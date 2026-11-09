@@ -1,8 +1,8 @@
 import { buildStagePrompt, PROMPT_VERSION } from './ai-prompts.mjs';
 import { readDocument, readingOmissions } from './document-reader.mjs';
 import { prepareDocumentInputs } from './document-inputs.mjs';
-import { BUSINESS_MODEL_SCHEMA, REQUIREMENT_REVIEW_SCHEMA, PLAN_REVIEW_SCHEMA, validateDocumentSummaries, validateBusinessModel, mergeBusinessModels, validateRequirementReview, validatePlanReview, mergeIssues } from './ai-pipeline-contract.mjs';
-import { buildAiRequest, DECOMPOSITION_SCHEMA, validateAnalysisProposal, validateDecompositionProposal, projectAnalysisBacklog, selectEvidenceQuote } from './ai-contract.mjs';
+import { BUSINESS_MODEL_MAX_BYTES, BUSINESS_MODEL_SCHEMA, REQUIREMENT_REVIEW_SCHEMA, PLAN_REVIEW_SCHEMA, validateDocumentSummaries, validateBusinessModel, mergeBusinessModels, validateRequirementReview, validatePlanReview, mergeIssues } from './ai-pipeline-contract.mjs';
+import { buildAiRequest, DECOMPOSITION_SCHEMA, validateAnalysisProposal, validateDecompositionProposal, projectAnalysisBacklog, selectEvidenceQuote, validatePrivateAiValue } from './ai-contract.mjs';
 import { matchRequirementsToContext } from '../../scripts/export-deliverables-workspace.mjs';
 import { privateWorkspaceContracts } from './private-validation.mjs';
 const { generateWorkPackagePlan } = privateWorkspaceContracts;
@@ -86,26 +86,44 @@ export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceR
   }
   let model;
   const synthesisSchema = structuredClone(BUSINESS_MODEL_SCHEMA);
+  synthesisSchema.properties.summary.maxLength = 2000;
+  synthesisSchema.properties.actors.items.properties.responsibility.maxLength = 240;
+  synthesisSchema.properties.terms.items.properties.meaning.maxLength = 240;
+  synthesisSchema.properties.sourceCoverage.items.properties.rationale.maxLength = 240;
+  const processFields = synthesisSchema.properties.processes.items.properties;
+  processFields.trigger.maxLength = 240;
+  for (const field of ['steps', 'exceptions', 'rules', 'data']) {
+    processFields[field].maxItems = 6;
+    processFields[field].items.maxLength = field === 'data' ? 180 : 240;
+  }
+  synthesisSchema.description += ' 중간 업무 지도는 행위자·업무 흐름·용어를 찾는 간결한 색인이다. 문서 통합의 구체성은 이 형식 상한과 색인 지시 안에서 충족한다. discoveryBudget.targetBatchBytes는 이번 묶음의 새 actors/processes/terms 설명에 권장하는 UTF-8 예산이다. summary는 교체되고 sourceCoverage와 issues는 누적된다. 이들은 권장 설명 예산에서 제외하지만 실제 누적 상한에 포함되므로 sourceCoverage의 rationale도 짧게 쓴다. 알려진 판독 질문의 크기(readingIssueBytes)를 미리 고려한다. 이전 모델도 계속 남으므로 각 묶음마다 전체 상한을 쓰지 않는다. 흐름은 상위 단계로, 규칙·데이터는 짧은 식별 문장으로 정리한다. 세부 조건·필드·인수 기준은 다음 단계에서 전체 원문 조항을 읽어 요구사항으로 만든다. 변경 없는 기존 항목은 반환에서 생략한다. 기존 항목의 갱신에는 새로 확인된 사실·배열 원소만 추가하며 이전 설명 전체를 바꿔 쓰거나 반복하지 않는다. 새 근거 문서만 연결할 때는 기존 설명에 포함된 짧은 문구를 그대로 재사용하고 새 배열 원소가 없으면 빈 배열을 반환한다. 병합은 기존 설명·배열·출처를 보존하므로 누적된 긴 설명을 더 짧은 문구로 교체하려 하지 않는다. 서로 다른 업무를 억지로 합치거나 미해결 질문·상충 근거·원문을 삭제하여 줄이지 않는다. 질문과 근거는 예산 목표보다 우선하며 실제 전체 상한을 넘으면 성공으로 꾸미지 않는다.';
   if (!snapshot.backlog.businessRequirements.length) {
     synthesisSchema.properties.issues.items.properties.requirementIds.maxItems = 0;
     synthesisSchema.description += ' No project requirements are registered yet: every issue.requirementIds must be []. Keep questions and cite sourceId/clauseId evidence; source document labels are not registered project requirement IDs.';
   }
   const batches = groups(documents, 4);
+  const readingIssueBytes = readingIssues.length ? Buffer.byteLength(JSON.stringify(readingIssues)) : 0;
   for (const [index, batch] of batches.entries()) {
     onStage('synthesis', index, batches.length);
     let data = { documents: batch, previousModel: model ?? null, decisions: snapshot.metadata.ai?.decisions ?? [], coverageRule: 'sourceCoverage must contain exactly the current documents. Return additions/updates for actors/processes/terms; the application retains omitted earlier entries and all unresolved issues. summary integrates previousModel. Use only the supplied anchors as verbatim issue citations.' };
+    data.discoveryBudget = { maxMergedBytes: BUSINESS_MODEL_MAX_BYTES, targetBatchBytes: Math.max(0, Math.floor((BUSINESS_MODEL_MAX_BYTES - readingIssueBytes) * 0.75 / batches.length)), readingIssueBytes, previousModelBytes: model ? Buffer.byteLength(JSON.stringify(model)) : 0, batch: index + 1, batches: batches.length };
     for (let attempt = 0; attempt < 2; attempt++) {
       if (signal?.aborted) fail('AI_CANCELLED');
-      const response = await run({ request: request('synthesis', data, snapshot), schema: synthesisSchema, cwd, signal });
-      if (signal?.aborted) fail('AI_CANCELLED');
       try {
+        const response = await run({ request: request('synthesis', data, snapshot), schema: synthesisSchema, cwd, signal });
+        if (signal?.aborted) fail('AI_CANCELLED');
         const delta = validateBusinessModel(response.output, snapshot, batch.map(doc => doc.sourceId));
+        validatePrivateAiValue(delta, synthesisSchema, { maxBytes: BUSINESS_MODEL_MAX_BYTES });
         try { model = mergeBusinessModels(model, delta, snapshot); }
         catch (error) { if (error.code === 'AI_OUTPUT_INVALID' && error.details?.some(detail => detail.kind === 'schema')) fail('AI_BUSINESS_MODEL_CAPACITY'); throw error; }
         break;
       } catch (error) {
+        if (signal?.aborted) fail('AI_CANCELLED');
         if (error.code !== 'AI_OUTPUT_INVALID' || attempt === 1) throw error;
-        data = { ...data, correction: { violations: error.details.map(({ kind, path }) => ({ kind, path })) } };
+        const details = Array.isArray(error.details) && error.details.length ? error.details : [{ kind: 'schema', path: '$' }];
+        const violations = details.map(detail => ({ kind: typeof detail?.kind === 'string' && /^[a-z-]{1,80}$/.test(detail.kind) ? detail.kind : 'schema', path: typeof detail?.path === 'string' && /^[a-zA-Z0-9_$.\[\]-]{1,200}$/.test(detail.path) ? detail.path : '$' }));
+        if (violations.some(detail => detail.kind === 'output-size')) throw error;
+        data = { ...data, correction: { violations } };
       }
     }
     onStage('synthesis', index + 1, batches.length);
