@@ -164,7 +164,9 @@ const eslintConfig = [
       "local-query": localQueryPlugin,
     },
     rules: {
-      "local-theme/enforce-design-tokens": "warn",
+      // [2026-11-10] warn → error. 헌법 제15조 2항의 의무인데 위반이 0건이 된 뒤에도 경고였다 — 새 위반이 경고 상한(19)을
+      //   차지하며 통과할 수 있었다. 게이트 원장(QUALITY-FRONTEND-DESIGN-TOKEN-SEVERITY)의 기준도 error 로 올려 되돌리면 붉다.
+      "local-theme/enforce-design-tokens": "error",
       "local-query/no-render-state-in-mutation-fn": "error",
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": [
