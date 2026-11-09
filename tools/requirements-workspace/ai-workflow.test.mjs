@@ -118,6 +118,65 @@ test('the final whole-proposal validation shares the single correction budget wi
   assert.equal(state.ai.proposal.coverage.length, 33);
 });
 
+test('each analysis batch has its own single correction while keeping prior verified questions', async t => {
+  const attempts = new Map(), indices = [];
+  const app = await fixture(t, async ({ request }) => {
+    const index = request.data.analysisBatch.index, attempt = (attempts.get(index) ?? 0) + 1; attempts.set(index, attempt); indices.push(index);
+    const src = request.data.sources[0], clause = src.clauses[0];
+    return envelope({ requirements: [], issues: attempt === 1 || index === 1 ? [{ id: `Q-${index}`, kind: 'decision', severity: 'blocking', question: `${index}번 업무의 범위를 확인해 주세요.`, options: [], requirementIds: [], citations: [{ sourceId: src.id, clauseId: clause.id, quote: attempt === 1 ? '원문에 없는 합성 인용문' : clause.text }] }] : [], coverage: request.data.sources.flatMap(src => src.clauses.map(part => ({ sourceId: src.id, clauseId: part.id, disposition: 'excluded', rationale: '업무 배경이며 범위를 확인한다.' }))) });
+  });
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 33 }, (_, index) => ({ ...source.clauses[0], id: `C-${index + 1}` })) });
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi(); const state = await app.engine.state();
+  assert.deepEqual(indices, [1, 1, 2, 2]); assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  assert.equal(state.ai.proposal.coverage.length, 33); assert.equal(state.ai.proposal.issues[0].question, '1번 업무의 범위를 확인해 주세요.');
+  assert.equal(state.backlog.businessRequirements.length, 0); assert.equal(state.metadata.baselines.length, 0);
+});
+
+test('malformed batch output is regenerated once without retransmitting the rejected body', async t => {
+  let calls = 0;
+  const app = await fixture(t, async ({ request }) => {
+    calls++;
+    if (calls === 1) return envelope({ SYNTHETIC_REJECTED_BODY: 'discard this malformed draft' });
+    if (calls === 2) { assert.ok(request.data.correction); assert.equal(JSON.stringify(request).includes('SYNTHETIC_REJECTED_BODY'), false); }
+    const src = request.data.sources[0], clause = src.clauses[0];
+    return envelope({ requirements: [], issues: calls === 2 ? [{ id: 'Q-KEEP', kind: 'decision', severity: 'blocking', question: '업무 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [{ sourceId: src.id, clauseId: clause.id, quote: clause.text }] }] : [], coverage: request.data.sources.flatMap(src => src.clauses.map(part => ({ sourceId: src.id, clauseId: part.id, disposition: 'excluded', rationale: '업무 배경' }))) });
+  });
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 33 }, (_, index) => ({ ...source.clauses[0], id: `C-${index + 1}` })) });
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi(); const state = await app.engine.state();
+  assert.equal(calls, 3); assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  assert.equal(state.ai.proposal.coverage.length, 33);
+});
+
+test('failed batch diagnostics keep safe validation locations while rejecting raw or forged metadata fields', async t => {
+  let calls = 0;
+  const app = await fixture(t, async ({ request }) => {
+    calls++; const value = analysis(request, { question: false }); value.requirements[0].citations[0].quote = 'SYNTHETIC_REJECTED_BODY'; return envelope(value);
+  });
+  await app.start(); await app.engine.waitForAi(); const state = await app.engine.state();
+  assert.equal(calls, 2); assert.equal(state.ai.current.status, 'failed');
+  assert.deepEqual(state.ai.current.validationFailures, [{ kind: 'citation-quote', path: 'items[0].citations[0]' }]);
+  assert.equal(JSON.stringify(state.metadata).includes('SYNTHETIC_REJECTED_BODY'), false);
+  const reordered = structuredClone(state.metadata); reordered.ai.jobs.at(-1).validationFailures = [{ path: 'items[0].citations[0]', kind: 'citation-quote' }];
+  assert.doesNotThrow(() => validateRequirementsMetadata(reordered));
+  const forged = structuredClone(state.metadata); forged.ai.jobs.at(-1).validationFailures[0].raw = 'SYNTHETIC_REJECTED_BODY';
+  assert.throws(() => validateRequirementsMetadata(forged), { code: 'AI_METADATA_INVALID' });
+});
+
+test('a batch runner parsing rejection receives one value-free correction without echoing its exception', async t => {
+  let calls = 0;
+  const app = await fixture(t, async ({ request }) => {
+    calls++;
+    if (calls === 1) throw Object.assign(Error('SYNTHETIC_REJECTED_BODY'), { code: 'AI_OUTPUT_INVALID', details: [{ kind: 'SYNTHETIC_REJECTED_BODY', path: '$.SYNTHETIC_REJECTED_BODY' }] });
+    if (calls === 2) { assert.deepEqual(request.data.correction.violations, [{ kind: 'schema', path: '$' }]); assert.equal(JSON.stringify(request).includes('SYNTHETIC_REJECTED_BODY'), false); }
+    const src = request.data.sources[0], clause = src.clauses[0];
+    return envelope({ requirements: [], issues: calls === 2 ? [{ id: 'Q-KEEP', kind: 'decision', severity: 'blocking', question: '업무 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [{ sourceId: src.id, clauseId: clause.id, quote: clause.text }] }] : [], coverage: request.data.sources.flatMap(src => src.clauses.map(part => ({ sourceId: src.id, clauseId: part.id, disposition: 'excluded', rationale: '업무 배경' }))) });
+  });
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 33 }, (_, index) => ({ ...source.clauses[0], id: `C-${index + 1}` })) });
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi(); const state = await app.engine.state();
+  assert.equal(calls, 3); assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  assert.equal(state.ai.current.attempts, 2, 'the current run retains its earlier correction without reusing that batch budget');
+});
+
 test('automatic decomposition attaches visuals only from its confirmed requirement source scope', async t => {
   const attachmentsByPhase = [];
   const app = await fixture(t, async ({ request, attachments }) => {

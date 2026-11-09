@@ -1,7 +1,7 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { ANALYSIS_SCHEMA, BATCH_ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, aiInputDigest, buildAiRequest, buildCorrectionRequest, seedAnalysis, validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal, projectAnalysisBacklog } from './ai-contract.mjs';
+import { ANALYSIS_SCHEMA, BATCH_ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, aiInputDigest, buildAiRequest, buildCorrectionRequest, seedAnalysis, validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal, projectAnalysisBacklog, safeValidationFailures } from './ai-contract.mjs';
 import { planAnalysisBatches, MAX_ANALYSIS_BATCHES } from './ai-analysis-batches.mjs';
 import { AI_MODEL, AI_EFFORT, AI_ANALYSIS_EFFORT, aiEffortForPhase, createCliRunner, findClaudeExecutable } from './ai-cli.mjs';
 import { assertExternalWorkspace } from './store.mjs';
@@ -26,7 +26,7 @@ export function validateAiMetadata(value) {
   if (value.version !== 1 || !Array.isArray(value.jobs) || !Array.isArray(value.decisions)) fail('AI_METADATA_INVALID');
   const ids = new Set();
   for (const job of value.jobs) {
-    exact(job, ['id', 'phase', 'status', 'inputDigest', 'startedAt', 'completedAt', 'appliedAt', 'model', 'effort', 'includeVisuals', 'attempts', 'batches', 'inputRef', 'contextRef', 'resultRef', 'errorCode', 'usage', 'fullPipeline', 'promptVersion', 'stage', 'stageProgress', 'modelCalls', 'checkpoints', 'reusedStages', 'resumeFrom', 'promptRefs', 'sensitivityWarnings']);
+    exact(job, ['id', 'phase', 'status', 'inputDigest', 'startedAt', 'completedAt', 'appliedAt', 'model', 'effort', 'includeVisuals', 'attempts', 'batches', 'inputRef', 'contextRef', 'resultRef', 'errorCode', 'usage', 'fullPipeline', 'promptVersion', 'stage', 'stageProgress', 'modelCalls', 'checkpoints', 'reusedStages', 'resumeFrom', 'promptRefs', 'sensitivityWarnings', 'validationFailures']);
     try { validateSensitivityWarnings(job.sensitivityWarnings ?? []); } catch { fail('AI_METADATA_INVALID'); }
     if (!/^[a-f0-9-]{36}$/.test(job.id ?? '') || ids.has(job.id) || !['analysis', 'decomposition'].includes(job.phase) || !statuses.includes(job.status) || !/^[a-f0-9]{64}$/.test(job.inputDigest ?? '') || !Number.isFinite(Date.parse(job.startedAt)) || job.model !== AI_MODEL || ![AI_EFFORT, AI_ANALYSIS_EFFORT].includes(job.effort)) fail('AI_METADATA_INVALID');
     ids.add(job.id); reference(job.inputRef, 'baseline'); reference(job.contextRef, 'ai');
@@ -48,6 +48,10 @@ export function validateAiMetadata(value) {
     if (['ready', 'needs-decisions', 'applied'].includes(job.status) && !job.resultRef) fail('AI_METADATA_INVALID');
     for (const key of ['completedAt', 'appliedAt']) if (job[key] !== undefined && !Number.isFinite(Date.parse(job[key]))) fail('AI_METADATA_INVALID');
     if (job.errorCode !== undefined && !/^[A-Z][A-Z0-9_]{2,80}$/.test(job.errorCode)) fail('AI_METADATA_INVALID');
+    if (job.validationFailures !== undefined) {
+      if (job.status !== 'failed' || job.errorCode !== 'AI_OUTPUT_INVALID' || !Array.isArray(job.validationFailures) || !job.validationFailures.length || job.validationFailures.length > 10) fail('AI_METADATA_INVALID');
+      for (const item of job.validationFailures) { exact(item, ['kind', 'path']); const safe = safeValidationFailures([item])[0]; if (item.kind !== safe.kind || item.path !== safe.path) fail('AI_METADATA_INVALID'); }
+    }
     if (job.usage) { exact(job.usage, ['inputTokens', 'outputTokens']); if (Object.values(job.usage).some(value => !Number.isSafeInteger(value) || value < 0)) fail('AI_METADATA_INVALID'); }
   }
   for (const decision of value.decisions) {
@@ -143,7 +147,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
       const scratchRoot = assertExternalWorkspace(join(store.directory, '.scratch')); mkdirSync(scratchRoot, { recursive: true, mode: 0o700 });
       const cwd = mkdtempSync(join(scratchRoot, 'ai-'));
       try {
-        let corrected = false, validated, output = initialAnalysis, pipeline;
+        let corrected = false, runCorrected = false, validated, output = initialAnalysis, pipeline;
         const batchAudit = [];
         const usage = { inputTokens: 0, outputTokens: 0 };
         const isCurrent = async () => {
@@ -253,22 +257,24 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
           const batchSnapshot = { ...snapshot, backlog: { ...snapshot.backlog, sources: currentRequest.data.sources } };
           const visuals = job.includeVisuals && !job.fullPipeline ? await prepareVisualAttachments(batchSnapshot, sourceFile, { signal: controller.signal }) : { attachments: [], sources: [] };
           currentRequest.data.visualSources = visuals.sources;
-          let attemptRequest = currentRequest, next, delta;
+          let attemptRequest = currentRequest, next, delta, batchCorrected = false;
           for (;;) {
             if (!await isCurrent()) return;
-            if (current(store.read()).attempts !== (corrected ? 2 : 1)) mark(job.id, stored => { stored.attempts = corrected ? 2 : 1; });
+            if (current(store.read()).attempts !== (runCorrected ? 2 : 1)) mark(job.id, stored => { stored.attempts = runCorrected ? 2 : 1; });
             if (controller.signal.aborted || closed) return;
-            const response = await run({ request: attemptRequest, attachments: visuals.attachments, schema: job.phase === 'analysis' ? batches?.length > 1 ? BATCH_ANALYSIS_SCHEMA : ANALYSIS_SCHEMA : DECOMPOSITION_SCHEMA, cwd, signal: controller.signal });
-            if (!await isCurrent()) return;
-            if (response.model !== AI_MODEL || response.effort !== aiEffortForPhase(attemptRequest.phase)) fail('AI_MODEL_MISMATCH');
-            delta = response.output;
+            let response;
             try {
+              response = await run({ request: attemptRequest, attachments: visuals.attachments, schema: job.phase === 'analysis' ? batches?.length > 1 ? BATCH_ANALYSIS_SCHEMA : ANALYSIS_SCHEMA : DECOMPOSITION_SCHEMA, cwd, signal: controller.signal });
+              if (!await isCurrent()) return;
+              if (response.model !== AI_MODEL || response.effort !== aiEffortForPhase(attemptRequest.phase)) fail('AI_MODEL_MISMATCH');
+              delta = response.output;
               next = batches?.length > 1 ? validateAnalysisBatchProposal(response.output, snapshot, batches[index], output, { idPrefix: currentRequest.data.analysisBatch.idPrefix }) : response.output;
               if (!(batches?.length > 1) || index === batches.length - 1) validated = job.phase === 'analysis' ? validateAnalysisProposal(next, snapshot) : validateDecompositionProposal(next, snapshot);
               break;
             } catch (error) {
-              if (error.code !== 'AI_OUTPUT_INVALID' || corrected) throw error;
-              attemptRequest = buildCorrectionRequest(currentRequest, response.output, error.details); corrected = true;
+              if (controller.signal.aborted || closed) return;
+              if (error.code !== 'AI_OUTPUT_INVALID' || batchCorrected || safeValidationFailures(error.details).some(detail => detail.kind === 'output-size')) throw error;
+              attemptRequest = buildCorrectionRequest(currentRequest, response?.output, error.details); batchCorrected = true; corrected = true; runCorrected = true;
             }
           }
           if (batches?.length > 1) {
@@ -313,7 +319,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
         assertExternalWorkspace(cwd); rmSync(cwd, { recursive: true, force: true });
       }
     }).catch(error => {
-      try { mark(job.id, stored => { if (stored.status !== 'running') return; stored.status = controller.signal.aborted ? 'cancelled' : 'failed'; stored.completedAt = now(); stored.errorCode = /^AI_[A-Z_]{2,70}$/.test(error.code ?? '') ? error.code : 'AI_RUN_FAILED'; if (operation.usage) stored.usage = operation.usage; }); }
+      try { mark(job.id, stored => { if (stored.status !== 'running') return; stored.status = controller.signal.aborted ? 'cancelled' : 'failed'; stored.completedAt = now(); stored.errorCode = /^AI_[A-Z_]{2,70}$/.test(error.code ?? '') ? error.code : 'AI_RUN_FAILED'; if (!controller.signal.aborted && error.code === 'AI_OUTPUT_INVALID') stored.validationFailures = safeValidationFailures(error.details); if (operation.usage) stored.usage = operation.usage; }); }
       catch { /* A foreign edit/lock loss must never be overwritten to save status. */ }
     }).finally(() => { if (active === operation) active = undefined; });
   }
