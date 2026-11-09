@@ -177,6 +177,20 @@ test('an open failed analysis dialog follows actual server progress without losi
       await act('source.ingest', { requestId: randomUUID(), filename: `source-${index + 1}.txt`, base64: Buffer.from(text).toString('base64'), classification: 'internal', sourceType: 'interview', sensitivityAcknowledged: true, readWithAI: false }); await app.engine.waitForImports();
     }
     browser = await chromium.launch({ headless: true }); const page = await browser.newPage(); page.setDefaultTimeout(15000);
+    const browserErrors = [], requests = [];
+    page.on('pageerror', error => { if (browserErrors.length < 10) browserErrors.push(error.message); });
+    page.on('request', request => {
+      const path = new URL(request.url()).pathname; if (!path.startsWith('/api/')) return;
+      let action; try { action = JSON.parse(request.postData() ?? '{}').action; } catch { /* No body for state reads. */ }
+      requests.push({ method: request.method(), path, ...(action ? { action } : {}) });
+    });
+    await page.addInitScript(() => {
+      window.__recoveryEvents = [];
+      const record = event => { if (window.__recoveryEvents.length < 30) window.__recoveryEvents.push(event); };
+      document.addEventListener('submit', event => record({ type: 'submit', form: event.target.id }), true);
+      document.addEventListener('invalid', event => record({ type: 'invalid', name: event.target.name }), true);
+      document.addEventListener('click', event => { const button = event.target.closest('button'); if (button) record({ type: 'click', action: button.dataset.action ?? null, button: button.textContent.trim().slice(0, 50) }); }, true);
+    });
     await page.goto(app.launchUrl); await page.getByRole('button', { name: 'AI 판독 이어서 진행', exact: true }).click();
     await page.locator('[name="sensitivityAcknowledged"]').check(); await page.locator('[name="ai-consent"]').check(); await page.getByRole('button', { name: '동의하고 전체 AI 처리 시작', exact: true }).click();
     await page.locator('.form-errors').filter({ hasText: 'AI_DOCUMENT_OUTPUT_INVALID' }).waitFor();
@@ -199,7 +213,10 @@ test('an open failed analysis dialog follows actual server progress without losi
     try { await page.getByRole('button', { name: '전체 초안 확인·반영', exact: true }).waitFor({ timeout: 90000 }); }
     catch (error) {
       const view = await app.engine.state().catch(() => null);
-      error.message += '\nSynthetic recovery state: ' + JSON.stringify({ aiStatus: view?.ai.current?.status ?? null, aiError: view?.ai.current?.errorCode ?? null, stage: view?.ai.current?.stage ?? null, importsActive: view?.imports.active ?? null, readings, dialogOpen: await page.locator('#dialog').evaluate(element => element.open, undefined, { timeout: 1000 }).catch(() => null), dialogError: await page.locator('#editor .form-errors').textContent({ timeout: 1000 }).catch(() => null), pageError: await page.locator('#page-errors').textContent({ timeout: 1000 }).catch(() => null) });
+      let diagnosticTimer;
+      const dom = await Promise.race([page.evaluate(() => ({ events: window.__recoveryEvents, online: navigator.onLine, busy: document.body.getAttribute('aria-busy'), title: document.querySelector('#dialog-title')?.textContent, submitDisabled: document.querySelector('#editor [type=submit]')?.disabled, invalid: [...document.querySelectorAll('#editor input')].filter(input => input.willValidate && !input.validity.valid).map(input => ({ name: input.name, type: input.type, checked: input.checked })) })).catch(() => null), new Promise(resolve => { diagnosticTimer = setTimeout(() => resolve(null), 1000); })]);
+      clearTimeout(diagnosticTimer);
+      error.message += '\nSynthetic recovery state: ' + JSON.stringify({ aiStatus: view?.ai.current?.status ?? null, aiError: view?.ai.current?.errorCode ?? null, stage: view?.ai.current?.stage ?? null, importsActive: view?.imports.active ?? null, readings, browserErrors, requests: requests.slice(-20), dom, dialogOpen: await page.locator('#dialog').evaluate(element => element.open, undefined, { timeout: 1000 }).catch(() => null), dialogError: await page.locator('#editor .form-errors').textContent({ timeout: 1000 }).catch(() => null), pageError: await page.locator('#page-errors').textContent({ timeout: 1000 }).catch(() => null) });
       throw error;
     }
     assert.equal(readings, 3); assert.equal((await app.engine.state()).metadata.baselines.length, 0);
