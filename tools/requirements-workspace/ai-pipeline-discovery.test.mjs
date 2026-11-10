@@ -78,7 +78,7 @@ test('discovery generates a bounded outline while retaining original clauses and
     expectedIssues.items.properties.citations.items = referenceSchema(36);
     assert.deepEqual(schema.properties.issues, expectedIssues);
     const { maxMergedBytesForBatch, ...budget } = request.data.discoveryBudget;
-    assert.deepEqual(budget, { absoluteMaxBytes: BUSINESS_MODEL_MAX_BYTES, targetBatchBytes: 12288, targetMergedBytesForBatch: 12288 * calls, readingIssueBytes: 0, readingIssueCount: 0, maxIssues: 100, previousModelBytes: request.data.previousModel ? Buffer.byteLength(JSON.stringify(request.data.previousModel)) : 0, batch: calls, batches: 10 });
+    assert.deepEqual(budget, { absoluteMaxBytes: BUSINESS_MODEL_MAX_BYTES, targetBatchBytes: 12288, targetMergedBytesForBatch: 12288 * calls, readingIssueBytes: 0, readingIssueCount: 0, maxIssues: 1000, maxIssuesPerResponse: 100, previousModelBytes: request.data.previousModel ? Buffer.byteLength(JSON.stringify(request.data.previousModel)) : 0, batch: calls, batches: 10 });
     assert.ok(maxMergedBytesForBatch > budget.targetMergedBytesForBatch && maxMergedBytesForBatch <= BUSINESS_MODEL_MAX_BYTES);
     if (calls === 10) assert.equal(maxMergedBytesForBatch, BUSINESS_MODEL_MAX_BYTES);
     assert.match(schema.description, /전체 원문 조항/);
