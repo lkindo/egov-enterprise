@@ -101,6 +101,48 @@ for (const change of ['reuse-disabled', 'visual-policy', 'source-text']) test(`a
   assert.equal(state.ai.current.batches.completed, 0); assert.equal(state.backlog.businessRequirements.length, 0);
 });
 
+test('a failed combined call resumes one partition at a time without replaying its saved prefix', async t => {
+  const calls = [];
+  const app = await fixture(t, async ({ request }) => {
+    const batch = request.data.analysisBatch; calls.push(batch.index);
+    if (batch.index >= 4 && batch.lastIndex > batch.index) throw Object.assign(Error('AI_TIMEOUT'), { code: 'AI_TIMEOUT' });
+    const src = request.data.sources[0];
+    return envelope({ requirements: [], issues: batch.index === 1 ? [{ id: 'Q', kind: 'decision', severity: 'blocking', question: '접수 처리 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [{ sourceId: src.id, clauseId: src.clauses[0].id, quote: src.clauses[0].text }] }] : [], coverage: request.data.sources.flatMap(value => value.clauses.map(clause => ({ sourceId: value.id, clauseId: clause.id, disposition: 'excluded', rationale: '업무 범위 확인이 필요한 배경 자료' }))) });
+  });
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 288 }, (_, index) => ({ ...source.clauses[0], id: `C-${index}` })) });
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi(); let state = await app.engine.state();
+  assert.equal(state.ai.current.errorCode, 'AI_TIMEOUT'); assert.equal(state.ai.current.batches.completed, 3);
+  assert.equal(state.ai.current.analysisBatchLimit, 1);
+  const old = state.ai.current.checkpoints.analysis, bytes = app.store.readArchive(old);
+  calls.length = 0; await app.start({ includeVisuals: false }); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.deepEqual(calls, [4, 5, 6, 7, 8, 9]); assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  assert.equal(state.ai.proposal.coverage.length, 288); assert.equal(app.store.readArchive(old), bytes);
+});
+
+test('direct visual analysis keeps each logical partition separate before preparing attachments', async t => {
+  let count, lastIndex;
+  const app = await fixture(t, async ({ request }) => { count=request.data.sources.reduce((sum,src)=>sum+src.clauses.length,0);lastIndex=request.data.analysisBatch.lastIndex;throw Object.assign(Error('AI_TIMEOUT'),{code:'AI_TIMEOUT'}); });
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 288 }, (_, index) => ({ ...source.clauses[0], id: `C-${index}` })) });
+  await app.start({ includeVisuals: true }); await app.engine.waitForAi();
+  assert.equal(count, 32); assert.equal(lastIndex, undefined);
+});
+
+test('a combined-call failure before the first checkpoint still persists the one-partition resume policy', async t => {
+  const calls = [];
+  const app = await fixture(t, async ({ request }) => {
+    const batch = request.data.analysisBatch; calls.push(batch.index);
+    if (batch.lastIndex > batch.index) throw Object.assign(Error('AI_OUTPUT_TOO_LARGE'), { code: 'AI_OUTPUT_TOO_LARGE' });
+    const src = request.data.sources[0];
+    return envelope({ requirements: [], issues: batch.index === 1 ? [{ id: 'Q', kind: 'decision', severity: 'blocking', question: '자료의 업무 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [{ sourceId: src.id, clauseId: src.clauses[0].id, quote: src.clauses[0].text }] }] : [], coverage: src.clauses.map(clause => ({ sourceId: src.id, clauseId: clause.id, disposition: 'excluded', rationale: '확인이 필요한 업무 배경' })) });
+  });
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 128 }, (_, index) => ({ ...source.clauses[0], id: `C-${index}` })) });
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi(); let state = await app.engine.state();
+  assert.equal(state.ai.current.errorCode, 'AI_OUTPUT_TOO_LARGE'); assert.equal(state.ai.current.analysisBatchLimit, 1); assert.equal(state.ai.current.checkpoints.analysis, undefined);
+  calls.length = 0; await app.start({ includeVisuals: false }); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.deepEqual(calls, [1, 2, 3, 4]); assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  for (const change of [job => { job.analysisBatchLimit = 2; }, job => { job.analysisAttachmentPolicy = 'unsupported'; }]) { const metadata = structuredClone(state.metadata); change(metadata.ai.jobs.at(-1)); assert.throws(() => validateRequirementsMetadata(metadata), { code: 'AI_METADATA_INVALID' }); }
+});
+
 test('high analysis preserves legacy xhigh history and rejects unsupported history efforts', async t => {
   const app = await fixture(t, async ({ request }) => ({ ...envelope(analysis(request, { question: false })), effort: 'high' }));
   await app.start(); await app.engine.waitForAi();
@@ -319,7 +361,7 @@ test('explicit batch updates and relinked draft reasons remain reviewable in the
 
 test('artifacts -> AI issues -> human answers -> confirmed baseline -> automatic epic generation -> task package', async t => {
   const phases = [];
-  const app = await fixture(t, async ({ request }) => { phases.push(request.phase); return envelope(request.phase === 'analysis' ? analysis(request) : decomposition()); });
+  const app = await fixture(t, async ({ request }) => { phases.push(request.phase); if (request.phase === 'decomposition') assert.equal(request.data.evidenceProtocol, undefined, 'standalone decomposition retains its canonical evidence/correction contract'); return envelope(request.phase === 'analysis' ? analysis(request) : decomposition()); });
   await app.start(); await app.engine.waitForAi();
   let state = await app.engine.state();
   assert.equal(state.ai.current.status, 'needs-decisions');

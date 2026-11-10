@@ -24,6 +24,7 @@ function reference(value, kind) {
 }
 const metricFields = ['requests', 'corrections', 'reusedResponses', 'inputBytes', 'logicalInputBytes', 'outputBytes', 'measuredOutputs', 'modelWaitMs', 'peakConcurrency', 'cacheReadInputTokens', 'cacheCreationInputTokens', 'cacheReports'];
 const emptyCallMetrics = () => ({ version: 1, ...Object.fromEntries(metricFields.map(field => [field, 0])), activeCalls: [] });
+const attachmentPolicy = job => job.analysisAttachmentPolicy ?? (job.fullPipeline || job.checkpoints?.discovery ? 'none' : job.includeVisuals !== false ? 'direct' : 'none');
 function validateCallMetrics(value, job) {
   exact(value, ['version', ...metricFields, 'activeCalls']);
   if (value.version !== 1 || metricFields.some(field => !Number.isSafeInteger(value[field]) || value[field] < 0) || value.requests !== job.modelCalls || value.requests > 256 || value.corrections > value.requests || value.measuredOutputs > value.requests || value.cacheReports > value.requests || value.peakConcurrency > 2 || !Array.isArray(value.activeCalls) || value.activeCalls.length > value.peakConcurrency || !value.requests && (value.inputBytes || value.logicalInputBytes || value.outputBytes || value.modelWaitMs || value.peakConcurrency)) fail('AI_METADATA_INVALID');
@@ -41,11 +42,13 @@ export function validateAiMetadata(value) {
   if (value.version !== 1 || !Array.isArray(value.jobs) || !Array.isArray(value.decisions)) fail('AI_METADATA_INVALID');
   const ids = new Set();
   for (const job of value.jobs) {
-    exact(job, ['id', 'phase', 'status', 'inputDigest', 'startedAt', 'completedAt', 'appliedAt', 'model', 'effort', 'includeVisuals', 'attempts', 'batches', 'inputRef', 'contextRef', 'resultRef', 'errorCode', 'usage', 'fullPipeline', 'promptVersion', 'stage', 'stageProgress', 'modelCalls', 'checkpoints', 'reusedStages', 'resumeFrom', 'promptRefs', 'sensitivityWarnings', 'validationFailures', 'callMetrics']);
+    exact(job, ['id', 'phase', 'status', 'inputDigest', 'startedAt', 'completedAt', 'appliedAt', 'model', 'effort', 'includeVisuals', 'analysisAttachmentPolicy', 'analysisBatchLimit', 'attempts', 'batches', 'inputRef', 'contextRef', 'resultRef', 'errorCode', 'usage', 'fullPipeline', 'promptVersion', 'stage', 'stageProgress', 'modelCalls', 'checkpoints', 'reusedStages', 'resumeFrom', 'promptRefs', 'sensitivityWarnings', 'validationFailures', 'callMetrics']);
     try { validateSensitivityWarnings(job.sensitivityWarnings ?? []); } catch { fail('AI_METADATA_INVALID'); }
     if (!/^[a-f0-9-]{36}$/.test(job.id ?? '') || ids.has(job.id) || !['analysis', 'decomposition'].includes(job.phase) || !statuses.includes(job.status) || !/^[a-f0-9]{64}$/.test(job.inputDigest ?? '') || !Number.isFinite(Date.parse(job.startedAt)) || job.model !== AI_MODEL || ![AI_EFFORT, AI_ANALYSIS_EFFORT].includes(job.effort)) fail('AI_METADATA_INVALID');
     ids.add(job.id); reference(job.inputRef, 'baseline'); reference(job.contextRef, 'ai');
     if (job.includeVisuals !== undefined && typeof job.includeVisuals !== 'boolean') fail('AI_METADATA_INVALID');
+    if (job.analysisAttachmentPolicy !== undefined && (job.phase !== 'analysis' || !['none', 'direct'].includes(job.analysisAttachmentPolicy) || job.analysisAttachmentPolicy === 'direct' && (job.fullPipeline || job.checkpoints?.discovery))) fail('AI_METADATA_INVALID');
+    if (job.analysisBatchLimit !== undefined && (job.phase !== 'analysis' || ![1, 3].includes(job.analysisBatchLimit))) fail('AI_METADATA_INVALID');
     if (job.fullPipeline !== undefined && typeof job.fullPipeline !== 'boolean' || job.fullPipeline && job.phase !== 'analysis' || job.promptVersion !== undefined && !/^[A-Za-z0-9_.-]{1,64}$/.test(job.promptVersion)) fail('AI_METADATA_INVALID');
     if (job.stage !== undefined && !['reading', 'synthesis', 'analysis', 'review-requirements', 'decomposition', 'review-plan'].includes(job.stage)) fail('AI_METADATA_INVALID');
     if (job.modelCalls !== undefined && (!Number.isSafeInteger(job.modelCalls) || job.modelCalls < 0 || job.modelCalls > 256)) fail('AI_METADATA_INVALID');
@@ -158,15 +161,18 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
       const reviewed = workflow.jobs.findLast(job => job.phase === 'analysis' && job.status === 'applied');
       try { analysisEvidence = proposal(reviewed); } catch (error) { if (!/^REQUIREMENTS_/.test(error.code ?? '') && error.code !== 'AI_OUTPUT_INVALID' && !(error instanceof SyntaxError)) throw error; }
     }
-    const request = buildAiRequest(snapshot, payload.phase, workflow.decisions, { ...batchOptions(0), previousAnalysis: initialAnalysis, analysisEvidence, evidenceReferences: true });
+    const useEvidenceReferences = payload.phase === 'analysis' || payload.fullPipeline === true;
+    const request = buildAiRequest(snapshot, payload.phase, workflow.decisions, { ...batchOptions(0), previousAnalysis: initialAnalysis, analysisEvidence, evidenceReferences: useEvidenceReferences });
     if (!runner) findClaudeExecutable();
     const progress = job => job.batches?.completed ?? (job.checkpoints?.analysis ? 1 : 0);
     const depth = job => Number(Boolean(job.checkpoints?.planning)) * 4 + Number(Boolean(job.checkpoints?.review)) * 2 + Number(Boolean(job.checkpoints?.discovery));
-    const resumable = payload.phase === 'analysis' && payload.reuseCheckpoints !== false && workflow.jobs.map((job, index) => ({ job, index })).filter(({ job }) => job.phase === 'analysis' && job.status !== 'running' && job.effort === AI_ANALYSIS_EFFORT && job.promptVersion === PROMPT_VERSION && job.inputDigest === inputDigest && (job.includeVisuals !== false) === (payload.includeVisuals !== false) && (!payload.fullPipeline || job.fullPipeline || job.checkpoints?.discovery) && job.checkpoints && Object.keys(job.checkpoints).length).sort((a, b) => progress(b.job) - progress(a.job) || depth(b.job) - depth(a.job) || b.index - a.index)[0]?.job;
+    const requestedPolicy = payload.fullPipeline || payload.includeVisuals === false ? 'none' : 'direct';
+    const priorSingleBatch = payload.phase === 'analysis' && workflow.jobs.some(job => job.phase === 'analysis' && job.analysisBatchLimit === 1 && job.effort === AI_ANALYSIS_EFFORT && job.promptVersion === PROMPT_VERSION && job.inputDigest === inputDigest && attachmentPolicy(job) === requestedPolicy);
+    const resumable = payload.phase === 'analysis' && payload.reuseCheckpoints !== false && workflow.jobs.map((job, index) => ({ job, index })).filter(({ job }) => job.phase === 'analysis' && job.status !== 'running' && job.effort === AI_ANALYSIS_EFFORT && job.promptVersion === PROMPT_VERSION && job.inputDigest === inputDigest && attachmentPolicy(job) === requestedPolicy && (!payload.fullPipeline || job.fullPipeline || job.checkpoints?.discovery) && job.checkpoints && Object.keys(job.checkpoints).length).sort((a, b) => progress(b.job) - progress(a.job) || depth(b.job) - depth(a.job) || b.index - a.index)[0]?.job;
     const callMetrics = emptyCallMetrics();
     const saved = resumable?.checkpoints ?? {};
     const checkpoints = payload.fullPipeline ? structuredClone(saved) : Object.fromEntries(['discovery', 'analysis'].filter(key => saved[key]).map(key => [key, structuredClone(saved[key])]));
-    const job = { id: jobId, phase: payload.phase, status: 'running', inputDigest, startedAt: now(), model: AI_MODEL, effort: AI_ANALYSIS_EFFORT, includeVisuals: payload.includeVisuals !== false, promptVersion: PROMPT_VERSION, ...(payload.fullPipeline ? { fullPipeline: true } : {}), stage: payload.fullPipeline ? 'reading' : payload.phase, modelCalls: 0, callMetrics: structuredClone(callMetrics), promptRefs: [], checkpoints, reusedStages: [], ...(resumable ? { resumeFrom: resumable.id } : {}),
+    const job = { id: jobId, phase: payload.phase, status: 'running', inputDigest, startedAt: now(), model: AI_MODEL, effort: AI_ANALYSIS_EFFORT, includeVisuals: payload.includeVisuals !== false, ...(payload.phase === 'analysis' ? { analysisAttachmentPolicy: requestedPolicy, analysisBatchLimit: priorSingleBatch ? 1 : 3 } : {}), promptVersion: PROMPT_VERSION, ...(payload.fullPipeline ? { fullPipeline: true } : {}), stage: payload.fullPipeline ? 'reading' : payload.phase, modelCalls: 0, callMetrics: structuredClone(callMetrics), promptRefs: [], checkpoints, reusedStages: [], ...(resumable ? { resumeFrom: resumable.id } : {}),
       ...(batches?.length > 1 ? { batches: { completed: 0, total: batches.length } } : {}), sensitivityWarnings: collectSensitivityWarnings({ backlog: snapshot.backlog, decisions: workflow.decisions }), inputRef: store.writeArchive('baseline', JSON.stringify(snapshot.backlog)), contextRef: store.writeArchive('ai', JSON.stringify(snapshot.metadata.context)) };
     commit(revision, next => { next.metadata.ai ??= empty(); next.metadata.ai.jobs.push(job); });
     const controller = new AbortController();
@@ -232,7 +238,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
         const run = async ({ preparedEvidence, ...args }) => {
           if (!await isCurrent()) fail('AI_STALE_INPUT');
           if (modelCalls >= 256) fail('AI_CALL_CAPACITY');
-          const evidence = preparedEvidence ?? (!['reading', 'synthesis'].includes(args.request.phase) ? prepareEvidenceRequest(args.request, args.schema) : null);
+          const evidence = preparedEvidence ?? (useEvidenceReferences && !['reading', 'synthesis'].includes(args.request.phase) ? prepareEvidenceRequest(args.request, args.schema) : null);
           const wire = evidence ? { ...args, request: evidence.request, schema: evidence.schema } : args;
           const inputBytes = Buffer.byteLength(JSON.stringify(wire.request));
           if (inputBytes > 768 * 1024) fail('AI_INPUT_TOO_LARGE');
@@ -332,10 +338,11 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
         // known capacity failure before paying to analyze any remaining source.
         let knownIssueCount = discovery ? mergeIssues(output?.issues ?? [], discovery.businessModel.issues).length : null;
         const responseSchema = job.phase === 'analysis' ? batches?.length > 1 ? BATCH_ANALYSIS_SCHEMA : ANALYSIS_SCHEMA : DECOMPOSITION_SCHEMA;
+        const directVisuals = job.phase === 'analysis' ? job.analysisAttachmentPolicy === 'direct' : job.includeVisuals && !job.fullPipeline;
         for (let index = startIndex; index < (batches?.length ?? 1);) {
           if (job.phase === 'analysis') onStage('analysis', index, batches?.length ?? 1);
           if (!await isCurrent()) return;
-          let group = batches?.length > 3 ? coalesceAnalysisBatches(batches, index) : { sources: batches?.[index], end: index };
+          let group = batches?.length > 3 && !directVisuals && job.analysisBatchLimit !== 1 ? coalesceAnalysisBatches(batches, index) : { sources: batches?.[index], end: index };
           let currentRequest, preparedEvidence;
           for (;;) {
             currentRequest = batches?.length > 1 ? buildAiRequest(snapshot, job.phase, workflow.decisions, { sources: group.sources, batch: { ...batchOptions(index).batch, ...(group.end > index ? { lastIndex: group.end + 1 } : {}) }, previousAnalysis: output, evidenceReferences: true }) : structuredClone(request);
@@ -348,7 +355,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             group = coalesceAnalysisBatches(batches, index, group.end - index);
           }
           const batchSnapshot = { ...snapshot, backlog: { ...snapshot.backlog, sources: currentRequest.data.sources } };
-          const visuals = job.includeVisuals && !job.fullPipeline && !discovery ? await prepareVisualAttachments(batchSnapshot, sourceFile, { signal: controller.signal }) : { attachments: [], sources: [] };
+          const visuals = directVisuals ? await prepareVisualAttachments(batchSnapshot, sourceFile, { signal: controller.signal }) : { attachments: [], sources: [] };
           currentRequest.data.visualSources = visuals.sources;
           if (visuals.sources.length) preparedEvidence = undefined;
           let attemptRequest = currentRequest, next, delta, batchCorrected = false;
@@ -367,7 +374,10 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
               break;
             } catch (error) {
               if (controller.signal.aborted || closed) return;
-              if (error.code !== 'AI_OUTPUT_INVALID' || batchCorrected || safeValidationFailures(error.details).some(detail => detail.kind === 'output-size')) throw error;
+              if (error.code !== 'AI_OUTPUT_INVALID' || batchCorrected || safeValidationFailures(error.details).some(detail => detail.kind === 'output-size')) {
+                if (group.end > index && ['AI_TIMEOUT', 'AI_OUTPUT_TOO_LARGE', 'AI_INPUT_TOO_LARGE', 'AI_ATTACHMENT_INVALID', 'AI_OUTPUT_INVALID'].includes(error.code)) mark(job.id, stored => { if (stored.status === 'running') stored.analysisBatchLimit = 1; });
+                throw error;
+              }
               attemptRequest = buildCorrectionRequest(currentRequest, response?.output, error.details, { evidenceReferences: true }); batchCorrected = true; corrected = true; runCorrected = true;
             }
           }

@@ -80,7 +80,8 @@ export function prepareEvidenceRequest(request, schema) {
         const chars = Array.from(citation.quote);
         span.push(chars.slice(0, 12).join(''), chars.slice(-12).join(''));
       }
-      catalog.push([citation.sourceId, citation.clauseId, span ?? citation.quote, allowed.has(clauseKey(citation.sourceId, citation.clauseId)), evidence.length - 1]);
+      const uniqueHint = !span || span.length === 2 || [span[2], span[3]].every(hint => clause.text.indexOf(hint) === clause.text.lastIndexOf(hint));
+      catalog.push([citation.sourceId, citation.clauseId, span && uniqueHint ? span : citation.quote, allowed.has(clauseKey(citation.sourceId, citation.clauseId)), evidence.length - 1]);
     }
     return indexes.get(key);
   };
@@ -100,7 +101,7 @@ export function prepareEvidenceRequest(request, schema) {
     for (const quote of excerpts(clause)) indexFor({ sourceId, clauseId, quote });
   }
   const wire = { ...original, instructions: `${protocolInstructions}\n${spanHintInstructions}\n\n${original.instructions}\n\nResponse reminder: citations are integer evidenceCatalog indexes; return no quote bodies.`, data: { ...projected, evidenceProtocol: EVIDENCE_PROTOCOL, evidenceCatalog: catalog } };
-  const canonicalRequest = { ...original, data: withoutQuoteBoundaries(original.data) };
+  const canonicalRequest = { ...original, data: withoutQuoteBoundaries(Object.fromEntries(fields.map(key => [key, original.data[key]]))) };
   if (Buffer.byteLength(JSON.stringify(wire)) > 768 * 1024 && Buffer.byteLength(JSON.stringify(canonicalRequest)) <= 768 * 1024) {
     // Selector overhead must neither hide evidence nor reject an input that the
     // original complete contract accepts. Fall back to that exact contract.

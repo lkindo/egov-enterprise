@@ -42,6 +42,8 @@ test('mixed document partitions keep the complete instruction prefix stable with
   const b = buildAiRequest(state, 'analysis', [], { sources: [second], batch: { index: 2, total: 2 } });
   assert.equal(a.instructions, b.instructions);
   assert.deepEqual(a.data.sources, [first]); assert.deepEqual(b.data.sources, [second]);
+  assert.deepEqual(a.data.currentMaterialProfile.sourceTypes, ['interview']); assert.deepEqual(a.data.currentMaterialProfile.formats, ['txt']);
+  assert.deepEqual(b.data.currentMaterialProfile.sourceTypes, ['regulation', 'screen']); assert.deepEqual(b.data.currentMaterialProfile.formats, ['pdf']);
   assert.match(a.instructions, /Cover exactly the clauses under data.sources/);
 });
 
@@ -75,6 +77,15 @@ test('current source selectors use exact spans without retranscribing text and h
   assert.ok(native.request.data.evidenceCatalog.some(row => row[2] === '이전 원문의 승인 조건과 예외를 모두 보존한다.'));
 });
 
+test('ambiguous fragment hints fall back to full quotation strings instead of making the model count offsets', () => {
+  const state = snapshot();
+  state.backlog.sources[0].clauses[0].text = ['가', '나'].map(letter => '공통으로 반복되는 시작 조건은 ' + letter.repeat(170) + ' 해당 원칙을 동일하게 적용한다.').join(' ');
+  const wire = prepareEvidenceRequest(buildAiRequest(state,'analysis'),ANALYSIS_SCHEMA);
+  const rows = wire.request.data.evidenceCatalog.filter(row=>row[0]==='SRC-1');
+  assert.ok(rows.length >= 2); assert.ok(rows.every(row=>typeof row[2]==='string'));
+  assert.ok(rows.every(row=>state.backlog.sources[0].clauses[0].text.includes(row[2])));
+});
+
 test('lossless evidence forwarding falls back to the canonical contract when selector overhead alone exceeds the input limit', () => {
   const clauses = Array.from({ length: 3000 }, (_, index) => ({ id: `C-${index}-${'C'.repeat(90)}`, text: '기관의 승인 조건과 예외를 확인한다.' }));
   const request = { phase: 'review-requirements', instructions: 'Keep every original condition and exception.', data: { sources: [{ id: 'S'.repeat(100), title: '다수 근거 검토', clauses }], requirements: [], existingIssues: [] } };
@@ -89,14 +100,14 @@ test('lossless evidence forwarding falls back to the canonical contract when sel
 
 test('new evidence selectors prefer complete sentence boundaries while all original text remains supplied', () => {
   const state = snapshot();
-  state.backlog.sources[0].clauses[0].text = Array.from({ length: 12 }, (_, index) => `제${index + 1}문장의 승인 조건과 거부 예외를 원문 그대로 확인한다.`).join(' ');
+  state.backlog.sources[0].clauses[0].text = Array.from({ length: 12 }, (_, index) => `제${index + 1}문장의 승인 조건과 거부 예외를 원문 그대로 확인한다-${String(index + 1).padStart(4, '0')}.`).join(' ');
   const request = buildAiRequest(state, 'analysis'), result = prepareEvidenceRequest(request, ANALYSIS_SCHEMA);
   const quotes = result.request.data.evidenceCatalog.map(row => catalogQuote(result.request, row));
   const fragments = result.request.data.evidenceCatalog.filter(row => Array.isArray(row[2]) && row[2].length === 4);
   assert.ok(fragments.length > 0, 'fragment selectors need readable opening/closing anchors as well as exact offsets');
   for (const row of fragments) { const quote = catalogQuote(result.request, row); assert.ok(quote.startsWith(row[2][2])); assert.ok(quote.endsWith(row[2][3])); }
   assert.ok(quotes.length > 1);
-  for (const quote of quotes) { assert.match(quote, /^제\d+문장/); assert.match(quote, /확인한다\.$/); assert.ok(state.backlog.sources[0].clauses[0].text.includes(quote)); }
+  for (const quote of quotes) { assert.match(quote, /^제\d+문장/); assert.match(quote, /확인한다-\d{4}\.$/); assert.ok(state.backlog.sources[0].clauses[0].text.includes(quote)); }
   assert.deepEqual(result.request.data.sources, request.data.sources);
 });
 

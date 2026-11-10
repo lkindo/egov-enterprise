@@ -25,6 +25,9 @@ test('parallel quality review progress separates active calls and completed anal
   assert.match(panel.textContent, /실제 호출 3회 · 보정 1회 · 저장 결과 재사용 2회 · 최대 동시 호출 2개/);
   assert.match(panel.textContent, /요청 JSON 합계 1,234,567바이트/);
   assert.match(panel.textContent, /측정된 응답 JSON 12,000바이트 \(1회\)/);
+  job.callMetrics.cacheReports = 1; job.callMetrics.cacheReadInputTokens = 321; job.callMetrics.cacheCreationInputTokens = 123;
+  button(window.document, '최신 상태 읽기').click(); await new Promise(resolve => setImmediate(resolve));
+  assert.match(window.document.querySelector('[aria-label="AI 요구사항 진행"]').textContent, /캐시 읽기 321토큰 · 캐시 생성 123토큰/);
   assert.doesNotMatch(panel.textContent, /9999999|전체.*분 단축|원본 파일 크기 1,234,567/);
   assert.equal(panel.querySelector('script'), null);
   job.fullPipeline = false; job.batches = { completed: 20, total: 96 };
@@ -114,6 +117,7 @@ test('AI start is visible, discloses remote processing and requires an explicit 
   start.click();
   const consent = document.querySelector('#editor input[name="ai-consent"]'); assert.ok(consent);
   const mode = document.querySelector('#editor select[name="visualMode"]'); assert.ok(mode);
+  assert.equal(mode.value, 'text', 'analysis defaults to registered text / verified document interpretation, with direct visuals explicitly selectable');
   const reuse = document.querySelector('#editor input[name="reuse"]'); assert.ok(reuse); assert.equal(reuse.checked, true);
   mode.value = 'text';
   assert.match(document.querySelector('#editor').textContent, /모델 서비스/);
@@ -153,11 +157,13 @@ test('AI start is visible, discloses remote processing and requires an explicit 
 test('a large issue ledger is paged without losing access to the last question or clearing a blocking decision', async t => {
   const dom = new JSDOM(markup, { url: 'http://127.0.0.1:8792/', runScripts: 'outside-only', pretendToBeVisual: true }); t.after(() => dom.window.close());
   const { window } = dom; window.structuredClone = structuredClone;
+  window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+  window.HTMLDialogElement.prototype.close = function () { this.open = false; };
   const pack = createEmptyBacklogPack(context); pack.project = { code: 'SYNTHETIC', name: '합성 업무' }; pack.sources = [structuredClone(source)];
   const issues = Array.from({ length: 121 }, (_, index) => ({ id: `Q-${index}`, question: `프로젝트 질문 ${index + 1}`, severity: 'blocking', options: ['사람의 정책 결정 필요'] }));
   const state = { revision: 'synthetic', backlog: pack, metadata: { baselines: [], exports: [], reviewedRequirements: {}, uatRecords: [], auditFindings: [] }, context, analysisReadiness: { valid: false, errors: [] }, readiness: { valid: false, errors: [] }, matches: { results: [] }, ai: { available: true, model: 'claude-opus-5-5', effort: 'high', active: false, current: { id: 'large-ledger', status: 'needs-decisions', phase: 'analysis' }, proposal: { issues, requirements: [] } } };
   const mutations = [];
-  window.fetch = async (url, options) => { if (options?.method === 'POST') mutations.push(url); return { ok: true, json: async () => url === '/api/session' ? { token: 'synthetic-token' } : state }; };
+  window.fetch = async (url, options) => { if (options?.method === 'POST') mutations.push({ url, payload: JSON.parse(options.body).payload }); return { ok: true, json: async () => url === '/api/session' ? { token: 'synthetic-token' } : state }; };
   await window.eval(`(async () => { ${script}\n })()`);
   const panel = () => window.document.querySelector('[aria-label="AI 요구사항 진행"]');
   assert.equal(panel().querySelectorAll('[data-ai-issue]').length, 20);
@@ -167,4 +173,18 @@ test('a large issue ledger is paged without losing access to the last question o
   assert.equal(button(window.document, '다음 질문').disabled, true);
   assert.ok(button(window.document, '답변하고 계속')); assert.equal(button(window.document, '요구사항 확정하고 에픽 생성'), undefined);
   assert.deepEqual(mutations, []); assert.equal(state.ai.proposal.issues.length, 121);
+  button(window.document, '답변하고 계속').click();
+  assert.equal(window.document.querySelectorAll('#editor textarea').length, 20);
+  window.document.querySelector('[name="answer-Q-0"]').value = '앞 페이지의 사용자 결정';
+  button(window.document, '다음 답변 페이지').click(); await new Promise(resolve => setImmediate(resolve));
+  button(window.document, '이전 답변 페이지').click(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(window.document.querySelector('[name="answer-Q-0"]').value, '앞 페이지의 사용자 결정');
+  for (let page = 0; page < 7; page++) {
+    for (const input of window.document.querySelectorAll('#editor textarea')) input.value = `사용자가 확정한 답변 ${input.name}`;
+    if (page < 6) { button(window.document, '다음 답변 페이지').click(); await new Promise(resolve => setImmediate(resolve)); }
+  }
+  assert.equal(mutations.length, 0, 'paging keeps the draft local and cannot auto-create decisions');
+  button(window.document, '답변을 반영하고 AI 계속 실행').click(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(mutations.length, 1); assert.equal(mutations[0].payload.answers.length, 121);
+  assert.equal(new Set(mutations[0].payload.answers.map(answer => answer.issueId)).size, 121);
 });

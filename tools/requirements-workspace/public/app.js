@@ -161,9 +161,10 @@ const aiStages = [['reading', '원본 판독'], ['synthesis', '문서 통합'], 
 const aiStageName = key => aiStages.find(([stage]) => stage === key)?.[1] ?? key;
 function aiStageProgress(job) {
   if (!job) return '';
-  if (!job.fullPipeline) return aiCallMetrics(job);
+  const fallback = job.analysisBatchLimit === 1 ? '<p role="status">합쳐 처리한 호출의 실패 기록이 있어, 동일 자료의 재개는 검토 묶음 한 개씩 진행합니다. 검증된 완료 묶음은 재사용합니다.</p>' : '';
+  if (!job.fullPipeline) return fallback + aiCallMetrics(job);
   const current = aiStages.findIndex(([key]) => key === job.stage);
-  return `<ol class="ai-stage-list">${aiStages.map(([key, label], index) => `<li${job.status === 'running' && key === job.stage ? ' aria-current="step"' : ''}>${index + 1}. ${esc(label)}${job.status === 'ready' || job.status === 'applied' || index < current ? ' · 완료' : key === job.stage ? ` · ${job.stageProgress?.completed ?? 0}/${job.stageProgress?.total ?? 1}` : ''}</li>`).join('')}</ol><p role="status">분석 실행의 모델 호출 ${job.modelCalls ?? 0}회${job.reusedStages?.length ? ` · 완료 단계 ${job.reusedStages.length}개 재사용` : ''}. 원본 판독 진행은 파일 등록 이력에서 별도로 확인합니다.</p>${aiCallMetrics(job)}`;
+  return fallback + `<ol class="ai-stage-list">${aiStages.map(([key, label], index) => `<li${job.status === 'running' && key === job.stage ? ' aria-current="step"' : ''}>${index + 1}. ${esc(label)}${job.status === 'ready' || job.status === 'applied' || index < current ? ' · 완료' : key === job.stage ? ` · ${job.stageProgress?.completed ?? 0}/${job.stageProgress?.total ?? 1}` : ''}</li>`).join('')}</ol><p role="status">분석 실행의 모델 호출 ${job.modelCalls ?? 0}회${job.reusedStages?.length ? ` · 완료 단계 ${job.reusedStages.length}개 재사용` : ''}. 원본 판독 진행은 파일 등록 이력에서 별도로 확인합니다.</p>${aiCallMetrics(job)}`;
 }
 function aiCallMetrics(job) {
   const metrics = job.callMetrics;
@@ -173,7 +174,8 @@ function aiCallMetrics(job) {
     const seconds = Math.max(0, Math.floor((Date.now() - Date.parse(call.startedAt)) / 1000));
     return `<p role="status">${esc(aiStageName(call.stage))}${call.batch ? ` · ${number(call.batch)}${call.endBatch > call.batch ? `~${number(call.endBatch)}` : ''}묶음` : ''} · 응답 대기 ${number(Math.floor(seconds / 60))}분 ${number(seconds % 60)}초</p>`;
   }).join('') : '';
-  return active + `<details class="mt-16"><summary>AI 실행 측정값</summary><p>실제 호출 ${number(metrics.requests)}회 · 보정 ${number(metrics.corrections)}회 · 저장 결과 재사용 ${number(metrics.reusedResponses)}회 · 최대 동시 호출 ${number(metrics.peakConcurrency)}개</p><p>요청 JSON 합계 ${number(metrics.inputBytes)}바이트 · 원본 파일 크기와 다릅니다.</p>${metrics.measuredOutputs ? `<p>측정된 응답 JSON ${number(metrics.outputBytes)}바이트 (${number(metrics.measuredOutputs)}회)</p>` : ''}</details>`;
+  const cache = metrics.cacheReports ? `<p>공급자 보고: 캐시 읽기 ${number(metrics.cacheReadInputTokens)}토큰 · 캐시 생성 ${number(metrics.cacheCreationInputTokens)}토큰 (${number(metrics.cacheReports)}회 응답)</p>` : '<p>공급자 캐시 사용량은 아직 보고되지 않았습니다.</p>';
+  return active + `<details class="mt-16"><summary>AI 실행 측정값</summary><p>실제 호출 ${number(metrics.requests)}회 · 보정 ${number(metrics.corrections)}회 · 저장 결과 재사용 ${number(metrics.reusedResponses)}회 · 최대 동시 호출 ${number(metrics.peakConcurrency)}개</p><p>요청 JSON 합계 ${number(metrics.inputBytes)}바이트 · 원본 파일 크기와 다릅니다.</p>${metrics.measuredOutputs ? `<p>측정된 응답 JSON ${number(metrics.outputBytes)}바이트 (${number(metrics.measuredOutputs)}회)</p>` : ''}${cache}</details>`;
 }
 function aiPlanPreview(proposal) {
   return `<details open><summary>AI 에픽·스토리 ${proposal.workItems.length}건 · 인수조건 ${proposal.acceptanceCriteria.length}건</summary>${proposal.workItems.map(item => `<article class="panel panel-body mt-16"><h3>${esc(item.title)}</h3><p>${esc(labels[item.workItemType])} · ${esc(item.id)}</p><p class="ai-analysis-copy">${esc(item.description ?? item.iWant ?? '')}</p>${proposal.acceptanceCriteria.filter(ac => ac.workItemId === item.id).map(ac => `<p class="wide-text"><strong>${esc(ac.polarity === 'allow' ? '허용' : '거부')}</strong> ${esc(ac.given)} → ${esc(ac.when)} → ${esc(ac.then)}</p>`).join('')}</article>`).join('')}</details>${proposal.taskPreview ? `<details class="mt-16"><summary>개발 작업계획 미리보기</summary><pre class="data-preview">${esc(proposal.taskPreview)}</pre></details>` : ''}`;
@@ -355,11 +357,39 @@ function aiStartForm(phase) {
   const scope = consentScope(), inputDigest = state.ai.inputDigests[phase];
   openForm('AI 분석 실행 확인', `<p>선택 모델: <strong>${esc(state.ai.model)} · ${esc(state.ai.effort)}</strong></p><p>이 PC의 CLI를 통해 모델 서비스로 아래에서 선택한 자료 범위와 프로젝트 문맥을 보냅니다. 기존 CLI의 로그인·과금 설정이 적용됩니다. ${phase === 'analysis' ? '구조 오류는 묶음마다 최대 한 번 자동 보정하며 묶음당 최대 두 번 호출될 수 있습니다.' : '구조 오류는 최대 한 번 자동 보정하며 추가 호출이 발생할 수 있습니다.'} 대용량 자료는 자동으로 나누어 순서대로 분석하므로 여러 번의 CLI 호출과 요금이 발생할 수 있습니다. 실패·취소 후 재실행은 자료·지시·추론 수준·시각 자료 선택·업무 문맥이 일치하는 완료 묶음을 검증하여 재사용합니다. 아래 선택을 해제하면 처음부터 새로 분석합니다. 시각 자료는 이미지 사본과 PDF 원본입니다. Office 문서의 비문자 도표는 별도 이미지나 PDF로 등록해 주세요.</p>${phase === 'analysis' && state.ai.analysisPlan?.batches > 1 ? `<p role="status">현재 자료는 총 ${state.ai.analysisPlan.batches}묶음입니다. 전체 묶음 수는 유지되고 완료 수가 증가합니다. 용량이 허용하면 인접한 최대 3묶음을 한 번에 처리합니다. 중간 결과를 합쳐 검증한 뒤 제안하며, 취소하면 다음 묶음을 전송하지 않습니다.</p>` : ''}${phase === 'analysis' && state.ai.analysisPlan?.errorCode ? `<p class="field-error" role="alert">자료의 처리 한도와 기존 요구사항의 원문 연결·분석 범위를 먼저 검토해 주세요. (${esc(state.ai.analysisPlan.errorCode)})</p>` : ''}<ul class="help-list">${backlog().sources.map(source => `<li>${esc(source.title)} · ${esc(source.classification)} · ${(source.clauses ?? []).length}개 조항</li>`).join('')}</ul>${visualModeChoice()}${phase === 'analysis' ? '<label class="checkbox-field"><input type="checkbox" name="reuse" checked> 검증된 완료 분석을 재사용합니다.</label>' : ''}${aiConsent('원문에 민감정보가 포함될 수 있으며, 분석을 완료하고 감지 내용은 별도로 안내하는 비공개 처리 방식임을 확인했습니다.', true, 'sensitivityAcknowledged')}${aiConsent('등록된 원문 자료를 선택한 CLI의 모델 서비스로 보내 분석하는 데 동의합니다.')}`, async data => { state = await request('/api/state'); assertConsentScope(scope); return act('ai.start', { phase, inputDigest, consent: data.has('ai-consent') && data.has('sensitivityAcknowledged'), model: state.ai.model, includeVisuals: data.get('visualMode') !== 'text', ...(phase === 'analysis' ? { reuseCheckpoints: data.has('reuse') } : {}) }); });
   dialogForm.querySelector('[type="submit"]').textContent = '동의하고 AI 분석 시작';
+  if (phase === 'analysis') {
+    const mode = dialogForm.querySelector('[name="visualMode"]'); mode.value = 'text';
+    mode.closest('label').insertAdjacentHTML('afterend', '<p>기본은 등록된 본문과 검증된 AI 판독·통합 문맥을 활용합니다. 이미지·PDF를 직접 다시 보내려면 위에서 시각 자료를 선택하세요. 실제 전송 방식이 같은 저장점만 재사용하며, 직접 시각 자료를 보내는 분석은 한 묶음씩 처리합니다.</p>');
+  }
 }
 function aiAnswerForm() {
   const job = state.ai.current, issues = state.ai.proposal.issues;
+  const draft = new Map(); let page = 0, version = 0;
+  const last = Math.max(0, Math.ceil(issues.length / 20) - 1), visible = () => issues.slice(page * 20, page * 20 + 20);
   const scopeChoice = job.phase === 'decomposition' ? select('답변이 확정 요구사항을 바꾸나요?', 'answerScope', [['requirements', '요구사항 변경 또는 불확실 · 재분석 후 다시 확정'], ['planning', '작업 계획만 보완 · 확정 요구사항은 유지']], 'requirements') : '';
-  openForm('AI 질문에 답변', scopeChoice + issues.map(issue => field(issue.question, `answer-${issue.id}`, '', { textarea: true, required: issue.severity === 'blocking', hint: issue.options.join(' / ') })).join('') + '<p>답변은 사용자 결정 근거로 보관되고 등록된 자료와 함께 모델 서비스로 전달됩니다. 업무 범위·권한·측정 기준이 바뀌면 요구사항을 다시 분석하고 확정합니다. 요구사항 재분석은 전체 등록 자료를 첫 묶음부터 다시 처리하므로 추가 CLI 호출과 요금이 발생합니다.</p>', data => act('ai.answer', { jobId: job.id, answers: issues.filter(issue => String(data.get(`answer-${issue.id}`) ?? '').trim()).map(issue => ({ issueId: issue.id, answer: data.get(`answer-${issue.id}`).trim() })), ...(job.phase === 'decomposition' ? { scope: data.get('answerScope') } : {}), continueWithAI: true }));
+  const content = () => `<p role="status">답변 페이지 ${page + 1}/${last + 1} · 질문 ${page * 20 + 1}~${page * 20 + visible().length}/${issues.length}</p>${visible().map(issue => field(issue.question, `answer-${issue.id}`, draft.get(issue.id) ?? '', { textarea: true, required: issue.severity === 'blocking', hint: issue.options.join(' / ') })).join('')}${last ? `<div class="row-actions"><button type="button" class="button secondary" data-answer-page="previous" ${page === 0 ? 'disabled' : ''}>이전 답변 페이지</button><button type="button" class="button secondary" data-answer-page="next" ${page === last ? 'disabled' : ''}>다음 답변 페이지</button></div>` : ''}`;
+  const remember = () => {
+    for (const issue of visible()) {
+      const value = String(dialogForm.elements.namedItem(`answer-${issue.id}`)?.value ?? '').trim();
+      if ((draft.get(issue.id) ?? '') !== value) { version++; if (value) draft.set(issue.id, value); else draft.delete(issue.id); }
+    }
+    dialogForm.elements.namedItem('aiAnswerDraftVersion').value = String(version);
+  };
+  const bind = () => {
+    for (const button of dialogForm.querySelectorAll('[data-answer-page]')) button.addEventListener('click', () => { remember(); page += button.dataset.answerPage === 'next' ? 1 : -1; showPage(); });
+  };
+  const showPage = () => {
+    dialogForm.querySelector('#ai-answer-page').innerHTML = content(); bind();
+    if (!draft.size && (!scopeChoice || dialogForm.elements.namedItem('answerScope').value === 'requirements')) dialogOriginal = formValue(dialogForm);
+    dialogForm.querySelector('#ai-answer-page textarea')?.focus();
+  };
+  openForm('AI 질문에 답변', scopeChoice + `<input type="hidden" name="aiAnswerDraftVersion" value="0"><div id="ai-answer-page">${content()}</div>` + '<p>페이지를 이동해도 작성한 답변은 이 창에서 유지합니다. 창을 닫으면 저장되지 않은 답변은 사라집니다. 결정 필요 질문에 모두 답한 뒤 전체 답변을 반영하세요.</p><p>답변은 사용자 결정 근거로 보관되고 등록된 자료와 함께 모델 서비스로 전달됩니다. 업무 범위·권한·측정 기준이 바뀌면 요구사항을 다시 분석하고 확정합니다. 요구사항 재분석은 전체 등록 자료를 첫 묶음부터 다시 처리하므로 추가 CLI 호출과 요금이 발생합니다.</p>', data => {
+    remember();
+    const missing = issues.findIndex(issue => issue.severity === 'blocking' && !draft.has(issue.id));
+    if (missing >= 0) { page = Math.floor(missing / 20); showPage(); showError(new Error('결정 필요 질문에 아직 답변하지 않았습니다. 표시된 페이지에서 답변을 작성해 주세요.')); return false; }
+    return act('ai.answer', { jobId: job.id, answers: issues.filter(issue => draft.has(issue.id)).map(issue => ({ issueId: issue.id, answer: draft.get(issue.id) })), ...(job.phase === 'decomposition' ? { scope: data.get('answerScope') } : {}), continueWithAI: true });
+  });
+  bind();
   dialogForm.querySelector('[type="submit"]').textContent = '답변을 반영하고 AI 계속 실행';
 }
 function aiConfirmForm() {

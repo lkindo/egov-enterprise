@@ -369,6 +369,7 @@ export function buildAiRequest(snapshot, phase, decisions = [], { sources = snap
   const context = snapshot.metadata.context;
   const promptSources = phase === 'analysis' && batch ? snapshot.backlog.sources : sources;
   const promptImports = (snapshot.metadata.imports ?? []).filter(job => job.status === 'ready' && promptSources.some(source => source.id === job.sourceId));
+  const materialImports = promptImports.filter(job => sources.some(source => source.id === job.sourceId));
   const request = {
     phase,
     promptVersion: PROMPT_VERSION,
@@ -376,6 +377,7 @@ export function buildAiRequest(snapshot, phase, decisions = [], { sources = snap
     data: {
       project: snapshot.backlog.project,
       sources,
+      ...(batch ? { currentMaterialProfile: { sourceTypes: [...new Set([...sources.map(source => source.sourceType), ...materialImports.flatMap(job => job.detectedTypes ?? [])])], formats: [...new Set(materialImports.map(job => job.format).filter(Boolean))], focus: 'Apply the material-specific guidance to these CURRENT source roles/formats. The stable full-project inventory in the instructions is reference context, not a claim that every current clause has every document role.' } } : {}),
       decisions,
       previousRequirements: batch ? snapshot.backlog.businessRequirements.map(req => ({ id: req.id, scopeDisposition: req.scopeDisposition, openQuestions: req.openQuestions ?? [] })) : snapshot.backlog.businessRequirements,
       ...(batch ? { analysisBatch: { ...batch, capacity: { requirementsRemaining: Math.max(0, 150 - (previousAnalysis?.requirements.length ?? 0)), issuesRemaining: Math.max(0, MAX_PROJECT_ISSUES - (previousAnalysis?.issues.length ?? 0)), maxRequirements: 150, maxIssues: MAX_PROJECT_ISSUES, maxIssuesPerResponse: 100, maxCitationsPerRequirement: 30, maxProposalBytes: MAX_PROJECT_PROPOSAL_BYTES, maxResponseBytes: 1024 ** 2, citationCounts: Object.fromEntries((previousAnalysis?.requirements ?? []).map(req => [req.id, req.citations.length])) } }, previousAnalysis: { requirements: previousAnalysis?.requirements ?? [], issues: previousAnalysis?.issues ?? [] }, policySources: batchPolicySources(snapshot, sources) } : {}),

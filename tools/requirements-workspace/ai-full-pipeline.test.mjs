@@ -49,7 +49,7 @@ test('analysis-only entry reuses a full-flow checkpoint and its complete verifie
   const original = state.ai.current.checkpoints.analysis;
   const originalIssueId = JSON.parse(app.store.readArchive(original)).output.output.issues[0].id;
   seen.length = 0;
-  await app.act('ai.start', { phase: 'analysis', inputDigest: state.ai.inputDigests.analysis, model: 'claude-opus-5-5', consent: true });
+  await app.act('ai.start', { phase: 'analysis', inputDigest: state.ai.inputDigests.analysis, model: 'claude-opus-5-5', consent: true, includeVisuals: false });
   await app.engine.waitForAi(); state = await app.engine.state();
   assert.deepEqual(seen, ['analysis-2']);
   assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
@@ -69,7 +69,7 @@ test('full resume keeps its deeper planning checkpoint after an intervening stan
   await app.start(); await app.engine.waitForAi(); let state = await app.engine.state();
   assert.equal(state.ai.current.errorCode, 'AI_TIMEOUT'); assert.ok(state.ai.current.checkpoints.planning);
   phases.length = 0;
-  await app.act('ai.start', { phase: 'analysis', inputDigest: state.ai.inputDigests.analysis, model: 'claude-opus-5-5', consent: true });
+  await app.act('ai.start', { phase: 'analysis', inputDigest: state.ai.inputDigests.analysis, model: 'claude-opus-5-5', consent: true, includeVisuals: false });
   await app.engine.waitForAi(); state = await app.engine.state(); assert.deepEqual(phases, []); assert.equal(state.ai.current.status, 'ready');
   phases.length = 0; await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
   assert.deepEqual(phases, ['review-plan'], 'the compatible full-flow review and generated plan must survive the entry-path switch');
@@ -89,12 +89,29 @@ test('a longer analysis without discovery cannot displace the compatible full-fl
   });
   await app.act('source.save', { ...source, clauses: Array.from({ length: 65 }, (_, index) => ({ ...source.clauses[0], id: `C-${index}` })) });
   let state = await app.engine.state();
-  await app.act('ai.start', { phase: 'analysis', inputDigest: state.ai.inputDigests.analysis, model: 'claude-opus-5-5', consent: true });
+  await app.act('ai.start', { phase: 'analysis', inputDigest: state.ai.inputDigests.analysis, model: 'claude-opus-5-5', consent: true, includeVisuals: false });
   await app.engine.waitForAi(); state = await app.engine.state(); assert.equal(state.ai.current.batches.completed, 2);
   full = true; await app.start(); await app.engine.waitForAi(); state = await app.engine.state(); assert.equal(state.ai.current.batches.completed, 1);
   phases.length = 0; await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
   assert.deepEqual(phases, ['analysis-2'], 'validated full-flow discovery and its compatible prefix must be selected');
   assert.equal(state.ai.current.batches.completed, 1); assert.equal(state.ai.current.errorCode, 'AI_TIMEOUT');
+});
+
+test('requesting direct visuals cannot silently adopt a text-only full-flow analysis checkpoint', async t => {
+  const indices = []; let direct = false;
+  const app = await setup(t, async ({ request }) => {
+    if (request.phase !== 'analysis') return envelope(reply(request), request.phase);
+    const index=request.data.analysisBatch.index; indices.push(index);
+    if (direct) assert.equal(request.data.businessModel, undefined);
+    if (index===2) throw Object.assign(Error('AI_TIMEOUT'),{code:'AI_TIMEOUT'});
+    const src=request.data.sources[0];
+    return envelope({requirements:[],issues:[{id:'Q',kind:'decision',severity:'blocking',question:'시각 자료의 적용 범위를 확인해 주세요.',options:[],requirementIds:[],citations:[{sourceId:src.id,clauseId:src.clauses[0].id,quote:src.clauses[0].text}]}],coverage:src.clauses.map(clause=>({sourceId:src.id,clauseId:clause.id,disposition:'excluded',rationale:'업무 배경의 적용 범위'}))},request.phase);
+  });
+  await app.act('source.save',{...source,clauses:Array.from({length:33},(_,index)=>({...source.clauses[0],id:`C-${index}`}))});
+  await app.start();await app.engine.waitForAi();let state=await app.engine.state();assert.equal(state.ai.current.batches.completed,1);
+  direct=true;indices.length=0;
+  await app.act('ai.start',{phase:'analysis',inputDigest:state.ai.inputDigests.analysis,model:'claude-opus-5-5',consent:true,includeVisuals:true});await app.engine.waitForAi();state=await app.engine.state();
+  assert.deepEqual(indices,[1,2]);assert.equal(state.ai.current.resumeFrom,undefined);assert.equal(state.ai.current.checkpoints.discovery,undefined);assert.equal(state.ai.current.analysisAttachmentPolicy,'direct');
 });
 
 test('known cross-stage issue capacity stops after a saved batch and rejects resume before any new model call', async t => {
