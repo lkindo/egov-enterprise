@@ -43,11 +43,10 @@ const KNOWN_ROUTE_CAPABILITIES = {
     },
     {
       // [2026-09-06 DEC-OPS-042] 관리자 발송이 실기능이 됐다 — POST /api/v1/admin/notifications/dispatch(ADMIN/SYSTEM).
-      //   live 는 E4(현재 UI→서버 왕복 산출물)가 있어야 하므로 partial + candidateStatus live 로 두었다(결재 허브와 같은 규칙).
-      // [2026-11-10] 업무 흐름 시험이 화면에서 수신자를 골라 보내고 수신자 알림함에서 확인한다(roundtrips) — E4 를 얻어 live 다.
-      id: 'notifications.dispatch', status: 'live', dataSource: 'admin-notifications-dispatch-api', actions: ['send'],
+      //   live 는 E4(현재 UI→서버 왕복 산출물)가 있어야 하므로 partial + candidateStatus live 로 둔다(결재 허브와 같은 규칙).
+      id: 'notifications.dispatch', status: 'partial', candidateStatus: 'live', dataSource: 'admin-notifications-dispatch-api', actions: ['send'],
       unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: '알림 보내기', primaryTask: false,
-      evidenceLevel: 'E4', evidence: ['frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx', 'frontend/src/app/admin/notifications/__tests__/NotificationDispatchDialog.test.tsx', 'frontend/src/services/foundation/system/NotificationAdminService.ts', 'api-server/src/main/java/nuri/api/controller/business/notification/NotificationAdminApiController.java', 'api-server/src/test/java/nuri/api/controller/business/notification/NotificationAdminApiControllerTest.java'],
+      evidenceLevel: 'E3', evidence: ['frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx', 'frontend/src/app/admin/notifications/__tests__/NotificationDispatchDialog.test.tsx', 'frontend/src/services/foundation/system/NotificationAdminService.ts', 'api-server/src/main/java/nuri/api/controller/business/notification/NotificationAdminApiController.java', 'api-server/src/test/java/nuri/api/controller/business/notification/NotificationAdminApiControllerTest.java'],
     },
     // [2026-11-08] notifications.health-metrics('98.2% / ACTIVE')는 화면에 없다(코드 검색 0건) — 원장과 함께 걷었다.
     // [2026-09-23] notifications.dispatch-preview 는 DEC-OPS-038(2026-09-06)이 데모 발송 뷰와 함께

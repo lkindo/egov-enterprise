@@ -3233,7 +3233,8 @@
         },
         {
           "id": "notifications.dispatch",
-          "status": "live",
+          "status": "partial",
+          "candidateStatus": "live",
           "dataSource": "admin-notifications-dispatch-api",
           "actions": [
             "send"
@@ -3242,28 +3243,18 @@
           "actorScope": "ADMIN|SYSTEM",
           "visibleLabel": "알림 보내기",
           "primaryTask": false,
-          "decisionSafe": false,
-          "evidenceLevel": "E4",
-          "lastVerifiedAt": "2026-11-10",
-          "owner": "product/UX + domain owner",
-          "roundtrips": [
-            {
-              "spec": "frontend/e2e/journeys/notifications.spec.ts",
-              "test": "Notification: 관리자가 화면에서 보낸 알림이 수신자 알림함에 남는다",
-              "actions": [
-                "send"
-              ]
-            }
-          ],
+          "evidenceLevel": "E3",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/notification/NotificationAdminApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/notification/NotificationAdminApiControllerTest.java",
-            "frontend/e2e/journeys/notifications.spec.ts",
             "frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx",
             "frontend/src/app/admin/notifications/__tests__/NotificationDispatchDialog.test.tsx",
             "frontend/src/app/admin/notifications/page.tsx",
             "frontend/src/services/foundation/system/NotificationAdminService.ts"
-          ]
+          ],
+          "decisionSafe": false,
+          "lastVerifiedAt": "2026-08-21",
+          "owner": "product/UX + domain owner"
         }
       ],
       "evidence": [
