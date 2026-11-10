@@ -14,6 +14,7 @@ import { buildAiRequest, validateAnalysisBatchProposal, validateAnalysisProposal
 import { PROMPT_VERSION } from './ai-prompts.mjs';
 import { validateAiMetadata } from './ai-workflow.mjs';
 import { MAX_ANALYSIS_MODEL_CALLS } from './ai-cli.mjs';
+import { pipelineReply } from './test-fixtures/pipeline.mjs';
 
 test('bounded subpasses retain a finite per-run call ceiling and reject its next value', () => {
   const ref = kind => ({ id: randomUUID(), kind, sha256: 'a'.repeat(64), bytes: 1 });
@@ -29,6 +30,13 @@ test('a valid legacy 23-batch checkpoint resumes a bounded three-partition block
   const calls = [];
   app = await fixture(t, async ({ request }) => {
     calls.push(request.phase);
+    if (request.phase === 'reading') return envelope(pipelineReply(request), request.phase);
+    if (request.phase === 'synthesis') {
+      const result = pipelineReply(request);
+      result.issues = [{ id: 'BUSINESS-Q', kind: 'decision', severity: 'blocking', question: '기관의 접수 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [{ evidenceIndex: 0 }] }];
+      return envelope(result, request.phase);
+    }
+    if (request.phase === 'review-requirements') return envelope(pipelineReply(request), request.phase);
     if (mode === 'fail') throw Object.assign(Error('AI_TIMEOUT'), { code: 'AI_TIMEOUT' });
     const sources = request.data.sources, all = sources.flatMap(src => src.clauses.map(clause => ({ sourceId: src.id, clauseId: clause.id, quote: clause.text }))), id = `${request.data.analysisBatch.idPrefix}REQ-1`;
     let output;
@@ -43,8 +51,11 @@ test('a valid legacy 23-batch checkpoint resumes a bounded three-partition block
   });
   const large = Array.from({ length: 220 }, (_, index) => `${index}번 접수 조건과 오프라인 예외를 명시한다. `).join('');
   await app.act('source.save', { ...source, clauses: Array.from({ length: 801 }, (_, index) => ({ ...structuredClone(source.clauses[0]), id: `C-${index}`, ...(index === 0 ? { text: large } : {}) })) });
-  await app.start({ includeVisuals: false }); await app.engine.waitForAi();
+  await app.start({ includeVisuals: false, fullPipeline: true }); await app.engine.waitForAi();
   const before = app.store.read(), job = before.metadata.ai.jobs.at(-1), batches = planAnalysisBatches(before);
+  assert.ok(job.checkpoints.discovery, JSON.stringify({ code: job.errorCode, phases: [...new Set(calls)] }));
+  const businessModel = JSON.parse(app.store.readArchive(job.checkpoints.discovery)).output.businessModel;
+  assert.equal(businessModel.issues.length, 1);
   assert.equal(batches.length, 26);
   const processed = batches.slice(0, 23).flatMap(batch => batch.flatMap(src => src.clauses.map(clause => ({ sourceId: src.id, clause }))));
   const requirements = Array.from({ length: 74 }, (_, index) => ({ ...analysis({ data: { sources: [source], decisions: [] } }, { question: false }).requirements[0], id: `LEGACY-${index}`, title: `합성 접수 범위 ${index}`, citations: [] }));
@@ -52,11 +63,11 @@ test('a valid legacy 23-batch checkpoint resumes a bounded three-partition block
   for (const [index, req] of requirements.entries()) for (let part = 0; part < 12; part++) req.citations.push({ sourceId: source.id, clauseId: 'C-0', quote: large.slice(index * 12 + part, index * 12 + part + 700) });
   assert.ok(requirements.every(req => req.citations.length <= 30));
   const output = { requirements, issues: [], coverage: processed.map((item, index) => ({ sourceId: item.sourceId, clauseId: item.clause.id, disposition: 'included', rationale: '기존 합성 원문 검토', requirementIds: [`LEGACY-${index % 74}`] })) };
-  const checkpoint = { version: 1, stage: 'analysis', inputDigest: job.inputDigest, promptVersion: PROMPT_VERSION, upstreamDigest: createHash('sha256').update('null').digest('hex'), output: { completed: 23, total: 26, corrected: false, output, batchAudit: [] }, sensitivityWarnings: [] };
+  const checkpoint = { version: 1, stage: 'analysis', inputDigest: job.inputDigest, promptVersion: PROMPT_VERSION, upstreamDigest: createHash('sha256').update(JSON.stringify(businessModel)).digest('hex'), output: { completed: 23, total: 26, corrected: false, output, batchAudit: [] }, sensitivityWarnings: [] };
   const ref = app.store.writeArchive('ai', JSON.stringify(checkpoint)), original = app.store.readArchive(ref);
-  app.store.transact(app.store.read().revision, next => { const stored = next.metadata.ai.jobs.at(-1); stored.checkpoints = { analysis: ref }; stored.batches.completed = 23; stored.analysisBatchLimit = 3; });
+  app.store.transact(app.store.read().revision, next => { const stored = next.metadata.ai.jobs.at(-1); stored.checkpoints.analysis = ref; stored.batches.completed = 23; stored.analysisBatchLimit = 3; });
   calls.length = 0; mode = 'pause-merge';
-  await app.start({ includeVisuals: false }); await app.engine.waitForAi(); let state = await app.engine.state();
+  await app.start({ includeVisuals: false, fullPipeline: true }); await app.engine.waitForAi(); let state = await app.engine.state();
   assert.equal(state.ai.current.errorCode, 'AI_TIMEOUT');
   assert.equal(state.ai.current.batches.completed, 23, 'pending candidates never advance the committed source prefix');
   const pendingRef = state.ai.current.checkpoints.analysis, pending = JSON.parse(app.store.readArchive(pendingRef));
@@ -64,10 +75,10 @@ test('a valid legacy 23-batch checkpoint resumes a bounded three-partition block
   assert.ok(pending.output.pendingContext.contexts.length > 0);
   assert.ok(calls.includes('analysis') && calls.includes('analysis-context'));
   calls.length = 0; mode = 'bounded';
-  await app.start({ includeVisuals: false }); await app.engine.waitForAi(); state = await app.engine.state();
+  await app.start({ includeVisuals: false, fullPipeline: true }); await app.engine.waitForAi(); state = await app.engine.state();
   assert.ok(['ready', 'needs-decisions'].includes(state.ai.current.status), state.ai.current.errorCode);
   assert.equal(state.ai.current.batches.completed, 26);
-  assert.deepEqual([...new Set(calls)], ['analysis-merge'], 'a new job ID must reuse every valid candidate and comparison');
+  assert.ok(calls.includes('analysis-merge') && !calls.includes('analysis') && !calls.includes('analysis-context') && !calls.includes('synthesis'), 'a new job ID must reuse every valid candidate, comparison and business model');
   assert.deepEqual(state.ai.proposal.requirements.map(item => item.id), requirements.map(item => item.id));
   assert.equal(state.ai.proposal.coverage.length, 801);
   assert.equal(app.store.readArchive(ref), original);

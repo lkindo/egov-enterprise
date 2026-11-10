@@ -41,6 +41,9 @@ test('parallel quality review progress separates active calls and completed anal
   const bounded = window.document.querySelector('[aria-label="AI 요구사항 진행"]').textContent;
   assert.match(bounded, /기존 요구사항·근거 대조 2\/7단위/); assert.match(bounded, /23\/96묶음 분석 완료/);
   assert.match(bounded, /모든 대조·통합이 검증된 뒤/); assert.doesNotMatch(bounded, /24\/96묶음 분석 완료/);
+  job.fullPipeline = true;
+  button(window.document, '최신 상태 읽기').click(); await new Promise(resolve => setImmediate(resolve));
+  assert.match(window.document.querySelector('.ai-stage-list [aria-current="step"]').textContent, /요구사항 작성 · 23\/96/);
 });
 test('invalid AI output shows validation evidence and checkpoint recovery instead of unrelated login advice', async t => {
   const dom = new JSDOM(markup, { url: 'http://127.0.0.1:8792/', runScripts: 'outside-only', pretendToBeVisual: true }); t.after(() => dom.window.close());

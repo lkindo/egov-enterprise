@@ -15,17 +15,24 @@ test('quality review pages a large single requirement without omitting original 
   state.backlog.project = { code: 'SYNTHETIC', name: '합성 근거 검토', institution: '합성 기관', baselineProfile: '' };
   state.backlog.sources = [{ ...structuredClone(source), clauses: Array.from({ length: 96 }, (_, index) => ({ ...structuredClone(source.clauses[0]), id: `C-${index}`, text: `${index}번 조건: ${'담당자만 열람하고 야간 오프라인 예외를 유지한다. '.repeat(110)}` })) }];
   const proposal = analysis({ data: { sources: state.backlog.sources, decisions: [] } }, { question: false });
-  for (const cite of proposal.requirements[0].citations) cite.quote = cite.quote.slice(0, 1000);
+  proposal.requirements[0].citations = state.backlog.sources[0].clauses.flatMap(clause => [clause.text.slice(0, 1800), clause.text.slice(100, 1900)].map(quote => ({ sourceId: source.id, clauseId: clause.id, quote })));
+  proposal.requirements[0].solutionDisposition = 'undecided';
+  proposal.issues = [{ id: 'FULL-PROOF', kind: 'risk', severity: 'observation', question: '전체 근거를 유지한 검토 기록', options: [], requirementIds: [proposal.requirements[0].id], citations: structuredClone(proposal.requirements[0].citations) }];
   const seen = new Set(), replies = [], taskIds = []; let pause = true;
+  const markers = new Set();
   const run = async ({ request, schema }) => {
     const prepared = prepareEvidenceRequest(request, schema);
     assert.ok(Buffer.byteLength(JSON.stringify(prepared.request)) + Buffer.byteLength(JSON.stringify(prepared.schema)) <= CONTEXT_WINDOW_BYTES);
     if (pause && replies.length === 1) throw Object.assign(Error('AI_TIMEOUT'), { code: 'AI_TIMEOUT' });
     for (const item of request.data.sources) for (const clause of item.clauses) { seen.add(clause.id); assert.equal(clause.text, state.backlog.sources[0].clauses.find(old => old.id === clause.id).text); }
     assert.ok(request.data.requirements[0].description.includes('접수'));
-    return { output: { issues: [], revisions: [] } };
+    const first = request.data.sources[0].clauses[0], marker = `검토창 ${first.id}`; markers.add(marker);
+    const allowed = new Set(request.data.sources.flatMap(src => src.clauses.map(clause => `${src.id}/${clause.id}`)));
+    for (const issue of [...request.data.existingIssues, ...request.data.validationIssues, ...request.data.businessModel.issues]) assert.ok(issue.citations.every(cite => allowed.has(`${cite.sourceId}/${cite.clauseId}`)), 'other-window proof must neither inflate nor authorize this call');
+    await new Promise(resolve => setTimeout(resolve, 5));
+    return { output: { issues: [], revisions: [{ ...request.data.requirements[0], description: `${request.data.requirements[0].description} ${marker}`, citations: [{ sourceId: source.id, clauseId: first.id, quote: first.text.slice(0, 1800) }] }] } };
   };
-  const options = { run, evidenceReferences: true, onReply(index, reply, _merged, taskId) { assert.equal(index, replies.length); replies.push(reply); taskIds.push(taskId); } };
+  const options = { run, concurrency: 2, evidenceReferences: true, onReply(index, reply, _merged, taskId) { assert.equal(index, replies.length); replies.push(reply); taskIds.push(taskId); } };
   await assert.rejects(reviewRequirements(proposal, model(), state, options), { code: 'AI_TIMEOUT' });
   assert.equal(replies.length, 1); const firstSeen = new Set(seen); seen.clear(); pause = false;
   await assert.rejects(reviewRequirements(proposal, model(), state, { ...options, resumeReplies: replies, resumeTaskIds: ['0'.repeat(64)] }), { code: 'AI_CHECKPOINT_INVALID' });
@@ -33,6 +40,8 @@ test('quality review pages a large single requirement without omitting original 
   assert.ok([...firstSeen].every(id => !seen.has(id)), 'verified source windows are not paid for twice');
   assert.equal(new Set([...firstSeen, ...seen]).size, 96);
   assert.deepEqual(result.requirements[0].citations, proposal.requirements[0].citations);
+  assert.deepEqual(result.issues[0].citations, proposal.issues[0].citations);
+  for (const marker of markers) assert.ok(result.requirements[0].description.includes(marker), 'later windows preserve earlier semantic revisions');
   assert.equal(result.coverage.length, 96);
 });
 
@@ -64,6 +73,9 @@ test('every planning request retains the full executable scope of an existing sh
   state.backlog.sources = [structuredClone(source)];
   const output = analysis({ data: { sources: state.backlog.sources, decisions: [] } }, { question: false });
   output.requirements = Array.from({ length: 5 }, (_, index) => ({ ...structuredClone(output.requirements[0]), id: `REQ-${index + 1}` }));
+  output.requirements[4].requirementType = 'constraint';
+  output.requirements[4].nfrCriteria = { metric: '타인 접수의 노출', threshold: '거부', verificationMethod: 'integration-test' };
+  output.issues = [{ id: 'RELATED', kind: 'risk', severity: 'observation', question: 'REQ-1 내보내기는 REQ-5의 노출 금지 조건을 함께 따른다.', options: [], requirementIds: ['REQ-1', 'REQ-5'], citations: structuredClone(output.requirements[0].citations) }];
   output.coverage[0].requirementIds = output.requirements.map(req => req.id);
   state.backlog = projectAnalysisBacklog(state, validateAnalysisProposal(output, state));
   const original = decomposition(), ids = output.requirements.map(req => req.id);
@@ -72,6 +84,9 @@ test('every planning request retains the full executable scope of an existing sh
   state.backlog.traceLinks = ids.map((id, index) => ({ ...original.traceLinks[0], id: `TRACE-${index}`, requirementId: id, workItemId: `STORY-${index}`, acId: `AC-ALLOW-${index}` }));
   const before = structuredClone(state.backlog); let calls = 0;
   const result = await planAndReview(output, model(), state, [], { run: async ({ request }) => {
+    assert.ok(request.data.analysisIssues.some(issue => issue.id === 'RELATED'));
+    const scope = new Set(request.data.planningBatch?.requirementIds ?? request.data.requirements.map(req => req.id));
+    if (!scope.has('REQ-5')) assert.ok(request.data.crossRequirementContext.some(req => req.id === 'REQ-5' && req.description === output.requirements[4].description));
     if (request.phase === 'review-plan') return { output: { issues: [], workItemUpdates: [], acceptanceUpdates: [], traceUpdates: [] } };
     calls++;
     assert.deepEqual(request.data.previousWorkItems.find(item => item.id === 'EPIC-1').requirementIds, ids);

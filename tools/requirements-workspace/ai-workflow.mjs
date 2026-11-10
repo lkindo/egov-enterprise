@@ -17,6 +17,7 @@ const fail = code => { throw Object.assign(new Error(code), { code }); };
 const statuses = ['running', 'ready', 'needs-decisions', 'failed', 'stale', 'cancelled', 'interrupted', 'applied'];
 const checkpointKeys = ['discovery', 'analysis', 'review', 'planning'];
 const checkpointPhases = { discovery: ['reading', 'synthesis'], analysis: ['analysis', 'analysis-context', 'analysis-merge'], review: ['review-requirements'], planning: ['decomposition', 'review-plan'] };
+const analysisContextModes = ['bounded-reconciliation-1', 'bounded-reconciliation-2', ANALYSIS_CONTEXT_VERSION];
 const exact = (value, keys) => { if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(key => !keys.includes(key))) fail('AI_METADATA_INVALID'); };
 const checkpointObject = (value, keys) => { if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length !== keys.length || keys.some(key => !Object.hasOwn(value, key))) fail('AI_CHECKPOINT_INVALID'); };
 function reference(value, kind) {
@@ -313,7 +314,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
         const validateAnalysisCheckpoint = cached => {
           checkpointObject(cached, ['completed', 'total', 'corrected', 'output', 'batchAudit', ...(Object.hasOwn(cached, 'contextMode') ? ['contextMode'] : []), ...(Object.hasOwn(cached, 'pendingContext') ? ['pendingContext'] : [])]);
           const total = batches?.length ?? 1;
-          if (cached.contextMode !== undefined && cached.contextMode !== ANALYSIS_CONTEXT_VERSION || cached.pendingContext && cached.contextMode !== ANALYSIS_CONTEXT_VERSION || cached.pendingContext && cached.completed === total) fail('AI_CHECKPOINT_INVALID');
+          if (cached.contextMode !== undefined && !analysisContextModes.includes(cached.contextMode) || cached.pendingContext && !analysisContextModes.includes(cached.contextMode) || cached.pendingContext && cached.completed === total) fail('AI_CHECKPOINT_INVALID');
           if (cached.pendingContext && (!Number.isSafeInteger(cached.pendingContext.logicalEnd) || cached.pendingContext.logicalEnd <= cached.completed || cached.pendingContext.logicalEnd > Math.min(total, cached.completed + 3))) fail('AI_CHECKPOINT_INVALID');
           if (cached.total !== total || !Number.isInteger(cached.completed) || cached.completed < (cached.pendingContext ? 0 : 1) || cached.completed > total || typeof cached.corrected !== 'boolean' || !Array.isArray(cached.batchAudit)) fail('AI_CHECKPOINT_INVALID');
           if (cached.completed === 0) {
@@ -334,7 +335,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             const total = batches?.length ?? 1;
             validateAnalysisCheckpoint(cached);
             output = cached.output; startIndex = cached.completed; corrected = cached.corrected; batchAudit.push(...cached.batchAudit);
-            boundedAnalysis = cached.contextMode === ANALYSIS_CONTEXT_VERSION; pendingContext = cached.pendingContext ?? null;
+            boundedAnalysis = analysisContextModes.includes(cached.contextMode); pendingContext = cached.pendingContext ?? null;
             if (startIndex === total) validated = validateAnalysisProposal(output, snapshot);
             reusedCheckpoint('analysis', startIndex === total);
             if (!restoreCheckpointWarnings('analysis')) onValidated('analysis', output);
@@ -370,6 +371,8 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
                 group = coalesceAnalysisBatches(batches, index);
                 currentRequest = buildAiRequest(snapshot, job.phase, workflow.decisions, { sources: group.sources, batch: { ...batchOptions(index).batch, ...(group.end > index ? { lastIndex: group.end + 1 } : {}) }, previousAnalysis: output, evidenceReferences: true });
                 if (analysisUpstream) currentRequest.data.businessModel = analysisUpstream;
+                if (analysisUpstream && currentRequest.data.analysisBatch) currentRequest.data.analysisBatch.capacity.issuesRemaining = Math.max(0, MAX_PROJECT_ISSUES - knownIssueCount);
+                currentRequest.data.visualSources = [];
               }
               break;
             }
@@ -386,6 +389,8 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
               const context = currentRequest.data.businessModel;
               currentRequest = buildAiRequest(snapshot, 'analysis', workflow.decisions, { sources: group.sources, batch: { index: index + 1, total: batches?.length ?? 1, idPrefix: `B${jobId.slice(0, 8)}-${index + 1}-` }, previousAnalysis: output ?? seedAnalysis(snapshot), evidenceReferences: true });
               if (context) currentRequest.data.businessModel = context;
+              if (context) currentRequest.data.analysisBatch.capacity.issuesRemaining = Math.max(0, MAX_PROJECT_ISSUES - knownIssueCount);
+              currentRequest.data.visualSources = visuals.sources;
             }
             const result = await reconcileAnalysisBatch({ snapshot, sources: group.sources, previous: output ?? seedAnalysis(snapshot), request: currentRequest, run: args => run({ ...args, cwd }), signal: controller.signal, attachments: visuals.attachments, resume: pendingContext,
               readPart: readJson, writePart: value => store.writeArchive('ai', JSON.stringify(value)),

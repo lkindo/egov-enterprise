@@ -353,6 +353,25 @@ test('project proof is bounded to three thousand citations without enlarging an 
   assert.throws(() => validatePrivateAiValue(value, projectProposalSchema(ANALYSIS_SCHEMA), { maxBytes: 4 * 1024 ** 2 }), { code: 'AI_OUTPUT_INVALID' });
 });
 
+test('only the bounded aggregate may reuse an exact earlier background source, never an unseen future source', () => {
+  const state = snapshot(), previous = proposal(); previous.issues = [];
+  const make = (id, text) => ({ ...structuredClone(state.backlog.sources[0]), id, clauses: [{ ...structuredClone(state.backlog.sources[0].clauses[0]), id: 'C', text }] });
+  const old = make('OLD', '정기 신청의 처리기간은 접수 완료일부터 17영업일이다.'), current = make('NEW', '담당자는 정기 신청에 기관의 처리기간을 적용한다.'), future = make('FUTURE', '미래 문서는 아직 이 단계의 근거로 제공되지 않았다.');
+  state.backlog.sources.push(old, current, future);
+  previous.coverage.push({ sourceId: old.id, clauseId: 'C', disposition: 'excluded', requirementIds: [], rationale: '앞선 배경 정의' });
+  const cite = src => ({ sourceId: src.id, clauseId: 'C', quote: src.clauses[0].text });
+  const delta = { requirements: [{ ...structuredClone(previous.requirements[0]), id: 'B-NEW', citations: [cite(current), cite(old)] }], issues: [], coverage: [{ sourceId: current.id, clauseId: 'C', disposition: 'included', requirementIds: ['B-NEW'], rationale: '정기 신청의 처리기간' }] };
+  const invalid = fn => assert.throws(fn, error => error.code === 'AI_OUTPUT_INVALID' && error.details[0].kind === 'batch-unseen-citation');
+  invalid(() => validateAnalysisBatchProposal(delta, state, [current], previous, { idPrefix: 'B-' }));
+  invalid(() => validateAnalysisBatchProposal(delta, state, [current], previous, { idPrefix: 'B-', historicalSources: [old] }));
+  const result = validateAnalysisBatchProposal(delta, state, [current], previous, { idPrefix: 'B-', aggregate: true, historicalSources: [old] });
+  assert.equal(result.coverage.find(entry => entry.sourceId === old.id).disposition, 'merged');
+  const changed = structuredClone(old); changed.clauses[0].text += ' 변경';
+  invalid(() => validateAnalysisBatchProposal(delta, state, [current], previous, { idPrefix: 'B-', aggregate: true, historicalSources: [changed] }));
+  const unseen = structuredClone(delta); unseen.requirements[0].citations[1] = cite(future);
+  invalid(() => validateAnalysisBatchProposal(unseen, state, [current], previous, { idPrefix: 'B-', aggregate: true, historicalSources: [future] }));
+});
+
 test('batch quotation failures distinguish requirements and retain a known existing requirement identity', () => {
   const state = snapshot(), previous = proposal(), value = proposal(); previous.issues = []; previous.coverage = []; value.issues = []; value.updatedRequirementIds = ['REQ-1'];
   value.requirements[0].citations[0].quote = 'SYNTHETIC_REJECTED_QUOTE';
@@ -378,6 +397,7 @@ test('batch correction discards malformed drafts and carries only bounded known 
   assert.deepEqual(safeValidationFailures([{ get kind() { accessed = true; return 'citation-quote'; }, get path() { accessed = true; return 'items[0]'; } }]), [{ kind: 'schema', path: '$' }]);
   assert.equal(accessed, false);
   assert.deepEqual(safeValidationFailures([{ kind: 'business-model-source', path: '$.actors[0].responsibility' }]), [{ kind: 'business-model-source', path: '$.actors[0].responsibility' }]);
+  assert.deepEqual(safeValidationFailures([{ kind: 'context-reference', path: '$.matches[0].candidateId' }]), [{ kind: 'context-reference', path: '$.matches[0].candidateId' }]);
 });
 
 test('unrecoverable cumulative capacity is reported before spending the correction budget', () => {

@@ -40,8 +40,8 @@ const acSchema = object({ id: identifier, workItemId: identifier, requirementIds
 const traceSchema = object({ id: identifier, requirementId: identifier, workItemId: identifier, acId: identifier, targetKind: enumeration(TARGET_KINDS), targetId: string(300), linkIntent: enumeration(['candidate', 'planned', 'existing']), notes: string() }, ['id', 'requirementId', 'targetKind', 'targetId', 'linkIntent']);
 export const DECOMPOSITION_SCHEMA = object({ workItems: array(workSchema, 1, 500), acceptanceCriteria: array(acSchema, 1, 1500), traceLinks: array(traceSchema, 0, 3000), issues: array(issueSchema, 0, 100), retirements: array(object({ entity: enumeration(['workItem', 'acceptanceCriterion', 'traceLink']), id: identifier, reason: string() }), 0, 3000) }, ['workItems', 'acceptanceCriteria', 'traceLinks', 'issues']);
 
-const failureKinds = new Set(['schema', 'output-size', 'sensitive-output', 'duplicate-id', 'citation-quote', 'citation-capacity', 'citation-reference', 'coverage-source', 'coverage-reference', 'coverage-disposition', 'coverage-missing', 'coverage-scope', 'batch-update-intent', 'batch-new-id', 'batch-unseen-citation', 'batch-issue-replacement', 'requirement-omission', 'issue-reference', 'module-reference', 'analysis-backlog-structure', 'backlog-structure', 'development-readiness', 'existing-target', 'implicit-removal', 'retirement-reference', 'trace-ac-relation', 'trace-requirement', 'business-model-coverage', 'business-model-source', 'business-model-budget', 'document-source', 'issue-id-collision', 'plan-review-id', 'plan-review-requirement', 'plan-review-scope', 'quality-scope-change']);
-const failureFields = new Set(['items', 'sourceCoverage', 'actors', 'responsibility', 'sourceIds', 'processes', 'trigger', 'steps', 'exceptions', 'rules', 'data', 'terms', 'term', 'meaning', 'documents', 'documentTypes', 'sections', 'warningCodes', 'unreadable', 'uncertain', 'anchors', 'clauseCount', 'anchorScope', 'inputId', 'note', 'reason', 'revisions', 'workItemUpdates', 'acceptanceUpdates', 'traceUpdates']);
+const failureKinds = new Set(['schema', 'output-size', 'sensitive-output', 'duplicate-id', 'citation-quote', 'citation-capacity', 'citation-reference', 'coverage-source', 'coverage-reference', 'coverage-disposition', 'coverage-missing', 'coverage-scope', 'batch-update-intent', 'batch-new-id', 'batch-unseen-citation', 'batch-issue-replacement', 'requirement-omission', 'issue-reference', 'module-reference', 'analysis-backlog-structure', 'backlog-structure', 'development-readiness', 'existing-target', 'implicit-removal', 'retirement-reference', 'trace-ac-relation', 'trace-requirement', 'business-model-coverage', 'business-model-source', 'business-model-budget', 'document-source', 'issue-id-collision', 'plan-review-id', 'plan-review-requirement', 'plan-review-scope', 'quality-scope-change', 'context-inspection', 'context-reference', 'context-unseen-citation', 'review-unseen-citation']);
+const failureFields = new Set(['inspectedPageIds', 'matches', 'candidateId', 'relation', 'items', 'sourceCoverage', 'actors', 'responsibility', 'sourceIds', 'processes', 'trigger', 'steps', 'exceptions', 'rules', 'data', 'terms', 'term', 'meaning', 'documents', 'documentTypes', 'sections', 'warningCodes', 'unreadable', 'uncertain', 'anchors', 'clauseCount', 'anchorScope', 'inputId', 'note', 'reason', 'revisions', 'workItemUpdates', 'acceptanceUpdates', 'traceUpdates']);
 function collectFailureFields(schema) {
   for (const [key, value] of Object.entries(schema.properties ?? {})) { failureFields.add(key); collectFailureFields(value); }
   if (schema.items) collectFailureFields(schema.items);
@@ -137,7 +137,7 @@ export function seedAnalysis(snapshot) {
   });
   return { requirements, issues: [], coverage: [] };
 }
-export function validateAnalysisBatchProposal(value, snapshot, sources, previous, { idPrefix, aggregate = false } = {}) {
+export function validateAnalysisBatchProposal(value, snapshot, sources, previous, { idPrefix, aggregate = false, historicalSources = [] } = {}) {
   privateValue(value, aggregate ? projectProposalSchema(BATCH_ANALYSIS_SCHEMA) : BATCH_ANALYSIS_SCHEMA, { maxBytes: aggregate ? MAX_PROJECT_PROPOSAL_BYTES : 1024 ** 2 });
   unique(value.requirements);
   unique(value.issues);
@@ -176,7 +176,14 @@ export function validateAnalysisBatchProposal(value, snapshot, sources, previous
   if (Buffer.byteLength(JSON.stringify(result)) > MAX_PROJECT_PROPOSAL_BYTES) capacity('AI_PROPOSAL_CAPACITY');
   privateValue(result, projectProposalSchema(ANALYSIS_SCHEMA), { maxBytes: MAX_PROJECT_PROPOSAL_BYTES });
   const clauses = clauseMap(snapshot), current = new Set(sources.flatMap(source => source.clauses.map(clause => `${source.id}/${clause.id}`)));
+  const historical = new Set(), eligible = new Set([...(previous?.coverage ?? []).map(entry => `${entry.sourceId}/${entry.clauseId}`), ...[...(previous?.requirements ?? []), ...(previous?.issues ?? [])].flatMap(item => item.citations.map(cite => `${cite.sourceId}/${cite.clauseId}`))]);
+  for (const source of historicalSources) for (const clause of source.clauses) {
+    const key = `${source.id}/${clause.id}`;
+    if (!aggregate || !eligible.has(key) || clauses.get(key)?.text !== clause.text) invalid('batch-unseen-citation', 'citations');
+    historical.add(key);
+  }
   const allowed = new Set([...current, ...(previous?.requirements ?? []).flatMap(req => req.citations.map(cite => `${cite.sourceId}/${cite.clauseId}`)), ...(previous?.issues ?? []).flatMap(issue => issue.citations.map(cite => `${cite.sourceId}/${cite.clauseId}`)), ...snapshot.backlog.sources.flatMap(source => source.clauses.filter(clause => source.id.startsWith('DEC-') && source.sourceType === 'policy-memo' || clause.requirementIds?.some(id => snapshot.backlog.businessRequirements.some(req => req.id === id))).map(clause => `${source.id}/${clause.id}`))]);
+  for (const key of historical) allowed.add(key);
   citations(result.requirements, clauses, 'requirements'); issues(result.issues, ids, clauses, 'issues');
   if ([...result.requirements, ...result.issues].some(item => item.citations.some(cite => !allowed.has(`${cite.sourceId}/${cite.clauseId}`)))) invalid('batch-unseen-citation', 'citations');
   const modules = new Set((snapshot.metadata.context.modules ?? []).map(module => typeof module === 'string' ? module : module.id));
