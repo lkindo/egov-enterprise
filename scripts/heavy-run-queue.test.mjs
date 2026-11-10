@@ -438,12 +438,16 @@ test('a repository that cannot be read fails instead of running without the queu
     execFileSync('git', ['init', '-q', dir], { env, stdio: 'ignore' });
     // 잘못된 설정은 git 을 128 로 실패시키지만 '저장소 밖'은 아니다.
     const broken = { ...env, GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'core.bare', GIT_CONFIG_VALUE_0: 'not-a-boolean' };
-    const classified = spawnSync(process.execPath, [QUEUE, 'classify'], { cwd: dir, env: broken, encoding: 'utf8' });
-    if (WINDOWS) {
-      assert.equal(classified.status, 1, classified.stdout);
-      assert.match(classified.stderr, /저장소를 확인하지 못했다/);
-    } else {
-      assert.equal(classified.stdout.trim(), 'direct', 'off Windows the queue never reads the repository');
+    // 정상 저장소 안에서 GIT_DIR 이 없는 경로를 가리키면 git 은 'not a git repository' 로 실패하지만 이것도 설정 오류다(Codex 44 지적 3).
+    const misdirected = { ...env, GIT_DIR: path.join(dir, 'missing-git-dir') };
+    for (const [label, badEnv] of [['bad config', broken], ['missing GIT_DIR', misdirected]]) {
+      const classified = spawnSync(process.execPath, [QUEUE, 'classify'], { cwd: dir, env: badEnv, encoding: 'utf8' });
+      if (WINDOWS) {
+        assert.equal(classified.status, 1, `${label}: ${classified.stdout}`);
+        assert.match(classified.stderr, /저장소를 확인하지 못했다/, label);
+      } else {
+        assert.equal(classified.stdout.trim(), 'direct', 'off Windows the queue never reads the repository');
+      }
     }
     const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'heavy-run-queue-nogit-'));
     try {

@@ -604,17 +604,21 @@ export function heavyRunKind(values, { cwd = '' } = {}) {
   if (name === 'pnpm' || name === 'npm') {
     let index = 0;
     let directory = null;
+    let filtered = false;
     for (; index < args.length && args[index].startsWith('-'); index += 1) {
-      if (['-C', '--dir', '--prefix', '--filter'].includes(args[index])) { directory = args[index + 1] ?? ''; index += 1; }
+      if (['-C', '--dir', '--prefix'].includes(args[index])) { directory = args[index + 1] ?? ''; index += 1; }
+      else if (args[index] === '--filter') { filtered = true; index += 1; }
     }
-    const frontend = /(?:^|[\\/])frontend[\\/]?$/i.test(directory ?? cwd.replaceAll('\\', '/'));
+    // 디렉터리 옵션은 cwd 기준으로 푼다(`-C .`·`-C frontend/.`, Codex 44 지적 4). --filter 는 패키지 선택자라 어느 패키지인지 모르면 둘 다 본다.
+    const target = (directory === null ? cwd : resolve(cwd || '.', directory)).replaceAll('\\', '/').replace(/\/+$/, '');
+    const frontend = /(?:^|\/)frontend$/i.test(target);
     const verb = args[index];
     if (verb === 'exec' || verb === 'dlx') return heavyRunKind(args.slice(index + 1), { cwd });
     if (name === 'pnpm' && (verb === 'vitest' || verb === 'playwright')) return heavyRunKind(args.slice(index), { cwd });
     const script = ['run', 'run-script'].includes(verb) ? args[index + 1] : (verb === 't' ? 'test' : verb);
     const rest = args.slice(index + (['run', 'run-script'].includes(verb) ? 2 : 1)).filter((word) => word !== '--');
     if (!script) return null;
-    const heavy = frontend ? FRONTEND_HEAVY_SCRIPTS : ROOT_HEAVY_SCRIPTS;
+    const heavy = filtered ? new Set([...FRONTEND_HEAVY_SCRIPTS, ...ROOT_HEAVY_SCRIPTS]) : (frontend ? FRONTEND_HEAVY_SCRIPTS : ROOT_HEAVY_SCRIPTS);
     if (!heavy.has(script)) return null;
     // 프런트 단위 시험 스크립트에 파일을 더하면 그 파일만 돈다. E2E·루트 Gradle·운영 계약은 인자와 관계없이 전체다.
     return frontend && ['test', 'test:coverage'].includes(script) && !vitestRunsAll(rest) ? null : `${name}-${script}`;

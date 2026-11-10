@@ -173,7 +173,9 @@ export function gitCommonDir(cwd = process.cwd()) {
       { cwd, encoding: 'utf8', windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], timeout: 15_000 }).trim() || null;
   } catch (error) {
     if (error.code === 'ENOENT') return null;
-    if (error.status === 128 && /not a git repository/i.test(String(error.stderr ?? ''))) return null;
+    // 저장소 경로를 환경으로 지정했는데 실패하면(지운 경로·오타 GIT_DIR) 설정 오류다 — 저장소 밖이 아니다(Codex 44 지적 3).
+    const pinned = ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_COMMON_DIR'].some((key) => process.env[key]);
+    if (!pinned && error.status === 128 && /not a git repository/i.test(String(error.stderr ?? ''))) return null;
     throw Object.assign(new Error(`저장소를 확인하지 못했다(${error.code ?? error.status ?? error.message})`), { queueFailure: true });
   }
 }

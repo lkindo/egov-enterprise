@@ -214,7 +214,9 @@ const CASES = {
       // 2026-11-10 Codex 43차 미탐: PowerShell 호출 연산자, 넓은·좁은 필터 혼합, 루트 pnpm 스크립트.
       '& node scripts/run-isolated-e2e.mjs --representative', '& "C:\\Program Files\\nodejs\\node.exe" scripts/run-isolated-e2e.mjs',
       '&"C:\\Program Files\\nodejs\\node.exe" --test', '& .\\gradlew.bat :api-server:test', './gradlew :api-server:test --tests "*" --tests "*FooTest"',
-      'pnpm run base:generate-db -- --profile core', 'pnpm run test:operational-contracts', 'pnpm test'],
+      'pnpm run base:generate-db -- --profile core', 'pnpm run test:operational-contracts', 'pnpm test',
+      // 2026-11-10 Codex 44차 미탐: cwd 기준 상대 디렉터리 옵션.
+      'cd frontend && pnpm -C . run test:e2e', 'pnpm -C frontend/. run test:e2e', 'npm --prefix ./frontend test', 'pnpm --filter frontend run test:e2e'],
     pass: ['./gradlew :api-server:test --tests "*FooTest"', './gradlew :api-server:test --tests "nuri.api.FooTest" :api-server:harnessTest --tests "*Linter*"',
       './gradlew compileJava compileTestJava', './gradlew :api-server:jacocoTestReport', './gradlew :api-server:bootJar',
       'pnpm -C frontend test -- src/a.test.ts', 'pnpm -C frontend exec vitest run src/a.test.ts', 'pnpm -C frontend exec vitest related src/a.ts',
@@ -223,6 +225,7 @@ const CASES = {
       'node scripts/heavy-run-queue.mjs run --kind gradle -- .\\gradlew.bat :api-server:test', 'git commit --only -m "./gradlew test 는 대기열로" -- a.md',
       'node scripts/heavy-run-queue.mjs run --kind isolated-e2e -- npm run test:e2e:isolated', 'npm run base:generate-source -- --profile core',
       'node --test scripts/run-isolated-e2e.test.mjs', 'pnpm install', 'pnpm run lint', '& node scripts/heavy-run-queue.mjs status',
+      'pnpm -C . run lint', 'cd frontend && pnpm -C . run type-check',
       'echo "pnpm -C frontend test"'],
   },
   'heavy-run-queue-bypass': {
