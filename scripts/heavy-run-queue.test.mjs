@@ -599,9 +599,13 @@ test('Windows: the pre-push header re-runs the hook under a supervisor with the 
     for (const file of ['heavy-run-queue.mjs', 'heavy-run-pipes.mjs', 'verification-record.mjs']) fs.copyFileSync(path.join(HERE, file), path.join(fx.dir, 'scripts', file));
     fs.mkdirSync(path.join(fx.dir, '.githooks'));
     const out = path.join(fx.dir, 'hook.out');
-    fs.writeFileSync(path.join(fx.dir, '.githooks', 'pre-push'), `#!/bin/sh\n${header}printf '%s|%s|%s|' "$EGOV_QUEUE_STATE" "$1" "\${${ENV_LOCK}:+token}" > hook.out\ncat >> hook.out\nexit 7\n`);
+    // 본문은 셸 내장 명령만 쓴다 — PowerShell 에서 띄운 시험(post-push)의 PATH 에는 Git 의 usr/bin(cat 등)이 없다. 실제 훅은 git 이 PATH 를 맞춘다.
+    fs.writeFileSync(path.join(fx.dir, '.githooks', 'pre-push'), `#!/bin/sh\n${header}printf '%s|%s|%s|' "$EGOV_QUEUE_STATE" "$1" "\${${ENV_LOCK}:+token}" > hook.out\nwhile IFS= read -r line; do printf '%s\\n' "$line" >> hook.out; done\nexit 7\n`);
     const shell = gitShell();
     const refs = 'refs/heads/a 1111111111111111111111111111111111111111 refs/heads/a 2222222222222222222222222222222222222222\nrefs/heads/b 3333333333333333333333333333333333333333 refs/heads/b 0000000000000000000000000000000000000000\n';
+    // PowerShell 에서 띄운 post-push 처럼 Git 의 usr/bin·bin 이 PATH 에 없어도 감독이 셸을 찾아야 한다(2026-11-10 post-push 에서 ENOENT).
+    const pathKey = Object.keys(fx.env).find((key) => key.toLowerCase() === 'path');
+    fx.env[pathKey] = fx.env[pathKey].split(path.delimiter).filter((entry) => !/[\\/]Git[\\/](?:usr[\\/])?bin[\\/]?$/i.test(entry)).join(path.delimiter);
     const result = spawnSync(shell, ['.githooks/pre-push', 'origin', 'https://example.invalid/space path.git'], { cwd: fx.dir, env: fx.env, input: refs, encoding: 'utf8' });
     assert.equal(result.status, 7, result.stderr);
     assert.equal(fs.readFileSync(out, 'utf8').replace(/\r\n/g, '\n'), `inside|origin|token|${refs}`);
