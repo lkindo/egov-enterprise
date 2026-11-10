@@ -274,12 +274,15 @@ test('closing a failed first upload in the same window exposes resume and remain
 
 test('the default UI reads uploaded material with AI, shows real prompts and the full draft, then applies one reviewed plan', async () => {
   const workspace = mkdtempSync(join(tmpdir(), 'synthetic-full-pipeline-browser-'));
-  let app, browser;
+  let app, browser, releaseAnalysis;
   try {
     const phases = [], injection = '<img data-pipeline-probe src=x onerror="window.untrustedPipelineRan=true">';
     app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async ({ request, attachments = [] }) => {
       phases.push(request.phase);
-      if (request.phase === 'analysis') assert.equal(attachments.length, 0, 'already read originals are not resent in every requirement batch');
+      if (request.phase === 'analysis') {
+        assert.equal(attachments.length, 0, 'already read originals are not resent in every requirement batch');
+        await new Promise(resolve => { releaseAnalysis = resolve; });
+      }
       const value = pipelineReply(request); if (request.phase === 'synthesis') value.summary += injection;
       if (request.phase === 'reading') value.summary += ' 연락처 010-1234-5678';
       return envelope(value, request.phase);
@@ -301,6 +304,12 @@ test('the default UI reads uploaded material with AI, shows real prompts and the
     await page.locator('[name="sensitivityAcknowledged"]').check(); await page.locator('[name="ai-consent"]').check();
     await page.getByRole('button', { name: '등록하고 계속', exact: true }).click();
     await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 90000 });
+    await page.getByText(/요구사항 작성 · 응답 대기/).waitFor({ timeout: 90000 });
+    await page.getByText('AI 실행 측정값', { exact: true }).click();
+    assert.match(await page.locator('[aria-label="AI 요구사항 진행"]').textContent(), /실제 호출 2회/);
+    assert.equal((await app.engine.state()).ai.current.status, 'running');
+    if (process.env.REQUIREMENTS_TEST_SCREENSHOTS) { mkdirSync(process.env.REQUIREMENTS_TEST_SCREENSHOTS, { recursive: true }); await page.screenshot({ path: join(process.env.REQUIREMENTS_TEST_SCREENSHOTS, 'ai-active-metrics-desktop.png'), fullPage: true }); }
+    releaseAnalysis(); releaseAnalysis = undefined;
     await page.getByRole('button', { name: '전체 초안 확인·반영', exact: true }).waitFor({ timeout: 90000 });
     const before = await app.engine.state();
     await page.getByRole('note', { name: '민감정보 감지 안내' }).waitFor();
@@ -308,6 +317,10 @@ test('the default UI reads uploaded material with AI, shows real prompts and the
     assert.doesNotMatch(JSON.stringify(before.sensitivityWarnings), /010-1234/);
     assert.deepEqual(phases, ['reading', 'synthesis', 'analysis', 'review-requirements', 'decomposition', 'review-plan']);
     assert.equal(before.backlog.businessRequirements.length, 0); assert.equal(before.metadata.baselines.length, 0);
+    assert.equal(before.ai.current.callMetrics.requests, 5);
+    assert.equal(before.ai.current.callMetrics.activeCalls.length, 0);
+    await page.getByText('AI 실행 측정값', { exact: true }).click();
+    assert.match(await page.locator('[aria-label="AI 요구사항 진행"]').textContent(), /실제 호출 5회/);
     assert.equal(await page.locator('[data-pipeline-probe]').count(), 0);
     assert.equal(await page.evaluate(() => Boolean(window.untrustedPipelineRan)), false);
     await page.getByText('통합 업무 흐름', { exact: true }).waitFor();
@@ -333,7 +346,7 @@ test('the default UI reads uploaded material with AI, shows real prompts and the
   } catch (error) {
     const redact = value => String(value ?? '').replaceAll(app?.launchSecret ?? '\0', '[redacted]').replace(/#launch=[A-Za-z0-9_%.-]+/g, '#launch=[redacted]');
     const safe = new Error(redact(error.message)); safe.stack = redact(error.stack); throw safe;
-  } finally { await browser?.close(); await app?.close(); rmSync(workspace, { recursive: true, force: true }); }
+  } finally { releaseAnalysis?.(); await browser?.close(); await app?.close(); rmSync(workspace, { recursive: true, force: true }); }
 });
 
 test('a changed source list after the consent screen opens is stopped before any model transmission', async () => {

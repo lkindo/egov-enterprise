@@ -91,7 +91,9 @@ export function createCliRunner({ launch, timeoutMs = 15 * 60 * 1000, maxOutputB
           const models = Object.keys(envelope.modelUsage ?? {});
           if (models.length !== 1 || models[0] !== AI_MODEL) throw failure('AI_MODEL_MISMATCH');
           const usage = envelope.modelUsage[AI_MODEL];
-          finish(null, { output: envelope.structured_output, model: AI_MODEL, effort, usage: { inputTokens: Number.isSafeInteger(usage.inputTokens) ? usage.inputTokens : 0, outputTokens: Number.isSafeInteger(usage.outputTokens) ? usage.outputTokens : 0 } });
+          const telemetry = { outputBytes: Buffer.byteLength(JSON.stringify(envelope.structured_output)) };
+          for (const key of ['cacheReadInputTokens', 'cacheCreationInputTokens']) if (Number.isSafeInteger(usage[key]) && usage[key] >= 0) telemetry[key] = usage[key];
+          finish(null, { output: envelope.structured_output, model: AI_MODEL, effort, usage: { inputTokens: Number.isSafeInteger(usage.inputTokens) ? usage.inputTokens : 0, outputTokens: Number.isSafeInteger(usage.outputTokens) ? usage.outputTokens : 0 }, telemetry });
         } catch (error) { finish(failure(error.code === 'AI_MODEL_MISMATCH' ? error.code : 'AI_CLI_FAILED')); }
       });
       child.stdin.on('error', () => { /* An early CLI failure is handled by close. */ });
