@@ -334,13 +334,19 @@ describe('관리 화면 링크 노출 census', () => {
 });
 
 /**
- * [GAP-COMPOSE-001] 화면 경로 목적지 census — 코드에 문자열로 적은 화면 경로(링크 속성 href·link·moreHref·url, router.push·replace,
- * redirect·permanentRedirect 의 첫 인자)는 이 트리의 화면(page.tsx)으로 풀려야 한다. 원본에서는 늘 지키는 불변식이고, 재사용
- * 생성물(T2)에서는 투영으로 지워진 기능의 화면을 남은 화면이 가리킬 때 붉다 — 위 census 가 `/admin` 목적지만 보던 것을 모든 화면
- * 경로로 넓힌다. AST 로 읽으므로 주석 속 경로는 세지 않는다(바닥글의 '되살릴 때' 안내 주석이 그 예다). 삼항이면 두 갈래를 다 본다.
- * API·정적 파일 경로는 화면이 아니다. 변수로 조립한 목적지와 문장 속 메뉴 이름은 보지 않는다(남은 한계 — GAP-COMPOSE-001).
+ * [GAP-COMPOSE-001] 화면 경로 목적지 census — 코드에 문자열로 적은 화면 경로는 이 트리의 화면(page.tsx)으로 풀려야 한다. 세는 자리는
+ * 이름이 {@link SCREEN_LINK_KEY} 에 맞는 속성·JSX 속성·변수·매개변수 기본값의 값, router.push·replace, redirect·permanentRedirect 의
+ * 첫 인자다. 원본에서는 늘 지키는 불변식이고, 재사용 생성물(T2)에서는 투영으로 지워진 기능의 화면을 남은 화면이 가리킬 때 붉다 — 위
+ * census 가 `/admin` 목적지만 보던 것을 모든 화면 경로로 넓힌다. AST 로 읽으므로 주석 속 경로는 세지 않는다(바닥글의 '되살릴 때' 안내
+ * 주석이 그 예다). 삼항이면 두 갈래를 다 본다. API·정적 파일 경로는 화면이 아니다. 이름이 규칙 밖인 속성·도우미 인자, 다른 이름의
+ * 상수를 거쳐 넘긴 목적지, 문장 속 메뉴 이름은 보지 않는다(남은 한계 — GAP-COMPOSE-001).
  */
 const SCREEN_LINK_ROOTS = [...SCAN_ROOTS, join(FRONTEND_DIR, 'src', 'lib')];
+/**
+ * 화면 목적지를 담는 이름: href·url·link·route 로 끝나는 이름(centerHref·moreHref 등), 접두어가 붙은 …Path(canonicalPath),
+ * 목록 복귀의 fallback. 이름만 `path` 인 것은 쿠키 옵션(`{ path: '/' }`)이 써서 뺀다. 위 census 의 {@link LINK_KEYS} 를 포함한다.
+ */
+const SCREEN_LINK_KEY = /^(?:\w*(?:href|Href|url|Url|link|Link|route|Route)|\w+Path|fallback)$/;
 const NOT_SCREEN = /^\/(?:api|_next|images|icons|fonts|static|uploads?)(?:\/|$)|\.\w+$/;
 const NAVIGATION_CALLS = new Set(['push', 'replace', 'redirect', 'permanentRedirect']);
 
@@ -363,12 +369,15 @@ function literalScreenTargets(source: string, fileName = 'screen.tsx'): ScreenTa
     const path = text.split(/[?#]/, 1)[0];
     if (!NOT_SCREEN.test(path)) targets.push({ offset: node.getStart(file), target: path });
   };
-  const keyOf = (name: ts.PropertyName | ts.JsxAttributeName) =>
+  const keyOf = (name: ts.PropertyName | ts.JsxAttributeName | ts.BindingName) =>
     (ts.isIdentifier(name) || ts.isStringLiteral(name) ? name.text : undefined);
+  const linkKey = (name: ts.PropertyName | ts.JsxAttributeName | ts.BindingName) => SCREEN_LINK_KEY.test(keyOf(name) ?? '');
   const visit = (node: ts.Node) => {
-    if (ts.isJsxAttribute(node) && LINK_KEYS.has(keyOf(node.name) ?? '') && node.initializer) {
+    if (ts.isJsxAttribute(node) && linkKey(node.name) && node.initializer) {
       collect(ts.isJsxExpression(node.initializer) ? node.initializer.expression : node.initializer);
-    } else if (ts.isPropertyAssignment(node) && LINK_KEYS.has(keyOf(node.name) ?? '')) {
+    } else if (ts.isPropertyAssignment(node) && linkKey(node.name)) {
+      collect(node.initializer);
+    } else if ((ts.isVariableDeclaration(node) || ts.isParameter(node) || ts.isBindingElement(node)) && node.initializer && linkKey(node.name)) {
       collect(node.initializer);
     } else if (ts.isCallExpression(node)) {
       const callee = node.expression;
@@ -432,7 +441,7 @@ describe('화면 경로 목적지 census (GAP-COMPOSE-001)', () => {
 
   it('census 가 실제로 목적지를 센다(빈 스캔의 거짓 green 방지)', () => {
     const counted = files().reduce((total, path) => total + literalScreenTargets(readFileSync(path, 'utf8'), path).length, 0);
-    // 2026-11-10 실측: 원본 165, 시작 구성·단독 기능 투영의 가장 작은 값 약 55. 스캔이 깨지거나 일부 뿌리가 빠지는 것을 잡는다.
+    // 2026-11-10 실측: 원본 176, 시작 구성·단독 기능 투영의 가장 작은 값 약 55. 스캔이 깨지거나 일부 뿌리가 빠지는 것을 잡는다.
     expect(counted).toBeGreaterThan(projectionRemovedFiles().size > 0 ? 20 : 100);
   });
 
@@ -446,6 +455,20 @@ describe('화면 경로 목적지 census (GAP-COMPOSE-001)', () => {
       expect(dead("redirect('/survey');")).toEqual(['/survey']);
       expect(dead("const items = [{ id: 'a', moreHref: '/survey' }];")).toEqual(['/survey']);
       expect(dead("<Link href={ready ? '/board' : '/survey'}>x</Link>")).toEqual(['/survey']);
+    });
+
+    it('목적지 이름의 속성·변수·매개변수 기본값도 센다(centerHref·route·fallback·…Path)', () => {
+      expect(dead('<NotificationDrawer centerHref="/survey/center" />')).toEqual(['/survey/center']);
+      expect(dead("const HUBS = [{ key: 'a', route: '/survey/stats' }];")).toEqual(['/survey/stats']);
+      expect(dead("const centerHref = '/survey/center';")).toEqual(['/survey/center']);
+      expect(dead("useReturnToList({ fallback: '/survey' });")).toEqual(['/survey']);
+      expect(dead("function useBack({ fallback = '/survey' }) { return fallback; }")).toEqual(['/survey']);
+      expect(dead("const canonicalPath = `/survey/${id}`;")).toEqual(['/survey/${id}']);
+    });
+
+    it('이름만 path 인 쿠키 옵션과 목적지 이름이 아닌 값은 세지 않는다', () => {
+      expect(dead("response.cookies.set('t', '', { path: '/' }); cookies.delete({ name: 't', path: '/auth' });")).toEqual([]);
+      expect(dead("const label = '/survey'; const prefix = '/survey';")).toEqual([]);
     });
 
     it('있는 화면·동적 세그먼트·쿼리·템플릿은 통과하고, 주석·API·정적 파일·변수는 세지 않는다', () => {

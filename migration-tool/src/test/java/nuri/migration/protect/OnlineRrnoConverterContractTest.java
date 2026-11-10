@@ -421,8 +421,9 @@ class OnlineRrnoConverterContractTest {
 
     /**
      * {@link #ENCRYPTION_USERS} 에서 재사용 제품의 투영이 지운 사용처만 뺀다(예: 메일 기능을 덜어 낸 core 의 메일 처리기).
-     * 투영 원장에 적혀 있고 실제로 없는 파일만 빠진다 — 원본 저장소(원장 없음), 원장에 없는데 사라진 파일, 원장에 있는데
-     * 남은 파일은 그대로 기대값에 남아 red 다.
+     * 투영 원장에 적혀 있고 실제로 없는 파일만 빠진다. 원본 저장소(원장 없음)는 그대로 정확 대조이고, 원장에 없는데 사라진
+     * 파일은 기대값에 남아 red 다. 원장에 있는데 남은 파일도 기대값에 남아 실제 사용과 대조된다 — 원장과 디스크의 모순 자체는
+     * {@code scripts/reusable-projection-ledger.mjs} 가 거부한다.
      */
     private static Map<String, Set<String>> expectedEncryptionUsers() throws IOException {
         Set<String> removed = projectionRemovedFiles();
