@@ -38,7 +38,7 @@ const LOG = 'log.jsonl';
 
 const DEFAULT_TIMING = {
   pollMs: 1500, jitterMs: 500, staleFirstMs: 30_000, maxWaitMs: 180 * 60_000, recheckMs: 30_000, reportMs: 30_000,
-  parentPollMs: 500, treeChecks: 3, treeRecheckMs: 2_000, daemonSampleMs: 3_000, daemonBusyMs: 500, rpcServerMs: 5_000, rpcClientMs: 10_000, rpcAttempts: 3, listRetries: 3, inUseLimit: 10,
+  parentPollMs: 500, treeChecks: 3, treeRecheckMs: 2_000, daemonSampleMs: 3_000, rpcServerMs: 5_000, rpcClientMs: 10_000, rpcAttempts: 3, listRetries: 3, inUseLimit: 10,
 };
 /** The queue's own process tests shorten the intervals (EGOV_HEAVY_RUN_QUEUE_TIMING, JSON) — only with the test switch on. */
 function timing() {
@@ -132,30 +132,51 @@ export function dockerOutcome({ error, stdout = '', stderr = '' }, { liveRestore
 }
 
 /**
- * live-restore 설정(pure): files 는 [{ text } | { missing: true } | { error }]. 하나라도 읽지 못하면 unknown, 켠 곳이 있으면 on,
- * 모두 없거나 언급이 없으면 off(Docker 기본값). 관리 설정의 JSON 문자열 안(`\"live-restore\": true`)도 본다.
- * 이 세 파일 밖(레지스트리·MDM)에서 켠 경우는 수용한 남은 위험이다(DEC-OPS-413).
+ * live-restore 설정(pure): files 는 [{ text } | { missing: true } | { error }]. 설정은 JSON 으로 읽는다 — 관리 설정은 엔진 옵션을 JSON
+ * 문자열로 담으므로(`"value": "{\"live-restore\":\ntrue}"`) 그 문자열도 다시 파싱한다(Codex 46 지적 2). 하나라도 읽거나 파싱하지
+ * 못하면 unknown, 어디서든 `live-restore` 가 true 면 on, 그 밖에는 off(Docker 기본값).
+ * 이 세 파일 밖(레지스트리·MDM)에서 켠 경우는 수용한 남은 위험이다(DEC-OPS-413 ⑦).
  */
 export function liveRestoreState(files) {
-  if (files.some((file) => file.error)) return 'unknown';
-  return files.some((file) => typeof file.text === 'string' && /live-restore\\?["']?\s*:\s*true/i.test(file.text)) ? 'on' : 'off';
+  let on = false;
+  const visit = (value, depth) => {
+    if (depth > 8 || value === null) return;
+    if (typeof value === 'string') {
+      const text = value.trim();
+      if (!text.startsWith('{') || !/live-restore/i.test(text)) return;
+      visit(JSON.parse(text), depth + 1);
+      return;
+    }
+    if (typeof value !== 'object') return;
+    for (const [key, item] of Object.entries(value)) {
+      if (key.toLowerCase() === 'live-restore' && item === true) on = true;
+      visit(item, depth + 1);
+    }
+  };
+  for (const file of files) {
+    if (file.error) return 'unknown';
+    if (typeof file.text !== 'string') continue;
+    try { visit(JSON.parse(file.text.replace(/^\uFEFF/, '')), 0); } catch { return 'unknown'; }
+  }
+  return on ? 'on' : 'off';
 }
 
 /** 이 실행이 띄웠을 수 있는 도구 프로세스의 이름(부모가 사라져도 남아 일을 이어 갈 수 있는 것). */
 const TOOL_NAMES = /^(?:java|javaw|node|cmd|sh|bash|powershell|pwsh|gradle|docker)(?:\.exe)?$/i;
 
 /**
- * 일하는 Gradle 데몬(pure): 두 표본 사이에 CPU 시간(100ns 단위 합)이 threshold 이상 는 데몬. 첫 표본에 있던 데몬이 둘째 표본에서
- * CPU 를 보이지 않으면 판정할 수 없다(null).
+ * 일하는 Gradle 데몬(pure): 두 표본 사이에 CPU 시간(100ns 단위 합)이 thresholdMs 보다 많이 는 데몬 — 기본은 조금이라도 늘면 일하는
+ * 중이다(2026-11-10 실측: 유휴 데몬은 3초 표본 두 번 모두 0.0ms, Codex 46 지적 1). 첫 표본에 있던 데몬이 둘째 표본에서 CPU 를 보이지
+ * 않으면 판정할 수 없다(null).
  */
-export function busyDaemons(first, second, thresholdMs = 500) {
+export function busyDaemons(first, second, thresholdMs = 0) {
   const before = new Map(first.filter((entry) => typeof entry.command === 'string' && DAEMONS.test(entry.command)).map((entry) => [entry.pid, entry.cpu]));
   const busy = [];
   for (const [pid, cpu] of before) {
     const later = second.find((entry) => entry.pid === pid);
     if (!later) continue;
     if (!Number.isFinite(cpu) || !Number.isFinite(later.cpu)) return null;
-    if ((later.cpu - cpu) / 10_000 >= thresholdMs) busy.push(pid);
+    if ((later.cpu - cpu) / 10_000 > thresholdMs) busy.push(pid);
   }
   return busy;
 }
@@ -370,9 +391,28 @@ const TREE_LISTING = ['-NoProfile', '-NonInteractive', '-Command',
   + '@{n="Started";e={if ($_.CreationDate) { [DateTimeOffset]::new($_.CreationDate).ToUnixTimeMilliseconds() }}},'
   + '@{n="Cpu";e={[double]$_.KernelModeTime + [double]$_.UserModeTime}} | ConvertTo-Json -Compress'];
 
-/** Processes with their start time (epoch ms), for the end-of-run tree check. The queue's tests may force an unknown answer. */
+/**
+ * Processes with their start time (epoch ms), for the end-of-run tree check. The queue's tests may force an unknown answer,
+ * and keep only processes whose command line names their fixture (EGOV_HEAVY_RUN_QUEUE_TEST_TREE_SCOPE) so another session's
+ * orphans on the developer's machine cannot change their outcome (Codex 46 지적 3).
+ */
 function observeProcessTree() {
   if (testObservation('EGOV_HEAVY_RUN_QUEUE_TEST_TREE') === 'fail') return Promise.reject(new Error('test: tree listing failed'));
+  const scope = process.env[ENV_TEST_ACTIVE] === '1' ? process.env.EGOV_HEAVY_RUN_QUEUE_TEST_TREE_SCOPE : undefined;
+  if (!scope) return listProcessTree();
+  const needle = scope.replaceAll('\\', '/').toLowerCase();
+  return listProcessTree().then((entries) => {
+    const byPid = new Map(entries.map((entry) => [entry.pid, entry]));
+    const kept = new Set(entries.filter((entry) => typeof entry.command === 'string' && entry.command.replaceAll('\\', '/').toLowerCase().includes(needle)));
+    // 범위 안 프로세스의 조상도 모두 남긴다 — 조상을 지우면 살아 있는 부모를 둔 프로세스(시험 실행기 등)가 고아로 보인다.
+    for (const entry of [...kept]) {
+      for (let parent = byPid.get(entry.ppid); parent && !kept.has(parent); parent = byPid.get(parent.ppid)) kept.add(parent);
+    }
+    return entries.filter((entry) => kept.has(entry));
+  });
+}
+
+function listProcessTree() {
   return new Promise((resolve, reject) => {
     execFile('powershell.exe', TREE_LISTING, { encoding: 'utf8', windowsHide: true, timeout: 20_000, maxBuffer: 32 * 1024 * 1024 }, (error, stdout) => {
       if (error) return reject(error);
@@ -396,7 +436,7 @@ async function observeBusyDaemons() {
   const first = await observeProcessTree();
   if (!first.some((entry) => typeof entry.command === 'string' && DAEMONS.test(entry.command))) return [];
   await sleep(TIMING.daemonSampleMs);
-  return busyDaemons(first, await observeProcessTree(), TIMING.daemonBusyMs);
+  return busyDaemons(first, await observeProcessTree());
 }
 
 /** Docker live-restore 가 켜질 수 있는 세 설정 파일(사용자 엔진 설정·Desktop 설정·관리 설정). */

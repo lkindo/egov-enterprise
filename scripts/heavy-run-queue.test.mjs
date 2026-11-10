@@ -138,15 +138,23 @@ test('live-restore: on or unreadable makes a stopped engine unknown; off (or unm
   assert.equal(liveRestoreState([{ missing: true }, { missing: true }, { text: '{"linuxVM":{"dockerDaemonOptions":{"value":"{\\"live-restore\\": true}"}}}' }]), 'on');
   assert.equal(liveRestoreState([{ text: '{"live-restore": false}' }]), 'off');
   assert.equal(liveRestoreState([{ text: '{}' }, { error: 'EACCES' }]), 'unknown');
+  // 2026-11-10 Codex 46차: JSON 문자열 안의 이스케이프된 줄바꿈(`\n`)은 정규식으로는 놓친다 — 실제로 파싱한다.
+  assert.equal(liveRestoreState([{ text: '{"linuxVM":{"dockerDaemonOptions":{"value":"{\\"live-restore\\":\\ntrue}"}}}' }]), 'on');
+  assert.equal(liveRestoreState([{ text: '\uFEFF{"live-restore":true}' }]), 'on', 'a byte order mark is not a parse error');
+  assert.equal(liveRestoreState([{ text: '{"live-restore": tru' }]), 'unknown', 'an unreadable settings file is unknown');
+  assert.equal(liveRestoreState([{ text: '{"linuxVM":{"dockerDaemonOptions":{"value":"{\\"live-restore\\": oops}"}}}' }]), 'unknown');
+  assert.equal(liveRestoreState([{ text: '{"note":"live-restore: true is described here"}' }]), 'off', 'prose is not a setting');
 });
 
 test('busy daemons: CPU that grew between two samples by the threshold; unmeasured CPU is unknown', () => {
   const daemon = (pid, cpu) => ({ pid, name: 'java.exe', command: 'java org.gradle.launcher.daemon.bootstrap.GradleDaemon 8.14', cpu });
   const other = { pid: 9, name: 'node.exe', command: 'node x', cpu: 1 };
-  assert.deepEqual(busyDaemons([daemon(1, 0), daemon(2, 0), other], [daemon(1, 6_000_000), daemon(2, 1_000_000), { ...other, cpu: 9e9 }], 500), [1]);
-  assert.deepEqual(busyDaemons([other], [other], 500), []);
-  assert.deepEqual(busyDaemons([daemon(1, 0)], [], 500), [], 'a daemon that exited is not busy');
-  assert.equal(busyDaemons([daemon(1, undefined)], [daemon(1, 5)], 500), null);
+  // 기본 임계값은 0 이다 — 조금이라도 는 데몬은 일하는 중이다(유휴 데몬은 3초에 0.0ms, Codex 46 지적 1: 100ms 증가를 놓쳤다).
+  assert.deepEqual(busyDaemons([daemon(1, 0), daemon(2, 0), daemon(3, 5), other], [daemon(1, 6_000_000), daemon(2, 1_000_000), daemon(3, 5), { ...other, cpu: 9e9 }]), [1, 2]);
+  assert.deepEqual(busyDaemons([daemon(2, 0)], [daemon(2, 1_000_000)], 500), [], 'an explicit threshold still applies');
+  assert.deepEqual(busyDaemons([other], [other]), []);
+  assert.deepEqual(busyDaemons([daemon(1, 0)], []), [], 'a daemon that exited is not busy');
+  assert.equal(busyDaemons([daemon(1, undefined)], [daemon(1, 5)]), null);
 });
 
 test('cmd.exe lines quote what cmd splits and refuse what it would expand', () => {
@@ -231,6 +239,8 @@ function fixture() {
   env.EGOV_HEAVY_RUN_QUEUE_TEST_PROCESSES = processesFile;
   env.EGOV_HEAVY_RUN_QUEUE_TEST_DOCKER = dockerFile;
   env.EGOV_HEAVY_RUN_QUEUE_TEST_DAEMON = daemonFile;
+  // 끝난 트리 확인은 실제 프로세스 목록을 읽되 이 픽스처의 프로세스(명령줄에 경로가 있다)와 그 부모만 본다.
+  env.EGOV_HEAVY_RUN_QUEUE_TEST_TREE_SCOPE = dir;
   const commonDir = execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: dir, env, encoding: 'utf8' }).trim();
   const state = path.join(commonDir, 'egov-heavy-run');
   const work = path.join(dir, 'work.mjs');
@@ -239,12 +249,12 @@ import { spawn } from 'node:child_process';
 const [log, id, ms, code, mode] = process.argv.slice(2);
 // orphan: 부모가 죽어도 남는 손자를 띄운다(Gradle 실행기 JVM 이 cmd.exe 보다 오래 사는 경우의 대역).
 if (mode === 'orphan') {
-  const grandchild = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 120000)'], { detached: true, stdio: 'ignore' });
+  const grandchild = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 120000)', log], { detached: true, stdio: 'ignore' });
   fs.writeFileSync(log + '.' + id + '.pids', process.pid + ' ' + grandchild.pid);
 }
 // cut: 중간 프로세스가 손자를 띄우고 먼저 끝난다 — 손자의 부모 PID 는 이미 죽은 프로세스를 가리킨다.
 if (mode === 'cut') {
-  const middle = spawn(process.execPath, ['-e', "const c = require('node:child_process').spawn(process.execPath, ['-e', 'setTimeout(() => {}, 120000)'], { detached: true, stdio: 'ignore' }); require('node:fs').writeFileSync(process.argv[1], String(c.pid)); c.unref();", log + '.' + id + '.pids'], { detached: true, stdio: 'ignore' });
+  const middle = spawn(process.execPath, ['-e', "const c = require('node:child_process').spawn(process.execPath, ['-e', 'setTimeout(() => {}, 120000)', process.argv[1]], { detached: true, stdio: 'ignore' }); require('node:fs').writeFileSync(process.argv[1], String(c.pid)); c.unref();", log + '.' + id + '.pids'], { detached: true, stdio: 'ignore' });
   await new Promise((resolve) => middle.once('exit', resolve));
 }
 fs.appendFileSync(log, \`start \${id} \${Date.now()}\\n\`);
