@@ -17,6 +17,13 @@ const issueSchema = object({ id: identifier, kind: enumeration(['decision', 'con
 const requirementSchema = object({ id: identifier, title: string(200), description: string(6000), requirementType: enumeration(REQUIREMENT_TYPES), solutionDisposition: enumeration(SOLUTION_DISPOSITIONS), moduleCandidates: array(identifier, 0, 20), rationale: string(), nfrCriteria: nullable(nfrSchema), citations: array(citationSchema, 1, 30), scope: enumeration(['included', 'deferred', 'excluded']) }, ['id', 'title', 'description', 'requirementType', 'solutionDisposition', 'moduleCandidates', 'rationale', 'nfrCriteria', 'citations']);
 export const ANALYSIS_SCHEMA = object({ requirements: array(requirementSchema), issues: array(issueSchema, 0, 100), coverage: array(object({ sourceId: identifier, clauseId: identifier, disposition: enumeration(['included', 'merged', 'excluded', 'deferred']), requirementIds: array(identifier), rationale: string() }, ['sourceId', 'clauseId', 'disposition', 'rationale']), 1, 3000) });
 export const BATCH_ANALYSIS_SCHEMA = object({ ...ANALYSIS_SCHEMA.properties, updatedRequirementIds: array(identifier) }, Object.keys(ANALYSIS_SCHEMA.properties));
+// A single model response stays capped at 100 issues / 1MiB. Accumulating
+// independently validated responses is a different bounded storage contract.
+export const MAX_PROJECT_ISSUES = 1000;
+export const MAX_PROJECT_PROPOSAL_BYTES = 4 * 1024 ** 2;
+export function projectProposalSchema(schema) {
+  return { ...schema, properties: { ...schema.properties, issues: { ...schema.properties.issues, maxItems: MAX_PROJECT_ISSUES } } };
+}
 const workSchema = object({ id: identifier, workItemType: enumeration(WORK_ITEM_TYPES), parentEpicId: nullable(identifier), requirementIds: array(identifier, 1), title: string(200), description: string(6000), asA: string(), iWant: string(), soThat: string(), priority: enumeration(PRIORITIES), batch: { anyOf: [string(80), { type: 'integer', minimum: 1, maximum: 1000 }] }, dependsOn: array(identifier), archetype: enumeration(['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7']), decisionCards: array(string(2000), 0, 20) }, ['id', 'workItemType', 'parentEpicId', 'requirementIds', 'title']);
 const acSchema = object({ id: identifier, workItemId: identifier, requirementIds: array(identifier, 1), polarity: enumeration(['allow', 'forbid']), given: string(), when: string(), then: string(), verificationMethod: enumeration(VERIFICATION_METHODS) });
 const traceSchema = object({ id: identifier, requirementId: identifier, workItemId: identifier, acId: identifier, targetKind: enumeration(TARGET_KINDS), targetId: string(300), linkIntent: enumeration(['candidate', 'planned', 'existing']), notes: string() }, ['id', 'requirementId', 'targetKind', 'targetId', 'linkIntent']);
@@ -119,8 +126,8 @@ export function seedAnalysis(snapshot) {
   });
   return { requirements, issues: [], coverage: [] };
 }
-export function validateAnalysisBatchProposal(value, snapshot, sources, previous, { idPrefix } = {}) {
-  privateValue(value, BATCH_ANALYSIS_SCHEMA);
+export function validateAnalysisBatchProposal(value, snapshot, sources, previous, { idPrefix, aggregate = false } = {}) {
+  privateValue(value, aggregate ? projectProposalSchema(BATCH_ANALYSIS_SCHEMA) : BATCH_ANALYSIS_SCHEMA, { maxBytes: aggregate ? MAX_PROJECT_PROPOSAL_BYTES : 1024 ** 2 });
   unique(value.requirements);
   unique(value.issues);
   const oldIds = new Set((previous?.requirements ?? []).map(req => req.id)), updates = new Set(value.updatedRequirementIds ?? []);
@@ -153,10 +160,10 @@ export function validateAnalysisBatchProposal(value, snapshot, sources, previous
     if (!next) result.issues.push(structuredClone(issue));
   }
   if (result.requirements.length > 150) capacity('AI_REQUIREMENT_CAPACITY');
-  if (result.issues.length > 100) capacity('AI_ISSUE_CAPACITY');
+  if (result.issues.length > MAX_PROJECT_ISSUES) capacity('AI_ISSUE_CAPACITY');
   for (const req of result.requirements) if (req.citations.length > 30) invalid('citation-capacity', 'requirements', req.id);
-  if (Buffer.byteLength(JSON.stringify(result)) > 1024 ** 2) capacity('AI_PROPOSAL_CAPACITY');
-  privateValue(result, ANALYSIS_SCHEMA);
+  if (Buffer.byteLength(JSON.stringify(result)) > MAX_PROJECT_PROPOSAL_BYTES) capacity('AI_PROPOSAL_CAPACITY');
+  privateValue(result, projectProposalSchema(ANALYSIS_SCHEMA), { maxBytes: MAX_PROJECT_PROPOSAL_BYTES });
   const clauses = clauseMap(snapshot), current = new Set(sources.flatMap(source => source.clauses.map(clause => `${source.id}/${clause.id}`)));
   const allowed = new Set([...current, ...(previous?.requirements ?? []).flatMap(req => req.citations.map(cite => `${cite.sourceId}/${cite.clauseId}`)), ...(previous?.issues ?? []).flatMap(issue => issue.citations.map(cite => `${cite.sourceId}/${cite.clauseId}`)), ...snapshot.backlog.sources.flatMap(source => source.clauses.filter(clause => source.id.startsWith('DEC-') && source.sourceType === 'policy-memo' || clause.requirementIds?.some(id => snapshot.backlog.businessRequirements.some(req => req.id === id))).map(clause => `${source.id}/${clause.id}`))]);
   citations(result.requirements, clauses, 'requirements'); issues(result.issues, ids, clauses, 'issues');
@@ -189,11 +196,11 @@ export function validateAnalysisBatchProposal(value, snapshot, sources, previous
     if (!coverage.some(entry => entry.sourceId === sourceId && ['included', 'merged'].includes(entry.disposition) && entry.requirementIds.includes(req.id))) invalid('coverage-scope', 'requirements');
   }
   const accumulated = { requirements: result.requirements, issues: result.issues, coverage };
-  if (Buffer.byteLength(JSON.stringify(accumulated)) > 1024 ** 2) capacity('AI_PROPOSAL_CAPACITY');
+  if (Buffer.byteLength(JSON.stringify(accumulated)) > MAX_PROJECT_PROPOSAL_BYTES) capacity('AI_PROPOSAL_CAPACITY');
   return accumulated;
 }
 export function validateAnalysisProposal(value, snapshot) {
-  privateValue(value, ANALYSIS_SCHEMA);
+  privateValue(value, projectProposalSchema(ANALYSIS_SCHEMA), { maxBytes: MAX_PROJECT_PROPOSAL_BYTES });
   const ids = unique(value.requirements), clauses = clauseMap(snapshot), coverage = new Map();
   const scopeFor = req => req.scope ?? snapshot.backlog.businessRequirements.find(previous => previous.id === req.id && ['included', 'excluded', 'deferred'].includes(previous.scopeDisposition))?.scopeDisposition ?? 'included';
   let relationCorrections = 0;
@@ -248,6 +255,7 @@ export function validateAnalysisProposal(value, snapshot) {
     while (issueIds.has(id)) id = `${base}-${++suffix}`; issueIds.add(id);
     decisions.push({ id, kind: 'decision', severity: 'blocking', question: `${req.title}: ${[missingFit ? '기존 기능 활용·추가 개발의 해결 방향' : '', missingCriteria ? '측정 항목·기준값·검증 기준' : ''].filter(Boolean).join('과 ')}이 정해지지 않았습니다. 업무 요구로 포함할지, 개발 전 확인사항으로 보류할지, 제외할지와 필요한 기준을 결정해 주세요.`, options: ['업무 범위에 포함하고 해결 방향·검증 기준 제시', '개발 착수 전 확인사항으로 보류하고 사유 기록', '이번 범위에서 제외하고 사유 기록'], requirementIds: [req.id], citations: structuredClone(req.citations) });
   }
+  if (decisions.length > MAX_PROJECT_ISSUES || Buffer.byteLength(JSON.stringify(decisions)) > MAX_PROJECT_PROPOSAL_BYTES) capacity('AI_ISSUE_CAPACITY');
   const result = { ...structuredClone(value), issues: decisions, coverage: [...coverage.values()], relationCorrections, requirements: value.requirements.map(requirement => ({ ...structuredClone(requirement), proposedScope: scopeFor(requirement), scopeDisposition: 'proposed', acceptanceDisposition: 'pending' })) };
   result.changes = describeChanges(snapshot.backlog.businessRequirements, projectAnalysisBacklog(snapshot, result).businessRequirements, 'requirement', ['title', 'description', 'requirementType', 'moduleCandidates', 'scopeDisposition', 'solutionDisposition', 'nfrCriteria', 'rationale', 'sourceIds', 'openQuestions']);
   if (!decisions.some(issue => issue.severity === 'blocking')) {
@@ -277,7 +285,7 @@ export function projectAnalysisBacklog(snapshot, proposal) {
   return pack;
 }
 export function validateDecompositionProposal(value, snapshot) {
-  privateValue(value, DECOMPOSITION_SCHEMA);
+  privateValue(value, projectProposalSchema(DECOMPOSITION_SCHEMA), { maxBytes: MAX_PROJECT_PROPOSAL_BYTES });
   unique(value.workItems); unique(value.acceptanceCriteria); unique(value.traceLinks);
   const included = new Set(snapshot.backlog.businessRequirements.filter(req => req.scopeDisposition === 'included').map(req => req.id));
   const groups = [['workItem', 'workItems', Object.keys(workSchema.properties)], ['acceptanceCriterion', 'acceptanceCriteria', Object.keys(acSchema.properties)], ['traceLink', 'traceLinks', Object.keys(traceSchema.properties)]];
@@ -368,7 +376,7 @@ export function buildAiRequest(snapshot, phase, decisions = [], { sources = snap
       sources,
       decisions,
       previousRequirements: batch ? snapshot.backlog.businessRequirements.map(req => ({ id: req.id, scopeDisposition: req.scopeDisposition, openQuestions: req.openQuestions ?? [] })) : snapshot.backlog.businessRequirements,
-      ...(batch ? { analysisBatch: { ...batch, capacity: { requirementsRemaining: Math.max(0, 150 - (previousAnalysis?.requirements.length ?? 0)), issuesRemaining: Math.max(0, 100 - (previousAnalysis?.issues.length ?? 0)), maxRequirements: 150, maxIssues: 100, maxCitationsPerRequirement: 30, maxProposalBytes: 1024 ** 2, citationCounts: Object.fromEntries((previousAnalysis?.requirements ?? []).map(req => [req.id, req.citations.length])) } }, previousAnalysis: { requirements: previousAnalysis?.requirements ?? [], issues: previousAnalysis?.issues ?? [] }, policySources: batchPolicySources(snapshot, sources) } : {}),
+      ...(batch ? { analysisBatch: { ...batch, capacity: { requirementsRemaining: Math.max(0, 150 - (previousAnalysis?.requirements.length ?? 0)), issuesRemaining: Math.max(0, MAX_PROJECT_ISSUES - (previousAnalysis?.issues.length ?? 0)), maxRequirements: 150, maxIssues: MAX_PROJECT_ISSUES, maxIssuesPerResponse: 100, maxCitationsPerRequirement: 30, maxProposalBytes: MAX_PROJECT_PROPOSAL_BYTES, maxResponseBytes: 1024 ** 2, citationCounts: Object.fromEntries((previousAnalysis?.requirements ?? []).map(req => [req.id, req.citations.length])) } }, previousAnalysis: { requirements: previousAnalysis?.requirements ?? [], issues: previousAnalysis?.issues ?? [] }, policySources: batchPolicySources(snapshot, sources) } : {}),
       ...(phase === 'decomposition' ? {
         previousWorkItems: snapshot.backlog.workItems,
         previousAcceptanceCriteria: snapshot.backlog.acceptanceCriteria.map(ac => Object.fromEntries(Object.keys(acSchema.properties).filter(key => Object.hasOwn(ac, key)).map(key => [key, ac[key]]))),
@@ -383,6 +391,7 @@ export function buildAiRequest(snapshot, phase, decisions = [], { sources = snap
   if (phase === 'decomposition') request.instructions += ' Plan from the confirmed requirements. Sources contain their linked clauses and explicit policy decisions, not unrelated background. A clause marked citationEvidence contains only exact previously reviewed quotations, separated by newlines; those are evidence excerpts, not a complete source paragraph. Quote a single supplied verbatim excerpt, never invent text across omitted sections. Human-edited requirements fall back to their linked original clauses.';
   if (batch) request.instructions += ' This is a sequential batch of ONE analysis. Cover exactly the clauses under data.sources in coverage, not previous batches or policySources. Return ONLY new or changed requirements and new issues for this batch; the application retains unchanged previousAnalysis requirements, citations and unresolved issues automatically. Reuse an existing requirement ID when meaning matches. To link a current clause to an existing requirement, return the updated requirement with its new exact citation. Never reprint all unchanged requirements or issues. Keep descriptions concrete and coverage rationales concise. Add only requirements grounded in this batch or previous citations. Existing human previousRequirements must all be represented in the accumulated result; propose explicit scopes instead of dropping them. Do not replace or downgrade an earlier issue. policySources contains explicit human answers applicable to every batch. Previous citations are verified verbatim evidence; do not invent text for a previous source. Other document parts may appear in attached PDFs but are not this batch coverage.';
   if (batch) request.instructions += ' New requirement IDs MUST start with analysisBatch.idPrefix. An existing ID may be changed ONLY when explicitly listed in updatedRequirementIds; include only changed existing IDs that actually appear in this delta. Never reuse an old ID for unrelated meaning. Human requirements are already seeded in previousAnalysis, so unchanged human requirements do not need to be returned. Observe analysisBatch.capacity including existing citation counts; earlier verified citations cannot be removed. If a genuinely new fact cannot fit the remaining capacity, preserve it as deferred coverage with a blocking decision issue rather than silently dropping it, inventing a split, or exceeding capacity. When an included requirement cites a processed source, that source needs at least one included/merged clause linked by a verified citation. Extra policySources are reference-only for this call and receive their own coverage when they appear under data.sources.';
+  if (batch) request.instructions += ' analysisBatch.index through lastIndex (or index alone) identifies adjacent logical partitions combined into this ONE call. Cover every supplied clause exactly once. Return at most maxIssuesPerResponse new questions; previous questions remain fully visible and are retained by the application. The project accumulation limit does not enlarge a single response or permit suppressing a real ambiguity.';
   // Reference-capable callers materialize a smaller wire request before the
   // unchanged 768KiB forwarding guard. This internal canonical object is never
   // sent directly, and remains bounded by the archive's 8MiB ceiling.

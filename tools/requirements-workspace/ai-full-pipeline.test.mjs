@@ -33,6 +33,32 @@ function reply(request, { blocking = false } = {}) {
   }
 }
 
+test('analysis-only entry reuses a full-flow checkpoint and its complete verified business context', async t => {
+  const seen = []; let failed = false;
+  const app = await setup(t, async ({ request, attachments }) => {
+    seen.push(request.phase === 'analysis' ? `analysis-${request.data.analysisBatch.index}` : request.phase);
+    if (request.phase !== 'analysis') return envelope(reply(request), request.phase);
+    if (request.data.analysisBatch.index === 2 && !failed) { failed = true; throw Object.assign(Error('AI_TIMEOUT'), { code: 'AI_TIMEOUT' }); }
+    assert.ok(request.data.businessModel.processes.length, 'the upstream facts must accompany the reused prefix');
+    assert.deepEqual(attachments, [], 'verified full-flow document interpretation does not require retransmitting original visuals');
+    return envelope({ requirements: [], issues: request.data.analysisBatch.index === 1 ? [{ id: 'Q-PREFIX', kind: 'decision', severity: 'blocking', question: '업무 처리 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [0] }] : [], coverage: request.data.sources.flatMap(src => src.clauses.map(clause => ({ sourceId: src.id, clauseId: clause.id, disposition: 'excluded', rationale: '접수 업무의 배경 설명' }))) }, request.phase);
+  });
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 33 }, (_, index) => ({ ...source.clauses[0], id: `C-${index}` })) });
+  await app.start(); await app.engine.waitForAi(); let state = await app.engine.state();
+  assert.equal(state.ai.current.batches.completed, 1);
+  const original = state.ai.current.checkpoints.analysis;
+  const originalIssueId = JSON.parse(app.store.readArchive(original)).output.output.issues[0].id;
+  seen.length = 0;
+  await app.act('ai.start', { phase: 'analysis', inputDigest: state.ai.inputDigests.analysis, model: 'claude-opus-5-5', consent: true });
+  await app.engine.waitForAi(); state = await app.engine.state();
+  assert.deepEqual(seen, ['analysis-2']);
+  assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  assert.equal(state.ai.current.batches.completed, 2);
+  assert.ok(state.ai.proposal.issues.some(issue => issue.id === originalIssueId));
+  assert.equal(state.metadata.ai.jobs.at(-2).checkpoints.analysis.sha256, original.sha256);
+  assert.equal(state.backlog.businessRequirements.length, 0);
+});
+
 test('known cross-stage issue capacity stops after a saved batch and rejects resume before any new model call', async t => {
   const phases = []; let timer;
   const app = await setup(t, async ({ request, signal }) => {
@@ -55,9 +81,13 @@ test('known cross-stage issue capacity stops after a saved batch and rejects res
   t.after(() => clearTimeout(timer));
   await app.act('source.save', { ...source, clauses: Array.from({ length: 33 }, (_, index) => ({ ...source.clauses[0], id: `C-${index + 1}` })) });
   await app.start(); await app.engine.waitForAi(); let state = await app.engine.state();
-  assert.equal(state.ai.current.errorCode, 'AI_ISSUE_CAPACITY');
+  assert.equal(state.ai.current.errorCode, 'AI_CLI_FAILED', '101 accumulated cross-stage questions must not be mistaken for a single response');
   assert.equal(state.ai.current.batches.completed, 1);
-  const ref = state.ai.current.checkpoints.analysis, bytes = app.store.readArchive(ref);
+  const cached = JSON.parse(app.store.readArchive(state.ai.current.checkpoints.analysis));
+  const example = cached.output.output.issues[0];
+  cached.output.output.issues = Array.from({ length: 941 }, (_, index) => ({ ...structuredClone(example), id: `PROJECT-Q-${index}`, question: `확인이 필요한 프로젝트 정책 ${index}` }));
+  const ref = app.store.writeArchive('ai', JSON.stringify(cached)), bytes = app.store.readArchive(ref);
+  app.store.transact(app.store.read().revision, next => { next.metadata.ai.jobs.at(-1).checkpoints.analysis = ref; });
   phases.length = 0; await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
   assert.deepEqual(phases, [], 'a known impossible aggregate must not consume another model call');
   assert.equal(state.ai.current.errorCode, 'AI_ISSUE_CAPACITY');
@@ -77,7 +107,7 @@ test('full pipeline uses bounded evidence references and restores canonical proo
   const state = await app.engine.state();
   assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode);
   for (const request of requests.filter(item => !['reading', 'synthesis'].includes(item.phase))) {
-    assert.equal(request.data.evidenceProtocol, 'stored-evidence-v2');
+    assert.equal(request.data.evidenceProtocol, 'stored-evidence-v3');
     assert.ok(Buffer.byteLength(JSON.stringify(request)) <= 768 * 1024);
   }
   assert.equal(state.ai.proposal.requirements[0].citations[0].sourceId, source.id);

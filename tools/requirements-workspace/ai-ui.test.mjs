@@ -27,6 +27,11 @@ test('parallel quality review progress separates active calls and completed anal
   assert.match(panel.textContent, /측정된 응답 JSON 12,000바이트 \(1회\)/);
   assert.doesNotMatch(panel.textContent, /9999999|전체.*분 단축|원본 파일 크기 1,234,567/);
   assert.equal(panel.querySelector('script'), null);
+  job.fullPipeline = false; job.batches = { completed: 20, total: 96 };
+  job.callMetrics.activeCalls = [{ call: 3, stage: 'analysis', batch: 21, endBatch: 23, startedAt: new Date().toISOString() }];
+  button(window.document, '최신 상태 읽기').click(); await new Promise(resolve => setImmediate(resolve));
+  const individual = window.document.querySelector('[aria-label="AI 요구사항 진행"]').textContent;
+  assert.match(individual, /20\/96묶음 분석 완료/); assert.match(individual, /21~23묶음 · 응답 대기/);
 });
 test('invalid AI output shows validation evidence and checkpoint recovery instead of unrelated login advice', async t => {
   const dom = new JSDOM(markup, { url: 'http://127.0.0.1:8792/', runScripts: 'outside-only', pretendToBeVisual: true }); t.after(() => dom.window.close());
@@ -45,7 +50,7 @@ test('invalid AI output shows validation evidence and checkpoint recovery instea
   state.ai.current.errorCode = 'AI_ISSUE_CAPACITY';
   button(window.document, '최신 상태 읽기').click(); await new Promise(resolve => setImmediate(resolve));
   const capacity = window.document.querySelector('[aria-label="AI 요구사항 진행"]').textContent;
-  assert.match(capacity, /쟁점 100개/); assert.match(capacity, /업무 범위를 나누어/);
+  assert.match(capacity, /쟁점 1,000개/); assert.match(capacity, /4MiB/); assert.match(capacity, /업무 범위를 나누어/);
   assert.doesNotMatch(capacity, /CLI 로그인·사용 한도·자료 크기/);
   assert.doesNotMatch(capacity, /같은 자료의 반복 실행은 이 한도를 해결하지 못합니다/);
 });
@@ -109,6 +114,7 @@ test('AI start is visible, discloses remote processing and requires an explicit 
   start.click();
   const consent = document.querySelector('#editor input[name="ai-consent"]'); assert.ok(consent);
   const mode = document.querySelector('#editor select[name="visualMode"]'); assert.ok(mode);
+  const reuse = document.querySelector('#editor input[name="reuse"]'); assert.ok(reuse); assert.equal(reuse.checked, true);
   mode.value = 'text';
   assert.match(document.querySelector('#editor').textContent, /모델 서비스/);
   const submit = button(document, '동의하고 AI 분석 시작'); assert.ok(submit);
@@ -123,6 +129,7 @@ test('AI start is visible, discloses remote processing and requires an explicit 
   assert.equal(mutations[0].payload.consent, true);
   assert.equal(mutations[0].payload.inputDigest, 'synthetic-input');
   assert.equal(mutations[0].payload.includeVisuals, false);
+  assert.equal(mutations[0].payload.reuseCheckpoints, true);
   state.ai.current = { id: 'synthetic-job', phase: 'analysis', status: 'ready' };
   state.ai.proposal = { requirements: [], issues: [{ id: 'OBS', question: '확인할 참고 사항', severity: 'observation', options: [] }] };
   button(document, '최신 상태 읽기').click(); await new Promise(resolve => setImmediate(resolve));
@@ -141,4 +148,23 @@ test('AI start is visible, discloses remote processing and requires an explicit 
   document.querySelector('[name="answer-PLAN"]').value = '업무 요구사항을 유지하고 두 배치로 계획한다.';
   button(document, '답변을 반영하고 AI 계속 실행').click(); await new Promise(resolve => setImmediate(resolve));
   assert.equal(mutations.at(-1).payload.scope, 'planning');
+});
+
+test('a large issue ledger is paged without losing access to the last question or clearing a blocking decision', async t => {
+  const dom = new JSDOM(markup, { url: 'http://127.0.0.1:8792/', runScripts: 'outside-only', pretendToBeVisual: true }); t.after(() => dom.window.close());
+  const { window } = dom; window.structuredClone = structuredClone;
+  const pack = createEmptyBacklogPack(context); pack.project = { code: 'SYNTHETIC', name: '합성 업무' }; pack.sources = [structuredClone(source)];
+  const issues = Array.from({ length: 121 }, (_, index) => ({ id: `Q-${index}`, question: `프로젝트 질문 ${index + 1}`, severity: 'blocking', options: ['사람의 정책 결정 필요'] }));
+  const state = { revision: 'synthetic', backlog: pack, metadata: { baselines: [], exports: [], reviewedRequirements: {}, uatRecords: [], auditFindings: [] }, context, analysisReadiness: { valid: false, errors: [] }, readiness: { valid: false, errors: [] }, matches: { results: [] }, ai: { available: true, model: 'claude-opus-5-5', effort: 'high', active: false, current: { id: 'large-ledger', status: 'needs-decisions', phase: 'analysis' }, proposal: { issues, requirements: [] } } };
+  const mutations = [];
+  window.fetch = async (url, options) => { if (options?.method === 'POST') mutations.push(url); return { ok: true, json: async () => url === '/api/session' ? { token: 'synthetic-token' } : state }; };
+  await window.eval(`(async () => { ${script}\n })()`);
+  const panel = () => window.document.querySelector('[aria-label="AI 요구사항 진행"]');
+  assert.equal(panel().querySelectorAll('[data-ai-issue]').length, 20);
+  for (let page = 0; page < 6; page++) { button(window.document, '다음 질문').click(); await new Promise(resolve => setImmediate(resolve)); }
+  assert.match(panel().textContent, /프로젝트 질문 121/);
+  assert.equal(panel().querySelectorAll('[data-ai-issue]').length, 1);
+  assert.equal(button(window.document, '다음 질문').disabled, true);
+  assert.ok(button(window.document, '답변하고 계속')); assert.equal(button(window.document, '요구사항 확정하고 에픽 생성'), undefined);
+  assert.deepEqual(mutations, []); assert.equal(state.ai.proposal.issues.length, 121);
 });

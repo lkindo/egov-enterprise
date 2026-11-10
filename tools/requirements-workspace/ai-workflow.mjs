@@ -2,7 +2,7 @@ import { randomUUID, createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { ANALYSIS_SCHEMA, BATCH_ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, aiInputDigest, buildAiRequest, buildCorrectionRequest, seedAnalysis, validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal, projectAnalysisBacklog, safeValidationFailures, validatePrivateAiValue } from './ai-contract.mjs';
-import { planAnalysisBatches, MAX_ANALYSIS_BATCHES } from './ai-analysis-batches.mjs';
+import { planAnalysisBatches, coalesceAnalysisBatches, MAX_ANALYSIS_BATCHES } from './ai-analysis-batches.mjs';
 import { AI_MODEL, AI_EFFORT, AI_ANALYSIS_EFFORT, aiEffortForPhase, createCliRunner, findClaudeExecutable } from './ai-cli.mjs';
 import { assertExternalWorkspace } from './store.mjs';
 import { prepareVisualAttachments } from './ai-attachments.mjs';
@@ -26,12 +26,13 @@ const metricFields = ['requests', 'corrections', 'reusedResponses', 'inputBytes'
 const emptyCallMetrics = () => ({ version: 1, ...Object.fromEntries(metricFields.map(field => [field, 0])), activeCalls: [] });
 function validateCallMetrics(value, job) {
   exact(value, ['version', ...metricFields, 'activeCalls']);
-  if (!job.fullPipeline || value.version !== 1 || metricFields.some(field => !Number.isSafeInteger(value[field]) || value[field] < 0) || value.requests !== job.modelCalls || value.requests > 256 || value.corrections > value.requests || value.measuredOutputs > value.requests || value.cacheReports > value.requests || value.peakConcurrency > 2 || !Array.isArray(value.activeCalls) || value.activeCalls.length > value.peakConcurrency || !value.requests && (value.inputBytes || value.logicalInputBytes || value.outputBytes || value.modelWaitMs || value.peakConcurrency)) fail('AI_METADATA_INVALID');
+  if (value.version !== 1 || metricFields.some(field => !Number.isSafeInteger(value[field]) || value[field] < 0) || value.requests !== job.modelCalls || value.requests > 256 || value.corrections > value.requests || value.measuredOutputs > value.requests || value.cacheReports > value.requests || value.peakConcurrency > 2 || !Array.isArray(value.activeCalls) || value.activeCalls.length > value.peakConcurrency || !value.requests && (value.inputBytes || value.logicalInputBytes || value.outputBytes || value.modelWaitMs || value.peakConcurrency)) fail('AI_METADATA_INVALID');
   const ids = new Set();
   for (const call of value.activeCalls) {
-    exact(call, ['call', 'stage', 'batch', 'startedAt']);
+    exact(call, ['call', 'stage', 'batch', 'endBatch', 'startedAt']);
     if (!Number.isSafeInteger(call.call) || call.call < 1 || call.call > value.requests || ids.has(call.call) || !Object.values(checkpointPhases).flat().includes(call.stage) || call.batch !== null && (!Number.isSafeInteger(call.batch) || call.batch < 1 || call.batch > 3000) || !Number.isFinite(Date.parse(call.startedAt))) fail('AI_METADATA_INVALID');
     ids.add(call.call);
+    if (call.endBatch !== undefined && (!Number.isSafeInteger(call.batch) || !Number.isSafeInteger(call.endBatch) || call.endBatch < call.batch || call.endBatch > MAX_ANALYSIS_BATCHES || call.stage !== 'analysis')) fail('AI_METADATA_INVALID');
   }
 }
 export function validateAiMetadata(value) {
@@ -157,11 +158,13 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
       const reviewed = workflow.jobs.findLast(job => job.phase === 'analysis' && job.status === 'applied');
       try { analysisEvidence = proposal(reviewed); } catch (error) { if (!/^REQUIREMENTS_/.test(error.code ?? '') && error.code !== 'AI_OUTPUT_INVALID' && !(error instanceof SyntaxError)) throw error; }
     }
-    const request = buildAiRequest(snapshot, payload.phase, workflow.decisions, { ...batchOptions(0), previousAnalysis: initialAnalysis, analysisEvidence, evidenceReferences: payload.fullPipeline === true });
+    const request = buildAiRequest(snapshot, payload.phase, workflow.decisions, { ...batchOptions(0), previousAnalysis: initialAnalysis, analysisEvidence, evidenceReferences: true });
     if (!runner) findClaudeExecutable();
-    const resumable = payload.fullPipeline && payload.reuseCheckpoints !== false && workflow.jobs.findLast(job => job.fullPipeline && job.effort === AI_ANALYSIS_EFFORT && job.promptVersion === PROMPT_VERSION && job.inputDigest === inputDigest && job.checkpoints && Object.keys(job.checkpoints).length);
-    const callMetrics = payload.fullPipeline ? emptyCallMetrics() : null;
-    const job = { id: jobId, phase: payload.phase, status: 'running', inputDigest, startedAt: now(), model: AI_MODEL, effort: AI_ANALYSIS_EFFORT, includeVisuals: payload.includeVisuals !== false, promptVersion: PROMPT_VERSION, ...(payload.fullPipeline ? { fullPipeline: true, stage: 'reading', modelCalls: 0, callMetrics: structuredClone(callMetrics), promptRefs: [], checkpoints: structuredClone(resumable?.checkpoints ?? {}), reusedStages: [], ...(resumable ? { resumeFrom: resumable.id } : {}) } : {}),
+    const resumable = payload.phase === 'analysis' && payload.reuseCheckpoints !== false && workflow.jobs.filter(job => job.phase === 'analysis' && job.status !== 'running' && job.effort === AI_ANALYSIS_EFFORT && job.promptVersion === PROMPT_VERSION && job.inputDigest === inputDigest && (job.includeVisuals !== false) === (payload.includeVisuals !== false) && job.checkpoints && Object.keys(job.checkpoints).length).sort((a, b) => (b.batches?.completed ?? 0) - (a.batches?.completed ?? 0) || workflow.jobs.indexOf(b) - workflow.jobs.indexOf(a))[0];
+    const callMetrics = emptyCallMetrics();
+    const saved = resumable?.checkpoints ?? {};
+    const checkpoints = payload.fullPipeline ? structuredClone(saved) : Object.fromEntries(['discovery', 'analysis'].filter(key => saved[key]).map(key => [key, structuredClone(saved[key])]));
+    const job = { id: jobId, phase: payload.phase, status: 'running', inputDigest, startedAt: now(), model: AI_MODEL, effort: AI_ANALYSIS_EFFORT, includeVisuals: payload.includeVisuals !== false, promptVersion: PROMPT_VERSION, ...(payload.fullPipeline ? { fullPipeline: true } : {}), stage: payload.fullPipeline ? 'reading' : payload.phase, modelCalls: 0, callMetrics: structuredClone(callMetrics), promptRefs: [], checkpoints, reusedStages: [], ...(resumable ? { resumeFrom: resumable.id } : {}),
       ...(batches?.length > 1 ? { batches: { completed: 0, total: batches.length } } : {}), sensitivityWarnings: collectSensitivityWarnings({ backlog: snapshot.backlog, decisions: workflow.decisions }), inputRef: store.writeArchive('baseline', JSON.stringify(snapshot.backlog)), contextRef: store.writeArchive('ai', JSON.stringify(snapshot.metadata.context)) };
     commit(revision, next => { next.metadata.ai ??= empty(); next.metadata.ai.jobs.push(job); });
     const controller = new AbortController();
@@ -171,7 +174,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
       const scratchRoot = assertExternalWorkspace(join(store.directory, '.scratch')); mkdirSync(scratchRoot, { recursive: true, mode: 0o700 });
       const cwd = mkdtempSync(join(scratchRoot, 'ai-'));
       try {
-        let corrected = false, runCorrected = false, validated, output = initialAnalysis, pipeline;
+        let corrected = false, runCorrected = false, validated, output = initialAnalysis, pipeline, discovery;
         const batchAudit = [];
         const usage = { inputTokens: 0, outputTokens: 0 };
         const writeMetrics = () => {
@@ -193,7 +196,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
           const warnings = collectSensitivityWarnings(value, stage);
           if (warnings.length) mark(job.id, stored => { if (stored.status === 'running') stored.sensitivityWarnings = mergeSensitivityWarnings(stored.sensitivityWarnings, warnings); });
         };
-        const hash = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
+        const hash = value => createHash('sha256').update(JSON.stringify(value ?? null)).digest('hex');
         const checkpointWarnings = new Map();
         const restoreCheckpointWarnings = stage => {
           if (!checkpointWarnings.has(stage)) return false;
@@ -225,11 +228,11 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
         const run = async args => {
           if (!await isCurrent()) fail('AI_STALE_INPUT');
           if (modelCalls >= 256) fail('AI_CALL_CAPACITY');
-          const evidence = job.fullPipeline && !['reading', 'synthesis'].includes(args.request.phase) ? prepareEvidenceRequest(args.request, args.schema) : null;
+          const evidence = !['reading', 'synthesis'].includes(args.request.phase) ? prepareEvidenceRequest(args.request, args.schema) : null;
           const wire = evidence ? { ...args, request: evidence.request, schema: evidence.schema } : args;
           const inputBytes = Buffer.byteLength(JSON.stringify(wire.request));
-          if (inputBytes > (job.fullPipeline ? 768 * 1024 : 1024 ** 2)) fail('AI_INPUT_TOO_LARGE');
-          if (job.fullPipeline) {
+          if (inputBytes > 768 * 1024) fail('AI_INPUT_TOO_LARGE');
+          {
             const prompt = { version: PROMPT_VERSION, stage: wire.request.phase, instructions: wire.request.instructions, schema: wire.schema };
             const sha256 = hash(prompt);
             if (!sentPrompts.has(sha256)) {
@@ -246,7 +249,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
               ticket = ++modelCalls; callMetrics.requests = modelCalls;
               callMetrics.corrections += args.request.data?.correction ? 1 : 0;
               callMetrics.inputBytes += inputBytes; callMetrics.logicalInputBytes += evidence ? Buffer.byteLength(JSON.stringify(args.request)) : inputBytes;
-              callMetrics.activeCalls.push({ call: ticket, stage: args.request.phase, batch: args.request.data?.analysisBatch?.index ?? args.request.data?.planningBatch?.index ?? args.request.data?.reviewBatch?.index ?? args.request.data?.batch?.index ?? null, startedAt: now() });
+              callMetrics.activeCalls.push({ call: ticket, stage: args.request.phase, batch: args.request.data?.analysisBatch?.index ?? args.request.data?.planningBatch?.index ?? args.request.data?.reviewBatch?.index ?? args.request.data?.batch?.index ?? null, ...(args.request.data?.analysisBatch?.lastIndex ? { endBatch: args.request.data.analysisBatch.lastIndex } : {}), startedAt: now() });
               callMetrics.peakConcurrency = Math.max(callMetrics.peakConcurrency, callMetrics.activeCalls.length);
               stored.modelCalls = modelCalls; stored.callMetrics = structuredClone(callMetrics);
             });
@@ -271,7 +274,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             }
           }
         };
-        if (job.fullPipeline) {
+        if (job.fullPipeline || job.checkpoints.discovery) {
           pipeline = readCheckpoint('discovery', inputDigest);
           if (pipeline) {
             validateBusinessModel(pipeline.businessModel, snapshot, snapshot.backlog.sources.map(source => source.id));
@@ -288,11 +291,15 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             if (!restoreCheckpointWarnings('discovery')) { onValidated('reading', pipeline.documents); onValidated('synthesis', pipeline.businessModel); }
             if (refreshedAnchors) saveCheckpoint('discovery', inputDigest, pipeline);
           }
-          else { pipeline = await prepareBusinessModel(snapshot, { run, cwd, signal: controller.signal, sourceReading, onStage, onValidated }); saveCheckpoint('discovery', inputDigest, pipeline); }
+          else if (job.fullPipeline) { pipeline = await prepareBusinessModel(snapshot, { run, cwd, signal: controller.signal, sourceReading, onStage, onValidated }); saveCheckpoint('discovery', inputDigest, pipeline); }
+          discovery = pipeline;
+          if (!job.fullPipeline && !discovery) fail('AI_CHECKPOINT_INVALID');
+          if (!job.fullPipeline) pipeline = undefined;
         }
         let startIndex = 0;
-        const analysisUpstream = pipeline?.businessModel;
+        const analysisUpstream = discovery?.businessModel ?? null;
         const validateAnalysisCheckpoint = cached => {
+          checkpointObject(cached, ['completed', 'total', 'corrected', 'output', 'batchAudit']);
           const total = batches?.length ?? 1;
           if (cached.total !== total || !Number.isInteger(cached.completed) || cached.completed < 1 || cached.completed > total || typeof cached.corrected !== 'boolean' || !Array.isArray(cached.batchAudit)) fail('AI_CHECKPOINT_INVALID');
           if (cached.completed === total) validateAnalysisProposal(cached.output, snapshot);
@@ -300,15 +307,16 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             const processed = new Map();
             for (const batch of batches.slice(0, cached.completed)) for (const src of batch) { const old = processed.get(src.id); if (old) old.clauses.push(...src.clauses); else processed.set(src.id, structuredClone(src)); }
             const updates = snapshot.backlog.businessRequirements.map(req => req.id).filter(id => cached.output.requirements.some(req => req.id === id));
-            validateAnalysisBatchProposal({ ...cached.output, updatedRequirementIds: updates }, snapshot, [...processed.values()], initialAnalysis);
+            validateAnalysisBatchProposal({ ...cached.output, updatedRequirementIds: updates }, snapshot, [...processed.values()], initialAnalysis, { aggregate: true });
           }
         };
-        if (pipeline) {
+        if (job.phase === 'analysis') {
           const cached = readCheckpoint('analysis', analysisUpstream);
           if (cached) {
             const total = batches?.length ?? 1;
             validateAnalysisCheckpoint(cached);
             output = cached.output; startIndex = cached.completed; corrected = cached.corrected; batchAudit.push(...cached.batchAudit);
+            if (startIndex === total) validated = validateAnalysisProposal(output, snapshot);
             if (!restoreCheckpointWarnings('analysis')) onValidated('analysis', output);
             if (batches?.length > 1) mark(job.id, stored => { if (stored.status === 'running') stored.batches.completed = startIndex; });
             onStage('analysis', startIndex, total);
@@ -316,14 +324,20 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
         }
         // The same aggregate is required by the later quality review. Reject a
         // known capacity failure before paying to analyze any remaining source.
-        if (pipeline) mergeIssues(output?.issues ?? [], pipeline.businessModel.issues);
-        for (let index = startIndex; index < (batches?.length ?? 1); index++) {
-          if (pipeline) onStage('analysis', index, batches?.length ?? 1);
+        if (discovery) mergeIssues(output?.issues ?? [], discovery.businessModel.issues);
+        for (let index = startIndex; index < (batches?.length ?? 1);) {
+          if (job.phase === 'analysis') onStage('analysis', index, batches?.length ?? 1);
           if (!await isCurrent()) return;
-          const currentRequest = index === 0 ? structuredClone(request) : buildAiRequest(snapshot, job.phase, workflow.decisions, { ...batchOptions(index), previousAnalysis: output, evidenceReferences: Boolean(pipeline) });
-          if (pipeline) currentRequest.data.businessModel = pipeline.businessModel;
+          let group = batches?.length > 3 ? coalesceAnalysisBatches(batches, index) : { sources: batches?.[index], end: index };
+          let currentRequest;
+          for (;;) {
+            currentRequest = batches?.length > 1 ? buildAiRequest(snapshot, job.phase, workflow.decisions, { sources: group.sources, batch: { ...batchOptions(index).batch, ...(group.end > index ? { lastIndex: group.end + 1 } : {}) }, previousAnalysis: output, evidenceReferences: true }) : structuredClone(request);
+            if (analysisUpstream) currentRequest.data.businessModel = analysisUpstream;
+            if (Buffer.byteLength(JSON.stringify(prepareEvidenceRequest(currentRequest, BATCH_ANALYSIS_SCHEMA).request)) <= 760 * 1024 || group.end === index) break;
+            group = coalesceAnalysisBatches(batches, index, group.end - index);
+          }
           const batchSnapshot = { ...snapshot, backlog: { ...snapshot.backlog, sources: currentRequest.data.sources } };
-          const visuals = job.includeVisuals && !job.fullPipeline ? await prepareVisualAttachments(batchSnapshot, sourceFile, { signal: controller.signal }) : { attachments: [], sources: [] };
+          const visuals = job.includeVisuals && !job.fullPipeline && !discovery ? await prepareVisualAttachments(batchSnapshot, sourceFile, { signal: controller.signal }) : { attachments: [], sources: [] };
           currentRequest.data.visualSources = visuals.sources;
           let attemptRequest = currentRequest, next, delta, batchCorrected = false;
           for (;;) {
@@ -336,13 +350,13 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
               if (!await isCurrent()) return;
               if (response.model !== AI_MODEL || response.effort !== aiEffortForPhase(attemptRequest.phase)) fail('AI_MODEL_MISMATCH');
               delta = response.output;
-              next = batches?.length > 1 ? validateAnalysisBatchProposal(response.output, snapshot, batches[index], output, { idPrefix: currentRequest.data.analysisBatch.idPrefix }) : response.output;
-              if (!(batches?.length > 1) || index === batches.length - 1) validated = job.phase === 'analysis' ? validateAnalysisProposal(next, snapshot) : validateDecompositionProposal(next, snapshot);
+              next = batches?.length > 1 ? validateAnalysisBatchProposal(response.output, snapshot, group.sources, output, { idPrefix: currentRequest.data.analysisBatch.idPrefix }) : response.output;
+              if (!(batches?.length > 1) || group.end === batches.length - 1) validated = job.phase === 'analysis' ? validateAnalysisProposal(next, snapshot) : validateDecompositionProposal(next, snapshot);
               break;
             } catch (error) {
               if (controller.signal.aborted || closed) return;
               if (error.code !== 'AI_OUTPUT_INVALID' || batchCorrected || safeValidationFailures(error.details).some(detail => detail.kind === 'output-size')) throw error;
-              attemptRequest = buildCorrectionRequest(currentRequest, response?.output, error.details, { evidenceReferences: Boolean(pipeline) }); batchCorrected = true; corrected = true; runCorrected = true;
+              attemptRequest = buildCorrectionRequest(currentRequest, response?.output, error.details, { evidenceReferences: true }); batchCorrected = true; corrected = true; runCorrected = true;
             }
           }
           if (batches?.length > 1) {
@@ -352,12 +366,16 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
           }
           output = next;
           onValidated(job.phase, output);
-          if (pipeline) saveCheckpoint('analysis', analysisUpstream, { completed: index + 1, total: batches?.length ?? 1, corrected, output, batchAudit }, stored => {
-            if (stored.batches) stored.batches.completed = index + 1;
+          if (job.phase === 'analysis') saveCheckpoint('analysis', analysisUpstream, { completed: group.end + 1, total: batches?.length ?? 1, corrected, output, batchAudit }, stored => {
+            if (stored.batches) stored.batches.completed = group.end + 1;
             stored.usage = { ...usage };
           });
-          else if (batches?.length > 1) mark(job.id, stored => { if (stored.status === 'running') { stored.batches.completed = index + 1; stored.usage = { ...usage }; } });
-          if (pipeline) mergeIssues(output.issues, pipeline.businessModel.issues);
+          if (discovery) mergeIssues(output.issues, discovery.businessModel.issues);
+          index = group.end + 1;
+        }
+        if (discovery && !job.fullPipeline) {
+          output = { ...output, issues: mergeIssues(output.issues, discovery.businessModel.issues) };
+          validated = validateAnalysisProposal(output, snapshot);
         }
         if (pipeline) {
           const reviewUpstream = { output, businessModel: pipeline.businessModel };
