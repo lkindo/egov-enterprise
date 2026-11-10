@@ -332,3 +332,138 @@ describe('관리 화면 링크 노출 census', () => {
     });
   });
 });
+
+/**
+ * [GAP-COMPOSE-001] 화면 경로 목적지 census — 코드에 문자열로 적은 화면 경로(링크 속성 href·link·moreHref·url, router.push·replace,
+ * redirect·permanentRedirect 의 첫 인자)는 이 트리의 화면(page.tsx)으로 풀려야 한다. 원본에서는 늘 지키는 불변식이고, 재사용
+ * 생성물(T2)에서는 투영으로 지워진 기능의 화면을 남은 화면이 가리킬 때 붉다 — 위 census 가 `/admin` 목적지만 보던 것을 모든 화면
+ * 경로로 넓힌다. AST 로 읽으므로 주석 속 경로는 세지 않는다(바닥글의 '되살릴 때' 안내 주석이 그 예다). 삼항이면 두 갈래를 다 본다.
+ * API·정적 파일 경로는 화면이 아니다. 변수로 조립한 목적지와 문장 속 메뉴 이름은 보지 않는다(남은 한계 — GAP-COMPOSE-001).
+ */
+const SCREEN_LINK_ROOTS = [...SCAN_ROOTS, join(FRONTEND_DIR, 'src', 'lib')];
+const NOT_SCREEN = /^\/(?:api|_next|images|icons|fonts|static|uploads?)(?:\/|$)|\.\w+$/;
+const NAVIGATION_CALLS = new Set(['push', 'replace', 'redirect', 'permanentRedirect']);
+
+interface ScreenTarget {
+  offset: number;
+  target: string;
+}
+
+/** 문자열로 적은 화면 경로 목적지. 템플릿의 `${…}` 는 한 세그먼트로 본다. */
+function literalScreenTargets(source: string, fileName = 'screen.tsx'): ScreenTarget[] {
+  const file = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, fileName.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const targets: ScreenTarget[] = [];
+  const collect = (node: ts.Expression | undefined) => {
+    if (!node) return;
+    if (ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isSatisfiesExpression(node)) return collect(node.expression);
+    if (ts.isConditionalExpression(node)) { collect(node.whenTrue); collect(node.whenFalse); return; }
+    const text = ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) ? node.text
+      : ts.isTemplateExpression(node) ? node.getText(file).slice(1, -1) : undefined;
+    if (text === undefined || !text.startsWith('/') || text.startsWith('//')) return;
+    const path = text.split(/[?#]/, 1)[0];
+    if (!NOT_SCREEN.test(path)) targets.push({ offset: node.getStart(file), target: path });
+  };
+  const keyOf = (name: ts.PropertyName | ts.JsxAttributeName) =>
+    (ts.isIdentifier(name) || ts.isStringLiteral(name) ? name.text : undefined);
+  const visit = (node: ts.Node) => {
+    if (ts.isJsxAttribute(node) && LINK_KEYS.has(keyOf(node.name) ?? '') && node.initializer) {
+      collect(ts.isJsxExpression(node.initializer) ? node.initializer.expression : node.initializer);
+    } else if (ts.isPropertyAssignment(node) && LINK_KEYS.has(keyOf(node.name) ?? '')) {
+      collect(node.initializer);
+    } else if (ts.isCallExpression(node)) {
+      const callee = node.expression;
+      const name = ts.isPropertyAccessExpression(callee) ? callee.name.text : ts.isIdentifier(callee) ? callee.text : undefined;
+      const routerCall = ts.isPropertyAccessExpression(callee) && /router$/i.test(callee.expression.getText(file));
+      if (name && NAVIGATION_CALLS.has(name) && (routerCall || ts.isIdentifier(callee)) && (name.startsWith('redirect') || name === 'permanentRedirect' || routerCall)) {
+        collect(node.arguments[0]);
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  return targets;
+}
+
+/** 화면 경로 판정기: page.tsx 의 디렉터리에서 라우트 그룹·병렬 슬롯을 뺀 모양. 동적 세그먼트·`${…}` 는 한 세그먼트에 맞는다. */
+function screenRouteMatcher(routes: readonly (readonly string[])[]) {
+  return (target: string): boolean => {
+    const parts = target.split('/').filter(Boolean);
+    return routes.some((segments) => {
+      let index = 0;
+      for (const segment of segments) {
+        if (/^\[\[\.\.\./.test(segment)) return true;
+        if (/^\[\.\.\./.test(segment)) return index < parts.length;
+        if (index >= parts.length) return false;
+        const part = parts[index];
+        if (!/^\[.*\]$/.test(segment) && !/\$\{/.test(part) && segment !== part) return false;
+        index += 1;
+      }
+      return index === parts.length;
+    });
+  };
+}
+
+function appRoutes(): string[][] {
+  const pages: string[][] = [];
+  const walk = (directory: string) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      if (entry.isDirectory()) { if (entry.name !== '__tests__') walk(join(directory, entry.name)); }
+      else if (entry.name === 'page.tsx') {
+        pages.push(relative(APP_DIR, directory).split(sep).filter((segment) => segment && !/^\(.*\)$/.test(segment) && !segment.startsWith('@')));
+      }
+    }
+  };
+  walk(APP_DIR);
+  return pages;
+}
+
+describe('화면 경로 목적지 census (GAP-COMPOSE-001)', () => {
+  const files = () => SCREEN_LINK_ROOTS.filter((root) => existsSync(root)).flatMap(screenFiles);
+
+  it('코드에 적은 화면 경로는 이 트리의 화면으로 풀린다 — 생성물에서는 지워진 기능의 화면을 가리키는 링크가 붉다', () => {
+    const exists = screenRouteMatcher(appRoutes());
+    const dead = files().flatMap((path) => {
+      const source = readFileSync(path, 'utf8');
+      return literalScreenTargets(source, path).filter(({ target }) => !exists(target))
+        .map(({ offset, target }) => `${relative(FRONTEND_DIR, path).split(sep).join('/')}:${source.slice(0, offset).split('\n').length} ${target}`);
+    });
+    expect(dead, '없는 화면을 가리키는 링크입니다. 목적지를 고치거나, 생성물이면 그 링크를 목적지 기능의 마커 블록·슬롯 기여로 옮기세요.').toEqual([]);
+  });
+
+  it('census 가 실제로 목적지를 센다(빈 스캔의 거짓 green 방지)', () => {
+    const counted = files().reduce((total, path) => total + literalScreenTargets(readFileSync(path, 'utf8'), path).length, 0);
+    // 2026-11-10 실측: 원본 165, 시작 구성·단독 기능 투영의 가장 작은 값 약 55. 스캔이 깨지거나 일부 뿌리가 빠지는 것을 잡는다.
+    expect(counted).toBeGreaterThan(projectionRemovedFiles().size > 0 ? 20 : 100);
+  });
+
+  describe('판정 규칙', () => {
+    const exists = screenRouteMatcher([['board'], ['board', '[id]'], ['help', 'policies', '[type]'], ['docs', '[...slug]'], ['opt', '[[...rest]]'], []]);
+    const dead = (source: string) => literalScreenTargets(source).filter(({ target }) => !exists(target)).map(({ target }) => target);
+
+    it('없는 화면을 가리키는 링크·이동·리다이렉트는 붉다', () => {
+      expect(dead('<Link href="/survey/list">설문</Link>')).toEqual(['/survey/list']);
+      expect(dead("router.push('/survey/list');")).toEqual(['/survey/list']);
+      expect(dead("redirect('/survey');")).toEqual(['/survey']);
+      expect(dead("const items = [{ id: 'a', moreHref: '/survey' }];")).toEqual(['/survey']);
+      expect(dead("<Link href={ready ? '/board' : '/survey'}>x</Link>")).toEqual(['/survey']);
+    });
+
+    it('있는 화면·동적 세그먼트·쿼리·템플릿은 통과하고, 주석·API·정적 파일·변수는 세지 않는다', () => {
+      expect(dead('<Link href="/board?page=2#top">x</Link>')).toEqual([]);
+      expect(dead('<Link href={`/board/${id}`}>x</Link>')).toEqual([]);
+      expect(dead("router.replace('/help/policies/PRIVACY');")).toEqual([]);
+      expect(dead("router.push('/docs/a/b');")).toEqual([]);
+      expect(dead("router.push('/opt');")).toEqual([]);
+      expect(dead("router.push('/');")).toEqual([]);
+      expect(dead('{/* <Link href="/survey/list"> 로 되살린다 */}\nconst x = 1;')).toEqual([]);
+      expect(dead("// router.push('/survey')\nconst y = 2;")).toEqual([]);
+      expect(dead("fetch('/api/v1/board'); const url = '/api/v1/x'; <a href=\"/files/a.pdf\">x</a>")).toEqual([]);
+      expect(dead("router.push(SURVEY_ROUTE); <Link href={route}>x</Link>")).toEqual([]);
+      expect(dead("<a href=\"//cdn.example.com/x\">x</a>")).toEqual([]);
+    });
+
+    it('라우터가 아닌 객체의 push 는 화면 이동이 아니다', () => {
+      expect(dead("list.push('/survey');")).toEqual([]);
+    });
+  });
+});
