@@ -1,5 +1,7 @@
 package nuri.migration.protect;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ColumnMapping;
@@ -67,6 +69,8 @@ class OnlineRrnoConverterContractTest {
             "business-app/src/main/java", "api-server/src/main/java");
     /** 이관 단독 제품(generate-migration-product.mjs)의 표지 — 온라인 모듈이 없다. */
     private static final String MIGRATION_PRODUCT_LOCK = "migration-product-lock.json";
+    /** 재사용 제품(generate-reusable-base-source.mjs)의 투영 원장 — 투영이 지운 원본 파일 목록이다. 원본 저장소에는 없다. */
+    private static final String PROJECTION_LEDGER = "reusable-projection-ledger.json";
     /** Gradle test·PIT·단일 모듈 migrationTest 가 모두 넘기는 시험 실행 classpath. */
     private static final String TEST_CLASSPATH_PROPERTY = "migration.drill.classpath";
 
@@ -263,7 +267,7 @@ class OnlineRrnoConverterContractTest {
         assertThat(numeric).as("비암호 숫자 변환은 승인된 파일·컬럼의 정확한 집합이어야 한다").isEqualTo(expectedNumeric);
         assertThat(encryptionUsers)
                 .as("온라인 암호를 직접 부르는 원본이 바뀌었다 — 새 암호 컬럼이면 보호 목록·SERVICE_ENCRYPTED 와 함께 고친다")
-                .isEqualTo(new TreeMap<>(ENCRYPTION_USERS));
+                .isEqualTo(expectedEncryptionUsers());
         for (Map.Entry<String, String> service : SERVICE_ENCRYPTED.entrySet()) {
             assertThat(root.resolve(service.getValue())).as("서비스 암호 클래스").isRegularFile();
             String[] tableColumn = service.getKey().split("\\.");
@@ -413,6 +417,43 @@ class OnlineRrnoConverterContractTest {
 
     private static void requireOnline() {
         Assumptions.assumeTrue(onlineUnavailable == null, onlineUnavailable);
+    }
+
+    /**
+     * {@link #ENCRYPTION_USERS} 에서 재사용 제품의 투영이 지운 사용처만 뺀다(예: 메일 기능을 덜어 낸 core 의 메일 처리기).
+     * 투영 원장에 적혀 있고 실제로 없는 파일만 빠진다 — 원본 저장소(원장 없음), 원장에 없는데 사라진 파일, 원장에 있는데
+     * 남은 파일은 그대로 기대값에 남아 red 다.
+     */
+    private static Map<String, Set<String>> expectedEncryptionUsers() throws IOException {
+        Set<String> removed = projectionRemovedFiles();
+        Map<String, Set<String>> expected = new TreeMap<>();
+        ENCRYPTION_USERS.forEach((use, files) -> {
+            Set<String> kept = files.stream()
+                    .filter(file -> !removed.contains(file) || Files.exists(root.resolve(file)))
+                    .collect(Collectors.toCollection(TreeSet::new));
+            if (!kept.isEmpty()) {
+                expected.put(use, kept);
+            }
+        });
+        return expected;
+    }
+
+    private static Set<String> projectionRemovedFiles() throws IOException {
+        Path ledger = root.resolve(PROJECTION_LEDGER);
+        if (!Files.isRegularFile(ledger)) {
+            return Set.of();
+        }
+        JsonNode document = new ObjectMapper().readTree(ledger.toFile());
+        JsonNode removed = document.path("removedFiles");
+        assertThat(document.path("authority").asText())
+                .as("투영 원장이 아니다: %s", ledger).isEqualTo("generated-reusable-projection-ledger");
+        assertThat(removed.isArray()).as("투영 원장의 removedFiles 는 배열이다: %s", ledger).isTrue();
+        Set<String> files = new TreeSet<>();
+        for (JsonNode file : removed) {
+            assertThat(file.isTextual()).as("투영 원장의 removedFiles 항목은 경로 문자열이다: %s", file).isTrue();
+            files.add(file.asText());
+        }
+        return files;
     }
 
     private static Path repositoryRoot() {
