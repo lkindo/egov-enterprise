@@ -6,8 +6,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ENV_LOCK, ENV_SWITCH, ENV_TEST_ACTIVE, OWNER_LABELS, cmdLine, dockerOutcome, entryRoute, exitCodeFor, orderedWaiters, parseLockEnv,
-  runTreeAlive, shouldAttempt, startDecision } from './heavy-run-queue.mjs';
+import { ENV_LOCK, ENV_SWITCH, ENV_TEST_ACTIVE, OWNER_LABELS, busyDaemons, cmdLine, dockerOutcome, entryRoute, exitCodeFor, liveRestoreState,
+  orderedWaiters, parseLockEnv, runTreeAlive, shouldAttempt, startDecision } from './heavy-run-queue.mjs';
 import { lockPipeName, parseWaiterPipe, repositoryHash, waiterPipeName, waitingSupervisorPids } from './heavy-run-pipes.mjs';
 import { heavyProcessKinds, waitingExclusions } from './verification-record.mjs';
 
@@ -109,11 +109,44 @@ test('run tree: a process the child started is alive until it ends; older PIDs a
   const reused = { pid: 102, ppid: child, name: 'svchost.exe', command: 'svchost', started: at - 60_000 };
   const daemon = { pid: 103, ppid: child, name: 'java.exe', command: 'java -cp x org.gradle.launcher.daemon.bootstrap.GradleDaemon 8.14', started: at + 700 };
   const worker = { pid: 104, ppid: 103, name: 'java.exe', command: 'java GradleWorkerMain', started: at + 800 };
+  const shell = { pid: 1, ppid: 0, name: 'explorer.exe', command: 'explorer', started: at - 3_600_000 };
   const other = { pid: 200, ppid: 1, name: 'node.exe', command: 'node x', started: at + 100 };
-  assert.deepEqual(runTreeAlive([grandchild, great, reused, daemon, worker, other], child, at).alive.map((entry) => entry.pid), [101, 105]);
-  assert.deepEqual(runTreeAlive([reused, daemon, worker, other], child, at), { gone: true });
+  assert.deepEqual(runTreeAlive([shell, grandchild, great, reused, daemon, worker, other], child, at).alive.map((entry) => entry.pid), [101, 105]);
+  assert.deepEqual(runTreeAlive([shell, reused, daemon, worker, other], child, at), { gone: true });
   assert.deepEqual(runTreeAlive([{ ...grandchild, started: undefined }, other], child, at), { unknown: true });
   assert.deepEqual(runTreeAlive([], child, at), { unknown: true });
+  // 2026-11-10 Codex 44차: 중간 부모가 먼저 끝나 사슬이 끊긴 JVM(부모 PID 101 이 목록에 없다)도, 부모 PID 가 그보다 늦게 시작한
+  // 프로세스로 재사용된 경우도 '이 실행의 것일 수 있음'이다. 도구 이름이 아니거나 실행 전에 시작한 고아, 데몬은 아니다.
+  const cutOff = { pid: 106, ppid: 101, name: 'java.exe', command: 'java GradleWrapperMain', started: at + 1_200 };
+  const reusedParent = { pid: 107, ppid: 300, name: 'node.exe', command: 'node y', started: at + 1_300 };
+  const youngParent = { pid: 300, ppid: 1, name: 'svchost.exe', command: 'svchost', started: at + 5_000 };
+  const oldOrphan = { pid: 108, ppid: 999, name: 'node.exe', command: 'node z', started: at - 60_000 };
+  const nonTool = { pid: 109, ppid: 999, name: 'chrome.exe', command: 'chrome', started: at + 1_400 };
+  const orphanDaemon = { pid: 110, ppid: 999, name: 'java.exe', command: 'java org.gradle.launcher.daemon.bootstrap.GradleDaemon', started: at + 1_500 };
+  const found = runTreeAlive([shell, cutOff, reusedParent, youngParent, oldOrphan, nonTool, orphanDaemon, other], child, at);
+  assert.deepEqual(found.alive.map((entry) => [entry.pid, entry.orphan]), [[106, true], [107, true]]);
+});
+
+test('live-restore: on or unreadable makes a stopped engine unknown; off (or unmentioned) lets it mean nothing runs', () => {
+  const down = { error: Object.assign(new Error('x'), { code: 1 }), stderr: 'error during connect: open //./pipe/docker_engine: The system cannot find the file specified.' };
+  assert.deepEqual(dockerOutcome(down, { liveRestore: 'off' }), { none: true, reason: 'engine-down' });
+  assert.deepEqual(dockerOutcome(down, { liveRestore: 'on' }), { unknown: true, reason: 'live-restore-on' });
+  assert.deepEqual(dockerOutcome(down, { liveRestore: 'unknown' }), { unknown: true, reason: 'live-restore-unknown' });
+  assert.equal(liveRestoreState([{ text: '{"builder":{}}' }, { missing: true }, { missing: true }]), 'off');
+  assert.equal(liveRestoreState([{ text: '{"live-restore": true}' }, { missing: true }]), 'on');
+  // 관리 설정은 엔진 옵션을 JSON 문자열로 담는다.
+  assert.equal(liveRestoreState([{ missing: true }, { missing: true }, { text: '{"linuxVM":{"dockerDaemonOptions":{"value":"{\\"live-restore\\": true}"}}}' }]), 'on');
+  assert.equal(liveRestoreState([{ text: '{"live-restore": false}' }]), 'off');
+  assert.equal(liveRestoreState([{ text: '{}' }, { error: 'EACCES' }]), 'unknown');
+});
+
+test('busy daemons: CPU that grew between two samples by the threshold; unmeasured CPU is unknown', () => {
+  const daemon = (pid, cpu) => ({ pid, name: 'java.exe', command: 'java org.gradle.launcher.daemon.bootstrap.GradleDaemon 8.14', cpu });
+  const other = { pid: 9, name: 'node.exe', command: 'node x', cpu: 1 };
+  assert.deepEqual(busyDaemons([daemon(1, 0), daemon(2, 0), other], [daemon(1, 6_000_000), daemon(2, 1_000_000), { ...other, cpu: 9e9 }], 500), [1]);
+  assert.deepEqual(busyDaemons([other], [other], 500), []);
+  assert.deepEqual(busyDaemons([daemon(1, 0)], [], 500), [], 'a daemon that exited is not busy');
+  assert.equal(busyDaemons([daemon(1, undefined)], [daemon(1, 5)], 500), null);
 });
 
 test('cmd.exe lines quote what cmd splits and refuse what it would expand', () => {
@@ -191,10 +224,13 @@ function fixture() {
   execFileSync('git', ['init', '-q', dir], { env, stdio: 'ignore' });
   const processesFile = path.join(dir, 'observed-processes.json');
   const dockerFile = path.join(dir, 'observed-docker.json');
+  const daemonFile = path.join(dir, 'observed-daemon.txt');
   fs.writeFileSync(processesFile, '[]');
   fs.writeFileSync(dockerFile, '{}');
+  fs.writeFileSync(daemonFile, 'idle');
   env.EGOV_HEAVY_RUN_QUEUE_TEST_PROCESSES = processesFile;
   env.EGOV_HEAVY_RUN_QUEUE_TEST_DOCKER = dockerFile;
+  env.EGOV_HEAVY_RUN_QUEUE_TEST_DAEMON = daemonFile;
   const commonDir = execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: dir, env, encoding: 'utf8' }).trim();
   const state = path.join(commonDir, 'egov-heavy-run');
   const work = path.join(dir, 'work.mjs');
@@ -205,6 +241,11 @@ const [log, id, ms, code, mode] = process.argv.slice(2);
 if (mode === 'orphan') {
   const grandchild = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 120000)'], { detached: true, stdio: 'ignore' });
   fs.writeFileSync(log + '.' + id + '.pids', process.pid + ' ' + grandchild.pid);
+}
+// cut: 중간 프로세스가 손자를 띄우고 먼저 끝난다 — 손자의 부모 PID 는 이미 죽은 프로세스를 가리킨다.
+if (mode === 'cut') {
+  const middle = spawn(process.execPath, ['-e', "const c = require('node:child_process').spawn(process.execPath, ['-e', 'setTimeout(() => {}, 120000)'], { detached: true, stdio: 'ignore' }); require('node:fs').writeFileSync(process.argv[1], String(c.pid)); c.unref();", log + '.' + id + '.pids'], { detached: true, stdio: 'ignore' });
+  await new Promise((resolve) => middle.once('exit', resolve));
 }
 fs.appendFileSync(log, \`start \${id} \${Date.now()}\\n\`);
 await new Promise((resolve) => setTimeout(resolve, Number(ms)));
@@ -217,7 +258,7 @@ process.exit(Number(code));
     for (const child of children) { try { execFileSync('taskkill', ['/T', '/F', '/PID', String(child.pid)], { stdio: 'ignore' }); } catch { /* 이미 끝났다 */ } }
     try { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }); } catch (error) { process.stderr.write(`cleanup: ${error.code} ${dir}\n`); }
   };
-  return { dir, env, state, work, log: path.join(dir, 'work.log'), processesFile, dockerFile, children, cleanup,
+  return { dir, env, state, work, log: path.join(dir, 'work.log'), processesFile, dockerFile, daemonFile, children, cleanup,
     hash: repositoryHash(commonDir) };
 }
 
@@ -426,6 +467,53 @@ test('Windows: a direct child killed from outside while the supervisor lives is 
     assert.ok(fs.existsSync(path.join(fx.state, 'active.json')), 'an unseen tree keeps the marker');
   } finally {
     if (grandchild) { try { execFileSync('taskkill', ['/F', '/PID', String(grandchild)], { stdio: 'ignore' }); } catch { /* 이미 끝났다 */ } }
+    fx.cleanup();
+  }
+});
+
+test('Windows: a working Gradle daemon is waited for, unmeasured daemons and a stopped engine with live-restore need a person', async () => {
+  if (!WINDOWS) return assertDirectOffWindows();
+  const fx = fixture();
+  try {
+    fs.writeFileSync(fx.daemonFile, 'busy');
+    const busy = startRun(fx, [fx.work, fx.log, 'g', '10', '0']);
+    const busyWait = await until(() => { const match = phaseOf(fx); return match?.[1] === 'busy-wait' && match; }, 'busy-wait on the daemon');
+    assert.equal(queueCli(fx, ['confirm-idle', '--run', busyWait[2]]).status, 1, 'a working daemon is not confirmable');
+    fs.writeFileSync(fx.daemonFile, 'idle');
+    assert.equal((await busy.exited).status, 0);
+
+    fs.writeFileSync(fx.daemonFile, 'fail');
+    const unmeasured = startRun(fx, [fx.work, fx.log, 'h', '10', '0']);
+    const unknownDaemon = await until(() => { const match = phaseOf(fx); return match?.[1] === 'unknown-wait' && match; }, 'unknown-wait on the daemon');
+    assert.equal(queueCli(fx, ['confirm-idle', '--run', unknownDaemon[2]]).status, 0);
+    assert.equal((await unmeasured.exited).status, 0);
+    fs.writeFileSync(fx.daemonFile, 'idle');
+
+    // 엔진 파이프가 없고 live-restore 가 꺼졌으면 컨테이너가 돌 수 없다 — 그대로 시작한다.
+    fs.writeFileSync(fx.dockerFile, JSON.stringify({ engineDown: true }));
+    assert.equal((await startRun(fx, [fx.work, fx.log, 'i', '10', '0']).exited).status, 0);
+    // live-restore 가 켜졌으면 엔진이 내려가도 컨테이너가 돌 수 있다 — 사람이 확인해야 시작한다.
+    fs.writeFileSync(fx.dockerFile, JSON.stringify({ engineDown: true, liveRestore: 'on' }));
+    const restored = startRun(fx, [fx.work, fx.log, 'j', '10', '0']);
+    const unknownDocker = await until(() => { const match = phaseOf(fx); return match?.[1] === 'unknown-wait' && match; }, 'unknown-wait on live-restore');
+    assert.equal(queueCli(fx, ['confirm-idle', '--run', unknownDocker[2]]).status, 0);
+    assert.equal((await restored.exited).status, 0);
+  } finally { fx.cleanup(); }
+});
+
+test('Windows: a grandchild whose middle parent ended first keeps the run unverified even when the child ends cleanly', async () => {
+  if (!WINDOWS) return assertDirectOffWindows();
+  const fx = fixture();
+  let orphan = null;
+  try {
+    const run = startRun(fx, [fx.work, fx.log, 'k', '300', '0', 'cut']);
+    const result = await run.exited;
+    orphan = Number(fs.readFileSync(`${fx.log}.k.pids`, 'utf8'));
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /그 아래 프로세스 \d+개가 남아 있다/);
+    assert.ok(fs.existsSync(path.join(fx.state, 'active.json')), 'an orphan of the run window keeps the marker');
+  } finally {
+    if (orphan) { try { execFileSync('taskkill', ['/F', '/PID', String(orphan)], { stdio: 'ignore' }); } catch { /* 이미 끝났다 */ } }
     fx.cleanup();
   }
 });

@@ -38,7 +38,7 @@ const LOG = 'log.jsonl';
 
 const DEFAULT_TIMING = {
   pollMs: 1500, jitterMs: 500, staleFirstMs: 30_000, maxWaitMs: 180 * 60_000, recheckMs: 30_000, reportMs: 30_000,
-  parentPollMs: 500, treeChecks: 3, treeRecheckMs: 2_000, rpcServerMs: 5_000, rpcClientMs: 10_000, rpcAttempts: 3, listRetries: 3, inUseLimit: 10,
+  parentPollMs: 500, treeChecks: 3, treeRecheckMs: 2_000, daemonSampleMs: 3_000, daemonBusyMs: 500, rpcServerMs: 5_000, rpcClientMs: 10_000, rpcAttempts: 3, listRetries: 3, inUseLimit: 10,
 };
 /** The queue's own process tests shorten the intervals (EGOV_HEAVY_RUN_QUEUE_TIMING, JSON) — only with the test switch on. */
 function timing() {
@@ -115,7 +115,7 @@ export const OWNER_LABELS = Object.freeze(['egov.task', 'egov.project-composer',
  * One `docker ps --filter label=<key>` outcome: running container ids, none, or unknown. A missing CLI or an engine that is
  * not running means nothing can be running; any other failure (time-out, unexpected error) is unknown, never "none".
  */
-export function dockerOutcome({ error, stdout = '', stderr = '' }) {
+export function dockerOutcome({ error, stdout = '', stderr = '' }, { liveRestore = 'off' } = {}) {
   if (!error) {
     const ids = stdout.split(/\s+/).filter(Boolean);
     return ids.length ? { running: ids } : { none: true };
@@ -124,9 +124,40 @@ export function dockerOutcome({ error, stdout = '', stderr = '' }) {
   const text = String(stderr);
   // 엔진이 꺼진 것으로 확정할 수 있는 모양만 '실행 없음'이다 — 엔진 파이프가 없음(Windows), 로컬 소켓에 연결하지 못함(POSIX).
   // 접근 거부·연결 끊김·시간 초과·원격 엔진처럼 엔진이 돌고 있을 수 있는 실패는 모두 알 수 없음이다(Codex 43 지적 1).
-  if (/open \/\/\.\/pipe\/[\w.-]+: The system cannot find the file specified/i.test(text)) return { none: true, reason: 'engine-down' };
-  if (/Cannot connect to the Docker daemon at unix:\/\/\S+\. Is the docker daemon running\?/i.test(text)) return { none: true, reason: 'engine-down' };
-  return { unknown: true };
+  const engineDown = /open \/\/\.\/pipe\/[\w.-]+: The system cannot find the file specified/i.test(text)
+    || /Cannot connect to the Docker daemon at unix:\/\/\S+\. Is the docker daemon running\?/i.test(text);
+  if (!engineDown) return { unknown: true };
+  // live-restore 가 켜져 있으면 엔진이 내려가도 컨테이너가 돈다 — 켜졌거나 설정을 읽지 못하면 알 수 없음이다(DEC-OPS-413 ③).
+  return liveRestore === 'off' ? { none: true, reason: 'engine-down' } : { unknown: true, reason: `live-restore-${liveRestore}` };
+}
+
+/**
+ * live-restore 설정(pure): files 는 [{ text } | { missing: true } | { error }]. 하나라도 읽지 못하면 unknown, 켠 곳이 있으면 on,
+ * 모두 없거나 언급이 없으면 off(Docker 기본값). 관리 설정의 JSON 문자열 안(`\"live-restore\": true`)도 본다.
+ * 이 세 파일 밖(레지스트리·MDM)에서 켠 경우는 수용한 남은 위험이다(DEC-OPS-413).
+ */
+export function liveRestoreState(files) {
+  if (files.some((file) => file.error)) return 'unknown';
+  return files.some((file) => typeof file.text === 'string' && /live-restore\\?["']?\s*:\s*true/i.test(file.text)) ? 'on' : 'off';
+}
+
+/** 이 실행이 띄웠을 수 있는 도구 프로세스의 이름(부모가 사라져도 남아 일을 이어 갈 수 있는 것). */
+const TOOL_NAMES = /^(?:java|javaw|node|cmd|sh|bash|powershell|pwsh|gradle|docker)(?:\.exe)?$/i;
+
+/**
+ * 일하는 Gradle 데몬(pure): 두 표본 사이에 CPU 시간(100ns 단위 합)이 threshold 이상 는 데몬. 첫 표본에 있던 데몬이 둘째 표본에서
+ * CPU 를 보이지 않으면 판정할 수 없다(null).
+ */
+export function busyDaemons(first, second, thresholdMs = 500) {
+  const before = new Map(first.filter((entry) => typeof entry.command === 'string' && DAEMONS.test(entry.command)).map((entry) => [entry.pid, entry.cpu]));
+  const busy = [];
+  for (const [pid, cpu] of before) {
+    const later = second.find((entry) => entry.pid === pid);
+    if (!later) continue;
+    if (!Number.isFinite(cpu) || !Number.isFinite(later.cpu)) return null;
+    if ((later.cpu - cpu) / 10_000 >= thresholdMs) busy.push(pid);
+  }
+  return busy;
 }
 
 /** Long-lived helpers a run may start that do no run work of their own (their own children are theirs, not the run's). */
@@ -135,7 +166,10 @@ const DAEMONS = /\b(?:org\.gradle\.launcher\.daemon\.bootstrap\.GradleDaemon|Gra
 /**
  * Whether anything the run started may still run (pure; processes carry `started` epoch ms when known). Descendants are
  * processes whose parent chain reaches the child and that started after it (a PID reused by an older process is not its
- * descendant); daemons and their subtrees are not run work. The listing must show start times, or the answer is unknown.
+ * descendant); daemons and their subtrees are not run work. A middle process that ended first cuts the chain, so a tool
+ * process that started during the run and has no live parent (or a parent younger than itself — a reused PID) counts too:
+ * it may be this run's (Codex 44 지적 1). Other sessions' orphans of that window are counted the same way — the safe side.
+ * The listing must show start times, or the answer is unknown.
  */
 export function runTreeAlive(processes, childPid, childSpawnedAt) {
   if (!processes.length || processes.some((entry) => entry.started === undefined)) return { unknown: true };
@@ -152,6 +186,14 @@ export function runTreeAlive(processes, childPid, childSpawnedAt) {
       alive.push(entry);
       frontier.push(entry.pid);
     }
+  }
+  const byPid = new Map(processes.map((entry) => [entry.pid, entry]));
+  for (const entry of processes) {
+    if (seen.has(entry.pid) || entry.pid === childPid || !(entry.started >= after) || !TOOL_NAMES.test(entry.name ?? '')) continue;
+    if (typeof entry.command === 'string' && DAEMONS.test(entry.command)) continue;
+    const parent = byPid.get(entry.ppid);
+    if (parent && parent.started <= entry.started) continue;
+    alive.push({ ...entry, orphan: true });
   }
   return alive.length ? { alive } : { gone: true };
 }
@@ -295,10 +337,10 @@ function appendLog(dir, event) {
   try { fs.appendFileSync(path.join(dir, LOG), `${JSON.stringify({ at: new Date().toISOString(), ...event })}\n`); } catch { /* 기록 실패는 판정을 바꾸지 않는다 */ }
 }
 
-function dockerPs(label) {
+function dockerPs(label, liveRestore) {
   return new Promise((resolve) => {
     execFile('docker', ['ps', '--quiet', '--filter', `label=${label}`], { encoding: 'utf8', windowsHide: true, timeout: 20_000 },
-      (error, stdout, stderr) => resolve(dockerOutcome({ error, stdout, stderr })));
+      (error, stdout, stderr) => resolve(dockerOutcome({ error, stdout, stderr }, { liveRestore })));
   });
 }
 
@@ -325,7 +367,8 @@ async function observeProcesses() {
 
 const TREE_LISTING = ['-NoProfile', '-NonInteractive', '-Command',
   'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine,'
-  + '@{n="Started";e={if ($_.CreationDate) { [DateTimeOffset]::new($_.CreationDate).ToUnixTimeMilliseconds() }}} | ConvertTo-Json -Compress'];
+  + '@{n="Started";e={if ($_.CreationDate) { [DateTimeOffset]::new($_.CreationDate).ToUnixTimeMilliseconds() }}},'
+  + '@{n="Cpu";e={[double]$_.KernelModeTime + [double]$_.UserModeTime}} | ConvertTo-Json -Compress'];
 
 /** Processes with their start time (epoch ms), for the end-of-run tree check. The queue's tests may force an unknown answer. */
 function observeProcessTree() {
@@ -335,9 +378,34 @@ function observeProcessTree() {
       if (error) return reject(error);
       try {
         resolve([].concat(JSON.parse(stdout)).map((entry) => ({ pid: entry.ProcessId, ppid: entry.ParentProcessId, name: entry.Name,
-          command: entry.CommandLine, started: Number.isFinite(entry.Started) ? entry.Started : undefined })));
+          command: entry.CommandLine, started: Number.isFinite(entry.Started) ? entry.Started : undefined,
+          cpu: Number.isFinite(entry.Cpu) ? entry.Cpu : undefined })));
       } catch (parseError) { reject(parseError); }
     });
+  });
+}
+
+/**
+ * 일하는 Gradle 데몬의 PID 들(빈 배열이면 없음), 판정할 수 없으면 null. 데몬이 없으면 한 번만 본다. 시험은 'busy'·'idle'·'fail' 로 바꾼다.
+ */
+async function observeBusyDaemons() {
+  const fake = testObservation('EGOV_HEAVY_RUN_QUEUE_TEST_DAEMON');
+  if (fake === 'busy') return [1];
+  if (fake === 'idle') return [];
+  if (fake === 'fail') return null;
+  const first = await observeProcessTree();
+  if (!first.some((entry) => typeof entry.command === 'string' && DAEMONS.test(entry.command))) return [];
+  await sleep(TIMING.daemonSampleMs);
+  return busyDaemons(first, await observeProcessTree(), TIMING.daemonBusyMs);
+}
+
+/** Docker live-restore 가 켜질 수 있는 세 설정 파일(사용자 엔진 설정·Desktop 설정·관리 설정). */
+function liveRestoreFiles() {
+  const paths = [process.env.USERPROFILE && path.join(process.env.USERPROFILE, '.docker', 'daemon.json'),
+    process.env.APPDATA && path.join(process.env.APPDATA, 'Docker', 'settings-store.json'),
+    path.join(process.env.ProgramData || 'C:\\ProgramData', 'DockerDesktop', 'admin-settings.json')].filter(Boolean);
+  return paths.map((file) => {
+    try { return { text: fs.readFileSync(file, 'utf8') }; } catch (error) { return error.code === 'ENOENT' ? { missing: true } : { error: error.code }; }
   });
 }
 
@@ -346,10 +414,13 @@ async function observeContainers() {
   const fake = testObservation('EGOV_HEAVY_RUN_QUEUE_TEST_DOCKER');
   if (fake !== undefined) {
     const table = JSON.parse(fake);
+    const engineDown = { error: { code: 1 }, stderr: 'error during connect: open //./pipe/docker_engine: The system cannot find the file specified.' };
     return OWNER_LABELS.map((label) => ({ label, ...(table.unknown ? { unknown: true }
-      : (table[label] ? { running: Array.from({ length: table[label] }, (_, index) => `c${index}`) } : { none: true })) }));
+      : table.engineDown ? dockerOutcome(engineDown, { liveRestore: table.liveRestore ?? 'off' })
+        : (table[label] ? { running: Array.from({ length: table[label] }, (_, index) => `c${index}`) } : { none: true })) }));
   }
-  return Promise.all(OWNER_LABELS.map(async (label) => ({ label, ...(await dockerPs(label)) })));
+  const liveRestore = liveRestoreState(liveRestoreFiles());
+  return Promise.all(OWNER_LABELS.map(async (label) => ({ label, ...(await dockerPs(label, liveRestore)) })));
 }
 
 const LAUNCHER = /\b(?:org\.gradle\.wrapper\.GradleWrapperMain|org\.gradle\.launcher\.GradleMain)\b/;
@@ -458,6 +529,12 @@ class Supervisor {
       else result.visible.push(...kinds);
       result.launchers = processes.filter((entry) => typeof entry.command === 'string' && LAUNCHER.test(entry.command)).length;
     } catch { result.unknown.push({ code: 'process-list-failed' }); }
+    // 데몬은 늘 떠 있어 무거운 분류에 없다 — CPU 가 늘고 있으면 누군가의 빌드(앞 실행이 끊고 간 작업 포함)를 하고 있다(Codex 44 지적 2).
+    try {
+      const busy = await observeBusyDaemons();
+      if (busy === null) result.unknown.push({ code: 'daemon-cpu-unknown' });
+      else if (busy.length) result.visible.push('gradle-daemon-busy');
+    } catch { result.unknown.push({ code: 'daemon-cpu-unknown' }); }
     const marker = readJson(path.join(this.dir, MARKER));
     if (marker.corrupt) result.unknown.push({ code: 'marker-unreadable' });
     else if (marker.exists && marker.value?.runId !== this.runId) result.unknown.push({ code: 'previous-run-unverified', detail: marker.value });

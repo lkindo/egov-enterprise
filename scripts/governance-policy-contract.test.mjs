@@ -292,8 +292,11 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
     errors.push('protocol §6.6 must keep the no-lock boundary outside the heavy-run queue');
   }
   const heavySection = section(activeProtocol, '### 6.3 무거운 검증은 하나씩', '### 6.4');
+  // [2026-11-10 DEC-OPS-413 ⑦] 남은 실행은 '관측할 수 있는' 것만 기다린다는 사용자 결정과 수용 위험의 위치를 함께 고정한다 — 문구가
+  // 빠지면 대기열이 남은 실행을 모두 잡는다고 읽힌다.
   if (!heavySection.includes('대기열은 증거를 만들거나 면제하지 않는다') || !heavySection.includes('앞 실행이 끝났는지 알 수 없으면')
-    || !heavySection.includes('자동으로 시작하지 않는다') || !heavySection.includes('대기열에 참여하지 않는 실행')) {
+    || !heavySection.includes('자동으로 시작하지 않는다') || !heavySection.includes('대기열에 참여하지 않는 실행')
+    || !heavySection.includes('관측 밖의 남은 실행은 수용한 위험이다(DEC-OPS-413 ⑦)')) {
     errors.push('protocol §6.3 must keep the heavy-run queue evidence and unknown-state boundary');
   }
   if (!worktreeSection.includes('상대 경로 `.githooks`')) {
@@ -690,6 +693,7 @@ test('DEC-OPS-385 protocol pins fail with their own message', () => {
     ['protocol', '잠금 파일·잠금 디렉터리는 두지 않고', '잠금 파일을 두고', 'no-lock boundary outside the heavy-run queue'],
     ['protocol', '대기열은 증거를 만들거나 면제하지 않는다', '대기열을 거친 실행은 겹침 판정 없이 증거가 된다', 'heavy-run queue evidence and unknown-state boundary'],
     ['protocol', '앞 실행이 끝났는지 알 수 없으면', '앞 실행이 오래되면', 'heavy-run queue evidence and unknown-state boundary'],
+    ['protocol', '관측 밖의 남은 실행은 수용한 위험이다(DEC-OPS-413 ⑦)', '남은 실행은 모두 기다린다', 'heavy-run queue evidence and unknown-state boundary'],
     ['protocol', '상대 경로 `.githooks`', '절대 경로', 'relative hooks path'],
     ['protocol', '직접 만들지 않은 작업 트리는', '오래된 작업 트리는', 'worktree it did not create'],
     ['protocol', '지우기 전에 묻는다', '바로 지운다', 'worktree it did not create'],
