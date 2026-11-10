@@ -1,4 +1,6 @@
+import type { Response } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
+import { waitForHydration } from '../fixtures/hydration';
 import { getAdminBearerToken } from '../utils/admin-token';
 test.describe('Modernization: Hierarchical Interface Verification', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
@@ -186,6 +188,125 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
             // 자식부터 지운다 — 하위 부서가 있으면 삭제가 409 로 막힌다.
             await request.delete(`${DEPT_API}/${childId}`, { headers: auth });
             await request.delete(`${DEPT_API}/${parentId}`, { headers: auth });
+        }
+    });
+    /**
+     * 부서 관리 여정(2026-11-10) — 부서를 화면에서 등록하고, 이름으로 좁혀 찾고, 새로고침이 서버에서 다시 읽고, 상세를 열어
+     * 설명을 고치고, 지우는 것이 모두 서버에 반영되는지 본다.
+     *
+     * 비교용 부서(조회어에 걸리지 않는 이름)와 새로고침 뒤에 나타날 부서(조회어에 걸리는 이름)는 API 로 만든다 — 둘은 이 여정이
+     * 증명하는 동작이 아니다. 화면에서 지우는 부서에는 사용자·하위 부서를 두지 않는다(있으면 삭제가 409 다). 이름에 밑줄을 쓰지
+     * 않는다 — 서버의 이름 검색이 LIKE 라 밑줄이 한 글자 와일드카드가 된다.
+     */
+    test('부서를 화면에서 등록·검색·새로고침·수정·삭제한다', async ({ page, request }) => {
+        const auth = { Authorization: `Bearer ${getAdminBearerToken()}` };
+        const DEPT_API = '/api/v1/admin/system/departments';
+        const stamp = Date.now().toString().slice(-8);
+        const prefix = `E2E19M${stamp}`;
+        const name = `${prefix}A`;
+        const laterName = `${prefix}B`;
+        const otherName = `E2E19N${stamp}`;
+        const description = `E2E 부서 설명 ${stamp}`;
+        const owned = new Set<string>();
+        const createByApi = async (ognzNm: string) => {
+            const res = await request.post(DEPT_API, { headers: auth, data: { ognzNm } });
+            expect(res.ok(), '여정 보조 부서 등록이 성공해야 한다').toBeTruthy();
+            const id = (await res.json()).data as string;
+            owned.add(id);
+            return id;
+        };
+        const treeFor = (keyword: string) => (response: Response) => response.request().method() === 'GET'
+            && new URL(response.url()).pathname === `${DEPT_API}/tree`
+            && new URL(response.url()).searchParams.get('keyword') === keyword;
+        const otherId = await createByApi(otherName);
+        try {
+            await page.goto('/admin/user/departments');
+            await expect(page.getByRole('heading', { level: 1, name: '부서 및 조직 관리', exact: true })).toBeVisible({ timeout: 20000 });
+            const nodes = page.locator('[data-a2-master-item]');
+            // 조회어 없이 연 조직도에는 비교용 부서도 있다.
+            await expect(nodes.filter({ hasText: otherId })).toHaveCount(1, { timeout: 20000 });
+
+            let deptId = '';
+            await test.step('부서를 등록한다', async () => {
+                const createButton = page.getByRole('button', { name: '부서 등록', exact: true });
+                await waitForHydration(createButton);
+                await createButton.click();
+                const dialog = page.getByRole('dialog', { name: '신규 부서 등록' });
+                await dialog.getByPlaceholder('예: 기획부').fill(name);
+                const createdResponse = page.waitForResponse((response) => response.request().method() === 'POST'
+                    && new URL(response.url()).pathname === DEPT_API);
+                await dialog.getByRole('button', { name: '부서 등록', exact: true }).click();
+                const created = await createdResponse;
+                expect(created.status(), '화면의 부서 등록').toBe(201);
+                deptId = (await created.json()).data as string;
+                owned.add(deptId);
+                await expect(dialog).toBeHidden();
+            });
+            const createdNode = nodes.filter({ hasText: deptId });
+
+            await test.step('부서 검색이 조직도를 그 이름의 부서로 좁힌다', async () => {
+                const search = page.getByRole('textbox', { name: '부서 검색' });
+                const searched = page.waitForResponse(treeFor(prefix));
+                await search.fill(prefix);
+                await search.press('Enter');
+                expect((await searched).ok(), '부서 검색 조회가 성공해야 한다').toBeTruthy();
+                await expect(createdNode).toHaveCount(1, { timeout: 20000 });
+                await expect(nodes.filter({ hasText: otherId })).toHaveCount(0);
+                await expect(nodes).toHaveCount(1);
+            });
+
+            await test.step('새로고침이 지금 조회어의 조직도를 서버에서 다시 읽는다', async () => {
+                const laterId = await createByApi(laterName);
+                const refreshed = page.waitForResponse(treeFor(prefix));
+                await page.getByRole('button', { name: '새로고침', exact: true }).click();
+                expect((await refreshed).ok(), '새로고침의 조직도 재조회가 성공해야 한다').toBeTruthy();
+                await expect(nodes.filter({ hasText: laterId })).toHaveCount(1, { timeout: 20000 });
+                await expect(nodes).toHaveCount(2);
+            });
+
+            await test.step('상세를 열어 부서 설명을 고친다', async () => {
+                await createdNode.click();
+                await expect(createdNode).toHaveAttribute('aria-current', 'true');
+                await expect(page.getByRole('heading', { level: 2, name, exact: true })).toBeVisible();
+                await page.getByRole('button', { name: '정보 수정', exact: true }).click();
+                const dialog = page.getByRole('dialog', { name: '부서 정보 수정' });
+                await expect(dialog.getByPlaceholder('예: 기획부')).toHaveValue(name);
+                await dialog.getByPlaceholder('부서의 역할 및 책임 정의...').fill(description);
+                const updatedResponse = page.waitForResponse((response) => response.request().method() === 'PUT'
+                    && new URL(response.url()).pathname === `${DEPT_API}/${deptId}`);
+                await dialog.getByRole('button', { name: '정보 수정', exact: true }).click();
+                expect((await updatedResponse).ok(), '화면의 부서 수정').toBeTruthy();
+                await expect(dialog).toBeHidden();
+                // 상세의 '부서 설명' 은 다시 읽은 조직도의 값이다.
+                await expect(page.getByText(description, { exact: true })).toBeVisible({ timeout: 20000 });
+                const stored = await request.get(`${DEPT_API}/${deptId}`, { headers: auth });
+                expect(stored.status(), '고친 부서 조회').toBe(200);
+                expect((await stored.json()).data).toMatchObject({ ognzId: deptId, ognzNm: name, ognzExpln: description });
+            });
+
+            await test.step('부서를 삭제한다', async () => {
+                await page.getByRole('button', { name: '부서 삭제', exact: true }).click();
+                const deletedResponse = page.waitForResponse((response) => response.request().method() === 'DELETE'
+                    && new URL(response.url()).pathname === `${DEPT_API}/${deptId}`);
+                await page.getByRole('dialog', { name: '부서 삭제' }).getByRole('button', { name: '삭제', exact: true }).click();
+                expect((await deletedResponse).ok(), '화면의 부서 삭제').toBeTruthy();
+                owned.delete(deptId);
+                // 삭제 뒤 화면은 같은 조회어로 조직도를 다시 읽는다 — 지운 부서가 빠지고 새로고침으로 나타난 부서만 남는다.
+                await expect(createdNode).toHaveCount(0, { timeout: 20000 });
+                await expect(nodes).toHaveCount(1);
+                const remaining = await request.get(`${DEPT_API}/tree`, { headers: auth, params: { keyword: name } });
+                expect(remaining.status(), '삭제 뒤 부서 조회').toBe(200);
+                expect((await remaining.json()).data).toEqual([]);
+            });
+        }
+        finally {
+            // 열린 화면의 데이터를 먼저 지우지 않는다 — 화면을 떠난 뒤 정리한다.
+            await page.goto('about:blank');
+            const cleanup: Array<[string, number]> = [];
+            for (const id of owned) {
+                cleanup.push([id, (await request.delete(`${DEPT_API}/${id}`, { headers: auth })).status()]);
+            }
+            expect(cleanup, '여정 전용 부서 정리').toEqual([...owned].map(id => [id, 200]));
         }
     });
 });

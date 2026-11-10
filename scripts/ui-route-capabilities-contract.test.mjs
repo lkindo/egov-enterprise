@@ -558,7 +558,10 @@ test('unverified fields require a bounded review and demo cannot leak to core pr
   // [2026-09-06 DEC-OPS-038] dispatch-preview 데모는 걷었다. [2026-11-08] 화면에 없던 health-metrics 도 걷었다 — E3 까지만 있고
   //   목업 원천·미지원 동작이 없는 알림 보내기를 live 로 올린다. 그래서 E4·E5 요건 하나만 붉어야 한다(예전 단언은 목업 규칙과의
   //   '또는' 이라 E4 요건을 지워도 통과했다).
+  // [2026-11-10] 알림 보내기는 이제 업무 흐름 시험 결속으로 실제 E4·live 다 — 그 결속과 등급을 걷은 사본으로 같은 요건을 본다.
   const dispatch = notification.capabilities.find(({ id }) => id === 'notifications.dispatch');
+  delete dispatch.roundtrips;
+  dispatch.evidenceLevel = 'E3';
   dispatch.status = 'live';
   notification.status = 'partial';
   assert.match(

@@ -1,6 +1,11 @@
 import { expect,test } from '../fixtures/browser-test';
 import { getAdminBearerToken } from '../utils/admin-token';
 import { screenYmd } from '../helpers/screen-date';
+/**
+ * 화면 동작이 부른 응답을 기다리는 상한. 요청이 나가지 않으면 시험 제한 시간까지 매달리지 않고 실패해,
+ * finally 의 정리가 살아 있는 컨텍스트에서 돈다(2026-11-10 격리 E2E 에서 180초 매달린 뒤 정리가 끊겼다).
+ */
+const RESPONSE_WAIT = { timeout: 20_000 };
 test.describe('부서 일정 진입', () => {
     /**
      * Enterprise Workflow & Productivity
@@ -87,6 +92,214 @@ test.describe('캘린더 조작', () => {
             }
             finally {
                 await request.delete(`${SCHEDULE_API}/${schdlSn}`, { headers: auth });
+            }
+        });
+        test('캘린더: 날짜를 고르면 그날 일정만 남고 화면에서 등록·수정·삭제한다', async ({ page, request }) => {
+            // 화면의 기준 달(SSR 의 getTodayYmd, 한국 날짜)과 같은 달의 15·16일에 개인 일정 두 건을 준비한다.
+            const unique = `${Date.now()}`;
+            const yearMonth = screenYmd().slice(0, 6);
+            const year = Number(yearMonth.slice(0, 4));
+            const month = Number(yearMonth.slice(4, 6));
+            const onDay15 = `${PREFIX}Day15_${unique}`;
+            const onDay16 = `${PREFIX}Day16_${unique}`;
+            const created = `${PREFIX}UiNew_${unique}`;
+            const edited = `${PREFIX}UiEdited_${unique}`;
+            const fixtures: number[] = [];
+            let createdSn = 0;
+            let createdDeleted = false;
+            const row = (name: string) => page.getByRole('row').filter({ hasText: name });
+            try {
+                for (const [name, day] of [[onDay15, '15'], [onDay16, '16']] as const) {
+                    const res = await request.post(SCHEDULE_API, {
+                        headers: auth,
+                        data: { schdlNm: name, schdlBgngYmd: `${yearMonth}${day}`, schdlEndYmd: `${yearMonth}${day}`, schdlSeCd: '2' },
+                    });
+                    expect(res.status(), '캘린더 시험용 일정 생성이 성공해야 한다').toBe(201);
+                    fixtures.push((await res.json()).data as number);
+                }
+                await page.goto('/smart-toolkit/schedule');
+                await expect(page.getByRole('heading', { level: 1, name: '일정', exact: true })).toBeVisible({ timeout: 15000 });
+                // 월 조회(서버)가 준비한 두 일정을 표에 싣는다.
+                await expect(row(onDay15), '그 달의 일정이 표에 보여야 한다').toBeVisible({ timeout: 20000 });
+                await expect(row(onDay16)).toBeVisible();
+                // 날짜 단추의 접근 이름은 react-day-picker 가 ko 로캘의 'PPPP'(예: 2026년 11월 15일 일요일)로 만든다.
+                await page.getByRole('button', { name: new RegExp(`${year}년 ${month}월 15일 `) }).click();
+                await expect(page.getByRole('heading', { level: 2, name: new RegExp(`^${year}년 ${month}월 15일 \\(.\\) 일정$`) })).toBeVisible();
+                await expect(row(onDay15), '고른 날짜의 일정은 남아야 한다').toBeVisible();
+                await expect(row(onDay16), '다른 날짜의 일정은 걸러져야 한다').toHaveCount(0);
+                await page.getByRole('button', { name: '전체 보기', exact: true }).click();
+                await expect(row(onDay16), '전체 보기로 그 달의 일정이 다시 보여야 한다').toBeVisible();
+
+                // 등록 — 날짜 기본값은 화면의 오늘이라 지금 보고 있는 달에 들어간다.
+                await page.getByRole('button', { name: '일정 등록', exact: true }).click();
+                const createDialog = page.getByRole('dialog', { name: '일정 등록', exact: true });
+                await createDialog.locator('input[name="schdlNm"]').fill(created);
+                const [createResponse] = await Promise.all([
+                    page.waitForResponse((response) => new URL(response.url()).pathname === SCHEDULE_API
+                        && response.request().method() === 'POST', RESPONSE_WAIT),
+                    createDialog.getByRole('button', { name: '일정 등록', exact: true }).click(),
+                ]);
+                expect(createResponse.status(), '화면에서 일정 등록이 성공해야 한다').toBe(201);
+                createdSn = (await createResponse.json()).data as number;
+                expect(createdSn).toBeGreaterThan(0);
+                await expect(createDialog).toBeHidden();
+                await expect(row(created), '등록한 일정이 다시 읽은 월 목록에 보여야 한다').toBeVisible();
+                const stored = await request.get(`${SCHEDULE_API}/${createdSn}`, { headers: auth });
+                expect(stored.status()).toBe(200);
+                expect((await stored.json()).data).toMatchObject({ schdlNm: created, schdlSeCd: '2' });
+
+                // 수정 — 행의 수정 단추가 기존 값을 실은 폼을 연다.
+                await row(created).getByRole('button', { name: `${created} 일정 수정`, exact: true }).click();
+                const editDialog = page.getByRole('dialog', { name: '일정 수정', exact: true });
+                await expect(editDialog.locator('input[name="schdlNm"]')).toHaveValue(created);
+                await editDialog.locator('input[name="schdlNm"]').fill(edited);
+                const [updateResponse] = await Promise.all([
+                    page.waitForResponse((response) => new URL(response.url()).pathname === `${SCHEDULE_API}/${createdSn}`
+                        && response.request().method() === 'PUT', RESPONSE_WAIT),
+                    editDialog.getByRole('button', { name: '일정 수정', exact: true }).click(),
+                ]);
+                expect(updateResponse.status(), '화면에서 일정 수정이 성공해야 한다').toBe(200);
+                await expect(editDialog).toBeHidden();
+                await expect(row(edited), '수정한 이름이 다시 읽은 월 목록에 보여야 한다').toBeVisible();
+                await expect(row(created)).toHaveCount(0);
+                const updated = await request.get(`${SCHEDULE_API}/${createdSn}`, { headers: auth });
+                expect(updated.status()).toBe(200);
+                expect((await updated.json()).data.schdlNm).toBe(edited);
+
+                // 삭제 — 확인 대화상자를 거쳐 실제로 지운다.
+                await row(edited).getByRole('button', { name: `${edited} 일정 삭제`, exact: true }).click();
+                const confirmation = page.getByRole('dialog', { name: '일정 삭제', exact: true });
+                const [deleteResponse] = await Promise.all([
+                    page.waitForResponse((response) => new URL(response.url()).pathname === `${SCHEDULE_API}/${createdSn}`
+                        && response.request().method() === 'DELETE', RESPONSE_WAIT),
+                    confirmation.getByRole('button', { name: '삭제', exact: true }).click(),
+                ]);
+                expect(deleteResponse.status(), '삭제 확인이 실제 삭제로 이어져야 한다').toBe(200);
+                createdDeleted = true;
+                await expect(row(edited)).toHaveCount(0);
+                const monthly = await request.get(`${SCHEDULE_API}/monthly`, { headers: auth, params: { yearMonth } });
+                expect(monthly.status()).toBe(200);
+                expect(((await monthly.json()).data as { schdlSn: number }[]).map(schedule => schedule.schdlSn)).not.toContain(createdSn);
+            }
+            finally {
+                // 화면을 먼저 떠난 뒤 이 시험이 만든 일정만 지운다.
+                try {
+                    await page.goto('about:blank');
+                }
+                finally {
+                    const owned = createdSn && !createdDeleted ? [...fixtures, createdSn] : fixtures;
+                    for (const schdlSn of owned) {
+                        const cleanup = await request.delete(`${SCHEDULE_API}/${schdlSn}`, { headers: auth });
+                        expect(cleanup.status(), '이 시험이 만든 일정을 정리한다').toBe(200);
+                    }
+                }
+            }
+        });
+        test('부서 일정: 검색·등록·수정·삭제가 서버에 반영된다', async ({ page, request }) => {
+            const unique = `${Date.now()}`;
+            const today = screenYmd();
+            const listed = `${PREFIX}DeptListed_${unique}`;
+            const created = `${PREFIX}DeptNew_${unique}`;
+            const edited = `${PREFIX}DeptEdited_${unique}`;
+            const emptyText = '등록된 부서 일정이 존재하지 않습니다.';
+            let listedSn = 0;
+            let createdSn = 0;
+            let createdDeleted = false;
+            const row = (name: string) => page.getByRole('row').filter({ hasText: name });
+            const search = page.getByPlaceholder('일정명으로 검색하세요');
+            // 검색창은 입력마다 서버를 다시 부른다 — 그 검색어의 응답을 기다린다.
+            const searchFor = async (keyword: string) => {
+                const [response] = await Promise.all([
+                    page.waitForResponse((candidate) => {
+                        const url = new URL(candidate.url());
+                        return url.pathname === `${SCHEDULE_API}/dept` && candidate.request().method() === 'GET'
+                            && url.searchParams.get('schdlNm') === keyword;
+                    }, RESPONSE_WAIT),
+                    search.fill(keyword),
+                ]);
+                expect(response.status(), '부서 일정 검색이 성공해야 한다').toBe(200);
+            };
+            try {
+                // 부서 일정 목록은 schdlSeCd='1' 만 싣는다(GET /schedules/dept).
+                const res = await request.post(SCHEDULE_API, {
+                    headers: auth,
+                    data: { schdlNm: listed, schdlBgngYmd: today, schdlEndYmd: today, schdlSeCd: '1' },
+                });
+                expect(res.status(), '부서 일정 시험용 일정 생성이 성공해야 한다').toBe(201);
+                listedSn = (await res.json()).data as number;
+                await page.goto('/smart-toolkit/schedule/dept');
+                await expect(page.getByRole('heading', { level: 1, name: '부서 일정 관리', exact: true })).toBeVisible({ timeout: 15000 });
+
+                await searchFor(listed);
+                const period = `${today.slice(0, 4)}.${today.slice(4, 6)}.${today.slice(6)}`;
+                await expect(row(listed), '서버가 준 부서 일정과 기간이 표에 보여야 한다').toContainText(`${period} ~ ${period}`);
+                await searchFor(`${listed}_없음`);
+                await expect(page.getByText(emptyText, { exact: true }), '일치하지 않는 검색어는 빈 표가 되어야 한다').toBeVisible();
+                await expect(row(listed)).toHaveCount(0);
+
+                // 등록
+                await page.getByRole('button', { name: '일정 등록', exact: true }).click();
+                const createDialog = page.getByRole('dialog', { name: '일정 등록', exact: true });
+                await createDialog.locator('#schdlNm').fill(created);
+                const [createResponse] = await Promise.all([
+                    page.waitForResponse((response) => new URL(response.url()).pathname === SCHEDULE_API
+                        && response.request().method() === 'POST', RESPONSE_WAIT),
+                    createDialog.getByRole('button', { name: '저장', exact: true }).click(),
+                ]);
+                expect(createResponse.status(), '화면에서 부서 일정 등록이 성공해야 한다').toBe(201);
+                createdSn = (await createResponse.json()).data as number;
+                expect(createdSn).toBeGreaterThan(0);
+                await expect(createDialog).toBeHidden();
+                await searchFor(created);
+                await expect(row(created), '등록한 부서 일정이 목록에 보여야 한다').toBeVisible();
+                const stored = await request.get(`${SCHEDULE_API}/${createdSn}`, { headers: auth });
+                expect(stored.status()).toBe(200);
+                expect((await stored.json()).data).toMatchObject({ schdlNm: created, schdlSeCd: '1' });
+
+                // 수정
+                await row(created).getByRole('button', { name: `${created} 수정`, exact: true }).click();
+                const editDialog = page.getByRole('dialog', { name: '일정 수정', exact: true });
+                await expect(editDialog.locator('#schdlNm')).toHaveValue(created);
+                await editDialog.locator('#schdlNm').fill(edited);
+                const [updateResponse] = await Promise.all([
+                    page.waitForResponse((response) => new URL(response.url()).pathname === `${SCHEDULE_API}/${createdSn}`
+                        && response.request().method() === 'PUT', RESPONSE_WAIT),
+                    editDialog.getByRole('button', { name: '저장', exact: true }).click(),
+                ]);
+                expect(updateResponse.status(), '화면에서 부서 일정 수정이 성공해야 한다').toBe(200);
+                await expect(editDialog).toBeHidden();
+                await searchFor(edited);
+                await expect(row(edited), '수정한 이름이 목록에 보여야 한다').toBeVisible();
+                const updated = await request.get(`${SCHEDULE_API}/${createdSn}`, { headers: auth });
+                expect(updated.status()).toBe(200);
+                expect((await updated.json()).data.schdlNm).toBe(edited);
+
+                // 삭제
+                await row(edited).getByRole('button', { name: `${edited} 삭제`, exact: true }).click();
+                const confirmation = page.getByRole('dialog', { name: '일정 삭제', exact: true });
+                const [deleteResponse] = await Promise.all([
+                    page.waitForResponse((response) => new URL(response.url()).pathname === `${SCHEDULE_API}/${createdSn}`
+                        && response.request().method() === 'DELETE', RESPONSE_WAIT),
+                    confirmation.getByRole('button', { name: '삭제', exact: true }).click(),
+                ]);
+                expect(deleteResponse.status(), '삭제 확인이 실제 삭제로 이어져야 한다').toBe(200);
+                createdDeleted = true;
+                await expect(row(edited)).toHaveCount(0);
+                await expect(page.getByText(emptyText, { exact: true })).toBeVisible();
+                const gone = await request.get(`${SCHEDULE_API}/${createdSn}`, { headers: auth });
+                expect(gone.status(), '삭제한 일정을 다시 조회하면 404여야 한다').toBe(404);
+            }
+            finally {
+                try {
+                    await page.goto('about:blank');
+                }
+                finally {
+                    const owned = [listedSn, createdDeleted ? 0 : createdSn].filter(schdlSn => schdlSn > 0);
+                    for (const schdlSn of owned) {
+                        const cleanup = await request.delete(`${SCHEDULE_API}/${schdlSn}`, { headers: auth });
+                        expect(cleanup.status(), '이 시험이 만든 일정을 정리한다').toBe(200);
+                    }
+                }
             }
         });
     });

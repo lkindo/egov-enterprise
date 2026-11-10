@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { APIRequestContext } from '@playwright/test';
+import type { APIRequestContext, Response as NetworkResponse } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
 import { screenYmd } from '../helpers/screen-date';
 test.describe('공개 포털', () => {
@@ -25,7 +25,8 @@ type Survey = { srvySn: number; srvyTtl: string; srvyTmpltSn: number; srvyBgngYm
 type Template = { srvyTmpltSn: number; srvyTmpltTypeCd: string; srvyTmpltExpln: string };
 type Question = { srvyQstnSn: number; srvySn: number; qstnCn: string;
     items: { srvyArtclSn: number; artclCn: string }[] };
-type SurveyResponse = { srvyRspnsSn: number; srvySn: number; srvyQstnSn: number; srvyArtclSn: number; rspdntAnsCn: string | null };
+type SurveyResponse = { srvyRspnsSn: number; srvySn: number; srvyQstnSn: number; srvyArtclSn: number; rspdntAnsCn: string | null;
+    rspnsNm: string | null };
 type ResponsePage = { list: SurveyResponse[]; totalPage: number };
 
 async function readData<T>(request: APIRequestContext, url: string): Promise<T> {
@@ -180,7 +181,19 @@ test.describe('설문 응답 생명주기', () => {
                 expect(draft.titles, '작성 중 설문은 응답자 목록에 보이지 않아야 한다').not.toContain(surveyTitle);
                 const adminMain = adminPage.locator('main#main-content').filter({ visible: true });
                 await adminPage.reload();
-                await adminMain.getByRole('combobox', { name: '설문 선택', exact: true }).selectOption(String(surveyId));
+                // 설문지를 고르면 서버가 준 그 설문지의 문항·선택 항목이 패널에 실린다(설문지 상세).
+                const [questionsLoaded] = await Promise.all([
+                    adminPage.waitForResponse(response => new URL(response.url()).pathname === `${SURVEYS}/${surveyId}/questions`
+                        && response.request().method() === 'GET'),
+                    adminMain.getByRole('combobox', { name: '설문 선택', exact: true }).selectOption(String(surveyId)),
+                ]);
+                expect(questionsLoaded.status(), '고른 설문지의 문항 조회가 성공해야 한다').toBe(200);
+                for (const { questionText, choiceLabel, unselectedLabel } of questionFixtures) {
+                    await expect(adminMain.getByRole('button', { name: `${questionText} 문항 수정`, exact: true })).toBeVisible();
+                    for (const label of [choiceLabel, unselectedLabel]) {
+                        await expect(adminMain.getByRole('button', { name: `${label} 항목 수정`, exact: true })).toBeVisible();
+                    }
+                }
                 const released = adminPage.waitForResponse(response => new URL(response.url()).pathname === `${SURVEYS}/${surveyId}`
                     && response.request().method() === 'PUT');
                 await adminMain.getByRole('button', { name: '응답자에게 공개', exact: true }).click();
@@ -188,8 +201,36 @@ test.describe('설문 응답 생명주기', () => {
                 expect((await released).status()).toBe(200);
                 await expect(adminMain.getByRole('button', { name: '공개 중단', exact: true })).toBeVisible();
                 expect((await listedTitles()).titles, '공개한 설문은 응답자 목록에 보여야 한다').toContain(surveyTitle);
-                await userPage.goto(`/survey/${surveyId}`);
+                // 응답자 설문 목록 화면에서 공개한 설문을 찾아 연다. 서버 정렬을 가정하지 않고, 화면이 받은 페이지 응답에
+                // 그 설문이 실릴 때까지 '다음 페이지'로 넘긴다.
                 const main = userPage.locator('main#main-content').filter({ visible: true });
+                const surveyListPage = (pageNo: number) => userPage.waitForResponse(response => {
+                    const url = new URL(response.url());
+                    return url.pathname === '/api/v1/surveys' && response.request().method() === 'GET'
+                        && url.searchParams.get('page') === String(pageNo) && url.searchParams.get('size') === '10'
+                        && !url.searchParams.has('keyword');
+                });
+                const readSurveyPage = async (response: NetworkResponse) => {
+                    expect(response.status(), '응답자 설문 목록 조회가 성공해야 한다').toBe(200);
+                    return (await response.json() as { data: { list: { srvySn: number }[]; totalPage: number } }).data;
+                };
+                let listPage = 1;
+                let [listResponse] = await Promise.all([surveyListPage(listPage), userPage.goto('/survey')]);
+                let listed = await readSurveyPage(listResponse);
+                while (!listed.list.some(survey => survey.srvySn === surveyId)) {
+                    expect(listPage, '공개한 설문이 응답자 목록의 어느 페이지에도 없다').toBeLessThan(listed.totalPage);
+                    listPage += 1;
+                    [listResponse] = await Promise.all([
+                        surveyListPage(listPage),
+                        main.getByRole('button', { name: '다음 페이지', exact: true }).click(),
+                    ]);
+                    listed = await readSurveyPage(listResponse);
+                }
+                const listedRow = main.getByRole('row').filter({ hasText: surveyTitle });
+                await expect(listedRow, '공개한 설문이 응답자 목록 표에 보여야 한다').toBeVisible();
+                await expect(listedRow).toContainText(`${edited.begin} ~ ${edited.end}`);
+                await listedRow.getByRole('button', { name: `${surveyTitle} 상세 이동`, exact: true }).click();
+                await expect(userPage).toHaveURL(new RegExp(`/survey/${surveyId}$`));
                 await expect(main.getByText(surveyTitle, { exact: true })).toBeVisible();
                 await expect(main.getByText(`${edited.begin} ~ ${edited.end}`, { exact: true })).toBeVisible();
                 for (const { choiceLabel } of selectedAnswers) {
@@ -208,6 +249,7 @@ test.describe('설문 응답 생명주기', () => {
             });
 
             const responseIds = new Map<number, number>();
+            let respondentName = '';
             await test.step('관리자가 두 문항의 응답 목록과 각각의 상세에서 선택한 레이블을 확인한다', async () => {
                 let pageCount = 1;
                 for (let page = 1; page <= pageCount && responseIds.size < selectedAnswers.length; page++) {
@@ -220,6 +262,7 @@ test.describe('설문 응답 생명주기', () => {
                             expect(owned).toHaveLength(1);
                             expect(owned[0].rspdntAnsCn).toBe(choiceLabel);
                             responseIds.set(srvyArtclSn, owned[0].srvyRspnsSn);
+                            respondentName = owned[0].rspnsNm ?? '';
                         }
                     }
                 }
@@ -245,6 +288,34 @@ test.describe('설문 응답 생명주기', () => {
                     await expect(main.getByText(choiceLabel, { exact: true })).toBeVisible();
                     await expect(main.getByText('응답 내용이 등록되지 않았습니다.', { exact: true })).toHaveCount(0);
                 }
+                // 응답자 이름 검색 — 서버가 응답자 이름으로 걸러 이 합성 사용자의 두 문항 응답만 남긴다.
+                expect(respondentName, '서버가 제출 시 응답자 이름을 채워야 한다').toBeTruthy();
+                await adminPage.goto('/survey/response');
+                const responseMain = adminPage.locator('main#main-content').filter({ visible: true });
+                await expect(responseMain.getByRole('heading', { level: 1, name: '설문조사 응답 관리', exact: true })).toBeVisible();
+                const respondentSearch = () => adminPage.waitForResponse(response => {
+                    const url = new URL(response.url());
+                    return url.pathname === RESPONSES && response.request().method() === 'GET'
+                        && url.searchParams.get('keyword') === respondentName;
+                });
+                const [searched] = await Promise.all([
+                    respondentSearch(),
+                    responseMain.getByLabel('응답자 이름 검색', { exact: true }).fill(respondentName),
+                ]);
+                expect(searched.status(), '응답자 이름 검색이 성공해야 한다').toBe(200);
+                const respondentRows = responseMain.getByRole('row').filter({ hasText: respondentName });
+                await expect(responseMain.getByText('총 2건의 응답이 조회되었습니다.', { exact: true })).toBeVisible();
+                await expect(respondentRows).toHaveCount(2);
+                for (const { choiceLabel } of selectedAnswers) {
+                    await expect(respondentRows.filter({ hasText: choiceLabel })).toHaveCount(1);
+                }
+                // 새로고침 — 같은 조건으로 서버를 다시 읽는다.
+                const [refreshed] = await Promise.all([
+                    respondentSearch(),
+                    responseMain.getByRole('button', { name: '새로고침', exact: true }).click(),
+                ]);
+                expect(refreshed.status(), '응답 목록 새로고침이 성공해야 한다').toBe(200);
+                await expect(respondentRows).toHaveCount(2);
             });
             await test.step('한 답변에서 전체 제출을 취소하면 두 문항이 사라지고 기간 안에 다시 제출할 수 있다', async () => {
                 const anchor = responseIds.get(selectedAnswers[0].srvyArtclSn)!;
@@ -278,6 +349,54 @@ test.describe('설문 응답 생명주기', () => {
                 expect((await submittedAgain).status()).toBe(200);
                 await expect(userPage.getByRole('button', { name: '제출 완료', exact: true })).toBeDisabled();
             });
+            await test.step('설문 결과 통계 화면에서 제목으로 설문지를 골라 선택 답변별 집계를 확인한다', async () => {
+                await adminPage.goto('/survey/stats');
+                const statsMain = adminPage.locator('main#main-content').filter({ visible: true });
+                await expect(statsMain.getByRole('heading', { level: 1, name: '설문 결과 통계', exact: true })).toBeVisible();
+                const [searched] = await Promise.all([
+                    adminPage.waitForResponse(response => {
+                        const url = new URL(response.url());
+                        return url.pathname === '/api/v1/surveys' && response.request().method() === 'GET'
+                            && url.searchParams.get('keyword') === surveyTitle;
+                    }),
+                    statsMain.getByLabel('설문 제목', { exact: true }).fill(surveyTitle),
+                ]);
+                expect(searched.status(), '통계 화면의 설문지 검색이 성공해야 한다').toBe(200);
+                const [stats] = await Promise.all([
+                    adminPage.waitForResponse(response => new URL(response.url()).pathname === `/api/v1/surveys/${surveyId}/stats`
+                        && response.request().method() === 'GET'),
+                    statsMain.getByRole('button', { name: surveyTitle, exact: true }).click(),
+                ]);
+                expect(stats.status(), '설문 결과 통계 조회가 성공해야 한다').toBe(200);
+                await expect(adminPage).toHaveURL(new RegExp(`/survey/stats\\?srvySn=${surveyId}$`));
+                // 다시 제출한 한 사람의 답이 문항마다 선택한 항목 1명(100%), 고르지 않은 항목 0명(0%)으로 집계된다.
+                for (const { choiceLabel, unselectedLabel } of questionFixtures) {
+                    await expect(statsMain.getByText(choiceLabel, { exact: true }).locator('xpath=following-sibling::span[1]'))
+                        .toHaveText(/^1 명 \(100%\)/);
+                    await expect(statsMain.getByText(unselectedLabel, { exact: true }).locator('xpath=following-sibling::span[1]'))
+                        .toHaveText(/^0 명 \(0%\)/);
+                }
+            });
+            await test.step('설문지·문항 화면에서 설문지를 삭제하면 서버에서도 사라진다', async () => {
+                // 응답자 화면을 먼저 떠난다 — 설문 상세가 열린 채로 지우면 그 화면의 재조회가 404 를 받는다.
+                await userPage.goto('about:blank');
+                await adminPage.goto('/admin/survey/hub?tab=questions');
+                const hubMain = adminPage.locator('main#main-content').filter({ visible: true });
+                const surveySelect = hubMain.getByRole('combobox', { name: '설문 선택', exact: true });
+                await surveySelect.selectOption(String(surveyId));
+                await hubMain.getByRole('button', { name: '설문지 삭제', exact: true }).click();
+                const confirmation = adminPage.getByRole('dialog', { name: '설문지 삭제', exact: true });
+                await expect(confirmation).toContainText(surveyTitle);
+                const [deleted] = await Promise.all([
+                    adminPage.waitForResponse(response => new URL(response.url()).pathname === `${SURVEYS}/${surveyId}`
+                        && response.request().method() === 'DELETE'),
+                    confirmation.getByRole('button', { name: '삭제', exact: true }).click(),
+                ]);
+                expect(deleted.status(), '화면의 설문지 삭제가 성공해야 한다').toBe(200);
+                await expect(surveySelect.locator(`option[value="${surveyId}"]`), '삭제한 설문지는 선택지에서 빠져야 한다').toHaveCount(0);
+                expect((await adminRequest.get(`${SURVEYS}/${surveyId}`)).status(), '삭제한 설문지를 다시 조회하면 404여야 한다').toBe(404);
+                surveyId = undefined;
+            });
         } finally {
             // 사용자 화면을 먼저 떠난다 — 설문 상세(/survey/{id})가 열린 채로 설문을 지우면 그 화면의 재조회가 404 를 받아
             // 브라우저 오류 감시가 실패로 잡는다(2026-10-18 CI 재시도 통과 1건). 사용자 삭제도 이 뒤라 순서는 같다.
@@ -308,6 +427,88 @@ test.describe('설문 응답 생명주기', () => {
                 }
                 expect(removed.status(), '합성 설문 사용자는 bounded cleanup 뒤 삭제되어야 한다').toBe(200);
                 expect((await adminRequest.get(`${users}/${userId}`)).status()).toBe(404);
+            }
+        }
+    });
+});
+test.describe('설문 템플릿 관리', () => {
+    test('설문 템플릿: 화면에서 추가·상세 열기·수정·삭제가 서버에 반영된다', async ({ adminPage, adminRequest }) => {
+        // 아무 설문도 참조하지 않는 새 템플릿만 다룬다 — 설문이 쓰는 템플릿은 서버가 삭제를 거부한다.
+        const unique = randomUUID().replaceAll('-', '');
+        const templateCode = `T7${unique.slice(0, 10)}`;
+        const description = `E2E 템플릿 화면 ${unique}`;
+        const editedDescription = `E2E 템플릿 수정 ${unique}`;
+        const templatesApi = `${SURVEYS}/templates`;
+        const main = adminPage.locator('main#main-content').filter({ visible: true });
+        const codeInput = main.getByLabel('템플릿 유형 코드', { exact: true });
+        const descriptionInput = main.getByLabel('템플릿 설명', { exact: true });
+        const templateItem = main.getByRole('listitem').filter({ hasText: templateCode });
+        let templateId: number | undefined;
+        let deleted = false;
+        try {
+            await adminPage.goto('/admin/survey/hub?tab=templates');
+            await expect(main.getByRole('heading', { level: 1, name: '설문 템플릿 관리', exact: true })).toBeVisible({ timeout: 30000 });
+
+            // 추가 → 서버가 다시 준 목록에 보인다.
+            await codeInput.fill(templateCode);
+            await descriptionInput.fill(description);
+            const [created] = await Promise.all([
+                adminPage.waitForResponse(response => new URL(response.url()).pathname === templatesApi
+                    && response.request().method() === 'POST'),
+                main.getByRole('button', { name: '템플릿 추가', exact: true }).click(),
+            ]);
+            expect(created.status(), '화면에서 템플릿 추가가 성공해야 한다').toBe(201);
+            templateId = (await created.json() as { data: number }).data;
+            expect(templateId).toBeGreaterThan(0);
+            await expect(templateItem, '추가한 템플릿이 다시 읽은 목록에 보여야 한다').toBeVisible();
+            await expect(templateItem).toContainText(description);
+            await expect(codeInput, '추가가 끝나면 입력 칸이 비워져야 한다').toHaveValue('');
+            const stored = await readData<Template>(adminRequest, `${templatesApi}/${templateId}`);
+            expect(stored).toMatchObject({ srvyTmpltTypeCd: templateCode, srvyTmpltExpln: description });
+
+            // 상세 열기 — 수정 단추가 서버 상세를 읽어 폼에 싣는다.
+            const [detail] = await Promise.all([
+                adminPage.waitForResponse(response => new URL(response.url()).pathname === `${templatesApi}/${templateId}`
+                    && response.request().method() === 'GET'),
+                templateItem.getByRole('button', { name: `${description} 템플릿 수정`, exact: true }).click(),
+            ]);
+            expect(detail.status(), '템플릿 상세 조회가 성공해야 한다').toBe(200);
+            await expect(codeInput).toHaveValue(templateCode);
+            await expect(descriptionInput).toHaveValue(description);
+
+            // 수정 → 서버 값이 바뀐다.
+            await descriptionInput.fill(editedDescription);
+            const [updated] = await Promise.all([
+                adminPage.waitForResponse(response => new URL(response.url()).pathname === `${templatesApi}/${templateId}`
+                    && response.request().method() === 'PUT'),
+                main.getByRole('button', { name: '템플릿 수정 저장', exact: true }).click(),
+            ]);
+            expect(updated.status(), '화면에서 템플릿 수정이 성공해야 한다').toBe(200);
+            await expect(templateItem, '수정한 설명이 다시 읽은 목록에 보여야 한다').toContainText(editedDescription);
+            await expect(main.getByRole('button', { name: '템플릿 추가', exact: true })).toBeVisible();
+            const saved = await readData<Template>(adminRequest, `${templatesApi}/${templateId}`);
+            expect(saved).toMatchObject({ srvyTmpltTypeCd: templateCode, srvyTmpltExpln: editedDescription });
+
+            // 삭제 → 확인 뒤 서버에서 사라진다.
+            await templateItem.getByRole('button', { name: `${editedDescription} 템플릿 삭제`, exact: true }).click();
+            const confirmation = adminPage.getByRole('dialog', { name: '설문 템플릿 삭제', exact: true });
+            await expect(confirmation).toContainText(editedDescription);
+            const [removed] = await Promise.all([
+                adminPage.waitForResponse(response => new URL(response.url()).pathname === `${templatesApi}/${templateId}`
+                    && response.request().method() === 'DELETE'),
+                confirmation.getByRole('button', { name: '삭제', exact: true }).click(),
+            ]);
+            expect(removed.status(), '화면에서 템플릿 삭제가 성공해야 한다').toBe(200);
+            deleted = true;
+            await expect(templateItem, '삭제한 템플릿은 목록에서 빠져야 한다').toHaveCount(0);
+            expect((await adminRequest.get(`${templatesApi}/${templateId}`)).status(), '삭제한 템플릿을 다시 조회하면 404여야 한다').toBe(404);
+        } finally {
+            // 화면을 먼저 떠난 뒤, 남아 있으면 이 시험이 만든 템플릿만(코드 대조 후) 지운다.
+            await adminPage.goto('about:blank');
+            if (templateId !== undefined && !deleted) {
+                const owned = await readData<Template>(adminRequest, `${templatesApi}/${templateId}`);
+                expect(owned.srvyTmpltTypeCd).toBe(templateCode);
+                expect((await adminRequest.delete(`${templatesApi}/${templateId}`)).status()).toBe(200);
             }
         }
     });

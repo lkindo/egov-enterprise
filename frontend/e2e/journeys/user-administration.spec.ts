@@ -77,6 +77,15 @@ test.describe('사용자와 권한 관리', () => {
                     exact: true,
                 });
                 await expect(createdUserAction).toBeVisible({ timeout: 15000 });
+                // --- Step 6b: Refresh ---
+                // [2026-11-10] 툴바의 '새로고침' 은 지금 검색어의 사용자 목록을 서버에서 다시 읽는다. 그 재조회가 실제로 나가고
+                //   성공했는지 응답으로 보고, 다시 읽은 목록에도 방금 만든 사용자가 남아 있는지 본다.
+                const refreshed = page.waitForResponse((r) => r.request().method() === 'GET'
+                    && new URL(r.url()).pathname === '/api/v1/admin/system/users'
+                    && new URL(r.url()).searchParams.get('searchKeyword') === testName, { timeout: 30000 });
+                await page.getByRole('button', { name: '새로고침', exact: true }).click();
+                expect((await refreshed).ok(), '새로고침의 사용자 목록 재조회가 성공해야 한다').toBeTruthy();
+                await expect(createdUserAction).toBeVisible({ timeout: 15000 });
                 // --- Step 7: Update ---
                 // [2026-08-10 신설 → 2026-08-11 활성화] 이 테스트의 이름은 줄곧
                 //   'Create-Search-Update-Delete Flow' 였지만 **Update 단계가 존재한 적이 없었다.**
@@ -155,6 +164,10 @@ test.describe('사용자와 권한 관리', () => {
                     .locator('[data-sonner-toast][data-type="success"]')
                     .filter({ hasText: '삭제했습니다' });
                 await expect(deleteSuccessAlert.first()).toBeVisible({ timeout: 15000 });
+                // [2026-11-10] 토스트만 보고 끝내지 않는다 — 삭제 뒤 화면은 같은 검색어로 목록을 다시 읽는다. 그 목록에서 사용자가
+                //   빠지고 서버가 0건이라고 답한 빈 상태 문구가 보여야 서버에서 지워진 것이다.
+                await expect(updatedUserAction).toHaveCount(0, { timeout: 15000 });
+                await expect(page.getByText(`"${updatedName}"에 대한 검색 결과가 없습니다.`, { exact: true }).first()).toBeVisible({ timeout: 15000 });
                 console.log('>>> User Lifecycle Completed Successfully');
             });
             // [2026-08-11 해소] 여기에 `test.fixme('User Update: … 현재 PUT 400')` 가 있었다.

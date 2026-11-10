@@ -2,6 +2,7 @@ import { APIRequestContext,APIResponse } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { expect,test } from '../fixtures/browser-test';
+import { trackApiRequests, waitForHydration } from '../fixtures/hydration';
 import { NotificationPage } from '../pages/NotificationPage';
 // [2026-07-28 정정] 백엔드 주소를 세 곳에 하드코딩하고 있었다. auth.setup.ts·cleanup-db.ts 는 이미
 //   `process.env.NEXT_PUBLIC_API_URL || 기본값` 패턴을 쓰는데 이 파일만 예외였다. 백엔드를 다른
@@ -154,26 +155,133 @@ test.describe('Notification & Communication Intelligence', () => {
     test('Notification: Hub Search and Filter Verification', async ({ request, page }) => {
         // [E2E 감사 B] isVisible 가드 + count>=0(수학적 항상참) 제거 —
         // 고유 태그 알림을 seed한 뒤 검색해 실제로 필터링되어 노출되는지 단언한다.
+        // [2026-11-10] 검색·읽음 조건이 결과를 실제로 바꾸는지 본다. 종전에는 seed 한 알림(가장 최근)이 보이는지만 봐서, 거르지
+        //   않아도 첫 쪽에 있는 그 알림으로 통과했다. 이제 태그가 다른 알림이 검색 뒤 빠지고, 읽은 알림이 '읽지 않은 알림' 에서
+        //   빠지는 것을 그 조건으로 다시 읽은 서버 응답과 함께 확인한다.
         const uniqueTag = `HubSearch_${Date.now()}`;
-        const seedRes = await request.post(`${API_BASE}/notifications`, {
-            headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
-            data: { notiTtlNm: uniqueTag, notiCn: 'Hub search filter validation payload.', readYn: 'N', rcvrId: 'webmaster' }
-        });
-        expect(seedRes.ok(), `알림 seed 실패: ${seedRes.status()}`).toBeTruthy();
-        const seedId = await createdNotificationId(seedRes);
+        const unreadTitle = `${uniqueTag}_unread`;
+        const seenTitle = `${uniqueTag}_seen`;
+        const otherTitle = `HubOther_${Date.now()}`;
+        const headers = { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' };
+        const seedIds: unknown[] = [];
+        const seed = async (title: string) => {
+            const seedRes = await request.post(`${API_BASE}/notifications`, {
+                headers,
+                data: { notiTtlNm: title, notiCn: 'Hub search filter validation payload.', readYn: 'N', rcvrId: 'webmaster' }
+            });
+            expect(seedRes.ok(), `알림 seed 실패: ${seedRes.status()}`).toBeTruthy();
+            const id = await createdNotificationId(seedRes);
+            seedIds.push(id);
+            return id;
+        };
+        // seed 는 열린 홈의 머리글 알림에 실시간으로 닿아 재조회를 부를 수 있다 — 그 조회가 끝난 뒤 홈을 떠난다.
+        const homeApi = trackApiRequests(page);
         try {
+            await seed(unreadTitle);
+            const seenId = await seed(seenTitle);
+            await seed(otherTitle);
+            const read = await request.post(`${API_BASE}/notifications/${seenId}/read`, { headers });
+            expect(read.ok(), `알림 읽음 처리 실패: ${read.status()}`).toBeTruthy();
+            await homeApi.settled(page.getByRole('heading', { level: 1, name: '업무 홈' }));
             console.log('>>> Navigating to Notification Hub');
+            const api = trackApiRequests(page);
             await page.goto('/admin/notifications');
-            await page.waitForLoadState('networkidle');
-            const searchInput = page.locator('input[placeholder*="검색"], input[aria-label*="Search"]').first();
-            await expect(searchInput).toBeVisible({ timeout: 15000 });
+            const heading = page.getByRole('heading', { level: 1, name: '알림 센터' });
+            await expect(heading).toBeVisible({ timeout: 15000 });
+            const rows = page.getByRole('table', { name: '받은 알림 목록' }).getByRole('row');
+            // 거르기 전에는 셋 다 첫 쪽에 있다(받은 순서의 최신이다).
+            for (const title of [unreadTitle, seenTitle, otherTitle]) {
+                await expect(rows.filter({ hasText: title })).toHaveCount(1, { timeout: 15000 });
+            }
+            const searchInput = page.getByLabel('알림 검색어');
+            await waitForHydration(searchInput);
             await searchInput.fill(uniqueTag);
-            await page.keyboard.press('Enter');
-            // 검색 결과에 seed한 항목이 반드시 나타나야 한다.
-            await expect(page.getByText(uniqueTag).first()).toBeVisible({ timeout: 15000 });
+            await Promise.all([
+                page.waitForResponse(response => listedWith(response.url(), { searchWrd: uniqueTag, readYn: null }) && response.ok()),
+                searchInput.press('Enter'),
+            ]);
+            // 검색 결과에 seed한 항목이 반드시 나타나야 하고, 태그가 다른 알림은 빠진다.
+            await expect(rows.filter({ hasText: unreadTitle })).toHaveCount(1);
+            await expect(rows.filter({ hasText: seenTitle })).toHaveCount(1);
+            await expect(rows.filter({ hasText: otherTitle })).toHaveCount(0);
+            // 읽음 조건 — '읽지 않은 알림' 은 서버에 readYn=N 으로 다시 묻고, 읽은 알림은 빠진다.
+            const readFilter = page.getByRole('group', { name: '읽음 조건' });
+            await Promise.all([
+                page.waitForResponse(response => listedWith(response.url(), { searchWrd: uniqueTag, readYn: 'N' }) && response.ok()),
+                readFilter.getByRole('button', { name: /^읽지 않은 알림/ }).click(),
+            ]);
+            await expect(readFilter.getByRole('button', { name: /^읽지 않은 알림/ })).toHaveAttribute('aria-pressed', 'true');
+            await expect(rows.filter({ hasText: unreadTitle })).toHaveCount(1);
+            await expect(rows.filter({ hasText: seenTitle })).toHaveCount(0);
+            // '전체 알림' 으로 돌아가면 읽은 알림이 다시 보인다(같은 조건의 앞선 응답을 다시 쓴다 — 조회 캐시 60초).
+            await readFilter.getByRole('button', { name: '전체 알림', exact: true }).click();
+            await expect(rows.filter({ hasText: seenTitle })).toHaveCount(1);
+            await api.settled(heading);
         }
         finally {
-            await deleteNotification(request, seedId);
+            await page.goto('about:blank');
+            for (const id of seedIds) await deleteNotification(request, id);
+        }
+    });
+    /*
+     * [2026-11-10] 관리자 발송(DEC-OPS-042) — 화면에서 수신자를 고르고 보내면 서버가 수신자마다 알림을 만든다. 수신자는 일반 사용자
+     * (TEST1)이고, 그 사람의 알림함은 그 사람의 자격(userRequest)으로 읽는다. 수신자 로그인을 새로 하지 않는다(공유 세션 보존).
+     */
+    test('Notification: 관리자가 화면에서 보낸 알림이 수신자 알림함에 남는다', async ({ page, userRequest }) => {
+        const meRes = await userRequest.get('/api/v1/users/me');
+        expect(meRes.status(), '수신자 프로필 조회').toBe(200);
+        const recipient = (await meRes.json()).data as { esntlId: string; userNm: string };
+        expect(recipient.esntlId).toBeTruthy();
+        expect(recipient.userNm?.length ?? 0, '수신자 찾기는 이름 두 글자 이상으로 찾는다').toBeGreaterThanOrEqual(2);
+        const title = `E2E_Dispatch_${Date.now()}`;
+        const inbox = async () => {
+            const response = await userRequest.get('/api/v1/notifications', { params: { searchWrd: title, page: 1, size: 10 } });
+            expect(response.status(), '수신자 알림함 조회').toBe(200);
+            return ((await response.json()).data?.list ?? []) as { notiSn: number; notiTtlNm: string }[];
+        };
+        try {
+            await page.goto('/admin/notifications');
+            await expect(page.getByRole('heading', { level: 1, name: '알림 센터' })).toBeVisible({ timeout: 15000 });
+            await page.getByRole('button', { name: '알림 보내기', exact: true }).click();
+            const dialog = page.getByRole('dialog', { name: '알림 보내기' });
+            await expect(dialog).toBeVisible();
+            await dialog.getByRole('button', { name: '수신자 찾기', exact: true }).click();
+            const picker = page.getByRole('dialog', { name: '알림 수신자 찾기' });
+            await picker.getByLabel('사용자 검색어 입력').fill(recipient.userNm);
+            await picker.getByRole('button', { name: '검색', exact: true }).click();
+            // 같은 이름의 다른 계정이 있어도 수신자의 내부 식별자로 그 사람을 고른다.
+            await picker.getByRole('checkbox', { name: `${recipient.userNm} 선택`, exact: true })
+                .and(picker.locator(`[id="recipient-user-${recipient.esntlId}"]`))
+                .check();
+            await picker.getByRole('button', { name: /^선택 추가/ }).click();
+            await expect(picker).toBeHidden();
+            await expect(dialog.getByRole('list', { name: '선택된 수신자' })).toContainText(recipient.userNm);
+            await dialog.getByRole('textbox', { name: '제목 (필수)', exact: true }).fill(title);
+            await dialog.getByRole('textbox', { name: '내용 (필수)', exact: true }).fill('관리자 화면 발송 여정이 보낸 알림입니다.');
+            const [dispatched] = await Promise.all([
+                page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/admin/notifications/dispatch'
+                    && response.request().method() === 'POST'),
+                dialog.getByRole('button', { name: '알림 보내기 (1명)', exact: true }).click(),
+            ]);
+            expect(dispatched.status(), '알림 발송').toBe(200);
+            expect((await dispatched.json()).data, '한 명에게 보냈다').toBe(1);
+            await expect(dialog).toBeHidden();
+            // 수신자의 알림함에 정확히 그 알림 하나가 있다.
+            await expect.poll(async () => (await inbox()).map(item => item.notiTtlNm), { timeout: 15000 }).toEqual([title]);
+        }
+        finally {
+            for (const item of await inbox()) {
+                const removed = await userRequest.delete(`/api/v1/notifications/${item.notiSn}`);
+                expect(removed.status(), '수신자 알림 정리').toBe(200);
+            }
         }
     });
 });
+
+/** 알림 센터 목록 조회의 조건이 기대와 같은가. readYn 이 null 이면 읽음 조건 없이(전체) 물은 조회다. */
+function listedWith(url: string, expected: { searchWrd: string; readYn: string | null }): boolean {
+    const parsed = new URL(url);
+    return parsed.pathname === '/api/v1/notifications'
+        && parsed.searchParams.get('searchWrd') === expected.searchWrd
+        && parsed.searchParams.get('readYn') === expected.readYn;
+}

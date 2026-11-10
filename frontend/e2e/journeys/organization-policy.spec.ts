@@ -57,7 +57,23 @@ test.describe('Ops Governance', () => {
         const modified = (await reread.json()).data;
         expect(modified).toMatchObject({ plcyTypeCd: code, plcyTtl: updatedTitle });
         expect(modified.plcyCn).toContain(updatedContent);
-        await adminPage.reload();
+        // [2026-11-10] 새로고침 — 화면 밖(API)에서 바뀐 제목은 목록의 새로고침 단추가 서버에 다시 물어야 보인다. 저장 뒤 목록 재조회가
+        //   끝나(수정한 제목이 보인 뒤) 바꾸므로, 그 다음에 보이는 새 제목은 새로고침이 받아 온 값이다.
         await expect(adminPage.getByRole('button', { name: `${updatedTitle} 정책 수정`, exact: true })).toBeVisible();
+        const refreshedTitle = `${title} refreshed`;
+        const changed = await adminRequest.put(`/api/v1/admin/system/policies/${code}`, {
+            data: { plcyTtl: refreshedTitle, plcyCn: `<p>${updatedContent}</p>` },
+        });
+        expect(changed.status()).toBe(200);
+        const [refreshed] = await Promise.all([
+            adminPage.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/admin/system/policies'
+                && response.request().method() === 'GET'),
+            adminPage.getByRole('button', { name: '새로고침', exact: true }).click(),
+        ]);
+        expect(refreshed.status()).toBe(200);
+        await expect(adminPage.getByRole('button', { name: `${refreshedTitle} 정책 수정`, exact: true })).toBeVisible();
+        await expect(adminPage.getByRole('button', { name: `${updatedTitle} 정책 수정`, exact: true })).toHaveCount(0);
+        await adminPage.reload();
+        await expect(adminPage.getByRole('button', { name: `${refreshedTitle} 정책 수정`, exact: true })).toBeVisible();
     });
 });

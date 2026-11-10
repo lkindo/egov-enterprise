@@ -1,7 +1,10 @@
-import { type APIRequestContext, type Locator, type Page } from '@playwright/test';
+import { type APIRequestContext, type Download, type Locator, type Page } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
-import { waitForHydration } from '../fixtures/hydration';
+import { trackApiRequests, waitForHydration } from '../fixtures/hydration';
 import { screenDate } from '../helpers/screen-date';
+
+/** 일반 게시판(Q&A 템플릿) — 다른 여정도 합성 글을 만들고 지우는 게시판이다. */
+const GENERAL_BOARD_ID = 'BBSMSTR_DDDDDDDDDDDD';
 test.describe('협업 도구', () => {
     /**
      * Advanced Collaboration & Intelligence
@@ -63,8 +66,14 @@ test.describe('운영 관측', () => {
             await expect(summaryValue(page, '기간 합계')).toHaveText('0');
             await expect(summaryValue(page, '가장 많은 날')).toHaveText('없음');
             await expect(page.getByTestId('report-basis')).toContainText(`집계 구간: ${quiet[0]} ~ ${quiet[2]}`);
-            // 차트는 표와 같은 계열 하나를 그린다 — 축 눈금의 순서·형식은 단위 시험(IntelligenceHubClient.time-axis)이 보고,
-            //   여기서는 차트 내부 클래스 이름에 기대지 않는다.
+            // 차트는 표와 같은 계열 하나를 그린다 — 가로축 눈금이 서버가 채운 그 사흘이다. 축 눈금의 순서·형식은 단위
+            //   시험(IntelligenceHubClient.time-axis)이 보고, 여기서는 차트 내부 클래스 이름에 기대지 않고 SVG 글자만 읽는다.
+            await expectChartDays(page, quiet);
+            // [2026-11-10] 내보내기는 지금 표(서버가 준 사흘)를 그대로 파일로 낸다.
+            await expectExport(page, 'stats_system_stats', '성공 로그인', quiet.map((date) => [date, '0']));
+            // 쪽 — 12일은 두 쪽(쪽당 10행)이고 둘째 쪽은 마지막 이틀이다. 실행 전의 날이라 0 이다.
+            await openSecondPage(page, screenDate(-21), screenDate(-10));
+            await expectRows(page, [[screenDate(-11), '0'], [screenDate(-10), '0']]);
 
             // 2) 오늘 — 같은 순간의 API 응답과 화면의 표·요약이 같다.
             await applyPeriod(page, today, today);
@@ -79,6 +88,10 @@ test.describe('운영 관측', () => {
             await expect(picker.getByRole('button', { name: '수정 요청', exact: true })).toHaveAttribute('aria-pressed', 'true');
             await expect(page.getByRole('columnheader', { name: '수정 요청 건수' })).toBeVisible();
             await expectRows(page, quiet.map((date) => [date, '0']));
+            await expectChartDays(page, quiet);
+            await expectExport(page, 'stats_user_stats', '수정 요청', quiet.map((date) => [date, '0']));
+            await openSecondPage(page, screenDate(-21), screenDate(-10));
+            await expectRows(page, [[screenDate(-11), '0'], [screenDate(-10), '0']]);
             await picker.getByRole('button', { name: '조회 요청', exact: true }).click();
             await applyPeriod(page, today, today);
             await expectMatchesApi(page, adminRequest, '/api/v1/admin/system/statistics/user', today,
@@ -89,6 +102,72 @@ test.describe('운영 관측', () => {
             await expect(page.getByRole('heading', { level: 1, name: '관리자 통계', exact: true })).toBeVisible({ timeout: 15000 });
             await expect(page.getByRole('navigation', { name: '통계 분석 뷰' }).getByRole('button', { name: /통계 개요$/ }))
                 .toHaveAttribute('aria-current', 'page');
+        });
+
+        /*
+         * [2026-11-10] 콘텐츠 지표(게시글 등록 건수, 작성일 기준) — 이 시험이 오늘 글을 하나 써 두면 오늘 하루의 값은 1 이상이고, 요약·표가
+         * 같은 순간의 API 응답과 같다(새로고침 단추가 서버에 다시 묻는 것을 응답으로 확인한다). 다른 시험도 같은 날 글을 쓰고 지우므로
+         * 오늘 값을 고정하지 않고, 지난 날은 값이 아니라 서버가 채운 날짜만 본다.
+         */
+        test('콘텐츠 지표에서 방금 쓴 글이 오늘 등록 건수에 잡히고 쪽·차트·내보내기·새로고침이 같은 계열을 따른다', async ({ page, adminRequest }) => {
+            const today = screenDate(0);
+            const quiet = [screenDate(-9), screenDate(-8), screenDate(-7)];
+            const pstSn = await createPost(adminRequest, '콘텐츠 지표');
+            try {
+                const api = trackApiRequests(page);
+                await page.goto('/admin/stats/board');
+                const heading = page.getByRole('heading', { level: 1, name: '콘텐츠 지표 분석', exact: true });
+                await expect(heading).toBeVisible({ timeout: 15000 });
+
+                // 1) 오늘 — 방금 쓴 글이 등록 건수에 잡힌다. 표·요약이 새로고침 뒤 같은 순간의 API 응답과 같다.
+                await applyPeriod(page, today, today);
+                const value = await expectMatchesApi(page, adminRequest, '/api/v1/admin/system/statistics/bbs', today, (data) => data);
+                expect(value, '이 시험이 오늘 쓴 글을 센다').toBeGreaterThanOrEqual(1);
+                // 2) 내보내기 — 지금 표의 행(서버가 준 오늘 값)을 그대로 파일로 낸다.
+                await expectExport(page, 'stats_content_stats', '등록(작성일 기준)', [[today, String(value)]]);
+                // 3) 차트 — 사흘을 고르면 표는 세 행이고 가로축은 서버가 채운 그 사흘이다.
+                await applyPeriod(page, quiet[0], quiet[2]);
+                await expect(sourceRows(page)).toHaveCount(quiet.length);
+                await expectChartDays(page, quiet);
+                // 4) 쪽 — 12일은 두 쪽이고 둘째 쪽은 마지막 이틀이다(날짜만 본다).
+                await openSecondPage(page, screenDate(-21), screenDate(-10));
+                await expect(sourceRows(page)).toHaveCount(2);
+                await expect(sourceRows(page).nth(0).getByRole('cell').first()).toHaveText(screenDate(-11));
+                await expect(sourceRows(page).nth(1).getByRole('cell').first()).toHaveText(screenDate(-10));
+                await api.settled(heading);
+            } finally {
+                await page.goto('about:blank');
+                expect((await adminRequest.delete(`/api/v1/boards/${GENERAL_BOARD_ID}/posts/${pstSn}`)).status(), '합성 글 정리').toBe(200);
+            }
+        });
+
+        /*
+         * [2026-11-10] 통계 개요의 요약(누적 사용자·금일 성공 로그인·전체 등록 건수)은 서버가 그린 값이다. 다른 시험이 같은 순간에 사용자·
+         * 로그인·글을 늘리므로, 화면의 새로고침 단추로 다시 그리게 하고 같은 순간의 요약 API 와 같아질 때까지 대조한다. 이 시험이 쓴 글이
+         * 있으므로 전체 등록 건수는 1 이상이다.
+         */
+        test('통계 개요 요약 칸이 같은 순간의 서버 요약과 같다', async ({ page, adminRequest }) => {
+            const pstSn = await createPost(adminRequest, '통계 개요 요약');
+            try {
+                const api = trackApiRequests(page);
+                await page.goto('/admin/stats');
+                const heading = page.getByRole('heading', { level: 1, name: '관리자 통계', exact: true });
+                await expect(heading).toBeVisible({ timeout: 15000 });
+                await expect(async () => {
+                    await page.getByRole('button', { name: '새로고침', exact: true }).click();
+                    const response = await adminRequest.get('/api/v1/admin/system/statistics/summary');
+                    expect(response.status()).toBe(200);
+                    const summary = (await response.json()).data as { totalUsers: number; todayConnects: number; totalPosts: number };
+                    expect(summary.totalPosts, '이 시험이 쓴 글을 센다').toBeGreaterThanOrEqual(1);
+                    await expect(summaryValue(page, '누적 사용자')).toHaveText(Number(summary.totalUsers).toLocaleString('en-US'), { timeout: 5000 });
+                    await expect(summaryValue(page, '금일 성공 로그인')).toHaveText(Number(summary.todayConnects).toLocaleString('en-US'), { timeout: 5000 });
+                    await expect(summaryValue(page, '전체 등록 건수')).toHaveText(Number(summary.totalPosts).toLocaleString('en-US'), { timeout: 5000 });
+                }).toPass({ timeout: 60_000 });
+                await api.settled(heading);
+            } finally {
+                await page.goto('about:blank');
+                expect((await adminRequest.delete(`/api/v1/boards/${GENERAL_BOARD_ID}/posts/${pstSn}`)).status(), '합성 글 정리').toBe(200);
+            }
         });
     });
 });
@@ -124,6 +203,7 @@ function summaryValue(page: Page, title: string): Locator {
 /**
  * 오늘 하루의 화면 값이 같은 순간의 API 응답과 같다. 다른 시험이 동시에 로그인·요청하면 두 읽기 사이에 값이 늘 수 있으므로,
  * 새로고침해 다시 읽고 같아질 때까지 기다린다. 오늘은 기간 안이라 행이 정확히 하나다(빈 날 채우기는 오늘에서 멈춘다).
+ * [2026-11-10] 새로고침 단추가 서버에 그 계열을 다시 물었는지(응답)를 확인한 뒤 대조한다 — 종전에는 누르기만 했다. 대조한 값을 돌려준다.
  */
 async function expectMatchesApi(
     page: Page,
@@ -131,9 +211,13 @@ async function expectMatchesApi(
     apiPath: string,
     today: string,
     series: (data: unknown) => unknown,
-) {
+): Promise<number> {
+    let matched = Number.NaN;
     await expect(async () => {
-        await page.getByRole('button', { name: /통계 새로고침$/ }).click();
+        await Promise.all([
+            page.waitForResponse((response) => new URL(response.url()).pathname === apiPath && response.ok(), { timeout: 10_000 }),
+            page.getByRole('button', { name: /통계 새로고침$/ }).click(),
+        ]);
         const response = await adminRequest.get(apiPath, { params: { fromDate: today, toDate: today } });
         expect(response.status()).toBe(200);
         const points = series((await response.json()).data) as { date: string; value: number }[];
@@ -142,5 +226,56 @@ async function expectMatchesApi(
         await expect(sourceRows(page)).toHaveCount(1, { timeout: 3000 });
         await expect(sourceRows(page).first().getByRole('cell')).toHaveText([today, value], { timeout: 3000 });
         await expect(summaryValue(page, '기간 합계')).toHaveText(value, { timeout: 3000 });
+        matched = points[0].value;
     }).toPass({ timeout: 45_000 });
+    return matched;
+}
+
+/** 기간을 고르고 원본 표의 둘째 쪽으로 간다(쪽당 10행). 기간을 바꾸면 표는 첫 쪽으로 돌아가므로 기간을 먼저 정한다. */
+async function openSecondPage(page: Page, from: string, to: string) {
+    await applyPeriod(page, from, to);
+    const pager = page.getByRole('navigation', { name: '페이지 탐색' });
+    await pager.getByRole('button', { name: '2 페이지', exact: true }).click();
+    await expect(pager.getByRole('button', { name: '2 페이지', exact: true })).toHaveAttribute('aria-current', 'page');
+}
+
+/** 차트(구역 '일자별 추이')의 가로축 눈금이 그 날들(MM-DD)이다 — 눈금은 서버가 준 계열의 날짜에서 나온다. */
+async function expectChartDays(page: Page, dates: string[]) {
+    const chart = page.getByRole('region', { name: '일자별 추이', exact: true });
+    for (const date of dates) {
+        await expect(chart.locator('svg text').filter({ hasText: new RegExp(`^${date.slice(5)}$`) })).toBeVisible();
+    }
+}
+
+/** 내려받은 파일을 끝까지 읽는다(UTF-8 BOM 은 뗀다). */
+async function downloadedText(download: Download): Promise<string> {
+    expect(await download.failure(), '내려받기가 끝나야 한다').toBeNull();
+    const chunks: Buffer[] = [];
+    for await (const chunk of await download.createReadStream()) chunks.push(Buffer.from(chunk));
+    return Buffer.concat(chunks).toString('utf8').replace(/^﻿/, '');
+}
+
+/** '엑셀 내보내기' 가 지금 표의 행을 그대로 CSV 로 낸다 — 머리글 [집계 일자, <계열> 건수] 와 [일자, 건수] 행. */
+async function expectExport(page: Page, filePrefix: string, seriesName: string, rows: string[][]) {
+    const [download] = await Promise.all([
+        page.waitForEvent('download'),
+        page.getByRole('button', { name: '엑셀 내보내기', exact: true }).click(),
+    ]);
+    expect(download.suggestedFilename()).toMatch(new RegExp(`^${filePrefix}_\\d{4}-\\d{2}-\\d{2}\\.csv$`));
+    const lines = (await downloadedText(download)).split('\n');
+    expect(lines).toEqual([
+        `"집계 일자","${seriesName} 건수"`,
+        ...rows.map((cells) => cells.map((cell) => `"${cell}"`).join(',')),
+    ]);
+}
+
+/** 이 시험만의 글을 관리자 API 로 쓴다(작성일은 오늘). 지우는 것은 호출자의 finally 다. */
+async function createPost(adminRequest: APIRequestContext, label: string): Promise<number> {
+    const created = await adminRequest.post('/api/v1/boards/posts', {
+        data: { bbsId: GENERAL_BOARD_ID, pstTtl: `E2E ${label} ${Date.now()}`, pstCn: '<p>통계 여정이 만든 합성 글</p>' },
+    });
+    expect(created.status(), '합성 글 등록').toBe(201);
+    const pstSn = (await created.json()).data as number;
+    expect(Number.isSafeInteger(pstSn) && pstSn > 0).toBe(true);
+    return pstSn;
 }

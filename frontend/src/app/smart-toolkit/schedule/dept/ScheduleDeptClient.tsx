@@ -185,8 +185,10 @@ export default function ScheduleDeptClient() {
             schdlSeCd: schedule.schdlSeCd ?? '1',
             // 저장된 중요도를 그대로 왕복한다 — 비어 있으면 비워 둔다('A' 로 채우지 않는다).
             schdlImprtCd: schedule.schdlImprtCd ?? undefined,
-            schdlKndCd: schedule.schdlKndCd,
-            reptSeCd: schedule.reptSeCd,
+            // [2026-11-10] 이 화면에서 등록한 일정은 종류·반복 코드가 비어(null) 있다 — null 을 그대로 실으면 폼 검증
+            //   (z.string().optional())이 거부해 같은 화면에서 수정할 수 없었다. 중요도와 같게 비어 있으면 비워 둔다.
+            schdlKndCd: schedule.schdlKndCd ?? undefined,
+            reptSeCd: schedule.reptSeCd ?? undefined,
         });
         validation.setFormErrors({}, false);
         setIsDialogOpen(true);

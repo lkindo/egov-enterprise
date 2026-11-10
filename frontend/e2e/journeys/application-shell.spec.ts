@@ -1,4 +1,29 @@
+import { randomBytes } from 'node:crypto';
+import { type APIRequestContext, type Locator } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
+import { trackApiRequests } from '../fixtures/hydration';
+
+/** 업무게시판(config/board-ids 의 TASK_BOARD_ID) — 업무 홈 '업무게시판 최근 글' 의 원천이다. */
+const TASK_BOARD_ID = 'BBSMSTR_CCCCCCCCCCCC';
+/** 일반 게시판(Q&A 템플릿) — 다른 여정도 합성 글을 만들고 지우는 게시판이다. */
+const GENERAL_BOARD_ID = 'BBSMSTR_DDDDDDDDDDDD';
+
+/** 이 시험만의 글을 관리자 API 로 쓴다. 지우는 것은 호출자의 finally 다. */
+async function createPost(adminRequest: APIRequestContext, bbsId: string, title: string): Promise<number> {
+    const created = await adminRequest.post('/api/v1/boards/posts', {
+        data: { bbsId, pstTtl: title, pstCn: '<p>업무 홈 여정이 만든 합성 글</p>' },
+    });
+    expect(created.status(), '합성 글 등록').toBe(201);
+    const pstSn = (await created.json()).data as number;
+    expect(Number.isSafeInteger(pstSn) && pstSn > 0).toBe(true);
+    return pstSn;
+}
+
+/** 실시간 상태 카드의 값 — 카드 제목 바로 앞의 값 문단(RealTimeStatCard). 서버 방송 전에는 '—' 다. */
+function realtimeValue(region: Locator, title: string): Locator {
+    return region.getByText(title, { exact: true }).locator('xpath=preceding-sibling::p[1]');
+}
+
 test.describe('공통 셸과 인증', () => {
     test.describe('Core Base (Auth & Dashboard)', () => {
         test.describe('Dashboard Integrity (Session Preserved)', () => {
@@ -74,6 +99,55 @@ test.describe('공통 셸과 인증', () => {
                 await expect(page.getByText('전체 미읽음 알림')).toHaveCount(0);
                 await page.getByRole('link', { name: /^내 담당 업무/ }).click();
                 await expect(page).toHaveURL(/\/smart-toolkit\/dept-job$/);
+            });
+        });
+        /*
+         * [2026-11-10] 업무 홈이 서버가 준 자료를 그리는지 이 시험이 만든 자료로 확인한다. 화면을 열기 전에 자료를 만든다 — 열린 홈을
+         * 다시 읽으면(reload) 진행 중인 카드 조회가 끊겨 오류 감시가 실패로 잡는다. 떠나기 전에 홈의 /api 요청이 끝나기를 기다린다.
+         */
+        test.describe('Work Home Server Data', () => {
+            test.use({ storageState: 'playwright/.auth/user.json' });
+            test('업무 홈 업무게시판 최근 글에 방금 쓴 글이 보인다', async ({ page, adminRequest }) => {
+                const title = `E2E 업무 홈 최근 글 ${Date.now()}-${randomBytes(3).toString('hex')}`;
+                const pstSn = await createPost(adminRequest, TASK_BOARD_ID, title);
+                try {
+                    const api = trackApiRequests(page);
+                    await page.goto('/');
+                    const heading = page.getByRole('heading', { level: 1, name: '업무 홈' });
+                    await expect(heading).toBeVisible({ timeout: 30000 });
+                    // 최근 글 목록은 업무 홈 대시보드 API 가 주는 업무게시판 최신 5건이다 — 방금 쓴 글이 그 상세로 가는 링크로 보인다.
+                    const recent = page.getByRole('region', { name: '업무게시판 최근 글' });
+                    const link = recent.getByRole('link', { name: title, exact: true });
+                    await expect(link).toBeVisible({ timeout: 15000 });
+                    await expect(link).toHaveAttribute('href', `/admin/community/boards/detail?bbsId=${TASK_BOARD_ID}&pstSn=${pstSn}`);
+                    await api.settled(heading);
+                }
+                finally {
+                    await page.goto('about:blank');
+                    expect((await adminRequest.delete(`/api/v1/boards/${TASK_BOARD_ID}/posts/${pstSn}`)).status(), '합성 글 정리').toBe(200);
+                }
+            });
+            test('업무 홈 실시간 상태가 서버가 방송한 통계를 보인다', async ({ page, adminRequest }) => {
+                // '오늘 등록된 글' 은 작성일이 오늘인 글 수다 — 이 시험이 오늘 글을 하나 써 두면 서버 값은 1 이상이다.
+                const pstSn = await createPost(adminRequest, GENERAL_BOARD_ID, `E2E 실시간 상태 ${Date.now()}-${randomBytes(3).toString('hex')}`);
+                try {
+                    const api = trackApiRequests(page);
+                    await page.goto('/');
+                    const heading = page.getByRole('heading', { level: 1, name: '업무 홈' });
+                    await expect(heading).toBeVisible({ timeout: 30000 });
+                    const realtime = page.getByRole('region', { name: '실시간 상태' });
+                    await expect(realtime.getByRole('status')).toHaveText('실시간 연결됨', { timeout: 30000 });
+                    // 값은 웹소켓 방송(/topic/dashboard/stats, 5초 주기)으로만 온다 — 방송 전에는 '—' 다.
+                    await expect(realtimeValue(realtime, '실시간 연결 세션(이 서버)')).toHaveText(/^\d[\d,]*$/, { timeout: 20000 });
+                    await expect(realtimeValue(realtime, '새 연결(이 서버, 1분마다 초기화)')).toHaveText(/^\d[\d,]*$/);
+                    // 서버는 오늘 글 수를 30초까지 재사용한다 — 그보다 길게 기다린다.
+                    await expect(realtimeValue(realtime, '오늘 등록된 글')).toHaveText(/^[1-9][\d,]*$/, { timeout: 45000 });
+                    await api.settled(heading);
+                }
+                finally {
+                    await page.goto('about:blank');
+                    expect((await adminRequest.delete(`/api/v1/boards/${GENERAL_BOARD_ID}/posts/${pstSn}`)).status(), '합성 글 정리').toBe(200);
+                }
             });
         });
     });
