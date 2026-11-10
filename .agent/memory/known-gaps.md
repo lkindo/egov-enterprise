@@ -105,7 +105,7 @@ refresh_triggers:
 | GAP-STD-001 | P2 | open | standard schema metadata | 표준 스키마에 표준 용어가 없거나 물리 타입이 다른 컬럼이 남았다(목록은 처분안) — 등록 단어 조합만으로 표준 적합으로 보지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-E2E-001 | P3 | needs-revalidation | E2E impact selection | PR 은 검토된 화면 변경만 E2E 를 spec 단위로 선별하고 공유·미지 입력과 main 은 전수다 — 일반 의존성 완전성과 절감률은 검증되지 않았다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
 | GAP-REQ-001 | P2 | open | requirements UAT CSV | 같은 인수조건의 예전 검수 CSV가 이후 판정을 바꿀 수 있다 — 판정 버전 충돌 검사가 필요하며, 현재는 최신 검수표만 사용하고 현재 판정과 대조한다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
-| GAP-HELP-001 | P2 | open | help center Q&A | 도움말 센터 1:1 Q&A 탭은 문의가 하나라도 있으면 오류다 — 계약이 필수로 적은 작성자·사용 여부를 목록 질의가 싣지 않는다. 계약 검사를 풀어 덮지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
+| GAP-HELP-001 | P2 | open | help center Q&A | 도움말 센터 1:1 Q&A 탭은 문의가 있으면 오류다 — 목록 질의가 싣지 않는 작성자·사용 여부를 변환 코드가 필수로 요구한다. '내 문의' 표지를 지킬지 정한 뒤 고친다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-DATA-002 | P2 | blocked-external | legacy input data | OCI 설문 3행의 시작·종료일이 잘린 채 남아 있다 — 업무 소유자가 원래 날짜를 확인하기 전에는 추정해 보정하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-DEP-001 | P1 | needs-revalidation | dependency security | PR 의존성 snapshot readiness 와 runtime High 차단은 구현됐고, public fork probe 와 양쪽 snapshot 부재 경계는 외부 검증이 남았다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
 | GAP-MIG-001 | P1 | blocked-external | migration-tool | vendor 7종 이관의 실측 범위가 서로 다르고 모두 UNVERIFIED·MANUAL_ONLY 다 — 도입 버전·driver 별 COMMIT 자격·cutover 는 기관 실측이 필요하다. | [상세](../../docs/04-operations/known-gaps-detail.md#migration) |

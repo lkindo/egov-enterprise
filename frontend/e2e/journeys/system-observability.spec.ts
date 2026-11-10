@@ -84,6 +84,16 @@ test.describe('로그 조회 — 거부된 요청을 기록에서 찾는다', ()
         const loginRows = dataRows(page, '로그인로그 목록');
         await expect(loginRows.filter({ hasText: 'webmaster' }).first()).toBeVisible({ timeout: 20000 });
         await expect(loginRows.filter({ hasNotText: 'webmaster' })).toHaveCount(0);
+
+        // [2026-11-10 Codex 50차] 웹 로그도 이 화면의 분류다 — 탭을 바꾸면 검색어를 유지한 채 웹 로그 API 로 다시 읽는다.
+        //   웹 로그 행은 적재 이벤트에 달려 있어 이 실행에 있다고 장담할 수 없으므로, 서버가 준 건수대로 표 또는 빈 결과를 보이는지 본다.
+        const [webLoaded] = await Promise.all([logsLoaded(page, 'web', 'webmaster'), categories.getByRole('tab', { name: '웹 로그', exact: true }).click()]);
+        await expect(categories.getByRole('tab', { name: '웹 로그', exact: true })).toHaveAttribute('aria-selected', 'true');
+        const webTotal = Number((await webLoaded.json()).data?.total ?? 0);
+        const webOutcome = webTotal > 0
+            ? dataRows(page, '웹 로그 목록').first()
+            : page.getByText('"webmaster"에 대한 검색 결과가 없습니다.', { exact: true }).first();
+        await expect(webOutcome, '웹 로그 분류가 서버가 준 결과를 보여야 한다').toBeVisible({ timeout: 20000 });
     });
 
     test('실패 요청 로그를 검색하고 발생일자 기간으로 거르면 기간 밖에서는 빠진다', async ({ page, userRequest, adminRequest }) => {
@@ -141,7 +151,7 @@ function dataRows(page: Page, table: string): Locator {
 }
 
 /** 그 분류의 로그 목록을 그 검색어(와 기간 yyyyMMdd)로 다시 읽은 응답. */
-function logsLoaded(page: Page, kind: 'system' | 'login', keyword: string, period?: [string, string]) {
+function logsLoaded(page: Page, kind: 'system' | 'login' | 'web', keyword: string, period?: [string, string]) {
     return page.waitForResponse((response) => {
         const url = new URL(response.url());
         return url.pathname === `/api/v1/admin/system/logs/${kind}`

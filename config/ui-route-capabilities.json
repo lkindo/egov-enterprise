@@ -74,7 +74,7 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "live",
+      "status": "partial",
       "dataSource": "mixed",
       "supportedActions": [
         "dismiss",
@@ -110,7 +110,8 @@
       "capabilities": [
         {
           "id": "home.work-summary",
-          "status": "live",
+          "status": "partial",
+          "candidateStatus": "live",
           "dataSource": "dashboard-api+approvals-api+memo-reports-api+schedules-api+surveys-api+dept-jobs-api",
           "actions": [
             "view-list"
@@ -120,22 +121,12 @@
           "visibleLabel": "업무게시판 최근 글·최근 공지사항·결재 대기·읽지 않은 받은 보고·오늘 일정·참여할 설문·내 담당 업무",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E4",
-          "lastVerifiedAt": "2026-11-10",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-20",
           "owner": "product/UX + domain owner",
-          "roundtrips": [
-            {
-              "spec": "frontend/e2e/journeys/application-shell.spec.ts",
-              "test": "업무 홈 업무게시판 최근 글에 방금 쓴 글이 보인다",
-              "actions": [
-                "view-list"
-              ]
-            }
-          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/main/DashboardApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/main/DashboardApiControllerTest.java",
-            "frontend/e2e/journeys/application-shell.spec.ts",
             "frontend/src/app/UnifiedDashboardClient.tsx",
             "frontend/src/app/__tests__/UnifiedDashboardClient.shell.test.tsx",
             "frontend/src/app/__tests__/WorkHome.equivalence.test.tsx",
@@ -5510,7 +5501,8 @@
         },
         {
           "id": "survey.questionnaire-template-management",
-          "status": "live",
+          "status": "partial",
+          "candidateStatus": "live",
           "dataSource": "admin-surveys-api",
           "actions": [
             "create",
@@ -5524,37 +5516,12 @@
           "visibleLabel": "설문지·문항 · 템플릿",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E4",
-          "lastVerifiedAt": "2026-11-10",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-09-25",
           "owner": "product/UX + domain owner",
-          "roundtrips": [
-            {
-              "spec": "frontend/e2e/journeys/public-navigation.spec.ts",
-              "test": "설문 생성·참여·선택답 확인: 기간 등록·수정과 관리자 목록·상세 표시",
-              "actions": [
-                "create",
-                "delete",
-                "edit",
-                "view-detail",
-                "view-list"
-              ]
-            },
-            {
-              "spec": "frontend/e2e/journeys/public-navigation.spec.ts",
-              "test": "설문 템플릿: 화면에서 추가·상세 열기·수정·삭제가 서버에 반영된다",
-              "actions": [
-                "create",
-                "delete",
-                "edit",
-                "view-detail",
-                "view-list"
-              ]
-            }
-          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyApiController.java",
             "api-server/src/test/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyApiControllerTest.java",
-            "frontend/e2e/journeys/public-navigation.spec.ts",
             "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
             "frontend/src/app/admin/survey/components/SurveyTemplatesPanel.tsx",
             "frontend/src/app/admin/survey/components/__tests__/SurveyQuestionsPanel.test.tsx",
@@ -7453,7 +7420,8 @@
         },
         {
           "id": "cms.page-publication",
-          "status": "live",
+          "status": "partial",
+          "candidateStatus": "live",
           "dataSource": "cms-content-pages-api",
           "actions": [
             "navigate",
@@ -7465,24 +7433,12 @@
           "visibleLabel": "게시 · 게시 중지 · 이력 · 메뉴에 추가",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E4",
-          "lastVerifiedAt": "2026-11-10",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-22",
           "owner": "product/UX + domain owner",
-          "roundtrips": [
-            {
-              "spec": "frontend/e2e/journeys/help-content.spec.ts",
-              "test": "콘텐츠 페이지 작성·게시 → 일반 사용자가 주소로 읽고, 게시를 멈추면 없는 페이지다",
-              "actions": [
-                "navigate",
-                "submit",
-                "view-detail"
-              ]
-            }
-          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/cms/CmsPageAdminApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/cms/CmsPageAdminApiControllerTest.java",
-            "frontend/e2e/journeys/help-content.spec.ts",
             "frontend/src/app/admin/system/content-pages/ContentPageEditor.tsx",
             "frontend/src/app/admin/system/content-pages/__tests__/ContentPagesClient.test.tsx"
           ]

@@ -1,4 +1,5 @@
 import { expect,test } from '../fixtures/browser-test';
+import { waitForHydration } from '../fixtures/hydration';
 import { getAdminBearerToken } from '../utils/admin-token';
 import { screenYmd } from '../helpers/screen-date';
 /**
@@ -229,6 +230,8 @@ test.describe('캘린더 조작', () => {
                 listedSn = (await res.json()).data as number;
                 await page.goto('/smart-toolkit/schedule/dept');
                 await expect(page.getByRole('heading', { level: 1, name: '부서 일정 관리', exact: true })).toBeVisible({ timeout: 15000 });
+                // [2026-11-10 Codex 50차] 제목은 서버가 그린다 — 검색창이 하이드레이션되기 전에 채우면 입력이 화면 상태에 들어가지 않아 검색 요청이 나가지 않는다.
+                await waitForHydration(search);
 
                 await searchFor(listed);
                 const period = `${today.slice(0, 4)}.${today.slice(4, 6)}.${today.slice(6)}`;
