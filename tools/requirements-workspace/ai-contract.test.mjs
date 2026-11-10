@@ -151,6 +151,33 @@ test('batches communicate remaining capacity and citation overflow can use one b
   assert.match(corrected.instructions, /CURRENT batch delta/);
 });
 
+test('batch quotation failures distinguish requirements and retain a known existing requirement identity', () => {
+  const state = snapshot(), previous = proposal(), value = proposal(); previous.issues = []; previous.coverage = []; value.issues = []; value.updatedRequirementIds = ['REQ-1'];
+  value.requirements[0].citations[0].quote = 'SYNTHETIC_REJECTED_QUOTE';
+  let failure;
+  try { validateAnalysisBatchProposal(value, state, state.backlog.sources, previous, { idPrefix: 'B02-' }); } catch (error) { failure = error; }
+  assert.deepEqual(failure.details, [{ kind: 'citation-quote', path: 'requirements[0].citations[0]', requirementId: 'REQ-1' }]);
+  const request = buildAiRequest(state, 'analysis', [], { sources: state.backlog.sources, batch: { index: 2, total: 2, idPrefix: 'B02-' }, previousAnalysis: previous });
+  assert.equal(buildCorrectionRequest(request, value, failure.details).data.correction.violations[0].requirementId, 'REQ-1');
+});
+
+test('batch correction discards malformed drafts and carries only bounded known failure locations', async () => {
+  const state = snapshot(), request = buildAiRequest(state, 'analysis', [], { sources: state.backlog.sources, batch: { index: 1, total: 2, idPrefix: 'B01-' }, previousAnalysis: proposal() });
+  const rejected = { get unknown() { throw Error('SYNTHETIC_REJECTED_BODY'); } };
+  const details = [{ kind: 'citation-quote', path: 'items[0].citations[0]', requirementId: 'REQ-1', raw: 'SYNTHETIC_REJECTED_BODY' }, { kind: 'SYNTHETIC_REJECTED_BODY', path: 'requirements.SYNTHETIC_REJECTED_BODY' }];
+  const corrected = buildCorrectionRequest(request, rejected, details);
+  assert.equal(JSON.stringify(corrected).includes('SYNTHETIC_REJECTED_BODY'), false);
+  assert.equal(Object.hasOwn(corrected.data.correction, 'previousOutput'), false);
+  assert.deepEqual(corrected.data.correction.violations, [{ kind: 'citation-quote', path: 'items[0].citations[0]', requirementId: 'REQ-1' }, { kind: 'schema', path: '$' }]);
+  const { safeValidationFailures } = await import('./ai-contract.mjs');
+  assert.deepEqual(safeValidationFailures(details), [{ kind: 'citation-quote', path: 'items[0].citations[0]' }, { kind: 'schema', path: '$' }]);
+  assert.equal(safeValidationFailures(Array(20).fill(details[0])).length, 10);
+  let accessed = false;
+  assert.deepEqual(safeValidationFailures([{ get kind() { accessed = true; return 'citation-quote'; }, get path() { accessed = true; return 'items[0]'; } }]), [{ kind: 'schema', path: '$' }]);
+  assert.equal(accessed, false);
+  assert.deepEqual(safeValidationFailures([{ kind: 'business-model-source', path: '$.actors[0].responsibility' }]), [{ kind: 'business-model-source', path: '$.actors[0].responsibility' }]);
+});
+
 test('unrecoverable cumulative capacity is reported before spending the correction budget', () => {
   const state = snapshot(), seed = proposal(); seed.issues = []; seed.coverage = [];
   seed.requirements = Array.from({ length: 100 }, (_, index) => ({ ...structuredClone(proposal().requirements[0]), id: `OLD-${index}`, description: 'x'.repeat(4400) }));

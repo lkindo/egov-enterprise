@@ -9,6 +9,21 @@ const { JSDOM } = require('jsdom');
 const markup = readFileSync(new URL('./public/index.html', import.meta.url), 'utf8');
 const script = readFileSync(new URL('./public/app.js', import.meta.url), 'utf8');
 const button = (document, name) => [...document.querySelectorAll('button')].find(element => element.textContent.trim() === name);
+test('invalid AI output shows validation evidence and checkpoint recovery instead of unrelated login advice', async t => {
+  const dom = new JSDOM(markup, { url: 'http://127.0.0.1:8792/', runScripts: 'outside-only', pretendToBeVisual: true }); t.after(() => dom.window.close());
+  const { window } = dom; window.structuredClone = structuredClone;
+  const pack = createEmptyBacklogPack(context); pack.project = { code: 'SYNTHETIC', name: '합성 업무' }; pack.sources = [structuredClone(source)];
+  const state = { revision: 'synthetic', backlog: pack, metadata: { baselines: [], exports: [], reviewedRequirements: {}, uatRecords: [], auditFindings: [] }, context, imports: { active: false, jobs: [] }, analysisReadiness: { valid: false, errors: [] }, readiness: { valid: false, errors: [] }, matches: { results: [] }, ai: { available: true, model: 'claude-opus-5-5', effort: 'high', active: false, proposal: null, inputDigests: {}, current: { id: 'synthetic-job', phase: 'analysis', fullPipeline: true, status: 'failed', errorCode: 'AI_OUTPUT_INVALID', attempts: 2, batches: { completed: 8, total: 96 }, checkpoints: { analysis: { id: 'synthetic-checkpoint' } }, validationFailures: [{ kind: 'citation-quote', path: 'items[0].citations[0]' }] } } };
+  window.fetch = async url => ({ ok: true, json: async () => url === '/api/session' ? { token: 'synthetic-token' } : state });
+  await window.eval(`(async () => { ${script}\n })()`);
+  const panel = window.document.querySelector('[aria-label="AI 요구사항 진행"]');
+  assert.match(panel.textContent, /원문 인용/); assert.match(panel.textContent, /items\[0\]\.citations\[0\]/);
+  assert.match(panel.textContent, /완료된 8묶음/); assert.doesNotMatch(panel.textContent, /CLI 로그인·사용 한도·자료 크기/);
+  state.ai.current.fullPipeline = false; state.ai.current.checkpoints = undefined;
+  button(window.document, '최신 상태 읽기').click(); await new Promise(resolve => setImmediate(resolve));
+  const basic = window.document.querySelector('[aria-label="AI 요구사항 진행"]');
+  assert.match(basic.textContent, /첫 묶음부터/); assert.doesNotMatch(basic.textContent, /완료된 8묶음은 저장/);
+});
 test('stopping while the browser reads a file prevents a later upload and does not cancel a nonexistent server job', async t => {
   const dom = new JSDOM(markup, { url: 'http://127.0.0.1:8792/', runScripts: 'outside-only', pretendToBeVisual: true });
   t.after(() => dom.window.close());

@@ -22,6 +22,26 @@ const acSchema = object({ id: identifier, workItemId: identifier, requirementIds
 const traceSchema = object({ id: identifier, requirementId: identifier, workItemId: identifier, acId: identifier, targetKind: enumeration(TARGET_KINDS), targetId: string(300), linkIntent: enumeration(['candidate', 'planned', 'existing']), notes: string() }, ['id', 'requirementId', 'targetKind', 'targetId', 'linkIntent']);
 export const DECOMPOSITION_SCHEMA = object({ workItems: array(workSchema, 1, 500), acceptanceCriteria: array(acSchema, 1, 1500), traceLinks: array(traceSchema, 0, 3000), issues: array(issueSchema, 0, 100), retirements: array(object({ entity: enumeration(['workItem', 'acceptanceCriterion', 'traceLink']), id: identifier, reason: string() }), 0, 3000) }, ['workItems', 'acceptanceCriteria', 'traceLinks', 'issues']);
 
+const failureKinds = new Set(['schema', 'output-size', 'sensitive-output', 'duplicate-id', 'citation-quote', 'citation-capacity', 'citation-reference', 'coverage-source', 'coverage-reference', 'coverage-disposition', 'coverage-missing', 'coverage-scope', 'batch-update-intent', 'batch-new-id', 'batch-unseen-citation', 'batch-issue-replacement', 'requirement-omission', 'issue-reference', 'module-reference', 'analysis-backlog-structure', 'backlog-structure', 'development-readiness', 'existing-target', 'implicit-removal', 'retirement-reference', 'trace-ac-relation', 'trace-requirement', 'business-model-coverage', 'business-model-source', 'business-model-budget', 'document-source', 'issue-id-collision', 'plan-review-id', 'plan-review-requirement', 'plan-review-scope', 'quality-scope-change']);
+const failureFields = new Set(['items', 'sourceCoverage', 'actors', 'responsibility', 'sourceIds', 'processes', 'trigger', 'steps', 'exceptions', 'rules', 'data', 'terms', 'term', 'meaning', 'documents', 'documentTypes', 'sections', 'warningCodes', 'unreadable', 'uncertain', 'anchors', 'clauseCount', 'anchorScope', 'inputId', 'note', 'reason', 'revisions', 'workItemUpdates', 'acceptanceUpdates', 'traceUpdates']);
+function collectFailureFields(schema) {
+  for (const [key, value] of Object.entries(schema.properties ?? {})) { failureFields.add(key); collectFailureFields(value); }
+  if (schema.items) collectFailureFields(schema.items);
+  for (const branch of schema.anyOf ?? []) collectFailureFields(branch);
+}
+for (const schema of [ANALYSIS_SCHEMA, BATCH_ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA]) collectFailureFields(schema);
+function failureValue(value, key) {
+  try { return value && typeof value === 'object' ? Object.getOwnPropertyDescriptor(value, key)?.value : undefined; } catch { return undefined; }
+}
+export function safeValidationFailures(details) {
+  const values = Array.isArray(details) && details.length ? details.slice(0, 10) : [{}];
+  return values.map(detail => {
+    const path = failureValue(detail, 'path'), kind = failureValue(detail, 'kind');
+    const safe = typeof path === 'string' && path.length <= 200 && /^(?:\$|[A-Za-z_][A-Za-z_0-9]*)(?:\.[A-Za-z_][A-Za-z_0-9]*|\[\d{1,4}\])*$/.test(path) && (path.match(/[A-Za-z_][A-Za-z_0-9]*/g) ?? []).every(field => failureFields.has(field));
+    return { kind: failureKinds.has(kind) ? kind : 'schema', path: safe ? path : '$' };
+  });
+}
+
 // Validate precisely the small JSON-Schema vocabulary above. No coercion, defaults,
 // accessor execution, prototype-bearing fields or unknown properties are accepted.
 function check(value, schema, depth = 0, path = '$') {
@@ -74,15 +94,15 @@ export function selectEvidenceQuote(text) {
   }
   return null;
 }
-function citations(items, clauses) {
+function citations(items, clauses, prefix = 'items') {
   for (const [index, item] of items.entries()) for (const [citationIndex, citation] of item.citations.entries()) {
     const original = clauses.get(`${citation.sourceId}/${citation.clauseId}`);
-    if (!original?.text.includes(citation.quote) || !meaningful(citation.quote) || meaningful(citation.quote) < Math.min(12, meaningful(original.text))) invalid('citation-quote', `items[${index}].citations[${citationIndex}]`);
+    if (!original?.text.includes(citation.quote) || !meaningful(citation.quote) || meaningful(citation.quote) < Math.min(12, meaningful(original.text))) invalid('citation-quote', `${prefix}[${index}].citations[${citationIndex}]`, prefix === 'requirements' ? item.id : undefined);
   }
 }
 export function validateEvidenceCitations(items, snapshot) { citations(items, clauseMap(snapshot)); }
-function issues(items, requirements, clauses) {
-  unique(items); citations(items, clauses);
+function issues(items, requirements, clauses, citationPrefix = 'items') {
+  unique(items); citations(items, clauses, citationPrefix);
   for (const issue of items) if (new Set(issue.requirementIds).size !== issue.requirementIds.length || issue.requirementIds.some(id => !requirements.has(id))) invalid('issue-reference', 'issues');
 }
 export function seedAnalysis(snapshot) {
@@ -139,7 +159,7 @@ export function validateAnalysisBatchProposal(value, snapshot, sources, previous
   privateValue(result, ANALYSIS_SCHEMA);
   const clauses = clauseMap(snapshot), current = new Set(sources.flatMap(source => source.clauses.map(clause => `${source.id}/${clause.id}`)));
   const allowed = new Set([...current, ...(previous?.requirements ?? []).flatMap(req => req.citations.map(cite => `${cite.sourceId}/${cite.clauseId}`)), ...(previous?.issues ?? []).flatMap(issue => issue.citations.map(cite => `${cite.sourceId}/${cite.clauseId}`)), ...snapshot.backlog.sources.flatMap(source => source.clauses.filter(clause => source.id.startsWith('DEC-') && source.sourceType === 'policy-memo' || clause.requirementIds?.some(id => snapshot.backlog.businessRequirements.some(req => req.id === id))).map(clause => `${source.id}/${clause.id}`))]);
-  citations(result.requirements, clauses); issues(result.issues, ids, clauses);
+  citations(result.requirements, clauses, 'requirements'); issues(result.issues, ids, clauses, 'issues');
   if ([...result.requirements, ...result.issues].some(item => item.citations.some(cite => !allowed.has(`${cite.sourceId}/${cite.clauseId}`)))) invalid('batch-unseen-citation', 'citations');
   const modules = new Set((snapshot.metadata.context.modules ?? []).map(module => typeof module === 'string' ? module : module.id));
   if (result.requirements.some(req => req.moduleCandidates.some(id => !modules.has(id)))) invalid('module-reference', 'requirements');
@@ -367,6 +387,13 @@ export function buildAiRequest(snapshot, phase, decisions = [], { sources = snap
 }
 
 export function buildCorrectionRequest(request, output, details = []) {
+  if (request.phase === 'analysis' && request.data.analysisBatch) {
+    const next = structuredClone(request), known = new Set((request.data.previousAnalysis?.requirements ?? []).map(req => req.id));
+    next.instructions += ' Correct the CURRENT batch delta using the original inputs and bounded invariant failures. The rejected draft is not supplied. Return current coverage, only new/changed requirements, explicit updatedRequirementIds and new issues. Retain prior verified evidence and human decisions. Use exact provided source IDs, clause IDs and verbatim quotations; do not invent facts, approvals or policy to pass validation. Earlier verified citations remain preserved; defer genuinely new evidence with a decision issue when remaining capacity cannot accept it. Cite only current data.sources, previously verified previousAnalysis citations or explicit policySources. businessModel is global context and does not authorize unseen source citations. requirements/issues positions describe the accumulated candidate, not necessarily the current delta; a supplied requirementId identifies an existing requirement.';
+    next.data.correction = { violations: safeValidationFailures(details).map((failure, index) => { const id = failureValue(details?.[index], 'requirementId'); return { ...failure, ...(known.has(id) ? { requirementId: id } : {}) }; }) };
+    if (Buffer.byteLength(JSON.stringify(next)) > 768 * 1024) capacity('AI_INPUT_TOO_LARGE');
+    return next;
+  }
   // Never retransmit malformed output. Only a schema-valid private draft can
   // be returned as untrusted data for one structural correction.
   privateValue(output, request.phase === 'analysis' ? request.data.analysisBatch ? BATCH_ANALYSIS_SCHEMA : ANALYSIS_SCHEMA : DECOMPOSITION_SCHEMA);

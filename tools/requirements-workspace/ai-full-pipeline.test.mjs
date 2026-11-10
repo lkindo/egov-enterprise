@@ -335,3 +335,29 @@ test('a failed later analysis batch resumes after validated prior coverage witho
   assert.deepEqual(indices, [2]); assert.equal(state.ai.current.status, 'needs-decisions');
   assert.equal(state.ai.proposal.coverage.length, 33); assert.deepEqual(state.ai.proposal.issues[0], originalQuestion);
 });
+
+for (const [recovers, rejectsFirst] of [[true, true], [false, true], [true, false]]) test(`resuming a corrected checkpoint keeps fresh correction and prior evidence: recovery=${recovers}, invalid=${rejectsFirst}`, async t => {
+  let failSecond = true; const indices = [], counts = new Map();
+  const app = await setup(t, async ({ request }) => {
+    if (request.phase !== 'analysis') return envelope(reply(request), request.phase);
+    const index = request.data.analysisBatch.index; indices.push(index);
+    if (index === 2 && failSecond) { failSecond = false; throw Object.assign(Error('AI_CLI_FAILED'), { code: 'AI_CLI_FAILED' }); }
+    const attempt = (counts.get(index) ?? 0) + 1; counts.set(index, attempt);
+    const src = request.data.sources[0], clause = src.clauses[0];
+    const invalid = index === 1 && attempt === 1 || index === 2 && (rejectsFirst && attempt === 1 || !recovers);
+    return envelope({ requirements: [], issues: invalid || index === 1 ? [{ id: `Q-${index}`, kind: 'decision', severity: 'blocking', question: `${index}번 업무 범위를 확인해 주세요.`, options: [], requirementIds: [], citations: [{ sourceId: src.id, clauseId: clause.id, quote: invalid ? '원문에 없는 합성 인용문' : clause.text }] }] : [], coverage: request.data.sources.flatMap(src => src.clauses.map(part => ({ sourceId: src.id, clauseId: part.id, disposition: 'excluded', rationale: '업무 배경이며 범위 확인이 필요하다.' }))) });
+  });
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 33 }, (_, index) => ({ ...source.clauses[0], id: `C-${index + 1}` })) });
+  await app.start(); await app.engine.waitForAi(); let state = await app.engine.state();
+  assert.equal(state.ai.current.errorCode, 'AI_CLI_FAILED');
+  assert.equal(state.ai.current.attempts, 2, 'the current run retains the earlier successful correction in its audit');
+  const oldRef = state.ai.current.checkpoints.analysis, oldBytes = app.store.readArchive(oldRef), checkpoint = JSON.parse(oldBytes);
+  assert.equal(checkpoint.output.completed, 1); assert.equal(checkpoint.output.corrected, true);
+  indices.length = 0; await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.deepEqual(indices, rejectsFirst ? [2, 2] : [2]); assert.equal(state.ai.current.status, recovers ? 'needs-decisions' : 'failed', state.ai.current.errorCode);
+  assert.equal(state.ai.current.attempts, rejectsFirst ? 2 : 1, 'old checkpoint corrections are not counted as new-run model calls');
+  assert.equal(app.store.readArchive(oldRef), oldBytes);
+  if (recovers) { assert.equal(state.ai.proposal.coverage.length, 33); assert.equal(state.ai.proposal.issues[0].question, checkpoint.output.output.issues[0].question); }
+  else { assert.equal(state.ai.current.errorCode, 'AI_OUTPUT_INVALID'); assert.deepEqual(state.ai.current.checkpoints.analysis, oldRef); assert.equal(state.ai.current.batches.completed, 1); }
+  assert.equal(state.metadata.baselines.length, 0);
+});
