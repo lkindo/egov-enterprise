@@ -129,6 +129,23 @@ function splitSegments(raw) {
 const tokens = (text) => text.trim().split(/\s+/).filter(Boolean);
 const unquote = (value) => value.replace(/^(['"])(.*)\1$/s, '$2');
 
+/** SOP §6.6 의 도구별 고정 작업 트리 이름 꼴 `wt-<프로젝트>-<도구>` (예: wt-egov-codex). 임시 트리는 뒤에 작업 이름이 붙는다. */
+const PERSISTENT_WORKTREE_NAME = /^wt-[^\\/\s-]+-(?:codex|claude|gemini)$/i;
+
+/** `git worktree add [옵션] <경로> …` 의 경로(따옴표를 벗긴 원문). worktree add 가 아니거나 경로가 없으면 null 이다. */
+function worktreeAddPath(git, raw) {
+  if (git?.sub !== 'worktree' || git.args[0] !== 'add') return null;
+  const words = tokens(raw);
+  const at = words.findIndex((word) => word === 'add');
+  const options = new Set(['-b', '-B', '--reason']);
+  for (let index = at + 1; index < words.length; index += 1) {
+    if (options.has(words[index])) { index += 1; continue; }
+    if (words[index].startsWith('-')) continue;
+    return unquote(words[index]);
+  }
+  return null;
+}
+
 /** 뒤 단어를 명령 자리에 두는 셸 예약어 — `for …; do git …`·`if …; then …; else …` 의 조각은 예약어 다음이 명령이다. */
 const SHELL_KEYWORDS = new Set(['do', 'then', 'else', 'elif', 'if', 'while', 'until']);
 
@@ -1174,18 +1191,18 @@ export const RULES = Object.freeze([
     why: 'Playwright 매처(`contracts/…spec.ts`·`(journeys|quality)/…spec.ts`)와 E2E 선별 계획기가 spec 의 절대 경로에 정규식을 적용해, 경로의 디렉터리 이름이 quality·journeys·contracts 로 끝나면 소유가 모호하다고 붉다(2026-10-19).',
     fix: '작업 트리는 D:\\wt-<짧은 이름> 으로 두되 그 셋으로 끝나는 디렉터리 이름을 쓰지 않는다(SOP §6.6).',
     match: ({ git, raw }) => {
-      if (git?.sub !== 'worktree' || git.args[0] !== 'add') return false;
-      const words = tokens(raw);
-      const at = words.findIndex((word) => word === 'add');
-      const options = new Set(['-b', '-B', '--reason']);
-      let path = null;
-      for (let index = at + 1; index < words.length; index += 1) {
-        if (options.has(words[index])) { index += 1; continue; }
-        if (words[index].startsWith('-')) continue;
-        path = unquote(words[index]);
-        break;
-      }
+      const path = worktreeAddPath(git, raw);
       return path !== null && path.split(/[\\/]/).some((part) => /(quality|journeys|contracts)$/i.test(part));
+    },
+  },
+  {
+    id: 'worktree-add-outside-persistent', decision: 'ask',
+    why: '도구마다 고정 작업 트리 하나가 기본이고 임시 트리는 예외다(SOP §6.6, DEC-OPS-414). 2026-11-06~11-10 Codex 한 세션이 고정 트리가 비어 있는데도 임시 트리 셋을 차례로 만들었고, 일이 끝난 뒤에도 남아 사용자가 몰랐다 — 그중 하나는 병합 뒤에도 미리보기 실행기가 그 코드를 불러 쓰고 있었다.',
+    fix: '고정 트리(D:\\wt-<프로젝트>-<도구>)가 유휴이면 그곳에서 작업 브랜치로 시작한다. 고정 트리가 다른 세션에 쓰이거나 실행 중 검증의 입력을 지켜야 할 때만 이유를 사용자에게 설명하고 승인을 받아 임시 트리를 만들고, 완료 보고에서 그 트리를 지울지 묻는다(SOP §6.6).',
+    // 경로를 셸 변수로 넘기면(`git worktree add --detach $tree HEAD`) 고정 트리인지 알 수 없다 — 이름이 고정 트리 꼴이 아니면 묻는다.
+    match: ({ git, raw }) => {
+      const path = worktreeAddPath(git, raw);
+      return path !== null && !PERSISTENT_WORKTREE_NAME.test(path.split(/[\\/]/).filter(Boolean).at(-1) ?? '');
     },
   },
   {

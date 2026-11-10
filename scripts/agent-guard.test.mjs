@@ -247,7 +247,28 @@ const CASES = {
     // setup 프로젝트 매처는 `/.*\.setup\.ts/` 라 디렉터리 이름으로는 걸리지 않는다(2026-10-27 감사).
     pass: ['git worktree add D:\\wt-board -b fix/x origin/main', 'git worktree list', 'git worktree add D:\\wt-setup -b fix/x origin/main'],
   },
+  // 2026-11-06~11-10 Codex 한 세션이 고정 트리(D:\wt-egov-codex)가 비어 있는데도 실제로 실행한 명령 셋 — 셋째는 경로를 변수로 넘겼다.
+  'worktree-add-outside-persistent': {
+    hit: ['git worktree add -b feat/requirements-ai-document-pipeline-20261106 D:\\wt-egov-codex-ai-intake origin/main',
+      'git worktree add --detach D:\\wt-egov-codex-intake-resume-ui 706926a7bdebc64205dc4d140148e26818fe7852',
+      "$taskEvidenceTree = 'D:\\wt-egov-codex-discovery-evidence-20261110'\nif (Test-Path -LiteralPath $taskEvidenceTree) { throw 'EVIDENCE_WORKTREE_ALREADY_EXISTS' }\ngit worktree add --detach $taskEvidenceTree HEAD",
+      'git -C D:\\project\\egov-enterprise worktree add "D:\\wt-egov-claude-hotfix" -b fix/x origin/main', 'git worktree add ../wt-egov-codex-x origin/main',
+      'git worktree add --detach D:\\wt-egov-board origin/main'],
+    pass: ['git worktree add --detach D:\\wt-egov-codex origin/main', 'git worktree add --detach D:\\wt-egov-claude\\ origin/main',
+      'git worktree add --detach "E:/work/wt-shop-gemini" origin/main', 'git worktree list --porcelain', 'git worktree prune -v',
+      'git commit --only -m "git worktree add D:\\wt-egov-codex-x 는 묻는다" -- a.md', 'echo "git worktree add --detach D:\\wt-egov-codex-x HEAD"'],
+  },
 };
+
+test('worktree-add-outside-persistent: SOP §6.6 표의 고정 트리는 묻지 않고, 그 뒤에 작업 이름을 붙인 임시 트리는 묻는다', () => {
+  const protocol = readFileSync(join(repoRoot, 'docs', '03-guides', 'orchestration-protocol.md'), 'utf8');
+  const assigned = [...protocol.matchAll(/^\| (?:Codex|Claude Code|Antigravity\/Gemini) \| `([^`]+)` \|$/gmu)].map((match) => match[1]);
+  assert.equal(assigned.length, 3, 'SOP §6.6 의 도구별 고정 작업 트리 표를 읽는다');
+  for (const path of assigned) {
+    assert.ok(!ruleOf(`git worktree add --detach ${path} origin/main`).includes('worktree-add-outside-persistent'), `고정 트리는 통과: ${path}`);
+    assert.ok(ruleOf(`git worktree add --detach ${path}-task origin/main`).includes('worktree-add-outside-persistent'), `임시 트리는 묻는다: ${path}-task`);
+  }
+});
 
 test('tagged-test-on-default-task: 벤더 카탈로그 시험은 전용 실행 도구로 안내한다', () => {
   const rule = RULES.find(({ id }) => id === 'tagged-test-on-default-task');

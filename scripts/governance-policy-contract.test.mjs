@@ -362,6 +362,25 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
     || !worktreeFinish.includes('자기 작업 브랜치만 기존 완료 규칙에 따라 정리하며, 고정 작업 트리 디렉터리는 삭제하지 않는다')) {
     errors.push('protocol §6.6 must verify owned completion, park detached, and retain the directory');
   }
+  // [2026-11-11 DEC-OPS-414] 도구마다 고정 트리 하나가 기본이다 — 임시 트리는 승인을 받아 예외로만 만들고, 병합이 아니라 쓰는 것이 없어졌을
+  // 때 완료 보고에서 정리를 묻는다(Codex 한 세션이 비어 있는 고정 트리를 두고 임시 트리 셋을 남긴 사례).
+  if (!worktreeSection.includes('도구마다 고정 트리 하나가 기본이고 임시 트리는 예외다')
+    || !worktreeSection.includes('자기 고정 트리가 유휴인지 먼저 본다')
+    || !worktreeSection.includes('임시 트리를 만들기 전에 그 이유를 사용자에게 알리고 승인을 받는다')
+    || !worktreeSection.includes('실행 전 가드가 고정 트리 밖의 `git worktree add` 를 묻는다')) {
+    errors.push('protocol §6.6 must keep temporary worktrees exceptional and approved');
+  }
+  const worktreeLifetime = section(worktreeSection, '- **임시 트리의 수명**', '- **정리**');
+  if (!worktreeLifetime.includes('그 트리의 작업이 병합돼도 끝난 것이 아니다')
+    || !worktreeLifetime.includes('그 트리의 코드를 불러 도는 서버·실행기·미리보기')
+    || !worktreeLifetime.includes('완료 보고에서 사용자에게 그 트리를 지울지 묻고')) {
+    errors.push('protocol §6.6 must close temporary worktrees through the completion report');
+  }
+  const worktreeCleanup = section(worktreeSection, '- **정리**');
+  if (!worktreeCleanup.includes('`build/` 의 백업 링크까지 깊이 제한 없이 찾는다')
+    || !worktreeCleanup.includes('드라이브 문자와 구분자를 갖춘 절대 경로로 확인한다')) {
+    errors.push('protocol §6.6 must unlink every outside link and resolve an absolute target before deleting');
+  }
 
   // [2026-10-24 DEC-OPS-382] 설계 검토 예산 — 반복 비용만 줄이고 승인 분리·신호 보존·L2 검토는 지운 채 남지 않게 고정한다.
   const designReviewBudget = section(activeProtocol, '## 7. 설계 검토 예산');
@@ -781,6 +800,33 @@ test('DEC-OPS-395 persistent worktree regressions fail with their own message', 
     const errors = protocolTruthErrors({ ...current, [source]: current[source].replace(from, to) });
     assert.ok(errors.some(error => error.includes(expected)), `${from} → ${expected}: ${JSON.stringify(errors)}`);
   }
+});
+
+test('DEC-OPS-414 temporary worktree regressions fail with their own message', () => {
+  const cases = [
+    ['protocol', '도구마다 고정 트리 하나가 기본이고 임시 트리는 예외다', '임시 트리는 필요할 때 자유롭게 만든다', 'exceptional and approved'],
+    ['protocol', '자기 고정 트리가 유휴인지 먼저 본다', '지금 있는 임시 트리에서 새 트리를 만든다', 'exceptional and approved'],
+    ['protocol', '임시 트리를 만들기 전에 그 이유를 사용자에게 알리고 승인을 받는다', '임시 트리는 묻지 않고 만든다', 'exceptional and approved'],
+    ['protocol', '실행 전 가드가 고정 트리 밖의 `git worktree add` 를 묻는다', '가드는 작업 트리 생성을 보지 않는다', 'exceptional and approved'],
+    ['protocol', '그 트리의 작업이 병합돼도 끝난 것이 아니다', '그 트리의 작업이 병합되면 끝난 것이다', 'through the completion report'],
+    ['protocol', '그 트리의 코드를 불러 도는 서버·실행기·미리보기', '그 트리의 미커밋 변경', 'through the completion report'],
+    ['protocol', '완료 보고에서 사용자에게 그 트리를 지울지 묻고', '완료 보고에 적지 않고 그대로 두고', 'through the completion report'],
+    ['protocol', '`build/` 의 백업 링크까지 깊이 제한 없이 찾는다', '`node_modules` 링크만 찾는다', 'unlink every outside link'],
+    ['protocol', '드라이브 문자와 구분자를 갖춘 절대 경로로 확인한다', '경로를 그대로 넘긴다', 'resolve an absolute target'],
+  ];
+  for (const [source, from, to, expected] of cases) {
+    assert.equal(current[source].split(from).length, 2, `${source} must hold the pinned sentence exactly once: ${from}`);
+    const errors = protocolTruthErrors({ ...current, [source]: current[source].replace(from, to) });
+    assert.ok(errors.some(error => error.includes(expected)), `${from} → ${expected}: ${JSON.stringify(errors)}`);
+  }
+});
+
+test('DEC-OPS-414 the guard that SOP §6.6 names asks before a worktree outside the persistent trees', async () => {
+  const { RULES } = await import('./agent-guard.mjs');
+  const rule = RULES.find(({ id }) => id === 'worktree-add-outside-persistent');
+  assert.ok(rule, 'SOP §6.6 이 말하는 가드 규칙이 규칙 표에 있다');
+  assert.equal(rule.decision, 'ask', '임시 트리는 막지 않고 사용자 승인을 받는다');
+  assert.match(rule.fix, /SOP §6\.6/u);
 });
 
 test('persistent worktree assignments require distinct operators and paths without freezing locations', () => {
