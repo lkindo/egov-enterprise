@@ -274,19 +274,17 @@ test('requirement generation keeps prior semantic facts available to every later
   assert.equal(state.ai.proposal.coverage.length, 33); assert.equal(state.backlog.businessRequirements.length, 0);
 });
 
-test('independent requirement review groups overlap and keep every source and pending decision', async t => {
-  let startFirst, startSecond, release, timer;
-  const first = new Promise(resolve => { startFirst = resolve; }), second = new Promise(resolve => { startSecond = resolve; }), gate = new Promise(resolve => { release = resolve; });
+test('semantic cross-context serializes quality review and exposes earlier revisions to later groups', async t => {
+  const called = [];
   const app = await sevenRequirementReviewApp(t, async request => {
-    if (request.data.requirements[0].id === 'REQ-1') { startFirst(); await gate; } else startSecond();
-    return { issues: [], revisions: [] };
+    const first = request.data.requirements[0]; called.push(first.id);
+    if (first.id === 'REQ-7') assert.ok(request.data.crossRequirementContext.find(req => req.id === 'REQ-1').description.includes('원문 조건 유지 검토 완료'));
+    await new Promise(resolve => setTimeout(resolve, 10));
+    return { issues: [], revisions: first.id === 'REQ-1' ? [{ ...first, description: first.description + ' 원문 조건 유지 검토 완료' }] : [] };
   });
-  t.after(() => { clearTimeout(timer); release(); });
-  await app.start(); await first;
-  const parallel = await Promise.race([second.then(() => true), new Promise(resolve => { timer = setTimeout(() => resolve(false), 5000); })]);
-  clearTimeout(timer); release(); await app.engine.waitForAi();
+  await app.start(); await app.engine.waitForAi();
   const state = await app.engine.state();
-  assert.equal(parallel, true);
+  assert.deepEqual(called, ['REQ-1', 'REQ-7']); assert.equal(state.ai.current.callMetrics.peakConcurrency, 1);
   assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
   assert.equal(state.ai.proposal.requirements.length, 7); assert.equal(state.ai.proposal.coverage.length, 7);
   assert.ok(state.ai.proposal.issues.some(issue => issue.severity === 'blocking'));
@@ -321,8 +319,16 @@ test('a failed later quality review reuses earlier verified reviews and preserve
     const ref = app.store.writeArchive('ai', JSON.stringify(corrupt));
     app.store.transact(app.store.read().revision, next => { next.metadata.ai = structuredClone(savedAi); next.metadata.ai.jobs.at(-1).checkpoints.review = ref; });
     reviewed.length = 0; await app.start(); await app.engine.waitForAi();
-    assert.equal((await app.engine.state()).ai.current.errorCode, 'AI_CHECKPOINT_INVALID', fault);
-    assert.deepEqual(reviewed, [], `reject ${fault} before another review call`);
+    if (fault === 'wrong-task') {
+      const rebuilt = await app.engine.state();
+      assert.equal(rebuilt.ai.current.status, 'needs-decisions', rebuilt.ai.current.errorCode);
+      assert.deepEqual(reviewed, ['REQ-1', 'REQ-7']);
+      assert.equal((rebuilt.ai.proposal.requirements[0].description.match(/검토된 표현/g) ?? []).length, 1);
+      assert.equal(app.store.readArchive(reference), oldBytes);
+    } else {
+      assert.equal((await app.engine.state()).ai.current.errorCode, 'AI_CHECKPOINT_INVALID', fault);
+      assert.deepEqual(reviewed, [], `reject ${fault} before another review call`);
+    }
   }
   app.store.transact(app.store.read().revision, next => { next.metadata.ai = structuredClone(savedAi); });
   reviewed.length = 0; await app.start(); await app.engine.waitForAi(); state = await app.engine.state();

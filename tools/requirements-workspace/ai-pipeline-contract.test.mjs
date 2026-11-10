@@ -10,6 +10,33 @@ import { createEmptyBacklogPack } from '../../scripts/export-deliverables-worksp
 const snapshot = () => ({ backlog: { sources: [structuredClone(source)], businessRequirements: [] }, metadata: { context } });
 const model = () => ({ summary: '접수 조회 업무의 책임과 열람 범위를 정리한다.', actors: [{ name: '담당자', responsibility: '접수 목록 조회', sourceIds: ['SRC-1'] }], processes: [{ name: '접수 조회', trigger: '담당자의 조회 요청', steps: ['조회 조건 입력', '허용 범위의 결과 확인'], exceptions: ['열람 범위 미결정'], rules: [], data: ['접수 목록'], sourceIds: ['SRC-1'] }], terms: [], issues: [], sourceCoverage: [{ sourceId: 'SRC-1', role: 'business', rationale: '조회 업무와 담당 범위의 근거' }] });
 
+test('shared semantic questions are visited losslessly through bounded quality and planning windows', async () => {
+  const state = { backlog: createEmptyBacklogPack(context), metadata: { context, ai: { decisions: [] } } };
+  state.backlog.project = { code: 'SYNTHETIC', name: '공통 문맥 분할', institution: '', baselineProfile: '' }; state.backlog.sources = [structuredClone(source)];
+  const proposal = analysis({ data: { sources: state.backlog.sources, decisions: [] } }, { question: false });
+  proposal.issues = Array.from({ length: 450 }, (_, index) => ({ id: `SEMANTIC-${index}`, kind: 'risk', severity: 'observation', question: `${index}: ${'원문의 조건과 예외를 의미 그대로 유지한다. '.repeat(65)}`, options: [], requirementIds: [proposal.requirements[0].id], citations: structuredClone(proposal.requirements[0].citations) }));
+  const seen = new Map(); let calls = 0;
+  const run = async ({ request, schema }) => {
+    calls++; const prepared = prepareEvidenceRequest(request, schema);
+    assert.ok(Buffer.byteLength(JSON.stringify(prepared.request)) + Buffer.byteLength(JSON.stringify(prepared.schema)) <= CONTEXT_WINDOW_BYTES);
+    if (!seen.has(request.phase)) seen.set(request.phase, new Set());
+    for (const issue of [...(request.data.existingIssues ?? []), ...(request.data.analysisIssues ?? [])]) { seen.get(request.phase).add(issue.id); assert.equal(issue.question, proposal.issues.find(old => old.id === issue.id).question); }
+    if (request.phase === 'review-requirements') return { output: { revisions: [], issues: [] } };
+    if (request.phase === 'review-plan') return { output: { workItemUpdates: [], acceptanceUpdates: [], traceUpdates: [], issues: [] } };
+    const plan = decomposition(), prefix = request.data.planningBatch.idPrefix, rename = id => `${prefix}${id}`;
+    for (const work of plan.workItems) { work.id = rename(work.id); if (work.parentEpicId) work.parentEpicId = rename(work.parentEpicId); }
+    for (const ac of plan.acceptanceCriteria) { ac.id = rename(ac.id); ac.workItemId = rename(ac.workItemId); }
+    for (const trace of plan.traceLinks) { trace.id = rename(trace.id); trace.workItemId = rename(trace.workItemId); trace.acId = rename(trace.acId); }
+    assert.deepEqual(request.data.planningBatch.requirementIds, [proposal.requirements[0].id]);
+    return { output: plan };
+  };
+  const reviewed = await reviewRequirements(proposal, model(), state, { run, evidenceReferences: true });
+  assert.deepEqual(reviewed.issues, proposal.issues);
+  const result = await planAndReview(reviewed, model(), state, [], { run, evidenceReferences: true });
+  for (const stage of ['review-requirements', 'decomposition', 'review-plan']) assert.equal(seen.get(stage).size, 450, stage);
+  assert.ok(calls >= 6); assert.equal(result.planningOutput.workItems.length, 2);
+});
+
 test('quality review pages a large single requirement without omitting original clauses or old proof and binds resume to its exact tasks', async () => {
   const state = { backlog: createEmptyBacklogPack(context), metadata: { context, ai: { decisions: [] } } };
   state.backlog.project = { code: 'SYNTHETIC', name: '합성 근거 검토', institution: '합성 기관', baselineProfile: '' };
@@ -35,7 +62,6 @@ test('quality review pages a large single requirement without omitting original 
   const options = { run, concurrency: 2, evidenceReferences: true, onReply(index, reply, _merged, taskId) { assert.equal(index, replies.length); replies.push(reply); taskIds.push(taskId); } };
   await assert.rejects(reviewRequirements(proposal, model(), state, options), { code: 'AI_TIMEOUT' });
   assert.equal(replies.length, 1); const firstSeen = new Set(seen); seen.clear(); pause = false;
-  await assert.rejects(reviewRequirements(proposal, model(), state, { ...options, resumeReplies: replies, resumeTaskIds: ['0'.repeat(64)] }), { code: 'AI_CHECKPOINT_INVALID' });
   const result = await reviewRequirements(proposal, model(), state, { ...options, resumeReplies: [...replies], resumeTaskIds: [...taskIds] });
   assert.ok([...firstSeen].every(id => !seen.has(id)), 'verified source windows are not paid for twice');
   assert.equal(new Set([...firstSeen, ...seen]).size, 96);
@@ -43,6 +69,9 @@ test('quality review pages a large single requirement without omitting original 
   assert.deepEqual(result.issues[0].citations, proposal.issues[0].citations);
   for (const marker of markers) assert.ok(result.requirements[0].description.includes(marker), 'later windows preserve earlier semantic revisions');
   assert.equal(result.coverage.length, 96);
+  let reset = false; const regenerated = [];
+  const recovered = await reviewRequirements(proposal, model(), state, { run, evidenceReferences: true, resumeReplies: replies.slice(0, 1), resumeTaskIds: ['0'.repeat(64)], onReset() { reset = true; }, onReply(index) { regenerated.push(index); } });
+  assert.ok(reset); assert.equal(regenerated[0], 0); assert.deepEqual(recovered.requirements[0].citations, proposal.requirements[0].citations);
 });
 
 test('requirement review adds a thirty-first source without discarding prior verified quotations', () => {

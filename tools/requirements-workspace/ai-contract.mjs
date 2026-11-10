@@ -26,14 +26,32 @@ export const BATCH_ANALYSIS_SCHEMA = object({ ...ANALYSIS_SCHEMA.properties, upd
 export const MAX_PROJECT_ISSUES = 1000;
 export const MAX_PROJECT_PROPOSAL_BYTES = 4 * 1024 ** 2;
 export const MAX_PROJECT_CITATIONS_PER_ITEM = 3000;
+const contextRelationSchema = object({ id: identifier, requirementIds: array(identifier), rationale: string(2000), citations: array(citationSchema, 1, MAX_PROJECT_CITATIONS_PER_ITEM) });
+const referenceResolutionSchema = object({ id: identifier, issue: issueSchema, answer: string(6000), citations: array(citationSchema, 1, MAX_PROJECT_CITATIONS_PER_ITEM) });
+referenceResolutionSchema.properties.status = enumeration(['resolved', 'partial']);
+referenceResolutionSchema.properties.remainingQuestion = string();
 export function projectProposalSchema(schema) {
   const result = structuredClone(schema);
+  if (result.properties.requirements && result.properties.coverage) {
+    result.properties.contextRelations = array(contextRelationSchema, 0, 3000);
+    result.properties.referenceResolutions = array(referenceResolutionSchema, 0, 1000);
+  }
   if (result.properties.issues) result.properties.issues.maxItems = MAX_PROJECT_ISSUES;
   for (const field of ['requirements', 'issues']) {
     const citations = result.properties[field]?.items?.properties?.citations;
     if (citations) citations.maxItems = MAX_PROJECT_CITATIONS_PER_ITEM;
   }
   return result;
+}
+function validateContextRecords(value, ids, clauses) {
+  for (const field of ['contextRelations', 'referenceResolutions']) {
+    unique(value[field] ?? []); citations(value[field] ?? [], clauses, field);
+    for (const row of value[field] ?? []) {
+      const refs = field === 'referenceResolutions' ? row.issue.requirementIds : row.requirementIds;
+      if (new Set(refs).size !== refs.length || refs.some(id => !ids.has(id))) invalid('context-reference');
+      if (field === 'referenceResolutions') issues([row.issue], ids, clauses);
+    }
+  }
 }
 const workSchema = object({ id: identifier, workItemType: enumeration(WORK_ITEM_TYPES), parentEpicId: nullable(identifier), requirementIds: array(identifier, 1), title: string(200), description: string(6000), asA: string(), iWant: string(), soThat: string(), priority: enumeration(PRIORITIES), batch: { anyOf: [string(80), { type: 'integer', minimum: 1, maximum: 1000 }] }, dependsOn: array(identifier), archetype: enumeration(['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7']), decisionCards: array(string(2000), 0, 20) }, ['id', 'workItemType', 'parentEpicId', 'requirementIds', 'title']);
 const acSchema = object({ id: identifier, workItemId: identifier, requirementIds: array(identifier, 1), polarity: enumeration(['allow', 'forbid']), given: string(), when: string(), then: string(), verificationMethod: enumeration(VERIFICATION_METHODS) });
@@ -148,6 +166,11 @@ export function validateAnalysisBatchProposal(value, snapshot, sources, previous
     if (!oldIds.has(req.id) && idPrefix && !req.id.startsWith(idPrefix)) invalid('batch-new-id', 'requirements', req.id);
   }
   const result = structuredClone(value), incoming = new Map(result.requirements.map(req => [req.id, req]));
+  for (const field of ['contextRelations', 'referenceResolutions']) if (previous?.[field] || value[field]) {
+    const entries = new Map((previous?.[field] ?? []).map(row => [row.id, structuredClone(row)]));
+    for (const row of value[field] ?? []) { if (entries.has(row.id) && JSON.stringify(entries.get(row.id)) !== JSON.stringify(row)) invalid('context-reference'); entries.set(row.id, structuredClone(row)); }
+    result[field] = [...entries.values()];
+  }
   delete result.updatedRequirementIds;
   result.requirements = [...(previous?.requirements ?? []).map(req => incoming.get(req.id) ?? structuredClone(req)), ...result.requirements.filter(req => !previous?.requirements.some(old => old.id === req.id))];
   const ids = unique(result.requirements);
@@ -185,7 +208,8 @@ export function validateAnalysisBatchProposal(value, snapshot, sources, previous
   const allowed = new Set([...current, ...(previous?.requirements ?? []).flatMap(req => req.citations.map(cite => `${cite.sourceId}/${cite.clauseId}`)), ...(previous?.issues ?? []).flatMap(issue => issue.citations.map(cite => `${cite.sourceId}/${cite.clauseId}`)), ...snapshot.backlog.sources.flatMap(source => source.clauses.filter(clause => source.id.startsWith('DEC-') && source.sourceType === 'policy-memo' || clause.requirementIds?.some(id => snapshot.backlog.businessRequirements.some(req => req.id === id))).map(clause => `${source.id}/${clause.id}`))]);
   for (const key of historical) allowed.add(key);
   citations(result.requirements, clauses, 'requirements'); issues(result.issues, ids, clauses, 'issues');
-  if ([...result.requirements, ...result.issues].some(item => item.citations.some(cite => !allowed.has(`${cite.sourceId}/${cite.clauseId}`)))) invalid('batch-unseen-citation', 'citations');
+  validateContextRecords(result, ids, clauses);
+  if ([...result.requirements, ...result.issues, ...(result.contextRelations ?? []), ...(result.referenceResolutions ?? []), ...(result.referenceResolutions ?? []).map(row => row.issue)].some(item => item.citations.some(cite => !allowed.has(`${cite.sourceId}/${cite.clauseId}`)))) invalid('batch-unseen-citation', 'citations');
   const modules = new Set((snapshot.metadata.context.modules ?? []).map(module => typeof module === 'string' ? module : module.id));
   if (result.requirements.some(req => req.moduleCandidates.some(id => !modules.has(id)))) invalid('module-reference', 'requirements');
   const covered = new Set();
@@ -213,7 +237,7 @@ export function validateAnalysisBatchProposal(value, snapshot, sources, previous
   for (const req of result.requirements) if (included.has(req.id)) for (const sourceId of new Set(req.citations.filter(cite => processed.has(`${cite.sourceId}/${cite.clauseId}`)).map(cite => cite.sourceId))) {
     if (!coverage.some(entry => entry.sourceId === sourceId && ['included', 'merged'].includes(entry.disposition) && entry.requirementIds.includes(req.id))) invalid('coverage-scope', 'requirements');
   }
-  const accumulated = { requirements: result.requirements, issues: result.issues, coverage };
+  const accumulated = { requirements: result.requirements, issues: result.issues, coverage, ...Object.fromEntries(['contextRelations', 'referenceResolutions'].filter(field => result[field]).map(field => [field, result[field]])) };
   if (Buffer.byteLength(JSON.stringify(accumulated)) > MAX_PROJECT_PROPOSAL_BYTES) capacity('AI_PROPOSAL_CAPACITY');
   return accumulated;
 }
@@ -223,6 +247,7 @@ export function validateAnalysisProposal(value, snapshot) {
   const scopeFor = req => req.scope ?? snapshot.backlog.businessRequirements.find(previous => previous.id === req.id && ['included', 'excluded', 'deferred'].includes(previous.scopeDisposition))?.scopeDisposition ?? 'included';
   let relationCorrections = 0;
   citations(value.requirements, clauses); issues(value.issues, ids, clauses);
+  validateContextRecords(value, ids, clauses);
   if (!ids.size && !value.issues.some(issue => issue.severity === 'blocking')) invalid();
   if (snapshot.backlog.businessRequirements.some(req => !ids.has(req.id))) invalid('requirement-omission', 'requirements');
   const modules = new Set((snapshot.metadata.context.modules ?? []).map(module => typeof module === 'string' ? module : module.id));

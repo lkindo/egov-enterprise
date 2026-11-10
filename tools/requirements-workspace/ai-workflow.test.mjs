@@ -25,8 +25,9 @@ test('bounded subpasses retain a finite per-run call ceiling and reject its next
   assert.throws(() => validateAiMetadata(value), { code: 'AI_METADATA_INVALID' });
 });
 
-test('a valid legacy 23-batch checkpoint resumes a bounded three-partition block after its comparisons and keeps every legacy ID', async t => {
+for (const candidateFailure of [false, true]) test(candidateFailure ? 'a coalesced candidate failure downshifts the next resume while retaining 23 completed parts and discovery' : 'a valid legacy 23-batch checkpoint resumes a bounded three-partition block after its comparisons and keeps every legacy ID', async t => {
   let mode = 'fail', app;
+  const candidateSizes = [];
   const calls = [];
   app = await fixture(t, async ({ request }) => {
     calls.push(request.phase);
@@ -37,11 +38,12 @@ test('a valid legacy 23-batch checkpoint resumes a bounded three-partition block
       return envelope(result, request.phase);
     }
     if (request.phase === 'review-requirements') return envelope(pipelineReply(request), request.phase);
-    if (mode === 'fail') throw Object.assign(Error('AI_TIMEOUT'), { code: 'AI_TIMEOUT' });
+    if (request.phase === 'analysis') candidateSizes.push(request.data.sources.reduce((count, src) => count + src.clauses.length, 0));
+    if (mode === 'fail' || mode === 'fail-candidate' && request.phase === 'analysis') throw Object.assign(Error('AI_TIMEOUT'), { code: 'AI_TIMEOUT' });
     const sources = request.data.sources, all = sources.flatMap(src => src.clauses.map(clause => ({ sourceId: src.id, clauseId: clause.id, quote: clause.text }))), id = `${request.data.analysisBatch.idPrefix}REQ-1`;
     let output;
     if (request.phase === 'analysis') output = { requirements: Array.from({ length: Math.ceil(all.length / 30) }, (_, index) => ({ ...analysis({ data: { sources, decisions: [] } }, { question: false }).requirements[0], id: `${id}-${index}`, citations: all.slice(index * 30, (index + 1) * 30) })), issues: [], coverage: all.map((cite, index) => ({ sourceId: cite.sourceId, clauseId: cite.clauseId, disposition: 'included', rationale: '신규 접수 조건', requirementIds: [`${id}-${Math.floor(index / 30)}`] })) };
-    else if (request.phase === 'analysis-context') output = { inspectedPageIds: request.data.contextPages.map(page => page.pageId), matches: request.data.previousAnalysis.requirements.some(item => item.id === 'LEGACY-73') ? request.data.requirements.map(candidate => ({ candidateId: candidate.id, requirementId: 'LEGACY-73', relation: 'same', rationale: '같은 합성 접수 업무' })) : [], issues: [] };
+    else if (request.phase === 'analysis-context') output = { inspectedPageIds: request.data.contextPages.map(page => page.pageId), evidenceLinks: [], referenceAnswers: [], matches: request.data.previousAnalysis.requirements.some(item => item.id === 'LEGACY-73') ? request.data.requirements.map(candidate => ({ candidateId: candidate.id, requirementId: 'LEGACY-73', relation: 'same', rationale: '같은 합성 접수 업무' })) : [], issues: [] };
     else if (request.phase === 'analysis-merge') {
       if (mode === 'pause-merge') throw Object.assign(Error('AI_TIMEOUT'), { code: 'AI_TIMEOUT' });
       output = { revisions: request.data.mergeTargets.map(target => ({ ...target.existing, citations: all.slice(0, 1) })), issues: [] };
@@ -66,10 +68,20 @@ test('a valid legacy 23-batch checkpoint resumes a bounded three-partition block
   const checkpoint = { version: 1, stage: 'analysis', inputDigest: job.inputDigest, promptVersion: PROMPT_VERSION, upstreamDigest: createHash('sha256').update(JSON.stringify(businessModel)).digest('hex'), output: { completed: 23, total: 26, corrected: false, output, batchAudit: [] }, sensitivityWarnings: [] };
   const ref = app.store.writeArchive('ai', JSON.stringify(checkpoint)), original = app.store.readArchive(ref);
   app.store.transact(app.store.read().revision, next => { const stored = next.metadata.ai.jobs.at(-1); stored.checkpoints.analysis = ref; stored.batches.completed = 23; stored.analysisBatchLimit = 3; });
-  calls.length = 0; mode = 'pause-merge';
+  calls.length = 0; mode = candidateFailure ? 'fail-candidate' : 'pause-merge';
   await app.start({ includeVisuals: false, fullPipeline: true }); await app.engine.waitForAi(); let state = await app.engine.state();
   assert.equal(state.ai.current.errorCode, 'AI_TIMEOUT');
   assert.equal(state.ai.current.batches.completed, 23, 'pending candidates never advance the committed source prefix');
+  if (candidateFailure) {
+    assert.equal(state.ai.current.analysisBatchLimit, 1);
+    calls.length = 0; candidateSizes.length = 0; mode = 'bounded';
+    await app.start({ includeVisuals: false, fullPipeline: true }); await app.engine.waitForAi(); state = await app.engine.state();
+    assert.ok(['ready', 'needs-decisions'].includes(state.ai.current.status), state.ai.current.errorCode);
+    assert.equal(state.ai.current.batches.completed, 26); assert.ok(candidateSizes.every(size => size <= 32));
+    assert.ok(!calls.includes('synthesis') && !calls.includes('reading'));
+    assert.deepEqual(state.ai.proposal.requirements.map(item => item.id), requirements.map(item => item.id));
+    assert.equal(state.ai.proposal.coverage.length, 801); assert.equal(app.store.readArchive(ref), original); return;
+  }
   const pendingRef = state.ai.current.checkpoints.analysis, pending = JSON.parse(app.store.readArchive(pendingRef));
   assert.equal(pending.output.pendingContext.logicalEnd, 26);
   assert.ok(pending.output.pendingContext.contexts.length > 0);
@@ -81,6 +93,21 @@ test('a valid legacy 23-batch checkpoint resumes a bounded three-partition block
   assert.ok(calls.includes('analysis-merge') && !calls.includes('analysis') && !calls.includes('analysis-context') && !calls.includes('synthesis'), 'a new job ID must reuse every valid candidate, comparison and business model');
   assert.deepEqual(state.ai.proposal.requirements.map(item => item.id), requirements.map(item => item.id));
   assert.equal(state.ai.proposal.coverage.length, 801);
+  assert.equal(app.store.readArchive(ref), original);
+  const poisoned = structuredClone(pending);
+  poisoned.output.pendingContext.contexts[0].taskId = '0'.repeat(64);
+  const poisonedRef = app.store.writeArchive('ai', JSON.stringify(poisoned));
+  app.store.transact(app.store.read().revision, next => {
+    const stored = next.metadata.ai.jobs.at(-1);
+    stored.checkpoints = { discovery: stored.checkpoints.discovery, analysis: poisonedRef }; stored.batches.completed = 23;
+  });
+  calls.length = 0;
+  await app.start({ includeVisuals: false, fullPipeline: true }); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.ok(['ready', 'needs-decisions'].includes(state.ai.current.status), state.ai.current.errorCode);
+  assert.deepEqual(state.ai.current.checkpointResets, [{ reason: 'pending-invalid', completed: 23 }]);
+  assert.ok(calls.includes('analysis') && !calls.includes('synthesis') && !calls.includes('reading'));
+  assert.equal(state.ai.current.batches.completed, 26); assert.equal(state.ai.proposal.coverage.length, 801);
+  assert.deepEqual(state.ai.proposal.requirements.map(item => item.id), requirements.map(item => item.id));
   assert.equal(app.store.readArchive(ref), original);
 });
 

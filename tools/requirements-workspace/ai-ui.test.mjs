@@ -44,6 +44,14 @@ test('parallel quality review progress separates active calls and completed anal
   job.fullPipeline = true;
   button(window.document, '최신 상태 읽기').click(); await new Promise(resolve => setImmediate(resolve));
   assert.match(window.document.querySelector('.ai-stage-list [aria-current="step"]').textContent, /요구사항 작성 · 23\/96/);
+  job.checkpointResets = [{ reason: 'pending-invalid', completed: 23 }];
+  state.ai.proposal = { issues: [], contextRelations: Array.from({ length: 21 }, (_, index) => ({ id: `REL-${index}`, requirementIds: ['REQ-1'], rationale: `관계 기록 ${index} <img src=x>` })), referenceResolutions: [{ id: 'REF-1', status: 'partial', issue: { question: '원래 참조 질문', requirementIds: ['REQ-1'] }, answer: '원문에서 17영업일 확인', remainingQuestion: '기한 경과 정책 확인' }] };
+  button(window.document, '최신 상태 읽기').click(); await new Promise(resolve => setImmediate(resolve));
+  const audit = window.document.querySelector('[aria-label="AI 요구사항 진행"]');
+  assert.match(audit.textContent, /완료된 23묶음을 유지/); assert.match(audit.textContent, /자료 관계·참조 확인 22건/);
+  assert.match(audit.textContent, /관계 기록 0/); assert.doesNotMatch(audit.textContent, /원래 참조 질문/); assert.equal(audit.querySelector('img'), null);
+  button(window.document, '다음 대조 기록').click(); await new Promise(resolve => setImmediate(resolve));
+  assert.match(window.document.querySelector('[aria-label="AI 요구사항 진행"]').textContent, /일부 확인된 참조.*원래 참조 질문.*17영업일 확인.*기한 경과 정책 확인/s);
 });
 test('invalid AI output shows validation evidence and checkpoint recovery instead of unrelated login advice', async t => {
   const dom = new JSDOM(markup, { url: 'http://127.0.0.1:8792/', runScripts: 'outside-only', pretendToBeVisual: true }); t.after(() => dom.window.close());

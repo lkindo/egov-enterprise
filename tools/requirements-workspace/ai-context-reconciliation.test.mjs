@@ -48,12 +48,12 @@ function fixture({ many = true, reference = false } = {}) {
       for (const src of data.historicalSources ?? []) for (const clause of src.clauses) seenQuotes.add(clause.text);
       seenPages.push(...data.contextPages.map(page => page.pageId));
       const lateProvided = data.historicalSources?.some(src => src.clauses.some(clause => clause.id === old.at(-1).id));
-      output = { inspectedPageIds: data.contextPages.map(page => page.pageId), matches: candidates.flatMap(candidate => [...ids].filter(id => matchBoth || id === 'REQ-LATE' && lateProvided).map(requirementId => ({ candidateId: candidate.id, requirementId, relation: relatedOnly ? 'related' : 'same', rationale: '합성 기존 ID와 연결되는 업무 조건' }))), issues: unseen ? [{ id: 'Q-UNSEEN', kind: 'risk', severity: 'blocking', question: '제공되지 않은 증거를 선택해서는 안 된다.', options: [], requirementIds: [candidates[0].id], citations: [cite(old.at(-1))] }] : [] };
+      output = { inspectedPageIds: data.contextPages.map(page => page.pageId), matches: candidates.filter(candidate => !candidate.questionOnly).flatMap(candidate => [...ids].filter(id => matchBoth || id === 'REQ-LATE' && lateProvided).map(requirementId => ({ candidateId: candidate.id, requirementId, relation: relatedOnly ? 'related' : 'same', rationale: '합성 기존 ID와 연결되는 업무 조건' }))), issues: unseen ? [{ id: 'Q-UNSEEN', kind: 'risk', severity: 'blocking', question: '제공되지 않은 증거를 선택해서는 안 된다.', options: [], requirementIds: [candidates[0].id], citations: [cite(old.at(-1))] }] : [] };
       for (const match of output.matches) {
         const candidate = candidates.find(item => item.id === match.candidateId);
         if (candidate.contextOnly) match.citations = candidate.sourceRefs.map(ref => ({ ...ref, quote: data.sources.find(src => src.id === ref.sourceId).clauses.find(clause => clause.id === ref.clauseId).text }));
       }
-      if (enrichAll && data.historicalSources.length) output.issues.push({ id: 'SOURCE-LINK', kind: 'risk', severity: 'observation', question: '자료 연계: 제공된 과거 조건을 현재 접수 기준과 함께 보존한다.', options: [], requirementIds: [candidates[0].id], citations: data.historicalSources.flatMap(src => src.clauses.map(clause => ({ sourceId: src.id, clauseId: clause.id, quote: clause.text }))) });
+      if (enrichAll && data.historicalSources.length) output.evidenceLinks = [{ candidateId: candidates[0].id, clarification: '자료 연계: 제공된 과거 조건을 현재 접수 기준과 함께 보존한다.', citations: data.historicalSources.flatMap(src => src.clauses.map(clause => ({ sourceId: src.id, clauseId: clause.id, quote: clause.text }))) }];
     } else if (request.phase === 'analysis-merge') {
       output = { revisions: data.mergeTargets.map(target => ({ ...target.existing, description: `${target.existing.description} ${target.candidates.map(item => item.description).join(' ')}`, citations: target.candidates.flatMap(item => [cite(current)]) })), issues: [] };
       if (reference) output.revisions[0].citations.push({ sourceId: ref.id, clauseId: 'REF', quote: ref.clauses[0].text });
@@ -61,6 +61,7 @@ function fixture({ many = true, reference = false } = {}) {
       if (badScope) output.revisions[0].scope = 'OUTSIDE-CONTRACT';
       if (scopeProposal) output.revisions[0].scope = 'excluded';
     } else throw Error('UNEXPECTED_SYNTHETIC_PHASE');
+    if (prepared.schema.properties.matches) { output.evidenceLinks ??= []; output.referenceAnswers ??= []; }
     return { output: prepared.resolve(output) };
   };
   const options = { snapshot, sources, previous, request, run, writePart, readPart, limitBytes: 72 * 1024, onCheckpoint: value => { checkpoints.push(structuredClone(value)); }, onReuse: name => reused.push(name) };
@@ -104,8 +105,8 @@ test('a distinct related requirement retains a nonblocking link for downstream p
   const app = fixture({ many: false }); app.related();
   const result = await pipeline.reconcileAnalysisBatch(app.options);
   assert.equal(result.output.requirements.length, 3);
-  const note = result.output.issues.find(issue => issue.id.includes('CTX-REL') || issue.question.startsWith('계획 연계:'));
-  assert.equal(note.severity, 'observation'); assert.equal(note.kind, 'risk');
+  const note = result.output.contextRelations[0];
+  assert.equal(result.output.issues.length, 0);
   assert.ok(note.requirementIds.includes('REQ-LATE'));
   assert.ok(note.requirementIds.some(id => id.startsWith('B-SYNTHETIC-24-REQ-')));
   assert.ok(result.output.requirements.every(req => !req.id.includes('TMP-')));
@@ -166,12 +167,14 @@ test('source-valid evidence outside the supplied context page is rejected before
   assert.equal(app.calls.filter(call => call.phase === 'analysis-context').length, 2, 'only one value-free correction');
 });
 
-test('a substituted pending comparison task is rejected before any new paid call', async () => {
+test('a substituted pending comparison task rebuilds only pending work and preserves the canonical prefix', async () => {
   const app = fixture(), controller = new AbortController();
   await assert.rejects(pipeline.reconcileAnalysisBatch({ ...app.options, signal: controller.signal, onCheckpoint: state => { app.checkpoints.push(structuredClone(state)); if (state.contexts.length === 1) controller.abort(); } }), { code: 'AI_CANCELLED' });
   const pending = app.checkpoints.at(-1); pending.contexts[0].taskId = '0'.repeat(64); app.calls.length = 0;
-  await assert.rejects(pipeline.reconcileAnalysisBatch({ ...app.options, resume: pending }), { code: 'AI_CHECKPOINT_INVALID' });
-  assert.deepEqual(app.calls, []);
+  const original = structuredClone(app.previous), resets = [];
+  const result = await pipeline.reconcileAnalysisBatch({ ...app.options, resume: pending, onReset: reason => resets.push(reason) });
+  assert.deepEqual(resets, ['pending-invalid']); assert.deepEqual(app.previous, original);
+  assert.equal(app.calls.filter(call => call.phase === 'analysis').length, 1); assert.equal(result.output.requirements.length, 2);
 });
 
 test('previously uncited background definitions are read in full and integrated into the current requirement before its ID is committed', async () => {
@@ -191,13 +194,15 @@ test('previously uncited background definitions are read in full and integrated 
       if (request.phase === 'analysis') output = { requirements: [base], issues: [], updatedRequirementIds: [], coverage: [{ sourceId: current.id, clauseId: current.clauses[0].id, disposition: 'included', requirementIds: [base.id], rationale: '기관 달력을 참조하는 정기 처리' }] };
       else if (request.phase === 'analysis-context') {
         assert.equal(request.data.historicalSources[0].clauses[0].text, definition.clauses[0].text);
-        output = { inspectedPageIds: request.data.contextPages.map(page => page.pageId), matches: [], issues: [{ id: 'LINK-DEF', kind: 'risk', severity: 'observation', question: '자료 연계: 기관 달력의 정기 신청 17영업일 정의를 적용하고 비상 5영업일과 구별한다.', options: [], requirementIds: [base.id], citations: [cite(definition)] }] };
+        output = { inspectedPageIds: request.data.contextPages.map(page => page.pageId), matches: [], issues: [], evidenceLinks: [{ candidateId: base.id, clarification: '기관 달력의 정기 신청 17영업일 정의를 적용하고 비상 5영업일과 구별한다.', citations: [cite(definition)] }] };
       } else {
         assert.equal(request.phase, 'analysis-merge');
         assert.ok(request.data.mergeTargets[0].candidates.some(req => req.citations.some(citation => citation.quote === definition.clauses[0].text)));
         output = { revisions: [{ ...base, id: request.data.mergeTargets[0].existing.id, description: '담당자는 정기 신청을 접수 완료일부터 17영업일 이내 처리한다. 비상 신청은 이 요구사항의 대상이 아니다.', citations: [cite(current), cite(definition)] }], issues: [] };
       }
-      return { output: preparedEvidence.resolve(output) };
+      if (preparedEvidence.schema.properties.matches) { output.evidenceLinks ??= []; output.referenceAnswers ??= []; }
+      if (preparedEvidence.schema.properties.matches) { output.evidenceLinks ??= []; output.referenceAnswers ??= []; }
+    return { output: preparedEvidence.resolve(output) };
     },
   });
   assert.deepEqual(phases, ['analysis', 'analysis-context', 'analysis-merge']);
@@ -225,10 +230,95 @@ test('a later definitions-only block refines an existing requirement without pub
       assert.equal(request.data.mergeTargets[0].existing.id, 'EXISTING');
       output = { revisions: [{ ...requirement, description: '담당자는 정기 신청을 접수 완료일부터 17영업일 이내 처리한다. 비상 5영업일 규칙을 정기 신청에 적용하지 않는다.', citations: [cite(current)] }], issues: [] };
     }
+    if (preparedEvidence.schema.properties.matches) { output.evidenceLinks ??= []; output.referenceAnswers ??= []; }
     return { output: preparedEvidence.resolve(output) };
   } });
   assert.deepEqual(result.output.requirements.map(req => req.id), ['EXISTING']);
   assert.match(result.output.requirements[0].description, /17영업일/);
   assert.equal(result.output.coverage.find(entry => entry.sourceId === current.id).disposition, 'merged');
   assert.equal(validateAnalysisProposal(result.output, snapshot).coverage.length, 2);
+});
+
+for (const relation of ['related', 'conflict']) test(`${relation} and blocking issue proof never become supporting requirement evidence`, async () => {
+  const app = fixture({ many: false }), original = structuredClone(app.previous), run = app.options.run;
+  app.options.run = async args => {
+    const response = await run(args);
+    if (args.request.phase === 'analysis-context') {
+      for (const match of response.output.matches) { match.relation = relation; match.citations = [{ sourceId: source.id, clauseId: app.old.at(-1).id, quote: app.old.at(-1).text }]; }
+      response.output.issues.push({ id: 'REAL-QUESTION', kind: 'decision', severity: 'blocking', question: '상충하는 적용 범위를 결정해 주세요.', options: [], requirementIds: [args.request.data.requirements[0].id], citations: [{ sourceId: source.id, clauseId: app.old[0].id, quote: app.old[0].text }] });
+    }
+    return response;
+  };
+  const result = await pipeline.reconcileAnalysisBatch(app.options), added = result.output.requirements.find(req => !original.requirements.some(old => old.id === req.id));
+  assert.deepEqual(app.previous, original); assert.deepEqual(added.citations.map(cite => cite.clauseId), ['CURRENT']);
+  assert.ok(!app.calls.some(call => call.phase === 'analysis-merge'));
+  assert.ok(result.output.issues.some(issue => issue.question === '상충하는 적용 범위를 결정해 주세요.'));
+  if (relation === 'conflict') assert.ok(result.output.issues.some(issue => issue.kind === 'conflict' && issue.citations.some(cite => cite.clauseId === 'CURRENT') && issue.citations.some(cite => cite.clauseId !== 'CURRENT')));
+});
+
+for (const outcome of ['missing', 'resolved', 'conflict', 'partial']) test(`a provisional external reference is ${outcome} only after every historical comparison`, async () => {
+  const app = fixture({ many: outcome === 'conflict' }), run = app.options.run, questionId = 'PENDING-REFERENCE'; let question, adjudications = 0;
+  if (outcome === 'conflict') app.related();
+  const oldQuestion = { id: 'HUMAN-Q', kind: 'decision', severity: 'blocking', question: '기관이 승인할 담당 역할은 무엇인가?', options: [], requirementIds: ['REQ-LATE'], citations: [app.previous.requirements[1].citations[0]] };
+  app.previous.issues.push(oldQuestion);
+  app.options.request.data.previousAnalysis.issues = structuredClone(app.previous.issues);
+  app.options.run = async args => {
+    if (args.request.data.question) {
+      adjudications++; assert.ok(app.calls.filter(call => call.phase === 'analysis-context').length > 0);
+      const status = outcome === 'partial' ? 'unresolved' : outcome === 'conflict' && adjudications > 1 ? 'resolved' : outcome;
+      return { output: { status, remainingQuestion: status === 'resolved' ? null : outcome === 'partial' ? '72시간을 넘긴 신청의 후속 조치는 무엇인가?' : question.question, remainingOptions: [], answer: '원문은 기존 담당 접수의 72시간 조건을 명시한다. 다른 범위의 정책 승인에는 답하지 않는다.', citations: args.request.data.answers.flatMap(answer => answer.citations) } };
+    }
+    const response = await run(args);
+    if (args.request.phase === 'analysis') {
+      question = { id: questionId, kind: 'missing', severity: 'blocking', question: '참조된 기존 처리시간은 얼마인가?', options: [], requirementIds: [response.output.requirements[0].id], citations: response.output.requirements[0].citations };
+      response.output.issues.push(question);
+    } else if (args.request.phase === 'analysis-context' && outcome !== 'missing') {
+      const src = args.request.data.historicalSources[0], clause = src?.clauses[0];
+      if (clause) response.output.referenceAnswers.push({ issueId: questionId, answer: outcome === 'conflict' ? '기관 원문의 적용 대상과 예외 조건을 하나도 빼지 않고 비교하여야 한다. '.repeat(100) : '기존 담당 접수 처리시간은 72시간이다.', citations: [{ sourceId: src.id, clauseId: clause.id, quote: clause.text }] });
+    }
+    return response;
+  };
+  const result = await pipeline.reconcileAnalysisBatch(app.options);
+  assert.deepEqual(result.output.issues.find(issue => issue.id === 'HUMAN-Q'), oldQuestion);
+  assert.equal(result.output.issues.some(issue => issue.question === question.question), !['resolved', 'partial'].includes(outcome));
+  if (outcome === 'partial') {
+    const remaining = result.output.issues.find(issue => issue.question === '72시간을 넘긴 신청의 후속 조치는 무엇인가?');
+    assert.equal(remaining.severity, 'blocking'); assert.ok(remaining.citations.some(cite => cite.clauseId !== 'CURRENT'));
+    assert.equal(result.output.referenceResolutions[0].issue.question, question.question);
+  }
+  assert.equal(result.output.referenceResolutions.length, outcome === 'missing' ? 0 : 1);
+  if (outcome === 'conflict') assert.equal(result.output.referenceResolutions[0].status, 'partial');
+  if (outcome === 'conflict') assert.deepEqual(result.output.requirements.find(req => !app.previous.requirements.some(old => old.id === req.id)).citations.map(cite => cite.clauseId), ['CURRENT'], 'conflicting reference answers belong to the unresolved question, never requirement support');
+  if (outcome === 'conflict') assert.ok(adjudications > 1, 'a later resolved page cannot erase an earlier conflict');
+  else assert.equal(adjudications, outcome === 'missing' ? 0 : 1);
+  if (outcome === 'resolved') assert.equal(result.output.referenceResolutions[0].issue.question, question.question);
+});
+
+test('a corrupt pending candidate is discarded without reusing any poisoned piece or changing the canonical prefix', async () => {
+  const app = fixture({ many: false }), controller = new AbortController();
+  await assert.rejects(pipeline.reconcileAnalysisBatch({ ...app.options, signal: controller.signal, onCheckpoint(state) { app.checkpoints.push(state); controller.abort(); } }), { code: 'AI_CANCELLED' });
+  const state = app.checkpoints.at(-1), old = structuredClone(app.previous), resets = [];
+  app.records.set(state.candidateRef.id, {}); app.calls.length = 0;
+  const result = await pipeline.reconcileAnalysisBatch({ ...app.options, resume: state, onReset: reason => resets.push(reason) });
+  assert.deepEqual(resets, ['pending-invalid']); assert.deepEqual(app.previous, old);
+  assert.equal(app.calls[0].phase, 'analysis'); assert.equal(result.output.requirements.length, 2);
+});
+
+test('published narratives replace full and abbreviated temporary requirement and question IDs', async () => {
+  const app = fixture({ many: false }), run = app.options.run;
+  app.options.run = async args => {
+    const response = await run(args);
+    if (args.request.phase === 'analysis') {
+      const req = response.output.requirements[0], questionId = `${args.request.data.analysisBatch.idPrefix}Q1`, shortId = req.id.slice('B-SYNTHETIC-24-'.length);
+      req.description += ` ${req.id} · ${shortId} · ${questionId}`;
+      response.output.coverage[0].rationale += ` ${shortId}`;
+      response.output.issues.push({ id: questionId, kind: 'decision', severity: 'blocking', question: `${req.id}의 범위를 ${questionId}에서 결정해 주세요.`, options: [], requirementIds: [req.id], citations: req.citations });
+    }
+    return response;
+  };
+  const result = await pipeline.reconcileAnalysisBatch(app.options), issue = result.output.issues[0];
+  assert.ok(result.output.requirements.some(req => req.description.includes(issue.id)));
+  assert.ok(result.output.requirements.every(req => !req.description.includes('TMP-')));
+  assert.ok(result.output.coverage.every(row => !row.rationale.includes('TMP-')));
+  assert.ok(!issue.question.includes('TMP-')); assert.ok(issue.question.includes('REQ-LATE'));
 });

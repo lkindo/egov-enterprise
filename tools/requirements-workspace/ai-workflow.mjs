@@ -17,7 +17,7 @@ const fail = code => { throw Object.assign(new Error(code), { code }); };
 const statuses = ['running', 'ready', 'needs-decisions', 'failed', 'stale', 'cancelled', 'interrupted', 'applied'];
 const checkpointKeys = ['discovery', 'analysis', 'review', 'planning'];
 const checkpointPhases = { discovery: ['reading', 'synthesis'], analysis: ['analysis', 'analysis-context', 'analysis-merge'], review: ['review-requirements'], planning: ['decomposition', 'review-plan'] };
-const analysisContextModes = ['bounded-reconciliation-1', 'bounded-reconciliation-2', ANALYSIS_CONTEXT_VERSION];
+const analysisContextModes = ['bounded-reconciliation-1', 'bounded-reconciliation-2', 'bounded-reconciliation-3', ANALYSIS_CONTEXT_VERSION];
 const exact = (value, keys) => { if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(key => !keys.includes(key))) fail('AI_METADATA_INVALID'); };
 const checkpointObject = (value, keys) => { if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length !== keys.length || keys.some(key => !Object.hasOwn(value, key))) fail('AI_CHECKPOINT_INVALID'); };
 function reference(value, kind) {
@@ -44,7 +44,7 @@ export function validateAiMetadata(value) {
   if (value.version !== 1 || !Array.isArray(value.jobs) || !Array.isArray(value.decisions)) fail('AI_METADATA_INVALID');
   const ids = new Set();
   for (const job of value.jobs) {
-    exact(job, ['id', 'phase', 'status', 'inputDigest', 'startedAt', 'completedAt', 'appliedAt', 'model', 'effort', 'includeVisuals', 'analysisAttachmentPolicy', 'analysisBatchLimit', 'attempts', 'batches', 'inputRef', 'contextRef', 'resultRef', 'errorCode', 'usage', 'fullPipeline', 'promptVersion', 'stage', 'stageProgress', 'modelCalls', 'checkpoints', 'reusedStages', 'resumeFrom', 'promptRefs', 'sensitivityWarnings', 'validationFailures', 'callMetrics']);
+    exact(job, ['id', 'phase', 'status', 'inputDigest', 'startedAt', 'completedAt', 'appliedAt', 'model', 'effort', 'includeVisuals', 'analysisAttachmentPolicy', 'analysisBatchLimit', 'attempts', 'batches', 'inputRef', 'contextRef', 'resultRef', 'errorCode', 'usage', 'fullPipeline', 'promptVersion', 'stage', 'stageProgress', 'modelCalls', 'checkpoints', 'reusedStages', 'resumeFrom', 'promptRefs', 'sensitivityWarnings', 'validationFailures', 'callMetrics', 'checkpointResets']);
     try { validateSensitivityWarnings(job.sensitivityWarnings ?? []); } catch { fail('AI_METADATA_INVALID'); }
     if (!/^[a-f0-9-]{36}$/.test(job.id ?? '') || ids.has(job.id) || !['analysis', 'decomposition'].includes(job.phase) || !statuses.includes(job.status) || !/^[a-f0-9]{64}$/.test(job.inputDigest ?? '') || !Number.isFinite(Date.parse(job.startedAt)) || job.model !== AI_MODEL || ![AI_EFFORT, AI_ANALYSIS_EFFORT].includes(job.effort)) fail('AI_METADATA_INVALID');
     ids.add(job.id); reference(job.inputRef, 'baseline'); reference(job.contextRef, 'ai');
@@ -53,6 +53,7 @@ export function validateAiMetadata(value) {
     if (job.analysisBatchLimit !== undefined && (job.phase !== 'analysis' || ![1, 3].includes(job.analysisBatchLimit))) fail('AI_METADATA_INVALID');
     if (job.fullPipeline !== undefined && typeof job.fullPipeline !== 'boolean' || job.fullPipeline && job.phase !== 'analysis' || job.promptVersion !== undefined && !/^[A-Za-z0-9_.-]{1,64}$/.test(job.promptVersion)) fail('AI_METADATA_INVALID');
     if (job.stage !== undefined && !Object.values(checkpointPhases).flat().includes(job.stage)) fail('AI_METADATA_INVALID');
+    if (job.checkpointResets !== undefined && (!Array.isArray(job.checkpointResets) || job.checkpointResets.length > 16 || job.checkpointResets.some(item => !item || Object.keys(item).length !== 2 || !['pending-invalid', 'pending-policy-changed'].includes(item.reason) || !Number.isSafeInteger(item.completed) || item.completed < 0 || item.completed > MAX_ANALYSIS_BATCHES))) fail('AI_METADATA_INVALID');
     if (job.modelCalls !== undefined && (!Number.isSafeInteger(job.modelCalls) || job.modelCalls < 0 || job.modelCalls > MAX_ANALYSIS_MODEL_CALLS)) fail('AI_METADATA_INVALID');
     if (job.callMetrics !== undefined) validateCallMetrics(job.callMetrics, job);
     if (job.stageProgress) { exact(job.stageProgress, ['completed', 'total']); if (!Number.isSafeInteger(job.stageProgress.total) || job.stageProgress.total < 0 || job.stageProgress.total > 3000 || !Number.isSafeInteger(job.stageProgress.completed) || job.stageProgress.completed < 0 || job.stageProgress.completed > job.stageProgress.total) fail('AI_METADATA_INVALID'); }
@@ -315,7 +316,6 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
           checkpointObject(cached, ['completed', 'total', 'corrected', 'output', 'batchAudit', ...(Object.hasOwn(cached, 'contextMode') ? ['contextMode'] : []), ...(Object.hasOwn(cached, 'pendingContext') ? ['pendingContext'] : [])]);
           const total = batches?.length ?? 1;
           if (cached.contextMode !== undefined && !analysisContextModes.includes(cached.contextMode) || cached.pendingContext && !analysisContextModes.includes(cached.contextMode) || cached.pendingContext && cached.completed === total) fail('AI_CHECKPOINT_INVALID');
-          if (cached.pendingContext && (!Number.isSafeInteger(cached.pendingContext.logicalEnd) || cached.pendingContext.logicalEnd <= cached.completed || cached.pendingContext.logicalEnd > Math.min(total, cached.completed + 3))) fail('AI_CHECKPOINT_INVALID');
           if (cached.total !== total || !Number.isInteger(cached.completed) || cached.completed < (cached.pendingContext ? 0 : 1) || cached.completed > total || typeof cached.corrected !== 'boolean' || !Array.isArray(cached.batchAudit)) fail('AI_CHECKPOINT_INVALID');
           if (cached.completed === 0) {
             if (JSON.stringify(cached.output) !== JSON.stringify(initialAnalysis ?? seedAnalysis(snapshot))) fail('AI_CHECKPOINT_INVALID');
@@ -336,6 +336,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             validateAnalysisCheckpoint(cached);
             output = cached.output; startIndex = cached.completed; corrected = cached.corrected; batchAudit.push(...cached.batchAudit);
             boundedAnalysis = analysisContextModes.includes(cached.contextMode); pendingContext = cached.pendingContext ?? null;
+            if (pendingContext && (!Number.isSafeInteger(pendingContext.logicalEnd) || pendingContext.logicalEnd <= startIndex || pendingContext.logicalEnd > Math.min(total, startIndex + 3))) pendingContext = { ...pendingContext, logicalEnd: Math.min(total, startIndex + 1), historyDigest: 'invalid-pending' };
             if (startIndex === total) validated = validateAnalysisProposal(output, snapshot);
             reusedCheckpoint('analysis', startIndex === total);
             if (!restoreCheckpointWarnings('analysis')) onValidated('analysis', output);
@@ -361,8 +362,10 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             currentRequest.data.visualSources = [];
             if (job.phase !== 'analysis') break;
             if (boundedAnalysis) break;
-            const candidate = prepareEvidenceRequest(currentRequest, responseSchema);
-            if (Buffer.byteLength(JSON.stringify(candidate.request)) + Buffer.byteLength(JSON.stringify(candidate.schema)) <= CONTEXT_WINDOW_BYTES) { preparedEvidence = candidate; break; }
+            let candidate;
+            try { candidate = prepareEvidenceRequest(currentRequest, responseSchema); }
+            catch (error) { if (!['AI_INPUT_TOO_LARGE', 'AI_EVIDENCE_CAPACITY'].includes(error.code)) throw error; }
+            if (candidate && Buffer.byteLength(JSON.stringify(candidate.request)) + Buffer.byteLength(JSON.stringify(candidate.schema)) <= CONTEXT_WINDOW_BYTES) { preparedEvidence = candidate; break; }
             if (group.end === index) {
               needsContext = true;
               // Compare a bounded candidate block once with history, rather
@@ -392,15 +395,25 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
               if (context) currentRequest.data.analysisBatch.capacity.issuesRemaining = Math.max(0, MAX_PROJECT_ISSUES - knownIssueCount);
               currentRequest.data.visualSources = visuals.sources;
             }
-            const result = await reconcileAnalysisBatch({ snapshot, sources: group.sources, previous: output ?? seedAnalysis(snapshot), request: currentRequest, run: args => run({ ...args, cwd }), signal: controller.signal, attachments: visuals.attachments, resume: pendingContext,
+            let result;
+            try { result = await reconcileAnalysisBatch({ snapshot, sources: group.sources, previous: output ?? seedAnalysis(snapshot), request: currentRequest, run: args => run({ ...args, cwd }), signal: controller.signal, attachments: visuals.attachments, resume: pendingContext,
               readPart: readJson, writePart: value => store.writeArchive('ai', JSON.stringify(value)),
               onCheckpoint(state) {
                 pendingContext = state;
                 saveCheckpoint('analysis', analysisUpstream, { completed: index, total: batches?.length ?? 1, corrected: corrected || runCorrected, output: output ?? seedAnalysis(snapshot), batchAudit, contextMode: ANALYSIS_CONTEXT_VERSION, pendingContext: state });
               },
+              onReset(reason) {
+                pendingContext = null;
+                mark(job.id, stored => { stored.checkpointResets = [...(stored.checkpointResets ?? []).slice(-15), { reason, completed: index }]; });
+                if (index) saveCheckpoint('analysis', analysisUpstream, { completed: index, total: batches?.length ?? 1, corrected, output, batchAudit, contextMode: ANALYSIS_CONTEXT_VERSION });
+                else { delete job.checkpoints.analysis; mark(job.id, stored => { delete stored.checkpoints.analysis; }); }
+              },
               onProgress: onStage, onReuse: reusedResponse, onValidated: value => onValidated('analysis', value),
               onCorrection() { runCorrected = true; mark(job.id, stored => { if (stored.status === 'running') stored.attempts = 2; }); },
-            });
+            }); } catch (error) {
+              if (group.end > index && !pendingContext?.candidateRef && ['AI_TIMEOUT', 'AI_OUTPUT_TOO_LARGE', 'AI_INPUT_TOO_LARGE', 'AI_ATTACHMENT_INVALID', 'AI_OUTPUT_INVALID', 'AI_EVIDENCE_CAPACITY'].includes(error.code)) mark(job.id, stored => { if (stored.status === 'running') stored.analysisBatchLimit = 1; });
+              throw error;
+            }
             next = result.output; delta = result.delta; batchCorrected = result.corrected; corrected ||= result.corrected; pendingContext = null;
             if (!(batches?.length > 1) || group.end === batches.length - 1) validated = validateAnalysisProposal(next, snapshot);
           } else for (;;) {
