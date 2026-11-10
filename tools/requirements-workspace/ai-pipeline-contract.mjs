@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, validatePrivateAiValue, validateEvidenceCitations } from './ai-contract.mjs';
+import { ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, MAX_PROJECT_ISSUES, MAX_PROJECT_PROPOSAL_BYTES, projectProposalSchema, validatePrivateAiValue, validateEvidenceCitations } from './ai-contract.mjs';
 const string = (maxLength = 2000) => ({ type: 'string', minLength: 1, maxLength });
 const array = (items, maxItems = 100) => ({ type: 'array', items, minItems: 0, maxItems });
 const object = properties => ({ type: 'object', properties, required: Object.keys(properties), additionalProperties: false });
@@ -38,18 +38,19 @@ function validIssues(issues, snapshot, requirementIds) {
 export function mergeIssues(previous, incoming) {
   const result = structuredClone(previous), ids = new Set(result.map(issue => issue.id));
   for (const item of incoming) {
-    const same = result.find(old => old.question === item.question && JSON.stringify(old.citations) === JSON.stringify(item.citations));
+    const meaning = issue => JSON.stringify([issue.kind, issue.question, issue.options, issue.requirementIds, issue.citations]);
+    const same = result.find(old => meaning(old) === meaning(item));
     if (same) { if (item.severity === 'blocking') same.severity = 'blocking'; continue; }
     const copy = structuredClone(item);
     if (ids.has(copy.id)) copy.id = `Q-${createHash('sha256').update(JSON.stringify(copy)).digest('hex').slice(0, 24)}`;
     if (ids.has(copy.id)) invalid('issue-id-collision');
     ids.add(copy.id); result.push(copy);
   }
-  if (result.length > 100) capacity('AI_ISSUE_CAPACITY');
+  if (result.length > MAX_PROJECT_ISSUES || Buffer.byteLength(JSON.stringify(result)) > MAX_PROJECT_PROPOSAL_BYTES) capacity('AI_ISSUE_CAPACITY');
   return result;
 }
 export function validateBusinessModel(value, snapshot, expectedSources) {
-  try { validatePrivateAiValue(value, BUSINESS_MODEL_SCHEMA, { maxBytes: BUSINESS_MODEL_MAX_BYTES }); }
+  try { validatePrivateAiValue(value, projectProposalSchema(BUSINESS_MODEL_SCHEMA), { maxBytes: BUSINESS_MODEL_MAX_BYTES }); }
   catch (error) { if (error.code === 'AI_OUTPUT_INVALID' && error.details?.some(detail => detail.kind === 'output-size')) capacity('AI_BUSINESS_MODEL_CAPACITY'); throw error; }
   const known = new Set(snapshot.backlog.sources.map(source => source.id));
   for (const item of [...value.actors, ...value.processes, ...value.terms]) if (new Set(item.sourceIds).size !== item.sourceIds.length || item.sourceIds.some(id => !known.has(id))) invalid('business-model-source');

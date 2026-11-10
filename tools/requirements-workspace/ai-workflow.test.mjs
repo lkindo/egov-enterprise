@@ -24,6 +24,125 @@ async function fixture(t, aiRunner, artifactExtractor) {
   return { engine, store, act, start };
 }
 
+test('standalone analysis resumes its validated completed prefix with metrics and no duplicate call', async t => {
+  const seen = []; let app, cancel = false;
+  app = await fixture(t, async ({ request }) => {
+    seen.push(request.data.analysisBatch.index);
+    if (cancel) throw Object.assign(Error('AI_TIMEOUT'), { code: 'AI_TIMEOUT' });
+    cancel = true;
+    const src = request.data.sources[0], clause = src.clauses[0];
+    return envelope({ requirements: [], issues: [{ id: 'QUESTION-1', kind: 'decision', severity: 'blocking', question: '접수 업무의 적용 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [{ sourceId: src.id, clauseId: clause.id, quote: clause.text }] }], coverage: request.data.sources.flatMap(value => value.clauses.map(item => ({ sourceId: value.id, clauseId: item.id, disposition: 'excluded', rationale: '업무 범위에 대한 원문 확인 필요' }))) });
+  });
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 33 }, (_, index) => ({ ...source.clauses[0], id: `C-${index}` })) });
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi();
+  let state = await app.engine.state();
+  assert.equal(state.ai.current.batches.completed, 1);
+  assert.ok(state.ai.current.checkpoints?.analysis, 'every entry path must durably save the completed analysis');
+  const checkpoint = state.ai.current.checkpoints.analysis;
+  seen.length = 0;
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.deepEqual(seen, [2]);
+  assert.equal(state.ai.current.batches.completed, 1);
+  assert.deepEqual(state.ai.current.checkpoints.analysis, checkpoint);
+  assert.equal(state.ai.current.callMetrics.requests, 1);
+  assert.equal(state.ai.current.callMetrics.reusedResponses, 1);
+  assert.equal(state.backlog.businessRequirements.length, 0);
+});
+
+test('adjacent analysis partitions share a call while every original clause and prior question remains', async t => {
+  const calls = [], keys = [];
+  const app = await fixture(t, async ({ request }) => {
+    calls.push(request.data.analysisBatch);
+    const src = request.data.sources[0], clause = src.clauses[0];
+    keys.push(...request.data.sources.flatMap(value => value.clauses.map(item => `${value.id}/${item.id}`)));
+    if (calls.length > 1) assert.ok(request.data.previousAnalysis.issues.some(issue => issue.question === '업무 경계를 확정해 주세요.'));
+    return envelope({ requirements: [], issues: calls.length === 1 ? [{ id: 'QUESTION-GROUP', kind: 'decision', severity: 'blocking', question: '업무 경계를 확정해 주세요.', options: [], requirementIds: [], citations: [{ sourceId: src.id, clauseId: clause.id, quote: clause.text }] }] : [], coverage: request.data.sources.flatMap(value => value.clauses.map(item => ({ sourceId: value.id, clauseId: item.id, disposition: 'excluded', rationale: '개발 범위의 배경 설명' }))) });
+  });
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 288 }, (_, index) => ({ ...source.clauses[0], id: `C-${index}` })) });
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi(); const state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  assert.equal(calls.length, 3, 'nine legacy partitions need three complete bounded calls');
+  assert.equal(keys.length, 288); assert.equal(new Set(keys).size, 288);
+  assert.deepEqual(calls.map(batch => [batch.index, batch.lastIndex]), [[1, 3], [4, 6], [7, 9]]);
+  assert.deepEqual(state.ai.current.batches, { completed: 9, total: 9 });
+  assert.equal(state.ai.proposal.coverage.length, 288);
+});
+
+test('a complete standalone analysis can be reused with zero model calls and keeps human confirmation pending', async t => {
+  let calls = 0;
+  const app = await fixture(t, async ({ request }) => { calls++; return envelope(analysis(request, { question: false })); });
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi();
+  let state = await app.engine.state(); assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode);
+  const previous = structuredClone(state.ai.proposal.requirements), checkpoint = state.ai.current.checkpoints.analysis;
+  calls = 0;
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode); assert.equal(calls, 0);
+  assert.deepEqual(state.ai.proposal.requirements, previous); assert.deepEqual(state.ai.current.checkpoints.analysis, checkpoint);
+  assert.equal(state.ai.current.modelCalls, 0); assert.equal(state.backlog.businessRequirements.length, 0);
+});
+
+for (const change of ['reuse-disabled', 'visual-policy', 'source-text']) test(`analysis checkpoint compatibility rejects ${change} before reusing a prefix`, async t => {
+  let completed = false; const calls = [];
+  const app = await fixture(t, async ({ request }) => {
+    calls.push(request.data.analysisBatch.index);
+    if (completed) throw Object.assign(Error('AI_TIMEOUT'), { code: 'AI_TIMEOUT' });
+    completed = true;
+    const src = request.data.sources[0];
+    return envelope({ requirements: [], issues: [{ id: 'Q', kind: 'decision', severity: 'blocking', question: '업무 정책의 적용 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [{ sourceId: src.id, clauseId: src.clauses[0].id, quote: src.clauses[0].text }] }], coverage: src.clauses.map(clause => ({ sourceId: src.id, clauseId: clause.id, disposition: 'excluded', rationale: '업무 배경의 범위 확인' })) });
+  });
+  const material = { ...source, clauses: Array.from({ length: 33 }, (_, index) => ({ ...source.clauses[0], id: `C-${index}` })) };
+  await app.act('source.save', material); await app.start({ includeVisuals: false }); await app.engine.waitForAi();
+  assert.equal((await app.engine.state()).ai.current.batches.completed, 1);
+  if (change === 'source-text') { material.clauses[0].text += ' 변경된 접수 조건을 확인한다.'; await app.act('source.save', material); }
+  calls.length = 0;
+  await app.start({ includeVisuals: change === 'visual-policy', ...(change === 'reuse-disabled' ? { reuseCheckpoints: false } : {}) });
+  await app.engine.waitForAi(); const state = await app.engine.state();
+  assert.deepEqual(calls, [1]); assert.equal(state.ai.current.resumeFrom, undefined);
+  assert.equal(state.ai.current.batches.completed, 0); assert.equal(state.backlog.businessRequirements.length, 0);
+});
+
+test('a failed combined call resumes one partition at a time without replaying its saved prefix', async t => {
+  const calls = [];
+  const app = await fixture(t, async ({ request }) => {
+    const batch = request.data.analysisBatch; calls.push(batch.index);
+    if (batch.index >= 4 && batch.lastIndex > batch.index) throw Object.assign(Error('AI_TIMEOUT'), { code: 'AI_TIMEOUT' });
+    const src = request.data.sources[0];
+    return envelope({ requirements: [], issues: batch.index === 1 ? [{ id: 'Q', kind: 'decision', severity: 'blocking', question: '접수 처리 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [{ sourceId: src.id, clauseId: src.clauses[0].id, quote: src.clauses[0].text }] }] : [], coverage: request.data.sources.flatMap(value => value.clauses.map(clause => ({ sourceId: value.id, clauseId: clause.id, disposition: 'excluded', rationale: '업무 범위 확인이 필요한 배경 자료' }))) });
+  });
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 288 }, (_, index) => ({ ...source.clauses[0], id: `C-${index}` })) });
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi(); let state = await app.engine.state();
+  assert.equal(state.ai.current.errorCode, 'AI_TIMEOUT'); assert.equal(state.ai.current.batches.completed, 3);
+  assert.equal(state.ai.current.analysisBatchLimit, 1);
+  const old = state.ai.current.checkpoints.analysis, bytes = app.store.readArchive(old);
+  calls.length = 0; await app.start({ includeVisuals: false }); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.deepEqual(calls, [4, 5, 6, 7, 8, 9]); assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  assert.equal(state.ai.proposal.coverage.length, 288); assert.equal(app.store.readArchive(old), bytes);
+});
+
+test('direct visual analysis keeps each logical partition separate before preparing attachments', async t => {
+  let count, lastIndex;
+  const app = await fixture(t, async ({ request }) => { count=request.data.sources.reduce((sum,src)=>sum+src.clauses.length,0);lastIndex=request.data.analysisBatch.lastIndex;throw Object.assign(Error('AI_TIMEOUT'),{code:'AI_TIMEOUT'}); });
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 288 }, (_, index) => ({ ...source.clauses[0], id: `C-${index}` })) });
+  await app.start({ includeVisuals: true }); await app.engine.waitForAi();
+  assert.equal(count, 32); assert.equal(lastIndex, undefined);
+});
+
+test('a combined-call failure before the first checkpoint still persists the one-partition resume policy', async t => {
+  const calls = [];
+  const app = await fixture(t, async ({ request }) => {
+    const batch = request.data.analysisBatch; calls.push(batch.index);
+    if (batch.lastIndex > batch.index) throw Object.assign(Error('AI_OUTPUT_TOO_LARGE'), { code: 'AI_OUTPUT_TOO_LARGE' });
+    const src = request.data.sources[0];
+    return envelope({ requirements: [], issues: batch.index === 1 ? [{ id: 'Q', kind: 'decision', severity: 'blocking', question: '자료의 업무 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [{ sourceId: src.id, clauseId: src.clauses[0].id, quote: src.clauses[0].text }] }] : [], coverage: src.clauses.map(clause => ({ sourceId: src.id, clauseId: clause.id, disposition: 'excluded', rationale: '확인이 필요한 업무 배경' })) });
+  });
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 128 }, (_, index) => ({ ...source.clauses[0], id: `C-${index}` })) });
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi(); let state = await app.engine.state();
+  assert.equal(state.ai.current.errorCode, 'AI_OUTPUT_TOO_LARGE'); assert.equal(state.ai.current.analysisBatchLimit, 1); assert.equal(state.ai.current.checkpoints.analysis, undefined);
+  calls.length = 0; await app.start({ includeVisuals: false }); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.deepEqual(calls, [1, 2, 3, 4]); assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  for (const change of [job => { job.analysisBatchLimit = 2; }, job => { job.analysisAttachmentPolicy = 'unsupported'; }]) { const metadata = structuredClone(state.metadata); change(metadata.ai.jobs.at(-1)); assert.throws(() => validateRequirementsMetadata(metadata), { code: 'AI_METADATA_INVALID' }); }
+});
+
 test('high analysis preserves legacy xhigh history and rejects unsupported history efforts', async t => {
   const app = await fixture(t, async ({ request }) => ({ ...envelope(analysis(request, { question: false })), effort: 'high' }));
   await app.start(); await app.engine.waitForAi();
@@ -224,7 +343,8 @@ test('explicit batch updates and relinked draft reasons remain reviewable in the
     const old = request.data.previousAnalysis.issues[0].citations[0];
     const value = analysis({ data: { ...request.data, sources: [{ ...src, clauses: [part] }] } }, { question: false });
     value.requirements[0].id = `${request.data.analysisBatch.idPrefix}REQ-1`;
-    value.requirements[0].citations.push(old);
+    const currentEvidence = request.data.evidenceCatalog.find(row => row[0] === src.id && row[1] === part.id && row[3])[4];
+    value.requirements[0].citations = [currentEvidence, old];
     value.coverage[0].requirementIds = [value.requirements[0].id];
     return envelope(value);
   });
@@ -241,7 +361,7 @@ test('explicit batch updates and relinked draft reasons remain reviewable in the
 
 test('artifacts -> AI issues -> human answers -> confirmed baseline -> automatic epic generation -> task package', async t => {
   const phases = [];
-  const app = await fixture(t, async ({ request }) => { phases.push(request.phase); return envelope(request.phase === 'analysis' ? analysis(request) : decomposition()); });
+  const app = await fixture(t, async ({ request }) => { phases.push(request.phase); if (request.phase === 'decomposition') assert.equal(request.data.evidenceProtocol, undefined, 'standalone decomposition retains its canonical evidence/correction contract'); return envelope(request.phase === 'analysis' ? analysis(request) : decomposition()); });
   await app.start(); await app.engine.waitForAi();
   let state = await app.engine.state();
   assert.equal(state.ai.current.status, 'needs-decisions');
@@ -308,7 +428,8 @@ test('one bounded correction can repair structural AI links without storing the 
   const state = await app.engine.state();
   assert.equal(state.ai.current.status, 'ready');
   assert.equal(calls.length, 2);
-  assert.equal(calls[1].data.correction.previousOutput.coverage[0].requirementIds[0], 'UNKNOWN');
+  assert.equal(Object.hasOwn(calls[1].data.correction, 'previousOutput'), false);
+  assert.doesNotMatch(JSON.stringify(calls[1]), /UNKNOWN/);
   assert.equal(calls[1].data.correction.violations[0].kind, 'coverage-reference');
   assert.equal(state.backlog.businessRequirements.length, 0);
   assert.doesNotMatch(app.store.readArchive(state.ai.current.resultRef), /UNKNOWN/);

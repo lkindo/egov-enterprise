@@ -1,12 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateBusinessModel, validateRequirementReview, validatePlanReview } from './ai-pipeline-contract.mjs';
+import { mergeIssues, validateBusinessModel, validateRequirementReview, validatePlanReview } from './ai-pipeline-contract.mjs';
 import { planningGroups, prepareBusinessModel, planAndReview } from './ai-pipeline.mjs';
 import { validateEvidenceCitations, validateAnalysisProposal, projectAnalysisBacklog } from './ai-contract.mjs';
 import { context, source, analysis, decomposition } from './test-fixtures/ai.mjs';
 import { createEmptyBacklogPack } from '../../scripts/export-deliverables-workspace.mjs';
 const snapshot = () => ({ backlog: { sources: [structuredClone(source)], businessRequirements: [] }, metadata: { context } });
 const model = () => ({ summary: '접수 조회 업무의 책임과 열람 범위를 정리한다.', actors: [{ name: '담당자', responsibility: '접수 목록 조회', sourceIds: ['SRC-1'] }], processes: [{ name: '접수 조회', trigger: '담당자의 조회 요청', steps: ['조회 조건 입력', '허용 범위의 결과 확인'], exceptions: ['열람 범위 미결정'], rules: [], data: ['접수 목록'], sourceIds: ['SRC-1'] }], terms: [], issues: [], sourceCoverage: [{ sourceId: 'SRC-1', role: 'business', rationale: '조회 업무와 담당 범위의 근거' }] });
+
+test('project issue merging preserves distinct options, kinds and requirement scope even when wording and citations match', () => {
+  const first = { id: 'Q', kind: 'decision', severity: 'observation', question: '적용 범위를 확인해 주세요.', options: ['본인 담당 건'], requirementIds: ['REQ-1'], citations: [{ sourceId: 'SRC-1', clauseId: 'C-1', quote: source.clauses[0].text }] };
+  const differentOptions = { ...structuredClone(first), options: ['부서 전체 건'] };
+  const differentScope = { ...structuredClone(first), requirementIds: ['REQ-2'] };
+  const differentKind = { ...structuredClone(first), kind: 'conflict' };
+  const merged = mergeIssues([first], [differentOptions, differentScope, differentKind]);
+  assert.equal(merged.length, 4); assert.equal(new Set(merged.map(issue => issue.id)).size, 4);
+  assert.deepEqual(merged[0], first);
+  const repeated = mergeIssues(merged, [{ ...structuredClone(first), id: 'OTHER-ID', severity: 'blocking' }]);
+  assert.equal(repeated.length, 4); assert.equal(repeated[0].severity, 'blocking');
+});
 
 test('every planning request retains the full executable scope of an existing shared epic', async () => {
   const state = { backlog: createEmptyBacklogPack(context), metadata: { context } };

@@ -1,12 +1,13 @@
 import { validatePrivateAiValue } from './ai-contract.mjs';
 
-export const EVIDENCE_PROTOCOL = 'stored-evidence-v2';
+export const EVIDENCE_PROTOCOL = 'stored-evidence-v3';
 const MAX_REFERENCES = 32768;
 const invalid = () => { throw Object.assign(new Error('AI_OUTPUT_INVALID'), { code: 'AI_OUTPUT_INVALID', details: [{ kind: 'citation-reference', path: 'citations' }] }); };
 const keyOf = value => JSON.stringify([value.sourceId, value.clauseId, value.quote]);
 const clauseKey = (sourceId, clauseId) => JSON.stringify([sourceId, clauseId]);
 const letters = text => (text.match(/[\p{L}\p{N}]/gu) ?? []).length;
-const protocolInstructions = 'Evidence protocol stored-evidence-v2: In the RESPONSE every citations array contains integer evidenceCatalog indexes, not quote objects. Canonical examples below describe final storage, not the wire response. evidenceCatalog rows are [sourceId, clauseId, exactQuote, allowed, evidenceIndex]. Select the explicit LAST integer, never count rows or invent indexes. All historical quotations are supplied in full: compare their exact conditions, thresholds and exceptions with current sources, even if earlier generated descriptions omitted them. Current sources are verbatim. Choose allowed evidence supporting every fact and unresolved question. Never invent a quote, index or approval. Unchanged prior requirements/issues are retained automatically; return only the requested delta/revisions and new issues. The application restores exact selected quotations; do not reprint their bodies in the RESPONSE. Global business context alone does not authorize an entry with allowed=false.';
+const protocolInstructions = 'Evidence protocol stored-evidence-v3: In the RESPONSE every citations array contains integer evidenceCatalog indexes, not quote objects. Canonical examples below describe final storage, not the wire response. evidenceCatalog rows are [sourceId, clauseId, quoteOrSpan, allowed, evidenceIndex]. quoteOrSpan is either a FULL verbatim quote string or [start,end] UTF-16 offsets into the FULL text of that exact source/clause under data.sources or data.policySources. The end offset is exclusive. A span references text supplied in full, never an omitted document. Select the explicit LAST integer, never count rows or invent indexes. All historical quotations without a supplied full current clause remain inline in FULL: compare their exact conditions, thresholds and exceptions with current sources, even if earlier generated descriptions omitted them. Current sources are verbatim. Choose allowed evidence supporting every fact and unresolved question. Never invent a quote, index or approval. Unchanged prior requirements/issues are retained automatically; return only the requested delta/revisions and new issues. The application restores exact selected quotations; do not reprint their bodies in the RESPONSE. Global business context alone does not authorize an entry with allowed=false.';
+const spanHintInstructions = 'A fragment span also includes readable opening and closing anchors: [start,end,openingText,closingText]. Locate that passage in the FULL supplied clause using these anchors; do not count characters to infer its meaning. The anchors are lookup hints, not replacements for the passage or its conditions/exceptions. The exact full quote is restored by the application.';
 
 function referenceSchema(schema) {
   const result = structuredClone(schema);
@@ -72,7 +73,15 @@ export function prepareEvidenceRequest(request, schema) {
     if (!indexes.has(key)) {
       if (evidence.length >= MAX_REFERENCES) throw Object.assign(new Error('AI_EVIDENCE_CAPACITY'), { code: 'AI_EVIDENCE_CAPACITY' });
       indexes.set(key, evidence.length); evidence.push(structuredClone(citation));
-      catalog.push([citation.sourceId, citation.clauseId, citation.quote, allowed.has(clauseKey(citation.sourceId, citation.clauseId)), evidence.length - 1]);
+      const clause = current.get(clauseKey(citation.sourceId, citation.clauseId));
+      const start = clause?.text.indexOf(citation.quote) ?? -1;
+      const span = start >= 0 ? [start, start + citation.quote.length] : null;
+      if (span && citation.quote !== clause.text.trim()) {
+        const chars = Array.from(citation.quote);
+        span.push(chars.slice(0, 12).join(''), chars.slice(-12).join(''));
+      }
+      const uniqueHint = !span || span.length === 2 || [span[2], span[3]].every(hint => clause.text.indexOf(hint) === clause.text.lastIndexOf(hint));
+      catalog.push([citation.sourceId, citation.clauseId, span && uniqueHint ? span : citation.quote, allowed.has(clauseKey(citation.sourceId, citation.clauseId)), evidence.length - 1]);
     }
     return indexes.get(key);
   };
@@ -81,13 +90,18 @@ export function prepareEvidenceRequest(request, schema) {
     if (!value || typeof value !== 'object') return value;
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, key === 'citations' && Array.isArray(item) ? item.map(indexFor) : project(item)]));
   };
-  const projected = withoutQuoteBoundaries(project(original.data));
+  // Keep invariant context before the changing draft/source partition. This
+  // preserves exact facts and permits the provider to reuse a common prefix;
+  // cache hits and time savings are measured, never assumed.
+  const stableFields = ['project', 'modules', 'businessModel', 'decisions', 'sourceReadingNotes', 'policySources', 'previousRequirements'];
+  const fields = [...stableFields.filter(key => Object.hasOwn(original.data, key)), ...Object.keys(original.data).filter(key => !stableFields.includes(key) && key !== 'analysisBatch'), ...(Object.hasOwn(original.data, 'analysisBatch') ? ['analysisBatch'] : [])];
+  const projected = withoutQuoteBoundaries(project(Object.fromEntries(fields.map(key => [key, original.data[key]]))));
   for (const [key, clause] of current) {
     const [sourceId, clauseId] = JSON.parse(key);
     for (const quote of excerpts(clause)) indexFor({ sourceId, clauseId, quote });
   }
-  const wire = { ...original, instructions: `${protocolInstructions}\n\n${original.instructions}\n\nResponse reminder: citations are integer evidenceCatalog indexes; return no quote bodies.`, data: { ...projected, evidenceProtocol: EVIDENCE_PROTOCOL, evidenceCatalog: catalog } };
-  const canonicalRequest = { ...original, data: withoutQuoteBoundaries(original.data) };
+  const wire = { ...original, instructions: `${protocolInstructions}\n${spanHintInstructions}\n\n${original.instructions}\n\nResponse reminder: citations are integer evidenceCatalog indexes; return no quote bodies.`, data: { ...projected, evidenceProtocol: EVIDENCE_PROTOCOL, evidenceCatalog: catalog } };
+  const canonicalRequest = { ...original, data: withoutQuoteBoundaries(Object.fromEntries(fields.map(key => [key, original.data[key]]))) };
   if (Buffer.byteLength(JSON.stringify(wire)) > 768 * 1024 && Buffer.byteLength(JSON.stringify(canonicalRequest)) <= 768 * 1024) {
     // Selector overhead must neither hide evidence nor reject an input that the
     // original complete contract accepts. Fall back to that exact contract.

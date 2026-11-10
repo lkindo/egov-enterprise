@@ -1,5 +1,21 @@
 const fail = code => { throw Object.assign(new Error(code), { code }); };
 export const MAX_ANALYSIS_BATCHES = 128;
+// Logical partitions stay stable so existing checkpoints remain reusable.
+// A CLI call can cover several adjacent partitions without omitting any clause.
+export function coalesceAnalysisBatches(batches, start, maxPartitions = 3) {
+  const sources = []; let end = start, clauses = 0;
+  for (let index = start; index < Math.min(batches.length, start + maxPartitions); index++) {
+    const next = structuredClone(sources), map = new Map(next.map(source => [source.id, source]));
+    for (const source of batches[index]) {
+      if (map.has(source.id)) map.get(source.id).clauses.push(...source.clauses);
+      else { const copy = structuredClone(source); next.push(copy); map.set(source.id, copy); }
+    }
+    const count = next.reduce((sum, source) => sum + source.clauses.length, 0);
+    if (index > start && (count > 96 || Buffer.byteLength(JSON.stringify(next)) > 96 * 1024)) break;
+    sources.splice(0, sources.length, ...next); clauses = count; end = index;
+  }
+  return { sources, end, clauses };
+}
 // Bound both input and coverage output per call. The final proposal retains the
 // existing 150-requirement / 3,000-clause contract; no source is silently cut.
 export function planAnalysisBatches(snapshot, decisions = []) {
