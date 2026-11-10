@@ -47,6 +47,7 @@ test('invalid AI output shows validation evidence and checkpoint recovery instea
   const capacity = window.document.querySelector('[aria-label="AI 요구사항 진행"]').textContent;
   assert.match(capacity, /쟁점 100개/); assert.match(capacity, /업무 범위를 나누어/);
   assert.doesNotMatch(capacity, /CLI 로그인·사용 한도·자료 크기/);
+  assert.doesNotMatch(capacity, /같은 자료의 반복 실행은 이 한도를 해결하지 못합니다/);
 });
 test('stopping while the browser reads a file prevents a later upload and does not cancel a nonexistent server job', async t => {
   const dom = new JSDOM(markup, { url: 'http://127.0.0.1:8792/', runScripts: 'outside-only', pretendToBeVisual: true });

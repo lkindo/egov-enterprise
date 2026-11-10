@@ -174,7 +174,11 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
         let corrected = false, runCorrected = false, validated, output = initialAnalysis, pipeline;
         const batchAudit = [];
         const usage = { inputTokens: 0, outputTokens: 0 };
-        const writeMetrics = () => { if (callMetrics) mark(job.id, stored => { stored.callMetrics = structuredClone(callMetrics); }); };
+        const writeMetrics = () => {
+          if (!callMetrics) return;
+          try { mark(job.id, stored => { stored.callMetrics = structuredClone(callMetrics); }); }
+          catch { /* Optional telemetry must not replace a response or its original failure. Essential writes still enforce CAS. */ }
+        };
         const reusedResponse = () => { if (callMetrics) { callMetrics.reusedResponses++; writeMetrics(); } };
         const isCurrent = async () => {
           if (controller.signal.aborted || closed) return false;
@@ -237,12 +241,16 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
           let ticket = null;
           if (callMetrics) {
             if (callMetrics.activeCalls.length >= 2) fail('AI_CALL_CONCURRENCY');
-            ticket = ++modelCalls; callMetrics.requests = modelCalls;
-            callMetrics.corrections += args.request.data?.correction ? 1 : 0;
-            callMetrics.inputBytes += inputBytes; callMetrics.logicalInputBytes += evidence ? Buffer.byteLength(JSON.stringify(args.request)) : inputBytes;
-            callMetrics.activeCalls.push({ call: ticket, stage: args.request.phase, batch: args.request.data?.analysisBatch?.index ?? args.request.data?.planningBatch?.index ?? args.request.data?.reviewBatch?.index ?? args.request.data?.batch?.index ?? null, startedAt: now() });
-            callMetrics.peakConcurrency = Math.max(callMetrics.peakConcurrency, callMetrics.activeCalls.length);
-            mark(job.id, stored => { stored.modelCalls = modelCalls; stored.callMetrics = structuredClone(callMetrics); });
+            mark(job.id, stored => {
+              if (stored.status !== 'running') return;
+              ticket = ++modelCalls; callMetrics.requests = modelCalls;
+              callMetrics.corrections += args.request.data?.correction ? 1 : 0;
+              callMetrics.inputBytes += inputBytes; callMetrics.logicalInputBytes += evidence ? Buffer.byteLength(JSON.stringify(args.request)) : inputBytes;
+              callMetrics.activeCalls.push({ call: ticket, stage: args.request.phase, batch: args.request.data?.analysisBatch?.index ?? args.request.data?.planningBatch?.index ?? args.request.data?.reviewBatch?.index ?? args.request.data?.batch?.index ?? null, startedAt: now() });
+              callMetrics.peakConcurrency = Math.max(callMetrics.peakConcurrency, callMetrics.activeCalls.length);
+              stored.modelCalls = modelCalls; stored.callMetrics = structuredClone(callMetrics);
+            });
+            if (ticket === null) fail(controller.signal.aborted ? 'AI_CANCELLED' : 'AI_STALE_INPUT');
           }
           let response, waitMs = 0; const began = performance.now();
           try {

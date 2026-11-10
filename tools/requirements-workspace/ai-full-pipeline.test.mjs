@@ -77,7 +77,7 @@ test('full pipeline uses bounded evidence references and restores canonical proo
   const state = await app.engine.state();
   assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode);
   for (const request of requests.filter(item => !['reading', 'synthesis'].includes(item.phase))) {
-    assert.equal(request.data.evidenceProtocol, 'stored-evidence-v1');
+    assert.equal(request.data.evidenceProtocol, 'stored-evidence-v2');
     assert.ok(Buffer.byteLength(JSON.stringify(request)) <= 768 * 1024);
   }
   assert.equal(state.ai.proposal.requirements[0].citations[0].sourceId, source.id);
@@ -132,16 +132,38 @@ test('new call metrics count actual calls and preserve the zero-call meaning of 
   }
 });
 
-async function sevenRequirementReviewApp(t, review) {
+async function sevenRequirementReviewApp(t, review, { sharedSource = false, sharedIssue = false } = {}) {
   const app = await setup(t, async ({ request }) => {
     if (request.phase === 'review-requirements') return envelope(await review(request), request.phase);
     if (request.phase !== 'analysis') return envelope(reply(request), request.phase);
     const requirements = request.data.sources[0].clauses.map((clause, index) => ({ ...analysis(request, { question: false }).requirements[0], id: `REQ-${index + 1}`, title: `접수 조건 ${index + 1}`, citations: [request.data.evidenceCatalog.findIndex(([sourceId, clauseId, quote, allowed]) => sourceId === source.id && clauseId === clause.id && quote && allowed)] }));
-    return envelope({ requirements, issues: [{ id: 'POLICY', kind: 'decision', severity: 'blocking', question: '기관의 접수 처리 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [requirements[0].citations[0]] }], coverage: request.data.sources[0].clauses.map((clause, index) => ({ sourceId: source.id, clauseId: clause.id, disposition: 'included', requirementIds: [requirements[index].id], rationale: '등록한 원문 처리 조건' })) }, request.phase);
+    if (sharedSource) for (const req of requirements.slice(1)) req.citations.push(requirements[0].citations[0]);
+    return envelope({ requirements, issues: [{ id: 'POLICY', kind: 'decision', severity: 'blocking', question: '기관의 접수 처리 범위를 확인해 주세요.', options: [], requirementIds: sharedIssue ? requirements.map(req => req.id) : [], citations: [requirements[0].citations[0]] }], coverage: request.data.sources[0].clauses.map(clause => ({ sourceId: source.id, clauseId: clause.id, disposition: 'included', rationale: '등록한 원문 처리 조건' })) }, request.phase);
   });
   await app.act('source.save', { ...source, clauses: Array.from({ length: 7 }, (_, index) => ({ ...source.clauses[0], id: `C-${index + 1}`, text: `${source.clauses[0].text} 문단 ${index + 1}의 처리 조건을 유지한다.` })) });
   return app;
 }
+
+for (const connection of ['source', 'issue']) test(`quality review keeps a later group sequential when it shares an existing ${connection}`, async t => {
+  const called = []; let started, release, timer;
+  const firstStarted = new Promise(resolve => { started = resolve; });
+  const barrier = new Promise(resolve => { release = resolve; });
+  const app = await sevenRequirementReviewApp(t, async request => {
+    called.push(request.data.requirements[0].id);
+    if (request.data.requirements[0].id === 'REQ-1') { started(); await barrier; }
+    return { issues: [], revisions: [] };
+  }, { sharedSource: connection === 'source', sharedIssue: connection === 'issue' });
+  let observed;
+  try {
+    await app.start(); await Promise.race([firstStarted, new Promise((_, reject) => { timer = setTimeout(() => reject(Error('first review not reached')), 30000); })]);
+    await new Promise(resolve => setImmediate(resolve)); observed = [...called];
+  } finally { clearTimeout(timer); release(); }
+  await app.engine.waitForAi(); const state = await app.engine.state();
+  assert.deepEqual(observed, ['REQ-1'], 'the later group must see the earlier group issues before it is sent');
+  assert.deepEqual(called, ['REQ-1', 'REQ-7']); assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  assert.equal(state.ai.proposal.requirements.length, 7); assert.equal(state.ai.proposal.coverage.length, 7);
+  assert.equal(state.ai.current.callMetrics.peakConcurrency, 1);
+});
 
 test('requirement generation keeps prior semantic facts available to every later batch before asking for a new identity', async t => {
   let firstId; const indices = [];

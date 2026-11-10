@@ -5,6 +5,7 @@ import { createEmptyBacklogPack } from '../../scripts/export-deliverables-worksp
 import { ANALYSIS_SCHEMA, BATCH_ANALYSIS_SCHEMA, validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal, seedAnalysis, aiInputDigest, buildAiRequest, buildCorrectionRequest, projectAnalysisBacklog } from './ai-contract.mjs';
 import { planAnalysisBatches } from './ai-analysis-batches.mjs';
 import { prepareEvidenceRequest } from './ai-evidence.mjs';
+import { REQUIREMENT_REVIEW_SCHEMA } from './ai-pipeline-contract.mjs';
 
 const context = { snapshotDigest: 'synthetic-context', commit: 'synthetic', capabilities: [], screens: [], interfaces: [], tables: [], gates: [], modules: [], presets: [], permissions: [] };
 const original = '담당자는 접수 목록을 조회한다. 열람 범위는 다음 회의에서 결정한다.';
@@ -16,13 +17,35 @@ function snapshot() {
 }
 const citation = () => ({ sourceId: 'SRC-1', clauseId: 'C-1', quote: '담당자는 접수 목록을 조회한다.' });
 
-test('evidence references preserve every prior semantic field and restore exact stored quotes without resending them', () => {
+test('lossless evidence forwarding falls back to the canonical contract when selector overhead alone exceeds the input limit', () => {
+  const clauses = Array.from({ length: 120 }, (_, index) => ({ id: `C-${index}`, text: `기관의 승인 조건 ${index}를 원문으로 확인한다. ` + Array.from({ length: 45 }, (_, part) => `${index}번 자료 ${part}번 정책의 적용 조건과 예외를 정확하게 보존한다.`).join(' ') }));
+  const request = { phase: 'review-requirements', instructions: 'Keep every original condition and exception.', data: { sources: [{ id: 'SRC', title: '다수 근거 검토', clauses }], requirements: [], existingIssues: [] } };
+  assert.ok(Buffer.byteLength(JSON.stringify(request)) < 768 * 1024);
+  const result = prepareEvidenceRequest(request, REQUIREMENT_REVIEW_SCHEMA);
+  assert.equal(result.request.data.evidenceProtocol, undefined);
+  assert.deepEqual(result.request, request, 'do not remove any quotation or reject an input that the original complete contract accepts');
+  assert.deepEqual(result.schema, REQUIREMENT_REVIEW_SCHEMA);
+  assert.deepEqual(result.resolve({ issues: [], revisions: [] }), { issues: [], revisions: [] });
+  assert.throws(() => result.resolve({ issues: [{ id: 'Q', kind: 'risk', severity: 'blocking', question: '근거를 확인한다.', options: [], requirementIds: [], citations: [0] }], revisions: [] }), { code: 'AI_OUTPUT_INVALID' }, 'a canonical fallback cannot accept selectors that were never sent');
+});
+
+test('new evidence selectors prefer complete sentence boundaries while all original text remains supplied', () => {
+  const state = snapshot();
+  state.backlog.sources[0].clauses[0].text = Array.from({ length: 12 }, (_, index) => `제${index + 1}문장의 승인 조건과 거부 예외를 원문 그대로 확인한다.`).join(' ');
+  const request = buildAiRequest(state, 'analysis'), result = prepareEvidenceRequest(request, ANALYSIS_SCHEMA);
+  const quotes = result.request.data.evidenceCatalog.map(row => row[2]);
+  assert.ok(quotes.length > 1);
+  for (const quote of quotes) { assert.match(quote, /^제\d+문장/); assert.match(quote, /확인한다\.$/); assert.ok(state.backlog.sources[0].clauses[0].text.includes(quote)); }
+  assert.deepEqual(result.request.data.sources, request.data.sources);
+});
+
+test('evidence references preserve every prior semantic field and keep full historical quotes visible', () => {
   const state = snapshot(), previous = proposal();
   const current = { ...structuredClone(state.backlog.sources[0]), id: 'SRC-2', clauses: [{ id: 'C-2', text: '승인자는 금액 1,000만원 이상을 이중 승인한다. 예외 승인은 금지하며 원래의 조회 권한을 유지한다.', locator: '2쪽', disposition: 'question', rationale: '추가 승인 조건', requirementIds: [] }] };
   state.backlog.sources.push(current);
   const request = buildAiRequest(state, 'analysis', [], { sources: [current], batch: { index: 2, total: 2, idPrefix: 'B2-' }, previousAnalysis: previous });
   const originalRequest = structuredClone(request), wire = prepareEvidenceRequest(request, BATCH_ANALYSIS_SCHEMA);
-  assert.equal(wire.request.data.evidenceProtocol, 'stored-evidence-v1');
+  assert.equal(wire.request.data.evidenceProtocol, 'stored-evidence-v2');
   assert.deepEqual(request, originalRequest, 'preparing a request never changes the canonical checkpoint');
   assert.deepEqual(wire.request.data.sources, [current], 'all current text, amounts, prohibitions and exceptions are supplied verbatim');
   for (const field of ['requirements', 'issues']) for (const [index, item] of previous[field].entries()) {
@@ -30,7 +53,8 @@ test('evidence references preserve every prior semantic field and restore exact 
     const { citations: references, ...projectedMeaning } = wire.request.data.previousAnalysis[field][index];
     assert.deepEqual(projectedMeaning, meaning);
     assert.ok(references.every(Number.isSafeInteger));
-    assert.ok(references.every(ref => wire.request.data.evidenceCatalog[ref][2] === null), 'old proof is retained in the application rather than copied back into the prompt');
+    assert.ok(references.every((ref, at) => wire.request.data.evidenceCatalog[ref][2] === citations[at].quote), 'the model can compare original conditions that earlier generated descriptions may omit');
+    assert.ok(references.every(ref => wire.request.data.evidenceCatalog[ref][4] === ref), 'catalog rows explicitly label the response index instead of requiring the model to count them');
   }
   const restored = wire.resolve({ ...structuredClone(previous), requirements: wire.request.data.previousAnalysis.requirements, issues: wire.request.data.previousAnalysis.issues });
   assert.deepEqual(restored, previous, 'all historical citations resolve to their exact original bytes');
@@ -43,18 +67,19 @@ test('evidence references preserve every prior semantic field and restore exact 
   assert.equal(result.coverage.length, 2);
 });
 
-test('distinct historical quote bodies no longer dominate the reference request while all facts remain recoverable', () => {
+test('distinct historical quote bodies stay visible while output references avoid regenerating them', () => {
   const requirements = Array.from({ length: 64 }, (_, index) => ({ ...proposal().requirements[0], id: `REQ-${index}`, title: `조건 ${index}`, description: `금액 ${index + 100}원 이상은 승인하고 그 미만은 거부한다. 예외 처분은 미결정이다.`, citations: Array.from({ length: 20 }, (_, clause) => ({ sourceId: 'OLD', clauseId: `C-${index}-${clause}`, quote: `고유 근거 ${index} ${clause} ` + '승인 조건과 금액 기준을 원문 그대로 보존한다. '.repeat(12) })) }));
   const request = { phase: 'analysis', instructions: 'Keep every condition, number, source and unresolved decision.', data: { sources: snapshot().backlog.sources, previousAnalysis: { requirements, issues: [] }, businessModel: { summary: '승인 전 원문 확인', issues: [] } } };
   const wire = prepareEvidenceRequest(request, BATCH_ANALYSIS_SCHEMA), bytes = value => Buffer.byteLength(JSON.stringify(value));
-  assert.ok(bytes(wire.request) < bytes(request) * 0.45, `wire=${bytes(wire.request)} canonical=${bytes(request)}`);
+  for (const requirement of requirements) for (const cite of requirement.citations) assert.ok(wire.request.data.evidenceCatalog.some(row => row[2] === cite.quote));
+  assert.ok(bytes(wire.request.data.previousAnalysis.requirements) < bytes(requirements) * 0.45, 'reference output is short even though all source quotations stay visible in the input catalog');
   const decoded = wire.resolve({ requirements: wire.request.data.previousAnalysis.requirements, issues: [], coverage: proposal().coverage });
   assert.deepEqual(decoded.requirements, requirements, 'projection changes representation, never a condition, threshold, disposition or historical quote');
 });
 
 test('reference-capable builders defer only the logical input cap while the compact wire retains complete facts', () => {
   const state = snapshot(), previous = proposal(), quote = 'The reviewer preserves every original condition, amount and exception. '.repeat(12);
-  previous.requirements = Array.from({ length: 60 }, (_, index) => ({ ...proposal().requirements[0], id: `OLD-${index}`, citations: Array.from({ length: 15 }, (_, part) => ({ sourceId: 'HISTORY', clauseId: `C-${index}-${part}`, quote })) }));
+  previous.requirements = Array.from({ length: 60 }, (_, index) => ({ ...proposal().requirements[0], id: `OLD-${index}`, citations: Array.from({ length: 15 }, (_, part) => ({ sourceId: 'HISTORY', clauseId: `C-${part}`, quote })) }));
   const options = { sources: state.backlog.sources, batch: { index: 2, total: 2, idPrefix: 'B2-' }, previousAnalysis: previous };
   assert.throws(() => buildAiRequest(state, 'analysis', [], options), { code: 'AI_INPUT_TOO_LARGE' });
   const canonical = buildAiRequest(state, 'analysis', [], { ...options, evidenceReferences: true });

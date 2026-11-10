@@ -10,6 +10,19 @@ import { createHash } from 'node:crypto';
 
 const fail = code => { throw Object.assign(new Error(code), { code }); };
 const groups = (values, count) => Array.from({ length: Math.ceil(values.length / count) }, (_, index) => values.slice(index * count, (index + 1) * count));
+function independentReviewGroups(first, second, issues) {
+  // Uncited-clause reviews can discover related missing requirements; keep
+  // those sequential. Known requirements need disjoint evidence and issues.
+  if (!first?.requirements.length || !second?.requirements.length) return false;
+  const keys = entry => new Set(entry.sources.flatMap(source => source.clauses.map(clause => JSON.stringify([source.id, clause.id]))));
+  const left = keys(first), right = keys(second);
+  if ([...left].some(key => right.has(key))) return false;
+  const texts = new Set(first.sources.flatMap(source => source.clauses.map(clause => clause.text)));
+  if (second.sources.some(source => source.clauses.some(clause => texts.has(clause.text)))) return false;
+  const firstIds = new Set(first.requirements.map(req => req.id)), secondIds = new Set(second.requirements.map(req => req.id));
+  const touches = (issue, ids, clauses) => issue.requirementIds.some(id => ids.has(id)) || issue.citations.some(cite => clauses.has(JSON.stringify([cite.sourceId, cite.clauseId])));
+  return !issues.some(issue => touches(issue, firstIds, left) && touches(issue, secondIds, right));
+}
 export function planningGroups(requirements, priorWork, priorAcceptance = []) {
   const parent = new Map(requirements.map(req => [req.id, req.id]));
   const root = id => { while (parent.get(id) !== id) id = parent.get(id); return id; };
@@ -211,10 +224,10 @@ export async function reviewRequirements(output, businessModel, snapshot, { run,
   if (![1, 2].includes(concurrency) || !Array.isArray(resumeReplies) || resumeReplies.length > batches.length) fail('AI_CHECKPOINT_INVALID');
   const pending = new Map(), controller = new AbortController(), abort = () => controller.abort();
   signal?.addEventListener('abort', abort, { once: true }); if (signal?.aborted) abort();
-  const launch = (index, base) => {
+  const launch = (index, base, checkedIssues) => {
     const entry = batches[index], batch = entry.requirements, ids = new Set(batch.map(req => req.id));
     const declaredIssues = new Set(base.issues.map(issue => issue.id));
-    const validationIssues = validateAnalysisProposal(base, snapshot).issues.filter(issue => !declaredIssues.has(issue.id) && (!issue.requirementIds.length || issue.requirementIds.some(id => ids.has(id))));
+    const validationIssues = checkedIssues.filter(issue => !declaredIssues.has(issue.id) && (!issue.requirementIds.length || issue.requirementIds.some(id => ids.has(id))));
     return run({ request: request('review-requirements', { ...reviewContext(snapshot, batch), reviewBatch: { index: index + 1, total: batches.length }, businessModel, requirements: batch, sources: entry.sources, coverage: output.coverage.filter(item => entry.sources.some(source => source.id === item.sourceId && source.clauses.some(clause => clause.id === item.clauseId))), existingIssues: base.issues, validationIssues, reviewContract: 'Return issues and revisions. Revisions are complete replacements for current requirement IDs only, never new requirements or scope changes. Use supplied decisions and repository evidence to check solutionDisposition; undecided blocks executable planning. For non-functional/data/constraint requirements, nfrCriteria needs a source-supported metric, threshold and verificationMethod; qualitative allow/deny criteria are valid and do not require invented numeric SLAs. validationIssues are recomputed application checks: repair their causes only when supported, never copy a resolved system question into issues. A batch with no requirements independently reviews uncited source clauses and their excluded/deferred coverage: report missing business requirements or unjustified exclusions as source-cited issues; do not silently accept the earlier coverage rationale. Fix wording/structure only when fully supported; policy ambiguity needs a blocking issue. Retain all verified citations. Do not return coverage or a self-awarded pass.' }, snapshot, { evidenceReferences }), schema: REQUIREMENT_REVIEW_SCHEMA, cwd, signal: controller.signal }).then(response => ({ response }), error => ({ error }));
   };
   try {
@@ -222,7 +235,11 @@ export async function reviewRequirements(output, businessModel, snapshot, { run,
     onStage('review-requirements', index, batches.length);
     if (controller.signal.aborted) fail('AI_CANCELLED');
     const cached = index < resumeReplies.length;
-    if (!cached && !pending.size) for (let at = index; at < Math.min(index + concurrency, batches.length); at++) pending.set(at, launch(at, result));
+    if (!cached && !pending.size) {
+      const checkedIssues = validateAnalysisProposal(result, snapshot).issues;
+      pending.set(index, launch(index, result, checkedIssues));
+      if (concurrency === 2 && independentReviewGroups(entry, batches[index + 1], checkedIssues)) pending.set(index + 1, launch(index + 1, result, checkedIssues));
+    }
     const received = cached ? { response: { output: resumeReplies[index] } } : await pending.get(index); pending.delete(index);
     if (received.error) throw received.error;
     const response = received.response, ids = new Set(entry.requirements.map(req => req.id));
@@ -260,7 +277,7 @@ export async function planAndReview(output, businessModel, snapshot, decisions, 
     req.data.businessModel = businessModel;
     req.data.requirementScopeIndex = draft.backlog.businessRequirements.map(req => ({ id: req.id, scopeDisposition: req.scopeDisposition }));
     req.data.planningBatch = { index: index + 1, total: batches.length, idPrefix: `${idPrefix}${index + 1}-`, requirementIds: [...ids] };
-    req.data.previousPlanIndex = plan.workItems.map(item => ({ id: item.id, title: item.title, workItemType: item.workItemType, parentEpicId: item.parentEpicId, requirementIds: item.requirementIds, dependsOn: item.dependsOn ?? [] }));
+    req.data.previousPlanIndex = plan.workItems.map(item => ({ id: item.id, title: item.title, workItemType: item.workItemType, parentEpicId: item.parentEpicId, requirementIds: item.requirementIds, dependsOn: item.dependsOn ?? [], priority: item.priority ?? null, batch: item.batch ?? null }));
     req.instructions += '\nSequential planning contract: Return only new/changed work/AC/trace entries and explicit retirements. Omitted entries remain preserved. Current executable children and ACs may refer only to planningBatch.requirementIds. requirementScopeIndex lists the whole project: included requirements in other batches remain in scope. Leave their child work/AC/trace unchanged and never retire them. Existing children connected across requirements are deliberately kept in the same batch. Existing epics may be shared and their requirement sets are unioned by the application. When total>1, new IDs MUST start with planningBatch.idPrefix; original supplied plan IDs may be updated only for their existing requirement meaning. Do not retire a generated entry from another batch. New dependencies can reference known previousPlanIndex IDs. Every excluded prior original entry needs an explicit retirement.';
     const response = await run({ request: req, schema: DECOMPOSITION_SCHEMA, cwd, signal });
     const delta = response.output;

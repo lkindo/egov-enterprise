@@ -25,6 +25,8 @@ test('every planning request retains the full executable scope of an existing sh
     if (request.phase === 'review-plan') return { output: { issues: [], workItemUpdates: [], acceptanceUpdates: [], traceUpdates: [] } };
     calls++;
     assert.deepEqual(request.data.previousWorkItems.find(item => item.id === 'EPIC-1').requirementIds, ids);
+    assert.equal(request.data.previousPlanIndex.find(item => item.id === 'STORY-0').priority, 'MUST');
+    assert.equal(request.data.previousPlanIndex.find(item => item.id === 'STORY-0').batch, 1);
     const current = new Set(request.data.planningBatch.requirementIds);
     return { output: { workItems: [{ ...original.workItems[0], requirementIds: [...current] }, ...before.workItems.filter(item => item.workItemType !== 'epic' && item.requirementIds.some(id => current.has(id)))], acceptanceCriteria: before.acceptanceCriteria.filter(item => item.requirementIds.some(id => current.has(id))), traceLinks: before.traceLinks.filter(item => current.has(item.requirementId)), issues: [] } };
   } });
