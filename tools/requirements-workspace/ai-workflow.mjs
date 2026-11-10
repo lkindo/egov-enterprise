@@ -1,7 +1,7 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { ANALYSIS_SCHEMA, BATCH_ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, aiInputDigest, buildAiRequest, buildCorrectionRequest, seedAnalysis, validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal, projectAnalysisBacklog, safeValidationFailures, validatePrivateAiValue } from './ai-contract.mjs';
+import { ANALYSIS_SCHEMA, BATCH_ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, MAX_PROJECT_ISSUES, aiInputDigest, buildAiRequest, buildCorrectionRequest, seedAnalysis, validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal, projectAnalysisBacklog, safeValidationFailures, validatePrivateAiValue } from './ai-contract.mjs';
 import { planAnalysisBatches, coalesceAnalysisBatches, MAX_ANALYSIS_BATCHES } from './ai-analysis-batches.mjs';
 import { AI_MODEL, AI_EFFORT, AI_ANALYSIS_EFFORT, aiEffortForPhase, createCliRunner, findClaudeExecutable } from './ai-cli.mjs';
 import { assertExternalWorkspace } from './store.mjs';
@@ -160,7 +160,9 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
     }
     const request = buildAiRequest(snapshot, payload.phase, workflow.decisions, { ...batchOptions(0), previousAnalysis: initialAnalysis, analysisEvidence, evidenceReferences: true });
     if (!runner) findClaudeExecutable();
-    const resumable = payload.phase === 'analysis' && payload.reuseCheckpoints !== false && workflow.jobs.filter(job => job.phase === 'analysis' && job.status !== 'running' && job.effort === AI_ANALYSIS_EFFORT && job.promptVersion === PROMPT_VERSION && job.inputDigest === inputDigest && (job.includeVisuals !== false) === (payload.includeVisuals !== false) && job.checkpoints && Object.keys(job.checkpoints).length).sort((a, b) => (b.batches?.completed ?? 0) - (a.batches?.completed ?? 0) || workflow.jobs.indexOf(b) - workflow.jobs.indexOf(a))[0];
+    const progress = job => job.batches?.completed ?? (job.checkpoints?.analysis ? 1 : 0);
+    const depth = job => Number(Boolean(job.checkpoints?.planning)) * 4 + Number(Boolean(job.checkpoints?.review)) * 2 + Number(Boolean(job.checkpoints?.discovery));
+    const resumable = payload.phase === 'analysis' && payload.reuseCheckpoints !== false && workflow.jobs.map((job, index) => ({ job, index })).filter(({ job }) => job.phase === 'analysis' && job.status !== 'running' && job.effort === AI_ANALYSIS_EFFORT && job.promptVersion === PROMPT_VERSION && job.inputDigest === inputDigest && (job.includeVisuals !== false) === (payload.includeVisuals !== false) && (!payload.fullPipeline || job.fullPipeline || job.checkpoints?.discovery) && job.checkpoints && Object.keys(job.checkpoints).length).sort((a, b) => progress(b.job) - progress(a.job) || depth(b.job) - depth(a.job) || b.index - a.index)[0]?.job;
     const callMetrics = emptyCallMetrics();
     const saved = resumable?.checkpoints ?? {};
     const checkpoints = payload.fullPipeline ? structuredClone(saved) : Object.fromEntries(['discovery', 'analysis'].filter(key => saved[key]).map(key => [key, structuredClone(saved[key])]));
@@ -183,6 +185,10 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
           catch { /* Optional telemetry must not replace a response or its original failure. Essential writes still enforce CAS. */ }
         };
         const reusedResponse = () => { if (callMetrics) { callMetrics.reusedResponses++; writeMetrics(); } };
+        const reusedCheckpoint = (stage, complete = true) => {
+          if (complete) mark(job.id, stored => { if (stored.status === 'running') stored.reusedStages = [...new Set([...stored.reusedStages, stage])]; });
+          reusedResponse();
+        };
         const isCurrent = async () => {
           if (controller.signal.aborted || closed) return false;
           const live = await contextProvider();
@@ -213,8 +219,6 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             if (value.sensitivityWarnings.some(warning => !checkpointPhases[stage].includes(warning.stage))) fail('AI_CHECKPOINT_INVALID');
             checkpointWarnings.set(stage, value.sensitivityWarnings);
           }
-          const partial = stage === 'analysis' && value.output?.completed !== value.output?.total || ['review', 'planning'].includes(stage) && value.output?.version === 2;
-          if (!partial) mark(job.id, stored => { if (stored.status === 'running') stored.reusedStages = [...new Set([...stored.reusedStages, stage])]; });
           return value.output;
         };
         const saveCheckpoint = (stage, upstream, value, mutate = () => {}) => {
@@ -225,10 +229,10 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
         };
         let modelCalls = 0;
         const sentPrompts = new Set();
-        const run = async args => {
+        const run = async ({ preparedEvidence, ...args }) => {
           if (!await isCurrent()) fail('AI_STALE_INPUT');
           if (modelCalls >= 256) fail('AI_CALL_CAPACITY');
-          const evidence = !['reading', 'synthesis'].includes(args.request.phase) ? prepareEvidenceRequest(args.request, args.schema) : null;
+          const evidence = preparedEvidence ?? (!['reading', 'synthesis'].includes(args.request.phase) ? prepareEvidenceRequest(args.request, args.schema) : null);
           const wire = evidence ? { ...args, request: evidence.request, schema: evidence.schema } : args;
           const inputBytes = Buffer.byteLength(JSON.stringify(wire.request));
           if (inputBytes > 768 * 1024) fail('AI_INPUT_TOO_LARGE');
@@ -290,6 +294,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             }
             if (!restoreCheckpointWarnings('discovery')) { onValidated('reading', pipeline.documents); onValidated('synthesis', pipeline.businessModel); }
             if (refreshedAnchors) saveCheckpoint('discovery', inputDigest, pipeline);
+            reusedCheckpoint('discovery');
           }
           else if (job.fullPipeline) { pipeline = await prepareBusinessModel(snapshot, { run, cwd, signal: controller.signal, sourceReading, onStage, onValidated }); saveCheckpoint('discovery', inputDigest, pipeline); }
           discovery = pipeline;
@@ -317,6 +322,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             validateAnalysisCheckpoint(cached);
             output = cached.output; startIndex = cached.completed; corrected = cached.corrected; batchAudit.push(...cached.batchAudit);
             if (startIndex === total) validated = validateAnalysisProposal(output, snapshot);
+            reusedCheckpoint('analysis', startIndex === total);
             if (!restoreCheckpointWarnings('analysis')) onValidated('analysis', output);
             if (batches?.length > 1) mark(job.id, stored => { if (stored.status === 'running') stored.batches.completed = startIndex; });
             onStage('analysis', startIndex, total);
@@ -324,21 +330,27 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
         }
         // The same aggregate is required by the later quality review. Reject a
         // known capacity failure before paying to analyze any remaining source.
-        if (discovery) mergeIssues(output?.issues ?? [], discovery.businessModel.issues);
+        let knownIssueCount = discovery ? mergeIssues(output?.issues ?? [], discovery.businessModel.issues).length : null;
+        const responseSchema = job.phase === 'analysis' ? batches?.length > 1 ? BATCH_ANALYSIS_SCHEMA : ANALYSIS_SCHEMA : DECOMPOSITION_SCHEMA;
         for (let index = startIndex; index < (batches?.length ?? 1);) {
           if (job.phase === 'analysis') onStage('analysis', index, batches?.length ?? 1);
           if (!await isCurrent()) return;
           let group = batches?.length > 3 ? coalesceAnalysisBatches(batches, index) : { sources: batches?.[index], end: index };
-          let currentRequest;
+          let currentRequest, preparedEvidence;
           for (;;) {
             currentRequest = batches?.length > 1 ? buildAiRequest(snapshot, job.phase, workflow.decisions, { sources: group.sources, batch: { ...batchOptions(index).batch, ...(group.end > index ? { lastIndex: group.end + 1 } : {}) }, previousAnalysis: output, evidenceReferences: true }) : structuredClone(request);
             if (analysisUpstream) currentRequest.data.businessModel = analysisUpstream;
-            if (Buffer.byteLength(JSON.stringify(prepareEvidenceRequest(currentRequest, BATCH_ANALYSIS_SCHEMA).request)) <= 760 * 1024 || group.end === index) break;
+            if (analysisUpstream && currentRequest.data.analysisBatch) currentRequest.data.analysisBatch.capacity.issuesRemaining = Math.max(0, MAX_PROJECT_ISSUES - knownIssueCount);
+            currentRequest.data.visualSources = [];
+            if (group.end === index) break;
+            const candidate = prepareEvidenceRequest(currentRequest, responseSchema);
+            if (Buffer.byteLength(JSON.stringify(candidate.request)) <= 760 * 1024) { preparedEvidence = candidate; break; }
             group = coalesceAnalysisBatches(batches, index, group.end - index);
           }
           const batchSnapshot = { ...snapshot, backlog: { ...snapshot.backlog, sources: currentRequest.data.sources } };
           const visuals = job.includeVisuals && !job.fullPipeline && !discovery ? await prepareVisualAttachments(batchSnapshot, sourceFile, { signal: controller.signal }) : { attachments: [], sources: [] };
           currentRequest.data.visualSources = visuals.sources;
+          if (visuals.sources.length) preparedEvidence = undefined;
           let attemptRequest = currentRequest, next, delta, batchCorrected = false;
           for (;;) {
             if (!await isCurrent()) return;
@@ -346,7 +358,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             if (controller.signal.aborted || closed) return;
             let response;
             try {
-              response = await run({ request: attemptRequest, attachments: visuals.attachments, schema: job.phase === 'analysis' ? batches?.length > 1 ? BATCH_ANALYSIS_SCHEMA : ANALYSIS_SCHEMA : DECOMPOSITION_SCHEMA, cwd, signal: controller.signal });
+              response = await run({ request: attemptRequest, attachments: visuals.attachments, schema: responseSchema, cwd, signal: controller.signal, preparedEvidence: attemptRequest === currentRequest ? preparedEvidence : undefined });
               if (!await isCurrent()) return;
               if (response.model !== AI_MODEL || response.effort !== aiEffortForPhase(attemptRequest.phase)) fail('AI_MODEL_MISMATCH');
               delta = response.output;
@@ -370,7 +382,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             if (stored.batches) stored.batches.completed = group.end + 1;
             stored.usage = { ...usage };
           });
-          if (discovery) mergeIssues(output.issues, discovery.businessModel.issues);
+          if (discovery) knownIssueCount = mergeIssues(output.issues, discovery.businessModel.issues).length;
           index = group.end + 1;
         }
         if (discovery && !job.fullPipeline) {
@@ -399,13 +411,14 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             saveCheckpoint('review', reviewUpstream, { version: 2, replies: reviewRefs });
           }, onReuse(_index, merged) { reusedResponse(); onValidated('review-requirements', merged); } });
           validated = validateAnalysisProposal(output, snapshot);
+          if (reviewed && !partialReview) reusedCheckpoint('review');
           if (!reviewed || partialReview || !restoreCheckpointWarnings('review')) onValidated('review-requirements', output);
           if (!reviewed || partialReview) saveCheckpoint('review', reviewUpstream, output);
           if (!validated.issues.some(issue => issue.severity === 'blocking')) {
             const planningUpstream = { output, businessModel: pipeline.businessModel };
             let plan = readCheckpoint('planning', planningUpstream);
             const partialPlan = plan?.version === 2;
-            if (plan && !partialPlan) { plan.validatedPlan = validateDecompositionProposal(plan.planningOutput, { ...snapshot, backlog: projectAnalysisBacklog(snapshot, validated) }); if (!restoreCheckpointWarnings('planning')) { onValidated('decomposition', plan.planningOutput); onValidated('review-plan', plan.planningOutput); } }
+            if (plan && !partialPlan) { plan.validatedPlan = validateDecompositionProposal(plan.planningOutput, { ...snapshot, backlog: projectAnalysisBacklog(snapshot, validated) }); if (!restoreCheckpointWarnings('planning')) { onValidated('decomposition', plan.planningOutput); onValidated('review-plan', plan.planningOutput); } reusedCheckpoint('planning'); }
             else {
               const replies = [], refs = []; let generated = partialPlan ? plan.planningOutput : null;
               if (partialPlan) {

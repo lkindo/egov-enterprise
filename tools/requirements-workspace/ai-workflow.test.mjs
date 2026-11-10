@@ -45,6 +45,7 @@ test('standalone analysis resumes its validated completed prefix with metrics an
   assert.equal(state.ai.current.batches.completed, 1);
   assert.deepEqual(state.ai.current.checkpoints.analysis, checkpoint);
   assert.equal(state.ai.current.callMetrics.requests, 1);
+  assert.equal(state.ai.current.callMetrics.reusedResponses, 1);
   assert.equal(state.backlog.businessRequirements.length, 0);
 });
 

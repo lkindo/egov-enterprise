@@ -34,6 +34,17 @@ test('stable business facts precede changing analysis context so exact common pr
   assert.deepEqual(first.data.sources, state.backlog.sources);
 });
 
+test('mixed document partitions keep the complete instruction prefix stable without changing current coverage scope', () => {
+  const state = snapshot(), first = state.backlog.sources[0], second = { ...structuredClone(first), id: 'SRC-POLICY', sourceType: 'regulation' };
+  state.backlog.sources.push(second);
+  state.metadata.imports = [{ status: 'ready', sourceId: first.id, format: 'txt', detectedTypes: ['interview'] }, { status: 'ready', sourceId: second.id, format: 'pdf', detectedTypes: ['regulation', 'screen'] }];
+  const a = buildAiRequest(state, 'analysis', [], { sources: [first], batch: { index: 1, total: 2 } });
+  const b = buildAiRequest(state, 'analysis', [], { sources: [second], batch: { index: 2, total: 2 } });
+  assert.equal(a.instructions, b.instructions);
+  assert.deepEqual(a.data.sources, [first]); assert.deepEqual(b.data.sources, [second]);
+  assert.match(a.instructions, /Cover exactly the clauses under data.sources/);
+});
+
 test('project analysis retains more than one hundred questions but a model response remains bounded to one hundred', () => {
   const state = snapshot(); let accumulated;
   for (let batch = 0; batch < 2; batch++) {
@@ -81,6 +92,9 @@ test('new evidence selectors prefer complete sentence boundaries while all origi
   state.backlog.sources[0].clauses[0].text = Array.from({ length: 12 }, (_, index) => `제${index + 1}문장의 승인 조건과 거부 예외를 원문 그대로 확인한다.`).join(' ');
   const request = buildAiRequest(state, 'analysis'), result = prepareEvidenceRequest(request, ANALYSIS_SCHEMA);
   const quotes = result.request.data.evidenceCatalog.map(row => catalogQuote(result.request, row));
+  const fragments = result.request.data.evidenceCatalog.filter(row => Array.isArray(row[2]) && row[2].length === 4);
+  assert.ok(fragments.length > 0, 'fragment selectors need readable opening/closing anchors as well as exact offsets');
+  for (const row of fragments) { const quote = catalogQuote(result.request, row); assert.ok(quote.startsWith(row[2][2])); assert.ok(quote.endsWith(row[2][3])); }
   assert.ok(quotes.length > 1);
   for (const quote of quotes) { assert.match(quote, /^제\d+문장/); assert.match(quote, /확인한다\.$/); assert.ok(state.backlog.sources[0].clauses[0].text.includes(quote)); }
   assert.deepEqual(result.request.data.sources, request.data.sources);

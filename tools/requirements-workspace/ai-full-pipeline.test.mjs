@@ -59,17 +59,58 @@ test('analysis-only entry reuses a full-flow checkpoint and its complete verifie
   assert.equal(state.backlog.businessRequirements.length, 0);
 });
 
+test('full resume keeps its deeper planning checkpoint after an intervening standalone reuse of the same analysis', async t => {
+  const phases = []; let first = true;
+  const app = await setup(t, async ({ request }) => {
+    phases.push(request.phase);
+    if (request.phase === 'review-plan' && first) { first = false; throw Object.assign(Error('AI_TIMEOUT'), { code: 'AI_TIMEOUT' }); }
+    return envelope(reply(request), request.phase);
+  });
+  await app.start(); await app.engine.waitForAi(); let state = await app.engine.state();
+  assert.equal(state.ai.current.errorCode, 'AI_TIMEOUT'); assert.ok(state.ai.current.checkpoints.planning);
+  phases.length = 0;
+  await app.act('ai.start', { phase: 'analysis', inputDigest: state.ai.inputDigests.analysis, model: 'claude-opus-5-5', consent: true });
+  await app.engine.waitForAi(); state = await app.engine.state(); assert.deepEqual(phases, []); assert.equal(state.ai.current.status, 'ready');
+  phases.length = 0; await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.deepEqual(phases, ['review-plan'], 'the compatible full-flow review and generated plan must survive the entry-path switch');
+  assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode);
+  assert.equal(state.backlog.businessRequirements.length, 0);
+});
+
+test('a longer analysis without discovery cannot displace the compatible full-flow prefix', async t => {
+  let full = false; const phases = [];
+  const app = await setup(t, async ({ request }) => {
+    phases.push(request.phase === 'analysis' ? `analysis-${request.data.analysisBatch.index}` : request.phase);
+    if (request.phase !== 'analysis') return envelope(reply(request), request.phase);
+    const index = request.data.analysisBatch.index;
+    if (index === (full ? 2 : 3)) throw Object.assign(Error('AI_TIMEOUT'), { code: 'AI_TIMEOUT' });
+    const current = request.data.sources[0];
+    return envelope({ requirements: [], issues: index === 1 ? [{ id: 'Q', kind: 'decision', severity: 'blocking', question: '업무 범위의 적용 조건을 확인해 주세요.', options: [], requirementIds: [], citations: [{ sourceId: current.id, clauseId: current.clauses[0].id, quote: current.clauses[0].text }] }] : [], coverage: request.data.sources.flatMap(src => src.clauses.map(clause => ({ sourceId: src.id, clauseId: clause.id, disposition: 'excluded', rationale: '업무 배경의 범위 결정' }))) }, request.phase);
+  });
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 65 }, (_, index) => ({ ...source.clauses[0], id: `C-${index}` })) });
+  let state = await app.engine.state();
+  await app.act('ai.start', { phase: 'analysis', inputDigest: state.ai.inputDigests.analysis, model: 'claude-opus-5-5', consent: true });
+  await app.engine.waitForAi(); state = await app.engine.state(); assert.equal(state.ai.current.batches.completed, 2);
+  full = true; await app.start(); await app.engine.waitForAi(); state = await app.engine.state(); assert.equal(state.ai.current.batches.completed, 1);
+  phases.length = 0; await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.deepEqual(phases, ['analysis-2'], 'validated full-flow discovery and its compatible prefix must be selected');
+  assert.equal(state.ai.current.batches.completed, 1); assert.equal(state.ai.current.errorCode, 'AI_TIMEOUT');
+});
+
 test('known cross-stage issue capacity stops after a saved batch and rejects resume before any new model call', async t => {
   const phases = []; let timer;
-  const app = await setup(t, async ({ request, signal }) => {
+  const app = await setup(t, async ({ request, schema, signal }) => {
     phases.push(request.phase);
     if (request.phase === 'synthesis') {
+      assert.equal(request.data.discoveryBudget.maxIssues, 1000); assert.equal(request.data.discoveryBudget.maxIssuesPerResponse, 100);
+      assert.equal(schema.properties.issues.maxItems, 100);
       const value = reply(request);
       value.issues = Array.from({ length: 60 }, (_, index) => ({ id: `BIZ-${index}`, kind: 'decision', severity: 'blocking', question: `기관 정책 ${index}의 적용 범위를 확인해 주세요.`, options: [], requirementIds: [], citations: [{ evidenceIndex: 0 }] }));
       return envelope(value, request.phase);
     }
     if (request.phase !== 'analysis') return envelope(reply(request), request.phase);
     if (request.data.analysisBatch.index === 2) {
+      assert.equal(request.data.analysisBatch.capacity.issuesRemaining, 899);
       await new Promise((resolve, reject) => {
         const stop = code => { clearTimeout(timer); reject(Object.assign(Error(code), { code })); };
         signal.addEventListener('abort', () => stop('AI_CANCELLED'), { once: true });
@@ -311,7 +352,7 @@ test('plan review failure reuses the fully validated generated plan and earlier 
   assert.deepEqual(phases, ['review-plan']); assert.deepEqual(reviewed, ['STORY-8']);
   assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode);
   assert.equal(state.ai.current.reusedStages.includes('planning'), false);
-  assert.equal(state.ai.current.callMetrics.reusedResponses, 2, 'count the stored generated plan and completed review result');
+  assert.equal(state.ai.current.callMetrics.reusedResponses, 5, 'count discovery, analysis, requirements review, generated plan and completed plan review result');
   assert.equal(state.ai.proposal.workItems.length, 10);
   assert.equal(state.ai.proposal.acceptanceCriteria.length, 18);
   assert.equal((state.ai.proposal.workItems.find(item => item.id === 'STORY-0').title.match(/검토 반영/g) ?? []).length, 1);
