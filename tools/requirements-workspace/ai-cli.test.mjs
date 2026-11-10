@@ -13,6 +13,16 @@ function fixture(t, body) {
   return { cwd, runner: options => createCliRunner({ launch: { command: process.execPath, args: [script] }, ...options }) };
 }
 const success = value => JSON.stringify({ type: 'result', subtype: 'success', is_error: false, structured_output: value, modelUsage: { 'claude-opus-5-5': { inputTokens: 5, outputTokens: 10 } } });
+
+test('CLI telemetry reports bounded numeric output and provider cache usage without copying private envelope data', async t => {
+  const value = JSON.parse(success({ okay: true, note: 'PRIVATE-CUSTOMER' }));
+  Object.assign(value.modelUsage['claude-opus-5-5'], { cacheReadInputTokens: 512, cacheCreationInputTokens: 32, debug: 'PRIVATE-CUSTOMER' });
+  const { cwd, runner } = fixture(t, `process.stdout.write(${JSON.stringify(JSON.stringify(value))});`);
+  const result = await runner()({ request: { phase: 'analysis' }, schema: { type: 'object' }, cwd });
+  assert.deepEqual(result.telemetry, { outputBytes: Buffer.byteLength(JSON.stringify(value.structured_output)), cacheReadInputTokens: 512, cacheCreationInputTokens: 32 });
+  assert.doesNotMatch(JSON.stringify(result.telemetry), /PRIVATE|debug/);
+  assert.deepEqual(result.usage, { inputTokens: 5, outputTokens: 10 });
+});
 test('prompt is stdin data; fixed arguments remove tools and persistence; shell metacharacters cannot execute', async t => {
   const { cwd, runner } = fixture(t, `let data='';for await(const chunk of process.stdin)data+=chunk;process.stdout.write(JSON.stringify({type:'result',subtype:'success',is_error:false,structured_output:{input:JSON.parse(data),args:process.argv.slice(2)},modelUsage:{'claude-opus-5-5':{inputTokens:5,outputTokens:10}}}));`);
   const marker = join(cwd, 'MUST-NOT-EXIST');

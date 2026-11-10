@@ -140,3 +140,10 @@ test('an existing child spanning planning boundaries stays in one connected batc
   assert.ok(batches.some(batch => batch.some(req => req.id === 'REQ-1') && batch.some(req => req.id === 'REQ-5')));
   assert.equal(batches.flat().length, 6);
 });
+
+test('shared acceptance evidence also keeps its complete requirement scope in one planning group', () => {
+  const requirements = Array.from({ length: 6 }, (_, index) => ({ id: `REQ-${index + 1}` }));
+  const batches = planningGroups(requirements, [], [{ id: 'HUMAN-AC', workItemId: 'SHARED-EPIC', requirementIds: ['REQ-1', 'REQ-6'] }]);
+  assert.ok(batches.some(batch => batch.some(req => req.id === 'REQ-1') && batch.some(req => req.id === 'REQ-6')));
+  assert.equal(batches.flat().length, 6);
+});

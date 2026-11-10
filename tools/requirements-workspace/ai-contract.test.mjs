@@ -2,8 +2,9 @@ import test from 'node:test';
 import { PROMPT_VERSION } from './ai-prompts.mjs';
 import assert from 'node:assert/strict';
 import { createEmptyBacklogPack } from '../../scripts/export-deliverables-workspace.mjs';
-import { validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal, seedAnalysis, aiInputDigest, buildAiRequest, buildCorrectionRequest, projectAnalysisBacklog } from './ai-contract.mjs';
+import { ANALYSIS_SCHEMA, BATCH_ANALYSIS_SCHEMA, validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal, seedAnalysis, aiInputDigest, buildAiRequest, buildCorrectionRequest, projectAnalysisBacklog } from './ai-contract.mjs';
 import { planAnalysisBatches } from './ai-analysis-batches.mjs';
+import { prepareEvidenceRequest } from './ai-evidence.mjs';
 
 const context = { snapshotDigest: 'synthetic-context', commit: 'synthetic', capabilities: [], screens: [], interfaces: [], tables: [], gates: [], modules: [], presets: [], permissions: [] };
 const original = '담당자는 접수 목록을 조회한다. 열람 범위는 다음 회의에서 결정한다.';
@@ -14,6 +15,74 @@ function snapshot() {
   return { backlog, metadata: { context, baselines: [], reviewedRequirements: {}, uatRecords: [], auditFindings: [], exports: [] } };
 }
 const citation = () => ({ sourceId: 'SRC-1', clauseId: 'C-1', quote: '담당자는 접수 목록을 조회한다.' });
+
+test('evidence references preserve every prior semantic field and restore exact stored quotes without resending them', () => {
+  const state = snapshot(), previous = proposal();
+  const current = { ...structuredClone(state.backlog.sources[0]), id: 'SRC-2', clauses: [{ id: 'C-2', text: '승인자는 금액 1,000만원 이상을 이중 승인한다. 예외 승인은 금지하며 원래의 조회 권한을 유지한다.', locator: '2쪽', disposition: 'question', rationale: '추가 승인 조건', requirementIds: [] }] };
+  state.backlog.sources.push(current);
+  const request = buildAiRequest(state, 'analysis', [], { sources: [current], batch: { index: 2, total: 2, idPrefix: 'B2-' }, previousAnalysis: previous });
+  const originalRequest = structuredClone(request), wire = prepareEvidenceRequest(request, BATCH_ANALYSIS_SCHEMA);
+  assert.equal(wire.request.data.evidenceProtocol, 'stored-evidence-v1');
+  assert.deepEqual(request, originalRequest, 'preparing a request never changes the canonical checkpoint');
+  assert.deepEqual(wire.request.data.sources, [current], 'all current text, amounts, prohibitions and exceptions are supplied verbatim');
+  for (const field of ['requirements', 'issues']) for (const [index, item] of previous[field].entries()) {
+    const { citations, ...meaning } = item;
+    const { citations: references, ...projectedMeaning } = wire.request.data.previousAnalysis[field][index];
+    assert.deepEqual(projectedMeaning, meaning);
+    assert.ok(references.every(Number.isSafeInteger));
+    assert.ok(references.every(ref => wire.request.data.evidenceCatalog[ref][2] === null), 'old proof is retained in the application rather than copied back into the prompt');
+  }
+  const restored = wire.resolve({ ...structuredClone(previous), requirements: wire.request.data.previousAnalysis.requirements, issues: wire.request.data.previousAnalysis.issues });
+  assert.deepEqual(restored, previous, 'all historical citations resolve to their exact original bytes');
+  const index = wire.request.data.evidenceCatalog.findIndex(([sourceId, clauseId, quote, allowed]) => sourceId === current.id && clauseId === 'C-2' && quote?.includes('1,000만원') && allowed);
+  assert.ok(index >= 0);
+  const delta = { requirements: [{ ...structuredClone(previous.requirements[0]), citations: [index] }], issues: [], coverage: [{ sourceId: current.id, clauseId: 'C-2', disposition: 'included', rationale: '추가 승인 규칙', requirementIds: ['REQ-1'] }], updatedRequirementIds: ['REQ-1'] };
+  const result = validateAnalysisBatchProposal(wire.resolve(delta), state, [current], previous, { idPrefix: 'B2-' });
+  assert.ok(result.requirements[0].citations.some(item => JSON.stringify(item) === JSON.stringify(citation())));
+  assert.ok(result.requirements[0].citations.some(item => item.sourceId === current.id && current.clauses[0].text.includes(item.quote)));
+  assert.equal(result.coverage.length, 2);
+});
+
+test('distinct historical quote bodies no longer dominate the reference request while all facts remain recoverable', () => {
+  const requirements = Array.from({ length: 64 }, (_, index) => ({ ...proposal().requirements[0], id: `REQ-${index}`, title: `조건 ${index}`, description: `금액 ${index + 100}원 이상은 승인하고 그 미만은 거부한다. 예외 처분은 미결정이다.`, citations: Array.from({ length: 20 }, (_, clause) => ({ sourceId: 'OLD', clauseId: `C-${index}-${clause}`, quote: `고유 근거 ${index} ${clause} ` + '승인 조건과 금액 기준을 원문 그대로 보존한다. '.repeat(12) })) }));
+  const request = { phase: 'analysis', instructions: 'Keep every condition, number, source and unresolved decision.', data: { sources: snapshot().backlog.sources, previousAnalysis: { requirements, issues: [] }, businessModel: { summary: '승인 전 원문 확인', issues: [] } } };
+  const wire = prepareEvidenceRequest(request, BATCH_ANALYSIS_SCHEMA), bytes = value => Buffer.byteLength(JSON.stringify(value));
+  assert.ok(bytes(wire.request) < bytes(request) * 0.45, `wire=${bytes(wire.request)} canonical=${bytes(request)}`);
+  const decoded = wire.resolve({ requirements: wire.request.data.previousAnalysis.requirements, issues: [], coverage: proposal().coverage });
+  assert.deepEqual(decoded.requirements, requirements, 'projection changes representation, never a condition, threshold, disposition or historical quote');
+});
+
+test('reference-capable builders defer only the logical input cap while the compact wire retains complete facts', () => {
+  const state = snapshot(), previous = proposal(), quote = 'The reviewer preserves every original condition, amount and exception. '.repeat(12);
+  previous.requirements = Array.from({ length: 60 }, (_, index) => ({ ...proposal().requirements[0], id: `OLD-${index}`, citations: Array.from({ length: 15 }, (_, part) => ({ sourceId: 'HISTORY', clauseId: `C-${index}-${part}`, quote })) }));
+  const options = { sources: state.backlog.sources, batch: { index: 2, total: 2, idPrefix: 'B2-' }, previousAnalysis: previous };
+  assert.throws(() => buildAiRequest(state, 'analysis', [], options), { code: 'AI_INPUT_TOO_LARGE' });
+  const canonical = buildAiRequest(state, 'analysis', [], { ...options, evidenceReferences: true });
+  assert.ok(Buffer.byteLength(JSON.stringify(canonical)) > 768 * 1024);
+  const wire = prepareEvidenceRequest(canonical, BATCH_ANALYSIS_SCHEMA);
+  assert.ok(Buffer.byteLength(JSON.stringify(wire.request)) < 768 * 1024);
+  assert.deepEqual(wire.resolve({ requirements: wire.request.data.previousAnalysis.requirements, issues: [], coverage: proposal().coverage }).requirements, previous.requirements);
+  const correction = buildCorrectionRequest(canonical, null, [{ kind: 'citation-reference', path: 'citations' }], { evidenceReferences: true });
+  assert.ok(prepareEvidenceRequest(correction, BATCH_ANALYSIS_SCHEMA).request.instructions.includes('citations are integer'));
+});
+
+test('reference decoding rejects unknown, unseen, mixed and accessor-backed citations before canonical validation', () => {
+  const state = snapshot(), request = buildAiRequest(state, 'analysis'), wire = prepareEvidenceRequest(request, ANALYSIS_SCHEMA);
+  const valid = { ...proposal(), issues: [], requirements: [{ ...proposal().requirements[0], citations: [0] }] };
+  assert.throws(() => wire.resolve({ ...valid, requirements: [{ ...valid.requirements[0], citations: [9999] }] }), { code: 'AI_OUTPUT_INVALID' });
+  assert.throws(() => wire.resolve({ ...valid, requirements: [{ ...valid.requirements[0], citations: [{ evidenceIndex: 0, quote: original }] }] }), { code: 'AI_OUTPUT_INVALID' });
+  const hidden = { ...structuredClone(request), data: { ...structuredClone(request.data), businessModel: { issues: [{ ...proposal().issues[0], citations: [{ sourceId: 'UNSEEN', clauseId: 'X', quote: '자료 범위 밖의 근거를 임의 연결하면 안 된다.' }] }] } } };
+  const bounded = prepareEvidenceRequest(hidden, ANALYSIS_SCHEMA), unseen = bounded.request.data.evidenceCatalog.findIndex(item => item[0] === 'UNSEEN');
+  assert.ok(unseen >= 0);
+  assert.throws(() => bounded.resolve({ ...valid, requirements: [{ ...valid.requirements[0], citations: [unseen] }] }), { code: 'AI_OUTPUT_INVALID' });
+  let accessed = false; const malicious = structuredClone(valid);
+  Object.defineProperty(malicious.requirements[0], 'citations', { enumerable: true, get() { accessed = true; return [0]; } });
+  assert.throws(() => wire.resolve(malicious), { code: 'AI_OUTPUT_INVALID' });
+  assert.equal(accessed, false);
+  const legacyBad = proposal(); legacyBad.requirements[0].citations[0].quote = '존재하지 않는 원문을 통과시키면 안 된다.';
+  assert.throws(() => validateAnalysisProposal(wire.resolve(legacyBad), state), error => error.code === 'AI_OUTPUT_INVALID' && error.details[0].kind === 'citation-quote');
+});
+
 test('actual requirement requests select the versioned business-analysis prompt for the supplied documents', () => {
   const state = snapshot();
   const request = buildAiRequest(state, 'analysis');

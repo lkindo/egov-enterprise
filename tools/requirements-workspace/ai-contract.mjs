@@ -354,7 +354,7 @@ function batchPolicySources(snapshot, sources) {
     return clauses.length ? [{ ...source, clauses }] : [];
   });
 }
-export function buildAiRequest(snapshot, phase, decisions = [], { sources = snapshot.backlog.sources, batch, previousAnalysis, analysisEvidence } = {}) {
+export function buildAiRequest(snapshot, phase, decisions = [], { sources = snapshot.backlog.sources, batch, previousAnalysis, analysisEvidence, evidenceReferences = false } = {}) {
   if (!['analysis', 'decomposition'].includes(phase)) invalid();
   if (phase === 'decomposition') sources = decompositionSources(snapshot, analysisEvidence);
   const context = snapshot.metadata.context;
@@ -382,16 +382,19 @@ export function buildAiRequest(snapshot, phase, decisions = [], { sources = snap
   if (phase === 'decomposition') request.instructions += ' Plan from the confirmed requirements. Sources contain their linked clauses and explicit policy decisions, not unrelated background. A clause marked citationEvidence contains only exact previously reviewed quotations, separated by newlines; those are evidence excerpts, not a complete source paragraph. Quote a single supplied verbatim excerpt, never invent text across omitted sections. Human-edited requirements fall back to their linked original clauses.';
   if (batch) request.instructions += ' This is a sequential batch of ONE analysis. Cover exactly the clauses under data.sources in coverage, not previous batches or policySources. Return ONLY new or changed requirements and new issues for this batch; the application retains unchanged previousAnalysis requirements, citations and unresolved issues automatically. Reuse an existing requirement ID when meaning matches. To link a current clause to an existing requirement, return the updated requirement with its new exact citation. Never reprint all unchanged requirements or issues. Keep descriptions concrete and coverage rationales concise. Add only requirements grounded in this batch or previous citations. Existing human previousRequirements must all be represented in the accumulated result; propose explicit scopes instead of dropping them. Do not replace or downgrade an earlier issue. policySources contains explicit human answers applicable to every batch. Previous citations are verified verbatim evidence; do not invent text for a previous source. Other document parts may appear in attached PDFs but are not this batch coverage.';
   if (batch) request.instructions += ' New requirement IDs MUST start with analysisBatch.idPrefix. An existing ID may be changed ONLY when explicitly listed in updatedRequirementIds; include only changed existing IDs that actually appear in this delta. Never reuse an old ID for unrelated meaning. Human requirements are already seeded in previousAnalysis, so unchanged human requirements do not need to be returned. Observe analysisBatch.capacity including existing citation counts; earlier verified citations cannot be removed. If a genuinely new fact cannot fit the remaining capacity, preserve it as deferred coverage with a blocking decision issue rather than silently dropping it, inventing a split, or exceeding capacity. When an included requirement cites a processed source, that source needs at least one included/merged clause linked by a verified citation. Extra policySources are reference-only for this call and receive their own coverage when they appear under data.sources.';
-  if (Buffer.byteLength(JSON.stringify(request)) > 768 * 1024) capacity(phase === 'decomposition' ? 'AI_DECOMPOSITION_INPUT_TOO_LARGE' : 'AI_INPUT_TOO_LARGE');
+  // Reference-capable callers materialize a smaller wire request before the
+  // unchanged 768KiB forwarding guard. This internal canonical object is never
+  // sent directly, and remains bounded by the archive's 8MiB ceiling.
+  if (Buffer.byteLength(JSON.stringify(request)) > (evidenceReferences ? 8 * 1024 ** 2 : 768 * 1024)) capacity(phase === 'decomposition' ? 'AI_DECOMPOSITION_INPUT_TOO_LARGE' : 'AI_INPUT_TOO_LARGE');
   return request;
 }
 
-export function buildCorrectionRequest(request, output, details = []) {
+export function buildCorrectionRequest(request, output, details = [], { evidenceReferences = false } = {}) {
   if (request.phase === 'analysis' && request.data.analysisBatch) {
     const next = structuredClone(request), known = new Set((request.data.previousAnalysis?.requirements ?? []).map(req => req.id));
     next.instructions += ' Correct the CURRENT batch delta using the original inputs and bounded invariant failures. The rejected draft is not supplied. Return current coverage, only new/changed requirements, explicit updatedRequirementIds and new issues. Retain prior verified evidence and human decisions. Use exact provided source IDs, clause IDs and verbatim quotations; do not invent facts, approvals or policy to pass validation. Earlier verified citations remain preserved; defer genuinely new evidence with a decision issue when remaining capacity cannot accept it. Cite only current data.sources, previously verified previousAnalysis citations or explicit policySources. businessModel is global context and does not authorize unseen source citations. requirements/issues positions describe the accumulated candidate, not necessarily the current delta; a supplied requirementId identifies an existing requirement.';
     next.data.correction = { violations: safeValidationFailures(details).map((failure, index) => { const id = failureValue(details?.[index], 'requirementId'); return { ...failure, ...(known.has(id) ? { requirementId: id } : {}) }; }) };
-    if (Buffer.byteLength(JSON.stringify(next)) > 768 * 1024) capacity('AI_INPUT_TOO_LARGE');
+    if (Buffer.byteLength(JSON.stringify(next)) > (evidenceReferences ? 8 * 1024 ** 2 : 768 * 1024)) capacity('AI_INPUT_TOO_LARGE');
     return next;
   }
   // Never retransmit malformed output. Only a schema-valid private draft can
