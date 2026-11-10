@@ -149,7 +149,8 @@
         },
         {
           "id": "home.realtime-status",
-          "status": "live",
+          "status": "partial",
+          "candidateStatus": "live",
           "dataSource": "dashboard-stats-websocket",
           "actions": [
             "view-stats"
@@ -159,24 +160,14 @@
           "visibleLabel": "실시간 상태",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E4",
-          "lastVerifiedAt": "2026-11-10",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-20",
           "owner": "product/UX + domain owner",
-          "roundtrips": [
-            {
-              "spec": "frontend/e2e/journeys/application-shell.spec.ts",
-              "test": "업무 홈 실시간 상태가 서버가 방송한 통계를 보인다",
-              "actions": [
-                "view-stats"
-              ]
-            }
-          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/websocket/DashboardStatsEventListener.java",
             "api-server/src/main/java/nuri/config/websocket/WebSocketAuthorizationInterceptor.java",
             "api-server/src/test/java/nuri/config/websocket/WebSocketAuthorizationInterceptorTest.java",
             "business-app/src/main/java/nuri/business/service/dashboard/RealTimeDashboardService.java",
-            "frontend/e2e/journeys/application-shell.spec.ts",
             "frontend/src/app/page.tsx",
             "frontend/src/components/features/dashboard/RealTimeDashboard.tsx",
             "frontend/src/components/features/dashboard/RealTimeHomeSection.tsx",
@@ -4976,7 +4967,8 @@
       "capabilities": [
         {
           "id": "stats.content-trend",
-          "status": "live",
+          "status": "partial",
+          "candidateStatus": "live",
           "dataSource": "admin-statistics-api",
           "actions": [
             "export",
@@ -4990,22 +4982,9 @@
           "visibleLabel": "콘텐츠 지표 분석",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E4",
-          "lastVerifiedAt": "2026-11-10",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-20",
           "owner": "product/UX + domain owner",
-          "roundtrips": [
-            {
-              "spec": "frontend/e2e/journeys/statistics.spec.ts",
-              "test": "콘텐츠 지표에서 방금 쓴 글이 오늘 등록 건수에 잡히고 쪽·차트·내보내기·새로고침이 같은 계열을 따른다",
-              "actions": [
-                "export",
-                "paginate",
-                "refresh",
-                "view-chart",
-                "view-summary"
-              ]
-            }
-          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiController.java",
             "api-server/src/test/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiControllerTest.java",
@@ -5163,7 +5142,7 @@
         "SYSTEM"
       ],
       "surface": "admin-console",
-      "status": "live",
+      "status": "partial",
       "dataSource": "admin-statistics-connect-api",
       "supportedActions": [
         "export",
@@ -5200,7 +5179,8 @@
       "capabilities": [
         {
           "id": "stats.system-activity",
-          "status": "live",
+          "status": "partial",
+          "candidateStatus": "live",
           "dataSource": "admin-statistics-connect-api",
           "actions": [
             "export",
@@ -5214,27 +5194,13 @@
           "visibleLabel": "시스템 활성 지표",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E4",
-          "lastVerifiedAt": "2026-11-10",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-20",
           "owner": "product/UX + domain owner",
-          "roundtrips": [
-            {
-              "spec": "frontend/e2e/journeys/statistics.spec.ts",
-              "test": "기간을 바꾸면 성공 로그인·사용자 활동의 표와 차트가 그 기간으로 바뀌고 기록이 없는 날은 0 이다",
-              "actions": [
-                "export",
-                "paginate",
-                "refresh",
-                "view-chart",
-                "view-summary"
-              ]
-            }
-          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiController.java",
             "api-server/src/test/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiControllerTest.java",
             "business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java",
-            "frontend/e2e/journeys/statistics.spec.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/screen/page.tsx",
             "frontend/src/services/foundation/system/StatsAdminService.ts"
@@ -5259,7 +5225,7 @@
         "SYSTEM"
       ],
       "surface": "admin-console",
-      "status": "live",
+      "status": "partial",
       "dataSource": "admin-statistics-user-api",
       "supportedActions": [
         "export",
@@ -5296,7 +5262,8 @@
       "capabilities": [
         {
           "id": "stats.user-activity",
-          "status": "live",
+          "status": "partial",
+          "candidateStatus": "live",
           "dataSource": "admin-statistics-user-api",
           "actions": [
             "export",
@@ -5310,29 +5277,15 @@
           "visibleLabel": "사용자 통계 분석",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E4",
-          "lastVerifiedAt": "2026-11-10",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-20",
           "owner": "product/UX + domain owner",
-          "roundtrips": [
-            {
-              "spec": "frontend/e2e/journeys/statistics.spec.ts",
-              "test": "기간을 바꾸면 성공 로그인·사용자 활동의 표와 차트가 그 기간으로 바뀌고 기록이 없는 날은 0 이다",
-              "actions": [
-                "export",
-                "paginate",
-                "refresh",
-                "view-chart",
-                "view-summary"
-              ]
-            }
-          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiController.java",
             "api-server/src/test/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiControllerTest.java",
             "api-server/src/test/java/nuri/api/schema/UserActivityUpsertIntegrationTest.java",
             "business-core/src/main/java/nuri/business/service/log/UserActivityLogAggregator.java",
             "business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java",
-            "frontend/e2e/journeys/statistics.spec.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/user/page.tsx",
             "frontend/src/services/foundation/system/StatsAdminService.ts"

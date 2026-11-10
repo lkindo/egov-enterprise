@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { APIRequestContext, Response as NetworkResponse } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
+import { waitForHydration } from '../fixtures/hydration';
 import { screenYmd } from '../helpers/screen-date';
 test.describe('공개 포털', () => {
     test.describe('Public Engagement & Experience', () => {
@@ -298,6 +299,8 @@ test.describe('설문 응답 생명주기', () => {
                     return url.pathname === RESPONSES && response.request().method() === 'GET'
                         && url.searchParams.get('keyword') === respondentName;
                 });
+                // [2026-11-10 Codex 51차] 검색창은 서버가 그린 화면에 있다 — 하이드레이션 전에 채우면 검색 요청이 나가지 않는다.
+                await waitForHydration(responseMain.getByLabel('응답자 이름 검색', { exact: true }));
                 const [searched] = await Promise.all([
                     respondentSearch(),
                     responseMain.getByLabel('응답자 이름 검색', { exact: true }).fill(respondentName),
@@ -353,6 +356,7 @@ test.describe('설문 응답 생명주기', () => {
                 await adminPage.goto('/survey/stats');
                 const statsMain = adminPage.locator('main#main-content').filter({ visible: true });
                 await expect(statsMain.getByRole('heading', { level: 1, name: '설문 결과 통계', exact: true })).toBeVisible();
+                await waitForHydration(statsMain.getByLabel('설문 제목', { exact: true }));
                 const [searched] = await Promise.all([
                     adminPage.waitForResponse(response => {
                         const url = new URL(response.url());
