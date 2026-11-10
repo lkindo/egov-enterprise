@@ -22,7 +22,7 @@ test('parallel quality review progress separates active calls and completed anal
   assert.match(panel.textContent, /96\/96묶음 분석 완료/);
   assert.match(panel.textContent, /요구사항 품질 검토 · 2묶음 · 응답 대기/);
   assert.match(panel.textContent, /요구사항 품질 검토 · 3묶음 · 응답 대기/);
-  assert.match(panel.textContent, /실제 호출 3회 · 보정 1회 · 저장 응답 재사용 2회 · 최대 동시 호출 2개/);
+  assert.match(panel.textContent, /실제 호출 3회 · 보정 1회 · 저장 결과 재사용 2회 · 최대 동시 호출 2개/);
   assert.match(panel.textContent, /요청 JSON 합계 1,234,567바이트/);
   assert.match(panel.textContent, /측정된 응답 JSON 12,000바이트 \(1회\)/);
   assert.doesNotMatch(panel.textContent, /9999999|전체.*분 단축|원본 파일 크기 1,234,567/);

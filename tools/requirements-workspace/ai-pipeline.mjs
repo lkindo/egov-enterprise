@@ -244,7 +244,6 @@ export async function planAndReview(output, businessModel, snapshot, decisions, 
   const batches = planningGroups(included, snapshot.backlog.workItems, snapshot.backlog.acceptanceCriteria);
   let plan = { workItems: structuredClone(snapshot.backlog.workItems), acceptanceCriteria: structuredClone(snapshot.backlog.acceptanceCriteria), traceLinks: structuredClone(snapshot.backlog.traceLinks), issues: [], retirements: [] };
   const original = Object.fromEntries(['workItems', 'acceptanceCriteria', 'traceLinks'].map(field => [field, new Map(plan[field].map(item => [item.id, structuredClone(item)]))]));
-  const touchedEpics = new Set();
   if (!resumePlanning) {
   for (const [index, batch] of batches.entries()) {
     onStage('decomposition', index, batches.length);
@@ -278,8 +277,7 @@ export async function planAndReview(output, businessModel, snapshot, decisions, 
         if (previous && !sharedEpic && !(itemReqs.some(id => (previous.requirementIds ?? [previous.requirementId]).includes(id)))) fail('AI_OUTPUT_INVALID');
         const value = structuredClone(item);
         if (field === 'workItems' && item.workItemType === 'epic') {
-          if (touchedEpics.has(item.id)) value.requirementIds = [...new Set([...old.requirementIds, ...item.requirementIds])];
-          touchedEpics.add(item.id);
+          if (old) value.requirementIds = [...new Set([...old.requirementIds.filter(id => executable.has(id)), ...item.requirementIds])];
         }
         if (old) plan[field][plan[field].findIndex(entry => entry.id === item.id)] = value; else plan[field].push(value);
       }
@@ -310,6 +308,7 @@ export async function planAndReview(output, businessModel, snapshot, decisions, 
     validateDecompositionProposal(resumePlanning, draft);
     plan = structuredClone(resumePlanning);
     onStage('decomposition', batches.length, batches.length);
+    await onReuse('generation');
   }
   onValidated('decomposition', plan);
   if (!resumePlanning) await onGenerated(plan);

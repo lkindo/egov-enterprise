@@ -333,7 +333,7 @@ export function aiInputDigest(snapshot, phase, decisions = []) {
   const readings = new Map((snapshot.metadata.imports ?? []).filter(job => job.status === 'ready' && job.readingRef).map(job => [job.sourceId, { sourceId: job.sourceId, sha256: job.readingRef.sha256, promptVersion: job.promptVersion }]));
   return createHash('sha256').update(JSON.stringify(canonical({ phase, promptVersion: PROMPT_VERSION, backlog: snapshot.backlog, context: snapshot.metadata.context.snapshotDigest, decisions, readings: [...readings.values()].sort((a, b) => a.sourceId.localeCompare(b.sourceId)) }))).digest('hex');
 }
-function decompositionSources(snapshot, analysisEvidence) {
+function decompositionSources(snapshot, analysisEvidence, evidenceReferences = false) {
   const included = snapshot.backlog.businessRequirements.filter(req => req.scopeDisposition === 'included');
   const fields = ['title', 'description', 'requirementType', 'solutionDisposition', 'moduleCandidates', 'rationale', 'nfrCriteria'];
   const reviewed = new Map((analysisEvidence?.requirements ?? []).filter(req => included.some(current => current.id === req.id && fields.every(key => JSON.stringify(canonical(current[key] ?? null)) === JSON.stringify(canonical(req[key] ?? null))))).map(req => [req.id, req]));
@@ -342,7 +342,8 @@ function decompositionSources(snapshot, analysisEvidence) {
       const linked = included.filter(req => clause.requirementIds?.includes(req.id));
       if (!linked.length) return source.sourceType === 'policy-memo' && source.id.startsWith('DEC-') ? [clause] : [];
       const quoted = linked.map(req => reviewed.get(req.id)?.citations.filter(cite => cite.sourceId === source.id && cite.clauseId === clause.id && clause.text.includes(cite.quote)) ?? []);
-      return [{ ...clause, ...(quoted.every(items => items.length) ? { text: [...new Set(quoted.flat().map(cite => cite.quote))].join('\n'), citationEvidence: true } : {}) }];
+      const excerpts = [...new Set(quoted.flat().map(cite => cite.quote))];
+      return [{ ...clause, ...(quoted.every(items => items.length) ? { text: excerpts.join('\n'), citationEvidence: true, ...(evidenceReferences ? { citationExcerpts: excerpts } : {}) } : {}) }];
     });
     return clauses.length ? [{ ...source, clauses }] : [];
   });
@@ -356,7 +357,7 @@ function batchPolicySources(snapshot, sources) {
 }
 export function buildAiRequest(snapshot, phase, decisions = [], { sources = snapshot.backlog.sources, batch, previousAnalysis, analysisEvidence, evidenceReferences = false } = {}) {
   if (!['analysis', 'decomposition'].includes(phase)) invalid();
-  if (phase === 'decomposition') sources = decompositionSources(snapshot, analysisEvidence);
+  if (phase === 'decomposition') sources = decompositionSources(snapshot, analysisEvidence, evidenceReferences);
   const context = snapshot.metadata.context;
   const request = {
     phase,
@@ -390,9 +391,9 @@ export function buildAiRequest(snapshot, phase, decisions = [], { sources = snap
 }
 
 export function buildCorrectionRequest(request, output, details = [], { evidenceReferences = false } = {}) {
-  if (request.phase === 'analysis' && request.data.analysisBatch) {
+  if (request.phase === 'analysis' && (request.data.analysisBatch || evidenceReferences)) {
     const next = structuredClone(request), known = new Set((request.data.previousAnalysis?.requirements ?? []).map(req => req.id));
-    next.instructions += ' Correct the CURRENT batch delta using the original inputs and bounded invariant failures. The rejected draft is not supplied. Return current coverage, only new/changed requirements, explicit updatedRequirementIds and new issues. Retain prior verified evidence and human decisions. Use exact provided source IDs, clause IDs and verbatim quotations; do not invent facts, approvals or policy to pass validation. Earlier verified citations remain preserved; defer genuinely new evidence with a decision issue when remaining capacity cannot accept it. Cite only current data.sources, previously verified previousAnalysis citations or explicit policySources. businessModel is global context and does not authorize unseen source citations. requirements/issues positions describe the accumulated candidate, not necessarily the current delta; a supplied requirementId identifies an existing requirement.';
+    next.instructions += request.data.analysisBatch ? ' Correct the CURRENT batch delta using the original inputs and bounded invariant failures. The rejected draft is not supplied. Return current coverage, only new/changed requirements, explicit updatedRequirementIds and new issues. Retain prior verified evidence and human decisions. Use exact provided source IDs, clause IDs and verbatim quotations; do not invent facts, approvals or policy to pass validation. Earlier verified citations remain preserved; defer genuinely new evidence with a decision issue when remaining capacity cannot accept it. Cite only current data.sources, previously verified previousAnalysis citations or explicit policySources. businessModel is global context and does not authorize unseen source citations. requirements/issues positions describe the accumulated candidate, not necessarily the current delta; a supplied requirementId identifies an existing requirement.' : ' Regenerate the COMPLETE single analysis once using the original inputs and bounded invariant failures. The rejected draft is not supplied. Return complete requirements, issues and source coverage; do not return updatedRequirementIds or a batch delta. Preserve every source-supported condition, exception, human decision and unresolved question. Never invent facts or approval to pass validation.';
     next.data.correction = { violations: safeValidationFailures(details).map((failure, index) => { const id = failureValue(details?.[index], 'requirementId'); return { ...failure, ...(known.has(id) ? { requirementId: id } : {}) }; }) };
     if (Buffer.byteLength(JSON.stringify(next)) > (evidenceReferences ? 8 * 1024 ** 2 : 768 * 1024)) capacity('AI_INPUT_TOO_LARGE');
     return next;

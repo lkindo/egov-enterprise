@@ -1,11 +1,36 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateBusinessModel, validateRequirementReview, validatePlanReview } from './ai-pipeline-contract.mjs';
-import { planningGroups, prepareBusinessModel } from './ai-pipeline.mjs';
-import { validateEvidenceCitations } from './ai-contract.mjs';
+import { planningGroups, prepareBusinessModel, planAndReview } from './ai-pipeline.mjs';
+import { validateEvidenceCitations, validateAnalysisProposal, projectAnalysisBacklog } from './ai-contract.mjs';
 import { context, source, analysis, decomposition } from './test-fixtures/ai.mjs';
+import { createEmptyBacklogPack } from '../../scripts/export-deliverables-workspace.mjs';
 const snapshot = () => ({ backlog: { sources: [structuredClone(source)], businessRequirements: [] }, metadata: { context } });
 const model = () => ({ summary: '접수 조회 업무의 책임과 열람 범위를 정리한다.', actors: [{ name: '담당자', responsibility: '접수 목록 조회', sourceIds: ['SRC-1'] }], processes: [{ name: '접수 조회', trigger: '담당자의 조회 요청', steps: ['조회 조건 입력', '허용 범위의 결과 확인'], exceptions: ['열람 범위 미결정'], rules: [], data: ['접수 목록'], sourceIds: ['SRC-1'] }], terms: [], issues: [], sourceCoverage: [{ sourceId: 'SRC-1', role: 'business', rationale: '조회 업무와 담당 범위의 근거' }] });
+
+test('every planning request retains the full executable scope of an existing shared epic', async () => {
+  const state = { backlog: createEmptyBacklogPack(context), metadata: { context } };
+  state.backlog.project = { code: 'SYNTHETIC', name: '공유 에픽 업무', institution: '', baselineProfile: '' };
+  state.backlog.sources = [structuredClone(source)];
+  const output = analysis({ data: { sources: state.backlog.sources, decisions: [] } }, { question: false });
+  output.requirements = Array.from({ length: 5 }, (_, index) => ({ ...structuredClone(output.requirements[0]), id: `REQ-${index + 1}` }));
+  output.coverage[0].requirementIds = output.requirements.map(req => req.id);
+  state.backlog = projectAnalysisBacklog(state, validateAnalysisProposal(output, state));
+  const original = decomposition(), ids = output.requirements.map(req => req.id);
+  state.backlog.workItems = [{ ...original.workItems[0], requirementIds: ids }, ...ids.map((id, index) => ({ ...original.workItems[1], id: `STORY-${index}`, requirementIds: [id] }))];
+  state.backlog.acceptanceCriteria = ids.flatMap((id, index) => original.acceptanceCriteria.map(ac => ({ ...ac, id: `${ac.id}-${index}`, workItemId: `STORY-${index}`, requirementIds: [id] })));
+  state.backlog.traceLinks = ids.map((id, index) => ({ ...original.traceLinks[0], id: `TRACE-${index}`, requirementId: id, workItemId: `STORY-${index}`, acId: `AC-ALLOW-${index}` }));
+  const before = structuredClone(state.backlog); let calls = 0;
+  const result = await planAndReview(output, model(), state, [], { run: async ({ request }) => {
+    if (request.phase === 'review-plan') return { output: { issues: [], workItemUpdates: [], acceptanceUpdates: [], traceUpdates: [] } };
+    calls++;
+    assert.deepEqual(request.data.previousWorkItems.find(item => item.id === 'EPIC-1').requirementIds, ids);
+    const current = new Set(request.data.planningBatch.requirementIds);
+    return { output: { workItems: [{ ...original.workItems[0], requirementIds: [...current] }, ...before.workItems.filter(item => item.workItemType !== 'epic' && item.requirementIds.some(id => current.has(id)))], acceptanceCriteria: before.acceptanceCriteria.filter(item => item.requirementIds.some(id => current.has(id))), traceLinks: before.traceLinks.filter(item => current.has(item.requirementId)), issues: [] } };
+  } });
+  assert.equal(calls, 2); assert.deepEqual(result.planningOutput.workItems.find(item => item.id === 'EPIC-1').requirementIds, ids);
+  assert.deepEqual(state.backlog, before);
+});
 
 test('synthesis receives only quotable representative anchors while retaining every original clause', async () => {
   const state = snapshot();

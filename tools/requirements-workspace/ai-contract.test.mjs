@@ -118,6 +118,20 @@ test('decomposition sends confirmed quotation evidence instead of resending mult
   assert.equal(state.backlog.sources[0].clauses.length, 501, 'original sources are unchanged');
 });
 
+test('decomposition evidence selectors retain verified multiline quotes without joining gaps or losing short lines', () => {
+  const state = snapshot(), value = proposal(), quote = '금액 기준\n승인 조건\n기관 예외';
+  state.backlog.sources[0].clauses[0].text = quote;
+  value.requirements[0].citations = [{ ...citation(), quote }]; value.issues = [];
+  state.backlog = projectAnalysisBacklog(state, validateAnalysisProposal(value, state));
+  const request = buildAiRequest(state, 'decomposition', [], { analysisEvidence: value, evidenceReferences: true });
+  const wire = prepareEvidenceRequest(request, ANALYSIS_SCHEMA);
+  const index = wire.request.data.evidenceCatalog.findIndex(item => item[2] === quote && item[3]);
+  assert.ok(index >= 0, 'a valid multiline quotation remains selectable as its exact original bytes');
+  assert.deepEqual(wire.resolve({ ...value, requirements: [{ ...value.requirements[0], citations: [index] }] }), value);
+  assert.equal(wire.request.data.sources[0].clauses[0].text, quote);
+  assert.equal(Object.hasOwn(wire.request.data.sources[0].clauses[0], 'citationExcerpts'), false, 'private quote boundaries do not duplicate the wire source text');
+});
+
 test('later batches preserve earlier citations, requirements and blocking decisions and cannot cite unseen sources', () => {
   const state = snapshot();
   state.backlog.sources.push({ ...structuredClone(state.backlog.sources[0]), id: 'SRC-2', clauses: [{ ...structuredClone(state.backlog.sources[0].clauses[0]), text: '담당자는 후속 자료의 접수 업무를 조회하고 검토한다.' }] });

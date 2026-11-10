@@ -1,14 +1,14 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { ANALYSIS_SCHEMA, BATCH_ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, aiInputDigest, buildAiRequest, buildCorrectionRequest, seedAnalysis, validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal, projectAnalysisBacklog, safeValidationFailures } from './ai-contract.mjs';
+import { ANALYSIS_SCHEMA, BATCH_ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, aiInputDigest, buildAiRequest, buildCorrectionRequest, seedAnalysis, validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal, projectAnalysisBacklog, safeValidationFailures, validatePrivateAiValue } from './ai-contract.mjs';
 import { planAnalysisBatches, MAX_ANALYSIS_BATCHES } from './ai-analysis-batches.mjs';
 import { AI_MODEL, AI_EFFORT, AI_ANALYSIS_EFFORT, aiEffortForPhase, createCliRunner, findClaudeExecutable } from './ai-cli.mjs';
 import { assertExternalWorkspace } from './store.mjs';
 import { prepareVisualAttachments } from './ai-attachments.mjs';
 import { PROMPT_VERSION } from './ai-prompts.mjs';
 import { prepareBusinessModel, documentAnchors, reviewRequirements, planAndReview, buildTaskPreview } from './ai-pipeline.mjs';
-import { validateBusinessModel, validateDocumentSummaries, mergeIssues } from './ai-pipeline-contract.mjs';
+import { validateBusinessModel, validateDocumentSummaries, mergeIssues, REQUIREMENT_REVIEW_SCHEMA, PLAN_REVIEW_SCHEMA } from './ai-pipeline-contract.mjs';
 import { collectSensitivityWarnings, mergeSensitivityWarnings, validateSensitivityWarnings } from './privacy-warnings.mjs';
 import { prepareEvidenceRequest } from './ai-evidence.mjs';
 
@@ -17,6 +17,7 @@ const statuses = ['running', 'ready', 'needs-decisions', 'failed', 'stale', 'can
 const checkpointKeys = ['discovery', 'analysis', 'review', 'planning'];
 const checkpointPhases = { discovery: ['reading', 'synthesis'], analysis: ['analysis'], review: ['review-requirements'], planning: ['decomposition', 'review-plan'] };
 const exact = (value, keys) => { if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(key => !keys.includes(key))) fail('AI_METADATA_INVALID'); };
+const checkpointObject = (value, keys) => { if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length !== keys.length || keys.some(key => !Object.hasOwn(value, key))) fail('AI_CHECKPOINT_INVALID'); };
 function reference(value, kind) {
   exact(value, ['id', 'kind', 'sha256', 'bytes']);
   if (!/^[a-f0-9-]{36}$/.test(value.id ?? '') || value.kind !== kind || !/^[a-f0-9]{64}$/.test(value.sha256 ?? '') || !Number.isSafeInteger(value.bytes) || value.bytes < 0 || value.bytes > 8 * 1024 ** 2) fail('AI_METADATA_INVALID');
@@ -81,6 +82,14 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
   const ai = snapshot => snapshot.metadata.ai ?? empty();
   const current = snapshot => ai(snapshot).jobs.at(-1);
   const readJson = ref => JSON.parse(store.readArchive(ref));
+  const checkpointPart = (ref, schema) => {
+    try {
+      reference(ref, 'ai'); const item = readJson(ref);
+      checkpointObject(item, ['version', 'batch', 'output']);
+      validatePrivateAiValue(item.output, schema);
+      return item;
+    } catch { fail('AI_CHECKPOINT_INVALID'); }
+  };
   function proposal(job) {
     if (!job?.resultRef) return null;
     const input = { backlog: readJson(job.inputRef), metadata: { context: readJson(job.contextRef) } };
@@ -197,7 +206,8 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             if (value.sensitivityWarnings.some(warning => !checkpointPhases[stage].includes(warning.stage))) fail('AI_CHECKPOINT_INVALID');
             checkpointWarnings.set(stage, value.sensitivityWarnings);
           }
-          mark(job.id, stored => { if (stored.status === 'running') stored.reusedStages = [...new Set([...stored.reusedStages, stage])]; });
+          const partial = stage === 'analysis' && value.output?.completed !== value.output?.total || ['review', 'planning'].includes(stage) && value.output?.version === 2;
+          if (!partial) mark(job.id, stored => { if (stored.status === 'running') stored.reusedStages = [...new Set([...stored.reusedStages, stage])]; });
           return value.output;
         };
         const saveCheckpoint = (stage, upstream, value, mutate = () => {}) => {
@@ -347,10 +357,10 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
           const partialReview = reviewed?.version === 2;
           const reviewRefs = [], resumeReplies = [];
           if (partialReview) {
-            exact(reviewed, ['version', 'replies']);
+            checkpointObject(reviewed, ['version', 'replies']);
             if (!Array.isArray(reviewed.replies) || reviewed.replies.length < 1 || reviewed.replies.length > 128) fail('AI_CHECKPOINT_INVALID');
             for (const [index, ref] of reviewed.replies.entries()) {
-              reference(ref, 'ai'); const item = readJson(ref); exact(item, ['version', 'batch', 'output']);
+              const item = checkpointPart(ref, REQUIREMENT_REVIEW_SCHEMA);
               if (item.version !== 1 || item.batch !== index + 1) fail('AI_CHECKPOINT_INVALID');
               reviewRefs.push(ref); resumeReplies.push(item.output);
             }
@@ -373,10 +383,12 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             else {
               const replies = [], refs = []; let generated = partialPlan ? plan.planningOutput : null;
               if (partialPlan) {
-                exact(plan, ['version', 'planningOutput', 'replies']);
+                checkpointObject(plan, ['version', 'planningOutput', 'replies']);
+                if (!plan.planningOutput || typeof plan.planningOutput !== 'object' || Array.isArray(plan.planningOutput)) fail('AI_CHECKPOINT_INVALID');
+                try { validateDecompositionProposal(plan.planningOutput, { ...snapshot, backlog: projectAnalysisBacklog(snapshot, validated) }); } catch { fail('AI_CHECKPOINT_INVALID'); }
                 if (!Array.isArray(plan.replies) || plan.replies.length > 128) fail('AI_CHECKPOINT_INVALID');
                 for (const [index, ref] of plan.replies.entries()) {
-                  reference(ref, 'ai'); const item = readJson(ref); exact(item, ['version', 'batch', 'output']);
+                  const item = checkpointPart(ref, PLAN_REVIEW_SCHEMA);
                   if (item.version !== 1 || item.batch !== index + 1) fail('AI_CHECKPOINT_INVALID');
                   refs.push(ref); replies.push(item.output);
                 }

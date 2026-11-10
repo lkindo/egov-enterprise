@@ -85,6 +85,26 @@ test('full pipeline uses bounded evidence references and restores canonical proo
   assert.equal(state.backlog.businessRequirements.length, 0, 'transport work never approves the draft');
 });
 
+for (const recovers of [true, false]) test(`a single-batch native citation failure gets exactly one value-free correction: recovery=${recovers}`, async t => {
+  const requests = [];
+  const app = await setup(t, async ({ request }) => {
+    const output = reply(request);
+    if (request.phase === 'analysis') {
+      requests.push(structuredClone(request));
+      output.requirements[0].citations = [requests.length === 1 || !recovers ? 9999 : 0];
+    }
+    return envelope(output, request.phase);
+  });
+  await app.start(); await app.engine.waitForAi(); const state = await app.engine.state();
+  assert.equal(requests.length, 2);
+  assert.equal(requests[0].data.analysisBatch, undefined);
+  assert.equal(Object.hasOwn(requests[1].data.correction, 'previousOutput'), false);
+  assert.equal(requests[1].data.correction.violations[0].kind, 'citation-reference');
+  assert.equal(state.ai.current.status, recovers ? 'ready' : 'failed');
+  if (!recovers) assert.equal(state.ai.current.validationFailures[0].kind, 'citation-reference');
+  assert.equal(state.backlog.businessRequirements.length, 0);
+});
+
 test('new call metrics count actual calls and preserve the zero-call meaning of a fully reused run', async t => {
   const phases = []; let app;
   app = await setup(t, async ({ request }) => {
@@ -175,9 +195,26 @@ test('a failed later quality review reuses earlier verified reviews and preserve
   assert.ok(reference, 'the valid first review must be checkpointed before the later failure');
   const oldBytes = app.store.readArchive(reference), record = JSON.parse(oldBytes);
   assert.equal(record.output.version, 2); assert.equal(record.output.replies.length, 1);
+  const savedAi = structuredClone(app.store.read().metadata.ai);
+  for (const fault of ['unknown-field', 'missing-replies', 'invalid-reply']) {
+    const corrupt = structuredClone(record);
+    if (fault === 'unknown-field') corrupt.output.unexpected = true;
+    if (fault === 'missing-replies') delete corrupt.output.replies;
+    if (fault === 'invalid-reply') {
+      const part = JSON.parse(app.store.readArchive(corrupt.output.replies[0])); part.output.revisions = 'invalid';
+      corrupt.output.replies[0] = app.store.writeArchive('ai', JSON.stringify(part));
+    }
+    const ref = app.store.writeArchive('ai', JSON.stringify(corrupt));
+    app.store.transact(app.store.read().revision, next => { next.metadata.ai = structuredClone(savedAi); next.metadata.ai.jobs.at(-1).checkpoints.review = ref; });
+    reviewed.length = 0; await app.start(); await app.engine.waitForAi();
+    assert.equal((await app.engine.state()).ai.current.errorCode, 'AI_CHECKPOINT_INVALID', fault);
+    assert.deepEqual(reviewed, [], `reject ${fault} before another review call`);
+  }
+  app.store.transact(app.store.read().revision, next => { next.metadata.ai = structuredClone(savedAi); });
   reviewed.length = 0; await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
   assert.deepEqual(reviewed, ['REQ-7']);
   assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  assert.equal(state.ai.current.reusedStages.includes('review'), false, 'a partial result is not a complete reused stage');
   assert.equal((state.ai.proposal.requirements[0].description.match(/검토된 표현/g) ?? []).length, 1);
   assert.equal(app.store.readArchive(reference), oldBytes);
   assert.equal(state.backlog.businessRequirements.length, 0);
@@ -203,10 +240,26 @@ test('plan review failure reuses the fully validated generated plan and earlier 
   const ref = state.ai.current.checkpoints.planning; assert.ok(ref);
   const oldBytes = app.store.readArchive(ref), record = JSON.parse(oldBytes);
   assert.equal(record.output.version, 2); assert.equal(record.output.replies.length, 1);
+  const savedAi = structuredClone(app.store.read().metadata.ai);
+  for (const fault of ['missing-generation', 'null-generation', 'unknown-field', 'invalid-generation']) {
+    const corrupt = structuredClone(record);
+    if (fault === 'missing-generation') delete corrupt.output.planningOutput;
+    if (fault === 'null-generation') corrupt.output.planningOutput = null;
+    if (fault === 'unknown-field') corrupt.output.unexpected = true;
+    if (fault === 'invalid-generation') corrupt.output.planningOutput = {};
+    const ref = app.store.writeArchive('ai', JSON.stringify(corrupt));
+    app.store.transact(app.store.read().revision, next => { next.metadata.ai = structuredClone(savedAi); next.metadata.ai.jobs.at(-1).checkpoints.planning = ref; });
+    phases.length = 0; await app.start(); await app.engine.waitForAi();
+    assert.equal((await app.engine.state()).ai.current.errorCode, 'AI_CHECKPOINT_INVALID', fault);
+    assert.deepEqual(phases, [], `reject ${fault} before another model call`);
+  }
+  app.store.transact(app.store.read().revision, next => { next.metadata.ai = structuredClone(savedAi); });
   phases.length = 0; reviewed.length = 0;
   await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
   assert.deepEqual(phases, ['review-plan']); assert.deepEqual(reviewed, ['STORY-8']);
   assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode);
+  assert.equal(state.ai.current.reusedStages.includes('planning'), false);
+  assert.equal(state.ai.current.callMetrics.reusedResponses, 2, 'count the stored generated plan and completed review result');
   assert.equal(state.ai.proposal.workItems.length, 10);
   assert.equal(state.ai.proposal.acceptanceCriteria.length, 18);
   assert.equal((state.ai.proposal.workItems.find(item => item.id === 'STORY-0').title.match(/검토 반영/g) ?? []).length, 1);

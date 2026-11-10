@@ -21,6 +21,9 @@ function referenceSchema(schema) {
 }
 
 function excerpts(clause) {
+  // Verified quotations can contain newlines themselves. Keep their original
+  // boundaries rather than joining gaps or splitting a valid multiline quote.
+  if (clause.citationEvidence && Array.isArray(clause.citationExcerpts)) return [...new Set(clause.citationExcerpts.filter(quote => typeof quote === 'string' && quote.length > 0 && quote.length <= 2000 && clause.text.includes(quote)))];
   // The complete supplied text stays in sources. Overlapping exact excerpts
   // are selectors, not a summary or an omission of the underlying paragraph.
   const required = Math.min(12, letters(clause.text)), result = new Set();
@@ -61,6 +64,7 @@ export function prepareEvidenceRequest(request, schema) {
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, key === 'citations' && Array.isArray(item) ? item.map(indexFor) : project(item)]));
   };
   const projected = project(original.data);
+  for (const field of ['sources', 'policySources']) if (projected[field]) projected[field] = projected[field].map(source => ({ ...source, clauses: source.clauses.map(({ citationExcerpts: _boundaries, ...clause }) => clause) }));
   for (const [key, clause] of current) {
     const [sourceId, clauseId] = JSON.parse(key);
     for (const quote of excerpts(clause)) indexFor({ sourceId, clauseId, quote });
