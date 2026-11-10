@@ -62,6 +62,147 @@ GAP-STD-001(`.agent/memory/known-gaps.md`)의 다음 행동("컬럼마다 표준
 
 등록·물리 변경을 진행할 때는 그 시점의 데이터 범위·참조·동시 쓰기를 다시 확인하고, [DB 헌법 제7조](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md)에 따른 Expand → Sync → Redirect → Contract와 승인·관측·복구 조건을 따로 설계한다. 과거 0행 관측이나 다른 6개를 다룬 ADR-0014는 이번 6개 변경의 승인이 아니다.
 
+### 2026-11-10 1차 재대조 — 등록안(2026-11-10 승인)
+
+2026-11-10 사용자 결정은 "1차는 재대조와 등록안 작성에 착수하고, 등록은 최종 목록 승인 뒤 Boot 4.1.3 재기록 묶음에 넣는다"이다.
+
+**기준과 방법.**
+- 공유 OCI 개발 DB(Flyway 2.148)를 아래 「실측 쿼리」로 읽기 전용 조회했다.
+- 집계는 컬럼 1,085, 용어 없는 컬럼 292, 고유 이름 213 이다.
+- 표 1 의 A·A* 후보 107개를 오늘의 컬럼·용어(13,246)·도메인(132)과 다시 대조했다.
+  - 여전히 용어가 없는가.
+  - 제안 용어명과 한글명이 같은 기존 용어가 없는가.
+  - 물리 타입·길이가 후보 도메인과 맞는가.
+- 동의어 탐색은 §4 「남는 위험」의 범위(한글명 일치)를 넘지 않는다.
+
+**결과.**
+- 준비 완료 93개, 소유자 확인 12개, A* 2개(1차 제외)다. 사라진 컬럼·이미 등록된 이름·동명 용어는 없었다.
+- 표 1 이후 새로 생긴 이름은 `bbs_chg_hstry_sn`(V2_139, `tb_bbs_chg_hstry` 의 bigint 식별 키) 하나다. 기존 bigint 식별 키의 관례대로 게시판변경이력일련번호/일련번호N19 로 준비 완료에 더했다.
+- 그래서 등록안의 기본 목록은 94개다.
+
+**소유자 확인 12개의 권고.**
+
+| 컬럼 | 제안(도메인) | 권고 | 이유 |
+|---|---|---|---|
+| `admdst_zone_nm` | 행정구역구역명(명V100) | A | 용어명은 단어 한글명을 잇는 규칙의 결과라 '구역'이 겹친다. 값은 행정구역 이름이다 |
+| `cert_dn_vl` | 인증고유명값(명V100) | A | VL 을 명V100 에 잇는 새 조합이다(기존 VL 용어는 HASH_VL 해시값V64 하나). 도메인·길이는 맞는다 |
+| `srvy_trgt` | 설문대상(내용V1000) | A | 설문 대상을 적는 자유 글이다(`SurveyInfo.srvyTrgt`). 도메인이 맞는다 |
+| `file_strg_path` | 파일저장경로(내용V1000) | C | 경로 관례는 '~경로명(명V300)'이다. 길이 1000 에 맞는 경로 도메인이 없다 |
+| `file_url` | 파일URL(내용V1000) | C | URL 관례는 '~URL주소(주소V2000)'다 |
+| `rel_img_path` | 관계이미지경로(명V100) | C | 경로 관례 '~경로명' 과 다르다 |
+| `mthd_nm` | 방법명(명V100) | C | 값은 주로 Java 메서드 이름이고, 시스템 오류 로그에서는 알 수 없으면 HTTP 메서드로 대체된다(SystemErrorLogListener) — 단어 '방법'과 뜻이 다르다 |
+| `pswd` | 비밀번호(암호화번호V256) | C | 기존 ~PSWD 관례(번호V25)와 다르다. 게시글·댓글·만족도의 pswd 는 미사용·제거 후보다(GAP-BOARD-001) |
+| `rfsh_tkn` | 리프레시토큰(내용V4000) | C | 해시를 저장해 뜻은 해시값V64 이지만 길이가 다르다(DEC-OPS-136) |
+| `rpt_ttl` | 보고제목(명V100) | C | 제목 관례 명V256 과 길이가 다르다 |
+| `rspns_nm` | 응답명(명V100) | C | 응답자 이름을 저장한다(SurveyResultService — 인증 주체의 이름, 없으면 로그인 ID). 같은 뜻의 기존 용어 RSPDNT_NM 응답자명(명V100)이 있어 이름 정정(B) 대상이지만, 이름 정정은 Expand-and-Contract 와 엔티티·API 변경이 따라 1차에서는 C 로 둔다 |
+| `sndng_telno` | 발송전화번호(번호C13) | C | 전화번호 관례 전화번호V11 과 다르다 |
+
+2026-11-10 사용자가 이 권고대로 승인했다("권고대로 승인") — 1차 등록은 97개(준비 94 + A 3)이고, C 9개는 이관 원장에서 `nonStandardTarget` 과 사유로 확정하는 대상이다. 등록은 Boot 4.1.3 재기록 묶음에서 한다.
+
+**등록 전에 남는 일.**
+- 재기록 묶음 시점에 같은 쿼리로 다시 대조한다. 그 사이 스키마가 바뀌었거나 공공데이터 공통표준 9차가 나와 같은 뜻의 용어가 생겼을 수 있다(2026-11-10 현재 data.go.kr 의 최신본은 8차·2025-11).
+- 메타 전용 마이그레이션 계약 시험을 둔다. 공유 OCI 적용은 따로 승인받는다.
+- 등록 대상 컬럼을 `nonStandardTarget` 으로 확정해 둔 기관 이관 원장은 표준 용어로 바꿔야 등록 뒤 검증을 통과한다(TermLedgerValidator). 저장소 안의 원장 고정물은 시험용 표만 써서 영향이 없다.
+
+등록안 94개(준비 완료) 목록:
+
+| # | 영문약어 | 용어명 | 도메인 | 표 |
+|---:|---|---|---|---|
+| 1 | `ADMDST_CD` | 행정구역코드 | 코드C12 | tb_admdst_cd |
+| 2 | `ADMDST_SE_CD` | 행정구역구분코드 | 코드C12 | tb_admdst_cd |
+| 3 | `APLCNT_ID` | 신청자아이디 | 명V20 | tb_ifml_atrz_info, tb_ifml_atrz_tmpr_strg |
+| 4 | `APRVR_ID` | 결재자아이디 | 명V20 | tb_ifml_atrz_info |
+| 5 | `BBS_ATRB_CD` | 게시판속성코드 | 코드C12 | tb_bbs_master |
+| 6 | `BBS_CHG_HSTRY_SN` | 게시판변경이력일련번호 | 일련번호N19 | tb_bbs_chg_hstry |
+| 7 | `BBS_ID` | 게시판아이디 | 명V20 | tb_bbs_chg_hstry, tb_bbs_comment, tb_bbs_item, tb_bbs_master, tb_bbs_master_optn, tb_bbs_scrap, tb_bbs_use_info, tb_dgstfn_info, tb_dta_use_stats |
+| 8 | `BBS_TYPE_CD` | 게시판유형코드 | 코드C12 | tb_bbs_master |
+| 9 | `BFR_USER_ID` | 이전사용자아이디 | 명V20 | tb_ifml_atrz_prcs_hstry |
+| 10 | `BNR_IMG_NM` | 배너이미지명 | 명V100 | tb_bnr_info |
+| 11 | `BNR_NM` | 배너명 | 명V100 | tb_bnr_info |
+| 12 | `CD_ID` | 코드아이디 | 명V20 | tb_com_cd, tb_com_cd_chg_hstry, tb_com_dtl_cd |
+| 13 | `CD_ID_EXPLN` | 코드아이디설명 | 내용V4000 | tb_com_cd |
+| 14 | `CD_ID_NM` | 코드아이디명 | 명V100 | tb_com_cd |
+| 15 | `CLSF_CD` | 분류코드 | 코드C12 | tb_com_cd, tb_com_cd_chg_hstry, tb_com_clsf_cd |
+| 16 | `CLSF_CD_EXPLN` | 분류코드설명 | 내용V4000 | tb_com_clsf_cd |
+| 17 | `CMNTY_INTRO_CN` | 커뮤니티소개내용 | 내용V4000 | tb_cmnty_info |
+| 18 | `CNTN_MTHD_CD` | 접속방법코드 | 코드C12 | tb_login_log |
+| 19 | `COM_CD_CHG_HSTRY_SN` | 공통코드변경이력일련번호 | 일련번호N19 | tb_com_cd_chg_hstry |
+| 20 | `CR_TYPE_CD` | 직업유형코드 | 코드C12 | tb_extrl_hr_info, tb_srvy_rspdnt |
+| 21 | `DEPT_ID` | 부서아이디 | 명V20 | tb_dept_job_bx |
+| 22 | `DEPT_TASK_BOX_NM` | 부서업무함명 | 명V100 | tb_dept_job_bx |
+| 23 | `DEPT_TASK_NM` | 부서업무명 | 명V100 | tb_dept_task_info |
+| 24 | `DGSTFN_SN` | 만족도일련번호 | 일련번호N19 | tb_dgstfn_info |
+| 25 | `DIARY_NM` | 일기명 | 명V100 | tb_diary_info |
+| 26 | `DMND_USER_ID` | 요청사용자아이디 | 명V20 | tb_privacy_log, tb_sys_log, tb_user_log, tb_web_log |
+| 27 | `DMND_USER_IP_ADDR` | 요청사용자IP주소 | 주소V45 | tb_privacy_log, tb_sys_log, tb_web_log |
+| 28 | `DRCTN_MTTR` | 지시사항 | 내용V4000 | tb_diary_info, tb_memo_rpt_info |
+| 29 | `DRCTN_MTTR_REG_DT` | 지시사항등록일시 | 연월일시분초D | tb_memo_rpt_info |
+| 30 | `DSPTCH_RSLT_CD` | 발신결과코드 | 코드C12 | tb_email_dsptch_manage |
+| 31 | `DTL_CD` | 상세코드 | 코드C12 | tb_com_cd_chg_hstry, tb_com_dtl_cd |
+| 32 | `DTL_CD_NM` | 상세코드명 | 명V100 | tb_com_dtl_cd |
+| 33 | `ENT_SE_CD` | 기업구분코드 | 코드C12 | tb_user_info |
+| 34 | `ERR_CD` | 오류코드 | 코드C12 | tb_login_log, tb_sys_log |
+| 35 | `ERR_SE_CD` | 오류구분코드 | 코드C12 | tb_sys_log |
+| 36 | `EVNT_APRV_YMD` | 행사승인일자 | 연월일C8 | tb_event_info |
+| 37 | `EVNT_APRV_YN` | 행사승인여부 | 여부C1 | tb_event_info |
+| 38 | `EVNT_TYPE_CD` | 행사유형코드 | 코드C12 | tb_event_info |
+| 39 | `GNDR_CD` | 성별코드 | 코드C12 | tb_extrl_hr_info, tb_srvy_rspdnt, tb_user_info |
+| 40 | `GROUP_ID` | 그룹아이디 | 명V20 | tb_authrt_group_info, tb_user_info |
+| 41 | `HLP_DFN` | 도움말정의 | 내용V1000 | tb_hlp_info |
+| 42 | `HLP_SE_CD` | 도움말구분코드 | 코드C3 | tb_hlp_info |
+| 43 | `IFML_ATRZ_PRCS_HSTRY_SN` | 비공식결재처리이력일련번호 | 일련번호N19 | tb_ifml_atrz_prcs_hstry |
+| 44 | `MBR_STTS_CD` | 회원상태코드 | 코드C12 | tb_cmnty_user_map |
+| 45 | `MEMO_RPT_YMD` | 메모보고일자 | 연월일C8 | tb_memo_rpt_info |
+| 46 | `OGNZ_ID` | 조직아이디 | 명V20 | tb_ognz_info, tb_user_info |
+| 47 | `ONLN_MNL_DFN` | 온라인매뉴얼정의 | 내용V4000 | tb_onln_mnl_info |
+| 48 | `ONLN_MNL_EXPLN` | 온라인매뉴얼설명 | 내용V4000 | tb_onln_mnl_info |
+| 49 | `ONLN_MNL_NM` | 온라인매뉴얼명 | 명V100 | tb_onln_mnl_info |
+| 50 | `ONLN_MNL_SE_CD` | 온라인매뉴얼구분코드 | 코드C12 | tb_onln_mnl_info |
+| 51 | `PIC_ID` | 담당자아이디 | 명V20 | tb_dept_task_info |
+| 52 | `PLCY_TYPE_CD` | 정책유형코드 | 코드C12 | tb_plcy_manage |
+| 53 | `POLL_ARTCL_NM` | 여론조사항목명 | 명V100 | tb_onln_poll_artcl |
+| 54 | `POLL_BGNG_YMD` | 여론조사시작일자 | 연월일C8 | tb_onln_poll_manage |
+| 55 | `POLL_END_YMD` | 여론조사종료일자 | 연월일C8 | tb_onln_poll_manage |
+| 56 | `POLL_KND_CD` | 여론조사종류코드 | 코드C12 | tb_onln_poll_manage |
+| 57 | `POLL_NM` | 여론조사명 | 명V100 | tb_onln_poll_manage |
+| 58 | `PRCS_SE_CD` | 처리구분코드 | 코드C12 | tb_sys_log |
+| 59 | `PRCS_TYPE_CD` | 처리유형코드 | 코드C12 | tb_ifml_atrz_prcs_hstry |
+| 60 | `QNA_CAT_CD` | 질의응답카테고리코드 | 코드C12 | tb_bbs_item |
+| 61 | `QNA_STTS_CD` | 질의응답상태코드 | 코드C12 | tb_bbs_item |
+| 62 | `QSTN_SN` | 질문일련번호 | 일련번호N19 | tb_srvy_qstn |
+| 63 | `QSTN_TYPE_CD` | 질문유형코드 | 코드C12 | tb_srvy_qstn |
+| 64 | `RCPTN_SE_CD` | 수신구분코드 | 코드C12 | tb_note_rcptn |
+| 65 | `RCVR_ID` | 수신자아이디 | 명V20 | tb_email_dsptch_manage, tb_note_rcptn, tb_sms_rcptn, tb_user_noti |
+| 66 | `REG_SE_CD` | 등록구분코드 | 코드C12 | tb_cmnty_info |
+| 67 | `REPT_SE_CD` | 반복구분코드 | 코드C12 | tb_schdl_info |
+| 68 | `RPT_SE_CD` | 보고구분코드 | 코드C12 | tb_rpt_info |
+| 69 | `RPT_STTS_CD` | 보고상태코드 | 코드C12 | tb_rpt_info |
+| 70 | `RPTR_ID` | 보고자아이디 | 명V20 | tb_memo_rpt_info |
+| 71 | `RPTR_INQ_DT` | 보고자조회일시 | 연월일시분초D | tb_memo_rpt_info |
+| 72 | `RSLT_CD` | 결과코드 | 코드C12 | tb_sms_rcptn |
+| 73 | `RSPNS_CD` | 응답코드 | 코드C12 | tb_sys_log |
+| 74 | `RWRD_CD` | 포상코드 | 코드C12 | tb_rward_manage |
+| 75 | `RWRD_USER_ID` | 포상사용자아이디 | 명V20 | tb_rward_manage |
+| 76 | `SCHDL_DEPT_ID` | 일정부서아이디 | 명V20 | tb_schdl_info |
+| 77 | `SCHDL_IMPRT_CD` | 일정중요도코드 | 코드C12 | tb_schdl_info |
+| 78 | `SCHDL_KND_CD` | 일정종류코드 | 코드C12 | tb_schdl_info |
+| 79 | `SCHDL_PIC_ID` | 일정담당자아이디 | 명V20 | tb_schdl_info |
+| 80 | `SCHDL_PLC_NM` | 일정장소명 | 명V100 | tb_schdl_info |
+| 81 | `SCHDL_SE_CD` | 일정구분코드 | 코드C12 | tb_schdl_info |
+| 82 | `SNDR_ID` | 발송자아이디 | 명V20 | tb_note_sndng |
+| 83 | `SRVY_RSPDNT_ID` | 설문응답자아이디 | 명V20 | tb_srvy_rspdnt |
+| 84 | `SRVY_TMPLT_TYPE_CD` | 설문서식유형코드 | 코드C12 | tb_srvy_tmplt |
+| 85 | `TASK_SE_CD` | 업무구분코드 | 코드C12 | tb_ifml_atrz_hstry, tb_ifml_atrz_info, tb_ifml_atrz_tmpr_strg |
+| 86 | `TMPLT_ID` | 서식아이디 | 명V20 | tb_bbs_master, tb_cmnty_info, tb_tmplt_info |
+| 87 | `TMPLT_SE_CD` | 서식구분코드 | 코드C12 | tb_tmplt_info |
+| 88 | `TRGT_ID` | 대상아이디 | 명V20 | tb_bbs_use_info |
+| 89 | `TRGT_USER_ID` | 대상사용자아이디 | 명V20 | tb_ifml_atrz_prcs_hstry |
+| 90 | `TTL_BOLD_YN` | 제목볼드여부 | 여부C1 | tb_bbs_item |
+| 91 | `UP_ADMDST_CD` | 상위행정구역코드 | 코드C12 | tb_admdst_cd |
+| 92 | `UP_OGNZ_ID` | 상위조직아이디 | 명V20 | tb_ognz_info |
+| 93 | `USER_STTS_CD` | 사용자상태코드 | 코드C12 | tb_user_info |
+| 94 | `USER_TYPE_CD` | 사용자유형코드 | 코드C12 | tb_user_info |
+
 ### 실측 쿼리
 
 집계(과거 1,011·276·212, 2026-10-29에는 1,082·291·213):
