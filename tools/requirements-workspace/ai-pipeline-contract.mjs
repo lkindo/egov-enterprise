@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, MAX_PROJECT_ISSUES, MAX_PROJECT_PROPOSAL_BYTES, projectProposalSchema, validatePrivateAiValue, validateEvidenceCitations } from './ai-contract.mjs';
+import { ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, MAX_PROJECT_ISSUES, MAX_PROJECT_PROPOSAL_BYTES, MAX_PROJECT_CITATIONS_PER_ITEM, projectProposalSchema, validatePrivateAiValue, validateEvidenceCitations } from './ai-contract.mjs';
 const string = (maxLength = 2000) => ({ type: 'string', minLength: 1, maxLength });
 const array = (items, maxItems = 100) => ({ type: 'array', items, minItems: 0, maxItems });
 const object = properties => ({ type: 'object', properties, required: Object.keys(properties), additionalProperties: false });
@@ -87,7 +87,7 @@ export function validateRequirementReview(value, proposal, snapshot) {
     const old = requirements.get(revision.id);
     if (!old || (revision.scope ?? 'included') !== (old.scope ?? 'included')) invalid('quality-scope-change');
     const quotes = new Map([...old.citations, ...revision.citations].map(cite => [`${cite.sourceId}/${cite.clauseId}/${cite.quote}`, cite]));
-    if (quotes.size > 30) capacity('AI_CITATION_CAPACITY');
+    if (quotes.size > MAX_PROJECT_CITATIONS_PER_ITEM) capacity('AI_CITATION_CAPACITY');
     requirements.set(revision.id, { ...structuredClone(revision), citations: [...quotes.values()] });
   }
   return { ...structuredClone(proposal), requirements: [...requirements.values()], issues: mergeIssues(proposal.issues, value.issues) };

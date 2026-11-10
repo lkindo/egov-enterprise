@@ -11,18 +11,29 @@ const enumeration = values => ({ type: 'string', enum: values });
 const array = (items, minItems = 0, maxItems = 150) => ({ type: 'array', items, minItems, maxItems });
 const object = (properties, required = Object.keys(properties)) => ({ type: 'object', properties, required, additionalProperties: false });
 const nullable = schema => ({ anyOf: [schema, { type: 'null' }] });
+// A transport block can contain 96 clauses belonging to one business purpose.
+// Keep a finite selector budget large enough to ground it without fake splits;
+// the independent 1MiB response-byte guard remains authoritative.
+export const MAX_RESPONSE_CITATIONS_PER_ITEM = 128;
 const citationSchema = object({ sourceId: identifier, clauseId: identifier, quote: string(2000) });
 const nfrSchema = object({ metric: string(), threshold: string(), verificationMethod: enumeration(VERIFICATION_METHODS) });
-const issueSchema = object({ id: identifier, kind: enumeration(['decision', 'conflict', 'missing', 'ambiguity', 'risk']), severity: enumeration(['blocking', 'observation']), question: string(), options: array(string(500), 0, 8), requirementIds: array(identifier), citations: array(citationSchema, 1, 30) });
-const requirementSchema = object({ id: identifier, title: string(200), description: string(6000), requirementType: enumeration(REQUIREMENT_TYPES), solutionDisposition: enumeration(SOLUTION_DISPOSITIONS), moduleCandidates: array(identifier, 0, 20), rationale: string(), nfrCriteria: nullable(nfrSchema), citations: array(citationSchema, 1, 30), scope: enumeration(['included', 'deferred', 'excluded']) }, ['id', 'title', 'description', 'requirementType', 'solutionDisposition', 'moduleCandidates', 'rationale', 'nfrCriteria', 'citations']);
+const issueSchema = object({ id: identifier, kind: enumeration(['decision', 'conflict', 'missing', 'ambiguity', 'risk']), severity: enumeration(['blocking', 'observation']), question: string(), options: array(string(500), 0, 8), requirementIds: array(identifier), citations: array(citationSchema, 1, MAX_RESPONSE_CITATIONS_PER_ITEM) });
+const requirementSchema = object({ id: identifier, title: string(200), description: string(6000), requirementType: enumeration(REQUIREMENT_TYPES), solutionDisposition: enumeration(SOLUTION_DISPOSITIONS), moduleCandidates: array(identifier, 0, 20), rationale: string(), nfrCriteria: nullable(nfrSchema), citations: array(citationSchema, 1, MAX_RESPONSE_CITATIONS_PER_ITEM), scope: enumeration(['included', 'deferred', 'excluded']) }, ['id', 'title', 'description', 'requirementType', 'solutionDisposition', 'moduleCandidates', 'rationale', 'nfrCriteria', 'citations']);
 export const ANALYSIS_SCHEMA = object({ requirements: array(requirementSchema), issues: array(issueSchema, 0, 100), coverage: array(object({ sourceId: identifier, clauseId: identifier, disposition: enumeration(['included', 'merged', 'excluded', 'deferred']), requirementIds: array(identifier), rationale: string() }, ['sourceId', 'clauseId', 'disposition', 'rationale']), 1, 3000) });
 export const BATCH_ANALYSIS_SCHEMA = object({ ...ANALYSIS_SCHEMA.properties, updatedRequirementIds: array(identifier) }, Object.keys(ANALYSIS_SCHEMA.properties));
 // A single model response stays capped at 100 issues / 1MiB. Accumulating
 // independently validated responses is a different bounded storage contract.
 export const MAX_PROJECT_ISSUES = 1000;
 export const MAX_PROJECT_PROPOSAL_BYTES = 4 * 1024 ** 2;
+export const MAX_PROJECT_CITATIONS_PER_ITEM = 3000;
 export function projectProposalSchema(schema) {
-  return { ...schema, properties: { ...schema.properties, issues: { ...schema.properties.issues, maxItems: MAX_PROJECT_ISSUES } } };
+  const result = structuredClone(schema);
+  if (result.properties.issues) result.properties.issues.maxItems = MAX_PROJECT_ISSUES;
+  for (const field of ['requirements', 'issues']) {
+    const citations = result.properties[field]?.items?.properties?.citations;
+    if (citations) citations.maxItems = MAX_PROJECT_CITATIONS_PER_ITEM;
+  }
+  return result;
 }
 const workSchema = object({ id: identifier, workItemType: enumeration(WORK_ITEM_TYPES), parentEpicId: nullable(identifier), requirementIds: array(identifier, 1), title: string(200), description: string(6000), asA: string(), iWant: string(), soThat: string(), priority: enumeration(PRIORITIES), batch: { anyOf: [string(80), { type: 'integer', minimum: 1, maximum: 1000 }] }, dependsOn: array(identifier), archetype: enumeration(['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7']), decisionCards: array(string(2000), 0, 20) }, ['id', 'workItemType', 'parentEpicId', 'requirementIds', 'title']);
 const acSchema = object({ id: identifier, workItemId: identifier, requirementIds: array(identifier, 1), polarity: enumeration(['allow', 'forbid']), given: string(), when: string(), then: string(), verificationMethod: enumeration(VERIFICATION_METHODS) });
@@ -121,7 +132,7 @@ export function seedAnalysis(snapshot) {
       return { sourceId, clauseId: clause.id, quote };
     });
     const result = { id: req.id, title: req.title, description: req.description, requirementType: req.requirementType, solutionDisposition: req.solutionDisposition, moduleCandidates: req.moduleCandidates ?? [], rationale: req.rationale, nfrCriteria: req.nfrCriteria ?? null, citations: cites, ...(['included', 'excluded', 'deferred'].includes(req.scopeDisposition) ? { scope: req.scopeDisposition } : {}) };
-    try { check(result, requirementSchema); citations([result], clauseMap(snapshot)); } catch { capacity('AI_EXISTING_REQUIREMENT_REVIEW_REQUIRED'); }
+    try { check(result, projectProposalSchema(ANALYSIS_SCHEMA).properties.requirements.items); citations([result], clauseMap(snapshot)); } catch { capacity('AI_EXISTING_REQUIREMENT_REVIEW_REQUIRED'); }
     return result;
   });
   return { requirements, issues: [], coverage: [] };
@@ -161,7 +172,7 @@ export function validateAnalysisBatchProposal(value, snapshot, sources, previous
   }
   if (result.requirements.length > 150) capacity('AI_REQUIREMENT_CAPACITY');
   if (result.issues.length > MAX_PROJECT_ISSUES) capacity('AI_ISSUE_CAPACITY');
-  for (const req of result.requirements) if (req.citations.length > 30) invalid('citation-capacity', 'requirements', req.id);
+  for (const req of result.requirements) if (req.citations.length > MAX_PROJECT_CITATIONS_PER_ITEM) invalid('citation-capacity', 'requirements', req.id);
   if (Buffer.byteLength(JSON.stringify(result)) > MAX_PROJECT_PROPOSAL_BYTES) capacity('AI_PROPOSAL_CAPACITY');
   privateValue(result, projectProposalSchema(ANALYSIS_SCHEMA), { maxBytes: MAX_PROJECT_PROPOSAL_BYTES });
   const clauses = clauseMap(snapshot), current = new Set(sources.flatMap(source => source.clauses.map(clause => `${source.id}/${clause.id}`)));
@@ -351,7 +362,16 @@ function decompositionSources(snapshot, analysisEvidence, evidenceReferences = f
       if (!linked.length) return source.sourceType === 'policy-memo' && source.id.startsWith('DEC-') ? [clause] : [];
       const quoted = linked.map(req => reviewed.get(req.id)?.citations.filter(cite => cite.sourceId === source.id && cite.clauseId === clause.id && clause.text.includes(cite.quote)) ?? []);
       const excerpts = [...new Set(quoted.flat().map(cite => cite.quote))];
-      return [{ ...clause, ...(quoted.every(items => items.length) ? { text: excerpts.join('\n'), citationEvidence: true, ...(evidenceReferences ? { citationExcerpts: excerpts } : {}) } : {}) }];
+      // Preserve every quotation while transmitting overlapping source spans
+      // once. Joining only overlapping/adjacent intervals never bridges a gap.
+      const spans = excerpts.map(quote => { const start = clause.text.indexOf(quote); return [start, start + quote.length]; }).sort((a, b) => a[0] - b[0]);
+      const merged = [];
+      for (const span of spans) {
+        const last = merged.at(-1);
+        if (last && span[0] <= last[1]) last[1] = Math.max(last[1], span[1]); else merged.push([...span]);
+      }
+      const text = merged.map(([start, end]) => clause.text.slice(start, end)).join('\n');
+      return [{ ...clause, ...(quoted.every(items => items.length) ? { text, citationEvidence: true, ...(evidenceReferences ? { citationExcerpts: excerpts } : {}) } : {}) }];
     });
     return clauses.length ? [{ ...source, clauses }] : [];
   });
@@ -380,7 +400,7 @@ export function buildAiRequest(snapshot, phase, decisions = [], { sources = snap
       ...(batch ? { currentMaterialProfile: { sourceTypes: [...new Set([...sources.map(source => source.sourceType), ...materialImports.flatMap(job => job.detectedTypes ?? [])])], formats: [...new Set(materialImports.map(job => job.format).filter(Boolean))], focus: 'Apply the material-specific guidance to these CURRENT source roles/formats. The stable full-project inventory in the instructions is reference context, not a claim that every current clause has every document role.' } } : {}),
       decisions,
       previousRequirements: batch ? snapshot.backlog.businessRequirements.map(req => ({ id: req.id, scopeDisposition: req.scopeDisposition, openQuestions: req.openQuestions ?? [] })) : snapshot.backlog.businessRequirements,
-      ...(batch ? { analysisBatch: { ...batch, capacity: { requirementsRemaining: Math.max(0, 150 - (previousAnalysis?.requirements.length ?? 0)), issuesRemaining: Math.max(0, MAX_PROJECT_ISSUES - (previousAnalysis?.issues.length ?? 0)), maxRequirements: 150, maxIssues: MAX_PROJECT_ISSUES, maxIssuesPerResponse: 100, maxCitationsPerRequirement: 30, maxProposalBytes: MAX_PROJECT_PROPOSAL_BYTES, maxResponseBytes: 1024 ** 2, citationCounts: Object.fromEntries((previousAnalysis?.requirements ?? []).map(req => [req.id, req.citations.length])) } }, previousAnalysis: { requirements: previousAnalysis?.requirements ?? [], issues: previousAnalysis?.issues ?? [] }, policySources: batchPolicySources(snapshot, sources) } : {}),
+      ...(batch ? { analysisBatch: { ...batch, capacity: { requirementsRemaining: Math.max(0, 150 - (previousAnalysis?.requirements.length ?? 0)), issuesRemaining: Math.max(0, MAX_PROJECT_ISSUES - (previousAnalysis?.issues.length ?? 0)), maxRequirements: 150, maxIssues: MAX_PROJECT_ISSUES, maxIssuesPerResponse: 100, maxCitationsPerRequirement: MAX_PROJECT_CITATIONS_PER_ITEM, maxCitationsPerResponseItem: MAX_RESPONSE_CITATIONS_PER_ITEM, maxProposalBytes: MAX_PROJECT_PROPOSAL_BYTES, maxResponseBytes: 1024 ** 2, citationCounts: Object.fromEntries((previousAnalysis?.requirements ?? []).map(req => [req.id, req.citations.length])) } }, previousAnalysis: { requirements: previousAnalysis?.requirements ?? [], issues: previousAnalysis?.issues ?? [] }, policySources: batchPolicySources(snapshot, sources) } : {}),
       ...(phase === 'decomposition' ? {
         previousWorkItems: snapshot.backlog.workItems,
         previousAcceptanceCriteria: snapshot.backlog.acceptanceCriteria.map(ac => Object.fromEntries(Object.keys(acSchema.properties).filter(key => Object.hasOwn(ac, key)).map(key => [key, ac[key]]))),

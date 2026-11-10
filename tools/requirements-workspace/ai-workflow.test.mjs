@@ -11,6 +11,67 @@ import { createRequirementsEngine, initialRequirementsMetadata, validateRequirem
 import { context, source, analysis, decomposition, envelope } from './test-fixtures/ai.mjs';
 import { planAnalysisBatches } from './ai-analysis-batches.mjs';
 import { buildAiRequest, validateAnalysisBatchProposal, validateAnalysisProposal } from './ai-contract.mjs';
+import { PROMPT_VERSION } from './ai-prompts.mjs';
+import { validateAiMetadata } from './ai-workflow.mjs';
+import { MAX_ANALYSIS_MODEL_CALLS } from './ai-cli.mjs';
+
+test('bounded subpasses retain a finite per-run call ceiling and reject its next value', () => {
+  const ref = kind => ({ id: randomUUID(), kind, sha256: 'a'.repeat(64), bytes: 1 });
+  const value = { version: 1, decisions: [], jobs: [{ id: randomUUID(), phase: 'analysis', status: 'failed', inputDigest: 'b'.repeat(64), startedAt: new Date().toISOString(), model: 'claude-opus-5-5', effort: 'high', inputRef: ref('baseline'), contextRef: ref('ai'), modelCalls: MAX_ANALYSIS_MODEL_CALLS }] };
+  assert.equal(MAX_ANALYSIS_MODEL_CALLS, 1024);
+  assert.doesNotThrow(() => validateAiMetadata(value));
+  value.jobs[0].modelCalls++;
+  assert.throws(() => validateAiMetadata(value), { code: 'AI_METADATA_INVALID' });
+});
+
+test('a valid legacy 23-batch checkpoint resumes a bounded three-partition block after its comparisons and keeps every legacy ID', async t => {
+  let mode = 'fail', app;
+  const calls = [];
+  app = await fixture(t, async ({ request }) => {
+    calls.push(request.phase);
+    if (mode === 'fail') throw Object.assign(Error('AI_TIMEOUT'), { code: 'AI_TIMEOUT' });
+    const sources = request.data.sources, all = sources.flatMap(src => src.clauses.map(clause => ({ sourceId: src.id, clauseId: clause.id, quote: clause.text }))), id = `${request.data.analysisBatch.idPrefix}REQ-1`;
+    let output;
+    if (request.phase === 'analysis') output = { requirements: Array.from({ length: Math.ceil(all.length / 30) }, (_, index) => ({ ...analysis({ data: { sources, decisions: [] } }, { question: false }).requirements[0], id: `${id}-${index}`, citations: all.slice(index * 30, (index + 1) * 30) })), issues: [], coverage: all.map((cite, index) => ({ sourceId: cite.sourceId, clauseId: cite.clauseId, disposition: 'included', rationale: '신규 접수 조건', requirementIds: [`${id}-${Math.floor(index / 30)}`] })) };
+    else if (request.phase === 'analysis-context') output = { inspectedPageIds: request.data.contextPages.map(page => page.pageId), matches: request.data.previousAnalysis.requirements.some(item => item.id === 'LEGACY-73') ? request.data.requirements.map(candidate => ({ candidateId: candidate.id, requirementId: 'LEGACY-73', relation: 'same', rationale: '같은 합성 접수 업무' })) : [], issues: [] };
+    else if (request.phase === 'analysis-merge') {
+      if (mode === 'pause-merge') throw Object.assign(Error('AI_TIMEOUT'), { code: 'AI_TIMEOUT' });
+      output = { revisions: request.data.mergeTargets.map(target => ({ ...target.existing, citations: all.slice(0, 1) })), issues: [] };
+    }
+    else throw Error('UNEXPECTED_PHASE');
+    return envelope(output);
+  });
+  const large = Array.from({ length: 220 }, (_, index) => `${index}번 접수 조건과 오프라인 예외를 명시한다. `).join('');
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 801 }, (_, index) => ({ ...structuredClone(source.clauses[0]), id: `C-${index}`, ...(index === 0 ? { text: large } : {}) })) });
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi();
+  const before = app.store.read(), job = before.metadata.ai.jobs.at(-1), batches = planAnalysisBatches(before);
+  assert.equal(batches.length, 26);
+  const processed = batches.slice(0, 23).flatMap(batch => batch.flatMap(src => src.clauses.map(clause => ({ sourceId: src.id, clause }))));
+  const requirements = Array.from({ length: 74 }, (_, index) => ({ ...analysis({ data: { sources: [source], decisions: [] } }, { question: false }).requirements[0], id: `LEGACY-${index}`, title: `합성 접수 범위 ${index}`, citations: [] }));
+  for (const [index, item] of processed.entries()) requirements[index % 74].citations.push({ sourceId: item.sourceId, clauseId: item.clause.id, quote: item.clause.id === 'C-0' ? large.slice(0, 700) : item.clause.text });
+  for (const [index, req] of requirements.entries()) for (let part = 0; part < 12; part++) req.citations.push({ sourceId: source.id, clauseId: 'C-0', quote: large.slice(index * 12 + part, index * 12 + part + 700) });
+  assert.ok(requirements.every(req => req.citations.length <= 30));
+  const output = { requirements, issues: [], coverage: processed.map((item, index) => ({ sourceId: item.sourceId, clauseId: item.clause.id, disposition: 'included', rationale: '기존 합성 원문 검토', requirementIds: [`LEGACY-${index % 74}`] })) };
+  const checkpoint = { version: 1, stage: 'analysis', inputDigest: job.inputDigest, promptVersion: PROMPT_VERSION, upstreamDigest: createHash('sha256').update('null').digest('hex'), output: { completed: 23, total: 26, corrected: false, output, batchAudit: [] }, sensitivityWarnings: [] };
+  const ref = app.store.writeArchive('ai', JSON.stringify(checkpoint)), original = app.store.readArchive(ref);
+  app.store.transact(app.store.read().revision, next => { const stored = next.metadata.ai.jobs.at(-1); stored.checkpoints = { analysis: ref }; stored.batches.completed = 23; stored.analysisBatchLimit = 3; });
+  calls.length = 0; mode = 'pause-merge';
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi(); let state = await app.engine.state();
+  assert.equal(state.ai.current.errorCode, 'AI_TIMEOUT');
+  assert.equal(state.ai.current.batches.completed, 23, 'pending candidates never advance the committed source prefix');
+  const pendingRef = state.ai.current.checkpoints.analysis, pending = JSON.parse(app.store.readArchive(pendingRef));
+  assert.equal(pending.output.pendingContext.logicalEnd, 26);
+  assert.ok(pending.output.pendingContext.contexts.length > 0);
+  assert.ok(calls.includes('analysis') && calls.includes('analysis-context'));
+  calls.length = 0; mode = 'bounded';
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.ok(['ready', 'needs-decisions'].includes(state.ai.current.status), state.ai.current.errorCode);
+  assert.equal(state.ai.current.batches.completed, 26);
+  assert.deepEqual([...new Set(calls)], ['analysis-merge'], 'a new job ID must reuse every valid candidate and comparison');
+  assert.deepEqual(state.ai.proposal.requirements.map(item => item.id), requirements.map(item => item.id));
+  assert.equal(state.ai.proposal.coverage.length, 801);
+  assert.equal(app.store.readArchive(ref), original);
+});
 
 async function fixture(t, aiRunner, artifactExtractor) {
   const workspace = mkdtempSync(join(tmpdir(), 'synthetic-ai-workflow-'));

@@ -220,7 +220,7 @@ test('new call metrics count actual calls and preserve the zero-call meaning of 
   }
 });
 
-async function sevenRequirementReviewApp(t, review, { sharedSource = false, sharedIssue = false } = {}) {
+async function sevenRequirementReviewApp(t, review, { sharedSource = false, sharedIssue = false, count = 7 } = {}) {
   const app = await setup(t, async ({ request }) => {
     if (request.phase === 'review-requirements') return envelope(await review(request), request.phase);
     if (request.phase !== 'analysis') return envelope(reply(request), request.phase);
@@ -228,7 +228,7 @@ async function sevenRequirementReviewApp(t, review, { sharedSource = false, shar
     if (sharedSource) for (const req of requirements.slice(1)) req.citations.push(requirements[0].citations[0]);
     return envelope({ requirements, issues: [{ id: 'POLICY', kind: 'decision', severity: 'blocking', question: '기관의 접수 처리 범위를 확인해 주세요.', options: [], requirementIds: sharedIssue ? requirements.map(req => req.id) : [], citations: [requirements[0].citations[0]] }], coverage: request.data.sources[0].clauses.map(clause => ({ sourceId: source.id, clauseId: clause.id, disposition: 'included', rationale: '등록한 원문 처리 조건' })) }, request.phase);
   });
-  await app.act('source.save', { ...source, clauses: Array.from({ length: 7 }, (_, index) => ({ ...source.clauses[0], id: `C-${index + 1}`, text: `${source.clauses[0].text} 문단 ${index + 1}의 처리 조건을 유지한다.` })) });
+  await app.act('source.save', { ...source, clauses: Array.from({ length: count }, (_, index) => ({ ...source.clauses[0], id: `C-${index + 1}`, text: `${source.clauses[0].text} 문단 ${index + 1}의 처리 조건을 유지한다.` })) });
   return app;
 }
 
@@ -304,14 +304,18 @@ test('a failed later quality review reuses earlier verified reviews and preserve
   const reference = state.ai.current.checkpoints.review;
   assert.ok(reference, 'the valid first review must be checkpointed before the later failure');
   const oldBytes = app.store.readArchive(reference), record = JSON.parse(oldBytes);
-  assert.equal(record.output.version, 2); assert.equal(record.output.replies.length, 1);
+  assert.equal(record.output.version, 3); assert.equal(record.output.replies.length, 1);
   const savedAi = structuredClone(app.store.read().metadata.ai);
-  for (const fault of ['unknown-field', 'missing-replies', 'invalid-reply']) {
+  for (const fault of ['unknown-field', 'missing-replies', 'invalid-reply', 'wrong-task']) {
     const corrupt = structuredClone(record);
     if (fault === 'unknown-field') corrupt.output.unexpected = true;
     if (fault === 'missing-replies') delete corrupt.output.replies;
     if (fault === 'invalid-reply') {
       const part = JSON.parse(app.store.readArchive(corrupt.output.replies[0])); part.output.revisions = 'invalid';
+      corrupt.output.replies[0] = app.store.writeArchive('ai', JSON.stringify(part));
+    }
+    if (fault === 'wrong-task') {
+      const part = JSON.parse(app.store.readArchive(corrupt.output.replies[0])); part.taskId = '0'.repeat(64);
       corrupt.output.replies[0] = app.store.writeArchive('ai', JSON.stringify(part));
     }
     const ref = app.store.writeArchive('ai', JSON.stringify(corrupt));
@@ -328,6 +332,32 @@ test('a failed later quality review reuses earlier verified reviews and preserve
   assert.equal((state.ai.proposal.requirements[0].description.match(/검토된 표현/g) ?? []).length, 1);
   assert.equal(app.store.readArchive(reference), oldBytes);
   assert.equal(state.backlog.businessRequirements.length, 0);
+});
+
+test('legacy v2 quality replies migrate to hashed task references before a second interrupted resume', async t => {
+  const calls = []; let stopAt = 'REQ-7';
+  const app = await sevenRequirementReviewApp(t, async request => {
+    const id = request.data.requirements[0].id; calls.push(id);
+    if (id === stopAt) throw Object.assign(Error('AI_TIMEOUT'), { code: 'AI_TIMEOUT' });
+    return { issues: [], revisions: [] };
+  }, { count: 13, sharedIssue: true });
+  await app.start(); await app.engine.waitForAi(); let state = await app.engine.state();
+  assert.equal(state.ai.current.errorCode, 'AI_TIMEOUT');
+  const record = JSON.parse(app.store.readArchive(state.ai.current.checkpoints.review)), first = JSON.parse(app.store.readArchive(record.output.replies[0]));
+  first.version = 1; delete first.taskId; record.output.version = 2;
+  record.output.replies[0] = app.store.writeArchive('ai', JSON.stringify(first));
+  const old = app.store.writeArchive('ai', JSON.stringify(record));
+  app.store.transact(app.store.read().revision, next => { next.metadata.ai.jobs.at(-1).checkpoints.review = old; });
+  calls.length = 0; stopAt = 'REQ-13';
+  await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.deepEqual(calls, ['REQ-7', 'REQ-13']); assert.equal(state.ai.current.errorCode, 'AI_TIMEOUT');
+  const migrated = JSON.parse(app.store.readArchive(state.ai.current.checkpoints.review));
+  assert.equal(migrated.output.version, 3); assert.equal(migrated.output.replies.length, 2);
+  for (const ref of migrated.output.replies) { const part = JSON.parse(app.store.readArchive(ref)); assert.equal(part.version, 2); assert.match(part.taskId, /^[a-f0-9]{64}$/); }
+  calls.length = 0; stopAt = null;
+  await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.deepEqual(calls, ['REQ-13']); assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  assert.equal(JSON.parse(app.store.readArchive(old)).output.version, 2);
 });
 
 test('plan review failure reuses the fully validated generated plan and earlier shared-epic reviews', async t => {
@@ -349,7 +379,7 @@ test('plan review failure reuses the fully validated generated plan and earlier 
   assert.equal(state.ai.current.status, 'failed'); assert.equal(state.ai.current.errorCode, 'AI_CLI_FAILED');
   const ref = state.ai.current.checkpoints.planning; assert.ok(ref);
   const oldBytes = app.store.readArchive(ref), record = JSON.parse(oldBytes);
-  assert.equal(record.output.version, 2); assert.equal(record.output.replies.length, 1);
+  assert.equal(record.output.version, 3); assert.equal(record.output.replies.length, 1);
   const savedAi = structuredClone(app.store.read().metadata.ai);
   for (const fault of ['missing-generation', 'null-generation', 'unknown-field', 'invalid-generation']) {
     const corrupt = structuredClone(record);

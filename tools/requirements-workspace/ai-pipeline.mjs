@@ -7,6 +7,9 @@ import { matchRequirementsToContext } from '../../scripts/export-deliverables-wo
 import { privateWorkspaceContracts } from './private-validation.mjs';
 const { generateWorkPackagePlan } = privateWorkspaceContracts;
 import { createHash } from 'node:crypto';
+import { prepareEvidenceRequest } from './ai-evidence.mjs';
+import { CONTEXT_WINDOW_BYTES } from './ai-analysis-batches.mjs';
+export { reconcileAnalysisBatch } from './ai-context-reconciliation.mjs';
 
 const fail = code => { throw Object.assign(new Error(code), { code }); };
 const groups = (values, count) => Array.from({ length: Math.ceil(values.length / count) }, (_, index) => values.slice(index * count, (index + 1) * count));
@@ -23,7 +26,7 @@ function independentReviewGroups(first, second, issues) {
   const touches = (issue, ids, clauses) => issue.requirementIds.some(id => ids.has(id)) || issue.citations.some(cite => clauses.has(JSON.stringify([cite.sourceId, cite.clauseId])));
   return !issues.some(issue => touches(issue, firstIds, left) && touches(issue, secondIds, right));
 }
-export function planningGroups(requirements, priorWork, priorAcceptance = []) {
+export function planningGroups(requirements, priorWork, priorAcceptance = [], maxItems = 4) {
   const parent = new Map(requirements.map(req => [req.id, req.id]));
   const root = id => { while (parent.get(id) !== id) id = parent.get(id); return id; };
   for (const item of [...priorWork.filter(item => item.workItemType !== 'epic'), ...priorAcceptance]) {
@@ -33,9 +36,64 @@ export function planningGroups(requirements, priorWork, priorAcceptance = []) {
   const connected = new Map();
   for (const req of requirements) { const key = root(req.id); if (!connected.has(key)) connected.set(key, []); connected.get(key).push(req); }
   const result = []; let batch = [];
-  for (const component of connected.values()) { if (batch.length && batch.length + component.length > 4) { result.push(batch); batch = []; } batch.push(...component); }
+  for (const component of connected.values()) { if (batch.length && batch.length + component.length > maxItems) { result.push(batch); batch = []; } batch.push(...component); }
   if (batch.length) result.push(batch);
   return result;
+}
+function fitsRequest(value, schema) {
+  try {
+    const prepared = prepareEvidenceRequest(value, schema);
+    return Buffer.byteLength(JSON.stringify(prepared.request)) + Buffer.byteLength(JSON.stringify(prepared.schema)) <= CONTEXT_WINDOW_BYTES;
+  } catch (error) {
+    if (!['AI_INPUT_TOO_LARGE', 'AI_DECOMPOSITION_INPUT_TOO_LARGE', 'AI_EVIDENCE_CAPACITY'].includes(error.code)) throw error;
+    return false;
+  }
+}
+function sourceEntries(sources) { return sources.flatMap(source => source.clauses.map(clause => ({ source, clause }))); }
+function groupedSources(entries) {
+  const sources = new Map();
+  for (const { source, clause } of entries) {
+    if (!sources.has(source.id)) sources.set(source.id, { ...source, clauses: [] });
+    sources.get(source.id).clauses.push(clause);
+  }
+  return [...sources.values()];
+}
+function proofWindow(entry) {
+  // Every linked original clause is still supplied in full across these
+  // windows. Avoid retransmitting its same historical quotes as a second copy.
+  return { ...entry, requirements: entry.requirements.map(req => ({ ...req, citations: [] })), proofWindow: true };
+}
+function splitReviewEntries(entries, make, schema, splitMembers) {
+  const result = [];
+  function visit(entry) {
+    if (fitsRequest(make(entry), schema)) { result.push(entry); return; }
+    const split = splitMembers(entry);
+    if (split.length > 1) { split.forEach(visit); return; }
+    if (!entry.proofWindow) { visit(proofWindow(entry)); return; }
+    const clauses = sourceEntries(entry.sources);
+    if (clauses.length < 2) fail('AI_INPUT_TOO_LARGE');
+    const middle = Math.ceil(clauses.length / 2);
+    for (const items of [clauses.slice(0, middle), clauses.slice(middle)]) visit({ ...entry, sources: groupedSources(items) });
+  }
+  entries.forEach(visit); return result;
+}
+function assertSuppliedProof(output, input) {
+  const proof = [], visit = value => {
+    if (Array.isArray(value)) { value.forEach(visit); return; }
+    if (!value || typeof value !== 'object') return;
+    for (const [key, item] of Object.entries(value)) if (key === 'citations') proof.push(...item); else visit(item);
+  };
+  visit(input.data);
+  const clauses = sourceEntries(input.data.sources ?? []);
+  const check = value => {
+    if (Array.isArray(value)) { value.forEach(check); return; }
+    if (!value || typeof value !== 'object') return;
+    for (const [key, item] of Object.entries(value)) {
+      if (key !== 'citations') { check(item); continue; }
+      for (const cite of item) if (!clauses.some(({ source, clause }) => source.id === cite.sourceId && clause.id === cite.clauseId && clause.text.includes(cite.quote)) && !proof.some(old => old.sourceId === cite.sourceId && old.clauseId === cite.clauseId && old.quote.includes(cite.quote))) throw Object.assign(Error('AI_OUTPUT_INVALID'), { code: 'AI_OUTPUT_INVALID', details: [{ kind: 'review-unseen-citation', path: '$' }] });
+    }
+  };
+  check(output);
 }
 function request(stage, data, snapshot, { evidenceReferences = false } = {}) {
   const value = { phase: stage, promptVersion: PROMPT_VERSION, instructions: buildStagePrompt(stage, { sourceTypes: [...snapshot.backlog.sources.map(source => source.sourceType), ...(snapshot.metadata.imports ?? []).flatMap(job => job.detectedTypes ?? []), ...(data.documents ?? []).flatMap(doc => doc.documentTypes ?? [])], formats: (snapshot.metadata.imports ?? []).map(job => job.format), hasExisting: snapshot.backlog.businessRequirements.length > 0, hasDecisions: Boolean(snapshot.metadata.ai?.decisions.length) }), data };
@@ -211,9 +269,9 @@ export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceR
   return { documents, businessModel: model };
 }
 
-export async function reviewRequirements(output, businessModel, snapshot, { run, cwd, signal, onStage = () => {}, concurrency = 1, resumeReplies = [], onReply = () => {}, onReuse = () => {}, evidenceReferences = false }) {
+export async function reviewRequirements(output, businessModel, snapshot, { run, cwd, signal, onStage = () => {}, concurrency = 1, resumeReplies = [], resumeTaskIds = null, onReset = () => {}, onReply = () => {}, onReuse = () => {}, evidenceReferences = false }) {
   let result = { ...structuredClone(output), issues: mergeIssues(output.issues, businessModel?.issues ?? []) };
-  const batches = groups(output.requirements, 6).map(requirements => ({ requirements, sources: evidence(snapshot, requirements) }));
+  let batches = groups(output.requirements, 6).map(requirements => ({ requirements, sources: evidence(snapshot, requirements) }));
   const cited = new Set(output.requirements.flatMap(req => req.citations.map(cite => `${cite.sourceId}/${cite.clauseId}`)));
   const omitted = snapshot.backlog.sources.flatMap(source => source.clauses.filter(clause => !cited.has(`${source.id}/${clause.id}`)).map(clause => ({ source, clause })));
   for (const entries of groups(omitted, 32)) {
@@ -221,14 +279,30 @@ export async function reviewRequirements(output, businessModel, snapshot, { run,
     for (const { source, clause } of entries) { if (!sources.has(source.id)) sources.set(source.id, { ...source, clauses: [] }); sources.get(source.id).clauses.push(clause); }
     batches.push({ requirements: [], sources: [...sources.values()] });
   }
-  if (![1, 2].includes(concurrency) || !Array.isArray(resumeReplies) || resumeReplies.length > batches.length) fail('AI_CHECKPOINT_INVALID');
+  const makeReview = (entry, index, total, base, checkedIssues) => {
+    const batch = entry.requirements.map(item => {
+      const current = base.requirements.find(req => req.id === item.id) ?? item;
+      return entry.proofWindow ? { ...current, citations: [] } : current;
+    }), ids = new Set(batch.map(req => req.id));
+    const declaredIssues = new Set(base.issues.map(issue => issue.id));
+    const validationIssues = checkedIssues.filter(issue => !declaredIssues.has(issue.id) && (!issue.requirementIds.length || issue.requirementIds.some(id => ids.has(id))));
+    return request('review-requirements', { ...reviewContext(snapshot, batch), reviewBatch: { index: index + 1, total, proofWindow: Boolean(entry.proofWindow) }, businessModel, requirements: batch, sources: entry.sources, coverage: output.coverage.filter(item => entry.sources.some(source => source.id === item.sourceId && source.clauses.some(clause => clause.id === item.clauseId))), existingIssues: base.issues, validationIssues, reviewContract: 'Return issues and revisions. Revisions are complete replacements for current requirement IDs only, never new requirements or scope changes. Use supplied decisions and repository evidence to check solutionDisposition; undecided blocks executable planning. For non-functional/data/constraint requirements, nfrCriteria needs a source-supported metric, threshold and verificationMethod; qualitative allow/deny criteria are valid and do not require invented numeric SLAs. validationIssues are recomputed application checks: repair their causes only when supported, never copy a resolved system question into issues. A batch with no requirements independently reviews uncited source clauses and their excluded/deferred coverage: report missing business requirements or unjustified exclusions as source-cited issues; do not silently accept the earlier coverage rationale. Fix wording/structure only when fully supported; policy ambiguity needs a blocking issue. Retain all verified citations. In proofWindow mode the complete requirement meaning is repeated and every original linked clause is visited across windows. The host preserves all historical quotes; cite the supplied original window only. Never remove a condition because another source window is absent. Do not return coverage or a self-awarded pass.' }, snapshot, { evidenceReferences });
+  };
+  const originalBatches = batches, checked = validateAnalysisProposal(result, snapshot).issues;
+  batches = splitReviewEntries(batches, entry => makeReview(entry, 0, 3000, result, checked), REQUIREMENT_REVIEW_SCHEMA, entry => {
+    if (entry.requirements.length < 2) return [entry];
+    return groups(entry.requirements, Math.ceil(entry.requirements.length / 2)).map(requirements => ({ requirements, sources: evidence(snapshot, requirements) }));
+  });
+  const taskIds = batches.map(entry => createHash('sha256').update(JSON.stringify(entry)).digest('hex'));
+  if (!Array.isArray(resumeReplies) || resumeTaskIds !== null && (!Array.isArray(resumeTaskIds) || resumeTaskIds.length !== resumeReplies.length || resumeTaskIds.some((id, index) => id !== taskIds[index]))) fail('AI_CHECKPOINT_INVALID');
+  if (resumeTaskIds === null && resumeReplies.length && JSON.stringify(originalBatches) !== JSON.stringify(batches)) { resumeReplies = []; onReset(); }
+  if (![1, 2].includes(concurrency) || resumeReplies.length > batches.length) fail('AI_CHECKPOINT_INVALID');
   const pending = new Map(), controller = new AbortController(), abort = () => controller.abort();
   signal?.addEventListener('abort', abort, { once: true }); if (signal?.aborted) abort();
   const launch = (index, base, checkedIssues) => {
-    const entry = batches[index], batch = entry.requirements, ids = new Set(batch.map(req => req.id));
-    const declaredIssues = new Set(base.issues.map(issue => issue.id));
-    const validationIssues = checkedIssues.filter(issue => !declaredIssues.has(issue.id) && (!issue.requirementIds.length || issue.requirementIds.some(id => ids.has(id))));
-    return run({ request: request('review-requirements', { ...reviewContext(snapshot, batch), reviewBatch: { index: index + 1, total: batches.length }, businessModel, requirements: batch, sources: entry.sources, coverage: output.coverage.filter(item => entry.sources.some(source => source.id === item.sourceId && source.clauses.some(clause => clause.id === item.clauseId))), existingIssues: base.issues, validationIssues, reviewContract: 'Return issues and revisions. Revisions are complete replacements for current requirement IDs only, never new requirements or scope changes. Use supplied decisions and repository evidence to check solutionDisposition; undecided blocks executable planning. For non-functional/data/constraint requirements, nfrCriteria needs a source-supported metric, threshold and verificationMethod; qualitative allow/deny criteria are valid and do not require invented numeric SLAs. validationIssues are recomputed application checks: repair their causes only when supported, never copy a resolved system question into issues. A batch with no requirements independently reviews uncited source clauses and their excluded/deferred coverage: report missing business requirements or unjustified exclusions as source-cited issues; do not silently accept the earlier coverage rationale. Fix wording/structure only when fully supported; policy ambiguity needs a blocking issue. Retain all verified citations. Do not return coverage or a self-awarded pass.' }, snapshot, { evidenceReferences }), schema: REQUIREMENT_REVIEW_SCHEMA, cwd, signal: controller.signal }).then(response => ({ response }), error => ({ error }));
+    const value = makeReview(batches[index], index, batches.length, base, checkedIssues);
+    if (!fitsRequest(value, REQUIREMENT_REVIEW_SCHEMA)) fail('AI_INPUT_TOO_LARGE');
+    return run({ request: value, schema: REQUIREMENT_REVIEW_SCHEMA, cwd, signal: controller.signal }).then(response => ({ response, request: value }), error => ({ error }));
   };
   try {
   for (const [index, entry] of batches.entries()) {
@@ -244,17 +318,18 @@ export async function reviewRequirements(output, businessModel, snapshot, { run,
     if (received.error) throw received.error;
     const response = received.response, ids = new Set(entry.requirements.map(req => req.id));
     validatePrivateAiValue(response.output, REQUIREMENT_REVIEW_SCHEMA);
+    assertSuppliedProof(response.output, received.request ?? makeReview(entry, index, batches.length, result, validateAnalysisProposal(result, snapshot).issues));
     if (response.output.revisions?.some(req => !ids.has(req.id))) fail('AI_OUTPUT_INVALID');
     result = validateRequirementReview(response.output, result, snapshot);
     validateAnalysisProposal(result, snapshot);
-    if (!cached) await onReply(index, response.output, result); else await onReuse(index, result);
+    if (!cached) await onReply(index, response.output, result, taskIds[index]); else await onReuse(index, result, taskIds[index]);
     onStage('review-requirements', index + 1, batches.length);
   }
   } finally { abort(); await Promise.allSettled(pending.values()); signal?.removeEventListener('abort', abort); }
   return result;
 }
 
-export async function planAndReview(output, businessModel, snapshot, decisions, { run, cwd, signal, onStage = () => {}, onValidated = () => {}, idPrefix = 'PLAN-', evidenceReferences = false, resumePlanning = null, resumeReplies = [], onGenerated = () => {}, onReviewReply = () => {}, onReuse = () => {} }) {
+export async function planAndReview(output, businessModel, snapshot, decisions, { run, cwd, signal, onStage = () => {}, onValidated = () => {}, idPrefix = 'PLAN-', evidenceReferences = false, resumePlanning = null, resumeReplies = [], resumeTaskIds = null, onReset = () => {}, onGenerated = () => {}, onReviewReply = () => {}, onReuse = () => {} }) {
   const analysis = validateAnalysisProposal(output, snapshot), draft = { ...snapshot, backlog: projectAnalysisBacklog(snapshot, analysis) };
   const included = draft.backlog.businessRequirements.filter(req => req.scopeDisposition === 'included');
   if (!included.length) fail('AI_NO_EXECUTABLE_REQUIREMENTS');
@@ -262,7 +337,8 @@ export async function planAndReview(output, businessModel, snapshot, decisions, 
   let plan = { workItems: structuredClone(snapshot.backlog.workItems), acceptanceCriteria: structuredClone(snapshot.backlog.acceptanceCriteria), traceLinks: structuredClone(snapshot.backlog.traceLinks), issues: [], retirements: [] };
   const original = Object.fromEntries(['workItems', 'acceptanceCriteria', 'traceLinks'].map(field => [field, new Map(plan[field].map(item => [item.id, structuredClone(item)]))]));
   if (!resumePlanning) {
-  for (const [index, batch] of batches.entries()) {
+  for (let index = 0; index < batches.length; index++) {
+    const batch = batches[index];
     onStage('decomposition', index, batches.length);
     const ids = new Set(batch.map(req => req.id)), executable = new Set(included.map(req => req.id));
     // Full shared epics and explicit retirement candidates remain visible.
@@ -279,6 +355,11 @@ export async function planAndReview(output, businessModel, snapshot, decisions, 
     req.data.planningBatch = { index: index + 1, total: batches.length, idPrefix: `${idPrefix}${index + 1}-`, requirementIds: [...ids] };
     req.data.previousPlanIndex = plan.workItems.map(item => ({ id: item.id, title: item.title, workItemType: item.workItemType, parentEpicId: item.parentEpicId, requirementIds: item.requirementIds, dependsOn: item.dependsOn ?? [], priority: item.priority ?? null, batch: item.batch ?? null }));
     req.instructions += '\nSequential planning contract: Return only new/changed work/AC/trace entries and explicit retirements. Omitted entries remain preserved. Current executable children and ACs may refer only to planningBatch.requirementIds. requirementScopeIndex lists the whole project: included requirements in other batches remain in scope. Leave their child work/AC/trace unchanged and never retire them. Existing children connected across requirements are deliberately kept in the same batch. Existing epics may be shared and their requirement sets are unioned by the application. When total>1, new IDs MUST start with planningBatch.idPrefix; original supplied plan IDs may be updated only for their existing requirement meaning. Do not retire a generated entry from another batch. New dependencies can reference known previousPlanIndex IDs. Every excluded prior original entry needs an explicit retirement.';
+    if (!fitsRequest(req, DECOMPOSITION_SCHEMA)) {
+      const smaller = planningGroups(batch, snapshot.backlog.workItems, snapshot.backlog.acceptanceCriteria, 1);
+      if (smaller.length < 2) fail('AI_DECOMPOSITION_INPUT_TOO_LARGE');
+      batches.splice(index, 1, ...smaller); index--; continue;
+    }
     const response = await run({ request: req, schema: DECOMPOSITION_SCHEMA, cwd, signal });
     const delta = response.output;
     // Check the delta vocabulary before merging; the full structural contract
@@ -329,18 +410,33 @@ export async function planAndReview(output, businessModel, snapshot, decisions, 
   }
   onValidated('decomposition', plan);
   if (!resumePlanning) await onGenerated(plan);
-  const reviewBatches = groups(plan.workItems.filter(item => item.workItemType !== 'epic'), 8);
+  const entryFor = children => {
+    const ids = new Set(children.flatMap(item => item.requirementIds)), requirements = output.requirements.filter(req => ids.has(req.id));
+    return { children, requirements, sources: evidence(snapshot, requirements) };
+  };
+  const makeReview = (entry, index, total) => {
+    const children = entry.children, requirements = entry.requirements, workIds = new Set(children.map(item => item.id)), reqIds = new Set(requirements.map(req => req.id));
+    return request('review-plan', { ...reviewContext(snapshot, requirements, plan.traceLinks.filter(link => reqIds.has(link.requirementId))), reviewBatch: { index: index + 1, total, proofWindow: Boolean(entry.proofWindow) }, businessModel, requirements, sources: entry.sources, workItems: plan.workItems.filter(item => workIds.has(item.id) || children.some(child => child.parentEpicId === item.id)), acceptanceCriteria: plan.acceptanceCriteria.filter(ac => workIds.has(ac.workItemId)), traceLinks: plan.traceLinks.filter(link => reqIds.has(link.requirementId)), existingIssues: plan.issues, reviewContract: 'Return issues, workItemUpdates, acceptanceUpdates and traceUpdates. These are updates of known current-batch IDs only, never new entries or implicit removals. Preserve the complete original requirement set of shared epics and ACs; never reduce it to the current review subset. Preserve work types, parent relationships and required original evidence. Only repair concrete supported defects; missing policy stays a blocking question. Do not manufacture completed tests or human approval. In proofWindow mode complete requirement meaning and complete shared work/AC scope remain supplied; every linked original clause is visited across windows. Cite this supplied window only; never remove conditions because other windows are absent.' }, snapshot, { evidenceReferences });
+  };
+  const originalReviews = groups(plan.workItems.filter(item => item.workItemType !== 'epic'), 8).map(entryFor);
+  const reviewBatches = splitReviewEntries(originalReviews, entry => makeReview(entry, 0, 3000), PLAN_REVIEW_SCHEMA, entry => entry.children.length < 2 ? [entry] : groups(entry.children, Math.ceil(entry.children.length / 2)).map(entryFor));
+  const taskIds = reviewBatches.map(entry => createHash('sha256').update(JSON.stringify(entry)).digest('hex'));
+  if (resumeTaskIds !== null && (!Array.isArray(resumeTaskIds) || resumeTaskIds.length !== resumeReplies.length || resumeTaskIds.some((id, index) => id !== taskIds[index]))) fail('AI_CHECKPOINT_INVALID');
+  if (resumeTaskIds === null && resumeReplies.length && JSON.stringify(originalReviews) !== JSON.stringify(reviewBatches)) { resumeReplies = []; onReset(); }
   if (!Array.isArray(resumeReplies) || resumeReplies.length > reviewBatches.length) fail('AI_CHECKPOINT_INVALID');
-  for (const [index, children] of reviewBatches.entries()) {
+  for (const [index, entry] of reviewBatches.entries()) {
+    const children = entry.children;
     onStage('review-plan', index, reviewBatches.length);
-    const workIds = new Set(children.map(item => item.id)), reqIds = new Set(children.flatMap(item => item.requirementIds));
-    const requirements = output.requirements.filter(req => reqIds.has(req.id));
+    const workIds = new Set(children.map(item => item.id));
     const cached = index < resumeReplies.length;
-    const response = cached ? { output: resumeReplies[index] } : await run({ request: request('review-plan', { ...reviewContext(snapshot, requirements, plan.traceLinks.filter(link => reqIds.has(link.requirementId))), reviewBatch: { index: index + 1, total: reviewBatches.length }, businessModel, requirements, sources: evidence(snapshot, requirements), workItems: plan.workItems.filter(item => workIds.has(item.id) || children.some(child => child.parentEpicId === item.id)), acceptanceCriteria: plan.acceptanceCriteria.filter(ac => workIds.has(ac.workItemId)), traceLinks: plan.traceLinks.filter(link => reqIds.has(link.requirementId)), existingIssues: plan.issues, reviewContract: 'Return issues, workItemUpdates, acceptanceUpdates and traceUpdates. These are updates of known current-batch IDs only, never new entries or implicit removals. Preserve the complete original requirement set of shared epics and ACs; never reduce it to the current review subset. Preserve work types, parent relationships and required original evidence. Only repair concrete supported defects; missing policy stays a blocking question. Do not manufacture completed tests or human approval.' }, snapshot, { evidenceReferences }), schema: PLAN_REVIEW_SCHEMA, cwd, signal });
+    const value = makeReview(entry, index, reviewBatches.length);
+    if (!fitsRequest(value, PLAN_REVIEW_SCHEMA)) fail('AI_INPUT_TOO_LARGE');
+    const response = cached ? { output: resumeReplies[index] } : await run({ request: value, schema: PLAN_REVIEW_SCHEMA, cwd, signal });
     const allowed = { workItems: new Set(plan.workItems.filter(item => workIds.has(item.id) || children.some(child => child.parentEpicId === item.id)).map(item => item.id)), acceptanceCriteria: new Set(plan.acceptanceCriteria.filter(ac => workIds.has(ac.workItemId)).map(ac => ac.id)), traceLinks: new Set(plan.traceLinks.filter(link => workIds.has(link.workItemId)).map(link => link.id)) };
+    validatePrivateAiValue(response.output, PLAN_REVIEW_SCHEMA); assertSuppliedProof(response.output, value);
     plan = validatePlanReview(response.output, plan, draft, allowed); validateDecompositionProposal(plan, draft);
     onValidated('review-plan', plan);
-    if (!cached) await onReviewReply(index, response.output); else await onReuse(index);
+    if (!cached) await onReviewReply(index, response.output, taskIds[index]); else await onReuse(index, taskIds[index]);
     onStage('review-plan', index + 1, reviewBatches.length);
   }
   const validatedPlan = validateDecompositionProposal(plan, draft), taskBacklog = { ...draft.backlog, workItems: plan.workItems, acceptanceCriteria: plan.acceptanceCriteria, traceLinks: plan.traceLinks };

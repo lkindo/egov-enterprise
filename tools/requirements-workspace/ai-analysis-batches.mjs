@@ -1,4 +1,58 @@
+import { createHash } from 'node:crypto';
 const fail = code => { throw Object.assign(new Error(code), { code }); };
+export const CONTEXT_WINDOW_BYTES = 720 * 1024;
+
+// Store the full canonical ledger locally. A model sees measured, lossless
+// windows of it, never an ever-growing copy of the entire ledger.
+export function packContextWindows(items, prepare, { limitBytes = CONTEXT_WINDOW_BYTES, maxItems = 64 } = {}) {
+  if (!Array.isArray(items) || typeof prepare !== 'function' || !Number.isSafeInteger(limitBytes) || limitBytes < 1 || limitBytes > 768 * 1024 || !Number.isSafeInteger(maxItems) || maxItems < 1) fail('AI_CONTEXT_CONFIGURATION_INVALID');
+  const result = [];
+  for (let start = 0; start < items.length;) {
+    const measure = end => {
+      const current = structuredClone(items.slice(start, end)); let prepared;
+      try { prepared = prepare(current, { start, end }); }
+      catch (error) {
+        if (!['AI_INPUT_TOO_LARGE', 'AI_DECOMPOSITION_INPUT_TOO_LARGE', 'AI_EVIDENCE_CAPACITY'].includes(error.code)) throw error;
+        return null;
+      }
+      if (!prepared?.request || !prepared?.schema) fail('AI_CONTEXT_CONFIGURATION_INVALID');
+      const bytes = Buffer.byteLength(JSON.stringify(prepared.request)) + Buffer.byteLength(JSON.stringify(prepared.schema));
+      return bytes <= limitBytes ? { start, end, items: current, prepared, bytes } : null;
+    };
+    const maximum = Math.min(items.length, start + maxItems);
+    let selected = measure(maximum);
+    if (!selected) {
+      let low = start + 1, high = maximum - 1;
+      while (low <= high) {
+        const end = Math.floor((low + high) / 2), current = measure(end);
+        if (current) { selected = current; low = end + 1; } else high = end - 1;
+      }
+    }
+    if (!selected) fail('AI_INPUT_TOO_LARGE');
+    result.push(selected); start = selected.end;
+  }
+  return result;
+}
+
+// One requirement may have more proof than a model window. Repeat its complete
+// semantic header and visit every exact quote page; do not choose representative
+// proof or truncate conditions to make an input fit.
+export function paginateContextRecords(records, prepare, options = {}) {
+  if (!Array.isArray(records)) fail('AI_CONTEXT_CONFIGURATION_INVALID');
+  const result = [];
+  for (const entry of records) {
+    if (!entry?.record || !Array.isArray(entry.record.citations)) fail('AI_CONTEXT_CONFIGURATION_INVALID');
+    const total = entry.record.citations.length, { citations: _proof, ...header } = entry.record, { record: _record, ...metadata } = entry;
+    const page = (citations, start) => ({ ...structuredClone(metadata), record: { ...structuredClone(header), citations }, proofOffset: start, proofCount: citations.length, proofTotal: total, pageId: `CTX-${'0'.repeat(64)}` });
+    const windows = total ? packContextWindows(entry.record.citations, (citations, range) => prepare([page(citations, range.start)]), { maxItems: 128, ...options }) : packContextWindows([null], () => prepare([page([], 0)]), { ...options, maxItems: 1 });
+    for (const window of windows) {
+      const value = page(total ? window.items : [], total ? window.start : 0);
+      value.pageId = `CTX-${createHash('sha256').update(JSON.stringify({ ...value, pageId: undefined })).digest('hex')}`;
+      result.push(value);
+    }
+  }
+  return result;
+}
 export const MAX_ANALYSIS_BATCHES = 128;
 // Logical partitions stay stable so existing checkpoints remain reusable.
 // A CLI call can cover several adjacent partitions without omitting any clause.
