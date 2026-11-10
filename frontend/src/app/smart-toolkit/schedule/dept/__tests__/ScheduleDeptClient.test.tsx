@@ -509,4 +509,20 @@ describe('ScheduleDeptClient 수정 본문 계약', () => {
     expect(body.schdlImprtCd).toBeUndefined();
     expect(body).toMatchObject({ schdlKndCd: '02', reptSeCd: '1' });
   });
+
+  // [2026-11-10] 이 화면의 등록 폼은 종류·반복 코드를 묻지 않아 서버에 null 로 남는다. 종전에는 그 null 을 폼에 그대로 실어
+  //   검증이 '입력값이 올바르지 않습니다' 로 막았다 — 이 화면에서 만든 일정을 이 화면에서 고칠 수 없었다(격리 E2E 가 찾았다).
+  it('종류·반복 코드가 비어 있는 일정도 수정할 수 있고, 비어 있으면 비워 둔다', async () => {
+    harness.getDeptScheduleList.mockResolvedValue({
+      list: [{ ...SERVER_SHAPED_ROW, schdlKndCd: null, reptSeCd: null, schdlImprtCd: null }],
+    });
+    const [schdlSn, body] = await editAndSave();
+
+    expect(schdlSn).toBe(42);
+    expect(body.schdlKndCd).toBeUndefined();
+    expect(body.reptSeCd).toBeUndefined();
+    expect(body.schdlImprtCd).toBeUndefined();
+    expect(body).toMatchObject({ schdlNm: '부서 정기 회의(수정)', schdlSeCd: '1' });
+    expect(() => parseGeneratedOperationRequest(updateScheduleOperation, body)).not.toThrow();
+  });
 });

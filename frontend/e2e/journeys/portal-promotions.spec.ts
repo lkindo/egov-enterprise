@@ -4,6 +4,7 @@ import path from 'path';
 import { expect,test } from '../fixtures/browser-test';
 import { PromotionPage } from '../pages/PromotionPage';
 import { screenDate } from '../helpers/screen-date';
+import { trackApiRequests } from '../fixtures/hydration';
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1').replace(/\/$/, '');
 /**
  * 이 spec 이 UI 로 만든 홍보물(팝업·배너)을 제목으로 찾아 지운다.
@@ -57,6 +58,25 @@ async function deletePromotionByTitle(request: APIRequestContext, kind: 'popups'
     catch (error) {
         console.warn(`>>> [cleanup] ${kind} 정리 중 오류 — 잔존분이 누적됩니다: ${String(error)}`);
     }
+}
+/** 관리 화면의 한 쪽 행 수(BannerAdminClient DEFAULT_PAGE_SIZE). 관리 목록 API 도 같은 크기로 넘겨 행이 있는 화면 쪽을 찾는다. */
+const ADMIN_PROMOTION_PAGE_SIZE = 20;
+/**
+ * 관리 목록 API 를 끝까지 넘겨 이름이 정확히 같은 홍보물을 찾고, 그 행이 보이는 관리 화면의 쪽을 함께 돌려준다.
+ * 목록은 서버 정렬이 없으므로(@PageableDefault 만 있다) 새 행이 첫 쪽에 있다고 가정하지 않는다. 없으면 null 이다.
+ */
+async function findPromotion(request: APIRequestContext, kind: 'popups' | 'banners', title: string): Promise<{ id: number; screenPage: number } | null> {
+    const titleField = kind === 'popups' ? 'popupTtlNm' : 'bnrNm';
+    const idField = kind === 'popups' ? 'popupSn' : 'bnrSn';
+    for (let page = 1, totalPage = 1; page <= totalPage; page++) {
+        const listed = await request.get(`/api/v1/admin/system/${kind}`, { params: { page, size: ADMIN_PROMOTION_PAGE_SIZE } });
+        expect(listed.status()).toBe(200);
+        const body = (await listed.json()).data;
+        const row = ((body?.list ?? []) as Array<Record<string, unknown>>).find(item => item[titleField] === title);
+        if (row) return { id: Number(row[idField]), screenPage: page };
+        totalPage = Number(body?.totalPage ?? 1);
+    }
+    return null;
 }
 test.describe('Public Engagement & Experience', () => {
     test('팝업 크기는 입력 원문을 보존하고 직접 정정한 정수 문자열만 저장한다', async ({ adminPage, adminRequest }, testInfo) => {
@@ -127,10 +147,15 @@ test.describe('Public Engagement & Experience', () => {
         }
     });
 
-    test('Portal Promotion Flow (Admin Popup/Banner -> User Visibility)', async ({ adminPage, userPage, actorPage, request }) => {
+    test('Portal Promotion Flow (Admin Popup/Banner -> User Visibility)', async ({ adminPage, userPage, actorPage, request, adminRequest }) => {
         const popupTitle = `E2E Popup ${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const bannerTitle = `E2E Banner ${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        const editedBannerTitle = `${bannerTitle} 수정`;
         const promo = new PromotionPage(adminPage);
+        let phonePage: Page | undefined;
+        // 화면을 새로 고치거나 떠나기 전에 그 화면이 보낸 /api 요청이 끝나기를 기다린다(끊긴 요청은 오류 감시가 결함으로 본다).
+        let phoneRequests: ReturnType<typeof trackApiRequests> | undefined;
+        let homeRequests: ReturnType<typeof trackApiRequests> | undefined;
         try {
             /*
               [2026-10-20] 공지 팝업은 이제 모달 대화상자다 — 떠 있는 동안 업무 홈의 다른 조작을 막는다. 같은 실행의 다른 시험(다른 worker)이
@@ -150,6 +175,12 @@ test.describe('Public Engagement & Experience', () => {
                 // 모달 대화상자이고, 제목이 이름이며, 초점이 제목으로 들어온다.
                 await expect(popupDialog).toHaveAttribute('aria-modal', 'true');
                 await expect(popupDialog.getByRole('heading', { name: popupTitle })).toBeFocused();
+                // 관리 화면에서 올린 그림이 첨부로 저장되어, 사용자 팝업이 그 첨부를 blob 으로 받아 실제로 그린다.
+                const popupImage = popupDialog.getByRole('img', { name: popupTitle, exact: true });
+                await expect(popupImage).toHaveAttribute('src', /^blob:/);
+                await expect.poll(() => popupImage.evaluate(image => (image as HTMLImageElement).naturalWidth), {
+                    message: '첨부 팝업 이미지가 실제로 디코딩되어야 한다',
+                }).toBeGreaterThan(0);
                 // 넓은 화면에서는 저장한 좌표·크기(100, 100, 400×400)를 그대로 쓴다 — 화면 안에 들어오는 값이다.
                 // 휴대폰과 같이 열림 애니메이션이 자리 잡은 뒤 측정한다(허용치는 그대로 1px).
                 await expect(async () => {
@@ -163,6 +194,8 @@ test.describe('Public Engagement & Experience', () => {
 
                 // 휴대폰 폭에서는 저장 좌표·크기 대신 화면 아래쪽 시트로 보인다(넘치지 않는다).
                 const phone = await actorPage({ storageState: 'playwright/.auth/user.json', viewport: { width: 390, height: 844 } });
+                phonePage = phone.page;
+                phoneRequests = trackApiRequests(phone.page);
                 const phoneDialog = await openPopupDialog(phone.page, popupTitle);
                 // 대화상자는 열릴 때 짧게 움직인다 — 자리 잡은 뒤의 위치를 잰다(허용치는 그대로 1px).
                 await expect(async () => {
@@ -177,10 +210,53 @@ test.describe('Public Engagement & Experience', () => {
                 await phoneDialog.getByRole('button', { name: '닫기', exact: true }).click();
                 await expect(phoneDialog).toBeHidden();
             });
-            // 확인했으면 바로 지운다 — 게시된 모달 팝업이 다른 시험의 업무 홈을 막지 않게 한다.
-            await deletePromotionByTitle(request, 'popups', popupTitle);
+            await test.step('User: 닫기는 이번 방문만, 오늘 하루 보지 않기는 그 기기에서 새로 고쳐도 다시 뜨지 않는다', async () => {
+                if (!phonePage) throw new Error('휴대폰 사용자 화면이 준비되지 않았습니다.');
+                const phone = phonePage;
+                await phoneRequests?.settled(phone.locator('body'));
+                const reopenRequests = trackApiRequests(phone);
+                // '닫기' 는 저장하지 않는다 — 다시 들어오면 같은 공지가 또 뜬다.
+                const reopened = await openPopupDialog(phone, popupTitle);
+                const popupSn = await reopened.getByTestId('notice-popup-panel').getAttribute('data-popup-sn');
+                expect(popupSn, '공지 패널이 팝업 번호를 싣는다').toMatch(/^\d+$/);
+                await reopened.getByRole('button', { name: '오늘 하루 보지 않기', exact: true }).click();
+                await expect(reopened).toBeHidden();
+                // 숨김은 그 기기의 브라우저 저장소에 오늘 자정(한국 시각)까지 남는다(PopupManager.hideUntilMidnight).
+                expect(await phone.evaluate(sn => window.localStorage.getItem(`popup_hide_${sn}`), popupSn)).toMatch(/^\d+$/);
+                await reopenRequests.settled(phone.locator('body'));
+                const reloadRequests = trackApiRequests(phone);
+                try {
+                    const activeResponse = phone.waitForResponse(response => response.request().method() === 'GET'
+                        && new URL(response.url()).pathname === '/api/v1/popups/active');
+                    await phone.reload();
+                    const active = await activeResponse;
+                    expect(active.status()).toBe(200);
+                    const served = ((await active.json()).data ?? []) as Array<{ popupTtlNm?: string }>;
+                    // 서버는 그 공지를 여전히 게시 중으로 준다 — 보이지 않는 것은 그 기기에 저장된 숨김 때문이다.
+                    expect(served.map(popup => popup.popupTtlNm)).toContain(popupTitle);
+                    // 받은 목록을 화면이 처리하고 요청이 잠잠해진 뒤에 본다 — 그때도 그 공지의 대화상자는 없다.
+                    await reloadRequests.settled(phone.locator('body'));
+                    await expect(phone.getByRole('dialog', { name: popupTitle })).toHaveCount(0);
+                } finally {
+                    // 팝업을 지우기 전에 그 팝업을 받은 화면을 떠난다.
+                    await phone.goto('about:blank');
+                }
+            });
+            // 확인했으면 바로 지운다 — 게시된 모달 팝업이 다른 시험의 업무 홈을 막지 않게 한다. 관리 화면의 삭제 단추로 지운다.
+            await test.step('Admin: 팝업을 관리 목록에서 지운다', async () => {
+                const listed = await findPromotion(adminRequest, 'popups', popupTitle);
+                expect(listed, '만든 팝업이 관리 목록에 있다').not.toBeNull();
+                await adminPage.goto(`/admin/system/banner?tab=popup&page=${listed!.screenPage}`);
+                await adminPage.getByRole('button', { name: `${popupTitle} 팝업 삭제`, exact: true }).click();
+                await adminPage.getByRole('dialog', { name: '팝업 삭제 확인', exact: true }).getByRole('button', { name: '삭제', exact: true }).click();
+                await expect(adminPage.getByRole('button', { name: `${popupTitle} 팝업 수정`, exact: true })).toHaveCount(0);
+                await expect.poll(() => findPromotion(adminRequest, 'popups', popupTitle), {
+                    message: '화면에서 지운 팝업이 서버 목록에서도 빠져야 한다',
+                }).toBeNull();
+            });
             await test.step('User: Verify Banner Visibility', async () => {
                 console.log(`>>> Verifying banner on Dashboard`);
+                homeRequests = trackApiRequests(userPage);
                 await userPage.goto('/');
                 const bannerRegion = userPage.getByRole('region', { name: '홍보 배너', exact: true });
                 // 이미지 다운로드를 기다리는 동안 자동 회전으로 검증 대상이 바뀌지 않게 한다.
@@ -229,11 +305,47 @@ test.describe('Public Engagement & Experience', () => {
                 await expect(bannerLink).toHaveAttribute('target', '_blank');
                 await expect(bannerLink).toHaveAttribute('rel', 'noopener noreferrer');
             });
+            await test.step('Admin: 배너를 관리 목록에서 확인하고 고친 뒤 지운다', async () => {
+                // 사용자 업무 홈을 먼저 떠난다 — 회전하는 배너가 지운 첨부를 다시 받으면 404 가 브라우저 오류로 잡힌다.
+                await homeRequests?.settled(userPage.locator('body'));
+                await userPage.goto('about:blank');
+                const listed = await findPromotion(adminRequest, 'banners', bannerTitle);
+                expect(listed, '만든 배너가 관리 목록에 있다').not.toBeNull();
+                await adminPage.goto(`/admin/system/banner?tab=banner&page=${listed!.screenPage}`);
+                const editButton = (name: string) => adminPage.getByRole('button', { name: `${name} 배너 수정`, exact: true });
+                // 목록 행은 서버가 저장한 링크 주소를 함께 보인다.
+                await expect(adminPage.getByRole('row').filter({ has: editButton(bannerTitle) })).toContainText('https://egovframe.go.kr');
+                await editButton(bannerTitle).click();
+                const dialog = adminPage.getByRole('dialog', { name: '배너 명세 수정', exact: true });
+                const nameInput = dialog.getByRole('textbox', { name: /배너 명칭/ });
+                await expect(nameInput).toHaveValue(bannerTitle);
+                await nameInput.fill(editedBannerTitle);
+                await dialog.getByRole('button', { name: '자산 수정', exact: true }).click();
+                await expect(dialog).toBeHidden();
+                await expect(editButton(editedBannerTitle)).toBeVisible();
+                const stored = await adminRequest.get(`/api/v1/admin/system/banners/${listed!.id}`);
+                expect(stored.status()).toBe(200);
+                expect((await stored.json()).data).toMatchObject({ bnrNm: editedBannerTitle, linkUrl: 'https://egovframe.go.kr' });
+
+                await adminPage.getByRole('button', { name: `${editedBannerTitle} 배너 삭제`, exact: true }).click();
+                await adminPage.getByRole('dialog', { name: '배너 삭제 확인', exact: true }).getByRole('button', { name: '삭제', exact: true }).click();
+                await expect(editButton(editedBannerTitle)).toHaveCount(0);
+                await expect.poll(() => findPromotion(adminRequest, 'banners', editedBannerTitle), {
+                    message: '화면에서 지운 배너가 서버 목록에서도 빠져야 한다',
+                }).toBeNull();
+            });
         }
         finally {
-            // 누적이 다음 실행의 캐러셀 순회를 다시 어렵게 만들기 전에 지운다(위 주석의 7건 사고). 팝업은 위에서 이미 지웠다면 아무것도 하지 않는다.
-            await deletePromotionByTitle(request, 'popups', popupTitle);
-            await deletePromotionByTitle(request, 'banners', bannerTitle);
+            // 누적이 다음 실행의 캐러셀 순회를 다시 어렵게 만들기 전에 지운다(위 주석의 7건 사고). 위에서 이미 지웠다면 아무것도 하지 않는다.
+            // 열린 화면을 먼저 떠난 뒤 지운다 — 남은 화면의 재조회가 지운 홍보물·첨부를 받지 않게 한다. 수정한 배너 이름도 원래 이름을 담는다.
+            try {
+                await userPage.goto('about:blank');
+                await adminPage.goto('about:blank');
+                if (phonePage) await phonePage.goto('about:blank');
+            } finally {
+                await deletePromotionByTitle(request, 'popups', popupTitle);
+                await deletePromotionByTitle(request, 'banners', bannerTitle);
+            }
         }
     });
 });

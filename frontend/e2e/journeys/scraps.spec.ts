@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '../fixtures/browser-test';
+import { trackApiRequests, waitForHydration } from '../fixtures/hydration';
 import { ScrapPage } from '../pages/ScrapPage';
 test.describe('Collaboration & Knowledge Extension', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
@@ -105,6 +106,98 @@ test.describe('Collaboration & Knowledge Extension', () => {
                     if (pstSn !== undefined && Number.isSafeInteger(pstSn) && pstSn > 0) {
                         expect((await adminRequest.delete(`/api/v1/boards/${bbsId}/posts/${pstSn}`)).status()).toBe(200);
                     }
+                }
+            }
+        }
+    });
+
+    // 협업 허브의 스크랩 탭(/admin/collaboration/scraps) — 목록 위 모달로 등록·수정하고, 새로고침 단추로 서버 목록을 다시 읽는다.
+    test('협업 허브 스크랩 탭에서 스크랩을 등록하고 새로 고친 목록에서 고친다', async ({ page, adminRequest }) => {
+        const marker = randomUUID().slice(0, 8);
+        const name = `E2E hub scrap ${marker}`;
+        const laterName = `E2E hub scrap later ${marker}`;
+        const editedName = `E2E hub scrap edited ${marker}`;
+        // 등록 폼은 http(s) 절대 주소만 받는다(scrap-form-validation 의 등록 스키마). 사이트 내부 경로는 게시글에서 스크랩할 때와 수정에서만 받는다.
+        const scrapUrl = `https://www.egovframe.go.kr/e2e-hub-scrap/${marker}`;
+        const description = `허브에서 남긴 스크랩 ${marker}`;
+        const editedDescription = `허브에서 고친 설명 ${marker}`;
+        const created: number[] = [];
+        const openButton = (scrapNm: string) => page.getByRole('button', { name: `${scrapNm} 스크랩 열기`, exact: true });
+        // 떠나기 전에 화면이 보낸 /api 요청이 끝나기를 기다린다(끊긴 요청은 오류 감시가 결함으로 본다).
+        const hubRequests = trackApiRequests(page);
+        try {
+            await page.goto('/admin/collaboration/scraps');
+            await expect(page.getByRole('tab', { name: '스크랩', exact: true })).toHaveAttribute('aria-selected', 'true');
+            await waitForHydration(page.getByRole('button', { name: '스크랩 등록', exact: true }));
+            let scrapSn = 0;
+            await test.step('Admin: 스크랩 탭에서 스크랩을 등록하면 목록에 보인다', async () => {
+                await page.getByRole('button', { name: '스크랩 등록', exact: true }).click();
+                const dialog = page.getByRole('dialog', { name: '스크랩 등록', exact: true });
+                await dialog.getByRole('textbox', { name: /스크랩명/ }).fill(name);
+                await dialog.getByRole('textbox', { name: /참조 URL/ }).fill(scrapUrl);
+                await dialog.getByRole('textbox', { name: '설명', exact: true }).fill(description);
+                const [saved] = await Promise.all([
+                    page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/scraps'
+                        && response.request().method() === 'POST'),
+                    dialog.getByTestId('scrap-submit-button').click(),
+                ]);
+                expect(saved.status()).toBe(201);
+                scrapSn = (await saved.json()).data as number;
+                expect(Number.isSafeInteger(scrapSn) && scrapSn > 0).toBe(true);
+                created.push(scrapSn);
+                await expect(dialog).toBeHidden();
+                // 등록 뒤 목록을 서버에서 다시 읽어 그 스크랩을 보인다.
+                await expect(openButton(name)).toBeVisible();
+                const persisted = await adminRequest.get(`/api/v1/scraps/${scrapSn}`);
+                expect(persisted.status()).toBe(200);
+                expect((await persisted.json()).data).toMatchObject({ scrapSn, scrapNm: name, scrapUrl, scrapExpln: description });
+            });
+            await test.step('Admin: 새로고침하면 그사이 서버에 생긴 스크랩이 보인다', async () => {
+                // 서버는 사용 중인 같은 주소의 스크랩을 409 로 거부한다(ScrapService) — 다른 주소로 만든다.
+                const later = await adminRequest.post('/api/v1/scraps', {
+                    data: { scrapNm: laterName, scrapUrl: `${scrapUrl}-later`, scrapExpln: '', useYn: 'Y' },
+                });
+                expect(later.status()).toBe(201);
+                created.push((await later.json()).data as number);
+                await expect(openButton(laterName)).toHaveCount(0);
+                const [refetched] = await Promise.all([
+                    page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/scraps'
+                        && response.request().method() === 'GET'),
+                    page.getByRole('button', { name: '현재 목록 새로고침', exact: true }).click(),
+                ]);
+                expect(refetched.status()).toBe(200);
+                await expect(openButton(laterName)).toBeVisible();
+            });
+            await test.step('Admin: 목록에서 스크랩을 열어 이름과 설명을 고친다', async () => {
+                await openButton(name).click();
+                const dialog = page.getByRole('dialog', { name: '스크랩 수정', exact: true });
+                await expect(dialog.getByRole('textbox', { name: /참조 URL/ })).toHaveValue(scrapUrl);
+                await expect(dialog.getByRole('textbox', { name: '설명', exact: true })).toHaveValue(description);
+                await dialog.getByRole('textbox', { name: /스크랩명/ }).fill(editedName);
+                await dialog.getByRole('textbox', { name: '설명', exact: true }).fill(editedDescription);
+                const [updated] = await Promise.all([
+                    page.waitForResponse(response => new URL(response.url()).pathname === `/api/v1/scraps/${scrapSn}`
+                        && response.request().method() === 'PUT'),
+                    dialog.getByRole('button', { name: '수정 완료', exact: true }).click(),
+                ]);
+                expect(updated.status()).toBe(200);
+                await expect(dialog).toBeHidden();
+                await expect(openButton(editedName)).toBeVisible();
+                await expect(openButton(name)).toHaveCount(0);
+                const persisted = await adminRequest.get(`/api/v1/scraps/${scrapSn}`);
+                expect(persisted.status()).toBe(200);
+                expect((await persisted.json()).data).toMatchObject({
+                    scrapSn, scrapNm: editedName, scrapUrl, scrapExpln: editedDescription,
+                });
+                await hubRequests.settled(page.locator('body'));
+            });
+        } finally {
+            // 열린 화면의 재조회가 지운 스크랩을 요청하지 않게 먼저 떠난다. 한 정리가 실패해도 나머지는 수행한다.
+            try {
+                await page.goto('about:blank');
+            } finally {
+                for (const id of created) {
+                    expect((await adminRequest.delete(`/api/v1/scraps/${id}`)).status()).toBe(200);
                 }
             }
         }

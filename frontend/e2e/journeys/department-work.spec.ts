@@ -1,9 +1,13 @@
+import { randomUUID } from 'node:crypto';
 import { expect,test } from '../fixtures/browser-test';
 import { DeptJobPage } from '../pages/DeptJobPage';
 import { getAdminBearerToken } from '../utils/admin-token';
 const JOB_API = '/api/v1/dept-jobs';
 const BOX_API = `${JOB_API}/boxes`;
 const DEPT_API = '/api/v1/admin/system/departments';
+const USER_API = '/api/v1/admin/system/users';
+/** 화면 동작이 부른 응답을 기다리는 상한 — 요청이 나가지 않으면 시험 제한 시간까지 매달리지 않고 실패해 정리가 돈다. */
+const RESPONSE_WAIT = { timeout: 20_000 };
 /** 이 스펙이 만든 자원만 지우기 위한 접두사. 다른 tier·cleanup 정책과 겹치지 않는 고유값을 쓴다. */
 const PREFIX = 'E2E25_';
 test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
@@ -220,6 +224,124 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
                 if (!deleted) {
                     const cleanup = await request.delete(`${JOB_API}/${deptTaskSn}`, { headers: auth });
                     expect(cleanup.status(), '이 시험이 만든 업무를 정리한다').toBe(200);
+                }
+            }
+        }
+    });
+    test('부서 업무 목록: 화면 등록·조회 범위 전환·상세 이동·행 삭제', async ({ page, request }) => {
+        const suffix = `${Date.now()}`;
+        const marker = randomUUID().replaceAll('-', '').slice(0, 10);
+        // 다른 사람에게 배정한 업무는 '내 업무'에 없고 '부서 전체'에만 있다 — 그 담당자를 이 시험이 만든 합성 사용자로 둔다.
+        const assigneeId = `E2E25U${marker}`;
+        const assigneeName = `E2E25 담당 ${marker}`;
+        const assignedName = `${PREFIX}Assigned_${suffix}`;
+        const createdName = `${PREFIX}ListNew_${suffix}`;
+        const deptJobPage = new DeptJobPage(page);
+        let assigneeCreated = false;
+        let assignedSn = 0;
+        let createdSn = 0;
+        let createdDeleted = false;
+        try {
+            const userCreate = await request.post(USER_API, {
+                headers: auth,
+                data: { userId: assigneeId, userNm: assigneeName, pswd: `Aa1!${randomUUID()}`, role: 'USER' },
+            });
+            expect(userCreate.status(), '담당자로 지정할 합성 사용자 생성이 성공해야 한다').toBe(201);
+            assigneeCreated = true;
+            const assignee = await request.get(`${USER_API}/${assigneeId}`, { headers: auth });
+            expect(assignee.status()).toBe(200);
+            const assigneeEsntlId = (await assignee.json()).data.esntlId as string;
+            expect(assigneeEsntlId, '담당자 축은 esntlId 다').toBeTruthy();
+            const assigned = await request.post(JOB_API, {
+                headers: auth,
+                data: { deptTaskNm: assignedName, prrtyRnk: '2', picId: assigneeEsntlId },
+            });
+            expect(assigned.status(), '다른 사람에게 배정한 업무 생성이 성공해야 한다').toBe(201);
+            assignedSn = (await assigned.json()).data as number;
+
+            // 목록 화면의 '업무 등록' 대화상자로 담당자 미지정(=등록자 본인) 업무를 만든다. 목록에 머문다.
+            await deptJobPage.gotoJobList();
+            await page.getByRole('button', { name: '업무 등록', exact: true }).click();
+            const createDialog = page.getByRole('dialog', { name: '부서 업무 등록', exact: true });
+            await createDialog.locator('input[name="deptTaskNm"]').fill(createdName);
+            const [createdResponse] = await Promise.all([
+                page.waitForResponse((response) => new URL(response.url()).pathname === JOB_API
+                    && response.request().method() === 'POST', RESPONSE_WAIT),
+                createDialog.getByRole('button', { name: '업무 등록', exact: true }).click(),
+            ]);
+            expect(createdResponse.status(), '목록의 등록 대화상자가 실제 업무를 만들어야 한다').toBe(201);
+            createdSn = (await createdResponse.json()).data as number;
+            expect(createdSn).toBeGreaterThan(0);
+            await expect(createDialog).toBeHidden();
+            await deptJobPage.search(createdName);
+            await expect(deptJobPage.row(createdName), '등록한 업무가 내 업무 목록에 나타나야 한다').toBeVisible({ timeout: 30000 });
+            const createdDetail = await request.get(`${JOB_API}/${createdSn}`, { headers: auth });
+            expect(createdDetail.status()).toBe(200);
+            expect((await createdDetail.json()).data).toMatchObject({ deptTaskNm: createdName, prrtyRnk: '2' });
+
+            // 조회 범위 — 다른 사람에게 배정한 업무는 '내 업무'에서 빠지고 '부서 전체'에서 담당자 이름과 함께 보인다.
+            await deptJobPage.search(assignedName);
+            await expect(deptJobPage.emptyMessage, '다른 사람에게 배정한 업무는 내 업무에 없어야 한다').toBeVisible({ timeout: 20000 });
+            const scope = page.getByRole('group', { name: '조회 범위', exact: true });
+            const [deptScope] = await Promise.all([
+                page.waitForResponse((response) => {
+                    const url = new URL(response.url());
+                    return url.pathname === JOB_API && response.request().method() === 'GET'
+                        && url.searchParams.get('scope') === 'dept';
+                }, RESPONSE_WAIT),
+                scope.getByRole('button', { name: '부서 전체', exact: true }).click(),
+            ]);
+            expect(deptScope.status(), '부서 전체 조회가 성공해야 한다').toBe(200);
+            await expect(scope.getByRole('button', { name: '부서 전체', exact: true })).toHaveAttribute('aria-pressed', 'true');
+            await expect(deptJobPage.row(assignedName), '부서 전체에는 다른 사람의 업무가 보여야 한다').toBeVisible({ timeout: 20000 });
+            await expect(deptJobPage.row(assignedName)).toContainText(assigneeName);
+            await scope.getByRole('button', { name: '내 업무', exact: true }).click();
+            await expect(deptJobPage.emptyMessage, '내 업무로 되돌리면 다시 빠져야 한다').toBeVisible({ timeout: 20000 });
+
+            // 상세 이동 — 목록 행의 상세 단추가 그 업무의 상세 화면에 착지한다.
+            await deptJobPage.search(createdName);
+            const createdRow = deptJobPage.row(createdName);
+            await expect(createdRow).toBeVisible({ timeout: 20000 });
+            await createdRow.getByRole('button', { name: `${createdName} 상세 보기`, exact: true }).click();
+            await expect(page, '행의 상세 단추는 그 업무의 상세로 이동해야 한다').toHaveURL(new RegExp(`/smart-toolkit/dept-job/${createdSn}$`), { timeout: 30000 });
+            await expect(page.getByText(createdName).first()).toBeVisible({ timeout: 30000 });
+            await expect(page.getByText(String(createdSn)).first(), '상세에 식별자가 표시되어야 한다').toBeVisible();
+
+            // 행 삭제 — 목록을 떠나지 않고 확인 후 지운다.
+            // 목록으로 돌아오면 이 탭이 기억한 조회 조건(검색어·조회 범위)이 마운트 뒤에 복원된다. 복원과 겹쳐 검색어를 입력하면
+            // 입력이 복원값 뒤에 이어 붙어 두 번 겹친 검색어로 조회된다(2026-11-10 격리 E2E). 복원이 끝난 검색어를 확인하고
+            // 그 조건의 목록을 그대로 쓴다.
+            await deptJobPage.gotoJobList();
+            await expect(deptJobPage.searchInput, '목록으로 돌아오면 이 탭의 검색어가 복원되어야 한다').toHaveValue(createdName, { timeout: 20000 });
+            await expect(createdRow).toBeVisible({ timeout: 20000 });
+            await createdRow.getByTestId('job-delete').click();
+            const confirmation = page.getByRole('dialog', { name: '업무 삭제', exact: true });
+            await expect(confirmation).toContainText(createdName);
+            const [deletedResponse] = await Promise.all([
+                page.waitForResponse((response) => new URL(response.url()).pathname === `${JOB_API}/${createdSn}`
+                    && response.request().method() === 'DELETE', RESPONSE_WAIT),
+                confirmation.getByRole('button', { name: '삭제', exact: true }).click(),
+            ]);
+            expect(deletedResponse.status(), '목록 행의 삭제 확인이 실제 삭제로 이어져야 한다').toBe(200);
+            createdDeleted = true;
+            await expect(createdRow).toHaveCount(0);
+            await expect(deptJobPage.emptyMessage).toBeVisible({ timeout: 20000 });
+            const gone = await request.get(`${JOB_API}/${createdSn}`, { headers: auth });
+            expect(gone.status(), 'UI 삭제가 실제 삭제로 이어져야 한다').toBe(404);
+        }
+        finally {
+            // 화면을 먼저 떠난 뒤 이 시험이 만든 업무·사용자만 정리한다(업무를 먼저 지워 담당자 참조를 없앤다).
+            try {
+                await page.goto('about:blank');
+            }
+            finally {
+                for (const deptTaskSn of [createdDeleted ? 0 : createdSn, assignedSn].filter(sn => sn > 0)) {
+                    const cleanup = await request.delete(`${JOB_API}/${deptTaskSn}`, { headers: auth });
+                    expect(cleanup.status(), '이 시험이 만든 업무를 정리한다').toBe(200);
+                }
+                if (assigneeCreated) {
+                    const cleanupUser = await request.delete(`${USER_API}/${assigneeId}`, { headers: auth });
+                    expect(cleanupUser.status(), '이 시험이 만든 합성 사용자를 정리한다').toBe(200);
                 }
             }
         }
