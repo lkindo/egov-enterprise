@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ENV_LOCK, ENV_SWITCH, ENV_TEST_ACTIVE, OWNER_LABELS, cmdLine, dockerOutcome, entryRoute, exitCodeFor, orderedWaiters, parseLockEnv,
-  shouldAttempt, startDecision } from './heavy-run-queue.mjs';
+  runTreeAlive, shouldAttempt, startDecision } from './heavy-run-queue.mjs';
 import { lockPipeName, parseWaiterPipe, repositoryHash, waiterPipeName, waitingSupervisorPids } from './heavy-run-pipes.mjs';
 import { heavyProcessKinds, waitingExclusions } from './verification-record.mjs';
 
@@ -85,12 +85,35 @@ test('docker answers: running ids wait, a missing CLI or a stopped engine runs n
   }
   assert.deepEqual(dockerOutcome({ error: Object.assign(new Error('timeout'), { killed: true, signal: 'SIGTERM' }), stderr: '' }), { unknown: true });
   assert.deepEqual(dockerOutcome({ error: Object.assign(new Error('x'), { code: 1 }), stderr: 'permission denied while trying to connect' }), { unknown: true });
+  // 2026-11-10 Codex 43차: 엔진이 도는데 연결만 거부된 모양을 '엔진 꺼짐'으로 읽으면 실행 중인 컨테이너를 놓친다.
+  for (const stderr of ['error during connect: Get "http://%2F%2F.%2Fpipe%2Fdocker_engine/v1.47/containers/json": open //./pipe/docker_engine: Access is denied.',
+    'error during connect: Get "http://%2F%2F.%2Fpipe%2Fdocker_engine/_ping": context deadline exceeded (Client.Timeout exceeded while awaiting headers) timed out',
+    'error during connect: This error may indicate that the docker daemon is not running.', 'Cannot connect to the Docker daemon at tcp://10.0.0.1:2375. Is the docker daemon running?']) {
+    assert.deepEqual(dockerOutcome({ error: Object.assign(new Error('x'), { code: 1 }), stderr }), { unknown: true }, stderr);
+  }
+  assert.deepEqual(dockerOutcome({ error: Object.assign(new Error('x'), { code: 1 }),
+    stderr: 'error during connect: open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.' }), { none: true, reason: 'engine-down' });
   // 소유 라벨은 단독 실행 대상이 컨테이너에 이미 붙이는 표식이다 — 생성 코드(벤더 증거 입력)를 바꾸지 않고 남은 컨테이너를 찾는다.
   assert.deepEqual([...OWNER_LABELS], ['egov.task', 'egov.project-composer', 'egov.reusable-verification', 'egov.composer.vendor']);
   for (const [file, label] of [['run-isolated-e2e.mjs', "'egov.task=isolated-e2e'"], ['project-composer-postgres.mjs', "'egov.project-composer'"],
     ['verify-reusable-base.mjs', "'egov.reusable-verification'"], ['project-composer-vendor-engine.mjs', "'egov.composer.vendor'"]]) {
     assert.ok(fs.readFileSync(path.join(HERE, file), 'utf8').includes(label), `${file} still labels its containers with ${label}`);
   }
+});
+
+test('run tree: a process the child started is alive until it ends; older PIDs and daemons are not the run; no start times is unknown', () => {
+  const at = 1_000_000;
+  const child = 100;
+  const grandchild = { pid: 101, ppid: child, name: 'java.exe', command: 'java org.gradle.wrapper.GradleWrapperMain test', started: at + 500 };
+  const great = { pid: 105, ppid: 101, name: 'cmd.exe', command: 'cmd /c x', started: at + 900 };
+  const reused = { pid: 102, ppid: child, name: 'svchost.exe', command: 'svchost', started: at - 60_000 };
+  const daemon = { pid: 103, ppid: child, name: 'java.exe', command: 'java -cp x org.gradle.launcher.daemon.bootstrap.GradleDaemon 8.14', started: at + 700 };
+  const worker = { pid: 104, ppid: 103, name: 'java.exe', command: 'java GradleWorkerMain', started: at + 800 };
+  const other = { pid: 200, ppid: 1, name: 'node.exe', command: 'node x', started: at + 100 };
+  assert.deepEqual(runTreeAlive([grandchild, great, reused, daemon, worker, other], child, at).alive.map((entry) => entry.pid), [101, 105]);
+  assert.deepEqual(runTreeAlive([reused, daemon, worker, other], child, at), { gone: true });
+  assert.deepEqual(runTreeAlive([{ ...grandchild, started: undefined }, other], child, at), { unknown: true });
+  assert.deepEqual(runTreeAlive([], child, at), { unknown: true });
 });
 
 test('cmd.exe lines quote what cmd splits and refuse what it would expand', () => {
@@ -140,7 +163,25 @@ test('repository hashes ignore case, separators and a trailing slash', () => {
 // ---------------------------------------------------------------------------------------------------------------------
 // 실제 프로세스(Windows) — 시험용 임시 저장소마다 잠금이 따로라 이 checkout 의 잠금과 섞이지 않는다.
 
-const FAST = JSON.stringify({ pollMs: 100, jitterMs: 50, recheckMs: 300, reportMs: 600_000, parentPollMs: 100, staleFirstMs: 5000, rpcClientMs: 3000 });
+const FAST = JSON.stringify({ pollMs: 100, jitterMs: 50, recheckMs: 300, reportMs: 600_000, parentPollMs: 100, staleFirstMs: 5000, rpcClientMs: 3000,
+  treeRecheckMs: 300 });
+
+/**
+ * 비Windows 에는 대기열이 없다 — Windows 시험들이 거기서 단언 없이 끝나지 않도록, 같은 진입이 감독 없이 그대로 돌고(토큰 없음)
+ * 종료 코드를 지키며 classify 가 direct 인지를 대신 본다(Codex 43 지적 9).
+ */
+function assertDirectOffWindows() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'heavy-run-queue-off-'));
+  try {
+    const env = { ...process.env, [ENV_TEST_ACTIVE]: '1' };
+    delete env[ENV_LOCK];
+    execFileSync('git', ['init', '-q', dir], { env, stdio: 'ignore' });
+    const classified = spawnSync(process.execPath, [QUEUE, 'classify'], { cwd: dir, env, encoding: 'utf8' });
+    assert.equal(classified.stdout.trim(), 'direct');
+    const ran = spawnSync(process.execPath, [QUEUE, 'run', '--kind', 'probe', '--', process.execPath, '-e', `process.exit(process.env.${ENV_LOCK} ? 9 : 4)`], { cwd: dir, env });
+    assert.equal(ran.status, 4);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+}
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function fixture() {
@@ -158,7 +199,13 @@ function fixture() {
   const state = path.join(commonDir, 'egov-heavy-run');
   const work = path.join(dir, 'work.mjs');
   fs.writeFileSync(work, `import fs from 'node:fs';
-const [log, id, ms, code] = process.argv.slice(2);
+import { spawn } from 'node:child_process';
+const [log, id, ms, code, mode] = process.argv.slice(2);
+// orphan: 부모가 죽어도 남는 손자를 띄운다(Gradle 실행기 JVM 이 cmd.exe 보다 오래 사는 경우의 대역).
+if (mode === 'orphan') {
+  const grandchild = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 120000)'], { detached: true, stdio: 'ignore' });
+  fs.writeFileSync(log + '.' + id + '.pids', process.pid + ' ' + grandchild.pid);
+}
 fs.appendFileSync(log, \`start \${id} \${Date.now()}\\n\`);
 await new Promise((resolve) => setTimeout(resolve, Number(ms)));
 fs.appendFileSync(log, \`end \${id} \${Date.now()}\\n\`);
@@ -215,7 +262,7 @@ test('runs off Windows (and outside the test switch) go straight through without
 });
 
 test('Windows: concurrent runs are serialized, keep their exit codes and leave no marker', async () => {
-  if (!WINDOWS) { assert.equal(entryRoute({ platform: process.platform, env: {}, hash: HASH }).route, 'direct'); return; }
+  if (!WINDOWS) return assertDirectOffWindows();
   const fx = fixture();
   try {
     const runs = [1, 2, 3].map((id) => startRun(fx, [fx.work, fx.log, String(id), '1500', String(id + 10)]));
@@ -234,7 +281,7 @@ test('Windows: concurrent runs are serialized, keep their exit codes and leave n
 });
 
 test('Windows: a nested entry is inside; a same-repository token the holder does not confirm fails without queueing', async () => {
-  if (!WINDOWS) return;
+  if (!WINDOWS) return assertDirectOffWindows();
   const fx = fixture();
   try {
     const nested = await startRun(fx, [QUEUE, 'classify']).exited;
@@ -249,7 +296,7 @@ test('Windows: a nested entry is inside; a same-repository token the holder does
 });
 
 test('Windows: after a holder is killed the next run never starts on its own; confirm-idle by the holder releases it', async () => {
-  if (!WINDOWS) return;
+  if (!WINDOWS) return assertDirectOffWindows();
   const fx = fixture();
   try {
     const first = startRun(fx, [fx.work, fx.log, 'a', '60000', '0']);
@@ -276,7 +323,7 @@ test('Windows: after a holder is killed the next run never starts on its own; co
 });
 
 test('Windows: a visible heavy run or running container keeps the holder waiting, and confirm-idle cannot override it', async () => {
-  if (!WINDOWS) return;
+  if (!WINDOWS) return assertDirectOffWindows();
   const fx = fixture();
   try {
     fs.writeFileSync(fx.processesFile, JSON.stringify([{ pid: 999_001, ppid: 1, name: 'node.exe', command: 'node C:\\x\\node_modules\\vitest\\vitest.mjs run' }]));
@@ -312,7 +359,7 @@ test('Windows: a visible heavy run or running container keeps the holder waiting
 });
 
 test('Windows: confirm-idle re-checks — a run that became visible while the holder waited on an unknown state is not confirmable', async () => {
-  if (!WINDOWS) return;
+  if (!WINDOWS) return assertDirectOffWindows();
   const fx = fixture();
   // 다시 보는 주기를 길게 둬 보유자가 'unknown-wait' 에 머무는 동안 확인 요청이 스스로 다시 판정하는지 본다.
   fx.env.EGOV_HEAVY_RUN_QUEUE_TIMING = JSON.stringify({ ...JSON.parse(FAST), recheckMs: 600_000 });
@@ -332,7 +379,7 @@ test('Windows: confirm-idle re-checks — a run that became visible while the ho
 });
 
 test('Windows: a waiting supervisor ends with its caller', async () => {
-  if (!WINDOWS) return;
+  if (!WINDOWS) return assertDirectOffWindows();
   const fx = fixture();
   try {
     const holder = startRun(fx, [fx.work, fx.log, 'h', '60000', '0']);
@@ -347,6 +394,65 @@ test('Windows: a waiting supervisor ends with its caller', async () => {
   } finally { fx.cleanup(); }
 });
 
+test('Windows: a direct child killed from outside while the supervisor lives is not a verified end when its tree survives', async () => {
+  if (!WINDOWS) return assertDirectOffWindows();
+  const fx = fixture();
+  let grandchild = null;
+  try {
+    const run = startRun(fx, [fx.work, fx.log, 'o', '60000', '0', 'orphan']);
+    await until(() => fs.existsSync(`${fx.log}.o.pids`) && fs.existsSync(fx.log) && fs.readFileSync(fx.log, 'utf8').includes('start o'), 'the child with an orphan');
+    const [childPid, orphanPid] = fs.readFileSync(`${fx.log}.o.pids`, 'utf8').split(' ').map(Number);
+    grandchild = orphanPid;
+    // 감독이 아니라 직접 자식만 끝낸다 — 감독은 살아 있고, 자식이 띄운 손자는 남는다.
+    execFileSync('taskkill', ['/F', '/PID', String(childPid)], { stdio: 'ignore' });
+    const result = await run.exited;
+    assert.equal(result.status, 1, result.output);
+    assert.match(result.output, /그 아래 프로세스 1개가 남아 있다/);
+    assert.ok(fs.existsSync(path.join(fx.state, 'active.json')), 'a surviving tree keeps the marker');
+    assert.match(fs.readFileSync(path.join(fx.state, 'log.jsonl'), 'utf8'), /"event":"tree-unverified"/);
+    // 트리를 볼 수 없어도 끝나지 않은 것으로 본다.
+    execFileSync('taskkill', ['/F', '/PID', String(orphanPid)], { stdio: 'ignore' });
+    grandchild = null;
+    fs.rmSync(path.join(fx.state, 'active.json'));
+    const clean = startRun(fx, [fx.work, fx.log, 'b', '10', '0']);
+    await clean.exited;
+    assert.equal(fs.existsSync(path.join(fx.state, 'active.json')), false, 'a run whose tree is seen gone removes the marker');
+    const treeFile = path.join(fx.dir, 'tree.txt');
+    fs.writeFileSync(treeFile, 'fail');
+    const unseen = spawn(process.execPath, [QUEUE, 'run', '--kind', 'probe', '--', process.execPath, fx.work, fx.log, 'n', '10', '0'],
+      { cwd: fx.dir, env: { ...fx.env, EGOV_HEAVY_RUN_QUEUE_TEST_TREE: treeFile }, stdio: 'ignore' });
+    fx.children.add(unseen);
+    await new Promise((resolve) => unseen.once('exit', resolve));
+    assert.ok(fs.existsSync(path.join(fx.state, 'active.json')), 'an unseen tree keeps the marker');
+  } finally {
+    if (grandchild) { try { execFileSync('taskkill', ['/F', '/PID', String(grandchild)], { stdio: 'ignore' }); } catch { /* 이미 끝났다 */ } }
+    fx.cleanup();
+  }
+});
+
+test('a repository that cannot be read fails instead of running without the queue', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'heavy-run-queue-git-'));
+  try {
+    const env = { ...process.env, [ENV_TEST_ACTIVE]: '1' };
+    delete env[ENV_LOCK];
+    execFileSync('git', ['init', '-q', dir], { env, stdio: 'ignore' });
+    // 잘못된 설정은 git 을 128 로 실패시키지만 '저장소 밖'은 아니다.
+    const broken = { ...env, GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'core.bare', GIT_CONFIG_VALUE_0: 'not-a-boolean' };
+    const classified = spawnSync(process.execPath, [QUEUE, 'classify'], { cwd: dir, env: broken, encoding: 'utf8' });
+    if (WINDOWS) {
+      assert.equal(classified.status, 1, classified.stdout);
+      assert.match(classified.stderr, /저장소를 확인하지 못했다/);
+    } else {
+      assert.equal(classified.stdout.trim(), 'direct', 'off Windows the queue never reads the repository');
+    }
+    const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'heavy-run-queue-nogit-'));
+    try {
+      const plain = spawnSync(process.execPath, [QUEUE, 'classify'], { cwd: outside, env: { ...env, GIT_CEILING_DIRECTORIES: path.dirname(outside) }, encoding: 'utf8' });
+      assert.equal(plain.stdout.trim(), 'direct', 'outside a repository the queue is not used');
+    } finally { fs.rmSync(outside, { recursive: true, force: true }); }
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 function gitShell() {
   const located = spawnSync('git', ['--exec-path'], { encoding: 'utf8' }).stdout.trim();
   const gitRoot = path.resolve(located, '..', '..', '..');
@@ -356,7 +462,7 @@ function gitShell() {
 const posix = (value) => value.replaceAll('\\', '/');
 
 test('Windows: a running supervisor whose shell caller vanished ends the child tree and keeps the marker (unverified end)', async () => {
-  if (!WINDOWS) return;
+  if (!WINDOWS) return assertDirectOffWindows();
   const fx = fixture();
   try {
     const node = posix(process.execPath);
@@ -373,7 +479,7 @@ test('Windows: a running supervisor whose shell caller vanished ends the child t
 });
 
 test('Windows: the pre-push header re-runs the hook under a supervisor with the same stdin, argv and exit code', async () => {
-  if (!WINDOWS) return;
+  if (!WINDOWS) return assertDirectOffWindows();
   const fx = fixture();
   try {
     const hook = fs.readFileSync(path.join(ROOT, '.githooks', 'pre-push'), 'utf8').replace(/\r\n/g, '\n');

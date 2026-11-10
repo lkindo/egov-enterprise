@@ -210,7 +210,11 @@ const CASES = {
       'TZ=Asia/Seoul ./gradlew test', 'bash -lc "./gradlew :api-server:test"',
       // 벤더 증거 입력이라 아직 스스로 줄을 서지 않는 진입점(다음 재기록 묶음에서 연결).
       'npm run test:e2e:isolated', 'npm run test:e2e:isolated -- --representative', 'npm run base:generate-db -- --profile core',
-      'node scripts/run-isolated-e2e.mjs --representative', 'node scripts\\generate-reusable-base-db.mjs --profile core'],
+      'node scripts/run-isolated-e2e.mjs --representative', 'node scripts\\generate-reusable-base-db.mjs --profile core',
+      // 2026-11-10 Codex 43차 미탐: PowerShell 호출 연산자, 넓은·좁은 필터 혼합, 루트 pnpm 스크립트.
+      '& node scripts/run-isolated-e2e.mjs --representative', '& "C:\\Program Files\\nodejs\\node.exe" scripts/run-isolated-e2e.mjs',
+      '&"C:\\Program Files\\nodejs\\node.exe" --test', '& .\\gradlew.bat :api-server:test', './gradlew :api-server:test --tests "*" --tests "*FooTest"',
+      'pnpm run base:generate-db -- --profile core', 'pnpm run test:operational-contracts', 'pnpm test'],
     pass: ['./gradlew :api-server:test --tests "*FooTest"', './gradlew :api-server:test --tests "nuri.api.FooTest" :api-server:harnessTest --tests "*Linter*"',
       './gradlew compileJava compileTestJava', './gradlew :api-server:jacocoTestReport', './gradlew :api-server:bootJar',
       'pnpm -C frontend test -- src/a.test.ts', 'pnpm -C frontend exec vitest run src/a.test.ts', 'pnpm -C frontend exec vitest related src/a.ts',
@@ -218,14 +222,18 @@ const CASES = {
       'node --test scripts/a.test.mjs scripts/b.test.mjs', 'npm run test:shared-memory', 'npm run verify:post-push', 'npm run base:verify -- --profile core',
       'node scripts/heavy-run-queue.mjs run --kind gradle -- .\\gradlew.bat :api-server:test', 'git commit --only -m "./gradlew test 는 대기열로" -- a.md',
       'node scripts/heavy-run-queue.mjs run --kind isolated-e2e -- npm run test:e2e:isolated', 'npm run base:generate-source -- --profile core',
-      'node --test scripts/run-isolated-e2e.test.mjs',
+      'node --test scripts/run-isolated-e2e.test.mjs', 'pnpm install', 'pnpm run lint', '& node scripts/heavy-run-queue.mjs status',
       'echo "pnpm -C frontend test"'],
   },
   'heavy-run-queue-bypass': {
     hit: ['EGOV_HEAVY_RUN_QUEUE=off npm run verify:push', 'export EGOV_HEAVY_RUN_QUEUE=off', '$env:EGOV_HEAVY_RUN_QUEUE = "off"',
-      'node scripts/heavy-run-queue.mjs confirm-idle --run 20261110-ab12cd34'],
+      'node scripts/heavy-run-queue.mjs confirm-idle --run 20261110-ab12cd34',
+      // 2026-11-10 Codex 43차 미탐: 따옴표 친 스크립트 경로, CMD 의 따옴표 친 대입, cross-env.
+      'node "scripts/heavy-run-queue.mjs" confirm-idle --run x', 'node "D:\\wt-egov-claude\\scripts\\heavy-run-queue.mjs" confirm-idle --run x',
+      'set "EGOV_HEAVY_RUN_QUEUE=off"', 'npx cross-env EGOV_HEAVY_RUN_QUEUE=off npm run verify:push'],
     pass: ['node scripts/heavy-run-queue.mjs status', 'git commit --only -m "EGOV_HEAVY_RUN_QUEUE=off 는 묻는다" -- a.md',
-      'grep -n EGOV_HEAVY_RUN_QUEUE scripts/heavy-run-queue.mjs'],
+      'grep -n EGOV_HEAVY_RUN_QUEUE scripts/heavy-run-queue.mjs', 'echo "node scripts/heavy-run-queue.mjs confirm-idle --run x"',
+      'git commit --only -m "confirm-idle 은 묻는다" -- a.md'],
   },
   'guard-canary': {
     hit: ['echo AGENT_GUARD_CANARY', '  echo AGENT_GUARD_CANARY  '],

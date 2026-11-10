@@ -38,7 +38,7 @@ const LOG = 'log.jsonl';
 
 const DEFAULT_TIMING = {
   pollMs: 1500, jitterMs: 500, staleFirstMs: 30_000, maxWaitMs: 180 * 60_000, recheckMs: 30_000, reportMs: 30_000,
-  parentPollMs: 500, rpcServerMs: 5_000, rpcClientMs: 10_000, rpcAttempts: 3, listRetries: 3, inUseLimit: 10,
+  parentPollMs: 500, treeChecks: 3, treeRecheckMs: 2_000, rpcServerMs: 5_000, rpcClientMs: 10_000, rpcAttempts: 3, listRetries: 3, inUseLimit: 10,
 };
 /** The queue's own process tests shorten the intervals (EGOV_HEAVY_RUN_QUEUE_TIMING, JSON) — only with the test switch on. */
 function timing() {
@@ -47,6 +47,8 @@ function timing() {
   return { ...DEFAULT_TIMING, ...Object.fromEntries(Object.entries(override).filter(([key, value]) => key in DEFAULT_TIMING && Number.isInteger(value) && value > 0)) };
 }
 export const TIMING = Object.freeze(timing());
+/** confirm-idle 은 보유자가 프로세스(최대 15초)·Docker(최대 20초)를 다시 보므로 연결·응답 기한을 그보다 길게 둔다. */
+const CONFIRM_MS = 90_000;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // 순수 판정(시험 대상)
@@ -119,8 +121,39 @@ export function dockerOutcome({ error, stdout = '', stderr = '' }) {
     return ids.length ? { running: ids } : { none: true };
   }
   if (error.code === 'ENOENT') return { none: true, reason: 'docker-missing' };
-  if (/Cannot connect to the Docker daemon|error during connect|docker_engine|Is the docker daemon running/i.test(`${stderr}`)) return { none: true, reason: 'engine-down' };
+  const text = String(stderr);
+  // 엔진이 꺼진 것으로 확정할 수 있는 모양만 '실행 없음'이다 — 엔진 파이프가 없음(Windows), 로컬 소켓에 연결하지 못함(POSIX).
+  // 접근 거부·연결 끊김·시간 초과·원격 엔진처럼 엔진이 돌고 있을 수 있는 실패는 모두 알 수 없음이다(Codex 43 지적 1).
+  if (/open \/\/\.\/pipe\/[\w.-]+: The system cannot find the file specified/i.test(text)) return { none: true, reason: 'engine-down' };
+  if (/Cannot connect to the Docker daemon at unix:\/\/\S+\. Is the docker daemon running\?/i.test(text)) return { none: true, reason: 'engine-down' };
   return { unknown: true };
+}
+
+/** Long-lived helpers a run may start that do no run work of their own (their own children are theirs, not the run's). */
+const DAEMONS = /\b(?:org\.gradle\.launcher\.daemon\.bootstrap\.GradleDaemon|GradleDaemon|KotlinCompileDaemon)\b/;
+
+/**
+ * Whether anything the run started may still run (pure; processes carry `started` epoch ms when known). Descendants are
+ * processes whose parent chain reaches the child and that started after it (a PID reused by an older process is not its
+ * descendant); daemons and their subtrees are not run work. The listing must show start times, or the answer is unknown.
+ */
+export function runTreeAlive(processes, childPid, childSpawnedAt) {
+  if (!processes.length || processes.some((entry) => entry.started === undefined)) return { unknown: true };
+  const after = childSpawnedAt - 2000;
+  const frontier = [childPid];
+  const seen = new Set(frontier);
+  const alive = [];
+  while (frontier.length) {
+    const parent = frontier.shift();
+    for (const entry of processes) {
+      if (entry.ppid !== parent || seen.has(entry.pid) || !(entry.started >= after)) continue;
+      seen.add(entry.pid);
+      if (typeof entry.command === 'string' && DAEMONS.test(entry.command)) continue;
+      alive.push(entry);
+      frontier.push(entry.pid);
+    }
+  }
+  return alive.length ? { alive } : { gone: true };
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -129,11 +162,20 @@ export function dockerOutcome({ error, stdout = '', stderr = '' }) {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const say = (message) => { try { process.stderr.write(`${TAG} ${message}\n`); } catch { /* 출력 실패는 결과를 바꾸지 않는다 */ } };
 
+/**
+ * The absolute Git common dir, null only when this is certainly not a repository (git says so, or git is not installed).
+ * Any other failure — a time-out, a permission or configuration error — throws: "could not tell" must not become "no queue"
+ * (Codex 43 지적 3).
+ */
 export function gitCommonDir(cwd = process.cwd()) {
   try {
     return execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'],
-      { cwd, encoding: 'utf8', windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'], timeout: 15_000 }).trim() || null;
-  } catch { return null; }
+      { cwd, encoding: 'utf8', windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], timeout: 15_000 }).trim() || null;
+  } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    if (error.status === 128 && /not a git repository/i.test(String(error.stderr ?? ''))) return null;
+    throw Object.assign(new Error(`저장소를 확인하지 못했다(${error.code ?? error.status ?? error.message})`), { queueFailure: true });
+  }
 }
 
 async function listNames() {
@@ -190,9 +232,14 @@ async function rpcWithRetry(hash, request) {
 
 /** direct | inside | queue, or fail (a same-repository token the holder did not confirm). Warnings go to stderr only. */
 export async function classify({ env = process.env, platform = process.platform, cwd = process.cwd() } = {}) {
-  const commonDir = platform === 'win32' ? gitCommonDir(cwd) : null;
+  // 플랫폼·시험 안·우회는 저장소를 보지 않고 정한다. 저장소를 확인하지 못하면 대기열 없이 돌지 않고 실패한다.
+  const early = entryRoute({ platform, env, hash: 'unresolved' });
+  let commonDir = null;
+  if (early.route !== 'direct') {
+    try { commonDir = gitCommonDir(cwd); } catch (error) { return { state: 'fail', reason: error.message }; }
+  }
   const hash = commonDir ? repositoryHash(commonDir) : null;
-  const decision = entryRoute({ platform, env, hash });
+  const decision = early.route === 'direct' ? early : entryRoute({ platform, env, hash });
   if (decision.route === 'direct') {
     if (decision.reason === 'off') say(`${ENV_SWITCH}=off — 대기열 없이 실행한다(실행 기록의 겹침 판정은 그대로다).`);
     return { state: 'direct', reason: decision.reason, hash, commonDir };
@@ -272,6 +319,24 @@ async function observeProcesses() {
   if (text === 'blind') return [];
   return [self, ...JSON.parse(text).map((entry) => ({ ...entry, pid: entry.pid === 'self' ? process.pid : entry.pid, ppid: entry.ppid === 'parent' ? process.ppid : entry.ppid }))
     .filter((entry) => entry.pid !== process.pid)];
+}
+
+const TREE_LISTING = ['-NoProfile', '-NonInteractive', '-Command',
+  'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine,'
+  + '@{n="Started";e={if ($_.CreationDate) { [DateTimeOffset]::new($_.CreationDate).ToUnixTimeMilliseconds() }}} | ConvertTo-Json -Compress'];
+
+/** Processes with their start time (epoch ms), for the end-of-run tree check. The queue's tests may force an unknown answer. */
+function observeProcessTree() {
+  if (testObservation('EGOV_HEAVY_RUN_QUEUE_TEST_TREE') === 'fail') return Promise.reject(new Error('test: tree listing failed'));
+  return new Promise((resolve, reject) => {
+    execFile('powershell.exe', TREE_LISTING, { encoding: 'utf8', windowsHide: true, timeout: 20_000, maxBuffer: 32 * 1024 * 1024 }, (error, stdout) => {
+      if (error) return reject(error);
+      try {
+        resolve([].concat(JSON.parse(stdout)).map((entry) => ({ pid: entry.ProcessId, ppid: entry.ParentProcessId, name: entry.Name,
+          command: entry.CommandLine, started: Number.isFinite(entry.Started) ? entry.Started : undefined })));
+      } catch (parseError) { reject(parseError); }
+    });
+  });
 }
 
 /** Per owner label: running ids, none, or unknown. */
@@ -362,19 +427,21 @@ class Supervisor {
         if (end < 0) return;
         let request;
         try { request = JSON.parse(buffer.slice(0, end)); } catch { request = {}; }
-        this.answer(request).then((reply) => socket.end(`${JSON.stringify(reply)}\n`), () => socket.end(`${JSON.stringify({ ok: false, reason: 'error' })}\n`));
+        // confirm-idle 은 다시 관측하므로 그 동안 연결을 잡아 둔다(클라이언트 기한과 같다).
+        if (request.op === 'confirm-idle') socket.setTimeout(CONFIRM_MS);
+        this.answer(request, socket).then((reply) => socket.end(`${JSON.stringify(reply)}\n`), () => socket.end(`${JSON.stringify({ ok: false, reason: 'error' })}\n`));
       });
       socket.on('close', () => this.sockets.delete(socket));
       socket.on('error', () => {});
     });
   }
 
-  async answer(request) {
+  async answer(request, socket = null) {
     const owns = request.token === this.token;
     switch (request.op) {
       case 'check': return owns && this.phase === 'running' ? { ok: true, runId: this.runId } : { ok: false, reason: owns ? this.phase : 'token' };
       case 'who': return { ok: true, kind: this.kind, runId: this.runId, phase: this.phase, startedAt: this.startedAt, worktree: process.cwd() };
-      case 'confirm-idle': return this.confirmIdle(request.runId);
+      case 'confirm-idle': return this.confirmIdle(request.runId, socket);
       default: return { ok: false, reason: 'op' };
     }
   }
@@ -423,10 +490,12 @@ class Supervisor {
     }
   }
 
-  async confirmIdle(runId) {
+  async confirmIdle(runId, socket = null) {
     if (runId !== this.runId || this.phase !== 'unknown-wait') return { ok: false, reason: runId !== this.runId ? 'run' : this.phase };
     const result = await this.assess();
     if (result.visible.length || result.running.length) return { ok: false, reason: 'visible', visible: result.visible, running: result.running };
+    // 다시 보는 동안 요청한 쪽이 끊겼으면(시간 초과로 실패를 보고했으면) 확인을 적용하지 않는다.
+    if (socket?.destroyed || this.phase !== 'unknown-wait') return { ok: false, reason: socket?.destroyed ? 'disconnected' : this.phase };
     await this.exclusive(() => {
       const marker = readJson(path.join(this.dir, MARKER));
       if (marker.exists && !marker.corrupt && marker.value?.runId !== this.runId) appendLog(this.dir, { event: 'confirm-idle-marker', runId: this.runId, previous: marker.value });
@@ -450,10 +519,29 @@ class Supervisor {
     await closeServer(this.waiter);
     this.waiter = null;
     this.phase = 'running';
+    const spawnedAt = Date.now();
     const outcome = await spawnChild(this.command, this.args, this.childEnv(), (child) => { this.child = child; });
-    const verified = !this.killedChild;
+    // 직접 자식이 끝났다는 것만으로는 실행이 끝났다고 보지 않는다 — 감독이 끝낸 트리가 아니고, 그 아래에 남은 프로세스가 없어야
+    // 검증된 종료다(Codex 43 지적 2: 바깥에서 cmd.exe 만 끝내면 Gradle 실행기 JVM 이 남는다).
+    const verified = !this.killedChild && await this.childTreeGone(spawnedAt);
     await this.release(verified);
     return exitCodeFor(outcome);
+  }
+
+  /** 자식이 만든 프로세스가 모두 끝났는지(데몬 제외). 잠깐 늦게 끝나는 손자를 위해 몇 번 다시 보고, 볼 수 없으면 끝나지 않은 것이다. */
+  async childTreeGone(spawnedAt) {
+    if (!this.child?.pid) return true;
+    let last = { unknown: true };
+    for (let attempt = 0; attempt < TIMING.treeChecks; attempt++) {
+      try { last = runTreeAlive(await observeProcessTree(), this.child.pid, spawnedAt); } catch { last = { unknown: true }; }
+      if (last.gone) return true;
+      if (attempt + 1 < TIMING.treeChecks) await sleep(TIMING.treeRecheckMs);
+    }
+    say(last.alive
+      ? `자식은 끝났지만 그 아래 프로세스 ${last.alive.length}개가 남아 있다(${[...new Set(last.alive.map((entry) => entry.name))].join(', ')}) — 다음 실행은 확인을 요구한다.`
+      : '자식 아래 프로세스를 확인하지 못했다 — 다음 실행은 확인을 요구한다.');
+    appendLog(this.dir, { event: 'tree-unverified', runId: this.runId, alive: last.alive?.map((entry) => entry.name) ?? null });
+    return false;
   }
 
   async release(verified) {
@@ -595,7 +683,8 @@ async function main(argv) {
       const runId = runAt >= 0 ? rest[runAt + 1] : null;
       const commonDir = gitCommonDir();
       if (!runId || !commonDir) { say('사용법: confirm-idle --run <runId>(저장소 안에서)'); return 2; }
-      const answer = await rpcWithRetry(repositoryHash(commonDir), { op: 'confirm-idle', runId }).catch((error) => ({ ok: false, reason: error.code }));
+      // 다시 보내지 않는다 — 보유자는 연결이 살아 있을 때만 확인을 적용하고, 끊긴 요청의 처리는 버린다(Codex 43 지적 8).
+      const answer = await rpc(repositoryHash(commonDir), { op: 'confirm-idle', runId }, { timeoutMs: CONFIRM_MS }).catch((error) => ({ ok: false, reason: error.code }));
       if (!answer.ok) { say(`확인 거부(${answer.reason}${answer.visible?.length || answer.running?.length ? `: ${[...(answer.visible ?? []), ...(answer.running ?? [])].join(', ')}` : ''}).`); return 1; }
       say('확인했다 — 보유자가 시작한다.');
       return 0;
