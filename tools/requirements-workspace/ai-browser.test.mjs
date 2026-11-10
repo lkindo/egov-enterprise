@@ -37,7 +37,7 @@ test('multi-batch analysis shows its cost and progress and cancellation stops th
     const page = await browserContext.newPage();
     await page.goto(app.launchUrl);
     await page.getByRole('button', { name: 'AI 요구사항 생성', exact: true }).click();
-    await page.getByText('현재 자료는 2묶음으로 나누어 분석합니다.', { exact: false }).waitFor();
+    await page.getByText('현재 자료는 총 2묶음입니다.', { exact: false }).waitFor();
     await audit(page, 'ai-batch-consent');
     await page.locator('[name="ai-consent"]').check();
     await page.locator('[name="sensitivityAcknowledged"]').check();

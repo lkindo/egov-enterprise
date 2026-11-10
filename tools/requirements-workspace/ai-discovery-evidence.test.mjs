@@ -202,17 +202,21 @@ for (const termCount of [100, 160]) test(`cumulative rejection of ${termCount} t
   assert.equal(result.businessModel.sourceCoverage.length, 8);
 });
 
-test('reading questions reserve issue slots before accepting model questions', async () => {
+for (const count of [100, 101]) test(`reading questions preserve project slots while each model response stays bounded to one hundred (${count})`, async () => {
   const state = snapshot(); let calls = 0;
-  const result = await prepareBusinessModel(state, { sourceReading: () => ({ ...reading(), unreadable: [{ inputId: 'C-1', reason: '원본의 처리기간을 대조해야 한다.' }] }), run: async ({ request }) => {
+  const result = await prepareBusinessModel(state, { sourceReading: () => ({ ...reading(), unreadable: [{ inputId: 'C-1', reason: '원본의 처리기간을 대조해야 한다.' }] }), run: async ({ request, schema }) => {
     calls++;
+    assert.equal(schema.properties.issues.maxItems, 100);
+    assert.equal(request.data.discoveryBudget.maxIssues, 1000);
+    assert.equal(request.data.discoveryBudget.maxIssuesPerResponse, 100);
+    assert.equal(request.data.discoveryBudget.readingIssueCount, 1);
     if (calls === 2) {
-      assert.deepEqual(request.data.correction.violations, [{ kind: 'business-model-budget', path: '$' }]);
-      assert.equal(request.data.correction.budget.reason, 'issues'); assert.equal(request.data.correction.budget.readingIssueCount, 1);
+      assert.deepEqual(request.data.correction.violations, [{ kind: 'schema', path: '$' }]);
     }
-    return envelope({ ...model(request), issues: Array.from({ length: calls === 1 ? 100 : 1 }, (_, index) => question(`Q-SLOT-${index}`, [{ evidenceIndex: 0 }])) });
+    return envelope({ ...model(request), issues: Array.from({ length: calls === 1 ? count : 1 }, (_, index) => ({ ...question(`Q-SLOT-${index}`, [{ evidenceIndex: 0 }]), question: `${index + 1}번 접수 열람 범위를 확인해 주세요.` })) });
   } });
-  assert.equal(calls, 2); assert.equal(result.businessModel.issues.length, 2);
+  assert.equal(calls, count === 100 ? 1 : 2);
+  assert.equal(result.businessModel.issues.length, count === 100 ? 101 : 2);
   assert.ok(result.businessModel.issues.some(issue => issue.id.startsWith('DOC-')));
 });
 

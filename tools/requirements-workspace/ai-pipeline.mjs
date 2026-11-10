@@ -2,7 +2,7 @@ import { buildStagePrompt, PROMPT_VERSION } from './ai-prompts.mjs';
 import { readDocument, readingOmissions } from './document-reader.mjs';
 import { prepareDocumentInputs } from './document-inputs.mjs';
 import { BUSINESS_MODEL_MAX_BYTES, BUSINESS_MODEL_SCHEMA, REQUIREMENT_REVIEW_SCHEMA, PLAN_REVIEW_SCHEMA, validateDocumentSummaries, validateBusinessModel, mergeBusinessModels, validateRequirementReview, validatePlanReview, mergeIssues } from './ai-pipeline-contract.mjs';
-import { buildAiRequest, DECOMPOSITION_SCHEMA, validateAnalysisProposal, validateDecompositionProposal, projectAnalysisBacklog, selectEvidenceQuote, validatePrivateAiValue } from './ai-contract.mjs';
+import { buildAiRequest, DECOMPOSITION_SCHEMA, MAX_PROJECT_ISSUES, validateAnalysisProposal, validateDecompositionProposal, projectAnalysisBacklog, selectEvidenceQuote, validatePrivateAiValue } from './ai-contract.mjs';
 import { matchRequirementsToContext } from '../../scripts/export-deliverables-workspace.mjs';
 import { privateWorkspaceContracts } from './private-validation.mjs';
 const { generateWorkPackagePlan } = privateWorkspaceContracts;
@@ -164,7 +164,7 @@ export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceR
     let data = { documents: evidence.documents, previousModel: model ? structuredClone(model) : null, previousIssueEvidence: evidence.previousIssueEvidence, evidenceCount: evidence.citations.length, decisions: snapshot.metadata.ai?.decisions ?? [], coverageRule: 'sourceCoverage must contain exactly the current documents. Return additions/updates for actors/processes/terms; the application retains omitted earlier entries and all unresolved issues. summary integrates previousModel. Choose supplied evidenceIndex references for issue citations; the application resolves them to immutable source quotations.' };
     const remainingCoverage = minimumCoverage.slice((index + 1) * 4);
     const remainingCoverageBytes = remainingCoverage.length ? Buffer.byteLength(JSON.stringify(remainingCoverage)) - 1 : 0;
-    data.discoveryBudget = { absoluteMaxBytes: BUSINESS_MODEL_MAX_BYTES, targetBatchBytes, targetMergedBytesForBatch: targetBatchBytes * (index + 1), maxMergedBytesForBatch: availableModelBytes - remainingCoverageBytes, readingIssueBytes, readingIssueCount: readingIssues.length, maxIssues: BUSINESS_MODEL_SCHEMA.properties.issues.maxItems, previousModelBytes: model ? Buffer.byteLength(JSON.stringify(model)) : 0, batch: index + 1, batches: batches.length };
+    data.discoveryBudget = { absoluteMaxBytes: BUSINESS_MODEL_MAX_BYTES, targetBatchBytes, targetMergedBytesForBatch: targetBatchBytes * (index + 1), maxMergedBytesForBatch: availableModelBytes - remainingCoverageBytes, readingIssueBytes, readingIssueCount: readingIssues.length, maxIssues: MAX_PROJECT_ISSUES, maxIssuesPerResponse: BUSINESS_MODEL_SCHEMA.properties.issues.maxItems, previousModelBytes: model ? Buffer.byteLength(JSON.stringify(model)) : 0, batch: index + 1, batches: batches.length };
     for (let attempt = 0; attempt < 2; attempt++) {
       if (signal?.aborted) fail('AI_CANCELLED');
       let budgetFeedback;
