@@ -9,6 +9,25 @@ const { JSDOM } = require('jsdom');
 const markup = readFileSync(new URL('./public/index.html', import.meta.url), 'utf8');
 const script = readFileSync(new URL('./public/app.js', import.meta.url), 'utf8');
 const button = (document, name) => [...document.querySelectorAll('button')].find(element => element.textContent.trim() === name);
+
+test('parallel quality review progress separates active calls and completed analysis with numeric request metrics', async t => {
+  const dom = new JSDOM(markup, { url: 'http://127.0.0.1:8792/', runScripts: 'outside-only', pretendToBeVisual: true }); t.after(() => dom.window.close());
+  const { window } = dom; window.structuredClone = structuredClone;
+  const pack = createEmptyBacklogPack(context); pack.sources = [structuredClone(source)];
+  const job = { id: 'synthetic-job', phase: 'analysis', fullPipeline: true, status: 'running', stage: 'review-requirements', stageProgress: { completed: 1, total: 3 }, batches: { completed: 96, total: 96 }, modelCalls: 3, callMetrics: { requests: 3, corrections: 1, reusedResponses: 2, inputBytes: 1234567, outputBytes: 12000, measuredOutputs: 1, peakConcurrency: 2, activeCalls: [2, 3].map(call => ({ call, stage: 'review-requirements', batch: call, startedAt: new Date(Date.now() - 65000).toISOString() })), modelWaitMs: 9999999 } };
+  const state = { revision: 'synthetic', backlog: pack, metadata: { baselines: [], exports: [], reviewedRequirements: {}, uatRecords: [], auditFindings: [] }, context, analysisReadiness: { valid: false, errors: [] }, readiness: { valid: false, errors: [] }, matches: { results: [] }, ai: { available: true, model: 'claude-opus-5-5', effort: 'high', active: true, current: job, proposal: null } };
+  window.fetch = async url => ({ ok: true, json: async () => url === '/api/session' ? { token: 'synthetic-token' } : state });
+  await window.eval(`(async () => { ${script}\n })()`);
+  const panel = window.document.querySelector('[aria-label="AI 요구사항 진행"]');
+  assert.match(panel.textContent, /96\/96묶음 분석 완료/);
+  assert.match(panel.textContent, /요구사항 품질 검토 · 2묶음 · 응답 대기/);
+  assert.match(panel.textContent, /요구사항 품질 검토 · 3묶음 · 응답 대기/);
+  assert.match(panel.textContent, /실제 호출 3회 · 보정 1회 · 저장 결과 재사용 2회 · 최대 동시 호출 2개/);
+  assert.match(panel.textContent, /요청 JSON 합계 1,234,567바이트/);
+  assert.match(panel.textContent, /측정된 응답 JSON 12,000바이트 \(1회\)/);
+  assert.doesNotMatch(panel.textContent, /9999999|전체.*분 단축|원본 파일 크기 1,234,567/);
+  assert.equal(panel.querySelector('script'), null);
+});
 test('invalid AI output shows validation evidence and checkpoint recovery instead of unrelated login advice', async t => {
   const dom = new JSDOM(markup, { url: 'http://127.0.0.1:8792/', runScripts: 'outside-only', pretendToBeVisual: true }); t.after(() => dom.window.close());
   const { window } = dom; window.structuredClone = structuredClone;
@@ -23,6 +42,12 @@ test('invalid AI output shows validation evidence and checkpoint recovery instea
   button(window.document, '최신 상태 읽기').click(); await new Promise(resolve => setImmediate(resolve));
   const basic = window.document.querySelector('[aria-label="AI 요구사항 진행"]');
   assert.match(basic.textContent, /첫 묶음부터/); assert.doesNotMatch(basic.textContent, /완료된 8묶음은 저장/);
+  state.ai.current.errorCode = 'AI_ISSUE_CAPACITY';
+  button(window.document, '최신 상태 읽기').click(); await new Promise(resolve => setImmediate(resolve));
+  const capacity = window.document.querySelector('[aria-label="AI 요구사항 진행"]').textContent;
+  assert.match(capacity, /쟁점 100개/); assert.match(capacity, /업무 범위를 나누어/);
+  assert.doesNotMatch(capacity, /CLI 로그인·사용 한도·자료 크기/);
+  assert.doesNotMatch(capacity, /같은 자료의 반복 실행은 이 한도를 해결하지 못합니다/);
 });
 test('stopping while the browser reads a file prevents a later upload and does not cancel a nonexistent server job', async t => {
   const dom = new JSDOM(markup, { url: 'http://127.0.0.1:8792/', runScripts: 'outside-only', pretendToBeVisual: true });

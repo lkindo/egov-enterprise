@@ -33,6 +33,263 @@ function reply(request, { blocking = false } = {}) {
   }
 }
 
+test('known cross-stage issue capacity stops after a saved batch and rejects resume before any new model call', async t => {
+  const phases = []; let timer;
+  const app = await setup(t, async ({ request, signal }) => {
+    phases.push(request.phase);
+    if (request.phase === 'synthesis') {
+      const value = reply(request);
+      value.issues = Array.from({ length: 60 }, (_, index) => ({ id: `BIZ-${index}`, kind: 'decision', severity: 'blocking', question: `기관 정책 ${index}의 적용 범위를 확인해 주세요.`, options: [], requirementIds: [], citations: [{ evidenceIndex: 0 }] }));
+      return envelope(value, request.phase);
+    }
+    if (request.phase !== 'analysis') return envelope(reply(request), request.phase);
+    if (request.data.analysisBatch.index === 2) {
+      await new Promise((resolve, reject) => {
+        const stop = code => { clearTimeout(timer); reject(Object.assign(Error(code), { code })); };
+        signal.addEventListener('abort', () => stop('AI_CANCELLED'), { once: true });
+        timer = setTimeout(() => stop('AI_CLI_FAILED'), 500);
+      });
+    }
+    return envelope({ requirements: [], issues: Array.from({ length: 41 }, (_, index) => ({ id: `REQ-Q-${index}`, kind: 'decision', severity: 'blocking', question: `접수 조건 ${index}의 의사결정을 확인해 주세요.`, options: [], requirementIds: [], citations: [0] })), coverage: request.data.sources.flatMap(src => src.clauses.map(clause => ({ sourceId: src.id, clauseId: clause.id, disposition: 'excluded', rationale: '확인이 필요한 업무 배경' }))) }, request.phase);
+  });
+  t.after(() => clearTimeout(timer));
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 33 }, (_, index) => ({ ...source.clauses[0], id: `C-${index + 1}` })) });
+  await app.start(); await app.engine.waitForAi(); let state = await app.engine.state();
+  assert.equal(state.ai.current.errorCode, 'AI_ISSUE_CAPACITY');
+  assert.equal(state.ai.current.batches.completed, 1);
+  const ref = state.ai.current.checkpoints.analysis, bytes = app.store.readArchive(ref);
+  phases.length = 0; await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.deepEqual(phases, [], 'a known impossible aggregate must not consume another model call');
+  assert.equal(state.ai.current.errorCode, 'AI_ISSUE_CAPACITY');
+  assert.equal(state.ai.current.modelCalls, 0); assert.equal(state.ai.current.batches.completed, 1);
+  assert.equal(app.store.readArchive(ref), bytes); assert.equal(state.backlog.businessRequirements.length, 0);
+});
+
+test('full pipeline uses bounded evidence references and restores canonical proof before final validation', async t => {
+  const requests = [];
+  const app = await setup(t, async ({ request }) => {
+    requests.push(request);
+    const output = reply(request);
+    if (request.phase === 'analysis') for (const requirement of output.requirements) requirement.citations = [0];
+    return envelope(output, request.phase);
+  });
+  await app.start(); await app.engine.waitForAi();
+  const state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode);
+  for (const request of requests.filter(item => !['reading', 'synthesis'].includes(item.phase))) {
+    assert.equal(request.data.evidenceProtocol, 'stored-evidence-v2');
+    assert.ok(Buffer.byteLength(JSON.stringify(request)) <= 768 * 1024);
+  }
+  assert.equal(state.ai.proposal.requirements[0].citations[0].sourceId, source.id);
+  assert.ok(source.clauses[0].text.includes(state.ai.proposal.requirements[0].citations[0].quote));
+  assert.equal(state.backlog.businessRequirements.length, 0, 'transport work never approves the draft');
+});
+
+for (const recovers of [true, false]) test(`a single-batch native citation failure gets exactly one value-free correction: recovery=${recovers}`, async t => {
+  const requests = [];
+  const app = await setup(t, async ({ request }) => {
+    const output = reply(request);
+    if (request.phase === 'analysis') {
+      requests.push(structuredClone(request));
+      output.requirements[0].citations = [requests.length === 1 || !recovers ? 9999 : 0];
+    }
+    return envelope(output, request.phase);
+  });
+  await app.start(); await app.engine.waitForAi(); const state = await app.engine.state();
+  assert.equal(requests.length, 2);
+  assert.equal(requests[0].data.analysisBatch, undefined);
+  assert.equal(Object.hasOwn(requests[1].data.correction, 'previousOutput'), false);
+  assert.equal(requests[1].data.correction.violations[0].kind, 'citation-reference');
+  assert.equal(state.ai.current.status, recovers ? 'ready' : 'failed');
+  if (!recovers) assert.equal(state.ai.current.validationFailures[0].kind, 'citation-reference');
+  assert.equal(state.backlog.businessRequirements.length, 0);
+});
+
+test('new call metrics count actual calls and preserve the zero-call meaning of a fully reused run', async t => {
+  const phases = []; let app;
+  app = await setup(t, async ({ request }) => {
+    phases.push(request.phase);
+    const metrics = app.store.read().metadata.ai.jobs.at(-1).callMetrics;
+    assert.ok(metrics?.activeCalls.some(call => call.stage === request.phase));
+    return { ...envelope(reply(request), request.phase), telemetry: { outputBytes: 123, cacheReadInputTokens: 40 } };
+  });
+  await app.start(); await app.engine.waitForAi(); let state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode);
+  const first = structuredClone(state.ai.current.callMetrics);
+  assert.equal(first.requests, phases.length); assert.equal(first.requests, 6);
+  assert.equal(first.corrections, 0); assert.equal(first.peakConcurrency, 1);
+  assert.equal(first.outputBytes, 123 * phases.length); assert.equal(first.measuredOutputs, phases.length);
+  assert.ok(first.inputBytes > 0); assert.ok(first.logicalInputBytes > 0); assert.ok(first.modelWaitMs >= 0);
+  assert.deepEqual(first.activeCalls, []);
+  phases.length = 0; await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'ready'); assert.deepEqual(phases, []);
+  assert.equal(state.ai.current.callMetrics.requests, 0); assert.equal(state.ai.current.callMetrics.inputBytes, 0);
+  assert.equal(state.ai.current.modelCalls, 0);
+  assert.deepEqual(state.metadata.ai.jobs.at(-2).callMetrics, first, 'historical cost is not relabeled as a current call');
+  for (const mutate of [value => { value.callMetrics.rawPrompt = 'PRIVATE'; }, value => { value.callMetrics.requests = 1; }, value => { value.callMetrics.inputBytes = -1; }, value => { value.callMetrics.activeCalls = [{ call: 1, stage: 'PRIVATE', batch: 1, startedAt: new Date().toISOString() }]; }]) {
+    const invalid = structuredClone(state.metadata); mutate(invalid.ai.jobs.at(-1));
+    assert.throws(() => validateRequirementsMetadata(invalid), { code: 'AI_METADATA_INVALID' });
+  }
+});
+
+async function sevenRequirementReviewApp(t, review, { sharedSource = false, sharedIssue = false } = {}) {
+  const app = await setup(t, async ({ request }) => {
+    if (request.phase === 'review-requirements') return envelope(await review(request), request.phase);
+    if (request.phase !== 'analysis') return envelope(reply(request), request.phase);
+    const requirements = request.data.sources[0].clauses.map((clause, index) => ({ ...analysis(request, { question: false }).requirements[0], id: `REQ-${index + 1}`, title: `접수 조건 ${index + 1}`, citations: [request.data.evidenceCatalog.findIndex(([sourceId, clauseId, quote, allowed]) => sourceId === source.id && clauseId === clause.id && quote && allowed)] }));
+    if (sharedSource) for (const req of requirements.slice(1)) req.citations.push(requirements[0].citations[0]);
+    return envelope({ requirements, issues: [{ id: 'POLICY', kind: 'decision', severity: 'blocking', question: '기관의 접수 처리 범위를 확인해 주세요.', options: [], requirementIds: sharedIssue ? requirements.map(req => req.id) : [], citations: [requirements[0].citations[0]] }], coverage: request.data.sources[0].clauses.map(clause => ({ sourceId: source.id, clauseId: clause.id, disposition: 'included', rationale: '등록한 원문 처리 조건' })) }, request.phase);
+  });
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 7 }, (_, index) => ({ ...source.clauses[0], id: `C-${index + 1}`, text: `${source.clauses[0].text} 문단 ${index + 1}의 처리 조건을 유지한다.` })) });
+  return app;
+}
+
+for (const connection of ['source', 'issue']) test(`quality review keeps a later group sequential when it shares an existing ${connection}`, async t => {
+  const called = []; let started, release, timer;
+  const firstStarted = new Promise(resolve => { started = resolve; });
+  const barrier = new Promise(resolve => { release = resolve; });
+  const app = await sevenRequirementReviewApp(t, async request => {
+    called.push(request.data.requirements[0].id);
+    if (request.data.requirements[0].id === 'REQ-1') { started(); await barrier; }
+    return { issues: [], revisions: [] };
+  }, { sharedSource: connection === 'source', sharedIssue: connection === 'issue' });
+  let observed;
+  try {
+    await app.start(); await Promise.race([firstStarted, new Promise((_, reject) => { timer = setTimeout(() => reject(Error('first review not reached')), 30000); })]);
+    await new Promise(resolve => setImmediate(resolve)); observed = [...called];
+  } finally { clearTimeout(timer); release(); }
+  await app.engine.waitForAi(); const state = await app.engine.state();
+  assert.deepEqual(observed, ['REQ-1'], 'the later group must see the earlier group issues before it is sent');
+  assert.deepEqual(called, ['REQ-1', 'REQ-7']); assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  assert.equal(state.ai.proposal.requirements.length, 7); assert.equal(state.ai.proposal.coverage.length, 7);
+  assert.equal(state.ai.current.callMetrics.peakConcurrency, 1);
+});
+
+test('requirement generation keeps prior semantic facts available to every later batch before asking for a new identity', async t => {
+  let firstId; const indices = [];
+  const app = await setup(t, async ({ request }) => {
+    if (request.phase !== 'analysis') return envelope(reply(request), request.phase);
+    const index = request.data.analysisBatch.index; indices.push(index);
+    if (index === 2) {
+      const previous = request.data.previousAnalysis.requirements.find(item => item.id === firstId);
+      assert.equal(previous?.description, '담당자가 접수 목록을 조회한다. 예외 승인은 기관의 결정을 기다린다.');
+      assert.ok(request.data.previousAnalysis.issues.some(item => item.question === '예외 승인 정책을 확인해 주세요.'));
+    }
+    const requirement = { ...analysis(request).requirements[0], id: firstId ?? `${request.data.analysisBatch.idPrefix}ONLY`, description: '담당자가 접수 목록을 조회한다. 예외 승인은 기관의 결정을 기다린다.', citations: [0] };
+    if (index === 1) firstId = requirement.id;
+    return envelope({ requirements: index === 1 ? [requirement] : [], issues: index === 1 ? [{ id: 'POLICY', kind: 'decision', severity: 'blocking', question: '예외 승인 정책을 확인해 주세요.', options: [], requirementIds: [firstId], citations: [0] }] : [], coverage: request.data.sources.flatMap(src => src.clauses.map((clause, at) => ({ sourceId: src.id, clauseId: clause.id, disposition: index === 1 && at === 0 ? 'included' : 'excluded', rationale: '접수 업무와 원문 배경을 구별한다.' }))) }, request.phase);
+  });
+  await app.act('source.save', { ...source, clauses: Array.from({ length: 33 }, (_, index) => ({ ...source.clauses[0], id: `C-${index + 1}` })) });
+  await app.start(); await app.engine.waitForAi(); const state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  assert.deepEqual(indices, [1, 2]); assert.equal(state.ai.proposal.requirements.length, 1);
+  assert.equal(state.ai.proposal.coverage.length, 33); assert.equal(state.backlog.businessRequirements.length, 0);
+});
+
+test('independent requirement review groups overlap and keep every source and pending decision', async t => {
+  let startFirst, startSecond, release, timer;
+  const first = new Promise(resolve => { startFirst = resolve; }), second = new Promise(resolve => { startSecond = resolve; }), gate = new Promise(resolve => { release = resolve; });
+  const app = await sevenRequirementReviewApp(t, async request => {
+    if (request.data.requirements[0].id === 'REQ-1') { startFirst(); await gate; } else startSecond();
+    return { issues: [], revisions: [] };
+  });
+  t.after(() => { clearTimeout(timer); release(); });
+  await app.start(); await first;
+  const parallel = await Promise.race([second.then(() => true), new Promise(resolve => { timer = setTimeout(() => resolve(false), 5000); })]);
+  clearTimeout(timer); release(); await app.engine.waitForAi();
+  const state = await app.engine.state();
+  assert.equal(parallel, true);
+  assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  assert.equal(state.ai.proposal.requirements.length, 7); assert.equal(state.ai.proposal.coverage.length, 7);
+  assert.ok(state.ai.proposal.issues.some(issue => issue.severity === 'blocking'));
+});
+
+test('a failed later quality review reuses earlier verified reviews and preserves their revisions exactly once', async t => {
+  let fail = true; const reviewed = [];
+  const app = await sevenRequirementReviewApp(t, async request => {
+    const first = request.data.requirements[0]; reviewed.push(first.id);
+    if (first.id === 'REQ-7' && fail) { fail = false; throw Object.assign(Error('AI_CLI_FAILED'), { code: 'AI_CLI_FAILED' }); }
+    return { issues: [], revisions: first.id === 'REQ-1' ? [{ ...first, description: first.description + ' 검토된 표현을 한 번만 보완한다.' }] : [] };
+  });
+  await app.start(); await app.engine.waitForAi(); let state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'failed'); assert.equal(state.ai.current.errorCode, 'AI_CLI_FAILED');
+  const reference = state.ai.current.checkpoints.review;
+  assert.ok(reference, 'the valid first review must be checkpointed before the later failure');
+  const oldBytes = app.store.readArchive(reference), record = JSON.parse(oldBytes);
+  assert.equal(record.output.version, 2); assert.equal(record.output.replies.length, 1);
+  const savedAi = structuredClone(app.store.read().metadata.ai);
+  for (const fault of ['unknown-field', 'missing-replies', 'invalid-reply']) {
+    const corrupt = structuredClone(record);
+    if (fault === 'unknown-field') corrupt.output.unexpected = true;
+    if (fault === 'missing-replies') delete corrupt.output.replies;
+    if (fault === 'invalid-reply') {
+      const part = JSON.parse(app.store.readArchive(corrupt.output.replies[0])); part.output.revisions = 'invalid';
+      corrupt.output.replies[0] = app.store.writeArchive('ai', JSON.stringify(part));
+    }
+    const ref = app.store.writeArchive('ai', JSON.stringify(corrupt));
+    app.store.transact(app.store.read().revision, next => { next.metadata.ai = structuredClone(savedAi); next.metadata.ai.jobs.at(-1).checkpoints.review = ref; });
+    reviewed.length = 0; await app.start(); await app.engine.waitForAi();
+    assert.equal((await app.engine.state()).ai.current.errorCode, 'AI_CHECKPOINT_INVALID', fault);
+    assert.deepEqual(reviewed, [], `reject ${fault} before another review call`);
+  }
+  app.store.transact(app.store.read().revision, next => { next.metadata.ai = structuredClone(savedAi); });
+  reviewed.length = 0; await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.deepEqual(reviewed, ['REQ-7']);
+  assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  assert.equal(state.ai.current.reusedStages.includes('review'), false, 'a partial result is not a complete reused stage');
+  assert.equal((state.ai.proposal.requirements[0].description.match(/검토된 표현/g) ?? []).length, 1);
+  assert.equal(app.store.readArchive(reference), oldBytes);
+  assert.equal(state.backlog.businessRequirements.length, 0);
+});
+
+test('plan review failure reuses the fully validated generated plan and earlier shared-epic reviews', async t => {
+  let fail = true; const phases = [], reviewed = [];
+  const app = await setup(t, async ({ request }) => {
+    phases.push(request.phase);
+    if (request.phase === 'decomposition') {
+      const base = decomposition(), children = Array.from({ length: 9 }, (_, index) => ({ ...structuredClone(base.workItems[1]), id: `STORY-${index}`, title: `접수 검증 ${index}`, description: index === 0 ? '문의 연락처 010-1234-5678' : base.workItems[1].description }));
+      return envelope({ workItems: [base.workItems[0], ...children], acceptanceCriteria: children.flatMap((child, index) => base.acceptanceCriteria.map(ac => ({ ...ac, id: `${ac.id}-${index}`, workItemId: child.id }))), traceLinks: children.map((child, index) => ({ ...base.traceLinks[0], id: `TRACE-${index}`, workItemId: child.id, acId: `${base.acceptanceCriteria[0].id}-${index}` })), issues: [] }, request.phase);
+    }
+    if (request.phase === 'review-plan') {
+      const children = request.data.workItems.filter(item => item.workItemType !== 'epic'); reviewed.push(children[0].id);
+      if (children[0].id === 'STORY-8' && fail) { fail = false; throw Object.assign(Error('AI_CLI_FAILED'), { code: 'AI_CLI_FAILED' }); }
+      return envelope({ issues: [], workItemUpdates: children[0].id === 'STORY-0' ? [{ ...children[0], title: children[0].title + ' 검토 반영' }] : [], acceptanceUpdates: [], traceUpdates: [] }, request.phase);
+    }
+    return envelope(reply(request), request.phase);
+  });
+  await app.start(); await app.engine.waitForAi(); let state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'failed'); assert.equal(state.ai.current.errorCode, 'AI_CLI_FAILED');
+  const ref = state.ai.current.checkpoints.planning; assert.ok(ref);
+  const oldBytes = app.store.readArchive(ref), record = JSON.parse(oldBytes);
+  assert.equal(record.output.version, 2); assert.equal(record.output.replies.length, 1);
+  const savedAi = structuredClone(app.store.read().metadata.ai);
+  for (const fault of ['missing-generation', 'null-generation', 'unknown-field', 'invalid-generation']) {
+    const corrupt = structuredClone(record);
+    if (fault === 'missing-generation') delete corrupt.output.planningOutput;
+    if (fault === 'null-generation') corrupt.output.planningOutput = null;
+    if (fault === 'unknown-field') corrupt.output.unexpected = true;
+    if (fault === 'invalid-generation') corrupt.output.planningOutput = {};
+    const ref = app.store.writeArchive('ai', JSON.stringify(corrupt));
+    app.store.transact(app.store.read().revision, next => { next.metadata.ai = structuredClone(savedAi); next.metadata.ai.jobs.at(-1).checkpoints.planning = ref; });
+    phases.length = 0; await app.start(); await app.engine.waitForAi();
+    assert.equal((await app.engine.state()).ai.current.errorCode, 'AI_CHECKPOINT_INVALID', fault);
+    assert.deepEqual(phases, [], `reject ${fault} before another model call`);
+  }
+  app.store.transact(app.store.read().revision, next => { next.metadata.ai = structuredClone(savedAi); });
+  phases.length = 0; reviewed.length = 0;
+  await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.deepEqual(phases, ['review-plan']); assert.deepEqual(reviewed, ['STORY-8']);
+  assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode);
+  assert.equal(state.ai.current.reusedStages.includes('planning'), false);
+  assert.equal(state.ai.current.callMetrics.reusedResponses, 2, 'count the stored generated plan and completed review result');
+  assert.equal(state.ai.proposal.workItems.length, 10);
+  assert.equal(state.ai.proposal.acceptanceCriteria.length, 18);
+  assert.equal((state.ai.proposal.workItems.find(item => item.id === 'STORY-0').title.match(/검토 반영/g) ?? []).length, 1);
+  assert.ok(state.ai.current.sensitivityWarnings.some(warning => warning.stage === 'decomposition' && warning.kind === 'mobile-phone'));
+  assert.equal(app.store.readArchive(ref), oldBytes);
+  assert.equal(state.backlog.workItems.length, 0);
+});
+
 test('patterns in original evidence and six-stage results remain private advisories through final task confirmation', async t => {
   const phases = [];
   const app = await setup(t, async ({ request }) => {
@@ -165,7 +422,7 @@ test('an independently detected PDF transcription mismatch blocks planning even 
 });
 
 test('multiple planning batches retain every requirement, shared epic, AC and trace through final confirmation', async t => {
-  let expanded = false; const epicId = 'EPIC-1', batches = [];
+  let expanded = false; const epicId = 'EPIC-1', batches = [], planningRequests = [];
   const app = await setup(t, async ({ request }) => {
     if (!expanded) return envelope(reply(request), request.phase);
     if (request.phase === 'analysis') {
@@ -175,6 +432,7 @@ test('multiple planning batches retain every requirement, shared epic, AC and tr
     }
     if (request.phase === 'decomposition') {
       const batch = request.data.planningBatch, ids = batch.requirementIds, base = decomposition(); batches.push(ids);
+      planningRequests.push(structuredClone(request.data));
       const first = batch.index === 1, child = first ? 'STORY-1' : `${batch.idPrefix}STORY`, allow = first ? 'AC-ALLOW' : `${batch.idPrefix}ALLOW`, forbid = first ? 'AC-FORBID' : `${batch.idPrefix}FORBID`;
       return envelope({ workItems: [{ ...base.workItems[0], id: epicId, requirementIds: ids }, { ...base.workItems[1], id: child, parentEpicId: epicId, requirementIds: ids }], acceptanceCriteria: base.acceptanceCriteria.map(ac => ({ ...ac, id: ac.polarity === 'allow' ? allow : forbid, workItemId: child, requirementIds: ids })), traceLinks: ids.map((id, index) => ({ ...base.traceLinks[0], id: id === 'REQ-1' ? 'TRACE-1' : `${batch.idPrefix}TRACE-${index}`, requirementId: id, workItemId: child, acId: allow })), issues: [] });
     }
@@ -184,6 +442,10 @@ test('multiple planning batches retain every requirement, shared epic, AC and tr
   assert.equal(state.ai.current.status, 'ready'); await app.act('ai.confirm', { jobId: state.ai.current.id }); expanded = true;
   await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
   assert.equal(state.ai.current.status, 'ready'); assert.deepEqual(batches.map(batch => batch.length), [4, 1]);
+  assert.ok(planningRequests[1].previousPlanIndex.some(item => item.id === 'STORY-1'), 'global dependency IDs stay visible');
+  assert.ok(planningRequests[1].previousWorkItems.some(item => item.id === epicId), 'shared epic meaning remains complete');
+  assert.ok(!planningRequests[1].previousWorkItems.some(item => item.id === 'STORY-1'), 'other groups retain their details in storage instead of resending them');
+  assert.ok(!planningRequests[1].previousAcceptanceCriteria.some(item => item.workItemId === 'STORY-1'));
   assert.equal(state.ai.proposal.workItems.find(item => item.id === epicId).requirementIds.length, 5);
   assert.equal(state.ai.proposal.acceptanceCriteria.length, 4); assert.equal(state.ai.proposal.traceLinks.length, 5);
   await app.act('ai.confirm', { jobId: state.ai.current.id }); state = await app.engine.state();
