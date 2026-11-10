@@ -36,6 +36,7 @@ import { buildProjectionLedger, writeProjectionLedger } from './reusable-project
 import { installProjectedColumnCatalog } from './reusable-migration-catalog.mjs';
 import { assertFrontendToolchain, regenerateContractTypes, writeProjectedApiDocs } from './reusable-contract-projection.mjs';
 import { assertContractReferencesSurvive } from './reusable-contract-references.mjs';
+import { ensureQueued } from './heavy-run-queue.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const OUTPUT_ROOT = join(ROOT, 'build', 'reusable-base', 'source');
@@ -380,4 +381,8 @@ async function main() {
 
 /* 계약 테스트가 이 모듈을 import 해도 생성이 시작되면 안 된다(부작용 있는 import 금지). */
 const isMain = process.argv[1] && resolve(process.argv[1]) === resolve(SCRIPT_PATH);
-if (isMain) runReportingChild({ argv: process.argv.slice(2), root: ROOT, stage: CHILD_STAGE, label: 'base-source', main });
+// [DEC-OPS-413] 단독 실행 대상(SOP §6.3) — 무엇이든 시작하기 전에 대기열에서 차례를 기다린다(검증 안에서 부르면 같은 실행이다).
+if (isMain) {
+  ensureQueued('base-source');
+  runReportingChild({ argv: process.argv.slice(2), root: ROOT, stage: CHILD_STAGE, label: 'base-source', main });
+}

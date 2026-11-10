@@ -4,13 +4,14 @@
 // [DEC-OPS-410] One exception of use, not of behavior: records of `verify post-push` carry authority 'post-push-merge-evidence'. The merge
 // wait tool (scripts/pr-checks-wait.mjs) reads only those, and only when the record itself shows a clean, unchanged, non-overlapping
 // Windows run of the operational contracts at the PR head. Every other record stays diagnostic-only and is never read as evidence.
-import { execFileSync } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { appendFileSync, closeSync, constants as fsConstants, fstatSync, lstatSync, mkdirSync, openSync, readFileSync,
   readdirSync, statSync, writeFileSync } from 'node:fs';
 import { constants } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { listQueuePipeNamesSync, waitingSupervisorPids } from './heavy-run-pipes.mjs';
 
 const WARNING = '[verification-record] Diagnostic recording is unavailable; verification behavior is unchanged.';
 const RUN_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -53,18 +54,46 @@ const HEAVY_PROCESS_KINDS = [
 const executable = name => (typeof name === 'string' ? name.toLowerCase().replace(/\.exe$/, '') : '');
 const WATCHED_EXECUTABLES = new Set(HEAVY_PROCESS_KINDS.flatMap(([, names]) => names));
 
+// [DEC-OPS-413] A queue supervisor (scripts/heavy-run-queue.mjs `run`) and the entry that synchronously waits for it.
+const QUEUE_SUPERVISOR = /(?:^|[\s"\\/])heavy-run-queue\.mjs"?\s+run(?:\s|$)/i;
+const ENTRY_KINDS = new Set(['verify', 'isolated-e2e', 'reusable-base', 'pre-push']);
+const entryShaped = entry => typeof entry?.command === 'string' && HEAVY_PROCESS_KINDS.some(([kind, names, pattern]) =>
+  ENTRY_KINDS.has(kind) && names.includes(executable(entry.name)) && pattern.test(entry.command));
+
+/**
+ * [DEC-OPS-413] Waiting queue supervisors and their direct entry-shaped parent — nothing else. A supervisor waits before it
+ * starts any child, and the entry that wrapped itself into the queue does nothing but wait for it (it wraps itself as its
+ * first action), so neither is running work. Only a process whose PID holds a waiter pipe *and* whose command line is a
+ * supervisor counts (the listing and the pipe list are taken at different moments); the walk stops at the direct parent, so
+ * an outer run that started a waiting entry (another repository's run, a `node --test`) stays visible.
+ */
+export function waitingExclusions(processes, waitingPids) {
+  const excluded = new Set();
+  if (!waitingPids?.size) return excluded;
+  const byPid = new Map(processes.map(entry => [entry.pid, entry]));
+  for (const entry of processes) {
+    if (!waitingPids.has(entry.pid) || executable(entry.name) !== 'node' || typeof entry.command !== 'string'
+      || !QUEUE_SUPERVISOR.test(entry.command)) continue;
+    excluded.add(entry.pid);
+    const parent = byPid.get(entry.ppid);
+    if (parent && entryShaped(parent)) excluded.add(parent.pid);
+  }
+  return excluded;
+}
+
 /**
  * Kinds of heavy runs among processes outside the caller's own ancestry (pure; processes are {pid, ppid, name, command}).
  * null means the list could not show what ran: the caller's own entry has no command line (the listing is blind), or a
  * watched executable's command line was unreadable (an elevated process) while nothing else was seen. A blind scan is
- * "unknown", never "nothing".
+ * "unknown", never "nothing". waitingPids are PIDs holding a heavy-run queue waiter pipe (see waitingExclusions).
  */
-export function heavyProcessKinds(processes, selfPid = process.pid) {
+export function heavyProcessKinds(processes, selfPid = process.pid, waitingPids = new Set()) {
   const self = processes.find(entry => entry.pid === selfPid);
   if (!self || typeof self.command !== 'string') return null;
   const parents = new Map(processes.map(entry => [entry.pid, entry.ppid]));
   const own = new Set();
   for (let pid = selfPid; pid && !own.has(pid); pid = parents.get(pid)) own.add(pid);
+  for (const pid of waitingExclusions(processes, waitingPids)) own.add(pid);
   const kinds = new Set();
   let unreadable = false;
   for (const entry of processes) {
@@ -79,19 +108,47 @@ export function heavyProcessKinds(processes, selfPid = process.pid) {
   return kinds.size || !unreadable ? [...kinds].sort() : null;
 }
 
-/** A slow listing (a loaded machine) times out into an unknown sample rather than delaying the verification it records. */
-export function listProcesses({ timeout = 8000 } = {}) {
-  const options = { encoding: 'utf8', windowsHide: true, timeout, maxBuffer: 16 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] };
-  if (process.platform === 'win32') {
-    const json = execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
-      'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine | ConvertTo-Json -Compress'], options);
-    return [].concat(JSON.parse(json)).map(entry =>
+const WINDOWS_LISTING = ['powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
+  'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine | ConvertTo-Json -Compress']];
+const POSIX_LISTING = ['ps', ['-eo', 'pid=,ppid=,ucomm=,args=']];
+const listingOptions = timeout => ({ encoding: 'utf8', windowsHide: true, timeout, maxBuffer: 16 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] });
+
+function parseListing(output, windows) {
+  if (windows) {
+    return [].concat(JSON.parse(output)).map(entry =>
       ({ pid: entry.ProcessId, ppid: entry.ParentProcessId, name: entry.Name, command: entry.CommandLine }));
   }
-  return execFileSync('ps', ['-eo', 'pid=,ppid=,ucomm=,args='], options).split('\n').flatMap(line => {
+  return output.split('\n').flatMap(line => {
     const match = /^\s*(\d+)\s+(\d+)\s+(\S+)\s+(.*)$/.exec(line);
     return match ? [{ pid: Number(match[1]), ppid: Number(match[2]), name: match[3], command: match[4] }] : [];
   });
+}
+
+/** A slow listing (a loaded machine) times out into an unknown sample rather than delaying the verification it records. */
+export function listProcesses({ timeout = 8000 } = {}) {
+  const windows = process.platform === 'win32';
+  const [command, args] = windows ? WINDOWS_LISTING : POSIX_LISTING;
+  return parseListing(execFileSync(command, args, listingOptions(timeout)), windows);
+}
+
+/** The same listing without blocking the event loop (the heavy-run queue supervisor keeps answering its pipe meanwhile). */
+export function listProcessesAsync({ timeout = 15_000 } = {}) {
+  const windows = process.platform === 'win32';
+  const [command, args] = windows ? WINDOWS_LISTING : POSIX_LISTING;
+  return new Promise((resolvePromise, reject) => {
+    execFile(command, args, listingOptions(timeout), (error, stdout) => {
+      if (error) return reject(error);
+      try { resolvePromise(parseListing(stdout, windows)); } catch (parseError) { reject(parseError); }
+    });
+  });
+}
+
+/**
+ * [DEC-OPS-413] PIDs of waiting heavy-run queue supervisors, read *after* the process listing (a pipe present now was held by a
+ * process alive at the listing). A namespace that cannot be listed excludes nothing — over-reporting overlap is the safe side.
+ */
+export function waitingQueuePids() {
+  try { return waitingSupervisorPids(listQueuePipeNamesSync()); } catch { return new Set(); }
 }
 
 /** Union of the samples a run took; any sample that saw nothing known is unknown unless another sample saw a run. */
@@ -109,7 +166,10 @@ function concurrency(samples) {
  */
 function scanHeavyProcesses() {
   if (process.env.NODE_TEST_CONTEXT || process.env.VERIFICATION_RECORD_PROCESS_SCAN === 'off') return null;
-  try { return heavyProcessKinds(listProcesses()); } catch { return null; }
+  try {
+    const processes = listProcesses();
+    return heavyProcessKinds(processes, process.pid, waitingQueuePids());
+  } catch { return null; }
 }
 
 /**

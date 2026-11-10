@@ -14,7 +14,7 @@ export const MIGRATION_PRODUCT_INPUTS = Object.freeze([
   // Actual inputs of the packaged workspace integration drill; UI/server/AI remain separate products.
   'tools/migration-workspace/engine.mjs', 'tools/migration-workspace/store.mjs', 'tools/migration-workspace/inputs.mjs',
   'config/migration-test-duration-profile.json', 'scripts/migration-test-shard.mjs', 'scripts/migration-profile-provenance.mjs',
-  'scripts/verify.mjs', 'scripts/verification-record.mjs',
+  'scripts/verify.mjs', 'scripts/verification-record.mjs', 'scripts/heavy-run-queue.mjs', 'scripts/heavy-run-pipes.mjs',
   'scripts/migration-verification-contract.test.mjs', 'scripts/required-checks-contract.mjs',
   'scripts/adoption-review.mjs', 'scripts/adoption-execute.mjs', 'scripts/adoption-execute.test.mjs',
   'scripts/adoption-execute-fixtures.mjs',

@@ -9,6 +9,7 @@ import { runCommand, verifyReusableArtifact } from './verify-reusable-artifact.m
 import { normalizeBackendLayout } from './reusable-layout.mjs';
 import { projectionLedgerCoverageErrors } from './reusable-projection-ledger.mjs';
 import { isCopyableSourceFile, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
+import { ensureQueued } from './heavy-run-queue.mjs';
 
 /** 생성 직후 원본 쪽에서 원장이 생성기가 지운 파일을 빠짐없이 적었는지 본다(Phase 2 D6). */
 export function assertProjectionLedgerCoverage(root, output) {
@@ -93,6 +94,8 @@ export async function verifyReusableBase({ root, profile, layout = 'multi-module
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  // [DEC-OPS-413] 단독 실행 대상(SOP §6.3) — 무엇이든 시작하기 전에 대기열에서 차례를 기다린다.
+  ensureQueued('base-verify');
   try {
     await verifyReusableBase({ root: resolve(dirname(fileURLToPath(import.meta.url)), '..'), ...parseBaseVerificationArgs(process.argv.slice(2)) });
   } catch (error) { process.stderr.write(`${error.message}\n`); process.exitCode = 1; }

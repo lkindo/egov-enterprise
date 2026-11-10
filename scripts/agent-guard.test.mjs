@@ -198,6 +198,35 @@ const CASES = {
       'gh pr checks 1002 --watch=false', 'gh pr checks 1002 --watch=0', 'gh pr checks 1002 --watch="false"',
       'gh -R OWNER/REPO pr checks 1002 --required', 'Write-Output "& \'C:\\Program Files\\GitHub CLI\\gh.exe\' pr checks 1002 --watch"'],
   },
+  // [DEC-OPS-413] 2026-11-09~10 다른 세션의 무거운 실행과 겹쳐 post-push 기록 둘이 무효가 됐다. 전체 실행만 대기열로 보내고 표적 실행은 통과한다.
+  'heavy-run-unqueued': {
+    hit: ['.\\gradlew.bat :api-server:test', './gradlew :api-server:test --tests "*"', './gradlew :api-server:test --tests "*Test"',
+      './gradlew :api-server:harnessTest --tests "*Linter*" :api-server:schemaValidationTest', 'gradlew.bat onlineBuild', './gradlew check',
+      './gradlew localGate', './gradlew frontendUnitTest', './gradlew jacocoOnlineReport', './gradlew jacocoMigrationReportInputs',
+      './gradlew jacocoRootCoverageVerification', './gradlew :api-server:vendorConformanceTest', 'npx cross-env TZ=Asia/Seoul gradlew.bat test',
+      'pnpm -C frontend test', 'pnpm -C frontend run test:coverage', 'pnpm -C frontend exec vitest run', 'npx vitest run', 'cd frontend && pnpm test',
+      'pnpm -C frontend run test:e2e -- --list', 'pnpm -C frontend exec playwright test e2e/a.spec.ts', 'npm --prefix frontend test',
+      'npm run test:operational-contracts', 'npm test', 'npm run test:coverage', 'node --test', 'node --test "scripts/*.test.mjs"',
+      'TZ=Asia/Seoul ./gradlew test', 'bash -lc "./gradlew :api-server:test"',
+      // 벤더 증거 입력이라 아직 스스로 줄을 서지 않는 진입점(다음 재기록 묶음에서 연결).
+      'npm run test:e2e:isolated', 'npm run test:e2e:isolated -- --representative', 'npm run base:generate-db -- --profile core',
+      'node scripts/run-isolated-e2e.mjs --representative', 'node scripts\\generate-reusable-base-db.mjs --profile core'],
+    pass: ['./gradlew :api-server:test --tests "*FooTest"', './gradlew :api-server:test --tests "nuri.api.FooTest" :api-server:harnessTest --tests "*Linter*"',
+      './gradlew compileJava compileTestJava', './gradlew :api-server:jacocoTestReport', './gradlew :api-server:bootJar',
+      'pnpm -C frontend test -- src/a.test.ts', 'pnpm -C frontend exec vitest run src/a.test.ts', 'pnpm -C frontend exec vitest related src/a.ts',
+      'pnpm -C frontend exec vitest run --list', 'pnpm -C frontend exec playwright test --list', 'pnpm -C frontend run type-check', 'pnpm -C frontend run lint',
+      'node --test scripts/a.test.mjs scripts/b.test.mjs', 'npm run test:shared-memory', 'npm run verify:post-push', 'npm run base:verify -- --profile core',
+      'node scripts/heavy-run-queue.mjs run --kind gradle -- .\\gradlew.bat :api-server:test', 'git commit --only -m "./gradlew test 는 대기열로" -- a.md',
+      'node scripts/heavy-run-queue.mjs run --kind isolated-e2e -- npm run test:e2e:isolated', 'npm run base:generate-source -- --profile core',
+      'node --test scripts/run-isolated-e2e.test.mjs',
+      'echo "pnpm -C frontend test"'],
+  },
+  'heavy-run-queue-bypass': {
+    hit: ['EGOV_HEAVY_RUN_QUEUE=off npm run verify:push', 'export EGOV_HEAVY_RUN_QUEUE=off', '$env:EGOV_HEAVY_RUN_QUEUE = "off"',
+      'node scripts/heavy-run-queue.mjs confirm-idle --run 20261110-ab12cd34'],
+    pass: ['node scripts/heavy-run-queue.mjs status', 'git commit --only -m "EGOV_HEAVY_RUN_QUEUE=off 는 묻는다" -- a.md',
+      'grep -n EGOV_HEAVY_RUN_QUEUE scripts/heavy-run-queue.mjs'],
+  },
   'guard-canary': {
     hit: ['echo AGENT_GUARD_CANARY', '  echo AGENT_GUARD_CANARY  '],
     pass: ['echo AGENT_GUARD_CANARY_X', 'grep -n AGENT_GUARD_CANARY scripts/agent-guard.mjs', 'echo hello'],
@@ -429,7 +458,8 @@ test('막는 판정이 묻는 판정보다 앞서고, 걸린 규칙의 이유와
   assert.equal(verdict.decision, 'deny');
   assert.deepEqual(verdict.rules, ['git-commit-without-only', 'git-force-push']);
   assert.match(verdict.reason, /\[agent-guard:git-commit-without-only\].*--only/u);
-  assert.equal(decide('git status && npm test'), null);
+  // 루트 `npm test` 는 Gradle 전체 시험이라 heavy-run-unqueued 가 막는다(DEC-OPS-413) — 걸리지 않는 명령은 가벼운 node 시험으로 본다.
+  assert.equal(decide('git status && npm run test:shared-memory'), null);
   assert.equal(decide(''), null);
 });
 

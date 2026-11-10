@@ -17,6 +17,8 @@ git config core.hooksPath .githooks
 
 현재 계약 게이트는 `api-docs.json`과 생성 타입/Zod 파일이 Git에 추적되는지 확인한다. 그 뒤 index 와 작업 트리 둘 다 본다 — index 의 스펙으로 임시 디렉터리에 다시 만든 결과를 index 생성물과 비교하고, 작업 트리가 index 와 다르면 작업 트리 쌍도 비교한다. 검증은 작업 파일과 index를 수정하지 않으며 줄바꿈 차이만 정규화한다. 하네스는 소스 변경의 pre-push 경로에도 연결하지만 훅은 우회 가능하므로 최종 병합 권위는 required CI다.
 
+pre-push는 맨 앞(stdin 을 읽기 전)에서 [무거운 검증 대기열](../scripts/heavy-run-queue.mjs)을 거친다(DEC-OPS-413). Windows 에서 같은 저장소의 다른 무거운 실행이 끝날 때까지 기다린 뒤, 감독이 이 훅을 같은 argv·stdin 으로 다시 실행하고 종료 코드를 그대로 돌려준다. 대기 시간은 실행 기록 밖이다. 앞 실행이 끝났는지 알 수 없으면 사람이 `node scripts/heavy-run-queue.mjs confirm-idle --run <runId>` 로 확인할 때까지 시작하지 않으며, 상태는 `node scripts/heavy-run-queue.mjs status` 로 본다. 비Windows·시험 안·`EGOV_HEAVY_RUN_QUEUE=off` 는 대기열 없이 그대로 돈다(에이전트는 사용자 지시 없이 끄지 않는다).
+
 pre-push는 검사할 범위를 push 범위(stdin의 `remote_sha..local_sha`)로 고르지만, 컴파일·타입·codegen·lint·운영 계약·Vitest·하네스는 모두 push하는 커밋이 아니라 현재 체크아웃(index·작업 트리)에서 돈다. 다른 브랜치를 push하거나 커밋하지 않은 변경이 있으면 로컬 결과는 push하는 커밋의 증거가 아니며, 그 커밋의 권위는 required CI다.
 
 pre-push와 `verify`는 고정 단계 ID·시간·결과를 ignored `build/verification-runs/<UUID>.jsonl`에 관측용으로 남긴다. 명령·환경·출력 원문은 기록하지 않으며 기록 오류가 검사를 건너뛰거나 실패를 통과시키지 않는다. 미완결 기록은 성공이 아니고, 이 기록으로 훅·CI·독립 재검증을 생략할 수 없다. 통합 점검의 폼 census·전체 하네스는 유지한다([F2 판단과 기록 해석](../docs/03-guides/harness-improvement-pilot.md)).

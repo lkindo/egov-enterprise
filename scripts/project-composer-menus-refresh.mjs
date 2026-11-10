@@ -11,6 +11,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runComposerCommand } from './project-composer-command.mjs';
 import { createOwnedPostgres, ownedContainerId, removeOwnedPostgres, removeOwnedPostgresByToken, waitForOwnedPostgres } from './project-composer-postgres.mjs';
+import { ensureQueued } from './heavy-run-queue.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -55,7 +56,9 @@ export async function refreshComposerMenus({ root = ROOT, run = runComposerComma
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const shown = path => relative(ROOT, path).replaceAll('\\', '/');
+  // [DEC-OPS-413] 단독 실행 대상(SOP §6.3) — 무엇이든 시작하기 전에 대기열에서 차례를 기다린다.
+  ensureQueued('menus-refresh');
+  const shown =path => relative(ROOT, path).replaceAll('\\', '/');
   try {
     const { log } = await refreshComposerMenus();
     process.stdout.write(`[menus] config/project-composer-menus.json 을 원본 마이그레이션 적용 결과로 갱신했습니다. 로그: ${shown(log)}\n`);
