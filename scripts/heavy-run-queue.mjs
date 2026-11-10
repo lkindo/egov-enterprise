@@ -132,25 +132,32 @@ export function dockerOutcome({ error, stdout = '', stderr = '' }, { liveRestore
 }
 
 /**
- * live-restore 설정(pure): files 는 [{ text } | { missing: true } | { error }]. 설정은 JSON 으로 읽는다 — 관리 설정은 엔진 옵션을 JSON
- * 문자열로 담으므로(`"value": "{\"live-restore\":\ntrue}"`) 그 문자열도 다시 파싱한다(Codex 46 지적 2). 하나라도 읽거나 파싱하지
- * 못하면 unknown, 어디서든 `live-restore` 가 true 면 on, 그 밖에는 off(Docker 기본값).
- * 이 세 파일 밖(레지스트리·MDM)에서 켠 경우는 수용한 남은 위험이다(DEC-OPS-413 ⑦).
+ * live-restore 설정(pure): files 는 [{ text } | { missing: true } | { error }]. 설정은 JSON 으로 읽고, 판정은 해석한 키와 불리언으로만
+ * 한다 — 원문 정규식은 이스케이프(`\n`·`l`)로 쓴 키를 놓친다(Codex 46 지적 2·47). 관리 설정의 엔진 옵션(`dockerDaemonOptions`,
+ * 그 `value`)은 JSON 문자열이라 늘 다시 파싱하고, 파싱하지 못하면 unknown 이다. 그 밖의 `{` 로 시작하는 문자열은 파싱을 시도해 되면
+ * 따라 들어가고, 안 되면 설정이 아닌 글로 본다. 파일을 읽거나 파싱하지 못하면 unknown, 어디서든 `live-restore` 가 true 면 on, 그 밖에는
+ * off(Docker 기본값). 이 세 파일 밖(레지스트리·MDM)에서 켠 경우는 수용한 남은 위험이다(DEC-OPS-413 ⑦).
  */
 export function liveRestoreState(files) {
   let on = false;
-  const visit = (value, depth) => {
+  const visit = (value, depth, options = false) => {
     if (depth > 8 || value === null) return;
     if (typeof value === 'string') {
       const text = value.trim();
-      if (!text.startsWith('{') || !/live-restore/i.test(text)) return;
-      visit(JSON.parse(text), depth + 1);
+      // 엔진 옵션 문자열은 반드시 파싱한다(실패는 바깥에서 unknown). 빈 문자열은 옵션 없음이다.
+      if (options) { if (text) visit(JSON.parse(text), depth + 1); return; }
+      if (!text.startsWith('{')) return;
+      let parsed;
+      try { parsed = JSON.parse(text); } catch { return; }
+      visit(parsed, depth + 1);
       return;
     }
     if (typeof value !== 'object') return;
     for (const [key, item] of Object.entries(value)) {
-      if (key.toLowerCase() === 'live-restore' && item === true) on = true;
-      visit(item, depth + 1);
+      const name = key.toLowerCase();
+      if (name === 'live-restore' && item === true) on = true;
+      // dockerDaemonOptions 는 JSON 문자열이거나 { value: JSON 문자열, locked } 다.
+      visit(item, depth + 1, name === 'dockerdaemonoptions' || (options && name === 'value'));
     }
   };
   for (const file of files) {

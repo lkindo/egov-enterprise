@@ -144,6 +144,12 @@ test('live-restore: on or unreadable makes a stopped engine unknown; off (or unm
   assert.equal(liveRestoreState([{ text: '{"live-restore": tru' }]), 'unknown', 'an unreadable settings file is unknown');
   assert.equal(liveRestoreState([{ text: '{"linuxVM":{"dockerDaemonOptions":{"value":"{\\"live-restore\\": oops}"}}}' }]), 'unknown');
   assert.equal(liveRestoreState([{ text: '{"note":"live-restore: true is described here"}' }]), 'off', 'prose is not a setting');
+  // 2026-11-10 Codex 47차: 엔진 옵션 문자열 안의 Unicode 이스케이프(`l` = l)로 쓴 키도 해석한 키로 판정한다.
+  assert.equal(liveRestoreState([{ text: '{"linuxVM":{"dockerDaemonOptions":{"locked":true,"value":"{\\"\\\\u006cive-restore\\":true}"}}}' }]), 'on');
+  assert.equal(liveRestoreState([{ text: '{"linuxVM":{"dockerDaemonOptions":"{\\"live-restore\\":true}"}}' }]), 'on', 'the options may be the string itself');
+  assert.equal(liveRestoreState([{ text: '{"linuxVM":{"dockerDaemonOptions":{"value":"not json"}}}' }]), 'unknown', 'options that do not parse are unknown');
+  assert.equal(liveRestoreState([{ text: '{"linuxVM":{"dockerDaemonOptions":{"value":""}}}' }]), 'off', 'empty options are no options');
+  assert.equal(liveRestoreState([{ text: '{"template":"{not json} is fine"}' }]), 'off', 'other brace text is not a setting');
 });
 
 test('busy daemons: CPU that grew between two samples by the threshold; unmeasured CPU is unknown', () => {
