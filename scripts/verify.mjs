@@ -25,6 +25,7 @@
 import { execSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { platform } from 'node:os';
+import { ensureQueued } from './heavy-run-queue.mjs';
 import { createRun } from './verification-record.mjs';
 
 const isWin = platform() === 'win32';
@@ -37,6 +38,10 @@ if (!allowedScopes.has(scope)) {
   console.error(`알 수 없는 범위 '${requestedScope}' — ${[...allowedScopes].join('|')} 중 하나여야 합니다.`);
   process.exit(2);
 }
+
+// [DEC-OPS-413] 단독 실행 대상(SOP §6.3)은 실행 기록을 열기 전에 대기열에서 차례를 기다린다(비Windows·Git 밖·시험 안은 그대로 돈다).
+// ops 는 원격 정책 조회 하나라 무거운 검증이 아니다.
+if (scope !== 'ops') ensureQueued('verify');
 
 const record = createRun({ root: process.cwd(), entrypoint: 'verify', scope,
   parentRunId: process.env.EGOV_VERIFICATION_RUN_ID || undefined, timezone: process.env.TZ || 'Asia/Seoul' });

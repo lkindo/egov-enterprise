@@ -529,6 +529,117 @@ function gradleTestFilters(raw) {
   return pairs;
 }
 
+/**
+ * [DEC-OPS-413] 대기열 없이 부르면 막는 전체 실행. 표적 실행(구체적 `--tests`, 파일을 적은 Vitest·node 시험, 목록만 보는 Playwright)은
+ * 통과한다. 목록에 없는 태스크·스크립트와 변수로 만든 명령은 판정하지 않는다(가드 원칙 — 실행 기록이 뒤를 받친다).
+ * 시험을 실행하는 Gradle 태스크는 build.gradle 의 dependsOn 에서 정했다(모듈별 jacocoTestReport 는 시험→보고서 finalizedBy 뿐이라 뺀다).
+ */
+const GRADLE_TEST_TYPE = (name) => ['test', 'harnessTest', 'schemaValidationTest'].includes(name) || /^vendor\w*Test$/.test(name);
+const GRADLE_AGGREGATES = new Set(['check', 'build', 'onlineBuild', 'localGate', 'frontendUnitTest', 'pitest', 'jacocoRootReport',
+  'jacocoOnlineReport', 'jacocoMigrationReport', 'jacocoOnlineReportInputs', 'jacocoMigrationReportInputs']);
+const BROAD_TEST_FILTER = /^\*+(?:Tests?|IT)?\*?$/;
+// 격리 E2E·DB 번들 생성은 벤더 증거 입력이라 스스로 줄을 서는 연결을 다음 벤더 재기록 묶음으로 미뤘다 — 그때까지 직접 부르면 여기서 막는다.
+const ROOT_HEAVY_SCRIPTS = new Set(['test', 'test:ci', 'test:coverage', 'test:operational-contracts', 'test:e2e:isolated',
+  'test:e2e:enterprise-task-lab', 'base:generate-db']);
+const UNWRAPPED_ENTRY_SCRIPTS = /(?:^|[\\/])(run-isolated-e2e|generate-reusable-base-db)\.mjs$/i;
+const FRONTEND_HEAVY_SCRIPTS = new Set(['test', 'test:coverage', 'test:e2e', 'test:e2e:full', 'test:e2e:coverage', 'test:e2e:ui', 'test:e2e:debug']);
+const VITEST_VALUE_OPTIONS = new Set(['-c', '--config', '--project', '--dir', '-r', '--root', '--reporter', '--outputFile', '--pool', '-t',
+  '--testNamePattern', '--environment', '--shard', '--maxWorkers', '--minWorkers', '--mode', '--exclude']);
+const baseName = (value) => value.replaceAll('\\', '/').split('/').pop().toLowerCase().replace(/\.(?:exe|cmd|bat|ps1|mjs|js)$/, '');
+
+function gradleRunsAllTests(values) {
+  const tasks = [];
+  for (let index = 0; index < values.length; index += 1) {
+    const word = values[index];
+    if (word === '--tests' && index + 1 < values.length) { tasks.at(-1)?.filters.push(values[index + 1]); index += 1; }
+    else if (word.startsWith('--tests=')) tasks.at(-1)?.filters.push(word.slice('--tests='.length));
+    else if (GRADLE_VALUE_OPTIONS.has(word)) index += 1;
+    else if (!word.startsWith('-')) tasks.push({ name: word.split(':').pop(), filters: [] });
+  }
+  // 여러 --tests 는 합집합이다 — 넓은 필터가 하나라도 있으면 전체 실행이다(Codex 43 지적 7).
+  return tasks.some(({ name, filters }) => GRADLE_AGGREGATES.has(name) || /CoverageVerification$/.test(name)
+    || (GRADLE_TEST_TYPE(name) && (!filters.length || filters.some((filter) => BROAD_TEST_FILTER.test(filter)))));
+}
+
+function vitestRunsAll(values) {
+  if (values[0] === 'related' || values.includes('--list')) return false;
+  for (let index = 0; index < values.length; index += 1) {
+    const word = values[index];
+    if (VITEST_VALUE_OPTIONS.has(word)) { index += 1; continue; }
+    if (!word.startsWith('-') && !['run', 'watch', 'dev'].includes(word)) return false;
+  }
+  return true;
+}
+
+const playwrightRunsTests = (values) => values[0] === 'test' && !values.includes('--list');
+
+/**
+ * 명령 단어들(따옴표를 벗긴 값)이 대기열 밖의 전체 실행이면 그 종류, 아니면 null. cwd 는 npm·pnpm 스크립트가 어느 패키지의 것인지
+ * 정한다 — 디렉터리 옵션(`-C`·`--dir`·`--prefix`·`--filter`)이 없으면 cwd 의 패키지다(Codex 43 지적 6: 루트 pnpm 실행).
+ */
+export function heavyRunKind(values, { cwd = '' } = {}) {
+  let at = 0;
+  while (at < values.length && /^[A-Za-z_]\w*=/.test(values[at])) at += 1;
+  const [command, ...args] = values.slice(at);
+  if (!command) return null;
+  const name = baseName(command);
+  if (name === 'gradlew') return gradleRunsAllTests(args) ? 'gradle' : null;
+  if (name === 'vitest') return vitestRunsAll(args) ? 'vitest' : null;
+  if (name === 'playwright' || (name === 'cli' && /playwright/i.test(command))) return playwrightRunsTests(args) ? 'playwright' : null;
+  if (name === 'npx' || name === 'cross-env' || name === 'cross-env-shell') {
+    let index = 0;
+    while (index < args.length && args[index].startsWith('-')) index += 1;
+    return heavyRunKind(args.slice(index), { cwd });
+  }
+  if (name === 'node') {
+    const test = args.indexOf('--test');
+    if (test >= 0) {
+      const files = args.slice(test + 1).filter((word) => !word.startsWith('-'));
+      return !files.length || files.some((file) => /[*?]/.test(file)) ? 'node-test' : null;
+    }
+    const script = args.find((word) => !word.startsWith('-'));
+    if (script && UNWRAPPED_ENTRY_SCRIPTS.test(script)) return baseName(script);
+    return script && /vitest|playwright/i.test(script) ? heavyRunKind([script, ...args.slice(args.indexOf(script) + 1)]) : null;
+  }
+  if (name === 'pnpm' || name === 'npm') {
+    let index = 0;
+    let directory = null;
+    let filtered = false;
+    for (; index < args.length && args[index].startsWith('-'); index += 1) {
+      if (['-C', '--dir', '--prefix'].includes(args[index])) { directory = args[index + 1] ?? ''; index += 1; }
+      else if (args[index] === '--filter') { filtered = true; index += 1; }
+    }
+    // 디렉터리 옵션은 cwd 기준으로 푼다(`-C .`·`-C frontend/.`, Codex 44 지적 4). --filter 는 패키지 선택자라 어느 패키지인지 모르면 둘 다 본다.
+    const target = (directory === null ? cwd : resolve(cwd || '.', directory)).replaceAll('\\', '/').replace(/\/+$/, '');
+    const frontend = /(?:^|\/)frontend$/i.test(target);
+    const verb = args[index];
+    if (verb === 'exec' || verb === 'dlx') return heavyRunKind(args.slice(index + 1), { cwd });
+    if (name === 'pnpm' && (verb === 'vitest' || verb === 'playwright')) return heavyRunKind(args.slice(index), { cwd });
+    const script = ['run', 'run-script'].includes(verb) ? args[index + 1] : (verb === 't' ? 'test' : verb);
+    const rest = args.slice(index + (['run', 'run-script'].includes(verb) ? 2 : 1)).filter((word) => word !== '--');
+    if (!script) return null;
+    const heavy = filtered ? new Set([...FRONTEND_HEAVY_SCRIPTS, ...ROOT_HEAVY_SCRIPTS]) : (frontend ? FRONTEND_HEAVY_SCRIPTS : ROOT_HEAVY_SCRIPTS);
+    if (!heavy.has(script)) return null;
+    // 프런트 단위 시험 스크립트에 파일을 더하면 그 파일만 돈다. E2E·루트 Gradle·운영 계약은 인자와 관계없이 전체다.
+    return frontend && ['test', 'test:coverage'].includes(script) && !vitestRunsAll(rest) ? null : `${name}-${script}`;
+  }
+  return null;
+}
+
+/** 대기열을 끄는 대입(`K=V cmd`·`export`·`set`·`setx`·`env`·`cross-env`·PowerShell `$env:`)이나 `confirm-idle` 호출인가. */
+function bypassesHeavyRunQueue(code, raw) {
+  if (/\$env:EGOV_HEAVY_RUN_QUEUE\s*=/i.test(code)) return true;
+  const words = alignedWords(code, raw);
+  const values = words.map((word) => unquote(word.text.replace(/^&/, '')));
+  const at = commandAt(words.map((word) => word.code));
+  const names = /^EGOV_HEAVY_RUN_QUEUE(?:=|$)/i;
+  if (values.slice(0, at).some((value) => names.test(value))) return true;
+  const command = baseName(values[at] ?? '');
+  if (['export', 'set', 'setx', 'env', 'npx', 'cross-env', 'cross-env-shell'].includes(command)
+    && values.slice(at + 1).some((value) => names.test(value))) return true;
+  return values.some((value, index) => /(?:^|[\\/])heavy-run-queue\.mjs$/i.test(value) && values[index + 1] === 'confirm-idle');
+}
+
 /** 하네스·스키마 태그 시험을 가리키는 필터인가. `Class`·`pkg.Class`·`pkg.Class.method`·`*Class*` 를 받는다. */
 function namesTaggedClass(filter, tagged) {
   const parts = filter.split('.').map((part) => part.replace(/\*/g, ''));
@@ -1091,6 +1202,25 @@ export const RULES = Object.freeze([
         try { return statSync(join(dir, '.git')).isFile(); } catch { return false; }
       });
     },
+  },
+  {
+    id: 'heavy-run-unqueued', decision: 'deny',
+    why: '전체 시험(Gradle 시험 태스크·전체 Vitest·운영 계약·Playwright)은 한 기계에서 하나씩 돈다(SOP §6.3) — 대기열 밖에서 돌리면 다른 세션의 post-push·pre-push 와 겹쳐 양쪽 모두 그 커밋의 증거가 되지 않는다(DEC-OPS-413).',
+    fix: '`node scripts/heavy-run-queue.mjs run --kind <종류> -- <같은 명령>` 으로 감싸 차례를 기다린다(`npm run verify*`·`base:verify`·`base:generate-source`·`project:menus:refresh` 는 스스로 줄을 선다). 영향 시험만 볼 거면 대상을 좁힌다 — `--tests <클래스>`, `vitest run <파일>`, `node --test <파일>`.',
+    // 명령 자리는 commandAt 으로 찾는다 — 환경 대입·셸 예약어·PowerShell 호출 연산자(`& node …`·`&"…\node.exe" …`)를 건너뛴다(Codex 43 지적 4).
+    match: ({ code, raw, cwd }) => {
+      const words = alignedWords(code, raw);
+      const at = commandAt(words.map((word) => word.code));
+      return heavyRunKind(words.slice(at).map((word) => unquote(word.text.replace(/^&/, ''))), { cwd }) !== null;
+    },
+  },
+  {
+    id: 'heavy-run-queue-bypass', decision: 'ask',
+    why: '`EGOV_HEAVY_RUN_QUEUE=off` 는 무거운 검증 대기열을 건너뛰고, `confirm-idle` 은 앞 실행이 끝났는지 알 수 없는 상태를 사람이 확인했다는 뜻이다 — 둘 다 다른 세션의 실행과 겹칠 수 있다(DEC-OPS-413).',
+    fix: '`node scripts/heavy-run-queue.mjs status` 로 무엇이 막는지 보고 사용자에게 알린 뒤 지시를 받는다. 남은 프로세스·컨테이너는 끝내거나 지운다.',
+    // 실제 대입·호출 자리의 단어 값을 본다 — 따옴표 친 경로(`node "scripts/heavy-run-queue.mjs" confirm-idle`)도 잡고, 커밋 메시지 속 문구는
+    // 대입이나 호출이 아니므로 통과한다(Codex 43 지적 5).
+    match: ({ code, raw }) => bypassesHeavyRunQueue(code, raw),
   },
   {
     id: 'guard-canary', decision: 'deny',

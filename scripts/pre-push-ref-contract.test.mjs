@@ -294,7 +294,7 @@ function observeVerification(scope, { source, failCommand, env = {}, recordEvent
   const zones = [];
   const runner = source ?? readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8');
   try {
-    runInNewContext(runner.replace(/^import [^\r\n]+ from '(?:node:[^']+|\.\/verification-record\.mjs)';\r?$/gm, ''), {
+    runInNewContext(runner.replace(/^import [^\r\n]+ from '(?:node:[^']+|\.\/verification-record\.mjs|\.\/heavy-run-queue\.mjs)';\r?$/gm, ''), {
       execSync: (command, options) => {
         commands.push(command);
         zones.push(options?.env?.TZ);
@@ -304,6 +304,7 @@ function observeVerification(scope, { source, failCommand, env = {}, recordEvent
       },
       platform: () => 'linux',
       randomBytes: () => ({ toString: () => 'fixture-only' }),
+      ensureQueued: (kind) => { recordEvents.push({ event: 'queue', kind }); return 'direct'; },
       createRun: (options) => {
         recordEvents.push({ event: 'begin', ...options });
         return {
@@ -330,6 +331,29 @@ function observeVerification(scope, { source, failCommand, env = {}, recordEvent
   }
   return { commands, exits, zones };
 }
+
+// [DEC-OPS-413] 단독 실행 대상은 실행 기록을 열기 전에 대기열에서 차례를 기다린다 — 대기 시간이 기록에 들어가지 않고, 기록이 연
+// 뒤에 줄을 서면 그 기록이 다른 실행과의 겹침을 담는다. ops 는 원격 정책 조회 하나라 줄을 서지 않는다.
+test('verify queues before it opens its run record, in every scope but ops', () => {
+  for (const scope of ['docs', 'fast', 'push', 'full', 'be', 'fe', 'e2e', 'migration', 'post-push', 'integrate']) {
+    const events = [];
+    observeVerification(scope, { recordEvents: events });
+    assert.deepEqual(events.slice(0, 2).map(({ event, kind }) => kind ?? event), ['verify', 'begin'], scope);
+  }
+  const ops = [];
+  observeVerification('ops', { recordEvents: ops });
+  assert.equal(ops.some(({ event }) => event === 'queue'), false);
+  assert.equal(ops[0]?.event, 'begin');
+  // 대기열 진입을 기록 뒤로 옮긴 실행기는 위 단언에 걸린다(red 재현): 기록을 먼저 연다.
+  const runner = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8').replace(/\r\n/g, '\n');
+  const queueLine = "if (scope !== 'ops') ensureQueued('verify');\n";
+  assert.ok(runner.includes(queueLine));
+  const moved = runner.replace(queueLine, '').replace(/(\n\/\/ 고정된 분류명만 관측한다)/, `\n${queueLine}$1`);
+  assert.notEqual(moved, runner);
+  const events = [];
+  observeVerification('push', { source: moved, recordEvents: events });
+  assert.deepEqual(events.slice(0, 2).map(({ event, kind }) => kind ?? event), ['begin', 'verify'], 'the moved runner opens its record first');
+});
 
 // 로컬 기본은 KST(개발 기계와 같은 조건)이고, 명시한 TZ 가 이겨 CI 러너(UTC) 조건을 그대로 재현할 수 있다.
 test('verify defaults to KST and lets an explicit TZ reproduce the UTC CI runner', () => {
