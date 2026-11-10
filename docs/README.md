@@ -13,6 +13,7 @@
 | 이 프레임워크로 **새 프로젝트를 시작**한다 | [getting-started.md](03-guides/getting-started.md) — 온보딩 런북 |
 | **초기 요구사항 수집부터 단계별로 에이전트에게 작업을 지시**한다(`P0~P5`) | [design-to-deliverables-guide.md §7](03-guides/design-to-deliverables-guide.md#7-요구사항-입구intake통합-전환cutover최종-종료closeout-연결) — 요구사항 작업공간 CLI·3축 Fit-Gap·에이전트 지시 플레이북 |
 | **에이전트로 작업**한다(작업 등급·승인·검증 절차) | [orchestration-protocol.md](03-guides/orchestration-protocol.md) — SOP |
+| 이 저장소의 **코드를 처음 고친다**(무엇을 읽고 무엇을 돌리나) | [AGENTS.md 작업 시작 시 필수 읽기](../AGENTS.md#작업-시작-시-필수-읽기) → 고칠 경로의 결정 색인은 `node scripts/decision-indexes.mjs --for <경로>` → 그 변경을 읽는 시험은 `node scripts/impact-tests.mjs --diff origin/main` → 범위별 검증은 [AGENTS.md 검증 표](../AGENTS.md#verification-by-change-scope)와 [.githooks/README.md](../.githooks/README.md)(무거운 검증은 [대기열](03-guides/orchestration-protocol.md#63-무거운-검증은-하나씩)이 하나씩 돌린다). 모듈 지도는 [project-context.md](../.agent/memory/project-context.md#모듈런타임-지도) |
 | **테스트를 쓴다** | [testing-guide.md](03-guides/testing-guide.md) (SSOT) → [e2e-test-guide.md](03-guides/e2e-test-guide.md) |
 | **게이트가 red 인데 원인을 모른다** | [verification-blindspots.md](04-operations/verification-blindspots.md) · [.githooks/README.md](../.githooks/README.md) |
 | **DB 객체를 설계**한다 | [db-standardization-manual.md](03-guides/db-standardization-manual.md) → [DB 헌법](../.agent/knowledge/db-standard-constitution/artifacts/constitution.md) |
