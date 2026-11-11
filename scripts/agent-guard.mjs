@@ -225,12 +225,13 @@ const hasUnclosedQuote = (masked) => ['"', "'"].some((quote) => (masked.split(qu
  * 를 PowerShell 규칙으로 가려 이 조각 자리(start)를 잘라 쓰고, 그것도 닫히지 않으면 이 조각만 다시 가린다(최종 재검토).
  */
 function quoteAwareMask(code, raw, view = null, start = 0) {
-  if (!hasUnclosedQuote(code)) return { code, closed: true };
-  // 닫힘 여부는 가린 판 전체로 정한다 — 전체에서 닫힌 따옴표도 조각으로 자르면 조각 안의 따옴표 수는 홀수일 수 있다(최종 재검토).
-  if (typeof view === 'string') {
+  // PowerShell 판을 쓸지는 명령 전체로 정한다 — 메시지 안의 `;` 두 개 사이 조각에는 따옴표가 없어 조각만 보면 보정이 필요한지 모른다.
+  // 닫힘 여부도 전체 판으로 정한다 — 전체에서 닫힌 따옴표도 조각으로 자르면 조각 안의 따옴표 수는 홀수일 수 있다(최종 재검토·확인).
+  if (typeof view === 'string' && hasUnclosedQuote(maskQuoted(view))) {
     const whole = maskQuotedPowerShell(view);
     if (!hasUnclosedQuote(whole)) return { code: whole.slice(start, start + raw.length), closed: true };
   }
+  if (!hasUnclosedQuote(code)) return { code, closed: true };
   const powershell = maskQuotedPowerShell(raw);
   return hasUnclosedQuote(powershell) ? { code, closed: false } : { code: powershell, closed: true };
 }

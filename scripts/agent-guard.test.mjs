@@ -290,6 +290,7 @@ const CASES = {
       'git -C "D:\\wt-egov-claude\\" commit --only -m "docs: worktree add approvals" -- AGENTS.md',
       // 최종 재검토 반례: 메시지 안의 `;` 로 조각이 잘린 경우와 PowerShell 주석.
       'git -C "D:\\wt-egov-claude\\" commit --only -m "docs: note; git worktree add requires approval" -- AGENTS.md',
+      'git -C "D:\\wt-egov-claude\\" commit --only -m "docs: note; git worktree add requires approval; keep paths" -- AGENTS.md',
       'git -C "D:\\wt-egov-claude\\" status # worktree add requires approval'],
   },
 };
