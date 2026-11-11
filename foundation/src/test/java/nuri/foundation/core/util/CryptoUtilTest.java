@@ -319,7 +319,9 @@ class CryptoUtilTest {
                                     java.util.Map.of("Globals.File.algorithmKey", "egovframe")));
                     badProdBoot.register(nuri.foundation.core.config.ProjectCryptoConfig.class);
                     org.assertj.core.api.Assertions.assertThatThrownBy(badProdBoot::refresh)
-                            .hasRootCauseInstanceOf(IllegalStateException.class);
+                            .rootCause()
+                            .isInstanceOf(IllegalStateException.class)
+                            .hasMessageContaining("prod 프로파일에서는");
                 }
             } finally {
                 CryptoUtil restore = new CryptoUtil();

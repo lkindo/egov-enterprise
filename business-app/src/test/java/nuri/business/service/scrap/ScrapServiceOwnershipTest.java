@@ -186,13 +186,15 @@ class ScrapServiceOwnershipTest {
     }
 
     @Test
-    @DisplayName("🔒 내부 게시글 스크랩은 원본 열람 검증을 거치고 bbsId·pstSn 을 서버에서 확정해 저장한다")
-    void boardPostScrapVerifiesAccessAndPopulatesTargetIds() {
+    @DisplayName("🔒 내부 게시글 스크랩은 원본 열람 검증을 거치고 요청 본문 bbsId·pstSn 은 무시한다")
+    void boardPostScrapVerifiesAccessAndIgnoresClientTargetIds() {
         String url = "/admin/community/boards/detail?bbsId=BBS-1&pstSn=31";
         given(scrapRepository.findByFrstRgtrIdAndScrapUrlOrderByScrapSnAsc("owner", url)).willReturn(List.of());
         given(scrapRepository.save(any(Scrap.class))).willReturn(ownedBy("owner", 50L, url));
 
         Long scrapSn = scrapService.createScrap("owner", ScrapDto.builder()
+                .bbsId("FORGED-BBS")
+                .pstSn(999L)
                 .scrapNm("공지 보관")
                 .scrapUrl(url)
                 .scrapExpln("설명")
@@ -203,12 +205,40 @@ class ScrapServiceOwnershipTest {
         verify(boardPostAccess).assertScrapablePost("BBS-1", 31L);
         ArgumentCaptor<Scrap> captor = ArgumentCaptor.forClass(Scrap.class);
         verify(scrapRepository).save(captor.capture());
-        assertThat(captor.getValue().getBbsId()).isEqualTo("BBS-1");
-        assertThat(captor.getValue().getPstSn()).isEqualTo(31L);
+        assertThat(captor.getValue().getBbsId()).isNull();
+        assertThat(captor.getValue().getPstSn()).isNull();
     }
 
     @Test
-    @DisplayName("🔒 삭제·미존재·비밀글·비회원 커뮤니티 게시글 주소는 등록과 되살리기·수정에서 모두 거부한다")
+    @DisplayName("스크랩 제목·설명만 바꿀 때는 기존 URL 의 원본 게시글이 마감·삭제됐더라도 수정이 막히지 않으며, 이미 활성인 중복 등록은 409 를 우선한다")
+    void unchangedUrlMetadataEditAndActiveDuplicateDoNotReverifyBoardPost() {
+        String closedPostUrl = "/admin/community/boards/detail?bbsId=BBS-CLOSED&pstSn=55";
+        Scrap existing = ownedBy("owner", 51L, closedPostUrl);
+        given(scrapRepository.findById(51L)).willReturn(Optional.of(existing));
+        authenticateAs("owner", "USER");
+
+        scrapService.updateScrap(51L, "owner", ScrapDto.builder()
+                .scrapNm("새 제목")
+                .scrapUrl(closedPostUrl)
+                .scrapExpln("새 메모")
+                .useYn("Y")
+                .build());
+
+        assertThat(existing.getScrapNm()).isEqualTo("새 제목");
+        assertThat(existing.getScrapExpln()).isEqualTo("새 메모");
+        verify(boardPostAccess, never()).assertScrapablePost(any(), any());
+
+        given(scrapRepository.findByFrstRgtrIdAndScrapUrlOrderByScrapSnAsc("owner", closedPostUrl))
+                .willReturn(List.of(existing));
+        assertThatExceptionOfType(BusinessException.class)
+                .isThrownBy(() -> scrapService.createScrap("owner", ScrapDto.builder()
+                        .scrapNm("중복 등록").scrapUrl(closedPostUrl).useYn("Y").build()))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.DUPLICATE_RESOURCE);
+        verify(boardPostAccess, never()).assertScrapablePost(any(), any());
+    }
+
+    @Test
+    @DisplayName("🔒 삭제·미존재·비밀글·비회원 커뮤니티 내부 게시글 경로는 신규 등록·되살리기·URL 변경 수정에서 거부한다")
     void unreadableOrMissingBoardPostCannotBeScrappedOrRevived() {
         String secretUrl = "/admin/community/boards/detail?bbsId=BBS-SECRET&pstSn=77";
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))

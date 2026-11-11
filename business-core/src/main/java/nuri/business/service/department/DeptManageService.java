@@ -25,7 +25,7 @@ public class DeptManageService {
 
     /** 조직 계층 탐색 시 데이터 이상(순환 등)으로 인한 무한 루프를 막는 상한. */
     private static final int MAX_HIERARCHY_DEPTH = 50;
-    /** 조직도 일괄 저장 요청의 최대 항목 수 — 무제한 배열이 전체 조직 행 잠금을 오래 쥐는 것을 막는다. */
+    /** 조직도 일괄 저장 요청의 최대 항목 수 — 전체 조직 행 잠금을 잡은 트랜잭션 안에서 무제한 반복 처리로 잠금 보유 시간이 길어지는 것을 막는다. */
     public static final int MAX_HIERARCHY_BATCH_SIZE = 500;
 
     private final DeptManageRepository deptManageRepository;

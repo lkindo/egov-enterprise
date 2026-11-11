@@ -84,12 +84,12 @@ public class ScrapService {
     @Transactional
     public Long createScrap(String userId, ScrapDto dto) {
         String normalizedUrl = normalizeAndValidateUrl(dto.getScrapUrl());
-        BoardTarget boardTarget = resolveAndVerifyBoardTarget(normalizedUrl);
         if (normalizedUrl != null) {
             List<Scrap> sameTarget = scrapRepository.findByFrstRgtrIdAndScrapUrlOrderByScrapSnAsc(userId, normalizedUrl);
             if (sameTarget.stream().anyMatch(s -> "Y".equals(s.getUseYn()))) {
                 throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE, DUPLICATE_SCRAP_MESSAGE);
             }
+            verifyBoardTargetIfInternal(normalizedUrl);
             if (!sameTarget.isEmpty()) {
                 Scrap previous = sameTarget.get(0);
                 previous.update(dto.getScrapNm(), normalizedUrl, dto.getScrapExpln(),
@@ -100,11 +100,10 @@ public class ScrapService {
         }
         // [P0] scrapUrl/scrapExpln/useYn 를 반드시 담는다 — 과거 builder 가 이 3개를 통째로 버려
         // 링크 보관 기능이 구조적으로 무동작이었다(저장된 URL 이 항상 null).
-        // bbsId/pstSn 는 요청 본문 필드를 신뢰하지 않고(mass assignment 차단), 내부 게시글 경로일 때만
-        // 서버가 URL 파싱 및 BoardPostAccessPort 열람 검증을 거친 값으로 확정해 기록한다.
+        // bbsId/pstSn 는 요청 본문을 신뢰하지 않으며(mass assignment 차단), 수정 시 URL 변경과 함께
+        // Scrap.update 가 원자적으로 갱신할 수 있을 때까지(Wave 2 엔티티 변경) null 로 일관되게 유지해
+        // scrapUrl 과 FK(pst_sn) 불일치를 막는다. 내부 게시글 경로의 열람 권한 검증은 위에서 선행한다.
         Scrap entity = Scrap.builder()
-                .bbsId(boardTarget != null ? boardTarget.bbsId() : null)
-                .pstSn(boardTarget != null ? boardTarget.pstSn() : null)
                 .scrapNm(dto.getScrapNm())
                 .scrapUrl(normalizedUrl)
                 .scrapExpln(dto.getScrapExpln())
@@ -120,13 +119,18 @@ public class ScrapService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCRAP_UPDATE_ALL"); // [IDOR] 소유자/관리자만 수정
         String normalizedUrl = normalizeAndValidateUrl(dto.getScrapUrl());
-        resolveAndVerifyBoardTarget(normalizedUrl);
+        boolean urlChanged = !java.util.Objects.equals(normalizedUrl, entity.getScrapUrl());
+        // 대상 URL 이 바뀔 때만 내부 게시글 열람 권한을 검증한다 — 이미 보관한 게시글이 나중에 마감·삭제돼도
+        // 스크랩 제목·설명 수정은 막히지 않게 한다.
+        if (urlChanged) {
+            verifyBoardTargetIfInternal(normalizedUrl);
+        }
         // 요청 DTO 값을 반영한다(과거에는 entity 의 기존 값을 자기 자신에게 재대입해 수정이 무동작이었다).
         // useYn 만은 미전달(null) 시 기존 값을 보존 — 누락된 요청이 목록 필터(useYn='Y')에서 행을 증발시키는 것을 막는다.
         String useYn = dto.getUseYn() != null ? dto.getUseYn() : entity.getUseYn();
         // [2026-10-19] 주소를 바꿔 같은 사용자의 다른 스크랩과 겹치면 409 — 등록과 같은 1인 1주소 규칙이다.
         //   겹침은 스크랩 주인(frstRgtrId) 기준이다. 대리 수정하는 관리자의 보관함이 아니다.
-        if (normalizedUrl != null && !normalizedUrl.equals(entity.getScrapUrl())
+        if (normalizedUrl != null && urlChanged
                 && scrapRepository.findByFrstRgtrIdAndScrapUrlOrderByScrapSnAsc(entity.getFrstRgtrId(), normalizedUrl)
                         .stream().anyMatch(other -> !other.getScrapSn().equals(entity.getScrapSn()))) {
             throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE, DUPLICATE_SCRAP_MESSAGE);
@@ -152,9 +156,13 @@ public class ScrapService {
         return stripped;
     }
 
-    private @Nullable BoardTarget resolveAndVerifyBoardTarget(@Nullable String normalizedUrl) {
+    /**
+     * 사이트 내 상대 경로({@code /...}) 가운데 게시판 게시글을 가리키는 경로·쿼리만 추려 열람 가능 여부를 검증한다.
+     * fragment({@code #...}) 뒤는 서버 라우팅 대상이 아니므로 버리고, {@code http(s)://} 절대 URL 은 외부 링크로 취급한다.
+     */
+    private void verifyBoardTargetIfInternal(@Nullable String normalizedUrl) {
         if (normalizedUrl == null || !normalizedUrl.startsWith("/")) {
-            return null;
+            return;
         }
         int fragmentIdx = normalizedUrl.indexOf('#');
         String withoutFragment = fragmentIdx >= 0 ? normalizedUrl.substring(0, fragmentIdx) : normalizedUrl;
@@ -199,7 +207,7 @@ public class ScrapService {
         }
 
         if (!explicitBoardPath && !seenBoardQueryParam) {
-            return null;
+            return;
         }
         if (bbsId == null || bbsId.isEmpty() || bbsId.length() > MAX_BBS_ID_LENGTH
                 || bbsId.chars().anyMatch(Character::isISOControl)) {
@@ -216,7 +224,6 @@ public class ScrapService {
         }
 
         assertBoardTargetScrapable(bbsId, pstSn);
-        return new BoardTarget(bbsId, pstSn);
     }
 
     private void assertBoardTargetScrapable(String bbsId, long pstSn) {
@@ -240,8 +247,5 @@ public class ScrapService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCRAP_DELETE_ALL"); // [IDOR] 소유자/관리자만 삭제
         scrapRepository.delete(entity);
-    }
-
-    private record BoardTarget(String bbsId, Long pstSn) {
     }
 }
