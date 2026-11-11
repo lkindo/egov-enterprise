@@ -49,3 +49,14 @@ test('an unknown preparation failure is not treated as an oversized record', () 
   const failure = Object.assign(Error('synthetic failure'), { code: 'SYNTHETIC_INVALID' });
   assert.throws(() => batching.packContextWindows([1], () => { throw failure; }), error => error === failure);
 });
+
+test('a lone source batch keeps its former single-call admission while several batches use bounded windows', () => {
+  const prepared = bytes => ({ request: { phase: 'analysis', data: { text: 'x'.repeat(bytes) } }, schema: { type: 'object', description: '응답 스키마'.repeat(500) } });
+  const between = prepared(740 * 1024), edge = prepared(766 * 1024), over = prepared(770 * 1024), small = prepared(100 * 1024);
+  assert.ok(size(between.request) + size(between.schema) > batching.CONTEXT_WINDOW_BYTES && size(between.request) <= batching.SINGLE_BATCH_REQUEST_BYTES);
+  assert.equal(batching.fitsDirectAnalysis(between, { singleBatch: true }), true, 'one batch between 720KiB and 768KiB is still sent in one call');
+  assert.equal(batching.fitsDirectAnalysis(edge, { singleBatch: true }), true, 'the former 768KiB wire limit, not a tighter one, admits a lone batch');
+  assert.equal(batching.fitsDirectAnalysis(between, { singleBatch: false }), false, 'several batches compare a crowded block through bounded windows');
+  assert.equal(batching.fitsDirectAnalysis(over, { singleBatch: true }), false);
+  assert.equal(batching.fitsDirectAnalysis(small, { singleBatch: false }), true);
+});

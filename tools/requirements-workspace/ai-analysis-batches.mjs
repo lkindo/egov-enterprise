@@ -1,6 +1,14 @@
 import { createHash } from 'node:crypto';
 const fail = code => { throw Object.assign(new Error(code), { code }); };
 export const CONTEXT_WINDOW_BYTES = 720 * 1024;
+// A lone source batch keeps its single-call admission from before bounded
+// windows: it was sent unreduced and only the 768KiB wire check applied. So
+// bounded comparison only takes over where that call could not be sent.
+export const SINGLE_BATCH_REQUEST_BYTES = 768 * 1024;
+export function fitsDirectAnalysis(prepared, { singleBatch }) {
+  const request = Buffer.byteLength(JSON.stringify(prepared.request));
+  return request + Buffer.byteLength(JSON.stringify(prepared.schema)) <= CONTEXT_WINDOW_BYTES || singleBatch === true && request <= SINGLE_BATCH_REQUEST_BYTES;
+}
 
 // Store the full canonical ledger locally. A model sees measured, lossless
 // windows of it, never an ever-growing copy of the entire ledger.

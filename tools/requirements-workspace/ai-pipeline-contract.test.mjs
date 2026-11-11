@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mergeIssues, validateBusinessModel, validateRequirementReview, validatePlanReview } from './ai-pipeline-contract.mjs';
-import { planningGroups, prepareBusinessModel, planAndReview, reviewRequirements } from './ai-pipeline.mjs';
+import { planningGroups, prepareBusinessModel, planAndReview, reviewRequirements, fitEntry, admitsPlanEntryId } from './ai-pipeline.mjs';
 import { prepareEvidenceRequest } from './ai-evidence.mjs';
 import { CONTEXT_WINDOW_BYTES } from './ai-analysis-batches.mjs';
 import { validateEvidenceCitations, validateAnalysisProposal, projectAnalysisBacklog } from './ai-contract.mjs';
@@ -35,6 +35,87 @@ test('shared semantic questions are visited losslessly through bounded quality a
   const result = await planAndReview(reviewed, model(), state, [], { run, evidenceReferences: true });
   for (const stage of ['review-requirements', 'decomposition', 'review-plan']) assert.equal(seen.get(stage).size, 450, stage);
   assert.ok(calls >= 6); assert.equal(result.planningOutput.workItems.length, 2);
+});
+
+test('a planning group split into several windows creates its plan once and later windows may change nothing', async () => {
+  const state = { backlog: createEmptyBacklogPack(context), metadata: { context, ai: { decisions: [] } } };
+  state.backlog.project = { code: 'SYNTHETIC', name: '계획 창 이어 쓰기', institution: '', baselineProfile: '' }; state.backlog.sources = [structuredClone(source)];
+  const proposal = analysis({ data: { sources: state.backlog.sources, decisions: [] } }, { question: false });
+  proposal.issues = Array.from({ length: 450 }, (_, index) => ({ id: `SEMANTIC-${index}`, kind: 'risk', severity: 'observation', question: `${index}: ${'원문의 조건과 예외를 의미 그대로 유지한다. '.repeat(65)}`, options: [], requirementIds: [proposal.requirements[0].id], citations: structuredClone(proposal.requirements[0].citations) }));
+  let generations = 0, continuations = 0;
+  const run = async ({ request, schema }) => {
+    if (request.phase === 'review-requirements') return { output: { revisions: [], issues: [] } };
+    if (request.phase === 'review-plan') return { output: { workItemUpdates: [], acceptanceUpdates: [], traceUpdates: [], issues: [] } };
+    if (generations) {
+      // Nothing new in this window: an empty delta keeps the first window's plan.
+      continuations++;
+      assert.equal(schema.properties.workItems.minItems, 0); assert.equal(schema.properties.acceptanceCriteria.minItems, 0);
+      assert.match(request.instructions, /Continuation window/);
+      assert.ok(request.data.previousWorkItems.some(item => item.id.startsWith(request.data.planningBatch.idPrefix)), 'a continuation window sees the entries the first window created');
+      return { output: { workItems: [], acceptanceCriteria: [], traceLinks: [], issues: [], retirements: [] } };
+    }
+    generations++;
+    assert.equal(schema.properties.workItems.minItems, 1); assert.doesNotMatch(request.instructions, /Continuation window/);
+    const plan = decomposition(), prefix = request.data.planningBatch.idPrefix, rename = id => `${prefix}${id}`;
+    for (const work of plan.workItems) { work.id = rename(work.id); if (work.parentEpicId) work.parentEpicId = rename(work.parentEpicId); }
+    for (const ac of plan.acceptanceCriteria) { ac.id = rename(ac.id); ac.workItemId = rename(ac.workItemId); }
+    for (const trace of plan.traceLinks) { trace.id = rename(trace.id); trace.workItemId = rename(trace.workItemId); trace.acId = rename(trace.acId); }
+    return { output: plan };
+  };
+  const reviewed = await reviewRequirements(proposal, model(), state, { run, evidenceReferences: true });
+  const result = await planAndReview(reviewed, model(), state, [], { run, evidenceReferences: true });
+  assert.equal(generations, 1); assert.ok(continuations > 0, 'the shared context must actually span several planning windows');
+  assert.equal(result.planningOutput.workItems.length, 2);
+});
+
+test('a shared-context page that must also split its members never revisits pages its siblings cover', () => {
+  // Two members fill most of a window; four shared records do not fit beside
+  // them, and even one record alone does not. Each member must then see every
+  // shared record exactly once, plus the other member's meaning.
+  const members = ['R1', 'R2'], shared = ['S/1', 'S/2', 'S/3', 'S/4'];
+  const make = entry => {
+    const all = [...shared, ...members.filter(id => !entry.requirements.includes(id)).map(id => `cross/${id}`)];
+    const keys = entry.inspectShared || !entry.sharedKeys ? all : entry.sharedKeys;
+    return { phase: 'review-requirements', data: { requirements: entry.requirements.map(id => ({ id, body: '가'.repeat(116_000) })), shared: keys.map(key => ({ key, body: 'x'.repeat(key.startsWith('S/') ? 50_000 : 1_000) })), sharedContextWindow: { recordIds: keys } } };
+  };
+  const schema = { type: 'object', properties: {}, required: [], additionalProperties: false };
+  const splitMembers = entry => entry.requirements.length < 2 ? [entry] : entry.requirements.map(id => ({ requirements: [id] }));
+  const queue = [{ requirements: members }], seen = new Map();
+  for (let index = 0; index < queue.length; index++) {
+    const entry = fitEntry(queue, index, make, schema, splitMembers), data = make(entry).data;
+    const prepared = prepareEvidenceRequest(make(entry), schema);
+    assert.ok(Buffer.byteLength(JSON.stringify(prepared.request)) + Buffer.byteLength(JSON.stringify(prepared.schema)) <= CONTEXT_WINDOW_BYTES);
+    for (const req of data.requirements) for (const row of data.shared) { const pair = `${req.id}|${row.key}`; seen.set(pair, (seen.get(pair) ?? 0) + 1); }
+  }
+  assert.ok(queue.some(entry => entry.requirements.length === 1), 'the members really had to be separated');
+  for (const id of members) for (const key of shared) assert.equal(seen.get(`${id}|${key}`), 1, `${id} sees ${key} exactly once`);
+  assert.ok(seen.get('R1|cross/R2') >= 1 && seen.get('R2|cross/R1') >= 1, 'a separated member still sees the other member');
+});
+
+test('a whole-request capacity failure before paging splits the members instead of stopping the run', () => {
+  // The unpaged request of both members is rejected by its own pre-check; one
+  // member alone is small. That is a reason to split, not to fail.
+  const make = entry => {
+    if (entry.requirements.length > 1) throw Object.assign(Error('AI_INPUT_TOO_LARGE'), { code: 'AI_INPUT_TOO_LARGE' });
+    const keys = entry.inspectShared || !entry.sharedKeys ? ['S/1'] : entry.sharedKeys;
+    return { phase: 'review-requirements', data: { requirements: entry.requirements.map(id => ({ id })), shared: keys.map(key => ({ key })), sharedContextWindow: { recordIds: keys } } };
+  };
+  const schema = { type: 'object', properties: {}, required: [], additionalProperties: false };
+  const queue = [{ requirements: ['R1', 'R2'] }], visited = [];
+  for (let index = 0; index < queue.length; index++) visited.push(...fitEntry(queue, index, make, schema, entry => entry.requirements.length < 2 ? [entry] : entry.requirements.map(id => ({ requirements: [id] }))).requirements);
+  assert.deepEqual(visited, ['R1', 'R2']);
+});
+
+test('a continuation window may update an entry generated earlier in this run for its own requirements under that entry\'s ID', () => {
+  const ids = new Set(['R1']), idPrefix = 'PLAN-1.1-';
+  const generatedForR1 = { id: 'PLAN-1-STORY-1', workItemType: 'story', requirementIds: ['R1'] };
+  const generatedForR2 = { id: 'PLAN-1-STORY-2', workItemType: 'story', requirementIds: ['R2'] };
+  assert.equal(admitsPlanEntryId({ id: 'PLAN-1-STORY-1' }, 'workItems', { old: generatedForR1, ids, idPrefix }), true, 'a member split must not lock the window out of its own earlier entries');
+  assert.equal(admitsPlanEntryId({ id: 'PLAN-1-AC-1' }, 'acceptanceCriteria', { old: { id: 'PLAN-1-AC-1', requirementIds: ['R1'] }, ids, idPrefix }), true);
+  assert.equal(admitsPlanEntryId({ id: 'PLAN-1-STORY-2' }, 'workItems', { old: generatedForR2, ids, idPrefix }), false, 'another requirement\'s generated entry stays protected');
+  assert.equal(admitsPlanEntryId({ id: 'PLAN-9-STORY-1' }, 'workItems', { ids, idPrefix }), false, 'a new entry still needs this window\'s prefix');
+  assert.equal(admitsPlanEntryId({ id: 'PLAN-1.1-STORY-9' }, 'workItems', { ids, idPrefix }), true);
+  assert.equal(admitsPlanEntryId({ id: 'ORIGINAL-1' }, 'workItems', { previous: { id: 'ORIGINAL-1' }, ids, idPrefix }), true);
 });
 
 test('quality review pages a large single requirement without omitting original clauses or old proof and binds resume to its exact tasks', async () => {

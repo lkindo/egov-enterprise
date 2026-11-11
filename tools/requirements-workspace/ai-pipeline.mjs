@@ -12,7 +12,19 @@ import { CONTEXT_WINDOW_BYTES } from './ai-analysis-batches.mjs';
 export { reconcileAnalysisBatch } from './ai-context-reconciliation.mjs';
 
 const fail = code => { throw Object.assign(new Error(code), { code }); };
-const groups = (values, count) => Array.from({ length: Math.ceil(values.length / count) }, (_, index) => values.slice(index * count, (index + 1) * count));
+// A planning group split into several windows creates its work in the first
+// window. Later windows see those entries and may legitimately change nothing.
+export const DECOMPOSITION_CONTINUATION_SCHEMA = { ...DECOMPOSITION_SCHEMA, properties: { ...DECOMPOSITION_SCHEMA.properties, workItems: { ...DECOMPOSITION_SCHEMA.properties.workItems, minItems: 0 }, acceptanceCriteria: { ...DECOMPOSITION_SCHEMA.properties.acceptanceCriteria, minItems: 0 } } };
+// An entry without an original record is either new, and carries this window's
+// prefix, or an update of an entry an earlier window of this run generated for
+// these same requirements, which keeps its own ID even after a member split
+// gave this window another prefix.
+export function admitsPlanEntryId(item, field, { previous, old, ids, idPrefix }) {
+  if (previous || field === 'workItems' && old?.workItemType === 'epic' || item.id.startsWith(idPrefix)) return true;
+  return Boolean(old) && (old.requirementIds ?? [old.requirementId]).some(id => ids.has(id));
+}
+const continuationContract ='\nContinuation window: earlier windows of this same planning group already created its work items and acceptance criteria, supplied above with full records. Return only entries that this window\'s additional shared context or source clauses require you to add or change. Empty arrays are valid when nothing changes. An update replaces the whole entry, so keep every condition it already has. Never recreate an existing entry under a new ID.';
+const groups =(values, count) => Array.from({ length: Math.ceil(values.length / count) }, (_, index) => values.slice(index * count, (index + 1) * count));
 export function planningGroups(requirements, priorWork, priorAcceptance = [], maxItems = 4) {
   const parent = new Map(requirements.map(req => [req.id, req.id]));
   const root = id => { while (parent.get(id) !== id) id = parent.get(id); return id; };
@@ -27,12 +39,13 @@ export function planningGroups(requirements, priorWork, priorAcceptance = [], ma
   if (batch.length) result.push(batch);
   return result;
 }
+const CAPACITY_CODES = ['AI_INPUT_TOO_LARGE', 'AI_DECOMPOSITION_INPUT_TOO_LARGE', 'AI_EVIDENCE_CAPACITY'];
 function fitsRequest(value, schema) {
   try {
     const prepared = prepareEvidenceRequest(typeof value === 'function' ? value() : value, schema);
     return Buffer.byteLength(JSON.stringify(prepared.request)) + Buffer.byteLength(JSON.stringify(prepared.schema)) <= CONTEXT_WINDOW_BYTES;
   } catch (error) {
-    if (!['AI_INPUT_TOO_LARGE', 'AI_DECOMPOSITION_INPUT_TOO_LARGE', 'AI_EVIDENCE_CAPACITY'].includes(error.code)) throw error;
+    if (!CAPACITY_CODES.includes(error.code)) throw error;
     return false;
   }
 }
@@ -71,19 +84,35 @@ function sharedRequest(entry, value) {
   data.sharedContextWindow = { recordIds: rows.filter(row => !selected || selected.has(key(row))).map(key), rule: 'Every complete semantic record is reviewed across sequential windows. Preserve conditions from earlier windows. Host retains all canonical proof. Only the supplied original source clauses authorize new quotations; a missing window does not negate its conditions.' };
   return value;
 }
-function fitEntry(queue, index, make, schema, splitMembers) {
+export function fitEntry(queue, index, make, schema, splitMembers) {
+  // make() provides all shared rows before sharedRequest selects a page.
+  const keysOf = entry => make({ ...entry, inspectShared: true }).data.sharedContextWindow.recordIds;
+  // make() checks the whole unpaged request before it can page; a capacity
+  // failure there means "split further", not "give up".
+  const attempt = build => {
+    try { return build(); }
+    catch (error) { if (!CAPACITY_CODES.includes(error.code)) throw error; return null; }
+  };
   for (;;) {
     const entry = queue[index];
     if (fitsRequest(() => make(entry), schema)) return entry;
-    const value = make({ ...entry, sharedKeys: [] });
-    // make() provides all shared rows before sharedRequest selects a page.
-    const allKeys = entry.sharedKeys ?? make({ ...entry, inspectShared: true }).data.sharedContextWindow.recordIds;
-    if (allKeys.length > 1 && fitsRequest(value, schema)) {
+    const value = attempt(() => make({ ...entry, sharedKeys: [] }));
+    const allKeys = entry.sharedKeys ?? attempt(() => keysOf(entry)) ?? [];
+    if (value && allKeys.length > 1 && fitsRequest(value, schema)) {
       const middle = Math.ceil(allKeys.length / 2);
       queue.splice(index, 1, ...[allKeys.slice(0, middle), allKeys.slice(middle)].map(sharedKeys => ({ ...entry, sharedKeys })));
     } else {
       const split = splitMembers(entry);
-      if (split.length > 1) queue.splice(index, 1, ...split.map(part => ({ ...entry, ...part, sharedKeys: undefined })));
+      if (split.length > 1) {
+        // A page window keeps its own page plus the records that become shared
+        // once its members are separated. Its sibling pages still cover the
+        // rest of the original shared context for these same members.
+        const page = entry.sharedKeys && new Set(entry.sharedKeys), whole = page && attempt(() => new Set(keysOf(entry)));
+        queue.splice(index, 1, ...split.map(part => {
+          const next = { ...entry, ...part, sharedKeys: undefined }, keys = whole && attempt(() => keysOf(next));
+          return keys ? { ...next, sharedKeys: keys.filter(key => page.has(key) || !whole.has(key)) } : next;
+        }));
+      }
       else if (!entry.proofWindow) queue[index] = proofWindow(entry);
       else {
         const clauses = sourceEntries(entry.sources);
@@ -349,6 +378,10 @@ async function planAndReviewWindows(output, businessModel, snapshot, decisions, 
   let plan = { workItems: structuredClone(snapshot.backlog.workItems), acceptanceCriteria: structuredClone(snapshot.backlog.acceptanceCriteria), traceLinks: structuredClone(snapshot.backlog.traceLinks), issues: [], retirements: [] };
   const original = Object.fromEntries(['workItems', 'acceptanceCriteria', 'traceLinks'].map(field => [field, new Map(plan[field].map(item => [item.id, structuredClone(item)]))]));
   if (!resumePlanning) {
+  // Requirements that already had a generation window; a later window of the
+  // same requirements continues their plan instead of creating it again.
+  const planned = new Set();
+  const continues = entry => entry.requirements.every(req => planned.has(req.id));
   for (let index = 0; index < batches.length; index++) {
     const make = entry => {
     const batch = entry.requirements;
@@ -369,28 +402,32 @@ async function planAndReviewWindows(output, businessModel, snapshot, decisions, 
     req.data.planningBatch = { index: index + 1, total: batches.length, idPrefix: `${idPrefix}${entry.groupId}-`, requirementIds: [...ids] };
     req.data.previousPlanIndex = plan.workItems.map(item => ({ id: item.id, title: item.title, workItemType: item.workItemType, parentEpicId: item.parentEpicId, requirementIds: item.requirementIds, dependsOn: item.dependsOn ?? [], priority: item.priority ?? null, batch: item.batch ?? null }));
     req.instructions += '\nSequential planning contract: Return only new/changed work/AC/trace entries and explicit retirements. Omitted entries remain preserved. Current executable children and ACs may refer only to planningBatch.requirementIds. requirementScopeIndex lists the whole project: included requirements in other batches remain in scope. Leave their child work/AC/trace unchanged and never retire them. Existing children connected across requirements are deliberately kept in the same batch. Existing epics may be shared and their requirement sets are unioned by the application. When total>1, new IDs MUST start with planningBatch.idPrefix; original supplied plan IDs may be updated only for their existing requirement meaning. Do not retire a generated entry from another batch. New dependencies can reference known previousPlanIndex IDs. Every excluded prior original entry needs an explicit retirement. crossRequirementContext gives complete meanings of other global constraints and linked requirements; apply their source-backed conditions while respecting scope and requirementScopeIndex. They remain outside this batch work scope. analysisIssues preserves all source-analysis questions and relationship notes; their proof is repeated only where its original clause is supplied, and the host preserves all original proof.';
+    if (continues(entry)) req.instructions += continuationContract;
     req.data.contextRelations = output.contextRelations ?? [];
     req.data.referenceResolutions = output.referenceResolutions ?? [];
     if (entry.proofWindow) { req.data.sources = entry.sources; req.data.previousRequirements = req.data.previousRequirements.map(item => ({ ...item, citations: [] })); }
     return sharedRequest(entry, req);
     };
     const entry = fitEntry(batches, index, make, DECOMPOSITION_SCHEMA, entry => {
-      const smaller = planningGroups(entry.requirements, snapshot.backlog.workItems, snapshot.backlog.acceptanceCriteria, 1);
+      // Keep requirements together that an earlier window of this run already
+      // tied to a shared story or acceptance criterion.
+      const smaller = planningGroups(entry.requirements, plan.workItems, plan.acceptanceCriteria, 1);
       return smaller.length < 2 ? [entry] : smaller.map((requirements, part) => ({ requirements, groupId: `${entry.groupId}.${part + 1}`, sources: evidence(snapshot, output.requirements.filter(req => requirements.some(item => item.id === req.id))) }));
     });
     const batch = entry.requirements, ids = new Set(batch.map(req => req.id)), executable = new Set(included.map(req => req.id)), req = make(entry);
+    const schema = continues(entry) ? DECOMPOSITION_CONTINUATION_SCHEMA : DECOMPOSITION_SCHEMA;
     onStage('decomposition', index, batches.length);
-    const response = await run({ request: req, schema: DECOMPOSITION_SCHEMA, cwd, signal });
+    const response = await run({ request: req, schema, cwd, signal });
     const delta = response.output;
     // Check the delta vocabulary before merging; the full structural contract
     // is checked below against the complete projected requirement scope.
-    const { validatePrivateAiValue } = await import('./ai-contract.mjs'); validatePrivateAiValue(delta, DECOMPOSITION_SCHEMA);
+    const { validatePrivateAiValue } = await import('./ai-contract.mjs'); validatePrivateAiValue(delta, schema);
     for (const [field, items] of [['workItems', delta.workItems], ['acceptanceCriteria', delta.acceptanceCriteria], ['traceLinks', delta.traceLinks]]) {
       for (const item of items) {
         const old = plan[field].find(value => value.id === item.id), itemReqs = item.requirementIds ?? [item.requirementId];
         if (field !== 'workItems' || item.workItemType !== 'epic') if (itemReqs.some(id => !ids.has(id))) fail('AI_OUTPUT_INVALID');
         const previous = original[field].get(item.id);
-        if (batches.length > 1 && !previous && !(field === 'workItems' && old?.workItemType === 'epic') && !item.id.startsWith(req.data.planningBatch.idPrefix)) fail('AI_OUTPUT_INVALID');
+        if (batches.length > 1 && !admitsPlanEntryId(item, field, { previous, old, ids, idPrefix: req.data.planningBatch.idPrefix })) fail('AI_OUTPUT_INVALID');
         const sharedEpic = field === 'workItems' && previous?.workItemType === 'epic' && item.workItemType === 'epic';
         if (previous && !sharedEpic && !(itemReqs.some(id => (previous.requirementIds ?? [previous.requirementId]).includes(id)))) fail('AI_OUTPUT_INVALID');
         const value = structuredClone(item);
@@ -412,6 +449,7 @@ async function planAndReviewWindows(output, businessModel, snapshot, decisions, 
       if (!plan.retirements.some(item => item.entity === retirement.entity && item.id === retirement.id)) plan.retirements.push(retirement);
     }
     plan.issues = mergeIssues(plan.issues, delta.issues);
+    for (const item of batch) planned.add(item.id);
     onStage('decomposition', index + 1, batches.length);
   }
   // Epic coverage follows the actual proposed children, including unchanged

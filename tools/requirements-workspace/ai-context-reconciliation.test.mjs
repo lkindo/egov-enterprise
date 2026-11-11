@@ -294,6 +294,100 @@ for (const outcome of ['missing', 'resolved', 'conflict', 'partial']) test(`a pr
   if (outcome === 'resolved') assert.equal(result.output.referenceResolutions[0].issue.question, question.question);
 });
 
+test('a reference verdict that confirms nothing cites nothing and lends no support to the candidate', async () => {
+  const app = fixture({ many: false }), run = app.options.run, questionId = 'PENDING-REFERENCE'; let question, adjudications = 0;
+  app.related();
+  app.options.run = async args => {
+    if (args.request.data.question) {
+      adjudications++;
+      // The proposed answer turned out to be about a different document scope.
+      return { output: { status: 'unresolved', remainingQuestion: question.question, remainingOptions: [], answer: '제공된 답변 창의 원문은 이 참조 값을 정하지 않는다.', citations: [] } };
+    }
+    const response = await run(args);
+    if (args.request.phase === 'analysis') {
+      question = { id: questionId, kind: 'missing', severity: 'blocking', question: '참조된 기존 처리시간은 얼마인가?', options: [], requirementIds: [response.output.requirements[0].id], citations: response.output.requirements[0].citations };
+      response.output.issues.push(question);
+    } else if (args.request.phase === 'analysis-context') {
+      const src = args.request.data.historicalSources[0], clause = src?.clauses[0];
+      if (clause) response.output.referenceAnswers.push({ issueId: questionId, answer: '다른 문서의 처리시간이 답일 수 있다.', citations: [{ sourceId: src.id, clauseId: clause.id, quote: clause.text }] });
+    }
+    return response;
+  };
+  const result = await pipeline.reconcileAnalysisBatch(app.options), added = result.output.requirements.find(req => !app.previous.requirements.some(old => old.id === req.id));
+  assert.equal(adjudications, 1);
+  assert.ok(result.output.issues.some(issue => issue.question === question.question && issue.severity === 'blocking'), 'the provisional question stays open');
+  assert.equal(result.output.referenceResolutions.length, 0);
+  assert.deepEqual(added.citations.map(cite => cite.clauseId), ['CURRENT'], 'a rejected answer never becomes requirement support');
+  for (const req of result.output.requirements) assert.ok(!(req.clarifications ?? []).length);
+});
+
+test('a conflicting reference verdict must cite its conflicting answers so the conflict cannot silently disappear', async () => {
+  const app = fixture({ many: false }), run = app.options.run, questionId = 'PENDING-REFERENCE'; let question, corrections = 0;
+  app.related();
+  app.options.run = async args => {
+    if (args.request.data.question) {
+      if (args.request.data.correction) corrections++;
+      const citations = args.request.data.correction ? args.request.data.answers.flatMap(answer => answer.citations) : [];
+      return { output: { status: 'conflict', remainingQuestion: '1년과 5년 중 어느 보존기간을 적용할지 결정해 주세요.', remainingOptions: ['1년', '5년'], answer: '두 문서의 보존기간이 상충한다.', citations } };
+    }
+    const response = await run(args);
+    if (args.request.phase === 'analysis') {
+      question = { id: questionId, kind: 'missing', severity: 'blocking', question: '참조된 보존기간은 얼마인가?', options: [], requirementIds: [response.output.requirements[0].id], citations: response.output.requirements[0].citations };
+      response.output.issues.push(question);
+    } else if (args.request.phase === 'analysis-context') {
+      const src = args.request.data.historicalSources[0], clause = src?.clauses[0];
+      if (clause) response.output.referenceAnswers.push({ issueId: questionId, answer: '다른 문서는 다른 보존기간을 정한다.', citations: [{ sourceId: src.id, clauseId: clause.id, quote: clause.text }] });
+    }
+    return response;
+  };
+  const result = await pipeline.reconcileAnalysisBatch(app.options);
+  assert.equal(corrections, 1, 'a conflict without proof is rejected and regenerated once');
+  const conflict = result.output.issues.find(issue => issue.question === '1년과 5년 중 어느 보존기간을 적용할지 결정해 주세요.');
+  assert.ok(conflict && conflict.kind === 'conflict' && conflict.severity === 'blocking', 'the conflict and its remaining question survive');
+  assert.ok(!result.output.issues.some(issue => issue.question === question.question));
+});
+
+test('a clarification whose proof the new candidate already cites is still integrated before publication', async () => {
+  const app = fixture({ many: false }), run = app.options.run, questionId = 'PENDING-REFERENCE'; let question;
+  app.related();
+  app.options.run = async args => {
+    if (args.request.data.question) return { output: { status: 'resolved', remainingQuestion: null, remainingOptions: [], answer: '현재 원문이 타 부서 접수 거부를 정한다.', citations: args.request.data.answers.flatMap(answer => answer.citations) } };
+    const response = await run(args);
+    if (args.request.phase === 'analysis') {
+      question = { id: questionId, kind: 'missing', severity: 'blocking', question: '타 부서 접수의 처리 기준은 무엇인가?', options: [], requirementIds: [response.output.requirements[0].id], citations: response.output.requirements[0].citations };
+      response.output.issues.push(question);
+    } else if (args.request.phase === 'analysis-context') {
+      // The answer is the candidate's own current clause: no new citation.
+      response.output.referenceAnswers.push({ issueId: questionId, answer: '현재 원문이 타 부서 접수 거부를 정한다.', citations: [{ sourceId: source.id, clauseId: app.current.id, quote: app.current.text }] });
+    } else if (args.request.phase === 'analysis-merge') {
+      assert.ok(args.request.data.mergeTargets[0].candidates.some(item => item.clarifications?.includes('현재 원문이 타 부서 접수 거부를 정한다.')));
+    }
+    return response;
+  };
+  const result = await pipeline.reconcileAnalysisBatch(app.options);
+  assert.ok(!result.output.issues.some(issue => issue.question === question.question), 'the resolved provisional question is closed');
+  assert.ok(app.calls.some(call => call.phase === 'analysis-merge'), 'the clarification reaches the published meaning through a merge');
+  const added = result.output.requirements.find(req => !app.previous.requirements.some(old => old.id === req.id));
+  assert.deepEqual(added.citations.map(cite => cite.clauseId), ['CURRENT']);
+});
+
+test('ten or more temporary IDs are replaced whole, never by the prefix of a shorter ID', async () => {
+  const app = fixture({ many: false }), run = app.options.run;
+  app.options.run = async args => {
+    const response = await run(args);
+    if (args.request.phase === 'analysis') {
+      const req = response.output.requirements[0], prefix = args.request.data.analysisBatch.idPrefix;
+      for (let number = 1; number <= 10; number++) response.output.issues.push({ id: `${prefix}Q${number}`, kind: 'decision', severity: 'blocking', question: number === 1 ? `${prefix}Q10 및 ${prefix.slice('B-SYNTHETIC-24-'.length)}Q10과 함께 결정해 주세요.` : `${number}번 결정 질문`, options: [], requirementIds: [req.id], citations: req.citations });
+    }
+    return response;
+  };
+  const result = await pipeline.reconcileAnalysisBatch(app.options);
+  const tenth = result.output.issues.find(issue => issue.question === '10번 결정 질문'), first = result.output.issues.find(issue => issue.question.includes('함께 결정해 주세요.'));
+  assert.ok(tenth && first);
+  assert.ok(!first.question.includes('TMP-'));
+  assert.equal(first.question, `${tenth.id} 및 ${tenth.id}과 함께 결정해 주세요.`, 'both the full and abbreviated tenth ID resolve to its own final ID');
+});
+
 test('a corrupt pending candidate is discarded without reusing any poisoned piece or changing the canonical prefix', async () => {
   const app = fixture({ many: false }), controller = new AbortController();
   await assert.rejects(pipeline.reconcileAnalysisBatch({ ...app.options, signal: controller.signal, onCheckpoint(state) { app.checkpoints.push(state); controller.abort(); } }), { code: 'AI_CANCELLED' });

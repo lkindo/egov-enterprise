@@ -2,7 +2,7 @@ import { randomUUID, createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { ANALYSIS_SCHEMA, BATCH_ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, MAX_PROJECT_ISSUES, aiInputDigest, buildAiRequest, buildCorrectionRequest, seedAnalysis, validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal, projectAnalysisBacklog, safeValidationFailures, validatePrivateAiValue } from './ai-contract.mjs';
-import { planAnalysisBatches, coalesceAnalysisBatches, MAX_ANALYSIS_BATCHES, CONTEXT_WINDOW_BYTES } from './ai-analysis-batches.mjs';
+import { planAnalysisBatches, coalesceAnalysisBatches, MAX_ANALYSIS_BATCHES, fitsDirectAnalysis } from './ai-analysis-batches.mjs';
 import { AI_MODEL, AI_EFFORT, AI_ANALYSIS_EFFORT, MAX_ANALYSIS_MODEL_CALLS, aiEffortForPhase, createCliRunner, findClaudeExecutable } from './ai-cli.mjs';
 import { assertExternalWorkspace } from './store.mjs';
 import { prepareVisualAttachments } from './ai-attachments.mjs';
@@ -365,7 +365,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             let candidate;
             try { candidate = prepareEvidenceRequest(currentRequest, responseSchema); }
             catch (error) { if (!['AI_INPUT_TOO_LARGE', 'AI_EVIDENCE_CAPACITY'].includes(error.code)) throw error; }
-            if (candidate && Buffer.byteLength(JSON.stringify(candidate.request)) + Buffer.byteLength(JSON.stringify(candidate.schema)) <= CONTEXT_WINDOW_BYTES) { preparedEvidence = candidate; break; }
+            if (candidate && fitsDirectAnalysis(candidate, { singleBatch: !(batches?.length > 1) })) { preparedEvidence = candidate; break; }
             if (group.end === index) {
               needsContext = true;
               // Compare a bounded candidate block once with history, rather
