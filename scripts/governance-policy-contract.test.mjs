@@ -333,6 +333,7 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
   const worktreeStart = section(worktreeSection, '- **최초 생성과 작업 시작**', '- **경로**');
   if (!worktreeStart.includes('고정 트리가 없을 때만')
     || !worktreeStart.includes('`git worktree add --detach <고정 경로> origin/main`')
+    || !worktreeStart.includes('이때도 실행 전 가드가 승인을 묻는다(DEC-OPS-414)')
     || !worktreeStart.includes('이미 존재하는 경로는 같은 저장소의 등록된 트리인지 확인하며 덮어쓰지 않는다')
     || !worktreeStart.includes('유휴 고정 트리는 `detached origin/main` 상태로 두고 그 상태에서는 수정·커밋하지 않는다')
     || !worktreeStart.includes('`git switch --no-track -c <고유 작업 브랜치> origin/main`')) {
@@ -361,6 +362,35 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
     || !worktreeFinish.includes('`git fetch --no-prune origin` 뒤 `git switch --detach origin/main`')
     || !worktreeFinish.includes('자기 작업 브랜치만 기존 완료 규칙에 따라 정리하며, 고정 작업 트리 디렉터리는 삭제하지 않는다')) {
     errors.push('protocol §6.6 must verify owned completion, park detached, and retain the directory');
+  }
+  // [2026-11-11 DEC-OPS-414] 도구마다 고정 트리 하나가 기본이다 — 임시 트리는 승인을 받아 예외로만 만들고, 병합이 아니라 쓰는 것이 없어졌을
+  // 때 완료 보고에서 정리를 묻는다(Codex 한 세션이 비어 있는 고정 트리를 두고 임시 트리 셋을 남긴 사례).
+  if (!worktreeSection.includes('도구마다 고정 트리 하나가 기본이고 임시 트리는 예외다')
+    || !worktreeSection.includes('고정 트리가 다른 세션에 쓰이고 있거나 사용 여부가 불명확할 때, 또는 실행 중인 검증의 입력을 지키려고')
+    || !worktreeSection.includes('자기 고정 트리가 유휴인지 먼저 본다')
+    || !worktreeSection.includes('임시 트리를 만들기 전에 그 이유를 사용자에게 알리고 승인을 받는다')
+    || !worktreeSection.includes('실행 전 가드가 모든 `git worktree add` 를 묻는다')) {
+    errors.push('protocol §6.6 must keep temporary worktrees exceptional and approved');
+  }
+  // Codex 훅은 묻기를 지원하지 않는다 — 실행 규칙의 승인 창이 대신 묻고, 못 잡는 꼴은 가드가 막는다는 경계를 함께 고정한다.
+  if (!worktreeSection.includes('고정 트리를 처음 만들 때도 묻는다')
+    || !worktreeSection.includes('저장소 실행 규칙(`.codex/rules/agent-guard.rules`)의 승인 창이 대신 묻는다')
+    || !worktreeSection.includes('Codex 가 확실히 풀어 보지 못하는 꼴(셸 변수·`git -C`·여러 명령·`cmd /c`)이나 그 규칙 파일이 바뀐 뒤 다시 시작하지 않은 Codex 에서는 가드가 막고')) {
+    errors.push('protocol §6.6 must route Codex approval through its execution rules and keep the guard as the fallback');
+  }
+  const worktreeLifetime = section(worktreeSection, '- **임시 트리의 수명**', '- **정리**');
+  if (!worktreeLifetime.includes('그 트리의 작업이 병합돼도 끝난 것이 아니다')
+    || !worktreeLifetime.includes('그 트리의 코드를 불러 도는 서버·실행기·미리보기')
+    || !worktreeLifetime.includes('그 트리를 작업 위치로 쓰는 셸')
+    || !worktreeLifetime.includes('저장소 밖 스크립트의 경로 참조(`file:///D:/wt-…` import 등)가 남았는지 확인한다')
+    || !worktreeLifetime.includes('완료 보고에서 사용자에게 그 트리를 지울지 묻고')) {
+    errors.push('protocol §6.6 must close temporary worktrees through the completion report');
+  }
+  const worktreeCleanup = section(worktreeSection, '- **정리**');
+  if (!worktreeCleanup.includes('지울 때는 링크(junction)를 먼저 끊어 링크 너머의 원본을 지우지 않게 한다')
+    || !worktreeCleanup.includes('`build/` 의 백업 링크까지 깊이 제한 없이 찾는다')
+    || !worktreeCleanup.includes('드라이브 문자와 구분자를 갖춘 절대 경로로 확인한다')) {
+    errors.push('protocol §6.6 must unlink every outside link and resolve an absolute target before deleting');
   }
 
   // [2026-10-24 DEC-OPS-382] 설계 검토 예산 — 반복 비용만 줄이고 승인 분리·신호 보존·L2 검토는 지운 채 남지 않게 고정한다.
@@ -781,6 +811,42 @@ test('DEC-OPS-395 persistent worktree regressions fail with their own message', 
     const errors = protocolTruthErrors({ ...current, [source]: current[source].replace(from, to) });
     assert.ok(errors.some(error => error.includes(expected)), `${from} → ${expected}: ${JSON.stringify(errors)}`);
   }
+});
+
+test('DEC-OPS-414 temporary worktree regressions fail with their own message', () => {
+  const cases = [
+    ['protocol', '도구마다 고정 트리 하나가 기본이고 임시 트리는 예외다', '임시 트리는 필요할 때 자유롭게 만든다', 'exceptional and approved'],
+    ['protocol', '자기 고정 트리가 유휴인지 먼저 본다', '지금 있는 임시 트리에서 새 트리를 만든다', 'exceptional and approved'],
+    ['protocol', '임시 트리를 만들기 전에 그 이유를 사용자에게 알리고 승인을 받는다', '임시 트리는 묻지 않고 만든다', 'exceptional and approved'],
+    ['protocol', '실행 전 가드가 모든 `git worktree add` 를 묻는다', '가드는 작업 트리 생성을 보지 않는다', 'exceptional and approved'],
+    ['protocol', '고정 트리가 다른 세션에 쓰이고 있거나 사용 여부가 불명확할 때, 또는', '고정 트리가 다른 세션에 쓰이고 있을 때, 또는', 'exceptional and approved'],
+    ['protocol', '고정 트리를 처음 만들 때도 묻는다', '고정 트리는 묻지 않는다', 'route Codex approval'],
+    ['protocol', '저장소 실행 규칙(`.codex/rules/agent-guard.rules`)의 승인 창이 대신 묻는다', '사용자가 직접 실행한다', 'route Codex approval'],
+    ['protocol', 'Codex 가 확실히 풀어 보지 못하는 꼴(셸 변수·`git -C`·여러 명령·`cmd /c`)이나 그 규칙 파일이 바뀐 뒤 다시 시작하지 않은 Codex 에서는 가드가 막고', '그 밖의 꼴도 그대로 넘기고', 'keep the guard as the fallback'],
+    ['protocol', '그 트리를 작업 위치로 쓰는 셸', '그 트리의 미커밋 변경', 'through the completion report'],
+    ['protocol', '저장소 밖 스크립트의 경로 참조', '저장소 안의 참조', 'through the completion report'],
+    ['protocol', '`file:///D:/wt-…` import 등)가 남았는지 확인한다', '`file:///D:/wt-…` import 등)는 확인하지 않는다', 'through the completion report'],
+    ['protocol', '이때도 실행 전 가드가 승인을 묻는다(DEC-OPS-414)', '이때는 묻지 않는다', 'create once, park detached'],
+    ['protocol', '지울 때는 링크(junction)를 먼저 끊어 링크 너머의 원본을 지우지 않게 한다', '지울 때는 디렉터리째 지운다', 'unlink every outside link'],
+    ['protocol', '그 트리의 작업이 병합돼도 끝난 것이 아니다', '그 트리의 작업이 병합되면 끝난 것이다', 'through the completion report'],
+    ['protocol', '그 트리의 코드를 불러 도는 서버·실행기·미리보기', '그 트리의 미커밋 변경', 'through the completion report'],
+    ['protocol', '완료 보고에서 사용자에게 그 트리를 지울지 묻고', '완료 보고에 적지 않고 그대로 두고', 'through the completion report'],
+    ['protocol', '`build/` 의 백업 링크까지 깊이 제한 없이 찾는다', '`node_modules` 링크만 찾는다', 'unlink every outside link'],
+    ['protocol', '드라이브 문자와 구분자를 갖춘 절대 경로로 확인한다', '경로를 그대로 넘긴다', 'resolve an absolute target'],
+  ];
+  for (const [source, from, to, expected] of cases) {
+    assert.equal(current[source].split(from).length, 2, `${source} must hold the pinned sentence exactly once: ${from}`);
+    const errors = protocolTruthErrors({ ...current, [source]: current[source].replace(from, to) });
+    assert.ok(errors.some(error => error.includes(expected)), `${from} → ${expected}: ${JSON.stringify(errors)}`);
+  }
+});
+
+test('DEC-OPS-414 the guard that SOP §6.6 names asks before every git worktree add', async () => {
+  const { RULES } = await import('./agent-guard.mjs');
+  const rule = RULES.find(({ id }) => id === 'git-worktree-add');
+  assert.ok(rule, 'SOP §6.6 이 말하는 가드 규칙이 규칙 표에 있다');
+  assert.equal(rule.decision, 'ask', '임시 트리는 막지 않고 사용자 승인을 받는다');
+  assert.match(rule.fix, /SOP §6\.6/u);
 });
 
 test('persistent worktree assignments require distinct operators and paths without freezing locations', () => {

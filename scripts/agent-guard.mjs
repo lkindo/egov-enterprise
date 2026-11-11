@@ -129,6 +129,141 @@ function splitSegments(raw) {
 const tokens = (text) => text.trim().split(/\s+/).filter(Boolean);
 const unquote = (value) => value.replace(/^(['"])(.*)\1$/s, '$2');
 
+/** `git worktree add` 에서 값을 다음 단어로 받는 옵션 — 그 값(브랜치 이름·잠금 사유)을 경로로 읽지 않는다. */
+const WORKTREE_ADD_VALUE_OPTIONS = new Set(['-b', '-B', '--reason']);
+
+/**
+ * `git worktree add` 의 인자 단어들(`add` 뒤). worktree add 가 아니면 null 이다. 단어는 따옴표 경계를 지켜 나누고(`"D:\a b"` 는 한 단어),
+ * git 전역 옵션(`-C <dir>`·`"-C"` 처럼 따옴표 친 것 포함)은 셸이 넘길 값으로 가려 건너 실제 하위 명령 자리에서 읽는다.
+ */
+/** git 실행 파일 이름인가(`git`·`git.exe`·경로). */
+const isGitExecutable = (value) => /(^|[\\/])git(\.exe)?$/i.test(value ?? '');
+
+/**
+ * 셸 없는 argv(문자열로 바꾸지 않은 칸 배열)가 `git [전역 옵션…] worktree add …` 인가. 칸 경계가 그대로라 셸 해석 문제가 없다 — Codex 가 셸 없이
+ * 넘긴 argv 는 문자열로 이어 판정하면 공백·따옴표·`;` 든 칸이 하위 명령을 가린다(Codex 56·58·59차).
+ */
+export function argvWorktreeAdd(argv) {
+  return argvWorktreeAddAt(argv) >= 0;
+}
+
+/** argv 가 `git [전역 옵션…] worktree add` 면 `add` 다음 칸의 위치, 아니면 -1. */
+function argvWorktreeAddAt(argv) {
+  if (!Array.isArray(argv) || !isGitExecutable(argv[0])) return -1;
+  let index = 1;
+  while (index < argv.length && String(argv[index]).startsWith('-')) index += GIT_VALUE_OPTIONS.has(argv[index]) ? 2 : 1;
+  return argv[index] === 'worktree' && argv[index + 1] === 'add' ? index + 2 : -1;
+}
+
+/** 셸 없는 argv 의 `git worktree add` 경로 칸(옵션·그 값을 건너뛴 첫 피연산자). 없으면 null. */
+function argvWorktreeAddPath(argv) {
+  const start = argvWorktreeAddAt(argv);
+  if (start < 0) return null;
+  for (let index = start; index < argv.length; index += 1) {
+    const value = String(argv[index]);
+    if (WORKTREE_ADD_VALUE_OPTIONS.has(value)) { index += 1; continue; }
+    if (!value.startsWith('-')) return value;
+  }
+  return null;
+}
+
+/** 작업 트리 경로의 디렉터리 이름이 E2E 매처와 겹치는가(quality·journeys·contracts 로 끝난다). */
+const collidesWithE2e = (path) => path !== null && path.split(/[\\/]/).some((part) => /(quality|journeys|contracts)$/i.test(part));
+
+/**
+ * `git worktree add` 의 인자 단어들(`add` 뒤). worktree add 가 아니면 null 이다. 단어는 따옴표 경계를 지켜 나누고(`"D:\a b"` 는 한 단어),
+ * 실행 파일은 호출 연산자(`&"…\git.exe"`)를 벗긴 값으로, git 전역 옵션(`-C <dir>`·`"-C"` 포함)은 셸이 넘길 값으로 가려 건너 실제 하위 명령
+ * 자리에서 읽는다.
+ */
+function worktreeAddArgs(rawCode, raw, view = null, start = 0) {
+  // 단어 경계는 셸 규칙에 맞게 가린 판으로 잡는다(PowerShell 의 `"D:\x\"`, 최종 검토).
+  const { code } = quoteAwareMask(rawCode, raw, view, start);
+  // PowerShell 의 출력 대입(`$result = git …`·`$null=git …`·`$x =git …`)은 우변이 명령이다 — 공백 유무와 상관없다(Codex 60·61차).
+  const all = alignedWords(code, raw);
+  const first = commandAt(all.map((word) => word.code));
+  const target = all[first]?.code ?? '';
+  const joined = /^\$[\w:]+=/u.exec(target);
+  const spaced = /^\$[\w:]+$/u.test(target) && all[first + 1]?.code.startsWith('=') ? all[first + 1] : null;
+  if (joined || spaced) {
+    const word = joined ? all[first] : spaced;
+    const cut = word.end - word.code.length + (joined ? joined[0].length : 1);
+    return worktreeAddArgs(code.slice(cut), raw.slice(cut));
+  }
+  const invoked = invokedCommand(code, raw);
+  if (!invoked || !isGitExecutable(invoked.name)) return null;
+  const words = invoked.args;
+  let index = 0;
+  while (index < words.length && shellWordValue(words[index].text).startsWith('-')) {
+    index += GIT_VALUE_OPTIONS.has(shellWordValue(words[index].text)) ? 2 : 1;
+  }
+  if (shellWordValue(words[index]?.text ?? '') !== 'worktree' || shellWordValue(words[index + 1]?.text ?? '') !== 'add') return null;
+  return words.slice(index + 2);
+}
+
+/** 따옴표 밖의 `worktree add` 낱말 — 앞뒤가 이름 글자가 아니면 된다(`{ git worktree add …`·`$x=git worktree add …`). */
+const WORKTREE_ADD_TEXT = /(?:^|[^\w-])worktree\s+add(?:[^\w-]|$)/u;
+
+/**
+ * git 이 쓰인 조각에서 따옴표 밖에 `worktree add` 가 보이면 그렇다고 본다. 명령 구조를 하나씩 풀지 않는다 — 블록·대입·호출 연산자·셸마다 다른
+ * 이스케이프를 구조로 쫓으면 꼴마다 빈틈이 났다(Codex 56~61차). 따옴표 안(메시지·검색어)은 가린 판에 없고, 따옴표가 닫히지 않았으면
+ * (PowerShell 의 `"D:\x\"` 를 bash 규칙으로 읽은 경우) 경계를 알 수 없어 원문에서 찾는다. 따옴표 없이 쓴 `echo worktree add` 같은 드문 꼴은
+ * 묻게 되는 쪽을 받아들인다.
+ */
+function textualWorktreeAdd(code, raw, view = null, start = 0) {
+  if (!/(?:^|[^\w-])git(?:\.exe)?(?:[^\w-]|$)/iu.test(raw)) return false;
+  const { code: masked, closed } = quoteAwareMask(code, raw, view, start);
+  // 어느 셸 규칙으로도 따옴표가 닫히지 않으면 경계를 알 수 없어 원문을 본다.
+  return WORKTREE_ADD_TEXT.test(closed ? masked : raw);
+}
+
+const hasUnclosedQuote = (masked) => ['"', "'"].some((quote) => (masked.split(quote).length - 1) % 2 === 1);
+
+/**
+ * 따옴표를 가린 판. bash 규칙으로 닫히지 않는데 PowerShell 규칙(백슬래시는 글자, 백틱·겹친 따옴표가 이스케이프)으로는 닫히면 PowerShell 판을
+ * 쓴다 — `git -C "D:\x\" commit -m "… worktree add …"` 를 bash 규칙으로 가리면 메시지가 따옴표 밖으로 나와 하위 명령처럼 읽힌다(최종 검토).
+ * 길이를 보존하므로 원문과 위치가 그대로 맞는다. 조각 나누기는 bash 규칙으로 하므로 메시지 안의 `;` 에서 조각이 잘릴 수 있다 — 명령 전체(view)
+ * 를 PowerShell 규칙으로 가려 이 조각 자리(start)를 잘라 쓰고, 그것도 닫히지 않으면 이 조각만 다시 가린다(최종 재검토).
+ */
+function quoteAwareMask(code, raw, view = null, start = 0) {
+  // PowerShell 판을 쓸지는 명령 전체로 정한다 — 메시지 안의 `;` 두 개 사이 조각에는 따옴표가 없어 조각만 보면 보정이 필요한지 모른다.
+  // 닫힘 여부도 전체 판으로 정한다 — 전체에서 닫힌 따옴표도 조각으로 자르면 조각 안의 따옴표 수는 홀수일 수 있다(최종 재검토·확인).
+  if (typeof view === 'string' && hasUnclosedQuote(maskQuoted(view))) {
+    const whole = maskQuotedPowerShell(view);
+    if (!hasUnclosedQuote(whole)) return { code: whole.slice(start, start + raw.length), closed: true };
+  }
+  if (!hasUnclosedQuote(code)) return { code, closed: true };
+  const powershell = maskQuotedPowerShell(raw);
+  return hasUnclosedQuote(powershell) ? { code, closed: false } : { code: powershell, closed: true };
+}
+
+/**
+ * PowerShell 규칙으로 따옴표 안을 밑줄로, 따옴표 밖 주석(`#` 뒤 줄 끝까지)을 공백으로 가린다 — 큰따옴표 안의 이스케이프는 백틱과 겹친 따옴표
+ * 뿐이고, 작은따옴표 안은 겹친 따옴표뿐이다. 길이를 보존한다.
+ */
+function maskQuotedPowerShell(text) {
+  let out = '';
+  let quote = null;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (quote) {
+      if ((quote === '"' && char === '`' && index + 1 < text.length) || (char === quote && text[index + 1] === quote)) { out += '__'; index += 1; continue; }
+      if (char === quote) { out += char; quote = null; continue; }
+      out += '_';
+      continue;
+    }
+    if (char === '#' && (index === 0 || /\s/.test(text[index - 1]))) {
+      const end = text.indexOf('\n', index);
+      const stop = end < 0 ? text.length : end;
+      out += ' '.repeat(stop - index);
+      index = stop - 1;
+      continue;
+    }
+    if (char === '\'' || char === '"') quote = char;
+    out += char;
+  }
+  return out;
+}
+
 /** 뒤 단어를 명령 자리에 두는 셸 예약어 — `for …; do git …`·`if …; then …; else …` 의 조각은 예약어 다음이 명령이다. */
 const SHELL_KEYWORDS = new Set(['do', 'then', 'else', 'elif', 'if', 'while', 'until']);
 
@@ -1173,20 +1308,31 @@ export const RULES = Object.freeze([
     // `setup` 프로젝트 매처는 `/.*\.setup\.ts/` 라 디렉터리 이름으로는 걸리지 않는다 — 디렉터리에 걸리는 셋만 본다.
     why: 'Playwright 매처(`contracts/…spec.ts`·`(journeys|quality)/…spec.ts`)와 E2E 선별 계획기가 spec 의 절대 경로에 정규식을 적용해, 경로의 디렉터리 이름이 quality·journeys·contracts 로 끝나면 소유가 모호하다고 붉다(2026-10-19).',
     fix: '작업 트리는 D:\\wt-<짧은 이름> 으로 두되 그 셋으로 끝나는 디렉터리 이름을 쓰지 않는다(SOP §6.6).',
+    // main 과 같은 판정이다 — 새 작업 트리 규칙의 따옴표 해석을 쓰면 `O\'Brien/contracts` 처럼 기존에 막던 경로를 놓쳤다(최종 재검토).
     match: ({ git, raw }) => {
       if (git?.sub !== 'worktree' || git.args[0] !== 'add') return false;
       const words = tokens(raw);
       const at = words.findIndex((word) => word === 'add');
-      const options = new Set(['-b', '-B', '--reason']);
       let path = null;
       for (let index = at + 1; index < words.length; index += 1) {
-        if (options.has(words[index])) { index += 1; continue; }
+        if (WORKTREE_ADD_VALUE_OPTIONS.has(words[index])) { index += 1; continue; }
         if (words[index].startsWith('-')) continue;
         path = unquote(words[index]);
         break;
       }
-      return path !== null && path.split(/[\\/]/).some((part) => /(quality|journeys|contracts)$/i.test(part));
+      return collidesWithE2e(path);
     },
+  },
+  {
+    id: 'git-worktree-add', decision: 'ask',
+    why: '도구마다 고정 작업 트리 하나가 기본이고 임시 트리는 예외다(SOP §6.6, DEC-OPS-414). 2026-11-06~11-10 Codex 한 세션이 고정 트리가 비어 있는데도 임시 트리 셋을 차례로 만들었고, 일이 끝난 뒤에도 남아 사용자가 몰랐다 — 그중 하나는 병합 뒤에도 미리보기 실행기가 그 코드를 불러 쓰고 있었다.',
+    fix: '고정 트리가 유휴이면 그곳에서 작업 브랜치로 시작한다. 고정 트리가 다른 세션에 쓰이거나 사용 여부가 불명확할 때, 또는 실행 중 검증의 입력을 지켜야 할 때만 이유를 사용자에게 설명하고 승인을 받아 임시 트리를 만들고, 완료 보고에서 그 트리를 지울지 묻는다. 고정 트리를 처음 만들 때도 묻는다(SOP §6.6).',
+    // 경로로 고정 트리를 가려 주지 않는다 — 경로 해석(`-C` 누적·셸 이스케이프·변수)은 셸마다 달라 예외가 빈틈이 됐고(Codex 54·55차),
+    // 고정 트리를 처음 만드는 일은 도구마다 한 번뿐이다. Codex 실행 규칙도 경로를 가리지 못하므로 세 도구가 똑같이 묻는다.
+    codexPrompt: ['git', 'worktree', 'add'],
+    codexJustification: '작업 트리를 더하려면 사용자 승인을 받는다 — 도구마다 고정 트리 하나가 기본이고 임시 트리는 예외이며, 고정 트리를 처음 만들 때도 묻는다(SOP §6.6, DEC-OPS-414).',
+    // 셸 없는 argv 배열은 칸 구조로만 판정한다(applyArgvRules).
+    match: ({ code, raw, view, start }) => worktreeAddArgs(code, raw, view, start) !== null || textualWorktreeAdd(code, raw, view, start),
   },
   {
     id: 'gitleaks-worktree-mount', decision: 'deny',
@@ -1310,7 +1456,7 @@ function inspectView(view, command, cwd, depth, state, cwdUnknown = false) {
     const { here } = location;
     const git = gitInvocation(part.code);
     const gitDir = git?.dir ? /\s-C\s+("[^"]+"|'[^']+'|\S+)/.exec(part.raw)?.[1] : null;
-    const context = { command, raw: part.raw, code: part.code, git, cwd: gitDir ? resolve(here, unquote(gitDir)) : here, root: state.root,
+    const context = { command, view, start: part.start, raw: part.raw, code: part.code, git, cwd: gitDir ? resolve(here, unquote(gitDir)) : here, root: state.root,
       cwdUnknown: location.unknown };
     for (const rule of state.rules) {
       if (state.hits.some((hit) => hit.id === rule.id)) continue;
@@ -1361,7 +1507,10 @@ export function evaluate(command, { cwd = process.cwd(), rules = RULES, gitRunne
   };
 }
 
-/** 각 도구의 PreToolUse 입력에서 명령 문자열과 작업 디렉터리를 꺼낸다. 셸 명령이 아니면 null. */
+/**
+ * 각 도구의 PreToolUse 입력에서 명령 문자열과 작업 디렉터리를 꺼낸다. 셸 명령이 아니면 null. 셸 없는 argv 배열은 칸 그대로 `argv` 로도 준다 —
+ * 문자열은 main 과 같이 칸을 공백으로 이어(다른 규칙의 판정을 바꾸지 않는다, Codex 59차) 만들고, 칸 경계가 필요한 판정은 argv 로 한다.
+ */
 export function readHookInput(agent, input) {
   if (agent === 'antigravity') {
     const args = input?.toolCall?.args ?? {};
@@ -1372,10 +1521,148 @@ export function readHookInput(agent, input) {
   // Codex 의 apply_patch 는 셸 명령이 아니라 파일 편집이다 — 본문의 `git commit …` 같은 줄을 명령으로 읽지 않는다.
   if (Array.isArray(raw) && /(^|[\\/])apply_patch(\.exe)?$/i.test(raw[0] ?? '')) return null;
   // Codex 는 명령을 셸 래퍼 배열(["powershell.exe","-Command","…"]·["bash","-lc","…"])로 넘긴다 — 셸에 넘긴 스크립트를 판정한다.
-  const wrapped = Array.isArray(raw) && raw.length >= 3 && /(^|[\\/])(powershell|pwsh|bash|sh|zsh|cmd)(\.exe)?$/i.test(raw[0])
-    && /^(-Command|-c|-lc|\/c)$/i.test(raw.at(-2));
-  const command = Array.isArray(raw) ? (wrapped ? raw.at(-1) : raw.join(' ')) : raw;
-  return typeof command === 'string' ? { command, cwd: input.cwd ?? process.cwd() } : null;
+  // main 처럼 끝에서 둘째 칸의 플래그도 받고, 첫 피연산자 앞의 플래그면 스크립트 뒤에 칸이 더 있어도 래퍼다: PowerShell·cmd 는 남은 칸을
+  // 이어 한 명령으로 돌리고, bash 계열은 다음 한 칸만 스크립트다. 스크립트 파일(`bash x.sh -c …`) 뒤의 칸은 그 스크립트의 인자다(Codex 60차).
+  // 셸 목록은 셸 래퍼 재귀(SHELL_WRAPPER)와 같다 — dash 를 빼면 셸 없는 argv 로 잘못 분류된다(최종 검토).
+  const shell = Array.isArray(raw) ? SHELL_WRAPPER.exec(raw[0] ?? '')?.[1]?.toLowerCase() ?? null : null;
+  const shellFlag = /^(-Command|-c|-lc|\/c)$/i;
+  // 옵션 접두사는 셸마다 다르다 — bash 계열의 `/…` 는 스크립트 경로다(Codex 61차).
+  const optionPrefix = shell === 'cmd' ? /^\// : ['bash', 'sh', 'zsh', 'dash'].includes(shell) ? /^[-+]/ : /^-/;
+  let flagAt = -1;
+  for (let index = 1; shell && index < raw.length; index += 1) {
+    if (shellFlag.test(raw[index])) { flagAt = index; break; }
+    if (!optionPrefix.test(raw[index] ?? '')) break;
+  }
+  const script = flagAt > 0 && flagAt + 1 < raw.length
+    ? (['bash', 'sh', 'zsh', 'dash'].includes(shell) ? raw[flagAt + 1] : raw.slice(flagAt + 1).join(' '))
+    : shell && raw.length >= 3 && shellFlag.test(raw.at(-2)) ? raw.at(-1) : null;
+  const command = Array.isArray(raw) ? (script ?? raw.join(' ')) : raw;
+  if (typeof command !== 'string') return null;
+  // 첫 칸이 셸이면 래퍼를 풀지 못했어도 셸 없는 argv 가 아니다 — 이은 문자열의 판정(셸 래퍼 재귀)을 그대로 둔다(Codex 61차).
+  return Array.isArray(raw) && !shell ? { command, cwd: input.cwd ?? process.cwd(), argv: raw } : { command, cwd: input.cwd ?? process.cwd() };
+}
+
+/**
+ * 셸 없는 argv 배열이면 작업 트리 두 규칙(`git-worktree-add`·`worktree-name-collides-with-e2e`)은 칸 구조로만 판정한다 — 공백으로 이은
+ * 문자열에서는 메시지 칸의 `{ git worktree add … }`·경로 칸의 아포스트로피가 판정을 흔든다(Codex 56·58·59·60차). 다른 규칙은 그 문자열의
+ * 판정을 그대로 둔다. argv 가 없으면 판정을 바꾸지 않는다.
+ */
+export function applyArgvRules(verdict, argv, rules = RULES) {
+  // 칸 구조 판정은 argv 자체가 git 호출일 때만 한다 — 다른 실행 파일(env·알 수 없는 셸)은 이은 문자열의 판정을 그대로 둔다(최종 검토).
+  if (!Array.isArray(argv) || !isGitExecutable(argv[0])) return verdict;
+  const structural = new Map([
+    ['git-worktree-add', argvWorktreeAdd(argv)],
+    ['worktree-name-collides-with-e2e', collidesWithE2e(argvWorktreeAddPath(argv))],
+  ]);
+  const ids = [...(verdict?.rules ?? []).filter((id) => !structural.has(id)), ...[...structural].filter(([, hit]) => hit).map(([id]) => id)];
+  const hits = ids.map((id) => rules.find((candidate) => candidate.id === id)).filter(Boolean);
+  if (!hits.length) return null;
+  return {
+    decision: hits.some((hit) => hit.decision === 'deny') ? 'deny' : 'ask',
+    rules: hits.map((hit) => hit.id),
+    reason: hits.map((hit) => `[agent-guard:${hit.id}] ${hit.why} → ${hit.fix}`).join('\n'),
+  };
+}
+
+/** Codex 가 시작할 때 읽는 저장소 실행 규칙(프로젝트 `.codex/` 층을 신뢰해야 읽는다 — 이 가드 훅이 도는 조건과 같다). */
+export const CODEX_RULES_PATH = '.codex/rules/agent-guard.rules';
+
+/** 규칙 표의 `codexPrompt` 에서 Codex 실행 규칙 파일 내용을 만든다. 시험이 저장소의 파일과 대조한다. */
+export function renderCodexRules(rules = RULES) {
+  const header = [
+    '# 실행 전 가드(scripts/agent-guard.mjs)의 묻기 규칙 가운데 Codex 가 승인 창으로 대신 묻는 것(DEC-OPS-414).',
+    '# Codex 훅은 묻기를 지원하지 않는다 — 가드는 Codex 가 아래 앞부분으로 확실히 풀어 보는 명령만, 그리고 Codex 가 이 파일이 바뀐 뒤에 시작했을 때만 넘긴다.',
+    '# 그 밖은 막고 사용자 실행을 안내한다. 직접 고치지 않는다: 정본은 가드 규칙 표의 codexPrompt 이고 시험이 이 파일과 대조한다. 바뀌면 Codex 를 다시 시작한다.',
+  ];
+  const entries = rules.filter((rule) => rule.decision === 'ask' && rule.codexPrompt).map((rule) => [
+    'prefix_rule(',
+    `    pattern = [${rule.codexPrompt.map((word) => JSON.stringify(word)).join(', ')}],`,
+    '    decision = "prompt",',
+    `    justification = ${JSON.stringify(`[agent-guard:${rule.id}] ${rule.codexJustification ?? rule.fix}`)},`,
+    ')',
+  ].join('\n'));
+  return `${[...header, '', ...entries].join('\n')}\n`;
+}
+
+/**
+ * Codex 0.162.1 이 PowerShell 스크립트를 argv 로 풀 때 확실히 받는 맨 단어(codex-rs/shell-command/src/command_safety/powershell_tree_sitter.rs
+ * 의 lower_command_text·reject_unsupported_bare_word 보다 좁게 잡는다): 따옴표·변수·`@`·괄호·구분자 없음, 숫자로 시작하지 않음, `-x:값` 아님.
+ */
+function codexBareWord(word) {
+  return /^[A-Za-z_./\\-][\w.:/\\=+-]*$/u.test(word) && !(word.startsWith('-') && !word.startsWith('--') && word.includes(':'));
+}
+
+/** Codex 0.162.1 이 PowerShell 래퍼를 풀 때 `-Command`/`-c` 앞에 받는 옵션(codex-rs/shell-command/src/powershell.rs 의 POWERSHELL_FLAGS). */
+const CODEX_POWERSHELL_FLAGS = new Set(['-nologo', '-noprofile']);
+const CODEX_POWERSHELL = /^(?:.*[\\/])?(?:powershell(?:\.exe)?|pwsh)$/iu;
+
+/**
+ * Codex 가 실행 규칙에 맞춰 볼 argv — 확실히 알 수 있을 때만 준다. 셸 없이 바로 실행하는 argv 는 그대로이고, Windows 에서 Codex 가 푸는
+ * PowerShell 래퍼(`-NoLogo`·`-NoProfile` 뒤 `-Command`/`-c` 와 스크립트 하나로 끝나는 것)나 문자열 명령(code mode 의 cmd — Windows 에서
+ * PowerShell 로 돈다, 2026-11-11 실측)은 그 안이 맨 단어만으로 된 명령 하나일 때만 단어로 푼다. 그 밖(cmd /c·다른 옵션·여러 명령·Windows 밖의
+ * 셸 스크립트)은 null 이다.
+ */
+export function codexPolicyArgv(toolInput, platform = process.platform) {
+  const command = toolInput?.command ?? toolInput?.cmd;
+  const script = (text) => {
+    if (platform !== 'win32' || typeof text !== 'string' || /[\r\n\t]/u.test(text)) return null;
+    const words = text.trim().split(/ +/u);
+    return words.length && words.every(codexBareWord) ? words : null;
+  };
+  if (typeof command === 'string') return script(command);
+  if (!Array.isArray(command) || !command.length || !command.every((part) => typeof part === 'string')) return null;
+  if (CODEX_POWERSHELL.test(command[0])) {
+    let index = 1;
+    while (CODEX_POWERSHELL_FLAGS.has(command[index]?.toLowerCase())) index += 1;
+    const flag = command[index]?.toLowerCase();
+    return (flag === '-command' || flag === '-c') && command.length === index + 2 ? script(command[index + 1]) : null;
+  }
+  // 셸 없이 바로 실행하는 argv 는 Codex 가 그대로 맞춰 본다(cmd /c·bash -lc 같은 래퍼는 첫 단어가 git 이 아니어서 앞부분이 맞지 않는다).
+  return command;
+}
+
+/**
+ * Codex 에서 이 판정을 막지 않고 Codex 실행 규칙의 승인 창에 맡겨도 되는가. Codex 훅은 묻기를 지원하지 않아(공식 hooks 문서 — ask 를 내면
+ * 훅 실패로 보고 명령을 그대로 실행한다) 묻기 판정을 막는 것으로 바꾸는데, 그러면 Claude Code·Antigravity 와 달리 사용자가 직접 실행해야 한다.
+ * 다음이 모두 참일 때만 true 다 — 아니면 종전처럼 막고 사용자 실행을 안내한다.
+ * - 걸린 규칙이 모두 묻기이고 `codexPrompt` 가 있으며, Codex 가 맞춰 볼 argv 가 그 앞부분으로 시작한다(codexPolicyArgv).
+ * - 저장소 실행 규칙 파일이 규칙 표에서 만든 내용과 같다.
+ * - 지금의 Codex 프로세스가 그 파일이 마지막으로 바뀐 뒤에 시작했다 — 실행 규칙은 시작할 때 읽으므로, 그 전에 뜬 Codex 는 규칙이 없다.
+ */
+export function codexPromptCovers(verdict, toolInput, { rulesText, rulesModifiedAt, codexStartedAt, platform = process.platform, rules = RULES } = {}) {
+  if (!verdict || verdict.decision !== 'ask' || rulesText !== renderCodexRules(rules)) return false;
+  const argv = codexPolicyArgv(toolInput, platform);
+  if (!argv) return false;
+  const prefixed = verdict.rules.every((id) => {
+    const prefix = rules.find((rule) => rule.id === id)?.codexPrompt;
+    return Array.isArray(prefix) && prefix.every((word, index) => argv[index] === word);
+  });
+  if (!prefixed) return false;
+  const started = typeof codexStartedAt === 'function' ? codexStartedAt() : codexStartedAt;
+  return Number.isFinite(started) && Number.isFinite(rulesModifiedAt) && started > rulesModifiedAt;
+}
+
+const CODEX_RULES_FILE = fileURLToPath(new URL(`../${CODEX_RULES_PATH}`, import.meta.url));
+
+function readCodexRules() {
+  try {
+    return { text: readFileSync(CODEX_RULES_FILE, 'utf8').replace(/\r\n/g, '\n'), modifiedAt: statSync(CODEX_RULES_FILE).mtimeMs };
+  } catch {
+    return { text: null, modifiedAt: null };
+  }
+}
+
+/**
+ * 이 훅을 띄운 가장 가까운 codex 프로세스의 시작 시각(ms). Windows 밖이거나 찾지 못하면 null 이다 — 위임하지 않는다.
+ * `AGENT_GUARD_CODEX_PROCESS=none` 이면 찾지 않는다 — 위임을 끄는 쪽으로만 쓰이므로(시험이 Codex 안에서 돌아도 같은 판정을 내게 한다) 우회가 되지 않는다.
+ */
+function codexProcessStartedAt() {
+  if (process.platform !== 'win32' || process.env.AGENT_GUARD_CODEX_PROCESS === 'none') return null;
+  const script = `$id=${process.pid};for($i=0;$i -lt 16;$i++){$p=Get-CimInstance Win32_Process -Filter "ProcessId=$id";if(-not $p){break};`
+    + `if($p.Name -match '^codex(\\.exe)?$'){[Console]::Out.Write($p.CreationDate.ToUniversalTime().ToString('o'));break};$id=$p.ParentProcessId}`;
+  const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { encoding: 'utf8', windowsHide: true, timeout: 8000 });
+  const at = Date.parse(result.stdout?.trim() ?? '');
+  return Number.isFinite(at) ? at : null;
 }
 
 /** 판정을 각 도구의 출력 형식으로 바꾼다. 막지 않은 명령에는 승인을 대신 내리지 않는다(DEC-OPS-386 ②; 2026-11-01 Antigravity 설치본 실측에서 빈 출력·{} 는 PreToolUse 프로토콜 오류로 명령이 거부되고 allow 는 Always Allow 밖 명령까지 자동 승인하므로, Antigravity 는 Always Allow 캐시·기본 승인 흐름을 따르는 { decision: "ask" } 를 돌려준다). */
@@ -1406,8 +1693,18 @@ async function main(argv) {
   }
   let output = renderVerdict(agent, null);
   try {
-    const hook = readHookInput(agent, JSON.parse(await readStdin()));
-    if (hook) output = renderVerdict(agent, evaluate(hook.command, { cwd: hook.cwd }));
+    const input = JSON.parse(await readStdin());
+    const hook = readHookInput(agent, input);
+    if (hook) {
+      const verdict = applyArgvRules(evaluate(hook.command, { cwd: hook.cwd }), hook.argv);
+      // Codex 는 실행 규칙의 승인 창이 대신 물을 수 있는 명령이면 넘긴다(DEC-OPS-414) — 막지 않은 명령에 승인을 대신 내리지는 않는다.
+      // 프로세스 시작 시각은 다른 조건이 다 맞을 때만 묻는다(PowerShell 조회가 1초 남짓 걸린다).
+      const delegate = agent === 'codex' && verdict?.decision === 'ask' && (() => {
+        const rules = readCodexRules();
+        return codexPromptCovers(verdict, input?.tool_input, { rulesText: rules.text, rulesModifiedAt: rules.modifiedAt, codexStartedAt: codexProcessStartedAt });
+      })();
+      output = renderVerdict(agent, delegate ? null : verdict);
+    }
   } catch (error) {
     // 판정할 수 없으면 막지 않는다 — 병합 권위는 CI 다. "걸린 규칙 없음"과 구분되게 단계 이름과 오류 이름만 남긴다.
     reportFailure('input', error);
