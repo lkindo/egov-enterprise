@@ -257,7 +257,9 @@ const CASES = {
       'git worktree add --detach D:\\wt-egov-codex origin/main', 'git worktree add --detach "D:\\wt-egov-codex extra" HEAD',
       'git -C frontend -C src worktree add --detach ..\\..\\wt-egov-codex HEAD', 'git "-C" . worktree add --detach D:\\wt-egov-codex-task HEAD',
       'git -C . worktree add --detach D:/wt-egov-codex\\ task HEAD', 'git -C add worktree add --detach D:\\wt-egov-codex-task HEAD',
-      'git worktree add --detach `\n  D:\\wt-egov-codex origin/main', '"C:\\Program Files\\Git\\cmd\\git.exe" worktree add D:\\wt-x HEAD'],
+      'git worktree add --detach `\n  D:\\wt-egov-codex origin/main', '"C:\\Program Files\\Git\\cmd\\git.exe" worktree add D:\\wt-x HEAD',
+      // 2026-11-11 Codex 56차 반례: 셸마다 다른 이스케이프로 단어 경계를 잘못 잡아 하위 명령을 놓쳤다.
+      'git -c user.name=Agent\\ Review worktree add --detach /d/wt-review HEAD', 'git -C "D:\\wt-egov-claude\\" worktree add --detach D:\\wt-review HEAD'],
     pass: ['git worktree list --porcelain', 'git worktree prune -v', 'git worktree remove D:\\wt-x',
       'git commit --only -m "git worktree add D:\\wt-egov-codex-x 는 묻는다" -- a.md', 'echo "git worktree add --detach D:\\wt-egov-codex-x HEAD"',
       'rg -n "git worktree add" docs'],
@@ -305,11 +307,16 @@ test('git-worktree-add: Codex 는 실행 규칙이 확실히 잡는 명령만 �
   assert.equal(covers({ cmd: 'git status' }, { codexStartedAt: () => { asked += 1; return later; } }), false);
   assert.equal(asked, 0, '다른 조건이 맞지 않으면 프로세스 시작 시각을 묻지 않는다');
   assert.equal(codexPolicyArgv({ cmd: 'git worktree add D:\\wt-x HEAD' }, 'win32').join(' '), 'git worktree add D:\\wt-x HEAD');
+  // 2026-11-11 Codex 56차: 셸 없는 argv 는 인자 경계를 지켜 판정한다 — 공백 든 값을 그냥 이으면 하위 명령을 놓쳤다.
+  const argvCommand = readHookInput('codex', { tool_input: { command: ['git', '-c', 'user.name=Agent Review', 'worktree', 'add', 'D:\\wt-review', 'HEAD'] }, cwd: repoRoot }).command;
+  assert.equal(argvCommand, "git -c 'user.name=Agent Review' worktree add D:\\wt-review HEAD");
+  assert.ok(ruleOf(argvCommand).includes('git-worktree-add'), '공백 든 전역 옵션 값 뒤의 worktree add 도 묻는다');
 
-  // 실행 파일은 Codex 프로세스 밖에서 돌므로(시작 시각을 찾지 못한다) 위임하지 않고 막는다.
-  const run = (input) => spawnSync(process.execPath, [GUARD, '--agent', 'codex'], { input: JSON.stringify(input), encoding: 'utf8' });
+  // 실행 파일은 Codex 시작 시각을 찾지 못하면 위임하지 않고 막는다 — 이 시험이 Codex 안에서 돌아도 같도록 조회를 끈다(Codex 56차).
+  const run = (input) => spawnSync(process.execPath, [GUARD, '--agent', 'codex'],
+    { input: JSON.stringify(input), encoding: 'utf8', env: { ...process.env, AGENT_GUARD_CODEX_PROCESS: 'none' } });
   const outside = JSON.parse(run({ tool_input: { cmd: 'git worktree add --detach D:\\wt-egov-codex-probe HEAD' }, cwd: repoRoot }).stdout);
-  assert.equal(outside.hookSpecificOutput.permissionDecision, 'deny', 'Codex 밖에서는 규칙 로드를 확인할 수 없어 막는다');
+  assert.equal(outside.hookSpecificOutput.permissionDecision, 'deny', 'Codex 시작 시각을 모르면 규칙 로드를 확인할 수 없어 막는다');
   const claude = JSON.parse(spawnSync(process.execPath, [GUARD, '--agent', 'claude'],
     { input: JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'git worktree add --detach D:\\wt-egov-claude origin/main' }, cwd: repoRoot }), encoding: 'utf8' }).stdout);
   assert.equal(claude.hookSpecificOutput.permissionDecision, 'ask', 'Claude Code 는 고정 트리를 처음 만들 때도 묻는다');

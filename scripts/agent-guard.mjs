@@ -149,6 +149,16 @@ function worktreeAddArgs(code, raw) {
 }
 
 /**
+ * 셸마다 이스케이프가 달라 단어 경계를 확정할 수 없는 git 명령 — Git Bash 의 `user.name=Agent\ Review`, PowerShell 의 `"D:\x\"`(PowerShell 은
+ * 백슬래시로 따옴표를 이스케이프하지 않는다) — 에 `worktree add` 가 보이면 그렇다고 본다(Codex 56차). 구조 해석이 하위 명령을 놓칠 수 있어서다.
+ */
+function ambiguousWorktreeAdd(code, raw) {
+  const words = tokens(code);
+  if (!/(^|[\\/])git(\.exe)?$/i.test(words[commandAt(words)] ?? '')) return false;
+  return /\\[\s"]/u.test(raw) && /(?:^|\s)worktree\s+add(?:\s|$)/u.test(raw);
+}
+
+/**
  * `git worktree add [옵션] <경로> …` 의 경로(셸이 넘길 값). 경로가 없으면 null 이다. 줄이음 표식(`` ` ``·`\`)에서 끝나면 경로가 다음 줄에
  * 있다 — 줄을 합친 판정이 따로 보므로 여기서는 경로가 없다고 본다.
  */
@@ -1222,7 +1232,7 @@ export const RULES = Object.freeze([
     // 고정 트리를 처음 만드는 일은 도구마다 한 번뿐이다. Codex 실행 규칙도 경로를 가리지 못하므로 세 도구가 똑같이 묻는다.
     codexPrompt: ['git', 'worktree', 'add'],
     codexJustification: '작업 트리를 더하려면 사용자 승인을 받는다 — 도구마다 고정 트리 하나가 기본이고 임시 트리는 예외이며, 고정 트리를 처음 만들 때도 묻는다(SOP §6.6, DEC-OPS-414).',
-    match: ({ code, raw }) => worktreeAddArgs(code, raw) !== null,
+    match: ({ code, raw }) => worktreeAddArgs(code, raw) !== null || ambiguousWorktreeAdd(code, raw),
   },
   {
     id: 'gitleaks-worktree-mount', decision: 'deny',
@@ -1397,6 +1407,12 @@ export function evaluate(command, { cwd = process.cwd(), rules = RULES, gitRunne
   };
 }
 
+/** argv 한 칸을 가드의 단어 하나로 읽히게 감싼다. 공백·따옴표·셸 특수문자가 없으면 그대로 둔다(작은따옴표는 안을 글자 그대로 둔다). */
+function quoteArgument(value) {
+  if (typeof value !== 'string' || /^[\w.:/\\=@+,%-]+$/u.test(value)) return String(value);
+  return value.includes("'") ? `"${value.replace(/(["\\$`])/g, '\\$1')}"` : `'${value}'`;
+}
+
 /** 각 도구의 PreToolUse 입력에서 명령 문자열과 작업 디렉터리를 꺼낸다. 셸 명령이 아니면 null. */
 export function readHookInput(agent, input) {
   if (agent === 'antigravity') {
@@ -1410,7 +1426,8 @@ export function readHookInput(agent, input) {
   // Codex 는 명령을 셸 래퍼 배열(["powershell.exe","-Command","…"]·["bash","-lc","…"])로 넘긴다 — 셸에 넘긴 스크립트를 판정한다.
   const wrapped = Array.isArray(raw) && raw.length >= 3 && /(^|[\\/])(powershell|pwsh|bash|sh|zsh|cmd)(\.exe)?$/i.test(raw[0])
     && /^(-Command|-c|-lc|\/c)$/i.test(raw.at(-2));
-  const command = Array.isArray(raw) ? (wrapped ? raw.at(-1) : raw.join(' ')) : raw;
+  // 셸 없는 argv 는 인자 경계를 지켜 잇는다 — 공백이 든 인자(`user.name=Agent Review`)를 그냥 이으면 판정이 하위 명령을 놓친다(Codex 56차).
+  const command = Array.isArray(raw) ? (wrapped ? raw.at(-1) : raw.map(quoteArgument).join(' ')) : raw;
   return typeof command === 'string' ? { command, cwd: input.cwd ?? process.cwd() } : null;
 }
 
@@ -1502,9 +1519,12 @@ function readCodexRules() {
   }
 }
 
-/** 이 훅을 띄운 가장 가까운 codex 프로세스의 시작 시각(ms). Windows 밖이거나 찾지 못하면 null 이다 — 위임하지 않는다. */
+/**
+ * 이 훅을 띄운 가장 가까운 codex 프로세스의 시작 시각(ms). Windows 밖이거나 찾지 못하면 null 이다 — 위임하지 않는다.
+ * `AGENT_GUARD_CODEX_PROCESS=none` 이면 찾지 않는다 — 위임을 끄는 쪽으로만 쓰이므로(시험이 Codex 안에서 돌아도 같은 판정을 내게 한다) 우회가 되지 않는다.
+ */
 function codexProcessStartedAt() {
-  if (process.platform !== 'win32') return null;
+  if (process.platform !== 'win32' || process.env.AGENT_GUARD_CODEX_PROCESS === 'none') return null;
   const script = `$id=${process.pid};for($i=0;$i -lt 16;$i++){$p=Get-CimInstance Win32_Process -Filter "ProcessId=$id";if(-not $p){break};`
     + `if($p.Name -match '^codex(\\.exe)?$'){[Console]::Out.Write($p.CreationDate.ToUniversalTime().ToString('o'));break};$id=$p.ParentProcessId}`;
   const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { encoding: 'utf8', windowsHide: true, timeout: 8000 });
