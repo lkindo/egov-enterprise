@@ -330,14 +330,19 @@ export function createRequirementsEngine({ store, contextProvider, root, aiRunne
         })); break;
       }
       case 'uat.import': {
-        exact(payload, ['csv', 'buildRef']); if (typeof payload.csv !== 'string') fail('CSV_REQUIRED');
+        exact(payload, ['csv', 'buildRef', 'allowDecisionOverwrite']); if (typeof payload.csv !== 'string') fail('CSV_REQUIRED');
+        if (payload.allowDecisionOverwrite !== undefined && typeof payload.allowDecisionOverwrite !== 'boolean') fail('INVALID_REQUEST');
         if (!text(payload.buildRef, 200)) fail('EVIDENCE_REQUIRED');
         if (!baselineCurrent(next)) fail('BASELINE_REQUIRED');
         if ((await contextProvider()).snapshotDigest !== pack.contextSnapshotDigest) fail('CONTEXT_CHANGED');
         if (!shared.validateDevelopmentReadiness(pack, meta.context).valid) fail('DEVELOPMENT_NOT_READY');
         packFrom(await scratch(next, async folder => {
           writeFileSync(join(folder, 'sheets/uat-checklist.csv'), payload.csv, { mode: 0o600 });
-          await shared.importUatChecklist(root, folder, { contextSnapshot: meta.context, buildRef: payload.buildRef });
+          await shared.importUatChecklist(root, folder, {
+            contextSnapshot: meta.context,
+            buildRef: payload.buildRef,
+            allowDecisionOverwrite: payload.allowDecisionOverwrite === true,
+          });
           return JSON.parse(readFileSync(join(folder, 'backlog.json'), 'utf8'));
         }));
         const previousAcs = new Map(previous.backlog.acceptanceCriteria.map(ac => [ac.id, ac]));

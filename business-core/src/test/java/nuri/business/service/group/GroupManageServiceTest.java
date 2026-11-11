@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("GroupManageService (그룹 관리 서비스) 테스트")
@@ -229,5 +230,20 @@ class GroupManageServiceTest {
 
         // Then
         verify(groupManageRepository).deleteAllById(any());
+    }
+
+    @Test
+    @DisplayName("그룹 다중 삭제 - 101개 초과는 저장소 호출 전에 거부하고 빈 목록은 무연산으로 통과한다")
+    void deleteGroupsEnforcesBatchSizeAndEmptyShortCircuit() {
+        groupManageService.deleteGroups(new String[0]);
+        verifyNoInteractions(userRepository, groupManageRepository);
+
+        String[] oversized = java.util.stream.IntStream.range(0, 101).mapToObj(i -> "G" + i).toArray(String[]::new);
+        nuri.foundation.core.exception.BusinessException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                nuri.foundation.core.exception.BusinessException.class,
+                () -> groupManageService.deleteGroups(oversized));
+        org.junit.jupiter.api.Assertions.assertEquals(
+                nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE, ex.getErrorCode());
+        verifyNoInteractions(userRepository, groupManageRepository);
     }
 }

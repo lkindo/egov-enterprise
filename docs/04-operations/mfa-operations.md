@@ -1,6 +1,6 @@
 # 로컬 TOTP MFA 운영과 복구
 
-[ADR-0025](../02-architecture/decisions/ADR-0025-enterprise-completeness-and-durable-operations.md)의 D11 A를 구현한 인증 흐름과 운영 적용 조건이다. 개발 migration·격리 검증은 실제 운영 DB 적용, 실계정 권한 배정, 운영 키 발급 또는 MFA 강제 전환을 포함하지 않는다. TOTP는 피싱 저항성 인증이 아니다.
+[ADR-0025](../02-architecture/decisions/ADR-0025-enterprise-completeness-and-durable-operations.md)의 D11 A와 [ADR-0054](../02-architecture/decisions/ADR-0054-production-overlay-mfa-default-and-preflight.md)를 구현한 인증 흐름과 운영 적용 조건이다. 개발 migration·격리 검증은 실제 운영 DB 적용, 실계정 권한 배정, 운영 키 발급 또는 MFA 강제 전환을 포함하지 않는다. TOTP는 피싱 저항성 인증이 아니다.
 
 ## 적용 범위와 설정
 
@@ -10,9 +10,9 @@
 | --- | --- | --- |
 | `nuri.security.mfa.active-key-id` | `MFA_ACTIVE_KEY_ID` | 신규 암호화에 사용할 키 식별자. 기본 미설정 |
 | `nuri.security.mfa.keys-json` | `MFA_KEYS_JSON` | 키 식별자와 표준 Base64로 표현한 32바이트 AES 키의 JSON 객체. 기본 미설정 |
-| `nuri.security.mfa.require-protected` | `MFA_REQUIRE_PROTECTED` | 보호계정의 등록 의무. 기본 `false` |
+| `nuri.security.mfa.require-protected` | `MFA_REQUIRE_PROTECTED` | 보호계정의 등록 의무. 애플리케이션(로컬·격리 E2E) 기본 `false`, 운영 배포 오버레이 기본 `true` |
 
-[운영 Compose 오버레이](../../docker-compose.prod.yml)는 이 세 변수를 값 없는 항목으로 전달한다. 기본값을 사용할 때는 호스트 환경과 `.env`에서 해당 항목을 생략한다. 빈 값으로 정의하면 애플리케이션 기본값을 덮을 수 있다. 오버레이에 키 값이나 강제 적용 기본값을 저장하지 않는다.
+[운영 Compose 오버레이](../../docker-compose.prod.yml)는 두 키 변수(`MFA_ACTIVE_KEY_ID`, `MFA_KEYS_JSON`)를 값 없는 항목으로 전달하고, `MFA_REQUIRE_PROTECTED`는 `${MFA_REQUIRE_PROTECTED:-true}`로 전달한다([ADR-0054](../02-architecture/decisions/ADR-0054-production-overlay-mfa-default-and-preflight.md), DEC-OPS-415). [배포 스크립트](../../scripts/deploy.sh)는 `.env`를 읽지 않고 export된 **셸 환경변수**만 읽으며, 같은 기본값(`true`) 기준으로 두 키링 변수가 모두 채워져 있는지 이미지 pull 전에 먼저 검사하고 `true`/`false` 외 오타 값을 거부한다. 운영에서 기본값(`true`)으로 배포하기 전에 `MFA_RECOVER` 담당·대체 담당 배정, 본인확인 절차, 암호화 키 백업, 복구코드 안전 보관을 먼저 갖춰야 한다. 승인된 전환 유예 기간에 보호계정 강제를 잠시 끄려면 `deploy.sh` 실행 시 셸 환경에 `export MFA_REQUIRE_PROTECTED=false`를 명시한다(`docker compose -f docker-compose.yml -f docker-compose.prod.yml`을 직접 실행할 때는 셸 환경변수 또는 루트 `.env`에 지정하며, [격리 릴리스 스모크](../../scripts/run-isolated-release-smoke.mjs)는 관리자 TOTP 없는 스모크 경계를 위해 계획에 `false`를 명시한다). 오버레이에 실제 암호화 키 값은 저장하지 않는다.
 
 두 키 설정이 모두 비어 있고 강제 적용이 꺼져 있으면 등록은 사용할 수 없다. 미등록 일반 계정의 기존 비밀번호 로그인은 유지된다. 키 없이 강제 적용을 켜거나, 키 설정 일부만 제공하거나, 키 형식·활성 키 식별자가 잘못되면 애플리케이션이 기동을 거부한다. 키링은 최대 16개 키를 수용한다.
 

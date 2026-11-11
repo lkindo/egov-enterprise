@@ -5,8 +5,8 @@ status: active
 authority: derived-active-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-10-29
-verified_against: 47ff9721ccd0076ed11825d5607519be12652327
+verified_at: 2026-11-11
+verified_against: 321af3ecc793e6eeb85ab63523914ce091d17065
 canonical_sources:
   - ../../docs/04-operations/known-gaps-detail.md
   - ../../docs/02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md
@@ -79,7 +79,7 @@ refresh_triggers:
 
 | GAP-ID | 우선순위 | 상태 | 영역 | 요약 | 근거 | 다음 행동/재개 조건 | 결정권자 | 검증일 |
 |---|---|---|---|---|---|---|---|---|
-| GAP-SEC-004 | P1 | needs-revalidation | client IP trust boundary | ADR-0019 형상(edge가 `X-Forwarded-For`를 덮어씀, Next 비공개, `TRUSTED_EDGE_PROXY`)을 2026-09-14 격리 운영 오버레이 스택에서 전체 경로로 실측했다. edge 경로는 위조 IP를 기록하지 않았고 IP 제한도 우회되지 않았다. 그러나 신뢰 대역이 서브넷 전체라 도커 게이트웨이도 신뢰되어, api 공개 포트 직접 요청에서 위조 IP가 기록되고 IP 제한이 우회됐다. 신뢰 대상을 Next 고정 주소 /32로 좁힌 뒤(DEC-OPS-098) 같은 시험에서 둘 다 막혔다. 남은 것: egov-net 안의 다른 컨테이너가 Next에 직접 보내는 위조 XFF, 운영 호스트의 LB·TLS·iptables·IPv6 경로. | [리허설 결과](../../docs/04-operations/readiness-followups.md#클라이언트-ip-신뢰-경계-리허설), [ADR-0019](../../docs/02-architecture/decisions/ADR-0019-client-ip-trust-boundary.md), [ConfigSafetyLinterTest](../../api-server/src/test/java/nuri/api/harness/ConfigSafetyLinterTest.java), [edge 템플릿](../../config/edge/default.conf.template) | 운영 배포 때 네트워크를 재생성(`down`→`up`)해 고정 주소를 반영하고, 실제 호스트에서 위조 헤더 로그인의 기록 IP와 IP 제한 허용·거부를 다시 본다. 부가 컨테이너는 egov-net에 두지 않거나 Next 직접 도달을 막는다. 로그인 한도 기본값은 ADR-0035 로 IP당 분당 30 으로 낮췄다 — 운영 배포에서 [RATE-LIMIT] 거절을 관측해 조정한다. | 보안/운영 소유자 | 2026-09-14 |
+| GAP-SEC-004 | P1 | needs-revalidation | client IP trust boundary | ADR-0019 형상(edge가 `X-Forwarded-For`를 덮어씀, Next 비공개, `TRUSTED_EDGE_PROXY`)을 2026-09-14 격리 운영 오버레이 스택에서 전체 경로로 실측했다. edge 경로는 위조 IP를 기록하지 않았고 IP 제한도 우회되지 않았다. 그러나 신뢰 대역이 서브넷 전체라 도커 게이트웨이도 신뢰되어, api 공개 포트 직접 요청에서 위조 IP가 기록되고 IP 제한이 우회됐다. 신뢰 대상을 Next 고정 주소 /32로 좁힌 뒤(DEC-OPS-098) 같은 시험에서 둘 다 막혔다. 남은 것: egov-net 안의 다른 컨테이너가 Next에 직접 보내는 위조 XFF, 운영 호스트의 LB·TLS·iptables·IPv6 경로. | [리허설 결과](../../docs/04-operations/readiness-followups.md#클라이언트-ip-신뢰-경계-리허설), [ADR-0019](../../docs/02-architecture/decisions/ADR-0019-client-ip-trust-boundary.md), [ConfigSafetyLinterTest](../../api-server/src/test/java/nuri/api/harness/ConfigSafetyLinterTest.java), [edge 템플릿](../../config/edge/default.conf.template) | 운영 배포 때 네트워크를 재생성(`down`→`up`)해 고정 주소를 반영하고, 실제 호스트에서 위조 헤더 로그인의 기록 IP와 IP 제한 허용·거부를 다시 본다. 부가 컨테이너는 egov-net에 두지 않거나 Next 직접 도달을 막는다. 로그인 한도 기본값은 ADR-0035 로 IP당 분당 30 으로 낮췄다 — 운영 배포에서 [RATE-LIMIT] 거절을 관측해 조정한다. 키링 없는 수동 운영 오버레이 리허설은 `MFA_REQUIRE_PROTECTED=false` 를 명시한다(ADR-0054). | 보안/운영 소유자 | 2026-09-14 |
 
 기관으로 이전한 `GAP-OPS-002`·`GAP-SEC-001`·`GAP-DATA-001`·`GAP-AUTH-003`은 `backup-recovery`·`crypto-lifecycle`·`authorization` 통제에서, `GAP-SEC-003`·`GAP-STORAGE-001`·`GAP-OPS-001`은 `attachment-operations`·`operational-assurance`에서 증거를 확보한다. 원본의 종료는 기관 의무 면제가 아니다. 직접 DB 쓰기·import의 첨부 provenance 강제 설계는 여전히 별도다. [기관 도입 가이드](../../docs/03-guides/governance-review-lifecycle.md#3-온라인-제품의-기관-도입), [이전 근거 1](../../docs/archived/operational-decisions-history.md#gap-ops-002), [이전 근거 2](../../docs/archived/operational-decisions-history.md#gap-sec-003).
 
@@ -104,8 +104,6 @@ refresh_triggers:
 | GAP-MIG-002 | P2 | open | migration protected keys | 암호화할 소스 컬럼은 키로 쓸 수 없어(평문이 제어 표에 남는다) 그런 컬럼만 키인 테이블과 숫자형 보호 소스는 지금 적재할 수 없다. | [상세](../../docs/04-operations/known-gaps-detail.md#migration) |
 | GAP-STD-001 | P2 | open | standard schema metadata | 표준 스키마에 표준 용어가 없거나 물리 타입이 다른 컬럼이 남았다(목록은 처분안) — 등록 단어 조합만으로 표준 적합으로 보지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-E2E-001 | P3 | needs-revalidation | E2E impact selection | PR 은 검토된 화면 변경만 E2E 를 spec 단위로 선별하고 공유·미지 입력과 main 은 전수다 — 일반 의존성 완전성과 절감률은 검증되지 않았다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
-| GAP-REQ-001 | P2 | open | requirements UAT CSV | 같은 인수조건의 예전 검수 CSV가 이후 판정을 바꿀 수 있다 — 판정 버전 충돌 검사가 필요하며, 현재는 최신 검수표만 사용하고 현재 판정과 대조한다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
-| GAP-HELP-001 | P2 | open | help center Q&A | 도움말 센터 1:1 Q&A 탭은 문의가 있으면 오류다 — 목록 질의가 싣지 않는 작성자·사용 여부를 변환 코드가 필수로 요구한다. '내 문의' 표지를 지킬지 정한 뒤 고친다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-DATA-002 | P2 | blocked-external | legacy input data | OCI 설문 3행의 시작·종료일이 잘린 채 남아 있다 — 업무 소유자가 원래 날짜를 확인하기 전에는 추정해 보정하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-DEP-001 | P1 | needs-revalidation | dependency security | PR 의존성 snapshot readiness 와 runtime High 차단은 구현됐고, public fork probe 와 양쪽 snapshot 부재 경계는 외부 검증이 남았다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
 | GAP-MIG-001 | P1 | blocked-external | migration-tool | vendor 7종 이관의 실측 범위가 서로 다르고 모두 UNVERIFIED·MANUAL_ONLY 다 — 도입 버전·driver 별 COMMIT 자격·cutover 는 기관 실측이 필요하다. | [상세](../../docs/04-operations/known-gaps-detail.md#migration) |

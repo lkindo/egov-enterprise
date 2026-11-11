@@ -121,19 +121,19 @@ export const AdminPasswordChangeRequestSchema = /*#__PURE__*/ (() => z.object({
 export type AdminPasswordChangeRequest = z.infer<typeof AdminPasswordChangeRequestSchema>;
 
 export const BulkStatusRequestSchema = /*#__PURE__*/ (() => z.object({
-  userIds: z.array(z.string()).min(1),
+  userIds: z.array(z.string()).min(1).max(100),
   status: z.enum(["P","A","D"]),
 }))();
 export type BulkStatusRequest = z.infer<typeof BulkStatusRequestSchema>;
 
 export const BulkRoleRequestSchema = /*#__PURE__*/ (() => z.object({
-  userIds: z.array(z.string()).min(1),
+  userIds: z.array(z.string()).min(1).max(100),
   role: z.enum(["USER","ADMIN"]),
 }))();
 export type BulkRoleRequest = z.infer<typeof BulkRoleRequestSchema>;
 
 export const BulkDeptMoveRequestSchema = /*#__PURE__*/ (() => z.object({
-  userIds: z.array(z.string()).min(1),
+  userIds: z.array(z.string()).min(1).max(100),
   ognzId: z.string(),
 }))();
 export type BulkDeptMoveRequest = z.infer<typeof BulkDeptMoveRequestSchema>;
@@ -430,32 +430,32 @@ export const AdminPasswordChangeRequestResponseSchema = /*#__PURE__*/ (() => z.o
 }))();
 
 export const BulkStatusRequestRequestSchema = /*#__PURE__*/ (() => z.object({
-  userIds: z.array(z.string()).min(1),
+  userIds: z.array(z.string()).min(1).max(100),
   status: z.enum(["P","A","D"]),
 }))();
 
 export const BulkStatusRequestResponseSchema = /*#__PURE__*/ (() => z.object({
-  userIds: z.array(z.string().optional().nullable()).min(1),
+  userIds: z.array(z.string().optional().nullable()).min(1).max(100),
   status: z.enum(["P","A","D"]),
 }))();
 
 export const BulkRoleRequestRequestSchema = /*#__PURE__*/ (() => z.object({
-  userIds: z.array(z.string()).min(1),
+  userIds: z.array(z.string()).min(1).max(100),
   role: z.enum(["USER","ADMIN"]),
 }))();
 
 export const BulkRoleRequestResponseSchema = /*#__PURE__*/ (() => z.object({
-  userIds: z.array(z.string().optional().nullable()).min(1),
+  userIds: z.array(z.string().optional().nullable()).min(1).max(100),
   role: z.enum(["USER","ADMIN"]),
 }))();
 
 export const BulkDeptMoveRequestRequestSchema = /*#__PURE__*/ (() => z.object({
-  userIds: z.array(z.string()).min(1),
+  userIds: z.array(z.string()).min(1).max(100),
   ognzId: z.string(),
 }))();
 
 export const BulkDeptMoveRequestResponseSchema = /*#__PURE__*/ (() => z.object({
-  userIds: z.array(z.string().optional().nullable()).min(1),
+  userIds: z.array(z.string().optional().nullable()).min(1).max(100),
   ognzId: z.string(),
 }))();
 

@@ -2689,6 +2689,18 @@ function normalizeCsvCell(val) {
   return trimmed === '' || trimmed === BLANK ? '' : trimmed;
 }
 
+export function computeUatDecisionVersion(ac) {
+  const payload = JSON.stringify([
+    'uat-decision-v1',
+    ac?.acceptanceDisposition ?? 'pending',
+    normalizeCsvCell(ac?.uatSignedBy),
+    normalizeCsvCell(ac?.uatVerifiedAt),
+    normalizeCsvCell(ac?.uatEvidence),
+    normalizeCsvCell(ac?.uatBuildRef),
+  ]);
+  return sha256(payload).slice(0, 32);
+}
+
 function parseCsvObjects(text, options = {}) {
   if (typeof text === 'string' && text.includes('\uFFFD')) {
     throw new Error('CSV contains U+FFFD replacement character (encoding corruption — save CSV as UTF-8)');
@@ -2975,6 +2987,7 @@ async function writeUatChecklist(root, workspaceDir, options) {
       ['uatEvidence', 'uatEvidence'],
       ['acContentHash', 'acContentHash'],
       ['uatBuildRef', 'uatBuildRef'],
+      ['uatBaseDecisionHash', 'uatBaseDecisionHash'],
     ],
     rows: (pack.acceptanceCriteria ?? []).map((ac) => ({
       acId: ac.id,
@@ -2991,6 +3004,7 @@ async function writeUatChecklist(root, workspaceDir, options) {
       uatEvidence: ac.uatEvidence ?? '',
       acContentHash: ac.acContentHash,
       uatBuildRef: ac.uatBuildRef ?? '',
+      uatBaseDecisionHash: computeUatDecisionVersion(ac),
     })),
   };
 
@@ -3014,8 +3028,11 @@ async function readUatChecklist(root, workspaceDir, options) {
   const backlogPath = join(wsPath, 'backlog.json');
   const pack = JSON.parse(readFileSync(backlogPath, 'utf8'));
   const uatCsvPath = options.file ? resolve(root, options.file) : join(wsPath, 'sheets', 'uat-checklist.csv');
+  const allowDecisionOverwrite = options.allowDecisionOverwrite === true;
   const rows = parseCsvObjects(readFileSync(uatCsvPath, 'utf8'), {
-    requiredHeaders: ['acId', 'acceptanceDisposition', 'acContentHash'],
+    requiredHeaders: allowDecisionOverwrite
+      ? ['acId', 'acceptanceDisposition', 'acContentHash']
+      : ['acId', 'acceptanceDisposition', 'acContentHash', 'uatBaseDecisionHash'],
   });
 
   const errors = [];
@@ -3121,6 +3138,19 @@ async function readUatChecklist(root, workspaceDir, options) {
         `acceptanceCriterion ${ac.id}: AC text/method in UAT CSV differs from backlog.json; edit AC definitions via backlog.json or stories-ac-review.csv, then re-run uat-export`,
       );
       continue;
+    }
+    if (!unchangedJudgment && !allowDecisionOverwrite) {
+      const currentDecisionHash = computeUatDecisionVersion(ac);
+      const rowBaseDecisionHash = (row.uatBaseDecisionHash ?? '').trim();
+      if (rowBaseDecisionHash !== currentDecisionHash) {
+        const reportedRowHash = /^[0-9a-f]{32}$/u.test(rowBaseDecisionHash)
+          ? rowBaseDecisionHash
+          : (rowBaseDecisionHash ? 'invalid' : 'missing');
+        errors.push(
+          `acceptanceCriterion ${ac.id}: UAT sheet uatBaseDecisionHash (${reportedRowHash}) does not match current decision state (${currentDecisionHash}); re-export UAT checklist from the latest backlog before importing or pass --allow-decision-overwrite`,
+        );
+        continue;
+      }
     }
     // Keep the original optional metadata byte-for-byte when CSV normalization is
     // the only difference; an unchanged row must not create a fresh attestation.
@@ -3359,6 +3389,7 @@ function parseCliArgs(argv) {
   let sample = false;
   let refreshContext = false;
   let dryRun = false;
+  let allowDecisionOverwrite = false;
   for (let i = 1; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--workspace') {
@@ -3393,11 +3424,13 @@ function parseCliArgs(argv) {
       refreshContext = true;
     } else if (arg === '--dry-run') {
       dryRun = true;
+    } else if (arg === '--allow-decision-overwrite') {
+      allowDecisionOverwrite = true;
     } else {
       throw new Error(`unknown argument: ${arg}`);
     }
   }
-  return { command, workspace, out, file, query, workItemId, batch, selection, buildRef, force, sample, refreshContext, dryRun };
+  return { command, workspace, out, file, query, workItemId, batch, selection, buildRef, force, sample, refreshContext, dryRun, allowDecisionOverwrite };
 }
 
 async function main() {
@@ -3409,7 +3442,7 @@ async function main() {
   return runCli(args);
 }
 
-async function runCli({ command, workspace, out, file, query, workItemId, batch, selection, buildRef, force, sample, refreshContext, dryRun }) {
+async function runCli({ command, workspace, out, file, query, workItemId, batch, selection, buildRef, force, sample, refreshContext, dryRun, allowDecisionOverwrite }) {
   if (command === 'init') {
     const res = await initRequirementsWorkspace(ROOT, workspace, { force, sample });
     process.stdout.write(`initialized requirements workspace at ${res.workspaceDir} (warnings: ${res.validation.warnings.length})\n`);
@@ -3478,7 +3511,7 @@ async function runCli({ command, workspace, out, file, query, workItemId, batch,
     return;
   }
   if (command === 'uat-import') {
-    const res = await importUatChecklist(ROOT, workspace, { file, dryRun, buildRef });
+    const res = await importUatChecklist(ROOT, workspace, { file, dryRun, buildRef, allowDecisionOverwrite });
     process.stdout.write(`imported UAT checklist (${res.updatedAcs} ACs, ${res.acceptedRequirements} accepted reqs)\n`);
     return;
   }
@@ -3507,7 +3540,7 @@ async function runCli({ command, workspace, out, file, query, workItemId, batch,
     process.stdout.write(`composition check passed (unsolicited modules: ${res.unsolicitedModules.length})\n`);
     return;
   }
-  throw new Error('usage: node scripts/export-deliverables-workspace.mjs <init|verify|export-context|match|plan|sheets-export|sheets-import|uat-export|uat-import|check-composition> --workspace <dir outside checkout> [--sample] [--force] [--refresh-context] [uat-import: --build-ref <target build>]');
+  throw new Error('usage: node scripts/export-deliverables-workspace.mjs <init|verify|export-context|match|plan|sheets-export|sheets-import|uat-export|uat-import|check-composition> --workspace <dir outside checkout> [--sample] [--force] [--refresh-context] [uat-import: --build-ref <target build> [--allow-decision-overwrite]]');
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

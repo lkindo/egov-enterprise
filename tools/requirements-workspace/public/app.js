@@ -594,7 +594,7 @@ function findingForm(key) {
   disposition.addEventListener('change', () => { dialogForm.elements.namedItem('evidence').required = disposition.value === 'resolved'; });
 }
 function csvForm(uatOnly = false) {
-  openForm(uatOnly ? '검수 CSV 반영' : '검토 CSV 반영', uatOnly ? field('검수 대상 빌드·커밋', 'buildRef', '', { required: true }) + field('검수 CSV 본문', 'csv', '', { textarea: true, required: true }) : field('요구사항 CSV 본문', 'requirements', '', { textarea: true, required: true }) + field('스토리·인수조건 CSV 본문', 'workItems', '', { textarea: true, required: true }), data => act(uatOnly ? 'uat.import' : 'sheets.import', Object.fromEntries(data)), uatOnly ? '최신 검수표를 사용하고 현재 판정과 대조하세요. 예전 CSV는 이후 판정을 덮어쓸 수 있습니다. 변경 없는 행은 이전 검수를 유지합니다. 변경한 행의 빌드가 이전 값 그대로이면 위에 입력한 새 빌드를 적용합니다. 행에 이전과 다른 빌드를 직접 적으면 그 행의 빌드를 사용합니다. 실제 검수한 빌드와 근거를 확인하세요.' : '내보낸 CSV의 헤더를 유지하고 내용을 붙여 넣으세요. 전체 내용을 검증한 뒤 한 번에 반영하며 실패하면 입력과 기존 데이터를 보존합니다.');
+  openForm(uatOnly ? '검수 CSV 반영' : '검토 CSV 반영', uatOnly ? field('검수 대상 빌드·커밋', 'buildRef', '', { required: true }) + field('검수 CSV 본문', 'csv', '', { textarea: true, required: true }) : field('요구사항 CSV 본문', 'requirements', '', { textarea: true, required: true }) + field('스토리·인수조건 CSV 본문', 'workItems', '', { textarea: true, required: true }), data => act(uatOnly ? 'uat.import' : 'sheets.import', Object.fromEntries(data)), uatOnly ? '최신 검수표를 내려받아 사용하세요. 내보낸 뒤 다른 검수 판정이 기록된 예전 CSV(uatBaseDecisionHash 불일치)는 덮어쓰기 방지를 위해 거부됩니다. 변경 없는 행은 이전 검수를 유지합니다. 변경한 행의 빌드가 이전 값 그대로이면 위에 입력한 새 빌드를 적용합니다. 행에 이전과 다른 빌드를 직접 적으면 그 행의 빌드를 사용합니다. 실제 검수한 빌드와 근거를 확인하세요.' : '내보낸 CSV의 헤더를 유지하고 내용을 붙여 넣으세요. 전체 내용을 검증한 뒤 한 번에 반영하며 실패하면 입력과 기존 데이터를 보존합니다.');
 }
 async function download(key) {
   try {

@@ -131,6 +131,84 @@ test.describe('공개 포털', () => {
                 await expect(article).toContainText('리소스 경로: /e2e/test/path');
             });
         });
+        // [2026-11-11 GAP-HELP-001] 일반 사용자가 도움말 센터 1:1 Q&A 탭에서 비밀 문의를 직접 등록하고 목록과 검색어로 다시 읽는다.
+        test("일반 사용자가 도움말 센터에서 1:1 문의를 등록하고 목록에서 검색한다", async ({ userPage }) => {
+            const stamp = `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            const qnaTitleA = `E2E 1:1 문의 ${stamp} A`;
+            const qnaTitleB = `E2E 별도 문의 ${stamp} B`;
+            const qnaBoardPath = '/api/v1/boards/BBSMSTR_DDDDDDDDDDDD';
+            const qnaRequests = trackApiRequests(userPage);
+            try {
+                await test.step('User: 1:1 Q&A 문의 탭을 연다', async () => {
+                    await userPage.goto('/help');
+                    const qnaTab = userPage.getByRole('tab', { name: '1:1 Q&A 문의', exact: true });
+                    await waitForHydration(qnaTab);
+                    const [listed] = await Promise.all([
+                        userPage.waitForResponse((response) => {
+                            const url = new URL(response.url());
+                            return response.request().method() === 'GET' && url.pathname === qnaBoardPath;
+                        }),
+                        qnaTab.click(),
+                    ]);
+                    expect(listed.status()).toBe(200);
+                    await expect(userPage.getByRole('heading', { level: 3, name: '문의 내역' })).toBeVisible();
+                });
+
+                const submitInquiry = async (title: string, content: string) => {
+                    const askButton = userPage.getByRole('button', { name: '새로운 문의 작성' });
+                    await waitForHydration(askButton);
+                    await askButton.click();
+                    const dialog = userPage.getByRole('dialog', { name: '1:1 문의 작성' });
+                    await expect(dialog).toBeVisible();
+                    await dialog.getByRole('textbox', { name: '제목' }).fill(title);
+                    await dialog.getByRole('textbox', { name: '내용' }).fill(content);
+                    const [created, reloaded] = await Promise.all([
+                        userPage.waitForResponse((response) => {
+                            const url = new URL(response.url());
+                            return response.request().method() === 'POST' && url.pathname === '/api/v1/boards/posts';
+                        }),
+                        userPage.waitForResponse((response) => {
+                            const url = new URL(response.url());
+                            return response.request().method() === 'GET' && url.pathname === qnaBoardPath;
+                        }),
+                        dialog.getByRole('button', { name: '문의 등록', exact: true }).click(),
+                    ]);
+                    expect(created.ok()).toBeTruthy();
+                    expect(reloaded.status()).toBe(200);
+                };
+
+                await test.step('User: 화면에서 1:1 문의 두 건을 등록하고 목록에서 확인한다', async () => {
+                    await submitInquiry(qnaTitleA, `E2E 1:1 문의 본문 ${stamp} A`);
+                    await submitInquiry(qnaTitleB, `E2E 1:1 문의 본문 ${stamp} B`);
+                    const rowA = userPage.getByRole('row').filter({ hasText: qnaTitleA });
+                    const rowB = userPage.getByRole('row').filter({ hasText: qnaTitleB });
+                    await expect(rowA).toBeVisible({ timeout: 15000 });
+                    await expect(rowA).toContainText('1:1 문의');
+                    await expect(rowA).toContainText('미해결');
+                    await expect(rowB).toBeVisible({ timeout: 15000 });
+                });
+
+                await test.step('User: 키워드로 검색해 서버가 거른 1:1 문의만 남는 것을 확인한다', async () => {
+                    const searchInput = userPage.getByRole('textbox', { name: '도움말 키워드 검색' });
+                    await waitForHydration(searchInput);
+                    const [searched] = await Promise.all([
+                        userPage.waitForResponse((response) => {
+                            const url = new URL(response.url());
+                            return response.request().method() === 'GET'
+                                && url.pathname === qnaBoardPath
+                                && url.searchParams.get('searchWrd') === qnaTitleA;
+                        }),
+                        searchInput.fill(qnaTitleA),
+                    ]);
+                    expect(searched.status()).toBe(200);
+                    await expect(userPage.getByRole('row').filter({ hasText: qnaTitleA })).toHaveCount(1);
+                    await expect(userPage.getByRole('row').filter({ hasText: qnaTitleB })).toHaveCount(0);
+                    await qnaRequests.settled(userPage.locator('body'));
+                });
+            } finally {
+                await userPage.goto('about:blank');
+            }
+        });
     });
 });
 test.describe('도움말 관리', () => {

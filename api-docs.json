@@ -20402,7 +20402,7 @@
           "User Group Management"
         ],
         "summary": "그룹 다중 삭제",
-        "description": "여러 사용자 그룹 정보를 한꺼번에 삭제합니다.",
+        "description": "한 번에 최대 100개의 사용자 그룹 정보를 삭제합니다.",
         "operationId": "deleteGroups",
         "requestBody": {
           "content": {
@@ -20411,7 +20411,8 @@
                 "type": "array",
                 "items": {
                   "type": "string"
-                }
+                },
+                "maxItems": 100
               }
             }
           },
@@ -45066,9 +45067,11 @@
         "properties": {
           "userIds": {
             "type": "array",
+            "description": "대상 사용자 ID 목록",
             "items": {
               "type": "string"
             },
+            "maxItems": 100,
             "minItems": 1
           },
           "status": {
@@ -45092,9 +45095,11 @@
         "properties": {
           "userIds": {
             "type": "array",
+            "description": "대상 사용자 ID 목록",
             "items": {
               "type": "string"
             },
+            "maxItems": 100,
             "minItems": 1
           },
           "role": {
@@ -45115,9 +45120,11 @@
         "properties": {
           "userIds": {
             "type": "array",
+            "description": "대상 사용자 ID 목록",
             "items": {
               "type": "string"
             },
+            "maxItems": 100,
             "minItems": 1
           },
           "ognzId": {

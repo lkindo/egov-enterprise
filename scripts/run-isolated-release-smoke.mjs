@@ -129,7 +129,10 @@ export function createReleaseSmokePlan(rendered, context, credentials) {
       service.environment = { POSTGRES_DB: context.database, POSTGRES_USER: 'smoke', POSTGRES_PASSWORD: credentials.database };
       service.volumes = []; service.tmpfs = ['/var/lib/postgresql/data'];
     } else if (name === 'api') {
+      // [ADR-0054] 운영 오버레이 기본값은 MFA_REQUIRE_PROTECTED=true 이나, 격리 릴리스 스모크는 MFA 키링과 관리자 TOTP 없이
+      // 이미지·네트워크·복원 경계를 검증하므로 스모크 계획에서만 명시적으로 false 로 덮어쓴다(bootstrap 도 복제한다).
       service.environment = { ...service.environment,
+        MFA_REQUIRE_PROTECTED: 'false',
         DB_URL: `jdbc:postgresql://db:5432/${context.database}`, DB_USERNAME: 'smoke', DB_PASSWORD: credentials.database,
         JWT_SECRET: credentials.jwt, ALGORITHM_KEY: credentials.encryption, ADMIN_INITIAL_PASSWORD: credentials.admin,
         OLD_ALGORITHM_KEY: '', MAIL_HOST: '127.0.0.1', TRUSTED_PROXIES: `${context.frontendIp}/32`,
@@ -182,6 +185,7 @@ export function validateReleaseSmokePlan(plan, context, credentials) {
     if (name === 'api' || name === 'bootstrap') {
       const expectedProfile = name === 'api' ? 'prod' : 'e2e';
       if (env.SPRING_PROFILES_ACTIVE !== expectedProfile || env.SPRING_FLYWAY_LOCATIONS !== 'classpath:db/migration'
+        || env.MFA_REQUIRE_PROTECTED !== 'false'
         || env.DB_URL !== `jdbc:postgresql://db:5432/${context.database}` || env.DB_USERNAME !== 'smoke' || env.DB_PASSWORD !== credentials.database
         || env.JWT_SECRET !== credentials.jwt || env.ALGORITHM_KEY !== credentials.encryption || env.ADMIN_INITIAL_PASSWORD !== credentials.admin
         || env.TRUSTED_PROXIES !== `${context.frontendIp}/32` || env.MAIL_HOST !== '127.0.0.1' || env.CORS_ORIGIN_1 !== 'http://edge:8080'

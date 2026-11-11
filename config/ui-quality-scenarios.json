@@ -663,7 +663,7 @@
             "network": "online"
           },
           "truth": {
-            "status": "partial",
+            "status": "live",
             "owner": "product/UX + help domain owner",
             "reviewBy": "2027-02-06"
           }

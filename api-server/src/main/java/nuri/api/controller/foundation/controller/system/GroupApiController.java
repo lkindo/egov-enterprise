@@ -1,12 +1,16 @@
 package nuri.api.controller.foundation.controller.system;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.group.GroupManageService;
 import nuri.business.service.group.dto.GroupManageDto;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -75,10 +79,16 @@ public class GroupApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "그룹 다중 삭제", description = "여러 사용자 그룹 정보를 한꺼번에 삭제합니다.")
+    @Operation(summary = "그룹 다중 삭제", description = "한 번에 최대 "
+            + GroupManageService.MAX_BULK_DELETE_GROUPS + "개의 사용자 그룹 정보를 삭제합니다.")
     @DeleteMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.GroupApiController#deleteGroups')")
-    public ResponseEntity<ApiResponse<Void>> deleteGroups(@RequestBody List<String> groupIds) {
+    public ResponseEntity<ApiResponse<Void>> deleteGroups(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = String.class),
+                            maxItems = GroupManageService.MAX_BULK_DELETE_GROUPS)))
+            @RequestBody @Size(max = GroupManageService.MAX_BULK_DELETE_GROUPS,
+                    message = "한 번에 삭제할 그룹 ID는 {max}개 이하여야 합니다.") List<String> groupIds) {
         groupManageService.deleteGroups(groupIds.toArray(new String[0]));
         return ResponseEntity.ok(ApiResponse.success(null));
     }

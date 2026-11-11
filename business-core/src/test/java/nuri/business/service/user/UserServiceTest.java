@@ -996,6 +996,25 @@ class UserServiceTest {
         assertThat(detail.mfaEnabled()).isTrue();
     }
 
+    @Test
+    @DisplayName("사용자 상태·부서 다중 변경은 101개 초과 ID를 조회 전에 INVALID_INPUT_VALUE 로 거부한다")
+    void bulkMutationsRejectOversizedBatchBeforeRepositoryLookup() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+        List<String> oversized = java.util.Collections.nCopies(101, "user1");
+
+        BusinessException statusError = assertThrows(BusinessException.class,
+                () -> userService.updateUsersStatus(oversized, "P"));
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, statusError.getErrorCode());
+
+        given(deptManageRepository.existsById("DEPT1")).willReturn(true);
+        BusinessException deptError = assertThrows(BusinessException.class,
+                () -> userService.moveUsersToDept(oversized, "DEPT1"));
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, deptError.getErrorCode());
+
+        verifyNoInteractions(userRepository);
+    }
+
     /** 가입은 잠금 뒤 현재 권한을 다시 본다(서비스 가드) — 컨트롤러를 지나지 않는 시험도 권한을 쥐어야 한다. */
     private static void authorizeSignup() {
         org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(

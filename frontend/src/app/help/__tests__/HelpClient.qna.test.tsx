@@ -33,11 +33,6 @@ const harness = vi.hoisted(() => ({
   getQnas: vi.fn(),
   createQna: vi.fn(),
   toast: vi.fn(),
-  viewer: undefined as { esntlId: string } | undefined,
-}));
-
-vi.mock('@/contexts/AuthContext', () => ({
-  useOptionalAuth: () => (harness.viewer ? { user: harness.viewer } : undefined),
 }));
 
 vi.mock('@/services/business/user/help/HelpUserService', () => ({
@@ -73,7 +68,6 @@ describe('도움말 Q&A — 문의 등록', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.sessionStorage.clear();
-    harness.viewer = undefined;
     harness.getFaqs.mockResolvedValue({ list: [] });
     harness.getQnas.mockResolvedValue({ list: [] });
     harness.createQna.mockResolvedValue(undefined);
@@ -169,7 +163,6 @@ describe('도움말 Q&A — 상태와 범위를 사실대로 말한다', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.sessionStorage.clear();
-    harness.viewer = undefined;
     harness.getFaqs.mockResolvedValue({ list: [] });
     harness.createQna.mockResolvedValue(undefined);
   });
@@ -198,45 +191,27 @@ describe('도움말 Q&A — 상태와 범위를 사실대로 말한다', () => {
   });
 
   /*
-    [2026-10-26 ADR-0043 UX-04] 종전에는 행을 열 수 없어 1:1 문의에 달린 답을 읽을 길이 없었고, 내 문의와 남의 공개 질문이 같은
-    모양이었다. 제목이 게시글 상세로 가고, 구분이 서버 값(비밀글·작성자)으로 정해진다.
+    [2026-10-26 ADR-0043 UX-04 / 2026-11-11 GAP-HELP-001] 종전에는 행을 열 수 없어 1:1 문의에 달린 답을 읽을 길이 없었고,
+    비밀 문의와 공개 질문이 같은 모양이었다. 제목이 게시글 상세로 가고, 구분이 서버 열람 경계(scrtYn)로 정해진다.
   */
-  it('제목으로 게시글 상세를 열고, 구분 열이 내 1:1 문의·공개 질문을 가른다', async () => {
+  it('제목으로 게시글 상세를 열고, 구분 열이 1:1 문의·공개 질문을 가른다', async () => {
     const user = userEvent.setup();
-    harness.viewer = { esntlId: 'me' };
     harness.getQnas.mockResolvedValue({
       list: [
-        { qaId: '11', qstnTtl: '내 비밀 문의', wrterNm: '나', authorId: 'me', writngDe: '2026-10-26', qnaSttsCd: 'OPEN', scrtYn: 'Y' },
-        { qaId: '12', qstnTtl: '남의 공개 질문', wrterNm: '박', authorId: 'other', writngDe: '2026-10-25', qnaSttsCd: 'OPEN', scrtYn: 'N' },
-        // 관리자에게만 오는 남의 비밀 문의 — '내' 문의라고 부르지 않는다.
-        { qaId: '13', qstnTtl: '남의 비밀 문의', wrterNm: '최', authorId: 'other', writngDe: '2026-10-24', qnaSttsCd: 'OPEN', scrtYn: 'Y' },
+        { qaId: '11', qstnTtl: '비밀 문의', wrterNm: '나', writngDe: '2026-10-26', qnaSttsCd: 'OPEN', scrtYn: 'Y' },
+        { qaId: '12', qstnTtl: '모두의 질문', wrterNm: '박', writngDe: '2026-10-25', qnaSttsCd: 'OPEN', scrtYn: 'N' },
       ],
     });
     render(<HelpClient />);
     await openQnaTab(user);
 
-    const mine = (await screen.findByRole('link', { name: '내 비밀 문의' })).closest('tr')!;
-    expect(screen.getByRole('link', { name: '내 비밀 문의' }))
+    const secretRow = (await screen.findByRole('link', { name: '비밀 문의' })).closest('tr')!;
+    expect(screen.getByRole('link', { name: '비밀 문의' }))
       .toHaveAttribute('href', '/admin/community/boards/detail?bbsId=BBSMSTR_DDDDDDDDDDDD&pstSn=11');
-    expect(within(mine).getByText('내 1:1 문의')).toBeVisible();
-    expect(within(mine).getByText('2026-10-26')).toBeVisible();
-    const publicRow = screen.getByRole('link', { name: '남의 공개 질문' }).closest('tr')!;
+    expect(within(secretRow).getByText('1:1 문의')).toBeVisible();
+    expect(within(secretRow).getByText('2026-10-26')).toBeVisible();
+    const publicRow = screen.getByRole('link', { name: '모두의 질문' }).closest('tr')!;
     expect(within(publicRow).getByText('공개 질문')).toBeVisible();
-    const othersSecret = screen.getByRole('link', { name: '남의 비밀 문의' }).closest('tr')!;
-    expect(within(othersSecret).getByText('1:1 문의')).toBeVisible();
-    expect(within(othersSecret).queryByText('내 1:1 문의')).toBeNull();
-  });
-
-  it('로그인 사용자를 모르면 어떤 비밀 문의도 내 문의라고 부르지 않는다', async () => {
-    const user = userEvent.setup();
-    harness.getQnas.mockResolvedValue({
-      list: [{ qaId: '11', qstnTtl: '비밀 문의', wrterNm: '나', authorId: 'me', writngDe: '2026-10-26', scrtYn: 'Y' }],
-    });
-    render(<HelpClient />);
-    await openQnaTab(user);
-
-    const row = (await screen.findByRole('link', { name: '비밀 문의' })).closest('tr')!;
-    expect(within(row).getByText('1:1 문의')).toBeVisible();
     expect(screen.queryByText('내 1:1 문의')).toBeNull();
   });
 
