@@ -281,7 +281,7 @@ const CASES = {
       "git commit --only -m 'fix: handle \\ in worktree add commands' -- scripts/agent-guard.mjs",
       'git commit --only -m "say \\"worktree add\\" here" -- a.md',
       'if (Test-Path D:\\wt-review) { git worktree list }', "Write-Output '{ git worktree add D:\\wt-x HEAD }'",
-      '$list = git worktree list', '$list=git worktree list'],
+      '$list = git worktree list', '$list=git worktree list', 'Write-Output worktree add notes'],
   },
 };
 

@@ -198,38 +198,19 @@ function worktreeAddArgs(code, raw) {
   return words.slice(index + 2);
 }
 
-/**
- * PowerShell 블록(`if (…) { git worktree add … }`) 안의 명령에 `git worktree add` 가 있는가. 가드의 조각 나누기는 블록 안을 꺼내지 않는다 —
- * 가린 판에서 가장 안쪽 `{ … }` 몸체를 찾아 `;` 로 나눈 뒤 같은 자리의 원문과 함께 본다(Codex 59차). 따옴표 안의 중괄호는 가린 판에 없다.
- */
-function blockWorktreeAdd(code, raw) {
-  // 조각 나누기가 블록 안의 `;`·`|` 에서 먼저 자르면 이 조각의 블록은 닫히지 않는다 — 마지막으로 연 `{` 뒤를 본다(Codex 60차).
-  const open = code.lastIndexOf('{');
-  if (open >= 0 && !code.includes('}', open) && worktreeAddArgs(code.slice(open + 1), raw.slice(open + 1)) !== null) return true;
-  for (const block of code.matchAll(/\{([^{}]*)\}/gu)) {
-    const start = block.index + 1;
-    let from = 0;
-    for (const piece of `${block[1]};`.matchAll(/[^;]*;/gu)) {
-      const end = from + piece[0].length - 1;
-      if (worktreeAddArgs(block[1].slice(from, end), raw.slice(start + from, start + end)) !== null) return true;
-      from = end + 1;
-    }
-  }
-  return false;
-}
+/** 따옴표 밖의 `worktree add` 낱말 — 앞뒤가 이름 글자가 아니면 된다(`{ git worktree add …`·`$x=git worktree add …`). */
+const WORKTREE_ADD_TEXT = /(?:^|[^\w-])worktree\s+add(?:[^\w-]|$)/u;
 
 /**
- * 셸마다 이스케이프가 달라 단어 경계를 확정할 수 없는 git 명령 — Git Bash 의 `user.name=Agent\ Review`, PowerShell 의 `"D:\x\"`(PowerShell 은
- * 백슬래시로 따옴표를 이스케이프하지 않는다) — 에 `worktree add` 가 보이면 그렇다고 본다(Codex 56차). 구조 해석이 하위 명령을 놓칠 수 있어서다.
+ * git 이 쓰인 조각에서 따옴표 밖에 `worktree add` 가 보이면 그렇다고 본다. 명령 구조를 하나씩 풀지 않는다 — 블록·대입·호출 연산자·셸마다 다른
+ * 이스케이프를 구조로 쫓으면 꼴마다 빈틈이 났다(Codex 56~61차). 따옴표 안(메시지·검색어)은 가린 판에 없고, 따옴표가 닫히지 않았으면
+ * (PowerShell 의 `"D:\x\"` 를 bash 규칙으로 읽은 경우) 경계를 알 수 없어 원문에서 찾는다. 따옴표 없이 쓴 `echo worktree add` 같은 드문 꼴은
+ * 묻게 되는 쪽을 받아들인다.
  */
-function ambiguousWorktreeAdd(code, raw) {
-  // 실행 파일은 원문 값으로 읽는다 — `'git'`·`&"…\git.exe"` 는 가린 판에서 밑줄이다(Codex 57·59차).
-  if (!isGitExecutable(invokedCommand(code, raw)?.name)) return false;
-  const worktreeAdd = /(?:^|\s)worktree\s+add(?:\s|$)/u;
-  // 따옴표가 닫히지 않았으면(PowerShell 의 `"D:\x\"` 를 bash 규칙으로 읽은 경우) 경계를 알 수 없다 — 원문에서 찾는다.
-  if (['"', "'"].some((quote) => (code.split(quote).length - 1) % 2 === 1)) return worktreeAdd.test(raw);
-  // 따옴표 밖의 `\`+공백(Git Bash)·`` ` ``+공백(PowerShell) 이스케이프만 모호하다고 본다 — 메시지 안의 것은 가린 판에 없다(Codex 57·58차).
-  return /[\\`]\s/u.test(code) && worktreeAdd.test(code);
+function textualWorktreeAdd(code, raw) {
+  if (!/(?:^|[^\w-])git(?:\.exe)?(?:[^\w-]|$)/iu.test(raw)) return false;
+  const unclosed = ['"', "'"].some((quote) => (code.split(quote).length - 1) % 2 === 1);
+  return WORKTREE_ADD_TEXT.test(unclosed ? raw : code);
 }
 
 /**
@@ -1306,7 +1287,7 @@ export const RULES = Object.freeze([
     codexPrompt: ['git', 'worktree', 'add'],
     codexJustification: '작업 트리를 더하려면 사용자 승인을 받는다 — 도구마다 고정 트리 하나가 기본이고 임시 트리는 예외이며, 고정 트리를 처음 만들 때도 묻는다(SOP §6.6, DEC-OPS-414).',
     // 셸 없는 argv 배열은 칸 구조로만 판정한다(applyArgvRules).
-    match: ({ code, raw }) => worktreeAddArgs(code, raw) !== null || blockWorktreeAdd(code, raw) || ambiguousWorktreeAdd(code, raw),
+    match: ({ code, raw }) => worktreeAddArgs(code, raw) !== null || textualWorktreeAdd(code, raw),
   },
   {
     id: 'gitleaks-worktree-mount', decision: 'deny',
