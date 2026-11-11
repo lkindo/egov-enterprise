@@ -136,11 +136,30 @@ const WORKTREE_ADD_VALUE_OPTIONS = new Set(['-b', '-B', '--reason']);
  * `git worktree add` 의 인자 단어들(`add` 뒤). worktree add 가 아니면 null 이다. 단어는 따옴표 경계를 지켜 나누고(`"D:\a b"` 는 한 단어),
  * git 전역 옵션(`-C <dir>`·`"-C"` 처럼 따옴표 친 것 포함)은 셸이 넘길 값으로 가려 건너 실제 하위 명령 자리에서 읽는다.
  */
+/** git 실행 파일 이름인가(`git`·`git.exe`·경로). */
+const isGitExecutable = (value) => /(^|[\\/])git(\.exe)?$/i.test(value ?? '');
+
+/**
+ * 셸 없는 argv(문자열로 바꾸지 않은 칸 배열)가 `git [전역 옵션…] worktree add …` 인가. 칸 경계가 그대로라 셸 해석 문제가 없다 — Codex 가 셸 없이
+ * 넘긴 argv 는 문자열로 이어 판정하면 공백·따옴표·`;` 든 칸이 하위 명령을 가린다(Codex 56·58·59차).
+ */
+export function argvWorktreeAdd(argv) {
+  if (!Array.isArray(argv) || !isGitExecutable(argv[0])) return false;
+  let index = 1;
+  while (index < argv.length && String(argv[index]).startsWith('-')) index += GIT_VALUE_OPTIONS.has(argv[index]) ? 2 : 1;
+  return argv[index] === 'worktree' && argv[index + 1] === 'add';
+}
+
+/**
+ * `git worktree add` 의 인자 단어들(`add` 뒤). worktree add 가 아니면 null 이다. 단어는 따옴표 경계를 지켜 나누고(`"D:\a b"` 는 한 단어),
+ * 실행 파일은 호출 연산자(`&"…\git.exe"`)를 벗긴 값으로, git 전역 옵션(`-C <dir>`·`"-C"` 포함)은 셸이 넘길 값으로 가려 건너 실제 하위 명령
+ * 자리에서 읽는다.
+ */
 function worktreeAddArgs(code, raw) {
-  const words = alignedWords(code, raw);
-  const at = commandAt(words.map((word) => word.code));
-  if (!/(^|[\\/])git(\.exe)?$/i.test(words[at]?.value ?? '')) return null;
-  let index = at + 1;
+  const invoked = invokedCommand(code, raw);
+  if (!invoked || !isGitExecutable(invoked.name)) return null;
+  const words = invoked.args;
+  let index = 0;
   while (index < words.length && shellWordValue(words[index].text).startsWith('-')) {
     index += GIT_VALUE_OPTIONS.has(shellWordValue(words[index].text)) ? 2 : 1;
   }
@@ -149,13 +168,29 @@ function worktreeAddArgs(code, raw) {
 }
 
 /**
+ * PowerShell 블록(`if (…) { git worktree add … }`) 안의 명령에 `git worktree add` 가 있는가. 가드의 조각 나누기는 블록 안을 꺼내지 않는다 —
+ * 가린 판에서 가장 안쪽 `{ … }` 몸체를 찾아 `;` 로 나눈 뒤 같은 자리의 원문과 함께 본다(Codex 59차). 따옴표 안의 중괄호는 가린 판에 없다.
+ */
+function blockWorktreeAdd(code, raw) {
+  for (const block of code.matchAll(/\{([^{}]*)\}/gu)) {
+    const start = block.index + 1;
+    let from = 0;
+    for (const piece of `${block[1]};`.matchAll(/[^;]*;/gu)) {
+      const end = from + piece[0].length - 1;
+      if (worktreeAddArgs(block[1].slice(from, end), raw.slice(start + from, start + end)) !== null) return true;
+      from = end + 1;
+    }
+  }
+  return false;
+}
+
+/**
  * 셸마다 이스케이프가 달라 단어 경계를 확정할 수 없는 git 명령 — Git Bash 의 `user.name=Agent\ Review`, PowerShell 의 `"D:\x\"`(PowerShell 은
  * 백슬래시로 따옴표를 이스케이프하지 않는다) — 에 `worktree add` 가 보이면 그렇다고 본다(Codex 56차). 구조 해석이 하위 명령을 놓칠 수 있어서다.
  */
 function ambiguousWorktreeAdd(code, raw) {
-  const words = alignedWords(code, raw);
-  // 실행 파일은 원문 값으로 읽는다 — `'git'` 처럼 따옴표 친 실행 파일은 가린 판에서 밑줄이다(Codex 57차).
-  if (!/(^|[\\/])git(\.exe)?$/i.test(shellWordValue(words[commandAt(words.map((word) => word.code))]?.text ?? ''))) return false;
+  // 실행 파일은 원문 값으로 읽는다 — `'git'`·`&"…\git.exe"` 는 가린 판에서 밑줄이다(Codex 57·59차).
+  if (!isGitExecutable(invokedCommand(code, raw)?.name)) return false;
   const worktreeAdd = /(?:^|\s)worktree\s+add(?:\s|$)/u;
   // 따옴표가 닫히지 않았으면(PowerShell 의 `"D:\x\"` 를 bash 규칙으로 읽은 경우) 경계를 알 수 없다 — 원문에서 찾는다.
   if (['"', "'"].some((quote) => (code.split(quote).length - 1) % 2 === 1)) return worktreeAdd.test(raw);
@@ -1237,7 +1272,8 @@ export const RULES = Object.freeze([
     // 고정 트리를 처음 만드는 일은 도구마다 한 번뿐이다. Codex 실행 규칙도 경로를 가리지 못하므로 세 도구가 똑같이 묻는다.
     codexPrompt: ['git', 'worktree', 'add'],
     codexJustification: '작업 트리를 더하려면 사용자 승인을 받는다 — 도구마다 고정 트리 하나가 기본이고 임시 트리는 예외이며, 고정 트리를 처음 만들 때도 묻는다(SOP §6.6, DEC-OPS-414).',
-    match: ({ code, raw }) => worktreeAddArgs(code, raw) !== null || ambiguousWorktreeAdd(code, raw),
+    // 셸 없는 argv 배열은 칸 그대로 argvWorktreeAdd 가 따로 본다(main 의 addArgvHits).
+    match: ({ code, raw }) => worktreeAddArgs(code, raw) !== null || blockWorktreeAdd(code, raw) || ambiguousWorktreeAdd(code, raw),
   },
   {
     id: 'gitleaks-worktree-mount', decision: 'deny',
@@ -1412,29 +1448,10 @@ export function evaluate(command, { cwd = process.cwd(), rules = RULES, gitRunne
   };
 }
 
-/** 가드가 셸 문법으로 읽는 글자 — argv 칸 안에 있으면 따옴표로 감싸 데이터로 둔다(공백·따옴표·구분자·주석·변수·괄호·리다이렉션). */
-const ARGV_SHELL_SYNTAX = /[\s'"`;|&#$()<>]/u;
-
-/** 칸 전체를 한 따옴표 문자열로 감싼다. 작은따옴표가 들었으면 큰따옴표로 감싸고 `" \ $ `` ` `` 를 이스케이프한다. */
-function quoteWhole(value) {
-  return value.includes("'") ? `"${value.replace(/(["\\$`])/g, '\\$1')}"` : `'${value}'`;
-}
-
 /**
- * 셸 없는 argv 한 칸을 가드의 단어 하나로 읽히게 한다. 셸 문법 글자가 없으면 그대로 두고, 있으면 그 칸을 따옴표로 감싸 데이터로 둔다 —
- * `;`·`#`·작은따옴표를 그대로 두면 조각·주석·문자열로 읽혀 뒤의 명령을 놓친다(Codex 58차). 옵션 칸은 이름(`-cuser.name=`·`--opt=`)과 앞
- * 대시를 따옴표 밖에 남긴다 — 칸 전체를 감싸면 옵션 모양이 가려져 하위 명령을 잘못 읽는다(Codex 57차).
+ * 각 도구의 PreToolUse 입력에서 명령 문자열과 작업 디렉터리를 꺼낸다. 셸 명령이 아니면 null. 셸 없는 argv 배열은 칸 그대로 `argv` 로도 준다 —
+ * 문자열은 main 과 같이 칸을 공백으로 이어(다른 규칙의 판정을 바꾸지 않는다, Codex 59차) 만들고, 칸 경계가 필요한 판정은 argv 로 한다.
  */
-function quoteArgument(value) {
-  const text = String(value);
-  if (!ARGV_SHELL_SYNTAX.test(text)) return text;
-  const option = /^(-{1,2}[^=\s'"`;|&#$()<>]*=)(.*)$/su.exec(text);
-  if (option) return `${option[1]}${quoteWhole(option[2])}`;
-  const dashes = /^-*/u.exec(text)[0];
-  return `${dashes}${quoteWhole(text.slice(dashes.length))}`;
-}
-
-/** 각 도구의 PreToolUse 입력에서 명령 문자열과 작업 디렉터리를 꺼낸다. 셸 명령이 아니면 null. */
 export function readHookInput(agent, input) {
   if (agent === 'antigravity') {
     const args = input?.toolCall?.args ?? {};
@@ -1450,9 +1467,24 @@ export function readHookInput(agent, input) {
   const flagAt = shell ? raw.findIndex((part, index) => index > 0 && /^(-Command|-c|-lc|\/c)$/i.test(part)) : -1;
   const script = flagAt > 0 && flagAt + 1 < raw.length
     ? (['bash', 'sh', 'zsh'].includes(shell) ? raw[flagAt + 1] : raw.slice(flagAt + 1).join(' ')) : null;
-  // 셸 없는 argv 는 인자 경계를 지켜 잇는다 — 공백이 든 인자(`user.name=Agent Review`)를 그냥 이으면 판정이 하위 명령을 놓친다(Codex 56차).
-  const command = Array.isArray(raw) ? (script ?? raw.map(quoteArgument).join(' ')) : raw;
-  return typeof command === 'string' ? { command, cwd: input.cwd ?? process.cwd() } : null;
+  const command = Array.isArray(raw) ? (script ?? raw.join(' ')) : raw;
+  if (typeof command !== 'string') return null;
+  return Array.isArray(raw) && script === null ? { command, cwd: input.cwd ?? process.cwd(), argv: raw } : { command, cwd: input.cwd ?? process.cwd() };
+}
+
+/**
+ * 셸 없는 argv 배열에서만 확정할 수 있는 판정을 더한다 — 지금은 `git worktree add`(칸 경계를 지켜 본다, Codex 56·58·59차). 이미 걸렸으면
+ * 그대로 둔다.
+ */
+export function addArgvHits(verdict, argv, rules = RULES) {
+  const rule = rules.find(({ id }) => id === 'git-worktree-add');
+  if (!rule || !argvWorktreeAdd(argv) || verdict?.rules.includes(rule.id)) return verdict;
+  const hits = [...(verdict?.rules ?? []), rule.id].map((id) => rules.find((candidate) => candidate.id === id)).filter(Boolean);
+  return {
+    decision: hits.some((hit) => hit.decision === 'deny') ? 'deny' : 'ask',
+    rules: hits.map((hit) => hit.id),
+    reason: hits.map((hit) => `[agent-guard:${hit.id}] ${hit.why} → ${hit.fix}`).join('\n'),
+  };
 }
 
 /** Codex 가 시작할 때 읽는 저장소 실행 규칙(프로젝트 `.codex/` 층을 신뢰해야 읽는다 — 이 가드 훅이 도는 조건과 같다). */
@@ -1587,7 +1619,7 @@ async function main(argv) {
     const input = JSON.parse(await readStdin());
     const hook = readHookInput(agent, input);
     if (hook) {
-      const verdict = evaluate(hook.command, { cwd: hook.cwd });
+      const verdict = addArgvHits(evaluate(hook.command, { cwd: hook.cwd }), hook.argv);
       // Codex 는 실행 규칙의 승인 창이 대신 물을 수 있는 명령이면 넘긴다(DEC-OPS-414) — 막지 않은 명령에 승인을 대신 내리지는 않는다.
       // 프로세스 시작 시각은 다른 조건이 다 맞을 때만 묻는다(PowerShell 조회가 1초 남짓 걸린다).
       const delegate = agent === 'codex' && verdict?.decision === 'ask' && (() => {

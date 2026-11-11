@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 
-import { CODEX_RULES_PATH, RULES, codexPolicyArgv, codexPromptCovers, evaluate, readHookInput, renderCodexRules, renderVerdict } from './agent-guard.mjs';
+import { CODEX_RULES_PATH, RULES, addArgvHits, codexPolicyArgv, codexPromptCovers, evaluate, readHookInput, renderCodexRules, renderVerdict } from './agent-guard.mjs';
 
 const repoRoot = resolve(import.meta.dirname, '..');
 const GUARD = join(repoRoot, 'scripts', 'agent-guard.mjs');
@@ -263,13 +263,18 @@ const CASES = {
       // 2026-11-11 Codex 57차 반례: 따옴표 친 실행 파일은 가린 판에서 밑줄이라 모호 판정이 git 을 못 알아봤다.
       "'git' -c user.name=Agent\\ Review worktree add --detach /d/wt-review HEAD",
       // 2026-11-11 Codex 58차 반례: PowerShell 은 백틱으로 공백을 이스케이프한다.
-      'git -c user.name=Agent` Review worktree add --detach D:\\wt-review HEAD'],
+      'git -c user.name=Agent` Review worktree add --detach D:\\wt-review HEAD',
+      // 2026-11-11 Codex 59차 반례: 붙여 쓴 호출 연산자와, 경로를 확인하는 PowerShell 조건 블록 안의 명령.
+      '&"C:\\Program Files\\Git\\cmd\\git.exe" worktree add --detach D:\\wt-review HEAD',
+      'if (-not (Test-Path -LiteralPath D:\\wt-review)) { git worktree add --detach D:\\wt-review HEAD }',
+      'if ($true) { Write-Output start; git -C D:\\project\\egov-enterprise worktree add D:\\wt-review HEAD }'],
     pass: ['git worktree list --porcelain', 'git worktree prune -v', 'git worktree remove D:\\wt-x',
       'git commit --only -m "git worktree add D:\\wt-egov-codex-x 는 묻는다" -- a.md', 'echo "git worktree add --detach D:\\wt-egov-codex-x HEAD"',
       'rg -n "git worktree add" docs',
       // 2026-11-11 Codex 57차 반례: 메시지 안의 `\ ` 와 낱말을 명령으로 읽어 정상 커밋을 물었다.
       "git commit --only -m 'fix: handle \\ in worktree add commands' -- scripts/agent-guard.mjs",
-      'git commit --only -m "say \\"worktree add\\" here" -- a.md'],
+      'git commit --only -m "say \\"worktree add\\" here" -- a.md',
+      'if (Test-Path D:\\wt-review) { git worktree list }', "Write-Output '{ git worktree add D:\\wt-x HEAD }'"],
   },
 };
 
@@ -314,22 +319,29 @@ test('git-worktree-add: Codex 는 실행 규칙이 확실히 잡는 명령만 �
   assert.equal(covers({ cmd: 'git status' }, { codexStartedAt: () => { asked += 1; return later; } }), false);
   assert.equal(asked, 0, '다른 조건이 맞지 않으면 프로세스 시작 시각을 묻지 않는다');
   assert.equal(codexPolicyArgv({ cmd: 'git worktree add D:\\wt-x HEAD' }, 'win32').join(' '), 'git worktree add D:\\wt-x HEAD');
-  // 2026-11-11 Codex 56차: 셸 없는 argv 는 인자 경계를 지켜 판정한다 — 공백 든 값을 그냥 이으면 하위 명령을 놓쳤다.
-  const argvCommand = readHookInput('codex', { tool_input: { command: ['git', '-c', 'user.name=Agent Review', 'worktree', 'add', 'D:\\wt-review', 'HEAD'] }, cwd: repoRoot }).command;
-  assert.equal(argvCommand, "git -c 'user.name=Agent Review' worktree add D:\\wt-review HEAD");
-  assert.ok(ruleOf(argvCommand).includes('git-worktree-add'), '공백 든 전역 옵션 값 뒤의 worktree add 도 묻는다');
-  // 2026-11-11 Codex 57차 반례: 칸 전체를 따옴표로 감싸면 옵션 모양이 가려져 다른 규칙(훅 우회·강제 푸시)이 하위 명령을 놓쳤다.
-  const argvVerdict = (command) => ruleOf(readHookInput('codex', { tool_input: { command }, cwd: repoRoot }).command);
+  // 셸 없는 argv 는 문자열로 main 과 똑같이 이어 다른 규칙의 판정을 바꾸지 않고(Codex 59차), git worktree add 는 칸 그대로 본다(Codex 56·58차).
+  const argvVerdict = (command) => {
+    const hook = readHookInput('codex', { tool_input: { command }, cwd: repoRoot });
+    return addArgvHits(decide(hook.command, hook.cwd), hook.argv)?.rules ?? [];
+  };
+  assert.equal(readHookInput('codex', { tool_input: { command: ['git', '-c', 'user.name=Agent Review', 'worktree', 'add', 'D:\\wt-review', 'HEAD'] }, cwd: repoRoot }).command,
+    'git -c user.name=Agent Review worktree add D:\\wt-review HEAD', '문자열은 main 과 같이 칸을 공백으로 잇는다');
+  for (const argv of [
+    ['git', '-c', 'user.name=Agent Review', 'worktree', 'add', 'D:\\wt-review', 'HEAD'],
+    ['git', '-c', 'user.name=Agent;Review', 'worktree', 'add', 'D:/wt-review', 'HEAD'],
+    ['git', '-c', "user.name=O'Brien", 'worktree', 'add', 'D:/wt-review', 'HEAD'],
+    ['C:\\Program Files\\Git\\cmd\\git.exe', '--no-pager', 'worktree', 'add', 'D:\\wt x', 'HEAD'],
+  ]) assert.ok(argvVerdict(argv).includes('git-worktree-add'), `칸 경계를 지켜 worktree add 를 본다: ${JSON.stringify(argv)}`);
+  assert.ok(!argvVerdict(['git', 'worktree', 'list']).includes('git-worktree-add'));
+  assert.ok(!argvVerdict(['git', 'commit', '-m', 'git worktree add', '--', 'a.md']).includes('git-worktree-add'), '메시지 칸은 하위 명령이 아니다');
+  // 2026-11-11 Codex 57·59차 반례: argv 를 따옴표로 바꿔 이으면 다른 규칙이 옵션·대입·실행 파일·경로를 잘못 읽었다 — main 과 같은 판정이어야 한다.
   assert.ok(argvVerdict(['git', '-cuser.name=리뷰', 'commit', '--no-verify', '--only', '-m', 'fix', '--', 'README.md']).includes('git-no-verify'));
   assert.ok(argvVerdict(['git', 'push', '--force-with-lease=feature/한글', 'origin', 'feat/x']).includes('git-force-push'));
-  assert.ok(argvVerdict(['git', '-c', 'user.name=Agent Review', 'commit', '--no-verify', '-m', 'fix it', '--', 'a.md']).includes('git-no-verify'));
-  assert.ok(!argvVerdict(['git', 'commit', '--only', '-m', '--no-verify mention only', '--', 'a.md']).includes('git-no-verify'),
-    '메시지 칸 안의 낱말은 옵션이 아니다');
-  // 2026-11-11 Codex 58차 반례: argv 칸의 `;`·작은따옴표·`#` 를 셸 문법으로 읽어 뒤의 명령을 놓쳤다.
-  assert.ok(argvVerdict(['git', '-c', 'user.name=Agent;Review', 'worktree', 'add', 'D:/wt-review', 'HEAD']).includes('git-worktree-add'));
-  assert.ok(argvVerdict(['git', '-c', "user.name=O'Brien", 'commit', '--no-verify', '--only', '-m', 'fix', '--', 'README.md']).includes('git-no-verify'));
-  assert.ok(argvVerdict(['rg', '-e', '#', '.env']).includes('env-file-read'));
-  assert.ok(argvVerdict(['git', "-cuser.name=O'Brien; x", 'commit', '--no-verify', '-m', 'fix', '--', 'a.md']).includes('git-no-verify'));
+  assert.ok(argvVerdict(['git', 'commit', '-nmFix title', '--only', '--', 'README.md']).includes('git-no-verify'));
+  assert.ok(argvVerdict(['env', 'SKIP_HOOKS=skip hooks', 'git', 'push']).includes('git-hook-bypass'));
+  assert.ok(argvVerdict(['D:/tools(1)/git.exe', 'push', '--force']).includes('git-force-push'));
+  assert.ok(!argvVerdict(['.\\gradlew.bat', ':api-server:test', '--tests', 'nuri.openapi.OpenApiDocumentationTest',
+    '-Dopenapi.export.path=D:/exports/review files/api-docs.json']).includes('openapi-relative-export-path'));
   // 스크립트 뒤에 칸이 더 있어도 셸 래퍼다 — PowerShell 은 남은 칸을 이어 돌리므로 그 안의 worktree add 를 놓치면 안 된다.
   assert.ok(argvVerdict(['pwsh', '-Command', 'git worktree add D:\\wt-x HEAD', 'extra']).includes('git-worktree-add'));
   assert.ok(argvVerdict(['powershell.exe', '-NoProfile', '-Command', 'git', 'worktree', 'add', 'D:\\wt-x', 'HEAD']).includes('git-worktree-add'));
@@ -340,6 +352,8 @@ test('git-worktree-add: Codex 는 실행 규칙이 확실히 잡는 명령만 �
     { input: JSON.stringify(input), encoding: 'utf8', env: { ...process.env, AGENT_GUARD_CODEX_PROCESS: 'none' } });
   const outside = JSON.parse(run({ tool_input: { cmd: 'git worktree add --detach D:\\wt-egov-codex-probe HEAD' }, cwd: repoRoot }).stdout);
   assert.equal(outside.hookSpecificOutput.permissionDecision, 'deny', 'Codex 시작 시각을 모르면 규칙 로드를 확인할 수 없어 막는다');
+  const argvRun = JSON.parse(run({ tool_input: { command: ['git', '-c', 'user.name=Agent Review', 'worktree', 'add', 'D:\\wt-review', 'HEAD'] }, cwd: repoRoot }).stdout);
+  assert.match(argvRun.hookSpecificOutput.permissionDecisionReason, /agent-guard:git-worktree-add/u, '실행 파일도 셸 없는 argv 의 worktree add 를 칸 그대로 본다');
   const claude = JSON.parse(spawnSync(process.execPath, [GUARD, '--agent', 'claude'],
     { input: JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'git worktree add --detach D:\\wt-egov-claude origin/main' }, cwd: repoRoot }), encoding: 'utf8' }).stdout);
   assert.equal(claude.hookSpecificOutput.permissionDecision, 'ask', 'Claude Code 는 고정 트리를 처음 만들 때도 묻는다');
@@ -577,7 +591,7 @@ test('도구마다 입력을 읽고 그 도구의 형식으로 답한다', () =>
     { command: 'git status', cwd: 'D:/r' });
   assert.deepEqual(readHookInput('codex', { tool_input: { command: ['bash', '-lc', 'git commit -am x'] }, cwd: 'D:/r' }),
     { command: 'git commit -am x', cwd: 'D:/r' });
-  assert.deepEqual(readHookInput('codex', { tool_input: { command: ['git', 'status'] }, cwd: 'D:/r' }), { command: 'git status', cwd: 'D:/r' });
+  assert.deepEqual(readHookInput('codex', { tool_input: { command: ['git', 'status'] }, cwd: 'D:/r' }), { command: 'git status', cwd: 'D:/r', argv: ['git', 'status'] });
   assert.deepEqual(readHookInput('antigravity', { toolCall: { name: 'run_command', args: { CommandLine: 'git status', Cwd: 'D:/r' } } }),
     { command: 'git status', cwd: 'D:/r' });
   assert.equal(readHookInput('claude', { tool_name: 'Read', tool_input: { file_path: 'a' } }), null);
