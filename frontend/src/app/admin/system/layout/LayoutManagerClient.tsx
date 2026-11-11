@@ -76,6 +76,10 @@ export default function LayoutManagerClient() {
     applyThemeTokens(themeConfig);
     const persisted = writeSavedThemeConfig(themeConfig);
     setDraftThemeConfig(persisted ? null : themeConfig);
+    if (!persisted) {
+      toast('현재 화면에는 적용했으나 브라우저 저장소에 보관하지 못했습니다. 새로고침하면 초기화됩니다.', 'error');
+      return;
+    }
     // ⚠ 문구는 실제 저장 범위와 일치해야 한다. 종전 "플랫폼 전반의 UI 인프라에 즉각 적용" 은
     //   같은 화면 하단의 "브라우저에만 보관되므로 다른 기기·다른 사용자에게는 전파되지 않습니다"
     //   와 정면으로 모순됐다 — 버튼과 토스트가 안내문을 반박하면 사용자는 강한 쪽(버튼)을 믿는다.

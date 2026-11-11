@@ -9,26 +9,30 @@ interface NoteListRow {
     noteSndngSn?: number;
 }
 
-async function cleanupNotesByMarker(client: APIRequestContext, marker: string) {
-    const receivedRes = await client.get(`/api/v1/notes/received?searchWrd=${encodeURIComponent(marker)}&page=1&size=50`);
-    if (receivedRes.ok()) {
-        const rows = ((await receivedRes.json()).data?.list ?? []) as NoteListRow[];
-        for (const row of rows) {
-            if (row.noteRcptnSn) {
-                const deleted = await client.delete(`/api/v1/notes/${row.noteRcptnSn}?type=received`);
-                expect(deleted.status()).toBe(200);
+async function cleanupNotesByMarker(client: APIRequestContext, marker: string, suppressErrors = false) {
+    try {
+        const receivedRes = await client.get(`/api/v1/notes/received?searchWrd=${encodeURIComponent(marker)}&page=1&size=50`);
+        if (receivedRes.ok()) {
+            const rows = ((await receivedRes.json()).data?.list ?? []) as NoteListRow[];
+            for (const row of rows) {
+                if (row.noteRcptnSn) {
+                    const deleted = await client.delete(`/api/v1/notes/${row.noteRcptnSn}?type=received`);
+                    if (!suppressErrors) expect(deleted.status()).toBe(200);
+                }
             }
         }
-    }
-    const sentRes = await client.get(`/api/v1/notes/sent?searchWrd=${encodeURIComponent(marker)}&page=1&size=50`);
-    if (sentRes.ok()) {
-        const rows = ((await sentRes.json()).data?.list ?? []) as NoteListRow[];
-        for (const row of rows) {
-            if (row.noteSndngSn) {
-                const deleted = await client.delete(`/api/v1/notes/${row.noteSndngSn}?type=sent`);
-                expect(deleted.status()).toBe(200);
+        const sentRes = await client.get(`/api/v1/notes/sent?searchWrd=${encodeURIComponent(marker)}&page=1&size=50`);
+        if (sentRes.ok()) {
+            const rows = ((await sentRes.json()).data?.list ?? []) as NoteListRow[];
+            for (const row of rows) {
+                if (row.noteSndngSn) {
+                    const deleted = await client.delete(`/api/v1/notes/${row.noteSndngSn}?type=sent`);
+                    if (!suppressErrors) expect(deleted.status()).toBe(200);
+                }
             }
         }
+    } catch (cleanupError) {
+        if (!suppressErrors) throw cleanupError;
     }
 }
 
@@ -40,7 +44,7 @@ test.describe('쪽지함 및 협업 허브 쪽지 과업 여정', () => {
         userPage,
         adminRequest,
         userRequest,
-    }) => {
+    }, testInfo) => {
         const marker = randomUUID().slice(0, 8);
         const noteSubject = `E2E 쪽지 발송 ${marker}`;
         const distractorSubject = `E2E 쪽지 대조군 ${marker}`;
@@ -196,13 +200,14 @@ test.describe('쪽지함 및 협업 허브 쪽지 과업 여정', () => {
             try {
                 await Promise.allSettled([adminPage.goto('about:blank'), userPage.goto('about:blank')]);
             } finally {
-                await cleanupNotesByMarker(adminRequest, marker);
-                await cleanupNotesByMarker(userRequest, marker);
+                const suppress = testInfo.status !== testInfo.expectedStatus;
+                await cleanupNotesByMarker(adminRequest, marker, suppress);
+                await cleanupNotesByMarker(userRequest, marker, suppress);
             }
         }
     });
 
-    test('협업 허브 쪽지 탭에서 받은 쪽지를 조회·검색·새로고침한다', async ({ page, adminRequest, userRequest }) => {
+    test('협업 허브 쪽지 탭에서 받은 쪽지를 조회·검색·새로고침한다', async ({ page, adminRequest, userRequest }, testInfo) => {
         const marker = randomUUID().slice(0, 8);
         const firstSubject = `E2E 허브쪽지 초기 ${marker}`;
         const laterSubject = `E2E 허브쪽지 추가 ${marker}`;
@@ -272,8 +277,9 @@ test.describe('쪽지함 및 협업 허브 쪽지 과업 여정', () => {
             try {
                 await page.goto('about:blank');
             } finally {
-                await cleanupNotesByMarker(adminRequest, marker);
-                await cleanupNotesByMarker(userRequest, marker);
+                const suppress = testInfo.status !== testInfo.expectedStatus;
+                await cleanupNotesByMarker(adminRequest, marker, suppress);
+                await cleanupNotesByMarker(userRequest, marker, suppress);
             }
         }
     });

@@ -189,17 +189,22 @@ const SelectAddressBookDetailClient = () => {
     const [memberDialog, setMemberDialog] = useState<{ member: NameCard | null } | null>(null);
     const memberRemovePendingRef = useRef(false);
     const memberRefreshPendingRef = useRef(false);
+    const adbkNmRef = useRef(adbkNm);
+    useLayoutEffect(() => {
+        adbkNmRef.current = adbkNm;
+    }, [adbkNm]);
     const [isMemberRefreshing, setIsMemberRefreshing] = useState(false);
     const [removePendingMemberSn, setRemovePendingMemberSn] = useState<number | null>(null);
     const refreshDetail = async () => {
         memberRefreshPendingRef.current = true;
         setIsMemberRefreshing(true);
         const previousBase = editBase;
-        const draftDirty = previousBase != null && adbkNm !== previousBase.adbkNm;
         try {
             const updated = await addressbookUserService.getAddressBook(adbkSn);
             queryClient.setQueryData(['address-book-detail', adbkSn], updated);
-            if (draftDirty && updated.adbkNm !== previousBase.adbkNm && updated.adbkNm !== adbkNm) {
+            const currentDraft = adbkNmRef.current;
+            const draftDirty = previousBase != null && currentDraft !== previousBase.adbkNm;
+            if (draftDirty && updated.adbkNm !== previousBase.adbkNm && updated.adbkNm !== currentDraft) {
                 setLatest(updated);
                 setReloadError(null);
                 setConflict({ kind: 'name' });
