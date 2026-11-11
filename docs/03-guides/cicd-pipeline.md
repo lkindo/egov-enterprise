@@ -473,14 +473,15 @@ E2E job은 회차별 JWT 환경과 일치하는 프론트엔드를 클린 빌드
 
 - **위치**: `/tmp/playwright-browsers`
 - **키**: `runner.os-playwright-{pnpm-lock.yaml 해시}`
+- **쓰기·복원**: `e2e-tests` 가 캐시하고, 요구사항 작업공간 브라우저 계약을 돌리는 `secret-scan` 은 읽기 전용(`actions/cache/restore`)으로만 복원한다.
 - **효과**: 매번 설치하지 않고 재사용
 
 ### Playwright 시스템 패키지(.deb)
 
-- **이유**: 2026-10 설치 시간 초과 3건은 멈춤이 아니라 미러의 느린 `.deb` 다운로드(약 40kB/s, 21~26MB)였다. 색인 갱신은 1~11초였다.
+- **이유**: 2026-10 설치 시간 초과 3건은 멈춤이 아니라 미러의 느린 `.deb` 다운로드(약 40kB/s, 21~26MB)였고, 2026-11 Ubuntu 26.04 미러 DNS 장애에서는 캐시 복원이 없던 `secret-scan` 만 시간 초과로 멈췄다. 색인 갱신은 정상일 때 1~11초다.
 - **키**: `playwright-debs-{ImageOS}-{arch}-{Playwright 버전}-{ImageVersion}`. 러너 이미지가 바뀌면 이전 이미지 키로 복원한다(apt 는 이름·버전·크기가 맞는 파일만 쓴다).
-- **쓰기**: main push 의 첫 샤드만, 정확한 키가 없을 때 저장한다. PR 은 복원만 한다(저장소 캐시 한도·쓰기 경계).
-- **상한**: 적중 경로(install-deps) 15분, 미적중 경로(install --with-deps)는 그 이상. 약 30kB/s 까지 받으며 잡 상한 30분 안이다. 재시도 루프는 두지 않는다.
+- **쓰기·복원**: main push 의 `e2e-tests` 첫 샤드만 정확한 키가 없을 때 저장하고, PR 의 `e2e-tests` 와 모든 실행의 `secret-scan` 은 복원만 한다(저장소 캐시 한도·쓰기 경계).
+- **상한**: `e2e-tests` 적중 경로(install-deps) 15분(잡 상한 30분 안), 미적중 경로(install --with-deps)는 그 이상, `secret-scan` 부트스트랩은 잡 전체 취소(20분) 전에 설치 정체를 드러내도록 단계 상한 15분을 둔다. 재시도 루프는 두지 않는다.
 
 ---
 

@@ -35,24 +35,35 @@ class SmsApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser
     @DisplayName("SMS 발송 내역 조회")
     void getSmsList() throws Exception {
-        Page<SmsDto> page = new PageImpl<>(List.of(SmsDto.builder().smsTrsmSn(1L).build()));
+        Page<SmsDto> page = new PageImpl<>(List.of(SmsDto.builder()
+                .smsTrsmSn(1L)
+                .sndngTelno("0212345678")
+                .sndngCn("Content")
+                .build()));
         given(smsService.getSmsList(any(), any(), any())).willReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/operation/sms"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.list[0].smsTrsmSn").value(1));
+                .andExpect(jsonPath("$.data.list[0].smsTrsmSn").value(1))
+                .andExpect(jsonPath("$.data.list[0].recipients").doesNotExist());
     }
 
     @Test
     @WithMockCustomUser
     @DisplayName("SMS 상세 조회")
     void getSms() throws Exception {
-        SmsDto dto = SmsDto.builder().smsTrsmSn(1L).sndngCn("Content").build();
+        SmsDto dto = SmsDto.builder()
+                .smsTrsmSn(1L)
+                .sndngTelno("0212345678")
+                .sndngCn("Content")
+                .recipients(List.of(SmsRecptnDto.builder().rcptnTelno("01012345678").build()))
+                .build();
         given(smsService.getSms(1L)).willReturn(dto);
 
         mockMvc.perform(get("/api/v1/admin/operation/sms/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.smsTrsmSn").value(1));
+                .andExpect(jsonPath("$.data.smsTrsmSn").value(1))
+                .andExpect(jsonPath("$.data.recipients").doesNotExist());
     }
 
     @Test

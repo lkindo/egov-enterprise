@@ -191,7 +191,8 @@ export default function HelpClient() {
     if (!askingRef.current) setAskOpen(false);
   };
 
-  const submitAsk = askForm.handleSubmit(async (values: AskFormValues) => {
+  const submitAsk = (event: React.FormEvent<HTMLFormElement>) => {
+    void askForm.handleSubmit(async (values: AskFormValues) => {
     // 동기 lock — 제출 중 재클릭이 두 번째 문의를 만들지 못하게 한다.
     if (askingRef.current) return;
     askingRef.current = true;
@@ -216,7 +217,8 @@ export default function HelpClient() {
       askingRef.current = false;
       setAsking(false);
     }
-  });
+    })(event);
+  };
 
   /*
     [2026-10-26 ADR-0043 UX-04 / 2026-11-11 GAP-HELP-001] 종전 문의 내역은 행을 열 수 없어 1:1 문의에 달린 답을 읽을 길이 없었고,

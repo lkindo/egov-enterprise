@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  hardNavigateToInternalRoute,
   normalizeInternalRoute,
   resolveMenuInternalRoute,
 } from '../internal-route';
@@ -77,5 +78,21 @@ describe('chkURL 은 목적지가 아니다', () => {
   it('modernRoute 가 있으면 그것만 쓴다', () => {
     const menu = { modernRoute: '/admin/x?tab=a', chkURL: 'legacy/menu.do' };
     expect(resolveMenuInternalRoute(menu)).toBe('/admin/x?tab=a');
+  });
+});
+
+describe('hardNavigateToInternalRoute 동일 출처 전체 페이지 이동', () => {
+  it('origin이 있는 브라우저 Location에는 동일 출처 절대 URL을 설정한다', () => {
+    const loc = { href: 'https://portal.example.go.kr/admin', origin: 'https://portal.example.go.kr' };
+    hardNavigateToInternalRoute('/login?expired=true&redirect=%2Fadmin%2Fusers', loc, '/login?expired=true');
+    expect(loc.href).toBe('https://portal.example.go.kr/login?expired=true&redirect=%2Fadmin%2Fusers');
+  });
+
+  it('외부 출처·프로토콜 상대·제어문자 입력은 fallback 동일 출처 경로로만 이동한다', () => {
+    for (const unsafe of ['//evil.example/phish', 'https://evil.example/phish', '/\\evil.example', '/login?redirect=%250aevil']) {
+      const loc = { href: '', origin: 'https://portal.example.go.kr' };
+      hardNavigateToInternalRoute(unsafe, loc, '/login?expired=true');
+      expect(loc.href).toBe('https://portal.example.go.kr/login?expired=true');
+    }
   });
 });

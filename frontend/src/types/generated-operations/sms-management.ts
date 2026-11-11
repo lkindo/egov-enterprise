@@ -23,7 +23,7 @@ export const getSmsListOperation = /*#__PURE__*/ (() => {
   responseSchema: z.lazy(() => PageResponseSmsDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseSmsDtoResponseSchema,
   requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
+  responseForbiddenPaths: [["list","*","recipients"]],
   });
 })();
 
@@ -61,7 +61,7 @@ export const getSmsOperation = /*#__PURE__*/ (() => {
   responseSchema: z.lazy(() => SmsDtoResponseSchema),
   envelopeSchema: ApiResponseSmsDtoResponseSchema,
   requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
+  responseForbiddenPaths: [["recipients"]],
   });
 })();
 

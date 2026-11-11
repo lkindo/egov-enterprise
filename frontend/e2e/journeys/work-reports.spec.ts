@@ -1,4 +1,5 @@
 import { expect,test } from '../fixtures/browser-test';
+import { trackApiRequests } from '../fixtures/hydration';
 import { workReportData } from '../helpers/work-report-data';
 import { DeptJobPage } from '../pages/DeptJobPage';
 import { getAdminBearerToken } from '../utils/admin-token';
@@ -96,6 +97,46 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
             finally {
                 if (!deleted)
                     await request.delete(`${REPORT_API}/${rptpSn}`, { headers: auth });
+            }
+        });
+        test('보고 등록 모달로 새 업무 보고를 작성해 서버에 저장한다', async ({ page, request }) => {
+            const { purgeByTag, tagFor } = workReportData(auth);
+            const tag = tagFor('CreateModal');
+            const title = `${tag}_01`;
+            const content = `UI 등록 모달 검증 본문 ${title}`;
+            const deptJobPage = new DeptJobPage(page);
+            const tracker = trackApiRequests(page);
+            try {
+                await deptJobPage.gotoReportList();
+                await page.getByRole('button', { name: '보고 등록', exact: true }).click();
+                const createDialog = page.getByRole('dialog', { name: '업무 보고 등록', exact: true });
+                await expect(createDialog).toBeVisible();
+                await createDialog.getByRole('textbox', { name: /보고 제목/ }).fill(title);
+                await createDialog.getByRole('textbox', { name: /보고 내용/ }).fill(content);
+                const [savedRes] = await Promise.all([
+                    page.waitForResponse(res => new URL(res.url()).pathname === REPORT_API
+                        && res.request().method() === 'POST'),
+                    createDialog.getByRole('button', { name: '보고 등록', exact: true }).click(),
+                ]);
+                expect(savedRes.ok()).toBe(true);
+                await expect(createDialog).toBeHidden();
+
+                await deptJobPage.search(title);
+                await expect(deptJobPage.row(title)).toBeVisible({ timeout: 20000 });
+
+                const listRes = await request.get(`${REPORT_API}?searchKeyword=${encodeURIComponent(title)}&page=1&size=10`, { headers: auth });
+                expect(listRes.ok()).toBe(true);
+                const row = ((await listRes.json()).data.list as Array<{ rptpSn?: number; rptTtl?: string; rptCn?: string }>)[0];
+                expect(row?.rptTtl).toBe(title);
+                expect(row?.rptCn).toBe(content);
+                expect(row?.rptpSn).toBeTruthy();
+                await tracker.settled(page.locator('body'));
+            } finally {
+                try {
+                    await page.goto('about:blank');
+                } finally {
+                    await purgeByTag(request, tag);
+                }
             }
         });
     });

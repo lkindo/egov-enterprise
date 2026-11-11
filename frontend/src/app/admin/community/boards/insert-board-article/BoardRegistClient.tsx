@@ -623,7 +623,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
         </div> : !canWrite && <p role="status" className="text-sm text-muted-foreground">
           {boardMeta ? '이 게시판을 편집할 권한이 없습니다. 필요한 권한은 관리자에게 문의해 주세요.' : '게시판 편집 권한을 확인하고 있습니다.'}
         </p>}
-        <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form noValidate onSubmit={(event) => { void form.handleSubmit(onSubmit)(event); }} className="space-y-4">
           <fieldset disabled={!canWrite || isSubmitting} className="contents">
           <p className="text-sm text-muted-foreground">
             초안 임시 보관은 현재 탭에서만 유효합니다. 새로고침하거나 탭을 닫으면 사라지므로 게시글을 등록해 주세요.

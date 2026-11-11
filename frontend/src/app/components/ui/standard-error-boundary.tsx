@@ -2,6 +2,7 @@
 
 import { Component, ReactNode } from 'react';
 import { AlertTriangle, RefreshCcw, Home } from 'lucide-react';
+import { hardNavigateToInternalRoute } from '@/lib/navigation/internal-route';
 
 interface Props {
   children: ReactNode;
@@ -43,7 +44,7 @@ export class StandardErrorBoundary extends Component<Props, State> {
               다시 시도
             </button>
             <button
-              onClick={() => window.location.href = '/'}
+              onClick={() => hardNavigateToInternalRoute('/')}
               className="flex items-center gap-2 px-6 py-2.5 border rounded-md font-semibold hover:bg-accent transition-colors"
             >
               <Home size={18} />

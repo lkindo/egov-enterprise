@@ -331,7 +331,47 @@ jobs:
 
       # The standalone requirements browser checks are part of the same required
       # Node catalog and use the Playwright version pinned by the frontend lockfile.
+      # Restore main's Playwright .deb and browser caches read-only so apt/Chromium
+      # bootstrap does not stall on Ubuntu mirror slowness or transient DNS outages.
+      - name: Resolve Playwright system package cache key
+        id: secret-scan-apt-key
+        working-directory: frontend
+        run: |
+          set -euo pipefail
+          playwright=$(node -p "require('@playwright/test/package.json').version")
+          prefix="playwright-debs-${ImageOS:-unknown}-${RUNNER_ARCH}-${playwright}-"
+          echo "prefix=${prefix}" >> "$GITHUB_OUTPUT"
+          echo "key=${prefix}${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Playwright system packages
+        id: secret-scan-apt-restore
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ${{ runner.temp }}/playwright-debs
+          key: ${{ steps.secret-scan-apt-key.outputs.key }}
+          restore-keys: |
+            ${{ steps.secret-scan-apt-key.outputs.prefix }}
+
+      - name: Seed apt archive with restored Playwright packages
+        if: steps.secret-scan-apt-restore.outputs.cache-matched-key != ''
+        env:
+          MATCHED_KEY: ${{ steps.secret-scan-apt-restore.outputs.cache-matched-key }}
+        run: |
+          shopt -s nullglob
+          debs=("$RUNNER_TEMP"/playwright-debs/*.deb)
+          echo "복원한 .deb ${#debs[@]}개 ($MATCHED_KEY)"
+          if [ "${#debs[@]}" -gt 0 ]; then sudo cp --no-clobber -- "${debs[@]}" /var/cache/apt/archives/; fi
+
+      - name: Restore Playwright Browsers
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
       - name: Install Chromium for requirements workspace browser contracts
+        timeout-minutes: 15
         run: pnpm -C frontend exec playwright install --with-deps chromium
 
       # 우회 가능한 로컬 훅에 의존하지 않도록 저장소 운영 계약을 required CI에서 다시 검증한다.

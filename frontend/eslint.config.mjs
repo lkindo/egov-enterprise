@@ -1,19 +1,11 @@
 /*
   [2026-10-06] 잔여 경고의 성격 — package.json 의 `--max-warnings` 와 함께 읽는다.
-  [2026-11-10] 실측 19건(상한 19): react-hooks/refs 10 · set-state-in-effect 6 · no-location-assign 3. 규칙별 의미는 아래와 같다.
+  [2026-11-11] 실측 0건(상한 0): react-hooks/refs · set-state-in-effect · no-location-assign 전량 해소.
 
-  경고는 호출부의 계약과 함께 판정한다. 현재 의미와 처리 범위는 아래와 같다:
-
-  - react-hooks/refs — `form.handleSubmit(...)` 를 렌더 중 평가한다고 본다. 이 저장소의 표준 폼 패턴이고
-    폼 검증 census 가 그 형태를 요구한다. 규칙이 훅 내부의 ref 접근을 소비자 코드로 귀속시키는 오탐이다.
-  - react-hooks/set-state-in-effect — 조회 시작의 로딩 상태 변경 4곳, 공통 코드의 외부 선택 동기화와
-    레이아웃 폼의 localStorage 복원 각 1곳이다. 정책·투표 조회의 지연 응답은 별도 회귀 테스트와
-    요청 순번으로 보호한다. 조회 구조를 개선할 때 다시 검토하며, 경고를 피하려고
-    `await Promise.resolve()` 지연을 추가하거나 브라우저 복원을 SSR 초기값으로 옮기지 않는다.
-  - @next/next/no-location-assign-relative-destination — 인증 오류·오류 복구의 **의도된 전체 페이지 이동**이다.
-    SPA 전환(router.push)이면 낡은 토큰과 캐시가 살아남는다. 전체 재적재가 이 경로의 목적이다.
-
-  새 경고는 상한에 걸려 red 가 된다. 위 셋 중 하나를 줄이면 상한도 같은 변경에서 내린다(gates.json 동시 갱신).
+  새 경고는 `--max-warnings 0` 과 `config/governance/gates.json`(`QUALITY-FRONTEND-LINT-WARNINGS`, 상한 0)에서 즉시 red 가 된다:
+  - 폼 제출 핸들러는 이벤트 핸들러(`(event) => { void form.handleSubmit(fn)(event); }`)로 감싸 렌더 단계 ref 평가 경고를 만들지 않는다.
+  - 비동기 조회 시작 상태 전이는 이벤트 핸들러/초기 상태와 비동기 완료 구간으로 분리하고, 외부 저장소 복원은 `useSyncExternalStore`(SSR snapshot `null`)를 쓴다.
+  - 인증 만료·오류 바운더리의 의도된 전체 페이지 재적재는 `hardNavigateToInternalRoute`(`src/lib/navigation/internal-route.ts`) 동일 출처 경계를 거친다.
 */
 import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 import nextTypescript from "eslint-config-next/typescript";
@@ -220,14 +212,15 @@ const eslintConfig = [
           "message": "손으로 쓴 탭 역할 금지 — @/app/components/ui/standard-tabs 의 TabList·Tab·TabPanel 을 쓰세요(방향키·roving tabindex·aria-controls 를 갖춘 탭 원천)."
         }
       ],
-      // eslint-config-next 16(+eslint-plugin-react-hooks 6)이 React Compiler 계열 신규 규칙을 error 로 켜지만,
-      // 기존 코드베이스에 대량 존재(set-state-in-effect 등 41건)하므로 게이트 그린 유지 + 백로그 가시화를 위해
-      // repo 규범(warn 기반)에 맞춰 warn 으로 완화한다(점진 정리 대상).
-      "react-hooks/set-state-in-effect": "warn",
+      // [2026-11-11] 전량 해소한 3개 규칙(set-state-in-effect · refs · no-location-assign-relative-destination)은
+      //   "error" 로 승격해 --max-warnings 조정이나 부분 비활성화 우회를 차단한다.
+      //   나머지 React Compiler 계열(purity · immutability · error-boundaries)은 현재 위반 0건이며 --max-warnings 0 이 지킨다.
+      "react-hooks/set-state-in-effect": "error",
       "react-hooks/purity": "warn",
       "react-hooks/immutability": "warn",
-      "react-hooks/refs": "warn",
+      "react-hooks/refs": "error",
       "react-hooks/error-boundaries": "warn",
+      "@next/next/no-location-assign-relative-destination": "error",
     }
   },
   {

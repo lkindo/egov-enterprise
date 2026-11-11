@@ -388,7 +388,7 @@ export default function AdministCodeClient({
       <form
         id="administ-code-register-form"
         noValidate
-        onSubmit={form.handleSubmit(onRegisterSubmit)}
+        onSubmit={(event) => { void form.handleSubmit(onRegisterSubmit)(event); }}
         className="space-y-[var(--form-gap)] pt-2 text-left"
       >
        <FormErrorSummary

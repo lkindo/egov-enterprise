@@ -96,15 +96,13 @@ export default function PolicyAdminClient() {
     closeDisabled: form.formState.isSubmitting,
   });
 
-  const fetchPolicies = useCallback(async () => {
-    const requestId = ++policyRequestRef.current;
-    setLoading(true);
-    setError(null);
+  const runFetchPolicies = useCallback(async (requestId: number) => {
     try {
       const data = await policyAdminService.getPolicies();
       if (requestId !== policyRequestRef.current) return;
       setPolicies(data);
       setPoliciesReceived(true);
+      setError(null);
     } catch (err) {
       if (requestId !== policyRequestRef.current) return;
       setError(toError(err));
@@ -116,10 +114,18 @@ export default function PolicyAdminClient() {
     }
   }, [toast]);
 
+  const fetchPolicies = useCallback(async () => {
+    const requestId = ++policyRequestRef.current;
+    setLoading(true);
+    setError(null);
+    await runFetchPolicies(requestId);
+  }, [runFetchPolicies]);
+
   useEffect(() => {
-    void fetchPolicies();
+    const requestId = ++policyRequestRef.current;
+    void runFetchPolicies(requestId);
     return () => { policyRequestRef.current += 1; };
-  }, [fetchPolicies]);
+  }, [runFetchPolicies]);
 
   const handleEdit = (policy: SystemPolicy) => {
     if (!canWrite) return;

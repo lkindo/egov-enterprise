@@ -8,6 +8,7 @@ const client = vi.hoisted(() => ({
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
 import { addressbookUserService } from './AddressbookUserService';
+import { toMemberRequest } from '@/app/admin/collaboration/address-book/address-book-form-validation';
 
 const successEnvelope = (data: unknown) => ({
   success: true,
@@ -118,5 +119,36 @@ describe('AddressbookUserService generated contract', () => {
     await expect(addressbookUserService.createAddressBook({ adbkNm: '영업팀' } as never))
       .rejects.toThrow('생성 API 요청이 OpenAPI 계약과 일치하지 않습니다.');
     expect(client.requestRaw).not.toHaveBeenCalled();
+  });
+
+  it('상세 응답의 null 연락처 필드는 raw 전송 시 거부되고 toMemberRequest 정규화 뒤에는 통과한다', async () => {
+    const responseMemberWithNulls = {
+      adbkMbrSn: 11,
+      adbkSn: 3,
+      userId: null,
+      nm: '홍길동',
+      emlAddr: null,
+      homeTelno: null,
+      mblTelno: '01012345678',
+      ofcTelno: null,
+      faxNo: null,
+    };
+
+    await expect(addressbookUserService.updateAddressBook(3, {
+      adbkNm: '영업1팀',
+      rlsScopeCd: 'PUBLIC',
+      editToken: addressBook.editToken,
+      adbkMan: [responseMemberWithNulls as never],
+    })).rejects.toThrow();
+    expect(client.requestRaw).not.toHaveBeenCalled();
+
+    client.requestRaw.mockResolvedValueOnce(successEnvelope(null));
+    await expect(addressbookUserService.updateAddressBook(3, {
+      adbkNm: '영업1팀',
+      rlsScopeCd: 'PUBLIC',
+      editToken: addressBook.editToken,
+      adbkMan: [toMemberRequest(responseMemberWithNulls)],
+    })).resolves.toBeUndefined();
+    expect(client.requestRaw).toHaveBeenCalledTimes(1);
   });
 });

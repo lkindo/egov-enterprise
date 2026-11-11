@@ -2418,8 +2418,8 @@
         "flag": "--max-warnings"
       },
       "executionProfile": "EXEC-FRONTEND-LINT",
-      "current": 19,
-      "baseline": 19,
+      "current": 0,
+      "baseline": 0,
       "direction": "maximum",
       "tier": [
         "pre-push",

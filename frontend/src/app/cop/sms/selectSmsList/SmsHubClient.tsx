@@ -22,7 +22,7 @@ import { MessageSquare,
   Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { smsAdminService, SmsDto } from '@/services/foundation/operation/SmsAdminService';
+import { smsAdminService, SmsDto, SmsRequestDto } from '@/services/foundation/operation/SmsAdminService';
 import type { PageResponse } from '@/types/foundation/system';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
@@ -80,7 +80,7 @@ export default function SmsHubClient({
 
   const sendMutation = useMutation({
     mutationFn: (sms: SmsFormState) => {
-      const payload: SmsDto = {
+      const payload: SmsRequestDto = {
         sndngTelno: sms.sndngTelno,
         sndngCn: sms.sndngCn,
         recipients: sms.rcptnTelno ? [{ rcptnTelno: sms.rcptnTelno }] : [],
@@ -155,14 +155,14 @@ export default function SmsHubClient({
       )
     },
     {
-      header: 'RECIPIENT',
+      header: 'RECIPIENTS',
       accessor: (item) => (
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-[var(--radius-hub-item)] bg-surface-inverse flex items-center justify-center text-primary shadow-lg group-hover:scale-110 transition-transform">
             <Phone size={16} />
           </div>
           <span className="text-sm font-bold text-foreground tracking-tighter">
-            {item.recipients?.[0]?.rcptnTelno ?? '-'}
+            {item.recptnCnt != null ? `${item.recptnCnt}명` : '-'}
           </span>
         </div>
       )

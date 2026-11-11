@@ -27,6 +27,7 @@ test.describe('Collaboration & Knowledge Extension', () => {
         const editedDescription = `게시글을 다시 찾을 설명 ${marker}`;
         let pstSn: number | undefined;
         let scrapSn: number | undefined;
+        const tracker = trackApiRequests(page);
         try {
             // 기존 일반 게시판에 이 시험의 글만 준비한다. 스크랩 생성·수정은 실제 UI를 통과한다.
             const created = await adminRequest.post('/api/v1/boards/posts', {
@@ -95,6 +96,7 @@ test.describe('Collaboration & Knowledge Extension', () => {
             await expect(dialog.getByRole('textbox', { name: /스크랩명/ })).toHaveValue(editedName);
             await expect(dialog.getByRole('textbox', { name: '설명', exact: true })).toHaveValue(editedDescription);
             await expect(url).toHaveValue(canonicalPath);
+            await tracker.settled(page.locator('body'));
         } finally {
             // 열린 화면의 재조회가 삭제된 글·스크랩을 요청하지 않게 먼저 떠난다. 한 정리가 실패해도 나머지는 수행한다.
             try { await page.goto('about:blank'); } finally {
@@ -197,6 +199,195 @@ test.describe('Collaboration & Knowledge Extension', () => {
                 await page.goto('about:blank');
             } finally {
                 for (const id of created) {
+                    expect((await adminRequest.delete(`/api/v1/scraps/${id}`)).status()).toBe(200);
+                }
+            }
+        }
+    });
+
+    test('협업 허브 기본 경로에서 스크랩 탭으로 전환해 등록·새로고침·수정을 수행한다', async ({ page, adminRequest }) => {
+        const marker = randomUUID().slice(0, 8);
+        const name = `E2E collab scrap ${marker}`;
+        const laterName = `E2E collab scrap later ${marker}`;
+        const editedName = `E2E collab scrap edited ${marker}`;
+        const scrapUrl = `https://www.egovframe.go.kr/e2e-collab-scrap/${marker}`;
+        const created: number[] = [];
+        const openButton = (scrapNm: string) => page.getByRole('button', { name: `${scrapNm} 스크랩 열기`, exact: true });
+        const hubRequests = trackApiRequests(page);
+
+        try {
+            await page.goto('/admin/collaboration');
+            const scrapsTab = page.getByRole('tab', { name: '스크랩', exact: true });
+            await waitForHydration(scrapsTab);
+            await scrapsTab.click();
+            await expect(scrapsTab).toHaveAttribute('aria-selected', 'true');
+            await page.getByRole('button', { name: '스크랩 등록', exact: true }).click();
+
+            const createDialog = page.getByRole('dialog', { name: '스크랩 등록', exact: true });
+            await createDialog.getByRole('textbox', { name: /스크랩명/ }).fill(name);
+            await createDialog.getByRole('textbox', { name: /참조 URL/ }).fill(scrapUrl);
+            const [saved] = await Promise.all([
+                page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/scraps'
+                    && response.request().method() === 'POST'),
+                createDialog.getByTestId('scrap-submit-button').click(),
+            ]);
+            expect(saved.status()).toBe(201);
+            const scrapSn = (await saved.json()).data as number;
+            created.push(scrapSn);
+            await expect(createDialog).toBeHidden();
+            await expect(openButton(name)).toBeVisible();
+
+            const later = await adminRequest.post('/api/v1/scraps', {
+                data: { scrapNm: laterName, scrapUrl: `${scrapUrl}-later`, scrapExpln: '', useYn: 'Y' },
+            });
+            expect(later.status()).toBe(201);
+            created.push((await later.json()).data as number);
+            await expect(openButton(laterName)).toHaveCount(0);
+
+            const [refetched] = await Promise.all([
+                page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/scraps'
+                    && response.request().method() === 'GET'),
+                page.getByRole('button', { name: '현재 목록 새로고침', exact: true }).click(),
+            ]);
+            expect(refetched.status()).toBe(200);
+            await expect(openButton(laterName)).toBeVisible();
+
+            await openButton(name).click();
+            const editDialog = page.getByRole('dialog', { name: '스크랩 수정', exact: true });
+            await editDialog.getByRole('textbox', { name: /스크랩명/ }).fill(editedName);
+            const [updated] = await Promise.all([
+                page.waitForResponse(response => new URL(response.url()).pathname === `/api/v1/scraps/${scrapSn}`
+                    && response.request().method() === 'PUT'),
+                editDialog.getByRole('button', { name: '수정 완료', exact: true }).click(),
+            ]);
+            expect(updated.status()).toBe(200);
+            await expect(editDialog).toBeHidden();
+            await expect(openButton(editedName)).toBeVisible();
+            await hubRequests.settled(page.locator('body'));
+        } finally {
+            try {
+                await page.goto('about:blank');
+            } finally {
+                for (const id of created) {
+                    expect((await adminRequest.delete(`/api/v1/scraps/${id}`)).status()).toBe(200);
+                }
+            }
+        }
+    });
+
+    test('스크랩 목록 전용 화면에서 신규 등록·새로고침·수정·삭제를 수행한다', async ({ page, adminRequest }) => {
+        const marker = randomUUID().slice(0, 8);
+        const name = `E2E list scrap ${marker}`;
+        const laterName = `E2E list scrap later ${marker}`;
+        const editedName = `E2E list scrap edited ${marker}`;
+        const scrapUrl = `https://www.egovframe.go.kr/e2e-list-scrap/${marker}`;
+        const remainingIds: number[] = [];
+        const tracker = trackApiRequests(page);
+
+        const ensureVisibleOnPages = async (targetSn: number, totalPageHint: number) => {
+            for (let pageNo = 1; pageNo < totalPageHint; pageNo++) {
+                const currentBtn = page.getByRole('button', { name: `${pageNo + 1} 페이지`, exact: true });
+                if ((await currentBtn.count()) === 0) break;
+                const [paged] = await Promise.all([
+                    page.waitForResponse(res => new URL(res.url()).pathname === '/api/v1/scraps'
+                        && res.request().method() === 'GET'),
+                    page.getByRole('button', { name: '다음 페이지', exact: true }).click(),
+                ]);
+                const body = (await paged.json()).data as { list: { scrapSn: number }[] };
+                if (body.list.some(item => item.scrapSn === targetSn)) return;
+            }
+        };
+
+        try {
+            const firstList = page.waitForResponse(res => new URL(res.url()).pathname === '/api/v1/scraps'
+                && res.request().method() === 'GET');
+            await scrapPage.goto();
+            await firstList;
+            const createBtn = page.getByRole('button', { name: '신규 등록', exact: true });
+            await waitForHydration(createBtn);
+
+            await createBtn.click();
+            const createDialog = page.getByRole('dialog', { name: '스크랩 등록', exact: true });
+            await createDialog.getByRole('textbox', { name: /스크랩명/ }).fill(name);
+            await createDialog.getByRole('textbox', { name: /참조 URL/ }).fill(scrapUrl);
+            const [createdRes, afterCreateList] = await Promise.all([
+                page.waitForResponse(res => new URL(res.url()).pathname === '/api/v1/scraps'
+                    && res.request().method() === 'POST'),
+                page.waitForResponse(res => new URL(res.url()).pathname === '/api/v1/scraps'
+                    && res.request().method() === 'GET'),
+                createDialog.getByTestId('scrap-submit-button').click(),
+            ]);
+            expect(createdRes.status()).toBe(201);
+            const scrapSn = (await createdRes.json()).data as number;
+            remainingIds.push(scrapSn);
+            const createdListBody = (await afterCreateList.json()).data as { list: { scrapSn: number }[]; totalPage: number };
+            if (!createdListBody.list.some(item => item.scrapSn === scrapSn)) {
+                await ensureVisibleOnPages(scrapSn, createdListBody.totalPage);
+            }
+            await expect(page.getByRole('button', { name: `${name} 수정`, exact: true })).toBeVisible();
+
+            const laterSeed = await adminRequest.post('/api/v1/scraps', {
+                data: { scrapNm: laterName, scrapUrl: `${scrapUrl}-later`, scrapExpln: '', useYn: 'Y' },
+            });
+            expect(laterSeed.status()).toBe(201);
+            const laterSn = (await laterSeed.json()).data as number;
+            remainingIds.push(laterSn);
+
+            const [refetched] = await Promise.all([
+                page.waitForResponse(res => new URL(res.url()).pathname === '/api/v1/scraps'
+                    && res.request().method() === 'GET'),
+                page.getByRole('button', { name: '스크랩 목록 새로고침', exact: true }).click(),
+            ]);
+            expect(refetched.status()).toBe(200);
+            const refetchedBody = (await refetched.json()).data as { list: { scrapSn: number }[]; totalPage: number };
+            if (!refetchedBody.list.some(item => item.scrapSn === laterSn)) {
+                await ensureVisibleOnPages(laterSn, refetchedBody.totalPage);
+            }
+            await expect(page.getByRole('button', { name: `${laterName} 수정`, exact: true })).toBeVisible();
+            if ((await page.getByRole('button', { name: `${name} 수정`, exact: true }).count()) === 0) {
+                const page1Btn = page.getByRole('button', { name: '1 페이지', exact: true });
+                if ((await page1Btn.count()) > 0) {
+                    const [page1Res] = await Promise.all([
+                        page.waitForResponse(res => new URL(res.url()).pathname === '/api/v1/scraps'
+                            && res.request().method() === 'GET'),
+                        page1Btn.click(),
+                    ]);
+                    const p1Body = (await page1Res.json()).data as { list: { scrapSn: number }[]; totalPage: number };
+                    if (!p1Body.list.some(item => item.scrapSn === scrapSn)) {
+                        await ensureVisibleOnPages(scrapSn, p1Body.totalPage);
+                    }
+                }
+            }
+
+            await page.getByRole('button', { name: `${name} 수정`, exact: true }).click();
+            const editDialog = page.getByRole('dialog', { name: '스크랩 수정', exact: true });
+            await editDialog.getByRole('textbox', { name: /스크랩명/ }).fill(editedName);
+            const [updated] = await Promise.all([
+                page.waitForResponse(res => new URL(res.url()).pathname === `/api/v1/scraps/${scrapSn}`
+                    && res.request().method() === 'PUT'),
+                editDialog.getByRole('button', { name: '수정 완료', exact: true }).click(),
+            ]);
+            expect(updated.status()).toBe(200);
+            await expect(editDialog).toBeHidden();
+            await expect(page.getByRole('button', { name: `${editedName} 삭제`, exact: true })).toBeVisible();
+
+            await page.getByRole('button', { name: `${editedName} 삭제`, exact: true }).click();
+            const confirmDialog = page.getByRole('dialog').filter({ hasText: '스크랩 삭제' });
+            await expect(confirmDialog).toBeVisible();
+            const [deleted] = await Promise.all([
+                page.waitForResponse(res => new URL(res.url()).pathname === `/api/v1/scraps/${scrapSn}`
+                    && res.request().method() === 'DELETE'),
+                confirmDialog.getByRole('button', { name: '삭제', exact: true }).click(),
+            ]);
+            expect(deleted.status()).toBe(200);
+            remainingIds.splice(remainingIds.indexOf(scrapSn), 1);
+            await expect(page.getByRole('button', { name: `${editedName} 삭제`, exact: true })).toHaveCount(0);
+            await tracker.settled(page.locator('body'));
+        } finally {
+            try {
+                await page.goto('about:blank');
+            } finally {
+                for (const id of remainingIds) {
                     expect((await adminRequest.delete(`/api/v1/scraps/${id}`)).status()).toBe(200);
                 }
             }

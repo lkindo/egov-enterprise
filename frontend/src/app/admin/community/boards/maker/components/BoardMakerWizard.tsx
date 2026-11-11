@@ -868,7 +868,7 @@ export function BoardMakerWizard() {
      이미 사용자에게 알리므로 콘솔 출력은 정보 가치가 없다. 게다가 E2E 의 콘솔 오류 가드가 이를
      금지 로그로 잡아 테스트를 실패시켰다(Validation Edge Case: Creation Failure with Empty Name).
      진단이 필요하면 개발 모드 조건부로 출력할 것. */}
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <form onSubmit={(event) => { void handleSubmit(onSubmit)(event); }} noValidate>
           <FormErrorSummary
             errors={errors}
             labels={BOARD_MAKER_FORM_LABELS}

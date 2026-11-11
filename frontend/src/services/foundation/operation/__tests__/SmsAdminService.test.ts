@@ -18,7 +18,7 @@ describe('SmsAdminService numeric transmission serial contract', () => {
       const data = await client.get(url, config);
       const fallback = url.endsWith('/recipients')
         ? [{ rcptnTelno: '01033334444' }]
-        : { sndngTelno: '0212345678', sndngCn: 'message', recipients: [{ rcptnTelno: '01033334444' }] };
+        : { sndngTelno: '0212345678', sndngCn: 'message' };
       return { success: true, code: 'S000', message: 'success', data: data ?? fallback };
     });
     client.requestRaw.mockImplementation(async ({ url, method, data, ...config }) => {
@@ -59,5 +59,28 @@ describe('SmsAdminService numeric transmission serial contract', () => {
     })).rejects.toThrow();
 
     expect(client.post).not.toHaveBeenCalled();
+  });
+
+  it('rejects leaked recipients in SMS list and detail responses', async () => {
+    client.get.mockResolvedValueOnce({
+      list: [{
+        sndngTelno: '0212345678',
+        sndngCn: 'message',
+        recipients: [{ rcptnTelno: '01033334444' }],
+      }],
+      total: 1,
+      page: 1,
+      size: 10,
+      totalPage: 1,
+    });
+    await expect(smsAdminService.getSmsList({ page: 1, size: 10 })).rejects.toThrow();
+
+    client.get.mockResolvedValueOnce({
+      sndngTelno: '0212345678',
+      sndngCn: 'message',
+      recipients: [{ rcptnTelno: '01033334444' }],
+    });
+
+    await expect(smsAdminService.getSms(101)).rejects.toThrow();
   });
 });

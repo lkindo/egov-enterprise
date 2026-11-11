@@ -8,6 +8,7 @@ import {
   scrapCreateFormSchema,
   scrapEditFormSchema,
 } from '../scrap-form-validation';
+import { parseScrapUrl } from '../scrap-url';
 import { ScrapFormDialog, type ScrapFormValues } from '../ScrapFormDialog';
 import { submitPostScrap } from '@/queries/scrap-post-action';
 import ScrapListClient from '../selectScrapList/ScrapListClient';
@@ -162,6 +163,42 @@ describe('scrap form validation contract', () => {
     expect(scrapCreateFormSchema.safeParse(values).success).toBe(false);
   });
 
+  it('fragment 뒤의 가짜 게시판 파라미터에 속지 않고 비정상 내부 게시글 URL은 서버 규칙과 같게 거부한다', () => {
+    expect(parseScrapUrl('/pages/guide#?bbsId=BBS-1&nttId=31')).toEqual({
+      isInternal: true,
+      resolvedHref: '/pages/guide#?bbsId=BBS-1&nttId=31',
+    });
+    expect(parseScrapUrl('/cop/bbs/selectArticleDetail.do?bbsId=BBS-1&nttId=31#comment-2')).toEqual({
+      isInternal: true,
+      resolvedHref: '/admin/community/boards/detail?bbsId=BBS-1&pstSn=31',
+    });
+
+    for (const invalidBoardUrl of [
+      '/admin/community/boards/detail',
+      '/admin/community/boards/detail?bbsId=BBS-1',
+      '/cop/bbs/selectArticleDetail.do?nttId=31',
+      '/admin/community/boards/detail?bbsId=BBS-1&bbsId=BBS-2&pstSn=31',
+      '/admin/community/boards/detail?bbsId=BBS-1&pstSn=31&nttId=32',
+      `/admin/community/boards/detail?bbsId=${'B'.repeat(21)}&pstSn=31`,
+      '/admin/community/boards/detail?bbsId=BBS-1&pstSn=0',
+      '/admin/community/boards/detail?bbsId=BBS-1&pstSn=not-a-number',
+      '/admin/community/boards/detail?bbsId=BBS-1&pstSn=9223372036854775808',
+      '/admin/community/boards/detail?bbsId=%E0%A4%A&pstSn=31',
+      '/cop/bbs/selectArticleDetail.do?bbsId=BBS-1#nttId=31',
+      '/pages/guide?%E0%A4%A=1',
+    ]) {
+      expect(parseScrapUrl(invalidBoardUrl)).toBeNull();
+      expect(
+        scrapEditFormSchema.safeParse({
+          scrapNm: '깨진 게시글 참조',
+          scrapUrl: invalidBoardUrl,
+          scrapExpln: '',
+          useYn: 'Y',
+        }).success,
+      ).toBe(false);
+    }
+  });
+
   it.each([
     ['경로 중간 역슬래시', '/admin\\community/boards/detail'],
     ['NUL 제어문자', '/admin/\u0000community/boards/detail'],
@@ -224,6 +261,33 @@ describe('scrap form validation contract', () => {
     }, undefined);
     expect(mocks.post).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+  });
+
+  it('기존 레거시 게시판 목록 URL을 그대로 둔 채 이름·설명만 고치면 서버와 같게 허용하고, 다른 불완전 게시판 URL로 바꾸면 막는다', async () => {
+    const legacyListUrl = '/cop/bbs/selectArticleList.do?bbsId=BBS-1';
+    const user = userEvent.setup();
+    const firstView = renderDetail({ scrapNm: '레거시 스크랩', scrapUrl: legacyListUrl, scrapExpln: '기존 설명' });
+
+    const name = screen.getByRole('textbox', { name: /스크랩명/ });
+    await user.clear(name);
+    await user.type(name, '레거시 제목 수정');
+    await user.click(screen.getByRole('button', { name: /수정 완료$/ }));
+
+    await waitFor(() => expect(mocks.put).toHaveBeenCalledTimes(1));
+    expect(mocks.put).toHaveBeenCalledWith('scraps/17', {
+      scrapNm: '레거시 제목 수정',
+      scrapUrl: legacyListUrl,
+      scrapExpln: '기존 설명',
+      useYn: 'Y',
+    }, undefined);
+    firstView.unmount();
+
+    renderDetail({ scrapNm: '레거시 스크랩', scrapUrl: legacyListUrl, scrapExpln: '기존 설명' });
+    const secondUrl = screen.getByRole('textbox', { name: /참조 URL/ });
+    fireEvent.change(secondUrl, { target: { value: '/cop/bbs/selectArticleList.do?bbsId=BBS-2' } });
+    fireEvent.click(screen.getByRole('button', { name: /수정 완료$/ }));
+    expect(mocks.put).toHaveBeenCalledTimes(1);
+    expect(secondUrl).toHaveAttribute('aria-invalid', 'true');
   });
 
   it('신규 수동 등록은 내부 주소를 입력해도 저장하지 않고 URL 오류를 안내한다', async () => {

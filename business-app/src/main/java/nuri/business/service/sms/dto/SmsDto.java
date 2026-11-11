@@ -1,6 +1,7 @@
 package nuri.business.service.sms.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -62,10 +63,13 @@ public class SmsDto {
 
 
     @ArraySchema(
-            arraySchema = @Schema(description = "수신자 목록"),
+            arraySchema = @Schema(description = "수신자 목록 — 발송 요청 전용(응답에는 실리지 않는다)",
+                    accessMode = Schema.AccessMode.WRITE_ONLY),
             schema = @Schema(implementation = SmsRecptnDto.class),
             minItems = 1,
             maxItems = MAX_RECIPIENTS_PER_REQUEST)
+    // 요청 전용 — 읽기 매퍼가 채우지 않으며 직렬화에서도 제외한다(개인정보 응답은 /{smsTrsmSn}/recipients 전용).
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Builder.Default
     @NotEmpty
     @Size(min = 1, max = MAX_RECIPIENTS_PER_REQUEST)

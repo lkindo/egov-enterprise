@@ -159,11 +159,49 @@ export default function CommonCodeClient({
   const structureSubmitAttemptRef = useRef(false);
   const structureSavePendingRef = useRef(false);
 
+  const initialClusters = useMemo(
+    () => buildInitialCodeClusters(clCodes, groups),
+    [clCodes, groups],
+  );
+
+  const hierarchySignature = useMemo(
+    () => JSON.stringify(initialClusters),
+    [initialClusters],
+  );
+
   // D&D States
-  const [flattenedNodes, setFlattenedNodes] = useState<FlattenedCodeNode[]>([]);
+  const [flattenedNodes, setFlattenedNodes] = useState<FlattenedCodeNode[]>(
+    () => flattenCodeTree(initialClusters),
+  );
+  const [syncedHierarchySignature, setSyncedHierarchySignature] = useState(hierarchySignature);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [hasExplorerChanges, setHasExplorerChanges] = useState(false);
   const hierarchyRevisionRef = useRef(0);
+  const hierarchySeedSignatureRef = useRef<string | undefined>(undefined);
+  const hasExplorerChangesRef = useRef(false);
+
+  if (syncedHierarchySignature !== hierarchySignature) {
+    setSyncedHierarchySignature(hierarchySignature);
+    setFlattenedNodes(flattenCodeTree(initialClusters));
+    if (hasExplorerChanges) {
+      setHasExplorerChanges(false);
+      setActiveId(null);
+    }
+  }
+
+  useEffect(() => {
+    const previousSignature = hierarchySeedSignatureRef.current;
+    if (previousSignature === hierarchySignature) return;
+    hierarchySeedSignatureRef.current = hierarchySignature;
+    if (previousSignature !== undefined && hasExplorerChangesRef.current) {
+      hierarchyRevisionRef.current += 1;
+      toast('서버의 코드 구조가 갱신되어 저장되지 않은 소속 분류 변경을 취소했습니다.', 'info');
+    }
+  }, [hierarchySignature, toast]);
+
+  useEffect(() => {
+    hasExplorerChangesRef.current = hasExplorerChanges;
+  }, [hasExplorerChanges]);
 
   const form = useAppForm<
     typeof codeDetailFormSchema,
@@ -207,37 +245,19 @@ export default function CommonCodeClient({
     }
   }, [editingDetail, isModalOpen, resetForm]);
 
-  const initialClusters = useMemo(
-    () => buildInitialCodeClusters(clCodes, groups),
-    [clCodes, groups],
-  );
-
-  const hierarchySignature = useMemo(
-    () => JSON.stringify(initialClusters),
-    [initialClusters],
-  );
-  const hierarchySeedSignatureRef = useRef<string | undefined>(undefined);
-
-  useEffect(() => {
-    const previousSignature = hierarchySeedSignatureRef.current;
-    if (previousSignature === hierarchySignature) return;
-    hierarchySeedSignatureRef.current = hierarchySignature;
-    setFlattenedNodes(flattenCodeTree(initialClusters));
-    if (previousSignature !== undefined && hasExplorerChanges) {
-      hierarchyRevisionRef.current += 1;
-      setHasExplorerChanges(false);
-      setActiveId(null);
-      toast('서버의 코드 구조가 갱신되어 저장되지 않은 소속 분류 변경을 취소했습니다.', 'info');
-    }
-  }, [hasExplorerChanges, hierarchySignature, initialClusters, toast]);
-
   const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<GroupCode | null>(null);
   // [2026-09-27 DIP B5 F11] 변경 이력 대화상자 — 열릴 때만 마운트한다.
   const [historyTarget, setHistoryTarget] = useState<CodeChangeHistoryTarget | null>(null);
-  const previousSelectedGroupIdRef = useRef<string | null | undefined>(undefined);
-  const selectedGroupSeedResolvedRef = useRef(false);
-  const selectedGroupSeedHierarchyRef = useRef<string | undefined>(undefined);
+  const [seedSync, setSeedSync] = useState<{
+    selectedGroupId: string | null | undefined;
+    hierarchySignature: string | undefined;
+    resolved: boolean;
+  }>({
+    selectedGroupId: undefined,
+    hierarchySignature: undefined,
+    resolved: false,
+  });
 
   const selectNode = (node: FlattenedCodeNode) => {
     if (node.type === 'cluster') {
@@ -552,16 +572,12 @@ export default function CommonCodeClient({
     toast(`‘${code.dtlCdNm}’(${code.dtlCd}) — ${group.cdIdNm} 그룹이 선택되었습니다.`, 'success');
   };
 
-  // Synchronize initial state from props
-  useEffect(() => {
-    const nextSelectedGroupId = selectedGroupId ?? null;
-    const previousSelectedGroupId = previousSelectedGroupIdRef.current;
-    const seedChanged = previousSelectedGroupId !== nextSelectedGroupId;
-    const hierarchyChanged = selectedGroupSeedHierarchyRef.current !== hierarchySignature;
-    if (!seedChanged && !hierarchyChanged) return;
-    previousSelectedGroupIdRef.current = nextSelectedGroupId;
-    selectedGroupSeedHierarchyRef.current = hierarchySignature;
-
+  // Synchronize initial state from props during render
+  const nextSelectedGroupId = selectedGroupId ?? null;
+  const previousSelectedGroupId = seedSync.selectedGroupId;
+  const seedChanged = previousSelectedGroupId !== nextSelectedGroupId;
+  const hierarchyChanged = seedSync.hierarchySignature !== hierarchySignature;
+  if (seedChanged || hierarchyChanged) {
     const findGroup = (groupId: string) => findGroupInClusters(initialClusters, groupId);
     const revealSelectionIfHidden = (nodeId: string) => {
       if (!searchQuery) return;
@@ -570,66 +586,68 @@ export default function CommonCodeClient({
     };
 
     if (!seedChanged) {
+      let nextResolved = seedSync.resolved;
       if (selectedGroup) {
         const currentSelection = findGroup(selectedGroup.cdId);
         if (currentSelection) {
           revealSelectionIfHidden(currentSelection.group.cdId);
           setSelectedClusterId(currentSelection.cluster.id);
           setSelectedGroup(currentSelection.group);
-          return;
+        } else {
+          if (selectedGroup.cdId === nextSelectedGroupId) nextResolved = false;
+          setSelectedClusterId(null);
+          setSelectedGroup(null);
         }
-        if (selectedGroup.cdId === nextSelectedGroupId) selectedGroupSeedResolvedRef.current = false;
-        setSelectedClusterId(null);
-        setSelectedGroup(null);
-        return;
-      }
-
-      if (selectedClusterId) {
+      } else if (selectedClusterId) {
         const clusterStillExists = initialClusters.some((cluster) => cluster.id === selectedClusterId);
         if (clusterStillExists) revealSelectionIfHidden(selectedClusterId);
         else setSelectedClusterId(null);
-        return;
+      } else if (!nextResolved && nextSelectedGroupId) {
+        const lateSelection = findGroup(nextSelectedGroupId);
+        if (lateSelection) {
+          nextResolved = true;
+          setSearchQuery('');
+          setSelectedClusterId(lateSelection.cluster.id);
+          setSelectedGroup(lateSelection.group);
+        }
       }
-
-      if (selectedGroupSeedResolvedRef.current || !nextSelectedGroupId) return;
-      const lateSelection = findGroup(nextSelectedGroupId);
-      if (!lateSelection) return;
-      selectedGroupSeedResolvedRef.current = true;
-      setSearchQuery('');
-      setSelectedClusterId(lateSelection.cluster.id);
-      setSelectedGroup(lateSelection.group);
-      return;
-    }
-
-    selectedGroupSeedResolvedRef.current = false;
-
-    if (!nextSelectedGroupId) {
-      selectedGroupSeedResolvedRef.current = true;
+      setSeedSync({
+        selectedGroupId: nextSelectedGroupId,
+        hierarchySignature,
+        resolved: nextResolved,
+      });
+    } else if (!nextSelectedGroupId) {
+      setSeedSync({
+        selectedGroupId: nextSelectedGroupId,
+        hierarchySignature,
+        resolved: true,
+      });
       if (previousSelectedGroupId !== undefined) {
         setSelectedClusterId(null);
         setSelectedGroup(null);
       }
-      return;
+    } else {
+      const seededSelection = findGroup(nextSelectedGroupId);
+      if (seededSelection) {
+        setSeedSync({
+          selectedGroupId: nextSelectedGroupId,
+          hierarchySignature,
+          resolved: true,
+        });
+        setSearchQuery('');
+        setSelectedClusterId(seededSelection.cluster.id);
+        setSelectedGroup(seededSelection.group);
+      } else {
+        setSeedSync({
+          selectedGroupId: nextSelectedGroupId,
+          hierarchySignature,
+          resolved: false,
+        });
+        setSelectedClusterId(null);
+        setSelectedGroup(null);
+      }
     }
-
-    const seededSelection = findGroup(nextSelectedGroupId);
-    if (seededSelection) {
-      selectedGroupSeedResolvedRef.current = true;
-      setSearchQuery('');
-      setSelectedClusterId(seededSelection.cluster.id);
-      setSelectedGroup(seededSelection.group);
-      return;
-    }
-    setSelectedClusterId(null);
-    setSelectedGroup(null);
-  }, [
-    hierarchySignature,
-    initialClusters,
-    selectedClusterId,
-    selectedGroup,
-    selectedGroupId,
-    searchQuery,
-  ]);
+  }
 
   // Filtered Nodes
   const visibleNodes = useMemo(

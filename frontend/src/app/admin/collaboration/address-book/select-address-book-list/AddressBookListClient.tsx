@@ -266,7 +266,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
             { label: '공개 범위(미적용)', key: 'rlsScopeCd' },
             { label: '등록일자', key: 'crtDt' },
           ]}
-          filename="주소록"
+          filename="address_book"
           className="flex h-[var(--control-h-sm)] items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-muted-foreground transition-colors hover:text-primary"
         />
       }

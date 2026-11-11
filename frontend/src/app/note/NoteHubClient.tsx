@@ -125,12 +125,7 @@ export default function NoteHubClient() {
     },
   });
 
-  const loadNotes = useCallback(async (requestedTab: NoteTab = tabRef.current) => {
-    if (requestedTab !== tabRef.current) return;
-    const requestId = ++listRequestRef.current;
-    setLoading(true);
-    setListError(null);
-    setNotes([]);
+  const runLoadNotes = useCallback(async (requestId: number, requestedTab: NoteTab) => {
     try {
       const query = searchKeyword
         ? { page, size: pageSize, searchWrd: searchKeyword }
@@ -141,6 +136,7 @@ export default function NoteHubClient() {
 
       if (requestId !== listRequestRef.current || requestedTab !== tabRef.current) return;
       if (requestedTab === 'received') void refreshUnreadCount();
+      setListError(null);
       setNotes(res.list || []);
       setTotal(typeof res.total === 'number' ? res.total : (res.list?.length ?? 0));
     } catch {
@@ -153,12 +149,23 @@ export default function NoteHubClient() {
     }
   }, [toast, page, pageSize, searchKeyword, refreshUnreadCount]);
 
+  const loadNotes = useCallback(async (requestedTab: NoteTab = tabRef.current) => {
+    if (requestedTab !== tabRef.current) return;
+    const requestId = ++listRequestRef.current;
+    setLoading(true);
+    setListError(null);
+    setNotes([]);
+    await runLoadNotes(requestId, requestedTab);
+  }, [runLoadNotes]);
+
   useEffect(() => {
-    void loadNotes(tab);
+    if (tab !== tabRef.current) return;
+    const requestId = ++listRequestRef.current;
+    void runLoadNotes(requestId, tab);
     return () => {
       listRequestRef.current += 1;
     };
-  }, [loadNotes, tab]);
+  }, [runLoadNotes, tab]);
 
   const closeDetailModal = () => {
     detailRequestRef.current += 1;
@@ -188,6 +195,9 @@ export default function NoteHubClient() {
       void loadNotes();
       return;
     }
+    setLoading(true);
+    setListError(null);
+    setNotes([]);
     // 3페이지에서 검색해 빈 화면이 되는 것을 막는다.
     if (page !== 1) setPage(1);
     setSearchKeyword(applied);
@@ -492,10 +502,23 @@ export default function NoteHubClient() {
         pagination={{
           currentPage: page,
           totalPages: Math.max(1, Math.ceil(total / pageSize)),
-          onPageChange: setPage,
+          onPageChange: (nextPage) => {
+            if (nextPage === page) return;
+            setLoading(true);
+            setListError(null);
+            setNotes([]);
+            setPage(nextPage);
+          },
           // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
           pageSize,
-          onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
+          onPageSizeChange: (size) => {
+            if (size === pageSize && page === 1) return;
+            setLoading(true);
+            setListError(null);
+            setNotes([]);
+            setPageSize(size);
+            setPage(1);
+          },
         }}
       />
       </TabPanel>

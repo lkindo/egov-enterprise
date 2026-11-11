@@ -108,7 +108,11 @@ describe('Header account navigation authorization', () => {
     testState.unreadCount = 3;
     renderHeader({ id: 'menu-reader', name: '메뉴 조회 사용자', role: 'USER', permissions: ['MENU_READ', 'NOTI_READ'], authorizationVersion: 'v2' });
 
-    expect(await screen.findByRole('button', { name: '알림, 읽지 않음 3건' })).toBeInTheDocument();
+    const bellButton = await screen.findByRole('button', { name: '알림, 읽지 않음 3건' });
+    expect(bellButton).toBeInTheDocument();
+    const unreadBadge = bellButton.querySelector('[data-slot="badge"]');
+    expect(unreadBadge).not.toBeNull();
+    expect(unreadBadge).toHaveClass('bg-destructive', 'text-destructive-foreground');
     await openAccountMenu();
     expect(screen.getByRole('button', { name: '로그아웃' })).toBeInTheDocument();
 

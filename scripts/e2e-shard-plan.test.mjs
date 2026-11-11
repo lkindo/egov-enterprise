@@ -78,7 +78,8 @@ test('audited cross-route consumers are retained in the candidate population', (
     ['admin/survey/hub/SurveyHubClient.tsx', ['journeys/online-polls.spec.ts', 'journeys/public-navigation.spec.ts']],
     ['admin/survey/components/SurveyQuestionsPanel.tsx', ['journeys/public-navigation.spec.ts']],
     ['admin/help/KnowledgeHubClient.tsx', ['journeys/help-content.spec.ts', 'journeys/community-navigation.spec.ts']],
-    ['admin/community/boards/master/BoardMasterListClient.tsx', ['journeys/help-content.spec.ts', 'journeys/authentication.spec.ts', 'journeys/authorization.spec.ts']],
+    ['admin/community/boards/master/BoardMasterListClient.tsx', ['journeys/help-content.spec.ts', 'journeys/authentication.spec.ts', 'journeys/authorization.spec.ts', 'journeys/global-search.spec.ts', 'journeys/scraps.spec.ts']],
+    ['admin/operation/rewards/page.tsx', ['journeys/rewards.spec.ts', 'journeys/global-search.spec.ts']],
     ['approvals/ApprovalHubClient.tsx', ['journeys/approvals.spec.ts', 'journeys/public-navigation.spec.ts']],
   ];
   for (const [file, owners] of cases) {
@@ -132,8 +133,9 @@ test('immutable PR merge selects owners and redistributes exactly those files ov
   const input = isolatedPullRequest(t);
   const selected = resolveCiImpactPlan(input);
   assert.equal(selected.mode, 'selected', selected.reasons.join('; '));
-  assert.equal(selected.selectedSpecs.length, 11);
+  assert.equal(selected.selectedSpecs.length, 12);
   assert.ok(selected.selectedSpecs.includes('journeys/rewards.spec.ts'));
+  assert.ok(selected.selectedSpecs.includes('journeys/global-search.spec.ts'));
   assert.ok(selected.selectedSpecs.includes('quality/mfa-accessibility.spec.ts'));
   const shards = buildDurationBalancedPlan(loadDurationProfile(), 2, selected.selectedSpecs);
   assert.deepEqual(shards.flatMap(shard => shard.specs).sort(), selected.selectedSpecs);
@@ -169,7 +171,8 @@ test('Actions merge SHA selects when the API mergeability field is null, absent 
     const selected = resolveCiImpactPlan(input);
     assert.equal(selected.mode, 'selected', selected.reasons.join('; '));
     assert.equal(selected.checkoutSha, input.githubSha);
-    assert.equal(selected.selectedSpecs.length, 11);
+    assert.equal(selected.selectedSpecs.length, 12);
+    assert.ok(selected.selectedSpecs.includes('journeys/global-search.spec.ts'));
     assert.ok(selected.selectedSpecs.includes('quality/mfa-accessibility.spec.ts'));
   }
 });
@@ -315,7 +318,7 @@ test('the default projects retain all measured CI specs while the frozen serial 
   const inventory = partitionPlaywrightSpecs([...ciSpecs, manualSpec], repositorySpecOwnership());
   assert.deepEqual(inventory, { ciSpecs, manualSpecs: [manualSpec] });
   assert.deepEqual(discoverSpecs(), ciSpecs);
-  assert.equal(ciSpecs.length, 50); // ADR-0049 removes only the retired workflow demo spec.
+  assert.equal(ciSpecs.length, 51); // ADR-0049 baseline (50) + journeys/notes.spec.ts.
 });
 
 test('new ordinary specs still require measured durations and unowned or ambiguous specs are red', () => {

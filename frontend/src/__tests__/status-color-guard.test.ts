@@ -58,7 +58,6 @@ const BASELINE_BY_FILE: Record<string, number> = {
   'src/app/admin/survey/stats/SurveyStatsClient.tsx': 7,
   'src/app/admin/system/logs/user/SystemLogsUserClient.tsx': 3,
   'src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx': 3,
-  'src/app/components/layout/header-notifications.tsx': 1,
   'src/app/components/ui/confirm-modal.tsx': 6,
   'src/app/components/ui/standard-form.tsx': 1,
   'src/app/components/ui/status-displays.tsx': 13,

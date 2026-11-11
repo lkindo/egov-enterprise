@@ -366,6 +366,24 @@ describe('address-book form validation contract', () => {
     expect(remove).not.toBeDisabled();
     expect(mocks.push).not.toHaveBeenCalled();
   });
+
+  it('상세 삭제 성공 직후 언마운트 전에는 재조회(404)하지 않고 언마운트 시 상세 캐시를 비운다', async () => {
+    const user = userEvent.setup();
+    const view = renderDetail();
+    await screen.findByDisplayValue('팀 주소록');
+    expect(mocks.getAddressBook).toHaveBeenCalledTimes(1);
+
+    mocks.getAddressBook.mockImplementation(async () => {
+      throw { response: { status: 404 } };
+    });
+    await user.click(screen.getByRole('button', { name: '팀 주소록 주소록 삭제' }));
+
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith('/admin/collaboration/address-book/select-address-book-list'));
+    expect(mocks.getAddressBook).toHaveBeenCalledTimes(1);
+
+    view.unmount();
+    expect(view.queryClient.getQueryData(['address-book-detail', 7])).toBeUndefined();
+  });
 });
 
 describe('주소록 구성원 추가·수정·삭제 (DIP B5 F8)', () => {
@@ -473,6 +491,80 @@ describe('주소록 구성원 추가·수정·삭제 (DIP B5 F8)', () => {
     await act(async () => rejectUpdate(new Error('Network Error')));
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('구성원을 빼지 못했습니다.', 'error'));
     expect(screen.getByRole('button', { name: '을 삭제' })).toBeEnabled();
+  });
+
+  it('구성원을 저장한 뒤 작성 중이던 명칭을 이어서 저장하면 갱신된 editToken을 보내 409 자기 충돌을 일으키지 않는다', async () => {
+    const user = userEvent.setup();
+    renderDetail();
+    const nameInput = await screen.findByDisplayValue('팀 주소록');
+    await user.clear(nameInput);
+    await user.type(nameInput, '미저장 수정 명칭');
+
+    const refreshedAfterMemberAdd = {
+      adbkSn: 7,
+      adbkNm: '팀 주소록',
+      rlsScopeCd: 'G',
+      editToken: LATEST_EDIT_TOKEN,
+      adbkMan: [...members, { adbkMbrSn: 33, nm: '병', emlAddr: '', mblTelno: '01055556666' }],
+    };
+    mocks.getAddressBook.mockResolvedValueOnce(refreshedAfterMemberAdd);
+
+    await user.click(screen.getByRole('button', { name: '구성원 추가' }));
+    const dialog = await screen.findByRole('dialog', { name: '구성원 추가' });
+    await user.type(within(dialog).getByRole('textbox', { name: /성명/ }), '병');
+    await user.type(within(dialog).getByRole('textbox', { name: '휴대전화' }), '010-5555-6666');
+    await user.click(within(dialog).getByRole('button', { name: '구성원 추가' }));
+
+    await screen.findByText('병');
+    expect(nameInput).toHaveValue('미저장 수정 명칭');
+
+    await user.click(screen.getByRole('button', { name: /저장$/ }));
+    await waitFor(() => expect(mocks.updateAddressBook).toHaveBeenCalledTimes(2));
+    expect(mocks.updateAddressBook).toHaveBeenLastCalledWith(7, {
+      adbkNm: '미저장 수정 명칭',
+      rlsScopeCd: 'G',
+      editToken: LATEST_EDIT_TOKEN,
+    });
+  });
+
+  it('미저장 명칭 초안이 있는 동안 서버 명칭이 바뀌면 구성원 갱신 후 editToken을 자동 채택하지 않고 명칭 충돌을 표시한다', async () => {
+    const user = userEvent.setup();
+    renderDetail();
+    const nameInput = await screen.findByDisplayValue('팀 주소록');
+    await user.clear(nameInput);
+    await user.type(nameInput, '내 초안 명칭');
+
+    const concurrentlyRenamed = {
+      adbkSn: 7,
+      adbkNm: '다른 탭이 바꾼 명칭',
+      rlsScopeCd: 'G',
+      editToken: LATEST_EDIT_TOKEN,
+      adbkMan: [...members, { adbkMbrSn: 33, nm: '병', emlAddr: '', mblTelno: '01055556666' }],
+    };
+    mocks.getAddressBook.mockResolvedValueOnce(concurrentlyRenamed);
+
+    await user.click(screen.getByRole('button', { name: '구성원 추가' }));
+    const dialog = await screen.findByRole('dialog', { name: '구성원 추가' });
+    await user.type(within(dialog).getByRole('textbox', { name: /성명/ }), '병');
+    await user.type(within(dialog).getByRole('textbox', { name: '휴대전화' }), '010-5555-6666');
+    await user.click(within(dialog).getByRole('button', { name: '구성원 추가' }));
+
+    await screen.findByText('병');
+    const conflict = await screen.findByRole('alert', { name: '다른 변경과 충돌했습니다' });
+    expect(within(conflict).getByText('서버 주소록 명칭: 다른 탭이 바꾼 명칭')).toBeVisible();
+    expect(within(conflict).getByText('내 입력 명칭: 내 초안 명칭')).toBeVisible();
+    expect(nameInput).toHaveValue('내 초안 명칭');
+    expect(screen.getByRole('button', { name: /저장$/ })).toBeDisabled();
+    expect(mocks.updateAddressBook).toHaveBeenCalledTimes(1);
+
+    await user.click(within(conflict).getByRole('button', { name: '최신 내용에 내 변경 반영' }));
+    await user.click(screen.getByRole('button', { name: /저장$/ }));
+    await waitFor(() => expect(mocks.updateAddressBook).toHaveBeenCalledTimes(2));
+    expect(mocks.updateAddressBook).toHaveBeenLastCalledWith(7, {
+      adbkNm: '내 초안 명칭',
+      rlsScopeCd: 'G',
+      editToken: LATEST_EDIT_TOKEN,
+    });
   });
 });
 

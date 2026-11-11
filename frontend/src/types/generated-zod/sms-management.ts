@@ -112,7 +112,6 @@ export const SmsDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   pendingCnt: z.number().int().optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  recipients: z.array(z.lazy(() => SmsRecptnDtoResponseSchema)).min(1).max(100),
   searchCondition: z.string().optional().nullable(),
   searchWrd: z.string().optional().nullable(),
 }))();

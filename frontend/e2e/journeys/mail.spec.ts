@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { expect,test } from '../fixtures/browser-test';
+import { trackApiRequests } from '../fixtures/hydration';
 import { MailPage } from '../pages/MailPage';
 test.describe('Enterprise Mail System E2E', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
@@ -113,5 +114,105 @@ test.describe('Enterprise Mail System E2E', () => {
         await page.getByTestId('mail-send-btn').click();
         await page.waitForURL(/\/mail-history/, { timeout: 15000 });
         await mailPage.verifyMailInHistory(subject);
+    });
+
+    test('수신자 찾기에서 주소록 명함을 골라 발송하고 발신 이력을 새로고침해 조회·삭제한다', async ({ page, adminRequest }) => {
+        const stamp = `${Date.now()}`;
+        const bookName = `E2E 메일주소록 ${stamp}`;
+        const cardName = `명함수신자_${stamp}`;
+        const cardEmail = `card-${stamp}@example.com`;
+        const cardMailSubject = `ADBK_MAIL ${stamp}`;
+        const laterMailSubject = `REFRESH_MAIL ${stamp}`;
+        let adbkSn: number | undefined;
+        const tracker = trackApiRequests(page);
+
+        try {
+            const createdBook = await adminRequest.post('/api/v1/address-books', {
+                data: {
+                    adbkNm: bookName,
+                    rlsScopeCd: 'P',
+                    adbkMan: [{ nm: cardName, emlAddr: cardEmail, mblTelno: '01022223333' }],
+                },
+            });
+            expect(createdBook.status()).toBe(201);
+            adbkSn = (await createdBook.json()).data as number;
+
+            await mailPage.navigateToSend();
+            await page.getByTestId('mail-recipient-picker-btn').click();
+            const picker = page.getByRole('dialog', { name: '수신자 찾기' });
+            await expect(picker).toBeVisible();
+
+            const [booksRes] = await Promise.all([
+                page.waitForResponse(res => new URL(res.url()).pathname === '/api/v1/address-books'
+                    && res.request().method() === 'GET'),
+                picker.getByRole('tab', { name: '주소록', exact: true }).click(),
+            ]);
+            expect(booksRes.status()).toBe(200);
+
+            const bookSelect = picker.locator('#recipient-address-book');
+            await expect(bookSelect).toBeVisible();
+            const [contactsRes] = await Promise.all([
+                page.waitForResponse(res => new URL(res.url()).pathname === `/api/v1/address-books/${adbkSn}`
+                    && res.request().method() === 'GET'),
+                bookSelect.selectOption(String(adbkSn)),
+            ]);
+            expect(contactsRes.status()).toBe(200);
+
+            await picker.getByRole('checkbox', { name: `${cardName} 선택`, exact: true }).check();
+            await picker.getByRole('button', { name: /선택 추가/ }).click();
+            await expect(picker).toBeHidden();
+
+            const badge = page.getByTestId('selected-recipient-badge').filter({ hasText: cardName });
+            await expect(badge).toBeVisible();
+            await expect(badge).toHaveAttribute('data-recipient-kind', 'contact');
+
+            await page.getByTestId('mail-subject-input').fill(cardMailSubject);
+            await page.getByTestId('mail-content-textarea').fill('주소록 명함 수신자 발송 검증');
+            await page.getByTestId('mail-send-btn').click();
+            await page.waitForURL(/\/mail-history/, { timeout: 15000 });
+            await mailPage.verifyMailInHistory(cardMailSubject);
+
+            const laterSent = await adminRequest.post('/api/v1/mails', {
+                data: {
+                    recipients: [{ emlAddr: 'later-refresh@example.com' }],
+                    sj: laterMailSubject,
+                    emailCn: '새로고침 검증 본문',
+                },
+            });
+            expect(laterSent.ok()).toBe(true);
+
+            const searchInput = page.getByRole('textbox', { name: '메일 검색' });
+            await searchInput.clear();
+            await searchInput.fill(laterMailSubject);
+            const [refreshedRes] = await Promise.all([
+                page.waitForResponse(res => new URL(res.url()).pathname === '/api/v1/mails'
+                    && res.request().method() === 'GET'),
+                page.getByRole('button', { name: '발신 이력 새로고침', exact: true }).click(),
+            ]);
+            expect(refreshedRes.status()).toBe(200);
+            await mailPage.verifyMailInHistory(laterMailSubject);
+            await expect(page.getByTestId('mail-item').filter({ hasText: cardMailSubject })).toHaveCount(0);
+
+            await mailPage.deleteMail(laterMailSubject);
+            await mailPage.deleteMail(cardMailSubject);
+            await tracker.settled(page.locator('body'));
+        } finally {
+            try {
+                await page.goto('about:blank');
+            } finally {
+                if (adbkSn !== undefined) {
+                    await adminRequest.delete(`/api/v1/address-books/${adbkSn}`);
+                }
+                for (const kw of [cardMailSubject, laterMailSubject]) {
+                    const res = await adminRequest.get(`/api/v1/mails?searchCondition=1&searchKeyword=${encodeURIComponent(kw)}&page=1&size=20`);
+                    if (res.ok()) {
+                        const rows = ((await res.json()).data?.list ?? []) as Array<{ emlDsptchSn?: number }>;
+                        for (const row of rows) {
+                            if (row.emlDsptchSn) await adminRequest.delete(`/api/v1/mails/${row.emlDsptchSn}`);
+                        }
+                    }
+                }
+            }
+        }
     });
 });

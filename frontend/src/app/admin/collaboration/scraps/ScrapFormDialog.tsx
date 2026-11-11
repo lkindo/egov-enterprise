@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,8 +14,8 @@ import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { useDirtyCloseGuard } from '@/hooks/useDirtyCloseGuard';
 import { scrapMutationOptions } from '@/queries/scrap-query-options';
 import {
+  createScrapEditFormSchema,
   scrapCreateFormSchema,
-  scrapEditFormSchema,
   scrapValidationLabels,
 } from './scrap-form-validation';
 
@@ -63,7 +63,11 @@ export function ScrapFormDialog({
   const submitPendingRef = useRef(false);
 
   const isEdit = mode === 'edit';
-  const validation = useManualFormValidation(isEdit ? scrapEditFormSchema : scrapCreateFormSchema, {
+  const formSchema = useMemo(
+    () => (isEdit ? createScrapEditFormSchema(initialValues?.scrapUrl) : scrapCreateFormSchema),
+    [isEdit, initialValues?.scrapUrl],
+  );
+  const validation = useManualFormValidation(formSchema, {
     labels: scrapValidationLabels,
   });
   const createMutation = useMutation(scrapMutationOptions.create(queryClient));

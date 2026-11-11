@@ -7,6 +7,7 @@ import { forwardedClientIpHeaders } from '@/lib/api/forwarded-client-ip';
 import { assertCurrentAuthorizationRequest, assertRequestAllowedWhileSignedOut, getAuthorizationRequestEpoch, isSessionTransitionPending, isSignedOut, notifyAuthorizationChanged } from '@/lib/auth/authorization-state';
 import { isCanceledRequest } from '@/lib/safe-error-log';
 import { loginReturnPath } from '@/lib/auth/login-return-path';
+import { hardNavigateToInternalRoute } from '@/lib/navigation/internal-route';
 
 /*
  * 요청 단위 옵션 확장.
@@ -250,7 +251,11 @@ axiosInstance.interceptors.response.use(
         if (typeof window !== 'undefined' && !superseded) {
           // 세션 만료 시 로그인 화면으로 포워딩
           // [결정 17] 경로와 구조 키(게시판·글·탭·쪽)만 넘겨, 다시 로그인하면 보던 자리로 돌아간다.
-          window.location.href = `/login?expired=true&redirect=${encodeURIComponent(loginReturnPath(window.location.pathname, window.location.search))}`;
+          hardNavigateToInternalRoute(
+            `/login?expired=true&redirect=${encodeURIComponent(loginReturnPath(window.location.pathname, window.location.search))}`,
+            window.location,
+            '/login?expired=true',
+          );
         }
 
         return Promise.reject(finalReissueError);

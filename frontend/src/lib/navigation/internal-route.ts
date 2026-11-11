@@ -87,3 +87,26 @@ export function normalizeInternalRoute(rawRoute?: string | null): string | null 
 export function resolveMenuInternalRoute(source: MenuRouteSource): string | null {
   return source.modernRoute ? normalizeInternalRoute(source.modernRoute) : null;
 }
+
+/**
+ * 인증 만료·오류 바운더리 복구처럼 SPA 상태와 메모리 캐시를 비워야 하는
+ * 의도된 전체 페이지 재적재(hard navigation) 전용 동일 출처 이동 경계다.
+ */
+export function hardNavigateToInternalRoute(
+  rawRoute: string,
+  locationTarget: { href: string; origin?: string } = window.location,
+  fallbackRoute: '/' | '/login' | '/login?expired=true' = '/',
+): void {
+  const normalized = rawRoute.startsWith('/') ? normalizeInternalRoute(rawRoute) : null;
+  const safePath = normalized ?? fallbackRoute;
+  const hasConcreteOrigin = Boolean(locationTarget.origin && locationTarget.origin !== 'null');
+  const baseOrigin = hasConcreteOrigin ? locationTarget.origin! : INTERNAL_ROUTE_BASE;
+  const resolved = new URL(safePath, baseOrigin);
+  if (resolved.origin !== baseOrigin) {
+    locationTarget.href = hasConcreteOrigin ? `${baseOrigin}/` : '/';
+    return;
+  }
+  locationTarget.href = hasConcreteOrigin
+    ? resolved.href
+    : `${resolved.pathname}${resolved.search}${resolved.hash}`;
+}

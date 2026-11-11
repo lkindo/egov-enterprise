@@ -1,4 +1,5 @@
 import { expect,test } from '../fixtures/browser-test';
+import { trackApiRequests } from '../fixtures/hydration';
 import { getAdminBearerToken } from '../utils/admin-token';
 test.describe('Operational Extension & Uncovered Modules', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
@@ -50,5 +51,109 @@ test.describe('Operational Extension & Uncovered Modules', () => {
         //   부분 일치 getByText 는 그 문구에 걸려 count 1 이었다(CI run 33980097374) — 이름 셀은 정확 일치로만 센다.
         await expect(operationalPage.page.getByText(/에 대한 검색 결과가 없습니다/)).toBeVisible();
         await expect(operationalPage.page.getByText(renamed, { exact: true })).toHaveCount(0);
+    });
+
+    test('포상 기록을 화면에서 등록하고 새로고침과 페이지 이동으로 목록을 확인한다', async ({ operationalPage, page, adminRequest }) => {
+        const tag = `E2E_RWD_${Date.now()}`;
+        const tracker = trackApiRequests(page);
+
+        try {
+            const meRes = await adminRequest.get('/api/v1/users/me');
+            expect(meRes.status()).toBe(200);
+            const me = (await meRes.json()).data as { esntlId: string; userNm: string };
+            expect(me.userNm.length >= 2).toBe(true);
+
+            for (let idx = 1; idx <= 10; idx++) {
+                const seeded = await adminRequest.post('/api/v1/admin/operation/rewards', {
+                    data: {
+                        rwardNm: `${tag}_시드_${String(idx).padStart(2, '0')}`,
+                        rwardwnrId: me.esntlId,
+                        rwardCode: 'R01',
+                        rwardDe: '20261110',
+                        pblenCn: `포상 페이징 시드 ${idx}`,
+                    },
+                });
+                expect(seeded.ok()).toBe(true);
+            }
+
+            await operationalPage.gotoRewards();
+            await page.getByRole('button', { name: '포상 기록 등록', exact: true }).click();
+            const createModal = page.getByRole('dialog', { name: '포상 기록 등록', exact: true });
+            await expect(createModal).toBeVisible();
+
+            const uiCreatedName = `${tag}_UI등록`;
+            await createModal.getByRole('textbox', { name: /^포상 명칭/ }).fill(uiCreatedName);
+            await createModal.getByRole('button', { name: '수상자 선택', exact: true }).click();
+
+            const picker = page.getByRole('dialog', { name: '수상자 검색 및 선택', exact: true });
+            await expect(picker).toBeVisible();
+            await picker.getByLabel('사용자 검색어 입력').fill(me.userNm);
+            await picker.getByRole('button', { name: '검색' }).click();
+            await picker.getByRole('button', { name: `사용자 선택: ${me.userNm}`, exact: true }).first().click();
+            await expect(picker).toBeHidden();
+
+            await createModal.getByRole('textbox', { name: /^포상 코드/ }).fill('R02');
+            await createModal.getByRole('textbox', { name: /^포상 일자/ }).fill('20261111');
+            await createModal.getByRole('textbox', { name: /^공적 내용/ }).fill('UI 포상 기록 등록 왕복 검증');
+
+            const [createdRes] = await Promise.all([
+                page.waitForResponse(res => new URL(res.url()).pathname === '/api/v1/admin/operation/rewards'
+                    && res.request().method() === 'POST'),
+                createModal.getByRole('button', { name: '최종 등록', exact: true }).click(),
+            ]);
+            expect(createdRes.ok()).toBe(true);
+            await expect(createModal).toBeHidden();
+
+            await operationalPage.searchRewards(tag);
+            await expect(page.getByTestId('work-list-toolbar')).toContainText('총 11건');
+            await expect(page.locator('tbody tr')).toHaveCount(10);
+
+            const [page2Res] = await Promise.all([
+                page.waitForResponse(res => new URL(res.url()).pathname === '/api/v1/admin/operation/rewards'
+                    && res.request().method() === 'GET'),
+                page.getByRole('button', { name: '다음 페이지', exact: true }).click(),
+            ]);
+            expect(page2Res.status()).toBe(200);
+            await expect(page.locator('tbody tr')).toHaveCount(1);
+
+            await page.getByRole('button', { name: '이전 페이지', exact: true }).click();
+            await expect(page.locator('tbody tr')).toHaveCount(10);
+
+            const refreshedName = `${tag}_새로고침`;
+            const extraSeed = await adminRequest.post('/api/v1/admin/operation/rewards', {
+                data: {
+                    rwardNm: refreshedName,
+                    rwardwnrId: me.esntlId,
+                    rwardCode: 'R03',
+                    rwardDe: '20261111',
+                    pblenCn: '포상 새로고침 확인',
+                },
+            });
+            expect(extraSeed.ok()).toBe(true);
+
+            const [refreshedRes] = await Promise.all([
+                page.waitForResponse(res => new URL(res.url()).pathname === '/api/v1/admin/operation/rewards'
+                    && res.request().method() === 'GET'),
+                page.getByRole('button', { name: '포상 목록 새로고침', exact: true }).click(),
+            ]);
+            expect(refreshedRes.status()).toBe(200);
+            await expect(page.getByTestId('work-list-toolbar')).toContainText('총 12건');
+            await expect(page.getByText(refreshedName, { exact: true })).toBeVisible();
+            await tracker.settled(page.getByRole('button', { name: '포상 목록 새로고침', exact: true }));
+        } finally {
+            try {
+                await page.goto('about:blank');
+            } finally {
+                const listed = await adminRequest.get(`/api/v1/admin/operation/rewards?name=${encodeURIComponent(tag)}&page=1&size=50`);
+                if (listed.ok()) {
+                    const rows = ((await listed.json()).data?.list ?? []) as Array<{ rwrdSn?: number }>;
+                    for (const row of rows) {
+                        if (row.rwrdSn !== undefined) {
+                            await adminRequest.delete(`/api/v1/admin/operation/rewards/${row.rwrdSn}`);
+                        }
+                    }
+                }
+            }
+        }
     });
 });

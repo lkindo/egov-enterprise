@@ -44805,12 +44805,13 @@
           },
           "recipients": {
             "type": "array",
-            "description": "수신자 목록",
+            "description": "수신자 목록 — 발송 요청 전용(응답에는 실리지 않는다)",
             "items": {
               "$ref": "#/components/schemas/SmsRecptnDto"
             },
             "maxItems": 100,
-            "minItems": 1
+            "minItems": 1,
+            "writeOnly": true
           },
           "searchCondition": {
             "type": "string",
