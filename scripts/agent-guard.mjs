@@ -176,11 +176,15 @@ const collidesWithE2e = (path) => path !== null && path.split(/[\\/]/).some((par
  * 자리에서 읽는다.
  */
 function worktreeAddArgs(code, raw) {
-  // PowerShell 의 출력 대입(`$result = git …`·`$null = git …`)은 우변이 명령이다(Codex 60차).
+  // PowerShell 의 출력 대입(`$result = git …`·`$null=git …`·`$x =git …`)은 우변이 명령이다 — 공백 유무와 상관없다(Codex 60·61차).
   const all = alignedWords(code, raw);
   const first = commandAt(all.map((word) => word.code));
-  if (/^\$[\w:]+$/u.test(all[first]?.code ?? '') && all[first + 1]?.code === '=') {
-    const cut = all[first + 1].end;
+  const target = all[first]?.code ?? '';
+  const joined = /^\$[\w:]+=/u.exec(target);
+  const spaced = /^\$[\w:]+$/u.test(target) && all[first + 1]?.code.startsWith('=') ? all[first + 1] : null;
+  if (joined || spaced) {
+    const word = joined ? all[first] : spaced;
+    const cut = word.end - word.code.length + (joined ? joined[0].length : 1);
     return worktreeAddArgs(code.slice(cut), raw.slice(cut));
   }
   const invoked = invokedCommand(code, raw);
@@ -1495,17 +1499,20 @@ export function readHookInput(agent, input) {
   // 이어 한 명령으로 돌리고, bash 계열은 다음 한 칸만 스크립트다. 스크립트 파일(`bash x.sh -c …`) 뒤의 칸은 그 스크립트의 인자다(Codex 60차).
   const shell = Array.isArray(raw) ? /(^|[\\/])(powershell|pwsh|bash|sh|zsh|cmd)(\.exe)?$/i.exec(raw[0] ?? '')?.[2]?.toLowerCase() : null;
   const shellFlag = /^(-Command|-c|-lc|\/c)$/i;
+  // 옵션 접두사는 셸마다 다르다 — bash 계열의 `/…` 는 스크립트 경로다(Codex 61차).
+  const optionPrefix = shell === 'cmd' ? /^\// : ['bash', 'sh', 'zsh'].includes(shell) ? /^[-+]/ : /^-/;
   let flagAt = -1;
   for (let index = 1; shell && index < raw.length; index += 1) {
     if (shellFlag.test(raw[index])) { flagAt = index; break; }
-    if (!/^[-/]/.test(raw[index] ?? '')) break;
+    if (!optionPrefix.test(raw[index] ?? '')) break;
   }
   const script = flagAt > 0 && flagAt + 1 < raw.length
     ? (['bash', 'sh', 'zsh'].includes(shell) ? raw[flagAt + 1] : raw.slice(flagAt + 1).join(' '))
     : shell && raw.length >= 3 && shellFlag.test(raw.at(-2)) ? raw.at(-1) : null;
   const command = Array.isArray(raw) ? (script ?? raw.join(' ')) : raw;
   if (typeof command !== 'string') return null;
-  return Array.isArray(raw) && script === null ? { command, cwd: input.cwd ?? process.cwd(), argv: raw } : { command, cwd: input.cwd ?? process.cwd() };
+  // 첫 칸이 셸이면 래퍼를 풀지 못했어도 셸 없는 argv 가 아니다 — 이은 문자열의 판정(셸 래퍼 재귀)을 그대로 둔다(Codex 61차).
+  return Array.isArray(raw) && !shell ? { command, cwd: input.cwd ?? process.cwd(), argv: raw } : { command, cwd: input.cwd ?? process.cwd() };
 }
 
 /**

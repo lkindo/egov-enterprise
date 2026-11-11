@@ -271,7 +271,9 @@ const CASES = {
       // 2026-11-11 Codex 60차 반례: 블록 안 명령 뒤의 `;`·`|` 와 PowerShell 출력 대입.
       'if (-not (Test-Path D:\\wt-review)) { git worktree add --detach D:\\wt-review HEAD; Write-Output done }',
       'if ($true) { git worktree add D:\\wt-x HEAD | Out-Null }', '$result = git worktree add --detach D:\\wt-review HEAD',
-      '$null = git worktree add D:\\wt-x HEAD'],
+      '$null = git worktree add D:\\wt-x HEAD',
+      // 2026-11-11 Codex 61차 반례: 공백 없는 출력 대입.
+      '$null=git worktree add --detach D:\\wt-review HEAD', '$x =git worktree add D:\\wt-x HEAD'],
     pass: ['git worktree list --porcelain', 'git worktree prune -v', 'git worktree remove D:\\wt-x',
       'git commit --only -m "git worktree add D:\\wt-egov-codex-x 는 묻는다" -- a.md', 'echo "git worktree add --detach D:\\wt-egov-codex-x HEAD"',
       'rg -n "git worktree add" docs',
@@ -279,7 +281,7 @@ const CASES = {
       "git commit --only -m 'fix: handle \\ in worktree add commands' -- scripts/agent-guard.mjs",
       'git commit --only -m "say \\"worktree add\\" here" -- a.md',
       'if (Test-Path D:\\wt-review) { git worktree list }', "Write-Output '{ git worktree add D:\\wt-x HEAD }'",
-      '$list = git worktree list'],
+      '$list = git worktree list', '$list=git worktree list'],
   },
 };
 
@@ -355,6 +357,10 @@ test('git-worktree-add: Codex 는 실행 규칙이 확실히 잡는 명령만 �
   // 2026-11-11 Codex 60차 반례: 스크립트 파일 뒤의 -c 는 그 스크립트의 인자다. main 의 끝에서 둘째 플래그 인식은 그대로다.
   assert.ok(!argvVerdict(['bash', 'scripts/render-example.sh', '-c', 'git push --force', '--dry-run']).includes('git-force-push'));
   assert.ok(argvVerdict(['powershell.exe', '-ExecutionPolicy', 'Bypass', '-Command', 'git worktree add D:\\wt-x HEAD']).includes('git-worktree-add'));
+  // 2026-11-11 Codex 61차 반례: 풀지 못한 셸 래퍼를 셸 없는 argv 로 보면 main 이 내던 거부까지 지웠다. bash 의 `/…` 는 스크립트 경로다.
+  const unparsed = argvVerdict(['powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'git', 'worktree', 'add', '--detach', 'D:/wt-contracts', 'HEAD']);
+  assert.ok(unparsed.includes('worktree-name-collides-with-e2e') && unparsed.includes('git-worktree-add'), '풀지 못한 셸 래퍼도 main 처럼 판정한다');
+  assert.ok(!argvVerdict(['bash', '/d/project/scripts/render-example.sh', '-c', 'git push --force', '--dry-run']).includes('git-force-push'));
   // 스크립트 뒤에 칸이 더 있어도 셸 래퍼다 — PowerShell 은 남은 칸을 이어 돌리므로 그 안의 worktree add 를 놓치면 안 된다.
   assert.ok(argvVerdict(['pwsh', '-Command', 'git worktree add D:\\wt-x HEAD', 'extra']).includes('git-worktree-add'));
   assert.ok(argvVerdict(['powershell.exe', '-NoProfile', '-Command', 'git', 'worktree', 'add', 'D:\\wt-x', 'HEAD']).includes('git-worktree-add'));
