@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 
-import { CODEX_RULES_PATH, RULES, codexPromptCovers, evaluate, isPersistentWorktree, readHookInput, renderCodexRules, renderVerdict } from './agent-guard.mjs';
+import { CODEX_RULES_PATH, RULES, codexPolicyArgv, codexPromptCovers, evaluate, readHookInput, renderCodexRules, renderVerdict } from './agent-guard.mjs';
 
 const repoRoot = resolve(import.meta.dirname, '..');
 const GUARD = join(repoRoot, 'scripts', 'agent-guard.mjs');
@@ -248,70 +248,71 @@ const CASES = {
     pass: ['git worktree add D:\\wt-board -b fix/x origin/main', 'git worktree list', 'git worktree add D:\\wt-setup -b fix/x origin/main'],
   },
   // 2026-11-06~11-10 Codex 한 세션이 고정 트리(D:\wt-egov-codex)가 비어 있는데도 실제로 실행한 명령 셋 — 셋째는 경로를 변수로 넘겼다.
-  'worktree-add-outside-persistent': {
+  // 고정 트리도 묻는다: 경로 예외는 셸마다 다른 해석(`-C` 누적·이스케이프·변수) 때문에 빈틈이 됐다(Codex 54·55차).
+  'git-worktree-add': {
     hit: ['git worktree add -b feat/requirements-ai-document-pipeline-20261106 D:\\wt-egov-codex-ai-intake origin/main',
       'git worktree add --detach D:\\wt-egov-codex-intake-resume-ui 706926a7bdebc64205dc4d140148e26818fe7852',
       "$taskEvidenceTree = 'D:\\wt-egov-codex-discovery-evidence-20261110'\nif (Test-Path -LiteralPath $taskEvidenceTree) { throw 'EVIDENCE_WORKTREE_ALREADY_EXISTS' }\ngit worktree add --detach $taskEvidenceTree HEAD",
       'git -C D:\\project\\egov-enterprise worktree add "D:\\wt-egov-claude-hotfix" -b fix/x origin/main', 'git worktree add ../wt-egov-codex-x origin/main',
-      'git worktree add --detach D:\\wt-egov-board origin/main',
-      // 2026-11-11 Codex 54차 반례: 따옴표 안 공백·잠금 사유 속 이름·변수 보간·다른 부모의 같은 이름·`-C add` 를 고정 트리로 읽었다.
-      'git worktree add --detach "D:\\wt-egov-codex extra" HEAD',
-      'git worktree add --lock --reason "maintenance wt-egov-codex scheduled" --detach D:\\wt-egov-codex-task HEAD',
-      "$project = 'egov-codex-task'\ngit worktree add --detach \"D:\\wt-${project}-codex\" HEAD",
-      'git worktree add --detach D:\\scratch-a\\wt-egov-codex HEAD', 'git -C add worktree add --detach D:\\wt-egov-codex-task HEAD',
-      'git worktree add --detach %TREE% HEAD'],
-    pass: ['git worktree add --detach D:\\wt-egov-codex origin/main', 'git worktree add --detach D:\\wt-egov-claude\\ origin/main',
-      'git worktree add --detach "D:\\wt-egov-gemini" origin/main', 'git worktree add --detach d:/WT-EGOV-CODEX origin/main',
-      'git worktree list --porcelain', 'git worktree prune -v',
+      'git worktree add --detach D:\\wt-egov-codex origin/main', 'git worktree add --detach "D:\\wt-egov-codex extra" HEAD',
+      'git -C frontend -C src worktree add --detach ..\\..\\wt-egov-codex HEAD', 'git "-C" . worktree add --detach D:\\wt-egov-codex-task HEAD',
+      'git -C . worktree add --detach D:/wt-egov-codex\\ task HEAD', 'git -C add worktree add --detach D:\\wt-egov-codex-task HEAD',
+      'git worktree add --detach `\n  D:\\wt-egov-codex origin/main', '"C:\\Program Files\\Git\\cmd\\git.exe" worktree add D:\\wt-x HEAD'],
+    pass: ['git worktree list --porcelain', 'git worktree prune -v', 'git worktree remove D:\\wt-x',
       'git commit --only -m "git worktree add D:\\wt-egov-codex-x 는 묻는다" -- a.md', 'echo "git worktree add --detach D:\\wt-egov-codex-x HEAD"',
-      // 2026-11-11 Codex 54차 반례: 줄을 합치기 전 판정이 줄이음 표식을 경로로 읽어 정상 고정 트리 생성을 물었다.
-      'git worktree add --detach `\n  D:\\wt-egov-codex origin/main', 'git worktree add --detach \\\n  D:/wt-egov-codex origin/main',
-      // 따옴표 친 값은 한 단어다 — 공백이 든 잠금 사유를 경로로 잘라 읽으면 정상 고정 트리 생성을 묻는다.
-      'git worktree add --lock --reason "hold for review" --detach D:\\wt-egov-codex origin/main'],
+      'rg -n "git worktree add" docs'],
   },
 };
 
-test('worktree-add-outside-persistent: 고정 트리는 SOP 표의 전체 경로로만 인정한다 — 표를 옮기면 이전 위치는 묻는다', () => {
-  const target = (value) => ({ value, text: value });
-  assert.equal(isPersistentWorktree(target('D:\\wt-egov-codex'), repoRoot, ['D:\\wt-egov-codex']), true);
-  assert.equal(isPersistentWorktree(target('D:\\wt-egov-codex'), repoRoot, ['E:\\work\\wt-egov-codex']), false, '배정을 옮기면 이전 경로는 고정 트리가 아니다');
-  assert.equal(isPersistentWorktree(target('D:\\scratch\\wt-egov-codex'), repoRoot, ['D:\\wt-egov-codex']), false, '이름만 같은 다른 부모');
-  assert.equal(isPersistentWorktree(target('D:\\wt-egov-codex'), repoRoot, []), false, '표를 못 읽으면 묻는다');
-  assert.equal(isPersistentWorktree({ value: 'D:\\wt-egov-codex', text: '"D:\\wt-${p}"' }, repoRoot, ['D:\\wt-egov-codex']), false, '셸 보간은 위치를 알 수 없다');
-});
-
-test('worktree-add-outside-persistent: Codex 는 실행 규칙이 승인 창을 띄울 단순 명령만 넘기고 그 밖은 막는다', () => {
+test('git-worktree-add: Codex 는 실행 규칙이 확실히 잡는 명령만 승인 창에 넘기고 그 밖은 막는다', () => {
   const rulesText = readFileSync(join(repoRoot, CODEX_RULES_PATH), 'utf8').replace(/\r\n/g, '\n');
   assert.equal(rulesText, renderCodexRules(), `${CODEX_RULES_PATH} 는 가드 규칙 표의 codexPrompt 에서 만든다 — renderCodexRules() 출력으로 바꾼다`);
   assert.match(rulesText, /pattern = \["git", "worktree", "add"\],\n {4}decision = "prompt",/u);
-  const covers = (command, text = rulesText) => codexPromptCovers(decide(command), command, text);
-  assert.equal(covers('git worktree add --detach D:\\wt-egov-codex-probe HEAD'), true, '단순 명령은 Codex 실행 규칙이 묻는다');
-  assert.equal(covers('git worktree add -b feat/x D:\\wt-egov-codex-ai-intake origin/main'), true);
-  for (const command of [
-    "$taskEvidenceTree = 'D:\\wt-egov-codex-discovery-evidence-20261110'\ngit worktree add --detach $taskEvidenceTree HEAD",
-    'git -C D:\\project\\egov-enterprise worktree add D:\\wt-egov-codex-x HEAD', 'git worktree add --detach "D:\\wt-egov-codex x" HEAD',
-    'git worktree add --detach D:\\wt-egov-codex-x HEAD; echo done', 'git worktree add --detach D:\\wt-egov-codex-x HEAD && git status',
-    'git reset --hard', 'git commit -am "x"',
-  ]) assert.equal(covers(command), false, `실행 규칙이 못 잡을 수 있으니 막는다: ${command}`);
-  assert.equal(covers('git worktree add --detach D:\\wt-egov-codex-probe HEAD', null), false, '규칙 파일이 없으면 막는다');
-  assert.equal(covers('git worktree add --detach D:\\wt-egov-codex-probe HEAD', rulesText.replace('"prompt"', '"allow"')), false, '규칙 파일이 표와 다르면 막는다');
+  const later = 2_000_000_000_000;
+  const covers = (toolInput, options = {}) => {
+    const { command } = readHookInput('codex', { tool_input: toolInput, cwd: repoRoot });
+    return codexPromptCovers(decide(command), toolInput,
+      { rulesText, rulesModifiedAt: 1_000, codexStartedAt: later, platform: 'win32', ...options });
+  };
+  // Codex 0.162.1 이 PowerShell 래퍼를 풀고 맨 단어로 나눠 ["git","worktree","add",…] 로 맞춰 보는 꼴.
+  for (const toolInput of [
+    { cmd: 'git worktree add --detach D:\\wt-egov-codex-probe HEAD' },
+    { cmd: 'git worktree add -b feat/x D:\\wt-egov-codex-ai-intake origin/main' },
+    { command: ['powershell.exe', '-NoProfile', '-Command', 'git worktree add --detach D:\\wt-x HEAD'] },
+    { command: ['C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe', '-NoLogo', '-NoProfile', '-c', 'git worktree add D:\\wt-x HEAD'] },
+    { command: ['git', 'worktree', 'add', '--detach', 'D:\\wt x', '706926a7'] },
+  ]) assert.equal(covers(toolInput), true, `Codex 실행 규칙이 묻는다: ${JSON.stringify(toolInput)}`);
+  // 2026-11-11 Codex 55차 반례: Codex 가 풀지 못하는 단어·래퍼는 실행 규칙도 못 잡는다 — 훅이 막아야 한다.
+  for (const toolInput of [
+    { cmd: 'git worktree add --detach D:\\wt-egov-codex@probe HEAD' }, { cmd: 'git worktree add -b 55-review D:\\wt-egov-codex-probe HEAD' },
+    { cmd: 'git worktree add --detach D:\\wt-x 706926a7bdeb' }, { cmd: "git worktree add --detach 'D:\\wt x' HEAD" },
+    { cmd: 'git worktree add --detach $tree HEAD' }, { cmd: 'git -C D:\\project\\egov-enterprise worktree add D:\\wt-x HEAD' },
+    { cmd: 'Git worktree add D:\\wt-x HEAD' }, { cmd: 'git.exe worktree add D:\\wt-x HEAD' },
+    { cmd: 'git worktree add D:\\wt-x HEAD; echo done' }, { cmd: 'git worktree add D:\\wt-x HEAD\ngit status' },
+    { command: ['cmd.exe', '/c', 'git worktree add D:\\wt-x HEAD'] },
+    { command: ['powershell.exe', '-NonInteractive', '-Command', 'git worktree add D:\\wt-x HEAD'] },
+    { command: ['pwsh', '-Command', 'git worktree add D:\\wt-x HEAD', 'extra'] },
+    { command: ['bash', '-lc', 'git worktree add D:/wt-x HEAD'] },
+    { command: ['git', '-C', '.', 'worktree', 'add', 'D:\\wt-x', 'HEAD'] },
+  ]) assert.equal(covers(toolInput), false, `실행 규칙이 못 잡으니 막는다: ${JSON.stringify(toolInput)}`);
+  assert.equal(covers({ cmd: 'git worktree add D:\\wt-x HEAD' }, { platform: 'linux' }), false, 'PowerShell 을 푸는 것은 Windows 뿐이다');
+  assert.equal(covers({ cmd: 'git worktree add D:\\wt-x HEAD' }, { rulesText: null }), false, '규칙 파일이 없으면 막는다');
+  assert.equal(covers({ cmd: 'git worktree add D:\\wt-x HEAD' }, { rulesText: rulesText.replace('"prompt"', '"allow"') }), false, '규칙 파일이 표와 다르면 막는다');
+  // 2026-11-11 Codex 55차: 실행 규칙은 Codex 가 시작할 때 읽는다 — 파일이 그 뒤에 생겼거나 바뀌었으면 지금 Codex 에는 규칙이 없다.
+  assert.equal(covers({ cmd: 'git worktree add D:\\wt-x HEAD' }, { codexStartedAt: 500 }), false, '규칙 파일보다 먼저 시작한 Codex 는 막는다');
+  assert.equal(covers({ cmd: 'git worktree add D:\\wt-x HEAD' }, { codexStartedAt: null }), false, 'Codex 시작 시각을 모르면 막는다');
+  let asked = 0;
+  assert.equal(covers({ cmd: 'git status' }, { codexStartedAt: () => { asked += 1; return later; } }), false);
+  assert.equal(asked, 0, '다른 조건이 맞지 않으면 프로세스 시작 시각을 묻지 않는다');
+  assert.equal(codexPolicyArgv({ cmd: 'git worktree add D:\\wt-x HEAD' }, 'win32').join(' '), 'git worktree add D:\\wt-x HEAD');
 
+  // 실행 파일은 Codex 프로세스 밖에서 돌므로(시작 시각을 찾지 못한다) 위임하지 않고 막는다.
   const run = (input) => spawnSync(process.execPath, [GUARD, '--agent', 'codex'], { input: JSON.stringify(input), encoding: 'utf8' });
-  assert.equal(run({ tool_input: { command: 'git worktree add --detach D:\\wt-egov-codex-probe HEAD' }, cwd: repoRoot }).stdout, '',
-    'Codex 훅은 넘기고 실행 규칙의 승인 창이 묻는다');
-  const blocked = JSON.parse(run({ tool_input: { command: 'git worktree add --detach $tree HEAD' }, cwd: repoRoot }).stdout);
-  assert.equal(blocked.hookSpecificOutput.permissionDecision, 'deny', '실행 규칙이 못 잡는 꼴은 종전처럼 막는다');
-  assert.equal(run({ tool_input: { command: 'git worktree add --detach D:\\wt-egov-codex origin/main' }, cwd: repoRoot }).stdout, '', '고정 트리는 걸리지 않는다');
-});
-
-test('worktree-add-outside-persistent: SOP §6.6 표의 고정 트리는 묻지 않고, 그 뒤에 작업 이름을 붙인 임시 트리는 묻는다', () => {
-  const protocol = readFileSync(join(repoRoot, 'docs', '03-guides', 'orchestration-protocol.md'), 'utf8');
-  const assigned = [...protocol.matchAll(/^\| (?:Codex|Claude Code|Antigravity\/Gemini) \| `([^`]+)` \|$/gmu)].map((match) => match[1]);
-  assert.equal(assigned.length, 3, 'SOP §6.6 의 도구별 고정 작업 트리 표를 읽는다');
-  for (const path of assigned) {
-    assert.ok(!ruleOf(`git worktree add --detach ${path} origin/main`).includes('worktree-add-outside-persistent'), `고정 트리는 통과: ${path}`);
-    assert.ok(ruleOf(`git worktree add --detach ${path}-task origin/main`).includes('worktree-add-outside-persistent'), `임시 트리는 묻는다: ${path}-task`);
-  }
+  const outside = JSON.parse(run({ tool_input: { cmd: 'git worktree add --detach D:\\wt-egov-codex-probe HEAD' }, cwd: repoRoot }).stdout);
+  assert.equal(outside.hookSpecificOutput.permissionDecision, 'deny', 'Codex 밖에서는 규칙 로드를 확인할 수 없어 막는다');
+  const claude = JSON.parse(spawnSync(process.execPath, [GUARD, '--agent', 'claude'],
+    { input: JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'git worktree add --detach D:\\wt-egov-claude origin/main' }, cwd: repoRoot }), encoding: 'utf8' }).stdout);
+  assert.equal(claude.hookSpecificOutput.permissionDecision, 'ask', 'Claude Code 는 고정 트리를 처음 만들 때도 묻는다');
 });
 
 test('tagged-test-on-default-task: 벤더 카탈로그 시험은 전용 실행 도구로 안내한다', () => {
