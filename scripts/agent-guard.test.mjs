@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 
-import { CODEX_RULES_PATH, RULES, addArgvHits, codexPolicyArgv, codexPromptCovers, evaluate, readHookInput, renderCodexRules, renderVerdict } from './agent-guard.mjs';
+import { CODEX_RULES_PATH, RULES, applyArgvRules, codexPolicyArgv, codexPromptCovers, evaluate, readHookInput, renderCodexRules, renderVerdict } from './agent-guard.mjs';
 
 const repoRoot = resolve(import.meta.dirname, '..');
 const GUARD = join(repoRoot, 'scripts', 'agent-guard.mjs');
@@ -267,14 +267,19 @@ const CASES = {
       // 2026-11-11 Codex 59차 반례: 붙여 쓴 호출 연산자와, 경로를 확인하는 PowerShell 조건 블록 안의 명령.
       '&"C:\\Program Files\\Git\\cmd\\git.exe" worktree add --detach D:\\wt-review HEAD',
       'if (-not (Test-Path -LiteralPath D:\\wt-review)) { git worktree add --detach D:\\wt-review HEAD }',
-      'if ($true) { Write-Output start; git -C D:\\project\\egov-enterprise worktree add D:\\wt-review HEAD }'],
+      'if ($true) { Write-Output start; git -C D:\\project\\egov-enterprise worktree add D:\\wt-review HEAD }',
+      // 2026-11-11 Codex 60차 반례: 블록 안 명령 뒤의 `;`·`|` 와 PowerShell 출력 대입.
+      'if (-not (Test-Path D:\\wt-review)) { git worktree add --detach D:\\wt-review HEAD; Write-Output done }',
+      'if ($true) { git worktree add D:\\wt-x HEAD | Out-Null }', '$result = git worktree add --detach D:\\wt-review HEAD',
+      '$null = git worktree add D:\\wt-x HEAD'],
     pass: ['git worktree list --porcelain', 'git worktree prune -v', 'git worktree remove D:\\wt-x',
       'git commit --only -m "git worktree add D:\\wt-egov-codex-x 는 묻는다" -- a.md', 'echo "git worktree add --detach D:\\wt-egov-codex-x HEAD"',
       'rg -n "git worktree add" docs',
       // 2026-11-11 Codex 57차 반례: 메시지 안의 `\ ` 와 낱말을 명령으로 읽어 정상 커밋을 물었다.
       "git commit --only -m 'fix: handle \\ in worktree add commands' -- scripts/agent-guard.mjs",
       'git commit --only -m "say \\"worktree add\\" here" -- a.md',
-      'if (Test-Path D:\\wt-review) { git worktree list }', "Write-Output '{ git worktree add D:\\wt-x HEAD }'"],
+      'if (Test-Path D:\\wt-review) { git worktree list }', "Write-Output '{ git worktree add D:\\wt-x HEAD }'",
+      '$list = git worktree list'],
   },
 };
 
@@ -322,7 +327,7 @@ test('git-worktree-add: Codex 는 실행 규칙이 확실히 잡는 명령만 �
   // 셸 없는 argv 는 문자열로 main 과 똑같이 이어 다른 규칙의 판정을 바꾸지 않고(Codex 59차), git worktree add 는 칸 그대로 본다(Codex 56·58차).
   const argvVerdict = (command) => {
     const hook = readHookInput('codex', { tool_input: { command }, cwd: repoRoot });
-    return addArgvHits(decide(hook.command, hook.cwd), hook.argv)?.rules ?? [];
+    return applyArgvRules(decide(hook.command, hook.cwd), hook.argv)?.rules ?? [];
   };
   assert.equal(readHookInput('codex', { tool_input: { command: ['git', '-c', 'user.name=Agent Review', 'worktree', 'add', 'D:\\wt-review', 'HEAD'] }, cwd: repoRoot }).command,
     'git -c user.name=Agent Review worktree add D:\\wt-review HEAD', '문자열은 main 과 같이 칸을 공백으로 잇는다');
@@ -342,6 +347,14 @@ test('git-worktree-add: Codex 는 실행 규칙이 확실히 잡는 명령만 �
   assert.ok(argvVerdict(['D:/tools(1)/git.exe', 'push', '--force']).includes('git-force-push'));
   assert.ok(!argvVerdict(['.\\gradlew.bat', ':api-server:test', '--tests', 'nuri.openapi.OpenApiDocumentationTest',
     '-Dopenapi.export.path=D:/exports/review files/api-docs.json']).includes('openapi-relative-export-path'));
+  // 2026-11-11 Codex 60차 반례: argv 의 메시지 칸·경로 칸을 이은 문자열로 판정하면 작업 트리 두 규칙이 흔들렸다 — 칸 구조로만 본다.
+  assert.ok(!argvVerdict(['git', 'commit', '--only', '-m', 'docs: explain { git worktree add D:/wt-x HEAD }', '--', 'README.md']).includes('git-worktree-add'),
+    '메시지 칸의 블록 문구는 명령이 아니다');
+  const apostrophe = argvVerdict(['git', 'worktree', 'add', "D:/O'Brien/contracts", 'HEAD']);
+  assert.ok(apostrophe.includes('worktree-name-collides-with-e2e') && apostrophe.includes('git-worktree-add'), 'main 처럼 경로 칸의 contracts 를 막는다');
+  // 2026-11-11 Codex 60차 반례: 스크립트 파일 뒤의 -c 는 그 스크립트의 인자다. main 의 끝에서 둘째 플래그 인식은 그대로다.
+  assert.ok(!argvVerdict(['bash', 'scripts/render-example.sh', '-c', 'git push --force', '--dry-run']).includes('git-force-push'));
+  assert.ok(argvVerdict(['powershell.exe', '-ExecutionPolicy', 'Bypass', '-Command', 'git worktree add D:\\wt-x HEAD']).includes('git-worktree-add'));
   // 스크립트 뒤에 칸이 더 있어도 셸 래퍼다 — PowerShell 은 남은 칸을 이어 돌리므로 그 안의 worktree add 를 놓치면 안 된다.
   assert.ok(argvVerdict(['pwsh', '-Command', 'git worktree add D:\\wt-x HEAD', 'extra']).includes('git-worktree-add'));
   assert.ok(argvVerdict(['powershell.exe', '-NoProfile', '-Command', 'git', 'worktree', 'add', 'D:\\wt-x', 'HEAD']).includes('git-worktree-add'));

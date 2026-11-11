@@ -144,11 +144,31 @@ const isGitExecutable = (value) => /(^|[\\/])git(\.exe)?$/i.test(value ?? '');
  * 넘긴 argv 는 문자열로 이어 판정하면 공백·따옴표·`;` 든 칸이 하위 명령을 가린다(Codex 56·58·59차).
  */
 export function argvWorktreeAdd(argv) {
-  if (!Array.isArray(argv) || !isGitExecutable(argv[0])) return false;
+  return argvWorktreeAddAt(argv) >= 0;
+}
+
+/** argv 가 `git [전역 옵션…] worktree add` 면 `add` 다음 칸의 위치, 아니면 -1. */
+function argvWorktreeAddAt(argv) {
+  if (!Array.isArray(argv) || !isGitExecutable(argv[0])) return -1;
   let index = 1;
   while (index < argv.length && String(argv[index]).startsWith('-')) index += GIT_VALUE_OPTIONS.has(argv[index]) ? 2 : 1;
-  return argv[index] === 'worktree' && argv[index + 1] === 'add';
+  return argv[index] === 'worktree' && argv[index + 1] === 'add' ? index + 2 : -1;
 }
+
+/** 셸 없는 argv 의 `git worktree add` 경로 칸(옵션·그 값을 건너뛴 첫 피연산자). 없으면 null. */
+function argvWorktreeAddPath(argv) {
+  const start = argvWorktreeAddAt(argv);
+  if (start < 0) return null;
+  for (let index = start; index < argv.length; index += 1) {
+    const value = String(argv[index]);
+    if (WORKTREE_ADD_VALUE_OPTIONS.has(value)) { index += 1; continue; }
+    if (!value.startsWith('-')) return value;
+  }
+  return null;
+}
+
+/** 작업 트리 경로의 디렉터리 이름이 E2E 매처와 겹치는가(quality·journeys·contracts 로 끝난다). */
+const collidesWithE2e = (path) => path !== null && path.split(/[\\/]/).some((part) => /(quality|journeys|contracts)$/i.test(part));
 
 /**
  * `git worktree add` 의 인자 단어들(`add` 뒤). worktree add 가 아니면 null 이다. 단어는 따옴표 경계를 지켜 나누고(`"D:\a b"` 는 한 단어),
@@ -156,6 +176,13 @@ export function argvWorktreeAdd(argv) {
  * 자리에서 읽는다.
  */
 function worktreeAddArgs(code, raw) {
+  // PowerShell 의 출력 대입(`$result = git …`·`$null = git …`)은 우변이 명령이다(Codex 60차).
+  const all = alignedWords(code, raw);
+  const first = commandAt(all.map((word) => word.code));
+  if (/^\$[\w:]+$/u.test(all[first]?.code ?? '') && all[first + 1]?.code === '=') {
+    const cut = all[first + 1].end;
+    return worktreeAddArgs(code.slice(cut), raw.slice(cut));
+  }
   const invoked = invokedCommand(code, raw);
   if (!invoked || !isGitExecutable(invoked.name)) return null;
   const words = invoked.args;
@@ -172,6 +199,9 @@ function worktreeAddArgs(code, raw) {
  * 가린 판에서 가장 안쪽 `{ … }` 몸체를 찾아 `;` 로 나눈 뒤 같은 자리의 원문과 함께 본다(Codex 59차). 따옴표 안의 중괄호는 가린 판에 없다.
  */
 function blockWorktreeAdd(code, raw) {
+  // 조각 나누기가 블록 안의 `;`·`|` 에서 먼저 자르면 이 조각의 블록은 닫히지 않는다 — 마지막으로 연 `{` 뒤를 본다(Codex 60차).
+  const open = code.lastIndexOf('{');
+  if (open >= 0 && !code.includes('}', open) && worktreeAddArgs(code.slice(open + 1), raw.slice(open + 1)) !== null) return true;
   for (const block of code.matchAll(/\{([^{}]*)\}/gu)) {
     const start = block.index + 1;
     let from = 0;
@@ -1260,8 +1290,7 @@ export const RULES = Object.freeze([
     why: 'Playwright 매처(`contracts/…spec.ts`·`(journeys|quality)/…spec.ts`)와 E2E 선별 계획기가 spec 의 절대 경로에 정규식을 적용해, 경로의 디렉터리 이름이 quality·journeys·contracts 로 끝나면 소유가 모호하다고 붉다(2026-10-19).',
     fix: '작업 트리는 D:\\wt-<짧은 이름> 으로 두되 그 셋으로 끝나는 디렉터리 이름을 쓰지 않는다(SOP §6.6).',
     match: ({ code, raw }) => {
-      const path = worktreeAddPath(code, raw);
-      return path !== null && path.split(/[\\/]/).some((part) => /(quality|journeys|contracts)$/i.test(part));
+      return collidesWithE2e(worktreeAddPath(code, raw));
     },
   },
   {
@@ -1272,7 +1301,7 @@ export const RULES = Object.freeze([
     // 고정 트리를 처음 만드는 일은 도구마다 한 번뿐이다. Codex 실행 규칙도 경로를 가리지 못하므로 세 도구가 똑같이 묻는다.
     codexPrompt: ['git', 'worktree', 'add'],
     codexJustification: '작업 트리를 더하려면 사용자 승인을 받는다 — 도구마다 고정 트리 하나가 기본이고 임시 트리는 예외이며, 고정 트리를 처음 만들 때도 묻는다(SOP §6.6, DEC-OPS-414).',
-    // 셸 없는 argv 배열은 칸 그대로 argvWorktreeAdd 가 따로 본다(main 의 addArgvHits).
+    // 셸 없는 argv 배열은 칸 구조로만 판정한다(applyArgvRules).
     match: ({ code, raw }) => worktreeAddArgs(code, raw) !== null || blockWorktreeAdd(code, raw) || ambiguousWorktreeAdd(code, raw),
   },
   {
@@ -1462,24 +1491,37 @@ export function readHookInput(agent, input) {
   // Codex 의 apply_patch 는 셸 명령이 아니라 파일 편집이다 — 본문의 `git commit …` 같은 줄을 명령으로 읽지 않는다.
   if (Array.isArray(raw) && /(^|[\\/])apply_patch(\.exe)?$/i.test(raw[0] ?? '')) return null;
   // Codex 는 명령을 셸 래퍼 배열(["powershell.exe","-Command","…"]·["bash","-lc","…"])로 넘긴다 — 셸에 넘긴 스크립트를 판정한다.
-  // 스크립트 뒤에 칸이 더 있어도 래퍼다: PowerShell·cmd 는 남은 칸을 이어 한 명령으로 돌리고, bash 계열은 다음 한 칸만 스크립트다.
+  // main 처럼 끝에서 둘째 칸의 플래그도 받고, 첫 피연산자 앞의 플래그면 스크립트 뒤에 칸이 더 있어도 래퍼다: PowerShell·cmd 는 남은 칸을
+  // 이어 한 명령으로 돌리고, bash 계열은 다음 한 칸만 스크립트다. 스크립트 파일(`bash x.sh -c …`) 뒤의 칸은 그 스크립트의 인자다(Codex 60차).
   const shell = Array.isArray(raw) ? /(^|[\\/])(powershell|pwsh|bash|sh|zsh|cmd)(\.exe)?$/i.exec(raw[0] ?? '')?.[2]?.toLowerCase() : null;
-  const flagAt = shell ? raw.findIndex((part, index) => index > 0 && /^(-Command|-c|-lc|\/c)$/i.test(part)) : -1;
+  const shellFlag = /^(-Command|-c|-lc|\/c)$/i;
+  let flagAt = -1;
+  for (let index = 1; shell && index < raw.length; index += 1) {
+    if (shellFlag.test(raw[index])) { flagAt = index; break; }
+    if (!/^[-/]/.test(raw[index] ?? '')) break;
+  }
   const script = flagAt > 0 && flagAt + 1 < raw.length
-    ? (['bash', 'sh', 'zsh'].includes(shell) ? raw[flagAt + 1] : raw.slice(flagAt + 1).join(' ')) : null;
+    ? (['bash', 'sh', 'zsh'].includes(shell) ? raw[flagAt + 1] : raw.slice(flagAt + 1).join(' '))
+    : shell && raw.length >= 3 && shellFlag.test(raw.at(-2)) ? raw.at(-1) : null;
   const command = Array.isArray(raw) ? (script ?? raw.join(' ')) : raw;
   if (typeof command !== 'string') return null;
   return Array.isArray(raw) && script === null ? { command, cwd: input.cwd ?? process.cwd(), argv: raw } : { command, cwd: input.cwd ?? process.cwd() };
 }
 
 /**
- * 셸 없는 argv 배열에서만 확정할 수 있는 판정을 더한다 — 지금은 `git worktree add`(칸 경계를 지켜 본다, Codex 56·58·59차). 이미 걸렸으면
- * 그대로 둔다.
+ * 셸 없는 argv 배열이면 작업 트리 두 규칙(`git-worktree-add`·`worktree-name-collides-with-e2e`)은 칸 구조로만 판정한다 — 공백으로 이은
+ * 문자열에서는 메시지 칸의 `{ git worktree add … }`·경로 칸의 아포스트로피가 판정을 흔든다(Codex 56·58·59·60차). 다른 규칙은 그 문자열의
+ * 판정을 그대로 둔다. argv 가 없으면 판정을 바꾸지 않는다.
  */
-export function addArgvHits(verdict, argv, rules = RULES) {
-  const rule = rules.find(({ id }) => id === 'git-worktree-add');
-  if (!rule || !argvWorktreeAdd(argv) || verdict?.rules.includes(rule.id)) return verdict;
-  const hits = [...(verdict?.rules ?? []), rule.id].map((id) => rules.find((candidate) => candidate.id === id)).filter(Boolean);
+export function applyArgvRules(verdict, argv, rules = RULES) {
+  if (!Array.isArray(argv)) return verdict;
+  const structural = new Map([
+    ['git-worktree-add', argvWorktreeAdd(argv)],
+    ['worktree-name-collides-with-e2e', collidesWithE2e(argvWorktreeAddPath(argv))],
+  ]);
+  const ids = [...(verdict?.rules ?? []).filter((id) => !structural.has(id)), ...[...structural].filter(([, hit]) => hit).map(([id]) => id)];
+  const hits = ids.map((id) => rules.find((candidate) => candidate.id === id)).filter(Boolean);
+  if (!hits.length) return null;
   return {
     decision: hits.some((hit) => hit.decision === 'deny') ? 'deny' : 'ask',
     rules: hits.map((hit) => hit.id),
@@ -1619,7 +1661,7 @@ async function main(argv) {
     const input = JSON.parse(await readStdin());
     const hook = readHookInput(agent, input);
     if (hook) {
-      const verdict = addArgvHits(evaluate(hook.command, { cwd: hook.cwd }), hook.argv);
+      const verdict = applyArgvRules(evaluate(hook.command, { cwd: hook.cwd }), hook.argv);
       // Codex 는 실행 규칙의 승인 창이 대신 물을 수 있는 명령이면 넘긴다(DEC-OPS-414) — 막지 않은 명령에 승인을 대신 내리지는 않는다.
       // 프로세스 시작 시각은 다른 조건이 다 맞을 때만 묻는다(PowerShell 조회가 1초 남짓 걸린다).
       const delegate = agent === 'codex' && verdict?.decision === 'ask' && (() => {
