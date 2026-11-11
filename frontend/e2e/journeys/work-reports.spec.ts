@@ -98,5 +98,45 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
                     await request.delete(`${REPORT_API}/${rptpSn}`, { headers: auth });
             }
         });
+        test('보고 등록 모달로 새 업무 보고를 작성해 서버에 저장한다', async ({ page, request }) => {
+            const title = `${PREFIX}Create_${Date.now()}`;
+            const content = `UI 등록 모달 검증 본문 ${title}`;
+            const deptJobPage = new DeptJobPage(page);
+            let createdSn: number | undefined;
+            try {
+                await deptJobPage.gotoReportList();
+                await page.getByRole('button', { name: '보고 등록', exact: true }).click();
+                const createDialog = page.getByRole('dialog', { name: '업무 보고 등록', exact: true });
+                await expect(createDialog).toBeVisible();
+                await createDialog.getByRole('textbox', { name: /보고 제목/ }).fill(title);
+                await createDialog.getByRole('textbox', { name: /보고 내용/ }).fill(content);
+                const [savedRes] = await Promise.all([
+                    page.waitForResponse(res => new URL(res.url()).pathname === REPORT_API
+                        && res.request().method() === 'POST'),
+                    createDialog.getByRole('button', { name: '보고 등록', exact: true }).click(),
+                ]);
+                expect(savedRes.ok()).toBe(true);
+                await expect(createDialog).toBeHidden();
+
+                await deptJobPage.search(title);
+                await expect(deptJobPage.row(title)).toBeVisible({ timeout: 20000 });
+
+                const listRes = await request.get(`${REPORT_API}?searchKeyword=${encodeURIComponent(title)}&page=1&size=10`, { headers: auth });
+                expect(listRes.ok()).toBe(true);
+                const row = ((await listRes.json()).data.list as Array<{ rptpSn?: number; rptTtl?: string; rptCn?: string }>)[0];
+                expect(row?.rptTtl).toBe(title);
+                expect(row?.rptCn).toBe(content);
+                createdSn = row?.rptpSn;
+                expect(createdSn).toBeTruthy();
+            } finally {
+                try {
+                    await page.goto('about:blank');
+                } finally {
+                    if (createdSn !== undefined) {
+                        await request.delete(`${REPORT_API}/${createdSn}`, { headers: auth });
+                    }
+                }
+            }
+        });
     });
 });

@@ -8,6 +8,7 @@ import {
   scrapCreateFormSchema,
   scrapEditFormSchema,
 } from '../scrap-form-validation';
+import { parseScrapUrl } from '../scrap-url';
 import { ScrapFormDialog, type ScrapFormValues } from '../ScrapFormDialog';
 import { submitPostScrap } from '@/queries/scrap-post-action';
 import ScrapListClient from '../selectScrapList/ScrapListClient';
@@ -160,6 +161,40 @@ describe('scrap form validation contract', () => {
     expect(edited.success).toBe(true);
     if (edited.success) expect(edited.data.scrapUrl).toBe(scrapUrl);
     expect(scrapCreateFormSchema.safeParse(values).success).toBe(false);
+  });
+
+  it('fragment 뒤의 가짜 게시판 파라미터에 속지 않고 비정상 내부 게시글 URL은 서버 규칙과 같게 거부한다', () => {
+    expect(parseScrapUrl('/pages/guide#?bbsId=BBS-1&nttId=31')).toEqual({
+      isInternal: true,
+      resolvedHref: '/pages/guide#?bbsId=BBS-1&nttId=31',
+    });
+    expect(parseScrapUrl('/cop/bbs/selectArticleDetail.do?bbsId=BBS-1&nttId=31#comment-2')).toEqual({
+      isInternal: true,
+      resolvedHref: '/admin/community/boards/detail?bbsId=BBS-1&pstSn=31',
+    });
+
+    for (const invalidBoardUrl of [
+      '/admin/community/boards/detail',
+      '/admin/community/boards/detail?bbsId=BBS-1',
+      '/cop/bbs/selectArticleDetail.do?nttId=31',
+      '/admin/community/boards/detail?bbsId=BBS-1&bbsId=BBS-2&pstSn=31',
+      '/admin/community/boards/detail?bbsId=BBS-1&pstSn=31&nttId=32',
+      `/admin/community/boards/detail?bbsId=${'B'.repeat(21)}&pstSn=31`,
+      '/admin/community/boards/detail?bbsId=BBS-1&pstSn=0',
+      '/admin/community/boards/detail?bbsId=BBS-1&pstSn=not-a-number',
+      '/admin/community/boards/detail?bbsId=BBS-1&pstSn=9223372036854775808',
+      '/admin/community/boards/detail?bbsId=%E0%A4%A&pstSn=31',
+    ]) {
+      expect(parseScrapUrl(invalidBoardUrl)).toBeNull();
+      expect(
+        scrapEditFormSchema.safeParse({
+          scrapNm: '깨진 게시글 참조',
+          scrapUrl: invalidBoardUrl,
+          scrapExpln: '',
+          useYn: 'Y',
+        }).success,
+      ).toBe(false);
+    }
   });
 
   it.each([

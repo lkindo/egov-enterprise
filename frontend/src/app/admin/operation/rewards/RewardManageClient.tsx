@@ -403,7 +403,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
           <form
             id="reward-register-form"
             noValidate
-            onSubmit={form.handleSubmit(onRegisterSubmit)}
+            onSubmit={(event) => { void form.handleSubmit(onRegisterSubmit)(event); }}
             className="space-y-[var(--form-gap)] pt-2 text-left"
           >
             {/* 조회 전용이면 입력을 통째로 잠근다 — 값은 읽히고 바꿀 수는 없다. */}

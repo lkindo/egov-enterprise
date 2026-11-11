@@ -112,22 +112,54 @@ const KNOWN_ROUTE_CAPABILITIES = {
   ],
   '/search': [
     {
-      id: 'search.users', status: 'partial', candidateStatus: 'live', dataSource: 'authenticated-minimal-user-search-api', actions: ['keyword-search'],
+      id: 'search.users', status: 'live', dataSource: 'authenticated-minimal-user-search-api', actions: ['keyword-search'],
       unsupportedVisibleActions: [], actorScope: 'AUTHENTICATED', visibleLabel: '임직원 검색', primaryTask: true,
-      evidenceLevel: 'E3', evidence: ['frontend/src/app/search/SearchClient.tsx', 'frontend/src/app/search/__tests__/SearchClient.contract.test.tsx', 'frontend/src/services/business/user/UserSearchService.ts', 'api-server/src/main/java/nuri/api/controller/UserApiController.java'],
+      evidenceLevel: 'E4',
+      roundtrips: [{
+        spec: 'frontend/e2e/journeys/global-search.spec.ts',
+        test: '통합 검색에서 게시글·임직원·권한 범위 메뉴 바로가기를 조회하고 이동한다',
+        actions: ['keyword-search'],
+      }],
+      evidence: [
+        'api-server/src/main/java/nuri/api/controller/UserApiController.java',
+        'frontend/e2e/journeys/global-search.spec.ts',
+        'frontend/src/app/search/SearchClient.tsx',
+        'frontend/src/app/search/__tests__/SearchClient.contract.test.tsx',
+        'frontend/src/services/business/user/UserSearchService.ts',
+      ],
     },
     {
-      // [2026-11-08] 고정 목록이 아니라 메뉴 API(menuService.getHeadMenus)의 트리를 검색어로 거른다. 왕복 산출물이 없어 partial 이다.
-      id: 'search.menu-shortcuts', status: 'partial', dataSource: 'head-menus-api', actions: ['navigate'],
+      id: 'search.menu-shortcuts', status: 'live', dataSource: 'head-menus-api', actions: ['navigate'],
       unsupportedVisibleActions: [], actorScope: 'AUTHENTICATED', visibleLabel: '메뉴 바로가기', primaryTask: false,
-      evidenceLevel: 'E2', evidence: ['frontend/src/app/search/SearchClient.tsx', 'frontend/src/services/business/user/MenuService.ts'],
+      evidenceLevel: 'E4',
+      roundtrips: [{
+        spec: 'frontend/e2e/journeys/global-search.spec.ts',
+        test: '통합 검색에서 게시글·임직원·권한 범위 메뉴 바로가기를 조회하고 이동한다',
+        actions: ['navigate'],
+      }],
+      evidence: [
+        'frontend/e2e/journeys/global-search.spec.ts',
+        'frontend/src/app/search/SearchClient.tsx',
+        'frontend/src/services/business/user/MenuService.ts',
+      ],
     },
     {
-      // [2026-11-08] 게시글 탭은 2026-09-02 부터 실제 검색이지만 게시판 기능 표지 안이라 게시판 없는 구성(core·survey·approval)에는
-      //   없다. 원장과 이 기대값은 같아야 하므로 둘 다 아직 미지원으로 두고, 기능별 판정을 만들 때 함께 고친다(정기 검토 2차).
-      id: 'search.articles', status: 'unavailable', dataSource: 'none', actions: [],
-      unsupportedVisibleActions: [], actorScope: 'AUTHENTICATED', visibleLabel: '게시글 (미지원)', primaryTask: false,
-      evidenceLevel: 'E1', evidence: ['frontend/src/app/search/SearchClient.tsx'],
+      // [2026-11-11] 게시글 탭은 게시판 기능 표지 안이라 게시판 없는 구성(core·survey·approval)에서는 BoardUserService 가 빠진다.
+      //   생성물 투영에서는 E4 및 빠진 증거가 있는 동결 화면이 기관 검토 행(route-capability-review)으로 되돌아간다.
+      id: 'search.articles', status: 'live', dataSource: 'boards-search-api', actions: ['keyword-search', 'navigate'],
+      unsupportedVisibleActions: [], actorScope: 'AUTHENTICATED', visibleLabel: '게시글 검색', primaryTask: false,
+      evidenceLevel: 'E4',
+      roundtrips: [{
+        spec: 'frontend/e2e/journeys/global-search.spec.ts',
+        test: '통합 검색에서 게시글·임직원·권한 범위 메뉴 바로가기를 조회하고 이동한다',
+        actions: ['keyword-search', 'navigate'],
+      }],
+      evidence: [
+        'api-server/src/main/java/nuri/api/controller/business/board/BoardApiController.java',
+        'frontend/e2e/journeys/global-search.spec.ts',
+        'frontend/src/app/search/SearchClient.tsx',
+        'frontend/src/services/business/user/board/BoardUserService.ts',
+      ],
     },
   ],
 };
@@ -367,6 +399,7 @@ function knownCapabilitiesForRoute(route, source, asOf) {
   if (!definitions) return null;
   return definitions.map((definition) => ({
     ...definition,
+    ...(definition.roundtrips ? { roundtrips: structuredClone(definition.roundtrips) } : {}),
     actions: uniqueSorted(definition.actions ?? []),
     unsupportedVisibleActions: uniqueSorted(definition.unsupportedVisibleActions ?? []),
     decisionSafe: false,
@@ -374,6 +407,29 @@ function knownCapabilitiesForRoute(route, source, asOf) {
     owner: 'product/UX + domain owner',
     evidence: uniqueSorted([source, ...(definition.evidence ?? [])]),
   }));
+}
+
+function isProjectedCapabilityReset(entry) {
+  if (entry.capabilities?.length !== 1) return false;
+  const [capability] = entry.capabilities;
+  return capability?.id === 'route-capability-review'
+    && capability?.status === 'unverified'
+    && capability?.candidateStatus === undefined
+    && capability?.dataSource === 'unverified'
+    && capability?.actorScope === 'UNVERIFIED'
+    && capability?.visibleLabel === 'unverified'
+    && capability?.primaryTask === true
+    && capability?.decisionSafe === false
+    && capability?.evidenceLevel === 'E0'
+    && exactArray(capability?.actions ?? [], [])
+    && exactArray(capability?.unsupportedVisibleActions ?? [], [])
+    && ['status', 'dataSource', 'supportedActions'].every((field) => entry.unverifiedFields?.includes(field));
+}
+
+function frozenCapabilityRequiresProjectionReset(frozen, repository) {
+  return repository?.profileProjections?.projection === true
+    && frozen.some((definition) => ['E4', 'E5'].includes(definition.evidenceLevel)
+      || (definition.evidence ?? []).some((file) => !isFile(path.join(repository.repoRoot, file))));
 }
 
 function exactArray(left, right) {
@@ -1155,22 +1211,31 @@ export function validateRouteCapabilities(manifest, repository) {
        */
       const frozen = KNOWN_ROUTE_CAPABILITIES[entry.route];
       if (frozen) {
-        const byId = new Map(entry.capabilities.map((capability) => [capability.id, capability]));
-        const frozenIds = frozen.map(({ id }) => id).sort();
-        if (!exactArray([...byId.keys()].sort(), frozenIds)) {
-          errors.push(`${label}: capability ids must match the frozen capability expectation`);
-        }
-        for (const definition of frozen) {
-          const capability = byId.get(definition.id);
-          if (!capability) continue;
-          for (const field of ['status', 'candidateStatus', 'dataSource', 'visibleLabel', 'evidenceLevel', 'primaryTask', 'actorScope']) {
-            if ((capability[field] ?? null) !== (definition[field] ?? null)) {
-              errors.push(`${label}/${definition.id}: ${field} drifted from the frozen expectation`);
-            }
+        if (frozenCapabilityRequiresProjectionReset(frozen, repository)) {
+          if (!isProjectedCapabilityReset(entry)) {
+            errors.push(`${label}: projected route whose frozen capability uses E4/E5 or absent evidence must reset to route-capability-review`);
           }
-          for (const field of ['actions', 'unsupportedVisibleActions']) {
-            if (!exactArray(capability[field] ?? [], uniqueSorted(definition[field] ?? []))) {
-              errors.push(`${label}/${definition.id}: ${field} drifted from the frozen expectation`);
+        } else {
+          const byId = new Map(entry.capabilities.map((capability) => [capability.id, capability]));
+          const frozenIds = frozen.map(({ id }) => id).sort();
+          if (!exactArray([...byId.keys()].sort(), frozenIds)) {
+            errors.push(`${label}: capability ids must match the frozen capability expectation`);
+          }
+          for (const definition of frozen) {
+            const capability = byId.get(definition.id);
+            if (!capability) continue;
+            for (const field of ['status', 'candidateStatus', 'dataSource', 'visibleLabel', 'evidenceLevel', 'primaryTask', 'actorScope']) {
+              if ((capability[field] ?? null) !== (definition[field] ?? null)) {
+                errors.push(`${label}/${definition.id}: ${field} drifted from the frozen expectation`);
+              }
+            }
+            for (const field of ['actions', 'unsupportedVisibleActions']) {
+              if (!exactArray(capability[field] ?? [], uniqueSorted(definition[field] ?? []))) {
+                errors.push(`${label}/${definition.id}: ${field} drifted from the frozen expectation`);
+              }
+            }
+            if (JSON.stringify(capability.roundtrips ?? null) !== JSON.stringify(definition.roundtrips ?? null)) {
+              errors.push(`${label}/${definition.id}: roundtrips drifted from the frozen expectation`);
             }
           }
         }

@@ -115,16 +115,41 @@ export function buildTokenVars(config: ThemeConfig): Record<string, string> {
 }
 
 const TOKEN_KEYS = Object.keys(buildTokenVars(DEFAULT_THEME_CONFIG));
+const savedThemeListeners = new Set<() => void>();
 
-/*
-  브라우저 저장소는 사생활 모드·저장소 차단에서 예외를 던진다(PopupManager 의 DIP V9 기록과 같은 이유).
-  이 화면의 저장은 편의 기능이므로, 저장소를 쓸 수 없으면 토큰은 이번 화면에서만 적용되고 저장·복원만 잃는다.
-*/
-export function readSavedThemeConfig(): ThemeConfig | null {
+function notifySavedThemeListeners() {
+  savedThemeListeners.forEach((listener) => listener());
+}
+
+export function subscribeSavedThemeConfig(onStoreChange: () => void): () => void {
+  savedThemeListeners.add(onStoreChange);
+  if (typeof window === 'undefined') {
+    return () => {
+      savedThemeListeners.delete(onStoreChange);
+    };
+  }
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === null || event.key === STORAGE_KEY) onStoreChange();
+  };
+  window.addEventListener('storage', handleStorage);
+  return () => {
+    savedThemeListeners.delete(onStoreChange);
+    window.removeEventListener('storage', handleStorage);
+  };
+}
+
+export function readSavedThemeSnapshot(): string | null {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return null;
-    const parsed: unknown = JSON.parse(saved);
+    return localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function parseSavedThemeSnapshot(snapshot: string | null): ThemeConfig | null {
+  if (!snapshot) return null;
+  try {
+    const parsed: unknown = JSON.parse(snapshot);
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
     return normalizeConfig(parsed);
   } catch {
@@ -132,9 +157,18 @@ export function readSavedThemeConfig(): ThemeConfig | null {
   }
 }
 
+/*
+  브라우저 저장소는 사생활 모드·저장소 차단에서 예외를 던진다(PopupManager 의 DIP V9 기록과 같은 이유).
+  이 화면의 저장은 편의 기능이므로, 저장소를 쓸 수 없으면 토큰은 이번 화면에서만 적용되고 저장·복원만 잃는다.
+*/
+export function readSavedThemeConfig(): ThemeConfig | null {
+  return parseSavedThemeSnapshot(readSavedThemeSnapshot());
+}
+
 export function writeSavedThemeConfig(config: ThemeConfig) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    notifySavedThemeListeners();
   } catch {
     // 저장하지 못하면 이번 화면에서만 적용된다.
   }
@@ -143,6 +177,7 @@ export function writeSavedThemeConfig(config: ThemeConfig) {
 function clearSavedThemeConfig() {
   try {
     localStorage.removeItem(STORAGE_KEY);
+    notifySavedThemeListeners();
   } catch {
     // 저장소를 쓸 수 없으면 지울 것도 없다.
   }

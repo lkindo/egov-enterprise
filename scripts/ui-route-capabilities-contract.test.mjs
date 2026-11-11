@@ -290,12 +290,16 @@ test('current unresolved product evidence is explicit and does not claim G1 read
   assert.ok(analysis.result.summary.unresolvedRoutes > 0);
   assert.equal(analysis.result.summary.gateReady, false);
   const search = analysis.manifest.routes.find(({ route }) => route === '/search');
-  assert.equal(search?.status, 'partial');
+  assert.equal(search?.status, 'live');
   const userSearch = search.capabilities.find(({ id }) => id === 'search.users');
-  assert.equal(userSearch?.status, 'partial');
-  assert.equal(userSearch?.candidateStatus, 'live');
+  assert.equal(userSearch?.status, 'live');
+  assert.equal(userSearch?.candidateStatus, undefined);
+  assert.equal(userSearch?.evidenceLevel, 'E4');
   assert.equal(userSearch?.actorScope, 'AUTHENTICATED');
   assert.equal(userSearch?.dataSource, 'authenticated-minimal-user-search-api');
+  const articleSearch = search.capabilities.find(({ id }) => id === 'search.articles');
+  assert.equal(articleSearch?.status, 'live');
+  assert.equal(articleSearch?.evidenceLevel, 'E4');
   assert.equal(search.capabilities.some(({ id }) => id === 'search.users-user'), false);
   assert.equal(search.capabilities.some(({ id }) => id === 'search.users-admin'), false);
 
@@ -916,4 +920,64 @@ test('a journey that stubs the network through an imported fixture is not a serv
   assert.deepEqual(journeyNetworkStubSources(root, 'frontend/e2e/journeys/typed.spec.ts'), []);
   assert.deepEqual(journeyNetworkStubSources(ROOT, 'frontend/e2e/journeys/authentication.spec.ts'),
     ['frontend/e2e/journeys/authentication.spec.ts']);
+});
+
+test('frozen capabilities with E4 or absent evidence reset to route-capability-review only in generated projections', () => {
+  const { manifest } = currentAnalysis();
+  const makeReviewReset = (entry) => {
+    entry.capabilities = [{
+      id: 'route-capability-review',
+      status: 'unverified',
+      dataSource: 'unverified',
+      actions: [],
+      unsupportedVisibleActions: [],
+      actorScope: 'UNVERIFIED',
+      visibleLabel: 'unverified',
+      primaryTask: true,
+      decisionSafe: false,
+      evidenceLevel: 'E0',
+      lastVerifiedAt: manifest.asOf,
+      owner: 'adopter product/UX + domain owner',
+      evidence: [entry.source],
+    }];
+    entry.status = 'unverified';
+    entry.dataSource = 'unverified';
+    entry.supportedActions = [];
+    entry.decisionSafe = false;
+    entry.unverifiedFields = [...new Set([...(entry.unverifiedFields ?? []), 'status', 'dataSource', 'supportedActions'])].sort();
+    entry.review = { owner: 'adopter product/UX + domain owner', reviewBy: '2026-12-31', reason: 'projected runtime evidence reset' };
+  };
+
+  // ① 원본 저장소(projection: false)에서는 /search 를 검토 행으로 되돌릴 수 없다.
+  const upstreamReset = structuredClone(manifest);
+  makeReviewReset(upstreamReset.routes.find(({ route }) => route === '/search'));
+  assert.match(
+    validateRouteCapabilities(upstreamReset, repository).errors.join('\n'),
+    /route \/search: capability ids must match the frozen capability expectation/,
+  );
+
+  // ② 생성물 투영(projection: true)에서는 E4 인 /search 가 그대로 남으면 붉고, 검토 행으로 되돌린 상태만 허용한다.
+  const coreProjection = repository.profileProjections.profiles.find(({ profile }) => profile === 'core');
+  const projectedRepository = { ...structuredClone(repository), profileProjections: { projection: true, profiles: [coreProjection] } };
+  assert.match(
+    validateRouteCapabilities(manifest, projectedRepository).errors.join('\n'),
+    /route \/search: projected route whose frozen capability uses E4\/E5 or absent evidence must reset to route-capability-review/,
+  );
+
+  const projectedValid = structuredClone(manifest);
+  for (const row of projectedValid.routes) {
+    row.directProjectionProfiles = directProjectionProfiles(row.source, projectedRepository.profileProjections);
+  }
+  makeReviewReset(projectedValid.routes.find(({ route }) => route === '/search'));
+  assert.ok(
+    !validateRouteCapabilities(projectedValid, projectedRepository).errors.some((error) => error.startsWith('route /search')),
+  );
+
+  // ③ E3 이하이고 모든 증거 파일이 있는 동결 화면(/admin/user/absences)은 생성물 투영에서도 임의로 검토 행으로 되돌릴 수 없다.
+  const tamperedAbsences = structuredClone(projectedValid);
+  makeReviewReset(tamperedAbsences.routes.find(({ route }) => route === '/admin/user/absences'));
+  assert.match(
+    validateRouteCapabilities(tamperedAbsences, projectedRepository).errors.join('\n'),
+    /route \/admin\/user\/absences: capability ids must match the frozen capability expectation/,
+  );
 });

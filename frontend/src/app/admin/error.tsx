@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ErrorReference } from '@/app/components/ui/error-reference';
 import { loginReturnPath } from '@/lib/auth/login-return-path';
+import { hardNavigateToInternalRoute } from '@/lib/navigation/internal-route';
 
 function statusFrom(value: unknown): number | undefined {
   if (!value || typeof value !== 'object') return undefined;
@@ -74,7 +75,11 @@ export default function AdminError({
                   이 파일만 비대칭이었다.
                 */
                 // [2026-10-01 결정 17] 구조 키(게시판·글·탭·쪽)만 형식을 맞춰 되살린다 — 검색어는 여전히 싣지 않는다.
-                window.location.href = `/login?redirect=${encodeURIComponent(loginReturnPath(window.location.pathname, window.location.search))}`;
+                hardNavigateToInternalRoute(
+                  `/login?redirect=${encodeURIComponent(loginReturnPath(window.location.pathname, window.location.search))}`,
+                  window.location,
+                  '/login',
+                );
               }}
             />
             <ActionButton icon={<Home size={18} />} label="메인으로" href="/" />

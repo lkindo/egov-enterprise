@@ -126,18 +126,23 @@ export function mapAddressBookMemberFieldErrors(errors: Record<string, string>) 
   return mapped;
 }
 
+type NullableMemberFields = {
+  [K in keyof NameCard]?: NameCard[K] | null;
+};
+
 /**
  * 구성원 목록 PUT 에 싣는 한 줄. 서버는 목록에 없는 구성원을 지우고 번호가 있는 구성원을 고치므로, 이 화면이 묻지 않는
- * 집 전화·사무실 전화·팩스도 조회한 값 그대로 되돌려 보낸다. 연결된 사용자(userId)는 서버 소유라 싣지 않는다.
+ * 집 전화·사무실 전화·팩스도 조회한 값 그대로 되돌려 보낸다. 연결된 사용자(userId)는 서버 소유라 싣지 않으며,
+ * 응답의 null 필드는 요청 계약(DEC-OPS-028: 요청 스키마는 non-nullable)에 맞춰 undefined 로 정규화한다.
  */
-export function toMemberRequest(member: NameCard): NameCard {
+export function toMemberRequest(member: NullableMemberFields): NameCard {
   return {
-    adbkMbrSn: member.adbkMbrSn,
-    nm: member.nm,
-    emlAddr: member.emlAddr,
-    homeTelno: member.homeTelno,
-    mblTelno: member.mblTelno,
-    ofcTelno: member.ofcTelno,
-    faxNo: member.faxNo,
+    adbkMbrSn: member.adbkMbrSn ?? undefined,
+    nm: member.nm ?? '',
+    emlAddr: member.emlAddr ?? undefined,
+    homeTelno: member.homeTelno ?? undefined,
+    mblTelno: member.mblTelno ?? undefined,
+    ofcTelno: member.ofcTelno ?? undefined,
+    faxNo: member.faxNo ?? undefined,
   };
 }

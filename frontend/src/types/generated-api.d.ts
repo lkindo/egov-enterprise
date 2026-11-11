@@ -8507,7 +8507,7 @@ export interface components {
              * @description 최초 등록 일시
              */
             crtDt?: string;
-            /** @description 수신자 목록 */
+            /** @description 수신자 목록 — 발송 요청 전용(응답에는 실리지 않는다) */
             recipients: components["schemas"]["SmsRecptnDto"][];
             /** @description 검색 조건 */
             searchCondition?: string;

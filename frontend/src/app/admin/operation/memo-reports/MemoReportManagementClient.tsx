@@ -204,7 +204,8 @@ export default function MemoReportManagementClient() {
     if (!composingRef.current) setComposeOpen(false);
   };
 
-  const submitCompose = composeForm.handleSubmit(async (values) => {
+  const submitCompose = (event: React.FormEvent<HTMLFormElement>) => {
+    void composeForm.handleSubmit(async (values) => {
     // 동기 lock — 제출 중 재클릭이 두 번째 보고를 만들지 못하게 한다.
     if (composingRef.current) return;
     composingRef.current = true;
@@ -230,7 +231,8 @@ export default function MemoReportManagementClient() {
       composingRef.current = false;
       setComposing(false);
     }
-  });
+    })(event);
+  };
 
   /*
     [2026-09-08 PD-RPT-001] 수정·삭제 배선.
@@ -392,7 +394,8 @@ export default function MemoReportManagementClient() {
     setIsEditing(true);
   };
 
-  const submitEdit = editForm.handleSubmit(async (values) => {
+  const submitEdit = (event: React.FormEvent<HTMLFormElement>) => {
+    void editForm.handleSubmit(async (values) => {
     if (editingRef.current || detailTarget == null || detail == null) return;
     editingRef.current = true;
     const session = detailSession.current;
@@ -423,7 +426,8 @@ export default function MemoReportManagementClient() {
       editingRef.current = false;
       setEditPending(false);
     }
-  });
+    })(event);
+  };
 
   const handleDeleteReport = async () => {
     if (deleteReportRef.current || editingRef.current || detailTarget == null) return;
@@ -450,7 +454,8 @@ export default function MemoReportManagementClient() {
     }
   };
 
-  const submitInstruction = instructionForm.handleSubmit(async (values) => {
+  const submitInstruction = (event: React.FormEvent<HTMLFormElement>) => {
+    void instructionForm.handleSubmit(async (values) => {
     if (savingInstructionRef.current || detailTarget == null || !detail || instructionBlocked || !canInstruct(detail)) return;
     const session = detailSession.current;
     const scope = detailScope;
@@ -497,7 +502,8 @@ export default function MemoReportManagementClient() {
         setSavingInstruction(false);
       }
     }
-  });
+    })(event);
+  };
 
   // 탭·페이지는 URL 파생값이다(공유·새로고침·뒤로가기 복원 + 사이드바 활성 유지).
   // ADR-0009는 URL 사용을 의무화하지 않는다. 이 화면은 검색어를 로컬 상태로 유지한다.

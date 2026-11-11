@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo, useSyncExternalStore } from 'react';
 import { Palette,
   CheckCircle2,
   Info,
@@ -22,7 +22,8 @@ import { useToast } from '@/app/components/ui/toast';
 
 import {
   DEFAULT_THEME_CONFIG, RADIUS_MULTIPLIER, applyThemeTokens, buildTokenVars, parseBaseRadius,
-  readSavedThemeConfig, resetThemeTokens, writeSavedThemeConfig, type ThemeConfig,
+  parseSavedThemeSnapshot, readSavedThemeSnapshot, resetThemeTokens, subscribeSavedThemeConfig,
+  writeSavedThemeConfig, type ThemeConfig,
 } from '@/lib/theme/layout-theme';
 
 // 색상 선택지(브랜드 후보값 데이터일 뿐, 스타일 하드코딩이 아니다)
@@ -50,7 +51,16 @@ export default function LayoutManagerClient() {
   const { toast } = useToast();
 
   // --- 디자인 토큰 상태 ---
-  const [themeConfig, setThemeConfig] = useState<ThemeConfig>(DEFAULT_THEME_CONFIG);
+  // 전역 복원은 ThemeProvider가 맡고, 이 화면은 SSR 초기값(null → DEFAULT_THEME_CONFIG)과 일치시킨 뒤
+  // 하이드레이션 직후 외부 저장소 스냅샷으로 저장된 설정을 복원한다.
+  const savedSnapshot = useSyncExternalStore(
+    subscribeSavedThemeConfig,
+    readSavedThemeSnapshot,
+    () => null,
+  );
+  const savedThemeConfig = useMemo(() => parseSavedThemeSnapshot(savedSnapshot), [savedSnapshot]);
+  const [draftThemeConfig, setDraftThemeConfig] = useState<ThemeConfig | null>(null);
+  const themeConfig = draftThemeConfig ?? savedThemeConfig ?? DEFAULT_THEME_CONFIG;
 
   // 미리보기 전용 CSS 변수 (전역 오염 없음)
   // CSS 커스텀 프로퍼티는 React.CSSProperties 에 인덱스 시그니처가 없어 이중 캐스팅이 필요하다.
@@ -61,16 +71,11 @@ export default function LayoutManagerClient() {
 
   const baseRadius = parseBaseRadius(themeConfig.borderRadius);
 
-  // 전역 복원은 ThemeProvider가 맡고, 이 화면은 저장된 설정을 폼에 복원한다.
-  useEffect(() => {
-    const saved = readSavedThemeConfig();
-    if (saved) setThemeConfig(saved);
-  }, []);
-
   // --- 핸들러 ---
   const handleThemeSave = () => {
     applyThemeTokens(themeConfig);
     writeSavedThemeConfig(themeConfig);
+    setDraftThemeConfig(null);
     // ⚠ 문구는 실제 저장 범위와 일치해야 한다. 종전 "플랫폼 전반의 UI 인프라에 즉각 적용" 은
     //   같은 화면 하단의 "브라우저에만 보관되므로 다른 기기·다른 사용자에게는 전파되지 않습니다"
     //   와 정면으로 모순됐다 — 버튼과 토스트가 안내문을 반박하면 사용자는 강한 쪽(버튼)을 믿는다.
@@ -79,7 +84,7 @@ export default function LayoutManagerClient() {
 
   const handleThemeReset = () => {
     resetThemeTokens();
-    setThemeConfig(DEFAULT_THEME_CONFIG);
+    setDraftThemeConfig(DEFAULT_THEME_CONFIG);
     toast('디자인 토큰을 기본값(globals.css)으로 되돌렸습니다.', 'success');
   };
 
@@ -146,7 +151,7 @@ export default function LayoutManagerClient() {
                       id="theme-base-radius"
                       type="range" min="0" max="1.5" step="0.05"
                       value={themeConfig.borderRadius}
-                      onChange={(e) => setThemeConfig({ ...themeConfig, borderRadius: e.target.value })}
+                      onChange={(e) => setDraftThemeConfig({ ...themeConfig, borderRadius: e.target.value })}
                       className="w-full h-3 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
                       aria-label="곡률 베이스 값(rem)"
                     />
@@ -180,7 +185,7 @@ export default function LayoutManagerClient() {
                       type="button"
                       aria-label={`브랜드 색상 ${color} 선택`}
                       aria-pressed={themeConfig.primaryColor === color}
-                      onClick={() => setThemeConfig({ ...themeConfig, primaryColor: color })}
+                      onClick={() => setDraftThemeConfig({ ...themeConfig, primaryColor: color })}
                       className={`h-[var(--control-h)] rounded-lg transition-all border-4 ${themeConfig.primaryColor === color ? 'border-primary ring-8 ring-primary/10 scale-105' : 'border-transparent'}`}
                       style={{ backgroundColor: color }}
                     />
@@ -191,7 +196,7 @@ export default function LayoutManagerClient() {
                     id="theme-primary-color"
                     type="color" value={themeConfig.primaryColor}
                     aria-label="브랜드 기본 색상"
-                    onChange={(e) => setThemeConfig({ ...themeConfig, primaryColor: e.target.value })}
+                    onChange={(e) => setDraftThemeConfig({ ...themeConfig, primaryColor: e.target.value })}
                     className="h-11 w-24 cursor-pointer p-2 rounded-lg border-none shadow-inner bg-muted"
                   />
                   <div className="flex-1 h-11 bg-muted rounded-lg flex items-center px-6 font-bold text-lg text-foreground justify-center tracking-widest border border-border">

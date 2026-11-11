@@ -45,19 +45,13 @@ export default function OnlinePollParticipateClient() {
   // 저장 포맷과 같은 'yyyyMMdd' 8자 기준일.
   const todayStr = useTodayStorageYmd();
 
-  const fetchPolls = useCallback(async () => {
-    const requestId = ++listRequestRef.current;
-    setLoading(true);
-    // [2026-08-29] 조회 실패를 '없음'으로 그리지 않는다.
-    //   종전 catch 는 토스트만 띄우고 polls 를 [] 로 둔 채 로딩을 내렸다. 실패 상태를 남기는
-    //   state 도 재시도 경로도 없어, 토스트가 사라지면 화면에는 '활성 설문이 없습니다' 라는
-    //   단정만 남았다 — 사용자는 조회가 실패한 줄 모른다.
-    setLoadError(null);
+  const runFetchPolls = useCallback(async (requestId: number) => {
     try {
       const res = await pollUserService.getPollList({ page: 1, size: 100 });
       if (requestId !== listRequestRef.current) return;
       // Support both Spring Data JPA Page (content) and legacy list format
       setPolls(res.list || []);
+      setLoadError(null);
     } catch {
       if (requestId !== listRequestRef.current) return;
       setLoadError('투표 목록을 불러오지 못했습니다.');
@@ -67,15 +61,27 @@ export default function OnlinePollParticipateClient() {
     }
   }, [toast]);
 
+  const fetchPolls = useCallback(async () => {
+    const requestId = ++listRequestRef.current;
+    setLoading(true);
+    // [2026-08-29] 조회 실패를 '없음'으로 그리지 않는다.
+    //   종전 catch 는 토스트만 띄우고 polls 를 [] 로 둔 채 로딩을 내렸다. 실패 상태를 남기는
+    //   state 도 재시도 경로도 없어, 토스트가 사라지면 화면에는 '활성 설문이 없습니다' 라는
+    //   단정만 남았다 — 사용자는 조회가 실패한 줄 모른다.
+    setLoadError(null);
+    await runFetchPolls(requestId);
+  }, [runFetchPolls]);
+
   useEffect(() => {
-    void fetchPolls();
+    const requestId = ++listRequestRef.current;
+    void runFetchPolls(requestId);
     return () => {
       listRequestRef.current += 1;
       selectionRequestRef.current += 1;
       selectedPollSnRef.current = undefined;
       lifecycleRef.current += 1;
     };
-  }, [fetchPolls]);
+  }, [runFetchPolls]);
 
   const handleSelectPoll = async (poll: OnlinePollManageDetailVO) => {
     const requestId = ++selectionRequestRef.current;

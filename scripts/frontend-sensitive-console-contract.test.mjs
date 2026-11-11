@@ -183,3 +183,41 @@ test('규칙 무력화 시도는 재현 가능한 red 다', () => {
   assert.deepEqual(allow, ['warn', 'error', 'log']);
   assert.notDeepEqual(allow, ['warn', 'error']);
 });
+
+const PROTECTED_NEXT_HOOK_RULES = [
+  'react-hooks/set-state-in-effect',
+  'react-hooks/refs',
+  '@next/next/no-location-assign-relative-destination',
+];
+
+function findWeakenedProtectedRules(configSource) {
+  const stripped = configSource
+    .replace(/\/\*[\s\S]*?\*\//gu, '')
+    .replace(/\/\/[^\r\n]*/gu, '');
+  return PROTECTED_NEXT_HOOK_RULES.filter((rule) => {
+    const escaped = rule.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+    const ruleEntry = new RegExp(`["']${escaped}["']\\s*:\\s*(?:["'](off|warn)["']|[01]\\b|\\[\\s*(?:["'](off|warn)["']|[01]\\b))`, 'u');
+    return ruleEntry.test(stripped);
+  });
+}
+
+test('해소한 프론트엔드 lint 경고 3종 규칙은 warn/off 로 약화하지 않고 max-warnings 0 을 유지한다', () => {
+  const packageJson = JSON.parse(readFileSync(new URL('../frontend/package.json', import.meta.url), 'utf8'));
+  assert.match(packageJson.scripts.lint, /--max-warnings(?:=|\s+)0(?:\s|$)/u);
+  assert.deepEqual(findWeakenedProtectedRules(ESLINT_CONFIG), []);
+});
+
+test('해소한 프론트엔드 lint 규칙을 warn/off 로 되돌리는 시도는 재현 가능한 red 다', () => {
+  assert.deepEqual(
+    findWeakenedProtectedRules('rules: { "react-hooks/refs": "warn", "react-hooks/set-state-in-effect": ["off"] }'),
+    ['react-hooks/set-state-in-effect', 'react-hooks/refs'],
+  );
+  assert.deepEqual(
+    findWeakenedProtectedRules('rules: { "@next/next/no-location-assign-relative-destination": 0 }'),
+    ['@next/next/no-location-assign-relative-destination'],
+  );
+  assert.deepEqual(
+    findWeakenedProtectedRules('/* "react-hooks/refs": "off" */ rules: { "react-hooks/refs": "error" }'),
+    [],
+  );
+});

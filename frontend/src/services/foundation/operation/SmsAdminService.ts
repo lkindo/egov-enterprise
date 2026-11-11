@@ -11,7 +11,8 @@ import {
   sendSmsOperation,
 } from '@/types/generated-operations';
 
-export type SmsDto = components['schemas']['SmsDto'];
+export type SmsRequestDto = components['schemas']['SmsDto'];
+export type SmsDto = Omit<components['schemas']['SmsDto'], 'recipients'>;
 export type SmsDeliveryStatus = components['schemas']['SmsDeliveryStatusDto'];
 type SmsRecptnDto = components['schemas']['SmsRecptnDto'];
 type SmsSearchParams = NonNullable<operations['getSmsList']['parameters']['query']>;
@@ -34,7 +35,7 @@ class SmsAdminService extends ApiService {
   }
 
   /** SMS 발송 실행 */
-  async sendSms(smsDto: SmsDto, config?: AxiosRequestConfig): Promise<number> {
+  async sendSms(smsDto: SmsRequestDto, config?: AxiosRequestConfig): Promise<number> {
     return this.executeGenerated(sendSmsOperation, { body: smsDto, config });
   }
 

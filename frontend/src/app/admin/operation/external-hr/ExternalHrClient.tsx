@@ -518,7 +518,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
           <form
             id="external-hr-register-form"
             noValidate
-            onSubmit={form.handleSubmit(onRegisterSubmit)}
+            onSubmit={(event) => { void form.handleSubmit(onRegisterSubmit)(event); }}
             className="space-y-6 pt-4 text-left"
           >
             <FormErrorSummary

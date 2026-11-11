@@ -408,7 +408,7 @@ export default function HpcmClient({
         }
       >
         <Form {...form}>
-          <form id="hpcm-create-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4 text-left" noValidate>
+          <form id="hpcm-create-form" onSubmit={(event) => { void form.handleSubmit(onSubmit)(event); }} className="space-y-6 pt-4 text-left" noValidate>
             <FormErrorSummary labels={HPCM_FORM_LABELS} onNavigate={form.focusError} />
             <ShadcnFormField
               control={form.control}

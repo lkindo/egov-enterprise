@@ -107,10 +107,7 @@ export default function ScheduleDeptClient() {
         labels: SCHEDULE_FORM_LABELS,
     });
 
-    const fetchList = useCallback(async () => {
-        const sequence = ++fetchSequence.current;
-        setLoading(true);
-        setFetchError(null);
+    const runFetchList = useCallback(async (sequence: number) => {
         try {
             const response = await getDeptScheduleList(params);
             if (sequence !== fetchSequence.current) return;
@@ -118,9 +115,12 @@ export default function ScheduleDeptClient() {
             const total = response?.total ?? 0;
             const lastPage = Math.max(1, Math.ceil(total / size));
             if ((params.page ?? 1) > lastPage) {
+                setLoading(true);
+                setFetchError(null);
                 setParams((current) => ({ ...current, page: lastPage, size }));
                 return;
             }
+            setFetchError(null);
             setPageInfo({ total, size });
             setSchedules(response?.list ?? []);
         } catch (err) {
@@ -133,13 +133,23 @@ export default function ScheduleDeptClient() {
         }
     }, [params]);
 
+    const fetchList = useCallback(async () => {
+        const sequence = ++fetchSequence.current;
+        setLoading(true);
+        setFetchError(null);
+        await runFetchList(sequence);
+    }, [runFetchList]);
+
     useEffect(() => {
-        void fetchList();
+        const sequence = ++fetchSequence.current;
+        void runFetchList(sequence);
         return () => { fetchSequence.current += 1; };
-    }, [fetchList]);
+    }, [runFetchList]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
+        setLoading(true);
+        setFetchError(null);
         setParams(prev => ({ ...prev, page: 1 }));
     };
 
@@ -281,7 +291,11 @@ export default function ScheduleDeptClient() {
                     placeholder="일정명으로 검색하세요"
                     className="max-w-sm rounded-lg"
                     value={params.schdlNm}
-                    onChange={(e) => setParams(prev => ({ ...prev, schdlNm: e.target.value, page: 1 }))}
+                    onChange={(e) => {
+                        setLoading(true);
+                        setFetchError(null);
+                        setParams(prev => ({ ...prev, schdlNm: e.target.value, page: 1 }));
+                    }}
                 />
                 <Button onClick={handleSearch} className="rounded-lg px-8 font-bold">조회</Button>
             </div>
@@ -385,7 +399,11 @@ export default function ScheduleDeptClient() {
                     total={pageInfo.total}
                     page={params.page ?? 1}
                     size={pageInfo.size}
-                    onPageChange={(page) => setParams((current) => ({ ...current, page, size: pageInfo.size }))}
+                    onPageChange={(page) => {
+                        setLoading(true);
+                        setFetchError(null);
+                        setParams((current) => ({ ...current, page, size: pageInfo.size }));
+                    }}
                 />
             )}
 
