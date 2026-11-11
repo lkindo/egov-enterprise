@@ -2,12 +2,13 @@ import { randomUUID, createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { ANALYSIS_SCHEMA, BATCH_ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, MAX_PROJECT_ISSUES, aiInputDigest, buildAiRequest, buildCorrectionRequest, seedAnalysis, validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal, projectAnalysisBacklog, safeValidationFailures, validatePrivateAiValue } from './ai-contract.mjs';
-import { planAnalysisBatches, coalesceAnalysisBatches, MAX_ANALYSIS_BATCHES } from './ai-analysis-batches.mjs';
-import { AI_MODEL, AI_EFFORT, AI_ANALYSIS_EFFORT, aiEffortForPhase, createCliRunner, findClaudeExecutable } from './ai-cli.mjs';
+import { planAnalysisBatches, coalesceAnalysisBatches, MAX_ANALYSIS_BATCHES, fitsDirectAnalysis } from './ai-analysis-batches.mjs';
+import { AI_MODEL, AI_EFFORT, AI_ANALYSIS_EFFORT, MAX_ANALYSIS_MODEL_CALLS, aiEffortForPhase, createCliRunner, findClaudeExecutable } from './ai-cli.mjs';
 import { assertExternalWorkspace } from './store.mjs';
 import { prepareVisualAttachments } from './ai-attachments.mjs';
 import { PROMPT_VERSION } from './ai-prompts.mjs';
-import { prepareBusinessModel, documentAnchors, reviewRequirements, planAndReview, buildTaskPreview } from './ai-pipeline.mjs';
+import { prepareBusinessModel, documentAnchors, reviewRequirements, planAndReview, buildTaskPreview, reconcileAnalysisBatch } from './ai-pipeline.mjs';
+import { ANALYSIS_CONTEXT_VERSION } from './ai-context-reconciliation.mjs';
 import { validateBusinessModel, validateDocumentSummaries, mergeIssues, REQUIREMENT_REVIEW_SCHEMA, PLAN_REVIEW_SCHEMA } from './ai-pipeline-contract.mjs';
 import { collectSensitivityWarnings, mergeSensitivityWarnings, validateSensitivityWarnings } from './privacy-warnings.mjs';
 import { prepareEvidenceRequest } from './ai-evidence.mjs';
@@ -15,7 +16,8 @@ import { prepareEvidenceRequest } from './ai-evidence.mjs';
 const fail = code => { throw Object.assign(new Error(code), { code }); };
 const statuses = ['running', 'ready', 'needs-decisions', 'failed', 'stale', 'cancelled', 'interrupted', 'applied'];
 const checkpointKeys = ['discovery', 'analysis', 'review', 'planning'];
-const checkpointPhases = { discovery: ['reading', 'synthesis'], analysis: ['analysis'], review: ['review-requirements'], planning: ['decomposition', 'review-plan'] };
+const checkpointPhases = { discovery: ['reading', 'synthesis'], analysis: ['analysis', 'analysis-context', 'analysis-merge'], review: ['review-requirements'], planning: ['decomposition', 'review-plan'] };
+const analysisContextModes = ['bounded-reconciliation-1', 'bounded-reconciliation-2', 'bounded-reconciliation-3', ANALYSIS_CONTEXT_VERSION];
 const exact = (value, keys) => { if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(key => !keys.includes(key))) fail('AI_METADATA_INVALID'); };
 const checkpointObject = (value, keys) => { if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length !== keys.length || keys.some(key => !Object.hasOwn(value, key))) fail('AI_CHECKPOINT_INVALID'); };
 function reference(value, kind) {
@@ -27,7 +29,7 @@ const emptyCallMetrics = () => ({ version: 1, ...Object.fromEntries(metricFields
 const attachmentPolicy = job => job.analysisAttachmentPolicy ?? (job.fullPipeline || job.checkpoints?.discovery ? 'none' : job.includeVisuals !== false ? 'direct' : 'none');
 function validateCallMetrics(value, job) {
   exact(value, ['version', ...metricFields, 'activeCalls']);
-  if (value.version !== 1 || metricFields.some(field => !Number.isSafeInteger(value[field]) || value[field] < 0) || value.requests !== job.modelCalls || value.requests > 256 || value.corrections > value.requests || value.measuredOutputs > value.requests || value.cacheReports > value.requests || value.peakConcurrency > 2 || !Array.isArray(value.activeCalls) || value.activeCalls.length > value.peakConcurrency || !value.requests && (value.inputBytes || value.logicalInputBytes || value.outputBytes || value.modelWaitMs || value.peakConcurrency)) fail('AI_METADATA_INVALID');
+  if (value.version !== 1 || metricFields.some(field => !Number.isSafeInteger(value[field]) || value[field] < 0) || value.requests !== job.modelCalls || value.requests > MAX_ANALYSIS_MODEL_CALLS || value.corrections > value.requests || value.measuredOutputs > value.requests || value.cacheReports > value.requests || value.peakConcurrency > 2 || !Array.isArray(value.activeCalls) || value.activeCalls.length > value.peakConcurrency || !value.requests && (value.inputBytes || value.logicalInputBytes || value.outputBytes || value.modelWaitMs || value.peakConcurrency)) fail('AI_METADATA_INVALID');
   const ids = new Set();
   for (const call of value.activeCalls) {
     exact(call, ['call', 'stage', 'batch', 'endBatch', 'startedAt']);
@@ -42,7 +44,7 @@ export function validateAiMetadata(value) {
   if (value.version !== 1 || !Array.isArray(value.jobs) || !Array.isArray(value.decisions)) fail('AI_METADATA_INVALID');
   const ids = new Set();
   for (const job of value.jobs) {
-    exact(job, ['id', 'phase', 'status', 'inputDigest', 'startedAt', 'completedAt', 'appliedAt', 'model', 'effort', 'includeVisuals', 'analysisAttachmentPolicy', 'analysisBatchLimit', 'attempts', 'batches', 'inputRef', 'contextRef', 'resultRef', 'errorCode', 'usage', 'fullPipeline', 'promptVersion', 'stage', 'stageProgress', 'modelCalls', 'checkpoints', 'reusedStages', 'resumeFrom', 'promptRefs', 'sensitivityWarnings', 'validationFailures', 'callMetrics']);
+    exact(job, ['id', 'phase', 'status', 'inputDigest', 'startedAt', 'completedAt', 'appliedAt', 'model', 'effort', 'includeVisuals', 'analysisAttachmentPolicy', 'analysisBatchLimit', 'attempts', 'batches', 'inputRef', 'contextRef', 'resultRef', 'errorCode', 'usage', 'fullPipeline', 'promptVersion', 'stage', 'stageProgress', 'modelCalls', 'checkpoints', 'reusedStages', 'resumeFrom', 'promptRefs', 'sensitivityWarnings', 'validationFailures', 'callMetrics', 'checkpointResets']);
     try { validateSensitivityWarnings(job.sensitivityWarnings ?? []); } catch { fail('AI_METADATA_INVALID'); }
     if (!/^[a-f0-9-]{36}$/.test(job.id ?? '') || ids.has(job.id) || !['analysis', 'decomposition'].includes(job.phase) || !statuses.includes(job.status) || !/^[a-f0-9]{64}$/.test(job.inputDigest ?? '') || !Number.isFinite(Date.parse(job.startedAt)) || job.model !== AI_MODEL || ![AI_EFFORT, AI_ANALYSIS_EFFORT].includes(job.effort)) fail('AI_METADATA_INVALID');
     ids.add(job.id); reference(job.inputRef, 'baseline'); reference(job.contextRef, 'ai');
@@ -50,8 +52,9 @@ export function validateAiMetadata(value) {
     if (job.analysisAttachmentPolicy !== undefined && (job.phase !== 'analysis' || !['none', 'direct'].includes(job.analysisAttachmentPolicy) || job.analysisAttachmentPolicy === 'direct' && (job.fullPipeline || job.checkpoints?.discovery))) fail('AI_METADATA_INVALID');
     if (job.analysisBatchLimit !== undefined && (job.phase !== 'analysis' || ![1, 3].includes(job.analysisBatchLimit))) fail('AI_METADATA_INVALID');
     if (job.fullPipeline !== undefined && typeof job.fullPipeline !== 'boolean' || job.fullPipeline && job.phase !== 'analysis' || job.promptVersion !== undefined && !/^[A-Za-z0-9_.-]{1,64}$/.test(job.promptVersion)) fail('AI_METADATA_INVALID');
-    if (job.stage !== undefined && !['reading', 'synthesis', 'analysis', 'review-requirements', 'decomposition', 'review-plan'].includes(job.stage)) fail('AI_METADATA_INVALID');
-    if (job.modelCalls !== undefined && (!Number.isSafeInteger(job.modelCalls) || job.modelCalls < 0 || job.modelCalls > 256)) fail('AI_METADATA_INVALID');
+    if (job.stage !== undefined && !Object.values(checkpointPhases).flat().includes(job.stage)) fail('AI_METADATA_INVALID');
+    if (job.checkpointResets !== undefined && (!Array.isArray(job.checkpointResets) || job.checkpointResets.length > 16 || job.checkpointResets.some(item => !item || Object.keys(item).length !== 2 || !['pending-invalid', 'pending-policy-changed'].includes(item.reason) || !Number.isSafeInteger(item.completed) || item.completed < 0 || item.completed > MAX_ANALYSIS_BATCHES))) fail('AI_METADATA_INVALID');
+    if (job.modelCalls !== undefined && (!Number.isSafeInteger(job.modelCalls) || job.modelCalls < 0 || job.modelCalls > MAX_ANALYSIS_MODEL_CALLS)) fail('AI_METADATA_INVALID');
     if (job.callMetrics !== undefined) validateCallMetrics(job.callMetrics, job);
     if (job.stageProgress) { exact(job.stageProgress, ['completed', 'total']); if (!Number.isSafeInteger(job.stageProgress.total) || job.stageProgress.total < 0 || job.stageProgress.total > 3000 || !Number.isSafeInteger(job.stageProgress.completed) || job.stageProgress.completed < 0 || job.stageProgress.completed > job.stageProgress.total) fail('AI_METADATA_INVALID'); }
     if (job.checkpoints) { exact(job.checkpoints, checkpointKeys); for (const ref of Object.values(job.checkpoints)) reference(ref, 'ai'); }
@@ -59,7 +62,7 @@ export function validateAiMetadata(value) {
     if (job.resumeFrom !== undefined && !/^[a-f0-9-]{36}$/.test(job.resumeFrom)) fail('AI_METADATA_INVALID');
     if (job.promptRefs !== undefined) {
       if (!Array.isArray(job.promptRefs) || job.promptRefs.length > 64) fail('AI_METADATA_INVALID');
-      for (const item of job.promptRefs) { exact(item, ['stage', 'sha256', 'ref']); if (!['reading', 'synthesis', 'analysis', 'review-requirements', 'decomposition', 'review-plan'].includes(item.stage) || !/^[a-f0-9]{64}$/.test(item.sha256)) fail('AI_METADATA_INVALID'); reference(item.ref, 'ai'); }
+      for (const item of job.promptRefs) { exact(item, ['stage', 'sha256', 'ref']); if (!Object.values(checkpointPhases).flat().includes(item.stage) || !/^[a-f0-9]{64}$/.test(item.sha256)) fail('AI_METADATA_INVALID'); reference(item.ref, 'ai'); }
     }
     if (job.attempts !== undefined && ![1, 2].includes(job.attempts)) fail('AI_METADATA_INVALID');
     if (job.batches !== undefined) { exact(job.batches, ['completed', 'total']); if (job.phase !== 'analysis' || !Number.isSafeInteger(job.batches.total) || job.batches.total < 1 || job.batches.total > MAX_ANALYSIS_BATCHES || !Number.isSafeInteger(job.batches.completed) || job.batches.completed < 0 || job.batches.completed > job.batches.total) fail('AI_METADATA_INVALID'); }
@@ -89,7 +92,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
   const checkpointPart = (ref, schema) => {
     try {
       reference(ref, 'ai'); const item = readJson(ref);
-      checkpointObject(item, ['version', 'batch', 'output']);
+      checkpointObject(item, ['version', 'batch', 'output', ...(item?.version === 2 ? ['taskId'] : [])]);
       validatePrivateAiValue(item.output, schema);
       return item;
     } catch { fail('AI_CHECKPOINT_INVALID'); }
@@ -182,7 +185,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
       const scratchRoot = assertExternalWorkspace(join(store.directory, '.scratch')); mkdirSync(scratchRoot, { recursive: true, mode: 0o700 });
       const cwd = mkdtempSync(join(scratchRoot, 'ai-'));
       try {
-        let corrected = false, runCorrected = false, validated, output = initialAnalysis, pipeline, discovery;
+        let corrected = false, runCorrected = false, validated, output = initialAnalysis, pipeline, discovery, pendingContext = null, boundedAnalysis = false;
         const batchAudit = [];
         const usage = { inputTokens: 0, outputTokens: 0 };
         const writeMetrics = () => {
@@ -237,13 +240,13 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
         const sentPrompts = new Set();
         const run = async ({ preparedEvidence, ...args }) => {
           if (!await isCurrent()) fail('AI_STALE_INPUT');
-          if (modelCalls >= 256) fail('AI_CALL_CAPACITY');
+          if (modelCalls >= MAX_ANALYSIS_MODEL_CALLS) fail('AI_CALL_CAPACITY');
           const evidence = preparedEvidence ?? (useEvidenceReferences && !['reading', 'synthesis'].includes(args.request.phase) ? prepareEvidenceRequest(args.request, args.schema) : null);
           const wire = evidence ? { ...args, request: evidence.request, schema: evidence.schema } : args;
           const inputBytes = Buffer.byteLength(JSON.stringify(wire.request));
           if (inputBytes > 768 * 1024) fail('AI_INPUT_TOO_LARGE');
           {
-            const prompt = { version: PROMPT_VERSION, stage: wire.request.phase, instructions: wire.request.instructions, schema: wire.schema };
+            const prompt = { version: wire.request.promptVersion ?? PROMPT_VERSION, stage: wire.request.phase, instructions: wire.request.instructions, schema: wire.schema };
             const sha256 = hash(prompt);
             if (!sentPrompts.has(sha256)) {
               const ref = store.writeArchive('ai', JSON.stringify(prompt)); sentPrompts.add(sha256);
@@ -259,7 +262,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
               ticket = ++modelCalls; callMetrics.requests = modelCalls;
               callMetrics.corrections += args.request.data?.correction ? 1 : 0;
               callMetrics.inputBytes += inputBytes; callMetrics.logicalInputBytes += evidence ? Buffer.byteLength(JSON.stringify(args.request)) : inputBytes;
-              callMetrics.activeCalls.push({ call: ticket, stage: args.request.phase, batch: args.request.data?.analysisBatch?.index ?? args.request.data?.planningBatch?.index ?? args.request.data?.reviewBatch?.index ?? args.request.data?.batch?.index ?? null, ...(args.request.data?.analysisBatch?.lastIndex ? { endBatch: args.request.data.analysisBatch.lastIndex } : {}), startedAt: now() });
+              callMetrics.activeCalls.push({ call: ticket, stage: args.request.phase, batch: args.request.data?.analysisBatch?.index ?? args.request.data?.planningBatch?.index ?? args.request.data?.reviewBatch?.index ?? args.request.data?.batch?.index ?? null, ...(args.request.phase === 'analysis' && args.request.data?.analysisBatch?.lastIndex ? { endBatch: args.request.data.analysisBatch.lastIndex } : {}), startedAt: now() });
               callMetrics.peakConcurrency = Math.max(callMetrics.peakConcurrency, callMetrics.activeCalls.length);
               stored.modelCalls = modelCalls; stored.callMetrics = structuredClone(callMetrics);
             });
@@ -310,9 +313,14 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
         let startIndex = 0;
         const analysisUpstream = discovery?.businessModel ?? null;
         const validateAnalysisCheckpoint = cached => {
-          checkpointObject(cached, ['completed', 'total', 'corrected', 'output', 'batchAudit']);
+          checkpointObject(cached, ['completed', 'total', 'corrected', 'output', 'batchAudit', ...(Object.hasOwn(cached, 'contextMode') ? ['contextMode'] : []), ...(Object.hasOwn(cached, 'pendingContext') ? ['pendingContext'] : [])]);
           const total = batches?.length ?? 1;
-          if (cached.total !== total || !Number.isInteger(cached.completed) || cached.completed < 1 || cached.completed > total || typeof cached.corrected !== 'boolean' || !Array.isArray(cached.batchAudit)) fail('AI_CHECKPOINT_INVALID');
+          if (cached.contextMode !== undefined && !analysisContextModes.includes(cached.contextMode) || cached.pendingContext && !analysisContextModes.includes(cached.contextMode) || cached.pendingContext && cached.completed === total) fail('AI_CHECKPOINT_INVALID');
+          if (cached.total !== total || !Number.isInteger(cached.completed) || cached.completed < (cached.pendingContext ? 0 : 1) || cached.completed > total || typeof cached.corrected !== 'boolean' || !Array.isArray(cached.batchAudit)) fail('AI_CHECKPOINT_INVALID');
+          if (cached.completed === 0) {
+            if (JSON.stringify(cached.output) !== JSON.stringify(initialAnalysis ?? seedAnalysis(snapshot))) fail('AI_CHECKPOINT_INVALID');
+            return;
+          }
           if (cached.completed === total) validateAnalysisProposal(cached.output, snapshot);
           else {
             const processed = new Map();
@@ -327,6 +335,8 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             const total = batches?.length ?? 1;
             validateAnalysisCheckpoint(cached);
             output = cached.output; startIndex = cached.completed; corrected = cached.corrected; batchAudit.push(...cached.batchAudit);
+            boundedAnalysis = analysisContextModes.includes(cached.contextMode); pendingContext = cached.pendingContext ?? null;
+            if (pendingContext && (!Number.isSafeInteger(pendingContext.logicalEnd) || pendingContext.logicalEnd <= startIndex || pendingContext.logicalEnd > Math.min(total, startIndex + 3))) pendingContext = { ...pendingContext, logicalEnd: Math.min(total, startIndex + 1), historyDigest: 'invalid-pending' };
             if (startIndex === total) validated = validateAnalysisProposal(output, snapshot);
             reusedCheckpoint('analysis', startIndex === total);
             if (!restoreCheckpointWarnings('analysis')) onValidated('analysis', output);
@@ -342,16 +352,33 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
         for (let index = startIndex; index < (batches?.length ?? 1);) {
           if (job.phase === 'analysis') onStage('analysis', index, batches?.length ?? 1);
           if (!await isCurrent()) return;
-          let group = batches?.length > 3 && !directVisuals && job.analysisBatchLimit !== 1 ? coalesceAnalysisBatches(batches, index) : { sources: batches?.[index], end: index };
-          let currentRequest, preparedEvidence;
+          const contextParts = pendingContext ? pendingContext.logicalEnd - index : job.analysisBatchLimit === 1 ? 1 : 3;
+          let group = batches?.length > 3 && !directVisuals ? coalesceAnalysisBatches(batches, index, boundedAnalysis ? contextParts : job.analysisBatchLimit ?? 3) : { sources: batches?.[index], end: index };
+          let currentRequest, preparedEvidence, needsContext = boundedAnalysis;
           for (;;) {
             currentRequest = batches?.length > 1 ? buildAiRequest(snapshot, job.phase, workflow.decisions, { sources: group.sources, batch: { ...batchOptions(index).batch, ...(group.end > index ? { lastIndex: group.end + 1 } : {}) }, previousAnalysis: output, evidenceReferences: true }) : structuredClone(request);
             if (analysisUpstream) currentRequest.data.businessModel = analysisUpstream;
             if (analysisUpstream && currentRequest.data.analysisBatch) currentRequest.data.analysisBatch.capacity.issuesRemaining = Math.max(0, MAX_PROJECT_ISSUES - knownIssueCount);
             currentRequest.data.visualSources = [];
-            if (group.end === index) break;
-            const candidate = prepareEvidenceRequest(currentRequest, responseSchema);
-            if (Buffer.byteLength(JSON.stringify(candidate.request)) <= 760 * 1024) { preparedEvidence = candidate; break; }
+            if (job.phase !== 'analysis') break;
+            if (boundedAnalysis) break;
+            let candidate;
+            try { candidate = prepareEvidenceRequest(currentRequest, responseSchema); }
+            catch (error) { if (!['AI_INPUT_TOO_LARGE', 'AI_EVIDENCE_CAPACITY'].includes(error.code)) throw error; }
+            if (candidate && fitsDirectAnalysis(candidate, { singleBatch: !(batches?.length > 1) })) { preparedEvidence = candidate; break; }
+            if (group.end === index) {
+              needsContext = true;
+              // Compare a bounded candidate block once with history, rather
+              // than repeating the same historical scan for each partition.
+              if (batches?.length > 3 && !directVisuals && job.analysisBatchLimit !== 1) {
+                group = coalesceAnalysisBatches(batches, index);
+                currentRequest = buildAiRequest(snapshot, job.phase, workflow.decisions, { sources: group.sources, batch: { ...batchOptions(index).batch, ...(group.end > index ? { lastIndex: group.end + 1 } : {}) }, previousAnalysis: output, evidenceReferences: true });
+                if (analysisUpstream) currentRequest.data.businessModel = analysisUpstream;
+                if (analysisUpstream && currentRequest.data.analysisBatch) currentRequest.data.analysisBatch.capacity.issuesRemaining = Math.max(0, MAX_PROJECT_ISSUES - knownIssueCount);
+                currentRequest.data.visualSources = [];
+              }
+              break;
+            }
             group = coalesceAnalysisBatches(batches, index, group.end - index);
           }
           const batchSnapshot = { ...snapshot, backlog: { ...snapshot.backlog, sources: currentRequest.data.sources } };
@@ -359,7 +386,37 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
           currentRequest.data.visualSources = visuals.sources;
           if (visuals.sources.length) preparedEvidence = undefined;
           let attemptRequest = currentRequest, next, delta, batchCorrected = false;
-          for (;;) {
+          if (job.phase === 'analysis' && needsContext) {
+            boundedAnalysis = true;
+            if (!currentRequest.data.analysisBatch) {
+              const context = currentRequest.data.businessModel;
+              currentRequest = buildAiRequest(snapshot, 'analysis', workflow.decisions, { sources: group.sources, batch: { index: index + 1, total: batches?.length ?? 1, idPrefix: `B${jobId.slice(0, 8)}-${index + 1}-` }, previousAnalysis: output ?? seedAnalysis(snapshot), evidenceReferences: true });
+              if (context) currentRequest.data.businessModel = context;
+              if (context) currentRequest.data.analysisBatch.capacity.issuesRemaining = Math.max(0, MAX_PROJECT_ISSUES - knownIssueCount);
+              currentRequest.data.visualSources = visuals.sources;
+            }
+            let result;
+            try { result = await reconcileAnalysisBatch({ snapshot, sources: group.sources, previous: output ?? seedAnalysis(snapshot), request: currentRequest, run: args => run({ ...args, cwd }), signal: controller.signal, attachments: visuals.attachments, resume: pendingContext,
+              readPart: readJson, writePart: value => store.writeArchive('ai', JSON.stringify(value)),
+              onCheckpoint(state) {
+                pendingContext = state;
+                saveCheckpoint('analysis', analysisUpstream, { completed: index, total: batches?.length ?? 1, corrected: corrected || runCorrected, output: output ?? seedAnalysis(snapshot), batchAudit, contextMode: ANALYSIS_CONTEXT_VERSION, pendingContext: state });
+              },
+              onReset(reason) {
+                pendingContext = null;
+                mark(job.id, stored => { stored.checkpointResets = [...(stored.checkpointResets ?? []).slice(-15), { reason, completed: index }]; });
+                if (index) saveCheckpoint('analysis', analysisUpstream, { completed: index, total: batches?.length ?? 1, corrected, output, batchAudit, contextMode: ANALYSIS_CONTEXT_VERSION });
+                else { delete job.checkpoints.analysis; mark(job.id, stored => { delete stored.checkpoints.analysis; }); }
+              },
+              onProgress: onStage, onReuse: reusedResponse, onValidated: value => onValidated('analysis', value),
+              onCorrection() { runCorrected = true; mark(job.id, stored => { if (stored.status === 'running') stored.attempts = 2; }); },
+            }); } catch (error) {
+              if (group.end > index && !pendingContext?.candidateRef && ['AI_TIMEOUT', 'AI_OUTPUT_TOO_LARGE', 'AI_INPUT_TOO_LARGE', 'AI_ATTACHMENT_INVALID', 'AI_OUTPUT_INVALID', 'AI_EVIDENCE_CAPACITY'].includes(error.code)) mark(job.id, stored => { if (stored.status === 'running') stored.analysisBatchLimit = 1; });
+              throw error;
+            }
+            next = result.output; delta = result.delta; batchCorrected = result.corrected; corrected ||= result.corrected; pendingContext = null;
+            if (!(batches?.length > 1) || group.end === batches.length - 1) validated = validateAnalysisProposal(next, snapshot);
+          } else for (;;) {
             if (!await isCurrent()) return;
             if (current(store.read()).attempts !== (runCorrected ? 2 : 1)) mark(job.id, stored => { stored.attempts = runCorrected ? 2 : 1; });
             if (controller.signal.aborted || closed) return;
@@ -388,7 +445,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
           }
           output = next;
           onValidated(job.phase, output);
-          if (job.phase === 'analysis') saveCheckpoint('analysis', analysisUpstream, { completed: group.end + 1, total: batches?.length ?? 1, corrected, output, batchAudit }, stored => {
+          if (job.phase === 'analysis') saveCheckpoint('analysis', analysisUpstream, { completed: group.end + 1, total: batches?.length ?? 1, corrected, output, batchAudit, ...(boundedAnalysis ? { contextMode: ANALYSIS_CONTEXT_VERSION } : {}) }, stored => {
             if (stored.batches) stored.batches.completed = group.end + 1;
             stored.usage = { ...usage };
           });
@@ -402,24 +459,28 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
         if (pipeline) {
           const reviewUpstream = { output, businessModel: pipeline.businessModel };
           const reviewed = readCheckpoint('review', reviewUpstream);
-          const partialReview = reviewed?.version === 2;
-          const reviewRefs = [], resumeReplies = [];
+          const partialReview = [2, 3].includes(reviewed?.version);
+          const reviewRefs = [], resumeReplies = [], resumeTaskIds = [];
           if (partialReview) {
             checkpointObject(reviewed, ['version', 'replies']);
-            if (!Array.isArray(reviewed.replies) || reviewed.replies.length < 1 || reviewed.replies.length > 128) fail('AI_CHECKPOINT_INVALID');
+            if (!Array.isArray(reviewed.replies) || reviewed.replies.length < 1 || reviewed.replies.length > 3000) fail('AI_CHECKPOINT_INVALID');
             for (const [index, ref] of reviewed.replies.entries()) {
               const item = checkpointPart(ref, REQUIREMENT_REVIEW_SCHEMA);
-              if (item.version !== 1 || item.batch !== index + 1) fail('AI_CHECKPOINT_INVALID');
+              if (item.version !== (reviewed.version === 3 ? 2 : 1) || item.batch !== index + 1 || reviewed.version === 3 && !/^[a-f0-9]{64}$/.test(item.taskId ?? '')) fail('AI_CHECKPOINT_INVALID');
               reviewRefs.push(ref); resumeReplies.push(item.output);
+              if (reviewed.version === 3) resumeTaskIds.push(item.taskId);
             }
           }
           if (reviewed && !partialReview) output = reviewed;
-          else output = await reviewRequirements(output, pipeline.businessModel, snapshot, { run, cwd, signal: controller.signal, onStage, concurrency: 2, evidenceReferences: true, resumeReplies, onReply(index, value, merged) {
+          else output = await reviewRequirements(output, pipeline.businessModel, snapshot, { run, cwd, signal: controller.signal, onStage, concurrency: 2, evidenceReferences: true, resumeReplies, resumeTaskIds: reviewed?.version === 3 ? resumeTaskIds : null, onReset() { reviewRefs.length = 0; }, onReply(index, value, merged, taskId) {
             if (index !== reviewRefs.length) fail('AI_CHECKPOINT_INVALID');
             onValidated('review-requirements', merged);
-            reviewRefs.push(store.writeArchive('ai', JSON.stringify({ version: 1, batch: index + 1, output: value })));
-            saveCheckpoint('review', reviewUpstream, { version: 2, replies: reviewRefs });
-          }, onReuse(_index, merged) { reusedResponse(); onValidated('review-requirements', merged); } });
+            reviewRefs.push(store.writeArchive('ai', JSON.stringify({ version: 2, batch: index + 1, taskId, output: value })));
+            saveCheckpoint('review', reviewUpstream, { version: 3, replies: reviewRefs });
+          }, onReuse(index, merged, taskId) {
+            if (reviewed?.version === 2) reviewRefs[index] = store.writeArchive('ai', JSON.stringify({ version: 2, batch: index + 1, taskId, output: resumeReplies[index] }));
+            reusedResponse(); onValidated('review-requirements', merged);
+          } });
           validated = validateAnalysisProposal(output, snapshot);
           if (reviewed && !partialReview) reusedCheckpoint('review');
           if (!reviewed || partialReview || !restoreCheckpointWarnings('review')) onValidated('review-requirements', output);
@@ -427,29 +488,33 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
           if (!validated.issues.some(issue => issue.severity === 'blocking')) {
             const planningUpstream = { output, businessModel: pipeline.businessModel };
             let plan = readCheckpoint('planning', planningUpstream);
-            const partialPlan = plan?.version === 2;
+            const partialPlan = [2, 3].includes(plan?.version);
             if (plan && !partialPlan) { plan.validatedPlan = validateDecompositionProposal(plan.planningOutput, { ...snapshot, backlog: projectAnalysisBacklog(snapshot, validated) }); if (!restoreCheckpointWarnings('planning')) { onValidated('decomposition', plan.planningOutput); onValidated('review-plan', plan.planningOutput); } reusedCheckpoint('planning'); }
             else {
-              const replies = [], refs = []; let generated = partialPlan ? plan.planningOutput : null;
+              const replies = [], refs = [], taskIds = []; let generated = partialPlan ? plan.planningOutput : null;
               if (partialPlan) {
                 checkpointObject(plan, ['version', 'planningOutput', 'replies']);
                 if (!plan.planningOutput || typeof plan.planningOutput !== 'object' || Array.isArray(plan.planningOutput)) fail('AI_CHECKPOINT_INVALID');
                 try { validateDecompositionProposal(plan.planningOutput, { ...snapshot, backlog: projectAnalysisBacklog(snapshot, validated) }); } catch { fail('AI_CHECKPOINT_INVALID'); }
-                if (!Array.isArray(plan.replies) || plan.replies.length > 128) fail('AI_CHECKPOINT_INVALID');
+                if (!Array.isArray(plan.replies) || plan.replies.length > 3000) fail('AI_CHECKPOINT_INVALID');
                 for (const [index, ref] of plan.replies.entries()) {
                   const item = checkpointPart(ref, PLAN_REVIEW_SCHEMA);
-                  if (item.version !== 1 || item.batch !== index + 1) fail('AI_CHECKPOINT_INVALID');
+                  if (item.version !== (plan.version === 3 ? 2 : 1) || item.batch !== index + 1 || plan.version === 3 && !/^[a-f0-9]{64}$/.test(item.taskId ?? '')) fail('AI_CHECKPOINT_INVALID');
                   refs.push(ref); replies.push(item.output);
+                  if (plan.version === 3) taskIds.push(item.taskId);
                 }
               }
-              plan = await planAndReview(output, pipeline.businessModel, snapshot, workflow.decisions, { run, cwd, signal: controller.signal, onStage, onValidated, idPrefix: `P${jobId.slice(0, 8)}-`, evidenceReferences: true, resumePlanning: generated, resumeReplies: replies,
-                onGenerated(value) { generated = structuredClone(value); saveCheckpoint('planning', planningUpstream, { version: 2, planningOutput: generated, replies: [] }); },
-                onReviewReply(index, value) {
+              plan = await planAndReview(output, pipeline.businessModel, snapshot, workflow.decisions, { run, cwd, signal: controller.signal, onStage, onValidated, idPrefix: `P${jobId.slice(0, 8)}-`, evidenceReferences: true, resumePlanning: generated, resumeReplies: replies, resumeTaskIds: plan?.version === 3 ? taskIds : null, onReset() { refs.length = 0; },
+                onGenerated(value) { generated = structuredClone(value); saveCheckpoint('planning', planningUpstream, { version: 3, planningOutput: generated, replies: [] }); },
+                onReviewReply(index, value, taskId) {
                   if (index !== refs.length) fail('AI_CHECKPOINT_INVALID');
-                  refs.push(store.writeArchive('ai', JSON.stringify({ version: 1, batch: index + 1, output: value })));
-                  saveCheckpoint('planning', planningUpstream, { version: 2, planningOutput: generated, replies: refs });
+                  refs.push(store.writeArchive('ai', JSON.stringify({ version: 2, batch: index + 1, taskId, output: value })));
+                  saveCheckpoint('planning', planningUpstream, { version: 3, planningOutput: generated, replies: refs });
                 },
-                onReuse() { reusedResponse(); },
+                onReuse(index, taskId) {
+                  if (plan?.version === 2 && Number.isInteger(index)) refs[index] = store.writeArchive('ai', JSON.stringify({ version: 2, batch: index + 1, taskId, output: replies[index] }));
+                  reusedResponse();
+                },
               });
               saveCheckpoint('planning', planningUpstream, { planningOutput: plan.planningOutput, taskPreview: plan.taskPreview });
             }

@@ -1,12 +1,169 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mergeIssues, validateBusinessModel, validateRequirementReview, validatePlanReview } from './ai-pipeline-contract.mjs';
-import { planningGroups, prepareBusinessModel, planAndReview } from './ai-pipeline.mjs';
+import { planningGroups, prepareBusinessModel, planAndReview, reviewRequirements, fitEntry, admitsPlanEntryId } from './ai-pipeline.mjs';
+import { prepareEvidenceRequest } from './ai-evidence.mjs';
+import { CONTEXT_WINDOW_BYTES } from './ai-analysis-batches.mjs';
 import { validateEvidenceCitations, validateAnalysisProposal, projectAnalysisBacklog } from './ai-contract.mjs';
 import { context, source, analysis, decomposition } from './test-fixtures/ai.mjs';
 import { createEmptyBacklogPack } from '../../scripts/export-deliverables-workspace.mjs';
 const snapshot = () => ({ backlog: { sources: [structuredClone(source)], businessRequirements: [] }, metadata: { context } });
 const model = () => ({ summary: '접수 조회 업무의 책임과 열람 범위를 정리한다.', actors: [{ name: '담당자', responsibility: '접수 목록 조회', sourceIds: ['SRC-1'] }], processes: [{ name: '접수 조회', trigger: '담당자의 조회 요청', steps: ['조회 조건 입력', '허용 범위의 결과 확인'], exceptions: ['열람 범위 미결정'], rules: [], data: ['접수 목록'], sourceIds: ['SRC-1'] }], terms: [], issues: [], sourceCoverage: [{ sourceId: 'SRC-1', role: 'business', rationale: '조회 업무와 담당 범위의 근거' }] });
+
+test('shared semantic questions are visited losslessly through bounded quality and planning windows', async () => {
+  const state = { backlog: createEmptyBacklogPack(context), metadata: { context, ai: { decisions: [] } } };
+  state.backlog.project = { code: 'SYNTHETIC', name: '공통 문맥 분할', institution: '', baselineProfile: '' }; state.backlog.sources = [structuredClone(source)];
+  const proposal = analysis({ data: { sources: state.backlog.sources, decisions: [] } }, { question: false });
+  proposal.issues = Array.from({ length: 450 }, (_, index) => ({ id: `SEMANTIC-${index}`, kind: 'risk', severity: 'observation', question: `${index}: ${'원문의 조건과 예외를 의미 그대로 유지한다. '.repeat(65)}`, options: [], requirementIds: [proposal.requirements[0].id], citations: structuredClone(proposal.requirements[0].citations) }));
+  const seen = new Map(); let calls = 0;
+  const run = async ({ request, schema }) => {
+    calls++; const prepared = prepareEvidenceRequest(request, schema);
+    assert.ok(Buffer.byteLength(JSON.stringify(prepared.request)) + Buffer.byteLength(JSON.stringify(prepared.schema)) <= CONTEXT_WINDOW_BYTES);
+    if (!seen.has(request.phase)) seen.set(request.phase, new Set());
+    for (const issue of [...(request.data.existingIssues ?? []), ...(request.data.analysisIssues ?? [])]) { seen.get(request.phase).add(issue.id); assert.equal(issue.question, proposal.issues.find(old => old.id === issue.id).question); }
+    if (request.phase === 'review-requirements') return { output: { revisions: [], issues: [] } };
+    if (request.phase === 'review-plan') return { output: { workItemUpdates: [], acceptanceUpdates: [], traceUpdates: [], issues: [] } };
+    const plan = decomposition(), prefix = request.data.planningBatch.idPrefix, rename = id => `${prefix}${id}`;
+    for (const work of plan.workItems) { work.id = rename(work.id); if (work.parentEpicId) work.parentEpicId = rename(work.parentEpicId); }
+    for (const ac of plan.acceptanceCriteria) { ac.id = rename(ac.id); ac.workItemId = rename(ac.workItemId); }
+    for (const trace of plan.traceLinks) { trace.id = rename(trace.id); trace.workItemId = rename(trace.workItemId); trace.acId = rename(trace.acId); }
+    assert.deepEqual(request.data.planningBatch.requirementIds, [proposal.requirements[0].id]);
+    return { output: plan };
+  };
+  const reviewed = await reviewRequirements(proposal, model(), state, { run, evidenceReferences: true });
+  assert.deepEqual(reviewed.issues, proposal.issues);
+  const result = await planAndReview(reviewed, model(), state, [], { run, evidenceReferences: true });
+  for (const stage of ['review-requirements', 'decomposition', 'review-plan']) assert.equal(seen.get(stage).size, 450, stage);
+  assert.ok(calls >= 6); assert.equal(result.planningOutput.workItems.length, 2);
+});
+
+test('a planning group split into several windows creates its plan once and later windows may change nothing', async () => {
+  const state = { backlog: createEmptyBacklogPack(context), metadata: { context, ai: { decisions: [] } } };
+  state.backlog.project = { code: 'SYNTHETIC', name: '계획 창 이어 쓰기', institution: '', baselineProfile: '' }; state.backlog.sources = [structuredClone(source)];
+  const proposal = analysis({ data: { sources: state.backlog.sources, decisions: [] } }, { question: false });
+  proposal.issues = Array.from({ length: 450 }, (_, index) => ({ id: `SEMANTIC-${index}`, kind: 'risk', severity: 'observation', question: `${index}: ${'원문의 조건과 예외를 의미 그대로 유지한다. '.repeat(65)}`, options: [], requirementIds: [proposal.requirements[0].id], citations: structuredClone(proposal.requirements[0].citations) }));
+  let generations = 0, continuations = 0;
+  const run = async ({ request, schema }) => {
+    if (request.phase === 'review-requirements') return { output: { revisions: [], issues: [] } };
+    if (request.phase === 'review-plan') return { output: { workItemUpdates: [], acceptanceUpdates: [], traceUpdates: [], issues: [] } };
+    if (generations) {
+      // Nothing new in this window: an empty delta keeps the first window's plan.
+      continuations++;
+      assert.equal(schema.properties.workItems.minItems, 0); assert.equal(schema.properties.acceptanceCriteria.minItems, 0);
+      assert.match(request.instructions, /Continuation window/);
+      assert.ok(request.data.previousWorkItems.some(item => item.id.startsWith(request.data.planningBatch.idPrefix)), 'a continuation window sees the entries the first window created');
+      return { output: { workItems: [], acceptanceCriteria: [], traceLinks: [], issues: [], retirements: [] } };
+    }
+    generations++;
+    assert.equal(schema.properties.workItems.minItems, 1); assert.doesNotMatch(request.instructions, /Continuation window/);
+    const plan = decomposition(), prefix = request.data.planningBatch.idPrefix, rename = id => `${prefix}${id}`;
+    for (const work of plan.workItems) { work.id = rename(work.id); if (work.parentEpicId) work.parentEpicId = rename(work.parentEpicId); }
+    for (const ac of plan.acceptanceCriteria) { ac.id = rename(ac.id); ac.workItemId = rename(ac.workItemId); }
+    for (const trace of plan.traceLinks) { trace.id = rename(trace.id); trace.workItemId = rename(trace.workItemId); trace.acId = rename(trace.acId); }
+    return { output: plan };
+  };
+  const reviewed = await reviewRequirements(proposal, model(), state, { run, evidenceReferences: true });
+  const result = await planAndReview(reviewed, model(), state, [], { run, evidenceReferences: true });
+  assert.equal(generations, 1); assert.ok(continuations > 0, 'the shared context must actually span several planning windows');
+  assert.equal(result.planningOutput.workItems.length, 2);
+});
+
+test('a shared-context page that must also split its members never revisits pages its siblings cover', () => {
+  // Two members fill most of a window; four shared records do not fit beside
+  // them, and even one record alone does not. Each member must then see every
+  // shared record exactly once, plus the other member's meaning.
+  const members = ['R1', 'R2'], shared = ['S/1', 'S/2', 'S/3', 'S/4'];
+  const make = entry => {
+    const all = [...shared, ...members.filter(id => !entry.requirements.includes(id)).map(id => `cross/${id}`)];
+    const keys = entry.inspectShared || !entry.sharedKeys ? all : entry.sharedKeys;
+    return { phase: 'review-requirements', data: { requirements: entry.requirements.map(id => ({ id, body: '가'.repeat(116_000) })), shared: keys.map(key => ({ key, body: 'x'.repeat(key.startsWith('S/') ? 50_000 : 1_000) })), sharedContextWindow: { recordIds: keys } } };
+  };
+  const schema = { type: 'object', properties: {}, required: [], additionalProperties: false };
+  const splitMembers = entry => entry.requirements.length < 2 ? [entry] : entry.requirements.map(id => ({ requirements: [id] }));
+  const queue = [{ requirements: members }], seen = new Map();
+  for (let index = 0; index < queue.length; index++) {
+    const entry = fitEntry(queue, index, make, schema, splitMembers), data = make(entry).data;
+    const prepared = prepareEvidenceRequest(make(entry), schema);
+    assert.ok(Buffer.byteLength(JSON.stringify(prepared.request)) + Buffer.byteLength(JSON.stringify(prepared.schema)) <= CONTEXT_WINDOW_BYTES);
+    for (const req of data.requirements) for (const row of data.shared) { const pair = `${req.id}|${row.key}`; seen.set(pair, (seen.get(pair) ?? 0) + 1); }
+  }
+  assert.ok(queue.some(entry => entry.requirements.length === 1), 'the members really had to be separated');
+  for (const id of members) for (const key of shared) assert.equal(seen.get(`${id}|${key}`), 1, `${id} sees ${key} exactly once`);
+  assert.ok(seen.get('R1|cross/R2') >= 1 && seen.get('R2|cross/R1') >= 1, 'a separated member still sees the other member');
+});
+
+test('a whole-request capacity failure before paging splits the members instead of stopping the run', () => {
+  // The unpaged request of both members is rejected by its own pre-check; one
+  // member alone is small. That is a reason to split, not to fail.
+  const make = entry => {
+    if (entry.requirements.length > 1) throw Object.assign(Error('AI_INPUT_TOO_LARGE'), { code: 'AI_INPUT_TOO_LARGE' });
+    const keys = entry.inspectShared || !entry.sharedKeys ? ['S/1'] : entry.sharedKeys;
+    return { phase: 'review-requirements', data: { requirements: entry.requirements.map(id => ({ id })), shared: keys.map(key => ({ key })), sharedContextWindow: { recordIds: keys } } };
+  };
+  const schema = { type: 'object', properties: {}, required: [], additionalProperties: false };
+  const queue = [{ requirements: ['R1', 'R2'] }], visited = [];
+  for (let index = 0; index < queue.length; index++) visited.push(...fitEntry(queue, index, make, schema, entry => entry.requirements.length < 2 ? [entry] : entry.requirements.map(id => ({ requirements: [id] }))).requirements);
+  assert.deepEqual(visited, ['R1', 'R2']);
+});
+
+test('a continuation window may update an entry generated earlier in this run for its own requirements under that entry\'s ID', () => {
+  const ids = new Set(['R1']), idPrefix = 'PLAN-1.1-';
+  const generatedForR1 = { id: 'PLAN-1-STORY-1', workItemType: 'story', requirementIds: ['R1'] };
+  const generatedForR2 = { id: 'PLAN-1-STORY-2', workItemType: 'story', requirementIds: ['R2'] };
+  assert.equal(admitsPlanEntryId({ id: 'PLAN-1-STORY-1' }, 'workItems', { old: generatedForR1, ids, idPrefix }), true, 'a member split must not lock the window out of its own earlier entries');
+  assert.equal(admitsPlanEntryId({ id: 'PLAN-1-AC-1' }, 'acceptanceCriteria', { old: { id: 'PLAN-1-AC-1', requirementIds: ['R1'] }, ids, idPrefix }), true);
+  assert.equal(admitsPlanEntryId({ id: 'PLAN-1-STORY-2' }, 'workItems', { old: generatedForR2, ids, idPrefix }), false, 'another requirement\'s generated entry stays protected');
+  assert.equal(admitsPlanEntryId({ id: 'PLAN-9-STORY-1' }, 'workItems', { ids, idPrefix }), false, 'a new entry still needs this window\'s prefix');
+  assert.equal(admitsPlanEntryId({ id: 'PLAN-1.1-STORY-9' }, 'workItems', { ids, idPrefix }), true);
+  assert.equal(admitsPlanEntryId({ id: 'ORIGINAL-1' }, 'workItems', { previous: { id: 'ORIGINAL-1' }, ids, idPrefix }), true);
+});
+
+test('quality review pages a large single requirement without omitting original clauses or old proof and binds resume to its exact tasks', async () => {
+  const state = { backlog: createEmptyBacklogPack(context), metadata: { context, ai: { decisions: [] } } };
+  state.backlog.project = { code: 'SYNTHETIC', name: '합성 근거 검토', institution: '합성 기관', baselineProfile: '' };
+  state.backlog.sources = [{ ...structuredClone(source), clauses: Array.from({ length: 96 }, (_, index) => ({ ...structuredClone(source.clauses[0]), id: `C-${index}`, text: `${index}번 조건: ${'담당자만 열람하고 야간 오프라인 예외를 유지한다. '.repeat(110)}` })) }];
+  const proposal = analysis({ data: { sources: state.backlog.sources, decisions: [] } }, { question: false });
+  proposal.requirements[0].citations = state.backlog.sources[0].clauses.flatMap(clause => [clause.text.slice(0, 1800), clause.text.slice(100, 1900)].map(quote => ({ sourceId: source.id, clauseId: clause.id, quote })));
+  proposal.requirements[0].solutionDisposition = 'undecided';
+  proposal.issues = [{ id: 'FULL-PROOF', kind: 'risk', severity: 'observation', question: '전체 근거를 유지한 검토 기록', options: [], requirementIds: [proposal.requirements[0].id], citations: structuredClone(proposal.requirements[0].citations) }];
+  const seen = new Set(), replies = [], taskIds = []; let pause = true;
+  const markers = new Set();
+  const run = async ({ request, schema }) => {
+    const prepared = prepareEvidenceRequest(request, schema);
+    assert.ok(Buffer.byteLength(JSON.stringify(prepared.request)) + Buffer.byteLength(JSON.stringify(prepared.schema)) <= CONTEXT_WINDOW_BYTES);
+    if (pause && replies.length === 1) throw Object.assign(Error('AI_TIMEOUT'), { code: 'AI_TIMEOUT' });
+    for (const item of request.data.sources) for (const clause of item.clauses) { seen.add(clause.id); assert.equal(clause.text, state.backlog.sources[0].clauses.find(old => old.id === clause.id).text); }
+    assert.ok(request.data.requirements[0].description.includes('접수'));
+    const first = request.data.sources[0].clauses[0], marker = `검토창 ${first.id}`; markers.add(marker);
+    const allowed = new Set(request.data.sources.flatMap(src => src.clauses.map(clause => `${src.id}/${clause.id}`)));
+    for (const issue of [...request.data.existingIssues, ...request.data.validationIssues, ...request.data.businessModel.issues]) assert.ok(issue.citations.every(cite => allowed.has(`${cite.sourceId}/${cite.clauseId}`)), 'other-window proof must neither inflate nor authorize this call');
+    await new Promise(resolve => setTimeout(resolve, 5));
+    return { output: { issues: [], revisions: [{ ...request.data.requirements[0], description: `${request.data.requirements[0].description} ${marker}`, citations: [{ sourceId: source.id, clauseId: first.id, quote: first.text.slice(0, 1800) }] }] } };
+  };
+  const options = { run, concurrency: 2, evidenceReferences: true, onReply(index, reply, _merged, taskId) { assert.equal(index, replies.length); replies.push(reply); taskIds.push(taskId); } };
+  await assert.rejects(reviewRequirements(proposal, model(), state, options), { code: 'AI_TIMEOUT' });
+  assert.equal(replies.length, 1); const firstSeen = new Set(seen); seen.clear(); pause = false;
+  const result = await reviewRequirements(proposal, model(), state, { ...options, resumeReplies: [...replies], resumeTaskIds: [...taskIds] });
+  assert.ok([...firstSeen].every(id => !seen.has(id)), 'verified source windows are not paid for twice');
+  assert.equal(new Set([...firstSeen, ...seen]).size, 96);
+  assert.deepEqual(result.requirements[0].citations, proposal.requirements[0].citations);
+  assert.deepEqual(result.issues[0].citations, proposal.issues[0].citations);
+  for (const marker of markers) assert.ok(result.requirements[0].description.includes(marker), 'later windows preserve earlier semantic revisions');
+  assert.equal(result.coverage.length, 96);
+  let reset = false; const regenerated = [];
+  const recovered = await reviewRequirements(proposal, model(), state, { run, evidenceReferences: true, resumeReplies: replies.slice(0, 1), resumeTaskIds: ['0'.repeat(64)], onReset() { reset = true; }, onReply(index) { regenerated.push(index); } });
+  assert.ok(reset); assert.equal(regenerated[0], 0); assert.deepEqual(recovered.requirements[0].citations, proposal.requirements[0].citations);
+});
+
+test('requirement review adds a thirty-first source without discarding prior verified quotations', () => {
+  const state = snapshot(); state.backlog.sources[0].clauses = Array.from({ length: 31 }, (_, index) => ({ ...structuredClone(source.clauses[0]), id: `C-${index}` }));
+  const request = { data: { sources: state.backlog.sources, decisions: [] } }, previous = analysis(request, { question: false });
+  previous.requirements[0].citations = previous.requirements[0].citations.slice(0, 30);
+  const revision = { ...structuredClone(previous.requirements[0]), citations: [{ sourceId: source.id, clauseId: 'C-30', quote: source.clauses[0].text }] };
+  const result = validateRequirementReview({ revisions: [revision], issues: [] }, previous, state);
+  assert.equal(result.requirements[0].citations.length, 31);
+  assert.deepEqual(result.requirements[0].citations.slice(0, 30), previous.requirements[0].citations);
+});
 
 test('project issue merging preserves distinct options, kinds and requirement scope even when wording and citations match', () => {
   const first = { id: 'Q', kind: 'decision', severity: 'observation', question: '적용 범위를 확인해 주세요.', options: ['본인 담당 건'], requirementIds: ['REQ-1'], citations: [{ sourceId: 'SRC-1', clauseId: 'C-1', quote: source.clauses[0].text }] };
@@ -26,6 +183,9 @@ test('every planning request retains the full executable scope of an existing sh
   state.backlog.sources = [structuredClone(source)];
   const output = analysis({ data: { sources: state.backlog.sources, decisions: [] } }, { question: false });
   output.requirements = Array.from({ length: 5 }, (_, index) => ({ ...structuredClone(output.requirements[0]), id: `REQ-${index + 1}` }));
+  output.requirements[4].requirementType = 'constraint';
+  output.requirements[4].nfrCriteria = { metric: '타인 접수의 노출', threshold: '거부', verificationMethod: 'integration-test' };
+  output.issues = [{ id: 'RELATED', kind: 'risk', severity: 'observation', question: 'REQ-1 내보내기는 REQ-5의 노출 금지 조건을 함께 따른다.', options: [], requirementIds: ['REQ-1', 'REQ-5'], citations: structuredClone(output.requirements[0].citations) }];
   output.coverage[0].requirementIds = output.requirements.map(req => req.id);
   state.backlog = projectAnalysisBacklog(state, validateAnalysisProposal(output, state));
   const original = decomposition(), ids = output.requirements.map(req => req.id);
@@ -34,6 +194,9 @@ test('every planning request retains the full executable scope of an existing sh
   state.backlog.traceLinks = ids.map((id, index) => ({ ...original.traceLinks[0], id: `TRACE-${index}`, requirementId: id, workItemId: `STORY-${index}`, acId: `AC-ALLOW-${index}` }));
   const before = structuredClone(state.backlog); let calls = 0;
   const result = await planAndReview(output, model(), state, [], { run: async ({ request }) => {
+    assert.ok(request.data.analysisIssues.some(issue => issue.id === 'RELATED'));
+    const scope = new Set(request.data.planningBatch?.requirementIds ?? request.data.requirements.map(req => req.id));
+    if (!scope.has('REQ-5')) assert.ok(request.data.crossRequirementContext.some(req => req.id === 'REQ-5' && req.description === output.requirements[4].description));
     if (request.phase === 'review-plan') return { output: { issues: [], workItemUpdates: [], acceptanceUpdates: [], traceUpdates: [] } };
     calls++;
     assert.deepEqual(request.data.previousWorkItems.find(item => item.id === 'EPIC-1').requirementIds, ids);

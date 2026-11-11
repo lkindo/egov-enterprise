@@ -2,13 +2,20 @@ import test from 'node:test';
 import { PROMPT_VERSION } from './ai-prompts.mjs';
 import assert from 'node:assert/strict';
 import { createEmptyBacklogPack } from '../../scripts/export-deliverables-workspace.mjs';
-import { ANALYSIS_SCHEMA, BATCH_ANALYSIS_SCHEMA, validatePrivateAiValue, validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal, seedAnalysis, aiInputDigest, buildAiRequest, buildCorrectionRequest, projectAnalysisBacklog } from './ai-contract.mjs';
+import { ANALYSIS_SCHEMA, BATCH_ANALYSIS_SCHEMA, projectProposalSchema, validatePrivateAiValue, validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal, seedAnalysis, aiInputDigest, buildAiRequest, buildCorrectionRequest, projectAnalysisBacklog } from './ai-contract.mjs';
 import { planAnalysisBatches } from './ai-analysis-batches.mjs';
 import { prepareEvidenceRequest } from './ai-evidence.mjs';
 import { REQUIREMENT_REVIEW_SCHEMA } from './ai-pipeline-contract.mjs';
 
 const context = { snapshotDigest: 'synthetic-context', commit: 'synthetic', capabilities: [], screens: [], interfaces: [], tables: [], gates: [], modules: [], presets: [], permissions: [] };
 const original = '담당자는 접수 목록을 조회한다. 열람 범위는 다음 회의에서 결정한다.';
+test('one business requirement can ground every clause of the existing 96-clause transport block without inventing separate requirements', () => {
+  const value = proposal(); value.issues = [];
+  value.requirements[0].citations = Array.from({ length: 96 }, (_, index) => ({ sourceId: 'SRC-1', clauseId: `C-${index}`, quote: original }));
+  assert.doesNotThrow(() => validatePrivateAiValue(value, ANALYSIS_SCHEMA));
+  value.requirements[0].citations = Array.from({ length: 129 }, () => value.requirements[0].citations[0]);
+  assert.throws(() => validatePrivateAiValue(value, ANALYSIS_SCHEMA), { code: 'AI_OUTPUT_INVALID' });
+});
 function snapshot() {
   const backlog = createEmptyBacklogPack(context);
   backlog.project = { code: 'SYNTHETIC', name: '합성 접수 업무', institution: '합성 기관', baselineProfile: '' };
@@ -303,6 +310,15 @@ test('human evidence is seeded from actual reverse links and unlinked legacy req
   assert.throws(() => seedAnalysis(state), { code: 'AI_EXISTING_REQUIREMENT_REVIEW_REQUIRED' });
 });
 
+test('registered requirements with accumulated proof use the project bound when seeded for a new analysis', () => {
+  const state = snapshot(); state.backlog = projectAnalysisBacklog(state, validateAnalysisProposal(proposal(), state));
+  state.backlog.sources = Array.from({ length: 129 }, (_, index) => ({ ...structuredClone(state.backlog.sources[0]), id: `SRC-${index}` }));
+  state.backlog.businessRequirements[0].sourceIds = state.backlog.sources.map(source => source.id);
+  const seeded = seedAnalysis(state);
+  assert.equal(seeded.requirements[0].citations.length, 129);
+  assert.equal(new Set(seeded.requirements[0].citations.map(cite => cite.sourceId)).size, 129);
+});
+
 test('unchanged optional human fields keep their stored representation during analysis projection', () => {
   const state = snapshot(), value = proposal(); value.issues = [];
   state.backlog = projectAnalysisBacklog(state, validateAnalysisProposal(value, state));
@@ -312,23 +328,48 @@ test('unchanged optional human fields keep their stored representation during an
   assert.deepEqual(projected.businessRequirements, state.backlog.businessRequirements);
 });
 
-test('batches communicate remaining capacity and citation overflow can use one bounded delta correction', () => {
+test('a thirty-first accumulated citation retains all proof while a model delta has a separate finite cap', () => {
   const state = snapshot();
   state.backlog.sources[0].clauses = Array.from({ length: 31 }, (_, index) => ({ ...structuredClone(state.backlog.sources[0].clauses[0]), id: `C-${index}` }));
-  const previous = proposal(); previous.issues = []; previous.requirements[0].citations = state.backlog.sources[0].clauses.slice(0, 30).map(clause => ({ sourceId: 'SRC-1', clauseId: clause.id, quote: original })); previous.coverage = [];
+  const previous = proposal(); previous.issues = []; previous.requirements[0].citations = state.backlog.sources[0].clauses.slice(0, 30).map(clause => ({ sourceId: 'SRC-1', clauseId: clause.id, quote: original })); previous.coverage = state.backlog.sources[0].clauses.slice(0, 30).map(clause => ({ sourceId: 'SRC-1', clauseId: clause.id, disposition: 'included', rationale: '공통 조회 업무의 원문 근거', requirementIds: ['REQ-1'] }));
   const current = [{ ...state.backlog.sources[0], clauses: [state.backlog.sources[0].clauses[30]] }];
   const request = buildAiRequest(state, 'analysis', [], { sources: current, batch: { index: 2, total: 2, idPrefix: 'B02-' }, previousAnalysis: previous });
   assert.equal(request.data.analysisBatch.capacity.requirementsRemaining, 149);
   assert.equal(request.data.analysisBatch.capacity.citationCounts['REQ-1'], 30);
   const value = proposal(); value.issues = []; value.updatedRequirementIds = ['REQ-1']; value.requirements[0].citations[0].clauseId = 'C-30'; value.coverage[0].clauseId = 'C-30';
-  let failure;
-  try { validateAnalysisBatchProposal(value, state, current, previous, { idPrefix: 'B02-' }); } catch (error) { failure = error; }
-  assert.equal(failure?.code, 'AI_OUTPUT_INVALID');
-  assert.equal(failure.details[0].kind, 'citation-capacity');
-  assert.equal(failure.details[0].requirementId, 'REQ-1');
-  const corrected = buildCorrectionRequest(request, value, failure.details);
-  assert.equal(corrected.data.correction.violations[0].requirementId, 'REQ-1');
-  assert.match(corrected.instructions, /CURRENT batch delta/);
+  const merged = validateAnalysisBatchProposal(value, state, current, previous, { idPrefix: 'B02-' });
+  assert.equal(merged.requirements[0].citations.length, 31);
+  assert.ok(previous.requirements[0].citations.every(cite => merged.requirements[0].citations.some(next => JSON.stringify(next) === JSON.stringify(cite))));
+  assert.equal(validateAnalysisProposal(merged, state).coverage.length, 31);
+  const oversizedDelta = structuredClone(value); oversizedDelta.requirements[0].citations = Array.from({ length: 129 }, () => merged.requirements[0].citations[0]);
+  assert.throws(() => validateAnalysisBatchProposal(oversizedDelta, state, current, previous, { idPrefix: 'B02-' }), { code: 'AI_OUTPUT_INVALID' });
+});
+
+test('project proof is bounded to three thousand citations without enlarging an individual response', () => {
+  const value = proposal(); value.requirements[0].citations = Array.from({ length: 3000 }, citation);
+  assert.throws(() => validatePrivateAiValue(value, ANALYSIS_SCHEMA), { code: 'AI_OUTPUT_INVALID' });
+  assert.doesNotThrow(() => validatePrivateAiValue(value, projectProposalSchema(ANALYSIS_SCHEMA), { maxBytes: 4 * 1024 ** 2 }));
+  value.requirements[0].citations.push(citation());
+  assert.throws(() => validatePrivateAiValue(value, projectProposalSchema(ANALYSIS_SCHEMA), { maxBytes: 4 * 1024 ** 2 }), { code: 'AI_OUTPUT_INVALID' });
+});
+
+test('only the bounded aggregate may reuse an exact earlier background source, never an unseen future source', () => {
+  const state = snapshot(), previous = proposal(); previous.issues = [];
+  const make = (id, text) => ({ ...structuredClone(state.backlog.sources[0]), id, clauses: [{ ...structuredClone(state.backlog.sources[0].clauses[0]), id: 'C', text }] });
+  const old = make('OLD', '정기 신청의 처리기간은 접수 완료일부터 17영업일이다.'), current = make('NEW', '담당자는 정기 신청에 기관의 처리기간을 적용한다.'), future = make('FUTURE', '미래 문서는 아직 이 단계의 근거로 제공되지 않았다.');
+  state.backlog.sources.push(old, current, future);
+  previous.coverage.push({ sourceId: old.id, clauseId: 'C', disposition: 'excluded', requirementIds: [], rationale: '앞선 배경 정의' });
+  const cite = src => ({ sourceId: src.id, clauseId: 'C', quote: src.clauses[0].text });
+  const delta = { requirements: [{ ...structuredClone(previous.requirements[0]), id: 'B-NEW', citations: [cite(current), cite(old)] }], issues: [], coverage: [{ sourceId: current.id, clauseId: 'C', disposition: 'included', requirementIds: ['B-NEW'], rationale: '정기 신청의 처리기간' }] };
+  const invalid = fn => assert.throws(fn, error => error.code === 'AI_OUTPUT_INVALID' && error.details[0].kind === 'batch-unseen-citation');
+  invalid(() => validateAnalysisBatchProposal(delta, state, [current], previous, { idPrefix: 'B-' }));
+  invalid(() => validateAnalysisBatchProposal(delta, state, [current], previous, { idPrefix: 'B-', historicalSources: [old] }));
+  const result = validateAnalysisBatchProposal(delta, state, [current], previous, { idPrefix: 'B-', aggregate: true, historicalSources: [old] });
+  assert.equal(result.coverage.find(entry => entry.sourceId === old.id).disposition, 'merged');
+  const changed = structuredClone(old); changed.clauses[0].text += ' 변경';
+  invalid(() => validateAnalysisBatchProposal(delta, state, [current], previous, { idPrefix: 'B-', aggregate: true, historicalSources: [changed] }));
+  const unseen = structuredClone(delta); unseen.requirements[0].citations[1] = cite(future);
+  invalid(() => validateAnalysisBatchProposal(unseen, state, [current], previous, { idPrefix: 'B-', aggregate: true, historicalSources: [future] }));
 });
 
 test('batch quotation failures distinguish requirements and retain a known existing requirement identity', () => {
@@ -356,6 +397,7 @@ test('batch correction discards malformed drafts and carries only bounded known 
   assert.deepEqual(safeValidationFailures([{ get kind() { accessed = true; return 'citation-quote'; }, get path() { accessed = true; return 'items[0]'; } }]), [{ kind: 'schema', path: '$' }]);
   assert.equal(accessed, false);
   assert.deepEqual(safeValidationFailures([{ kind: 'business-model-source', path: '$.actors[0].responsibility' }]), [{ kind: 'business-model-source', path: '$.actors[0].responsibility' }]);
+  assert.deepEqual(safeValidationFailures([{ kind: 'context-reference', path: '$.matches[0].candidateId' }]), [{ kind: 'context-reference', path: '$.matches[0].candidateId' }]);
 });
 
 test('unrecoverable cumulative capacity is reported before spending the correction budget', () => {
