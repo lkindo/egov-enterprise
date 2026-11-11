@@ -175,9 +175,9 @@ const collidesWithE2e = (path) => path !== null && path.split(/[\\/]/).some((par
  * 실행 파일은 호출 연산자(`&"…\git.exe"`)를 벗긴 값으로, git 전역 옵션(`-C <dir>`·`"-C"` 포함)은 셸이 넘길 값으로 가려 건너 실제 하위 명령
  * 자리에서 읽는다.
  */
-function worktreeAddArgs(rawCode, raw) {
+function worktreeAddArgs(rawCode, raw, view = null, start = 0) {
   // 단어 경계는 셸 규칙에 맞게 가린 판으로 잡는다(PowerShell 의 `"D:\x\"`, 최종 검토).
-  const code = quoteAwareCode(rawCode, raw);
+  const { code } = quoteAwareMask(rawCode, raw, view, start);
   // PowerShell 의 출력 대입(`$result = git …`·`$null=git …`·`$x =git …`)은 우변이 명령이다 — 공백 유무와 상관없다(Codex 60·61차).
   const all = alignedWords(code, raw);
   const first = commandAt(all.map((word) => word.code));
@@ -209,11 +209,11 @@ const WORKTREE_ADD_TEXT = /(?:^|[^\w-])worktree\s+add(?:[^\w-]|$)/u;
  * (PowerShell 의 `"D:\x\"` 를 bash 규칙으로 읽은 경우) 경계를 알 수 없어 원문에서 찾는다. 따옴표 없이 쓴 `echo worktree add` 같은 드문 꼴은
  * 묻게 되는 쪽을 받아들인다.
  */
-function textualWorktreeAdd(code, raw) {
+function textualWorktreeAdd(code, raw, view = null, start = 0) {
   if (!/(?:^|[^\w-])git(?:\.exe)?(?:[^\w-]|$)/iu.test(raw)) return false;
-  const masked = quoteAwareCode(code, raw);
+  const { code: masked, closed } = quoteAwareMask(code, raw, view, start);
   // 어느 셸 규칙으로도 따옴표가 닫히지 않으면 경계를 알 수 없어 원문을 본다.
-  return WORKTREE_ADD_TEXT.test(hasUnclosedQuote(masked) ? raw : masked);
+  return WORKTREE_ADD_TEXT.test(closed ? masked : raw);
 }
 
 const hasUnclosedQuote = (masked) => ['"', "'"].some((quote) => (masked.split(quote).length - 1) % 2 === 1);
@@ -221,15 +221,24 @@ const hasUnclosedQuote = (masked) => ['"', "'"].some((quote) => (masked.split(qu
 /**
  * 따옴표를 가린 판. bash 규칙으로 닫히지 않는데 PowerShell 규칙(백슬래시는 글자, 백틱·겹친 따옴표가 이스케이프)으로는 닫히면 PowerShell 판을
  * 쓴다 — `git -C "D:\x\" commit -m "… worktree add …"` 를 bash 규칙으로 가리면 메시지가 따옴표 밖으로 나와 하위 명령처럼 읽힌다(최종 검토).
- * 길이를 보존하므로 원문과 위치가 그대로 맞는다.
+ * 길이를 보존하므로 원문과 위치가 그대로 맞는다. 조각 나누기는 bash 규칙으로 하므로 메시지 안의 `;` 에서 조각이 잘릴 수 있다 — 명령 전체(view)
+ * 를 PowerShell 규칙으로 가려 이 조각 자리(start)를 잘라 쓰고, 그것도 닫히지 않으면 이 조각만 다시 가린다(최종 재검토).
  */
-function quoteAwareCode(code, raw) {
-  if (!hasUnclosedQuote(code)) return code;
+function quoteAwareMask(code, raw, view = null, start = 0) {
+  if (!hasUnclosedQuote(code)) return { code, closed: true };
+  // 닫힘 여부는 가린 판 전체로 정한다 — 전체에서 닫힌 따옴표도 조각으로 자르면 조각 안의 따옴표 수는 홀수일 수 있다(최종 재검토).
+  if (typeof view === 'string') {
+    const whole = maskQuotedPowerShell(view);
+    if (!hasUnclosedQuote(whole)) return { code: whole.slice(start, start + raw.length), closed: true };
+  }
   const powershell = maskQuotedPowerShell(raw);
-  return hasUnclosedQuote(powershell) ? code : powershell;
+  return hasUnclosedQuote(powershell) ? { code, closed: false } : { code: powershell, closed: true };
 }
 
-/** PowerShell 규칙으로 따옴표 안을 밑줄로 가린다 — 큰따옴표 안의 이스케이프는 백틱과 겹친 따옴표뿐이고, 작은따옴표 안은 겹친 따옴표뿐이다. */
+/**
+ * PowerShell 규칙으로 따옴표 안을 밑줄로, 따옴표 밖 주석(`#` 뒤 줄 끝까지)을 공백으로 가린다 — 큰따옴표 안의 이스케이프는 백틱과 겹친 따옴표
+ * 뿐이고, 작은따옴표 안은 겹친 따옴표뿐이다. 길이를 보존한다.
+ */
 function maskQuotedPowerShell(text) {
   let out = '';
   let quote = null;
@@ -241,27 +250,17 @@ function maskQuotedPowerShell(text) {
       out += '_';
       continue;
     }
+    if (char === '#' && (index === 0 || /\s/.test(text[index - 1]))) {
+      const end = text.indexOf('\n', index);
+      const stop = end < 0 ? text.length : end;
+      out += ' '.repeat(stop - index);
+      index = stop - 1;
+      continue;
+    }
     if (char === '\'' || char === '"') quote = char;
     out += char;
   }
   return out;
-}
-
-/**
- * `git worktree add [옵션] <경로> …` 의 경로(셸이 넘길 값). 경로가 없으면 null 이다. 줄이음 표식(`` ` ``·`\`)에서 끝나면 경로가 다음 줄에
- * 있다 — 줄을 합친 판정이 따로 보므로 여기서는 경로가 없다고 본다.
- */
-function worktreeAddPath(code, raw) {
-  const args = worktreeAddArgs(code, raw);
-  if (!args) return null;
-  for (let index = 0; index < args.length; index += 1) {
-    const value = shellWordValue(args[index].text);
-    if (args[index].code === '`' || args[index].code === '\\') return null;
-    if (WORKTREE_ADD_VALUE_OPTIONS.has(value)) { index += 1; continue; }
-    if (value.startsWith('-')) continue;
-    return value;
-  }
-  return null;
 }
 
 /** 뒤 단어를 명령 자리에 두는 셸 예약어 — `for …; do git …`·`if …; then …; else …` 의 조각은 예약어 다음이 명령이다. */
@@ -1308,8 +1307,19 @@ export const RULES = Object.freeze([
     // `setup` 프로젝트 매처는 `/.*\.setup\.ts/` 라 디렉터리 이름으로는 걸리지 않는다 — 디렉터리에 걸리는 셋만 본다.
     why: 'Playwright 매처(`contracts/…spec.ts`·`(journeys|quality)/…spec.ts`)와 E2E 선별 계획기가 spec 의 절대 경로에 정규식을 적용해, 경로의 디렉터리 이름이 quality·journeys·contracts 로 끝나면 소유가 모호하다고 붉다(2026-10-19).',
     fix: '작업 트리는 D:\\wt-<짧은 이름> 으로 두되 그 셋으로 끝나는 디렉터리 이름을 쓰지 않는다(SOP §6.6).',
-    match: ({ code, raw }) => {
-      return collidesWithE2e(worktreeAddPath(code, raw));
+    // main 과 같은 판정이다 — 새 작업 트리 규칙의 따옴표 해석을 쓰면 `O\'Brien/contracts` 처럼 기존에 막던 경로를 놓쳤다(최종 재검토).
+    match: ({ git, raw }) => {
+      if (git?.sub !== 'worktree' || git.args[0] !== 'add') return false;
+      const words = tokens(raw);
+      const at = words.findIndex((word) => word === 'add');
+      let path = null;
+      for (let index = at + 1; index < words.length; index += 1) {
+        if (WORKTREE_ADD_VALUE_OPTIONS.has(words[index])) { index += 1; continue; }
+        if (words[index].startsWith('-')) continue;
+        path = unquote(words[index]);
+        break;
+      }
+      return collidesWithE2e(path);
     },
   },
   {
@@ -1321,7 +1331,7 @@ export const RULES = Object.freeze([
     codexPrompt: ['git', 'worktree', 'add'],
     codexJustification: '작업 트리를 더하려면 사용자 승인을 받는다 — 도구마다 고정 트리 하나가 기본이고 임시 트리는 예외이며, 고정 트리를 처음 만들 때도 묻는다(SOP §6.6, DEC-OPS-414).',
     // 셸 없는 argv 배열은 칸 구조로만 판정한다(applyArgvRules).
-    match: ({ code, raw }) => worktreeAddArgs(code, raw) !== null || textualWorktreeAdd(code, raw),
+    match: ({ code, raw, view, start }) => worktreeAddArgs(code, raw, view, start) !== null || textualWorktreeAdd(code, raw, view, start),
   },
   {
     id: 'gitleaks-worktree-mount', decision: 'deny',
@@ -1445,7 +1455,7 @@ function inspectView(view, command, cwd, depth, state, cwdUnknown = false) {
     const { here } = location;
     const git = gitInvocation(part.code);
     const gitDir = git?.dir ? /\s-C\s+("[^"]+"|'[^']+'|\S+)/.exec(part.raw)?.[1] : null;
-    const context = { command, raw: part.raw, code: part.code, git, cwd: gitDir ? resolve(here, unquote(gitDir)) : here, root: state.root,
+    const context = { command, view, start: part.start, raw: part.raw, code: part.code, git, cwd: gitDir ? resolve(here, unquote(gitDir)) : here, root: state.root,
       cwdUnknown: location.unknown };
     for (const rule of state.rules) {
       if (state.hits.some((hit) => hit.id === rule.id)) continue;

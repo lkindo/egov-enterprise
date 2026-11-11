@@ -243,7 +243,9 @@ const CASES = {
     pass: ['echo AGENT_GUARD_CANARY_X', 'grep -n AGENT_GUARD_CANARY scripts/agent-guard.mjs', 'echo hello'],
   },
   'worktree-name-collides-with-e2e': {
-    hit: ['git worktree add D:\\wt-quality -b fix/x origin/main', 'git worktree add -b fix/x ../wt-contracts origin/main'],
+    hit: ['git worktree add D:\\wt-quality -b fix/x origin/main', 'git worktree add -b fix/x ../wt-contracts origin/main',
+      // 최종 재검토 반례: main 처럼 원문 단어로 경로를 읽는다 — 따옴표 밖 이스케이프한 `'` 뒤의 contracts 도 막는다.
+      "git worktree add /tmp/O\\'Brien/contracts HEAD"],
     // setup 프로젝트 매처는 `/.*\.setup\.ts/` 라 디렉터리 이름으로는 걸리지 않는다(2026-10-27 감사).
     pass: ['git worktree add D:\\wt-board -b fix/x origin/main', 'git worktree list', 'git worktree add D:\\wt-setup -b fix/x origin/main'],
   },
@@ -285,7 +287,10 @@ const CASES = {
       'if (Test-Path D:\\wt-review) { git worktree list }', "Write-Output '{ git worktree add D:\\wt-x HEAD }'",
       '$list = git worktree list', '$list=git worktree list', 'Write-Output worktree add notes',
       // 최종 검토 반례: PowerShell 은 `\"` 로 따옴표를 닫는다 — 메시지 안의 낱말을 명령으로 읽지 않는다.
-      'git -C "D:\\wt-egov-claude\\" commit --only -m "docs: worktree add approvals" -- AGENTS.md'],
+      'git -C "D:\\wt-egov-claude\\" commit --only -m "docs: worktree add approvals" -- AGENTS.md',
+      // 최종 재검토 반례: 메시지 안의 `;` 로 조각이 잘린 경우와 PowerShell 주석.
+      'git -C "D:\\wt-egov-claude\\" commit --only -m "docs: note; git worktree add requires approval" -- AGENTS.md',
+      'git -C "D:\\wt-egov-claude\\" status # worktree add requires approval'],
   },
 };
 
