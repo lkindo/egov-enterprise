@@ -3043,4 +3043,27 @@ class BoardServiceTest {
                 .isEqualTo("업무게시판");
         assertThat(new BoardMapperImpl().toDto(row).bbsTtl()).as("목록·상세 경로는 게시판 이름을 싣지 않는다").isNull();
     }
+
+    @Test
+    @DisplayName("🔒 BoardPostAccessPort.assertScrapablePost 는 활성 게시판·비밀글 소유권·게시 기간을 조회수 증가 없이 검증한다")
+    void assertScrapablePost_enforcesStrictReadabilityWithoutIncrementingViewCount() {
+        BoardDetailResult secretOther = BoardDetailResult.builder()
+                .pstSn(77L).bbsId("BBS_01").scrtYn("Y").userId("ESNTL_OWNER").build();
+        given(boardRepository.findActiveArticleDetail("BBS_01", 77L)).willReturn(Optional.of(secretOther));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("ESNTL_INTRUDER"));
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId("ESNTL_OWNER", "BOARD_READ_ALL"))
+                .thenThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED));
+
+        assertThatThrownBy(() -> boardService.assertScrapablePost("BBS_01", 77L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+
+        BoardDetailResult visible = BoardDetailResult.builder()
+                .pstSn(78L).bbsId("BBS_01").scrtYn("N").userId("ESNTL_OWNER").build();
+        given(boardRepository.findActiveArticleDetail("BBS_01", 78L)).willReturn(Optional.of(visible));
+
+        boardService.assertScrapablePost("BBS_01", 78L);
+        verifyNoInteractions(viewCountService);
+    }
 }

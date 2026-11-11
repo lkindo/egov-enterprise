@@ -14,7 +14,7 @@ import java.util.concurrent.RejectedExecutionException;
  * 비동기 처리 설정
  * - 메일 발송, 로그 기록 등 부가 작업의 비동기 처리를 위한 스레드 풀 설정
  */
-@Configuration
+@Configuration("outboundAsyncConfig")
 @EnableAsync
 @Profile("!test")
 @Slf4j

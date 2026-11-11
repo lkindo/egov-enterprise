@@ -2066,6 +2066,20 @@
             "gradle": ":business-core:pitest",
             "classes": "nuri.business.domain.code.*,nuri.business.domain.user.repository.*,nuri.business.domain.common.*",
             "tests": "nuri.business.*"
+          },
+          {
+            "scope": "business-app-knowledge-collab",
+            "job": "mutation-scope",
+            "gradle": ":business-app:pitest",
+            "classes": "nuri.business.service.help.*,nuri.business.service.scrap.*,nuri.business.service.addressbook.*,nuri.business.service.report.*,nuri.business.service.template.*",
+            "tests": "nuri.business.*"
+          },
+          {
+            "scope": "business-app-cms",
+            "job": "mutation-scope",
+            "gradle": ":business-app:pitest",
+            "classes": "nuri.business.service.cms.*",
+            "tests": "nuri.business.*"
           }
         ]
       },

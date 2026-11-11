@@ -80,7 +80,12 @@ public class WorkReportService extends BaseAbstractService {
         // 소유권 검증(IDOR 방어): 작성자 본인 또는 관리자만 삭제 가능.
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "WORK_RPT_DELETE_ALL");
 
+        Long atchFileSn = entity.getAtchFileSn();
         workReportRepository.delete(entity);
+        if (atchFileSn != null) {
+            workReportRepository.flush();
+            attachmentAssignmentPolicy.releaseIfUnreferenced(atchFileSn);
+        }
     }
 
     /**

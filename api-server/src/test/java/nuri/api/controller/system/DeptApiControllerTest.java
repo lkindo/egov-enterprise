@@ -145,6 +145,24 @@ public class DeptApiControllerTest extends BaseControllerTest {
     }
 
     @Test
+    public void updateDeptHierarchy_NullItemOrOversizedBatch_ShouldBeRejected() throws Exception {
+        mockMvc.perform(put("/api/v1/admin/system/departments/batch-hierarchy")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("[null]"))
+                .andExpect(status().isBadRequest());
+
+        String oversized = java.util.stream.IntStream.rangeClosed(1, 501)
+                .mapToObj(i -> "{\"ognzId\":\"DEPT_" + i + "\",\"sortOrdr\":" + i + "}")
+                .collect(java.util.stream.Collectors.joining(",", "[", "]"));
+        mockMvc.perform(put("/api/v1/admin/system/departments/batch-hierarchy")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(oversized))
+                .andExpect(status().isBadRequest());
+
+        verify(deptManageService, never()).updateDeptHierarchy(any());
+    }
+
+    @Test
     public void updateDept_ShouldSucceed() throws Exception {
         DeptManageDto dto = DeptManageDto.builder()
                 .ognzId("ORGNZT_0000000000001")

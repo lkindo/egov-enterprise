@@ -37,10 +37,8 @@ public class LegacyConfig {
     // 동일 basename 5종, 빈명 "messageSource")가 단독 제공하므로 여기의 @Profile("!test") 중복 정의를 제거.
     // (⚠@Profile("!test") 라 전체 테스트 미로드 — 컴파일+동일-basename 확인으로 확증, prod-boot 은 §4.1 보류)
 
-    @Bean
-    public nuri.foundation.core.config.ApplicationContextProvider applicationContextProvider() {
-        return new nuri.foundation.core.config.ApplicationContextProvider();
-    }
+    // [정리 2026-11-11] applicationContextProvider 빈 이중정의 해소 — foundation ApplicationContextProvider(@Component)가
+    // 단독 제공하므로 여기의 중복 @Bean 정의를 제거한다(bean overriding 비활성화 선행 조건).
 
     // [§2.A D3(a)(b) 정정 2026-07-17] egovBBSMstr/Blog/AnswerNo/StsfdgNo IdGnr 4빈 + strategy 4빈 제거.
     // 근거(db-bridge 실측): ① setTable("COMTECOPSEQ") 인데 COMTECOPSEQ 테이블 실물 부재(채번 시 실패).

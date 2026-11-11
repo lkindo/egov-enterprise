@@ -130,10 +130,14 @@ public class PopupService {
     @Transactional
     public void deletePopup(Long popupSn) {
         SecurityUtil.assertPermission("POPUP_DELETE");
-        if (!popupRepository.existsById(Objects.requireNonNull(popupSn))) {
-            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
+        Popup popup = popupRepository.findById(Objects.requireNonNull(popupSn))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        Long atchFileSn = parsePersistedAttachmentId(popup.getFileUrl());
+        popupRepository.delete(popup);
+        if (atchFileSn != null) {
+            popupRepository.flush();
+            attachmentAssignmentPolicy.releaseIfUnreferenced(atchFileSn);
         }
-        popupRepository.deleteById(Objects.requireNonNull(popupSn));
     }
 
     private static void validateDimensions(PopupDto dto) {

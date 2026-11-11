@@ -76,7 +76,7 @@ export const updateDeptHierarchyOperation = /*#__PURE__*/ (() => {
   multipartParts: null,
   pathSchema: null,
   querySchema: null,
-  requestSchema: z.array(z.lazy(() => DeptHierarchyItemRequestRequestSchema.strict())),
+  requestSchema: z.array(z.lazy(() => DeptHierarchyItemRequestRequestSchema.strict())).max(500),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],

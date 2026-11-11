@@ -38,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import nuri.foundation.core.board.BoardPostAccessPort;
 import nuri.foundation.core.community.CommunityBoardAccessPort;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -58,7 +59,7 @@ import static nuri.business.service.board.BoardPolicySupport.*;
  */
 @Slf4j
 @Service
-public class BoardService extends BaseAbstractService {
+public class BoardService extends BaseAbstractService implements BoardPostAccessPort {
 
         private final BoardRepository boardRepository;
         private final BoardMasterRepository boardMasterRepository;
@@ -705,6 +706,12 @@ public class BoardService extends BaseAbstractService {
                 }
                 // [2026-10-01 결정 23·2026-10-23 ADR-0040 결정 3] 게시 기간 밖의 글의 댓글·추천·만족도도 상세와 같은 사람만 닿는다.
                 assertPostingVisible(detail, today);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public void assertScrapablePost(String bbsId, Long pstSn) {
+                assertCommentAccess(bbsId, pstSn);
         }
 
         /**

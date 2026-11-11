@@ -6,13 +6,12 @@ import org.egovframe.rte.fdl.crypto.EgovPasswordEncoder;
 import org.egovframe.rte.fdl.crypto.impl.EgovARIACryptoServiceImpl;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.core.env.Profiles;
 import org.jspecify.annotations.NonNull;
-import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 @Slf4j
-@Component
 public class CryptoUtil implements ApplicationContextAware {
 
     private static EgovCryptoService cryptoService;
@@ -55,6 +54,12 @@ public class CryptoUtil implements ApplicationContextAware {
     @Override
     public void setApplicationContext(@NonNull ApplicationContext applicationContext) {
         log.info("### CryptoUtil: setApplicationContext called");
+        var env = applicationContext.getEnvironment();
+        if (env != null && env.acceptsProfiles(Profiles.of("prod"))
+                && (algorithmKey == null || algorithmKey.isBlank() || WEAK_DEFAULT_KEYS.contains(algorithmKey))) {
+            throw new IllegalStateException(
+                    "prod 프로파일에서는 약한 기본 암호화 키 또는 빈 키를 사용할 수 없습니다. 외부 시크릿(ALGORITHM_KEY)을 주입하십시오.");
+        }
         CryptoUtil.cryptoService = (EgovCryptoService) applicationContext.getBean("ariacryptoService");
     }
 

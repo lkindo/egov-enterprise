@@ -79,11 +79,18 @@ public class DeptApiController {
     }
 
     @Operation(summary = "조직 계층 일괄 저장",
-            description = "조직도 편집 결과(상위 부서·정렬 순서)를 일괄 반영합니다. 각 항목의 ognzId 는 필수입니다.")
+            description = "조직도 편집 결과(상위 부서·정렬 순서)를 일괄 반영합니다. 각 항목의 ognzId 는 필수이며 한 번에 최대 "
+                    + DeptManageService.MAX_HIERARCHY_BATCH_SIZE + "건까지 요청할 수 있습니다.")
     @PutMapping("/batch-hierarchy")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.system.DeptApiController#updateDeptHierarchy')")
     public ResponseEntity<ApiResponse<Void>> updateDeptHierarchy(
-            @RequestBody java.util.List<@Valid DeptHierarchyItemRequest> items) {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
+                    content = @io.swagger.v3.oas.annotations.media.Content(
+                            array = @io.swagger.v3.oas.annotations.media.ArraySchema(
+                                    schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = DeptHierarchyItemRequest.class),
+                                    maxItems = DeptManageService.MAX_HIERARCHY_BATCH_SIZE)))
+            @RequestBody @jakarta.validation.constraints.Size(max = DeptManageService.MAX_HIERARCHY_BATCH_SIZE)
+            java.util.List<@jakarta.validation.constraints.NotNull @Valid DeptHierarchyItemRequest> items) {
         java.util.List<DeptManageDto> hierarchy = items.stream()
                 .map(item -> DeptManageDto.builder()
                         .ognzId(item.ognzId())

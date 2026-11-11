@@ -307,6 +307,21 @@ class ScheduleServiceTest {
     }
 
     @Test
+    @DisplayName("일정 삭제 — 첨부파일이 있으면 물리 삭제 및 flush 뒤 미참조 첨부를 수거한다")
+    void deleteSchedule_flushesAndReleasesAttachmentWhenPresent() {
+        Schedule entity = Schedule.builder().schdlSn(2L).atchFileSn(401L).build();
+        entity.setFrstRgtrId("user1");
+        given(scheduleRepository.findById(2L)).willReturn(Optional.of(entity));
+
+        scheduleService.deleteSchedule(2L, "user1");
+
+        org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(scheduleRepository, attachmentAssignmentPolicy);
+        inOrder.verify(scheduleRepository).delete(entity);
+        inOrder.verify(scheduleRepository).flush();
+        inOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(401L);
+    }
+
+    @Test
     @DisplayName("일정 삭제 - 소유권 가드(SecurityUtil.assertOwnerOrPermission) 위임 검증")
     void deleteSchedule_delegatesOwnershipGuard() {
         // given — 소유자 loginId=frstRgtrId. 실제 소유권 거부/허용 판정은 SecurityUtilTest 가 검증하고,

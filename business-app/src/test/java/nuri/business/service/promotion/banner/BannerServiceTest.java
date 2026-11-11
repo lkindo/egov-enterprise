@@ -292,6 +292,21 @@ class BannerServiceTest {
     }
 
     @Test
+    @DisplayName("배너 삭제 — 첨부파일이 있으면 물리 삭제 및 flush 뒤 미참조 첨부를 수거한다")
+    void deleteBanner_flushesAndReleasesAttachmentWhenPresent() {
+        authenticate("BANNER_DELETE");
+        Banner existing = Banner.builder().bnrSn(2L).bnrNm("With image").atchFileSn(601L).build();
+        given(bannerRepository.findById(2L)).willReturn(Optional.of(existing));
+
+        bannerService.deleteBanner(2L);
+
+        org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(bannerRepository, attachmentAssignmentPolicy);
+        inOrder.verify(bannerRepository).delete(existing);
+        inOrder.verify(bannerRepository).flush();
+        inOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(601L);
+    }
+
+    @Test
     @DisplayName("[2026-10-18] 배너 삭제 - 없는 배너는 404 다(종전 deleteById 는 조용히 200 이었다)")
     void deleteBanner_Fail_NotFound() {
         authenticate("BANNER_DELETE");

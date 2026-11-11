@@ -175,6 +175,24 @@ class DeptManageServiceTest {
         verifyNoInteractions(deptManageRepository);
     }
 
+    @Test
+    @DisplayName("조직도 일괄 저장 — 상한(500건) 초과 및 null 항목은 저장소 잠금 전에 400 으로 거부한다")
+    void updateDeptHierarchyRejectsOversizedBatchAndNullItems() {
+        List<DeptManageDto> tooMany = java.util.stream.IntStream.rangeClosed(1, 501)
+                .mapToObj(i -> DeptManageDto.builder().ognzId("DEPT_" + i).build())
+                .toList();
+        BusinessException oversized = assertThrows(BusinessException.class,
+                () -> deptManageService.updateDeptHierarchy(tooMany));
+        assertEquals(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE, oversized.getErrorCode());
+
+        List<DeptManageDto> withNull = java.util.Collections.singletonList(null);
+        BusinessException nullItem = assertThrows(BusinessException.class,
+                () -> deptManageService.updateDeptHierarchy(withNull));
+        assertEquals(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE, nullItem.getErrorCode());
+
+        verifyNoInteractions(deptManageRepository);
+    }
+
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.ValueSource(booleans = {true, false})
     void refusesDeletionWhileMembersOrChildrenRemain(boolean members) {

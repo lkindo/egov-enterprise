@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "PIT 범위별 job 시간(started_at→completed_at, runner 대기 제외)의 초 단위 중앙값이다. ci.yml 의 PIT matrix 는 이 값이 긴 범위부터 선언한다(LPT, ADR-0044). 다시 재면 PR 설명에 실측 run id 를 남긴다.",
+  "description": "PIT 범위별 job 시간(started_at→completed_at, runner 대기 제외)의 초 단위 중앙값이다. ci.yml 의 PIT matrix 는 이 값이 긴 범위부터 선언한다(LPT, ADR-0044). 신설 범위(business-app-knowledge-collab, business-app-cms)는 첫 main push CI 실행 전까지 로컬 pitest 실측 초를 잠정 기록하고, 다시 재면 PR 설명에 실측 run id 를 남긴다.",
   "source": {
     "workflow": ".github/workflows/ci.yml",
     "branch": "main",
@@ -22,12 +22,14 @@
       "business-app-board": 735,
       "business-app-delivery-operation": 482,
       "business-core-file": 461,
+      "business-app-knowledge-collab": 424,
       "business-app-workflow": 421,
       "business-app-home-promotion": 372,
       "business-app-participation": 329,
       "business-core-auth": 311,
       "business-core-code-user-common": 250,
       "business-app-survey": 223,
+      "business-app-cms": 187,
       "business-core-user-org": 169,
       "business-core-observability": 146,
       "foundation-security-filter": 72,

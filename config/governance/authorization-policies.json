@@ -4940,6 +4940,20 @@
       ]
     },
     {
+      "target": "ScrapService#assertBoardTargetScrapable",
+      "source": "business-app/src/main/java/nuri/business/service/scrap/ScrapService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "boardPostAccess == null",
+        "CommonErrorCode.ACCESS_DENIED",
+        "boardPostAccess.assertScrapablePost(bbsId, pstSn);"
+      ],
+      "forbiddenTokens": [
+        "boardPostAccess != null &&"
+      ]
+    },
+    {
       "target": "UserService#changePassword",
       "source": "business-core/src/main/java/nuri/business/service/user/UserService.java",
       "policy": "SELF_WITH_CREDENTIAL",

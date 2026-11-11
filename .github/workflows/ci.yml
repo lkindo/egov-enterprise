@@ -1609,6 +1609,14 @@ jobs:
             tests: "nuri.business.*"
             threshold: 75
 
+          # 도움말·스크랩(게시판 열람 권한 위임)·주소록(소유·버전 토큰)·업무보고(소유·첨부 정리)·템플릿 참조 차단 경계를 검증한다.
+          # 로컬 실측 247 mutations, 80%, 424초.
+          - scope: business-app-knowledge-collab
+            gradle: ":business-app:pitest"
+            classes: "nuri.business.service.help.*,nuri.business.service.scrap.*,nuri.business.service.addressbook.*,nuri.business.service.report.*,nuri.business.service.template.*"
+            tests: "nuri.business.*"
+            threshold: 75
+
           - scope: business-app-workflow
             gradle: ":business-app:pitest"
             classes: "nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.informalsanction.*"
@@ -1649,6 +1657,14 @@ jobs:
           - scope: business-app-survey
             gradle: ":business-app:pitest"
             classes: "nuri.business.service.survey.*"
+            tests: "nuri.business.*"
+            threshold: 75
+
+          # 콘텐츠 페이지(CMS) 문서 정규화·게시 상태 전이·홈 소개 지정·보관·파기 권한 및 감사를 검증한다.
+          # 로컬 실측 440 mutations, 84%, 187초.
+          - scope: business-app-cms
+            gradle: ":business-app:pitest"
+            classes: "nuri.business.service.cms.*"
             tests: "nuri.business.*"
             threshold: 75
 
