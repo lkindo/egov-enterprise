@@ -159,8 +159,8 @@ function ambiguousWorktreeAdd(code, raw) {
   const worktreeAdd = /(?:^|\s)worktree\s+add(?:\s|$)/u;
   // 따옴표가 닫히지 않았으면(PowerShell 의 `"D:\x\"` 를 bash 규칙으로 읽은 경우) 경계를 알 수 없다 — 원문에서 찾는다.
   if (['"', "'"].some((quote) => (code.split(quote).length - 1) % 2 === 1)) return worktreeAdd.test(raw);
-  // 따옴표 밖의 `\`+공백(Git Bash 의 이스케이프)만 모호하다고 본다 — 메시지 안의 `\ ` 는 가린 판에 없다(Codex 57차).
-  return /\\\s/u.test(code) && worktreeAdd.test(code);
+  // 따옴표 밖의 `\`+공백(Git Bash)·`` ` ``+공백(PowerShell) 이스케이프만 모호하다고 본다 — 메시지 안의 것은 가린 판에 없다(Codex 57·58차).
+  return /[\\`]\s/u.test(code) && worktreeAdd.test(code);
 }
 
 /**
@@ -1412,15 +1412,26 @@ export function evaluate(command, { cwd = process.cwd(), rules = RULES, gitRunne
   };
 }
 
+/** 가드가 셸 문법으로 읽는 글자 — argv 칸 안에 있으면 따옴표로 감싸 데이터로 둔다(공백·따옴표·구분자·주석·변수·괄호·리다이렉션). */
+const ARGV_SHELL_SYNTAX = /[\s'"`;|&#$()<>]/u;
+
+/** 칸 전체를 한 따옴표 문자열로 감싼다. 작은따옴표가 들었으면 큰따옴표로 감싸고 `" \ $ `` ` `` 를 이스케이프한다. */
+function quoteWhole(value) {
+  return value.includes("'") ? `"${value.replace(/(["\\$`])/g, '\\$1')}"` : `'${value}'`;
+}
+
 /**
- * argv 한 칸을 가드의 단어 하나로 읽히게 한다. 공백이 든 칸만 그 공백을 따옴표로 감싼다(`user.name=Agent" "Review`) — 칸 전체를 감싸면
- * `-cuser.name=…`·`--force-with-lease=…` 같은 옵션 모양이 가려져 다른 규칙이 하위 명령을 잘못 읽는다(Codex 57차). 두 따옴표가 다 들었으면
- * 종전처럼 그대로 둔다.
+ * 셸 없는 argv 한 칸을 가드의 단어 하나로 읽히게 한다. 셸 문법 글자가 없으면 그대로 두고, 있으면 그 칸을 따옴표로 감싸 데이터로 둔다 —
+ * `;`·`#`·작은따옴표를 그대로 두면 조각·주석·문자열로 읽혀 뒤의 명령을 놓친다(Codex 58차). 옵션 칸은 이름(`-cuser.name=`·`--opt=`)과 앞
+ * 대시를 따옴표 밖에 남긴다 — 칸 전체를 감싸면 옵션 모양이 가려져 하위 명령을 잘못 읽는다(Codex 57차).
  */
 function quoteArgument(value) {
-  if (typeof value !== 'string' || !/\s/u.test(value)) return String(value);
-  const quote = !value.includes('"') ? '"' : !value.includes("'") ? "'" : null;
-  return quote ? value.replace(/\s+/gu, (space) => `${quote}${space}${quote}`) : value;
+  const text = String(value);
+  if (!ARGV_SHELL_SYNTAX.test(text)) return text;
+  const option = /^(-{1,2}[^=\s'"`;|&#$()<>]*=)(.*)$/su.exec(text);
+  if (option) return `${option[1]}${quoteWhole(option[2])}`;
+  const dashes = /^-*/u.exec(text)[0];
+  return `${dashes}${quoteWhole(text.slice(dashes.length))}`;
 }
 
 /** 각 도구의 PreToolUse 입력에서 명령 문자열과 작업 디렉터리를 꺼낸다. 셸 명령이 아니면 null. */
