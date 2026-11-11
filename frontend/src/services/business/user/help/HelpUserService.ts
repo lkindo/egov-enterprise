@@ -182,7 +182,7 @@ class HelpUserService extends ApiService {
       config,
     });
     const list = (response.list ?? []).map((item): QNA => {
-      // [2026-11-11 GAP-HELP-001·DEC-OPS-414 ①] 게시판 목록 질의(BoardRepositoryImpl#searchArticles)는 내부 식별자 비표시 원칙(ADR-0043 0차)과
+      // [2026-11-11 GAP-HELP-001·DEC-OPS-415 ①] 게시판 목록 질의(BoardRepositoryImpl#searchArticles)는 내부 식별자 비표시 원칙(ADR-0043 0차)과
       //   목록 투영 범위에 따라 userId·useYn 을 싣지 않는다(둘 다 OpenAPI 계약상 nullable 이고 useYn='Y' 는 서버가 거른다).
       //   상세 링크를 만드는 양의 정수 pstSn 만 필수 불변식으로 검증한다.
       if (

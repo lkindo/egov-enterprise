@@ -70,7 +70,7 @@ if [ -n "$MISSING" ]; then
     exit 1
 fi
 
-# [2026-11-11 ADR-0054·DEC-OPS-414] docker-compose.prod.yml 은 MFA_REQUIRE_PROTECTED 기본값을 true 로 둔다.
+# [2026-11-11 ADR-0054·DEC-OPS-415] docker-compose.prod.yml 은 MFA_REQUIRE_PROTECTED 기본값을 true 로 둔다.
 #   deploy.sh 는 .env 를 읽지 않고 export 된 셸 환경변수만 읽는다.
 #   오타 값(예: no/0)이 조용히 비활성화로 해석되지 않게 true/false 만 허용하고,
 #   true 일 때는 키링 두 변수(MFA_ACTIVE_KEY_ID·MFA_KEYS_JSON) 누락을 이미지 pull 전에 즉시 차단한다.

@@ -320,7 +320,7 @@ class ConfigSafetyLinterTest {
         // ── 13) [2026-10-21] 운영 컨테이너 격리 — 권한 제거·권한 상승 차단·메모리 상한과 그 상한을 따르는 api 힙
         violations.addAll(prodContainerHardeningViolations(composeProdSrc));
 
-        // ── 14) [2026-11-11 DEC-OPS-414] 운영 보호계정 MFA 기본 강제와 배포 사전 키링 검증
+        // ── 14) [2026-11-11 DEC-OPS-415] 운영 보호계정 MFA 기본 강제와 배포 사전 키링 검증
         Path deployScriptPath = root.resolve(DEPLOY_SCRIPT);
         if (Files.isRegularFile(deployScriptPath)) {
             violations.addAll(prodMfaProtectionViolations(
@@ -656,7 +656,7 @@ class ConfigSafetyLinterTest {
     }
 
     @Test
-    @DisplayName("[DEC-OPS-414] 운영 오버레이 MFA_REQUIRE_PROTECTED 기본 true 및 deploy.sh 사전 키링 검증이 빠지면 red")
+    @DisplayName("[DEC-OPS-415] 운영 오버레이 MFA_REQUIRE_PROTECTED 기본 true 및 deploy.sh 사전 키링 검증이 빠지면 red")
     void prodMfaProtectionRejectsDisabledDefaultAndMissingDeployPreflight() throws IOException {
         Path root = resolveRepoRoot();
         String prodSrc = stripComments(HarnessSourceIndex.read(root.resolve(COMPOSE_PROD)));
