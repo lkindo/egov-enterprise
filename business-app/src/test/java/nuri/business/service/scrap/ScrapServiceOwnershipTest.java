@@ -213,8 +213,10 @@ class ScrapServiceOwnershipTest {
     @DisplayName("스크랩 제목·설명만 바꿀 때는 기존 URL 의 원본 게시글이 마감·삭제됐더라도 수정이 막히지 않으며, 이미 활성인 중복 등록은 409 를 우선한다")
     void unchangedUrlMetadataEditAndActiveDuplicateDoNotReverifyBoardPost() {
         String closedPostUrl = "/admin/community/boards/detail?bbsId=BBS-CLOSED&pstSn=55";
-        Scrap existing = ownedBy("owner", 51L, closedPostUrl);
+        Scrap existing = ownedBy("owner", 51L, " " + closedPostUrl + " ");
         given(scrapRepository.findById(51L)).willReturn(Optional.of(existing));
+        given(scrapRepository.findByFrstRgtrIdAndScrapUrlOrderByScrapSnAsc("owner", closedPostUrl))
+                .willReturn(List.of());
         authenticateAs("owner", "USER");
 
         scrapService.updateScrap(51L, "owner", ScrapDto.builder()
@@ -226,10 +228,17 @@ class ScrapServiceOwnershipTest {
 
         assertThat(existing.getScrapNm()).isEqualTo("새 제목");
         assertThat(existing.getScrapExpln()).isEqualTo("새 메모");
+        assertThat(existing.getScrapUrl()).isEqualTo(closedPostUrl);
         verify(boardPostAccess, never()).assertScrapablePost(any(), any());
 
         given(scrapRepository.findByFrstRgtrIdAndScrapUrlOrderByScrapSnAsc("owner", closedPostUrl))
                 .willReturn(List.of(existing));
+        Scrap another = ownedBy("owner", 52L, "https://other.example.com");
+        given(scrapRepository.findById(52L)).willReturn(Optional.of(another));
+        assertThatExceptionOfType(BusinessException.class)
+                .isThrownBy(() -> scrapService.updateScrap(52L, "owner", ScrapDto.builder()
+                        .scrapNm("중복 수정").scrapUrl(closedPostUrl).useYn("Y").build()))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.DUPLICATE_RESOURCE);
         assertThatExceptionOfType(BusinessException.class)
                 .isThrownBy(() -> scrapService.createScrap("owner", ScrapDto.builder()
                         .scrapNm("중복 등록").scrapUrl(closedPostUrl).useYn("Y").build()))

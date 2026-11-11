@@ -76,6 +76,7 @@ test.describe('조직 ↔ 일정 통합 사슬', () => {
         const suffix = randomBytes(4).toString('hex');
         const departments: string[] = []; const users: string[] = []; const schedules: number[] = [];
         const fileGroups: number[] = [];
+        const boundScheduleByFileGroup = new Map<number, number>();
         type FileItem = { atchFileSn: number; fileSn: number; orignlFileNm: string; fileMg: number };
         try {
             for (const label of ['Same', 'Other']) {
@@ -132,7 +133,8 @@ test.describe('조직 ↔ 일정 통합 사슬', () => {
                 const response = await actors.post(SCHEDULE_API, { headers: owner,
                     data: { schdlNm: `${PREFIX}${sharing}_${suffix}`, schdlBgngYmd: ymd, schdlEndYmd: ymd, schdlSeCd: sharing, atchFileSn } });
                 expect(response.status()).toBe(201); const id = (await response.json()).data as number;
-                expect(Number.isSafeInteger(id)).toBe(true); expect(id).toBeGreaterThan(0); schedules.push(id); return id;
+                expect(Number.isSafeInteger(id)).toBe(true); expect(id).toBeGreaterThan(0);
+                schedules.push(id); boundScheduleByFileGroup.set(atchFileSn, id); return id;
             };
             // 공유·개인 일정이 같은 파일을 참조하면 any-readable 정책 때문에 개인 첨부 검증이 무효가 된다.
             const sharedFile = await upload('shared'); const privateFile = await upload('private');
@@ -191,12 +193,20 @@ test.describe('조직 ↔ 일정 통합 사슬', () => {
             const cleanup = async (operation: () => Promise<void>) => {
                 try { await operation(); } catch (error) { failures.push(error); }
             };
+            const deletedSchedules = new Set<number>();
             try {
                 for (const id of schedules.reverse()) await cleanup(async () => {
                     expect((await adminRequest.delete(`${SCHEDULE_API}/${id}`)).status()).toBe(200);
+                    deletedSchedules.add(id);
                 });
                 for (const id of fileGroups.reverse()) await cleanup(async () => {
-                    const list = await adminRequest.get(`/api/v1/files/${id}`); expect(list.status()).toBe(200);
+                    const boundSchedule = boundScheduleByFileGroup.get(id);
+                    const list = await adminRequest.get(`/api/v1/files/${id}`);
+                    if (boundSchedule !== undefined && deletedSchedules.has(boundSchedule)) {
+                        expect(list.status(), '일정 물리 삭제로 무참조 첨부 그룹이 함께 수거되어야 한다').toBe(404);
+                        return;
+                    }
+                    expect(list.status()).toBe(200);
                     for (const item of (await list.json()).data as FileItem[]) {
                         expect((await adminRequest.delete(`/api/v1/files/${id}/${item.fileSn}`)).status()).toBe(200);
                     }

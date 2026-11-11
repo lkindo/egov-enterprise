@@ -119,21 +119,25 @@ public class ScrapService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCRAP_UPDATE_ALL"); // [IDOR] 소유자/관리자만 수정
         String normalizedUrl = normalizeAndValidateUrl(dto.getScrapUrl());
-        boolean urlChanged = !java.util.Objects.equals(normalizedUrl, entity.getScrapUrl());
-        // 대상 URL 이 바뀔 때만 내부 게시글 열람 권한을 검증한다 — 이미 보관한 게시글이 나중에 마감·삭제돼도
-        // 스크랩 제목·설명 수정은 막히지 않게 한다.
-        if (urlChanged) {
-            verifyBoardTargetIfInternal(normalizedUrl);
-        }
+        String existingNormalizedUrl = entity.getScrapUrl() != null && !entity.getScrapUrl().strip().isEmpty()
+                ? entity.getScrapUrl().strip()
+                : null;
+        boolean rawUrlChanged = !Objects.equals(normalizedUrl, entity.getScrapUrl());
+        boolean targetUrlChanged = !Objects.equals(normalizedUrl, existingNormalizedUrl);
         // 요청 DTO 값을 반영한다(과거에는 entity 의 기존 값을 자기 자신에게 재대입해 수정이 무동작이었다).
         // useYn 만은 미전달(null) 시 기존 값을 보존 — 누락된 요청이 목록 필터(useYn='Y')에서 행을 증발시키는 것을 막는다.
         String useYn = dto.getUseYn() != null ? dto.getUseYn() : entity.getUseYn();
         // [2026-10-19] 주소를 바꿔 같은 사용자의 다른 스크랩과 겹치면 409 — 등록과 같은 1인 1주소 규칙이다.
         //   겹침은 스크랩 주인(frstRgtrId) 기준이다. 대리 수정하는 관리자의 보관함이 아니다.
-        if (normalizedUrl != null && urlChanged
+        if (normalizedUrl != null && rawUrlChanged
                 && scrapRepository.findByFrstRgtrIdAndScrapUrlOrderByScrapSnAsc(entity.getFrstRgtrId(), normalizedUrl)
                         .stream().anyMatch(other -> !other.getScrapSn().equals(entity.getScrapSn()))) {
             throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE, DUPLICATE_SCRAP_MESSAGE);
+        }
+        // 대상 URL 이 바뀔 때만 내부 게시글 열람 권한을 검증한다 — 이미 보관한 게시글이 나중에 마감·삭제되거나
+        // 앞뒤 공백이 붙은 옛 행을 그대로 저장해도 스크랩 제목·설명 수정은 막히지 않으며, 중복 검사 뒤에 두어 등록과 같은 409 우선순위를 유지한다.
+        if (targetUrlChanged) {
+            verifyBoardTargetIfInternal(normalizedUrl);
         }
         entity.update(dto.getScrapNm(), normalizedUrl, dto.getScrapExpln(), useYn);
         entity.setLastMdfrId(userId);
