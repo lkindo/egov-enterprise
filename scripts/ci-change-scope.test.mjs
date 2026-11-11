@@ -59,7 +59,7 @@ test('agent harness guard, skill adapter generator and hook adapters select only
   assert.equal(guard.mutation, false);
   assert.equal(guard.mutationMigrationTool, false);
   assert.equal(guard.frontend, false);
-  const hooks = classifyChangedFiles(['.claude/settings.json', '.codex/hooks.json', '.agents/hooks.json']);
+  const hooks = classifyChangedFiles(['.claude/settings.json', '.codex/hooks.json', '.agents/hooks.json', '.codex/rules/agent-guard.rules']);
   assert.deepEqual(hooks.unknownFiles, []);
   assert.equal(hooks.backend, false);
   assert.equal(hooks.migration, false);

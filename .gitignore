@@ -191,9 +191,12 @@ test/load-tests/results/
 !**/.claude/settings.json
 !/.claude/skills/
 **/.claude/settings.local.json
-# Codex 는 프로젝트 훅만 공유한다(config.toml 등 로컬 설정은 추적하지 않는다).
+# Codex 는 프로젝트 훅과 가드가 만든 실행 규칙만 공유한다(config.toml 등 로컬 설정은 추적하지 않는다, DEC-OPS-414).
 **/.codex/*
 !/.codex/hooks.json
+!/.codex/rules/
+/.codex/rules/*
+!/.codex/rules/agent-guard.rules
 
 # ----- Upload/Storage -----
 # 첨부 저장소(file.upload.path 기본값 ./storage/uploads)는 작업 디렉터리 기준이다 — 루트와 Gradle 모듈(시험 실행)에서 생긴다.

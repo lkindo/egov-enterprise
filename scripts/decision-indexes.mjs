@@ -46,7 +46,7 @@ export const DECISION_AREA_ROUTES = Object.freeze({
   'ci-governance': Object.freeze({
     paths: Object.freeze([
       '.github/**', '.githooks/**', '.zap/**', '.agent/scripts/**', '.agent/skills/**', '.agent/knowledge/**',
-      '.agents/hooks.json', '.claude/settings.json', '.codex/hooks.json', '.gemini/settings.json',
+      '.agents/hooks.json', '.claude/settings.json', '.codex/hooks.json', '.codex/rules/agent-guard.rules', '.gemini/settings.json',
       'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'LICENSE', 'Makefile', 'start-dev.ps1',
       '.editorconfig', '.gitattributes', '.gitignore', '.gitleaks.toml', '.nvmrc', 'lombok.config',
       'config/governance/**', 'config/security/**', 'config/dependency-check/**', 'config/migration-test-duration-profile.json',
