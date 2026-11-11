@@ -31,6 +31,16 @@ async function cleanupNotesByMarker(client: APIRequestContext, marker: string, s
                 }
             }
         }
+        const notiRes = await client.get(`/api/v1/notifications?searchWrd=${encodeURIComponent(marker)}&page=1&size=50`);
+        if (notiRes.ok()) {
+            const notis = ((await notiRes.json()).data?.list ?? []) as Array<{ notiSn?: number }>;
+            for (const noti of notis) {
+                if (noti.notiSn) {
+                    const deleted = await client.delete(`/api/v1/notifications/${noti.notiSn}`);
+                    if (!suppressErrors) expect(deleted.status()).toBe(200);
+                }
+            }
+        }
     } catch (cleanupError) {
         if (!suppressErrors) throw cleanupError;
     }

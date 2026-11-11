@@ -95,7 +95,7 @@ test.describe('Advanced Collaboration & Intelligence', () => {
                     page.waitForEvent('download'),
                     page.getByRole('button', { name: '현재 페이지 엑셀 내보내기', exact: true }).click(),
                 ]);
-                expect(download.suggestedFilename()).toMatch(/^주소록_\d{4}-\d{2}-\d{2}\.csv$/);
+                expect(download.suggestedFilename()).toMatch(/^address_book_\d{4}-\d{2}-\d{2}\.csv$/);
                 const downloadedPath = await download.path();
                 expect(downloadedPath).toBeTruthy();
                 const csvContent = fs.readFileSync(downloadedPath!, 'utf8');

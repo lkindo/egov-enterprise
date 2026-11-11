@@ -62,7 +62,7 @@ export function HeaderNotifications() {
         <span className="sr-only">{unreadCount > 0 ? `알림, 읽지 않음 ${unreadCount}건` : '알림'}</span>
         <Bell size={20} aria-hidden="true" className={cn(unreadCount > 0 && 'animate-bounce-subtle')} />
         {unreadCount > 0 && (
-          <Badge aria-hidden="true" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-rose-500 text-white border-2 border-background font-bold text-xs shadow-lg">
+          <Badge aria-hidden="true" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-destructive text-destructive-foreground border-2 border-background font-bold text-xs shadow-lg">
             {unreadCount > 9 ? '9+' : unreadCount}
           </Badge>
         )}
