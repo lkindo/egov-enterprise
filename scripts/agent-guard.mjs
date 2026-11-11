@@ -175,7 +175,9 @@ const collidesWithE2e = (path) => path !== null && path.split(/[\\/]/).some((par
  * 실행 파일은 호출 연산자(`&"…\git.exe"`)를 벗긴 값으로, git 전역 옵션(`-C <dir>`·`"-C"` 포함)은 셸이 넘길 값으로 가려 건너 실제 하위 명령
  * 자리에서 읽는다.
  */
-function worktreeAddArgs(code, raw) {
+function worktreeAddArgs(rawCode, raw) {
+  // 단어 경계는 셸 규칙에 맞게 가린 판으로 잡는다(PowerShell 의 `"D:\x\"`, 최종 검토).
+  const code = quoteAwareCode(rawCode, raw);
   // PowerShell 의 출력 대입(`$result = git …`·`$null=git …`·`$x =git …`)은 우변이 명령이다 — 공백 유무와 상관없다(Codex 60·61차).
   const all = alignedWords(code, raw);
   const first = commandAt(all.map((word) => word.code));
@@ -209,8 +211,40 @@ const WORKTREE_ADD_TEXT = /(?:^|[^\w-])worktree\s+add(?:[^\w-]|$)/u;
  */
 function textualWorktreeAdd(code, raw) {
   if (!/(?:^|[^\w-])git(?:\.exe)?(?:[^\w-]|$)/iu.test(raw)) return false;
-  const unclosed = ['"', "'"].some((quote) => (code.split(quote).length - 1) % 2 === 1);
-  return WORKTREE_ADD_TEXT.test(unclosed ? raw : code);
+  const masked = quoteAwareCode(code, raw);
+  // 어느 셸 규칙으로도 따옴표가 닫히지 않으면 경계를 알 수 없어 원문을 본다.
+  return WORKTREE_ADD_TEXT.test(hasUnclosedQuote(masked) ? raw : masked);
+}
+
+const hasUnclosedQuote = (masked) => ['"', "'"].some((quote) => (masked.split(quote).length - 1) % 2 === 1);
+
+/**
+ * 따옴표를 가린 판. bash 규칙으로 닫히지 않는데 PowerShell 규칙(백슬래시는 글자, 백틱·겹친 따옴표가 이스케이프)으로는 닫히면 PowerShell 판을
+ * 쓴다 — `git -C "D:\x\" commit -m "… worktree add …"` 를 bash 규칙으로 가리면 메시지가 따옴표 밖으로 나와 하위 명령처럼 읽힌다(최종 검토).
+ * 길이를 보존하므로 원문과 위치가 그대로 맞는다.
+ */
+function quoteAwareCode(code, raw) {
+  if (!hasUnclosedQuote(code)) return code;
+  const powershell = maskQuotedPowerShell(raw);
+  return hasUnclosedQuote(powershell) ? code : powershell;
+}
+
+/** PowerShell 규칙으로 따옴표 안을 밑줄로 가린다 — 큰따옴표 안의 이스케이프는 백틱과 겹친 따옴표뿐이고, 작은따옴표 안은 겹친 따옴표뿐이다. */
+function maskQuotedPowerShell(text) {
+  let out = '';
+  let quote = null;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (quote) {
+      if ((quote === '"' && char === '`' && index + 1 < text.length) || (char === quote && text[index + 1] === quote)) { out += '__'; index += 1; continue; }
+      if (char === quote) { out += char; quote = null; continue; }
+      out += '_';
+      continue;
+    }
+    if (char === '\'' || char === '"') quote = char;
+    out += char;
+  }
+  return out;
 }
 
 /**
@@ -1478,17 +1512,18 @@ export function readHookInput(agent, input) {
   // Codex 는 명령을 셸 래퍼 배열(["powershell.exe","-Command","…"]·["bash","-lc","…"])로 넘긴다 — 셸에 넘긴 스크립트를 판정한다.
   // main 처럼 끝에서 둘째 칸의 플래그도 받고, 첫 피연산자 앞의 플래그면 스크립트 뒤에 칸이 더 있어도 래퍼다: PowerShell·cmd 는 남은 칸을
   // 이어 한 명령으로 돌리고, bash 계열은 다음 한 칸만 스크립트다. 스크립트 파일(`bash x.sh -c …`) 뒤의 칸은 그 스크립트의 인자다(Codex 60차).
-  const shell = Array.isArray(raw) ? /(^|[\\/])(powershell|pwsh|bash|sh|zsh|cmd)(\.exe)?$/i.exec(raw[0] ?? '')?.[2]?.toLowerCase() : null;
+  // 셸 목록은 셸 래퍼 재귀(SHELL_WRAPPER)와 같다 — dash 를 빼면 셸 없는 argv 로 잘못 분류된다(최종 검토).
+  const shell = Array.isArray(raw) ? SHELL_WRAPPER.exec(raw[0] ?? '')?.[1]?.toLowerCase() ?? null : null;
   const shellFlag = /^(-Command|-c|-lc|\/c)$/i;
   // 옵션 접두사는 셸마다 다르다 — bash 계열의 `/…` 는 스크립트 경로다(Codex 61차).
-  const optionPrefix = shell === 'cmd' ? /^\// : ['bash', 'sh', 'zsh'].includes(shell) ? /^[-+]/ : /^-/;
+  const optionPrefix = shell === 'cmd' ? /^\// : ['bash', 'sh', 'zsh', 'dash'].includes(shell) ? /^[-+]/ : /^-/;
   let flagAt = -1;
   for (let index = 1; shell && index < raw.length; index += 1) {
     if (shellFlag.test(raw[index])) { flagAt = index; break; }
     if (!optionPrefix.test(raw[index] ?? '')) break;
   }
   const script = flagAt > 0 && flagAt + 1 < raw.length
-    ? (['bash', 'sh', 'zsh'].includes(shell) ? raw[flagAt + 1] : raw.slice(flagAt + 1).join(' '))
+    ? (['bash', 'sh', 'zsh', 'dash'].includes(shell) ? raw[flagAt + 1] : raw.slice(flagAt + 1).join(' '))
     : shell && raw.length >= 3 && shellFlag.test(raw.at(-2)) ? raw.at(-1) : null;
   const command = Array.isArray(raw) ? (script ?? raw.join(' ')) : raw;
   if (typeof command !== 'string') return null;
@@ -1502,7 +1537,8 @@ export function readHookInput(agent, input) {
  * 판정을 그대로 둔다. argv 가 없으면 판정을 바꾸지 않는다.
  */
 export function applyArgvRules(verdict, argv, rules = RULES) {
-  if (!Array.isArray(argv)) return verdict;
+  // 칸 구조 판정은 argv 자체가 git 호출일 때만 한다 — 다른 실행 파일(env·알 수 없는 셸)은 이은 문자열의 판정을 그대로 둔다(최종 검토).
+  if (!Array.isArray(argv) || !isGitExecutable(argv[0])) return verdict;
   const structural = new Map([
     ['git-worktree-add', argvWorktreeAdd(argv)],
     ['worktree-name-collides-with-e2e', collidesWithE2e(argvWorktreeAddPath(argv))],

@@ -273,7 +273,9 @@ const CASES = {
       'if ($true) { git worktree add D:\\wt-x HEAD | Out-Null }', '$result = git worktree add --detach D:\\wt-review HEAD',
       '$null = git worktree add D:\\wt-x HEAD',
       // 2026-11-11 Codex 61차 반례: 공백 없는 출력 대입.
-      '$null=git worktree add --detach D:\\wt-review HEAD', '$x =git worktree add D:\\wt-x HEAD'],
+      '$null=git worktree add --detach D:\\wt-review HEAD', '$x =git worktree add D:\\wt-x HEAD',
+      // 어느 셸 규칙으로도 따옴표가 닫히지 않으면 원문에서 찾는다.
+      'git -C "D:\\wt-egov-claude worktree add --detach D:\\wt-review HEAD'],
     pass: ['git worktree list --porcelain', 'git worktree prune -v', 'git worktree remove D:\\wt-x',
       'git commit --only -m "git worktree add D:\\wt-egov-codex-x 는 묻는다" -- a.md', 'echo "git worktree add --detach D:\\wt-egov-codex-x HEAD"',
       'rg -n "git worktree add" docs',
@@ -281,7 +283,9 @@ const CASES = {
       "git commit --only -m 'fix: handle \\ in worktree add commands' -- scripts/agent-guard.mjs",
       'git commit --only -m "say \\"worktree add\\" here" -- a.md',
       'if (Test-Path D:\\wt-review) { git worktree list }', "Write-Output '{ git worktree add D:\\wt-x HEAD }'",
-      '$list = git worktree list', '$list=git worktree list', 'Write-Output worktree add notes'],
+      '$list = git worktree list', '$list=git worktree list', 'Write-Output worktree add notes',
+      // 최종 검토 반례: PowerShell 은 `\"` 로 따옴표를 닫는다 — 메시지 안의 낱말을 명령으로 읽지 않는다.
+      'git -C "D:\\wt-egov-claude\\" commit --only -m "docs: worktree add approvals" -- AGENTS.md'],
   },
 };
 
@@ -361,6 +365,9 @@ test('git-worktree-add: Codex 는 실행 규칙이 확실히 잡는 명령만 �
   const unparsed = argvVerdict(['powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'git', 'worktree', 'add', '--detach', 'D:/wt-contracts', 'HEAD']);
   assert.ok(unparsed.includes('worktree-name-collides-with-e2e') && unparsed.includes('git-worktree-add'), '풀지 못한 셸 래퍼도 main 처럼 판정한다');
   assert.ok(!argvVerdict(['bash', '/d/project/scripts/render-example.sh', '-c', 'git push --force', '--dry-run']).includes('git-force-push'));
+  // 최종 검토 반례: dash 를 셸로 알아보지 못하면 셸 없는 argv 로 보고 main 의 E2E 이름 거부를 지웠다. 칸 판정은 git argv 에만 한다.
+  assert.ok(argvVerdict(['dash', '-c', 'echo ready; git worktree add /tmp/wt-contracts HEAD']).includes('worktree-name-collides-with-e2e'));
+  assert.ok(argvVerdict(['env', 'GIT_TRACE=1', 'git', 'worktree', 'add', 'D:/wt-x', 'HEAD']).includes('git-worktree-add'), 'git 이 아닌 argv 는 문자열 판정 그대로다');
   // 스크립트 뒤에 칸이 더 있어도 셸 래퍼다 — PowerShell 은 남은 칸을 이어 돌리므로 그 안의 worktree add 를 놓치면 안 된다.
   assert.ok(argvVerdict(['pwsh', '-Command', 'git worktree add D:\\wt-x HEAD', 'extra']).includes('git-worktree-add'));
   assert.ok(argvVerdict(['powershell.exe', '-NoProfile', '-Command', 'git', 'worktree', 'add', 'D:\\wt-x', 'HEAD']).includes('git-worktree-add'));
