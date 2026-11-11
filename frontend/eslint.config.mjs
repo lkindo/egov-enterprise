@@ -212,14 +212,15 @@ const eslintConfig = [
           "message": "손으로 쓴 탭 역할 금지 — @/app/components/ui/standard-tabs 의 TabList·Tab·TabPanel 을 쓰세요(방향키·roving tabindex·aria-controls 를 갖춘 탭 원천)."
         }
       ],
-      // eslint-config-next 16(+eslint-plugin-react-hooks 6)이 React Compiler 계열 신규 규칙을 error 로 켜지만,
-      // 기존 코드베이스에 대량 존재(set-state-in-effect 등 41건)하므로 게이트 그린 유지 + 백로그 가시화를 위해
-      // repo 규범(warn 기반)에 맞춰 warn 으로 완화한다(점진 정리 대상).
-      "react-hooks/set-state-in-effect": "warn",
+      // [2026-11-11] 전량 해소한 3개 규칙(set-state-in-effect · refs · no-location-assign-relative-destination)은
+      //   "error" 로 승격해 --max-warnings 조정이나 부분 비활성화 우회를 차단한다.
+      //   나머지 React Compiler 계열(purity · immutability · error-boundaries)은 현재 위반 0건이며 --max-warnings 0 이 지킨다.
+      "react-hooks/set-state-in-effect": "error",
       "react-hooks/purity": "warn",
       "react-hooks/immutability": "warn",
-      "react-hooks/refs": "warn",
+      "react-hooks/refs": "error",
       "react-hooks/error-boundaries": "warn",
+      "@next/next/no-location-assign-relative-destination": "error",
     }
   },
   {

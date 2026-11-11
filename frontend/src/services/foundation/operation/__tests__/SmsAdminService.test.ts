@@ -63,6 +63,19 @@ describe('SmsAdminService numeric transmission serial contract', () => {
 
   it('rejects leaked recipients in SMS list and detail responses', async () => {
     client.get.mockResolvedValueOnce({
+      list: [{
+        sndngTelno: '0212345678',
+        sndngCn: 'message',
+        recipients: [{ rcptnTelno: '01033334444' }],
+      }],
+      total: 1,
+      page: 1,
+      size: 10,
+      totalPage: 1,
+    });
+    await expect(smsAdminService.getSmsList({ page: 1, size: 10 })).rejects.toThrow();
+
+    client.get.mockResolvedValueOnce({
       sndngTelno: '0212345678',
       sndngCn: 'message',
       recipients: [{ rcptnTelno: '01033334444' }],

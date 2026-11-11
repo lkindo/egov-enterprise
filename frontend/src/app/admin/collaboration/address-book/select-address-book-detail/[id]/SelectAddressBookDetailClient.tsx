@@ -111,7 +111,6 @@ const SelectAddressBookDetailClient = () => {
             toast('주소록이 수정되었습니다.', 'success');
             leftAfterWriteRef.current = true;
             setHasLeftAfterWrite(true);
-            void queryClient.invalidateQueries({ queryKey: ['address-books'] });
             router.push(LIST_PATH);
         },
         onError: (mutationError: unknown) => {
@@ -138,7 +137,6 @@ const SelectAddressBookDetailClient = () => {
             toast('주소록이 삭제되었습니다.', 'success');
             leftAfterWriteRef.current = true;
             setHasLeftAfterWrite(true);
-            void queryClient.invalidateQueries({ queryKey: ['address-books'] });
             router.push(LIST_PATH);
         },
     });
@@ -197,13 +195,20 @@ const SelectAddressBookDetailClient = () => {
         memberRefreshPendingRef.current = true;
         setIsMemberRefreshing(true);
         const previousBase = editBase;
+        const draftDirty = previousBase != null && adbkNm !== previousBase.adbkNm;
         try {
             const updated = await addressbookUserService.getAddressBook(adbkSn);
             queryClient.setQueryData(['address-book-detail', adbkSn], updated);
+            if (draftDirty && updated.adbkNm !== previousBase.adbkNm && updated.adbkNm !== adbkNm) {
+                setLatest(updated);
+                setReloadError(null);
+                setConflict({ kind: 'name' });
+                return;
+            }
             setEditBase(updated);
-            setAdbkNm((currentName) => (
-                !previousBase || currentName === previousBase.adbkNm ? updated.adbkNm : currentName
-            ));
+            if (!draftDirty) {
+                setAdbkNm(updated.adbkNm);
+            }
         } catch (refreshFailure: unknown) {
             toast(extractErrorMessage(refreshFailure, '구성원 변경 후 최신 정보를 다시 불러오지 못했습니다. 새로고침 후 다시 확인해 주세요.'), 'error');
             void queryClient.invalidateQueries({ queryKey: ['address-book-detail', adbkSn] });
@@ -275,9 +280,20 @@ const SelectAddressBookDetailClient = () => {
         : undefined;
     const discardChanges = () => {
         if (!latest) return;
+        const draftDirty = editBase != null && adbkNm !== editBase.adbkNm;
+        queryClient.setQueryData(['address-book-detail', adbkSn], latest);
+        if (conflict?.kind === 'remove' && draftDirty) {
+            if (latest.adbkNm !== editBase.adbkNm && latest.adbkNm !== adbkNm) {
+                setConflict({ kind: 'name' });
+                return;
+            }
+            setEditBase(latest);
+            setConflict(null);
+            setLatest(null);
+            return;
+        }
         setAdbkNm(latest.adbkNm);
         setEditBase(latest);
-        queryClient.setQueryData(['address-book-detail', adbkSn], latest);
         setConflict(null);
         setLatest(null);
     };

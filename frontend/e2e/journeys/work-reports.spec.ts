@@ -1,4 +1,5 @@
 import { expect,test } from '../fixtures/browser-test';
+import { trackApiRequests } from '../fixtures/hydration';
 import { workReportData } from '../helpers/work-report-data';
 import { DeptJobPage } from '../pages/DeptJobPage';
 import { getAdminBearerToken } from '../utils/admin-token';
@@ -99,10 +100,12 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
             }
         });
         test('보고 등록 모달로 새 업무 보고를 작성해 서버에 저장한다', async ({ page, request }) => {
-            const title = `${PREFIX}Create_${Date.now()}`;
+            const { purgeByTag, tagFor } = workReportData(auth);
+            const tag = tagFor('CreateModal');
+            const title = `${tag} 등록검증`;
             const content = `UI 등록 모달 검증 본문 ${title}`;
             const deptJobPage = new DeptJobPage(page);
-            let createdSn: number | undefined;
+            const tracker = trackApiRequests(page);
             try {
                 await deptJobPage.gotoReportList();
                 await page.getByRole('button', { name: '보고 등록', exact: true }).click();
@@ -126,15 +129,13 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
                 const row = ((await listRes.json()).data.list as Array<{ rptpSn?: number; rptTtl?: string; rptCn?: string }>)[0];
                 expect(row?.rptTtl).toBe(title);
                 expect(row?.rptCn).toBe(content);
-                createdSn = row?.rptpSn;
-                expect(createdSn).toBeTruthy();
+                expect(row?.rptpSn).toBeTruthy();
+                await tracker.settled(page.locator('body'));
             } finally {
                 try {
                     await page.goto('about:blank');
                 } finally {
-                    if (createdSn !== undefined) {
-                        await request.delete(`${REPORT_API}/${createdSn}`, { headers: auth });
-                    }
+                    await purgeByTag(request, tag);
                 }
             }
         });

@@ -526,6 +526,46 @@ describe('주소록 구성원 추가·수정·삭제 (DIP B5 F8)', () => {
       editToken: LATEST_EDIT_TOKEN,
     });
   });
+
+  it('미저장 명칭 초안이 있는 동안 서버 명칭이 바뀌면 구성원 갱신 후 editToken을 자동 채택하지 않고 명칭 충돌을 표시한다', async () => {
+    const user = userEvent.setup();
+    renderDetail();
+    const nameInput = await screen.findByDisplayValue('팀 주소록');
+    await user.clear(nameInput);
+    await user.type(nameInput, '내 초안 명칭');
+
+    const concurrentlyRenamed = {
+      adbkSn: 7,
+      adbkNm: '다른 탭이 바꾼 명칭',
+      rlsScopeCd: 'G',
+      editToken: LATEST_EDIT_TOKEN,
+      adbkMan: [...members, { adbkMbrSn: 33, nm: '병', emlAddr: '', mblTelno: '01055556666' }],
+    };
+    mocks.getAddressBook.mockResolvedValueOnce(concurrentlyRenamed);
+
+    await user.click(screen.getByRole('button', { name: '구성원 추가' }));
+    const dialog = await screen.findByRole('dialog', { name: '구성원 추가' });
+    await user.type(within(dialog).getByRole('textbox', { name: /성명/ }), '병');
+    await user.type(within(dialog).getByRole('textbox', { name: '휴대전화' }), '010-5555-6666');
+    await user.click(within(dialog).getByRole('button', { name: '구성원 추가' }));
+
+    await screen.findByText('병');
+    const conflict = await screen.findByRole('alert', { name: '다른 변경과 충돌했습니다' });
+    expect(within(conflict).getByText('서버 주소록 명칭: 다른 탭이 바꾼 명칭')).toBeVisible();
+    expect(within(conflict).getByText('내 입력 명칭: 내 초안 명칭')).toBeVisible();
+    expect(nameInput).toHaveValue('내 초안 명칭');
+    expect(screen.getByRole('button', { name: /저장$/ })).toBeDisabled();
+    expect(mocks.updateAddressBook).toHaveBeenCalledTimes(1);
+
+    await user.click(within(conflict).getByRole('button', { name: '최신 내용에 내 변경 반영' }));
+    await user.click(screen.getByRole('button', { name: /저장$/ }));
+    await waitFor(() => expect(mocks.updateAddressBook).toHaveBeenCalledTimes(2));
+    expect(mocks.updateAddressBook).toHaveBeenLastCalledWith(7, {
+      adbkNm: '내 초안 명칭',
+      rlsScopeCd: 'G',
+      editToken: LATEST_EDIT_TOKEN,
+    });
+  });
 });
 
 describe('AddressBookMemberDialog 제출 계약 (DIP B5 F8)', () => {

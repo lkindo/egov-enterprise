@@ -155,7 +155,7 @@ export default function SmsHubClient({
       )
     },
     {
-      header: 'RECIPIENT',
+      header: 'RECIPIENTS',
       accessor: (item) => (
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-[var(--radius-hub-item)] bg-surface-inverse flex items-center justify-center text-primary shadow-lg group-hover:scale-110 transition-transform">

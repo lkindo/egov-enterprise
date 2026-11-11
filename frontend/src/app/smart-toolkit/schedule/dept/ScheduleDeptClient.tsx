@@ -108,6 +108,7 @@ export default function ScheduleDeptClient() {
     });
 
     const runFetchList = useCallback(async (sequence: number) => {
+        let redirectingToLastPage = false;
         try {
             const response = await getDeptScheduleList(params);
             if (sequence !== fetchSequence.current) return;
@@ -115,6 +116,7 @@ export default function ScheduleDeptClient() {
             const total = response?.total ?? 0;
             const lastPage = Math.max(1, Math.ceil(total / size));
             if ((params.page ?? 1) > lastPage) {
+                redirectingToLastPage = true;
                 setLoading(true);
                 setFetchError(null);
                 setParams((current) => ({ ...current, page: lastPage, size }));
@@ -129,7 +131,7 @@ export default function ScheduleDeptClient() {
             setFetchError(toError(err));
             setSchedules([]);
         } finally {
-            if (sequence === fetchSequence.current) setLoading(false);
+            if (!redirectingToLastPage && sequence === fetchSequence.current) setLoading(false);
         }
     }, [params]);
 

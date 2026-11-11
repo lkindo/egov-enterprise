@@ -27,6 +27,7 @@ test.describe('Collaboration & Knowledge Extension', () => {
         const editedDescription = `게시글을 다시 찾을 설명 ${marker}`;
         let pstSn: number | undefined;
         let scrapSn: number | undefined;
+        const tracker = trackApiRequests(page);
         try {
             // 기존 일반 게시판에 이 시험의 글만 준비한다. 스크랩 생성·수정은 실제 UI를 통과한다.
             const created = await adminRequest.post('/api/v1/boards/posts', {
@@ -95,6 +96,7 @@ test.describe('Collaboration & Knowledge Extension', () => {
             await expect(dialog.getByRole('textbox', { name: /스크랩명/ })).toHaveValue(editedName);
             await expect(dialog.getByRole('textbox', { name: '설명', exact: true })).toHaveValue(editedDescription);
             await expect(url).toHaveValue(canonicalPath);
+            await tracker.settled(page.locator('body'));
         } finally {
             // 열린 화면의 재조회가 삭제된 글·스크랩을 요청하지 않게 먼저 떠난다. 한 정리가 실패해도 나머지는 수행한다.
             try { await page.goto('about:blank'); } finally {
@@ -337,6 +339,25 @@ test.describe('Collaboration & Knowledge Extension', () => {
                 page.getByRole('button', { name: '스크랩 목록 새로고침', exact: true }).click(),
             ]);
             expect(refetched.status()).toBe(200);
+            const refetchedBody = (await refetched.json()).data as { list: { scrapSn: number }[]; totalPage: number };
+            if (!refetchedBody.list.some(item => item.scrapSn === laterSn)) {
+                await ensureVisibleOnPages(laterSn, refetchedBody.totalPage);
+            }
+            await expect(page.getByRole('button', { name: `${laterName} 수정`, exact: true })).toBeVisible();
+            if ((await page.getByRole('button', { name: `${name} 수정`, exact: true }).count()) === 0) {
+                const page1Btn = page.getByRole('button', { name: '1 페이지', exact: true });
+                if ((await page1Btn.count()) > 0) {
+                    const [page1Res] = await Promise.all([
+                        page.waitForResponse(res => new URL(res.url()).pathname === '/api/v1/scraps'
+                            && res.request().method() === 'GET'),
+                        page1Btn.click(),
+                    ]);
+                    const p1Body = (await page1Res.json()).data as { list: { scrapSn: number }[]; totalPage: number };
+                    if (!p1Body.list.some(item => item.scrapSn === scrapSn)) {
+                        await ensureVisibleOnPages(scrapSn, p1Body.totalPage);
+                    }
+                }
+            }
 
             await page.getByRole('button', { name: `${name} 수정`, exact: true }).click();
             const editDialog = page.getByRole('dialog', { name: '스크랩 수정', exact: true });

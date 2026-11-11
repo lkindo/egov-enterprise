@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { ScrapDtoSchema } from '@/types/generated-zod';
-import { parseScrapUrl } from './scrap-url';
+import { isLinkableScrapUrl, parseScrapUrl } from './scrap-url';
 
 const scrapNameSchema = ScrapDtoSchema.shape.scrapNm
   .unwrap()
@@ -37,15 +37,28 @@ export const scrapCreateFormSchema = ScrapDtoSchema.pick({
   useYn: scrapUseSchema,
 });
 
-export const scrapEditFormSchema = scrapCreateFormSchema.extend({
-  scrapUrl: ScrapDtoSchema.shape.scrapUrl
-    .unwrap()
-    .refine(
-      (value) => !value.trim() || parseScrapUrl(value) !== null,
-      '참조 URL은 안전한 사이트 내부 경로 또는 http://, https:// 주소여야 합니다.',
-    )
-    .pipe(scrapUrlValueSchema),
-});
+export function createScrapEditFormSchema(initialScrapUrl?: string) {
+  const normalizedInitialUrl = initialScrapUrl !== undefined && isLinkableScrapUrl(initialScrapUrl)
+    ? initialScrapUrl.trim()
+    : null;
+  return scrapCreateFormSchema.extend({
+    scrapUrl: ScrapDtoSchema.shape.scrapUrl
+      .unwrap()
+      .refine(
+        (value) => {
+          if (!value.trim()) return true;
+          if (normalizedInitialUrl !== null && value.trim() === normalizedInitialUrl) {
+            return isLinkableScrapUrl(value);
+          }
+          return parseScrapUrl(value) !== null;
+        },
+        '참조 URL은 안전한 사이트 내부 경로 또는 http://, https:// 주소여야 합니다.',
+      )
+      .pipe(scrapUrlValueSchema),
+  });
+}
+
+export const scrapEditFormSchema = createScrapEditFormSchema();
 
 export const scrapValidationLabels = {
   scrapExpln: '설명',

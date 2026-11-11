@@ -6,7 +6,7 @@ import { trackApiRequests, waitForHydration } from '../fixtures/hydration';
 interface NoteListRow {
     noteSn?: number;
     noteRcptnSn?: number;
-    noteTrnsmitSn?: number;
+    noteSndngSn?: number;
 }
 
 async function cleanupNotesByMarker(client: APIRequestContext, marker: string) {
@@ -15,7 +15,8 @@ async function cleanupNotesByMarker(client: APIRequestContext, marker: string) {
         const rows = ((await receivedRes.json()).data?.list ?? []) as NoteListRow[];
         for (const row of rows) {
             if (row.noteRcptnSn) {
-                await client.delete(`/api/v1/notes/${row.noteRcptnSn}?type=received`);
+                const deleted = await client.delete(`/api/v1/notes/${row.noteRcptnSn}?type=received`);
+                expect(deleted.status()).toBe(200);
             }
         }
     }
@@ -23,8 +24,9 @@ async function cleanupNotesByMarker(client: APIRequestContext, marker: string) {
     if (sentRes.ok()) {
         const rows = ((await sentRes.json()).data?.list ?? []) as NoteListRow[];
         for (const row of rows) {
-            if (row.noteTrnsmitSn) {
-                await client.delete(`/api/v1/notes/${row.noteTrnsmitSn}?type=sent`);
+            if (row.noteSndngSn) {
+                const deleted = await client.delete(`/api/v1/notes/${row.noteSndngSn}?type=sent`);
+                expect(deleted.status()).toBe(200);
             }
         }
     }
@@ -41,6 +43,7 @@ test.describe('쪽지함 및 협업 허브 쪽지 과업 여정', () => {
     }) => {
         const marker = randomUUID().slice(0, 8);
         const noteSubject = `E2E 쪽지 발송 ${marker}`;
+        const distractorSubject = `E2E 쪽지 대조군 ${marker}`;
         const noteBody = `쪽지 실제 왕복 본문 ${marker}`;
         const replySubject = `Re: ${noteSubject}`;
         const replyBody = `쪽지 답장 본문 ${marker}`;
@@ -58,6 +61,11 @@ test.describe('쪽지함 및 협업 허브 쪽지 과업 여정', () => {
             const userMe = (await userMeRes.json()).data as { esntlId: string; userNm: string };
             expect(adminMe.userNm.length >= 2).toBe(true);
             expect(userMe.userNm.length >= 2).toBe(true);
+
+            const distractorSeed = await adminRequest.post('/api/v1/notes', {
+                data: { rcverId: userMe.esntlId, noteSj: distractorSubject, noteCn: `대조군 본문 ${marker}` },
+            });
+            expect(distractorSeed.ok()).toBe(true);
 
             await test.step('발신자(Admin): 새 쪽지를 작성해 수신자에게 발송하고 보낸 쪽지함에서 조회한다', async () => {
                 await adminPage.goto('/note');
@@ -88,23 +96,45 @@ test.describe('쪽지함 및 협업 허브 쪽지 과업 여정', () => {
                 await expect(writeDialog).toBeHidden();
 
                 await adminPage.getByRole('tab', { name: /보낸 쪽지함/ }).click();
+                await expect(adminPage.getByRole('button', { name: `${distractorSubject} 쪽지 열기`, exact: true })).toBeVisible();
                 const searchInput = adminPage.getByPlaceholder('제목 또는 내용으로 검색');
                 await searchInput.fill(noteSubject);
-                await adminPage.getByRole('button', { name: '조회', exact: true }).click();
+                const [sentSearchRes] = await Promise.all([
+                    adminPage.waitForResponse(res => {
+                        const url = new URL(res.url());
+                        return url.pathname === '/api/v1/notes/sent'
+                            && url.searchParams.get('searchWrd') === noteSubject
+                            && res.request().method() === 'GET';
+                    }),
+                    adminPage.getByRole('button', { name: '조회', exact: true }).click(),
+                ]);
+                expect(sentSearchRes.status()).toBe(200);
                 await expect(adminPage.getByRole('button', { name: `${noteSubject} 쪽지 열기`, exact: true })).toBeVisible();
+                await expect(adminPage.getByRole('button', { name: `${distractorSubject} 쪽지 열기`, exact: true })).toHaveCount(0);
             });
 
             await test.step('수신자(User): 받은 쪽지함에서 검색·상세 열람 후 답장하고 삭제한다', async () => {
                 await userPage.goto('/note');
                 const searchInput = userPage.getByPlaceholder('제목 또는 내용으로 검색');
                 await waitForHydration(searchInput);
+                await expect(userPage.getByRole('button', { name: `${distractorSubject} 쪽지 열기`, exact: true })).toBeVisible();
                 await searchInput.fill(noteSubject);
-                await userPage.getByRole('button', { name: '조회', exact: true }).click();
+                const [receivedSearchRes] = await Promise.all([
+                    userPage.waitForResponse(res => {
+                        const url = new URL(res.url());
+                        return url.pathname === '/api/v1/notes/received'
+                            && url.searchParams.get('searchWrd') === noteSubject
+                            && res.request().method() === 'GET';
+                    }),
+                    userPage.getByRole('button', { name: '조회', exact: true }).click(),
+                ]);
+                expect(receivedSearchRes.status()).toBe(200);
 
                 const openNoteBtn = userPage.getByRole('button', { name: `${noteSubject} 쪽지 열기`, exact: true });
                 await expect(openNoteBtn).toBeVisible();
+                await expect(userPage.getByRole('button', { name: `${distractorSubject} 쪽지 열기`, exact: true })).toHaveCount(0);
                 const [detailRes] = await Promise.all([
-                    userPage.waitForResponse(res => new URL(res.url()).pathname.startsWith('/api/v1/notes/')
+                    userPage.waitForResponse(res => /^\/api\/v1\/notes\/\d+$/.test(new URL(res.url()).pathname)
                         && res.request().method() === 'GET'),
                     openNoteBtn.click(),
                 ]);

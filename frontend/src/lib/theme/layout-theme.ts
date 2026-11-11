@@ -165,12 +165,14 @@ export function readSavedThemeConfig(): ThemeConfig | null {
   return parseSavedThemeSnapshot(readSavedThemeSnapshot());
 }
 
-export function writeSavedThemeConfig(config: ThemeConfig) {
+export function writeSavedThemeConfig(config: ThemeConfig): boolean {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
     notifySavedThemeListeners();
+    return true;
   } catch {
     // 저장하지 못하면 이번 화면에서만 적용된다.
+    return false;
   }
 }
 

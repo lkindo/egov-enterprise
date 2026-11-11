@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import fs from 'node:fs';
 import { expect, test } from '../fixtures/browser-test';
 import { trackApiRequests, waitForHydration } from '../fixtures/hydration';
 /**
@@ -15,6 +16,7 @@ test.describe('Advanced Collaboration & Intelligence', () => {
         const suffix = Math.random().toString(36).substring(7);
         const testName = `Identity_${suffix}`;
         const testEmail = `${testName}@egov.enterprise.com`;
+        const tracker = trackApiRequests(page);
         try {
             await collabPage.goto();
             await collabPage.createContact(testName, testEmail);
@@ -22,6 +24,7 @@ test.describe('Advanced Collaboration & Intelligence', () => {
             // 주소록은 collaboration 허브의 탭이 아니라 demo pack 전용 목록 라우트에서 관리한다.
             await expect(page).toHaveURL(/\/admin\/collaboration\/address-book\/select-address-book-list/);
             await collabPage.verifyIdentityInList(testName);
+            await tracker.settled(page.locator('body'));
         } finally {
             try {
                 await page.goto('about:blank');
@@ -75,14 +78,29 @@ test.describe('Advanced Collaboration & Intelligence', () => {
 
                 const searchInput = page.getByLabel('주소록 검색');
                 await searchInput.fill(listDeleteBookName);
-                await page.getByRole('button', { name: '검색', exact: true }).click();
+                const [searchedListRes] = await Promise.all([
+                    page.waitForResponse(res => {
+                        const url = new URL(res.url());
+                        return url.pathname === '/api/v1/address-books'
+                            && url.searchParams.get('searchWrd') === listDeleteBookName
+                            && res.request().method() === 'GET';
+                    }),
+                    page.getByRole('button', { name: '검색', exact: true }).click(),
+                ]);
+                expect(searchedListRes.status()).toBe(200);
                 await expect(page.getByRole('link', { name: listDeleteBookName, exact: true })).toBeVisible();
+                await expect(page.getByRole('link', { name: detailBookName, exact: true })).toHaveCount(0);
 
                 const [download] = await Promise.all([
                     page.waitForEvent('download'),
                     page.getByRole('button', { name: '현재 페이지 엑셀 내보내기', exact: true }).click(),
                 ]);
                 expect(download.suggestedFilename()).toMatch(/^주소록_\d{4}-\d{2}-\d{2}\.csv$/);
+                const downloadedPath = await download.path();
+                expect(downloadedPath).toBeTruthy();
+                const csvContent = fs.readFileSync(downloadedPath!, 'utf8');
+                expect(csvContent).toContain(listDeleteBookName);
+                expect(csvContent).not.toContain(detailBookName);
 
                 await page.getByRole('button', { name: `${listDeleteBookName} 주소록 삭제`, exact: true }).click();
                 const confirmDialog = page.getByRole('dialog').filter({ hasText: '주소록 삭제' });
@@ -100,7 +118,16 @@ test.describe('Advanced Collaboration & Intelligence', () => {
             await test.step('상세 화면에서 명칭 초안을 유지한 채 구성원 추가·수정·삭제 후 명칭 저장과 주소록 삭제를 수행한다', async () => {
                 const searchInput = page.getByLabel('주소록 검색');
                 await searchInput.fill(detailBookName);
-                await page.getByRole('button', { name: '검색', exact: true }).click();
+                const [detailSearchRes] = await Promise.all([
+                    page.waitForResponse(res => {
+                        const url = new URL(res.url());
+                        return url.pathname === '/api/v1/address-books'
+                            && url.searchParams.get('searchWrd') === detailBookName
+                            && res.request().method() === 'GET';
+                    }),
+                    page.getByRole('button', { name: '검색', exact: true }).click(),
+                ]);
+                expect(detailSearchRes.status()).toBe(200);
                 await page.getByRole('link', { name: detailBookName, exact: true }).click();
 
                 await expect(page).toHaveURL(new RegExp(`/admin/collaboration/address-book/select-address-book-detail/${detailSn}$`));

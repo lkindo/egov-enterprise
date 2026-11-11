@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { test } from 'node:test';
+
+const requireFromFrontend = createRequire(new URL('../frontend/package.json', import.meta.url));
+const ts = requireFromFrontend('typescript');
 
 const ACTION_SOURCE_DIRECTORY = new URL('../frontend/src/app/actions/', import.meta.url);
 const ACTION_SOURCES = readdirSync(ACTION_SOURCE_DIRECTORY, { withFileTypes: true })
@@ -190,34 +194,78 @@ const PROTECTED_NEXT_HOOK_RULES = [
   '@next/next/no-location-assign-relative-destination',
 ];
 
-function findWeakenedProtectedRules(configSource) {
-  const stripped = configSource
-    .replace(/\/\*[\s\S]*?\*\//gu, '')
-    .replace(/\/\/[^\r\n]*/gu, '');
+function extractRuleSeverity(initializer) {
+  let target = initializer;
+  if (ts.isArrayLiteralExpression(target)) {
+    target = target.elements[0];
+  }
+  if (!target) return null;
+  if (ts.isStringLiteralLike(target)) return target.text;
+  if (ts.isNumericLiteral(target)) {
+    const num = Number(target.text);
+    if (num === 2) return 'error';
+    if (num === 1) return 'warn';
+    if (num === 0) return 'off';
+  }
+  return 'non-literal';
+}
+
+function findProtectedRuleViolations(configSource) {
+  const sourceFile = ts.createSourceFile('eslint.config.mjs', configSource, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  if (sourceFile.parseDiagnostics.length > 0) {
+    return ['parse-error'];
+  }
+
+  const seenSeverities = new Map(PROTECTED_NEXT_HOOK_RULES.map((rule) => [rule, []]));
+
+  function visit(node) {
+    if (
+      ts.isPropertyAssignment(node)
+      && (ts.isIdentifier(node.name) || ts.isStringLiteralLike(node.name))
+      && node.name.text === 'rules'
+      && ts.isObjectLiteralExpression(node.initializer)
+    ) {
+      for (const prop of node.initializer.properties) {
+        if (!ts.isPropertyAssignment(prop)) continue;
+        if (!ts.isIdentifier(prop.name) && !ts.isStringLiteralLike(prop.name)) continue;
+        const ruleName = prop.name.text;
+        if (!seenSeverities.has(ruleName)) continue;
+        seenSeverities.get(ruleName).push(extractRuleSeverity(prop.initializer));
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
   return PROTECTED_NEXT_HOOK_RULES.filter((rule) => {
-    const escaped = rule.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-    const ruleEntry = new RegExp(`["']${escaped}["']\\s*:\\s*(?:["'](off|warn)["']|[01]\\b|\\[\\s*(?:["'](off|warn)["']|[01]\\b))`, 'u');
-    return ruleEntry.test(stripped);
+    const severities = seenSeverities.get(rule);
+    return severities.length === 0 || severities.some((severity) => severity !== 'error');
   });
 }
 
-test('해소한 프론트엔드 lint 경고 3종 규칙은 warn/off 로 약화하지 않고 max-warnings 0 을 유지한다', () => {
+test('해소한 프론트엔드 lint 경고 3종 규칙은 error 로 명시 승격되고 max-warnings 0 을 유지한다', () => {
   const packageJson = JSON.parse(readFileSync(new URL('../frontend/package.json', import.meta.url), 'utf8'));
   assert.match(packageJson.scripts.lint, /--max-warnings(?:=|\s+)0(?:\s|$)/u);
-  assert.deepEqual(findWeakenedProtectedRules(ESLINT_CONFIG), []);
+  assert.deepEqual(findProtectedRuleViolations(ESLINT_CONFIG), []);
 });
 
-test('해소한 프론트엔드 lint 규칙을 warn/off 로 되돌리는 시도는 재현 가능한 red 다', () => {
+test('실제 eslint.config.mjs 원문(glob 문자열 포함)에서 규칙을 warn/off/누락으로 약화하면 재현 가능한 red 다', () => {
+  assert.ok(ESLINT_CONFIG.includes('".next/**"') && ESLINT_CONFIG.includes('"**/*.jsx"'));
   assert.deepEqual(
-    findWeakenedProtectedRules('rules: { "react-hooks/refs": "warn", "react-hooks/set-state-in-effect": ["off"] }'),
-    ['react-hooks/set-state-in-effect', 'react-hooks/refs'],
+    findProtectedRuleViolations(ESLINT_CONFIG.replace('"react-hooks/refs": "error"', '"react-hooks/refs": "warn"')),
+    ['react-hooks/refs'],
   );
   assert.deepEqual(
-    findWeakenedProtectedRules('rules: { "@next/next/no-location-assign-relative-destination": 0 }'),
+    findProtectedRuleViolations(ESLINT_CONFIG.replace('"react-hooks/set-state-in-effect": "error"', '"react-hooks/set-state-in-effect": "off"')),
+    ['react-hooks/set-state-in-effect'],
+  );
+  assert.deepEqual(
+    findProtectedRuleViolations(ESLINT_CONFIG.replace('"@next/next/no-location-assign-relative-destination": "error",', '')),
     ['@next/next/no-location-assign-relative-destination'],
   );
   assert.deepEqual(
-    findWeakenedProtectedRules('/* "react-hooks/refs": "off" */ rules: { "react-hooks/refs": "error" }'),
-    [],
+    findProtectedRuleViolations(`${ESLINT_CONFIG}\nconst extra = { rules: { "react-hooks/refs": ["off"] } };`),
+    ['react-hooks/refs'],
   );
 });

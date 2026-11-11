@@ -184,6 +184,8 @@ describe('scrap form validation contract', () => {
       '/admin/community/boards/detail?bbsId=BBS-1&pstSn=not-a-number',
       '/admin/community/boards/detail?bbsId=BBS-1&pstSn=9223372036854775808',
       '/admin/community/boards/detail?bbsId=%E0%A4%A&pstSn=31',
+      '/cop/bbs/selectArticleDetail.do?bbsId=BBS-1#nttId=31',
+      '/pages/guide?%E0%A4%A=1',
     ]) {
       expect(parseScrapUrl(invalidBoardUrl)).toBeNull();
       expect(
@@ -259,6 +261,33 @@ describe('scrap form validation contract', () => {
     }, undefined);
     expect(mocks.post).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+  });
+
+  it('기존 레거시 게시판 목록 URL을 그대로 둔 채 이름·설명만 고치면 서버와 같게 허용하고, 다른 불완전 게시판 URL로 바꾸면 막는다', async () => {
+    const legacyListUrl = '/cop/bbs/selectArticleList.do?bbsId=BBS-1';
+    const user = userEvent.setup();
+    const firstView = renderDetail({ scrapNm: '레거시 스크랩', scrapUrl: legacyListUrl, scrapExpln: '기존 설명' });
+
+    const name = screen.getByRole('textbox', { name: /스크랩명/ });
+    await user.clear(name);
+    await user.type(name, '레거시 제목 수정');
+    await user.click(screen.getByRole('button', { name: /수정 완료$/ }));
+
+    await waitFor(() => expect(mocks.put).toHaveBeenCalledTimes(1));
+    expect(mocks.put).toHaveBeenCalledWith('scraps/17', {
+      scrapNm: '레거시 제목 수정',
+      scrapUrl: legacyListUrl,
+      scrapExpln: '기존 설명',
+      useYn: 'Y',
+    }, undefined);
+    firstView.unmount();
+
+    renderDetail({ scrapNm: '레거시 스크랩', scrapUrl: legacyListUrl, scrapExpln: '기존 설명' });
+    const secondUrl = screen.getByRole('textbox', { name: /참조 URL/ });
+    fireEvent.change(secondUrl, { target: { value: '/cop/bbs/selectArticleList.do?bbsId=BBS-2' } });
+    fireEvent.click(screen.getByRole('button', { name: /수정 완료$/ }));
+    expect(mocks.put).toHaveBeenCalledTimes(1);
+    expect(secondUrl).toHaveAttribute('aria-invalid', 'true');
   });
 
   it('신규 수동 등록은 내부 주소를 입력해도 저장하지 않고 URL 오류를 안내한다', async () => {

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { expect,test } from '../fixtures/browser-test';
+import { trackApiRequests } from '../fixtures/hydration';
 import { MailPage } from '../pages/MailPage';
 test.describe('Enterprise Mail System E2E', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
@@ -123,6 +124,7 @@ test.describe('Enterprise Mail System E2E', () => {
         const cardMailSubject = `ADBK_MAIL ${stamp}`;
         const laterMailSubject = `REFRESH_MAIL ${stamp}`;
         let adbkSn: number | undefined;
+        const tracker = trackApiRequests(page);
 
         try {
             const createdBook = await adminRequest.post('/api/v1/address-books', {
@@ -189,9 +191,11 @@ test.describe('Enterprise Mail System E2E', () => {
             ]);
             expect(refreshedRes.status()).toBe(200);
             await mailPage.verifyMailInHistory(laterMailSubject);
+            await expect(page.getByTestId('mail-item').filter({ hasText: cardMailSubject })).toHaveCount(0);
 
             await mailPage.deleteMail(laterMailSubject);
             await mailPage.deleteMail(cardMailSubject);
+            await tracker.settled(page.locator('body'));
         } finally {
             try {
                 await page.goto('about:blank');

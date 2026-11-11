@@ -12,6 +12,27 @@ function decodeQueryComponent(raw: string): string | null {
 }
 
 /**
+ * 서버 ScrapService.normalizeAndValidateUrl(SafeUrls.isLinkable)과 동일한 기본 링크 가능성 검사.
+ * 수정 시 URL이 바뀌지 않은 레거시 내부 경로(예: 목록형 /cop/bbs/selectArticleList.do)의 제목·설명 편집을 막지 않되,
+ * 제어문자·역슬래시·위험 스킴은 항상 차단한다.
+ */
+export function isLinkableScrapUrl(url: string | undefined): boolean {
+    if (!url || /[\\\p{Cc}]/u.test(url)) return false;
+    const trimmed = url.trim();
+    if (!trimmed) return false;
+    if (INTERNAL_PATH.test(trimmed)) return true;
+    if (/^https?:\/\//i.test(trimmed)) {
+        try {
+            const parsed = new URL(trimmed);
+            return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+        } catch {
+            return false;
+        }
+    }
+    return false;
+}
+
+/**
  * 스크랩의 안전한 이동 목적지를 판정한다. 레거시 게시판 주소 변환은 표시할 링크에만
  * 적용하며, 편집 검증에서 반환 주소를 저장값으로 사용하지 않는다.
  *
@@ -40,7 +61,6 @@ export function parseScrapUrl(url: string | undefined): { isInternal: boolean; r
         let bbsId: string | null = null;
         let postIdRaw: string | null = null;
         let seenBoardQueryParam = false;
-        let malformedEncoding = false;
 
         if (query.length > 0) {
             for (const pair of query.split('&')) {
@@ -49,10 +69,7 @@ export function parseScrapUrl(url: string | undefined): { isInternal: boolean; r
                 const rawKey = eqIdx >= 0 ? pair.slice(0, eqIdx) : pair;
                 const rawVal = eqIdx >= 0 ? pair.slice(eqIdx + 1) : '';
                 const key = decodeQueryComponent(rawKey);
-                if (key === null) {
-                    malformedEncoding = true;
-                    continue;
-                }
+                if (key === null) return null;
                 const lowerKey = key.toLowerCase();
                 if (lowerKey === 'bbsid') {
                     seenBoardQueryParam = true;
@@ -75,7 +92,6 @@ export function parseScrapUrl(url: string | undefined): { isInternal: boolean; r
         if (!explicitBoardPath && !seenBoardQueryParam) {
             return { isInternal: true, resolvedHref: trimmed };
         }
-        if (malformedEncoding) return null;
         if (!bbsId || bbsId.length > MAX_BBS_ID_LENGTH || /[\p{Cc}]/u.test(bbsId)) {
             return null;
         }

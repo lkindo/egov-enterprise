@@ -1,4 +1,5 @@
 import { expect,test } from '../fixtures/browser-test';
+import { trackApiRequests } from '../fixtures/hydration';
 import { getAdminBearerToken } from '../utils/admin-token';
 test.describe('Operational Extension & Uncovered Modules', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
@@ -54,6 +55,7 @@ test.describe('Operational Extension & Uncovered Modules', () => {
 
     test('포상 기록을 화면에서 등록하고 새로고침과 페이지 이동으로 목록을 확인한다', async ({ operationalPage, page, adminRequest }) => {
         const tag = `E2E_RWD_${Date.now()}`;
+        const tracker = trackApiRequests(page);
 
         try {
             const meRes = await adminRequest.get('/api/v1/users/me');
@@ -137,6 +139,7 @@ test.describe('Operational Extension & Uncovered Modules', () => {
             expect(refreshedRes.status()).toBe(200);
             await expect(page.getByTestId('work-list-toolbar')).toContainText('총 12건');
             await expect(page.getByText(refreshedName, { exact: true })).toBeVisible();
+            await tracker.settled(page.getByRole('button', { name: '포상 목록 새로고침', exact: true }));
         } finally {
             try {
                 await page.goto('about:blank');
