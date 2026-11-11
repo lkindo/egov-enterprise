@@ -60,6 +60,11 @@ class OpenApiDocumentationTest {
       assertThat(userIdsProp.path("type").asString()).as(dtoName).isEqualTo("array");
       assertThat(userIdsProp.path("maxItems").asInt()).as(dtoName).isEqualTo(100);
     }
+    var deptHierarchySchema = root.path("paths")
+        .path("/api/v1/admin/system/departments/batch-hierarchy").path("put")
+        .path("requestBody").path("content").path("application/json").path("schema");
+    assertThat(deptHierarchySchema.path("type").asString()).isEqualTo("array");
+    assertThat(deptHierarchySchema.path("maxItems").asInt()).isEqualTo(500);
   }
 
   @Test

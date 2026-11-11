@@ -116,7 +116,13 @@ public class RewardManageService {
     @Transactional
     public void deleteReward(Long rwrdSn) {
         SecurityUtil.assertPermission("REWARD_DELETE");
-        rewardManageRepository.delete(findRequired(rwrdSn));
+        RewardManage entity = findRequired(rwrdSn);
+        Long atchFileSn = entity.getAtchFileSn();
+        rewardManageRepository.delete(entity);
+        if (atchFileSn != null) {
+            rewardManageRepository.flush();
+            attachmentAssignmentPolicy.releaseIfUnreferenced(atchFileSn);
+        }
     }
 
     private RewardManage findRequired(Long rwrdSn) {

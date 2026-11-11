@@ -320,6 +320,7 @@ public class NoteService {
         }
         // 양측 모두 삭제 → 물리 수거 (자식 → 부모 순)
         Long noteSn = sndng.getNote() != null ? sndng.getNote().getNoteSn() : null;
+        Long atchFileSn = sndng.getNote() != null ? sndng.getNote().getAtchFileSn() : null;
         noteRecptnRepository.deleteAll(noteRecptnRepository.findByNoteDsptchNoteSndngSn(noteSndngSn));
         noteRecptnRepository.flush();
         noteTrnsmitRepository.delete(sndng);
@@ -329,6 +330,10 @@ public class NoteService {
                 && noteTrnsmitRepository.countByNoteNoteSn(noteSn) == 0
                 && noteRecptnRepository.countByNoteNoteSn(noteSn) == 0) {
             noteRepository.deleteById(noteSn);
+            if (atchFileSn != null) {
+                noteRepository.flush();
+                attachmentAssignmentPolicy.releaseIfUnreferenced(atchFileSn);
+            }
         }
     }
 

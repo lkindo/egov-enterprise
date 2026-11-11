@@ -469,4 +469,77 @@ class CmsPageAdminServiceTest {
                 .isInstanceOf(BusinessException.class);
         verify(contentRepository, never()).search(anyString(), eq("DELETED"), any());
     }
+
+    @Test
+    void archiveAndUnarchiveTransitionStateAndRejectInvalidStates() {
+        CmsContent draft = content(1L, DOCUMENT_JSON, 3);
+        when(contentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(draft));
+
+        var archivedDetail = service.archive(1L, CmsPageStateRequest.builder().version(3).build());
+        assertThat(draft.isArchived()).isTrue();
+        assertThat(archivedDetail.status()).isEqualTo("ARCHIVED");
+        verify(contentRepository).flush();
+
+        assertThatThrownBy(() -> service.archive(1L, CmsPageStateRequest.builder().version(3).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("이미 보관");
+
+        var unarchivedDetail = service.unarchive(1L, CmsPageStateRequest.builder().version(3).build());
+        assertThat(draft.isArchived()).isFalse();
+        assertThat(unarchivedDetail.status()).isEqualTo("DRAFT");
+
+        assertThatThrownBy(() -> service.unarchive(1L, CmsPageStateRequest.builder().version(3).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("보관한 페이지가 아닙니다");
+    }
+
+    @Test
+    void purgeClearsDanglingHomePointerAndRecordsHomeAudit() {
+        CmsSiteSetting home = CmsSiteSetting.create(CmsSiteSetting.HOME_INTRO);
+        home.point(1L);
+        when(homeService.lockHome()).thenReturn(home);
+        when(contentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(content(1L, DOCUMENT_JSON, 3)));
+
+        service.purgePage(1L, purge("guide"));
+
+        assertThat(home.getContsSn()).isNull();
+        InOrder auditOrder = inOrder(sensitiveAudit);
+        auditOrder.verify(sensitiveAudit).recordMutation("CMS_HOME_UPDATE", "NONE");
+        auditOrder.verify(sensitiveAudit).recordReferencedMutation("CMS_PAGE_PURGE", "1:guide", "INC-2026-7");
+    }
+
+    @Test
+    void getRevisionsAndGetRevisionReturnNumberedHistoryAndRejectMissingRevision() {
+        CmsContent published = content(1L, DOCUMENT_JSON, 3);
+        published.publish(20L);
+        when(contentRepository.findById(1L)).thenReturn(Optional.of(published));
+        CmsContentRevision r2 = revision(20L, 1L, "개정본", DOCUMENT_JSON);
+        CmsContentRevision r1 = revision(10L, 1L, "초판", DOCUMENT_JSON);
+        when(revisionRepository.findByContsSnOrderByContsRvsnSnDesc(1L)).thenReturn(List.of(r2, r1));
+
+        var summaries = service.getRevisions(1L);
+        assertThat(summaries).hasSize(2);
+        assertThat(summaries.get(0).revisionNumber()).isEqualTo(2L);
+        assertThat(summaries.get(0).current()).isTrue();
+        assertThat(summaries.get(1).revisionNumber()).isEqualTo(1L);
+        assertThat(summaries.get(1).current()).isFalse();
+
+        when(revisionRepository.findByContsRvsnSnAndContsSn(20L, 1L)).thenReturn(Optional.of(r2));
+        when(revisionRepository.countByContsSnAndContsRvsnSnLessThanEqual(1L, 20L)).thenReturn(2L);
+        var detail = service.getRevision(1L, 20L);
+        assertThat(detail.revisionNumber()).isEqualTo(2L);
+        assertThat(detail.contsTtl()).isEqualTo("개정본");
+
+        when(revisionRepository.findByContsRvsnSnAndContsSn(99L, 1L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.getRevision(1L, 99L))
+                .isInstanceOf(BusinessException.class)
+                .extracting(error -> ((BusinessException) error).getErrorCode())
+                .isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND);
+    }
+
+    @Test
+    void attachmentSourceContributorDeclaresCmsPage() {
+        assertThat(new nuri.business.service.cms.attachment.CmsAttachmentSourceContributor().sources())
+                .containsExactly(nuri.business.service.file.AttachmentSource.CMS_PAGE);
+    }
 }

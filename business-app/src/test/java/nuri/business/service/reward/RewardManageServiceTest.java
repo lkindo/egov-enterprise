@@ -469,6 +469,21 @@ class RewardManageServiceTest {
     }
 
     @Test
+    @DisplayName("포상 삭제 — 첨부파일이 있으면 물리 삭제 및 flush 뒤 미참조 첨부를 수거한다")
+    void deleteReward_flushesAndReleasesAttachmentWhenPresent() {
+        authorize("REWARD_DELETE");
+        RewardManage entity = RewardManage.builder().rwrdSn(8L).rwrdNm("Attached").atchFileSn(501L).build();
+        given(rewardManageRepository.findById(8L)).willReturn(Optional.of(entity));
+
+        rewardManageService.deleteReward(8L);
+
+        org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(rewardManageRepository, attachmentAssignmentPolicy);
+        inOrder.verify(rewardManageRepository).delete(entity);
+        inOrder.verify(rewardManageRepository).flush();
+        inOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(501L);
+    }
+
+    @Test
     @DisplayName("없는 포상의 수정·삭제는 RESOURCE_NOT_FOUND")
     void updateOrDelete_NotFound() {
         authorize("REWARD_UPDATE");

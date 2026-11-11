@@ -66,7 +66,7 @@ class AttachmentSourceRegistryLinterTest {
                     + "(?:(?:public|protected|private)\\s+)?(?:(?:static|final|synchronized)\\s+)*"
                     + "[\\w.$][\\w.$<>?,\\[\\] ]*\\s+([a-zA-Z0-9_]+)\\s*\\(");
     private static final Pattern ATTACHMENT_USAGE = Pattern.compile(
-            "\\.(?:getAtchFileSn|setAtchFileSn|atchFileSn|getFileUrl|fileUrl|uploadFiles|updateFiles|uploadBoardFiles|updateBoardFiles|assertAssignable)\\s*\\(");
+            "\\.(?:getAtchFileSn|setAtchFileSn|atchFileSn|getFileUrl|fileUrl|uploadFiles|updateFiles|uploadBoardFiles|updateBoardFiles|assertAssignable|releaseIfUnreferenced|discardUnreferencedAttachment)\\s*\\(");
     private static final Pattern LOCAL_ATTACHMENT_STORAGE_USAGE = Pattern.compile(
             "(?<![\\w$.])(?:createFileGroup|appendToFileGroup|storeFileDetails)\\s*\\(");
     private static final Set<String> UPLOAD_ENTRY_POINTS =
@@ -110,6 +110,8 @@ class AttachmentSourceRegistryLinterTest {
                     readOnly()),
             entry("business-app/src/main/java/nuri/business/service/promotion/popup/dto/PopupSaveRequest.java#toDto",
                     readOnly()),
+            entry("business-core/src/main/java/nuri/business/service/file/AttachmentAssignmentPolicy.java#releaseIfUnreferenced",
+                    delegate("fileService.discardUnreferencedAttachment(", "fileDetailRepository.", "fileMasterRepository.")),
             entry("business-core/src/main/java/nuri/business/service/file/AttachmentIntegrityService.java#knownNamesByDirectory",
                     readOnly()),
             entry("business-core/src/main/java/nuri/business/service/file/AttachmentIntegrityService.java#describe",
@@ -185,6 +187,8 @@ class AttachmentSourceRegistryLinterTest {
             entry("business-app/src/main/java/nuri/business/service/note/NoteService.java#sendNote",
                     guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)",
                             "noteRepository.save(")),
+            entry("business-app/src/main/java/nuri/business/service/note/NoteService.java#purgeIfBothPartiesDeleted",
+                    releaseAfterFlush("noteRepository.flush();")),
             entry("business-app/src/main/java/nuri/business/service/note/NoteService.java#convertTrnsmitToDto",
                     readOnly()),
             entry("business-app/src/main/java/nuri/business/service/note/NoteService.java#convertRecptnToDto",
@@ -194,6 +198,8 @@ class AttachmentSourceRegistryLinterTest {
                             "rewardManageRepository.save(")),
             entry("business-app/src/main/java/nuri/business/service/reward/RewardManageService.java#updateReward",
                     guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)", "reward.update(")),
+            entry("business-app/src/main/java/nuri/business/service/reward/RewardManageService.java#deleteReward",
+                    releaseAfterFlush("rewardManageRepository.flush();")),
             entry("business-app/src/main/java/nuri/business/service/reward/RewardManageService.java#convertToDto",
                     readOnly()),
             entry("business-app/src/main/java/nuri/business/service/report/WorkReportService.java#createWorkReport",
@@ -201,6 +207,8 @@ class AttachmentSourceRegistryLinterTest {
                             "workReportRepository.save(")),
             entry("business-app/src/main/java/nuri/business/service/report/WorkReportService.java#updateWorkReport",
                     guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)", "entity.update(")),
+            entry("business-app/src/main/java/nuri/business/service/report/WorkReportService.java#deleteWorkReport",
+                    releaseAfterFlush("workReportRepository.flush();")),
             entry("business-app/src/main/java/nuri/business/service/report/WorkReportService.java#toDto",
                     readOnly()),
             entry("business-app/src/main/java/nuri/business/service/schedule/ScheduleService.java#createSchedule",
@@ -208,16 +216,22 @@ class AttachmentSourceRegistryLinterTest {
                             "scheduleRepository.save(")),
             entry("business-app/src/main/java/nuri/business/service/schedule/ScheduleService.java#updateSchedule",
                     guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)", "entity.updateAll(")),
+            entry("business-app/src/main/java/nuri/business/service/schedule/ScheduleService.java#deleteSchedule",
+                    releaseAfterFlush("scheduleRepository.flush();")),
             entry("business-app/src/main/java/nuri/business/service/promotion/banner/BannerService.java#insertBanner",
                     guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)",
                             "bannerRepository.save(")),
             entry("business-app/src/main/java/nuri/business/service/promotion/banner/BannerService.java#updateBanner",
                     guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)", "entity.update(")),
+            entry("business-app/src/main/java/nuri/business/service/promotion/banner/BannerService.java#deleteBanner",
+                    releaseAfterFlush("bannerRepository.flush();")),
             entry("business-app/src/main/java/nuri/business/service/promotion/popup/PopupService.java#createPopup",
                     guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)",
                             "popupRepository.save(")),
             entry("business-app/src/main/java/nuri/business/service/promotion/popup/PopupService.java#updatePopup",
                     guarded("attachmentAssignmentPolicy.assertAssignable(requestedAtchFileSn)", "popup.update(")),
+            entry("business-app/src/main/java/nuri/business/service/promotion/popup/PopupService.java#deletePopup",
+                    releaseAfterFlush("popupRepository.flush();")),
             entry("business-app/src/main/java/nuri/business/service/promotion/popup/dto/PopupDto.java#from",
                     readOnly()));
 
@@ -405,6 +419,52 @@ class AttachmentSourceRegistryLinterTest {
                 }
                 """;
         assertTrue(attachmentMethodViolations(Map.of(path, readOnlyWrite), readOnlyRules).stream()
+                .anyMatch(value -> value.contains("금지된 쓰기/재사용 토큰")));
+
+        Map<String, AttachmentMethodRule> releaseRules = Map.of(
+                path + "#delete", releaseAfterFlush("repository.flush();"));
+        String validRelease = """
+                class SyntheticService {
+                    public void delete(Item item) {
+                        Long atchFileSn = item.getAtchFileSn();
+                        repository.delete(item);
+                        if (atchFileSn != null) {
+                            repository.flush();
+                            attachmentAssignmentPolicy.releaseIfUnreferenced(atchFileSn);
+                        }
+                    }
+                }
+                """;
+        assertTrue(attachmentMethodViolations(Map.of(path, validRelease), releaseRules).isEmpty());
+
+        String releaseBeforeFlush = """
+                class SyntheticService {
+                    public void delete(Item item) {
+                        Long atchFileSn = item.getAtchFileSn();
+                        repository.delete(item);
+                        attachmentAssignmentPolicy.releaseIfUnreferenced(atchFileSn);
+                        repository.flush();
+                    }
+                }
+                """;
+        assertTrue(attachmentMethodViolations(Map.of(path, releaseBeforeFlush), releaseRules).stream()
+                .anyMatch(value -> value.contains("저장보다 뒤")));
+
+        String releaseWithoutFlush = """
+                class SyntheticService {
+                    public void delete(Item item) {
+                        Long atchFileSn = item.getAtchFileSn();
+                        repository.delete(item);
+                        attachmentAssignmentPolicy.releaseIfUnreferenced(atchFileSn);
+                    }
+                }
+                """;
+        assertTrue(attachmentMethodViolations(Map.of(path, releaseWithoutFlush), releaseRules).stream()
+                .anyMatch(value -> value.contains("가드 토큰 소실")));
+        String directFileRepoInRelease = validRelease.replace(
+                "attachmentAssignmentPolicy.releaseIfUnreferenced(atchFileSn);",
+                "attachmentAssignmentPolicy.releaseIfUnreferenced(atchFileSn); fileMasterRepository.deleteById(atchFileSn);");
+        assertTrue(attachmentMethodViolations(Map.of(path, directFileRepoInRelease), releaseRules).stream()
                 .anyMatch(value -> value.contains("금지된 쓰기/재사용 토큰")));
 
         String readOnlyBulkWrite = readOnlyWrite.replace(
@@ -955,6 +1015,15 @@ class AttachmentSourceRegistryLinterTest {
 
     private static AttachmentMethodRule guarded(String guardToken, String... mutationTokens) {
         return new AttachmentMethodRule(guardToken, List.of(mutationTokens), List.of(), false);
+    }
+
+    /** 물리 삭제 수거는 엔티티 삭제 flush 뒤에만 실행하고 파일 저장소를 직접 건드리지 않는다. */
+    private static AttachmentMethodRule releaseAfterFlush(String flushToken) {
+        return new AttachmentMethodRule(
+                flushToken,
+                List.of("attachmentAssignmentPolicy.releaseIfUnreferenced("),
+                List.of("fileDetailRepository.", "fileMasterRepository."),
+                false);
     }
 
     private static AttachmentMethodRule generatedUpload() {

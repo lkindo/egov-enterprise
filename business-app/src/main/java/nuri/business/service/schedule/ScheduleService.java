@@ -209,7 +209,12 @@ public class ScheduleService {
         // SecurityUtil 이 SecurityContext 에서 loginId 를 읽어 소유자/관리자를 올바로 판정한다.
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCHEDULE_DELETE_ALL");
 
+        Long atchFileSn = entity.getAtchFileSn();
         scheduleRepository.delete(entity);
+        if (atchFileSn != null) {
+            scheduleRepository.flush();
+            attachmentAssignmentPolicy.releaseIfUnreferenced(atchFileSn);
+        }
     }
 
     private ScheduleDto convertToDto(Schedule entity) {

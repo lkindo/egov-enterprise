@@ -87,7 +87,12 @@ public class BannerService {
         SecurityUtil.assertPermission("BANNER_DELETE");
         Banner entity = bannerRepository.findById(Objects.requireNonNull(bnrSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        Long atchFileSn = entity.getAtchFileSn();
         bannerRepository.delete(entity);
+        if (atchFileSn != null) {
+            bannerRepository.flush();
+            attachmentAssignmentPolicy.releaseIfUnreferenced(atchFileSn);
+        }
     }
 
     private static void assertLinkable(String linkUrl) {

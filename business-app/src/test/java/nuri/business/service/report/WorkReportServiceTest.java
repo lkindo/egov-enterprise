@@ -253,6 +253,26 @@ class WorkReportServiceTest {
     }
 
     @Test
+    @DisplayName("업무보고 삭제 — 첨부파일이 있으면 물리 삭제 및 flush 뒤 미참조 첨부를 수거한다")
+    void deleteWorkReport_flushesAndReleasesAttachmentWhenPresent() {
+        WorkReport report = WorkReport.builder()
+                .rptpSn(2L)
+                .rptTtl("첨부보고")
+                .atchFileSn(301L)
+                .build();
+        when(workReportRepository.findById(2L)).thenReturn(Optional.of(report));
+
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            workReportService.deleteWorkReport(2L);
+        }
+
+        org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(workReportRepository, attachmentAssignmentPolicy);
+        inOrder.verify(workReportRepository).delete(report);
+        inOrder.verify(workReportRepository).flush();
+        inOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(301L);
+    }
+
+    @Test
     @DisplayName("업무보고 상세 조회 테스트")
     void getWorkReportTest() {
         WorkReport report = WorkReport.builder()

@@ -603,6 +603,7 @@ test('every computed Java port connection is an integration or a registration-on
     'core>reward (AttachmentSourceContributor)', 'core>reward (LoginIdReferenceContributor)',
     'core>schedule (AttachmentSourceContributor)', 'core>schedule (LoginIdReferenceContributor)', 'core>scrap (LoginIdReferenceContributor)',
     'core>sms (DurableWorkHandler)', 'core>survey (LoginIdReferenceContributor)', 'dashboard>board (PostStatisticsContributor)',
+    'scrap>board (BoardPostAccessPort)',
     'template>board (TemplateReferenceContributor)', 'template>community (TemplateReferenceContributor)',
   ]);
   // 예외 객체가 필드로 쓰는 ErrorCode 는 빈의 주입이 아니라 연결이 아니다.
@@ -612,10 +613,11 @@ test('every computed Java port connection is an integration or a registration-on
   assert.deepEqual([...declared].sort(), ['board>community (CommunityBoardAccessPort)', 'community>template (TemplateAssignmentPolicy)',
     'dashboard>board (PostStatisticsContributor)']);
   const canDegrade = degradationPredicate(catalog.capabilities, catalog.presets);
-  // 늘 함께 있는 쌍(요구 폐포 안이고 그 기능을 담은 시작 구성이 모두 상대도 담는 쌍)은 분류하지 않는다. 지금은 그런 포트 연결이 없다 —
-  // [2026-10-20] 실시간 대시보드 → 알림(전 사용자 미읽음 수 포트)을 걷어 하나 남은 쌍이 사라졌다.
-  assert.deepEqual(ports.connections.filter(row => !canDegrade(row.from, row.to)).map(portKey), []);
-  assert.deepEqual(registrationOnlyPorts.map(portKey).sort(), keys.filter(key => !declared.has(key)));
+  // 늘 함께 있는 쌍(요구 폐포 안이고 그 기능을 담은 시작 구성이 모두 상대도 담는 쌍)은 분류하지 않는다.
+  // scrap 은 board 를 필수 요구하므로 scrap>board (BoardPostAccessPort) 는 저하되지 않는 필수 쌍이다.
+  const nonDegrading = new Set(ports.connections.filter(row => !canDegrade(row.from, row.to)).map(portKey));
+  assert.deepEqual([...nonDegrading], ['scrap>board (BoardPostAccessPort)']);
+  assert.deepEqual(registrationOnlyPorts.map(portKey).sort(), keys.filter(key => !declared.has(key) && !nonDegrading.has(key)));
   for (const row of registrationOnlyPorts) assert.match(row.reason, /^[^A-Za-z]+\.$/, portKey(row));
 });
 

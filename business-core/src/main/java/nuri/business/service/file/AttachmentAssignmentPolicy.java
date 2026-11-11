@@ -4,10 +4,12 @@ import nuri.business.domain.file.FileMaster;
 import nuri.business.domain.file.FileMasterRepository;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
+import org.jspecify.annotations.Nullable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * 새 업무 참조에 첨부를 할당할 때 사용하는 공용 인가 경계.
+ * 새 업무 참조에 첨부를 할당하거나 마지막 업무 참조가 지워질 때 사용하는 공용 경계.
  *
  * <p>열람 가능 여부와 새 참조를 만들 수 있는 권한은 다르다. 이 정책은 첨부 마스터의 존재를
  * 확인한 뒤 {@link FileAccessPolicy#assertAttachable(FileMaster)}에 위임하여 원 업로더만 할당할 수
@@ -19,12 +21,22 @@ public class AttachmentAssignmentPolicy {
 
     private final FileMasterRepository fileMasterRepository;
     private final FileAccessPolicy fileAccessPolicy;
+    private final @Nullable FileService fileService;
+
+    @Autowired
+    public AttachmentAssignmentPolicy(
+            FileMasterRepository fileMasterRepository,
+            FileAccessPolicy fileAccessPolicy,
+            @Nullable FileService fileService) {
+        this.fileMasterRepository = fileMasterRepository;
+        this.fileAccessPolicy = fileAccessPolicy;
+        this.fileService = fileService;
+    }
 
     public AttachmentAssignmentPolicy(
             FileMasterRepository fileMasterRepository,
             FileAccessPolicy fileAccessPolicy) {
-        this.fileMasterRepository = fileMasterRepository;
-        this.fileAccessPolicy = fileAccessPolicy;
+        this(fileMasterRepository, fileAccessPolicy, null);
     }
 
     /**
@@ -42,5 +54,15 @@ public class AttachmentAssignmentPolicy {
         FileMaster master = fileMasterRepository.findById(atchFileSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         fileAccessPolicy.assertAttachable(master);
+    }
+
+    /**
+     * 업무 행을 물리 삭제하고 flush 한 뒤, 다른 업무 참조가 남아 있지 않은 첨부를 수거한다(DEC-OPS-394).
+     */
+    public boolean releaseIfUnreferenced(@Nullable Long atchFileSn) {
+        if (atchFileSn == null || fileService == null) {
+            return false;
+        }
+        return fileService.discardUnreferencedAttachment(atchFileSn);
     }
 }

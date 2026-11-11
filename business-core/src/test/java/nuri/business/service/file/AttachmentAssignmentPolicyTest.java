@@ -128,6 +128,27 @@ class AttachmentAssignmentPolicyTest {
     }
 
     @Test
+    @DisplayName("물리 삭제 뒤 첨부 수거 요청은 FileService.discardUnreferencedAttachment 로 위임하고 null·미주입은 안전하게 무시한다")
+    void releaseIfUnreferencedDelegatesWhenPresentAndIgnoresNullOrMissingService() {
+        FileService fileService = mock(FileService.class);
+        when(fileService.discardUnreferencedAttachment(101L)).thenReturn(true);
+        when(fileService.discardUnreferencedAttachment(202L)).thenReturn(false);
+
+        AttachmentAssignmentPolicy withService = new AttachmentAssignmentPolicy(
+                fileMasterRepository,
+                new FileAccessPolicy((atchFileSn, loginId, esntlId) -> AttachmentReferenceResolver.Grants.none()),
+                fileService);
+
+        assertThat(withService.releaseIfUnreferenced(null)).isFalse();
+        assertThat(withService.releaseIfUnreferenced(101L)).isTrue();
+        assertThat(withService.releaseIfUnreferenced(202L)).isFalse();
+        assertThat(policy(AttachmentReferenceResolver.Grants.none()).releaseIfUnreferenced(101L)).isFalse();
+
+        verify(fileService).discardUnreferencedAttachment(101L);
+        verify(fileService).discardUnreferencedAttachment(202L);
+    }
+
+    @Test
     @DisplayName("할당 거부 로그에는 현재 loginId 원문을 남기지 않는다")
     void deniedAssignmentLogDoesNotContainRawLoginId() {
         String sensitiveLoginId = "private-login-id-sentinel";

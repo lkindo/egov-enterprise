@@ -920,7 +920,7 @@ export interface paths {
         get?: never;
         /**
          * 조직 계층 일괄 저장
-         * @description 조직도 편집 결과(상위 부서·정렬 순서)를 일괄 반영합니다. 각 항목의 ognzId 는 필수입니다.
+         * @description 조직도 편집 결과(상위 부서·정렬 순서)를 일괄 반영합니다. 각 항목의 ognzId 는 필수이며 한 번에 최대 500건까지 요청할 수 있습니다.
          */
         put: operations["updateDeptHierarchy"];
         post?: never;

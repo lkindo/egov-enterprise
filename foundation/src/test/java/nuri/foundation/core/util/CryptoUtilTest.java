@@ -274,5 +274,58 @@ class CryptoUtilTest {
                 new CryptoUtil().setAlgorithmKey("ARIA");
             }
         }
+
+        @Test
+        @DisplayName("prod 프로파일에서는 약한 기본키·빈 키·null 키로 기동할 수 없으며(fail-fast), @Component 중복 등록을 두지 않는다")
+        void prodProfileRejectsWeakOrBlankKeysAndComponentScanDuplicateIsAbsent() {
+            assertThat(CryptoUtil.class.isAnnotationPresent(org.springframework.stereotype.Component.class)).isFalse();
+
+            org.springframework.core.env.Environment prodEnv = mock(org.springframework.core.env.Environment.class);
+            when(prodEnv.acceptsProfiles(any(org.springframework.core.env.Profiles.class)))
+                    .thenAnswer(inv -> inv.<org.springframework.core.env.Profiles>getArgument(0).matches("prod"::equals));
+            ApplicationContext prodCtx = mock(ApplicationContext.class);
+            when(prodCtx.getEnvironment()).thenReturn(prodEnv);
+            lenient().when(prodCtx.getBean("ariacryptoService")).thenReturn(cryptoService);
+
+            try {
+                for (String weakOrMissing : java.util.Arrays.asList("egovframe", "egoventerprise0123", "", "   ", null)) {
+                    CryptoUtil candidate = new CryptoUtil();
+                    candidate.setAlgorithmKey(weakOrMissing);
+                    org.assertj.core.api.Assertions.assertThatThrownBy(() -> candidate.setApplicationContext(prodCtx))
+                            .as("prod 에서 취약 키가 통과했다: " + weakOrMissing)
+                            .isInstanceOf(IllegalStateException.class);
+                }
+
+                CryptoUtil strongProd = new CryptoUtil();
+                strongProd.setAlgorithmKey("9f3c!Aq2#Zx7_Lm4Pv8Nr1Ts6");
+                assertThatCode(() -> strongProd.setApplicationContext(prodCtx)).doesNotThrowAnyException();
+
+                org.springframework.core.env.Environment localEnv = mock(org.springframework.core.env.Environment.class);
+                when(localEnv.acceptsProfiles(any(org.springframework.core.env.Profiles.class)))
+                        .thenAnswer(inv -> inv.<org.springframework.core.env.Profiles>getArgument(0).matches("local"::equals));
+                ApplicationContext localCtx = mock(ApplicationContext.class);
+                when(localCtx.getEnvironment()).thenReturn(localEnv);
+                when(localCtx.getBean("ariacryptoService")).thenReturn(cryptoService);
+
+                CryptoUtil localSample = new CryptoUtil();
+                localSample.setAlgorithmKey("egovframe");
+                assertThatCode(() -> localSample.setApplicationContext(localCtx)).doesNotThrowAnyException();
+
+                // 실제 Spring 컨테이너 라이프사이클(@Value 주입 → ApplicationContextAware)에서도 prod 기본키 기동이 차단된다.
+                try (var badProdBoot = new org.springframework.context.annotation.AnnotationConfigApplicationContext()) {
+                    badProdBoot.getEnvironment().setActiveProfiles("prod");
+                    badProdBoot.getEnvironment().getPropertySources().addFirst(
+                            new org.springframework.core.env.MapPropertySource("test",
+                                    java.util.Map.of("Globals.File.algorithmKey", "egovframe")));
+                    badProdBoot.register(nuri.foundation.core.config.ProjectCryptoConfig.class);
+                    org.assertj.core.api.Assertions.assertThatThrownBy(badProdBoot::refresh)
+                            .hasRootCauseInstanceOf(IllegalStateException.class);
+                }
+            } finally {
+                CryptoUtil restore = new CryptoUtil();
+                restore.setAlgorithmKey("ARIA");
+                restore.setApplicationContext(Objects.requireNonNull(applicationContext));
+            }
+        }
     }
 }

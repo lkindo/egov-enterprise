@@ -498,13 +498,34 @@ class PopupServiceImplTest {
     void deletePopup_Success() {
         authenticate("POPUP_DELETE");
         // given
-        given(popupRepository.existsById(1L)).willReturn(true);
+        Popup popup = Popup.builder().popupSn(1L).popupTtlNm("Popup").build();
+        given(popupRepository.findById(1L)).willReturn(Optional.of(popup));
 
         // when
         popupService.deletePopup(1L);
 
         // then
-        verify(popupRepository, times(1)).deleteById(1L);
+        verify(popupRepository, times(1)).delete(popup);
+    }
+
+    @Test
+    @DisplayName("팝업 삭제 — 내부 첨부 URL 이면 물리 삭제 및 flush 뒤 미참조 첨부를 수거하고, 외부 URL 은 건드리지 않는다")
+    void deletePopup_flushesAndReleasesInternalAttachmentOnly() {
+        authenticate("POPUP_DELETE");
+        Popup attached = Popup.builder().popupSn(2L).popupTtlNm("Attached").fileUrl("/api/v1/files/701").build();
+        Popup external = Popup.builder().popupSn(3L).popupTtlNm("External").fileUrl("https://cdn.example.test/img.png").build();
+        given(popupRepository.findById(2L)).willReturn(Optional.of(attached));
+        given(popupRepository.findById(3L)).willReturn(Optional.of(external));
+
+        popupService.deletePopup(2L);
+        popupService.deletePopup(3L);
+
+        org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(popupRepository, attachmentAssignmentPolicy);
+        inOrder.verify(popupRepository).delete(attached);
+        inOrder.verify(popupRepository).flush();
+        inOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(701L);
+        verify(popupRepository).delete(external);
+        org.mockito.Mockito.verifyNoMoreInteractions(attachmentAssignmentPolicy);
     }
 
     @Test
@@ -512,7 +533,7 @@ class PopupServiceImplTest {
     void deletePopup_NotFound_ShouldThrowBusinessException() {
         authenticate("POPUP_DELETE");
         // given
-        given(popupRepository.existsById(1L)).willReturn(false);
+        given(popupRepository.findById(1L)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> popupService.deletePopup(1L))
@@ -558,9 +579,8 @@ class PopupServiceImplTest {
         assertThat(existing.getFrstRgtrId()).isEqualTo("foreign-creator");
 
         authenticate("POPUP_DELETE");
-        given(popupRepository.existsById(1L)).willReturn(true);
         popupService.deletePopup(existing.getPopupSn());
-        verify(popupRepository).deleteById(1L);
+        verify(popupRepository).delete(existing);
     }
 
     private static Stream<Arguments> deniedWrites() {

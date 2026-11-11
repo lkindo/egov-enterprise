@@ -125,4 +125,38 @@ class NoteServiceTest {
                 .hasMessageNotContaining("개별 최대 20자");
         verify(userRepository).findByEsntlIdIn(org.mockito.ArgumentMatchers.anyList());
     }
+
+    @Test
+    @DisplayName("쪽지 삭제 — 한쪽만 지우면 첨부를 유지하고, 양측 모두 지워 본문(Note)을 물리 삭제할 때만 flush 후 미참조 첨부를 수거한다")
+    void deleteNote_releasesAttachmentOnlyWhenNoteIsPhysicallyPurged() {
+        nuri.business.domain.note.Note note = nuri.business.domain.note.Note.builder()
+                .noteSn(50L).noteTtl("첨부 쪽지").atchFileSn(777L).build();
+        nuri.business.domain.note.NoteTrnsmit trnsmit = nuri.business.domain.note.NoteTrnsmit.builder()
+                .noteSndngSn(10L).note(note).sndrId("USR_SNDR_1").build();
+        nuri.business.domain.note.NoteRecptn recptn = nuri.business.domain.note.NoteRecptn.builder()
+                .noteRcptnSn(20L).note(note).noteDsptch(trnsmit).rcvrId("USR_RCVR_1").openYn("N").rcptnSeCd("0").build();
+
+        given(noteTrnsmitRepository.findById(10L)).willReturn(java.util.Optional.of(trnsmit));
+        given(noteTrnsmitRepository.findByIdForUpdate(10L)).willReturn(java.util.Optional.of(trnsmit));
+        given(noteRecptnRepository.countByNoteDsptchNoteSndngSnAndDelYn(10L, "N")).willReturn(1L);
+
+        // 1) 발신자만 삭제(수신자는 아직 미삭제) → 본문·첨부 모두 보존
+        noteService.deleteNote(10L, "sent", "USR_SNDR_1");
+        org.mockito.Mockito.verify(noteRepository, org.mockito.Mockito.never()).deleteById(anyLong());
+        org.mockito.Mockito.verify(attachmentAssignmentPolicy, org.mockito.Mockito.never()).releaseIfUnreferenced(any());
+
+        // 2) 수신자도 삭제(양측 모두 삭제 + 잔여 참조 0) → 본문 물리 삭제 → flush → 미참조 첨부 수거
+        given(noteRecptnRepository.findById(20L)).willReturn(java.util.Optional.of(recptn));
+        given(noteRecptnRepository.countByNoteDsptchNoteSndngSnAndDelYn(10L, "N")).willReturn(0L);
+        given(noteRecptnRepository.findByNoteDsptchNoteSndngSn(10L)).willReturn(List.of(recptn));
+        given(noteTrnsmitRepository.countByNoteNoteSn(50L)).willReturn(0L);
+        given(noteRecptnRepository.countByNoteNoteSn(50L)).willReturn(0L);
+
+        noteService.deleteNote(20L, "received", "USR_RCVR_1");
+
+        org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(noteRepository, attachmentAssignmentPolicy);
+        inOrder.verify(noteRepository).deleteById(50L);
+        inOrder.verify(noteRepository).flush();
+        inOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(777L);
+    }
 }
