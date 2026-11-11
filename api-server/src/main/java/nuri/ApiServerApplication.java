@@ -45,9 +45,6 @@ public class ApiServerApplication extends SpringBootServletInitializer {
         }
 
         public static void main(String[] args) {
-                SpringApplication app = new SpringApplication(ApiServerApplication.class);
-                app.setAllowCircularReferences(true);
-                app.setAllowBeanDefinitionOverriding(true);
-                app.run(args);
+                SpringApplication.run(ApiServerApplication.class, args);
         }
 }

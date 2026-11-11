@@ -46,6 +46,7 @@ public class UserService extends BaseAbstractService {
 
         /** 사용자 관리 화면의 최대 페이지 크기와 같은 입력 ID 상한. 중복 ID도 요청 건수에 포함한다. */
         public static final int MAX_BULK_DELETE_USERS = 100;
+        public static final int MAX_BULK_USERS = MAX_BULK_DELETE_USERS;
 
         /**
          * 가입일자(yyyyMMdd) 판정의 기준 시계. 운영에서는 항상 Asia/Seoul 시스템 시계다.
@@ -687,7 +688,12 @@ public class UserService extends BaseAbstractService {
          * 트랜잭션을 실패시킨다.</p>
          */
         private List<User> findAllByLoginIdOrThrow(List<String> userIds) {
-                List<String> requestedIds = required(userIds, "사용자 ID 목록은 null 일 수 없습니다").stream()
+                List<String> nonNullIds = required(userIds, "사용자 ID 목록은 null 일 수 없습니다");
+                if (nonNullIds.size() > MAX_BULK_USERS) {
+                        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                                        "한 번에 처리할 사용자 ID는 " + MAX_BULK_USERS + "개 이하여야 합니다.");
+                }
+                List<String> requestedIds = nonNullIds.stream()
                                 .map(id -> required(id, "사용자 ID 는 null 일 수 없습니다"))
                                 .distinct()
                                 .toList();

@@ -25,6 +25,9 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class GroupManageService {
 
+    /** 그룹 관리 화면의 최대 페이지 크기와 같은 일괄 삭제 상한. 중복 ID도 요청 건수에 포함한다. */
+    public static final int MAX_BULK_DELETE_GROUPS = 100;
+
     private final GroupManageRepository groupManageRepository;
     private final UserRepository userRepository;
 
@@ -123,6 +126,13 @@ public class GroupManageService {
     public void deleteGroups(String[] groupIds) {
         nuri.business.security.util.SecurityUtil.assertPermission("CLASS_GRP_DELETE");
         List<String> ids = Arrays.asList(Objects.requireNonNull(groupIds));
+        if (ids.size() > MAX_BULK_DELETE_GROUPS) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "한 번에 삭제할 그룹 ID는 " + MAX_BULK_DELETE_GROUPS + "개 이하여야 합니다.");
+        }
+        if (ids.isEmpty()) {
+            return;
+        }
         // [V2_13 결속] 위 deleteGroup 과 동일 사유의 참조 해제
         userRepository.clearGroupIdByGroupIdIn(ids);
         groupManageRepository.deleteAllById(ids);

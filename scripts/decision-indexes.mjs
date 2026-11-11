@@ -47,7 +47,7 @@ export const DECISION_AREA_ROUTES = Object.freeze({
     paths: Object.freeze([
       '.github/**', '.githooks/**', '.zap/**', '.agent/scripts/**', '.agent/skills/**', '.agent/knowledge/**',
       '.agents/hooks.json', '.claude/settings.json', '.codex/hooks.json', '.codex/rules/agent-guard.rules', '.gemini/settings.json',
-      'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'Makefile', 'start-dev.ps1',
+      'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'LICENSE', 'Makefile', 'start-dev.ps1',
       '.editorconfig', '.gitattributes', '.gitignore', '.gitleaks.toml', '.nvmrc', 'lombok.config',
       'config/governance/**', 'config/security/**', 'config/dependency-check/**', 'config/migration-test-duration-profile.json',
       'config/pit-duration-profile.json', 'scripts/**', 'tools/agent-evaluation/**', 'tools/requirements-workspace/**', 'api-server/src/test/**', 'api-server/src/main/resources/db/migration/**',
@@ -67,7 +67,7 @@ export const DECISION_AREA_ROUTES = Object.freeze({
       'docs/04-operations/dependabot-alert-census.md', 'docs/04-operations/load-test-guide.md',
       'docs/04-operations/migration-release-log.md', 'docs/04-operations/sast-findings-review.md', 'docs/04-operations/secure-coding-weakness-baseline.md',
       'docs/04-operations/ui-quality-assisted-accessibility.md', 'docs/04-operations/ui-ux-baseline-protocol.md',
-      'docs/04-operations/verification-blindspots.md',
+      'docs/04-operations/third-party-notices.md', 'docs/04-operations/verification-blindspots.md',
     ]),
     conditions: Object.freeze([]),
   }),

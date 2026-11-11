@@ -535,4 +535,36 @@ public class UserApiControllerTest extends BaseControllerTest {
                 .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("관리자: 사용자 상태·부서·권한 일괄 변경은 101개 이상 ID를 서비스 호출 전에 400으로 거부한다")
+    void bulkUserMutationsRejectOversizedBatchBeforeServiceCall() throws Exception {
+        List<String> oversizedIds = IntStream.range(0, 101).mapToObj(i -> "user" + i).toList();
+
+        BulkStatusRequest statusReq = new BulkStatusRequest();
+        statusReq.setUserIds(oversizedIds);
+        statusReq.setStatus("P");
+        mockMvc.perform(patch("/api/v1/admin/system/users/status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(statusReq)))
+                .andExpect(status().isBadRequest());
+
+        BulkDeptMoveRequest deptReq = new BulkDeptMoveRequest();
+        deptReq.setUserIds(oversizedIds);
+        deptReq.setOgnzId("ORG1");
+        mockMvc.perform(patch("/api/v1/admin/system/users/dept")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(deptReq)))
+                .andExpect(status().isBadRequest());
+
+        BulkRoleRequest roleReq = new BulkRoleRequest();
+        roleReq.setUserIds(oversizedIds);
+        roleReq.setRole(nuri.business.domain.user.entity.Role.ADMIN);
+        mockMvc.perform(patch("/api/v1/admin/system/users/role")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(roleReq)))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(userService);
+    }
 }

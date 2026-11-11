@@ -41,16 +41,25 @@ class OpenApiDocumentationTest {
   private tools.jackson.databind.ObjectMapper objectMapper;
 
   @Test
-  @DisplayName("사용자 일괄 삭제의 100건 입력 상한을 OpenAPI에 공개한다")
+  @DisplayName("사용자·그룹 일괄 변경 API들의 100건 입력 상한을 OpenAPI에 공개한다")
   void bulkUserDeletionLimit_isDocumented() throws Exception {
     String content = mockMvc.perform(get("/v3/api-docs"))
         .andExpect(status().isOk())
         .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-    var requestSchema = objectMapper.readTree(content).path("paths")
-        .path("/api/v1/admin/system/users").path("delete")
-        .path("requestBody").path("content").path("application/json").path("schema");
-    assertThat(requestSchema.path("type").asString()).isEqualTo("array");
-    assertThat(requestSchema.path("maxItems").asInt()).isEqualTo(100);
+    var root = objectMapper.readTree(content);
+    for (String bulkDeletePath : java.util.List.of("/api/v1/admin/system/users", "/api/v1/admin/system/groups")) {
+      var requestSchema = root.path("paths")
+          .path(bulkDeletePath).path("delete")
+          .path("requestBody").path("content").path("application/json").path("schema");
+      assertThat(requestSchema.path("type").asString()).as(bulkDeletePath).isEqualTo("array");
+      assertThat(requestSchema.path("maxItems").asInt()).as(bulkDeletePath).isEqualTo(100);
+    }
+    var schemas = root.path("components").path("schemas");
+    for (String dtoName : java.util.List.of("BulkStatusRequest", "BulkDeptMoveRequest", "BulkRoleRequest")) {
+      var userIdsProp = schemas.path(dtoName).path("properties").path("userIds");
+      assertThat(userIdsProp.path("type").asString()).as(dtoName).isEqualTo("array");
+      assertThat(userIdsProp.path("maxItems").asInt()).as(dtoName).isEqualTo(100);
+    }
   }
 
   @Test

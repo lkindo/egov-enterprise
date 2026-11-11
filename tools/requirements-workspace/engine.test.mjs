@@ -137,6 +137,18 @@ test('reviewed analysis baseline survives decomposition; evidenced UAT resets wh
   await act('uat.import', { csv: csv.replace('TEST-001 시험 기록', 'TEST-002 새 시험 기록'), buildRef: 'BUILD-002' });
   assert.equal(store.read().metadata.uatRecords.length, 3);
   assert.equal(store.read().metadata.uatRecords.at(-1).buildRef, 'BUILD-002');
+  await act('uat.record', { acId: 'AC-allow', disposition: 'rejected', signer: '기관 검토 역할', date: '2026-11-05', evidence: 'TEST-003 반려 기록', buildRef: 'BUILD-003' });
+  assert.equal(store.read().backlog.businessRequirements[0].acceptanceDisposition, 'rejected');
+  await assert.rejects(
+    act('uat.import', { csv, buildRef: 'BUILD-001' }),
+    error => error.code === 'UAT_IMPORT_INVALID' && error.errors.some(item => item.includes('uatBaseDecisionHash')),
+    'stale BUILD-001 CSV must not silently overwrite BUILD-003 rejected judgment',
+  );
+  assert.equal(store.read().backlog.acceptanceCriteria.find(ac => ac.id === 'AC-allow').acceptanceDisposition, 'rejected');
+  assert.equal(store.read().backlog.businessRequirements[0].acceptanceDisposition, 'rejected');
+  await act('uat.import', { csv, buildRef: 'BUILD-001', allowDecisionOverwrite: true });
+  assert.equal(store.read().backlog.businessRequirements[0].acceptanceDisposition, 'accepted');
+  assert.equal(store.read().metadata.uatRecords.length, 5);
   setContext({ ...context, snapshotDigest: 'unrelated-catalog-change', gates: [{ id: 'unrelated-gate', status: 'blocking' }] });
   assert.equal((await engine.state()).contextChanged, true);
   await act('context.refresh', {});
@@ -149,6 +161,6 @@ test('reviewed analysis baseline survives decomposition; evidenced UAT resets wh
   await act('requirement.save', { requirement: changed, reviewed: false });
   assert.equal((await engine.state()).baselineCurrent, false);
   assert.equal((await engine.state()).metadata.exports.find(item => item.kind === 'task').stale, true);
-  assert.equal(store.read().metadata.uatRecords.length, 3);
+  assert.equal(store.read().metadata.uatRecords.length, 5);
   await assert.rejects(act('export.create', { kind: 'task' }), /BASELINE_REQUIRED/);
 });

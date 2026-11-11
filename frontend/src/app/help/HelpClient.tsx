@@ -7,7 +7,6 @@ import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { helpUserService, FAQ, QNA, type HelpGuide } from '@/services/business/user/help/HelpUserService';
 import { isQnaSolved, QNA_STATUS_LABELS } from '@/lib/board/qna-status';
 import { QNA_BOARD_ID } from '@/config/board-ids';
-import { useOptionalAuth } from '@/contexts/AuthContext';
 import { useSessionListState } from '@/lib/hooks/use-session-list-state';
 import { useToast } from '@/app/components/ui/toast';
 import { HelpCircle, MessageCircle, ChevronDown, PlusCircle, BookOpen, FileText } from 'lucide-react';
@@ -86,10 +85,13 @@ const isHelpTab = (value: string): value is HelpTab => (HELP_TABS as readonly st
  */
 const HELP_LIST_STATE_DEFAULTS = { tab: 'faq', page: 1, keyword: '' };
 
-/** 1:1 문의 내역 한 건의 구분. 비밀글은 작성자와 관리자에게만 오므로, 내 글이 아닌 비밀글은 관리자 화면에서만 보인다. */
-function qnaKindLabel(item: QNA, viewerId: string | undefined): string {
-  if (item.scrtYn !== 'Y') return '공개 질문';
-  return viewerId && item.authorId === viewerId ? '내 1:1 문의' : '1:1 문의';
+/**
+ * 1:1 문의 내역 한 건의 구분(2026-11-11 GAP-HELP-001).
+ * 게시판 목록 질의는 내부 식별자 노출을 막기 위해 작성자 ID(userId)를 싣지 않으므로 서버의 열람 경계(scrtYn)만으로 구분한다.
+ * 일반 사용자에게 보이는 비밀글은 BoardPredicate 상 본인이 남긴 1:1 문의뿐이며, 전체 열람 권한(BOARD_READ_ALL) 보유자는 모든 1:1 문의를 함께 열람한다.
+ */
+function qnaKindLabel(item: QNA): string {
+  return item.scrtYn === 'Y' ? '1:1 문의' : '공개 질문';
 }
 
 /** 1:1 문의·공개 질문은 Q&A 게시판의 글이다 — 상세는 게시글 상세 화면이 연다(댓글로 단 답변도 거기서 읽는다). */
@@ -98,7 +100,6 @@ const qnaDetailHref = (item: QNA) =>
 
 export default function HelpClient() {
   const { toast } = useToast();
-  const viewerId = useOptionalAuth()?.user?.esntlId;
   const [listState, updateListState] = useSessionListState('help-center', HELP_LIST_STATE_DEFAULTS);
   const tab: HelpTab = isHelpTab(listState.tab) ? listState.tab : 'faq';
   const page = Number.isSafeInteger(listState.page) && listState.page > 0 ? listState.page : 1;
@@ -218,8 +219,8 @@ export default function HelpClient() {
   });
 
   /*
-    [2026-10-26 ADR-0043 UX-04] 종전 문의 내역은 행을 열 수 없어 1:1 문의에 달린 답을 읽을 길이 없었고, 내 문의와 남의 공개 질문이
-    같은 모양이었다. 제목으로 게시글 상세를 열고, 구분 열이 '내 1:1 문의'·'공개 질문' 을 말한다(서버 값 scrtYn·작성자만 읽는다).
+    [2026-10-26 ADR-0043 UX-04 / 2026-11-11 GAP-HELP-001] 종전 문의 내역은 행을 열 수 없어 1:1 문의에 달린 답을 읽을 길이 없었고,
+    비밀 문의와 공개 질문이 같은 모양이었다. 제목으로 게시글 상세를 열고, 구분 열이 '1:1 문의'·'공개 질문' 을 말한다(서버 값 scrtYn).
     등록일은 yyyy-MM-dd 다. 상태 이름은 게시판 정본(QNA_STATUS_LABELS)을 쓴다 — '답변 대기' 는 답이 달려도 해결로 표시하기 전까지
     남는 상태라 실제 의미와 달랐다(UX-05).
   */
@@ -228,7 +229,7 @@ export default function HelpClient() {
       header: '구분',
       accessor: (item: QNA) => (
         <span className="whitespace-nowrap rounded border border-border px-2 py-0.5 text-xs text-muted-foreground">
-          {qnaKindLabel(item, viewerId)}
+          {qnaKindLabel(item)}
         </span>
       ),
     },
@@ -459,6 +460,7 @@ export default function HelpClient() {
               <StandardDataTable
                 columns={qnaColumns}
                 data={qnas}
+                keyField="qaId"
                 loading={loading}
                 error={currentLoadError}
                 onRetry={retryLoad}

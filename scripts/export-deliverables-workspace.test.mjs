@@ -29,6 +29,7 @@ import {
   buildContextSnapshot,
   compareBacklogWithComposition,
   computeAcHash,
+  computeUatDecisionVersion,
   createEmptyBacklogPack,
   createSampleBacklogPack,
   diffContextSnapshots,
@@ -1296,6 +1297,67 @@ test('Review hardening red proofs: AC hash tab non-collision, UAT signature/roll
     assert.ok(badVal.errors.some((e) => e.includes('dependency cycle detected')));
   } finally {
     rmSync(root, { recursive: true, force: true });
+    rmSync(ws, { recursive: true, force: true });
+  }
+});
+
+test('UAT import rejects stale uatBaseDecisionHash overwriting newer decisions unless --allow-decision-overwrite is explicit', async () => {
+  const snap = buildContextSnapshot(MOCK_INPUTS);
+  const ws = mkdtempSync(join(tmpdir(), 'req-uat-decision-version-'));
+  try {
+    writeFileSync(join(ws, 'backlog.json'), JSON.stringify(readyBacklog(snap)));
+    const initialExport = await exportUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap });
+    const acceptedBuild1Csv = readFileSync(initialExport.uatCsvPath, 'utf8')
+      .replace(/,pending,\(값 없음\),\(값 없음\),\(값 없음\),/gu, ',accepted,기관 검수 역할,2026-11-04,BUILD-001 인수 근거,');
+    writeFileSync(initialExport.uatCsvPath, acceptedBuild1Csv, 'utf8');
+    await importUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap, buildRef: 'BUILD-001' });
+
+    // Archive the exported BUILD-001 accepted CSV (with uatBaseDecisionHash matching BUILD-001 accepted)
+    const build1Export = await exportUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap });
+    const archivedBuild1Csv = readFileSync(build1Export.uatCsvPath, 'utf8');
+    const packAfterBuild1 = JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8'));
+    assert.ok(archivedBuild1Csv.includes(computeUatDecisionVersion(packAfterBuild1.acceptanceCriteria[0])));
+
+    // Record a newer BUILD-002 rejected judgment on AC index 0
+    const build2RejectedCsv = archivedBuild1Csv.replace(
+      `${packAfterBuild1.acceptanceCriteria[0].id},${packAfterBuild1.acceptanceCriteria[0].requirementIds.join(';')},${packAfterBuild1.acceptanceCriteria[0].workItemId},${packAfterBuild1.acceptanceCriteria[0].polarity},${packAfterBuild1.acceptanceCriteria[0].given},${packAfterBuild1.acceptanceCriteria[0].when},${packAfterBuild1.acceptanceCriteria[0].then},${packAfterBuild1.acceptanceCriteria[0].verificationMethod},accepted,기관 검수 역할,2026-11-04,BUILD-001 인수 근거,${packAfterBuild1.acceptanceCriteria[0].acContentHash},BUILD-001,`,
+      `${packAfterBuild1.acceptanceCriteria[0].id},${packAfterBuild1.acceptanceCriteria[0].requirementIds.join(';')},${packAfterBuild1.acceptanceCriteria[0].workItemId},${packAfterBuild1.acceptanceCriteria[0].polarity},${packAfterBuild1.acceptanceCriteria[0].given},${packAfterBuild1.acceptanceCriteria[0].when},${packAfterBuild1.acceptanceCriteria[0].then},${packAfterBuild1.acceptanceCriteria[0].verificationMethod},rejected,기관 검수 역할,2026-11-05,BUILD-002 반려 사유,${packAfterBuild1.acceptanceCriteria[0].acContentHash},BUILD-002,`,
+    );
+    writeFileSync(build1Export.uatCsvPath, build2RejectedCsv, 'utf8');
+    await importUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap, buildRef: 'BUILD-002' });
+    const beforeStaleAttempt = readFileSync(join(ws, 'backlog.json'), 'utf8');
+    assert.equal(JSON.parse(beforeStaleAttempt).acceptanceCriteria[0].acceptanceDisposition, 'rejected');
+    assert.equal(JSON.parse(beforeStaleAttempt).acceptanceCriteria[0].uatBuildRef, 'BUILD-002');
+
+    // Attempting to import the archived BUILD-001 accepted CSV must fail closed and preserve BUILD-002 rejected
+    writeFileSync(build1Export.uatCsvPath, archivedBuild1Csv, 'utf8');
+    await assert.rejects(
+      importUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap, buildRef: 'BUILD-001' }),
+      (error) => error.code === 'UAT_IMPORT_INVALID'
+        && error.errors.some((message) => message.includes('uatBaseDecisionHash') && message.includes('--allow-decision-overwrite')),
+    );
+    assert.equal(readFileSync(join(ws, 'backlog.json'), 'utf8'), beforeStaleAttempt);
+
+    // Stripping the uatBaseDecisionHash header also fails closed without allowDecisionOverwrite
+    const withoutHeader = archivedBuild1Csv
+      .split('\r\n')
+      .map((line) => (line ? line.slice(0, line.lastIndexOf(',')) : line))
+      .join('\r\n');
+    writeFileSync(build1Export.uatCsvPath, withoutHeader, 'utf8');
+    await assert.rejects(
+      importUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap, buildRef: 'BUILD-001' }),
+      (error) => error.code === 'UAT_IMPORT_INVALID'
+        && error.errors.some((message) => message.includes('missing required CSV column header: "uatBaseDecisionHash"')),
+    );
+    assert.equal(readFileSync(join(ws, 'backlog.json'), 'utf8'), beforeStaleAttempt);
+
+    // Explicit allowDecisionOverwrite resolves the conflict intentionally
+    writeFileSync(build1Export.uatCsvPath, archivedBuild1Csv, 'utf8');
+    await importUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap, buildRef: 'BUILD-001', allowDecisionOverwrite: true });
+    const overwritten = JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8'));
+    assert.equal(overwritten.acceptanceCriteria[0].acceptanceDisposition, 'accepted');
+    assert.equal(overwritten.acceptanceCriteria[0].uatBuildRef, 'BUILD-001');
+  } finally {
     rmSync(ws, { recursive: true, force: true });
   }
 });

@@ -1,0 +1,22 @@
+Proprietary Evaluation & Reference License
+Copyright (c) 2026 lkindo (eGov Enterprise Modernization Project). All Rights Reserved.
+
+1. Ownership and Scope
+Except for third-party open-source software, standard framework reference materials, and externally sourced agent skills identified in `docs/04-operations/third-party-notices.md` and component-level `LICENSE` files, all source code, architecture specifications, governance contracts, migration/composition tooling, and documentation in this repository are proprietary works owned by the copyright holder.
+
+2. Permitted Evaluation, Public Hosting, and Authorized Project Delivery
+- Evaluation Access: Access to this repository grants a limited, non-exclusive, non-transferable, revocable right to inspect, build, and execute the software solely for non-commercial technical evaluation and architecture review.
+- Public GitHub Hosting: While this repository is hosted publicly on GitHub, nothing in this license restricts the rights granted to GitHub and GitHub users under the GitHub Terms of Service (including viewing the repository and creating forks on GitHub using platform features for evaluation/inspection); such platform rights do not grant permission for commercial redistribution or unauthorized production deployment.
+- Authorized Institution Delivery: When a generated project (`project-composer`) or migration package is delivered to an adopting institution under a written adoption or delivery agreement with the copyright holder, the institution's use, modification, operation, and institutional redistribution of that generated output are governed by that written agreement, and the authorized institution may replace this upstream `LICENSE` in its independent delivered repository accordingly.
+
+3. Restrictions
+Except as permitted in Section 2 or by prior written permission from the copyright holder, you may not:
+- redistribute, mirror outside permitted GitHub platform forking, publish, or sublicense this repository or generated project outputs to unauthorized third parties;
+- sell, lease, or offer this repository or substantially derived platform packages as a standalone commercial framework or SaaS product; or
+- remove or alter copyright, attribution, or license notices in unauthorized copies.
+
+4. Third-Party Open-Source Software and Standard Framework Components
+This project builds upon eGovFrame (전자정부 표준프레임워크, Apache License 2.0) and third-party open-source packages (including Spring, Hibernate, Next.js, React, and ecosystem libraries). Nothing in this file restricts, limits, or supersedes the rights and obligations governing those third-party components under their respective open-source licenses. See `docs/04-operations/third-party-notices.md` for details.
+
+5. Disclaimer of Warranty
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.

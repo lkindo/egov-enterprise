@@ -70,6 +70,35 @@ if [ -n "$MISSING" ]; then
     exit 1
 fi
 
+# [2026-11-11 ADR-0054·DEC-OPS-415] docker-compose.prod.yml 은 MFA_REQUIRE_PROTECTED 기본값을 true 로 둔다.
+#   deploy.sh 는 .env 를 읽지 않고 export 된 셸 환경변수만 읽는다.
+#   오타 값(예: no/0)이 조용히 비활성화로 해석되지 않게 true/false 만 허용하고,
+#   true 일 때는 키링 두 변수(MFA_ACTIVE_KEY_ID·MFA_KEYS_JSON) 누락을 이미지 pull 전에 즉시 차단한다.
+#   운영 기본(true)으로 배포하기 전에 MFA_RECOVER 담당 배정·키 백업·복구코드 보관 절차가 준비돼 있어야 한다.
+MFA_REQUIRE_PROTECTED_EFFECTIVE=$(printf '%s' "${MFA_REQUIRE_PROTECTED:-true}" | tr '[:upper:]' '[:lower:]')
+case "$MFA_REQUIRE_PROTECTED_EFFECTIVE" in
+    true)
+        MFA_MISSING=""
+        for v in MFA_ACTIVE_KEY_ID MFA_KEYS_JSON; do
+            eval "val=\${$v:-}"
+            if [ -z "$val" ]; then
+                MFA_MISSING="$MFA_MISSING $v"
+            fi
+        done
+        if [ -n "$MFA_MISSING" ]; then
+            echo "ERROR: 운영 보호계정 MFA 강제(MFA_REQUIRE_PROTECTED=true, 기본값)에는 키링 시크릿이 필수입니다:$MFA_MISSING" >&2
+            echo "       강제 활성화 전 MFA_RECOVER 담당 배정·암호화 키 백업·복구코드 보관 준비를 함께 확인하십시오(ADR-0054)." >&2
+            echo "       승인된 전환 유예로 비활성화하려면 셸 환경에 export MFA_REQUIRE_PROTECTED=false 를 명시하십시오(.env 만으로는 deploy.sh 에 반영되지 않음)." >&2
+            exit 1
+        fi
+        ;;
+    false) ;;
+    *)
+        echo "ERROR: MFA_REQUIRE_PROTECTED 는 true 또는 false 여야 합니다(현재 값: ${MFA_REQUIRE_PROTECTED:-})." >&2
+        exit 1
+        ;;
+esac
+
 # 현재 공식 compose 형상은 api.depends_on.db와 함께 번들 PostgreSQL을 항상 기동한다.
 # 외부 관리형 DB URL을 받아 놓고 번들 DB도 함께 올리면 백업/복원 대상과 런타임 DB가 갈라지므로
 # 별도 profile이 마련되기 전에는 조용히 지원하는 척하지 않고 중단한다.
