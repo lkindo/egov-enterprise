@@ -214,6 +214,7 @@ function releaseSmokeFixture() {
   const credentials = { database: 'fixture-database', jwt: 'fixture-jwt', encryption: 'fixture-key', admin: 'fixture-admin' };
   const rendered = { services: {
     db: {}, api: { environment: { SPRING_PROFILES_ACTIVE: 'prod', SPRING_FLYWAY_LOCATIONS: 'classpath:db/migration',
+      MFA_REQUIRE_PROTECTED: 'true',
       MANAGEMENT_PORT: '9090', MANAGEMENT_ADDRESS: '0.0.0.0', SPRING_APPLICATION_JSON: '{"management":{"health":{"mail":{"enabled":false}}}}' } },
     frontend: { environment: { TRUSTED_EDGE_PROXY: 'true' } }, edge: {},
   } };
@@ -268,6 +269,13 @@ test('production smoke has a separate owned plan and requires actual dirty sourc
   validateReleaseSmokePlan(normalized, fixture.context, fixture.credentials);
   assert.equal(fixture.plan.services.api.environment.SPRING_PROFILES_ACTIVE, 'prod');
   assert.equal(fixture.plan.services.bootstrap.environment.SPRING_PROFILES_ACTIVE, 'e2e');
+  assert.equal(fixture.plan.services.api.environment.MFA_REQUIRE_PROTECTED, 'false');
+  assert.equal(fixture.plan.services.bootstrap.environment.MFA_REQUIRE_PROTECTED, 'false');
+  for (const target of ['api', 'bootstrap']) {
+    const mfaBroken = structuredClone(fixture.plan);
+    mfaBroken.services[target].environment.MFA_REQUIRE_PROTECTED = 'true';
+    assert.throws(() => validateReleaseSmokePlan(mfaBroken, fixture.context, fixture.credentials), /production boundary/);
+  }
   assert.equal(fixture.plan.services.api.environment.NURI_AUTHORIZATION_ISOLATED_CUTOVER, undefined);
   for (const mutate of [
     value => { value.images.api.Config.Labels['io.egov.ui-quality.build-input-tree-sha256'] = 'd'.repeat(64); },

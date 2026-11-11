@@ -137,18 +137,18 @@ describe('HelpUserService FAQ detail', () => {
 describe('HelpUserService QNA generated contract', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('생성 BoardDto page를 검증한 뒤 UI QNA 모델로 명시적으로 변환한다', async () => {
+  it('실제 게시판 목록 투영(userId·useYn null)을 받아 UI QNA 모델로 변환한다', async () => {
     vi.mocked(client.getRaw).mockResolvedValueOnce(successEnvelope({
       list: [{
         pstSn: 42,
         bbsId: 'BBSMSTR_QAAAAAAAAAAA',
         pstTtl: '문의 제목',
         pstCn: '문의 본문',
-        useYn: 'Y',
-        userId: 'writer-1',
+        useYn: null,
+        userId: null,
         userNm: '작성자',
         qnaSttsCd: 'OPEN',
-        scrtYn: 'N',
+        scrtYn: 'Y',
         crtDt: '2026-08-30T00:00:00Z',
       }],
       total: 1,
@@ -166,16 +166,21 @@ describe('HelpUserService QNA generated contract', () => {
       qaId: '42',
       qstnTtl: '문의 제목',
       wrterNm: '작성자',
-      authorId: 'writer-1',
       qnaSttsCd: 'OPEN',
+      scrtYn: 'Y',
       // [2026-10-26 ADR-0043 UX-04] 등록일은 yyyy-MM-dd 다 — 전송 문자열(T·시각)을 보이지 않는다.
       writngDe: '2026-08-30',
     });
+    expect(result.list[0]).not.toHaveProperty('authorId');
   });
 
-  it('생성 계약의 필수 userId/useYn이 빠진 응답을 화면에 통과시키지 않는다', async () => {
+  it.each([
+    ['누락', undefined],
+    ['0', 0],
+    ['음수', -1],
+  ])('유효하지 않은 정수 pstSn(%s) 응답은 화면에 통과시키지 않는다', async (_label, pstSn) => {
     vi.mocked(client.getRaw).mockResolvedValueOnce(successEnvelope({
-      list: [{ pstSn: 42, pstTtl: '불완전 문의', pstCn: '본문' }],
+      list: [{ pstSn, pstTtl: '불완전 문의', pstCn: '본문' }],
       total: 1,
       page: 1,
       size: 10,
@@ -187,16 +192,12 @@ describe('HelpUserService QNA generated contract', () => {
     );
   });
 
-  it('Q&A 작성자 ID null은 공개 필수 모델과 소유권 의미를 만들 수 없어 fail-closed 한다', async () => {
+  it.each([
+    ['소수', 1.5],
+    ['안전 정수 초과', 9007199254740992],
+  ])('정수 계약 밖 pstSn(%s) 응답은 OpenAPI 생성 검증기에서 먼저 거부된다', async (_label, pstSn) => {
     vi.mocked(client.getRaw).mockResolvedValueOnce(successEnvelope({
-      list: [{
-        pstSn: 42,
-        pstTtl: '작성자 없는 문의',
-        pstCn: '본문',
-        userId: null,
-        userNm: null,
-        useYn: 'Y',
-      }],
+      list: [{ pstSn, pstTtl: '불완전 문의', pstCn: '본문' }],
       total: 1,
       page: 1,
       size: 10,
@@ -204,13 +205,13 @@ describe('HelpUserService QNA generated contract', () => {
     }));
 
     await expect(helpUserService.getQnas({ page: 1, size: 10 })).rejects.toThrow(
-      'Q&A 목록 정보를 표시할 수 없습니다.',
+      '생성 API 응답이 OpenAPI 계약과 일치하지 않습니다.',
     );
   });
 
   /*
-    [2026-10-26 ADR-0043 0차] 이름이 비면 종전에는 작성자 ID(esntlId)를 이름 칸에 보였다 — 공개 질문이면 다른 사용자에게 남의 내부 키가
-    드러났다. 이름 칸은 중립 표기만 받고, 내부 식별자는 표시하지 않는 소유 판정 필드(authorId)에만 남는다.
+    [2026-10-26 ADR-0043 0차 / 2026-11-11 GAP-HELP-001] 이름이 비면 종전에는 작성자 ID(esntlId)를 이름 칸에 보였다 — 공개 질문이면
+    다른 사용자에게 남의 내부 키가 드러났다. 이름 칸은 중립 표기만 받고 내부 식별자는 목록 상태에도 담지 않는다.
   */
   it.each([
     ['null', null],
@@ -224,7 +225,7 @@ describe('HelpUserService QNA generated contract', () => {
         pstCn: '문의 본문',
         userId: 'writer-1',
         userNm,
-        useYn: 'Y',
+        useYn: null,
         qnaSttsCd: null,
         scrtYn: null,
         crtDt: null,
@@ -239,7 +240,7 @@ describe('HelpUserService QNA generated contract', () => {
 
     expect(result.list[0].wrterNm).toBe('이름 없음');
     expect(result.list[0].wrterNm).not.toContain('writer-1');
-    expect(result.list[0].authorId).toBe('writer-1');
+    expect(result.list[0]).not.toHaveProperty('authorId');
     expect(result.list[0].writngDe).toBe('');
     expect(result.list[0]).not.toHaveProperty('qnaSttsCd');
     expect(result.list[0]).not.toHaveProperty('scrtYn');

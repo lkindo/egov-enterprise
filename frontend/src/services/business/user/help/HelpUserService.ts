@@ -38,11 +38,6 @@ export interface QNA {
   writngPassword?: string;
   /** 작성자 이름. 이름이 없으면 중립 표기(UNNAMED_AUTHOR)다 — 내부 식별자를 이름 대신 보이지 않는다. */
   wrterNm: string;
-  /**
-   * 작성자 내부 식별자(esntlId). 화면은 '내 문의' 판정에만 쓰고 표시하지 않는다(2026-10-26 ADR-0043 0차) — 공개 질문은 다른
-   * 사용자에게도 보이므로 이 값을 화면에 그리면 남의 내부 키가 드러난다.
-   */
-  authorId?: string;
   /** 등록일(yyyy-MM-dd). 해석할 수 없으면 빈 문자열이다 — 전송 문자열(T·시각)을 그대로 보이지 않는다. */
   writngDe: string;
   /**
@@ -187,10 +182,13 @@ class HelpUserService extends ApiService {
       config,
     });
     const list = (response.list ?? []).map((item): QNA => {
+      // [2026-11-11 GAP-HELP-001·DEC-OPS-414 ①] 게시판 목록 질의(BoardRepositoryImpl#searchArticles)는 내부 식별자 비표시 원칙(ADR-0043 0차)과
+      //   목록 투영 범위에 따라 userId·useYn 을 싣지 않는다(둘 다 OpenAPI 계약상 nullable 이고 useYn='Y' 는 서버가 거른다).
+      //   상세 링크를 만드는 양의 정수 pstSn 만 필수 불변식으로 검증한다.
       if (
         typeof item.pstSn !== 'number'
-        || typeof item.userId !== 'string'
-        || typeof item.useYn !== 'string'
+        || !Number.isSafeInteger(item.pstSn)
+        || item.pstSn <= 0
       ) {
         throw new Error('Q&A 목록 정보를 표시할 수 없습니다.');
       }
@@ -201,7 +199,6 @@ class HelpUserService extends ApiService {
         qstnCn: item.pstCn ?? '',
         ansCn: item.pstCn ?? '',
         wrterNm: item.userNm?.trim() || UNNAMED_AUTHOR,
-        authorId: item.userId,
         writngDe: toDisplayYmdPart(item.crtDt),
         ...(item.qnaSttsCd == null ? {} : { qnaSttsCd: item.qnaSttsCd }),
         ...(item.scrtYn == null ? {} : { scrtYn: item.scrtYn }),

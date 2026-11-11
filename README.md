@@ -268,3 +268,10 @@ make bootstrap
 - **기술 문의**: 프로젝트 Discussions
 
 ---
+
+## 📄 라이선스 (License)
+
+- 이 저장소의 자체 작성 코드·문서·거버넌스 자산은 평가·참조 및 사전 서면 승인된 프로젝트 활용으로 제한하는 비공개/전용 조건([LICENSE](./LICENSE))을 따른다.
+- 전자정부 표준프레임워크(Apache-2.0) 및 서드파티 오픈소스·외부 스킬·DB 벤더 자산의 라이선스 경계는 [서드파티 오픈소스 고지](./docs/04-operations/third-party-notices.md)를 따른다.
+
+---

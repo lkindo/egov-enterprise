@@ -105,4 +105,23 @@ class GroupApiControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk());
         verify(groupManageService).deleteGroups(any());
     }
+
+    @Test
+    @DisplayName("그룹 다중 삭제는 최대 100개 ID를 허용하고 101개 이상은 서비스 호출 전에 거부한다")
+    void testDeleteGroupsBatchSizeBoundary() throws Exception {
+        List<String> maxIds = java.util.stream.IntStream.range(0, 100).mapToObj(i -> "G" + i).toList();
+        mockMvc.perform(delete("/api/v1/admin/system/groups")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(maxIds)))
+                .andExpect(status().isOk());
+        verify(groupManageService).deleteGroups(any());
+
+        clearInvocations(groupManageService);
+        List<String> oversizedIds = java.util.stream.IntStream.range(0, 101).mapToObj(i -> "G" + i).toList();
+        mockMvc.perform(delete("/api/v1/admin/system/groups")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(oversizedIds)))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(groupManageService);
+    }
 }

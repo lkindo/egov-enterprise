@@ -144,6 +144,7 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [performance-optimization-guide.md](04-operations/performance-optimization-guide.md) | 성능 최적화 |
 | [load-test-guide.md](04-operations/load-test-guide.md) | k6 부하 테스트 |
 | [dependabot-alert-census.md](04-operations/dependabot-alert-census.md) | 의존성 취약점 판정 절차 |
+| [third-party-notices.md](04-operations/third-party-notices.md) | 서드파티 오픈소스·표준프레임워크(Apache-2.0)·외부 스킬·DB 벤더 드라이버/이미지 라이선스 고지 |
 | [readiness-followups.md](04-operations/readiness-followups.md) | 운영 후속 실측 기록 — 날짜 입력·화면 연결·첨부 점검·혼합 부하, 이관 vendor 리허설(Oracle·MySQL·MariaDB·SQL Server·CUBRID·표준화), IP 신뢰 경계, Spring Boot 4 실측, ZAP 경고 분류, 도메인 정합성, 프록시 연결 경합 |
 | [project-evaluation-adversarial-review-2026-10-21.md](04-operations/project-evaluation-adversarial-review-2026-10-21.md) | Gemini 상세 품질평가 재검토 — 98.3점의 증거 한계, 코드와 충돌하는 주장, 개선안 14개 판정과 후속 우선순위 |
 | [standard-metadata-disposition.md](04-operations/standard-metadata-disposition.md) | 표준 용어가 없거나 도메인과 물리 타입이 다른 컬럼마다 등록·정정·예외 처분 후보와 승인 단위(GAP-STD-001, 승인 전 검토 자료) |

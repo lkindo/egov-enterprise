@@ -2635,7 +2635,7 @@ export interface paths {
         post: operations["createGroup"];
         /**
          * 그룹 다중 삭제
-         * @description 여러 사용자 그룹 정보를 한꺼번에 삭제합니다.
+         * @description 한 번에 최대 100개의 사용자 그룹 정보를 삭제합니다.
          */
         delete: operations["deleteGroups"];
         options?: never;
@@ -8586,6 +8586,7 @@ export interface components {
             newPassword: string;
         };
         BulkStatusRequest: {
+            /** @description 대상 사용자 ID 목록 */
             userIds: string[];
             /**
              * @description 계정 상태 코드(P 정상 · A 승인 대기 · D 비활성)
@@ -8594,11 +8595,13 @@ export interface components {
             status: "P" | "A" | "D";
         };
         BulkRoleRequest: {
+            /** @description 대상 사용자 ID 목록 */
             userIds: string[];
             /** @enum {string} */
             role: "USER" | "ADMIN";
         };
         BulkDeptMoveRequest: {
+            /** @description 대상 사용자 ID 목록 */
             userIds: string[];
             ognzId: string;
         };

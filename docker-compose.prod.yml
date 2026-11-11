@@ -123,7 +123,11 @@ services:
       LOGIN_LOCK_MINUTES:
       MFA_ACTIVE_KEY_ID:
       MFA_KEYS_JSON:
-      MFA_REQUIRE_PROTECTED:
+      # [2026-11-11 ADR-0054·DEC-OPS-414] 앱/로컬/격리 E2E 기본값은 false 이나 운영 배포 오버레이는 보호계정 MFA 등록 의무를 기본 true 로 켠다.
+      #   켜진 상태에서 키링 두 변수(MFA_ACTIVE_KEY_ID·MFA_KEYS_JSON)가 비면 deploy.sh 사전 검증과 앱 기동이 모두 즉시 중단하며,
+      #   운영 강제 전 MFA_RECOVER 담당 배정·암호화 키 백업·복구코드 보관 준비가 선행돼야 한다.
+      #   승인된 전환 유예 기간이 필요한 기관은 deploy.sh 실행 시 셸 export MFA_REQUIRE_PROTECTED=false 를(직접 docker compose 실행 시 셸 환경 또는 .env 에) 명시한다.
+      MFA_REQUIRE_PROTECTED: ${MFA_REQUIRE_PROTECTED:-true}
       # [2026-09-30] OTLP 메트릭 push 는 수집기를 정한 환경에서만 켠다(기본 false). 켜면 URL 도 함께 준다.
       OTLP_METRICS_EXPORT_ENABLED:
       OTLP_METRICS_URL:

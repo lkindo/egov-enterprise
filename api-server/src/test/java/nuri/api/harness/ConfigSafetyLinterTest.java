@@ -167,6 +167,8 @@ class ConfigSafetyLinterTest {
 
     private static final Pattern COMPOSE_TRUSTED_PROXIES =
             Pattern.compile("(?m)^\\s*TRUSTED_PROXIES\\s*:\\s*\\$\\{TRUSTED_PROXIES:-([^}]*)}\\s*$");
+    private static final Pattern COMPOSE_PROD_MFA_REQUIRE_PROTECTED =
+            Pattern.compile("(?m)^\\s*MFA_REQUIRE_PROTECTED\\s*:\\s*\\$\\{MFA_REQUIRE_PROTECTED:-true}\\s*$");
 
     private static final Pattern COMPOSE_HOST_PORT_MAPPING =
             Pattern.compile("(?m)^\\s*-\\s*\"?(\\d+):(\\d+)\"?\\s*$");
@@ -317,6 +319,13 @@ class ConfigSafetyLinterTest {
 
         // ── 13) [2026-10-21] 운영 컨테이너 격리 — 권한 제거·권한 상승 차단·메모리 상한과 그 상한을 따르는 api 힙
         violations.addAll(prodContainerHardeningViolations(composeProdSrc));
+
+        // ── 14) [2026-11-11 DEC-OPS-414] 운영 보호계정 MFA 기본 강제와 배포 사전 키링 검증
+        Path deployScriptPath = root.resolve(DEPLOY_SCRIPT);
+        if (Files.isRegularFile(deployScriptPath)) {
+            violations.addAll(prodMfaProtectionViolations(
+                    composeProdSrc, stripComments(HarnessSourceIndex.read(deployScriptPath))));
+        }
 
         if (!violations.isEmpty()) {
             StringBuilder sb = new StringBuilder();
@@ -618,6 +627,70 @@ class ConfigSafetyLinterTest {
                 + "\nMANIFEST_API_IMAGE=$(jq -r '.apiImage' -- \"$RELEASE_MANIFEST\")\n", repeatedRead);
         assertTrue(repeatedRead.stream().anyMatch(message -> message.contains("한 번의 jq 파일 읽기")),
                 repeatedRead.toString());
+    }
+
+    static List<String> prodMfaProtectionViolations(String composeProdSrc, String deployScriptSrc) {
+        List<String> violations = new ArrayList<>();
+        Matcher apiBlock = COMPOSE_API_BLOCK.matcher(composeProdSrc);
+        if (!apiBlock.find()) {
+            violations.add(COMPOSE_PROD + ": api 서비스 블록을 분리할 수 없어 MFA_REQUIRE_PROTECTED 기본값을 판정할 수 없습니다.");
+        } else if (!COMPOSE_PROD_MFA_REQUIRE_PROTECTED.matcher(apiBlock.group(1)).find()) {
+            violations.add(COMPOSE_PROD + ": api.environment 의 MFA_REQUIRE_PROTECTED 가"
+                    + " '${MFA_REQUIRE_PROTECTED:-true}' 가 아닙니다 — 운영 배포에서 보호계정 MFA 가"
+                    + " 조용히 꺼진 채 기동하지 않도록 기본값을 true 로 두고 전환 유예만 명시적으로 false 를 주십시오.");
+        }
+
+        List<String> requiredSignals = List.of(
+                "MFA_REQUIRE_PROTECTED_EFFECTIVE=$(printf '%s' \"${MFA_REQUIRE_PROTECTED:-true}\" | tr '[:upper:]' '[:lower:]')",
+                "for v in MFA_ACTIVE_KEY_ID MFA_KEYS_JSON; do",
+                "false) ;;",
+                "MFA_REQUIRE_PROTECTED 는 true 또는 false 여야 합니다");
+        List<String> missing = requiredSignals.stream().filter(signal -> !deployScriptSrc.contains(signal)).toList();
+        int mfaGuardIndex = deployScriptSrc.indexOf("MFA_REQUIRE_PROTECTED_EFFECTIVE=");
+        int pullIndex = deployScriptSrc.indexOf("docker pull \"$ref\"");
+        if (!missing.isEmpty() || mfaGuardIndex < 0 || pullIndex < 0 || mfaGuardIndex > pullIndex) {
+            violations.add(DEPLOY_SCRIPT + ": MFA_REQUIRE_PROTECTED 기본 강제 사전 키링 검증이 없거나 이미지 pull 뒤에 있습니다 —"
+                    + " 누락 신호=" + missing);
+        }
+        return violations;
+    }
+
+    @Test
+    @DisplayName("[DEC-OPS-414] 운영 오버레이 MFA_REQUIRE_PROTECTED 기본 true 및 deploy.sh 사전 키링 검증이 빠지면 red")
+    void prodMfaProtectionRejectsDisabledDefaultAndMissingDeployPreflight() throws IOException {
+        Path root = resolveRepoRoot();
+        String prodSrc = stripComments(HarnessSourceIndex.read(root.resolve(COMPOSE_PROD)));
+        String deploySrc = stripComments(HarnessSourceIndex.read(root.resolve(DEPLOY_SCRIPT)));
+        assertTrue(prodMfaProtectionViolations(prodSrc, deploySrc).isEmpty(),
+                () -> prodMfaProtectionViolations(prodSrc, deploySrc).toString());
+
+        Map<String, List<String>> broken = new LinkedHashMap<>();
+        broken.put("무기본값 전달 원복", prodMfaProtectionViolations(
+                prodSrc.replace("MFA_REQUIRE_PROTECTED: ${MFA_REQUIRE_PROTECTED:-true}", "MFA_REQUIRE_PROTECTED:"),
+                deploySrc));
+        broken.put("기본 false 로 약화", prodMfaProtectionViolations(
+                prodSrc.replace("MFA_REQUIRE_PROTECTED: ${MFA_REQUIRE_PROTECTED:-true}",
+                        "MFA_REQUIRE_PROTECTED: ${MFA_REQUIRE_PROTECTED:-false}"),
+                deploySrc));
+        broken.put("고정 true 로 전환 유예 차단", prodMfaProtectionViolations(
+                prodSrc.replace("MFA_REQUIRE_PROTECTED: ${MFA_REQUIRE_PROTECTED:-true}", "MFA_REQUIRE_PROTECTED: true"),
+                deploySrc));
+        broken.put("deploy 키링 검증 누락", prodMfaProtectionViolations(
+                prodSrc,
+                deploySrc.replace("for v in MFA_ACTIVE_KEY_ID MFA_KEYS_JSON; do", "for v in MFA_ACTIVE_KEY_ID; do")));
+        broken.put("deploy 오타 값 차단 누락", prodMfaProtectionViolations(
+                prodSrc,
+                deploySrc.replace("MFA_REQUIRE_PROTECTED 는 true 또는 false 여야 합니다", "removed")));
+        broken.put("deploy false 분기 누락", prodMfaProtectionViolations(
+                prodSrc,
+                deploySrc.replace("false) ;;", "disabled) ;;")));
+        broken.put("deploy MFA 검증이 docker pull 뒤로 이동", prodMfaProtectionViolations(
+                prodSrc,
+                deploySrc.replace("MFA_REQUIRE_PROTECTED_EFFECTIVE=", "MOVED_MFA_GUARD=")
+                        .replace("docker pull \"$ref\"",
+                                "docker pull \"$ref\"\nMFA_REQUIRE_PROTECTED_EFFECTIVE=$(printf '%s'"
+                                        + " \"${MFA_REQUIRE_PROTECTED:-true}\" | tr '[:upper:]' '[:lower:]')")));
+        broken.forEach((name, violations) -> assertFalse(violations.isEmpty(), name));
     }
 
     @ParameterizedTest(name = "{0}")
