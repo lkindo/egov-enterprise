@@ -19,7 +19,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { basename, delimiter, dirname, isAbsolute, join, normalize, resolve, sep } from 'node:path';
+import { basename, delimiter, dirname, isAbsolute, join, normalize, posix, resolve, sep, win32 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const AGENTS = new Set(['claude', 'codex', 'antigravity']);
@@ -129,21 +129,62 @@ function splitSegments(raw) {
 const tokens = (text) => text.trim().split(/\s+/).filter(Boolean);
 const unquote = (value) => value.replace(/^(['"])(.*)\1$/s, '$2');
 
-/** SOP §6.6 의 도구별 고정 작업 트리 이름 꼴 `wt-<프로젝트>-<도구>` (예: wt-egov-codex). 임시 트리는 뒤에 작업 이름이 붙는다. */
-const PERSISTENT_WORKTREE_NAME = /^wt-[^\\/\s-]+-(?:codex|claude|gemini)$/i;
+/** `git worktree add` 에서 값을 다음 단어로 받는 옵션 — 그 값(브랜치 이름·잠금 사유)을 경로로 읽지 않는다. */
+const WORKTREE_ADD_VALUE_OPTIONS = new Set(['-b', '-B', '--reason']);
 
-/** `git worktree add [옵션] <경로> …` 의 경로(따옴표를 벗긴 원문). worktree add 가 아니거나 경로가 없으면 null 이다. */
-function worktreeAddPath(git, raw) {
-  if (git?.sub !== 'worktree' || git.args[0] !== 'add') return null;
-  const words = tokens(raw);
-  const at = words.findIndex((word) => word === 'add');
-  const options = new Set(['-b', '-B', '--reason']);
-  for (let index = at + 1; index < words.length; index += 1) {
-    if (options.has(words[index])) { index += 1; continue; }
-    if (words[index].startsWith('-')) continue;
-    return unquote(words[index]);
+/**
+ * `git worktree add [옵션] <경로> …` 의 경로 단어. 셸이 넘길 값(`value`)과 원문(`text`)을 함께 준다. worktree add 가 아니거나 경로가 없으면
+ * null 이다. 단어는 따옴표 경계를 지켜 나누고(`"D:\a b"` 는 한 단어), git 전역 옵션(`-C <dir>`)을 건너 실제 하위 명령 자리에서 읽는다. 줄이음
+ * 표식(`` ` ``·`\`)에서 끝나면 경로가 다음 줄에 있다 — 줄을 합친 판정이 따로 보므로 여기서는 경로가 없다고 본다.
+ */
+function worktreeAddPath(code, raw) {
+  const words = alignedWords(code, raw);
+  const at = commandAt(words.map((word) => word.code));
+  if (!/(^|[\\/])git(\.exe)?$/i.test(words[at]?.value ?? '')) return null;
+  let index = at + 1;
+  while (index < words.length && words[index].code.startsWith('-')) index += GIT_VALUE_OPTIONS.has(words[index].code) ? 2 : 1;
+  if (words[index]?.value !== 'worktree' || words[index + 1]?.value !== 'add') return null;
+  for (index += 2; index < words.length; index += 1) {
+    const { code: word, text } = words[index];
+    if (word === '`' || word === '\\') return null;
+    if (WORKTREE_ADD_VALUE_OPTIONS.has(word)) { index += 1; continue; }
+    if (word.startsWith('-')) continue;
+    return { value: shellWordValue(text), text };
   }
   return null;
+}
+
+/** SOP §6.6 표에 배정된 도구별 고정 작업 트리 경로(정본은 그 표다 — 가드는 복제하지 않고 읽는다). 표를 못 읽으면 빈 목록이다. */
+let persistentWorktreeCache = null;
+export function persistentWorktrees(protocolPath = fileURLToPath(new URL('../docs/03-guides/orchestration-protocol.md', import.meta.url))) {
+  if (persistentWorktreeCache?.path === protocolPath) return persistentWorktreeCache.trees;
+  let trees = [];
+  try {
+    const text = readFileSync(protocolPath, 'utf8');
+    trees = [...text.matchAll(/^\| (?:Codex|Claude Code|Antigravity\/Gemini) \| `([^`]+)` \|\r?$/gmu)].map((match) => match[1]);
+  } catch { trees = []; }
+  persistentWorktreeCache = { path: protocolPath, trees };
+  return trees;
+}
+
+/**
+ * 경로 비교용 정규화. 드라이브 경로(`D:\…`)는 어느 플랫폼에서든 Windows 규칙(대소문자 무시)으로 풀고 — Linux CI 에서도 SOP 표의 Windows
+ * 경로와 견줘야 한다 — 그 밖은 base 기준 절대 경로로 푼다(Windows 는 대소문자 무시).
+ */
+function comparableTreePath(value, base) {
+  if (/^[A-Za-z]:[\\/]/.test(value)) return win32.resolve(value).toLowerCase();
+  return process.platform === 'win32' ? resolve(base, value).toLowerCase() : posix.resolve(base, value);
+}
+
+/**
+ * 만들려는 작업 트리가 SOP §6.6 의 고정 트리 그 자체인가. 이름이 아니라 전체 경로로 견준다 — 다른 부모 아래 같은 이름(`D:\x\wt-egov-codex`)은
+ * 고정 트리가 아니고, 표의 위치를 옮기면 이전 위치도 더는 고정 트리가 아니다. 셸이 펼칠 변수·치환(`$tree`·`${p}`·`%P%`·`` ` ``)이 든 경로는
+ * 실제 위치를 알 수 없어 고정 트리로 인정하지 않는다.
+ */
+export function isPersistentWorktree(target, cwd, trees = persistentWorktrees()) {
+  if (/[$%`]/.test(target.text)) return false;
+  const wanted = comparableTreePath(fromMsysPath(target.value), cwd);
+  return trees.some((tree) => comparableTreePath(tree, cwd) === wanted);
 }
 
 /** 뒤 단어를 명령 자리에 두는 셸 예약어 — `for …; do git …`·`if …; then …; else …` 의 조각은 예약어 다음이 명령이다. */
@@ -1190,19 +1231,22 @@ export const RULES = Object.freeze([
     // `setup` 프로젝트 매처는 `/.*\.setup\.ts/` 라 디렉터리 이름으로는 걸리지 않는다 — 디렉터리에 걸리는 셋만 본다.
     why: 'Playwright 매처(`contracts/…spec.ts`·`(journeys|quality)/…spec.ts`)와 E2E 선별 계획기가 spec 의 절대 경로에 정규식을 적용해, 경로의 디렉터리 이름이 quality·journeys·contracts 로 끝나면 소유가 모호하다고 붉다(2026-10-19).',
     fix: '작업 트리는 D:\\wt-<짧은 이름> 으로 두되 그 셋으로 끝나는 디렉터리 이름을 쓰지 않는다(SOP §6.6).',
-    match: ({ git, raw }) => {
-      const path = worktreeAddPath(git, raw);
-      return path !== null && path.split(/[\\/]/).some((part) => /(quality|journeys|contracts)$/i.test(part));
+    match: ({ code, raw }) => {
+      const path = worktreeAddPath(code, raw)?.value;
+      return path !== undefined && path.split(/[\\/]/).some((part) => /(quality|journeys|contracts)$/i.test(part));
     },
   },
   {
     id: 'worktree-add-outside-persistent', decision: 'ask',
     why: '도구마다 고정 작업 트리 하나가 기본이고 임시 트리는 예외다(SOP §6.6, DEC-OPS-414). 2026-11-06~11-10 Codex 한 세션이 고정 트리가 비어 있는데도 임시 트리 셋을 차례로 만들었고, 일이 끝난 뒤에도 남아 사용자가 몰랐다 — 그중 하나는 병합 뒤에도 미리보기 실행기가 그 코드를 불러 쓰고 있었다.',
-    fix: '고정 트리(D:\\wt-<프로젝트>-<도구>)가 유휴이면 그곳에서 작업 브랜치로 시작한다. 고정 트리가 다른 세션에 쓰이거나 실행 중 검증의 입력을 지켜야 할 때만 이유를 사용자에게 설명하고 승인을 받아 임시 트리를 만들고, 완료 보고에서 그 트리를 지울지 묻는다(SOP §6.6).',
-    // 경로를 셸 변수로 넘기면(`git worktree add --detach $tree HEAD`) 고정 트리인지 알 수 없다 — 이름이 고정 트리 꼴이 아니면 묻는다.
-    match: ({ git, raw }) => {
-      const path = worktreeAddPath(git, raw);
-      return path !== null && !PERSISTENT_WORKTREE_NAME.test(path.split(/[\\/]/).filter(Boolean).at(-1) ?? '');
+    fix: '고정 트리(SOP §6.6 표의 경로)가 유휴이면 그곳에서 작업 브랜치로 시작한다. 고정 트리가 다른 세션에 쓰이거나 사용 여부가 불명확할 때, 또는 실행 중 검증의 입력을 지켜야 할 때만 이유를 사용자에게 설명하고 승인을 받아 임시 트리를 만들고, 완료 보고에서 그 트리를 지울지 묻는다(SOP §6.6).',
+    // Codex 훅은 묻기를 지원하지 않는다 — Codex 실행 규칙(.codex/rules/agent-guard.rules)이 이 앞부분의 단순 명령에 승인 창을 띄운다.
+    codexPrompt: ['git', 'worktree', 'add'],
+    codexJustification: '작업 트리를 더하려면 사용자 승인을 받는다 — 도구마다 고정 트리 하나가 기본이고 임시 트리는 예외다(SOP §6.6, DEC-OPS-414). 실행 규칙은 경로를 가리지 못해 고정 트리를 처음 만들 때도 묻는다.',
+    // 고정 트리는 SOP 표의 전체 경로로만 인정한다. 경로를 셸 변수로 넘기면(`git worktree add --detach $tree HEAD`) 위치를 알 수 없어 묻는다.
+    match: ({ code, raw, cwd }) => {
+      const target = worktreeAddPath(code, raw);
+      return target !== null && !isPersistentWorktree(target, cwd);
     },
   },
   {
@@ -1395,6 +1439,56 @@ export function readHookInput(agent, input) {
   return typeof command === 'string' ? { command, cwd: input.cwd ?? process.cwd() } : null;
 }
 
+/** Codex 가 시작할 때 읽는 저장소 실행 규칙(프로젝트 `.codex/` 층을 신뢰해야 읽는다 — 이 가드 훅이 도는 조건과 같다). */
+export const CODEX_RULES_PATH = '.codex/rules/agent-guard.rules';
+
+/** 규칙 표의 `codexPrompt` 에서 Codex 실행 규칙 파일 내용을 만든다. 시험이 저장소의 파일과 대조한다. */
+export function renderCodexRules(rules = RULES) {
+  const header = [
+    '# 실행 전 가드(scripts/agent-guard.mjs)의 묻기 규칙 가운데 Codex 가 승인 창으로 대신 묻는 것(DEC-OPS-414).',
+    '# Codex 훅은 묻기를 지원하지 않는다 — 가드는 아래 앞부분으로 시작하는 단순 명령만 Codex 에 넘기고, 그 밖은 막고 사용자 실행을 안내한다.',
+    '# 직접 고치지 않는다: 정본은 가드 규칙 표의 codexPrompt 이고 시험이 이 파일과 대조한다. Codex 는 시작할 때 읽으므로 바뀌면 다시 시작한다.',
+  ];
+  const entries = rules.filter((rule) => rule.decision === 'ask' && rule.codexPrompt).map((rule) => [
+    'prefix_rule(',
+    `    pattern = [${rule.codexPrompt.map((word) => JSON.stringify(word)).join(', ')}],`,
+    '    decision = "prompt",',
+    `    justification = ${JSON.stringify(`[agent-guard:${rule.id}] ${rule.codexJustification ?? rule.fix}`)},`,
+    ')',
+  ].join('\n'));
+  return `${[...header, '', ...entries].join('\n')}\n`;
+}
+
+/** 셸 메타문자·따옴표·변수 없이 공백으로만 나뉜 단순 명령 하나의 단어들. 아니면 null — Codex 실행 규칙이 앞부분을 맞춰 볼 수 있는 꼴만 받는다. */
+function plainCommandWords(command) {
+  const words = command.trim().split(' ');
+  return words.every((word) => /^[\w.:\\/=@+-]+$/u.test(word)) ? words : null;
+}
+
+/**
+ * Codex 에서 이 판정을 막지 않고 Codex 실행 규칙의 승인 창에 맡겨도 되는가. Codex 훅은 묻기를 지원하지 않아(공식 hooks 문서 — ask 를 내면
+ * 훅 실패로 보고 명령을 그대로 실행한다) 묻기 판정을 막는 것으로 바꾸는데, 그러면 Claude Code·Antigravity 와 달리 사용자가 직접 실행해야 한다.
+ * 걸린 규칙이 모두 묻기이고 `codexPrompt` 가 있으며, 명령이 그 앞부분으로 시작하는 단순 명령이고, 저장소 실행 규칙 파일이 규칙 표와 같을 때만
+ * true 다 — 그 밖(셸 변수·`git -C`·여러 명령·규칙 파일 불일치)은 실행 규칙이 못 잡을 수 있어 종전처럼 막는다.
+ */
+export function codexPromptCovers(verdict, command, rulesText, rules = RULES) {
+  if (!verdict || verdict.decision !== 'ask' || rulesText !== renderCodexRules(rules)) return false;
+  const words = typeof command === 'string' ? plainCommandWords(command) : null;
+  if (!words) return false;
+  return verdict.rules.every((id) => {
+    const prefix = rules.find((rule) => rule.id === id)?.codexPrompt;
+    return Array.isArray(prefix) && prefix.every((word, index) => words[index] === word);
+  });
+}
+
+function readCodexRules() {
+  try {
+    return readFileSync(fileURLToPath(new URL(`../${CODEX_RULES_PATH}`, import.meta.url)), 'utf8').replace(/\r\n/g, '\n');
+  } catch {
+    return null;
+  }
+}
+
 /** 판정을 각 도구의 출력 형식으로 바꾼다. 막지 않은 명령에는 승인을 대신 내리지 않는다(DEC-OPS-386 ②; 2026-11-01 Antigravity 설치본 실측에서 빈 출력·{} 는 PreToolUse 프로토콜 오류로 명령이 거부되고 allow 는 Always Allow 밖 명령까지 자동 승인하므로, Antigravity 는 Always Allow 캐시·기본 승인 흐름을 따르는 { decision: "ask" } 를 돌려준다). */
 export function renderVerdict(agent, verdict) {
   if (agent === 'antigravity') {
@@ -1424,7 +1518,11 @@ async function main(argv) {
   let output = renderVerdict(agent, null);
   try {
     const hook = readHookInput(agent, JSON.parse(await readStdin()));
-    if (hook) output = renderVerdict(agent, evaluate(hook.command, { cwd: hook.cwd }));
+    if (hook) {
+      const verdict = evaluate(hook.command, { cwd: hook.cwd });
+      // Codex 는 실행 규칙의 승인 창이 대신 물을 수 있는 단순 명령이면 넘긴다(DEC-OPS-414) — 막지 않은 명령에 승인을 대신 내리지는 않는다.
+      output = renderVerdict(agent, agent === 'codex' && codexPromptCovers(verdict, hook.command, readCodexRules()) ? null : verdict);
+    }
   } catch (error) {
     // 판정할 수 없으면 막지 않는다 — 병합 권위는 CI 다. "걸린 규칙 없음"과 구분되게 단계 이름과 오류 이름만 남긴다.
     reportFailure('input', error);

@@ -365,19 +365,29 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
   // [2026-11-11 DEC-OPS-414] 도구마다 고정 트리 하나가 기본이다 — 임시 트리는 승인을 받아 예외로만 만들고, 병합이 아니라 쓰는 것이 없어졌을
   // 때 완료 보고에서 정리를 묻는다(Codex 한 세션이 비어 있는 고정 트리를 두고 임시 트리 셋을 남긴 사례).
   if (!worktreeSection.includes('도구마다 고정 트리 하나가 기본이고 임시 트리는 예외다')
+    || !worktreeSection.includes('고정 트리가 다른 세션에 쓰이고 있거나 사용 여부가 불명확할 때, 또는 실행 중인 검증의 입력을 지키려고')
     || !worktreeSection.includes('자기 고정 트리가 유휴인지 먼저 본다')
     || !worktreeSection.includes('임시 트리를 만들기 전에 그 이유를 사용자에게 알리고 승인을 받는다')
     || !worktreeSection.includes('실행 전 가드가 고정 트리 밖의 `git worktree add` 를 묻는다')) {
     errors.push('protocol §6.6 must keep temporary worktrees exceptional and approved');
   }
+  // Codex 훅은 묻기를 지원하지 않는다 — 실행 규칙의 승인 창이 대신 묻고, 못 잡는 꼴은 가드가 막는다는 경계를 함께 고정한다.
+  if (!worktreeSection.includes('가드는 아래 표의 전체 경로로만 고정 트리를 인정한다')
+    || !worktreeSection.includes('저장소 실행 규칙(`.codex/rules/agent-guard.rules`)의 승인 창이 대신 묻는다')
+    || !worktreeSection.includes('그 규칙이 못 잡는 꼴(셸 변수·`git -C`·여러 명령)은 가드가 막고 사용자 실행을 안내하며')) {
+    errors.push('protocol §6.6 must route Codex approval through its execution rules and keep the guard as the fallback');
+  }
   const worktreeLifetime = section(worktreeSection, '- **임시 트리의 수명**', '- **정리**');
   if (!worktreeLifetime.includes('그 트리의 작업이 병합돼도 끝난 것이 아니다')
     || !worktreeLifetime.includes('그 트리의 코드를 불러 도는 서버·실행기·미리보기')
+    || !worktreeLifetime.includes('그 트리를 작업 위치로 쓰는 셸')
+    || !worktreeLifetime.includes('저장소 밖 스크립트의 경로 참조')
     || !worktreeLifetime.includes('완료 보고에서 사용자에게 그 트리를 지울지 묻고')) {
     errors.push('protocol §6.6 must close temporary worktrees through the completion report');
   }
   const worktreeCleanup = section(worktreeSection, '- **정리**');
-  if (!worktreeCleanup.includes('`build/` 의 백업 링크까지 깊이 제한 없이 찾는다')
+  if (!worktreeCleanup.includes('지울 때는 링크(junction)를 먼저 끊어 링크 너머의 원본을 지우지 않게 한다')
+    || !worktreeCleanup.includes('`build/` 의 백업 링크까지 깊이 제한 없이 찾는다')
     || !worktreeCleanup.includes('드라이브 문자와 구분자를 갖춘 절대 경로로 확인한다')) {
     errors.push('protocol §6.6 must unlink every outside link and resolve an absolute target before deleting');
   }
@@ -808,6 +818,13 @@ test('DEC-OPS-414 temporary worktree regressions fail with their own message', (
     ['protocol', '자기 고정 트리가 유휴인지 먼저 본다', '지금 있는 임시 트리에서 새 트리를 만든다', 'exceptional and approved'],
     ['protocol', '임시 트리를 만들기 전에 그 이유를 사용자에게 알리고 승인을 받는다', '임시 트리는 묻지 않고 만든다', 'exceptional and approved'],
     ['protocol', '실행 전 가드가 고정 트리 밖의 `git worktree add` 를 묻는다', '가드는 작업 트리 생성을 보지 않는다', 'exceptional and approved'],
+    ['protocol', '고정 트리가 다른 세션에 쓰이고 있거나 사용 여부가 불명확할 때, 또는', '고정 트리가 다른 세션에 쓰이고 있을 때, 또는', 'exceptional and approved'],
+    ['protocol', '가드는 아래 표의 전체 경로로만 고정 트리를 인정한다', '가드는 디렉터리 이름으로 고정 트리를 가린다', 'route Codex approval'],
+    ['protocol', '저장소 실행 규칙(`.codex/rules/agent-guard.rules`)의 승인 창이 대신 묻는다', '사용자가 직접 실행한다', 'route Codex approval'],
+    ['protocol', '그 규칙이 못 잡는 꼴(셸 변수·`git -C`·여러 명령)은 가드가 막고 사용자 실행을 안내하며', '그 밖의 꼴도 그대로 넘기며', 'keep the guard as the fallback'],
+    ['protocol', '그 트리를 작업 위치로 쓰는 셸', '그 트리의 미커밋 변경', 'through the completion report'],
+    ['protocol', '저장소 밖 스크립트의 경로 참조', '저장소 안의 참조', 'through the completion report'],
+    ['protocol', '지울 때는 링크(junction)를 먼저 끊어 링크 너머의 원본을 지우지 않게 한다', '지울 때는 디렉터리째 지운다', 'unlink every outside link'],
     ['protocol', '그 트리의 작업이 병합돼도 끝난 것이 아니다', '그 트리의 작업이 병합되면 끝난 것이다', 'through the completion report'],
     ['protocol', '그 트리의 코드를 불러 도는 서버·실행기·미리보기', '그 트리의 미커밋 변경', 'through the completion report'],
     ['protocol', '완료 보고에서 사용자에게 그 트리를 지울지 묻고', '완료 보고에 적지 않고 그대로 두고', 'through the completion report'],

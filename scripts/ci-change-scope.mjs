@@ -351,6 +351,8 @@ export const GENERATOR_TOOL_PATHS = Object.freeze([
   { path: 'scripts/agent-skill-adapters', axes: ['backend', 'e2e', 'schema'] },
   { path: '.claude/settings.json', axes: [] },
   { path: '.codex/hooks.json', axes: [] },
+  // [2026-11-11 DEC-OPS-414] Codex 가 훅 대신 승인 창으로 묻는 실행 규칙 — 가드 규칙 표에서 만들고 운영 계약(agent-guard 시험)이 대조한다.
+  { path: '.codex/rules/agent-guard.rules', exact: true, axes: [] },
   { path: '.agents/hooks.json', axes: [] },
 ].map(entry => Object.freeze({ ...entry, axes: Object.freeze(entry.axes) })));
 
