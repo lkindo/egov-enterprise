@@ -259,10 +259,15 @@ const CASES = {
       'git -C . worktree add --detach D:/wt-egov-codex\\ task HEAD', 'git -C add worktree add --detach D:\\wt-egov-codex-task HEAD',
       'git worktree add --detach `\n  D:\\wt-egov-codex origin/main', '"C:\\Program Files\\Git\\cmd\\git.exe" worktree add D:\\wt-x HEAD',
       // 2026-11-11 Codex 56차 반례: 셸마다 다른 이스케이프로 단어 경계를 잘못 잡아 하위 명령을 놓쳤다.
-      'git -c user.name=Agent\\ Review worktree add --detach /d/wt-review HEAD', 'git -C "D:\\wt-egov-claude\\" worktree add --detach D:\\wt-review HEAD'],
+      'git -c user.name=Agent\\ Review worktree add --detach /d/wt-review HEAD', 'git -C "D:\\wt-egov-claude\\" worktree add --detach D:\\wt-review HEAD',
+      // 2026-11-11 Codex 57차 반례: 따옴표 친 실행 파일은 가린 판에서 밑줄이라 모호 판정이 git 을 못 알아봤다.
+      "'git' -c user.name=Agent\\ Review worktree add --detach /d/wt-review HEAD"],
     pass: ['git worktree list --porcelain', 'git worktree prune -v', 'git worktree remove D:\\wt-x',
       'git commit --only -m "git worktree add D:\\wt-egov-codex-x 는 묻는다" -- a.md', 'echo "git worktree add --detach D:\\wt-egov-codex-x HEAD"',
-      'rg -n "git worktree add" docs'],
+      'rg -n "git worktree add" docs',
+      // 2026-11-11 Codex 57차 반례: 메시지 안의 `\ ` 와 낱말을 명령으로 읽어 정상 커밋을 물었다.
+      "git commit --only -m 'fix: handle \\ in worktree add commands' -- scripts/agent-guard.mjs",
+      'git commit --only -m "say \\"worktree add\\" here" -- a.md'],
   },
 };
 
@@ -309,8 +314,19 @@ test('git-worktree-add: Codex 는 실행 규칙이 확실히 잡는 명령만 �
   assert.equal(codexPolicyArgv({ cmd: 'git worktree add D:\\wt-x HEAD' }, 'win32').join(' '), 'git worktree add D:\\wt-x HEAD');
   // 2026-11-11 Codex 56차: 셸 없는 argv 는 인자 경계를 지켜 판정한다 — 공백 든 값을 그냥 이으면 하위 명령을 놓쳤다.
   const argvCommand = readHookInput('codex', { tool_input: { command: ['git', '-c', 'user.name=Agent Review', 'worktree', 'add', 'D:\\wt-review', 'HEAD'] }, cwd: repoRoot }).command;
-  assert.equal(argvCommand, "git -c 'user.name=Agent Review' worktree add D:\\wt-review HEAD");
+  assert.equal(argvCommand, 'git -c user.name=Agent" "Review worktree add D:\\wt-review HEAD');
   assert.ok(ruleOf(argvCommand).includes('git-worktree-add'), '공백 든 전역 옵션 값 뒤의 worktree add 도 묻는다');
+  // 2026-11-11 Codex 57차 반례: 칸 전체를 따옴표로 감싸면 옵션 모양이 가려져 다른 규칙(훅 우회·강제 푸시)이 하위 명령을 놓쳤다.
+  const argvVerdict = (command) => ruleOf(readHookInput('codex', { tool_input: { command }, cwd: repoRoot }).command);
+  assert.ok(argvVerdict(['git', '-cuser.name=리뷰', 'commit', '--no-verify', '--only', '-m', 'fix', '--', 'README.md']).includes('git-no-verify'));
+  assert.ok(argvVerdict(['git', 'push', '--force-with-lease=feature/한글', 'origin', 'feat/x']).includes('git-force-push'));
+  assert.ok(argvVerdict(['git', '-c', 'user.name=Agent Review', 'commit', '--no-verify', '-m', 'fix it', '--', 'a.md']).includes('git-no-verify'));
+  assert.ok(!argvVerdict(['git', 'commit', '--only', '-m', '--no-verify mention only', '--', 'a.md']).includes('git-no-verify'),
+    '메시지 칸 안의 낱말은 옵션이 아니다');
+  // 스크립트 뒤에 칸이 더 있어도 셸 래퍼다 — PowerShell 은 남은 칸을 이어 돌리므로 그 안의 worktree add 를 놓치면 안 된다.
+  assert.ok(argvVerdict(['pwsh', '-Command', 'git worktree add D:\\wt-x HEAD', 'extra']).includes('git-worktree-add'));
+  assert.ok(argvVerdict(['powershell.exe', '-NoProfile', '-Command', 'git', 'worktree', 'add', 'D:\\wt-x', 'HEAD']).includes('git-worktree-add'));
+  assert.ok(argvVerdict(['bash', '-lc', 'git worktree add /d/wt-x HEAD', 'arg0']).includes('git-worktree-add'));
 
   // 실행 파일은 Codex 시작 시각을 찾지 못하면 위임하지 않고 막는다 — 이 시험이 Codex 안에서 돌아도 같도록 조회를 끈다(Codex 56차).
   const run = (input) => spawnSync(process.execPath, [GUARD, '--agent', 'codex'],

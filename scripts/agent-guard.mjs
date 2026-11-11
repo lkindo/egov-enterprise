@@ -153,9 +153,14 @@ function worktreeAddArgs(code, raw) {
  * 백슬래시로 따옴표를 이스케이프하지 않는다) — 에 `worktree add` 가 보이면 그렇다고 본다(Codex 56차). 구조 해석이 하위 명령을 놓칠 수 있어서다.
  */
 function ambiguousWorktreeAdd(code, raw) {
-  const words = tokens(code);
-  if (!/(^|[\\/])git(\.exe)?$/i.test(words[commandAt(words)] ?? '')) return false;
-  return /\\[\s"]/u.test(raw) && /(?:^|\s)worktree\s+add(?:\s|$)/u.test(raw);
+  const words = alignedWords(code, raw);
+  // 실행 파일은 원문 값으로 읽는다 — `'git'` 처럼 따옴표 친 실행 파일은 가린 판에서 밑줄이다(Codex 57차).
+  if (!/(^|[\\/])git(\.exe)?$/i.test(shellWordValue(words[commandAt(words.map((word) => word.code))]?.text ?? ''))) return false;
+  const worktreeAdd = /(?:^|\s)worktree\s+add(?:\s|$)/u;
+  // 따옴표가 닫히지 않았으면(PowerShell 의 `"D:\x\"` 를 bash 규칙으로 읽은 경우) 경계를 알 수 없다 — 원문에서 찾는다.
+  if (['"', "'"].some((quote) => (code.split(quote).length - 1) % 2 === 1)) return worktreeAdd.test(raw);
+  // 따옴표 밖의 `\`+공백(Git Bash 의 이스케이프)만 모호하다고 본다 — 메시지 안의 `\ ` 는 가린 판에 없다(Codex 57차).
+  return /\\\s/u.test(code) && worktreeAdd.test(code);
 }
 
 /**
@@ -1407,10 +1412,15 @@ export function evaluate(command, { cwd = process.cwd(), rules = RULES, gitRunne
   };
 }
 
-/** argv 한 칸을 가드의 단어 하나로 읽히게 감싼다. 공백·따옴표·셸 특수문자가 없으면 그대로 둔다(작은따옴표는 안을 글자 그대로 둔다). */
+/**
+ * argv 한 칸을 가드의 단어 하나로 읽히게 한다. 공백이 든 칸만 그 공백을 따옴표로 감싼다(`user.name=Agent" "Review`) — 칸 전체를 감싸면
+ * `-cuser.name=…`·`--force-with-lease=…` 같은 옵션 모양이 가려져 다른 규칙이 하위 명령을 잘못 읽는다(Codex 57차). 두 따옴표가 다 들었으면
+ * 종전처럼 그대로 둔다.
+ */
 function quoteArgument(value) {
-  if (typeof value !== 'string' || /^[\w.:/\\=@+,%-]+$/u.test(value)) return String(value);
-  return value.includes("'") ? `"${value.replace(/(["\\$`])/g, '\\$1')}"` : `'${value}'`;
+  if (typeof value !== 'string' || !/\s/u.test(value)) return String(value);
+  const quote = !value.includes('"') ? '"' : !value.includes("'") ? "'" : null;
+  return quote ? value.replace(/\s+/gu, (space) => `${quote}${space}${quote}`) : value;
 }
 
 /** 각 도구의 PreToolUse 입력에서 명령 문자열과 작업 디렉터리를 꺼낸다. 셸 명령이 아니면 null. */
@@ -1424,10 +1434,13 @@ export function readHookInput(agent, input) {
   // Codex 의 apply_patch 는 셸 명령이 아니라 파일 편집이다 — 본문의 `git commit …` 같은 줄을 명령으로 읽지 않는다.
   if (Array.isArray(raw) && /(^|[\\/])apply_patch(\.exe)?$/i.test(raw[0] ?? '')) return null;
   // Codex 는 명령을 셸 래퍼 배열(["powershell.exe","-Command","…"]·["bash","-lc","…"])로 넘긴다 — 셸에 넘긴 스크립트를 판정한다.
-  const wrapped = Array.isArray(raw) && raw.length >= 3 && /(^|[\\/])(powershell|pwsh|bash|sh|zsh|cmd)(\.exe)?$/i.test(raw[0])
-    && /^(-Command|-c|-lc|\/c)$/i.test(raw.at(-2));
+  // 스크립트 뒤에 칸이 더 있어도 래퍼다: PowerShell·cmd 는 남은 칸을 이어 한 명령으로 돌리고, bash 계열은 다음 한 칸만 스크립트다.
+  const shell = Array.isArray(raw) ? /(^|[\\/])(powershell|pwsh|bash|sh|zsh|cmd)(\.exe)?$/i.exec(raw[0] ?? '')?.[2]?.toLowerCase() : null;
+  const flagAt = shell ? raw.findIndex((part, index) => index > 0 && /^(-Command|-c|-lc|\/c)$/i.test(part)) : -1;
+  const script = flagAt > 0 && flagAt + 1 < raw.length
+    ? (['bash', 'sh', 'zsh'].includes(shell) ? raw[flagAt + 1] : raw.slice(flagAt + 1).join(' ')) : null;
   // 셸 없는 argv 는 인자 경계를 지켜 잇는다 — 공백이 든 인자(`user.name=Agent Review`)를 그냥 이으면 판정이 하위 명령을 놓친다(Codex 56차).
-  const command = Array.isArray(raw) ? (wrapped ? raw.at(-1) : raw.map(quoteArgument).join(' ')) : raw;
+  const command = Array.isArray(raw) ? (script ?? raw.map(quoteArgument).join(' ')) : raw;
   return typeof command === 'string' ? { command, cwd: input.cwd ?? process.cwd() } : null;
 }
 
