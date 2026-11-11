@@ -1806,30 +1806,85 @@ test('requirements browser contracts install pinned Chromium and system dependen
   const stepName = 'Install Chromium for requirements workspace browser contracts';
   const command = 'run: pnpm -C frontend exec playwright install --with-deps chromium';
   function bootstrapErrors(content) {
-    const job = parseWorkflowJobs(content.replace(/\r\n/g, '\n')).get('secret-scan') ?? '';
-    const install = workflowStep(job, stepName);
+    const jobs = parseWorkflowJobs(content.replace(/\r\n/g, '\n'));
+    const job = jobs.get('secret-scan') ?? '';
+    const e2eJob = jobs.get('e2e-tests') ?? '';
     const dependencies = workflowStep(job, 'Install frontend dependencies for contract execution');
+    const aptKey = workflowStep(job, 'Resolve Playwright system package cache key');
+    const aptRestore = workflowStep(job, 'Restore Playwright system packages');
+    const aptSeed = workflowStep(job, 'Seed apt archive with restored Playwright packages');
+    const browserRestore = workflowStep(job, 'Restore Playwright Browsers');
+    const install = workflowStep(job, stepName);
     const runner = workflowStep(job, 'Verify repository operational contracts');
+    const e2eAptKey = workflowStep(e2eJob, 'Resolve Playwright system package cache key');
+    const e2eAptRestore = workflowStep(e2eJob, 'Restore Playwright system packages');
+    const e2eBrowserCache = workflowStep(e2eJob, 'Cache Playwright Browsers');
+    const input = (step, key) => step.match(new RegExp(`^ {10}${key}: (.+)$`, 'm'))?.[1];
+    const runBody = step => step.slice(step.indexOf('        run: |\n')).trim();
     const errors = [];
     if (!install || !install.split('\n').some(line => line.trim() === command)) errors.push('pinned Chromium and system dependency installation is missing');
     if (/^\s+(?:if|continue-on-error):/m.test(install)) errors.push('browser installation cannot be conditional or advisory');
-    if (!dependencies || !runner || !install || job.indexOf(install) < job.indexOf(dependencies) || job.indexOf(install) > job.indexOf(runner)) errors.push('browser installation must follow frontend dependencies and precede the Node catalog');
+    if (!/^ {8}timeout-minutes: 15$/m.test(install)) errors.push('browser installation needs a 15-minute step timeout to surface install stalls before job cancellation');
+    if (!dependencies || !runner || !install || job.indexOf(install) < job.indexOf(dependencies) || job.indexOf(install) > job.indexOf(runner)) {
+      errors.push('browser installation must follow frontend dependencies and precede the Node catalog');
+    }
     if (job.split('\n').filter(line => line.trim() === command).length !== 1) errors.push('the Node contract job installs Chromium exactly once');
+    if (!aptKey.includes('prefix="playwright-debs-${ImageOS:-unknown}-${RUNNER_ARCH}-${playwright}-"')
+      || !aptKey.includes('require(\'@playwright/test/package.json\').version')
+      || runBody(aptKey) !== runBody(e2eAptKey)) {
+      errors.push('secret-scan must derive the exact same Playwright system package cache key script as e2e-tests');
+    }
+    if (!/uses: actions\/cache\/restore@[0-9a-f]{40}/.test(aptRestore)
+      || input(aptRestore, 'path') !== '${{ runner.temp }}/playwright-debs'
+      || input(aptRestore, 'path') !== input(e2eAptRestore, 'path')
+      || input(aptRestore, 'key') !== '${{ steps.secret-scan-apt-key.outputs.key }}'
+      || !aptRestore.includes('${{ steps.secret-scan-apt-key.outputs.prefix }}')) {
+      errors.push('secret-scan must restore Playwright system packages read-only from the shared e2e-tests path and prefix');
+    }
+    if (!/^ {8}if: steps\.secret-scan-apt-restore\.outputs\.cache-matched-key != ''$/m.test(aptSeed)
+      || !aptSeed.includes('debs=("$RUNNER_TEMP"/playwright-debs/*.deb)')
+      || !aptSeed.includes('/var/cache/apt/archives/')) {
+      errors.push('secret-scan must seed /var/cache/apt/archives from exact or prefix-matched Playwright .deb cache hits');
+    }
+    if (!/uses: actions\/cache\/restore@[0-9a-f]{40}/.test(browserRestore)
+      || input(browserRestore, 'path') !== '${{ env.PLAYWRIGHT_BROWSERS_PATH }}'
+      || input(browserRestore, 'path') !== input(e2eBrowserCache, 'path')
+      || input(browserRestore, 'key') !== input(e2eBrowserCache, 'key')
+      || !browserRestore.includes('${{ runner.os }}-playwright-')) {
+      errors.push('secret-scan must restore pinned Playwright browsers read-only with the exact e2e-tests cache path and key');
+    }
+    if (/uses: actions\/cache(?:\/save)?@[0-9a-f]{40}/.test(job)) {
+      errors.push('secret-scan must remain a read-only Playwright cache consumer');
+    }
+    const order = [dependencies, aptKey, aptRestore, aptSeed, browserRestore, install, runner].map(step => (step ? job.indexOf(step) : -1));
+    if (order.some(at => at < 0) || order.some((at, index) => index > 0 && at <= order[index - 1])) {
+      errors.push('Playwright cache restore and apt seeding must run after frontend dependencies and before Chromium installation');
+    }
     return errors;
   }
   assert.deepEqual(bootstrapErrors(ciContent), []);
   const job = parseWorkflowJobs(ciContent.replace(/\r\n/g, '\n')).get('secret-scan');
   const install = workflowStep(job, stepName);
-  for (const mutation of [
-    current => current.replace(install, ''),
-    current => current.replace('--with-deps chromium', 'chromium'),
-    current => current.replace(`      - name: ${stepName}`, `      - name: ${stepName}\n        if: false`),
-    current => current.replace(`      - name: ${stepName}`, `      - name: ${stepName}\n        continue-on-error: true`),
-    current => `${current.replace(install, '')}\n${install}`,
+  const browserRestore = workflowStep(job, 'Restore Playwright Browsers');
+  const saveAction = '55cc8345863c7cc4c66a329aec7e433d2d1c52a9';
+  for (const [targetJob, mutation, expectedError] of [
+    ['secret-scan', current => current.replace(install, ''), /installation is missing/],
+    ['secret-scan', current => current.replace('--with-deps chromium', 'chromium'), /installation is missing/],
+    ['secret-scan', current => current.replace(`      - name: ${stepName}`, `      - name: ${stepName}\n        if: false`), /cannot be conditional or advisory/],
+    ['secret-scan', current => current.replace(`      - name: ${stepName}`, `      - name: ${stepName}\n        continue-on-error: true`), /cannot be conditional or advisory/],
+    ['secret-scan', current => current.replace('        timeout-minutes: 15\n', ''), /15-minute step timeout/],
+    ['secret-scan', current => `${current.replace(install, '')}\n${install}`, /precede the Node catalog/],
+    ['secret-scan', current => current.replace(browserRestore, ''), /restore pinned Playwright browsers read-only/],
+    ['secret-scan', current => `${current}\n      - name: Save cache from secret-scan\n        uses: actions/cache/save@${saveAction}\n`, /read-only Playwright cache consumer/],
+    ['secret-scan', current => current.replace('uses: actions/cache/restore@', 'uses: actions/cache@'), /read-only Playwright cache consumer/],
+    ['secret-scan', current => current.replace('path: ${{ runner.temp }}/playwright-debs', 'path: ${{ runner.temp }}/apt-debs'), /shared e2e-tests path and prefix/],
+    ['secret-scan', current => current.replace("if: steps.secret-scan-apt-restore.outputs.cache-matched-key != ''", "if: steps.secret-scan-apt-restore.outputs.cache-hit == 'true'"), /seed \/var\/cache\/apt\/archives/],
+    ['e2e-tests', current => current.replace('prefix="playwright-debs-', 'prefix="playwright-debs-v2-'), /exact same Playwright system package cache key script as e2e-tests/],
+    ['e2e-tests', current => current.replace("key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/pnpm-lock.yaml') }}", "key: ${{ runner.os }}-playwright-v2-${{ hashFiles('frontend/pnpm-lock.yaml') }}"), /exact e2e-tests cache path and key/],
   ]) {
-    const changed = mutateWorkflowJob(ciContent, 'secret-scan', mutation);
+    const changed = mutateWorkflowJob(ciContent, targetJob, mutation);
     assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'), 'the negative fixture must change the workflow');
-    assert.ok(bootstrapErrors(changed).length, 'removed, weakened, skipped or late browser installation must fail');
+    assert.match(bootstrapErrors(changed).join('\n'), expectedError);
   }
 });
 
