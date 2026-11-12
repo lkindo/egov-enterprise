@@ -37,9 +37,40 @@ public interface InformalSanctionRepository extends JpaRepository<InformalSancti
             @Param("keyword") String keyword, @Param("fromYmd") String fromYmd, @Param("toYmd") String toYmd,
             @Param("status") String status, Pageable pageable);
 
-    /** 문서의 현재 상태와 관계없이 본인이 결정한 차수의 라인이 있는 문서. */
+    /**
+     * [V2_151] 대기함 — 내 차례인 문서와, 오늘 나에게 결재를 맡긴 사람({@code delegators}, 비어 있으면 부르지 않는다)의 차례인
+     * 문서다. 내가 기안했거나 그 차수 결재선에 내가 있는 문서는 대리결재로 싣지 않는다(서비스의 대리결재 판정과 같다).
+     */
+    String PENDING_WITH_SUBSTITUTION = "select s from InformalSanction s where s.aprvYn = 'A' and (exists "
+            + "(select d.id from InformalSanctionDetail d where d.id.ifmlAtrzSn = s.ifmlAtrzSn "
+            + "and d.id.atrzCycl = s.atrzCycl and d.id.userId = :aprvrId and d.aprvYn = 'A') "
+            + "or (s.aplcntId <> :aprvrId and not exists (select own.id from InformalSanctionDetail own "
+            + "where own.id.ifmlAtrzSn = s.ifmlAtrzSn and own.id.atrzCycl = s.atrzCycl and own.id.userId = :aprvrId) "
+            + "and exists (select p.id from InformalSanctionDetail p where p.id.ifmlAtrzSn = s.ifmlAtrzSn "
+            + "and p.id.atrzCycl = s.atrzCycl and p.aprvYn = 'A' and p.id.userId in :delegators)))";
+
+    @Query(PENDING_WITH_SUBSTITUTION + LIST_FILTER)
+    Page<InformalSanction> findPendingWithSubstitution(@Param("aprvrId") String aprvrId,
+            @Param("delegators") java.util.Collection<String> delegators,
+            @Param("keyword") String keyword, @Param("fromYmd") String fromYmd, @Param("toYmd") String toYmd,
+            @Param("status") String status, Pageable pageable);
+
+    @Query("select count(s) from InformalSanction s where s.aprvYn = 'A' and (exists "
+            + "(select d.id from InformalSanctionDetail d where d.id.ifmlAtrzSn = s.ifmlAtrzSn "
+            + "and d.id.atrzCycl = s.atrzCycl and d.id.userId = :aprvrId and d.aprvYn = 'A') "
+            + "or (s.aplcntId <> :aprvrId and not exists (select own.id from InformalSanctionDetail own "
+            + "where own.id.ifmlAtrzSn = s.ifmlAtrzSn and own.id.atrzCycl = s.atrzCycl and own.id.userId = :aprvrId) "
+            + "and exists (select p.id from InformalSanctionDetail p where p.id.ifmlAtrzSn = s.ifmlAtrzSn "
+            + "and p.id.atrzCycl = s.atrzCycl and p.aprvYn = 'A' and p.id.userId in :delegators)))")
+    long countPendingWithSubstitution(@Param("aprvrId") String aprvrId,
+            @Param("delegators") java.util.Collection<String> delegators);
+
+    /**
+     * 문서의 현재 상태와 관계없이 본인이 결정한 차수의 라인이 있는 문서. [V2_151] 대리결재자로 대신 결정한 줄도 본인이 결정한 줄이다.
+     */
     @Query("select s from InformalSanction s where exists (select d.id from InformalSanctionDetail d "
-            + "where d.id.ifmlAtrzSn = s.ifmlAtrzSn and d.id.userId = :aprvrId and d.aprvYn in :aprvYns)" + LIST_FILTER)
+            + "where d.id.ifmlAtrzSn = s.ifmlAtrzSn and (d.id.userId = :aprvrId or d.sbtAprvrId = :aprvrId) "
+            + "and d.aprvYn in :aprvYns)" + LIST_FILTER)
     Page<InformalSanction> findProcessed(@Param("aprvrId") String aprvrId,
             @Param("aprvYns") java.util.Collection<String> aprvYns,
             @Param("keyword") String keyword, @Param("fromYmd") String fromYmd, @Param("toYmd") String toYmd,
@@ -61,7 +92,7 @@ public interface InformalSanctionRepository extends JpaRepository<InformalSancti
      */
     @Query("SELECT s FROM InformalSanction s WHERE s.ifmlAtrzSn = :id "
             + "AND (s.aplcntId = :participantId OR EXISTS (SELECT d.id FROM InformalSanctionDetail d "
-            + "WHERE d.id.ifmlAtrzSn = s.ifmlAtrzSn AND d.id.userId = :participantId) "
+            + "WHERE d.id.ifmlAtrzSn = s.ifmlAtrzSn AND (d.id.userId = :participantId OR d.sbtAprvrId = :participantId)) "
             + "OR EXISTS (SELECT r.id FROM InformalSanctionReference r "
             + "WHERE r.id.ifmlAtrzSn = s.ifmlAtrzSn AND r.id.userId = :participantId))")
     Optional<InformalSanction> findByIdAndParticipant(

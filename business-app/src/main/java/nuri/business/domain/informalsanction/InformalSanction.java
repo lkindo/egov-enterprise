@@ -62,11 +62,18 @@ public class InformalSanction extends BaseEntity {
     @Column(precision = 7, scale = 0, nullable = false)
     private BigDecimal atrzCycl = BigDecimal.ONE;
 
+    /**
+     * 지금 차수의 첨부 묶음(V2_151). 차수 이력({@link InformalSanctionHistory})이 그 차수의 묶음을 따로 남긴다 — 재상신으로 묶음을
+     * 바꿔도 앞 차수 결재자가 본 첨부가 남는다. 묶음은 개인 귀속 첨부라 일반 파일 API 로 개별 삭제되지 않는다(ADR-0048).
+     */
+    @Column(name = "atch_file_sn")
+    private Long atchFileSn;
+
     // 팩토리 create() 전용 생성자 (선언 순서에 맞춘 비즈니스 필드; 감사 필드/@Version 제외)
     private InformalSanction(Long ifmlAtrzSn, String taskSeCd, String aplcntId,
                              String reqYmd, String aprvrId, String aprvYn,
                              LocalDateTime atrzDt, String rjctRsnCn,
-                             String docTtl, String docCn, BigDecimal atrzCycl) {
+                             String docTtl, String docCn, BigDecimal atrzCycl, Long atchFileSn) {
         this.ifmlAtrzSn = ifmlAtrzSn;
         this.taskSeCd = taskSeCd;
         this.aplcntId = aplcntId;
@@ -78,6 +85,7 @@ public class InformalSanction extends BaseEntity {
         this.docTtl = docTtl;
         this.docCn = docCn;
         this.atrzCycl = atrzCycl == null ? BigDecimal.ONE : atrzCycl.setScale(0, java.math.RoundingMode.UNNECESSARY);
+        this.atchFileSn = atchFileSn;
     }
 
     /**
@@ -87,9 +95,20 @@ public class InformalSanction extends BaseEntity {
     public static InformalSanction create(Long ifmlAtrzSn, String taskSeCd, String aplcntId,
                                           String reqYmd, String aprvrId, String aprvYn,
                                           LocalDateTime atrzDt, String rjctRsnCn,
-                                          String docTtl, String docCn, BigDecimal atrzCycl) {
+                                          String docTtl, String docCn, BigDecimal atrzCycl, Long atchFileSn) {
         return new InformalSanction(ifmlAtrzSn, taskSeCd, aplcntId, reqYmd, aprvrId, aprvYn, atrzDt, rjctRsnCn,
-                docTtl, docCn, atrzCycl);
+                docTtl, docCn, atrzCycl, atchFileSn);
+    }
+
+    /**
+     * 재상신할 차수의 첨부 묶음을 정한다(V2_151). 반려·회수된 문서만 — 진행 중이거나 끝난 문서의 첨부는 바꿀 수 없다(위변조 방지).
+     * {@code null} 이면 새 차수는 첨부가 없다. 앞 차수의 묶음은 차수 이력에 남는다. 업로더 확인은 서비스가 먼저 한다.
+     */
+    public void replaceAttachment(Long atchFileSn) {
+        if (!SanctionStatus.REJECTED.getCode().equals(aprvYn) && !SanctionStatus.WITHDRAWN.getCode().equals(aprvYn)) {
+            throw new nuri.foundation.core.exception.BusinessException(nuri.foundation.core.exception.CommonErrorCode.INVALID_STATE);
+        }
+        this.atchFileSn = atchFileSn;
     }
 
     public void selectRepresentativeApprover(String approverId) {

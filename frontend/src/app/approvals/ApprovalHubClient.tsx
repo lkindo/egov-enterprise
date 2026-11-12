@@ -422,7 +422,7 @@ function useApprovalDocumentActions({
           continue;
         }
         try {
-          await confirmMutation.mutateAsync({ ifmlAtrzSn: item.ifmlAtrzSn as number, status: SANCTION_STATUS.APPROVED, version: item.version });
+          await confirmMutation.mutateAsync({ ifmlAtrzSn: item.ifmlAtrzSn as number, status: SANCTION_STATUS.APPROVED, version: item.version, onBehalfOf: item.onBehalfOfId ?? undefined });
         } catch (error) {
           failures.push(`‘${documentLabel(item)}’: ${failureMessage(error, '처리하지 못했습니다.')}`);
         }
@@ -716,6 +716,7 @@ export default function ApprovalHubClient() {
         status: validatedDecision.status,
         reason: validatedDecision.reason,
         version,
+        onBehalfOf: item.onBehalfOfId ?? undefined,
       });
       toast(`성공적으로 ${actionNm}되었습니다.`, 'success');
       setRejectReason('');

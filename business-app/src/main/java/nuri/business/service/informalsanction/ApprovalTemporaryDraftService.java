@@ -73,10 +73,12 @@ public class ApprovalTemporaryDraftService {
     private final UserRepository userRepository;
     private final ApprovalLineAssistService lineAssistService;
     private final InformalSanctionService informalSanctionService;
+    /** [V2_151] 첨부 묶음 할당은 원 업로더만, 임시저장을 지우면 남은 참조가 없는 묶음을 수거한다(DEC-OPS-394). */
+    private final nuri.business.service.file.AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
-    /** 형식을 확인하고 빈 문자열을 비운 저장 내용. */
+    /** 형식을 확인하고 빈 문자열을 비운 저장 내용. [V2_151] 첨부 묶음은 저장할 때 원 업로더인지 따로 확인한다. */
     private record Content(String taskSeCd, String docTtl, String docCn, List<ApprovalStageRequest> stages,
-                           List<String> references) {
+                           List<String> references, Long attachment) {
         int approverCount() {
             return stages.stream().mapToInt(stage -> stage.approverIds().size()).sum();
         }
@@ -123,7 +125,7 @@ public class ApprovalTemporaryDraftService {
                 : lineAssistService.checkApprovers(applicant, referenceIds);
         return new ApprovalTemporaryDraftDto(draft.getIfmlAtrzTmprStrgSn(), draft.getTaskSeCd(),
                 taskTypeNames().getOrDefault(draft.getTaskSeCd(), ""), draft.getDocTtl(), draft.getDocCn(), stageDtos,
-                references, draft.getVersion(), draft.getMdfcnDt());
+                references, draft.getVersion(), draft.getMdfcnDt(), draft.getAtchFileSn());
     }
 
     @Transactional
@@ -134,8 +136,15 @@ public class ApprovalTemporaryDraftService {
             throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
                     "임시저장은 " + MAX_DRAFTS + "건까지 둘 수 있습니다. 쓰지 않는 임시저장을 지워 주세요.");
         }
-        ApprovalTemporaryDraft draft = draftRepository.save(
-                ApprovalTemporaryDraft.create(applicant, content.taskSeCd(), content.docTtl(), content.docCn()));
+        // [V2_151] 첨부 묶음은 원 업로더만 붙인다 — 저장보다 먼저 확인한다(첨부 할당 writer 계약).
+        Long atchFileSn = content.attachment();
+        if (atchFileSn != null) {
+            attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+        }
+        ApprovalTemporaryDraft created = ApprovalTemporaryDraft.create(applicant, content.taskSeCd(), content.docTtl(),
+                content.docCn());
+        created.replaceAttachment(atchFileSn);
+        ApprovalTemporaryDraft draft = draftRepository.save(created);
         lineRepository.saveAll(lines(draft.getIfmlAtrzTmprStrgSn(), content.stages()));
         referenceRepository.saveAll(references(draft.getIfmlAtrzTmprStrgSn(), content.references()));
         return summary(draft, content.approverCount(), content.references().size(), taskTypeNames());
@@ -158,6 +167,12 @@ public class ApprovalTemporaryDraftService {
             throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
                     "다른 곳에서 임시저장을 고쳤습니다. 최신 내용을 다시 불러와 주세요.");
         }
+        // [V2_151] 새로 붙이는 묶음만 원 업로더인지 확인한다(이미 붙어 있던 묶음은 그대로 둘 수 있다).
+        Long atchFileSn = content.attachment();
+        if (atchFileSn != null && !atchFileSn.equals(draft.getAtchFileSn())) {
+            attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+        }
+        draft.replaceAttachment(atchFileSn);
         draft.revise(content.taskSeCd(), content.docTtl(), content.docCn());
         lineRepository.deleteForDraft(draft.getIfmlAtrzTmprStrgSn());
         lineRepository.saveAll(lines(draft.getIfmlAtrzTmprStrgSn(), content.stages()));
@@ -168,24 +183,39 @@ public class ApprovalTemporaryDraftService {
         return summary(draft, content.approverCount(), content.references().size(), taskTypeNames());
     }
 
-    /** 결재선 행은 FK(ON DELETE CASCADE)가 함께 지운다. */
+    /**
+     * 결재선 행은 FK(ON DELETE CASCADE)가 함께 지운다. [V2_151] 지운 뒤 다른 업무 참조가 남지 않은 첨부 묶음을 수거한다(DEC-OPS-394)
+     * — 행 삭제를 먼저 내보내야 참조 판정이 이 임시저장을 세지 않는다.
+     */
     @Transactional
     public void deleteTemporaryDraft(String applicant, Long temporaryDraftSn) {
-        draftRepository.delete(lockOwnedDraft(applicant, temporaryDraftSn));
+        ApprovalTemporaryDraft draft = lockOwnedDraft(applicant, temporaryDraftSn);
+        Long attachment = draft.getAtchFileSn();
+        draftRepository.delete(draft);
+        draftRepository.flush();
+        attachmentAssignmentPolicy.releaseIfUnreferenced(attachment);
     }
 
     /**
      * 임시저장을 소비하며 상신한다. 기안자는 상신 문서의 신청자(컨트롤러가 인증 주체로 채운다)이며, 소비가 상신보다 먼저다 —
      * 상신 검사가 실패하면 트랜잭션이 되돌아가 임시저장이 남는다. 참조자는 상신 요청의 것을 쓴다(임시저장 참조자는 함께 지워진다).
+     *
+     * <p>[V2_151] 첨부도 상신 요청의 것을 쓴다 — 보통 임시저장의 묶음을 그대로 보내 문서로 옮긴다. 다른 묶음을 보내 임시저장의 묶음이
+     * 어느 업무에도 남지 않으면 상신을 내보낸 뒤 수거한다(임시저장 삭제와 같다).
      */
     @Transactional
     public Long submitWithTemporaryDraft(InformalSanctionDto dto, List<ApprovalStageRequest> stages,
                                          List<String> references, Long temporaryDraftSn, Integer temporaryDraftVersion) {
-        consumeForSubmit(Objects.requireNonNull(dto).getAplcntId(), temporaryDraftSn, temporaryDraftVersion);
-        return informalSanctionService.registerInformalSanction(dto, stages, references);
+        Long draftAttachment = consumeForSubmit(Objects.requireNonNull(dto).getAplcntId(), temporaryDraftSn,
+                temporaryDraftVersion);
+        Long id = informalSanctionService.registerInformalSanction(dto, stages, references);
+        draftRepository.flush();
+        attachmentAssignmentPolicy.releaseIfUnreferenced(draftAttachment);
+        return id;
     }
 
-    private void consumeForSubmit(String applicant, Long temporaryDraftSn, Integer temporaryDraftVersion) {
+    /** 임시저장을 지우고 그 첨부 묶음 번호를 돌려준다(없으면 {@code null}). */
+    private Long consumeForSubmit(String applicant, Long temporaryDraftSn, Integer temporaryDraftVersion) {
         assertApplicant(applicant);
         if (temporaryDraftSn == null || temporaryDraftVersion == null) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
@@ -195,10 +225,12 @@ public class ApprovalTemporaryDraftService {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                     "임시저장 번호와 버전이 올바르지 않습니다.");
         }
+        Long attachment = draftRepository.findAttachmentOfOwnedDraft(temporaryDraftSn, applicant).orElse(null);
         if (draftRepository.deleteOwnedVersion(temporaryDraftSn, applicant, temporaryDraftVersion) == 0) {
             throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
                     "임시저장이 이미 상신되었거나 다른 곳에서 바뀌었습니다. 최신 내용을 다시 불러와 주세요.");
         }
+        return attachment;
     }
 
     private void lockDraftOwner(String applicant) {
@@ -238,11 +270,16 @@ public class ApprovalTemporaryDraftService {
         }
         List<ApprovalStageRequest> stages = stages(request.getStages());
         List<String> references = references(request.getReferences(), stages);
-        if (taskSeCd == null && docTtl == null && docCn == null && stages.isEmpty() && references.isEmpty()) {
-            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                    "저장할 내용이 없습니다. 업무 구분·제목·본문·결재선·참조자 중 하나는 채워 주세요.");
+        Long attachment = request.getAtchFileSn();
+        if (attachment != null && attachment <= 0) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "첨부파일 번호가 올바르지 않습니다.");
         }
-        return new Content(taskSeCd, docTtl, docCn, stages, references);
+        if (taskSeCd == null && docTtl == null && docCn == null && stages.isEmpty() && references.isEmpty()
+                && attachment == null) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "저장할 내용이 없습니다. 업무 구분·제목·본문·결재선·참조자·첨부 중 하나는 채워 주세요.");
+        }
+        return new Content(taskSeCd, docTtl, docCn, stages, references, attachment);
     }
 
     /**

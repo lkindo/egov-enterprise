@@ -66,6 +66,7 @@ import { canOpenPage } from '@/lib/auth/page-access';
 import { canPermission } from '@/lib/auth/permissions';
 import { USER_DELETE_CONSEQUENCE, USER_PAGE_SIZE_OPTIONS, userOrgToolbarCounts, type UserOrgWriteOperation } from './user-org-hub-model';
 import { useUserOrgAbsences } from './useUserOrgAbsences';
+import { AbsenceDelegationDialog } from './AbsenceDelegationDialog';
 import { useUserOrgDialogs } from './useUserOrgDialogs';
 import { useUserOrgSelection } from './useUserOrgSelection';
 import { DeptDetailActions, UserDetailActions } from './UserOrgDetailActions';
@@ -564,13 +565,20 @@ function useUserOrgNavigation({ defaultTab, setSelectedItemId }: {
   return { isPending, activeTab, router, userPage, userPageSize, goToPage, handleTabChange, handlePageSizeChange };
 }
 
-/** 부재 탭의 열 — 직함·부재 여부와, 부재를 바꿀 권한(ABSENCE_UPDATE)이 있으면 조치(부재·복귀 처리). */
-function absenceColumns({ absenceOf, canUpdateAbsence, absencePendingId, handleToggleAbsence }: {
+/**
+ * 부재 탭의 열 — 직함·부재 여부와, 부재를 바꿀 권한(ABSENCE_UPDATE)이 있으면 조치(부재·복귀 처리·대리결재 지정).
+ * [V2_151] 부재 중인 사람의 대리결재자와 기간을 부재 여부 아래에 보인다.
+ */
+function absenceColumns({ absenceOf, delegationOf, nameOf, canUpdateAbsence, absencePendingId, handleToggleAbsence, onEditDelegation }: {
   absenceOf: (user: UserManage) => string | null;
+  delegationOf: (user: UserManage) => { sbtAprvrId: string; absnBgngYmd: string | null; absnEndYmd: string | null } | null;
+  nameOf: (esntlId: string) => string;
   canUpdateAbsence: boolean;
   absencePendingId: string | null;
   handleToggleAbsence: (user: UserManage) => Promise<void>;
+  onEditDelegation: (user: UserManage) => void;
 }): Column<UserManage>[] {
+  const shortYmd = (ymd: string | null) => (ymd && ymd.length === 8 ? `${ymd.slice(4, 6)}.${ymd.slice(6, 8)}` : '?');
   return [
       {
         header: '직함',
@@ -590,8 +598,18 @@ function absenceColumns({ absenceOf, canUpdateAbsence, absencePendingId, handleT
             ? (
               // ⚠ `text-warning-emphasis` 를 쓰지 않는다 — 그 토큰은 정의돼 있지 않아 Tailwind 가
               //   클래스를 만들지 않고 색이 조용히 사라진다. 배경 틴트로 상태를 말한다.
-              <span className="inline-flex items-center rounded border border-warning/40 bg-warning/15 px-1.5 py-0.5 text-xs font-medium text-foreground">
-                부재
+              <span className="flex flex-col items-start gap-1">
+                <span className="inline-flex items-center rounded border border-warning/40 bg-warning/15 px-1.5 py-0.5 text-xs font-medium text-foreground">
+                  부재
+                </span>
+                {(() => {
+                  const delegation = delegationOf(user);
+                  return delegation ? (
+                    <span className="text-xs text-muted-foreground">
+                      대리결재 {nameOf(delegation.sbtAprvrId)} · {shortYmd(delegation.absnBgngYmd)}~{shortYmd(delegation.absnEndYmd)}
+                    </span>
+                  ) : null;
+                })()}
               </span>
             )
             : <span className="text-xs text-muted-foreground">정상</span>;
@@ -600,7 +618,7 @@ function absenceColumns({ absenceOf, canUpdateAbsence, absencePendingId, handleT
       // 부재를 바꿀 권한(ABSENCE_UPDATE)이 없으면 조치 열을 두지 않는다 — 부재 여부는 그대로 보인다.
       ...(canUpdateAbsence ? [{
         header: '조치',
-        className: 'text-right w-36',
+        className: 'text-right w-56',
         accessor: (user: UserManage) => {
           const state = absenceOf(user);
           if (state === null) return null;
@@ -610,7 +628,15 @@ function absenceColumns({ absenceOf, canUpdateAbsence, absencePendingId, handleT
             ? `${user.userNm ?? user.userId} 복귀 처리`
             : `${user.userNm ?? user.userId} 부재 처리`;
           return (
-            <div className="flex justify-end">
+            <div className="flex flex-wrap justify-end gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={absencePendingId !== null}
+                onClick={(event) => { event.stopPropagation(); onEditDelegation(user); }}
+              >
+                <span className="sr-only">{user.userNm ?? user.userId} </span>대리결재 지정
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -806,7 +832,9 @@ export default function UserOrgHubClient({
     if (userPage !== 1) goToPage(1);
   };
 
-  const { isAbsencesLoading, isAbsencesError, absencesError, refetchAbsences, absenceOf } = useUserOrgAbsences(activeTab === 'ABSENCES');
+  const { isAbsencesLoading, isAbsencesError, absencesError, refetchAbsences, absenceOf, delegationOf } = useUserOrgAbsences(activeTab === 'ABSENCES');
+  // [V2_151] 대리결재 지정 대화상자의 대상.
+  const [delegationTarget, setDelegationTarget] = useState<UserManage | null>(null);
 
   /**
    * 검색 입력은 사용자/부서 탭이 공유한다. USERS 탭에서 입력한 사용자 검색어가 부서 조회에 섞이면
@@ -889,7 +917,11 @@ export default function UserOrgHubClient({
     ...COMMON_USER_COLUMNS,
     // 부재 탭은 부재 여부·조치가 주 관심사이므로 연락 정보 대신 그 두 열을 붙인다(G9 — 열 과밀 금지).
     ...(activeTab === 'ABSENCES'
-      ? absenceColumns({ absenceOf, canUpdateAbsence, absencePendingId, handleToggleAbsence })
+      ? absenceColumns({
+        absenceOf, delegationOf, canUpdateAbsence, absencePendingId, handleToggleAbsence,
+        nameOf: (esntlId: string) => users.find(candidate => candidate.esntlId === esntlId)?.userNm ?? esntlId,
+        onEditDelegation: setDelegationTarget,
+      })
       : buildStandardUserColumns(departments)),
   ];
 
@@ -993,6 +1025,17 @@ export default function UserOrgHubClient({
           )}
         >
           <div className={cn('flex min-w-0 flex-col gap-3', isDeptTab && 'h-full')}>
+            {delegationTarget && (
+              <AbsenceDelegationDialog
+                key={delegationTarget.esntlId}
+                target={{ ...delegationTarget, delegation: delegationOf(delegationTarget) }}
+                delegateName={(() => {
+                  const delegateId = delegationOf(delegationTarget)?.sbtAprvrId;
+                  return delegateId ? users.find(candidate => candidate.esntlId === delegateId)?.userNm ?? undefined : undefined;
+                })()}
+                onClose={() => setDelegationTarget(null)}
+              />
+            )}
             {activeTab === 'ABSENCES' && (
               <AbsenceStatusNotice
                 isError={isAbsencesError}

@@ -196,13 +196,18 @@ public class ApprovalApiController {
                 approvalService.addReferences(id, request.getReferences(), request.getVersion())));
     }
 
-    @Operation(summary = "Confirm Approval (Approve/Reject)")
+    @Operation(summary = "Confirm Approval (Approve/Reject)",
+            description = "지금 차례인 결재자가 승인·반려합니다. 차례인 결재자가 오늘 부재 기간에 결재를 맡긴 대리결재자는 그 줄을 대신 "
+                    + "결정합니다(onBehalfOf 로 원결재자를 고릅니다). 대신 결정한 줄에는 원결재자와 결정한 사람이 따로 남고, 민감 작업 감사 "
+                    + "원장에 기록되며 원결재자에게 알림이 갑니다. 기안자이거나 같은 차수 결재선에 있는 사람은 대신 결정할 수 없고, 기간이 "
+                    + "끝났거나 맡기지 않은 사람은 403 입니다.")
     @PutMapping("/{id}/confirm")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#confirm')")
     public ResponseEntity<ApiResponse<Void>> confirm(
             @PathVariable Long id,
             @Valid @RequestBody ApprovalConfirmRequest request) {
-        approvalService.confirmInformalSanction(id, request.getStatus(), request.getReason(), request.getVersion());
+        approvalService.confirmInformalSanction(id, request.getStatus(), request.getReason(), request.getVersion(),
+                request.getOnBehalfOf());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -412,6 +417,7 @@ public class ApprovalApiController {
         return InformalSanctionDto.builder()
                 .taskSeCd(request.getTaskSeCd()).aprvrId(request.getAprvrId())
                 .reqYmd(reqYmd).aplcntId(applicantId)
-                .docTtl(request.getDocTtl()).docCn(request.getDocCn()).build();
+                .docTtl(request.getDocTtl()).docCn(request.getDocCn())
+                .atchFileSn(request.getAtchFileSn()).build();
     }
 }

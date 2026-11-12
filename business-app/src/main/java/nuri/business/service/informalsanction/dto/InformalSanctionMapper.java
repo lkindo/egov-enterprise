@@ -1,8 +1,11 @@
 package nuri.business.service.informalsanction.dto;
 
 import nuri.business.domain.informalsanction.InformalSanction;
+import nuri.business.domain.informalsanction.InformalSanctionHistory;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 /**
  * 비정형 결재 엔티티→DTO MapStruct 매퍼 (컴파일타임 생성, Spring 빈).
@@ -36,5 +39,12 @@ public interface InformalSanctionMapper {
     @Mapping(target = "references", ignore = true)
     @Mapping(target = "referenceViewer", ignore = true)
     @Mapping(target = "canAddReference", ignore = true)
+    @Mapping(target = "onBehalfOfId", ignore = true)
+    @Mapping(target = "onBehalfOfNm", ignore = true)
     InformalSanctionDto toDto(InformalSanction entity);
+
+    /** [V2_151] 앞 차수만 보는 결재자에게는 그 차수 이력의 첨부 묶음을 싣는다(제목·본문을 이력으로 바꾸는 것과 같다). */
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "atchFileSn", source = "atchFileSn")
+    void applyRevisionAttachment(InformalSanctionHistory revision, @MappingTarget InformalSanctionDto dto);
 }

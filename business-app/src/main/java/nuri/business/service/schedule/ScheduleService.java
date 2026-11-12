@@ -36,6 +36,23 @@ public class ScheduleService {
      * 미배정자끼리 '부서 공유' 일정을 보는 이 동작은 유지하기로 정했다(DEC-OPS-375).
      */
     private static final String DEFAULT_ORG_ID = "ORGNZT_0000000000000";
+    /**
+     * [V2_152] 일정 구분 — 부서 공유(1)·개인(2)·전사(3). 전사 일정은 로그인 사용자 모두의 달력에 보이고, 만들고 고치고 지우는 일은
+     * 일정 수정·삭제 대행 권한 보유자만 한다(등록자라도 권한이 없으면 못 한다, H3).
+     */
+    static final String COMPANY_WIDE = "3";
+    private static final java.util.Set<String> SCOPES = java.util.Set.of("1", "2", COMPANY_WIDE);
+
+    /** 일정 구분을 확인하고 전사 일정이면 대행 권한을 요구한다. 비어 있는 구분은 종전대로 받는다(개인 목록·달력이 담당자로 거른다). */
+    private static void assertScope(String schdlSeCd, String companyPermission) {
+        if (schdlSeCd == null || schdlSeCd.isBlank()) return;
+        if (!SCOPES.contains(schdlSeCd)) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "일정 공유 범위를 확인해 주세요.");
+        }
+        if (COMPANY_WIDE.equals(schdlSeCd)) {
+            nuri.business.security.util.SecurityUtil.assertPermission(companyPermission);
+        }
+    }
 
     /** 로그인 사용자의 소속 조직 ID. 미배정이면 기본조직으로 폴백한다. */
     private String resolveDeptId(String loginId) {
@@ -107,7 +124,10 @@ public class ScheduleService {
                 .filter(loginId -> !loginId.isBlank())
                 .filter(loginId -> Objects.equals(entity.getSchdlDeptId(), resolveDeptId(loginId)))
                 .isPresent();
-        if (!sharedWithCurrentDepartment) {
+        // [V2_152] 전사 일정은 로그인 사용자 모두에게 공유된다(월별 달력과 같은 범위).
+        boolean sharedCompanyWide = COMPANY_WIDE.equals(entity.getSchdlSeCd())
+                && nuri.business.security.util.SecurityUtil.getCurrentLoginId().filter(loginId -> !loginId.isBlank()).isPresent();
+        if (!sharedWithCurrentDepartment && !sharedCompanyWide) {
             nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCHEDULE_READ_ALL");
         }
         return convertToDto(entity);
@@ -131,6 +151,7 @@ public class ScheduleService {
     @Transactional
     public Long createSchedule(String userId, ScheduleDto dto) {
         requireStartDate(dto);
+        assertScope(dto.getSchdlSeCd(), "SCHEDULE_UPDATE_ALL");
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
@@ -170,6 +191,11 @@ public class ScheduleService {
         // [2026-10-18] 화면이 읽은 버전과 다르면 다른 사람이 먼저 고친 것이다 — 덮지 않고 409 로 알린다(인가 판정 뒤).
         nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
         requireStartDate(dto);
+        // [V2_152] 전사 일정을 고치거나 전사로 바꾸는 일은 대행 권한 보유자만 — 등록자라는 이유로 전사 공지를 고치지 못한다.
+        if (COMPANY_WIDE.equals(entity.getSchdlSeCd())) {
+            nuri.business.security.util.SecurityUtil.assertPermission("SCHEDULE_UPDATE_ALL");
+        }
+        assertScope(dto.getSchdlSeCd(), "SCHEDULE_UPDATE_ALL");
 
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
@@ -208,6 +234,10 @@ public class ScheduleService {
         // [IDOR/정체성 수정] 기존 가드는 userId(컨트롤러 esntlId)와 frstRgtrId(loginId)를 비교해 항상 deny-all 이었다.
         // SecurityUtil 이 SecurityContext 에서 loginId 를 읽어 소유자/관리자를 올바로 판정한다.
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCHEDULE_DELETE_ALL");
+        // [V2_152] 전사 일정은 삭제 대행 권한 보유자만 지운다.
+        if (COMPANY_WIDE.equals(entity.getSchdlSeCd())) {
+            nuri.business.security.util.SecurityUtil.assertPermission("SCHEDULE_DELETE_ALL");
+        }
 
         Long atchFileSn = entity.getAtchFileSn();
         scheduleRepository.delete(entity);
@@ -235,6 +265,10 @@ public class ScheduleService {
         }
         if (nuri.business.security.util.SecurityUtil.hasPermission(overridePermission)) {
             return true;
+        }
+        // [V2_152] 전사 일정은 대행 권한 보유자만 고치고 지운다(쓰기 경로와 같은 판정).
+        if (COMPANY_WIDE.equals(entity.getSchdlSeCd())) {
+            return false;
         }
         String owner = entity.getFrstRgtrId();
         return org.springframework.util.StringUtils.hasText(owner)

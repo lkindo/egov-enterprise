@@ -44,6 +44,8 @@ export interface ApprovalDecision {
   reason?: string;
   /** 상세·목록에서 받은 문서 버전. 서버가 필수로 대조한다. */
   version: number;
+  /** [V2_151] 대리결재로 대신 결정할 원결재자(상세·목록의 onBehalfOfId). 본인 차례면 비운다. */
+  onBehalfOf?: string;
 }
 
 export const approvalKeys = {
@@ -171,8 +173,8 @@ async function refreshDocument(queryClient: QueryClient, ifmlAtrzSn: number) {
 
 export const approvalMutationOptions = {
   confirm: (queryClient: QueryClient) => mutationOptions({
-    mutationFn: async ({ ifmlAtrzSn, status, reason, version }: ApprovalDecision) => {
-      await approvalUserService.confirm(ifmlAtrzSn, status, reason, version);
+    mutationFn: async ({ ifmlAtrzSn, status, reason, version, onBehalfOf }: ApprovalDecision) => {
+      await approvalUserService.confirm(ifmlAtrzSn, status, reason, version, onBehalfOf);
       await queryClient.invalidateQueries({ queryKey: approvalKeys.lists() });
       await queryClient.invalidateQueries({ queryKey: approvalKeys.detail(ifmlAtrzSn) });
     },

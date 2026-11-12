@@ -43,11 +43,27 @@ class UserAbsenceAdminService extends ApiService {
     return this.executeGenerated(getAbsenceOperation, { path: { emplyrId: esntlId }, config });
   }
 
-  /** 업서트다 — 기록이 없던 사용자도 이 호출로 처음 행이 생긴다. 실존하지 않는 사용자는 서버가 404 로 막는다. */
+  /**
+   * 업서트다 — 기록이 없던 사용자도 이 호출로 처음 행이 생긴다. 실존하지 않는 사용자는 서버가 404 로 막는다.
+   * [V2_151] 부재·복귀만 바꾸므로 대리결재 지정은 비운다(통째로 바꾸는 PUT 이다) — 대리결재는 {@link updateDelegation} 으로 정한다.
+   */
   async updateAbsence(esntlId: string, userAbsnYn: string, config?: AxiosRequestConfig): Promise<void> {
     await this.executeGenerated(updateAbsenceOperation, {
       path: { emplyrId: esntlId },
       body: { userId: esntlId, userAbsnYn },
+      config,
+    });
+  }
+
+  /**
+   * [V2_151] 부재 기간과 대리결재자를 함께 정한다(부재로 표시된다). 본인·사용 중이 아니거나 잠긴 계정·그 기간에 부재 중이거나
+   * 이미 다른 사람의 대리결재자인 사람은 서버가 400 으로 거부하며, 화면은 그 문구를 그대로 보인다.
+   */
+  async updateDelegation(esntlId: string, delegation: { sbtAprvrId: string; absnBgngYmd: string; absnEndYmd: string },
+    config?: AxiosRequestConfig): Promise<void> {
+    await this.executeGenerated(updateAbsenceOperation, {
+      path: { emplyrId: esntlId },
+      body: { userId: esntlId, userAbsnYn: ABSENT, ...delegation },
       config,
     });
   }

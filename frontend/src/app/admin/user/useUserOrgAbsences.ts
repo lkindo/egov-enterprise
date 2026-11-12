@@ -55,5 +55,14 @@ export function useUserOrgAbsences(enabled: boolean) {
     return absenceByEsntlId.get(user.esntlId) === ABSENT ? ABSENT : PRESENT;
   };
 
-  return { isAbsencesLoading, isAbsencesError, absencesError, refetchAbsences, absenceOf };
+  /** [V2_151] 부재 기간·대리결재자 — 부재 중이고 대리결재자가 있을 때만 있다. 조회 전·실패면 모른다(null). */
+  const delegationOf = (user: UserManage) => {
+    if (isAbsencesError || absenceRecords === undefined || !user?.esntlId) return null;
+    const record = absenceRecords.find(item => item?.userId === user.esntlId);
+    return record && record.userAbsnYn === ABSENT && record.sbtAprvrId
+      ? { sbtAprvrId: record.sbtAprvrId, absnBgngYmd: record.absnBgngYmd ?? null, absnEndYmd: record.absnEndYmd ?? null }
+      : null;
+  };
+
+  return { isAbsencesLoading, isAbsencesError, absencesError, refetchAbsences, absenceOf, delegationOf };
 }

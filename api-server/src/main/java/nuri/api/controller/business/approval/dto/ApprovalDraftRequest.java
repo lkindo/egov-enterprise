@@ -55,6 +55,18 @@ public class ApprovalDraftRequest {
     @Pattern(regexp = "^\\d{8}$")
     private String reqYmd;
 
+    /**
+     * [V2_151] 첨부 묶음. 재상신 요청이 이 클래스를 상속하므로 재상신에서는 새 차수의 묶음이다 — 지금 묶음을 그대로 보내면 유지하고,
+     * 새로 올린 묶음을 보내면 바꾸며, 비우면 새 차수는 첨부가 없다(앞 차수의 묶음은 그 차수 이력에 남는다).
+     */
+    @Schema(description = "첨부파일 일련번호(파일 업로드가 돌려준 값). 직접 올린 첨부만 붙일 수 있습니다. 결재가 진행 중이거나 끝나면 "
+            + "첨부를 바꾸거나 지울 수 없고, 재상신에서 새 묶음으로 바꿀 수 있습니다(앞 차수의 첨부는 남습니다).")
+    @jakarta.validation.constraints.Positive
+    private Long atchFileSn;
+
+    public Long getAtchFileSn() { return atchFileSn; }
+    public void setAtchFileSn(Long atchFileSn) { this.atchFileSn = atchFileSn; }
+
     public String getTaskSeCd() {
         return taskSeCd;
     }

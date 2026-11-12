@@ -27,9 +27,9 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
     // 기간 겹침(overlap) 조건: bgng <= 구간끝 AND end(NULL·기존 빈 문자열이면 bgng) >= 구간시작.
     // '시작 또는 종료가 구간 안'만 보던 기존 조건은 구간을 완전히 감싸는 장기 일정을 누락했다.
-    // [범위] 캘린더는 '내 일정 + 우리 부서 일정'을 함께 보여준다. 내가 담당자인 건과, 부서 구분('1')이며
-    //   내 부서인 건을 합집합으로 조회한다.
-    @Query("SELECT s FROM Schedule s WHERE (s.schdlPicId = :userId OR (s.schdlSeCd = '1' AND s.schdlDeptId = :deptId)) "
+    // [범위] 캘린더는 '내 일정 + 우리 부서 일정 + 전사 일정'을 함께 보여준다. 내가 담당자인 건, 부서 구분('1')이며
+    //   내 부서인 건, 전사 구분('3', V2_152)인 건을 합집합으로 조회한다.
+    @Query("SELECT s FROM Schedule s WHERE (s.schdlPicId = :userId OR (s.schdlSeCd = '1' AND s.schdlDeptId = :deptId) OR s.schdlSeCd = '3') "
             + "AND s.schdlBgngYmd <= CONCAT(:yearMonth, '31') AND COALESCE(NULLIF(s.schdlEndYmd, ''), s.schdlBgngYmd) >= CONCAT(:yearMonth, '01') "
             // [2026-09-26 DIP C7] 같은 날 일정의 표시 순서를 DB 에 맡기지 않는다 — 시작일, 등록 순.
             + "ORDER BY s.schdlBgngYmd ASC, s.schdlSn ASC")

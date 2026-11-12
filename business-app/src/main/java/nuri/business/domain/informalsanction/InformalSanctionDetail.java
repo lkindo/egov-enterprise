@@ -27,6 +27,12 @@ public class InformalSanctionDetail extends BaseEntity {
     @Column(length = 4000)
     private String atrzOpnnCn;
     private LocalDateTime atrzDt;
+    /**
+     * 원결재자({@code id.userId}) 대신 이 줄을 결정한 대리결재자(esntlId, V2_151). 본인이 결정했으면 {@code null} 이다 — 원결재자와
+     * 실제로 결정한 사람을 따로 남겨 사후 감사가 둘을 구별한다.
+     */
+    @Column(length = 20)
+    private String sbtAprvrId;
 
     public static InformalSanctionDetail create(InformalSanctionDetailId id,
                                                ApprovalStageKind kind, boolean active) {
@@ -51,6 +57,18 @@ public class InformalSanctionDetail extends BaseEntity {
         this.aprvYn = (approved ? ApprovalStatus.APPROVED : ApprovalStatus.REJECTED).getCode();
         this.atrzOpnnCn = opinion;
         this.atrzDt = decidedAt;
+    }
+
+    /**
+     * 부재 중인 원결재자 대신 대리결재자가 이 줄을 결정한다. 결정 규칙은 {@link #decide} 와 같고, 결정한 사람을 따로 남긴다.
+     * 대리결재 자격(유효한 부재 기간·지정된 대리결재자·같은 차수 겸직 금지)은 서비스가 먼저 판정한다.
+     */
+    public void decideAsSubstitute(String substituteId, boolean approved, String opinion, LocalDateTime decidedAt) {
+        if (substituteId == null || substituteId.isBlank() || substituteId.equals(id.getUserId())) {
+            throw new BusinessException(CommonErrorCode.INVALID_STATE);
+        }
+        decide(approved, opinion, decidedAt);
+        this.sbtAprvrId = substituteId;
     }
 
     /**

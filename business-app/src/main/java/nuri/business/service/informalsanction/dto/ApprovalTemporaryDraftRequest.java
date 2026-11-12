@@ -53,4 +53,8 @@ public class ApprovalTemporaryDraftRequest {
     @Schema(description = "고치려는 임시저장의 버전. 수정할 때만 필요하며 다르면 409 다")
     @Min(0)
     private Integer version;
+
+    @Schema(description = "첨부파일 일련번호(파일 업로드가 돌려준 값, V2_151). 비우면 첨부가 없다. 직접 올린 첨부만 지정할 수 있다")
+    @jakarta.validation.constraints.Positive
+    private Long atchFileSn;
 }

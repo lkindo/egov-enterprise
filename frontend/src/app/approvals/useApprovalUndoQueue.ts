@@ -171,7 +171,7 @@ export function useApprovalUndoQueue({
     const accepted = scheduleApprovalCommit(id, async () => {
       setCommittingIds(current => [...current, id]);
       try {
-        await confirmMutation.mutateAsync({ ifmlAtrzSn: id, status: SANCTION_STATUS.APPROVED, reason, version });
+        await confirmMutation.mutateAsync({ ifmlAtrzSn: id, status: SANCTION_STATUS.APPROVED, reason, version, onBehalfOf: item.onBehalfOfId ?? undefined });
         toast(`‘${title}’ ${actionNm}했습니다.`, 'success');
       } catch (error) {
         // 10초 사이 사용자가 다른 문서에 의견을 쓰고 있을 수 있다 — 그 글을 덮거나 실패 안내를 그 문서에 붙이지 않는다.

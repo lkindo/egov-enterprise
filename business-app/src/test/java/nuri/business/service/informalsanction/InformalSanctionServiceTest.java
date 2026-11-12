@@ -66,6 +66,10 @@ class InformalSanctionServiceTest {
     @org.mockito.Spy
     nuri.business.service.informalsanction.dto.InformalSanctionMapper informalSanctionMapper = new nuri.business.service.informalsanction.dto.InformalSanctionMapperImpl();
 
+    /** [V2_151] 첨부 할당·대리결재·민감 감사 — 없으면 @InjectMocks 가 null 을 넣어 열람·목록·결정 경로가 NPE 로 끝난다. */
+    @org.mockito.Mock private nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository;
+    @org.mockito.Mock private nuri.business.service.file.AttachmentAssignmentPolicy attachmentAssignmentPolicy;
+    @org.mockito.Mock private nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
     @InjectMocks
     private InformalSanctionService informalSanctionService;
 

@@ -97,10 +97,10 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
             }
             try {
                 SourceHit hit = query(source, atchFileSn, loginId, esntlId);
-                // 일정 본문을 읽지 못하면 다른 공유 참조나 FILE_READ_ALL로 첨부만 열 수 없다.
+                // 일정 본문·결재 임시저장을 읽지 못하면 다른 공유 참조나 FILE_READ_ALL로 첨부만 열 수 없다.
                 // 삭제에는 이 제한을 적용하지 않으므로 owner와 별도로 집계한다.
-                readDenied |= source == AttachmentSource.SCHEDULE && hit.referenced()
-                        && !hit.shared() && !hit.owner();
+                readDenied |= (source == AttachmentSource.SCHEDULE || source == AttachmentSource.APPROVAL_DRAFT)
+                        && hit.referenced() && !hit.shared() && !hit.owner();
                 shared |= hit.shared();
                 owner |= hit.owner();
                 boolean personalSource = source.sensitivity() == AttachmentSource.Sensitivity.PERSONAL;
@@ -142,6 +142,9 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
         if (source == AttachmentSource.DEPT_TASK) return queryDeptTask(atchFileSn, loginId, esntlId);
         if (source == AttachmentSource.POPUP) return queryPopup(atchFileSn, loginId);
         if (source == AttachmentSource.BANNER) return queryBanner(atchFileSn, loginId);
+        if (source == AttachmentSource.APPROVAL) return queryApproval(atchFileSn, esntlId);
+        if (source == AttachmentSource.APPROVAL_REVISION) return queryApprovalRevision(atchFileSn, esntlId);
+        if (source == AttachmentSource.APPROVAL_DRAFT) return queryApprovalDraft(atchFileSn, esntlId);
         List<Object> params = new ArrayList<>();
 
         String sharedExpr = source.sharedPredicate() != null ? source.sharedPredicate() : "1 = 0";
@@ -284,7 +287,9 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
             String department = reference.userDepartment();
             if (department == null || department.isBlank()) department = "ORGNZT_0000000000000";
             shared |= readAll || (loginId != null && !loginId.isBlank()
-                    && "1".equals(reference.sharing()) && department.equals(reference.department()));
+                    && "1".equals(reference.sharing()) && department.equals(reference.department()))
+                    // [V2_152] 전사 일정은 로그인 사용자 모두에게 공유된다(ScheduleService#getSchedule 과 같다).
+                    || (loginId != null && !loginId.isBlank() && "3".equals(reference.sharing()));
             owner |= loginId != null && loginId.equals(reference.registrar());
         }
         return new SourceHit(!references.isEmpty(), shared, owner, false);
@@ -386,6 +391,83 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
         }
         return new SourceHit(!references.isEmpty(), shared, owner, false);
     }
+
+    /**
+     * 약식결재 문서의 지금 차수 첨부(V2_151). InformalSanctionService#getInformalSanction 의 상세 관문과 같은 조건이다 — 기안자는 소유,
+     * 지금 차수 결재선의 원결재자·그 줄을 대신 결정한 대리결재자·참조자(모든 차수)·지금 유효한 대리결재자(진행 중 문서의 차례인 줄의
+     * 원결재자가 오늘 부재 기간에 이 사람에게 결재를 맡겼다)는 열람 전용 당사자다. core 는 결재 엔티티에 의존하지 않으므로 SQL 로 읽고,
+     * 본문/첨부의 일치는 결재 첨부 접근 시험이 대조한다. 오늘은 본문 판정과 같은 한국 날짜다.
+     */
+    private SourceHit queryApproval(Long fileId, String esntlId) {
+        if (esntlId == null) {
+            return referenceOnly("SELECT COUNT(*) FROM tb_ifml_atrz_info WHERE atch_file_sn = ?", fileId);
+        }
+        String today = LocalDate.ofInstant(clock.instant(), SERVICE_ZONE).format(DateTimeFormatter.BASIC_ISO_DATE);
+        var references = jdbcTemplate.query("""
+                SELECT s.aplcnt_id,
+                       CASE WHEN EXISTS (SELECT 1 FROM tb_ifml_atrz_dtl d
+                                          WHERE d.ifml_atrz_sn = s.ifml_atrz_sn AND d.atrz_cycl = s.atrz_cycl
+                                            AND (d.user_id = ? OR d.sbt_aprvr_id = ?)) THEN 1 ELSE 0 END AS line_flag,
+                       CASE WHEN EXISTS (SELECT 1 FROM tb_ifml_atrz_rfpr r
+                                          WHERE r.ifml_atrz_sn = s.ifml_atrz_sn AND r.user_id = ?) THEN 1 ELSE 0 END AS reference_flag,
+                       CASE WHEN s.aprv_yn = 'A' AND EXISTS (SELECT 1 FROM tb_ifml_atrz_dtl d
+                                          JOIN tb_user_absn a ON a.user_id = d.user_id
+                                          WHERE d.ifml_atrz_sn = s.ifml_atrz_sn AND d.atrz_cycl = s.atrz_cycl AND d.aprv_yn = 'A'
+                                            AND a.user_absn_yn = 'Y' AND a.sbt_aprvr_id = ?
+                                            AND a.absn_bgng_ymd <= ? AND a.absn_end_ymd >= ?) THEN 1 ELSE 0 END AS delegate_flag
+                  FROM tb_ifml_atrz_info s
+                 WHERE s.atch_file_sn = ?
+                """, (rs, rowNum) -> new ApprovalReference(rs.getString("aplcnt_id"),
+                    rs.getInt("line_flag") == 1 || rs.getInt("reference_flag") == 1 || rs.getInt("delegate_flag") == 1),
+                esntlId, esntlId, esntlId, esntlId, today, today, fileId);
+        return approvalHit(references, esntlId);
+    }
+
+    /**
+     * 약식결재 차수 이력의 첨부(V2_151). 본문의 차수 공개와 같다 — 기안자는 소유, 그 차수의 결재선(원결재자·대리결재자)과 참조자는
+     * 열람 전용 당사자다. 지금 차수의 대리결재 근거는 문서 머리({@link #queryApproval})가 같은 묶음으로 만든다.
+     */
+    private SourceHit queryApprovalRevision(Long fileId, String esntlId) {
+        if (esntlId == null) {
+            return referenceOnly("SELECT COUNT(*) FROM tb_ifml_atrz_hstry WHERE atch_file_sn = ?", fileId);
+        }
+        var references = jdbcTemplate.query("""
+                SELECT s.aplcnt_id,
+                       CASE WHEN EXISTS (SELECT 1 FROM tb_ifml_atrz_dtl d
+                                          WHERE d.ifml_atrz_sn = h.ifml_atrz_sn AND d.atrz_cycl = h.atrz_cycl
+                                            AND (d.user_id = ? OR d.sbt_aprvr_id = ?)) THEN 1 ELSE 0 END AS line_flag,
+                       CASE WHEN EXISTS (SELECT 1 FROM tb_ifml_atrz_rfpr r
+                                          WHERE r.ifml_atrz_sn = h.ifml_atrz_sn AND r.user_id = ?) THEN 1 ELSE 0 END AS reference_flag
+                  FROM tb_ifml_atrz_hstry h
+                  JOIN tb_ifml_atrz_info s ON s.ifml_atrz_sn = h.ifml_atrz_sn
+                 WHERE h.atch_file_sn = ?
+                """, (rs, rowNum) -> new ApprovalReference(rs.getString("aplcnt_id"),
+                    rs.getInt("line_flag") == 1 || rs.getInt("reference_flag") == 1),
+                esntlId, esntlId, esntlId, fileId);
+        return approvalHit(references, esntlId);
+    }
+
+    /** 상신 전 임시저장의 첨부(V2_151). 기안자 본인만 소유하며 공유 근거는 없다 — 본인이 아니면 resolve 가 열람 거부를 만든다. */
+    private SourceHit queryApprovalDraft(Long fileId, String esntlId) {
+        List<String> applicants = jdbcTemplate.query(
+                "SELECT aplcnt_id FROM tb_ifml_atrz_tmpr_strg WHERE atch_file_sn = ?",
+                (rs, rowNum) -> rs.getString("aplcnt_id"), fileId);
+        boolean owner = esntlId != null && applicants.stream().anyMatch(esntlId::equals);
+        return new SourceHit(!applicants.isEmpty(), false, owner, false);
+    }
+
+    private SourceHit referenceOnly(String countSql, Long fileId) {
+        Long count = jdbcTemplate.queryForObject(countSql, Long.class, fileId);
+        return new SourceHit(count != null && count > 0, false, false, false);
+    }
+
+    private static SourceHit approvalHit(List<ApprovalReference> references, String esntlId) {
+        boolean owner = references.stream().anyMatch(reference -> esntlId.equals(reference.applicant()));
+        boolean reader = references.stream().anyMatch(ApprovalReference::participant);
+        return new SourceHit(!references.isEmpty(), false, owner, reader);
+    }
+
+    private record ApprovalReference(String applicant, boolean participant) {}
 
     /**
      * 술어에 들어 있는 <b>바인드 자리표시자</b> 개수를 센다.

@@ -7,6 +7,7 @@ import { SANCTION_STATUS, type InformalSanctionDto } from '@/services/business/u
 import { ApprovalStepper } from './ApprovalStepper';
 import { ApprovalCollaborationPanel } from './ApprovalCollaborationPanel';
 import { ApprovalReferencePanel } from './ApprovalReferencePanel';
+import { ApprovalAttachmentList } from './ApprovalAttachmentList';
 import { formatYmd } from './approval-hub-model';
 
 /*
@@ -101,6 +102,12 @@ export function ApprovalDocumentView({
 
   return (
     <>
+      {/* [V2_151] 대리결재 — 서버가 지금 대신 결정할 수 있다고 판정했을 때만 보인다. */}
+      {detail?.onBehalfOfId && (
+        <p role="note" className="rounded-md border border-primary/30 bg-primary/10 p-3 text-sm text-foreground">
+          부재 중인 {detail.onBehalfOfNm || detail.onBehalfOfId} 님 대신 결재합니다. 결정은 원결재자와 따로 기록되고 원결재자에게 알림이 갑니다.
+        </p>
+      )}
       {detail && (
         <ApprovalCollaborationPanel
           key={`${selectedKey}-${detail.atrzCycl ?? ''}`}
@@ -113,6 +120,7 @@ export function ApprovalDocumentView({
         <h3 className="font-semibold">{document.docTtl || '문서 내용'} · {document.atrzCycl ?? 1}차</h3>
         <p className="whitespace-pre-wrap break-words text-sm text-foreground">{document.docCn || '작성한 본문이 없습니다.'}</p>
       </section>
+      <ApprovalAttachmentList atchFileSn={(detail ?? document).atchFileSn} />
       <section aria-label="결재 진행 상태" className="rounded-md border border-border p-4">
         <h3 className="mb-3 text-[length:var(--font-size-body)] font-semibold text-foreground">결재 진행 상태</h3>
         <ApprovalStepper steps={workflowSteps} stages={document.stages} currentUserId={currentUserId} />
@@ -164,6 +172,7 @@ export function ApprovalDocumentView({
           <summary className="cursor-pointer font-semibold">{revision.atrzCycl}차 · {revision.docTtl || '제목 없음'} · {revision.aprvYn === SANCTION_STATUS.REJECTED ? '반려' : revision.aprvYn === SANCTION_STATUS.WITHDRAWN ? '회수' : revision.aprvYn === SANCTION_STATUS.APPROVED ? '승인 완료' : '대기'}</summary>
           <p className="my-3 whitespace-pre-wrap break-words text-sm">{revision.docCn || '작성한 본문이 없습니다.'}</p>
           <ApprovalStepper stages={revision.stages} currentUserId={currentUserId} accessibleLabel={`${revision.atrzCycl}차 결재선 진행`} />
+          <ApprovalAttachmentList atchFileSn={revision.atchFileSn} label={`${revision.atrzCycl}차 첨부 파일`} />
         </details>)}
       </section> : null}
     </>
