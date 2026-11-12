@@ -24,7 +24,7 @@ import {
   userAbsenceAdminService,
 } from '@/services/foundation/system/UserAbsenceAdminService';
 import { useToast } from '@/app/components/ui/toast';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column, type ServerSortState } from '@/app/components/ui/standard-data-table';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
@@ -180,10 +180,13 @@ function useUserOrgUsers({ activeTab, searchKeyword, userPage, userPageSize, ini
 }) {
   // [2026-09-26 DIP B5 F4] 사용자 탭의 계정 상태·소속 부서·로그인 잠금 조건. 부재 탭은 전체 사용자를 그대로 본다.
   const [userFilters, setUserFilters] = useState<UserListFilters>(EMPTY_USER_FILTERS);
+  // [Wave 4 GAP-UI-001] 사용자 탭의 서버 정렬 — 로그인 ID·이름·등록일시(인덱스가 받치는 열)로 목록 전체를 정렬한다.
+  const [userSort, setUserSort] = useState<ServerSortState>({});
   const appliedUserFilters = activeTab === 'USERS' ? userFilters : EMPTY_USER_FILTERS;
+  const appliedUserSort = activeTab === 'USERS' ? userSort : {};
   const hasUserFilter = Boolean(appliedUserFilters.userSttsCd || appliedUserFilters.ognzId || appliedUserFilters.lckYn);
   const { data: usersData, isLoading: isUsersLoading, isError: isUsersError, error: usersError, refetch: refetchUsers } = useQuery({
-    queryKey: ['admin-users', searchKeyword, userPage, userPageSize, appliedUserFilters],
+    queryKey: ['admin-users', searchKeyword, userPage, userPageSize, appliedUserFilters, appliedUserSort],
     // 서버(GET /admin/system/users)는 searchKeyword + page(1부터)·size 를 읽는다(ADR-0036).
     // 종전의 옛 페이지 이름은 서버가 읽지 않아 그대로 무시됐고,
     // 몇 페이지를 눌러도 항상 첫 페이지가 왔다(死 페이저 — 감사 m-2).
@@ -192,18 +195,20 @@ function useUserOrgUsers({ activeTab, searchKeyword, userPage, userPageSize, ini
       ...(appliedUserFilters.userSttsCd ? { userSttsCd: appliedUserFilters.userSttsCd } : {}),
       ...(appliedUserFilters.ognzId ? { ognzId: appliedUserFilters.ognzId } : {}),
       ...(appliedUserFilters.lckYn ? { lckYn: appliedUserFilters.lckYn } : {}),
+      ...(appliedUserSort.sortBy ? { sortBy: appliedUserSort.sortBy, sortDir: appliedUserSort.sortDir ?? 'asc' } : {}),
     }),
     enabled: activeTab === 'USERS' || activeTab === 'ABSENCES',
     // 서버 프리페치가 실패했다면(null) 시드를 쓰지 않는다 — 빈 목록을 시드로 넣으면
     // staleTime 동안 재조회가 막혀 조회 실패가 '0건'으로 위장된다(감사 P1-1).
-    initialData: (userPage === 1 && userPageSize === 10 && !searchKeyword && !hasUserFilter) ? (initialUsers ?? undefined) : undefined
+    initialData: (userPage === 1 && userPageSize === 10 && !searchKeyword && !hasUserFilter && !appliedUserSort.sortBy)
+      ? (initialUsers ?? undefined) : undefined
   });
   const users = useMemo(() => {
     const list = usersData?.list;
     return (Array.isArray(list) ? list.filter(Boolean) : []) as UserManage[];
   }, [usersData]);
 
-  return { userFilters, setUserFilters, hasUserFilter, usersData, isUsersLoading, isUsersError, usersError, refetchUsers, users };
+  return { userFilters, setUserFilters, userSort, setUserSort, hasUserFilter, usersData, isUsersLoading, isUsersError, usersError, refetchUsers, users };
 }
 
 /**
@@ -311,6 +316,32 @@ function useUserOrgWriteActions({
       await queryClient.invalidateQueries({ queryKey: ['admin-user-detail', selectedItemId] });
     } catch (error) {
       toast(failureMessage(error, '계정 잠금을 해제하지 못했습니다.'), 'error');
+    } finally {
+      finishNonFormAction(operation);
+    }
+  };
+
+  /**
+   * [V2_153] 강제 로그아웃. 대상의 모든 로그인 세션을 지금 끊는다 — 계정 상태·비밀번호는 그대로라 다시 로그인하면 들어온다. 확인 본문에
+   * 대상과 결과를 밝힌다(누구의 무엇을 끊는지 모른 채 누르지 않게).
+   */
+  const handleForceLogout = async () => {
+    const operation = 'force-logout' as const;
+    if (!selectedItemId || !beginNonFormAction(operation)) return;
+    try {
+      const targetName = (selectedItem as UserManage)?.userNm ?? String(selectedItemId);
+      const ok = await confirm({
+        title: '강제 로그아웃',
+        message: `'${targetName}(${selectedItemId})' 사용자의 모든 로그인 세션을 지금 끊습니다. 계정 상태와 비밀번호는 바뀌지 않아 다시 로그인할 수 있습니다.`,
+        confirmText: '강제 로그아웃',
+        cancelText: '취소',
+        variant: 'destructive',
+      });
+      if (!ok) return;
+      await userAdminService.forceLogout(selectedItemId as string);
+      toast(`'${targetName}' 사용자의 세션을 끊었습니다.`, 'success');
+    } catch (error) {
+      toast(failureMessage(error, '강제 로그아웃하지 못했습니다.'), 'error');
     } finally {
       finishNonFormAction(operation);
     }
@@ -496,6 +527,7 @@ function useUserOrgWriteActions({
     absencePendingId,
     handleToggleAbsence,
     handleUnlockUser,
+    handleForceLogout,
     handleDeleteUser,
     handleDeleteDept,
     handleBulkDelete,
@@ -823,7 +855,7 @@ export default function UserOrgHubClient({
     }
   };
 
-  const { userFilters, setUserFilters, hasUserFilter, usersData, isUsersLoading, isUsersError, usersError, refetchUsers, users } = useUserOrgUsers({
+  const { userFilters, setUserFilters, userSort, setUserSort, hasUserFilter, usersData, isUsersLoading, isUsersError, usersError, refetchUsers, users } = useUserOrgUsers({
     activeTab, searchKeyword, userPage, userPageSize, initialUsers,
   });
   const userFilterId = useId();
@@ -907,7 +939,7 @@ export default function UserOrgHubClient({
   } = useUserOrgSelection({ activeTab, selectedItemId, users, departments, flattenedDepts });
 
   const {
-    absencePendingId, handleToggleAbsence, handleUnlockUser, handleDeleteUser, handleDeleteDept,
+    absencePendingId, handleToggleAbsence, handleUnlockUser, handleForceLogout, handleDeleteUser, handleDeleteDept,
     handleBulkStatusUpdate, handleBulkDeptMove, handleSaveDeptHierarchy, userBulkActions,
   } = useUserOrgWriteActions({
     lock, selectedItemId, setSelectedItemId, selectedItem, selectedDept, absenceOf, refetchUsers, refetchDepts, dialogs, dept: deptTree,
@@ -947,14 +979,17 @@ export default function UserOrgHubClient({
       canUpdateUser={canUpdateUser}
       canResetPassword={canResetPassword}
       canUnlock={displayedUser?.lckYn === 'Y' && canChangeUserStatus}
+      canForceLogout={canChangeUserStatus}
       canDeleteUser={canDeleteUser}
       locked={isSaving}
       detailLoaded={Boolean(selectedUserDetail)}
       unlockBusy={activeWriteOperation === 'unlock-user'}
+      forceLogoutBusy={activeWriteOperation === 'force-logout'}
       deleteBusy={activeWriteOperation === 'delete-user'}
       onOpenEdit={dialogs.handleOpenUserEdit}
       onOpenPasswordReset={dialogs.handleOpenPasswordReset}
       onUnlock={() => void handleUnlockUser()}
+      onForceLogout={() => void handleForceLogout()}
       handleDeleteUser={handleDeleteUser}
     />
   );
@@ -1081,6 +1116,14 @@ export default function UserOrgHubClient({
                   className="border-none shadow-none bg-transparent"
                   // ⚠ 총 건수는 셸의 결과 툴바가 단독으로 소유한다 — 여기에 totalCount 를 다시 넘기면
                   //   같은 수치가 표 위아래로 두 번 나온다(work-list-adoption-census 가 red 로 막는다).
+                  // [Wave 4] 사용자 탭은 이름·사용자 ID·등록일 열을 서버가 목록 전체로 정렬한다. 정렬이 바뀌면 1페이지로 돌아간다.
+                  serverSort={activeTab === 'USERS' ? {
+                      ...userSort,
+                      onSortChange: (next) => {
+                          setUserSort(next);
+                          if (userPage !== 1) goToPage(1);
+                      },
+                  } : undefined}
                   pagination={{
                       currentPage: userPage,
                       totalPages: usersData?.totalPage || 1,

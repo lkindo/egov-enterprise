@@ -39,7 +39,12 @@ public class LoginLogManageService extends BaseAbstractService {
     }
 
     public List<LoginLogDto> selectLoginLogList(@NonNull BaseSearchDto searchVO) {
-        Pageable pageable = searchVO.toPageable();
+        return selectLoginLogList(searchVO, org.springframework.data.domain.Sort.unsorted());
+    }
+
+    /** [Wave 4] 허용 목록이 고른 정렬(접속일시 오름·내림)로 조회한다. 정렬이 없으면 최신순이다. */
+    public List<LoginLogDto> selectLoginLogList(@NonNull BaseSearchDto searchVO, org.springframework.data.domain.Sort sort) {
+        Pageable pageable = searchVO.toPageable(required(sort, "sort 는 null 일 수 없습니다"));
         Page<LoginLog> page = loginLogRepository.searchLoginLogs(
                 searchVO.getSearchKeyword(), searchVO.getSearchKeywordFrom(), searchVO.getSearchKeywordTo(),
                 required(pageable, "pageable 는 null 일 수 없습니다"));

@@ -151,7 +151,7 @@ export const getUsersOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "searchKeyword": z.string().optional(), "userSttsCd": z.string().optional(), "ognzId": z.string().optional(), "lckYn": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "searchKeyword": z.string().optional(), "userSttsCd": z.string().optional(), "ognzId": z.string().optional(), "lckYn": z.string().optional(), "sortBy": z.string().optional(), "sortDir": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseUserListItemDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseUserListItemDtoResponseSchema,
@@ -191,6 +191,25 @@ export const deleteUsersOperation = /*#__PURE__*/ (() => {
   pathSchema: null,
   querySchema: null,
   requestSchema: z.array(z.string()).max(100),
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const forceLogoutOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "forceLogout",
+  method: "post",
+  path: "/api/v1/admin/system/users/{userId}/logout",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "userId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: null,
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],

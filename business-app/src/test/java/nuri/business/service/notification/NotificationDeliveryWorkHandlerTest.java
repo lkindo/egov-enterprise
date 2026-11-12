@@ -19,7 +19,7 @@ class NotificationDeliveryWorkHandlerTest {
     final SimpMessagingTemplate messaging = mock(SimpMessagingTemplate.class);
     final ObjectMapper mapper = new ObjectMapper();
     final NotificationDeliveryWorkHandler handler = new NotificationDeliveryWorkHandler(
-            repository, new NotificationMapperImpl(), messaging, mapper);
+            repository, new NotificationMapperImpl(), new StompNotificationPushAdapter(messaging), mapper);
 
     private DurableWork work() {
         return new DurableWork(UUID.randomUUID(), handler.type(), mapper.writeValueAsString(

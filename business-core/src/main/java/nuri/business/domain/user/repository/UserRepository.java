@@ -69,4 +69,13 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
     @org.springframework.data.jpa.repository.Modifying
     @Query(value = "UPDATE tb_user_info SET last_lgt_dt = :loggedOutAt WHERE esntl_id = :esntlId", nativeQuery = true)
     int recordLogout(@Param("esntlId") String esntlId, @Param("loggedOutAt") java.time.LocalDateTime loggedOutAt);
+
+    /**
+     * 세션차수를 한 문장으로 1 올린다(V2_153). 그 전에 발급된 access·refresh token 이 모두 거부된다 — 비밀번호 변경·초기화,
+     * 계정 상태 변경, 로그인 실패 잠금, 관리자 강제 로그아웃이 부른다. 엔티티의 {@code ssnCycl} 은 읽기 전용이라 이 UPDATE 만
+     * 쓰고, 겹친 증가도 서로 덮지 않는다. 감사 컬럼은 바꾸지 않는다. 앞서 바꾼 엔티티를 먼저 반영한다(같은 행을 이어 쓰는 순서).
+     */
+    @org.springframework.data.jpa.repository.Modifying(flushAutomatically = true)
+    @Query(value = "UPDATE tb_user_info SET ssn_cycl = ssn_cycl + 1 WHERE esntl_id IN (:esntlIds)", nativeQuery = true)
+    int advanceSessionCycle(@Param("esntlIds") java.util.Collection<String> esntlIds);
 }

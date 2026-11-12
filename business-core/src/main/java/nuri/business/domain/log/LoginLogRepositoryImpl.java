@@ -32,7 +32,7 @@ public class LoginLogRepositoryImpl implements LoginLogRepositoryCustom {
                         creatDtBetween(searchBgnDe, searchEndDe))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(loginLog.crtDt.desc())
+                .orderBy(loginLogOrder(pageable))
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
@@ -44,6 +44,18 @@ public class LoginLogRepositoryImpl implements LoginLogRepositoryCustom {
 
         return PageableExecutionUtils.getPage(Objects.requireNonNull(content), Objects.requireNonNull(pageable),
                 countQuery::fetchOne);
+    }
+
+    /**
+     * [Wave 4 GAP-UI-001] 접속일시 정렬. 허용 목록(컨트롤러)이 고른 접속일시 오름차순만 바꾸고, 그 밖은 기본 최신순
+     * {@code loginLog.crtDt.desc()} 다. 같은 시각은 로그인 일련번호로 끊어 페이지가 바뀌어도 순서가 흔들리지 않게 한다.
+     */
+    private static com.querydsl.core.types.OrderSpecifier<?>[] loginLogOrder(Pageable pageable) {
+        var crtDt = pageable.getSort().getOrderFor("crtDt");
+        if (crtDt != null && crtDt.isAscending()) {
+            return new com.querydsl.core.types.OrderSpecifier<?>[] {loginLog.crtDt.asc(), loginLog.lgnSn.asc()};
+        }
+        return new com.querydsl.core.types.OrderSpecifier<?>[] {loginLog.crtDt.desc(), loginLog.lgnSn.desc()};
     }
 
     /**

@@ -87,7 +87,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
                 .where(condition)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(user.userId.asc())
+                .orderBy(userListOrder(pageable))
                 .fetch()
                 // [2026-10-18] 목록은 휴대전화·이메일을 가린다. 원문은 정보주체를 기록하는 상세 조회에서만 나간다(UserDto#withMaskedContacts).
                 .stream().map(UserDto::withMaskedContacts).toList();
@@ -99,6 +99,28 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
                 .fetchOne();
 
         return new PageImpl<>(content, pageable, total);
+    }
+
+    /**
+     * [Wave 4 GAP-UI-001] 목록 정렬 — 컨트롤러 허용 목록이 고른 속성만 고정 경로로 바꾼다(임의 경로를 만들지 않는다). 같은 이름·등록일시
+     * 끼리는 로그인 ID 로 끊어 페이지가 바뀌어도 순서가 흔들리지 않게 한다. 정렬이 없으면 종전대로 로그인 ID 오름차순이다.
+     */
+    private static com.querydsl.core.types.OrderSpecifier<?>[] userListOrder(Pageable pageable) {
+        List<com.querydsl.core.types.OrderSpecifier<?>> orders = new java.util.ArrayList<>();
+        for (org.springframework.data.domain.Sort.Order order : pageable.getSort()) {
+            com.querydsl.core.types.Order direction = order.isAscending()
+                    ? com.querydsl.core.types.Order.ASC : com.querydsl.core.types.Order.DESC;
+            switch (order.getProperty()) {
+                case "userId" -> orders.add(new com.querydsl.core.types.OrderSpecifier<>(direction, user.userId));
+                case "userNm" -> orders.add(new com.querydsl.core.types.OrderSpecifier<>(direction, user.userNm));
+                case "crtDt" -> orders.add(new com.querydsl.core.types.OrderSpecifier<>(direction, user.crtDt));
+                default -> { }
+            }
+        }
+        if (orders.stream().noneMatch(order -> order.getTarget().equals(user.userId))) {
+            orders.add(user.userId.asc());
+        }
+        return orders.toArray(new com.querydsl.core.types.OrderSpecifier<?>[0]);
     }
 
     @Override

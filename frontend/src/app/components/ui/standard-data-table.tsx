@@ -39,6 +39,25 @@ export interface Column<T> {
    * 클라이언트 정렬이다 — 서버 페이지네이션·서버 정렬 계약은 바꾸지 않는다.
    */
   sortKey?: keyof T;
+  /**
+   * [Wave 4 GAP-UI-001] 서버 정렬 키(opt-in). 표에 {@link StandardDataTableBaseProps.serverSort} 가 있을 때만 쓰인다 — 이 열의 머리글을
+   * 누르면 서버에 정렬을 요청해 **목록 전체**를 정렬한다(현재 페이지 고지를 하지 않는다). 키는 서버의 허용 목록(인덱스가 받치는 열)과
+   * 같아야 한다. 같은 열에 sortKey 를 함께 두면 serverSort 를 주는 표에서는 서버 정렬이, 주지 않는 표에서는 현재 페이지 정렬이 된다.
+   */
+  serverSortKey?: string;
+}
+
+/** 서버 정렬 상태(Wave 4). sortBy 가 없으면 서버 기본 순서다. */
+export interface ServerSortState {
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
+}
+
+/** 머리글을 누를 때의 다음 서버 정렬 — 기본 → 오름차순 → 내림차순 → 기본(클라이언트 정렬과 같은 순환). */
+export function nextServerSort(current: ServerSortState, key: string): ServerSortState {
+  if (current.sortBy !== key) return { sortBy: key, sortDir: 'asc' };
+  if (current.sortDir !== 'desc') return { sortBy: key, sortDir: 'desc' };
+  return {};
 }
 
 /**
@@ -165,6 +184,11 @@ interface StandardDataTableBaseProps<T> {
    * (work-screen-grammar-contract, 사유 필수)에 등재돼야 하며 목록 밖의 소비는 red 다(카탈로그 §4 '업무 표 행 토큰').
    */
   rowDensity?: 'default' | 'work';
+  /**
+   * [Wave 4 GAP-UI-001] 서버 정렬(opt-in). serverSortKey 를 단 열의 정렬을 서버에 맡긴다 — 표는 상태를 그리기만 하고, 바뀐 정렬을
+   * onSortChange 로 알린다(조회 조건으로 다시 읽는 일은 화면이 한다). 주지 않으면 serverSortKey 는 무시되고 DOM 이 종전과 같다.
+   */
+  serverSort?: ServerSortState & { onSortChange: (next: ServerSortState) => void };
 }
 
 /** 행 밀도별 셀 패딩. 완전한 리터럴로 둔다(Tailwind 소스 스캔). */
@@ -326,6 +350,7 @@ export function StandardDataTable<T extends object>({
   rowTestId,
   fillHeight = false,
   rowDensity = 'default',
+  serverSort,
 }: StandardDataTableProps<T>) {
 
   const cellPadClass = CELL_PAD_CLASS[rowDensity];
@@ -488,7 +513,7 @@ export function StandardDataTable<T extends object>({
    * 읽는다. 로그 조사처럼 "가장 최근 것부터" 를 전제로 판단하는 화면에서 이 오해는 결론을 바꾼다.
    * 서버 정렬 계약을 만들기 전까지, 최소한 범위를 화면이 말하게 한다.
    */
-  const sortScopeIsPageOnly = columns.some((column) => column.sortKey !== undefined)
+  const sortScopeIsPageOnly = columns.some((column) => column.sortKey !== undefined && !(serverSort && column.serverSortKey))
     && pagination !== undefined
     && pagination.totalPages > 1;
   /*
@@ -499,6 +524,9 @@ export function StandardDataTable<T extends object>({
   const sortButtonTitle = pagination !== undefined && pagination.totalPages <= 1
     ? undefined
     : '현재 페이지의 행만 정렬합니다';
+
+  /** 서버 정렬을 받는 열 — serverSort 가 있을 때만. */
+  const serverSortColumns = serverSort ? columns.filter((column) => column.serverSortKey !== undefined) : [];
 
   const desktopScrollRegionProps = useOverflowRegion<HTMLDivElement>(`${accessibleLabel} 스크롤 영역`);
 
@@ -649,17 +677,28 @@ export function StandardDataTable<T extends object>({
                   전체 선택
                 </label>
               ) : null}
-              {leafColumns.some((c) => c.getCanSort()) ? (
+              {leafColumns.some((c) => c.getCanSort()) || serverSortColumns.length > 0 ? (
                 <label className="flex items-center gap-2 text-sm">
                   정렬 기준
                   <select
                     className="h-[var(--control-h-sm)] rounded-md border border-input bg-background px-2 text-sm"
                     value={(() => {
+                      if (serverSort?.sortBy && serverSortColumns.some((c) => c.serverSortKey === serverSort.sortBy)) {
+                        return `server:${serverSort.sortBy}:${serverSort.sortDir ?? 'asc'}`;
+                      }
                       const sorted = leafColumns.find((c) => c.getIsSorted());
                       return sorted ? `${sorted.id}:${sorted.getIsSorted()}` : '';
                     })()}
                     onChange={(event) => {
-                      const [id, direction] = event.target.value.split(':');
+                      const value = event.target.value;
+                      if (value.startsWith('server:')) {
+                        const [, key, direction] = value.split(':');
+                        table.resetSorting();
+                        serverSort?.onSortChange({ sortBy: key, sortDir: direction === 'desc' ? 'desc' : 'asc' });
+                        return;
+                      }
+                      const [id, direction] = value.split(':');
+                      if (serverSort?.sortBy) serverSort.onSortChange({});
                       if (!id) { table.resetSorting(); return; }
                       leafColumns.find((c) => c.id === id)?.toggleSorting(direction === 'desc');
                     }}
@@ -667,7 +706,14 @@ export function StandardDataTable<T extends object>({
                     <option value="">정렬 안 함</option>
                     {columns.map((column, idx) => {
                       const tanColumn = leafColumns[idx];
-                      if (!tanColumn?.getCanSort() || typeof column.header !== 'string') return null;
+                      if (typeof column.header !== 'string') return null;
+                      if (serverSort && column.serverSortKey) {
+                        return [
+                          <option key={`server:${column.serverSortKey}:asc`} value={`server:${column.serverSortKey}:asc`}>{`${column.header} 오름차순`}</option>,
+                          <option key={`server:${column.serverSortKey}:desc`} value={`server:${column.serverSortKey}:desc`}>{`${column.header} 내림차순`}</option>,
+                        ];
+                      }
+                      if (!tanColumn?.getCanSort()) return null;
                       return [
                         <option key={`${tanColumn.id}:asc`} value={`${tanColumn.id}:asc`}>{`${column.header} 오름차순`}</option>,
                         <option key={`${tanColumn.id}:desc`} value={`${tanColumn.id}:desc`}>{`${column.header} 내림차순`}</option>,
@@ -700,8 +746,11 @@ export function StandardDataTable<T extends object>({
                 )}
                 {columns.map((column, idx) => {
                   const tanColumn = leafColumns[idx];
-                  const canSort = tanColumn?.getCanSort() ?? false;
-                  const sortDirection = canSort ? tanColumn.getIsSorted() : false;
+                  const serverKey = serverSort ? column.serverSortKey : undefined;
+                  const canSort = serverKey !== undefined || (tanColumn?.getCanSort() ?? false);
+                  const sortDirection = serverKey !== undefined
+                    ? (serverSort?.sortBy === serverKey ? (serverSort.sortDir ?? 'asc') : false)
+                    : canSort ? tanColumn.getIsSorted() : false;
                   return (
                     <th
                       key={`header-${idx}`}
@@ -719,9 +768,16 @@ export function StandardDataTable<T extends object>({
                       {canSort ? (
                         <button
                           type="button"
-                          onClick={tanColumn.getToggleSortingHandler()}
+                          onClick={serverKey !== undefined
+                            ? () => {
+                                if (!serverSort) return;
+                                table.resetSorting();
+                                serverSort.onSortChange(nextServerSort(serverSort, serverKey));
+                              }
+                            : tanColumn.getToggleSortingHandler()}
                           // 서버 페이지네이션은 그대로다 — 정렬 범위를 정직하게 문서화한다(쪽이 하나면 말하지 않는다).
-                          title={sortButtonTitle}
+                          // 서버 정렬 열은 목록 전체를 정렬하므로 현재 페이지 고지를 하지 않는다.
+                          title={serverKey !== undefined ? '목록 전체를 정렬합니다' : sortButtonTitle}
                           className="flex items-center gap-2 font-semibold text-foreground transition-colors hover:text-primary outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           {column.header}

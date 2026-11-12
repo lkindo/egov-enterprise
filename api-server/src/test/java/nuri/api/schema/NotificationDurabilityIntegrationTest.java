@@ -188,7 +188,7 @@ class NotificationDurabilityIntegrationTest {
         return jobs.findByJobMngNo(key).orElseThrow();
     }
     private void due() { jdbc.update(VendorTestSql.sql(jdbc, "UPDATE tb_sys_job SET job_prnmnt_dt=TIMESTAMP '1970-01-01 00:00:00' WHERE job_mng_no=?"), job().getJobMngNo()); }
-    private NotificationDeliveryWorkHandler handler() { return new NotificationDeliveryWorkHandler(inbox, notificationMapper, transport, mapper); }
+    private NotificationDeliveryWorkHandler handler() { return new NotificationDeliveryWorkHandler(inbox, notificationMapper, new nuri.business.service.notification.StompNotificationPushAdapter(transport), mapper); }
     private DurableWorkDispatcher newWorker() { return new DurableWorkDispatcher(jobs, List.of(handler()), manager, false); }
     private void authenticate() {
         var principal = CustomUserDetails.builder().userId(receiver).esntlId(receiver).enabled(true).permissions(List.of()).build();

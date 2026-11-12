@@ -93,7 +93,7 @@ refresh_triggers:
 | GAP-CONTRACT-001 | P2 | open | API/DTO | 입력 계약 원장 표적의 제약을 게이트가 검사하고 `@Valid` 없는 제약 DTO 도 막는다 — 원장 밖 요청 본문은 저장 경로가 생기면 다시 판정한다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-FE-001 | P3 | accepted-risk | frontend security | `style-src` 의 `unsafe-inline` 은 sonner 가 nonce 를 지원하거나 교체될 때까지 받아들인 위험이다 — 세분화하면 `csp-policy` 계약이 붉다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-CODE-001 | P3 | accepted-risk | institution code | 기관코드 원장·수신 로그에는 앱 쓰기 경로가 없고 수신 확인은 `procSe` 만 바꾼다 — 쓰기 경로와 그 권한은 공급처 명세가 확정된 뒤에 설계한다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
-| GAP-UI-001 | P3 | deferred | table sorting | 표 열 정렬은 현재 페이지 행만 재배열하고 화면이 그 범위를 고지한다 — 날짜 외 열의 전체 정렬은 실제 요구와 인덱스 계획을 함께 설계한다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
+| GAP-UI-001 | P3 | open | table sorting | 사용자·로그인 로그·결재 목록은 허용 목록과 인덱스가 받치는 열로 서버 정렬한다 — 나머지 로그 열은 현재 페이지 정렬이고, 인덱스 없는 열은 서버 정렬로 올리지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-COPY-001 | P3 | open | visible copy norms | 화면 용어 원장의 규범 검토에서 기록한 편차(날짜 형식·확인 문구·대기 라벨 등)가 남았다 — 화면별로 처분하고 일괄 치환하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-DEPT-001 | P3 | open | department hierarchy | 부서 저장이 상위 연결을 지우던 경로는 닫혔고 이미 지워진 행은 저장소로 알 수 없다 — NULL 집계로 손상을 추정해 보정하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-FILE-001 | P3 | open | attachment cleanup | 첨부 실물 삭제는 영속 작업·제한 재시도로 처리하고 운영 저장소 복구·고아 후보 처리는 미완료다 — 고아 파일을 추정해 지우지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |

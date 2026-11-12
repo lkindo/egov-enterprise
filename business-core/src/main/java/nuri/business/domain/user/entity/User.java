@@ -74,6 +74,22 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "last_lgt_dt", insertable = false, updatable = false)
     private LocalDateTime lastLgtDt;
 
+    /**
+     * 세션차수(V2_153). 토큰은 발급 때의 값을 담고, 이 값이 늘면 그 전에 발급된 access·refresh token 이 모두 거부된다
+     * (JwtTokenProvider). 읽기 전용 매핑이다 — 쓰기는 {@code UserRepository#advanceSessionCycle} 의 원자적 UPDATE 만 한다.
+     * 로그아웃 시각과 같은 이유다: 엔티티 저장은 모든 컬럼을 다시 쓰므로, 쓰기 가능하게 두면 겹친 저장이 읽어 둔 옛 차수로 무효화를
+     * 되돌린다. 새 행은 DB 기본값(0)을 받는다.
+     */
+    @Getter(AccessLevel.NONE)
+    @Column(name = "ssn_cycl", precision = 7, scale = 0, nullable = false, insertable = false, updatable = false)
+    @org.hibernate.annotations.ColumnDefault("0")
+    private java.math.BigInteger ssnCycl;
+
+    /** 세션차수. 아직 DB 에서 다시 읽지 않은 새 행이면 기본값 0 이다. */
+    public int getSessionCycle() {
+        return ssnCycl == null ? 0 : ssnCycl.intValueExact();
+    }
+
     @Column(length = 32)
     private String otpSecret;
 

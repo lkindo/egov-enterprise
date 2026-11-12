@@ -58,13 +58,23 @@ public class LoginLogApiController {
 
     private final LoginLogManageService loginLogManageService;
 
-    @Operation(summary = "로그인 로그 목록 조회")
+    /**
+     * [Wave 4 GAP-UI-001] 로그인 로그 정렬 허용 목록 — 접속일시(ix_tb_login_log_crt_dt) 하나다. 비우면 최신순이고, 같은 시각은 로그인
+     * 일련번호로 끊는다. 그 밖의 열(로그인 ID·접속 방식)은 인덱스가 없어 받지 않는다(400).
+     */
+    private static final nuri.business.domain.common.ServerSortWhitelist LOGIN_LOG_SORT =
+            nuri.business.domain.common.ServerSortWhitelist.of(java.util.Map.of("crtDt", "crtDt"));
+
+    @Operation(summary = "로그인 로그 목록 조회",
+            description = "정렬은 sortBy=crtDt(접속일시)와 sortDir(asc·desc)로 목록 전체에 걸린다. 비우면 접속일시 최신순이고 그 밖의 값은 400 입니다.")
     @GetMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.LoginLogApiController#getLoginLogList')")
     public ResponseEntity<ApiResponse<PageResponse<LoginLogDto>>> getLoginLogList(
-            @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
+            @Valid @ModelAttribute BaseSearchDto searchDto,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String sortBy,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String sortDir) throws Exception {
 
-        List<LoginLogDto> list = loginLogManageService.selectLoginLogList(searchDto);
+        List<LoginLogDto> list = loginLogManageService.selectLoginLogList(searchDto, LOGIN_LOG_SORT.resolve(sortBy, sortDir));
         int totCnt = loginLogManageService.selectLoginLogListTotCnt(searchDto);
 
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchDto.getPageIndex(), searchDto.getPageUnit(), totCnt)));

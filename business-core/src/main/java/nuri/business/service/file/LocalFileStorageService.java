@@ -33,10 +33,13 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 /**
- * 로컬 파일 저장 서비스
+ * 로컬 파일 저장 서비스. [Wave 4] 기본 저장소다 — {@code file.storage.type} 이 비었거나 {@code local} 이면 켜지고, {@code s3} 이면
+ * S3 호환 어댑터({@code S3FileStorageConfiguration})가 대신한다.
  */
 @Slf4j
 @Service
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(prefix = "file.storage", name = "type",
+        havingValue = "local", matchIfMissing = true)
 public class LocalFileStorageService implements FileStorageService {
 
     private final Path rootLocation;

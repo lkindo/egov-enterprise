@@ -175,6 +175,8 @@ public class JwtTokenProvider {
      * 사용할 수 있었다</b> — 두 토큰이 같은 키로 서명되고 구조가 같아 구분할 근거가 없었기 때문이다.
      */
     private static final String CLAIM_TOKEN_TYPE = "typ";
+    /** 세션차수 클레임(V2_153). 이 값이 사용자의 현재 차수와 다르면 토큰을 거부한다. 없는 토큰(이전 발급분)은 0 으로 읽는다. */
+    private static final String CLAIM_SESSION_CYCLE = "ssn";
     private static final String TYPE_ACCESS = "access";
     private static final String TYPE_REFRESH = "refresh";
 
@@ -183,6 +185,12 @@ public class JwtTokenProvider {
     }
 
     public String createAccessToken(String userId, String role, String mfaVersion, java.time.Instant verifiedAt) {
+        return createAccessToken(userId, role, mfaVersion, verifiedAt, null);
+    }
+
+    /** 세션차수를 담아 발급한다(V2_153). {@code sessionCycle} 이 null 이면 클레임을 싣지 않는다(0 으로 읽힌다). */
+    public String createAccessToken(String userId, String role, String mfaVersion, java.time.Instant verifiedAt,
+            Integer sessionCycle) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + accessTokenValidityInMilliseconds);
         return Jwts.builder()
@@ -191,6 +199,7 @@ public class JwtTokenProvider {
                 .claim(CLAIM_TOKEN_TYPE, TYPE_ACCESS)
                 .claim("mfa_v", mfaVersion)
                 .claim("mfa_at", verifiedAt == null ? null : verifiedAt.getEpochSecond())
+                .claim(CLAIM_SESSION_CYCLE, sessionCycle)
                 .issuedAt(now)
                 .expiration(validity)
                 .signWith(key)
@@ -220,11 +229,25 @@ public class JwtTokenProvider {
 
     public String createRefreshToken(@org.jspecify.annotations.NonNull String userId, Date expiresAt,
             String mfaVersion, java.time.Instant verifiedAt) {
+        return createRefreshToken(userId, expiresAt, mfaVersion, verifiedAt, null);
+    }
+
+    /** 세션차수를 담아 새 수명으로 발급한다(V2_153, 로그인). */
+    public String createRefreshToken(@org.jspecify.annotations.NonNull String userId,
+            String mfaVersion, java.time.Instant verifiedAt, Integer sessionCycle) {
+        return createRefreshToken(userId, new Date(System.currentTimeMillis() + refreshTokenValidityInMilliseconds),
+                mfaVersion, verifiedAt, sessionCycle);
+    }
+
+    /** 세션차수를 담아 발급한다(V2_153). 재발급은 저장된 refresh token 의 절대 만료를 물려준다. */
+    public String createRefreshToken(@org.jspecify.annotations.NonNull String userId, Date expiresAt,
+            String mfaVersion, java.time.Instant verifiedAt, Integer sessionCycle) {
         return Jwts.builder()
                 .subject(userId)
                 .claim(CLAIM_TOKEN_TYPE, TYPE_REFRESH)
                 .claim("mfa_v", mfaVersion)
                 .claim("mfa_at", verifiedAt == null ? null : verifiedAt.getEpochSecond())
+                .claim(CLAIM_SESSION_CYCLE, sessionCycle)
                 .issuedAt(new Date())
                 .expiration(expiresAt)
                 .signWith(key)
@@ -238,11 +261,35 @@ public class JwtTokenProvider {
         new org.springframework.security.authentication.AccountStatusUserDetailsChecker().check(userDetails);
         rejectIfIssuedBeforeCredentialChange(claims.getIssuedAt(), userDetails);
         rejectIfIssuedBeforeLogout(claims.getIssuedAt(), userDetails);
+        assertSessionCycle(userDetails, sessionCycle(claims));
         var evidence = mfaEvidence(claims);
         assertMfaSession(userDetails, evidence);
         var authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
         authentication.setDetails(evidence);
         return authentication;
+    }
+
+    /** 토큰이 담은 세션차수(V2_153). 클레임이 없는 토큰(이전 발급분)은 0 이다. */
+    public int getSessionCycle(String token) {
+        return sessionCycle(Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload());
+    }
+
+    private static int sessionCycle(io.jsonwebtoken.Claims claims) {
+        Number cycle = claims.get(CLAIM_SESSION_CYCLE, Number.class);
+        return cycle == null ? 0 : cycle.intValue();
+    }
+
+    /**
+     * 토큰의 세션차수가 사용자의 현재 차수와 같아야 한다(V2_153). 비밀번호 변경·상태 변경·잠금·권한 그룹 회수·관리자 강제 로그아웃이
+     * 차수를 올리면 그 전에 발급된 access·refresh token 이 모두 여기서 거부된다 — 시각 비교(로그아웃·비밀번호 변경)와 달리 같은 초의
+     * 창도, 노드 시계 차이도 없다. 현재 차수를 모르는 주체(차수를 읽지 않는 어댑터)는 이 기준으로 거부하지 않는다.
+     */
+    public static void assertSessionCycle(UserDetails principal, int tokenCycle) {
+        if (principal instanceof nuri.foundation.security.service.CustomUserDetails current
+                && current.getSessionCycle() != null && current.getSessionCycle() != tokenCycle) {
+            throw new org.springframework.security.authentication.CredentialsExpiredException(
+                    "Token was issued before the session was revoked");
+        }
     }
 
     public nuri.foundation.security.mfa.MfaSessionEvidence getMfaEvidence(String token) {

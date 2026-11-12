@@ -431,14 +431,36 @@ public class UserService extends BaseAbstractService {
          * 만료(최대 7일)까지 access token 을 재발급받을 수 있었다. 본인 변경과 관리자 초기화는 모두
          * "지금까지의 자격을 끊는다" 는 의미이므로 두 경로에서 같은 폐기를 수행한다.
          *
-         * <p>토큰 테이블은 esntlId 단일 키이며 사용자 삭제와 같은 bulk 계약을 쓴다. 이미 발급된
-         * access token 은 서명 기반이라 여기서 폐기되지 않고 자기 만료 시각까지 유효하다.
+         * <p>토큰 테이블은 esntlId 단일 키이며 사용자 삭제와 같은 bulk 계약을 쓴다. [V2_153] 이미 발급된 access token 도
+         * 세션차수를 올려 즉시 끊는다 — 발급 때의 차수가 현재 차수와 다르면 인증 필터가 거부한다(401).
          */
         private void revokeRefreshTokens(User user) {
                 // 사용자→MFA 자격→refresh 순서로 잠근다. 비밀번호 이전의 도전은 더 이상 증명이 아니다.
                 userRepository.flush();
                 eventPublisher.publishEvent(new nuri.foundation.core.event.UserCredentialsChangedEvent(user.getEsntlId()));
-                refreshTokenRepository.deleteAllByEsntlIdIn(List.of(user.getEsntlId()));
+                revokeSessions(List.of(user.getEsntlId()));
+        }
+
+        /** [V2_153] 세션차수를 올리고 refresh token 을 지운다 — 그 전에 발급된 access·refresh token 이 모두 거부된다. */
+        private void revokeSessions(List<String> esntlIds) {
+                userRepository.advanceSessionCycle(esntlIds);
+                refreshTokenRepository.deleteAllByEsntlIdIn(esntlIds);
+        }
+
+        /**
+         * 관리자 강제 로그아웃(V2_153). 대상의 모든 세션을 지금 끊는다 — 발급된 access token 은 다음 요청에서 401 이고, refresh token
+         * 은 지워져 재발급되지 않는다. 계정 상태·비밀번호는 바꾸지 않는다(다시 로그인하면 들어온다). 계정 상태 관리 권한
+         * ({@code USER_STATUS})으로 하며 보호 계정은 상태 변경과 같은 보호 판정을 받는다. 응답 전에 민감 감사에 남긴다.
+         */
+        @Transactional
+        public void forceLogout(@NonNull String userId) {
+                nuri.business.security.util.SecurityUtil.assertPermission("USER_STATUS");
+                authorizationAdministration.lockAndAuthorize("USER_STATUS");
+                User user = findByLoginIdOrEsntlIdOrThrow(userId);
+                authorizationAdministration.authorizeProtectedAccountChange(user.getEsntlId());
+                refreshForUpdateOrThrow(user);
+                revokeSessions(List.of(user.getEsntlId()));
+                sensitiveAudit.recordMutation("ADMIN_FORCE_LOGOUT", user.getEsntlId());
         }
 
         /**
@@ -636,6 +658,8 @@ public class UserService extends BaseAbstractService {
                 refreshAllForUpdate(users);
                 users.forEach(user -> user.updateStatus(status));
                 userRepository.saveAllAndFlush(users);
+                // [V2_153] 상태가 바뀌면(정지·탈퇴·승인 등) 그 전에 발급된 세션을 끊는다 — 다시 활성으로 돌려도 옛 토큰은 되살아나지 않는다.
+                revokeSessions(users.stream().map(User::getEsntlId).toList());
                 authorizationAdministration.protectLastManager(managerCount);
         }
 

@@ -179,6 +179,31 @@
       ]
     },
     {
+      "id": "EXEC-COPYLEFT-LICENSE",
+      "tier": [
+        "ci"
+      ],
+      "command": "node scripts/copyleft-license-policy.mjs --frontend | --gradle build/licenses/runtime-licenses.json",
+      "bindings": [
+        {
+          "source": ".github/workflows/ci.yml",
+          "fragment": "run: node ../scripts/copyleft-license-policy.mjs --frontend",
+          "tiers": [
+            "ci"
+          ],
+          "job": "frontend-scope"
+        },
+        {
+          "source": ".github/workflows/ci.yml",
+          "fragment": "node scripts/copyleft-license-policy.mjs --gradle build/licenses/runtime-licenses.json",
+          "tiers": [
+            "ci"
+          ],
+          "job": "backend-scope"
+        }
+      ]
+    },
+    {
       "id": "EXEC-SAST-APPROXIMATION",
       "tier": [
         "pre-push",
@@ -845,6 +870,10 @@
         {
           "id": "DB-MIG-LOGOUT-CUTOFF-PRIVACY-SUBJECT",
           "source": "api-server/src/test/java/nuri/api/schema/LogoutCutoffAndPrivacySubjectMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-USER-SESSION-CYCLE",
+          "source": "api-server/src/test/java/nuri/api/schema/SessionCycleMigrationIntegrationTest.java"
         },
         {
           "id": "DB-MEMO-REPORT-RECIPIENT-INTEGRITY",

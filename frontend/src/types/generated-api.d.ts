@@ -2411,7 +2411,7 @@ export interface paths {
         };
         /**
          * 사용자 목록 조회
-         * @description 전체 사용자 목록을 페이징하여 조회합니다. 계정 상태(userSttsCd: P 정상·A 승인 대기·D 비활성)·소속 부서(ognzId, 직속만)·로그인 잠금(lckYn: Y·N)으로 좁힐 수 있고, 어휘 밖 값은 400 입니다. 휴대전화(mblTelno)·이메일(emlAddr)은 가린 값이며 원문은 사용자 상세 조회에서만 나옵니다.
+         * @description 전체 사용자 목록을 페이징하여 조회합니다. 계정 상태(userSttsCd: P 정상·A 승인 대기·D 비활성)·소속 부서(ognzId, 직속만)·로그인 잠금(lckYn: Y·N)으로 좁힐 수 있고, 어휘 밖 값은 400 입니다. 휴대전화(mblTelno)·이메일(emlAddr)은 가린 값이며 원문은 사용자 상세 조회에서만 나옵니다. 정렬은 sortBy(userId 로그인 ID·userNm 이름·crtDt 등록일시, 인덱스가 받치는 열만)와 sortDir(asc·desc)로 목록 전체에 걸리며, 비우면 로그인 ID 오름차순이고 그 밖의 값은 400 입니다.
          */
         get: operations["getUsers"];
         put?: never;
@@ -2425,6 +2425,26 @@ export interface paths {
          * @description 시스템에서 한 번에 최대 100명의 사용자를 삭제합니다. (관리자 권한)
          */
         delete: operations["deleteUsers"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/users/{userId}/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 강제 로그아웃
+         * @description 사용자의 모든 로그인 세션을 지금 끊습니다. 발급된 토큰은 다음 요청부터 거부되고, 계정 상태와 비밀번호는 바꾸지 않습니다. (관리자 권한)
+         */
+        post: operations["forceLogout"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -5409,7 +5429,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 로그인 로그 목록 조회 */
+        /**
+         * 로그인 로그 목록 조회
+         * @description 정렬은 sortBy=crtDt(접속일시)와 sortDir(asc·desc)로 목록 전체에 걸린다. 비우면 접속일시 최신순이고 그 밖의 값은 400 입니다.
+         */
         get: operations["getLoginLogList"];
         put?: never;
         post?: never;
@@ -27943,12 +27966,12 @@ export interface operations {
                 userSttsCd?: string;
                 ognzId?: string;
                 lckYn?: string;
+                sortBy?: string;
+                sortDir?: string;
                 /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -28105,6 +28128,73 @@ export interface operations {
             };
             /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    forceLogout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -38395,12 +38485,12 @@ export interface operations {
                 fromYmd?: string;
                 toYmd?: string;
                 status?: string;
+                sortBy?: string;
+                sortDir?: string;
                 /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -38462,12 +38552,12 @@ export interface operations {
                 fromYmd?: string;
                 toYmd?: string;
                 status?: string;
+                sortBy?: string;
+                sortDir?: string;
                 /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -38528,12 +38618,12 @@ export interface operations {
                 keyword?: string;
                 fromYmd?: string;
                 toYmd?: string;
+                sortBy?: string;
+                sortDir?: string;
                 /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -38595,12 +38685,12 @@ export interface operations {
                 fromYmd?: string;
                 toYmd?: string;
                 status?: string;
+                sortBy?: string;
+                sortDir?: string;
                 /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -40120,6 +40210,8 @@ export interface operations {
                 size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
+                sortBy?: string;
+                sortDir?: string;
             };
             header?: never;
             path?: never;

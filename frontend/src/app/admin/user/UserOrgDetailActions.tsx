@@ -1,6 +1,6 @@
 'use client';
 
-import { KeyRound, LockOpen, Pencil, Trash2 } from 'lucide-react';
+import { KeyRound, LockOpen, LogOut, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 /*
@@ -59,20 +59,25 @@ export function UserDetailActions({
   canUpdateUser,
   canResetPassword,
   canUnlock,
+  canForceLogout,
   canDeleteUser,
   locked,
   detailLoaded,
   unlockBusy,
+  forceLogoutBusy,
   deleteBusy,
   onOpenEdit,
   onOpenPasswordReset,
   onUnlock,
+  onForceLogout,
   handleDeleteUser,
 }: {
   canUpdateUser: boolean;
   canResetPassword: boolean;
   /** 잠긴 계정이고 계정 상태를 바꿀 권한이 있다. */
   canUnlock: boolean;
+  /** 계정 상태를 바꿀 권한이 있다 — 강제 로그아웃(V2_153)도 같은 권한이다. */
+  canForceLogout: boolean;
   canDeleteUser: boolean;
   /** 진행 중인 쓰기가 있다(허브의 쓰기 잠금). */
   locked: boolean;
@@ -80,11 +85,14 @@ export function UserDetailActions({
   detailLoaded: boolean;
   /** 진행 중인 쓰기가 계정 잠금 해제다. */
   unlockBusy: boolean;
+  /** 진행 중인 쓰기가 강제 로그아웃이다. */
+  forceLogoutBusy: boolean;
   /** 진행 중인 쓰기가 사용자 삭제다. */
   deleteBusy: boolean;
   onOpenEdit: () => void;
   onOpenPasswordReset: () => void;
   onUnlock: () => void;
+  onForceLogout: () => void;
   handleDeleteUser: () => Promise<void>;
 }) {
   return (
@@ -129,6 +137,19 @@ export function UserDetailActions({
           className="gap-1.5"
         >
           <LockOpen size={14} aria-hidden="true" /> 잠금 해제
+        </Button>
+      )}
+      {canForceLogout && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onForceLogout}
+          disabled={locked || forceLogoutBusy}
+          aria-busy={forceLogoutBusy || undefined}
+          className="gap-1.5"
+        >
+          <LogOut size={14} aria-hidden="true" /> 강제 로그아웃
         </Button>
       )}
       {canDeleteUser && (

@@ -163,6 +163,13 @@ nuri:
   notification:
     sender:
       tel: ${NOTIFICATION_SENDER_TEL:}
+    # [Wave 4] 실시간 알림 전달 어댑터. local(기본)은 이 노드의 STOMP 브로커이고, external 은 같은 알림을 외부 Pub/Sub 발행 주소에도
+    #   HMAC-SHA256 서명으로 낸다(멀티 노드·다른 소비자의 구독용). external 이면 주소(https)와 32자 이상 서명 비밀이 있어야 기동한다.
+    push:
+      type: ${NOTIFICATION_PUSH_TYPE:local}
+      external:
+        publish-url: ${NOTIFICATION_PUSH_PUBLISH_URL:}
+        secret: ${NOTIFICATION_PUSH_SECRET:}
     # [2026-09-06 DEC-OPS-038] 읽은 알림 보존·정리. tb_user_noti 는 사용자 탈퇴 때만 정리돼 읽은 알림도 영구 누적된다(감사 D09-06).
     #   [2026-09-24 DEC-OPS-128] 보존 기간은 6개월로 정했다. 켜는 순간 배포 환경의 알림을 지우므로 스위치는 기본 꺼짐이고
     #   운영자가 NOTIFICATION_RETENTION_ENABLED 하나로 켠다. 켜져 있어도 read-months 가 1 미만이면 삭제하지 않는다
@@ -190,6 +197,12 @@ nuri:
   # 판정/해제 주체: EgovAuthenticationProvider. 잠금 시각은 tb_user_info.lck_last_pnttm 에 기록된다.
   # ⚠ max-failures 를 0 이하로 두면 잠금이 비활성화된다 — 오설정으로 정상 사용자가 대량 잠기는
   #   가용성 사고를 재배포 없이 즉시 회피하기 위한 운영 탈출구다(평시에는 반드시 1 이상 유지).
+  # [Wave 4] 주민등록번호 AES-256-GCM 키링. 둘 다 비면 종전 ARIA 암호문을 쓰고, 채우면 새 값을 v2:<keyId> 로 쓴다(읽기는 늘 둘 다).
+  #   모양은 MFA 키링과 같다: RRNO_KEYS_JSON={"<keyId>":"<32바이트 표준 Base64>"}. 이전 키를 남겨 두면 그 암호문도 읽는다.
+  crypto:
+    rrno:
+      active-key-id: ${RRNO_ACTIVE_KEY_ID:}
+      keys-json: ${RRNO_KEYS_JSON:}
   security:
     mfa:
       active-key-id: ${MFA_ACTIVE_KEY_ID:}
@@ -270,6 +283,18 @@ logging:
 file:
   upload:
     path: ./storage/uploads
+  # [Wave 4] 첨부 저장소. 기본 local(위 upload.path)이고, s3 이면 S3 호환 오브젝트 저장소(AWS S3·MinIO)에 둔다 — 멀티 노드 배포가
+  #   노드끼리 첨부 볼륨을 나누지 않아도 된다. s3 설정이 비면 기동을 멈춘다(조용히 local 로 떨어지지 않는다).
+  storage:
+    type: ${FILE_STORAGE_TYPE:local}
+    s3:
+      endpoint: ${FILE_STORAGE_S3_ENDPOINT:}
+      region: ${FILE_STORAGE_S3_REGION:}
+      bucket: ${FILE_STORAGE_S3_BUCKET:}
+      access-key: ${FILE_STORAGE_S3_ACCESS_KEY:}
+      secret-key: ${FILE_STORAGE_S3_SECRET_KEY:}
+      prefix: ${FILE_STORAGE_S3_PREFIX:}
+      path-style: ${FILE_STORAGE_S3_PATH_STYLE:true}
 
 server:
   servlet:

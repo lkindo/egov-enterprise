@@ -314,6 +314,7 @@ export { checkApproversOperation } from './generated-operations/approval';
 export { getUsersOperation } from './generated-operations/user';
 export { insertUserOperation } from './generated-operations/user';
 export { deleteUsersOperation } from './generated-operations/user';
+export { forceLogoutOperation } from './generated-operations/user';
 export { getUserAuthoritiesOperation } from './generated-operations/user-authority-mapping';
 export { saveUserAuthoritiesOperation } from './generated-operations/user-authority-mapping';
 export { deleteUserAuthoritiesOperation } from './generated-operations/user-authority-mapping';

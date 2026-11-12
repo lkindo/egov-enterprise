@@ -516,6 +516,13 @@ jobs:
           set -o pipefail
           ./gradlew onlineBuild jacocoOnlineCoverageVerification "-Dopenapi.export.path=$GITHUB_WORKSPACE/api-docs.json" --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log
 
+      # [Wave 4] api-server 운영 런타임(runtimeClasspath)의 POM 라이선스에 강한 카피레프트가 들어오면 막는다(시험 전용 드라이버는 모집단 밖).
+      - name: Backend copyleft license policy
+        id: be-license
+        run: |
+          ./gradlew -I scripts/runtime-licenses.gradle :api-server:writeRuntimeLicenses --warning-mode fail --console=plain
+          node scripts/copyleft-license-policy.mjs --gradle build/licenses/runtime-licenses.json
+
       - name: Verify committed api-docs.json is fresh (contract drift gate)
         id: api-docs-gate
         # api-docs.json이 tracked 상태인지 먼저 확인해 삭제가 diff 검사에서 공집합 통과하지 않게 한다.
@@ -887,6 +894,13 @@ jobs:
       - name: Frontend dependency audit policy
         id: fe-audit
         run: node ../scripts/frontend-audit-policy.mjs
+        working-directory: frontend
+
+      # [Wave 4] 운영 의존성(pnpm --prod)에 강한 카피레프트(GPL·AGPL·SSPL 등)가 들어오면 막는다. 판정 규칙과 GPL-3.0 부정 시험은
+      #   scripts/copyleft-license-policy.* 가 정본이다(LGPL·링크 예외·허용 쪽 이중 라이선스는 통과).
+      - name: Frontend copyleft license policy
+        id: fe-license
+        run: node ../scripts/copyleft-license-policy.mjs --frontend
         working-directory: frontend
 
       # 프로덕션 미들웨어는 공개 dev 시크릿으로의 조용한 폴백을 금지한다. 이 잡은 백엔드를

@@ -408,6 +408,9 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
 
     private void removeMembership(String request, String userId, String group) {
         jdbc.update("DELETE FROM tb_authrt_user_map WHERE scrty_dcsn_trgt_id=? AND authrt_cd=?",userId,group);
+        // [V2_153] 그룹 회수는 그 전에 발급된 세션을 끊는다(세션차수 증가 → 옛 토큰 401). 권한은 요청마다 다시 읽지만, 회수 전에
+        //   받아 둔 화면·연결이 회수된 권한으로 계속 일하지 않게 다시 로그인하게 한다.
+        jdbc.update("UPDATE tb_user_info SET ssn_cycl = ssn_cycl + 1 WHERE esntl_id=?",userId);
         audit(request,"USER_GROUP","REMOVE",group,userId,null,"membership",group,null);
     }
 

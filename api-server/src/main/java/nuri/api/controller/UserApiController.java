@@ -127,9 +127,16 @@ public class UserApiController {
 
     // --- [관리자 전용 기능] /api/v1/admin/system/users ---
 
+    /** 사용자 목록 서버 정렬 허용 목록 — 로그인 ID(uk)·이름(ix_tb_user_info_user_nm)·등록일시(ix_tb_user_info_crt_dt, V2_153). */
+    private static final nuri.business.domain.common.ServerSortWhitelist USER_LIST_SORT =
+            nuri.business.domain.common.ServerSortWhitelist.of(java.util.Map.of("userId", "userId", "userNm", "userNm",
+                    "crtDt", "crtDt"));
+
     @Operation(summary = "사용자 목록 조회", description = "전체 사용자 목록을 페이징하여 조회합니다. "
             + "계정 상태(userSttsCd: P 정상·A 승인 대기·D 비활성)·소속 부서(ognzId, 직속만)·로그인 잠금(lckYn: Y·N)으로 좁힐 수 있고, "
-            + "어휘 밖 값은 400 입니다. 휴대전화(mblTelno)·이메일(emlAddr)은 가린 값이며 원문은 사용자 상세 조회에서만 나옵니다.")
+            + "어휘 밖 값은 400 입니다. 휴대전화(mblTelno)·이메일(emlAddr)은 가린 값이며 원문은 사용자 상세 조회에서만 나옵니다. "
+            + "정렬은 sortBy(userId 로그인 ID·userNm 이름·crtDt 등록일시, 인덱스가 받치는 열만)와 sortDir(asc·desc)로 목록 전체에 "
+            + "걸리며, 비우면 로그인 ID 오름차순이고 그 밖의 값은 400 입니다.")
     // [2026-10-18] 목록 projection 은 생년월일·주소를 싣지 않고 휴대전화·이메일을 가린다(UserDto#withMaskedContacts).
     @PrivacyAccess("사용자 목록(가린 휴대전화·이메일, 사무실 전화)")
     @GetMapping("/admin/system/users")
@@ -139,9 +146,14 @@ public class UserApiController {
             @RequestParam(required = false) String userSttsCd,
             @RequestParam(required = false) String ognzId,
             @RequestParam(required = false) String lckYn,
-            @PageableDefault(size = 10) Pageable pageable) {
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortDir,
+            @PageableDefault(size = 10) @nuri.api.support.UnsortedPageable Pageable pageable) {
+        // [Wave 4 GAP-UI-001] 서버 정렬은 허용 목록의 고정 속성만 받는다 — 임의 sort 를 저장소로 넘기지 않는다.
+        org.springframework.data.domain.Sort sort = USER_LIST_SORT.resolve(sortBy, sortDir);
         Page<UserDto> result = userService.getPagedUserList(searchKeyword,
-                UserListFilter.of(userSttsCd, ognzId, lckYn), pageable);
+                UserListFilter.of(userSttsCd, ognzId, lckYn),
+                org.springframework.data.domain.PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort));
         // 입력 규칙이 없는 목록 전용 응답으로 옮긴다 — 가린 이메일이 UserDto 의 이메일 형식 규칙에 걸리지 않게(UserListItemDto).
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result.map(nuri.business.service.user.dto.UserListItemDto::from))));
     }
@@ -245,6 +257,15 @@ public class UserApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#unlockUser')")
     public ResponseEntity<ApiResponse<Void>> unlockUser(@PathVariable String userId) {
         userService.unlockUser(userId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "강제 로그아웃", description = "사용자의 모든 로그인 세션을 지금 끊습니다. 발급된 토큰은 다음 요청부터 거부되고, 계정 상태와 비밀번호는 바꾸지 않습니다. (관리자 권한)")
+    @nuri.foundation.core.annotation.SensitiveOperation("관리자 강제 로그아웃")
+    @PostMapping("/admin/system/users/{userId}/logout")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#forceLogout')")
+    public ResponseEntity<ApiResponse<Void>> forceLogout(@PathVariable String userId) {
+        userService.forceLogout(userId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
