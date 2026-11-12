@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -23,7 +24,8 @@ import java.util.Objects;
  * 행사 행을 잠근 뒤 판정하고, 여기서는 상태 순서만 지킨다.
  */
 @Entity
-@Table(name = "tb_evnt_aply")
+@Table(name = "tb_evnt_aply", uniqueConstraints = @UniqueConstraint(
+        name = "uk_tb_evnt_aply_evnt_sn_aplcnt_id", columnNames = {"evnt_sn", "aplcnt_id"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class EventApplication extends BaseEntity {

@@ -53,6 +53,13 @@ class UniqueConstraintMirrorLinterTest {
     // CREATE UNIQUE INDEX <name> ON <table> (<cols>)  — 부분 UNIQUE(WHERE) 는 별도 처리(면제)
     private static final Pattern CREATE_UNIQUE_INDEX = Pattern.compile(
             "(?is)CREATE\\s+UNIQUE\\s+INDEX\\s+(?:CONCURRENTLY\\s+)?(?:IF\\s+NOT\\s+EXISTS\\s+)?[\"\\w]+\\s+ON\\s+(?:public\\.)?([\"\\w]+)[^(]*\\(([^)]+)\\)");
+    // CREATE TABLE <table> ( ... [CONSTRAINT <name>] UNIQUE (<cols>) ... ) — 새 표를 만들며 함께 적은 표 제약.
+    // 종전에는 ALTER TABLE·CREATE UNIQUE INDEX 형태만 읽어, 표 정의 안의 UNIQUE(V2_152 tb_evnt_aply)는 원본에서 보이지 않고
+    // pg_dump 기준선(ALTER TABLE ... ADD CONSTRAINT)을 쓰는 생성물에서만 붉었다. 컬럼 정의 뒤에 붙인 열 단위 UNIQUE 는 읽지 않는다.
+    private static final Pattern CREATE_TABLE = Pattern.compile(
+            "(?is)CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?(?:public\\.)?([\"\\w]+)\\s*\\((.*)\\)");
+    private static final Pattern INLINE_UNIQUE = Pattern.compile(
+            "(?is)(?:^|,)\\s*(?:CONSTRAINT\\s+[\"\\w]+\\s+)?UNIQUE\\s*\\(([^)]+)\\)");
     // ALTER TABLE <table> DROP COLUMN [IF EXISTS] <column> — 사라진 컬럼의 과거 UNIQUE를 최종 상태에서 제거
     private static final Pattern DROP_COLUMN = Pattern.compile(
             "(?is)ALTER\\s+TABLE\\s+(?:ONLY\\s+)?(?:public\\.)?([\"\\w]+).*?DROP\\s+COLUMN\\s+(?:IF\\s+EXISTS\\s+)?([\"\\w]+)");
@@ -135,10 +142,26 @@ class UniqueConstraintMirrorLinterTest {
             for (String stmt : sql.split(";")) {
                 addMatches(ADD_UNIQUE, stmt, result);
                 addMatches(CREATE_UNIQUE_INDEX, stmt, result);
+                addInlineUniques(stmt, result);
                 removeDroppedColumnUniques(stmt, result);
             }
         }
         return result;
+    }
+
+    private void addInlineUniques(String stmt, Map<String, List<Set<String>>> result) {
+        Matcher table = CREATE_TABLE.matcher(stmt);
+        if (!table.find()) {
+            return;
+        }
+        String name = unquote(table.group(1));
+        Matcher unique = INLINE_UNIQUE.matcher(table.group(2));
+        while (unique.find()) {
+            Set<String> cols = parseColumns(unique.group(1));
+            if (!cols.isEmpty()) {
+                result.computeIfAbsent(name, k -> new ArrayList<>()).add(cols);
+            }
+        }
     }
 
     private void removeDroppedColumnUniques(String sql, Map<String, List<Set<String>>> result) {
