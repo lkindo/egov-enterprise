@@ -127,14 +127,10 @@ export interface ApprovalListQuery {
   keyword?: string;
   fromYmd?: string;
   toYmd?: string;
-  /** [Wave 4] 결재번호 정렬 방향(서버는 결재번호 정렬만 받는다). 비우면 최신 결재번호 순이다. */
+  /** [Wave 4] 서버 정렬 기준 — 결재 목록은 결재번호만 받는다(그 밖은 400). 방향과 함께 보낸다. */
+  sortBy?: 'ifmlAtrzSn';
+  /** [Wave 4] 정렬 방향. 비우면 최신 결재번호 순이다. */
   sortDir?: 'asc' | 'desc';
-}
-
-/** 정렬 방향을 서버 계약(sortBy=ifmlAtrzSn·sortDir)으로 옮긴다. 비우면 보내지 않는다. */
-function withApprovalSort<T extends ApprovalListQuery>(params: T) {
-  const { sortDir, ...rest } = params;
-  return sortDir ? { ...rest, sortBy: 'ifmlAtrzSn', sortDir } : rest;
 }
 
 export interface ApprovalListQueryWithStatus extends ApprovalListQuery {
@@ -143,7 +139,7 @@ export interface ApprovalListQueryWithStatus extends ApprovalListQuery {
 
 class ApprovalUserService extends ApiService {
   async getPending(params: ApprovalListQuery): Promise<PageResponse<InformalSanctionDto>> {
-    const response = await this.executeGenerated(getPendingOperation, { query: withApprovalSort(params) });
+    const response = await this.executeGenerated(getPendingOperation, { query: params });
     return requirePageResponse<InformalSanctionDto>(response, '결재');
   }
 
@@ -152,13 +148,13 @@ class ApprovalUserService extends ApiService {
    * 결재자로서 처리한 이력으로 읽혔지만, 실제 질의는 `findByAplcntId` 다. 처리한 이력은 {@link getProcessed}.
    */
   async getMyHistory(params: ApprovalListQueryWithStatus): Promise<PageResponse<InformalSanctionDto>> {
-    const response = await this.executeGenerated(getMyHistoryOperation, { query: withApprovalSort(params) });
+    const response = await this.executeGenerated(getMyHistoryOperation, { query: params });
     return requirePageResponse<InformalSanctionDto>(response, '결재');
   }
 
   /** 결재자 본인이 이미 승인·반려한 결재. 대기 건은 섞이지 않는다. */
   async getProcessed(params: ApprovalListQueryWithStatus): Promise<PageResponse<InformalSanctionDto>> {
-    const response = await this.executeGenerated(getProcessedOperation, { query: withApprovalSort(params) });
+    const response = await this.executeGenerated(getProcessedOperation, { query: params });
     return requirePageResponse<InformalSanctionDto>(response, '결재');
   }
 
@@ -167,7 +163,7 @@ class ApprovalUserService extends ApiService {
    * 남는다. 상태 조건은 문서의 지금 상태다. 참조자는 결재하지 않으므로 대기함·처리함·대기 건수에 섞이지 않는다.
    */
   async getReferenced(params: ApprovalListQueryWithStatus): Promise<PageResponse<InformalSanctionDto>> {
-    const response = await this.executeGenerated(getReferencedOperation, { query: withApprovalSort(params) });
+    const response = await this.executeGenerated(getReferencedOperation, { query: params });
     return requirePageResponse<InformalSanctionDto>(response, '결재');
   }
 

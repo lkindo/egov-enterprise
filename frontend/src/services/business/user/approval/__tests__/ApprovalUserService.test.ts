@@ -69,10 +69,10 @@ describe('ApprovalUserService generated contract', () => {
     );
   });
 
-  it('[Wave 4] 정렬 방향은 서버 계약(sortBy=ifmlAtrzSn·sortDir)으로 옮기고, 비우면 정렬을 보내지 않는다', async () => {
+  it('[Wave 4] 결재번호 정렬(sortBy=ifmlAtrzSn·sortDir)을 서버 조회 조건으로 보내고, 비우면 정렬을 보내지 않는다', async () => {
     const page = { list: [], total: 0, page: 1, size: 20, totalPage: 0 };
     client.getRaw.mockResolvedValue(success(page));
-    await approvalUserService.getMyHistory({ page: 1, sortDir: 'asc' }).catch(() => undefined);
+    await approvalUserService.getMyHistory({ page: 1, sortBy: 'ifmlAtrzSn', sortDir: 'asc' }).catch(() => undefined);
     const sorted = JSON.stringify(client.getRaw.mock.calls.at(-1));
     expect(sorted).toContain('sortBy');
     expect(sorted).toContain('ifmlAtrzSn');

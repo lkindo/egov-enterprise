@@ -91,13 +91,16 @@ export interface ApprovalTemporarySaveInput {
   request: ApprovalTemporaryDraftRequest;
 }
 
-function listByTab(tab: ApprovalTab, params: ApprovalListParams) {
+function listByTab(tab: ApprovalTab, listParams: ApprovalListParams) {
+  // [Wave 4] 정렬 방향은 서버 계약(sortBy=ifmlAtrzSn·sortDir)으로 옮기고, 비우면 정렬을 보내지 않는다.
+  const { sortDir, ...rest } = listParams;
+  const params = sortDir ? { ...rest, sortBy: 'ifmlAtrzSn' as const, sortDir } : rest;
   switch (tab) {
     case 'PENDING':
       // 대기함은 상태 조건을 받지 않는다 — 넘기지 않는다.
       return approvalUserService.getPending({
         page: params.page, size: params.size, keyword: params.keyword, fromYmd: params.fromYmd, toYmd: params.toYmd,
-        sortDir: params.sortDir,
+        ...(sortDir ? { sortBy: 'ifmlAtrzSn' as const, sortDir } : {}),
       });
     case 'SUBMITTED':
       return approvalUserService.getMyHistory(params);
