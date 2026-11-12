@@ -100,6 +100,7 @@ export default function ManualAdminClient({
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
+  const [editingVersion, setEditingVersion] = useState<number | undefined>(undefined);
 
   /** 페이지는 URL 에 반영한다 — 새로고침·공유·뒤로가기 복원(감사 P1-7). 검색어는 넣지 않는다. */
   const goToPage = useCallback((next: number) => {
@@ -137,6 +138,7 @@ export default function ManualAdminClient({
   const handleOpenAdd = () => {
     if (savePendingRef.current || deletePendingRef.current) return;
     setMode('create');
+    setEditingVersion(undefined);
     form.reset({ onlnMnlSn: undefined, onlnMnlNm: '', onlnMnlExpln: '', onlnMnlDfn: '', onlnMnlSeCd: 'GNR' });
     setIsFormOpen(true);
   };
@@ -144,6 +146,7 @@ export default function ManualAdminClient({
   const handleOpenEdit = (manual: ManualDto) => {
     if (savePendingRef.current || deletePendingRef.current) return;
     setMode('edit');
+    setEditingVersion(manual.version);
     form.reset({
       onlnMnlSn: manual.onlnMnlSn,
       onlnMnlNm: manual.onlnMnlNm || '',
@@ -179,7 +182,11 @@ export default function ManualAdminClient({
         await manualAdminService.createManual(payload);
         toast('새 매뉴얼을 등록했습니다.', 'success');
       } else {
-        await manualAdminService.updateManual(values.onlnMnlSn!, { ...payload, onlnMnlSn: values.onlnMnlSn });
+        await manualAdminService.updateManual(values.onlnMnlSn!, {
+          ...payload,
+          onlnMnlSn: values.onlnMnlSn,
+          ...(editingVersion !== undefined ? { version: editingVersion } : {}),
+        });
         toast('매뉴얼 정보를 수정했습니다.', 'success');
       }
       setIsFormOpen(false);

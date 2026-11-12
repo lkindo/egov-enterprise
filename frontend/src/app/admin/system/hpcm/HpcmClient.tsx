@@ -117,6 +117,7 @@ export default function HpcmClient({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
   const [editingSn, setEditingSn] = useState<number | null>(null);
+  const [editingVersion, setEditingVersion] = useState<number | undefined>(undefined);
   const [savePending, setSavePending] = useState(false);
   const savingRef = useRef(false);
   const deletingRef = useRef(false);
@@ -179,6 +180,7 @@ export default function HpcmClient({
     if (isWritePending) return;
     setMode('create');
     setEditingSn(null);
+    setEditingVersion(undefined);
     form.reset({ hlpSeCd: '', hlpDfn: '', hlpExpln: '' });
     setIsModalOpen(true);
   };
@@ -187,6 +189,7 @@ export default function HpcmClient({
     if (isWritePending || item.hlpSn === undefined) return;
     setMode('edit');
     setEditingSn(item.hlpSn);
+    setEditingVersion(item.version);
     form.reset({
       hlpSeCd: item.hlpSeCd ?? '',
       hlpDfn: item.hlpDfn ?? '',
@@ -201,7 +204,11 @@ export default function HpcmClient({
     setSavePending(true);
     try {
       if (mode === 'edit' && editingSn !== null) {
-        await hpcmAdminService.updateHpcm(editingSn, { ...values, hlpSn: editingSn });
+        await hpcmAdminService.updateHpcm(editingSn, {
+          ...values,
+          hlpSn: editingSn,
+          ...(editingVersion !== undefined ? { version: editingVersion } : {}),
+        });
         toast('도움말 콘텐츠를 수정했습니다.', 'success');
       } else {
         await hpcmAdminService.createHpcm(values);

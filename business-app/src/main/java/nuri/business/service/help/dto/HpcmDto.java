@@ -43,5 +43,9 @@ public class HpcmDto {
     @Schema(description = "Description")
     private LocalDateTime crtDt;
 
+    @Schema(description = "낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.")
+    @Min(0)
+    private Integer version;
+
     // 엔티티→DTO 매핑은 HpcmMapper(MapStruct) 로 이관 (프레임워크 표준). 수기 from() 폐지.
 }

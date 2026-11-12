@@ -63,6 +63,41 @@ class MetaStandardTermsExtensionMigrationIntegrationTest extends SharedPostgresM
         }
     }
 
+    @Test
+    @DisplayName("V2_150: 승인된 표준 용어 97건을 등록하고 일련번호 도메인 4건을 일련번호N19 로 정정한다")
+    void v2_150RegistersApprovedStandardTermsAndAlignsBigintSerialDomains() throws Exception {
+        AuthorizationCutoverTestSupport.migrate(flyway(MigrationVersion.fromVersion("2.149")));
+        long before;
+        try (var c = openConnection(); var s = c.createStatement()) {
+            before = number(s, "SELECT count(*) FROM meta_standard_terms");
+            assertThat(number(s, "SELECT count(*) FROM meta_standard_terms WHERE eng_abbr IN "
+                    + "('BBS_CHG_HSTRY_SN', 'ADMDST_ZONE_NM', 'CERT_DN_VL', 'SRVY_TRGT')")).isZero();
+            assertThat(number(s, "SELECT count(*) FROM meta_standard_terms WHERE eng_abbr IN "
+                    + "('ANS_SN', 'ARTCL_SN', 'PST_SN', 'UP_PST_SN') AND domain_name = '일련번호N19'")).isZero();
+        }
+
+        flyway(MigrationVersion.fromVersion("2.150")).migrate();
+
+        try (var c = openConnection(); var s = c.createStatement()) {
+            assertThat(number(s, "SELECT count(*) FROM meta_standard_terms")).isEqualTo(before + 97);
+            assertThat(text(s, "SELECT term_name || '|' || domain_name || '|' || deprecated_yn"
+                    + " FROM meta_standard_terms WHERE eng_abbr = 'BBS_CHG_HSTRY_SN'"))
+                    .isEqualTo("게시판변경이력일련번호|일련번호N19|N");
+            assertThat(text(s, "SELECT term_name || '|' || domain_name || '|' || deprecated_yn"
+                    + " FROM meta_standard_terms WHERE eng_abbr = 'ADMDST_ZONE_NM'"))
+                    .isEqualTo("행정구역구역명|명V100|N");
+            assertThat(text(s, "SELECT term_name || '|' || domain_name || '|' || deprecated_yn"
+                    + " FROM meta_standard_terms WHERE eng_abbr = 'CERT_DN_VL'"))
+                    .isEqualTo("인증고유명값|명V100|N");
+            assertThat(text(s, "SELECT term_name || '|' || domain_name || '|' || deprecated_yn"
+                    + " FROM meta_standard_terms WHERE eng_abbr = 'SRVY_TRGT'"))
+                    .isEqualTo("설문대상|내용V1000|N");
+            assertThat(number(s, "SELECT count(*) FROM meta_standard_terms WHERE eng_abbr IN "
+                    + "('ANS_SN', 'ARTCL_SN', 'PST_SN', 'UP_PST_SN') AND domain_name = '일련번호N19'"))
+                    .isEqualTo(4);
+        }
+    }
+
     private static long number(Statement statement, String query) throws SQLException {
         try (ResultSet result = statement.executeQuery(query)) {
             assertThat(result.next()).isTrue();

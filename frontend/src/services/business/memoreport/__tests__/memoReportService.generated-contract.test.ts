@@ -128,7 +128,7 @@ describe('memoReportService generated instruction contract', () => {
     expect(createMemoReportOperation.requestForbiddenPaths).toStrictEqual(forbiddenPaths);
     expect(updateMemoReportOperation.requestForbiddenPaths).toStrictEqual(forbiddenPaths);
     expect(Object.keys(MemoReportDtoRequestSchema.shape).sort()).toStrictEqual(
-      ['rptTtl', 'memoRptYmd', 'rptrId', 'rptCn', 'atchFileSn'].sort(),
+      ['rptTtl', 'memoRptYmd', 'rptrId', 'rptCn', 'atchFileSn', 'version'].sort(),
     );
     expect(Object.keys(MemoReportDtoSchema.shape)).toEqual(expect.arrayContaining([...serverOwnedFields]));
     expect(Object.keys(MemoReportDtoResponseSchema.shape).sort()).toStrictEqual(

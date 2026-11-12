@@ -290,7 +290,10 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
       //   묻지 않은 개인정보를 지어내 저장하지 않는다 — 값이 없으면 보내지 않는다.
       if (editing) {
         // 식별자는 경로로만 간다 — 본문의 evntSn·otsdHrId 는 서버가 무시한다.
-        await externalHrAdminService.updateExternalHr(editing.evntSn, editing.otsdHrId, { ...values });
+        await externalHrAdminService.updateExternalHr(editing.evntSn, editing.otsdHrId, {
+          ...values,
+          ...(editing.version !== undefined ? { version: editing.version } : {}),
+        });
         toast('외부인사 정보를 수정했습니다.', 'success');
       } else {
         await externalHrAdminService.createExternalHr({ ...values });

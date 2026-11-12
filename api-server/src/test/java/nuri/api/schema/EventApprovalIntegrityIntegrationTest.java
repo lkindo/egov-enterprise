@@ -63,9 +63,14 @@ class EventApprovalIntegrityIntegrationTest {
         assertThat(approvalColumns(event)).containsExactly(null, null);
         jdbc.update("UPDATE tb_event_info SET evnt_aprv_yn='Y',evnt_aprv_ymd='20260901' WHERE evnt_sn=?", event);
         authenticate("EVENT_UPDATE");
-        events.updateEvent(event, key, EventInfoDto.builder().evntNm("정정").build());
+        events.updateEvent(event, key, EventInfoDto.builder().evntNm("정정").version(0).build());
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                        events.updateEvent(event, key, EventInfoDto.builder().evntNm("구버전 덮어쓰기").version(0).build()))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION);
         assertThat(approvalColumns(event)).containsExactly("Y", "20260901");
         assertThat(events.getEvent(event).getEvntNm()).isEqualTo("정정");
+        assertThat(events.getEvent(event).getVersion()).isEqualTo(1);
     }
 
     @Test
@@ -83,7 +88,7 @@ class EventApprovalIntegrityIntegrationTest {
                 try {
                     new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
                         VendorTestSql.nameSession(jdbc, application);
-                        events.updateEvent(event, key, EventInfoDto.builder().evntNm("대기 후 정정").build());
+                        events.updateEvent(event, key, EventInfoDto.builder().evntNm("대기 후 정정").version(0).build());
                     });
                 } finally { SecurityContextHolder.clearContext(); }
             });

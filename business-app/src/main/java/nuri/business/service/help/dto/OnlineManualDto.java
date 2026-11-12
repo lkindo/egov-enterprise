@@ -42,6 +42,10 @@ public class OnlineManualDto {
     @Schema(description = "등록 일시")
     private LocalDateTime crtDt;
 
+    @Schema(description = "낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.")
+    @Min(0)
+    private Integer version;
+
     // legacy
     // 레거시 별칭 완전 철폐 (표준화 동기화)
 

@@ -77,6 +77,7 @@ public class HelpService {
         SecurityUtil.assertPermission("HELP_UPDATE");
         Hpcm entity = hpcmRepository.findById(Objects.requireNonNull(hlpSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
         entity.update(dto.getHlpSeCd(), dto.getHlpDfn(), dto.getHlpExpln());
     }
 
@@ -140,6 +141,7 @@ public class HelpService {
         SecurityUtil.assertPermission("HELP_UPDATE");
         OnlineManual entity = onlineManualRepository.findById(Objects.requireNonNull(onlnMnlSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
         entity.update(dto.getOnlnMnlNm(), dto.getOnlnMnlSeCd(), dto.getOnlnMnlDfn(), dto.getOnlnMnlExpln());
     }
 

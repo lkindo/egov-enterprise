@@ -57,6 +57,7 @@ export const SurveyTemplateDtoSchema = /*#__PURE__*/ (() => z.object({
   srvyTmpltExpln: z.string().min(0).max(4000).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type SurveyTemplateDto = z.infer<typeof SurveyTemplateDtoSchema>;
 
@@ -228,6 +229,7 @@ export const SurveyTemplateDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   srvyTmpltExpln: z.string().min(0).max(4000).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const SurveyTemplateDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -237,6 +239,7 @@ export const SurveyTemplateDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   srvyTmpltExpln: z.string().min(0).max(4000).optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const SurveyCopyRequestRequestSchema = /*#__PURE__*/ (() => z.object({

@@ -11,6 +11,7 @@ export interface OnlinePollManageVO {
   pollAtmcDsuseYn?: string;
   frstRgtrId?: string;
   crtDt?: string;
+  version?: number;
 }
 
 /**
@@ -62,6 +63,7 @@ export interface OnlinePollDto {
   pollArticles?: OnlinePollItemDto[];
   frstRgtrId?: string;
   crtDt?: string;
+  version?: number;
 }
 
 export interface OnlinePollItemDto {

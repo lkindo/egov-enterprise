@@ -32,6 +32,7 @@ export interface Community {
   /** 승인을 기다리는 가입 신청 수. 관리자 목록만 싣는다(결정 20). */
   pendingMemberCount?: number | null;
   crtDt?: string;
+  version?: number;
 }
 
 /**

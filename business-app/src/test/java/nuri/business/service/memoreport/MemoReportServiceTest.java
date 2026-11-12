@@ -82,6 +82,7 @@ class MemoReportServiceTest {
     private MemoReport readableReport(Long attachmentId) {
         MemoReport report = MemoReport.builder().memoRptSn(1L).userId("writer").rptrId("recipient")
                 .rptTtl("제목").rptCn("읽은 본문").memoRptYmd("20261030").atchFileSn(attachmentId).build();
+        org.springframework.test.util.ReflectionTestUtils.setField(report, "version", 0);
         given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(report));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("recipient"));
@@ -106,7 +107,9 @@ class MemoReportServiceTest {
         given(fileService.getReadSnapshotForUpdate(15L)).willReturn(snapshot);
 
         MemoReportDto detail = memoReportService.getMemoReport(1L);
-        assertThat(detail.getRptrInqDt()).isEqualTo(report.getRptrInqDt()).isNotNull();
+        assertThat(detail.getRptrInqDt()).isNotNull();
+        assertThat(report.getRptrInqDt()).as("열람은 영속 엔티티를 더럽혀 @Version·수정자를 올리지 않는다").isNull();
+        verify(memoReportRepository).recordFirstReadIfUnread(1L, detail.getRptrInqDt());
         assertThat(detail.getInstructionReadToken()).matches("[a-f0-9]{64}");
         assertThat(detail.getAttachments()).extracting(nuri.business.service.file.dto.FileDto::getOrignlFileNm)
                 .containsExactly("읽은첨부.pdf");
@@ -141,8 +144,14 @@ class MemoReportServiceTest {
         assertThat(detail.getAttachments()).isNull();
         assertThat(detail.getInstructionReadToken()).isNull();
         assertThat(detail.getInstructable()).isFalse();
-        if (actor.equals("recipient")) assertThat(report.getRptrInqDt()).isNotNull();
-        else assertThat(report.getRptrInqDt()).isNull();
+        if (actor.equals("recipient")) {
+            assertThat(detail.getRptrInqDt()).isNotNull();
+            verify(memoReportRepository).recordFirstReadIfUnread(1L, detail.getRptrInqDt());
+        } else {
+            assertThat(detail.getRptrInqDt()).isNull();
+            verify(memoReportRepository, org.mockito.Mockito.never()).recordFirstReadIfUnread(anyLong(), any());
+        }
+        assertThat(report.getRptrInqDt()).isNull();
         org.mockito.Mockito.verifyNoInteractions(fileService, eventPublisher);
     }
 
@@ -458,9 +467,10 @@ class MemoReportServiceTest {
     @DisplayName("기존 비활성·식별불가 수신자를 유지한 정정은 신규 수신자 검사 없이 허용한다")
     void updatePreservesUnresolvableRecipient() {
         MemoReport report = MemoReport.builder().memoRptSn(1L).rptrId("retired").rptTtl("오타").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(report, "version", 0);
         given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(report));
         memoReportService.updateMemoReport(1L, "writer", MemoReportDto.builder()
-                .rptrId("retired").rptTtl("정정").build());
+                .rptrId("retired").rptTtl("정정").version(0).build());
         assertThat(report.getRptTtl()).isEqualTo("정정");
         assertThat(report.getRptrId()).isEqualTo("retired");
         org.mockito.Mockito.verifyNoInteractions(userRepository);
@@ -747,12 +757,14 @@ class MemoReportServiceTest {
         Long memoRptSn = 1L;
         String userId = "user1";
         MemoReport existingEntity = MemoReport.builder().memoRptSn(memoRptSn).userId(userId).rptrId("reportr1").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existingEntity, "version", 0);
         MemoReportDto updateDto = MemoReportDto.builder()
                 .memoRptSn(memoRptSn)
                 .rptTtl("Updated Subject")
                 .rptCn("Updated Content")
                 .rptrId("reportr1")
                 .memoRptYmd("20240502")
+                .version(0)
                 .build();
 
         given(memoReportRepository.findByIdForUpdate(memoRptSn)).willReturn(Optional.of(existingEntity));
@@ -767,6 +779,31 @@ class MemoReportServiceTest {
     }
 
     @Test
+    @DisplayName("메모보고 수정 - version 누락(400) 및 불일치(409) 차단")
+    void updateMemoReport_RejectsMissingOrStaleVersion() {
+        MemoReport existingEntity = MemoReport.builder()
+                .memoRptSn(1L)
+                .userId("user1")
+                .rptrId("reportr1")
+                .rptTtl("Original")
+                .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existingEntity, "version", 2);
+        given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existingEntity));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.updateMemoReport(1L, "user1",
+                        MemoReportDto.builder().rptrId("reportr1").rptTtl("NoVersion").build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.updateMemoReport(1L, "user1",
+                        MemoReportDto.builder().rptrId("reportr1").rptTtl("Stale").version(1).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+
+        assertThat(existingEntity.getRptTtl()).isEqualTo("Original");
+    }
+
+    @Test
     @DisplayName("메모보고 수정 - 새 첨부 할당 거부 시 기존 엔티티를 변경하지 않는다")
     void updateMemoReport_deniedAttachmentDoesNotMutate() {
         MemoReport existing = MemoReport.builder()
@@ -776,11 +813,13 @@ class MemoReportServiceTest {
                 .rptrId("old-reporter")
                 .atchFileSn(100L)
                 .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
         MemoReportDto request = MemoReportDto.builder()
                 .rptTtl("New Subject")
                 .rptCn("New Content")
                 .rptrId("old-reporter")
                 .atchFileSn(101L)
+                .version(0)
                 .build();
         given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existing));
         org.mockito.Mockito.doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
@@ -805,17 +844,20 @@ class MemoReportServiceTest {
                 .rptrId("reporter")
                 .atchFileSn(100L)
                 .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
         given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existing));
 
         memoReportService.updateMemoReport(1L, "user1", MemoReportDto.builder()
                 .rptTtl("Same")
                 .rptrId("reporter")
                 .atchFileSn(100L)
+                .version(0)
                 .build());
         memoReportService.updateMemoReport(1L, "user1", MemoReportDto.builder()
                 .rptTtl("Detached")
                 .rptrId("reporter")
                 .atchFileSn(null)
+                .version(0)
                 .build());
 
         org.mockito.Mockito.verifyNoInteractions(attachmentAssignmentPolicy);
@@ -848,8 +890,9 @@ class MemoReportServiceTest {
 
         MemoReportDto detail = memoReportService.getMemoReport(memoRptSn);
 
-        assertThat(entity.getRptrInqDt()).isNotNull();
-        assertThat(detail.getRptrInqDt()).isEqualTo(entity.getRptrInqDt());
+        assertThat(detail.getRptrInqDt()).isNotNull();
+        assertThat(entity.getRptrInqDt()).isNull();
+        verify(memoReportRepository).recordFirstReadIfUnread(memoRptSn, detail.getRptrInqDt());
     }
 
     @Test

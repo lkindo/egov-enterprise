@@ -76,8 +76,11 @@ class ConfigSafetyLinterTest {
             "foundation/src/main/java/nuri/foundation/core/config/AsyncConfig.java";
     private static final String APP_YML = "api-server/src/main/resources/application.yml";
     private static final String APP_PROD_YML = "api-server/src/main/resources/application-prod.yml";
+    private static final String APP_TEST_BASE_YML = "api-server/src/test/resources/application.yml";
 
     // ---- 판정 키 ---------------------------------------------------------------------
+    private static final String KEY_ALLOW_BEAN_OVERRIDING = "spring.main.allow-bean-definition-overriding";
+    private static final String KEY_ALLOW_CIRCULAR_REFERENCES = "spring.main.allow-circular-references";
     private static final String KEY_EXPOSURE_INCLUDE = "management.endpoints.web.exposure.include";
     private static final String KEY_SHOW_DETAILS = "management.endpoint.health.show-details";
     private static final String KEY_JDBC_URL = "spring.datasource.jdbc-url";
@@ -326,6 +329,21 @@ class ConfigSafetyLinterTest {
             violations.addAll(prodMfaProtectionViolations(
                     composeProdSrc, stripComments(HarnessSourceIndex.read(deployScriptPath))));
         }
+
+        // ── 15) [2026-11-12 Wave 2] 중복 빈 덮어쓰기·순환 참조 조용한 허용 차단 — 운영 base·기본 test base 모두 명시 false,
+        //        모든 main 프로파일 yml(application-*.yml)의 true 재허용 금지
+        Path appTestBaseYml = requireFile(root, APP_TEST_BASE_YML);
+        Map<String, Map<String, String>> profileYamls = new LinkedHashMap<>();
+        try (var overlayStream = Files.newDirectoryStream(
+                root.resolve("api-server/src/main/resources"), "application-*.yml")) {
+            List<Path> sortedOverlays = new ArrayList<>();
+            overlayStream.forEach(sortedOverlays::add);
+            sortedOverlays.sort(java.util.Comparator.comparing(p -> p.getFileName().toString()));
+            for (Path overlayPath : sortedOverlays) {
+                profileYamls.put(overlayPath.getFileName().toString(), flattenYaml(overlayPath));
+            }
+        }
+        violations.addAll(beanDefinitionOverridingViolations(base, flattenYaml(appTestBaseYml), profileYamls));
 
         if (!violations.isEmpty()) {
             StringBuilder sb = new StringBuilder();
@@ -690,6 +708,72 @@ class ConfigSafetyLinterTest {
                         .replace("docker pull \"$ref\"",
                                 "docker pull \"$ref\"\nMFA_REQUIRE_PROTECTED_EFFECTIVE=$(printf '%s'"
                                         + " \"${MFA_REQUIRE_PROTECTED:-true}\" | tr '[:upper:]' '[:lower:]')")));
+        broken.forEach((name, violations) -> assertFalse(violations.isEmpty(), name));
+    }
+
+    static List<String> beanDefinitionOverridingViolations(
+            Map<String, String> mainBaseYaml,
+            Map<String, String> testBaseYaml,
+            Map<String, Map<String, String>> profileYamls) {
+        List<String> violations = new ArrayList<>();
+        for (String strictKey : List.of(KEY_ALLOW_BEAN_OVERRIDING, KEY_ALLOW_CIRCULAR_REFERENCES)) {
+            auditRequiredFalseFlag(APP_YML, mainBaseYaml, strictKey, violations);
+            auditRequiredFalseFlag(APP_TEST_BASE_YML, testBaseYaml, strictKey, violations);
+            for (Map.Entry<String, Map<String, String>> entry : profileYamls.entrySet()) {
+                String raw = entry.getValue().get(strictKey);
+                if (raw != null && !"false".equalsIgnoreCase(unquote(raw))) {
+                    violations.add(entry.getKey() + ": " + strictKey + " = '" + unquote(raw)
+                            + "' 입니다 — 프로파일 오버레이가 중복 빈 덮어쓰기·순환 참조를 다시 허용하면 운영/검증 경로에서 빈 그래프 결함이 은폐됩니다.");
+                }
+            }
+        }
+        return violations;
+    }
+
+    private static void auditRequiredFalseFlag(
+            String label,
+            Map<String, String> yaml,
+            String key,
+            List<String> violations) {
+        String raw = yaml.get(key);
+        if (raw == null || unquote(raw).isEmpty()) {
+            violations.add(label + ": " + key + " 키가 없습니다 — 명시적으로 false 를 선언해 빈 그래프 제약을 고정하십시오.");
+            return;
+        }
+        if (!"false".equalsIgnoreCase(unquote(raw))) {
+            violations.add(label + ": " + key + " = '" + unquote(raw)
+                    + "' 입니다 — 고정 false 여야 합니다(placeholder·true 금지).");
+        }
+    }
+
+    @Test
+    @DisplayName("[H5 · Wave 2] 중복 빈 덮어쓰기·순환 참조(allow-bean-definition-overriding / allow-circular-references)가 true·누락·placeholder·프로파일 재허용이면 red")
+    void beanDefinitionOverridingRejectsEnabledMissingOrProfileReenable() {
+        Map<String, String> okBase = Map.of(
+                KEY_ALLOW_BEAN_OVERRIDING, "false",
+                KEY_ALLOW_CIRCULAR_REFERENCES, "false");
+        Map<String, String> okTestBase = Map.of(
+                KEY_ALLOW_BEAN_OVERRIDING, "false",
+                KEY_ALLOW_CIRCULAR_REFERENCES, "false");
+        assertTrue(beanDefinitionOverridingViolations(okBase, okTestBase, Map.of("application-prod.yml", Map.of())).isEmpty());
+
+        Map<String, List<String>> broken = new LinkedHashMap<>();
+        broken.put("main application.yml overriding true 회귀", beanDefinitionOverridingViolations(
+                Map.of(KEY_ALLOW_BEAN_OVERRIDING, "true", KEY_ALLOW_CIRCULAR_REFERENCES, "false"), okTestBase, Map.of()));
+        broken.put("main application.yml circular true 회귀", beanDefinitionOverridingViolations(
+                Map.of(KEY_ALLOW_BEAN_OVERRIDING, "false", KEY_ALLOW_CIRCULAR_REFERENCES, "true"), okTestBase, Map.of()));
+        broken.put("main application.yml 키 누락", beanDefinitionOverridingViolations(
+                Map.of(KEY_ALLOW_BEAN_OVERRIDING, "false"), okTestBase, Map.of()));
+        broken.put("main application.yml placeholder 우회", beanDefinitionOverridingViolations(
+                Map.of(KEY_ALLOW_BEAN_OVERRIDING, "${ALLOW_BEAN_OVERRIDING:false}", KEY_ALLOW_CIRCULAR_REFERENCES, "false"), okTestBase, Map.of()));
+        broken.put("test base application.yml true 불일치", beanDefinitionOverridingViolations(
+                okBase, Map.of(KEY_ALLOW_BEAN_OVERRIDING, "true", KEY_ALLOW_CIRCULAR_REFERENCES, "false"), Map.of()));
+        broken.put("application-prod.yml true 재허용", beanDefinitionOverridingViolations(
+                okBase, okTestBase, Map.of("application-prod.yml", Map.of(KEY_ALLOW_BEAN_OVERRIDING, "true"))));
+        broken.put("application-e2e.yml circular true 재허용", beanDefinitionOverridingViolations(
+                okBase, okTestBase, Map.of("application-e2e.yml", Map.of(KEY_ALLOW_CIRCULAR_REFERENCES, "true"))));
+        broken.put("application-swagger.yml overriding true 재허용", beanDefinitionOverridingViolations(
+                okBase, okTestBase, Map.of("application-swagger.yml", Map.of(KEY_ALLOW_BEAN_OVERRIDING, "true"))));
         broken.forEach((name, violations) -> assertFalse(violations.isEmpty(), name));
     }
 

@@ -275,36 +275,59 @@ class CommunityServiceImplTest {
                 .cmntySn(101L)
                 .cmntyNm("Comm A")
                 .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(community, "version", 0);
         given(communityRepository.findByIdForUpdate(101L)).willReturn(Optional.of(community));
-        
+
         CommunityDto updateDto = CommunityDto.builder()
                 .cmntySn(101L)
                 .cmntyNm("Updated Comm")
+                .version(0)
                 .build();
 
         // when
         communityService.updateCommunity("user1", updateDto);
-        
+
         // then
         assertThat(community.getCmntyNm()).isEqualTo("Updated Comm");
+    }
+
+    @Test
+    @DisplayName("커뮤니티 수정 - 버전 누락(400)·낡은 버전(409)은 거부한다")
+    void updateCommunity_RejectsMissingOrStaleVersion() {
+        Community community = Community.builder().cmntySn(101L).cmntyNm("Comm A").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(community, "version", 2);
+        given(communityRepository.findByIdForUpdate(101L)).willReturn(Optional.of(community));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> communityService.updateCommunity("user1",
+                CommunityDto.builder().cmntySn(101L).cmntyNm("NoVer").build()))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> communityService.updateCommunity("user1",
+                CommunityDto.builder().cmntySn(101L).cmntyNm("Stale").version(1).build()))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION);
+
+        assertThat(community.getCmntyNm()).isEqualTo("Comm A");
     }
 
     @Test
     void newTemplateIsValidatedBeforeCreateOrUpdateAndOldSelectionCanBeKept() {
         var rejected = new nuri.foundation.core.exception.BusinessException(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
         org.mockito.Mockito.doThrow(rejected).when(templateAssignmentPolicy).assertActiveForAssignment("missing");
-        var request = CommunityDto.builder().cmntySn(101L).cmntyNm("정정").tmpltId("missing").build();
+        var request = CommunityDto.builder().cmntySn(101L).cmntyNm("정정").tmpltId("missing").version(0).build();
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> communityService.createCommunity("writer", request)).isSameAs(rejected);
         verify(communityRepository, never()).save(any());
         var existing = Community.builder().cmntySn(101L).cmntyNm("원래").tmpltId("retired").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
         given(communityRepository.findByIdForUpdate(101L)).willReturn(Optional.of(existing));
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> communityService.updateCommunity("writer", request)).isSameAs(rejected);
         assertThat(existing.getCmntyNm()).isEqualTo("원래");
-        communityService.updateCommunity("writer", CommunityDto.builder().cmntySn(101L).cmntyNm("정정").tmpltId("retired").build());
+        communityService.updateCommunity("writer", CommunityDto.builder().cmntySn(101L).cmntyNm("정정").tmpltId("retired").version(0).build());
         assertThat(existing.getTmpltId()).isEqualTo("retired");
         assertThat(existing.getCmntyNm()).isEqualTo("정정");
         verify(templateAssignmentPolicy, never()).assertActiveForAssignment("retired");
-        communityService.updateCommunity("writer", CommunityDto.builder().cmntySn(101L).cmntyNm("정정").tmpltId(null).build());
+        communityService.updateCommunity("writer", CommunityDto.builder().cmntySn(101L).cmntyNm("정정").tmpltId(null).version(0).build());
         assertThat(existing.getTmpltId()).isNull();
     }
 
@@ -312,7 +335,7 @@ class CommunityServiceImplTest {
     @DisplayName("템플릿 기능이 없는 구성은 새 템플릿 지정을 거부하고, 기존 값 유지와 템플릿 없음은 받는다(fail-closed)")
     void withoutTheTemplateFeatureANewTemplateIsRefusedButKeepingAndClearingPass() {
         given(templateAssignmentPolicyProvider.getIfAvailable()).willReturn(null);
-        var request = CommunityDto.builder().cmntySn(101L).cmntyNm("새 커뮤니티").tmpltId("TMPL01").build();
+        var request = CommunityDto.builder().cmntySn(101L).cmntyNm("새 커뮤니티").tmpltId("TMPL01").version(0).build();
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> communityService.createCommunity("writer", request))
                 .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE)
@@ -320,16 +343,17 @@ class CommunityServiceImplTest {
         verify(communityRepository, never()).save(any());
 
         var existing = Community.builder().cmntySn(101L).cmntyNm("원래").tmpltId("KEPT").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
         given(communityRepository.findByIdForUpdate(101L)).willReturn(Optional.of(existing));
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> communityService.updateCommunity("writer", request))
                 .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
                 .hasMessageContaining("템플릿 기능이 없어");
         assertThat(existing.getCmntyNm()).isEqualTo("원래");
 
-        communityService.updateCommunity("writer", CommunityDto.builder().cmntySn(101L).cmntyNm("정정").tmpltId("KEPT").build());
+        communityService.updateCommunity("writer", CommunityDto.builder().cmntySn(101L).cmntyNm("정정").tmpltId("KEPT").version(0).build());
         assertThat(existing.getCmntyNm()).isEqualTo("정정");
         assertThat(existing.getTmpltId()).isEqualTo("KEPT");
-        communityService.updateCommunity("writer", CommunityDto.builder().cmntySn(101L).cmntyNm("정정").tmpltId(null).build());
+        communityService.updateCommunity("writer", CommunityDto.builder().cmntySn(101L).cmntyNm("정정").tmpltId(null).version(0).build());
         assertThat(existing.getTmpltId()).isNull();
         given(communityRepository.save(any(Community.class))).willAnswer(invocation -> invocation.getArgument(0));
         communityService.createCommunity("writer", CommunityDto.builder().cmntyNm("템플릿 없음").build());

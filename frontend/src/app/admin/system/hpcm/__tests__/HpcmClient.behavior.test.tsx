@@ -86,7 +86,7 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
   ),
 }));
 
-const ROW = { hlpSn: 7, hlpSeCd: 'BBS', hlpDfn: '게시판 삭제 가이드', hlpExpln: '물리 삭제 절차' };
+const ROW = { hlpSn: 7, hlpSeCd: 'BBS', hlpDfn: '게시판 삭제 가이드', hlpExpln: '물리 삭제 절차', version: 0 };
 
 const PAGE = { list: [ROW], total: 42, page: 0, size: 10, totalPage: 5 };
 
@@ -202,7 +202,7 @@ describe('도움말 콘텐츠 — 수정과 삭제', () => {
 
     await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
     expect(mocks.update.mock.calls[0][0]).toBe(7);
-    expect(mocks.update.mock.calls[0][1]).toMatchObject({ hlpSn: 7, hlpDfn: '고친 명칭' });
+    expect(mocks.update.mock.calls[0][1]).toMatchObject({ hlpSn: 7, hlpDfn: '고친 명칭', version: 0 });
     expect(mocks.create).not.toHaveBeenCalled();
   });
 

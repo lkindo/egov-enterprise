@@ -467,6 +467,7 @@ class OnlinePollServiceTest {
                         OnlinePollArticle.builder().pollArtclSn(11L).pollArtclNm("첫째").build(),
                         OnlinePollArticle.builder().pollArtclSn(12L).pollArtclNm("둘째").build())))
                 .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(poll, "version", 0);
         given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(poll));
         return poll;
     }
@@ -477,7 +478,26 @@ class OnlinePollServiceTest {
 
     private static OnlinePollManageDto pollUpdate(List<OnlinePollArticleDto> items) {
         return OnlinePollManageDto.builder().pollSn(1L).pollNm("투표 수정")
-                .pollBgngYmd("20000101").pollEndYmd("29991231").pollArticles(items).build();
+                .pollBgngYmd("20000101").pollEndYmd("29991231").pollArticles(items).version(0).build();
+    }
+
+    @Test
+    @DisplayName("설문 수정 - 버전 누락(400)·낡은 버전(409)은 거부한다")
+    void updatePoll_RejectsMissingOrStaleVersion() {
+        OnlinePollManage poll = editablePoll();
+        org.springframework.test.util.ReflectionTestUtils.setField(poll, "version", 3);
+
+        assertThatThrownBy(() -> onlinePollService.updatePoll(
+                OnlinePollManageDto.builder().pollSn(1L).pollNm("NoVer").build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+
+        assertThatThrownBy(() -> onlinePollService.updatePoll(
+                OnlinePollManageDto.builder().pollSn(1L).pollNm("Stale").version(2).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+
+        assertThat(poll.getPollNm()).isEqualTo("투표");
     }
 
     @Test
@@ -494,6 +514,7 @@ class OnlinePollServiceTest {
                     .pollNm("Old")
                     .pollArticles(new ArrayList<>())
                     .build();
+            org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
             given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
 
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
@@ -503,6 +524,7 @@ class OnlinePollServiceTest {
                     .pollBgngYmd("2024/01/01")
                     .pollEndYmd("2024/12/31")
                     .pollArticles(List.of(OnlinePollArticleDto.builder().pollArtclNm("New Item").build()))
+                    .version(0)
                     .build();
 
             onlinePollService.updatePoll(dto);
@@ -528,6 +550,7 @@ class OnlinePollServiceTest {
                     .pollNm("투표")
                     .pollArticles(new ArrayList<>(List.of(first, second)))
                     .build();
+            org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
             given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
 
             // 1) 같은 개수로 수정 시 기존 엔티티(PK 11, 12)가 유지된 채 이름만 갱신된다
@@ -539,6 +562,7 @@ class OnlinePollServiceTest {
                     .pollArticles(List.of(
                             OnlinePollArticleDto.builder().pollArtclSn(11L).pollArtclNm("변경 1").build(),
                             OnlinePollArticleDto.builder().pollArtclSn(12L).pollArtclNm("변경 2").build()))
+                    .version(0)
                     .build();
             onlinePollService.updatePoll(inPlaceDto);
             assertThat(entity.getPollArticles()).hasSize(2);
@@ -556,6 +580,7 @@ class OnlinePollServiceTest {
                     .pollBgngYmd("20260101")
                     .pollEndYmd("20261231")
                     .pollArticles(List.of(OnlinePollArticleDto.builder().pollArtclSn(11L).pollArtclNm("변경 1").build()))
+                    .version(0)
                     .build();
             assertThatThrownBy(() -> onlinePollService.updatePoll(shrinkDto))
                     .isInstanceOf(BusinessException.class)
@@ -587,6 +612,7 @@ class OnlinePollServiceTest {
                     .pollAtmcDsuseYn("Y")
                     .pollArticles(new ArrayList<>())
                     .build();
+            org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
             given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
 
             // 화면이 보내는 실제 모양 — 제목만 고치고 자동폐기 여부는 싣지 않는다.
@@ -595,6 +621,7 @@ class OnlinePollServiceTest {
                     .pollNm("제목만 고친 설문")
                     .pollBgngYmd("20240101")
                     .pollEndYmd("20241231")
+                    .version(0)
                     .build();
 
             onlinePollService.updatePoll(dto);
@@ -619,6 +646,7 @@ class OnlinePollServiceTest {
                     .pollAtmcDsuseYn("Y")
                     .pollArticles(new ArrayList<>())
                     .build();
+            org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
             given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
 
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
@@ -627,6 +655,7 @@ class OnlinePollServiceTest {
                     .pollBgngYmd("20240101")
                     .pollEndYmd("20241231")
                     .pollAtmcDsuseYn("N")
+                    .version(0)
                     .build();
 
             onlinePollService.updatePoll(dto);
@@ -644,12 +673,14 @@ class OnlinePollServiceTest {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL")).thenReturn(true);
 
             OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).pollNm("Old").build();
+            org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
             given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
 
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
                     .pollSn(1L)
                     .pollNm("New")
                     .pollArticles(null)
+                    .version(0)
                     .build();
 
             onlinePollService.updatePoll(dto);
@@ -961,6 +992,7 @@ class OnlinePollServiceTest {
                     .pollNm("Old")
                     .pollArticles(existingArticles)
                     .build();
+            org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
                     
             given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
 
@@ -975,6 +1007,7 @@ class OnlinePollServiceTest {
                     .pollDsuseYn("")
                     .pollAtmcDsuseYn(" ")
                     .pollArticles(List.of(keepItem, newItem, emptyItem))
+                    .version(0)
                     .build();
 
             onlinePollService.updatePoll(dto);

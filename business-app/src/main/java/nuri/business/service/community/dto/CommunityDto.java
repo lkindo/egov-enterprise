@@ -54,6 +54,9 @@ public class CommunityDto {
     private Long pendingMemberCount;
     // [2026-09-26 DIP V2] 등록자명(frstRegisterNm)은 from() 이 채우지 않아 늘 null 이라 걷었다.
     private String crtDt;
+    @Schema(description = "낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.")
+    @Min(0)
+    private Integer version;
 
     public static CommunityDto from(Community community) {
         if (community == null)
@@ -69,6 +72,7 @@ public class CommunityDto {
                 .crtDt(community.getCrtDt() != null
                         ? community.getCrtDt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                         : null)
+                .version(community.getVersion())
                 .build();
     }
 }

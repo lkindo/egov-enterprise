@@ -148,7 +148,10 @@ export default function TemplateAdminClient({
     setIsAdding(true);
     try {
       if (editingId) {
-        await templateAdminService.updateTemplate(editingId, validated);
+        await templateAdminService.updateTemplate(editingId, {
+          ...validated,
+          ...(newTemplate.version != null ? { version: newTemplate.version } : {}),
+        });
         toast('템플릿을 수정했습니다.', 'success');
       } else {
         await templateAdminService.createTemplate(validated);
@@ -177,7 +180,14 @@ export default function TemplateAdminClient({
   const handleOpenEdit = (item: TmplatInfo) => {
     validation.setFormErrors({}, false);
     setEditingId(item.tmpltId);
-    setNewTemplate({ tmpltId: item.tmpltId, tmpltNm: item.tmpltNm, tmpltSeCd: item.tmpltSeCd, tmpltPath: item.tmpltPath, useYn: item.useYn });
+    setNewTemplate({
+      tmpltId: item.tmpltId,
+      tmpltNm: item.tmpltNm,
+      tmpltSeCd: item.tmpltSeCd,
+      tmpltPath: item.tmpltPath,
+      useYn: item.useYn,
+      version: item.version,
+    });
     setIsAddOpen(true);
   };
 

@@ -25,6 +25,7 @@ export const MemoReportDtoSchema = /*#__PURE__*/ (() => z.object({
   instructable: z.boolean().optional(),
   instructionReadToken: z.string().min(64).max(64).regex(new RegExp("^[a-f0-9]{64}$")).optional().nullable(),
   attachments: z.array(z.lazy(() => FileDtoSchema)).optional().nullable(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type MemoReportDto = z.infer<typeof MemoReportDtoSchema>;
 
@@ -71,6 +72,7 @@ export const MemoReportDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   rptrId: z.string().min(0).max(20),
   rptCn: z.string().min(0).max(4000).optional(),
   atchFileSn: z.number().int().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const MemoReportDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -92,6 +94,7 @@ export const MemoReportDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   instructable: z.boolean().optional().nullable(),
   instructionReadToken: z.string().min(64).max(64).regex(new RegExp("^[a-f0-9]{64}$")).optional().nullable(),
   attachments: z.array(z.lazy(() => FileDtoResponseSchema)).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const MemoInstructionRequestRequestSchema = /*#__PURE__*/ (() => z.object({

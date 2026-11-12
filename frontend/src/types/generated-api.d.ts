@@ -6243,6 +6243,11 @@ export interface components {
             pollArticles?: components["schemas"]["OnlinePollArticleDto"][];
             /** @description 현재 사용자의 투표 참여 여부 */
             hasVoted?: boolean;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         FileDto: {
             /** Format: int64 */
@@ -6310,6 +6315,11 @@ export interface components {
             readonly instructionReadToken?: string | null;
             /** @description 상세와 같은 시점에 읽은 첨부. 미조회·열람 대상 아님은 null, 조회 결과 없음은 빈 목록 */
             readonly attachments?: components["schemas"]["FileDto"][] | null;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         /** @description 온라인 메뉴얼 DTO */
         OnlineManualDto: {
@@ -6334,6 +6344,11 @@ export interface components {
              * @description 등록 일시
              */
             crtDt?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         /** @description Description */
         HpcmDto: {
@@ -6356,6 +6371,11 @@ export interface components {
              * @description Description
              */
             crtDt?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         /** @description 부서 업무 저장 요청 */
         DeptJobSaveRequest: {
@@ -6591,6 +6611,11 @@ export interface components {
             frstRgtrId?: string;
             /** Format: date-time */
             crtDt?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         ApiResponseTemplateDto: {
             success?: boolean;
@@ -6744,6 +6769,11 @@ export interface components {
              * @description 등록 일시
              */
             crtDt?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         /** @description 팝업 저장 요청 */
         PopupSaveRequest: {
@@ -7359,6 +7389,11 @@ export interface components {
             /** Format: date-time */
             readonly mdfcnDt?: string | null;
             readonly lastMdfrId?: string | null;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         ApiResponseExternalHrDto: {
             success?: boolean;
@@ -7445,6 +7480,11 @@ export interface components {
              * @description 최종 수정 일시
              */
             mdfcnDt?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         CommunityDto: {
             /** Format: int64 */
@@ -7466,6 +7506,11 @@ export interface components {
             /** Format: int64 */
             readonly pendingMemberCount?: number | null;
             crtDt?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         ReplaceGroups: {
             groups: string[];
@@ -8972,6 +9017,11 @@ export interface components {
             pollArticles?: components["schemas"]["OnlinePollArticleDto"][];
             /** @description 현재 사용자의 투표 참여 여부 */
             hasVoted?: boolean;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         PageResponseOnlinePollManageDto: {
             /** @description 현재 페이지의 항목 */
@@ -12898,6 +12948,11 @@ export interface components {
              * @description 최종 수정 일시
              */
             mdfcnDt?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         PageResponseEventInfoDto: {
             /** @description 현재 페이지의 항목 */

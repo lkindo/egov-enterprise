@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.CascadeType;
 import lombok.*;
@@ -29,6 +30,10 @@ public class OnlinePollManage extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long pollSn;
+
+    /** 낙관적 잠금 버전(V2_149). 화면이 읽은 값과 다르면 다른 사람이 먼저 고친 것이다(서비스가 409 로 거부한다). */
+    @Version
+    private Integer version;
 
     @Column(length = 100, nullable = false)
     private String pollNm;

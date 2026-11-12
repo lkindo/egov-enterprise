@@ -69,22 +69,18 @@ public class EventInfoService {
         log.info("Updating event serial number: {}", evntSn);
         EventInfo eventInfo = eventInfoRepository.findByIdForUpdate(Objects.requireNonNull(evntSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
- 
-        EventInfo updated = EventInfo.builder()
-                .evntSn(evntSn)
-                .bizYr(dto.getBizYr())
-                .evntNm(dto.getEvntNm())
-                .evntCn(dto.getEvntCn())
-                .evntBgngYmd(normalizeYmd(dto.getEvntBgngYmd()))
-                .evntEndYmd(normalizeYmd(dto.getEvntEndYmd()))
-                .evntUseCnt(dto.getEvntUseCnt())
-                .picNm(dto.getPicNm())
-                .prepMttr(dto.getPrepMttr())
-                .evntTypeCd(dto.getEvntTypeCd())
-                .build();
-        // 재빌드-merge 패턴: 작성자(frstRgtrId)는 @CreatedBy 가 update 시 재적용되지 않으므로 기존 값 보존
-        updated.setFrstRgtrId(eventInfo.getFrstRgtrId());
-        eventInfoRepository.save(updated);
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), eventInfo.getVersion());
+
+        eventInfo.update(
+                dto.getBizYr(),
+                dto.getEvntNm(),
+                dto.getEvntCn(),
+                normalizeYmd(dto.getEvntBgngYmd()),
+                normalizeYmd(dto.getEvntEndYmd()),
+                dto.getEvntUseCnt(),
+                dto.getPicNm(),
+                dto.getPrepMttr(),
+                dto.getEvntTypeCd());
         log.info("Event updated successfully: {}", evntSn);
     }
  

@@ -185,7 +185,10 @@ test.describe('Board & Community (Business Flow)', () => {
             const community = (await response.json()).data;
             communityId = community.cmntySn;
             expect(community.tmpltId).toBe(active.tmpltId);
-            expect((await adminRequest.put(`${templates}/${active.tmpltId}`, { data: { ...active, useYn: 'N' } })).status()).toBe(200);
+            const activePersisted = (await (await adminRequest.get(`${templates}/${active.tmpltId}`)).json()).data;
+            expect((await adminRequest.put(`${templates}/${active.tmpltId}`, {
+                data: { ...active, useYn: 'N', version: activePersisted.version },
+            })).status()).toBe(200);
 
             // 새 브라우저 조회로 캐시를 비운 뒤 기존 참조의 보존을 검증한다.
             await adminPage.reload();
@@ -223,7 +226,7 @@ test.describe('Board & Community (Business Flow)', () => {
                 const owned = (await (await adminRequest.get(`${communities}/${communityId}`)).json()).data;
                 expect(owned.cmntyNm).toBe(name);
                 expect((await adminRequest.put(`${communities}/${communityId}`, {
-                    data: { cmntyNm: name, cmntyIntroCn: owned.cmntyIntroCn, tmpltId: null, useYn: 'N' },
+                    data: { cmntyNm: name, cmntyIntroCn: owned.cmntyIntroCn, tmpltId: null, useYn: 'N', version: owned.version },
                 })).status()).toBe(200);
                 expect((await adminRequest.delete(`${communities}/${communityId}`)).status()).toBe(200);
             }

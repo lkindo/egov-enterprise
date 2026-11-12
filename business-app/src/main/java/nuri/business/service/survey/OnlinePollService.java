@@ -194,6 +194,7 @@ public class OnlinePollService {
 
         OnlinePollManage entity = pollManageRepository.findByIdForUpdate(Objects.requireNonNull(dto.getPollSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
         
         /*
          * 자동폐기 여부(pollAtmcDsuseYn)는 **요청에 없으면 기존 값을 유지한다.**
@@ -224,6 +225,8 @@ public class OnlinePollService {
 
         if (dto.getPollArticles() != null) {
             updatePollArticles(entity, dto.getPollArticles(), currentUserId);
+            // 문항 이름만 바뀌어도 상위 설문 엔티티의 @Version 이 증가하도록 수정 시각을 명시 갱신한다.
+            entity.setMdfcnDt(nuri.foundation.core.util.ServiceTime.now());
         }
     }
 

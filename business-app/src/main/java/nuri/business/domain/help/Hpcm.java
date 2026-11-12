@@ -18,6 +18,10 @@ public class Hpcm extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long hlpSn;
 
+    /** 낙관적 잠금 버전(V2_149). 화면이 읽은 값과 다르면 다른 사람이 먼저 고친 것이다(서비스가 409 로 거부한다). */
+    @Version
+    private Integer version;
+
     @Column(length = 3, nullable = false)
     private String hlpSeCd;
 

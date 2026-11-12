@@ -12,7 +12,8 @@ spring:
   #   active: dev
   main:
     lazy-initialization: false
-    allow-bean-definition-overriding: true
+    allow-bean-definition-overriding: false
+    allow-circular-references: false
   mail:
     # spring.mail.host 가 설정되면 RealEmailSender 가, 없으면 LoggingEmailSender 가 활성화된다.
     # 발신 주소는 nuri.mail.from 이 정본이며 미설정 시 spring.mail.username → 아래 기본값 순으로 내려간다.
@@ -275,7 +276,7 @@ server:
     encoding:
       charset: UTF-8
       enabled: true
-      force: true
+      force-request: true
   error:
     include-message: always
     include-exception: false

@@ -186,6 +186,7 @@ public class CommunityService {
         nuri.business.security.util.SecurityUtil.assertPermission("COMMUNITY_UPDATE_ALL");
         Community community = communityRepository.findByIdForUpdate(Objects.requireNonNull(dto.getCmntySn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + dto.getCmntySn()));
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), community.getVersion());
 
         String templateId = normalizeTemplateId(dto.getTmpltId());
         // 기존 비활성·식별 불가 ID의 유지 정정은 허용한다. 새 선택만 활성 검증을 한다.

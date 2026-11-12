@@ -22,6 +22,7 @@ export const ExternalHrDtoSchema = /*#__PURE__*/ (() => z.object({
   frstRgtrId: z.string().optional().nullable(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   lastMdfrId: z.string().optional().nullable(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type ExternalHrDto = z.infer<typeof ExternalHrDtoSchema>;
 
@@ -68,6 +69,7 @@ export const ExternalHrDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   mdTelno: z.string().min(0).max(4).optional(),
   endTelno: z.string().min(0).max(4).optional(),
   emlAddr: z.string().min(0).max(320).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const ExternalHrDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -86,6 +88,7 @@ export const ExternalHrDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   frstRgtrId: z.string().optional().nullable(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   lastMdfrId: z.string().optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const ApiResponseExternalHrDtoRequestSchema = /*#__PURE__*/ (() => z.object({

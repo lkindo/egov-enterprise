@@ -23,6 +23,10 @@ public class EventInfo extends BaseEntity {
     @Column(name = "evnt_sn")
     private Long evntSn;
 
+    /** 낙관적 잠금 버전(V2_149). 화면이 읽은 값과 다르면 다른 사람이 먼저 고친 것이다(서비스가 409 로 거부한다). */
+    @Version
+    private Integer version;
+
     @Column(length = 4)
     private String bizYr;
 
@@ -85,5 +89,19 @@ public class EventInfo extends BaseEntity {
                                    String prepMttr, String evntTypeCd) {
         return new EventInfo(evntSn, bizYr, evntNm, evntCn, evntBgngYmd, evntEndYmd, evntUseCnt,
                 picNm, prepMttr, evntTypeCd);
+    }
+
+    /** 관리 중인 엔티티를 제자리에서 갱신해 @Version 과 읽기 전용 승인 컬럼(evntAprvYn·evntAprvYmd)을 보존한다. */
+    public void update(String bizYr, String evntNm, String evntCn, String evntBgngYmd, String evntEndYmd,
+                       Long evntUseCnt, String picNm, String prepMttr, String evntTypeCd) {
+        this.bizYr = bizYr;
+        this.evntNm = evntNm;
+        this.evntCn = evntCn;
+        this.evntBgngYmd = evntBgngYmd;
+        this.evntEndYmd = evntEndYmd;
+        this.evntUseCnt = evntUseCnt;
+        this.picNm = picNm;
+        this.prepMttr = prepMttr;
+        this.evntTypeCd = evntTypeCd;
     }
 }

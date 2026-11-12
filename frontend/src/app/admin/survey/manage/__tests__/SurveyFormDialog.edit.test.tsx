@@ -66,6 +66,7 @@ const RETIRED: SurveyFormInitialValues = {
   pollDsuseYn: 'Y',
   beginDate: new Date(2026, 7, 1),
   endDate: new Date(2026, 7, 31),
+  version: 3,
 };
 
 function renderEdit(initialValues: SurveyFormInitialValues = RETIRED) {
@@ -121,6 +122,7 @@ describe('설문 수정 모달 — 전체 치환 왕복', () => {
       // 저장 포맷은 'yyyyMMdd' 8자다 — varchar(8)/@Size(max = 8) 이라 10자는 400 이다.
       pollBgngYmd: '20260801',
       pollEndYmd: '20260831',
+      version: 3,
     });
   });
 

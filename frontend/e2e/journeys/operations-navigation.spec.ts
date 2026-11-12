@@ -182,11 +182,15 @@ test.describe('메모 보고의 읽은 내용과 지시 저장', () => {
                 expect(Buffer.concat(chunks)).toEqual(fileBytes);
 
                 if (changed === '본문') {
-                    const edited = await adminRequest.put(`${memos}/${memoId}`, { data: { ...payload, rptCn: updatedBody } });
+                    const edited = await adminRequest.put(`${memos}/${memoId}`, {
+                        data: { ...payload, rptCn: updatedBody, version: firstRead.version },
+                    });
                     expect(edited.status()).toBe(200);
                 } else {
                     // 개인 귀속 첨부는 개별 삭제로 지우지 않는다(ADR-0048). 묶음을 바꾸는 일은 메모 수정이 맡는다.
-                    const detached = await adminRequest.put(`${memos}/${memoId}`, { data: { ...payload, atchFileSn: null } });
+                    const detached = await adminRequest.put(`${memos}/${memoId}`, {
+                        data: { ...payload, atchFileSn: null, version: firstRead.version },
+                    });
                     expect(detached.status()).toBe(200);
                 }
                 const draft = `보존해야 할 지시 초안 ${title}`;

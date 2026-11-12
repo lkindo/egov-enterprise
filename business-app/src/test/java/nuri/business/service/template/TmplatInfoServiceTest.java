@@ -243,8 +243,9 @@ class TmplatInfoServiceTest {
     void updateTmplatInfo() {
         authenticate("TEMPLATE_UPDATE");
         Template template = Template.builder().tmpltId("TMPLT_001").tmpltNm("Old").tmpltSeCd("TMPT01").tmpltPath("/old").useYn("Y").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(template, "version", 0);
         when(templateRepository.findByIdForUpdate("TMPLT_001")).thenReturn(Optional.of(template));
-        TemplateDto dto = TemplateDto.builder().tmpltId("IGNORED").tmpltNm("New").tmpltSeCd("TMPT02").tmpltPath("/new").useYn("N").build();
+        TemplateDto dto = TemplateDto.builder().tmpltId("IGNORED").tmpltNm("New").tmpltSeCd("TMPT02").tmpltPath("/new").useYn("N").version(0).build();
 
         TemplateDto result = tmplatInfoService.updateTmplatInfo("TMPLT_001", dto);
 
@@ -253,6 +254,28 @@ class TmplatInfoServiceTest {
         assertThat(result.getTmpltSeCd()).isEqualTo("TMPT02");
         assertThat(result.getTmpltPath()).isEqualTo("/new");
         assertThat(result.getUseYn()).isEqualTo("N");
+        assertThat(result.getVersion()).isZero();
+    }
+
+    @Test
+    @DisplayName("템플릿 수정 — 버전 누락(400)·낡은 버전(409)은 거부한다")
+    void updateTmplatInfo_RejectsMissingOrStaleVersion() {
+        authenticate("TEMPLATE_UPDATE");
+        Template template = Template.builder().tmpltId("TMPLT_001").tmpltNm("Old").tmpltSeCd("TMPT01").tmpltPath("/old").useYn("Y").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(template, "version", 4);
+        when(templateRepository.findByIdForUpdate("TMPLT_001")).thenReturn(Optional.of(template));
+
+        assertThatThrownBy(() -> tmplatInfoService.updateTmplatInfo("TMPLT_001",
+                TemplateDto.builder().tmpltNm("New").tmpltSeCd("TMPT02").tmpltPath("/new").useYn("N").build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+
+        assertThatThrownBy(() -> tmplatInfoService.updateTmplatInfo("TMPLT_001",
+                TemplateDto.builder().tmpltNm("New").tmpltSeCd("TMPT02").tmpltPath("/new").useYn("N").version(3).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+
+        assertThat(template.getTmpltNm()).isEqualTo("Old");
     }
 
     @Test
@@ -294,9 +317,10 @@ class TmplatInfoServiceTest {
     void foreignCreatorIsManageableOnlyWithTheExactUpdateOrDeleteGrant() {
         Template existing = Template.builder().tmpltId("TMPLT_001").tmpltNm("Original")
                 .tmpltSeCd("TMPT01").tmpltPath("/original").useYn("Y").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
         existing.setFrstRgtrId("foreign-creator");
         TemplateDto request = TemplateDto.builder().tmpltNm("Changed")
-                .tmpltSeCd("TMPT01").tmpltPath("/changed").useYn("Y").build();
+                .tmpltSeCd("TMPT01").tmpltPath("/changed").useYn("Y").version(0).build();
 
         authenticate();
         assertDenied(() -> tmplatInfoService.updateTmplatInfo("TMPLT_001", request));

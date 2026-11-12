@@ -196,9 +196,10 @@ class ExternalHrServiceTest {
     void updateExternalHr_Success() {
         authenticateAs("admin_actor", "ADMIN");
         ExternalHr entity = ExternalHr.builder().evntSn(1L).otsdHrId("HR1").otsdHrNm("Old").emlAddr("old@example.com").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
         given(externalHrRepository.findById(new ExternalHrId(1L, "HR1"))).willReturn(Optional.of(entity));
         ExternalHrDto dto = ExternalHrDto.builder().evntSn(99L).otsdHrId("IGNORED").otsdHrNm("New")
-                .ogdpInstNm("기관").emlAddr("new@example.com").lastMdfrId("forged_modifier").build();
+                .ogdpInstNm("기관").emlAddr("new@example.com").lastMdfrId("forged_modifier").version(0).build();
 
         ExternalHrDto result = externalHrService.updateExternalHr(1L, "HR1", dto);
 
@@ -209,6 +210,28 @@ class ExternalHrServiceTest {
         assertThat(result.getEmlAddr()).isEqualTo("new@example.com");
         assertThat(entity.getLastMdfrId()).isEqualTo("admin_actor");
         assertThat(result.getLastMdfrId()).isEqualTo("admin_actor");
+        assertThat(result.getVersion()).isZero();
+    }
+
+    @Test
+    @DisplayName("외부 인력 수정 — 버전 누락은 400, 낡은 버전은 409 로 거부한다")
+    void updateExternalHr_RejectsMissingOrStaleVersion() {
+        authenticateAs("admin_actor", "ADMIN");
+        ExternalHr entity = ExternalHr.builder().evntSn(1L).otsdHrId("HR1").otsdHrNm("Old").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 3);
+        given(externalHrRepository.findById(new ExternalHrId(1L, "HR1"))).willReturn(Optional.of(entity));
+
+        assertThatThrownBy(() -> externalHrService.updateExternalHr(1L, "HR1",
+                ExternalHrDto.builder().otsdHrNm("NoVersion").build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+
+        assertThatThrownBy(() -> externalHrService.updateExternalHr(1L, "HR1",
+                ExternalHrDto.builder().otsdHrNm("Stale").version(2).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+
+        assertThat(entity.getOtsdHrNm()).isEqualTo("Old");
     }
 
     @Test

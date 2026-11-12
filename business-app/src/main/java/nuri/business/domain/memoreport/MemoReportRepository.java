@@ -3,9 +3,11 @@ package nuri.business.domain.memoreport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.Lock;
 import jakarta.persistence.LockModeType;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -16,6 +18,14 @@ public interface MemoReportRepository extends JpaRepository<MemoReport, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select m from MemoReport m where m.memoRptSn = :memoRptSn")
     Optional<MemoReport> findByIdForUpdate(@Param("memoRptSn") Long memoRptSn);
+
+    /**
+     * 수신자의 최초 열람 시각만 기록한다. 관리 엔티티를 더럽히지 않아 열람만으로 @Version 이나 최종수정자 감사 필드가
+     * 바뀌어 작성자의 진행 중 수정을 거짓 409 로 막지 않게 한다.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update MemoReport m set m.rptrInqDt = :readAt where m.memoRptSn = :memoRptSn and m.rptrInqDt is null")
+    int recordFirstReadIfUnread(@Param("memoRptSn") Long memoRptSn, @Param("readAt") LocalDateTime readAt);
 
     Page<MemoReport> findByUserId(String userId, Pageable pageable);
     Page<MemoReport> findByRptrId(String rptrId, Pageable pageable);

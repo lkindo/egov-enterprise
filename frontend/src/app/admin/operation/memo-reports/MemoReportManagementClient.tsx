@@ -409,6 +409,7 @@ export default function MemoReportManagementClient() {
         // 전체 치환이므로 화면이 묻지 않는 값도 상세에서 읽어 되돌려 보낸다.
         memoRptYmd: detail.memoRptYmd ?? getTodayYmd(),
         atchFileSn: detail.atchFileSn ?? undefined,
+        ...(detail.version != null ? { version: detail.version } : {}),
       });
       if (!isCurrentDetail(session, scope)) return;
       toast('보고를 수정했습니다.', 'success');

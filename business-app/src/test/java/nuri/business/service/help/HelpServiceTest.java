@@ -162,15 +162,37 @@ class HelpServiceTest {
     void updateHpcm_Success() {
         authorize("HELP_UPDATE");
         Hpcm entity = org.mockito.Mockito.spy(Hpcm.builder().hlpSn(1L).build());
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
         entity.setFrstRgtrId("foreign-writer");
         when(hpcmRepository.findById(1L)).thenReturn(Optional.of(entity));
-        HpcmDto dto = HpcmDto.builder().hlpDfn("Updated").build();
+        HpcmDto dto = HpcmDto.builder().hlpDfn("Updated").version(0).build();
 
         helpService.updateHpcm(1L, dto);
 
         verify(entity).update(any(), any(), any());
         assertThat(entity.getHlpDfn()).isEqualTo("Updated");
         assertThat(entity.getFrstRgtrId()).isEqualTo("foreign-writer");
+    }
+
+    @Test
+    @DisplayName("도움말 수정 — 버전 누락은 400, 낡은 버전은 409 로 거부하고 본문을 바꾸지 않는다")
+    void updateHpcm_RejectsMissingOrStaleVersion() {
+        authorize("HELP_UPDATE");
+        Hpcm entity = Hpcm.builder().hlpSn(1L).hlpDfn("Original").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 2);
+        when(hpcmRepository.findById(1L)).thenReturn(Optional.of(entity));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> helpService.updateHpcm(1L, HpcmDto.builder().hlpDfn("NoVersion").build()))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> helpService.updateHpcm(1L, HpcmDto.builder().hlpDfn("Stale").version(1).build()))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION);
+
+        assertThat(entity.getHlpDfn()).isEqualTo("Original");
     }
 
     @Test
@@ -250,15 +272,37 @@ class HelpServiceTest {
     void updateOnlineManual_Success() {
         authorize("HELP_UPDATE");
         OnlineManual entity = org.mockito.Mockito.spy(OnlineManual.builder().onlnMnlSn(1L).build());
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
         entity.setFrstRgtrId("foreign-writer");
         when(onlineManualRepository.findById(1L)).thenReturn(Optional.of(entity));
-        OnlineManualDto dto = OnlineManualDto.builder().onlnMnlNm("Updated").build();
+        OnlineManualDto dto = OnlineManualDto.builder().onlnMnlNm("Updated").version(0).build();
 
         helpService.updateOnlineManual(1L, dto);
 
         verify(entity).update(any(), any(), any(), any());
         assertThat(entity.getOnlnMnlNm()).isEqualTo("Updated");
         assertThat(entity.getFrstRgtrId()).isEqualTo("foreign-writer");
+    }
+
+    @Test
+    @DisplayName("온라인 매뉴얼 수정 — 버전 누락은 400, 낡은 버전은 409 로 거부한다")
+    void updateOnlineManual_RejectsMissingOrStaleVersion() {
+        authorize("HELP_UPDATE");
+        OnlineManual entity = OnlineManual.builder().onlnMnlSn(1L).onlnMnlNm("Original").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 5);
+        when(onlineManualRepository.findById(1L)).thenReturn(Optional.of(entity));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> helpService.updateOnlineManual(1L, OnlineManualDto.builder().onlnMnlNm("NoVer").build()))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> helpService.updateOnlineManual(1L, OnlineManualDto.builder().onlnMnlNm("Stale").version(4).build()))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION);
+
+        assertThat(entity.getOnlnMnlNm()).isEqualTo("Original");
     }
 
     @Test

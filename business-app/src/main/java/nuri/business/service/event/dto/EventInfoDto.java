@@ -79,6 +79,10 @@ public class EventInfoDto {
     @Schema(description = "최종 수정 일시")
     private LocalDateTime mdfcnDt;
 
+    @Schema(description = "낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.")
+    @Min(0)
+    private Integer version;
+
 
     // 수기 from(EventInfo) 은 EventInfoMapper(MapStruct, 프레임워크 표준)로 대체됨.
 }
