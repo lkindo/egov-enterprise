@@ -23,17 +23,34 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-/** 강한 카피레프트 식별자(SPDX·자유 표기). LGPL 은 앞의 L 로 제외된다. */
-const STRONG_COPYLEFT = /(^|[^L])\b(A?GPL|GNU (Affero )?General Public License|SSPL|Server Side Public License|EUPL|OSL|RPL|Sleepycat)\b/i;
+/**
+ * 강한 카피레프트 식별자(SPDX·POM 자유 표기·흔한 별칭). GPL 뒤에는 버전 별칭(v3·v2.0)이 붙을 수 있다 — 'GPLv3' 'AGPLv3' 'GPL v2'.
+ * LGPL 은 아래 약한 카피레프트 판정이 먼저 뺀다.
+ */
+const STRONG_COPYLEFT = /(^|[^A-Za-z])(A?GPL)(?:\s?v?\d+(?:\.\d+)?)?(?![A-Za-z])|GNU (Affero )?General Public License|GNU GPL|\b(SSPL|Server Side Public License|EUPL|OSL|RPL|Sleepycat)\b/i;
+const WEAK_COPYLEFT = /(^|[^A-Za-z])LGPL(?:\s?v?\d+(?:\.\d+)?)?(?![A-Za-z])|Lesser General Public|Library General Public/i;
 const LINKING_EXCEPTIONS = /\bWITH\s+(Classpath-exception-2\.0|GCC-exception-3\.1)\b|classpath exception/i;
+/** 알려진 허용(또는 약한 카피레프트) 라이선스 표기. 이 밖의 이름은 허용으로 단정하지 않고 경고로 남긴다. */
+const KNOWN_ALLOWED = /\b(MIT|X11|Apache|ASL|BSD|0BSD|ISC|MPL|Mozilla Public|EPL|Eclipse (Public|Distribution)|EDL|CDDL|Common Development|CC0|CC-BY|Creative Commons|Public Domain|Unlicense|Zlib|BlueOak|Python|PSF|W3C|Unicode|Bouncy Castle|JSON|WTFPL|Artistic|Go License|UPL|Universal Permissive|Indiana University|ICU|Similar to Apache|BSL-1\.0|Boost)\b/i;
 
-/** 한 SPDX 조각(괄호 없는 단일 라이선스)이 차단 대상인가. */
-function isBlockedTerm(term) {
+/** 한 SPDX 조각(괄호 없는 단일 라이선스)의 분류. */
+function classifyTerm(term) {
   const text = term.trim();
-  if (!text) return false;
-  if (/\bLGPL\b|Lesser General Public|Library General Public/i.test(text)) return false;
-  if (LINKING_EXCEPTIONS.test(text)) return false;
-  return STRONG_COPYLEFT.test(text);
+  if (!text) return 'allowed';
+  if (WEAK_COPYLEFT.test(text) || LINKING_EXCEPTIONS.test(text)) return 'allowed';
+  if (STRONG_COPYLEFT.test(text)) return 'blocked';
+  return KNOWN_ALLOWED.test(text) ? 'allowed' : 'unrecognized';
+}
+
+function isBlockedTerm(term) {
+  return classifyTerm(term) === 'blocked';
+}
+
+/** 식 안에 허용으로도 차단으로도 알아보지 못한 조각이 있는가(경고용 — 차단하지 않는다). */
+export function hasUnrecognizedTerm(expression) {
+  if (expression === null || expression === undefined) return false;
+  return tokenize(String(expression).trim()).filter((token) => !OPERATORS.has(token))
+    .some((token) => classifyTerm(token) === 'unrecognized');
 }
 
 /**
@@ -107,15 +124,18 @@ function evaluate(tokens) {
 export function evaluatePackages(packages) {
   const blocking = [];
   const unknown = [];
+  const unrecognized = [];
   for (const pkg of packages) {
     const license = pkg.license === undefined || pkg.license === null ? '' : String(pkg.license).trim();
     if (!license || /^(unknown|UNLICENSED|NOASSERTION)$/i.test(license)) {
       unknown.push(pkg);
     } else if (isBlockedLicense(license)) {
       blocking.push(pkg);
+    } else if (hasUnrecognizedTerm(license)) {
+      unrecognized.push(pkg);
     }
   }
-  return { checked: packages.length, blocking, unknown };
+  return { checked: packages.length, blocking, unknown, unrecognized };
 }
 
 /** `pnpm licenses list --prod --json` 출력 → 패키지 목록. 형식이 틀리면 던진다(fail-closed). */
@@ -161,13 +181,16 @@ function pnpmLicenses() {
 
 function report(policy, label) {
   for (const pkg of policy.unknown) console.warn(`::warning::${label}: license unknown — ${pkg.name}@${pkg.version}`);
+  for (const pkg of policy.unrecognized) {
+    console.warn(`::warning::${label}: license name not recognized (not assumed permissive) — ${pkg.name}@${pkg.version} (${pkg.license})`);
+  }
   if (policy.blocking.length > 0) {
     for (const pkg of policy.blocking) {
       console.error(`::error::${label}: copyleft license blocked — ${pkg.name}@${pkg.version} (${pkg.license})`);
     }
     return 1;
   }
-  console.log(`${label}: copyleft license policy passed (${policy.checked} packages, ${policy.unknown.length} unknown).`);
+  console.log(`${label}: copyleft license policy passed (${policy.checked} packages, ${policy.unknown.length} unknown, ${policy.unrecognized.length} unrecognized).`);
   return 0;
 }
 

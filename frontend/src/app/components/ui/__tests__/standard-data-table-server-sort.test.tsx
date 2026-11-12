@@ -53,6 +53,19 @@ describe('서버 정렬', () => {
     expect(screen.getByRole('button', { name: /이름/ })).toHaveAttribute('title', '목록 전체를 정렬합니다');
   });
 
+  it('서버 정렬 중에 현재 페이지 정렬 열을 누르면 서버 정렬을 푼다(두 정렬 표시가 함께 남지 않는다)', () => {
+    const onSortChange = vi.fn();
+    const mixed: Column<Row>[] = [
+      { header: '이름', accessor: (item) => item.name, serverSortKey: 'userNm' },
+      { header: '번호', accessor: (item) => String(item.id), sortKey: 'id' },
+    ];
+    render(<StandardDataTable<Row> columns={mixed} data={rows} keyField="id" pagination={pagination}
+      serverSort={{ sortBy: 'userNm', sortDir: 'asc', onSortChange }} />);
+    fireEvent.click(screen.getByRole('button', { name: /번호/ }));
+    expect(onSortChange).toHaveBeenLastCalledWith({});
+    expect(screen.getByRole('columnheader', { name: '번호' })).toHaveAttribute('aria-sort', 'ascending');
+  });
+
   it('serverSort 를 주지 않는 표에서 같은 열은 종전 현재 페이지 정렬이고 고지를 한다', () => {
     renderTable(undefined);
     expect(screen.getByText(NOTICE)).toBeInTheDocument();

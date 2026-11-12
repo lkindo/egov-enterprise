@@ -26,6 +26,7 @@ test('관리형 DB 접속 변수: 번들 DB·루프백·약한 SSL·CA 밖 경�
     'jdbc:postgresql://pg.example.com/egovdb?sslmode=verify-full&sslrootcert=/app/certs/db/ca.pem&sslfactory=evil.Factory': /허용 목록 밖/,
     'jdbc:postgresql://pg.example.com/egovdb?sslmode=verify-full&sslmode=disable&sslrootcert=/app/certs/db/ca.pem': /두 번/,
     'jdbc:mysql://pg.example.com/egovdb': /형식/,
+    'jdbc:postgresql://pg.example.com/egovdb?%73slmode=verify-full&sslrootcert=/app/certs/db/ca.pem': /인코딩/,
   };
   for (const [url, expected] of Object.entries(cases)) {
     const problems = evaluateManagedDbEnvironment({ ...VALID, DB_URL: url });

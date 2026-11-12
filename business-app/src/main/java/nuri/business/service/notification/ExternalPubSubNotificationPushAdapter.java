@@ -42,6 +42,8 @@ public class ExternalPubSubNotificationPushAdapter implements NotificationPushPo
     private final URI publishUrl;
     private final byte[] secret;
 
+    /** 운영 생성자 — 생성자가 둘이라 주입 대상을 밝힌다(시험 생성자는 HttpClient 를 받는다). */
+    @org.springframework.beans.factory.annotation.Autowired
     public ExternalPubSubNotificationPushAdapter(SimpMessagingTemplate messagingTemplate, ObjectMapper mapper,
             @Value("${nuri.notification.push.external.publish-url:}") String publishUrl,
             @Value("${nuri.notification.push.external.secret:}") String secret) {

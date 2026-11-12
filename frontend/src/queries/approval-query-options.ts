@@ -36,6 +36,8 @@ export interface ApprovalListParams {
   toYmd?: string;
   /** 대기 탭에서는 쓰지 않는다(대기함은 늘 대기 문서다). 참조된 결재 탭에서는 문서의 지금 상태다. */
   status?: SanctionStatusCode;
+  /** [Wave 4 GAP-UI-001] 결재번호 정렬 방향. 비우면 서버 기본(최신 결재번호 순)이다. 서버는 결재번호 정렬만 받는다. */
+  sortDir?: 'asc' | 'desc';
 }
 
 export interface ApprovalDecision {
@@ -95,6 +97,7 @@ function listByTab(tab: ApprovalTab, params: ApprovalListParams) {
       // 대기함은 상태 조건을 받지 않는다 — 넘기지 않는다.
       return approvalUserService.getPending({
         page: params.page, size: params.size, keyword: params.keyword, fromYmd: params.fromYmd, toYmd: params.toYmd,
+        sortDir: params.sortDir,
       });
     case 'SUBMITTED':
       return approvalUserService.getMyHistory(params);

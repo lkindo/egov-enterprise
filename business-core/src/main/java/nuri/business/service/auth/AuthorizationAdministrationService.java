@@ -376,6 +376,13 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
 
     private void removeGrant(String request, String group, Grant grant) {
         jdbc.update("DELETE FROM tb_authrt_grnt_map WHERE authrt_cd=? AND authrt_type_cd=? AND authrt_grnt_cd=?",group,grant.type(),grant.code());
+        // [V2_153] 그룹에서 권한을 회수하면 그 그룹 구성원의 세션을 끊는다(세션차수 증가 → 옛 토큰 401). 권한은 요청마다 다시 읽지만,
+        //   회수 전에 받아 둔 세션·연결이 회수된 권한으로 일하던 화면을 이어 가지 않게 다시 로그인하게 한다.
+        //   메뉴 표시(NAVIGATION)는 권한이 아니라 끊지 않는다 — 메뉴를 지울 때마다 그룹 전원이 로그아웃되지 않게.
+        if (!"NAVIGATION".equals(grant.type())) {
+            jdbc.update("UPDATE tb_user_info SET ssn_cycl = ssn_cycl + 1 WHERE esntl_id IN "
+                    + "(SELECT m.scrty_dcsn_trgt_id FROM tb_authrt_user_map m WHERE m.authrt_cd=?)",group);
+        }
         audit(request,"GROUP_GRANT","REMOVE",group,null,grant,"grant",grant.code(),null);
     }
 

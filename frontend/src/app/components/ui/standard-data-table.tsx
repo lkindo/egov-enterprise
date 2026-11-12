@@ -774,7 +774,11 @@ export function StandardDataTable<T extends object>({
                                 table.resetSorting();
                                 serverSort.onSortChange(nextServerSort(serverSort, serverKey));
                               }
-                            : tanColumn.getToggleSortingHandler()}
+                            : (event: React.MouseEvent<HTMLButtonElement>) => {
+                                // 현재 페이지 정렬로 바꾸면 서버 정렬을 푼다 — 두 정렬 표시가 함께 남지 않게(좁은 화면 선택기와 같다).
+                                if (serverSort?.sortBy) serverSort.onSortChange({});
+                                tanColumn.getToggleSortingHandler()?.(event);
+                              }}
                           // 서버 페이지네이션은 그대로다 — 정렬 범위를 정직하게 문서화한다(쪽이 하나면 말하지 않는다).
                           // 서버 정렬 열은 목록 전체를 정렬하므로 현재 페이지 고지를 하지 않는다.
                           title={serverKey !== undefined ? '목록 전체를 정렬합니다' : sortButtonTitle}

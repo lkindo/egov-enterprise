@@ -10,13 +10,14 @@ import { evaluatePackages, isBlockedLicense, packagesFromGradle, packagesFromPnp
 const SCRIPT = fileURLToPath(new URL('./copyleft-license-policy.mjs', import.meta.url));
 
 test('카피레프트 판정: 강한 카피레프트는 막고 허용·약한 카피레프트·링크 예외·허용 쪽 이중 라이선스는 통과한다', () => {
-  for (const blocked of ['GPL-3.0', 'GPL-3.0-only', 'GPL-2.0-or-later', 'AGPL-3.0-only', 'SSPL-1.0',
-    'GNU General Public License v3.0', 'MIT AND GPL-3.0', '(MIT AND AGPL-3.0)', 'EUPL-1.2']) {
+  for (const blocked of ['GPL-3.0', 'GPL-3.0-only', 'GPL-2.0-or-later', 'GPL-3.0+', 'AGPL-3.0-only', 'AGPL-3.0-or-later', 'SSPL-1.0',
+    'GNU General Public License v3.0', 'MIT AND GPL-3.0', '(MIT AND AGPL-3.0)', 'EUPL-1.2',
+    'GPLv3', 'GPLv2', 'AGPLv3', 'GPL v2', 'GPL', 'GNU GPL v3']) {
     assert.equal(isBlockedLicense(blocked), true, blocked);
   }
   for (const allowed of ['MIT', 'Apache-2.0', 'BSD-3-Clause', 'ISC', 'LGPL-2.1', 'LGPL-3.0-or-later',
     'Apache-2.0 AND LGPL-3.0-or-later', 'EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0', 'GPL-2.0 WITH Classpath-exception-2.0',
-    '(MIT OR GPL-3.0)', 'MPL-2.0', 'EPL-1.0', 'GNU Lesser General Public License', '']) {
+    '(MIT OR GPL-3.0)', 'MPL-2.0', 'EPL-1.0', 'GNU Lesser General Public License', 'LGPLv3', 'LGPL v2.1', '']) {
     assert.equal(isBlockedLicense(allowed), false, allowed);
   }
 });
@@ -40,6 +41,16 @@ test('🚨 의도적 GPL-3.0 fixture 는 pnpm·Gradle 두 모집단 모두에서
   assert.deepEqual(backend.unknown.map((pkg) => pkg.name), ['org.example:no-license-declared'], '알 수 없음은 경고다');
 });
 
+test('알아보지 못한 라이선스 이름은 허용으로 단정하지 않고 경고(unrecognized)로 남긴다', () => {
+  const policy = evaluatePackages([
+    { name: 'a', version: '1', license: 'MIT', source: 'pnpm' },
+    { name: 'b', version: '1', license: 'Some Custom Proprietary Terms', source: 'gradle' },
+    { name: 'c', version: '1', license: 'The Apache Software License, Version 2.0', source: 'gradle' },
+  ]);
+  assert.deepEqual(policy.blocking, []);
+  assert.deepEqual(policy.unrecognized.map((pkg) => pkg.name), ['b']);
+});
+
 test('CLI: GPL-3.0 fixture 는 종료 1, 허용만 있으면 0, 형식이 틀리면 2(fail-closed)', () => {
   const dir = mkdtempSync(join(tmpdir(), 'copyleft-'));
   const red = join(dir, 'red.json');
@@ -47,6 +58,9 @@ test('CLI: GPL-3.0 fixture 는 종료 1, 허용만 있으면 0, 형식이 틀리
   const malformed = join(dir, 'malformed.json');
   const emptyGradle = join(dir, 'empty-gradle.json');
   writeFileSync(red, JSON.stringify({ 'GPL-3.0': [{ name: 'evil-gpl-fixture', versions: ['1.0.0'], license: 'GPL-3.0' }] }));
+  const alias = join(dir, 'alias.json');
+  writeFileSync(alias, JSON.stringify({ authority: 'runtime-licenses', components: [
+    { module: 'org.example:gplv3-alias', version: '1.0', licenses: ['GPLv3'] }] }));
   writeFileSync(green, JSON.stringify({ MIT: [{ name: 'react', versions: ['19.3.1'], license: 'MIT' }] }));
   writeFileSync(malformed, JSON.stringify([{ name: 'x' }]));
   writeFileSync(emptyGradle, JSON.stringify({ authority: 'runtime-licenses', components: [] }));
@@ -56,6 +70,9 @@ test('CLI: GPL-3.0 fixture 는 종료 1, 허용만 있으면 0, 형식이 틀리
   assert.equal(blocked.status, 1, blocked.stderr);
   assert.match(blocked.stderr, /evil-gpl-fixture@1\.0\.0 \(GPL-3\.0\)/);
   assert.equal(run('--pnpm-json', green).status, 0);
+  const aliasBlocked = run('--gradle', alias);
+  assert.equal(aliasBlocked.status, 1, 'POM 의 GPLv3 별칭도 차단한다');
+  assert.match(aliasBlocked.stderr, /gplv3-alias@1\.0 \(GPLv3\)/);
   assert.equal(run('--pnpm-json', malformed).status, 2);
   assert.equal(run('--gradle', emptyGradle).status, 2, '빈 모집단은 통과가 아니다');
   assert.equal(run().status, 2);

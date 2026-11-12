@@ -175,6 +175,8 @@ const SHARED_ID_CONTRACT = [
 // The migration-side files already select it through migration-tool/.
 const SHARED_PROTECTED_COLUMN_CONTRACT = [
   /^business-core\/src\/main\/java\/nuri\/business\/domain\/common\/RrnoEncryptionConverter\.java$/,
+  // [Wave 4] 주민번호 키링과 그 구성 — 온라인 변환기가 부르고 이관 호환 계약이 함께 컴파일한다.
+  /^business-core\/src\/main\/java\/nuri\/business\/(?:domain\/common\/RrnoKeyring|core\/config\/RrnoKeyringConfiguration)\.java$/,
   /^foundation\/src\/main\/java\/nuri\/foundation\/core\/(?:util\/CryptoUtil|config\/ProjectCryptoConfig)\.java$/,
   /^foundation\/src\/main\/java\/nuri\/foundation\/security\/mfa\/MfaSecretCipher\.java$/,
   /^business-core\/src\/main\/java\/nuri\/business\/domain\/(?:user\/entity\/User|auth\/mfa\/MfaCredential)\.java$/,

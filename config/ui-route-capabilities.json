@@ -10986,9 +10986,9 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
+        "USER",
         "ADMIN",
-        "SYSTEM",
-        "USER"
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "live",

@@ -38,7 +38,10 @@ export function evaluateManagedDbEnvironment(env) {
   const parameters = new Map();
   for (const pair of query.split('&').filter(Boolean)) {
     const separator = pair.indexOf('=');
-    const name = decodeURIComponent(separator < 0 ? pair : pair.slice(0, separator));
+    const rawName = separator < 0 ? pair : pair.slice(0, separator);
+    // 드라이버는 옵션 이름을 디코딩하지 않는다 — 인코딩한 이름(%73slmode)은 검사기와 드라이버가 다르게 읽으므로 받지 않는다.
+    if (rawName.includes('%')) problems.push(`DB_URL 옵션 이름은 인코딩할 수 없습니다(${rawName.replace(/%/g, '%%').slice(0, 40)}).`);
+    const name = rawName;
     const value = separator < 0 ? '' : decodeURIComponent(pair.slice(separator + 1));
     if (parameters.has(name)) problems.push(`DB_URL 옵션 ${name} 이 두 번 있습니다.`);
     parameters.set(name, value);

@@ -80,6 +80,32 @@ class ExternalPubSubNotificationPushAdapterTest {
     }
 
     @Test
+    @DisplayName("external 설정이면 스프링 문맥이 외부 어댑터 하나를, 비우면 기본 STOMP 어댑터 하나를 포트로 만든다")
+    void springContextSelectsExactlyOneAdapterByProperty() {
+        var runner = new org.springframework.boot.test.context.runner.ApplicationContextRunner()
+                .withBean(SimpMessagingTemplate.class, () -> mock(SimpMessagingTemplate.class))
+                .withBean(ObjectMapper.class, ObjectMapper::new)
+                .withUserConfiguration(ExternalPubSubNotificationPushAdapter.class, StompNotificationPushAdapter.class);
+        runner.withPropertyValues("nuri.notification.push.type=external",
+                        "nuri.notification.push.external.publish-url=https://broker.example.com/publish",
+                        "nuri.notification.push.external.secret=" + SECRET)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context.getBean(nuri.foundation.core.notification.NotificationPushPort.class))
+                            .isInstanceOf(ExternalPubSubNotificationPushAdapter.class);
+                });
+        runner.run(context -> {
+            assertThat(context).hasNotFailed();
+            assertThat(context.getBean(nuri.foundation.core.notification.NotificationPushPort.class))
+                    .isInstanceOf(StompNotificationPushAdapter.class);
+        });
+        runner.withPropertyValues("nuri.notification.push.type=external",
+                        "nuri.notification.push.external.publish-url=http://broker.example.com/publish",
+                        "nuri.notification.push.external.secret=" + SECRET)
+                .run(context -> assertThat(context).as("https 가 아니면 기동을 멈춘다").hasFailed());
+    }
+
+    @Test
     @DisplayName("발행 주소는 https(루프백 http 는 시험용)이고 서명 비밀은 32자 이상이어야 만든다")
     void rejectsInsecureUrlAndShortSecret() {
         SimpMessagingTemplate messaging = mock(SimpMessagingTemplate.class);

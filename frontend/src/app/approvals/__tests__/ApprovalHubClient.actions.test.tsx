@@ -217,6 +217,18 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     await waitFor(() => expect(mocks.getMyHistory).toHaveBeenCalledWith(expect.objectContaining({ keyword: '휴가', status: 'R' })));
   });
 
+  it('[Wave 4] 정렬은 서버에 결재번호 방향으로 보내고 1페이지로 돌아가며, 탭을 옮겨도 이어진다', async () => {
+    renderClient();
+    await screen.findByText('휴가 신청');
+    fireEvent.change(screen.getByLabelText('정렬'), { target: { value: 'asc' } });
+    await waitFor(() => expect(mocks.getPending).toHaveBeenCalledWith(expect.objectContaining({ page: 1, sortDir: 'asc' })));
+
+    fireEvent.click(screen.getByRole('tab', { name: '내가 올린 결재' }));
+    await waitFor(() => expect(mocks.getMyHistory).toHaveBeenCalledWith(expect.objectContaining({ sortDir: 'asc' })));
+    fireEvent.change(screen.getByLabelText('정렬'), { target: { value: '' } });
+    await waitFor(() => expect(mocks.getMyHistory).toHaveBeenLastCalledWith(expect.not.objectContaining({ sortDir: expect.anything() })));
+  });
+
   it('🚨 조건에 맞는 문서가 없으면 조건 결과가 없다고 말한다 — 대기함이 비었다고 말하지 않는다 (DIP B5 F4, G15)', async () => {
     renderClient();
     await screen.findByText('휴가 신청');

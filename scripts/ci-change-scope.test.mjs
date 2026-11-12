@@ -287,6 +287,8 @@ test('online encryption sources select the migration suite that holds their comp
   // and the entities that declare protected columns (DEC-OPS-308).
   for (const file of [
     'business-core/src/main/java/nuri/business/domain/common/RrnoEncryptionConverter.java',
+    'business-core/src/main/java/nuri/business/domain/common/RrnoKeyring.java',
+    'business-core/src/main/java/nuri/business/core/config/RrnoKeyringConfiguration.java',
     'foundation/src/main/java/nuri/foundation/core/util/CryptoUtil.java',
     'foundation/src/main/java/nuri/foundation/core/config/ProjectCryptoConfig.java',
     'foundation/src/main/java/nuri/foundation/security/mfa/MfaSecretCipher.java',
