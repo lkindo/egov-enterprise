@@ -1,7 +1,8 @@
+import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createVisualAdmin } from '../fixtures/visual-admin';
 import { getAdminBearerToken } from '../utils/admin-token';
-import { request as playwrightRequest, type BrowserContext, type Locator, type Page } from '@playwright/test';
+import { request as playwrightRequest, type APIRequestContext, type BrowserContext, type Locator, type Page } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
 import { anonymousCsrfRequestState } from '../fixtures/csrf';
 
@@ -469,10 +470,88 @@ test.describe('인증 경계', () => {
 });
 
 
+const AUTHORIZATION = '/api/v1/admin/authorization';
+type NavigationEntry = { code: string; parentCode: string | null; route?: string | null; useYn?: string | null };
+type GrantEntry = { type: 'OPERATION' | 'NAVIGATION'; code: string };
+
+/**
+ * 전용 그룹으로 메뉴 관리 화면의 메뉴 표시(NAVIGATION)를 준다. revoke 는 그 화면의 표시만 뺀다.
+ *
+ * <p>[V2_153] 그룹 배정·기능권한 회수는 그 전에 받은 세션을 끊는다(다시 로그인해야 한다). 세션을 유지한 채 메뉴가 줄어드는
+ * 회수는 메뉴 표시 회수뿐이라, 늦은 옛 메뉴 응답이 메뉴를 되살리지 못하는지는 이 회수로 본다. 배정 회수가 세션을 끊는 것은
+ * security-administration 의 복수 그룹 여정이 401 로 본다. 정리는 사용자를 지운 뒤(배정이 함께 지워진다) 그룹을 지운다.
+ */
+async function grantMenuManagementDisplay(request: APIRequestContext, esntlId: string) {
+    const administrator = { Authorization: `Bearer ${getAdminBearerToken()}` };
+    const groupCode = `E2E_CMD_${randomBytes(4).toString('hex').toUpperCase()}`;
+    const read = async <T>(path: string, label: string): Promise<T> => {
+        const response = await request.get(path, { headers: administrator });
+        expect(response.status(), label).toBe(200);
+        return (await response.json()).data as T;
+    };
+    const replaceGrants = async (grants: GrantEntry[]) => {
+        const group = await read<{ version: string }>(`${AUTHORIZATION}/groups/${groupCode}`, '명령 센터 전용 그룹 조회');
+        const response = await request.put(`${AUTHORIZATION}/groups/${groupCode}/grants`, {
+            headers: administrator, data: { grants, version: group.version, complete: true },
+        });
+        expect(response.status(), '명령 센터 전용 그룹 권한 변경').toBe(200);
+    };
+    const dispose = async () => {
+        const group = await read<{ version: string }>(`${AUTHORIZATION}/groups/${groupCode}`, '명령 센터 전용 그룹 조회');
+        const removed = await request.delete(`${AUTHORIZATION}/groups/${groupCode}`, {
+            headers: administrator, params: { version: group.version },
+        });
+        expect(removed.status(), '명령 센터 전용 그룹 정리').toBe(200);
+    };
+    const created = await request.post(`${AUTHORIZATION}/groups`, {
+        headers: administrator, data: { code: groupCode, name: `명령 센터 메뉴 ${groupCode}`, description: '명령 센터 권한 회수 여정 전용' },
+    });
+    expect(created.status(), '명령 센터 전용 그룹 생성').toBe(201);
+    try {
+        const catalog = await read<{ navigation: NavigationEntry[] }>(`${AUTHORIZATION}/catalog`, '메뉴 카탈로그');
+        const leaf = catalog.navigation.find(entry => entry.route === '/admin/system/menus' && entry.useYn !== 'N');
+        if (!leaf) throw new Error('The canonical menu management leaf is missing.');
+        const navigation: GrantEntry[] = [];
+        const visited = new Set<string>();
+        let node: NavigationEntry | undefined = leaf;
+        while (node) {
+            if (visited.has(node.code)) throw new Error('Navigation catalog contains a cycle.');
+            visited.add(node.code);
+            navigation.push({ type: 'NAVIGATION', code: node.code });
+            if (!node.parentCode) break;
+            const parentCode: string = node.parentCode;
+            node = catalog.navigation.find(entry => entry.code === parentCode);
+            if (!node) throw new Error('Navigation catalog has a missing ancestor.');
+        }
+        const grants: GrantEntry[] = [{ type: 'OPERATION', code: 'MENU_READ' }, ...navigation];
+        await replaceGrants(grants);
+        const membershipUrl = `${AUTHORIZATION}/users/${esntlId}/groups`;
+        const membership = await read<{ groups: string[]; version: string }>(membershipUrl, '명령 센터 사용자 배정 조회');
+        const assigned = await request.put(membershipUrl, {
+            headers: administrator, data: { groups: [...membership.groups, groupCode], version: membership.version, complete: true },
+        });
+        expect(assigned.status(), '명령 센터 사용자에게 전용 그룹 배정(추가는 세션을 끊지 않는다)').toBe(200);
+        return {
+            revoke: () => replaceGrants(grants.filter(grant => grant.type !== 'NAVIGATION' || grant.code !== leaf.code)),
+            dispose,
+        };
+    } catch (error) {
+        try { await dispose(); } catch (cleanupError) { throw new AggregateError([error, cleanupError], 'Command menu fixture setup and cleanup failed'); }
+        throw error;
+    }
+}
+
 test.describe('명령 센터의 현재 계정·권한 경계', () => {
     test('권한 회수와 계정 전환은 늦은 메뉴 응답·재열기·뒤로가기에도 이전 메뉴를 복원하지 않는다', async ({ actorPage, request, baseURL }) => {
         if (!baseURL) throw new Error('The verified browser base URL is required.');
-        const fixture = await createVisualAdmin(request, baseURL);
+        const fixture = await createVisualAdmin(request, baseURL, { group: 'ROLE_USER' });
+        let menuDisplay: Awaited<ReturnType<typeof grantMenuManagementDisplay>>;
+        try {
+            menuDisplay = await grantMenuManagementDisplay(request, fixture.esntlId);
+        } catch (error) {
+            await fixture.dispose();
+            throw error;
+        }
         const actor = await actorPage({ storageState: fixture.storageState });
         const { page, context, guard } = actor;
         let releaseOldResponse: (() => void) | undefined;
@@ -562,14 +641,8 @@ test.describe('명령 센터의 현재 계정·권한 경계', () => {
             await page.keyboard.press('Control+k');
             await captured;
             await searchAdminMenu();
-            const membershipUrl = `/api/v1/admin/authorization/users/${fixture.esntlId}/groups`;
-            const administrator = { Authorization: `Bearer ${getAdminBearerToken()}` };
-            const before = await request.get(membershipUrl, { headers: administrator });
-            expect(before.status()).toBe(200);
-            const snapshot = (await before.json()).data;
-            expect((await request.put(membershipUrl, { headers: administrator, data: {
-                groups: ['ROLE_USER'], version: snapshot.version, complete: true,
-            } })).status()).toBe(200);
+            // 메뉴 표시 회수는 세션을 끊지 않는다 — 같은 탭이 권한 변경 알림으로 메뉴를 다시 읽는다.
+            await menuDisplay.revoke();
             const [, revokedMenus] = await Promise.all([
                 page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/auth/me' && response.status() === 200),
                 settledMenus(() => page.evaluate(() => window.dispatchEvent(new Event('authorization-changed')))),
@@ -621,7 +694,7 @@ test.describe('명령 센터의 현재 계정·권한 경계', () => {
         } finally {
             releaseOldResponse?.();
             await context.close();
-            await fixture.dispose();
+            try { await fixture.dispose(); } finally { await menuDisplay.dispose(); }
         }
     });
 });
