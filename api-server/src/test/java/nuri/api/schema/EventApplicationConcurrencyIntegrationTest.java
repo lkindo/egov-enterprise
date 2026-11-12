@@ -109,6 +109,28 @@ class EventApplicationConcurrencyIntegrationTest {
         race.assertContendersQueuedOnEventRow();
     }
 
+    /** 마감이 지나도 내가 신청한 끝나지 않은 행사는 목록에 남아 취소·결과 확인이 이어진다. 신청하지 않은 사람에게는 사라진다. */
+    @Test
+    void closedEventStaysListedOnlyForItsApplicants() {
+        authenticate(applicants.getFirst());
+        service.apply(evntSn);
+        String yesterday = LocalDate.now(ZoneId.of("Asia/Seoul")).minusDays(1).format(DateTimeFormatter.BASIC_ISO_DATE);
+        assertThat(jdbc.update("UPDATE tb_event_info SET aply_ddln_ymd=? WHERE evnt_sn=?", yesterday, evntSn)).isEqualTo(1);
+
+        var mine = service.getOpenEvents(org.springframework.data.domain.PageRequest.of(0, 100)).getContent().stream()
+                .filter(event -> evntSn.equals(event.evntSn())).toList();
+        assertThat(mine).as("신청자에게는 마감 뒤에도 남는다").singleElement().satisfies(event -> {
+            assertThat(event.myStatus()).isEqualTo("APPLIED");
+            assertThat(event.acceptingApplications()).isFalse();
+        });
+
+        authenticate(applicants.get(1));
+        assertThat(service.getOpenEvents(org.springframework.data.domain.PageRequest.of(0, 100)).getContent())
+                .as("신청하지 않은 사람에게는 마감한 행사가 보이지 않는다")
+                .noneMatch(event -> evntSn.equals(event.evntSn()));
+        SecurityContextHolder.clearContext();
+    }
+
     /**
      * 첫 신청자는 선행이다 — 신청을 반영한 뒤 커밋하지 않고 기다린다. 나머지는 그 뒤에 시작해 같은 행사 행 잠금을 기다리는 것이
      * 확인된 뒤에야 선행이 커밋한다. 결과는 신청자 순서대로 신청 성공({@code saved}), 오류 코드, 또는 예상 밖 예외 이름이다.

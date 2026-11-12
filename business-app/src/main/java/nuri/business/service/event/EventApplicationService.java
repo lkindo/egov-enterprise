@@ -55,19 +55,19 @@ public class EventApplicationService {
     private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * 지금 신청을 받는 행사 — 담당자가 정한 마감일이 오늘이거나 그 뒤인 행사. 마감일이 없는 행사(기존 행사 포함)는 신청을 받지 않아
-     * 나오지 않는다. 자리 수와 내 신청 상태를 함께 싣는다.
+     * 지금 신청을 받는 행사 — 담당자가 정한 마감일이 오늘이거나 그 뒤인 행사 — 와, 마감이 지났어도 내가 신청한 끝나지 않은 행사.
+     * 마감일이 없는 행사(기존 행사 포함)는 신청을 받지 않아 나오지 않는다. 자리 수와 내 신청 상태를 함께 싣는다.
      */
     public Page<OpenEventDto> getOpenEvents(Pageable pageable) {
         String today = today();
         Pageable page = PageRequest.of(pageable.getPageNumber(), Math.min(Math.max(pageable.getPageSize(), 1), MAX_PAGE_SIZE),
                 Sort.by(Sort.Order.asc("evntBgngYmd"), Sort.Order.asc("evntSn")));
-        Page<EventInfo> events = eventInfoRepository.findOpenForApplication(today, page);
+        String me = currentApplicant();
+        Page<EventInfo> events = eventInfoRepository.findOpenForApplication(today, me, page);
         if (events.isEmpty()) return events.map(event -> toOpenEvent(event, 0, null, today));
         List<Long> ids = events.stream().map(EventInfo::getEvntSn).toList();
         Map<Long, Long> seats = applicationRepository.countSeatsByEvent(ids).stream()
                 .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
-        String me = currentApplicant();
         Map<Long, EventApplication> mine = applicationRepository.findByAplcntIdAndEvntSnIn(me, ids).stream()
                 .collect(Collectors.toMap(EventApplication::getEvntSn, application -> application));
         return events.map(event -> toOpenEvent(event, seats.getOrDefault(event.getEvntSn(), 0L),

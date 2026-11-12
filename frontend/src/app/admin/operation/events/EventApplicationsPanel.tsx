@@ -10,12 +10,15 @@ import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { toSeoulDisplayDateTime } from '@/lib/format-date';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
+import { PagePagination } from '@/components/common/PagePagination';
 import {
   EVENT_APPLICATION_STATUS_LABELS,
   eventParticipationService,
   type EventApplication,
   type EventApplicationStatus,
 } from '@/services/foundation/operation/eventParticipationService';
+
+const APPLICATIONS_PAGE_SIZE = 20;
 
 /**
  * [V2_152] 행사 신청자 관리. 행사 등록자이거나 수정 대행 권한자에게만 서버가 목록을 연다(아니면 403 을 그대로 알린다). 승인·반려는
@@ -29,12 +32,13 @@ export function EventApplicationsPanel({ evntSn, eventName }: { evntSn: number; 
   const askConfirm = useConfirm();
   const queryClient = useQueryClient();
   const key = ['admin', 'events', evntSn, 'applications'] as const;
+  const [page, setPage] = useState(1);
   const [pending, setPending] = useState<{ sn: number; approved: boolean } | null>(null);
   // 같은 프레임의 두 번 누름도 한 번만 보낸다 — 상태 갱신은 다음 렌더에야 보이므로 ref 로 먼저 잠근다.
   const decisionPendingRef = useRef(false);
   const applications = useQuery({
-    queryKey: key,
-    queryFn: () => eventParticipationService.getApplications(evntSn, { page: 1, size: 100 }),
+    queryKey: [...key, page],
+    queryFn: () => eventParticipationService.getApplications(evntSn, { page, size: APPLICATIONS_PAGE_SIZE }),
     retry: false,
   });
   const decide = useMutation({
@@ -108,6 +112,7 @@ export function EventApplicationsPanel({ evntSn, eventName }: { evntSn: number; 
           })}
         </ul>
       )}
+      <PagePagination total={applications.data?.total ?? 0} page={page} size={APPLICATIONS_PAGE_SIZE} onPageChange={setPage} />
     </section>
   );
 }

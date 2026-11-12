@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
+import { PagePagination } from '@/components/common/PagePagination';
 import {
   EVENT_APPLICATION_STATUS_LABELS,
   eventParticipationService,
@@ -16,6 +17,7 @@ import {
 } from '@/services/foundation/operation/eventParticipationService';
 
 const openEventsKey = ['events', 'open'] as const;
+const PAGE_SIZE = 20;
 
 const formatYmd = (ymd?: string | null) => (ymd && ymd.length === 8 ? `${ymd.slice(0, 4)}.${ymd.slice(4, 6)}.${ymd.slice(6, 8)}` : '-');
 
@@ -30,9 +32,10 @@ export default function EventParticipationClient() {
   const [pendingSn, setPendingSn] = useState<number | null>(null);
   // 같은 프레임의 두 번 누름도 한 번만 보낸다 — 상태 갱신은 다음 렌더에야 보이므로 ref 로 먼저 잠근다.
   const requestPendingRef = useRef(false);
+  const [page, setPage] = useState(1);
   const events = useQuery({
-    queryKey: openEventsKey,
-    queryFn: () => eventParticipationService.getOpenEvents({ page: 1, size: 50 }),
+    queryKey: [...openEventsKey, page],
+    queryFn: () => eventParticipationService.getOpenEvents({ page, size: PAGE_SIZE }),
   });
   const refresh = () => queryClient.invalidateQueries({ queryKey: openEventsKey });
   const apply = useMutation({ mutationFn: (evntSn: number) => eventParticipationService.apply(evntSn), onSettled: refresh });
@@ -112,6 +115,7 @@ export default function EventParticipationClient() {
           })}
         </ul>
       )}
+      <PagePagination total={events.data?.total ?? 0} page={page} size={PAGE_SIZE} onPageChange={setPage} />
     </div>
   );
 }

@@ -86,6 +86,22 @@ describe('EventParticipationClient', () => {
     expect(within(rejectedCard).getByText(/반려된 신청입니다/)).toBeInTheDocument();
   });
 
+  it('행사가 한 쪽(20건)을 넘으면 다음 쪽으로 넘겨 뒤 행사에도 신청할 수 있다', async () => {
+    const user = userEvent.setup();
+    mocks.getOpenEvents.mockImplementation(({ page }: { page: number }) => Promise.resolve(page === 2
+      ? { list: [{ ...open, evntSn: 51, evntNm: '스물한째 행사' }], total: 21 }
+      : { list: [open], total: 21 }));
+    renderClient();
+    await screen.findByRole('listitem', { name: '가을 워크숍' });
+    expect(mocks.getOpenEvents).toHaveBeenLastCalledWith({ page: 1, size: 20 });
+
+    await user.click(screen.getByRole('link', { name: '2' }));
+    const card = await screen.findByRole('listitem', { name: '스물한째 행사' });
+    expect(mocks.getOpenEvents).toHaveBeenLastCalledWith({ page: 2, size: 20 });
+    await user.click(within(card).getByRole('button', { name: '스물한째 행사 참가 신청' }));
+    await waitFor(() => expect(mocks.apply).toHaveBeenCalledWith(51));
+  });
+
   it('정원이 그 사이 찬 거부(409)는 서버 문구로 보인다', async () => {
     const user = userEvent.setup();
     mocks.apply.mockRejectedValueOnce(new Error('정원이 찼습니다.'));

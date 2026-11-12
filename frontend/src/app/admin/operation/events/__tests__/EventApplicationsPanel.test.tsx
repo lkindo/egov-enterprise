@@ -50,6 +50,20 @@ describe('EventApplicationsPanel', () => {
     mocks.confirm.mockResolvedValue(true);
   });
 
+  it('신청자가 한 쪽(20명)을 넘으면 다음 쪽으로 넘겨 뒤 신청자도 처리할 수 있다', async () => {
+    const user = userEvent.setup();
+    mocks.getApplications.mockImplementation((_evntSn: number, { page }: { page: number }) => Promise.resolve(page === 2
+      ? { list: [{ ...applied, evntAplySn: 121, aplcntNm: '백스물하나' }], total: 21 }
+      : { list: [applied], total: 21 }));
+    renderPanel();
+    await screen.findByRole('button', { name: '홍신청 승인' });
+    expect(mocks.getApplications).toHaveBeenLastCalledWith(7, { page: 1, size: 20 });
+
+    await user.click(screen.getByRole('link', { name: '2' }));
+    await screen.findByRole('button', { name: '백스물하나 승인' });
+    expect(mocks.getApplications).toHaveBeenLastCalledWith(7, { page: 2, size: 20 });
+  });
+
   it('수정 권한이 없으면 신청자만 보이고 승인·반려 버튼이 없다', async () => {
     mocks.permissions = ['EVENT_READ'];
     renderPanel();

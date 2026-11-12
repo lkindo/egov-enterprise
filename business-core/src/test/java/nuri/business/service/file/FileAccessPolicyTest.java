@@ -586,6 +586,40 @@ class FileAccessPolicyTest {
         }
 
         @Test
+        @DisplayName("🚨 결재 임시저장 첨부는 기안자만 지운다 — 남의 임시저장이면 FILE_DELETE_ALL 관리자도 403(V2_151, H3)")
+        void adminCannotDeleteSomeoneElsesApprovalDraftAttachment() {
+            authenticate("admin", "USR_ADMIN", "ROLE_ADMIN");
+
+            assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(
+                    false, false, false, false, false, false, true, true))
+                    .assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(ex -> ((BusinessException) ex).getErrorCode())
+                    .isEqualTo(CommonErrorCode.ACCESS_DENIED);
+            assertThatCode(() -> policy(new AttachmentReferenceResolver.Grants(
+                    false, false, false, false, false, false, true, false))
+                    .assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .as("임시저장 밖의 열람 거부(일정)는 관리자 삭제를 막지 않는다").doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("🚨 결재 문서·이력에 묶인 묶음은 원 업로더라도 파일을 더하지 못한다(게시글 첨부 추가 경로, V2_151)")
+        void uploaderCannotAppendToFrozenApprovalGroup() {
+            authenticate(UPLOADER_LOGIN_ID, "USR_0000000000000001", "ROLE_USER");
+
+            assertThatThrownBy(() -> appendPolicy(true).assertAppendable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(ex -> ((BusinessException) ex).getErrorCode())
+                    .isEqualTo(CommonErrorCode.ACCESS_DENIED);
+            assertThatCode(() -> appendPolicy(false).assertAppendable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .doesNotThrowAnyException();
+
+            authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
+            assertThatThrownBy(() -> appendPolicy(false).assertAppendable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .as("원 업로더가 아니면 묶이지 않은 묶음에도 더하지 못한다").isInstanceOf(BusinessException.class);
+        }
+
+        @Test
         @DisplayName("🚨 참조원 해석 실패는 다른 소유 근거와 관리자 권한보다 우선해 삭제를 거부한다")
         void resolutionFailureDeniesOwnerAndAdmin() {
             AttachmentReferenceResolver.Grants failedWithOwner =
@@ -624,6 +658,21 @@ class FileAccessPolicyTest {
 
     private FileAccessPolicy policy(AttachmentReferenceResolver.Grants grants) {
         return new FileAccessPolicy((atchFileSn, loginId, esntlId) -> grants);
+    }
+
+    /** 묶음이 결재에 묶였는지({@code frozen})만 정한 리졸버. 추가 판정은 근거 집계를 보지 않는다. */
+    private FileAccessPolicy appendPolicy(boolean frozen) {
+        return new FileAccessPolicy(new AttachmentReferenceResolver() {
+            @Override
+            public Grants resolve(Long atchFileSn, String loginId, String esntlId) {
+                throw new AssertionError("추가 판정은 근거를 집계하지 않는다");
+            }
+
+            @Override
+            public boolean frozen(Long atchFileSn) {
+                return frozen;
+            }
+        });
     }
 
     /** 어느 업무 행도 가리키지 않는 첨부(미첨부 창). */

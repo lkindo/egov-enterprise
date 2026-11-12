@@ -89,6 +89,7 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
         boolean personalReader = false;
         boolean resolutionFailed = false;
         boolean readDenied = false;
+        boolean adminDeleteDenied = false;
 
         for (AttachmentSource source : sources) {
             if (source.sensitivity() == AttachmentSource.Sensitivity.DERIVED) {
@@ -101,6 +102,8 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
                 // 삭제에는 이 제한을 적용하지 않으므로 owner와 별도로 집계한다.
                 readDenied |= (source == AttachmentSource.SCHEDULE || source == AttachmentSource.APPROVAL_DRAFT)
                         && hit.referenced() && !hit.shared() && !hit.owner();
+                // 결재 임시저장의 첨부는 기안자만 하나씩 뺀다 — 관리자 삭제 근거도 되지 않는다(V2_151, H3).
+                adminDeleteDenied |= source == AttachmentSource.APPROVAL_DRAFT && hit.referenced() && !hit.owner();
                 shared |= hit.shared();
                 owner |= hit.owner();
                 boolean personalSource = source.sensitivity() == AttachmentSource.Sensitivity.PERSONAL;
@@ -113,7 +116,8 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
                 resolutionFailed = true;
             }
         }
-        return new Grants(shared, owner, personal, personalOwner, resolutionFailed, personalReader, readDenied);
+        return new Grants(shared, owner, personal, personalOwner, resolutionFailed, personalReader, readDenied,
+                adminDeleteDenied);
     }
 
     @Override
@@ -128,6 +132,25 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
                 }
             } catch (DataAccessException ex) {
                 log.error("[FileAccess] 참조원 조회 실패 — 참조가 있는 것으로 본다. source={} table={} atchFileSn={}",
+                        source, source.table(), atchFileSn, ex);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean frozen(Long atchFileSn) {
+        for (AttachmentSource source : sources) {
+            if (source != AttachmentSource.APPROVAL && source != AttachmentSource.APPROVAL_REVISION) {
+                continue;
+            }
+            try {
+                if (query(source, atchFileSn, null, null).referenced()) {
+                    return true;
+                }
+            } catch (DataAccessException ex) {
+                log.error("[FileAccess] 참조원 조회 실패 — 묶음을 바꿀 수 없는 것으로 본다. source={} table={} atchFileSn={}",
                         source, source.table(), atchFileSn, ex);
                 return true;
             }

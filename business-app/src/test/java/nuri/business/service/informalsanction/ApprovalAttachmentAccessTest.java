@@ -177,6 +177,28 @@ class ApprovalAttachmentAccessTest {
         authenticate("first", List.of());
         assertReadable(DRAFT_FILE, false);
         assertThatThrownBy(() -> files.assertDeletable(file(DRAFT_FILE))).isInstanceOf(BusinessException.class);
+
+        authenticate("stranger", List.of("FILE_DELETE_ALL"));
+        assertThatThrownBy(() -> files.assertDeletable(file(DRAFT_FILE))).as("남의 임시저장 첨부는 파일 관리자도 못 지운다")
+                .isInstanceOf(BusinessException.class)
+                .extracting(error -> ((BusinessException) error).getErrorCode()).isEqualTo(CommonErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("🚨 상신한 문서·앞 차수 이력의 묶음에는 원 업로더도 다른 경로로 파일을 더하지 못한다 — 임시저장 묶음은 더한다")
+    void submittedAndRevisionGroupsAreFrozenForAppends() {
+        var uploader = CustomUserDetails.builder().userId("uploader").esntlId("drafter").userNm("test")
+                .groups(List.of("ROLE_USER")).permissions(List.of())
+                .authorizationVersion(PermissionCodes.CATALOG_VERSION).enabled(true).lockAt("N").build();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(uploader, null, uploader.getAuthorities()));
+
+        for (long frozenFile : new long[] {CURRENT_FILE, FIRST_CYCLE_FILE}) {
+            assertThatThrownBy(() -> files.assertAppendable(file(frozenFile))).as("묶음 %d", frozenFile)
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(error -> ((BusinessException) error).getErrorCode()).isEqualTo(CommonErrorCode.ACCESS_DENIED);
+        }
+        assertThatCode(() -> files.assertAppendable(file(DRAFT_FILE))).doesNotThrowAnyException();
     }
 
     @Test
