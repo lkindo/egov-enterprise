@@ -177,8 +177,10 @@ class MemoReportRecipientIntegrityIntegrationTest {
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
         assertThatThrownBy(() -> memoReportService.updateMemoReport(id, sender, memo(sender)))
                 .isInstanceOf(BusinessException.class);
-        assertThat(jdbc.queryForMap("SELECT rptr_id, rpt_cn, version FROM tb_memo_rpt_info WHERE memo_rpt_sn=?", id))
-                .containsEntry("rptr_id", active).containsEntry("rpt_cn", "corrected").containsEntry("version", 1);
+        assertThat(jdbc.queryForMap("SELECT rptr_id, rpt_cn FROM tb_memo_rpt_info WHERE memo_rpt_sn=?", id))
+                .containsEntry("rptr_id", active).containsEntry("rpt_cn", "corrected");
+        assertThat(jdbc.queryForObject("SELECT version FROM tb_memo_rpt_info WHERE memo_rpt_sn=?", Integer.class, id))
+                .isEqualTo(1);
     }
 
     @Test
@@ -313,7 +315,8 @@ class MemoReportRecipientIntegrityIntegrationTest {
         MemoReportDto first = memoReportService.getMemoReport(id);
         Object readAt = reportRow(id).get("rptr_inq_dt");
         assertThat(readAt).isNotNull();
-        assertThat(reportRow(id).get("version")).isEqualTo(0);
+        assertThat(jdbc.queryForObject("SELECT version FROM tb_memo_rpt_info WHERE memo_rpt_sn=?", Integer.class, id))
+                .isZero();
         assertThat(first.getInstructionReadToken()).matches("[a-f0-9]{64}");
         assertThat(memoReportService.getMemoReport(id).getInstructionReadToken())
                 .isEqualTo(first.getInstructionReadToken());
