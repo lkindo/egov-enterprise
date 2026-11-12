@@ -24,7 +24,6 @@ export interface OperatorMember {
   status?: string | null;
   mngrYn?: string | null;
   joinYmd?: string | null;
-  whdwlYmd?: string | null;
 }
 
 /** 서버 상태 코드(A 신청·P 회원·W 탈퇴). 비우면 전체. */

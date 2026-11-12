@@ -519,7 +519,7 @@ class FileServiceTest {
         fileService.updateFiles(atchFileSn, Collections.singletonList(newFile));
 
         // then
-        verify(accessPolicy).assertAttachable(master);
+        verify(accessPolicy).assertAppendable(master);
         verify(fileDetailRepository, times(1)).save(any(FileDetail.class));
     }
 
@@ -531,14 +531,14 @@ class FileServiceTest {
         FileMaster master = new FileMaster(atchFileSn);
         given(fileMasterRepository.findByIdForUpdate(atchFileSn)).willReturn(Optional.of(master));
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(accessPolicy).assertAttachable(master);
+                .when(accessPolicy).assertAppendable(master);
 
         assertThatThrownBy(() -> updateWithProfile(
                 atchFileSn, Collections.singletonList(validJpeg("new.jpg")), board))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
 
-        verify(accessPolicy).assertAttachable(master);
+        verify(accessPolicy).assertAppendable(master);
         verifyNoInteractions(fileDetailRepository, storageService);
     }
 
@@ -585,7 +585,7 @@ class FileServiceTest {
         assertThat(captor.getAllValues()).extracting(FileDetail::getAtchFileSeq).containsExactly(4, 5);
         var order = inOrder(fileMasterRepository, accessPolicy, fileDetailRepository, storageService);
         order.verify(fileMasterRepository).findByIdForUpdate(atchFileSn);
-        order.verify(accessPolicy).assertAttachable(master);
+        order.verify(accessPolicy).assertAppendable(master);
         order.verify(fileDetailRepository).findByFileMaster(master);
         order.verify(storageService).store(files.get(0), "general/123");
     }
@@ -772,7 +772,7 @@ class FileServiceTest {
         fileService.updateBoardFiles(123L, List.of(video));
 
         var order = inOrder(accessPolicy, fileDetailRepository, storageService);
-        order.verify(accessPolicy).assertAttachable(master);
+        order.verify(accessPolicy).assertAppendable(master);
         order.verify(fileDetailRepository).findByFileMaster(master);
         order.verify(storageService).store(video, "general/123");
         order.verify(fileDetailRepository).save(argThat(detail -> detail.getAtchFileSeq() == 5));
@@ -790,7 +790,7 @@ class FileServiceTest {
         assertThatThrownBy(() -> fileService.updateBoardFiles(123L, List.of(validJpeg("first.jpg"), disguised)))
                 .isInstanceOf(BusinessException.class);
 
-        verify(accessPolicy).assertAttachable(master);
+        verify(accessPolicy).assertAppendable(master);
         verify(fileDetailRepository, never()).save(any());
         verifyNoInteractions(storageService);
     }

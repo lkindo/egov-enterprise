@@ -62,7 +62,7 @@ class S3FileStorageServiceTest {
         var signer = new S3RequestSigner("AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", "us-east-1");
         Map<String, String> headers = signer.sign("GET", "examplebucket.s3.amazonaws.com", "/test.txt", Map.of(),
                 Map.of("range", "bytes=0-9"), S3RequestSigner.EMPTY_PAYLOAD_SHA256,
-                ZonedDateTime.of(2013, 5, 24, 0, 0, 0, 0, ZoneOffset.UTC));
+                ZonedDateTime.of(2013, 5, 24, 0, 0, 0, 0, ZoneOffset.UTC).toInstant());
         assertThat(headers.get("authorization")).isEqualTo("AWS4-HMAC-SHA256 "
                 + "Credential=AKIAIOSFODNN7EXAMPLE/20130524/us-east-1/s3/aws4_request,"
                 + "SignedHeaders=host;range;x-amz-content-sha256;x-amz-date,"

@@ -179,9 +179,14 @@ class ProtectedAccountAdministrationIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT lck_yn FROM tb_user_info WHERE esntl_id=?", String.class, target)).isEqualTo("Y");
         setGrants(extraGroup, "AUTHRT_GRANT", "AUTHRT_ASSIGN");
         users.unlockUser(target);
+        assertThat(refreshTokens.existsById(target)).as("unlock keeps the existing session").isTrue();
+        Integer cycleBefore = jdbc.queryForObject("SELECT ssn_cycl FROM tb_user_info WHERE esntl_id=?", Integer.class, target);
         users.updateUsersStatus(List.of(login(target)), "C");
         assertThat(jdbc.queryForObject("SELECT user_stts_cd FROM tb_user_info WHERE esntl_id=?", String.class, target)).isEqualTo("C");
-        assertThat(refreshTokens.existsById(target)).as("unlock/status keep their existing session semantics").isTrue();
+        // [V2_153] 상태 변경은 대상의 세션을 끊는다 — 리프레시 토큰을 지우고 세션차수를 올려 발급된 접근 토큰도 거부한다.
+        assertThat(refreshTokens.existsById(target)).as("status change revokes the session").isFalse();
+        assertThat(jdbc.queryForObject("SELECT ssn_cycl FROM tb_user_info WHERE esntl_id=?", Integer.class, target))
+                .isEqualTo(cycleBefore + 1);
     }
 
     /**

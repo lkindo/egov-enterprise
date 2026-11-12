@@ -4842,6 +4842,23 @@
       ]
     },
     {
+      "target": "FileAccessPolicy#assertAppendable",
+      "source": "business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "assertAttachable(master);",
+        "referenceResolver.frozen(master.getAtchFileSn())",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "SecurityUtil.hasPermission(",
+        "grants.ownerGrant()",
+        "assertOwnerOrPermission"
+      ]
+    },
+    {
       "target": "FileAccessPolicy#assertAttachable",
       "source": "business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java",
       "policy": "STRICT_OWNER",
@@ -4892,7 +4909,7 @@
         "if (grants.resolutionFailed())",
         "if (grants.personalReference()) { log.warn(\"[FileAccess] 첨부 삭제 거부 — 개인 귀속 참조 atchFileSn={} loginId={}\", atchFileSn, loginId); throw new BusinessException(CommonErrorCode.ACCESS_DENIED); }",
         "if (grants.ownerGrant()) { return; }",
-        "if (admin) { return; }",
+        "if (admin && !grants.adminDeleteDenied()) { return; }",
         "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);",
         "SecurityUtil.hasPermission(\"FILE_DELETE_ALL\")"
       ],

@@ -426,7 +426,8 @@ class MfaFlowIntegrationTest {
         SecurityContextHolder.clearContext();
         doThrow(new IllegalStateException("isolated token issuer failure")).when(jwt).createAccessToken(
                 org.mockito.ArgumentMatchers.eq(subject), org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(Instant.class));
+                org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(Instant.class),
+                org.mockito.ArgumentMatchers.any());
 
         assertThatThrownBy(() -> auth.confirmMfaEnrollment(setup.challengeToken(), code(setup.secret()), IP))
                 .isInstanceOf(IllegalStateException.class).hasMessage("isolated token issuer failure");

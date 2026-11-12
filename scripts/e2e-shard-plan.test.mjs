@@ -318,7 +318,8 @@ test('the default projects retain all measured CI specs while the frozen serial 
   const inventory = partitionPlaywrightSpecs([...ciSpecs, manualSpec], repositorySpecOwnership());
   assert.deepEqual(inventory, { ciSpecs, manualSpecs: [manualSpec] });
   assert.deepEqual(discoverSpecs(), ciSpecs);
-  assert.equal(ciSpecs.length, 51); // ADR-0049 baseline (50) + journeys/notes.spec.ts.
+  // ADR-0049 baseline (50) + journeys/notes.spec.ts + Wave 3 journeys (approval-attachments·community-operators·event-applications).
+  assert.equal(ciSpecs.length, 54);
 });
 
 test('new ordinary specs still require measured durations and unowned or ambiguous specs are red', () => {

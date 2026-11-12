@@ -32,6 +32,6 @@ public class S3FileStorageConfiguration {
         var settings = new S3FileStorageService.Settings(endpoint, region, bucket, accessKey, secretKey, prefix, pathStyle);
         HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10))
                 .followRedirects(HttpClient.Redirect.NEVER).build();
-        return new S3FileStorageService(settings, http, Clock.systemUTC());
+        return new S3FileStorageService(settings, http, Clock.systemDefaultZone());
     }
 }

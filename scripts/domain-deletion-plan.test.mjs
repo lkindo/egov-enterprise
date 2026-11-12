@@ -181,7 +181,8 @@ test('a projected collaboration tree plans the same deletions without the full c
 // controller/business/operation, 결재는 controller/business/approval) 디렉터리 이름으로는 찾지 못한다.
 const API_MAIN = 'api-server/src/main/java/nuri/api/controller/business/';
 const API_MAIN_DELETIONS = {
-  event: ['operation/EventApiController.java', 'operation/ExternalHrApiController.java'],
+  event: ['operation/EventApiController.java', 'operation/EventApplicationAdminApiController.java',
+    'operation/EventParticipationApiController.java', 'operation/ExternalHrApiController.java'],
   reward: ['operation/RewardManageApiController.java'],
   informalsanction: ['approval/ApprovalApiController.java',
     'approval/dto/ApprovalConfirmRequest.java', 'approval/dto/ApprovalDraftRequest.java',

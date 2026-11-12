@@ -211,7 +211,7 @@ class ApprovalWorkflowIntegrationTest {
         service.resubmitInformalSanction(id, document("수정한 제목", "둘째 차수 내용"), version,
                 List.of(stage(ApprovalStageKind.APPROVAL, SECOND)));
         // FIRST 가 2차수에서 SECOND 대신 승인했다(대결 경로의 저장 결과만 둔다 — 판정은 대리결재 시험이 본다).
-        assertThat(jdbc.update("UPDATE tb_ifml_atrz_dtl SET sbt_aprvr_id = ?, aprv_yn = 'Y' "
+        assertThat(jdbc.update("UPDATE tb_ifml_atrz_dtl SET sbt_aprvr_id = ?, aprv_yn = 'C' "
                 + "WHERE ifml_atrz_sn = ? AND atrz_cycl = 2 AND user_id = ?", FIRST, id, SECOND)).isEqualTo(1);
 
         authenticate(FIRST);

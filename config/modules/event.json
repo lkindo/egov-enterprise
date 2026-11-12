@@ -61,8 +61,7 @@
     ],
     "rbacMatrix": {
       "surfaces": [
-        "/api/v1/admin/operation/events",
-        "/api/v1/events"
+        "/api/v1/admin/operation/events"
       ]
     },
     "markerBlocks": [],

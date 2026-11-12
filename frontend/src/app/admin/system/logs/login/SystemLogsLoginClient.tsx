@@ -75,7 +75,7 @@ const SystemLogsLoginClient = () => {
     const [sort, setSort] = useState<ServerSortState>({});
 
     const { data, isLoading, error, refetch } = useQuery<PageResponse<LoginLog>>({
-        queryKey: ['admin-logs-login', page, pageSize, searchKeyword, periodToParams(period), sort],
+        queryKey: ['admin-logs-login', page, pageSize, searchKeyword, sort, periodToParams(period)],
         queryFn: () => systemLogAdminService.getLoginLogs({
             page,
             size: pageSize,

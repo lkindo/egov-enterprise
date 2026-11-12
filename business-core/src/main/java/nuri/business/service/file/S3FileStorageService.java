@@ -24,7 +24,6 @@ import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -279,7 +278,7 @@ public class S3FileStorageService implements FileStorageService {
         String canonicalQuery = S3RequestSigner.canonicalQuery(query);
         URI uri = URI.create(endpoint.getScheme() + "://" + host + encodedPath + (canonicalQuery.isEmpty() ? "" : "?" + canonicalQuery));
         String payloadHash = "PUT".equals(method) ? S3RequestSigner.UNSIGNED_PAYLOAD : S3RequestSigner.EMPTY_PAYLOAD_SHA256;
-        Map<String, String> headers = signer.sign(method, host, encodedPath, query, extra, payloadHash, ZonedDateTime.now(clock));
+        Map<String, String> headers = signer.sign(method, host, encodedPath, query, extra, payloadHash, clock.instant());
         HttpRequest.Builder request = HttpRequest.newBuilder(uri).timeout(TIMEOUT).method(method, body);
         headers.forEach(request::header);
         try {
