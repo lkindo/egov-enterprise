@@ -79,6 +79,7 @@ export default function SurveyTemplatesPanel() {
             차단은 `parseGeneratedOperationRequest` 안이라 서버 로그에 흔적이 없다.
           */
           srvyTmpltPathNm: target.srvyTmpltPathNm ?? undefined,
+          ...(target.version != null ? { version: target.version } : {}),
         })
         : surveyAdminService.createTemplate(payload),
     onSuccess: () => {

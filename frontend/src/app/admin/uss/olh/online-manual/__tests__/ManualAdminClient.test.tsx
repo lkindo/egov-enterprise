@@ -207,6 +207,7 @@ describe('ManualAdminClient form validation', () => {
       onlnMnlDfn: '/manual/cross-lock',
       onlnMnlExpln: '기존 설명',
       onlnMnlSeCd: 'GNR',
+      version: 2,
     }];
     const pending = deferred<void>();
     mocks.updateManual.mockReturnValueOnce(pending.promise);
@@ -223,6 +224,7 @@ describe('ManualAdminClient form validation', () => {
     fireEvent.submit(fields.form);
 
     await waitFor(() => expect(mocks.updateManual).toHaveBeenCalledTimes(1));
+    expect(mocks.updateManual).toHaveBeenCalledWith(7, expect.objectContaining({ onlnMnlSn: 7, version: 2 }));
     expect(fields.submit).toBeDisabled();
     expect(fields.submit).toHaveAttribute('aria-busy', 'true');
     expect(fields.cancel).toBeDisabled();

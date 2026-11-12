@@ -131,17 +131,19 @@ class EventInfoServiceTest {
         authenticate(List.of("EVENT_CREATE", "EVENT_UPDATE"), List.of());
         given(eventInfoRepository.save(any(EventInfo.class))).willAnswer(invocation -> invocation.getArgument(0));
         eventInfoService.createEvent("writer", EventInfoDto.builder().evntNm("새 행사").build());
-        given(eventInfoRepository.findByIdForUpdate(1L))
-                .willReturn(Optional.of(EventInfo.builder().evntSn(1L).evntNm("기존").build()));
-        eventInfoService.updateEvent(1L, "writer", EventInfoDto.builder().evntNm("정정").build());
+        EventInfo existing = EventInfo.builder().evntSn(1L).evntNm("기존").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
+        given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existing));
+        eventInfoService.updateEvent(1L, "writer", EventInfoDto.builder().evntNm("정정").version(0).build());
 
         var saved = org.mockito.ArgumentCaptor.forClass(EventInfo.class);
-        verify(eventInfoRepository, times(2)).save(saved.capture());
-        assertThat(saved.getAllValues()).allSatisfy(event -> {
-            assertThat(event.getEvntAprvYn()).isNull();
-            assertThat(event.getEvntAprvYmd()).isNull();
-        });
-        assertThat(saved.getAllValues()).extracting(EventInfo::getEvntNm).containsExactly("새 행사", "정정");
+        verify(eventInfoRepository, times(1)).save(saved.capture());
+        assertThat(saved.getValue().getEvntAprvYn()).isNull();
+        assertThat(saved.getValue().getEvntAprvYmd()).isNull();
+        assertThat(saved.getValue().getEvntNm()).isEqualTo("새 행사");
+        assertThat(existing.getEvntAprvYn()).isNull();
+        assertThat(existing.getEvntAprvYmd()).isNull();
+        assertThat(existing.getEvntNm()).isEqualTo("정정");
     }
 
     @Test
@@ -216,19 +218,41 @@ class EventInfoServiceTest {
         authorize("EVENT_UPDATE");
         // given
         EventInfo existingEvent = EventInfo.builder().evntSn(1L).evntCn("Old Event").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existingEvent, "version", 0);
         existingEvent.setFrstRgtrId("foreign-writer");
         given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existingEvent));
-        
-        EventInfoDto updateDto = EventInfoDto.builder().evntCn("Updated Event").bizYr("2025").build();
+
+        EventInfoDto updateDto = EventInfoDto.builder().evntCn("Updated Event").bizYr("2025").version(0).build();
 
         // when
         eventInfoService.updateEvent(1L, "user1", updateDto);
 
         // then
-        verify(eventInfoRepository, times(1)).save(any(EventInfo.class));
-        var saved = org.mockito.ArgumentCaptor.forClass(EventInfo.class);
-        verify(eventInfoRepository).save(saved.capture());
-        assertThat(saved.getValue().getFrstRgtrId()).isEqualTo("foreign-writer");
+        verify(eventInfoRepository, org.mockito.Mockito.never()).save(any(EventInfo.class));
+        assertThat(existingEvent.getEvntCn()).isEqualTo("Updated Event");
+        assertThat(existingEvent.getBizYr()).isEqualTo("2025");
+        assertThat(existingEvent.getFrstRgtrId()).isEqualTo("foreign-writer");
+    }
+
+    @Test
+    @DisplayName("이벤트 수정 - 버전 누락(400)·낡은 버전(409)은 거부한다")
+    void updateEvent_RejectsMissingOrStaleVersion() {
+        authorize("EVENT_UPDATE");
+        EventInfo existingEvent = EventInfo.builder().evntSn(1L).evntCn("Old Event").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existingEvent, "version", 2);
+        given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existingEvent));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> eventInfoService.updateEvent(1L, "user1", EventInfoDto.builder().evntCn("NoVer").build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> eventInfoService.updateEvent(1L, "user1", EventInfoDto.builder().evntCn("Stale").version(1).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+
+        assertThat(existingEvent.getEvntCn()).isEqualTo("Old Event");
     }
 
     @Test

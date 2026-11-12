@@ -87,7 +87,7 @@ const ROW = {
   crtDt: '2026-08-28T09:00:00',
 };
 const READ_TOKEN = 'a'.repeat(64);
-const DETAIL = { ...ROW, instructionReadToken: READ_TOKEN, attachments: [] };
+const DETAIL = { ...ROW, instructionReadToken: READ_TOKEN, attachments: [], version: 0 };
 const FILE = { atchFileSn: 77, fileSn: 1, orignlFileNm: '검토자료.txt', fileExtsn: 'txt', fileMg: 42 };
 
 function renderClient() {
@@ -671,11 +671,12 @@ describe('메모보고 열람', () => {
     await waitFor(() => expect(mocks.updateMemoReport).toHaveBeenCalledTimes(1));
     const [sn, body] = mocks.updateMemoReport.mock.calls[0];
     expect(sn).toBe(ROW.memoRptSn);
-    // 화면이 묻지 않는 수신자·보고일자도 상세에서 읽어 되돌려 보낸다 — 빠지면 서버가 지운다.
+    // 화면이 묻지 않는 수신자·보고일자·버전도 상세에서 읽어 되돌려 보낸다 — 빠지면 서버가 지우거나 충돌을 모른다.
     expect(body).toMatchObject({
       rptTtl: '3분기 운영 보고(정정)',
       rptCn: '서버 증설이 필요합니다.',
       rptrId: ROW.rptrId,
+      version: 0,
     });
   });
 

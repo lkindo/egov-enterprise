@@ -540,4 +540,129 @@ class OpenApiDocumentationTest {
     long index = Long.parseLong(key);
     return index < 4_294_967_295L ? index : -1;
   }
+
+  @Test
+  @DisplayName("[Wave 2 · H5] 운영과 동일하게 빈 덮어쓰기·순환 참조 금지 상태에서 ApiServerApplication 전체 빈 그래프가 기동하고 중복 빈은 즉시 거부된다")
+  void strictBeanGraph_bootsWithoutBeanOverridingOrCircularReferences_andRejectsDuplicateBean() {
+    String h2Url = "jdbc:h2:mem:strict_bean_graph;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;NON_KEYWORDS=KEY,VALUE";
+    String[] strictBootArgs = {
+        "--spring.main.allow-bean-definition-overriding=false",
+        "--spring.main.allow-circular-references=false",
+        "--spring.datasource.url=" + h2Url,
+        "--spring.datasource.jdbc-url=" + h2Url,
+        "--spring.datasource.driver-class-name=org.h2.Driver",
+        "--spring.datasource.username=sa",
+        "--spring.datasource.password=",
+        "--spring.flyway.enabled=false",
+        "--spring.jpa.hibernate.ddl-auto=create",
+        "--spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
+        "--nuri.durable-work.enabled=false",
+        "--server.port=0"
+    };
+
+    java.util.Set<String> postgresLiveMetadataBarriers = java.util.Set.of(
+        "vendorProductCheck", "authorizationSchemaBarrier", "logDurationReadinessBarrier");
+    org.springframework.context.ApplicationContextInitializer<org.springframework.context.ConfigurableApplicationContext> strictInitializer = ctx -> {
+      ctx.getBeanFactory().registerSingleton(
+          ProductionClasspathOnlyExcludeFilter.class.getName(),
+          new ProductionClasspathOnlyExcludeFilter());
+      if (ctx.getBeanFactory() instanceof org.springframework.beans.factory.support.DefaultListableBeanFactory beanFactory) {
+        beanFactory.setAllowBeanDefinitionOverriding(false);
+        beanFactory.setAllowCircularReferences(false);
+      }
+      ctx.addBeanFactoryPostProcessor(bf -> bf.addBeanPostProcessor(
+          new org.springframework.beans.factory.config.BeanPostProcessor() {
+            @Override
+            public Object postProcessBeforeInitialization(Object bean, String beanName) {
+              if (postgresLiveMetadataBarriers.contains(beanName)) {
+                return (org.springframework.beans.factory.InitializingBean) () -> {};
+              }
+              return bean;
+            }
+          }));
+    };
+
+    try (var context = new org.springframework.boot.builder.SpringApplicationBuilder(nuri.ApiServerApplication.class)
+        .initializers(strictInitializer)
+        .run(strictBootArgs)) {
+      assertThat(context.isActive()).isTrue();
+      assertThat(context.getBean("characterEncodingFilter"))
+          .isInstanceOf(org.springframework.web.filter.CharacterEncodingFilter.class);
+    }
+
+    assertThatThrownBy(() -> {
+      try (var ignored = new org.springframework.boot.builder.SpringApplicationBuilder(
+              nuri.ApiServerApplication.class, DuplicateBeanProbeConfiguration.class)
+          .initializers(strictInitializer)
+          .run(strictBootArgs)) {
+        // unreachable
+      }
+    }).isInstanceOf(org.springframework.beans.factory.support.BeanDefinitionOverrideException.class);
+
+    assertThatThrownBy(() -> {
+      try (var ignored = new org.springframework.boot.builder.SpringApplicationBuilder(
+              nuri.ApiServerApplication.class, CircularReferenceProbeConfiguration.class)
+          .initializers(strictInitializer)
+          .run(strictBootArgs)) {
+        // unreachable
+      }
+    }).hasRootCauseInstanceOf(org.springframework.beans.factory.BeanCurrentlyInCreationException.class);
+  }
+
+  static final class ProductionClasspathOnlyExcludeFilter extends org.springframework.boot.context.TypeExcludeFilter {
+    @Override
+    public boolean match(
+        org.springframework.core.type.classreading.MetadataReader metadataReader,
+        org.springframework.core.type.classreading.MetadataReaderFactory metadataReaderFactory) {
+      String resourceDescription = metadataReader.getResource().getDescription().replace('\\', '/');
+      return resourceDescription.contains("/build/classes/java/test/")
+          || resourceDescription.contains("/build/classes/java/testFixtures/")
+          || resourceDescription.contains("-test-fixtures.jar")
+          || resourceDescription.contains("/out/test/")
+          || metadataReader.getAnnotationMetadata().isAnnotated(
+              "org.springframework.boot.test.context.TestConfiguration");
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj != null && getClass() == obj.getClass();
+    }
+
+    @Override
+    public int hashCode() {
+      return getClass().hashCode();
+    }
+  }
+
+  static class DuplicateBeanProbeConfiguration {
+    @org.springframework.context.annotation.Bean("characterEncodingFilter")
+    String collidingBeanOne() {
+      return "one";
+    }
+
+    @org.springframework.context.annotation.Bean("characterEncodingFilter")
+    Integer collidingBeanTwo() {
+      return 2;
+    }
+  }
+
+  static class CircularReferenceProbeConfiguration {
+    static class Alpha {
+      @org.springframework.beans.factory.annotation.Autowired Beta beta;
+    }
+
+    static class Beta {
+      @org.springframework.beans.factory.annotation.Autowired Alpha alpha;
+    }
+
+    @org.springframework.context.annotation.Bean
+    Alpha circularAlpha() {
+      return new Alpha();
+    }
+
+    @org.springframework.context.annotation.Bean
+    Beta circularBeta() {
+      return new Beta();
+    }
+  }
 }

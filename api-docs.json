@@ -39014,6 +39014,12 @@
           "hasVoted": {
             "type": "boolean",
             "description": "현재 사용자의 투표 참여 여부"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -39192,6 +39198,12 @@
               "$ref": "#/components/schemas/FileDto"
             },
             "readOnly": true
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -39241,6 +39253,12 @@
             "type": "string",
             "format": "date-time",
             "description": "등록 일시"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -39284,6 +39302,12 @@
             "type": "string",
             "format": "date-time",
             "description": "Description"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -40010,6 +40034,12 @@
           "crtDt": {
             "type": "string",
             "format": "date-time"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -40286,6 +40316,12 @@
             "type": "string",
             "format": "date-time",
             "description": "등록 일시"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         }
       },
@@ -41912,6 +41948,12 @@
               "null"
             ],
             "readOnly": true
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -42044,6 +42086,12 @@
             "type": "string",
             "format": "date-time",
             "description": "최종 수정 일시"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -42116,6 +42164,12 @@
           },
           "crtDt": {
             "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -46087,6 +46141,12 @@
           "hasVoted": {
             "type": "boolean",
             "description": "현재 사용자의 투표 참여 여부"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -55251,6 +55311,12 @@
             "type": "string",
             "format": "date-time",
             "description": "최종 수정 일시"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         }
       },

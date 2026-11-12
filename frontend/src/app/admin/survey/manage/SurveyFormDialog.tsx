@@ -44,6 +44,7 @@ export interface SurveyFormInitialValues {
   pollDsuseYn: string;
   beginDate?: Date;
   endDate?: Date;
+  version?: number;
 }
 
 /**
@@ -122,7 +123,12 @@ export function SurveyFormDialog({
     try {
       if (isEdit) {
         if (pollSn === undefined) throw new Error('설문 일련번호를 확인할 수 없습니다.');
-        await pollUserService.updatePoll({ ...formData, ...validated, pollSn });
+        await pollUserService.updatePoll({
+          ...formData,
+          ...validated,
+          pollSn,
+          ...(initialValues?.version !== undefined ? { version: initialValues.version } : {}),
+        });
         success('설문 정보를 저장했습니다.');
       } else {
         // 응답 선택지는 등록 시점에 고정 4종으로 만든다(종전 전용 페이지와 같은 값).

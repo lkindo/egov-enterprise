@@ -70,6 +70,7 @@ public class ExternalHrService {
         SecurityUtil.assertPermission("EXT_HR_UPDATE");
         String actorLoginId = currentLoginId();
         ExternalHr hr = findRequired(evntSn, otsdHrId);
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), hr.getVersion());
         hr.update(dto.getGndrCd(), dto.getOtsdHrNm(), dto.getCrTypeCd(), dto.getOgdpInstNm(), dto.getBrdtYmd(),
                 dto.getAreaNo(), dto.getMdTelno(), dto.getEndTelno(), dto.getEmlAddr(), actorLoginId);
         return convertToDto(hr);
@@ -110,6 +111,7 @@ public class ExternalHrService {
                 .crtDt(hr.getCrtDt())
                 .lastMdfrId(hr.getLastMdfrId())
                 .mdfcnDt(hr.getMdfcnDt())
+                .version(hr.getVersion())
                 .build();
     }
 }

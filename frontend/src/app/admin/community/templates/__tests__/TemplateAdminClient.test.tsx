@@ -46,7 +46,7 @@ vi.mock('@/app/components/ui/toast', () => ({
   useToast: () => ({ toast: mocks.toast }),
 }));
 
-type TemplateRow = { tmpltId: string; tmpltNm: string; tmpltSeCd: string; tmpltPath: string; useYn: string };
+type TemplateRow = { tmpltId: string; tmpltNm: string; tmpltSeCd: string; tmpltPath: string; useYn: string; version?: number };
 
 function renderClient(templates: TemplateRow[] = []) {
   const templatesPromise = Object.assign(Promise.resolve(templates), {
@@ -224,7 +224,7 @@ describe('TemplateAdminClient validation', () => {
  * 삭제는 확인 후 한 번만 부르고 pending 동안 disabled·aria-busy, 실패는 토스트다.
  */
 describe('TemplateAdminClient 수정·삭제', () => {
-  const ROW: TemplateRow = { tmpltId: 'TMPLT_1', tmpltNm: '공지 템플릿', tmpltSeCd: 'TMPT01', tmpltPath: '/t/notice.html', useYn: 'Y' };
+  const ROW: TemplateRow = { tmpltId: 'TMPLT_1', tmpltNm: '공지 템플릿', tmpltSeCd: 'TMPT01', tmpltPath: '/t/notice.html', useYn: 'Y', version: 0 };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -259,7 +259,7 @@ describe('TemplateAdminClient 수정·삭제', () => {
     await user.click(scope.getByRole('button', { name: '수정 승인' }));
 
     await waitFor(() => expect(mocks.updateTemplate).toHaveBeenCalledTimes(1));
-    expect(mocks.updateTemplate).toHaveBeenCalledWith('TMPLT_1', expect.objectContaining({ tmpltNm: '새 이름', tmpltPath: '/t/notice.html' }));
+    expect(mocks.updateTemplate).toHaveBeenCalledWith('TMPLT_1', expect.objectContaining({ tmpltNm: '새 이름', tmpltPath: '/t/notice.html', version: 0 }));
     expect(mocks.createTemplate).not.toHaveBeenCalled();
     expect(mocks.toast).toHaveBeenCalledWith('템플릿을 수정했습니다.', 'success');
     // 저장 뒤 목록을 서버에서 다시 읽는다.

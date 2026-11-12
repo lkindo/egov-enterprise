@@ -65,6 +65,10 @@ public class OnlinePollManageDto {
     @Schema(description = "현재 사용자의 투표 참여 여부")
     private Boolean hasVoted;
 
+    @Schema(description = "낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.")
+    @Min(0)
+    private Integer version;
+
     public static OnlinePollManageDto from(OnlinePollManage entity) {
         if (entity == null) return null;
         return OnlinePollManageDto.builder()
@@ -77,6 +81,7 @@ public class OnlinePollManageDto {
                 .pollAtmcDsuseYn(entity.getPollAtmcDsuseYn())
                 .frstRgtrId(entity.getFrstRgtrId())
                 .crtDt(entity.getCrtDt())
+                .version(entity.getVersion())
                 // 항목(pollArticles)은 서비스 레이어에서 OnlinePollArticleMapper 로 채운다.
                 // (수기 OnlinePollArticleDto.from() 제거 — entity→DTO 매핑을 Mapper 로 단일화해 드리프트 방지)
                 .pollArticles(Collections.emptyList())

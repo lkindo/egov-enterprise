@@ -290,6 +290,7 @@ export default function SurveyManageDetailClient() {
                         // 임의 보정하지 않는다 — 사용자가 다시 고르지 않으면 저장이 막힌다.
                         beginDate: parseStorageYmd(poll.pollBgngYmd) ?? undefined,
                         endDate: parseStorageYmd(poll.pollEndYmd) ?? undefined,
+                        version: poll.version,
                     }}
                     onClose={() => setIsEditing(false)}
                     onSaved={() => { void handleSaved(); }}

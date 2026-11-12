@@ -65,8 +65,8 @@ vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.co
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 
 const communities = [
-  { cmntySn: 11, cmntyNm: '독서 모임', cmntyIntrcn: '책을 읽습니다', useYn: 'Y', tmpltId: 'TMPL01', editable: true, deletable: true },
-  { cmntySn: 12, cmntyNm: '폐쇄된 모임', cmntyIntrcn: '', useYn: 'N', editable: true, deletable: true },
+  { cmntySn: 11, cmntyNm: '독서 모임', cmntyIntrcn: '책을 읽습니다', useYn: 'Y', tmpltId: 'TMPL01', editable: true, deletable: true, version: 0 },
+  { cmntySn: 12, cmntyNm: '폐쇄된 모임', cmntyIntrcn: '', useYn: 'N', editable: true, deletable: true, version: 0 },
 ];
 
 function renderDialog() {
@@ -209,7 +209,7 @@ describe('CommunityManageDialog', () => {
     await user.click(screen.getByRole('button', { name: '수정 저장' }));
 
     await waitFor(() => expect(mocks.updateCommunity).toHaveBeenCalledTimes(1));
-    expect(mocks.updateCommunity).toHaveBeenCalledWith(12, { cmntyNm: '폐쇄된 모임', cmntyIntroCn: '', tmpltId: undefined, useYn: 'Y' });
+    expect(mocks.updateCommunity).toHaveBeenCalledWith(12, { cmntyNm: '폐쇄된 모임', cmntyIntroCn: '', tmpltId: undefined, useYn: 'Y', version: 0 });
     expect(mocks.createCommunity).not.toHaveBeenCalled();
   });
 

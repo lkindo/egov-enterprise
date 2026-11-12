@@ -1,6 +1,7 @@
 package nuri.business.service.template.dto;
 
 import jakarta.validation.constraints.*;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import nuri.business.domain.template.Template;
 import lombok.Builder;
@@ -42,6 +43,10 @@ public class TemplateDto {
     private String useYn;
     private String frstRgtrId;
     private LocalDateTime crtDt;
+
+    @Schema(description = "낙관적 잠금 버전(V2_149). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.")
+    @Min(0)
+    private Integer version;
 
     // 엔티티→DTO 매핑은 TemplateMapper (MapStruct, 프레임워크 표준) 로 이관됨.
 

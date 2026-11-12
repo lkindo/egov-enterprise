@@ -1,6 +1,10 @@
 spring:
   main:
-    allow-bean-definition-overriding: true
+    # main application.yml 을 가리므로 같은 값을 둔다. 슬라이스·통합 시험은 application-test.yml 및
+    # 개별 시험 속성(@ApiHttpIntegrationTest 등)으로 덮어쓰기를 허용하고, 실제 전체 빈 그래프의 무충돌·무순환 기동은
+    # OpenApiDocumentationTest#strictBeanGraph_bootsWithoutBeanOverridingOrCircularReferences_andRejectsDuplicateBean 이 검증한다.
+    allow-bean-definition-overriding: false
+    allow-circular-references: false
   jackson:
     # [ADR-0024] 이 파일은 main application.yml 을 가린다. 운영과 같은 Jackson 기본값을 쓰도록 같은 선택을 둔다 —
     #   빠지면 테스트만 Jackson 3 기본값(날짜·primitive null·정렬 등)으로 검증한다.

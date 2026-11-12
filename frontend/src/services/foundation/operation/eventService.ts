@@ -22,6 +22,7 @@ export interface EventInfo {
   frstRgtrId?: string;
   crtDt?: string;
   mdfcnDt?: string;
+  version?: number;
 }
 
 

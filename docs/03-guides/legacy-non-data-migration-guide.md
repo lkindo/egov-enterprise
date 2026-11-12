@@ -113,7 +113,7 @@ SELECT count(*) AS manageable_admins
  WHERE u.user_stts_cd = 'P' AND coalesce(u.lck_yn, 'N') <> 'Y'
    AND NOT EXISTS (SELECT 1 FROM tb_login_policy p WHERE p.user_id = u.user_id AND p.lmt_yn = 'Y');
 
--- Q-A5 이력 없는 배정. API 로 배정했으면 0 이다. 이력 표의 사용자 열에 인덱스가 없어(GAP-AUTH-004) 한가한 시간에 돌린다.
+-- Q-A5 이력 없는 배정. API 로 배정했으면 0 이다. (V2_149 가 scrty_dcsn_trgt_id 인덱스를 제공하지만 대량 배정 직후에는 한가한 시간에 돌린다.)
 SELECT count(*) AS memberships_without_history
   FROM tb_authrt_user_map m
  WHERE NOT EXISTS (SELECT 1 FROM tb_authrt_chg_hstry h

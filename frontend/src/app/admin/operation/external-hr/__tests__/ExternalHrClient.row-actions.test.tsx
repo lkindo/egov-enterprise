@@ -99,7 +99,7 @@ vi.mock('@/services/foundation/operation/ExternalHrAdminService', () => ({
 
 const HR = {
   evntSn: 1, otsdHrId: 'HR-001', otsdHrNm: '홍길동', ogdpInstNm: '테스트 기관',
-  areaNo: '02', mdTelno: '1234', endTelno: '5678', emlAddr: 'hong@example.com', brdtYmd: '19900101',
+  areaNo: '02', mdTelno: '1234', endTelno: '5678', emlAddr: 'hong@example.com', brdtYmd: '19900101', version: 0,
 };
 /**
  * 식별자만 있는 행 — API·이관으로 최소 필드만 들어오면 이 모습이다.
@@ -149,7 +149,7 @@ describe('ExternalHrClient 행 액션', () => {
     fireEvent.click(scope.getByRole('button', { name: '수정 저장' }));
 
     await waitFor(() => expect(mocks.updateExternalHr).toHaveBeenCalledTimes(1));
-    expect(mocks.updateExternalHr).toHaveBeenCalledWith(1, 'HR-001', expect.objectContaining({ otsdHrNm: '홍길순', emlAddr: 'hong@example.com' }));
+    expect(mocks.updateExternalHr).toHaveBeenCalledWith(1, 'HR-001', expect.objectContaining({ otsdHrNm: '홍길순', emlAddr: 'hong@example.com', version: 0 }));
     expect(mocks.createExternalHr).not.toHaveBeenCalled();
     expect(mocks.toast).toHaveBeenCalledWith('외부인사 정보를 수정했습니다.', 'success');
   });

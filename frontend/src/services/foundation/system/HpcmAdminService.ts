@@ -17,6 +17,7 @@ export interface Hpcm {
   hlpDfn?: string;
   hlpExpln?: string;
   frstRgtrId?: string;
+  version?: number;
 }
 
 class HpcmAdminService extends ApiService {

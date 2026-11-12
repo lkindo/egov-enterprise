@@ -21,6 +21,7 @@ export const EventInfoRequestSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   lastMdfrId: z.string().optional(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type EventInfoRequest = z.infer<typeof EventInfoRequestSchema>;
 
@@ -50,6 +51,7 @@ export const EventInfoDtoSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   lastMdfrId: z.string().optional(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type EventInfoDto = z.infer<typeof EventInfoDtoSchema>;
 
@@ -88,6 +90,7 @@ export const EventInfoRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   lastMdfrId: z.string().optional(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const EventInfoRequestResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -105,6 +108,7 @@ export const EventInfoRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   lastMdfrId: z.string().optional().nullable(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const ApiResponsePageResponseEventInfoDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -142,6 +146,7 @@ export const EventInfoDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   lastMdfrId: z.string().optional(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const EventInfoDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -159,6 +164,7 @@ export const EventInfoDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   lastMdfrId: z.string().optional().nullable(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const PageResponseEventInfoDtoRequestSchema = /*#__PURE__*/ (() => z.object({

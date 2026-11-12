@@ -99,7 +99,13 @@ GAP-STD-001(`.agent/memory/known-gaps.md`)의 다음 행동("컬럼마다 표준
 
 2026-11-10 사용자가 이 권고대로 승인했다("권고대로 승인") — 1차 등록은 97개(준비 94 + A 3)이고, C 9개는 이관 원장에서 `nonStandardTarget` 과 사유로 확정하는 대상이다. 등록은 Boot 4.1.3 재기록 묶음에서 한다.
 
-**등록 전에 남는 일.**
+### 2026-11-12 1·2차 반영 결과 (`V2_150`·`V2_149`, DEC-OPS-416)
+
+- 2026-11-12 공유 OCI 개발 DB(`egovdb`, Flyway `2.148`) 읽기 전용 재대조 결과: 기승인 A 97개 약어 중 이미 등록된 약어 0건, 한글 용어명 중복 0건, 구성 단어·참조 도메인 누락 0건이었고, 표 2 도메인 정정 후보 4개 용어(`ANS_SN`·`PST_SN`·`UP_PST_SN`·`ARTCL_SN`)를 참조하는 물리 11개 컬럼(`tb_bbs_chg_hstry.pst_sn` 포함)도 전원 `bigint` 로 확인됐다.
+- 사용자 승인(DEC-OPS-416)에 따라 [V2_150](../../api-server/src/main/resources/db/migration/V2_150__register_approved_standard_terms.sql) 이 기승인 A 97개 표준 용어 등록과 표 2 도메인 정정 4건(`일련번호N19`)을 함께 반영하고 검증 `DO` 블록으로 고정했으며, [메타 계약 시험](../../api-server/src/test/java/nuri/api/schema/MetaStandardTermsExtensionMigrationIntegrationTest.java)이 격리 스키마에서 97개 등록·4개 도메인 정정을 단언한다.
+- 같은 묶음의 [V2_149](../../api-server/src/main/resources/db/migration/V2_149__add_missing_entity_versions_and_auth_history_index.sql) 가 가변 업무 엔티티 9개 표에 추가한 `version` 9개는 [DEC-OPS-378](../archived/operational-decisions-history.md#dec-ops-378) 기술 컬럼 예외다. 남은 범위는 3차 B 컬럼별 DDL 결정과 4차 C 기록이다.
+
+**등록 전에 남는 일(2026-11-10 기록 보존).**
 - 재기록 묶음 시점에 같은 쿼리로 다시 대조한다. 그 사이 스키마가 바뀌었거나 공공데이터 공통표준 9차가 나와 같은 뜻의 용어가 생겼을 수 있다(2026-11-10 현재 data.go.kr 의 최신본은 8차·2025-11).
 - 메타 전용 마이그레이션 계약 시험을 둔다. 공유 OCI 적용은 따로 승인받는다.
 - 등록 대상 컬럼을 `nonStandardTarget` 으로 확정해 둔 기관 이관 원장은 표준 용어로 바꿔야 등록 뒤 검증을 통과한다(TermLedgerValidator). 저장소 안의 원장 고정물은 시험용 표만 써서 영향이 없다.

@@ -68,12 +68,14 @@ class CommunityTemplateIntegrityIntegrationTest {
         var same = request(id);
         same.setCmntySn(community);
         same.setCmntyIntroCn("정정");
+        same.setVersion(communities.getCommunity(community).getVersion());
         communities.updateCommunity("fixture", same);
         assertThat(jdbc.queryForObject("SELECT cmnty_intro_cn FROM tb_cmnty_info WHERE cmnty_sn=?", String.class, community)).isEqualTo("정정");
         communities.deleteCommunity(community, "fixture");
         assertThatThrownBy(() -> deleteTemplateWithPermission(id)).isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_IN_USE);
         same.setTmpltId(null);
+        same.setVersion(jdbc.queryForObject("SELECT version FROM tb_cmnty_info WHERE cmnty_sn=?", Integer.class, community));
         communities.updateCommunity("fixture", same);
         deleteTemplateWithPermission(id);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_tmplt_info WHERE tmplt_id=?", Integer.class, id)).isZero();

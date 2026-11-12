@@ -32,6 +32,10 @@ public class ExternalHr implements Persistable<ExternalHrId> {
     @Column(length = 20)
     private String otsdHrId;
 
+    /** 낙관적 잠금 버전(V2_149). 화면이 읽은 값과 다르면 다른 사람이 먼저 고친 것이다(서비스가 409 로 거부한다). */
+    @Version
+    private Integer version;
+
     @Column(length = 12)
     private String gndrCd;
 

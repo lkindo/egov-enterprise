@@ -147,7 +147,11 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
         tmpltId: values.tmpltId || undefined,
       };
       if (editing) {
-        await communityAdminService.updateCommunity(editing.cmntySn, { ...payload, useYn: values.useYn });
+        await communityAdminService.updateCommunity(editing.cmntySn, {
+          ...payload,
+          useYn: values.useYn,
+          ...(editing.version !== undefined ? { version: editing.version } : {}),
+        });
         toast('커뮤니티를 수정했습니다.', 'success');
       } else {
         // 등록은 서버가 useYn='Y'·regSeCd='REGC01' 로 고정한다 — 화면은 사용 여부를 묻지 않는다.

@@ -172,10 +172,15 @@ class MemoReportRecipientIntegrityIntegrationTest {
         var correction = memo(active);
         correction.setRptCn("corrected");
         memoReportService.updateMemoReport(id, sender, correction);
+        assertThatThrownBy(() -> memoReportService.updateMemoReport(id, sender, correction))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
         assertThatThrownBy(() -> memoReportService.updateMemoReport(id, sender, memo(sender)))
                 .isInstanceOf(BusinessException.class);
         assertThat(jdbc.queryForMap("SELECT rptr_id, rpt_cn FROM tb_memo_rpt_info WHERE memo_rpt_sn=?", id))
                 .containsEntry("rptr_id", active).containsEntry("rpt_cn", "corrected");
+        assertThat(jdbc.queryForObject("SELECT version FROM tb_memo_rpt_info WHERE memo_rpt_sn=?", Integer.class, id))
+                .isEqualTo(1);
     }
 
     @Test
@@ -310,6 +315,8 @@ class MemoReportRecipientIntegrityIntegrationTest {
         MemoReportDto first = memoReportService.getMemoReport(id);
         Object readAt = reportRow(id).get("rptr_inq_dt");
         assertThat(readAt).isNotNull();
+        assertThat(jdbc.queryForObject("SELECT version FROM tb_memo_rpt_info WHERE memo_rpt_sn=?", Integer.class, id))
+                .isZero();
         assertThat(first.getInstructionReadToken()).matches("[a-f0-9]{64}");
         assertThat(memoReportService.getMemoReport(id).getInstructionReadToken())
                 .isEqualTo(first.getInstructionReadToken());
@@ -802,7 +809,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
     }
 
     private MemoReportDto memo(String receiver) {
-        return MemoReportDto.builder().rptTtl(fixtureId).rptCn("original").rptrId(receiver).build();
+        return MemoReportDto.builder().rptTtl(fixtureId).rptCn("original").rptrId(receiver).version(0).build();
     }
 
     private void waitForDatabaseLock(String application, int expected) throws InterruptedException {

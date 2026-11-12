@@ -193,7 +193,7 @@ describe('SurveyTemplatesPanel validation contract', () => {
   it('수정은 최신 상세를 한 번 읽고 숨겨진 경로를 보존해 저장한다', async () => {
     const user = userEvent.setup();
     mocked.getTemplateList.mockResolvedValue({ list: [{ srvyTmpltSn: 11, srvyTmpltTypeCd: 'OLD', srvyTmpltExpln: '목록 설명' }], total: 1, page: 1, size: 50, totalPage: 1 });
-    mocked.getSurveyTemplate.mockResolvedValue({ srvyTmpltSn: 11, srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '최신 설명', srvyTmpltPathNm: '/templates/preserved' });
+    mocked.getSurveyTemplate.mockResolvedValue({ srvyTmpltSn: 11, srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '최신 설명', srvyTmpltPathNm: '/templates/preserved', version: 0 });
     renderPanel();
     const edit = await screen.findByRole('button', { name: '목록 설명 템플릿 수정' });
     act(() => { edit.click(); edit.click(); });
@@ -203,7 +203,7 @@ describe('SurveyTemplatesPanel validation contract', () => {
     await user.clear(screen.getByLabelText('템플릿 설명'));
     await user.type(screen.getByLabelText('템플릿 설명'), '수정 설명');
     await user.click(screen.getByRole('button', { name: '템플릿 수정 저장' }));
-    await waitFor(() => expect(mocked.updateTemplate).toHaveBeenCalledWith(11, { srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '수정 설명', srvyTmpltPathNm: '/templates/preserved' }));
+    await waitFor(() => expect(mocked.updateTemplate).toHaveBeenCalledWith(11, { srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '수정 설명', srvyTmpltPathNm: '/templates/preserved', version: 0 }));
     expect(mocked.createTemplate).not.toHaveBeenCalled();
     expect(await screen.findByRole('button', { name: '템플릿 추가' })).toBeEnabled();
   });
@@ -255,7 +255,7 @@ describe('SurveyTemplatesPanel validation contract', () => {
     const user = userEvent.setup();
     mocked.getTemplateList.mockResolvedValue({ list: [{ srvyTmpltSn: 11, srvyTmpltTypeCd: 'OLD', srvyTmpltExpln: '목록 설명' }], total: 1, page: 1, size: 50, totalPage: 1 });
     // 등록 폼이 경로를 보내지 않아 서버가 null 로 저장한 행 — 이 화면이 실제로 만드는 모양이다.
-    mocked.getSurveyTemplate.mockResolvedValue({ srvyTmpltSn: 11, srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '최신 설명', srvyTmpltPathNm: null } as never);
+    mocked.getSurveyTemplate.mockResolvedValue({ srvyTmpltSn: 11, srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '최신 설명', srvyTmpltPathNm: null, version: 0 } as never);
     renderPanel();
 
     await user.click(await screen.findByRole('button', { name: '목록 설명 템플릿 수정' }));
@@ -268,7 +268,7 @@ describe('SurveyTemplatesPanel validation contract', () => {
     const [srvyTmpltSn, body] = mocked.updateTemplate.mock.calls[0];
     expect(srvyTmpltSn).toBe(11);
     expect(Object.values(body)).not.toContain(null);
-    expect(body).toMatchObject({ srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '수정 설명' });
+    expect(body).toMatchObject({ srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '수정 설명', version: 0 });
     // 모킹이 건너뛴 진짜 방어선을 직접 태운다.
     expect(() => parseGeneratedOperationRequest(updateTemplateOperation, body)).not.toThrow();
   });
@@ -276,7 +276,7 @@ describe('SurveyTemplatesPanel validation contract', () => {
   it('경로가 있으면 그대로 왕복시킨다 — 전체 치환이라 빠뜨리면 지워진다', async () => {
     const user = userEvent.setup();
     mocked.getTemplateList.mockResolvedValue({ list: [{ srvyTmpltSn: 11, srvyTmpltTypeCd: 'OLD', srvyTmpltExpln: '목록 설명' }], total: 1, page: 1, size: 50, totalPage: 1 });
-    mocked.getSurveyTemplate.mockResolvedValue({ srvyTmpltSn: 11, srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '최신 설명', srvyTmpltPathNm: '/templates/preserved' });
+    mocked.getSurveyTemplate.mockResolvedValue({ srvyTmpltSn: 11, srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '최신 설명', srvyTmpltPathNm: '/templates/preserved', version: 0 });
     renderPanel();
 
     await user.click(await screen.findByRole('button', { name: '목록 설명 템플릿 수정' }));
@@ -287,7 +287,7 @@ describe('SurveyTemplatesPanel validation contract', () => {
 
     await waitFor(() => expect(mocked.updateTemplate).toHaveBeenCalledTimes(1));
     const [, body] = mocked.updateTemplate.mock.calls[0];
-    expect(body).toEqual({ srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '수정 설명', srvyTmpltPathNm: '/templates/preserved' });
+    expect(body).toEqual({ srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '수정 설명', srvyTmpltPathNm: '/templates/preserved', version: 0 });
     expect(() => parseGeneratedOperationRequest(updateTemplateOperation, body)).not.toThrow();
   });
 

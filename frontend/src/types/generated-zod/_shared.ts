@@ -77,6 +77,7 @@ export const CommunityDtoSchema = /*#__PURE__*/ (() => z.object({
   deletable: z.boolean().optional(),
   pendingMemberCount: z.number().int().optional().nullable(),
   crtDt: z.string().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type CommunityDto = z.infer<typeof CommunityDtoSchema>;
 
@@ -393,6 +394,7 @@ export const CommunityDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   tmpltNm: z.string().optional(),
   useYn: z.enum(["Y","N"]),
   crtDt: z.string().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const CommunityDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -409,6 +411,7 @@ export const CommunityDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   deletable: z.boolean().optional().nullable(),
   pendingMemberCount: z.number().int().optional().nullable(),
   crtDt: z.string().optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const ApiResponseLongRequestSchema = /*#__PURE__*/ (() => z.object({

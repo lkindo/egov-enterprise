@@ -25,6 +25,9 @@ import nuri.foundation.core.util.ServiceTime;
 // @Bean 정의·static util). 따라서 egov 스캔은 원치 않는 컨트롤러/auto-config 만 끌어와 다시 배제하던 순부담이라
 // 스캔·제외필터(22 REGEX + 3 egov ASSIGNABLE) 통째 제거. 우리 egov @Bean 은 그대로 유지된다.
 @ComponentScan(basePackages = { "nuri" }, nameGenerator = FullBeanNameGenerator.class, excludeFilters = {
+                                @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {
+                                                org.springframework.boot.context.TypeExcludeFilter.class
+                                }),
                                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
                                                 nuri.business.security.config.SecurityConfig.class
                                 }),

@@ -64,6 +64,7 @@ const DETAIL = {
   picNm: '김담당',
   prepMttr: '버스 2대 예약',
   evntTypeCd: 'WORKSHOP',
+  version: 0,
 };
 
 function renderClient() {
@@ -114,6 +115,7 @@ describe('행사 수정', () => {
       picNm: '김담당',
       prepMttr: '버스 2대 예약',
       evntTypeCd: 'WORKSHOP',
+      version: 0,
     });
     expect(mocks.createEvent).not.toHaveBeenCalled();
   });

@@ -230,8 +230,11 @@ class OnlinePollItemIntegrityIntegrationTest {
     }
 
     private OnlinePollManageDto update(String firstName) {
+        Integer currentVersion = jdbc.queryForObject(
+                "SELECT version FROM tb_onln_poll_manage WHERE poll_sn=?", Integer.class, poll);
         return OnlinePollManageDto.builder().pollSn(poll).pollNm("항목 무결성")
                 .pollBgngYmd("20000101").pollEndYmd("29991231").pollDsuseYn("N")
+                .version(currentVersion)
                 .pollArticles(List.of(OnlinePollArticleDto.builder().pollArtclSn(second).pollArtclNm("둘째").build(),
                         OnlinePollArticleDto.builder().pollArtclSn(first).pollArtclNm(firstName).build())).build();
     }

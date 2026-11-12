@@ -14,6 +14,7 @@ export const OnlineManualDtoSchema = /*#__PURE__*/ (() => z.object({
   onlnMnlExpln: z.string().min(0).max(4000).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type OnlineManualDto = z.infer<typeof OnlineManualDtoSchema>;
 
@@ -24,6 +25,7 @@ export const HpcmDtoSchema = /*#__PURE__*/ (() => z.object({
   hlpExpln: z.string().min(0).max(4000),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type HpcmDto = z.infer<typeof HpcmDtoSchema>;
 
@@ -152,6 +154,7 @@ export const OnlineManualDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   onlnMnlExpln: z.string().min(0).max(4000).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const OnlineManualDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -162,6 +165,7 @@ export const OnlineManualDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   onlnMnlExpln: z.string().min(0).max(4000).optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const HpcmDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -171,6 +175,7 @@ export const HpcmDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   hlpExpln: z.string().min(0).max(4000),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const HpcmDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -180,6 +185,7 @@ export const HpcmDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   hlpExpln: z.string().min(0).max(4000),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const ApiResponsePageResponsePublicOnlineManualDtoRequestSchema = /*#__PURE__*/ (() => z.object({

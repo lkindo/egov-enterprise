@@ -28,6 +28,7 @@ export const OnlinePollManageRequestSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   pollArticles: z.array(z.lazy(() => OnlinePollArticleDtoSchema)).optional(),
   hasVoted: z.boolean().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type OnlinePollManageRequest = z.infer<typeof OnlinePollManageRequestSchema>;
 
@@ -54,6 +55,7 @@ export const OnlinePollManageDtoSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   pollArticles: z.array(z.lazy(() => OnlinePollArticleDtoSchema)).optional(),
   hasVoted: z.boolean().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type OnlinePollManageDto = z.infer<typeof OnlinePollManageDtoSchema>;
 
@@ -118,6 +120,7 @@ export const OnlinePollManageRequestRequestSchema = /*#__PURE__*/ (() => z.objec
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   pollArticles: z.array(z.lazy(() => OnlinePollArticleDtoRequestSchema.strict())).optional(),
   hasVoted: z.boolean().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const OnlinePollManageRequestResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -132,6 +135,7 @@ export const OnlinePollManageRequestResponseSchema = /*#__PURE__*/ (() => z.obje
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   pollArticles: z.array(z.lazy(() => OnlinePollArticleDtoResponseSchema)).optional().nullable(),
   hasVoted: z.boolean().optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const ApiResponsePageResponseOnlinePollManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -166,6 +170,7 @@ export const OnlinePollManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   pollArticles: z.array(z.lazy(() => OnlinePollArticleDtoRequestSchema.strict())).optional(),
   hasVoted: z.boolean().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const OnlinePollManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -180,6 +185,7 @@ export const OnlinePollManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   pollArticles: z.array(z.lazy(() => OnlinePollArticleDtoResponseSchema)).optional().nullable(),
   hasVoted: z.boolean().optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const PageResponseOnlinePollManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({

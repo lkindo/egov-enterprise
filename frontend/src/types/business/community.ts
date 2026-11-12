@@ -13,6 +13,7 @@ export interface CommunityVO {
   editable?: boolean;
   deletable?: boolean;
   crtDt?: string;
+  version?: number;
 }
 
 export interface CommunitySearchParams {

@@ -20,6 +20,7 @@ export interface ManualDto {
   onlnMnlSeCd: string;
   frstRgtrId?: string;
   crtDt?: string;
+  version?: number;
 }
 
 export type ManualSearchParams = NonNullable<operations['getManuals']['parameters']['query']>;
@@ -41,6 +42,7 @@ function requireManual(item: components['schemas']['OnlineManualDto']): ManualDt
     onlnMnlSeCd: item.onlnMnlSeCd,
     ...(item.frstRgtrId === undefined ? {} : { frstRgtrId: item.frstRgtrId }),
     ...(item.crtDt === undefined ? {} : { crtDt: item.crtDt }),
+    ...(item.version === undefined ? {} : { version: item.version }),
   };
 }
 

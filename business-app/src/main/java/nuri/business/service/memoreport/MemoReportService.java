@@ -179,11 +179,15 @@ public class MemoReportService {
         boolean participant = recipient || actor.equals(entity.getUserId());
         // 본문 권한은 파일 목록 작업권한을 대신하지 않는다. 허용된 참여자도 기존 파일 인가를 통과해야 한다.
         FileReadSnapshot snapshot = participant && canReadAttachments(entity) ? readAttachments(entity, false) : null;
-        if (recipient && entity.getRptrInqDt() == null) {
+        java.time.LocalDateTime firstReadAt = entity.getRptrInqDt();
+        if (recipient && firstReadAt == null) {
             // PostgreSQL timestamp(6)에 저장되는 정밀도로 응답도 맞춘다. 첫 응답과 재조회가 같은 최초 시각이다.
-            entity.updateInqireDt(vendorSql.storedTimestamp(java.time.LocalDateTime.now()));
+            // 열람만으로 @Version·감사 수정자를 올리지 않도록 벌크 조건부 UPDATE 로 기록한다.
+            firstReadAt = vendorSql.storedTimestamp(java.time.LocalDateTime.now());
+            memoReportRepository.recordFirstReadIfUnread(memoRptSn, firstReadAt);
         }
         MemoReportDto dto = toDtoWithPermission(entity, participantNames(List.of(entity)));
+        if (firstReadAt != null) dto.setRptrInqDt(firstReadAt);
         if (snapshot == null) dto.setInstructable(false);
         if (snapshot != null) dto.setAttachments(snapshot.toFileDtos());
         if (recipient && snapshot != null) dto.setInstructionReadToken(instructionReadToken(entity, snapshot));
@@ -339,6 +343,7 @@ public class MemoReportService {
         if (hasInstruction(entity)) {
             throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE, "지시가 달린 보고는 고칠 수 없습니다. 새 보고로 올려 주세요.");
         }
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);

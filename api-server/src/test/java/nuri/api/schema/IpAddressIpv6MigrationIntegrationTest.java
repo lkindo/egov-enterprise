@@ -83,10 +83,11 @@ class IpAddressIpv6MigrationIntegrationTest extends SharedPostgresMigrationTestS
                     WHERE domain_group='명칭' AND domain_name='주소V45'
                       AND upper(data_type)='VARCHAR' AND data_length=45
                     """)).isEqualTo(1);
+            // [V2_150] 기승인 DMND_USER_IP_ADDR(주소V45) 정식 등록으로 *_IP_ADDR 표준 용어는 29건 -> 30건이다.
             assertThat(singleInt(statement, """
                     SELECT count(*) FROM meta_standard_terms
                     WHERE eng_abbr='IP_ADDR' OR eng_abbr LIKE '%!_IP_ADDR' ESCAPE '!'
-                    """)).isEqualTo(29);
+                    """)).isEqualTo(30);
             assertThat(singleInt(statement, """
                     SELECT count(*) FROM meta_standard_terms
                     WHERE (eng_abbr='IP_ADDR' OR eng_abbr LIKE '%!_IP_ADDR' ESCAPE '!')

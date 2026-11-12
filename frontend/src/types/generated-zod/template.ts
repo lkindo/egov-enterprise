@@ -14,6 +14,7 @@ export const TemplateDtoSchema = /*#__PURE__*/ (() => z.object({
   useYn: z.string().min(0).max(1),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type TemplateDto = z.infer<typeof TemplateDtoSchema>;
 
@@ -47,6 +48,7 @@ export const TemplateDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   useYn: z.string().min(0).max(1),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const TemplateDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -57,6 +59,7 @@ export const TemplateDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   useYn: z.string().min(0).max(1),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const ApiResponseTemplateDtoRequestSchema = /*#__PURE__*/ (() => z.object({

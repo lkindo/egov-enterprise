@@ -148,16 +148,41 @@ class SurveyServiceTest {
                 .srvyTmpltSn(101L)
                 .srvyTmpltTypeCd("OLD")
                 .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(tmplat, "version", 0);
         given(tmplatRepository.findById(101L)).willReturn(Optional.of(tmplat));
 
         SurveyTemplateDto dto = SurveyTemplateDto.builder()
                 .srvyTmpltSn(101L)
                 .srvyTmpltTypeCd("NEW")
+                .version(0)
                 .build();
 
         surveyService.updateTmplat(dto);
 
         assertThat(tmplat.getSrvyTmpltTypeCd()).isEqualTo("NEW");
+    }
+
+    @Test
+    @DisplayName("설문 템플릿 수정 - 버전 누락(400)·낡은 버전(409)은 거부한다")
+    void updateTmplat_RejectsMissingOrStaleVersion() {
+        SurveyTemplate tmplat = SurveyTemplate.builder()
+                .srvyTmpltSn(101L)
+                .srvyTmpltTypeCd("OLD")
+                .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(tmplat, "version", 1);
+        given(tmplatRepository.findById(101L)).willReturn(Optional.of(tmplat));
+
+        assertThatThrownBy(() -> surveyService.updateTmplat(
+                SurveyTemplateDto.builder().srvyTmpltSn(101L).srvyTmpltTypeCd("NO_VER").build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+
+        assertThatThrownBy(() -> surveyService.updateTmplat(
+                SurveyTemplateDto.builder().srvyTmpltSn(101L).srvyTmpltTypeCd("STALE").version(0).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+
+        assertThat(tmplat.getSrvyTmpltTypeCd()).isEqualTo("OLD");
     }
 
     @Test
