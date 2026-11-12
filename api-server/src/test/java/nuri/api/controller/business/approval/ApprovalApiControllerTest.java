@@ -43,7 +43,7 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
                                 """))
                 .andExpect(status().isOk());
 
-        verify(approvalService).confirmInformalSanction(7L, "C", null, 3);
+        verify(approvalService).confirmInformalSanction(7L, "C", null, 3, null);
     }
 
     @Test
@@ -264,7 +264,12 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
         mockMvc.perform(put("/api/v1/approvals/7/confirm").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"C\",\"version\":4,\"reason\":\"검토 완료\"}"))
                 .andExpect(status().isOk());
-        verify(approvalService).confirmInformalSanction(7L, "C", "검토 완료", 4);
+        verify(approvalService).confirmInformalSanction(7L, "C", "검토 완료", 4, null);
+        // [V2_151] 대리결재는 원결재자(esntlId)를 본문 onBehalfOf 로 받아 그대로 넘긴다 — 판정은 서비스가 한다.
+        mockMvc.perform(put("/api/v1/approvals/8/confirm").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"C\",\"version\":2,\"onBehalfOf\":\"E-PRINCIPAL\"}"))
+                .andExpect(status().isOk());
+        verify(approvalService).confirmInformalSanction(8L, "C", null, 2, "E-PRINCIPAL");
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/approvals/7")
                         .queryParam("version", "4").with(csrf()))
                 .andExpect(status().isOk());

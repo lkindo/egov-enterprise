@@ -184,7 +184,8 @@ class UserAbsenceServiceImplTest {
         delegationFixture(account("B", "D", "N"));
         assertRejected(delegation("B", "20261112", "20261114"), "사용 중이 아니거나 잠긴");
 
-        org.mockito.Mockito.reset(userRepository, userAbsenceRepository);
+        org.mockito.Mockito.reset(userRepository);
+        org.mockito.Mockito.reset(userAbsenceRepository);
         delegationFixture(account("B", "P", "Y"));
         assertRejected(delegation("B", "20261112", "20261114"), "사용 중이 아니거나 잠긴");
     }

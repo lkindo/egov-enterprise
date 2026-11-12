@@ -74,7 +74,7 @@ public class CommunityOperatorApiController {
     }
 
     @Operation(summary = "운영자 지정·해제",
-            description = "승인된 회원을 운영자로 지정하거나 해제합니다. 마지막 남은 운영자는 해제할 수 없습니다(409). 운영자·관리자만 합니다.")
+            description = "승인된 회원을 운영자로 지정하거나 해제합니다. 운영자는 마지막 남은 운영자를 해제할 수 없습니다(409, 관리자는 할 수 있습니다). 운영자·관리자만 합니다.")
     @PutMapping("/members/{userId}/manager")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.community.CommunityOperatorApiController#designateOperator')")
     public ResponseEntity<ApiResponse<Void>> designateOperator(@PathVariable Long cmntySn, @PathVariable String userId,

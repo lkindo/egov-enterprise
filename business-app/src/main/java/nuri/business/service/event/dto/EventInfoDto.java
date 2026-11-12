@@ -65,6 +65,15 @@ public class EventInfoDto {
     @Size(max = 12)
     private String evntTypeCd;
 
+    @Schema(description = "온라인 참가 신청 정원(V2_152). 승인 대기·승인 신청 수가 이 값에 이르면 새 신청을 받지 않는다. 비우면 정원 없음 — '참여 정원'(evntUseCnt)은 신청을 막지 않는 안내 값이다.", example = "40")
+    @Positive
+    private Integer pscpNope;
+
+    @Schema(description = "참가 신청 마감일(yyyyMMdd, 한국 날짜). 정하면 사용자 '행사 참가' 화면에서 이날까지 신청을 받고, 비우면 신청을 받지 않는다. 행사 종료일보다 늦을 수 없다.", example = "20260520")
+    @Size(max = 8)
+    @Pattern(regexp = Ymd.OPTIONAL_PATTERN, message = "날짜는 유효한 yyyyMMdd 형식이어야 합니다.")
+    private String aplyDdlnYmd;
+
     // [2026-10-19] 승인 여부·승인일(evntAprvYn·evntAprvYmd)을 걷었다 — 행사 승인 처리 흐름이 제품에 없어 늘 대기·빈값이었다.
 
     @Schema(description = "최초 등록자 ID", example = "webmaster")

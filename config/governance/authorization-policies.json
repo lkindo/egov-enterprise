@@ -2049,6 +2049,85 @@
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.cms.CmsHomeAdminApiController#updateHome')",
       "routeGate": "OPERATION_PERMISSION",
       "guardRef": "CmsHomeService#updateHome"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/communities/{cmntySn}/operator/members/{userId}/approval",
+      "handler": "nuri.api.controller.business.community.CommunityOperatorApiController#approveOperatorMember",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.community.CommunityOperatorApiController#approveOperatorMember')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "CommunityService#approveMember"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/communities/{cmntySn}/operator/members/{userId}/request",
+      "handler": "nuri.api.controller.business.community.CommunityOperatorApiController#rejectOperatorMember",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.community.CommunityOperatorApiController#rejectOperatorMember')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "CommunityService#rejectMember"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/communities/{cmntySn}/operator/members/{userId}",
+      "handler": "nuri.api.controller.business.community.CommunityOperatorApiController#withdrawOperatorMember",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.community.CommunityOperatorApiController#withdrawOperatorMember')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "CommunityService#withdrawMemberAsOperator"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/communities/{cmntySn}/operator/members/{userId}/manager",
+      "handler": "nuri.api.controller.business.community.CommunityOperatorApiController#designateOperator",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.community.CommunityOperatorApiController#designateOperator')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "CommunityService#designateOperator"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/communities/{cmntySn}/operator/profile",
+      "handler": "nuri.api.controller.business.community.CommunityOperatorApiController#updateOperatorProfile",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.community.CommunityOperatorApiController#updateOperatorProfile')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "CommunityService#updateProfileAsOperator"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/events/{evntSn}/applications",
+      "handler": "nuri.api.controller.business.operation.EventParticipationApiController#applyForEvent",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.EventParticipationApiController#applyForEvent')",
+      "routeGate": "OPERATION_PERMISSION"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/events/{evntSn}/applications/me",
+      "handler": "nuri.api.controller.business.operation.EventParticipationApiController#cancelEventApplication",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.EventParticipationApiController#cancelEventApplication')",
+      "routeGate": "OPERATION_PERMISSION"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/operation/events/{evntSn}/applications/{evntAplySn}/approval",
+      "handler": "nuri.api.controller.business.operation.EventApplicationAdminApiController#approveEventApplication",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.EventApplicationAdminApiController#approveEventApplication')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "EventApplicationService#decide"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/operation/events/{evntSn}/applications/{evntAplySn}/rejection",
+      "handler": "nuri.api.controller.business.operation.EventApplicationAdminApiController#rejectEventApplication",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.EventApplicationAdminApiController#rejectEventApplication')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "EventApplicationService#decide"
     }
   ],
   "serviceGuardPolicies": [
@@ -2401,18 +2480,6 @@
       ]
     },
     {
-      "target": "CommunityService#approveMember",
-      "policy": "ADMIN_OR_SYSTEM",
-      "mechanisms": [
-        {
-          "helper": "assertPermission",
-          "count": 1,
-          "identityAxis": "PERMISSION",
-          "permission": "COMMUNITY_APPROVE"
-        }
-      ]
-    },
-    {
       "target": "CommunityService#getMembers",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -2421,18 +2488,6 @@
           "count": 1,
           "identityAxis": "PERMISSION",
           "permission": "COMMUNITY_READ_ALL"
-        }
-      ]
-    },
-    {
-      "target": "CommunityService#rejectMember",
-      "policy": "ADMIN_OR_SYSTEM",
-      "mechanisms": [
-        {
-          "helper": "assertPermission",
-          "count": 1,
-          "identityAxis": "PERMISSION",
-          "permission": "COMMUNITY_REJECT"
         }
       ]
     },
@@ -4526,6 +4581,66 @@
           "permission": "CMS_HOME_UPDATE"
         }
       ]
+    },
+    {
+      "target": "ScheduleService#assertScope",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "SCHEDULE_UPDATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "EventApplicationService#getApplications",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrPermission",
+          "count": 1,
+          "identityAxis": "LOGIN_ID",
+          "permission": "EVENT_UPDATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "EventApplicationService#decide",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrPermission",
+          "count": 1,
+          "identityAxis": "LOGIN_ID",
+          "permission": "EVENT_UPDATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "ScheduleService#assertCompanyWideUpdate",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "SCHEDULE_UPDATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "ScheduleService#assertCompanyWideDelete",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "SCHEDULE_DELETE_ALL"
+        }
+      ]
     }
   ],
   "manualGuardPolicies": [
@@ -5040,7 +5155,8 @@
         "if (department == null || department.isBlank()) department = \"ORGNZT_0000000000000\";",
         "shared |= readAll || (loginId != null && !loginId.isBlank() && \"1\".equals(reference.sharing()) && department.equals(reference.department()));",
         "owner |= loginId != null && loginId.equals(reference.registrar());",
-        "return new SourceHit(!references.isEmpty(), shared, owner, false);"
+        "return new SourceHit(!references.isEmpty(), shared, owner, false);",
+        "shared |= loginId != null && !loginId.isBlank() && \"3\".equals(reference.sharing());"
       ],
       "forbiddenTokens": [
         "SecurityUtil.hasPermission(\"FILE_READ_ALL\")",
@@ -5094,12 +5210,17 @@
         "SecurityUtil.assertOwnerByEsntlId(ownLine.getId().getUserId())",
         "ownLine.status() == ApprovalStatus.WAITING",
         "ownLine.status() != ApprovalStatus.ACTIVE",
-        "CommonErrorCode.ACCESS_DENIED"
+        "CommonErrorCode.ACCESS_DENIED",
+        "substitutableLines(sanction, lines, actor, Set.copyOf(delegatorsToday(actor)))",
+        "if (!substitute) SecurityUtil.assertOwnerByEsntlId(ownLine.getId().getUserId());",
+        "ownLine.decideAsSubstitute(actor, \"C\".equals(aprvYn), opinion, LocalDateTime.now());",
+        "sensitiveAudit.recordMutation(SUBSTITUTE_AUDIT_OPERATION,"
       ],
       "forbiddenTokens": [
         "SecurityUtil.isAdmin()",
         "SecurityUtil.isAdminOrSystem()"
-      ]
+      ],
+      "parameterCount": 5
     },
     {
       "target": "InformalSanctionService#requestSupplement",
@@ -5497,6 +5618,187 @@
         "protectedAccountGuard.authorizeProtectedAccountChange(target.getEsntlId())"
       ],
       "forbiddenTokens": []
+    },
+    {
+      "target": "CommunityService#assertOperatorOrPermission",
+      "source": "business-app/src/main/java/nuri/business/service/community/CommunityService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 2,
+      "requiredTokens": [
+        "if (SecurityUtil.hasPermission(permission))",
+        "SecurityUtil.getCurrentEsntlId()",
+        "\"Y\".equals(community.getUseYn()) && \"REGC01\".equals(community.getRegSeCd())",
+        "communityUserRepository.findById(new CommunityUserId(cmntySn, actor))",
+        ".filter(CommunityUser::isOperator)",
+        "CommonErrorCode.ACCESS_DENIED"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.isAdmin()",
+        "SecurityUtil.isAdminOrSystem()",
+        ".orElse(\"anonymous\")"
+      ]
+    },
+    {
+      "target": "CommunityService#approveMember",
+      "source": "business-app/src/main/java/nuri/business/service/community/CommunityService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "assertOperatorOrPermission(cmntySn, \"COMMUNITY_APPROVE\");",
+        "requireMembership(cmntySn, userId)",
+        "member.isRequested()"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "CommunityService#rejectMember",
+      "source": "business-app/src/main/java/nuri/business/service/community/CommunityService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "assertOperatorOrPermission(cmntySn, \"COMMUNITY_REJECT\");",
+        "requireMembership(cmntySn, userId)",
+        "member.isRequested()"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "CommunityService#getMembersAsOperator",
+      "source": "business-app/src/main/java/nuri/business/service/community/CommunityService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "assertOperatorOrPermission(cmntySn, \"COMMUNITY_READ_ALL\");",
+        "communityUserRepository.findByIdCmntySn(Objects.requireNonNull(cmntySn), sorted)"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "CommunityService#withdrawMemberAsOperator",
+      "source": "business-app/src/main/java/nuri/business/service/community/CommunityService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "assertOperatorOrPermission(cmntySn, \"COMMUNITY_UPDATE_ALL\");",
+        "requireMembership(cmntySn, userId)",
+        "if (member.isOperator())",
+        "CommonErrorCode.RESOURCE_IN_USE"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "CommunityService#designateOperator",
+      "source": "business-app/src/main/java/nuri/business/service/community/CommunityService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "assertOperatorOrPermission(cmntySn, \"COMMUNITY_UPDATE_ALL\");",
+        "requireMembership(cmntySn, userId)",
+        "if (!member.isApproved())",
+        "if (!SecurityUtil.hasPermission(\"COMMUNITY_UPDATE_ALL\"))",
+        "assertNotLastOperator(cmntySn,"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "CommunityService#updateProfileAsOperator",
+      "source": "business-app/src/main/java/nuri/business/service/community/CommunityService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "assertOperatorOrPermission(cmntySn, \"COMMUNITY_UPDATE_ALL\");",
+        "communityRepository.findByIdForUpdate(Objects.requireNonNull(cmntySn))",
+        "EntityVersions.assertCurrent(request.version(), community.getVersion())",
+        "community.update(request.cmntyNm(), request.cmntyIntroCn(), community.getTmpltId(), community.getUseYn())"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "CommunityService#assertNotLastOperator",
+      "source": "business-app/src/main/java/nuri/business/service/community/CommunityService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "communityRepository.findByIdForUpdate(Objects.requireNonNull(cmntySn))",
+        "communityUserRepository.countOperators(cmntySn) <= 1",
+        "CommonErrorCode.RESOURCE_IN_USE"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "InformalSanctionService#substitutableLines",
+      "source": "business-app/src/main/java/nuri/business/service/informalsanction/InformalSanctionService.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "!\"A\".equals(sanction.getAprvYn())",
+        "actor.equals(sanction.getAplcntId())",
+        "delegators.isEmpty()",
+        "currentLines.stream().anyMatch(d -> actor.equals(d.getId().getUserId()))",
+        "d.status() == ApprovalStatus.ACTIVE && delegators.contains(d.getId().getUserId())"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.isAdmin()",
+        "SecurityUtil.isAdminOrSystem()",
+        ".orElse(\"anonymous\")"
+      ]
+    },
+    {
+      "target": "JdbcAttachmentReferenceResolver#queryApproval",
+      "source": "business-core/src/main/java/nuri/business/service/file/JdbcAttachmentReferenceResolver.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "FROM tb_ifml_atrz_info s",
+        "WHERE s.atch_file_sn = ?",
+        "AND (d.user_id = ? OR d.sbt_aprvr_id = ?)",
+        "WHERE r.ifml_atrz_sn = s.ifml_atrz_sn AND r.user_id = ?",
+        "CASE WHEN s.aprv_yn = 'A' AND EXISTS",
+        "d.aprv_yn = 'A'",
+        "a.user_absn_yn = 'Y' AND a.sbt_aprvr_id = ?",
+        "a.absn_bgng_ymd <= ? AND a.absn_end_ymd >= ?",
+        "esntlId, esntlId, esntlId, esntlId, today, today, fileId",
+        "return approvalHit(references, esntlId);"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasPermission(\"FILE_READ_ALL\")",
+        "owner |= readAll",
+        ".orElse(\"anonymous\")"
+      ]
+    },
+    {
+      "target": "JdbcAttachmentReferenceResolver#queryApprovalRevision",
+      "source": "business-core/src/main/java/nuri/business/service/file/JdbcAttachmentReferenceResolver.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "FROM tb_ifml_atrz_hstry h",
+        "WHERE h.atch_file_sn = ?",
+        "d.atrz_cycl = h.atrz_cycl",
+        "AND (d.user_id = ? OR d.sbt_aprvr_id = ?)",
+        "esntlId, esntlId, esntlId, fileId",
+        "return approvalHit(references, esntlId);"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasPermission(\"FILE_READ_ALL\")",
+        "owner |= readAll",
+        ".orElse(\"anonymous\")"
+      ]
+    },
+    {
+      "target": "JdbcAttachmentReferenceResolver#queryApprovalDraft",
+      "source": "business-core/src/main/java/nuri/business/service/file/JdbcAttachmentReferenceResolver.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "SELECT aplcnt_id FROM tb_ifml_atrz_tmpr_strg WHERE atch_file_sn = ?",
+        "boolean owner = esntlId != null && applicants.stream().anyMatch(esntlId::equals);",
+        "return new SourceHit(!applicants.isEmpty(), false, owner, false);"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasPermission(\"FILE_READ_ALL\")",
+        ".orElse(\"anonymous\")"
+      ]
     }
   ],
   "permissionCatalog": "config/governance/permission-catalog.json",
@@ -8670,6 +8972,90 @@
       "handler": "nuri.api.controller.business.cms.CmsPageApiController#getHomeIntro",
       "access": "AUTHENTICATED",
       "permission": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/communities/{cmntySn}/operator/members",
+      "handler": "nuri.api.controller.business.community.CommunityOperatorApiController#getOperatorMembers",
+      "access": "PERMISSION",
+      "permission": "COMMUNITY_OPERATE"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/communities/{cmntySn}/operator/members/{userId}/approval",
+      "handler": "nuri.api.controller.business.community.CommunityOperatorApiController#approveOperatorMember",
+      "access": "PERMISSION",
+      "permission": "COMMUNITY_OPERATE"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/communities/{cmntySn}/operator/members/{userId}/request",
+      "handler": "nuri.api.controller.business.community.CommunityOperatorApiController#rejectOperatorMember",
+      "access": "PERMISSION",
+      "permission": "COMMUNITY_OPERATE"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/communities/{cmntySn}/operator/members/{userId}",
+      "handler": "nuri.api.controller.business.community.CommunityOperatorApiController#withdrawOperatorMember",
+      "access": "PERMISSION",
+      "permission": "COMMUNITY_OPERATE"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/communities/{cmntySn}/operator/members/{userId}/manager",
+      "handler": "nuri.api.controller.business.community.CommunityOperatorApiController#designateOperator",
+      "access": "PERMISSION",
+      "permission": "COMMUNITY_OPERATE"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/communities/{cmntySn}/operator/profile",
+      "handler": "nuri.api.controller.business.community.CommunityOperatorApiController#updateOperatorProfile",
+      "access": "PERMISSION",
+      "permission": "COMMUNITY_OPERATE"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/events",
+      "handler": "nuri.api.controller.business.operation.EventParticipationApiController#getOpenEvents",
+      "access": "PERMISSION",
+      "permission": "EVENT_APPLY"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/events/{evntSn}/applications",
+      "handler": "nuri.api.controller.business.operation.EventParticipationApiController#applyForEvent",
+      "access": "PERMISSION",
+      "permission": "EVENT_APPLY"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/events/{evntSn}/applications/me",
+      "handler": "nuri.api.controller.business.operation.EventParticipationApiController#cancelEventApplication",
+      "access": "PERMISSION",
+      "permission": "EVENT_APPLY"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/operation/events/{evntSn}/applications",
+      "handler": "nuri.api.controller.business.operation.EventApplicationAdminApiController#getEventApplications",
+      "access": "PERMISSION",
+      "permission": "EVENT_READ"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/operation/events/{evntSn}/applications/{evntAplySn}/approval",
+      "handler": "nuri.api.controller.business.operation.EventApplicationAdminApiController#approveEventApplication",
+      "access": "PERMISSION",
+      "permission": "EVENT_UPDATE"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/operation/events/{evntSn}/applications/{evntAplySn}/rejection",
+      "handler": "nuri.api.controller.business.operation.EventApplicationAdminApiController#rejectEventApplication",
+      "access": "PERMISSION",
+      "permission": "EVENT_UPDATE"
     }
   ]
 }

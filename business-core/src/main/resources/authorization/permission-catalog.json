@@ -679,6 +679,17 @@
       ]
     },
     {
+      "code": "COMMUNITY_OPERATE",
+      "domain": "COMMUNITY",
+      "action": "OPERATE",
+      "name": "커뮤니티 · 운영",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
       "code": "COMMUNITY_READ",
       "domain": "COMMUNITY",
       "action": "READ",
@@ -883,6 +894,17 @@
       "defaultGroups": [
         "ROLE_ADMIN",
         "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "EVENT_APPLY",
+      "domain": "EVENT",
+      "action": "APPLY",
+      "name": "행사 · 참가 신청",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
       ]
     },
     {
@@ -2659,6 +2681,9 @@
     "/cop/cmy/selectCommunityList": [],
     "/cop/sms/selectSmsList": [
       "SMS_READ"
+    ],
+    "/events": [
+      "EVENT_APPLY"
     ],
     "/help": [],
     "/help/policies/[type]": [],

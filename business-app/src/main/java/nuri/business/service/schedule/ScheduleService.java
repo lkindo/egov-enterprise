@@ -43,14 +43,28 @@ public class ScheduleService {
     static final String COMPANY_WIDE = "3";
     private static final java.util.Set<String> SCOPES = java.util.Set.of("1", "2", COMPANY_WIDE);
 
-    /** 일정 구분을 확인하고 전사 일정이면 대행 권한을 요구한다. 비어 있는 구분은 종전대로 받는다(개인 목록·달력이 담당자로 거른다). */
-    private static void assertScope(String schdlSeCd, String companyPermission) {
+    /** 일정 구분을 확인하고 전사 일정이면 수정 대행 권한을 요구한다. 비어 있는 구분은 종전대로 받는다(개인 목록·달력이 담당자로 거른다). */
+    private static void assertScope(String schdlSeCd) {
         if (schdlSeCd == null || schdlSeCd.isBlank()) return;
         if (!SCOPES.contains(schdlSeCd)) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "일정 공유 범위를 확인해 주세요.");
         }
         if (COMPANY_WIDE.equals(schdlSeCd)) {
-            nuri.business.security.util.SecurityUtil.assertPermission(companyPermission);
+            nuri.business.security.util.SecurityUtil.assertPermission("SCHEDULE_UPDATE_ALL");
+        }
+    }
+
+    /** 저장된 전사 일정을 고치려면 일정 수정 대행 권한이 있어야 한다 — 등록자라도 권한이 없으면 403 이다. */
+    private static void assertCompanyWideUpdate(String storedScope) {
+        if (COMPANY_WIDE.equals(storedScope)) {
+            nuri.business.security.util.SecurityUtil.assertPermission("SCHEDULE_UPDATE_ALL");
+        }
+    }
+
+    /** 저장된 전사 일정을 지우려면 일정 삭제 대행 권한이 있어야 한다 — 등록자라도 권한이 없으면 403 이다. */
+    private static void assertCompanyWideDelete(String storedScope) {
+        if (COMPANY_WIDE.equals(storedScope)) {
+            nuri.business.security.util.SecurityUtil.assertPermission("SCHEDULE_DELETE_ALL");
         }
     }
 
@@ -151,7 +165,7 @@ public class ScheduleService {
     @Transactional
     public Long createSchedule(String userId, ScheduleDto dto) {
         requireStartDate(dto);
-        assertScope(dto.getSchdlSeCd(), "SCHEDULE_UPDATE_ALL");
+        assertScope(dto.getSchdlSeCd());
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
@@ -192,10 +206,8 @@ public class ScheduleService {
         nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
         requireStartDate(dto);
         // [V2_152] 전사 일정을 고치거나 전사로 바꾸는 일은 대행 권한 보유자만 — 등록자라는 이유로 전사 공지를 고치지 못한다.
-        if (COMPANY_WIDE.equals(entity.getSchdlSeCd())) {
-            nuri.business.security.util.SecurityUtil.assertPermission("SCHEDULE_UPDATE_ALL");
-        }
-        assertScope(dto.getSchdlSeCd(), "SCHEDULE_UPDATE_ALL");
+        assertCompanyWideUpdate(entity.getSchdlSeCd());
+        assertScope(dto.getSchdlSeCd());
 
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
@@ -235,9 +247,7 @@ public class ScheduleService {
         // SecurityUtil 이 SecurityContext 에서 loginId 를 읽어 소유자/관리자를 올바로 판정한다.
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCHEDULE_DELETE_ALL");
         // [V2_152] 전사 일정은 삭제 대행 권한 보유자만 지운다.
-        if (COMPANY_WIDE.equals(entity.getSchdlSeCd())) {
-            nuri.business.security.util.SecurityUtil.assertPermission("SCHEDULE_DELETE_ALL");
-        }
+        assertCompanyWideDelete(entity.getSchdlSeCd());
 
         Long atchFileSn = entity.getAtchFileSn();
         scheduleRepository.delete(entity);

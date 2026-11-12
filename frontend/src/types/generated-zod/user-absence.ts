@@ -9,6 +9,9 @@ import { FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorIt
 export const UserAbsenceDtoSchema = /*#__PURE__*/ (() => z.object({
   userId: z.string().min(0).max(20),
   userAbsnYn: z.string().min(0).max(1).optional(),
+  sbtAprvrId: z.string().min(0).max(20).optional(),
+  absnBgngYmd: z.string().regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  absnEndYmd: z.string().regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
 }))();
 export type UserAbsenceDto = z.infer<typeof UserAbsenceDtoSchema>;
 
@@ -37,11 +40,17 @@ export type ApiResponseUserAbsenceDto = z.infer<typeof ApiResponseUserAbsenceDto
 export const UserAbsenceDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   userId: z.string().min(0).max(20),
   userAbsnYn: z.string().min(0).max(1).optional(),
+  sbtAprvrId: z.string().min(0).max(20).optional(),
+  absnBgngYmd: z.string().regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  absnEndYmd: z.string().regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
 }))();
 
 export const UserAbsenceDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   userId: z.string().min(0).max(20),
   userAbsnYn: z.string().min(0).max(1).optional().nullable(),
+  sbtAprvrId: z.string().min(0).max(20).optional().nullable(),
+  absnBgngYmd: z.string().regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
+  absnEndYmd: z.string().regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
 }))();
 
 export const ApiResponseListUserAbsenceDtoRequestSchema = /*#__PURE__*/ (() => z.object({

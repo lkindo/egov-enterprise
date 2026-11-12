@@ -1,7 +1,8 @@
 -- V2_152 Expand: 행사 참가 신청·정원 마감(DEC-OPS-416 ②, 2026-11-12 사용자 승인).
 --
 -- [행사] tb_event_info 에 정원(pscp_nope, 표준 용어 정원인원수 = 수N10)과 신청 마감일(aply_ddln_ymd, 신청마감일자 = 연월일C8)을
---   둔다. 정원이 비어 있으면 정원이 없고, 마감일이 비어 있으면 행사 시작일까지 신청을 받는다(서비스 규칙).
+--   둔다. 정원이 비어 있으면 정원이 없다. 신청은 담당자가 마감일을 정한 행사만 받는다(서비스 규칙) — 기존 행사는 마감일이 없어
+--   사용자 화면에 나오지 않는다(지금까지 관리자 전용이던 행사를 이 변경이 사용자에게 드러내지 않는다).
 -- [신청] tb_evnt_aply 를 새로 둔다 — 한 사람은 한 행사에 한 행이다(UK). 취소한 뒤 다시 신청하면 같은 행을 신청 상태로 되돌린다.
 --   신청자(aplcnt_id)는 esntlId 이고, 감사 컬럼(frst_rgtr_id·last_mdfr_id)은 공통 감사 계약대로 로그인 ID 다.
 --   상태: APPLIED(신청) → APPROVED(승인)·REJECTED(반려)·CANCELLED(본인 취소). 정원은 APPLIED·APPROVED 행을 센다 —
@@ -14,6 +15,7 @@
 --   - EVENT_APPLY: 행사는 지금까지 관리자 화면 전용이었다(EVENT_READ 기본 그룹에 ROLE_USER 없음). 열린 행사를 보고 신청·취소한다.
 --   - COMMUNITY_OPERATE: 커뮤니티 운영자 화면에 들어간다. 실제로 무엇을 할 수 있는지는 서비스가 그 커뮤니티의 운영자(승인 회원 +
 --     mngrYn=Y)인지로 판정한다 — 권한만으로는 어느 커뮤니티도 관리하지 못한다(GAP-CMTY-001).
+-- [메뉴] 참여 분류 아래에 행사 참가(/events) 메뉴 1행을 더하고 부모 분류를 보는 그룹(공유 OCI: 관리자·사용자)에 메뉴 표시를 배정한다.
 -- [무중단·호환성] 행사 표에는 NULL 허용 컬럼과 CHECK 만 더한다(기존 행은 정원·마감 없음). 새 표는 구버전 앱이 읽지 않는다.
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '60s';
@@ -78,7 +80,7 @@ CREATE TABLE tb_evnt_aply (
 CREATE INDEX ix_tb_evnt_aply_aplcnt_id ON tb_evnt_aply (aplcnt_id, evnt_sn);
 
 COMMENT ON COLUMN tb_event_info.pscp_nope IS '정원인원수 (pscp_nope, 비어 있으면 정원 없음)';
-COMMENT ON COLUMN tb_event_info.aply_ddln_ymd IS '신청마감일자 (aply_ddln_ymd, yyyyMMdd 한국 날짜; 비어 있으면 행사 시작일까지)';
+COMMENT ON COLUMN tb_event_info.aply_ddln_ymd IS '신청마감일자 (aply_ddln_ymd, yyyyMMdd 한국 날짜; 비어 있으면 신청을 받지 않는다)';
 COMMENT ON TABLE tb_evnt_aply IS '행사신청 (사용자 행사 참가 신청, 한 사람은 한 행사에 한 행)';
 COMMENT ON COLUMN tb_evnt_aply.evnt_aply_sn IS '행사신청일련번호';
 COMMENT ON COLUMN tb_evnt_aply.evnt_sn IS '행사일련번호';
@@ -115,3 +117,44 @@ BEGIN
     SELECT 'migration:2.152', catalog_version, 'GROUP_GRANT', 'ADD', authrt_cd, 'OPERATION', authrt_grnt_cd,
         'grant', NULL, authrt_grnt_cd, 'DEC-OPS-416: 행사 참가 신청·커뮤니티 운영 기능 권한', 'SYSTEM', CURRENT_TIMESTAMP FROM added;
 END $wave3_grants$;
+
+-- 참여 분류(V2_100 이 만든 'ADR-0017 참여 분류' 메뉴) 아래에 행사 참가 화면 메뉴를 하나 더한다. 분류 메뉴 번호는 V2_100 이 시퀀스로
+-- 받은 값이라 DB 마다 다를 수 있어 번호가 아니라 그 표식으로 찾는다. 메뉴 표시(NAVIGATION)는 부모 분류를 보는 그룹에 같이 준다
+-- (메뉴 행은 부모 메뉴의 NAVIGATION 그룹을 따른다, DEC-OPS-408 — 공유 OCI 에서는 관리자·사용자 그룹). 배정은 권한 변경 이력에 같은
+-- 정책 버전으로 남긴다(V2_137 형식). 화면 진입은 EVENT_APPLY 가 판정한다.
+-- 분류가 없거나 둘 이상이거나 같은 경로의 메뉴가 이미 있으면 멈춘다 — 다른 도입 환경의 메뉴를 추정해 덮지 않는다.
+DO $event_menu$
+DECLARE
+    catalog_version text;
+    parent_menu bigint;
+    page_menu bigint;
+BEGIN
+    IF (SELECT count(*) FROM tb_menu_info WHERE menu_expln = 'ADR-0017 참여 분류' AND up_menu_sn IS NULL) <> 1 THEN
+        RAISE EXCEPTION 'Event participation menu parent (ADR-0017 participation category) is missing or ambiguous';
+    END IF;
+    SELECT menu_sn INTO parent_menu FROM tb_menu_info WHERE menu_expln = 'ADR-0017 참여 분류' AND up_menu_sn IS NULL;
+    IF EXISTS (SELECT 1 FROM tb_menu_info WHERE modern_route = '/events') THEN
+        RAISE EXCEPTION 'Event participation menu already exists';
+    END IF;
+    SELECT plcy_ver_no INTO STRICT catalog_version FROM tb_authrt_chg_hstry
+     WHERE chg_artcl_nm = 'legacy_authorization_contract' AND chg_type_cd = 'UPDATE';
+
+    INSERT INTO tb_menu_info(menu_nm, menu_ordr, menu_expln, up_menu_sn, modern_route, use_yn, del_yn,
+        frst_rgtr_id, crt_dt, last_mdfr_id, mdfcn_dt)
+    VALUES ('행사 참가',
+        (SELECT coalesce(max(menu_ordr), 0) + 1 FROM tb_menu_info WHERE up_menu_sn = parent_menu),
+        '진행 중인 행사에 참가 신청하고 내 신청을 취소', parent_menu, '/events', 'Y', 'N',
+        'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP)
+    RETURNING menu_sn INTO page_menu;
+
+    WITH added AS (
+        INSERT INTO tb_authrt_grnt_map(authrt_cd, authrt_type_cd, authrt_grnt_cd, frst_rgtr_id, crt_dt, last_mdfr_id, mdfcn_dt)
+        SELECT g.authrt_cd, 'NAVIGATION', page_menu::text, 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP
+          FROM tb_authrt_grnt_map g
+         WHERE g.authrt_type_cd = 'NAVIGATION' AND g.authrt_grnt_cd = parent_menu::text
+        RETURNING authrt_cd, authrt_grnt_cd
+    ) INSERT INTO tb_authrt_chg_hstry(dmnd_idntfr, plcy_ver_no, chg_trgt_type_cd, chg_type_cd, authrt_cd,
+        authrt_type_cd, authrt_grnt_cd, chg_artcl_nm, chg_bfr_cn, chg_aftr_cn, chg_rsn, frst_rgtr_id, crt_dt)
+    SELECT 'migration:2.152', catalog_version, 'GROUP_GRANT', 'ADD', authrt_cd, 'NAVIGATION', authrt_grnt_cd,
+        'grant', NULL, authrt_grnt_cd, 'DEC-OPS-416: 행사 참가 메뉴', 'SYSTEM', CURRENT_TIMESTAMP FROM added;
+END $event_menu$;

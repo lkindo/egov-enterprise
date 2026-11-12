@@ -46,7 +46,7 @@ class CommunityUserApiControllerTest extends ControllerTestSupport {
     @DisplayName("커뮤니티 목록 조회 성공")
     void getCommunities_Success() throws Exception {
         Page<CommunityDto> page = new PageImpl<>(List.of(CommunityDto.builder().cmntySn(101L).cmntyNm("Test Comm").build()));
-        given(communityService.getActiveCommunityList(any(), any(), any(Pageable.class))).willReturn(page);
+        given(communityService.getActiveCommunityList(any(), any(), org.mockito.ArgumentMatchers.eq(false), any(Pageable.class))).willReturn(page);
 
         mockMvc.perform(get("/api/v1/communities")
                 .accept(MediaType.APPLICATION_JSON))
@@ -94,7 +94,7 @@ class CommunityUserApiControllerTest extends ControllerTestSupport {
     void getMyMembership() throws Exception {
         given(communityService.getMembership(101L, "user01")).willReturn(
                 new nuri.business.service.community.dto.CommunityMembershipDto(
-                        101L, nuri.business.service.community.dto.CommunityMembershipDto.Status.REQUESTED, "20260906"));
+                        101L, nuri.business.service.community.dto.CommunityMembershipDto.Status.REQUESTED, "20260906", false));
 
         mockMvc.perform(get("/api/v1/communities/101/membership").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())

@@ -4,7 +4,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import * as z from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Eye, Loader2, Plus, Settings, Trash2 } from 'lucide-react';
+import { Eye, Loader2, Plus, Settings, Trash2, Users } from 'lucide-react';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -13,6 +13,7 @@ import { eventService, EventInfo } from '@/services/foundation/operation/eventSe
 import { Button } from '@/components/ui/button';
 import { FormErrorSummary } from '@/components/ui/form';
 import { EventInfoRequestSchema } from '@/types/generated-zod';
+import { EventApplicationsPanel } from './EventApplicationsPanel';
 
 /**
  * `<input type="date">` 는 `2026-05-01`(10자)을 준다. 그러나 evnt_bgng_ymd/evnt_end_ymd 는
@@ -62,6 +63,8 @@ export const eventCreateSchema = EventInfoRequestSchema.pick({
   evntUseCnt: true,
   picNm: true,
   prepMttr: true,
+  pscpNope: true,
+  aplyDdlnYmd: true,
 }).extend({
   evntNm: EventInfoRequestSchema.shape.evntNm.trim().min(1, '행사 명칭을 입력해 주세요.'),
   evntCn: EventInfoRequestSchema.shape.evntCn.unwrap().trim().min(1, '상세 내용을 입력해 주세요.'),
@@ -82,9 +85,26 @@ export const eventCreateSchema = EventInfoRequestSchema.pick({
     .regex(/^\d+$/, '참여 정원은 0명 이상의 정수로 입력해 주세요.')
     .transform(Number)
     .pipe(EventInfoRequestSchema.shape.evntUseCnt.unwrap().finite().int().min(0, '참여 정원은 0명 이상이어야 합니다.')),
+  /*
+    [V2_152] 온라인 참가 신청의 정원과 마감일. 둘 다 고르지 않아도 된다 — 정원을 비우면 정원 없이 받고, 마감일을 비우면 신청을 받지 않는다(기존 행사는 사용자 화면에 나오지 않는다).
+    받는다. 신청 정원은 '참여 정원'(안내 값)과 달리 서버가 신청을 막는 값이다.
+  */
+  pscpNope: z.string()
+    .trim()
+    .regex(/^\d*$/, '신청 정원은 1명 이상의 정수로 입력해 주세요.')
+    .transform((value) => (value === '' ? undefined : Number(value)))
+    .pipe(EventInfoRequestSchema.shape.pscpNope.unwrap().int().min(1, '신청 정원은 1명 이상이어야 합니다.').optional()),
+  aplyDdlnYmd: z.string()
+    .trim()
+    .refine((value) => value === '' || isValidInputDate(value), '신청 마감일을 확인해 주세요.')
+    .transform((value) => (value === '' ? undefined : inputToYmd(value)))
+    .pipe(EventInfoRequestSchema.shape.aplyDdlnYmd),
 }).refine((values) => values.evntEndYmd >= values.evntBgngYmd, {
   path: ['evntEndYmd'],
   message: '행사 종료일은 시작일보다 빠를 수 없습니다.',
+}).refine((values) => values.aplyDdlnYmd === undefined || values.aplyDdlnYmd <= values.evntEndYmd, {
+  path: ['aplyDdlnYmd'],
+  message: '신청 마감일은 행사 종료일보다 늦을 수 없습니다.',
 });
 
 type EventCreateFormInput = z.input<typeof eventCreateSchema>;
@@ -97,6 +117,8 @@ const eventValidationLabels: Record<keyof EventCreateFormInput, string> = {
   evntUseCnt: '참여 정원',
   picNm: '담당자',
   prepMttr: '준비사항',
+  pscpNope: '신청 정원',
+  aplyDdlnYmd: '신청 마감일',
 };
 
 const EMPTY_EVENT_FORM: EventCreateFormInput = {
@@ -107,6 +129,8 @@ const EMPTY_EVENT_FORM: EventCreateFormInput = {
   evntUseCnt: '0',
   picNm: '',
   prepMttr: '',
+  pscpNope: '',
+  aplyDdlnYmd: '',
 };
 
 /** 반대 방향 — 저장된 YYYYMMDD 를 사람이 읽는 형태로. 등록이 가능해지면서 실제로 노출된다. */
@@ -189,6 +213,8 @@ export default function EventManagementClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitPendingRef = useRef(false);
   const [deletingEventSn, setDeletingEventSn] = useState<number | null>(null);
+  // [V2_152] 신청자 창 — 고른 행사의 참가 신청을 보고 승인·반려한다.
+  const [applicantsEvent, setApplicantsEvent] = useState<EventInfo | null>(null);
   const deletePendingRef = useRef(false);
   const validation = useManualFormValidation(eventCreateSchema, { labels: eventValidationLabels });
 
@@ -302,6 +328,8 @@ export default function EventManagementClient() {
         evntBgngYmd: ymdToInput(detail.evntBgngYmd),
         evntEndYmd: ymdToInput(detail.evntEndYmd),
         evntUseCnt: String(detail.evntUseCnt ?? 0),
+        pscpNope: detail.pscpNope ? String(detail.pscpNope) : '',
+        aplyDdlnYmd: ymdToInput(detail.aplyDdlnYmd),
       });
     } catch (loadError: unknown) {
       setIsCreateModalOpen(false);
@@ -385,7 +413,7 @@ export default function EventManagementClient() {
     // 상세 내용·담당자·준비사항은 목록 열에 없고 이 창으로만 볼 수 있다. 수정 권한이 없으면 같은 창을 조회 전용으로 연다.
     {
       header: '관리',
-      className: 'text-right w-32',
+      className: 'text-right w-40',
       accessor: (event: EventInfo) => {
         const isDeleting = deletingEventSn === event.evntSn;
         return (
@@ -400,6 +428,16 @@ export default function EventManagementClient() {
             className="rounded-md text-muted-foreground"
           >
             {canUpdateEvent ? <Settings size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={deletingEventSn !== null}
+            aria-label={`${event.evntNm} 신청자`}
+            onClick={() => setApplicantsEvent(event)}
+            className="rounded-md text-muted-foreground"
+          >
+            <Users size={16} aria-hidden="true" />
           </Button>
           {canDeleteEvent && (
           <Button
@@ -618,6 +656,50 @@ export default function EventManagementClient() {
                   <p {...validation.messageProps('evntUseCnt')} className="text-xs font-bold text-destructive-emphasis" />
                 ) : null}
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="pscpNope" className="text-[length:var(--font-size-body)] font-medium text-foreground">
+                  신청 정원 (명)
+                </Label>
+                <Input
+                  id="pscpNope"
+                  {...validation.fieldProps('pscpNope')}
+                  aria-describedby={[validation.fieldProps('pscpNope')['aria-describedby'], 'pscpNope-hint'].filter(Boolean).join(' ')}
+                  type="number"
+                  value={form.pscpNope ?? ''}
+                  onChange={(e) => {
+                    validation.clearError('pscpNope');
+                    setForm({ ...form, pscpNope: e.target.value });
+                  }}
+                  className="h-[var(--control-h)]"
+                  min={1}
+                  step={1}
+                />
+                <p id="pscpNope-hint" className="text-xs text-muted-foreground">비우면 정원 없이 신청을 받습니다.</p>
+                {validation.errors.pscpNope ? (
+                  <p {...validation.messageProps('pscpNope')} className="text-xs font-bold text-destructive-emphasis" />
+                ) : null}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="aplyDdlnYmd" className="text-[length:var(--font-size-body)] font-medium text-foreground">
+                  신청 마감일
+                </Label>
+                <Input
+                  id="aplyDdlnYmd"
+                  {...validation.fieldProps('aplyDdlnYmd')}
+                  aria-describedby={[validation.fieldProps('aplyDdlnYmd')['aria-describedby'], 'aplyDdlnYmd-hint'].filter(Boolean).join(' ')}
+                  type="date"
+                  value={form.aplyDdlnYmd ?? ''}
+                  onChange={(e) => {
+                    validation.clearError('aplyDdlnYmd');
+                    setForm({ ...form, aplyDdlnYmd: e.target.value });
+                  }}
+                  className="h-[var(--control-h)]"
+                />
+                <p id="aplyDdlnYmd-hint" className="text-xs text-muted-foreground">정하면 사용자의 행사 참가 화면에서 이날까지 신청을 받습니다. 비우면 신청을 받지 않습니다.</p>
+                {validation.errors.aplyDdlnYmd ? (
+                  <p {...validation.messageProps('aplyDdlnYmd')} className="text-xs font-bold text-destructive-emphasis" />
+                ) : null}
+              </div>
               {/*
                 [2026-08-28] 담당자·준비사항을 화면에 올린다. 서버 계약에는 있었지만 입력도
                 표시도 없어서, 저장 시 보존만 하고("이 창에서 보이지 않는 값은 그대로
@@ -686,6 +768,18 @@ export default function EventManagementClient() {
               )}
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={applicantsEvent !== null} onOpenChange={(open) => { if (!open) setApplicantsEvent(null); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{applicantsEvent?.evntNm} 신청자</DialogTitle>
+            <DialogDescription>참가 신청을 승인하거나 반려합니다. 반려한 신청은 다시 신청할 수 없습니다.</DialogDescription>
+          </DialogHeader>
+          {applicantsEvent ? (
+            <EventApplicationsPanel evntSn={applicantsEvent.evntSn} eventName={applicantsEvent.evntNm ?? '행사'} />
+          ) : null}
         </DialogContent>
       </Dialog>
     </WorkListPage>

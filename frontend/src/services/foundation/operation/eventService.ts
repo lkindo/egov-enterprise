@@ -19,6 +19,10 @@ export interface EventInfo {
   picNm?: string;
   prepMttr?: string;
   evntTypeCd?: string;
+  /** [V2_152] 온라인 참가 신청 정원. 비어 있으면 정원 없음. */
+  pscpNope?: number;
+  /** [V2_152] 참가 신청 마감일(yyyyMMdd). 정해야 신청을 받는다. */
+  aplyDdlnYmd?: string;
   frstRgtrId?: string;
   crtDt?: string;
   mdfcnDt?: string;

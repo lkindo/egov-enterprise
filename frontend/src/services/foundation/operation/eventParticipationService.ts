@@ -5,7 +5,6 @@ import {
   approveEventApplicationOperation,
   cancelEventApplicationOperation,
   getEventApplicationsOperation,
-  getOpenEventOperation,
   getOpenEventsOperation,
   rejectEventApplicationOperation,
 } from '@/types/generated-operations';
@@ -19,7 +18,7 @@ export type EventApplication = components['schemas']['EventApplicationDto'];
 export type EventApplicationStatus = 'APPLIED' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 
 export const EVENT_APPLICATION_STATUS_LABELS: Record<EventApplicationStatus, string> = {
-  APPLIED: '신청',
+  APPLIED: '승인 대기',
   APPROVED: '승인',
   REJECTED: '반려',
   CANCELLED: '취소',
@@ -33,8 +32,6 @@ interface Page<T> {
 export const eventParticipationService = {
   getOpenEvents: async (params: { page?: number; size?: number } = {}) =>
     executeGeneratedOperation(getOpenEventsOperation, { query: params }) as Promise<Page<OpenEvent>>,
-  getOpenEvent: async (evntSn: number) =>
-    executeGeneratedOperation(getOpenEventOperation, { path: { evntSn } }) as Promise<OpenEvent>,
   apply: async (evntSn: number) =>
     executeGeneratedOperation(applyForEventOperation, { path: { evntSn } }) as Promise<EventApplication>,
   cancel: async (evntSn: number) =>

@@ -67,7 +67,7 @@ export function ApprovalAttachmentList({ atchFileSn, label = '첨부 파일' }: 
           <p className="text-muted-foreground">첨부 파일을 불러오지 못했습니다.</p>
           <Button type="button" variant="outline" size="sm" onClick={() => void files.refetch()}>
             <RefreshCw aria-hidden="true" />
-            <span className="sr-only">{label} </span>다시 시도
+            <span className="sr-only">{label}</span>{' '}다시 시도
           </Button>
         </div>
       ) : (files.data ?? []).length === 0 ? (
@@ -90,7 +90,7 @@ export function ApprovalAttachmentList({ atchFileSn, label = '첨부 파일' }: 
                   onClick={() => void download(file.fileSn, name)}>
                   <Download aria-hidden="true" />
                   {/* 보이는 글자를 이름에 그대로 담고 어느 파일인지를 앞에 붙인다(보이는 이름과 접근 이름이 어긋나지 않게). */}
-                  <span className="sr-only">{name} </span>{downloading === file.fileSn ? '내려받는 중…' : '내려받기'}
+                  <span className="sr-only">{name}</span>{' '}{downloading === file.fileSn ? '내려받는 중…' : '내려받기'}
                 </Button>
               </li>
             );

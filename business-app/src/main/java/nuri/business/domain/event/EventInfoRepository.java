@@ -21,10 +21,9 @@ public interface EventInfoRepository extends JpaRepository<EventInfo, Long> {
     Page<EventInfo> findBySearchWrd(@Param("searchWrd") String searchWrd, Pageable pageable);
 
     /**
-     * [V2_152] 지금 신청을 받는 행사 — 마감일이 있으면 마감일, 없으면 행사 시작일이 오늘(yyyyMMdd)이거나 그 뒤다. 둘 다 없는 행사는
-     * 기한이 없다. 날짜는 같은 형식의 문자열이라 사전순 비교가 날짜 비교와 같다. 정원 마감은 서비스가 자리 수로 표시한다.
+     * [V2_152] 지금 신청을 받는 행사 — 담당자가 정한 신청 마감일이 오늘(yyyyMMdd)이거나 그 뒤다. 마감일이 없는 행사(기존 행사 포함)는
+     * 신청을 받지 않는다. 날짜는 같은 형식의 문자열이라 사전순 비교가 날짜 비교와 같다. 정원 마감은 서비스가 자리 수로 표시한다.
      */
-    @Query("select e from EventInfo e where (e.aplyDdlnYmd is not null and e.aplyDdlnYmd >= :today)"
-            + " or (e.aplyDdlnYmd is null and (e.evntBgngYmd is null or e.evntBgngYmd >= :today))")
+    @Query("select e from EventInfo e where e.aplyDdlnYmd is not null and e.aplyDdlnYmd >= :today")
     Page<EventInfo> findOpenForApplication(@Param("today") String today, Pageable pageable);
 }

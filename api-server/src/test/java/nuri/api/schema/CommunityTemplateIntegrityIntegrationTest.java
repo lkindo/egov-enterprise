@@ -33,22 +33,30 @@ class CommunityTemplateIntegrityIntegrationTest {
     @Autowired DataSource dataSource;
     @Autowired PlatformTransactionManager transactionManager;
     private String id;
+    /** [GAP-CMTY-001] 개설자는 첫 운영자로 등록되므로(tb_cmnty_user_map → tb_user_info FK) 주체는 실제 사용자 행이 있어야 한다. */
+    private String creator;
 
     @BeforeEach void seedOwnTemplate() {
-        authenticate();
         id = "CT" + UUID.randomUUID().toString().replace("-", "").substring(0, 14);
+        creator = "CU" + id.substring(2);
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
+                + "VALUES(?,?,'community template fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))"),
+                creator, creator);
+        authenticate();
         jdbc.update("INSERT INTO tb_tmplt_info(tmplt_id,tmplt_nm,tmplt_se_cd,tmplt_path,use_yn) VALUES (?,?,'TMPT02','metadata-only','Y')", id, id);
     }
     @AfterEach void cleanupOwnRows() {
         try {
+            jdbc.update("DELETE FROM tb_cmnty_user_map WHERE user_id=?", creator);
             jdbc.update("DELETE FROM tb_cmnty_info WHERE cmnty_nm=?", id);
             jdbc.update("DELETE FROM tb_tmplt_info WHERE tmplt_id=?", id);
+            jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", creator);
         } finally {
             SecurityContextHolder.clearContext();
         }
     }
     private void authenticate() {
-        var principal = CustomUserDetails.builder().userId("fixture").esntlId("fixture").enabled(true)
+        var principal = CustomUserDetails.builder().userId(creator).esntlId(creator).enabled(true)
                 .permissions(List.of("COMMUNITY_CREATE_ALL", "COMMUNITY_UPDATE_ALL", "COMMUNITY_DELETE_ALL")).build();
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));

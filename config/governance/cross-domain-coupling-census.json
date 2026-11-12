@@ -3,6 +3,16 @@
   "description": "교차 도메인 결합 census(CrossDomainCouplingLinterTest)의 동결 원장. business-app 서비스 파일이 다른 도메인 타입을 참조하는 edge 를 정확한 집합으로 동결한다. 생성물에서는 소유 파일과 참조 타입 소스가 모두 남은 edge 만 기대하며, scripts/cross-domain-coupling-census-contract.test.mjs 가 그 생존을 기능 소유로 계산해 생성기 제거 계획과 대조한다. 스캔 결과는 build/harness/cross-domain-coupling.actual.json. 편집하면 baseline-manifest 의 __registry 해시도 함께 바뀌어야 한다.",
   "edges": [
     {
+      "file": "event/EventApplicationService.java",
+      "owner": "event",
+      "target": "user",
+      "module": "business-core",
+      "types": [
+        "nuri.business.domain.user.entity.User",
+        "nuri.business.domain.user.repository.UserRepository"
+      ]
+    },
+    {
       "file": "addressbook/listener/AddressBookUserDeletionCleanupListener.java",
       "owner": "addressbook",
       "target": "user",
@@ -188,8 +198,37 @@
       "module": "business-core",
       "types": [
         "nuri.business.domain.user.entity.User",
+        "nuri.business.domain.user.repository.UserAbsenceRepository",
         "nuri.business.domain.user.repository.UserRepository",
         "nuri.business.service.user.dto.UserSearchDto"
+      ]
+    },
+    {
+      "file": "informalsanction/InformalSanctionService.java",
+      "owner": "informalsanction",
+      "target": "file",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.file.AttachmentAssignmentPolicy"
+      ]
+    },
+    {
+      "file": "informalsanction/ApprovalTemporaryDraftService.java",
+      "owner": "informalsanction",
+      "target": "file",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.file.AttachmentAssignmentPolicy"
+      ]
+    },
+    {
+      "file": "informalsanction/attachment/ApprovalAttachmentSourceContributor.java",
+      "owner": "informalsanction",
+      "target": "file",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.file.AttachmentSource",
+        "nuri.business.service.file.AttachmentSourceContributor"
       ]
     },
     {

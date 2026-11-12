@@ -49,14 +49,14 @@ export class OpsDetailPage {
         await this.page.getByPlaceholder(/행사 명칭을 입력하십시오/i).fill(data.name);
         await this.page.getByPlaceholder(/상세 내용을 입력하십시오/i).fill(data.desc);
         
-        const dateInputs = this.page.getByRole('dialog').locator('input[type="date"]');
-        await expect(dateInputs.first()).toBeVisible({ timeout: 10000 });
-        await expect(dateInputs).toHaveCount(2);
+        // [V2_152] 신청 마감일(date)·신청 정원(number)이 더해져 입력을 순서·타입으로 고르면 엉뚱한 칸을 채운다 — 라벨로 고른다.
+        const dialog = this.page.getByRole('dialog');
+        const startDate = dialog.getByLabel('행사 시작일', { exact: true });
+        await expect(startDate).toBeVisible({ timeout: 10000 });
+        await startDate.fill(data.startDate);
+        await dialog.getByLabel('행사 종료일', { exact: true }).fill(data.endDate);
 
-        await dateInputs.nth(0).fill(data.startDate);
-        await dateInputs.nth(1).fill(data.endDate);
-
-        await this.page.getByRole('dialog').locator('input[type="number"]').fill(data.capacity.toString());
+        await dialog.getByLabel('참여 정원 (명)', { exact: true }).fill(data.capacity.toString());
         
         // 제출 버튼도 '행사 등록' 이라 목록의 등록 트리거와 이름이 겹친다 → 다이얼로그로 한정한다.
         // (종전 /Deploy Protocol/i 역시 실존하지 않는 문구였다.)

@@ -8,6 +8,12 @@ const mocks = vi.hoisted(() => ({
   cancel: vi.fn(),
   submit: vi.fn(),
   toast: vi.fn(),
+  // [V2_152] 전사 일정 표시 판정. 기본은 인증 공급자가 없는 화면(공유 범위 체크 하나)이다.
+  permissions: null as string[] | null,
+}));
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useOptionalAuth: () => (mocks.permissions ? { user: { permissions: mocks.permissions, authorizationVersion: 'v1' } } : null),
 }));
 
 vi.mock('@/app/components/ui/toast', () => ({
@@ -41,6 +47,25 @@ describe('ScheduleCreateForm validation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.submit.mockResolvedValue(undefined);
+    mocks.permissions = null;
+  });
+
+  it('[V2_152] 전사 일정 공유는 일정 수정 대행 권한이 있을 때만 보이고, 고르면 공유 범위 3 으로 보낸다', async () => {
+    const user = userEvent.setup();
+    mocks.permissions = ['SCHEDULE_CREATE'];
+    const first = renderForm();
+    expect(screen.queryByRole('checkbox', { name: '전사 일정으로 공유' })).not.toBeInTheDocument();
+    first.unmount();
+
+    mocks.permissions = ['SCHEDULE_CREATE', 'SCHEDULE_UPDATE_ALL'];
+    renderForm();
+    const fields = getFormFields();
+    await user.type(fields.name, '전사 체육대회');
+    await user.click(screen.getByRole('checkbox', { name: '전사 일정으로 공유' }));
+    expect(screen.getByText('전사 일정으로 공유 중입니다')).toBeInTheDocument();
+    fireEvent.submit(fields.form);
+    await waitFor(() => expect(mocks.submit).toHaveBeenCalledTimes(1));
+    expect(mocks.submit.mock.calls[0][0]).toMatchObject({ schdlSeCd: '3' });
   });
 
   it('공백만 있는 일정명을 write sink로 보내지 않고 일정명으로 이동한다', async () => {

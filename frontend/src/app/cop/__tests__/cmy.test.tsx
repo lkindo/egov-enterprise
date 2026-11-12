@@ -121,6 +121,23 @@ describe('CommunityHubClient', () => {
     expect(screen.queryByText('보안 커뮤니티')).not.toBeInTheDocument();
   });
 
+  it('[GAP-CMTY-001] 내 가입 커뮤니티는 서버에 joined=true 로 묻는다 — 현재 페이지만 거르지 않는다', async () => {
+    renderWithClient(<CommunityHubClient initialData={mockInitialData} />);
+    const joined = screen.getByRole('button', { name: '내 가입 커뮤니티' });
+    expect(joined).toBeEnabled();
+    fireEvent.click(joined);
+    expect(joined).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() => {
+      expect(getCommunityListMock).toHaveBeenCalledWith({
+        page: 1,
+        size: 10,
+        searchCnd: '0',
+        searchWrd: '',
+        joined: true,
+      });
+    });
+  });
+
   it('서버가 실제로 읽는 파라미터로 조회한다(page/size/searchCnd/searchWrd)', async () => {
     renderWithClient(<CommunityHubClient initialData={mockInitialData} />);
 

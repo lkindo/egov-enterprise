@@ -1718,11 +1718,16 @@
       "status": "live",
       "dataSource": "mixed",
       "supportedActions": [
+        "approve-member",
+        "designate-operator",
+        "edit-profile",
         "join",
         "leave",
         "navigate",
+        "reject-member",
         "view-detail",
-        "view-list"
+        "view-list",
+        "withdraw-member"
       ],
       "profileOwners": [
         "demo"
@@ -1750,11 +1755,16 @@
           "status": "live",
           "dataSource": "mixed",
           "actions": [
+            "approve-member",
+            "designate-operator",
+            "edit-profile",
             "join",
             "leave",
             "navigate",
+            "reject-member",
             "view-detail",
-            "view-list"
+            "view-list",
+            "withdraw-member"
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "AUTHENTICATED|PARTICIPANT_OR_ADMIN",
@@ -3526,13 +3536,16 @@
       ],
       "surface": "admin-console",
       "status": "partial",
-      "dataSource": "admin-operation-events-api",
+      "dataSource": "mixed",
       "supportedActions": [
+        "approve-application",
         "create",
         "delete",
         "edit",
         "paginate",
+        "reject-application",
         "search",
+        "view-applicants",
         "view-list"
       ],
       "profileOwners": [
@@ -3605,6 +3618,69 @@
             "frontend/src/app/admin/operation/events/__tests__/EventCreateSubmit.test.tsx",
             "frontend/src/app/admin/operation/events/__tests__/EventEdit.test.tsx",
             "frontend/src/app/admin/operation/events/__tests__/EventManagementClient.test.tsx",
+            "frontend/src/app/admin/operation/events/page.tsx"
+          ]
+        },
+        {
+          "id": "event.applications",
+          "status": "live",
+          "dataSource": "admin-event-applications-api",
+          "actions": [
+            "approve-application",
+            "view-applicants"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "행사 신청자 · 승인",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-12",
+          "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/event-applications.spec.ts",
+              "test": "사용자는 정원이 있는 행사에 참가 신청·취소하고 정원이 차면 다른 사용자는 신청하지 못하며 담당자가 신청을 승인한다",
+              "actions": [
+                "approve-application",
+                "view-applicants"
+              ]
+            }
+          ],
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/business/operation/EventApplicationAdminApiController.java",
+            "business-app/src/main/java/nuri/business/service/event/EventApplicationService.java",
+            "business-app/src/test/java/nuri/business/service/event/EventApplicationServiceTest.java",
+            "frontend/e2e/journeys/event-applications.spec.ts",
+            "frontend/src/app/admin/operation/events/EventApplicationsPanel.tsx",
+            "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
+            "frontend/src/app/admin/operation/events/__tests__/EventApplicationsPanel.test.tsx",
+            "frontend/src/app/admin/operation/events/page.tsx"
+          ]
+        },
+        {
+          "id": "event.application-rejection",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "admin-event-applications-api",
+          "actions": [
+            "reject-application"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "행사 신청 반려",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-12",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/business/operation/EventApplicationAdminApiController.java",
+            "business-app/src/main/java/nuri/business/service/event/EventApplicationService.java",
+            "business-app/src/test/java/nuri/business/service/event/EventApplicationServiceTest.java",
+            "frontend/src/app/admin/operation/events/EventApplicationsPanel.tsx",
+            "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
+            "frontend/src/app/admin/operation/events/__tests__/EventApplicationsPanel.test.tsx",
             "frontend/src/app/admin/operation/events/page.tsx"
           ]
         }
@@ -7847,16 +7923,19 @@
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
-      "dataSource": "approvals-api",
+      "dataSource": "mixed",
       "supportedActions": [
+        "attach-file",
         "confirm",
         "create",
+        "download-attachment",
         "filter",
         "list",
         "refresh",
         "reject",
         "search",
-        "select-detail"
+        "select-detail",
+        "substitute-confirm"
       ],
       "profileOwners": [
         "approval",
@@ -7884,16 +7963,19 @@
         {
           "id": "redirect-destination",
           "status": "partial",
-          "dataSource": "approvals-api",
+          "dataSource": "mixed",
           "actions": [
+            "attach-file",
             "confirm",
             "create",
+            "download-attachment",
             "filter",
             "list",
             "refresh",
             "reject",
             "search",
-            "select-detail"
+            "select-detail",
+            "substitute-confirm"
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "AUTHENTICATED",
@@ -9469,6 +9551,7 @@
       "status": "partial",
       "dataSource": "mixed",
       "supportedActions": [
+        "assign-delegate",
         "mark-absent",
         "mark-returned",
         "search-users",
@@ -9505,6 +9588,7 @@
           "status": "partial",
           "dataSource": "admin-user-absences-api",
           "actions": [
+            "assign-delegate",
             "mark-absent",
             "mark-returned"
           ],
@@ -9515,12 +9599,14 @@
           "evidenceLevel": "E3",
           "evidence": [
             "business-core/src/main/java/nuri/business/service/system/user/impl/UserAbsenceServiceImpl.java",
+            "frontend/src/app/admin/user/AbsenceDelegationDialog.tsx",
             "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+            "frontend/src/app/admin/user/__tests__/AbsenceDelegationDialog.test.tsx",
             "frontend/src/app/admin/user/__tests__/UserOrgHubClient.absence.test.tsx",
             "frontend/src/services/foundation/system/UserAbsenceAdminService.ts"
           ],
           "decisionSafe": false,
-          "lastVerifiedAt": "2026-09-23",
+          "lastVerifiedAt": "2026-11-12",
           "owner": "product/UX + domain owner",
           "candidateStatus": "live"
         },
@@ -10324,16 +10410,19 @@
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
-      "dataSource": "approvals-api",
+      "dataSource": "mixed",
       "supportedActions": [
+        "attach-file",
         "confirm",
         "create",
+        "download-attachment",
         "filter",
         "list",
         "refresh",
         "reject",
         "search",
-        "select-detail"
+        "select-detail",
+        "substitute-confirm"
       ],
       "profileOwners": [
         "approval",
@@ -10386,6 +10475,45 @@
           "decisionSafe": false,
           "lastVerifiedAt": "2026-10-13",
           "owner": "product/UX + domain owner"
+        },
+        {
+          "id": "approvals.attachments-substitute",
+          "status": "live",
+          "dataSource": "approvals-api+files-api",
+          "actions": [
+            "attach-file",
+            "download-attachment",
+            "substitute-confirm"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "AUTHENTICATED",
+          "visibleLabel": "결재 첨부 · 부재 대리결재",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-12",
+          "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/approval-attachments.spec.ts",
+              "test": "첨부를 붙여 올린 결재를 부재 중 대리결재자가 첨부를 내려받고 대신 승인한다",
+              "actions": [
+                "attach-file",
+                "download-attachment",
+                "substitute-confirm"
+              ]
+            }
+          ],
+          "evidence": [
+            "business-app/src/test/java/nuri/business/service/informalsanction/ApprovalAttachmentAccessTest.java",
+            "business-app/src/test/java/nuri/business/service/informalsanction/ApprovalSubstitutionServiceTest.java",
+            "frontend/e2e/journeys/approval-attachments.spec.ts",
+            "frontend/src/app/approvals/ApprovalAttachmentList.tsx",
+            "frontend/src/app/approvals/ApprovalDocumentSections.tsx",
+            "frontend/src/app/approvals/ApprovalDraftDialog.tsx",
+            "frontend/src/app/approvals/__tests__/ApprovalAttachmentList.test.tsx",
+            "frontend/src/app/approvals/page.tsx"
+          ]
         }
       ],
       "evidence": [
@@ -10480,11 +10608,16 @@
       "status": "live",
       "dataSource": "mixed",
       "supportedActions": [
+        "approve-member",
+        "designate-operator",
+        "edit-profile",
         "join",
         "leave",
         "navigate",
+        "reject-member",
         "view-detail",
-        "view-list"
+        "view-list",
+        "withdraw-member"
       ],
       "profileOwners": [
         "demo"
@@ -10610,6 +10743,49 @@
             "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/page.tsx",
             "frontend/src/services/business/user/community/CommunityUserService.ts"
           ]
+        },
+        {
+          "id": "community.operator",
+          "status": "live",
+          "dataSource": "community-operator-api",
+          "actions": [
+            "approve-member",
+            "designate-operator",
+            "edit-profile",
+            "reject-member",
+            "withdraw-member"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "AUTHENTICATED",
+          "visibleLabel": "커뮤니티 운영 — 가입 승인·반려 · 운영자 지정 · 탈퇴 처리 · 소개 수정",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-12",
+          "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/community-operators.spec.ts",
+              "test": "운영자는 자기 커뮤니티의 가입 신청을 승인하고 소개를 고치며 다른 커뮤니티는 다루지 못한다",
+              "actions": [
+                "approve-member",
+                "designate-operator",
+                "edit-profile",
+                "reject-member",
+                "withdraw-member"
+              ]
+            }
+          ],
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/business/community/CommunityOperatorApiController.java",
+            "business-app/src/main/java/nuri/business/service/community/CommunityService.java",
+            "business-app/src/test/java/nuri/business/service/community/CommunityOperatorServiceTest.java",
+            "frontend/e2e/journeys/community-operators.spec.ts",
+            "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/page.tsx",
+            "frontend/src/components/business/community/CommunityOperatorPanel.tsx",
+            "frontend/src/components/business/community/__tests__/CommunityOperatorPanel.test.tsx",
+            "frontend/src/services/business/community/communityOperatorService.ts"
+          ]
         }
       ],
       "evidence": [
@@ -10630,7 +10806,7 @@
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
-      "dataSource": "mixed",
+      "dataSource": "communities-api",
       "supportedActions": [
         "filter",
         "navigate",
@@ -10688,20 +10864,33 @@
         },
         {
           "id": "community.my-joined-filter",
-          "status": "unavailable",
-          "dataSource": "none",
-          "actions": [],
-          "unsupportedVisibleActions": [
+          "status": "live",
+          "dataSource": "communities-api",
+          "actions": [
             "filter"
           ],
-          "actorScope": "UNVERIFIED",
+          "unsupportedVisibleActions": [],
+          "actorScope": "AUTHENTICATED",
           "visibleLabel": "내 가입 커뮤니티",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E1",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-12",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/community-operators.spec.ts",
+              "test": "운영자는 자기 커뮤니티의 가입 신청을 승인하고 소개를 고치며 다른 커뮤니티는 다루지 못한다",
+              "actions": [
+                "filter"
+              ]
+            }
+          ],
           "evidence": [
+            "api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java",
+            "business-app/src/main/java/nuri/business/service/community/CommunityService.java",
+            "frontend/e2e/journeys/community-operators.spec.ts",
+            "frontend/src/app/cop/__tests__/cmy.test.tsx",
             "frontend/src/app/cop/cmy/selectCommunityList/CommunityHubClient.tsx",
             "frontend/src/app/cop/cmy/selectCommunityList/page.tsx"
           ]
@@ -10790,6 +10979,86 @@
         "frontend/src/proxy.ts"
       ],
       "unverifiedFields": []
+    },
+    {
+      "route": "/events",
+      "source": "frontend/src/app/events/page.tsx",
+      "sourceShellAccess": "admin-system",
+      "shellAccess": "admin-system",
+      "roles": [
+        "ADMIN",
+        "SYSTEM",
+        "USER"
+      ],
+      "surface": "admin-console",
+      "status": "live",
+      "dataSource": "events-api",
+      "supportedActions": [
+        "apply",
+        "cancel",
+        "view-list"
+      ],
+      "profileOwners": [
+        "demo"
+      ],
+      "directProjectionProfiles": [
+        "demo"
+      ],
+      "journeys": [],
+      "visibleLabel": "행사 참가",
+      "menuExposure": "visible",
+      "decisionSafe": false,
+      "routing": {
+        "kind": "page"
+      },
+      "observedPageRedirectCalls": [],
+      "owner": "product/UX + domain owner",
+      "capabilities": [
+        {
+          "id": "event.participation",
+          "status": "live",
+          "dataSource": "events-api",
+          "actions": [
+            "apply",
+            "cancel",
+            "view-list"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM|USER",
+          "visibleLabel": "행사 참가 신청 · 취소",
+          "primaryTask": true,
+          "decisionSafe": false,
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-12",
+          "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/event-applications.spec.ts",
+              "test": "사용자는 정원이 있는 행사에 참가 신청·취소하고 정원이 차면 다른 사용자는 신청하지 못하며 담당자가 신청을 승인한다",
+              "actions": [
+                "apply",
+                "cancel",
+                "view-list"
+              ]
+            }
+          ],
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/business/operation/EventParticipationApiController.java",
+            "business-app/src/main/java/nuri/business/service/event/EventApplicationService.java",
+            "business-app/src/test/java/nuri/business/service/event/EventApplicationServiceTest.java",
+            "frontend/e2e/journeys/event-applications.spec.ts",
+            "frontend/src/app/events/EventParticipationClient.tsx",
+            "frontend/src/app/events/page.tsx",
+            "frontend/src/services/foundation/operation/eventParticipationService.ts"
+          ]
+        }
+      ],
+      "evidence": [
+        "config/modules/presets.json",
+        "frontend/next.config.ts",
+        "frontend/src/app/events/page.tsx",
+        "frontend/src/proxy.ts"
+      ]
     },
     {
       "route": "/help",

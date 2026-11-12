@@ -71,7 +71,7 @@ describe('CommunityDetailHubClient membership refresh after join', () => {
 
     // 상태를 아직 모르는 동안에도 신청 버튼은 열려 있다(컴포넌트 주석) — 첫 조회 응답 전에 누른다.
     fireEvent.click(screen.getByRole('button', { name: '커뮤니티 가입 신청' }));
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('가입을 신청했습니다. 관리자가 승인하면 회원이 됩니다.', 'success'));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('가입을 신청했습니다. 운영자나 관리자가 승인하면 회원이 됩니다.', 'success'));
     // 가입 전에 서버가 처리한 첫 조회는 NONE 이다 — 이 응답이 최종 결과가 되면 안 된다.
     await act(async () => { resolveStale(membership('NONE')); });
 

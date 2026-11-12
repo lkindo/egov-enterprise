@@ -174,7 +174,9 @@ async function refreshDocument(queryClient: QueryClient, ifmlAtrzSn: number) {
 export const approvalMutationOptions = {
   confirm: (queryClient: QueryClient) => mutationOptions({
     mutationFn: async ({ ifmlAtrzSn, status, reason, version, onBehalfOf }: ApprovalDecision) => {
-      await approvalUserService.confirm(ifmlAtrzSn, status, reason, version, onBehalfOf);
+      // 대리결재일 때만 원결재자를 싣는다 — 본인 차례의 결정은 종전 인자 그대로다.
+      if (onBehalfOf) await approvalUserService.confirm(ifmlAtrzSn, status, reason, version, onBehalfOf);
+      else await approvalUserService.confirm(ifmlAtrzSn, status, reason, version);
       await queryClient.invalidateQueries({ queryKey: approvalKeys.lists() });
       await queryClient.invalidateQueries({ queryKey: approvalKeys.detail(ifmlAtrzSn) });
     },

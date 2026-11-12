@@ -25,6 +25,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { failureMessage } from '@/lib/safe-error-log';
+import { CommunityOperatorPanel } from '@/components/business/community/CommunityOperatorPanel';
 
 export default function CommunityDetailHubClient({ 
   cmntySn,
@@ -61,6 +62,12 @@ export default function CommunityDetailHubClient({
     queryFn: () => communityUserService.getMyMembership(cmntySn),
   });
   const membershipStatus = membership?.status;
+  /*
+   * [GAP-CMTY-001, DEC-OPS-416] 이 커뮤니티의 운영자(승인 회원이면서 운영자로 지정됨)에게만 운영 패널을 보인다. 표시 판정일 뿐이고,
+   * 서버가 요청마다 그 커뮤니티의 운영자인지 다시 본다 — 다른 커뮤니티의 운영자는 403 이다.
+   */
+  const isOperator = membershipStatus === 'MEMBER' && membership?.operator === true
+    && canPermission(user, 'COMMUNITY_OPERATE');
   // [2026-10-24] 아직 데이터가 없는 조회가 진행 중이면 TanStack Query 는 무효화해도 새로 받지 않고 그 요청을 재사용한다 — 화면을
   //   열자마자 가입하면 가입 전에 나간 조회의 NONE 이 최종 결과가 되어 '승인 대기' 대신 신청 버튼이 다시 보였다(PR #973 run
   //   40071454996 trace). 진행 중인 조회를 먼저 취소해 가입·탈퇴 뒤의 조회가 반드시 새로 나가게 한다.
@@ -108,7 +115,7 @@ export default function CommunityDetailHubClient({
   const joinMutation = useMutation({
     mutationFn: () => communityUserService.joinCommunity(cmntySn),
     onSuccess: () => {
-      toast('가입을 신청했습니다. 관리자가 승인하면 회원이 됩니다.', 'success');
+      toast('가입을 신청했습니다. 운영자나 관리자가 승인하면 회원이 됩니다.', 'success');
       void refreshMembership();
     },
     onError: (error: unknown) => {
@@ -181,7 +188,7 @@ export default function CommunityDetailHubClient({
               ) : membershipStatus === 'MEMBER' ? (
                 <>
                   <span role="status" className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-success/10 px-3 text-xs font-bold text-success-emphasis">
-                    <ShieldCheck size={16} aria-hidden="true" /> 회원
+                    <ShieldCheck size={16} aria-hidden="true" /> {isOperator ? '운영자' : '회원'}
                   </span>
                   <Button
                     size="sm"
@@ -325,6 +332,16 @@ export default function CommunityDetailHubClient({
                 </ul>
               )}
             </HubSectionCard>
+
+            {isOperator ? (
+              <HubSectionCard
+                title="커뮤니티 운영"
+                description="이 커뮤니티의 가입 신청·회원·소개를 관리합니다. 운영자만 볼 수 있습니다."
+                icon={Settings}
+              >
+                <CommunityOperatorPanel cmntySn={cmntySn} community={community} />
+              </HubSectionCard>
+            ) : null}
           </div>
 
           {/* Sidebar Area */}
@@ -348,12 +365,12 @@ export default function CommunityDetailHubClient({
                   <h4 className="text-2xl font-bold tracking-tight leading-tight">가입 신청</h4>
                   <p className="text-xs text-white/60 font-bold tracking-tight leading-relaxed">
                     {membershipStatus === 'MEMBER'
-                      ? '이 커뮤니티의 회원입니다.'
+                      ? (isOperator ? '이 커뮤니티의 운영자입니다. 아래 커뮤니티 운영에서 가입 신청과 회원을 관리합니다.' : '이 커뮤니티의 회원입니다.')
                       : membershipStatus === 'REQUESTED'
-                        ? '가입 신청이 접수되었습니다. 관리자가 승인하면 회원이 됩니다.'
+                        ? '가입 신청이 접수되었습니다. 운영자나 관리자가 승인하면 회원이 됩니다.'
                         : membershipStatus === 'WITHDRAWN'
-                          ? '탈퇴한 커뮤니티입니다. 다시 신청하면 관리자가 검토해 승인하거나 반려합니다.'
-                          : '신청하면 관리자가 검토해 승인하거나 반려합니다.'}
+                          ? '탈퇴한 커뮤니티입니다. 다시 신청하면 운영자나 관리자가 검토해 승인하거나 반려합니다.'
+                          : '신청하면 운영자나 관리자가 검토해 승인하거나 반려합니다.'}
                     <br />
                     {/* [2026-09-08 PD-CMTY-001] 회원 전용 게시판이 생겼으므로 미제공 고지를 걷는다. */}
                     회원이 되면 이 커뮤니티에 귀속된 게시판을 이용할 수 있습니다.

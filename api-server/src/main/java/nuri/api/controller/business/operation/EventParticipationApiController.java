@@ -9,7 +9,6 @@ import nuri.business.service.event.dto.OpenEventDto;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,7 +16,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -41,21 +39,13 @@ public class EventParticipationApiController {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(applicationService.getOpenEvents(pageable))));
     }
 
-    @Operation(summary = "행사 상세(신청 화면)", description = "행사 정보·자리 수·내 신청 상태입니다. 없는 행사는 404 입니다.")
-    @GetMapping("/{evntSn}")
-    @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.EventParticipationApiController#getOpenEvent')")
-    public ResponseEntity<ApiResponse<OpenEventDto>> getOpenEvent(@PathVariable Long evntSn) {
-        return ResponseEntity.ok(ApiResponse.success(applicationService.getOpenEvent(evntSn)));
-    }
-
     @Operation(summary = "행사 참가 신청",
             description = "현재 사용자로 신청합니다. 마감이 지났거나 정원이 찼으면 409(C014), 이미 신청·승인됐거나 반려된 신청이면 409(C008) 입니다. "
-                    + "취소한 신청은 다시 신청할 수 있습니다.")
+                    + "취소한 신청은 같은 신청을 다시 연다 — 새 자원을 만드는 생성형이 아니라 행위형 POST 라 200 입니다(ADR-0036, 커뮤니티 가입과 같다).")
     @PostMapping("/{evntSn}/applications")
-    @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.EventParticipationApiController#applyForEvent')")
     public ResponseEntity<ApiResponse<EventApplicationDto>> applyForEvent(@PathVariable Long evntSn) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(applicationService.apply(evntSn)));
+        return ResponseEntity.ok(ApiResponse.success(applicationService.apply(evntSn)));
     }
 
     @Operation(summary = "행사 참가 신청 취소",

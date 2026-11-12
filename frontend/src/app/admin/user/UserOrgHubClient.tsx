@@ -633,9 +633,10 @@ function absenceColumns({ absenceOf, delegationOf, nameOf, canUpdateAbsence, abs
                 variant="ghost"
                 size="sm"
                 disabled={absencePendingId !== null}
+                aria-label={`${user.userNm ?? user.userId} 대리결재 지정`}
                 onClick={(event) => { event.stopPropagation(); onEditDelegation(user); }}
               >
-                <span className="sr-only">{user.userNm ?? user.userId} </span>대리결재 지정
+                대리결재 지정
               </Button>
               <Button
                 variant="outline"

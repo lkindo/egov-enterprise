@@ -25,6 +25,7 @@ export function toCommunityListQuery(params: CommunitySearchParams): CommunityLi
     ...(searchCnd === undefined ? {} : { searchCnd }),
     ...(searchWrd === undefined ? {} : { searchWrd }),
     ...(sort === undefined ? {} : { sort }),
+    ...(params.joined === true ? { joined: true } : {}),
   };
 }
 

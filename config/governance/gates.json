@@ -1243,6 +1243,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/DurableWorkIntegrationTest.java"
         },
         {
+          "id": "DB-EVENT-APPLICATION-CONCURRENCY",
+          "source": "api-server/src/test/java/nuri/api/schema/EventApplicationConcurrencyIntegrationTest.java"
+        },
+        {
           "id": "DB-EVENT-APPROVAL-INTEGRITY",
           "source": "api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java"
         },

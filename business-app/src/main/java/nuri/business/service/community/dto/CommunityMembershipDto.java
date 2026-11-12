@@ -16,14 +16,15 @@ import nuri.business.domain.community.CommunityUser;
 public record CommunityMembershipDto(
         @Schema(description = "커뮤니티 일련번호") Long cmntySn,
         @Schema(description = "멤버십 상태") Status status,
-        @Schema(description = "가입(신청)일자 yyyyMMdd — 행이 없으면 null", nullable = true) String joinYmd) {
+        @Schema(description = "가입(신청)일자 yyyyMMdd — 행이 없으면 null", nullable = true) String joinYmd,
+        @Schema(description = "그 커뮤니티의 운영자인가 — 승인된 회원이면서 운영자로 지정된 경우만 true(GAP-CMTY-001)") boolean operator) {
 
     public enum Status {
         NONE, REQUESTED, MEMBER, WITHDRAWN, UNKNOWN
     }
 
     public static CommunityMembershipDto none(Long cmntySn) {
-        return new CommunityMembershipDto(cmntySn, Status.NONE, null);
+        return new CommunityMembershipDto(cmntySn, Status.NONE, null, false);
     }
 
     public static CommunityMembershipDto from(CommunityUser member) {
@@ -34,6 +35,6 @@ public record CommunityMembershipDto(
                     case WITHDRAWN -> Status.WITHDRAWN;
                 })
                 .orElse(Status.UNKNOWN);
-        return new CommunityMembershipDto(member.getId().getCmntySn(), status, member.getJoinYmd());
+        return new CommunityMembershipDto(member.getId().getCmntySn(), status, member.getJoinYmd(), member.isOperator());
     }
 }

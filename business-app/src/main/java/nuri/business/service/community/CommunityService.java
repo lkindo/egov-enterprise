@@ -3,6 +3,7 @@ package nuri.business.service.community;
 import nuri.business.domain.community.Community;
 import nuri.business.domain.community.CommunityRepository;
 import nuri.business.domain.community.QCommunity;
+import nuri.business.domain.community.QCommunityUser;
 import nuri.business.domain.community.CommunityMemberStatus;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
@@ -10,11 +11,13 @@ import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.community.dto.CommunityDto;
 import nuri.business.service.community.dto.CommunityMemberDto;
 import nuri.business.service.community.dto.CommunityMembershipDto;
+import nuri.business.service.community.dto.CommunityOperatorRequests;
 import nuri.business.service.community.dto.CommunityTemplateOptionsDto;
 import nuri.business.domain.community.CommunityUser;
 import nuri.business.domain.community.CommunityUserRepository;
 import nuri.business.domain.community.CommunityUserId;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import nuri.foundation.core.exception.BusinessException;
@@ -96,17 +99,42 @@ public class CommunityService {
      */
     public Page<CommunityDto> getActiveCommunityList(String searchCnd, String searchWrd,
             @org.jspecify.annotations.NonNull Pageable pageable) {
-        return searchCommunities(searchCnd, searchWrd, pageable, true);
+        return getActiveCommunityList(searchCnd, searchWrd, false, pageable);
+    }
+
+    /**
+     * 일반 사용자용 목록에 '내가 가입한 커뮤니티만' 조건을 더한다(GAP-CMTY-001). 가입은 승인된 회원({@code P})만이며
+     * 신청(A)·탈퇴(W)는 빠진다. 신원 축은 esntlId 다 — loginId 로 대조하면 조용히 0건이 된다. 인증 주체가 없으면 빈 목록이다.
+     */
+    public Page<CommunityDto> getActiveCommunityList(String searchCnd, String searchWrd, boolean joinedOnly,
+            @org.jspecify.annotations.NonNull Pageable pageable) {
+        if (!joinedOnly) {
+            return searchCommunities(searchCnd, searchWrd, pageable, true, null);
+        }
+        return SecurityUtil.getCurrentEsntlId()
+                .map(esntlId -> searchCommunities(searchCnd, searchWrd, pageable, true, esntlId))
+                .orElseGet(() -> new PageImpl<>(List.of(), pageable, 0));
     }
 
     private Page<CommunityDto> searchCommunities(String searchCnd, String searchWrd,
             Pageable pageable, boolean activeOnly) {
+        return searchCommunities(searchCnd, searchWrd, pageable, activeOnly, null);
+    }
+
+    private Page<CommunityDto> searchCommunities(String searchCnd, String searchWrd,
+            Pageable pageable, boolean activeOnly, String joinedEsntlId) {
         QCommunity qCommunity = QCommunity.community;
         BooleanBuilder builder = new BooleanBuilder();
 
         builder.and(qCommunity.regSeCd.eq("REGC01"));
         if (activeOnly) {
             builder.and(qCommunity.useYn.eq("Y"));
+        }
+        if (joinedEsntlId != null) {
+            QCommunityUser membership = QCommunityUser.communityUser;
+            builder.and(qCommunity.cmntySn.in(JPAExpressions.select(membership.id.cmntySn).from(membership)
+                    .where(membership.id.userId.eq(joinedEsntlId),
+                            membership.mbrSttsCd.eq(CommunityMemberStatus.APPROVED.code()))));
         }
 
         if (searchWrd != null && !searchWrd.isEmpty()) {
@@ -177,8 +205,17 @@ public class CommunityService {
                 .tmpltId(templateId)
                 .useYn("Y")
                 .build();
-        return toDto(Objects
-                .requireNonNull(communityRepository.save(Objects.requireNonNull(community))));
+        Community saved = Objects.requireNonNull(communityRepository.save(Objects.requireNonNull(community)));
+        // [GAP-CMTY-001, DEC-OPS-416] 개설자는 그 커뮤니티의 첫 운영자다 — 승인 회원(P)이면서 mngrYn='Y' 로 등록한다.
+        //   신원 축은 esntlId(tb_cmnty_user_map.user_id → tb_user_info.esntl_id)다.
+        SecurityUtil.getCurrentEsntlId().ifPresent(creator -> communityUserRepository.save(CommunityUser.builder()
+                .id(new CommunityUserId(saved.getCmntySn(), creator))
+                .mbrSttsCd(CommunityMemberStatus.APPROVED.code())
+                .mngrYn("Y")
+                .joinYmd(today())
+                .useYn("Y")
+                .build()));
+        return toDto(saved);
     }
 
     @Transactional
@@ -309,6 +346,17 @@ public class CommunityService {
         java.util.UUID eventId = java.util.UUID.randomUUID();
         approvers.stream().sorted().forEach(receiver -> eventPublisher.publishEvent(
                 new nuri.foundation.core.event.NotificationRequestedEvent(eventId, receiver, title, content, COMMUNITY_MANAGE_ROUTE)));
+        // [GAP-CMTY-001] 그 커뮤니티의 운영자에게도 알린다 — 운영자는 관리 화면이 아니라 커뮤니티 상세의 운영 패널에서 처리한다.
+        //   권한 보유자로 이미 알린 사람과 신청자 자신은 뺀다.
+        communityUserRepository.findOperatorIds(community.getCmntySn()).stream()
+                .filter(id -> !id.equals(applicantEsntlId) && !approvers.contains(id))
+                .limit(MAX_APPROVER_NOTICES)
+                .forEach(operator -> eventPublisher.publishEvent(new nuri.foundation.core.event.NotificationRequestedEvent(
+                        eventId, operator, title, content, communityDetailRoute(community.getCmntySn()))));
+    }
+
+    private static String communityDetailRoute(Long cmntySn) {
+        return "/cop/cmy/selectCommunityDetail/" + cmntySn;
     }
 
     private void notifyApplicant(Long cmntySn, String applicantEsntlId, boolean approved) {
@@ -316,7 +364,7 @@ public class CommunityService {
                 .orElse("커뮤니티");
         String title = approved ? "커뮤니티 가입이 승인되었습니다" : "커뮤니티 가입 신청이 반려되었습니다";
         String content = approved ? name + " 의 회원이 되었습니다." : name + " 가입 신청이 반려되었습니다. 다시 신청할 수 있습니다.";
-        publishNotification(applicantEsntlId, title, content, "/cop/cmy/selectCommunityDetail/" + cmntySn);
+        publishNotification(applicantEsntlId, title, content, communityDetailRoute(cmntySn));
     }
 
     private static String communityName(Community community) {
@@ -330,8 +378,10 @@ public class CommunityService {
 
     // ─── 멤버십 전이 (2026-09-06 DEC-OPS-043, 2026-09-25 DEC-OPS-131, GAP-CMTY-001) ─────────────────────
     //   신청(A) → 승인(P) 또는 반려(행 삭제), 회원(P) → 탈퇴(W), 탈퇴(W) → 재신청(A).
-    //   승인·반려·강제 탈퇴는 명시 operation 권한 보유자만 한다. mngrYn 은 어떤 인가 판정도 읽지 않으므로
-    //   부여 경로를 두지 않는다 — 켜도 아무 권한이 생기지 않는 운영자 위임은 거짓 기능이다.
+    //   승인·반려·강제 탈퇴는 명시 operation 권한 보유자 또는 그 커뮤니티의 운영자가 한다(GAP-CMTY-001, DEC-OPS-416).
+    //   운영자 = 사용 중·정식 등록 커뮤니티의 승인 회원(P)이면서 mngrYn='Y'. 운영 범위는 그 커뮤니티 하나다 —
+    //   다른 커뮤니티의 운영자·신청(A)·탈퇴(W)·일반 회원은 403 이다. 운영자가 없어지는 변경(마지막 운영자의 탈퇴·해제)은
+    //   관리자(COMMUNITY_UPDATE_ALL)만 한다.
 
     /**
      * 관리자용 회원·가입 신청 목록. {@code status} 가 null 이면 전체.
@@ -354,7 +404,7 @@ public class CommunityService {
     /** 가입 신청 승인 — 신청 상태({@code A})인 행만 회원({@code P})으로 옮긴다. 그 외 상태는 400(INVALID_STATE). */
     @Transactional
     public void approveMember(Long cmntySn, String userId) {
-        SecurityUtil.assertPermission("COMMUNITY_APPROVE");
+        assertOperatorOrPermission(cmntySn, "COMMUNITY_APPROVE");
         CommunityUser member = requireMembership(cmntySn, userId);
         if (!member.isRequested()) {
             throw new BusinessException(CommonErrorCode.INVALID_STATE, "가입 신청 상태가 아니어서 승인할 수 없습니다.");
@@ -369,7 +419,7 @@ public class CommunityService {
      */
     @Transactional
     public void rejectMember(Long cmntySn, String userId) {
-        SecurityUtil.assertPermission("COMMUNITY_REJECT");
+        assertOperatorOrPermission(cmntySn, "COMMUNITY_REJECT");
         CommunityUser member = requireMembership(cmntySn, userId);
         if (!member.isRequested()) {
             throw new BusinessException(CommonErrorCode.INVALID_STATE,
@@ -394,7 +444,110 @@ public class CommunityService {
         if (!member.isApproved()) {
             throw new BusinessException(CommonErrorCode.INVALID_STATE, "승인된 회원만 탈퇴할 수 있습니다.");
         }
+        if (member.isOperator() && !SecurityUtil.hasPermission("COMMUNITY_UPDATE_ALL")) {
+            assertNotLastOperator(cmntySn, "마지막 운영자는 탈퇴할 수 없습니다. 다른 회원을 운영자로 지정한 뒤 탈퇴하세요.");
+        }
         member.withdraw(today());
+    }
+
+    // ─── 커뮤니티 운영자(GAP-CMTY-001, DEC-OPS-416) ────────────────────────────────────────────────
+
+    /**
+     * 운영자 회원·가입 신청 목록 — 그 커뮤니티의 운영자 또는 {@code COMMUNITY_READ_ALL} 보유자. 이름만 싣고 연락처는 싣지 않는다.
+     */
+    public Page<CommunityMemberDto> getMembersAsOperator(Long cmntySn, CommunityMemberStatus status,
+            @org.jspecify.annotations.NonNull Pageable pageable) {
+        assertOperatorOrPermission(cmntySn, "COMMUNITY_READ_ALL");
+        Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                Sort.by(Sort.Order.desc("joinYmd"), Sort.Order.asc("id.userId")));
+        Page<CommunityUser> page = status == null
+                ? communityUserRepository.findByIdCmntySn(Objects.requireNonNull(cmntySn), sorted)
+                : communityUserRepository.findByIdCmntySnAndMbrSttsCd(Objects.requireNonNull(cmntySn), status.code(), sorted);
+        Map<String, String> names = resolveUserNames(page.getContent());
+        return page.map(member -> CommunityMemberDto.from(member, names.get(member.getId().getUserId())));
+    }
+
+    /**
+     * 운영자의 강제 탈퇴 — 일반 회원만 탈퇴시킨다. 운영자(본인 포함)는 먼저 운영자를 해제해야 한다(409) — 운영자끼리 서로를
+     * 내보내는 경로를 두지 않고, 마지막 운영자 보호를 해제 한 곳에서만 판정하기 위해서다.
+     */
+    @Transactional
+    public void withdrawMemberAsOperator(Long cmntySn, String userId) {
+        assertOperatorOrPermission(cmntySn, "COMMUNITY_UPDATE_ALL");
+        CommunityUser member = requireMembership(cmntySn, userId);
+        if (!member.isApproved()) {
+            throw new BusinessException(CommonErrorCode.INVALID_STATE, "승인된 회원만 탈퇴시킬 수 있습니다.");
+        }
+        if (member.isOperator()) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE, "운영자는 먼저 운영자를 해제한 뒤 탈퇴시킬 수 있습니다.");
+        }
+        member.withdraw(today());
+    }
+
+    /**
+     * 운영자 지정·해제 — 승인된 회원만 지정한다. 운영자를 0명으로 만드는 해제는 관리자만 한다(409). 판정은 커뮤니티 행을
+     * 잠근 뒤 운영자 수를 세서 한다 — 두 운영자가 동시에 서로를 해제해도 마지막 한 명은 남는다.
+     */
+    @Transactional
+    public void designateOperator(Long cmntySn, String userId, Boolean manager) {
+        assertOperatorOrPermission(cmntySn, "COMMUNITY_UPDATE_ALL");
+        CommunityUser member = requireMembership(cmntySn, userId);
+        if (!member.isApproved()) {
+            throw new BusinessException(CommonErrorCode.INVALID_STATE, "승인된 회원만 운영자로 지정할 수 있습니다.");
+        }
+        if (Boolean.TRUE.equals(manager)) {
+            member.designateOperator();
+            return;
+        }
+        if (!member.isOperator()) {
+            return;
+        }
+        if (!SecurityUtil.hasPermission("COMMUNITY_UPDATE_ALL")) {
+            assertNotLastOperator(cmntySn, "마지막 운영자는 해제할 수 없습니다. 다른 회원을 먼저 운영자로 지정하세요.");
+        }
+        member.releaseOperator();
+    }
+
+    /**
+     * 운영자의 소개·기본 정보 수정 — 이름·소개만 바꾸고 사용 여부·템플릿은 그대로 둔다(관리자 몫). 읽은 버전과 다르면 409.
+     */
+    @Transactional
+    public void updateProfileAsOperator(Long cmntySn, CommunityOperatorRequests.ProfileRequest request) {
+        assertOperatorOrPermission(cmntySn, "COMMUNITY_UPDATE_ALL");
+        Community community = communityRepository.findByIdForUpdate(Objects.requireNonNull(cmntySn))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + cmntySn));
+        nuri.foundation.core.util.EntityVersions.assertCurrent(request.version(), community.getVersion());
+        community.update(request.cmntyNm(), request.cmntyIntroCn(), community.getTmpltId(), community.getUseYn());
+    }
+
+    /**
+     * 권한 보유자이거나 그 커뮤니티의 운영자인지 확인한다. 운영자는 사용 중·정식 등록 커뮤니티의 승인 회원이면서 운영자 표시가
+     * 있어야 한다. 다른 커뮤니티의 운영자·신청·탈퇴·일반 회원·인증 없음은 403 — 커뮤니티가 없는 것과 구분하지 않는다.
+     */
+    private void assertOperatorOrPermission(Long cmntySn, String permission) {
+        if (SecurityUtil.hasPermission(permission)) {
+            return;
+        }
+        String actor = SecurityUtil.getCurrentEsntlId()
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED, "이 커뮤니티의 운영자만 할 수 있습니다."));
+        boolean active = communityRepository.findById(Objects.requireNonNull(cmntySn))
+                .filter(community -> "Y".equals(community.getUseYn()) && "REGC01".equals(community.getRegSeCd()))
+                .isPresent();
+        boolean operator = active && communityUserRepository.findById(new CommunityUserId(cmntySn, actor))
+                .filter(CommunityUser::isOperator)
+                .isPresent();
+        if (!operator) {
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED, "이 커뮤니티의 운영자만 할 수 있습니다.");
+        }
+    }
+
+    /** 커뮤니티 행을 잠근 뒤 운영자 수를 센다 — 한 명뿐이면 409. 회원 행 → 커뮤니티 행 순서로 잠근다(교착 회피). */
+    private void assertNotLastOperator(Long cmntySn, String message) {
+        communityRepository.findByIdForUpdate(Objects.requireNonNull(cmntySn))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + cmntySn));
+        if (communityUserRepository.countOperators(cmntySn) <= 1) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE, message);
+        }
     }
 
     private static String today() {

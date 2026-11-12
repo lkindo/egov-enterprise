@@ -879,12 +879,15 @@ public class InformalSanctionService {
     private Page<InformalSanctionDto> toDtoPage(Page<InformalSanction> page, String actor, Set<String> delegators) {
         if (page.isEmpty()) return page.map(informalSanctionMapper::toDto);
         List<Long> ids = page.stream().map(InformalSanction::getIfmlAtrzSn).toList();
-        Map<Long, BigDecimal> currentCycles = page.stream()
-                .collect(Collectors.toMap(InformalSanction::getIfmlAtrzSn, InformalSanction::getAtrzCycl));
+        Map<Long, BigDecimal> currentCycles = new java.util.HashMap<>();
+        page.forEach(sanction -> currentCycles.put(sanction.getIfmlAtrzSn(), sanction.getAtrzCycl()));
         List<InformalSanctionDetail> visibleLines = detailRepository.findVisibleForDocuments(ids, actor);
         Set<Long> seesAny = visibleLines.stream().map(d -> d.getId().getIfmlAtrzSn()).collect(Collectors.toSet());
-        Set<Long> seesCurrent = visibleLines.stream()
-                .filter(d -> d.getId().getAtrzCycl().compareTo(currentCycles.get(d.getId().getIfmlAtrzSn())) == 0)
+        Set<Long> seesCurrent = delegators.isEmpty() ? Set.of() : visibleLines.stream()
+                .filter(d -> {
+                    BigDecimal current = currentCycles.get(d.getId().getIfmlAtrzSn());
+                    return current != null && d.getId().getAtrzCycl() != null && d.getId().getAtrzCycl().compareTo(current) == 0;
+                })
                 .map(d -> d.getId().getIfmlAtrzSn()).collect(Collectors.toSet());
         // 보이는 줄이 없으면(대신 결정만 한 문서) 넓히고, 오늘 맡긴 사람이 있으면 지금 차수가 보이지 않는 문서도 넓힌다.
         Set<Long> widenedIds = ids.stream().filter(id -> !seesAny.contains(id)

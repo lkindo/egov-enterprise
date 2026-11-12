@@ -293,7 +293,8 @@ describe('UserOrgHubClient 부재 관리 배선', () => {
     expect(busy).toBeDisabled();
     expect(busy).toHaveAttribute('aria-busy', 'true');
     // 잠금 중 다른 행의 버튼도 함께 잠긴다 — 동시 변경으로 목록이 어긋나지 않게 한다.
-    expect(within(rowOf('김부재')).getByRole('button')).toBeDisabled();
+    // [V2_151] 행마다 대리결재 지정 단추도 함께 잠긴다.
+    for (const button of within(rowOf('김부재')).getAllByRole('button')) expect(button).toBeDisabled();
 
     await user.click(busy);
     expect(userAbsenceAdminService.updateAbsence).toHaveBeenCalledTimes(1);

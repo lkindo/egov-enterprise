@@ -175,6 +175,8 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
   const canSaveTemporary = !resubmission && canPermission(user, 'APPROVAL_CREATE');
   // [2026-10-16 D2] 나의 결재선 — 저장·불러오기 API 가 기안 권한을 요구한다. 재상신에서도 결재선을 다시 지정하므로 쓴다.
   const canUseSavedLines = canPermission(user, 'APPROVAL_CREATE');
+  // [V2_151] 첨부는 파일 올리기 권한(FILE_UPLOAD)이 있을 때만 고를 수 있다 — 없으면 이미 붙은 첨부만 보인다(표시 판정, 서버가 다시 본다).
+  const canUploadFiles = canPermission(user, 'FILE_UPLOAD');
   // 복제 기안 창에도 둔다. 상한(20건) 안내와 409(C014) 문구가 이 목록을 가리키므로, 없으면 창을 닫아야 지울 수 있다.
   const showsTemporaryList = canSaveTemporary;
   // 이 창이 이어 쓰는 임시저장(번호·읽은 버전). 저장하면 받은 버전으로, 상신하면 서버가 이 버전과 함께 지운다.
@@ -448,7 +450,12 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
     };
     pendingRef.current = true; setSavingTemporary(true); setServerError('');
     try {
-      const atchFileSn = await resolveAttachment();
+      // 고른 파일은 잠금을 쥔 이 처리기 안에서 한 번 올린다 — 다시 누르면 같은 파일을 두 번 올리지 않는다.
+      let atchFileSn = attachment;
+      if (pendingFiles.length > 0) {
+        atchFileSn = await fileService.uploadFiles(pendingFiles);
+        setAttachment(atchFileSn); setPendingFiles([]); setUploaderKey(key => key + 1);
+      }
       const saved = await saveTemporaryMutation.mutateAsync({
         ...payload, request: { ...payload.request, ...(atchFileSn ? { atchFileSn } : {}) },
       });
@@ -719,8 +726,10 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
                 <ApprovalAttachmentList atchFileSn={attachment} label="붙인 첨부 파일" />
                 <Button type="button" variant="outline" size="sm" onClick={() => { touch(); setAttachment(undefined); }}>첨부 빼기</Button>
               </>}
-              <StandardFileUploader key={uploaderKey} onFilesChange={files => { touch(); setPendingFiles(files); }} />
-              <p className="text-xs text-muted-foreground">{attachment !== undefined ? '새 파일을 고르면 붙인 첨부 대신 새 파일로 바뀝니다. ' : ''}상신하면 결재가 끝날 때까지 첨부를 바꾸거나 지울 수 없습니다.{resubmission ? ' 앞 차수의 첨부는 그 차수 이력에 남습니다.' : ''}</p>
+              {canUploadFiles ? <>
+                <StandardFileUploader key={uploaderKey} onFilesChange={files => { touch(); setPendingFiles(files); }} />
+                <p className="text-xs text-muted-foreground">{attachment !== undefined ? '새 파일을 고르면 붙인 첨부 대신 새 파일로 바뀝니다. ' : ''}상신하면 결재가 끝날 때까지 첨부를 바꾸거나 지울 수 없습니다.{resubmission ? ' 앞 차수의 첨부는 그 차수 이력에 남습니다.' : ''}</p>
+              </> : <p className="text-xs text-muted-foreground">파일을 올릴 권한이 없어 첨부를 고를 수 없습니다.</p>}
             </div>
             <div className="space-y-2">
               <label htmlFor="approval-draft-task-type" className="text-sm font-semibold">업무 구분 (필수)</label>

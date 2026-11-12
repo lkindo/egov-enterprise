@@ -287,9 +287,9 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
             String department = reference.userDepartment();
             if (department == null || department.isBlank()) department = "ORGNZT_0000000000000";
             shared |= readAll || (loginId != null && !loginId.isBlank()
-                    && "1".equals(reference.sharing()) && department.equals(reference.department()))
-                    // [V2_152] 전사 일정은 로그인 사용자 모두에게 공유된다(ScheduleService#getSchedule 과 같다).
-                    || (loginId != null && !loginId.isBlank() && "3".equals(reference.sharing()));
+                    && "1".equals(reference.sharing()) && department.equals(reference.department()));
+            // [V2_152] 전사 일정은 로그인 사용자 모두에게 공유된다(ScheduleService#getSchedule 과 같다).
+            shared |= loginId != null && !loginId.isBlank() && "3".equals(reference.sharing());
             owner |= loginId != null && loginId.equals(reference.registrar());
         }
         return new SourceHit(!references.isEmpty(), shared, owner, false);

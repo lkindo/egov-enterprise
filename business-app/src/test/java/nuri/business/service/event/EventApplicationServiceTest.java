@@ -52,6 +52,7 @@ class EventApplicationServiceTest {
     private MockedStatic<SecurityUtil> security;
 
     private static final DateTimeFormatter YMD = DateTimeFormatter.BASIC_ISO_DATE;
+    private static final String TODAY = LocalDate.now(ZoneId.of("Asia/Seoul")).format(YMD);
     private static final String TOMORROW = LocalDate.now(ZoneId.of("Asia/Seoul")).plusDays(1).format(YMD);
     private static final String YESTERDAY = LocalDate.now(ZoneId.of("Asia/Seoul")).minusDays(1).format(YMD);
 
@@ -68,9 +69,8 @@ class EventApplicationServiceTest {
     }
 
     private EventInfo event(Integer capacity, String deadline, String begin) {
-        EventInfo event = EventInfo.builder().evntSn(5L).evntNm("워크숍").evntBgngYmd(begin).evntEndYmd(begin).build();
-        ReflectionTestUtils.setField(event, "pscpNope", capacity);
-        ReflectionTestUtils.setField(event, "aplyDdlnYmd", deadline);
+        EventInfo event = EventInfo.builder().evntSn(5L).evntNm("워크숍").evntBgngYmd(begin).evntEndYmd(begin)
+                .pscpNope(capacity).aplyDdlnYmd(deadline).build();
         event.setFrstRgtrId("owner-login");
         given(eventInfoRepository.findByIdForUpdate(5L)).willReturn(Optional.of(event));
         return event;
@@ -109,14 +109,18 @@ class EventApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("마감일이 지났으면 409 — 마감일이 없으면 행사 시작일이 마감이다")
-    void rejectsAfterDeadline() {
+    @DisplayName("마감일이 지났거나 마감일이 없는 행사(신청을 받지 않는 기존 행사)는 409 — 시작일이 남아 있어도 받지 않는다")
+    void rejectsAfterDeadlineOrWithoutDeadline() {
         event(null, YESTERDAY, TOMORROW);
         assertThat(error(() -> service.apply(5L)).getErrorCode()).isEqualTo(CommonErrorCode.RESOURCE_IN_USE);
 
         org.mockito.Mockito.reset(eventInfoRepository);
-        event(null, null, YESTERDAY);
+        event(null, null, TOMORROW);
         assertThat(error(() -> service.apply(5L)).getErrorCode()).isEqualTo(CommonErrorCode.RESOURCE_IN_USE);
+        assertThat(EventApplicationService.applicationOpen(
+                EventInfo.builder().evntBgngYmd(TOMORROW).build(), TODAY)).as("마감일 없는 기존 행사는 열리지 않는다").isFalse();
+        assertThat(EventApplicationService.applicationOpen(
+                EventInfo.builder().aplyDdlnYmd(TODAY).build(), TODAY)).as("마감일 당일까지 받는다").isTrue();
         verify(applicationRepository, never()).save(any());
     }
 

@@ -5,8 +5,8 @@
 
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
-import { ApiResponseCommunityDtoResponseSchema, ApiResponsePageResponseCommunityDtoResponseSchema, ApiResponseVoidResponseSchema, CommunityDtoRequestSchema, CommunityDtoResponseSchema, PageResponseCommunityDtoResponseSchema } from '../generated-zod/_shared';
-import { ApiResponseCommunityTemplateOptionsDtoResponseSchema, ApiResponseListCommunityDtoResponseSchema, ApiResponsePageResponseCommunityMemberDtoResponseSchema, CommunityTemplateOptionsDtoResponseSchema, PageResponseCommunityMemberDtoResponseSchema } from '../generated-zod/community';
+import { ApiResponseCommunityDtoResponseSchema, ApiResponsePageResponseCommunityDtoResponseSchema, ApiResponsePageResponseCommunityMemberDtoResponseSchema, ApiResponseVoidResponseSchema, CommunityDtoRequestSchema, CommunityDtoResponseSchema, PageResponseCommunityDtoResponseSchema, PageResponseCommunityMemberDtoResponseSchema } from '../generated-zod/_shared';
+import { ApiResponseCommunityTemplateOptionsDtoResponseSchema, ApiResponseListCommunityDtoResponseSchema, CommunityTemplateOptionsDtoResponseSchema } from '../generated-zod/community';
 
 export const getCommunityOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({

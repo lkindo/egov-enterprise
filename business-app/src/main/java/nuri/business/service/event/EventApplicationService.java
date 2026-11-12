@@ -54,7 +54,10 @@ public class EventApplicationService {
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-    /** 지금 신청을 받는 행사 — 마감일(없으면 시작일)이 오늘이거나 그 뒤인 행사. 자리 수와 내 신청 상태를 함께 싣는다. */
+    /**
+     * 지금 신청을 받는 행사 — 담당자가 정한 마감일이 오늘이거나 그 뒤인 행사. 마감일이 없는 행사(기존 행사 포함)는 신청을 받지 않아
+     * 나오지 않는다. 자리 수와 내 신청 상태를 함께 싣는다.
+     */
     public Page<OpenEventDto> getOpenEvents(Pageable pageable) {
         String today = today();
         Pageable page = PageRequest.of(pageable.getPageNumber(), Math.min(Math.max(pageable.getPageSize(), 1), MAX_PAGE_SIZE),
@@ -71,14 +74,6 @@ public class EventApplicationService {
                 mine.get(event.getEvntSn()), today));
     }
 
-    public OpenEventDto getOpenEvent(Long evntSn) {
-        EventInfo event = eventInfoRepository.findById(Objects.requireNonNull(evntSn))
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        String today = today();
-        EventApplication mine = applicationRepository.findByEvntSnAndAplcntId(evntSn, currentApplicant()).orElse(null);
-        return toOpenEvent(event, applicationRepository.countSeats(evntSn), mine, today);
-    }
-
     /**
      * 참가 신청. 마감이 지났으면 409, 이미 신청·승인됐거나 반려된 신청이면 409, 정원이 찼으면 409 다. 취소한 신청은 같은 행으로
      * 다시 신청한다.
@@ -89,7 +84,7 @@ public class EventApplicationService {
         EventInfo event = lockEvent(evntSn);
         String today = today();
         if (!applicationOpen(event, today)) {
-            throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE, "신청 마감이 지난 행사입니다.");
+            throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE, "신청을 받지 않거나 신청 마감이 지난 행사입니다.");
         }
         EventApplication existing = applicationRepository.findByEvntSnAndAplcntId(evntSn, applicant).orElse(null);
         if (existing != null && existing.status() != EventApplicationStatus.CANCELLED) {
@@ -170,10 +165,10 @@ public class EventApplicationService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
-    /** 신청을 받는 마지막 날 — 마감일, 없으면 행사 시작일. 둘 다 없으면 늘 받는다. */
+    /** 담당자가 정한 마감일이 오늘이거나 그 뒤면 신청을 받는다. 마감일이 없으면 받지 않는다. */
     static boolean applicationOpen(EventInfo event, String today) {
-        String last = event.getAplyDdlnYmd() != null ? event.getAplyDdlnYmd() : event.getEvntBgngYmd();
-        return last == null || last.compareTo(today) >= 0;
+        String last = event.getAplyDdlnYmd();
+        return last != null && !last.isBlank() && last.compareTo(today) >= 0;
     }
 
     private OpenEventDto toOpenEvent(EventInfo event, long seats, EventApplication mine, String today) {

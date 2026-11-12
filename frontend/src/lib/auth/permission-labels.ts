@@ -15,12 +15,12 @@ const DOMAIN_LABELS: Readonly<Record<string, string>> = {
   USER_LOG: '사용자 활동 이력', WEB_LOG: '웹 요청 이력', WORK_RPT: '업무 보고', WORKFLOW: '워크플로우',
 };
 const ACTION_LABELS: Readonly<Record<string, string>> = {
-  ACK: '확인', ADMIN_READ: '관리 조회',
+  ACK: '확인', ADMIN_READ: '관리 조회', APPLY: '참가 신청',
   APPROVE: '승인', ASSIGN: '배정', AUDIT: '감사 이력 조회', CANCEL: '취소',
   CREATE: '등록', CREATE_ALL: '관리자 등록', DELETE: '삭제', DELETE_ALL: '타인 자료 삭제',
   DEPT: '부서 변경', DISPATCH: '알림 발송', DOWNLOAD: '다운로드', DOWNLOAD_ALL: '타인 자료 다운로드',
   EDIT: '편집', EXPORT: '내보내기', GRANT: '권한 설정', HOME_UPDATE: '업무 홈 지정', IMPORT: '가져오기', INSTRUCT: '업무 지시', JOIN: '가입',
-  LIKE: '추천', MODERATE: '관리', PASSWORD: '비밀번호 변경', PIN: '상단 고정', PUBLISH: '게시', PURGE: '파기', READ: '조회', READ_ALL: '타인 자료 포함 조회',
+  LIKE: '추천', MODERATE: '관리', OPERATE: '운영', PASSWORD: '비밀번호 변경', PIN: '상단 고정', PUBLISH: '게시', PURGE: '파기', READ: '조회', READ_ALL: '타인 자료 포함 조회',
   RECOVER: '복구', REJECT: '반려', RETRY: '재처리', SEND: '발송', STATUS: '상태 변경', SUBMIT: '제출', UPDATE: '수정',
   UPDATE_ALL: '타인 자료 수정', UPLOAD: '업로드', UPLOAD_ALL: '관리자 업로드', VOTE: '투표',
 };
