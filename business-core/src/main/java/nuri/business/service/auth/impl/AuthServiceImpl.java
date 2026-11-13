@@ -39,7 +39,7 @@ public class AuthServiceImpl implements AuthService {
     /** [W1-E2] 로그인 감사 기록. 이 배선 전까지 tb_login_log 는 영구히 비어 있었다. */
     private final nuri.business.service.log.LogService logService;
     private final nuri.business.service.auth.mfa.MfaService mfaService;
-    /** [2026-10-18] 로그아웃 시각 기록(access token 무효화 기준). */
+    /** 로그아웃 시각과 세션차수 기록(access/refresh token 무효화 기준). */
     private final nuri.business.domain.user.repository.UserRepository userRepository;
 
     /**
@@ -337,20 +337,20 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void deleteNow(nuri.business.domain.auth.RefreshToken token) {
-        refreshTokenRepository.delete(token);
-        refreshTokenRepository.flush();
+        refreshTokenRepository.deleteAllByEsntlIdIn(java.util.List.of(token.getUserId()));
     }
 
     /**
-     * [2026-10-18] 로그아웃 시각을 남겨 그 전에 발급된 access token 을 끊는다(JwtTokenProvider).
+     * 세션차수를 올려 같은 초에 발급된 토큰까지 끊고, 로그아웃 시각도 함께 남긴다(JwtTokenProvider).
      *
      * <p>종전에는 refresh token 행만 지워, 이미 받은 access token 은 로그아웃 뒤에도 만료(기본 1시간)까지 통과했다.
      * 한 사용자는 세션이 하나(재발급 토큰 행이 사용자당 하나, DEC-OPS-158)이므로 그 사용자의 모든 access token 을 끊는다.
-     * 시각은 토큰을 서명하는 이 애플리케이션의 시계로 남긴다 — DB 시계로 남기면 두 시계의 차이만큼 로그아웃 직후
+     * 차수 증가와 시각 기록은 로그아웃의 같은 트랜잭션에서 커밋한다. 시각은 토큰을 서명하는 이 애플리케이션의 시계로 남긴다 — DB 시계로 남기면 두 시계의 차이만큼 로그아웃 직후
      * 다시 받은 토큰까지 거부될 수 있다. 신원(쿠키의 재발급 토큰 또는 인증 주체)이 확인된 사용자에게만 기록한다.
      */
     private void recordLogout(String esntlId) {
         if (esntlId != null && !esntlId.isBlank()) {
+            userRepository.advanceSessionCycle(java.util.List.of(esntlId));
             userRepository.recordLogout(esntlId, java.time.LocalDateTime.now());
         }
     }

@@ -22,6 +22,7 @@ sequenceDiagram
 
 ### 1.1 쿠키 세션 & 헤더 바인딩 핵심 메커니즘
 
+- 일반 로그아웃은 확인된 사용자(`esntlId`)의 refresh token을 지우고 같은 트랜잭션에서 세션차수(`ssn_cycl`)를 올린다. 이전 차수의 access/refresh token은 발급 시각이 로그아웃과 같은 초여도 거부되며, 새 로그인은 현재 차수로 발급한다. 인증 주체가 없으면 저장된 refresh token의 해시와 일치한 소유자만 무효화한다. 브라우저 쿠키 정리와 서버 세션 폐기는 각각 확인한다.
 - 로그인·갱신 BFF는 `accessToken`을 HttpOnly·SameSite=Strict로 설정한다. 브라우저 응답에는 access/refresh 토큰을 노출하지 않는다. Secure의 환경별 판정은 [ADR-0010](../02-architecture/decisions/ADR-0010-frontend-session-cookie-secure-policy.md)이 소유한다.
 - 일반 API는 동일 출처 proxy 또는 서버 코드가 쿠키를 Bearer 헤더로 중개한다. API에서 임의 쿠키를 인증으로 인정하는 전역 fallback은 없다. [proxy 원본](../../frontend/src/proxy.ts)과 [JWT 필터](../../foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java)를 함께 확인한다.
 - SockJS는 [WebSocketCookieAuthenticationFilter](../../api-server/src/main/java/nuri/config/websocket/WebSocketCookieAuthenticationFilter.java)의 정확한 HTTP transport 범위에서만 access 쿠키를 검증한다. 데이터 transport에는 허용 목록의 Origin이 필수다. 동일 출처 `/ws/info`·welcome GET은 Origin을 생략할 수 있어 별도 metadata 경계를 두지만 유효 자격증명은 계속 필요하다. 브라우저 JavaScript에 JWT를 넘겨 CONNECT 헤더를 만드는 방식은 사용하지 않는다.
