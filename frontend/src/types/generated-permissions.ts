@@ -66,6 +66,7 @@ export const PERMISSION_CODES = [
   "COMMUNITY_CREATE_ALL",
   "COMMUNITY_DELETE_ALL",
   "COMMUNITY_JOIN",
+  "COMMUNITY_OPERATE",
   "COMMUNITY_READ",
   "COMMUNITY_READ_ALL",
   "COMMUNITY_REJECT",
@@ -86,6 +87,7 @@ export const PERMISSION_CODES = [
   "DEPT_JOB_UPDATE_ALL",
   "DEPT_READ",
   "DEPT_UPDATE",
+  "EVENT_APPLY",
   "EVENT_CREATE",
   "EVENT_DELETE",
   "EVENT_DELETE_ALL",
@@ -237,7 +239,7 @@ export const PERMISSION_CODES = [
   "BOARD_PIN"
 ] as const;
 export type PermissionCode = (typeof PERMISSION_CODES)[number];
-export const PERMISSION_CATALOG_VERSION = "417857fb70b8cfb9c5988776d924121d18be5dc5802a2dedc6d3016b238c14bb";
+export const PERMISSION_CATALOG_VERSION = "3037cb41c240f741e7b158702323678b5fda8763eeb0094e6d140eeb8912313e";
 export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]>> = {
   "/": [],
   "/admin": [
@@ -499,6 +501,9 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
   "/cop/cmy/selectCommunityList": [],
   "/cop/sms/selectSmsList": [
     "SMS_READ"
+  ],
+  "/events": [
+    "EVENT_APPLY"
   ],
   "/help": [],
   "/help/policies/[type]": [],

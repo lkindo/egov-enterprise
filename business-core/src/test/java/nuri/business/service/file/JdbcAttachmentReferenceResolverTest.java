@@ -79,6 +79,9 @@ class JdbcAttachmentReferenceResolverTest {
                         when(rs.getString("ognz_id")).thenReturn("DEPT1");
                         when(rs.getBoolean("published")).thenReturn(counts.sharedCnt()>0);
                         when(rs.getString("pic_id")).thenReturn(counts.ownerCnt()>0?ESNTL_ID:"other-id");
+                        // [V2_151] 약식결재 문서·차수 이력·임시저장: 기안자(esntlId)가 소유, 결재선·참조·대결은 열람 전용 당사자다.
+                        when(rs.getString("aplcnt_id")).thenReturn(counts.ownerCnt()>0?ESNTL_ID:"other-id");
+                        when(rs.getInt("line_flag")).thenReturn(counts.readerCnt()>0?1:0);
                         when(rs.getString("dept_id")).thenReturn(counts.sharedCnt()>0?"DEPT1":"DEPT2");
                         when(rs.getString("rflt_yn")).thenReturn(counts.sharedCnt()>0?"Y":"N");
                         when(rs.getString("ntce_yn")).thenReturn(counts.sharedCnt()>0?"Y":"N");
@@ -411,7 +414,9 @@ class JdbcAttachmentReferenceResolverTest {
         for (String sql : jdbc.sqls) {
             if (!sql.contains("FROM tb_bbs_item ") && !sql.contains("FROM tb_schdl_info ")
                     && !sql.contains("FROM tb_cms_conts_file ") && !sql.contains("FROM tb_dept_task_info ")
-                    && !sql.contains("FROM tb_popup_info ") && !sql.contains("FROM tb_bnr_info ")) {
+                    && !sql.contains("FROM tb_popup_info ") && !sql.contains("FROM tb_bnr_info ")
+                    && !sql.contains("FROM tb_ifml_atrz_info ") && !sql.contains("FROM tb_ifml_atrz_hstry ")
+                    && !sql.contains("FROM tb_ifml_atrz_tmpr_strg ")) {
                 assertThat(sql).contains("COUNT(*) AS ref_cnt");
             }
         }
@@ -421,6 +426,9 @@ class JdbcAttachmentReferenceResolverTest {
         assertThat(jdbc.sqlFor(AttachmentSource.SCHEDULE))
                 .contains("u.user_id = ?", "WHERE s.atch_file_sn = ?");
         assertThat(jdbc.sqlFor(AttachmentSource.CMS_PAGE)).contains("WHERE f.atch_file_sn = ?");
+        assertThat(jdbc.sqlFor(AttachmentSource.APPROVAL)).contains("WHERE s.atch_file_sn = ?");
+        assertThat(jdbc.sqlFor(AttachmentSource.APPROVAL_REVISION)).contains("WHERE h.atch_file_sn = ?");
+        assertThat(jdbc.sqlFor(AttachmentSource.APPROVAL_DRAFT)).contains("WHERE atch_file_sn = ?");
         // 팝업만 연결 방식이 다르다 — URL 문자열 정확 일치.
         assertThat(jdbc.sqlFor(AttachmentSource.POPUP))
                 .contains("WHERE (file_url = ? OR file_url = ?)");

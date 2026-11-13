@@ -122,5 +122,25 @@ public class InformalSanctionDto {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Schema(description = "지금 차례인 결재자가 참조자를 더할 수 있는가", accessMode = Schema.AccessMode.READ_ONLY)
     private boolean canAddReference;
+
+    /**
+     * [V2_151] 보는 차수의 첨부 묶음. 지금 차수면 문서의 묶음, 앞 차수만 보는 결재자면 그 차수 이력의 묶음이다. 첨부 열람은
+     * 파일 API 가 본문 상세와 같은 조건(기안자·그 차수 결재선·참조자·유효한 대리결재자)으로 판정한다.
+     */
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(description = "보는 차수의 첨부파일 일련번호(없으면 null)", accessMode = Schema.AccessMode.READ_ONLY)
+    private Long atchFileSn;
+
+    /**
+     * [V2_151] 보는 사람이 대리결재자로서 결정할 수 있는 원결재자(esntlId) — 지금 차례인 줄의 원결재자가 오늘 부재 기간에 이 사람에게
+     * 결재를 맡겼을 때만 있다. 화면은 '○○ 대신 결재' 를 이 값으로 말하고, 결정 요청의 onBehalfOf 로 돌려보낸다.
+     */
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(description = "대리결재로 결정할 수 있는 원결재자 esntlId(대리결재자에게만)", accessMode = Schema.AccessMode.READ_ONLY)
+    private String onBehalfOfId;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(description = "대리결재로 결정할 수 있는 원결재자 이름", accessMode = Schema.AccessMode.READ_ONLY)
+    private String onBehalfOfNm;
 }
 

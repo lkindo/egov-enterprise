@@ -79,6 +79,8 @@ class ApprovalTemporaryDraftServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private ApprovalLineAssistService lineAssistService;
     @Mock private InformalSanctionService informalSanctionService;
+    /** [V2_151] 첨부 할당·수거 — 없으면 @InjectMocks 가 null 을 넣어 저장·삭제 경로가 NPE 로 끝난다. */
+    @org.mockito.Mock private nuri.business.service.file.AttachmentAssignmentPolicy attachmentAssignmentPolicy;
     @InjectMocks private ApprovalTemporaryDraftService service;
     private MockedStatic<SecurityUtil> security;
 

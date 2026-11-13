@@ -40,6 +40,9 @@ import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/app/components/ui/toast';
 import { AbsenceBadge } from '@/app/components/ui/absence-badge';
+import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
+import { fileService } from '@/services/foundation/file/FileService';
+import { ApprovalAttachmentList } from './ApprovalAttachmentList';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { getTodayYmd } from '@/lib/date/today-ymd';
 import { canPermission } from '@/lib/auth/permissions';
@@ -137,6 +140,14 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
     [resubmission, latestDocument],
   );
   const [expectedVersion, setExpectedVersion] = useState(resubmission?.version);
+  /*
+   * [V2_151] 첨부. 붙인 묶음(재상신은 지금 차수의 묶음, 이어 쓰기는 임시저장의 묶음)과 아직 올리지 않은 새 파일을 따로 둔다. 새 파일은
+   * 임시저장·상신할 때 한 번에 올려 새 묶음이 되고, 붙인 묶음을 대신한다 — 상신한 뒤에는 결재가 끝날 때까지 첨부를 바꿀 수 없다.
+   * 복제(template)는 원 문서의 첨부를 가져오지 않는다(남의 문서 묶음을 새 문서에 붙이지 않는다).
+   */
+  const [attachment, setAttachment] = useState<number | undefined>(() => resubmission?.atchFileSn ?? undefined);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [uploaderKey, setUploaderKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [edited, setEdited] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -164,6 +175,8 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
   const canSaveTemporary = !resubmission && canPermission(user, 'APPROVAL_CREATE');
   // [2026-10-16 D2] 나의 결재선 — 저장·불러오기 API 가 기안 권한을 요구한다. 재상신에서도 결재선을 다시 지정하므로 쓴다.
   const canUseSavedLines = canPermission(user, 'APPROVAL_CREATE');
+  // [V2_151] 첨부는 파일 올리기 권한(FILE_UPLOAD)이 있을 때만 고를 수 있다 — 없으면 이미 붙은 첨부만 보인다(표시 판정, 서버가 다시 본다).
+  const canUploadFiles = canPermission(user, 'FILE_UPLOAD');
   // 복제 기안 창에도 둔다. 상한(20건) 안내와 409(C014) 문구가 이 목록을 가리키므로, 없으면 창을 닫아야 지울 수 있다.
   const showsTemporaryList = canSaveTemporary;
   // 이 창이 이어 쓰는 임시저장(번호·읽은 버전). 저장하면 받은 버전으로, 상신하면 서버가 이 버전과 함께 지운다.
@@ -219,6 +232,13 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
   const emptyStageCount = stages.filter(stage => stage.users.length === 0).length;
   const lineStarted = step > 0 || stages.length > 1 || totalApprovers > 0;
   const touch = () => { setEdited(true); if (!needsReview && !temporaryConflict) setServerError(''); };
+  /** 새로 고른 파일이 있으면 한 번 올려 새 묶음으로 쓰고(다시 시도할 때 또 올리지 않는다), 없으면 붙인 묶음을 그대로 쓴다. */
+  const resolveAttachment = async (): Promise<number | undefined> => {
+    if (pendingFiles.length === 0) return attachment;
+    const uploaded = await fileService.uploadFiles(pendingFiles);
+    setAttachment(uploaded); setPendingFiles([]); setUploaderKey(key => key + 1);
+    return uploaded;
+  };
   const focusAfterRender = (target: () => HTMLElement | null | undefined) => {
     const origin = document.activeElement;
     requestAnimationFrame(() => {
@@ -412,8 +432,9 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
   const handleSaveTemporary = async () => {
     if (pendingRef.current || !canSaveTemporary || temporaryConflict) return;
     const savedStages = stages.filter(stage => stage.users.length > 0);
-    if (!(taskChosen && effectiveTask) && !docTtl.trim() && !docCn.trim() && savedStages.length === 0 && referees.length === 0) {
-      setServerError('저장할 내용이 없습니다. 업무 구분·제목·본문·결재선·참조자 중 하나는 채워 주세요.');
+    if (!(taskChosen && effectiveTask) && !docTtl.trim() && !docCn.trim() && savedStages.length === 0 && referees.length === 0
+      && attachment === undefined && pendingFiles.length === 0) {
+      setServerError('저장할 내용이 없습니다. 업무 구분·제목·본문·결재선·참조자·첨부 중 하나는 채워 주세요.');
       return;
     }
     const droppedStages = lineStarted ? stages.length - savedStages.length : 0;
@@ -429,7 +450,15 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
     };
     pendingRef.current = true; setSavingTemporary(true); setServerError('');
     try {
-      const saved = await saveTemporaryMutation.mutateAsync(payload);
+      // 고른 파일은 잠금을 쥔 이 처리기 안에서 한 번 올린다 — 다시 누르면 같은 파일을 두 번 올리지 않는다.
+      let atchFileSn = attachment;
+      if (pendingFiles.length > 0) {
+        atchFileSn = await fileService.uploadFiles(pendingFiles);
+        setAttachment(atchFileSn); setPendingFiles([]); setUploaderKey(key => key + 1);
+      }
+      const saved = await saveTemporaryMutation.mutateAsync({
+        ...payload, request: { ...payload.request, ...(atchFileSn ? { atchFileSn } : {}) },
+      });
       setTemporaryDraft({ temporaryDraftSn: saved.temporaryDraftSn, version: saved.version });
       // 신청일은 임시저장하지 않는다(이어 쓰면 오늘로 시작한다). 오늘이 아닌 신청일은 저장되지 않은 변경이므로 닫을 때 계속 묻는다.
       const unsavedDate = reqYmd !== getTodayYmd();
@@ -477,6 +506,7 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
     setReqYmd(getTodayYmd());
     setStages(nextStages.length > 0 ? nextStages : [{ key: nextKey.current++, kind: 'APPROVAL', users: [] }]);
     setReferees(nextReferees);
+    setAttachment(draft.atchFileSn ?? undefined); setPendingFiles([]); setUploaderKey(key => key + 1);
     setTemporaryDraft({ temporaryDraftSn: draft.temporaryDraftSn, version: draft.version });
     contentValidation.setFormErrors({}, false); draftValidation.setFormErrors({}, false);
     precheckRef.current += 1; setChecked([]); setBlockedMessage(''); setRefereeBlockedMessage(''); setPickerStage(null); setRefereePickerOpen(false);
@@ -599,8 +629,12 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
           setServerError('현재 문서 번호와 버전을 확인할 수 없습니다. 입력은 유지됩니다. 최신 문서를 확인해 주세요.');
           return;
         }
-        id = await resubmitMutation.mutateAsync({ ifmlAtrzSn: originalId, request: { ...request, version } });
-      } else id = await createMutation.mutateAsync({ request, temporaryDraft });
+        const atchFileSn = await resolveAttachment();
+        id = await resubmitMutation.mutateAsync({ ifmlAtrzSn: originalId, request: { ...request, version, ...(atchFileSn ? { atchFileSn } : {}) } });
+      } else {
+        const atchFileSn = await resolveAttachment();
+        id = await createMutation.mutateAsync({ request: { ...request, ...(atchFileSn ? { atchFileSn } : {}) }, temporaryDraft });
+      }
       setEdited(false);
       submittedRef.current = true;
       rememberTask(user?.esntlId, request.taskSeCd);
@@ -686,6 +720,17 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
             ) : null)}
             <div className="space-y-2"><label htmlFor="approval-draft-title" className="text-sm font-semibold">제목 (필수)</label><Input id="approval-draft-title" {...contentValidation.fieldProps('docTtl')} value={docTtl} maxLength={256} onChange={event => { touch(); contentValidation.clearError('docTtl'); setDocTtl(event.target.value); }} placeholder="결재할 내용을 한 문장으로 적어 주세요" />{fieldError('docTtl')}</div>
             <div className="space-y-2"><label htmlFor="approval-draft-content" className="text-sm font-semibold">본문 (선택)</label><textarea id="approval-draft-content" {...contentValidation.fieldProps('docCn')} value={docCn} maxLength={4000} rows={6} onChange={event => { touch(); contentValidation.clearError('docCn'); setDocCn(event.target.value); }} className="w-full rounded-md border border-input bg-background p-3 text-sm focus-visible:outline-2 focus-visible:outline-ring" /><p className="text-xs text-muted-foreground">검토에 필요한 배경과 요청 사항을 적어 주세요. {docCn.length}/4000자</p>{fieldError('docCn')}{taskTemplate && docCn.trim() !== taskTemplate && <Button type="button" variant="outline" size="sm" onClick={() => { touch(); setDocCn(current => current.trim() ? `${current}\n\n${taskTemplate}` : taskTemplate); setNotice('업무 구분의 본문 양식을 넣었습니다.'); }}><FileText aria-hidden="true" /> 업무 양식 넣기</Button>}</div>
+            <div className="space-y-2">
+              <p className="text-sm font-semibold">첨부 파일 (선택)</p>
+              {attachment !== undefined && <>
+                <ApprovalAttachmentList atchFileSn={attachment} label="붙인 첨부 파일" />
+                <Button type="button" variant="outline" size="sm" onClick={() => { touch(); setAttachment(undefined); }}>첨부 빼기</Button>
+              </>}
+              {canUploadFiles ? <>
+                <StandardFileUploader key={uploaderKey} onFilesChange={files => { touch(); setPendingFiles(files); }} />
+                <p className="text-xs text-muted-foreground">{attachment !== undefined ? '새 파일을 고르면 붙인 첨부 대신 새 파일로 바뀝니다. ' : ''}상신하면 결재가 끝날 때까지 첨부를 바꾸거나 지울 수 없습니다.{resubmission ? ' 앞 차수의 첨부는 그 차수 이력에 남습니다.' : ''}</p>
+              </> : <p className="text-xs text-muted-foreground">파일을 올릴 권한이 없어 첨부를 고를 수 없습니다.</p>}
+            </div>
             <div className="space-y-2">
               <label htmlFor="approval-draft-task-type" className="text-sm font-semibold">업무 구분 (필수)</label>
               {taskTypes.isLoading ? <p role="status" className="text-sm text-muted-foreground">업무 구분을 불러오는 중입니다.</p>

@@ -1400,6 +1400,13 @@
   },
   {
     "method": "POST",
+    "path": "/api/v1/admin/system/users/{userId}/logout",
+    "handler": "nuri.api.controller.UserApiController#forceLogout",
+    "access": "PERMISSION",
+    "permission": "USER_STATUS"
+  },
+  {
+    "method": "POST",
     "path": "/api/v1/approvals",
     "handler": "nuri.api.controller.business.approval.ApprovalApiController#createApproval",
     "access": "PERMISSION",
@@ -3168,5 +3175,89 @@
     "handler": "nuri.api.controller.business.cms.CmsPageApiController#getHomeIntro",
     "access": "AUTHENTICATED",
     "permission": null
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/communities/{cmntySn}/operator/members",
+    "handler": "nuri.api.controller.business.community.CommunityOperatorApiController#getOperatorMembers",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_OPERATE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/communities/{cmntySn}/operator/members/{userId}/approval",
+    "handler": "nuri.api.controller.business.community.CommunityOperatorApiController#approveOperatorMember",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_OPERATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/communities/{cmntySn}/operator/members/{userId}/request",
+    "handler": "nuri.api.controller.business.community.CommunityOperatorApiController#rejectOperatorMember",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_OPERATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/communities/{cmntySn}/operator/members/{userId}",
+    "handler": "nuri.api.controller.business.community.CommunityOperatorApiController#withdrawOperatorMember",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_OPERATE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/communities/{cmntySn}/operator/members/{userId}/manager",
+    "handler": "nuri.api.controller.business.community.CommunityOperatorApiController#designateOperator",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_OPERATE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/communities/{cmntySn}/operator/profile",
+    "handler": "nuri.api.controller.business.community.CommunityOperatorApiController#updateOperatorProfile",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_OPERATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/events",
+    "handler": "nuri.api.controller.business.operation.EventParticipationApiController#getOpenEvents",
+    "access": "PERMISSION",
+    "permission": "EVENT_APPLY"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/events/{evntSn}/applications",
+    "handler": "nuri.api.controller.business.operation.EventParticipationApiController#applyForEvent",
+    "access": "PERMISSION",
+    "permission": "EVENT_APPLY"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/events/{evntSn}/applications/me",
+    "handler": "nuri.api.controller.business.operation.EventParticipationApiController#cancelEventApplication",
+    "access": "PERMISSION",
+    "permission": "EVENT_APPLY"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/operation/events/{evntSn}/applications",
+    "handler": "nuri.api.controller.business.operation.EventApplicationAdminApiController#getEventApplications",
+    "access": "PERMISSION",
+    "permission": "EVENT_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/operation/events/{evntSn}/applications/{evntAplySn}/approval",
+    "handler": "nuri.api.controller.business.operation.EventApplicationAdminApiController#approveEventApplication",
+    "access": "PERMISSION",
+    "permission": "EVENT_UPDATE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/operation/events/{evntSn}/applications/{evntAplySn}/rejection",
+    "handler": "nuri.api.controller.business.operation.EventApplicationAdminApiController#rejectEventApplication",
+    "access": "PERMISSION",
+    "permission": "EVENT_UPDATE"
   }
 ]

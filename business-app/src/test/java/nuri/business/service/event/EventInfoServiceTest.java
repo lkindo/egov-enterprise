@@ -53,6 +53,9 @@ class EventInfoServiceTest {
     @Mock
     private nuri.business.domain.event.ExternalHrRepository externalHrRepository;
 
+    @Mock
+    private nuri.business.domain.event.EventApplicationRepository eventApplicationRepository;
+
     @BeforeEach
     @AfterEach
     void clearAuthentication() {
@@ -144,6 +147,55 @@ class EventInfoServiceTest {
         assertThat(existing.getEvntAprvYn()).isNull();
         assertThat(existing.getEvntAprvYmd()).isNull();
         assertThat(existing.getEvntNm()).isEqualTo("정정");
+    }
+
+    @Test
+    @DisplayName("[V2_152] 신청 정원·마감일을 저장하고, 마감일이 행사 종료일보다 늦으면 400 이며 저장하지 않는다")
+    void capacityAndDeadlineAreSavedAndValidated() {
+        authenticate(List.of("EVENT_CREATE", "EVENT_UPDATE"), List.of());
+        given(eventInfoRepository.save(any(EventInfo.class))).willAnswer(invocation -> invocation.getArgument(0));
+        eventInfoService.createEvent("writer", EventInfoDto.builder().evntNm("워크숍").evntBgngYmd("20261201")
+                .evntEndYmd("20261202").pscpNope(40).aplyDdlnYmd("2026-11-30").build());
+        var saved = org.mockito.ArgumentCaptor.forClass(EventInfo.class);
+        verify(eventInfoRepository).save(saved.capture());
+        assertThat(saved.getValue().getPscpNope()).isEqualTo(40);
+        assertThat(saved.getValue().getAplyDdlnYmd()).isEqualTo("20261130");
+
+        BusinessException late = assertThrows(BusinessException.class, () -> eventInfoService.createEvent("writer",
+                EventInfoDto.builder().evntNm("늦은 마감").evntEndYmd("20261202").aplyDdlnYmd("20261203").build()));
+        assertThat(late.getErrorCode()).isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+        verify(eventInfoRepository, times(1)).save(any(EventInfo.class));
+    }
+
+    @Test
+    @DisplayName("[V2_152] 정원을 이미 자리를 차지한 신청 수보다 작게 줄이면 400 — 같거나 크면 바꾼다")
+    void capacityCannotDropBelowOccupiedSeats() {
+        authenticate(List.of("EVENT_UPDATE"), List.of());
+        EventInfo existing = EventInfo.builder().evntSn(1L).evntNm("워크숍").pscpNope(10).build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
+        given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existing));
+        given(eventApplicationRepository.countSeats(1L)).willReturn(5L);
+
+        BusinessException shrink = assertThrows(BusinessException.class, () -> eventInfoService.updateEvent(1L, "writer",
+                EventInfoDto.builder().evntNm("워크숍").pscpNope(4).version(0).build()));
+        assertThat(shrink.getErrorCode()).isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThat(existing.getPscpNope()).isEqualTo(10);
+
+        eventInfoService.updateEvent(1L, "writer", EventInfoDto.builder().evntNm("워크숍").pscpNope(5).version(0).build());
+        assertThat(existing.getPscpNope()).isEqualTo(5);
+    }
+
+    @Test
+    @DisplayName("[V2_152] 승인 대기·승인 신청이 남은 행사는 지우지 않는다(409) — 신청이 행사와 함께 조용히 사라지지 않게")
+    void eventWithOccupiedSeatsIsNotDeleted() {
+        authenticate(List.of("EVENT_DELETE"), List.of());
+        EventInfo existing = EventInfo.builder().evntSn(1L).evntNm("워크숍").build();
+        given(eventInfoRepository.findById(1L)).willReturn(Optional.of(existing));
+        given(eventApplicationRepository.countSeats(1L)).willReturn(2L);
+
+        BusinessException inUse = assertThrows(BusinessException.class, () -> eventInfoService.deleteEvent(1L));
+        assertThat(inUse.getErrorCode()).isEqualTo(CommonErrorCode.RESOURCE_IN_USE);
+        verify(eventInfoRepository, org.mockito.Mockito.never()).delete(any(EventInfo.class));
     }
 
     @Test

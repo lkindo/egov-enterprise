@@ -751,6 +751,36 @@ class UserServiceTest {
             verify(user).unlockAccount();
             // 관리자 초기화도 이전 자격으로 발급된 refresh token 을 남기지 않는다.
             verify(refreshTokenRepository).deleteAllByEsntlIdIn(List.of("USR_ESNTL_1"));
+            // [V2_153] 이미 발급된 access token 도 세션차수를 올려 끊는다.
+            verify(userRepository).advanceSessionCycle(List.of("USR_ESNTL_1"));
+        }
+    }
+
+    @Test
+    @DisplayName("[V2_153] 강제 로그아웃은 USER_STATUS 권한자만 하고, 세션차수를 올리고 refresh token 을 지우며 민감 감사에 남긴다")
+    void forceLogoutRevokesEverySessionOfTheTarget() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+            User user = User.builder().userId("user1").esntlId("USR_ESNTL_1").userNm("대상").pswd("{bcrypt}x").build();
+            given(userRepository.findByUserId("user1")).willReturn(Optional.of(user));
+
+            userService.forceLogout("user1");
+
+            var order = org.mockito.Mockito.inOrder(authorizationAdministration, userRepository, refreshTokenRepository, sensitiveAudit);
+            order.verify(authorizationAdministration).lockAndAuthorize("USER_STATUS");
+            order.verify(authorizationAdministration).authorizeProtectedAccountChange("USR_ESNTL_1");
+            order.verify(userRepository).advanceSessionCycle(List.of("USR_ESNTL_1"));
+            order.verify(refreshTokenRepository).deleteAllByEsntlIdIn(List.of("USR_ESNTL_1"));
+            order.verify(sensitiveAudit).recordMutation("ADMIN_FORCE_LOGOUT", "USR_ESNTL_1");
+            assertEquals("{bcrypt}x", user.getPswd());
+
+            org.mockito.Mockito.clearInvocations(userRepository);
+            org.mockito.Mockito.clearInvocations(refreshTokenRepository);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_USER"));
+            assertThrows(BusinessException.class, () -> userService.forceLogout("user1"));
+            verify(userRepository, never()).advanceSessionCycle(any());
         }
     }
 

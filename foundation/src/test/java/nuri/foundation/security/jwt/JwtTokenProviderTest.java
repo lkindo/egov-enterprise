@@ -380,6 +380,61 @@ class JwtTokenProviderTest {
         }
     }
 
+    /**
+     * [V2_153] 세션차수. 토큰은 발급 때의 차수를 담고, 사용자의 현재 차수와 다르면 거부한다 — 비밀번호 변경·잠금·권한 그룹 회수·강제
+     * 로그아웃이 차수를 올린다. 차수를 담지 않은 이전 토큰은 0 으로 읽어 배포 직후 기존 세션을 끊지 않는다.
+     */
+    @Nested
+    @DisplayName("세션차수가 바뀐 토큰 거부")
+    class SessionCycle {
+        private void currentCycle(Integer cycle) {
+            when(userDetailsService.loadUserByUsername("subject")).thenReturn(
+                    nuri.foundation.security.service.CustomUserDetails.builder()
+                            .esntlId("subject").enabled(true).lockAt("N").sessionCycle(cycle).build());
+        }
+
+        @Test
+        @DisplayName("🚨 차수가 오른 뒤에는 그 전에 발급된 access token 을 거부한다(401 경로)")
+        void rejectsAccessTokenIssuedBeforeRevocation() {
+            String token = jwtTokenProvider.createAccessToken("subject", "ROLE_USER", null, null, 3);
+            currentCycle(4);
+
+            var rejected = assertThrows(org.springframework.security.authentication.CredentialsExpiredException.class,
+                    () -> jwtTokenProvider.getAuthentication(token));
+            assertThat(rejected.getMessage()).contains("revoked");
+        }
+
+        @Test
+        @DisplayName("차수가 같으면 통과하고, 토큰의 차수를 그대로 읽는다(access·refresh)")
+        void acceptsMatchingCycle() {
+            currentCycle(3);
+            assertThat(jwtTokenProvider.getAuthentication(
+                    jwtTokenProvider.createAccessToken("subject", "ROLE_USER", null, null, 3))).isNotNull();
+            assertThat(jwtTokenProvider.getSessionCycle(jwtTokenProvider.createRefreshToken("subject", null, null, 3)))
+                    .isEqualTo(3);
+        }
+
+        @Test
+        @DisplayName("차수를 담지 않은 이전 토큰은 0 이다 — 한 번도 끊지 않은 계정의 기존 세션은 이어지고, 끊은 계정은 거부한다")
+        void tokenWithoutCycleReadsAsZero() {
+            String legacy = jwtTokenProvider.createAccessToken("subject", "ROLE_USER");
+            assertThat(jwtTokenProvider.getSessionCycle(legacy)).isZero();
+            currentCycle(0);
+            assertThat(jwtTokenProvider.getAuthentication(legacy)).isNotNull();
+            currentCycle(1);
+            assertThrows(org.springframework.security.authentication.CredentialsExpiredException.class,
+                    () -> jwtTokenProvider.getAuthentication(legacy));
+        }
+
+        @Test
+        @DisplayName("현재 차수를 모르는 주체(차수를 읽지 않는 어댑터)는 이 기준으로 거부하지 않는다")
+        void unknownCurrentCycleDoesNotReject() {
+            currentCycle(null);
+            assertThat(jwtTokenProvider.getAuthentication(
+                    jwtTokenProvider.createAccessToken("subject", "ROLE_USER", null, null, 9))).isNotNull();
+        }
+    }
+
     @Test
     @DisplayName("잘못된 형식 토큰 검증 실패 (Malformed)")
     void validateToken_Malformed_fail() {

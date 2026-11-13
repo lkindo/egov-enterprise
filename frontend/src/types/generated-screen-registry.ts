@@ -1143,7 +1143,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "permissions": [
       {"code":"APPROVAL_APPROVE","action":"APPROVE","source":"write"},
       {"code":"APPROVAL_CANCEL","action":"CANCEL","source":"write"},
-      {"code":"APPROVAL_CREATE","action":"CREATE","source":"write"}
+      {"code":"APPROVAL_CREATE","action":"CREATE","source":"write"},
+      {"code":"FILE_UPLOAD","action":"UPLOAD","source":"write"}
     ]
   },
   {
@@ -1155,7 +1156,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
-      {"code":"APPROVAL_CREATE","action":"CREATE","source":"write"}
+      {"code":"APPROVAL_CREATE","action":"CREATE","source":"write"},
+      {"code":"FILE_UPLOAD","action":"UPLOAD","source":"write"}
     ]
   },
   {
@@ -1168,7 +1170,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"BOARD_READ_ALL","action":"READ_ALL","source":"display"},
-      {"code":"COMMUNITY_JOIN","action":"JOIN","source":"write"}
+      {"code":"COMMUNITY_JOIN","action":"JOIN","source":"write"},
+      {"code":"COMMUNITY_OPERATE","action":"OPERATE","source":"write"}
     ]
   },
   {
@@ -1180,6 +1183,18 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": []
+  },
+  {
+    "route": "/events",
+    "label": "행사 참가",
+    "labelSource": "menu",
+    "shellAccess": "admin-system",
+    "dynamic": false,
+    "demo": false,
+    "entry": {"permissions":["EVENT_APPLY"],"mode":"ANY"},
+    "permissions": [
+      {"code":"EVENT_APPLY","action":"APPLY","source":"entry"}
+    ]
   },
   {
     "route": "/help",
@@ -1316,7 +1331,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "permissions": [
       {"code":"SCHEDULE_CREATE","action":"CREATE","source":"write"},
       {"code":"SCHEDULE_DELETE","action":"DELETE","source":"write"},
-      {"code":"SCHEDULE_UPDATE","action":"UPDATE","source":"write"}
+      {"code":"SCHEDULE_UPDATE","action":"UPDATE","source":"write"},
+      {"code":"SCHEDULE_UPDATE_ALL","action":"UPDATE_ALL","source":"display"}
     ]
   },
   {
@@ -1462,6 +1478,7 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "COMMENT_READ",
       "COMMENT_UPDATE",
       "COMMUNITY_JOIN",
+      "COMMUNITY_OPERATE",
       "COMMUNITY_READ",
       "DASHBOARD_READ",
       "DEPT_BOX_READ",
@@ -1469,6 +1486,7 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "DEPT_JOB_DELETE",
       "DEPT_JOB_READ",
       "DEPT_JOB_UPDATE",
+      "EVENT_APPLY",
       "FILE_DELETE",
       "FILE_DOWNLOAD",
       "FILE_READ",
@@ -1513,7 +1531,8 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
     ],
     "screens": [
       "/admin/notifications",
-      "/admin/operation/memo-reports"
+      "/admin/operation/memo-reports",
+      "/events"
     ],
     "relatedScreens": [
       "/admin/collaboration",
@@ -1771,7 +1790,10 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/system/hpcm",
       "/admin/uss/olh/online-manual"
     ],
-    "relatedScreens": []
+    "relatedScreens": [
+      "/approvals",
+      "/approvals/draft"
+    ]
   },
   {
     "id": "content-pages",
@@ -1788,7 +1810,10 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
     "screens": [
       "/admin/system/content-pages"
     ],
-    "relatedScreens": []
+    "relatedScreens": [
+      "/approvals",
+      "/approvals/draft"
+    ]
   },
   {
     "id": "content-page-writing",
@@ -1803,7 +1828,10 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
     "screens": [
       "/admin/system/content-pages"
     ],
-    "relatedScreens": []
+    "relatedScreens": [
+      "/approvals",
+      "/approvals/draft"
+    ]
   },
   {
     "id": "messaging-operations",

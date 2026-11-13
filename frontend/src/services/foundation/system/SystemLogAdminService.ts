@@ -74,9 +74,17 @@ class SystemLogAdminService extends ApiService {
   /**
    * 로그인 로그 목록 조회
    */
-  async getLoginLogs(params: { page?: number; size?: number; searchWrd?: string } | SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<LoginLog>> {
+  /**
+   * 로그인 로그 목록. [Wave 4 GAP-UI-001] `sortDir` 을 주면 접속일시(sortBy=crtDt)로 서버가 목록 전체를 정렬한다 — 주지 않으면
+   * 최신순이다. 다른 로그 목록은 서버 정렬을 받지 않는다.
+   */
+  async getLoginLogs(
+    params: ({ page?: number; size?: number; searchWrd?: string } | SearchParams) & { sortDir?: 'asc' | 'desc' },
+    config?: AxiosRequestConfig,
+  ): Promise<PageResponse<LoginLog>> {
+    const { sortDir, ...search } = params;
     const response = await this.executeGenerated(getLoginLogListOperation, {
-      query: normalizeLogSearchParams(params),
+      query: { ...normalizeLogSearchParams(search), ...(sortDir ? { sortBy: 'crtDt', sortDir } : {}) },
       config,
     });
     return requirePageResponse<LoginLog>(response, '로그');

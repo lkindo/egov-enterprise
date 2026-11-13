@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-navigation-disposition.schema.json",
   "manifestRef": {
     "path": "config/ui-route-capabilities.json",
-    "sha256": "1c9635e3ec0c92c6835ad38af52d9f711222af7fa7125ed0e3d2b3ff3c588b8b"
+    "sha256": "c690bbbb07bb3ab691c375482970b1cc154227b612543c502a480241e113bca6"
   },
   "provisionalDirection": {
     "status": "accepted-provisional-direction",
@@ -4360,6 +4360,24 @@
             "자동 리다이렉트라 자체 이용자 표면이 없다 — 처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다"
           ]
         }
+      }
+    },
+    {
+      "route": "/events",
+      "reviewState": "proposed",
+      "disposition": "retain-canonical",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-12-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
       }
     },
     {

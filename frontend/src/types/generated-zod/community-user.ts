@@ -21,6 +21,7 @@ export const CommunityMembershipDtoSchema = /*#__PURE__*/ (() => z.object({
   cmntySn: z.number().int().optional(),
   status: z.enum(["NONE","REQUESTED","MEMBER","WITHDRAWN","UNKNOWN"]).optional(),
   joinYmd: z.string().optional().nullable(),
+  operator: z.boolean().optional(),
 }))();
 export type CommunityMembershipDto = z.infer<typeof CommunityMembershipDtoSchema>;
 
@@ -67,12 +68,14 @@ export const CommunityMembershipDtoRequestSchema = /*#__PURE__*/ (() => z.object
   cmntySn: z.number().int().optional(),
   status: z.enum(["NONE","REQUESTED","MEMBER","WITHDRAWN","UNKNOWN"]).optional(),
   joinYmd: z.string().optional().nullable(),
+  operator: z.boolean().optional(),
 }))();
 
 export const CommunityMembershipDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   cmntySn: z.number().int().optional().nullable(),
   status: z.enum(["NONE","REQUESTED","MEMBER","WITHDRAWN","UNKNOWN"]).optional().nullable(),
   joinYmd: z.string().optional().nullable(),
+  operator: z.boolean().optional().nullable(),
 }))();
 
 export const ApiResponseListCommunityBoardDtoRequestSchema = /*#__PURE__*/ (() => z.object({

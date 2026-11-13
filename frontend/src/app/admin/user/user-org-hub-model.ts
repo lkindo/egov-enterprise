@@ -9,6 +9,7 @@ export type UserOrgWriteOperation =
   | 'dept-form'
   | 'password-reset'
   | 'unlock-user'
+  | 'force-logout'
   | 'delete-user'
   | 'delete-dept'
   | 'bulk-delete'

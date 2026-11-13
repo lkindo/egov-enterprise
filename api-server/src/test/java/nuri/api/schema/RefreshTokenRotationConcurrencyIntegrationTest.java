@@ -109,7 +109,7 @@ class RefreshTokenRotationConcurrencyIntegrationTest {
     @DisplayName("동시 재발급은 저장되지 않은 리프레시 토큰을 돌려주지 않는다")
     void concurrentReissueNeverHandsOutATokenThatIsNotStored() throws Exception {
         doReturn("rotated-first", "rotated-second")
-                .when(jwtTokenProvider).createRefreshToken(eq(ESNTL_ID), any(Date.class));
+                .when(jwtTokenProvider).createRefreshToken(eq(ESNTL_ID), any(Date.class), any(), any(), any());
 
         List<String> outcomes = reissueConcurrently();
 
@@ -135,7 +135,9 @@ class RefreshTokenRotationConcurrencyIntegrationTest {
         // ⚠ 값을 고정하지 않으면 이 테스트는 **항상 통과할 수 없다** — 같은 초에 일어난 회전은
         //   seed 토큰과 글자까지 같은 JWT 를 만들어(iat 초 단위) 재사용과 원본이 구분되지 않는다.
         //   실제로 회전이 값을 바꾼 경우만 재사용이 성립하므로 그 경우를 고정한다.
-        doReturn("rotated-once").when(jwtTokenProvider).createRefreshToken(eq(ESNTL_ID), any(Date.class));
+        // 재발급은 세션차수를 싣는 오버로드로 발급한다(V2_153).
+        doReturn("rotated-once").when(jwtTokenProvider)
+                .createRefreshToken(eq(ESNTL_ID), any(Date.class), any(), any(), any());
         authService.reissue(issuedToken, "127.0.0.1");
 
         assertThatThrownBy(() -> authService.reissue(issuedToken, "127.0.0.1")).isInstanceOf(BusinessException.class);

@@ -62,6 +62,7 @@ class OnlineRrnoConverterContractTest {
             "migration-tool/src/main/java/nuri/migration/protect/EgovAriaColumnCipher.java";
     private static final List<String> ONLINE_CRYPTO_SOURCES = List.of(
             "business-core/src/main/java/nuri/business/domain/common/RrnoEncryptionConverter.java",
+            "business-core/src/main/java/nuri/business/domain/common/RrnoKeyring.java",
             "foundation/src/main/java/nuri/foundation/core/util/CryptoUtil.java",
             "foundation/src/main/java/nuri/foundation/core/config/ProjectCryptoConfig.java");
     private static final List<String> ONLINE_SOURCE_ROOTS = List.of(
@@ -212,6 +213,33 @@ class OnlineRrnoConverterContractTest {
                 assertThat(protector.protect("tb_user_info", "user_enrrno", blank)).isNull();
                 assertThat(online.converter().convertToDatabaseColumn(blank)).isNull();
             }
+        }
+    }
+
+    /**
+     * [Wave 4] 온라인이 주민번호 키링(AES-256-GCM v2)을 켜도 이관 도구의 ARIA 암호문은 그대로 읽힌다 — 이관 도구는 ARIA 로 쓰고,
+     * 온라인은 다음 저장 때 활성 키로 다시 암호화한다. 키링을 켠 온라인이 새로 쓰는 값은 v2 라 이관 도구 형식과 다르다(이관 도구는
+     * 온라인이 쓴 값을 읽지 않는다 — 적재 검증은 자기 암호문만 되읽는다).
+     */
+    @Test
+    @DisplayName("온라인이 키링을 켜도 이관 도구의 ARIA 암호문을 읽고, 새 값은 v2 로 쓴다")
+    void keyringEnabledOnlineStillReadsToolCiphertext() throws Exception {
+        requireOnline();
+        String key = KEYS.getFirst();
+        EgovAriaColumnCipher tool = new EgovAriaColumnCipher(key);
+        Class<?> keyring = onlineLoader.loadClass("nuri.business.domain.common.RrnoKeyring");
+        var configure = keyring.getMethod("configure", String.class, Map.class);
+        try (OnlineConverter online = OnlineConverter.start(key)) {
+            configure.invoke(null, "contract-k1", Map.of("contract-k1",
+                    java.util.Base64.getEncoder().encodeToString(new byte[32])));
+            for (String rrno : List.of("800101-1234567", "8001011234567")) {
+                assertThat(online.converter().convertToEntityAttribute(tool.encrypt(rrno))).isEqualTo(rrno);
+                String written = online.converter().convertToDatabaseColumn(rrno);
+                assertThat(written).startsWith("v2:contract-k1:").isNotEqualTo(tool.encrypt(rrno));
+                assertThat(online.converter().convertToEntityAttribute(written)).isEqualTo(rrno);
+            }
+        } finally {
+            configure.invoke(null, null, null);
         }
     }
 

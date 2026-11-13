@@ -14,6 +14,7 @@ import {
   moveUsersToDeptOperation,
   updatePasswordByAdminOperation,
   unlockUserOperation,
+  forceLogoutOperation,
   updateUserOperation,
   updateUsersStatusOperation,
 } from '@/types/generated-operations';
@@ -180,6 +181,11 @@ class UserAdminService extends ApiService {
   }
 
   /** 계정 잠금 해제(DIP B4 P7). 비밀번호와 세션은 바꾸지 않는다. */
+  /** [V2_153] 대상의 모든 로그인 세션을 지금 끊는다 — 발급된 토큰은 다음 요청부터 거부된다. 계정 상태·비밀번호는 그대로다. */
+  async forceLogout(userId: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.executeGenerated(forceLogoutOperation, { path: { userId }, config });
+  }
+
   async unlockUser(userId: string, config?: AxiosRequestConfig): Promise<void> {
     return this.executeGenerated(unlockUserOperation, { path: { userId }, config });
   }

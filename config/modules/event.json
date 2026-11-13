@@ -14,7 +14,8 @@
   "owns": {
     "tables": [
       "tb_event_info",
-      "tb_extrl_hr_info"
+      "tb_extrl_hr_info",
+      "tb_evnt_aply"
     ],
     "sequences": [],
     "sharedTables": [],
@@ -22,7 +23,9 @@
       "src/app/admin/operation/events",
       "src/app/admin/operation/external-hr",
       "src/app/admin/operation/rough-map",
+      "src/app/events",
       "src/services/foundation/operation/ExternalHrAdminService.ts",
+      "src/services/foundation/operation/eventParticipationService.ts",
       "src/services/foundation/operation/eventService.ts",
       "src/services/foundation/operation/__tests__/eventService.test.ts"
     ],
@@ -37,7 +40,8 @@
     "routes": [
       "/admin/operation/events",
       "/admin/operation/external-hr",
-      "/admin/operation/rough-map"
+      "/admin/operation/rough-map",
+      "/events"
     ],
     "exactRoutes": [],
     "menuTabs": [],
@@ -48,6 +52,10 @@
     "gates": [
       {
         "file": "api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java",
+        "alsoRequires": []
+      },
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/EventApplicationConcurrencyIntegrationTest.java",
         "alsoRequires": []
       }
     ],
@@ -62,7 +70,13 @@
   "dependsOn": [],
   "foreignKeys": [],
   "requires": [],
-  "integrates": [],
+  "integrates": [
+    {
+      "to": "notification",
+      "via": "event:NotificationRequestedEvent",
+      "reason": "알림 기능이 없으면 행사 담당자가 참가 신청을 승인하거나 반려해도 신청자에게 알림이 가지 않습니다. 신청자는 행사 참가 화면에서 결과를 확인합니다."
+    }
+  ],
   "registrationOnly": {
     "events": [],
     "contributions": [],

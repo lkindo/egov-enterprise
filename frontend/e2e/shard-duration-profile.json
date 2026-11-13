@@ -105,6 +105,7 @@
     "contracts/work-reports.spec.ts": 852,
     "journeys/address-book.spec.ts": 17536,
     "journeys/application-shell.spec.ts": 15447,
+    "journeys/approval-attachments.spec.ts": 13728,
     "journeys/approvals.spec.ts": 35009,
     "journeys/audit-log.spec.ts": 3978,
     "journeys/authentication.spec.ts": 25609,
@@ -113,9 +114,11 @@
     "journeys/board-masters.spec.ts": 27407,
     "journeys/common-codes.spec.ts": 5075,
     "journeys/community-navigation.spec.ts": 13204,
+    "journeys/community-operators.spec.ts": 11267,
     "journeys/department-hierarchy.spec.ts": 9565,
     "journeys/department-work.spec.ts": 11520,
     "journeys/event-administration.spec.ts": 8859,
+    "journeys/event-applications.spec.ts": 10888,
     "journeys/global-search.spec.ts": 15745,
     "journeys/help-content.spec.ts": 27499,
     "journeys/mail.spec.ts": 25211,
@@ -199,6 +202,26 @@
       "reportPath": "build/isolated-e2e/6545a1080b13c8e9099726b0/results.json",
       "reportSha256": "3b4292139499ae6bf5e5e0a281a1279353bb6fcbf47a3312231906ffbe71bf80",
       "note": "New notes journey spec and 7 expanded Batch 1B journey specs measured locally in isolated Playwright; replace provisional weights with the next successful CI observation."
+    },
+    {
+      "scope": [
+        "journeys/approval-attachments.spec.ts",
+        "journeys/community-operators.spec.ts",
+        "journeys/event-applications.spec.ts"
+      ],
+      "status": "provisional-local-supplement",
+      "executionKind": "local-isolated",
+      "runId": "a8f74752a6959f96a62d656d",
+      "sourceCommit": "d613db0c7922c368ebc75f9f62a8f16378ffc30a",
+      "sourceOverlaySha256": "c97d3acff0074ec25c4ac332b88ada9ef3494b316d549462a9581d15fd56e58e",
+      "capturedAt": "2026-11-12T09:27:12.356Z",
+      "runner": "Windows / local isolated Playwright",
+      "workers": 1,
+      "weightMethod": "observed-passed-attempt-duration-sum",
+      "observedPassedAttemptDurationMs": 35883,
+      "reportPath": "build/isolated-e2e/a8f74752a6959f96a62d656d/results.json",
+      "reportSha256": "5a8ddac5f4f15bf8d6de2985bbcd2d17ea4cf3d0bf2977f65ffcd647ff7bd7f7",
+      "note": "Wave 3 의 새 업무 흐름 시험 셋(결재 첨부·대리결재, 커뮤니티 운영자, 행사 참가 신청)만 로컬에서 재었다. 과거 Linux 워크플로 기록에 없으므로 다음 성공한 CI 관측으로 바꾼다."
     }
   ]
 }

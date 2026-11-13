@@ -1896,6 +1896,62 @@
     "column_name": "version"
   },
   {
+    "table_name": "tb_event_info",
+    "column_name": "pscp_nope"
+  },
+  {
+    "table_name": "tb_event_info",
+    "column_name": "aply_ddln_ymd"
+  },
+  {
+    "table_name": "tb_evnt_aply",
+    "column_name": "evnt_aply_sn"
+  },
+  {
+    "table_name": "tb_evnt_aply",
+    "column_name": "evnt_sn"
+  },
+  {
+    "table_name": "tb_evnt_aply",
+    "column_name": "aplcnt_id"
+  },
+  {
+    "table_name": "tb_evnt_aply",
+    "column_name": "aply_stts_cd"
+  },
+  {
+    "table_name": "tb_evnt_aply",
+    "column_name": "aply_dt"
+  },
+  {
+    "table_name": "tb_evnt_aply",
+    "column_name": "aply_prcs_dt"
+  },
+  {
+    "table_name": "tb_evnt_aply",
+    "column_name": "aply_rtrcn_dt"
+  },
+  {
+    "table_name": "tb_evnt_aply",
+    "column_name": "version"
+  },
+  {
+    "table_name": "tb_evnt_aply",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_evnt_aply",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_evnt_aply",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_evnt_aply",
+    "column_name": "mdfcn_dt"
+  },
+  {
     "table_name": "tb_extrl_hr_info",
     "column_name": "area_no"
   },
@@ -2120,6 +2176,10 @@
     "column_name": "mdfcn_dt"
   },
   {
+    "table_name": "tb_ifml_atrz_dtl",
+    "column_name": "sbt_aprvr_id"
+  },
+  {
     "table_name": "tb_ifml_atrz_hstry",
     "column_name": "ifml_atrz_sn"
   },
@@ -2170,6 +2230,10 @@
   {
     "table_name": "tb_ifml_atrz_hstry",
     "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_hstry",
+    "column_name": "atch_file_sn"
   },
   {
     "table_name": "tb_ifml_atrz_indv_apln",
@@ -2296,6 +2360,10 @@
     "column_name": "atrz_cycl"
   },
   {
+    "table_name": "tb_ifml_atrz_info",
+    "column_name": "atch_file_sn"
+  },
+  {
     "table_name": "tb_ifml_atrz_prcs_hstry",
     "column_name": "ifml_atrz_prcs_hstry_sn"
   },
@@ -2398,6 +2466,10 @@
   {
     "table_name": "tb_ifml_atrz_tmpr_strg",
     "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_tmpr_strg",
+    "column_name": "atch_file_sn"
   },
   {
     "table_name": "tb_ifml_atrz_tmpr_strg_dtl",
@@ -4172,6 +4244,18 @@
     "column_name": "last_mdfr_id"
   },
   {
+    "table_name": "tb_user_absn",
+    "column_name": "sbt_aprvr_id"
+  },
+  {
+    "table_name": "tb_user_absn",
+    "column_name": "absn_bgng_ymd"
+  },
+  {
+    "table_name": "tb_user_absn",
+    "column_name": "absn_end_ymd"
+  },
+  {
     "table_name": "tb_user_info",
     "column_name": "esntl_id"
   },
@@ -4358,6 +4442,10 @@
   {
     "table_name": "tb_user_info",
     "column_name": "last_lgt_dt"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "ssn_cycl"
   },
   {
     "table_name": "tb_user_log",

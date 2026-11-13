@@ -99,6 +99,24 @@ public enum AttachmentSource {
     /** 상벌 관리. 인사 민감 정보. */
     REWARD("tb_rward_manage", Sensitivity.PERSONAL, null, "frst_rgtr_id = ?", null),
 
+    /**
+     * 약식결재 문서의 지금 차수 첨부(V2_151). 개인 귀속 — 관리자 우회도, 일반 파일 API 의 개별 삭제도 없다(ADR-0048). 묶음을 바꾸는
+     * 일은 재상신이 맡고 앞 차수의 묶음은 {@link #APPROVAL_REVISION} 이 남긴다. 판정은 리졸버의 전용 조회가 본문 상세와 같은 조건으로
+     * 한다 — 소유는 기안자({@code aplcnt_id}, esntlId), 열람 전용 당사자는 지금 차수 결재선의 원결재자·대리결재자, 참조자, 지금 유효한
+     * 대리결재자다. 결재 전역 조회 권한은 없다(본문도 참여자에게만 열린다).
+     */
+    APPROVAL("tb_ifml_atrz_info", Sensitivity.PERSONAL, null, null, null),
+
+    /** 약식결재 차수 이력의 첨부(V2_151). 그 차수의 결재선(원결재자·대리결재자)·기안자·참조자만 연다 — 본문의 차수 공개와 같다. */
+    APPROVAL_REVISION("tb_ifml_atrz_hstry", Sensitivity.PERSONAL, null, null, null),
+
+    /**
+     * 상신 전 결재 임시저장의 첨부(V2_151). 기안자 본인만 연다 — 리졸버가 본인이 아니면 열람 거부(readDenied)를 만들어 관리자 우회
+     * ({@code FILE_READ_ALL})도 막는다. 개인 귀속으로 두지 않는 것은 상신 전에는 기안자가 첨부를 하나씩 빼야 하기 때문이다(소유 근거로
+     * 개별 삭제가 된다). 상신하면 묶음이 {@link #APPROVAL} 로 옮겨 가 개인 귀속이 된다.
+     */
+    APPROVAL_DRAFT("tb_ifml_atrz_tmpr_strg", Sensitivity.SHARED, null, null, null),
+
     /** 메일 발송 이력. 개인 귀속. */
     SENT_MAIL("tb_email_dsptch_manage", Sensitivity.PERSONAL, null, "frst_rgtr_id = ?", null),
 

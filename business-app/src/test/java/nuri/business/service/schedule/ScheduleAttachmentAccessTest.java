@@ -116,6 +116,9 @@ class ScheduleAttachmentAccessTest {
             blank-target-dept, viewer, internal-view,  true,  NULL,  1,    '',                      NONE,              false
             wrong-identity,    viewer, owner,          true,  DEPT1, 2,    DEPT1,                   NONE,              false
             blank-login,       '',     internal-view,  false, NULL,  1,    ORGNZT_0000000000000,     NONE,              false
+            company-wide,      viewer, internal-view,  true,  DEPT2, 3,    DEPT1,                   NONE,              true
+            company-no-user,   viewer, internal-view,  false, NULL,  3,    DEPT1,                   NONE,              true
+            company-no-login,  '',     internal-view,  false, NULL,  3,    DEPT1,                   NONE,              false
             """)
     void bodyAndAttachmentShareTheSameReadScope(String scenario, String loginId, String esntlId,
             boolean userExists, String membership, String kind, String department,

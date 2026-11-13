@@ -27,6 +27,14 @@ public interface ApprovalTemporaryDraftRepository extends JpaRepository<Approval
     long countByAplcntId(String aplcntId);
 
     /**
+     * 상신으로 지울 임시저장의 첨부 묶음(V2_151) — 지운 뒤 다른 업무에 남지 않은 묶음을 수거하려고 먼저 읽는다. 그 사이 다른 곳에서
+     * 고쳤으면 버전이 달라 뒤따르는 지우기({@link #deleteOwnedVersion})가 실패하고 상신 전체가 되돌아간다.
+     */
+    @Query("select d.atchFileSn from ApprovalTemporaryDraft d where d.ifmlAtrzTmprStrgSn = :sn and d.aplcntId = :aplcntId "
+            + "and d.atchFileSn is not null")
+    Optional<Long> findAttachmentOfOwnedDraft(@Param("sn") Long sn, @Param("aplcntId") String aplcntId);
+
+    /**
      * 상신과 함께 임시저장을 지운다 — 번호·기안자·버전이 모두 맞을 때만 지우고 지운 행 수를 돌려준다(0 이면 이미 상신했거나
      * 다른 곳에서 바뀐 것이다). 결재선 행은 FK(ON DELETE CASCADE)가 함께 지운다. 한 문장이라 두 탭이 같은 임시저장을
      * 동시에 상신해도 한쪽만 지운다.

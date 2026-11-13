@@ -55,6 +55,8 @@ export function ApprovalStepper({ steps = [], stages, currentUserId, accessibleL
               : ownTurn ? '내 차례' : active ? agreed ? '동의 대기' : '승인 대기' : '앞 단계 대기';
             return <li key={person.userId} className="space-y-1 text-sm">
               <p className={cn('flex flex-wrap items-center gap-1', ownTurn ? 'font-semibold text-primary' : 'text-foreground')}>{person.userNm || person.userId} · {personStatus}{isWaiting && <AbsenceBadge absent={person.absent} />}</p>
+              {/* [V2_151] 원결재자 대신 결정한 사람을 따로 보인다 — 누가 실제로 결정했는지 결재선에서 바로 안다. */}
+              {person.substituteId && <p className="text-xs text-muted-foreground">대리결재: {person.substituteNm || person.substituteId}</p>}
               {person.decidedAt && <p className="text-xs text-muted-foreground"><time dateTime={person.decidedAt}>{toSeoulDisplayDateTime(person.decidedAt)}</time></p>}
               {person.opinion && <p className="whitespace-pre-wrap break-words text-foreground">{person.opinion}</p>}
             </li>;

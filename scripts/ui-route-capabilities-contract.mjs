@@ -64,6 +64,20 @@ const KNOWN_ROUTE_CAPABILITIES = {
       unsupportedVisibleActions: [], actorScope: 'AUTHENTICATED', visibleLabel: '결재 기안·목록·승인·반려', primaryTask: true,
       evidenceLevel: 'E3', evidence: ['frontend/src/app/approvals/ApprovalHubClient.tsx', 'frontend/src/app/approvals/ApprovalDraftDialog.tsx', 'frontend/src/app/approvals/__tests__/ApprovalHubClient.actions.test.tsx', 'frontend/src/services/business/user/approval/ApprovalUserService.ts', 'frontend/e2e/journeys/approvals.spec.ts'],
     },
+    {
+      // [V2_151, DEC-OPS-416] 결재 첨부(기안 때 올리고 결재선·참조자·유효 대리결재자가 내려받는다)와 부재 대리결재(차례인 결재자가 부재
+      //   기간에 맡긴 사람이 대신 승인·반려). 대표 결재 시험(approvals.spec.ts — 벤더 인증 증거 입력)과 따로 왕복 시험을 둔다.
+      id: 'approvals.attachments-substitute', status: 'live', dataSource: 'approvals-api+files-api',
+      actions: ['attach-file', 'download-attachment', 'substitute-confirm'],
+      unsupportedVisibleActions: [], actorScope: 'AUTHENTICATED', visibleLabel: '결재 첨부 · 부재 대리결재', primaryTask: false,
+      evidenceLevel: 'E4',
+      roundtrips: [{
+        spec: 'frontend/e2e/journeys/approval-attachments.spec.ts',
+        test: '첨부를 붙여 올린 결재를 부재 중 대리결재자가 첨부를 내려받고 대신 승인한다',
+        actions: ['attach-file', 'download-attachment', 'substitute-confirm'],
+      }],
+      evidence: ['frontend/e2e/journeys/approval-attachments.spec.ts', 'business-app/src/test/java/nuri/business/service/informalsanction/ApprovalAttachmentAccessTest.java', 'business-app/src/test/java/nuri/business/service/informalsanction/ApprovalSubstitutionServiceTest.java', 'frontend/src/app/approvals/ApprovalAttachmentList.tsx', 'frontend/src/app/approvals/ApprovalDocumentSections.tsx', 'frontend/src/app/approvals/ApprovalDraftDialog.tsx', 'frontend/src/app/approvals/__tests__/ApprovalAttachmentList.test.tsx'],
+    },
   ],
   '/approvals/draft': [
     {
@@ -88,9 +102,10 @@ const KNOWN_ROUTE_CAPABILITIES = {
       // [2026-09-23] DEC-OPS-049 가 이 기능을 배선했는데 원장은 2026-08-21 판정(미연동)에 머물러 있었다.
       //   live 는 E4(UI→서버 왕복 산출물)가 있어야 하므로 알림 발송과 같게 partial + candidateStatus live 로 둔다.
       id: 'absence-management', status: 'partial', candidateStatus: 'live', dataSource: 'admin-user-absences-api',
-      actions: ['mark-absent', 'mark-returned'],
+      // [V2_151] 부재 기간과 대리결재자 지정(대리결재 지정 창)을 더한다 — 지정 규칙은 서버가 판정한다(UserAbsenceServiceImpl).
+      actions: ['mark-absent', 'mark-returned', 'assign-delegate'],
       unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: '부재 상태 관리', primaryTask: true,
-      evidenceLevel: 'E3', evidence: ['business-core/src/main/java/nuri/business/service/system/user/impl/UserAbsenceServiceImpl.java', 'frontend/src/app/admin/user/UserOrgHubClient.tsx', 'frontend/src/app/admin/user/__tests__/UserOrgHubClient.absence.test.tsx', 'frontend/src/services/foundation/system/UserAbsenceAdminService.ts'],
+      evidenceLevel: 'E3', evidence: ['business-core/src/main/java/nuri/business/service/system/user/impl/UserAbsenceServiceImpl.java', 'frontend/src/app/admin/user/UserOrgHubClient.tsx', 'frontend/src/app/admin/user/__tests__/UserOrgHubClient.absence.test.tsx', 'frontend/src/services/foundation/system/UserAbsenceAdminService.ts', 'frontend/src/app/admin/user/AbsenceDelegationDialog.tsx', 'frontend/src/app/admin/user/__tests__/AbsenceDelegationDialog.test.tsx'],
     },
     {
       id: 'absence.user-list-proxy', status: 'partial', dataSource: 'admin-users-api', actions: ['view-users', 'search-users'],

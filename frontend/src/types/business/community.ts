@@ -22,5 +22,7 @@ export interface CommunitySearchParams {
   size?: number;
   searchCondition?: string;
   searchKeyword?: string;
+  /** [GAP-CMTY-001] true 면 내가 승인된 회원인 커뮤니티만(서버 필터 — 신청·탈퇴 제외). */
+  joined?: boolean;
   [key: string]: unknown;
 }

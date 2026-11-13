@@ -509,13 +509,16 @@ export function formatDeptMembersLabel(deptMembersQuery: {
 export const COMMON_USER_COLUMNS: Column<UserManage>[] = [
   {
     header: '이름',
+    // 사용자 탭은 서버가 목록 전체로 정렬한다(Wave 4). 부재 탭은 서버 정렬을 주지 않아 현재 페이지 정렬이다.
     sortKey: 'userNm',
+    serverSortKey: 'userNm',
     className: 'w-36',
     accessor: (user) => <span className="font-semibold text-foreground">{user.userNm}</span>,
   },
   {
     header: '사용자 ID',
     sortKey: 'userId',
+    serverSortKey: 'userId',
     className: 'w-36',
     accessor: (user) => <span className="tabular-nums text-muted-foreground">{user.userId}</span>,
   },
@@ -567,6 +570,7 @@ export function buildStandardUserColumns(
     {
       header: '등록일',
       sortKey: 'crtDt',
+      serverSortKey: 'crtDt',
       className: 'w-28',
       // crtDt 는 Jackson 이 직렬화한 LocalDateTime(타임존 없음)이다. `new Date()` 로 해석하면
       // 로컬 타임존만큼 날짜가 밀 수 있으므로 문자열 앞 10자리를 그대로 표기한다.

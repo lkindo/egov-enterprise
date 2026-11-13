@@ -71,13 +71,41 @@ final class InformalSanctionReadAssembler {
             List<InformalSanctionProcess> processes, List<InformalSanctionReference> references,
             Map<String, String> users, Set<String> absent, Map<String, String> tasks,
             Map<String, UserSearchDto> referenceProfiles, boolean includeHistory) {
+        return toParticipantDto(informalSanctionMapper, sanction, actor, lines, revisions, processes, references, users,
+                absent, tasks, referenceProfiles, includeHistory, Set.of());
+    }
+
+    /**
+     * @param delegators 오늘 부재 기간에 {@code actor} 에게 결재를 맡긴 사람(V2_151). 이 사람들의 차례인 줄을 actor 가 대신 결정할 수
+     *                   있으면 지금 차수가 보이고 승인 힌트와 {@code onBehalfOf} 가 켜진다(결정 판정과 같다). 보완 요청·참조자
+     *                   추가는 자기 줄이 있는 결재자만 한다 — 대리결재자에게는 켜지지 않는다.
+     */
+    static InformalSanctionDto toParticipantDto(InformalSanctionMapper informalSanctionMapper,
+            InformalSanction sanction, String actor,
+            List<InformalSanctionDetail> lines, List<InformalSanctionHistory> revisions,
+            List<InformalSanctionProcess> processes, List<InformalSanctionReference> references,
+            Map<String, String> users, Set<String> absent, Map<String, String> tasks,
+            Map<String, UserSearchDto> referenceProfiles, boolean includeHistory, Set<String> delegators) {
         boolean owner = actor.equals(sanction.getAplcntId());
         // [2026-10-04 D4] 참조자는 기안자처럼 모든 차수를 읽는다 — 이 문서에 지금 사용자의 참조 행이 있는가로만 가린다
         //   (참조자 목록이 비었는지로 가리지 않는다). 쓰기 힌트 계산은 바꾸지 않는다 — 결재선 라인이나 신청자를 요구하므로
         //   참조자에게는 하나도 켜지지 않는다.
         boolean referenceViewer = references.stream().anyMatch(r -> actor.equals(r.getId().getUserId()));
-        Set<BigDecimal> allowed = lines.stream().filter(d -> actor.equals(d.getId().getUserId()))
+        // [V2_151] 대신 결정한 차수도 내가 든 차수다 — 결정한 그 차수의 내용·첨부를 계속 본다.
+        Set<BigDecimal> allowed = lines.stream()
+                .filter(d -> actor.equals(d.getId().getUserId()) || actor.equals(d.getSbtAprvrId()))
                 .map(d -> d.getId().getAtrzCycl()).collect(Collectors.toSet());
+        List<InformalSanctionDetail> currentLines = lines.stream()
+                .filter(d -> d.getId().getAtrzCycl().compareTo(sanction.getAtrzCycl()) == 0).toList();
+        boolean ownCurrentLine = currentLines.stream().anyMatch(d -> actor.equals(d.getId().getUserId()));
+        // [V2_151] 지금 대신 결정할 수 있는 원결재자 — 진행 중 문서의 차례인 줄 중 오늘 나에게 맡긴 사람. 기안자이거나 이 차수
+        //   결재선에 내가 있으면 대리결재가 없다(InformalSanctionService#substitutableLines 와 같은 판정).
+        Optional<String> principal = !"A".equals(sanction.getAprvYn()) || owner || ownCurrentLine || delegators.isEmpty()
+                ? Optional.empty()
+                : currentLines.stream().filter(d -> d.status() == ApprovalStatus.ACTIVE
+                                && delegators.contains(d.getId().getUserId()))
+                        .map(d -> d.getId().getUserId()).sorted().findFirst();
+        if (principal.isPresent()) allowed.add(sanction.getAtrzCycl());
         if (owner || referenceViewer) revisions.forEach(h -> allowed.add(h.getId().getAtrzCycl()));
         boolean current = owner || referenceViewer || allowed.contains(sanction.getAtrzCycl());
         BigDecimal visibleCycle = current ? sanction.getAtrzCycl() : allowed.stream().max(BigDecimal::compareTo)
@@ -91,6 +119,8 @@ final class InformalSanctionReadAssembler {
             dto.setTaskSeCd(visible.getTaskSeCd()); dto.setReqYmd(visible.getReqYmd());
             dto.setAprvYn(visible.getAprvYn()); dto.setAtrzDt(visible.getAtrzDt());
             dto.setRjctRsnCn(visible.getRjctRsnCn()); dto.setVersion(null);
+            // 그 차수에 올린 첨부(V2_151) — 매퍼가 이력의 묶음을 옮긴다.
+            informalSanctionMapper.applyRevisionAttachment(visible, dto);
             dto.setAprvrId(lines.stream().filter(d -> d.getId().getAtrzCycl().compareTo(visibleCycle) == 0)
                     .sorted(Comparator.comparing((InformalSanctionDetail d) -> d.getId().getAtrzSeq())
                             .thenComparing(d -> d.getId().getUserId())).map(d -> d.getId().getUserId()).findFirst().orElse(null));
@@ -104,9 +134,14 @@ final class InformalSanctionReadAssembler {
         dto.setStages(stages(visibleLines, users, absent));
         // 힌트는 서버가 그 요청을 실제로 받아 줄 때만 참이다 — 참여 조건뿐 아니라 그 동작의 기능 권한도 본다.
         // 권한을 회수한 그룹에게 버튼이 남으면 누른 뒤에야 403 을 만난다.
-        dto.setCanApprove(current && "A".equals(sanction.getAprvYn()) && SecurityUtil.hasPermission(APPROVE_PERMISSION)
+        boolean ownApprovable = current && "A".equals(sanction.getAprvYn()) && SecurityUtil.hasPermission(APPROVE_PERMISSION)
                 && visibleLines.stream()
-                .anyMatch(d -> actor.equals(d.getId().getUserId()) && d.status() == ApprovalStatus.ACTIVE));
+                .anyMatch(d -> actor.equals(d.getId().getUserId()) && d.status() == ApprovalStatus.ACTIVE);
+        // [V2_151] 대리결재자는 맡긴 사람의 줄을 대신 결정한다. 결정 요청에 onBehalfOf 로 돌려보낼 원결재자를 싣는다.
+        boolean substituteApprovable = principal.isPresent() && SecurityUtil.hasPermission(APPROVE_PERMISSION);
+        dto.setCanApprove(ownApprovable || substituteApprovable);
+        dto.setOnBehalfOfId(substituteApprovable ? principal.get() : null);
+        dto.setOnBehalfOfNm(substituteApprovable ? users.getOrDefault(principal.get(), "") : null);
         dto.setCanWithdraw(current && owner && "A".equals(sanction.getAprvYn())
                 && SecurityUtil.hasPermission(WITHDRAW_PERMISSION));
         dto.setCanResubmit(current && owner && List.of("R", "W").contains(sanction.getAprvYn())
@@ -128,13 +163,13 @@ final class InformalSanctionReadAssembler {
         dto.setCanReplaceApprover(drafter && visibleLines.stream()
                 .anyMatch(d -> d.status() == ApprovalStatus.WAITING || d.status() == ApprovalStatus.ACTIVE));
         dto.setCanAnswerSupplement(drafter && openAsk != null);
-        dto.setCanRequestSupplement(dto.isCanApprove() && openAsk == null);
+        dto.setCanRequestSupplement(ownApprovable && openAsk == null);
         // [2026-10-04 D4 개정 1] 참조자. 숨은 참조가 아니다 — 보는 사람이 볼 수 있는 가장 높은 차수까지 지정된 사람을 사람마다
         //   한 줄로 싣는다. 이전 차수에만 참여한 결재자는 그 뒤에 처음 지정된 참조자를 보지 않는다(차수 공개 원칙). 결재자 추가
         //   힌트는 쓰기 메서드와 같은 판정이다(20명은 서로 다른 사람 수다).
         dto.setReferenceViewer(referenceViewer);
         dto.setReferences(includeHistory ? references(references, allowed, sanction, referenceProfiles) : List.of());
-        dto.setCanAddReference(dto.isCanApprove() && !drafterDesignated(sanction, references)
+        dto.setCanAddReference(ownApprovable && !drafterDesignated(sanction, references)
                 && referenceRoomLeft(sanction, references, visibleLines));
         dto.setProcessHistory(includeHistory ? processes(processes, allowed, users) : List.of());
         return dto;
@@ -147,7 +182,8 @@ final class InformalSanctionReadAssembler {
                 .sorted(Comparator.comparing((InformalSanctionHistory h) -> h.getId().getAtrzCycl()).reversed())
                 .map(h -> new ApprovalRevisionDto(h.getId().getAtrzCycl().intValueExact(), h.getDocTtl(), h.getDocCn(),
                         h.getAprvYn(), h.getReqYmd(), h.getAtrzDt(), stages(lines.stream()
-                                .filter(d -> d.getId().getAtrzCycl().compareTo(h.getId().getAtrzCycl()) == 0).toList(), users, absent)))
+                                .filter(d -> d.getId().getAtrzCycl().compareTo(h.getId().getAtrzCycl()) == 0).toList(), users, absent),
+                        h.getAtchFileSn()))
                 .toList();
     }
 
@@ -204,7 +240,8 @@ final class InformalSanctionReadAssembler {
             return new ApprovalStageDto(entry.getKey().intValueExact(), group.getFirst().kind(), status,
                     group.stream().map(d -> new ApprovalApproverDto(d.getId().getUserId(),
                             users.getOrDefault(d.getId().getUserId(), ""), d.status(), d.getAtrzOpnnCn(), d.getAtrzDt(),
-                            absent.contains(d.getId().getUserId()))).toList());
+                            absent.contains(d.getId().getUserId()), d.getSbtAprvrId(),
+                            d.getSbtAprvrId() == null ? null : users.getOrDefault(d.getSbtAprvrId(), ""))).toList());
         }).toList();
     }
 

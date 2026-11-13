@@ -36,6 +36,8 @@ export interface ApprovalListParams {
   toYmd?: string;
   /** 대기 탭에서는 쓰지 않는다(대기함은 늘 대기 문서다). 참조된 결재 탭에서는 문서의 지금 상태다. */
   status?: SanctionStatusCode;
+  /** [Wave 4 GAP-UI-001] 결재번호 정렬 방향. 비우면 서버 기본(최신 결재번호 순)이다. 서버는 결재번호 정렬만 받는다. */
+  sortDir?: 'asc' | 'desc';
 }
 
 export interface ApprovalDecision {
@@ -44,6 +46,8 @@ export interface ApprovalDecision {
   reason?: string;
   /** 상세·목록에서 받은 문서 버전. 서버가 필수로 대조한다. */
   version: number;
+  /** [V2_151] 대리결재로 대신 결정할 원결재자(상세·목록의 onBehalfOfId). 본인 차례면 비운다. */
+  onBehalfOf?: string;
 }
 
 export const approvalKeys = {
@@ -87,12 +91,16 @@ export interface ApprovalTemporarySaveInput {
   request: ApprovalTemporaryDraftRequest;
 }
 
-function listByTab(tab: ApprovalTab, params: ApprovalListParams) {
+function listByTab(tab: ApprovalTab, listParams: ApprovalListParams) {
+  // [Wave 4] 정렬 방향은 서버 계약(sortBy=ifmlAtrzSn·sortDir)으로 옮기고, 비우면 정렬을 보내지 않는다.
+  const { sortDir, ...rest } = listParams;
+  const params = sortDir ? { ...rest, sortBy: 'ifmlAtrzSn' as const, sortDir } : rest;
   switch (tab) {
     case 'PENDING':
       // 대기함은 상태 조건을 받지 않는다 — 넘기지 않는다.
       return approvalUserService.getPending({
         page: params.page, size: params.size, keyword: params.keyword, fromYmd: params.fromYmd, toYmd: params.toYmd,
+        ...(sortDir ? { sortBy: 'ifmlAtrzSn' as const, sortDir } : {}),
       });
     case 'SUBMITTED':
       return approvalUserService.getMyHistory(params);
@@ -171,8 +179,10 @@ async function refreshDocument(queryClient: QueryClient, ifmlAtrzSn: number) {
 
 export const approvalMutationOptions = {
   confirm: (queryClient: QueryClient) => mutationOptions({
-    mutationFn: async ({ ifmlAtrzSn, status, reason, version }: ApprovalDecision) => {
-      await approvalUserService.confirm(ifmlAtrzSn, status, reason, version);
+    mutationFn: async ({ ifmlAtrzSn, status, reason, version, onBehalfOf }: ApprovalDecision) => {
+      // 대리결재일 때만 원결재자를 싣는다 — 본인 차례의 결정은 종전 인자 그대로다.
+      if (onBehalfOf) await approvalUserService.confirm(ifmlAtrzSn, status, reason, version, onBehalfOf);
+      else await approvalUserService.confirm(ifmlAtrzSn, status, reason, version);
       await queryClient.invalidateQueries({ queryKey: approvalKeys.lists() });
       await queryClient.invalidateQueries({ queryKey: approvalKeys.detail(ifmlAtrzSn) });
     },

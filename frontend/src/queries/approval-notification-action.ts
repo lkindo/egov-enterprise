@@ -76,7 +76,8 @@ export async function approveFromNotification({ target, queryClient }: Notificat
   const settled = new Promise<NotificationActionSettlement>((resolve, reject) => { settle = { resolve, reject }; });
   const accepted = scheduleApprovalCommit(ifmlAtrzSn, async () => {
     try {
-      await approvalUserService.confirm(ifmlAtrzSn, SANCTION_STATUS.APPROVED, undefined, version);
+      if (detail.onBehalfOfId) await approvalUserService.confirm(ifmlAtrzSn, SANCTION_STATUS.APPROVED, undefined, version, detail.onBehalfOfId);
+      else await approvalUserService.confirm(ifmlAtrzSn, SANCTION_STATUS.APPROVED, undefined, version);
       await queryClient.invalidateQueries({ queryKey: approvalKeys.lists() });
       await queryClient.invalidateQueries({ queryKey: approvalKeys.detail(ifmlAtrzSn) });
       settle.resolve({ kind: 'done', message: `‘${title}’ ${actionNm}했습니다.` });

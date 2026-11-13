@@ -269,6 +269,11 @@
       "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
     },
     {
+      "test": "EventApplicationConcurrencyIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
+    },
+    {
       "test": "EventApprovalIntegrityIntegrationTest.java",
       "category": "fixture-port",
       "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
@@ -360,6 +365,11 @@
     },
     {
       "test": "LogoutCutoffAndPrivacySubjectMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "SessionCycleMigrationIntegrationTest.java",
       "category": "replacement",
       "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
     },

@@ -69,6 +69,18 @@ describe('ApprovalUserService generated contract', () => {
     );
   });
 
+  it('[Wave 4] 결재번호 정렬(sortBy=ifmlAtrzSn·sortDir)을 서버 조회 조건으로 보내고, 비우면 정렬을 보내지 않는다', async () => {
+    const page = { list: [], total: 0, page: 1, size: 20, totalPage: 0 };
+    client.getRaw.mockResolvedValue(success(page));
+    await approvalUserService.getMyHistory({ page: 1, sortBy: 'ifmlAtrzSn', sortDir: 'asc' }).catch(() => undefined);
+    const sorted = JSON.stringify(client.getRaw.mock.calls.at(-1));
+    expect(sorted).toContain('sortBy');
+    expect(sorted).toContain('ifmlAtrzSn');
+    expect(sorted).toContain('"sortDir":"asc"');
+    await approvalUserService.getMyHistory({ page: 1 }).catch(() => undefined);
+    expect(JSON.stringify(client.getRaw.mock.calls.at(-1))).not.toContain('sortBy');
+  });
+
   it('상태 코드 상수는 서버 SanctionStatus와 1:1이다', () => {
     expect(SANCTION_STATUS).toEqual({ REQUESTED: 'A', APPROVED: 'C', REJECTED: 'R', WITHDRAWN: 'W' });
   });

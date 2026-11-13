@@ -136,6 +136,8 @@ function useApprovalQueue({
   const [keyword, setKeyword] = useState('');
   const [period, setPeriod] = useState<PeriodValue>(EMPTY_PERIOD);
   const [statusFilter, setStatusFilter] = useState<'' | SanctionStatusCode>('');
+  // [Wave 4 GAP-UI-001] 결재번호 정렬 — 서버가 목록 전체를 정렬한다(결재번호만 받는다). 비우면 최신 결재번호 순이다.
+  const [sortDir, setSortDir] = useState<'' | 'asc' | 'desc'>('');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(docParam);
   // 알림으로 연 문서. 목록의 현재 페이지에 없어도 상세를 연다.
   const [linkedId, setLinkedId] = useState<string | null>(docParam);
@@ -172,8 +174,10 @@ function useApprovalQueue({
     ...(keyword ? { keyword } : {}),
     ...(period.from && period.to ? { fromYmd: period.from.replace(/-/g, ''), toYmd: period.to.replace(/-/g, '') } : {}),
     ...(activeTab !== 'PENDING' && statusFilter ? { status: statusFilter } : {}),
+    ...(sortDir ? { sortDir } : {}),
   };
-  const hasListFilter = Object.keys(listFilters).length > 0;
+  // 정렬은 조건이 아니다 — 빈 목록 문구가 '조건에 맞는 문서가 없다' 로 바뀌지 않게 센 수에서 뺀다.
+  const hasListFilter = Object.keys(listFilters).some((key) => key !== 'sortDir');
   const { data: approvalData, dataUpdatedAt, isLoading, isFetching, error: approvalsError, refetch: refetchApprovals } = useQuery(
     approvalQueryOptions.list(activeTab, { page, size: PAGE_SIZE, ...listFilters }),
   );
@@ -267,7 +271,7 @@ function useApprovalQueue({
   };
 
   return {
-    activeTab, page, keyword, setKeyword, period, setPeriod, statusFilter, setStatusFilter, setSelectedItemId, linkedId,
+    activeTab, page, keyword, setKeyword, period, setPeriod, statusFilter, setStatusFilter, sortDir, setSortDir, setSelectedItemId, linkedId,
     bulkSelected, setBulkSelected, hasListFilter, list, total, totalPages, isLoading, isFetching, approvalsError, refetchApprovals,
     pendingTotal, selectedListItem, detailQuery, selectedItem, hasVisibleSelection, turnReference,
     applyListFilter, handleTabChange, handlePageChange, handleDraftCreated,
@@ -422,7 +426,7 @@ function useApprovalDocumentActions({
           continue;
         }
         try {
-          await confirmMutation.mutateAsync({ ifmlAtrzSn: item.ifmlAtrzSn as number, status: SANCTION_STATUS.APPROVED, version: item.version });
+          await confirmMutation.mutateAsync({ ifmlAtrzSn: item.ifmlAtrzSn as number, status: SANCTION_STATUS.APPROVED, version: item.version, onBehalfOf: item.onBehalfOfId ?? undefined });
         } catch (error) {
           failures.push(`‘${documentLabel(item)}’: ${failureMessage(error, '처리하지 못했습니다.')}`);
         }
@@ -530,25 +534,28 @@ function useApprovalDocumentActions({
  * (작성 중 의견 확인 → 1페이지·선택 해제). 2026-10-18 허브 분해 때 허브 안에서 나눴다(마크업 그대로).
  */
 function ApprovalQueueFilter({
-  keyword, period, statusFilter, showStatus, applyListFilter, setKeyword, setPeriod, setStatusFilter,
+  keyword, period, statusFilter, showStatus, sortDir, applyListFilter, setKeyword, setPeriod, setStatusFilter, setSortDir,
 }: {
   keyword: string;
   period: PeriodValue;
   statusFilter: '' | SanctionStatusCode;
   showStatus: boolean;
+  sortDir: '' | 'asc' | 'desc';
   applyListFilter: (apply: () => void) => void;
   setKeyword: (keyword: string) => void;
   setPeriod: (period: PeriodValue) => void;
   setStatusFilter: (status: '' | SanctionStatusCode) => void;
+  setSortDir: (sortDir: '' | 'asc' | 'desc') => void;
 }) {
   const statusFilterId = useId();
+  const sortId = useId();
   return (
     <KeywordFilter
       label="제목·번호"
       placeholder="결재 문서 제목 또는 번호"
       value={keyword}
       onSearch={(next) => applyListFilter(() => setKeyword(next))}
-      onReset={() => applyListFilter(() => { setKeyword(''); setPeriod(EMPTY_PERIOD); setStatusFilter(''); })}
+      onReset={() => applyListFilter(() => { setKeyword(''); setPeriod(EMPTY_PERIOD); setStatusFilter(''); setSortDir(''); })}
     >
       <PeriodFilter label="요청일" value={period} onChange={(next) => applyListFilter(() => setPeriod(next))} />
       {showStatus && (
@@ -569,6 +576,21 @@ function ApprovalQueueFilter({
           </select>
         </div>
       )}
+      <div className="space-y-1">
+        <label htmlFor={sortId} className="text-[length:var(--font-size-body)] font-medium">정렬</label>
+        <select
+          id={sortId}
+          value={sortDir}
+          onChange={(event) => {
+            const next = event.target.value as '' | 'asc' | 'desc';
+            applyListFilter(() => setSortDir(next));
+          }}
+          className="h-[var(--control-h)] rounded-md border border-input bg-background px-2 text-[length:var(--font-size-body)]"
+        >
+          <option value="">최신 문서 먼저</option>
+          <option value="asc">오래된 문서 먼저</option>
+        </select>
+      </div>
     </KeywordFilter>
   );
 }
@@ -624,7 +646,7 @@ export default function ApprovalHubClient() {
   };
 
   const {
-    activeTab, page, keyword, setKeyword, period, setPeriod, statusFilter, setStatusFilter, setSelectedItemId, linkedId,
+    activeTab, page, keyword, setKeyword, period, setPeriod, statusFilter, setStatusFilter, sortDir, setSortDir, setSelectedItemId, linkedId,
     bulkSelected, setBulkSelected, hasListFilter, list, total, totalPages, isLoading, isFetching, approvalsError, refetchApprovals,
     pendingTotal, selectedListItem, detailQuery, selectedItem, hasVisibleSelection, turnReference,
     applyListFilter, handleTabChange, handlePageChange, handleDraftCreated,
@@ -716,6 +738,7 @@ export default function ApprovalHubClient() {
         status: validatedDecision.status,
         reason: validatedDecision.reason,
         version,
+        onBehalfOf: item.onBehalfOfId ?? undefined,
       });
       toast(`성공적으로 ${actionNm}되었습니다.`, 'success');
       setRejectReason('');
@@ -799,10 +822,12 @@ export default function ApprovalHubClient() {
             period={period}
             statusFilter={statusFilter}
             showStatus={activeTab !== 'PENDING'}
+            sortDir={sortDir}
             applyListFilter={applyListFilter}
             setKeyword={setKeyword}
             setPeriod={setPeriod}
             setStatusFilter={setStatusFilter}
+            setSortDir={setSortDir}
           />
           {bulkEligible.length > 1 && (
             <section className="space-y-2 rounded-md border border-border p-3" aria-label="여러 건 승인">

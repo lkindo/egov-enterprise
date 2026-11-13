@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
   invalidateQueries: vi.fn(),
   cancelQueries: vi.fn(async () => undefined),
   // [2026-09-06 DEC-OPS-043] useQuery 목은 queryKey 로 갈라 답한다 — 상세는 initialData, 내 멤버십은 여기 값.
-  membership: undefined as undefined | { cmntySn: number; status: 'NONE' | 'REQUESTED' | 'MEMBER' | 'WITHDRAWN' | 'UNKNOWN'; joinYmd: string | null },
+  membership: undefined as undefined | { cmntySn: number; status: 'NONE' | 'REQUESTED' | 'MEMBER' | 'WITHDRAWN' | 'UNKNOWN'; joinYmd: string | null; operator?: boolean },
   // [2026-09-08 PD-CMTY-001] 커뮤니티 귀속 게시판.
   getCommunityBoards: vi.fn(),
   boards: undefined as undefined | Array<{ bbsId: string; bbsTtl: string | null; bbsExpln: string | null }>,
@@ -44,6 +44,9 @@ vi.mock('@/services/business/user/community/CommunityUserService', () => ({
   },
 }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
+vi.mock('@/components/business/community/CommunityOperatorPanel', () => ({
+  CommunityOperatorPanel: ({ cmntySn }: { cmntySn: number }) => <div data-testid="operator-panel">운영 패널 {cmntySn}</div>,
+}));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries, cancelQueries: mocks.cancelQueries }),
@@ -169,7 +172,7 @@ describe('커뮤니티 가입 — 화면은 실제 승인 절차만 말한다', 
 
     fireEvent.click(screen.getByRole('button', { name: '커뮤니티 가입 신청' }));
 
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('가입을 신청했습니다. 관리자가 승인하면 회원이 됩니다.', 'success'));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('가입을 신청했습니다. 운영자나 관리자가 승인하면 회원이 됩니다.', 'success'));
     const said = mocks.toast.mock.calls.map((call) => String(call[0])).join(' ');
     // 아직 승인되지 않은 시점의 안내다 — 신청 직후에 '이용' 을 약속하지 않는다.
     //   (회원이 되면 무엇이 열리는지는 사이드바 안내가 소유한다.)
@@ -185,7 +188,7 @@ describe('커뮤니티 가입 — 화면은 실제 승인 절차만 말한다', 
     expect(screen.queryByText(/내부 임직원 전용/)).not.toBeInTheDocument();
     expect(screen.queryByText(/가입 승인 필요/)).not.toBeInTheDocument();
     expect(screen.queryByText(/승인 처리 화면은 아직 없습니다/)).not.toBeInTheDocument();
-    expect(screen.getByText(/관리자가 검토해 승인하거나 반려합니다/)).toBeInTheDocument();
+    expect(screen.getByText(/운영자나 관리자가 검토해 승인하거나 반려합니다/)).toBeInTheDocument();
     /*
       [2026-09-08 PD-CMTY-001] 종전에는 '회원 전용 기능은 아직 제공되지 않습니다' 를 고정했다 —
       회원이 되어도 열리는 것이 없었기 때문이다(GAP-CMTY-001). 이제 회원 전용 게시판이 실제로
@@ -201,7 +204,7 @@ describe('커뮤니티 가입 — 화면은 실제 승인 절차만 말한다', 
 
     expect(screen.queryByRole('button', { name: /커뮤니티 가입 신청/ })).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('가입 승인 대기 중');
-    expect(screen.getByText(/관리자가 승인하면 회원이 됩니다/)).toBeInTheDocument();
+    expect(screen.getByText(/운영자나 관리자가 승인하면 회원이 됩니다/)).toBeInTheDocument();
   });
 
   it('회원이면 회원 상태를 보여 주고 신청 버튼을 열지 않는다', () => {
@@ -307,6 +310,32 @@ describe('커뮤니티 탈퇴와 재가입', () => {
     />,
   );
 
+  it('[GAP-CMTY-001] 운영 패널은 그 커뮤니티의 운영자이면서 운영 화면 권한이 있을 때만 보인다', () => {
+    mocks.membership = { cmntySn: 9, status: 'MEMBER', joinYmd: '20260801', operator: true };
+    mocks.permissions = ['COMMUNITY_OPERATE'];
+    const { unmount } = renderDetail();
+    expect(screen.getByTestId('operator-panel')).toHaveTextContent('운영 패널 9');
+    expect(screen.getByRole('status')).toHaveTextContent('운영자');
+    unmount();
+
+    mocks.permissions = [];
+    const second = renderDetail();
+    expect(screen.queryByTestId('operator-panel')).not.toBeInTheDocument();
+    second.unmount();
+
+    mocks.permissions = ['COMMUNITY_OPERATE'];
+    mocks.membership = { cmntySn: 9, status: 'MEMBER', joinYmd: '20260801', operator: false };
+    const third = renderDetail();
+    expect(screen.queryByTestId('operator-panel')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('회원');
+    third.unmount();
+
+    // 탈퇴·신청 행에 남은 표시는 운영 권한이 아니다 — 서버도 같은 행을 운영자로 보지 않는다.
+    mocks.membership = { cmntySn: 9, status: 'REQUESTED', joinYmd: '20260801', operator: true };
+    renderDetail();
+    expect(screen.queryByTestId('operator-panel')).not.toBeInTheDocument();
+  });
+
   it('회원의 탈퇴는 destructive 확인 뒤 한 번만 보내고, 처리 중에는 잠기며 실패는 서버 메시지로 안내한다', async () => {
     mocks.membership = { cmntySn: 9, status: 'MEMBER', joinYmd: '20260801' };
     let rejectLeave!: (reason?: unknown) => void;
@@ -364,11 +393,11 @@ describe('커뮤니티 탈퇴와 재가입', () => {
     renderDetail();
 
     expect(screen.getByText('탈퇴한 커뮤니티입니다. 다시 가입을 신청해 승인되면 게시판이 보입니다.')).toBeVisible();
-    expect(screen.getByText(/탈퇴한 커뮤니티입니다\. 다시 신청하면 관리자가 검토해 승인하거나 반려합니다\./)).toBeInTheDocument();
+    expect(screen.getByText(/탈퇴한 커뮤니티입니다\. 다시 신청하면 운영자나 관리자가 검토해 승인하거나 반려합니다\./)).toBeInTheDocument();
     expect(mocks.boardsEnabled).toBe(false);
 
     fireEvent.click(screen.getByRole('button', { name: '다시 가입 신청' }));
     await waitFor(() => expect(mocks.joinCommunity).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('가입을 신청했습니다. 관리자가 승인하면 회원이 됩니다.', 'success'));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('가입을 신청했습니다. 운영자나 관리자가 승인하면 회원이 됩니다.', 'success'));
   });
 });

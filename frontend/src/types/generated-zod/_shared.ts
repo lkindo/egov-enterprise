@@ -103,6 +103,19 @@ export const ApiResponseIntegerSchema = /*#__PURE__*/ (() => z.object({
 }))();
 export type ApiResponseInteger = z.infer<typeof ApiResponseIntegerSchema>;
 
+export const EventApplicationDtoSchema = /*#__PURE__*/ (() => z.object({
+  evntAplySn: z.number().int().optional(),
+  evntSn: z.number().int().optional(),
+  aplcntId: z.string().optional(),
+  aplcntNm: z.string().optional(),
+  aplySttsCd: z.enum(["APPLIED","APPROVED","REJECTED","CANCELLED"]).optional(),
+  aplyDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  aplyPrcsDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  aplyRtrcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().optional(),
+}))();
+export type EventApplicationDto = z.infer<typeof EventApplicationDtoSchema>;
+
 export const ApiResponseTokenResponseSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
@@ -231,6 +244,38 @@ export const PageResponseCommunityDtoSchema = /*#__PURE__*/ (() => z.object({
   totalPage: z.number().int(),
 }))();
 export type PageResponseCommunityDto = z.infer<typeof PageResponseCommunityDtoSchema>;
+
+export const ApiResponsePageResponseCommunityMemberDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseCommunityMemberDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponsePageResponseCommunityMemberDto = z.infer<typeof ApiResponsePageResponseCommunityMemberDtoSchema>;
+
+export const CommunityMemberDtoSchema = /*#__PURE__*/ (() => z.object({
+  cmntySn: z.number().int().optional(),
+  userId: z.string().optional(),
+  userNm: z.string().optional().nullable(),
+  status: z.enum(["REQUESTED","APPROVED","WITHDRAWN"]).optional().nullable(),
+  mbrSttsCd: z.string().optional(),
+  mngrYn: z.string().optional(),
+  joinYmd: z.string().optional().nullable(),
+  useYn: z.string().optional(),
+}))();
+export type CommunityMemberDto = z.infer<typeof CommunityMemberDtoSchema>;
+
+export const PageResponseCommunityMemberDtoSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => CommunityMemberDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
+}))();
+export type PageResponseCommunityMemberDto = z.infer<typeof PageResponseCommunityMemberDtoSchema>;
 
 export const ApiResponsePageResponseCommentDtoSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
@@ -452,6 +497,30 @@ export const ApiResponseIntegerResponseSchema = /*#__PURE__*/ (() => z.object({
   data: z.number().int().optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const EventApplicationDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  evntAplySn: z.number().int().optional(),
+  evntSn: z.number().int().optional(),
+  aplcntId: z.string().optional(),
+  aplcntNm: z.string().optional(),
+  aplySttsCd: z.enum(["APPLIED","APPROVED","REJECTED","CANCELLED"]).optional(),
+  aplyDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  aplyPrcsDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  aplyRtrcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().optional(),
+}))();
+
+export const EventApplicationDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  evntAplySn: z.number().int().optional().nullable(),
+  evntSn: z.number().int().optional().nullable(),
+  aplcntId: z.string().optional().nullable(),
+  aplcntNm: z.string().optional().nullable(),
+  aplySttsCd: z.enum(["APPLIED","APPROVED","REJECTED","CANCELLED"]).optional().nullable(),
+  aplyDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  aplyPrcsDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  aplyRtrcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  version: z.number().int().optional().nullable(),
 }))();
 
 export const ApiResponseTokenResponseRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -679,6 +748,64 @@ export const PageResponseCommunityDtoRequestSchema = /*#__PURE__*/ (() => z.obje
 
 export const PageResponseCommunityDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   list: z.array(z.lazy(() => CommunityDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
+}))();
+
+export const ApiResponsePageResponseCommunityMemberDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseCommunityMemberDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponsePageResponseCommunityMemberDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseCommunityMemberDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const CommunityMemberDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  cmntySn: z.number().int().optional(),
+  userId: z.string().optional(),
+  userNm: z.string().optional().nullable(),
+  status: z.enum(["REQUESTED","APPROVED","WITHDRAWN"]).optional().nullable(),
+  mbrSttsCd: z.string().optional(),
+  mngrYn: z.string().optional(),
+  joinYmd: z.string().optional().nullable(),
+  useYn: z.string().optional(),
+}))();
+
+export const CommunityMemberDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  cmntySn: z.number().int().optional().nullable(),
+  userId: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  status: z.enum(["REQUESTED","APPROVED","WITHDRAWN"]).optional().nullable(),
+  mbrSttsCd: z.string().optional().nullable(),
+  mngrYn: z.string().optional().nullable(),
+  joinYmd: z.string().optional().nullable(),
+  useYn: z.string().optional().nullable(),
+}))();
+
+export const PageResponseCommunityMemberDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => CommunityMemberDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
+}))();
+
+export const PageResponseCommunityMemberDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => CommunityMemberDtoResponseSchema)),
   total: z.number().int(),
   page: z.number().int(),
   size: z.number().int(),

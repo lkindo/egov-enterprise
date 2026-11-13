@@ -4,6 +4,7 @@ import { expect,test } from '../fixtures/browser-test';
 import { collectPageCoverage } from '../fixtures/page-observation';
 import { getAdminBearerToken } from '../utils/admin-token';
 import { anonymousCsrfRequestState, CSRF_COOKIE, CSRF_HEADER } from '../fixtures/csrf';
+import { assertIsolatedTarget } from '../../../scripts/e2e-isolation.mjs';
 /**
  * [2026-10-05 반박 리뷰 반영 — blocker 회귀 방지] 단추 중심의 맨 위 요소가 단추 자신(또는 그 안)인가. 창이 낮을 때(기본 뷰포트
  * 1280×720 포함) 권한 표 상자가 편집기 안에서 넘쳐 저장 막대를 덮으면 클릭이 표 칸에 떨어진다('td intercepts pointer events').
@@ -173,6 +174,13 @@ test.describe('권한 변경과 충돌 제어', () => {
             const hiddenGrants = grants.filter(grant => grant.type !== 'NAVIGATION' || grant.code !== leaf.code);
             await replaceGrants(adminRequest, {}, groupCode, grants);
             await replaceGroups(adminRequest, {}, me.esntlId, [groupCode]);
+            // [V2_153] 기본 그룹(ROLE_USER) 회수는 그 전에 받은 세션을 끊는다 — 옛 세션은 401 이고 다시 로그인한 세션으로 잇는다.
+            //   아래의 메뉴 표시(NAVIGATION) 회수는 세션을 끊지 않으므로 같은 화면에서 즐겨찾기 보존을 본다.
+            expect((await loginRequest.get('/api/v1/auth/me')).status(), '그룹 회수 전에 받은 세션은 끊긴다').toBe(401);
+            // 로그인은 CSRF 쿠키를 교체하므로 익명 컨텍스트의 고정 헤더 대신 현재 쿠키와 맞춘다.
+            const relogin = (await loginRequest.storageState()).cookies.find(cookie => cookie.name === CSRF_COOKIE)?.value;
+            if (!relogin) throw new Error('Bookmark relogin requires the current CSRF cookie.');
+            expect((await loginRequest.post('/api/v1/auth/login', { data: { userId, password }, headers: { [CSRF_HEADER]: relogin } })).status()).toBe(200);
             actor = await actorPage({ storageState: await loginRequest.storageState(), viewport: { width: 1440, height: 1000 } });
             const actorBrowser = actor.page;
             await actorBrowser.goto('/admin/system/menus');
@@ -474,20 +482,31 @@ test.describe('권한 변경과 충돌 제어', () => {
                 userCreated = created.ok();
                 expect(created.status(), '전용 사용자 생성').toBe(201);
                 // Keep the BFF's login cookie out of the context that alternates explicit bearer subjects.
-                const loginRequest = await playwright.request.newContext({ baseURL, ...anonymousCsrfRequestState(baseURL) });
-                let token: string | undefined;
-                try {
-                    const login = await loginRequest.post('/api/v1/auth/login', { data: { userId, password } });
-                    expect(login.status(), '전용 사용자 로그인').toBe(200);
-                    token = (login.headers()['set-cookie'] ?? '').split('\n')
-                        .map(line => /^accessToken=([^;]+)/.exec(line.trim())?.[1]).find(Boolean);
-                } finally {
-                    await loginRequest.dispose();
-                }
-                if (!token)
-                    throw new Error('Fixture login did not set an access cookie.');
-                const user = { Authorization: `Bearer ${token}` };
+                const signIn = async () => {
+                    const loginRequest = await playwright.request.newContext({ baseURL, ...anonymousCsrfRequestState(baseURL) });
+                    let issued: string | undefined;
+                    try {
+                        const login = await loginRequest.post('/api/v1/auth/login', { data: { userId, password } });
+                        expect(login.status(), '전용 사용자 로그인').toBe(200);
+                        issued = (login.headers()['set-cookie'] ?? '').split('\n')
+                            .map(line => /^accessToken=([^;]+)/.exec(line.trim())?.[1]).find(Boolean);
+                    } finally {
+                        await loginRequest.dispose();
+                    }
+                    if (!issued)
+                        throw new Error('Fixture login did not set an access cookie.');
+                    return issued;
+                };
+                // 권한 추가와 메뉴 표시(NAVIGATION) 변경은 같은 토큰의 다음 요청부터 반영된다(요청마다 현재 권한을 읽는다).
+                // [V2_153] 그룹·기능권한 회수는 그 전에 받은 토큰을 끊는다(세션차수) — 회수 뒤에는 옛 토큰이 401 인지 보고 다시 로그인한다.
+                let token = await signIn();
+                let user = { Authorization: `Bearer ${token}` };
                 const current = () => request.get('/api/v1/auth/me', { headers: user }).then(response => data<CurrentUser>(response, '현재 사용자 권한 조회'));
+                const reloginAfterRevocation = async (label: string) => {
+                    expect((await request.get('/api/v1/auth/me', { headers: user })).status(), `${label}: 회수 전에 받은 토큰은 끊긴다`).toBe(401);
+                    token = await signIn();
+                    user = { Authorization: `Bearer ${token}` };
+                };
                 const initial = await current();
                 expect(initial.id).toBe(userId);
                 expect(initial.groups).toEqual(['ROLE_USER']);
@@ -562,6 +581,7 @@ test.describe('권한 변경과 충돌 제어', () => {
                 await replaceGrants(request, administrator, groupA, grantsA);
                 const combined = await replaceGroups(request, administrator, esntlId, [groupA, groupB]);
                 expect(combined.groups).toEqual([groupA, groupB]);
+                await reloginAfterRevocation('기본 그룹(ROLE_USER) 회수');
                 const union = await current();
                 expect(union.groups).toEqual([groupA, groupB]);
                 expect(union.permissions).toEqual(['ADMCODE_READ', 'MENU_READ']);
@@ -667,6 +687,7 @@ test.describe('권한 변경과 충돌 제어', () => {
                     for (const permissions of [['POLL_READ'], ['POLL_READ_ALL'], ['POLL_CREATE']]) {
                         await replaceGrants(request, administrator, groupA,
                             permissions.map(code => ({ type: 'OPERATION', code })));
+                        await reloginAfterRevocation(`A 를 ${permissions.join('+')} 로 좁힘`);
                         for (const route of routes) {
                             const denied = await request.get(route, { headers: { Cookie: `accessToken=${token}` }, maxRedirects: 0 });
                             expect(denied.status(), `${permissions.join('+')}만으로 관리 화면 진입 불가`).toBe(307);
@@ -681,6 +702,7 @@ test.describe('권한 변경과 충돌 제어', () => {
                     }
                     const reads: Grant[] = ['POLL_READ', 'POLL_READ_ALL'].map(code => ({ type: 'OPERATION', code }));
                     await replaceGrants(request, administrator, groupA, reads);
+                    await reloginAfterRevocation('A 에서 POLL_CREATE 회수');
                     const actor = await actorPage({ storageState: { cookies: [], origins: [] } });
                     try {
                         await actor.context.addCookies([{ name: 'accessToken', value: token, url: baseURL, httpOnly: true, sameSite: 'Strict' }]);
@@ -705,17 +727,20 @@ test.describe('권한 변경과 충돌 제어', () => {
                         finally { await actor.context.close(); }
                     }
                     await replaceGrants(request, administrator, groupA, grantsA);
+                    await reloginAfterRevocation('A 의 투표 권한 회수');
                 });
-                // The same login token is reused throughout: every request must load current grants.
+                // 두 그룹이 함께 주던 권한은 한쪽에서 회수해도 다른 쪽으로 남는다(회수는 세션을 끊고, 새 세션은 합집합을 받는다).
                 await replaceGrants(request, administrator, groupB, [{ type: 'OPERATION', code: 'ADMCODE_READ' }]);
+                await reloginAfterRevocation('B 에서 MENU_READ 회수');
                 expect((await current()).permissions).toEqual(['ADMCODE_READ', 'MENU_READ']);
                 expect((await request.get(MENUS, { headers: user })).status(), 'A에 남은 공유 조회 권한 보존').toBe(200);
                 const onlyB = await replaceGroups(request, administrator, esntlId, [groupB]);
                 expect(onlyB.groups).toEqual([groupB]);
+                await reloginAfterRevocation('그룹 A 회수');
                 expect((await current()).permissions).toEqual(['ADMCODE_READ']);
-                expect((await request.get(MENUS, { headers: user })).status(), 'A 회수는 다음 요청부터 반영').toBe(403);
+                expect((await request.get(MENUS, { headers: user })).status(), 'A 회수 뒤 새 세션에도 A 의 권한은 없다').toBe(403);
                 const revokedPage = await request.get('/admin/system/menus', { headers: { Cookie: `accessToken=${token}` }, maxRedirects: 0 });
-                expect(revokedPage.status(), '기능권한 회수 후 같은 토큰으로 직접 URL 진입도 거절한다').toBe(307);
+                expect(revokedPage.status(), '기능권한 회수 후 새 토큰으로 직접 URL 진입도 거절한다').toBe(307);
                 expect(new URL(revokedPage.headers().location, baseURL).searchParams.get('auth_error')).toBe('unauthorized');
                 expect((await request.get(ADMCODES, { headers: user })).status(), '다른 그룹 B의 권한 보존').toBe(200);
                 const staleMembership = await request.put(`${AUTHORIZATION}/users/${esntlId}/groups`, {
@@ -724,6 +749,22 @@ test.describe('권한 변경과 충돌 제어', () => {
                 expect(staleMembership.status(), '오래된 전체 배정은 현재 B를 지울 수 없음').toBe(409);
                 expect(await membership(request, administrator, esntlId)).toEqual(onlyB);
                 await replaceGroups(request, administrator, esntlId, []);
+                expect((await request.get('/api/v1/auth/me', { headers: user })).status(), '그룹 B 회수(완전 회수): 회수 전에 받은 토큰은 끊긴다').toBe(401);
+                // 그룹이 하나도 없는 사용자는 역할이 없어 화면 로그인(BFF)이 세션을 만들지 않는다 — 백엔드에 직접 로그인해
+                //   새 세션에도 USER 권한이 암묵적으로 생기지 않는지 본다(일정 계약 시험과 같은 직접 호출).
+                const apiUrl = (await assertIsolatedTarget()).apiUrl;
+                const direct = await playwright.request.newContext({ baseURL: `${apiUrl}/`, ...anonymousCsrfRequestState(`${apiUrl}/`) });
+                try {
+                    const login = await direct.post('/api/v1/auth/login', { data: { userId, password } });
+                    expect(login.status(), '그룹 없는 사용자의 직접 로그인').toBe(200);
+                    const issued = (await login.json() as { data?: { accessToken?: string } }).data?.accessToken;
+                    if (!issued)
+                        throw new Error('Direct login returned no access token.');
+                    token = issued;
+                    user = { Authorization: `Bearer ${token}` };
+                } finally {
+                    await direct.dispose();
+                }
                 const empty = await current();
                 expect(empty.groups).toEqual([]);
                 expect(empty.permissions).toEqual([]);

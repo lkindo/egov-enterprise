@@ -162,9 +162,9 @@ public class FileAccessPolicy {
             return;
         }
 
-        // 5. 관리자.
+        // 5. 관리자 — 소유자 본인만 하나씩 빼는 참조원(결재 임시저장)의 첨부는 관리자도 지우지 못한다.
         boolean admin = SecurityUtil.hasPermission("FILE_DELETE_ALL");
-        if (admin) {
+        if (admin && !grants.adminDeleteDenied()) {
             return;
         }
 
@@ -190,6 +190,22 @@ public class FileAccessPolicy {
      * @param master 대상 첨부 마스터(존재 검증은 호출부에서 이미 수행)
      * @throws BusinessException ACCESS_DENIED(403) — 연결 권한이 없을 때
      */
+    /**
+     * 현재 인증 주체가 이 첨부 묶음에 파일을 더할 수 있는지 검증한다. 원 업로더여야 하고({@link #assertAttachable}), 묶음을 바꿀 수 없는
+     * 업무 참조원(상신한 결재 문서·결재 차수 이력)이 가리키지 않아야 한다 — 결재에 묶인 묶음을 게시글 첨부 추가 같은 다른 경로로 바꾸면
+     * 상신한 첨부와 앞 차수 이력이 함께 바뀐다(V2_151, H3).
+     *
+     * @param master 대상 첨부 마스터(존재 검증은 호출부에서 이미 수행)
+     * @throws BusinessException ACCESS_DENIED(403) — 원 업로더가 아니거나 바꿀 수 없는 묶음일 때
+     */
+    public void assertAppendable(FileMaster master) {
+        assertAttachable(master);
+        if (referenceResolver.frozen(master.getAtchFileSn())) {
+            log.warn("[FileAccess] 첨부 추가 거부 — 결재에 묶인 묶음 atchFileSn={}", master.getAtchFileSn());
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+        }
+    }
+
     public void assertAttachable(FileMaster master) {
         Long atchFileSn = master.getAtchFileSn();
         String loginId = SecurityUtil.getCurrentLoginId().orElse(null);

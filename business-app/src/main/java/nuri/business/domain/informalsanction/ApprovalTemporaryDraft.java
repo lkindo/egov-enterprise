@@ -50,6 +50,10 @@ public class ApprovalTemporaryDraft extends BaseEntity {
     @Column(length = 4000)
     private String docCn;
 
+    /** 상신 전 첨부 묶음(V2_151). 기안자 본인만 열고, 상신하면 묶음이 문서로 옮겨 간다. */
+    @Column(name = "atch_file_sn")
+    private Long atchFileSn;
+
     public static ApprovalTemporaryDraft create(String aplcntId, String taskSeCd, String docTtl, String docCn) {
         ApprovalTemporaryDraft draft = new ApprovalTemporaryDraft();
         draft.aplcntId = Objects.requireNonNull(aplcntId);
@@ -57,6 +61,11 @@ public class ApprovalTemporaryDraft extends BaseEntity {
         draft.docTtl = docTtl;
         draft.docCn = docCn;
         return draft;
+    }
+
+    /** 첨부 묶음을 정한다({@code null} 이면 첨부 없음). 업로더 확인은 서비스가 먼저 한다. */
+    public void replaceAttachment(Long atchFileSn) {
+        this.atchFileSn = atchFileSn;
     }
 
     /** 내용을 통째로 바꾼다. 바뀐 것이 없어도 수정 시각을 고쳐 버전을 올린다(결재선만 바뀐 저장도 새 버전이다). */

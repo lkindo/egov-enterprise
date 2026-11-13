@@ -31,6 +31,9 @@ public class InformalSanctionHistory extends BaseEntity {
     private LocalDateTime atrzDt;
     @Column(length = 4000)
     private String rjctRsnCn;
+    /** 이 차수에 올린 첨부 묶음(V2_151). 차수를 만들 때 문서에서 옮기고 그 뒤로 바꾸지 않는다 — 결재자가 본 첨부의 증거다. */
+    @Column(name = "atch_file_sn", updatable = false)
+    private Long atchFileSn;
 
     public static InformalSanctionHistory create(InformalSanction sanction) {
         InformalSanctionHistory history = new InformalSanctionHistory();
@@ -39,6 +42,7 @@ public class InformalSanctionHistory extends BaseEntity {
         history.docCn = sanction.getDocCn();
         history.taskSeCd = sanction.getTaskSeCd();
         history.reqYmd = sanction.getReqYmd();
+        history.atchFileSn = sanction.getAtchFileSn();
         history.updateResult(sanction);
         return history;
     }

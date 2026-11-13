@@ -121,6 +121,8 @@ class ZeroDowntimeMigrationLinterTest {
             "(?is)\\bALTER\\s+TABLE\\s+\\S+\\s+RENAME\\s+(?!CONSTRAINT\\b)");
     private static final Pattern ADD_CLAUSE_PATTERN = Pattern.compile(
             "(?is)\\bADD\\s+(?:COLUMN\\s+)?(.*?)(?:,|$|;)");
+    /** 이름 붙은 CHECK 제약 추가 — 컬럼을 더하지 않으므로 NOT NULL 컬럼 판정 밖이다. */
+    private static final Pattern CHECK_CONSTRAINT_CLAUSE = Pattern.compile("(?is)\\s*CONSTRAINT\\s+[a-z0-9_]+\\s+CHECK\\b.*");
     private static final Pattern FORBIDDEN_DROP_TABLE = Pattern.compile("(?is)\\bDROP\\s+TABLE\\b");
     private static final Pattern FORBIDDEN_DROP_SEQUENCE = Pattern.compile("(?is)\\bDROP\\s+SEQUENCE\\b");
     private static final Pattern FORBIDDEN_TRUNCATE = Pattern.compile(
@@ -148,6 +150,29 @@ class ZeroDowntimeMigrationLinterTest {
     private static final String HISTORY_BLOB_FAILURE = "Git show 실패: 기준 object/ref와 조상 관계를 확인하십시오.";
     /** cat-file 일괄 응답의 머리 줄: {@code <oid> <type> <size>}. */
     private static final Pattern BATCH_HEADER = Pattern.compile("([0-9a-f]{40}|[0-9a-f]{64}) (\\S+) (\\d{1,18})");
+
+    @Test
+    @DisplayName("ADD CONSTRAINT 의 CHECK 안 IS NOT NULL 은 컬럼 추가가 아니다 — DEFAULT 없는 NOT NULL 컬럼 추가는 여전히 막는다")
+    void addNotNullTargetsColumnsNotCheckConstraints() {
+        List<String> violations = new ArrayList<>();
+        checkAddNotNullViolation("V9__x.sql",
+                "ALTER TABLE t ADD CONSTRAINT ck_t_a CHECK (a IS NULL OR (b IS NOT NULL AND c IS NOT NULL));\n", violations);
+        assertThat(violations).isEmpty();
+
+        checkAddNotNullViolation("V9__x.sql", "ALTER TABLE t ADD COLUMN a varchar(8) NOT NULL;\n", violations);
+        assertThat(violations).singleElement().asString().contains("DEFAULT 없는 NOT NULL 컬럼 추가");
+        violations.clear();
+        checkAddNotNullViolation("V9__x.sql", "ALTER TABLE t ADD a varchar(8) NOT NULL;\n", violations);
+        assertThat(violations).hasSize(1);
+        violations.clear();
+        // 같은 문장에서 CHECK 뒤에 붙은 NOT NULL 컬럼 추가는 따로 잡는다.
+        checkAddNotNullViolation("V9__x.sql",
+                "ALTER TABLE t ADD CONSTRAINT ck_t_b CHECK (b IN ('x', 'y')), ADD COLUMN d integer NOT NULL;\n", violations);
+        assertThat(violations).hasSize(1).allMatch(v -> v.contains("d integer NOT NULL"));
+        violations.clear();
+        checkAddNotNullViolation("V9__x.sql", "ALTER TABLE t ADD COLUMN e integer NOT NULL DEFAULT 0;\n", violations);
+        assertThat(violations).isEmpty();
+    }
 
     @Test
     void migrationHistoryRejectsModifiedProtectedVersion(@TempDir Path root) throws Exception {
@@ -1451,6 +1476,11 @@ class ZeroDowntimeMigrationLinterTest {
         while (matcher.find()) {
             String addClause = matcher.group(1);
             String upperClause = addClause.toUpperCase();
+            // [2026-11-12 V2_151] ADD CONSTRAINT <이름> CHECK (...) 는 컬럼을 더하지 않는다 — CHECK 안의 IS NOT NULL 을 NOT NULL 컬럼
+            //   추가로 읽던 오탐을 걷는다. 컬럼 추가(ADD [COLUMN] ...)와 그 밖의 ADD 는 종전대로 본다.
+            if (CHECK_CONSTRAINT_CLAUSE.matcher(addClause).matches()) {
+                continue;
+            }
             if (upperClause.contains("NOT")
                     && upperClause.contains("NULL")
                     && !upperClause.contains("DEFAULT")) {

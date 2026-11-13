@@ -79,6 +79,24 @@ public class CommunityUser extends BaseEntity implements Serializable, Persistab
         return CommunityMemberStatus.WITHDRAWN.matches(this.mbrSttsCd);
     }
 
+    /**
+     * 그 커뮤니티의 운영자인가(GAP-CMTY-001, DEC-OPS-416) — 승인된 회원({@code P})이면서 {@code mngrYn='Y'} 일 때만이다.
+     * 탈퇴(W)·신청(A) 행에 남은 표시는 운영 권한이 아니다(탈퇴·재신청이 표시를 지우지만 직접 DML 행도 막는다).
+     */
+    public boolean isOperator() {
+        return isApproved() && "Y".equals(this.mngrYn);
+    }
+
+    /** 승인된 회원을 운영자로 지정한다. 개설자 자동 지정과 운영자·관리자의 지정이 쓴다. */
+    public void designateOperator() {
+        this.mngrYn = "Y";
+    }
+
+    /** 운영자 표시를 해제한다. 마지막 운영자인지는 서비스가 커뮤니티 행을 잠근 뒤 판정한다. */
+    public void releaseOperator() {
+        this.mngrYn = "N";
+    }
+
     /** 회원 → 탈퇴. 행은 남겨 가입·탈퇴 일자를 보존하며, 게시판 접근 판정은 회원({@code P})만 통과시킨다. */
     public void withdraw(String withdrawalYmd) {
         this.mbrSttsCd = CommunityMemberStatus.WITHDRAWN.code();

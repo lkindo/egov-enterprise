@@ -29,12 +29,14 @@ export default function CommunityHubClient({
   const [searchKeyword, setSearchKeyword] = useState('');
   // 'managed' = 내가 개설한 커뮤니티. 서버에 소유자 필터 파라미터가 없어
   // 현재 조회된 페이지 안에서만 추리는 클라이언트 필터다.
-  const [filter, setFilter] = useState<'all' | 'managed'>('all');
+  // 'joined' = 내가 승인된 회원인 커뮤니티(GAP-CMTY-001). 서버가 거르므로 페이지·건수가 그 결과 기준이다.
+  const [filter, setFilter] = useState<'all' | 'managed' | 'joined'>('all');
+  const joinedOnly = filter === 'joined';
   const authorizationScope = `${user?.id ?? ''}:${user?.esntlId ?? ''}:${user?.authorizationVersion ?? ''}`;
   const [initialAuthorizationScope] = useState(authorizationScope);
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['communities', authorizationScope, searchKeyword, page, pageSize],
+    queryKey: ['communities', authorizationScope, searchKeyword, page, pageSize, joinedOnly],
     /*
      * [2026-08-25 실측 수정] 종전에는 `pageIndex`·`searchKeyword` 를 보냈는데
      * CommunityApiController 는 **page(1부터, ADR-0036) / size** 와
@@ -47,8 +49,9 @@ export default function CommunityHubClient({
       size: pageSize,
       searchCnd: '0',
       searchWrd: searchKeyword,
+      ...(joinedOnly ? { joined: true } : {}),
     }),
-    initialData: (authorizationScope === initialAuthorizationScope && page === 1 && !searchKeyword && pageSize === 10) ? initialData : undefined,
+    initialData: (authorizationScope === initialAuthorizationScope && page === 1 && !searchKeyword && pageSize === 10 && !joinedOnly) ? initialData : undefined,
     placeholderData: undefined,
   });
 
@@ -148,7 +151,7 @@ export default function CommunityHubClient({
               size="sm"
               variant={filter === 'all' ? 'default' : 'outline'}
               aria-pressed={filter === 'all'}
-              onClick={() => setFilter('all')}
+              onClick={() => { setFilter('all'); setPage(1); }}
             >
               전체 목록
             </Button>
@@ -157,19 +160,18 @@ export default function CommunityHubClient({
               size="sm"
               variant={filter === 'managed' ? 'default' : 'outline'}
               aria-pressed={filter === 'managed'}
-              onClick={() => setFilter('managed')}
+              onClick={() => { setFilter('managed'); setPage(1); }}
               title="내가 개설한 커뮤니티만 현재 페이지에서 추립니다"
             >
               관리 중인 공간
             </Button>
-            {/* 가입 여부는 tb_cmnty_user_map 에만 있고 목록 응답(CommunityDto)에 없다.
-                가짜로 동작시키지 않고 사유를 밝혀 비활성화한다. */}
+            {/* [GAP-CMTY-001] 가입 여부는 tb_cmnty_user_map 에만 있다 — 서버가 승인 회원(P)인 커뮤니티로 거른다(joined=true). */}
             <Button
               type="button"
               size="sm"
-              variant="outline"
-              disabled
-              title="가입 여부를 내려주는 API가 아직 없어 사용할 수 없습니다"
+              variant={filter === 'joined' ? 'default' : 'outline'}
+              aria-pressed={filter === 'joined'}
+              onClick={() => { setFilter('joined'); setPage(1); }}
             >
               내 가입 커뮤니티
             </Button>
@@ -187,7 +189,9 @@ export default function CommunityHubClient({
         keyField="cmntySn"
         emptyMessage={filter === 'managed'
           ? "이 페이지에는 내가 개설한 커뮤니티가 없습니다."
-          : emptyResultMessage(searchKeyword, '등록된 커뮤니티가 없습니다.')}
+          : filter === 'joined'
+            ? emptyResultMessage(searchKeyword, '가입한 커뮤니티가 없습니다.')
+            : emptyResultMessage(searchKeyword, '등록된 커뮤니티가 없습니다.')}
         pagination={{
           currentPage: page,
           totalPages: data?.totalPage || 1,

@@ -127,6 +127,10 @@ export interface ApprovalListQuery {
   keyword?: string;
   fromYmd?: string;
   toYmd?: string;
+  /** [Wave 4] 서버 정렬 기준 — 결재 목록은 결재번호만 받는다(그 밖은 400). 방향과 함께 보낸다. */
+  sortBy?: 'ifmlAtrzSn';
+  /** [Wave 4] 정렬 방향. 비우면 최신 결재번호 순이다. */
+  sortDir?: 'asc' | 'desc';
 }
 
 export interface ApprovalListQueryWithStatus extends ApprovalListQuery {
@@ -224,9 +228,13 @@ class ApprovalUserService extends ApiService {
     aprvYn: typeof SANCTION_STATUS.APPROVED | typeof SANCTION_STATUS.REJECTED,
     rjctRsnCn: string | undefined,
     version: number,
+    onBehalfOf?: string,
   ): Promise<void> {
     // 버전은 필수다 — 다른 결재 쓰기와 같이 서버가 대조해 낡은 화면의 처리를 409 로 막는다(2026-10-27).
-    const request = ApprovalDecisionRequestSchema.parse({ status: aprvYn, reason: rjctRsnCn, version });
+    // [V2_151] 대리결재면 서버가 상세에 실어 준 원결재자를 그대로 돌려보낸다(본인 차례면 싣지 않는다).
+    const request = ApprovalDecisionRequestSchema.parse({
+      status: aprvYn, reason: rjctRsnCn, version, ...(onBehalfOf ? { onBehalfOf } : {}),
+    });
     return this.executeGenerated(confirmOperation, {
       path: { id: ifmlAtrzSn },
       body: request,

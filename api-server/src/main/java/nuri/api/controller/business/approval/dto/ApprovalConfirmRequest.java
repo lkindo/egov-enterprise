@@ -30,8 +30,15 @@ public class ApprovalConfirmRequest {
     @jakarta.validation.constraints.Min(0)
     private Integer version;
 
+    /** [V2_151] 대리결재 — 대신 결정할 원결재자. 상세의 onBehalfOfId 를 그대로 보낸다. 맡긴 사람이 하나면 비워도 된다. */
+    @Schema(description = "대리결재로 대신 결정할 원결재자 esntlId(상세의 onBehalfOfId). 본인 차례면 비웁니다.", maxLength = 20)
+    @Size(max = 20)
+    private String onBehalfOf;
+
     public Integer getVersion() { return version; }
     public void setVersion(Integer version) { this.version = version; }
+    public String getOnBehalfOf() { return onBehalfOf; }
+    public void setOnBehalfOf(String onBehalfOf) { this.onBehalfOf = onBehalfOf; }
 
     public String getStatus() {
         return status;

@@ -8,6 +8,7 @@ interface MockColumn {
   header: string;
   accessor: string | ((item: Record<string, unknown>, index?: number) => ReactNode);
   sortKey?: string;
+  serverSortKey?: string;
 }
 
 interface MockPagination {
@@ -318,6 +319,8 @@ interface ClusterCase {
   method: LogServiceMethod;
   /** header → 원시 정렬 키(sortKey). 현재 페이지 클라이언트 정렬 계약(StandardDataTable). */
   sortKeys: Record<string, string>;
+  /** [Wave 4 GAP-UI-001] header → 서버 정렬 키(serverSortKey). 인덱스가 받치는 열만 서버가 목록 전체를 정렬한다. */
+  serverSortKeys?: Record<string, string>;
 }
 
 const CLUSTER_CASES: ClusterCase[] = [
@@ -326,7 +329,9 @@ const CLUSTER_CASES: ClusterCase[] = [
     Component: SystemLogsLoginClient,
     row: LOGIN_ROW,
     method: 'getLoginLogs',
-    sortKeys: { 발생시점: 'creatDt', 사용자ID: 'loginId', 구분: 'loginMthd' },
+    // [Wave 4] 발생시점은 서버가 접속일시(ix_tb_login_log_crt_dt)로 목록 전체를 정렬한다. 나머지는 인덱스가 없어 현재 페이지 정렬이다.
+    sortKeys: { 사용자ID: 'loginId', 구분: 'loginMthd' },
+    serverSortKeys: { 발생시점: 'crtDt' },
   },
   {
     name: 'SYS',
@@ -426,11 +431,17 @@ describe('logs cluster modernization (m-1): page-size opt-in and current-page so
 
   it.each(CLUSTER_CASES)(
     '$name client marks date/user/type columns sortable via sortKey (current-page sorting)',
-    ({ Component, row, sortKeys }) => {
+    ({ Component, row, sortKeys, serverSortKeys = {} }) => {
       clientHarness.queryData = pageOf(row);
       render(<Component />);
 
       const { columns } = currentTableProps();
+      for (const [header, serverSortKey] of Object.entries(serverSortKeys)) {
+        const column = columns.find((candidate) => candidate.header === header);
+        expect(column?.serverSortKey, `${header} serverSortKey`).toBe(serverSortKey);
+      }
+      const serverSortableHeaders = columns.filter((c) => c.serverSortKey !== undefined).map((c) => c.header);
+      expect(serverSortableHeaders.sort()).toEqual(Object.keys(serverSortKeys).sort());
       for (const [header, sortKey] of Object.entries(sortKeys)) {
         const column = columns.find((candidate) => candidate.header === header);
         expect(column, `${header} column`).toBeDefined();

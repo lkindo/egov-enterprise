@@ -101,9 +101,16 @@ public class AuthServiceImpl implements AuthService {
         String esntlId = principal.getEsntlId();
         String loginId = principal.getLoginId();
         String version = principal.getMfaCredentialVersion();
-        String accessToken = version == null ? jwtTokenProvider.createAccessToken(esntlId, principal.getAuthorCode())
+        // [V2_153] 토큰은 발급 때의 세션차수를 담는다 — 그 뒤 차수가 오르면(비밀번호 변경·강제 로그아웃 등) 두 토큰 모두 거부된다.
+        Integer sessionCycle = principal.getSessionCycle();
+        String accessToken = sessionCycle != null
+                ? jwtTokenProvider.createAccessToken(esntlId, principal.getAuthorCode(), version,
+                        version == null ? null : mfaVerifiedAt, sessionCycle)
+                : version == null ? jwtTokenProvider.createAccessToken(esntlId, principal.getAuthorCode())
                 : jwtTokenProvider.createAccessToken(esntlId, principal.getAuthorCode(), version, mfaVerifiedAt);
-        String refreshToken = version == null ? jwtTokenProvider.createRefreshToken(esntlId)
+        String refreshToken = sessionCycle != null
+                ? jwtTokenProvider.createRefreshToken(esntlId, version, version == null ? null : mfaVerifiedAt, sessionCycle)
+                : version == null ? jwtTokenProvider.createRefreshToken(esntlId)
                 : jwtTokenProvider.createRefreshToken(esntlId, version, mfaVerifiedAt);
         // JWT에 기록된 초 단위 절대 만료를 저장해야 설정 수명과 회전 후 exp가 일치한다.
         java.time.LocalDateTime refreshExpiry = ServiceTime.toLocal(jwtTokenProvider.getExpiration(refreshToken).toInstant());
@@ -210,6 +217,21 @@ public class AuthServiceImpl implements AuthService {
         return storedToken;
     }
 
+    /**
+     * [V2_153] refresh token 의 세션차수가 현재 차수와 같아야 재발급한다. 다르면(비밀번호 변경·상태 변경·잠금·권한 그룹 회수·강제
+     * 로그아웃 뒤) 저장된 토큰을 지우고 {@code INVALID_TOKEN} 이다 — 무효화된 세션이 재발급으로 살아나지 않는다.
+     */
+    private void requireCurrentSessionCycle(CustomUserDetails principal, String refreshToken, String userId,
+            String presentedDigest) {
+        try {
+            JwtTokenProvider.assertSessionCycle(principal, jwtTokenProvider.getSessionCycle(refreshToken));
+        } catch (org.springframework.security.authentication.CredentialsExpiredException revoked) {
+            log.warn(">>> [Reissue] Rejected: session was revoked after this refresh token was issued");
+            refreshTokenRepository.deleteIfCurrent(userId, presentedDigest);
+            throw new BusinessException(CommonErrorCode.INVALID_TOKEN);
+        }
+    }
+
     @Override
     @Transactional
     public TokenResponse reissue(String refreshToken, String clientIp) {
@@ -224,6 +246,7 @@ public class AuthServiceImpl implements AuthService {
                 userDetailsService.loadUserByUsername(userId), userId);
         var mfaEvidence = jwtTokenProvider.getMfaEvidence(refreshToken);
         JwtTokenProvider.assertMfaSession(principal, mfaEvidence);
+        requireCurrentSessionCycle(principal, refreshToken, userId, presentedDigest);
 
         // [2026-09-25 DIP S6 ②] 재발급도 로그인 정책을 다시 본다. 종전에는 로그인 때 한 번만 봐서, 관리자가
         //   IP·시간대·접속 제한을 새로 걸어도 리프레시 토큰 수명(최대 7일) 동안 세션이 계속 연장됐다.
@@ -241,7 +264,11 @@ public class AuthServiceImpl implements AuthService {
 
         String mfaVersion = principal.getMfaCredentialVersion();
         java.time.Instant verifiedAt = mfaEvidence == null ? null : mfaEvidence.verifiedAt();
-        String newAccessToken = mfaVersion == null ? jwtTokenProvider.createAccessToken(userId, principal.getAuthorCode())
+        Integer sessionCycle = principal.getSessionCycle();
+        String newAccessToken = sessionCycle != null
+                ? jwtTokenProvider.createAccessToken(userId, principal.getAuthorCode(), mfaVersion,
+                        mfaVersion == null ? null : verifiedAt, sessionCycle)
+                : mfaVersion == null ? jwtTokenProvider.createAccessToken(userId, principal.getAuthorCode())
                 : jwtTokenProvider.createAccessToken(userId, principal.getAuthorCode(), mfaVersion, verifiedAt);
 
         // [W1-06] 리프레시 토큰 회전.
@@ -258,7 +285,10 @@ public class AuthServiceImpl implements AuthService {
             absoluteExpiry = presentedExpiry;
         }
         absoluteExpiry = absoluteExpiry.truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
-        String rotatedRefreshToken = mfaVersion == null ? jwtTokenProvider.createRefreshToken(userId, java.util.Date.from(absoluteExpiry))
+        String rotatedRefreshToken = sessionCycle != null
+                ? jwtTokenProvider.createRefreshToken(userId, java.util.Date.from(absoluteExpiry), mfaVersion,
+                        mfaVersion == null ? null : verifiedAt, sessionCycle)
+                : mfaVersion == null ? jwtTokenProvider.createRefreshToken(userId, java.util.Date.from(absoluteExpiry))
                 : jwtTokenProvider.createRefreshToken(userId, java.util.Date.from(absoluteExpiry), mfaVersion, verifiedAt);
 
         //   ⚠ **회전은 원자적이어야 한다** — 제시된 토큰이 아직 저장값일 때만 바꾼다(2026-09-16).

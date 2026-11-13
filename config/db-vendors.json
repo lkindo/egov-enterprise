@@ -172,39 +172,39 @@
           "version": "19",
           "engine": "oracle19",
           "evidence": {
-            "runId": "oracle19-47dc92c2562a-89880d63",
-            "commit": "47dc92c2562a8e686d7ed0ea58429a2d56df41d2",
-            "recordedAt": "2026-11-12T12:50:37.663+09:00",
-            "inputHash": "9ff7eb013d2ae5b1f3d5d0f5fb108c7a896587345f921797586f8d3f49333997",
-            "modelHash": "3ef452cab71f81d1a585eb5a8bc42c0c3bff5c0dd0726e60607086f4e67f7cd5",
+            "runId": "oracle19-fe55447bbd83-69651f48",
+            "commit": "fe55447bbd83ee473352827c05686240e9268855",
+            "recordedAt": "2026-11-13T09:30:49.929+09:00",
+            "inputHash": "cae4ee385dda95333a59731d3cf7be850dd98371d97335deae7d16bea1d1bd84",
+            "modelHash": "268c79634b06cea4995c963bd284b0ea35461d4a9ded247e6181e0d68cdae30b",
             "image": "fugeritorg/oracle-19.3.0-ee:2025.0@sha256:6a29a3c7924de980b9cf10ef8c7e6120fe2db8e3fc32b2087aa59a845e4c63ac",
             "imageOrigin": "community:fugeritorg",
             "scope": "application-database",
             "composition": {
               "profile": "demo",
               "layout": "multi-module",
-              "compositionHash": "c10bee51fec4f750cc159d95bc22c1847b139788c842b06fecb8880daa34e11a"
+              "compositionHash": "dc5087cda407a6d0f18c9411de7ed4eea57e055c7153d721cbc7c86dd625dd4d"
             },
             "steps": {
               "verification": {
                 "result": "passed"
               },
               "schemaParity": {
-                "tables": 98,
-                "statements": 1573,
+                "tables": 99,
+                "statements": 1615,
                 "degradations": 5
               },
               "seedParity": {
-                "tables": 98,
-                "rows": 18240
+                "tables": 99,
+                "rows": 18261
               },
               "hibernateValidate": {
                 "ddlAuto": "validate",
-                "contexts": 44
+                "contexts": 45
               },
               "integration": {
-                "classes": 51,
-                "tests": 399,
+                "classes": 52,
+                "tests": 402,
                 "failures": 0,
                 "errors": 0,
                 "skipped": 0
@@ -218,8 +218,8 @@
                   "skipped": 0
                 },
                 "differential": {
-                  "checks": 143,
-                  "rows": 1263,
+                  "checks": 148,
+                  "rows": 1295,
                   "differences": 0,
                   "unbalanced": 0,
                   "intentFailures": 0
@@ -227,7 +227,7 @@
               },
               "representativeE2e": {
                 "specs": 11,
-                "expected": 66,
+                "expected": 67,
                 "unexpected": 0,
                 "flaky": 0,
                 "skipped": 0
@@ -239,39 +239,39 @@
           "version": "23",
           "engine": "oracle",
           "evidence": {
-            "runId": "oracle-47dc92c2562a-863a4d1e",
-            "commit": "47dc92c2562a8e686d7ed0ea58429a2d56df41d2",
-            "recordedAt": "2026-11-12T12:04:01.878+09:00",
-            "inputHash": "9ff7eb013d2ae5b1f3d5d0f5fb108c7a896587345f921797586f8d3f49333997",
-            "modelHash": "3ef452cab71f81d1a585eb5a8bc42c0c3bff5c0dd0726e60607086f4e67f7cd5",
+            "runId": "oracle-fe55447bbd83-8f8a9add",
+            "commit": "fe55447bbd83ee473352827c05686240e9268855",
+            "recordedAt": "2026-11-13T08:43:22.240+09:00",
+            "inputHash": "cae4ee385dda95333a59731d3cf7be850dd98371d97335deae7d16bea1d1bd84",
+            "modelHash": "268c79634b06cea4995c963bd284b0ea35461d4a9ded247e6181e0d68cdae30b",
             "image": "gvenzl/oracle-free:23-slim-faststart@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093",
             "imageOrigin": "community:gvenzl",
             "scope": "application-database",
             "composition": {
               "profile": "demo",
               "layout": "multi-module",
-              "compositionHash": "c10bee51fec4f750cc159d95bc22c1847b139788c842b06fecb8880daa34e11a"
+              "compositionHash": "dc5087cda407a6d0f18c9411de7ed4eea57e055c7153d721cbc7c86dd625dd4d"
             },
             "steps": {
               "verification": {
                 "result": "passed"
               },
               "schemaParity": {
-                "tables": 98,
-                "statements": 1573,
+                "tables": 99,
+                "statements": 1615,
                 "degradations": 5
               },
               "seedParity": {
-                "tables": 98,
-                "rows": 18240
+                "tables": 99,
+                "rows": 18261
               },
               "hibernateValidate": {
                 "ddlAuto": "validate",
-                "contexts": 44
+                "contexts": 45
               },
               "integration": {
-                "classes": 51,
-                "tests": 399,
+                "classes": 52,
+                "tests": 402,
                 "failures": 0,
                 "errors": 0,
                 "skipped": 0
@@ -285,8 +285,8 @@
                   "skipped": 0
                 },
                 "differential": {
-                  "checks": 143,
-                  "rows": 1263,
+                  "checks": 148,
+                  "rows": 1295,
                   "differences": 0,
                   "unbalanced": 0,
                   "intentFailures": 0
@@ -294,7 +294,7 @@
               },
               "representativeE2e": {
                 "specs": 11,
-                "expected": 66,
+                "expected": 67,
                 "unexpected": 0,
                 "flaky": 0,
                 "skipped": 0
@@ -351,39 +351,39 @@
           "version": "11.4",
           "engine": "mariadb",
           "evidence": {
-            "runId": "mariadb-47dc92c2562a-e0266f5f",
-            "commit": "47dc92c2562a8e686d7ed0ea58429a2d56df41d2",
-            "recordedAt": "2026-11-12T13:42:51.797+09:00",
-            "inputHash": "1e97d9d6e9db078658f27d4fec06e1b60775d3d290abc8c0a65c833432428b9e",
-            "modelHash": "2caba84f589e947d7eae1a5f3ee1abf9f6b2a52df61844b464785e487db09f89",
+            "runId": "mariadb-fe55447bbd83-ed0ce63a",
+            "commit": "fe55447bbd83ee473352827c05686240e9268855",
+            "recordedAt": "2026-11-13T07:44:52.497+09:00",
+            "inputHash": "7728222eae63cd8c4039add75750fc5d466b87ad0743c64dfa6cd7f36a3c90b8",
+            "modelHash": "7db4fc6950e848c289c280f09d8506a89b9b5b97f0260f6a75867d142a786809",
             "image": "mariadb:11.4@sha256:d1891ede5a559f1086f55053bb8cc1569b0298338c4d72d71725a7f74f6ba620",
             "imageOrigin": "official:docker-library",
             "scope": "application-database",
             "composition": {
               "profile": "demo",
               "layout": "multi-module",
-              "compositionHash": "29aef8f7dd9342fea647f9bdc4f2ae2e2a0a0005a6280b7d17af3b8829a5a7bc"
+              "compositionHash": "188afa4ed5ee1a8e9b3a48e3032a2e1809f1ddff7b2770f512d19ca9605334e6"
             },
             "steps": {
               "verification": {
                 "result": "passed"
               },
               "schemaParity": {
-                "tables": 98,
-                "statements": 466,
+                "tables": 99,
+                "statements": 485,
                 "degradations": 4
               },
               "seedParity": {
-                "tables": 98,
-                "rows": 18240
+                "tables": 99,
+                "rows": 18261
               },
               "hibernateValidate": {
                 "ddlAuto": "validate",
-                "contexts": 44
+                "contexts": 45
               },
               "integration": {
-                "classes": 51,
-                "tests": 397,
+                "classes": 52,
+                "tests": 400,
                 "failures": 0,
                 "errors": 0,
                 "skipped": 0
@@ -397,8 +397,8 @@
                   "skipped": 0
                 },
                 "differential": {
-                  "checks": 143,
-                  "rows": 1311,
+                  "checks": 148,
+                  "rows": 1343,
                   "differences": 0,
                   "unbalanced": 0,
                   "intentFailures": 0
@@ -406,7 +406,7 @@
               },
               "representativeE2e": {
                 "specs": 11,
-                "expected": 66,
+                "expected": 67,
                 "unexpected": 0,
                 "flaky": 0,
                 "skipped": 0
@@ -456,39 +456,39 @@
           "version": "8.4",
           "engine": "mysql",
           "evidence": {
-            "runId": "mysql-47dc92c2562a-4a17aee3",
-            "commit": "47dc92c2562a8e686d7ed0ea58429a2d56df41d2",
-            "recordedAt": "2026-11-12T14:08:00.491+09:00",
-            "inputHash": "32ad75fb1f4701eb0503c8a726809344d59be65ba04d5e56f410480f2cb616a9",
-            "modelHash": "dff8aee71162864a8077e9c7eb850c186b08ce7ab26a58f6be1571f64058c130",
+            "runId": "mysql-fe55447bbd83-8f63228e",
+            "commit": "fe55447bbd83ee473352827c05686240e9268855",
+            "recordedAt": "2026-11-13T08:15:17.304+09:00",
+            "inputHash": "49d246ba38c54319bb2360fdb3805d22239f886f65be4449abfe567ae444edbb",
+            "modelHash": "faa05ee9dface9c40d180b6327f5ac2b2f0659a9efc85a7d535d3c97c163ccdc",
             "image": "mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902",
             "imageOrigin": "official:docker-library",
             "scope": "application-database",
             "composition": {
               "profile": "demo",
               "layout": "multi-module",
-              "compositionHash": "744f5d0225886cfe12e6c51f227ffd7473a57024c19be4ca382553f6a20c0155"
+              "compositionHash": "69048b07c5c5374396c9a367e1599ec1cd1c64cb3f7b2a0d77ccde3ccecd753f"
             },
             "steps": {
               "verification": {
                 "result": "passed"
               },
               "schemaParity": {
-                "tables": 98,
-                "statements": 476,
+                "tables": 99,
+                "statements": 495,
                 "degradations": 5
               },
               "seedParity": {
-                "tables": 98,
-                "rows": 18240
+                "tables": 99,
+                "rows": 18261
               },
               "hibernateValidate": {
                 "ddlAuto": "validate",
-                "contexts": 44
+                "contexts": 45
               },
               "integration": {
-                "classes": 51,
-                "tests": 396,
+                "classes": 52,
+                "tests": 399,
                 "failures": 0,
                 "errors": 0,
                 "skipped": 0
@@ -502,8 +502,8 @@
                   "skipped": 0
                 },
                 "differential": {
-                  "checks": 143,
-                  "rows": 1311,
+                  "checks": 148,
+                  "rows": 1343,
                   "differences": 0,
                   "unbalanced": 0,
                   "intentFailures": 0
@@ -511,7 +511,7 @@
               },
               "representativeE2e": {
                 "specs": 11,
-                "expected": 66,
+                "expected": 67,
                 "unexpected": 0,
                 "flaky": 0,
                 "skipped": 0
@@ -566,39 +566,39 @@
           "version": "2022",
           "engine": "mssql",
           "evidence": {
-            "runId": "mssql-47dc92c2562a-fef6d593",
-            "commit": "47dc92c2562a8e686d7ed0ea58429a2d56df41d2",
-            "recordedAt": "2026-11-12T14:46:12.929+09:00",
-            "inputHash": "f54f073ab35bbb589dddec1691fd27bfef7ec526e439d862a8be2266bc181071",
-            "modelHash": "408800e724ed924ea618d777a173e2f45df7ea02166447f9d0eba5393e425896",
+            "runId": "mssql-fe55447bbd83-d578fca3",
+            "commit": "fe55447bbd83ee473352827c05686240e9268855",
+            "recordedAt": "2026-11-13T08:27:12.721+09:00",
+            "inputHash": "d56c41e75b2c1afb74473cc2ef2a2c6454bd6ccf5a2fc6e4cd2a82f944bcd7e5",
+            "modelHash": "374c201b28a74525214ac99ed066dc4b692a248ef2aa101f8fe903376e40c14d",
             "image": "mcr.microsoft.com/mssql/server:2022-latest@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090",
             "imageOrigin": "official:mcr",
             "scope": "application-database",
             "composition": {
               "profile": "demo",
               "layout": "multi-module",
-              "compositionHash": "7b9da388273fe2931efdd62d0713bdb0145ceba6b9301307cace7fc4313f1475"
+              "compositionHash": "d60453e7a388693239cd5526f280ec3fde9d1020b97a7aa4d4f948c814c4c26e"
             },
             "steps": {
               "verification": {
                 "result": "passed"
               },
               "schemaParity": {
-                "tables": 98,
-                "statements": 456,
+                "tables": 99,
+                "statements": 475,
                 "degradations": 8
               },
               "seedParity": {
-                "tables": 98,
-                "rows": 18240
+                "tables": 99,
+                "rows": 18261
               },
               "hibernateValidate": {
                 "ddlAuto": "validate",
-                "contexts": 44
+                "contexts": 45
               },
               "integration": {
-                "classes": 51,
-                "tests": 397,
+                "classes": 52,
+                "tests": 400,
                 "failures": 0,
                 "errors": 0,
                 "skipped": 0
@@ -612,8 +612,8 @@
                   "skipped": 0
                 },
                 "differential": {
-                  "checks": 143,
-                  "rows": 1095,
+                  "checks": 148,
+                  "rows": 1125,
                   "differences": 0,
                   "unbalanced": 0,
                   "intentFailures": 0
@@ -621,7 +621,7 @@
               },
               "representativeE2e": {
                 "specs": 11,
-                "expected": 66,
+                "expected": 67,
                 "unexpected": 0,
                 "flaky": 0,
                 "skipped": 0
@@ -689,39 +689,39 @@
           "version": "11.4",
           "engine": "cubrid",
           "evidence": {
-            "runId": "cubrid-47dc92c2562a-24c5e22f",
-            "commit": "47dc92c2562a8e686d7ed0ea58429a2d56df41d2",
-            "recordedAt": "2026-11-12T13:19:57.661+09:00",
-            "inputHash": "d8a021ebec71baa98e5d1fd923c87a7ecb2149eba36a48b710bd78dbacce4e09",
-            "modelHash": "f28224d2a9b7a971522a5fc9145427a8f03324fe7510cf15caaa8bbbfb8a37b9",
+            "runId": "cubrid-fe55447bbd83-2abfc9f5",
+            "commit": "fe55447bbd83ee473352827c05686240e9268855",
+            "recordedAt": "2026-11-13T07:32:59.907+09:00",
+            "inputHash": "593b8e90a080723f9f24c6d4cee603a8de5ea41acbcc3d5739270dcd0c12c9b1",
+            "modelHash": "e4fb1ee0ae22081c8eb5a759ddd4d12fa096283c21e04d7109e284409de7fb07",
             "image": "cubrid/cubrid:11.4@sha256:1248b77ad39888df9e064655937188ab99fe056ed7e35b57d06155a015dc1791",
             "imageOrigin": "community:cubrid",
             "scope": "application-database",
             "composition": {
               "profile": "demo",
               "layout": "multi-module",
-              "compositionHash": "c77d26d6aefc901f432f698fecffdd1e7892aedbff2e56a5e5f3a27c74f7e0b5"
+              "compositionHash": "19e8ca3517250834f1b7a62a63c84f57450679dc54e4fe1827d66242de627126"
             },
             "steps": {
               "verification": {
                 "result": "passed"
               },
               "schemaParity": {
-                "tables": 98,
-                "statements": 633,
+                "tables": 99,
+                "statements": 657,
                 "degradations": 18
               },
               "seedParity": {
-                "tables": 98,
-                "rows": 18240
+                "tables": 99,
+                "rows": 18261
               },
               "hibernateValidate": {
                 "ddlAuto": "validate",
-                "contexts": 44
+                "contexts": 45
               },
               "integration": {
-                "classes": 51,
-                "tests": 397,
+                "classes": 52,
+                "tests": 400,
                 "failures": 0,
                 "errors": 0,
                 "skipped": 0
@@ -735,8 +735,8 @@
                   "skipped": 0
                 },
                 "differential": {
-                  "checks": 143,
-                  "rows": 1311,
+                  "checks": 148,
+                  "rows": 1343,
                   "differences": 0,
                   "unbalanced": 0,
                   "intentFailures": 0
@@ -744,7 +744,7 @@
               },
               "representativeE2e": {
                 "specs": 11,
-                "expected": 66,
+                "expected": 67,
                 "unexpected": 0,
                 "flaky": 0,
                 "skipped": 0

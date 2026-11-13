@@ -10,9 +10,17 @@ import java.util.List;
  *
  * @param references 임시저장한 참조자(2026-10-04 D4). 사람마다 지금 참조자로 고를 수 있는지(사용 중·결재 조회 권한)를
  *                   {@link ApproverProfileDto#referenceEligible()} 로 싣고, 같은 공개 수준을 지킨다
+ * @param atchFileSn 임시저장한 첨부 묶음(V2_151, 없으면 null)
  */
 public record ApprovalTemporaryDraftDto(Long temporaryDraftSn, String taskSeCd, String taskSeNm, String docTtl,
                                         String docCn, List<ApprovalLineStageDto> stages,
                                         List<ApproverProfileDto> references, Integer version,
-                                        LocalDateTime mdfcnDt) {
+                                        LocalDateTime mdfcnDt, Long atchFileSn) {
+
+    /** 첨부가 없는 임시저장. */
+    public ApprovalTemporaryDraftDto(Long temporaryDraftSn, String taskSeCd, String taskSeNm, String docTtl,
+                                     String docCn, List<ApprovalLineStageDto> stages,
+                                     List<ApproverProfileDto> references, Integer version, LocalDateTime mdfcnDt) {
+        this(temporaryDraftSn, taskSeCd, taskSeNm, docTtl, docCn, stages, references, version, mdfcnDt, null);
+    }
 }

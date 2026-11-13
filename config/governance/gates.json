@@ -179,6 +179,31 @@
       ]
     },
     {
+      "id": "EXEC-COPYLEFT-LICENSE",
+      "tier": [
+        "ci"
+      ],
+      "command": "node scripts/copyleft-license-policy.mjs --frontend | --gradle build/licenses/runtime-licenses.json",
+      "bindings": [
+        {
+          "source": ".github/workflows/ci.yml",
+          "fragment": "run: node ../scripts/copyleft-license-policy.mjs --frontend",
+          "tiers": [
+            "ci"
+          ],
+          "job": "frontend-scope"
+        },
+        {
+          "source": ".github/workflows/ci.yml",
+          "fragment": "node scripts/copyleft-license-policy.mjs --gradle build/licenses/runtime-licenses.json",
+          "tiers": [
+            "ci"
+          ],
+          "job": "backend-scope"
+        }
+      ]
+    },
+    {
       "id": "EXEC-SAST-APPROXIMATION",
       "tier": [
         "pre-push",
@@ -847,6 +872,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/LogoutCutoffAndPrivacySubjectMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-USER-SESSION-CYCLE",
+          "source": "api-server/src/test/java/nuri/api/schema/SessionCycleMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MEMO-REPORT-RECIPIENT-INTEGRITY",
           "source": "api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java"
         },
@@ -1241,6 +1270,10 @@
         {
           "id": "DB-DURABLE-WORK",
           "source": "api-server/src/test/java/nuri/api/schema/DurableWorkIntegrationTest.java"
+        },
+        {
+          "id": "DB-EVENT-APPLICATION-CONCURRENCY",
+          "source": "api-server/src/test/java/nuri/api/schema/EventApplicationConcurrencyIntegrationTest.java"
         },
         {
           "id": "DB-EVENT-APPROVAL-INTEGRITY",

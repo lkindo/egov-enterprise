@@ -36,6 +36,15 @@ public interface CommunityUserRepository
         long getCnt();
     }
 
+    /** [GAP-CMTY-001] 그 커뮤니티의 운영자 수 — 승인 회원(P)이면서 mngrYn='Y'. 서비스가 커뮤니티 행을 잠근 뒤 센다. */
+    @Query("select count(cu) from CommunityUser cu where cu.id.cmntySn = :cmntySn and cu.mbrSttsCd = 'P' and cu.mngrYn = 'Y'")
+    long countOperators(@Param("cmntySn") Long cmntySn);
+
+    /** [GAP-CMTY-001] 그 커뮤니티의 운영자 esntlId — 가입 신청 알림 수신자. */
+    @Query("select cu.id.userId from CommunityUser cu where cu.id.cmntySn = :cmntySn and cu.mbrSttsCd = 'P' and cu.mngrYn = 'Y'"
+            + " order by cu.id.userId")
+    List<String> findOperatorIds(@Param("cmntySn") Long cmntySn);
+
     // [V2_13 결속] 사용자 삭제 시 커뮤니티 멤버십 정리 (fk_tb_cmnty_user_map_tb_user_info NO ACTION)
     void deleteByIdUserIdIn(List<String> userIds);
 }

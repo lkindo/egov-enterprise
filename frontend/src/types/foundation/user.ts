@@ -54,6 +54,10 @@ export interface UserSearchParams {
   userSttsCd?: string;
   /** 소속 부서(직속만). */
   ognzId?: string;
+  /** [Wave 4] 서버 정렬 기준(userId·userNm·crtDt). 그 밖의 값은 서버가 400 으로 거부한다. */
+  sortBy?: string;
+  /** [Wave 4] 서버 정렬 방향. */
+  sortDir?: 'asc' | 'desc';
   /** 로그인 잠금(Y 잠김·N 잠기지 않음). */
   lckYn?: string;
 }

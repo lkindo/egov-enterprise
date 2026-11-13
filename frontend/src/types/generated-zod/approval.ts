@@ -10,6 +10,7 @@ export const ApprovalConfirmRequestSchema = /*#__PURE__*/ (() => z.object({
   status: z.enum(["C","R"]),
   reason: z.string().min(0).max(4000).optional(),
   version: z.number().int().min(0),
+  onBehalfOf: z.string().min(0).max(20).optional(),
 }))();
 export type ApprovalConfirmRequest = z.infer<typeof ApprovalConfirmRequestSchema>;
 
@@ -33,6 +34,7 @@ export const ApprovalTemporaryDraftRequestSchema = /*#__PURE__*/ (() => z.object
   stages: z.array(z.lazy(() => ApprovalStageRequestSchema)).min(0).max(10).optional(),
   references: z.array(z.string().min(0).max(20)).min(0).max(20).optional(),
   version: z.number().int().min(0).optional(),
+  atchFileSn: z.number().int().optional(),
 }))();
 export type ApprovalTemporaryDraftRequest = z.infer<typeof ApprovalTemporaryDraftRequestSchema>;
 
@@ -93,6 +95,7 @@ export const ApprovalDraftRequestSchema = /*#__PURE__*/ (() => z.object({
   stages: z.array(z.lazy(() => ApprovalStageRequestSchema)).min(1).max(10).optional(),
   references: z.array(z.string().min(0).max(20)).min(0).max(20).optional(),
   reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional(),
+  atchFileSn: z.number().int().optional(),
 }))();
 export type ApprovalDraftRequest = z.infer<typeof ApprovalDraftRequestSchema>;
 
@@ -117,6 +120,7 @@ export const ApprovalResubmissionRequestSchema = /*#__PURE__*/ (() => z.object({
   stages: z.array(z.lazy(() => ApprovalStageRequestSchema)).min(1).max(10).optional(),
   references: z.array(z.string().min(0).max(20)).min(0).max(20).optional(),
   reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional(),
+  atchFileSn: z.number().int().optional(),
   version: z.number().int().min(0),
 }))();
 export type ApprovalResubmissionRequest = z.infer<typeof ApprovalResubmissionRequestSchema>;
@@ -173,6 +177,8 @@ export const ApprovalApproverDtoSchema = /*#__PURE__*/ (() => z.object({
   opinion: z.string().optional(),
   decidedAt: z.iso.datetime({ offset: true, local: true }).optional(),
   absent: z.boolean().optional(),
+  substituteId: z.string().optional(),
+  substituteNm: z.string().optional(),
 }))();
 export type ApprovalApproverDto = z.infer<typeof ApprovalApproverDtoSchema>;
 
@@ -205,6 +211,7 @@ export const ApprovalRevisionDtoSchema = /*#__PURE__*/ (() => z.object({
   reqYmd: z.string().optional(),
   atrzDt: z.iso.datetime({ offset: true, local: true }).optional(),
   stages: z.array(z.lazy(() => ApprovalStageDtoSchema)).optional(),
+  atchFileSn: z.number().int().optional(),
 }))();
 export type ApprovalRevisionDto = z.infer<typeof ApprovalRevisionDtoSchema>;
 
@@ -259,6 +266,9 @@ export const InformalSanctionDtoSchema = /*#__PURE__*/ (() => z.object({
   references: z.array(z.lazy(() => ApprovalReferenceDtoSchema)).optional(),
   referenceViewer: z.boolean().optional(),
   canAddReference: z.boolean().optional(),
+  atchFileSn: z.number().int().optional(),
+  onBehalfOfId: z.string().optional(),
+  onBehalfOfNm: z.string().optional(),
 }))();
 export type InformalSanctionDto = z.infer<typeof InformalSanctionDtoSchema>;
 
@@ -300,6 +310,7 @@ export const ApprovalTemporaryDraftDtoSchema = /*#__PURE__*/ (() => z.object({
   references: z.array(z.lazy(() => ApproverProfileDtoSchema)).optional(),
   version: z.number().int().optional(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  atchFileSn: z.number().int().optional(),
 }))();
 export type ApprovalTemporaryDraftDto = z.infer<typeof ApprovalTemporaryDraftDtoSchema>;
 
@@ -406,12 +417,14 @@ export const ApprovalConfirmRequestRequestSchema = /*#__PURE__*/ (() => z.object
   status: z.enum(["C","R"]),
   reason: z.string().min(0).max(4000).optional(),
   version: z.number().int().min(0),
+  onBehalfOf: z.string().min(0).max(20).optional(),
 }))();
 
 export const ApprovalConfirmRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   status: z.enum(["C","R"]),
   reason: z.string().min(0).max(4000).optional().nullable(),
   version: z.number().int().min(0),
+  onBehalfOf: z.string().min(0).max(20).optional().nullable(),
 }))();
 
 export const ApproverReplaceRequestRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -443,6 +456,7 @@ export const ApprovalTemporaryDraftRequestRequestSchema = /*#__PURE__*/ (() => z
   stages: z.array(z.lazy(() => ApprovalStageRequestRequestSchema.strict())).min(0).max(10).optional(),
   references: z.array(z.string().min(0).max(20)).min(0).max(20).optional(),
   version: z.number().int().min(0).optional(),
+  atchFileSn: z.number().int().optional(),
 }))();
 
 export const ApprovalTemporaryDraftRequestResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -452,6 +466,7 @@ export const ApprovalTemporaryDraftRequestResponseSchema = /*#__PURE__*/ (() => 
   stages: z.array(z.lazy(() => ApprovalStageRequestResponseSchema)).min(0).max(10).optional().nullable(),
   references: z.array(z.string().min(0).max(20).optional().nullable()).min(0).max(20).optional().nullable(),
   version: z.number().int().min(0).optional().nullable(),
+  atchFileSn: z.number().int().optional().nullable(),
 }))();
 
 export const ApiResponseApprovalTemporaryDraftSummaryDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -550,6 +565,7 @@ export const ApprovalDraftRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   stages: z.array(z.lazy(() => ApprovalStageRequestRequestSchema.strict())).min(1).max(10).optional(),
   references: z.array(z.string().min(0).max(20)).min(0).max(20).optional(),
   reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional(),
+  atchFileSn: z.number().int().optional(),
 }))();
 
 export const ApprovalDraftRequestResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -560,6 +576,7 @@ export const ApprovalDraftRequestResponseSchema = /*#__PURE__*/ (() => z.object(
   stages: z.array(z.lazy(() => ApprovalStageRequestResponseSchema)).min(1).max(10).optional().nullable(),
   references: z.array(z.string().min(0).max(20).optional().nullable()).min(0).max(20).optional().nullable(),
   reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional().nullable(),
+  atchFileSn: z.number().int().optional().nullable(),
 }))();
 
 export const ApprovalSupplementRequestRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -592,6 +609,7 @@ export const ApprovalResubmissionRequestRequestSchema = /*#__PURE__*/ (() => z.o
   stages: z.array(z.lazy(() => ApprovalStageRequestRequestSchema.strict())).min(1).max(10).optional(),
   references: z.array(z.string().min(0).max(20)).min(0).max(20).optional(),
   reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional(),
+  atchFileSn: z.number().int().optional(),
   version: z.number().int().min(0),
 }))();
 
@@ -603,6 +621,7 @@ export const ApprovalResubmissionRequestResponseSchema = /*#__PURE__*/ (() => z.
   stages: z.array(z.lazy(() => ApprovalStageRequestResponseSchema)).min(1).max(10).optional().nullable(),
   references: z.array(z.string().min(0).max(20).optional().nullable()).min(0).max(20).optional().nullable(),
   reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional().nullable(),
+  atchFileSn: z.number().int().optional().nullable(),
   version: z.number().int().min(0),
 }))();
 
@@ -693,6 +712,8 @@ export const ApprovalApproverDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   opinion: z.string().optional(),
   decidedAt: z.iso.datetime({ offset: true, local: true }).optional(),
   absent: z.boolean().optional(),
+  substituteId: z.string().optional(),
+  substituteNm: z.string().optional(),
 }))();
 
 export const ApprovalApproverDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -702,6 +723,8 @@ export const ApprovalApproverDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   opinion: z.string().optional().nullable(),
   decidedAt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   absent: z.boolean().optional().nullable(),
+  substituteId: z.string().optional().nullable(),
+  substituteNm: z.string().optional().nullable(),
 }))();
 
 export const ApprovalProcessDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -750,6 +773,7 @@ export const ApprovalRevisionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   reqYmd: z.string().optional(),
   atrzDt: z.iso.datetime({ offset: true, local: true }).optional(),
   stages: z.array(z.lazy(() => ApprovalStageDtoRequestSchema.strict())).optional(),
+  atchFileSn: z.number().int().optional(),
 }))();
 
 export const ApprovalRevisionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -760,6 +784,7 @@ export const ApprovalRevisionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   reqYmd: z.string().optional().nullable(),
   atrzDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   stages: z.array(z.lazy(() => ApprovalStageDtoResponseSchema)).optional().nullable(),
+  atchFileSn: z.number().int().optional().nullable(),
 }))();
 
 export const ApprovalStageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -859,6 +884,9 @@ export const InformalSanctionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   references: z.array(z.lazy(() => ApprovalReferenceDtoResponseSchema)).optional().nullable(),
   referenceViewer: z.boolean().optional().nullable(),
   canAddReference: z.boolean().optional().nullable(),
+  atchFileSn: z.number().int().optional().nullable(),
+  onBehalfOfId: z.string().optional().nullable(),
+  onBehalfOfNm: z.string().optional().nullable(),
 }))();
 
 export const ApiResponseListApprovalTemporaryDraftSummaryDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -921,6 +949,7 @@ export const ApprovalTemporaryDraftDtoRequestSchema = /*#__PURE__*/ (() => z.obj
   references: z.array(z.lazy(() => ApproverProfileDtoRequestSchema.strict())).optional(),
   version: z.number().int().optional(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  atchFileSn: z.number().int().optional(),
 }))();
 
 export const ApprovalTemporaryDraftDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -933,6 +962,7 @@ export const ApprovalTemporaryDraftDtoResponseSchema = /*#__PURE__*/ (() => z.ob
   references: z.array(z.lazy(() => ApproverProfileDtoResponseSchema)).optional().nullable(),
   version: z.number().int().optional().nullable(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  atchFileSn: z.number().int().optional().nullable(),
 }))();
 
 export const ApiResponseListCommonCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({

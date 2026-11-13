@@ -37,14 +37,16 @@ public class CommunityUserApiController {
      * [2026-09-02] 사용 중인 커뮤니티만 돌려준다. 종전에는 관리자 목록과 같은 메서드를 불러
      * 논리 삭제된(useYn='N') 커뮤니티가 일반 사용자에게 그대로 보였다.
      */
-    @Operation(summary = "커뮤니티 목록 조회", description = "사용 중인 커뮤니티 목록을 페이징하여 조회합니다. 관리자가 사용 중지한 커뮤니티는 제외됩니다.")
+    @Operation(summary = "커뮤니티 목록 조회", description = "사용 중인 커뮤니티 목록을 페이징하여 조회합니다. 관리자가 사용 중지한 커뮤니티는 제외됩니다."
+            + " joined=true 면 내가 승인된 회원인 커뮤니티만 돌려줍니다(신청·탈퇴 제외).")
     @GetMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.community.CommunityUserApiController#getCommunities')")
     public ResponseEntity<ApiResponse<PageResponse<CommunityDto>>> getCommunities(
             @RequestParam(required = false) String searchCnd,
             @RequestParam(required = false) String searchWrd,
+            @RequestParam(defaultValue = "false") boolean joined,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<CommunityDto> page = communityService.getActiveCommunityList(searchCnd, searchWrd, pageable);
+        Page<CommunityDto> page = communityService.getActiveCommunityList(searchCnd, searchWrd, joined, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
 
@@ -90,7 +92,7 @@ public class CommunityUserApiController {
         return ResponseEntity.ok(ApiResponse.success(boardMasterService.getCommunityBoards(cmntySn)));
     }
 
-    @Operation(summary = "커뮤니티 가입 신청", description = "사용자가 특정 커뮤니티에 가입을 신청합니다. 관리자가 승인하면 회원이 됩니다.")
+    @Operation(summary = "커뮤니티 가입 신청", description = "사용자가 특정 커뮤니티에 가입을 신청합니다. 그 커뮤니티의 운영자나 관리자가 승인하면 회원이 됩니다.")
     @PostMapping("/{cmntySn}/join")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.community.CommunityUserApiController#joinCommunity')")
     public ResponseEntity<ApiResponse<Void>> joinCommunity(

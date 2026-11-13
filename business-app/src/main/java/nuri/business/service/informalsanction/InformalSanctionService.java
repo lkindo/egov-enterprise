@@ -41,6 +41,15 @@ public class InformalSanctionService {
     private final InformalSanctionProcessRepository processRepository;
     private final InformalSanctionReferenceRepository referenceRepository;
     private final EntityManager entityManager;
+    /** [V2_151] 첨부 묶음 할당은 원 업로더만 — 새 묶음을 문서에 붙이기 전에 확인한다. */
+    private final nuri.business.service.file.AttachmentAssignmentPolicy attachmentAssignmentPolicy;
+    /** [V2_151] 대리결재 — 오늘 부재 기간에 나에게 결재를 맡긴 사람. */
+    private final nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository;
+    /** [V2_151] 대리결재는 응답 전에 민감 작업 감사 원장에 남긴다(같은 트랜잭션). */
+    private final nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
+
+    /** 대리결재의 민감 작업 감사 이름 — 대상은 {@code 문서번호/차수/원결재자}. */
+    static final String SUBSTITUTE_AUDIT_OPERATION = "SANCTION_DELEGATED_ACT";
 
     static final String TASK_TYPE_CODE_GROUP = "COM075";
     static final String APPROVE_PERMISSION = "APPROVAL_APPROVE";
@@ -72,17 +81,28 @@ public class InformalSanctionService {
         return getPendingApprovalList(aprvrId, ApprovalListFilter.NONE, pageable);
     }
 
-    /** 대기함은 늘 대기 문서라 상태 조건은 쓰지 않는다. */
+    /**
+     * 대기함은 늘 대기 문서라 상태 조건은 쓰지 않는다. [V2_151] 오늘 부재 기간에 나에게 결재를 맡긴 사람의 차례인 문서도 함께
+     * 싣는다 — 내가 기안했거나 그 차수 결재선에 내가 있는 문서는 빼고(대리결재로 같은 문서를 두 번 결정하지 않는다) 상세·결정과
+     * 같은 판정이다. 맡긴 사람이 없으면 종전 질의 그대로다.
+     */
     public Page<InformalSanctionDto> getPendingApprovalList(String aprvrId, ApprovalListFilter filter, Pageable pageable) {
         assertCurrentParticipant(aprvrId);
         ApprovalListFilter f = Objects.requireNonNull(filter).withoutStatus();
-        return toDtoPage(informalSanctionRepository.findPending(aprvrId, f.keywordPattern(), f.fromYmd(), f.toYmd(),
-                null, Objects.requireNonNull(pageable)), aprvrId);
+        List<String> delegators = delegatorsToday(aprvrId);
+        Page<InformalSanction> page = delegators.isEmpty()
+                ? informalSanctionRepository.findPending(aprvrId, f.keywordPattern(), f.fromYmd(), f.toYmd(),
+                        null, Objects.requireNonNull(pageable))
+                : informalSanctionRepository.findPendingWithSubstitution(aprvrId, delegators, f.keywordPattern(),
+                        f.fromYmd(), f.toYmd(), null, Objects.requireNonNull(pageable));
+        return toDtoPage(page, aprvrId, Set.copyOf(delegators));
     }
 
     public long getPendingApprovalCount(String aprvrId) {
         assertCurrentParticipant(aprvrId);
-        return informalSanctionRepository.countPending(aprvrId);
+        List<String> delegators = delegatorsToday(aprvrId);
+        return delegators.isEmpty() ? informalSanctionRepository.countPending(aprvrId)
+                : informalSanctionRepository.countPendingWithSubstitution(aprvrId, delegators);
     }
 
     /** 문서가 계속 결재 중이거나 재상신됐어도 본인이 결정한 라인은 이력에 남는다. */
@@ -119,8 +139,11 @@ public class InformalSanctionService {
      */
     public InformalSanctionDto getInformalSanction(Long id, String participantId) {
         assertCurrentParticipant(participantId);
+        Set<String> delegators = Set.copyOf(delegatorsToday(participantId));
+        // [V2_151] 참여자(신청자·결재선·참조자·대신 결정한 대리결재자)가 아니면, 지금 대신 결정할 차례가 있는 대리결재자만 연다.
         InformalSanction sanction = informalSanctionRepository.findByIdAndParticipant(
                 Objects.requireNonNull(id), participantId)
+                .or(() -> currentSubstitution(id, participantId, delegators))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         List<InformalSanctionDetail> lines = detailRepository.findForDocuments(List.of(id));
         List<InformalSanctionHistory> history = historyRepository.findForDocuments(List.of(id));
@@ -128,7 +151,42 @@ public class InformalSanctionService {
         List<InformalSanctionReference> references = referenceRepository.findForDocuments(List.of(id));
         return toParticipantDto(informalSanctionMapper, sanction, participantId, lines, history, processes, references,
                 userNames(List.of(sanction), lines, processes), absentUsers(lines), taskTypeNames(),
-                referenceProfiles(references), true);
+                referenceProfiles(references), true, delegators);
+    }
+
+    /** 대리결재자가 지금 대신 결정할 수 있는 진행 중 문서인가 — 결정({@link #substitutableLines})과 같은 판정이다. */
+    private Optional<InformalSanction> currentSubstitution(Long id, String actor, Set<String> delegators) {
+        if (delegators.isEmpty()) return Optional.empty();
+        return informalSanctionRepository.findById(id).filter(sanction -> !substitutableLines(sanction,
+                detailRepository.findRevision(id, sanction.getAtrzCycl()), actor, delegators).isEmpty());
+    }
+
+    /**
+     * [V2_151] 대리결재자가 대신 결정할 수 있는 줄 — 진행 중인 문서의 지금 차수에서 차례(ACTIVE)인 줄 중 원결재자가 오늘 부재 기간에
+     * 이 사람에게 결재를 맡긴 줄이다. 기안자 본인이거나 그 차수 결재선에 이미 있는 사람은 대신 결정하지 못한다 — 자기 문서를
+     * 결재하거나 한 차수에서 두 줄을 결정하는 길을 만들지 않는다.
+     */
+    private static List<InformalSanctionDetail> substitutableLines(InformalSanction sanction,
+                                                                   List<InformalSanctionDetail> currentLines,
+                                                                   String actor, Set<String> delegators) {
+        if (!"A".equals(sanction.getAprvYn()) || actor.equals(sanction.getAplcntId()) || delegators.isEmpty()
+                || currentLines.stream().anyMatch(d -> actor.equals(d.getId().getUserId()))) {
+            return List.of();
+        }
+        return currentLines.stream()
+                .filter(d -> d.status() == ApprovalStatus.ACTIVE && delegators.contains(d.getId().getUserId()))
+                .sorted(Comparator.comparing(d -> d.getId().getUserId()))
+                .toList();
+    }
+
+    /** 오늘(한국 날짜) 부재 기간에 이 사람에게 결재를 맡긴 사람(esntlId). */
+    private List<String> delegatorsToday(String delegate) {
+        return userAbsenceRepository.findDelegatorsOn(delegate, serviceToday());
+    }
+
+    static String serviceToday() {
+        return java.time.LocalDate.now(nuri.foundation.core.util.ServiceTime.clock())
+                .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
     }
 
     /** 기존 단일 aprvrId 요청은 한 단계의 승인으로 유지한다. */
@@ -152,15 +210,38 @@ public class InformalSanctionService {
                 requests == null ? legacyStages(dto) : requests);
         ReferencePlan designated = validateReferences(dto.getAplcntId(), BigDecimal.ONE, lineUsers(stages), references,
                 List.of());
-        InformalSanction sanction = InformalSanction.builder()
-                .taskSeCd(dto.getTaskSeCd()).aplcntId(dto.getAplcntId())
-                .reqYmd(requestDate(dto.getReqYmd())).docTtl(dto.getDocTtl()).docCn(dto.getDocCn())
-                .aprvrId(stages.getFirst().approverIds().getFirst()).aprvYn("A")
-                .atrzCycl(BigDecimal.ONE).build();
-        InformalSanction saved = informalSanctionRepository.save(sanction);
+        InformalSanction saved = saveNewDocument(dto, stages.getFirst().approverIds().getFirst());
         createRevision(saved, stages);
         designateReferences(saved, designated, dto.getAplcntId());
         return saved.getIfmlAtrzSn();
+    }
+
+    /**
+     * 새 문서를 저장한다. [V2_151] 첨부 묶음은 원 업로더만 붙인다 — 저장보다 먼저 확인한다(첨부 할당 writer 계약). 첫 차수 이력은
+     * 이 묶음을 그대로 옮겨 남긴다.
+     */
+    private InformalSanction saveNewDocument(InformalSanctionDto dto, String firstApprover) {
+        Long atchFileSn = dto.getAtchFileSn();
+        if (atchFileSn != null) {
+            attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+        }
+        return informalSanctionRepository.save(InformalSanction.builder()
+                .taskSeCd(dto.getTaskSeCd()).aplcntId(dto.getAplcntId())
+                .reqYmd(requestDate(dto.getReqYmd())).docTtl(dto.getDocTtl()).docCn(dto.getDocCn())
+                .aprvrId(firstApprover).aprvYn("A")
+                .atrzCycl(BigDecimal.ONE).atchFileSn(atchFileSn).build());
+    }
+
+    /**
+     * 재상신할 차수의 첨부 묶음을 정한다. [V2_151] 지금 묶음을 그대로 두거나({@code null} 이면 첨부 없음) 새로 올린 묶음으로 바꾼다 —
+     * 새 묶음은 원 업로더만 붙인다. 앞 차수의 묶음은 그 차수 이력에 남아 앞 차수 결재자가 계속 연다(지우지 않는다).
+     */
+    private void replaceAttachmentForResubmission(InformalSanction sanction, InformalSanctionDto dto) {
+        Long atchFileSn = dto.getAtchFileSn();
+        if (atchFileSn != null && !atchFileSn.equals(sanction.getAtchFileSn())) {
+            attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+        }
+        sanction.replaceAttachment(atchFileSn);
     }
 
     @Transactional
@@ -222,6 +303,7 @@ public class InformalSanctionService {
         ReferencePlan designated = validateReferences(sanction.getAplcntId(), sanction.getAtrzCycl().add(BigDecimal.ONE),
                 lineUsers(stages), references, referenceRepository.findForDocuments(List.of(id)));
         currentHistory(sanction).updateResult(sanction);
+        replaceAttachmentForResubmission(sanction, dto);
         sanction.resubmit(dto.getTaskSeCd(), requestDate(dto.getReqYmd()), dto.getDocTtl(), dto.getDocCn(),
                 stages.getFirst().approverIds().getFirst());
         createRevision(sanction, stages);
@@ -230,14 +312,40 @@ public class InformalSanctionService {
 
     @Transactional
     public void confirmInformalSanction(Long id, String aprvYn, String opinion, Integer expectedVersion) {
+        confirmInformalSanction(id, aprvYn, opinion, expectedVersion, null);
+    }
+
+    /**
+     * 승인·반려. [V2_151] 결재선에 내 줄이 없으면 대리결재를 본다 — 지금 차례인 줄의 원결재자가 오늘 부재 기간에 나에게 결재를
+     * 맡겼으면 그 줄을 대신 결정한다({@code onBehalfOf} 로 원결재자를 고르며, 맡긴 줄이 하나면 비워도 된다). 대신 결정한 줄에는
+     * 원결재자와 따로 결정한 사람을 남기고, 응답 전에 민감 작업 감사 원장에 기록하며 원결재자에게 알린다. 기간이 끝났거나 맡기지
+     * 않은 사람은 결재선 밖 사람과 같이 403 이다.
+     */
+    @Transactional
+    public void confirmInformalSanction(Long id, String aprvYn, String opinion, Integer expectedVersion,
+                                        String onBehalfOf) {
         InformalSanction sanction = lock(id);
         String actor = SecurityUtil.getCurrentEsntlId()
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
+        String principal = onBehalfOf == null || onBehalfOf.isBlank() || onBehalfOf.equals(actor) ? null : onBehalfOf;
         List<InformalSanctionDetail> lines = detailRepository.findRevision(id, sanction.getAtrzCycl());
-        Optional<InformalSanctionDetail> found = lines.stream().filter(d -> actor.equals(d.getId().getUserId())).findFirst();
+        Optional<InformalSanctionDetail> found = principal == null
+                ? lines.stream().filter(d -> actor.equals(d.getId().getUserId())).findFirst() : Optional.empty();
+        boolean substitute = false;
+        if (found.isEmpty()) {
+            List<InformalSanctionDetail> candidates = substitutableLines(sanction, lines, actor,
+                    Set.copyOf(delegatorsToday(actor))).stream()
+                    .filter(d -> principal == null || principal.equals(d.getId().getUserId())).toList();
+            if (candidates.size() > 1) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        "대신 결재할 결재자를 골라 주세요. 이 단계에서 여러 사람이 결재를 맡겼습니다.");
+            }
+            found = candidates.stream().findFirst();
+            substitute = found.isPresent();
+        }
         if (found.isEmpty()) assertNotReplacedOut(sanction, actor);
         InformalSanctionDetail ownLine = found.orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
-        SecurityUtil.assertOwnerByEsntlId(ownLine.getId().getUserId());
+        if (!substitute) SecurityUtil.assertOwnerByEsntlId(ownLine.getId().getUserId());
         /*
          * [2026-10-01] 이미 끝난 문서·이미 처리한 라인은 입력 오류가 아니라 **먼저 일어난 다른 처리와의 충돌**이다.
          * 종전에는 사유 없는 400(잘못된 상태 전이)이라, 병렬 결재에서 다른 사람이 먼저 반려했거나 신청자가 회수한 문서를
@@ -257,7 +365,17 @@ public class InformalSanctionService {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "잘못된 결재 상태 코드입니다.");
         }
         InformalSanctionHistory history = currentHistory(sanction);
-        ownLine.decide("C".equals(aprvYn), opinion, LocalDateTime.now());
+        if (substitute) {
+            String principalId = ownLine.getId().getUserId();
+            ownLine.decideAsSubstitute(actor, "C".equals(aprvYn), opinion, LocalDateTime.now());
+            sensitiveAudit.recordMutation(SUBSTITUTE_AUDIT_OPERATION,
+                    id + "/" + sanction.getAtrzCycl().toPlainString() + "/" + principalId);
+            eventPublisher.publishEvent(new NotificationRequestedEvent(UUID.randomUUID(), principalId,
+                    "대리결재가 처리되었습니다", documentLabel(sanction) + "를 부재 중 대리결재자가 "
+                            + ("C".equals(aprvYn) ? "승인" : "반려") + "했습니다.", processedLink(id)));
+        } else {
+            ownLine.decide("C".equals(aprvYn), opinion, LocalDateTime.now());
+        }
         if ("R".equals(aprvYn)) {
             // 병렬 단계에서 한 사람이 반려하면 같은 차례였던 다른 결재자의 라인도 취소된다. 회수와 같이 알린다 —
             // 알리지 않으면 대기함에서 문서가 이유 없이 사라진다.
@@ -750,10 +868,39 @@ public class InformalSanctionService {
     }
 
     private Page<InformalSanctionDto> toDtoPage(Page<InformalSanction> page, String actor) {
+        return toDtoPage(page, actor, Set.of());
+    }
+
+    /**
+     * [V2_151] 보이는 결재선 질의는 신청자·참조자에게 지금 차수를, 결재자에게 자기가 든 마지막 차수를 돌려준다. 대리결재자로 보는
+     * 문서(대신 결정했거나 지금 대신 결정할 차례다)는 그 질의가 지금 차수를 돌려주지 않으므로, 지금 차수가 보이지 않는 문서는 모든
+     * 줄·차수를 읽어 조립한다 — 볼 차수는 조립이 같은 규칙(내가 든 차수·대신 결정한 차수·지금 대신 결정할 차수)으로 고른다.
+     */
+    private Page<InformalSanctionDto> toDtoPage(Page<InformalSanction> page, String actor, Set<String> delegators) {
         if (page.isEmpty()) return page.map(informalSanctionMapper::toDto);
         List<Long> ids = page.stream().map(InformalSanction::getIfmlAtrzSn).toList();
-        List<InformalSanctionDetail> lines = detailRepository.findVisibleForDocuments(ids, actor);
-        List<InformalSanctionHistory> history = historyRepository.findVisibleForDocuments(ids, actor);
+        Map<Long, BigDecimal> currentCycles = new java.util.HashMap<>();
+        page.forEach(sanction -> currentCycles.put(sanction.getIfmlAtrzSn(), sanction.getAtrzCycl()));
+        List<InformalSanctionDetail> visibleLines = detailRepository.findVisibleForDocuments(ids, actor);
+        Set<Long> seesAny = visibleLines.stream().map(d -> d.getId().getIfmlAtrzSn()).collect(Collectors.toSet());
+        Set<Long> seesCurrent = delegators.isEmpty() ? Set.of() : visibleLines.stream()
+                .filter(d -> {
+                    BigDecimal current = currentCycles.get(d.getId().getIfmlAtrzSn());
+                    return current != null && d.getId().getAtrzCycl() != null && d.getId().getAtrzCycl().compareTo(current) == 0;
+                })
+                .map(d -> d.getId().getIfmlAtrzSn()).collect(Collectors.toSet());
+        // 보이는 줄이 없으면(대신 결정만 한 문서) 넓히고, 오늘 맡긴 사람이 있으면 지금 차수가 보이지 않는 문서도 넓힌다.
+        Set<Long> widenedIds = ids.stream().filter(id -> !seesAny.contains(id)
+                || (!delegators.isEmpty() && !seesCurrent.contains(id))).collect(Collectors.toSet());
+        List<Long> widened = ids.stream().filter(widenedIds::contains).toList();
+        List<InformalSanctionDetail> lines = new ArrayList<>(visibleLines.stream()
+                .filter(d -> !widenedIds.contains(d.getId().getIfmlAtrzSn())).toList());
+        List<InformalSanctionHistory> history = new ArrayList<>(historyRepository.findVisibleForDocuments(ids, actor)
+                .stream().filter(h -> !widenedIds.contains(h.getId().getIfmlAtrzSn())).toList());
+        if (!widened.isEmpty()) {
+            lines.addAll(detailRepository.findForDocuments(widened));
+            history.addAll(historyRepository.findForDocuments(widened));
+        }
         List<InformalSanctionProcess> processes = processRepository.findForCurrentCycles(ids);
         // [D4] 참조자 여부·결재자 추가 힌트에 쓴다. 참조자 목록(이름)은 상세에만 싣는다.
         List<InformalSanctionReference> references = referenceRepository.findForDocuments(ids);
@@ -768,7 +915,8 @@ public class InformalSanctionService {
         return page.map(s -> toParticipantDto(informalSanctionMapper, s, actor,
                 byDocument.getOrDefault(s.getIfmlAtrzSn(), List.of()),
                 revisions.getOrDefault(s.getIfmlAtrzSn(), List.of()), processByDocument.getOrDefault(s.getIfmlAtrzSn(), List.of()),
-                referencesByDocument.getOrDefault(s.getIfmlAtrzSn(), List.of()), users, absent, tasks, Map.of(), false));
+                referencesByDocument.getOrDefault(s.getIfmlAtrzSn(), List.of()), users, absent, tasks, Map.of(), false,
+                delegators));
     }
 
     /** 상세의 참조자 이름·부서(사용자 검색과 같은 최소 필드). 참조자가 없으면 조회하지 않는다. */
@@ -784,7 +932,11 @@ public class InformalSanctionService {
                                           List<InformalSanctionProcess> processes) {
         Set<String> ids = new HashSet<>();
         sanctions.forEach(s -> { if (s.getAplcntId() != null) ids.add(s.getAplcntId()); });
-        lines.forEach(d -> ids.add(d.getId().getUserId()));
+        lines.forEach(d -> {
+            ids.add(d.getId().getUserId());
+            // [V2_151] 대신 결정한 대리결재자도 결재선에 이름으로 남는다.
+            if (d.getSbtAprvrId() != null) ids.add(d.getSbtAprvrId());
+        });
         // 결재선에서 빠진 사람도 처리 이력에는 이름으로 남아야 한다.
         processes.forEach(p -> {
             ids.add(p.getChgUserIdntfr());

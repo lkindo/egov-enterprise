@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "sourceMigrationHash": "04c4adf7d3c6209475534ff3c347edc5c9edc72fdd86db319a946f3c6d168678",
+  "sourceMigrationHash": "de65e5a32fbd2ddc3f9cf031c20bedfe6b0b702f0330a171cc8e535433b845dc",
   "menus": [
     {
       "menu_sn": 1000000,
@@ -761,6 +761,16 @@
       "modern_route": "/admin/system/content-pages",
       "use_yn": "Y",
       "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040404,
+      "up_menu_sn": 9040401,
+      "menu_ordr": 3,
+      "menu_nm": "행사 참가",
+      "menu_expln": "진행 중인 행사에 참가 신청하고 내 신청을 취소",
+      "modern_route": "/events",
+      "use_yn": "Y",
+      "del_yn": "N"
     }
   ],
   "navigation": [
@@ -1069,6 +1079,10 @@
       "menu_sn": 9040403
     },
     {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040404
+    },
+    {
       "authrt_cd": "ROLE_USER",
       "menu_sn": 1000000
     },
@@ -1143,6 +1157,10 @@
     {
       "authrt_cd": "ROLE_USER",
       "menu_sn": 9040401
+    },
+    {
+      "authrt_cd": "ROLE_USER",
+      "menu_sn": 9040404
     }
   ]
 }

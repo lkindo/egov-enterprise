@@ -237,6 +237,7 @@ vi.mock('@/services/foundation/system/UserAdminService', () => ({
     deleteUser: vi.fn(),
     updatePassword: vi.fn(),
     unlockUser: vi.fn(),
+    forceLogout: vi.fn(),
   },
 }));
 // 초기화 폼은 자기 테스트(AdminPasswordResetForm.test.tsx)가 있다. 여기서는 허브 배선만 본다.
@@ -950,6 +951,50 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     await act(async () => { resolveUnlock(); });
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('계정 잠금을 해제했습니다.', 'success'));
     await waitFor(() => expect(vi.mocked(userAdminService.getUser).mock.calls.length).toBeGreaterThan(detailReads));
+  });
+
+  it('[V2_153] 강제 로그아웃 은 확인 뒤 한 번만 보내고 처리 중 잠기며(aria-busy) 성공을 알린다', async () => {
+    mockConfirm.mockResolvedValue(true);
+    let resolveLogout!: () => void;
+    vi.mocked(userAdminService.forceLogout).mockReturnValueOnce(new Promise<void>((resolve) => { resolveLogout = resolve; }));
+    await selectFirstRow();
+
+    const control = await screen.findByRole('button', { name: '강제 로그아웃' });
+    act(() => { control.click(); control.click(); });
+
+    await waitFor(() => expect(userAdminService.forceLogout).toHaveBeenCalledTimes(1));
+    expect(userAdminService.forceLogout).toHaveBeenCalledWith('user1');
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+    expect(mockConfirm).toHaveBeenCalledWith(expect.objectContaining({
+      title: '강제 로그아웃', message: expect.stringContaining('모든 로그인 세션을 지금 끊습니다'),
+    }));
+    expect(control).toBeDisabled();
+    expect(control).toHaveAttribute('aria-busy', 'true');
+    await act(async () => { resolveLogout(); });
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith("'홍길동' 사용자의 세션을 끊었습니다.", 'success'));
+  });
+
+  it('[V2_153] 강제 로그아웃 은 확인을 취소하면 보내지 않고, 실패하면 서버 문구로 알린다', async () => {
+    mockConfirm.mockResolvedValueOnce(false);
+    await selectFirstRow();
+    const control = await screen.findByRole('button', { name: '강제 로그아웃' });
+    fireEvent.click(control);
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1));
+    expect(userAdminService.forceLogout).not.toHaveBeenCalled();
+    await waitFor(() => expect(control).toBeEnabled());
+
+    mockConfirm.mockResolvedValueOnce(true);
+    vi.mocked(userAdminService.forceLogout).mockRejectedValueOnce(new Error('보호 계정은 바꿀 수 없습니다.'));
+    fireEvent.click(control);
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('보호 계정은 바꿀 수 없습니다.', 'error'));
+    expect(control).toBeEnabled();
+  });
+
+  it('[V2_153] 계정 상태 권한이 없으면 강제 로그아웃을 보이지 않는다', async () => {
+    auth.permissions = FULL_PERMISSIONS.filter(code => code !== 'USER_STATUS');
+    await selectFirstRow();
+    await screen.findByRole('button', { name: '비밀번호 초기화' });
+    expect(screen.queryByRole('button', { name: '강제 로그아웃' })).not.toBeInTheDocument();
   });
 
   it('상세에서 이 사람을 대상으로 권한 배정·이력·로그인 이력을 연다 — 대상은 URL 이 아니라 탭 세션으로 넘긴다 (2026-10-01)', async () => {

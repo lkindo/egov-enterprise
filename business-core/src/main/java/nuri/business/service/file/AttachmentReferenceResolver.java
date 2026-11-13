@@ -28,6 +28,15 @@ public interface AttachmentReferenceResolver {
     }
 
     /**
+     * 이 묶음을 바꿀 수 없는 업무 참조원(상신한 결재 문서·결재 차수 이력)이 가리키는가. 그런 묶음은 원 업로더라도 일반 파일 경로(게시글
+     * 첨부 추가 등)로 파일을 더하지 못한다 — 묶음을 바꾸는 일은 그 업무의 재상신이 새 묶음으로 한다. 조회에 실패하면 묶인 것으로 본다
+     * (fail-closed). 기본 구현은 늘 묶였다고 답한다.
+     */
+    default boolean frozen(Long atchFileSn) {
+        return true;
+    }
+
+    /**
      * 참조원 조회 결과를 열람 근거와 실패 상태로 압축한 값.
      *
      * @param sharedGrant        공유 콘텐츠(비밀글 아님 등)로서 인증 사용자에게 열람 근거가 있는가
@@ -39,6 +48,8 @@ public interface AttachmentReferenceResolver {
      *                            열람 근거일 뿐 삭제 근거가 아니다
      * @param readDenied 비개인 참조원의 본문 열람 조건을 만족하지 못했는가 — 일반 공유·FILE_READ_ALL로 우회할 수 없다.
      *                   PERSONAL 당사자 판정과 삭제·재연결 권한에는 영향을 주지 않는다
+     * @param adminDeleteDenied 소유자 본인만 하나씩 빼는 참조원(결재 임시저장)이 이 첨부를 가리키고 현재 사용자가 그 소유자가
+     *                   아닌가 — 관리자 삭제({@code FILE_DELETE_ALL})도 막는다
      */
     record Grants(
             boolean sharedGrant,
@@ -47,7 +58,15 @@ public interface AttachmentReferenceResolver {
             boolean personalOwnerGrant,
             boolean resolutionFailed,
             boolean personalReaderGrant,
-            boolean readDenied) {
+            boolean readDenied,
+            boolean adminDeleteDenied) {
+
+        /** 관리자 삭제 거부 근거가 없는 판정(결재 임시저장 밖의 참조원만 걸린 첨부). */
+        public Grants(boolean sharedGrant, boolean ownerGrant, boolean personalReference,
+                boolean personalOwnerGrant, boolean resolutionFailed, boolean personalReaderGrant, boolean readDenied) {
+            this(sharedGrant, ownerGrant, personalReference, personalOwnerGrant, resolutionFailed,
+                    personalReaderGrant, readDenied, false);
+        }
 
         public Grants(boolean sharedGrant, boolean ownerGrant, boolean personalReference,
                 boolean personalOwnerGrant, boolean resolutionFailed, boolean personalReaderGrant) {

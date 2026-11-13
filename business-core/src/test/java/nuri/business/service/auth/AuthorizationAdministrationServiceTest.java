@@ -253,6 +253,24 @@ class AuthorizationAdministrationServiceTest {
                 .satisfies(write -> assertThat(write.values()).contains("DEPT_JOB_READ"));
     }
 
+    /**
+     * [V2_153] 권한 회수는 세션을 끊는다 — 그룹에서 업무 권한(OPERATION)을 빼면 그 그룹 구성원의 세션차수를, 사용자의 그룹 배정을 빼면
+     * 그 사용자의 세션차수를 한 문장으로 올린다. 메뉴 표시(NAVIGATION)를 빼는 것은 권한 회수가 아니라 끊지 않는다.
+     */
+    @Test
+    void revokingAnOperationGrantOrMembershipAdvancesSessionCyclesButNavigationDoesNot() {
+        db.groups.put("G_C", new GroupData("Ops", null, List.of(READ, new Grant("NAVIGATION", "7"))));
+        authenticate("operator_login", "OPERATOR_ID", Set.of("AUTHRT_READ", "AUTHRT_GRANT"));
+        service.replaceGrants("G_C", new ReplaceGrants(List.of(READ), service.group("G_C").version(), true));
+        assertThat(db.writesTo("tb_user_info")).as("메뉴 표시만 뺐다 — 세션을 끊지 않는다").isEmpty();
+
+        service.replaceGrants("G_C", new ReplaceGrants(List.of(), service.group("G_C").version(), true));
+        assertThat(db.writesTo("tb_user_info")).singleElement().satisfies(write -> {
+            assertThat(write.sql()).contains("ssn_cycl = ssn_cycl + 1").contains("tb_authrt_user_map");
+            assertThat(write.values()).containsExactly("G_C");
+        });
+    }
+
     @ParameterizedTest
     @org.junit.jupiter.params.provider.ValueSource(strings = {"USER_PASSWORD", "MFA_RECOVER"})
     void protectedMembershipAdditionRemovalAndDepartmentBatchRequireBothAdministrationPermissions(String permission) {
@@ -362,6 +380,11 @@ class AuthorizationAdministrationServiceTest {
         service.replaceMemberships("U_1", new ReplaceGroups(List.of("G_B", "G_C"), version, true));
         assertThat(db.writesTo("tb_authrt_user_map")).extracting(Write::values).containsExactly(
                 List.of("U_1", "G_A"), List.of("U_1", "G_C", "operator_login", "operator_login"));
+        // [V2_153] 그룹 회수(G_A)는 그 사용자의 세션을 끊는다. 추가(G_C)는 끊지 않는다.
+        assertThat(db.writesTo("tb_user_info")).singleElement().satisfies(write -> {
+            assertThat(write.sql()).contains("ssn_cycl = ssn_cycl + 1");
+            assertThat(write.values()).containsExactly("U_1");
+        });
         assertAudit(db.audits().get(0), "USER_GROUP", "REMOVE", "G_A", "U_1", null, "membership", "G_A", null);
         assertAudit(db.audits().get(1), "USER_GROUP", "ADD", "G_C", "U_1", null, "membership", null, "G_C");
     }
@@ -1042,7 +1065,9 @@ class AuthorizationAdministrationServiceTest {
 
         Boundary() { menuParents.put("1",null); menuParents.put("2","1"); menuParents.put("3",null); }
 
-        List<Write> writesTo(String table) { return writes.stream().filter(w -> w.sql().contains(table)).toList(); }
+        /** 그 표에 쓴 문장(쓰기 대상이 그 표다 — 하위 질의로 읽기만 한 표는 세지 않는다). */
+        List<Write> writesTo(String table) { return writes.stream().filter(w -> java.util.regex.Pattern.compile(
+                "(?is)^\\s*(?:INSERT\\s+INTO|UPDATE|DELETE\\s+FROM)\\s+" + java.util.regex.Pattern.quote(table) + "\\b.*").matcher(w.sql()).matches()).toList(); }
         List<Write> audits() { return writesTo("tb_authrt_chg_hstry"); }
 
         /** 조건에 맞는 마지막 이력 위치(1부터, 없으면 0). 수동 auditSequence 는 모든 축을 함께 바꾼다. */

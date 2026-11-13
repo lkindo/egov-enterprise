@@ -346,8 +346,8 @@ test('excluded permissions stay excluded only while the facts their reasons cite
   assert.match(filePolicy, /boolean admin = SecurityUtil\.hasPermission\("FILE_READ_ALL"\);\s*if \(admin && !grants\.personalReference\(\)\) \{\s*return;/u,
     'FILE_READ_ALL opens every non-personal attachment regardless of the shared predicate');
   // 삭제는 개인 귀속 참조를 앞에서 거부하므로(ADR-0048) 관리자 분기에 닿는 것은 비개인 첨부뿐이다.
-  assert.match(filePolicy, /if \(grants\.personalReference\(\)\) \{\s*log\.warn\([^;]*\);\s*throw new BusinessException\(CommonErrorCode\.ACCESS_DENIED\);\s*\}[\s\S]*boolean admin = SecurityUtil\.hasPermission\("FILE_DELETE_ALL"\);\s*if \(admin\) \{\s*return;/u,
-    'FILE_DELETE_ALL opens every non-personal attachment regardless of the shared predicate');
+  assert.match(filePolicy, /if \(grants\.personalReference\(\)\) \{\s*log\.warn\([^;]*\);\s*throw new BusinessException\(CommonErrorCode\.ACCESS_DENIED\);\s*\}[\s\S]*boolean admin = SecurityUtil\.hasPermission\("FILE_DELETE_ALL"\);\s*if \(admin && !grants\.adminDeleteDenied\(\)\) \{\s*return;/u,
+    'FILE_DELETE_ALL opens every non-personal attachment regardless of the shared predicate, except another drafter\'s approval attachment');
   const attachmentSources = javaCode('business-core/src/main/java/nuri/business/service/file/AttachmentSource.java');
   for (const source of ['MEMO_REPORT', 'WORK_REPORT']) {
     assert.match(attachmentSources, new RegExp(`\\b${source}\\("tb_[a-z_]+", Sensitivity\\.PERSONAL\\b`, 'u'), `${source} attachments are personal`);

@@ -3,6 +3,7 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.security.util.SecurityUtil;
  
 import nuri.foundation.core.exception.BusinessException;
+import nuri.business.domain.event.EventApplicationRepository;
 import nuri.business.domain.event.EventInfo;
 import nuri.business.domain.event.EventInfoRepository;
 import nuri.business.domain.event.ExternalHrRepository;
@@ -25,6 +26,7 @@ public class EventInfoService {
     private final EventInfoRepository eventInfoRepository;
     private final ExternalHrRepository externalHrRepository;
     private final EventInfoMapper eventInfoMapper;
+    private final EventApplicationRepository eventApplicationRepository;
 
     public Page<EventInfoDto> getEventList(String searchWrd, Pageable pageable) {
         log.debug("Fetching event list");
@@ -56,6 +58,8 @@ public class EventInfoService {
                 .picNm(dto.getPicNm())
                 .prepMttr(dto.getPrepMttr())
                 .evntTypeCd(dto.getEvntTypeCd())
+                .pscpNope(dto.getPscpNope())
+                .aplyDdlnYmd(applicationDeadline(dto))
                 .build();
 
         EventInfo saved = eventInfoRepository.save(Objects.requireNonNull(eventInfo));
@@ -70,6 +74,15 @@ public class EventInfoService {
         EventInfo eventInfo = eventInfoRepository.findByIdForUpdate(Objects.requireNonNull(evntSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), eventInfo.getVersion());
+        // [V2_152] 정원을 이미 자리를 차지한 신청 수보다 작게 줄이지 않는다 — 줄이면 화면의 남은 자리가 음수가 되고
+        //   누구를 떨어뜨릴지 정할 규칙이 없다. 행 잠금(findByIdForUpdate) 뒤라 동시 신청과 맞물리지 않는다.
+        if (dto.getPscpNope() != null) {
+            long seats = eventApplicationRepository.countSeats(evntSn);
+            if (seats > dto.getPscpNope()) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        "이미 신청한 인원(" + seats + "명)보다 신청 정원을 작게 줄일 수 없습니다. 신청을 먼저 반려하세요.");
+            }
+        }
 
         eventInfo.update(
                 dto.getBizYr(),
@@ -80,7 +93,9 @@ public class EventInfoService {
                 dto.getEvntUseCnt(),
                 dto.getPicNm(),
                 dto.getPrepMttr(),
-                dto.getEvntTypeCd());
+                dto.getEvntTypeCd(),
+                dto.getPscpNope(),
+                applicationDeadline(dto));
         log.info("Event updated successfully: {}", evntSn);
     }
  
@@ -90,6 +105,19 @@ public class EventInfoService {
      */
     private static String normalizeYmd(String ymd) {
         return ymd == null ? null : ymd.replace("-", "");
+    }
+
+    /** 신청 마감일(V2_152)을 정해야 신청을 받는다(비우면 받지 않는다). 행사 종료일보다 늦은 마감일은 받지 않는다(400). */
+    private static String applicationDeadline(EventInfoDto dto) {
+        String deadline = normalizeYmd(dto.getAplyDdlnYmd());
+        if (deadline == null || deadline.isBlank()) {
+            return null;
+        }
+        String end = normalizeYmd(dto.getEvntEndYmd());
+        if (end != null && !end.isBlank() && deadline.compareTo(end) > 0) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "신청 마감일은 행사 종료일보다 늦을 수 없습니다.");
+        }
+        return deadline;
     }
 
     @Transactional
@@ -105,6 +133,13 @@ public class EventInfoService {
         if (externalHrCount > 0) {
             throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
                     "외부인사 " + externalHrCount + "명이 등록된 행사는 삭제할 수 없습니다. 외부인사를 먼저 삭제하세요.");
+        }
+        // [V2_152] 자리를 차지한 신청(승인 대기·승인)이 있으면 지우지 않는다 — 신청 행은 행사와 함께 지워지므로(ON DELETE CASCADE)
+        //   신청자가 모르게 사라진다. 반려·취소만 남은 행사는 지운다.
+        long seats = eventApplicationRepository.countSeats(evntSn);
+        if (seats > 0) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
+                    "참가 신청 " + seats + "건이 있는 행사는 삭제할 수 없습니다. 신청을 먼저 반려하세요.");
         }
         eventInfoRepository.delete(Objects.requireNonNull(eventInfo));
         log.info("Event deleted successfully: {}", evntSn);

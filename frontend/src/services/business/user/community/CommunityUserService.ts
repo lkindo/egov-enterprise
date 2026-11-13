@@ -20,6 +20,8 @@ export type CommunityMembership = {
     cmntySn: number;
     status: NonNullable<components['schemas']['CommunityMembershipDto']['status']>;
     joinYmd: string | null;
+    /** [GAP-CMTY-001] 그 커뮤니티의 운영자인가 — 승인 회원이면서 운영자로 지정된 경우만 true. 표시 판정이며 서버가 다시 본다. */
+    operator: boolean;
 };
 
 /** 커뮤니티에 귀속된 게시판 한 건 — 승인된 회원만 받는다(서버가 판정). */
@@ -63,7 +65,7 @@ class CommunityUserService extends ApiService {
         if (typeof response.cmntySn !== 'number' || typeof response.status !== 'string') {
             throw new Error('커뮤니티 멤버십 응답이 필수 계약과 일치하지 않습니다.');
         }
-        return { cmntySn: response.cmntySn, status: response.status, joinYmd: response.joinYmd ?? null };
+        return { cmntySn: response.cmntySn, status: response.status, joinYmd: response.joinYmd ?? null, operator: response.operator === true };
     }
 
     /**

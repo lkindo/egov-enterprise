@@ -272,7 +272,8 @@ public class FileService extends BaseAbstractService {
 
         // 기존 업무 참조를 읽을 수 있다는 사실만으로 파일 그룹 자체를 변경할 수는 없다.
         // 원 업로더 확인을 상세 조회·물리 저장보다 먼저 수행해 거부된 요청의 부작용을 막는다.
-        accessPolicy.assertAttachable(master);
+        // 결재에 묶인 묶음은 원 업로더라도 이 경로로 바꾸지 못한다(재상신이 새 묶음으로 바꾼다).
+        accessPolicy.assertAppendable(master);
 
         Integer maxSn = fileDetailRepository.findByFileMaster(required(master, "master 는 null 일 수 없습니다")).stream()
                 .mapToInt(detail -> detail.getAtchFileSeq())

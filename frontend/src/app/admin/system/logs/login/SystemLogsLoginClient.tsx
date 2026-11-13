@@ -10,7 +10,7 @@ import { emptyResultMessage } from '@/app/components/patterns/empty-result-messa
 import { PeriodFilter, EMPTY_PERIOD, periodToParams, hasAppliedPeriod } from '@/app/components/patterns/period-filter';
 import { useRememberedListConditions } from '@/lib/hooks/use-remembered-list-conditions';
 import { clearTargetHandoff, useTargetHandoff } from '@/lib/navigation/target-handoff';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column, type ServerSortState } from '@/app/components/ui/standard-data-table';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { useToast } from '@/app/components/ui/toast';
 import { requestFullExport } from '@/app/components/patterns/full-result-export';
@@ -71,14 +71,17 @@ const SystemLogsLoginClient = () => {
     const searchKeyword = chosenKeyword ?? handedUser?.loginId ?? '';
     const setSearchKeyword = (next: string) => { clearTargetHandoff('login-log-user'); setChosenKeyword(next); };
     const { error: toastError } = useToast();
+    // [Wave 4 GAP-UI-001] 발생시점 열은 서버가 접속일시로 목록 전체를 정렬한다(인덱스가 받치는 열). 비우면 최신순이다.
+    const [sort, setSort] = useState<ServerSortState>({});
 
     const { data, isLoading, error, refetch } = useQuery<PageResponse<LoginLog>>({
-        queryKey: ['admin-logs-login', page, pageSize, searchKeyword, periodToParams(period)],
+        queryKey: ['admin-logs-login', page, pageSize, searchKeyword, sort, periodToParams(period)],
         queryFn: () => systemLogAdminService.getLoginLogs({
             page,
             size: pageSize,
             searchWrd: searchKeyword,
             ...periodToParams(period),
+            ...(sort.sortBy === 'crtDt' ? { sortDir: sort.sortDir ?? 'asc' } : {}),
         }),
     });
 
@@ -118,8 +121,8 @@ const SystemLogsLoginClient = () => {
         },
         {
             header: '발생시점',
-            // 현재 페이지 범위 클라이언트 정렬(opt-in) — 원시 ISO 문자열이 정렬 키다.
-            sortKey: 'creatDt',
+            // [Wave 4] 서버 정렬 — 접속일시(ix_tb_login_log_crt_dt)로 목록 전체를 정렬한다.
+            serverSortKey: 'crtDt',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
                     {item.creatDt ? item.creatDt.substring(0, 19).replace('T', ' ') : '-'}
@@ -234,6 +237,10 @@ const SystemLogsLoginClient = () => {
                 onRetry={() => refetch()}
                 emptyMessage={emptyResultMessage(searchKeyword, '조회된 로그인 로그가 없습니다.', hasAppliedPeriod(period))}
                 keyField="lgnSn"
+                serverSort={{
+                    ...sort,
+                    onSortChange: (next) => { setSort(next); setPage(1); },
+                }}
                 pagination={{
                     currentPage: page,
                     totalPages: totalPageCount,

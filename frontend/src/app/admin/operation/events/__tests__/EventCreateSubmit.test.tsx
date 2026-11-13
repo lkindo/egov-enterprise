@@ -68,24 +68,13 @@ async function fillLikeE2e() {
     target: { value: 'E2E 상세 내용' },
   });
 
-  const dates = Array.from(
-    screen.getByRole('dialog').querySelectorAll('input[type="date"]'),
-  ) as HTMLInputElement[];
-  expect(dates, 'e2e 는 date 입력이 정확히 2개라고 가정한다').toHaveLength(2);
-  fireEvent.change(dates[0], { target: { value: '2026-10-01' } });
-  fireEvent.change(dates[1], { target: { value: '2026-10-02' } });
-
   /*
-    e2e page object 는 라벨이 아니라 **타입 셀렉터**로 집는다:
-      dialog.locator('input[type="date"]')  → toHaveCount(2) 를 단언
-      dialog.locator('input[type="number"]').fill(...)  → 여러 개면 strict 위반
-    로컬 계약도 같은 방식으로 집어야 개수 모호성을 잡는다.
+    [V2_152] e2e page object(OpsDetailPage.createEvent)는 라벨로 집는다 — 신청 마감일(date)·신청 정원(number)이 더해져
+    타입·순서로 집으면 엉뚱한 칸을 채운다. 로컬 계약도 같은 라벨로 집어 라벨이 바뀌면 함께 붉게 한다.
   */
-  const dialogEl = screen.getByRole('dialog');
-  const numberInputs = dialogEl.querySelectorAll('input[type="number"]');
-  expect(numberInputs, 'e2e 는 number 입력이 정확히 1개라고 가정한다').toHaveLength(1);
-
-  fireEvent.change(numberInputs[0], { target: { value: '30' } });
+  fireEvent.change(dialog.getByLabelText('행사 시작일', { exact: true }), { target: { value: '2026-10-01' } });
+  fireEvent.change(dialog.getByLabelText('행사 종료일', { exact: true }), { target: { value: '2026-10-02' } });
+  fireEvent.change(dialog.getByLabelText('참여 정원 (명)', { exact: true }), { target: { value: '30' } });
 
   return dialog;
 }
@@ -113,6 +102,20 @@ describe('행사 등록 제출 — e2e 가 채우는 입력만으로 저장된�
       evntCn: 'E2E 상세 내용',
       evntUseCnt: 30,
     });
+  });
+
+  it('[V2_152] 신청 정원·마감일을 비우면 싣지 않고, 채우면 정수와 yyyyMMdd 로 싣는다 — 마감일이 종료일보다 늦으면 보내지 않는다', async () => {
+    const dialog = await fillLikeE2e();
+    fireEvent.change(dialog.getByLabelText('신청 마감일'), { target: { value: '2026-10-03' } });
+    fireEvent.click(dialog.getByRole('button', { name: '행사 등록' }));
+    expect(await dialog.findByText('신청 마감일은 행사 종료일보다 늦을 수 없습니다.')).toBeInTheDocument();
+    expect(mocks.createEvent).not.toHaveBeenCalled();
+
+    fireEvent.change(dialog.getByLabelText('신청 마감일'), { target: { value: '2026-09-30' } });
+    fireEvent.change(dialog.getByLabelText('신청 정원 (명)'), { target: { value: '40' } });
+    fireEvent.click(dialog.getByRole('button', { name: '행사 등록' }));
+    await waitFor(() => expect(mocks.createEvent).toHaveBeenCalledTimes(1));
+    expect(mocks.createEvent.mock.calls[0][0]).toMatchObject({ pscpNope: 40, aplyDdlnYmd: '20260930' });
   });
 
   it('담당자·준비사항을 채우면 그대로 실려 나간다', async () => {

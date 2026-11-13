@@ -49,6 +49,18 @@ public class ApprovalApiController {
      * <b>이미 승인·반려한 건까지 대기함에 남았다.</b> 결재자는 처리한 문서를 다시 열어 보고서야
      * 끝난 건임을 알게 됐다. 이름이 약속하는 것(pending)과 실제 질의가 어긋난 자리다.
      */
+    /**
+     * [Wave 4 GAP-UI-001] 결재 목록 정렬 허용 목록. 종전에는 sort 로 어느 엔티티 속성이든(본문 4000자 포함) 정렬할 수 있었다 — 결재 표는
+     * 기본키 인덱스만 있어 그 밖의 열 정렬은 전체 정렬이다. 결재번호(ifmlAtrzSn)만 받고, 비우면 최신 결재번호 순이다. 그 밖은 400 이다.
+     */
+    private static final nuri.business.domain.common.ServerSortWhitelist APPROVAL_LIST_SORT =
+            nuri.business.domain.common.ServerSortWhitelist.of(java.util.Map.of("ifmlAtrzSn", "ifmlAtrzSn"));
+
+    private static org.springframework.data.domain.Sort approvalSort(String sortBy, String sortDir) {
+        var sort = APPROVAL_LIST_SORT.resolve(sortBy, sortDir);
+        return sort.isSorted() ? sort : org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "ifmlAtrzSn");
+    }
+
     @Operation(summary = "Get Pending Approvals (Inbox)",
             description = "결재자 본인에게 온 결재 중 **대기(신청) 상태**만 조회합니다. 처리 완료 건은 제외됩니다. "
                     + "제목 검색어(keyword)와 요청일 기간(fromYmd·toYmd, yyyyMMdd 또는 yyyy-MM-dd)으로 좁힐 수 있고, 형식이 틀리거나 역순이면 400 입니다.")
@@ -59,9 +71,12 @@ public class ApprovalApiController {
             @org.springframework.web.bind.annotation.RequestParam(required = false) String keyword,
             @org.springframework.web.bind.annotation.RequestParam(required = false) String fromYmd,
             @org.springframework.web.bind.annotation.RequestParam(required = false) String toYmd,
-            @org.springframework.data.web.PageableDefault(sort = "ifmlAtrzSn", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String sortBy,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String sortDir,
+            @org.springframework.data.web.PageableDefault @nuri.api.support.UnsortedPageable Pageable pageable) {
         Page<InformalSanctionDto> result = approvalService.getPendingApprovalList(userDetails.getEsntlId(),
-                ApprovalListFilter.of(keyword, fromYmd, toYmd, null), pageable);
+                ApprovalListFilter.of(keyword, fromYmd, toYmd, null),
+                org.springframework.data.domain.PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), approvalSort(sortBy, sortDir)));
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
@@ -80,9 +95,12 @@ public class ApprovalApiController {
             @org.springframework.web.bind.annotation.RequestParam(required = false) String fromYmd,
             @org.springframework.web.bind.annotation.RequestParam(required = false) String toYmd,
             @org.springframework.web.bind.annotation.RequestParam(required = false) String status,
-            @org.springframework.data.web.PageableDefault(sort = "ifmlAtrzSn", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String sortBy,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String sortDir,
+            @org.springframework.data.web.PageableDefault @nuri.api.support.UnsortedPageable Pageable pageable) {
         Page<InformalSanctionDto> result = approvalService.getInformalSanctionList(userDetails.getEsntlId(),
-                ApprovalListFilter.of(keyword, fromYmd, toYmd, status), pageable);
+                ApprovalListFilter.of(keyword, fromYmd, toYmd, status),
+                org.springframework.data.domain.PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), approvalSort(sortBy, sortDir)));
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
@@ -97,9 +115,12 @@ public class ApprovalApiController {
             @org.springframework.web.bind.annotation.RequestParam(required = false) String fromYmd,
             @org.springframework.web.bind.annotation.RequestParam(required = false) String toYmd,
             @org.springframework.web.bind.annotation.RequestParam(required = false) String status,
-            @org.springframework.data.web.PageableDefault(sort = "ifmlAtrzSn", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String sortBy,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String sortDir,
+            @org.springframework.data.web.PageableDefault @nuri.api.support.UnsortedPageable Pageable pageable) {
         Page<InformalSanctionDto> result = approvalService.getProcessedApprovalList(userDetails.getEsntlId(),
-                ApprovalListFilter.of(keyword, fromYmd, toYmd, status), pageable);
+                ApprovalListFilter.of(keyword, fromYmd, toYmd, status),
+                org.springframework.data.domain.PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), approvalSort(sortBy, sortDir)));
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
@@ -118,9 +139,12 @@ public class ApprovalApiController {
             @org.springframework.web.bind.annotation.RequestParam(required = false) String fromYmd,
             @org.springframework.web.bind.annotation.RequestParam(required = false) String toYmd,
             @org.springframework.web.bind.annotation.RequestParam(required = false) String status,
-            @org.springframework.data.web.PageableDefault(sort = "ifmlAtrzSn", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String sortBy,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String sortDir,
+            @org.springframework.data.web.PageableDefault @nuri.api.support.UnsortedPageable Pageable pageable) {
         Page<InformalSanctionDto> result = approvalService.getReferencedApprovalList(userDetails.getEsntlId(),
-                ApprovalListFilter.of(keyword, fromYmd, toYmd, status), pageable);
+                ApprovalListFilter.of(keyword, fromYmd, toYmd, status),
+                org.springframework.data.domain.PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), approvalSort(sortBy, sortDir)));
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
@@ -196,13 +220,18 @@ public class ApprovalApiController {
                 approvalService.addReferences(id, request.getReferences(), request.getVersion())));
     }
 
-    @Operation(summary = "Confirm Approval (Approve/Reject)")
+    @Operation(summary = "Confirm Approval (Approve/Reject)",
+            description = "지금 차례인 결재자가 승인·반려합니다. 차례인 결재자가 오늘 부재 기간에 결재를 맡긴 대리결재자는 그 줄을 대신 "
+                    + "결정합니다(onBehalfOf 로 원결재자를 고릅니다). 대신 결정한 줄에는 원결재자와 결정한 사람이 따로 남고, 민감 작업 감사 "
+                    + "원장에 기록되며 원결재자에게 알림이 갑니다. 기안자이거나 같은 차수 결재선에 있는 사람은 대신 결정할 수 없고, 기간이 "
+                    + "끝났거나 맡기지 않은 사람은 403 입니다.")
     @PutMapping("/{id}/confirm")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#confirm')")
     public ResponseEntity<ApiResponse<Void>> confirm(
             @PathVariable Long id,
             @Valid @RequestBody ApprovalConfirmRequest request) {
-        approvalService.confirmInformalSanction(id, request.getStatus(), request.getReason(), request.getVersion());
+        approvalService.confirmInformalSanction(id, request.getStatus(), request.getReason(), request.getVersion(),
+                request.getOnBehalfOf());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -412,6 +441,7 @@ public class ApprovalApiController {
         return InformalSanctionDto.builder()
                 .taskSeCd(request.getTaskSeCd()).aprvrId(request.getAprvrId())
                 .reqYmd(reqYmd).aplcntId(applicantId)
-                .docTtl(request.getDocTtl()).docCn(request.getDocCn()).build();
+                .docTtl(request.getDocTtl()).docCn(request.getDocCn())
+                .atchFileSn(request.getAtchFileSn()).build();
     }
 }

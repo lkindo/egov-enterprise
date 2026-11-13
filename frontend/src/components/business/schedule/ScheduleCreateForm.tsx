@@ -19,6 +19,8 @@ import { ScheduleDtoSchema } from '@/types/generated-zod';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
+import { useOptionalAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 const scheduleValidationLabels: Record<string, string> = {
   schdlNm: '일정명',
@@ -77,7 +79,7 @@ export const scheduleFormSchema = ScheduleDtoSchema.extend({
     .optional(),
   schdlSeCd: z.string()
     .trim()
-    .refine((value: string): boolean => value === '1' || value === '2', '공유 범위를 확인해 주세요.')
+    .refine((value: string): boolean => value === '1' || value === '2' || value === '3', '공유 범위를 확인해 주세요.')
     .pipe(ScheduleDtoSchema.shape.schdlSeCd.unwrap()),
 }).refine((v) => !v.schdlEndYmd || !v.schdlBgngYmd || v.schdlEndYmd >= v.schdlBgngYmd, {
   message: '종료일은 시작일보다 빠를 수 없습니다.',
@@ -138,6 +140,10 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
   const { isSubmitting } = form.formState;
   const isSavePending = isSubmitting || isSubmitPending || isPending;
   const isDeptShared = form.watch('schdlSeCd') === '1';
+  // [V2_152] 전사 일정('3')은 일정 수정 대행 권한 보유자만 만들고 고친다(서버가 같은 판정으로 403). 표시 판정일 뿐이다.
+  const user = useOptionalAuth()?.user;
+  const isCompanyWide = form.watch('schdlSeCd') === '3';
+  const canShareCompanyWide = canPermission(user, 'SCHEDULE_UPDATE_ALL');
 
   useEffect(() => {
     onEditStateChange?.({ dirty: form.formState.isDirty, pending: isSavePending });
@@ -291,10 +297,26 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
                 <span className="text-xs font-bold tracking-tight text-foreground">
                   부서 일정으로 공유
                   <span className="ml-2 font-medium text-muted-foreground">
-                    {isDeptShared ? '같은 부서원에게도 표시됩니다' : '나만 볼 수 있습니다'}
+                    {isDeptShared ? '같은 부서원에게도 표시됩니다' : isCompanyWide ? '전사 일정으로 공유 중입니다' : '나만 볼 수 있습니다'}
                   </span>
                 </span>
               </label>
+              {(canShareCompanyWide || isCompanyWide) && (
+                <label className="mt-2 flex items-center gap-3 cursor-pointer select-none rounded-lg border border-border bg-muted/40 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    aria-label="전사 일정으로 공유"
+                    className="h-4 w-4 accent-primary"
+                    checked={isCompanyWide}
+                    disabled={!canShareCompanyWide}
+                    onChange={(e) => field.onChange(e.target.checked ? '3' : '2')}
+                  />
+                  <span className="text-xs font-bold tracking-tight text-foreground">
+                    전사 일정으로 공유
+                    <span className="ml-2 font-medium text-muted-foreground">모든 사용자의 달력에 표시됩니다</span>
+                  </span>
+                </label>
+              )}
               <FormMessage className="text-xs font-bold text-destructive-emphasis mt-1 ml-1" />
             </FormItem>
           )}

@@ -197,6 +197,32 @@ class ApprovalWorkflowIntegrationTest {
         assertThatThrownBy(() -> service.getInformalSanction(id, "WF_OUTSIDER")).isInstanceOf(BusinessException.class);
     }
 
+    /**
+     * [V2_151] 1차수를 직접 반려한 사람이 재상신된 2차수를 다른 결재자 대신 승인하면, 처리함은 옛 반려 차수가 아니라 대신 결정한
+     * 최신 차수를 보인다 — 보이는 차수 질의가 결재선 행의 대리결재자({@code sbt_aprvr_id})도 센다.
+     */
+    @Test
+    void processedListShowsTheLatestCycleDecidedAsSubstituteOverAnOlderDirectDecision() {
+        long id = create(List.of(stage(ApprovalStageKind.APPROVAL, FIRST)));
+        authenticate(FIRST);
+        service.confirmInformalSanction(id, "R", "근거 보완");
+        authenticate(OWNER);
+        int version = service.getInformalSanction(id, OWNER).getVersion();
+        service.resubmitInformalSanction(id, document("수정한 제목", "둘째 차수 내용"), version,
+                List.of(stage(ApprovalStageKind.APPROVAL, SECOND)));
+        // FIRST 가 2차수에서 SECOND 대신 승인했다(대결 경로의 저장 결과만 둔다 — 판정은 대리결재 시험이 본다).
+        assertThat(jdbc.update("UPDATE tb_ifml_atrz_dtl SET sbt_aprvr_id = ?, aprv_yn = 'C' "
+                + "WHERE ifml_atrz_sn = ? AND atrz_cycl = 2 AND user_id = ?", FIRST, id, SECOND)).isEqualTo(1);
+
+        authenticate(FIRST);
+        var processed = service.getProcessedApprovalList(FIRST, PageRequest.of(0, 10));
+        assertThat(processed.getContent()).anySatisfy(document -> {
+            assertThat(document.getIfmlAtrzSn()).isEqualTo(id);
+            assertThat(document.getAtrzCycl()).isEqualTo(2);
+            assertThat(document.getDocTtl()).isEqualTo("수정한 제목");
+        });
+    }
+
     @Test
     void withdrawalRetainsCompletedDecisionsAndCanBeResubmitted() {
         long id = create(List.of(stage(ApprovalStageKind.APPROVAL, FIRST), stage(ApprovalStageKind.APPROVAL, SECOND)));

@@ -134,9 +134,11 @@ class MenuInformationArchitectureMigrationIntegrationTest extends SharedPostgres
             //   V2_135 가 퇴역한 인터넷 서비스 안내의 SERVICE_* 기능 권한 8행(ROLE_ADMIN·ROLE_SYSTEM × 4)을 지우고 REMOVE 이력 8행을 남긴다.
             //   V2_137 이 콘텐츠 페이지 관리 메뉴의 ROLE_ADMIN 메뉴 배정 1행과 CMS 기능 권한 8행(ROLE_ADMIN·ROLE_SYSTEM × 4)을
             //   더하고 ADD 이력 9행을 남긴다(ADR-0039).
+            //   V2_152 가 EVENT_APPLY·COMMUNITY_OPERATE 기능 권한 6행(ROLE_ADMIN·ROLE_SYSTEM·ROLE_USER × 2)과 행사 참가 메뉴의
+            //   NAVIGATION 2행(참여 분류를 보는 ROLE_ADMIN·ROLE_USER)을 더하고 ADD 이력 8행을 남긴다(DEC-OPS-416).
             //   V2_100 자신의 효과(NAV 추가 4·제거 13)는 아래 식별자별 단언이 그대로 본다.
-            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION'")).isEqualTo(566-8-8-31-8+8);
-            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_chg_hstry")).isEqualTo(auditsBefore+17+8+6+8+1+31+1+8+1+8);
+            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION'")).isEqualTo(566-8-8-31-8+8+6);
+            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_chg_hstry")).isEqualTo(auditsBefore+17+8+6+8+1+31+1+8+1+8+8);
             assertThat(number(statement,"SELECT count(*) FROM tb_authrt_chg_hstry WHERE dmnd_idntfr='migration:2.100' "
                     + "AND chg_type_cd='ADD' AND authrt_type_cd='NAVIGATION'")).isEqualTo(4);
             assertThat(number(statement,"SELECT count(*) FROM tb_authrt_chg_hstry WHERE dmnd_idntfr='migration:2.100' "
@@ -148,7 +150,7 @@ class MenuInformationArchitectureMigrationIntegrationTest extends SharedPostgres
             assertThat(missingDefaultOperationGrants(statement)).as("기본 그룹 배정이 빠진 그룹:권한").isEmpty();
             assertThat(digest(statement,"tb_authrt_info","")).isEqualTo(before.get("tb_authrt_info"));
             assertThat(digest(statement,"tb_authrt_user_map","")).isEqualTo(before.get("tb_authrt_user_map"));
-            assertThat(digest(statement,"tb_authrt_chg_hstry","WHERE dmnd_idntfr NOT IN ('migration:2.100','migration:2.104','migration:2.120','migration:2.124','migration:2.125','migration:2.130','migration:2.134','migration:2.135','migration:2.137')"))
+            assertThat(digest(statement,"tb_authrt_chg_hstry","WHERE dmnd_idntfr NOT IN ('migration:2.100','migration:2.104','migration:2.120','migration:2.124','migration:2.125','migration:2.130','migration:2.134','migration:2.135','migration:2.137','migration:2.152')"))
                     .isEqualTo(before.get("tb_authrt_chg_hstry"));
         }
         var after=snapshot();

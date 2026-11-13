@@ -130,12 +130,17 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
                 // 임계값 도달 → 잠금. lockAccount()가 잠금 시각까지 남기므로 lockMinutes 경과 후 스스로 풀린다.
                 // save() 는 잠금 판정 '뒤'에 와야 lckYn/lckLastPnttm 이 같은 커밋에 함께 실린다.
                 Integer failures = userEntity.getLckCnt();
-                if (maxLoginFailures > 0 && failures != null && failures >= maxLoginFailures) {
+                boolean locked = maxLoginFailures > 0 && failures != null && failures >= maxLoginFailures;
+                if (locked) {
                     userEntity.lockAccount();
                     log.warn(">>> Account locked for user: {} (연속 실패 {}회 도달, {}분 후 자동 해제)",
                             userId, failures, lockMinutes);
                 }
                 userRepository.save(userEntity);
+                if (locked) {
+                    // [V2_153] 잠금은 그 전에 발급된 세션을 끊는다 — 잠금 시간이 지나 스스로 풀려도 옛 토큰은 되살아나지 않는다.
+                    userRepository.advanceSessionCycle(java.util.List.of(userEntity.getEsntlId()));
+                }
                 throw new BadCredentialsException("Invalid User ID or Password");
             }
             

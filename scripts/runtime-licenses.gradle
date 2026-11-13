@@ -1,0 +1,53 @@
+// [Wave 4] api-server 운영 런타임(runtimeClasspath) 의존성의 POM 라이선스를 build/licenses/runtime-licenses.json 에 쓴다.
+//   ./gradlew -I scripts/runtime-licenses.gradle :api-server:writeRuntimeLicenses
+//   node scripts/copyleft-license-policy.mjs --gradle build/licenses/runtime-licenses.json
+// POM 에 <licenses> 가 없으면 부모 POM 을 따라 올라간다(최대 8단계). 저장소 자신의 모듈(프로젝트 의존)은 모집단이 아니다.
+// 시험 전용 드라이버(testRuntimeOnly)는 runtimeClasspath 에 없으므로 들어오지 않는다.
+gradle.projectsEvaluated {
+    def apiProject = gradle.rootProject.project(':api-server')
+    apiProject.tasks.register('writeRuntimeLicenses') {
+        def target = gradle.rootProject.file('build/licenses/runtime-licenses.json')
+        outputs.file(target)
+        outputs.upToDateWhen { false }
+        doLast {
+            def poms = [:]
+            def pom = { String group, String name, String version ->
+                def key = "${group}:${name}:${version}"
+                if (!poms.containsKey(key)) {
+                    def configuration = apiProject.configurations.detachedConfiguration(
+                            apiProject.dependencies.create("${key}@pom"))
+                    configuration.transitive = false
+                    def file = configuration.resolve().find()
+                    poms[key] = file == null ? null : new groovy.xml.XmlSlurper(false, false).parse(file)
+                }
+                poms[key]
+            }
+            def licensesOf
+            licensesOf = { String group, String name, String version, int depth ->
+                def xml = pom(group, name, version)
+                if (xml == null) return []
+                def names = xml.licenses.license.collect { license ->
+                    def text = license.name.text().trim()
+                    text ? text : license.url.text().trim()
+                }.findAll { it }
+                if (!names.isEmpty() || depth >= 8 || xml.parent.size() == 0) return names
+                def parentVersion = xml.parent.version.text().trim()
+                if (!parentVersion || parentVersion.contains('$')) return names
+                licensesOf(xml.parent.groupId.text().trim(), xml.parent.artifactId.text().trim(), parentVersion, depth + 1)
+            }
+            def components = apiProject.configurations.runtimeClasspath.incoming.resolutionResult.allComponents
+                    .collect { it.id }
+                    .findAll { it instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier }
+                    .sort { "${it.group}:${it.module}:${it.version}" }
+                    .collect { id ->
+                        [module: "${id.group}:${id.module}".toString(), version: id.version,
+                         licenses: licensesOf(id.group, id.module, id.version, 0)]
+                    }
+            target.parentFile.mkdirs()
+            target.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(
+                    [authority: 'runtime-licenses', project: ':api-server', configuration: 'runtimeClasspath',
+                     components: components]))
+            logger.lifecycle("runtime-licenses: ${components.size()} components -> ${target}")
+        }
+    }
+}

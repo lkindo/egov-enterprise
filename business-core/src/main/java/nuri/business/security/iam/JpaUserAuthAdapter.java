@@ -44,6 +44,8 @@ public class JpaUserAuthAdapter implements UserAuthPort {
                 // [2026-10-18] 로그아웃 시각도 같은 기준(JVM 기본 시간대의 LocalDateTime.now())으로 되돌린다.
                 .lastLogoutAt(user.getLastLgtDt() == null ? null
                         : user.getLastLgtDt().atZone(java.time.ZoneId.systemDefault()).toInstant())
+                // [V2_153] 세션차수 — 토큰이 담은 차수와 다르면 인증 필터가 거부한다.
+                .sessionCycle(user.getSessionCycle())
                 .build();
     }
 }
