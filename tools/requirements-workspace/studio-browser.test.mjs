@@ -29,9 +29,14 @@ test('documents become requirements, deliverables and stories through the studio
   const workspace = mkdtempSync(join(tmpdir(), 'synthetic-studio-browser-'));
   let app, browser;
   try {
-    const studio = studioRunner();
-    app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async input => input.request.phase === 'reading'
-      ? { output: pipelineReply(input.request), model: STUDIO_MODEL, effort: 'xhigh', usage: { inputTokens: 1, outputTokens: 1 } } : studio(input) });
+    const studio = studioRunner(), reading = { calls: 0, hold: false, release: null };
+    app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async input => {
+      if (input.request.phase !== 'reading') return studio(input);
+      reading.calls += 1;
+      // A held reading stands in for the minutes a real document can take, so the progress shown meanwhile can be checked.
+      if (reading.hold) await new Promise(resolve => { reading.release = resolve; });
+      return { output: pipelineReply(input.request), model: STUDIO_MODEL, effort: 'xhigh', usage: { inputTokens: 1, outputTokens: 1 } };
+    } });
     browser = await chromium.launch({ headless: true });
     const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
     page.setDefaultTimeout(15000);
@@ -49,19 +54,27 @@ test('documents become requirements, deliverables and stories through the studio
 
     // One dialog registers the file, reads it and goes on to the analysis.
     // `result` is the stage summary this document must produce. The finished heading alone is not a signal: an earlier run leaves the same heading on screen.
-    const add = async (name, text, result) => {
+    // `whileReading` runs while the model is still reading the file, with the reading held.
+    const add = async (name, text, result, whileReading) => {
       await page.getByRole('button', { name: '문서 추가', exact: true }).click();
       await page.getByLabel('문서 파일', { exact: true }).setInputFiles([file(name, text)]);
       await page.getByRole('button', { name: '등록 시작', exact: true }).click();
       await page.getByText('두 항목을 모두 확인해 주세요.', { exact: true }).waitFor();
       await page.getByLabel(/문서 원문에 민감정보가 있을 수 있음을/).check();
       await page.getByLabel(/모델 서비스로 보내는 데 동의합니다/).check();
+      if (whileReading) { reading.hold = true; await page.getByLabel(/글자 문서\(TXT·Markdown·HTML\)는 AI 판독 없이/).uncheck(); }
       await page.getByRole('button', { name: '등록 시작', exact: true }).click();
+      if (whileReading) { await whileReading(); reading.hold = false; reading.release(); }
       await page.getByRole('cell', { name: new RegExp(name) }).waitFor();
       await page.getByRole('button', { name: result }).waitFor();
       await page.getByRole('heading', { name: '문서 분석 — 완료', exact: true }).waitFor();
     };
     await add('합성-제안요청서.txt', first, /^2\. 요구사항 확정 0 \/ 3건/);
+    // A text document is split on this PC: the model is not asked to read it, and the result is listed per file.
+    assert.equal(reading.calls, 0);
+    await page.getByRole('heading', { name: '문서 등록 결과', exact: true }).waitFor();
+    await page.getByText('완료 1건', { exact: true }).waitFor();
+    await page.getByText('조각 4개', { exact: true }).waitFor();
     await audit(page, 'studio-sources');
 
     await page.getByRole('button', { name: /^2\. 요구사항/ }).click();
@@ -73,7 +86,22 @@ test('documents become requirements, deliverables and stories through the studio
 
     // The second document proposes a change to the confirmed requirement instead of editing it.
     await page.getByRole('button', { name: /^1\. 자료함/ }).click();
-    await add('합성-회의록.txt', second, /^2\. 요구사항 확정 1 \/ 4건 · 쟁점 1/);
+    // With the option off the model reads the file. While that takes its time the screen says which file is being read
+    // and for how long, and the other stages show that registration is under way.
+    await add('합성-회의록.txt', second, /^2\. 요구사항 확정 1 \/ 4건 · 쟁점 1/, async () => {
+      await page.getByRole('heading', { name: '문서 등록 — 0 / 1건 끝남', exact: true }).waitFor();
+      await page.getByText(/AI가 문서를 읽는 중/).first().waitFor();
+      await page.locator('.st-files').getByText('읽는 중', { exact: true }).waitFor();
+      await audit(page, 'studio-registering');
+      await page.getByRole('button', { name: /^2\. 요구사항/ }).click();
+      await page.locator('#activity').getByText(/문서 등록 중 · 0 \/ 1건 끝남 · 합성-회의록\.txt · 경과 \d\d:\d\d/).waitFor();
+      const before = await page.locator('#activity [data-since]').textContent();
+      await page.waitForFunction(shown => document.querySelector('#activity [data-since]')?.textContent !== shown, before);
+      await page.locator('#activity').getByRole('button', { name: '자료함에서 보기', exact: true }).click();
+      await page.getByRole('heading', { name: '문서 등록 — 0 / 1건 끝남', exact: true }).waitFor();
+      assert.equal(reading.calls, 1);
+    });
+    assert.equal(await page.locator('#activity').isHidden(), true);
     await page.getByRole('button', { name: /^2\. 요구사항/ }).click();
     await page.getByRole('button', { name: /^확인할 것 2$/ }).click();
     await page.getByRole('button', { name: /^시설 예약 신청 SFR-001/ }).click();
