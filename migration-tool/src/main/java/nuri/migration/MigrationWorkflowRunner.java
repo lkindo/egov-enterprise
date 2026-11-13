@@ -34,6 +34,7 @@ import nuri.migration.etl.MigrationMode;
 import nuri.migration.generate.MappingGenerator;
 import nuri.migration.jdbc.SourceJdbcEndpoint;
 import nuri.migration.jdbc.SourceJdbcEndpointFactory;
+import nuri.migration.jdbc.JdbcUrlSafety;
 import nuri.migration.model.MappingLoader;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.plan.MigrationPlan;
@@ -1009,6 +1010,9 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
     private static void requireTarget(MappingSpec mapping) {
         if (mapping.target() == null) {
             throw gate("mapping.target이 필요합니다.");
+        }
+        if (JdbcUrlSafety.isH2Url(mapping.target().url())) {
+            throw gate("H2는 내부 임시 인덱스 전용이며 workflow target으로 사용할 수 없습니다.");
         }
     }
 

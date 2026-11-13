@@ -43,6 +43,8 @@ const childOnlyTests = [
   'nuri.migration.SqlServerPackagedCliIntegrationTest',
   'nuri.migration.EtlOracleCrashRecoveryIntegrationTest',
   'nuri.migration.OraclePackagedCliIntegrationTest',
+  'nuri.migration.state.BoundedMigrationStateTest',
+  'nuri.migration.verify.BoundedMigrationVerifierTest',
 ];
 const childOnlyScopes = [
   ['nuri.migration.transform.TransformerRegistry'],
@@ -319,7 +321,7 @@ test('migration duration profile exactly covers source tests and produces three 
   const profile = loadMigrationDurationProfile();
   const classes = discoverMigrationTestClasses();
   assert.deepEqual(validateMigrationDurationProfile(profile, classes), []);
-  assert.equal(classes.length, 195);
+  assert.equal(classes.length, 198);
   assert.equal(profile.source.classMeasurements?.['nuri.migration.MigrationWorkspacePackagedCliIntegrationTest']?.kind, 'local-junit');
   const plan = buildMigrationShardPlan(profile, classes);
   assert.equal(plan.length, 3);

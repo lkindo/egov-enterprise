@@ -46,7 +46,7 @@ public final class SourceJdbcEndpointFactory {
         }
         List<Path> jars = driverJars == null ? List.of() : List.copyOf(driverJars);
         if (jars.isEmpty()) {
-            if (driverClassOverride != null) {
+            if (driverClassOverride != null || JdbcUrlSafety.isH2Url(config.url())) {
                 throw SourceDriverException.configuration();
             }
             return bundled(config);

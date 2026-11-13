@@ -6,14 +6,13 @@ import nuri.migration.model.MappingSpec.RunContext;
 import nuri.migration.model.MappingSpec.TableMapping;
 import nuri.migration.schema.MigrationSchemaManager;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -27,7 +26,7 @@ import java.util.TreeSet;
  * 기록하고 따로 재개한다. 기본 매핑(id 생략)의 {@code mapping_id} 는 빈 문자열이다 — 제어 스키마 V2 가 V1 의 기존 행을
  * 그 값으로 채웠으므로 분할하지 않은 run 은 그대로 이어서 재개된다.
  */
-public final class MigrationStateStore {
+public final class MigrationStateStore implements AutoCloseable {
 
     public static final String RUN_TABLE = MigrationSchemaManager.CONTROL_SCHEMA + ".tb_migration_run";
     public static final String CHECKPOINT_TABLE = MigrationSchemaManager.CONTROL_SCHEMA
@@ -35,7 +34,11 @@ public final class MigrationStateStore {
 
     private final String runId;
     private final String sourceNamespace;
-    private final Map<Scope, Map<String, CheckpointEntry>> checkpoints = new LinkedHashMap<>();
+    private static final int PAGE_SIZE = 512;
+    private final MigrationScratchIndex checkpoints = new MigrationScratchIndex(
+            "CREATE TABLE checkpoint (source_table VARCHAR NOT NULL, mapping_id VARCHAR NOT NULL,"
+                    + " source_key VARCHAR NOT NULL, target_table VARCHAR NOT NULL, target_key VARCHAR NOT NULL,"
+                    + " row_checksum VARCHAR NOT NULL, PRIMARY KEY(source_table, mapping_id, source_key))");
 
     /** checkpoint 범위 — 소문자 소스 표기와 실효 매핑 id. */
     private record Scope(String sourceTable, String mappingId) {}
@@ -134,24 +137,20 @@ public final class MigrationStateStore {
         }
         Set<String> unknown = new TreeSet<>();
         Set<String> retargeted = new TreeSet<>();
-        for (Map.Entry<Scope, Map<String, CheckpointEntry>> recorded : checkpoints.entrySet()) {
-            Scope scope = recorded.getKey();
-            Map<String, String> declaredIds = targets.get(scope.sourceTable());
-            if (declaredIds == null) {
-                continue;
-            }
-            if (!declaredIds.containsKey(scope.mappingId())) {
-                unknown.add(label(scope));
-                continue;
-            }
-            Set<String> recordedTargets = new HashSet<>();
-            for (CheckpointEntry entry : recorded.getValue().values()) {
-                recordedTargets.add(normalize(entry.targetTable()));
-            }
-            if (recordedTargets.size() != 1 || !recordedTargets.contains(declaredIds.get(scope.mappingId()))) {
-                retargeted.add(label(scope));
-            }
-        }
+        checkpoints.access(index -> {
+            index.query("SELECT DISTINCT source_table, mapping_id, target_table FROM checkpoint",
+                    (RowCallbackHandler) row -> {
+                        Scope scope = scope(row.getString(1), row.getString(2));
+                        Map<String, String> declaredIds = targets.get(scope.sourceTable());
+                        if (declaredIds == null) return;
+                        if (!declaredIds.containsKey(scope.mappingId())) {
+                            if (unknown.size() < 100) unknown.add(label(scope));
+                        } else if (!row.getString(3).equals(declaredIds.get(scope.mappingId()))) {
+                            if (retargeted.size() < 100) retargeted.add(label(scope));
+                        }
+                    });
+            return null;
+        });
         if (!unknown.isEmpty()) {
             throw new IllegalStateException("재개 가드: 이 run 의 checkpoint 에 있는 매핑 " + unknown
                     + " 이 mapping 에 없습니다 — 같은 소스의 매핑 id 를 바꾼 채 재개할 수 없습니다."
@@ -170,24 +169,41 @@ public final class MigrationStateStore {
     }
 
     private void preload(JdbcTemplate target) {
-        checkpoints.clear();
-        List<CheckpointEntry> loaded = target.query(
-                "SELECT source_table, source_key, target_table, target_key, row_checksum, mapping_id FROM "
-                        + CHECKPOINT_TABLE + " WHERE run_id=? AND source_namespace=?",
-                (rs, rowNum) -> new CheckpointEntry(rs.getString(1), rs.getString(2), rs.getString(3),
-                        rs.getString(4), rs.getString(5), rs.getString(6)),
-                runId, sourceNamespace);
-        loaded.forEach(this::accept);
+        checkpoints.access(index -> index.update("DELETE FROM checkpoint"));
+        CheckpointEntry cursor = null;
+        while (true) {
+            String seek = cursor == null ? "" : " AND (source_table>? OR (source_table=? AND"
+                    + " (mapping_id>? OR (mapping_id=? AND source_key>?))))";
+            Object[] args = cursor == null ? new Object[]{runId, sourceNamespace}
+                    : new Object[]{runId, sourceNamespace, cursor.sourceTable(), cursor.sourceTable(),
+                            cursor.mappingId(), cursor.mappingId(), cursor.sourceKey()};
+            List<CheckpointEntry> page = target.query(
+                    "SELECT source_table, source_key, target_table, target_key, row_checksum, mapping_id FROM "
+                            + CHECKPOINT_TABLE + " WHERE run_id=? AND source_namespace=?" + seek
+                            + " ORDER BY source_table, mapping_id, source_key FETCH FIRST " + PAGE_SIZE + " ROWS ONLY",
+                    (rs, rowNum) -> new CheckpointEntry(rs.getString(1), rs.getString(2), rs.getString(3),
+                            rs.getString(4), rs.getString(5), rs.getString(6)), args);
+            if (page.isEmpty()) return;
+            accept(page);
+            cursor = page.getLast();
+        }
     }
 
     public CheckpointEntry find(String sourceTable, String mappingId, String sourceKey) {
-        Map<String, CheckpointEntry> table = checkpoints.get(scope(sourceTable, mappingId));
-        return table == null ? null : table.get(sourceKey);
+        Scope scope = scope(sourceTable, mappingId);
+        return checkpoints.access(index -> index.query(
+                "SELECT source_table, source_key, target_table, target_key, row_checksum, mapping_id FROM checkpoint"
+                        + " WHERE source_table=? AND mapping_id=? AND source_key=?",
+                (rs, rowNum) -> new CheckpointEntry(rs.getString(1), rs.getString(2), rs.getString(3),
+                        rs.getString(4), rs.getString(5), rs.getString(6)),
+                scope.sourceTable(), scope.mappingId(), sourceKey).stream().findFirst().orElse(null));
     }
 
     public long count(String sourceTable, String mappingId) {
-        Map<String, CheckpointEntry> table = checkpoints.get(scope(sourceTable, mappingId));
-        return table == null ? 0L : table.size();
+        Scope scope = scope(sourceTable, mappingId);
+        return checkpoints.access(index -> index.queryForObject(
+                "SELECT count(*) FROM checkpoint WHERE source_table=? AND mapping_id=?", Long.class,
+                scope.sourceTable(), scope.mappingId()));
     }
 
     public void write(Connection connection, List<CheckpointEntry> entries) throws SQLException {
@@ -215,18 +231,57 @@ public final class MigrationStateStore {
     }
 
     public void accept(List<CheckpointEntry> entries) {
-        entries.forEach(this::accept);
+        if (entries.isEmpty()) return;
+        checkpoints.access(index -> index.batchUpdate(
+                "MERGE INTO checkpoint (source_table, mapping_id, source_key, target_table, target_key, row_checksum)"
+                        + " KEY(source_table, mapping_id, source_key) VALUES (?, ?, ?, ?, ?, ?)",
+                entries, PAGE_SIZE, (statement, entry) -> {
+                    statement.setString(1, normalize(entry.sourceTable()));
+                    statement.setString(2, entry.mappingId());
+                    statement.setString(3, entry.sourceKey());
+                    statement.setString(4, normalize(entry.targetTable()));
+                    statement.setString(5, entry.targetKey());
+                    statement.setString(6, entry.rowChecksum());
+                }));
     }
 
-    private void accept(CheckpointEntry entry) {
-        checkpoints.computeIfAbsent(scope(entry.sourceTable(), entry.mappingId()), ignored -> new LinkedHashMap<>())
-                .put(entry.sourceKey(), entry);
-    }
+    @Override public void close() { checkpoints.close(); }
 
     public void mark(JdbcTemplate target, String status) {
         target.update("UPDATE " + RUN_TABLE
                 + " SET run_stts_cd=?, last_mdfcn_dt=CURRENT_TIMESTAMP"
                 + " WHERE run_id=? AND source_namespace=?", status, runId, sourceNamespace);
+    }
+
+    public record CheckpointCounts(long rows, long distinctTargetKeys) {}
+
+    public static CheckpointCounts counts(JdbcTemplate target, RunContext context, String sourceTable,
+                                          String mappingId) {
+        if (context == null || blank(context.runId()) || blank(context.sourceNamespace())) {
+            return new CheckpointCounts(0, 0);
+        }
+        return target.queryForObject("SELECT count(*), count(DISTINCT target_key) FROM " + CHECKPOINT_TABLE
+                        + " WHERE run_id=? AND source_namespace=? AND source_table=? AND mapping_id=?",
+                (rs, row) -> new CheckpointCounts(rs.getLong(1), rs.getLong(2)),
+                context.runId(), context.sourceNamespace(), normalize(sourceTable),
+                mappingId == null ? TableMapping.DEFAULT_ID : mappingId);
+    }
+
+    /** Keyset page, bounded independently of the run's checkpoint count. */
+    public static List<CheckpointEntry> readPage(JdbcTemplate target, RunContext context, String sourceTable,
+                                                String mappingId, String afterSourceKey, int limit) {
+        if (limit < 1 || limit > PAGE_SIZE) throw new IllegalArgumentException("invalid checkpoint page size");
+        if (context == null || blank(context.runId()) || blank(context.sourceNamespace())) return List.of();
+        String effectiveId = mappingId == null ? TableMapping.DEFAULT_ID : mappingId;
+        Object[] args = afterSourceKey == null
+                ? new Object[]{context.runId(), context.sourceNamespace(), normalize(sourceTable), effectiveId}
+                : new Object[]{context.runId(), context.sourceNamespace(), normalize(sourceTable), effectiveId, afterSourceKey};
+        return target.query("SELECT source_table, source_key, target_table, target_key, row_checksum, mapping_id FROM "
+                        + CHECKPOINT_TABLE + " WHERE run_id=? AND source_namespace=? AND source_table=? AND mapping_id=?"
+                        + (afterSourceKey == null ? "" : " AND source_key>?")
+                        + " ORDER BY source_key FETCH FIRST " + limit + " ROWS ONLY",
+                (rs, row) -> new CheckpointEntry(rs.getString(1), rs.getString(2), rs.getString(3),
+                        rs.getString(4), rs.getString(5), rs.getString(6)), args);
     }
 
     /** 기본 매핑의 checkpoint. 매핑 id 도입 전 호출부 호환. */

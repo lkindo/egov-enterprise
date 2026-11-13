@@ -9,6 +9,15 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class JdbcUrlSafetyTest {
 
+    @Test
+    void identifiesThePrivateDriverPrefixWithoutRejectingNormalDatabaseFamilies() {
+        assertThat(JdbcUrlSafety.isH2Url("jdbc:h2:mem:source")).isTrue();
+        assertThat(JdbcUrlSafety.isH2Url(" JDBC:H2:file:source ")).isTrue();
+        assertThat(JdbcUrlSafety.isH2Url(null)).isFalse();
+        assertThat(JdbcUrlSafety.isH2Url("jdbc:postgresql://db/app")).isFalse();
+        assertThat(JdbcUrlSafety.isH2Url("jdbc:mysql://db/app")).isFalse();
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {
         "jdbc:mysql://db/app?allowLoadLocalInfile=true",
