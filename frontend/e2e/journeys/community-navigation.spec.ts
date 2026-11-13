@@ -2,6 +2,7 @@ import { expect,test } from '../fixtures/browser-test';
 import { CommunityPage } from '../pages/CommunityPage';
 import { randomUUID } from 'node:crypto';
 import { collectPageCoverage } from '../fixtures/page-observation';
+import { trackApiRequests, waitForHydration } from '../fixtures/hydration';
 test.describe('Board & Community (Business Flow)', () => {
     // [2026-08-10 제거] `test.describe.configure({ mode: 'parallel' })`.
     //   playwright.config 는 `workers: 1` 이라(공유 DB 오염·OOM 방지) 이 선언은 **아무 효과가 없었다**.
@@ -17,7 +18,7 @@ test.describe('Board & Community (Business Flow)', () => {
         await communityPage.verifyCOPList();
         await communityPage.gotoMaster();
     });
-    test('신규 사용자는 가입 신청·관리자 승인 뒤 게시판을 보고 탈퇴하면 접근이 끊긴다', async ({ actorPage, adminPage, adminRequest, baseURL }) => {
+    test('신규 사용자는 가입 신청·관리자 승인 뒤 게시판을 보고 탈퇴하면 접근이 끊긴다', async ({ actorPage, adminPage, adminRequest, baseURL }, testInfo) => {
         const suffix = randomUUID().replaceAll('-', '').slice(0, 10);
         const users = '/api/v1/admin/system/users';
         const communities = '/api/v1/admin/content/community';
@@ -68,7 +69,51 @@ test.describe('Board & Community (Business Flow)', () => {
                 expect(response.status()).toBe(200);
                 return (await response.json()).data.status as string;
             };
-            await actor.page.goto(memberPath);
+            const listRequests = trackApiRequests(actor.page);
+            await actor.page.goto('/cop/cmy/selectCommunityList');
+            const search = actor.page.getByRole('textbox', { name: '커뮤니티명', exact: true });
+            await waitForHydration(search);
+            await search.fill(communityName);
+            await search.press('Enter');
+            const detail = actor.page.getByRole('link', { name: `${communityName} 상세 보기`, exact: true });
+            await expect(detail).toHaveAttribute('href', memberPath);
+            await expect(detail.getByRole('button')).toHaveCount(0);
+            const originalViewport = actor.page.viewportSize()!;
+            const html = actor.page.locator('html');
+            const originalDark = await html.evaluate(element => element.classList.contains('dark'));
+            await actor.page.emulateMedia({ reducedMotion: 'reduce' });
+            for (const dark of [false, true]) {
+                if (await html.evaluate(element => element.classList.contains('dark')) !== dark) {
+                    await actor.page.getByRole('button', { name: '테마 변경', exact: true }).click();
+                    await expect.poll(() => html.evaluate(element => element.classList.contains('dark'))).toBe(dark);
+                }
+                for (const viewport of [{ width: 1280, height: 900 }, { width: 768, height: 1024 }, { width: 375, height: 812 }]) {
+                    await actor.page.setViewportSize(viewport);
+                    await detail.scrollIntoViewIfNeeded();
+                    await detail.focus();
+                    await actor.page.keyboard.press('Shift+Tab');
+                    await expect(detail).not.toBeFocused();
+                    await expect(detail).not.toHaveCSS('box-shadow', /0px 0px 0px [1-9]\d*(?:\.\d+)?px/);
+                    const unfocusedShadow = await detail.evaluate(element => getComputedStyle(element).boxShadow);
+                    await actor.page.keyboard.press('Tab');
+                    await expect(detail).toBeFocused();
+                    await expect(detail).toBeInViewport();
+                    await expect(detail).toHaveCSS('box-shadow', /0px 0px 0px [1-9]\d*(?:\.\d+)?px/);
+                    await expect(detail).not.toHaveCSS('box-shadow', unfocusedShadow);
+                    const name = `community-link-${dark ? 'dark' : 'light'}-${viewport.width}.png`;
+                    const path = testInfo.outputPath(name);
+                    await actor.page.screenshot({ path, fullPage: true, animations: 'disabled' });
+                    await testInfo.attach(name, { path, contentType: 'image/png' });
+                }
+            }
+            await actor.page.setViewportSize(originalViewport);
+            if (await html.evaluate(element => element.classList.contains('dark')) !== originalDark) {
+                await actor.page.getByRole('button', { name: '테마 변경', exact: true }).click();
+            }
+            await listRequests.settled(search);
+            await detail.focus();
+            await actor.page.keyboard.press('Enter');
+            await expect(actor.page).toHaveURL(new RegExp(`${memberPath}$`));
             await expect(actor.page.getByRole('heading', { name: communityName, exact: true })).toBeVisible();
             await expect(actor.page.getByRole('link', { name: boardName, exact: false })).toHaveCount(0);
             expect(await readMembership()).toBe('NONE');

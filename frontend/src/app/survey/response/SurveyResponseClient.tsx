@@ -111,7 +111,7 @@ export default function SurveyResponseClient() {
 
   return (
     <div className="container mx-auto py-8 max-w-6xl space-y-6">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-end">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">설문조사 응답 관리</h1>
           <p className="text-muted-foreground mt-1">
@@ -119,12 +119,12 @@ export default function SurveyResponseClient() {
           </p>
         </div>
         <div className="flex space-x-2">
-          <Link href="/survey/stats">
-            <Button variant="outline" size="sm">
-              <BarChart3 className="mr-2 h-4 w-4" />
+          <Button asChild variant="outline" size="sm">
+            <Link href="/survey/stats">
+              <BarChart3 className="mr-2 h-4 w-4" aria-hidden="true" />
               통계 보기
-            </Button>
-          </Link>
+            </Link>
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -139,9 +139,9 @@ export default function SurveyResponseClient() {
 
       <Card className="shadow-sm">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle className="text-lg font-medium">응답 목록</CardTitle>
-            <div className="relative w-64">
+            <div className="relative w-full sm:w-64">
               <label htmlFor="survey-response-search" className="sr-only">응답자 이름 검색</label>
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -216,11 +216,11 @@ export default function SurveyResponseClient() {
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-center space-x-1">
-                          <Link href={`/survey/response/${item.srvyRspnsSn}`}>
-                            <Button variant="ghost" size="icon-sm" aria-label={`${item.rspnsNm || '설문'} 응답 상세보기`}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </Link>
+                          <Button asChild variant="ghost" size="icon-sm">
+                            <Link href={`/survey/response/${item.srvyRspnsSn}`} aria-label={`${item.rspnsNm || '설문'} 응답 상세보기`}>
+                              <Eye className="h-4 w-4" aria-hidden="true" />
+                            </Link>
+                          </Button>
                           {canCancel && <Button
                             variant="ghost"
                             size="icon-sm"

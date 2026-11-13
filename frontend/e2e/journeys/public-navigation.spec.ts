@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { APIRequestContext, Response as NetworkResponse } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
-import { waitForHydration } from '../fixtures/hydration';
+import { trackApiRequests, waitForHydration } from '../fixtures/hydration';
 import { screenYmd } from '../helpers/screen-date';
 test.describe('공개 포털', () => {
     test.describe('Public Engagement & Experience', () => {
@@ -37,7 +37,7 @@ async function readData<T>(request: APIRequestContext, url: string): Promise<T> 
 }
 
 test.describe('설문 응답 생명주기', () => {
-    test('설문 생성·참여·선택답 확인: 기간 등록·수정과 관리자 목록·상세 표시', async ({ adminPage, actorPage, adminRequest }) => {
+    test('설문 생성·참여·선택답 확인: 기간 등록·수정과 관리자 목록·상세 표시', async ({ adminPage, actorPage, adminRequest }, testInfo) => {
         // browser-test의 자동 isolatedTarget 검사와 정상 API로 생성한 합성 사용자만 사용한다.
         // online-polls의 pollSn과 구분되는 실제 srvySn 설문 생명주기다.
         const unique = randomUUID();
@@ -272,6 +272,7 @@ test.describe('설문 응답 생명주기', () => {
                 for (const { srvyArtclSn, choiceLabel } of selectedAnswers) {
                     const responseId = responseIds.get(srvyArtclSn);
                     expect(responseId, '제출한 선택 응답이 관리 API에 있어야 한다').toBeDefined();
+                    const responseRequests = trackApiRequests(adminPage);
                     await adminPage.goto('/survey/response');
                     const main = adminPage.locator('main#main-content').filter({ visible: true });
                     const detailSelector = `a[href="/survey/response/${responseId}"]`;
@@ -284,16 +285,76 @@ test.describe('설문 응답 생명주기', () => {
                     const row = main.getByRole('row').filter({ has: adminPage.locator(detailSelector) });
                     await expect(row).toBeVisible();
                     await expect(row.getByRole('cell').nth(1)).toHaveText(choiceLabel);
-                    await detail.click();
+                    await expect(detail).toHaveAccessibleName(`${respondentName || '설문'} 응답 상세보기`);
+                    await expect(detail.getByRole('button')).toHaveCount(0);
+                    if (srvyArtclSn === selectedAnswers[0].srvyArtclSn) {
+                        const stats = main.getByRole('link', { name: '통계 보기', exact: true });
+                        await expect(stats).toHaveAttribute('href', '/survey/stats');
+                        await expect(stats.getByRole('button')).toHaveCount(0);
+                        const originalViewport = adminPage.viewportSize()!;
+                        const html = adminPage.locator('html');
+                        const originalDark = await html.evaluate(element => element.classList.contains('dark'));
+                        await adminPage.emulateMedia({ reducedMotion: 'reduce' });
+                        for (const dark of [false, true]) {
+                            if (await html.evaluate(element => element.classList.contains('dark')) !== dark) {
+                                await adminPage.getByRole('button', { name: '테마 변경', exact: true }).click();
+                                await expect.poll(() => html.evaluate(element => element.classList.contains('dark'))).toBe(dark);
+                            }
+                            for (const viewport of [{ width: 1280, height: 900 }, { width: 768, height: 1024 }, { width: 375, height: 812 }]) {
+                                await adminPage.setViewportSize(viewport);
+                                for (const [control, link] of [['stats', stats], ['detail', detail]] as const) {
+                                    await link.scrollIntoViewIfNeeded();
+                                    await link.focus();
+                                    await adminPage.keyboard.press('Shift+Tab');
+                                    await expect(link).not.toBeFocused();
+                                    await expect(link).not.toHaveCSS('box-shadow', /0px 0px 0px [1-9]\d*(?:\.\d+)?px/);
+                                    const unfocusedShadow = await link.evaluate(element => getComputedStyle(element).boxShadow);
+                                    await adminPage.keyboard.press('Tab');
+                                    await expect(link).toBeFocused();
+                                    await expect(link).toBeInViewport();
+                                    await expect(link).toHaveCSS('box-shadow', /0px 0px 0px [1-9]\d*(?:\.\d+)?px/);
+                                    await expect(link).not.toHaveCSS('box-shadow', unfocusedShadow);
+                                    const name = `survey-${control}-${dark ? 'dark' : 'light'}-${viewport.width}.png`;
+                                    const path = testInfo.outputPath(name);
+                                    await adminPage.screenshot({ path, fullPage: true, animations: 'disabled' });
+                                    await testInfo.attach(name, { path, contentType: 'image/png' });
+                                }
+                            }
+                        }
+                        await adminPage.setViewportSize(originalViewport);
+                        if (await html.evaluate(element => element.classList.contains('dark')) !== originalDark) {
+                            await adminPage.getByRole('button', { name: '테마 변경', exact: true }).click();
+                        }
+                    }
+                    await responseRequests.settled(detail);
+                    await detail.focus();
+                    await adminPage.keyboard.press('Enter');
                     await expect(adminPage).toHaveURL(new RegExp(`/survey/response/${responseId}$`));
                     await expect(main.getByText(choiceLabel, { exact: true })).toBeVisible();
                     await expect(main.getByText('응답 내용이 등록되지 않았습니다.', { exact: true })).toHaveCount(0);
                 }
                 // 응답자 이름 검색 — 서버가 응답자 이름으로 걸러 이 합성 사용자의 두 문항 응답만 남긴다.
                 expect(respondentName, '서버가 제출 시 응답자 이름을 채워야 한다').toBeTruthy();
+                const listRequests = trackApiRequests(adminPage);
                 await adminPage.goto('/survey/response');
                 const responseMain = adminPage.locator('main#main-content').filter({ visible: true });
                 await expect(responseMain.getByRole('heading', { level: 1, name: '설문조사 응답 관리', exact: true })).toBeVisible();
+                const stats = responseMain.getByRole('link', { name: '통계 보기', exact: true });
+                await listRequests.settled(stats);
+                const statsRequests = trackApiRequests(adminPage);
+                await stats.focus();
+                await adminPage.keyboard.press('Shift+Tab');
+                await adminPage.keyboard.press('Tab');
+                await expect(stats).toBeFocused();
+                await adminPage.keyboard.press('Enter');
+                await expect(adminPage).toHaveURL(/\/survey\/stats$/);
+                const statsHeading = adminPage.getByRole('heading', { name: '설문 결과 통계', exact: true });
+                await expect(statsHeading).toBeVisible();
+                await statsRequests.settled(statsHeading);
+                const backRequests = trackApiRequests(adminPage);
+                await adminPage.goBack();
+                await expect(responseMain.getByRole('heading', { name: '설문조사 응답 관리', exact: true })).toBeVisible();
+                await backRequests.settled(responseMain.getByLabel('응답자 이름 검색', { exact: true }));
                 const respondentSearch = () => adminPage.waitForResponse(response => {
                     const url = new URL(response.url());
                     return url.pathname === RESPONSES && response.request().method() === 'GET'
