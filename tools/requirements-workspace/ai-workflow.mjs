@@ -600,5 +600,5 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
   }
   const initial = store.read();
   if (ai(initial).jobs.some(job => job.status === 'running')) commit(initial.revision, next => { for (const job of next.metadata.ai.jobs) if (job.status === 'running') { job.status = 'interrupted'; job.completedAt = now(); } });
-  return { view, action, async waitForIdle() { while (active) await active.promise; }, async close() { closed = true; active?.controller.abort(); while (active) await active.promise; } };
+  return { view, action, get active() { return Boolean(active); }, async waitForIdle() { while (active) await active.promise; }, async close() { closed = true; active?.controller.abort(); while (active) await active.promise; } };
 }

@@ -15,6 +15,7 @@ const STATIC = {
   '/': ['index.html', 'text/html;charset=utf-8'], '/index.html': ['index.html', 'text/html;charset=utf-8'],
   '/app.js': ['app.js', 'text/javascript;charset=utf-8'], '/styles.css': ['styles.css', 'text/css;charset=utf-8'],
   '/tokens.css': ['tokens.css', 'text/css;charset=utf-8'], '/fonts/PretendardVariable.woff2': ['fonts/PretendardVariable.woff2', 'font/woff2'],
+  '/studio.html': ['studio.html', 'text/html;charset=utf-8'], '/studio.js': ['studio.js', 'text/javascript;charset=utf-8'],
 };
 const fail = (code, status = 400) => { throw Object.assign(new Error(code), { code, status }); };
 const equal = (a, b) => typeof a === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
@@ -93,6 +94,19 @@ const messages = {
   REQUIREMENTS_LOCK_LOST: '작업공간 잠금이 변경되었습니다. 입력을 보존하고 다른 실행기의 사용 여부를 확인해 주세요.',
   REQUIREMENTS_RECOVERY_REQUIRED: '중단된 저장의 확인이 필요합니다. 파일과 저널을 보존하고 실행기를 재시작해 복구 결과를 확인해 주세요.',
   REQUIREMENTS_CONTEXT_CONFLICT: 'CLI와 UI의 문맥이 다릅니다. 차이를 검토한 뒤 기준 정보를 갱신해 주세요.',
+  AI_NOT_RUNNING: '실행 중인 AI 작업이 없습니다. 화면을 새로 고쳐 상태를 확인해 주세요.',
+  STUDIO_NOTHING_TO_DO: '새로 분석할 내용이 없습니다. 문서를 추가하거나 산출물을 켠 뒤 다시 실행해 주세요.',
+  STUDIO_NOT_READY: '필수 칸과 출처를 채우고 열려 있는 쟁점·질문을 정리한 뒤 확정해 주세요.',
+  STUDIO_ITEM_CONFLICT: '이 항목이 그 사이에 바뀌었습니다. 최신 내용을 확인한 뒤 다시 저장해 주세요. 입력한 내용은 화면에 남아 있습니다.',
+  STUDIO_ITEM_CONFIRMED: '확정된 항목은 AI가 보강하지 않습니다. 확정을 취소하거나 직접 수정해 주세요.',
+  STUDIO_ITEM_NOT_FOUND: '항목을 찾지 못했습니다. 화면을 새로 고쳐 주세요.',
+  STUDIO_CATEGORY_LOCKED: '고유번호를 받은 요구사항은 분류를 바꿀 수 없습니다. 제외한 뒤 새 요구사항으로 작성해 주세요.',
+  STUDIO_NAME_REQUIRED: '이름을 입력해 주세요.',
+  STUDIO_ANSWER_REQUIRED: '질문에 대한 답을 입력해 주세요.',
+  STUDIO_BASELINE_EMPTY: '확정된 요구사항이 있어야 기준선을 만들 수 있습니다.',
+  STUDIO_CAPACITY: '작업공간 하나에 담을 수 있는 항목 수를 넘었습니다. 업무 범위를 나누어 별도 작업공간에서 진행해 주세요.',
+  STUDIO_DOCUMENT_NOT_FOUND: '지금은 만들 수 없는 문서입니다. 해당 산출물을 켰는지 확인해 주세요.',
+  STUDIO_STATE_INVALID: '저장된 요구사항·산출물 자료의 형식을 확인하지 못했습니다. 작업공간 파일을 보존하고 백업과 비교해 주세요.',
 };
 
 export async function startRequirementsServer({ workspace, root = ROOT, port = 8792, host = '127.0.0.1', contextProvider = () => loadRepositoryContextSnapshot(root), staticAssets, aiRunner } = {}) {
@@ -140,6 +154,9 @@ export async function startRequirementsServer({ workspace, root = ROOT, port = 8
       }
       if (!equal(request.headers['x-workspace-token'], token)) fail('SESSION_REQUIRED', 403);
       if (request.method === 'GET' && url.pathname === '/api/state') { json(response, 200, await engine.state()); return; }
+      if (request.method === 'GET' && url.pathname === '/api/studio') { json(response, 200, engine.studio.view()); return; }
+      const studioDocument = url.pathname.match(/^\/api\/studio\/documents\/([A-Za-z0-9-]{1,80})$/);
+      if (request.method === 'GET' && studioDocument) { json(response, 200, engine.studio.document(studioDocument[1])); return; }
       const artifact = url.pathname.match(/^\/api\/artifacts\/([a-zA-Z0-9-]+)$/);
       if (request.method === 'GET' && artifact) { json(response, 200, engine.artifact(artifact[1])); return; }
       if (!['/api/action', '/api/ingest'].includes(url.pathname)) fail('NOT_FOUND', 404);
@@ -166,7 +183,7 @@ export async function startRequirementsServer({ workspace, root = ROOT, port = 8
   const url = `http://127.0.0.1:${server.address().port}`;
   let closed = false;
   const app = { url, server, engine, store, async close() { if (closed) return; closed = true; server.closeAllConnections(); await new Promise(resolveClose => server.close(resolveClose)); await engine.close(); resumeSessions.clear(); store.close(); } };
-  Object.defineProperties(app, { launchSecret: { value: launchSecret }, launchUrl: { value: `${url}/#launch=${launchSecret}` } });
+  Object.defineProperties(app, { launchSecret: { value: launchSecret }, launchUrl: { value: `${url}/#launch=${launchSecret}` }, studioUrl: { value: `${url}/studio.html#launch=${launchSecret}` } });
   return app;
 }
 
@@ -180,7 +197,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     }
     if (!options['--workspace']) fail('WORKSPACE_REQUIRED');
     const app = await startRequirementsServer({ workspace: resolve(options['--workspace']), port: options['--port'] === undefined ? 8792 : Number(options['--port']) });
-    console.log(`요구사항 작업공간: ${app.launchUrl}\n서버 작업자료는 지정한 외부 작업공간에 저장합니다. 다운로드 파일은 브라우저 저장 위치를 확인하세요. 종료: Ctrl+C`);
+    console.log(`요구사항 스튜디오(문서 → 요구사항 → 산출물 → 스토리): ${app.studioUrl}\n이전 화면(검수·감리 포함): ${app.launchUrl}\n서버 작업자료는 지정한 외부 작업공간에 저장합니다. 다운로드 파일은 브라우저 저장 위치를 확인하세요. 종료: Ctrl+C`);
     for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => { void app.close().then(() => { process.exitCode = 0; }); });
   } catch (error) {
     console.error(`시작하지 못했습니다. 오류 코드: ${/^[A-Z][A-Z0-9_]+$/.test(error.code ?? '') ? error.code : 'START_FAILED'}\n사용법: node tools/requirements-workspace/server.mjs --workspace <Git 밖 경로> [--port 8792]`);

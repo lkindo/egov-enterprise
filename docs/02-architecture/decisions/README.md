@@ -57,7 +57,8 @@
 | [ADR-0048](ADR-0048-personal-attachment-deletion-and-uploader-window.md) | 업로더 근거의 범위와 개인 귀속 첨부의 개별 삭제 | Accepted |
 | [ADR-0049](ADR-0049-retire-workflow-demo-screens.md) | 워크플로우 목업 3개 화면 퇴역과 기존 WORKFLOW_READ 배정 호환 | Accepted |
 | [ADR-0050](ADR-0050-local-requirements-workspace.md) | 요구사항 로컬 UI·외부 파일 작업공간·분석 기준선·개발 준비·인수 근거 결속 | Accepted |
-| [ADR-0052](ADR-0052-ai-document-to-development-plan.md) | AI 원본 판독·상황별 프롬프트·통합 분석·계획 초안·한 번의 최종 확인 | Accepted |
-| [ADR-0051](ADR-0051-ai-first-requirements-workflow.md) | 산출물 로컬 추출·OCR, 설치 CLI의 AI 요구사항·쟁점·에픽 생성과 사람의 확정 | Accepted |
+| [ADR-0052](ADR-0052-ai-document-to-development-plan.md) | AI 원본 판독·상황별 프롬프트·통합 분석·계획 초안·한 번의 최종 확인 | Accepted — 일부 ADR-0055로 대체 |
+| [ADR-0051](ADR-0051-ai-first-requirements-workflow.md) | 산출물 로컬 추출·OCR, 설치 CLI의 AI 요구사항·쟁점·에픽 생성과 사람의 확정 | Accepted — 일부 ADR-0055로 대체 |
 | [ADR-0053](ADR-0053-private-analysis-sensitivity-advisories.md) | 비공개 원문 분석은 민감정보 패턴을 별도 안내하고 완료하며 공개 검증은 유지 | Accepted |
 | [ADR-0054](ADR-0054-production-overlay-mfa-default-and-preflight.md) | 운영 오버레이 보호계정 MFA 기본 강제·배포 전 키링 선검증과 스모크 경계 | Accepted |
+| [ADR-0055](ADR-0055-requirements-item-store.md) | 요구사항·산출물 항목 저장소, 조각 단위 점진 분석, 요청 크기 상한, 사람의 확정·기준선 | Accepted |

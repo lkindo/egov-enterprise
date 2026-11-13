@@ -59,7 +59,7 @@ test('a stale stylesheet makes --check red without rewriting customer-facing ass
   assert.equal(run('--check').status, 0);
 });
 
-function assertStaticDocument(html) {
+function assertStaticDocument(html, entry = '/app.js', links = []) {
   // Parse like a browser; regex matching can miss mixed-case tags and unquoted attributes.
   // JSDOM does not execute scripts or fetch resources with these default options.
   const dom = new JSDOM(html);
@@ -71,12 +71,12 @@ function assertStaticDocument(html) {
       for (const attribute of element.attributes) {
         assert.ok(attribute.name !== 'style' && !/^on[a-z]+$/u.test(attribute.name), 'CSP-compatible markup has no inline styles or handlers');
         if (!['src', 'href'].includes(attribute.name)) continue;
-        assert.ok(['/app.js', '/tokens.css', '/styles.css', 'data:,'].includes(attribute.value) || attribute.value.startsWith('#'), 'static assets must remain local');
+        assert.ok([entry, '/tokens.css', '/styles.css', 'data:,', ...links].includes(attribute.value) || attribute.value.startsWith('#'), 'static assets must remain local');
       }
     }
     const scripts = [...document.querySelectorAll('script')];
     assert.equal(scripts.length, 1, 'the application entrypoint must exist exactly once');
-    assert.ok(scripts.every(script => script.getAttribute('src') === '/app.js' && !script.textContent.trim()), 'only the external application script is allowed');
+    assert.ok(scripts.every(script => script.getAttribute('src') === entry && !script.textContent.trim()), 'only the external application script is allowed');
   } finally {
     dom.window.close();
   }
@@ -87,6 +87,19 @@ test('static document parsing rejects mixed-case inline scripts, unquoted remote
   for (const appended of ['<SCRIPT>globalThis.synthetic = true</SCRIPT>', '<sCrIpT>void 0</sCrIpT>', '<IMG SRC=https://evil.invalid/pixel>', '<p style="color:red">synthetic</p>']) {
     assert.throws(() => assertStaticDocument(html + appended), undefined, 'the actual parsed document must reject nonlocal or inline executable assets');
   }
+});
+
+test('the studio page follows the same static rules and its script builds no inline styles or handlers', async () => {
+  const html = await readFile(join(here, 'public/studio.html'), 'utf8');
+  // The only link out of the page is the earlier screen served by the same launcher.
+  assertStaticDocument(html, '/studio.js', ['/']);
+  for (const appended of ['<script>void 0</script>', '<script src="/app.js"></script>', '<a href="https://evil.invalid/">x</a>', '<p style="color:red">synthetic</p>']) {
+    assert.throws(() => assertStaticDocument(html + appended, '/studio.js', ['/']), undefined, appended);
+  }
+  // The server's CSP refuses inline styles and handlers, so markup the script generates must not rely on them.
+  const script = await readFile(join(here, 'public/studio.js'), 'utf8');
+  assert.doesNotMatch(script, /\sstyle="|\son[a-z]+="/u);
+  assert.doesNotMatch(script, /\binnerHTML\s*\+=|document\.write|\beval\(|new Function\(/u);
 });
 
 test('static document and font references work offline and keep the font license', async () => {

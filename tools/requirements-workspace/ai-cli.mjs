@@ -7,7 +7,7 @@ export const AI_MODEL = 'claude-opus-5-5';
 export const AI_EFFORT = 'xhigh';
 export const AI_ANALYSIS_EFFORT = 'high';
 export const MAX_ANALYSIS_MODEL_CALLS = 1024;
-export const aiEffortForPhase = phase => ['synthesis', 'analysis', 'analysis-context', 'analysis-merge', 'review-requirements', 'decomposition', 'review-plan'].includes(phase) ? AI_ANALYSIS_EFFORT : AI_EFFORT;
+export const aiEffortForPhase = phase => ['synthesis', 'analysis', 'analysis-context', 'analysis-merge', 'review-requirements', 'decomposition', 'review-plan'].includes(phase) || String(phase).startsWith('studio-') ? AI_ANALYSIS_EFFORT : AI_EFFORT;
 const failure = code => Object.assign(new Error(code), { code });
 
 export function findClaudeExecutable({ path = process.env.PATH ?? process.env.Path ?? '' } = {}) {
