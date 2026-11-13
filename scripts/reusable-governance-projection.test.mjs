@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -195,5 +196,112 @@ test('release evidence binds active CI, required checks and upstream verificatio
     }
     write('.github/workflows/unreviewed.yml', 'run: bypass\n');
     assert.notEqual(projectedCodeScope(output).sha256, baseline.sha256, 'new active workflows must change the certified population');
+  } finally { cleanupOwnedFixture(output); }
+});
+
+test('adopter registration permits additive Java and unassigned permissions while retaining the original evidence', async () => {
+  const { createAdopterBaseline, deriveAdopterRevision, validateAdopterRevision } = await import('./reusable-adopter-project.mjs');
+  const output = mkdtempSync(join(tmpdir(), 'egov-governance-projection-'));
+  const write = (path, value) => {
+    mkdirSync(dirname(join(output, path)), { recursive: true });
+    writeFileSync(join(output, path), typeof value === 'string' ? value : `${JSON.stringify(value, null, 2)}\n`);
+  };
+  try {
+    write('frontend/src/proxy.ts', '// unchanged proxy\n');
+    write('frontend/next.config.ts', '// unchanged config\n');
+    for (let i = 0; i < 8; i++) write(`frontend/src/existing-${i}.ts`, '// existing\n');
+    const core = 'business-core/src/main/java/sample/Core.java';
+    write(core, 'package sample; public class Core {}\n');
+    const catalogPath = 'config/governance/permission-catalog.json';
+    const policyPath = 'config/governance/authorization-policies.json';
+    const catalog = { schemaVersion: 1, permissions: [{ code: 'ORIGINAL_READ', defaultGroups: ['ROLE_ADMIN'] }], pagePermissions: {} };
+    const policies = { operationBindings: [], endpointPolicies: [], serviceGuardPolicies: [], manualGuardPolicies: [] };
+    write(catalogPath, catalog); write(policyPath, policies);
+    const bundlesPath = 'config/governance/permission-bundles.json';
+    const bundles = { schemaVersion: 1, bundles: [], excluded: [{ code: 'ORIGINAL_READ', reason: 'Original explicit classification' }] };
+    write(bundlesPath, bundles);
+    const profile = { schemaVersion: 2, retained: [{ path: core, type: 'sample.Core' }], removed: [], census: { productionSources: 1, permissionCatalog: 1, operationBindings: 0 } };
+    write('config/governance/reusable-harness-profile.json', profile);
+    write('api-server/src/test/resources/harness/baseline-manifest.properties', '# Original harness fixture\n');
+    const apiPath = 'api-docs.json';
+    const originalApi = { openapi: '3.1.0', info: { title: 'Original fixture', version: '1' }, paths: {}, components: { schemas: {} }, tags: [] };
+    write(apiPath, originalApi);
+    write('.agent/scripts/codegen-zod.js', '// frozen fixture generator\n');
+    const generatedApi = 'frontend/src/types/generated-api.d.ts';
+    write(generatedApi, '// original generated API types\n');
+    const hash = path => createHash('sha256').update(readFileSync(join(output, path))).digest('hex');
+    write('reusable-base-lock.json', { sourceCommit: 'a'.repeat(40), adopterBaseline: {
+      apiDocsSha256: hash(apiPath), apiContractGeneratorSha256: hash('.agent/scripts/codegen-zod.js'),
+      permissionBundlesSha256: hash(bundlesPath),
+      harnessProfileSha256: hash('config/governance/reusable-harness-profile.json'),
+      harnessManifestSha256: hash('api-server/src/test/resources/harness/baseline-manifest.properties') } });
+    write('config/governance/reusable-governance-projection.json', { codeScope: projectedCodeScope(output) });
+    const baseline = createAdopterBaseline(output);
+    const originalScope = projectedCodeScope(output);
+    const added = 'business-app/src/main/java/sample/Extension.java';
+    write(added, 'package sample; public class Extension {}\n');
+    catalog.permissions.push({ code: 'ADOPTER_READ', defaultGroups: [] });
+    write(catalogPath, catalog);
+    assert.throws(() => deriveAdopterRevision(output, baseline, { reason: 'An unclassified new permission must remain red' }), /exclusion reason/);
+    bundles.excluded.push({ code: 'ADOPTER_READ', reason: 'Institution permission starts unassigned and outside existing bundles' });
+    write(bundlesPath, bundles);
+    const revision = deriveAdopterRevision(output, baseline, { reason: 'Add an institution service and an unassigned operation permission' });
+    assert.deepEqual(revision.addedSources.map(row => row.path), [added]);
+    assert.deepEqual(revision.permissionCodes, ['ORIGINAL_READ', 'ADOPTER_READ']);
+    assert.equal(revision.certificationEligible, false);
+    assert.equal(revision.environmentApproved, false);
+    assert.deepEqual(baseline.codeScope, originalScope);
+    assert.notDeepEqual(revision.codeScope, originalScope);
+    assert.deepEqual(validateAdopterRevision(output, baseline, revision), []);
+    assert.throws(() => deriveAdopterRevision(output, { ...baseline, profileText: `${baseline.profileText} ` }, { reason: revision.reason }), /harness snapshots/);
+    write(added, 'package sample; public class Extension { public int changed; }\n');
+    assert.match(validateAdopterRevision(output, baseline, revision).join('\n'), /revision|changed/i);
+    write(added, 'package sample; public class Extension {}\n');
+    const reject = (path, mutate, expected) => {
+      const before = readFileSync(join(output, path), 'utf8');
+      write(path, mutate(before));
+      assert.throws(() => deriveAdopterRevision(output, baseline, { reason: 'Explicit registration cannot waive original constraints' }), expected);
+      write(path, before);
+    };
+    reject(core, text => `${text}// changed original\n`, /retained|original|baseline/i);
+    reject(catalogPath, text => { const value = JSON.parse(text); value.permissions[1].defaultGroups = ['ROLE_ADMIN']; return value; }, /unassigned|defaultGroups/i);
+    reject(catalogPath, text => { const value = JSON.parse(text); value.permissions[0].defaultGroups = []; return value; }, /original|baseline|retained/i);
+    reject(policyPath, text => { const value = JSON.parse(text); value.operationBindings.push({ method: 'GET', path: '/api/adopter', access: 'PUBLIC', handler: 'sample.Extension#read' }); return value; }, /PERMISSION/i);
+    const policyBefore = readFileSync(join(output, policyPath), 'utf8');
+    write(policyPath, { ...policies, operationBindings: [{ method: 'GET', path: '/api/adopter', access: 'PERMISSION',
+      permission: 'ADOPTER_READ', handler: 'sample.Extension#read' }] });
+    assert.equal(deriveAdopterRevision(output, baseline, { reason: revision.reason }).policies.operationBindings[0].permission, 'ADOPTER_READ');
+    const serviceBefore = readFileSync(join(output, policyPath), 'utf8');
+    const servicePolicies = JSON.parse(serviceBefore);
+    servicePolicies.serviceGuardPolicies.push({ target: 'Extension#read', policy: 'PERMISSION',
+      mechanisms: [{ helper: 'assertPermission', count: 1, identityAxis: 'PERMISSION', permission: 'ADOPTER_READ' }] });
+    write(policyPath, servicePolicies);
+    assert.doesNotThrow(() => deriveAdopterRevision(output, baseline, { reason: revision.reason }),
+      'service guards use the same simple class name as the native Java census');
+    write(policyPath, serviceBefore);
+    reject(policyPath, text => text.replace('ADOPTER_READ', 'ORIGINAL_READ'), /new PERMISSION/);
+    reject(policyPath, text => text.replace('sample.Extension#read', 'sample.Core#read'), /registered added Java handler/);
+    reject(policyPath, text => text.replace('"GET"', '"POST"'), /GET API/);
+    const extendedApi = structuredClone(originalApi);
+    extendedApi.paths['/api/adopter'] = { get: { operationId: 'adopterRead', responses: { 200: { description: 'OK' } } } };
+    write(apiPath, extendedApi);
+    write(generatedApi, '// regenerated API types include adopterRead\n');
+    const newContractModule = 'frontend/src/types/generated-zod/adopter.ts';
+    write(newContractModule, '// generated new tag module\n');
+    const apiRevision = deriveAdopterRevision(output, baseline, { reason: revision.reason });
+    assert.ok(apiRevision.contract.artifacts.some(([path]) => path === generatedApi));
+    assert.ok(apiRevision.contract.artifacts.some(([path]) => path === newContractModule));
+    assert.ok(apiRevision.inputs.some(([path]) => path === apiPath));
+    assert.deepEqual(validateAdopterRevision(output, baseline, apiRevision), []);
+    write(generatedApi, '// unregistered manual generated type edit\n');
+    assert.match(validateAdopterRevision(output, baseline, apiRevision).join('\n'), /revision changed/i);
+    write(generatedApi, '// original generated API types\n');
+    rmSync(join(output, newContractModule));
+    write(apiPath, originalApi);
+    write(policyPath, policyBefore);
+    reject(bundlesPath, text => { const value = JSON.parse(text); value.excluded[0].reason = 'Changed original classification'; return value; }, /Original permission bundles/);
+    reject('reusable-base-lock.json', text => `${text}\n`, /lock/i);
+    write('frontend/src/unregistered.ts', '// out of scope\n');
+    assert.throws(() => deriveAdopterRevision(output, baseline, { reason: 'No general source waiver' }), /Java|unsupported|scope/i);
   } finally { cleanupOwnedFixture(output); }
 });

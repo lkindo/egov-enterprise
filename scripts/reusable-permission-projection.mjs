@@ -36,7 +36,8 @@ import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
 
 export const PERMISSION_CATALOG_PATH = 'config/governance/permission-catalog.json';
 export const AUTHORIZATION_POLICY_PATH = 'config/governance/authorization-policies.json';
-export const PERMISSION_BUNDLES_PATH = 'config/governance/permission-bundles.json';
+import { PERMISSION_BUNDLES_PATH } from './permission-artifact-paths.mjs';
+export { PERMISSION_BUNDLES_PATH } from './permission-artifact-paths.mjs';
 export const HARNESS_PROFILE_PATH = 'config/governance/reusable-harness-profile.json';
 const JAVA_SOURCE_ROOTS = Object.freeze(['api-server', 'business-app', 'business-core', 'foundation'].map(module => `${module}/src/main/java`));
 const JAVA_TYPE = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+$/u;
@@ -343,7 +344,7 @@ export function applyScreenAndBundleProjection({ sourceRoot, outputRoot, ledger 
  *     독립된 Java 제거 계획으로 거른 수다. census 는 생성 끝(하네스 단계)에 쓰이므로 그 전의 권한 생성기 실행은 이 대조를 하지 않는다 —
  *     생성 끝의 무결성 검사와 생성물 하네스(SecurePathsDeclarationSyncLinterTest)가 census 와 정확히 대조한다.
  */
-export function projectedPermissionCoverageErrors(root, { catalog, bindings, permissionCodes }) {
+export function projectedPermissionCoverageErrors(root, { catalog, bindings, permissionCodes, census: registeredCensus }) {
   const errors = [];
   const codes = catalog.permissions.map(row => row.code);
   const expected = [...permissionCodes].sort(byCodePoint);
@@ -362,7 +363,7 @@ export function projectedPermissionCoverageErrors(root, { catalog, bindings, per
   const censusFile = path.join(root, HARNESS_PROFILE_PATH);
   const censusText = readTextIfPresent(censusFile);
   if (censusText !== undefined) {
-    const census = JSON.parse(censusText).census ?? {};
+    const census = registeredCensus ?? JSON.parse(censusText).census ?? {};
     for (const [key, actual] of [['permissionCatalog', codes.length], ['operationBindings', bindings.length]]) {
       if (!Number.isInteger(census[key])) errors.push(`reusable harness census does not declare ${key}`);
       else if (census[key] !== actual) errors.push(`projected ${key} ${actual} differs from the reusable harness census ${census[key]}`);

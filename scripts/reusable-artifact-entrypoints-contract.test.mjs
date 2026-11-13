@@ -9,7 +9,7 @@ import { UPSTREAM_ATLAS, pruneUpstreamAtlas } from './reusable-source-gates.mjs'
 import { applySingleModuleLayout } from './reusable-single-module.mjs';
 import { installMultiModuleMigrationRuntime, installSingleModuleRuntime } from './reusable-layout-runtime.mjs';
 import { parseWorkflowJobs, reviewedActionPin } from './required-checks-contract.mjs';
-import { ARTIFACT_COMMAND, PRODUCT_CI_ACTIONS, VERIFICATION_HISTORY, reusableArtifactEntrypoints, upstreamActionPins,
+import { ARTIFACT_COMMAND, CURRENT_ARTIFACT_COMMAND, PRODUCT_CI_ACTIONS, VERIFICATION_HISTORY, reusableArtifactEntrypoints, upstreamActionPins,
   validateReusableArtifactEntrypoints } from './reusable-artifact-entrypoints-contract.mjs';
 import { presetIds } from './composition-profiles.mjs';
 
@@ -60,7 +60,8 @@ test('producer fixtures and the actual generated product preserve a distinct non
     const jobs = parseWorkflowJobs(read(root, '.github/workflows/ci.yml'));
     assert.deepEqual([...jobs.keys()], ['artifact-verification']);
     const job = jobs.get('artifact-verification');
-    assert.match(job, /^        run: node scripts\/verify-reusable-artifact\.mjs$/m);
+    assert.match(job, /^        run: node scripts\/adopter-project\.mjs verify$/m);
+    assert.match(read(root, '.githooks/pre-push'), /^node scripts\/adopter-project\.mjs verify$/m);
     assert.doesNotMatch(job, /verify-reusable-base|matrix\.profile|deploy\.sh|--execute/);
     assert.match(job, /gitleaks detect --source \. --no-git/);
     assert.match(job, /gitleaks detect --source \. --no-banner/);
@@ -179,12 +180,12 @@ test('product CI rejects disabled execution, altered scope, recursive generation
   const path = '.github/workflows/ci.yml';
   const source = read(root, path);
   for (const mutate of [
-    value => value.replace(`run: ${ARTIFACT_COMMAND}`, `run: ${ARTIFACT_COMMAND} --scope contracts`),
-    value => value.replace(`run: ${ARTIFACT_COMMAND}`, 'run: node scripts/verify-reusable-base.mjs --profile demo'),
-    value => value.replace(`run: ${ARTIFACT_COMMAND}`, `if: false\n        run: ${ARTIFACT_COMMAND}`),
+    value => value.replace(`run: ${CURRENT_ARTIFACT_COMMAND}`, `run: ${ARTIFACT_COMMAND} --scope contracts`),
+    value => value.replace(`run: ${CURRENT_ARTIFACT_COMMAND}`, 'run: node scripts/verify-reusable-base.mjs --profile demo'),
+    value => value.replace(`run: ${CURRENT_ARTIFACT_COMMAND}`, `if: false\n        run: ${CURRENT_ARTIFACT_COMMAND}`),
     value => value.replace('    steps:', '    if: false\n    steps:'),
     value => value.replace('    steps:', '    defaults:\n      run:\n        shell: echo {0}\n    steps:'),
-    value => value.replace(`run: ${ARTIFACT_COMMAND}`, 'run: exit 0'),
+    value => value.replace(`run: ${CURRENT_ARTIFACT_COMMAND}`, 'run: exit 0'),
     value => value.replace('      - name: Scan working tree', '      - if: false\n        name: Scan working tree'),
     value => value.replace('--exit-code 1', '--exit-code 0'),
     value => value.replace('VERSION=8.28.0', 'VERSION=latest'),
@@ -214,7 +215,7 @@ test('every supported alias follows the product scope and unsupported aliases ca
   const root = fixture(t);
   const path = 'package.json';
   const pkg = json(root, path);
-  const expected = { verify: '', 'verify:artifact': '', 'verify:full': '', 'verify:push': '', 'verify:fast': '',
+  const expected = { verify: '', 'verify:artifact': '', 'verify:full': '', 'verify:adopter': ' --scope adopter', 'verify:fast': '',
     'verify:docs': ' --scope contracts', 'verify:be': ' --scope backend', 'verify:fe': ' --scope frontend',
     'test:operational-contracts': ' --scope contracts' };
   for (const [alias, suffix] of Object.entries(expected)) {
@@ -224,6 +225,9 @@ test('every supported alias follows the product scope and unsupported aliases ca
     write(root, path, JSON.stringify(changed));
     assert.ok(validateReusableArtifactEntrypoints(root).some(error => error.includes(`incorrect generated alias: ${alias}`)));
   }
+  assert.equal(pkg.scripts['verify:push'], CURRENT_ARTIFACT_COMMAND);
+  write(root, path, JSON.stringify({ ...pkg, scripts: { ...pkg.scripts, 'verify:push': `${ARTIFACT_COMMAND} --scope contracts` } }));
+  assert.ok(validateReusableArtifactEntrypoints(root).some(error => error.includes('incorrect generated alias: verify:push')));
   for (const alias of ['verify:e2e', 'verify:ops', 'base:verify', 'migration:export']) {
     write(root, path, JSON.stringify({ ...pkg, scripts: { ...pkg.scripts, [alias]: 'echo inherited' } }));
     assert.ok(validateReusableArtifactEntrypoints(root).some(error => error.includes('inherited applicability')));
@@ -249,6 +253,8 @@ test('upstream snapshots, profile identity and unapplied institution policy cann
   write(root, manifestPath, JSON.stringify(manifest));
   write(root, '.githooks/pre-push', '#!/bin/sh\nexit 0\n');
   assert.ok(validateReusableArtifactEntrypoints(root).some(error => error.includes('pre-push')));
+  write(root, '.githooks/pre-push', `#!/bin/sh\nset -e\n${ARTIFACT_COMMAND}\n`);
+  assert.ok(validateReusableArtifactEntrypoints(root).some(error => error.includes('pre-push')), 'strict original verification cannot replace the current-project push guard');
 });
 
 test('missing upstream inputs fail before the product is represented as a valid projection', t => {

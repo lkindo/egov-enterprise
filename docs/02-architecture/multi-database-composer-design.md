@@ -173,7 +173,7 @@ flowchart TD
 
 - 벤더 프로젝트도 PostgreSQL 번들을 번역 근거로 그대로 둔다. `generatePermissions()` 는 그 번들의 시드를 다시 쓰지만 Flyway 는 그 폴더를 실행하지 않아 벤더 기준선과 체크섬을 건드리지 않는다. 시드 앵커를 읽는 하네스(`SecurityAuthAnnotationLinterTest`)가 있어 쓰기를 멈추지 않는다.
 - 번들 파일 집합은 어댑터가 선언하고 `verifyCompositionDatabaseFiles` 가 벤더별로 대조한다.
-- 생성 뒤 기본 그룹을 바꾸는 절차는 카탈로그와 벤더 문법의 새 마이그레이션을 함께 고치는 것이다. 재생성만으로는 벤더 DB 에 반영되지 않으므로 벤더 카탈로그 시험이 `defaultGroups` 와 실제 부여를 양방향으로 대조한다. 새 권한 코드는 구성과의 정확 일치 때문에 재생성이 멈춘다(GAP-COMPOSE-002).
+- 생성 뒤 기본 그룹을 바꾸는 절차는 카탈로그와 벤더 문법의 새 마이그레이션을 함께 고치는 것이다. 재생성만으로는 벤더 DB 에 반영되지 않으므로 벤더 카탈로그 시험이 `defaultGroups` 와 실제 부여를 양방향으로 대조한다. 새 Java·미배정 권한은 [별도 추가분 등록](../03-guides/generated-project-additions.md)을 거쳐 도입자 기술 범위로 검사한다(ADR-0057). 원본 인증 결속은 유지한다.
 - `R__zz_seed_base_admin.sql` 을 읽는 소비자는 생성물 기준으로 스크립트 6개(`generate-permissions`, `generate-reusable-base-db`, `export-deliverables-db`, `merge-main-regenerate`, `project-composer-menu-preview`, `project-composer-source`)와 그 시험, 하네스 2개(`SecurityAuthAnnotationLinterTest`, `BaseAdminBootstrapSeedIntegrationTest`)다. 단계 1 에서 벤더별 처리를 정한다.
 
 ## 4. 앱 SQL 중립화(D-6)
@@ -596,7 +596,7 @@ Hibernate validate 는 프로필 문자열을 증거로 쓰지 않는다. 실행
 
 `npm run verify` 의 의미는 바꾸지 않았다. 거버넌스 첫 단계가 소스 변경을 잡아 멈추므로 첫 변경 뒤에는 그 뒤 단계에 닿지 못하고, 이는 PostgreSQL 생성물과 같다(`reusable-base-guide.md`). 새 명령은 그 단계를 지나지 않으며 인증을 주장하지 않는다(보고서 `authority: local-vendor-schema-check`).
 
-지원하지 않는 것은 생성물 README 에 적는다: 파괴적 DDL 검사(ZDM 대응 없음), 명명 예외(카탈로그에는 줄이 없어 `naming-linter:ignore` 가 옮겨 오지 않는다), 이름 없이 만든 제약의 이름 규칙(PostgreSQL 명명 린터도 `CONSTRAINT` 구문만 본다), 뷰의 정의, 도입자가 더한 CHECK·트리거의 의미(차등 시험은 번역 입력만 본다), 같은 이름의 컬럼 타입 변경(바이트 길이 전환은 위 규칙이 본다), 제약·인덱스·시퀀스·컬럼·뷰의 따옴표 저장 표기, 새 권한 코드와 새 Java 소스(PostgreSQL 공통, GAP-COMPOSE-002). Oracle 의 CLOB 구분 불가(§6.1)도 남는다 — 길이 규칙은 `entityLen > physicalLen` 만 보므로 짧은 컬럼이 CLOB 이 된 경우는 잡지 못한다. SQL Server 의 `NVARCHAR(2n)` 은 드라이버가 답하는 값에 따라 길이 규칙이 느슨해질 수 있고, Oracle 외 벤더에서는 아직 돌려 보지 않았다.
+지원하지 않는 것은 생성물 README 에 적는다: 파괴적 DDL 검사(ZDM 대응 없음), 명명 예외(카탈로그에는 줄이 없어 `naming-linter:ignore` 가 옮겨 오지 않는다), 이름 없이 만든 제약의 이름 규칙(PostgreSQL 명명 린터도 `CONSTRAINT` 구문만 본다), 뷰의 정의, 도입자가 더한 CHECK·트리거의 의미(차등 시험은 번역 입력만 본다), 같은 이름의 컬럼 타입 변경(바이트 길이 전환은 위 규칙이 본다), 제약·인덱스·시퀀스·컬럼·뷰의 따옴표 저장 표기, 등록 없는 새 권한 코드·Java 추가와 기존 소스 변경(추가 전용 등록은 ADR-0057, PostgreSQL 공통). Oracle 의 CLOB 구분 불가(§6.1)도 남는다 — 길이 규칙은 `entityLen > physicalLen` 만 보므로 짧은 컬럼이 CLOB 이 된 경우는 잡지 못한다. SQL Server 의 `NVARCHAR(2n)` 은 드라이버가 답하는 값에 따라 길이 규칙이 느슨해질 수 있고, Oracle 외 벤더에서는 아직 돌려 보지 않았다.
 
 화면은 원장을 그대로 보인다. `certified` 만 고를 수 있고 나머지는 비활성 선택지와 사유로 남는다. 서버·엔진·두 생성기 입구가 원장의 같은 판정을 쓰므로 제품 코드는 원장 값 변경만으로 열린다. `COMPOSER_PREVIEW_VENDOR` 는 엔진과 생성기 입구만 열고 서버 경로는 열지 않는다.
 

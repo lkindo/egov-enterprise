@@ -20,6 +20,7 @@ export const vendorInputPath = vendor => `config/vendor/${vendor}/vendor-input.j
 
 /** 벤더 스키마만 다시 보는 범위. 인증 주장이 없고 벤더 프로젝트에만 있다. */
 export const VENDOR_SCHEMA_SCOPE = 'vendor-schema';
+export const ADOPTER_SCOPE = 'adopter';
 const GRADLE_OPTIONS = Object.freeze(['--no-daemon', '--warning-mode', 'fail', '--console=plain', '-Dfile.encoding=UTF-8']);
 /** 생성물의 기준선과 도입자 마이그레이션을 실제 Flyway 로 적용한 DB 에서 대조하고, 카탈로그 시험과 시나리오를 돌린다. */
 export const vendorIntegrationStep = (vendor, layout) => ({ id: 'backend', command: 'node', args: ['scripts/project-composer-vendor-integration.mjs', '--input', vendorInputPath(vendor), '--vendor', vendor, '--layout', layout,
@@ -30,7 +31,7 @@ export const vendorIntegrationStep = (vendor, layout) => ({ id: 'backend', comma
  * 벤더 생성물의 스키마 시험은 PostgreSQL 컨테이너 대신 그 벤더의 일회용 DB 에서 돈다(ADR-0047 D-10).
  */
 export function verificationSteps(scope = 'full', layout = 'multi-module', { vendor } = {}) {
-  if (!['contracts', 'backend', 'frontend', 'full', VENDOR_SCHEMA_SCOPE].includes(scope)) throw new Error(`scope must be contracts, backend, frontend, full or ${VENDOR_SCHEMA_SCOPE}`);
+  if (!['contracts', 'backend', 'frontend', 'full', VENDOR_SCHEMA_SCOPE, ADOPTER_SCOPE].includes(scope)) throw new Error(`scope must be contracts, backend, frontend, full, ${ADOPTER_SCOPE} or ${VENDOR_SCHEMA_SCOPE}`);
   normalizeBackendLayout(layout);
   const taskPrefix = layout === 'single-module' ? '' : ':api-server:';
   if (scope === VENDOR_SCHEMA_SCOPE && !vendor) throw new Error('vendor-schema 는 PostgreSQL 외 DB 로 생성한 프로젝트에서만 쓴다');
@@ -40,11 +41,11 @@ export function verificationSteps(scope = 'full', layout = 'multi-module', { ven
     vendorIntegrationStep(vendor, layout),
   ];
   const steps = [
-    { id: 'governance', command: 'node', args: ['scripts/verify-reusable-governance.mjs'] },
+    { id: 'governance', command: 'node', args: ['scripts/verify-reusable-governance.mjs', ...(scope === ADOPTER_SCOPE ? ['--adopter'] : [])] },
     { id: 'ui-governance', command: 'node', args: ['--test', 'scripts/reusable-ui-governance-contract.test.mjs'] },
     { id: 'entrypoints', command: 'node', args: ['--test', 'scripts/reusable-artifact-entrypoints-contract.test.mjs'] },
   ];
-  if (['backend', 'full'].includes(scope)) steps.push(
+  if (['backend', 'full', ADOPTER_SCOPE].includes(scope)) steps.push(
     { id: 'backend', command: 'gradle', args: ['compileJava', 'compileTestJava', `${taskPrefix}harnessTest`, ...(vendor ? [] : [`${taskPrefix}schemaValidationTest`]), ...GRADLE_OPTIONS] },
     ...(vendor ? [
       vendorIntegrationStep(vendor, layout),
@@ -52,7 +53,7 @@ export function verificationSteps(scope = 'full', layout = 'multi-module', { ven
       { id: 'backend', command: 'node', args: ['scripts/project-composer-vendor-differential.mjs', '--input', vendorInputPath(vendor), '--vendor', vendor] },
     ] : []),
   );
-  if (['frontend', 'full'].includes(scope)) steps.push(
+  if (['frontend', 'full', ADOPTER_SCOPE].includes(scope)) steps.push(
     // next typegen 이 라우트 타입과 next-env.d.ts 를 운영판으로 만든 뒤 tsc 를 돈다 — next-env.d.ts 는 추적하지 않는 Next 생성 파일이라 생성물에
     // 들어가지 않는다(2026-11-09, frontend/.gitignore). 원본 pre-push·verify·CI 와 같은 스크립트다.
     { id: 'typecheck', command: 'pnpm', args: ['-C', 'frontend', 'run', 'type-check'] },
@@ -112,7 +113,13 @@ export function verifyReusableArtifact({ root, scope = 'full', run = runCommand 
   const env = artifactStepEnvironment();
   const report = { schemaVersion: 1, authority: scope === VENDOR_SCHEMA_SCOPE ? 'local-vendor-schema-check' : 'local-product-technical-verification', profile: lock.profile,
     scope, layout, sourceCommit: lock.sourceCommit, checkedAt: new Date().toISOString(),
-    result: 'started', environmentApproved: false, runtimeScenariosExecuted: false, steps: [] };
+    result: 'started', environmentApproved: false, runtimeScenariosExecuted: false, steps: [],
+    ...(scope === ADOPTER_SCOPE ? { certificationEligible: false, authority: 'local-adopter-technical-verification' } : {}) };
+  if (scope === ADOPTER_SCOPE) {
+    const project = JSON.parse(readFileSync(resolve(root, 'adopter-project.json'), 'utf8'));
+    report.adopterRevision = { codeScope: project.revision?.codeScope,
+      registrationSha256: createHash('sha256').update(readFileSync(resolve(root, 'adopter-project.json'))).digest('hex') };
+  }
   const reports = resolve(root, 'build/reports/reusable-base');
   mkdirSync(reports, { recursive: true });
   const save = () => writeFileSync(resolve(reports, `${scope}.json`), `${JSON.stringify(report, null, 2)}\n`);
@@ -145,7 +152,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const args = process.argv.slice(2);
     const options = { root: resolve(dirname(fileURLToPath(import.meta.url)), '..') };
     for (let index = 0; index < args.length; index += 2) {
-      if (!['--root', '--scope'].includes(args[index]) || !args[index + 1]) throw new Error('usage: --root PATH --scope contracts|backend|frontend|full|vendor-schema');
+      if (!['--root', '--scope'].includes(args[index]) || !args[index + 1]) throw new Error('usage: --root PATH --scope contracts|backend|frontend|full|adopter|vendor-schema');
       options[args[index].slice(2)] = args[index + 1];
     }
     if (!existsSync(resolve(options.root, 'reusable-base-lock.json'))) throw new Error('run this command inside a generated reusable artifact');

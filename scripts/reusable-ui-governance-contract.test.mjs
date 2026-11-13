@@ -6,6 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { inspectReusableGovernance } from './reusable-governance-integrity.mjs';
+import { readAdopterProject } from './reusable-adopter-project.mjs';
 import { compositionProfiles } from './composition-profiles.mjs';
 import { validateVisibleTerms } from './frontend-visible-terms-contract.mjs';
 import { validateKrdsMapping } from './krds-profile-mapping-contract.mjs';
@@ -31,7 +32,8 @@ const documents = {
 };
 // The upstream regression suite keeps the complete reviewed product population.
 // Generated artifacts must first prove their independently derived projection scope.
-const inspection = artifact ? inspectReusableGovernance(ROOT, { requireLock: true }) : null;
+const adopter = artifact ? readAdopterProject(ROOT) : null;
+const inspection = artifact ? inspectReusableGovernance(ROOT, { requireLock: true, adopter: Boolean(adopter) }) : null;
 const scopes = artifact ? inspection.reviewScopes : {
   uiQuality: { scenarioIds: ['auth-login', 'admin-shell-hub', 'dense-user-logs', 'user-management-hub',
     'board-article-composer', 'faq-admin-user-lifecycle', 'board-maker-wizard', 'first-use-onboarding'] },
@@ -56,7 +58,7 @@ function proveRed(original, validate, cases) {
 test('active contracts validate exact applicable populations with no environment approval claim', () => {
   if (artifact) {
     assert.deepEqual(inspection.errors, []);
-    const report = verifyReusableGovernance(ROOT);
+    const report = verifyReusableGovernance(ROOT, { adopter: Boolean(adopter) });
     assert.deepEqual(report.errors, []);
     assert.equal(report.verifiedContracts.length, 8);
     assert.equal(report.environmentApproved, false);

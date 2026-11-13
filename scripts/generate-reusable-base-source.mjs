@@ -8,8 +8,8 @@ import { createHash } from 'node:crypto';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { projectReusableGovernance } from './reusable-governance-projection.mjs';
-import { canonicalJsonSha256, validateReusableGovernance } from './reusable-governance-integrity.mjs';
-import { ARTIFACT_COMMAND, VERIFICATION_HISTORY, artifactAliases, projectReusableMakefile, reusableArtifactEntrypoints, verificationTextHash } from './reusable-artifact-entrypoints-contract.mjs';
+import { canonicalJsonSha256, artifactTextSha256, validateReusableGovernance } from './reusable-governance-integrity.mjs';
+import { CURRENT_ARTIFACT_COMMAND, VERIFICATION_HISTORY, artifactAliases, projectReusableMakefile, reusableArtifactEntrypoints, verificationTextHash } from './reusable-artifact-entrypoints-contract.mjs';
 import { normalizeBackendLayout } from './reusable-layout.mjs';
 import { runReportingChild } from './project-composer-child-failure.mjs';
 import { applySingleModuleLayout } from './reusable-single-module.mjs';
@@ -130,12 +130,13 @@ export function installReusableVerification(output, layout = 'multi-module') {
   writeFileSync(join(output, 'Makefile'), makefile);
   // This is the adopter product hook, whose scope is the actual artifact. The producer hook is unchanged.
   mkdirSync(join(output, '.githooks'), { recursive: true });
-  writeFileSync(join(output, '.githooks/pre-push'), `#!/bin/sh\nset -e\n${ARTIFACT_COMMAND}\n`);
+  writeFileSync(join(output, '.githooks/pre-push'), `#!/bin/sh\nset -e\n${CURRENT_ARTIFACT_COMMAND}\n`);
   writeFileSync(join(output, 'REUSABLE_VERIFICATION.md'), '# Generated product verification\n\n'
-    + '`npm run verify`와 생성물 CI는 현재 프로필의 원장·Java 하네스·스키마·프런트 타입·lint·build를 검증한다. CI는 working-tree·incremental gitleaks 검사도 유지한다.\n\n'
-    + '`verify:docs`는 contracts, `verify:be`는 backend, `verify:fe`는 frontend이며 `verify:full`, `verify:push`, `verify:fast`는 보수적으로 full에 연결한다. 각 scope는 공통 활성 계약을 먼저 실행한다.\n\n'
+    + '`npm run verify`는 원본 결속을, 생성물 CI는 유효한 등록 유무에 따른 현재 프로젝트의 원장·Java 하네스·스키마·프런트 타입·lint·build를 검증한다. CI는 working-tree·incremental gitleaks 검사도 유지한다.\n\n'
+    + '`verify:docs`는 contracts, `verify:be`는 backend, `verify:fe`는 frontend이며 `verify:full`·`verify:fast`는 원본 full, `verify:push`는 현재 프로젝트 검사에 연결한다. 각 scope는 공통 활성 계약을 먼저 실행한다.\n\n'
     + '생산자 전용 `base:*`·`migration:export`, 기관 실행 환경이 필요한 `verify:e2e`·`verify:ops`는 제공하지 않는다. 독립 이관 제품 export는 원본 저장소에서 실행한다. 기관 브라우저 시나리오와 원격 ruleset은 기관에서 별도로 결속한다.\n\n'
     + '현재 CI의 required context 제안은 `artifact-verification` 하나이다. `.github/required-checks.json`의 remoteApplied=false는 기관 branch protection을 실제 적용하지 않았다는 뜻이다. 원본 6개 required context와 동등한 보증이 아니다.\n\n'
+    + 'Java·미배정 권한을 추가하기 전 `node scripts/adopter-project.mjs init`, 추가 뒤 `register --reason "구체적인 추가 사유"`와 `npm run verify:adopter`를 쓴다. CI·pre-push는 유효한 등록 유무에 따라 현재 프로젝트를 검사한다. 원본 `npm run verify`의 인증 경계는 유지하며 도입자 보고서는 원본 인증·기관 승인을 대체하지 않는다. 자세한 범위는 `docs/03-guides/generated-project-additions.md`를 따른다.\n\n'
     + '원본 workflow·required manifest·package·hook은 `config/governance/upstream-verification/`의 비활성 이력이다. 원본 CodeQL·E2E·mutation·배포·예약 작업은 기관 범위에 맞게 재결속해야 한다. 이력을 복사한 것은 외부 발행이나 기관 운영 승인이 아니다.\n');
 }
 
@@ -342,6 +343,13 @@ async function main() {
       environmentReview: 'pending',
     },
     databaseLock: dbLock,
+    adopterBaseline: {
+      apiDocsSha256: artifactTextSha256(output, 'api-docs.json'),
+      apiContractGeneratorSha256: artifactTextSha256(output, '.agent/scripts/codegen-zod.js'),
+      permissionBundlesSha256: artifactTextSha256(output, 'config/governance/permission-bundles.json'),
+      harnessProfileSha256: artifactTextSha256(output, 'config/governance/reusable-harness-profile.json'),
+      harnessManifestSha256: artifactTextSha256(output, 'api-server/src/test/resources/harness/baseline-manifest.properties'),
+    },
   };
   writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(lock, null, 2)}\n`, 'utf8');
   const governanceErrors = validateReusableGovernance(output);
@@ -371,9 +379,18 @@ async function main() {
       `- 현재 route/URL 모집단: ${governance.routes.length}/${governance.urlRecordIds.length}\n` +
       `- 기관 운영 검토: pending. 원본의 검토자·날짜는 upstream-review 이력이며 기관 승인이 아니다.\n` +
       `- 검토 경계: config/governance/reusable-governance-projection.json\n\n` +
+      'Java·미배정 권한 추가는 `docs/03-guides/generated-project-additions.md`의 init → register → verify:adopter 절차를 따른다. 원본 잠금·투영·승인 기록은 유지한다.\n\n' +
       `DB migration은 신규 빈 ${vendorInput ? vendorId : 'PostgreSQL'} 전용이다. 운영/공유 DB 축소에 사용하지 않는다.\n`,
     'utf8',
   );
+  const readmePath = join(output, 'README.md');
+  const readme = readFileSync(readmePath, 'utf8');
+  // 벤더 스키마 안내는 그대로 두고, 이제 별도 등록이 지원하는 두 소스 추가 항목만 현재 절차로 투영한다.
+  writeFileSync(readmePath, readme.replace(/^- 새 권한 코드:.*$/mu,
+    '- 새 권한 코드: 변경 전 `node scripts/adopter-project.mjs init`, 추가 뒤 `register --reason "구체적인 추가 사유"`와 `npm run verify:adopter`를 쓴다. 새 권한은 미배정으로 시작한다.')
+    .replace(/^- 새 Java 소스:.*$/mu,
+      '- 새 Java 소스: 별도 추가분 등록으로 검사한다. 기존 소스 변경·새 화면·마이그레이션은 추가 전용 등록의 자동 지원 범위 밖이다. 등록이 물리 스키마나 기관 승인을 만들지 않는다.')
+    + '\nJava·권한 추가 절차와 원본 인증의 경계: [도입자 가이드](docs/03-guides/generated-project-additions.md).\n', 'utf8');
   initializeGeneratedRepository(output);
   console.log(`[base-source] PASS: ${normalize(relative(ROOT, output))}`);
   console.log(`[base-source] removed java=${java.removedFiles}, frontend=${frontend.removedFiles}`);

@@ -1,9 +1,13 @@
-#!/usr/bin/env node
+import { projectedCodeScope } from './reusable-source-evidence.mjs';
+export { projectedCodeScope } from './reusable-source-evidence.mjs';
+import { readAdopterProject } from './reusable-adopter-project.mjs';
+import { API_DOCS_PATH, isAdopterContractArtifact } from './adopter-api-contract.mjs';
+import { PERMISSION_ARTIFACT_PATHS, PERMISSION_BUNDLES_PATH } from './permission-artifact-paths.mjs';
 import { createHash } from 'node:crypto';
-import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
-import { dirname, extname, join, resolve } from 'node:path';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { containedFile, containedFileResolver } from './adoption-review.mjs';
+import { containedFile } from './adoption-review.mjs';
 import { compositionProfiles } from './composition-profiles.mjs';
 import { buildUrlStateCensus, approvedStateItemSelectors, isUrlStateItemApproved } from './ui-url-state-census.mjs';
 import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
@@ -84,46 +88,6 @@ export function upstreamSnapshotText(sourceRoot, source) {
 }
 const exact = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 
-const CODE_ROOTS = [
-  ...['foundation', 'business-core', 'business-app', 'api-server'].flatMap(module => [`${module}/src/main`, `${module}/build.gradle`]),
-  'frontend/src', 'frontend/next.config.ts', 'frontend/package.json', 'frontend/pnpm-lock.yaml', 'frontend/tsconfig.json',
-  'build.gradle', 'settings.gradle', 'gradle.properties', 'gradle',
-  'package.json', 'scripts', '.githooks/pre-push',
-  '.github/workflows', '.github/required-checks.json', 'config/governance/upstream-verification',
-  'config/governance/authorization-policies.json', 'config/governance/permission-catalog.json',
-];
-const TEXT = new Set(['.java', '.kt', '.kts', '.json', '.yaml', '.yml', '.xml', '.properties', '.sql', '.js', '.jsx', '.ts', '.tsx',
-  '.mjs', '.cjs', '.css', '.scss', '.html', '.md', '.txt', '.gradle', '.toml', '.lock', '.sh', '.bat', '.ps1']);
-
-/** Release certification binds source content, not elapsed time or an institution approval date. */
-export function projectedCodeScope(root) {
-  const files = new Map();
-  // 수천 파일을 containedFile 과 같은 판정으로 가둔다 — 루트 실경로는 한 번만 푼다(containedFileResolver). 루트가 없으면 아래 순회가
-  // 아무 파일도 찾지 않으므로 처음 파일을 만날 때 만든다.
-  let contained;
-  function walk(file) {
-    const path = join(root, file);
-    if (!existsSync(path)) return;
-    const stat = lstatSync(path);
-    if (stat.isSymbolicLink()) throw new Error(`Artifact source scope cannot contain a symlink: ${file}`);
-    if (stat.isDirectory()) {
-      for (const name of readdirSync(path).sort()) walk(`${file}/${name}`);
-    } else if (stat.isFile()) {
-      if (file.startsWith('scripts/') && /\.test\.[cm]?[jt]s$/u.test(file)) return;
-      contained ??= containedFileResolver(root);
-      const bytes = readFileSync(contained(file));
-      const text = TEXT.has(extname(file)) || file.endsWith('/pre-push');
-      files.set(file, sha256(text ? bytes.toString('utf8').replace(/\r\n?/gu, '\n') : bytes));
-    }
-  }
-  for (const rootPath of CODE_ROOTS) walk(rootPath);
-  if (!files.has('frontend/src/proxy.ts') || !files.has('frontend/next.config.ts') || files.size < 10) {
-    throw new Error('Artifact code scope is missing required online sources');
-  }
-  const inputs = [...files].sort(([a], [b]) => a.localeCompare(b, 'en'));
-  return { format: 'reusable-source-evidence-v1-lf-text-raw-binary', fileCount: inputs.length, sha256: sha256(JSON.stringify(inputs)) };
-}
-
 export function buildGeneratedMemory({ profile, sourceCommit, migrationEnvironmentReview }) {
   const titles = ['프로젝트 컨텍스트', '결정 인덱스', '미해결 위험 인덱스'];
   return Object.fromEntries(MEMORY_PATHS.map((path, index) => {
@@ -151,15 +115,16 @@ export function buildGeneratedMemory({ profile, sourceCommit, migrationEnvironme
  *   · 화면 목록 산출물의 화면·별칭이 생성물 page 와 같고, 행·묶음의 권한이 카탈로그 안이며, 묶음이 묶음 원장(투영본 규칙)으로 다시
  *     계산한 것과 같다.
  */
-export function projectedPermissionArtifactErrors(root, { composition, upstreamCatalog, pageRoutes }) {
+export function projectedPermissionArtifactErrors(root, { composition, upstreamCatalog, pageRoutes, adopter }) {
   const errors = [];
   try {
-    const expected = projectPermissionCatalog(upstreamCatalog, { permissionCodes: composition.permissionCodes, routes: pageRoutes }).catalog;
+    const expected = adopter?.revision.catalog
+      ?? projectPermissionCatalog(upstreamCatalog, { permissionCodes: composition.permissionCodes, routes: pageRoutes }).catalog;
     const catalog = readJson(root, PERMISSION_CATALOG_PATH);
     if (!exact(catalog, expected)) errors.push('Projected permission catalog differs from the upstream catalog reduced to the composition');
     const policies = readJson(root, AUTHORIZATION_POLICY_PATH);
     errors.push(...projectedPermissionCoverageErrors(root, { catalog, bindings: policies.operationBindings ?? [],
-      permissionCodes: composition.permissionCodes }));
+      permissionCodes: adopter?.revision.permissionCodes ?? composition.permissionCodes }));
     for (const [file, content] of Object.entries(buildPermissionArtifacts(root))) {
       if (!existsSync(join(root, file)) || normalizedText(root, file) !== content.replace(/\r\n?/gu, '\n')) {
         errors.push(`Generated permission artifact differs from the projected permission sources: ${file}`);
@@ -171,12 +136,14 @@ export function projectedPermissionArtifactErrors(root, { composition, upstreamC
   return errors;
 }
 
-export function inspectReusableGovernance(root = ROOT, { requireLock = true } = {}) {
+export function inspectReusableGovernance(root = ROOT, { requireLock = true, adopter: adopterMode = false } = {}) {
   const errors = [];
   let metadata;
   let reviewScopes;
   function check(condition, message) { if (!condition) errors.push(message); }
   try {
+    const adopter = adopterMode ? readAdopterProject(root) : null;
+    check(!adopterMode || Boolean(adopter), 'Adopter verification requires a registered adopter project');
     metadata = readJson(root, PROJECTION_PATH);
     check(metadata.schemaVersion === 1 && metadata.authority === 'generated-reusable-governance-projection-not-environment-approval', 'Invalid projection metadata authority');
     check(compositionProfiles().includes(metadata.profile), 'Invalid projection profile');
@@ -239,18 +206,22 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
       // 이관 승인 원장은 이관 도구가 있는 구성에만 있다.
       check(Boolean(metadata.migrationEnvironmentReview) === !lock.vendorProjection, 'Migration review scope differs from the vendor projection');
     }
-    check(exact(metadata.codeScope, projectedCodeScope(root)), 'Source evidence scope changed; inherited approval requires review before artifact certification');
+    check(exact(adopter?.revision.codeScope ?? metadata.codeScope, projectedCodeScope(root)), 'Source evidence scope changed; inherited approval requires review before artifact certification');
     const activeArtifacts = metadata.activeArtifacts ?? [];
     check(exact(activeArtifacts.map(row => row.path).sort(), [...ACTIVE_ARTIFACTS].sort()), 'Active artifact hash population must be exact');
     for (const artifact of activeArtifacts) {
-      check(HEX.test(artifact.sha256 ?? '') && artifactTextSha256(root, artifact.path) === artifact.sha256, `Active review artifact changed: ${artifact.path}`);
+      const registeredCatalog = adopter && artifact.path === PERMISSION_CATALOG_PATH;
+      check(HEX.test(artifact.sha256 ?? '') && (registeredCatalog || artifactTextSha256(root, artifact.path) === artifact.sha256), `Active review artifact changed: ${artifact.path}`);
     }
     const bindings = metadata.sourceBindings ?? [];
     check(bindings.length > 0 && new Set(bindings.map(row => row.source)).size === bindings.length, 'Source binding population must be nonempty and unique');
     const bindingIndex = new Map();
     for (const binding of bindings) {
       check(HEX.test(binding.upstreamSha256 ?? '') && HEX.test(binding.projectedSha256 ?? ''), `Invalid source binding hash: ${binding.source}`);
-      check(artifactTextSha256(root, binding.source) === binding.projectedSha256, `Inherited source evidence changed: ${binding.source}`);
+      const registeredArtifact = adopter && [...PERMISSION_ARTIFACT_PATHS, PERMISSION_BUNDLES_PATH,
+        AUTHORIZATION_POLICY_PATH, PERMISSION_CATALOG_PATH].includes(binding.source)
+        || Boolean(adopter?.revision.contract) && (binding.source === API_DOCS_PATH || isAdopterContractArtifact(binding.source));
+      check(registeredArtifact || artifactTextSha256(root, binding.source) === binding.projectedSha256, `Inherited source evidence changed: ${binding.source}`);
       bindingIndex.set(binding.source, binding);
     }
     const routes = readJson(root, 'config/ui-route-capabilities.json');
@@ -262,7 +233,7 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
       errors.push(...artifactScreenErrors({ ledger: upstream.get('config/ui-route-capabilities.json'), catalog, composition,
         pageSources: new Set(actualPages.map(page => page.source)) }));
       errors.push(...projectedPermissionArtifactErrors(root, { composition, upstreamCatalog: upstream.get(PERMISSION_CATALOG_PATH),
-        pageRoutes: new Set(actualPages.map(page => page.route)) }));
+        pageRoutes: new Set(actualPages.map(page => page.route)), adopter }));
     }
     const census = readJson(root, 'config/ui-url-state-census.json');
     check(exact(census, buildUrlStateCensus({ repoRoot: root })), 'URL census drifted from current source');

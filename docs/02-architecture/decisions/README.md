@@ -62,3 +62,4 @@
 | [ADR-0053](ADR-0053-private-analysis-sensitivity-advisories.md) | 비공개 원문 분석은 민감정보 패턴을 별도 안내하고 완료하며 공개 검증은 유지 | Accepted |
 | [ADR-0054](ADR-0054-production-overlay-mfa-default-and-preflight.md) | 운영 오버레이 보호계정 MFA 기본 강제·배포 전 키링 선검증과 스모크 경계 | Accepted |
 | [ADR-0055](ADR-0055-requirements-item-store.md) | 요구사항·산출물 항목 저장소, 조각 단위 점진 분석, 요청 크기 상한, 사람의 확정·기준선 | Accepted |
+| [ADR-0057](ADR-0057-adopter-java-and-permission-registration.md) | 원본 인증·승인 기록을 보존하는 생성 프로젝트 Java·미배정 권한 추가분 등록과 별도 기술 검증 | Accepted |
