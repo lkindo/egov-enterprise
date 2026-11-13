@@ -10,7 +10,7 @@ import { AI_MODEL, aiEffortForPhase, createCliRunner, findClaudeExecutable } fro
 import { collectSensitivityWarnings } from './privacy-warnings.mjs';
 import { ARTIFACT_IDS, ARTIFACT_TYPES, DERIVED_DOCUMENTS, REQUIREMENT_CATEGORIES, REQUIREMENT_FIELDS, REQUIREMENT_KIND, fieldConflicts, fieldLabels, isFilled, isKind, mergeFieldsAdditive } from './studio-catalog.mjs';
 import { createIndex, similarity } from './studio-index.mjs';
-import { DEVELOPMENT_CATEGORIES, QUALITY_CATEGORIES, addCandidate, applyStories, applyTag, baselineContent, clauseKey, clauseMap, createRelations, crossChecks, decideProposal, failTag, initialStudio, itemById, itemReady, itemScore, label, markExtracted, meaningHash, missingFields, neighborIndex, orphanStories, pendingWork, planTargets, raiseQuestions, recordBaseline, removeOrphanStories, resolveIssue, saveItem, searchParts, setItemStatus, settleCandidate, startJob } from './studio-model.mjs';
+import { DEVELOPMENT_CATEGORIES, QUALITY_CATEGORIES, addCandidate, applyStories, applyTag, baselineContent, clauseKey, clauseMap, createRelations, crossChecks, decideProposal, demoteProgramConflicts, failTag, initialStudio, itemById, itemReady, itemScore, label, markExtracted, meaningHash, missingFields, neighborIndex, orphanStories, pendingWork, planTargets, raiseQuestions, recordBaseline, removeOrphanStories, resolveIssue, saveItem, searchParts, setItemStatus, settleCandidate, startJob, variantCurrent } from './studio-model.mjs';
 import { describeEvidence, documentList, renderDocument } from './studio-render.mjs';
 import { CLAUSE_BATCH, MERGE_BATCH, PLAN_BATCH, REQUEST_LIMIT, STUDIO_PROMPT_VERSION, batchClauses, classifyRequest, enrichRequest, extractRequest, fitted, mergeRequest, planRequest, readClassify, readEnrich, readExtract, readMerge, readPlan, studioPrompts } from './studio-tasks.mjs';
 
@@ -19,7 +19,7 @@ const exact = (value, keys) => { if (!value || typeof value !== 'object' || Arra
 const CONSENT = ['consent', 'model', 'sensitivityAcknowledged'];
 // Failures of the CLI itself stop a run; a reply that cannot be used only costs that one request.
 // A state the store refuses to save is a defect in this tool, so it stops the run as well instead of being counted away.
-const FATAL = /^(AI_CLI_UNAVAILABLE|AI_CLI_FAILED|AI_MODEL_MISMATCH|AI_TIMEOUT|AI_CONFIGURATION_INVALID|STUDIO_CAPACITY|STUDIO_CALL_CAPACITY|STUDIO_STATE_INVALID|INVALID_METADATA|INVALID_REQUEST|BACKLOG_INVALID|REQUIREMENTS_[A-Z_]+|WORKSPACE_REVISION_CONFLICT)$/;
+const FATAL = /^(AI_CLI_UNAVAILABLE|AI_CLI_FAILED|AI_MODEL_MISMATCH|AI_TIMEOUT|AI_CONFIGURATION_INVALID|STUDIO_CAPACITY|STUDIO_ISSUE_CAPACITY|STUDIO_CALL_CAPACITY|STUDIO_STATE_INVALID|INVALID_METADATA|INVALID_REQUEST|BACKLOG_INVALID|REQUIREMENTS_[A-Z_]+|WORKSPACE_REVISION_CONFLICT)$/;
 const STAGES = { classify: '조각 분류와 요구사항 후보 추출', extract: '켜 둔 산출물의 항목 추출', settle: '기존 요구사항·항목과 대조' };
 const errorCode = error => /^[A-Z][A-Z0-9_]{2,80}$/.test(error?.code ?? '') ? error.code : 'STUDIO_RUN_FAILED';
 
@@ -134,6 +134,8 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
     // "New" and "added to" describe the latest analysis. They are cleared when a new one starts, unless it continues a run that did not finish.
     const earlier = current().studio.jobs.filter(job => job.kind === 'analyze' && job.id !== context.id).at(-1);
     if (!earlier || earlier.status === 'done') context.step(studio => { for (const item of studio.items) item.flags = {}; });
+    // Differences the program raised were once stored as conflicts; they stop blocking confirmation here.
+    context.step((studio, job) => { const demoted = demoteProgramConflicts(studio); if (demoted) tally(job, 'demoted', demoted); });
     // Candidates an earlier run left behind are finished reading that only waits to be compared; they come first.
     if (current().studio.candidates.length) await settle(context);
     const first = pendingWork(current().studio, current().backlog), grouped = batchClauses(first.classify);
@@ -219,7 +221,7 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
           // commit was merged into it): the judgement is stale, so the candidate stays and is compared again.
           if (decision.target && itemById(draft, decision.target)?.rev !== rev) continue;
           const result = settleCandidate(draft, candidate.id, decision, now());
-          tally(job, result.outcome); if (result.conflicts) tally(job, 'conflict', result.conflicts); job.done += 1;
+          tally(job, result.outcome); if (result.conflicts) tally(job, 'conflict', result.conflicts); if (result.variants) tally(job, 'variant', result.variants); job.done += 1;
         }
       });
     }
@@ -390,7 +392,7 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
       catalog: { categories: REQUIREMENT_CATEGORIES, requirementFields: REQUIREMENT_FIELDS, types: ARTIFACT_TYPES, derived: DERIVED_DOCUMENTS, development: DEVELOPMENT_CATEGORIES, quality: QUALITY_CATEGORIES },
       sources, imports: (snapshot.metadata.imports ?? []).slice(-30).map(job => ({ requestId: job.requestId, filename: job.filename, status: job.status, errorCode: job.errorCode, sourceId: job.sourceId, readingProgress: job.readingProgress })),
       enabled: studio.enabled, items, proposals: studio.proposals.map(proposal => ({ ...proposal, sources: describeEvidence(proposal.evidence, clauses) })),
-      issues: studio.issues.map(issue => ({ ...issue, sources: describeEvidence(issue.evidence, clauses) })), baselines: studio.baselines.map(({ ref, ...baseline }) => baseline),
+      issues: studio.issues.map(issue => ({ ...issue, ...(issue.open && issue.kind === 'variant' ? { current: variantCurrent(studio, issue) } : {}), sources: describeEvidence(issue.evidence, clauses) })), baselines: studio.baselines.map(({ ref, ...baseline }) => baseline),
       plan: studio.plan ? { epics: studio.plan.epics, stories, updatedAt: studio.plan.updatedAt } : null, planTargets: planTargets(studio).map(item => item.id), planOrphans: orphans.size,
       pending: { classify: work.classify.length, extract: Object.fromEntries(Object.entries(work.extract).map(([type, list]) => [type, list.length])), merge: work.merge, waiting },
       checks, documents: documentList(studio), jobs: studio.jobs, active: active?.id ?? null, prompts: studioPrompts(),

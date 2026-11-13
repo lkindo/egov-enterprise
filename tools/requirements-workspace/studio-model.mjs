@@ -7,7 +7,10 @@ import { ARTIFACT_IDS, FIELD_LIMITS, REQUIREMENT_KIND, fieldConflicts, fieldLabe
 import { createIndex } from './studio-index.mjs';
 
 export const STUDIO_VERSION = 1;
-export const STUDIO_LIMITS = { items: 4000, candidates: 2000, issues: 1000, proposals: 1000, evidence: 40, links: 60, jobs: 12, stories: 3000, epics: 200, baselines: 100, questions: 8, tags: 20000 };
+// `variants` is how many open notes of differing wording one field of one item keeps.
+export const STUDIO_LIMITS = { items: 4000, candidates: 2000, issues: 4000, variants: 3, proposals: 1000, evidence: 40, links: 60, jobs: 12, stories: 3000, epics: 200, baselines: 100, questions: 8, tags: 20000 };
+/** Issue kinds. A question or a conflict blocks confirmation; a variant only shows that documents word a value differently. */
+export const ISSUE_KINDS = ['conflict', 'question', 'variant'];
 /** Requirement classes that become stories; the rest are quality criteria or project management. */
 export const DEVELOPMENT_CATEGORIES = ['SFR', 'SIR', 'DAR'];
 export const QUALITY_CATEGORIES = ['ECR', 'PER', 'TER', 'SER', 'QUR', 'COR'];
@@ -105,7 +108,7 @@ export function validateStudio(studio) {
     exact(issue, ['id', 'kind', 'itemId', 'text', 'field', 'existing', 'incoming', 'fields', 'evidence', 'open', 'resolution', 'createdAt']);
     unique(issue.id); validateEvidence(issue.evidence);
     const item = studio.items.find(entry => entry.id === issue.itemId);
-    if (!item || !['conflict', 'question'].includes(issue.kind) || !issue.text || issue.text !== clean(issue.text, 1000) || ![0, 1].includes(issue.open) || typeof issue.createdAt !== 'string') fail('STUDIO_STATE_INVALID');
+    if (!item || !ISSUE_KINDS.includes(issue.kind) || !issue.text || issue.text !== clean(issue.text, 1000) || ![0, 1].includes(issue.open) || typeof issue.createdAt !== 'string') fail('STUDIO_STATE_INVALID');
     if (issue.fields !== undefined) validateFields(item.kind, issue.fields);
     for (const key of ['field', 'existing', 'incoming', 'resolution']) if (issue[key] !== undefined && (typeof issue[key] !== 'string' || issue[key].length > FIELD_LIMITS.text)) fail('STUDIO_STATE_INVALID');
   }
@@ -141,7 +144,9 @@ function nextId(studio, prefix, width = 4) {
   return `${prefix}-${String(studio.seq[prefix]).padStart(width, '0')}`;
 }
 export const itemById = (studio, id) => studio.items.find(item => item.id === id);
-export const openIssues = (studio, id) => studio.issues.filter(issue => issue.open && issue.itemId === id);
+/** Open questions and conflicts of an item: what a person has to decide before it can be confirmed. */
+export const openIssues = (studio, id) => studio.issues.filter(issue => issue.open && issue.kind !== 'variant' && issue.itemId === id);
+export const openVariants = (studio, id) => studio.issues.filter(issue => issue.open && issue.kind === 'variant' && issue.itemId === id);
 export const proposalsOf = (studio, id) => studio.proposals.filter(proposal => proposal.itemId === id);
 
 /** What still has to be sent to the model, derived from state. Nothing is queued separately, so an interrupted run resumes by running again. */
@@ -211,8 +216,8 @@ function touch(item) { item.rev += 1; if (item.baseline) item.changed = 1; }
 export function raiseQuestions(studio, item, questions, evidence, now) {
   let added = 0;
   for (const text of questionList(questions)) {
-    if (studio.issues.some(issue => issue.itemId === item.id && issue.text === text)) continue;
-    if (studio.issues.length >= STUDIO_LIMITS.issues) fail('STUDIO_CAPACITY');
+    if (studio.issues.some(issue => issue.kind === 'question' && issue.itemId === item.id && issue.text === text)) continue;
+    if (studio.issues.length >= STUDIO_LIMITS.issues) fail('STUDIO_ISSUE_CAPACITY');
     studio.issues.push({ id: nextId(studio, 'ISS'), kind: 'question', itemId: item.id, text, evidence: evidenceList(evidence), open: 1, createdAt: now });
     added += 1;
   }
@@ -221,10 +226,54 @@ export function raiseQuestions(studio, item, questions, evidence, now) {
 /** Records two statements that cannot both hold, for a person to decide. Returns false when the same open issue is already there. */
 function raiseConflict(studio, target, { text, field, existing, incoming, fields, evidence }, now) {
   if (studio.issues.some(issue => issue.open && issue.kind === 'conflict' && issue.itemId === target.id && issue.text === text && issue.incoming === incoming)) return false;
-  if (studio.issues.length >= STUDIO_LIMITS.issues) fail('STUDIO_CAPACITY');
+  if (studio.issues.length >= STUDIO_LIMITS.issues) fail('STUDIO_ISSUE_CAPACITY');
   studio.issues.push({ id: nextId(studio, 'ISS'), kind: 'conflict', itemId: target.id, text, ...(field ? { field } : {}), ...(existing ? { existing } : {}), ...(incoming ? { incoming } : {}),
     ...(fields ? { fields: normalizeFields(target.kind, fields) } : {}), evidence: evidenceList(evidence), open: 1, createdAt: now });
   return true;
+}
+const variantText = (kind, field) => `‘${fieldLabels(kind, [field])}’ 값이 문서마다 다릅니다.`;
+/**
+ * Notes that another document words a short value or a table row differently.
+ * The program cannot tell wording from contradiction, so this never blocks
+ * confirmation and never stops a run: a field keeps a few notes, and a full
+ * store takes no more. The candidate's source is still cited on the record.
+ */
+function raiseVariant(studio, target, { field, existing, incoming, fields, evidence }, now) {
+  const open = studio.issues.filter(issue => issue.open && issue.kind === 'variant' && issue.itemId === target.id && issue.field === field);
+  if (open.some(issue => issue.incoming === incoming) || open.length >= STUDIO_LIMITS.variants || studio.issues.length >= STUDIO_LIMITS.issues) return false;
+  studio.issues.push({ id: nextId(studio, 'ISS'), kind: 'variant', itemId: target.id, text: variantText(target.kind, field), field, existing, incoming,
+    ...(fields ? { fields: normalizeFields(target.kind, fields) } : {}), evidence: evidenceList(evidence), open: 1, createdAt: now });
+  return true;
+}
+/**
+ * Differences the program itself raised were once stored as conflicts and
+ * blocked confirmation. They become notes; what the model judged a conflict
+ * stays one, even when its note uses the same words. The two are told apart by
+ * what was stored: the program kept nothing else for a text value and only the
+ * one differing row for a table, while a model conflict always carries the
+ * candidate's whole content and never quotes a table row as the existing
+ * statement. Records changed here are all kept, however many a field has.
+ * Returns how many were changed.
+ */
+export function demoteProgramConflicts(studio) {
+  let changed = 0;
+  for (const issue of studio.issues) {
+    if (issue.kind !== 'conflict' || !issue.field || !issue.existing || !issue.incoming) continue;
+    const item = itemById(studio, issue.itemId), spec = item && fieldsOf(item.kind).find(entry => entry.key === issue.field);
+    if (!spec || issue.text !== variantText(item.kind, spec.key)) continue;
+    const own = spec.type === 'text' ? issue.fields === undefined
+      : spec.type === 'rows' && issue.fields !== undefined && issue.fields[spec.key].length === 1 && fieldsOf(item.kind).every(entry => entry.key === spec.key || !isFilled(issue.fields[entry.key]));
+    if (own) { issue.kind = 'variant'; changed += 1; }
+  }
+  return changed;
+}
+/** What the field a note is about holds now. The note's own `existing` is what it held when the note was written. */
+export function variantCurrent(studio, issue) {
+  const item = itemById(studio, issue.itemId), spec = item && fieldsOf(item.kind).find(entry => entry.key === issue.field);
+  if (!spec) return '';
+  if (spec.type === 'text') return item.fields[spec.key];
+  const row = issue.fields?.[spec.key]?.[0], match = row && spec.type === 'rows' ? item.fields[spec.key].find(entry => rowKey(spec, entry) === rowKey(spec, row)) : null;
+  return match ? fieldText(spec, [match]) : '';
 }
 
 /**
@@ -234,8 +283,8 @@ function raiseConflict(studio, target, { text, field, existing, incoming, fields
  * A confirmed record is never changed here, not even its sources: what the
  * candidate would add waits as a proposal. The same holds for a draft when
  * `decision.review` says the comparison did not see both texts in full.
- * Structured values that disagree and additions that do not fit are raised as
- * issues, so the candidate's content is never dropped without a trace.
+ * Additions that do not fit are raised as issues, and structured values that
+ * differ are kept as notes, so the candidate's content leaves a trace.
  */
 export function settleCandidate(studio, candidateId, decision, now) {
   const index = studio.candidates.findIndex(candidate => candidate.id === candidateId);
@@ -257,24 +306,23 @@ export function settleCandidate(studio, candidateId, decision, now) {
   }
   const merged = mergeFieldsAdditive(target.kind, target.fields, candidate.fields);
   raiseQuestions(studio, target, candidate.questions, candidate.evidence, now);
-  let conflicts = 0;
-  for (const conflict of fieldConflicts(target.kind, target.fields, candidate.fields).slice(0, 5)) {
-    if (raiseConflict(studio, target, { text: `‘${fieldLabels(target.kind, [conflict.field])}’ 값이 문서마다 다릅니다.`, field: conflict.field, existing: conflict.existing, incoming: conflict.incoming,
-      fields: conflict.rows ? { [conflict.field]: conflict.rows } : undefined, evidence: candidate.evidence }, now)) conflicts += 1;
+  let conflicts = 0, variants = 0;
+  for (const conflict of fieldConflicts(target.kind, target.fields, candidate.fields)) {
+    if (raiseVariant(studio, target, { field: conflict.field, existing: conflict.existing, incoming: conflict.incoming, fields: conflict.rows ? { [conflict.field]: conflict.rows } : undefined, evidence: candidate.evidence }, now)) variants += 1;
   }
   if (merged.overflow.length && raiseConflict(studio, target, { text: `‘${fieldLabels(target.kind, merged.overflow)}’에 더할 내용이 한도를 넘어 다 담지 못했습니다. 항목을 나누거나 정리한 뒤 아래 내용을 반영해 주세요.`, fields: candidate.fields, evidence: candidate.evidence }, now)) conflicts += 1;
   const cited = new Set(target.evidence.map(entry => clauseKey(entry.s, entry.c))), fresh = candidate.evidence.filter(entry => !cited.has(clauseKey(entry.s, entry.c)));
-  if (!merged.changed.length && (!fresh.length || target.status !== 'confirmed')) { addEvidence(target, fresh); return { outcome: 'duplicate', item: target, conflicts }; }
+  if (!merged.changed.length && (!fresh.length || target.status !== 'confirmed')) { addEvidence(target, fresh); return { outcome: 'duplicate', item: target, conflicts, variants }; }
   if (target.status === 'confirmed' || decision.review === true) {
     const fields = normalizeFields(target.kind, merged.added);
     if (!studio.proposals.some(proposal => proposal.itemId === target.id && same(proposal.fields, fields) && same(proposal.evidence, candidate.evidence))) {
       if (studio.proposals.length >= STUDIO_LIMITS.proposals) fail('STUDIO_CAPACITY');
       studio.proposals.push({ id: nextId(studio, 'PRP'), itemId: target.id, fields, evidence: candidate.evidence, createdAt: now });
     }
-    return { outcome: 'proposed', item: target, conflicts };
+    return { outcome: 'proposed', item: target, conflicts, variants };
   }
   target.fields = merged.fields; addEvidence(target, candidate.evidence); target.flags.enriched = 1; touch(target);
-  return { outcome: 'enriched', item: target, conflicts };
+  return { outcome: 'enriched', item: target, conflicts, variants };
 }
 
 export const missingFields = item => fieldsOf(item.kind).filter(spec => spec.required && !isFilled(item.fields[spec.key])).map(spec => spec.key);
@@ -363,7 +411,8 @@ export function resolveIssue(studio, id, { choice, note }) {
     if (!['keep', 'adopt'].includes(choice)) fail('STUDIO_CHOICE_INVALID');
     if (choice === 'adopt') {
       const spec = fieldsOf(item.kind).find(entry => entry.key === issue.field && entry.key !== 'category'), rows = spec?.type === 'rows' ? issue.fields?.[spec.key] ?? [] : [];
-      if (spec && issue.incoming && spec.type === 'text' && item.fields[spec.key] === issue.existing) item.fields[spec.key] = normalizeField(spec, issue.incoming);
+      // A note offers another wording for the field: the person takes it whatever the field holds by now. A conflict replaces only the statement it quoted.
+      if (spec && issue.incoming && spec.type === 'text' && (issue.kind === 'variant' || item.fields[spec.key] === issue.existing)) item.fields[spec.key] = normalizeField(spec, issue.incoming);
       else if (spec && issue.incoming && spec.type === 'list' && item.fields[spec.key].includes(issue.existing)) item.fields[spec.key] = normalizeField(spec, item.fields[spec.key].map(entry => entry === issue.existing ? issue.incoming : entry));
       // A table row is replaced by the row of the same key from the new document; rows it does not name stay.
       else if (rows.length) item.fields[spec.key] = normalizeField(spec, [...item.fields[spec.key].map(row => rows.find(entry => rowKey(spec, entry) === rowKey(spec, row)) ?? row), ...rows.filter(entry => !item.fields[spec.key].some(row => rowKey(spec, row) === rowKey(spec, entry)))]);
