@@ -161,6 +161,7 @@ test('a value two documents word differently is a note that does not block confi
   let view = await run();
   const entity = () => named(engine.studio.view(), '예약', 'entity-def'), notes = () => engine.studio.view().issues.filter(issue => issue.itemId === entity().id).map(issue => [issue.kind, issue.field, issue.existing, issue.incoming, issue.open]);
   assert.deepEqual(notes(), [['variant', 'identifier', '예약번호', '예약ID', 1]]);
+  assert.equal(view.issues.find(issue => issue.kind === 'variant').current, '예약번호');
   assert.deepEqual([view.jobs.at(-1).summary.variant, view.jobs.at(-1).summary.conflict, entity().fields.identifier, entity().ready], [1, undefined, '예약번호', true]);
   // A workspace written before the two were told apart holds the same difference as a conflict, which blocks confirmation.
   store.transact(store.read().revision, draft => { draft.metadata.studio.issues.find(issue => issue.kind === 'variant').kind = 'conflict'; });

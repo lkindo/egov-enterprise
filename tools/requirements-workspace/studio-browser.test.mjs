@@ -150,6 +150,9 @@ test('documents become requirements, deliverables and stories through the studio
     await page.getByText('‘식별자’ 값이 문서마다 다릅니다.', { exact: true }).waitFor();
     assert.equal(await page.getByRole('button', { name: '확정', exact: true }).isEnabled(), true, 'a wording note does not block confirmation');
     await audit(page, 'studio-wording-note');
+    // The screen is redrawn on every poll and on every selection; the note a person unfolded stays open across it.
+    await page.getByRole('button', { name: /^예약 /, exact: false }).first().click();
+    assert.equal(await page.locator('details[data-notes]').getAttribute('open'), '', 'the unfolded note survives a redraw');
     await page.getByRole('button', { name: '다른 문서의 내용으로 바꿈', exact: true }).click();
     await page.getByText('새 문서의 내용을 반영했습니다.').waitFor();
     await page.getByRole('cell', { name: '예약ID', exact: true }).waitFor();

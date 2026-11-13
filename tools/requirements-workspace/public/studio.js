@@ -9,9 +9,9 @@ const CLASSIFICATIONS = [['internal', '내부'], ['public', '공개'], ['confide
 const JOB_NAMES = { analyze: '문서 분석', enrich: '빈칸 보강', plan: '에픽·스토리 작성' };
 const JOB_STATUS = { running: '진행 중', done: '완료', failed: '실패', cancelled: '취소함', interrupted: '중단됨' };
 const SUMMARY_NAMES = { removed: '지운 스토리', added: '새 초안', enriched: '기존 초안 보강', proposed: '확정 건 변경 제안', conflict: '충돌', variant: '다른 표기(참고)', demoted: '참고로 내린 표기 차이', duplicate: '중복(근거만 연결)', stories: '스토리를 쓴 요구사항', questions: '질문', nothing: '찾지 못함', clauses: '분류한 조각', oversize: '너무 큰 조각' };
-const ERROR_HINTS = { AI_CLI_UNAVAILABLE: 'Claude CLI를 찾지 못했습니다. 이 PC에 설치하고 로그인해 주세요.', AI_CLI_FAILED: 'CLI 실행이 끝나지 않았습니다. 로그인과 사용 한도를 확인해 주세요.', AI_TIMEOUT: 'AI 응답 시간이 초과되었습니다.', AI_MODEL_MISMATCH: '지정한 모델과 실제 실행 모델이 달랐습니다.', STUDIO_REPEATED_FAILURE: '쓸 수 없는 응답이 연달아 왔습니다. 잠시 뒤 다시 실행해 주세요.', STUDIO_CALL_CAPACITY: '한 번의 실행에서 쓸 수 있는 호출 수에 닿았습니다. 다시 실행하면 이어서 진행합니다.', STUDIO_CAPACITY: '작업공간 하나에 담을 수 있는 항목 수를 넘었습니다.', STUDIO_ISSUE_CAPACITY: '질문·쟁점 수가 작업공간 하나에 담을 수 있는 한도에 닿았습니다.' };
+const ERROR_HINTS = { AI_CLI_UNAVAILABLE: 'Claude CLI를 찾지 못했습니다. 이 PC에 설치하고 로그인해 주세요.', AI_CLI_FAILED: 'CLI 실행이 끝나지 않았습니다. 로그인과 사용 한도를 확인해 주세요.', AI_TIMEOUT: 'AI 응답 시간이 초과되었습니다.', AI_MODEL_MISMATCH: '지정한 모델과 실제 실행 모델이 달랐습니다.', STUDIO_REPEATED_FAILURE: '쓸 수 없는 응답이 연달아 왔습니다. 잠시 뒤 다시 실행해 주세요.', STUDIO_CALL_CAPACITY: '한 번의 실행에서 쓸 수 있는 호출 수에 닿았습니다. 다시 실행하면 이어서 진행합니다.', STUDIO_CAPACITY: '작업공간 하나에 담을 수 있는 항목 수를 넘었습니다.', STUDIO_ISSUE_CAPACITY: '질문·쟁점·참고의 수(닫은 것 포함)가 작업공간 하나에 담을 수 있는 한도에 닿았습니다.', REQUIREMENTS_TOO_LARGE: '작업공간 파일이 크기 한도(8MiB)에 닿았습니다.' };
 // A run that stopped at a workspace limit stops at the same place when it is run again.
-const LIMIT_ERRORS = ['STUDIO_CAPACITY', 'STUDIO_ISSUE_CAPACITY'];
+const LIMIT_ERRORS = ['STUDIO_CAPACITY', 'STUDIO_ISSUE_CAPACITY', 'REQUIREMENTS_TOO_LARGE'];
 
 // Text documents are split into clauses on this PC; anything that has to be looked at (scans, images, office files) is read by the model.
 const LOCAL_TEXT = /\.(?:txt|md|html?)$/i;
@@ -22,6 +22,8 @@ let token, workspaceId, view, pollTimer, uploading = null, lastUpload = null, bu
 let tab = 'sources';
 const selected = { requirement: null, type: null, item: null, story: null };
 const filter = { status: 'all', category: '', query: '' };
+// Items whose wording notes are unfolded. The screen is redrawn on every poll, so what a person opened is kept here.
+const unfolded = new Set();
 
 async function request(url, options = {}) {
   let response;
@@ -172,8 +174,8 @@ function requirementList() {
 function variantNotes(item) {
   const variants = openVariants(item.id);
   if (!variants.length) return '';
-  return `<details class="st-note"><summary><strong>문서마다 표기가 다른 값 ${variants.length}건</strong> <span class="st-small">확정을 막지 않습니다. 표현만 다르면 그대로 두고, 내용이 다르면 골라 주세요.</span></summary>
-    ${variants.map(issue => `<div class="st-note"><span>${esc(issue.text)}</span><div><span class="st-small">지금 내용</span><blockquote>${esc(issue.existing)}</blockquote></div><div><span class="st-small">다른 문서의 내용</span><blockquote>${esc(issue.incoming)}</blockquote></div><div>${sourceLines(issue.sources)}</div>
+  return `<details class="st-note" data-notes="${esc(item.id)}" ${unfolded.has(item.id) ? 'open' : ''}><summary><strong>문서마다 표기가 다른 값 ${variants.length}건</strong> <span class="st-small">확정을 막지 않습니다. 표현만 다르면 그대로 두고, 내용이 다르면 골라 주세요.</span></summary>
+    ${variants.map(issue => `<div class="st-note"><span>${esc(issue.text)}</span><div><span class="st-small">지금 내용</span><blockquote>${esc(issue.current || '비어 있음')}</blockquote></div><div><span class="st-small">다른 문서의 내용</span><blockquote>${esc(issue.incoming)}</blockquote></div><div>${sourceLines(issue.sources)}</div>
       <div class="row-actions"><button type="button" class="button small secondary" data-a="issue-keep" data-v="${esc(issue.id)}">지금 내용 유지</button><button type="button" class="button small secondary" data-a="issue-adopt" data-v="${esc(issue.id)}">다른 문서의 내용으로 바꿈</button></div></div>`).join('')}</details>`;
 }
 function issueNotes(item) {
@@ -502,6 +504,8 @@ document.addEventListener('click', event => {
   if (!element || element.disabled || element.matches('input[type="checkbox"]')) return;
   void handle(element.dataset.a, element.dataset.v);
 });
+// `toggle` does not bubble, so it is caught on the way down.
+document.addEventListener('toggle', event => { const id = event.target.dataset?.notes; if (id) unfolded[event.target.open ? 'add' : 'delete'](id); }, true);
 document.addEventListener('change', async event => {
   const element = event.target;
   if (element.dataset?.a === 'toggle') {

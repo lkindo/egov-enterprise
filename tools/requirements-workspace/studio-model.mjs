@@ -216,7 +216,7 @@ function touch(item) { item.rev += 1; if (item.baseline) item.changed = 1; }
 export function raiseQuestions(studio, item, questions, evidence, now) {
   let added = 0;
   for (const text of questionList(questions)) {
-    if (studio.issues.some(issue => issue.itemId === item.id && issue.text === text)) continue;
+    if (studio.issues.some(issue => issue.kind === 'question' && issue.itemId === item.id && issue.text === text)) continue;
     if (studio.issues.length >= STUDIO_LIMITS.issues) fail('STUDIO_ISSUE_CAPACITY');
     studio.issues.push({ id: nextId(studio, 'ISS'), kind: 'question', itemId: item.id, text, evidence: evidenceList(evidence), open: 1, createdAt: now });
     added += 1;
@@ -248,16 +248,32 @@ function raiseVariant(studio, target, { field, existing, incoming, fields, evide
 /**
  * Differences the program itself raised were once stored as conflicts and
  * blocked confirmation. They become notes; what the model judged a conflict
- * stays one. Returns how many were changed.
+ * stays one, even when its note uses the same words. The two are told apart by
+ * what was stored: the program kept nothing else for a text value and only the
+ * one differing row for a table, while a model conflict always carries the
+ * candidate's whole content and never quotes a table row as the existing
+ * statement. Records changed here are all kept, however many a field has.
+ * Returns how many were changed.
  */
 export function demoteProgramConflicts(studio) {
   let changed = 0;
   for (const issue of studio.issues) {
     if (issue.kind !== 'conflict' || !issue.field || !issue.existing || !issue.incoming) continue;
-    const item = itemById(studio, issue.itemId);
-    if (item && issue.text === variantText(item.kind, issue.field)) { issue.kind = 'variant'; changed += 1; }
+    const item = itemById(studio, issue.itemId), spec = item && fieldsOf(item.kind).find(entry => entry.key === issue.field);
+    if (!spec || issue.text !== variantText(item.kind, spec.key)) continue;
+    const own = spec.type === 'text' ? issue.fields === undefined
+      : spec.type === 'rows' && issue.fields !== undefined && issue.fields[spec.key].length === 1 && fieldsOf(item.kind).every(entry => entry.key === spec.key || !isFilled(issue.fields[entry.key]));
+    if (own) { issue.kind = 'variant'; changed += 1; }
   }
   return changed;
+}
+/** What the field a note is about holds now. The note's own `existing` is what it held when the note was written. */
+export function variantCurrent(studio, issue) {
+  const item = itemById(studio, issue.itemId), spec = item && fieldsOf(item.kind).find(entry => entry.key === issue.field);
+  if (!spec) return '';
+  if (spec.type === 'text') return item.fields[spec.key];
+  const row = issue.fields?.[spec.key]?.[0], match = row && spec.type === 'rows' ? item.fields[spec.key].find(entry => rowKey(spec, entry) === rowKey(spec, row)) : null;
+  return match ? fieldText(spec, [match]) : '';
 }
 
 /**
@@ -395,7 +411,8 @@ export function resolveIssue(studio, id, { choice, note }) {
     if (!['keep', 'adopt'].includes(choice)) fail('STUDIO_CHOICE_INVALID');
     if (choice === 'adopt') {
       const spec = fieldsOf(item.kind).find(entry => entry.key === issue.field && entry.key !== 'category'), rows = spec?.type === 'rows' ? issue.fields?.[spec.key] ?? [] : [];
-      if (spec && issue.incoming && spec.type === 'text' && item.fields[spec.key] === issue.existing) item.fields[spec.key] = normalizeField(spec, issue.incoming);
+      // A note offers another wording for the field: the person takes it whatever the field holds by now. A conflict replaces only the statement it quoted.
+      if (spec && issue.incoming && spec.type === 'text' && (issue.kind === 'variant' || item.fields[spec.key] === issue.existing)) item.fields[spec.key] = normalizeField(spec, issue.incoming);
       else if (spec && issue.incoming && spec.type === 'list' && item.fields[spec.key].includes(issue.existing)) item.fields[spec.key] = normalizeField(spec, item.fields[spec.key].map(entry => entry === issue.existing ? issue.incoming : entry));
       // A table row is replaced by the row of the same key from the new document; rows it does not name stay.
       else if (rows.length) item.fields[spec.key] = normalizeField(spec, [...item.fields[spec.key].map(row => rows.find(entry => rowKey(spec, entry) === rowKey(spec, row)) ?? row), ...rows.filter(entry => !item.fields[spec.key].some(row => rowKey(spec, row) === rowKey(spec, entry)))]);

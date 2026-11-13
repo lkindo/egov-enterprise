@@ -10,7 +10,7 @@ import { AI_MODEL, aiEffortForPhase, createCliRunner, findClaudeExecutable } fro
 import { collectSensitivityWarnings } from './privacy-warnings.mjs';
 import { ARTIFACT_IDS, ARTIFACT_TYPES, DERIVED_DOCUMENTS, REQUIREMENT_CATEGORIES, REQUIREMENT_FIELDS, REQUIREMENT_KIND, fieldConflicts, fieldLabels, isFilled, isKind, mergeFieldsAdditive } from './studio-catalog.mjs';
 import { createIndex, similarity } from './studio-index.mjs';
-import { DEVELOPMENT_CATEGORIES, QUALITY_CATEGORIES, addCandidate, applyStories, applyTag, baselineContent, clauseKey, clauseMap, createRelations, crossChecks, decideProposal, demoteProgramConflicts, failTag, initialStudio, itemById, itemReady, itemScore, label, markExtracted, meaningHash, missingFields, neighborIndex, orphanStories, pendingWork, planTargets, raiseQuestions, recordBaseline, removeOrphanStories, resolveIssue, saveItem, searchParts, setItemStatus, settleCandidate, startJob } from './studio-model.mjs';
+import { DEVELOPMENT_CATEGORIES, QUALITY_CATEGORIES, addCandidate, applyStories, applyTag, baselineContent, clauseKey, clauseMap, createRelations, crossChecks, decideProposal, demoteProgramConflicts, failTag, initialStudio, itemById, itemReady, itemScore, label, markExtracted, meaningHash, missingFields, neighborIndex, orphanStories, pendingWork, planTargets, raiseQuestions, recordBaseline, removeOrphanStories, resolveIssue, saveItem, searchParts, setItemStatus, settleCandidate, startJob, variantCurrent } from './studio-model.mjs';
 import { describeEvidence, documentList, renderDocument } from './studio-render.mjs';
 import { CLAUSE_BATCH, MERGE_BATCH, PLAN_BATCH, REQUEST_LIMIT, STUDIO_PROMPT_VERSION, batchClauses, classifyRequest, enrichRequest, extractRequest, fitted, mergeRequest, planRequest, readClassify, readEnrich, readExtract, readMerge, readPlan, studioPrompts } from './studio-tasks.mjs';
 
@@ -392,7 +392,7 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
       catalog: { categories: REQUIREMENT_CATEGORIES, requirementFields: REQUIREMENT_FIELDS, types: ARTIFACT_TYPES, derived: DERIVED_DOCUMENTS, development: DEVELOPMENT_CATEGORIES, quality: QUALITY_CATEGORIES },
       sources, imports: (snapshot.metadata.imports ?? []).slice(-30).map(job => ({ requestId: job.requestId, filename: job.filename, status: job.status, errorCode: job.errorCode, sourceId: job.sourceId, readingProgress: job.readingProgress })),
       enabled: studio.enabled, items, proposals: studio.proposals.map(proposal => ({ ...proposal, sources: describeEvidence(proposal.evidence, clauses) })),
-      issues: studio.issues.map(issue => ({ ...issue, sources: describeEvidence(issue.evidence, clauses) })), baselines: studio.baselines.map(({ ref, ...baseline }) => baseline),
+      issues: studio.issues.map(issue => ({ ...issue, ...(issue.open && issue.kind === 'variant' ? { current: variantCurrent(studio, issue) } : {}), sources: describeEvidence(issue.evidence, clauses) })), baselines: studio.baselines.map(({ ref, ...baseline }) => baseline),
       plan: studio.plan ? { epics: studio.plan.epics, stories, updatedAt: studio.plan.updatedAt } : null, planTargets: planTargets(studio).map(item => item.id), planOrphans: orphans.size,
       pending: { classify: work.classify.length, extract: Object.fromEntries(Object.entries(work.extract).map(([type, list]) => [type, list.length])), merge: work.merge, waiting },
       checks, documents: documentList(studio), jobs: studio.jobs, active: active?.id ?? null, prompts: studioPrompts(),
