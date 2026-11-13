@@ -11,7 +11,12 @@ const JOB_STATUS = { running: '진행 중', done: '완료', failed: '실패', ca
 const SUMMARY_NAMES = { removed: '지운 스토리', added: '새 초안', enriched: '기존 초안 보강', proposed: '확정 건 변경 제안', conflict: '충돌', duplicate: '중복(근거만 연결)', stories: '스토리를 쓴 요구사항', questions: '질문', nothing: '찾지 못함', clauses: '분류한 조각', oversize: '너무 큰 조각' };
 const ERROR_HINTS = { AI_CLI_UNAVAILABLE: 'Claude CLI를 찾지 못했습니다. 이 PC에 설치하고 로그인해 주세요.', AI_CLI_FAILED: 'CLI 실행이 끝나지 않았습니다. 로그인과 사용 한도를 확인해 주세요.', AI_TIMEOUT: 'AI 응답 시간이 초과되었습니다.', AI_MODEL_MISMATCH: '지정한 모델과 실제 실행 모델이 달랐습니다.', STUDIO_REPEATED_FAILURE: '쓸 수 없는 응답이 연달아 왔습니다. 잠시 뒤 다시 실행해 주세요.', STUDIO_CALL_CAPACITY: '한 번의 실행에서 쓸 수 있는 호출 수에 닿았습니다. 다시 실행하면 이어서 진행합니다.', STUDIO_CAPACITY: '작업공간 하나에 담을 수 있는 항목 수를 넘었습니다.' };
 
-let token, workspaceId, view, pollTimer, uploading = null, busy = false;
+// Text documents are split into clauses on this PC; anything that has to be looked at (scans, images, office files) is read by the model.
+const LOCAL_TEXT = /\.(?:txt|md|html?)$/i;
+const IMPORT_ERRORS = { FILE_NO_TEXT: '읽을 수 있는 본문이 없습니다', FILE_ENCODING_INVALID: '글자 인코딩을 읽지 못했습니다(UTF-8로 저장해 주세요)', FILE_TEXT_TOO_LARGE: '본문이 한도를 넘습니다(파일을 나누어 주세요)', FILE_TIMEOUT: '읽는 시간이 초과되었습니다', FILE_EXTRACTION_FAILED: '문서를 읽지 못했습니다', FILE_TYPE_UNSUPPORTED: '지원하지 않는 형식입니다', FILE_ENCRYPTED: '암호가 걸린 문서입니다', AI_DOCUMENT_UNREADABLE: 'AI가 본문을 읽지 못했습니다', AI_DOCUMENT_OUTPUT_INVALID: 'AI 판독 결과를 검증하지 못했습니다', AI_CLI_FAILED: 'Claude CLI 실행이 끝나지 않았습니다', AI_CLI_UNAVAILABLE: 'Claude CLI를 찾지 못했습니다', AI_TIMEOUT: 'AI 응답 시간이 초과되었습니다', interrupted: '실행기가 멈춰 중단되었습니다', cancelled: '취소되었습니다' };
+const ANALYZE_STAGES = ['조각 분류와 요구사항 후보 추출', '켜 둔 산출물의 항목 추출', '기존 요구사항·항목과 대조'];
+
+let token, workspaceId, view, pollTimer, uploading = null, lastUpload = null, busy = false;
 let tab = 'sources';
 const selected = { requirement: null, type: null, item: null, story: null };
 const filter = { status: 'all', category: '', query: '' };
@@ -91,16 +96,39 @@ const sourceLines = sources => sources.length ? sources.map(source => `<div clas
 const itemButton = (item, action = 'go-item') => `<button type="button" class="st-chip" data-a="${action}" data-v="${esc(item.id)}">${esc(item.kind === 'requirement' ? `${label(item)} ${item.name}` : `${kindName(item.kind)} · ${item.name}`)}</button>`;
 
 /* ---------- stage: documents ---------- */
+const clock = seconds => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
+const elapsedSince = since => clock(Math.max(0, (Date.now() - Date.parse(since)) / 1000));
+// A running clock shows that work is going on even while one long step reports no new count. It is hidden from
+// assistive technology, which would otherwise announce it every second.
+const ticking = since => `<span class="st-num" data-since="${esc(since)}" aria-hidden="true">${elapsedSince(since)}</span>`;
+const FILE_STATUS = { waiting: ['대기', 'outline'], reading: ['읽는 중', 'blue'], done: ['완료', 'green'], failed: ['실패', 'red'] };
+const fileRows = files => `<ul class="st-files">${files.map(file => `<li><span class="st-name">${esc(file.name)}</span>${badge(FILE_STATUS[file.status][0], FILE_STATUS[file.status][1])}<span class="muted st-small">${esc(file.note)}</span></li>`).join('')}</ul>`;
+/** What is being registered right now, file by file, and what the last registration ended with. */
+function uploadPanel() {
+  if (uploading) {
+    const finished = uploading.files.filter(file => ['done', 'failed'].includes(file.status)).length, current = uploading.files[uploading.index];
+    return `<section class="panel panel-body st-stack"><div class="st-spread"><h2>문서 등록 — ${finished} / ${uploading.files.length}건 끝남</h2>${badge('진행 중', 'blue')}</div>
+      <div class="st-row">${meter(Math.round(finished / uploading.files.length * 100))}<span class="muted st-small">전체 경과 ${ticking(uploading.startedAt)}</span></div>
+      <p><strong>지금 읽는 문서:</strong> ${esc(current.name)} — ${esc(current.note)} <span class="muted st-small">(이 문서 ${ticking(uploading.fileStartedAt)})</span></p>
+      ${fileRows(uploading.files)}
+      <p class="muted st-small">이 창을 닫거나 새로 고치면 남은 문서는 등록되지 않습니다. 다른 단계를 둘러보는 것은 괜찮습니다.</p></section>`;
+  }
+  if (!lastUpload) return '';
+  const failed = lastUpload.files.filter(file => file.status === 'failed');
+  return `<section class="panel panel-body st-stack"><div class="st-spread"><h2>문서 등록 결과</h2>${badge(failed.length ? `완료 ${lastUpload.files.length - failed.length}건 · 실패 ${failed.length}건` : `완료 ${lastUpload.files.length}건`, failed.length ? 'amber' : 'green')}</div>
+    <p class="muted st-small">걸린 시간 ${clock(lastUpload.seconds)}${failed.length ? ' · 실패한 문서는 원인을 고친 뒤 다시 넣을 수 있습니다.' : ''}</p>${fileRows(lastUpload.files)}</section>`;
+}
 function jobPanel() {
   const job = lastJob();
-  if (!job && !uploading) return '';
-  const upload = uploading ? `<div class="st-note"><strong>문서 등록 ${uploading.index}/${uploading.total}</strong><span>${esc(uploading.name)} — ${esc(uploading.note)}</span></div>` : '';
-  if (!job) return `<section class="panel panel-body st-stack" aria-live="polite">${upload}</section>`;
+  if (!job) return '';
   const running = job.status === 'running', percent = job.total ? Math.round(job.done / job.total * 100) : running ? 0 : 100;
   const summary = Object.entries(job.summary).filter(([, count]) => count).map(([key, count]) => `<div><b>${count}</b><span>${esc(SUMMARY_NAMES[key] ?? key)}</span></div>`).join('');
-  return `<section class="panel panel-body st-stack" aria-live="polite">${upload}
-    <div class="st-spread"><h2>${esc(JOB_NAMES[job.kind])} — ${esc(running ? job.stage : JOB_STATUS[job.status])}</h2><div class="row-actions">${badge(JOB_STATUS[job.status], running ? 'blue' : job.status === 'done' ? 'green' : 'amber')}${running ? `<button type="button" class="button small secondary" data-a="cancel" data-v="${esc(job.id)}">중지</button>` : ''}</div></div>
-    ${running ? `<div class="st-row">${meter(percent)}<span class="muted">${job.done} / ${job.total}</span></div>` : ''}
+  const at = ANALYZE_STAGES.indexOf(job.stage);
+  const steps = job.kind === 'analyze' && running ? `<ol class="st-steps">${ANALYZE_STAGES.map((name, index) => `<li ${index === at ? 'aria-current="step"' : ''}>${index < at ? badge('끝남', 'green') : index === at ? badge('진행 중', 'blue') : badge('대기', 'outline')} ${esc(name)}${index === at ? ` <span class="muted">${job.done} / ${job.total}</span>` : ''}</li>`).join('')}</ol>` : '';
+  const duration = job.completedAt ? clock(Math.max(0, (Date.parse(job.completedAt) - Date.parse(job.startedAt)) / 1000)) : null;
+  return `<section class="panel panel-body st-stack">
+    <div class="st-spread"><h2>${esc(JOB_NAMES[job.kind])} — ${esc(running ? job.stage : JOB_STATUS[job.status])}</h2><div class="row-actions">${running ? `<span class="muted st-small">경과 ${ticking(job.startedAt)}</span>` : duration ? `<span class="muted st-small">걸린 시간 ${duration}</span>` : ''}${badge(JOB_STATUS[job.status], running ? 'blue' : job.status === 'done' ? 'green' : 'amber')}${running ? `<button type="button" class="button small secondary" data-a="cancel" data-v="${esc(job.id)}">중지</button>` : ''}</div></div>
+    ${running ? `<div class="st-row">${meter(percent)}<span class="muted">${job.done} / ${job.total}</span></div>${steps}<p class="muted st-small">AI 호출 한 번에 수십 초가 걸립니다. 숫자가 잠시 멈춰 있어도 경과 시간이 흐르면 진행 중입니다. 창을 닫아도 분석은 계속되고, 다시 열면 이어서 보입니다.</p>` : ''}
     ${job.errorCode ? `<p class="field-error">${esc(ERROR_HINTS[job.errorCode] ?? `실행을 마치지 못했습니다 (${job.errorCode}).`)} 끝난 부분은 저장되어 있어, 다시 실행하면 남은 부분만 진행합니다.</p>` : ''}
     <div class="st-kv"><div><b>${job.calls}</b><span>AI 호출</span></div><div><b>${(job.maxRequestBytes / 1024).toFixed(1)}KB</b><span>호출당 최대 입력 (상한 ${Math.round(view.requestLimit / 1024)}KB)</span></div><div><b>${view.items.filter(item => item.status !== 'retired').length}</b><span>쌓인 요구사항·항목</span></div>${job.failures ? `<div><b>${job.failures}</b><span>쓰지 못한 응답·조각</span></div>` : ''}${summary}</div>
     <p class="muted st-small">호출마다 조각 묶음 하나와 비슷한 기존 항목 몇 건만 보냅니다. 쌓인 항목이 늘어도 한 번에 보내는 양은 상한을 넘지 않습니다.</p></section>`;
@@ -112,7 +140,7 @@ function viewSources() {
     <td><div class="st-chips">${Object.entries(source.artifacts).map(([type, count]) => badge(`${typeOf(type)?.name ?? type} ${count}`, view.enabled.includes(type) ? 'blue' : 'outline')).join('') || '<span class="muted">없음</span>'}</div></td></tr>`).join('');
   return `${view.project?.name === PLACEHOLDER_PROJECT ? `<div class="callout"><span class="callout-icon">i</span><div><strong>프로젝트 정보를 먼저 입력해 주세요</strong><p>산출물 문서의 머리말에 사업 이름이 들어갑니다.</p></div><div class="row-actions"><button type="button" class="button small" data-a="project">프로젝트 정보 입력</button></div></div>` : ''}
   ${view.available ? '' : '<div class="callout"><span class="callout-icon">!</span><div><strong>Claude CLI를 찾지 못했습니다</strong><p>문서 판독과 분석에는 이 PC에 설치·로그인된 Claude CLI가 필요합니다. 직접 작성과 문서 내려받기는 그대로 쓸 수 있습니다.</p></div></div>'}
-  ${jobPanel()}
+  ${uploadPanel()}${uploading ? '' : jobPanel()}
   <section class="panel"><div class="panel-head"><div><h2>등록한 문서</h2><small>문서는 언제든 더 넣을 수 있습니다. 넣은 문서만 새로 읽고, 앞서 만든 요구사항과 산출물에 이어 붙입니다.</small></div>
       <div class="row-actions">${pending ? `<button type="button" class="button secondary" data-a="run" ${view.active || uploading ? 'disabled' : ''}>AI 분석 진행 (대기 ${pending})</button>` : ''}<button type="button" class="button" data-a="upload" ${view.active || uploading ? 'disabled' : ''}>문서 추가</button></div></div>
     ${view.sources.length ? `<div class="table-wrap"><table><thead><tr><th>문서</th><th>조각</th><th>분류</th><th>요구사항 관련</th><th>산출물 종류별 관련 조각 (파란색은 작성 중인 산출물)</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty">아직 문서가 없습니다. 제안요청서, 회의록, 화면 캡처, 메모 등 어떤 문서든 넣을 수 있습니다.</div>'}
@@ -253,6 +281,15 @@ function render() {
   $('#project-name').textContent = view.project?.name === PLACEHOLDER_PROJECT ? '프로젝트 이름 없음' : view.project?.name ?? '';
   $('#stages').innerHTML = stages.map(([id, name, sub]) => `<button type="button" class="st-stage" data-a="tab" data-v="${id}" aria-current="${tab === id}"><strong>${esc(name)}</strong><span>${esc(sub)}</span></button>`).join('');
   $('#main').innerHTML = tab === 'sources' ? viewSources() : tab === 'requirements' ? viewRequirements() : tab === 'artifacts' ? viewArtifacts() : viewPlan();
+  // What is running is shown on every stage, not only where it was started.
+  const job = lastJob()?.status === 'running' ? lastJob() : null, activity = $('#activity');
+  activity.hidden = !uploading && !job;
+  activity.innerHTML = uploading ? `<span class="dot"></span><span><strong>문서 등록 중</strong> · ${uploading.files.filter(file => ['done', 'failed'].includes(file.status)).length} / ${uploading.files.length}건 끝남 · ${esc(uploading.files[uploading.index].name)} · 경과 ${ticking(uploading.startedAt)}</span>${tab === 'sources' ? '' : '<button type="button" data-a="tab" data-v="sources">자료함에서 보기</button>'}`
+    : job ? `<span class="dot"></span><span><strong>${esc(JOB_NAMES[job.kind])} 중</strong> · ${esc(job.stage)} ${job.done} / ${job.total} · 경과 ${ticking(job.startedAt)}</span>${tab === 'sources' ? '' : '<button type="button" data-a="tab" data-v="sources">자료함에서 보기</button>'}` : '';
+  // Progress is announced from one lasting element and only when it changes, so a re-render does not repeat it.
+  const spoken = uploading ? `문서 등록 ${uploading.files.filter(file => ['done', 'failed'].includes(file.status)).length} / ${uploading.files.length}건 끝남. ${uploading.files[uploading.index].name} ${uploading.files[uploading.index].note}`
+    : job ? `${JOB_NAMES[job.kind]} ${job.stage} ${job.done} / ${job.total}` : lastJob() ? `${JOB_NAMES[lastJob().kind]} ${JOB_STATUS[lastJob().status]}` : '';
+  if ($('#announce').textContent !== spoken) $('#announce').textContent = spoken;
   paint($('#main'));
   if (focus && ['filter-query', 'filter-category'].includes(focus)) { const element = document.getElementById(focus); element?.focus(); if (caret !== null) element?.setSelectionRange(caret, caret); }
 }
@@ -348,43 +385,56 @@ async function documentDialog(id) {
 function uploadDialog() {
   openDialog('문서 추가', `${field('files', '문서 파일', '<input type="file" name="files" multiple required>', '여러 개를 한 번에 고를 수 있습니다. 형식과 종류는 가리지 않으며 파일 하나는 20MB까지입니다.')}
     <div class="fields-row">${field('sourceType', '문서 종류', `<select name="sourceType">${SOURCE_TYPES.map(([value, name]) => `<option value="${value}">${esc(name)}</option>`).join('')}</select>`)}${field('classification', '보안 분류', `<select name="classification">${CLASSIFICATIONS.map(([value, name]) => `<option value="${value}">${esc(name)}</option>`).join('')}</select>`)}</div>
-    ${consentFields()}${checkbox('analyze', '판독이 끝나면 이어서 분석해 요구사항과 산출물에 반영합니다.', true)}`, { submit: '등록 시작', onSubmit: async (data, form) => {
+    ${consentFields()}${checkbox('localText', '글자 문서(TXT·Markdown·HTML)는 AI 판독 없이 이 PC에서 바로 조각으로 나눕니다. 몇 초면 끝납니다. 스캔·이미지·PDF·HWP·Office 문서는 AI가 읽으며 문서마다 몇 분이 걸릴 수 있습니다.', true)}
+    ${checkbox('analyze', '등록이 끝나면 이어서 분석해 요구사항과 산출물에 반영합니다.', true)}`, { submit: '등록 시작', onSubmit: async (data, form) => {
       const files = [...form.querySelector('[name="files"]').files];
       if (!files.length) throw new Error('문서를 골라 주세요.');
       const consent = consentOf(data);
       for (const file of files) if (file.size > 20 * 1024 ** 2) throw new Error(`${file.name}: 파일 하나는 20MB까지 등록할 수 있습니다.`);
-      void upload(files, { sourceType: data.get('sourceType'), classification: data.get('classification'), analyze: data.has('analyze'), consent });
+      void upload(files, { sourceType: data.get('sourceType'), classification: data.get('classification'), analyze: data.has('analyze'), localText: data.has('localText'), consent });
     } });
 }
 const fileBase64 = file => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onerror = () => reject(new Error(`${file.name}: 파일을 읽지 못했습니다.`)); reader.onload = () => resolve(String(reader.result).slice(String(reader.result).indexOf(',') + 1)); reader.readAsDataURL(file); });
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
-/** Registers files one at a time through the existing reading path, then starts the analysis if asked. */
+/**
+ * Registers files one at a time, then starts the analysis if asked. Every file
+ * has its own line on screen from the start, so what is waiting, being read,
+ * done or failed is visible throughout, with the reason for a failure.
+ */
 async function upload(files, options) {
-  const failures = [];
-  tab = 'sources';
+  tab = 'sources'; lastUpload = null;
+  uploading = { files: files.map(file => ({ name: file.name, status: 'waiting', note: '' })), index: 0, startedAt: new Date().toISOString(), fileStartedAt: new Date().toISOString() };
   try {
     for (const [index, file] of files.entries()) {
-      uploading = { index: index + 1, total: files.length, name: file.name, note: '문서를 읽는 중' }; render();
+      const entry = uploading.files[index], local = options.localText && LOCAL_TEXT.test(file.name);
+      uploading.index = index; uploading.fileStartedAt = new Date().toISOString();
+      entry.status = 'reading'; entry.note = local ? '글자 문서를 조각으로 나누는 중' : 'AI가 문서를 읽는 중'; render();
       try {
         const requestId = crypto.randomUUID(), base64 = await fileBase64(file);
         view = await request('/api/studio');
-        await post('/api/ingest', { revision: view.revision, action: 'source.ingest', payload: { requestId, filename: file.name, base64, classification: options.classification, sourceType: options.sourceType, sensitivityAcknowledged: true, readWithAI: true, consent: true, model: view.model } });
+        await post('/api/ingest', { revision: view.revision, action: 'source.ingest', payload: { requestId, filename: file.name, base64, classification: options.classification, sourceType: options.sourceType, sensitivityAcknowledged: true, ...(local ? {} : { readWithAI: true, consent: true, model: view.model }) } });
         for (;;) {
           view = await request('/api/studio');
-          const job = view.imports.find(entry => entry.requestId === requestId);
-          if (job?.status !== 'extracting') { if (job?.status !== 'ready') failures.push(`${file.name} (${job?.errorCode ?? job?.status ?? '확인 불가'})`); break; }
-          uploading.note = job.readingProgress ? `AI 판독 ${job.readingProgress.completed}/${job.readingProgress.total}구간` : '문서를 읽는 중'; render();
+          const job = view.imports.find(item => item.requestId === requestId);
+          if (job?.status === 'ready') { entry.status = 'done'; entry.note = `조각 ${view.sources.find(source => source.id === job.sourceId)?.clauses ?? 0}개`; break; }
+          if (job?.status !== 'extracting') { entry.status = 'failed'; entry.note = IMPORT_ERRORS[job?.errorCode] ?? IMPORT_ERRORS[job?.status] ?? job?.errorCode ?? '등록 상태를 확인하지 못했습니다'; break; }
+          entry.note = local ? '글자 문서를 조각으로 나누는 중' : job.readingProgress?.stage === 'reading' ? `AI가 문서를 읽는 중 · ${job.readingProgress.completed} / ${job.readingProgress.total}구간` : 'AI가 읽을 준비를 하는 중'; render();
           await pause(1500);
         }
-      } catch (error) { failures.push(`${file.name} (${error.message})`); }
+      } catch (error) { entry.status = 'failed'; entry.note = error.message; }
+      render();
     }
-  } finally { uploading = null; }
+  } finally { lastUpload = { files: uploading.files, seconds: (Date.now() - Date.parse(uploading.startedAt)) / 1000 }; uploading = null; }
   try { view = await request('/api/studio'); } catch { /* The page keeps the last view. */ }
   render();
-  if (failures.length) toast(`판독하지 못한 문서: ${failures.join(', ')}`);
+  const failed = lastUpload.files.filter(file => file.status === 'failed').length;
+  toast(failed ? `문서 ${lastUpload.files.length - failed}건을 등록했고 ${failed}건은 실패했습니다. 자료함에서 원인을 확인해 주세요.` : `문서 ${lastUpload.files.length}건을 등록했습니다.`);
   if (options.analyze && pendingTotal() && !view.active) await act('studio.run', options.consent, '분석을 시작했습니다.');
   schedule();
 }
+// Registration is driven by this page, so leaving it would drop the files that are still waiting.
+window.addEventListener('beforeunload', event => { if (uploading) { event.preventDefault(); event.returnValue = ''; } });
+setInterval(() => { for (const element of document.querySelectorAll('[data-since]')) element.textContent = elapsedSince(element.dataset.since); }, 1000);
 
 /* ---------- events ---------- */
 async function handle(action, value) {
