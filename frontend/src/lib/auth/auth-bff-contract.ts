@@ -10,7 +10,8 @@ export { authReissueResponseSchema } from '@/lib/auth/auth-reissue-contract';
  */
 export const authAuthenticatedDataSchema = TokenResponseResponseSchema.pick({ role: true }).extend({
   authenticationStage: z.literal('AUTHENTICATED').optional(),
-  role: z.string().min(1),
+  // 표시 호환용 값이다(인가는 permissions). 그룹이 하나도 없는 사용자는 백엔드가 role 을 주지 않으므로 응답에서 뺀다.
+  role: z.string().min(1).optional(),
   ...authorizationStateSchema.shape,
   recoveryCodes: z.array(z.string().min(1)).optional(),
 }).strict();

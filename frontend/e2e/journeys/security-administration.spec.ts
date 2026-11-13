@@ -4,7 +4,6 @@ import { expect,test } from '../fixtures/browser-test';
 import { collectPageCoverage } from '../fixtures/page-observation';
 import { getAdminBearerToken } from '../utils/admin-token';
 import { anonymousCsrfRequestState, CSRF_COOKIE, CSRF_HEADER } from '../fixtures/csrf';
-import { assertIsolatedTarget } from '../../../scripts/e2e-isolation.mjs';
 /**
  * [2026-10-05 반박 리뷰 반영 — blocker 회귀 방지] 단추 중심의 맨 위 요소가 단추 자신(또는 그 안)인가. 창이 낮을 때(기본 뷰포트
  * 1280×720 포함) 권한 표 상자가 편집기 안에서 넘쳐 저장 막대를 덮으면 클릭이 표 칸에 떨어진다('td intercepts pointer events').
@@ -750,21 +749,9 @@ test.describe('권한 변경과 충돌 제어', () => {
                 expect(await membership(request, administrator, esntlId)).toEqual(onlyB);
                 await replaceGroups(request, administrator, esntlId, []);
                 expect((await request.get('/api/v1/auth/me', { headers: user })).status(), '그룹 B 회수(완전 회수): 회수 전에 받은 토큰은 끊긴다').toBe(401);
-                // 그룹이 하나도 없는 사용자는 역할이 없어 화면 로그인(BFF)이 세션을 만들지 않는다 — 백엔드에 직접 로그인해
-                //   새 세션에도 USER 권한이 암묵적으로 생기지 않는지 본다(일정 계약 시험과 같은 직접 호출).
-                const apiUrl = (await assertIsolatedTarget()).apiUrl;
-                const direct = await playwright.request.newContext({ baseURL: `${apiUrl}/`, ...anonymousCsrfRequestState(`${apiUrl}/`) });
-                try {
-                    const login = await direct.post('/api/v1/auth/login', { data: { userId, password } });
-                    expect(login.status(), '그룹 없는 사용자의 직접 로그인').toBe(200);
-                    const issued = (await login.json() as { data?: { accessToken?: string } }).data?.accessToken;
-                    if (!issued)
-                        throw new Error('Direct login returned no access token.');
-                    token = issued;
-                    user = { Authorization: `Bearer ${token}` };
-                } finally {
-                    await direct.dispose();
-                }
+                // 그룹이 하나도 없는 사용자도 화면 로그인(BFF)으로 세션을 받는다(역할 없음) — 새 세션에도 USER 권한이 암묵적으로 생기지 않는다.
+                token = await signIn();
+                user = { Authorization: `Bearer ${token}` };
                 const empty = await current();
                 expect(empty.groups).toEqual([]);
                 expect(empty.permissions).toEqual([]);
