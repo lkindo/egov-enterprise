@@ -114,7 +114,7 @@ test('MFA BFF missing parsers, allowlist, descriptor binding or transport linkag
     ['unbound parser import', "@/lib/api/generated-operation'", "@/test-doubles/generated-operation'"],
     ['unbound descriptor import', "@/types/generated-operations'", "@/test-doubles/generated-operations'"],
     ['missing request parser', 'parseGeneratedOperationRequest(operation, body)', 'body'],
-    ['unparsed transport body', ', parsedBody, { headers:', ', body, { headers:'],
+    ['unparsed transport body', ', parsedBody, {', ', body, {'],
     ['missing response parser', 'parseGeneratedOperationResponse(operation, upstream.data)', 'upstream.data'],
     ['unexecuted response parser', 'parseGeneratedOperationResponse(operation, upstream.data)', 'false && parseGeneratedOperationResponse(operation, upstream.data)'],
     ['different response descriptor', 'parseGeneratedOperationResponse(operation, upstream.data)', 'parseGeneratedOperationResponse(mfaStatusOperation, upstream.data)'],

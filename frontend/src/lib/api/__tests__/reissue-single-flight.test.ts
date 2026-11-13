@@ -104,10 +104,11 @@ describe('reissueSession 단일 실행', () => {
     const { reissueSession } = await import('../client');
     await reissueSession();
 
-    const [url, body, config] = postMock.mock.calls[0] as [string, unknown, { baseURL?: string }];
+    const [url, body, config] = postMock.mock.calls[0] as [string, unknown, { baseURL?: string; timeout?: number }];
     expect(url).toBe('/api/auth/reissue');
     expect(body).toEqual({});
     expect(config.baseURL).toBe('');
+    expect(config.timeout).toBe(20_000);
   });
 
   it('success 가 아니면 실패로 다룬다', async () => {

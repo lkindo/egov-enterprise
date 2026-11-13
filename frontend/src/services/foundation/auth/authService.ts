@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { AUTH_BROWSER_REQUEST_TIMEOUT_MS } from '@/lib/auth/auth-request-policy';
 import { reissueSession } from '@/lib/api/client';
 import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
 import { normalizeAuthorizationState, type AuthorizationState } from '@/lib/auth/authorization-state';
@@ -80,7 +81,7 @@ export function normalizeAuthUser(value: unknown): AuthUser {
 // login/logout은 토큰을 HttpOnly 쿠키로 바인딩하는 Next Route Handler의 전체 envelope를
 // strict Zod로 검증해야 한다. 그래서 data만 풀어주는 일반 API client와 분리한 Axios special
 // transport를 쓴다. baseURL:''은 '/api/v1/api/auth/*' 이중 prefix 회귀를 차단한다.
-const ROUTE_HANDLER = { baseURL: '', withCredentials: true } as const;
+const ROUTE_HANDLER = { baseURL: '', withCredentials: true, timeout: AUTH_BROWSER_REQUEST_TIMEOUT_MS } as const;
 
 function axiosErrorResponseData(error: unknown): unknown {
  if (!isRecord(error) || !isRecord(error.response)) return undefined;

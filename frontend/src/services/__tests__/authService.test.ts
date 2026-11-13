@@ -8,6 +8,7 @@ vi.mock('next/config', () => ({
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
 import { authService, normalizeAuthUser } from '../foundation/auth/authService';
+import { mfaService } from '../foundation/auth/mfaService';
 import api from '@/lib/api/client';
 import { getCurrentUserOperation } from '@/types/generated-operations';
 
@@ -29,7 +30,7 @@ vi.mock('@/lib/api/generated-api-client', () => ({
 }));
 
 vi.mock('axios', () => ({
-  default: { post: vi.fn() },
+  default: { post: vi.fn(), get: vi.fn() },
 }));
 
 const mockedPost = vi.mocked(axios.post);
@@ -52,6 +53,7 @@ describe('authService', () => {
     expect(mockedPost).toHaveBeenCalledWith('/api/auth/login', loginData, {
       baseURL: '',
       withCredentials: true,
+      timeout: 20_000,
     });
     expect(result).toEqual(mockResponse);
   });
@@ -109,6 +111,7 @@ describe('authService', () => {
     expect(mockedPost).toHaveBeenCalledWith('/api/auth/logout', undefined, {
       baseURL: '',
       withCredentials: true,
+      timeout: 20_000,
     });
   });
 
@@ -121,6 +124,16 @@ describe('authService', () => {
     });
 
     await expect(authService.logout()).rejects.toThrow();
+  });
+
+  it('bounds both MFA GET and POST browser requests', async () => {
+    vi.mocked(axios.get).mockRejectedValueOnce(new Error('timeout'));
+    mockedPost.mockRejectedValueOnce(new Error('timeout'));
+    await expect(mfaService.status()).rejects.toThrow('timeout');
+    await expect(mfaService.verify({ code: '012345' })).rejects.toThrow('timeout');
+    const transport = { baseURL: '', withCredentials: true, timeout: 20_000 };
+    expect(axios.get).toHaveBeenCalledWith('/api/auth/mfa/status', transport);
+    expect(mockedPost).toHaveBeenCalledWith('/api/auth/mfa/verify', { code: '012345' }, transport);
   });
 
   // 재발급은 API client 를 직접 부르지 않는다. 백엔드가 리프레시 토큰을 회전시키므로

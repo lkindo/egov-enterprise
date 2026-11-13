@@ -18,6 +18,24 @@ const request = (path: string, body: unknown, cookie = `mfa_challenge=${challeng
 describe('MFA BFF restricted session boundary', () => {
   beforeEach(() => vi.clearAllMocks());
 
+  it('bounds authenticated status lookups and forwards request cancellation', async () => {
+    vi.mocked(axios.get).mockRejectedValueOnce(new Error('synthetic-private-timeout'));
+    const incoming = new NextRequest('https://example.test/api/auth/mfa/status', { headers: { cookie: 'accessToken=fixture' } });
+    const response = await GET(incoming, ctx('status'));
+    expect(axios.get).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ timeout: 15_000, signal: expect.any(AbortSignal) }));
+    expect(response.status).toBe(502);
+    expect(JSON.stringify(await response.json())).not.toContain('synthetic-private-timeout');
+  });
+
+  it('bounds challenge verification and forwards request cancellation', async () => {
+    vi.mocked(axios.post).mockRejectedValueOnce(new Error('synthetic-private-timeout'));
+    const incoming = request('verify', { code: '012345' });
+    const response = await POST(incoming, ctx('verify'));
+    expect(axios.post).toHaveBeenCalledWith(expect.any(String), expect.anything(), expect.objectContaining({ timeout: 15_000, signal: expect.any(AbortSignal) }));
+    expect(response.status).toBe(502);
+    expect(JSON.stringify(await response.json())).not.toContain('synthetic-private-timeout');
+  });
+
   it('binds only an expiring restricted cookie and omits every token from challenge JSON', async () => {
     const response = authenticationResponse(request('verify', {}), {
       authenticationStage: 'MFA_REQUIRED', mfaChallenge: challenge, mfaChallengeExpiresAt: expiry(),

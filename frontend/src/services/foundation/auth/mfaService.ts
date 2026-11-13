@@ -1,9 +1,10 @@
 import axios from 'axios';
+import { AUTH_BROWSER_REQUEST_TIMEOUT_MS } from '@/lib/auth/auth-request-policy';
 import { z } from 'zod';
 import { authLoginDataSchema } from '@/lib/auth/auth-bff-contract';
 import { mfaBrowserRequests, mfaCompleteSchema, mfaEnrollmentSchema, mfaReauthenticationSchema, mfaStatusSchema } from '@/lib/auth/mfa-bff-contract';
 
-const transport = { baseURL: '', withCredentials: true } as const;
+const transport = { baseURL: '', withCredentials: true, timeout: AUTH_BROWSER_REQUEST_TIMEOUT_MS } as const;
 async function post<T>(action: keyof typeof mfaBrowserRequests, value: unknown, schema: z.ZodType<T>): Promise<T> {
   const body = mfaBrowserRequests[action].parse(value);
   const response = await axios.post<unknown>(`/api/auth/mfa/${action}`, body, transport);

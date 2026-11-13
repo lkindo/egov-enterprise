@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
+import { authUpstreamRequestConfig } from '@/lib/auth/auth-request-policy';
 import { authLogoutResponseSchema } from '@/lib/auth/auth-bff-contract';
 import { clearMfaCookies } from '@/lib/auth/auth-session-response';
 import { forwardedClientIpHeaders } from '@/lib/api/forwarded-client-ip';
@@ -54,6 +55,8 @@ export async function POST(request: NextRequest) {
 
     const upstreamRequest = parseGeneratedOperationRequest(logoutOperation, undefined);
     const response = await axios.post(`${BACKEND_URL}/auth/logout`, upstreamRequest, {
+      // Finish revocation even if the browser disconnects; the deadline still applies.
+      ...authUpstreamRequestConfig(),
       headers: {
         'Cookie': cookieHeader,
         ...(resolvedAuthHeader ? { 'Authorization': resolvedAuthHeader } : {}),
