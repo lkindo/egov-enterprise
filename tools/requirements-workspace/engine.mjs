@@ -10,6 +10,8 @@ import { createArtifactImports, validateImportMetadata, isReusableDocumentReadin
 import { projectAnalysisBacklog } from './ai-contract.mjs';
 import { promptManifest } from './ai-prompts.mjs';
 import { validateReadingRecord } from './document-reader.mjs';
+import { createStudio } from './studio.mjs';
+import { validateStudio } from './studio-model.mjs';
 
 const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
 const digest = value => createHash('sha256').update(typeof value === 'string' ? value : JSON.stringify(canonical(value))).digest('hex');
@@ -35,8 +37,9 @@ function validateArchiveRef(ref, kind) {
   if (!/^[a-f0-9-]{36}$/.test(ref.id ?? '') || ref.kind !== kind || !/^[a-f0-9]{64}$/.test(ref.sha256 ?? '') || !Number.isSafeInteger(ref.bytes) || ref.bytes < 0 || ref.bytes > 8 * 1024 ** 2) fail('INVALID_ARCHIVE');
 }
 export function validateRequirementsMetadata(metadata) {
-  exact(metadata, ['context', 'baselines', 'reviewedRequirements', 'uatRecords', 'uatHistoryRefs', 'auditFindings', 'exports', 'composition', 'ai', 'imports']);
+  exact(metadata, ['context', 'baselines', 'reviewedRequirements', 'uatRecords', 'uatHistoryRefs', 'auditFindings', 'exports', 'composition', 'ai', 'imports', 'studio']);
   validateAiMetadata(metadata.ai);
+  validateStudio(metadata.studio);
   validateImportMetadata(metadata.imports);
   if (!metadata.context || !Array.isArray(metadata.baselines) || !Array.isArray(metadata.uatRecords) || !Array.isArray(metadata.auditFindings) || !Array.isArray(metadata.exports) || !metadata.reviewedRequirements || Array.isArray(metadata.reviewedRequirements)) fail('INVALID_METADATA');
   for (const [id, hash] of Object.entries(metadata.reviewedRequirements)) if (!idValid(id) || !/^[a-f0-9]{64}$/.test(hash)) fail('INVALID_METADATA');
@@ -151,6 +154,8 @@ export function createRequirementsEngine({ store, contextProvider, root, aiRunne
       }
     },
   });
+  // The item store (ADR-0055) shares this workspace and its checked commits, and never runs beside the earlier pipeline.
+  const studio = createStudio({ store, commit: commitMutation, runner: aiRunner, now, blocked: () => imports.active ? 'AI_DOCUMENTS_PROCESSING' : workflow.active ? 'AI_BUSY' : null });
   function readSnapshot() {
     try { return store.read(); }
     catch (error) {
@@ -165,7 +170,8 @@ export function createRequirementsEngine({ store, contextProvider, root, aiRunne
     const contextChanged = current.snapshotDigest !== snapshot.backlog.contextSnapshotDigest || current.snapshotDigest !== snapshot.metadata.context.snapshotDigest || Boolean(snapshot.contextConflict);
     if (contextChanged) { ready.valid = false; ready.errors.push('저장소 원장이 변경되었습니다. 문맥 차이를 검토하고 갱신하세요.'); }
     if (store.readOnly) { ready.valid = false; ready.errors.push('마지막으로 확인한 자료를 읽기 전용으로 표시합니다. 원본과 잠금 상태를 확인한 뒤 실행기를 다시 여세요.'); }
-    const metadata = { ...snapshot.metadata, exports: snapshot.metadata.exports.map(entry => ({ ...entry, stale: entry.inputBacklogHash !== digest(snapshot.backlog) || contextChanged })) };
+    // The item store has its own view; its records are not repeated in this state.
+    const metadata = { ...snapshot.metadata, studio: undefined, exports: snapshot.metadata.exports.map(entry => ({ ...entry, stale: entry.inputBacklogHash !== digest(snapshot.backlog) || contextChanged })) };
     const prompts = promptManifest({ sourceTypes: [...snapshot.backlog.sources.map(source => source.sourceType), ...(snapshot.metadata.imports ?? []).filter(job => job.status === 'ready').flatMap(job => job.detectedTypes ?? [])], formats: (snapshot.metadata.imports ?? []).filter(job => job.status === 'ready').map(job => job.format), hasExisting: snapshot.backlog.businessRequirements.length > 0, hasDecisions: Boolean(snapshot.metadata.ai?.decisions.length) });
     const noticeImports = (metadata.imports ?? []).filter(job => job.originalRef || job.status === 'extracting');
     const latestImports = [...new Set([...new Map(noticeImports.filter(job => job.status === 'ready').map(job => [job.sourceId ?? job.requestId, job])).values(), ...new Map(noticeImports.map(job => [job.sourceId ?? job.requestId, job])).values()])];
@@ -235,7 +241,8 @@ export function createRequirementsEngine({ store, contextProvider, root, aiRunne
   async function action(revision, actionName, payload) {
     if (typeof actionName !== 'string' || !payload || typeof payload !== 'object' || Array.isArray(payload)) fail('INVALID_REQUEST');
     if (actionName.startsWith('source.ingest') || actionName === 'source.reingest') { await imports.action(revision, actionName, payload); return state(); }
-    if (actionName.startsWith('ai.')) { if (actionName === 'ai.start' && imports.active) fail('AI_DOCUMENTS_PROCESSING'); await workflow.action(revision, actionName, payload); return state(); }
+    if (actionName.startsWith('studio.')) return studio.action(actionName, payload);
+    if (actionName.startsWith('ai.')) { if (actionName === 'ai.start' && imports.active) fail('AI_DOCUMENTS_PROCESSING'); if (actionName === 'ai.start' && studio.active) fail('AI_BUSY'); await workflow.action(revision, actionName, payload); return state(); }
     const previous = store.read();
     if (previous.revision !== revision) fail('WORKSPACE_REVISION_CONFLICT');
     const next = structuredClone(previous), pack = next.backlog, meta = next.metadata;
@@ -419,5 +426,5 @@ export function createRequirementsEngine({ store, contextProvider, root, aiRunne
     validateRequirementsMetadata(meta);
     store.transact(previous.revision, draft => { draft.backlog = next.backlog; draft.metadata = meta; }, { refreshContext: actionName === 'context.refresh' });
   }
-  return { state, action, artifact, sourceFile: imports.sourceFile, waitForAi: workflow.waitForIdle, waitForImports: imports.waitForIdle, async close() { await imports.close(); await workflow.close(); } };
+  return { state, action, artifact, sourceFile: imports.sourceFile, waitForAi: workflow.waitForIdle, waitForImports: imports.waitForIdle, studio: { view: () => studio.view(readSnapshot()), document: studio.document, waitForIdle: studio.waitForIdle }, async close() { await imports.close(); await workflow.close(); await studio.close(); } };
 }

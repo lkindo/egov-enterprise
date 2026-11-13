@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ko" data-brand-theme="premium">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark"><title>요구사항 스튜디오 · eGov Enterprise</title>
+  <link rel="icon" href="data:,"><link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/studio.js"></script>
+</head>
+<body class="st-body">
+  <a class="skip" href="#main">본문으로 이동</a>
+  <div class="st-wrap">
+    <header class="st-top">
+      <div class="st-title"><h1 id="project-name">연결 중</h1><small>요구사항 스튜디오 · 문서에서 요구사항, 분석·설계 산출물, 스토리까지</small></div>
+      <div class="row-actions">
+        <span class="prototype-pill">로컬 작업공간</span>
+        <button type="button" class="button small secondary" data-a="project">프로젝트 정보</button>
+        <button type="button" class="button small secondary" data-a="prompts">AI 작업 지시</button>
+        <a class="button small secondary" href="/">검수·감리(이전 화면)</a>
+        <button type="button" class="icon-button" id="theme" aria-label="다크 모드로 전환">◐</button>
+      </div>
+    </header>
+    <nav class="st-stages" id="stages" aria-label="작업 단계"></nav>
+    <main id="main" class="st-main" tabindex="-1"><div class="empty" role="status">작업공간에 연결하고 있습니다.</div></main>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="dialog" aria-labelledby="dialog-title"><div id="dialog-content"></div></dialog>
+</body>
+</html>
