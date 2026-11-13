@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ARTIFACT_TYPES, FIELD_LIMITS, fieldConflicts, fieldsOf, mergeFieldsAdditive, normalizeFields, overflowingFields } from './studio-catalog.mjs';
 import { createIndex, similarity, tokens } from './studio-index.mjs';
-import { addCandidate, applyStories, applyTag, clauseMap, createItem, crossChecks, decideProposal, failTag, initialStudio, itemReady, orphanStories, pendingWork, planTargets, relatedItems, removeOrphanStories, resolveIssue, saveItem, setItemStatus, settleCandidate, validateStudio } from './studio-model.mjs';
+import { STUDIO_LIMITS, addCandidate, applyStories, applyTag, clauseMap, createItem, crossChecks, decideProposal, demoteProgramConflicts, failTag, initialStudio, itemReady, openVariants, raiseQuestions, orphanStories, pendingWork, planTargets, relatedItems, removeOrphanStories, resolveIssue, saveItem, setItemStatus, settleCandidate, validateStudio } from './studio-model.mjs';
 import { describeEvidence, documentList, renderDocument } from './studio-render.mjs';
 import { CLAUSE_BATCH, REQUEST_LIMIT, batchClauses, classifyRequest, enrichRequest, extractRequest, fitted, mergeRequest, planRequest, readClassify, readEnrich, readExtract, readMerge } from './studio-tasks.mjs';
 import { clause, sourceOf } from './test-fixtures/studio.mjs';
@@ -137,7 +137,7 @@ test('a conflict keeps both statements until a person decides, and blocks confir
   assert.throws(() => validateStudio(forged), { code: 'STUDIO_STATE_INVALID' });
 });
 
-test('values that disagree, additions that do not fit and oversize input are surfaced, never dropped', () => {
+test('values that differ are kept as notes that do not block confirmation; additions that do not fit and oversize input are surfaced, never dropped', () => {
   const studio = initialStudio();
   const entity = createItem(studio, { kind: 'entity-def', name: '예약', fields: { description: '예약 건', identifier: '예약번호', attributes: [{ name: '예약번호', type: '문자' }, { name: '이용 일시', type: '일시' }] }, evidence: cite('C-2') });
   const incoming = { description: '다르게 쓴 예약 설명', identifier: '예약ID', attributes: [{ name: '예약번호', type: '숫자' }, { name: '이용 일시', type: '일시' }, { name: '이용 목적' }] };
@@ -145,8 +145,11 @@ test('values that disagree, additions that do not fit and oversize input are sur
   assert.deepEqual(fieldConflicts('entity-def', entity.fields, incoming).map(conflict => [conflict.field, conflict.existing, conflict.incoming]), [['identifier', '예약번호', '예약ID'], ['attributes', '예약번호 / 문자', '예약번호 / 숫자']]);
   const added = addCandidate(studio, { kind: 'entity-def', name: '예약', fields: incoming, evidence: cite('C-3'), questions: [] });
   const result = settleCandidate(studio, added.id, { action: 'same', target: entity.id }, NOW);
-  assert.deepEqual([result.outcome, result.conflicts, entity.fields.identifier, entity.fields.attributes.map(row => [row.name, row.type])], ['enriched', 2, '예약번호', [['예약번호', '문자'], ['이용 일시', '일시'], ['이용 목적', '']]]);
-  // Adopting a row conflict replaces that row only.
+  assert.deepEqual([result.outcome, result.conflicts, result.variants, entity.fields.identifier, entity.fields.attributes.map(row => [row.name, row.type])], ['enriched', 0, 2, '예약번호', [['예약번호', '문자'], ['이용 일시', '일시'], ['이용 목적', '']]]);
+  // The program cannot tell another wording from a contradiction, so what it found is a note: the record can still be confirmed.
+  assert.deepEqual(studio.issues.map(issue => [issue.kind, issue.field, issue.open]), [['variant', 'identifier', 1], ['variant', 'attributes', 1]]);
+  assert.deepEqual([itemReady(studio, entity), openVariants(studio, entity.id).length], [true, 2]);
+  // Adopting a row note replaces that row only.
   resolveIssue(studio, studio.issues.find(issue => issue.field === 'attributes').id, { choice: 'adopt' });
   resolveIssue(studio, studio.issues.find(issue => issue.field === 'identifier').id, { choice: 'adopt' });
   assert.deepEqual([entity.fields.identifier, entity.fields.attributes.map(row => [row.name, row.type])], ['예약ID', [['예약번호', '숫자'], ['이용 일시', '일시'], ['이용 목적', '']]]);
@@ -156,6 +159,14 @@ test('values that disagree, additions that do not fit and oversize input are sur
   assert.deepEqual([overflow.outcome, overflow.conflicts, full.fields.details.length], ['duplicate', 1, FIELD_LIMITS.listItems]);
   assert.deepEqual(studio.issues.at(-1).fields.details, ['넘치는 새 조건']);
   assert.equal(itemReady(studio, full), false);
+  // What the model judged a contradiction still blocks, and a field keeps only a few notes however many documents word it differently.
+  const worded = createItem(studio, { kind: 'entity-def', name: '시설', fields: { description: '시설 정보', identifier: '시설번호', attributes: [{ name: '시설번호' }] }, evidence: cite('C-2') });
+  const reword = identifier => settleCandidate(studio, addCandidate(studio, { kind: 'entity-def', name: '시설', fields: { identifier }, evidence: cite('C-3'), questions: [] }).id, { action: 'same', target: worded.id }, NOW).variants;
+  assert.deepEqual(['시설 번호 값', '시설ID', '시설ID', '시설코드', '시설 키', '시설 식별번호'].map(reword), [1, 1, 0, 1, 0, 0]);
+  assert.equal(openVariants(studio, worded.id).length, STUDIO_LIMITS.variants);
+  // Closing one makes room for the next difference.
+  resolveIssue(studio, openVariants(studio, worded.id)[0].id, { choice: 'keep' });
+  assert.deepEqual([reword('시설 키'), worded.fields.identifier, itemReady(studio, worded)], [1, '시설번호', true]);
   // What a person types is saved whole or refused.
   const tooLong = { category: 'SFR', definition: '가'.repeat(FIELD_LIMITS.text + 1), details: ['x'] };
   assert.deepEqual(overflowingFields('requirement', tooLong), ['definition']);
@@ -166,6 +177,28 @@ test('values that disagree, additions that do not fit and oversize input are sur
   // A model candidate that is too large is kept in part with a question that says so, so it cannot be confirmed unseen.
   const cut = addCandidate(studio, { kind: 'requirement', name: '큰 후보', fields: tooLong, evidence: cite('C-1'), questions: ['문서의 질문'] });
   assert.deepEqual([cut.questions.length, /길이 한도를 넘어/.test(cut.questions[0]), cut.questions[1]], [2, true, '문서의 질문']);
+  assert.equal(validateStudio(studio), true);
+});
+
+test('conflicts an earlier version raised by itself become notes, a model conflict stays, and a full store stops questions but not notes', () => {
+  const studio = initialStudio();
+  const entity = createItem(studio, { kind: 'entity-def', name: '예약', fields: { description: '예약 건', identifier: '예약번호', attributes: [{ name: '예약번호' }] }, evidence: cite('C-2') });
+  const issue = (id, text, extra = {}) => ({ id, kind: 'conflict', itemId: entity.id, text, ...extra, evidence: cite('C-3'), open: 1, createdAt: NOW });
+  studio.issues.push(issue('ISS-0001', '‘식별자’ 값이 문서마다 다릅니다.', { field: 'identifier', existing: '예약번호', incoming: '예약ID' }),
+    issue('ISS-0002', '식별 방법이 서로 다르다.', { field: 'identifier', existing: '예약번호', incoming: '접수번호' }), issue('ISS-0003', '‘식별자’ 값이 문서마다 다릅니다.'));
+  studio.seq.ISS = 3;
+  assert.equal(demoteProgramConflicts(studio), 1);
+  assert.deepEqual(studio.issues.map(entry => entry.kind), ['variant', 'conflict', 'conflict']);
+  assert.equal(demoteProgramConflicts(studio), 0);
+  // The model's conflict still has to be decided before the record can be confirmed.
+  assert.equal(itemReady(studio, entity), false);
+  for (const entry of studio.issues.slice(1)) resolveIssue(studio, entry.id, { choice: 'keep' });
+  assert.equal(itemReady(studio, entity), true);
+  // A full store: a note is not taken and nothing stops; a question has to be kept, so the run stops and names the limit.
+  studio.issues.push(...Array.from({ length: STUDIO_LIMITS.issues - studio.issues.length }, (unused, index) => ({ id: `ISS-${index + 1000}`, kind: 'question', itemId: entity.id, text: `닫힌 질문 ${index}`, evidence: [], open: 0, createdAt: NOW })));
+  const settled = settleCandidate(studio, addCandidate(studio, { kind: 'entity-def', name: '예약', fields: { identifier: '예약 키' }, evidence: cite('C-1'), questions: [] }).id, { action: 'same', target: entity.id }, NOW);
+  assert.deepEqual([settled.outcome, settled.variants, studio.issues.length], ['duplicate', 0, STUDIO_LIMITS.issues]);
+  assert.throws(() => raiseQuestions(studio, entity, ['새 질문'], [], NOW), { code: 'STUDIO_ISSUE_CAPACITY' });
   assert.equal(validateStudio(studio), true);
 });
 

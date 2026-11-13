@@ -11,7 +11,7 @@ import { startRequirementsServer } from './server.mjs';
 import { createRequirementsStore } from './store.mjs';
 import { REQUEST_LIMIT } from './studio-tasks.mjs';
 import { context } from './test-fixtures/ai.mjs';
-import { CONSENT, classifyReply, clause, mergeReply, sourceOf, studioRunner } from './test-fixtures/studio.mjs';
+import { CONSENT, classifyReply, clause, extractReply, mergeReply, sourceOf, studioRunner } from './test-fixtures/studio.mjs';
 
 const rfp = sourceOf('SRC-RFP', '합성 제안요청서', [
   clause('C-1', '[SFR:시설 예약 신청] 시민은 시설을 검색하고 예약을 신청한다. <function-tree:예약 신청>'),
@@ -150,6 +150,26 @@ test('model requests do not grow with the amount of stored work', async t => {
   assert.ok(sizes.every(size => size.max <= REQUEST_LIMIT), JSON.stringify(sizes));
   // The store quadrupled; the largest comparison request did not follow it.
   assert.ok(sizes.at(-1).merge <= sizes[1].merge * 1.5, JSON.stringify(sizes));
+});
+
+test('a value two documents word differently is a note that does not block confirmation, and conflicts stored for such values are released when analysis runs', async t => {
+  // The two documents name the identifier of the same entity differently.
+  const worded = request => { const reply = extractReply(request); for (const item of reply.items) if (item.name === '예약') item.fields.identifier = request.data.clauses.some(entry => entry.text.includes('이용 목적')) ? '예약ID' : '예약번호'; return reply; };
+  const { act, run, store, engine } = await fixture(t, { overrides: { 'studio-extract': worded } });
+  await act('source.save', rfp); await run();
+  await act('source.save', minutes);
+  let view = await run();
+  const entity = () => named(engine.studio.view(), '예약', 'entity-def'), notes = () => engine.studio.view().issues.filter(issue => issue.itemId === entity().id).map(issue => [issue.kind, issue.field, issue.existing, issue.incoming, issue.open]);
+  assert.deepEqual(notes(), [['variant', 'identifier', '예약번호', '예약ID', 1]]);
+  assert.deepEqual([view.jobs.at(-1).summary.variant, view.jobs.at(-1).summary.conflict, entity().fields.identifier, entity().ready], [1, undefined, '예약번호', true]);
+  // A workspace written before the two were told apart holds the same difference as a conflict, which blocks confirmation.
+  store.transact(store.read().revision, draft => { draft.metadata.studio.issues.find(issue => issue.kind === 'variant').kind = 'conflict'; });
+  assert.equal(entity().ready, false);
+  await act('source.save', sourceOf('SRC-MEMO', '합성 메모', [clause('C-1', '목차와 인사말')]));
+  view = await run();
+  assert.deepEqual([view.jobs.at(-1).status, view.jobs.at(-1).summary.demoted, entity().ready], ['done', 1, true]);
+  assert.deepEqual(notes(), [['variant', 'identifier', '예약번호', '예약ID', 1]]);
+  assert.equal((await act('studio.item.status', { id: entity().id, status: 'confirmed' })).items.find(item => item.id === entity().id).status, 'confirmed');
 });
 
 test('runs need consent, never start on their own after a restart, and unusable replies are counted instead of stored', async t => {

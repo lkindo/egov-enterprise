@@ -8,8 +8,10 @@ const SOURCE_TYPES = [['other', '기타 — AI가 문서 종류를 판단'], ['r
 const CLASSIFICATIONS = [['internal', '내부'], ['public', '공개'], ['confidential', '대외비'], ['restricted', '제한']];
 const JOB_NAMES = { analyze: '문서 분석', enrich: '빈칸 보강', plan: '에픽·스토리 작성' };
 const JOB_STATUS = { running: '진행 중', done: '완료', failed: '실패', cancelled: '취소함', interrupted: '중단됨' };
-const SUMMARY_NAMES = { removed: '지운 스토리', added: '새 초안', enriched: '기존 초안 보강', proposed: '확정 건 변경 제안', conflict: '충돌', duplicate: '중복(근거만 연결)', stories: '스토리를 쓴 요구사항', questions: '질문', nothing: '찾지 못함', clauses: '분류한 조각', oversize: '너무 큰 조각' };
-const ERROR_HINTS = { AI_CLI_UNAVAILABLE: 'Claude CLI를 찾지 못했습니다. 이 PC에 설치하고 로그인해 주세요.', AI_CLI_FAILED: 'CLI 실행이 끝나지 않았습니다. 로그인과 사용 한도를 확인해 주세요.', AI_TIMEOUT: 'AI 응답 시간이 초과되었습니다.', AI_MODEL_MISMATCH: '지정한 모델과 실제 실행 모델이 달랐습니다.', STUDIO_REPEATED_FAILURE: '쓸 수 없는 응답이 연달아 왔습니다. 잠시 뒤 다시 실행해 주세요.', STUDIO_CALL_CAPACITY: '한 번의 실행에서 쓸 수 있는 호출 수에 닿았습니다. 다시 실행하면 이어서 진행합니다.', STUDIO_CAPACITY: '작업공간 하나에 담을 수 있는 항목 수를 넘었습니다.' };
+const SUMMARY_NAMES = { removed: '지운 스토리', added: '새 초안', enriched: '기존 초안 보강', proposed: '확정 건 변경 제안', conflict: '충돌', variant: '다른 표기(참고)', demoted: '참고로 내린 표기 차이', duplicate: '중복(근거만 연결)', stories: '스토리를 쓴 요구사항', questions: '질문', nothing: '찾지 못함', clauses: '분류한 조각', oversize: '너무 큰 조각' };
+const ERROR_HINTS = { AI_CLI_UNAVAILABLE: 'Claude CLI를 찾지 못했습니다. 이 PC에 설치하고 로그인해 주세요.', AI_CLI_FAILED: 'CLI 실행이 끝나지 않았습니다. 로그인과 사용 한도를 확인해 주세요.', AI_TIMEOUT: 'AI 응답 시간이 초과되었습니다.', AI_MODEL_MISMATCH: '지정한 모델과 실제 실행 모델이 달랐습니다.', STUDIO_REPEATED_FAILURE: '쓸 수 없는 응답이 연달아 왔습니다. 잠시 뒤 다시 실행해 주세요.', STUDIO_CALL_CAPACITY: '한 번의 실행에서 쓸 수 있는 호출 수에 닿았습니다. 다시 실행하면 이어서 진행합니다.', STUDIO_CAPACITY: '작업공간 하나에 담을 수 있는 항목 수를 넘었습니다.', STUDIO_ISSUE_CAPACITY: '질문·쟁점 수가 작업공간 하나에 담을 수 있는 한도에 닿았습니다.' };
+// A run that stopped at a workspace limit stops at the same place when it is run again.
+const LIMIT_ERRORS = ['STUDIO_CAPACITY', 'STUDIO_ISSUE_CAPACITY'];
 
 // Text documents are split into clauses on this PC; anything that has to be looked at (scans, images, office files) is read by the model.
 const LOCAL_TEXT = /\.(?:txt|md|html?)$/i;
@@ -60,7 +62,9 @@ const categoryName = code => view.catalog.categories.find(category => category.c
 const itemOf = id => view.items.find(item => item.id === id);
 const itemsOf = kind => view.items.filter(item => item.kind === kind && item.status !== 'retired');
 const requirements = () => view.items.filter(item => item.kind === 'requirement');
-const openIssues = id => view.issues.filter(issue => issue.open && issue.itemId === id);
+// Questions and conflicts block confirmation; a variant only notes that documents word a value differently.
+const openIssues = id => view.issues.filter(issue => issue.open && issue.kind !== 'variant' && issue.itemId === id);
+const openVariants = id => view.issues.filter(issue => issue.open && issue.kind === 'variant' && issue.itemId === id);
 const proposalsOf = id => view.proposals.filter(proposal => proposal.itemId === id);
 const label = item => item.kind === 'requirement' ? item.number ?? '초안' : item.id;
 const filled = value => Array.isArray(value) ? value.length > 0 : Boolean(value);
@@ -134,7 +138,7 @@ function jobPanel() {
   return `<section class="panel panel-body st-stack">
     <div class="st-spread"><h2>${esc(JOB_NAMES[job.kind])} — ${esc(running ? job.stage : JOB_STATUS[job.status])}</h2><div class="row-actions">${running ? `<span class="muted st-small">경과 ${ticking(job.startedAt)}</span>` : duration ? `<span class="muted st-small">걸린 시간 ${duration}</span>` : ''}${badge(JOB_STATUS[job.status], running ? 'blue' : job.status === 'done' ? 'green' : 'amber')}${running ? `<button type="button" class="button small secondary" data-a="cancel" data-v="${esc(job.id)}">중지</button>` : ''}</div></div>
     ${running ? `<div class="st-row">${meter(percent)}<span class="muted">${job.done} / ${job.total}</span></div>${steps}<p class="muted st-small">묶음 몇 개를 읽을 때마다 바로 대조해 요구사항·항목으로 올리므로, 읽기와 대조를 오가며 진행하고 결과는 처음부터 차례로 쌓입니다. AI 호출 한 번에 수십 초가 걸립니다. 숫자가 잠시 멈춰 있어도 경과 시간이 흐르면 진행 중입니다. 창을 닫아도 분석은 계속되고, 다시 열면 이어서 보입니다.</p>` : ''}
-    ${job.errorCode ? `<p class="field-error">${esc(ERROR_HINTS[job.errorCode] ?? `실행을 마치지 못했습니다 (${job.errorCode}).`)} 끝난 부분은 저장되어 있어, 다시 실행하면 남은 부분만 진행합니다.</p>` : ''}
+    ${job.errorCode ? `<p class="field-error">${esc(ERROR_HINTS[job.errorCode] ?? `실행을 마치지 못했습니다 (${job.errorCode}).`)} ${LIMIT_ERRORS.includes(job.errorCode) ? '끝난 부분은 저장되어 있습니다. 다시 실행해도 같은 자리에서 멈추므로, 켜 둔 산출물을 줄이거나 업무 범위를 나누어 별도 작업공간에서 진행해 주세요.' : '끝난 부분은 저장되어 있어, 다시 실행하면 남은 부분만 진행합니다.'}</p>` : ''}
     <div class="st-kv"><div><b>${job.calls}</b><span>AI 호출</span></div><div><b>${(job.maxRequestBytes / 1024).toFixed(1)}KB</b><span>호출당 최대 입력 (상한 ${Math.round(view.requestLimit / 1024)}KB)</span></div><div><b>${view.items.filter(item => item.status !== 'retired').length}</b><span>쌓인 요구사항·항목</span></div>${job.failures ? `<div><b>${job.failures}</b><span>쓰지 못한 응답·조각</span></div>` : ''}${summary}</div>
     <p class="muted st-small">호출마다 조각 묶음 하나와 비슷한 기존 항목 몇 건만 보냅니다. 쌓인 항목이 늘어도 한 번에 보내는 양은 상한을 넘지 않습니다.</p></section>`;
 }
@@ -165,6 +169,13 @@ function requirementList() {
     <span class="st-name">${esc(item.name)}</span><span class="st-code">${esc(label(item))}</span>
     <span class="st-meta">${badge(item.fields.category || '분류 없음', 'outline')}${statusBadge(item)}${flagBadges(item)}<span class="st-row st-grow">${meter(item.score)}</span></span></button>`).join('')}</div>`;
 }
+function variantNotes(item) {
+  const variants = openVariants(item.id);
+  if (!variants.length) return '';
+  return `<details class="st-note"><summary><strong>문서마다 표기가 다른 값 ${variants.length}건</strong> <span class="st-small">확정을 막지 않습니다. 표현만 다르면 그대로 두고, 내용이 다르면 골라 주세요.</span></summary>
+    ${variants.map(issue => `<div class="st-note"><span>${esc(issue.text)}</span><div><span class="st-small">지금 내용</span><blockquote>${esc(issue.existing)}</blockquote></div><div><span class="st-small">다른 문서의 내용</span><blockquote>${esc(issue.incoming)}</blockquote></div><div>${sourceLines(issue.sources)}</div>
+      <div class="row-actions"><button type="button" class="button small secondary" data-a="issue-keep" data-v="${esc(issue.id)}">지금 내용 유지</button><button type="button" class="button small secondary" data-a="issue-adopt" data-v="${esc(issue.id)}">다른 문서의 내용으로 바꿈</button></div></div>`).join('')}</details>`;
+}
 function issueNotes(item) {
   return openIssues(item.id).map(issue => issue.kind === 'conflict'
     ? `<div class="st-note st-bad"><strong>문서 사이의 충돌</strong><span>${esc(issue.text)}</span>${issue.existing ? `<div><span class="st-small">지금 내용</span><blockquote>${esc(issue.existing)}</blockquote></div>` : ''}${issue.incoming ? `<div><span class="st-small">새 문서의 내용</span><blockquote>${esc(issue.incoming)}</blockquote></div>` : ''}
@@ -189,7 +200,7 @@ function itemDetail(item, heading) {
   const related = item.related.map(itemOf).filter(Boolean), blocker = item.status === 'draft' && !item.ready
     ? openIssues(item.id).length ? '쟁점·질문을 먼저 정리해야 확정할 수 있습니다.' : item.missing.length ? `필수 칸(${item.missing.map(key => fieldsOf(item.kind).find(spec => spec.key === key)?.label).join(', ')})을 채워야 확정할 수 있습니다.` : '출처가 있어야 확정할 수 있습니다.' : '';
   return `<section class="panel panel-body st-stack"><div class="st-spread"><div class="st-row"><span class="st-code">${esc(label(item))}</span>${heading ? `<h2>${esc(item.name)}</h2>` : ''}${statusBadge(item)}${flagBadges(item)}</div>${itemActions(item)}</div>
-    ${blocker ? `<p class="st-small st-missing">${esc(blocker)}</p>` : ''}${issueNotes(item)}${proposalNotes(item)}
+    ${blocker ? `<p class="st-small st-missing">${esc(blocker)}</p>` : ''}${issueNotes(item)}${proposalNotes(item)}${variantNotes(item)}
     <div class="table-wrap"><table class="st-spec">
       ${item.kind === 'requirement' ? `<tr><th>요구사항 고유번호</th><td>${item.number ? `<span class="st-code">${esc(item.number)}</span>` : '<span class="muted">확정할 때 분류별 일련번호를 받습니다</span>'}</td></tr><tr><th>요구사항 명칭</th><td><strong>${esc(item.name)}</strong></td></tr>` : ''}
       ${fieldsOf(item.kind).map(spec => `<tr><th>${esc(spec.label)}${spec.required ? ' <span class="st-missing">*</span>' : ''}</th><td>${fieldValue(spec, item.fields[spec.key])}</td></tr>`).join('')}
@@ -280,7 +291,7 @@ function render() {
   if (!view) return;
   const all = requirements().filter(item => item.status !== 'retired'), on = view.enabled, average = on.length ? Math.round(on.reduce((sum, id) => sum + typeScore(id), 0) / on.length) : 0;
   const stages = [['sources', '1. 자료함', `문서 ${view.sources.length}건 · 조각 ${view.sources.reduce((sum, source) => sum + source.clauses, 0)}개`],
-    ['requirements', '2. 요구사항', `확정 ${all.filter(item => item.status === 'confirmed').length} / ${all.length}건 · 쟁점 ${view.issues.filter(issue => issue.open).length}`],
+    ['requirements', '2. 요구사항', `확정 ${all.filter(item => item.status === 'confirmed').length} / ${all.length}건 · 쟁점 ${view.issues.filter(issue => issue.open && issue.kind !== 'variant').length}`],
     ['artifacts', '3. 분석·설계 산출물', `${on.length}종 작성 중 · 평균 ${average}%`], ['plan', '4. 에픽·스토리', view.plan?.stories.length ? `스토리 ${view.plan.stories.length}건` : '아직 만들지 않음']];
   const focus = document.activeElement?.id, caret = focus === 'filter-query' ? document.activeElement.selectionStart : null;
   $('#project-name').textContent = view.project?.name === PLACEHOLDER_PROJECT ? '프로젝트 이름 없음' : view.project?.name ?? '';
