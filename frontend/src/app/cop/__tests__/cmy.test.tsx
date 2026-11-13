@@ -26,7 +26,7 @@ vi.mock('@/services/business/user/community/CommunityUserService', () => ({
 }));
 
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import CommunityHubClient from '../cmy/selectCommunityList/CommunityHubClient';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -107,8 +107,9 @@ describe('CommunityHubClient', () => {
 
     expect(screen.getByText('개발자 커뮤니티')).toBeInTheDocument();
     expect(screen.getByText('개발 관련 논의', { exact: false })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '개발자 커뮤니티 상세 보기' }).closest('a'))
-      .toHaveAttribute('href', '/cop/cmy/selectCommunityDetail/101');
+    const detail = screen.getByRole('link', { name: '개발자 커뮤니티 상세 보기' });
+    expect(detail).toHaveAttribute('href', '/cop/cmy/selectCommunityDetail/101');
+    expect(within(detail).queryByRole('button')).not.toBeInTheDocument();
     expect(screen.getByText('등록된 소개 정보가 없습니다.', { exact: false })).toBeInTheDocument();
   });
 
