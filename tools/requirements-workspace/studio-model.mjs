@@ -3,7 +3,7 @@
 // synchronous and takes the state it changes, so the rules can be tested without
 // a model, a server or a workspace.
 import { createHash } from 'node:crypto';
-import { ARTIFACT_IDS, FIELD_LIMITS, REQUIREMENT_KIND, fieldText, fieldsOf, isFilled, isKind, kindPrefix, mergeFieldsAdditive, normalizeField, normalizeFields } from './studio-catalog.mjs';
+import { ARTIFACT_IDS, FIELD_LIMITS, REQUIREMENT_KIND, fieldConflicts, fieldLabels, fieldText, fieldsOf, isFilled, isKind, kindPrefix, mergeFieldsAdditive, normalizeField, normalizeFields, overflowingFields, rowKey } from './studio-catalog.mjs';
 import { createIndex } from './studio-index.mjs';
 
 export const STUDIO_VERSION = 1;
@@ -81,7 +81,8 @@ export function validateStudio(studio) {
     exact(item, ['id', 'kind', 'name', 'fields', 'evidence', 'links', 'status', 'number', 'origin', 'rev', 'flags', 'baseline', 'changed', 'note']);
     unique(item.id); validateFields(item.kind, item.fields); validateEvidence(item.evidence);
     if (!item.name || item.name !== clean(item.name, FIELD_LIMITS.name) || !['draft', 'confirmed', 'retired'].includes(item.status) || !['ai', 'user'].includes(item.origin) || !count(item.rev)) fail('STUDIO_STATE_INVALID');
-    if (item.number !== undefined && (item.kind !== REQUIREMENT_KIND || !/^[A-Z]{3}-\d{3,5}$/.test(item.number))) fail('STUDIO_STATE_INVALID');
+    // A number carries its class; the two may not come apart by any path.
+    if (item.number !== undefined && (item.kind !== REQUIREMENT_KIND || !/^[A-Z]{3}-\d{3,5}$/.test(item.number) || item.number.slice(0, 3) !== item.fields.category)) fail('STUDIO_STATE_INVALID');
     if (item.links !== undefined && (!Array.isArray(item.links) || item.links.length > STUDIO_LIMITS.links || item.links.some(id => !ID.test(id)))) fail('STUDIO_STATE_INVALID');
     exact(item.flags, ['fresh', 'enriched']);
     if (item.baseline !== undefined && !/^BL-\d{1,4}$/.test(item.baseline)) fail('STUDIO_STATE_INVALID');
@@ -166,8 +167,12 @@ export function markExtracted(studio, clauses, type) {
 }
 
 export function addCandidate(studio, { kind, name, fields, evidence, questions }) {
-  const candidate = { id: nextId(studio, 'CND', 5), kind, name: clean(name, FIELD_LIMITS.name), fields: normalizeFields(kind, fields), evidence: evidenceList(evidence), questions: questionList(questions) };
-  if (!isKind(kind) || !candidate.name || !candidate.evidence.length) return null;
+  if (!isKind(kind)) return null;
+  // Content beyond a field's limit is not kept; the candidate then carries a question that says so, which blocks confirmation until a person has looked.
+  const over = overflowingFields(kind, fields);
+  const notice = over.length ? [`‘${fieldLabels(kind, over)}’의 내용이 길이 한도를 넘어 일부만 담겼습니다. 근거 조각과 대조해 나누어 적어 주세요.`] : [];
+  const candidate = { id: nextId(studio, 'CND', 5), kind, name: clean(name, FIELD_LIMITS.name), fields: normalizeFields(kind, fields), evidence: evidenceList(evidence), questions: questionList([...notice, ...(Array.isArray(questions) ? questions : [])]) };
+  if (!candidate.name || !candidate.evidence.length) return null;
   if (studio.candidates.length >= STUDIO_LIMITS.candidates) fail('STUDIO_CAPACITY');
   studio.candidates.push(candidate);
   return candidate;
@@ -198,22 +203,39 @@ export function createItem(studio, { kind, name, fields, evidence = [], origin =
 }
 function addEvidence(item, evidence) { item.evidence = evidenceList([...item.evidence, ...evidence]); }
 function touch(item) { item.rev += 1; if (item.baseline) item.changed = 1; }
-/** Attaches questions a person has to answer to an item. Returns how many were new. */
+/**
+ * Attaches questions a person has to answer to an item. Returns how many were
+ * new. A full store is an error: an open question blocks confirmation, so one
+ * may not be left out without a trace.
+ */
 export function raiseQuestions(studio, item, questions, evidence, now) {
   let added = 0;
   for (const text of questionList(questions)) {
-    if (studio.issues.some(issue => issue.itemId === item.id && issue.text === text) || studio.issues.length >= STUDIO_LIMITS.issues) continue;
+    if (studio.issues.some(issue => issue.itemId === item.id && issue.text === text)) continue;
+    if (studio.issues.length >= STUDIO_LIMITS.issues) fail('STUDIO_CAPACITY');
     studio.issues.push({ id: nextId(studio, 'ISS'), kind: 'question', itemId: item.id, text, evidence: evidenceList(evidence), open: 1, createdAt: now });
     added += 1;
   }
   return added;
 }
-const addQuestions = raiseQuestions;
+/** Records two statements that cannot both hold, for a person to decide. Returns false when the same open issue is already there. */
+function raiseConflict(studio, target, { text, field, existing, incoming, fields, evidence }, now) {
+  if (studio.issues.some(issue => issue.open && issue.kind === 'conflict' && issue.itemId === target.id && issue.text === text && issue.incoming === incoming)) return false;
+  if (studio.issues.length >= STUDIO_LIMITS.issues) fail('STUDIO_CAPACITY');
+  studio.issues.push({ id: nextId(studio, 'ISS'), kind: 'conflict', itemId: target.id, text, ...(field ? { field } : {}), ...(existing ? { existing } : {}), ...(incoming ? { incoming } : {}),
+    ...(fields ? { fields: normalizeFields(target.kind, fields) } : {}), evidence: evidenceList(evidence), open: 1, createdAt: now });
+  return true;
+}
 
 /**
  * Applies one merge decision. The model only judges identity and names a
  * conflict; what is merged is always the candidate's own extracted content.
- * Confirmed items are never changed here: additions wait as a proposal.
+ *
+ * A confirmed record is never changed here, not even its sources: what the
+ * candidate would add waits as a proposal. The same holds for a draft when
+ * `decision.review` says the comparison did not see both texts in full.
+ * Structured values that disagree and additions that do not fit are raised as
+ * issues, so the candidate's content is never dropped without a trace.
  */
 export function settleCandidate(studio, candidateId, decision, now) {
   const index = studio.candidates.findIndex(candidate => candidate.id === candidateId);
@@ -222,28 +244,37 @@ export function settleCandidate(studio, candidateId, decision, now) {
   const target = ['same', 'conflict'].includes(decision?.action) ? studio.items.find(item => item.id === decision.target && item.kind === candidate.kind && item.status !== 'retired') : null;
   if (!target) {
     const item = createItem(studio, candidate);
-    addQuestions(studio, item, candidate.questions, candidate.evidence, now);
-    return { outcome: 'added', item };
+    raiseQuestions(studio, item, candidate.questions, candidate.evidence, now);
+    return { outcome: 'added', item, conflicts: 0 };
   }
   if (decision.action === 'conflict') {
-    if (studio.issues.length >= STUDIO_LIMITS.issues) fail('STUDIO_CAPACITY');
-    const spec = fieldsOf(target.kind).find(entry => entry.key === decision.field);
+    // The requirement class is never a statement to replace: a numbered requirement keeps its class.
+    const spec = fieldsOf(target.kind).find(entry => entry.key === decision.field && entry.key !== 'category');
     const existing = clean(decision.existing, FIELD_LIMITS.text), known = spec && (spec.type === 'text' ? target.fields[spec.key] === existing : spec.type === 'list' && target.fields[spec.key].includes(existing));
-    studio.issues.push({ id: nextId(studio, 'ISS'), kind: 'conflict', itemId: target.id, text: clean(decision.note, 1000) || `‘${candidate.name}’의 내용이 기존 내용과 다릅니다.`,
-      ...(known ? { field: spec.key, existing } : {}), ...(clean(decision.incoming, FIELD_LIMITS.text) ? { incoming: clean(decision.incoming, FIELD_LIMITS.text) } : {}),
-      fields: candidate.fields, evidence: candidate.evidence, open: 1, createdAt: now });
-    return { outcome: 'conflict', item: target };
+    raiseConflict(studio, target, { text: clean(decision.note, 1000) || `‘${candidate.name}’의 내용이 기존 내용과 다릅니다.`, field: known ? spec.key : undefined, existing: known ? existing : undefined,
+      incoming: clean(decision.incoming, FIELD_LIMITS.text), fields: candidate.fields, evidence: candidate.evidence }, now);
+    return { outcome: 'conflict', item: target, conflicts: 0 };
   }
   const merged = mergeFieldsAdditive(target.kind, target.fields, candidate.fields);
-  addQuestions(studio, target, candidate.questions, candidate.evidence, now);
-  if (!merged.changed.length) { addEvidence(target, candidate.evidence); return { outcome: 'duplicate', item: target }; }
-  if (target.status === 'confirmed') {
-    if (studio.proposals.length >= STUDIO_LIMITS.proposals) fail('STUDIO_CAPACITY');
-    studio.proposals.push({ id: nextId(studio, 'PRP'), itemId: target.id, fields: normalizeFields(target.kind, merged.added), evidence: candidate.evidence, createdAt: now });
-    return { outcome: 'proposed', item: target };
+  raiseQuestions(studio, target, candidate.questions, candidate.evidence, now);
+  let conflicts = 0;
+  for (const conflict of fieldConflicts(target.kind, target.fields, candidate.fields).slice(0, 5)) {
+    if (raiseConflict(studio, target, { text: `‘${fieldLabels(target.kind, [conflict.field])}’ 값이 문서마다 다릅니다.`, field: conflict.field, existing: conflict.existing, incoming: conflict.incoming,
+      fields: conflict.rows ? { [conflict.field]: conflict.rows } : undefined, evidence: candidate.evidence }, now)) conflicts += 1;
+  }
+  if (merged.overflow.length && raiseConflict(studio, target, { text: `‘${fieldLabels(target.kind, merged.overflow)}’에 더할 내용이 한도를 넘어 다 담지 못했습니다. 항목을 나누거나 정리한 뒤 아래 내용을 반영해 주세요.`, fields: candidate.fields, evidence: candidate.evidence }, now)) conflicts += 1;
+  const cited = new Set(target.evidence.map(entry => clauseKey(entry.s, entry.c))), fresh = candidate.evidence.filter(entry => !cited.has(clauseKey(entry.s, entry.c)));
+  if (!merged.changed.length && (!fresh.length || target.status !== 'confirmed')) { addEvidence(target, fresh); return { outcome: 'duplicate', item: target, conflicts }; }
+  if (target.status === 'confirmed' || decision.review === true) {
+    const fields = normalizeFields(target.kind, merged.added);
+    if (!studio.proposals.some(proposal => proposal.itemId === target.id && same(proposal.fields, fields) && same(proposal.evidence, candidate.evidence))) {
+      if (studio.proposals.length >= STUDIO_LIMITS.proposals) fail('STUDIO_CAPACITY');
+      studio.proposals.push({ id: nextId(studio, 'PRP'), itemId: target.id, fields, evidence: candidate.evidence, createdAt: now });
+    }
+    return { outcome: 'proposed', item: target, conflicts };
   }
   target.fields = merged.fields; addEvidence(target, candidate.evidence); target.flags.enriched = 1; touch(target);
-  return { outcome: 'enriched', item: target };
+  return { outcome: 'enriched', item: target, conflicts };
 }
 
 export const missingFields = item => fieldsOf(item.kind).filter(spec => spec.required && !isFilled(item.fields[spec.key])).map(spec => spec.key);
@@ -274,6 +305,8 @@ export function setItemStatus(studio, id, status) {
 }
 /** Human edit or manual creation. A numbered requirement keeps its class. */
 export function saveItem(studio, { id, kind, name, fields, links, rev }) {
+  // What a person typed is saved whole or not at all; nothing is cut to fit.
+  if (overflowingFields(id === undefined ? kind : itemById(studio, id)?.kind, fields).length || String(name ?? '').replace(/\s+/g, ' ').trim().length > FIELD_LIMITS.name) fail('STUDIO_FIELD_TOO_LONG');
   if (id === undefined) {
     const item = createItem(studio, { kind, name, fields, origin: 'user' });
     if (links !== undefined) item.links = linkList(studio, item, links);
@@ -329,9 +362,11 @@ export function resolveIssue(studio, id, { choice, note }) {
   } else {
     if (!['keep', 'adopt'].includes(choice)) fail('STUDIO_CHOICE_INVALID');
     if (choice === 'adopt') {
-      const spec = fieldsOf(item.kind).find(entry => entry.key === issue.field);
+      const spec = fieldsOf(item.kind).find(entry => entry.key === issue.field && entry.key !== 'category'), rows = spec?.type === 'rows' ? issue.fields?.[spec.key] ?? [] : [];
       if (spec && issue.incoming && spec.type === 'text' && item.fields[spec.key] === issue.existing) item.fields[spec.key] = normalizeField(spec, issue.incoming);
       else if (spec && issue.incoming && spec.type === 'list' && item.fields[spec.key].includes(issue.existing)) item.fields[spec.key] = normalizeField(spec, item.fields[spec.key].map(entry => entry === issue.existing ? issue.incoming : entry));
+      // A table row is replaced by the row of the same key from the new document; rows it does not name stay.
+      else if (rows.length) item.fields[spec.key] = normalizeField(spec, [...item.fields[spec.key].map(row => rows.find(entry => rowKey(spec, entry) === rowKey(spec, row)) ?? row), ...rows.filter(entry => !item.fields[spec.key].some(row => rowKey(spec, row) === rowKey(spec, entry)))]);
       else item.fields = mergeFieldsAdditive(item.kind, item.fields, issue.fields ?? {}).fields;
       addEvidence(item, issue.evidence); touch(item);
     }

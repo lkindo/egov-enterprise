@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { assertExternalWorkspace } from './store.mjs';
 import { AI_MODEL, aiEffortForPhase, createCliRunner, findClaudeExecutable } from './ai-cli.mjs';
 import { collectSensitivityWarnings } from './privacy-warnings.mjs';
-import { ARTIFACT_IDS, ARTIFACT_TYPES, DERIVED_DOCUMENTS, REQUIREMENT_CATEGORIES, REQUIREMENT_FIELDS, REQUIREMENT_KIND, isFilled, isKind } from './studio-catalog.mjs';
+import { ARTIFACT_IDS, ARTIFACT_TYPES, DERIVED_DOCUMENTS, REQUIREMENT_CATEGORIES, REQUIREMENT_FIELDS, REQUIREMENT_KIND, fieldConflicts, fieldLabels, isFilled, isKind, mergeFieldsAdditive } from './studio-catalog.mjs';
 import { createIndex, similarity } from './studio-index.mjs';
 import { DEVELOPMENT_CATEGORIES, QUALITY_CATEGORIES, addCandidate, applyStories, applyTag, baselineContent, clauseKey, clauseMap, createRelations, crossChecks, decideProposal, failTag, initialStudio, itemById, itemReady, itemScore, label, markExtracted, meaningHash, missingFields, neighborIndex, orphanStories, pendingWork, planTargets, raiseQuestions, recordBaseline, removeOrphanStories, resolveIssue, saveItem, searchParts, setItemStatus, settleCandidate, startJob } from './studio-model.mjs';
 import { describeEvidence, documentList, renderDocument } from './studio-render.mjs';
@@ -116,7 +116,7 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
         for (const tag of result.tags) applyTag(studio, tag.clause, tag);
         for (const clause of result.missing) failTag(studio, clause);
         for (const candidate of result.candidates) addCandidate(studio, candidate);
-        job.failures += result.missing.length; job.done += 1; tally(job, 'clauses', result.tags.length);
+        job.failures += result.missing.length + result.dropped; job.done += 1; tally(job, 'clauses', result.tags.length);
       });
     }, studio => { for (const clause of batch) failTag(studio, clause); }));
     const second = pendingWork(current().studio, current().backlog), tasks = [];
@@ -127,16 +127,25 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
     }
     stage(context, '켜 둔 산출물의 항목 추출', tasks.length);
     await pool(tasks, concurrency, task => unit(context, async () => {
-      const items = readExtract(await call(context, extractRequest(task.type, task.batch)), task.type, task.batch);
-      context.step((studio, job) => { markExtracted(studio, task.batch, task.type); for (const item of items) addCandidate(studio, item); job.done += 1; });
+      const request = extractRequest(task.type, task.batch);
+      let result = readExtract(await call(context, request), task.type, task.batch);
+      // A reply with unusable items is asked for once more. What is still unusable is counted; a reply with no item list
+      // leaves the clauses pending for the next run instead of marking them done.
+      if (result.invalid || result.dropped) result = readExtract(await call(context, request), task.type, task.batch);
+      if (result.invalid) fail('STUDIO_REPLY_UNUSABLE');
+      context.step((studio, job) => { markExtracted(studio, task.batch, task.type); for (const item of result.items) addCandidate(studio, item); job.failures += result.dropped; job.done += 1; });
     }));
     await settle(context);
   }
   /**
    * Compares candidates with existing items a few at a time. A candidate with no
-   * similar item is added without a model call; a deliverable item with the same
-   * name as an existing one is the same item. Candidates that resemble another
-   * candidate of the same round wait, so the earlier one is an item by then.
+   * similar item is added without a model call. A deliverable item named like an
+   * existing one is taken as the same item without asking only when it adds and
+   * contradicts nothing; otherwise the model compares them. Candidates that
+   * resemble another candidate of the same round wait, so the earlier one is an
+   * item by then. A judgement is applied only if its target is still the record
+   * that was compared; if a person changed it meanwhile, the candidate is
+   * compared again.
    */
   async function settle(context) {
     stage(context, '기존 요구사항·항목과 대조', current().studio.candidates.length);
@@ -150,16 +159,17 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
         if ([...direct, ...compare].some(entry => similarity([[entry.candidate.name, 1]], [[candidate.name, 1]]) >= 0.5)) continue;
         const near = search(candidate.name, candidate.fields);
         const twin = kind === REQUIREMENT_KIND ? null : near.find(hit => label(hit.item.name) === label(candidate.name));
+        const silent = twin && !mergeFieldsAdditive(kind, twin.item.fields, candidate.fields).changed.length && !fieldConflicts(kind, twin.item.fields, candidate.fields).length;
         if (!near.length) direct.push({ candidate, decision: { action: 'new' } });
-        else if (twin) direct.push({ candidate, decision: { action: 'same', target: twin.item.id } });
+        else if (silent) direct.push({ candidate, decision: { action: 'same', target: twin.item.id }, rev: twin.item.rev });
         else if (compare.length < MERGE_BATCH) compare.push({ candidate, near });
       }
       let decided = direct;
       if (compare.length) {
         try {
           const built = fitted(entries => mergeRequest(kind, entries), compare), entries = compare.slice(0, built.used);
-          const decisions = readMerge(await call(context, built), entries);
-          decided = [...direct, ...entries.map((entry, index) => ({ candidate: entry.candidate, decision: decisions[index] }))];
+          const decisions = readMerge(await call(context, built), entries, built.partial);
+          decided = [...direct, ...entries.map((entry, index) => ({ candidate: entry.candidate, decision: decisions[index], rev: entry.near.find(hit => hit.item.id === decisions[index].target)?.item.rev }))];
           context.streak = 0;
         } catch (error) {
           if (stops(context, error)) throw error;
@@ -169,9 +179,13 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
         }
       }
       context.step((draft, job) => {
-        for (const { candidate, decision } of decided) {
+        for (const { candidate, decision, rev } of decided) {
           if (!draft.candidates.some(entry => entry.id === candidate.id)) continue;
-          tally(job, settleCandidate(draft, candidate.id, decision, now()).outcome); job.done += 1;
+          // The target is no longer the record that was compared (a person edited it, or an earlier candidate of this
+          // commit was merged into it): the judgement is stale, so the candidate stays and is compared again.
+          if (decision.target && itemById(draft, decision.target)?.rev !== rev) continue;
+          const result = settleCandidate(draft, candidate.id, decision, now());
+          tally(job, result.outcome); if (result.conflicts) tally(job, 'conflict', result.conflicts); job.done += 1;
         }
       });
     }
@@ -208,6 +222,7 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
         target.flags.enriched = 1; target.rev += 1; tally(job, 'enriched');
       } else tally(job, 'nothing');
       if (result.question && missingFields(target).length && raiseQuestions(draft, target, [result.question], [], now())) tally(job, 'questions');
+      if (result.overflow.length) raiseQuestions(draft, target, [`보강한 ‘${fieldLabels(target.kind, result.overflow)}’의 내용이 길이 한도를 넘어 일부만 담겼습니다. 근거 조각과 대조해 주세요.`], result.evidence, now());
       job.done = 1;
     });
   }
@@ -221,9 +236,12 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
       const { studio } = current(), related = createRelations(studio);
       const entries = remaining.slice(0, PLAN_BATCH).map(id => itemById(studio, id)).filter(Boolean).map(requirement => ({ requirement, related: related(requirement).filter(item => item.kind !== REQUIREMENT_KIND) }));
       if (!entries.length) { remaining = remaining.slice(PLAN_BATCH); continue; }
+      // Only the few epics that resemble these requirements are sent, so the request does not grow with the plan.
+      const epics = studio.plan?.epics ?? [], epicIndex = createIndex(epics.map(epic => ({ id: epic.id, parts: [[epic.name, 1]] })));
+      const nearEpics = group => { const ids = new Set(epicIndex.search(group.flatMap(entry => [[entry.requirement.name, 2], [entry.requirement.fields.definition, 1]]), 12, 0).map(hit => hit.id)); return epics.filter(epic => ids.has(epic.id)); };
       let used = 1;
       try {
-        const built = fitted(group => planRequest(group, studio.plan?.epics ?? []), entries);
+        const built = fitted(group => planRequest(group, nearEpics(group)), entries);
         used = built.used;
         const ids = entries.slice(0, used).map(entry => entry.requirement.id), drafts = readPlan(await call(context, built));
         context.step((draft, job) => {

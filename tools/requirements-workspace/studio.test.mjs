@@ -160,14 +160,15 @@ test('runs need consent, never start on their own after a restart, and unusable 
   await assert.rejects(async () => act('studio.run', { ...CONSENT, sensitivityAcknowledged: false }), { code: 'FILE_REDACTION_REQUIRED' });
   await assert.rejects(async () => act('studio.run', { ...CONSENT, extra: 1 }), { code: 'INVALID_REQUEST' });
   let view = await run();
-  // The candidate cited a clause that was not sent, so it is dropped. Four clauses got no answer.
+  // The candidate cited a clause that was not sent, so it is dropped and counted. The clause it was meant for was called a
+  // requirement but grounds nothing usable, so it is not answered either: all five clauses stay pending.
   assert.equal(view.items.length, 0);
-  assert.equal(view.jobs.at(-1).failures, 4);
-  assert.equal(view.pending.classify, 4);
+  assert.equal(view.jobs.at(-1).failures, 6);
+  assert.equal(view.pending.classify, 5);
   view = await run();
-  // The second batch starts at the next clause, so one more gets an answer. The three left unanswered twice are closed and reported, not retried forever.
+  // After the second unusable answer the clauses are closed and reported per document, not retried forever.
   assert.equal(view.pending.classify, 0);
-  assert.equal(view.sources[0].failed, 3);
+  assert.equal(view.sources[0].failed, 5);
   // A job left running by a stopped launcher is shown as interrupted.
   const before = store.read();
   store.transact(before.revision, draft => { draft.metadata.studio.jobs.at(-1).status = 'running'; delete draft.metadata.studio.jobs.at(-1).completedAt; });
@@ -198,6 +199,36 @@ test('a failing CLI stops the run and keeps finished work; cancel stops between 
   await assert.rejects(async () => act2('studio.cancel', { jobId: 'JOB-9999' }), { code: 'AI_NOT_RUNNING' });
   assert.equal((await act2('studio.cancel', { jobId: started.active })).jobs.at(-1).status, 'cancelled');
   assert.equal(second.studio.view().items.length, 0);
+});
+
+test('a judgement about a record a person changed meanwhile is not applied; the candidate is compared again', async t => {
+  let calls = 0, edit;
+  const { act, run, engine } = await fixture(t, { overrides: { 'studio-merge': async request => { calls += 1; if (calls === 1) await edit(); return mergeReply(request); } } });
+  await act('source.save', sourceOf('SRC-A', '합성 문서 A', [clause('C-1', '[SFR:시설 예약 신청] 시민은 시설을 예약한다.')]));
+  let view = await run();
+  const booking = named(view, '시설 예약 신청');
+  edit = () => act('studio.item.save', { id: booking.id, name: booking.name, fields: { ...booking.fields, outputs: ['예약 신청서'] }, rev: booking.rev });
+  await act('source.save', sourceOf('SRC-B', '합성 문서 B', [clause('C-1', '[SFR:시설 예약 신청] 예약은 30일 전부터 받는다.')]));
+  view = await run();
+  // The first answer was about the record before the edit. It was set aside and the comparison was made once more.
+  assert.equal(calls, 2);
+  assert.deepEqual([named(view, '시설 예약 신청').fields.outputs, named(view, '시설 예약 신청').fields.details], [['예약 신청서'], ['시민은 시설을 예약한다.', '예약은 30일 전부터 받는다.']]);
+  assert.equal(view.pending.merge, 0);
+  assert.equal(engine.studio.view().items.filter(item => item.kind === 'requirement').length, 1);
+});
+
+test('planning sends only the epics that resemble the requirements, however many epics exist', async t => {
+  const { act, run, seen, store } = await fixture(t);
+  await act('source.save', sourceOf('SRC-A', '합성 문서 A', [clause('C-1', '[SFR:시설 예약 신청] 시민은 시설을 예약한다.')]));
+  let view = await run();
+  await act('studio.items.confirm', { kind: 'requirement' });
+  const before = store.read();
+  store.transact(before.revision, draft => { draft.metadata.studio.plan = { epics: Array.from({ length: 150 }, (unused, index) => ({ id: `EP-${String(index + 1).padStart(3, '0')}`, name: `${'가나다라마바사아자차'.repeat(11)} ${index}` })), stories: [], updatedAt: 'synthetic' }; draft.metadata.studio.seq.EP = 150; });
+  seen.length = 0;
+  view = await run('studio.plan');
+  assert.equal(view.jobs.at(-1).status, 'done', view.jobs.at(-1).errorCode);
+  assert.deepEqual(seen.map(entry => [entry.phase, entry.request.data.epics.length, entry.bytes <= REQUEST_LIMIT]), [['studio-plan', 12, true]]);
+  assert.equal(view.plan.stories.length, 1);
 });
 
 test('enrichment fills only empty fields of a draft and asks when the documents do not say', async t => {

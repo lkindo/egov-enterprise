@@ -102,6 +102,7 @@ const messages = {
   STUDIO_ITEM_NOT_FOUND: '항목을 찾지 못했습니다. 화면을 새로 고쳐 주세요.',
   STUDIO_CATEGORY_LOCKED: '고유번호를 받은 요구사항은 분류를 바꿀 수 없습니다. 제외한 뒤 새 요구사항으로 작성해 주세요.',
   STUDIO_NAME_REQUIRED: '이름을 입력해 주세요.',
+  STUDIO_FIELD_TOO_LONG: '칸에 담을 수 있는 길이나 개수를 넘었습니다. 이름은 120자, 글 칸은 2,000자, 목록은 30줄, 표는 60행과 칸마다 300자까지입니다. 항목을 나누어 적어 주세요. 입력한 내용은 화면에 남아 있습니다.',
   STUDIO_ANSWER_REQUIRED: '질문에 대한 답을 입력해 주세요.',
   STUDIO_BASELINE_EMPTY: '확정된 요구사항이 있어야 기준선을 만들 수 있습니다.',
   STUDIO_CAPACITY: '작업공간 하나에 담을 수 있는 항목 수를 넘었습니다. 업무 범위를 나누어 별도 작업공간에서 진행해 주세요.',

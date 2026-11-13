@@ -112,6 +112,17 @@ test('documents become requirements, deliverables and stories through the studio
     await page.getByRole('button', { name: /^3\. 분석·설계 산출물 4종 작성 중 · 평균 [1-9]/ }).click();
     await page.getByRole('button', { name: /^결제 처리/ }).click();
     await audit(page, 'studio-artifacts');
+    // A bar inside a table cell survives an edit: it is shown escaped and read back into the same cell.
+    await page.getByRole('button', { name: '엔터티정의서', exact: true }).click();
+    await page.getByRole('button', { name: /^예약 /, exact: false }).first().click();
+    await page.getByRole('button', { name: '수정', exact: true }).click();
+    await page.getByLabel('속성 *', { exact: true }).fill('예약번호 | 승인\\|반려 | VARCHAR(10) | 예');
+    await page.getByRole('button', { name: '저장', exact: true }).click();
+    await page.getByText('저장했습니다.').waitFor();
+    await page.getByRole('cell', { name: '승인|반려', exact: true }).waitFor();
+    await page.getByRole('button', { name: '수정', exact: true }).click();
+    assert.equal(await page.getByLabel('속성 *', { exact: true }).inputValue(), '예약번호 | 승인\\|반려 | VARCHAR(10) | 예');
+    await page.getByRole('button', { name: '닫기', exact: true }).click();
 
     await page.getByRole('button', { name: /^4\. 에픽·스토리/ }).click();
     await page.getByRole('button', { name: '에픽·스토리 만들기', exact: true }).click();

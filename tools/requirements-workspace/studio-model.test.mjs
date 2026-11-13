@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ARTIFACT_TYPES, FIELD_LIMITS, fieldsOf, mergeFieldsAdditive, normalizeFields } from './studio-catalog.mjs';
+import { ARTIFACT_TYPES, FIELD_LIMITS, fieldConflicts, fieldsOf, mergeFieldsAdditive, normalizeFields, overflowingFields } from './studio-catalog.mjs';
 import { createIndex, similarity, tokens } from './studio-index.mjs';
 import { addCandidate, applyStories, applyTag, clauseMap, createItem, crossChecks, decideProposal, failTag, initialStudio, itemReady, orphanStories, pendingWork, planTargets, relatedItems, removeOrphanStories, resolveIssue, saveItem, setItemStatus, settleCandidate, validateStudio } from './studio-model.mjs';
 import { describeEvidence, documentList, renderDocument } from './studio-render.mjs';
-import { CLAUSE_BATCH, REQUEST_LIMIT, batchClauses, classifyRequest, enrichRequest, extractRequest, fitted, mergeRequest, planRequest, readClassify, readEnrich, readMerge } from './studio-tasks.mjs';
+import { CLAUSE_BATCH, REQUEST_LIMIT, batchClauses, classifyRequest, enrichRequest, extractRequest, fitted, mergeRequest, planRequest, readClassify, readEnrich, readExtract, readMerge } from './studio-tasks.mjs';
 import { clause, sourceOf } from './test-fixtures/studio.mjs';
 
 const NOW = '2026-11-13T00:00:00.000Z';
@@ -71,19 +71,34 @@ test('candidates never change a confirmed record, and a requirement number is is
   const studio = initialStudio();
   const booking = requirement(studio, '시설 예약', ['시설을 검색한다.']);
   assert.equal(setItemStatus(studio, booking.id, 'confirmed').number, 'SFR-001');
-  // Same content: only the evidence is linked.
-  assert.equal(settleCandidate(studio, candidate(studio, '시설 예약', ['시설을 검색한다.']).id, { action: 'same', target: booking.id }, NOW).outcome, 'duplicate');
-  assert.equal(booking.evidence.length, 2);
+  // Same content from another clause: even the new source is not added to a confirmed record without a person.
+  const confirmedRev = booking.rev;
+  assert.equal(settleCandidate(studio, candidate(studio, '시설 예약', ['시설을 검색한다.']).id, { action: 'same', target: booking.id }, NOW).outcome, 'proposed');
+  assert.deepEqual([booking.evidence.length, booking.rev, studio.proposals[0].fields.details, studio.proposals[0].evidence.length], [1, confirmedRev, [], 1]);
+  // The same proposal is not filed twice, and a clause already cited proposes nothing.
+  settleCandidate(studio, candidate(studio, '시설 예약', ['시설을 검색한다.']).id, { action: 'same', target: booking.id }, NOW);
+  assert.equal(settleCandidate(studio, candidate(studio, '시설 예약', ['시설을 검색한다.'], cite('C-1')).id, { action: 'same', target: booking.id }, NOW).outcome, 'duplicate');
+  assert.equal(studio.proposals.length, 1);
+  decideProposal(studio, studio.proposals[0].id, true);
+  assert.deepEqual([booking.evidence.length, booking.rev], [2, confirmedRev + 1]);
   // New content for a confirmed record waits as a proposal that holds only the additions.
   assert.equal(settleCandidate(studio, candidate(studio, '시설 예약', ['시설을 검색한다.', '30일 전부터 신청한다.']).id, { action: 'same', target: booking.id }, NOW).outcome, 'proposed');
   assert.deepEqual(booking.fields.details, ['시설을 검색한다.']);
   assert.deepEqual(studio.proposals[0].fields.details, ['30일 전부터 신청한다.']);
+  // A draft is added to directly, unless the comparison saw only part of the text: then a person decides there too.
+  const draft = requirement(studio, '초안 요구', ['처음 내용'], cite('C-2'));
+  assert.equal(settleCandidate(studio, candidate(studio, '초안 요구', ['처음 내용', '부분 대조로 온 내용']).id, { action: 'same', target: draft.id, review: true }, NOW).outcome, 'proposed');
+  assert.deepEqual(draft.fields.details, ['처음 내용']);
+  decideProposal(studio, studio.proposals.at(-1).id, false);
+  assert.equal(settleCandidate(studio, candidate(studio, '초안 요구', ['처음 내용', '온전히 대조한 내용']).id, { action: 'same', target: draft.id }, NOW).outcome, 'enriched');
+  assert.deepEqual(draft.fields.details, ['처음 내용', '온전히 대조한 내용']);
+  setItemStatus(studio, draft.id, 'retired');
   decideProposal(studio, studio.proposals[0].id, true);
   assert.deepEqual(booking.fields.details, ['시설을 검색한다.', '30일 전부터 신청한다.']);
   // A target that does not exist, is retired, or is of another kind is not merged into.
   setItemStatus(studio, booking.id, 'retired');
   const again = settleCandidate(studio, candidate(studio, '시설 예약', ['다시 들어온 내용']).id, { action: 'same', target: booking.id }, NOW);
-  assert.deepEqual([again.outcome, again.item.id], ['added', 'REQ-0002']);
+  assert.deepEqual([again.outcome, again.item.id], ['added', 'REQ-0003']);
   // The retired number is not handed out again, and going back to draft keeps a number.
   assert.equal(setItemStatus(studio, again.item.id, 'confirmed').number, 'SFR-002');
   assert.equal(setItemStatus(studio, again.item.id, 'draft').number, 'SFR-002');
@@ -97,8 +112,11 @@ test('a conflict keeps both statements until a person decides, and blocks confir
   const payment = requirement(studio, '이용료 결제', ['승인 후 24시간 안에 결제한다.'], cite('C-3'));
   const settle = decision => settleCandidate(studio, candidate(studio, '이용료 결제', ['승인 후 48시간 안에 결제한다.'], cite('C-2')).id, { action: 'conflict', target: payment.id, note: '기한이 다르다', incoming: '승인 후 48시간 안에 결제한다.', ...decision }, NOW);
   settle({ field: 'details', existing: '승인 후 24시간 안에 결제한다.' });
+  // The same contradiction reported again is one issue, not two.
+  settle({ field: 'details', existing: '승인 후 24시간 안에 결제한다.' });
+  assert.equal(studio.issues.length, 1);
   // A quoted statement that is not in the record is not trusted as the thing to replace.
-  settle({ field: 'details', existing: '기록에 없는 문장' });
+  settle({ field: 'details', existing: '기록에 없는 문장', note: '기한 표현이 다르다' });
   assert.deepEqual(studio.issues.map(issue => issue.existing), ['승인 후 24시간 안에 결제한다.', undefined]);
   assert.deepEqual(payment.fields.details, ['승인 후 24시간 안에 결제한다.']);
   assert.equal(itemReady(studio, payment), false);
@@ -109,6 +127,45 @@ test('a conflict keeps both statements until a person decides, and blocks confir
   resolveIssue(studio, studio.issues[1].id, { choice: 'keep', note: '회의 결정' });
   assert.deepEqual([payment.fields.details, studio.issues[1].resolution], [['승인 후 48시간 안에 결제한다.'], '기존 내용 유지 — 회의 결정']);
   assert.equal(setItemStatus(studio, payment.id, 'confirmed').number, 'SFR-001');
+  // A conflict can never move a numbered requirement to another class, and the store refuses a number that does not match its class.
+  settle({ field: 'category', existing: 'SFR', incoming: 'PER' });
+  assert.equal(studio.issues.at(-1).field, undefined);
+  resolveIssue(studio, studio.issues.at(-1).id, { choice: 'adopt' });
+  assert.deepEqual([payment.number, payment.fields.category], ['SFR-001', 'SFR']);
+  assert.equal(validateStudio(studio), true);
+  const forged = structuredClone(studio); forged.items[0].fields.category = 'PER';
+  assert.throws(() => validateStudio(forged), { code: 'STUDIO_STATE_INVALID' });
+});
+
+test('values that disagree, additions that do not fit and oversize input are surfaced, never dropped', () => {
+  const studio = initialStudio();
+  const entity = createItem(studio, { kind: 'entity-def', name: '예약', fields: { description: '예약 건', identifier: '예약번호', attributes: [{ name: '예약번호', type: '문자' }, { name: '이용 일시', type: '일시' }] }, evidence: cite('C-2') });
+  const incoming = { description: '다르게 쓴 예약 설명', identifier: '예약ID', attributes: [{ name: '예약번호', type: '숫자' }, { name: '이용 일시', type: '일시' }, { name: '이용 목적' }] };
+  // Narrative text never counts as a disagreement; a short value and a table cell do.
+  assert.deepEqual(fieldConflicts('entity-def', entity.fields, incoming).map(conflict => [conflict.field, conflict.existing, conflict.incoming]), [['identifier', '예약번호', '예약ID'], ['attributes', '예약번호 / 문자', '예약번호 / 숫자']]);
+  const added = addCandidate(studio, { kind: 'entity-def', name: '예약', fields: incoming, evidence: cite('C-3'), questions: [] });
+  const result = settleCandidate(studio, added.id, { action: 'same', target: entity.id }, NOW);
+  assert.deepEqual([result.outcome, result.conflicts, entity.fields.identifier, entity.fields.attributes.map(row => [row.name, row.type])], ['enriched', 2, '예약번호', [['예약번호', '문자'], ['이용 일시', '일시'], ['이용 목적', '']]]);
+  // Adopting a row conflict replaces that row only.
+  resolveIssue(studio, studio.issues.find(issue => issue.field === 'attributes').id, { choice: 'adopt' });
+  resolveIssue(studio, studio.issues.find(issue => issue.field === 'identifier').id, { choice: 'adopt' });
+  assert.deepEqual([entity.fields.identifier, entity.fields.attributes.map(row => [row.name, row.type])], ['예약ID', [['예약번호', '숫자'], ['이용 일시', '일시'], ['이용 목적', '']]]);
+  // A list that is full cannot take more: the rest is kept in an issue with the candidate's content.
+  const full = requirement(studio, '가득 찬 요구', Array.from({ length: FIELD_LIMITS.listItems }, (unused, index) => `조건 ${index}`));
+  const overflow = settleCandidate(studio, candidate(studio, '가득 찬 요구', ['넘치는 새 조건']).id, { action: 'same', target: full.id }, NOW);
+  assert.deepEqual([overflow.outcome, overflow.conflicts, full.fields.details.length], ['duplicate', 1, FIELD_LIMITS.listItems]);
+  assert.deepEqual(studio.issues.at(-1).fields.details, ['넘치는 새 조건']);
+  assert.equal(itemReady(studio, full), false);
+  // What a person types is saved whole or refused.
+  const tooLong = { category: 'SFR', definition: '가'.repeat(FIELD_LIMITS.text + 1), details: ['x'] };
+  assert.deepEqual(overflowingFields('requirement', tooLong), ['definition']);
+  assert.deepEqual(overflowingFields('requirement', { details: Array.from({ length: 31 }, (unused, index) => `줄 ${index}`) }), ['details']);
+  assert.deepEqual(overflowingFields('entity-def', { attributes: [{ name: '속성', description: '나'.repeat(FIELD_LIMITS.cell + 1) }] }), ['attributes']);
+  assert.throws(() => saveItem(studio, { kind: 'requirement', name: '긴 요구', fields: tooLong }), { code: 'STUDIO_FIELD_TOO_LONG' });
+  assert.throws(() => saveItem(studio, { id: full.id, name: '나'.repeat(121), fields: full.fields, rev: full.rev }), { code: 'STUDIO_FIELD_TOO_LONG' });
+  // A model candidate that is too large is kept in part with a question that says so, so it cannot be confirmed unseen.
+  const cut = addCandidate(studio, { kind: 'requirement', name: '큰 후보', fields: tooLong, evidence: cite('C-1'), questions: ['문서의 질문'] });
+  assert.deepEqual([cut.questions.length, /길이 한도를 넘어/.test(cut.questions[0]), cut.questions[1]], [2, true, '문서의 질문']);
   assert.equal(validateStudio(studio), true);
 });
 
@@ -217,12 +274,26 @@ test('model replies are read defensively: only what refers to the request is kep
   assert.deepEqual(result.tags.map(tag => [tag.clause.clauseId, tag.requirement, tag.artifacts]), [['C-1', true, ['entity-def']]]);
   assert.deepEqual(result.missing.map(entry => entry.clauseId), ['C-2', 'C-3']);
   assert.deepEqual(result.candidates.map(entry => [entry.name, entry.fields.category, entry.evidence.length]), [['시설 예약', 'SFR', 1]]);
-  // Open questions block confirmation, so a reply cannot attach more than two to one candidate.
-  assert.deepEqual(readClassify({ clauses: [], candidates: [{ category: 'SFR', name: '질문 많은 후보', definition: '있다.', clauses: [1], questions: ['하나', '둘', '셋', '넷'] }] }, batch).candidates[0].questions, ['하나', '둘']);
+  assert.equal(result.dropped, 2);
+  // A clause called a requirement that grounds no usable candidate is not answered: it is sent again, not closed.
+  assert.deepEqual(readClassify({ clauses: [{ n: 1, requirement: true, artifacts: [] }, { n: 2, requirement: false, artifacts: [] }], candidates: [] }, batch).missing.map(entry => entry.clauseId), ['C-1', 'C-3']);
+  // Questions beyond what a record holds are counted, so the loss shows in the run.
+  const many = readClassify({ clauses: [{ n: 1, requirement: true, artifacts: [] }], candidates: [{ category: 'SFR', name: '질문 많은 후보', definition: '있다.', clauses: [1], questions: Array.from({ length: 11 }, (unused, index) => `질문 ${index}`) }] }, batch);
+  assert.deepEqual([many.candidates[0].questions.length, many.dropped], [11, 3]);
+  // An extraction reply without an item list is invalid; unusable items are counted.
+  assert.deepEqual([readExtract({}, 'entity-def', batch).invalid, readExtract({ items: [] }, 'entity-def', batch).invalid], [true, false]);
+  assert.deepEqual(readExtract({ items: [{ name: '예약', fields: {}, clauses: [2] }, { name: '', clauses: [1] }, { name: '근거 없음', clauses: [9] }] }, 'entity-def', batch), { items: [{ kind: 'entity-def', name: '예약', fields: {}, evidence: cite('C-2'), questions: [] }], dropped: 2, invalid: false });
   assert.deepEqual(readClassify(null, batch).missing.length, 3);
   const studio = initialStudio(), item = requirement(studio, '시설 예약', ['검색']), other = requirement(studio, '결제', ['결제']);
   const entries = [{ candidate: item, near: [{ item }] }, { candidate: other, near: [{ item }] }, { candidate: other, near: [{ item }] }];
   assert.deepEqual(readMerge({ decisions: [{ k: 1, action: 'same', target: item.id }, { k: 2, action: 'same', target: other.id }, { k: 3, action: 'delete', target: item.id }] }, entries).map(decision => decision.action), ['same', 'new', 'new']);
+  // A record too long to show in full is shown in part, and a judgement on it is marked for a person.
+  const long = requirement(studio, '긴 요구', Array.from({ length: 12 }, (unused, index) => `${index}번 ${'조건을 길게 적는다 '.repeat(20)}`));
+  const built = mergeRequest('requirement', [{ candidate: item, near: [{ item: long }, { item }] }, { candidate: long, near: [{ item }] }]);
+  assert.deepEqual([[...built.partial.items], built.partial.candidates], [[long.id], [false, true]]);
+  const marked = readMerge({ decisions: [{ k: 1, action: 'same', target: long.id }, { k: 2, action: 'same', target: item.id }] }, [{ candidate: item, near: [{ item: long }, { item }] }, { candidate: long, near: [{ item }] }], built.partial);
+  assert.deepEqual(marked.map(decision => decision.review), [true, true]);
+  assert.equal(readMerge({ decisions: [{ k: 1, action: 'same', target: item.id }] }, [{ candidate: item, near: [{ item: long }, { item }] }], built.partial)[0].review, false);
   const screen = createItem(studio, { kind: 'screen-def', name: '화면', fields: { description: '사람이 쓴 설명' }, evidence: cite('C-1') });
   const enriched = readEnrich({ fields: { description: '덮어쓰려는 설명', roles: ['시민'], bogus: 1 }, clauses: [2, 99], question: '  질문  ' }, screen, batch);
   assert.deepEqual([enriched.fields.description, enriched.fields.roles, enriched.evidence.map(entry => entry.c), enriched.question], ['', ['시민'], ['C-2'], '질문']);
@@ -247,6 +318,14 @@ test('documents are rendered from the records and are safe to open in a sheet or
   assert.match(definition, /초안 1건은 싣지 않음/);
   assert.match(renderDocument(studio, 'erd', context).content, /E1\["예약 건"\] \{\n {4}string A1 "번호"\n {2}\}\n {2}E1 \|\|--o\{ E1 : "1:N"/);
   assert.match(renderDocument(studio, 'rtm', context).content, /"고유번호","요구사항","출처 문서","기능분해도","엔터티정의서","화면설계서","스토리"/);
+  // A stored branch is drawn as stored; a continuation that names no step is shown as text, and a person's answer is in the document.
+  studio.enabled.push('business-flow');
+  const flow = createItem(studio, { kind: 'business-flow', name: '예약 검토', fields: { description: '검토 흐름', participants: ['담당자'], steps: [{ order: '1', actor: '담당자', activity: '검토', next: '2 또는 3' }, { order: '2', activity: '승인', next: '종료' }, { order: '3', activity: '반려' }, { order: '4', activity: '통지' }] }, evidence: cite('C-1') });
+  flow.note = '반려 통지는 문자로 한다';
+  const drawn = renderDocument(studio, 'business-flow', context).content;
+  assert.match(drawn, / {2}S1 --> S2\n {2}S1 --> S3\n {2}S2 -\.-> T2_1\(\["종료"\]\)\n {2}S3 --> S4\n```/);
+  assert.doesNotMatch(drawn, /S2 --> S3/);
+  assert.match(drawn, /\| 결정·메모 \| 반려 통지는 문자로 한다 \|/);
   for (const id of ['crud-matrix', 'stories', 'package-ST-0001', 'nope', undefined]) assert.throws(() => renderDocument(studio, id, context), { code: 'STUDIO_DOCUMENT_NOT_FOUND' });
   assert.ok(fieldsOf('requirement').length > 0);
 });

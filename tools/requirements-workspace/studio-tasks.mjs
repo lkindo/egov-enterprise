@@ -2,8 +2,8 @@
 // of clauses or one small group of items plus the few records they are compared
 // with. Its size is checked here before it is sent, so a request cannot grow
 // with the number of documents, requirements or deliverable items.
-import { ARTIFACT_IDS, ARTIFACT_TYPES, CATEGORY_CODES, REQUIREMENT_CATEGORIES, REQUIREMENT_KIND, artifactType, fieldGuide, fieldsOf, fieldsSchema, isFilled, kindName, normalizeFields } from './studio-catalog.mjs';
-import { itemText } from './studio-model.mjs';
+import { ARTIFACT_IDS, ARTIFACT_TYPES, CATEGORY_CODES, REQUIREMENT_CATEGORIES, REQUIREMENT_KIND, artifactType, fieldGuide, fieldsOf, fieldsSchema, isFilled, kindName, normalizeFields, overflowingFields } from './studio-catalog.mjs';
+import { STUDIO_LIMITS, itemText } from './studio-model.mjs';
 
 export const STUDIO_PROMPT_VERSION = '2026-11-13.1';
 export const STUDIO_PHASES = ['studio-classify', 'studio-extract', 'studio-merge', 'studio-enrich', 'studio-plan'];
@@ -12,9 +12,10 @@ export const REQUEST_LIMIT = 48 * 1024;
 export const CLAUSE_BATCH = { count: 24, bytes: 28 * 1024 };
 export const MERGE_BATCH = 6;
 export const PLAN_BATCH = 4;
-/** A candidate carries at most this many questions; an open question blocks confirmation, so they are kept few. */
-export const QUESTIONS_PER_CANDIDATE = 2;
 const SCHEMA_LIMIT = 20000;
+/** Questions a record can hold from one reply; the rest are counted as unusable so the loss shows in the run. */
+const questionsOf = entry => (Array.isArray(entry?.questions) ? entry.questions : []).filter(value => typeof value === 'string' && value.trim());
+const excessQuestions = entry => Math.max(0, questionsOf(entry).length - STUDIO_LIMITS.questions);
 const fail = code => { throw Object.assign(new Error(code), { code }); };
 const bytes = value => Buffer.byteLength(typeof value === 'string' ? value : JSON.stringify(value));
 const list = value => Array.isArray(value) ? value : [];
@@ -115,22 +116,32 @@ export function classifyRequest(batch) {
     candidates: { type: 'array', items: object({ category: { type: 'string', enum: CATEGORY_CODES }, name: { type: 'string' }, definition: { type: 'string' }, details: strings, outputs: strings, verification: { type: 'string' }, clauses: numbers, questions: strings }) },
   }));
 }
-/** Reads a classification reply. Clauses the reply skipped are returned as `missing`; nothing is assumed about them. */
+/**
+ * Reads a classification reply. A clause counts as answered only when the
+ * reply is usable for it: a clause the reply skipped, or one it called a
+ * requirement without a usable candidate that cites it, is returned as
+ * `missing` and will be sent again. `dropped` counts candidates that could
+ * not be used.
+ */
 export function readClassify(output, batch) {
   const tags = new Map(), candidates = [];
+  let dropped = 0;
   for (const entry of list(output?.clauses)) {
     const clause = Number.isInteger(entry?.n) ? batch[entry.n - 1] : undefined;
     if (clause && !tags.has(clause.key)) tags.set(clause.key, { clause, requirement: entry.requirement === true, artifacts: list(entry.artifacts).filter(id => ARTIFACT_IDS.includes(id)) });
   }
   for (const entry of list(output?.candidates)) {
     const cited = evidence(entry?.clauses, batch);
-    if (!cited.length || !text(entry.name) || !text(entry.definition)) continue;
-    candidates.push({ kind: REQUIREMENT_KIND, name: entry.name, evidence: cited, questions: list(entry.questions).slice(0, QUESTIONS_PER_CANDIDATE),
+    if (!cited.length || !text(entry.name) || !text(entry.definition)) { dropped += 1; continue; }
+    dropped += excessQuestions(entry);
+    candidates.push({ kind: REQUIREMENT_KIND, name: entry.name, evidence: cited, questions: questionsOf(entry),
       fields: { category: CATEGORY_CODES.includes(entry.category) ? entry.category : 'SFR', definition: entry.definition, details: list(entry.details), outputs: list(entry.outputs), verification: entry.verification } });
     // A clause that grounds a requirement is a requirement clause whatever its own flag said.
     for (const ref of cited) { const tag = tags.get(`${ref.s}/${ref.c}`); if (tag) tag.requirement = true; }
   }
-  return { tags: [...tags.values()], candidates, missing: batch.filter(clause => !tags.has(clause.key)) };
+  const grounded = new Set(candidates.flatMap(candidate => candidate.evidence.map(ref => `${ref.s}/${ref.c}`)));
+  for (const [key, tag] of tags) if (tag.requirement && !grounded.has(key)) tags.delete(key);
+  return { tags: [...tags.values()], candidates, missing: batch.filter(clause => !tags.has(clause.key)), dropped };
 }
 
 export function extractRequest(typeId, batch) {
@@ -139,32 +150,54 @@ export function extractRequest(typeId, batch) {
     artifact: { id: type.id, name: type.name, noun: type.noun, look: type.look, fields: fieldGuide(type.id) }, document: documentOf(batch), clauses: numbered(batch),
   }, object({ items: { type: 'array', items: object({ name: { type: 'string' }, fields: fieldsSchema(type.id), clauses: numbers, questions: strings }) } }));
 }
+/** `invalid` means the reply had no item list at all; `dropped` counts items that named nothing or cited no clause of the request. */
 export function readExtract(output, typeId, batch) {
   const items = [];
+  let dropped = 0;
   for (const entry of list(output?.items)) {
     const cited = evidence(entry?.clauses, batch);
-    if (cited.length && text(entry.name)) items.push({ kind: typeId, name: entry.name, fields: entry.fields, evidence: cited, questions: list(entry.questions).slice(0, QUESTIONS_PER_CANDIDATE) });
+    if (cited.length && text(entry.name)) { items.push({ kind: typeId, name: entry.name, fields: entry.fields, evidence: cited, questions: questionsOf(entry) }); dropped += excessQuestions(entry); }
+    else dropped += 1;
   }
-  return items;
+  return { items, dropped, invalid: !Array.isArray(output?.items) };
 }
 
-const compact = (kind, item, limit) => ({ name: item.name, ...(kind === REQUIREMENT_KIND && item.fields.category ? { category: item.fields.category } : {}), text: itemText(kind, item.fields, limit) });
-/** `entries` are `{ candidate, near: [{ item }] }`; a candidate is only ever compared with its own `near` items. */
-export function mergeRequest(kind, entries) {
-  const existing = new Map();
-  for (const entry of entries) for (const hit of entry.near) existing.set(hit.item.id, { id: hit.item.id, status: hit.item.status === 'confirmed' ? '확정' : '초안', ...compact(kind, hit.item, 700) });
-  return build('studio-merge', {
-    kind: kindName(kind), fields: fieldGuide(kind),
-    candidates: entries.map((entry, index) => ({ k: index + 1, ...compact(kind, entry.candidate, 1000), near: entry.near.map(hit => hit.item.id) })), existing: [...existing.values()],
-  }, object({ decisions: { type: 'array', items: object({ k: { type: 'integer' }, action: { type: 'string', enum: ['new', 'same', 'conflict'] }, target: { type: 'string' }, field: { type: 'string' }, existing: { type: 'string' }, incoming: { type: 'string' }, note: { type: 'string' } }) } }));
+/** The compact form of a record for a request, and whether its text had to be cut to the limit. */
+function compact(kind, item, limit) {
+  const full = itemText(kind, item.fields, Infinity);
+  return { entry: { name: item.name, ...(kind === REQUIREMENT_KIND && item.fields.category ? { category: item.fields.category } : {}), text: full.slice(0, limit) }, cut: full.length > limit };
 }
-/** One decision per entry, in order. A missing or out-of-scope decision becomes `new`: the candidate then shows up as a draft a person can see, and nothing is merged on a guess. */
-export function readMerge(output, entries) {
+/**
+ * `entries` are `{ candidate, near: [{ item }] }`; a candidate is only ever
+ * compared with its own `near` items. Long records are shown in part to keep
+ * the request bounded; `partial` names what was shown in part, so a judgement
+ * made on it is put to a person instead of being applied.
+ */
+export function mergeRequest(kind, entries) {
+  const existing = new Map(), partial = { candidates: [], items: new Set() };
+  for (const entry of entries) for (const hit of entry.near) {
+    if (existing.has(hit.item.id)) continue;
+    const shown = compact(kind, hit.item, 1200);
+    existing.set(hit.item.id, { id: hit.item.id, status: hit.item.status === 'confirmed' ? '확정' : '초안', ...shown.entry });
+    if (shown.cut) partial.items.add(hit.item.id);
+  }
+  const candidates = entries.map((entry, index) => { const shown = compact(kind, entry.candidate, 2000); partial.candidates.push(shown.cut); return { k: index + 1, ...shown.entry, near: entry.near.map(hit => hit.item.id) }; });
+  return { ...build('studio-merge', { kind: kindName(kind), fields: fieldGuide(kind), candidates, existing: [...existing.values()] },
+    object({ decisions: { type: 'array', items: object({ k: { type: 'integer' }, action: { type: 'string', enum: ['new', 'same', 'conflict'] }, target: { type: 'string' }, field: { type: 'string' }, existing: { type: 'string' }, incoming: { type: 'string' }, note: { type: 'string' } }) } })), partial };
+}
+/**
+ * One decision per entry, in order. A missing or out-of-scope decision becomes
+ * `new`: the candidate then shows up as a draft a person can see, and nothing
+ * is merged on a guess. `review` marks a judgement made without the full text
+ * of the candidate or of its target.
+ */
+export function readMerge(output, entries, partial = { candidates: [], items: new Set() }) {
   const byK = new Map(list(output?.decisions).filter(entry => Number.isInteger(entry?.k)).map(entry => [entry.k, entry]));
   return entries.map((entry, index) => {
     const decision = byK.get(index + 1);
     if (!decision || !['same', 'conflict'].includes(decision.action) || !entry.near.some(hit => hit.item.id === decision.target)) return { action: 'new' };
-    return { action: decision.action, target: decision.target, field: text(decision.field), existing: text(decision.existing), incoming: text(decision.incoming), note: text(decision.note) };
+    return { action: decision.action, target: decision.target, field: text(decision.field), existing: text(decision.existing), incoming: text(decision.incoming), note: text(decision.note),
+      review: partial.candidates[index] === true || partial.items.has(decision.target) };
   });
 }
 
@@ -179,15 +212,15 @@ export function enrichRequest(item, batch) {
 export function readEnrich(output, item, batch) {
   const empty = new Set(fieldsOf(item.kind).filter(spec => !isFilled(item.fields[spec.key])).map(spec => spec.key));
   const offered = output?.fields && typeof output.fields === 'object' && !Array.isArray(output.fields) ? output.fields : {};
-  const fields = normalizeFields(item.kind, Object.fromEntries(Object.entries(offered).filter(([key]) => empty.has(key))));
-  return { fields, evidence: evidence(output?.clauses, batch), question: text(output?.question).slice(0, 500) };
+  const usable = Object.fromEntries(Object.entries(offered).filter(([key]) => empty.has(key)));
+  return { fields: normalizeFields(item.kind, usable), overflow: overflowingFields(item.kind, usable), evidence: evidence(output?.clauses, batch), question: text(output?.question).slice(0, 500) };
 }
 
-/** `entries` are `{ requirement, related: [item] }` for a few confirmed requirements. */
+/** `entries` are `{ requirement, related: [item] }` for a few confirmed requirements; `epics` are the few existing epics that resemble them. */
 export function planRequest(entries, epics) {
   return build('studio-plan', {
     requirements: entries.map(({ requirement, related }) => ({ id: requirement.id, number: requirement.number, name: requirement.name, definition: requirement.fields.definition, details: requirement.fields.details, constraints: requirement.fields.constraints,
-      related: related.slice(0, 8).map(item => ({ kind: kindName(item.kind), ...compact(item.kind, item, 400) })) })),
+      related: related.slice(0, 8).map(item => ({ kind: kindName(item.kind), ...compact(item.kind, item, 400).entry })) })),
     epics: epics.map(epic => ({ id: epic.id, name: epic.name })),
   }, object({ stories: { type: 'array', items: object({ requirement: { type: 'string' }, epic: { type: 'string' }, epicName: { type: 'string' }, title: { type: 'string' }, role: { type: 'string' }, want: { type: 'string' }, green: strings, red: strings }) } }));
 }

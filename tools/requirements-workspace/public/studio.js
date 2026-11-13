@@ -134,14 +134,16 @@ function requirementList() {
 }
 function issueNotes(item) {
   return openIssues(item.id).map(issue => issue.kind === 'conflict'
-    ? `<div class="st-note st-bad"><strong>문서 사이의 충돌</strong><span>${esc(issue.text)}</span>${issue.existing ? `<div><span class="st-small">지금 내용</span><blockquote>${esc(issue.existing)}</blockquote></div>` : ''}${issue.incoming ? `<div><span class="st-small">새 문서의 내용</span><blockquote>${esc(issue.incoming)}</blockquote></div>` : ''}<div>${sourceLines(issue.sources)}</div>
+    ? `<div class="st-note st-bad"><strong>문서 사이의 충돌</strong><span>${esc(issue.text)}</span>${issue.existing ? `<div><span class="st-small">지금 내용</span><blockquote>${esc(issue.existing)}</blockquote></div>` : ''}${issue.incoming ? `<div><span class="st-small">새 문서의 내용</span><blockquote>${esc(issue.incoming)}</blockquote></div>` : ''}
+        ${!issue.incoming && issue.fields ? `<div><span class="st-small">새 문서에서 나온 내용</span><table class="st-spec">${fieldsOf(item.kind).filter(spec => spec.key !== 'category' && filled(issue.fields[spec.key])).map(spec => `<tr><th>${esc(spec.label)}</th><td>${fieldValue(spec, issue.fields[spec.key])}</td></tr>`).join('')}</table></div>` : ''}<div>${sourceLines(issue.sources)}</div>
         <div class="row-actions"><button type="button" class="button small secondary" data-a="issue-keep" data-v="${esc(issue.id)}">지금 내용 유지</button><button type="button" class="button small" data-a="issue-adopt" data-v="${esc(issue.id)}">새 문서의 내용으로 ${issue.existing ? '바꿈' : '추가'}</button></div></div>`
     : `<div class="st-note st-bad"><strong>결정이 필요한 질문</strong><span>${esc(issue.text)}</span><div class="row-actions"><button type="button" class="button small" data-a="issue-answer" data-v="${esc(issue.id)}">답변하기</button><button type="button" class="button small secondary" data-a="issue-dismiss" data-v="${esc(issue.id)}">답 없이 닫기</button></div></div>`).join('');
 }
 function proposalNotes(item) {
-  return proposalsOf(item.id).map(proposal => `<div class="st-note st-warn"><strong>변경 제안</strong><span class="st-small">새 문서에서 나온 내용입니다. 반영하면 아래 내용이 더해집니다.</span>
-    <table class="st-spec">${fieldsOf(item.kind).filter(spec => filled(proposal.fields[spec.key])).map(spec => `<tr><th>${esc(spec.label)}</th><td>${fieldValue(spec, proposal.fields[spec.key])}</td></tr>`).join('')}</table><div>${sourceLines(proposal.sources)}</div>
-    <div class="row-actions"><button type="button" class="button small" data-a="proposal-accept" data-v="${esc(proposal.id)}">반영</button><button type="button" class="button small secondary" data-a="proposal-reject" data-v="${esc(proposal.id)}">반영하지 않음</button></div></div>`).join('');
+  return proposalsOf(item.id).map(proposal => { const rows = fieldsOf(item.kind).filter(spec => filled(proposal.fields[spec.key])); return `<div class="st-note st-warn"><strong>변경 제안</strong>
+    <span class="st-small">${item.status === 'confirmed' ? '새 문서에서 나온 내용입니다. 확정된 기록이라 바로 더하지 않았습니다.' : '새 문서에서 나온 내용입니다. 비교할 때 내용 전체를 보지 못해 바로 더하지 않았습니다.'} ${rows.length ? '반영하면 아래 내용과 출처가 더해집니다.' : '내용은 그대로 두고 아래 출처만 더합니다.'}</span>
+    ${rows.length ? `<table class="st-spec">${rows.map(spec => `<tr><th>${esc(spec.label)}</th><td>${fieldValue(spec, proposal.fields[spec.key])}</td></tr>`).join('')}</table>` : ''}<div>${sourceLines(proposal.sources)}</div>
+    <div class="row-actions"><button type="button" class="button small" data-a="proposal-accept" data-v="${esc(proposal.id)}">반영</button><button type="button" class="button small secondary" data-a="proposal-reject" data-v="${esc(proposal.id)}">반영하지 않음</button></div></div>`; }).join('');
 }
 function itemActions(item) {
   const active = Boolean(view.active);
@@ -300,6 +302,18 @@ function analyzeLines() {
   lines.push('이미 분석한 문서는 다시 읽지 않습니다. 확정된 내용은 바꾸지 않고 변경 제안으로 올립니다.');
   return lines;
 }
+// A table is edited one row per line with cells separated by a bar. A bar or backslash inside a cell is written with a
+// backslash before it, so a row reads back exactly as it was shown.
+const encodeCell = value => String(value ?? '').replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
+function decodeRow(line) {
+  const cells = [''];
+  for (let index = 0; index < line.length; index++) {
+    if (line[index] === '\\' && index + 1 < line.length) cells[cells.length - 1] += line[++index];
+    else if (line[index] === '|') cells.push('');
+    else cells[cells.length - 1] += line[index];
+  }
+  return cells.map(cell => cell.trim());
+}
 function editDialog(item, kind) {
   const specs = fieldsOf(kind), values = item?.fields ?? {};
   const control = spec => {
@@ -307,9 +321,9 @@ function editDialog(item, kind) {
     if (spec.type === 'text' && spec.options) return `<select name="f-${spec.key}" ${spec.key === 'category' && item?.number ? 'disabled' : ''}><option value="">선택</option>${spec.options.map(option => `<option value="${esc(option)}" ${value === option ? 'selected' : ''}>${esc(spec.key === 'category' ? `${categoryName(option)} (${option})` : option)}</option>`).join('')}</select>`;
     if (spec.type === 'text') return `<textarea name="f-${spec.key}" rows="2">${esc(value ?? '')}</textarea>`;
     if (spec.type === 'list') return `<textarea name="f-${spec.key}" rows="4">${esc((value ?? []).join('\n'))}</textarea>`;
-    return `<textarea name="f-${spec.key}" rows="4">${esc((value ?? []).map(row => spec.columns.map(([key]) => row[key]).join(' | ')).join('\n'))}</textarea>`;
+    return `<textarea name="f-${spec.key}" rows="4">${esc((value ?? []).map(row => spec.columns.map(([key]) => encodeCell(row[key])).join(' | ')).join('\n'))}</textarea>`;
   };
-  const help = spec => spec.type === 'list' ? '한 줄에 하나씩' : spec.type === 'rows' ? `한 줄에 한 행 — ${spec.columns.map(([, name]) => name).join(' | ')}` : spec.key === 'category' && item?.number ? '고유번호를 받은 뒤에는 분류를 바꿀 수 없습니다.' : '';
+  const help = spec => spec.type === 'list' ? '한 줄에 하나씩' : spec.type === 'rows' ? `한 줄에 한 행 — ${spec.columns.map(([, name]) => name).join(' | ')} (칸 안의 세로줄은 \\| 로 적습니다)` : spec.key === 'category' && item?.number ? '고유번호를 받은 뒤에는 분류를 바꿀 수 없습니다.' : '';
   const others = view.items.filter(other => other.status !== 'retired' && other.id !== item?.id);
   openDialog(item ? `${kindName(kind)} 수정` : `${kindName(kind)} 직접 추가`, `${field('name', kind === 'requirement' ? '요구사항 명칭' : `${typeOf(kind).noun} 이름`, `<input type="text" name="name" value="${esc(item?.name ?? '')}" required>`)}
     ${specs.map(spec => field(`f-${spec.key}`, `${spec.label}${spec.required ? ' *' : ''}`, control(spec), help(spec))).join('')}
@@ -318,7 +332,7 @@ function editDialog(item, kind) {
       for (const spec of specs) {
         const raw = String(data.get(`f-${spec.key}`) ?? (spec.key === 'category' ? values.category ?? '' : ''));
         const lines = raw.split('\n').map(line => line.trim()).filter(Boolean);
-        fields[spec.key] = spec.type === 'text' ? raw.trim() : spec.type === 'list' ? lines : lines.map(line => { const cells = line.split('|').map(cell => cell.trim()); return Object.fromEntries(spec.columns.map(([key], index) => [key, cells[index] ?? ''])); });
+        fields[spec.key] = spec.type === 'text' ? raw.trim() : spec.type === 'list' ? lines : lines.map(line => { const cells = decodeRow(line); return Object.fromEntries(spec.columns.map(([key], index) => [key, cells[index] ?? ''])); });
       }
       const payload = { name: String(data.get('name') ?? ''), fields, links: data.getAll('links') };
       await submitAction('studio.item.save', item ? { ...payload, id: item.id, rev: item.rev } : { ...payload, kind }, '저장했습니다.');

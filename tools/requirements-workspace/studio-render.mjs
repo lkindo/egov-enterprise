@@ -71,18 +71,38 @@ function artifactDocument(studio, context, type) {
   lines.push(`## 1. ${type.noun} 목록`, '', table(['번호', type.noun, '설명', '관련 요구사항', '상태'], items.map((item, index) => [index + 1, item.name, item.fields.description,
     context.related(item).filter(other => other.kind === REQUIREMENT_KIND).map(requirementNumber).join(', '), `${statusName(item)}${missingFields(item).length ? ` · 빈칸 ${missingFields(item).length}` : ''}`])), '');
   if (type.id === 'function-tree' || type.id === 'menu-tree') lines.push('## 구조', '', ...tree(items), '');
-  if (type.id === 'business-flow') for (const item of items.filter(entry => entry.fields.steps.length)) lines.push(`## 흐름도 — ${item.name}`, '', '```mermaid', 'flowchart TD', ...item.fields.steps.map((step, index, steps) => `  S${index + 1}[${quoted(`${step.actor ? `${step.actor}: ` : ''}${step.activity || step.order}`)}]${index + 1 < steps.length ? ` --> S${index + 2}` : ''}`), '```', '');
+  if (type.id === 'business-flow') for (const item of items.filter(entry => entry.fields.steps.length)) lines.push(`## 흐름도 — ${item.name}`, '', '```mermaid', 'flowchart TD', ...flowLines(item.fields.steps), '```', '');
   lines.push(`## 2. ${type.noun}별 정의`, '');
   for (const item of items) {
     lines.push(`### ${item.name}`, '');
     const rows = [];
     for (const spec of fieldsOf(type.id)) if (spec.type !== 'rows') rows.push([spec.label, spec.type === 'list' ? item.fields[spec.key].join('\n') : item.fields[spec.key]]);
+    // A person's answer to a question about this item is part of the deliverable.
+    if (item.note) rows.push(['결정·메모', item.note]);
     rows.push(['관련 요구사항', context.related(item).filter(other => other.kind === REQUIREMENT_KIND).map(other => `${requirementNumber(other)} ${other.name}`).join('\n')], ['출처', sourceLines(item, context.clauses).join('\n')], ['상태', statusName(item)]);
     lines.push(table(['항목', '내용'], rows), '');
     for (const spec of fieldsOf(type.id)) if (spec.type === 'rows') lines.push(`**${spec.label}**`, '', isFilled(item.fields[spec.key]) ? table(spec.columns.map(([, name]) => name), item.fields[spec.key].map(row => spec.columns.map(([key]) => row[key]))) : '(비어 있음)', '');
     for (const issue of openIssues(studio, item.id)) lines.push(`> 미결: ${issue.text}`, '');
   }
   return lines.join('\n');
+}
+/**
+ * Edges of a business flow as stored. A step without a continuation goes on to
+ * the next row. A stored continuation is drawn to the steps it names by order
+ * or activity; a continuation that names no step is shown as its own text, not
+ * replaced by a guess.
+ */
+function flowLines(steps) {
+  const lines = steps.map((step, index) => `  S${index + 1}[${quoted(`${step.actor ? `${step.actor}: ` : ''}${step.activity || step.order}`)}]`);
+  const find = token => steps.findIndex(step => (step.order && label(step.order) === label(token)) || (step.activity && label(step.activity) === label(token)));
+  steps.forEach((step, index) => {
+    if (!step.next) { if (index + 1 < steps.length) lines.push(`  S${index + 1} --> S${index + 2}`); return; }
+    step.next.split(/[,;/]|또는|및/).map(part => part.trim()).filter(Boolean).forEach((token, branch) => {
+      const target = find(token.replace(/^(?:단계|step)\s*/i, '').replace(/\s*(?:단계|번)$/, ''));
+      lines.push(target >= 0 ? `  S${index + 1} --> S${target + 1}` : `  S${index + 1} -.-> T${index + 1}_${branch + 1}([${quoted(token)}])`);
+    });
+  });
+  return lines;
 }
 function tree(items) {
   const names = new Set(items.map(item => label(item.name))), lines = [], seen = new Set();
@@ -120,7 +140,7 @@ function storyLines(studio, context, story) {
   lines.push('## 요구사항', '', table(['항목', '내용'], [['정의', requirement.fields.definition], ['세부 내용', requirement.fields.details.map(detail => `- ${detail}`).join('\n')], ['제약·전제', requirement.fields.constraints.join('\n')], ['검증 방법·기준', requirement.fields.verification], ['출처', sourceLines(requirement, context.clauses).join('\n')]]), '', '## 관련 산출물', '');
   const related = context.related(requirement).filter(item => item.kind !== REQUIREMENT_KIND);
   if (!related.length) lines.push('(연결된 산출물 항목 없음)', '');
-  for (const item of related) lines.push(`### ${kindName(item.kind)} · ${item.name}`, '', ...fieldsOf(item.kind).filter(spec => isFilled(item.fields[spec.key])).map(spec => `- ${spec.label}: ${fieldText(spec, item.fields[spec.key])}`), '');
+  for (const item of related) lines.push(`### ${kindName(item.kind)} · ${item.name}`, '', ...fieldsOf(item.kind).filter(spec => isFilled(item.fields[spec.key])).map(spec => `- ${spec.label}: ${fieldText(spec, item.fields[spec.key])}`), ...(item.note ? [`- 결정·메모: ${item.note}`] : []), '');
   const quality = live(studio, REQUIREMENT_KIND).filter(item => item.status === 'confirmed' && QUALITY_CATEGORIES.includes(item.fields.category)).sort(byNumber);
   lines.push('## 함께 지킬 품질 기준', '', ...(quality.length ? quality.map(item => `- ${item.number} ${item.name}: ${[item.fields.definition, ...item.fields.details].join(' ')}`) : ['(확정된 성능·보안·품질·제약 요구사항 없음)']), '');
   return lines;

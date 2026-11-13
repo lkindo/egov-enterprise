@@ -164,7 +164,7 @@ export const rowKey = (spec, row) => String(row[spec.columns[0][0]] ?? '').toLow
  * lists and rows gain entries. Nothing a person wrote is replaced or removed.
  */
 export function mergeFieldsAdditive(kind, current, incoming) {
-  const next = normalizeFields(kind, current), extra = normalizeFields(kind, incoming), changed = [], added = {};
+  const next = normalizeFields(kind, current), extra = normalizeFields(kind, incoming), changed = [], added = {}, overflow = [];
   for (const spec of fieldsOf(kind)) {
     const before = next[spec.key], addition = extra[spec.key];
     if (!isFilled(addition)) continue;
@@ -174,11 +174,53 @@ export function mergeFieldsAdditive(kind, current, incoming) {
     const fresh = addition.filter(entry => !known.has(identity(entry)));
     if (!fresh.length) continue;
     const merged = normalizeField(spec, [...before, ...fresh]);
+    // The field is full: what did not fit is reported in `overflow`, never dropped without a trace.
+    if (merged.length < before.length + fresh.length) overflow.push(spec.key);
     if (merged.length === before.length) continue;
     next[spec.key] = merged; added[spec.key] = merged.slice(before.length); changed.push(spec.key);
   }
   // `added` holds only what the merge contributes, for showing a change proposal.
-  return { fields: next, changed, added };
+  return { fields: next, changed, added, overflow };
+}
+
+const whole = value => typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
+/** Field keys whose value is larger than the catalog allows, so that normalising it would lose part of it. */
+export function overflowingFields(kind, fields) {
+  const source = fields && typeof fields === 'object' && !Array.isArray(fields) ? fields : {}, result = [];
+  for (const spec of fieldsOf(kind)) {
+    const value = source[spec.key];
+    if (spec.type === 'text') { if (whole(value).length > FIELD_LIMITS.text) result.push(spec.key); continue; }
+    if (!Array.isArray(value)) continue;
+    if (spec.type === 'list') { if (new Set(value.flatMap(entry => pieces(entry, FIELD_LIMITS.listItem))).size > FIELD_LIMITS.listItems) result.push(spec.key); continue; }
+    const named = value.filter(entry => entry && typeof entry === 'object' && !Array.isArray(entry) && whole(entry[spec.columns[0][0]]));
+    if (named.length > FIELD_LIMITS.rows || named.some(entry => spec.columns.some(([key]) => whole(entry[key]).length > FIELD_LIMITS.cell))) result.push(spec.key);
+  }
+  return result;
+}
+export const fieldLabels = (kind, keys) => fieldsOf(kind).filter(spec => keys.includes(spec.key)).map(spec => spec.label).join(', ');
+
+const alike = (left, right) => whole(left).normalize('NFKC').replace(/\s+/g, '').toLowerCase() === whole(right).normalize('NFKC').replace(/\s+/g, '').toLowerCase();
+const rowText = (spec, row) => spec.columns.map(([key]) => row[key]).filter(Boolean).join(' / ');
+/**
+ * Structured values on which two sources disagree: a short text value filled
+ * differently, or a table row of the same key with a different cell. Narrative
+ * text and the requirement class are left out: two documents never word a
+ * description alike, and a class is a judgement, not a statement of the source.
+ */
+export function fieldConflicts(kind, current, incoming) {
+  const now = normalizeFields(kind, current), next = normalizeFields(kind, incoming), result = [];
+  for (const spec of fieldsOf(kind)) {
+    if (spec.type === 'text') {
+      const short = now[spec.key].length <= 40 && next[spec.key].length <= 40 && !['description', 'definition', 'category'].includes(spec.key);
+      if (short && now[spec.key] && next[spec.key] && !alike(now[spec.key], next[spec.key])) result.push({ field: spec.key, existing: now[spec.key], incoming: next[spec.key] });
+    } else if (spec.type === 'rows') {
+      for (const row of next[spec.key]) {
+        const match = now[spec.key].find(entry => rowKey(spec, entry) === rowKey(spec, row));
+        if (match && spec.columns.some(([key]) => match[key] && row[key] && !alike(match[key], row[key]))) result.push({ field: spec.key, existing: rowText(spec, match), incoming: rowText(spec, row), rows: [row] });
+      }
+    }
+  }
+  return result;
 }
 
 /** One-line text of a field value, for prompts, search and documents. */
