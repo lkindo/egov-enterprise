@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -10,7 +11,7 @@ import { startRequirementsServer } from './server.mjs';
 import { createRequirementsStore } from './store.mjs';
 import { REQUEST_LIMIT } from './studio-tasks.mjs';
 import { context } from './test-fixtures/ai.mjs';
-import { CONSENT, clause, mergeReply, sourceOf, studioRunner } from './test-fixtures/studio.mjs';
+import { CONSENT, classifyReply, clause, mergeReply, sourceOf, studioRunner } from './test-fixtures/studio.mjs';
 
 const rfp = sourceOf('SRC-RFP', '합성 제안요청서', [
   clause('C-1', '[SFR:시설 예약 신청] 시민은 시설을 검색하고 예약을 신청한다. <function-tree:예약 신청>'),
@@ -180,25 +181,87 @@ test('runs need consent, never start on their own after a restart, and unusable 
 });
 
 test('a failing CLI stops the run and keeps finished work; cancel stops between requests', async t => {
-  let calls = 0, release;
-  const gate = new Promise(resolve => { release = resolve; });
-  const { act, run, engine } = await fixture(t, { overrides: { 'studio-extract': async () => { calls += 1; if (calls === 1) await gate; throw Object.assign(new Error('AI_CLI_FAILED'), { code: 'AI_CLI_FAILED' }); } } });
+  let calls = 0, release, child, heldSignal, spawned;
+  const gate = new Promise(resolve => { release = resolve; }), holding = new Promise(resolve => { spawned = resolve; });
+  const { act, run, engine, workspace } = await fixture(t, { overrides: { 'studio-extract': async (request, schema, signal) => {
+    calls += 1;
+    if (calls === 1) {
+      // Like the real CLI, this request runs a process inside the run's working folder (Windows cannot remove a folder
+      // a process is working in) and ends that process when it is told to stop.
+      heldSignal = signal;
+      child = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 60000)'], { cwd: join(workspace, '.scratch', readdirSync(join(workspace, '.scratch')).find(name => name.startsWith('studio-'))), stdio: 'ignore' });
+      signal.addEventListener('abort', () => child.kill());
+      child.once('spawn', spawned);
+      await gate;
+    } else await holding;
+    throw Object.assign(new Error('AI_CLI_FAILED'), { code: 'AI_CLI_FAILED' });
+  } } });
+  t.after(() => child?.kill());
   await act('source.save', rfp);
   let view = await act('studio.run', CONSENT);
   assert.ok(view.active);
   await assert.rejects(async () => act('studio.run', CONSENT), { code: 'AI_BUSY' });
-  release(); await engine.studio.waitForIdle();
+  await engine.studio.waitForIdle();
   view = engine.studio.view();
+  // The reason is the CLI failure, not the folder that could not be removed, and the request still open was told to stop.
   assert.deepEqual([view.jobs.at(-1).status, view.jobs.at(-1).errorCode], ['failed', 'AI_CLI_FAILED']);
-  // Classification had been committed before the failure, so the next run does not repeat it.
+  assert.equal(heldSignal.aborted, true);
+  release();
+  // Classification had been committed before the failure, so the next run does not repeat it,
+  // and its requirement candidates had already become drafts.
   assert.equal(view.pending.classify, 0);
-  assert.equal(view.pending.merge, 3);
+  assert.equal(view.pending.merge, 0);
+  assert.equal(view.items.filter(item => item.kind === 'requirement').length, 3);
   const { engine: second, act: act2 } = await fixture(t, { overrides: { 'studio-classify': (request, schema, signal) => new Promise((resolve, reject) => signal.addEventListener('abort', () => reject(Object.assign(new Error('AI_CANCELLED'), { code: 'AI_CANCELLED' })))) } });
   await act2('source.save', rfp);
   const started = await act2('studio.run', CONSENT);
   await assert.rejects(async () => act2('studio.cancel', { jobId: 'JOB-9999' }), { code: 'AI_NOT_RUNNING' });
   assert.equal((await act2('studio.cancel', { jobId: started.active })).jobs.at(-1).status, 'cancelled');
   assert.equal(second.studio.view().items.length, 0);
+});
+
+test('candidates become items while documents are still being read, so the waiting list stays short however much is read', async t => {
+  const probe = { samples: [] };
+  const { act, run, engine } = await fixture(t, { overrides: { 'studio-classify': request => { const view = probe.engine.studio.view(); probe.samples.push({ items: view.items.length, waiting: view.pending.merge }); return classifyReply(request); } } });
+  probe.engine = engine;
+  await act('source.save', sourceOf('SRC-BIG', '합성 대량 문서', Array.from({ length: 240 }, (unused, index) => clause(`C-${index + 1}`, `[SFR:${word(index)}${word(index + 500)}] ${word(index + 1000)} ${word(index + 2000)} ${word(index + 3000)}`))));
+  const view = await run();
+  assert.equal(view.jobs.at(-1).status, 'done', view.jobs.at(-1).errorCode);
+  assert.equal(probe.samples.length, 10);
+  // Ten bundles of 24 clauses. By the time the last bundles were sent, the first ones had already become drafts,
+  // and what waited to be compared never exceeded the bundles read since the last comparison.
+  assert.ok(probe.samples.at(-1).items >= 96, JSON.stringify(probe.samples));
+  assert.ok(probe.samples.every(sample => sample.waiting <= 96), JSON.stringify(probe.samples));
+  assert.deepEqual([view.items.length, view.pending.merge], [240, 0]);
+  assert.deepEqual([view.jobs.at(-1).stage, view.jobs.at(-1).summary.added], ['기존 요구사항·항목과 대조', 240]);
+});
+
+test('candidates an unfinished run left behind are compared before anything new is read, several requests at a time', async t => {
+  let fail = true, open = 0, widest = 0;
+  const merge = async request => {
+    if (fail) throw Object.assign(new Error('AI_CLI_FAILED'), { code: 'AI_CLI_FAILED' });
+    open += 1; widest = Math.max(widest, open);
+    await new Promise(resolve => setImmediate(resolve));
+    open -= 1;
+    return mergeReply(request);
+  };
+  const { act, run, seen } = await fixture(t, { overrides: { 'studio-merge': merge } });
+  const names = Array.from({ length: 14 }, (unused, index) => `${word(index)}${word(index + 500)}`);
+  await act('source.save', sourceOf('SRC-A', '합성 문서 A', names.map((name, index) => clause(`C-${index + 1}`, `[SFR:${name}] ${word(index + 1000)} 업무를 처리한다.`))));
+  let view = await run();
+  assert.equal(view.items.length, 14);
+  await act('source.save', sourceOf('SRC-B', '합성 문서 B', names.map((name, index) => clause(`C-${index + 1}`, `[SFR:${name}] ${word(index + 2000)} 조건을 더한다.`))));
+  view = await run();
+  assert.deepEqual([view.jobs.at(-1).status, view.jobs.at(-1).errorCode, view.pending.merge], ['failed', 'AI_CLI_FAILED', 14]);
+  fail = false; seen.length = 0;
+  await act('source.save', sourceOf('SRC-C', '합성 문서 C', [clause('C-1', `[SFR:${word(900)}${word(901)}] 새 업무를 처리한다.`)]));
+  view = await run();
+  assert.equal(view.jobs.at(-1).status, 'done', view.jobs.at(-1).errorCode);
+  // The fourteen waiting candidates were compared first (two requests open at once), then the new document was read.
+  assert.deepEqual(phases(seen), ['studio-merge', 'studio-merge', 'studio-merge', 'studio-classify']);
+  assert.equal(widest, 2);
+  assert.deepEqual([view.items.length, view.pending.merge], [15, 0]);
+  assert.ok(view.items.filter(item => names.includes(item.name)).every(item => item.fields.details.length === 2 && item.sources.length === 2));
 });
 
 test('a judgement about a record a person changed meanwhile is not applied; the candidate is compared again', async t => {

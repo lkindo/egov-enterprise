@@ -2,7 +2,8 @@
 // into requirements, deliverable items, and stories. State lives in the
 // workspace; the model is a stateless worker called with bounded requests, and
 // every finished request is committed at once, so stopping loses one request.
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { assertExternalWorkspace } from './store.mjs';
 import { AI_MODEL, aiEffortForPhase, createCliRunner, findClaudeExecutable } from './ai-cli.mjs';
@@ -19,6 +20,8 @@ const CONSENT = ['consent', 'model', 'sensitivityAcknowledged'];
 // Failures of the CLI itself stop a run; a reply that cannot be used only costs that one request.
 // A state the store refuses to save is a defect in this tool, so it stops the run as well instead of being counted away.
 const FATAL = /^(AI_CLI_UNAVAILABLE|AI_CLI_FAILED|AI_MODEL_MISMATCH|AI_TIMEOUT|AI_CONFIGURATION_INVALID|STUDIO_CAPACITY|STUDIO_CALL_CAPACITY|STUDIO_STATE_INVALID|INVALID_METADATA|INVALID_REQUEST|BACKLOG_INVALID|REQUIREMENTS_[A-Z_]+|WORKSPACE_REVISION_CONFLICT)$/;
+const STAGES = { classify: '조각 분류와 요구사항 후보 추출', extract: '켜 둔 산출물의 항목 추출', settle: '기존 요구사항·항목과 대조' };
+const errorCode = error => /^[A-Z][A-Z0-9_]{2,80}$/.test(error?.code ?? '') ? error.code : 'STUDIO_RUN_FAILED';
 
 async function pool(tasks, width, run) {
   let next = 0;
@@ -66,11 +69,17 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
       mkdirSync(scratch, { recursive: true, mode: 0o700 });
       context.cwd = mkdtempSync(join(scratch, 'studio-'));
       try { await body(context); context.step(() => {}); finish('done'); }
-      finally { assertExternalWorkspace(context.cwd); rmSync(context.cwd, { recursive: true, force: true }); }
-    }).catch(error => {
-      const cancelled = controller.signal.aborted || error.code === 'AI_CANCELLED';
-      finish(cancelled ? 'cancelled' : 'failed', cancelled ? undefined : /^[A-Z][A-Z0-9_]{2,80}$/.test(error.code ?? '') ? error.code : 'STUDIO_RUN_FAILED');
-    }).finally(() => { if (active === operation) active = undefined; });
+      catch (error) {
+        const cancelled = controller.signal.aborted || error.code === 'AI_CANCELLED';
+        finish(cancelled ? 'cancelled' : 'failed', cancelled ? undefined : errorCode(error));
+        // Requests still in flight belong to a run that has ended; their replies could no longer be saved.
+        controller.abort();
+      } finally {
+        // A request that is still winding down can hold the folder. An empty folder left behind is harmless,
+        // and a cleanup error must never replace the reason the run ended.
+        try { assertExternalWorkspace(context.cwd); await rm(context.cwd, { recursive: true, force: true, maxRetries: 4, retryDelay: 200 }); } catch { /* left behind */ }
+      }
+    }).catch(error => finish('failed', errorCode(error))).finally(() => { if (active === operation) active = undefined; });
   }
   async function call(context, built) {
     if (context.signal.aborted) fail('AI_CANCELLED');
@@ -100,17 +109,36 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
     error.code = 'STUDIO_REPEATED_FAILURE';
     return true;
   }
-  const stage = (context, name, total) => context.step((studio, job) => { job.stage = name; job.done = 0; job.total = total; });
+  const stage = (context, name, total, done = 0) => context.step((studio, job) => { job.stage = name; job.done = done; job.total = total; });
   const tally = (job, key, amount = 1) => { job.summary[key] = (job.summary[key] ?? 0) + amount; };
+  /**
+   * Runs the request units of one stage a few at a time and compares the
+   * candidates they produced before going on. Items therefore appear while
+   * the documents are still being read, and the candidates that wait never
+   * come near the store's limit however many documents there are.
+   */
+  async function sliced(context, name, tasks, run) {
+    const width = concurrency * 2;
+    stage(context, name, tasks.length);
+    for (let start = 0; start < tasks.length; start += width) {
+      await pool(tasks.slice(start, start + width), concurrency, run);
+      const { studio } = current();
+      if (!studio.candidates.length) continue;
+      const done = studio.jobs.find(job => job.id === context.id)?.done ?? 0;
+      await settle(context);
+      if (start + width < tasks.length) stage(context, name, tasks.length, done);
+    }
+  }
 
   async function analyze(context) {
     // "New" and "added to" describe the latest analysis. They are cleared when a new one starts, unless it continues a run that did not finish.
     const earlier = current().studio.jobs.filter(job => job.kind === 'analyze' && job.id !== context.id).at(-1);
     if (!earlier || earlier.status === 'done') context.step(studio => { for (const item of studio.items) item.flags = {}; });
+    // Candidates an earlier run left behind are finished reading that only waits to be compared; they come first.
+    if (current().studio.candidates.length) await settle(context);
     const first = pendingWork(current().studio, current().backlog), grouped = batchClauses(first.classify);
     if (grouped.oversize.length) context.step((studio, job) => { for (const clause of grouped.oversize) { failTag(studio, clause); failTag(studio, clause); } job.failures += grouped.oversize.length; tally(job, 'oversize', grouped.oversize.length); });
-    stage(context, '조각 분류와 요구사항 후보 추출', grouped.batches.length);
-    await pool(grouped.batches, concurrency, batch => unit(context, async () => {
+    await sliced(context, STAGES.classify, grouped.batches, batch => unit(context, async () => {
       const result = readClassify(await call(context, classifyRequest(batch)), batch);
       context.step((studio, job) => {
         for (const tag of result.tags) applyTag(studio, tag.clause, tag);
@@ -125,8 +153,7 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
       for (const batch of batches.batches) tasks.push({ type, batch });
       if (batches.oversize.length) context.step(studio => markExtracted(studio, batches.oversize, type));
     }
-    stage(context, '켜 둔 산출물의 항목 추출', tasks.length);
-    await pool(tasks, concurrency, task => unit(context, async () => {
+    await sliced(context, STAGES.extract, tasks, task => unit(context, async () => {
       const request = extractRequest(task.type, task.batch);
       let result = readExtract(await call(context, request), task.type, task.batch);
       // A reply with unusable items is asked for once more. What is still unusable is counted; a reply with no item list
@@ -144,41 +171,48 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
    * contradicts nothing; otherwise the model compares them. Candidates that
    * resemble another candidate of the same round wait, so the earlier one is an
    * item by then. A judgement is applied only if its target is still the record
-   * that was compared; if a person changed it meanwhile, the candidate is
-   * compared again.
+   * that was compared; if a person changed it meanwhile, or another candidate
+   * of the same round was merged into it first, the candidate is compared again.
+   * A round sends as many comparison requests at once as the run may have open.
    */
   async function settle(context) {
-    stage(context, '기존 요구사항·항목과 대조', current().studio.candidates.length);
+    stage(context, STAGES.settle, current().studio.candidates.length);
     for (;;) {
       const { studio } = current();
       if (!studio.candidates.length) return;
       if (context.signal.aborted) fail('AI_CANCELLED');
-      const kind = studio.candidates[0].kind, search = neighborIndex(studio, kind), direct = [], compare = [];
+      const kind = studio.candidates[0].kind, search = neighborIndex(studio, kind), direct = [], groups = [[]], taken = [];
       for (const candidate of studio.candidates.filter(entry => entry.kind === kind).slice(0, 80)) {
         // Names carry identity; similar names in one round would be judged without seeing each other.
-        if ([...direct, ...compare].some(entry => similarity([[entry.candidate.name, 1]], [[candidate.name, 1]]) >= 0.5)) continue;
+        if (taken.some(name => similarity([[name, 1]], [[candidate.name, 1]]) >= 0.5)) continue;
         const near = search(candidate.name, candidate.fields);
         const twin = kind === REQUIREMENT_KIND ? null : near.find(hit => label(hit.item.name) === label(candidate.name));
         const silent = twin && !mergeFieldsAdditive(kind, twin.item.fields, candidate.fields).changed.length && !fieldConflicts(kind, twin.item.fields, candidate.fields).length;
         if (!near.length) direct.push({ candidate, decision: { action: 'new' } });
         else if (silent) direct.push({ candidate, decision: { action: 'same', target: twin.item.id }, rev: twin.item.rev });
-        else if (compare.length < MERGE_BATCH) compare.push({ candidate, near });
+        else {
+          if (groups.at(-1).length >= MERGE_BATCH) { if (groups.length >= concurrency) continue; groups.push([]); }
+          groups.at(-1).push({ candidate, near });
+        }
+        taken.push(candidate.name);
       }
-      let decided = direct;
-      if (compare.length) {
+      const decided = [...direct];
+      let failures = 0;
+      await Promise.all(groups.filter(group => group.length).map(async compare => {
         try {
           const built = fitted(entries => mergeRequest(kind, entries), compare), entries = compare.slice(0, built.used);
           const decisions = readMerge(await call(context, built), entries, built.partial);
-          decided = [...direct, ...entries.map((entry, index) => ({ candidate: entry.candidate, decision: decisions[index], rev: entry.near.find(hit => hit.item.id === decisions[index].target)?.item.rev }))];
+          decided.push(...entries.map((entry, index) => ({ candidate: entry.candidate, decision: decisions[index], rev: entry.near.find(hit => hit.item.id === decisions[index].target)?.item.rev })));
           context.streak = 0;
         } catch (error) {
           if (stops(context, error)) throw error;
           // The comparison could not be made; the candidate becomes a visible draft rather than being merged on a guess.
-          decided = [...direct, { candidate: compare[0].candidate, decision: { action: 'new' } }];
-          context.step((draft, job) => { job.failures += 1; });
+          decided.push({ candidate: compare[0].candidate, decision: { action: 'new' } });
+          failures += 1;
         }
-      }
+      }));
       context.step((draft, job) => {
+        job.failures += failures;
         for (const { candidate, decision, rev } of decided) {
           if (!draft.candidates.some(entry => entry.id === candidate.id)) continue;
           // The target is no longer the record that was compared (a person edited it, or an earlier candidate of this

@@ -124,11 +124,16 @@ function jobPanel() {
   const running = job.status === 'running', percent = job.total ? Math.round(job.done / job.total * 100) : running ? 0 : 100;
   const summary = Object.entries(job.summary).filter(([, count]) => count).map(([key, count]) => `<div><b>${count}</b><span>${esc(SUMMARY_NAMES[key] ?? key)}</span></div>`).join('');
   const at = ANALYZE_STAGES.indexOf(job.stage);
-  const steps = job.kind === 'analyze' && running ? `<ol class="st-steps">${ANALYZE_STAGES.map((name, index) => `<li ${index === at ? 'aria-current="step"' : ''}>${index < at ? badge('끝남', 'green') : index === at ? badge('진행 중', 'blue') : badge('대기', 'outline')} ${esc(name)}${index === at ? ` <span class="muted">${job.done} / ${job.total}</span>` : ''}</li>`).join('')}</ol>` : '';
+  // Reading and comparing alternate: a few bundles are read, then their candidates are compared and become items.
+  // A stage is finished when nothing is left for it, not when the run has moved past it once.
+  const left = [view.pending.classify, Object.values(view.pending.extract).reduce((sum, count) => sum + count, 0), view.pending.merge];
+  const leftText = [count => `남은 조각 ${count}개`, count => `남은 추출 ${count}건`, count => `남은 후보 ${count}건`];
+  const finished = index => index < 2 && !left[0] && !left[index];
+  const steps = job.kind === 'analyze' && running ? `<ol class="st-steps">${ANALYZE_STAGES.map((name, index) => `<li ${index === at ? 'aria-current="step"' : ''}>${index === at ? badge('진행 중', 'blue') : finished(index) ? badge('끝남', 'green') : badge('대기', 'outline')} ${esc(name)}${index === at ? ` <span class="muted">${job.done} / ${job.total}</span>` : left[index] ? ` <span class="muted">${leftText[index](left[index])}</span>` : ''}</li>`).join('')}</ol>` : '';
   const duration = job.completedAt ? clock(Math.max(0, (Date.parse(job.completedAt) - Date.parse(job.startedAt)) / 1000)) : null;
   return `<section class="panel panel-body st-stack">
     <div class="st-spread"><h2>${esc(JOB_NAMES[job.kind])} — ${esc(running ? job.stage : JOB_STATUS[job.status])}</h2><div class="row-actions">${running ? `<span class="muted st-small">경과 ${ticking(job.startedAt)}</span>` : duration ? `<span class="muted st-small">걸린 시간 ${duration}</span>` : ''}${badge(JOB_STATUS[job.status], running ? 'blue' : job.status === 'done' ? 'green' : 'amber')}${running ? `<button type="button" class="button small secondary" data-a="cancel" data-v="${esc(job.id)}">중지</button>` : ''}</div></div>
-    ${running ? `<div class="st-row">${meter(percent)}<span class="muted">${job.done} / ${job.total}</span></div>${steps}<p class="muted st-small">AI 호출 한 번에 수십 초가 걸립니다. 숫자가 잠시 멈춰 있어도 경과 시간이 흐르면 진행 중입니다. 창을 닫아도 분석은 계속되고, 다시 열면 이어서 보입니다.</p>` : ''}
+    ${running ? `<div class="st-row">${meter(percent)}<span class="muted">${job.done} / ${job.total}</span></div>${steps}<p class="muted st-small">묶음 몇 개를 읽을 때마다 바로 대조해 요구사항·항목으로 올리므로, 읽기와 대조를 오가며 진행하고 결과는 처음부터 차례로 쌓입니다. AI 호출 한 번에 수십 초가 걸립니다. 숫자가 잠시 멈춰 있어도 경과 시간이 흐르면 진행 중입니다. 창을 닫아도 분석은 계속되고, 다시 열면 이어서 보입니다.</p>` : ''}
     ${job.errorCode ? `<p class="field-error">${esc(ERROR_HINTS[job.errorCode] ?? `실행을 마치지 못했습니다 (${job.errorCode}).`)} 끝난 부분은 저장되어 있어, 다시 실행하면 남은 부분만 진행합니다.</p>` : ''}
     <div class="st-kv"><div><b>${job.calls}</b><span>AI 호출</span></div><div><b>${(job.maxRequestBytes / 1024).toFixed(1)}KB</b><span>호출당 최대 입력 (상한 ${Math.round(view.requestLimit / 1024)}KB)</span></div><div><b>${view.items.filter(item => item.status !== 'retired').length}</b><span>쌓인 요구사항·항목</span></div>${job.failures ? `<div><b>${job.failures}</b><span>쓰지 못한 응답·조각</span></div>` : ''}${summary}</div>
     <p class="muted st-small">호출마다 조각 묶음 하나와 비슷한 기존 항목 몇 건만 보냅니다. 쌓인 항목이 늘어도 한 번에 보내는 양은 상한을 넘지 않습니다.</p></section>`;
