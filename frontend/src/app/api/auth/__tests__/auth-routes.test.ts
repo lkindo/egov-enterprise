@@ -296,6 +296,23 @@ describe('POST /api/auth/login', () => {
     expect(cookie?.attrs.get('path')).toBe('/');
   });
 
+  it('그룹이 하나도 없는 사용자(role 없음)도 세션 쿠키를 받고, 응답에는 role 없이 빈 권한만 싣는다', async () => {
+    const token = tokenWithExp(inOneHour());
+    mockedPost.mockResolvedValue({
+      status: 200,
+      data: tokenEnvelope({ accessToken: token, role: null, groups: [], permissions: [] }),
+      headers: {},
+    });
+
+    const response = await login(postRequest('/api/auth/login', { userId: 'nogroup', password: '1' }));
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toEqual({ success: true, data: { groups: [], permissions: [], authorizationVersion: 'v1' } });
+    expect(JSON.stringify(body)).not.toContain(token);
+    expect(setCookie(response, 'accessToken')?.value).toBe(token);
+  });
+
   it('쿠키 수명을 토큰 exp 에서 유도한다 — 24시간 고정이 아니다', async () => {
     const token = tokenWithExp(inOneHour());
     mockedPost.mockResolvedValue({

@@ -13,6 +13,10 @@ const authorization = { groups: ['USER'], permissions: [], authorizationVersion:
 describe('local auth BFF Zod contract', () => {
   it('accepts only the redacted login role payload', () => {
     expect(authLoginDataSchema.parse({ role: 'ROLE_USER', ...authorization })).toEqual({ role: 'ROLE_USER', ...authorization });
+    // 그룹이 없는 사용자는 role 없이 빈 권한만 받는다. 빈 문자열 role 은 여전히 거부한다.
+    const noGroups = { groups: [], permissions: [], authorizationVersion: 'v1' };
+    expect(authLoginDataSchema.parse(noGroups)).toEqual(noGroups);
+    expect(authLoginDataSchema.safeParse({ role: '', ...noGroups }).success).toBe(false);
     expect(authLoginDataSchema.safeParse({
       role: 'ROLE_USER',
       ...authorization,

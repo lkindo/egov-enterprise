@@ -43,9 +43,11 @@ export function authenticationResponse(request: NextRequest, value: unknown, set
     setRestrictedCookie(request, response, 'mfa_challenge', token.mfaChallenge, token.mfaChallengeExpiresAt);
     return response;
   }
-  if (stage !== 'AUTHENTICATED' || !token.accessToken || !token.role) throw new Error('Invalid authenticated response');
+  if (stage !== 'AUTHENTICATED' || !token.accessToken) throw new Error('Invalid authenticated response');
+  // role 은 표시 호환용이다. 그룹이 하나도 없는 사용자는 role 없이 로그인한다 — 권한은 빈 permissions 가 정한다.
   const response = NextResponse.json(authLoginResponseSchema.parse({ success: true, data: {
-    role: token.role, groups: token.groups, permissions: token.permissions, authorizationVersion: token.authorizationVersion,
+    ...(token.role ? { role: token.role } : {}),
+    groups: token.groups, permissions: token.permissions, authorizationVersion: token.authorizationVersion,
     ...(token.authenticationStage ? { authenticationStage: 'AUTHENTICATED' } : {}),
     ...(token.recoveryCodes?.length ? { recoveryCodes: token.recoveryCodes } : {}),
   } }), { headers: { 'Cache-Control': 'no-store' } });
