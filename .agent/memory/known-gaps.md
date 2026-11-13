@@ -101,7 +101,7 @@ refresh_triggers:
 | GAP-COMPOSE-001 | P3 | open | composer degraded compositions | 기능 저하 생성물의 화면 일부가 사실과 다르게 말할 수 있다 — 목적지 이름 규칙 밖의 링크·상수를 거친 목적지와 문장 속 메뉴 이름은 아직 기계로 대조하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#composer) |
 | GAP-COMPOSE-002 | P3 | open | generated schema changes | 새 Java·미배정 권한은 별도 등록으로 지원한다. 기존 소스 수정·새 화면·마이그레이션 연계의 자동 등록은 남아 있다. | [상세](../../docs/04-operations/known-gaps-detail.md#composer) |
 | GAP-MIG-002 | P2 | open | migration protected keys | 암호화할 소스 컬럼은 키로 쓸 수 없어(평문이 제어 표에 남는다) 그런 컬럼만 키인 테이블과 숫자형 보호 소스는 지금 적재할 수 없다. | [상세](../../docs/04-operations/known-gaps-detail.md#migration) |
-| GAP-STD-001 | P2 | open | standard schema metadata | 기승인 97개 용어 등록과 도메인 정정 4건(V2_150)을 마쳤고 표준 용어가 없거나 물리 타입이 다른 컬럼이 남았다(목록은 처분안) — 등록 단어 조합만으로 표준 적합으로 보지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
+| GAP-STD-001 | P2 | open | standard schema metadata | 기승인 기술·1차 유지 예외는 승인 범위의 미등록 정정 후보에서 제외하고 잠정 정정·퇴역은 후속 판단한다. 등록 단어 조합만으로 표준 적합으로 보지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-E2E-001 | P3 | needs-revalidation | E2E impact selection | PR 은 검토된 화면 변경만 E2E 를 spec 단위로 선별하고 공유·미지 입력과 main 은 전수다 — 일반 의존성 완전성과 절감률은 검증되지 않았다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
 | GAP-DATA-002 | P2 | blocked-external | legacy input data | OCI 설문 3행의 시작·종료일이 잘린 채 남아 있다 — 업무 소유자가 원래 날짜를 확인하기 전에는 추정해 보정하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-DEP-001 | P1 | needs-revalidation | dependency security | PR 의존성 snapshot readiness 와 runtime High 차단은 구현됐고, public fork probe 와 양쪽 snapshot 부재 경계는 외부 검증이 남았다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
