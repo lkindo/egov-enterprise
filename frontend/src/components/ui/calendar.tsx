@@ -2,12 +2,31 @@
 
 import * as React from "react"
 
-import { DayPicker } from "react-day-picker"
+import { DayButton, DayPicker, type DayButtonProps } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
 type CalendarProps = React.ComponentProps<typeof DayPicker>
+
+const WEEKDAY = new Intl.DateTimeFormat("ko-KR", { weekday: "long" })
+
+/**
+ * 날짜 단추의 이름은 내용으로 만든다(2026-11-14 원점 평가, 일정 화면 axe). react-day-picker 는 `aria-label`
+ * ("2026년 11월 14일 금요일" 꼴, 오늘·선택은 영어 "Today, … selected")을 붙이는데, 보이는 숫자 "14" 가 그 이름의 낱말이 아니라
+ * ("14일" 이 한 낱말이다) WCAG 2.5.3(label-content-name-mismatch)에 걸렸다. 보이는 숫자 뒤에 화면에는 보이지 않는 보충 글자를 붙여
+ * 이름을 "14일 금요일, 2026년 11월, 오늘" 처럼 보이는 글자로 시작하게 한다.
+ */
+function CalendarDayButton({ "aria-label": _label, children, ...props }: DayButtonProps) {
+  const { date } = props.day
+  const state = `${props.modifiers.today ? ", 오늘" : ""}${props.modifiers.selected ? ", 선택됨" : ""}`
+  return (
+    <DayButton {...props}>
+      {children}
+      <span className="sr-only">{`일 ${WEEKDAY.format(date)}, ${date.getFullYear()}년 ${date.getMonth() + 1}월${state}`}</span>
+    </DayButton>
+  )
+}
 
 function Calendar({
  className,
@@ -59,6 +78,7 @@ function Calendar({
  ...classNames,
  }}
  {...props}
+ components={{ DayButton: CalendarDayButton, ...props.components }}
  />
  )
 }

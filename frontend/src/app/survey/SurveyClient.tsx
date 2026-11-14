@@ -68,7 +68,8 @@ export default function SurveyClient() {
       }
     },
     {
-      header: '',
+      header: '상세',
+      hideHeader: true,
       className: 'text-right',
       accessor: (item: Survey) => (
         <button

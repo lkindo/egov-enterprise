@@ -46,7 +46,18 @@ describe('Calendar classNames 어휘가 실제로 적용된다', () => {
     render(<Calendar mode="single" defaultMonth={new Date(2026, 7, 1)} />);
 
     // 라이브러리가 주는 기본 캡션 텍스트. 구조가 바뀌면 여기서 먼저 드러난다.
-    expect(screen.getByText(/August 2026|2026/)).toBeInTheDocument();
+    //   글자 전체를 맞춘다 — 날짜 단추의 숨김 보충 글자("…, 2026년 8월")도 '2026' 을 담는다.
+    expect(screen.getByText(/^(August 2026|2026년 8월)$/)).toBeInTheDocument();
+  });
+
+  it('[2026-11-14] 날짜 단추의 이름은 보이는 숫자로 시작한다 — WCAG 2.5.3(label-content-name-mismatch)', () => {
+    render(<Calendar mode="single" defaultMonth={new Date(2026, 7, 1)} selected={new Date(2026, 7, 14)} />);
+
+    // 이름을 aria-label 이 아니라 내용(보이는 숫자 + 숨김 보충 글자)에서 얻는다. 종전 이름("Friday, August 14th, 2026" 꼴)에는
+    //   보이는 "14" 가 낱말로 없어 axe 가 일정 화면에서 날짜마다 붉었다.
+    const selected = screen.getByRole('button', { name: '14일 금요일, 2026년 8월, 선택됨' });
+    expect(selected).not.toHaveAttribute('aria-label');
+    expect(screen.getByRole('button', { name: '1일 토요일, 2026년 8월' })).toBeInTheDocument();
   });
 
   it('호출부가 넘긴 classNames 가 래퍼 기본값을 덮어쓴다', () => {

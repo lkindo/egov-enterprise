@@ -185,7 +185,6 @@ export function StandardTabs({
             id={standardTabId(idPrefix, item.id)}
             selected={selected}
             aria-controls={panelId}
-            aria-label={typeof item.count === 'number' ? `${item.label} ${item.count}건` : item.label}
             onClick={() => onChange(item.id)}
             className={cn(
               underline
@@ -198,7 +197,9 @@ export function StandardTabs({
           >
             {item.icon ? <span aria-hidden="true">{item.icon}</span> : null}
             {item.label}
-            {typeof item.count === 'number' ? <span aria-label={`${item.count}건`}>{item.count}</span> : null}
+            {/* [2026-11-14] 이름은 내용에서 얻는다("게시글 0건"). 종전 aria-label 은 같은 문장이었지만 보이는 글자가 "게시글"+"0" 으로
+                구분자 없이 이어져 한 낱말이 돼 WCAG 2.5.3(label-content-name-mismatch)에 걸렸다. 공백은 flex 안이라 그려지지 않는다. */}
+            {typeof item.count === 'number' ? <>{' '}<span>{item.count}<span className="sr-only">건</span></span></> : null}
           </Tab>
         );
       })}

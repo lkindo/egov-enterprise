@@ -1,8 +1,9 @@
 import { randomBytes } from 'node:crypto';
 import type { APIRequestContext, Page } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
-import { expectContentReady, expectNoAccessibilityViolations } from '../fixtures/accessibility';
+import { LOADING_TEXT, expectContentReady, expectNoAccessibilityViolations } from '../fixtures/accessibility';
 import { HELP_FAQ_BOARD_ID } from '../../src/config/board-ids';
+import { SITE_IDENTITY } from '../../src/config/site-identity';
 test.describe('Quality & Resilience', () => {
     /**
      * [2026-09-14 GAP-UIQ-001] UI 품질 시나리오 8개가 쓰는 화면 중 axe 자동 검사가 없던 곳을 채운다.
@@ -123,6 +124,43 @@ test.describe('Quality & Resilience', () => {
         });
         test.describe('일반 사용자 화면', () => {
             test.use({ storageState: 'playwright/.auth/user.json' });
+            /*
+             * [2026-11-14 원점 평가] 일반 사용자의 업무 화면 유형별 대표 — 업무 홈·결재(목록·기안)·일정·쪽지·설문·행사·검색·커뮤니티·
+             *   업무 보고·안내 페이지. 종전 자동 감사는 관리자 화면과 로그인·도움말 위주라, 사용자가 가장 자주 쓰는 화면이 빠져 있었다.
+             *   빈 목록이어도 머리글·필터·빈 상태·쪽 이동 같은 화면 골격을 감사한다(행 단위 결함은 행을 만드는 시험이 따로 본다).
+             */
+            test('업무 홈 에 axe 위반이 없다', async ({ page }) => {
+                await page.emulateMedia({ reducedMotion: 'reduce' });
+                await page.goto('/');
+                await expectContentReady(page);
+                await expect(page).toHaveTitle(SITE_IDENTITY.siteName);
+                await expectNoAccessibilityViolations(page, '/');
+            });
+            test('/approvals/draft 에 axe 위반이 없다', async ({ page }) => {
+                // 기안 화면은 열리자마자 기안 대화상자를 띄운다 — 모달이 뒤의 h1 을 가리므로 대화상자 제목을 준비 신호로 삼고 그 상태를 감사한다.
+                await page.emulateMedia({ reducedMotion: 'reduce' });
+                await page.goto('/approvals/draft');
+                const dialog = page.getByRole('dialog', { name: '새 결재 기안' });
+                await expect(dialog.getByRole('heading', { name: '새 결재 기안' })).toBeVisible({ timeout: 30000 });
+                await expectPurposeTitle(page, '새 결재 기안');
+                await expect(dialog.locator('[role="status"]').filter({ hasText: LOADING_TEXT })).toHaveCount(0);
+                await expectNoAccessibilityViolations(page, '/approvals/draft', { ready: false });
+            });
+            for (const [route, purpose] of [
+                ['/approvals', '전자결재'],
+                ['/smart-toolkit/schedule', '일정 관리'],
+                ['/note', '쪽지함'],
+                ['/survey', '설문 목록'],
+                ['/events', '행사 참가'],
+                ['/search', '통합 검색'],
+                ['/cop/cmy/selectCommunityList', '커뮤니티 목록'],
+                ['/smart-toolkit/work-report', '업무 보고'],
+                ['/pages', '안내 페이지'],
+            ]) {
+                test(`${route} 에 axe 위반이 없다`, async ({ page }) => {
+                    await auditRoute(page, route, purpose);
+                });
+            }
             test('/help 에 axe 위반이 없다', async ({ page, adminRequest }) => {
                 await withOwnedFaq(adminRequest, page, (faq) => auditRoute(page, '/help', '도움말', () => expandOwnedFaq(page, faq)));
             });
