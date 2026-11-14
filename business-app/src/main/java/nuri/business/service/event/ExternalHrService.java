@@ -85,7 +85,9 @@ public class ExternalHrService {
         externalHrRepository.delete(findRequired(evntSn, otsdHrId));
     }
 
-    private static final java.util.regex.Pattern EMAIL = java.util.regex.Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+    // 도메인 조각이 점을 담지 않게 해 조각 경계가 하나로 정해진다 — `[^\s@]+\.[^\s@]+` 꼴은 점 위치를 여러 갈래로 시도해
+    //   긴 입력에서 다항 시간 역추적이 된다(CodeQL java/polynomial-redos).
+    private static final java.util.regex.Pattern EMAIL = java.util.regex.Pattern.compile("^[^\\s@]+@[^\\s@.]+(?:\\.[^\\s@.]+)+$");
     private static final java.util.regex.Pattern TELNO_PART = java.util.regex.Pattern.compile("^\\d{1,4}$");
 
     /**

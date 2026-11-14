@@ -253,12 +253,10 @@ public class SurveyResultService {
             // [2026-11-14] 답 칸은 문항 유형이 정한다. 화면(SurveyDetailClient)은 주관식에는 글 답만, 객관식에는 고른 항목이 '기타'일
             //   때만 기타 답을 싣는다. 서버가 그 계약을 보지 않으면 API 를 직접 불러 객관식 응답에 임의 글을 실을 수 있고, 그 글이
             //   응답 관리 화면과 내려받기에 그대로 나온다.
-            boolean writtenAnswer = a.rspdntAnsCn() != null && !a.rspdntAnsCn().isBlank();
+            //   객관식의 글 답은 거부하지 않고 저장하지 않는다 — 고른 항목이 답이고 글 칸은 그 문항에 없다. 옛 호출자(원본의 실제 DB
+            //   시험 고정물 포함)는 고른 항목과 함께 글 칸을 채워 보낸다. 기타 답은 칸이 있는 항목에서만 뜻이 있어 그 밖은 거부한다.
             boolean etcAnswer = a.etcAnsCn() != null && !a.etcAnsCn().isBlank();
-            if (!q.isFreeText() && writtenAnswer) {
-                throw new BusinessException("객관식 문항에는 글로 답할 수 없습니다: " + q.getQstnCn(),
-                        CommonErrorCode.INVALID_INPUT_VALUE);
-            }
+            String writtenAnswer = q.isFreeText() ? a.rspdntAnsCn() : null;
             if (etcAnswer && (q.isFreeText() || !"Y".equals(artcl.getEtcAnsYn()))) {
                 throw new BusinessException("기타 답은 '기타' 항목을 고를 때만 적을 수 있습니다: " + q.getQstnCn(),
                         CommonErrorCode.INVALID_INPUT_VALUE);
@@ -273,7 +271,7 @@ public class SurveyResultService {
                     .srvyTmpltSn(q.getSrvyTmpltSn())
                     .srvyQstnSn(a.srvyQstnSn())
                     .srvyArtclSn(a.srvyArtclSn())
-                    .rspdntAnsCn(a.rspdntAnsCn())
+                    .rspdntAnsCn(writtenAnswer)
                     .rspnsNm(respondentName)
                     .etcAnsCn(a.etcAnsCn())
                     .build());

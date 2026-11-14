@@ -121,7 +121,8 @@ class ExternalHrServiceTest {
     }
 
     @org.junit.jupiter.params.ParameterizedTest
-    @org.junit.jupiter.params.provider.CsvSource({ "이메일,메일주소,02,123,4567", "전화번호,a@b.kr,02,12a,4567", "전화번호,a@b.kr,0 2,123,4567" })
+    @org.junit.jupiter.params.provider.CsvSource({ "이메일,메일주소,02,123,4567", "이메일,a@.kr,02,123,4567", "이메일,a@b..kr,02,123,4567",
+            "이메일,a@b.kr.,02,123,4567", "전화번호,a@b.kr,02,12a,4567", "전화번호,a@b.kr,0 2,123,4567" })
     @DisplayName("[2026-11-14] 값이 있으면 이메일 형식과 전화번호 숫자를 서버도 본다 — 등록·수정 모두 400 이고 저장하지 않는다")
     void contactFormatsAreCheckedWhenPresent(String expected, String email, String area, String middle, String end) {
         authenticateAs("admin_actor", "ADMIN");

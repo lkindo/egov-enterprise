@@ -630,12 +630,23 @@ class SurveyResultServiceTest {
     }
 
     @Test
-    @DisplayName("[2026-11-14] 객관식 문항에 글 답을 실으면 400 이다 — 응답 관리 화면에 화면이 받지 않는 글이 나오지 않게")
-    void choiceQuestionRejectsWrittenAnswer() {
+    @DisplayName("[2026-11-14] 객관식 문항에 실린 글 답은 저장하지 않는다 — 응답 관리 화면에 화면이 받지 않는 글이 나오지 않게")
+    void choiceQuestionDropsWrittenAnswer() {
         choiceAndFreeText();
-        assertRejected("객관식 문항에는 글로 답할 수 없습니다",
+        // 옛 호출자는 고른 항목과 함께 글 칸을 채워 보낸다(원본의 실제 DB 시험 고정물도 같다) — 거부하지 않고 고른 항목만 남긴다.
+        SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto(null, List.of(
                 new SurveyResponseSubmitDto.Answer(301L, 401L, "임의 글", null),
-                new SurveyResponseSubmitDto.Answer(302L, 403L, "회의를 줄였으면 합니다", null));
+                new SurveyResponseSubmitDto.Answer(302L, 403L, "회의를 줄였으면 합니다", null)));
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId).thenReturn(java.util.Optional.of("user1"));
+            assertThat(service.submitResponse(201L, dto)).isEqualTo(2);
+        }
+        @SuppressWarnings("unchecked")
+        org.mockito.ArgumentCaptor<List<SurveyResult>> captor = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(resultRepository).saveAll(captor.capture());
+        assertThat(captor.getValue()).extracting(SurveyResult::getSrvyArtclSn, SurveyResult::getRspdntAnsCn)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(401L, null),
+                        org.assertj.core.groups.Tuple.tuple(403L, "회의를 줄였으면 합니다"));
     }
 
     @Test
