@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '../fixtures/browser-test';
-import { trackApiRequests, waitForHydration } from '../fixtures/hydration';
+import { trackApiRequests } from '../fixtures/hydration';
 import { SearchPage } from '../pages/SearchPage';
 
 test.describe('전역 검색', () => {
@@ -9,11 +9,15 @@ test.describe('전역 검색', () => {
     test.describe('Admin Observability & Workspace Intelligence', () => {
         test('전역 검색어가 URL에 반영되고 결과 없음 안내를 표시한다', async ({ page }) => {
             const search = new SearchPage(page);
+            const entryRequests = trackApiRequests(page);
             await search.navigate();
+            await entryRequests.settled(page.getByLabel('통합검색어'));
+            const resultRequests = trackApiRequests(page);
             console.log('>>> Searching for non-existent keyword');
             await search.performSearch('XYZ_NON_EXISTENT_KEYWORD_123');
             console.log('>>> Verifying empty state message');
             await search.verifyNoResults();
+            await resultRequests.settled(page.getByLabel('통합검색어'));
         });
 
         test('통합 검색에서 게시글·임직원·권한 범위 메뉴 바로가기를 조회하고 이동한다', async ({ page, userPage, adminRequest }) => {
@@ -36,10 +40,12 @@ test.describe('전역 검색', () => {
                 expect(Number.isSafeInteger(pstSn) && pstSn > 0).toBe(true);
 
                 await test.step('게시글 키워드 검색 후 상세 화면으로 이동한다', async () => {
-                    const articleNavRequests = trackApiRequests(page);
+                    const articleEntryRequests = trackApiRequests(page);
                     await page.goto('/search');
                     const input = page.getByLabel('통합검색어');
-                    await waitForHydration(input);
+                    // 검색은 native GET 문서 이동이다. 떠나는 문서의 요청을 먼저 끝내고 다음 문서를 별도로 추적한다.
+                    await articleEntryRequests.settled(input);
+                    const articleSearchRequests = trackApiRequests(page);
                     const [articleRes] = await Promise.all([
                         page.waitForResponse(res => new URL(res.url()).pathname === '/api/v1/boards/search'
                             && res.request().method() === 'GET'),
@@ -55,6 +61,8 @@ test.describe('전역 검색', () => {
                     await expect(articleSection).toBeVisible();
                     const postLink = articleSection.getByRole('link').filter({ hasText: postTitle });
                     await expect(postLink).toBeVisible();
+                    await articleSearchRequests.settled(postLink);
+                    const articleNavRequests = trackApiRequests(page);
                     await postLink.click();
                     await expect(page).toHaveURL(new RegExp(`/admin/community/boards/detail\\?bbsId=${bbsId}&pstSn=${pstSn}`));
                     const detailHeading = page.getByRole('heading', { name: postTitle, exact: true });
@@ -63,10 +71,11 @@ test.describe('전역 검색', () => {
                 });
 
                 await test.step('임직원 성명 키워드 검색 결과를 표시한다', async () => {
-                    const userSearchRequests = trackApiRequests(page);
+                    const userEntryRequests = trackApiRequests(page);
                     await page.goto('/search');
                     const input = page.getByLabel('통합검색어');
-                    await waitForHydration(input);
+                    await userEntryRequests.settled(input);
+                    const userSearchRequests = trackApiRequests(page);
                     const [userRes] = await Promise.all([
                         page.waitForResponse(res => new URL(res.url()).pathname === '/api/v1/users/search'
                             && res.request().method() === 'GET'),
@@ -85,20 +94,22 @@ test.describe('전역 검색', () => {
                 });
 
                 await test.step('메뉴 바로가기는 사용자 권한 범위로 거르고 선택 시 해당 화면으로 이동한다', async () => {
-                    const userRequests = trackApiRequests(userPage);
+                    const userEntryRequests = trackApiRequests(userPage);
                     await userPage.goto('/search');
                     const userInput = userPage.getByLabel('통합검색어');
-                    await waitForHydration(userInput);
+                    await userEntryRequests.settled(userInput);
+                    const userRequests = trackApiRequests(userPage);
                     await userInput.fill('포상');
                     await userPage.getByRole('button', { name: '검색 실행', exact: true }).click();
                     await expect(userPage).toHaveURL(/\/search\?q=/);
                     await userRequests.settled(userPage.getByLabel('통합검색어'));
                     await expect(userPage.locator('a[href="/admin/operation/rewards"]')).toHaveCount(0);
 
-                    const adminRequests = trackApiRequests(page);
+                    const adminEntryRequests = trackApiRequests(page);
                     await page.goto('/search');
                     const adminInput = page.getByLabel('통합검색어');
-                    await waitForHydration(adminInput);
+                    await adminEntryRequests.settled(adminInput);
+                    const adminSearchRequests = trackApiRequests(page);
                     await adminInput.fill('포상');
                     await page.getByRole('button', { name: '검색 실행', exact: true }).click();
                     const menuSection = page.locator('section').filter({
@@ -107,6 +118,8 @@ test.describe('전역 검색', () => {
                     await expect(menuSection).toBeVisible();
                     const rewardShortcut = menuSection.locator('a[href="/admin/operation/rewards"]');
                     await expect(rewardShortcut).toBeVisible();
+                    await adminSearchRequests.settled(rewardShortcut);
+                    const adminRequests = trackApiRequests(page);
                     await rewardShortcut.click();
                     await expect(page).toHaveURL(/\/admin\/operation\/rewards/);
                     await expect(page.getByRole('heading', { name: '포상 기록 관리', exact: true })).toBeVisible();
