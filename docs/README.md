@@ -16,6 +16,7 @@
 | **에이전트로 작업**한다(작업 등급·승인·검증 절차) | [orchestration-protocol.md](03-guides/orchestration-protocol.md) — SOP |
 | 이 저장소의 **코드를 처음 고친다**(무엇을 읽고 무엇을 돌리나) | [AGENTS.md 작업 시작 시 필수 읽기](../AGENTS.md#작업-시작-시-필수-읽기) → 고칠 경로의 결정 색인은 `node scripts/decision-indexes.mjs --for <경로>` → 그 변경을 읽는 시험은 `node scripts/impact-tests.mjs --diff origin/main` → 범위별 검증은 [AGENTS.md 검증 표](../AGENTS.md#verification-by-change-scope)와 [.githooks/README.md](../.githooks/README.md)(무거운 검증은 [대기열](03-guides/orchestration-protocol.md#63-무거운-검증은-하나씩)이 하나씩 돌린다). 모듈 지도는 [project-context.md](../.agent/memory/project-context.md#모듈런타임-지도) |
 | **테스트를 쓴다** | [testing-guide.md](03-guides/testing-guide.md) (SSOT) → [e2e-test-guide.md](03-guides/e2e-test-guide.md) |
+| 이 저장소의 **유지보수를 넘겨받는다**(정기 작업·결정 권한) | [maintainer-handover.md](04-operations/maintainer-handover.md) — 정본 링크 지도 |
 | **게이트가 red 인데 원인을 모른다** | [verification-blindspots.md](04-operations/verification-blindspots.md) · [.githooks/README.md](../.githooks/README.md) |
 | **DB 객체를 설계**한다 | [db-standardization-manual.md](03-guides/db-standardization-manual.md) → [DB 헌법](../.agent/knowledge/db-standard-constitution/artifacts/constitution.md) |
 
@@ -119,6 +120,7 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [verification-blindspots.md](04-operations/verification-blindspots.md) | **검증 사각지대** — "빌드 성공"과 "실제 작동"의 차이 |
 | [secure-coding-weakness-baseline.md](04-operations/secure-coding-weakness-baseline.md) | 행안부 구현단계 보안약점 49개를 CWE·OWASP·현재 탐지 수단과 대응시킨 사전 점검 기준선(공식 진단을 대신하지 않음) |
 | [pending-decisions.md](04-operations/pending-decisions.md) | 사용자 결정 대기 항목 트래커 |
+| [maintainer-handover.md](04-operations/maintainer-handover.md) | **유지보수자 인수인계 지도** — 결정 권한, 정기 실행(한국 시간), 일이 생길 때의 정본, 처음 맡았을 때 확인 순서 |
 | [operational-decisions-index-ci-governance.md](04-operations/operational-decisions-index-ci-governance.md) | CI·훅·게이트·계약·원장·검증 도구 경로에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |
 | [operational-decisions-index-composer.md](04-operations/operational-decisions-index-composer.md) | 프로젝트 생성기·기능 소유·슬롯·재사용 투영 경로에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |
 | [operational-decisions-index-migration.md](04-operations/operational-decisions-index-migration.md) | 독립 이관 도구(migration-tool)와 로컬 이관 작업공간에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |
