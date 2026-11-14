@@ -1,6 +1,8 @@
 package nuri.business.service.code;
 
 import nuri.business.domain.code.CommonCode;
+import nuri.business.domain.code.CommonCodeCategory;
+import nuri.business.domain.code.CommonCodeGroup;
 import nuri.business.domain.code.CommonCodeCategoryRepository;
 import nuri.business.domain.code.CommonCodeChangeRepository;
 import nuri.business.domain.code.CommonCodeGroupRepository;
@@ -38,6 +40,8 @@ class CommonCodeServiceCachingTest {
     @EnableCaching
     static class CachingContext {
         static final CommonCodeRepository CODES = mock(CommonCodeRepository.class);
+        static final CommonCodeGroupRepository GROUPS = mock(CommonCodeGroupRepository.class);
+        static final CommonCodeCategoryRepository CATEGORIES = mock(CommonCodeCategoryRepository.class);
 
         @Bean
         CacheManager cacheManager() {
@@ -46,7 +50,7 @@ class CommonCodeServiceCachingTest {
 
         @Bean
         CommonCodeService commonCodeService() {
-            return new CommonCodeService(CODES, mock(CommonCodeCategoryRepository.class), mock(CommonCodeGroupRepository.class),
+            return new CommonCodeService(CODES, CATEGORIES, GROUPS,
                     new CommonCodeMapperImpl(), mock(CommonCodeChangeRepository.class), new CommonCodeUsageCatalog(List.of()));
         }
     }
@@ -58,6 +62,11 @@ class CommonCodeServiceCachingTest {
     @Test
     @DisplayName("두 번 읽는 사이 바뀐 상세 코드를 두 번째 읽기가 그대로 본다")
     void readsTheRepositoryEveryTimeEvenWithCachingEnabled() {
+        // 소비 경로는 분류·그룹이 사용일 때만 상세 코드를 준다(2026-11-14).
+        given(CachingContext.GROUPS.findById("COM075")).willReturn(java.util.Optional.of(
+                CommonCodeGroup.builder().cdId("COM075").cdIdNm("업무 구분").clsfCd("EFC").useYn("Y").build()));
+        given(CachingContext.CATEGORIES.findById("EFC")).willReturn(java.util.Optional.of(
+                CommonCodeCategory.builder().clsfCd("EFC").clsfCdNm("분류").useYn("Y").build()));
         given(CachingContext.CODES.findByCdIdAndUseYn("COM075", "Y"))
                 .willReturn(List.of(code("WF", "검토")))
                 .willReturn(List.of(code("WF", "검토"), code("PAY", "지출")));
@@ -68,7 +77,7 @@ class CommonCodeServiceCachingTest {
             List<CommonCodeDto> second = service.getCodesByGroup("COM075");
 
             assertThat(first).extracting(CommonCodeDto::dtlCd).containsExactly("WF");
-            assertThat(second).extracting(CommonCodeDto::dtlCd).containsExactly("WF", "PAY");
+            assertThat(second).extracting(CommonCodeDto::dtlCd).containsExactly("PAY", "WF"); // 상세 코드 순
             verify(CachingContext.CODES, times(2)).findByCdIdAndUseYn("COM075", "Y");
         }
     }

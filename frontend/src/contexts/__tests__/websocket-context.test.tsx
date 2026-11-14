@@ -23,6 +23,7 @@ import { render, act } from '@testing-library/react';
 import SockJS from 'sockjs-client';
 import React from 'react';
 import { WebSocketContext, WebSocketProvider, useWebSocket } from '../websocket-context';
+import { loadTransport } from '../websocket-transport';
 
 let authUser: { id: string; authorizationVersion?: string } | null = { id: 'U1', authorizationVersion: 'v1' };
 
@@ -52,6 +53,11 @@ vi.mock('@stomp/stompjs', () => ({
 }));
 vi.mock('sockjs-client', () => ({ default: vi.fn(function () { return {}; }) }));
 vi.mock('../AuthContext', () => ({ useAuth: () => ({ user: authUser }) }));
+// 실제 불러오기(위 두 모의 모듈)를 그대로 쓰되, 실패를 흉내 낼 수 있게 감싼다.
+vi.mock('../websocket-transport', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../websocket-transport')>();
+  return { loadTransport: vi.fn(actual.loadTransport) };
+});
 
 /** 컨텍스트 값을 밖으로 노출시키는 소비자. */
 function Probe({ onValue }: { onValue: (v: ReturnType<typeof useWebSocket>) => void }) {
@@ -59,13 +65,20 @@ function Probe({ onValue }: { onValue: (v: ReturnType<typeof useWebSocket>) => v
   return null;
 }
 
-function renderProvider() {
+/**
+ * 공급자는 연결 라이브러리를 연결할 때 불러온다(동적 import). 불러오기가 끝날 때까지 한 번 기다린다 — 기다리지 않으면 연결 객체가
+ * 아직 없다는 것만 보게 된다.
+ */
+const settle = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+
+async function renderProvider() {
   let latest: ReturnType<typeof useWebSocket> = { client: null, isConnected: false };
   const utils = render(
     <WebSocketProvider>
       <Probe onValue={(v) => { latest = v; }} />
     </WebSocketProvider>
   );
+  await settle();
   return { ...utils, get value() { return latest; } };
 }
 
@@ -77,14 +90,16 @@ describe('WebSocketProvider', () => {
   });
 
   describe('연결 수명', () => {
-    it('권한 버전 변경 시 기존 연결을 종료하고 늦은 이전 연결 콜백을 무시한다', () => {
+    it('권한 버전 변경 시 기존 연결을 종료하고 늦은 이전 연결 콜백을 무시한다', async () => {
       let value: ReturnType<typeof useWebSocket> | undefined;
       const view = render(<WebSocketProvider><Probe onValue={(next) => { value = next; }} /></WebSocketProvider>);
+      await settle();
       const first = created[0];
       act(() => { first.onConnect?.(); });
       expect(value?.client).toBe(first);
       authUser = { id: 'U1', authorizationVersion: 'v2' };
       view.rerender(<WebSocketProvider><Probe onValue={(next) => { value = next; }} /></WebSocketProvider>);
+      await settle();
       expect(first.deactivate).toHaveBeenCalledTimes(1);
       expect(value?.client).toBeNull();
       act(() => { first.onConnect?.(); });
@@ -93,40 +108,42 @@ describe('WebSocketProvider', () => {
       expect(value?.client).toBe(created[1]);
     });
 
-    it('같은 사용자·권한 버전의 새 객체는 연결을 재생성하지 않는다', () => {
-      const view = renderProvider();
+    it('같은 사용자·권한 버전의 새 객체는 연결을 재생성하지 않는다', async () => {
+      const view = await renderProvider();
       authUser = { id: 'U1', authorizationVersion: 'v1' };
       view.rerender(<WebSocketProvider><Probe onValue={() => undefined} /></WebSocketProvider>);
+      await settle();
       expect(created).toHaveLength(1);
     });
 
-    it('허용한 동일 출처 transport만 사용하며 토큰을 연결 헤더나 URL에 넣지 않는다', () => {
-      renderProvider();
+    it('허용한 동일 출처 transport만 사용하며 토큰을 연결 헤더나 URL에 넣지 않는다', async () => {
+      await renderProvider();
       (created[0].config.webSocketFactory as () => unknown)();
       expect(SockJS).toHaveBeenCalledWith('/ws', undefined, { transports: ['websocket', 'xhr-streaming', 'xhr-polling'] });
       expect(created[0].config.connectHeaders).toBeUndefined();
     });
 
-    it('로그인 사용자가 있으면 연결을 시작한다', () => {
-      renderProvider();
+    it('로그인 사용자가 있으면 연결을 시작한다', async () => {
+      await renderProvider();
 
       expect(created).toHaveLength(1);
       expect(created[0].activate).toHaveBeenCalledTimes(1);
     });
 
-    it('로그인 사용자가 없으면 연결하지 않는다', () => {
+    it('로그인 사용자가 없으면 연결하지 않는다', async () => {
       authUser = null;
 
-      renderProvider();
+      await renderProvider();
 
       // 비로그인 상태에서 소켓을 열면 인증 없는 연결이 서버에 쌓인다.
       expect(created).toHaveLength(0);
     });
 
-    it('로그아웃하면 기존 연결을 끊는다 — 이전 사용자의 큐를 계속 듣고 있으면 안 된다', () => {
+    it('로그아웃하면 기존 연결을 끊는다 — 이전 사용자의 큐를 계속 듣고 있으면 안 된다', async () => {
       const { rerender } = render(
         <WebSocketProvider><Probe onValue={() => {}} /></WebSocketProvider>
       );
+      await settle();
       expect(created).toHaveLength(1);
       const first = created[0];
 
@@ -139,7 +156,7 @@ describe('WebSocketProvider', () => {
       expect(first.deactivate).toHaveBeenCalled();
     });
 
-    it('리렌더가 반복돼도 소켓을 하나만 만든다', () => {
+    it('리렌더가 반복돼도 소켓을 하나만 만든다', async () => {
       const { rerender } = render(
         <WebSocketProvider><Probe onValue={() => {}} /></WebSocketProvider>
       );
@@ -148,13 +165,79 @@ describe('WebSocketProvider', () => {
         rerender(<WebSocketProvider><Probe onValue={() => {}} /></WebSocketProvider>);
         rerender(<WebSocketProvider><Probe onValue={() => {}} /></WebSocketProvider>);
       });
+      await settle();
 
       // 중복 연결 가드가 풀리면 렌더마다 소켓이 늘어 서버 연결이 고갈된다.
       expect(created).toHaveLength(1);
     });
 
-    it('언마운트하면 연결을 정리한다', () => {
-      const { unmount } = renderProvider();
+    it('불러오는 사이에 로그아웃하면 연결을 만들지 않는다 — 이전 사용자의 소켓이 늦게 열리지 않게', async () => {
+      const { rerender } = render(
+        <WebSocketProvider><Probe onValue={() => {}} /></WebSocketProvider>
+      );
+      authUser = null;
+      act(() => {
+        rerender(<WebSocketProvider><Probe onValue={() => {}} /></WebSocketProvider>);
+      });
+      await settle();
+
+      expect(created).toHaveLength(0);
+    });
+
+    it('연결 라이브러리는 첫 화면 번들이 아니라 연결할 때 불러온다', async () => {
+      const { readFileSync } = await import('node:fs');
+      const { join } = await import('node:path');
+      const read = (name: string) => readFileSync(join(process.cwd(), 'src', 'contexts', name), 'utf8');
+      const staticLibraryImport = /^import\s+(?!type\b)[^;]*from\s+'(@stomp\/stompjs|sockjs-client)'/m;
+      const provider = read('websocket-context.tsx');
+      const transport = read('websocket-transport.ts');
+      expect(provider).not.toMatch(staticLibraryImport);
+      expect(transport).not.toMatch(staticLibraryImport);
+      expect(transport).toContain("import('@stomp/stompjs')");
+      expect(transport).toContain("import('sockjs-client')");
+    });
+
+    it('불러오기에 실패하면 잠시 뒤 다시 불러와 연결한다 — 일시 장애가 끝나면 실시간 연결이 돌아온다', async () => {
+      vi.useFakeTimers();
+      try {
+        vi.mocked(loadTransport).mockRejectedValueOnce(new Error('chunk load failed'));
+        render(<WebSocketProvider><Probe onValue={() => {}} /></WebSocketProvider>);
+        await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+        // 연결 객체가 없으면 stompjs 의 재연결도 돌지 않는다 — 공급자가 다시 불러와야 한다.
+        expect(created).toHaveLength(0);
+
+        await act(async () => { await vi.advanceTimersByTimeAsync(5_000); });
+
+        expect(loadTransport).toHaveBeenCalledTimes(2);
+        expect(created).toHaveLength(1);
+        expect(created[0].activate).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('다시 불러오기를 기다리는 사이 로그아웃하면 재시도를 취소한다 — 이전 사용자의 연결이 늦게 열리지 않게', async () => {
+      vi.useFakeTimers();
+      try {
+        vi.mocked(loadTransport).mockRejectedValueOnce(new Error('chunk load failed'));
+        const { rerender } = render(<WebSocketProvider><Probe onValue={() => {}} /></WebSocketProvider>);
+        await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+        authUser = null;
+        act(() => {
+          rerender(<WebSocketProvider><Probe onValue={() => {}} /></WebSocketProvider>);
+        });
+
+        await act(async () => { await vi.advanceTimersByTimeAsync(120_000); });
+
+        expect(loadTransport).toHaveBeenCalledTimes(1);
+        expect(created).toHaveLength(0);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('언마운트하면 연결을 정리한다', async () => {
+      const { unmount } = await renderProvider();
       const client = created[0];
       client.active = true;
 
@@ -165,8 +248,8 @@ describe('WebSocketProvider', () => {
   });
 
   describe('연결 상태 전이', () => {
-    it('연결되면 isConnected를 켜되 Provider 자체는 사용자 큐를 중복 구독하지 않는다', () => {
-      const view = renderProvider();
+    it('연결되면 isConnected를 켜되 Provider 자체는 사용자 큐를 중복 구독하지 않는다', async () => {
+      const view = await renderProvider();
       expect(view.value.isConnected).toBe(false);
 
       act(() => { created[0].onConnect?.(); });
@@ -177,20 +260,21 @@ describe('WebSocketProvider', () => {
       expect(view.value.client).toBe(created[0]);
     });
 
-    it('연결이 열려도 공급자 값은 같은 객체다 — 공개를 기다리는 서버 화면을 깨우지 않는다', () => {
+    it('연결이 열려도 공급자 값은 같은 객체다 — 공개를 기다리는 서버 화면을 깨우지 않는다', async () => {
       // 연결은 첫 화면 직후 열린다. 그때 context 값이 바뀌면 React 는 스트리밍 공개를 기다리던 경계를 브라우저에서 다시
       //   그리고 서버 사본이 숨은 채 잠시 남는다(2026-10-21 GAP-FE-003). 연결은 구독으로 읽는 소비자만 다시 그린다.
       const seen = new Set<unknown>();
       function ContextProbe() { seen.add(React.useContext(WebSocketContext)); useWebSocket(); return null; }
       render(<WebSocketProvider><ContextProbe /></WebSocketProvider>);
+      await settle();
 
       act(() => { created[0].onConnect?.(); });
 
       expect(seen.size, '연결이 공급자 값을 바꿨다').toBe(1);
     });
 
-    it('STOMP 오류가 나면 연결 해제 상태로 되돌린다', () => {
-      const view = renderProvider();
+    it('STOMP 오류가 나면 연결 해제 상태로 되돌린다', async () => {
+      const view = await renderProvider();
       act(() => { created[0].onConnect?.(); });
       expect(view.value.isConnected).toBe(true);
 
@@ -201,8 +285,8 @@ describe('WebSocketProvider', () => {
       expect(view.value.client).toBeNull();
     });
 
-    it('끊기면 연결 해제 상태로 되돌린다', () => {
-      const view = renderProvider();
+    it('끊기면 연결 해제 상태로 되돌린다', async () => {
+      const view = await renderProvider();
       act(() => { created[0].onConnect?.(); });
 
       act(() => { created[0].onDisconnect?.(); });
@@ -213,8 +297,8 @@ describe('WebSocketProvider', () => {
 
     // 서버가 소켓을 닫으면(권한이 바뀐 세션의 정책 위반 종료) stompjs 는 onDisconnect 없이 onWebSocketClose 만 부른다. 연결됨으로 남으면
     // 소비자의 subscribe 가 'There is no underlying STOMP connection' 으로 던진다(2026-11-07 CUBRID 대표 E2E).
-    it('서버가 소켓을 닫으면 연결 해제 상태로 되돌리고, 다시 연결되면 소비자에게 새로 알린다', () => {
-      const view = renderProvider();
+    it('서버가 소켓을 닫으면 연결 해제 상태로 되돌리고, 다시 연결되면 소비자에게 새로 알린다', async () => {
+      const view = await renderProvider();
       act(() => { created[0].onConnect?.(); });
       expect(view.value.isConnected).toBe(true);
 
@@ -228,8 +312,8 @@ describe('WebSocketProvider', () => {
       expect(view.value.client).toBe(created[0]);
     });
 
-    it('재연결 간격과 하트비트를 설정한다', () => {
-      renderProvider();
+    it('재연결 간격과 하트비트를 설정한다', async () => {
+      await renderProvider();
 
       // 재연결이 없으면 일시적 단절 후 알림이 영구히 멈춘다.
       expect(created[0].config.reconnectDelay).toBe(5000);
@@ -238,7 +322,7 @@ describe('WebSocketProvider', () => {
     });
   });
 
-  it('Provider 밖에서 훅을 쓰면 안전한 기본값을 돌려준다', () => {
+  it('Provider 밖에서 훅을 쓰면 안전한 기본값을 돌려준다', async () => {
     let value: ReturnType<typeof useWebSocket> | undefined;
     render(<Probe onValue={(v) => { value = v; }} />);
 

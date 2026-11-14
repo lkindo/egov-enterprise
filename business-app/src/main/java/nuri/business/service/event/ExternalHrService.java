@@ -37,6 +37,7 @@ public class ExternalHrService {
     @Transactional
     public ExternalHrDto createExternalHr(ExternalHrDto dto) {
         SecurityUtil.assertPermission("EXT_HR_CREATE");
+        requireContactFormats(dto);
         String actorLoginId = currentLoginId();
         ExternalHrId id = new ExternalHrId(dto.getEvntSn(), dto.getOtsdHrId());
         if (externalHrRepository.existsById(id)) {
@@ -68,6 +69,7 @@ public class ExternalHrService {
     @Transactional
     public ExternalHrDto updateExternalHr(Long evntSn, String otsdHrId, ExternalHrDto dto) {
         SecurityUtil.assertPermission("EXT_HR_UPDATE");
+        requireContactFormats(dto);
         String actorLoginId = currentLoginId();
         ExternalHr hr = findRequired(evntSn, otsdHrId);
         nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), hr.getVersion());
@@ -81,6 +83,31 @@ public class ExternalHrService {
     public void deleteExternalHr(Long evntSn, String otsdHrId) {
         SecurityUtil.assertPermission("EXT_HR_DELETE");
         externalHrRepository.delete(findRequired(evntSn, otsdHrId));
+    }
+
+    // 도메인 조각이 점을 담지 않게 해 조각 경계가 하나로 정해진다 — `[^\s@]+\.[^\s@]+` 꼴은 점 위치를 여러 갈래로 시도해
+    //   긴 입력에서 다항 시간 역추적이 된다(CodeQL java/polynomial-redos).
+    private static final java.util.regex.Pattern EMAIL = java.util.regex.Pattern.compile("^[^\\s@]+@[^\\s@.]+(?:\\.[^\\s@.]+)+$");
+    private static final java.util.regex.Pattern TELNO_PART = java.util.regex.Pattern.compile("^\\d{1,4}$");
+
+    /**
+     * 값이 있을 때의 형식만 본다(2026-11-14). 화면(ExternalHrClient)은 이메일 형식과 전화번호 숫자를 검사하지만 서버는 길이만 봐서,
+     * API·이관으로 들어온 값은 형식이 틀린 채 저장됐다. 필수 여부는 강제하지 않는다 — 최소 필드만 가진 행도 고칠 수 있어야 한다는
+     * 결정(DEC-OPS-045)을 지킨다.
+     */
+    private static void requireContactFormats(ExternalHrDto dto) {
+        if (filled(dto.getEmlAddr()) && !EMAIL.matcher(dto.getEmlAddr()).matches()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "이메일 형식이 올바르지 않습니다.");
+        }
+        for (String part : java.util.Arrays.asList(dto.getAreaNo(), dto.getMdTelno(), dto.getEndTelno())) {
+            if (filled(part) && !TELNO_PART.matcher(part).matches()) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "전화번호는 숫자만 입력해 주세요.");
+            }
+        }
+    }
+
+    private static boolean filled(String value) {
+        return value != null && !value.isBlank();
     }
 
     private ExternalHr findRequired(Long evntSn, String otsdHrId) {

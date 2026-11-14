@@ -43,6 +43,22 @@ class BoardViewCountServiceTest {
     }
 
     @Test
+    @DisplayName("[2026-11-14] 종료할 때 남은 조회수를 반영한다 — 마지막 주기 몫이 프로세스와 함께 사라지지 않게")
+    void flushOnShutdown_appliesWhatIsLeft() {
+        given(boardRepository.increaseInqCntAtomic(7L, 3)).willReturn(1);
+        boardViewCountService.increaseViewCount(7L);
+        boardViewCountService.increaseViewCount(7L);
+        boardViewCountService.increaseViewCount(7L);
+
+        boardViewCountService.flushOnShutdown();
+
+        verify(boardRepository).increaseInqCntAtomic(7L, 3);
+        // 소멸 콜백으로 등록돼 있어야 컨텍스트가 닫힐 때 불린다.
+        org.assertj.core.api.Assertions.assertThat(org.springframework.util.ReflectionUtils.findMethod(BoardViewCountService.class, "flushOnShutdown")
+                .isAnnotationPresent(jakarta.annotation.PreDestroy.class)).isTrue();
+    }
+
+    @Test
     @DisplayName("버퍼에 누적된 조회수를 하나의 원자 UPDATE 로 반영한다 (delta 누적 검증)")
     void syncViewCounts_appliesAccumulatedDeltaAtomically() {
         Long pstSn = 1L;

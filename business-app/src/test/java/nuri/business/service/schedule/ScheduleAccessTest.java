@@ -171,6 +171,20 @@ class ScheduleAccessTest {
     }
 
     @Test
+    @org.junit.jupiter.api.DisplayName("[2026-11-14] 기간 조회는 두 날짜를 yyyyMMdd 로 맞추고, 순서가 뒤집혔거나 366일을 넘거나 날짜가 아니면 400 이다")
+    void dateRangeIsNormalisedAndBounded() {
+        assertThat(service.getScheduleListByDateRange("owner", "2026-10-01", "2026-10-31")).isEmpty();
+        verify(repository).findSchedulesByDateRange("owner", "20261001", "20261031");
+        assertThat(service.getScheduleListByDateRange("owner", "20260101", "20261231")).isEmpty();
+        for (String[] range : new String[][] { { "20261031", "20261001" }, { "20260101", "20270102" }, { "20260230", "20260301" },
+                { "2026/10/01", "20261031" }, { "", "20261031" }, { null, "20261031" } }) {
+            assertThatThrownBy(() -> service.getScheduleListByDateRange("owner", range[0], range[1]))
+                    .as(java.util.Arrays.toString(range)).isInstanceOf(BusinessException.class);
+        }
+        verify(repository, org.mockito.Mockito.times(2)).findSchedulesByDateRange(anyString(), anyString(), anyString());
+    }
+
+    @Test
     void absentRecordsFailAndDateRangesPreserveOwnerScope() {
         assertThatThrownBy(() -> service.getSchedule(99L)).isInstanceOf(BusinessException.class);
         assertThatThrownBy(() -> service.updateSchedule(99L, "owner", ScheduleDto.builder().build())).isInstanceOf(BusinessException.class);

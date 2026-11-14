@@ -141,6 +141,15 @@ class NaverSensSmsSenderTest {
         assertThat(result.reason()).isEqualTo(Reason.INVALID_REQUEST);
         assertThat(postCount).hasValue(0);
         assertThat(requests).isEmpty();
+        // 접수 단계의 판정도 같다 — 보낼 수 없는 본문은 접수하지 않는다(2026-11-14).
+        assertThat(sender(properties()).rejectsMessage(content)).isTrue();
+    }
+
+    @ParameterizedTest(name = "{index}: sendable content is accepted at submission")
+    @CsvSource({"1", "45", "1000"})
+    void submissionAcceptsWhatTheGatewayCanSend(int koreanCharacters) {
+        assertThat(sender(properties()).rejectsMessage("가".repeat(koreanCharacters))).isFalse();
+        assertThat(requests).as("판정만 하고 보내지 않는다").isEmpty();
     }
 
     static Stream<Arguments> invalidContent() {

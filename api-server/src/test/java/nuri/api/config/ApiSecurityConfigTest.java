@@ -84,7 +84,7 @@ public class ApiSecurityConfigTest extends ControllerTestSupport {
         String apiHash = passwordEncoder.encode("isolated-password-fixture");
         String coreHash = fallback.encode("isolated-password-fixture");
 
-        assertThat(apiHash).startsWith("{bcrypt}$2a$10$");
+        assertThat(apiHash).startsWith("{bcrypt}$2a$12$"); // 비용 12(PasswordEncoders.BCRYPT_STRENGTH)
         assertThat(fallback.matches("isolated-password-fixture", apiHash)).isTrue();
         assertThat(passwordEncoder.matches("isolated-password-fixture", coreHash)).isTrue();
         assertThat(passwordEncoder.matches("wrong-password-fixture", coreHash)).isFalse();

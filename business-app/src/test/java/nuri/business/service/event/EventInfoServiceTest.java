@@ -97,7 +97,7 @@ class EventInfoServiceTest {
         if (operation.equals("UPDATE")) {
             org.mockito.Mockito.lenient().when(eventInfoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(foreign));
         } else if (operation.equals("DELETE")) {
-            org.mockito.Mockito.lenient().when(eventInfoRepository.findById(1L)).thenReturn(Optional.of(foreign));
+            org.mockito.Mockito.lenient().when(eventInfoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(foreign));
         }
         Runnable write = switch (operation) {
             case "CREATE" -> () -> eventInfoService.createEvent("foreign-writer", EventInfoDto.builder().evntNm("new").build());
@@ -186,16 +186,34 @@ class EventInfoServiceTest {
     }
 
     @Test
-    @DisplayName("[V2_152] 승인 대기·승인 신청이 남은 행사는 지우지 않는다(409) — 신청이 행사와 함께 조용히 사라지지 않게")
+    @DisplayName("[V2_152] 승인 대기·승인 신청이 남은 행사는 지우지 않는다(409) — 신청과 같은 행 잠금 뒤에 세어 신청이 행사와 함께 조용히 사라지지 않게")
     void eventWithOccupiedSeatsIsNotDeleted() {
         authenticate(List.of("EVENT_DELETE"), List.of());
         EventInfo existing = EventInfo.builder().evntSn(1L).evntNm("워크숍").build();
-        given(eventInfoRepository.findById(1L)).willReturn(Optional.of(existing));
+        given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existing));
         given(eventApplicationRepository.countSeats(1L)).willReturn(2L);
 
         BusinessException inUse = assertThrows(BusinessException.class, () -> eventInfoService.deleteEvent(1L));
         assertThat(inUse.getErrorCode()).isEqualTo(CommonErrorCode.RESOURCE_IN_USE);
         verify(eventInfoRepository, org.mockito.Mockito.never()).delete(any(EventInfo.class));
+        // 잠그지 않은 조회로 세면 센 뒤에 들어온 신청이 삭제와 함께 지워진다.
+        verify(eventInfoRepository, org.mockito.Mockito.never()).findById(any());
+    }
+
+    @Test
+    @DisplayName("[V2_152] 남은 신청이 없는 행사는 행 잠금 뒤에 세고 지운다")
+    void emptyEventIsDeletedUnderTheRowLock() {
+        authenticate(List.of("EVENT_DELETE"), List.of());
+        EventInfo existing = EventInfo.builder().evntSn(1L).evntNm("워크숍").build();
+        given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existing));
+        given(eventApplicationRepository.countSeats(1L)).willReturn(0L);
+
+        eventInfoService.deleteEvent(1L);
+
+        org.mockito.InOrder order = org.mockito.Mockito.inOrder(eventInfoRepository, eventApplicationRepository);
+        order.verify(eventInfoRepository).findByIdForUpdate(1L);
+        order.verify(eventApplicationRepository).countSeats(1L);
+        order.verify(eventInfoRepository).delete(existing);
     }
 
     @Test
@@ -327,7 +345,7 @@ class EventInfoServiceTest {
         // given
         EventInfo existingEvent = EventInfo.builder().evntSn(1L).build();
         existingEvent.setFrstRgtrId("foreign-writer");
-        given(eventInfoRepository.findById(1L)).willReturn(Optional.of(existingEvent));
+        given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existingEvent));
 
         // when
         eventInfoService.deleteEvent(1L);
@@ -341,7 +359,7 @@ class EventInfoServiceTest {
     void deleteEvent_rejectsWhenExternalHrExists() {
         authorize("EVENT_DELETE");
         EventInfo existingEvent = EventInfo.builder().evntSn(1L).build();
-        given(eventInfoRepository.findById(1L)).willReturn(Optional.of(existingEvent));
+        given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existingEvent));
         given(externalHrRepository.countByEvntSn(1L)).willReturn(3L);
 
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> eventInfoService.deleteEvent(1L))

@@ -169,85 +169,78 @@ public class NoteService {
         if (dto.getRcverId() == null || dto.getRcverId().isBlank()) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
         }
-        try {
-            List<String> receiverIds = java.util.Arrays.stream(dto.getRcverId().split(","))
-                    .map(String::trim)
-                    .filter(id -> !id.isEmpty())
-                    .toList();
-            if (receiverIds.isEmpty()) {
-                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
-            }
-            // [2026-10-27] 화면(note-form-validation.ts)과 같은 경계를 서버도 지킨다 — 화면을 거치지 않은 요청이 수만 명을 실으면
-            //   아래 IN 조회가 바인드 수 한도를 넘어 500 이 됐다. 개별 ID 는 tb_note_rcptn.rcvr_id varchar(20) 이다.
-            if (receiverIds.size() > MAX_RECEIVERS) {
-                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                        "수신자는 최대 " + MAX_RECEIVERS + "명까지 지정할 수 있습니다.");
-            }
-            if (receiverIds.stream().anyMatch(id -> id.length() > MAX_RECEIVER_ID_LENGTH)) {
-                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                        "수신자 식별자가 올바르지 않습니다 (개별 최대 " + MAX_RECEIVER_ID_LENGTH + "자).");
-            }
-            // 피커를 우회한 요청도 저장 전에 모든 수신자의 현재 사용 중 상태를 확인한다.
-            // 조회만 중복을 제거하고, 기존 수신행·알림의 순서와 중복 의미는 유지한다.
-            List<User> receivers = userRepository.findByEsntlIdIn(receiverIds.stream().distinct().toList());
-            java.util.Set<String> activeReceiverIds = receivers.stream()
-                    .filter(user -> "P".equals(user.getUserSttsCd()))
-                    .map(User::getEsntlId)
-                    .collect(Collectors.toSet());
-            if (!activeReceiverIds.containsAll(receiverIds)) {
-                // [2026-10-01] 사용 중이 아닌 수신자는 이름을 밝혀 거부한다 — 결재자 지정과 같은 규칙(DEC-OPS-155).
-                //   없는 식별자는 종전 문구로 거부하고 식별자를 되돌려 주지 않는다.
-                List<String> inactiveNames = receivers.stream()
-                        .filter(user -> !"P".equals(user.getUserSttsCd()))
-                        .map(User::getUserNm)
-                        .filter(org.springframework.util.StringUtils::hasText)
-                        .distinct()
-                        .toList();
-                if (!inactiveNames.isEmpty()) {
-                    throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                            String.join(", ", inactiveNames) + " 님은 사용 중인 계정이 아니어서 쪽지를 받을 수 없습니다."
-                                    + " 이 수신자를 빼고 다시 보내 주세요.");
-                }
-                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
-            }
-
-            Long atchFileSn = dto.getAtchFileSn();
-            if (atchFileSn != null) {
-                attachmentAssignmentPolicy.assertAssignable(atchFileSn);
-            }
-
-            Note note = Note.builder()
-                    .noteTtl(dto.getNoteSj())
-                    .noteCn(dto.getNoteCn())
-                    .atchFileSn(atchFileSn)
-                    .build();
-            noteRepository.save(note);
-
-            NoteTrnsmit trnsmit = NoteTrnsmit.builder()
-                    .note(note)
-                    .sndrId(dsptchUserId)
-                    .build();
-            noteTrnsmitRepository.save(trnsmit);
-
-            for (String receiverId : receiverIds) {
-                NoteRecptn recptn = NoteRecptn.builder()
-                        .note(note)
-                        .noteDsptch(trnsmit)
-                        .rcvrId(receiverId)
-                        .openYn("N")
-                        .rcptnSeCd("0")
-                        .build();
-                noteRecptnRepository.save(recptn);
-            }
-            publishReceivedNotifications(receiverIds, dto.getNoteSj());
-            // [ADR-0036] 생성 응답(201)의 본문은 새 쪽지의 일련번호다(GET /notes/{noteSn}).
-            return note.getNoteSn();
-        } catch (BusinessException e) {
-            throw e; // 입력 검증 등 의도된 비즈니스 예외는 그대로 전파
-        } catch (Exception e) {
-            log.error("Failed to send note: exceptionType={}", e.getClass().getSimpleName());
-            throw new BusinessException("쪽지 발송 중 오류가 발생했습니다.", CommonErrorCode.INTERNAL_SERVER_ERROR);
+        List<String> receiverIds = java.util.Arrays.stream(dto.getRcverId().split(","))
+                .map(String::trim)
+                .filter(id -> !id.isEmpty())
+                .toList();
+        if (receiverIds.isEmpty()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
         }
+        // [2026-10-27] 화면(note-form-validation.ts)과 같은 경계를 서버도 지킨다 — 화면을 거치지 않은 요청이 수만 명을 실으면
+        //   아래 IN 조회가 바인드 수 한도를 넘어 500 이 됐다. 개별 ID 는 tb_note_rcptn.rcvr_id varchar(20) 이다.
+        if (receiverIds.size() > MAX_RECEIVERS) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "수신자는 최대 " + MAX_RECEIVERS + "명까지 지정할 수 있습니다.");
+        }
+        if (receiverIds.stream().anyMatch(id -> id.length() > MAX_RECEIVER_ID_LENGTH)) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "수신자 식별자가 올바르지 않습니다 (개별 최대 " + MAX_RECEIVER_ID_LENGTH + "자).");
+        }
+        // 피커를 우회한 요청도 저장 전에 모든 수신자의 현재 사용 중 상태를 확인한다.
+        // 조회만 중복을 제거하고, 기존 수신행·알림의 순서와 중복 의미는 유지한다.
+        List<User> receivers = userRepository.findByEsntlIdIn(receiverIds.stream().distinct().toList());
+        java.util.Set<String> activeReceiverIds = receivers.stream()
+                .filter(user -> "P".equals(user.getUserSttsCd()))
+                .map(User::getEsntlId)
+                .collect(Collectors.toSet());
+        if (!activeReceiverIds.containsAll(receiverIds)) {
+            // [2026-10-01] 사용 중이 아닌 수신자는 이름을 밝혀 거부한다 — 결재자 지정과 같은 규칙(DEC-OPS-155).
+            //   없는 식별자는 종전 문구로 거부하고 식별자를 되돌려 주지 않는다.
+            List<String> inactiveNames = receivers.stream()
+                    .filter(user -> !"P".equals(user.getUserSttsCd()))
+                    .map(User::getUserNm)
+                    .filter(org.springframework.util.StringUtils::hasText)
+                    .distinct()
+                    .toList();
+            if (!inactiveNames.isEmpty()) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        String.join(", ", inactiveNames) + " 님은 사용 중인 계정이 아니어서 쪽지를 받을 수 없습니다."
+                                + " 이 수신자를 빼고 다시 보내 주세요.");
+            }
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        Long atchFileSn = dto.getAtchFileSn();
+        if (atchFileSn != null) {
+            attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+        }
+
+        Note note = Note.builder()
+                .noteTtl(dto.getNoteSj())
+                .noteCn(dto.getNoteCn())
+                .atchFileSn(atchFileSn)
+                .build();
+        noteRepository.save(note);
+
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder()
+                .note(note)
+                .sndrId(dsptchUserId)
+                .build();
+        noteTrnsmitRepository.save(trnsmit);
+
+        for (String receiverId : receiverIds) {
+            NoteRecptn recptn = NoteRecptn.builder()
+                    .note(note)
+                    .noteDsptch(trnsmit)
+                    .rcvrId(receiverId)
+                    .openYn("N")
+                    .rcptnSeCd("0")
+                    .build();
+            noteRecptnRepository.save(recptn);
+        }
+        publishReceivedNotifications(receiverIds, dto.getNoteSj());
+        // [ADR-0036] 생성 응답(201)의 본문은 새 쪽지의 일련번호다(GET /notes/{noteSn}).
+        return note.getNoteSn();
     }
 
     /**

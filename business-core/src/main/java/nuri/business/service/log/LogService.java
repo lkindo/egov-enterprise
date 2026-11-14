@@ -20,17 +20,39 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class LogService extends BaseAbstractService {
 
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(LogService.class);
+
     private final LoginLogRepository loginLogRepository;
 
+    /** 유실 카운터 메트릭 이름 — 웹·시스템·개인정보·사용자 로그와 같은 계열이다. 바꾸면 관측이 끊긴다. */
+    public static final String DROP_METRIC = "audit.loginlog.persist.failure";
+
+    /** 레지스트리가 없는 컨텍스트(단위 시험 슬라이스)에서도 만들어지도록 지연 조회한다(WebAuditLogListener 와 같은 이유). */
+    private final org.springframework.beans.factory.ObjectProvider<io.micrometer.core.instrument.MeterRegistry> meterRegistryProvider;
+
+    private final java.util.concurrent.atomic.AtomicLong persistFailureCount = new java.util.concurrent.atomic.AtomicLong();
+
     public LogService(LoginLogRepository loginLogRepository) {
+        this(loginLogRepository, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public LogService(LoginLogRepository loginLogRepository,
+            org.springframework.beans.factory.ObjectProvider<io.micrometer.core.instrument.MeterRegistry> meterRegistryProvider) {
         this.loginLogRepository = required(loginLogRepository, "LoginLogRepository 는 null 일 수 없습니다");
+        this.meterRegistryProvider = meterRegistryProvider;
     }
 
     /**
      * 로그인 로그 기록 (비동기 처리)
+     *
+     * <p><b>바깥 트랜잭션을 열지 않는다</b>(WebAuditLogListener 와 같은 이유). 메서드 트랜잭션이 있으면 연결 획득·커밋 실패가
+     * 아래 catch 밖(프록시)에서 나 유실 계측을 비껴간다. {@code SimpleJpaRepository.save} 가 자기 트랜잭션을 열고 그 안에서
+     * 커밋하므로 시작부터 커밋까지의 실패가 모두 {@code save()} 에서 던져져 한 번만 센다. 클래스 기본값(readOnly)에 합류하면
+     * 읽기 전용 트랜잭션에서 INSERT 하게 되므로 NOT_SUPPORTED 로 명시한다.
      */
     @Async("logExecutor")
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
     public void logLogin(String userId, String ip, String mthd, String errAt, String errCode) {
 
         LoginLog log = LoginLog.builder()
@@ -40,7 +62,23 @@ public class LogService extends BaseAbstractService {
                 .errOcrnYn(errAt)
                 .errCd(errCode)
                 .build();
-        loginLogRepository.save(required(log, "로그 엔티티는 null 일 수 없습니다"));
+        try {
+            loginLogRepository.save(required(log, "로그 엔티티는 null 일 수 없습니다"));
+        } catch (RuntimeException e) {
+            // [2026-11-14] 로그인 응답에는 영향을 주지 않되(비동기·best-effort) 유실을 셀 수 있게 남긴다. 종전에는 다른 로그와 달리
+            //   로그인 로그만 실패가 비동기 예외 처리기의 로그 한 줄로 사라져, 얼마나 잃었는지 셀 수 없었다.
+            long total = persistFailureCount.incrementAndGet();
+            io.micrometer.core.instrument.MeterRegistry registry = meterRegistryProvider == null ? null : meterRegistryProvider.getIfAvailable();
+            if (registry != null) {
+                registry.counter(DROP_METRIC).increment();
+            }
+            LOG.error("로그인 로그 영속화 실패(로그인에는 영향 없음) — 누적 유실 {}건, 예외유형={}", total, e.getClass().getSimpleName());
+        }
+    }
+
+    /** 시험·운영 점검용 유실 누계. 외부 관측은 {@link #DROP_METRIC} 메트릭을 쓴다. */
+    public long getPersistFailureCount() {
+        return persistFailureCount.get();
     }
 
     /**

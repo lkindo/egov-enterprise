@@ -171,6 +171,8 @@ describe('공통코드 — 사용처 표시와 영향 확인', () => {
     const options = mocks.confirm.mock.calls[0][0];
     expect(options.message).toContain('이 제품이 읽는 그룹');
     expect(options.message).toContain('상세 코드 목록에 그 상세 코드가 보이지 않습니다');
+    // 그룹을 끄면 소비 경로도 그 코드를 주지 않는다(CommonCodeService#getCodesByGroup) — 결과를 그대로 말한다.
+    expect(options.message).toContain('아래 사용처도 이 그룹의 코드를 더 받지 못합니다');
     expect(options.detailsLabel).toBe('이 제품이 이 그룹을 읽는 곳');
     const { container } = render(<>{options.details}</>);
     expect(within(container).getByText(APPROVAL_USAGE)).toBeInTheDocument();

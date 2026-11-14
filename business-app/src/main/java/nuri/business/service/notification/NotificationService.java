@@ -67,6 +67,7 @@ public class NotificationService {
     @Transactional
     public Long createNotification(String userId, NotificationDto dto) {
         requireUserId(userId);
+        requireInternalLink(dto.getLinkUrl());
         return createForEvent(new NotificationRequestedEvent(userId, dto.getNotiTtlNm(), dto.getNotiCn(), dto.getLinkUrl()));
     }
 
@@ -101,6 +102,7 @@ public class NotificationService {
     public int dispatchToUsers(NotificationDispatchRequest request) {
         SecurityUtil.assertPermission("NOTI_DISPATCH");
         Objects.requireNonNull(request, "발송 요청은 null 일 수 없습니다");
+        requireInternalLink(request.getLinkUrl());
         List<String> esntlIds = request.getRecipients().stream()
                 .map(NotificationDispatchRequest.Recipient::getEsntlId)
                 .toList();
@@ -115,6 +117,36 @@ public class NotificationService {
         }
         log.info("Dispatched {} notification(s) by administrator", recipients.size());
         return recipients.size();
+    }
+
+    /**
+     * 알림 링크는 이 앱 안의 경로만 받는다(2026-11-14). 화면(use-notifications)은 내부 경로가 아니면 링크를 버리지만, 서버는 관리자
+     * 발송의 임의 문자열을 그대로 저장했다 — 외부 주소·스킴·백슬래시·점 세그먼트는 저장 전에 거부한다. 비어 있으면 링크가 없는 알림이다.
+     */
+    private static final java.util.regex.Pattern MALFORMED_PERCENT_ESCAPE =
+            java.util.regex.Pattern.compile("%(?![0-9a-fA-F]{2})");
+    private static final java.util.regex.Pattern ENCODED_CONTROL_CHARACTER =
+            java.util.regex.Pattern.compile("%(?:25)*(?:0[0-9a-f]|1[0-9a-f]|7f)", java.util.regex.Pattern.CASE_INSENSITIVE);
+    private static final java.util.regex.Pattern ENCODED_PATH_SEPARATOR_OR_DOT =
+            java.util.regex.Pattern.compile("%(?:25)*(?:2e|2f|5c)", java.util.regex.Pattern.CASE_INSENSITIVE);
+
+    static void requireInternalLink(String link) {
+        if (link == null || link.isBlank()) {
+            return;
+        }
+        // 화면의 경로 경계(frontend/src/lib/navigation/internal-route.ts normalizeInternalRoute)와 같은 규칙이다 — 서버가 받은
+        //   링크를 화면이 버리면 알림의 링크가 소리 없이 사라진다. 다만 서버는 앱 절대 경로(/로 시작)만 받는다(옛 .do 상대 경로는 받지 않는다).
+        String path = link.split("[?#]", 2)[0];
+        boolean internal = link.equals(link.strip()) && link.indexOf('\\') < 0
+                && link.chars().noneMatch(Character::isISOControl)
+                && !MALFORMED_PERCENT_ESCAPE.matcher(link).find()
+                && !ENCODED_CONTROL_CHARACTER.matcher(link).find()
+                && path.startsWith("/") && !path.contains("//")
+                && !ENCODED_PATH_SEPARATOR_OR_DOT.matcher(path).find()
+                && java.util.Arrays.stream(path.split("/", -1)).noneMatch(segment -> segment.equals(".") || segment.equals(".."));
+        if (!internal) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "알림 링크는 이 앱 안의 경로(/로 시작)만 쓸 수 있습니다.");
+        }
     }
 
     @Transactional

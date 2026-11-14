@@ -114,6 +114,11 @@ public class SmsService {
     @Transactional
     public Long sendSms(String userId, @Valid SmsDto dto) {
         log.info("SMS dispatch requested");
+        // 게이트웨이가 보낼 수 없는 본문은 접수하지 않는다 — 접수 뒤 수신자 전원이 실패로 끝나는 것보다 지금 알리는 편이 낫다.
+        if (smsSender.rejectsMessage(dto.getSndngCn())) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "연결된 문자 게이트웨이가 보낼 수 없는 내용입니다. 길이를 줄이거나 지원하지 않는 문자(이모지 등)를 빼 주세요.");
+        }
         // 수신 번호를 먼저 확정한다 — 해석이 실패하면 수신자 없는 발송 헤더가 남지 않아야 한다.
         Map<String, String> recipients = resolveRecipients(dto);
 

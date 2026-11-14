@@ -71,6 +71,21 @@ class SmsServiceTest {
     }
 
     @Test
+    @DisplayName("[2026-11-14] 게이트웨이가 보낼 수 없는 본문은 접수하지 않는다 — 발송 헤더·수신자·작업을 남기지 않는다")
+    void sendSms_rejectsAMessageTheGatewayCannotSend() {
+        when(smsSender.rejectsMessage("보낼 수 없는 본문")).thenReturn(true);
+        SmsDto dto = SmsDto.builder().sndngTelno("01011112222").sndngCn("보낼 수 없는 본문")
+                .recipients(List.of(SmsRecptnDto.builder().rcptnTelno("01012345678").build())).build();
+
+        assertThatThrownBy(() -> smsService.sendSms("user01", dto))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasMessageContaining("게이트웨이가 보낼 수 없는 내용");
+        verify(smsRepository, never()).save(any());
+        verify(smsRecptnRepository, never()).save(any());
+        verifyNoInteractions(durableWork, userContactService);
+    }
+
+    @Test
     @DisplayName("사용자·직접 입력의 하이픈 차이는 정규화 후 한 수신자로 저장한다")
     void sendSms_normalizesBeforeDeduplication() {
         SmsDto dto = SmsDto.builder().sndngTelno("01011112222").sndngCn("Hello")

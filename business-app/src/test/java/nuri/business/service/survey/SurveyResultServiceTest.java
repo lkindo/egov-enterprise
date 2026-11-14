@@ -340,7 +340,7 @@ class SurveyResultServiceTest {
                 .willReturn(List.of(article(401L, 301L, "예"), article(402L, 302L, "예")));
 
         SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("홍길동",
-                List.of(new SurveyResponseSubmitDto.Answer(301L, 402L, "예", null)));
+                List.of(new SurveyResponseSubmitDto.Answer(301L, 402L, null, null)));
 
         try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
@@ -360,7 +360,7 @@ class SurveyResultServiceTest {
         given(resultRepository.existsBySrvySnAndFrstRgtrId(201L, "user1")).willReturn(true);
 
         SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("홍길동",
-                List.of(new SurveyResponseSubmitDto.Answer(301L, 401L, "예", null)));
+                List.of(new SurveyResponseSubmitDto.Answer(301L, 401L, null, null)));
 
         try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
@@ -379,7 +379,7 @@ class SurveyResultServiceTest {
         given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(openSurvey()));
 
         SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("홍길동",
-                List.of(new SurveyResponseSubmitDto.Answer(301L, 401L, "예", null)));
+                List.of(new SurveyResponseSubmitDto.Answer(301L, 401L, null, null)));
 
         try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
@@ -403,7 +403,7 @@ class SurveyResultServiceTest {
                 .willReturn(List.of(article(401L, 301L, "예"), article(402L, 302L, "아니오")));
 
         SurveyResponseSubmitDto partial = new SurveyResponseSubmitDto("홍길동",
-                List.of(new SurveyResponseSubmitDto.Answer(301L, 401L, "예", null)));
+                List.of(new SurveyResponseSubmitDto.Answer(301L, 401L, null, null)));
 
         try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
@@ -471,8 +471,8 @@ class SurveyResultServiceTest {
                 .willReturn(List.of(article(401L, 301L, "예"), article(402L, 302L, "아니오")));
 
         SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("홍길동", List.of(
-                new SurveyResponseSubmitDto.Answer(301L, 401L, "예", null),
-                new SurveyResponseSubmitDto.Answer(302L, 402L, "아니오", null)));
+                new SurveyResponseSubmitDto.Answer(301L, 401L, null, null),
+                new SurveyResponseSubmitDto.Answer(302L, 402L, null, null)));
 
         try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
@@ -605,6 +605,82 @@ class SurveyResultServiceTest {
         verify(resultRepository, never()).saveAll(any());
     }
 
+    // ---------- 답 칸과 문항 유형 (2026-11-14) ----------
+
+    /** 객관식 301(선택지 401 일반·402 기타)과 주관식 302(답 칸 403)인 열린 설문. */
+    private void choiceAndFreeText() {
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(openSurvey()));
+        given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
+        given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L))
+                .willReturn(List.of(question(301L, "선호 시간대", "1"), question(302L, "개선할 점", "2")));
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any())).willReturn(List.of(
+                article(401L, 301L, "오전"),
+                SurveyArticle.builder().srvyArtclSn(402L).srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L).artclSn(2L)
+                        .artclCn("기타").etcAnsYn("Y").build(),
+                article(403L, 302L, "답")));
+    }
+
+    private void assertRejected(String expected, SurveyResponseSubmitDto.Answer... answers) {
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId).thenReturn(java.util.Optional.of("user1"));
+            assertThatThrownBy(() -> service.submitResponse(201L, new SurveyResponseSubmitDto(null, List.of(answers))))
+                    .isInstanceOf(BusinessException.class).hasMessageContaining(expected);
+        }
+        verify(resultRepository, never()).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("[2026-11-14] 객관식 문항에 실린 글 답은 저장하지 않는다 — 응답 관리 화면에 화면이 받지 않는 글이 나오지 않게")
+    void choiceQuestionDropsWrittenAnswer() {
+        choiceAndFreeText();
+        // 옛 호출자는 고른 항목과 함께 글 칸을 채워 보낸다(원본의 실제 DB 시험 고정물도 같다) — 거부하지 않고 고른 항목만 남긴다.
+        SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto(null, List.of(
+                new SurveyResponseSubmitDto.Answer(301L, 401L, "임의 글", null),
+                new SurveyResponseSubmitDto.Answer(302L, 403L, "회의를 줄였으면 합니다", null)));
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId).thenReturn(java.util.Optional.of("user1"));
+            assertThat(service.submitResponse(201L, dto)).isEqualTo(2);
+        }
+        @SuppressWarnings("unchecked")
+        org.mockito.ArgumentCaptor<List<SurveyResult>> captor = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(resultRepository).saveAll(captor.capture());
+        assertThat(captor.getValue()).extracting(SurveyResult::getSrvyArtclSn, SurveyResult::getRspdntAnsCn)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(401L, null),
+                        org.assertj.core.groups.Tuple.tuple(403L, "회의를 줄였으면 합니다"));
+    }
+
+    @Test
+    @DisplayName("[2026-11-14] 기타 답은 기타 항목을 고를 때만 받는다 — 일반 항목·주관식에 실으면 400 이다")
+    void otherAnswerOnlyWithTheOtherArticle() {
+        choiceAndFreeText();
+        assertRejected("기타 답은",
+                new SurveyResponseSubmitDto.Answer(301L, 401L, null, "임의 글"),
+                new SurveyResponseSubmitDto.Answer(302L, 403L, "회의를 줄였으면 합니다", null));
+        org.mockito.Mockito.reset(resultRepository);
+        given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
+        assertRejected("기타 답은",
+                new SurveyResponseSubmitDto.Answer(301L, 401L, null, null),
+                new SurveyResponseSubmitDto.Answer(302L, 403L, "회의를 줄였으면 합니다", "임의 글"));
+    }
+
+    @Test
+    @DisplayName("[2026-11-14] 화면이 보내는 형태(기타 항목의 기타 답, 주관식의 글 답)는 그대로 저장한다")
+    void screenShapedAnswersAreSaved() {
+        choiceAndFreeText();
+        SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto(null, List.of(
+                new SurveyResponseSubmitDto.Answer(301L, 402L, null, "저녁"),
+                new SurveyResponseSubmitDto.Answer(302L, 403L, "회의를 줄였으면 합니다", null)));
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId).thenReturn(java.util.Optional.of("user1"));
+            assertThat(service.submitResponse(201L, dto)).isEqualTo(2);
+        }
+        @SuppressWarnings("unchecked")
+        org.mockito.ArgumentCaptor<List<SurveyResult>> captor = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(resultRepository).saveAll(captor.capture());
+        assertThat(captor.getValue()).extracting(SurveyResult::getEtcAnsCn, SurveyResult::getRspdntAnsCn)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("저녁", null), org.assertj.core.groups.Tuple.tuple(null, "회의를 줄였으면 합니다"));
+    }
+
     // ---------- 기간 가드 (2026-09-05) ----------
     //
     // 종전에는 존재·중복만 검사해 종료된 설문·시작 전 설문에도 응답이 저장됐다. 같은 도메인의
@@ -612,7 +688,7 @@ class SurveyResultServiceTest {
 
     private static SurveyResponseSubmitDto oneAnswer() {
         return new SurveyResponseSubmitDto("홍길동",
-                List.of(new SurveyResponseSubmitDto.Answer(301L, 401L, "예", null)));
+                List.of(new SurveyResponseSubmitDto.Answer(301L, 401L, null, null)));
     }
 
     @Test

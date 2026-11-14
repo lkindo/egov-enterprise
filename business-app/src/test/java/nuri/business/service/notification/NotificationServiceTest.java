@@ -283,6 +283,34 @@ class NotificationServiceTest {
         assertTrue(captor.getAllValues().stream().allMatch(n -> "점검 안내".equals(n.getNotiTtlNm())));
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = { "https://evil.example/login", "//evil.example", "javascript:alert(1)",
+            "/\\evil.example", "/admin/../login", "/a/./b", "relative/path", "/a\u0000b",
+            // 화면 경계(internal-route.ts)가 버리는 모양 — 서버가 받으면 링크가 화면에서 소리 없이 사라진다(2026-11-14 Codex 검토).
+            "/approvals//", "/approvals/%2e%2e/login", "/%252fexample.com", "/a%5cb", "/a%2Fb", "/a%zz", "/a%0d%0a",
+            "/a?q=%", " /approvals", "/approvals " })
+    @DisplayName("[2026-11-14] 알림 링크는 이 앱 안의 경로만 받는다 — 관리자 발송·개인 알림 모두 저장 전에 400 이다")
+    void linksOutsideTheAppAreRejectedBeforeAnyWrite(String link) {
+        authenticateAs("admin_actor", "ADMIN");
+        NotificationDispatchRequest request = dispatchRequest("U1");
+        request.setLinkUrl(link);
+        BusinessException dispatch = assertThrows(BusinessException.class, () -> notificationService.dispatchToUsers(request));
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, dispatch.getErrorCode());
+        BusinessException personal = assertThrows(BusinessException.class, () -> notificationService.createNotification("user123",
+                NotificationDto.builder().notiTtlNm("T").notiCn("B").linkUrl(link).build()));
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, personal.getErrorCode());
+        verifyNoInteractions(userContactService);
+        verify(notificationRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("[2026-11-14] 앱 안 경로·쿼리·조각과 빈 링크는 그대로 받는다")
+    void internalAndEmptyLinksAreAccepted() {
+        for (String link : new String[] { "/approvals?tab=waiting", "/board/1#comments", "/search?q=%ED%95%9C", "", null }) {
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> NotificationService.requireInternalLink(link), String.valueOf(link));
+        }
+    }
+
     @Test
     @DisplayName("수신자 중 하나라도 존재하지 않으면 전체를 거부하고 아무 행도 만들지 않는다")
     void dispatchToUsers_rejectsAllWhenAnyRecipientIsUnknown() {

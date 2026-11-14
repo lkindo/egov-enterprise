@@ -4,13 +4,16 @@ import { describe, expect, it, vi } from 'vitest';
  * 게이트 편입 판정(requiresRegisteredPermission) — 라우트 게이트(proxy.ts)와 링크 노출(page-access.ts)은 `/admin` 전체와 함께
  * `/admin` 밖이라도 기능권한이 등록된 화면을 막는다(2026-11-08). 실제 원장에는 그런 화면이 거의 없어(SMS 옛 경로 하나, 그마저
  * next.config 리다이렉트가 먼저 돈다) 합성 원장으로 규칙을 본다.
+ *
+ * 합성 원장의 권한은 모든 생성물에 있는 코드(MENU_READ, core)로 쓴다. 판정은 알려진 권한 코드만 인정하므로(canPermission),
+ * 기능이 빠진 생성물에 없는 코드(예: 설문의 SURVEY_RSP_READ)를 쓰면 그 생성물에서만 시험이 붉어진다(2026-11 야간 검증).
  */
 vi.mock('@/types/generated-permissions', async (importOriginal) => ({
   ...await importOriginal<typeof import('@/types/generated-permissions')>(),
   PAGE_PERMISSIONS: {
-    '/zz-ops/report': ['SURVEY_RSP_READ'],
-    '/zz-ops/report/[id]': ['SURVEY_RSP_READ'],
-    '/zz-ops/[id]': ['SURVEY_RSP_READ'],
+    '/zz-ops/report': ['MENU_READ'],
+    '/zz-ops/report/[id]': ['MENU_READ'],
+    '/zz-ops/[id]': ['MENU_READ'],
     '/zz-ops/new': [],
     '/zz-open': [],
     '/admin/zz-console': ['MENU_READ'],
@@ -32,7 +35,7 @@ describe('requiresRegisteredPermission', () => {
 
   it('대소문자를 흉내 내도 게이트에 들어가고, 정확한 등록이 없어 거부된다', () => {
     expect(requiresRegisteredPermission('/ZZ-ops/Report')).toBe(true);
-    expect(canEnterRegisteredPage('/ZZ-ops/Report', subject(['SURVEY_RSP_READ']))).toBe(false);
+    expect(canEnterRegisteredPage('/ZZ-ops/Report', subject(['MENU_READ']))).toBe(false);
   });
 
   it('인증만 요구하는 화면과 등록되지 않은 /admin 밖 화면은 게이트 대상이 아니다', () => {
@@ -55,8 +58,8 @@ describe('canOpenPage 는 같은 게이트를 쓴다', () => {
   it('/admin 밖이라도 권한이 등록된 화면은 그 권한이 있어야 링크를 보인다', () => {
     expect(canOpenPage(subject([]), '/zz-ops/report?page=2')).toBe(false);
     expect(canOpenPage(null, '/zz-ops/report/5')).toBe(false);
-    expect(canOpenPage(subject(['SURVEY_RSP_READ']), '/zz-ops/report#top')).toBe(true);
-    expect(canOpenPage(subject(['SURVEY_RSP_READ']), '/ZZ-ops/report')).toBe(false);
+    expect(canOpenPage(subject(['MENU_READ']), '/zz-ops/report#top')).toBe(true);
+    expect(canOpenPage(subject(['MENU_READ']), '/ZZ-ops/report')).toBe(false);
   });
 
   it('게이트 밖 화면은 그대로 열리고 /admin 은 종전과 같다', () => {

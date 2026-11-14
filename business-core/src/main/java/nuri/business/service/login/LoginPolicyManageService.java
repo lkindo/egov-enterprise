@@ -143,6 +143,11 @@ public class LoginPolicyManageService {
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
         // [GAP-SEC-006] 보호 계정에 정책을 거는 것은 그 계정의 로그인을 막는 일이다 — 저장 전에 가린다.
         protectedAccountGuard.authorizeProtectedAccountChange(target.getEsntlId());
+        // [2026-11-14] 정책의 식별자는 사용자 ID 이고 버전 열이 없어, 이미 정책이 있는 사용자에게 save() 하면 등록이 아니라
+        //   기존 정책을 조용히 덮어쓴다(관리자는 '등록'을 눌렀는데 다른 관리자가 건 제한이 사라진다). 바꾸려면 수정 경로를 쓴다.
+        if (loginPolicyRepository.existsById(dto.getUserId())) {
+            throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE, "이미 로그인 정책이 등록된 사용자입니다. 수정에서 바꿔 주세요.");
+        }
         long managersBefore = protectedAccountGuard.managerCount();
         LoginPolicy entity = LoginPolicy.builder()
                 .userId(dto.getUserId())

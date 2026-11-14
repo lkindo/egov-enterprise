@@ -110,12 +110,28 @@ public class CommonCodeService extends BaseAbstractService {
          * 소비처는 결재(COM075) 하나이고 요청마다 한 번, (cd_id, use_yn) 조건으로 기본 키 앞부분을 쓰는 수십 행 이하의 조회다 —
          * 결재 목록·상세·상신 요청이 이미 여러 번의 조회를 하는 것에 비하면 무시할 비용이라, 버전 키나 짧은 TTL 로 정합을 맞추는
          * 장치를 더하지 않고 캐시를 걷어 늘 DB 를 읽는다. 다시 캐시를 둔다면 인스턴스 사이 무효화(공유 캐시·버전 키)를 함께 둔다.
+         *
+         * [2026-11-14] 그룹과 그 분류가 '사용' 일 때만 상세 코드를 준다. 관리 화면은 분류가 사용 안 함인 그룹, 그룹이 사용 안 함인
+         * 상세 코드를 목록에서 감춘다(CommonCodeGroupRepositoryImpl·CommonCodeRepositoryImpl). 종전에는 소비 경로가 상세 코드의
+         * 사용 여부만 봐서, 그룹을 끄면 관리자는 그 코드를 볼 수도 고칠 수도 없는데 업무(결재 업무 구분)는 계속 그 코드를 썼다.
+         * 순서는 상세 코드 순으로 고정한다 — 순서 없는 조회는 DB 와 실행 계획에 따라 선택 목록의 순서가 바뀐다.
          */
         @Transactional(readOnly = true)
         public List<CommonCodeDto> getCodesByGroup(@NonNull String codeGroupId) {
+                String groupId = required(codeGroupId, "codeGroupId 는 null 일 수 없습니다");
+                boolean inUse = commonCodeGroupRepository.findById(groupId)
+                                .filter(group -> "Y".equals(group.getUseYn()))
+                                .flatMap(group -> group.getClsfCd() == null ? java.util.Optional.<CommonCodeCategory>empty()
+                                                : commonCodeCategoryRepository.findById(group.getClsfCd()))
+                                .filter(category -> "Y".equals(category.getUseYn()))
+                                .isPresent();
+                if (!inUse) {
+                        return List.of();
+                }
                 return commonCodeRepository
-                                .findByCdIdAndUseYn(required(codeGroupId, "codeGroupId 는 null 일 수 없습니다"), "Y")
+                                .findByCdIdAndUseYn(groupId, "Y")
                                 .stream()
+                                .sorted(java.util.Comparator.comparing(CommonCode::getDtlCd))
                                 .map(commonCodeMapper::toDto)
                                 .collect(Collectors.toList());
         }

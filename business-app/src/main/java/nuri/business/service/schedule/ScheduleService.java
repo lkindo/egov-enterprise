@@ -8,6 +8,7 @@ import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.schedule.dto.ScheduleDto;
 import nuri.business.service.schedule.dto.ScheduleMapper;
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.validation.Ymd;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -117,8 +118,25 @@ public class ScheduleService {
         return yearMonth;
     }
 
+    /** 한 번에 조회할 수 있는 기간의 상한(일). 달력 화면의 가장 넓은 보기(한 해)보다 하루 넓다. */
+    static final long MAX_RANGE_DAYS = 366;
+
+    /**
+     * 기간별 일정. [2026-11-14] 저장값은 yyyyMMdd 문자열이고 조회는 문자열 비교라, 형식이 다른 값(예: 2026-10-01)이 오면
+     * 오류 없이 엉뚱한 범위를 돌려줬다. 두 날짜를 yyyyMMdd 로 맞추고, 순서와 기간 상한을 본다.
+     */
     public List<ScheduleDto> getScheduleListByDateRange(String userId, String startDate, String endDate) {
-        return scheduleRepository.findSchedulesByDateRange(userId, startDate, endDate).stream()
+        String from = Ymd.compact(startDate), to = Ymd.compact(endDate);
+        if (from == null || from.isEmpty() || to == null || to.isEmpty()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "조회 시작일과 종료일을 모두 입력해 주세요.");
+        }
+        java.time.LocalDate first = java.time.LocalDate.parse(from, java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        java.time.LocalDate last = java.time.LocalDate.parse(to, java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        if (last.isBefore(first) || java.time.temporal.ChronoUnit.DAYS.between(first, last) >= MAX_RANGE_DAYS) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "조회 기간은 시작일부터 종료일까지 " + MAX_RANGE_DAYS + "일 이내여야 합니다.");
+        }
+        return scheduleRepository.findSchedulesByDateRange(userId, from, to).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }

@@ -124,7 +124,9 @@ public class EventInfoService {
     public void deleteEvent(Long evntSn) {
         SecurityUtil.assertPermission("EVENT_DELETE");
         log.warn("Deleting event serial number: {}", evntSn);
-        EventInfo eventInfo = eventInfoRepository.findById(Objects.requireNonNull(evntSn))
+        // 신청·취소·승인(EventApplicationService)과 같은 행 잠금 뒤에 센다. 잠그지 않고 세면, 센 뒤 커밋 전에 들어온 신청이
+        //   아래 삭제와 함께 CASCADE 로 지워진다 — 신청자는 접수됐다는 응답을 받고도 기록이 사라진다.
+        EventInfo eventInfo = eventInfoRepository.findByIdForUpdate(Objects.requireNonNull(evntSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         // [2026-09-26 DIP V9] 외부인사가 이 행사를 참조한다(fk_tb_extrl_hr_info_tb_event_info, NO ACTION).
         //   종전에는 삭제가 DB 무결성 오류로 끝나 사용자는 이유를 몰랐다. 건수를 밝혀 거부하고,
