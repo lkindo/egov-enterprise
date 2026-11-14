@@ -9,14 +9,16 @@ import { validateGeneratedMigrationRuntime, validateSingleModuleRuntime } from '
 
 export const VERIFICATION_HISTORY = 'config/governance/upstream-verification';
 export const ARTIFACT_COMMAND = 'node scripts/verify-reusable-artifact.mjs';
+export const CURRENT_ARTIFACT_COMMAND = 'node scripts/adopter-project.mjs verify';
 export const artifactAliases = Object.freeze({
   verify: ARTIFACT_COMMAND,
   'verify:artifact': ARTIFACT_COMMAND,
+  'verify:adopter': `${ARTIFACT_COMMAND} --scope adopter`,
   'verify:docs': `${ARTIFACT_COMMAND} --scope contracts`,
   'verify:be': `${ARTIFACT_COMMAND} --scope backend`,
   'verify:fe': `${ARTIFACT_COMMAND} --scope frontend`,
   'verify:full': ARTIFACT_COMMAND,
-  'verify:push': ARTIFACT_COMMAND,
+  'verify:push': CURRENT_ARTIFACT_COMMAND,
   'verify:fast': ARTIFACT_COMMAND,
   'test:operational-contracts': `${ARTIFACT_COMMAND} --scope contracts`,
 });
@@ -121,12 +123,12 @@ ${secretScanRun.split('\n').map(line => `          ${line}`).join('\n')}
       - name: Allow the Gradle wrapper to run
         run: chmod +x gradlew
       - name: Verify this generated product
-        run: ${ARTIFACT_COMMAND}
+        run: ${CURRENT_ARTIFACT_COMMAND}
       - name: Retain product verification
         uses: ${pin['actions/upload-artifact']}
         with:
           name: reusable-artifact-verification
-          path: build/reports/reusable-base/full.json
+          path: build/reports/reusable-base/*.json
           if-no-files-found: error
           retention-days: 7
 `;
@@ -136,7 +138,7 @@ ${secretScanRun.split('\n').map(line => `          ${line}`).join('\n')}
     requiredChecks: [{ context: 'artifact-verification', jobId: 'artifact-verification', needs: [] }],
     criticalSteps: [
       { jobId: 'artifact-verification', name: 'Scan working tree and incremental secrets', run: secretScanRun },
-      { jobId: 'artifact-verification', name: 'Verify this generated product', run: ARTIFACT_COMMAND },
+      { jobId: 'artifact-verification', name: 'Verify this generated product', run: CURRENT_ARTIFACT_COMMAND },
     ],
   };
   return { workflow, manifest };
@@ -192,7 +194,7 @@ export function validateReusableArtifactEntrypoints(root) {
     for (const [alias, command] of Object.entries(artifactAliases)) check(pkg.scripts?.[alias] === command, `incorrect generated alias: ${alias}`);
     check(!Object.keys(pkg.scripts ?? {}).some(alias => alias.startsWith('base:') || ['migration:export', 'verify:e2e', 'verify:ops'].includes(alias)),
       'producer or institution runtime aliases cannot imply inherited applicability');
-    check(read('.githooks/pre-push') === `#!/bin/sh\nset -e\n${ARTIFACT_COMMAND}\n`, 'generated pre-push must execute product verification');
+    check(read('.githooks/pre-push') === `#!/bin/sh\nset -e\n${CURRENT_ARTIFACT_COMMAND}\n`, 'generated pre-push must execute product verification');
     check(existsSync(join(root, 'REUSABLE_VERIFICATION.md')), 'generated verification boundary documentation is required');
   } catch (error) { errors.push(`entrypoint inspection failed: ${error.message}`); }
   return errors;

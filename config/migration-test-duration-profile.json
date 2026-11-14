@@ -15,6 +15,26 @@
         "kind": "local-junit",
         "baseCommit": "7757e5418d4046ca33e5202c2bb05cb8e08962df",
         "measuredAt": "2026-10-31T07:04:43.262Z"
+      },
+      "nuri.migration.state.BoundedMigrationStateTest": {
+        "kind": "local-junit",
+        "baseCommit": "59b55996db5cc1c902452eac80b5a72614d95451",
+        "measuredAt": "2026-11-13T17:02:02.177Z"
+      },
+      "nuri.migration.state.MigrationScratchIndexTest": {
+        "kind": "local-junit",
+        "baseCommit": "59b55996db5cc1c902452eac80b5a72614d95451",
+        "measuredAt": "2026-11-13T17:05:01.385Z"
+      },
+      "nuri.migration.verify.BoundedMigrationVerifierTest": {
+        "kind": "local-junit",
+        "baseCommit": "59b55996db5cc1c902452eac80b5a72614d95451",
+        "measuredAt": "2026-11-13T17:05:03.410Z"
+      },
+      "nuri.migration.jdbc.SourceJdbcEndpointFactoryTest": {
+        "kind": "local-junit",
+        "baseCommit": "59b55996db5cc1c902452eac80b5a72614d95451",
+        "measuredAt": "2026-11-13T17:01:52.464Z"
       }
     }
   },
@@ -120,7 +140,7 @@
     "nuri.migration.jdbc.JdbcLobReaderTest": 586,
     "nuri.migration.jdbc.JdbcUrlSafetyTest": 81,
     "nuri.migration.jdbc.LocalDriverJarPolicyTest": 15,
-    "nuri.migration.jdbc.SourceJdbcEndpointFactoryTest": 662,
+    "nuri.migration.jdbc.SourceJdbcEndpointFactoryTest": 9543,
     "nuri.migration.jdbc.SourceReadStatementsTest": 213,
     "nuri.migration.jdbc.StagedDriverJarsTest": 6,
     "nuri.migration.keymap.KeyMapRegistryTest": 3,
@@ -213,6 +233,9 @@
     "nuri.migration.suggest.ConformanceEstimatorTest": 90,
     "nuri.migration.suggest.LedgerDraftWriterTest": 800,
     "nuri.migration.suggest.TermSuggesterTest": 360,
-    "nuri.migration.TermSuggestPostgresIntegrationTest": 3500
+    "nuri.migration.TermSuggestPostgresIntegrationTest": 3500,
+    "nuri.migration.state.BoundedMigrationStateTest": 179208,
+    "nuri.migration.state.MigrationScratchIndexTest": 1321,
+    "nuri.migration.verify.BoundedMigrationVerifierTest": 87742
   }
 }

@@ -244,7 +244,7 @@ test('producer never accepts an invalid profile or uses a shared container after
   assert.deepEqual(removed, []);
 });
 
-test('generated package and hook call product verification without changing the producer entry point', (t) => {
+test('generated package keeps strict product verification while the hook verifies the current project', (t) => {
   const root = fixture(t);
   writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { verify: 'old' } }));
   for (const path of ['Makefile', '.github/workflows/ci.yml', '.github/required-checks.json', '.githooks/pre-push']) {
@@ -255,7 +255,8 @@ test('generated package and hook call product verification without changing the 
   const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
   assert.equal(pkg.scripts.verify, 'node scripts/verify-reusable-artifact.mjs');
   assert.equal(pkg.scripts['test:operational-contracts'], `${pkg.scripts.verify} --scope contracts`);
-  assert.match(readFileSync(join(root, '.githooks/pre-push'), 'utf8'), /^node scripts\/verify-reusable-artifact.mjs$/m);
+  assert.equal(readFileSync(join(root, '.githooks/pre-push'), 'utf8'),
+    '#!/bin/sh\nset -e\nnode scripts/adopter-project.mjs verify\n');
 });
 
 function validatePipeline(workflow, manifest) {

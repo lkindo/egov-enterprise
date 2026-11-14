@@ -383,132 +383,134 @@ public class EtlExecutor {
                 : new KeyMapRegistry();
         MigrationStateStore state = commit ? new MigrationStateStore(run) : null;
 
-        List<TableResult> results = new ArrayList<>();
-        boolean stateInitialized = false;
-        try {
-            List<TableMapping> orderedTables = TableOrderer.order(spec.tables());
-            requireCompositeForeignKeyOrder(orderedTables);
-            if (orderedTables.isEmpty()) {
-                if (commit) {
-                    initializeCommitState(targetJt, registry, state, spec.tables(),
-                            controlSchemaUpgradeAcknowledged);
-                    stateInitialized = true;
-                }
-            } else {
-                // 원본 키를 쓰는 컬럼의 시퀀스를 행을 쓰기 전에 정한다. 정할 수 없으면 여기서 멈춘다(DEC-OPS-306).
-                List<TargetSequenceSynchronizer.Target> sequencePlan = commit
-                        ? planTargetSequences(targetDs, orderedTables)
-                        : List.of();
-                boolean tablesRan = false;
-                // [ADR-0029 L3b] 격리한 행이 시퀀스 컬럼에 썼을 정수 키 최댓값(표 → 컬럼). 메모리에만 두고 결과에 싣지 않는다.
-                Map<String, Map<String, BigInteger>> isolatedKeys = new HashMap<>();
-                try (Connection sourceConnection = sourceDs.getConnection()) {
-                    try {
-                        sourceConnection.setReadOnly(true);
-                        sourceConnection.setTransactionIsolation(sourceReadPolicy.jdbcIsolation());
-                        sourceConnection.setAutoCommit(false);
-                        // [ADR-0029 L4 D2] 원천 표를 훑기 전에 대상 쓰기 세션의 복제 역할을 한 번 본다. 표마다 쓰기 연결을 열 때도
-                        //   다시 본다.
-                        TableResult roleFailure = commit
-                                ? requireOriginRole(targetDs, orderedTables, reconciliation)
-                                : null;
-                        TableResult preflightFailure = roleFailure != null ? roleFailure
-                                : EtlSourceQuerySupport.preflightOrderTupleUniqueness(
-                                        sourceConnection, orderedTables, commit);
-                        // [ADR-0029 L3e] 덤프만 하는 표의 정렬 키 NULL 부재·유일성은 어느 모드든 행을 읽거나 쓰기 전에 증명한다.
-                        String archivePreflight = preflightFailure == null
-                                ? EtlSourceQuerySupport.preflightDumpOnlyKeys(sourceConnection, dumpOnlyReads)
-                                : null;
-                        // [ADR-0029 L4 D2] 원천 집계는 어느 모드든 행을 읽기 전에 같은 읽기 세션에서 잰다. 잴 수 없으면 멈춘다.
-                        TableResult aggregateFailure = preflightFailure == null && archivePreflight == null
-                                ? EtlSourceQuerySupport.measureSourceAggregates(
-                                        sourceConnection, orderedTables, reconciliation)
-                                : null;
-                        if (preflightFailure != null) {
-                            results.add(preflightFailure);
+        try (registry; state) {
+            List<TableResult> results = new ArrayList<>();
+            boolean stateInitialized = false;
+            try {
+                List<TableMapping> orderedTables = TableOrderer.order(spec.tables());
+                requireCompositeForeignKeyOrder(orderedTables);
+                if (orderedTables.isEmpty()) {
+                    if (commit) {
+                        initializeCommitState(targetJt, registry, state, spec.tables(),
+                                controlSchemaUpgradeAcknowledged);
+                        stateInitialized = true;
+                    }
+                } else {
+                    // 원본 키를 쓰는 컬럼의 시퀀스를 행을 쓰기 전에 정한다. 정할 수 없으면 여기서 멈춘다(DEC-OPS-306).
+                    List<TargetSequenceSynchronizer.Target> sequencePlan = commit
+                            ? planTargetSequences(targetDs, orderedTables)
+                            : List.of();
+                    boolean tablesRan = false;
+                    // [ADR-0029 L3b] 격리한 행이 시퀀스 컬럼에 썼을 정수 키 최댓값(표 → 컬럼). 메모리에만 두고 결과에 싣지 않는다.
+                    Map<String, Map<String, BigInteger>> isolatedKeys = new HashMap<>();
+                    try (Connection sourceConnection = sourceDs.getConnection()) {
+                        try {
+                            sourceConnection.setReadOnly(true);
+                            sourceConnection.setTransactionIsolation(sourceReadPolicy.jdbcIsolation());
+                            sourceConnection.setAutoCommit(false);
+                            // [ADR-0029 L4 D2] 원천 표를 훑기 전에 대상 쓰기 세션의 복제 역할을 한 번 본다. 표마다 쓰기 연결을 열 때도
+                            //   다시 본다.
+                            TableResult roleFailure = commit
+                                    ? requireOriginRole(targetDs, orderedTables, reconciliation)
+                                    : null;
+                            TableResult preflightFailure = roleFailure != null ? roleFailure
+                                    : EtlSourceQuerySupport.preflightOrderTupleUniqueness(
+                                            sourceConnection, orderedTables, commit);
+                            // [ADR-0029 L3e] 덤프만 하는 표의 정렬 키 NULL 부재·유일성은 어느 모드든 행을 읽거나 쓰기 전에 증명한다.
+                            String archivePreflight = preflightFailure == null
+                                    ? EtlSourceQuerySupport.preflightDumpOnlyKeys(sourceConnection, dumpOnlyReads)
+                                    : null;
+                            // [ADR-0029 L4 D2] 원천 집계는 어느 모드든 행을 읽기 전에 같은 읽기 세션에서 잰다. 잴 수 없으면 멈춘다.
+                            TableResult aggregateFailure = preflightFailure == null && archivePreflight == null
+                                    ? EtlSourceQuerySupport.measureSourceAggregates(
+                                            sourceConnection, orderedTables, reconciliation)
+                                    : null;
+                            if (preflightFailure != null) {
+                                results.add(preflightFailure);
+                                safeRollback(sourceConnection);
+                            } else if (archivePreflight != null) {
+                                archives.fail(archivePreflight);
+                                safeRollback(sourceConnection);
+                            } else if (aggregateFailure != null) {
+                                results.add(aggregateFailure);
+                                safeRollback(sourceConnection);
+                            } else {
+                                if (commit) {
+                                    initializeCommitState(targetJt, registry, state, spec.tables(),
+                                            controlSchemaUpgradeAcknowledged);
+                                    stateInitialized = true;
+                                }
+                                boolean sourceSessionFailed = false;
+                                tablesRan = true;
+                                TableMapping stoppedAt = null;
+                                for (TableMapping table : orderedTables) {
+                                    if (stoppedAt != null) {
+                                        // [2026-10-13 DEC-OPS-309·2026-10-14 DEC-OPS-310] 앞 테이블의 행 변환·쓰기 실패로 run 을 멈췄다.
+                                        //   남은 테이블은 읽지도 쓰지도 않고, 처리하지 않았다는 사실을 결과에 남긴다.
+                                        results.add(notProcessed(table, stoppedAt, state));
+                                        continue;
+                                    }
+                                    TableExecution execution = runTable(
+                                            sourceConnection, targetDs, spec, index, table, registry, state, commit,
+                                            protector, guards.getOrDefault(lower(MappingIndex.label(table)), Map.of()),
+                                            sequenceColumns(sequencePlan, table), archives, reconciliation);
+                                    results.add(execution.result());
+                                    isolatedKeys.put(lower(MappingIndex.label(table)), execution.isolatedKeys());
+                                    if (execution.sourceSessionFailed()) {
+                                        sourceSessionFailed = true;
+                                        safeRollback(sourceConnection);
+                                        break;
+                                    }
+                                    if (execution.rowFailureStopped()) {
+                                        stoppedAt = table;
+                                    }
+                                }
+                                // [ADR-0029 L3e] 덤프만 하는 표는 매핑된 표를 모두 마친 같은 읽기 세션에서 읽는다. 앞에서 멈췄으면
+                                //   읽지 않는다 — 그 덤프는 결과에 없고 검증이 실패로 판정한다.
+                                if (!sourceSessionFailed && stoppedAt == null) {
+                                    sourceSessionFailed = !dumpOnlyTables(sourceConnection, dumpOnlyReads, archives);
+                                    if (sourceSessionFailed) {
+                                        safeRollback(sourceConnection);
+                                    }
+                                }
+                                if (!sourceSessionFailed) {
+                                    sourceConnection.commit();
+                                }
+                            }
+                        } catch (SQLException sourceFailure) {
                             safeRollback(sourceConnection);
-                        } else if (archivePreflight != null) {
-                            archives.fail(archivePreflight);
+                            throw new IllegalStateException("source read session failed", sourceFailure);
+                        } catch (Throwable failure) {
                             safeRollback(sourceConnection);
-                        } else if (aggregateFailure != null) {
-                            results.add(aggregateFailure);
-                            safeRollback(sourceConnection);
-                        } else {
-                            if (commit) {
-                                initializeCommitState(targetJt, registry, state, spec.tables(),
-                                        controlSchemaUpgradeAcknowledged);
-                                stateInitialized = true;
-                            }
-                            boolean sourceSessionFailed = false;
-                            tablesRan = true;
-                            TableMapping stoppedAt = null;
-                            for (TableMapping table : orderedTables) {
-                                if (stoppedAt != null) {
-                                    // [2026-10-13 DEC-OPS-309·2026-10-14 DEC-OPS-310] 앞 테이블의 행 변환·쓰기 실패로 run 을 멈췄다.
-                                    //   남은 테이블은 읽지도 쓰지도 않고, 처리하지 않았다는 사실을 결과에 남긴다.
-                                    results.add(notProcessed(table, stoppedAt, state));
-                                    continue;
-                                }
-                                TableExecution execution = runTable(
-                                        sourceConnection, targetDs, spec, index, table, registry, state, commit,
-                                        protector, guards.getOrDefault(lower(MappingIndex.label(table)), Map.of()),
-                                        sequenceColumns(sequencePlan, table), archives, reconciliation);
-                                results.add(execution.result());
-                                isolatedKeys.put(lower(MappingIndex.label(table)), execution.isolatedKeys());
-                                if (execution.sourceSessionFailed()) {
-                                    sourceSessionFailed = true;
-                                    safeRollback(sourceConnection);
-                                    break;
-                                }
-                                if (execution.rowFailureStopped()) {
-                                    stoppedAt = table;
-                                }
-                            }
-                            // [ADR-0029 L3e] 덤프만 하는 표는 매핑된 표를 모두 마친 같은 읽기 세션에서 읽는다. 앞에서 멈췄으면
-                            //   읽지 않는다 — 그 덤프는 결과에 없고 검증이 실패로 판정한다.
-                            if (!sourceSessionFailed && stoppedAt == null) {
-                                sourceSessionFailed = !dumpOnlyTables(sourceConnection, dumpOnlyReads, archives);
-                                if (sourceSessionFailed) {
-                                    safeRollback(sourceConnection);
-                                }
-                            }
-                            if (!sourceSessionFailed) {
-                                sourceConnection.commit();
-                            }
+                            throw propagate(failure);
                         }
-                    } catch (SQLException sourceFailure) {
-                        safeRollback(sourceConnection);
-                        throw new IllegalStateException("source read session failed", sourceFailure);
-                    } catch (Throwable failure) {
-                        safeRollback(sourceConnection);
-                        throw propagate(failure);
+                    }
+                    if (tablesRan) {
+                        // 오류가 난 테이블도 앞선 chunk 는 남으므로 재설정한다. 앞으로만 옮기므로 재실행해도 같다.
+                        synchronizeTargetSequences(targetDs, sequencePlan, results, isolatedKeys);
                     }
                 }
-                if (tablesRan) {
-                    // 오류가 난 테이블도 앞선 chunk 는 남으므로 재설정한다. 앞으로만 옮기므로 재실행해도 같다.
-                    synchronizeTargetSequences(targetDs, sequencePlan, results, isolatedKeys);
+            } catch (SQLException sourceConnectionFailure) {
+                if (stateInitialized) {
+                    Objects.requireNonNull(state).mark(targetJt, "FAILED");
                 }
+                throw new IllegalStateException("source read session failed", sourceConnectionFailure);
+            } catch (Throwable failure) {
+                if (stateInitialized && !isJvmFatal(failure)) {
+                    Objects.requireNonNull(state).mark(targetJt, "FAILED");
+                }
+                throw propagate(failure);
             }
-        } catch (SQLException sourceConnectionFailure) {
+            if (registry.hasPending()) {
+                throw new IllegalStateException("처리 종료 후 미확정 keymap이 남았습니다 — 이관 결과를 신뢰할 수 없습니다");
+            }
             if (stateInitialized) {
-                Objects.requireNonNull(state).mark(targetJt, "FAILED");
+                boolean failed = results.stream().anyMatch(result -> !result.errors().isEmpty())
+                        || !archives.outcome().errors().isEmpty();
+                Objects.requireNonNull(state).mark(targetJt, failed ? "FAILED" : "LOADED");
             }
-            throw new IllegalStateException("source read session failed", sourceConnectionFailure);
-        } catch (Throwable failure) {
-            if (stateInitialized && !isJvmFatal(failure)) {
-                Objects.requireNonNull(state).mark(targetJt, "FAILED");
-            }
-            throw propagate(failure);
+            return results;
         }
-        if (registry.hasPending()) {
-            throw new IllegalStateException("처리 종료 후 미확정 keymap이 남았습니다 — 이관 결과를 신뢰할 수 없습니다");
-        }
-        if (stateInitialized) {
-            boolean failed = results.stream().anyMatch(result -> !result.errors().isEmpty())
-                    || !archives.outcome().errors().isEmpty();
-            Objects.requireNonNull(state).mark(targetJt, failed ? "FAILED" : "LOADED");
-        }
-        return results;
     }
 
     static void requireArchiveRules(MappingSpec spec, ArchiveRun archives, boolean commit) {
@@ -1130,9 +1132,9 @@ public class EtlExecutor {
                 + SourceIntrospector.qualifiedIdent(table.source())
                 + (isBlank(table.where()) ? "" : " WHERE " + table.where())
                 + " ORDER BY " + EtlSourceQuerySupport.orderByClause(table);
-        Set<String> seen = new HashSet<>();
         boolean boundedVariableValues = "Microsoft SQL Server".equals(sourceConnection.getMetaData().getDatabaseProductName());
-        try (PreparedStatement statement = SourceReadStatements.prepare(sourceConnection, sql);
+        try (var seen = registry.reservationKeys();
+             PreparedStatement statement = SourceReadStatements.prepare(sourceConnection, sql);
              ResultSet result = statement.executeQuery()) {
             while (result.next()) {
                 Object raw = boundedVariableValues

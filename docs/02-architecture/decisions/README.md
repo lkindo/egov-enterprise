@@ -63,4 +63,5 @@
 | [ADR-0054](ADR-0054-production-overlay-mfa-default-and-preflight.md) | 운영 오버레이 보호계정 MFA 기본 강제·배포 전 키링 선검증과 스모크 경계 | Accepted |
 | [ADR-0055](ADR-0055-requirements-item-store.md) | 요구사항·산출물 항목 저장소, 조각 단위 점진 분석, 요청 크기 상한, 사람의 확정·기준선 | Accepted — 일부 ADR-0056·ADR-0058로 대체 |
 | [ADR-0056](ADR-0056-requirements-wording-notes.md) | 요구사항 스튜디오의 문서마다 다른 표기는 확정을 막지 않는 참고, 모델이 판정한 충돌·질문만 쟁점 | Accepted |
+| [ADR-0057](ADR-0057-adopter-java-and-permission-registration.md) | 원본 인증·승인 기록을 보존하는 생성 프로젝트 Java·미배정 권한 추가분 등록과 별도 기술 검증 | Accepted |
 | [ADR-0058](ADR-0058-requirements-question-groups.md) | 요구사항 스튜디오의 같은 것을 묻는 질문은 한 묶음으로 한 번만 답하고, 확정을 막는 기준은 그대로 | Accepted |

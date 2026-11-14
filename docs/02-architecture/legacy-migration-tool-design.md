@@ -468,6 +468,10 @@ INSERT는 매핑한 대상 컬럼을 모두 나열하고 NULL 값도 명시해 �
 
 재실행은 같은 `runId + sourceNamespace`의 keymap/checkpoint를 preload한다. 행 변환 실패로 멈춘 run 은 원인을 고친 mapping(다시 승인한 plan)으로 같은 run 을 재개하면 마지막으로 커밋된 checkpoint 다음 행부터 적재한다([PostgreSQL 회귀](../../migration-tool/src/test/java/nuri/migration/EtlPartialLoadRecoveryPostgresIntegrationTest.java)). 동일 source identity의 target identity와 transformed-row checksum이 같으면 이미 완료된 행으로 인정하고, checksum·target identity·target table이 달라지면 실패한다. 사후 verifier도 run-scoped checkpoint 수, target identity 유일성, target 행 재조회 checksum을 대조한다.
 
+실행 중 keymap·pending 예약·checkpoint 조회 상태와 자기참조 중복 키 검사는 [실행 전용 인덱스](../../migration-tool/src/main/java/nuri/migration/state/MigrationScratchIndex.java)에 둔다. 원격 선적재는 512건씩 읽고, 로컬 인덱스는 2MiB 캐시를 설정한 파일 기반 H2를 사용한다. 이 내장 드라이버를 bundled source나 workflow target으로 선택하면 연결 전에 거부한다. 임시 디렉터리는 생성 직후 실경로로 고정하고 소유자만 접근하도록 만들며, 파일은 실행마다 만든 키로 AES 암호화한다. 정상·예외 종료 모두 인덱스를 닫고 소유한 파일의 삭제를 시도한다. 정리 실패는 값·경로 없는 고정 경고로 남기며, 이미 확정한 대상 DB 결과를 바꾸지 않는다. 강제 종료나 정리 실패 후 남은 암호화 임시 파일은 재개에 사용하지 않으며, 재개는 대상 DB의 durable 상태에서 인덱스를 다시 만든다. DRY_RUN도 임시 디스크를 사용하므로 `java.io.tmpdir`에 키 수에 비례하는 여유 공간이 필요하다. 대상 DB 쓰기는 기존 COMMIT 경계에만 남고, 자기참조 선채번의 전체 예약과 일반 chunk의 data·keymap·checkpoint 커밋/롤백 경계는 유지한다.
+
+사후 대조는 대상 DB에서 checkpoint 전체 건수·대상 키 중복을 집계하고, source key 순으로 500건씩 target checksum을 검증한다. 시작·종료 집계와 실제 대조 건수가 달라지면 실패한다. typed identity도 한 페이지씩 해석한다. [키 상태 힙 회귀](../../migration-tool/src/test/java/nuri/migration/state/BoundedMigrationStateTest.java)와 [실제 PostgreSQL 대조 힙 회귀](../../migration-tool/src/test/java/nuri/migration/verify/BoundedMigrationVerifierTest.java)는 별도 JVM의 64MiB 힙에서 대량 키 보존·예약 롤백·대조를 검사한다. 소스 행·LOB 페이지·변환기·실행 계획·격리 상한은 각 계약에 따라 별도로 메모리를 사용한다.
+
 ### 매핑 식별자와 분할(ADR-0029 L3c)
 
 한 소스 표를 여러 대상으로 나눌 수 있다(1:N 분할, [DEC-OPS-319](../../.agent/memory/decisions.md)). 판정은 한 곳([MappingIndex](../../migration-tool/src/main/java/nuri/migration/mapping/MappingIndex.java))이 하고 정적 검증·실행 순서·실행기·플래너·생성기가 같은 규칙을 쓴다.

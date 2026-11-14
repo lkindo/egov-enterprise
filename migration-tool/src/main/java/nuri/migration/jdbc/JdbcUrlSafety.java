@@ -41,6 +41,11 @@ public final class JdbcUrlSafety {
     private JdbcUrlSafety() {
     }
 
+    /** H2 is an internal scratch index, not a newly supported bundled migration endpoint. */
+    public static boolean isH2Url(String url) {
+        return url != null && url.strip().toLowerCase(Locale.ROOT).startsWith("jdbc:h2:");
+    }
+
     /** 위험한 연결 속성이 없는가. 드라이버처럼 속성을 나눈 뒤 이름과 값을 따로 퍼센트 디코딩해 본다. */
     public static boolean isSafe(String url) {
         if (url == null) {

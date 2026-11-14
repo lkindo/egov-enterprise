@@ -8,6 +8,8 @@ import { queryConsumerContractErrors, validateUiQuality } from './ui-quality-sce
 import { discoverPageRoutes, inspectRouteRepository, validateRouteCapabilities } from './ui-route-capabilities-contract.mjs';
 import { buildUrlStateCensus, compareUrlStateCensus, validateUrlStateCensus } from './ui-url-state-census.mjs';
 import { validateUrlStateApproval } from './ui-url-state-approval-contract.mjs';
+import { readAdopterProject, adopterContractChanged } from './reusable-adopter-project.mjs';
+import { buildAdopterContractArtifacts, currentContractArtifacts } from './adopter-api-contract.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PATHS = {
@@ -53,7 +55,7 @@ export function validateActiveUiContracts(root, reviewScopes, documents = readRe
   return errors;
 }
 
-export function verifyReusableGovernance(root = ROOT) {
+export function verifyReusableGovernance(root = ROOT, { adopter = false, verifyContracts = false } = {}) {
   const report = {
     schemaVersion: 1,
     authority: 'reusable-artifact-technical-contract-results',
@@ -64,12 +66,21 @@ export function verifyReusableGovernance(root = ROOT) {
     applicability: null,
   };
   try {
-    const inspection = inspectReusableGovernance(resolve(root), { requireLock: true });
+    const inspection = inspectReusableGovernance(resolve(root), { requireLock: true, adopter });
     report.profile = inspection.metadata?.profile ?? null;
     report.errors.push(...inspection.errors.map(error => `projection-integrity: ${error}`));
     report.applicability = inspection.reviewScopes;
     if (report.errors.length) return report;
     report.errors.push(...validateActiveUiContracts(resolve(root), inspection.reviewScopes));
+    if (adopter && verifyContracts && report.errors.length === 0) {
+      const project = readAdopterProject(resolve(root));
+      if (adopterContractChanged(project.baseline, project.revision)) {
+        const expected = buildAdopterContractArtifacts(resolve(root));
+        const actual = currentContractArtifacts(resolve(root));
+        const drift = [...new Set([...expected.keys(), ...actual.keys()])].filter(path => expected.get(path) !== actual.get(path));
+        if (drift.length) report.errors.push(`Adopter API contract generation drift: ${drift.join(', ')}`);
+      }
+    }
     if (report.errors.length === 0) {
       report.verifiedContracts = ['projection-integrity', 'routes', 'url-census', 'url-approval', 'visible-terms', 'krds', 'ui-quality', 'ui-quality-query'];
     }
@@ -80,12 +91,13 @@ export function verifyReusableGovernance(root = ROOT) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const args = process.argv.slice(2);
+  const adopter = process.argv.includes('--adopter');
+  const args = process.argv.slice(2).filter(arg => arg !== '--adopter');
   if (args.length !== 0 && (args.length !== 2 || args[0] !== '--root' || !args[1])) {
     console.error('Usage: node scripts/verify-reusable-governance.mjs [--root PATH]');
     process.exitCode = 1;
   } else {
-    const report = verifyReusableGovernance(args[1] ?? ROOT);
+    const report = verifyReusableGovernance(args[1] ?? ROOT, { adopter, verifyContracts: true });
     console.log(JSON.stringify(report, null, 2));
     if (report.errors.length) process.exitCode = 1;
   }

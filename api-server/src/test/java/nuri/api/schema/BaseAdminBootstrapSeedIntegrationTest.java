@@ -185,12 +185,15 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
         String probe = """
                 import { readFileSync } from 'node:fs';
                 import { validateReusableGovernance } from './scripts/reusable-governance-integrity.mjs';
+                import { readAdopterProject } from './scripts/reusable-adopter-project.mjs';
                 import { verifyProjectComposition } from './scripts/project-composer-recipe.mjs';
                 import { compositionDigest } from './scripts/project-composer-catalog.mjs';
                 import { projectCompositionMenus, projectCompositionNavigation } from './scripts/project-composer-db.mjs';
                 import { validateProjectComposerMenus } from './scripts/project-composer-menu-preview.mjs';
                 const read = path => JSON.parse(readFileSync(path, 'utf8'));
-                if (validateReusableGovernance(process.cwd()).length) throw new Error('Composer provenance is invalid');
+                const adopter = readAdopterProject(process.cwd());
+                if (validateReusableGovernance(process.cwd(), { adopter: Boolean(adopter) }).length)
+                  throw new Error('Composer provenance is invalid');
                 const selection = read('config/governance/upstream-review/project-composer-selection.json');
                 const composition = verifyProjectComposition(selection.composition, selection.catalog);
                 const raw = read('config/project-composer-menus.json');

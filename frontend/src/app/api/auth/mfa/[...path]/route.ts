@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
+import { authUpstreamRequestConfig } from '@/lib/auth/auth-request-policy';
 import { z } from 'zod';
 import { parseGeneratedOperationRequest, parseGeneratedOperationResponse } from '@/lib/api/generated-operation';
 import { forwardedClientIpHeaders } from '@/lib/api/forwarded-client-ip';
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   if ((await context.params).path.join('/') !== 'status') return failure(404);
   if (!request.cookies.get('accessToken')?.value) return failure(401);
   try {
-    const response = await axios.get(`${BACKEND_URL}/auth/mfa/status`, { headers: headers(request) });
+    const response = await axios.get(`${BACKEND_URL}/auth/mfa/status`, { ...authUpstreamRequestConfig(request), headers: headers(request) });
     return json(mfaStatusSchema.parse(parseGeneratedOperationResponse(mfaStatusOperation, response.data)));
   } catch (error) { return failure(statusOf(error)); }
 }
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
   try {
     const parsedBody = parseGeneratedOperationRequest(operation, body);
-    const upstream = await axios.post(`${BACKEND_URL}/auth/mfa/${action}`, parsedBody, { headers: headers(request, !restricted) });
+    const upstream = await axios.post(`${BACKEND_URL}/auth/mfa/${action}`, parsedBody, { ...authUpstreamRequestConfig(request), headers: headers(request, !restricted) });
     const data = parseGeneratedOperationResponse(operation, upstream.data);
     if (action === 'enrollment/confirm' || action === 'verify' || action === 'recovery-codes') {
       return authenticationResponse(request, data, upstream.headers['set-cookie'] ?? []);

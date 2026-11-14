@@ -209,6 +209,21 @@ class MigrationWorkflowRunnerTest {
     }
 
     @Test
+    void privateIndexDriverCannotBeUsedAsAWorkflowTarget() {
+        DbConfig target = new DbConfig("jdbc:h2:mem:untrusted-target", "synthetic-user", "synthetic-password",
+                "org.h2.Driver", "synthetic-target");
+        MappingSpec denied = new MappingSpec(mapping.source(), target, mapping.tables(), mapping.codemaps(),
+                mapping.run(), mapping.ledger(), mapping.archives());
+        given(loader.loadContent(any(String.class))).willReturn(denied);
+        assertThatThrownBy(() -> runner.run(args("--command=plan", "--mapping=" + mappingPath,
+                "--inventory=" + temp.resolve("unused-inventory.json"), "--plan=" + temp.resolve("blocked-plan.json"))))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("H2는 내부 임시 인덱스 전용이며 workflow target으로 사용할 수 없습니다.")
+                .hasMessageNotContaining(target.url()).hasMessageNotContaining(target.password());
+        org.mockito.Mockito.verifyNoInteractions(introspector);
+    }
+
+    @Test
     void discoverSetsReadOnlyBeforePreflightAndWritesCanonicalInventory() throws Exception {
         Path inventory = temp.resolve("inventory.json");
 

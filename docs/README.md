@@ -11,6 +11,7 @@
 | 상황 | 문서 |
 |---|---|
 | 이 프레임워크로 **새 프로젝트를 시작**한다 | [getting-started.md](03-guides/getting-started.md) — 온보딩 런북 |
+| 생성 프로젝트에 **Java·미배정 권한을 추가**한다 | [generated-project-additions.md](03-guides/generated-project-additions.md) — 원본 인증·승인과 분리한 추가분 등록·검증 |
 | **초기 요구사항 수집부터 단계별로 에이전트에게 작업을 지시**한다(`P0~P5`) | [design-to-deliverables-guide.md §7](03-guides/design-to-deliverables-guide.md#7-요구사항-입구intake통합-전환cutover최종-종료closeout-연결) — 요구사항 작업공간 CLI·3축 Fit-Gap·에이전트 지시 플레이북 |
 | **에이전트로 작업**한다(작업 등급·승인·검증 절차) | [orchestration-protocol.md](03-guides/orchestration-protocol.md) — SOP |
 | 이 저장소의 **코드를 처음 고친다**(무엇을 읽고 무엇을 돌리나) | [AGENTS.md 작업 시작 시 필수 읽기](../AGENTS.md#작업-시작-시-필수-읽기) → 고칠 경로의 결정 색인은 `node scripts/decision-indexes.mjs --for <경로>` → 그 변경을 읽는 시험은 `node scripts/impact-tests.mjs --diff origin/main` → 범위별 검증은 [AGENTS.md 검증 표](../AGENTS.md#verification-by-change-scope)와 [.githooks/README.md](../.githooks/README.md)(무거운 검증은 [대기열](03-guides/orchestration-protocol.md#63-무거운-검증은-하나씩)이 하나씩 돌린다). 모듈 지도는 [project-context.md](../.agent/memory/project-context.md#모듈런타임-지도) |

@@ -582,22 +582,49 @@ public class MigrationVerifier {
         if (table == null) {
             return new ScopedVerification(-1L, "run scoped 검증 매핑을 찾을 수 없음");
         }
-        List<MigrationStateStore.CheckpointEntry> checkpoints;
+        MigrationStateStore.CheckpointCounts counts;
         try {
-            checkpoints = MigrationStateStore.read(target, spec.run(), table.source(), table.effectiveId());
+            counts = MigrationStateStore.counts(target, spec.run(), table.source(), table.effectiveId());
         } catch (RuntimeException e) {
             return new ScopedVerification(-1L, "run scoped checkpoint 대조 실패 — 성공을 증명할 수 없음");
         }
-        if (checkpoints.size() != result.written()) {
-            return new ScopedVerification(checkpoints.size(),
-                    "run scoped parity 불일치: checkpoint=" + checkpoints.size()
+        if (counts.rows() != result.written()) {
+            return new ScopedVerification(counts.rows(),
+                    "run scoped parity 불일치: checkpoint=" + counts.rows()
                             + ", written=" + result.written());
         }
-
-        if (table.identity() != null) {
-            return verifyTypedScoped(target, table, checkpoints, tally);
+        if (counts.distinctTargetKeys() != counts.rows()) {
+            return new ScopedVerification(counts.rows(),
+                    "run scoped parity 불일치: checkpoint target key 중복");
         }
+        long observed = 0;
+        String cursor = null;
+        try {
+            while (true) {
+                List<MigrationStateStore.CheckpointEntry> page = MigrationStateStore.readPage(
+                        target, spec.run(), table.source(), table.effectiveId(), cursor, VERIFY_BATCH);
+                if (page.isEmpty() && observed > 0) break;
+                ScopedVerification checked = table.identity() == null
+                        ? verifyLegacyScoped(target, table, page, tally)
+                        : verifyTypedScoped(target, table, page, tally);
+                if (checked.error() != null) return new ScopedVerification(counts.rows(), checked.error());
+                if (page.isEmpty()) break;
+                observed += page.size();
+                if (observed > counts.rows()) break;
+                cursor = page.getLast().sourceKey();
+            }
+            if (observed != counts.rows()
+                    || !counts.equals(MigrationStateStore.counts(target, spec.run(), table.source(), table.effectiveId()))) {
+                return new ScopedVerification(counts.rows(), "run scoped checkpoint 건수/대상 키 집계가 대조 중 변경됨 — 성공을 증명할 수 없음");
+            }
+        } catch (RuntimeException failure) {
+            return new ScopedVerification(counts.rows(), "run scoped checkpoint 대조 실패 — 성공을 증명할 수 없음");
+        }
+        return new ScopedVerification(counts.rows(), null);
+    }
 
+    private ScopedVerification verifyLegacyScoped(JdbcTemplate target, MappingSpec.TableMapping table,
+                                                   List<MigrationStateStore.CheckpointEntry> checkpoints, TargetTally tally) {
         List<String> columns = EtlExecutor.canonicalTargetColumns(table);
         String targetKey = EtlExecutor.targetIdentityColumn(table);
         if (targetKey == null || targetKey.isBlank() || columns.isEmpty()) {

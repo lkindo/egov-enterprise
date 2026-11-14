@@ -1,5 +1,6 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SurveyResponseClient from '../SurveyResponseClient';
 
@@ -59,6 +60,24 @@ describe('SurveyResponseClient destructive boundary', () => {
     });
   });
 
+  it.each([['통계 보기', '/survey/stats'], ['홍길동 응답 상세보기', '/survey/response/7']])(
+    '%s 이동은 중첩 버튼 없는 단일 링크이고 Tab으로 진입·이탈한다', async (name, href) => {
+      const user = userEvent.setup();
+      renderSubject();
+      const link = await screen.findByRole('link', { name });
+      expect(link.tagName).toBe('A');
+      expect(link).toHaveAttribute('href', href);
+      expect(within(link).queryByRole('button')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+      for (let count = 0; count < 25 && document.activeElement !== link; count++) await user.tab();
+      expect(link).toHaveFocus();
+      await user.tab();
+      expect(link.contains(document.activeElement)).toBe(false);
+      await user.tab({ shift: true });
+      expect(link).toHaveFocus();
+    },
+  );
+
   /**
    * [2026-08-29] 첫 화면이 1페이지를 요청한다. [ADR-0036] 서버 page 도 1부터라 첫 화면은 `page: 1` 이다.
    *
@@ -93,7 +112,7 @@ describe('SurveyResponseClient destructive boundary', () => {
   it('응답 읽기 권한만 있으면 상세는 열 수 있지만 제출 취소를 제공하지 않는다', async () => {
     mocks.permissions = ['SURVEY_RSP_READ'];
     renderSubject();
-    expect(await screen.findByRole('button', { name: '홍길동 응답 상세보기' })).toBeVisible();
+    expect(await screen.findByRole('link', { name: '홍길동 응답 상세보기' })).toBeVisible();
     expect(screen.queryByRole('button', { name: '홍길동 전체 제출 취소' })).not.toBeInTheDocument();
     expect(mocks.deleteResponse).not.toHaveBeenCalled();
   });

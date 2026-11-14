@@ -5,6 +5,8 @@ import nuri.migration.model.MappingSpec.DbConfig;
 import nuri.migration.source.SourceIntrospector;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -12,6 +14,7 @@ import javax.sql.DataSource;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.Driver;
@@ -19,12 +22,16 @@ import java.sql.DriverPropertyInfo;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static nuri.migration.PackagedCliArchiveAssertions.assertDeploymentJarExcludesSourceDrivers;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.BDDMockito.given;
@@ -37,6 +44,113 @@ class SourceJdbcEndpointFactoryTest {
     private final SourceIntrospector introspector = mock(SourceIntrospector.class);
     private final SourceJdbcEndpointFactory factory = new SourceJdbcEndpointFactory(
             introspector, new LocalDriverJarPolicy());
+
+    @Test
+    void privateIndexDriverCannotBecomeABundledUserSource() {
+        SourceJdbcEndpointFactory production = new SourceJdbcEndpointFactory(new SourceIntrospector());
+        DbConfig source = new DbConfig("jdbc:h2:mem:untrusted-source;DATABASE_EVENT_LISTENER=private.Listener",
+                "synthetic-user", "synthetic-password", "org.h2.Driver");
+        assertThatThrownBy(() -> production.open(source, List.of(), null))
+                .isInstanceOf(SourceDriverException.class).hasNoCause()
+                .hasMessageNotContaining(source.url()).hasMessageNotContaining(source.password());
+    }
+
+    @Test
+    void shippedJarRejectsPrivateIndexSourceAndTargetBeforeOpeningUserDatabaseFiles() throws Exception {
+        Path application = Path.of(System.getProperty("migration.drill.jar")).toRealPath();
+        assertDeploymentJarExcludesSourceDrivers(application);
+        for (String command : List.of("discover", "plan")) {
+            boolean source = command.equals("discover");
+            Path database = temp.resolve(command + "-forbidden");
+            String h2 = "jdbc:h2:file:" + database.toString().replace('\\', '/');
+            Path mapping = temp.resolve(command + "-mapping.yml");
+            Path log = temp.resolve(command + "-packaged.log");
+            Files.writeString(mapping, """
+                    source:
+                      url: '%s'
+                      username: synthetic-user
+                      password: '${DRILL_ENDPOINT_PASSWORD}'
+                      driver: %s
+                      endpointId: synthetic-source
+                    target:
+                      url: '%s'
+                      username: synthetic-user
+                      password: '${DRILL_ENDPOINT_PASSWORD}'
+                      driver: %s
+                      endpointId: synthetic-target
+                    tables: []
+                    """.formatted(source ? h2 : "jdbc:postgresql://127.0.0.1:1/unused",
+                    source ? "org.h2.Driver" : "org.postgresql.Driver",
+                    source ? "jdbc:postgresql://127.0.0.1:1/unused" : h2,
+                    source ? "org.postgresql.Driver" : "org.h2.Driver"));
+            boolean windows = System.getProperty("os.name").startsWith("Windows");
+            var arguments = new ArrayList<>(List.of(Path.of(System.getProperty("java.home"), "bin", windows ? "java.exe" : "java").toString(),
+                    "-Dfile.encoding=UTF-8", "-jar", application.toString(), "--command=" + command,
+                    "--mapping=" + mapping, "--inventory=" + temp.resolve(command + "-inventory.json")));
+            if (!source) arguments.add("--plan=" + temp.resolve("forbidden-plan.json"));
+            ProcessBuilder builder = new ProcessBuilder(arguments).redirectErrorStream(true).redirectOutput(log.toFile());
+            builder.environment().put("DRILL_ENDPOINT_PASSWORD", "synthetic-private-password");
+            Process worker = builder.start();
+            try {
+                assertThat(worker.waitFor(60, TimeUnit.SECONDS)).as("packaged endpoint rejection terminates").isTrue();
+                assertThat(worker.exitValue()).isNotZero();
+                String output = Files.readString(log);
+                assertThat(output).contains(source ? "MW_DIAGNOSTIC=DB_DRIVER_UNAVAILABLE"
+                        : "H2는 내부 임시 인덱스 전용이며 workflow target으로 사용할 수 없습니다.");
+                assertThat(output).doesNotContain("synthetic-private-password");
+                assertThat(Files.exists(Path.of(database + ".mv.db"))).isFalse();
+                assertThat(Files.exists(Path.of(database + ".trace.db"))).isFalse();
+            } finally { if (worker.isAlive()) worker.destroyForcibly().waitFor(10, TimeUnit.SECONDS); }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "BOOT-INF/lib/mysql-connector-j-fixture.jar",
+            "BOOT-INF/lib/mariadb-java-client-fixture.jar",
+            "BOOT-INF/lib/ojdbc11-fixture.jar",
+            "BOOT-INF/lib/mssql-jdbc-fixture.jar",
+            "BOOT-INF/classes/com/mysql/cj/jdbc/Driver.class",
+            "BOOT-INF/classes/org/mariadb/jdbc/Driver.class",
+            "BOOT-INF/classes/oracle/jdbc/OracleDriver.class",
+            "BOOT-INF/classes/com/microsoft/sqlserver/jdbc/SQLServerDriver.class"
+    })
+    void shippedArchiveRejectsInjectedExternalSourceDriver(String entry) throws Exception {
+        Path application = Path.of(System.getProperty("migration.drill.jar")).toRealPath();
+        Path changed = Files.copy(application, temp.resolve("source-driver-injected.jar"));
+        try (var archive = FileSystems.newFileSystem(changed, Map.of())) {
+            Path resource = archive.getPath("/" + entry);
+            Files.createDirectories(resource.getParent());
+            Files.write(resource, new byte[] { 0 });
+        }
+        assertThatThrownBy(() -> assertDeploymentJarExcludesSourceDrivers(changed))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageContaining("external source drivers must stay outside");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = { "missing-h2", "duplicate-h2", "missing-private-index" })
+    void shippedArchiveRequiresPrivateIndexAndOneH2Library(String violation) throws Exception {
+        Path application = Path.of(System.getProperty("migration.drill.jar")).toRealPath();
+        Path changed = Files.copy(application, temp.resolve("private-index-violation.jar"));
+        try (var archive = FileSystems.newFileSystem(changed, Map.of())) {
+            if (violation.equals("missing-private-index")) {
+                Files.delete(archive.getPath("/BOOT-INF/classes/nuri/migration/state/MigrationScratchIndex.class"));
+            } else {
+                Path library;
+                try (var libraries = Files.list(archive.getPath("/BOOT-INF/lib"))) {
+                    library = libraries.filter(path -> path.getFileName().toString().startsWith("h2-"))
+                            .findFirst().orElseThrow();
+                }
+                if (violation.equals("missing-h2")) Files.delete(library);
+                else Files.copy(library, library.resolveSibling("h2-duplicate-fixture.jar"));
+            }
+        }
+        assertThatThrownBy(() -> assertDeploymentJarExcludesSourceDrivers(changed))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageContaining(violation.equals("missing-private-index")
+                        ? "private encrypted index" : "exactly one H2 library");
+    }
 
     @Test
     void springCreatesTheFactoryUsingItsProductionConstructorAndInjectedIntrospector() {

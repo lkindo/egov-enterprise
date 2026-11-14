@@ -3,10 +3,11 @@
 // 파일의 시험을 차례로 돌리고 파일끼리는 함께 돌리므로, 구성별 시험을 나눈 파일(…-profiles-<n>.test.mjs)이 이 본문을 등록한다.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { projectReusableGovernance } from './reusable-governance-projection.mjs';
 import { applyFrontendProjection, createFrontendProjector, pruneFrontend } from './reusable-source-frontend.mjs';
 import { composerProfile } from './project-composer-source.mjs';
@@ -14,7 +15,7 @@ import { compositionProfiles } from './composition-profiles.mjs';
 import { pruneJava } from './reusable-source-java.mjs';
 import { buildUrlStateCensus } from './ui-url-state-census.mjs';
 import { analyzeRouteCapabilities } from './ui-route-capabilities-contract.mjs';
-import { canonicalJsonSha256, inspectReusableGovernance, MEMORY_PATHS, snapshotPathFor, upstreamSnapshotText } from './reusable-governance-integrity.mjs';
+import { canonicalJsonSha256, artifactTextSha256, inspectReusableGovernance, MEMORY_PATHS, snapshotPathFor, upstreamSnapshotText } from './reusable-governance-integrity.mjs';
 import { REVIEW_MANIFEST_PATHS, REVIEW_SCOPE_PATH } from './reusable-review-scopes.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { COMPOSER_SELECTION_PATH, resolveProjectRecipe } from './project-composer-recipe.mjs';
@@ -26,6 +27,10 @@ import { AUTHORIZATION_POLICY_PATH, PERMISSION_BUNDLES_PATH, PERMISSION_CATALOG_
 import { SCREEN_REGISTRY_OUTPUT, readScreenRegistryArtifact } from './screen-registry-model.mjs';
 import { activeCompositionEntry, writeProjectedModules } from './generate-reusable-base-source.mjs';
 import { MODULES_DIRECTORY, RETIRED_OWNERSHIP_DECLARATION, composerOwnership, loadComposerModules } from './composer-modules.mjs';
+import { writeHarnessBaseline } from './reusable-source-harness.mjs';
+import { initializeAdopterProject, registerAdopterProject } from './adopter-project.mjs';
+import { readAdopterProject } from './reusable-adopter-project.mjs';
+import { generatePermissions } from './generate-permissions.mjs';
 import { relative } from 'node:path';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -71,6 +76,91 @@ export function cleanupOwnedFixture(directory) {
 /** 구성별 투영 시험을 나눠 담는 파일 수. 파일 이름은 reusable-governance-projection-profiles-<1..PROFILE_SHARDS>.test.mjs 다. */
 export const PROFILE_SHARDS = 4;
 
+// 기존 core fixture를 복사해 실제 등록 진입점을 검증한다. 원래 fixture의 변이 검사는 같은 원본에서 계속 돈다.
+function exerciseAdopterRegistration(pristine, { profile, composition }) {
+  const output = mkdtempSync(join(tmpdir(), 'egov-governance-projection-'));
+  try {
+    cpSync(pristine, output, { recursive: true });
+    for (const source of ['business-core/src/testFixtures/java', 'migration-tool/src/test/java']) {
+      mkdirSync(dirname(join(output, source)), { recursive: true });
+      cpSync(join(ROOT, source), join(output, source), { recursive: true });
+    }
+    mkdirSync(join(output, 'api-server/src/test/resources/harness'), { recursive: true });
+    writeHarnessBaseline(output, { ownership, profile, schemaTables: composition.tables.length });
+    const anchoredLock = readJson(output, 'reusable-base-lock.json');
+    anchoredLock.adopterBaseline = {
+      ...(existsSync(join(output, 'api-docs.json')) ? { apiDocsSha256: artifactTextSha256(output, 'api-docs.json'),
+        apiContractGeneratorSha256: artifactTextSha256(output, '.agent/scripts/codegen-zod.js') } : {}),
+      permissionBundlesSha256: artifactTextSha256(output, 'config/governance/permission-bundles.json'),
+      harnessProfileSha256: artifactTextSha256(output, 'config/governance/reusable-harness-profile.json'),
+      harnessManifestSha256: artifactTextSha256(output, 'api-server/src/test/resources/harness/baseline-manifest.properties'),
+    };
+    writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(anchoredLock, null, 2)}\n`);
+    const originalEvidence = ['reusable-base-lock.json', 'config/governance/reusable-governance-projection.json',
+      'config/governance/adoption-review.json'].map(path => [path, readFileSync(join(output, path))]);
+    initializeAdopterProject(output);
+    const added = 'business-app/src/main/java/nuri/business/adopter/AdopterProbe.java';
+    mkdirSync(dirname(join(output, added)), { recursive: true });
+    writeFileSync(join(output, added), 'package nuri.business.adopter; public record AdopterProbe(String value) {}\n');
+    const permissionPath = 'config/governance/permission-catalog.json';
+    const permissions = readJson(output, permissionPath);
+    permissions.permissions.push({ code: 'ADOPTER_READ', domain: 'ADOPTER', action: 'READ', name: '기관 업무 조회', defaultGroups: [] });
+    writeFileSync(join(output, permissionPath), `${JSON.stringify(permissions, null, 2)}\n`);
+    const bundlePath = 'config/governance/permission-bundles.json';
+    const bundles = readJson(output, bundlePath);
+    bundles.excluded.push({ code: 'ADOPTER_READ', reason: '기관 추가 조회 권한은 기존 역할 묶음에 자동 포함하지 않는다.' });
+    writeFileSync(join(output, bundlePath), `${JSON.stringify(bundles, null, 2)}\n`);
+    const seedBefore = readFileSync(join(output, 'api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql'), 'utf8');
+    const registered = registerAdopterProject(output, '기관 업무의 새 DTO와 미배정 조회 권한 추가');
+    assert.equal(registered.revision.addedSources.length, 1);
+    assert.equal(registered.revision.certificationEligible, false);
+    // 실제 Java 게이트가 실행하는 probe를 쓴다. 의존성 주소만 생산자 모듈로 바꾸고 검증 대상 cwd는 생성물이다.
+    const bootstrapSource = readFileSync(join(ROOT, 'api-server/src/test/java/nuri/api/schema/BaseAdminBootstrapSeedIntegrationTest.java'), 'utf8');
+    const bootstrapProbe = bootstrapSource.match(/String probe = """([\s\S]*?)""";/u)?.[1]
+      ?.replace(/from '\.\/scripts\/([^']+)'/gu, (_match, file) => `from '${pathToFileURL(join(ROOT, 'scripts', file)).href}'`);
+    assert.ok(bootstrapProbe, 'bootstrap provenance probe must remain executable');
+    const probe = () => spawnSync(process.execPath, ['--input-type=module', '--eval', bootstrapProbe],
+      { cwd: output, encoding: 'utf8', windowsHide: true, timeout: 180_000 });
+    const valid = probe();
+    assert.equal(valid.status, 0, valid.stderr);
+    const grants = JSON.parse(valid.stdout).operationGrants;
+    assert.ok(grants.length > 0 && grants.every(row => row.authrt_grnt_cd !== 'ADOPTER_READ'), '초기 부여 기대값은 원본에서 도출하며 새 권한을 자동 부여하지 않는다');
+    const registryBefore = readFileSync(join(output, 'adopter-project.json'));
+    const invalidRegistration = JSON.parse(registryBefore);
+    invalidRegistration.revision.inputs[0][1] = '0'.repeat(64);
+    writeFileSync(join(output, 'adopter-project.json'), JSON.stringify(invalidRegistration));
+    const invalid = probe();
+    assert.notEqual(invalid.status, 0);
+    assert.match(invalid.stderr, /Registered adopter revision changed/);
+    writeFileSync(join(output, 'adopter-project.json'), registryBefore);
+    assert.equal(readAdopterProject(output).harnessProfile.census.productionSources,
+      JSON.parse(registered.baseline.profileText).retained.length + 1);
+    assert.deepEqual(inspectReusableGovernance(output, { adopter: true }).errors, []);
+    assert.match(inspectReusableGovernance(output).errors.join('\n'), /Source evidence scope changed/);
+    generatePermissions(output, true);
+    assert.equal(readFileSync(join(output, 'api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql'), 'utf8'), seedBefore,
+      '새 미배정 권한이 기존 그룹 부여 시드를 바꾸지 않는다');
+    for (const [path, bytes] of originalEvidence) assert.ok(readFileSync(join(output, path)).equals(bytes), path);
+    writeFileSync(join(output, added), 'package nuri.business.adopter; public record AdopterProbe(String changed) {}\n');
+    assert.match(inspectReusableGovernance(output, { adopter: true }).errors.join('\n'), /revision changed/);
+    assert.throws(() => generatePermissions(output, true), /explicit registration/);
+    registerAdopterProject(output, '기관 DTO 필드 변경을 현재 소스 해시로 다시 등록');
+    assert.deepEqual(inspectReusableGovernance(output, { adopter: true }).errors, []);
+    const generated = [...PERMISSION_ARTIFACT_PATHS, 'adopter-project.json', 'config/governance/reusable-harness-profile.json',
+      'api-server/src/test/resources/harness/baseline-manifest.properties'].map(path => [path, readFileSync(join(output, path))]);
+    const gate = 'api-server/src/test/java/nuri/api/harness/HarnessBaselineIntegrityTest.java';
+    const originalGate = readFileSync(join(output, gate));
+    writeFileSync(join(output, gate), originalGate.toString('utf8').replace(/\}\s*$/u, '    private static final int ADOPTER_TEST_MUTATION = 1;\n}\n'));
+    assert.throws(() => registerAdopterProject(output, '추가 등록으로 다른 하네스 규칙 변경을 승인할 수 없다'), /other harness rules/);
+    for (const [path, bytes] of generated) assert.ok(readFileSync(join(output, path)).equals(bytes), `failed registration must restore ${path}`);
+    assert.ok(!readFileSync(join(output, gate)).equals(originalGate), '등록 실패는 사용자 입력 수정을 덮어쓰지 않는다');
+    writeFileSync(join(output, gate), originalGate);
+    console.log('core adopter fixture: registered inputs, original-evidence red, drift red and rollback guard passed');
+
+  } finally { cleanupOwnedFixture(output); }
+}
+
+
 /*
  * 구성(compositionProfiles)을 나눈 파일에 담는다. core 는 core 전용 변이 시험이 더해져 구성 가운데 가장 길므로 첫 파일에 혼자 두고,
  * 나머지 구성은 차례대로 둘째 파일부터 돌려 담는다 — 차례 나머지로만 나누면 core 와 다른 구성이 한 파일에 묶여 그 파일이 로컬 병렬
@@ -97,6 +187,10 @@ export function registerProfileProjectionTests(shard) {
       const output = mkdtempSync(join(tmpdir(), 'egov-governance-projection-'));
       try {
         copyInputs(output);
+        if (profileName === 'core') {
+          // 이 fixture는 DB를 실행하지 않는다. census가 읽는 기준선만 두며 실제 스키마 자격을 주장하지 않는다.
+          writeFileSync(join(output, 'api-server/src/main/resources/db/migration/V1_0__baseline.sql'), 'CREATE TABLE tb_fixture (id bigint);\n');
+        }
         const copied = walk(output, () => true).map(path => normalize(relative(output, path)));
         // 프리셋도 구성 경로로 생성한다(DEC-OPS-239) — 모든 프로필이 해석된 구성을 갖는다. 해석기는 카탈로그를 바꾸지 않으므로 모듈의
         // 원본 카탈로그를 그대로 쓴다(시험마다 다시 적재하지 않는다).
@@ -141,6 +235,7 @@ export function registerProfileProjectionTests(shard) {
           governance: { path: 'config/governance/reusable-governance-projection.json', projectionSha256: canonicalJsonSha256(result) } };
         writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(lock, null, 2)}\n`);
         assert.deepEqual(inspectReusableGovernance(output).errors, []);
+        if (profileName === 'core') exerciseAdopterRegistration(output, { profile, composition });
         // 변이를 되돌린 뒤에는 무결성 검사를 처음부터 다시 돌리지 않는다(한 번에 수 초다). 대신 되돌린 파일이 변이 전 바이트(없던 파일은
         // 부재)와 같은지 본다 — 검사기는 디스크 내용의 결정적 함수라 이 대조가 같은 사실을 더 정확히 본다. 깨끗한 검사는 위의 첫 검사와
         // 마지막 선택 변이 직전의 한 번이 맡고, 그 사이 모든 변이의 되돌리기를 덮는다.
@@ -403,10 +498,12 @@ export function registerProfileProjectionTests(shard) {
           } finally { restorePermissions(); }
           assert.deepEqual(inspectReusableGovernance(output).errors, []);
           const selection = readJson(output, COMPOSER_SELECTION_PATH);
+          const selectionBeforeMutation = readFileSync(join(output, COMPOSER_SELECTION_PATH));
           assert.equal(selection.composition.compositionHash, composition.compositionHash);
           selection.composition.permissionCodes.push('MAIL_SEND');
           writeFileSync(join(output, COMPOSER_SELECTION_PATH), JSON.stringify(selection));
           assert.match(inspectReusableGovernance(output).errors.join('\n'), /snapshot checksum mismatch|does not match/);
+          writeFileSync(join(output, COMPOSER_SELECTION_PATH), selectionBeforeMutation);
         }
         console.log(`${profileName}: routes=${result.routes.length}, URL records=${result.urlRecordIds.length}, inherited=${result.inheritedUrlRecordIds.length}, adoption=pending`);
       } finally {

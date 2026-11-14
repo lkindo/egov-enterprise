@@ -590,6 +590,7 @@ test('the record command refuses before starting any container when the setup ca
   refused({ lock: { layout: 'single-module' } }, null, /multi-module 생성물에서만 돈다/);
   refused({ lock: { composition: { resolvedDomains: ['cms'], compositionHash: 'd'.repeat(64) } } }, null, /대표 묶음에 필요한 기능이 이 구성에 없다/);
   refused({ full: { result: 'failed' } }, null, /생성물 전체 검증이 이 커밋에서 통과한 기록이 없다/);
+  refused({ full: { scope: 'adopter', certificationEligible: false } }, null, /도입자 기술 검증은 벤더 인증 증거가 아니다/);
   refused({ full: { sourceCommit: 'f'.repeat(40) } }, null, /생성물 전체 검증이 이 커밋에서 통과한 기록이 없다/);
   refused({}, ({ artifact }) => rmSync(join(artifact, 'build/reports/reusable-base/full.json')), /보고서를 읽지 못했다: build\/reports\/reusable-base\/full\.json/);
   refused({}, ({ root }) => put(root, 'reusable-base-lock.json', '{}'), /원본 저장소에서 실행한다/);

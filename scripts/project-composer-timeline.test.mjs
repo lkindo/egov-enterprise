@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { HISTORY_FILE, HISTORY_LIMIT, HISTORY_MIN_RUNS, JOB_STAGES, PROGRESS_WEIGHTS, appendJobHistory, createJobTimeline, estimateRemaining,
   historyEntry, readJobHistory, verificationStepMarkers } from './project-composer-timeline.mjs';
-import { VERIFICATION_STEP_IDS, verifyReusableArtifact } from './verify-reusable-artifact.mjs';
+import { VERIFICATION_STEP_IDS, verificationSteps, verifyReusableArtifact } from './verify-reusable-artifact.mjs';
 
 function clock(start = 1_000_000) {
   let now = start;
@@ -111,6 +111,35 @@ test('the step markers are exactly the headers the real verifier prints, in step
     try { verifyReusableArtifact({ root, scope: 'full', run: () => '' }); } finally { process.stdout.write = original; }
     const markers = verificationStepMarkers({ profile: 'custom', layout });
     assert.deepEqual(printed.map(line => markers.get(line)), [...VERIFICATION_STEP_IDS], layout);
+  }
+});
+
+test('adopter verification keeps every product check and cannot replace the generation certification report', t => {
+  for (const layout of ['multi-module', 'single-module']) {
+    const root = fixture(t);
+    writeFileSync(join(root, 'reusable-base-lock.json'), JSON.stringify({ profile: 'custom', layout }));
+    const codeScope = { format: 'fixture', fileCount: 1, sha256: 'a'.repeat(64) };
+    writeFileSync(join(root, 'adopter-project.json'), JSON.stringify({ revision: { codeScope } }));
+    mkdirSync(join(root, 'build/reports/reusable-base'), { recursive: true });
+    const full = join(root, 'build/reports/reusable-base/full.json');
+    writeFileSync(full, 'original certification evidence');
+    const commands = [];
+    const report = verifyReusableArtifact({ root, scope: 'adopter', run: (command, args) => commands.push([command, args]) });
+    assert.equal(report.scope, 'adopter');
+    assert.equal(report.certificationEligible, false);
+    assert.equal(report.environmentApproved, false);
+    assert.equal(report.authority, 'local-adopter-technical-verification');
+    assert.deepEqual(report.adopterRevision.codeScope, codeScope);
+    assert.match(report.adopterRevision.registrationSha256, /^[a-f0-9]{64}$/u);
+    assert.deepEqual(report.steps.map(step => step.step), [...VERIFICATION_STEP_IDS]);
+    assert.deepEqual(commands[0], ['node', ['scripts/verify-reusable-governance.mjs', '--adopter']]);
+    assert.deepEqual(commands.slice(1), verificationSteps('full', layout).slice(1).map(step => [step.command, step.args]));
+    assert.equal(readFileSync(full, 'utf8'), 'original certification evidence');
+    assert.throws(() => verifyReusableArtifact({ root, scope: 'adopter', run: () => { throw new Error('intentional governance failure'); } }), /intentional governance failure/);
+    const failed = JSON.parse(readFileSync(join(root, 'build/reports/reusable-base/adopter.json'), 'utf8'));
+    assert.equal(failed.result, 'failed');
+    assert.equal(failed.steps.length, 1);
+    assert.equal(failed.failure.step, 'governance');
   }
 });
 

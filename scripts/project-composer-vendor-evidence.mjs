@@ -85,6 +85,8 @@ function assertArtifactFits(root, artifact, vendorId, commit) {
   const missing = requiredDomains.filter(domain => !present.has(domain));
   if (missing.length) throw refuse(`대표 묶음에 필요한 기능이 이 구성에 없다: ${missing.join(', ')}`);
   const verification = readReport(artifact, 'build/reports/reusable-base/full.json');
+  if (verification.certificationEligible === false || verification.scope === 'adopter'
+      || verification.authority === 'local-adopter-technical-verification') throw refuse('도입자 기술 검증은 벤더 인증 증거가 아니다.');
   if (verification.result !== 'passed' || verification.sourceCommit !== commit) throw refuse('생성물 전체 검증이 이 커밋에서 통과한 기록이 없다.');
   // 커밋이 같아도 미커밋 수정으로 만들고 되돌렸을 수 있다. 생성 명령은 늘 --allow-dirty 를 받아 잠금만으로는 가를 수 없다.
   const generation = readReport(artifact, GENERATION_REPORT);

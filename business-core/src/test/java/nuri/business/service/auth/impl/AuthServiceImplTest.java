@@ -563,17 +563,54 @@ class AuthServiceImplTest {
     class Logout {
 
         @Test
-        @DisplayName("리프레시 토큰을 삭제하고 즉시 flush 한다")
-        void deletesAndFlushesRefreshToken() {
-            RefreshToken stored = storedToken();
-            given(refreshTokenRepository.findById(ESNTL_ID)).willReturn(Optional.of(stored));
+        @DisplayName("로그아웃 뒤 이전 차수 토큰은 발급 초와 관계없이 거부하고 새 차수 토큰은 허용한다")
+        void logoutRevokesTokensWithoutAnIssuedAtRoundingWindow() {
+            var cycle = new java.util.concurrent.atomic.AtomicInteger(3);
+            var cutoff = new java.util.concurrent.atomic.AtomicReference<Instant>();
+            given(userDetailsService.loadUserByUsername(ESNTL_ID)).willAnswer(ignored ->
+                    CustomUserDetails.builder().esntlId(ESNTL_ID).enabled(true).lockAt("N")
+                            .sessionCycle(cycle.get()).lastLogoutAt(cutoff.get()).build());
+            given(userRepository.advanceSessionCycle(List.of(ESNTL_ID))).willAnswer(ignored -> {
+                cycle.incrementAndGet();
+                return 1;
+            });
+            given(userRepository.recordLogout(eq(ESNTL_ID), any())).willAnswer(invocation -> {
+                cutoff.set(ServiceTime.toInstant(invocation.getArgument(1)));
+                return 1;
+            });
+            var provider = new JwtTokenProvider();
+            org.springframework.test.util.ReflectionTestUtils.setField(provider, "secretKey",
+                    "logout-test-signing-key-only-for-this-fixture-64-characters-long!!");
+            org.springframework.test.util.ReflectionTestUtils.setField(provider, "userDetailsService", userDetailsService);
+            org.springframework.test.util.ReflectionTestUtils.invokeMethod(provider, "init");
+            String beforeLogout = provider.createAccessToken(ESNTL_ID, "ROLE_USER", null, null, cycle.get());
+            assertThat(provider.getAuthentication(beforeLogout)).isNotNull();
 
             authService.logout(ESNTL_ID, null);
 
-            verify(refreshTokenRepository).delete(stored);
-            // L154 `removed call to flush` 뮤턴트가 여기서 죽는다.
-            // flush 가 없으면 삭제가 트랜잭션 커밋까지 지연돼 로그아웃 직후 재발급이 성공할 수 있다.
-            verify(refreshTokenRepository).flush();
+            assertThatThrownBy(() -> provider.getAuthentication(beforeLogout))
+                    .isInstanceOf(org.springframework.security.authentication.CredentialsExpiredException.class);
+            // 이전 principal 이 로그아웃 뒤 발급을 마쳐도 iat 에 관계없이 이전 차수는 거부한다.
+            assertThatThrownBy(() -> provider.getAuthentication(
+                    provider.createAccessToken(ESNTL_ID, "ROLE_USER", null, null, 3)))
+                    .isInstanceOf(org.springframework.security.authentication.CredentialsExpiredException.class);
+            assertThat(provider.getAuthentication(
+                    provider.createAccessToken(ESNTL_ID, "ROLE_USER", null, null, cycle.get()))).isNotNull();
+        }
+
+        @Test
+        @DisplayName("리프레시 행이 경합으로 이미 없어도 bulk 삭제 뒤 세션차수를 올린다")
+        void bulkDeletionAcceptsAnAlreadyRemovedRefreshRow() {
+            RefreshToken stored = storedToken();
+            given(refreshTokenRepository.findById(ESNTL_ID)).willReturn(Optional.of(stored));
+            given(refreshTokenRepository.deleteAllByEsntlIdIn(List.of(ESNTL_ID))).willReturn(0);
+
+            authService.logout(ESNTL_ID, null);
+
+            verify(refreshTokenRepository).deleteAllByEsntlIdIn(List.of(ESNTL_ID));
+            verify(refreshTokenRepository, never()).delete(any());
+            verify(refreshTokenRepository, never()).flush();
+            verify(userRepository).advanceSessionCycle(List.of(ESNTL_ID));
         }
 
         @Test
@@ -606,8 +643,9 @@ class AuthServiceImplTest {
 
             authService.logout(null, "cookie-token");
 
-            verify(refreshTokenRepository).delete(stored);
-            verify(refreshTokenRepository).flush();
+            verify(refreshTokenRepository).deleteAllByEsntlIdIn(List.of(ESNTL_ID));
+            verify(refreshTokenRepository, never()).delete(any());
+            verify(refreshTokenRepository, never()).flush();
             // 원문으로는 찾지 않는다 — 저장값은 해시다.
             verify(refreshTokenRepository, never()).findByRfshTkn("cookie-token");
             verify(refreshTokenRepository, never()).findById(anyString());
@@ -622,6 +660,7 @@ class AuthServiceImplTest {
             verify(refreshTokenRepository, never()).findByRfshTkn(any());
             verify(refreshTokenRepository, never()).delete(any());
             verify(userRepository, never()).recordLogout(anyString(), any());
+            verify(userRepository, never()).advanceSessionCycle(any());
         }
 
         @Test
@@ -634,6 +673,7 @@ class AuthServiceImplTest {
 
             ArgumentCaptor<java.time.LocalDateTime> at = ArgumentCaptor.forClass(java.time.LocalDateTime.class);
             verify(userRepository).recordLogout(eq(ESNTL_ID), at.capture());
+            verify(userRepository).advanceSessionCycle(List.of(ESNTL_ID));
             assertThat(at.getValue()).isBetween(before, java.time.LocalDateTime.now());
         }
 
@@ -645,6 +685,7 @@ class AuthServiceImplTest {
             authService.logout(ESNTL_ID, null);
 
             verify(userRepository).recordLogout(eq(ESNTL_ID), any());
+            verify(userRepository).advanceSessionCycle(List.of(ESNTL_ID));
         }
 
         @Test
@@ -658,6 +699,7 @@ class AuthServiceImplTest {
             authService.logout(null, "stale-or-forged-token");
 
             verify(userRepository, times(1)).recordLogout(eq(ESNTL_ID), any());
+            verify(userRepository, times(1)).advanceSessionCycle(List.of(ESNTL_ID));
         }
     }
 

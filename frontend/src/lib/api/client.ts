@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { AUTH_BROWSER_REQUEST_TIMEOUT_MS } from '@/lib/auth/auth-request-policy';
 import type { AxiosRequestConfig } from 'axios';
 import { cache } from 'react';
 
@@ -143,6 +144,7 @@ export function reissueSession(): Promise<void> {
         // baseURL:'' — Route Handler(/api/auth/reissue) 직결. 미지정 시 '/api/v1' 전치되어
         // '/api/v1/api/auth/reissue'→백엔드 401 로 재발급 자체가 파손된다.
         baseURL: '',
+        timeout: AUTH_BROWSER_REQUEST_TIMEOUT_MS,
         headers: { 'Authorization': '' },
       } as AxiosRequestConfig & { _retry: boolean }
     )

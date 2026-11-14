@@ -52,6 +52,44 @@ class MigrationVerifierTypedIdentityTest {
     private final MigrationVerifier verifier = new MigrationVerifier();
 
     @Test
+    void emptyScopedRunStillRequiresAnIdentityAndChecksumContract() {
+        var table = new TableMapping("legacy_empty", "tb_empty", null, null, List.of(), null, List.of(), null);
+        Fixture fixture = fixture(h2(), table);
+        var result = new EtlExecutor.TableResult("legacy_empty", "tb_empty", 0, 0, 0, List.of());
+        MigrationReport report = verifier.verify(fixture.spec(), List.of(result), fixture.jdbc());
+        assertThat(report.ok()).isFalse();
+        assertThat(report.tables().getFirst().note()).contains("checksum 계약");
+    }
+
+    @Test
+    void typedPagesPreserveChecksumsAndRejectDuplicateTargetsAcrossPageBoundaries() throws Exception {
+        Fixture fixture = compositeFixture(true);
+        var entries = new ArrayList<CheckpointEntry>();
+        List<String> columns = EtlExecutor.canonicalTargetColumns(fixture.spec().tables().getFirst());
+        for (int i = 0; i < 1001; i++) {
+            fixture.jdbc().update("INSERT INTO tb_order VALUES ('A', ?, 'payload')", i);
+            entries.add(CheckpointEntry.typed("legacy_order", TypedKeyTuple.of(TypedValue.text("source-" + i)),
+                    "tb_order", composite("A", i), RowChecksum.calculate(columns, row("A", i, "payload"))));
+        }
+        writeCheckpoints(fixture, entries);
+        var results = List.of(new EtlExecutor.TableResult("legacy_order", "tb_order", 1001, 1001, 1001, List.of()));
+        MigrationReport passing = verifier.verify(fixture.spec(), results, fixture.jdbc());
+        assertThat(passing.ok()).isTrue();
+        assertThat(passing.tables().getFirst().targetRows()).isEqualTo(1001);
+
+        entries.sort(java.util.Comparator.comparing(CheckpointEntry::sourceKey));
+        CheckpointEntry first = entries.getFirst();
+        CheckpointEntry last = entries.getLast();
+        fixture.jdbc().update("UPDATE migration_control.tb_migration_checkpoint SET target_key=?, row_checksum=?"
+                        + " WHERE run_id=? AND source_namespace=? AND source_table=? AND mapping_id=? AND source_key=?",
+                first.targetKey(), first.rowChecksum(), fixture.spec().run().runId(), fixture.spec().run().sourceNamespace(),
+                "legacy_order", "", last.sourceKey());
+        MigrationReport duplicate = verifier.verify(fixture.spec(), results, fixture.jdbc());
+        assertThat(duplicate.ok()).isFalse();
+        assertThat(duplicate.tables().getFirst().note()).contains("checkpoint target key 중복");
+    }
+
+    @Test
     void verifiesTypedCompositeKeysWithParameterizedTuplePredicatesAndChecksums() throws Exception {
         Fixture fixture = compositeFixture(true);
         fixture.jdbc().update("INSERT INTO tb_order VALUES ('A', 1, 'one')");

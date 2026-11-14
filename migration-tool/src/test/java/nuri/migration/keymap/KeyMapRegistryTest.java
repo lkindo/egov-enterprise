@@ -11,6 +11,22 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class KeyMapRegistryTest {
 
     @Test
+    void clearingAnOuterSuffixInvalidatesLaterCheckpointOffsets() throws Exception {
+        try (KeyMapRegistry registry = new KeyMapRegistry()) {
+            Checkpoint outer = registry.checkpoint();
+            registry.mintOrGet("legacy_user", "first", "USR");
+            Checkpoint inner = registry.checkpoint();
+            registry.mintOrGet("legacy_user", "second", "USR");
+            registry.rollback(outer);
+            assertThatThrownBy(() -> registry.rollback(inner)).isInstanceOf(IllegalStateException.class);
+            registry.mintOrGet("legacy_user", "third", "USR");
+            Checkpoint later = registry.checkpoint();
+            registry.accept(outer);
+            assertThatThrownBy(() -> registry.accept(later)).isInstanceOf(IllegalStateException.class);
+        }
+    }
+
+    @Test
     void rollbackRemovesPendingMappingFromTranslationState() {
         KeyMapRegistry registry = new KeyMapRegistry();
         Checkpoint checkpoint = registry.checkpoint();

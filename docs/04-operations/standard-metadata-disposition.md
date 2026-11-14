@@ -1,6 +1,6 @@
 # 표준 스키마 메타 처분안 (GAP-STD-001)
 
-> **검토 자료이며 승인이 아니다.** DB/표준 소유자가 컬럼마다 용어 등록·물리 정정을 승인하기 전의 처분 후보다. 이 문서는 DB 를 바꾸지 않으며, 등록·정정은 각각 새 Flyway 와 별도 승인으로 한다.
+> **후보 처분표 자체는 승인이 아니다.** 기승인·반영 범위는 DEC-OPS-378·379와 2026-11-10 유지 승인 등 각 절에 명시된 사용자 승인 원본을 따른다. 이번 실측은 승인을 추가하지 않으며, 그 밖의 용어 등록·물리 정정은 컬럼별 승인 대상이다. 이 문서는 DB를 바꾸지 않으며 신규 등록·정정은 새 Flyway와 별도 승인으로 한다.
 
 ## 1. 머리
 
@@ -11,6 +11,104 @@ GAP-STD-001(`.agent/memory/known-gaps.md`)의 다음 행동("컬럼마다 표준
 - 상세 처분표 최초 조사 기준일: **2026-10-18** — 아래 표 1·표 2와 A/B/C 건수는 이 시점의 후보를 보존한다. 현재 관측 차분은 다음 절에 따로 적는다.
 - 원천: 공유 OCI 개발 DB(`egovdb`, 운영 아님) 읽기 전용 조회 — `.agent/scripts/db-bridge.js`(SELECT·WITH만). 수치는 그날의 DB 실측이며 저장소에 남는 증거가 아니다.
 - 보조 원천: JPA 엔티티 필드 타입(정적 파싱), 컬럼 COMMENT, 화면 라벨, 시드 마이그레이션(V2_1·V2_15·V2_17·V2_112·V2_128·V2_129·V2_56·V2_69·V2_76).
+
+### 2026-11-14 승인 예외를 반영한 재실측
+
+공유 OCI 개발 DB의 `public.tb_` 기본 테이블을 2026-11-13 21:02 UTC(한국 시각 2026-11-14)에 읽기 전용으로 재조회했다. Flyway는 `2.153`이고 표준 단어·용어·도메인은 각각 3,388·13,347·132개다. 아래는 그 시점의 관측이며, 과거 후보표를 새로 승인하거나 다른 환경의 적용 완료를 뜻하지 않는다. 메타 3표 자체는 DB 헌법의 감사 제외 범위다.
+
+| 구분 | 현재 컬럼 수 | 분류·후속 처리 |
+|---|---:|---|
+| 전체 | 1,116 / 95개 표 | `public.tb_` 기본 테이블만 집계 |
+| 용어 없음 원시 집계 | 172 / 고유 이름 116개 | 이 수를 미승인 결함 수로 쓰지 않는다 |
+| 기승인 기술 컬럼 `version` | 26 | DEC-OPS-378의 명칭 예외. 규격 일치 24개와 기존 제약 형태 후속 판단 2개를 구분 |
+| 2026-11-10 1차 C 유지 승인 | 14 / 9개 이름 | 승인된 1차 등록 제외 범위이며 잠정 B 정정·퇴역 후보까지 영구 보존한다는 뜻은 아님 |
+| 남은 처분 후보 | 132 | B 100개·C 30개·A* 2개. 미승인·보류 후보이며 132개 모두를 확정 결함으로 단정하지 않는다 |
+| 용어가 있는 컬럼의 타입 차이 | 14 | 같은 숫자 종류 11개, `ans_lv` 1개, 호환용 구 로그 컬럼 2개로 구분 |
+| 폐기 용어 사용 | 0 | 이번 조회 범위에 한함 |
+
+**승인 예외의 범위.** [DEC-OPS-378](../archived/operational-decisions-history.md#dec-ops-378)의 기술 명칭 예외와 [2026-11-10 C 9개 승인](#approved-first-phase-20261110)의 1차 유지 범위는 이미 승인된 것으로 다룬다. 후속 이름 정정·퇴역 가능성까지 막는 영구 예외로 확대하지 않는다. C 9개는 현재 아래 14개 물리 컬럼에 해당한다. 같은 이름을 미래의 다른 컬럼에 쓰는 것까지 승인한 목록은 아니다. 이관할 때는 여전히 해당 대상에 live 용어가 없다는 확인과 원장 `nonStandardTarget` 사유가 필요하다. 예외 유지는 보안·인가·데이터 무결성 검사를 면제하지 않는다.
+
+| 승인된 이름 | 현재 물리 대상 |
+|---|---|
+| `file_strg_path` | `tb_file_detail` |
+| `file_url` | `tb_popup_info` |
+| `rel_img_path` | `tb_menu_info` |
+| `mthd_nm` | `tb_sys_log`, `tb_user_log` |
+| `pswd` | `tb_bbs_comment`, `tb_bbs_item`, `tb_dgstfn_info`는 GAP-BOARD-001 제거 후보이며 삭제는 별도 승인. `tb_user_info` 포함 총 4개가 이번 1차 유지 범위 |
+| `rfsh_tkn` | `tb_auth_rfsh_tk` |
+| `rpt_ttl` | `tb_memo_rpt_info`, `tb_rpt_info` |
+| `rspns_nm` | `tb_srvy_rslt` — 1차 C(잠정), 기존 `RSPDNT_NM`으로의 B 정정 후보 유지 |
+| `sndng_telno` | `tb_sms_info` |
+
+이 14개는 [2026-10-18 표 1](#disposition-table-20261018)에 이미 존재한 이름·대상과 대조했다. 표 1이 `pswd` 4개 중 두 표만 열거한 부분은 [V2_0 기준선](../../api-server/src/main/resources/db/migration/V2_0__baseline.sql)의 게시글·댓글·만족도·사용자 네 표에서 확인했다. V2_149~153 이후의 신규 대상을 승인 범위에 더하지 않았다. 현재 132개 집계와 별도로, 승인된 1차 유지 대상 안의 `rspns_nm` 이름 정정 및 미사용 `pswd` 3개 퇴역 후보도 후속 판단으로 남는다.
+
+**남은 후보와 결정 단위.** 표 1의 현재 존재하는 미등록 컬럼을 대조하고, 이후 승인된 위 14개를 옛 A 분류보다 우선했다. B는 이름 76개·이름과 길이 19개·이름과 타입 2개·타입 2개·길이 1개다. C 30개는 기관코드 공급 형식·레거시 경로·역할·퇴역 후보 등의 미확정 처분이며 승인된 C 9개와 섞지 않는다. A*는 `tb_diary_info.diary_prgrs_rt`, `tb_srvy_qstn.max_chc_cnt`다. 새 INTEGER 도메인이나 약어를 임의 등록하지 않는다. 등록 단어 조합만으로 표준 적합으로 보지 않는다.
+
+| 다음 결정 | 검토할 원본·승인 전 경계 |
+|---|---|
+| B의 이름·길이·타입 정정 | 표 1의 개별 후보를 표 단위로 묶고 현재 메타 의미·참조·실데이터 범위와 API를 확인한 뒤 Expand–Sync–Redirect–Contract 및 복구 조건을 설계한다. 100개 일괄 이름 변경·등록 승인이 아니다 |
+| C 30개 | 표 1의 사유와 GAP-CODE-001 등 연결된 보류 조건을 따라 예외 유지·퇴역·정정 중 소유자가 결정한다. 옛 C 표기만으로 승인 예외가 되지 않는다 |
+| A* 2개 | 기존 표준 용어·숫자 도메인과 실제 업무 범위를 확인하고 물리 NUMERIC 전환 또는 별도 도메인 설계를 승인한다. 같은 숫자 종류라는 이유로 정합 완료로 세지 않는다 |
+| 용어 있는 타입 차이 12개 | 표 2의 남은 숫자 종류 11개와 `ans_lv`를 각각 검토한다. `ans_lv`의 의미 보류는 2026-10-29 후속 절을 따른다 |
+| 호환용 `tb_sys_log.prcs_tm`, `tb_web_log.prcs_tm` | [로그 전환 패킷](log-duration-transition-proposal.md)과 [실제 적용 로그](shared-oci-migration-apply-log.md)의 V2_145·146으로 새 `prcs_req_msec` 전환을 마쳤다. 현재 새 컬럼은 메타와 일치하고 구 컬럼은 호환을 위해 남았다. 새 타입 정정 결함으로 중복 계산하거나 이번 작업으로 DROP하지 않는다. 후속 Contract의 관측·소비자 종료·승인이 필요하다 |
+
+용어가 있고 물리 타입 종류까지 같은 VARCHAR·NUMERIC 컬럼에서는 길이·정밀도·소수 자릿수 차이가 관측되지 않았다. 이관 도구의 같은 숫자 종류 허용은 **메타 도메인과 물리 타입의 정확한 일치**와 구분한다. 숫자 종류 차이 11개는 게시글 수치(`cmnt_cnt`, `file_cnt`, `inq_cnt`), 게시판 첨부 크기, CMS/파일의 첨부 순서, 만족도 점수, 통계 파일 번호, 파일 크기, 기관코드 수신 로그 작업 번호, 사용자 로그 조회수다(정확한 컬럼은 표 2와 아래 [컬럼별 추출 SQL](#실측-쿼리)을 대조한다).
+
+**기술 예외와 물리 제약은 별도다.** `version` 26개 모두 integer/default 0이고, 24개는 NOT NULL 및 검증된 `ck_<표>_version`(>=0)까지 있다. 기존 `tb_bbs_item.version`은 NULL 허용·해당 CHECK 없음, `tb_ifml_atrz_info.version`은 NOT NULL·해당 CHECK 없음이다. [DEC-OPS-379](../archived/operational-decisions-history.md#dec-ops-379)는 게시글 NULL 보정·NOT NULL 전환을 승인 밖에 두었다. 이 관측으로 기존 보류를 취소하거나 제약·데이터를 바꾸지 않는다. 두 차이는 용어 미등록 건수에 다시 가산하지 않으며 별도 무결성 후속 판단으로 남긴다.
+
+다음 SQL은 **용어 부재 분류와 `version` 제약 형태 분할**을 재현한다. `version`은 integer에 한정하고 NOT NULL·default 0·검증된 지정 CHECK의 현재 형태 24개와 기존 형태 2개를 나눈다. 실제 낙관적 잠금 용도는 JPA와 승인 원본으로 함께 확인한다. 업무용 version이나 새 예외를 자동 승인하는 게이트가 아니다. 폐기 용어 사용·현행 용어 부재는 별도 열로 센다. 약어 조인은 EXISTS로 하므로 사전 중복 행으로 컬럼 수가 늘지 않는다. C 9개는 확인한 14개 대상에만 결속한다.
+
+B/C/A*의 업무 처분 분할은 이 SQL의 출력이 아니다. [기존 컬럼별 추출과 타입 정규화 기준](#실측-쿼리)에 표 1·표 2 및 후속 승인 범위를 대조한 수동 분류다. 타입·길이 차이도 해당 추출 결과에서 판정한다. 스키마가 바뀌면 같은 SQL과 승인 원본을 재대조하며 등록 단어 조합만으로 표준 적합으로 보지 않는다.
+
+별도 카탈로그 권한 대조에서 public tb_ 기본 표 95개 모두 SELECT 가능했고, pg_catalog의 비삭제 물리 컬럼 1,116개와 information_schema에 보이는 1,116개가 일치했다. 메타 3표의 SELECT 권한도 확인했다. 연결 역할 이름·접속 정보는 기록하지 않는다.
+
+```sql
+WITH approved_retention(table_name, column_name) AS (
+ VALUES ('tb_auth_rfsh_tk','rfsh_tkn'), ('tb_bbs_comment','pswd'),
+ ('tb_bbs_item','pswd'), ('tb_dgstfn_info','pswd'),
+ ('tb_file_detail','file_strg_path'), ('tb_memo_rpt_info','rpt_ttl'),
+ ('tb_menu_info','rel_img_path'), ('tb_popup_info','file_url'),
+ ('tb_rpt_info','rpt_ttl'), ('tb_sms_info','sndng_telno'),
+ ('tb_srvy_rslt','rspns_nm'), ('tb_sys_log','mthd_nm'),
+ ('tb_user_info','pswd'), ('tb_user_log','mthd_nm')
+), cols AS (
+ SELECT c.table_name, c.column_name,
+        EXISTS (SELECT 1 FROM meta_standard_terms s
+                WHERE s.eng_abbr=upper(c.column_name)) AS has_term,
+        EXISTS (SELECT 1 FROM meta_standard_terms s
+                WHERE s.eng_abbr=upper(c.column_name) AND s.deprecated_yn='N') AS has_current_term,
+        EXISTS (SELECT 1 FROM meta_standard_terms s
+                WHERE s.eng_abbr=upper(c.column_name) AND s.deprecated_yn='Y') AS has_deprecated_term,
+        CASE WHEN c.column_name='version' AND c.data_type='integer' THEN
+               CASE WHEN c.is_nullable='NO' AND c.column_default='0' AND EXISTS (
+                 SELECT 1 FROM pg_constraint p JOIN pg_class r ON r.oid=p.conrelid
+                 JOIN pg_namespace n ON n.oid=r.relnamespace
+                 WHERE n.nspname=c.table_schema AND r.relname=c.table_name
+                   AND p.contype='c' AND p.convalidated AND p.conname='ck_'||c.table_name||'_version'
+                   AND pg_get_constraintdef(p.oid)='CHECK ((version >= 0))'
+               ) THEN 'technical_shape' ELSE 'technical_legacy_shape' END
+             WHEN a.table_name IS NOT NULL THEN 'approved_first_phase_retention'
+             ELSE 'pending_disposition' END AS disposition
+ FROM information_schema.columns c
+ JOIN information_schema.tables t ON t.table_schema=c.table_schema AND t.table_name=c.table_name
+ LEFT JOIN approved_retention a ON a.table_name=c.table_name AND a.column_name=c.column_name
+ WHERE c.table_schema='public' AND t.table_type='BASE TABLE' AND c.table_name LIKE 'tb\_%'
+)
+SELECT count(*) AS total_columns, count(DISTINCT table_name) AS tables,
+ count(*) FILTER (WHERE NOT has_term) AS raw_no_term,
+ count(DISTINCT column_name) FILTER (WHERE NOT has_term) AS raw_no_term_names,
+ count(*) FILTER (WHERE NOT has_term AND disposition IN ('technical_shape','technical_legacy_shape')) AS technical_name_exception,
+ count(*) FILTER (WHERE NOT has_term AND disposition='technical_shape') AS technical_shape,
+ count(*) FILTER (WHERE NOT has_term AND disposition='technical_legacy_shape') AS technical_legacy_shape,
+ count(*) FILTER (WHERE NOT has_term AND disposition='approved_first_phase_retention') AS approved_first_phase_retention,
+ count(*) FILTER (WHERE NOT has_term AND disposition='pending_disposition') AS pending_disposition,
+ count(*) FILTER (WHERE has_deprecated_term) AS deprecated_term_columns,
+ count(*) FILTER (WHERE has_term AND NOT has_current_term) AS registered_without_current_term
+ FROM cols
+```
+
+이번 재실측·분류는 DB 쓰기를 하지 않았다. 공유 DB의 메타 등록·도메인 변경·DDL·데이터 보정은 정확한 대상과 SQL, 사전 실측, 격리 검증, 배포·복구 조건을 갖춘 개별 패킷의 승인 뒤 진행한다([AGENTS.md](../../AGENTS.md#공통-작업-원칙)). 승인 예외를 제외했다는 이유만으로 DB 표준 전 영역의 준수 완료나 특정 종합 점수를 선언하지 않는다.
+
 
 ### 2026-10-29 재실측 차분
 
@@ -61,6 +159,8 @@ GAP-STD-001(`.agent/memory/known-gaps.md`)의 다음 행동("컬럼마다 표준
 **3. 답변 레벨 — 의미 결정 전 보류.** [Board](../../business-app/src/main/java/nuri/business/domain/board/Board.java)는 기본값 0을 두고 [BoardService.replyPost](../../business-app/src/main/java/nuri/business/service/board/BoardService.java)도 현재 0을 쓴다. 이는 **현재 앱 쓰기 경로의 사실**이고, 위 378행 집계는 **해당 환경·시점 데이터의 사실**이다. 둘 다 `ans_lv`가 계산된 답변 깊이라는 근거는 아니다. 따라서 표 2의 `ANS_DPTH` 이름 정정 제안은 보류로 대체한다. 기존 응답 필드를 보존할지 실제 깊이 기능을 도입할지 제품이 먼저 정하고, 후자라면 새 용어·도메인과 기존 값의 의미·재계산을 별도로 승인한다. 공통 `ANS_LV` 사전 도메인 변경이나 컬럼 삭제로 처리하지 않는다.
 
 등록·물리 변경을 진행할 때는 그 시점의 데이터 범위·참조·동시 쓰기를 다시 확인하고, [DB 헌법 제7조](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md)에 따른 Expand → Sync → Redirect → Contract와 승인·관측·복구 조건을 따로 설계한다. 과거 0행 관측이나 다른 6개를 다룬 ADR-0014는 이번 6개 변경의 승인이 아니다.
+
+<a id="approved-first-phase-20261110"></a>
 
 ### 2026-11-10 1차 재대조 — 등록안(2026-11-10 승인)
 
@@ -288,6 +388,8 @@ SELECT cols.*, st.term_name, st.domain_name, d.data_type AS dom_type, d.data_len
 - **등록하면 이관 원장 동작이 바뀐다.** DEC-OPS-317 ② 는 표준 용어가 없는 대상 컬럼만 `nonStandardTarget: {reason}` 으로 확정하게 하고 "live 메타에 그 컬럼의 용어가 없다는 증명"을 요구한다. 그래서 용어를 등록하면 그 컬럼의 비표준 대상 확정은 plan 에서 막힌다(`TermLedgerValidator.live` — "live 메타의 표준 용어가 있어 비표준 대상으로 확정할 수 없습니다"). GAP-STD-001 도 "표준 용어를 등록하면 … 원장도 용어로 고친다"고 적는다. 등록 뒤에는 그 컬럼에 도메인·적합성 대조가 새로 걸린다.
 - **B 의 이름 정정은 원장 대상 컬럼명도 바꾼다.** 확정 원장은 대상 컬럼이 표준 영문약어와 같아야 하므로(`confirmed`), 이름을 바꾸면 그 컬럼을 가리키는 원장을 다시 만든다.
 - 단어가 없는 경우(인사·준비·밀리초)는 제9조에 따라 단어 등록부터 요청한다. 프로젝트 단어 PREP=전임은 뜻이 잘못 올라간 것으로 보인다.
+
+<a id="disposition-table-20261018"></a>
 
 ## 2. 표 1 — 2026-10-18 표준 용어가 없는 고유 이름 212개
 

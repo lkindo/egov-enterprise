@@ -33,9 +33,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.jar.JarFile;
 import java.util.spi.ToolProvider;
 
+import static nuri.migration.PackagedCliArchiveAssertions.assertDeploymentJarExcludesSourceDrivers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Exercises the shipped bootJar and isolated external JDBC boundary without granting COMMIT qualification. */
@@ -290,16 +290,6 @@ class MariaDbPackagedCliIntegrationTest extends MariaDbPostgresTestSupport {
         return driver;
     }
 
-    private static void assertDeploymentJarExcludesSourceDrivers(Path application) throws Exception {
-        try (var archive = new JarFile(application.toFile())) {
-            assertThat(archive.getJarEntry("BOOT-INF/classes/nuri/migration/MigrationToolApplication.class")).isNotNull();
-            assertThat(archive.stream().map(entry -> entry.getName().toLowerCase(Locale.ROOT)).anyMatch(name ->
-                    name.startsWith("boot-inf/lib/mariadb-java-client-") || name.contains("/org/mariadb/jdbc/")
-                            || name.startsWith("boot-inf/lib/mysql-connector") || name.contains("/com/mysql/")
-                            || name.startsWith("boot-inf/lib/ojdbc") || name.startsWith("boot-inf/lib/h2-")))
-                    .as("source drivers and test-only H2 must be absent from the shipped executable JAR").isFalse();
-        }
-    }
 
     private void addArchiveResource(Path archive, String marker) throws Exception {
         Files.writeString(directory.resolve(marker), "synthetic deployment boundary probe\n");

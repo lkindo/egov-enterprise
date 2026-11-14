@@ -11,7 +11,8 @@ dependencies {
     runtimeOnly 'org.flywaydb:flyway-database-postgresql'
     runtimeOnly libs.postgresql
 
-    testImplementation 'com.h2database:h2'
+    // Bounded, encrypted run-local identity index; never an operational target database.
+    runtimeOnly 'com.h2database:h2'
     testImplementation libs.testcontainers.postgresql
     testImplementation libs.testcontainers.junit.jupiter
     // Testcontainers 2 는 모듈 좌표에 testcontainers- 접두를 붙였다(버전은 Boot 4 BOM 관리).
@@ -79,7 +80,9 @@ pitest {
                 'nuri.migration.EtlSqlServerCrashRecoveryIntegrationTest',
                 'nuri.migration.SqlServerPackagedCliIntegrationTest',
                 'nuri.migration.EtlOracleCrashRecoveryIntegrationTest',
-                'nuri.migration.OraclePackagedCliIntegrationTest'
+                'nuri.migration.OraclePackagedCliIntegrationTest',
+                'nuri.migration.state.BoundedMigrationStateTest',
+                'nuri.migration.verify.BoundedMigrationVerifierTest'
         ]
     }
     jvmArgs.add(providers.provider {

@@ -124,6 +124,7 @@ function postRequest(
   body?: unknown,
   headers: Record<string, string> = {},
   origin = 'http://localhost:3001',
+  signal?: AbortSignal,
 ): NextRequest {
   const requestOrigin = new URL(origin);
   const forwardedClient = requestOrigin.hostname === '[::1]'
@@ -134,6 +135,7 @@ function postRequest(
 
   return new NextRequest(`${origin}${path}`, {
     method: 'POST',
+    signal,
     headers: {
       'content-type': 'application/json',
       host: requestOrigin.host,
@@ -154,6 +156,55 @@ function axiosError(status: number, data: unknown) {
 }
 
 type SessionRouteName = 'login' | 'reissue';
+
+describe.each([
+  { path: '/api/auth/login', handler: login, body: { userId: 'fixture', password: 'fixture' }, status: 500 },
+  { path: '/api/auth/reissue', handler: reissue, body: undefined, status: 502 },
+  { path: '/api/auth/logout', handler: logout, body: undefined, status: 200 },
+])('$path transport failure boundary', ({ path, handler, body, status }) => {
+  it('bounds upstream wait and returns only the safe failure contract', async () => {
+    const privateDetail = 'synthetic-private-network-detail';
+    mockedPost.mockRejectedValueOnce(Object.assign(new Error(privateDetail), { code: 'ECONNABORTED' }));
+    const request = postRequest(path, body);
+    const response = await handler(request);
+    expect(mockedPost.mock.calls[0][2]).toEqual(expect.objectContaining({
+      timeout: 15_000, signal: expect.any(AbortSignal),
+    }));
+    expect(response.status).toBe(status);
+    expect(JSON.stringify(await response.json())).not.toContain(privateDetail);
+    if (handler === logout) {
+      for (const name of ['accessToken', 'refreshToken', 'session_exp', 'mfa_challenge', 'mfa_reauth']) {
+        expect(setCookie(response, name)?.value).toBe('');
+        expect(setCookie(response, name)?.attrs.get('expires')).toBe(new Date(0).toUTCString());
+      }
+    }
+  });
+
+  it('forwards cancellation except when logout must finish revocation', async () => {
+    const controller = new AbortController();
+    const request = postRequest(path, body, {}, 'http://localhost:3001', controller.signal);
+    let rejectPending: (error: Error) => void = () => {};
+    mockedPost.mockImplementationOnce((_url, _body, config) => new Promise((_resolve, reject) => {
+      rejectPending = reject;
+      config?.signal?.addEventListener?.('abort', () => reject(new Error('synthetic-abort-detail')), { once: true });
+    }));
+    const responsePromise = handler(request);
+    try {
+      await vi.waitFor(() => expect(mockedPost).toHaveBeenCalled());
+      expect(mockedPost.mock.calls[0][2]?.signal?.aborted).toBe(false);
+      controller.abort();
+      expect(mockedPost.mock.calls[0][2]?.signal?.aborted).toBe(handler !== logout);
+      if (handler === logout) rejectPending(new Error('synthetic-abort-detail'));
+      const response = await responsePromise;
+      expect(response.status).toBe(status);
+      expect(JSON.stringify(await response.json())).not.toContain('synthetic-abort-detail');
+      if (handler === logout) expect(setCookie(response, 'refreshToken')?.value).toBe('');
+    } finally {
+      rejectPending(new Error('test cleanup'));
+      await responsePromise;
+    }
+  });
+});
 
 async function issueSessionThroughRoute(
   routeName: SessionRouteName,

@@ -77,7 +77,7 @@ const GATE_TAGS = ['@Tag("governance-harness")', '@Tag("schema-validation")', '@
   전체를 해시한다. 메타 게이트(HarnessBaselineIntegrityTest)도 여기 있다 — 이 도구를 실행하고 판정하는 본문이 그 게이트의 전부다.
 */
 const ARCH_RULE_FILE_PATTERN =
-  /(?:WorkflowManifestLinterTest|FlywaySchemaOwnershipLinterTest|ReusableHarnessProfile|ControllerScanBaseLinterTest|EntityLombokSourceLinterTest|EntitySchemaConformanceLinterTest|MigrationSchemaReplay|SchemaConformanceRules|VendorCatalogConformanceTest|EntityTableOwnershipLinterTest|HandlerReachesServiceLinterTest|HarnessBaselineIntegrityTest|PageableConstructionLinterTest|PkGenerationStandardLinterTest|ResponseContractLinterTest|SecurityAuthAnnotationLinterTest|ServiceReadOnlyTransactionalLinterTest|SchemaValidationIntegrationTest|WriteSmokeIntegrationTest|AuthorizationAdministrationIntegrationTest|AttachmentSourceRegistryLinterTest|CrossDomainCouplingLinterTest|InputContractMirrorLinterTest|PrivacyAccessCensusLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules|Archunit\w*)\.java$/;
+  /(?:WorkflowManifestLinterTest|FlywaySchemaOwnershipLinterTest|BaseAdminBootstrapSeedIntegrationTest|ReusableHarnessProfile|ControllerScanBaseLinterTest|EntityLombokSourceLinterTest|EntitySchemaConformanceLinterTest|MigrationSchemaReplay|SchemaConformanceRules|VendorCatalogConformanceTest|EntityTableOwnershipLinterTest|HandlerReachesServiceLinterTest|HarnessBaselineIntegrityTest|PageableConstructionLinterTest|PkGenerationStandardLinterTest|ResponseContractLinterTest|SecurityAuthAnnotationLinterTest|ServiceReadOnlyTransactionalLinterTest|SchemaValidationIntegrationTest|WriteSmokeIntegrationTest|AuthorizationAdministrationIntegrationTest|AttachmentSourceRegistryLinterTest|CrossDomainCouplingLinterTest|InputContractMirrorLinterTest|PrivacyAccessCensusLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules|Archunit\w*)\.java$/;
 
 /*
   게이트 판정의 근거 데이터를 담은 registry 와 실행 가능한 생성물 정책 — 내용 해시를 동결한다. 동결 census 가 상수에서 JSON registry 로
@@ -96,8 +96,14 @@ const GATE_REGISTRIES = [
   'scripts/reusable-artifact-entrypoints-contract.mjs',
   'scripts/reusable-artifact-entrypoints-contract.test.mjs',
   'scripts/verify-reusable-artifact.mjs',
+  'scripts/adopter-project.mjs',
+  'scripts/reusable-adopter-project.mjs',
+  'scripts/permission-artifact-paths.mjs',
+  'scripts/reusable-source-evidence.mjs',
+  'scripts/reusable-harness-census.mjs',
   // 위 생성물 정책이 받는 구성 이름(시작 구성 id·custom)은 이 모듈이 정한다(11단계 C8) — 정책과 같은 경계에 묶는다.
   'scripts/composition-profiles.mjs',
+  'scripts/adopter-api-contract.mjs',
   'config/governance/reusable-harness-profile.json',
   'config/governance/authorization-policies.json',
   'config/governance/cross-domain-coupling-census.json',

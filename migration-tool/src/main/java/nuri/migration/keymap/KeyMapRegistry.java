@@ -3,30 +3,28 @@ package nuri.migration.keymap;
 import nuri.migration.identity.TypedKeyEncoding;
 import nuri.migration.identity.TypedKeyTuple;
 import nuri.migration.schema.MigrationSchemaManager;
+import nuri.migration.state.MigrationScratchIndex;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * 레거시 키 → 신규 표준 대리키 대응 레지스트리 — 참조 무결성 보존의 핵심(키스톤).
  *
  * <p>부모 테이블에서 {@code idStrategy}로 신규 esntl_id 를 채번({@link #mintOrGet})하면 그 대응을
- * 인메모리 + 타깃 테이블({@code tb_migration_key_map})에 적재한다. 자식 테이블은 {@code fkRef} 로
+ * 암호화한 실행 전용 디스크 인덱스 + 타깃 테이블({@code tb_migration_key_map})에 적재한다. 자식 테이블은 {@code fkRef} 로
  * {@link #translate} 를 호출해 레거시 FK 값을 신규 부모 키로 재작성한다. 이것이 없으면 대리키 재생성 시
  * 모든 자식 FK 가 고아가 되며(그리고 stub 검증기가 이를 성공으로 보고), 그래서 이 도구의 최대 공백이었다.
  *
  * <p>실행 단위(run)마다 새로 생성한다(상태 누수 방지 — Spring 빈 아님). COMMIT 모드에서는 시작 시
  * {@link #preload} 로 기존 대응을 읽어 재실행 멱등성을 확보한다.
  */
-public class KeyMapRegistry {
+public class KeyMapRegistry implements AutoCloseable {
 
     public static final String TABLE = MigrationSchemaManager.CONTROL_SCHEMA + ".tb_migration_key_map";
     private static final int KEY_COLUMN_LIMIT = 256;
@@ -34,15 +32,19 @@ public class KeyMapRegistry {
     private final String runId;
     private final String sourceNamespace;
 
-    /** sourceTable(lower) → (legacyKey → newKey). */
-    private final Map<String, Map<String, String>> maps = new LinkedHashMap<>();
-    /** 아직 현재 target transaction에 동반 기록되지 않은 신규 대응. */
-    private final List<PendingMapping> pending = new ArrayList<>();
+    private static final int PAGE_SIZE = 512;
+    private final MigrationScratchIndex index = new MigrationScratchIndex(
+            "CREATE TABLE scratch_keymap (source_table VARCHAR NOT NULL, legacy_key VARCHAR NOT NULL,"
+                    + " new_key VARCHAR NOT NULL, pending_order BIGINT, PRIMARY KEY(source_table, legacy_key))",
+            "CREATE INDEX scratch_pending ON scratch_keymap(pending_order)",
+            "CREATE TABLE scratch_reservation_seen (legacy_key VARCHAR PRIMARY KEY)");
+    private long nextPendingOrder;
+    private boolean reservationActive;
 
     /** pending suffix의 시작점을 나타내는 rollback/accept 토큰. */
-    public record Checkpoint(int pendingSize) {}
+    public record Checkpoint(long pendingSize) {}
 
-    private record PendingMapping(String sourceTable, String legacyKey, String newKey) {}
+    private record PendingMapping(long order, String sourceTable, String legacyKey, String newKey) {}
 
     public KeyMapRegistry() {
         this("legacy", "legacy");
@@ -61,14 +63,12 @@ public class KeyMapRegistry {
         if (legacyKey == null) {
             return null;
         }
-        Map<String, String> m = maps.computeIfAbsent(key(sourceTable), k -> new LinkedHashMap<>());
-        String existing = m.get(legacyKey);
+        String existing = translate(sourceTable, legacyKey);
         if (existing != null) {
             return existing;
         }
         String newKey = StandardIdGenerator.generate(generatorPrefix);
-        m.put(legacyKey, newKey);
-        pending.add(new PendingMapping(key(sourceTable), legacyKey, newKey));
+        insertPending(sourceTable, legacyKey, newKey);
         return newKey;
     }
 
@@ -82,16 +82,14 @@ public class KeyMapRegistry {
                 sourceKey, KEY_COLUMN_LIMIT, "tb_migration_key_map.legacy_key");
         String encodedTarget = TypedKeyEncoding.encode(
                 targetKey, KEY_COLUMN_LIMIT, "tb_migration_key_map.new_key");
-        Map<String, String> table = maps.computeIfAbsent(key(sourceTable), ignored -> new LinkedHashMap<>());
-        String existing = table.get(encodedSource);
+        String existing = translate(sourceTable, encodedSource);
         if (existing != null) {
             if (!existing.equals(encodedTarget)) {
                 throw new IllegalStateException("typed keymap conflict for " + sourceTable);
             }
             return TypedKeyEncoding.decode(existing);
         }
-        table.put(encodedSource, encodedTarget);
-        pending.add(new PendingMapping(key(sourceTable), encodedSource, encodedTarget));
+        insertPending(sourceTable, encodedSource, encodedTarget);
         return targetKey;
     }
 
@@ -102,36 +100,52 @@ public class KeyMapRegistry {
         if (legacyKey == null) {
             return null;
         }
-        Map<String, String> m = maps.get(key(parentSourceTable));
-        return m == null ? null : m.get(legacyKey);
+        return index.access(jdbc -> jdbc.query(
+                "SELECT new_key FROM scratch_keymap WHERE source_table=? AND legacy_key=?",
+                (rs, row) -> rs.getString(1), key(parentSourceTable), legacyKey).stream().findFirst().orElse(null));
     }
 
     /** typed/composite 자식 FK 번역. legacy 문자열 map으로 묵시 fallback하지 않는다. */
     public TypedKeyTuple translate(String parentSourceTable, TypedKeyTuple sourceKey) {
         String encodedSource = TypedKeyEncoding.encode(
                 sourceKey, KEY_COLUMN_LIMIT, "tb_migration_key_map.legacy_key");
-        Map<String, String> table = maps.get(key(parentSourceTable));
-        String encodedTarget = table == null ? null : table.get(encodedSource);
+        String encodedTarget = translate(parentSourceTable, encodedSource);
         return encodedTarget == null ? null : TypedKeyEncoding.decode(encodedTarget);
     }
 
     public boolean hasMappingFor(String sourceTable) {
-        Map<String, String> m = maps.get(key(sourceTable));
-        return m != null && !m.isEmpty();
+        return index.access(jdbc -> !jdbc.query(
+                "SELECT 1 FROM scratch_keymap WHERE source_table=? FETCH FIRST 1 ROWS ONLY",
+                (rs, row) -> rs.getInt(1), key(sourceTable)).isEmpty());
     }
 
-    /** 기존 대응을 인메모리로 선적재 — 재실행 시 동일 키 재사용(멱등). */
+    /** 기존 대응을 bounded page로 로컬 디스크에 읽어 재실행 시 동일 키를 재사용한다. */
     public void preload(JdbcTemplate target) {
-        target.query("SELECT source_table, legacy_key, new_key FROM " + TABLE
-                + " WHERE run_id=? AND source_namespace=?", rs -> {
-            maps.computeIfAbsent(rs.getString(1), k -> new LinkedHashMap<>())
-                    .put(rs.getString(2), rs.getString(3));
-        }, runId, sourceNamespace);
+        PendingMapping cursor = null;
+        while (true) {
+            String seek = cursor == null ? "" : " AND (source_table>? OR (source_table=? AND legacy_key>?))";
+            Object[] args = cursor == null ? new Object[]{runId, sourceNamespace}
+                    : new Object[]{runId, sourceNamespace, cursor.sourceTable(), cursor.sourceTable(), cursor.legacyKey()};
+            List<PendingMapping> page = target.query("SELECT source_table, legacy_key, new_key FROM " + TABLE
+                            + " WHERE run_id=? AND source_namespace=?" + seek
+                            + " ORDER BY source_table, legacy_key FETCH FIRST " + PAGE_SIZE + " ROWS ONLY",
+                    (rs, row) -> new PendingMapping(-1, rs.getString(1), rs.getString(2), rs.getString(3)), args);
+            if (page.isEmpty()) return;
+            index.access(jdbc -> jdbc.batchUpdate(
+                    "MERGE INTO scratch_keymap (source_table, legacy_key, new_key, pending_order)"
+                            + " KEY(source_table, legacy_key) VALUES (?, ?, ?, NULL)", page, PAGE_SIZE,
+                    (statement, mapping) -> {
+                        statement.setString(1, key(mapping.sourceTable()));
+                        statement.setString(2, mapping.legacyKey());
+                        statement.setString(3, mapping.newKey());
+                    }));
+            cursor = page.getLast();
+        }
     }
 
     /** 현재 pending suffix를 구분할 checkpoint를 만든다. */
     public Checkpoint checkpoint() {
-        return new Checkpoint(pending.size());
+        return new Checkpoint(nextPendingOrder);
     }
 
     /**
@@ -139,63 +153,99 @@ public class KeyMapRegistry {
      * commit/rollback은 호출자가 data INSERT와 함께 수행한다.
      */
     public long writePending(Connection connection, Checkpoint checkpoint) throws SQLException {
-        int from = checkedOffset(checkpoint);
-        int expected = pending.size() - from;
-        if (expected == 0) {
-            return 0L;
-        }
+        long from = checkedOffset(checkpoint);
+        long cursor = from - 1;
+        long written = 0;
         try (PreparedStatement statement = connection.prepareStatement(
                 "INSERT INTO " + TABLE
                         + " (run_id, source_namespace, source_table, legacy_key, new_key) VALUES (?, ?, ?, ?, ?)")) {
-            for (int i = from; i < pending.size(); i++) {
-                PendingMapping mapping = pending.get(i);
-                statement.setString(1, runId);
-                statement.setString(2, sourceNamespace);
-                statement.setString(3, mapping.sourceTable());
-                statement.setString(4, mapping.legacyKey());
-                statement.setString(5, mapping.newKey());
-                statement.addBatch();
-            }
-            int[] updateCounts = statement.executeBatch();
-            long written = exactInsertedRows(updateCounts, expected);
-            if (written < 0) {
-                throw new SQLException("키맵 JDBC batch updateCounts가 정확한 1행 기록을 증명하지 못했습니다");
-            }
-            return written;
-        }
-    }
-
-    /** transaction commit 성공 뒤 pending 표식만 제거하고 인메모리 번역 map은 유지한다. */
-    public void accept(Checkpoint checkpoint) {
-        int from = checkedOffset(checkpoint);
-        pending.subList(from, pending.size()).clear();
-    }
-
-    /** transaction rollback 시 신규 pending과 그에 대응하는 인메모리 번역을 함께 제거한다. */
-    public void rollback(Checkpoint checkpoint) {
-        int from = checkedOffset(checkpoint);
-        for (int i = pending.size() - 1; i >= from; i--) {
-            PendingMapping mapping = pending.get(i);
-            Map<String, String> tableMappings = maps.get(mapping.sourceTable());
-            if (tableMappings != null) {
-                tableMappings.remove(mapping.legacyKey(), mapping.newKey());
-                if (tableMappings.isEmpty()) {
-                    maps.remove(mapping.sourceTable());
+            while (true) {
+                long after = cursor;
+                List<PendingMapping> page = index.access(jdbc -> jdbc.query(
+                        "SELECT pending_order, source_table, legacy_key, new_key FROM scratch_keymap"
+                                + " WHERE pending_order>=? AND pending_order>? ORDER BY pending_order"
+                                + " FETCH FIRST " + PAGE_SIZE + " ROWS ONLY",
+                        (rs, row) -> new PendingMapping(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4)),
+                        from, after));
+                if (page.isEmpty()) return written;
+                for (PendingMapping mapping : page) {
+                    statement.setString(1, runId);
+                    statement.setString(2, sourceNamespace);
+                    statement.setString(3, mapping.sourceTable());
+                    statement.setString(4, mapping.legacyKey());
+                    statement.setString(5, mapping.newKey());
+                    statement.addBatch();
                 }
+                long batchWritten = exactInsertedRows(statement.executeBatch(), page.size());
+                if (batchWritten < 0) {
+                    throw new SQLException("키맵 JDBC batch updateCounts가 정확한 1행 기록을 증명하지 못했습니다");
+                }
+                written += batchWritten;
+                statement.clearBatch();
+                cursor = page.getLast().order();
             }
         }
-        pending.subList(from, pending.size()).clear();
+    }
+
+    /** transaction commit 성공 뒤 pending 표식만 제거하고 번역 identity는 디스크에 유지한다. */
+    public void accept(Checkpoint checkpoint) {
+        long from = checkedOffset(checkpoint);
+        index.access(jdbc -> jdbc.update("UPDATE scratch_keymap SET pending_order=NULL WHERE pending_order>=?", from));
+        nextPendingOrder = from;
+    }
+
+    /** transaction rollback 시 신규 pending과 그에 대응하는 번역을 함께 제거한다. */
+    public void rollback(Checkpoint checkpoint) {
+        long from = checkedOffset(checkpoint);
+        index.access(jdbc -> jdbc.update("DELETE FROM scratch_keymap WHERE pending_order>=?", from));
+        nextPendingOrder = from;
     }
 
     public boolean hasPending() {
-        return !pending.isEmpty();
+        return index.access(jdbc -> !jdbc.query(
+                "SELECT 1 FROM scratch_keymap WHERE pending_order IS NOT NULL FETCH FIRST 1 ROWS ONLY",
+                (rs, row) -> rs.getInt(1)).isEmpty());
     }
 
-    private int checkedOffset(Checkpoint checkpoint) {
-        if (checkpoint == null || checkpoint.pendingSize() < 0 || checkpoint.pendingSize() > pending.size()) {
+    private long checkedOffset(Checkpoint checkpoint) {
+        if (checkpoint == null || checkpoint.pendingSize() < 0 || checkpoint.pendingSize() > nextPendingOrder) {
             throw new IllegalStateException("유효하지 않은 keymap checkpoint: " + checkpoint);
         }
         return checkpoint.pendingSize();
+    }
+
+    private void insertPending(String sourceTable, String legacyKey, String newKey) {
+        long following = Math.addExact(nextPendingOrder, 1);
+        index.access(jdbc -> jdbc.update("INSERT INTO scratch_keymap VALUES (?, ?, ?, ?)",
+                key(sourceTable), legacyKey, newKey, nextPendingOrder));
+        nextPendingOrder = following;
+    }
+
+    @Override public void close() { index.close(); }
+
+    /** Exact duplicate detection for one self-reference reservation pass, without retaining a heap set. */
+    public ReservationKeys reservationKeys() {
+        if (reservationActive) throw new IllegalStateException("a key reservation pass is already active");
+        reservationActive = true;
+        return new ReservationKeys();
+    }
+
+    public final class ReservationKeys implements AutoCloseable {
+        private boolean closed;
+
+        public boolean add(String legacyKey) {
+            if (closed) throw new IllegalStateException("key reservation pass is closed");
+            return index.access(jdbc -> jdbc.update("INSERT INTO scratch_reservation_seen (legacy_key)"
+                    + " SELECT ? WHERE NOT EXISTS (SELECT 1 FROM scratch_reservation_seen WHERE legacy_key=?)",
+                    legacyKey, legacyKey)) == 1;
+        }
+
+        @Override public void close() {
+            if (closed) return;
+            index.access(jdbc -> jdbc.update("DELETE FROM scratch_reservation_seen"));
+            closed = true;
+            reservationActive = false;
+        }
     }
 
     private static long exactInsertedRows(int[] updateCounts, int expectedStatements) {

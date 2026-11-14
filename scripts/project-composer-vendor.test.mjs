@@ -2235,7 +2235,7 @@ test('the isolation replacement cases run in the source operational contracts, a
   else assert.match(contracts, /"scripts\/\*\.test\.mjs"/);
   // 파일을 직접 적어도, glob 이나 폴더로 돌려도 원장 문장이 틀린 것이다.
   for (const layout of ['multi-module', 'single-module']) {
-    for (const scope of ['contracts', 'backend', 'frontend', 'full', 'vendor-schema']) {
+    for (const scope of ['contracts', 'backend', 'frontend', 'full', 'adopter', 'vendor-schema']) {
       for (const argument of verificationSteps(scope, layout, { vendor: 'oracle' }).flatMap(step => step.args)) {
         assert.doesNotMatch(argument, /project-composer-vendor\.test|\*|^scripts\/?$/, `생성물 검증이 돌리게 되면 원장 문장을 고친다: ${layout} ${scope}`);
       }
@@ -2244,7 +2244,7 @@ test('the isolation replacement cases run in the source operational contracts, a
   assert.equal(artifactAliases.verify, ARTIFACT_COMMAND);
   const workflow = isArtifact ? readText('.github/workflows/ci.yml') : reusableArtifactEntrypoints('core',
     JSON.parse(readText('.github/required-checks.json')).criticalSteps.find(step => step.name === 'Run gitleaks (working tree + incremental)').run, readText('.github/workflows/ci.yml')).workflow;
-  assert.match(workflow, /^ +run: node scripts\/verify-reusable-artifact\.mjs$/m);
+  assert.match(workflow, /^ +run: node scripts\/adopter-project\.mjs verify$/m);
   assert.doesNotMatch(workflow, /\.test\.mjs|node --test|npm (?:run )?test/, '생성물 ci.yml 이 돌리게 되면 원장 문장을 고친다');
 });
 
