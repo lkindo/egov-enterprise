@@ -36,6 +36,7 @@ ID가 보관 원문의 앵커다: 운영 결정 행의 전문·이유·승인 �
 | ADR-0049 | accepted | 워크플로우 목업 3개 화면을 퇴역하고 실제 결재·템플릿을 보존한다. WORKFLOW_READ는 기존 DB 인증 호환으로 유지하며 퇴역 URL 진입은 거부한다. | 2026-11-01 | V2_45 화면 보존 판단, 목업 3개 화면의 demo-isolated 승인, DEC-OPS-300의 해당 화면 소유 선언 |
 | ADR-0054 | accepted | 애플리케이션 기본값(`false`)과 운영 오버레이 기본값(`MFA_REQUIRE_PROTECTED=${MFA_REQUIRE_PROTECTED:-true}`)을 분리하고 `deploy.sh`가 이미지 pull 전 키링·불리언 값을 선검증한다. 복구 준비 전제와 릴리스 스모크 명시적 `false` 경계를 유지한다. | 2026-11-11 | ADR-0025 D11의 운영 오버레이 기본 비활성 방식, DEC-OPS-412 ①의 운영 오버레이 기본값 false 유지 부분 |
 | ADR-0059 | accepted | 운영 오버레이의 edge 가 로그인·추가 인증·비밀번호 변경 경로를 접속 주소당 백엔드 로그인 한도(`RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE`)로 한 번 더 제한하고, 거부 본문은 그 경로의 실패 응답 계약을 따른다. | 2026-11-14 | ADR-0035 경계의 '여러 인스턴스의 합산은 하지 않는다'(edge 가 있는 운영 오버레이) |
+| ADR-0060 | accepted | 접근·재발급 토큰을 ES256(kid 키링)으로 서명하고 Next 프록시에는 공개키만 둔다. 1차 배포는 옛 HMAC 토큰도 받고 7일 뒤 2차 배포에서 HMAC·`JWT_SECRET` 을 뺀다. 구현은 Spring Boot 4.1.3 재기록 묶음이다. | 2026-11-14 | - |
 | DEC-OPS-010 | accepted | 설문 열람(목록·상세·문항)과 제출은 인증 사용자(`@Authenticated`)에게 개방하고, 설문·템플릿·문항·항목의 관리 뮤테이션은 `@AdminOrSystem`으로 유지한다. | 2026-08-20 | - |
 | DEC-OPS-011 | accepted | production CSP의 `script-src`에서 `unsafe-inline`을 요청별 nonce로 대체하고, 그 전제로 PPR(cacheComponents)을 포기해 전 페이지를 동적 렌더로 전환한다. | 2026-08-20 | - |
 | DEC-OPS-015 | accepted | 직교 data-density 축(comfortable·compact)을 신설한다 — 서버 env `UI_DENSITY`를 allowlist 검증해 `<html data-density>` 전역 1곳에 배선하고, ERP 밀도는 globals.css 의 compact 무레이어 오버라이드 블록 한 곳으로 전달한다. | 2026-08-23 | - |

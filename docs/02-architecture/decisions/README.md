@@ -66,3 +66,4 @@
 | [ADR-0057](ADR-0057-adopter-java-and-permission-registration.md) | 원본 인증·승인 기록을 보존하는 생성 프로젝트 Java·미배정 권한 추가분 등록과 별도 기술 검증 | Accepted |
 | [ADR-0058](ADR-0058-requirements-question-groups.md) | 요구사항 스튜디오의 같은 것을 묻는 질문은 한 묶음으로 한 번만 답하고, 확정을 막는 기준은 그대로 | Accepted |
 | [ADR-0059](ADR-0059-edge-login-rate-limit.md) | 운영 앞단 프록시(edge)가 로그인·추가 인증·비밀번호 변경을 접속 주소당 백엔드와 같은 한도로 한 번 더 제한 | Accepted |
+| [ADR-0060](ADR-0060-asymmetric-jwt-signing.md) | 접근·재발급 토큰을 ES256 키링으로 서명하고 Next 에는 공개키만 둔다 — 두 번 배포로 전환, 구현은 재기록 묶음 | Accepted |
