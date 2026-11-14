@@ -394,15 +394,21 @@ class AuthServiceTest {
     @DisplayName("로그아웃 성공")
     void testLogoutSuccess() {
         // Given
-        String userId = "user1";
-        nuri.business.domain.auth.RefreshToken rt = mock(nuri.business.domain.auth.RefreshToken.class);
-        when(refreshTokenRepository.findById(userId)).thenReturn(java.util.Optional.of(rt));
+        String esntlId = "USR_ESNTL_0001";
+        nuri.business.domain.auth.RefreshToken rt = nuri.business.domain.auth.RefreshToken.builder()
+                .userId(esntlId)
+                .rfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("refresh-token-fixture"))
+                .exprtnDt(ServiceTime.now().plusDays(1))
+                .build();
+        when(refreshTokenRepository.findById(esntlId)).thenReturn(java.util.Optional.of(rt));
 
         // When
-        authService.logout(userId, null);
+        authService.logout(esntlId, null);
 
         // Then
-        verify(refreshTokenRepository).delete(rt);
+        verify(refreshTokenRepository).deleteAllByEsntlIdIn(List.of(esntlId));
+        verify(userRepository).advanceSessionCycle(List.of(esntlId));
+        verify(userRepository).recordLogout(eq(esntlId), any(java.time.LocalDateTime.class));
     }
 
     @Test
