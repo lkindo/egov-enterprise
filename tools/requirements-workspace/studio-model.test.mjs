@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ARTIFACT_TYPES, FIELD_LIMITS, fieldConflicts, fieldsOf, mergeFieldsAdditive, normalizeFields, overflowingFields } from './studio-catalog.mjs';
 import { createIndex, similarity, tokens } from './studio-index.mjs';
-import { STUDIO_LIMITS, addCandidate, applyStories, applyTag, clauseMap, createItem, crossChecks, decideProposal, demoteProgramConflicts, failTag, initialStudio, itemReady, openVariants, raiseQuestions, orphanStories, pendingWork, planTargets, relatedItems, removeOrphanStories, resolveIssue, saveItem, setItemStatus, settleCandidate, validateStudio, variantCurrent } from './studio-model.mjs';
+import { STUDIO_LIMITS, addCandidate, applyStories, applyTag, clauseMap, createItem, crossChecks, decideProposal, demoteProgramConflicts, failTag, groupQuestion, initialStudio, itemReady, openIssues, openVariants, raiseQuestions, orphanStories, pendingWork, planTargets, questionGroup, relatedItems, removeOrphanStories, resolveIssue, saveItem, setItemStatus, settleCandidate, splitQuestion, standsAlone, validateStudio, variantCurrent } from './studio-model.mjs';
 import { describeEvidence, documentList, renderDocument } from './studio-render.mjs';
-import { CLAUSE_BATCH, REQUEST_LIMIT, batchClauses, classifyRequest, enrichRequest, extractRequest, fitted, mergeRequest, planRequest, readClassify, readEnrich, readExtract, readMerge } from './studio-tasks.mjs';
+import { CLAUSE_BATCH, REQUEST_LIMIT, batchClauses, classifyRequest, enrichRequest, extractRequest, fitted, groupRequest, mergeRequest, planRequest, readClassify, readEnrich, readExtract, readGroup, readMerge } from './studio-tasks.mjs';
 import { clause, sourceOf } from './test-fixtures/studio.mjs';
 
 const NOW = '2026-11-13T00:00:00.000Z';
@@ -221,6 +221,73 @@ test('conflicts an earlier version raised by itself become notes, a model confli
   assert.equal(validateStudio(studio), true);
 });
 
+test('questions that ask the same thing are one decision: grouped only under a question that leads, answered once for every record, and split by a person', () => {
+  const studio = initialStudio();
+  const booking = requirement(studio, '시설 예약 신청', ['시민은 시설을 예약한다.']), payment = requirement(studio, '이용료 결제', ['결제는 24시간 안에 한다.'], cite('C-3'));
+  const entity = createItem(studio, { kind: 'entity-def', name: '결제', fields: { description: '결제 정보' }, evidence: cite('C-2') });
+  const asked = '결제 수단이 정해지지 않았습니다. 어떻게 정합니까?';
+  raiseQuestions(studio, booking, [asked, '예약 가능 기간은 얼마입니까?', '결제 수단은 언제 확정합니까?'], cite('C-1'), NOW);
+  raiseQuestions(studio, payment, ['결제 수단은 무엇으로 합니까?'], cite('C-3'), NOW);
+  raiseQuestions(studio, entity, [asked], cite('C-2'), NOW);
+  const [first, period, when, second, third] = studio.issues, topics = () => studio.issues.map(issue => issue.topic);
+  // Nothing has been compared yet: every question waits and stands for itself.
+  assert.deepEqual([pendingWork(studio, backlog).questions, questionGroup(studio, first).length], [5, 1]);
+  assert.equal(groupQuestion(studio, second.id, first.id), false, 'the earlier question has not been compared itself, so it leads nothing yet');
+  assert.equal(groupQuestion(studio, first.id), true);
+  assert.equal(groupQuestion(studio, period.id), true);
+  assert.equal(groupQuestion(studio, second.id, first.id), true);
+  assert.equal(groupQuestion(studio, third.id, second.id), false, 'a question that repeats another leads nothing');
+  assert.equal(groupQuestion(studio, third.id, first.id), true);
+  assert.equal(groupQuestion(studio, third.id, period.id), false, 'a question is grouped once');
+  assert.equal(groupQuestion(studio, when.id, first.id), true);
+  assert.deepEqual(topics(), [first.id, period.id, first.id, first.id, first.id]);
+  assert.deepEqual([pendingWork(studio, backlog).questions, questionGroup(studio, third).length, validateStudio(studio)], [0, 4, true]);
+  // Grouping changes nothing about what blocks confirmation.
+  assert.deepEqual([booking, payment, entity].map(item => openIssues(studio, item.id).length), [3, 1, 1]);
+
+  // A person finds that the one that leads asks something else: it leaves and the earliest of the rest leads.
+  splitQuestion(studio, first.id);
+  assert.deepEqual(topics(), [first.id, period.id, when.id, when.id, when.id]);
+  assert.throws(() => splitQuestion(studio, first.id), { code: 'STUDIO_ISSUE_NOT_GROUPED' });
+  splitQuestion(studio, when.id);
+  assert.deepEqual([topics(), validateStudio(studio)], [[first.id, period.id, when.id, second.id, second.id], true]);
+
+  // Several questions close only for a person who was shown exactly them: no list, a list that misses one or names another closes nothing.
+  const pair = [second.id, third.id];
+  for (const group of [undefined, [third.id], [third.id, second.id, first.id], 'all']) assert.throws(() => resolveIssue(studio, third.id, { note: '카드로 한다.', group }), { code: 'STUDIO_GROUP_CHANGED' });
+  assert.throws(() => resolveIssue(studio, first.id, { note: '카드로 한다.', group: [first.id, second.id] }), { code: 'STUDIO_GROUP_CHANGED' }, 'a question on its own is not closed with a list that names more');
+  // An answer without words closes nothing; an answer closes the whole group and is written to each record it is attached to.
+  assert.throws(() => resolveIssue(studio, third.id, { note: '  ', group: pair }), { code: 'STUDIO_ANSWER_REQUIRED' });
+  assert.deepEqual([studio.issues.every(issue => issue.open === 1), payment.fields.details], [true, ['결제는 24시간 안에 한다.']]);
+  resolveIssue(studio, third.id, { note: '카드와 계좌이체로 한다.', group: [third.id, second.id] });
+  assert.deepEqual(studio.issues.map(issue => [issue.open, issue.resolution]), [[1, undefined], [1, undefined], [1, undefined], [0, '카드와 계좌이체로 한다.'], [0, '카드와 계좌이체로 한다.']]);
+  assert.deepEqual([payment.fields.details, entity.note, booking.fields.details], [['결제는 24시간 안에 한다.', '카드와 계좌이체로 한다.'], '카드와 계좌이체로 한다.', ['시민은 시설을 예약한다.']]);
+  assert.equal(openIssues(studio, payment.id).length, 0);
+  // Two questions of one group on the same record: the answer is written to it once.
+  assert.equal(groupQuestion(studio, raiseQuestions(studio, booking, ['결제 수단 확정 시점은 언제입니까?'], cite('C-1'), NOW) && studio.issues.at(-1).id, when.id), true);
+  const revision = booking.rev;
+  resolveIssue(studio, when.id, { note: '착수 보고 때 확정한다.', group: [when.id, studio.issues.at(-1).id] });
+  assert.deepEqual([booking.fields.details, booking.rev], [['시민은 시설을 예약한다.', '착수 보고 때 확정한다.'], revision + 1]);
+  // Closing without an answer closes the group and leaves the records as they are.
+  assert.equal(groupQuestion(studio, raiseQuestions(studio, payment, ['예약 가능 기간은 며칠입니까?'], cite('C-3'), NOW) && studio.issues.at(-1).id, period.id), true);
+  const before = JSON.stringify([booking.fields, payment.fields]);
+  resolveIssue(studio, period.id, { choice: 'dismiss', group: [period.id, studio.issues.at(-1).id] });
+  assert.deepEqual([studio.issues.filter(issue => issue.open).map(issue => issue.id), JSON.stringify([booking.fields, payment.fields]) === before], [[first.id], true]);
+  assert.equal(studio.issues.at(-1).resolution, '답하지 않고 닫음');
+
+  // A question about one record's own content is never compared: it is born leading itself, and a notice of cut content stands alone.
+  raiseQuestions(studio, entity, ['식별자를 알려 주세요.'], [], NOW, true);
+  assert.deepEqual([studio.issues.at(-1).topic === studio.issues.at(-1).id, pendingWork(studio, backlog).questions], [true, 0]);
+  const cut = addCandidate(studio, { kind: 'requirement', name: '긴 요구', fields: { category: 'SFR', definition: '가'.repeat(FIELD_LIMITS.text + 10), details: ['세부'] }, evidence: cite('C-1'), questions: [asked] });
+  assert.deepEqual(cut.questions.map(text => standsAlone({ text })), [true, false]);
+  // A topic belongs to questions only and has to name a question that leads.
+  assert.equal(validateStudio(studio), true);
+  for (const broken of [draft => { draft.issues[4].topic = draft.issues[3].id; draft.issues[3].topic = draft.issues[2].id; }, draft => { draft.issues[0].topic = 'ISS-9999'; }, draft => { draft.issues.push({ id: 'ISS-7000', kind: 'conflict', itemId: booking.id, text: '충돌', evidence: [], open: 1, createdAt: NOW, topic: 'ISS-7000' }); }]) {
+    const draft = structuredClone(studio); broken(draft);
+    assert.throws(() => validateStudio(draft), { code: 'STUDIO_STATE_INVALID' });
+  }
+});
+
 test('clauses are sent once: a tagged clause is not pending, a changed clause is, and two failures close it', () => {
   const studio = initialStudio(), [first, second, third] = [...clauses.values()];
   assert.equal(pendingWork(studio, backlog).classify.length, 3);
@@ -349,6 +416,18 @@ test('model replies are read defensively: only what refers to the request is kep
   const screen = createItem(studio, { kind: 'screen-def', name: '화면', fields: { description: '사람이 쓴 설명' }, evidence: cite('C-1') });
   const enriched = readEnrich({ fields: { description: '덮어쓰려는 설명', roles: ['시민'], bogus: 1 }, clauses: [2, 99], question: '  질문  ' }, screen, batch);
   assert.deepEqual([enriched.fields.description, enriched.fields.roles, enriched.evidence.map(entry => entry.c), enriched.question], ['', ['시민'], ['C-2'], '질문']);
+  // A question is sent with the record it is attached to and is compared only with its own few earlier questions.
+  const asked = (id, text, record) => ({ question: { id, text }, item: record }), earlier = [asked('ISS-0001', '결제 수단은 무엇입니까?', item), asked('ISS-0002', '환불 기한은 얼마입니까?', long)];
+  const compared = [{ ...asked('ISS-0003', '결제 수단을 정해 주세요.', screen), near: [earlier[0]] }, { ...asked('ISS-0004', '환불은 며칠 안에 합니까?', item), near: [earlier[1], earlier[0]] }];
+  const grouping = groupRequest(compared);
+  assert.deepEqual(grouping.request.data, { questions: [{ k: 1, item: '화면설계서 · 화면', text: '결제 수단을 정해 주세요.', near: ['ISS-0001'] }, { k: 2, item: '요구사항 · 시설 예약', text: '환불은 며칠 안에 합니까?', near: ['ISS-0002', 'ISS-0001'] }],
+    existing: [{ id: 'ISS-0001', item: '요구사항 · 시설 예약', text: '결제 수단은 무엇입니까?' }, { id: 'ISS-0002', item: '요구사항 · 긴 요구', text: '환불 기한은 얼마입니까?' }] });
+  assert.ok(grouping.bytes <= REQUEST_LIMIT);
+  // An answer naming a question the entry was not compared with, an unknown number or no answer groups nothing.
+  assert.deepEqual(readGroup({ decisions: [{ k: 1, same: 'ISS-0002' }, { k: 2, same: 'ISS-0001' }, { k: 7, same: 'ISS-0001' }] }, compared), [undefined, 'ISS-0001']);
+  assert.deepEqual(readGroup({ decisions: [{ k: 2, same: 'ISS-0404' }, 'x', { same: 'ISS-0001' }] }, compared), [undefined, undefined]);
+  // A reply with no decision list is not read as "nothing is the same": the questions are compared again.
+  for (const reply of [{}, null, { decisions: 'none' }]) assert.throws(() => readGroup(reply, compared), { code: 'STUDIO_REPLY_UNUSABLE' });
 });
 
 test('documents are rendered from the records and are safe to open in a sheet or a Markdown viewer', () => {

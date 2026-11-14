@@ -4,17 +4,19 @@
 //   <entity-def:예약> …      relates the clause to a deliverable and names its item
 //   속성(예약번호, 이용 일시)  attributes of an entity item
 //   (미정) …                 raises a question on the candidate
+//   (미결:결제 수단) …        raises the same open point on whatever the clause yields
 export const STUDIO_MODEL = 'claude-opus-5-5';
-const requirementMark = /\[([A-Z]{3}):([^\]]+)\]/, artifactMark = /<([a-z-]+):([^>]+)>/g;
-const strip = text => text.replace(requirementMark, '').replace(artifactMark, '').replace(/속성\([^)]*\)/, '').trim();
+const requirementMark = /\[([A-Z]{3}):([^\]]+)\]/, artifactMark = /<([a-z-]+):([^>]+)>/g, openMark = /\(미결:([^)]+)\)/;
+const strip = text => text.replace(requirementMark, '').replace(artifactMark, '').replace(openMark, '').replace(/속성\([^)]*\)/, '').trim();
 const label = value => String(value).replace(/\s+/g, '').toLowerCase();
+const openPoint = text => { const mark = text.match(openMark); return mark ? [`${mark[1]}이 정해지지 않았습니다. 어떻게 정합니까?`] : []; };
 
 export function classifyReply(request) {
   const clauses = [], candidates = [];
   for (const clause of request.data.clauses) {
     const requirement = clause.text.match(requirementMark), artifacts = [...clause.text.matchAll(artifactMark)].map(match => match[1]);
     clauses.push({ n: clause.n, requirement: Boolean(requirement), artifacts });
-    if (requirement) candidates.push({ category: requirement[1], name: requirement[2], definition: strip(clause.text), details: [strip(clause.text)], outputs: [], verification: '', clauses: [clause.n], questions: clause.text.includes('(미정)') ? [`${requirement[2]}의 미정 사항을 결정해 주세요.`] : [] });
+    if (requirement) candidates.push({ category: requirement[1], name: requirement[2], definition: strip(clause.text), details: [strip(clause.text)], outputs: [], verification: '', clauses: [clause.n], questions: [...(clause.text.includes('(미정)') ? [`${requirement[2]}의 미정 사항을 결정해 주세요.`] : []), ...openPoint(clause.text)] });
   }
   return { clauses, candidates };
 }
@@ -23,9 +25,14 @@ export function extractReply(request) {
   for (const clause of request.data.clauses) for (const match of clause.text.matchAll(artifactMark)) {
     if (match[1] !== request.data.artifact.id) continue;
     const attributes = clause.text.match(/속성\(([^)]*)\)/)?.[1].split(',').map(name => ({ name: name.trim(), description: '', type: '', required: '' })) ?? [];
-    items.push({ name: match[2], fields: { description: strip(clause.text), ...(match[1] === 'entity-def' && attributes.length ? { attributes } : {}) }, clauses: [clause.n], questions: [] });
+    items.push({ name: match[2], fields: { description: strip(clause.text), ...(match[1] === 'entity-def' && attributes.length ? { attributes } : {}) }, clauses: [clause.n], questions: openPoint(clause.text) });
   }
   return { items };
+}
+/** A question repeats an earlier one when the two read the same. Tests that need another judgement pass their own `studio-group`. */
+export function groupReply(request) {
+  const texts = new Map(request.data.existing.map(question => [question.id, label(question.text)]));
+  return { decisions: request.data.questions.map(question => ({ k: question.k, same: question.near.find(id => texts.get(id) === label(question.text)) ?? '' })) };
 }
 /** Same name means the same thing; anything else is new. Tests that need a conflict pass their own `merge`. */
 export function mergeReply(request) {
@@ -52,7 +59,7 @@ export function planReply(request) {
  * every request with its size so tests can assert what was sent.
  */
 export function studioRunner({ overrides = {}, seen = [] } = {}) {
-  const replies = { 'studio-classify': classifyReply, 'studio-extract': extractReply, 'studio-merge': mergeReply, 'studio-enrich': enrichReply, 'studio-plan': planReply, ...overrides };
+  const replies = { 'studio-classify': classifyReply, 'studio-extract': extractReply, 'studio-merge': mergeReply, 'studio-group': groupReply, 'studio-enrich': enrichReply, 'studio-plan': planReply, ...overrides };
   return async ({ request, schema, signal }) => {
     if (signal?.aborted) throw Object.assign(new Error('AI_CANCELLED'), { code: 'AI_CANCELLED' });
     seen.push({ phase: request.phase, bytes: Buffer.byteLength(JSON.stringify(request)), request });

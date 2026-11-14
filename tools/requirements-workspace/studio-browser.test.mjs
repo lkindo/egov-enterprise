@@ -23,6 +23,8 @@ async function audit(page, label) {
 }
 const first = ['[SFR:시설 예약 신청] 시민은 시설을 검색하고 예약을 신청한다. <function-tree:예약 신청> <screen-def:예약 신청 화면>', '<entity-def:예약> 예약 정보를 관리한다. 속성(예약번호, 이용 일시)', '[SFR:이용료 결제] 승인 후 24시간 안에 결제한다. <process-def:결제 처리>', '[PER:응답 시간] 조회는 3초 안에 응답한다.'].join('\n\n');
 const second = ['[SFR:시설 예약 신청] 예약은 이용일 30일 전부터 신청한다.', '[SFR:예약 현황 통계] (미정) 담당자가 이용 현황을 조회한다.', '<entity-def:예약> 예약 식별 방법을 정한다.'].join('\n\n');
+// One open point that a requirement, a function and an entity all carry.
+const third = ['[SFR:알림 발송] (미결:알림 수단) 예약이 승인되면 알린다. <function-tree:알림 발송>', '<entity-def:알림> (미결:알림 수단) 알림 이력을 관리한다. 속성(알림번호)'].join('\n\n');
 // The two documents name the identifier of the same entity differently.
 const worded = request => { const reply = extractReply(request); for (const item of reply.items) if (item.name === '예약') item.fields.identifier = request.data.clauses.some(clause => clause.text.includes('식별 방법')) ? '예약ID' : '예약번호'; return reply; };
 const file = (name, text) => ({ name, mimeType: 'text/plain', buffer: Buffer.from(text) });
@@ -176,8 +178,56 @@ test('documents become requirements, deliverables and stories through the studio
     await page.getByText(/# ST-0001 시설 예약 신청/).waitFor();
     await page.getByText(/PER-001 응답 시간/).first().waitFor();
 
-    // A phone-width screen keeps every stage reachable without sideways scrolling.
     await page.getByRole('button', { name: '닫기', exact: true }).click();
+
+    // Three records ask the same open point. It is one decision on screen: counted once, answered once for all of them.
+    await page.getByRole('button', { name: /^1\. 자료함/ }).click();
+    await add('합성-메모.txt', third, /^2\. 요구사항 확정 4 \/ 5건 · 쟁점 1$/);
+    await page.getByText('같은 질문으로 묶음', { exact: true }).waitFor();
+    await page.getByRole('button', { name: /^2\. 요구사항/ }).click();
+    await page.getByText('결정이 필요한 질문 1가지', { exact: true }).click();
+    await page.getByText('항목 3건', { exact: true }).waitFor();
+    await page.getByText('묶인 질문 3건 보기', { exact: true }).click();
+    await audit(page, 'studio-questions');
+    // What a person unfolded stays open when the screen is redrawn.
+    await page.getByRole('button', { name: /^알림 발송 초안/ }).click();
+    await page.getByText('같은 것을 묻는 질문이 2건 더 있습니다. 한 번 답하거나 닫으면 함께 처리됩니다.', { exact: true }).waitFor();
+    assert.deepEqual(await page.locator('details[data-notes]').evaluateAll(list => list.map(element => element.open)), [true, true], 'the unfolded list survives a redraw');
+    const panel = page.locator('details[data-notes="questions"]');
+    // Closing several at once is confirmed first.
+    await panel.getByRole('button', { name: '답 없이 닫기', exact: true }).click();
+    await page.getByText(/같은 것을 묻는 질문 3건\(항목 3건\)을 답 없이 함께 닫습니다/).waitFor();
+    // The questions that would close with it are listed with their records before the person decides.
+    await page.locator('#dialog').getByText('— 기능분해도 · 알림 발송', { exact: true }).waitFor();
+    await page.locator('#dialog').getByText('— 엔터티정의서 · 알림', { exact: true }).waitFor();
+    await page.getByRole('button', { name: '닫기', exact: true }).click();
+    // A person takes one question out of the group; the other two stay one decision.
+    await panel.getByRole('button', { name: '따로 떼기', exact: true }).first().click();
+    await page.getByText('묶음에서 떼었습니다. 이 질문은 따로 답합니다.').waitFor();
+    await page.getByText('결정이 필요한 질문 2가지', { exact: true }).waitFor();
+    await page.getByRole('button', { name: /^2\. 요구사항 확정 4 \/ 5건 · 쟁점 2$/ }).waitFor();
+    await panel.getByRole('button', { name: '답변하기', exact: true }).first().click();
+    await page.getByText('같은 것을 묻는 질문 2건(항목 2건)에 함께 답합니다.', { exact: true }).waitFor();
+    await page.locator('#dialog').getByText('— 엔터티정의서 · 알림', { exact: true }).waitFor();
+    await page.getByLabel('답변', { exact: true }).fill('문자와 전자우편으로 알린다.');
+    await page.getByRole('button', { name: '저장', exact: true }).click();
+    await page.getByText('같은 질문 2건에 답변을 기록했습니다.').waitFor();
+    await page.getByText('결정이 필요한 질문 1가지', { exact: true }).waitFor();
+    assert.equal(await page.getByRole('button', { name: '확정', exact: true }).isDisabled(), true, 'the question taken out of the group still blocks its record');
+    await panel.getByRole('button', { name: '답 없이 닫기', exact: true }).click();
+    await page.getByText('질문을 닫았습니다. 내용은 바뀌지 않았습니다.').waitFor();
+    await page.getByRole('button', { name: /^2\. 요구사항 확정 4 \/ 5건 · 쟁점 0$/ }).waitFor();
+    assert.equal(await panel.count(), 0);
+    // The one answer reached both records it was asked on.
+    await page.getByRole('button', { name: /^3\. 분석·설계 산출물/ }).click();
+    await page.getByRole('button', { name: '엔터티정의서', exact: true }).click();
+    await page.getByRole('button', { name: /^알림 /, exact: false }).first().click();
+    await page.getByRole('cell', { name: '문자와 전자우편으로 알린다.', exact: true }).waitFor();
+    await page.getByRole('button', { name: '기능분해도', exact: true }).click();
+    await page.getByRole('button', { name: /^알림 발송 /, exact: false }).first().click();
+    await page.getByRole('cell', { name: '문자와 전자우편으로 알린다.', exact: true }).waitFor();
+
+    // A phone-width screen keeps every stage reachable without sideways scrolling.
     await page.setViewportSize({ width: 400, height: 800 });
     await page.getByRole('button', { name: /^2\. 요구사항/ }).click();
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'no sideways page scroll at phone width');

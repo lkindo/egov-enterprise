@@ -105,13 +105,16 @@ export function validateStudio(studio) {
     validateFields(item.kind, proposal.fields);
   }
   for (const issue of studio.issues) {
-    exact(issue, ['id', 'kind', 'itemId', 'text', 'field', 'existing', 'incoming', 'fields', 'evidence', 'open', 'resolution', 'createdAt']);
+    exact(issue, ['id', 'kind', 'itemId', 'text', 'field', 'existing', 'incoming', 'fields', 'evidence', 'open', 'resolution', 'createdAt', 'topic']);
     unique(issue.id); validateEvidence(issue.evidence);
     const item = studio.items.find(entry => entry.id === issue.itemId);
     if (!item || !ISSUE_KINDS.includes(issue.kind) || !issue.text || issue.text !== clean(issue.text, 1000) || ![0, 1].includes(issue.open) || typeof issue.createdAt !== 'string') fail('STUDIO_STATE_INVALID');
     if (issue.fields !== undefined) validateFields(item.kind, issue.fields);
     for (const key of ['field', 'existing', 'incoming', 'resolution']) if (issue[key] !== undefined && (typeof issue[key] !== 'string' || issue[key].length > FIELD_LIMITS.text)) fail('STUDIO_STATE_INVALID');
   }
+  // Only a question has a topic, and it names a question that leads a group: one whose topic is itself.
+  const questions = new Map(studio.issues.filter(issue => issue.kind === 'question').map(issue => [issue.id, issue]));
+  for (const issue of studio.issues) if (issue.topic !== undefined && (issue.kind !== 'question' || questions.get(issue.topic)?.topic !== issue.topic)) fail('STUDIO_STATE_INVALID');
   for (const baseline of studio.baselines) {
     exact(baseline, ['id', 'name', 'createdAt', 'ref', 'counts']);
     if (!/^BL-\d{1,4}$/.test(baseline.id ?? '') || !baseline.name || baseline.name !== clean(baseline.name, 120) || typeof baseline.createdAt !== 'string' || !plain(baseline.ref) || !plain(baseline.counts) || Object.values(baseline.counts).some(value => !count(value))) fail('STUDIO_STATE_INVALID');
@@ -148,6 +151,13 @@ export const itemById = (studio, id) => studio.items.find(item => item.id === id
 export const openIssues = (studio, id) => studio.issues.filter(issue => issue.open && issue.kind !== 'variant' && issue.itemId === id);
 export const openVariants = (studio, id) => studio.issues.filter(issue => issue.open && issue.kind === 'variant' && issue.itemId === id);
 export const proposalsOf = (studio, id) => studio.proposals.filter(proposal => proposal.itemId === id);
+/** Open questions that have not been compared with the earlier ones yet. `topic` is set once a question has been: to the question it repeats, or to itself. */
+export const ungroupedQuestions = studio => studio.issues.filter(issue => issue.open && issue.kind === 'question' && issue.topic === undefined);
+/** The open questions that ask what this one asks, itself included. A person answers them once. */
+export const questionGroup = (studio, issue) => issue.topic === undefined ? [issue] : studio.issues.filter(entry => entry.open && entry.kind === 'question' && entry.topic === issue.topic);
+/** A notice the program attaches when content was cut is about that one record and never joins a group. */
+const CUT_NOTICE = '길이 한도를 넘어 일부만 담겼습니다';
+export const standsAlone = issue => issue.text.includes(CUT_NOTICE);
 
 /** What still has to be sent to the model, derived from state. Nothing is queued separately, so an interrupted run resumes by running again. */
 export function pendingWork(studio, backlog) {
@@ -157,7 +167,7 @@ export function pendingWork(studio, backlog) {
     if (!tag || tag.h !== clause.hash) { classify.push(clause); continue; }
     for (const type of studio.enabled) if (tag.a.includes(type) && !tag.x.includes(type)) extract[type].push(clause);
   }
-  return { classify, extract, merge: studio.candidates.length };
+  return { classify, extract, merge: studio.candidates.length, questions: ungroupedQuestions(studio).length };
 }
 export function applyTag(studio, clause, { requirement, artifacts }) {
   studio.tags[clause.key] = { h: clause.hash, r: requirement ? 1 : 0, a: [...new Set(artifacts)].filter(id => ARTIFACT_IDS.includes(id)), x: [] };
@@ -175,7 +185,7 @@ export function addCandidate(studio, { kind, name, fields, evidence, questions }
   if (!isKind(kind)) return null;
   // Content beyond a field's limit is not kept; the candidate then carries a question that says so, which blocks confirmation until a person has looked.
   const over = overflowingFields(kind, fields);
-  const notice = over.length ? [`‘${fieldLabels(kind, over)}’의 내용이 길이 한도를 넘어 일부만 담겼습니다. 근거 조각과 대조해 나누어 적어 주세요.`] : [];
+  const notice = over.length ? [`‘${fieldLabels(kind, over)}’의 내용이 ${CUT_NOTICE}. 근거 조각과 대조해 나누어 적어 주세요.`] : [];
   const candidate = { id: nextId(studio, 'CND', 5), kind, name: clean(name, FIELD_LIMITS.name), fields: normalizeFields(kind, fields), evidence: evidenceList(evidence), questions: questionList([...notice, ...(Array.isArray(questions) ? questions : [])]) };
   if (!candidate.name || !candidate.evidence.length) return null;
   if (studio.candidates.length >= STUDIO_LIMITS.candidates) fail('STUDIO_CAPACITY');
@@ -211,17 +221,46 @@ function touch(item) { item.rev += 1; if (item.baseline) item.changed = 1; }
 /**
  * Attaches questions a person has to answer to an item. Returns how many were
  * new. A full store is an error: an open question blocks confirmation, so one
- * may not be left out without a trace.
+ * may not be left out without a trace. `alone` marks questions about this one
+ * record only (what would fill its own empty field), which are never compared
+ * with the questions of other records.
  */
-export function raiseQuestions(studio, item, questions, evidence, now) {
+export function raiseQuestions(studio, item, questions, evidence, now, alone = false) {
   let added = 0;
   for (const text of questionList(questions)) {
     if (studio.issues.some(issue => issue.kind === 'question' && issue.itemId === item.id && issue.text === text)) continue;
     if (studio.issues.length >= STUDIO_LIMITS.issues) fail('STUDIO_ISSUE_CAPACITY');
-    studio.issues.push({ id: nextId(studio, 'ISS'), kind: 'question', itemId: item.id, text, evidence: evidenceList(evidence), open: 1, createdAt: now });
+    const id = nextId(studio, 'ISS');
+    studio.issues.push({ id, kind: 'question', itemId: item.id, text, evidence: evidenceList(evidence), open: 1, createdAt: now, ...(alone ? { topic: id } : {}) });
     added += 1;
   }
   return added;
+}
+/**
+ * Records what the comparison found for one open question: it repeats an
+ * earlier open question and joins that one's group, or (no `leadId`) it leads a
+ * group of its own. Returns false when nothing was recorded — the question was
+ * closed or grouped meanwhile, or the one it was compared with no longer leads
+ * an open group — so the caller compares it again.
+ */
+export function groupQuestion(studio, id, leadId) {
+  const issue = ungroupedQuestions(studio).find(entry => entry.id === id);
+  if (!issue) return false;
+  if (leadId === undefined) { issue.topic = issue.id; return true; }
+  const lead = studio.issues.find(entry => entry.id === leadId && entry.open && entry.kind === 'question' && entry.topic === entry.id);
+  if (!lead) return false;
+  issue.topic = lead.id;
+  return true;
+}
+/** Takes one question out of its group, for a person who finds that it asks something else. The rest stay together under the earliest of them. */
+export function splitQuestion(studio, id) {
+  const issue = studio.issues.find(entry => entry.id === id && entry.open && entry.kind === 'question');
+  if (!issue) fail('STUDIO_ISSUE_NOT_FOUND');
+  const rest = questionGroup(studio, issue).filter(entry => entry !== issue);
+  if (!rest.length) fail('STUDIO_ISSUE_NOT_GROUPED');
+  if (issue.topic === issue.id) for (const entry of rest) entry.topic = rest[0].id;
+  issue.topic = issue.id;
+  return issue;
 }
 /** Records two statements that cannot both hold, for a person to decide. Returns false when the same open issue is already there. */
 function raiseConflict(studio, target, { text, field, existing, incoming, fields, evidence }, now) {
@@ -392,21 +431,33 @@ export function decideProposal(studio, id, accept) {
 /**
  * Closes an issue with a person's decision. `adopt` puts the new statement in
  * place of the one it contradicts when that statement is still there, and adds
- * it otherwise. A question is closed with the person's answer, or dismissed.
+ * it otherwise. A question is closed with the person's answer, or dismissed;
+ * the questions grouped with it ask the same thing and close with it, and the
+ * answer is added once to every record they are attached to. Several questions
+ * close only when `group` names exactly them: a person decides about the
+ * questions that were on screen, not about one that joined the group since.
  */
-export function resolveIssue(studio, id, { choice, note }) {
+export function resolveIssue(studio, id, { choice, note, group }) {
   const issue = studio.issues.find(entry => entry.id === id && entry.open);
   if (!issue) fail('STUDIO_ISSUE_NOT_FOUND');
   const item = itemById(studio, issue.itemId), answer = clean(note, FIELD_LIMITS.listItem);
-  if (issue.kind === 'question' && choice === 'dismiss') {
+  if (issue.kind === 'question') {
+    const members = questionGroup(studio, issue);
+    if ((members.length > 1 || group !== undefined) && !(Array.isArray(group) && same([...group].sort(), members.map(entry => entry.id).sort()))) fail('STUDIO_GROUP_CHANGED');
     // A question is the model's; a person may close it without an answer and the record stays as it is.
-    issue.resolution = '답하지 않고 닫음';
-  } else if (issue.kind === 'question') {
-    if (!answer) fail('STUDIO_ANSWER_REQUIRED');
-    const details = fieldsOf(item.kind).find(spec => spec.key === 'details' || spec.key === 'rules');
-    if (details) { item.fields[details.key] = normalizeField(details, [...item.fields[details.key], answer]); touch(item); }
-    else { item.note = clean([item.note, answer].filter(Boolean).join(' / '), FIELD_LIMITS.text); touch(item); }
-    issue.resolution = answer;
+    if (choice !== 'dismiss' && !answer) fail('STUDIO_ANSWER_REQUIRED');
+    const answered = new Set();
+    for (const entry of members) {
+      const target = itemById(studio, entry.itemId);
+      if (choice !== 'dismiss' && !answered.has(target.id)) {
+        const details = fieldsOf(target.kind).find(spec => spec.key === 'details' || spec.key === 'rules');
+        if (details) target.fields[details.key] = normalizeField(details, [...target.fields[details.key], answer]);
+        else target.note = clean([target.note, answer].filter(Boolean).join(' / '), FIELD_LIMITS.text);
+        touch(target); answered.add(target.id);
+      }
+      entry.resolution = choice === 'dismiss' ? '답하지 않고 닫음' : answer;
+      entry.open = 0;
+    }
   } else {
     if (!['keep', 'adopt'].includes(choice)) fail('STUDIO_CHOICE_INVALID');
     if (choice === 'adopt') {
