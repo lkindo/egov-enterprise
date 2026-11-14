@@ -347,6 +347,9 @@ class EgovAuthenticationProviderTest {
         // When & Then
         assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
                 .hasMessageContaining("locked");
+        // [2026-11-14] 잠긴 계정도 없는 계정과 같은 더미 해시를 한 번 계산한다 — 응답 시간으로 잠김을 가려내지 못하게.
+        verify(passwordEncoder).matches("password", "{bcrypt}isolated-dummy");
+        verifyNoInteractions(egovPasswordEncoder);
     }
 
     @Test
@@ -387,7 +390,10 @@ class EgovAuthenticationProviderTest {
         assertThatThrownBy(() -> authenticationProvider.authenticate(
                 new UsernamePasswordAuthenticationToken("testuser", "password")))
                 .isInstanceOf(DisabledException.class);
-        verifyNoInteractions(passwordEncoder, egovPasswordEncoder);
+        // 저장된 해시와는 비교하지 않는다. 대신 없는 계정과 같은 더미 해시를 한 번 계산해 응답 시간을 맞춘다(2026-11-14).
+        verify(passwordEncoder).matches("password", "{bcrypt}isolated-dummy");
+        org.mockito.Mockito.verifyNoMoreInteractions(passwordEncoder);
+        verifyNoInteractions(egovPasswordEncoder);
         verify(userDetailsService, never()).loadUserByUsername(anyString());
     }
 

@@ -92,8 +92,15 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
                         return new BadCredentialsException("Invalid User ID or Password");
                     });
             
-            // 잠금 없이 먼저 거른다 — 정지·잠김 계정은 비밀번호 검증(비싼 해시)과 행 잠금 전에 돌려보낸다.
-            validateAccountStatus(userEntity);
+            // 잠금 없이 먼저 거른다 — 정지·잠김 계정은 비밀번호 검증과 행 잠금 전에 돌려보낸다.
+            //   [2026-11-14] 다만 돌려보내기 전에 없는 계정과 같은 더미 해시를 한 번 계산한다. 해시 없이 바로 거부하면 응답이
+            //   해시 시간만큼 빨라, 응답 시간만으로 정지·잠김 계정을 가려낼 수 있다(응답 본문은 이미 같다).
+            try {
+                validateAccountStatus(userEntity);
+            } catch (AuthenticationException rejected) {
+                passwordEncoder.matches(password == null ? "" : password, unknownIdentityPasswordHash);
+                throw rejected;
+            }
 
             // [보안 A09] 비밀번호 해시(저장/유도)는 어떤 레벨로도 로깅하지 않는다. 추적은 userId 만.
             log.debug(">>> [EgovAuthenticationProvider] User found: {}", userEntity.getUserId());

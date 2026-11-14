@@ -69,20 +69,53 @@ class CommonCodeServiceTest {
     @InjectMocks
     private CommonCodeService commonCodeService;
 
+    private void groupInUse(String groupUse, String categoryUse) {
+        given(commonCodeGroupRepository.findById("GRP1")).willReturn(Optional.of(CommonCodeGroup.builder()
+                .cdId("GRP1").cdIdNm("업무 구분").clsfCd("CL1").useYn(groupUse).build()));
+        lenient().when(commonCodeCategoryRepository.findById("CL1"))
+                .thenReturn(Optional.of(CommonCodeCategory.builder().clsfCd("CL1").clsfCdNm("분류").useYn(categoryUse).build()));
+    }
+
+    private void resetRepositories() {
+        org.mockito.Mockito.reset(commonCodeGroupRepository);
+        org.mockito.Mockito.reset(commonCodeCategoryRepository);
+        org.mockito.Mockito.reset(commonCodeRepository);
+    }
+
+    private static CommonCode detail(String dtlCd) {
+        return CommonCode.builder().cdId("GRP1").dtlCd(dtlCd).dtlCdNm("코드 " + dtlCd).useYn("Y").build();
+    }
+
     @Test
-    @DisplayName("그룹별 코드 목록 조회 테스트")
+    @DisplayName("그룹별 코드 목록 — 그룹과 분류가 사용일 때 사용 상세 코드를 상세 코드 순으로 준다")
     void getCodesByGroupTest() {
-        given(commonCodeRepository.findByCdIdAndUseYn(anyString(), anyString()))
-                .willReturn(List.of(CommonCode.builder()
-                        .cdId("GRP1")
-                        .dtlCd("CODE1")
-                        .dtlCdNm("코드명1")
-                        .build()));
+        groupInUse("Y", "Y");
+        given(commonCodeRepository.findByCdIdAndUseYn("GRP1", "Y"))
+                .willReturn(List.of(detail("CODE3"), detail("CODE1"), detail("CODE2")));
 
         List<CommonCodeDto> result = commonCodeService.getCodesByGroup("GRP1");
 
-        assertEquals(1, result.size());
-        assertEquals("CODE1", result.get(0).dtlCd());
+        assertEquals(List.of("CODE1", "CODE2", "CODE3"), result.stream().map(CommonCodeDto::dtlCd).toList());
+    }
+
+    @Test
+    @DisplayName("[2026-11-14] 그룹이나 그 분류를 사용 안 함으로 바꾸면 소비 경로도 그 상세 코드를 주지 않는다 — 관리 화면에서 사라진 코드를 업무가 계속 쓰지 않게")
+    void disabledGroupOrCategoryYieldsNoCodes() {
+        for (String[] uses : new String[][] { { "N", "Y" }, { "Y", "N" } }) {
+            resetRepositories();
+            groupInUse(uses[0], uses[1]);
+            lenient().when(commonCodeRepository.findByCdIdAndUseYn("GRP1", "Y")).thenReturn(List.of(detail("CODE1")));
+
+            assertEquals(List.of(), commonCodeService.getCodesByGroup("GRP1"), String.join("/", uses));
+        }
+        // 없는 그룹, 분류가 없는 그룹도 같다.
+        resetRepositories();
+        given(commonCodeGroupRepository.findById("GRP1")).willReturn(Optional.empty());
+        assertEquals(List.of(), commonCodeService.getCodesByGroup("GRP1"));
+        given(commonCodeGroupRepository.findById("GRP1")).willReturn(Optional.of(CommonCodeGroup.builder()
+                .cdId("GRP1").cdIdNm("업무 구분").useYn("Y").build()));
+        assertEquals(List.of(), commonCodeService.getCodesByGroup("GRP1"));
+        verify(commonCodeRepository, never()).findByCdIdAndUseYn(anyString(), anyString());
     }
 
     @Test

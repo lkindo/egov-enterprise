@@ -58,6 +58,27 @@ class LogServiceTest {
             assertEquals(errAt, savedLog.getErrOcrnYn());
             assertEquals(errCode, savedLog.getErrCd());
         }
+
+        @Test
+        @DisplayName("[2026-11-14] 저장 실패는 로그인을 막지 않고 유실 수와 메트릭으로 남는다")
+        void testLogLogin_CountsDrops() {
+            var registry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
+            @SuppressWarnings("unchecked")
+            org.springframework.beans.factory.ObjectProvider<io.micrometer.core.instrument.MeterRegistry> provider =
+                    mock(org.springframework.beans.factory.ObjectProvider.class);
+            when(provider.getIfAvailable()).thenReturn(registry);
+            LogService counted = new LogService(loginLogRepository, provider);
+            when(loginLogRepository.save(any(LoginLog.class))).thenThrow(new org.springframework.dao.QueryTimeoutException("slow"));
+
+            assertDoesNotThrow(() -> counted.logLogin("user01", "127.0.0.1", "WEB", "N", null));
+            assertDoesNotThrow(() -> counted.logLogin("user01", "127.0.0.1", "WEB", "Y", "A005"));
+
+            assertEquals(2, counted.getPersistFailureCount());
+            assertEquals(2.0, registry.counter(LogService.DROP_METRIC).count());
+            // 레지스트리가 없는 구성에서도 세기만 하고 던지지 않는다.
+            assertDoesNotThrow(() -> logService.logLogin("user01", "127.0.0.1", "WEB", "N", null));
+            assertEquals(1, logService.getPersistFailureCount());
+        }
     }
 
     @Nested

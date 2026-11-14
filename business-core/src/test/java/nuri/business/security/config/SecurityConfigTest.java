@@ -16,7 +16,7 @@ class SecurityConfigTest {
     void storesBcryptAndRejectsWrongPassword() {
         String encoded = encoder.encode("isolated-password-fixture");
 
-        assertThat(encoded).startsWith("{bcrypt}$2a$10$");
+        assertThat(encoded).startsWith("{bcrypt}$2a$12$"); // 비용 12(2026-11-14, PasswordEncoders.BCRYPT_STRENGTH)
         assertThat(encoder.matches("isolated-password-fixture", encoded)).isTrue();
         assertThat(encoder.matches("wrong-password-fixture", encoded)).isFalse();
         assertThat(encoder.upgradeEncoding(encoded)).isFalse();

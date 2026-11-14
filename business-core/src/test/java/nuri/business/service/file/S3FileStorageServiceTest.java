@@ -38,6 +38,8 @@ class S3FileStorageServiceTest {
     private HttpServer server;
     private final Map<String, byte[]> objects = new ConcurrentHashMap<>();
     private final List<String> requests = new CopyOnWriteArrayList<>();
+    /** 0 이 아니면 HEAD 에 이 상태로 답한다 — 저장소 장애·권한 거부를 흉내 낸다. */
+    private volatile int headStatus;
     private S3FileStorageService storage;
 
     @BeforeEach
@@ -151,6 +153,24 @@ class S3FileStorageServiceTest {
                 .isInstanceOf(IllegalStateException.class);
     }
 
+    @Test
+    @DisplayName("[2026-11-14] 저장소가 없다고 답할 때만 없음이다 — 닿지 못했거나 403·5xx 로 답하면 판정할 수 없어 던진다")
+    void existenceCheckDoesNotTurnAnOutageIntoMissingFiles() {
+        String saved = storage.store(new org.springframework.mock.web.MockMultipartFile("f", "a.txt", "text/plain", "x".getBytes(StandardCharsets.UTF_8)), "general");
+        for (int status : new int[] { 403, 500, 503 }) {
+            headStatus = status;
+            assertThatThrownBy(() -> storage.exists(saved, "general")).as("status " + status).isInstanceOf(BusinessException.class);
+        }
+        headStatus = 0;
+        assertThat(storage.exists(saved, "general")).isTrue();
+        assertThat(storage.exists("missing.txt", "general")).isFalse();
+        // 닿지 않는 저장소(닫힌 포트)
+        var unreachable = new S3FileStorageService(new S3FileStorageService.Settings("http://127.0.0.1:1", "ap-northeast-2",
+                "egov-files", "AKIDEXAMPLE", "secret-example", "tenant-a", true), HttpClient.newHttpClient(),
+                Clock.fixed(Instant.parse("2026-11-12T00:00:00Z"), ZoneOffset.UTC));
+        assertThatThrownBy(() -> unreachable.exists(saved, "general")).as("연결 실패").isInstanceOf(BusinessException.class);
+    }
+
     // ------------------------------------------------------------------ 가짜 S3
 
     private void handle(HttpExchange exchange) throws IOException {
@@ -190,6 +210,7 @@ class S3FileStorageServiceTest {
                 }
             }
             case "HEAD" -> {
+                if (headStatus != 0) { respond(exchange, headStatus, null); return; }
                 if (stored == null) { respond(exchange, 404, null); return; }
                 exchange.getResponseHeaders().add("ETag", "\"" + S3RequestSigner.sha256Hex(stored) + "\"");
                 exchange.getResponseHeaders().add("Content-Length", String.valueOf(stored.length));

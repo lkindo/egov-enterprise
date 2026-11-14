@@ -424,7 +424,7 @@ export default function CommonCodeClient({
         const ok = await confirm({
           title: '분류를 미사용으로 전환',
           message: '이 분류를 미사용으로 바꾸면 소속 코드 그룹 ' + affected + '개가 목록에서 함께 사라집니다. 그룹과 상세 코드가 지워지는 것은 아니며, 분류를 다시 사용으로 되돌리면 그대로 나타납니다.'
-            + (readGroups.length > 0 ? ' 이 가운데 ' + readGroups.length + '개는 이 제품이 읽는 그룹이라 아래 사용처를 확인하세요.' : ''),
+            + (readGroups.length > 0 ? ' 이 가운데 ' + readGroups.length + '개는 이 제품이 읽는 그룹이라, 분류를 다시 사용으로 되돌릴 때까지 아래 사용처가 그 코드를 받지 못합니다.' : ''),
           confirmText: '미사용으로 전환',
           ...(readGroups.length > 0 ? {
             detailsLabel: CODE_USAGE_DETAILS_LABEL,
@@ -482,7 +482,7 @@ export default function CommonCodeClient({
     if (!isNew && source && source.useYn !== 'N' && values.useYn === 'N' && usages.length > 0) {
       const ok = await confirm({
         title: '이 제품이 읽는 그룹을 사용 안 함으로 전환',
-        message: `${codeGroupLabel(source)} 그룹은 이 제품이 읽는 그룹입니다. 사용 안 함으로 바꾸면 이 화면의 상세 코드 목록에 그 상세 코드가 보이지 않습니다. 아래 사용처를 확인한 뒤 진행하세요.`,
+        message: `${codeGroupLabel(source)} 그룹은 이 제품이 읽는 그룹입니다. 사용 안 함으로 바꾸면 이 화면의 상세 코드 목록에 그 상세 코드가 보이지 않습니다. 아래 사용처도 이 그룹의 코드를 더 받지 못합니다(예: 결재 업무 구분이 비면 결재를 올릴 수 없습니다). 아래 사용처를 확인한 뒤 진행하세요.`,
         details: <CodeUsageList usages={usages} />,
         detailsLabel: CODE_USAGE_DETAILS_LABEL,
         confirmText: '사용 안 함으로 전환',

@@ -100,6 +100,22 @@ class NoteServiceTest {
     }
 
     @Test
+    @DisplayName("[2026-11-14] 저장 실패는 감싸지 않고 그대로 전한다 — 공통 처리기가 무결성 위반(409)·DB 장애(503)를 가를 수 있게")
+    void sendNote_propagatesStorageFailuresUnwrapped() {
+        nuri.business.domain.user.entity.User activeUser = nuri.business.domain.user.entity.User.builder()
+                .userId("rcvr1").esntlId("USR_RCVR_1").userNm("수신자").userSttsCd("P").pswd("{bcrypt}x").build();
+        given(userRepository.findByEsntlIdIn(List.of("USR_RCVR_1"))).willReturn(List.of(activeUser));
+        org.springframework.dao.DataIntegrityViolationException integrity =
+                new org.springframework.dao.DataIntegrityViolationException("fk");
+        given(noteRepository.save(any())).willThrow(integrity);
+
+        nuri.business.service.note.dto.NoteDto dto = nuri.business.service.note.dto.NoteDto.builder()
+                .rcverId("USR_RCVR_1").noteSj("제목").noteCn("내용").build();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> noteService.sendNote("USR_SNDR_1", dto)).isSameAs(integrity);
+    }
+
+    @Test
     @DisplayName("🚨 화면을 거치지 않은 요청도 수신자 100명·ID 20자 경계에서 400 이고 사용자 조회 전에 멈춘다 (2026-10-27)")
     void sendNote_rejectsReceiverListBeyondScreenBounds() {
         String tooMany = java.util.stream.IntStream.rangeClosed(1, 101)

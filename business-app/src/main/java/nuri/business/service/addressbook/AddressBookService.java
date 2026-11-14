@@ -65,40 +65,33 @@ public class AddressBookService {
 
     @Transactional
     public Long createAddressBook(String userId, AddressBookDto dto) {
-        try {
-            AddressBook entity = AddressBook.builder()
-                    .adbkNm(dto.getAdbkNm())
-                    .rlsScopeCd(dto.getRlsScopeCd())
-                    .trgetOgnzId(dto.getTrgetOgnzId())
-                    .useYn("Y")
-                    .wrterId(userId)
-                    .build();
+        AddressBook entity = AddressBook.builder()
+                .adbkNm(dto.getAdbkNm())
+                .rlsScopeCd(dto.getRlsScopeCd())
+                .trgetOgnzId(dto.getTrgetOgnzId())
+                .useYn("Y")
+                .wrterId(userId)
+                .build();
 
-            addressBookRepository.save(entity);
+        addressBookRepository.save(entity);
 
-            if (dto.getAdbkMan() != null) {
-                for (AddressBookUserDto userDto : dto.getAdbkMan()) {
-                    // 연결된 사용자는 요청에서 받지 않는다 — 손으로 적는 연락처다(DIP B5 F8).
-                    AddressBookUser userEntity = AddressBookUser.builder()
-                            .addressBook(entity)
-                            .nm(userDto.getNm())
-                            .emlAddr(userDto.getEmlAddr())
-                            .homeTelno(userDto.getHomeTelno())
-                            .mblTelno(userDto.getMblTelno())
-                            .ofcTelno(userDto.getOfcTelno())
-                            .faxNo(userDto.getFaxNo())
-                            .build();
-                    addressBookUserRepository.save(userEntity);
-                }
+        if (dto.getAdbkMan() != null) {
+            for (AddressBookUserDto userDto : dto.getAdbkMan()) {
+                // 연결된 사용자는 요청에서 받지 않는다 — 손으로 적는 연락처다(DIP B5 F8).
+                AddressBookUser userEntity = AddressBookUser.builder()
+                        .addressBook(entity)
+                        .nm(userDto.getNm())
+                        .emlAddr(userDto.getEmlAddr())
+                        .homeTelno(userDto.getHomeTelno())
+                        .mblTelno(userDto.getMblTelno())
+                        .ofcTelno(userDto.getOfcTelno())
+                        .faxNo(userDto.getFaxNo())
+                        .build();
+                addressBookUserRepository.save(userEntity);
             }
-            // [ADR-0036] 생성 응답(201)의 본문은 새 주소록의 일련번호다.
-            return entity.getAdbkSn();
-        } catch (BusinessException be) {
-            throw be;
-        } catch (Exception e) {
-            log.error("Failed to create AddressBook", e);
-            throw new BusinessException("주소록 생성 중 오류가 발생했습니다.", CommonErrorCode.INTERNAL_SERVER_ERROR);
         }
+        // [ADR-0036] 생성 응답(201)의 본문은 새 주소록의 일련번호다.
+        return entity.getAdbkSn();
     }
 
     @Transactional
@@ -168,20 +161,16 @@ public class AddressBookService {
                         userDto.getHomeTelno(), userDto.getMblTelno(), userDto.getOfcTelno(), userDto.getFaxNo());
                 continue;
             }
-            try {
-                    AddressBookUser newUser = AddressBookUser.builder()
-                            .addressBook(entity)
-                            .nm(userDto.getNm())
-                            .emlAddr(userDto.getEmlAddr())
-                            .homeTelno(userDto.getHomeTelno())
-                            .mblTelno(userDto.getMblTelno())
-                            .ofcTelno(userDto.getOfcTelno())
-                            .faxNo(userDto.getFaxNo())
-                            .build();
-                    addressBookUserRepository.save(newUser);
-                } catch (Exception e) {
-                    throw new BusinessException("ID 생성 중 오류가 발생했습니다.", CommonErrorCode.INTERNAL_SERVER_ERROR);
-                }
+            AddressBookUser newUser = AddressBookUser.builder()
+                    .addressBook(entity)
+                    .nm(userDto.getNm())
+                    .emlAddr(userDto.getEmlAddr())
+                    .homeTelno(userDto.getHomeTelno())
+                    .mblTelno(userDto.getMblTelno())
+                    .ofcTelno(userDto.getOfcTelno())
+                    .faxNo(userDto.getFaxNo())
+                    .build();
+            addressBookUserRepository.save(newUser);
         }
     }
 

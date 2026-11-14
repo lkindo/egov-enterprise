@@ -85,6 +85,29 @@ class AddressBookServiceTest {
     }
 
     @Test
+    @DisplayName("[2026-11-14] 저장 실패는 감싸지 않고 그대로 전한다 — 공통 처리기가 무결성 위반(409)·DB 장애(503)를 가를 수 있게")
+    void createAddressBook_propagatesStorageFailuresUnwrapped() {
+        org.springframework.dao.QueryTimeoutException timeout = new org.springframework.dao.QueryTimeoutException("slow");
+        org.mockito.Mockito.when(addressBookRepository.save(any(AddressBook.class))).thenThrow(timeout);
+        AddressBookDto dto = AddressBookDto.builder().adbkNm("New").build();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> addressBookService.createAddressBook("user", dto)).isSameAs(timeout);
+    }
+
+    @Test
+    @DisplayName("[2026-11-14] 구성원 저장 실패도 그대로 전한다")
+    void createAddressBook_memberStorageFailureIsNotRewritten() {
+        org.springframework.dao.DataIntegrityViolationException integrity =
+                new org.springframework.dao.DataIntegrityViolationException("duplicate");
+        org.mockito.Mockito.when(addressBookUserRepository.save(any())).thenThrow(integrity);
+        nuri.business.service.addressbook.dto.AddressBookUserDto userDto =
+            nuri.business.service.addressbook.dto.AddressBookUserDto.builder().nm("User").build();
+        AddressBookDto dto = AddressBookDto.builder().adbkNm("New").adbkMan(List.of(userDto)).build();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> addressBookService.createAddressBook("user", dto)).isSameAs(integrity);
+    }
+
+    @Test
     @DisplayName("주소록 등록 성공")
     void createAddressBook_Success() {
         // Given

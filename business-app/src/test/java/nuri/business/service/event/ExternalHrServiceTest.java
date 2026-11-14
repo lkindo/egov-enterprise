@@ -120,6 +120,30 @@ class ExternalHrServiceTest {
         assertThat(result.getLastMdfrId()).isEqualTo("admin_actor");
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({ "이메일,메일주소,02,123,4567", "전화번호,a@b.kr,02,12a,4567", "전화번호,a@b.kr,0 2,123,4567" })
+    @DisplayName("[2026-11-14] 값이 있으면 이메일 형식과 전화번호 숫자를 서버도 본다 — 등록·수정 모두 400 이고 저장하지 않는다")
+    void contactFormatsAreCheckedWhenPresent(String expected, String email, String area, String middle, String end) {
+        authenticateAs("admin_actor", "ADMIN");
+        ExternalHrDto dto = ExternalHrDto.builder().evntSn(2L).otsdHrId("HR2").emlAddr(email)
+                .areaNo(area).mdTelno(middle).endTelno(end).build();
+        assertThatThrownBy(() -> externalHrService.createExternalHr(dto))
+                .isInstanceOf(BusinessException.class).hasMessageContaining(expected);
+        assertThatThrownBy(() -> externalHrService.updateExternalHr(2L, "HR2", dto))
+                .isInstanceOf(BusinessException.class).hasMessageContaining(expected);
+        verify(externalHrRepository, never()).save(any());
+        verify(externalHrRepository, never()).findById(any());
+    }
+
+    @Test
+    @DisplayName("[2026-11-14] 연락처를 비운 등록은 그대로 받는다 — 필수 여부는 강제하지 않는다(DEC-OPS-045)")
+    void blankContactsAreStillAccepted() {
+        authenticateAs("admin_actor", "ADMIN");
+        ExternalHrDto dto = ExternalHrDto.builder().evntSn(2L).otsdHrId("HR2").emlAddr("").areaNo(" ").build();
+        given(externalHrRepository.save(any(ExternalHr.class))).willAnswer(invocation -> invocation.getArgument(0));
+        assertThat(externalHrService.createExternalHr(dto).getOtsdHrId()).isEqualTo("HR2");
+    }
+
     @Test
     @DisplayName("같은 행사와 외부인사 ID의 중복 등록은 기존 행을 덮어쓰지 않고 거부한다")
     void createExternalHr_RejectsDuplicateCompositeId() {

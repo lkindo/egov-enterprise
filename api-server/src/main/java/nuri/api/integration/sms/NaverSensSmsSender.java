@@ -230,6 +230,13 @@ public final class NaverSensSmsSender implements SmsSender, AutoCloseable {
         return Base64.getEncoder().encodeToString(signed);
     }
 
+    /** send() 와 같은 판정이다 — 접수에서 미리 물어 보낼 수 없는 본문을 받지 않는다. */
+    @Override
+    public boolean rejectsMessage(String message) {
+        int bytes = contentBytes(message);
+        return bytes < 1 || bytes > 2000;
+    }
+
     private static int contentBytes(String message) {
         if (message == null || message.isBlank() || message.length() > 2000) return -1;
         try {

@@ -43,4 +43,16 @@ public interface SmsSender {
     default boolean isDeliveryConfigured() {
         return false;
     }
+
+    /**
+     * 이 게이트웨이가 본문을 보낼 수 없는가(길이·문자 집합). 접수할 때 묻는다(2026-11-14).
+     *
+     * <p>종전에는 접수가 4,000자까지 받고 게이트웨이는 보낼 때 자기 한도(예: SENS 2,000바이트·EUC-KR)를 넘으면 거부해,
+     * 관리자는 접수됐다는 응답을 받고 나중에 수신자 결과에서 모두 실패를 봤다. 보낼 수 없는 본문은 접수 단계에서 알린다.
+     * 기본값은 false(가리지 않음)다 — 발송하지 않는 구현(기록·미연결)은 본문을 가리지 않는다. 거부 쪽을 true 로 둔 것은
+     * 시험의 목(기본 메서드에 false)이 실제 기본값과 같은 뜻이 되게 하려는 것이다.
+     */
+    default boolean rejectsMessage(String message) {
+        return false;
+    }
 }

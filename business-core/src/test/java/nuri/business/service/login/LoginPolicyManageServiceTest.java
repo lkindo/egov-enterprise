@@ -362,6 +362,22 @@ class LoginPolicyManageServiceTest {
     }
 
     @Test
+    @DisplayName("[2026-11-14] 이미 정책이 있는 사용자의 등록은 409 이고 기존 정책을 덮어쓰지 않는다")
+    void insertRejectsAnExistingPolicyInsteadOfOverwritingIt() {
+        authenticate("policy-manager", "LOGIN_POL_CREATE");
+        User user = User.builder().userId("USER1").esntlId("USR1").userNm("Name1").pswd("pass").build();
+        given(userRepository.findByUserId("USER1")).willReturn(Optional.of(user));
+        given(loginPolicyRepository.existsById("USER1")).willReturn(true);
+        LoginPolicyDto dto = new LoginPolicyDto();
+        dto.setUserId("USER1");
+        dto.setLmtYn("N");
+
+        BusinessException duplicate = assertThrows(BusinessException.class, () -> loginPolicyManageService.insertLoginPolicy(dto));
+        assertEquals(CommonErrorCode.DUPLICATE_RESOURCE, duplicate.getErrorCode());
+        verify(loginPolicyRepository, org.mockito.Mockito.never()).save(any(LoginPolicy.class));
+    }
+
+    @Test
     @DisplayName("로그인 정책 등록 실패 - 존재하지 않는 사용자 (유령 loginId 차단, V2_13 결속)")
     void insertLoginPolicyUserNotFoundTest() {
         authenticate("policy-manager", "LOGIN_POL_CREATE");

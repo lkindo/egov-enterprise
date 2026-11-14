@@ -11,8 +11,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 게시글 조회수 관리 서비스
- * - Redis를 활용한 쓰기 지연(Write-Back) 전략 구현 (여기서는 메모리 맵으로 단순화)
+ * 게시글 조회수 관리 서비스 — 조회수를 프로세스 메모리에 모았다가 1분마다 원자 UPDATE 로 반영한다(쓰기 지연).
+ *
+ * <p>버퍼는 인스턴스마다 따로이고 각자 자기 몫만 더하므로 여러 대여도 합은 맞다. 종료할 때 남은 몫을 반영한다
+ * ({@link #flushOnShutdown}). 비정상 종료(강제 종료·OOM)의 마지막 주기 몫은 잃는다 — 조회수는 정확한 회계 값이 아니라는
+ * 절충이다. 같은 사람의 새로고침을 거르지 않는다.
  */
 @Slf4j
 @Service
@@ -21,8 +24,16 @@ public class BoardViewCountService {
 
     private final BoardRepository boardRepository;
     
-    // In-memory buffer for view counts (Production should use Redis)
     private final Map<Long, Integer> viewCountBuffer = new ConcurrentHashMap<>();
+
+    /**
+     * 종료할 때 남은 조회수를 반영한다(2026-11-14). 종전에는 마지막 주기(최대 1분) 몫이 프로세스와 함께 사라져, 배포마다 조회수가
+     * 조금씩 빠졌다. 소멸은 의존 역순이라 이 빈이 저장소보다 먼저 정리된다 — 이 시점에 저장소는 아직 쓸 수 있다.
+     */
+    @jakarta.annotation.PreDestroy
+    public void flushOnShutdown() {
+        syncViewCountsToDb();
+    }
 
     /**
      * 조회수 증가 요청 (버퍼에 저장)

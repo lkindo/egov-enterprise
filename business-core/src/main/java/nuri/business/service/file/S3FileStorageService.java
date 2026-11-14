@@ -139,14 +139,33 @@ public class S3FileStorageService implements FileStorageService {
         return loadAsResource(filename, "");
     }
 
+    /**
+     * 객체가 있으면 true, 저장소가 없다고 답하면(404) false 다. 저장소에 닿지 못했거나(연결·시간 초과) 다른 상태(403·5xx)로
+     * 답하면 판정할 수 없으므로 예외를 던진다.
+     *
+     * <p>[2026-11-14] 종전에는 판정하지 못한 경우도 false 였다. 저장소 장애 한 번이면 무결성 점검이 모든 첨부를 "실물 없음"으로
+     * 보고해, 장애가 대량 유실처럼 보였다. 예약 점검은 예외를 실패(FAILED)로 남기고 유실(DRIFT)과 구분한다(AttachmentIntegrityScheduler).
+     */
     @Override
     public boolean exists(String filename, String targetPath) {
+        String objectKey;
         try {
-            return send("HEAD", key(targetPath, filename), Map.of(), Map.of(), HttpRequest.BodyPublishers.noBody(),
-                    HttpResponse.BodyHandlers.discarding()).statusCode() == 200;
-        } catch (RuntimeException unavailable) {
-            return false;
+            objectKey = key(targetPath, filename);
+        } catch (RuntimeException unsafeName) {
+            return false; // 버킷 접두 밖을 가리키는 이름은 어떤 객체도 가리키지 않는다 — 그 파일 하나의 판정이다.
         }
+        int status;
+        try {
+            status = send("HEAD", objectKey, Map.of(), Map.of(), HttpRequest.BodyPublishers.noBody(),
+                    HttpResponse.BodyHandlers.discarding()).statusCode();
+        } catch (RuntimeException unavailable) {
+            log.error("Object storage could not be reached for an existence check: {}", unavailable.getClass().getSimpleName());
+            throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
+        }
+        if (status == 200) return true;
+        if (status == 404) return false;
+        log.error("Object storage answered an existence check with status={}", status);
+        throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
     }
 
     @Override

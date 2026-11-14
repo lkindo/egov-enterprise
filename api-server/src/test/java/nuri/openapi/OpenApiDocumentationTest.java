@@ -609,14 +609,43 @@ class OpenApiDocumentationTest {
     }).hasRootCauseInstanceOf(org.springframework.beans.factory.BeanCurrentlyInCreationException.class);
   }
 
+  @Test
+  @DisplayName("[2026-11-14] 운영 빈 그래프 시험은 main 이 아닌 Gradle 소스 세트 출력을 모두 시험용으로 거른다 — 단일 모듈 생성물의 fixtures 포함")
+  void productionClasspathFilterExcludesEveryNonMainSourceSet() throws Exception {
+    var filter = new ProductionClasspathOnlyExcludeFilter();
+    for (String sourceSet : java.util.List.of("test", "testFixtures", "fixtures", "integrationTest")) {
+      assertThat(filter.match(classAt("file [D:/work/app/build/classes/java/" + sourceSet + "/nuri/business/core/config/TestCacheConfig.class]"), null))
+          .as(sourceSet).isTrue();
+    }
+    assertThat(filter.match(classAt("file [D:/work/app/build/classes/java/main/nuri/foundation/core/config/CacheConfig.class]"), null)).isFalse();
+    assertThat(filter.match(classAt("file [/work/app/foundation/build/classes/java/main/nuri/X.class]"), null)).isFalse();
+    assertThat(filter.match(classAt("URL [jar:file:/work/app/foundation/build/libs/foundation-plain.jar!/nuri/X.class]"), null)).isFalse();
+    assertThat(filter.match(classAt("URL [jar:file:/work/app/business-core/build/libs/business-core-test-fixtures.jar!/nuri/X.class]"), null)).isTrue();
+  }
+
+  private static org.springframework.core.type.classreading.MetadataReader classAt(String description) {
+    var resource = org.mockito.Mockito.mock(org.springframework.core.io.Resource.class);
+    org.mockito.Mockito.when(resource.getDescription()).thenReturn(description);
+    var annotations = org.mockito.Mockito.mock(org.springframework.core.type.AnnotationMetadata.class);
+    var reader = org.mockito.Mockito.mock(org.springframework.core.type.classreading.MetadataReader.class);
+    org.mockito.Mockito.when(reader.getResource()).thenReturn(resource);
+    org.mockito.Mockito.when(reader.getAnnotationMetadata()).thenReturn(annotations);
+    return reader;
+  }
+
   static final class ProductionClasspathOnlyExcludeFilter extends org.springframework.boot.context.TypeExcludeFilter {
+    private static final java.util.regex.Pattern NON_MAIN_GRADLE_OUTPUT =
+        java.util.regex.Pattern.compile("/build/classes/java/(?!main/)[^/]+/");
+
     @Override
     public boolean match(
         org.springframework.core.type.classreading.MetadataReader metadataReader,
         org.springframework.core.type.classreading.MetadataReaderFactory metadataReaderFactory) {
       String resourceDescription = metadataReader.getResource().getDescription().replace('\\', '/');
-      return resourceDescription.contains("/build/classes/java/test/")
-          || resourceDescription.contains("/build/classes/java/testFixtures/")
+      // Gradle 출력 가운데 운영 코드는 main 소스 세트뿐이다. 이름을 하나씩 적으면 배치가 새 소스 세트를 쓸 때 시험용 클래스가
+      // 운영 그래프로 샌다 — 단일 모듈 생성물은 고정물을 `fixtures` 소스 세트로 컴파일해, TestCacheConfig 의 cacheManager 가
+      // 운영 CacheConfig 와 겹쳐 덮어쓰기 금지에서 기동이 실패했다(2026-11 야간 검증).
+      return NON_MAIN_GRADLE_OUTPUT.matcher(resourceDescription).find()
           || resourceDescription.contains("-test-fixtures.jar")
           || resourceDescription.contains("/out/test/")
           || metadataReader.getAnnotationMetadata().isAnnotated(

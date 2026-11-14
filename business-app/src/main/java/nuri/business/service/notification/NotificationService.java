@@ -67,6 +67,7 @@ public class NotificationService {
     @Transactional
     public Long createNotification(String userId, NotificationDto dto) {
         requireUserId(userId);
+        requireInternalLink(dto.getLinkUrl());
         return createForEvent(new NotificationRequestedEvent(userId, dto.getNotiTtlNm(), dto.getNotiCn(), dto.getLinkUrl()));
     }
 
@@ -101,6 +102,7 @@ public class NotificationService {
     public int dispatchToUsers(NotificationDispatchRequest request) {
         SecurityUtil.assertPermission("NOTI_DISPATCH");
         Objects.requireNonNull(request, "발송 요청은 null 일 수 없습니다");
+        requireInternalLink(request.getLinkUrl());
         List<String> esntlIds = request.getRecipients().stream()
                 .map(NotificationDispatchRequest.Recipient::getEsntlId)
                 .toList();
@@ -115,6 +117,23 @@ public class NotificationService {
         }
         log.info("Dispatched {} notification(s) by administrator", recipients.size());
         return recipients.size();
+    }
+
+    /**
+     * 알림 링크는 이 앱 안의 경로만 받는다(2026-11-14). 화면(use-notifications)은 내부 경로가 아니면 링크를 버리지만, 서버는 관리자
+     * 발송의 임의 문자열을 그대로 저장했다 — 외부 주소·스킴·백슬래시·점 세그먼트는 저장 전에 거부한다. 비어 있으면 링크가 없는 알림이다.
+     */
+    static void requireInternalLink(String link) {
+        if (link == null || link.isBlank()) {
+            return;
+        }
+        String path = link.split("[?#]", 2)[0];
+        boolean internal = link.startsWith("/") && !link.startsWith("//") && link.indexOf('\\') < 0
+                && link.chars().noneMatch(Character::isISOControl)
+                && java.util.Arrays.stream(path.split("/", -1)).noneMatch(segment -> segment.equals(".") || segment.equals(".."));
+        if (!internal) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "알림 링크는 이 앱 안의 경로(/로 시작)만 쓸 수 있습니다.");
+        }
     }
 
     @Transactional

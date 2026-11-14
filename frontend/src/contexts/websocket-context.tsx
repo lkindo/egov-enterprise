@@ -1,8 +1,13 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
+import type { Client } from '@stomp/stompjs';
 import { useAuth } from './AuthContext';
+
+/**
+ * 연결 라이브러리(STOMP·SockJS)는 로그인한 사용자에게만 필요하다. 루트 공급자가 정적으로 가져오면 로그인 화면을 포함한 모든 첫
+ * 화면 번들에 실린다 — 연결을 시작할 때 불러온다(2026-11-14).
+ */
+const loadTransport = () => Promise.all([import('@stomp/stompjs'), import('sockjs-client')]);
 
 interface WebSocketContextType {
   client: Client | null;
@@ -62,43 +67,50 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!userId) return;
     let disposed = false;
+    let opened: Client | null = null;
 
-    const client = new Client({
-      // 동일 출처(same-origin) 상대 경로 → next.config rewrites('/ws/:path*')가 백엔드 WebSocket으로 프록시
-      // HttpOnly same-origin cookie authenticates the handshake; no token enters JS or the URL.
-      webSocketFactory: () => new SockJS('/ws', undefined, { transports: ['websocket', 'xhr-streaming', 'xhr-polling'] }),
-      reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
-    });
-
-    client.onConnect = () => {
+    // 불러오는 사이에 로그아웃·사용자 전환·언마운트가 끝났으면(disposed) 연결을 만들지 않는다 — 이전 사용자의 소켓이 남지 않게.
+    //   불러오지 못하면 연결하지 않는다. 소비자는 연결 없음으로 동작한다(알림은 폴링 보정).
+    void loadTransport().then(([{ Client: StompClient }, { default: SockJS }]) => {
       if (disposed) return;
-      store.set({ userId, identityId, authorizationVersion, client });
-      // Provider는 연결 수명만 소유한다. 여기서도 개인 큐를 구독하면 useNotifications 소비자의
-      // 구독과 중복되어 알림 하나당 토스트가 두 번 뜬다. 목적별 구독·payload 검증은 소비자가 맡는다.
-    };
+      const client = new StompClient({
+        // 동일 출처(same-origin) 상대 경로 → next.config rewrites('/ws/:path*')가 백엔드 WebSocket으로 프록시
+        // HttpOnly same-origin cookie authenticates the handshake; no token enters JS or the URL.
+        webSocketFactory: () => new SockJS('/ws', undefined, { transports: ['websocket', 'xhr-streaming', 'xhr-polling'] }),
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
+      });
+      opened = client;
 
-    client.onStompError = () => {
-      if (store.get()?.client === client) store.set(null);
-    };
+      client.onConnect = () => {
+        if (disposed) return;
+        store.set({ userId, identityId, authorizationVersion, client });
+        // Provider는 연결 수명만 소유한다. 여기서도 개인 큐를 구독하면 useNotifications 소비자의
+        // 구독과 중복되어 알림 하나당 토스트가 두 번 뜬다. 목적별 구독·payload 검증은 소비자가 맡는다.
+      };
 
-    client.onDisconnect = () => {
-      if (store.get()?.client === client) store.set(null);
-    };
+      client.onStompError = () => {
+        if (store.get()?.client === client) store.set(null);
+      };
 
-    // 서버가 소켓을 닫으면(권한이 바뀐 세션을 정책 위반으로 끊는 경우 등) stompjs 는 onDisconnect 가 아니라 이것만 부른다 — onDisconnect 는
-    // DISCONNECT 응답을 받을 때만 온다. 연결됨으로 남기면 소비자의 subscribe 가 'There is no underlying STOMP connection' 으로 던지고,
-    // 재연결 뒤에도 같은 클라이언트라 소비자가 다시 구독하지 않는다(2026-11-07 CUBRID 대표 E2E 에서 재현).
-    client.onWebSocketClose = () => {
-      if (store.get()?.client === client) store.set(null);
-    };
+      client.onDisconnect = () => {
+        if (store.get()?.client === client) store.set(null);
+      };
 
-    client.activate();
+      // 서버가 소켓을 닫으면(권한이 바뀐 세션을 정책 위반으로 끊는 경우 등) stompjs 는 onDisconnect 가 아니라 이것만 부른다 — onDisconnect 는
+      // DISCONNECT 응답을 받을 때만 온다. 연결됨으로 남기면 소비자의 subscribe 가 'There is no underlying STOMP connection' 으로 던지고,
+      // 재연결 뒤에도 같은 클라이언트라 소비자가 다시 구독하지 않는다(2026-11-07 CUBRID 대표 E2E 에서 재현).
+      client.onWebSocketClose = () => {
+        if (store.get()?.client === client) store.set(null);
+      };
+
+      client.activate();
+    }, () => undefined);
 
     return () => {
       disposed = true;
-      void client.deactivate();
+      if (opened) void opened.deactivate();
     };
   }, [store, userId, identityId, authorizationVersion]);
 
