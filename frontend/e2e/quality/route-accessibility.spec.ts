@@ -139,20 +139,36 @@ test.describe('Quality & Resilience', () => {
             test('/approvals/draft 에 axe 위반이 없다', async ({ page }) => {
                 // 기안 화면은 열리자마자 기안 대화상자를 띄운다 — 모달이 뒤의 h1 을 가리므로 대화상자 제목을 준비 신호로 삼고 그 상태를 감사한다.
                 await page.emulateMedia({ reducedMotion: 'reduce' });
+                // 임시저장 목록은 조회 중에 아무것도 그리지 않는다(행이 늦게 나타난다) — 응답이 온 뒤에 감사한다.
+                const temporaryDraftsLoaded = page.waitForResponse((response) => response.request().method() === 'GET'
+                    && new URL(response.url()).pathname === '/api/v1/approvals/temporary-drafts', { timeout: 30000 });
                 await page.goto('/approvals/draft');
                 const dialog = page.getByRole('dialog', { name: '새 결재 기안' });
                 await expect(dialog.getByRole('heading', { name: '새 결재 기안' })).toBeVisible({ timeout: 30000 });
                 await expectPurposeTitle(page, '새 결재 기안');
+                expect((await temporaryDraftsLoaded).ok(), '임시저장 목록 조회').toBe(true);
                 await expect(dialog.locator('[role="status"]').filter({ hasText: LOADING_TEXT })).toHaveCount(0);
                 await expectNoAccessibilityViolations(page, '/approvals/draft', { ready: false });
             });
+            // [2026-11-14] 이름을 내용에서 얻는 공용 부품(달력 날짜 단추·건수 탭)은 실제 브라우저가 계산한 이름도 본다 — sr-only·flex
+            //   경계에서 구분자가 끼는지는 jsdom 이 아니라 브라우저의 접근 이름 계산이 정한다. Chromium 은 숨김 글자 앞에 공백을 넣어
+            //   "14 일 금요일, …"·"게시글 0 건" 이 된다 — 보이는 숫자가 이름의 독립 낱말이라 WCAG 2.5.3 에 그대로 맞는다.
+            test('/smart-toolkit/schedule 에 axe 위반이 없다', async ({ page }) => {
+                await auditRoute(page, '/smart-toolkit/schedule', '일정 관리', async () => {
+                    await expect(page.getByRole('button', { name: /^\d{1,2} 일 [월화수목금토일]요일, \d{4}년 \d{1,2}월(, 오늘)?(, 선택됨)?$/ }).first())
+                        .toBeVisible();
+                });
+            });
+            test('/search 에 axe 위반이 없다', async ({ page }) => {
+                await auditRoute(page, '/search', '통합 검색', async () => {
+                    await expect(page.getByRole('tab', { name: /^임직원 \d+ 건$/ })).toBeVisible();
+                });
+            });
             for (const [route, purpose] of [
                 ['/approvals', '전자결재'],
-                ['/smart-toolkit/schedule', '일정 관리'],
                 ['/note', '쪽지함'],
                 ['/survey', '설문 목록'],
                 ['/events', '행사 참가'],
-                ['/search', '통합 검색'],
                 ['/cop/cmy/selectCommunityList', '커뮤니티 목록'],
                 ['/smart-toolkit/work-report', '업무 보고'],
                 ['/pages', '안내 페이지'],

@@ -15,7 +15,8 @@ const WEEKDAY = new Intl.DateTimeFormat("ko-KR", { weekday: "long" })
  * 날짜 단추의 이름은 내용으로 만든다(2026-11-14 원점 평가, 일정 화면 axe). react-day-picker 는 `aria-label`
  * ("2026년 11월 14일 금요일" 꼴, 오늘·선택은 영어 "Today, … selected")을 붙이는데, 보이는 숫자 "14" 가 그 이름의 낱말이 아니라
  * ("14일" 이 한 낱말이다) WCAG 2.5.3(label-content-name-mismatch)에 걸렸다. 보이는 숫자 뒤에 화면에는 보이지 않는 보충 글자를 붙여
- * 이름을 "14일 금요일, 2026년 11월, 오늘" 처럼 보이는 글자로 시작하게 한다.
+ * 이름을 보이는 글자로 시작하게 한다 — 브라우저는 숨김 글자 앞에 공백을 넣어 "14 일 금요일, 2026년 11월, 오늘" 로 읽는다(보이는
+ * 숫자가 독립 낱말이 된다). jsdom 은 공백 없이 "14일 …" 로 계산한다.
  */
 function CalendarDayButton({ "aria-label": _label, children, ...props }: DayButtonProps) {
   const { date } = props.day
@@ -78,7 +79,11 @@ function Calendar({
  ...classNames,
  }}
  {...props}
- components={{ DayButton: CalendarDayButton, ...props.components }}
+ // 호출자가 날짜 단추 이름·숫자 서식·달력 시간대를 직접 주면 라이브러리의 이름을 그대로 둔다 — 보충 글자는 기본 서식(숫자만)과
+ // 브라우저 시간대를 전제로 만들어, 그 조합에서는 이름이 겹치거나("14일일") 요일이 어긋나거나 호출자의 라벨을 잃는다.
+ components={props.labels?.labelDayButton || props.formatters?.formatDay || props.timeZone
+   ? props.components
+   : { DayButton: CalendarDayButton, ...props.components }}
  />
  )
 }
