@@ -64,7 +64,7 @@ export const DECISION_AREA_ROUTES = Object.freeze({
       'docs/03-guides/harness-improvement-pilot.md', 'docs/03-guides/non-e2e-verification-guide.md',
       'docs/03-guides/orchestration-protocol.md', 'docs/03-guides/testing-guide.md',
       'docs/03-guides/requirements-workspace-guide.md',
-      'docs/04-operations/dependabot-alert-census.md', 'docs/04-operations/load-test-guide.md',
+      'docs/04-operations/dependabot-alert-census.md', 'docs/04-operations/load-test-guide.md', 'docs/04-operations/maintainer-handover.md',
       'docs/04-operations/migration-release-log.md', 'docs/04-operations/sast-findings-review.md', 'docs/04-operations/secure-coding-weakness-baseline.md',
       'docs/04-operations/ui-quality-assisted-accessibility.md', 'docs/04-operations/ui-ux-baseline-protocol.md',
       'docs/04-operations/third-party-notices.md', 'docs/04-operations/verification-blindspots.md',
