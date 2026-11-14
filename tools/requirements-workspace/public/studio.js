@@ -8,7 +8,7 @@ const SOURCE_TYPES = [['other', '기타 — AI가 문서 종류를 판단'], ['r
 const CLASSIFICATIONS = [['internal', '내부'], ['public', '공개'], ['confidential', '대외비'], ['restricted', '제한']];
 const JOB_NAMES = { analyze: '문서 분석', enrich: '빈칸 보강', plan: '에픽·스토리 작성' };
 const JOB_STATUS = { running: '진행 중', done: '완료', failed: '실패', cancelled: '취소함', interrupted: '중단됨' };
-const SUMMARY_NAMES = { removed: '지운 스토리', added: '새 초안', enriched: '기존 초안 보강', proposed: '확정 건 변경 제안', conflict: '충돌', variant: '다른 표기(참고)', demoted: '참고로 내린 표기 차이', duplicate: '중복(근거만 연결)', stories: '스토리를 쓴 요구사항', questions: '질문', nothing: '찾지 못함', clauses: '분류한 조각', oversize: '너무 큰 조각' };
+const SUMMARY_NAMES = { removed: '지운 스토리', added: '새 초안', enriched: '기존 초안 보강', proposed: '확정 건 변경 제안', conflict: '충돌', variant: '다른 표기(참고)', demoted: '참고로 내린 표기 차이', grouped: '같은 질문으로 묶음', duplicate: '중복(근거만 연결)', stories: '스토리를 쓴 요구사항', questions: '질문', nothing: '찾지 못함', clauses: '분류한 조각', oversize: '너무 큰 조각' };
 const ERROR_HINTS = { AI_CLI_UNAVAILABLE: 'Claude CLI를 찾지 못했습니다. 이 PC에 설치하고 로그인해 주세요.', AI_CLI_FAILED: 'CLI 실행이 끝나지 않았습니다. 로그인과 사용 한도를 확인해 주세요.', AI_TIMEOUT: 'AI 응답 시간이 초과되었습니다.', AI_MODEL_MISMATCH: '지정한 모델과 실제 실행 모델이 달랐습니다.', STUDIO_REPEATED_FAILURE: '쓸 수 없는 응답이 연달아 왔습니다. 잠시 뒤 다시 실행해 주세요.', STUDIO_CALL_CAPACITY: '한 번의 실행에서 쓸 수 있는 호출 수에 닿았습니다. 다시 실행하면 이어서 진행합니다.', STUDIO_CAPACITY: '작업공간 하나에 담을 수 있는 항목 수를 넘었습니다.', STUDIO_ISSUE_CAPACITY: '질문·쟁점·참고의 수(닫은 것 포함)가 작업공간 하나에 담을 수 있는 한도에 닿았습니다.', REQUIREMENTS_TOO_LARGE: '작업공간 파일이 크기 한도(8MiB)에 닿았습니다.' };
 // A run that stopped at a workspace limit stops at the same place when it is run again.
 const LIMIT_ERRORS = ['STUDIO_CAPACITY', 'STUDIO_ISSUE_CAPACITY', 'REQUIREMENTS_TOO_LARGE'];
@@ -16,14 +16,16 @@ const LIMIT_ERRORS = ['STUDIO_CAPACITY', 'STUDIO_ISSUE_CAPACITY', 'REQUIREMENTS_
 // Text documents are split into clauses on this PC; anything that has to be looked at (scans, images, office files) is read by the model.
 const LOCAL_TEXT = /\.(?:txt|md|html?)$/i;
 const IMPORT_ERRORS = { FILE_NO_TEXT: '읽을 수 있는 본문이 없습니다', FILE_ENCODING_INVALID: '글자 인코딩을 읽지 못했습니다(UTF-8로 저장해 주세요)', FILE_TEXT_TOO_LARGE: '본문이 한도를 넘습니다(파일을 나누어 주세요)', FILE_TIMEOUT: '읽는 시간이 초과되었습니다', FILE_EXTRACTION_FAILED: '문서를 읽지 못했습니다', FILE_TYPE_UNSUPPORTED: '지원하지 않는 형식입니다', FILE_ENCRYPTED: '암호가 걸린 문서입니다', AI_DOCUMENT_UNREADABLE: 'AI가 본문을 읽지 못했습니다', AI_DOCUMENT_OUTPUT_INVALID: 'AI 판독 결과를 검증하지 못했습니다', AI_CLI_FAILED: 'Claude CLI 실행이 끝나지 않았습니다', AI_CLI_UNAVAILABLE: 'Claude CLI를 찾지 못했습니다', AI_TIMEOUT: 'AI 응답 시간이 초과되었습니다', interrupted: '실행기가 멈춰 중단되었습니다', cancelled: '취소되었습니다' };
-const ANALYZE_STAGES = ['조각 분류와 요구사항 후보 추출', '켜 둔 산출물의 항목 추출', '기존 요구사항·항목과 대조'];
+const ANALYZE_STAGES = ['조각 분류와 요구사항 후보 추출', '켜 둔 산출물의 항목 추출', '기존 요구사항·항목과 대조', '같은 질문 묶기'];
+const QUESTION_PAGE = 30;
 
 let token, workspaceId, view, pollTimer, uploading = null, lastUpload = null, busy = false;
 let tab = 'sources';
 const selected = { requirement: null, type: null, item: null, story: null };
 const filter = { status: 'all', category: '', query: '' };
-// Items whose wording notes are unfolded. The screen is redrawn on every poll, so what a person opened is kept here.
+// What a person unfolded: an item's wording notes, the question list, a group's questions. The screen is redrawn on every poll, so it is kept here.
 const unfolded = new Set();
+let questionLimit = QUESTION_PAGE;
 
 async function request(url, options = {}) {
   let response;
@@ -39,7 +41,12 @@ async function act(action, payload, message) {
   if (busy) return false;
   busy = true;
   try { view = await post('/api/action', { revision: view.revision, action, payload }); render(); if (message) toast(message); return true; }
-  catch (error) { toast(error.message); return false; }
+  catch (error) {
+    toast(error.message);
+    // The group a question belongs to changed since the screen was drawn: show it as it is now.
+    if (error.code === 'STUDIO_GROUP_CHANGED') try { view = await request('/api/studio'); render(); } catch { /* The next poll shows it. */ }
+    return false;
+  }
   finally { busy = false; schedule(); }
 }
 async function reload() { view = await request('/api/studio'); render(); schedule(); }
@@ -68,11 +75,20 @@ const requirements = () => view.items.filter(item => item.kind === 'requirement'
 const openIssues = id => view.issues.filter(issue => issue.open && issue.kind !== 'variant' && issue.itemId === id);
 const openVariants = id => view.issues.filter(issue => issue.open && issue.kind === 'variant' && issue.itemId === id);
 const proposalsOf = id => view.proposals.filter(proposal => proposal.itemId === id);
+// Questions that ask the same thing share a topic, the id of the first of them, and are answered together.
+const topicOf = issue => issue.topic ?? issue.id;
+const sameQuestions = issue => view.issues.filter(entry => entry.open && entry.kind === 'question' && topicOf(entry) === topicOf(issue));
+/** Open questions as the decisions a person has to make: one entry per group, the ones most records wait for first. */
+function questionGroups() {
+  const groups = new Map();
+  for (const issue of view.issues) if (issue.open && issue.kind === 'question') { const key = topicOf(issue); if (!groups.has(key)) groups.set(key, []); groups.get(key).push(issue); }
+  return [...groups.values()].map(members => ({ lead: members.find(issue => issue.id === topicOf(issue)) ?? members[0], members, items: [...new Set(members.map(issue => issue.itemId))] })).sort((left, right) => right.items.length - left.items.length);
+}
 const label = item => item.kind === 'requirement' ? item.number ?? '초안' : item.id;
 const filled = value => Array.isArray(value) ? value.length > 0 : Boolean(value);
 const needsAttention = item => item.status !== 'retired' && (item.flags.fresh || item.flags.enriched || proposalsOf(item.id).length || openIssues(item.id).length || item.sources.some(source => source.stale));
 const typeScore = id => { const list = itemsOf(id); return list.length ? Math.round(list.reduce((sum, item) => sum + item.score, 0) / list.length) : 0; };
-const pendingTotal = () => view.pending.classify + view.pending.merge + Object.values(view.pending.extract).reduce((sum, count) => sum + count, 0);
+const pendingTotal = () => view.pending.classify + view.pending.merge + view.pending.questions + Object.values(view.pending.extract).reduce((sum, count) => sum + count, 0);
 const lastJob = () => view.jobs.at(-1);
 
 /* ---------- small pieces ---------- */
@@ -132,8 +148,8 @@ function jobPanel() {
   const at = ANALYZE_STAGES.indexOf(job.stage);
   // Reading and comparing alternate: a few bundles are read, then their candidates are compared and become items.
   // A stage is finished when nothing is left for it, not when the run has moved past it once.
-  const left = [view.pending.classify, Object.values(view.pending.extract).reduce((sum, count) => sum + count, 0), view.pending.merge];
-  const leftText = [count => `남은 조각 ${count}개`, count => `남은 추출 ${count}건`, count => `남은 후보 ${count}건`];
+  const left = [view.pending.classify, Object.values(view.pending.extract).reduce((sum, count) => sum + count, 0), view.pending.merge, view.pending.questions];
+  const leftText = [count => `남은 조각 ${count}개`, count => `남은 추출 ${count}건`, count => `남은 후보 ${count}건`, count => `견줄 질문 ${count}건`];
   const finished = index => index < 2 && !left[0] && !left[index];
   const steps = job.kind === 'analyze' && running ? `<ol class="st-steps">${ANALYZE_STAGES.map((name, index) => `<li ${index === at ? 'aria-current="step"' : ''}>${index === at ? badge('진행 중', 'blue') : finished(index) ? badge('끝남', 'green') : badge('대기', 'outline')} ${esc(name)}${index === at ? ` <span class="muted">${job.done} / ${job.total}</span>` : left[index] ? ` <span class="muted">${leftText[index](left[index])}</span>` : ''}</li>`).join('')}</ol>` : '';
   const duration = job.completedAt ? clock(Math.max(0, (Date.parse(job.completedAt) - Date.parse(job.startedAt)) / 1000)) : null;
@@ -155,7 +171,7 @@ function viewSources() {
   <section class="panel"><div class="panel-head"><div><h2>등록한 문서</h2><small>문서는 언제든 더 넣을 수 있습니다. 넣은 문서만 새로 읽고, 앞서 만든 요구사항과 산출물에 이어 붙입니다.</small></div>
       <div class="row-actions">${pending ? `<button type="button" class="button secondary" data-a="run" ${view.active || uploading ? 'disabled' : ''}>AI 분석 진행 (대기 ${pending})</button>` : ''}<button type="button" class="button" data-a="upload" ${view.active || uploading ? 'disabled' : ''}>문서 추가</button></div></div>
     ${view.sources.length ? `<div class="table-wrap"><table><thead><tr><th>문서</th><th>조각</th><th>분류</th><th>요구사항 관련</th><th>산출물 종류별 관련 조각 (파란색은 작성 중인 산출물)</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty">아직 문서가 없습니다. 제안요청서, 회의록, 화면 캡처, 메모 등 어떤 문서든 넣을 수 있습니다.</div>'}
-    <div class="panel-body st-stack">${pending ? `<p class="st-small">분석 대기 — 분류할 조각 ${view.pending.classify}개${enabledWaiting.length ? ` · 산출물 항목 추출 ${enabledWaiting.map(([type, count]) => `${typeOf(type).name} ${count}`).join(', ')}` : ''}${view.pending.merge ? ` · 대조할 후보 ${view.pending.merge}건` : ''}</p>` : ''}
+    <div class="panel-body st-stack">${pending ? `<p class="st-small">분석 대기 — 분류할 조각 ${view.pending.classify}개${enabledWaiting.length ? ` · 산출물 항목 추출 ${enabledWaiting.map(([type, count]) => `${typeOf(type).name} ${count}`).join(', ')}` : ''}${view.pending.merge ? ` · 대조할 후보 ${view.pending.merge}건` : ''}${view.pending.questions ? ` · 앞선 질문과 견줄 질문 ${view.pending.questions}건` : ''}</p>` : ''}
       ${failedImports.length ? `<div class="st-note st-warn"><strong>판독하지 못한 문서</strong><ul class="st-list">${failedImports.map(job => `<li>${esc(job.filename)} — ${esc(job.errorCode ?? job.status)}</li>`).join('')}</ul><span class="st-small">원본은 보존되어 있습니다. 읽을 수 있는 PDF·이미지 사본으로 다시 넣어 주세요.</span></div>` : ''}
       ${view.sensitivityWarnings.length ? `<p class="st-small muted">민감정보 패턴 안내 — 요구사항·산출물 내용에서 ${view.sensitivityWarnings.reduce((sum, warning) => sum + warning.count, 0)}곳이 감지되었습니다. 문서를 밖으로 보내기 전에 내용을 확인해 주세요. 감지 여부가 완전한 검사는 아닙니다.</p>` : ''}
       <p class="muted st-small">조각마다 요구사항 분류와 관련 산출물 종류를 표시해 둡니다. 꺼 둔 산출물의 표시도 남으므로, 나중에 켜면 문서를 다시 읽지 않고 초안을 만듭니다.</p></div></section>`;
@@ -183,7 +199,27 @@ function issueNotes(item) {
     ? `<div class="st-note st-bad"><strong>문서 사이의 충돌</strong><span>${esc(issue.text)}</span>${issue.existing ? `<div><span class="st-small">지금 내용</span><blockquote>${esc(issue.existing)}</blockquote></div>` : ''}${issue.incoming ? `<div><span class="st-small">새 문서의 내용</span><blockquote>${esc(issue.incoming)}</blockquote></div>` : ''}
         ${!issue.incoming && issue.fields ? `<div><span class="st-small">새 문서에서 나온 내용</span><table class="st-spec">${fieldsOf(item.kind).filter(spec => spec.key !== 'category' && filled(issue.fields[spec.key])).map(spec => `<tr><th>${esc(spec.label)}</th><td>${fieldValue(spec, issue.fields[spec.key])}</td></tr>`).join('')}</table></div>` : ''}<div>${sourceLines(issue.sources)}</div>
         <div class="row-actions"><button type="button" class="button small secondary" data-a="issue-keep" data-v="${esc(issue.id)}">지금 내용 유지</button><button type="button" class="button small" data-a="issue-adopt" data-v="${esc(issue.id)}">새 문서의 내용으로 ${issue.existing ? '바꿈' : '추가'}</button></div></div>`
-    : `<div class="st-note st-bad"><strong>결정이 필요한 질문</strong><span>${esc(issue.text)}</span><div class="row-actions"><button type="button" class="button small" data-a="issue-answer" data-v="${esc(issue.id)}">답변하기</button><button type="button" class="button small secondary" data-a="issue-dismiss" data-v="${esc(issue.id)}">답 없이 닫기</button></div></div>`).join('');
+    : questionNote(issue, item)).join('');
+}
+const itemChips = (ids, limit) => `${ids.slice(0, limit).map(itemOf).filter(Boolean).map(other => itemButton(other, other.kind === 'requirement' ? 'go-requirement' : 'go-item')).join('')}${ids.length > limit ? `<span class="muted st-small">외 ${ids.length - limit}건</span>` : ''}`;
+function questionNote(issue, item) {
+  const others = sameQuestions(issue).filter(entry => entry.id !== issue.id), elsewhere = [...new Set(others.map(entry => entry.itemId))].filter(id => id !== item.id);
+  return `<div class="st-note st-bad"><strong>결정이 필요한 질문</strong><span>${esc(issue.text)}</span>
+    ${others.length ? `<span class="st-small">같은 것을 묻는 질문이 ${others.length}건 더 있습니다. 한 번 답하거나 닫으면 함께 처리됩니다.</span>${elsewhere.length ? `<div class="st-chips">${itemChips(elsewhere, 8)}</div>` : ''}` : ''}
+    <div class="row-actions"><button type="button" class="button small" data-a="issue-answer" data-v="${esc(issue.id)}">답변하기</button><button type="button" class="button small secondary" data-a="issue-dismiss" data-v="${esc(issue.id)}">답 없이 닫기</button>${others.length ? `<button type="button" class="button small ghost" data-a="issue-split" data-v="${esc(issue.id)}">이 질문만 따로 떼기</button>` : ''}</div></div>`;
+}
+// The other questions an answer or a close takes along, each with the record it is attached to, so a person sees them before deciding.
+const takenAlong = (group, issue) => `<ul class="st-list">${group.filter(entry => entry.id !== issue.id).map(entry => { const other = itemOf(entry.itemId); return `<li>${esc(entry.text)} <span class="muted st-small">— ${esc(other ? `${kindName(other.kind)} · ${other.name}` : '')}</span></li>`; }).join('')}</ul>`;
+/** Every open question once, however many records ask it: the decisions that are still open, the ones most records wait for first. */
+function questionPanel() {
+  const groups = questionGroups();
+  if (!groups.length) return '';
+  const total = groups.reduce((sum, group) => sum + group.members.length, 0), waiting = new Set(groups.flatMap(group => group.items)).size, shown = groups.slice(0, questionLimit);
+  return `<section class="panel panel-body"><details class="st-stack" data-notes="questions" ${unfolded.has('questions') ? 'open' : ''}><summary><strong>결정이 필요한 질문 ${groups.length}가지</strong> <span class="st-small">요구사항·산출물 항목 ${waiting}건이 답을 기다립니다.${total > groups.length ? ` 같은 것을 묻는 질문 ${total}건을 묶은 수입니다.` : ''}${view.pending.questions ? ` 아직 견주지 않은 질문 ${view.pending.questions}건은 ‘AI 분석 진행’ 때 묶습니다.` : ''}</span></summary>
+    ${shown.map(group => { const key = `q:${topicOf(group.lead)}`; return `<div class="st-note"><span>${esc(group.lead.text)}</span><div class="st-chips">${badge(`항목 ${group.items.length}건`, 'outline')}${itemChips(group.items, 6)}</div>
+      ${group.members.length > 1 ? `<details data-notes="${esc(key)}" ${unfolded.has(key) ? 'open' : ''}><summary class="st-small">묶인 질문 ${group.members.length}건 보기</summary><ul class="st-list">${group.members.map(issue => `<li>${esc(issue.text)} <span class="muted st-small">— ${esc(itemOf(issue.itemId)?.name ?? '')}</span> <button type="button" class="text-button" data-a="issue-split" data-v="${esc(issue.id)}">따로 떼기</button></li>`).join('')}</ul></details>` : ''}
+      <div class="row-actions"><button type="button" class="button small" data-a="issue-answer" data-v="${esc(group.lead.id)}">답변하기</button><button type="button" class="button small secondary" data-a="issue-dismiss" data-v="${esc(group.lead.id)}">답 없이 닫기</button></div></div>`; }).join('')}
+    ${groups.length > shown.length ? `<div class="row-actions"><button type="button" class="button small secondary" data-a="more-questions">${Math.min(QUESTION_PAGE, groups.length - shown.length)}가지 더 보기</button></div>` : ''}</details></section>`;
 }
 function proposalNotes(item) {
   return proposalsOf(item.id).map(proposal => { const rows = fieldsOf(item.kind).filter(spec => filled(proposal.fields[spec.key])); return `<div class="st-note st-warn"><strong>변경 제안</strong>
@@ -220,7 +256,7 @@ function viewRequirements() {
   return `<section class="panel"><div class="panel-head"><div><h2>요구사항</h2><small>${baseline ? `기준선 ${esc(baseline.id)} ‘${esc(baseline.name)}’ · 요구사항 ${baseline.counts.requirement ?? 0}건${outside ? ` · 그 뒤 바뀌거나 새로 확정된 것 ${outside}건` : ''}` : '아직 기준선이 없습니다. 확정한 요구사항을 묶어 기준선을 만듭니다.'}</small></div>
       <div class="row-actions"><button type="button" class="button small secondary" data-a="confirm-all" data-v="requirement" ${ready ? '' : 'disabled'}>검토 가능한 초안 ${ready}건 모두 확정</button><button type="button" class="button small secondary" data-a="baseline" ${count('confirmed') ? '' : 'disabled'}>기준선 만들기</button>
         <button type="button" class="button small secondary" data-a="new-item" data-v="requirement">요구사항 직접 추가</button><button type="button" class="button small secondary" data-a="document" data-v="requirements">요구사항정의서</button><button type="button" class="button small secondary" data-a="document" data-v="requirements-sheet">목록(CSV)</button><button type="button" class="button small secondary" data-a="document" data-v="rtm">요구사항추적표</button></div></div></section>
-  <div class="st-split"><section class="panel panel-body st-stack">
+  ${questionPanel()}<div class="st-split"><section class="panel panel-body st-stack">
       <div class="st-chips" role="group" aria-label="상태">${chips.map(([id, name]) => `<button type="button" class="st-chip" data-a="filter-status" data-v="${id}" aria-pressed="${filter.status === id}">${esc(name)}</button>`).join('')}</div>
       <div class="st-row"><select id="filter-category" aria-label="분류"><option value="">모든 분류</option>${view.catalog.categories.map(category => `<option value="${category.code}" ${filter.category === category.code ? 'selected' : ''}>${esc(category.name)}</option>`).join('')}</select>
         <input type="search" id="filter-query" class="search-input" placeholder="이름·내용 검색" aria-label="검색" value="${esc(filter.query)}"></div>
@@ -293,7 +329,7 @@ function render() {
   if (!view) return;
   const all = requirements().filter(item => item.status !== 'retired'), on = view.enabled, average = on.length ? Math.round(on.reduce((sum, id) => sum + typeScore(id), 0) / on.length) : 0;
   const stages = [['sources', '1. 자료함', `문서 ${view.sources.length}건 · 조각 ${view.sources.reduce((sum, source) => sum + source.clauses, 0)}개`],
-    ['requirements', '2. 요구사항', `확정 ${all.filter(item => item.status === 'confirmed').length} / ${all.length}건 · 쟁점 ${view.issues.filter(issue => issue.open && issue.kind !== 'variant').length}`],
+    ['requirements', '2. 요구사항', `확정 ${all.filter(item => item.status === 'confirmed').length} / ${all.length}건 · 쟁점 ${view.issues.filter(issue => issue.open && issue.kind === 'conflict').length + questionGroups().length}`],
     ['artifacts', '3. 분석·설계 산출물', `${on.length}종 작성 중 · 평균 ${average}%`], ['plan', '4. 에픽·스토리', view.plan?.stories.length ? `스토리 ${view.plan.stories.length}건` : '아직 만들지 않음']];
   const focus = document.activeElement?.id, caret = focus === 'filter-query' ? document.activeElement.selectionStart : null;
   $('#project-name').textContent = view.project?.name === PLACEHOLDER_PROJECT ? '프로젝트 이름 없음' : view.project?.name ?? '';
@@ -345,6 +381,18 @@ async function submitAction(action, payload, message) {
   view = await post('/api/action', { revision: view.revision, action, payload });
   render(); schedule(); if (message) toast(message);
 }
+/**
+ * Answers or closes a question together with the questions shown with it. The request names them, so if the group
+ * changed since the dialog opened nothing is closed; the screen then shows the group as it is now.
+ */
+async function decideQuestion(group, payload, message) {
+  try { await submitAction('studio.issue', { ...payload, group: group.map(entry => entry.id) }, message); }
+  catch (error) {
+    if (error.code !== 'STUDIO_GROUP_CHANGED') throw error;
+    $('#dialog').close(); await reload(); toast(error.message);
+    return false;
+  }
+}
 function runDialog(action, title, lines, payload = {}) {
   openDialog(title, `<ul class="st-list">${lines.map(line => `<li>${esc(line)}</li>`).join('')}</ul>${consentFields()}<p class="muted">Claude CLI 연결은 오프라인 AI가 아닙니다. 진행 중에도 화면을 닫을 수 있으며, 중지하면 끝난 부분은 남습니다.</p>`,
     { submit: '시작', onSubmit: async data => { await submitAction(action, { ...payload, ...consentOf(data) }); tab = action === 'studio.plan' ? 'plan' : action === 'studio.run' ? 'sources' : tab; render(); } });
@@ -354,6 +402,7 @@ function analyzeLines() {
   if (view.pending.classify) lines.push(`아직 분류하지 않은 조각 ${view.pending.classify}개를 묶음으로 나눠 분류하고 요구사항 후보를 뽑습니다.`);
   for (const [type, count] of Object.entries(view.pending.extract)) if (count) lines.push(`${typeOf(type).name}: 관련 조각 ${count}개에서 항목을 만듭니다.`);
   if (view.pending.merge) lines.push(`대조를 기다리는 후보 ${view.pending.merge}건을 기존 내용과 비교합니다.`);
+  if (view.pending.questions) lines.push(`질문 ${view.pending.questions}건을 앞서 나온 질문과 견주어, 같은 것을 묻는 질문은 한 번만 답하도록 묶습니다.`);
   lines.push('이미 분석한 문서는 다시 읽지 않습니다. 확정된 내용은 바꾸지 않고 변경 제안으로 올립니다.');
   return lines;
 }
@@ -482,9 +531,19 @@ async function handle(action, value) {
     case 'proposal-reject': await act('studio.proposal', { id: value, accept: false }, '반영하지 않았습니다.'); break;
     case 'issue-keep': await act('studio.issue', { id: value, choice: 'keep' }, '지금 내용을 유지하기로 기록했습니다.'); break;
     case 'issue-adopt': await act('studio.issue', { id: value, choice: 'adopt' }, '새 문서의 내용을 반영했습니다.'); break;
-    case 'issue-dismiss': await act('studio.issue', { id: value, choice: 'dismiss' }, '질문을 닫았습니다. 내용은 바뀌지 않았습니다.'); break;
+    case 'issue-dismiss': { const issue = view.issues.find(entry => entry.id === value);
+      if (!issue) break;
+      const group = sameQuestions(issue);
+      // Closing several questions at once cannot be undone, so it is confirmed first.
+      if (group.length < 2) await act('studio.issue', { id: value, choice: 'dismiss', group: [value] }, '질문을 닫았습니다. 내용은 바뀌지 않았습니다.');
+      else openDialog('답 없이 닫기', `<p>${esc(issue.text)}</p><p>같은 것을 묻는 질문 <strong>${group.length}건</strong>(항목 ${new Set(group.map(entry => entry.itemId)).size}건)을 답 없이 함께 닫습니다. 항목의 내용은 바뀌지 않습니다.</p>${takenAlong(group, issue)}`, { submit: '모두 닫기', onSubmit: async () => decideQuestion(group, { id: value, choice: 'dismiss' }, `같은 질문 ${group.length}건을 닫았습니다.`) });
+      break; }
     case 'issue-answer': { const issue = view.issues.find(entry => entry.id === value);
-      openDialog('질문에 답변', `<p>${esc(issue.text)}</p>${field('note', '답변', '<textarea name="note" rows="3" required></textarea>', '답변은 이 항목의 내용에 한 줄로 더해집니다.')}`, { onSubmit: async data => submitAction('studio.issue', { id: value, note: String(data.get('note') ?? '') }, '답변을 기록했습니다.') }); break; }
+      if (!issue) break;
+      const group = sameQuestions(issue);
+      openDialog('질문에 답변', `<p>${esc(issue.text)}</p>${group.length > 1 ? `<p class="st-small">같은 것을 묻는 질문 ${group.length}건(항목 ${new Set(group.map(entry => entry.itemId)).size}건)에 함께 답합니다.</p>${takenAlong(group, issue)}` : ''}${field('note', '답변', '<textarea name="note" rows="3" required></textarea>', group.length > 1 ? '답변은 질문이 붙은 항목마다 내용에 한 줄로 더해집니다.' : '답변은 이 항목의 내용에 한 줄로 더해집니다.')}`, { onSubmit: async data => decideQuestion(group, { id: value, note: String(data.get('note') ?? '') }, group.length > 1 ? `같은 질문 ${group.length}건에 답변을 기록했습니다.` : '답변을 기록했습니다.') }); break; }
+    case 'issue-split': await act('studio.issue.split', { id: value }, '묶음에서 떼었습니다. 이 질문은 따로 답합니다.'); break;
+    case 'more-questions': questionLimit += QUESTION_PAGE; render(); break;
     case 'baseline': { const confirmed = requirements().filter(entry => entry.status === 'confirmed').length, drafts = requirements().filter(entry => entry.status === 'draft').length;
       openDialog('기준선 만들기', `<p>지금 확정된 요구사항 <strong>${confirmed}건</strong>과 확정된 산출물 항목을 기준선으로 묶어 보관합니다. 초안 ${drafts}건은 들어가지 않고 계속 고도화할 수 있습니다.</p>${field('name', '기준선 이름', `<input type="text" name="name" value="${view.baselines.length ? '변경 반영' : '1차 요구사항 확정'}" required>`)}<p class="muted">기준선 뒤에도 문서를 넣을 수 있습니다. 기준선에 든 내용이 바뀌면 ‘이후 변경’으로 표시하고 다음 기준선에서 묶습니다.</p>`, { submit: '만들기', onSubmit: async data => submitAction('studio.baseline', { name: String(data.get('name') ?? '') }, '기준선을 만들었습니다.') }); break; }
     case 'enable': await act('studio.enable', { type: value, enabled: true }, (view.pending.waiting[value] ?? 0) ? '켰습니다. ‘AI 분석 진행’을 누르면 표시해 둔 조각으로 초안을 만듭니다.' : '켰습니다. 관련 문서를 넣거나 직접 작성해 주세요.'); selected.type = value; render(); break;
