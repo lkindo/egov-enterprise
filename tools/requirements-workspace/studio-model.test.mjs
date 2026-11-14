@@ -280,9 +280,35 @@ test('questions that ask the same thing are one decision: grouped only under a q
   assert.deepEqual([studio.issues.at(-1).topic === studio.issues.at(-1).id, pendingWork(studio, backlog).questions], [true, 0]);
   const cut = addCandidate(studio, { kind: 'requirement', name: '긴 요구', fields: { category: 'SFR', definition: '가'.repeat(FIELD_LIMITS.text + 10), details: ['세부'] }, evidence: cite('C-1'), questions: [asked] });
   assert.deepEqual(cut.questions.map(text => standsAlone({ text })), [true, false]);
-  // A topic belongs to questions only and has to name a question that leads.
+  // Nothing joins a question that stands alone either, whether it was raised as such or is the program's notice.
+  const own = studio.issues.at(-1);
+  raiseQuestions(studio, payment, ['식별자를 알려 주세요.', cut.questions[0]], cite('C-3'), NOW);
+  const [similar, notice] = studio.issues.slice(-2);
+  assert.deepEqual([own.alone, groupQuestion(studio, similar.id, own.id), groupQuestion(studio, notice.id), groupQuestion(studio, similar.id, notice.id), groupQuestion(studio, similar.id)], [1, false, true, false, true]);
+
+  // An answer goes to the record's list of details, or to its note when that list is full. When a record of the group can hold it
+  // in neither, nothing closes and no record is changed, not even the ones that had room.
+  const roomy = requirement(studio, '여유 있는 요구', ['조건']), full = requirement(studio, '가득 찬 요구', Array.from({ length: FIELD_LIMITS.listItems }, (unused, index) => `조건 ${index + 1}`));
+  raiseQuestions(studio, roomy, ['보관 기간은 얼마입니까?'], cite('C-1'), NOW); raiseQuestions(studio, full, ['보관 기간을 정해 주세요.'], cite('C-1'), NOW);
+  const [kept, joined] = studio.issues.slice(-2), both = [kept.id, joined.id];
+  assert.deepEqual([groupQuestion(studio, kept.id), groupQuestion(studio, joined.id, kept.id)], [true, true]);
+  full.note = '가'.repeat(FIELD_LIMITS.text - 3);
+  assert.throws(() => resolveIssue(studio, kept.id, { note: '5년 보관한다.', group: both }), { code: 'STUDIO_ANSWER_NO_ROOM' });
+  assert.deepEqual([kept.open, joined.open, roomy.fields.details, full.fields.details.length], [1, 1, ['조건'], FIELD_LIMITS.listItems]);
+  full.note = '기존 메모';
+  resolveIssue(studio, kept.id, { note: '5년 보관한다.', group: both });
+  assert.deepEqual([kept.open, joined.open, roomy.fields.details, full.fields.details.length, full.note], [0, 0, ['조건', '5년 보관한다.'], FIELD_LIMITS.listItems, '기존 메모 / 5년 보관한다.']);
+
+  // A topic belongs to questions only and names a question that leads; an open question is not left in the group of a closed one;
+  // a question that stands alone leads only itself.
   assert.equal(validateStudio(studio), true);
-  for (const broken of [draft => { draft.issues[4].topic = draft.issues[3].id; draft.issues[3].topic = draft.issues[2].id; }, draft => { draft.issues[0].topic = 'ISS-9999'; }, draft => { draft.issues.push({ id: 'ISS-7000', kind: 'conflict', itemId: booking.id, text: '충돌', evidence: [], open: 1, createdAt: NOW, topic: 'ISS-7000' }); }]) {
+  const stored = (id, open, extra) => ({ id, kind: 'question', itemId: booking.id, text: `저장된 질문 ${id}`, evidence: [], open, createdAt: NOW, ...extra });
+  const closedPair = structuredClone(studio); closedPair.issues.push(stored('ISS-7001', 0, { topic: 'ISS-7001' }), stored('ISS-7002', 0, { topic: 'ISS-7001' }));
+  assert.equal(validateStudio(closedPair), true, 'a closed group keeps its record');
+  for (const broken of [draft => { draft.issues[4].topic = draft.issues[3].id; draft.issues[3].topic = draft.issues[2].id; }, draft => { draft.issues[0].topic = 'ISS-9999'; }, draft => { draft.issues.push({ id: 'ISS-7000', kind: 'conflict', itemId: booking.id, text: '충돌', evidence: [], open: 1, createdAt: NOW, topic: 'ISS-7000' }); },
+    draft => { draft.issues.push(stored('ISS-7001', 0, { topic: 'ISS-7001' }), stored('ISS-7002', 1, { topic: 'ISS-7001' })); },
+    draft => { draft.issues.push(stored('ISS-7001', 1, { topic: 'ISS-7001', alone: 1 }), stored('ISS-7002', 1, { topic: 'ISS-7001' })); },
+    draft => { draft.issues.push(stored('ISS-7001', 1, { alone: 1 })); }, draft => { draft.issues.push(stored('ISS-7001', 1, { topic: 'ISS-7001', alone: true })); }]) {
     const draft = structuredClone(studio); broken(draft);
     assert.throws(() => validateStudio(draft), { code: 'STUDIO_STATE_INVALID' });
   }

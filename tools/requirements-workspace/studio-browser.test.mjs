@@ -206,6 +206,21 @@ test('documents become requirements, deliverables and stories through the studio
     await page.getByText('묶음에서 떼었습니다. 이 질문은 따로 답합니다.').waitFor();
     await page.getByText('결정이 필요한 질문 2가지', { exact: true }).waitFor();
     await page.getByRole('button', { name: /^2\. 요구사항 확정 4 \/ 5건 · 쟁점 2$/ }).waitFor();
+    // The request names the questions the person was shown. A request that names fewer than the group now holds — as when
+    // the group changed after the dialog opened — closes nothing: the dialog goes away and the group is shown as it is.
+    await page.route('**/api/action', async route => {
+      const body = JSON.parse(route.request().postData());
+      body.payload.group.pop();
+      await route.continue({ postData: JSON.stringify(body) });
+    }, { times: 1 });
+    await panel.getByRole('button', { name: '답변하기', exact: true }).first().click();
+    await page.getByLabel('답변', { exact: true }).fill('문자로 알린다.');
+    await page.getByRole('button', { name: '저장', exact: true }).click();
+    await page.getByText(/묶음이 화면에 보인 것과 달라졌습니다\. 아무것도 닫지 않았습니다\./).waitFor();
+    assert.equal(await page.locator('#dialog').evaluate(dialog => dialog.open), false);
+    await page.getByText('결정이 필요한 질문 2가지', { exact: true }).waitFor();
+    // The refused request is the one error the browser has logged so far.
+    assert.deepEqual(errors.splice(0), ['Failed to load resource: the server responded with a status of 400 (Bad Request)']);
     await panel.getByRole('button', { name: '답변하기', exact: true }).first().click();
     await page.getByText('같은 것을 묻는 질문 2건(항목 2건)에 함께 답합니다.', { exact: true }).waitFor();
     await page.locator('#dialog').getByText('— 엔터티정의서 · 알림', { exact: true }).waitFor();

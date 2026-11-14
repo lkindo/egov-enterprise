@@ -352,7 +352,9 @@ test('questions that ask the same thing are grouped by comparison and answered o
   // The next document repeats the open point on a new record, and two of its records are too long to keep whole.
   const lengthy = '이력을 빠짐없이 적는다 '.repeat(180);
   await act('source.save', sourceOf('SRC-C', '합성 설계 메모', [clause('C-1', '<entity-def:간편 결제 수단> (미결:결제 수단) 간편 결제 수단을 관리한다. 속성(수단 코드)'),
-    clause('C-2', `<entity-def:결제 이력> ${lengthy}`), clause('C-3', `<entity-def:환불 이력> ${lengthy}`)]));
+    clause('C-2', `<entity-def:결제 이력> ${lengthy}`), clause('C-3', `<entity-def:환불 이력> ${lengthy}`),
+    // An ordinary question in nearly the words of the program's notice: the notice is not compared with it either.
+    clause('C-4', '[SFR:설명 점검] (질문:엔터티 설명의 내용이 길이 한도를 넘는지 근거 조각과 대조해 나누어 적어 주세요.) 설명을 점검한다.')]));
   seen.length = 0;
   view = await run();
   const issueOf = id => engine.studio.view().issues.find(issue => issue.id === id), joined = view.issues.find(issue => issue.itemId === named(view, '간편 결제 수단', 'entity-def').id);
@@ -367,6 +369,31 @@ test('questions that ask the same thing are grouped by comparison and answered o
   await assert.rejects(async () => act('studio.issue.split', { id: joined.id }), { code: 'STUDIO_ISSUE_NOT_GROUPED' });
   await act('studio.issue', { id: later.id, choice: 'dismiss' });
   assert.deepEqual([issueOf(later.id).open, issueOf(joined.id).open], [0, 1]);
+});
+
+test('a question is compared with the question that leads a group even when only the group\'s other questions resemble it, and never with a question that stands alone', async t => {
+  const firstNear = request => ({ decisions: request.data.questions.map(question => ({ k: question.k, same: question.near[0] ?? '' })) });
+  const { act, run, seen, store } = await fixture(t, { overrides: { 'studio-group': firstNear } });
+  await act('source.save', sourceOf('SRC-A', '합성 요구 문서', [clause('C-1', '[SFR:이용료 결제] (미결:결제 수단) 승인 후 결제한다.'), clause('C-2', '<entity-def:회원> 회원 정보를 관리한다.')]));
+  let view = await run();
+  const lead = view.issues[0], payment = named(view, '이용료 결제');
+  // Enrichment leaves a question about the record's own empty field.
+  view = await run('studio.enrich', { itemId: named(view, '회원', 'entity-def').id });
+  const own = view.issues.at(-1);
+  assert.deepEqual([own.alone, own.topic, own.text], [1, own.id, '등록한 문서에서 찾지 못했습니다. 직접 알려 주세요.']);
+  // The group grew: a dozen questions that word the open point in other words than the one that leads it.
+  const worded = index => `간편 지불 방식의 허용 범위를 아직 확정하지 못했다. ${index}차 회의에서 다시 논의한다.`;
+  store.transact(store.read().revision, draft => { const studio = draft.metadata.studio; for (let index = 1; index <= 12; index++) { studio.seq.ISS += 1; studio.issues.push({ id: `ISS-${String(studio.seq.ISS).padStart(4, '0')}`, kind: 'question', itemId: payment.id, text: worded(index), evidence: [], open: 1, createdAt: 'synthetic', topic: lead.id }); } });
+  await act('source.save', sourceOf('SRC-B', '합성 회의록', [clause('C-1', `[SFR:간편 결제] (질문:${worded(13)}) 간편 결제를 지원한다.`), clause('C-2', '[SFR:시설 관리] (질문:등록한 문서에서 찾지 못했습니다. 직접 알려 주세요.) 시설을 등록한다.')]));
+  seen.length = 0;
+  view = await run();
+  const late = view.issues.find(issue => issue.itemId === named(view, '간편 결제').id), apart = view.issues.find(issue => issue.itemId === named(view, '시설 관리').id);
+  assert.deepEqual([view.jobs.at(-1).status, late.text, apart.text], ['done', worded(13), own.text]);
+  // The new question reads like the twelve, not like the one that leads them. It is still compared with that one, and only with it.
+  assert.deepEqual(seen.filter(entry => entry.phase === 'studio-group').map(entry => entry.request.data.questions.map(question => question.near)), [[[lead.id]]]);
+  assert.deepEqual([late.topic, view.jobs.at(-1).summary.grouped, view.pending.questions], [lead.id, 1, 0]);
+  // The question that reads exactly like the one enrichment left was not compared with it and leads itself.
+  assert.deepEqual([apart.topic, seen.some(entry => entry.phase === 'studio-group' && JSON.stringify(entry.request.data).includes(own.id))], [apart.id, false]);
 });
 
 test('planning sends only the epics that resemble the requirements, however many epics exist', async t => {

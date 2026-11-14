@@ -105,16 +105,21 @@ export function validateStudio(studio) {
     validateFields(item.kind, proposal.fields);
   }
   for (const issue of studio.issues) {
-    exact(issue, ['id', 'kind', 'itemId', 'text', 'field', 'existing', 'incoming', 'fields', 'evidence', 'open', 'resolution', 'createdAt', 'topic']);
+    exact(issue, ['id', 'kind', 'itemId', 'text', 'field', 'existing', 'incoming', 'fields', 'evidence', 'open', 'resolution', 'createdAt', 'topic', 'alone']);
     unique(issue.id); validateEvidence(issue.evidence);
     const item = studio.items.find(entry => entry.id === issue.itemId);
     if (!item || !ISSUE_KINDS.includes(issue.kind) || !issue.text || issue.text !== clean(issue.text, 1000) || ![0, 1].includes(issue.open) || typeof issue.createdAt !== 'string') fail('STUDIO_STATE_INVALID');
     if (issue.fields !== undefined) validateFields(item.kind, issue.fields);
     for (const key of ['field', 'existing', 'incoming', 'resolution']) if (issue[key] !== undefined && (typeof issue[key] !== 'string' || issue[key].length > FIELD_LIMITS.text)) fail('STUDIO_STATE_INVALID');
   }
-  // Only a question has a topic, and it names a question that leads a group: one whose topic is itself.
+  // Only a question has a topic, and it names a question that leads a group: one whose topic is itself. An open question
+  // is never left in the group of a closed one, and a question that stands alone leads only itself.
   const questions = new Map(studio.issues.filter(issue => issue.kind === 'question').map(issue => [issue.id, issue]));
-  for (const issue of studio.issues) if (issue.topic !== undefined && (issue.kind !== 'question' || questions.get(issue.topic)?.topic !== issue.topic)) fail('STUDIO_STATE_INVALID');
+  for (const issue of studio.issues) {
+    const lead = questions.get(issue.topic);
+    if (issue.topic !== undefined && (issue.kind !== 'question' || lead?.topic !== issue.topic || (issue.open && !lead.open) || (lead !== issue && lead.alone))) fail('STUDIO_STATE_INVALID');
+    if (issue.alone !== undefined && (issue.alone !== 1 || issue.topic !== issue.id)) fail('STUDIO_STATE_INVALID');
+  }
   for (const baseline of studio.baselines) {
     exact(baseline, ['id', 'name', 'createdAt', 'ref', 'counts']);
     if (!/^BL-\d{1,4}$/.test(baseline.id ?? '') || !baseline.name || baseline.name !== clean(baseline.name, 120) || typeof baseline.createdAt !== 'string' || !plain(baseline.ref) || !plain(baseline.counts) || Object.values(baseline.counts).some(value => !count(value))) fail('STUDIO_STATE_INVALID');
@@ -155,9 +160,14 @@ export const proposalsOf = (studio, id) => studio.proposals.filter(proposal => p
 export const ungroupedQuestions = studio => studio.issues.filter(issue => issue.open && issue.kind === 'question' && issue.topic === undefined);
 /** The open questions that ask what this one asks, itself included. A person answers them once. */
 export const questionGroup = (studio, issue) => issue.topic === undefined ? [issue] : studio.issues.filter(entry => entry.open && entry.kind === 'question' && entry.topic === issue.topic);
-/** A notice the program attaches when content was cut is about that one record and never joins a group. */
+/**
+ * A question about one record's own content is never compared with the
+ * questions of other records, in either direction: it joins no group and no
+ * question joins it. These are the questions raised as `alone` and the notice
+ * the program attaches when content was cut.
+ */
 const CUT_NOTICE = '길이 한도를 넘어 일부만 담겼습니다';
-export const standsAlone = issue => issue.text.includes(CUT_NOTICE);
+export const standsAlone = issue => issue.alone === 1 || issue.text.includes(CUT_NOTICE);
 
 /** What still has to be sent to the model, derived from state. Nothing is queued separately, so an interrupted run resumes by running again. */
 export function pendingWork(studio, backlog) {
@@ -231,7 +241,7 @@ export function raiseQuestions(studio, item, questions, evidence, now, alone = f
     if (studio.issues.some(issue => issue.kind === 'question' && issue.itemId === item.id && issue.text === text)) continue;
     if (studio.issues.length >= STUDIO_LIMITS.issues) fail('STUDIO_ISSUE_CAPACITY');
     const id = nextId(studio, 'ISS');
-    studio.issues.push({ id, kind: 'question', itemId: item.id, text, evidence: evidenceList(evidence), open: 1, createdAt: now, ...(alone ? { topic: id } : {}) });
+    studio.issues.push({ id, kind: 'question', itemId: item.id, text, evidence: evidenceList(evidence), open: 1, createdAt: now, ...(alone ? { topic: id, alone: 1 } : {}) });
     added += 1;
   }
   return added;
@@ -241,13 +251,13 @@ export function raiseQuestions(studio, item, questions, evidence, now, alone = f
  * earlier open question and joins that one's group, or (no `leadId`) it leads a
  * group of its own. Returns false when nothing was recorded — the question was
  * closed or grouped meanwhile, or the one it was compared with no longer leads
- * an open group — so the caller compares it again.
+ * an open group or stands alone — so the caller compares it again.
  */
 export function groupQuestion(studio, id, leadId) {
   const issue = ungroupedQuestions(studio).find(entry => entry.id === id);
   if (!issue) return false;
   if (leadId === undefined) { issue.topic = issue.id; return true; }
-  const lead = studio.issues.find(entry => entry.id === leadId && entry.open && entry.kind === 'question' && entry.topic === entry.id);
+  const lead = studio.issues.find(entry => entry.id === leadId && entry.open && entry.kind === 'question' && entry.topic === entry.id && !standsAlone(entry));
   if (!lead) return false;
   issue.topic = lead.id;
   return true;
@@ -429,6 +439,18 @@ export function decideProposal(studio, id, accept) {
   return item;
 }
 /**
+ * Where a person's answer goes on a record: its list of details or rules, or
+ * its note when the record has no such list or the list is full. Returns what
+ * to change, or null when neither can hold the answer whole.
+ */
+function withAnswer(item, answer) {
+  const spec = fieldsOf(item.kind).find(entry => entry.key === 'details' || entry.key === 'rules');
+  const list = spec ? normalizeField(spec, [...item.fields[spec.key], answer]) : [];
+  if (list.includes(answer)) return { fields: { ...item.fields, [spec.key]: list } };
+  const note = clean([item.note, answer].filter(Boolean).join(' / '), FIELD_LIMITS.text);
+  return note.endsWith(answer) ? { note } : null;
+}
+/**
  * Closes an issue with a person's decision. `adopt` puts the new statement in
  * place of the one it contradicts when that statement is still there, and adds
  * it otherwise. A question is closed with the person's answer, or dismissed;
@@ -446,18 +468,14 @@ export function resolveIssue(studio, id, { choice, note, group }) {
     if ((members.length > 1 || group !== undefined) && !(Array.isArray(group) && same([...group].sort(), members.map(entry => entry.id).sort()))) fail('STUDIO_GROUP_CHANGED');
     // A question is the model's; a person may close it without an answer and the record stays as it is.
     if (choice !== 'dismiss' && !answer) fail('STUDIO_ANSWER_REQUIRED');
-    const answered = new Set();
-    for (const entry of members) {
-      const target = itemById(studio, entry.itemId);
-      if (choice !== 'dismiss' && !answered.has(target.id)) {
-        const details = fieldsOf(target.kind).find(spec => spec.key === 'details' || spec.key === 'rules');
-        if (details) target.fields[details.key] = normalizeField(details, [...target.fields[details.key], answer]);
-        else target.note = clean([target.note, answer].filter(Boolean).join(' / '), FIELD_LIMITS.text);
-        touch(target); answered.add(target.id);
-      }
-      entry.resolution = choice === 'dismiss' ? '답하지 않고 닫음' : answer;
-      entry.open = 0;
-    }
+    // Every record is checked before any is changed: an answer that one of them cannot hold whole closes nothing.
+    const written = choice === 'dismiss' ? [] : [...new Set(members.map(entry => entry.itemId))].map(itemId => {
+      const target = itemById(studio, itemId), next = withAnswer(target, answer);
+      if (!next) fail('STUDIO_ANSWER_NO_ROOM');
+      return [target, next];
+    });
+    for (const [target, next] of written) { Object.assign(target, next); touch(target); }
+    for (const entry of members) { entry.resolution = choice === 'dismiss' ? '답하지 않고 닫음' : answer; entry.open = 0; }
   } else {
     if (!['keep', 'adopt'].includes(choice)) fail('STUDIO_CHOICE_INVALID');
     if (choice === 'adopt') {

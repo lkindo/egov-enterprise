@@ -172,8 +172,9 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
   /**
    * Compares open questions with the earlier open ones, so that what several
    * records ask in common is answered once. A question that resembles no
-   * earlier one leads a group of its own without a model call; so does a
-   * notice of the program, which is about its own record. Questions that
+   * earlier one leads a group of its own without a model call. A question
+   * about one record's own content is compared with nothing and nothing is
+   * compared with it. Questions that
    * resemble one already taken in the same round wait, so the earlier one
    * leads a group by then. A judgement is recorded only if the question it
    * names still leads an open group; otherwise the question is compared again.
@@ -188,11 +189,13 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
       const open = new Map(studio.issues.filter(issue => issue.open && issue.kind === 'question').map(issue => [issue.id, issue]));
       const index = createIndex([...open.values()].map(issue => ({ id: issue.id, parts: [[issue.text, 1]] })));
       const entry = question => ({ question, item: itemById(studio, question.itemId) });
+      // A question that resembles the other questions of a group is compared with the one that leads the group.
+      const leadOf = other => other.topic === undefined ? undefined : open.get(other.topic);
       const direct = [], groups = [[]], taken = new Set();
       for (const question of waiting.slice(0, 200)) {
-        const hits = index.search([[question.text, 1]], 12, 0.18).filter(hit => hit.id !== question.id);
-        if (hits.some(hit => taken.has(hit.id))) continue;
-        const near = standsAlone(question) ? [] : hits.map(hit => open.get(hit.id)).filter(other => other.topic === other.id).slice(0, GROUP_NEAR).map(entry);
+        const hits = index.search([[question.text, 1]], 24, 0.18).filter(hit => hit.id !== question.id).map(hit => open.get(hit.id));
+        if (hits.some(other => taken.has(other.id))) continue;
+        const near = standsAlone(question) ? [] : [...new Set(hits.map(leadOf))].filter(lead => lead && !standsAlone(lead)).slice(0, GROUP_NEAR).map(entry);
         if (!near.length) direct.push({ id: question.id });
         else {
           if (groups.at(-1).length >= GROUP_BATCH) { if (groups.length >= concurrency) continue; groups.push([]); }

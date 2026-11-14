@@ -5,11 +5,12 @@
 //   속성(예약번호, 이용 일시)  attributes of an entity item
 //   (미정) …                 raises a question on the candidate
 //   (미결:결제 수단) …        raises the same open point on whatever the clause yields
+//   (질문:무엇으로 합니까?) …  raises that question, word for word
 export const STUDIO_MODEL = 'claude-opus-5-5';
-const requirementMark = /\[([A-Z]{3}):([^\]]+)\]/, artifactMark = /<([a-z-]+):([^>]+)>/g, openMark = /\(미결:([^)]+)\)/;
-const strip = text => text.replace(requirementMark, '').replace(artifactMark, '').replace(openMark, '').replace(/속성\([^)]*\)/, '').trim();
+const requirementMark = /\[([A-Z]{3}):([^\]]+)\]/, artifactMark = /<([a-z-]+):([^>]+)>/g, openMark = /\(미결:([^)]+)\)/, askMark = /\(질문:([^)]+)\)/;
+const strip = text => text.replace(requirementMark, '').replace(artifactMark, '').replace(openMark, '').replace(askMark, '').replace(/속성\([^)]*\)/, '').trim();
 const label = value => String(value).replace(/\s+/g, '').toLowerCase();
-const openPoint = text => { const mark = text.match(openMark); return mark ? [`${mark[1]}이 정해지지 않았습니다. 어떻게 정합니까?`] : []; };
+const openPoint = text => { const mark = text.match(openMark), ask = text.match(askMark); return [...(mark ? [`${mark[1]}이 정해지지 않았습니다. 어떻게 정합니까?`] : []), ...(ask ? [ask[1]] : [])]; };
 
 export function classifyReply(request) {
   const clauses = [], candidates = [];
