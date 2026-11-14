@@ -149,6 +149,7 @@ services:
       OTLP_METRICS_EXPORT_ENABLED:
       OTLP_METRICS_URL:
       # [2026-09-14 ADR-0019] 요청 제한 한도. 낮추는 순서는 application.yml 의 rate-limit 주석을 따른다.
+      #   로그인 한도는 edge 도 같은 값을 쓴다(ADR-0059, 아래 edge 의 EDGE_LOGIN_REQUESTS_PER_MINUTE) — 올리면 둘이 함께 오른다.
       RATE_LIMIT_REQUESTS_PER_MINUTE:
       RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE:
       JWT_REFRESH_TOKEN_VALIDITY_MS:
@@ -239,6 +240,8 @@ services:
       # 앞단 LB·TLS 종단 대역. 없으면 루프백(= 아무 상위도 신뢰하지 않음).
       EDGE_TRUSTED_UPSTREAM: ${EDGE_TRUSTED_UPSTREAM:-127.0.0.1/32}
       EDGE_CLIENT_MAX_BODY_SIZE: ${EDGE_CLIENT_MAX_BODY_SIZE:-50m}
+      # 로그인 요청 제한(ADR-0059) — api 의 로그인 한도와 같은 변수다. api 를 여러 대 띄워도 주소당 한도가 지켜진다.
+      EDGE_LOGIN_REQUESTS_PER_MINUTE: ${RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE:-30}
       # 템플릿 치환을 EDGE_* 로 한정한다 — nginx 변수($remote_addr 등)를 환경변수로 오인해 지우지 않게 한다.
       NGINX_ENVSUBST_FILTER: "^EDGE_"
     volumes:

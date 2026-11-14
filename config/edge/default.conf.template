@@ -21,6 +21,31 @@ map $http_upgrade $connection_upgrade {
     ''      close;
 }
 
+# 로그인 요청 제한 (ADR-0059)
+#
+# 백엔드 로그인 버킷(RateLimitFilter)은 인스턴스 메모리라 api 를 여러 대 띄우면 한 주소의 시도가 대수만큼 늘어난다.
+# 브라우저의 모든 요청이 지나는 여기서 같은 한도를 한 번 더 건다. 한도는 백엔드와 같은 변수
+# RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE 에서 온다(운영 오버레이가 EDGE_LOGIN_REQUESTS_PER_MINUTE 로 넘긴다).
+#   경로 집합은 백엔드 로그인 버킷과 같다. 판정은 nginx 가 디코딩·정규화한 $uri 로 한다 — 인코딩(%6e)이나 중복 슬래시로
+#   비껴가지 못한다. 키가 빈 요청(그 밖의 경로)은 세지 않는다.
+map $uri $edge_login_limit_key {
+    default                         "";
+    ~*^/api/auth/(login|mfa/)       $binary_remote_addr;
+    ~*^/api/v1/auth/(login|mfa/)    $binary_remote_addr;
+    ~*^/api/v1/users/me/password    $binary_remote_addr;
+}
+
+# 거부 본문은 그 경로의 실패 응답 계약과 같다 — 화면은 백엔드가 막을 때와 같은 안내를 보인다.
+#   로그인 BFF: frontend/src/lib/auth/login-error.ts, 추가 인증 BFF: frontend/src/app/api/auth/mfa/[...path]/route.ts,
+#   백엔드 직접 경로: RateLimitFilter. 문구가 갈라지면 edge 신뢰 경계 계약이 붉다.
+map $uri $edge_login_limited_body {
+    default                         '{"success":false,"code":"C429","message":"Rate limit exceeded. Too many requests from this IP."}';
+    ~*^/api/auth/login              '{"success":false,"code":"LOGIN_RATE_LIMITED","message":"로그인 요청이 많습니다. 잠시 후 다시 시도해주세요."}';
+    ~*^/api/auth/mfa/               '{"success":false,"message":"인증 요청이 많습니다. 잠시 후 다시 시도해 주세요."}';
+}
+
+limit_req_zone $edge_login_limit_key zone=edge_login:10m rate=${EDGE_LOGIN_REQUESTS_PER_MINUTE}r/m;
+
 server {
     listen 8080;
     server_name _;
@@ -39,7 +64,21 @@ server {
         return 200;
     }
 
+    # 로그인 요청 제한의 거부 응답(ADR-0059). 뒤 서비스가 보낸 429 는 여기로 오지 않는다(proxy_intercept_errors 꺼짐).
+    location @edge_login_limited {
+        default_type "application/json; charset=utf-8";
+        add_header Cache-Control "no-store" always;
+        add_header X-Rate-Limit-Retry-After-Seconds 60 always;
+        return 429 $edge_login_limited_body;
+    }
+
     location / {
+        # 위 map 이 로그인 경로에만 키를 준다. 버스트는 한도와 같고 기다리게 하지 않는다(백엔드 토큰 버킷과 같은 꼴).
+        limit_req zone=edge_login burst=${EDGE_LOGIN_REQUESTS_PER_MINUTE} nodelay;
+        limit_req_status 429;
+        limit_req_log_level warn;
+        error_page 429 = @edge_login_limited;
+
         proxy_pass http://frontend:3000;
         proxy_http_version 1.1;
 

@@ -36,6 +36,33 @@ test('every way back to spoofable or collapsed client IPs is red', () => {
   }
 });
 
+test('every way the edge login limit drifts from the backend bucket or the screens is red (ADR-0059)', () => {
+  const T = PATHS.edgeTemplate;
+  const cases = [
+    ['login key map removed', mutate(T, 'map $uri $edge_login_limit_key', 'map $uri $edge_removed_key'), /로그인 경로 판정/],
+    ['other paths counted too', mutate(T, '    default                         "";', '    default                         $binary_remote_addr;'), /기본 키가 비어 있지 않습니다/],
+    ['MFA BFF path dropped', mutate(T, '    ~*^/api/auth/(login|mfa/)       $binary_remote_addr;', '    ~*^/api/auth/(login)            $binary_remote_addr;'), /\/api\/auth\/\(login\|mfa\/\) 를 접속 주소로/],
+    ['password path dropped', mutate(T, '    ~*^/api/v1/users/me/password    $binary_remote_addr;', ''), /\/api\/v1\/users\/me\/password 를 접속 주소로/],
+    ['backend password path moved', mutate(PATHS.backendRateLimitFilter, 'PASSWORD_CHANGE_PATH = "/api/v1/users/me/password"', 'PASSWORD_CHANGE_PATH = "/api/v1/account/password"'), /비밀번호 변경 경로\(\/api\/v1\/account\/password\)/],
+    ['rate hard-coded', mutate(T, 'rate=${EDGE_LOGIN_REQUESTS_PER_MINUTE}r/m', 'rate=30r/m'), /EDGE_LOGIN_REQUESTS_PER_MINUTE\(분당\)/],
+    ['limit not applied to the proxy', mutate(T, '        limit_req zone=edge_login burst=${EDGE_LOGIN_REQUESTS_PER_MINUTE} nodelay;', ''), /limit_req zone=edge_login burst=한도 nodelay/],
+    ['burst queues instead of rejecting', mutate(T, 'burst=${EDGE_LOGIN_REQUESTS_PER_MINUTE} nodelay;', 'burst=${EDGE_LOGIN_REQUESTS_PER_MINUTE};'), /limit_req zone=edge_login burst=한도 nodelay/],
+    ['rejection becomes 503', mutate(T, 'limit_req_status 429;', 'limit_req_status 503;'), /거부 상태가 429 가 아닙니다/],
+    ['rejection loses the contract body', mutate(T, 'error_page 429 = @edge_login_limited;', ''), /계약 본문\(@edge_login_limited\)/],
+    ['named location returns another status', mutate(T, 'return 429 $edge_login_limited_body;', 'return 503 $edge_login_limited_body;'), /429 와 경로별 본문/],
+    ['screen message changed alone', mutate(PATHS.loginFailureMessages, "LOGIN_RATE_LIMITED_MESSAGE = '로그인 요청이 많습니다.", "LOGIN_RATE_LIMITED_MESSAGE = '요청이 많습니다."), /로그인 BFF 거부 본문/],
+    ['MFA BFF message changed alone', mutate(PATHS.mfaBffRoute, "status === 429 ? '인증 요청이 많습니다.", "status === 429 ? '요청이 많습니다."), /추가 인증 BFF 거부 본문/],
+    ['backend body changed alone', mutate(PATHS.backendRateLimitFilter, 'Rate limit exceeded. Too many requests from this IP.', 'Too many requests.'), /백엔드 직접 경로 거부 본문/],
+    ['edge limit not forwarded', mutate(PATHS.composeProd, '      EDGE_LOGIN_REQUESTS_PER_MINUTE: ${RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE:-30}', '      # removed'), /같은 변수\(RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE\)/],
+    ['edge limit uses its own variable', mutate(PATHS.composeProd, 'EDGE_LOGIN_REQUESTS_PER_MINUTE: ${RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE:-30}', 'EDGE_LOGIN_REQUESTS_PER_MINUTE: ${EDGE_LOGIN_REQUESTS_PER_MINUTE:-30}'), /같은 변수\(RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE\)/],
+    ['edge default drifts from the backend default', mutate(PATHS.composeProd, '${RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE:-30}', '${RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE:-60}'), /기본값\(60\)이 백엔드 기본값\(30\)/],
+  ];
+  for (const [name, files, expected] of cases) {
+    const errors = evaluateEdgeTrustBoundary(files);
+    assert.ok(errors.some((error) => expected.test(error)), `${name} was not detected: ${JSON.stringify(errors)}`);
+  }
+});
+
 test('a comment that only mentions the helper does not satisfy a route', () => {
   const route = AUTH_BFF_ROUTES[1];
   const files = mutate(route, '...forwardedClientIpHeaders(request.headers),', '// ...forwardedClientIpHeaders(request.headers),');

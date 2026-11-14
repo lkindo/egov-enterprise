@@ -41,7 +41,7 @@
 | [ADR-0032](ADR-0032-migration-pit-two-slots.md) | 이관 PIT 여덟 범위의 두 슬롯 실행과 실측 긴 순서 | Accepted — 일부 ADR-0044로 대체 |
 | [ADR-0033](ADR-0033-encrypted-mail-delivery-snapshot.md) | 메일 자동 복구용 접수 당시 수신주소의 암호화 보관과 완료 후 정리 | Accepted |
 | [ADR-0034](ADR-0034-retire-ended-authorization-surfaces.md) | 종료한 구 인가·비공식결재 API 경로 제거와 집행 지점 없는 권한 퇴역 | Accepted |
-| [ADR-0035](ADR-0035-login-rate-limit-default.md) | 로그인 요청 제한의 템플릿 기본값 인하(IP당 분당 30) | Accepted |
+| [ADR-0035](ADR-0035-login-rate-limit-default.md) | 로그인 요청 제한의 템플릿 기본값 인하(IP당 분당 30) | Accepted — 일부 ADR-0059로 대체 |
 | [ADR-0036](ADR-0036-api-paging-and-created-status-conventions.md) | 목록의 1 기반 page·size 통일·잘못된 입력 400, 자원을 만드는 POST 의 201·새 식별자 본문 | Accepted |
 | [ADR-0037](ADR-0037-product-pit-six-slots.md) | 제품 PIT 여섯 슬롯과 실측 긴 순서, 효과 없으면 4로 되돌림 | Accepted — 일부 ADR-0044로 대체 |
 | [ADR-0038](ADR-0038-credential-cookie-csrf-token.md) | 쿠키 자격을 실은 쓰기 요청에 이중 제출 CSRF 토큰(SockJS는 허용 Origin) | Accepted |
@@ -65,3 +65,4 @@
 | [ADR-0056](ADR-0056-requirements-wording-notes.md) | 요구사항 스튜디오의 문서마다 다른 표기는 확정을 막지 않는 참고, 모델이 판정한 충돌·질문만 쟁점 | Accepted |
 | [ADR-0057](ADR-0057-adopter-java-and-permission-registration.md) | 원본 인증·승인 기록을 보존하는 생성 프로젝트 Java·미배정 권한 추가분 등록과 별도 기술 검증 | Accepted |
 | [ADR-0058](ADR-0058-requirements-question-groups.md) | 요구사항 스튜디오의 같은 것을 묻는 질문은 한 묶음으로 한 번만 답하고, 확정을 막는 기준은 그대로 | Accepted |
+| [ADR-0059](ADR-0059-edge-login-rate-limit.md) | 운영 앞단 프록시(edge)가 로그인·추가 인증·비밀번호 변경을 접속 주소당 백엔드와 같은 한도로 한 번 더 제한 | Accepted |
