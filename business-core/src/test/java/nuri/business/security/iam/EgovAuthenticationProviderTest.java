@@ -238,8 +238,55 @@ class EgovAuthenticationProviderTest {
                 .isInstanceOf(BadCredentialsException.class)
                 .isNotInstanceOf(AuthenticationServiceException.class);
 
-        verify(passwordEncoder, never()).matches(anyString(), anyString());
+        // 표준 인코더로 레거시 해시를 검증하지 않는다. 대신 실패 작업량을 없는 계정과 맞추려고 더미 해시를 한 번 검증한다
+        // (SHA-256 실패가 즉시 끝나 응답 시간만으로 미전환 활성 계정을 가려내지 못하게).
+        verify(passwordEncoder, never()).matches(anyString(), org.mockito.ArgumentMatchers.eq("hashedPassword"));
+        verify(passwordEncoder, never()).matches(anyString(), org.mockito.ArgumentMatchers.eq("{egov}hashedPassword"));
+        verify(passwordEncoder).matches("wrongpassword", "{bcrypt}isolated-dummy");
         assertThat(testUser.getLckCnt()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("[2026-11-14] 낮은 비용 bcrypt 계정의 실패는 현재 비용 한 번과 같은 작업량이 되도록 더미 검증을 더한다")
+    void authenticate_lowerCostMismatch_padsVerificationWork() {
+        User lowerCostUser = User.builder()
+                .userId("lowcost")
+                .esntlId("USR_0000000000009")
+                .pswd("{bcrypt}" + new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(11).encode("password"))
+                .userNm("Lower Cost")
+                .lckYn("N")
+                .build();
+        when(userRepository.findByUserId("lowcost")).thenReturn(Optional.of(lowerCostUser));
+        when(passwordEncoder.matches("wrongpassword", lowerCostUser.getPswd())).thenReturn(false);
+
+        assertThatThrownBy(() -> authenticationProvider.authenticate(
+                new UsernamePasswordAuthenticationToken("lowcost", "wrongpassword")))
+                .isInstanceOf(BadCredentialsException.class);
+
+        @SuppressWarnings("unchecked")
+        java.util.Map<Integer, String> dummies = (java.util.Map<Integer, String>)
+                ReflectionTestUtils.getField(authenticationProvider, "lowerCostDummies");
+        assertThat(dummies).containsOnlyKeys(11);
+        assertThat(lowerCostUser.getLckCnt()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("[2026-11-14] 더미 검증 횟수는 비용 차이만큼 두 배씩 늘고, 현재 비용 이상·해석 불가 해시는 맞추지 않는다")
+    void paddingVerificationsMatchCurrentStandardCost() {
+        assertThat(nuri.business.security.service.PasswordEncoders.BCRYPT_STRENGTH).isEqualTo(12);
+        assertThat(EgovAuthenticationProvider.paddingVerifications(10)).isEqualTo(3);
+        assertThat(EgovAuthenticationProvider.paddingVerifications(11)).isEqualTo(1);
+        assertThat(EgovAuthenticationProvider.paddingVerifications(4)).isEqualTo(255);
+        assertThat(EgovAuthenticationProvider.paddingVerifications(12)).isZero();
+        assertThat(EgovAuthenticationProvider.paddingVerifications(13)).isZero();
+        assertThat(EgovAuthenticationProvider.paddingVerifications(3)).isZero();
+        assertThat(EgovAuthenticationProvider.paddingVerifications(-1)).isZero();
+
+        assertThat(EgovAuthenticationProvider.standardBcryptCost("{bcrypt}$2a$10$abcdefghijklmnopqrstuv")).isEqualTo(10);
+        assertThat(EgovAuthenticationProvider.standardBcryptCost("{bcrypt}$2b$12$abcdefghijklmnopqrstuv")).isEqualTo(12);
+        assertThat(EgovAuthenticationProvider.standardBcryptCost("{bcrypt}current")).isEqualTo(-1);
+        assertThat(EgovAuthenticationProvider.standardBcryptCost("$2a$10$abcdefghijklmnopqrstuv")).isEqualTo(-1);
+        assertThat(EgovAuthenticationProvider.standardBcryptCost(null)).isEqualTo(-1);
     }
 
     @Test

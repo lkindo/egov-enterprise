@@ -2,12 +2,13 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import type { Client } from '@stomp/stompjs';
 import { useAuth } from './AuthContext';
+import { loadTransport } from './websocket-transport';
 
 /**
- * 연결 라이브러리(STOMP·SockJS)는 로그인한 사용자에게만 필요하다. 루트 공급자가 정적으로 가져오면 로그인 화면을 포함한 모든 첫
- * 화면 번들에 실린다 — 연결을 시작할 때 불러온다(2026-11-14).
+ * 연결 라이브러리를 불러오지 못했을 때 다시 불러오기까지의 간격(ms). 마지막 값으로 계속 시도한다 — 일시 장애가 끝나면 연결이 돌아오고,
+ * 계속 실패해도 1분에 한 번이다. 공급자가 정리되면(로그아웃·사용자 전환·언마운트) 기다리던 재시도도 취소한다.
  */
-const loadTransport = () => Promise.all([import('@stomp/stompjs'), import('sockjs-client')]);
+const TRANSPORT_RETRY_DELAYS_MS = [5_000, 15_000, 30_000, 60_000] as const;
 
 interface WebSocketContextType {
   client: Client | null;
@@ -68,10 +69,14 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     if (!userId) return;
     let disposed = false;
     let opened: Client | null = null;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    let failures = 0;
 
     // 불러오는 사이에 로그아웃·사용자 전환·언마운트가 끝났으면(disposed) 연결을 만들지 않는다 — 이전 사용자의 소켓이 남지 않게.
-    //   불러오지 못하면 연결하지 않는다. 소비자는 연결 없음으로 동작한다(알림은 폴링 보정).
-    void loadTransport().then(([{ Client: StompClient }, { default: SockJS }]) => {
+    //   불러오지 못하면 잠시 뒤 다시 불러온다. 연결 객체가 없으면 stompjs 의 재연결(reconnectDelay)도 돌지 않아, 다시 부르지 않으면
+    //   같은 사용자·권한 버전인 동안 연결이 영영 돌아오지 않는다(알림은 폴링으로 보정되지만 실시간 대시보드는 연결 중에 머문다).
+    //   기다리는 동안 소비자는 연결 없음으로 동작한다.
+    const load = () => void loadTransport().then(([{ Client: StompClient }, { default: SockJS }]) => {
       if (disposed) return;
       const client = new StompClient({
         // 동일 출처(same-origin) 상대 경로 → next.config rewrites('/ws/:path*')가 백엔드 WebSocket으로 프록시
@@ -106,10 +111,17 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       };
 
       client.activate();
-    }, () => undefined);
+    }, () => {
+      if (disposed) return;
+      const delay = TRANSPORT_RETRY_DELAYS_MS[Math.min(failures, TRANSPORT_RETRY_DELAYS_MS.length - 1)];
+      failures += 1;
+      retryTimer = setTimeout(load, delay);
+    });
+    load();
 
     return () => {
       disposed = true;
+      if (retryTimer !== undefined) clearTimeout(retryTimer);
       if (opened) void opened.deactivate();
     };
   }, [store, userId, identityId, authorizationVersion]);

@@ -79,6 +79,17 @@ class LogServiceTest {
             assertDoesNotThrow(() -> logService.logLogin("user01", "127.0.0.1", "WEB", "N", null));
             assertEquals(1, logService.getPersistFailureCount());
         }
+
+        @Test
+        @DisplayName("[2026-11-14] 로그인 로그는 바깥 트랜잭션 없이 저장해 연결·커밋 실패도 save() 안에서 잡혀 센다")
+        void testLogLogin_HasNoOuterTransaction() throws NoSuchMethodException {
+            // 메서드 트랜잭션이 있으면 연결 획득·커밋 실패가 catch 밖(프록시)에서 나 유실 계측을 비껴간다. 클래스 기본값
+            // (readOnly)에 합류해도 읽기 전용 트랜잭션에서 INSERT 하게 된다 — 그래서 NOT_SUPPORTED 여야 한다.
+            var method = LogService.class.getMethod("logLogin", String.class, String.class, String.class, String.class, String.class);
+            var tx = method.getAnnotation(org.springframework.transaction.annotation.Transactional.class);
+            assertNotNull(tx, "클래스의 readOnly 기본값에 합류하지 않도록 메서드에서 명시해야 한다");
+            assertEquals(org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED, tx.propagation());
+        }
     }
 
     @Nested

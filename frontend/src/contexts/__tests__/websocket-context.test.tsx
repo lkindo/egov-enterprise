@@ -23,6 +23,7 @@ import { render, act } from '@testing-library/react';
 import SockJS from 'sockjs-client';
 import React from 'react';
 import { WebSocketContext, WebSocketProvider, useWebSocket } from '../websocket-context';
+import { loadTransport } from '../websocket-transport';
 
 let authUser: { id: string; authorizationVersion?: string } | null = { id: 'U1', authorizationVersion: 'v1' };
 
@@ -52,6 +53,11 @@ vi.mock('@stomp/stompjs', () => ({
 }));
 vi.mock('sockjs-client', () => ({ default: vi.fn(function () { return {}; }) }));
 vi.mock('../AuthContext', () => ({ useAuth: () => ({ user: authUser }) }));
+// 실제 불러오기(위 두 모의 모듈)를 그대로 쓰되, 실패를 흉내 낼 수 있게 감싼다.
+vi.mock('../websocket-transport', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../websocket-transport')>();
+  return { loadTransport: vi.fn(actual.loadTransport) };
+});
 
 /** 컨텍스트 값을 밖으로 노출시키는 소비자. */
 function Probe({ onValue }: { onValue: (v: ReturnType<typeof useWebSocket>) => void }) {
@@ -179,10 +185,55 @@ describe('WebSocketProvider', () => {
     });
 
     it('연결 라이브러리는 첫 화면 번들이 아니라 연결할 때 불러온다', async () => {
-      const source = (await import('node:fs')).readFileSync((await import('node:path')).join(process.cwd(), 'src', 'contexts', 'websocket-context.tsx'), 'utf8');
-      expect(source).not.toMatch(/^import\s+(?!type\b)[^;]*from\s+'(@stomp\/stompjs|sockjs-client)'/m);
-      expect(source).toContain("import('@stomp/stompjs')");
-      expect(source).toContain("import('sockjs-client')");
+      const { readFileSync } = await import('node:fs');
+      const { join } = await import('node:path');
+      const read = (name: string) => readFileSync(join(process.cwd(), 'src', 'contexts', name), 'utf8');
+      const staticLibraryImport = /^import\s+(?!type\b)[^;]*from\s+'(@stomp\/stompjs|sockjs-client)'/m;
+      const provider = read('websocket-context.tsx');
+      const transport = read('websocket-transport.ts');
+      expect(provider).not.toMatch(staticLibraryImport);
+      expect(transport).not.toMatch(staticLibraryImport);
+      expect(transport).toContain("import('@stomp/stompjs')");
+      expect(transport).toContain("import('sockjs-client')");
+    });
+
+    it('불러오기에 실패하면 잠시 뒤 다시 불러와 연결한다 — 일시 장애가 끝나면 실시간 연결이 돌아온다', async () => {
+      vi.useFakeTimers();
+      try {
+        vi.mocked(loadTransport).mockRejectedValueOnce(new Error('chunk load failed'));
+        render(<WebSocketProvider><Probe onValue={() => {}} /></WebSocketProvider>);
+        await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+        // 연결 객체가 없으면 stompjs 의 재연결도 돌지 않는다 — 공급자가 다시 불러와야 한다.
+        expect(created).toHaveLength(0);
+
+        await act(async () => { await vi.advanceTimersByTimeAsync(5_000); });
+
+        expect(loadTransport).toHaveBeenCalledTimes(2);
+        expect(created).toHaveLength(1);
+        expect(created[0].activate).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('다시 불러오기를 기다리는 사이 로그아웃하면 재시도를 취소한다 — 이전 사용자의 연결이 늦게 열리지 않게', async () => {
+      vi.useFakeTimers();
+      try {
+        vi.mocked(loadTransport).mockRejectedValueOnce(new Error('chunk load failed'));
+        const { rerender } = render(<WebSocketProvider><Probe onValue={() => {}} /></WebSocketProvider>);
+        await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+        authUser = null;
+        act(() => {
+          rerender(<WebSocketProvider><Probe onValue={() => {}} /></WebSocketProvider>);
+        });
+
+        await act(async () => { await vi.advanceTimersByTimeAsync(120_000); });
+
+        expect(loadTransport).toHaveBeenCalledTimes(1);
+        expect(created).toHaveLength(0);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('언마운트하면 연결을 정리한다', async () => {

@@ -45,9 +45,14 @@ public class LogService extends BaseAbstractService {
 
     /**
      * 로그인 로그 기록 (비동기 처리)
+     *
+     * <p><b>바깥 트랜잭션을 열지 않는다</b>(WebAuditLogListener 와 같은 이유). 메서드 트랜잭션이 있으면 연결 획득·커밋 실패가
+     * 아래 catch 밖(프록시)에서 나 유실 계측을 비껴간다. {@code SimpleJpaRepository.save} 가 자기 트랜잭션을 열고 그 안에서
+     * 커밋하므로 시작부터 커밋까지의 실패가 모두 {@code save()} 에서 던져져 한 번만 센다. 클래스 기본값(readOnly)에 합류하면
+     * 읽기 전용 트랜잭션에서 INSERT 하게 되므로 NOT_SUPPORTED 로 명시한다.
      */
     @Async("logExecutor")
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
     public void logLogin(String userId, String ip, String mthd, String errAt, String errCode) {
 
         LoginLog log = LoginLog.builder()

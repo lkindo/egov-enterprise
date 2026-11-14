@@ -1,6 +1,7 @@
 package nuri.business.security.iam;
 
 import nuri.business.security.service.EgovPasswordEncoder;
+import nuri.business.security.service.PasswordEncoders;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
@@ -107,6 +108,10 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
 
             String encodedPassword = userEntity.getPswd();
             boolean isMatched = verifyPassword(userEntity, password, encodedPassword);
+            if (!isMatched) {
+                // 잠금 밖에서 한다 — 아래 주석과 같은 이유로, 잠금을 쥔 채 해시를 더 계산하지 않는다.
+                padFailedVerificationWork(password, encodedPassword);
+            }
 
             // [2026-10-18] 실패 횟수의 증가와 잠금 판정은 행 잠금 아래에서 현재 값으로 한다.
             //   종전에는 잠금 없이 읽은 엔티티의 횟수를 메모리에서 올려 저장했다. 같은 계정에 동시에 틀린 비밀번호를 보내면
@@ -195,6 +200,72 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             matched = egovPasswordEncoder.matches(password, cleanHash, userEntity.getEsntlId());
         }
         return matched;
+    }
+
+    /** 실패 경로 작업량 맞춤용 검증기 — bcrypt 는 비용을 해시에서 읽으므로 이 인코더의 강도는 결과와 시간에 상관없다. */
+    private static final org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder PADDING_VERIFIER =
+            new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+
+    private static final java.util.regex.Pattern STANDARD_BCRYPT_COST =
+            java.util.regex.Pattern.compile("^\\{bcrypt}\\$2[abxy]?\\$(\\d{2})\\$");
+
+    /** bcrypt 가 받는 가장 낮은 비용. 이보다 낮은 값은 해시가 아니므로 맞추지 않는다. */
+    private static final int MIN_BCRYPT_COST = 4;
+
+    /** 비용별 더미 해시. 처음 쓸 때 한 번만 만든다(낮은 비용이라 싸다). */
+    private final java.util.Map<Integer, String> lowerCostDummies = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * [2026-11-14] 비밀번호가 틀린 경로의 해시 작업량을 현재 표준 비용({@link PasswordEncoders#BCRYPT_STRENGTH})에 맞춘다.
+     *
+     * <p>없는 계정·정지·잠긴 계정은 현재 비용의 더미 해시를 한 번 검증한다. 저장 해시가 더 싼 계정(재해시 전의 낮은 비용 bcrypt,
+     * 옛 SHA-256)은 틀린 비밀번호에 그만큼 빨리 답해, 응답 시간만으로 "아직 전환하지 않은 활성 계정" 을 가려낼 수 있었다 — 실패
+     * 로그인은 재해시하지 않으므로 그 차이는 계정이 성공 로그인할 때까지 남는다. 그래서 모자란 만큼 같은 비용의 더미 해시를 더
+     * 검증한다(bcrypt 작업량은 비용이 1 오를 때 두 배다). 결과는 버린다 — 판정은 이미 끝났다.
+     */
+    private void padFailedVerificationWork(String password, String encodedPassword) {
+        String raw = password == null ? "" : password;
+        if (isLegacyPassword(encodedPassword)) {
+            passwordEncoder.matches(raw, unknownIdentityPasswordHash);
+            return;
+        }
+        int cost = standardBcryptCost(encodedPassword);
+        int rounds = paddingVerifications(cost);
+        if (rounds == 0) {
+            return;
+        }
+        String dummy = lowerCostDummies.computeIfAbsent(cost,
+                c -> new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(c).encode(randomSecret()));
+        for (int i = 0; i < rounds; i++) {
+            PADDING_VERIFIER.matches(raw, dummy);
+        }
+    }
+
+    /** {@code {bcrypt}$2a$NN$...} 의 비용. 표준 bcrypt 가 아니면 -1. */
+    static int standardBcryptCost(String encodedPassword) {
+        if (encodedPassword == null) {
+            return -1;
+        }
+        java.util.regex.Matcher matcher = STANDARD_BCRYPT_COST.matcher(encodedPassword);
+        return matcher.find() ? Integer.parseInt(matcher.group(1)) : -1;
+    }
+
+    /** 비용 {@code cost} 해시를 몇 번 더 검증해야 현재 표준 비용 한 번과 작업량이 같은가. 맞출 필요가 없으면 0. */
+    static int paddingVerifications(int cost) {
+        if (cost < MIN_BCRYPT_COST || cost >= PasswordEncoders.BCRYPT_STRENGTH) {
+            return 0;
+        }
+        return (1 << (PasswordEncoders.BCRYPT_STRENGTH - cost)) - 1;
+    }
+
+    private static String randomSecret() {
+        byte[] random = new byte[32];
+        new java.security.SecureRandom().nextBytes(random);
+        try {
+            return java.util.Base64.getEncoder().encodeToString(random);
+        } finally {
+            java.util.Arrays.fill(random, (byte) 0);
+        }
     }
 
     /** {@code {egov}} 표식 또는 표식 없는 기존 SHA-256 해시는 레거시 검증 경로로만 처리한다. */
