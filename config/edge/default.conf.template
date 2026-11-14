@@ -36,12 +36,13 @@ map $uri $edge_login_limit_key {
 }
 
 # 거부 본문은 그 경로의 실패 응답 계약과 같다 — 화면은 백엔드가 막을 때와 같은 안내를 보인다.
-#   로그인 BFF: frontend/src/lib/auth/login-error.ts, 추가 인증 BFF: frontend/src/app/api/auth/mfa/[...path]/route.ts,
-#   백엔드 직접 경로: RateLimitFilter. 문구가 갈라지면 edge 신뢰 경계 계약이 붉다.
+#   로그인 BFF: frontend/src/lib/auth/login-error.ts, 추가 인증 BFF: frontend/src/app/api/auth/mfa/[...path]/route.ts.
+#   /api/v1/auth/login·/api/v1/auth/mfa/ 는 백엔드가 아니라 그 BFF 의 별칭이다(frontend/src/app/api/v1/auth/** 가 Next rewrite 보다
+#   먼저 받는다). 비밀번호 변경만 백엔드로 넘어가 RateLimitFilter 의 본문을 받는다. 문구가 갈라지면 edge 신뢰 경계 계약이 붉다.
 map $uri $edge_login_limited_body {
     default                         '{"success":false,"code":"C429","message":"Rate limit exceeded. Too many requests from this IP."}';
-    ~*^/api/auth/login              '{"success":false,"code":"LOGIN_RATE_LIMITED","message":"로그인 요청이 많습니다. 잠시 후 다시 시도해주세요."}';
-    ~*^/api/auth/mfa/               '{"success":false,"message":"인증 요청이 많습니다. 잠시 후 다시 시도해 주세요."}';
+    ~*^/api/(v1/)?auth/login        '{"success":false,"code":"LOGIN_RATE_LIMITED","message":"로그인 요청이 많습니다. 잠시 후 다시 시도해주세요."}';
+    ~*^/api/(v1/)?auth/mfa/         '{"success":false,"message":"인증 요청이 많습니다. 잠시 후 다시 시도해 주세요."}';
 }
 
 limit_req_zone $edge_login_limit_key zone=edge_login:10m rate=${EDGE_LOGIN_REQUESTS_PER_MINUTE}r/m;
