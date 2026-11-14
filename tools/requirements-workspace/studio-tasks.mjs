@@ -5,12 +5,15 @@
 import { ARTIFACT_IDS, ARTIFACT_TYPES, CATEGORY_CODES, REQUIREMENT_CATEGORIES, REQUIREMENT_KIND, artifactType, fieldGuide, fieldsOf, fieldsSchema, isFilled, kindName, normalizeFields, overflowingFields } from './studio-catalog.mjs';
 import { STUDIO_LIMITS, itemText } from './studio-model.mjs';
 
-export const STUDIO_PROMPT_VERSION = '2026-11-13.1';
-export const STUDIO_PHASES = ['studio-classify', 'studio-extract', 'studio-merge', 'studio-enrich', 'studio-plan'];
+export const STUDIO_PROMPT_VERSION = '2026-11-14.1';
+export const STUDIO_PHASES = ['studio-classify', 'studio-extract', 'studio-merge', 'studio-group', 'studio-enrich', 'studio-plan'];
 /** Hard ceiling of one request's JSON, in UTF-8 bytes. */
 export const REQUEST_LIMIT = 48 * 1024;
 export const CLAUSE_BATCH = { count: 24, bytes: 28 * 1024 };
 export const MERGE_BATCH = 6;
+/** Questions judged in one request, and how many earlier questions each is compared with. A question is a sentence, so a request holds more of them than of records. */
+export const GROUP_BATCH = 16;
+export const GROUP_NEAR = 4;
 export const PLAN_BATCH = 4;
 const SCHEMA_LIMIT = 20000;
 /** Questions a record can hold from one reply; the rest are counted as unusable so the loss shows in the run. */
@@ -59,6 +62,13 @@ const INSTRUCTIONS = {
     '- conflict: 같은 대상에 대해 기존 항목과 함께 성립할 수 없는 내용을 말한다(수치·조건·주체가 다르다). target에 기존 항목 id, field에 충돌한 칸의 키, existing에 기존 항목의 해당 문장을 글자 그대로, incoming에 후보의 해당 문장, note에 무엇이 다른지 한 문장으로 적는다.',
     '- new: 위 둘이 아니다. target은 빈 문자열로 둔다.',
     '이름이 비슷해도 대상·주체·목적이 다르면 new다. 확신이 없으면 new다.',
+  ].join('\n'),
+  'studio-group': [
+    '작업: 새 질문이 앞서 나온 질문과 같은 것을 묻는지 판정.',
+    'data.questions의 질문마다 decisions에 한 항목씩 답한다. k는 입력의 k 그대로 쓴다. 비교 대상은 그 질문의 near에 적힌 기존 질문뿐이며 내용은 data.existing에 있다. item은 그 질문이 붙어 있는 요구사항이나 산출물 항목이다.',
+    '- 같은 결정이나 같은 사실을 묻고 있어 한쪽에 답하면 그 답이 다른 쪽의 답도 될 때만 same에 그 기존 질문의 id를 적는다. 붙어 있는 항목이나 표현은 달라도 된다.',
+    '- 주제가 같아도 묻는 대상이나 묻는 내용이 다르면 같은 질문이 아니다. 답이 항목마다 달라지는 질문(그 항목 자신의 값·관계·범위를 묻는 것)도 같은 질문이 아니다. 이때 same은 빈 문자열로 둔다.',
+    '확신이 없으면 same은 빈 문자열로 둔다.',
   ].join('\n'),
   'studio-enrich': [
     '작업: 항목의 빈칸 보강.',
@@ -199,6 +209,31 @@ export function readMerge(output, entries, partial = { candidates: [], items: ne
     return { action: decision.action, target: decision.target, field: text(decision.field), existing: text(decision.existing), incoming: text(decision.incoming), note: text(decision.note),
       review: partial.candidates[index] === true || partial.items.has(decision.target) };
   });
+}
+
+/**
+ * `entries` are `{ question, item, near: [{ question, item }] }`: an open
+ * question nobody has compared yet, the record it is attached to, and the few
+ * earlier questions that resemble it. A question is only ever compared with
+ * its own `near`.
+ */
+export function groupRequest(entries) {
+  const existing = new Map(), record = item => `${kindName(item.kind)} · ${item.name}`;
+  for (const entry of entries) for (const hit of entry.near) if (!existing.has(hit.question.id)) existing.set(hit.question.id, { id: hit.question.id, item: record(hit.item), text: hit.question.text });
+  return build('studio-group', { questions: entries.map((entry, index) => ({ k: index + 1, item: record(entry.item), text: entry.question.text, near: entry.near.map(hit => hit.question.id) })), existing: [...existing.values()] },
+    object({ decisions: { type: 'array', items: object({ k: { type: 'integer' }, same: { type: 'string' } }) } }));
+}
+/**
+ * One answer per entry, in order: the id of the earlier question it repeats,
+ * or undefined. An answer that is missing or names a question outside the
+ * entry's own `near` groups nothing. A reply without a decision list is
+ * refused, so the questions are compared again instead of being left ungrouped
+ * for good.
+ */
+export function readGroup(output, entries) {
+  if (!Array.isArray(output?.decisions)) fail('STUDIO_REPLY_UNUSABLE');
+  const byK = new Map(output.decisions.filter(entry => Number.isInteger(entry?.k)).map(entry => [entry.k, entry]));
+  return entries.map((entry, index) => { const same = text(byK.get(index + 1)?.same); return entry.near.some(hit => hit.question.id === same) ? same : undefined; });
 }
 
 export function enrichRequest(item, batch) {

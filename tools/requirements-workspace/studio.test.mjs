@@ -11,7 +11,7 @@ import { startRequirementsServer } from './server.mjs';
 import { createRequirementsStore } from './store.mjs';
 import { REQUEST_LIMIT } from './studio-tasks.mjs';
 import { context } from './test-fixtures/ai.mjs';
-import { CONSENT, classifyReply, clause, extractReply, mergeReply, sourceOf, studioRunner } from './test-fixtures/studio.mjs';
+import { CONSENT, classifyReply, clause, extractReply, groupReply, mergeReply, sourceOf, studioRunner } from './test-fixtures/studio.mjs';
 
 const rfp = sourceOf('SRC-RFP', '합성 제안요청서', [
   clause('C-1', '[SFR:시설 예약 신청] 시민은 시설을 검색하고 예약을 신청한다. <function-tree:예약 신청>'),
@@ -301,6 +301,101 @@ test('a judgement about a record a person changed meanwhile is not applied; the 
   assert.equal(engine.studio.view().items.filter(item => item.kind === 'requirement').length, 1);
 });
 
+test('questions that ask the same thing are grouped by comparison and answered once; an unusable or outdated judgement groups nothing', async t => {
+  let broken = true, meanwhile = null;
+  const group = async request => { if (broken) return {}; if (meanwhile) { const during = meanwhile; meanwhile = null; await during(); } return groupReply(request); };
+  const { act, run, seen, store, engine } = await fixture(t, { overrides: { 'studio-group': group } });
+  await act('source.save', sourceOf('SRC-A', '합성 요구 문서', [
+    clause('C-1', '[SFR:이용료 결제] (미결:결제 수단) 승인 후 결제한다.'),
+    clause('C-2', '[SFR:환불 처리] (미결:환불 기한) 취소하면 환불한다.'),
+    clause('C-3', '<entity-def:결제> (미결:결제 수단) 결제 정보를 관리한다. 속성(결제번호)'),
+  ]));
+  let view = await run();
+  const [means, refund, entityMeans] = view.issues.map(issue => issue.id), topics = () => engine.studio.view().issues.map(issue => issue.topic);
+  assert.deepEqual(view.issues.map(issue => [issue.kind, issue.text]), [['question', '결제 수단이 정해지지 않았습니다. 어떻게 정합니까?'], ['question', '환불 기한이 정해지지 않았습니다. 어떻게 정합니까?'], ['question', '결제 수단이 정해지지 않았습니다. 어떻게 정합니까?']]);
+  // The reply held no decisions: nothing is grouped on a guess, each question stays on its own, and the loss is counted.
+  assert.deepEqual([view.jobs.at(-1).status, view.jobs.at(-1).failures, view.jobs.at(-1).summary.grouped, view.pending.questions, topics()], ['done', 2, undefined, 0, [means, refund, entityMeans]]);
+
+  // A workspace written before questions were compared: running the analysis compares them and reads nothing else.
+  store.transact(store.read().revision, draft => { for (const issue of draft.metadata.studio.issues) delete issue.topic; });
+  assert.equal(engine.studio.view().pending.questions, 3);
+  broken = false; seen.length = 0;
+  view = await run();
+  assert.deepEqual([view.jobs.at(-1).status, phases(seen), view.jobs.at(-1).summary, view.pending.questions], ['done', ['studio-group', 'studio-group'], { grouped: 1 }, 0]);
+  assert.deepEqual(topics(), [means, refund, means]);
+  // The first question was never sent: nothing earlier resembled it. A question is sent with the record it is attached to and only the few earlier questions that resemble it.
+  assert.deepEqual(seen.map(entry => entry.request.data.questions.map(question => [question.item, question.near])), [[['요구사항 · 환불 처리', [means]]], [['엔터티정의서 · 결제', [means, refund]]]]);
+  assert.deepEqual(seen.at(-1).request.data.existing.map(question => [question.id, question.item]), [[means, '요구사항 · 이용료 결제'], [refund, '요구사항 · 환불 처리']]);
+  assert.ok(seen.every(entry => entry.bytes <= REQUEST_LIMIT));
+  // The marks of the analysis before stay: this run read no document.
+  assert.ok(view.items.every(item => item.flags.fresh === 1));
+  // Grouping does not open the way to confirmation.
+  await assert.rejects(async () => act('studio.item.status', { id: named(view, '이용료 결제').id, status: 'confirmed' }), { code: 'STUDIO_NOT_READY' });
+  await assert.rejects(async () => act('studio.run', CONSENT), { code: 'STUDIO_NOTHING_TO_DO' });
+  // A group is closed only by a request that names its questions: the person decides about what was on screen.
+  await assert.rejects(async () => act('studio.issue', { id: entityMeans, note: '카드로 한다.' }), { code: 'STUDIO_GROUP_CHANGED' });
+  await assert.rejects(async () => act('studio.issue', { id: means, choice: 'dismiss', group: [means] }), { code: 'STUDIO_GROUP_CHANGED' });
+  assert.deepEqual(engine.studio.view().issues.map(issue => issue.open), [1, 1, 1]);
+
+  // A person answers the group while a later question is being compared with it: the judgement names a question that no longer leads an open group, so it is set aside and the comparison is made again.
+  await act('source.save', sourceOf('SRC-B', '합성 회의록', [clause('C-1', '[SFR:간편 결제] (미결:결제 수단) 간편 결제를 지원한다.')]));
+  meanwhile = () => act('studio.issue', { id: entityMeans, note: '카드와 계좌이체로 한다.', group: [means, entityMeans] });
+  seen.length = 0;
+  view = await run();
+  const later = view.issues.at(-1);
+  assert.deepEqual(seen.filter(entry => entry.phase === 'studio-group').map(entry => entry.request.data.questions[0].near), [[means, refund], [refund]]);
+  assert.deepEqual([later.open, later.topic === later.id, view.jobs.at(-1).summary.grouped], [1, true, undefined]);
+  // One answer closed both questions of the group and was written to both records.
+  assert.deepEqual(view.issues.slice(0, 3).map(issue => [issue.open, issue.resolution]), [[0, '카드와 계좌이체로 한다.'], [1, undefined], [0, '카드와 계좌이체로 한다.']]);
+  assert.deepEqual([named(view, '이용료 결제').fields.details, named(view, '결제', 'entity-def').note, named(view, '이용료 결제').ready], [['승인 후 결제한다.', '카드와 계좌이체로 한다.'], '카드와 계좌이체로 한다.', true]);
+
+  // The next document repeats the open point on a new record, and two of its records are too long to keep whole.
+  const lengthy = '이력을 빠짐없이 적는다 '.repeat(180);
+  await act('source.save', sourceOf('SRC-C', '합성 설계 메모', [clause('C-1', '<entity-def:간편 결제 수단> (미결:결제 수단) 간편 결제 수단을 관리한다. 속성(수단 코드)'),
+    clause('C-2', `<entity-def:결제 이력> ${lengthy}`), clause('C-3', `<entity-def:환불 이력> ${lengthy}`),
+    // An ordinary question in nearly the words of the program's notice: the notice is not compared with it either.
+    clause('C-4', '[SFR:설명 점검] (질문:엔터티 설명의 내용이 길이 한도를 넘는지 근거 조각과 대조해 나누어 적어 주세요.) 설명을 점검한다.')]));
+  seen.length = 0;
+  view = await run();
+  const issueOf = id => engine.studio.view().issues.find(issue => issue.id === id), joined = view.issues.find(issue => issue.itemId === named(view, '간편 결제 수단', 'entity-def').id);
+  assert.deepEqual([joined.topic, view.jobs.at(-1).status, view.jobs.at(-1).summary.grouped], [later.id, 'done', 1]);
+  // The program's notice that content was cut reads the same on both records, but each is about its own record: it is never sent for comparison and never grouped.
+  const notices = view.issues.filter(issue => issue.text.includes('길이 한도를 넘어 일부만 담겼습니다'));
+  assert.deepEqual(notices.map(issue => [issue.open, issue.topic === issue.id, issue.text === notices[0].text]), [[1, true, true], [1, true, true]]);
+  assert.ok(seen.filter(entry => entry.phase === 'studio-group').length > 0 && !seen.some(entry => entry.phase === 'studio-group' && JSON.stringify(entry.request.data).includes('길이 한도')));
+  // A person takes a question out of its group; it is then answered on its own.
+  await act('studio.issue.split', { id: joined.id });
+  assert.equal(issueOf(joined.id).topic, joined.id);
+  await assert.rejects(async () => act('studio.issue.split', { id: joined.id }), { code: 'STUDIO_ISSUE_NOT_GROUPED' });
+  await act('studio.issue', { id: later.id, choice: 'dismiss' });
+  assert.deepEqual([issueOf(later.id).open, issueOf(joined.id).open], [0, 1]);
+});
+
+test('a question is compared with the question that leads a group even when only the group\'s other questions resemble it, and never with a question that stands alone', async t => {
+  const firstNear = request => ({ decisions: request.data.questions.map(question => ({ k: question.k, same: question.near[0] ?? '' })) });
+  const { act, run, seen, store } = await fixture(t, { overrides: { 'studio-group': firstNear } });
+  await act('source.save', sourceOf('SRC-A', '합성 요구 문서', [clause('C-1', '[SFR:이용료 결제] (미결:결제 수단) 승인 후 결제한다.'), clause('C-2', '<entity-def:회원> 회원 정보를 관리한다.')]));
+  let view = await run();
+  const lead = view.issues[0], payment = named(view, '이용료 결제');
+  // Enrichment leaves a question about the record's own empty field.
+  view = await run('studio.enrich', { itemId: named(view, '회원', 'entity-def').id });
+  const own = view.issues.at(-1);
+  assert.deepEqual([own.alone, own.topic, own.text], [1, own.id, '등록한 문서에서 찾지 못했습니다. 직접 알려 주세요.']);
+  // The group grew: a dozen questions that word the open point in other words than the one that leads it.
+  const worded = index => `간편 지불 방식의 허용 범위를 아직 확정하지 못했다. ${index}차 회의에서 다시 논의한다.`;
+  store.transact(store.read().revision, draft => { const studio = draft.metadata.studio; for (let index = 1; index <= 12; index++) { studio.seq.ISS += 1; studio.issues.push({ id: `ISS-${String(studio.seq.ISS).padStart(4, '0')}`, kind: 'question', itemId: payment.id, text: worded(index), evidence: [], open: 1, createdAt: 'synthetic', topic: lead.id }); } });
+  await act('source.save', sourceOf('SRC-B', '합성 회의록', [clause('C-1', `[SFR:간편 결제] (질문:${worded(13)}) 간편 결제를 지원한다.`), clause('C-2', '[SFR:시설 관리] (질문:등록한 문서에서 찾지 못했습니다. 직접 알려 주세요.) 시설을 등록한다.')]));
+  seen.length = 0;
+  view = await run();
+  const late = view.issues.find(issue => issue.itemId === named(view, '간편 결제').id), apart = view.issues.find(issue => issue.itemId === named(view, '시설 관리').id);
+  assert.deepEqual([view.jobs.at(-1).status, late.text, apart.text], ['done', worded(13), own.text]);
+  // The new question reads like the twelve, not like the one that leads them. It is still compared with that one, and only with it.
+  assert.deepEqual(seen.filter(entry => entry.phase === 'studio-group').map(entry => entry.request.data.questions.map(question => question.near)), [[[lead.id]]]);
+  assert.deepEqual([late.topic, view.jobs.at(-1).summary.grouped, view.pending.questions], [lead.id, 1, 0]);
+  // The question that reads exactly like the one enrichment left was not compared with it and leads itself.
+  assert.deepEqual([apart.topic, seen.some(entry => entry.phase === 'studio-group' && JSON.stringify(entry.request.data).includes(own.id))], [apart.id, false]);
+});
+
 test('planning sends only the epics that resemble the requirements, however many epics exist', async t => {
   const { act, run, seen, store } = await fixture(t);
   await act('source.save', sourceOf('SRC-A', '합성 문서 A', [clause('C-1', '[SFR:시설 예약 신청] 시민은 시설을 예약한다.')]));
@@ -326,6 +421,8 @@ test('enrichment fills only empty fields of a draft and asks when the documents 
   assert.deepEqual(named(view, '시설', 'entity-def').missing, []);
   view = await run('studio.enrich', { itemId: member.id });
   assert.deepEqual(view.issues.map(issue => [issue.kind, issue.itemId, issue.open]), [['question', member.id, 1]]);
+  // It asks about this record's own field, so it is not left waiting to be compared with the questions of other records.
+  assert.deepEqual([view.issues[0].topic, view.pending.questions], [view.issues[0].id, 0]);
   view = await act('studio.item.status', { id: facility.id, status: 'confirmed' });
   await assert.rejects(async () => act('studio.enrich', { itemId: facility.id, ...CONSENT }), { code: 'STUDIO_ITEM_CONFIRMED' });
   view = await act('studio.items.confirm', { kind: 'entity-def' });

@@ -10,9 +10,9 @@ import { AI_MODEL, aiEffortForPhase, createCliRunner, findClaudeExecutable } fro
 import { collectSensitivityWarnings } from './privacy-warnings.mjs';
 import { ARTIFACT_IDS, ARTIFACT_TYPES, DERIVED_DOCUMENTS, REQUIREMENT_CATEGORIES, REQUIREMENT_FIELDS, REQUIREMENT_KIND, fieldConflicts, fieldLabels, isFilled, isKind, mergeFieldsAdditive } from './studio-catalog.mjs';
 import { createIndex, similarity } from './studio-index.mjs';
-import { DEVELOPMENT_CATEGORIES, QUALITY_CATEGORIES, addCandidate, applyStories, applyTag, baselineContent, clauseKey, clauseMap, createRelations, crossChecks, decideProposal, demoteProgramConflicts, failTag, initialStudio, itemById, itemReady, itemScore, label, markExtracted, meaningHash, missingFields, neighborIndex, orphanStories, pendingWork, planTargets, raiseQuestions, recordBaseline, removeOrphanStories, resolveIssue, saveItem, searchParts, setItemStatus, settleCandidate, startJob, variantCurrent } from './studio-model.mjs';
+import { DEVELOPMENT_CATEGORIES, QUALITY_CATEGORIES, addCandidate, applyStories, applyTag, baselineContent, clauseKey, clauseMap, createRelations, crossChecks, decideProposal, demoteProgramConflicts, failTag, groupQuestion, initialStudio, itemById, itemReady, itemScore, label, markExtracted, meaningHash, missingFields, neighborIndex, orphanStories, pendingWork, planTargets, raiseQuestions, recordBaseline, removeOrphanStories, resolveIssue, saveItem, searchParts, setItemStatus, settleCandidate, splitQuestion, standsAlone, startJob, ungroupedQuestions, variantCurrent } from './studio-model.mjs';
 import { describeEvidence, documentList, renderDocument } from './studio-render.mjs';
-import { CLAUSE_BATCH, MERGE_BATCH, PLAN_BATCH, REQUEST_LIMIT, STUDIO_PROMPT_VERSION, batchClauses, classifyRequest, enrichRequest, extractRequest, fitted, mergeRequest, planRequest, readClassify, readEnrich, readExtract, readMerge, readPlan, studioPrompts } from './studio-tasks.mjs';
+import { CLAUSE_BATCH, GROUP_BATCH, GROUP_NEAR, MERGE_BATCH, PLAN_BATCH, REQUEST_LIMIT, STUDIO_PROMPT_VERSION, batchClauses, classifyRequest, enrichRequest, extractRequest, fitted, groupRequest, mergeRequest, planRequest, readClassify, readEnrich, readExtract, readGroup, readMerge, readPlan, studioPrompts } from './studio-tasks.mjs';
 
 const fail = code => { throw Object.assign(new Error(code), { code }); };
 const exact = (value, keys) => { if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(key => !keys.includes(key))) fail('INVALID_REQUEST'); };
@@ -20,7 +20,7 @@ const CONSENT = ['consent', 'model', 'sensitivityAcknowledged'];
 // Failures of the CLI itself stop a run; a reply that cannot be used only costs that one request.
 // A state the store refuses to save is a defect in this tool, so it stops the run as well instead of being counted away.
 const FATAL = /^(AI_CLI_UNAVAILABLE|AI_CLI_FAILED|AI_MODEL_MISMATCH|AI_TIMEOUT|AI_CONFIGURATION_INVALID|STUDIO_CAPACITY|STUDIO_ISSUE_CAPACITY|STUDIO_CALL_CAPACITY|STUDIO_STATE_INVALID|INVALID_METADATA|INVALID_REQUEST|BACKLOG_INVALID|REQUIREMENTS_[A-Z_]+|WORKSPACE_REVISION_CONFLICT)$/;
-const STAGES = { classify: '조각 분류와 요구사항 후보 추출', extract: '켜 둔 산출물의 항목 추출', settle: '기존 요구사항·항목과 대조' };
+const STAGES = { classify: '조각 분류와 요구사항 후보 추출', extract: '켜 둔 산출물의 항목 추출', settle: '기존 요구사항·항목과 대조', gather: '같은 질문 묶기' };
 const errorCode = error => /^[A-Z][A-Z0-9_]{2,80}$/.test(error?.code ?? '') ? error.code : 'STUDIO_RUN_FAILED';
 
 async function pool(tasks, width, run) {
@@ -132,8 +132,10 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
 
   async function analyze(context) {
     // "New" and "added to" describe the latest analysis. They are cleared when a new one starts, unless it continues a run that did not finish.
-    const earlier = current().studio.jobs.filter(job => job.kind === 'analyze' && job.id !== context.id).at(-1);
-    if (!earlier || earlier.status === 'done') context.step(studio => { for (const item of studio.items) item.flags = {}; });
+    const earlier = current().studio.jobs.filter(job => job.kind === 'analyze' && job.id !== context.id).at(-1), work = pendingWork(current().studio, current().backlog);
+    // A run that only groups questions reads and compares nothing, so the marks of the analysis before it stay.
+    const reads = work.classify.length || work.merge || Object.values(work.extract).some(list => list.length);
+    if (reads && (!earlier || earlier.status === 'done')) context.step(studio => { for (const item of studio.items) item.flags = {}; });
     // Differences the program raised were once stored as conflicts; they stop blocking confirmation here.
     context.step((studio, job) => { const demoted = demoteProgramConflicts(studio); if (demoted) tally(job, 'demoted', demoted); });
     // Candidates an earlier run left behind are finished reading that only waits to be compared; they come first.
@@ -165,6 +167,62 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
       context.step((studio, job) => { markExtracted(studio, task.batch, task.type); for (const item of result.items) addCandidate(studio, item); job.failures += result.dropped; job.done += 1; });
     }));
     await settle(context);
+    await gather(context);
+  }
+  /**
+   * Compares open questions with the earlier open ones, so that what several
+   * records ask in common is answered once. A question that resembles no
+   * earlier one leads a group of its own without a model call. A question
+   * about one record's own content is compared with nothing and nothing is
+   * compared with it. Questions that
+   * resemble one already taken in the same round wait, so the earlier one
+   * leads a group by then. A judgement is recorded only if the question it
+   * names still leads an open group; otherwise the question is compared again.
+   */
+  async function gather(context) {
+    const total = ungroupedQuestions(current().studio).length;
+    if (total) stage(context, STAGES.gather, total);
+    for (;;) {
+      const { studio } = current(), waiting = ungroupedQuestions(studio);
+      if (!waiting.length) return;
+      if (context.signal.aborted) fail('AI_CANCELLED');
+      const open = new Map(studio.issues.filter(issue => issue.open && issue.kind === 'question').map(issue => [issue.id, issue]));
+      const index = createIndex([...open.values()].map(issue => ({ id: issue.id, parts: [[issue.text, 1]] })));
+      const entry = question => ({ question, item: itemById(studio, question.itemId) });
+      // A question that resembles the other questions of a group is compared with the one that leads the group.
+      const leadOf = other => other.topic === undefined ? undefined : open.get(other.topic);
+      const direct = [], groups = [[]], taken = new Set();
+      for (const question of waiting.slice(0, 200)) {
+        const hits = index.search([[question.text, 1]], 24, 0.18).filter(hit => hit.id !== question.id).map(hit => open.get(hit.id));
+        if (hits.some(other => taken.has(other.id))) continue;
+        const near = standsAlone(question) ? [] : [...new Set(hits.map(leadOf))].filter(lead => lead && !standsAlone(lead)).slice(0, GROUP_NEAR).map(entry);
+        if (!near.length) direct.push({ id: question.id });
+        else {
+          if (groups.at(-1).length >= GROUP_BATCH) { if (groups.length >= concurrency) continue; groups.push([]); }
+          groups.at(-1).push({ ...entry(question), near });
+        }
+        taken.add(question.id);
+      }
+      const decided = [...direct];
+      let failures = 0;
+      await Promise.all(groups.filter(group => group.length).map(async compare => {
+        try {
+          const built = fitted(groupRequest, compare), entries = compare.slice(0, built.used);
+          const leads = readGroup(await call(context, built), entries);
+          decided.push(...entries.map((item, at) => ({ id: item.question.id, lead: leads[at] })));
+          context.streak = 0;
+        } catch (error) {
+          if (stops(context, error)) throw error;
+          // The comparison could not be made; the question stays on its own rather than being grouped on a guess.
+          decided.push({ id: compare[0].question.id });
+          failures += 1;
+        }
+      }));
+      context.step((draft, job) => {
+        job.failures += failures;
+        for (const { id, lead } of decided) if (groupQuestion(draft, id, lead)) { job.done += 1; if (lead) tally(job, 'grouped'); }
+      });
+    }
   }
   /**
    * Compares candidates with existing items a few at a time. A candidate with no
@@ -257,8 +315,9 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
         for (const entry of result.evidence) if (!seen.has(clauseKey(entry.s, entry.c)) && target.evidence.length < 40) target.evidence.push(entry);
         target.flags.enriched = 1; target.rev += 1; tally(job, 'enriched');
       } else tally(job, 'nothing');
-      if (result.question && missingFields(target).length && raiseQuestions(draft, target, [result.question], [], now())) tally(job, 'questions');
-      if (result.overflow.length) raiseQuestions(draft, target, [`보강한 ‘${fieldLabels(target.kind, result.overflow)}’의 내용이 길이 한도를 넘어 일부만 담겼습니다. 근거 조각과 대조해 주세요.`], result.evidence, now());
+      // Both ask about this record's own fields, so they are not compared with the questions of other records.
+      if (result.question && missingFields(target).length && raiseQuestions(draft, target, [result.question], [], now(), true)) tally(job, 'questions');
+      if (result.overflow.length) raiseQuestions(draft, target, [`보강한 ‘${fieldLabels(target.kind, result.overflow)}’의 내용이 길이 한도를 넘어 일부만 담겼습니다. 근거 조각과 대조해 주세요.`], result.evidence, now(), true);
       job.done = 1;
     });
   }
@@ -301,7 +360,7 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
       case 'studio.run': {
         exact(payload, CONSENT); requireConsent(payload);
         const { studio, backlog } = current(), work = pendingWork(studio, backlog);
-        if (!work.classify.length && !work.merge && !Object.values(work.extract).some(list => list.length)) fail('STUDIO_NOTHING_TO_DO');
+        if (!work.classify.length && !work.merge && !work.questions && !Object.values(work.extract).some(list => list.length)) fail('STUDIO_NOTHING_TO_DO');
         begin('analyze', analyze); break;
       }
       case 'studio.enrich': {
@@ -351,8 +410,12 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
         update(studio => { decideProposal(studio, payload.id, payload.accept); }); break;
       }
       case 'studio.issue': {
-        exact(payload, ['id', 'choice', 'note']);
+        exact(payload, ['id', 'choice', 'note', 'group']);
         update(studio => { resolveIssue(studio, payload.id, payload); }); break;
+      }
+      case 'studio.issue.split': {
+        exact(payload, ['id']);
+        update(studio => { splitQuestion(studio, payload.id); }); break;
       }
       case 'studio.baseline': {
         exact(payload, ['name']);
@@ -394,7 +457,7 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
       enabled: studio.enabled, items, proposals: studio.proposals.map(proposal => ({ ...proposal, sources: describeEvidence(proposal.evidence, clauses) })),
       issues: studio.issues.map(issue => ({ ...issue, ...(issue.open && issue.kind === 'variant' ? { current: variantCurrent(studio, issue) } : {}), sources: describeEvidence(issue.evidence, clauses) })), baselines: studio.baselines.map(({ ref, ...baseline }) => baseline),
       plan: studio.plan ? { epics: studio.plan.epics, stories, updatedAt: studio.plan.updatedAt } : null, planTargets: planTargets(studio).map(item => item.id), planOrphans: orphans.size,
-      pending: { classify: work.classify.length, extract: Object.fromEntries(Object.entries(work.extract).map(([type, list]) => [type, list.length])), merge: work.merge, waiting },
+      pending: { classify: work.classify.length, extract: Object.fromEntries(Object.entries(work.extract).map(([type, list]) => [type, list.length])), merge: work.merge, questions: work.questions, waiting },
       checks, documents: documentList(studio), jobs: studio.jobs, active: active?.id ?? null, prompts: studioPrompts(),
       sensitivityWarnings: advisories.list,
     };
