@@ -45,6 +45,11 @@ export interface Column<T> {
    * 같아야 한다. 같은 열에 sortKey 를 함께 두면 serverSort 를 주는 표에서는 서버 정렬이, 주지 않는 표에서는 현재 페이지 정렬이 된다.
    */
   serverSortKey?: string;
+  /**
+   * [2026-11-14] 머리 글자를 화면에서만 숨긴다(아이콘 단추 열 등). 화면 낭독기에는 `header` 가 머리칸 이름으로 읽힌다 — 빈 머리칸은
+   * axe `empty-table-header` 에 걸리고 어느 열인지 알 수 없다. 좁은 화면 카드의 열 이름도 그리지 않는다(종전 빈 머리칸과 같은 모양).
+   */
+  hideHeader?: boolean;
 }
 
 /** 서버 정렬 상태(Wave 4). sortBy 가 없으면 서버 기본 순서다. */
@@ -293,7 +298,7 @@ function DataRowComponent<T extends object>({
           key={`row-cell-${colIdx}`}
           // md 미만에서 thead 가 시각적으로 숨겨지므로 각 셀이 자기 열 이름을 스스로 보여줘야 한다.
           // 문자열 header 만 라벨로 쓴다(ReactNode header 는 CSS content 로 표현할 수 없다).
-          data-label={typeof column.header === 'string' ? column.header : undefined}
+          data-label={typeof column.header === 'string' ? (column.hideHeader ? '' : column.header) : undefined}
           className={cn(
             `${cellPadClass} text-sm font-medium text-foreground/80 tracking-tight transition-colors group-hover:text-foreground`,
             column.className
@@ -784,7 +789,7 @@ export function StandardDataTable<T extends object>({
                           title={serverKey !== undefined ? '목록 전체를 정렬합니다' : sortButtonTitle}
                           className="flex items-center gap-2 font-semibold text-foreground transition-colors hover:text-primary outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-ring"
                         >
-                          {column.header}
+                          {column.hideHeader ? <span className="sr-only">{column.header}</span> : column.header}
                           {sortDirection === 'asc' ? (
                             <ArrowUp className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                           ) : sortDirection === 'desc' ? (
@@ -795,7 +800,7 @@ export function StandardDataTable<T extends object>({
                         </button>
                       ) : (
                         <div className="flex items-center gap-2">
-                          {column.header}
+                          {column.hideHeader ? <span className="sr-only">{column.header}</span> : column.header}
                         </div>
                       )}
                     </th>

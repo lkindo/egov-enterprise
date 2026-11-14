@@ -1,8 +1,9 @@
 import { randomBytes } from 'node:crypto';
 import type { APIRequestContext, Page } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
-import { expectContentReady, expectNoAccessibilityViolations } from '../fixtures/accessibility';
+import { LOADING_TEXT, expectContentReady, expectNoAccessibilityViolations } from '../fixtures/accessibility';
 import { HELP_FAQ_BOARD_ID } from '../../src/config/board-ids';
+import { SITE_IDENTITY } from '../../src/config/site-identity';
 test.describe('Quality & Resilience', () => {
     /**
      * [2026-09-14 GAP-UIQ-001] UI 품질 시나리오 8개가 쓰는 화면 중 axe 자동 검사가 없던 곳을 채운다.
@@ -123,6 +124,59 @@ test.describe('Quality & Resilience', () => {
         });
         test.describe('일반 사용자 화면', () => {
             test.use({ storageState: 'playwright/.auth/user.json' });
+            /*
+             * [2026-11-14 원점 평가] 일반 사용자의 업무 화면 유형별 대표 — 업무 홈·결재(목록·기안)·일정·쪽지·설문·행사·검색·커뮤니티·
+             *   업무 보고·안내 페이지. 종전 자동 감사는 관리자 화면과 로그인·도움말 위주라, 사용자가 가장 자주 쓰는 화면이 빠져 있었다.
+             *   빈 목록이어도 머리글·필터·빈 상태·쪽 이동 같은 화면 골격을 감사한다(행 단위 결함은 행을 만드는 시험이 따로 본다).
+             */
+            test('업무 홈 에 axe 위반이 없다', async ({ page }) => {
+                await page.emulateMedia({ reducedMotion: 'reduce' });
+                await page.goto('/');
+                await expectContentReady(page);
+                await expect(page).toHaveTitle(SITE_IDENTITY.siteName);
+                await expectNoAccessibilityViolations(page, '/');
+            });
+            test('/approvals/draft 에 axe 위반이 없다', async ({ page }) => {
+                // 기안 화면은 열리자마자 기안 대화상자를 띄운다 — 모달이 뒤의 h1 을 가리므로 대화상자 제목을 준비 신호로 삼고 그 상태를 감사한다.
+                await page.emulateMedia({ reducedMotion: 'reduce' });
+                // 임시저장 목록은 조회 중에 아무것도 그리지 않는다(행이 늦게 나타난다) — 응답이 온 뒤에 감사한다.
+                const temporaryDraftsLoaded = page.waitForResponse((response) => response.request().method() === 'GET'
+                    && new URL(response.url()).pathname === '/api/v1/approvals/temporary-drafts', { timeout: 30000 });
+                await page.goto('/approvals/draft');
+                const dialog = page.getByRole('dialog', { name: '새 결재 기안' });
+                await expect(dialog.getByRole('heading', { name: '새 결재 기안' })).toBeVisible({ timeout: 30000 });
+                await expectPurposeTitle(page, '새 결재 기안');
+                expect((await temporaryDraftsLoaded).ok(), '임시저장 목록 조회').toBe(true);
+                await expect(dialog.locator('[role="status"]').filter({ hasText: LOADING_TEXT })).toHaveCount(0);
+                await expectNoAccessibilityViolations(page, '/approvals/draft', { ready: false });
+            });
+            // [2026-11-14] 이름을 내용에서 얻는 공용 부품(달력 날짜 단추·건수 탭)은 실제 브라우저가 계산한 이름도 본다 — sr-only·flex
+            //   경계에서 구분자가 끼는지는 jsdom 이 아니라 브라우저의 접근 이름 계산이 정한다. Chromium 은 숨김 글자 앞에 공백을 넣어
+            //   "14 일 금요일, …"·"게시글 0 건" 이 된다 — 보이는 숫자가 이름의 독립 낱말이라 WCAG 2.5.3 에 그대로 맞는다.
+            test('/smart-toolkit/schedule 에 axe 위반이 없다', async ({ page }) => {
+                await auditRoute(page, '/smart-toolkit/schedule', '일정 관리', async () => {
+                    await expect(page.getByRole('button', { name: /^\d{1,2} 일 [월화수목금토일]요일, \d{4}년 \d{1,2}월(, 오늘)?(, 선택됨)?$/ }).first())
+                        .toBeVisible();
+                });
+            });
+            test('/search 에 axe 위반이 없다', async ({ page }) => {
+                await auditRoute(page, '/search', '통합 검색', async () => {
+                    await expect(page.getByRole('tab', { name: /^임직원 \d+ 건$/ })).toBeVisible();
+                });
+            });
+            for (const [route, purpose] of [
+                ['/approvals', '전자결재'],
+                ['/note', '쪽지함'],
+                ['/survey', '설문 목록'],
+                ['/events', '행사 참가'],
+                ['/cop/cmy/selectCommunityList', '커뮤니티 목록'],
+                ['/smart-toolkit/work-report', '업무 보고'],
+                ['/pages', '안내 페이지'],
+            ]) {
+                test(`${route} 에 axe 위반이 없다`, async ({ page }) => {
+                    await auditRoute(page, route, purpose);
+                });
+            }
             test('/help 에 axe 위반이 없다', async ({ page, adminRequest }) => {
                 await withOwnedFaq(adminRequest, page, (faq) => auditRoute(page, '/help', '도움말', () => expandOwnedFaq(page, faq)));
             });

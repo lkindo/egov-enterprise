@@ -123,8 +123,9 @@ test.describe('캘린더 조작', () => {
                 // 월 조회(서버)가 준비한 두 일정을 표에 싣는다.
                 await expect(row(onDay15), '그 달의 일정이 표에 보여야 한다').toBeVisible({ timeout: 20000 });
                 await expect(row(onDay16)).toBeVisible();
-                // 날짜 단추의 접근 이름은 react-day-picker 가 ko 로캘의 'PPPP'(예: 2026년 11월 15일 일요일)로 만든다.
-                await page.getByRole('button', { name: new RegExp(`${year}년 ${month}월 15일 `) }).click();
+                // 날짜 단추의 접근 이름은 공용 달력이 내용으로 만든다 — 보이는 숫자 + 숨김 "일 요일, 연 월"(2026-11-14, WCAG 2.5.3).
+                //   Chromium 은 숨김 글자 앞에 공백을 넣어 "15 일 일요일, 2026년 11월" 로 읽는다. 연·월까지 맞춰 바깥 달의 15일과 가른다.
+                await page.getByRole('button', { name: new RegExp(`^15 ?일 [월화수목금토일]요일, ${year}년 ${month}월`) }).click();
                 await expect(page.getByRole('heading', { level: 2, name: new RegExp(`^${year}년 ${month}월 15일 \\(.\\) 일정$`) })).toBeVisible();
                 await expect(row(onDay15), '고른 날짜의 일정은 남아야 한다').toBeVisible();
                 await expect(row(onDay16), '다른 날짜의 일정은 걸러져야 한다').toHaveCount(0);
