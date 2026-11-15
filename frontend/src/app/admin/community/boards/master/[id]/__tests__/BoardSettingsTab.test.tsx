@@ -653,7 +653,7 @@ describe('BoardSettingsTab', () => {
       const trigger = screen.getByRole('button', { name: '게시판 영구 삭제' });
       expect(trigger).toBeDisabled();
       expect(trigger).toHaveAccessibleDescription(
-        '[공지사항] 게시판은 앱이 공지사항(업무 홈 공지 카드), 자주 묻는 질문(공개 FAQ·도움말) 용도로 지정해 쓰고 있어 영구 삭제할 수 없습니다. 쓰지 않으려면 사용 안 함으로 두십시오.',
+        '[공지사항] 게시판은 앱이 공지사항(업무 홈 공지 카드), 자주 묻는 질문(공개 FAQ·도움말) 용도로 지정해 쓰고 있어 영구 삭제할 수 없습니다. 쓰지 않으려면 사용 안 함으로 두세요.',
       );
       fireEvent.click(trigger);
       expect(mocks.isBoardMasterDeletable).not.toHaveBeenCalled();
@@ -661,6 +661,7 @@ describe('BoardSettingsTab', () => {
     });
 
     it('화면이 모르던 지정 게시판을 서버가 거부하면(B007) 서버 사유를 그대로 알리고 최신 지정 용도를 다시 읽는다', async () => {
+      // 서버(BoardMasterService B007)의 실제 문구다 — 어미('~두십시오')는 벤더 증거 재기록 묶음에서 '~두세요' 로 옮긴다(DEC-OPS-417).
       const reason = '[공지사항] 게시판은 앱이 위키(지식 허브 위키 탭) 용도로 지정해 쓰고 있어 영구 삭제할 수 없습니다. 쓰지 않으려면 사용 안 함으로 두십시오.';
       mocks.deleteBoardMasterPhysically.mockRejectedValue({ response: { status: 409, data: { code: 'B007', message: reason } } });
       const { onReload } = renderTab({ useYn: 'N' });

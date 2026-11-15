@@ -62,7 +62,7 @@ export class DeptJobPage {
 
     /** 조회 조건 영역의 검색창. */
     get searchInput(): Locator {
-        return this.page.locator('input[placeholder="검색어를 입력하십시오..."]');
+        return this.page.locator('input[placeholder="검색어를 입력해 주세요"]');
     }
 
     /**

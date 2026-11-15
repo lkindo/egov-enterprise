@@ -213,7 +213,8 @@ test('contract-level norms keep their approved reading, floors, format bans and 
     ['missing approval', (f) => { delete f.approval; }, /approval boundary is missing/],
     ['inflated claim', (f) => { f.approval.allowedCompletionClaim = 'content review complete'; }, /approval completion claim must stay bounded/],
     ['changed population', (f) => { f.population.kind = 'full-visible-string-census'; }, /population must stay a bounded pilot census/],
-    ['unrecorded owner', (f) => { f.ownerAssignment = 'assigned'; }, /ownerAssignment other than unassigned/],
+    // [2026-11-16] 원장은 이제 DEC-OPS-417 로 소유자를 지정했다 — 근거를 지운 지정이 붉은지 본다.
+    ['unrecorded owner', (f) => { f.ownerAssignment = 'assigned'; delete f.ownerAssignmentRef; }, /ownerAssignment other than unassigned/],
     ['norm review after evidence review', (f) => { f.normsReviewedAt = '2099-01-01'; }, /normsReviewedAt must be a real date on or before lastReviewedAt/],
     ['unbounded norm review', (f) => { f.reviewBy = '2036-01-01'; }, /within 120 days after normsReviewedAt/],
   ];

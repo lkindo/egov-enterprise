@@ -173,6 +173,8 @@ describe('A2 master-detail adoption census', () => {
     const client = source('src/app/admin/system/common-code/CommonCodeClient.tsx');
     // [2026-09-14] 트리 노드는 CodeTreeNode.tsx 로 분리했다. 선택 시맨틱은 그 파일이 갖고, 화면이 실제로 그 노드를 쓰는지 함께 본다.
     const treeNode = source('src/app/admin/system/common-code/CodeTreeNode.tsx');
+    // [2026-11-16] 끌어 놓기 탐색기(상태·트리)는 CodeHierarchyExplorer.tsx 로 옮겼다 — 화면 → 탐색기 → 노드 사슬을 함께 본다.
+    const explorer = source('src/app/admin/system/common-code/CodeHierarchyExplorer.tsx');
     const administ = source('src/app/admin/system/codes/administ/AdministCodeClient.tsx');
     const institution = source('src/app/admin/system/codes/institution/InstitutionCodeClient.tsx');
 
@@ -184,8 +186,10 @@ describe('A2 master-detail adoption census', () => {
     //   `entry-animation-guard` 가 src/app 전체에 대해 본다 — 적용 범위가 줄지 않는 중복 제거다.
     expect(hub).toMatch(/<CommonCodeClient\b[^>]*\bembedded\b\s*\/>/);
     expect(client).toMatch(/<MasterDetailPage\b/);
-    expect(client).toMatch(/import \{[^}]*\bSortableCodeNode\b[^}]*\} from '\.\/CodeTreeNode'/);
-    expect(client).toMatch(/<SortableCodeNode\b/);
+    expect(client).toMatch(/import \{[^}]*\bCodeHierarchyTree\b[^}]*\} from '\.\/CodeHierarchyExplorer'/);
+    expect(client).toMatch(/<CodeHierarchyTree\b/);
+    expect(explorer).toMatch(/import \{[^}]*\bSortableCodeNode\b[^}]*\} from '\.\/CodeTreeNode'/);
+    expect(explorer).toMatch(/<SortableCodeNode\b/);
     // `data-a2-master-item-type` 도 부분 문자열로 걸리므로 속성 식 전체로 고정한다.
     expect(treeNode).toContain("data-a2-master-item={isOverlay ? undefined : ''}");
     expect(treeNode).toContain("aria-current={isSelected ? 'true' : undefined}");

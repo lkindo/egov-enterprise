@@ -46,8 +46,8 @@ export class OpsDetailPage {
         // 실측 제목은 '신규 행사 등록'(EventManagementClient DialogTitle).
         await expect(this.page.getByRole('heading', { name: '신규 행사 등록' })).toBeVisible({ timeout: 10000 });
         
-        await this.page.getByPlaceholder(/행사 명칭을 입력하십시오/i).fill(data.name);
-        await this.page.getByPlaceholder(/상세 내용을 입력하십시오/i).fill(data.desc);
+        await this.page.getByPlaceholder(/행사 명칭을 입력해 주세요/i).fill(data.name);
+        await this.page.getByPlaceholder(/상세 내용을 입력해 주세요/i).fill(data.desc);
         
         // [V2_152] 신청 마감일(date)·신청 정원(number)이 더해져 입력을 순서·타입으로 고르면 엉뚱한 칸을 채운다 — 라벨로 고른다.
         const dialog = this.page.getByRole('dialog');

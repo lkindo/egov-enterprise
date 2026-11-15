@@ -7,7 +7,8 @@ import { waitForHydration } from '../fixtures/hydration';
 async function selectGroup(page: Page, cdId: string) {
     const master = page.getByTestId('master-detail-page').getByTestId('master-detail-master');
     await page.getByRole('textbox', { name: '분류·그룹명 또는 코드로 검색', exact: true }).fill(cdId);
-    const group = master.locator(`[data-a2-master-item-type="group"][aria-label*="(${cdId}) 선택"]`);
+    // 이름은 '이름 코드[ · 제품이 읽음] 선택' 이다 — 제품이 읽는 그룹은 표지가 코드와 '선택' 사이에 온다(2026-11-16).
+    const group = master.locator(`[data-a2-master-item-type="group"][aria-label*=" ${cdId} "][aria-label$=" 선택"]`);
     await expect(group).toHaveCount(1, { timeout: 20_000 });
     await group.click();
     await expect(group).toHaveAttribute('aria-current', 'true');

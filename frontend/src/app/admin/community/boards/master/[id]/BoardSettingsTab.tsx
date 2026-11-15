@@ -355,7 +355,7 @@ export function BoardSettingsTab({ detail, onReload }: {
   const qnaDesignated = isHelpQnaBoard(detail.bbsId, detail.designations);
   const designatedPurposes = detail.designations.map((designation) => DESIGNATION_PURPOSES[designation] ?? designation);
   const designatedPurgeReason = designatedPurposes.length > 0
-    ? `[${detail.bbsTtl}] 게시판은 앱이 ${designatedPurposes.join(', ')} 용도로 지정해 쓰고 있어 영구 삭제할 수 없습니다. 쓰지 않으려면 사용 안 함으로 두십시오.`
+    ? `[${detail.bbsTtl}] 게시판은 앱이 ${designatedPurposes.join(', ')} 용도로 지정해 쓰고 있어 영구 삭제할 수 없습니다. 쓰지 않으려면 사용 안 함으로 두세요.`
     : null;
 
   // 연결 메뉴는 메뉴·접근 탭과 같은 원천·판정이다. 두 원천이 모두 확정된 뒤에 판정한다(그 전에는 확인하는 중).
@@ -503,7 +503,7 @@ export function BoardSettingsTab({ detail, onReload }: {
       if (!deletable) {
         await confirm({
           title: '영구 삭제할 수 없습니다',
-          message: `[${detail.bbsTtl}] 게시판은 글이 한 번이라도 있었던 게시판이라 영구 삭제할 수 없습니다. 지운 글도 기록이 남아 있습니다. 쓰지 않을 게시판은 사용 안 함 상태로 두십시오.`,
+          message: `[${detail.bbsTtl}] 게시판은 글이 한 번이라도 있었던 게시판이라 영구 삭제할 수 없습니다. 지운 글도 기록이 남아 있습니다. 쓰지 않을 게시판은 사용 안 함 상태로 두세요.`,
           confirmText: '확인',
           variant: 'default',
         });
