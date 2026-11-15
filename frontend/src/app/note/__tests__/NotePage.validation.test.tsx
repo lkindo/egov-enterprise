@@ -6,9 +6,11 @@ import NoteHubClient from '../NoteHubClient';
 import NotePage from '../page';
 
 // [2026-11-14] 쪽지함이 홈의 '안 읽은 쪽지' 카드 캐시를 무효화하려고 쿼리 클라이언트를 쓴다 — 렌더마다 새 클라이언트로 감싼다.
-const render = (ui: React.ReactElement) => rtlRender(ui, {
-  wrapper: ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>,
+// 무효화를 보는 시험은 클라이언트를 넘긴다.
+const render = (ui: React.ReactElement, client: QueryClient = new QueryClient()) => rtlRender(ui, {
+  wrapper: ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
 });
+const UNREAD_CARD_FILTER = { queryKey: ['notes', 'unread-count'] };
 
 const mocks = vi.hoisted(() => ({
   toast: vi.fn(),
@@ -323,16 +325,21 @@ describe('NotePage validation contract', () => {
     mocks.deleteNote.mockImplementationOnce(() => new Promise<void>((resolve) => {
       resolveDelete = resolve;
     }));
-    render(<NotePage />);
+    const queryClient = new QueryClient();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+    render(<NotePage />, queryClient);
 
     fireEvent.click(await screen.findByRole('button', { name: '삭제할 받은 쪽지 삭제' }));
     await waitFor(() => expect(mocks.deleteNote).toHaveBeenCalledWith(21, { type: 'received' }));
     fireEvent.click(screen.getByRole('tab', { name: '보낸 쪽지함' }));
     expect(await screen.findByText('현재 보낸 쪽지')).toBeInTheDocument();
+    invalidate.mockClear();
 
     resolveDelete();
 
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('삭제되었습니다.', 'success'));
+    // [2026-11-15] 받은함 목록을 다시 읽지 않아도(탭을 바꿨다) 홈의 안 읽은 쪽지 카드는 낡은 것으로 표시한다.
+    expect(invalidate).toHaveBeenCalledWith(UNREAD_CARD_FILTER);
     expect(screen.getByText('현재 보낸 쪽지')).toBeInTheDocument();
     expect(screen.queryByText('삭제할 받은 쪽지')).not.toBeInTheDocument();
     expect(mocks.getReceivedNotes).toHaveBeenCalledTimes(1);
@@ -378,6 +385,30 @@ describe('NotePage validation contract', () => {
     expect(screen.queryByText(/sender-7/)).not.toBeInTheDocument();
     // [2026-09-26 DIP V3] 원 발신자가 수신자 칩으로 들어간다 — 제출 값에만 있으면 칩이 비어 보였다.
     expect(screen.getByText('총 1명 선택됨')).toBeInTheDocument();
+  });
+
+  it('[2026-11-15] 받은 쪽지 상세 응답이 늦게 와 화면이 버려도 홈의 안 읽은 쪽지 카드는 무효화한다', async () => {
+    const first = { noteSn: 8, noteRcptnSn: 81, noteSj: '먼저 연 쪽지', noteCn: '본문', dsptchUserId: 'a', rcverId: 'r', openYn: 'N', crtDt: '2026-11-15' };
+    const second = { noteSn: 9, noteRcptnSn: 91, noteSj: '나중에 연 쪽지', noteCn: '본문', dsptchUserId: 'b', rcverId: 'r', openYn: 'N', crtDt: '2026-11-15' };
+    mocks.getReceivedNotes.mockResolvedValueOnce({ list: [first, second] });
+    let resolveFirst!: (note: typeof first) => void;
+    mocks.getNote
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveFirst = resolve; }))
+      .mockImplementationOnce(() => new Promise(() => undefined));
+    const queryClient = new QueryClient();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+    render(<NotePage />, queryClient);
+
+    fireEvent.click(await screen.findByRole('button', { name: '먼저 연 쪽지 쪽지 열기' }));
+    fireEvent.click(screen.getByRole('button', { name: '나중에 연 쪽지 쪽지 열기' }));
+    await waitFor(() => expect(mocks.getNote).toHaveBeenCalledTimes(2));
+    invalidate.mockClear();
+
+    // 첫 응답은 늦은 응답이라 화면에 반영하지 않는다 — 그래도 서버는 그 쪽지를 읽음으로 바꿨다.
+    await act(async () => resolveFirst({ ...first, openYn: 'Y' }));
+
+    expect(invalidate).toHaveBeenCalledWith(UNREAD_CARD_FILTER);
+    expect(mocks.getUnreadReceivedCount).toHaveBeenCalledTimes(1);
   });
 
   it('🚨 받은 쪽지 목록은 발신자 이름을 보이고, 이름을 모르면 내부 식별자 대신 그 사실을 말한다 (DIP V3)', async () => {

@@ -65,10 +65,10 @@ Token set equality와 정적 ratio test는 저비용 preflight다. 실제 대비
 | `components/common` | 여러 feature가 쓰는 composite | 특정 domain mutation/validation |
 | `components/features`·`components/business` | domain UI(query options는 `src/queries`, service adapter는 `src/services`) | 다른 domain의 내부 구현 소유 |
 | `app/components` | app shell·layout·archetype 셸(patterns), 화면 공용 조합 부품(`app/components/ui` — standard-*·picker·toast) | 근거 없는 전역 public API 승격 |
-| `lib/hooks` | API·조회 키를 모르는 범용 훅(디바운스·쪽 번호 보정·목록 조건 기억) | service·`src/hooks`·`src/queries` import |
+| `lib/hooks` | 화면·업무를 모르는 범용 훅(디바운스·쪽 번호 보정·목록 조건 기억). 예외: 알림 훅(`use-notifications`)은 알림 API·인증·웹소켓 문맥을 직접 읽는다 | service·`src/hooks`·`src/queries` import |
 | `hooks` | service·권한을 아는 공용 훅(`hooks/api`) | 특정 화면 하나만 쓰는 훅(그 화면 옆에 둔다) |
 
-이름이 비슷한 `components/ui` 와 `app/components/ui` 는 의존 방향으로 나눈다 — 서비스·라우터·인증 문맥·`@/app` 을 읽으면 `app/components/ui` 다. `components/ui`·`lib/hooks` 의 금지 import 는 ESLint `no-restricted-imports` 가 막는다([eslint.config.mjs](../../frontend/eslint.config.mjs), 2026-11-15 도입 시 정적 import 위반 0건). 동적 `import()` 는 규칙 밖이다.
+이름이 비슷한 `components/ui` 와 `app/components/ui` 는 의존 방향으로 나눈다 — 서비스·라우터·인증 문맥·`@/app` 을 읽으면 `app/components/ui` 다. `components/ui`·`lib/hooks` 의 금지 import 는 ESLint `no-restricted-imports` 가 막는다([eslint.config.mjs](../../frontend/eslint.config.mjs), 2026-11-15 도입 시 정적 import 위반 0건). 규칙이 보는 것은 표의 금지 칸에 적은 `@/…` 별칭 import 뿐이다 — 동적 `import()`(기본 부품 `BoardMedia` 의 파일 서비스 지연 로딩 1곳), 상대 경로 import, `@/lib/api` 직접 호출(알림 훅)은 규칙 밖이며 검토로 본다.
 
 물리적 폴더 하나로 모든 component를 모으는 것은 목표가 아니다. 의존 방향, profile 제거 가능성, server/client boundary와 public API의 명확성이 목표다.
 

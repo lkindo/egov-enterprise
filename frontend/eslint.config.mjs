@@ -219,7 +219,8 @@ const eslintConfig = [
           "message": "'로딩 중' 대신 '불러오는 중…' 을 쓰세요(화면 용어 — 외래어 대신 우리말 동작어)."
         },
         {
-          "selector": ":matches(Literal[value=/^\\s*처리 중(…|\\.\\.\\.?)?\\s*$/], JSXText[value=/^\\s*처리 중(…|\\.\\.\\.?)?\\s*$/])",
+          // 식 없는 템플릿 문자열(`처리 중…`)도 본다. 대상을 넣은 `${대상} 처리 중…` 은 식이 있어 걸리지 않는다. 문자열 연결('처리 ' + '중…')은 이 규칙 밖이다.
+          "selector": ":matches(Literal[value=/^\\s*처리 중(…|\\.\\.\\.?)?\\s*$/], JSXText[value=/^\\s*처리 중(…|\\.\\.\\.?)?\\s*$/], TemplateLiteral[expressions.length=0] > TemplateElement[value.raw=/^\\s*처리 중(…|\\.\\.\\.?)?\\s*$/])",
           "message": "대상 없는 '처리 중…' 대신 무엇을 하는지 밝히세요 — 예: '부서 등록 중…', '추천 처리 중…'."
         }
       ],
@@ -300,8 +301,9 @@ const eslintConfig = [
     // [2026-11-15] 공용 부품·범용 훅의 의존 방향(docs/02-architecture/frontend-design-system.md §5).
     //
     // `src/components/ui` 는 서비스·라우터·인증 문맥을 모르는 기본 부품이고, 화면 공용 조합 부품은 `src/app/components/ui` 다.
-    // `src/lib/hooks` 는 API·조회 키를 모르는 범용 훅이고, 서비스를 부르는 훅은 `src/hooks` 에 둔다. 이름이 비슷한 두 폴더가
+    // `src/lib/hooks` 는 화면·업무를 모르는 범용 훅이고, 서비스를 부르는 훅은 `src/hooks` 에 둔다. 이름이 비슷한 두 폴더가
     // 섞이면 기본 부품이 업무 조회를 끌고 들어와 기능을 뺀 구성에서 함께 빠진다. 도입 시점 위반 0건(정적 import 기준).
+    // 이 규칙은 `@/…` 별칭 import 만 본다 — 동적 import()·상대 경로·`@/lib/api` 직접 호출(알림 훅 use-notifications)은 밖이다.
     //
     // 같은 규칙 이름을 다시 선언하면 앞 블록의 설정을 덮으므로 sonner 금지를 함께 싣는다.
     files: ["src/lib/hooks/**/*.ts", "src/lib/hooks/**/*.tsx"],

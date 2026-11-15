@@ -289,6 +289,9 @@ export default function NoteHubClient() {
         type: target.type,
         relationSn: target.relationSn,
       });
+      // 받은 쪽지를 열면 서버가 읽음으로 바꾼다 — 홈 카드 무효화는 아래의 늦은 응답 판정(상세를 닫았거나 다른 쪽지를 열었음)과
+      // 무관하게 한다. 종전에는 그 판정 뒤의 미읽음 재계산에만 묶여, 응답 전에 상세를 닫으면 홈이 읽기 전 수를 보였다.
+      if (target.type === 'received') void invalidateNoteUnreadCount(queryClient);
       if (requestId !== detailRequestRef.current) return;
 
       const resolvedDetail: Note = {
@@ -312,7 +315,7 @@ export default function NoteHubClient() {
     } finally {
       if (requestId === detailRequestRef.current) setDetailLoading(false);
     }
-  }, [refreshUnreadCount]);
+  }, [refreshUnreadCount, queryClient]);
 
   const handleDetail = (note: Note) => {
     const relationSn = tab === 'received' ? note.noteRcptnSn : note.noteSndngSn;
@@ -349,6 +352,8 @@ export default function NoteHubClient() {
       });
       if (!ok) return;
       await noteService.deleteNote(relationSn, { type: deleteTab });
+      // 안 읽은 받은 쪽지를 지우면 홈 카드의 수가 줄어든다 — 탭을 바꿔 아래 목록 재조회를 건너뛰어도 무효화한다.
+      if (deleteTab === 'received') void invalidateNoteUnreadCount(queryClient);
       toast('삭제되었습니다.', 'success');
       if (tabRef.current === deleteTab) await loadNotes(deleteTab);
     } catch {
