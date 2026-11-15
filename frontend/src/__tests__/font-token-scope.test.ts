@@ -160,15 +160,16 @@ describe('Nuri Sans 조각(생성물)', () => {
     expect(size('core') + size('ko-1') + size('ko-2')).toBeLessThanOrEqual(200_000);
   });
 
-  it('OFL 예약 이름을 쓰지 않고, 라이선스 전문과 변경 기록을 조각 옆에 둔다', () => {
+  // 라이선스·변경 기록은 public/fonts 에 둔다 — 운영 이미지가 public/ 을 그대로 싣는다(조각은 빌드가 .next/static 으로 옮긴다).
+  it('OFL 예약 이름을 쓰지 않고, 라이선스 전문과 변경 기록을 운영 이미지에 함께 싣는다', () => {
     expect(manifest.family).toBe('Nuri Sans');
     for (const reserved of [/pretendard/i, /\binter\b/i, /\bsource\b/i, /m plus/i]) {
       expect(faces.map((face) => face.family).join(' ')).not.toMatch(reserved);
     }
-    const ofl = readFileSync(join(fontDir, 'OFL.txt'), 'utf8');
+    const ofl = readFileSync(join(root, 'public/fonts/OFL.txt'), 'utf8');
     expect(ofl).toContain("with Reserved Font Name 'Pretendard'");
     expect(ofl).toContain('SIL Open Font License, Version 1.1');
-    expect(existsSync(join(fontDir, 'FONTLOG.txt'))).toBe(true);
+    expect(readFileSync(join(root, 'public/fonts/FONTLOG.txt'), 'utf8')).toContain("Renamed to 'Nuri Sans'");
   });
 
   it('원본 2MB 글꼴은 정적 공개 경로(public/)에 두지 않는다 — 쓰지 않는 2MB 를 누구나 받게 된다', () => {

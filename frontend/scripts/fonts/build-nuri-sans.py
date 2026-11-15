@@ -6,7 +6,8 @@
 
 라이선스: Pretendard 는 SIL OFL 1.1 이며 'Pretendard'·'Source'·'Inter'·'M PLUS 1' 이 예약 글꼴 이름(RFN)이다.
 글자를 덜어 낸 조각은 OFL 의 수정본이라 예약 이름을 쓸 수 없다 — 글꼴 안의 이름(name 표)과 CSS 이름을
-'Nuri Sans' 로 바꾸고, 저작권 고지(nameID 0)와 라이선스(13·14)는 그대로 둔다. OFL.txt 를 조각 옆에 둔다.
+'Nuri Sans' 로 바꾸고, 원저작자 고지(저작권·상표·디자이너·라이선스)는 그대로 둔다. OFL.txt·FONTLOG.txt 는 public/fonts 에 둬
+운영 이미지에 글꼴과 함께 실린다.
 
 조각(선언 범위는 서로 겹치지 않는다 — 겹치면 브라우저가 앞 조각을 받는 동안 다음 조각까지 받는다):
   core       기본 라틴·일반 문장부호·기본 화살표·한글 호환 자모(입력 중 조합 글자)
@@ -226,6 +227,7 @@ def main():
     parser.add_argument("--out-dir", default=os.path.join(frontend, "src", "app", "fonts", "nuri-sans"))
     parser.add_argument("--css", default=os.path.join(frontend, "src", "app", "fonts", "nuri-sans.css"))
     parser.add_argument("--manifest", default=os.path.join(here, "nuri-sans.manifest.json"))
+    parser.add_argument("--license-dir", default=os.path.join(frontend, "public", "fonts"))
     args = parser.parse_args()
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
@@ -258,9 +260,11 @@ def main():
         print(f"{name:8s} 글자 {len(cps):5d}  선언 {len(declared):5d}  {len(data):8d}B")
 
     # OFL 1.1 은 수정본에도 저작권 고지와 라이선스 전문을 함께 두게 한다. 무엇을 바꿨는지는 FONTLOG 에 적는다.
-    shutil.copyfile(os.path.join(here, "OFL.txt"), os.path.join(args.out_dir, "OFL.txt"))
+    #   public/fonts 에 두는 까닭: 운영 이미지가 public/ 을 그대로 싣는다(조각은 빌드가 .next/static 으로 옮긴다).
+    os.makedirs(args.license_dir, exist_ok=True)
+    shutil.copyfile(os.path.join(here, "OFL.txt"), os.path.join(args.license_dir, "OFL.txt"))
     version = source_font["name"].getDebugName(5)
-    with open(os.path.join(args.out_dir, "FONTLOG.txt"), "w", encoding="utf-8", newline="\n") as handle:
+    with open(os.path.join(args.license_dir, "FONTLOG.txt"), "w", encoding="utf-8", newline="\n") as handle:
         handle.write(
             f"{FAMILY} — FONTLOG\n\n"
             f"Original: Pretendard Variable ({version}), Copyright (c) 2021 Kil Hyung-jin, SIL Open Font License 1.1 (see OFL.txt).\n"
@@ -275,7 +279,7 @@ def main():
     rel_dir = os.path.relpath(args.out_dir, os.path.dirname(args.css)).replace(os.sep, "/")
     lines = [
         "/* 생성물 — frontend/scripts/fonts/build-nuri-sans.py 가 만든다. 직접 고치지 않는다.",
-        " * Nuri Sans 는 Pretendard Variable 을 글자 범위별로 나눈 OFL 수정본이다(예약 이름이라 이름을 바꿨다, 라이선스는 nuri-sans/OFL.txt).",
+        " * Nuri Sans 는 Pretendard Variable 을 글자 범위별로 나눈 OFL 수정본이다(예약 이름이라 이름을 바꿨다, 라이선스는 public/fonts/OFL.txt).",
         " * 범위는 서로 겹치지 않는다 — 브라우저는 화면 글자와 겹치는 조각만 받는다. KS X 1001 밖 드문 음절은 화면 문구에 쓰인 것만 담고",
         " * 나머지는 시스템 글꼴로 그린다. */",
     ]
