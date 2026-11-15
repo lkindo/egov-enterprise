@@ -54,6 +54,7 @@ const stats = {
   artclCn: '항목',
   count: 7,
   percentage: 70,
+  respondentCount: 10,
 };
 
 describe('survey API generated boundary', () => {
@@ -138,6 +139,42 @@ describe('survey API generated boundary', () => {
       frstRgtrId: '',
       crtDt: '',
     });
+  });
+
+  it('설문 통계의 respondentCount를 보존하고 선택 필드의 null은 생략 정규화하며 잘못된 타입은 차단한다', async () => {
+    executeGeneratedOperationMock.mockResolvedValueOnce([
+      stats,
+      {
+        srvyQstnSn: 5,
+        qstnCn: '의견을 작성해 주세요',
+        qstnTypeCd: '2',
+        srvyArtclSn: 9,
+        artclCn: null,
+        count: 3,
+        percentage: 100,
+        respondentCount: null,
+      },
+    ]);
+
+    await expect(getSurveyStats({ srvySn: 2 })).resolves.toEqual([
+      stats,
+      {
+        srvyQstnSn: 5,
+        qstnCn: '의견을 작성해 주세요',
+        qstnTypeCd: '2',
+        srvyArtclSn: 9,
+        count: 3,
+        percentage: 100,
+      },
+    ]);
+
+    executeGeneratedOperationMock.mockResolvedValueOnce([
+      { ...stats, respondentCount: '10' as never },
+    ]);
+
+    await expect(getSurveyStats({ srvySn: 2 })).rejects.toThrow(
+      '설문 통계가 필수 계약과 일치하지 않습니다.',
+    );
   });
 });
 

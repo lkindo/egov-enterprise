@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { hasDeliveryChannel } from '@/lib/delivery-channels';
 import { StandardModal } from '@/app/components/ui/standard-modal';
+import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
 import { UserPicker } from '@/app/components/ui/user-picker';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
@@ -107,6 +108,7 @@ export default function MemoReportManagementClient() {
   //   막히는 비대칭이고, 조용히 죽는 결함이다(DEC-OPS-023).
   const isAdmin = canPermission(user, 'MEMO_RPT_READ_ALL');
   const canDownloadAttachments = canPermission(user, 'FILE_DOWNLOAD');
+  const canUploadAttachments = canPermission(user, 'FILE_UPLOAD');
   // [2026-09-25 DIP I7] 지시는 보고를 받은 사람(rptrId, esntlId 축)만 남긴다.
   //   서버(MemoReportService.assertRecipient)와 같은 규칙이며 서버가 다시 판정한다.
   //   [2026-10-01] 서버가 판정한 instructable 을 먼저 쓴다 — 종전 화면은 지시 기능 권한(MEMO_RPT_INSTRUCT)을 보지 않아
@@ -144,6 +146,10 @@ export default function MemoReportManagementClient() {
   const [isComposeOpen, setComposeOpen] = useState(false);
   const [isPickerOpen, setPickerOpen] = useState(false);
   const [recipientName, setRecipientName] = useState<string | null>(null);
+  const composeFilesRef = useRef<File[]>([]);
+  const composeFilesGenerationRef = useRef(0);
+  const [composeUploaderKey, setComposeUploaderKey] = useState(0);
+  const uploadedComposeBundleRef = useRef<{ files: File[]; atchFileSn: number } | null>(null);
   const [isComposing, setComposing] = useState(false);
   const composingRef = useRef(false);
 
@@ -197,7 +203,17 @@ export default function MemoReportManagementClient() {
   const openCompose = () => {
     composeForm.reset({ rptTtl: '', rptCn: '', rptrId: '' });
     setRecipientName(null);
+    composeFilesGenerationRef.current += 1;
+    composeFilesRef.current = [];
+    uploadedComposeBundleRef.current = null;
+    setComposeUploaderKey((prev) => prev + 1);
     setComposeOpen(true);
+  };
+
+  const handleComposeFilesChange = (files: File[]) => {
+    composeFilesGenerationRef.current += 1;
+    composeFilesRef.current = files;
+    uploadedComposeBundleRef.current = null;
   };
 
   const closeCompose = () => {
@@ -210,15 +226,44 @@ export default function MemoReportManagementClient() {
     if (composingRef.current) return;
     composingRef.current = true;
     setComposing(true);
+    const submitFiles = composeFilesRef.current;
+    const submitFilesGeneration = composeFilesGenerationRef.current;
     try {
+      let atchFileSn: number | undefined;
+      if (canUploadAttachments && submitFiles.length > 0) {
+        if (uploadedComposeBundleRef.current?.files === submitFiles) {
+          atchFileSn = uploadedComposeBundleRef.current.atchFileSn;
+        } else {
+          try {
+            atchFileSn = await fileService.uploadFiles(submitFiles);
+          } catch (uploadError: unknown) {
+            toast(extractErrorMessage(uploadError, '첨부파일을 올리지 못했습니다. 입력 내용은 유지됩니다.'), 'error');
+            return;
+          }
+          if (composeFilesGenerationRef.current !== submitFilesGeneration) {
+            toast('첨부파일 목록이 바뀌어 등록을 중단했습니다. 첨부파일을 확인한 뒤 다시 등록해 주세요.', 'error');
+            return;
+          }
+          uploadedComposeBundleRef.current = { files: submitFiles, atchFileSn };
+        }
+      }
+      if (composeFilesGenerationRef.current !== submitFilesGeneration) {
+        toast('첨부파일 목록이 바뀌어 등록을 중단했습니다. 첨부파일을 확인한 뒤 다시 등록해 주세요.', 'error');
+        return;
+      }
       await memoReportService.createMemoReport({
         rptTtl: values.rptTtl,
         rptCn: values.rptCn,
         rptrId: values.rptrId,
         // 보고 일자는 서버가 요구하는 값이라 화면이 오늘로 채운다(사용자가 고를 축이 아니다).
         memoRptYmd: getTodayYmd(),
+        ...(atchFileSn !== undefined ? { atchFileSn } : {}),
       });
       toast('보고를 등록했습니다.', 'success');
+      composeFilesGenerationRef.current += 1;
+      composeFilesRef.current = [];
+      uploadedComposeBundleRef.current = null;
+      setComposeUploaderKey((prev) => prev + 1);
       setComposeOpen(false);
       // 방금 쓴 보고가 '내 보고' 에 보여야 등록됐다는 것을 사용자가 확인할 수 있다.
       handleTabChange('MY');
@@ -1050,6 +1095,19 @@ export default function MemoReportManagementClient() {
                 </FormItem>
               )}
             />
+
+            {canUploadAttachments ? (
+              <div className="space-y-2">
+                <span className="text-sm font-bold text-foreground">첨부파일</span>
+                <StandardFileUploader
+                  key={composeUploaderKey}
+                  name="files"
+                  disabled={isComposing}
+                  onFilesChange={handleComposeFilesChange}
+                />
+                <p className="text-xs text-muted-foreground">선택한 파일은 보고를 등록할 때 함께 올라갑니다.</p>
+              </div>
+            ) : null}
 
             <div className="flex justify-end gap-3">
               <Button type="button" variant="outline" onClick={closeCompose} disabled={isComposing}>취소</Button>

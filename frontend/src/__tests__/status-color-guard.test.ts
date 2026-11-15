@@ -61,7 +61,6 @@ const BASELINE_BY_FILE: Record<string, number> = {
   'src/app/components/ui/confirm-modal.tsx': 6,
   'src/app/components/ui/standard-form.tsx': 1,
   'src/app/components/ui/status-displays.tsx': 13,
-  'src/app/cop/sms/selectSmsList/SmsHubClient.tsx': 3,
   'src/app/global-error.tsx': 6,
   'src/app/login/LoginClient.tsx': 1,
   'src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx': 2,

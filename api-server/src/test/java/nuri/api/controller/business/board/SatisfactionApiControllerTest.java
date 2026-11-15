@@ -320,6 +320,44 @@ class SatisfactionApiControllerTest {
         order.verify(satisfactionService).assertLocatedAt(10L, "BBS_01", 1L);
     }
 
+    @Test
+    @DisplayName("🔒 볼 수 없는 글의 만족도는 대리 삭제할 수 없다 — 소속 대조와 삭제에 닿지 않는다")
+    void moderateOnInaccessiblePostIsForbiddenBeforeService() throws Exception {
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(boardService).assertCommentReadAccess("BBS_01", 99L);
+
+        mockMvc.perform(delete("/api/v1/boards/BBS_01/posts/99/satisfactions/10/moderate"))
+                .andExpect(status().isForbidden());
+
+        verify(satisfactionService, never()).assertLocatedAt(anyLong(), anyString(), anyLong());
+        verify(satisfactionService, never()).deleteByModerator(anyLong());
+    }
+
+    @Test
+    @DisplayName("🔒 대리 삭제도 경로의 글에 속하지 않은 평가 번호는 없는 평가와 같은 404 다")
+    void moderateRejectsSatisfactionOfAnotherPost() throws Exception {
+        doThrow(new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND))
+                .when(satisfactionService).assertLocatedAt(10L, "BBS_01", 1L);
+
+        mockMvc.perform(delete("/api/v1/boards/BBS_01/posts/1/satisfactions/10/moderate"))
+                .andExpect(status().isNotFound());
+
+        verify(boardService).assertCommentReadAccess("BBS_01", 1L);
+        verify(satisfactionService, never()).deleteByModerator(anyLong());
+    }
+
+    @Test
+    @DisplayName("경로의 글에 속한 평가는 열람 가드·소속 대조 순서로 대리 삭제된다")
+    void moderatePassesGuardAndLocationInOrder() throws Exception {
+        mockMvc.perform(delete("/api/v1/boards/BBS_01/posts/1/satisfactions/10/moderate"))
+                .andExpect(status().isOk());
+
+        var order = org.mockito.Mockito.inOrder(boardService, satisfactionService);
+        order.verify(boardService).assertCommentReadAccess("BBS_01", 1L);
+        order.verify(satisfactionService).assertLocatedAt(10L, "BBS_01", 1L);
+        order.verify(satisfactionService).deleteByModerator(10L);
+    }
+
     private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder modify(
             String method, String path) {
         return "PUT".equals(method)

@@ -21,6 +21,7 @@ interface StandardFileUploaderProps {
   onFilesChange?: (files: File[]) => void;
   onUpload?: (file: File, onProgress: (progress: number) => void) => Promise<unknown>;
   isAutoUpload?: boolean;
+  disabled?: boolean;
   maxFiles?: number;
   maxSizeMB?: number;
   accept?: string;
@@ -59,6 +60,7 @@ export function StandardFileUploader({
   onFilesChange,
   onUpload,
   isAutoUpload = false,
+  disabled = false,
   maxFiles = 5,
   // [2026-09-27 DIP B5 F9] 기본값을 서버(FileService)가 받는 확장자·파일당 크기로 둔다. 종전 기본값은 모든 형식이라,
   //   고른 파일이 저장할 때 415 로 거부되는 것을 사용자가 뒤늦게 알았다.
@@ -136,6 +138,7 @@ export function StandardFileUploader({
   }, [onUpload, toast]);
 
   const handleFiles = useCallback((files: File[]) => {
+    if (disabled) return;
     const validFiles = files.filter(file => {
       if (file.name.length > MAX_FILENAME_LENGTH) {
         toast.error('파일명은 확장자를 포함해 300자 이내로 지정해 주세요.');
@@ -186,9 +189,10 @@ export function StandardFileUploader({
       });
       toast.success(`${newFileStates.length}개의 파일이 추가되었습니다.`);
     }
-  }, [fileStates, maxFiles, maxSizeMB, accept, onFilesChange, isAutoUpload, onUpload, performActualUpload, simulateUpload, toast]);
+  }, [disabled, fileStates, maxFiles, maxSizeMB, accept, onFilesChange, isAutoUpload, onUpload, performActualUpload, simulateUpload, toast]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return;
     if (e.target.files) {
       handleFiles(Array.from(e.target.files));
     }
@@ -197,12 +201,14 @@ export function StandardFileUploader({
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
+    if (disabled) return;
     if (e.dataTransfer.files) {
       handleFiles(Array.from(e.dataTransfer.files));
     }
   };
 
   const removeFile = (id: string) => {
+    if (disabled) return;
     clearFallbackUpload(id);
     const updatedStates = fileStates.filter(fs => fs.id !== id);
     setFileStates(updatedStates);
@@ -213,14 +219,21 @@ export function StandardFileUploader({
     <div className={cn("space-y-2", className)}>
       {/* Drop Zone */}
       <label
-        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        aria-disabled={disabled || undefined}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (disabled) return;
+          setIsDragging(true);
+        }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={onDrop}
         className={cn(
-          "relative flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed px-3 py-4 transition-colors focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2",
-          isDragging
-            ? "border-primary bg-primary/10"
-            : "border-border bg-background hover:bg-muted"
+          "relative flex w-full flex-col items-center justify-center gap-1 rounded-md border border-dashed px-3 py-4 transition-colors focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2",
+          disabled
+            ? "cursor-not-allowed border-border bg-muted/40 opacity-60"
+            : isDragging
+              ? "cursor-pointer border-primary bg-primary/10"
+              : "cursor-pointer border-border bg-background hover:bg-muted"
         )}
       >
         <div className="flex flex-col items-center gap-1">
@@ -232,7 +245,7 @@ export function StandardFileUploader({
             최대 {maxFiles}개 파일 / {maxSizeMB}MB 제한
           </p>
         </div>
-        <input name={name} type="file" aria-label="파일 첨부 선택" className="sr-only" multiple accept={accept} onChange={handleFileChange} />
+        <input name={name} type="file" aria-label="파일 첨부 선택" className="sr-only" multiple accept={accept} disabled={disabled} onChange={handleFileChange} />
       </label>
 
       {/* File List */}
@@ -293,8 +306,9 @@ export function StandardFileUploader({
               <button
                 type="button"
                 aria-label={`${fs.file.name} 첨부 파일 삭제`}
+                disabled={disabled}
                 onClick={() => removeFile(fs.id)}
-                className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive-emphasis focus-visible:opacity-100"
+                className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive-emphasis focus-visible:opacity-100 disabled:pointer-events-none disabled:opacity-40"
               >
                 <X size={16} aria-hidden="true" />
               </button>

@@ -283,4 +283,31 @@ describe('StandardFileUploader', () => {
 
     expect(vi.getTimerCount()).toBe(baselineTimers);
   });
+
+  it('disabled 상태에서는 파일 선택·드롭·첨부 삭제를 모두 차단한다', () => {
+    const onFilesChange = vi.fn();
+    const initial = file('initial.pdf', 'application/pdf');
+    const added = file('added.pdf', 'application/pdf');
+    const dropped = file('dropped.pdf', 'application/pdf');
+
+    const { rerender } = render(<StandardFileUploader onFilesChange={onFilesChange} />);
+    fireEvent.change(input(), { target: { files: [initial] } });
+    expect(screen.getByText('initial.pdf')).toBeInTheDocument();
+    expect(onFilesChange).toHaveBeenCalledTimes(1);
+
+    rerender(<StandardFileUploader disabled onFilesChange={onFilesChange} />);
+
+    const deleteButton = screen.getByRole('button', { name: 'initial.pdf 첨부 파일 삭제' });
+    expect(input()).toBeDisabled();
+    expect(deleteButton).toBeDisabled();
+
+    fireEvent.change(input(), { target: { files: [added] } });
+    fireEvent.drop(dropZone(), { dataTransfer: { files: [dropped] } });
+    fireEvent.click(deleteButton);
+
+    expect(screen.getByText('initial.pdf')).toBeInTheDocument();
+    expect(screen.queryByText('added.pdf')).not.toBeInTheDocument();
+    expect(screen.queryByText('dropped.pdf')).not.toBeInTheDocument();
+    expect(onFilesChange).toHaveBeenCalledTimes(1);
+  });
 });
