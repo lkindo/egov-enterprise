@@ -443,6 +443,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
       {"code":"FILE_DOWNLOAD","action":"DOWNLOAD","source":"display"},
       {"code":"FILE_READ","action":"READ","source":"display"},
       {"code":"FILE_READ_ALL","action":"READ_ALL","source":"display"},
+      {"code":"FILE_UPLOAD","action":"UPLOAD","source":"write"},
       {"code":"MEMO_RPT_CREATE","action":"CREATE","source":"write"},
       {"code":"MEMO_RPT_DELETE","action":"DELETE","source":"write"},
       {"code":"MEMO_RPT_INSTRUCT","action":"INSTRUCT","source":"write"},

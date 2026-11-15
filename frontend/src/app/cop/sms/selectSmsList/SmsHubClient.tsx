@@ -18,7 +18,6 @@ import { MessageSquare,
   Clock, 
   Plus, 
   ShieldCheck, 
-  CheckCircle2, 
   Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -63,7 +62,7 @@ export default function SmsHubClient({
   const sendPendingRef = useRef(false);
   
   const [newSms, setNewSms] = useState<SmsFormState>({
-    sndngTelno: '010-1234-5678',
+    sndngTelno: '',
     rcptnTelno: '',
     sndngCn: '',
   });
@@ -74,8 +73,12 @@ export default function SmsHubClient({
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['sms-list', searchKeyword, page],
-    queryFn: () => smsAdminService.getSmsList({ page, searchKeyword }),
-    initialData: (page === 1 && !searchKeyword) ? initialData : undefined
+    queryFn: () =>
+      smsAdminService.getSmsList({
+        page,
+        ...(searchKeyword ? { searchCondition: '1', searchKeyword } : {}),
+      }),
+    initialData: (page === 1 && !searchKeyword) ? initialData : undefined,
   });
 
   const sendMutation = useMutation({
@@ -99,7 +102,7 @@ export default function SmsHubClient({
       */
       toast('발송 요청을 접수했습니다. 전달 결과는 ‘문자 메시지 발송 관리’에서 확인하세요.', 'info');
       setIsDialogOpen(false);
-      setNewSms((current) => ({ ...current, rcptnTelno: '', sndngCn: '' }));
+      setNewSms({ sndngTelno: '', rcptnTelno: '', sndngCn: '' });
       validation.setFormErrors({}, false);
       queryClient.invalidateQueries({ queryKey: ['sms-list'] });
     },
@@ -184,11 +187,11 @@ export default function SmsHubClient({
       )
     },
     {
-      header: 'STATUS',
-      accessor: () => (
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100 text-xs font-bold tracking-tight">
-          <CheckCircle2 size={12} /> DELIVERED
-        </div>
+      header: 'SENDER',
+      accessor: (item) => (
+        <span className="text-xs font-bold text-muted-foreground tracking-tight tabular-nums">
+          {item.sndngTelno || '-'}
+        </span>
       )
     }
   ];
@@ -250,6 +253,29 @@ export default function SmsHubClient({
                           onNavigate={validation.focusError}
                         />
                         <div className="space-y-6">
+                            <div className="space-y-3">
+                                <Label htmlFor="sms-hub-sender" className="text-xs font-bold text-muted-foreground tracking-tight">발신 번호</Label>
+                                <div className="relative group">
+                                    <Phone aria-hidden="true" className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={20} />
+                                    <Input
+                                        id="sms-hub-sender"
+                                        {...validation.fieldProps('sndngTelno')}
+                                        required
+                                        inputMode="tel"
+                                        maxLength={13}
+                                        placeholder="02-000-0000"
+                                        className="pl-16 bg-muted border-2 border-input rounded-[var(--radius-hub-item)] text-lg font-bold tracking-tight focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
+                                        value={newSms.sndngTelno}
+                                        onChange={(e) => {
+                                          setNewSms((current) => ({ ...current, sndngTelno: e.target.value }));
+                                          validation.clearError('sndngTelno');
+                                        }}
+                                    />
+                                </div>
+                                {validation.errors.sndngTelno && (
+                                  <p {...validation.messageProps('sndngTelno')} className="text-xs font-bold text-destructive" />
+                                )}
+                            </div>
                             <div className="space-y-3">
                                 <Label htmlFor="sms-hub-recipient" className="text-xs font-bold text-muted-foreground tracking-tight">수신 번호</Label>
                                 <div className="relative group">
@@ -341,9 +367,8 @@ export default function SmsHubClient({
                 <h4 className="text-3xl font-bold tracking-tighter text-foreground">_ Channel<br />Throughput</h4>
               </div>
               <div className="space-y-6 relative z-10">
-                <MetricItem label="Total Packets" value={data?.total || 0} />
-                <MetricItem label="Success Ratio" value="99.8%" />
-                <MetricItem label="Latency Index" value="240ms" />
+                <MetricItem label="전체 발송 요청" value={data?.total ?? 0} />
+                <MetricItem label="현재 페이지 건수" value={smsList.length} />
               </div>
             </div>
 
@@ -375,7 +400,10 @@ export default function SmsHubClient({
                       className="pl-16 bg-muted/50 border-none rounded-[var(--radius-hub-item)] text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
                       placeholder="Search packets..."
                       value={searchKeyword}
-                      onChange={(e) => setSearchKeyword(e.target.value)}
+                      onChange={(e) => {
+                        setSearchKeyword(e.target.value);
+                        setPage(1);
+                      }}
                     />
                   </div>
                   

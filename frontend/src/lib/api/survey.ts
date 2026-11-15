@@ -79,6 +79,8 @@ function requireSurveyStats(
     || typeof item.srvyArtclSn !== 'number'
     || typeof item.count !== 'number'
     || typeof item.percentage !== 'number'
+    || (item.artclCn !== undefined && item.artclCn !== null && typeof item.artclCn !== 'string')
+    || (item.respondentCount !== undefined && item.respondentCount !== null && typeof item.respondentCount !== 'number')
   ) {
     throw new Error('설문 통계가 필수 계약과 일치하지 않습니다.');
   }
@@ -87,9 +89,10 @@ function requireSurveyStats(
     qstnCn: item.qstnCn,
     qstnTypeCd: item.qstnTypeCd,
     srvyArtclSn: item.srvyArtclSn,
-    ...(item.artclCn === undefined ? {} : { artclCn: item.artclCn }),
+    ...(typeof item.artclCn === 'string' ? { artclCn: item.artclCn } : {}),
     count: item.count,
     percentage: item.percentage,
+    ...(typeof item.respondentCount === 'number' ? { respondentCount: item.respondentCount } : {}),
   };
 }
 

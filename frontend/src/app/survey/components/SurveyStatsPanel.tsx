@@ -3,11 +3,37 @@
 import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { downloadSurveyStatsXlsx, getSurveyStats } from '@/lib/api/survey';
+import { FREE_TEXT_QUESTION_TYPE, type SurveyResultStats } from '@/types/business/survey';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { Loader2, BarChart3, Download } from 'lucide-react';
 import { failureMessage } from '@/lib/safe-error-log';
+
+interface QuestionStatsGroup {
+  srvyQstnSn: number;
+  qstnCn: string;
+  qstnTypeCd: string;
+  items: SurveyResultStats[];
+}
+
+function groupSurveyStats(stats: SurveyResultStats[]): QuestionStatsGroup[] {
+  const groups = new Map<number, QuestionStatsGroup>();
+  for (const row of stats) {
+    const existing = groups.get(row.srvyQstnSn);
+    if (existing) {
+      existing.items.push(row);
+    } else {
+      groups.set(row.srvyQstnSn, {
+        srvyQstnSn: row.srvyQstnSn,
+        qstnCn: row.qstnCn,
+        qstnTypeCd: row.qstnTypeCd,
+        items: [row],
+      });
+    }
+  }
+  return [...groups.values()];
+}
 
 /**
  * 설문 결과 통계 패널 — `/survey/stats` 와 `/survey/[id]` 가 공유한다.
@@ -81,6 +107,8 @@ export function SurveyStatsPanel({ srvySn }: { srvySn: number | null }) {
     return <div className="text-center py-10 text-muted-foreground">응답 데이터가 없습니다.</div>;
   }
 
+  const questionGroups = groupSurveyStats(data);
+
   return (
     <div className="grid grid-cols-1 gap-6">
       <div className="flex flex-wrap items-center justify-end gap-3">
@@ -98,41 +126,53 @@ export function SurveyStatsPanel({ srvySn }: { srvySn: number | null }) {
           <Download size={14} aria-hidden="true" /> {isDownloading ? '내려받는 중…' : '결과를 엑셀로 내려받기'}
         </Button>
       </div>
-      {data.map((stat, idx) => (
-        <Card key={`${stat.qstnCn}-${stat.artclCn ?? ''}-${idx}`} className="shadow-sm overflow-hidden">
-          <CardHeader className="bg-muted/30 border-b">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-md flex items-center">
-                <span className="bg-primary text-primary-foreground w-6 h-6 rounded-lg flex items-center justify-center text-sm mr-3">
-                  {idx + 1}
-                </span>
-                {stat.qstnCn}
-              </CardTitle>
-              <div className="text-sm font-semibold px-2 py-1 bg-hub-blue/10 text-hub-blue rounded">
-                {stat.qstnTypeCd === '1' ? '객관식' : '주관식'}
+      {questionGroups.map((group, groupIdx) => {
+        const isFreeText = group.qstnTypeCd === FREE_TEXT_QUESTION_TYPE;
+        return (
+          <Card key={group.srvyQstnSn} className="shadow-sm overflow-hidden">
+            <CardHeader className="bg-muted/30 border-b">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-md flex items-center">
+                  <span className="bg-primary text-primary-foreground w-6 h-6 rounded-lg flex items-center justify-center text-sm mr-3">
+                    {groupIdx + 1}
+                  </span>
+                  {group.qstnCn}
+                </CardTitle>
+                <div className="text-sm font-semibold px-2 py-1 bg-hub-blue/10 text-hub-blue rounded">
+                  {isFreeText ? '주관식' : '객관식'}
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              <div className="flex justify-between text-sm mb-1">
-                <span className="font-medium">{stat.artclCn || '주관식 답변'}</span>
-                <span className="text-muted-foreground">
-                  {/* [2026-09-26 DIP V8] 비율의 분모는 이 문항에 응답한 사람 수다. 복수선택이면 항목 합계가 100% 를 넘을 수 있다. */}
-                  {stat.count || 0} 명 ({stat.percentage || 0}%)
-                  {typeof stat.respondentCount === 'number' ? ` · 응답자 ${stat.respondentCount}명 기준` : ''}
-                </span>
-              </div>
-              <div className="w-full bg-muted rounded-lg h-2.5 overflow-hidden">
-                <div
-                  className="bg-primary h-2.5 rounded-lg transition-all duration-500"
-                  style={{ width: `${stat.percentage || 0}%` }}
-                ></div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </CardHeader>
+            <CardContent className="pt-6 space-y-5">
+              {group.items.map((stat) => (
+                <div key={stat.srvyArtclSn} className="space-y-2">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="font-medium">
+                      {isFreeText ? (stat.artclCn || '주관식 응답') : (stat.artclCn || '선택 항목')}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {/* [2026-09-26 DIP V8] 비율의 분모는 이 문항에 응답한 사람 수다. 복수선택이면 항목 합계가 100% 를 넘을 수 있다. */}
+                      {stat.count || 0} 명 ({stat.percentage || 0}%)
+                      {typeof stat.respondentCount === 'number' ? ` · 응답자 ${stat.respondentCount}명 기준` : ''}
+                    </span>
+                  </div>
+                  <div className="w-full bg-muted rounded-lg h-2.5 overflow-hidden">
+                    <div
+                      className="bg-primary h-2.5 rounded-lg transition-all duration-500"
+                      style={{ width: `${Math.min(100, Math.max(0, stat.percentage || 0))}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+              {isFreeText ? (
+                <p className="text-xs text-muted-foreground">
+                  주관식 서술 답변은 설문 응답 관리에서 확인합니다.
+                </p>
+              ) : null}
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }

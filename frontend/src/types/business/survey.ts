@@ -79,7 +79,7 @@ export interface SurveyResultStats {
   srvyQstnSn: number;
   /** 문항 내용 */
   qstnCn: string;
-  /** 문항 유형 코드 ('1'=객관식, 그 외 주관식) */
+  /** 문항 유형 코드 ('2'=주관식 FREE_TEXT_QUESTION_TYPE, 그 외 객관식) */
   qstnTypeCd: string;
   /** 항목 일련번호 */
   srvyArtclSn: number;

@@ -19,21 +19,31 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import MemoReportManagementClient from '../MemoReportManagementClient';
 
-const mocks = vi.hoisted(() => ({
-  getReceivedReports: vi.fn(),
-  getMyReports: vi.fn(),
-  getMemoReports: vi.fn(),
-  getMemoReport: vi.fn(),
-  createMemoReport: vi.fn(),
-  updateDrctMatter: vi.fn(),
-  updateMemoReport: vi.fn(),
-  deleteMemoReport: vi.fn(),
-  confirm: vi.fn(),
-  toast: vi.fn(),
-  replace: vi.fn(),
-  downloadFile: vi.fn(),
-  user: { role: 'ROLE_ADMIN', permissions: ['MEMO_RPT_READ_ALL'], authorizationVersion: 'v1' } as { role: string; esntlId?: string; permissions?: string[]; authorizationVersion?: string } | null,
-}));
+const mocks = vi.hoisted(() => {
+  const toast = vi.fn();
+  return {
+    getReceivedReports: vi.fn(),
+    getMyReports: vi.fn(),
+    getMemoReports: vi.fn(),
+    getMemoReport: vi.fn(),
+    createMemoReport: vi.fn(),
+    updateDrctMatter: vi.fn(),
+    updateMemoReport: vi.fn(),
+    deleteMemoReport: vi.fn(),
+    confirm: vi.fn(),
+    toast,
+    toastApi: {
+      toast,
+      success: vi.fn(),
+      error: vi.fn(),
+      removeToast: vi.fn(),
+    },
+    replace: vi.fn(),
+    downloadFile: vi.fn(),
+    uploadFiles: vi.fn(),
+    user: { role: 'ROLE_ADMIN', permissions: ['MEMO_RPT_READ_ALL'], authorizationVersion: 'v1' } as { role: string; esntlId?: string; permissions?: string[]; authorizationVersion?: string } | null,
+  };
+});
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mocks.replace }),
@@ -41,7 +51,9 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: mocks.user }) }));
-vi.mock('@/services/foundation/file/FileService', () => ({ fileService: { downloadFile: mocks.downloadFile } }));
+vi.mock('@/services/foundation/file/FileService', () => ({
+  fileService: { downloadFile: mocks.downloadFile, uploadFiles: mocks.uploadFiles },
+}));
 vi.mock('@/services/business/memoreport/memoReportService', () => ({
   memoReportService: {
     getReceivedReports: mocks.getReceivedReports,
@@ -62,7 +74,7 @@ vi.mock('@/extensions/generated-delivery-channels', () => ({
 }));
 beforeEach(() => { channels.notification = true; });
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
-vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
+vi.mock('@/app/components/ui/toast', () => ({ useToast: () => mocks.toastApi }));
 vi.mock('@/app/components/ui/user-picker', () => ({
   UserPicker: ({ isOpen, onSelect }: { isOpen: boolean; onSelect: (u: { esntlId?: string; userNm?: string }) => void }) =>
     isOpen ? (
@@ -897,6 +909,173 @@ describe('메모보고 작성', () => {
       '보고를 등록하지 못했습니다. 입력 내용은 유지됩니다.', 'error'));
     expect(form.getByLabelText('제목', { exact: false })).toHaveValue('제목');
     expect(form.getByLabelText('내용', { exact: false })).toHaveValue('내용');
+  });
+
+  it('FILE_UPLOAD 권한이 있으면 첨부파일을 올려 받은 atchFileSn 을 싣고 재시도 시 중복 업로드를 피한다', async () => {
+    mocks.user = { role: 'ROLE_USER', permissions: ['FILE_UPLOAD'], authorizationVersion: 'v1' };
+    mocks.uploadFiles.mockResolvedValue(88);
+    mocks.createMemoReport
+      .mockRejectedValueOnce(new Error('일시 저장 오류'))
+      .mockResolvedValueOnce(12);
+    renderClient();
+    const form = await openCompose();
+
+    const attachment = new File(['hello'], 'report.pdf', { type: 'application/pdf' });
+    fireEvent.change(form.getByLabelText('제목', { exact: false }), { target: { value: '첨부 보고' } });
+    fireEvent.change(form.getByLabelText('내용', { exact: false }), { target: { value: '첨부 본문' } });
+    fireEvent.click(form.getByRole('button', { name: '받는 사람 선택' }));
+    fireEvent.click(await screen.findByRole('button', { name: '박수신 선택' }));
+    fireEvent.change(form.getByLabelText('파일 첨부 선택'), { target: { files: [attachment] } });
+
+    fireEvent.click(form.getByRole('button', { name: '보고 등록' }));
+
+    await waitFor(() => expect(mocks.uploadFiles).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mocks.createMemoReport).toHaveBeenCalledTimes(1));
+    expect(mocks.uploadFiles.mock.calls[0][0]).toEqual([attachment]);
+    expect(mocks.createMemoReport.mock.calls[0][0]).toMatchObject({
+      rptTtl: '첨부 보고',
+      rptCn: '첨부 본문',
+      rptrId: 'USR_B',
+      atchFileSn: 88,
+    });
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      '보고를 등록하지 못했습니다. 입력 내용은 유지됩니다.', 'error'));
+
+    // 파일 변경 없이 재시도하면 이미 발급된 atchFileSn(88)을 재사용한다.
+    fireEvent.click(form.getByRole('button', { name: '보고 등록' }));
+    await waitFor(() => expect(mocks.createMemoReport).toHaveBeenCalledTimes(2));
+    expect(mocks.uploadFiles).toHaveBeenCalledTimes(1);
+    expect(mocks.createMemoReport.mock.calls[1][0]).toMatchObject({ atchFileSn: 88 });
+  });
+
+  it('첨부파일 업로드에 실패하면 보고 등록을 호출하지 않고 사유와 입력을 유지한다', async () => {
+    mocks.user = { role: 'ROLE_USER', permissions: ['FILE_UPLOAD'], authorizationVersion: 'v1' };
+    mocks.uploadFiles.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { data: { message: '허용하지 않는 파일 형식입니다.' } },
+    });
+    renderClient();
+    const form = await openCompose();
+
+    const attachment = new File(['corrupt'], 'corrupt.pdf', { type: 'application/pdf' });
+    fireEvent.change(form.getByLabelText('제목', { exact: false }), { target: { value: '업로드 실패 보고' } });
+    fireEvent.change(form.getByLabelText('내용', { exact: false }), { target: { value: '본문 유지' } });
+    fireEvent.click(form.getByRole('button', { name: '받는 사람 선택' }));
+    fireEvent.click(await screen.findByRole('button', { name: '박수신 선택' }));
+    fireEvent.change(form.getByLabelText('파일 첨부 선택'), { target: { files: [attachment] } });
+
+    fireEvent.click(form.getByRole('button', { name: '보고 등록' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('허용하지 않는 파일 형식입니다.', 'error'));
+    expect(mocks.createMemoReport).not.toHaveBeenCalled();
+    expect(form.getByLabelText('제목', { exact: false })).toHaveValue('업로드 실패 보고');
+    expect(form.getByLabelText('내용', { exact: false })).toHaveValue('본문 유지');
+  });
+
+  it('첨부 업로드 대기 중에는 파일 선택·드롭·삭제를 잠그고 완료 후 등록한다', async () => {
+    mocks.user = { role: 'ROLE_USER', permissions: ['FILE_UPLOAD'], authorizationVersion: 'v1' };
+    let resolveUpload!: (sn: number) => void;
+    mocks.uploadFiles.mockImplementationOnce(
+      () => new Promise<number>((resolve) => {
+        resolveUpload = resolve;
+      }),
+    );
+    mocks.createMemoReport.mockResolvedValueOnce(15);
+    renderClient();
+    const form = await openCompose();
+
+    const first = new File(['first'], 'first.pdf', { type: 'application/pdf' });
+    const extra = new File(['extra'], 'extra.pdf', { type: 'application/pdf' });
+    fireEvent.change(form.getByLabelText('제목', { exact: false }), { target: { value: '잠금 검증 보고' } });
+    fireEvent.change(form.getByLabelText('내용', { exact: false }), { target: { value: '대기 중 첨부 고정' } });
+    fireEvent.click(form.getByRole('button', { name: '받는 사람 선택' }));
+    fireEvent.click(await screen.findByRole('button', { name: '박수신 선택' }));
+    fireEvent.change(form.getByLabelText('파일 첨부 선택'), { target: { files: [first] } });
+
+    fireEvent.click(form.getByRole('button', { name: '보고 등록' }));
+
+    await waitFor(() => expect(mocks.uploadFiles).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(form.getByRole('button', { name: '등록 중…' })).toBeDisabled());
+
+    const fileInput = form.getByLabelText('파일 첨부 선택') as HTMLInputElement;
+    const dropZone = fileInput.closest('label') as HTMLLabelElement;
+    const deleteButton = form.getByRole('button', { name: 'first.pdf 첨부 파일 삭제' });
+    expect(fileInput).toBeDisabled();
+    expect(deleteButton).toBeDisabled();
+
+    fireEvent.click(deleteButton);
+    fireEvent.change(fileInput, { target: { files: [extra] } });
+    fireEvent.drop(dropZone, { dataTransfer: { files: [extra] } });
+
+    expect(form.getByText('first.pdf')).toBeInTheDocument();
+    expect(form.queryByText('extra.pdf')).not.toBeInTheDocument();
+
+    await act(async () => {
+      resolveUpload(77);
+    });
+
+    await waitFor(() => expect(mocks.createMemoReport).toHaveBeenCalledTimes(1));
+    expect(mocks.createMemoReport.mock.calls[0][0]).toMatchObject({ atchFileSn: 77 });
+  });
+
+  it('업로드 중 첨부가 동기적으로 바뀌면 이전 atchFileSn 으로 등록하지 않고 다음 재시도에 반영한다', async () => {
+    mocks.user = { role: 'ROLE_USER', permissions: ['FILE_UPLOAD'], authorizationVersion: 'v1' };
+    let resolveUpload!: (sn: number) => void;
+    renderClient();
+    const form = await openCompose();
+
+    const first = new File(['first'], 'first.pdf', { type: 'application/pdf' });
+    fireEvent.change(form.getByLabelText('제목', { exact: false }), { target: { value: '경합 차단 보고' } });
+    fireEvent.change(form.getByLabelText('내용', { exact: false }), { target: { value: '삭제 후 재등록' } });
+    fireEvent.click(form.getByRole('button', { name: '받는 사람 선택' }));
+    fireEvent.click(await screen.findByRole('button', { name: '박수신 선택' }));
+    fireEvent.change(form.getByLabelText('파일 첨부 선택'), { target: { files: [first] } });
+
+    mocks.uploadFiles.mockImplementationOnce(() => {
+      fireEvent.click(form.getByRole('button', { name: 'first.pdf 첨부 파일 삭제' }));
+      return new Promise<number>((resolve) => {
+        resolveUpload = resolve;
+      });
+    });
+    mocks.createMemoReport.mockResolvedValueOnce(16);
+
+    fireEvent.click(form.getByRole('button', { name: '보고 등록' }));
+    await waitFor(() => expect(mocks.uploadFiles).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      resolveUpload(77);
+    });
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      '첨부파일 목록이 바뀌어 등록을 중단했습니다. 첨부파일을 확인한 뒤 다시 등록해 주세요.',
+      'error',
+    ));
+    expect(mocks.createMemoReport).not.toHaveBeenCalled();
+    expect(form.getByLabelText('제목', { exact: false })).toHaveValue('경합 차단 보고');
+    expect(form.getByLabelText('내용', { exact: false })).toHaveValue('삭제 후 재등록');
+
+    fireEvent.click(form.getByRole('button', { name: '보고 등록' }));
+    await waitFor(() => expect(mocks.createMemoReport).toHaveBeenCalledTimes(1));
+    expect(mocks.uploadFiles).toHaveBeenCalledTimes(1);
+    expect(mocks.createMemoReport.mock.calls[0][0]).not.toHaveProperty('atchFileSn');
+  });
+
+  it('FILE_UPLOAD 권한이 없으면 작성 모달에 파일 업로더를 보이지 않고 첨부 없이 등록한다', async () => {
+    mocks.user = { role: 'ROLE_USER', permissions: ['MEMO_RPT_READ'], authorizationVersion: 'v1' };
+    renderClient();
+    const form = await openCompose();
+
+    expect(form.queryByLabelText('파일 첨부 선택')).not.toBeInTheDocument();
+
+    fireEvent.change(form.getByLabelText('제목', { exact: false }), { target: { value: '무첨부 보고' } });
+    fireEvent.change(form.getByLabelText('내용', { exact: false }), { target: { value: '본문' } });
+    fireEvent.click(form.getByRole('button', { name: '받는 사람 선택' }));
+    fireEvent.click(await screen.findByRole('button', { name: '박수신 선택' }));
+    fireEvent.click(form.getByRole('button', { name: '보고 등록' }));
+
+    await waitFor(() => expect(mocks.createMemoReport).toHaveBeenCalledTimes(1));
+    expect(mocks.uploadFiles).not.toHaveBeenCalled();
+    expect(mocks.createMemoReport.mock.calls[0][0]).not.toHaveProperty('atchFileSn');
   });
 });
 

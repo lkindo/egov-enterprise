@@ -126,7 +126,7 @@ public class SatisfactionApiController {
     }
 
     /**
-     * 수정·삭제도 조회·등록과 같은 게시글 경계를 지나고, 평가가 경로의 글에 실제로 속하는지 본다(2026-10-23 ADR-0040 A0,
+     * 수정·삭제·대리 삭제도 조회·등록과 같은 게시글 경계를 지나고, 평가가 경로의 글에 실제로 속하는지 본다(2026-10-23 ADR-0040 A0,
      * 댓글 DIP S8 선례). 종전에는 작성자 확인만 해서, 회원 전용 게시판에서 탈퇴한 사람도 읽지 못하는 글의 자기 평가를
      * 고치고 지울 수 있었고, 경로의 글과 평가의 글이 달라도 통과했다. 가드를 먼저 부른다 — 소속 대조를 앞에 두면
      * 읽을 수 없는 글의 평가 번호가 있는지 404/403 차이로 드러난다.
@@ -144,6 +144,7 @@ public class SatisfactionApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.SatisfactionApiController#moderate')")
     public ResponseEntity<ApiResponse<Void>> moderate(
             @PathVariable String bbsId, @PathVariable Long pstSn, @PathVariable Long dgstfnSn) {
+        assertSatisfactionAccess(bbsId, pstSn, dgstfnSn);
         satisfactionService.deleteByModerator(dgstfnSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
