@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, type CSSProperties, type RefObject } from 'react';
 import { X } from 'lucide-react';
 import { popupService } from '@/services/business/user/PopupService';
-import { isCanceledRequest } from '@/lib/safe-error-log';
+import { isCanceledRequest, isSessionExpiredRejection } from '@/lib/safe-error-log';
 import { PublicPopup } from '@/types/foundation/banner';
 import Image from 'next/image';
 import { AttachmentImage, extractAtchFileSn } from '@/app/components/ui/attachment-image';
@@ -273,7 +273,8 @@ export function PopupManager() {
                 setIndex(0);
             } catch (error) {
                 // [2026-09-16] 취소는 실패가 아니다 — 인증 상태 변경으로 이전 요청 결과를 버린 경우다.
-                if (!isCanceledRequest(error)) {
+                // [2026-11-16] 세션이 끝나 로그인 화면으로 넘어가는 중의 거절도 실패가 아니다.
+                if (!isCanceledRequest(error) && !isSessionExpiredRejection(error)) {
                     console.error('Failed to fetch popups:', error);
                 }
             }
