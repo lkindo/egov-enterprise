@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight, ExternalLink, Pause, Play } from 'lucide-react';
 import { bannerService } from '@/services/business/user/BannerService';
-import { isCanceledRequest } from '@/lib/safe-error-log';
+import { isCanceledRequest, isSessionExpiredRejection } from '@/lib/safe-error-log';
 import { PublicBanner } from '@/types/foundation/banner';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -50,7 +50,8 @@ export function BannerSlider() {
       } catch (error: unknown) {
         // [2026-09-16] 취소는 실패가 아니다 — 인증 상태가 바뀌어 이전 요청 결과를 버린 것이다.
         //   콘솔 오류로 남기면 e2e 오류 감지기가 진짜 오류와 섞어 세고, 재시도로 통과해도 flaky 가 된다.
-        if (!isCanceledRequest(error)) {
+        //   [2026-11-16] 세션이 끝나 로그인 화면으로 넘어가는 중의 거절도 같다(isSessionExpiredRejection).
+        if (!isCanceledRequest(error) && !isSessionExpiredRejection(error)) {
           const err = error as { response?: { status?: number } };
           if (err.response?.status === 403) {
             console.warn('>>> [BannerSlider] Access denied (403). Banners will not be displayed for this user.');

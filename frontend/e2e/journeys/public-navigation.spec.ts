@@ -307,10 +307,20 @@ test.describe('설문 응답 생명주기', () => {
                                     await link.focus();
                                     await adminPage.keyboard.press('Shift+Tab');
                                     await expect(link).not.toBeFocused();
+                                    // [2026-11-16] main run 43596175100 — 375→1280 폭 전환과 테마 변경 직후 반복에서 Tab 뒤에도 포커스가 사이드바
+                                    //   접기 단추(Shift+Tab 의 목적지)에 남았다(40회 중 1회, 원인 미확정). 다음에 나면 원인을 가를 수 있게 두 시점의
+                                    //   포커스를 실패 메시지에 남긴다 — 판정은 그대로다.
+                                    const describeFocus = () => adminPage.evaluate(() => {
+                                        const active = document.activeElement as HTMLElement | null;
+                                        if (!active || active === document.body) return 'body';
+                                        return `${active.tagName.toLowerCase()}[${active.getAttribute('aria-label') ?? active.textContent?.trim().slice(0, 24) ?? ''}]`;
+                                    });
+                                    const focusAfterShiftTab = await describeFocus();
                                     await expect(link).not.toHaveCSS('box-shadow', /0px 0px 0px [1-9]\d*(?:\.\d+)?px/);
                                     const unfocusedShadow = await link.evaluate(element => getComputedStyle(element).boxShadow);
                                     await adminPage.keyboard.press('Tab');
-                                    await expect(link).toBeFocused();
+                                    const focusAfterTab = await describeFocus();
+                                    await expect(link, `${dark ? 'dark' : 'light'} ${viewport.width}px ${control}: Shift+Tab 뒤 ${focusAfterShiftTab}, Tab 뒤 ${focusAfterTab}`).toBeFocused();
                                     await expect(link).toBeInViewport();
                                     await expect(link).toHaveCSS('box-shadow', /0px 0px 0px [1-9]\d*(?:\.\d+)?px/);
                                     await expect(link).not.toHaveCSS('box-shadow', unfocusedShadow);

@@ -118,3 +118,17 @@ export function isCanceledRequest(error: unknown): boolean {
   if (!isRecord(error)) return false;
   return error.code === 'ERR_CANCELED' || error.name === 'CanceledError';
 }
+
+/**
+ * 세션이 끝나 로그인 화면으로 넘어가는 중의 거절인가 — 재발급이 `SESSION_EXPIRED`(401)로 거부되면 클라이언트가 로그인 화면으로
+ * 이동하고(lib/api/client.ts) 기다리던 조회를 그 재발급 오류로 거절한다(2026-11-16).
+ *
+ * <p>화면을 떠나는 중의 결과라 실패가 아니다. 홈 위젯이 이것을 `console.error` 로 남기면 e2e 오류 감지기가 진짜 오류와 함께
+ * 센다 — main run 43573279508 에서 배정 회수 뒤 도착한 팝업 조회가 그렇게 시험을 붉혔다. 재발급의 다른 거절(요청 제한·프록시
+ * 오류)과 일반 401 은 여기에 들지 않는다.
+ */
+export function isSessionExpiredRejection(error: unknown): boolean {
+  if (!isRecord(error) || !isRecord(error.response) || error.response.status !== 401) return false;
+  const data = error.response.data;
+  return isRecord(data) && data.code === 'SESSION_EXPIRED';
+}

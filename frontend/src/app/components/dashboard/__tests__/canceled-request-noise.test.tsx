@@ -72,4 +72,30 @@ describe('취소된 조회는 콘솔 오류가 아니다', () => {
     render(<PopupManager />);
     await waitFor(() => expect(errorSpy).toHaveBeenCalled());
   });
+
+  // [2026-11-16] main run 43573279508 — 배정 회수 뒤 도착한 팝업 조회가 세션 만료 거절을 콘솔 오류로 남겨 e2e 가 붉었다.
+  //   재발급이 SESSION_EXPIRED 로 거부되면 클라이언트가 로그인 화면으로 옮기고 기다리던 조회를 그 오류로 거절한다.
+  const sessionExpired = (code = 'SESSION_EXPIRED', status = 401) => Object.assign(
+    new Error('다른 곳에서 로그인했거나 세션이 만료되었습니다. 다시 로그인해 주세요.'),
+    { name: 'AxiosError', response: { status, data: { success: false, code, message: '세션이 만료되었습니다.' } } },
+  );
+
+  it('세션이 끝나 로그인 화면으로 넘어가는 중의 팝업·배너 거절은 기록하지 않는다', async () => {
+    harness.popups.mockRejectedValue(sessionExpired());
+    harness.banners.mockRejectedValue(sessionExpired());
+    render(<><PopupManager /><BannerSlider /></>);
+    await waitFor(() => expect(harness.popups).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(harness.banners).toHaveBeenCalledTimes(1));
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('재발급의 다른 거절(요청 제한)이나 일반 401 은 그대로 기록한다', async () => {
+    harness.popups.mockRejectedValue(sessionExpired('REISSUE_RATE_LIMITED', 429));
+    render(<PopupManager />);
+    await waitFor(() => expect(errorSpy).toHaveBeenCalledTimes(1));
+    errorSpy.mockClear();
+    harness.banners.mockRejectedValue(Object.assign(new Error('Request failed with status code 401'), { response: { status: 401, data: {} } }));
+    render(<BannerSlider />);
+    await waitFor(() => expect(errorSpy).toHaveBeenCalledTimes(1));
+  });
 });
