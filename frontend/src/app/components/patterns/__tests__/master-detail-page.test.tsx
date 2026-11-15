@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MasterDetailLayout, MasterDetailPage } from '../master-detail-page';
 
@@ -31,6 +31,46 @@ function renderPage(overrides: Partial<React.ComponentProps<typeof MasterDetailP
     />,
   );
 }
+
+/*
+ * [2026-11-16] 상세 영역이 넘치면 키보드로 닿아야 스크롤할 수 있다(axe scrollable-region-focusable). 공용 setup 의 ResizeObserver
+ *   흉내는 콜백을 부르지 않으므로 이 묶음에서만 콜백을 부르는 관찰기로 바꿔 넘침 분기를 직접 본다.
+ */
+describe('MasterDetailPage — 넘치는 상세 영역의 키보드 스크롤', () => {
+  const originalResizeObserver = global.ResizeObserver;
+  let notifyResize: Array<() => void> = [];
+  beforeEach(() => {
+    notifyResize = [];
+    global.ResizeObserver = class {
+      constructor(callback: ResizeObserverCallback) {
+        notifyResize.push(() => callback([], this as unknown as ResizeObserver));
+      }
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+  });
+  afterEach(() => {
+    global.ResizeObserver = originalResizeObserver;
+  });
+
+  it('넘칠 때만 탭으로 닿고, 늦게 커지거나 줄어든 이미지 로드에서 다시 잰다', () => {
+    renderPage();
+    const detail = screen.getByTestId('master-detail-detail');
+    let scrollHeight = 900;
+    Object.defineProperty(detail, 'scrollHeight', { configurable: true, get: () => scrollHeight });
+    Object.defineProperty(detail, 'clientHeight', { configurable: true, get: () => 400 });
+    expect(detail).toHaveAttribute('tabindex', '-1');
+
+    act(() => { notifyResize.forEach((notify) => notify()); });
+    expect(detail).toHaveAttribute('tabindex', '0');
+
+    // load 는 버블되지 않는다 — 상세 안 요소에서 난 load 를 영역이 캡처로 받아 다시 잰다.
+    scrollHeight = 400;
+    act(() => { detail.querySelector('p')!.dispatchEvent(new Event('load')); });
+    expect(detail).toHaveAttribute('tabindex', '-1');
+  });
+});
 
 describe('MasterDetailPage — A2 archetype 문법', () => {
   it('페이지 헤더 → 좌측 마스터 → 우측 상세 순서와 단일 h1을 유지한다', () => {

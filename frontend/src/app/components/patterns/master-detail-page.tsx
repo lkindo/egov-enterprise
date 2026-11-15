@@ -328,9 +328,12 @@ export function MasterDetailPage({
     resize?.observe(content);
     const mutation = typeof MutationObserver === 'undefined' ? null : new MutationObserver(measure);
     mutation?.observe(content, { childList: true, subtree: true, characterData: true });
+    // 크기를 미리 적지 않은 이미지가 뒤늦게 커지면 노드도 영역 크기도 바뀌지 않는다 — load 는 버블되지 않아 캡처로 받는다.
+    content.addEventListener('load', measure, true);
     return () => {
       resize?.disconnect();
       mutation?.disconnect();
+      content.removeEventListener('load', measure, true);
     };
   }, []);
 
