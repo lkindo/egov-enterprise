@@ -1,5 +1,11 @@
 import React from 'react';
 import type { Metadata } from 'next';
+// [2026-11-15] 본문 글꼴 Nuri Sans — Pretendard 가변 글꼴을 글자 범위별 조각으로 나눈 OFL 수정본(scripts/fonts/build-nuri-sans.py).
+//   한글 전체를 담은 2MB 한 벌은 모든 화면이 받아 첫 방문이 느렸다(Lighthouse 모의 첫 그림 11초). 브라우저는 unicode-range 가
+//   화면 글자와 겹치는 조각만 받는다 — 로그인은 기본 라틴·화면 문구 음절 세 조각(185KB)이다. next/font/local 은
+//   unicode-range 를 지원하지 않아 @font-face 를 생성 CSS 로 둔다. 미리 불러오지 않고(DEC-OPS-191) font-display 는 optional 이다 —
+//   느린 첫 방문은 대체 글꼴을 유지해 늦은 글꼴 전환을 막고, 받은 조각은 다음 방문에 쓴다.
+import './fonts/nuri-sans.css';
 import './globals.css';
 import { ThemeProvider } from './components/theme-provider';
 import Providers from './providers';
@@ -8,7 +14,6 @@ import { Header } from './components/layout/header';
 import { Sidebar } from './components/layout/sidebar';
 import { Footer } from './components/layout/footer';
 import { Inter, Outfit } from 'next/font/google';
-import localFont from 'next/font/local';
 import { PageTransition } from './components/layout/page-transition';
 import { resolveBrandTheme } from '@/lib/theme/brand-theme';
 import { resolveDensity } from '@/lib/theme/density';
@@ -20,18 +25,6 @@ import { getServerUser } from '@/lib/auth/server-user';
 import { SITE_IDENTITY } from '@/config/site-identity';
 import { POPSTATE_GATE_SCRIPT } from '@/lib/navigation/popstate-gate';
 import { SIDEBAR_COLLAPSE_SCRIPT } from '@/lib/layout/sidebar-collapse-script';
-
-// [2026-10-01] 한글 전체를 담은 가변 글꼴(약 2MB)이라 미리 불러오지 않는다.
-//   인증 업무 실측에서도 2.06MB 전송·13초 다운로드와 뒤늦은 글꼴 전환이 관측됐다.
-//   optional은 느린 첫 방문에서 대체 글꼴을 유지해 늦은 전환을 막고, 캐시된 글꼴은 다음 방문에서 사용한다.
-//   번들 예산 스크립트가 라우트별 preload 글꼴 바이트를 막는다.
-const pretendard = localFont({
-  src: '../../public/fonts/PretendardVariable.woff2',
-  display: 'optional',
-  preload: false,
-  weight: '45 920',
-  variable: '--font-pretendard',
-});
 
 const inter = Inter({
   subsets: ['latin'],
@@ -126,11 +119,11 @@ export default async function RootLayout({
   const density = resolveDensity(process.env.UI_DENSITY);
   // [2026-09-16 GAP-UIF-001] next/font 변수는 <html>(:root)에 둔다. globals.css 의 @theme 는
   // --font-sans 를 :root 에서 계산하는데, 변수를 body 에만 두면 그 시점에 값이 없어 별칭 전체가
-  // 무효가 되고 브라우저는 시스템 대체 글꼴로 떨어졌다 — 번들한 Pretendard 가 쓰이지 않았다.
+  // 무효가 되고 브라우저는 시스템 대체 글꼴로 떨어졌다 — 번들한 본문 글꼴이 쓰이지 않았다.
   return (
     <html
       lang="ko"
-      className={`${pretendard.variable} ${inter.variable} ${outfit.variable} scroll-pt-16`}
+      className={`${inter.variable} ${outfit.variable} scroll-pt-16`}
       data-brand-theme={brandTheme}
       data-density={density}
       suppressHydrationWarning

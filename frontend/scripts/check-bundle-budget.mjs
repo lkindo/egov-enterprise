@@ -39,6 +39,9 @@
  * 글꼴은 `display: swap` 으로 받으므로 미리 불러오지 않아도 본문은 대체 글꼴로 먼저 보인다. next/font 매니페스트
  * (`.next/server/next-font-manifest.json`)에서 라우트마다 preload 되는 글꼴 바이트를 더해 가장 큰 라우트를 본다.
  * 매니페스트가 없으면 측정할 수 없으므로 통과시키지 않는다.
+ * [2026-11-15] 본문 글꼴은 이제 next/font 가 아니라 글자 범위별 조각(Nuri Sans, `src/app/fonts/nuri-sans.css`)이다. 조각은 미리
+ * 불러오지 않아 이 측정에 잡히지 않으며, 로그인 첫 화면이 받는 두 조각의 합 상한은 단위 가드(`font-token-scope.test.ts`)가 본다.
+ * 조각의 `@font-face` 선언(gzip 약 6KB)은 CSS 합계에 들어간다.
  *
  * [2026-10-19] **모든 라우트가 첫 로드에 받는 JS(공용 JS)를 센다.** 합계·단일 청크 예산은 어느 화면이 무엇을 받는지 말하지
  * 않는다 — 루트 레이아웃이 끌어온 모듈은 121개 라우트 모두의 첫 로드에 실리는데도 두 예산 안이었다. 실측(main 682d203f3)에서
@@ -48,6 +51,11 @@
  * 공용 JS 는 루트 레이아웃 아래 모든 페이지의 첫 로드 JS 의 교집합이다. 페이지마다 첫 로드 JS 는 build-manifest 의 rootMainFiles 와
  * 그 페이지 client reference 매니페스트(`.next/server/app/**\/page_client-reference-manifest.js`)의 entryJSFiles 전부의 합집합이다.
  * 루트 레이아웃 entry 가 없는 페이지(`_global-error`)는 루트 레이아웃 밖이라 뺀다. 매니페스트를 읽지 못하면 통과시키지 않는다.
+ *
+ * [2026-11-15] **화면 하나의 첫 로드 JS 최대(page)를 센다.** 공용 JS 는 모든 화면의 교집합이라 한 화면만 끌어온 큰 라이브러리를
+ * 보지 못한다 — 통계 화면 7개는 차트 래퍼가 recharts 를 정적으로 불러 첫 로드가 약 580KB 로 다른 화면(중앙값 431KB)보다 컸다.
+ * 차트 본체를 next/dynamic 으로 늦춰 441KB 로 줄였고(같은 기계 Windows 빌드), 그 뒤 가장 큰 화면은 공통코드 관리(481,849B)다.
+ * 같은 순회에서 페이지마다 첫 로드 JS 합계를 잰다.
  */
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -56,7 +64,8 @@ import { gzipSync } from 'node:zlib';
 const CHUNK_ROOT = path.resolve('.next/static/chunks');
 const BUDGETS = {
   // shared: 공용 JS(위 2026-10-19). 실측 345,355B 를 정책 하한(여유 10%) 안에 두는 가장 작은 천 단위 값이다.
-  js: { total: 2_250_000, single: 150_000, shared: 384_000 },
+  // page: 화면 하나의 첫 로드 JS 최대(아래 2026-11-15). 실측 481,849B 를 정책 하한(여유 10%) 안에 두는 가장 작은 천 단위 값이다.
+  js: { total: 2_250_000, single: 150_000, shared: 384_000, page: 536_000 },
   css: { total: 40_000, single: 38_000 },
 };
 
@@ -113,32 +122,41 @@ function parseClientReferenceManifest(source, file) {
 /**
  * 공용 JS — 루트 레이아웃 아래 모든 페이지가 첫 로드에 받는 JS 파일의 교집합과 그 gzip 크기.
  * 페이지의 첫 로드 JS = build-manifest 의 rootMainFiles ∪ 그 페이지 매니페스트의 entryJSFiles 전부(레이아웃·경계·페이지).
+ * 같은 순회에서 페이지마다 첫 로드 JS 합계를 재어 가장 큰 페이지도 돌려준다(아래 page 예산).
  */
-async function measureSharedJs() {
+async function measureFirstLoadJs() {
   const { rootMainFiles } = JSON.parse(await readFile(BUILD_MANIFEST, 'utf8'));
   if (!Array.isArray(rootMainFiles) || rootMainFiles.length === 0) {
     throw new Error('build-manifest.json 에 rootMainFiles 가 없습니다');
   }
   const manifests = (await walk(APP_SERVER_ROOT)).filter((file) => path.basename(file) === CLIENT_REFERENCE_MANIFEST);
+  const gzipSizes = new Map();
+  const gzipOf = async (chunk) => {
+    if (!gzipSizes.has(chunk)) {
+      gzipSizes.set(chunk, gzipSync(await readFile(path.resolve('.next', chunk)), { level: 9 }).byteLength);
+    }
+    return gzipSizes.get(chunk);
+  };
   let shared = null;
   let pages = 0;
+  let largestPage = { page: null, total: 0 };
   for (const file of manifests) {
-    for (const { manifest } of parseClientReferenceManifest(await readFile(file, 'utf8'), file)) {
+    for (const { page, manifest } of parseClientReferenceManifest(await readFile(file, 'utf8'), file)) {
       const entries = manifest.entryJSFiles ?? {};
       if (!Object.keys(entries).some((entry) => ROOT_LAYOUT_ENTRY.test(entry))) continue;
       const firstLoad = new Set(rootMainFiles);
       for (const files of Object.values(entries)) for (const chunk of files) firstLoad.add(chunk);
       shared = shared === null ? firstLoad : new Set([...shared].filter((chunk) => firstLoad.has(chunk)));
       pages += 1;
+      let total = 0;
+      for (const chunk of firstLoad) total += await gzipOf(chunk);
+      if (total > largestPage.total) largestPage = { page, total };
     }
   }
   if (pages === 0) throw new Error('루트 레이아웃 아래 페이지의 client reference 매니페스트를 찾지 못했습니다 — next build 선행 여부를 확인하십시오');
-  const rows = await Promise.all([...shared].map(async (chunk) => ({
-    file: chunk,
-    gzip: gzipSync(await readFile(path.resolve('.next', chunk)), { level: 9 }).byteLength,
-  })));
+  const rows = await Promise.all([...shared].map(async (chunk) => ({ file: chunk, gzip: await gzipOf(chunk) })));
   rows.sort((left, right) => right.gzip - left.gzip);
-  return { pages, rows, total: rows.reduce((sum, row) => sum + row.gzip, 0) };
+  return { pages, rows, total: rows.reduce((sum, row) => sum + row.gzip, 0), largestPage };
 }
 
 function headroomOf(actual, budget) {
@@ -223,7 +241,7 @@ try {
     }
   }
 
-  const shared = await measureSharedJs();
+  const shared = await measureFirstLoadJs();
   const sharedHeadroom = headroomOf(shared.total, BUDGETS.js.shared);
   const largestShared = shared.rows.slice(0, 3).map((row) => `${row.file} ${formatBytes(row.gzip)}`).join(', ');
   console.log(
@@ -240,6 +258,24 @@ try {
     violations.push(
       `모든 라우트가 첫 로드에 받는 JS gzip ${formatBytes(shared.total)}가 공용 예산 ${formatBytes(BUDGETS.js.shared)} 초과`
       + ` — 루트 레이아웃(src/app/layout.tsx)에서 닿는 모듈을 점검하십시오(큰 청크: ${largestShared}).`,
+    );
+  }
+
+  const pageHeadroom = headroomOf(shared.largestPage.total, BUDGETS.js.page);
+  console.log(
+    `JS 화면 첫 로드 최대: ${shared.largestPage.page} gzip ${formatBytes(shared.largestPage.total)}`
+    + `/${formatBytes(BUDGETS.js.page)} (여유 ${formatHeadroom(pageHeadroom)})`,
+  );
+  if (pageHeadroom.ratio < HEADROOM_FLOOR && pageHeadroom.remaining >= 0) {
+    console.warn(
+      `⚠ JS 화면 첫 로드 여유 ${formatHeadroom(pageHeadroom)} — 정책 하한 ${(HEADROOM_FLOOR * 100).toFixed(0)}% 미만입니다(차단하지 않음).\n`
+      + '   그 화면이 정적으로 import 한 큰 라이브러리(차트·편집기)를 next/dynamic 으로 늦출 수 있는지 점검하십시오.',
+    );
+  }
+  if (shared.largestPage.total > BUDGETS.js.page) {
+    violations.push(
+      `화면 ${shared.largestPage.page} 의 첫 로드 JS gzip ${formatBytes(shared.largestPage.total)}가 화면 예산 `
+      + `${formatBytes(BUDGETS.js.page)} 초과 — 그 화면이 정적으로 import 한 큰 라이브러리를 점검하십시오.`,
     );
   }
 

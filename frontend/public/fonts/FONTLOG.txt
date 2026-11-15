@@ -1,0 +1,9 @@
+Nuri Sans — FONTLOG
+
+Original: Pretendard Variable (Version 1.309;Glyphs 3.2 (3225)), Copyright (c) 2021 Kil Hyung-jin, SIL Open Font License 1.1 (see OFL.txt).
+Modification: subset by Unicode range into 13 web font files for this application;
+Hangul syllables outside KS X 1001 (except those used in this application's text) are not included.
+Outlines, metrics, variation axis and OpenType layout features of the included glyphs are unchanged.
+Renamed to 'Nuri Sans' because 'Pretendard', 'Source', 'Inter' and 'M PLUS 1' are Reserved Font Names.
+Copyright, trademark, designer and license records in the name table are kept as in the original.
+Generator: frontend/scripts/fonts/build-nuri-sans.py (fontTools 4.68.0).
