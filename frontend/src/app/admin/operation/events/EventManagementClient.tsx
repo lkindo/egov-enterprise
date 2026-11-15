@@ -534,7 +534,7 @@ export default function EventManagementClient() {
                     ? '조회 전용입니다. 행사 정보를 수정할 권한이 없습니다.'
                   : editingEvent
                     ? '이 창에서 보이지 않는 값은 그대로 유지됩니다.'
-                    : '행사 기본 정보를 입력하십시오.'}
+                    : '행사 기본 정보를 입력해 주세요.'}
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -560,7 +560,7 @@ export default function EventManagementClient() {
                     validation.clearError('evntNm');
                     setForm({ ...form, evntNm: e.target.value });
                   }}
-                  placeholder="행사 명칭을 입력하십시오"
+                  placeholder="행사 명칭을 입력해 주세요"
                   className="h-[var(--control-h)]"
                   required
                   maxLength={200}
@@ -582,7 +582,7 @@ export default function EventManagementClient() {
                     validation.clearError('evntCn');
                     setForm({ ...form, evntCn: e.target.value });
                   }}
-                  placeholder="상세 내용을 입력하십시오"
+                  placeholder="상세 내용을 입력해 주세요"
                   className="h-[var(--control-h)]"
                   required
                   maxLength={4000}

@@ -464,7 +464,7 @@ export default function LoginPolicyAdminClient() {
                           <Input {...field} maxLength={30} placeholder="예: 192.168.0.1 (미입력 시 제한 없음)" className="pl-12 rounded-lg border-2 bg-muted/50 font-bold" />
                         </FormControl>
                       </div>
-                      <FormDescription className="text-xs font-medium opacity-60">특정 IP에서만 접근을 허용하려면 입력하십시오.</FormDescription>
+                      <FormDescription className="text-xs font-medium opacity-60">특정 IP에서만 접근을 허용하려면 입력해 주세요.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

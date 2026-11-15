@@ -181,7 +181,7 @@ describe('공통코드 — 분류·그룹 구조 편집', () => {
     expect(screen.getByRole('button', { name: /그룹 수정/ })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /분류 수정/ })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: '업무 도메인 (DOMAIN) 선택' }));
+    fireEvent.click(screen.getByRole('button', { name: '업무 도메인 DOMAIN 선택' }));
     expect(screen.getByRole('button', { name: /분류 수정/ })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /그룹 수정/ })).not.toBeInTheDocument();
   });
@@ -208,7 +208,7 @@ describe('공통코드 — 분류·그룹 구조 편집', () => {
 
   it('분류를 미사용으로 바꾸기 전에 소속 그룹이 함께 사라진다고 고지한다', async () => {
     renderClient();
-    fireEvent.click(screen.getByRole('button', { name: '업무 도메인 (DOMAIN) 선택' }));
+    fireEvent.click(screen.getByRole('button', { name: '업무 도메인 DOMAIN 선택' }));
     fireEvent.click(screen.getByRole('button', { name: /분류 수정/ }));
 
     // 폼 목은 reset 으로 채워진 값을 그대로 제출한다. 사용자가 미사용으로 바꾼 상태를 만든다.
@@ -225,7 +225,7 @@ describe('공통코드 — 분류·그룹 구조 편집', () => {
   it('고지를 취소하면 저장하지 않는다', async () => {
     mocks.confirm.mockResolvedValue(false);
     renderClient();
-    fireEvent.click(screen.getByRole('button', { name: '업무 도메인 (DOMAIN) 선택' }));
+    fireEvent.click(screen.getByRole('button', { name: '업무 도메인 DOMAIN 선택' }));
     fireEvent.click(screen.getByRole('button', { name: /분류 수정/ }));
 
     mocks.formValues = { ...mocks.formValues, useYn: 'N' };
@@ -237,7 +237,7 @@ describe('공통코드 — 분류·그룹 구조 편집', () => {
 
   it('소속 그룹이 없는 분류는 고지 없이 바로 저장한다 — 사라질 것이 없다', async () => {
     renderClient();
-    fireEvent.click(screen.getByRole('button', { name: '기타 분류 (OTHER) 선택' }));
+    fireEvent.click(screen.getByRole('button', { name: '기타 분류 OTHER 선택' }));
     fireEvent.click(screen.getByRole('button', { name: /분류 수정/ }));
 
     mocks.formValues = { ...mocks.formValues, useYn: 'N' };

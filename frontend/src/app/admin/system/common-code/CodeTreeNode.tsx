@@ -133,7 +133,11 @@ const CodeNodeRow = ({
         data-a2-master-item={isOverlay ? undefined : ''}
         data-a2-master-item-type={isOverlay ? undefined : node.type}
         aria-current={isSelected ? 'true' : undefined}
-        aria-label={`${node.name} (${node.id}) 선택${readByProduct ? ' · 제품이 읽음' : ''}`}
+        // [2026-11-16] 접근성 이름은 보이는 글자(이름·코드·'제품이 읽음' 표지)를 보이는 순서대로 담고 '선택' 을 끝에 둔다 — 보이는 글자가
+        //   이름에 그대로 들어 있어야 음성 명령으로 부를 수 있다(axe label-content-name-mismatch, 공통코드 항목 선택 상태 감사가 78곳을 찾았다).
+        //   코드를 괄호로 감싸지 않는다: 이름의 괄호 속 글자는 덧붙인 설명으로 보고 비교에서 뺀다(axe 4.14 removeParentheticals) —
+        //   종전 '이름 (코드) 선택' 은 보이는 코드가 이름에 없는 것으로 판정됐다.
+        aria-label={`${node.name} ${node.id}${readByProduct ? ' · 제품이 읽음' : ''} 선택`}
         className={cn(
           "relative flex min-w-0 flex-1 items-center justify-between overflow-hidden rounded-md border p-3 text-left transition-colors",
           isCluster
@@ -158,6 +162,9 @@ const CodeNodeRow = ({
             )}>
               {node.name}
             </span>
+            {/* [2026-11-16] 세로로 놓인 두 줄이 '이름코드' 한 낱말로 이어 읽히지 않게 공백 글자를 둔다(화면에는 보이지 않는다).
+                axe 는 보이는 글자를 요소 경계와 상관없이 이어 붙이고(visibleVirtual), 한글과 영문·숫자 사이는 낱말 경계로 보지 않는다. */}
+            {' '}
             <span className={cn(
               "font-mono text-xs",
               isSelected ? "text-primary-foreground" : "text-muted-foreground"
@@ -165,6 +172,7 @@ const CodeNodeRow = ({
               {node.id}
             </span>
           </div>
+          {readByProduct && ' '}
           {readByProduct && (
             <span
               data-code-usage-badge=""

@@ -143,9 +143,10 @@ describe('공통코드 — 사용처 표시와 영향 확인', () => {
 
   it('목록은 이 제품이 읽는 그룹에만 "제품이 읽음"을 붙이고 이름에도 싣는다', () => {
     renderClient(null);
-    const read = screen.getByRole('button', { name: '결재 업무 구분 (COM075) 선택 · 제품이 읽음' });
+    // [2026-11-16] 이름은 보이는 순서(이름·코드·표지)를 따르고 '선택' 을 끝에 둔다(axe label-content-name-mismatch).
+    const read = screen.getByRole('button', { name: '결재 업무 구분 COM075 · 제품이 읽음 선택' });
     expect(within(read).getByText('제품이 읽음')).toBeInTheDocument();
-    const unread = screen.getByRole('button', { name: '모니터링 구분 (COM046) 선택' });
+    const unread = screen.getByRole('button', { name: '모니터링 구분 COM046 선택' });
     expect(within(unread).queryByText('제품이 읽음')).not.toBeInTheDocument();
   });
 
@@ -154,7 +155,7 @@ describe('공통코드 — 사용처 표시와 영향 확인', () => {
     const readPanel = await screen.findByRole('region', { name: '이 제품이 읽는 그룹' });
     expect(readPanel).toHaveTextContent(APPROVAL_USAGE);
 
-    fireEvent.click(screen.getByRole('button', { name: '모니터링 구분 (COM046) 선택' }));
+    fireEvent.click(screen.getByRole('button', { name: '모니터링 구분 COM046 선택' }));
     const unreadPanel = await screen.findByRole('region', { name: '이 제품이 읽지 않는 그룹' });
     expect(unreadPanel).toHaveTextContent('제품 동작은 바뀌지 않습니다');
     expect(unreadPanel).toHaveTextContent('다른 시스템이 이 값을 쓰는지는 이 화면이 알 수 없습니다');
@@ -225,7 +226,7 @@ describe('공통코드 — 사용처 표시와 영향 확인', () => {
 
   it('읽는 그룹이 든 분류를 미사용으로 바꾸면 그 그룹의 사용처를 함께 보인다', async () => {
     renderClient(null);
-    fireEvent.click(screen.getByRole('button', { name: '업무 도메인 (DOMAIN) 선택' }));
+    fireEvent.click(screen.getByRole('button', { name: '업무 도메인 DOMAIN 선택' }));
     fireEvent.click(screen.getByRole('button', { name: /분류 수정/ }));
     mocks.formValues = { ...mocks.formValues, useYn: 'N' };
 

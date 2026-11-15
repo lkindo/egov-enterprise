@@ -58,7 +58,7 @@ export function requestFullExport({
   if (typeof totalCount === 'number' && totalCount > MAX_EXPORT_ROWS) {
     onTooMany(
       `전체 결과가 ${totalCount.toLocaleString('ko-KR')}건으로 export 상한(`
-      + `${MAX_EXPORT_ROWS.toLocaleString('ko-KR')}건)을 초과합니다. 검색 조건이나 기간을 좁혀 다시 시도하십시오.`,
+      + `${MAX_EXPORT_ROWS.toLocaleString('ko-KR')}건)을 초과합니다. 검색 조건이나 기간을 좁혀 다시 시도해 주세요.`,
     );
     return false;
   }

@@ -1,30 +1,10 @@
 import { fetchAllPages } from '@/lib/api/fetch-all-pages';
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragOverlay,
-  DragStartEvent,
-  DragEndEvent,
-  MeasuringStrategy,
-  type Announcements
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { createPortal } from 'react-dom';
-import {
-  buildInitialCodeClusters,
   findGroupInClusters,
   flattenCodeTree,
   FlattenedCodeNode,
-  moveGroupNodeToCluster,
 } from './treeUtils';
+import { CodeHierarchyTree, useCodeHierarchyExplorer } from './CodeHierarchyExplorer';
 import {
   Search,
   SearchSlash,
@@ -74,15 +54,10 @@ import {
   CODE_GROUP_FIELD_LABELS,
 } from './common-code-form-schemas';
 import {
-  buildCodeDndAnnouncements,
-  CODE_DND_SCREEN_READER_INSTRUCTIONS,
-  CodeNodeOverlay,
   COMMON_DETAIL_COLUMNS,
   CommonCodeDetailActions,
   CommonCodeDetailPanel,
-  dropAnimation,
   filterCodeNodes,
-  SortableCodeNode,
 } from './CodeTreeNode';
 import { CodeClusterFields, CodeDetailFields, CodeGroupFields } from './CodeFormFields';
 import { CommonCodeChangeHistoryDialog, type CodeChangeHistoryTarget } from './CommonCodeChangeHistoryDialog';
@@ -159,50 +134,6 @@ export default function CommonCodeClient({
   const structureSubmitAttemptRef = useRef(false);
   const structureSavePendingRef = useRef(false);
 
-  const initialClusters = useMemo(
-    () => buildInitialCodeClusters(clCodes, groups),
-    [clCodes, groups],
-  );
-
-  const hierarchySignature = useMemo(
-    () => JSON.stringify(initialClusters),
-    [initialClusters],
-  );
-
-  // D&D States
-  const [flattenedNodes, setFlattenedNodes] = useState<FlattenedCodeNode[]>(
-    () => flattenCodeTree(initialClusters),
-  );
-  const [syncedHierarchySignature, setSyncedHierarchySignature] = useState(hierarchySignature);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [hasExplorerChanges, setHasExplorerChanges] = useState(false);
-  const hierarchyRevisionRef = useRef(0);
-  const hierarchySeedSignatureRef = useRef<string | undefined>(undefined);
-  const hasExplorerChangesRef = useRef(false);
-
-  if (syncedHierarchySignature !== hierarchySignature) {
-    setSyncedHierarchySignature(hierarchySignature);
-    setFlattenedNodes(flattenCodeTree(initialClusters));
-    if (hasExplorerChanges) {
-      setHasExplorerChanges(false);
-      setActiveId(null);
-    }
-  }
-
-  useEffect(() => {
-    const previousSignature = hierarchySeedSignatureRef.current;
-    if (previousSignature === hierarchySignature) return;
-    hierarchySeedSignatureRef.current = hierarchySignature;
-    if (previousSignature !== undefined && hasExplorerChangesRef.current) {
-      hierarchyRevisionRef.current += 1;
-      toast('서버의 코드 구조가 갱신되어 저장되지 않은 소속 분류 변경을 취소했습니다.', 'info');
-    }
-  }, [hierarchySignature, toast]);
-
-  useEffect(() => {
-    hasExplorerChangesRef.current = hasExplorerChanges;
-  }, [hasExplorerChanges]);
-
   const form = useAppForm<
     typeof codeDetailFormSchema,
     z.infer<typeof codeDetailFormSchema>
@@ -269,6 +200,24 @@ export default function CommonCodeClient({
     setSelectedGroup(node.data);
   };
 
+  // 분류·그룹 탐색기(끌어다 소속 옮기기) — 상태와 트리는 CodeHierarchyExplorer, 저장은 아래 handleSaveExplorerChanges.
+  const explorer = useCodeHierarchyExplorer({
+    clCodes,
+    groups,
+    toast,
+    moveBlocked: Boolean(searchQuery) || isSaving,
+    onSelectNode: selectNode,
+    onMovedToCluster: setSelectedClusterId,
+  });
+  const {
+    initialClusters,
+    hierarchySignature,
+    flattenedNodes,
+    hasExplorerChanges,
+    setHasExplorerChanges,
+    hierarchyRevisionRef,
+  } = explorer;
+
   const selectedNodeId = selectedGroup?.cdId ?? selectedClusterId;
   const selectedNode = selectedNodeId
     ? flattenedNodes.find((node) => node.id === selectedNodeId) ?? null
@@ -309,51 +258,6 @@ export default function CommonCodeClient({
   });
 
   const detailList: CmmnDetailCode[] = detailRows ?? [];
-
-  // D&D Handlers
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
-  const dndAnnouncements = useMemo<Announcements>(
-    () => buildCodeDndAnnouncements(flattenedNodes),
-    [flattenedNodes],
-  );
-
-  const handleDragStart = (event: DragStartEvent) => {
-    if (searchQuery || isSaving) return;
-    const nextActiveId = event.active.id as string;
-    const activeNode = flattenedNodes.find((node) => node.id === nextActiveId);
-    if (!activeNode || activeNode.type !== 'group') return;
-    setActiveId(nextActiveId);
-    selectNode(activeNode);
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    if (searchQuery || isSaving) {
-      setActiveId(null);
-      return;
-    }
-    const { active, over } = event;
-    const outcome = moveGroupNodeToCluster(flattenedNodes, active.id, over?.id);
-    if (outcome.kind === 'same-cluster') {
-      toast('같은 분류 안의 순서는 저장되지 않습니다. 다른 분류로 이동해 주세요.', 'info');
-      setActiveId(null);
-      return;
-    }
-    if (outcome.kind !== 'moved') {
-      setActiveId(null);
-      return;
-    }
-
-    setFlattenedNodes(outcome.nextNodes);
-    setSelectedClusterId(outcome.targetParentId);
-    hierarchyRevisionRef.current += 1;
-    setHasExplorerChanges(true);
-    toast('코드 그룹의 소속 분류가 변경되었습니다.', 'info');
-    setActiveId(null);
-  };
 
   /** 선택된 분류에 속한 코드 그룹 수. 미사용 전환 고지와 분류 상세의 '포함 그룹' 수에 쓴다. */
   const groupCountOf = (clsfCd: string) =>
@@ -716,7 +620,7 @@ export default function CommonCodeClient({
     if (isModalOpen || detailSubmitAttemptRef.current
       || detailSavePendingRef.current || detailDeletePendingRef.current) return;
     if (!selectedGroup) {
-      toast('코드 명세를 등록할 그룹 코드를 먼저 선택하십시오.', 'info');
+      toast('상세 코드를 등록할 코드 그룹을 먼저 선택해 주세요.', 'info');
       return;
     }
     setModalTargetGroup({ cdId: selectedGroup.cdId, cdIdNm: selectedGroup.cdIdNm });
@@ -862,7 +766,6 @@ export default function CommonCodeClient({
     }] : []),
   ];
 
-  const activeNode = activeId ? flattenedNodes.find(n => n.id === activeId) : null;
   const saveDisabled = !hasExplorerChanges || !selectedNode || isSaving || isModalOpen || isPickerOpen;
 
   return (
@@ -942,49 +845,14 @@ export default function CommonCodeClient({
                 </p>
               </div>
             ) : (
-              <DndContext
-                sensors={sensors}
-                accessibility={{
-                  announcements: dndAnnouncements,
-                  screenReaderInstructions: CODE_DND_SCREEN_READER_INSTRUCTIONS,
-                }}
-                collisionDetection={closestCenter}
-                measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                onDragCancel={() => setActiveId(null)}
-              >
-                <SortableContext items={visibleNodes.map((node) => node.id)} strategy={verticalListSortingStrategy}>
-                  <div className="space-y-1">
-                    {visibleNodes.map((node, index) => {
-                      const isSelected = selectedNode?.id === node.id;
-                      return (
-                        <SortableCodeNode
-                          key={node.id}
-                          node={node}
-                          isSelected={isSelected}
-                          tabIndex={isSelected || (!selectedNode && index === 0) ? 0 : -1}
-                          dragDisabled={Boolean(searchQuery) || isSaving}
-                          reorderable={canUpdateCode}
-                          parentClassificationName={node.type === 'group'
-                            ? flattenedNodes.find((candidate) => candidate.type === 'cluster' && candidate.id === node.parentId)?.name
-                            : undefined}
-                          onClick={() => selectNode(node)}
-                        />
-                      );
-                    })}
-                  </div>
-                </SortableContext>
-
-                {typeof document !== 'undefined' && createPortal(
-                  <DragOverlay dropAnimation={dropAnimation}>
-                    {activeId && activeNode ? (
-                      <CodeNodeOverlay node={activeNode} />
-                    ) : null}
-                  </DragOverlay>,
-                  document.body,
-                )}
-              </DndContext>
+              <CodeHierarchyTree
+                explorer={explorer}
+                visibleNodes={visibleNodes}
+                selectedNode={selectedNode}
+                dragDisabled={Boolean(searchQuery) || isSaving}
+                reorderable={canUpdateCode}
+                onSelectNode={selectNode}
+              />
             )}
           </div>
         )}

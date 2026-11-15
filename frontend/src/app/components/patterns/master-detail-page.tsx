@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useId, useRef } from 'react';
+import React, { Suspense, useEffect, useId, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 import {
@@ -311,6 +311,31 @@ export function MasterDetailPage({
   const detailSectionRef = useRef<HTMLElement>(null);
   const detailContentRef = useRef<HTMLDivElement>(null);
   const arrowSelectingRef = useRef(false);
+  /*
+   * [2026-11-16] 상세 영역이 넘쳐 스크롤이 생기면 키보드로도 닿아야 스크롤할 수 있다(WCAG 2.1.1, axe scrollable-region-focusable —
+   *   공통코드 관리에서 항목을 고른 상태 감사가 처음 찾았다). 상세 안에 키보드로 갈 곳이 없는 표·설명만 있으면 tabindex -1 인 이 영역은
+   *   탭으로 닿지 않았다. 늘 탭 정지점을 두면 넘치지 않는 화면에도 쓸모없는 단계가 생기므로, 넘칠 때만 0 으로 둔다.
+   *   크기 변화(ResizeObserver)와 내용 변화(MutationObserver)에서 다시 잰다 — 관찰 콜백에서만 상태를 바꾼다.
+   */
+  const [detailOverflows, setDetailOverflows] = useState(false);
+  useEffect(() => {
+    const content = detailContentRef.current;
+    if (!content) return undefined;
+    const measure = () => setDetailOverflows(
+      content.scrollHeight > content.clientHeight + 1 || content.scrollWidth > content.clientWidth + 1,
+    );
+    const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    resize?.observe(content);
+    const mutation = typeof MutationObserver === 'undefined' ? null : new MutationObserver(measure);
+    mutation?.observe(content, { childList: true, subtree: true, characterData: true });
+    // 크기를 미리 적지 않은 이미지가 뒤늦게 커지면 노드도 영역 크기도 바뀌지 않는다 — load 는 버블되지 않아 캡처로 받는다.
+    content.addEventListener('load', measure, true);
+    return () => {
+      resize?.disconnect();
+      mutation?.disconnect();
+      content.removeEventListener('load', measure, true);
+    };
+  }, []);
 
   const handlePageKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (onSaveShortcut) {
@@ -494,7 +519,7 @@ export function MasterDetailPage({
 
           <div
             ref={detailContentRef}
-            tabIndex={-1}
+            tabIndex={detailOverflows ? 0 : -1}
             data-a2-detail
             data-testid="master-detail-detail"
             className={cn(

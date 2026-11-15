@@ -288,7 +288,7 @@ export function DeptJobListSection({
       // 왜 비었는지와 다음 행동('부서 전체' 선택)을 문구로 알려 준다.
       emptyMessage={
         jobScope === 'mine'
-          ? '내가 담당자인 업무가 없습니다. 부서 전체를 보려면 조회 범위에서 \'부서 전체\'를 선택하십시오.'
+          ? '내가 담당자인 업무가 없습니다. 부서 전체를 보려면 조회 범위에서 \'부서 전체\'를 선택해 주세요.'
           : emptyResultMessage(searchKeyword, '등록된 업무가 없습니다.')
       }
       error={isJobError ? (jobError instanceof Error ? jobError : new Error('업무 목록을 불러오지 못했습니다.')) : null}
@@ -337,7 +337,7 @@ export function DeptJobListSection({
               기대하면 계속 0건이 나오므로 약속하지 않는다. 지금 보내는 축은 업무명이다.
             */
             label="업무명"
-            placeholder="검색어를 입력하십시오..."
+            placeholder="검색어를 입력해 주세요"
             value={searchKeyword}
             onSearch={(keyword) => { setSearchKeyword(keyword); setJobPage(1); }}
           >

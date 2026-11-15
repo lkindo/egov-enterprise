@@ -222,6 +222,12 @@ const eslintConfig = [
           // 식 없는 템플릿 문자열(`처리 중…`)도 본다. 대상을 넣은 `${대상} 처리 중…` 은 식이 있어 걸리지 않는다. 문자열 연결('처리 ' + '중…')은 이 규칙 밖이다.
           "selector": ":matches(Literal[value=/^\\s*처리 중(…|\\.\\.\\.?)?\\s*$/], JSXText[value=/^\\s*처리 중(…|\\.\\.\\.?)?\\s*$/], TemplateLiteral[expressions.length=0] > TemplateElement[value.raw=/^\\s*처리 중(…|\\.\\.\\.?)?\\s*$/])",
           "message": "대상 없는 '처리 중…' 대신 무엇을 하는지 밝히세요 — 예: '부서 등록 중…', '추천 처리 중…'."
+        },
+        // [2026-11-16] 문구 어미 기준(2026-11-15 사용자 위임 결정): 서술은 합쇼체(~니다), 요청은 '~해 주세요'·'~하세요' 다.
+        //   '~하십시오' 는 쓰지 않는다 — 화면 13곳을 옮긴 뒤 0건에서 동결한다(화면과 짝인 백엔드 메시지 4곳은 벤더 증거 재기록 묶음에서 옮긴다, DEC-OPS-417). 주석·시험·e2e 는 이 블록 밖이다.
+        {
+          "selector": ":matches(Literal[value=/십시오/], JSXText[value=/십시오/], TemplateElement[value.raw=/십시오/])",
+          "message": "'~하십시오' 대신 '~해 주세요' 나 '~하세요' 를 쓰세요(화면 문구 어미 기준 — 서술 ~니다, 요청 ~해 주세요·~하세요)."
         }
       ],
       // [2026-11-11] 전량 해소한 3개 규칙(set-state-in-effect · refs · no-location-assign-relative-destination)은
