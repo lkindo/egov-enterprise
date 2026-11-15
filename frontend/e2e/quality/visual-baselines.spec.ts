@@ -2,6 +2,7 @@ import { expect,test } from '../fixtures/browser-test';
 import { createVisualAdmin } from '../fixtures/visual-admin';
 import { getAdminBearerToken } from '../utils/admin-token';
 import { anonymousCsrfRequestState } from '../fixtures/csrf';
+import { warmBodyFontCache } from '../fixtures/body-font';
 test.describe('Quality & Resilience', () => {
     test.describe('Global Quality (A11y & Visual)', () => {
         test.use({
@@ -63,6 +64,10 @@ test.describe('Quality & Resilience', () => {
             test.skip(process.platform !== 'linux', '비주얼 회귀는 CI(리눅스) 전용이다 — OS 별 렌더 차이로 로컬 기준선은 러너에서 의미가 없다. '
                 + '기준선 생성: CI 에서 `pnpm exec playwright test -g "Visual Regression Baseline" --update-snapshots` '
                 + '후 생성된 e2e/quality/visual-baselines.spec.ts-snapshots/ 를 커밋한다.');
+            // [2026-11-15] 본문 글꼴 조각을 캐시에 받아 둔 뒤 다시 연다 — optional 글꼴이 제때 오느냐에 따라 같은 화면이 두 글꼴로
+            //   찍히던 것을 디자인 글꼴 하나로 고정한다(fixtures/body-font.ts). 이 컨텍스트의 뒤 화면들도 같은 캐시를 쓴다.
+            await page.goto('/admin');
+            await warmBodyFontCache(page);
             await page.goto('/admin');
             // [2026-10-23] 머리글의 현재 영역(나의 업무)은 하이드레이션 뒤 effect 가 정한다(HeaderSearchParamSync) — 서버 그림에는
             //   강조가 없어, 러너가 바빠 하이드레이션이 늦으면 강조 없는 화면이 안정돼 캡처된다(PR #966 run 39933517191 첫 시도,
@@ -148,11 +153,16 @@ test.describe('Quality & Resilience', () => {
                     // 않을 수 있다(비로그인 컨텍스트가 세션 확인을 생략하는 경로). 발생 필수로
                     // 두면 "기대 오류 미발생" 위반으로 생성이 죽으므로 선택적 항목으로 둔다.
                     minOccurrences: 0,
-                    maxOccurrences: 4,
-                    reason: '비로그인 상태의 로그인 화면이 세션 유무를 확인하는 초기 요청이다(발생 시에만 소비).',
+                    // 글꼴 캐시 예열로 로그인 화면을 두 번 연다 — 한 번 열 때의 상한(4)의 두 배다.
+                    maxOccurrences: 8,
+                    reason: '비로그인 상태의 로그인 화면이 세션 유무를 확인하는 초기 요청이다(발생 시에만 소비, 예열로 두 번 연다).',
                     expiresAt: '2026-12-31',
                 }]);
             // ?e2e=true: 온보딩 투어 자동 비활성(quality/login-accessibility 로그인 a11y 테스트와 동일 진입 계약).
+            //   이 컨텍스트는 캐시가 따로라 여기서도 본문 글꼴을 예열한 뒤 다시 연다.
+            await anonPage.goto('/login?e2e=true');
+            await expect(anonPage.getByRole('heading', { level: 1, name: '엔터프라이즈', exact: true })).toBeVisible({ timeout: 30000 });
+            await warmBodyFontCache(anonPage);
             await anonPage.goto('/login?e2e=true');
             await expect(anonPage).toHaveURL(/\/login\?e2e=true$/);
             await expect(anonPage.getByRole('heading', { level: 1, name: '엔터프라이즈', exact: true })).toBeVisible({ timeout: 30000 });
