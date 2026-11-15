@@ -101,6 +101,25 @@ test.describe('Quality & Resilience', () => {
                     await withOwnedFaq(adminRequest, page, (faq) => auditRoute(page, route, purpose, () => expectFaqHubRows(page, faq)));
                 });
             }
+            /*
+             * [2026-11-16 프런트 품질 6단계] 화면 유형별 대표 상태 — 위 목록은 처음 연 화면만 본다. 마스터-상세는 항목을 고른 뒤에야
+             *   상세 표·작업 단추가 그려지고, 대화상자는 열어야 그 이름·필드 이름·닫기 단추가 생긴다. 공통코드 관리로 둘을 함께 본다
+             *   (seed 분류·그룹만 읽고 아무것도 저장하지 않는다 — 대화상자는 취소로 닫는다).
+             */
+            test('/admin/system/common-code 의 항목을 고른 마스터-상세와 연 대화상자에 axe 위반이 없다', async ({ page }) => {
+                await auditRoute(page, '/admin/system/common-code', '통합 코드 허브', async () => {
+                    const firstGroup = page.locator('[data-a2-master-item][data-a2-master-item-type="group"]').first();
+                    await firstGroup.click();
+                    await expect(firstGroup).toHaveAttribute('aria-current', 'true');
+                });
+                await page.getByRole('button', { name: '분류 등록', exact: true }).click();
+                const dialog = page.getByRole('dialog', { name: '코드 분류 등록' });
+                await expect(dialog).toBeVisible();
+                // 대화상자가 열리면 뒤 본문(h1)은 보조기술에서 가려진다 — 준비는 위에서 확인했으므로 다시 보지 않는다.
+                await expectNoAccessibilityViolations(page, '/admin/system/common-code 코드 분류 등록 대화상자', { ready: false });
+                await dialog.getByRole('button', { name: '취소', exact: true }).click();
+                await expect(dialog).toBeHidden();
+            });
             test('문서 제목은 실제 링크 이동·뒤로가기·레거시 redirect 목적지에 맞게 갱신된다', async ({ page }) => {
                 await page.goto('/admin');
                 await expectContentReady(page);

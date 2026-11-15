@@ -255,7 +255,7 @@ export default function WorkReportClient({ initialYmd }: WorkReportClientProps) 
             하나뿐이라 작성자로는 좁혀지지 않는다.
           */
           label="보고 제목"
-          placeholder="검색어를 입력하십시오..."
+          placeholder="검색어를 입력해 주세요"
           value={searchKeyword}
           onSearch={(keyword) => { setSearchKeyword(keyword); setReportPage(1); }}
         />

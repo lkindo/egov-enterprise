@@ -78,7 +78,7 @@ function logAuthDiagnosticOnce(outcome: string): void {
   console.warn(
     `[Middleware] JWT 검증 ${outcome}. 미들웨어가 쓰는 시크릿 출처=${source}.\n` +
       `  Edge env 가시성(존재 여부만): ${envSeen}\n` +
-      `  요청별 검증 결과는 x-mw-auth 응답 헤더에서 확인하십시오.`
+      `  요청별 검증 결과는 x-mw-auth 응답 헤더에서 확인하세요.`
   );
 }
 

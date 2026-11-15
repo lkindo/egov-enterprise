@@ -91,7 +91,7 @@ export function AssetUploadField({ onFilesChange }: { onFilesChange: (files: Fil
           <span className="text-center text-xs">여기로 파일을 드래그하여 업로드</span>
         </div>
       </div>
-      <p className="mt-1 px-1 text-xs leading-relaxed text-muted-foreground">시스템 표준 규격 이미지를 준수하십시오</p>
+      <p className="mt-1 px-1 text-xs leading-relaxed text-muted-foreground">시스템 표준 규격의 이미지를 사용해 주세요</p>
     </FormItem>
   );
 }

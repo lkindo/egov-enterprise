@@ -260,8 +260,8 @@ describe('CommonCodeClient', () => {
     expect(screen.getByText('1 / 1')).toBeInTheDocument();
     expect(screen.getByTestId('common-code-detail-table')).toHaveAttribute('data-entry-motion', 'disabled');
 
-    const firstGroup = screen.getByRole('button', { name: '사용자 상태 (GRP1) 선택' });
-    const secondGroup = screen.getByRole('button', { name: '게시 상태 (GRP2) 선택' });
+    const firstGroup = screen.getByRole('button', { name: '사용자 상태 GRP1 선택' });
+    const secondGroup = screen.getByRole('button', { name: '게시 상태 GRP2 선택' });
     expect(firstGroup).toHaveAttribute('data-a2-master-item');
     expect(firstGroup).toHaveAttribute('aria-current', 'true');
     expect(firstGroup).toHaveAttribute('tabindex', '0');
@@ -296,7 +296,7 @@ describe('CommonCodeClient', () => {
     fireEvent.click(within(groupDialog).getByRole('button', { name: '이력 닫기' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: '업무 도메인 (DOMAIN) 선택' }));
+    fireEvent.click(screen.getByRole('button', { name: '업무 도메인 DOMAIN 선택' }));
     fireEvent.click(await screen.findByRole('button', { name: '변경 이력' }));
     const clusterDialog = screen.getByRole('dialog', { name: '업무 도메인 변경 이력' });
     expect(clusterDialog).toHaveAttribute('data-kind', 'cluster');
@@ -313,10 +313,10 @@ describe('CommonCodeClient', () => {
       screen.getByTestId('master-detail-master').querySelectorAll<HTMLElement>('[data-a2-master-item]'),
     ).map((item) => item.getAttribute('aria-label'));
     expect(itemNames).toEqual([
-      '업무 도메인 (DOMAIN) 선택',
-      '사용자 상태 (GRP1) 선택',
-      '게시 상태 (GRP2) 선택',
-      '기타 분류 (OTHER) 선택',
+      '업무 도메인 DOMAIN 선택',
+      '사용자 상태 GRP1 선택',
+      '게시 상태 GRP2 선택',
+      '기타 분류 OTHER 선택',
     ]);
   });
 
@@ -324,7 +324,7 @@ describe('CommonCodeClient', () => {
     renderClient();
     await screen.findByText('활성');
 
-    const selected = screen.getByRole('button', { name: '사용자 상태 (GRP1) 선택' });
+    const selected = screen.getByRole('button', { name: '사용자 상태 GRP1 선택' });
     const handle = screen.getByRole('button', { name: '게시 상태 (GRP2) 소속 분류 이동 핸들 — 현재 업무 도메인 분류' });
     const selectedHandle = screen.getByRole('button', { name: '사용자 상태 (GRP1) 소속 분류 이동 핸들 — 현재 업무 도메인 분류' });
     expect(selectedHandle)
@@ -386,13 +386,13 @@ describe('CommonCodeClient', () => {
     fireEvent.change(screen.getByRole('textbox', { name: '분류·그룹명 또는 코드로 검색' }), {
       target: { value: '게시' },
     });
-    expect(screen.queryByRole('button', { name: '사용자 상태 (GRP1) 선택' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '사용자 상태 GRP1 선택' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '코드 검색' }));
     fireEvent.click(screen.getByRole('button', { name: '선택기로 사용자 상태 선택' }));
 
     expect(screen.getByRole('textbox', { name: '분류·그룹명 또는 코드로 검색' })).toHaveValue('');
-    expect(screen.getByRole('button', { name: '사용자 상태 (GRP1) 선택' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: '사용자 상태 GRP1 선택' })).toHaveAttribute('aria-current', 'true');
   });
 
   it('does not report success when a CodePicker group is absent from the current tree', async () => {
@@ -411,8 +411,8 @@ describe('CommonCodeClient', () => {
   it('clears a local selection when the external groupId seed is removed or invalidated', async () => {
     const view = renderClient();
     await screen.findByText('활성');
-    fireEvent.click(screen.getByRole('button', { name: '게시 상태 (GRP2) 선택' }));
-    expect(screen.getByRole('button', { name: '게시 상태 (GRP2) 선택' })).toHaveAttribute('aria-current', 'true');
+    fireEvent.click(screen.getByRole('button', { name: '게시 상태 GRP2 선택' }));
+    expect(screen.getByRole('button', { name: '게시 상태 GRP2 선택' })).toHaveAttribute('aria-current', 'true');
 
     view.rerenderClient(null);
     expect(within(screen.getByTestId('master-detail-detail')).getByRole('status')).toHaveTextContent('선택된 코드 없음');
@@ -421,14 +421,14 @@ describe('CommonCodeClient', () => {
     expect(within(screen.getByTestId('master-detail-detail')).getByRole('status')).toHaveTextContent('선택된 코드 없음');
 
     view.rerenderClient('GRP1');
-    expect(screen.getByRole('button', { name: '사용자 상태 (GRP1) 선택' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: '사용자 상태 GRP1 선택' })).toHaveAttribute('aria-current', 'true');
 
     fireEvent.change(screen.getByRole('textbox', { name: '분류·그룹명 또는 코드로 검색' }), {
       target: { value: '사용자' },
     });
     view.rerenderClient('GRP2');
     expect(screen.getByRole('textbox', { name: '분류·그룹명 또는 코드로 검색' })).toHaveValue('');
-    expect(screen.getByRole('button', { name: '게시 상태 (GRP2) 선택' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: '게시 상태 GRP2 선택' })).toHaveAttribute('aria-current', 'true');
   });
 
   it('retries an unresolved seed and clears a resolved selection removed by refreshed hierarchy data', () => {
@@ -437,7 +437,7 @@ describe('CommonCodeClient', () => {
     expect(within(screen.getByTestId('master-detail-detail')).getByRole('status')).toHaveTextContent('선택된 코드 없음');
 
     unresolved.rerenderClient('LATE', { groups: [...groups, lateGroup] as any });
-    expect(screen.getByRole('button', { name: '후속 그룹 (LATE) 선택' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: '후속 그룹 LATE 선택' })).toHaveAttribute('aria-current', 'true');
 
     unresolved.rerenderClient('LATE', { groups: groups as any });
     expect(within(screen.getByTestId('master-detail-detail')).getByRole('status')).toHaveTextContent('선택된 코드 없음');
@@ -456,7 +456,7 @@ describe('CommonCodeClient', () => {
     });
 
     expect(screen.getByRole('textbox', { name: '분류·그룹명 또는 코드로 검색' })).toHaveValue('');
-    expect(screen.getByRole('button', { name: '계정 상태 (GRP1) 선택' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: '계정 상태 GRP1 선택' })).toHaveAttribute('aria-current', 'true');
   });
 
   it('filters SSR placeholder details to the selected group before the client query resolves', () => {
@@ -653,7 +653,7 @@ describe('CommonCodeClient', () => {
     fireEvent.click(screen.getByRole('button', { name: '드래그 시작' }));
     expect(mocks.useSortable).not.toHaveBeenCalledWith({ id: 'GRP1', disabled: true });
     fireEvent.click(screen.getByRole('button', { name: '다른 분류로 드래그 완료' }));
-    expect(screen.getByRole('button', { name: '사용자 상태 (GRP1) 선택' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: '사용자 상태 GRP1 선택' })).toHaveAttribute('aria-current', 'true');
     expect(saveButton).toBeEnabled();
 
     view.rerenderClient('GRP2');
@@ -710,7 +710,7 @@ describe('CommonCodeClient', () => {
 
   it('runs the hierarchy save shortcut only after drag selection creates a change', async () => {
     renderClient(null);
-    const firstGroup = screen.getByRole('button', { name: '사용자 상태 (GRP1) 선택' });
+    const firstGroup = screen.getByRole('button', { name: '사용자 상태 GRP1 선택' });
 
     fireEvent.keyDown(firstGroup, { key: 's', ctrlKey: true });
     expect(mocks.saveHierarchy).not.toHaveBeenCalled();
@@ -727,7 +727,7 @@ describe('CommonCodeClient', () => {
     renderClient(null);
     expect(within(screen.getByTestId('master-detail-detail')).getByRole('status')).toHaveTextContent('선택된 코드 없음');
     expect(screen.getByRole('button', { name: '그룹 소속 저장' })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: '게시 상태 (GRP2) 선택' }));
+    fireEvent.click(screen.getByRole('button', { name: '게시 상태 GRP2 선택' }));
     expect(await screen.findByText('게시 상태 그룹')).toBeInTheDocument();
   });
 
@@ -749,12 +749,12 @@ describe('CommonCodeClient', () => {
     expect(screen.queryByRole('button', { name: /소속 분류 이동 핸들/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /분류는 이동할 수 없음/ })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: '업무 도메인 (DOMAIN) 선택' }));
+    fireEvent.click(screen.getByRole('button', { name: '업무 도메인 DOMAIN 선택' }));
     expect(await screen.findByRole('button', { name: '변경 이력' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '분류 수정' })).not.toBeInTheDocument();
 
     // 저장 단축키도 연결하지 않는다 — 저장할 수 없는 변경을 만들지 않는다.
-    fireEvent.keyDown(screen.getByRole('button', { name: '사용자 상태 (GRP1) 선택' }), { key: 's', ctrlKey: true });
+    fireEvent.keyDown(screen.getByRole('button', { name: '사용자 상태 GRP1 선택' }), { key: 's', ctrlKey: true });
     expect(mocks.saveHierarchy).not.toHaveBeenCalled();
   });
 

@@ -5,7 +5,8 @@
   "lastReviewedAt": "2026-11-07",
   "normsReviewedAt": "2026-11-07",
   "owner": "content-design",
-  "ownerAssignment": "unassigned",
+  "ownerAssignment": "저장소 소유자(DEC-OPS-013 제품 owner)",
+  "ownerAssignmentRef": "DEC-OPS-417",
   "reviewBy": "2027-02-05",
   "normPolicy": {
     "decisionRef": "DEC-OPS-100",

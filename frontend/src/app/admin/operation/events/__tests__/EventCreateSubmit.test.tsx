@@ -61,10 +61,10 @@ async function fillLikeE2e() {
   fireEvent.click(await screen.findByRole('button', { name: /행사 등록/ }));
   const dialog = within(await screen.findByRole('dialog'));
 
-  fireEvent.change(dialog.getByPlaceholderText('행사 명칭을 입력하십시오'), {
+  fireEvent.change(dialog.getByPlaceholderText('행사 명칭을 입력해 주세요'), {
     target: { value: 'E2E 워크숍' },
   });
-  fireEvent.change(dialog.getByPlaceholderText('상세 내용을 입력하십시오'), {
+  fireEvent.change(dialog.getByPlaceholderText('상세 내용을 입력해 주세요'), {
     target: { value: 'E2E 상세 내용' },
   });
 
