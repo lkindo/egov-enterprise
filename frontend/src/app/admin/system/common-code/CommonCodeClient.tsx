@@ -1097,7 +1097,7 @@ export default function CommonCodeClient({
       <StandardModal
         isOpen={isModalOpen}
         onClose={closeDetailModal}
-        title={editingDetail ? '아키텍처 명세 수정' : '신규 명세 등록'}
+        title={editingDetail ? '상세 코드 수정' : '상세 코드 등록'}
         maxWidth="3xl"
         footer={
           <div className="flex w-full gap-4">

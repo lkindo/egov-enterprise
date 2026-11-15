@@ -208,7 +208,7 @@ export function DepartmentForm({
             className="flex-[2] rounded-lg font-bold text-xs tracking-widest shadow-xl bg-surface-inverse text-surface-inverse-foreground hover:bg-primary transition-all group"
           >
             <Zap size={18} className="group-hover:animate-pulse mr-2" />
-            {isWritePending ? '처리 중…' : mode === 'create' ? '부서 등록' : '정보 수정'}
+            {isWritePending ? (mode === 'create' ? '부서 등록 중…' : '부서 수정 중…') : mode === 'create' ? '부서 등록' : '정보 수정'}
           </Button>
         </div>
       </form>

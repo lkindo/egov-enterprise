@@ -98,7 +98,7 @@ export default function SecurityGroupClient() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
       setIsDialogOpen(false);
-      toast('신규 보안 그룹 아키텍처가 설정되었습니다.', 'success');
+      toast('보안 그룹을 등록했습니다.', 'success');
     },
     onError: (error) => {
       const fieldErrors = extractFieldErrors(error);
@@ -113,7 +113,7 @@ export default function SecurityGroupClient() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
       setIsDialogOpen(false);
-      toast('보안 그룹 명세가 성공적으로 수정되었습니다.', 'success');
+      toast('보안 그룹을 수정했습니다.', 'success');
     },
     onError: (error) => {
       const fieldErrors = extractFieldErrors(error);
@@ -162,7 +162,7 @@ export default function SecurityGroupClient() {
     mutationFn: (groupId: string) => groupAdminService.deleteGroup(groupId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
-      toast('보안 그룹 프로필이 영구적으로 파기되었습니다.', 'success');
+      toast('보안 그룹을 삭제했습니다.', 'success');
     },
     onError: () => toast('삭제 처리 중 시스템 예외가 발생했습니다.', 'error'),
     onSettled: () => {
@@ -444,7 +444,7 @@ export default function SecurityGroupClient() {
             </button>
             <Button onClick={handleSubmit} aria-busy={isSubmitPending || undefined} disabled={isSubmitPending || isDeletePending} className="flex-[2] rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
               {isSubmitPending ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />}
-              <span className="ml-2">{editingGroup ? '그룹 수정' : '신규 그룹 배포'}</span>
+              <span className="ml-2">{editingGroup ? '그룹 수정' : '그룹 등록'}</span>
             </Button>
           </div>
         </div>

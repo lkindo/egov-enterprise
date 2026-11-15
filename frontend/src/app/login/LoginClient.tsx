@@ -193,13 +193,12 @@ function LoginContent() {
             {/* Background Overlay from previous design style */}
 
 
+            {/* [2026-11-14] 로그인 카드·제목·입력 칸은 진입 애니메이션 없이 서버가 그린 그대로 보인다. 종전에는 투명(opacity 0)에서
+                시작해 하이드레이션·애니메이션이 끝나야 보였다 — 같은 기계 Lighthouse 관측값에서 첫 그림 316ms 뒤 제목(LCP)이 649ms 에
+                나타났고, 바꾼 뒤에는 첫 그림과 같은 419ms 다. (Lighthouse 모의 LCP 14초대는 이것이 아니라 첫 그림 전에 받기 시작하는
+                2MB 글꼴이 정한다.) 제출 중 표시처럼 사용자 동작 뒤의 애니메이션은 그대로 둔다. */}
             <motion.div
-                initial={shouldReduceMotion ? false : { opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                    duration: 0.8,
-                    ease: [0.16, 1, 0.3, 1]
-                }}
+                initial={false}
                 className="relative z-10 mx-auto w-full max-w-md"
             >
                 <Card
@@ -248,9 +247,7 @@ function LoginContent() {
 
                     <CardHeader className="space-y-2 text-center pt-10">
                         <motion.div
-                            initial={shouldReduceMotion ? false : { scale: 0.5, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 0.3, duration: 0.5 }}
+                            initial={false}
                             className="w-12 h-12 bg-primary/10 rounded-[var(--radius-hub-item)] mx-auto flex items-center justify-center mb-2"
                         >
                             <Zap className="text-primary w-6 h-6 fill-primary" />
@@ -300,9 +297,7 @@ function LoginContent() {
                                 onNavigate={validation.focusError}
                             />
                             <motion.div
-                                initial={shouldReduceMotion ? false : { opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.4 }}
+                                initial={false}
                                 className="space-y-2"
                             >
                                 <Label htmlFor="id" className="text-xs font-bold text-muted-foreground tracking-tight ml-1">
@@ -333,9 +328,7 @@ function LoginContent() {
                             </motion.div>
 
                             <motion.div
-                                initial={shouldReduceMotion ? false : { opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.5 }}
+                                initial={false}
                                 className="space-y-2"
                             >
                                 <Label htmlFor="password" className="text-xs font-bold text-muted-foreground tracking-tight ml-1">
@@ -402,9 +395,7 @@ function LoginContent() {
 
                         <CardFooter className="px-8 pb-10 pt-2">
                             <motion.div
-                                initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.7 }}
+                                initial={false}
                                 className="w-full"
                             >
                                 <Button
@@ -430,7 +421,7 @@ export default function LoginClient() {
         <Suspense fallback={
             <div className="flex min-h-64 items-center justify-center">
                 <h1 className="sr-only">로그인 화면을 불러오는 중</h1>
-                <p role="status">로딩 중...</p>
+                <p role="status">불러오는 중…</p>
             </div>
         }>
             <LoginContent />

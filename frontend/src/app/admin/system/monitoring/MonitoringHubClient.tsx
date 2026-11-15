@@ -503,8 +503,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
       {/* 실측(액추에이터) 기반 지표 */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <GaugeChart value={cpuUsage === null ? null : Number(cpuUsage.toFixed(1))} title="CPU_LOAD" unit="%" color={chartColors.series[1]} />
-        <GaugeChart value={memUsage === null ? null : Number(memUsage.toFixed(1))} title="MEMORY_ALLOC" unit="%" color={chartColors.series[0]} />
+        <GaugeChart value={cpuUsage === null ? null : Number(cpuUsage.toFixed(1))} title="CPU 사용률" unit="%" color={chartColors.series[1]} />
+        <GaugeChart value={memUsage === null ? null : Number(memUsage.toFixed(1))} title="메모리 사용률" unit="%" color={chartColors.series[0]} />
       </div>
 
       {/*
@@ -702,8 +702,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             틀려도 오류가 나지 않고 빈 결과만 나오므로 "그 계정 기록이 없다" 로 오독된다.
           */
           <KeywordFilter
-            label={activeTab === 'LOGIN' ? '사용자ID · 접속IP' : '서비스명 · 요청ID'}
-            placeholder={activeTab === 'LOGIN' ? '사용자ID, 접속IP 검색' : '서비스명, 요청ID 검색'}
+            label={activeTab === 'LOGIN' ? '로그인 ID · 접속 IP' : '서비스명 · 요청ID'}
+            placeholder={activeTab === 'LOGIN' ? '로그인 ID, 접속 IP 검색' : '서비스명, 요청ID 검색'}
             value={searchKeyword}
             onSearch={handleSearchKeywordChange}
             // [2026-09-26 DIP C6] 초기화는 기간도 지운다.

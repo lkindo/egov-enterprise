@@ -141,7 +141,7 @@ export default function LayoutManagerClient() {
           <section className="space-y-6">
             <h3 className="text-xl font-bold flex items-center gap-2 text-foreground">
               <Palette size={20} className="text-primary" />
-              곡률 시스템 (Radius Scale)
+              모서리 둥글기
             </h3>
             <Card className="rounded-lg border-none shadow-[0_32px_80px_rgba(0,0,0,0.06)] bg-card/60 backdrop-blur-3xl p-2 overflow-hidden">
               <CardContent className="space-y-8 pt-8">
@@ -178,7 +178,7 @@ export default function LayoutManagerClient() {
           <section className="space-y-6">
             <h3 className="text-xl font-bold flex items-center gap-2 text-foreground">
               <Brush size={20} className="text-primary" />
-              브랜드 아이덴티티 (Color)
+              브랜드 색상
             </h3>
             <Card className="rounded-lg border-none shadow-[0_32px_80px_rgba(0,0,0,0.06)] bg-card/60 backdrop-blur-3xl p-2">
               <CardContent className="space-y-6 pt-8">

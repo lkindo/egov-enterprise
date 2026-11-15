@@ -1,8 +1,14 @@
 import * as React from 'react';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import NoteHubClient from '../NoteHubClient';
 import NotePage from '../page';
+
+// [2026-11-14] 쪽지함이 홈의 '안 읽은 쪽지' 카드 캐시를 무효화하려고 쿼리 클라이언트를 쓴다 — 렌더마다 새 클라이언트로 감싼다.
+const render = (ui: React.ReactElement) => rtlRender(ui, {
+  wrapper: ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>,
+});
 
 const mocks = vi.hoisted(() => ({
   toast: vi.fn(),

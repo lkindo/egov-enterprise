@@ -42,10 +42,10 @@ export class SecurityAdminPage {
         await this.page.locator('#groupNm').fill(groupNm);
         await this.page.locator('#groupDc').fill(`${groupNm} description for E2E`);
         
-        console.log(`>>> Clicking '신규 그룹 배포' button`);
-        await this.page.getByRole('button', { name: /신규 그룹 배포/i }).click({ force: true });
+        console.log(`>>> Clicking '그룹 등록' button`);
+        await this.page.getByRole('button', { name: /^그룹 등록$/ }).click({ force: true });
         console.log(`>>> Waiting for success toast`);
-        await expect(this.page.getByText(/성공|완료|되었습니다|저장|반영/i).first()).toBeVisible({ timeout: 10000 });
+        await expect(this.page.getByText('보안 그룹을 등록했습니다.').first()).toBeVisible({ timeout: 10000 });
         console.log(`>>> Group Created Successfully`);
     }
 

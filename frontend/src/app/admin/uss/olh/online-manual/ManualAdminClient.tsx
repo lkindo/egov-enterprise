@@ -463,7 +463,7 @@ export default function ManualAdminClient({
                   aria-busy={isSaving || undefined}
                   className="px-16 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-[0.3em] shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex-1"
                 >
-                  {isSaving ? '처리 중...' : mode === 'edit' ? '수정 완료' : '등록 완료'}
+                  {isSaving ? (mode === 'edit' ? '매뉴얼 수정 중…' : '매뉴얼 등록 중…') : mode === 'edit' ? '수정 완료' : '등록 완료'}
                 </Button>
               </DialogFooter>
             </form>

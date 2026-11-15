@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
@@ -23,6 +24,7 @@ import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { failureMessage } from '@/lib/safe-error-log';
 import { noteComposeSchema } from './note-form-validation';
+import { invalidateNoteUnreadCount } from './note-query-keys';
 import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 
 const NOTE_FORM_LABELS = {
@@ -94,13 +96,16 @@ export default function NoteHubClient() {
   const [total, setTotal] = useState(0);
   // [2026-09-26 DIP V3] 받은 쪽지함의 미읽음 수. null 은 조회 실패이며 0 으로 말하지 않는다.
   const [unreadCount, setUnreadCount] = useState<number | null>(null);
+  const queryClient = useQueryClient();
   const refreshUnreadCount = useCallback(async () => {
+    // 홈의 '안 읽은 쪽지' 카드도 같은 수를 보인다 — 여기서 다시 셀 때 카드 캐시도 낡은 것으로 표시한다.
+    void invalidateNoteUnreadCount(queryClient);
     try {
       setUnreadCount(await noteService.getUnreadReceivedCount());
     } catch {
       setUnreadCount(null);
     }
-  }, []);
+  }, [queryClient]);
 
   const [isWriteModalOpen, setWriteOpen] = useState(false);
   const [isPickerOpen, setPickerOpen] = useState(false);

@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { noteService } from '@/services/business/user/NoteService';
+import { noteUnreadCountKey } from '@/app/note/note-query-keys';
 
 /**
  * 업무 홈의 '안 읽은 쪽지' 요약(2026-10-01 UI/UX 분석 16번).
@@ -17,7 +18,7 @@ export function UnreadNotesCard() {
   const { user } = useAuth();
   const canRead = canPermission(user, 'NOTE_READ');
   const unread = useQuery({
-    queryKey: ['notes', 'unread-count', user?.id],
+    queryKey: noteUnreadCountKey(user?.id),
     queryFn: () => noteService.getUnreadReceivedCount(),
     enabled: canRead,
     retry: false,

@@ -25,7 +25,7 @@ export default async function RewardManagePage() {
   }
 
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]"><h1 className="sr-only">포상 관리를 불러오는 중</h1>로딩 중..</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]"><h1 className="sr-only">포상 관리를 불러오는 중</h1>불러오는 중…</div>}>
       <RewardManageClient initialPage={initialPage} />
     </Suspense>
   );

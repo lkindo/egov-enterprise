@@ -18,9 +18,9 @@ export class ObservabilityPage {
     }
 
     async verifyMetrics() {
-        // 허브 observability 탭의 실측 게이지 지표 (CPU_LOAD/MEMORY_ALLOC). NETWORK_TRAFFIC 표본은 하네스 탭으로 옮겼다(DEC-OPS-409).
-        await this.page.waitForSelector('text=/CPU_LOAD|MEMORY_ALLOC/i', { state: 'visible', timeout: 15000 });
-        const cards = this.page.locator('div').filter({ hasText: /CPU_LOAD|MEMORY_ALLOC/i });
+        // 허브 observability 탭의 실측 게이지 지표 (CPU 사용률·메모리 사용률). NETWORK_TRAFFIC 표본은 하네스 탭으로 옮겼다(DEC-OPS-409).
+        await this.page.waitForSelector('text=/CPU 사용률|메모리 사용률/', { state: 'visible', timeout: 15000 });
+        const cards = this.page.locator('div').filter({ hasText: /CPU 사용률|메모리 사용률/ });
         await expect(cards.first()).toBeVisible();
     }
 

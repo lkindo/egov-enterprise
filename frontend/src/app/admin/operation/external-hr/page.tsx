@@ -25,7 +25,7 @@ export default async function ExternalHrPage() {
     }
 
     return (
-        <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]"><h1 className="sr-only">외부 인사 연계를 불러오는 중</h1>로딩 중..</div>}>
+        <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]"><h1 className="sr-only">외부 인사 연계를 불러오는 중</h1>불러오는 중…</div>}>
             <ExternalHrClient initialPage={initialPage} />
         </Suspense>
     );

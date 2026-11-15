@@ -17,8 +17,8 @@ test.describe('System Observability & Intelligence', () => {
         // Verify specific metrics are visible
         const page = obsPage['page'];
         // 모니터링 허브 observability 탭의 실제 지표 라벨 (구 standalone 페이지 라벨은 라우트 통합으로 제거됨)
-        await expect(page.getByText('CPU_LOAD', { exact: false }).first()).toBeVisible();
-        await expect(page.getByText('MEMORY_ALLOC', { exact: false }).first()).toBeVisible();
+        await expect(page.getByText('CPU 사용률', { exact: false }).first()).toBeVisible();
+        await expect(page.getByText('메모리 사용률', { exact: false }).first()).toBeVisible();
         // [2026-11-09 DEC-OPS-409] NETWORK_TRAFFIC 는 고정 배열 표본이라 시연 기능의 하네스 탭으로 옮겼다 — 가동 상태 탭의 실측 지표가 아니다.
     });
     test("모니터링 새로고침 후 현재 조회 결과 반출 dialog를 연다", async () => {

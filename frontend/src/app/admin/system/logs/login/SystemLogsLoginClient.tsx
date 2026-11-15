@@ -192,8 +192,8 @@ const SystemLogsLoginClient = () => {
             totalCount={error || data === undefined ? undefined : totalCount}
             filter={
                 <KeywordFilter
-                    label="사용자ID · 접속IP"
-                    placeholder="사용자ID, 접속IP 검색"
+                    label="로그인 ID · 접속 IP"
+                    placeholder="로그인 ID, 접속 IP 검색"
                     value={searchKeyword}
                     onSearch={(keyword: string) => { setSearchKeyword(keyword); setPage(1); }}
                     // [2026-09-26 DIP C6] 초기화는 기간도 지운다 — 종전에는 검색어만 비우고 기간이 남아, 비운 줄 안 조건이 계속 걸렸다.

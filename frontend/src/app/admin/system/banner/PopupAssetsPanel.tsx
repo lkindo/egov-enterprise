@@ -519,7 +519,7 @@ export function usePopupAssetsPanel({
                   required
                   render={({ field }) => (
                     <FormItem className="space-y-1.5 p-0.5">
-                      <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">팝업 타이틀 (Header)</FormLabel>
+                      <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">팝업 타이틀</FormLabel>
                       <FormControl>
                         <Input {...field} maxLength={100} className="rounded-lg text-md font-bold tracking-tight shadow-inner" placeholder="팝업 제목 입력" />
                       </FormControl>
@@ -534,7 +534,7 @@ export function usePopupAssetsPanel({
                     required
                     render={({ field }) => (
                       <FormItem className="space-y-1.5 p-0.5">
-                        <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">게시 시작 시점 (T-0)</FormLabel>
+                        <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">게시 시작 시점</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
@@ -559,7 +559,7 @@ export function usePopupAssetsPanel({
                     required
                     render={({ field }) => (
                       <FormItem className="space-y-1.5 p-0.5">
-                        <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">게시 종료 시점 (T-End)</FormLabel>
+                        <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">게시 종료 시점</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
@@ -586,7 +586,7 @@ export function usePopupAssetsPanel({
                     required
                     render={({ field }) => (
                       <FormItem className="space-y-1.5 p-0.5">
-                        <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">가로 좌표 (X_Pivot)</FormLabel>
+                        <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">가로 좌표</FormLabel>
                         <FormControl>
                           <Input {...field} {...numberInputProps(field, 0, POPUP_NUMBER_MAX)} />
                         </FormControl>
@@ -600,7 +600,7 @@ export function usePopupAssetsPanel({
                     required
                     render={({ field }) => (
                       <FormItem className="space-y-1.5 p-0.5">
-                        <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">세로 좌표 (Y_Pivot)</FormLabel>
+                        <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">세로 좌표</FormLabel>
                         <FormControl>
                           <Input {...field} {...numberInputProps(field, 0, POPUP_NUMBER_MAX)} />
                         </FormControl>
@@ -616,7 +616,7 @@ export function usePopupAssetsPanel({
                     required
                     render={({ field }) => (
                       <FormItem className="space-y-1.5 p-0.5">
-                        <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">가로 폭 (W_Res)</FormLabel>
+                        <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">가로 폭</FormLabel>
                         <FormControl>
                           <Input {...field} type="text" inputMode="numeric" />
                         </FormControl>
@@ -637,7 +637,7 @@ export function usePopupAssetsPanel({
                     required
                     render={({ field }) => (
                       <FormItem className="space-y-1.5 p-0.5">
-                        <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">세로 높이 (H_Res)</FormLabel>
+                        <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">세로 높이</FormLabel>
                         <FormControl>
                           <Input {...field} type="text" inputMode="numeric" />
                         </FormControl>
@@ -670,7 +670,7 @@ export function usePopupAssetsPanel({
                   </div>
                 )}
                 <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-muted/40 p-4">
-                  <p className="text-xs text-muted-foreground">상태 프로토콜</p>
+                  <p className="text-xs text-muted-foreground">사용 상태</p>
                   <div className="grid grid-cols-2 gap-3">
                     <ShadcnFormField
                       control={popupForm.control}
@@ -686,8 +686,8 @@ export function usePopupAssetsPanel({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="rounded-lg">
-                              <SelectItem value="Y" className="text-[length:var(--font-size-body)]">게시 (LIVE)</SelectItem>
-                              <SelectItem value="N" className="text-[length:var(--font-size-body)]">대기 (STAGING)</SelectItem>
+                              <SelectItem value="Y" className="text-[length:var(--font-size-body)]">게시</SelectItem>
+                              <SelectItem value="N" className="text-[length:var(--font-size-body)]">대기</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
@@ -708,8 +708,8 @@ export function usePopupAssetsPanel({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="rounded-lg">
-                              <SelectItem value="Y" className="text-[length:var(--font-size-body)]">활성 (ENABLE)</SelectItem>
-                              <SelectItem value="N" className="text-[length:var(--font-size-body)]">비활성 (DISABLE)</SelectItem>
+                              <SelectItem value="Y" className="text-[length:var(--font-size-body)]">사용</SelectItem>
+                              <SelectItem value="N" className="text-[length:var(--font-size-body)]">사용 안 함</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />

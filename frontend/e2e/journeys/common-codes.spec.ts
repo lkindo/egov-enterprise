@@ -130,7 +130,7 @@ test.describe('공통코드 변경 이력과 사용처', () => {
 
             await test.step('상세 코드를 등록한다', async () => {
                 await workArea.getByRole('button', { name: '신규 상세 코드 등록', exact: true }).click();
-                const dialog = page.getByRole('dialog', { name: '신규 명세 등록' });
+                const dialog = page.getByRole('dialog', { name: '상세 코드 등록' });
                 await dialog.getByLabel(/코드 식별자/).fill('D1');
                 await dialog.getByLabel(/표기 레이블/).fill('처음 이름');
                 await dialog.getByRole('button', { name: '저장', exact: true }).click();
@@ -140,7 +140,7 @@ test.describe('공통코드 변경 이력과 사용처', () => {
 
             await test.step('상세 코드의 이름을 고친다', async () => {
                 await workArea.getByRole('button', { name: '처음 이름 코드 수정', exact: true }).click();
-                const dialog = page.getByRole('dialog', { name: '아키텍처 명세 수정' });
+                const dialog = page.getByRole('dialog', { name: '상세 코드 수정' });
                 const label = dialog.getByLabel(/표기 레이블/);
                 await expect(label).toHaveValue('처음 이름');
                 await label.fill('바꾼 이름');

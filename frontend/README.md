@@ -39,10 +39,12 @@ pnpm dlx shadcn@<고정버전> add <component>
 
 ## 📂 주요 구조
 
-- `src/app`: App Router 기반 페이지 구성
-- `src/components`: UI 및 비즈니스 컴포넌트
-- `src/services`: API 통신 레이어 (Axios / TanStack Query)
-- `src/types`: TypeScript 인터페이스 정의
-- `src/hooks`: 커스텀 훅 (인증, 공통 기능 등)
+- `src/app`: App Router 기반 페이지 구성. 화면 공용 조합 부품은 `src/app/components/ui`(standard-*·picker·toast)
+- `src/components`: 기본 부품(`ui` — 서비스·라우터·인증 문맥을 모른다)과 업무 컴포넌트
+- `src/services`: API 통신 레이어, `src/queries`: TanStack Query 조회 옵션·키
+- `src/types`: TypeScript 인터페이스 정의(`generated-*` 는 생성물)
+- `src/hooks`: 서비스·권한을 아는 공용 훅, `src/lib/hooks`: API 를 모르는 범용 훅
+
+폴더별 허용·금지 의존은 [디자인 시스템 §5](../docs/02-architecture/frontend-design-system.md#5-component-ownership)가 정본이며 ESLint 가 막는다.
 
 ---

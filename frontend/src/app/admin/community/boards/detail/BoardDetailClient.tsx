@@ -147,7 +147,9 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
 
   const { data: article } = useQuery({
     queryKey: ['article-detail', bbsId, pstSn],
-    queryFn: () => knowledgeService.getArticle(bbsId!, pstSn),
+    // [2026-11-14] 조회수는 서버가 첫 화면을 그릴 때(BoardDetailServer) 한 번 센다. 이 쿼리는 해결 표시·추천 실패 뒤 무효화나
+    //   창 복귀 때 다시 읽는 것이라 세지 않는다 — 종전에는 다시 읽을 때마다 조회수가 1씩 올랐다.
+    queryFn: () => knowledgeService.getArticle(bbsId!, pstSn, { countView: false }),
     initialData: initialData.article,
     enabled: !!initialData.article && hasValidPstSn,
   });

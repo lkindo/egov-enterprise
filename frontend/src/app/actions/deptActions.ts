@@ -49,7 +49,7 @@ export async function saveDeptHierarchyAction(
     await deptAdminService.updateDeptHierarchy(submitData, config);
 
     revalidatePath('/admin/user/departments');
-    return { success: true, message: '조직 아키텍처 구조가 동기화되었습니다.' };
+    return { success: true, message: '부서 정보를 저장했습니다.' };
   } catch (error) {
     const message = extractErrorMessage(error, '계층 구조 저장 중 오류 발생');
     return { success: false, message };

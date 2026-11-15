@@ -139,7 +139,7 @@ describe('CommonCodeClient real form validation', () => {
     expect(name).toHaveValue('사용자가 입력한 코드명');
     expect(name).toHaveAttribute('aria-invalid', 'true');
     await waitFor(() => expect(name).toHaveFocus());
-    expect(screen.getByRole('region', { name: '신규 명세 등록' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '상세 코드 등록' })).toBeInTheDocument();
     expect(mocks.toast).not.toHaveBeenCalledWith('입력값을 확인해 주세요.', 'error');
   });
 });

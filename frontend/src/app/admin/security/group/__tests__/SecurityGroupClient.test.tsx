@@ -175,12 +175,12 @@ describe('SecurityGroupClient', () => {
     fireEvent.change(screen.getByPlaceholderText('그룹 식별자'), { target: { value: 'GROUP_NEW' } });
     fireEvent.change(screen.getByPlaceholderText('그룹 명칭 입력'), { target: { value: '신규 그룹' } });
     fireEvent.change(screen.getByPlaceholderText('상세 명세 입력...'), { target: { value: '신규 정책' } });
-    fireEvent.click(screen.getByRole('button', { name: /신규 그룹 배포/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^\S*그룹 등록$/ }));
 
     await waitFor(() => expect(mocks.create).toHaveBeenCalledWith({
       groupId: 'GROUP_NEW', groupNm: '신규 그룹', groupDc: '신규 정책',
     }));
-    expect(mocks.toast).toHaveBeenCalledWith('신규 보안 그룹 아키텍처가 설정되었습니다.', 'success');
+    expect(mocks.toast).toHaveBeenCalledWith('보안 그룹을 등록했습니다.', 'success');
   });
 
   it('같은 tick의 그룹 저장은 동기 잠금으로 한 번만 전송한다', async () => {
@@ -191,7 +191,7 @@ describe('SecurityGroupClient', () => {
     fireEvent.click(screen.getByRole('button', { name: /분류 그룹 등록/ }));
     fireEvent.change(screen.getByPlaceholderText('그룹 식별자'), { target: { value: 'GROUP_NEW' } });
     fireEvent.change(screen.getByPlaceholderText('그룹 명칭 입력'), { target: { value: '신규 그룹' } });
-    const submit = screen.getByRole('button', { name: /신규 그룹 배포/ });
+    const submit = screen.getByRole('button', { name: /^\S*그룹 등록$/ });
 
     act(() => {
       submit.click();
@@ -226,7 +226,7 @@ describe('SecurityGroupClient', () => {
     const groupName = screen.getByLabelText('분류 그룹 이름');
     fireEvent.change(groupName, { target: { value: '입력한 그룹 명칭' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /신규 그룹 배포/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^\S*그룹 등록$/ }));
 
     const cancel = screen.getByRole('button', { name: '취소' });
     await waitFor(() => expect(cancel).toBeDisabled());
@@ -248,7 +248,7 @@ describe('SecurityGroupClient', () => {
     fireEvent.click(screen.getByRole('button', { name: /분류 그룹 등록/ }));
 
     const groupId = screen.getByLabelText('분류 그룹 ID');
-    fireEvent.click(screen.getByRole('button', { name: /신규 그룹 배포/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^\S*그룹 등록$/ }));
 
     expect(mocks.create).not.toHaveBeenCalled();
     expect(await screen.findByText('그룹 ID를 입력해 주세요.')).toBeInTheDocument();
@@ -258,7 +258,7 @@ describe('SecurityGroupClient', () => {
 
     fireEvent.change(groupId, { target: { value: 'G'.repeat(21) } });
     fireEvent.change(screen.getByLabelText('분류 그룹 이름'), { target: { value: '정상 그룹' } });
-    fireEvent.click(screen.getByRole('button', { name: /신규 그룹 배포/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^\S*그룹 등록$/ }));
 
     expect(mocks.create).not.toHaveBeenCalled();
     expect(await screen.findByText('그룹 ID: 최대 20자까지 입력할 수 있습니다.')).toBeInTheDocument();

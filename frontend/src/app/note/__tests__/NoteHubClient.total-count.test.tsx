@@ -1,6 +1,12 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// [2026-11-14] 쪽지함이 홈의 '안 읽은 쪽지' 카드 캐시를 무효화하려고 쿼리 클라이언트를 쓴다 — 렌더마다 새 클라이언트로 감싼다.
+const render = (ui: React.ReactElement) => rtlRender(ui, {
+  wrapper: ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>,
+});
 
 /**
  * 쪽지함이 셸 툴바에 넘기는 총 건수와, 같은 값을 보이는 쪽지함 탭의 건수.
@@ -58,6 +64,17 @@ describe('쪽지함 — 셸 툴바와 탭의 총 건수', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getUnreadReceivedCount.mockResolvedValue(0);
+  });
+
+  it('[2026-11-14] 미읽음 수를 다시 셀 때 홈의 안 읽은 쪽지 카드 캐시도 무효화한다', async () => {
+    mocks.getReceivedNotes.mockResolvedValue({ list: [], total: 0 });
+    const queryClient = new QueryClient();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+    rtlRender(<QueryClientProvider client={queryClient}><NoteHubClient /></QueryClientProvider>);
+
+    await waitFor(() => expect(mocks.getUnreadReceivedCount).toHaveBeenCalled());
+    // 카드 키는 ['notes', 'unread-count', 사용자] 다 — 접두로 사용자와 무관하게 덮는다.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['notes', 'unread-count'] });
   });
 
   it('목록 응답을 받기 전에는 총 건수를 내지 않는다 — 0건이라고 말하지 않는다', async () => {

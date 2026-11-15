@@ -486,7 +486,7 @@ describe('CommonCodeClient', () => {
     expect(await screen.findByText('활성')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '활성 코드 수정' }));
-    const editModal = screen.getByRole('region', { name: '아키텍처 명세 수정' });
+    const editModal = screen.getByRole('region', { name: '상세 코드 수정' });
     expect(editModal).toHaveTextContent('GRP1');
     fireEvent.click(within(editModal).getByRole('button', { name: /저장$/ }));
     await waitFor(() => expect(mocks.saveDetail).toHaveBeenCalledWith(null, expect.objectContaining({
@@ -494,7 +494,7 @@ describe('CommonCodeClient', () => {
     })));
 
     fireEvent.click(screen.getByRole('button', { name: '신규 상세 코드 등록' }));
-    const createModal = screen.getByRole('region', { name: '신규 명세 등록' });
+    const createModal = screen.getByRole('region', { name: '상세 코드 등록' });
     expect(within(createModal).getByTestId('common-code-form-error-summary')).toBeInTheDocument();
     expect(within(createModal).getByPlaceholderText(/코드 사용처 및 시스템 제약 조건 설명/))
       .toHaveClass('focus-visible:ring-2', 'focus-visible:ring-ring');
@@ -559,7 +559,7 @@ describe('CommonCodeClient', () => {
     renderClient();
     expect(await screen.findByText('활성')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: '신규 상세 코드 등록' }));
-    fireEvent.click(within(screen.getByRole('region', { name: '신규 명세 등록' })).getByRole('button', { name: /저장$/ }));
+    fireEvent.click(within(screen.getByRole('region', { name: '상세 코드 등록' })).getByRole('button', { name: /저장$/ }));
 
     await waitFor(() => expect(mocks.applyServerErrors).toHaveBeenCalledWith(expect.objectContaining({
       fieldErrors: { dtlCdNm: '코드 명칭은 이미 사용 중입니다.' },
@@ -576,7 +576,7 @@ describe('CommonCodeClient', () => {
     const resetCallCount = mocks.reset.mock.calls.length;
 
     view.rerenderClient('GRP2');
-    const editModal = screen.getByRole('region', { name: '아키텍처 명세 수정' });
+    const editModal = screen.getByRole('region', { name: '상세 코드 수정' });
     expect(editModal).toHaveTextContent('GRP1');
     expect(mocks.reset).toHaveBeenCalledTimes(resetCallCount);
     fireEvent.click(within(editModal).getByRole('button', { name: /저장$/ }));
@@ -592,19 +592,19 @@ describe('CommonCodeClient', () => {
     const view = renderClient('GRP1');
     expect(await screen.findByText('활성')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: '신규 상세 코드 등록' }));
-    expect(screen.getByRole('region', { name: '신규 명세 등록' })).toBeVisible();
+    expect(screen.getByRole('region', { name: '상세 코드 등록' })).toBeVisible();
 
     mocks.isSubmitting = true;
     view.rerenderClient('GRP1');
-    const pendingModal = screen.getByRole('region', { name: '신규 명세 등록' });
+    const pendingModal = screen.getByRole('region', { name: '상세 코드 등록' });
     expect(within(pendingModal).getByRole('button', { name: '취소' })).toBeDisabled();
     fireEvent.click(within(pendingModal).getByRole('button', { name: '모달 닫기 요청' }));
-    expect(screen.getByRole('region', { name: '신규 명세 등록' })).toBeVisible();
+    expect(screen.getByRole('region', { name: '상세 코드 등록' })).toBeVisible();
 
     mocks.isSubmitting = false;
     view.rerenderClient('GRP1');
-    fireEvent.click(within(screen.getByRole('region', { name: '신규 명세 등록' })).getByRole('button', { name: '취소' }));
-    expect(screen.queryByRole('region', { name: '신규 명세 등록' })).not.toBeInTheDocument();
+    fireEvent.click(within(screen.getByRole('region', { name: '상세 코드 등록' })).getByRole('button', { name: '취소' }));
+    expect(screen.queryByRole('region', { name: '상세 코드 등록' })).not.toBeInTheDocument();
   });
 
   it('상세 저장 중 취소·삭제를 막고 structured 오류 뒤에도 modal·값·summary를 보존한다', async () => {
@@ -613,7 +613,7 @@ describe('CommonCodeClient', () => {
     renderClient();
     expect(await screen.findByText('활성')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: '활성 코드 수정' }));
-    const modal = screen.getByRole('region', { name: '아키텍처 명세 수정' });
+    const modal = screen.getByRole('region', { name: '상세 코드 수정' });
     const saveButton = within(modal).getByRole('button', { name: /저장$/ });
     const cancelButton = within(modal).getByRole('button', { name: '취소' });
 
@@ -639,7 +639,7 @@ describe('CommonCodeClient', () => {
     await waitFor(() => expect(mocks.applyServerErrors).toHaveBeenCalledWith(expect.objectContaining({
       fieldErrors: { dtlCdNm: '이미 사용 중인 코드 명칭입니다.' },
     })));
-    const preservedModal = screen.getByRole('region', { name: '아키텍처 명세 수정' });
+    const preservedModal = screen.getByRole('region', { name: '상세 코드 수정' });
     expect(within(preservedModal).getByTestId('common-code-form-error-summary')).toBeInTheDocument();
     expect(within(preservedModal).getByPlaceholderText(/레이블 명칭 입력/)).toHaveValue('신규 코드');
     expect(within(preservedModal).getByRole('button', { name: '취소' })).toBeEnabled();
