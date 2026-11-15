@@ -189,7 +189,7 @@ function LikeButton({
     >
       <ThumbsUp size={14} aria-hidden="true" />
       {recommended && <span>추천함</span>}
-      <span className="tabular-nums">{pending ? '처리 중…' : item.likeCnt || 0}</span>
+      <span className="tabular-nums">{pending ? '추천 처리 중…' : item.likeCnt || 0}</span>
     </Button>
   );
 }

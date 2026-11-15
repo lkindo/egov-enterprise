@@ -27,8 +27,8 @@ export const codeDetailFormSchema = CmmnDetailCodeDtoSchema.extend({
 export const CODE_DETAIL_FIELD_LABELS = {
  dtlCd: '코드 식별자',
  dtlCdNm: '표기 레이블',
- dtlCdExpln: '메타데이터 컨텍스트 설명',
- useYn: '활성 상태',
+ dtlCdExpln: '설명',
+ useYn: '사용 여부',
  'root.server': '저장 요청',
 };
 

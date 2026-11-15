@@ -270,6 +270,19 @@ describe('LoginPage Component', () => {
     expect(form).toHaveAttribute('aria-hidden', 'true');
   });
 
+  it('[2026-11-14] 카드·제목·입력 칸·로그인 단추는 동작을 줄이지 않아도 처음부터 보인다 — 첫 화면(LCP)이 JS 를 기다리지 않게', () => {
+    mockReducedMotion.mockReturnValue(false);
+    const { container } = render(<LoginPage />);
+
+    // 종전에는 투명에서 시작해 하이드레이션·애니메이션 뒤에야 보였다(Lighthouse 관측값: 첫 그림 316ms, 제목 649ms).
+    const animatedNodes = [...container.querySelectorAll('[data-motion-initial]')];
+    expect(animatedNodes.length).toBeGreaterThan(0);
+    for (const node of animatedNodes) {
+      expect(node).toHaveAttribute('data-motion-initial', 'false');
+    }
+    expect(screen.getByRole('heading', { level: 1 }).closest('[data-motion-initial]')).toHaveAttribute('data-motion-initial', 'false');
+  });
+
   it('does not start entrance animations when reduced motion is requested', () => {
     mockReducedMotion.mockReturnValue(true);
     const { container } = render(<LoginPage />);

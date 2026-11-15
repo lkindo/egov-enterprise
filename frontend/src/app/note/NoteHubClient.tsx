@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
@@ -23,6 +24,7 @@ import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { failureMessage } from '@/lib/safe-error-log';
 import { noteComposeSchema } from './note-form-validation';
+import { invalidateNoteUnreadCount } from './note-query-keys';
 import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 
 const NOTE_FORM_LABELS = {
@@ -94,13 +96,16 @@ export default function NoteHubClient() {
   const [total, setTotal] = useState(0);
   // [2026-09-26 DIP V3] 받은 쪽지함의 미읽음 수. null 은 조회 실패이며 0 으로 말하지 않는다.
   const [unreadCount, setUnreadCount] = useState<number | null>(null);
+  const queryClient = useQueryClient();
   const refreshUnreadCount = useCallback(async () => {
+    // 홈의 '안 읽은 쪽지' 카드도 같은 수를 보인다 — 여기서 다시 셀 때 카드 캐시도 낡은 것으로 표시한다.
+    void invalidateNoteUnreadCount(queryClient);
     try {
       setUnreadCount(await noteService.getUnreadReceivedCount());
     } catch {
       setUnreadCount(null);
     }
-  }, []);
+  }, [queryClient]);
 
   const [isWriteModalOpen, setWriteOpen] = useState(false);
   const [isPickerOpen, setPickerOpen] = useState(false);
@@ -284,6 +289,9 @@ export default function NoteHubClient() {
         type: target.type,
         relationSn: target.relationSn,
       });
+      // 받은 쪽지를 열면 서버가 읽음으로 바꾼다 — 홈 카드 무효화는 아래의 늦은 응답 판정(상세를 닫았거나 다른 쪽지를 열었음)과
+      // 무관하게 한다. 종전에는 그 판정 뒤의 미읽음 재계산에만 묶여, 응답 전에 상세를 닫으면 홈이 읽기 전 수를 보였다.
+      if (target.type === 'received') void invalidateNoteUnreadCount(queryClient);
       if (requestId !== detailRequestRef.current) return;
 
       const resolvedDetail: Note = {
@@ -307,7 +315,7 @@ export default function NoteHubClient() {
     } finally {
       if (requestId === detailRequestRef.current) setDetailLoading(false);
     }
-  }, [refreshUnreadCount]);
+  }, [refreshUnreadCount, queryClient]);
 
   const handleDetail = (note: Note) => {
     const relationSn = tab === 'received' ? note.noteRcptnSn : note.noteSndngSn;
@@ -344,6 +352,8 @@ export default function NoteHubClient() {
       });
       if (!ok) return;
       await noteService.deleteNote(relationSn, { type: deleteTab });
+      // 안 읽은 받은 쪽지를 지우면 홈 카드의 수가 줄어든다 — 탭을 바꿔 아래 목록 재조회를 건너뛰어도 무효화한다.
+      if (deleteTab === 'received') void invalidateNoteUnreadCount(queryClient);
       toast('삭제되었습니다.', 'success');
       if (tabRef.current === deleteTab) await loadNotes(deleteTab);
     } catch {

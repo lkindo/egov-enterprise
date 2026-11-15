@@ -47,9 +47,9 @@ export class PromotionPage {
             const current = (await noticeStatusTrigger.textContent()) ?? '';
             if (!/게시/.test(current)) {
                 await noticeStatusTrigger.click();
-                await this.page.getByRole('option', { name: /게시 \(LIVE\)/i }).press('Enter');
+                await this.page.getByRole('option', { name: '게시', exact: true }).press('Enter');
             } else {
-                console.log('>>> [Promotion] 게시 설정이 이미 게시(LIVE) — 콤보박스를 열지 않는다.');
+                console.log('>>> [Promotion] 게시 설정이 이미 게시 — 콤보박스를 열지 않는다.');
             }
         }
 

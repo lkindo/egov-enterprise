@@ -83,7 +83,7 @@ export function numberInputProps(
 export function AssetUploadField({ onFilesChange }: { onFilesChange: (files: File[]) => void }) {
   return (
     <FormItem className="space-y-1.5 p-0.5">
-      <Label className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">미디어 자산 업로드 (Visual Payload)</Label>
+      <Label className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">미디어 자산 업로드</Label>
       <div className="rounded-md border border-dashed border-border bg-muted/50 p-3 transition-colors hover:bg-muted">
         <StandardFileUploader onFilesChange={onFilesChange} maxFiles={1} />
         <div className="mt-2 flex items-center justify-center gap-2 text-muted-foreground">

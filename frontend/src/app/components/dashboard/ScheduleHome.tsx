@@ -6,6 +6,7 @@ import { todayStorageYmd } from '@/lib/format-date';
 import { getDeptScheduleMonthList } from '@/services/business/schedule/deptScheduleService';
 import type { DeptSchedule } from '@/types/business/schedule';
 import { HomeSummaryCard, summaryValue } from './HomeSummaryCard';
+import { scheduleHomeKey } from '@/app/smart-toolkit/schedule/schedule-query-keys';
 
 /**
  * 업무 홈의 '오늘 일정' 카드(2026-10-20). 일정 기능 소유이고 업무 홈 셸에는 home-sections 기여(extensions/schedule/home-sections.ts)로
@@ -28,7 +29,7 @@ export function ScheduleTodayCard() {
   const today = todayStorageYmd();
   const yearMonth = today.slice(0, 6);
   const schedules = useQuery({
-    queryKey: ['home', 'schedule-today', user?.id, yearMonth],
+    queryKey: scheduleHomeKey(user?.id, yearMonth),
     queryFn: () => getDeptScheduleMonthList({ yearMonth }),
     retry: false,
   });

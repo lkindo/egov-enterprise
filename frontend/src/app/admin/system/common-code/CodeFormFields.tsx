@@ -260,7 +260,7 @@ export function CodeDetailFields({
           render={({ field }) => (
             <FormItem className="space-y-1.5 p-0.5">
               <FormLabel className="ml-1 flex items-center gap-1.5 text-xs font-bold text-foreground">
-                코드 식별자 (Unique ID)
+                코드 식별자
               </FormLabel>
               <FormControl>
                 <Input
@@ -283,7 +283,7 @@ export function CodeDetailFields({
           render={({ field }) => (
             <FormItem className="space-y-1.5 p-0.5">
               <FormLabel className="ml-1 flex items-center gap-1.5 text-xs font-bold text-foreground">
-                표기 레이블 (Label)
+                표기 레이블
               </FormLabel>
               <FormControl>
                 <Input
@@ -306,7 +306,7 @@ export function CodeDetailFields({
           render={({ field }) => (
             <FormItem className="space-y-1.5 p-0.5">
               <FormLabel className="ml-1 flex items-center gap-1.5 text-xs font-bold text-foreground">
-                활성 상태 프로토콜
+                사용 여부
               </FormLabel>
               <Select
                 onValueChange={field.onChange}
@@ -320,10 +320,10 @@ export function CodeDetailFields({
                 </FormControl>
                 <SelectContent className="rounded-lg shadow-xl z-[9999]">
                   <SelectItem value="Y" className="h-12 rounded-lg text-xs font-bold text-success-emphasis">
-                    사용 중 (ACTIVE)
+                    사용 중
                   </SelectItem>
                   <SelectItem value="N" className="h-12 rounded-lg text-xs font-bold text-destructive-emphasis">
-                    미사용 (INACTIVE)
+                    미사용
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -338,7 +338,7 @@ export function CodeDetailFields({
           render={({ field }) => (
             <FormItem className="space-y-1.5 p-0.5">
               <FormLabel className="ml-1 flex items-center gap-1.5 text-xs font-bold text-foreground">
-                메타데이터 컨텍스트 설명
+                설명
               </FormLabel>
               <FormControl>
                 <textarea

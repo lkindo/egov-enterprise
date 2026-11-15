@@ -285,6 +285,7 @@ describe('shared useAppForm visual validation contract', () => {
       value: '보존할 부서',
       fieldName: /부서 명칭/,
       submitName: /부서 등록/,
+      pendingName: '부서 등록 중…',
       render: (onSubmit: () => Promise<void>, onCancel: () => void) => (
         <DepartmentForm
           mode="create"
@@ -301,6 +302,7 @@ describe('shared useAppForm visual validation contract', () => {
       value: '보존할 사용자',
       fieldName: /사용자 성함/,
       submitName: /정보 수정/,
+      pendingName: '사용자 수정 중…',
       render: (onSubmit: () => Promise<void>, onCancel: () => void) => (
         <UserManageForm
           mode="edit"
@@ -322,7 +324,8 @@ describe('shared useAppForm visual validation contract', () => {
 
     fireEvent.click(submit);
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
-    expect(screen.getByRole('button', { name: /처리 중…/ })).toHaveAttribute('aria-busy', 'true');
+    // [2026-11-15] 대기 라벨은 대상을 밝힌다(대상 없는 '처리 중…' 은 lint 가 막는다).
+    expect(screen.getByRole('button', { name: new RegExp(entry.pendingName) })).toHaveAttribute('aria-busy', 'true');
     expect(cancel).toBeDisabled();
 
     await act(async () => pending.reject({

@@ -433,10 +433,10 @@ export default function LoginPolicyAdminClient() {
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold flex items-center gap-3">
                   <Settings2 className="text-primary" />
-                  {selectedPolicy?.regYn === 'Y' ? '정책 프로파일링' : '정책 신규 등록'}
+                  {selectedPolicy?.regYn === 'Y' ? '정책 수정' : '정책 신규 등록'}
                 </DialogTitle>
               </DialogHeader>
-              <p className="text-xs font-bold text-surface-inverse-foreground/40 tracking-[0.3em] uppercase">USER_ID: {selectedPolicy?.userId}</p>
+              <p className="text-xs font-bold text-surface-inverse-foreground/40 tracking-[0.3em] uppercase">로그인 ID: {selectedPolicy?.userId}</p>
               {selectedPolicy?.regYn !== 'Y' ? (
                 <p className="text-xs font-semibold text-surface-inverse-foreground/70">
                   이 사용자에게는 아직 로그인 정책이 없습니다. 저장하면 새로 등록됩니다.
@@ -512,7 +512,7 @@ export default function LoginPolicyAdminClient() {
                       <FormItem className="flex items-center justify-between space-y-0">
                         <div className="space-y-1">
                           <FormLabel className="text-sm font-bold tracking-tight">계정 접속 전면 제한</FormLabel>
-                          <p className="text-xs font-bold text-muted-foreground opacity-60 uppercase">BLOCK_ACCOUNT_ACCESS</p>
+                          <p className="text-xs font-bold text-muted-foreground opacity-60 uppercase">켜면 이 계정은 로그인할 수 없습니다</p>
                         </div>
                         <FormControl>
                           <Switch 

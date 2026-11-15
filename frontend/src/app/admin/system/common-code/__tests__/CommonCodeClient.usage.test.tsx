@@ -210,7 +210,7 @@ describe('공통코드 — 사용처 표시와 영향 확인', () => {
     renderClient('COM075');
     fireEvent.click(await screen.findByRole('button', { name: '검토 코드 수정' }));
     mocks.formValues = { ...mocks.formValues, dtlCdNm: '사전 검토' };
-    fireEvent.click(within(screen.getByRole('region', { name: '아키텍처 명세 수정' })).getByRole('button', { name: /저장$/ }));
+    fireEvent.click(within(screen.getByRole('region', { name: '상세 코드 수정' })).getByRole('button', { name: /저장$/ }));
 
     await waitFor(() => expect(mocks.saveDetail).toHaveBeenCalledTimes(1));
     expect(mocks.confirm).toHaveBeenCalledTimes(1);
@@ -218,7 +218,7 @@ describe('공통코드 — 사용처 표시와 영향 확인', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '신규 상세 코드 등록' }));
     mocks.formValues = { ...mocks.formValues, dtlCd: 'NEW', dtlCdNm: '신규' };
-    fireEvent.click(within(screen.getByRole('region', { name: '신규 명세 등록' })).getByRole('button', { name: /저장$/ }));
+    fireEvent.click(within(screen.getByRole('region', { name: '상세 코드 등록' })).getByRole('button', { name: /저장$/ }));
     await waitFor(() => expect(mocks.saveDetail).toHaveBeenCalledTimes(2));
     expect(mocks.confirm).toHaveBeenCalledTimes(1);
   });

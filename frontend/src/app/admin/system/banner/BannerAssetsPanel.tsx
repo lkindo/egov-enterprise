@@ -423,7 +423,7 @@ export function useBannerAssetsPanel({
                   required
                   render={({ field }) => (
                     <FormItem className="space-y-1.5 p-0.5">
-                      <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">배너 명칭 (Internal Label)</FormLabel>
+                      <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">배너 명칭</FormLabel>
                       <FormControl>
                         <Input {...field} maxLength={100} className="rounded-lg text-md font-bold tracking-tight shadow-inner" placeholder="배너 이름 입력" />
                       </FormControl>
@@ -437,7 +437,7 @@ export function useBannerAssetsPanel({
                   name="linkUrl"
                   render={({ field }) => (
                     <FormItem className="space-y-1.5 p-0.5">
-                      <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">랜딩 페이지 (Target URL)</FormLabel>
+                      <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">랜딩 페이지</FormLabel>
                       <div className="relative group/link">
                         <LinkIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                         <FormControl>
@@ -460,7 +460,7 @@ export function useBannerAssetsPanel({
                     required
                     render={({ field }) => (
                       <FormItem className="space-y-1.5 p-0.5">
-                        <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">노출 순서 Priority</FormLabel>
+                        <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">노출 순서</FormLabel>
                         <FormControl>
                           <Input {...field} {...numberInputProps(field, 0)} />
                         </FormControl>
@@ -482,8 +482,8 @@ export function useBannerAssetsPanel({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="rounded-lg shadow-2xl">
-                            <SelectItem value="Y" className="text-[length:var(--font-size-body)]">--- 활성 (Live) ---</SelectItem>
-                            <SelectItem value="N" className="text-[length:var(--font-size-body)]">--- 대기 (Staging) ---</SelectItem>
+                            <SelectItem value="Y" className="text-[length:var(--font-size-body)]">게시 중</SelectItem>
+                            <SelectItem value="N" className="text-[length:var(--font-size-body)]">대기</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
@@ -496,7 +496,7 @@ export function useBannerAssetsPanel({
                   name="bnrExpln"
                   render={({ field }) => (
                     <FormItem className="space-y-1.5 p-0.5">
-                      <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">자산 명세 및 설명 (Metadata)</FormLabel>
+                      <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">설명</FormLabel>
                       <FormControl>
                         <textarea {...field} maxLength={4000} className="w-full min-h-[120px] p-6 rounded-lg border-2 border-input bg-muted text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner" placeholder="배너 자산 용도 및 노출 조건 설명" />
                       </FormControl>

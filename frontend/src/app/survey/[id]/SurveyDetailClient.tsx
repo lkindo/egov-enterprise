@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { surveyParticipationService } from '@/services/foundation/survey/SurveyParticipationService';
+import { invalidateAfterSurveyResponse } from '@/queries/survey-query-options';
 import { FREE_TEXT_QUESTION_TYPE, type Survey, type SurveyQuestion, type SurveyResponseSubmit } from '@/types/business/survey';
 import { todayStorageYmd } from '@/lib/format-date';
 import {
@@ -179,9 +180,8 @@ export default function SurveyDetailClient({
 
       await surveyParticipationService.submitAnswers(srvySn, payload);
       setIsSubmitted(true);
-      // 제출한 응답이 바로 아래 통계에 반영되게 한다 — 종전에는 캐시된 통계가 제출 전 값으로 남았다.
-      void queryClient.invalidateQueries({ queryKey: ['survey-stats', srvySn] });
-      void queryClient.invalidateQueries({ queryKey: ['survey', srvySn] });
+      // 제출한 응답이 바로 아래 통계와, 목록의 '응답함'·홈 카드·내 응답 목록에 반영되게 한다.
+      invalidateAfterSurveyResponse(queryClient, srvySn);
       toast('설문 응답을 제출했습니다.', 'success');
     } catch (submitException) {
       /*

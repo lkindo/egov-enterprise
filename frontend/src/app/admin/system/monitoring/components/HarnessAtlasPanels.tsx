@@ -131,7 +131,7 @@ export function HarnessAtlasTab({ selectedItemId, onSelect }: {
               <Zap size={18} />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-foreground leading-none">JPA Performance Guardrail Telemetry</h4>
+              <h4 className="text-sm font-bold text-foreground leading-none">JPA 성능 가드레일 지표</h4>
               {/* '실시간 계측'이라는 표현은 사실이 아니므로 제거 — 아래 목록은 예시 로그다. */}
               <p className="mt-0.5 text-xs text-muted-foreground">테스트-타임 SQL 쿼리 가드레일 예시 보드</p>
             </div>
@@ -256,7 +256,7 @@ export function HarnessDashboardOverview() {
     <div className="flex h-full flex-col space-y-4 overflow-hidden rounded-md border border-border bg-card p-4 text-left font-sans">
       <div className="border-b border-border pb-3">
         <div className="flex items-center gap-3 mb-3 flex-wrap">
-          <h3 className="text-xs text-muted-foreground">Harness Governance SSOT</h3>
+          <h3 className="text-xs text-muted-foreground">거버넌스 하네스 기준</h3>
           <SampleDataBadge />
         </div>
         <h2 className="mb-1 text-lg font-semibold tracking-tight text-foreground">아틀라스 통합 관제</h2>
@@ -302,7 +302,7 @@ export function HarnessDashboardOverview() {
             <div className="relative space-y-3 border-l-2 border-border py-1 pl-5">
               <div className="relative">
                 <div className="absolute -left-[27px] top-0.5 size-3.5 rounded-full border-4 border-card bg-surface-inverse" aria-hidden="true" />
-                <span className="text-[10px] font-medium tracking-wide text-muted-foreground">STEP 1. Stop & Diagnose</span>
+                <span className="text-[10px] font-medium tracking-wide text-muted-foreground">1단계 · 멈추고 진단</span>
                 <p className="text-[10px] text-muted-foreground font-medium leading-tight mt-0.5">에러 시 즉각 중단 및 오판 진단(False Assumption) 도출</p>
               </div>
               <div className="relative">
@@ -441,7 +441,7 @@ export function SkillDetailView({ skill }: { skill: HarnessSkill }) {
 
       {/* Flow Steps */}
       <div className="space-y-3">
-        <h5 className="text-[length:var(--font-size-body)] font-semibold text-foreground">오케스트레이션 파이프라인 (Execution Flow)</h5>
+        <h5 className="text-[length:var(--font-size-body)] font-semibold text-foreground">오케스트레이션 실행 흐름</h5>
         <div className="relative pl-6 border-l-2 border-border space-y-4 py-2">
           {currentMeta.flow.map((step, idx) => (
             <div key={idx} className="relative">
@@ -537,7 +537,7 @@ export function TestDetailView({ test }: { test: HarnessTest }) {
 
       {/* SQL Stacks */}
       <div className="space-y-4">
-        <h5 className="text-[length:var(--font-size-body)] font-semibold text-foreground">대표 DB 호출 스택 예시 (Database Call Stack)</h5>
+        <h5 className="text-[length:var(--font-size-body)] font-semibold text-foreground">대표 DB 호출 스택 예시</h5>
         <div className="space-y-3">
           {currentStack.stacks.map((stack, idx) => (
             <div key={idx} className="flex flex-col gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">

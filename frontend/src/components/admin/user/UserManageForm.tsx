@@ -120,7 +120,7 @@ export function UserManageForm({
                   transition={{ duration: 0.4 }}
                 >
                   <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1">
-                    사용자 아이디 (Identity_ID)
+                    사용자 아이디
                   </FormLabel>
                   <FormControl>
                     <Input
@@ -316,7 +316,7 @@ export function UserManageForm({
             className="flex-[2] rounded-lg font-bold text-xs tracking-widest shadow-xl bg-surface-inverse text-surface-inverse-foreground hover:bg-primary transition-all group"
           >
             <Zap size={18} className="group-hover:animate-pulse mr-2" />
-            {isWritePending ? '처리 중…' : mode === 'create' ? '신규 등록' : '정보 수정'}
+            {isWritePending ? (mode === 'create' ? '사용자 등록 중…' : '사용자 수정 중…') : mode === 'create' ? '신규 등록' : '정보 수정'}
           </Button>
         </div>
       </form>

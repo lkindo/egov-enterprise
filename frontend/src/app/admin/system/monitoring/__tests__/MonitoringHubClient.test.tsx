@@ -216,7 +216,7 @@ describe('MonitoringHubClient', () => {
    * 라벨이 술어와 어긋나면 빈 결과가 "그 계정 기록이 없다" 로 오독된다.
    */
   const LOG_SEARCH_LABEL = '서비스명 · 요청ID';
-  const LOGIN_SEARCH_LABEL = '사용자ID · 접속IP';
+  const LOGIN_SEARCH_LABEL = '로그인 ID · 접속 IP';
 
   it.each([
     ['', mocks.audit, 'authorize', LOG_SEARCH_LABEL],
@@ -432,7 +432,7 @@ describe('MonitoringHubClient', () => {
     expect(screen.queryByText('추세 · 다차원 상태(미연동)')).toBeNull();
     expect(screen.queryByText('샘플 데이터')).toBeNull();
     // 이 탭의 차트는 실측 게이지 둘뿐이다.
-    expect(screen.getAllByTestId('dynamic-panel').map((chart) => chart.dataset.chart)).toEqual(['CPU_LOAD', 'MEMORY_ALLOC']);
+    expect(screen.getAllByTestId('dynamic-panel').map((chart) => chart.dataset.chart)).toEqual(['CPU 사용률', '메모리 사용률']);
   });
 
   if (inProjection('frontend/src/extensions/showcase/hub-tabs-monitoring.ts')) it('추세 · 다차원 상태 표본은 하네스 탭에 샘플 배지·차트 셋과 함께 있다', () => {

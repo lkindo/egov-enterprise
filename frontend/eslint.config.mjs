@@ -210,6 +210,18 @@ const eslintConfig = [
         {
           "selector": "JSXAttribute[name.name='role'] Literal[value=/^tab(list|panel)?$/]",
           "message": "손으로 쓴 탭 역할 금지 — @/app/components/ui/standard-tabs 의 TabList·Tab·TabPanel 을 쓰세요(방향키·roving tabindex·aria-controls 를 갖춘 탭 원천)."
+        },
+        // [2026-11-15] 화면 대기 문구. 기다리는 동안은 '불러오는 중…' 이고, 저장·처리 중은 무엇을 하는지(대상) 붙인다
+        //   — '부서 등록 중…', '추천 처리 중…'. '로딩 중'·대상 없는 '처리 중…' 은 화면 용어 검토(GAP-COPY-001)에서 남은 편차였고
+        //   5곳을 옮긴 뒤 0건에서 동결한다. 주석·시험·e2e 는 이 블록 밖이다.
+        {
+          "selector": ":matches(Literal[value=/로딩 중/], JSXText[value=/로딩 중/], TemplateElement[value.raw=/로딩 중/])",
+          "message": "'로딩 중' 대신 '불러오는 중…' 을 쓰세요(화면 용어 — 외래어 대신 우리말 동작어)."
+        },
+        {
+          // 식 없는 템플릿 문자열(`처리 중…`)도 본다. 대상을 넣은 `${대상} 처리 중…` 은 식이 있어 걸리지 않는다. 문자열 연결('처리 ' + '중…')은 이 규칙 밖이다.
+          "selector": ":matches(Literal[value=/^\\s*처리 중(…|\\.\\.\\.?)?\\s*$/], JSXText[value=/^\\s*처리 중(…|\\.\\.\\.?)?\\s*$/], TemplateLiteral[expressions.length=0] > TemplateElement[value.raw=/^\\s*처리 중(…|\\.\\.\\.?)?\\s*$/])",
+          "message": "대상 없는 '처리 중…' 대신 무엇을 하는지 밝히세요 — 예: '부서 등록 중…', '추천 처리 중…'."
         }
       ],
       // [2026-11-11] 전량 해소한 3개 규칙(set-state-in-effect · refs · no-location-assign-relative-destination)은
@@ -281,6 +293,60 @@ const eslintConfig = [
         paths: [{
           name: "sonner",
           message: "sonner 를 직접 부르지 말고 useToast(@/app/components/ui/toast)를 쓰세요 — 문구 정규화와 '실패 1회 = 토스트 1개' 규칙이 그 안에 있습니다.",
+        }],
+      }],
+    },
+  },
+  {
+    // [2026-11-15] 공용 부품·범용 훅의 의존 방향(docs/02-architecture/frontend-design-system.md §5).
+    //
+    // `src/components/ui` 는 서비스·라우터·인증 문맥을 모르는 기본 부품이고, 화면 공용 조합 부품은 `src/app/components/ui` 다.
+    // `src/lib/hooks` 는 화면·업무를 모르는 범용 훅이고, 서비스를 부르는 훅은 `src/hooks` 에 둔다. 이름이 비슷한 두 폴더가
+    // 섞이면 기본 부품이 업무 조회를 끌고 들어와 기능을 뺀 구성에서 함께 빠진다. 도입 시점 위반 0건(정적 import 기준).
+    // 이 규칙은 `@/…` 별칭 import 만 본다 — 동적 import()·상대 경로·`@/lib/api` 직접 호출(알림 훅 use-notifications)은 밖이다.
+    //
+    // 같은 규칙 이름을 다시 선언하면 앞 블록의 설정을 덮으므로 sonner 금지를 함께 싣는다.
+    files: ["src/lib/hooks/**/*.ts", "src/lib/hooks/**/*.tsx"],
+    ignores: [
+      "src/**/__tests__/**",
+      "src/**/*.test.ts",
+      "src/**/*.test.tsx",
+    ],
+    rules: {
+      "no-restricted-imports": ["error", {
+        paths: [{
+          name: "sonner",
+          message: "sonner 를 직접 부르지 말고 useToast(@/app/components/ui/toast)를 쓰세요 — 문구 정규화와 '실패 1회 = 토스트 1개' 규칙이 그 안에 있습니다.",
+        }],
+        patterns: [{
+          group: ["@/services/*", "@/hooks/*", "@/queries/*"],
+          message: "범용 훅(src/lib/hooks)은 서비스·업무 훅·조회 키를 모릅니다 — 서비스를 부르는 훅은 src/hooks 에 두거나, 조회는 부르는 쪽이 하고 값을 넘기세요.",
+        }],
+      }],
+    },
+  },
+  {
+    // [2026-11-15] 기본 부품은 서비스·조회 키에 더해 라우터·인증 문맥·화면 계층도 모른다(위 블록과 같은 이유). 범용 훅에는
+    //   이 세 축을 걸지 않는다 — 알림 훅이 인증·웹소켓 문맥을, 목록 조건 훅이 기간 필터 정의를 읽는다.
+    files: ["src/components/ui/**/*.ts", "src/components/ui/**/*.tsx"],
+    ignores: [
+      "src/components/ui/sonner.tsx",
+      "src/**/__tests__/**",
+      "src/**/*.test.ts",
+      "src/**/*.test.tsx",
+    ],
+    rules: {
+      "no-restricted-imports": ["error", {
+        paths: [
+          {
+            name: "sonner",
+            message: "sonner 를 직접 부르지 말고 useToast(@/app/components/ui/toast)를 쓰세요 — 문구 정규화와 '실패 1회 = 토스트 1개' 규칙이 그 안에 있습니다.",
+          },
+          { name: "next/navigation", message: "기본 부품은 라우터를 모릅니다 — 이동은 부르는 쪽이 onClick·href 로 넘기세요." },
+        ],
+        patterns: [{
+          group: ["@/services/*", "@/hooks/*", "@/queries/*", "@/contexts/*", "@/app/*"],
+          message: "기본 부품(src/components/ui)은 서비스·업무 훅·조회 키·인증 문맥·화면 계층(@/app)을 모릅니다 — 화면 공용 조합 부품이면 src/app/components/ui 에 두세요.",
         }],
       }],
     },

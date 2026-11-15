@@ -197,14 +197,14 @@ export default function SmsHubClient({
     <TooltipProvider delayDuration={0}>
       <div className="space-y-[var(--gap-hub-section)] pb-24 animate-in fade-in duration-1000">
         <PageHeader
-          title="커뮤니케이션 매트릭스"
+          title="문자 발송"
           breadcrumbs={[{ label: '운영 관리' }, { label: 'SMS 서비스' }]}
         />
 
         <HubHeader
           title="Communication"
           highlight="Pulse"
-          subtitle="전사 메시징 프로토콜 및 발송 로그 실시간 아카이브"
+          subtitle="문자를 보내고 발송 결과를 확인합니다"
           icon={MessageSquare}
           actions={
             <div className="flex gap-4 p-2 items-center">
@@ -231,7 +231,7 @@ export default function SmsHubClient({
                                     <MessageSquare className="text-primary" /> Send_Message
                                 </DialogTitle>
                                 <DialogDescription className="text-muted-foreground text-xs font-bold mt-2">
-                                    새로운 문자 메시지를 발송하기 위한 파라미터를 입력하십시오.
+                                    받는 사람과 보낼 내용을 입력해 주세요.
                                 </DialogDescription>
                             </DialogHeader>
                         </div>
@@ -355,7 +355,7 @@ export default function SmsHubClient({
                 </p>
                 <div className="flex items-center gap-3 p-4 bg-white/5 rounded-[var(--radius-hub-item)] border border-white/5">
                     <ShieldCheck size={18} className="text-primary" />
-                    <span className="text-xs font-bold tracking-tight">TLS_ENCRYPTED_NODE</span>
+                    <span className="text-xs font-bold tracking-tight">전송 구간 암호화(TLS)</span>
                 </div>
             </div>
           </div>
@@ -364,7 +364,7 @@ export default function SmsHubClient({
           <div className="col-span-12 lg:col-span-9">
             <HubSectionCard
               title="Transmission Log"
-              description="시스템에서 처리된 모든 아웃바운드 메시지 엔티티의 시퀀스입니다"
+              description="보낸 문자와 발송 결과입니다"
               icon={Clock}
             >
               <div className="space-y-8">

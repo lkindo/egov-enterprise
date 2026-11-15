@@ -88,7 +88,7 @@ export async function saveCmmnCodeHierarchyAction(flattenedNodes: FlattenedCodeN
     await codeAdminService.updateCmmnCodeHierarchy(submitData, config);
 
     revalidatePath('/admin/system/common-code');
-    return { success: true, message: '공통코드 도메인 구조가 동기화되었습니다.' };
+    return { success: true, message: '공통코드를 저장했습니다.' };
   } catch (error) {
     const message = extractErrorMessage(error, '계층 구조 저장 중 오류 발생');
     return { success: false, message };
