@@ -33,10 +33,14 @@ const fontDir = join(root, 'src/app/fonts/nuri-sans');
 type ManifestSlice = { name: string; file: string; bytes: number; sha256: string; unicodeRange: string; glyphRange: string };
 const manifest = JSON.parse(readFileSync(join(root, 'scripts/fonts/nuri-sans.manifest.json'), 'utf8')) as {
   family: string;
+  weight: string;
   slices: ManifestSlice[];
 };
 
-type Face = { family: string; display: string; file: string; ranges: Array<[number, number]>; rangeText: string };
+type Face = {
+  family: string; display: string; weight: string; style: string; src: string; file: string;
+  ranges: Array<[number, number]>; rangeText: string;
+};
 
 function parseRanges(text: string): Array<[number, number]> {
   return text.split(',').map((part) => {
@@ -53,6 +57,9 @@ const faces: Face[] = [...fontCss.matchAll(/@font-face\s*\{([^}]*)\}/g)].map(([,
   return {
     family: prop('font-family').replace(/['"]/g, ''),
     display: prop('font-display'),
+    weight: prop('font-weight'),
+    style: prop('font-style'),
+    src: prop('src'),
     file,
     rangeText: prop('unicode-range'),
     ranges: parseRanges(prop('unicode-range')),
@@ -103,11 +110,16 @@ describe('Nuri Sans 조각(생성물)', () => {
     expect(onDisk).toEqual(manifest.slices.map((slice) => slice.file).sort());
   });
 
-  it('모든 조각이 같은 이름·optional 이고 범위가 서로 겹치지 않는다', () => {
+  it('모든 조각이 같은 이름·가변 굵기 전 구간·optional·woff2 이고 범위가 서로 겹치지 않는다', () => {
     expect(faces.length).toBeGreaterThan(0);
+    // 굵기를 한 값(예: 400)으로 적으면 700·900 을 쓰는 제목이 가변 축 대신 합성 굵기로 그려진다 — 원본 축 범위와 같아야 한다.
+    expect(manifest.weight).toMatch(/^\d+ \d+$/);
     for (const face of faces) {
       expect(face.family).toBe('Nuri Sans');
       expect(face.display).toBe('optional');
+      expect(face.weight, face.file).toBe(manifest.weight);
+      expect(face.style, face.file).toBe('normal');
+      expect(face.src, face.file).toBe(`url('./nuri-sans/${face.file}') format('woff2')`);
     }
     const all = faces.flatMap((face) => face.ranges.map(([lo, hi]) => ({ lo, hi, file: face.file })))
       .sort((a, b) => a.lo - b.lo);
@@ -141,7 +153,8 @@ describe('Nuri Sans 조각(생성물)', () => {
     expect(missing.map((cp) => String.fromCodePoint(cp))).toEqual([]);
   });
 
-  // Lighthouse 실측(2026-11-15): 로그인 첫 화면은 core·ko-1·ko-2 세 조각만 받는다(185,380B, 종전 한 벌 2,057,688B).
+  // Lighthouse 실측(2026-11-15): 로그인 첫 화면은 core·ko-1·ko-2 세 조각만 받는다(약 185KB, 종전 한 벌 2,057,688B).
+  //   어느 조각을 받는지는 e2e(quality/login-accessibility.spec.ts)가 요청 기록으로 본다.
   it('로그인 첫 화면이 받는 세 조각(기본 라틴·화면 문구 음절)은 합쳐 200,000B 이하다', () => {
     const size = (name: string) => manifest.slices.find((slice) => slice.name === name)?.bytes ?? Infinity;
     expect(size('core') + size('ko-1') + size('ko-2')).toBeLessThanOrEqual(200_000);

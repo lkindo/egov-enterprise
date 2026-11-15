@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { Page } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
 import { expectNoAccessibilityViolations } from '../fixtures/accessibility';
@@ -50,11 +52,14 @@ test.describe('공통 셸과 인증', () => {
         //   되는데, 그때도 선언·preload 는 그대로라 소스만 보면 정상으로 보인다.
         // [2026-11-15] 본문 글꼴은 Pretendard 를 글자 범위별로 나눈 Nuri Sans 다(OFL 예약 이름이라 이름을 바꿨다).
         //   조각 주소는 빌드가 CSS 의 url() 을 정적 자산으로 바꿔 만든다 — 주소가 깨지거나 CSP 가 막으면 선언은
-        //   그대로인 채 대체 글꼴로 떨어지므로, 화면 글자의 조각을 실제로 받아 오는지까지 본다.
-        test('본문 글꼴은 번들한 Nuri Sans 로 계산되고 화면 글자의 조각을 받아 온다', async ({ page, consoleGuard }) => {
+        //   그대로인 채 대체 글꼴로 떨어진다. 세 가지를 본다: ① 계산된 글꼴 선언, ② 로그인 화면이 실제로 요청한 조각
+        //   (기본 라틴·자주 쓰는 음절을 받고 구간 조각 ko-b* 는 받지 않는다 — 범위가 겹치거나 넓어지면 쓰지 않을 조각까지 받는다),
+        //   ③ 첫 화면 세 조각(core·ko-1·ko-2)을 받아 올 수 있다. font-display: optional 이라 느린 첫 방문에는 대체 글꼴을
+        //   유지할 수 있으므로, ③ 은 "그 조각으로 그린다" 가 아니라 "받아 올 수 있다" 의 증거다.
+        test('본문 글꼴은 번들한 Nuri Sans 로 계산되고 화면 글자의 조각만 받아 온다', async ({ page, consoleGuard }) => {
             consoleGuard.expectErrors([{
                     id: 'E2E-CORE-LOGIN-FONT-ME-401',
-                    specScope: 'login-accessibility.spec.ts :: 본문 글꼴은 번들한 Nuri Sans 로 계산되고 화면 글자의 조각을 받아 온다',
+                    specScope: 'login-accessibility.spec.ts :: 본문 글꼴은 번들한 Nuri Sans 로 계산되고 화면 글자의 조각만 받아 온다',
                     channel: 'response',
                     urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
                     messagePattern: null,
@@ -68,13 +73,27 @@ test.describe('공통 셸과 인증', () => {
             await expect(page.getByRole('heading', { level: 1, name: '엔터프라이즈' })).toBeVisible({ timeout: 30000 });
             const fontFamily = await page.evaluate(() => getComputedStyle(document.body).fontFamily);
             expect(fontFamily.toLowerCase()).toContain('nuri sans');
-            // FontFaceSet.load 는 받지 못한 조각이 하나라도 있으면 거부한다. 라틴·한글 두 조각이 다 와야 한다.
-            const loaded = await page.evaluate(async () => {
-                const faces = await document.fonts.load('400 16px "Nuri Sans"', '로그인 Login');
+
+            const requestedSlices = () => page.evaluate(() => performance.getEntriesByType('resource')
+                .map((entry) => /\/nuri-sans-([a-z0-9-]+?)\.[^/]*\.woff2$/.exec(new URL(entry.name).pathname)?.[1])
+                .filter((name): name is string => Boolean(name)));
+            await expect.poll(async () => (await requestedSlices()).sort()).toEqual(expect.arrayContaining(['core', 'ko-1']));
+            expect((await requestedSlices()).filter((name) => name.startsWith('ko-b'))).toEqual([]);
+
+            // 첫 화면 세 조각의 대표 글자를 생성 기록에서 고른다 — FontFaceSet.load 는 받지 못한 조각이 하나라도 있으면 거부한다.
+            const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'scripts', 'fonts', 'nuri-sans.manifest.json'), 'utf-8')) as {
+                slices: Array<{ name: string; glyphRange: string }>;
+            };
+            const firstGlyph = (name: string) => {
+                const range = manifest.slices.find((slice) => slice.name === name)!.glyphRange;
+                return String.fromCodePoint(parseInt(/U\+([0-9A-F]+)/.exec(range)![1], 16));
+            };
+            const sample = `L${firstGlyph('ko-1')}${firstGlyph('ko-2')}`;
+            const loaded = await page.evaluate(async (text) => {
+                const faces = await document.fonts.load('400 16px "Nuri Sans"', text);
                 return faces.map((face) => face.status);
-            });
-            expect(loaded.length).toBeGreaterThanOrEqual(2);
-            expect(loaded.every((status) => status === 'loaded')).toBe(true);
+            }, sample);
+            expect(loaded).toEqual(['loaded', 'loaded', 'loaded']);
         });
     });
 });

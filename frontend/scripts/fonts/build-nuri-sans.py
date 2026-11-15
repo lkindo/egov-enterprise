@@ -16,7 +16,7 @@
   ko-2       화면 문구에 나오는 나머지 음절
   ko-b<N>    한글 음절 영역을 연속 구간으로 나눈 조각. 선언 범위는 구간 전체(화면 문구 음절 제외)이고, 담는 글자는
              그 구간의 KS X 1001 완성형 음절뿐이다 — 이름·제목 같은 사용자 자료.
-드문 음절(KS X 1001 밖 8,800여 자)은 담지 않는다 — 시스템 글꼴로 그린다(Pretendard Std 와 같은 선택). 모두 담으려면 그 글자를
+드문 음절(KS X 1001 밖 8,800여 자)은 화면 문구에 쓰인 것(ko-1·ko-2)만 담고 나머지는 시스템 글꼴로 그린다(Pretendard Std 와 같은 선택). 모두 담으려면 그 글자를
 빼고 범위를 적어야 해 첫 화면이 받는 CSS 가 gzip 15KB 로 세 배가 되고(2026-11-15 실측), 구간 범위에 담으면 사용자 자료가 있는 화면이
 구간마다 드문 글자 수백 개를 함께 받는다. 구간 범위에 드문 음절이 들어 있어 그 글자가 나오면 구간 조각을 받은 뒤 다음 글꼴로 넘어간다.
 
@@ -70,10 +70,35 @@ def is_ks_x_1001(cp):
         return False
 
 
-JSX_COMMENT = re.compile(r"\{/\*.*?\*/\}", re.S)
-BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.S)
-# 줄 주석은 앞이 공백·구분자일 때만 — 'https://' 같은 문자열 속 // 는 남긴다.
-LINE_COMMENT = re.compile(r"(^|[\s;{}(),])//.*$", re.M)
+def strip_comments(text):
+    """TS/TSX 에서 주석만 뺀다 — 따옴표·템플릿 문자열 안의 `/*`·`//` 는 문구로 남긴다(정규식으로 지우면 문구까지 지운다).
+
+    JSX 본문 글자는 코드 상태로 남는다(한글은 식별자에 쓰지 않으므로 코드 상태의 한글은 JSX 문구다). 정규식 리터럴·JSX 본문의
+    따옴표처럼 문자열 시작으로 잘못 보이는 꼴은 빈도를 조금 흐릴 뿐 결과 글꼴의 글자 수록에는 영향이 없다 — 화면 문구 음절이
+    아니어도 KS X 1001 음절은 구간 조각에 담긴다.
+    """
+    out = []
+    i, n = 0, len(text)
+    while i < n:
+        ch = text[i]
+        two = text[i:i + 2]
+        if two == "//":
+            end = text.find("\n", i)
+            i = n if end < 0 else end
+        elif two == "/*":
+            end = text.find("*/", i + 2)
+            i = n if end < 0 else end + 2
+        elif ch in "'\"`":
+            # 따옴표 문자열은 줄을 넘지 않는다 — JSX 본문의 아포스트로피(Don't)가 아래 줄까지 삼키지 않게 줄 끝에서 멈춘다.
+            j = i + 1
+            while j < n and text[j] != ch and (ch == "`" or text[j] != "\n"):
+                j += 2 if text[j] == "\\" else 1
+            out.append(text[i:j + 1])
+            i = j + 1
+        else:
+            out.append(ch)
+            i += 1
+    return "".join(out)
 
 
 def source_syllable_counts(src_dir):
@@ -87,7 +112,7 @@ def source_syllable_counts(src_dir):
             with open(os.path.join(root, name), encoding="utf-8", errors="ignore") as handle:
                 text = handle.read()
             if not name.endswith(".json"):
-                text = LINE_COMMENT.sub(r"\1", BLOCK_COMMENT.sub("", JSX_COMMENT.sub("", text)))
+                text = strip_comments(text)
             counts.update(ord(ch) for ch in re.findall(r"[가-힣]", text))
     return counts
 
@@ -175,7 +200,8 @@ def build_slice(source, slice_name, cps):
     options.name_legacy = True
     options.name_languages = ["*"]
     options.notdef_outline = True
-    font = TTFont(source)
+    # 저장 때 head.modified 를 현재 시각으로 바꾸지 않는다 — 같은 입력이면 같은 바이트가 나와야 생성 기록의 해시가 뜻을 가진다.
+    font = TTFont(source, recalcTimestamp=False)
     subsetter = subset.Subsetter(options)
     subsetter.populate(unicodes=cps)
     subsetter.subset(font)
@@ -250,7 +276,8 @@ def main():
     lines = [
         "/* 생성물 — frontend/scripts/fonts/build-nuri-sans.py 가 만든다. 직접 고치지 않는다.",
         " * Nuri Sans 는 Pretendard Variable 을 글자 범위별로 나눈 OFL 수정본이다(예약 이름이라 이름을 바꿨다, 라이선스는 nuri-sans/OFL.txt).",
-        " * 범위는 서로 겹치지 않는다 — 브라우저는 화면 글자와 겹치는 조각만 받는다. 드문 음절(KS X 1001 밖)은 담지 않아 시스템 글꼴로 그린다. */",
+        " * 범위는 서로 겹치지 않는다 — 브라우저는 화면 글자와 겹치는 조각만 받는다. KS X 1001 밖 드문 음절은 화면 문구에 쓰인 것만 담고",
+        " * 나머지는 시스템 글꼴로 그린다. */",
     ]
     for entry in entries:
         lines += [
