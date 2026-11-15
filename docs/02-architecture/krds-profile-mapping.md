@@ -67,7 +67,7 @@
 
 - reference implementation이 어느 기관의 공식 서비스인지 승인되지 않았다.
 - 프로필 토큰 값은 `premium.css`(Hub Blue)와 `krds-aligned.css`(공개 KRDS 단계값)로 나뉘었지만 둘 다 KRDS standard palette가 아니며 `krds-standard` palette adapter는 아직 없다.
-- Pretendard Variable/Inter/Outfit은 KRDS 표준형 Pretendard GOV 계약으로 검증되지 않았다.
+- 본문 글꼴 Nuri Sans(Pretendard Variable 의 글자 범위별 분할본, 2026-11-15)와 Inter/Outfit은 KRDS 표준형 Pretendard GOV 계약으로 검증되지 않았다.
 - premium radius/shadow와 standard shape/elevation이 profile별로 분리되지 않았다.
 - `.dark`는 일반 dark mode이며 KRDS 선명한 화면 모드 또는 OS forced colors 증거가 아니다.
 - masthead, 운영기관 식별자, 연락처, 정책 링크, footer 순서를 승인할 institution owner가 없다.

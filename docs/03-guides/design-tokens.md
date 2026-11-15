@@ -6,7 +6,7 @@
 > **구조**: [ADR-0003](../02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md)의 브랜드 프로필 × 색상 모드 2축이 **구현 완료**됐다 — `<html data-brand-theme>`가 서버 env(`BRAND_THEME`)에서 전역 배선되며(레이아웃 1곳, 라우트별 배정은 ADR-0004 금지), 프로필 선택은 배포 단위 설정이다.
 > **프로필 주장 경계**: 지원 프로필은 [brand-theme.ts](../../frontend/src/lib/theme/brand-theme.ts)의 allowlist가, `krds-standard`의 미구현 범위와 KRDS 준수 주장 경계는 [프로필 추적 매트릭스](../02-architecture/krds-profile-mapping.md)가 정한다. 프로필 구현을 접근성·KRDS 준수 완료로 표현하지 않는다.
 
-폰트 호환 경계: `globals.css`의 `@theme`는 `--default-font-family`에 시스템 fallback을 명시해 Tailwind 업데이트 전의 글자 폭을 보존한다. [layout.tsx](../../frontend/src/app/layout.tsx)의 `next/font` 변수는 2026-09-16부터 `<html>`(:root)에 선언한다 — `--font-sans` 별칭이 같은 :root에서 계산되므로 `body`에만 두면 별칭이 무효가 되어 시스템 글꼴로 떨어졌다(GAP-UIF-001). 실사용 판정은 선언이 아니라 계산된 글꼴이며, e2e가 로그인 화면에서 `getComputedStyle(document.body).fontFamily`를 확인하고 단위 가드가 스코프 회귀를 막는다. 글자 폭이 실제로 달라지므로 시각 회귀 기준선은 CI에서 다시 생성한다.
+폰트 호환 경계: `globals.css`의 `@theme`는 `--default-font-family`에 시스템 fallback을 명시해 Tailwind 업데이트 전의 글자 폭을 보존한다. [layout.tsx](../../frontend/src/app/layout.tsx)의 `next/font` 변수는 2026-09-16부터 `<html>`(:root)에 선언한다 — `--font-sans` 별칭이 같은 :root에서 계산되므로 `body`에만 두면 별칭이 무효가 되어 시스템 글꼴로 떨어졌다(GAP-UIF-001). 실사용 판정은 선언이 아니라 계산된 글꼴이며, e2e가 로그인 화면에서 `getComputedStyle(document.body).fontFamily`를 확인하고 단위 가드가 스코프 회귀를 막는다. 글자 폭이 실제로 달라지므로 시각 회귀 기준선은 CI에서 다시 생성한다. 본문 글꼴은 2026-11-15부터 Pretendard Variable 을 글자 범위별 조각으로 나눈 **Nuri Sans** 다 — OFL 예약 이름이라 이름을 바꿨고, [생성기](../../frontend/scripts/fonts/build-nuri-sans.py)가 조각·`@font-face` CSS·생성 기록을 만들며, 브라우저는 `unicode-range` 가 화면 글자와 겹치는 조각만 받는다(로그인 첫 화면 약 185KB, 종전 2MB). KS X 1001 밖의 드문 음절은 담지 않아 시스템 글꼴로 그린다. 단위 가드가 조각 CSS 와 생성 기록·범위 겹침·KS X 1001 수록을 대조하고, e2e 가 로그인 화면에서 조각을 실제로 받아 오는지 본다.
 
 ---
 

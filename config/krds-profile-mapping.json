@@ -168,7 +168,7 @@
       "disposition": "deferred",
       "applicableProfiles": ["krds-standard", "krds-aligned"],
       "upstream": "https://www.krds.go.kr/html/site/style/style_03.html",
-      "reason": "layout.tsx loads Pretendard Variable, Inter and Outfit through next/font and, since 2026-09-16, declares their variables on <html> so the root --font-sans alias resolves to Pretendard; rendering differences across OS and browsers are still unreviewed (GAP-UIF-001). Pretendard GOV and profile-specific hierarchy have not been evaluated.",
+      "reason": "The body font is Nuri Sans, Pretendard Variable split into unicode-range web font slices and renamed under the OFL (2026-11-15, layout.tsx imports the generated @font-face CSS); Inter and Outfit load through next/font with their variables on <html> since 2026-09-16 so the root --font-sans alias resolves. Rendering differences across OS and browsers are still unreviewed (GAP-UIF-001). Pretendard GOV and profile-specific hierarchy have not been evaluated.",
       "owner": "design-system-accessibility",
       "reviewBy": "2027-01-21"
     },

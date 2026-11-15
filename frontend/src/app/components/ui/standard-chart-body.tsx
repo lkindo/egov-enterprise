@@ -1,0 +1,190 @@
+'use client';
+
+// [2026-11-15] 차트 본체 — recharts 를 쓰는 부분만 여기에 둔다. StandardChartWrapper 가 next/dynamic 으로 늦게 불러와
+//   통계 화면의 첫 로드 JS 에서 recharts 를 뺀다(틀·제목은 서버 HTML 에 그대로 있다).
+import { useId } from 'react';
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+    LineChart, Line, AreaChart, Area, PieChart, Pie, Cell
+} from 'recharts';
+import { SafeResponsiveContainer } from '@/app/components/ui/observability-charts';
+import { useChartColors } from '@/lib/hooks/useChartColors';
+
+export interface StandardChartBodyProps {
+    type: 'bar' | 'line' | 'area' | 'pie';
+    data: unknown[];
+    dataKeys: string[];
+}
+
+export function StandardChartBody({ type, data, dataKeys }: StandardChartBodyProps) {
+    const c = useChartColors();
+    // 같은 페이지에 차트가 2개 이상일 때 <defs> id 충돌로 그라디언트가 서로를 덮어쓰는 것을 방지
+    // React 의 useId 는 ':' / '«' 등 SVG id·url(#…) 에 부적합한 문자를 포함하므로 영숫자만 남긴다
+    const gradientId = useId().replace(/[^a-zA-Z0-9]/g, '');
+    const barGradientId = `bar-${gradientId}`;
+    const areaGradientId = `area-${gradientId}`;
+
+    return (
+        <SafeResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            {type === 'bar' ? (
+                <BarChart data={data} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                    <defs>
+                        <linearGradient id={barGradientId} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={c.accent} stopOpacity={1} />
+                            <stop offset="100%" stopColor={c.accent} stopOpacity={0.6} />
+                        </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={c.grid} />
+                    <XAxis
+                        dataKey="name"
+                        fontSize={10}
+                        fontWeight={800}
+                        tickLine={false}
+                        axisLine={{ stroke: c.axis }}
+                        tick={{ fill: c.tick }}
+                    />
+                    <YAxis
+                        fontSize={10}
+                        fontWeight={800}
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: c.tick }}
+                    />
+                    <Tooltip
+                        cursor={{ fill: c.accentSoft }}
+                        content={<CustomTooltip />}
+                    />
+                    {(dataKeys || []).map((key) => (
+                        <Bar
+                            key={key}
+                            dataKey={key}
+                            fill={`url(#${barGradientId})`}
+                            radius={[6, 6, 0, 0]}
+                            barSize={24}
+                        />
+                    ))}
+                </BarChart>
+            ) : type === 'area' ? (
+                <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                        <linearGradient id={areaGradientId} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={c.accent} stopOpacity={0.3} />
+                            <stop offset="100%" stopColor={c.accent} stopOpacity={0} />
+                        </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={c.grid} />
+                    <XAxis
+                        dataKey="name"
+                        fontSize={10}
+                        fontWeight={800}
+                        tickLine={false}
+                        axisLine={{ stroke: c.axis }}
+                        tick={{ fill: c.tick }}
+                    />
+                    <YAxis
+                        fontSize={10}
+                        fontWeight={800}
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: c.tick }}
+                    />
+                    <Tooltip cursor={{ stroke: c.axis }} content={<CustomTooltip />} />
+                    {(dataKeys || []).map((key) => (
+                        <Area
+                            key={key}
+                            type="monotone"
+                            dataKey={key}
+                            stroke={c.accent}
+                            strokeWidth={3}
+                            fillOpacity={1}
+                            fill={`url(#${areaGradientId})`}
+                        />
+                    ))}
+                </AreaChart>
+            ) : type === 'pie' ? (
+                <PieChart>
+                    <Pie
+                        data={data}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="count"
+                    >
+                        {(data || []).map((entry, index) => (
+                            <Cell
+                                key={`cell-${index}`}
+                                fill={c.series[index % c.series.length]}
+                                /* 인접 조각 사이 2px 표면 간극 — 저대비 단계도 경계가 보이게 한다 */
+                                stroke={c.surface}
+                                strokeWidth={2}
+                            />
+                        ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend
+                        verticalAlign="bottom"
+                        align="center"
+                        iconType="circle"
+                        formatter={(value) => <span className="text-xs font-bold text-muted-foreground ml-1">{value}</span>}
+                    />
+                </PieChart>
+            ) : type === 'line' ? (
+                <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={c.grid} />
+                    <XAxis dataKey="name" fontSize={10} fontWeight={800} tickLine={false} axisLine={{ stroke: c.axis }} tick={{ fill: c.tick }} />
+                    <YAxis fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tick={{ fill: c.tick }} />
+                    <Tooltip cursor={{ stroke: c.axis }} content={<CustomTooltip />} />
+                    {(dataKeys || []).map((key, idx) => (
+                        <Line
+                            key={key}
+                            type="monotone"
+                            dataKey={key}
+                            stroke={c.series[idx % c.series.length]}
+                            strokeWidth={3}
+                            dot={{ r: 4, fill: c.surface, strokeWidth: 2 }}
+                            activeDot={{ r: 6, strokeWidth: 0 }}
+                        />
+                    ))}
+                </LineChart>
+            ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                    지원하지 않는 차트 유형입니다.
+                </div>
+            )}
+        </SafeResponsiveContainer>
+    );
+}
+
+interface TooltipPayloadItem {
+    name?: string;
+    value?: number | string;
+    color?: string;
+    fill?: string;
+}
+
+function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: unknown[]; label?: string }) {
+    if (active && payload && (payload as unknown[]).length) {
+        const items = (payload ?? []) as TooltipPayloadItem[];
+        return (
+            <div className="bg-background/95 backdrop-blur-sm border shadow-2xl rounded-lg p-3 min-w-[120px]">
+                <p className="text-xs font-bold text-muted-foreground mb-1 tracking-tighter">{label}</p>
+                <div className="space-y-1">
+                    {items.map((p, idx) => (
+                        <div key={`tooltip-item-${idx}`} className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color || p.fill }} />
+                                <span className="text-sm font-bold text-foreground">{p.name}</span>
+                            </div>
+                            <span className="text-sm font-bold text-primary">
+                                {typeof p.value === 'number' ? p.value.toLocaleString() : (p.value ?? 0)}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+    return null;
+}
