@@ -928,48 +928,49 @@ public class EtlExecutor {
                                     KeyMapRegistry registry, MigrationStateStore state,
                                     Connection target, TableCounts counts, List<String> errors) throws SQLException {
         List<Object> cursor = null;
-        Set<String> seenSourceKeys = new HashSet<>();
-        Set<String> seenOrderDigests = new HashSet<>();
-        boolean hasMore;
-        do {
-            SourcePage page = readSourcePage(source, table, cursor, counts.archive.columns());
-            hasMore = page.hasMore();
-            List<Map<String, Object>> accepted = new ArrayList<>(page.rows().size());
-            for (Map<String, Object> row : page.rows()) {
-                counts.read++;
-                String sourceKey = sourceKey(row, table);
-                if (!seenSourceKeys.add(sourceKey)) {
-                    throw new SQLException(
-                            "중복 source identity(" + table.source() + "): sourceDigest="
-                                    + KeyDiagnostics.digest(sourceKey));
+        // 표 전체의 중복 판정은 힙이 아니라 실행 전용 디스크 색인이 맡는다(2026-11-16) — 행 수에 비례해 힙이 자라지 않는다.
+        try (KeysetSeenIdentities seen = new KeysetSeenIdentities()) {
+            boolean hasMore;
+            do {
+                SourcePage page = readSourcePage(source, table, cursor, counts.archive.columns());
+                hasMore = page.hasMore();
+                List<Map<String, Object>> accepted = new ArrayList<>(page.rows().size());
+                for (Map<String, Object> row : page.rows()) {
+                    counts.read++;
+                    String sourceKey = sourceKey(row, table);
+                    if (!seen.firstSourceKey(sourceKey)) {
+                        throw new SQLException(
+                                "중복 source identity(" + table.source() + "): sourceDigest="
+                                        + KeyDiagnostics.digest(sourceKey));
+                    }
+                    String orderDigest = EtlSourceQuerySupport.orderDigest(row, table);
+                    if (!seen.firstOrderDigest(orderDigest)) {
+                        throw new SQLException(
+                                "중복 order identity(" + table.source() + "): orderDigest="
+                                        + orderDigest);
+                    }
+                    // [ADR-0029 L3e] 읽은 행은 모두 덤프한다 — 재개로 건너뛸 행·격리할 행도 같은 읽기의 행이다.
+                    counts.archive.row(row);
+                    accepted.add(row);
                 }
-                String orderDigest = EtlSourceQuerySupport.orderDigest(row, table);
-                if (!seenOrderDigests.add(orderDigest)) {
-                    throw new SQLException(
-                            "중복 order identity(" + table.source() + "): orderDigest="
-                                    + orderDigest);
+                // [ADR-0029 L3d] 페이지를 다 읽어 결과를 닫은 뒤, 같은 연결·같은 읽기 트랜잭션에서 조회 표를 읽는다.
+                EtlSourceQuerySupport.ChunkLookups lookups = accepted.isEmpty()
+                        ? EtlSourceQuerySupport.ChunkLookups.NONE
+                        : EtlSourceQuerySupport.resolveLookups(source, table, accepted);
+                if (!accepted.isEmpty()
+                        && !processChunk(accepted, lookups, spec, table, writePlan, registry, state,
+                                target, counts, errors)) {
+                    return false;
                 }
-                // [ADR-0029 L3e] 읽은 행은 모두 덤프한다 — 재개로 건너뛸 행·격리할 행도 같은 읽기의 행이다.
-                counts.archive.row(row);
-                accepted.add(row);
-            }
-            // [ADR-0029 L3d] 페이지를 다 읽어 결과를 닫은 뒤, 같은 연결·같은 읽기 트랜잭션에서 조회 표를 읽는다.
-            EtlSourceQuerySupport.ChunkLookups lookups = accepted.isEmpty()
-                    ? EtlSourceQuerySupport.ChunkLookups.NONE
-                    : EtlSourceQuerySupport.resolveLookups(source, table, accepted);
-            if (!accepted.isEmpty()
-                    && !processChunk(accepted, lookups, spec, table, writePlan, registry, state,
-                            target, counts, errors)) {
-                return false;
-            }
-            if (!page.rows().isEmpty()) {
-                cursor = EtlSourceQuerySupport.orderValues(page.rows().get(page.rows().size() - 1), table);
-            }
-            // Do not retain the previous large page while JDBC constructs the next one.
-            accepted.clear();
-            page.rows().clear();
-        } while (hasMore);
-        return true;
+                if (!page.rows().isEmpty()) {
+                    cursor = EtlSourceQuerySupport.orderValues(page.rows().get(page.rows().size() - 1), table);
+                }
+                // Do not retain the previous large page while JDBC constructs the next one.
+                accepted.clear();
+                page.rows().clear();
+            } while (hasMore);
+            return true;
+        }
     }
 
     private record SourcePage(List<Map<String, Object>> rows, boolean hasMore) {}

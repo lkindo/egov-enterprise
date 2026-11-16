@@ -66,6 +66,23 @@ public class UserService extends BaseAbstractService {
                 return LocalDate.now(signupClock).format(DateTimeFormatter.BASIC_ISO_DATE);
         }
 
+        /**
+         * 비밀번호 변경의 현재 비밀번호 불일치도 로그인 실패와 같은 횟수에 더하고 같은 한도에서 잠근다(2026-11-16). 설정 키는 로그인
+         * 인증({@code EgovAuthenticationProvider})과 같다 — 한도를 따로 두면 로그인을 막아 둔 대입이 이 경로로 옮겨 온다.
+         * 0 이하이면 잠그지 않는다(로그인과 같은 규칙).
+         */
+        @org.springframework.beans.factory.annotation.Value("${nuri.security.login.max-failures:5}")
+        private int maxLoginFailures = 5;
+
+        @org.springframework.beans.factory.annotation.Value("${nuri.security.login.lock-minutes:15}")
+        private long lockMinutes = 15;
+
+        /** 테스트 전용 — 실패 한도와 잠금 시간을 고정한다. */
+        void useLoginFailureLimits(int maxFailures, long minutes) {
+                this.maxLoginFailures = maxFailures;
+                this.lockMinutes = minutes;
+        }
+
 
         private final UserRepository userRepository;
         private final RefreshTokenRepository refreshTokenRepository;
@@ -381,27 +398,81 @@ public class UserService extends BaseAbstractService {
 
         /**
          * 비밀번호 변경
+         *
+         * <p>[2026-11-16] 현재 비밀번호가 틀리면 로그인 실패와 같은 횟수를 올린다({@link #recordCurrentPasswordFailure}). 종전에는
+         * 세지 않아, 로그인한 세션(빼앗긴 토큰 포함)으로 현재 비밀번호를 한도 없이 대입할 수 있었다. 그 쓰기는 예외와 함께 커밋된다
+         * ({@code noRollbackFor}) — 로그인의 {@code BadCredentialsException} 과 같은 이유다.
          */
-        @Transactional
+        @Transactional(noRollbackFor = nuri.business.domain.user.exception.CurrentPasswordMismatchException.class)
         public void changePassword(@NonNull String userId, @NonNull String oldPassword, @NonNull String newPassword) {
                 User user = findByLoginIdOrEsntlIdOrThrow(userId);
                 String observedPassword = user.getPswd();
-                if (!passwordEncoder.matches(oldPassword, observedPassword)) {
-                        throw new BusinessException(UserErrorCode.INVALID_PASSWORD);
-                }
-                // 같은 값으로 바꾸면 임시 비밀번호 표시만 지워져 강제 변경을 건너뛴다.
-                if (oldPassword.equals(newPassword)) {
-                        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "새 비밀번호는 현재 비밀번호와 달라야 합니다.");
-                }
+                // 새 비밀번호 해시는 현재 비밀번호가 맞든 틀리든 한 번 계산한다. 맞힌 요청만 해시를 더 계산하면 잠긴 뒤에도 응답 시간이
+                //   정답을 알린다. 해시 계산은 잠금 밖에서 한다.
                 String encodedPassword = passwordEncoder.encode(newPassword);
-                // 해시 계산은 잠금 밖에서 한다. 대기 중 초기화됐으면 현재 비밀번호로 다시 검증한다.
+                if (!passwordEncoder.matches(oldPassword, observedPassword)) {
+                        recordCurrentPasswordFailure(user, observedPassword);
+                }
+                // 대기 중 초기화됐으면 현재 비밀번호로 다시 검증한다.
                 refreshForUpdateOrThrow(user);
                 if (!java.util.Objects.equals(observedPassword, user.getPswd())
                                 && !passwordEncoder.matches(oldPassword, user.getPswd())) {
                         throw new BusinessException(UserErrorCode.INVALID_PASSWORD);
                 }
+                // 잠금 안에서 다시 본다. 같은 세션으로 동시에 보낸 대입 요청은 잠금 전에 인증을 지나왔을 수 있다 — 한도에 닿아 잠긴 뒤
+                //   맞힌 요청이 비밀번호를 바꾸면 잠금이 대입을 막지 못한다. 잠금 시간이 지났으면 로그인처럼 풀고 진행한다.
+                if (isLockedNow(user)) {
+                        throw new BusinessException(UserErrorCode.INVALID_PASSWORD);
+                }
+                // 같은 값으로 바꾸면 임시 비밀번호 표시만 지워져 강제 변경을 건너뛴다. 잠금 판정 뒤에 본다 — 앞에 두면 잠긴 동안에도
+                //   '현재=새 비밀번호' 대입의 400 이 정답을, 401 이 오답을 알린다.
+                if (oldPassword.equals(newPassword)) {
+                        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "새 비밀번호는 현재 비밀번호와 달라야 합니다.");
+                }
                 user.updatePassword(encodedPassword);
+                // 현재 비밀번호를 증명했다 — 로그인 성공과 같이 연속 실패 횟수를 지운다.
+                user.unlockAccount();
                 revokeRefreshTokens(user);
+        }
+
+        /**
+         * 현재 비밀번호 불일치를 로그인 실패 횟수에 더하고, 한도에 닿으면 잠근 뒤 {@link CurrentPasswordMismatchException} 을 던진다.
+         *
+         * <p>로그인 인증과 같은 규칙이다(DEC-OPS-354). 횟수는 행 잠금 아래의 현재 값으로 올린다 — 잠금 없이 읽은 값을 올려 저장하면
+         * 동시 요청의 증가가 서로를 덮는다. 이미 잠겨 있으면 횟수를 더 올리지 않는다(고정창). 잠글 때 세션 차수를 올려 그 전에 발급된
+         * 세션을 끊는다(V2_153) — 한 번 틀린 것만으로는 끊지 않는다. 기다리는 사이 비밀번호가 바뀌었으면 옛 해시와 대조한 실패이므로
+         * 세지 않는다.
+         */
+        private void recordCurrentPasswordFailure(User user, String observedPassword) {
+                refreshForUpdateOrThrow(user);
+                if (!java.util.Objects.equals(observedPassword, user.getPswd()) || isLockedNow(user)) {
+                        throw new BusinessException(UserErrorCode.INVALID_PASSWORD);
+                }
+                user.incrementLockCount();
+                Integer failures = user.getLckCnt();
+                boolean locked = maxLoginFailures > 0 && failures != null && failures >= maxLoginFailures;
+                if (locked) {
+                        user.lockAccount();
+                        log.warn("Account locked after repeated current-password failures (failures={}, lockMinutes={})",
+                                        failures, lockMinutes);
+                }
+                userRepository.save(user);
+                if (locked) {
+                        userRepository.advanceSessionCycle(List.of(user.getEsntlId()));
+                }
+                throw new nuri.business.domain.user.exception.CurrentPasswordMismatchException();
+        }
+
+        /** 잠겨 있고 잠금 시간이 아직 지나지 않았는가. 지났으면 로그인 인증처럼 여기서 풀고 false 다. */
+        private boolean isLockedNow(User user) {
+                if (!user.isLocked()) {
+                        return false;
+                }
+                if (user.hasLockExpired(java.time.Duration.ofMinutes(lockMinutes))) {
+                        user.unlockAccount();
+                        return false;
+                }
+                return true;
         }
 
         /**

@@ -611,6 +611,74 @@ class SurveyServiceTest {
         assertThat(question.getMaxChcCnt()).isEqualTo(1);
     }
 
+    @org.junit.jupiter.api.Nested
+    @DisplayName("문항 수정의 순번(2026-11-16)")
+    class QuestionOrderOnUpdate {
+
+        private SurveyQuestion question(long id, long order) {
+            return SurveyQuestion.builder().srvyQstnSn(id).srvySn(201L).qstnSn(order).qstnTypeCd("1").qstnCn("문항 " + id).build();
+        }
+
+        private SurveyQuestionDto edit(Long order) {
+            return SurveyQuestionDto.builder().srvyQstnSn(301L).srvySn(201L).qstnSn(order).qstnTypeCd("1").qstnCn("고친 문항").build();
+        }
+
+        @Test
+        @DisplayName("순번을 비워 보내면 그대로 둔다 — null 이 NOT NULL 컬럼에 들어가 500 이 되지 않는다")
+        void blankOrderKeepsTheCurrentOrder() {
+            SurveyQuestion target = question(301L, 2L);
+            given(qesitmRepository.findById(301L)).willReturn(Optional.of(target));
+            givenQuestionSurvey(301L);
+
+            surveyService.updateQuestion(edit(null));
+
+            assertThat(target.getQstnSn()).isEqualTo(2L);
+            assertThat(target.getQstnCn()).isEqualTo("고친 문항");
+        }
+
+        @ParameterizedTest
+        @ValueSource(longs = {0, -1})
+        @DisplayName("1 미만의 순번으로는 바꾸지 못한다(400)")
+        void rejectsNonPositiveOrder(long order) {
+            SurveyQuestion target = question(301L, 2L);
+            given(qesitmRepository.findById(301L)).willReturn(Optional.of(target));
+            givenQuestionSurvey(301L);
+
+            assertThatThrownBy(() -> surveyService.updateQuestion(edit(order)))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+            assertThat(target.getQstnSn()).isEqualTo(2L);
+            assertThat(target.getQstnCn()).isEqualTo("문항 301");
+        }
+
+        @Test
+        @DisplayName("같은 설문의 다른 문항이 쓰는 순번으로는 바꾸지 못한다(400)")
+        void rejectsAnOrderTakenByAnotherQuestion() {
+            SurveyQuestion target = question(301L, 2L);
+            given(qesitmRepository.findById(301L)).willReturn(Optional.of(target));
+            givenQuestionSurvey(301L);
+            given(qesitmRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(300L, 1L), target));
+
+            assertThatThrownBy(() -> surveyService.updateQuestion(edit(1L)))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+            assertThat(target.getQstnSn()).isEqualTo(2L);
+        }
+
+        @Test
+        @DisplayName("이미 겹친 옛 문항도 같은 순번을 다시 보내는 내용 수정은 막지 않는다")
+        void resendingTheSameOrderIsNotChecked() {
+            SurveyQuestion target = question(301L, 1L);
+            given(qesitmRepository.findById(301L)).willReturn(Optional.of(target));
+            givenQuestionSurvey(301L);
+
+            surveyService.updateQuestion(edit(1L));
+
+            assertThat(target.getQstnCn()).isEqualTo("고친 문항");
+            verify(qesitmRepository, never()).findBySrvySnOrderByQstnSnAsc(any());
+        }
+    }
+
     @ParameterizedTest
     @ValueSource(longs = {0, 3})
     @DisplayName("다른 설문 경로로 문항을 수정하면 응답 유무와 무관하게 404이며 모든 문항 필드를 보존한다")

@@ -9,7 +9,12 @@ import java.util.List;
 
 @Repository
 public interface ScrapRepository extends JpaRepository<Scrap, Long> {
-    Page<Scrap> findByFrstRgtrIdAndUseYn(String frstRgtrId, String useYn, Pageable pageable);
+    /**
+     * 한 사용자의 보관함 목록 — 최근 스크랩이 먼저다(2026-11-16). 종전에는 정렬 없이 쪽을 나눠(컨트롤러는 요청 정렬을 받지 않는다)
+     * DB 가 돌려주는 순서가 쪽마다 달라질 수 있었고, 쪽을 넘기면 같은 항목이 다시 나오거나 빠졌다. 일련번호는 유일해 순서가 하나로
+     * 정해진다.
+     */
+    Page<Scrap> findByFrstRgtrIdAndUseYnOrderByScrapSnDesc(String frstRgtrId, String useYn, Pageable pageable);
 
     /**
      * 한 사용자가 같은 주소로 남긴 스크랩 — 사용 여부와 무관하다. DB 유일 제약

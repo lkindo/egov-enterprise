@@ -35,6 +35,11 @@
         "kind": "local-junit",
         "baseCommit": "59b55996db5cc1c902452eac80b5a72614d95451",
         "measuredAt": "2026-11-13T17:01:52.464Z"
+      },
+      "nuri.migration.etl.KeysetSeenIdentitiesTest": {
+        "kind": "local-junit",
+        "baseCommit": "242da70e9be95841da027fdc73aca453c0d4727f",
+        "measuredAt": "2026-11-16T08:09:41.273Z"
       }
     }
   },
@@ -236,6 +241,7 @@
     "nuri.migration.TermSuggestPostgresIntegrationTest": 3500,
     "nuri.migration.state.BoundedMigrationStateTest": 179208,
     "nuri.migration.state.MigrationScratchIndexTest": 1321,
-    "nuri.migration.verify.BoundedMigrationVerifierTest": 87742
+    "nuri.migration.verify.BoundedMigrationVerifierTest": 87742,
+    "nuri.migration.etl.KeysetSeenIdentitiesTest": 6494
   }
 }

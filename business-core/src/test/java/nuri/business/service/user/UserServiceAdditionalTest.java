@@ -268,6 +268,142 @@ class UserServiceAdditionalTest {
         verify(refreshTokenRepository, never()).deleteAllByEsntlIdIn(anyList());
     }
 
+    @org.junit.jupiter.api.Nested
+    @DisplayName("현재 비밀번호 불일치는 로그인 실패와 같은 횟수로 센다(2026-11-16)")
+    class CurrentPasswordFailures {
+
+        @Test
+        @DisplayName("한 번 틀리면 행 잠금 아래에서 횟수만 올리고 세션은 끊지 않는다 — 실패 타입은 롤백에서 빠진다")
+        void countsUnderRowLockWithoutRevokingSessions() throws Exception {
+            User user = createBaseUser("testUser").pswd("encodedOld").lckCnt(1).build();
+            when(userRepository.findById("testUser")).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("wrong", "encodedOld")).thenReturn(false);
+
+            assertThatThrownBy(() -> userService.changePassword("testUser", "wrong", "newPassword"))
+                    .isInstanceOf(nuri.business.domain.user.exception.CurrentPasswordMismatchException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", UserErrorCode.INVALID_PASSWORD);
+
+            assertThat(user.getLckCnt()).isEqualTo(2);
+            assertThat(user.isLocked()).isFalse();
+            var order = inOrder(userRepository);
+            order.verify(userRepository).refreshForUpdate(user);
+            order.verify(userRepository).save(user);
+            verify(userRepository, never()).advanceSessionCycle(anyList());
+            verify(refreshTokenRepository, never()).deleteAllByEsntlIdIn(anyList());
+            // 횟수가 예외와 함께 롤백되면 이 기능은 조용히 없어진다 — 로그인의 BadCredentialsException 과 같은 결속.
+            org.springframework.transaction.annotation.Transactional tx = UserService.class
+                    .getMethod("changePassword", String.class, String.class, String.class)
+                    .getAnnotation(org.springframework.transaction.annotation.Transactional.class);
+            assertThat(tx.noRollbackFor()).containsExactly(
+                    nuri.business.domain.user.exception.CurrentPasswordMismatchException.class);
+        }
+
+        @Test
+        @DisplayName("한도에 닿으면 잠그고 그 전에 발급된 세션 차수를 올린다")
+        void locksAndAdvancesSessionCycleAtTheLimit() {
+            userService.useLoginFailureLimits(5, 15);
+            User user = createBaseUser("testUser").pswd("encodedOld").lckCnt(4).build();
+            when(userRepository.findById("testUser")).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("wrong", "encodedOld")).thenReturn(false);
+
+            assertThatThrownBy(() -> userService.changePassword("testUser", "wrong", "newPassword"))
+                    .isInstanceOf(nuri.business.domain.user.exception.CurrentPasswordMismatchException.class);
+
+            assertThat(user.getLckCnt()).isEqualTo(5);
+            assertThat(user.isLocked()).isTrue();
+            assertThat(user.getLckLastPnttm()).isNotNull();
+            var order = inOrder(userRepository);
+            order.verify(userRepository).save(user);
+            order.verify(userRepository).advanceSessionCycle(java.util.List.of("ESNTL_testUser"));
+            // 틀린 요청도 새 해시를 한 번 계산한다 — 맞힌 요청만 더 오래 걸리면 잠긴 뒤에도 응답 시간이 정답을 알린다.
+            verify(passwordEncoder).encode("newPassword");
+        }
+
+        @Test
+        @DisplayName("잠긴 동안 '현재=새 비밀번호' 대입은 맞혀도 같은 값 거절(400)이 아니라 비밀번호 불일치로 답한다 — 정답을 알리지 않는다")
+        void sameValueGuessWhileLockedDoesNotRevealTheAnswer() {
+            User user = createBaseUser("testUser").pswd("encodedOld").lckYn("Y").lckCnt(5)
+                    .lckLastPnttm(java.time.LocalDateTime.now().minusMinutes(1)).build();
+            when(userRepository.findById("testUser")).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("guess", "encodedOld")).thenReturn(true);
+
+            assertThatThrownBy(() -> userService.changePassword("testUser", "guess", "guess"))
+                    .hasFieldOrPropertyWithValue("errorCode", UserErrorCode.INVALID_PASSWORD);
+
+            assertThat(user.getPswd()).isEqualTo("encodedOld");
+            assertThat(user.getLckCnt()).isEqualTo(5);
+        }
+
+        @Test
+        @DisplayName("이미 잠긴 동안의 실패는 횟수도 잠금 시각도 바꾸지 않는다(고정창)")
+        void doesNotExtendAnActiveLock() {
+            java.time.LocalDateTime lockedAt = java.time.LocalDateTime.now().minusMinutes(1);
+            User user = createBaseUser("testUser").pswd("encodedOld").lckYn("Y").lckCnt(5).lckLastPnttm(lockedAt).build();
+            when(userRepository.findById("testUser")).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("wrong", "encodedOld")).thenReturn(false);
+
+            assertThatThrownBy(() -> userService.changePassword("testUser", "wrong", "newPassword"))
+                    .isNotInstanceOf(nuri.business.domain.user.exception.CurrentPasswordMismatchException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", UserErrorCode.INVALID_PASSWORD);
+
+            assertThat(user.getLckCnt()).isEqualTo(5);
+            assertThat(user.getLckLastPnttm()).isEqualTo(lockedAt);
+            verify(userRepository, never()).save(any());
+            verify(userRepository, never()).advanceSessionCycle(anyList());
+        }
+
+        @Test
+        @DisplayName("잠긴 동안에는 맞는 현재 비밀번호로도 바꾸지 못한다 — 동시 대입 요청이 잠금 뒤에 맞히는 경로를 막는다")
+        void rejectsACorrectPasswordWhileLocked() {
+            User user = createBaseUser("testUser").pswd("encodedOld").lckYn("Y").lckCnt(5)
+                    .lckLastPnttm(java.time.LocalDateTime.now().minusMinutes(1)).build();
+            when(userRepository.findById("testUser")).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("oldPassword", "encodedOld")).thenReturn(true);
+            when(passwordEncoder.encode("newPassword")).thenReturn("encodedNew");
+
+            assertThatThrownBy(() -> userService.changePassword("testUser", "oldPassword", "newPassword"))
+                    .hasFieldOrPropertyWithValue("errorCode", UserErrorCode.INVALID_PASSWORD);
+
+            assertThat(user.getPswd()).isEqualTo("encodedOld");
+            verify(refreshTokenRepository, never()).deleteAllByEsntlIdIn(anyList());
+        }
+
+        @Test
+        @DisplayName("현재 비밀번호를 증명해 바꾸면 연속 실패 횟수를 지운다 — 잠금 시간이 지난 잠금도 풀린다")
+        void successClearsTheFailureCount() {
+            User user = createBaseUser("testUser").pswd("encodedOld").lckYn("Y").lckCnt(5)
+                    .lckLastPnttm(java.time.LocalDateTime.now().minusMinutes(16)).build();
+            when(userRepository.findById("testUser")).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("oldPassword", "encodedOld")).thenReturn(true);
+            when(passwordEncoder.encode("newPassword")).thenReturn("encodedNew");
+
+            userService.changePassword("testUser", "oldPassword", "newPassword");
+
+            assertThat(user.getPswd()).isEqualTo("encodedNew");
+            assertThat(user.getLckCnt()).isZero();
+            assertThat(user.isLocked()).isFalse();
+        }
+
+        @Test
+        @DisplayName("기다리는 사이 비밀번호가 바뀌었으면 옛 해시와 대조한 실패라 세지 않는다")
+        void doesNotCountAFailureAgainstAReplacedHash() {
+            User user = createBaseUser("testUser").pswd("encodedOld").lckCnt(1).build();
+            when(userRepository.findById("testUser")).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("wrong", "encodedOld")).thenReturn(false);
+            doAnswer(invocation -> {
+                org.springframework.test.util.ReflectionTestUtils.setField(user, "pswd", "encodedReset");
+                return null;
+            }).when(userRepository).refreshForUpdate(user);
+
+            assertThatThrownBy(() -> userService.changePassword("testUser", "wrong", "newPassword"))
+                    .isNotInstanceOf(nuri.business.domain.user.exception.CurrentPasswordMismatchException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", UserErrorCode.INVALID_PASSWORD);
+
+            assertThat(user.getLckCnt()).isEqualTo(1);
+            verify(userRepository, never()).save(any());
+        }
+    }
+
     @Test
     @DisplayName("사용자 삭제 성공 - 종속 데이터(권한매핑·토큰) 정리 후 이벤트 발행과 함께 삭제 (V2_12 FK 결속)")
     void deleteUser_success() {

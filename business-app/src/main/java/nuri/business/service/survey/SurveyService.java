@@ -351,9 +351,32 @@ public class SurveyService {
             }
             maxChcCnt = 1;
         }
-        entity.update(dto.getQstnSn(), dto.getQstnTypeCd(), dto.getQstnCn(), maxChcCnt);
+        entity.update(resolveQuestionOrder(entity, dto.getQstnSn()), dto.getQstnTypeCd(), dto.getQstnCn(), maxChcCnt);
         // 유형을 주관식으로 바꾸면 답변 칸이 있어야 한다 — 유형 변경은 응답이 없을 때만 지나온다(위 meaningChanged).
         ensureFreeTextArticle(entity);
+    }
+
+    /**
+     * 수정 요청의 문항 순번(2026-11-16). 비우면 그대로 둔다 — 화면은 null 을 떨어뜨려 보내므로(omitNulls), 그대로 쓰면 NOT NULL
+     * 컬럼에 null 이 들어가 500 이 됐다. 바꿀 때만 1 이상이어야 하고 같은 설문의 다른 문항과 겹치지 않아야 한다(DEC-OPS-157 —
+     * 순번만 바꾸는 것은 응답 뒤에도 허용한다). 같은 값을 다시 보내는 것은 검사하지 않는다 — 이미 겹친 옛 문항의 내용 수정을 막지
+     * 않는다. 설문 행을 잠근 뒤라({@link #questionAfterSurveyLock}) 등록·다른 수정과 겹쳐 같은 순번이 생기지 않는다.
+     */
+    private Long resolveQuestionOrder(SurveyQuestion entity, Long requested) {
+        if (requested == null || requested.equals(entity.getQstnSn())) {
+            return entity.getQstnSn();
+        }
+        if (requested <= 0) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "문항 순번은 1 이상이어야 합니다.");
+        }
+        boolean taken = qesitmRepository.findBySrvySnOrderByQstnSnAsc(entity.getSrvySn()).stream()
+                .anyMatch(other -> !other.getSrvyQstnSn().equals(entity.getSrvyQstnSn())
+                        && requested.equals(other.getQstnSn()));
+        if (taken) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "같은 순번의 문항이 이미 있습니다. 다른 순번을 정해 주세요.");
+        }
+        return requested;
     }
 
     /** 응답 판정과 같은 규칙 — NULL·0·음수는 하나만 고른다(SurveyResultService#submitResponse). */
