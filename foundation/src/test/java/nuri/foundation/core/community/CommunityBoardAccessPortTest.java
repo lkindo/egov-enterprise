@@ -30,6 +30,7 @@ class CommunityBoardAccessPortTest {
     void defaultSummaryIsEmpty() {
         assertThat(MEMBERSHIP_ONLY.exists(7L)).isTrue();
         assertThat(MEMBERSHIP_ONLY.summary(7L)).isEmpty();
+        assertThat(MEMBERSHIP_ONLY.accessibleCommunityIds("USR_01")).isEmpty();
     }
 
     @Test

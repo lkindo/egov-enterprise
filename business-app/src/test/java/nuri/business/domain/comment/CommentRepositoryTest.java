@@ -117,32 +117,13 @@ class CommentRepositoryTest {
     }
 
     @Test
-    @DisplayName("[Top 1c] 관리자 가시성 질의는 비밀글·게시기간 밖·비활성 게시판·미가입 커뮤니티의 댓글을 거른다")
+    @DisplayName("[Top 1c] 관리자 가시성 질의는 비밀글·게시기간 밖·비활성 게시판·허용되지 않은 커뮤니티 댓글을 거른다")
     void visibleModerationQueries_filterSecretOutOfPeriodInactiveAndCommunityComments() {
         String today = "20261116";
         nuri.business.domain.board.BoardMaster openBoard = persistBoard("BBSMSTR_VIS_OPEN", "Y", null);
         nuri.business.domain.board.BoardMaster inactiveBoard = persistBoard("BBSMSTR_VIS_DEAD", "N", null);
-
-        nuri.business.domain.community.Community activeCommunity = nuri.business.domain.community.Community.builder()
-                .cmntyNm("활성 커뮤니티").regSeCd("REGC01").useYn("Y").build();
-        entityManager.persist(activeCommunity);
-        nuri.business.domain.community.Community inactiveCommunity = nuri.business.domain.community.Community.builder()
-                .cmntyNm("비활성 커뮤니티").regSeCd("REGC01").useYn("N").build();
-        entityManager.persist(inactiveCommunity);
-        entityManager.flush();
-
-        entityManager.persist(nuri.business.domain.community.CommunityUser.builder()
-                .id(new nuri.business.domain.community.CommunityUserId(activeCommunity.getCmntySn(), "viewer-member"))
-                .mbrSttsCd("P").useYn("Y").build());
-        entityManager.persist(nuri.business.domain.community.CommunityUser.builder()
-                .id(new nuri.business.domain.community.CommunityUserId(activeCommunity.getCmntySn(), "viewer-pending"))
-                .mbrSttsCd("A").useYn("Y").build());
-        entityManager.persist(nuri.business.domain.community.CommunityUser.builder()
-                .id(new nuri.business.domain.community.CommunityUserId(inactiveCommunity.getCmntySn(), "viewer-member"))
-                .mbrSttsCd("P").useYn("Y").build());
-
-        nuri.business.domain.board.BoardMaster memberBoard = persistBoard("BBSMSTR_CMTY_OK", "Y", activeCommunity.getCmntySn());
-        nuri.business.domain.board.BoardMaster deadCmtyBoard = persistBoard("BBSMSTR_CMTY_DEAD", "Y", inactiveCommunity.getCmntySn());
+        nuri.business.domain.board.BoardMaster memberBoard = persistBoard("BBSMSTR_CMTY_OK", "Y", 101L);
+        nuri.business.domain.board.BoardMaster otherCmtyBoard = persistBoard("BBSMSTR_CMTY_OTHER", "Y", 102L);
 
         var publicPost = persistPost(openBoard.getBbsId(), "author1", "N", null, null, "Y");
         var secretPost = persistPost(openBoard.getBbsId(), "author1", "Y", null, null, "Y");
@@ -151,7 +132,7 @@ class CommentRepositoryTest {
         var deletedPost = persistPost(openBoard.getBbsId(), "author1", "N", null, null, "N");
         var inactiveBoardPost = persistPost(inactiveBoard.getBbsId(), "author1", "N", null, null, "Y");
         var cmtyPost = persistPost(memberBoard.getBbsId(), "author1", "N", "", "", "Y");
-        var deadCmtyPost = persistPost(deadCmtyBoard.getBbsId(), "author1", "N", null, null, "Y");
+        var otherCmtyPost = persistPost(otherCmtyBoard.getBbsId(), "author1", "N", null, null, "Y");
 
         saveForPost(publicPost, "공개글 댓글");
         saveForPost(secretPost, "비밀글 댓글");
@@ -160,37 +141,42 @@ class CommentRepositoryTest {
         saveForPost(deletedPost, "삭제글 댓글");
         saveForPost(inactiveBoardPost, "비활성게시판 댓글");
         saveForPost(cmtyPost, "가입커뮤니티 댓글");
-        saveForPost(deadCmtyPost, "비활성커뮤니티 댓글");
+        saveForPost(otherCmtyPost, "타커뮤니티 댓글");
         entityManager.flush();
 
-        Page<Comment> otherViewer = commentRepository.findVisibleForModeration(
+        Page<Comment> publicOnly = commentRepository.findVisiblePublicForModeration(
                 "outsider", today, PageRequest.of(0, 20));
-        assertThat(otherViewer.getContent()).extracting(Comment::getAnsCn)
+        assertThat(publicOnly.getContent()).extracting(Comment::getAnsCn)
                 .containsExactly("공개글 댓글");
+        assertThat(commentRepository.findVisiblePublicForModerationByBbsId(
+                        memberBoard.getBbsId(), "author1", today, PageRequest.of(0, 20)).getContent())
+                .isEmpty();
+        assertThat(commentRepository.findVisiblePublicForModerationByPstSn(
+                        publicPost.getPstSn(), "outsider", today, PageRequest.of(0, 20)).getContent())
+                .extracting(Comment::getAnsCn).containsExactly("공개글 댓글");
+        assertThat(commentRepository.findVisiblePublicForModerationByBbsIdAndPstSn(
+                        openBoard.getBbsId(), secretPost.getPstSn(), "author1", today, PageRequest.of(0, 20)).getContent())
+                .extracting(Comment::getAnsCn).containsExactly("비밀글 댓글");
 
-        Page<Comment> pendingApplicant = commentRepository.findVisibleForModeration(
-                "viewer-pending", today, PageRequest.of(0, 20));
-        assertThat(pendingApplicant.getContent()).extracting(Comment::getAnsCn)
-                .containsExactly("공개글 댓글");
-
+        java.util.Set<Long> allowedCommunities = java.util.Set.of(101L);
         Page<Comment> approvedMember = commentRepository.findVisibleForModeration(
-                "viewer-member", today, PageRequest.of(0, 20));
+                "viewer-member", today, allowedCommunities, PageRequest.of(0, 20));
         assertThat(approvedMember.getContent()).extracting(Comment::getAnsCn)
                 .containsExactlyInAnyOrder("공개글 댓글", "가입커뮤니티 댓글");
 
         Page<Comment> authorViewer = commentRepository.findVisibleForModeration(
-                "author1", today, PageRequest.of(0, 20));
+                "author1", today, java.util.Set.of(999L), PageRequest.of(0, 20));
         assertThat(authorViewer.getContent()).extracting(Comment::getAnsCn)
                 .containsExactlyInAnyOrder("공개글 댓글", "비밀글 댓글", "예약글 댓글", "종료글 댓글");
 
         assertThat(commentRepository.findVisibleForModerationByBbsId(
-                        openBoard.getBbsId(), "outsider", today, PageRequest.of(0, 20)).getContent())
-                .extracting(Comment::getAnsCn).containsExactly("공개글 댓글");
+                        memberBoard.getBbsId(), "viewer-member", today, allowedCommunities, PageRequest.of(0, 20)).getContent())
+                .extracting(Comment::getAnsCn).containsExactly("가입커뮤니티 댓글");
         assertThat(commentRepository.findVisibleForModerationByPstSn(
-                        secretPost.getPstSn(), "outsider", today, PageRequest.of(0, 20)).getContent())
+                        secretPost.getPstSn(), "outsider", today, allowedCommunities, PageRequest.of(0, 20)).getContent())
                 .isEmpty();
         assertThat(commentRepository.findVisibleForModerationByBbsIdAndPstSn(
-                        openBoard.getBbsId(), secretPost.getPstSn(), "author1", today, PageRequest.of(0, 20)).getContent())
+                        openBoard.getBbsId(), secretPost.getPstSn(), "author1", today, allowedCommunities, PageRequest.of(0, 20)).getContent())
                 .extracting(Comment::getAnsCn).containsExactly("비밀글 댓글");
     }
 

@@ -4,10 +4,12 @@ import nuri.business.domain.comment.Comment;
 import nuri.business.domain.comment.CommentRepository;
 import nuri.business.domain.comment.exception.CommentErrorCode;
 import nuri.business.service.comment.dto.CommentDto;
+import nuri.foundation.core.community.CommunityBoardAccessPort;
 import nuri.foundation.core.event.PostCommentCountChangedEvent;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
-import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,11 +19,26 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class CommentService {
 
     private final CommentRepository commentRepository;
     private final ApplicationEventPublisher eventPublisher;
+    @Nullable
+    private final CommunityBoardAccessPort communityBoardAccess;
+
+    @Autowired
+    public CommentService(
+            CommentRepository commentRepository,
+            ApplicationEventPublisher eventPublisher,
+            @Nullable CommunityBoardAccessPort communityBoardAccess) {
+        this.commentRepository = commentRepository;
+        this.eventPublisher = eventPublisher;
+        this.communityBoardAccess = communityBoardAccess;
+    }
+
+    public CommentService(CommentRepository commentRepository, ApplicationEventPublisher eventPublisher) {
+        this(commentRepository, eventPublisher, null);
+    }
 
     @Transactional(readOnly = true)
     public Page<CommentDto> getComments(Long pstSn, String bbsId, Pageable pageable) {
@@ -70,14 +87,34 @@ public class CommentService {
             return Page.empty(page);
         }
         String today = java.time.LocalDate.now(SERVICE_ZONE).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        java.util.Set<Long> accessibleCommunities = communityBoardAccess != null
+                ? communityBoardAccess.accessibleCommunityIds(viewerEsntlId)
+                : java.util.Set.of();
+        if (accessibleCommunities == null || accessibleCommunities.isEmpty()) {
+            if (hasBoard && pstSn != null) {
+                comments = commentRepository.findVisiblePublicForModerationByBbsIdAndPstSn(
+                        bbsId, pstSn, viewerEsntlId, today, page);
+            } else if (hasBoard) {
+                comments = commentRepository.findVisiblePublicForModerationByBbsId(bbsId, viewerEsntlId, today, page);
+            } else if (pstSn != null) {
+                comments = commentRepository.findVisiblePublicForModerationByPstSn(pstSn, viewerEsntlId, today, page);
+            } else {
+                comments = commentRepository.findVisiblePublicForModeration(viewerEsntlId, today, page);
+            }
+            return comments.map(this::toDto);
+        }
         if (hasBoard && pstSn != null) {
-            comments = commentRepository.findVisibleForModerationByBbsIdAndPstSn(bbsId, pstSn, viewerEsntlId, today, page);
+            comments = commentRepository.findVisibleForModerationByBbsIdAndPstSn(
+                    bbsId, pstSn, viewerEsntlId, today, accessibleCommunities, page);
         } else if (hasBoard) {
-            comments = commentRepository.findVisibleForModerationByBbsId(bbsId, viewerEsntlId, today, page);
+            comments = commentRepository.findVisibleForModerationByBbsId(
+                    bbsId, viewerEsntlId, today, accessibleCommunities, page);
         } else if (pstSn != null) {
-            comments = commentRepository.findVisibleForModerationByPstSn(pstSn, viewerEsntlId, today, page);
+            comments = commentRepository.findVisibleForModerationByPstSn(
+                    pstSn, viewerEsntlId, today, accessibleCommunities, page);
         } else {
-            comments = commentRepository.findVisibleForModeration(viewerEsntlId, today, page);
+            comments = commentRepository.findVisibleForModeration(
+                    viewerEsntlId, today, accessibleCommunities, page);
         }
         return comments.map(this::toDto);
     }

@@ -147,7 +147,7 @@ services:
       #   기본값은 api 쪽(위 JWT_SECRET)과 동일한 dev 편의용이며 운영은 바깥에서 주입한다.
       JWT_SECRET: ${JWT_SECRET:-dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==}
       # [ADR-0060 1차 배포] Next 는 공개키(JWT_VERIFY_KEYS_JSON)만 받는다. prod 오버레이는 ALLOW_DEV_JWT_VERIFY_KEYS 를 false 로 덮어쓴다.
-      JWT_VERIFY_KEYS_JSON:
+      JWT_VERIFY_KEYS_JSON: ${JWT_VERIFY_KEYS_JSON:-}
       ALLOW_DEV_JWT_VERIFY_KEYS: ${ALLOW_DEV_JWT_VERIFY_KEYS:-true}
     depends_on:
       api:

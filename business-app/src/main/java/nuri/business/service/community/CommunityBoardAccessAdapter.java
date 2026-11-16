@@ -60,4 +60,13 @@ public class CommunityBoardAccessAdapter implements CommunityBoardAccessPort {
                 .map(community -> new CommunitySummary(community.getCmntyNm(),
                         "Y".equals(community.getUseYn()) && "REGC01".equals(community.getRegSeCd())));
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Set<Long> accessibleCommunityIds(String esntlId) {
+        if (esntlId == null || esntlId.isBlank()) {
+            return java.util.Set.of();
+        }
+        return java.util.Set.copyOf(communityUserRepository.findAccessibleCommunityIds(esntlId));
+    }
 }

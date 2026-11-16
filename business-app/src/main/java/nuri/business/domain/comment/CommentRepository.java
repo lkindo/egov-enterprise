@@ -39,49 +39,84 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
      * 타인의 비밀글·게시 기간 밖 글·비활성 게시판·비가입 커뮤니티의 댓글을 보지 못하게 거른다.
      *
      * <p>Oracle 에서 {@code = ''} 는 {@code UNKNOWN} 이므로 빈 문자열 판정은 {@code length(...) = 0} 을 쓰고,
-     * PostgreSQL 타입 미지정 null 오류를 막기 위해 필터 조합별로 메서드를 나눈다.
+     * PostgreSQL 타입 미지정 null 오류를 막기 위해 필터 조합별로 메서드를 나눈다. 커뮤니티 엔티티는 선택 도메인이라
+     * {@code CommunityBoardAccessPort} 로 조회한 허용 커뮤니티 ID 집합만 받는다.
      */
-    String VISIBLE_MODERATION_PREDICATE = "EXISTS ("
+    String BASE_VISIBLE_POST_PREFIX = "EXISTS ("
             + "SELECT b.pstSn FROM Board b, BoardMaster m "
             + "WHERE b.pstSn = c.pstSn AND b.bbsId = c.bbsId AND b.useYn = 'Y' "
             + "AND m.bbsId = b.bbsId AND m.useYn = 'Y' "
             + "AND (b.scrtYn IS NULL OR length(b.scrtYn) = 0 OR b.scrtYn = 'N' OR b.userId = :viewerEsntlId) "
             + "AND (((b.pstBgngYmd IS NULL OR length(b.pstBgngYmd) = 0 OR b.pstBgngYmd <= :today) "
             + "      AND (b.pstEndYmd IS NULL OR length(b.pstEndYmd) = 0 OR b.pstEndYmd >= :today)) "
-            + "     OR b.userId = :viewerEsntlId) "
-            + "AND (m.cmntySn IS NULL OR EXISTS ("
-            + "    SELECT cu.id FROM CommunityUser cu, Community cm "
-            + "    WHERE cm.cmntySn = m.cmntySn AND cm.useYn = 'Y' "
-            + "    AND cu.id.cmntySn = m.cmntySn AND cu.id.userId = :viewerEsntlId "
-            + "    AND cu.mbrSttsCd = 'P')))";
+            + "     OR b.userId = :viewerEsntlId) ";
 
-    @Query("SELECT c FROM Comment c WHERE c.useYn = 'Y' AND " + VISIBLE_MODERATION_PREDICATE)
-    Page<Comment> findVisibleForModeration(
+    String VISIBLE_PUBLIC_MODERATION_PREDICATE =
+            BASE_VISIBLE_POST_PREFIX + "AND m.cmntySn IS NULL)";
+
+    String VISIBLE_COMMUNITY_MODERATION_PREDICATE =
+            BASE_VISIBLE_POST_PREFIX + "AND (m.cmntySn IS NULL OR m.cmntySn IN :accessibleCommunityIds))";
+
+    @Query("SELECT c FROM Comment c WHERE c.useYn = 'Y' AND " + VISIBLE_PUBLIC_MODERATION_PREDICATE)
+    Page<Comment> findVisiblePublicForModeration(
             @Param("viewerEsntlId") String viewerEsntlId,
             @Param("today") String today,
             Pageable pageable);
 
-    @Query("SELECT c FROM Comment c WHERE c.useYn = 'Y' AND c.bbsId = :bbsId AND " + VISIBLE_MODERATION_PREDICATE)
-    Page<Comment> findVisibleForModerationByBbsId(
+    @Query("SELECT c FROM Comment c WHERE c.useYn = 'Y' AND c.bbsId = :bbsId AND " + VISIBLE_PUBLIC_MODERATION_PREDICATE)
+    Page<Comment> findVisiblePublicForModerationByBbsId(
             @Param("bbsId") String bbsId,
             @Param("viewerEsntlId") String viewerEsntlId,
             @Param("today") String today,
             Pageable pageable);
 
-    @Query("SELECT c FROM Comment c WHERE c.useYn = 'Y' AND c.pstSn = :pstSn AND " + VISIBLE_MODERATION_PREDICATE)
-    Page<Comment> findVisibleForModerationByPstSn(
+    @Query("SELECT c FROM Comment c WHERE c.useYn = 'Y' AND c.pstSn = :pstSn AND " + VISIBLE_PUBLIC_MODERATION_PREDICATE)
+    Page<Comment> findVisiblePublicForModerationByPstSn(
             @Param("pstSn") Long pstSn,
             @Param("viewerEsntlId") String viewerEsntlId,
             @Param("today") String today,
             Pageable pageable);
 
     @Query("SELECT c FROM Comment c WHERE c.useYn = 'Y' AND c.bbsId = :bbsId AND c.pstSn = :pstSn AND "
-            + VISIBLE_MODERATION_PREDICATE)
+            + VISIBLE_PUBLIC_MODERATION_PREDICATE)
+    Page<Comment> findVisiblePublicForModerationByBbsIdAndPstSn(
+            @Param("bbsId") String bbsId,
+            @Param("pstSn") Long pstSn,
+            @Param("viewerEsntlId") String viewerEsntlId,
+            @Param("today") String today,
+            Pageable pageable);
+
+    @Query("SELECT c FROM Comment c WHERE c.useYn = 'Y' AND " + VISIBLE_COMMUNITY_MODERATION_PREDICATE)
+    Page<Comment> findVisibleForModeration(
+            @Param("viewerEsntlId") String viewerEsntlId,
+            @Param("today") String today,
+            @Param("accessibleCommunityIds") java.util.Collection<Long> accessibleCommunityIds,
+            Pageable pageable);
+
+    @Query("SELECT c FROM Comment c WHERE c.useYn = 'Y' AND c.bbsId = :bbsId AND " + VISIBLE_COMMUNITY_MODERATION_PREDICATE)
+    Page<Comment> findVisibleForModerationByBbsId(
+            @Param("bbsId") String bbsId,
+            @Param("viewerEsntlId") String viewerEsntlId,
+            @Param("today") String today,
+            @Param("accessibleCommunityIds") java.util.Collection<Long> accessibleCommunityIds,
+            Pageable pageable);
+
+    @Query("SELECT c FROM Comment c WHERE c.useYn = 'Y' AND c.pstSn = :pstSn AND " + VISIBLE_COMMUNITY_MODERATION_PREDICATE)
+    Page<Comment> findVisibleForModerationByPstSn(
+            @Param("pstSn") Long pstSn,
+            @Param("viewerEsntlId") String viewerEsntlId,
+            @Param("today") String today,
+            @Param("accessibleCommunityIds") java.util.Collection<Long> accessibleCommunityIds,
+            Pageable pageable);
+
+    @Query("SELECT c FROM Comment c WHERE c.useYn = 'Y' AND c.bbsId = :bbsId AND c.pstSn = :pstSn AND "
+            + VISIBLE_COMMUNITY_MODERATION_PREDICATE)
     Page<Comment> findVisibleForModerationByBbsIdAndPstSn(
             @Param("bbsId") String bbsId,
             @Param("pstSn") Long pstSn,
             @Param("viewerEsntlId") String viewerEsntlId,
             @Param("today") String today,
+            @Param("accessibleCommunityIds") java.util.Collection<Long> accessibleCommunityIds,
             Pageable pageable);
 
     // [W1-25 P3② 삭제] findMaxId() 제거 — 저장소 전역 호출부 0(선언 1건뿐).

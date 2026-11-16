@@ -46,6 +46,9 @@ class CommentServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private nuri.foundation.core.community.CommunityBoardAccessPort communityBoardAccess;
+
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.CsvSource({
             "owner-login, true, false, true",
@@ -127,7 +130,7 @@ class CommentServiceTest {
     @DisplayName("[Top 1c] BOARD_READ_ALL 이 없으면 가시성 필터 질의만 쓰고, 인증 주체가 없으면 빈 목록으로 닫는다")
     void getCommentsForModeration_withoutBoardReadAllUsesVisibilityQueriesAndFailsClosed() {
         __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")).thenReturn(false);
-        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.empty());
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("   "));
 
         Page<CommentDto> anonymous = commentService.getCommentsForModeration(null, null, PageRequest.of(0, 10));
         assertThat(anonymous.getContent()).isEmpty();
@@ -139,17 +142,45 @@ class CommentServiceTest {
         Comment visible = Comment.builder().ansSn(8L).pstSn(3L).bbsId("BBS_01").ansCn("공개 댓글").useYn("Y").build();
         visible.setCrtDt(LocalDateTime.now());
         Page<Comment> visiblePage = new PageImpl<>(java.util.List.of(visible));
-        given(commentRepository.findVisibleForModeration(org.mockito.ArgumentMatchers.eq("viewer-1"),
+
+        given(communityBoardAccess.accessibleCommunityIds("viewer-1")).willReturn(java.util.Set.of());
+        given(commentRepository.findVisiblePublicForModeration(org.mockito.ArgumentMatchers.eq("viewer-1"),
                 org.mockito.ArgumentMatchers.eq(expectedToday), org.mockito.ArgumentMatchers.any())).willReturn(visiblePage);
-        given(commentRepository.findVisibleForModerationByBbsId(org.mockito.ArgumentMatchers.eq("BBS_01"),
+        given(commentRepository.findVisiblePublicForModerationByBbsId(org.mockito.ArgumentMatchers.eq("BBS_01"),
                 org.mockito.ArgumentMatchers.eq("viewer-1"), org.mockito.ArgumentMatchers.eq(expectedToday),
                 org.mockito.ArgumentMatchers.any())).willReturn(Page.empty());
-        given(commentRepository.findVisibleForModerationByPstSn(org.mockito.ArgumentMatchers.eq(3L),
+        given(commentRepository.findVisiblePublicForModerationByPstSn(org.mockito.ArgumentMatchers.eq(3L),
                 org.mockito.ArgumentMatchers.eq("viewer-1"), org.mockito.ArgumentMatchers.eq(expectedToday),
                 org.mockito.ArgumentMatchers.any())).willReturn(Page.empty());
-        given(commentRepository.findVisibleForModerationByBbsIdAndPstSn(org.mockito.ArgumentMatchers.eq("BBS_01"),
+        given(commentRepository.findVisiblePublicForModerationByBbsIdAndPstSn(org.mockito.ArgumentMatchers.eq("BBS_01"),
                 org.mockito.ArgumentMatchers.eq(3L), org.mockito.ArgumentMatchers.eq("viewer-1"),
                 org.mockito.ArgumentMatchers.eq(expectedToday), org.mockito.ArgumentMatchers.any())).willReturn(Page.empty());
+
+        assertThat(commentService.getCommentsForModeration(null, null, PageRequest.of(0, 10)).getContent())
+                .extracting(CommentDto::getAnsCn).containsExactly("공개 댓글");
+        commentService.getCommentsForModeration("BBS_01", null, PageRequest.of(0, 10));
+        commentService.getCommentsForModeration(null, 3L, PageRequest.of(0, 10));
+        commentService.getCommentsForModeration("BBS_01", 3L, PageRequest.of(0, 10));
+
+        CommentService withoutCommunity = new CommentService(commentRepository, eventPublisher);
+        assertThat(withoutCommunity.getCommentsForModeration(null, null, PageRequest.of(0, 10)).getContent())
+                .extracting(CommentDto::getAnsCn).containsExactly("공개 댓글");
+
+        java.util.Set<Long> communities = java.util.Set.of(10L);
+        given(communityBoardAccess.accessibleCommunityIds("viewer-1")).willReturn(communities);
+        given(commentRepository.findVisibleForModeration(org.mockito.ArgumentMatchers.eq("viewer-1"),
+                org.mockito.ArgumentMatchers.eq(expectedToday), org.mockito.ArgumentMatchers.eq(communities),
+                org.mockito.ArgumentMatchers.any())).willReturn(visiblePage);
+        given(commentRepository.findVisibleForModerationByBbsId(org.mockito.ArgumentMatchers.eq("BBS_01"),
+                org.mockito.ArgumentMatchers.eq("viewer-1"), org.mockito.ArgumentMatchers.eq(expectedToday),
+                org.mockito.ArgumentMatchers.eq(communities), org.mockito.ArgumentMatchers.any())).willReturn(Page.empty());
+        given(commentRepository.findVisibleForModerationByPstSn(org.mockito.ArgumentMatchers.eq(3L),
+                org.mockito.ArgumentMatchers.eq("viewer-1"), org.mockito.ArgumentMatchers.eq(expectedToday),
+                org.mockito.ArgumentMatchers.eq(communities), org.mockito.ArgumentMatchers.any())).willReturn(Page.empty());
+        given(commentRepository.findVisibleForModerationByBbsIdAndPstSn(org.mockito.ArgumentMatchers.eq("BBS_01"),
+                org.mockito.ArgumentMatchers.eq(3L), org.mockito.ArgumentMatchers.eq("viewer-1"),
+                org.mockito.ArgumentMatchers.eq(expectedToday), org.mockito.ArgumentMatchers.eq(communities),
+                org.mockito.ArgumentMatchers.any())).willReturn(Page.empty());
 
         assertThat(commentService.getCommentsForModeration(null, null, PageRequest.of(0, 10)).getContent())
                 .extracting(CommentDto::getAnsCn).containsExactly("공개 댓글");
