@@ -146,7 +146,7 @@ class SmsServiceTest {
         Sms sms = sms(101L, "01011112222", "Hello");
         ReflectionTestUtils.setField(sms, "frstRgtrId", "sender01");
         Page<Sms> page = new PageImpl<>(List.of(sms), pageable, 1);
-        when(smsRepository.searchSms(anyString(), anyString(), any(Pageable.class))).thenReturn(page);
+        when(smsRepository.searchSms(anyString(), anyString(), eq("sender01"), any(Pageable.class))).thenReturn(page);
 
         // When
         Page<SmsResponseDto> result = smsService.getSmsList("Hello", pageable);
@@ -164,7 +164,7 @@ class SmsServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Sms> page = new PageImpl<>(List.of(sms(101L, "01011112222", "Hello"), sms(102L, "01011112222", "Bye")),
                 pageable, 2);
-        when(smsRepository.searchSms(anyString(), anyString(), any(Pageable.class))).thenReturn(page);
+        when(smsRepository.searchSms(anyString(), anyString(), nullable(String.class), any(Pageable.class))).thenReturn(page);
         when(smsRecptnRepository.countByResult(List.of(101L, 102L))).thenReturn(List.of(
                 resultCount(101L, "S", 2), resultCount(101L, "F", 1), resultCount(101L, "P", 1)));
 
@@ -178,23 +178,24 @@ class SmsServiceTest {
     }
 
     @Test
-    @DisplayName("타인이 발송한 SMS 목록·상세 조회는 발신번호를 마스킹하고 본문을 감춘다")
+    @DisplayName("타인이 발송한 SMS 목록·상세 조회는 발신번호를 마스킹하고 본문을 감추며 검색에는 현재 로그인 ID 를 넘긴다")
     void getSmsListAndDetail_maskForNonSender() {
         authenticateAs("other_admin", "ADMIN");
         Sms sms = sms(101L, "01011112222", "Secret Body");
         ReflectionTestUtils.setField(sms, "frstRgtrId", "sender01");
         Pageable pageable = PageRequest.of(0, 10);
-        when(smsRepository.searchSms(anyString(), anyString(), any(Pageable.class)))
+        when(smsRepository.searchSms(anyString(), anyString(), eq("other_admin"), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(sms), pageable, 1));
         when(smsRepository.findById(101L)).thenReturn(Optional.of(sms));
 
-        SmsResponseDto listRow = smsService.getSmsList("Secret", pageable).getContent().get(0);
+        SmsResponseDto listRow = smsService.getSmsList("", pageable).getContent().get(0);
         SmsResponseDto detail = smsService.getSms(101L);
 
         assertThat(listRow.getSndngTelno()).isEqualTo("010****2222");
         assertThat(listRow.getSndngCn()).isNull();
         assertThat(detail.getSndngTelno()).isEqualTo("010****2222");
         assertThat(detail.getSndngCn()).isNull();
+        verify(smsRepository).searchSms(eq("1"), eq(""), eq("other_admin"), eq(pageable));
     }
 
     private static SmsRecptnRepository.ResultCount resultCount(Long sn, String code, long cnt) {
@@ -495,11 +496,11 @@ class SmsServiceTest {
     @DisplayName("SMS 목록 조회 - 조건부 검색")
     void getSmsList_WithCondition() {
         Pageable pageable = PageRequest.of(0, 10);
-        when(smsRepository.searchSms(anyString(), anyString(), any())).thenReturn(Page.empty());
+        when(smsRepository.searchSms(anyString(), anyString(), nullable(String.class), any())).thenReturn(Page.empty());
 
         smsService.getSmsList("2", "key", pageable);
 
-        verify(smsRepository).searchSms(eq("2"), eq("key"), eq(pageable));
+        verify(smsRepository).searchSms(eq("2"), eq("key"), isNull(), eq(pageable));
     }
 
     @Test

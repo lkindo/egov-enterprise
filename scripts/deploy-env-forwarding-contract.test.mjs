@@ -247,6 +247,16 @@ test('the insecure loopback cookie opt-in can never appear in the production ove
   assert.ok(errors.some((error) => /ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE: 운영 오버레이에 둘 수 없습니다/.test(error)), errors.join('\n'));
 });
 
+test('JWT signing private key variables can never be forwarded to frontend in the production overlay', () => {
+  for (const name of ['JWT_SIGNING_ACTIVE_KID', 'JWT_SIGNING_KEYS_JSON']) {
+    const errors = evaluate({
+      frontendSource: 'process.env.BACKEND_API_URL;',
+      prod: compose({ api: ['SPRING_PROFILES_ACTIVE: prod'], frontend: [`${name}: \${${name}}`] }),
+    });
+    assert.ok(errors.some((error) => error.includes(`${name}: 운영 오버레이에 둘 수 없습니다`)), errors.join('\n'));
+  }
+});
+
 test('compose parsing distinguishes passthrough, empty assignment and literal values', () => {
   const text = 'services:\n  api:\n    environment:\n      - A=1\n      - B\n      - E=\n      C: "x" # note\n      D: ~\n  web:\n    image: x\n';
   assert.deepEqual([...parseComposeServiceEnvironment(text, 'api')], [['A', '1'], ['B', null], ['E', ''], ['C', '"x"'], ['D', null]]);

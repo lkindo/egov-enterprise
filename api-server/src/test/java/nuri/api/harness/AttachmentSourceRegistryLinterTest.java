@@ -105,6 +105,8 @@ class AttachmentSourceRegistryLinterTest {
                     guarded("assertAttachmentIsAssignable(dto.getAtchFileSn())", "deptJob.update(")),
             entry("business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java#assertAttachmentIsAssignable",
                     required("attachmentAssignmentPolicy.assertAssignable(atchFileSn)")),
+            entry("business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java#deleteDeptJob",
+                    releaseAfterFlush("deptJobRepository.flush();")),
             // 저장 요청의 DTO 변환은 파일 귀속을 저장하지 않는다. 실제 writer 가드는 서비스에서 유지한다.
             entry("business-core/src/main/java/nuri/business/service/deptjob/dto/DeptJobSaveRequest.java#toDto",
                     readOnly()),
@@ -201,6 +203,8 @@ class AttachmentSourceRegistryLinterTest {
                             "memoReportRepository.save(")),
             entry("business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java#updateMemoReport",
                     guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)", "entity.update(")),
+            entry("business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java#deleteMemoReport",
+                    releaseAfterFlush("memoReportRepository.flush();")),
             // 조회 권한·내용 지문은 첨부의 read-only 소비다. 개인 첨부 인가는 FileService가 집행한다.
             entry("business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java#canReadAttachments",
                     readOnly()),

@@ -34,6 +34,56 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     Page<Comment> findByPstSnAndUseYn(Long pstSn, String useYn, Pageable pageable);
 
+    /**
+     * [Top 1c] {@code BOARD_READ_ALL} 이 없는 댓글 관리자({@code COMMENT_READ_ALL} 만 보유)가 목록에서
+     * 타인의 비밀글·게시 기간 밖 글·비활성 게시판·비가입 커뮤니티의 댓글을 보지 못하게 거른다.
+     *
+     * <p>Oracle 에서 {@code = ''} 는 {@code UNKNOWN} 이므로 빈 문자열 판정은 {@code length(...) = 0} 을 쓰고,
+     * PostgreSQL 타입 미지정 null 오류를 막기 위해 필터 조합별로 메서드를 나눈다.
+     */
+    String VISIBLE_MODERATION_PREDICATE = "EXISTS ("
+            + "SELECT b.pstSn FROM Board b, BoardMaster m "
+            + "WHERE b.pstSn = c.pstSn AND b.bbsId = c.bbsId AND b.useYn = 'Y' "
+            + "AND m.bbsId = b.bbsId AND m.useYn = 'Y' "
+            + "AND (b.scrtYn IS NULL OR length(b.scrtYn) = 0 OR b.scrtYn = 'N' OR b.userId = :viewerEsntlId) "
+            + "AND (((b.pstBgngYmd IS NULL OR length(b.pstBgngYmd) = 0 OR b.pstBgngYmd <= :today) "
+            + "      AND (b.pstEndYmd IS NULL OR length(b.pstEndYmd) = 0 OR b.pstEndYmd >= :today)) "
+            + "     OR b.userId = :viewerEsntlId) "
+            + "AND (m.cmntySn IS NULL OR EXISTS ("
+            + "    SELECT cu.id FROM CommunityUser cu, Community cm "
+            + "    WHERE cm.cmntySn = m.cmntySn AND cm.useYn = 'Y' "
+            + "    AND cu.id.cmntySn = m.cmntySn AND cu.id.userId = :viewerEsntlId "
+            + "    AND cu.mbrSttsCd = 'P')))";
+
+    @Query("SELECT c FROM Comment c WHERE c.useYn = 'Y' AND " + VISIBLE_MODERATION_PREDICATE)
+    Page<Comment> findVisibleForModeration(
+            @Param("viewerEsntlId") String viewerEsntlId,
+            @Param("today") String today,
+            Pageable pageable);
+
+    @Query("SELECT c FROM Comment c WHERE c.useYn = 'Y' AND c.bbsId = :bbsId AND " + VISIBLE_MODERATION_PREDICATE)
+    Page<Comment> findVisibleForModerationByBbsId(
+            @Param("bbsId") String bbsId,
+            @Param("viewerEsntlId") String viewerEsntlId,
+            @Param("today") String today,
+            Pageable pageable);
+
+    @Query("SELECT c FROM Comment c WHERE c.useYn = 'Y' AND c.pstSn = :pstSn AND " + VISIBLE_MODERATION_PREDICATE)
+    Page<Comment> findVisibleForModerationByPstSn(
+            @Param("pstSn") Long pstSn,
+            @Param("viewerEsntlId") String viewerEsntlId,
+            @Param("today") String today,
+            Pageable pageable);
+
+    @Query("SELECT c FROM Comment c WHERE c.useYn = 'Y' AND c.bbsId = :bbsId AND c.pstSn = :pstSn AND "
+            + VISIBLE_MODERATION_PREDICATE)
+    Page<Comment> findVisibleForModerationByBbsIdAndPstSn(
+            @Param("bbsId") String bbsId,
+            @Param("pstSn") Long pstSn,
+            @Param("viewerEsntlId") String viewerEsntlId,
+            @Param("today") String today,
+            Pageable pageable);
+
     // [W1-25 P3② 삭제] findMaxId() 제거 — 저장소 전역 호출부 0(선언 1건뿐).
     //   WHERE 절이 전혀 없는 **전역** MAX(ans_sn) 채번이라, 살아 있었다면 게시글 경계를 넘어
     //   댓글 순번이 뒤엉키는 구조였다. 실제 댓글 PK 는 JpaRepository<Comment, Long> 표준 경로를 쓴다.

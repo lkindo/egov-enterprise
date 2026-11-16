@@ -51,6 +51,9 @@ class CommentRepositoryTest {
     @Autowired
     private CommentRepository commentRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
     private static final String BBS_ID = "BBSMSTR_TEST00000001";
     private static final Long PST_SN = 1L;
 
@@ -111,5 +114,124 @@ class CommentRepositoryTest {
         assertThat(page.getContent())
                 .extracting(Comment::getAnsCn)
                 .containsExactlyInAnyOrder("첫 번째", "두 번째");
+    }
+
+    @Test
+    @DisplayName("[Top 1c] 관리자 가시성 질의는 비밀글·게시기간 밖·비활성 게시판·미가입 커뮤니티의 댓글을 거른다")
+    void visibleModerationQueries_filterSecretOutOfPeriodInactiveAndCommunityComments() {
+        String today = "20261116";
+        nuri.business.domain.board.BoardMaster openBoard = persistBoard("BBSMSTR_VIS_OPEN", "Y", null);
+        nuri.business.domain.board.BoardMaster inactiveBoard = persistBoard("BBSMSTR_VIS_DEAD", "N", null);
+
+        nuri.business.domain.community.Community activeCommunity = nuri.business.domain.community.Community.builder()
+                .cmntyNm("활성 커뮤니티").regSeCd("REGC01").useYn("Y").build();
+        entityManager.persist(activeCommunity);
+        nuri.business.domain.community.Community inactiveCommunity = nuri.business.domain.community.Community.builder()
+                .cmntyNm("비활성 커뮤니티").regSeCd("REGC01").useYn("N").build();
+        entityManager.persist(inactiveCommunity);
+        entityManager.flush();
+
+        entityManager.persist(nuri.business.domain.community.CommunityUser.builder()
+                .id(new nuri.business.domain.community.CommunityUserId(activeCommunity.getCmntySn(), "viewer-member"))
+                .mbrSttsCd("P").useYn("Y").build());
+        entityManager.persist(nuri.business.domain.community.CommunityUser.builder()
+                .id(new nuri.business.domain.community.CommunityUserId(activeCommunity.getCmntySn(), "viewer-pending"))
+                .mbrSttsCd("A").useYn("Y").build());
+        entityManager.persist(nuri.business.domain.community.CommunityUser.builder()
+                .id(new nuri.business.domain.community.CommunityUserId(inactiveCommunity.getCmntySn(), "viewer-member"))
+                .mbrSttsCd("P").useYn("Y").build());
+
+        nuri.business.domain.board.BoardMaster memberBoard = persistBoard("BBSMSTR_CMTY_OK", "Y", activeCommunity.getCmntySn());
+        nuri.business.domain.board.BoardMaster deadCmtyBoard = persistBoard("BBSMSTR_CMTY_DEAD", "Y", inactiveCommunity.getCmntySn());
+
+        var publicPost = persistPost(openBoard.getBbsId(), "author1", "N", null, null, "Y");
+        var secretPost = persistPost(openBoard.getBbsId(), "author1", "Y", null, null, "Y");
+        var scheduledPost = persistPost(openBoard.getBbsId(), "author1", "N", "20261120", "20261201", "Y");
+        var endedPost = persistPost(openBoard.getBbsId(), "author1", "N", "20260101", "20261101", "Y");
+        var deletedPost = persistPost(openBoard.getBbsId(), "author1", "N", null, null, "N");
+        var inactiveBoardPost = persistPost(inactiveBoard.getBbsId(), "author1", "N", null, null, "Y");
+        var cmtyPost = persistPost(memberBoard.getBbsId(), "author1", "N", "", "", "Y");
+        var deadCmtyPost = persistPost(deadCmtyBoard.getBbsId(), "author1", "N", null, null, "Y");
+
+        saveForPost(publicPost, "공개글 댓글");
+        saveForPost(secretPost, "비밀글 댓글");
+        saveForPost(scheduledPost, "예약글 댓글");
+        saveForPost(endedPost, "종료글 댓글");
+        saveForPost(deletedPost, "삭제글 댓글");
+        saveForPost(inactiveBoardPost, "비활성게시판 댓글");
+        saveForPost(cmtyPost, "가입커뮤니티 댓글");
+        saveForPost(deadCmtyPost, "비활성커뮤니티 댓글");
+        entityManager.flush();
+
+        Page<Comment> otherViewer = commentRepository.findVisibleForModeration(
+                "outsider", today, PageRequest.of(0, 20));
+        assertThat(otherViewer.getContent()).extracting(Comment::getAnsCn)
+                .containsExactly("공개글 댓글");
+
+        Page<Comment> pendingApplicant = commentRepository.findVisibleForModeration(
+                "viewer-pending", today, PageRequest.of(0, 20));
+        assertThat(pendingApplicant.getContent()).extracting(Comment::getAnsCn)
+                .containsExactly("공개글 댓글");
+
+        Page<Comment> approvedMember = commentRepository.findVisibleForModeration(
+                "viewer-member", today, PageRequest.of(0, 20));
+        assertThat(approvedMember.getContent()).extracting(Comment::getAnsCn)
+                .containsExactlyInAnyOrder("공개글 댓글", "가입커뮤니티 댓글");
+
+        Page<Comment> authorViewer = commentRepository.findVisibleForModeration(
+                "author1", today, PageRequest.of(0, 20));
+        assertThat(authorViewer.getContent()).extracting(Comment::getAnsCn)
+                .containsExactlyInAnyOrder("공개글 댓글", "비밀글 댓글", "예약글 댓글", "종료글 댓글");
+
+        assertThat(commentRepository.findVisibleForModerationByBbsId(
+                        openBoard.getBbsId(), "outsider", today, PageRequest.of(0, 20)).getContent())
+                .extracting(Comment::getAnsCn).containsExactly("공개글 댓글");
+        assertThat(commentRepository.findVisibleForModerationByPstSn(
+                        secretPost.getPstSn(), "outsider", today, PageRequest.of(0, 20)).getContent())
+                .isEmpty();
+        assertThat(commentRepository.findVisibleForModerationByBbsIdAndPstSn(
+                        openBoard.getBbsId(), secretPost.getPstSn(), "author1", today, PageRequest.of(0, 20)).getContent())
+                .extracting(Comment::getAnsCn).containsExactly("비밀글 댓글");
+    }
+
+    private nuri.business.domain.board.BoardMaster persistBoard(String bbsId, String useYn, Long cmntySn) {
+        nuri.business.domain.board.BoardMaster master = nuri.business.domain.board.BoardMaster.builder()
+                .bbsId(bbsId)
+                .bbsTtl("테스트 게시판 " + bbsId)
+                .bbsTypeCd("BBST01")
+                .bbsAtrbCd("BBSA03")
+                .useYn(useYn)
+                .cmntySn(cmntySn)
+                .build();
+        entityManager.persist(master);
+        return master;
+    }
+
+    private nuri.business.domain.board.Board persistPost(
+            String bbsId, String userId, String scrtYn, String bgngYmd, String endYmd, String useYn) {
+        nuri.business.domain.board.Board post = nuri.business.domain.board.Board.builder()
+                .bbsId(bbsId)
+                .pstTtl("게시글")
+                .pstCn("내용")
+                .userId(userId)
+                .scrtYn(scrtYn)
+                .pstBgngYmd(bgngYmd)
+                .pstEndYmd(endYmd)
+                .useYn(useYn)
+                .build();
+        entityManager.persist(post);
+        entityManager.flush();
+        return post;
+    }
+
+    private Comment saveForPost(nuri.business.domain.board.Board post, String content) {
+        return commentRepository.save(Comment.builder()
+                .bbsId(post.getBbsId())
+                .pstSn(post.getPstSn())
+                .wrterId("commenter")
+                .wrterNm("Commenter")
+                .ansCn(content)
+                .useYn("Y")
+                .build());
     }
 }

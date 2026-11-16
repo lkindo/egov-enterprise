@@ -906,7 +906,15 @@ jobs:
       # 프로덕션 미들웨어는 공개 dev 시크릿으로의 조용한 폴백을 금지한다. 이 잡은 백엔드를
       # 기동하지 않으므로 대칭값은 불필요하지만, 빌드 자체에는 회차별 임시값이 반드시 필요하다.
       - name: Generate ephemeral JWT secret (frontend build only)
-        run: echo "JWT_SECRET=$(openssl rand -hex 44)" >> "$GITHUB_ENV"
+        run: |
+          echo "JWT_SECRET=$(openssl rand -hex 44)" >> "$GITHUB_ENV"
+          node --input-type=module <<'NODE'
+          import { generateKeyPairSync } from 'node:crypto';
+          import { appendFileSync } from 'node:fs';
+          const { publicKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+          const spki = publicKey.export({ format: 'der', type: 'spki' }).toString('base64');
+          appendFileSync(process.env.GITHUB_ENV, `JWT_VERIFY_KEYS_JSON=${JSON.stringify({ 'ci-build-es256': spki })}\n`);
+          NODE
 
       - name: Build production frontend
         id: fe-build
@@ -1254,10 +1262,27 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 프로덕션 미들웨어는 JWT_SECRET 부재나 공개 dev 기본값으로의 폴백을 거부한다.
-      # 백엔드와 프론트 빌드·기동은 회차별 동일한 임시 raw secret을 사용해야 서명 검증이 성립한다.
-      - name: Generate ephemeral JWT secret (backend/frontend 대칭)
-        run: echo "JWT_SECRET=$(openssl rand -hex 44)" >> "$GITHUB_ENV"
+      # 프로덕션 미들웨어는 JWT_SECRET·JWT_VERIFY_KEYS_JSON 부재나 공개 dev 기본값으로의 폴백을 거부한다.
+      # 백엔드만 ES256 개인키 키링을 받고, 프론트에는 공개키(JWT_VERIFY_KEYS_JSON)와 전환기 HMAC 시크릿만 전달한다.
+      - name: Generate ephemeral JWT keyring (isolated E2E)
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync, chmodSync, writeFileSync } from 'node:fs';
+          import path from 'node:path';
+          import { createIsolatedJwtEnvironment } from './scripts/run-isolated-e2e.mjs';
+          const jwt = createIsolatedJwtEnvironment();
+          console.log(`::add-mask::${jwt.api.JWT_SECRET}`);
+          for (const v of Object.values(JSON.parse(jwt.api.JWT_SIGNING_KEYS_JSON))) console.log(`::add-mask::${v}`);
+          console.log(`::add-mask::${jwt.api.JWT_SIGNING_KEYS_JSON}`);
+          appendFileSync(process.env.GITHUB_ENV,
+            `JWT_SECRET=${jwt.frontend.JWT_SECRET}\nJWT_VERIFY_KEYS_JSON=${jwt.frontend.JWT_VERIFY_KEYS_JSON}\n`);
+          const signingFile = path.join(process.env.RUNNER_TEMP, 'e2e-jwt-signing.json');
+          writeFileSync(signingFile, JSON.stringify({
+            JWT_SIGNING_ACTIVE_KID: jwt.api.JWT_SIGNING_ACTIVE_KID,
+            JWT_SIGNING_KEYS_JSON: jwt.api.JWT_SIGNING_KEYS_JSON,
+          }), { mode: 0o600, flag: 'wx' });
+          chmodSync(signingFile, 0o600);
+          NODE
 
       # MFA는 격리 API에만 회차별 키를 제공한다. 운영 키나 보호계정 강제 적용은 상속하지 않는다.
       - name: Generate isolated MFA keyring (masked, no protected-account rollout)
@@ -1296,7 +1321,14 @@ jobs:
       - name: Start Docker Infrastructure (DB & API)
         id: e2e-compose
         run: |
+          set -euo pipefail
           set -o pipefail
+          SIGNING_FILE="${RUNNER_TEMP}/e2e-jwt-signing.json"
+          trap 'rm -f "$SIGNING_FILE"' EXIT
+          JWT_SIGNING_ACTIVE_KID="$(jq -r '.JWT_SIGNING_ACTIVE_KID' "$SIGNING_FILE")"
+          JWT_SIGNING_KEYS_JSON="$(jq -r '.JWT_SIGNING_KEYS_JSON' "$SIGNING_FILE")"
+          export JWT_SIGNING_ACTIVE_KID JWT_SIGNING_KEYS_JSON
+          rm -f "$SIGNING_FILE"
           node scripts/e2e-compose-preflight.mjs
           docker compose up --no-build -d db api 2>&1 | tee /tmp/compose-up.log
 

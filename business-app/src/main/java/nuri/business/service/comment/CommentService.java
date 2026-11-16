@@ -33,25 +33,51 @@ public class CommentService {
                 .map(this::toDto);
     }
 
+    private static final java.time.ZoneId SERVICE_ZONE = java.time.ZoneId.of("Asia/Seoul");
+
     /**
      * 관리자 댓글 관리 목록. 게시판·글 번호는 선택 조건이며, 둘 다 없으면 살아 있는 전체 댓글을 최신순으로 준다.
      *
      * <p>종전 관리자 API 는 {@link #getComments} 를 그대로 불러, 조건 없이 부르는 유일한 화면(모니터링 허브의
      * 댓글 탭)이 언제나 빈 목록을 받았다(2026-09-25 DIP I6 ⑥, GAP-DOMAIN-001 ⑥).</p>
+     *
+     * <p>[Top 1c] {@code BOARD_READ_ALL} 권한이 없는 경우(예: {@code COMMENT_READ_ALL} 만 보유)에는
+     * 타인의 비밀글·게시 기간 밖 글·비활성 게시판·비가입 커뮤니티의 댓글을 조회 결과에서 제외한다.</p>
      */
+    @Transactional(readOnly = true)
     public Page<CommentDto> getCommentsForModeration(String bbsId, Long pstSn, Pageable pageable) {
         Pageable page = pageable.getSort().isSorted() ? pageable
                 : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "ansSn"));
         boolean hasBoard = bbsId != null && !bbsId.isBlank();
         Page<Comment> comments;
+        if (nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")) {
+            if (hasBoard && pstSn != null) {
+                comments = commentRepository.findByBbsIdAndPstSn(bbsId, pstSn, page);
+            } else if (hasBoard) {
+                comments = commentRepository.findByBbsIdAndUseYn(bbsId, "Y", page);
+            } else if (pstSn != null) {
+                comments = commentRepository.findByPstSnAndUseYn(pstSn, "Y", page);
+            } else {
+                comments = commentRepository.findByUseYn("Y", page);
+            }
+            return comments.map(this::toDto);
+        }
+
+        String viewerEsntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
+                .filter(id -> !id.isBlank())
+                .orElse(null);
+        if (viewerEsntlId == null) {
+            return Page.empty(page);
+        }
+        String today = java.time.LocalDate.now(SERVICE_ZONE).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
         if (hasBoard && pstSn != null) {
-            comments = commentRepository.findByBbsIdAndPstSn(bbsId, pstSn, page);
+            comments = commentRepository.findVisibleForModerationByBbsIdAndPstSn(bbsId, pstSn, viewerEsntlId, today, page);
         } else if (hasBoard) {
-            comments = commentRepository.findByBbsIdAndUseYn(bbsId, "Y", page);
+            comments = commentRepository.findVisibleForModerationByBbsId(bbsId, viewerEsntlId, today, page);
         } else if (pstSn != null) {
-            comments = commentRepository.findByPstSnAndUseYn(pstSn, "Y", page);
+            comments = commentRepository.findVisibleForModerationByPstSn(pstSn, viewerEsntlId, today, page);
         } else {
-            comments = commentRepository.findByUseYn("Y", page);
+            comments = commentRepository.findVisibleForModeration(viewerEsntlId, today, page);
         }
         return comments.map(this::toDto);
     }

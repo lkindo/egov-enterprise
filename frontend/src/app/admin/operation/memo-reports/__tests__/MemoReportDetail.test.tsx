@@ -782,6 +782,113 @@ describe('메모보고 열람', () => {
   });
 });
 
+describe('메모보고 수정 첨부파일', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.user = { role: 'ROLE_USER', permissions: ['FILE_UPLOAD'], authorizationVersion: 'v1' };
+    const page = { list: [ROW], total: 1 };
+    mocks.getReceivedReports.mockResolvedValue(page);
+    mocks.getMyReports.mockResolvedValue(page);
+    mocks.getMemoReports.mockResolvedValue(page);
+    mocks.getMemoReport.mockReset().mockResolvedValue({
+      ...DETAIL,
+      atchFileSn: 77,
+      attachments: [FILE],
+      editable: true,
+    });
+    mocks.updateMemoReport.mockReset().mockResolvedValue(undefined);
+    mocks.uploadFiles.mockReset();
+  });
+
+  const openEditForm = async () => {
+    fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));
+    await screen.findByText('서버 증설이 필요합니다.');
+    fireEvent.click(await screen.findByRole('button', { name: '수정' }));
+    return within(screen.getByRole('dialog', { name: '3분기 운영 보고' }));
+  };
+
+  it('FILE_UPLOAD 권한이 있으면 수정에서 새 첨부파일을 올려 교체하고 재시도 시 중복 업로드를 피한다', async () => {
+    mocks.uploadFiles.mockResolvedValue(99);
+    mocks.updateMemoReport
+      .mockRejectedValueOnce(new Error('일시 저장 오류'))
+      .mockResolvedValueOnce(undefined);
+    renderClient();
+    const dialog = await openEditForm();
+
+    const replacement = new File(['next'], 'replacement.pdf', { type: 'application/pdf' });
+    fireEvent.change(dialog.getByLabelText('파일 첨부 선택'), { target: { files: [replacement] } });
+    fireEvent.click(dialog.getByRole('button', { name: '저장' }));
+
+    await waitFor(() => expect(mocks.uploadFiles).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mocks.updateMemoReport).toHaveBeenCalledTimes(1));
+    expect(mocks.uploadFiles.mock.calls[0][0]).toEqual([replacement]);
+    expect(mocks.updateMemoReport.mock.calls[0][1]).toMatchObject({ atchFileSn: 99 });
+
+    fireEvent.click(dialog.getByRole('button', { name: '저장' }));
+    await waitFor(() => expect(mocks.updateMemoReport).toHaveBeenCalledTimes(2));
+    expect(mocks.uploadFiles).toHaveBeenCalledTimes(1);
+    expect(mocks.updateMemoReport.mock.calls[1][1]).toMatchObject({ atchFileSn: 99 });
+  });
+
+  it('FILE_UPLOAD 권한이 없어도 기존 첨부를 유지하거나 해제해 저장할 수 있다', async () => {
+    mocks.user = { role: 'ROLE_USER', permissions: [], authorizationVersion: 'v1' };
+    renderClient();
+    const dialog = await openEditForm();
+
+    expect(dialog.queryByLabelText('파일 첨부 선택')).toBeNull();
+    fireEvent.click(dialog.getByRole('button', { name: '저장' }));
+
+    await waitFor(() => expect(mocks.updateMemoReport).toHaveBeenCalledTimes(1));
+    expect(mocks.updateMemoReport.mock.calls[0][1]).toMatchObject({ atchFileSn: 77 });
+    expect(mocks.uploadFiles).not.toHaveBeenCalled();
+
+    fireEvent.click(await screen.findByRole('button', { name: '수정' }));
+    fireEvent.click(dialog.getByRole('button', { name: '기존 첨부 해제' }));
+    expect(dialog.getByText('저장 시 기존 첨부파일을 해제합니다.')).toBeVisible();
+    fireEvent.click(dialog.getByRole('button', { name: '저장' }));
+
+    await waitFor(() => expect(mocks.updateMemoReport).toHaveBeenCalledTimes(2));
+    expect(mocks.updateMemoReport.mock.calls[1][1].atchFileSn).toBeUndefined();
+    expect(mocks.uploadFiles).not.toHaveBeenCalled();
+  });
+
+  it('수정 첨부 업로드가 실패하거나 업로드 중 첨부 목록이 바뀌면 updateMemoReport 를 호출하지 않는다', async () => {
+    mocks.uploadFiles.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { data: { message: '허용하지 않는 수정 첨부입니다.' } },
+    });
+    renderClient();
+    const dialog = await openEditForm();
+
+    const first = new File(['v1'], 'v1.pdf', { type: 'application/pdf' });
+    fireEvent.change(dialog.getByLabelText('파일 첨부 선택'), { target: { files: [first] } });
+    fireEvent.click(dialog.getByRole('button', { name: '저장' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('허용하지 않는 수정 첨부입니다.', 'error'));
+    expect(mocks.updateMemoReport).not.toHaveBeenCalled();
+
+    let resolveUpload!: (sn: number) => void;
+    mocks.uploadFiles.mockImplementationOnce(() => {
+      fireEvent.click(dialog.getByRole('button', { name: 'v1.pdf 첨부 파일 삭제' }));
+      return new Promise<number>((resolve) => {
+        resolveUpload = resolve;
+      });
+    });
+
+    fireEvent.click(dialog.getByRole('button', { name: '저장' }));
+    await waitFor(() => expect(mocks.uploadFiles).toHaveBeenCalledTimes(2));
+    await act(async () => {
+      resolveUpload(105);
+    });
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      '첨부파일 목록이 바뀌어 수정을 중단했습니다. 첨부파일을 확인한 뒤 다시 저장해 주세요.',
+      'error',
+    ));
+    expect(mocks.updateMemoReport).not.toHaveBeenCalled();
+  });
+});
+
 /**
  * 보고 작성 — 없던 발신 경로.
  *

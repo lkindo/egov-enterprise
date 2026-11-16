@@ -15,6 +15,10 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.util.ReflectionTestUtils;
 import jakarta.servlet.http.Cookie;
 
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.spec.ECGenParameterSpec;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 
@@ -84,13 +88,21 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("[보안] prod 여도 새로 만든 시크릿이면 기동한다 — 값 기준 판정이지 프로파일 기준이 아니다")
-    void init_allowsFreshSecretInProd() {
+    @DisplayName("[보안] prod 여도 새로 만든 시크릿과 EC 서명키면 기동한다 — 값 기준 판정이지 프로파일 기준이 아니다")
+    void init_allowsFreshSecretInProd() throws Exception {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
+        kpg.initialize(new ECGenParameterSpec("secp256r1"));
+        KeyPair kp = kpg.generateKeyPair();
+        String pkcs8 = Base64.getEncoder().encodeToString(kp.getPrivate().getEncoded());
+
         JwtTokenProvider provider = new JwtTokenProvider();
         ReflectionTestUtils.setField(provider, "secretKey",
                 "a-freshly-generated-secret-that-is-long-enough-for-hs512-hmac-key-material-0123456789");
+        ReflectionTestUtils.setField(provider, "signingActiveKid", "prod-es256-1");
+        ReflectionTestUtils.setField(provider, "signingKeysJson", "{\"prod-es256-1\":\"" + pkcs8 + "\"}");
         ReflectionTestUtils.setField(provider, "activeProfiles", "prod");
         ReflectionTestUtils.invokeMethod(provider, "init");
+        assertThat(provider.getActiveKidForTest()).isEqualTo("prod-es256-1");
     }
 
     /**
@@ -128,7 +140,7 @@ class JwtTokenProviderTest {
         String token = jwtTokenProvider.createAccessToken("testuser", "ROLE_USER");
 
         io.jsonwebtoken.Claims claims = Jwts.parser()
-                .verifyWith(jwtTokenProvider.getKeyForTest())
+                .verifyWith(jwtTokenProvider.getActiveVerifyKeyForTest())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
@@ -559,14 +571,23 @@ class JwtTokenProviderTest {
     //   "호출부는 테스트했는데 구현은 아무도 안 봤다" 는 이 저장소에서 반복된 형태다.
     // ─────────────────────────────────────────────────────────────────────────
 
-    /** 다른 시크릿으로 초기화된 별도 제공자 — 서명 비대칭 상황을 만든다. */
+    /** 다른 시크릿과 다른 P-256 서명키로 초기화된 별도 제공자 — 서명 비대칭 상황을 만든다. */
     private JwtTokenProvider providerWithOtherSecret() {
-        JwtTokenProvider other = new JwtTokenProvider();
-        ReflectionTestUtils.setField(other, "secretKey",
-                "anotherSecretKeyanotherSecretKeyanotherSecretKeyXX");
-        ReflectionTestUtils.setField(other, "cookieSecure", false);
-        ReflectionTestUtils.invokeMethod(other, "init");
-        return other;
+        try {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
+            kpg.initialize(new ECGenParameterSpec("secp256r1"));
+            String otherPkcs8 = Base64.getEncoder().encodeToString(kpg.generateKeyPair().getPrivate().getEncoded());
+            JwtTokenProvider other = new JwtTokenProvider();
+            ReflectionTestUtils.setField(other, "secretKey",
+                    "anotherSecretKeyanotherSecretKeyanotherSecretKeyXX");
+            ReflectionTestUtils.setField(other, "signingActiveKid", "dev-es256-1");
+            ReflectionTestUtils.setField(other, "signingKeysJson", "{\"dev-es256-1\":\"" + otherPkcs8 + "\"}");
+            ReflectionTestUtils.setField(other, "cookieSecure", false);
+            ReflectionTestUtils.invokeMethod(other, "init");
+            return other;
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Nested
@@ -743,6 +764,176 @@ class JwtTokenProviderTest {
             assertEquals(64, full.length());
             assertTrue(full.matches("[0-9a-f]{64}"));
             assertTrue(full.startsWith(fp), "지문은 전체 해시의 앞 8자여야 한다");
+        }
+    }
+
+    @Nested
+    @DisplayName("ADR-0060 비대칭 ES256 서명·키링·전환 검증")
+    class AsymmetricEs256Signing {
+
+        private KeyPair generateEcKeyPair(String curve) throws Exception {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
+            kpg.initialize(new ECGenParameterSpec(curve));
+            return kpg.generateKeyPair();
+        }
+
+        private JwtTokenProvider providerWith(String activeKid, String keysJson, boolean acceptLegacyHmac, String profiles) {
+            JwtTokenProvider p = new JwtTokenProvider();
+            ReflectionTestUtils.setField(p, "secretKey", secretKey);
+            ReflectionTestUtils.setField(p, "signingActiveKid", activeKid);
+            ReflectionTestUtils.setField(p, "signingKeysJson", keysJson);
+            ReflectionTestUtils.setField(p, "acceptLegacyHmac", acceptLegacyHmac);
+            ReflectionTestUtils.setField(p, "activeProfiles", profiles);
+            ReflectionTestUtils.invokeMethod(p, "init");
+            return p;
+        }
+
+        @Test
+        @DisplayName("dev 기본 키링은 ES256·dev-es256-1 kid 로 발급하고 Node 와 동일한 SPKI 지문을 계산한다")
+        void issuesEs256WithKidAndExpectedFingerprint() {
+            assertEquals("dev-es256-1", jwtTokenProvider.getActiveKidForTest());
+            assertEquals("3989a5f1", jwtTokenProvider.getVerifyKeyFingerprints().get("dev-es256-1"));
+
+            String access = jwtTokenProvider.createAccessToken("alice", "ROLE_USER");
+            String refresh = jwtTokenProvider.createRefreshToken("alice");
+
+            var parsedAccess = Jwts.parser()
+                    .verifyWith(jwtTokenProvider.getActiveVerifyKeyForTest())
+                    .build()
+                    .parseSignedClaims(access);
+            assertEquals("ES256", parsedAccess.getHeader().getAlgorithm());
+            assertEquals("dev-es256-1", parsedAccess.getHeader().getKeyId());
+
+            assertTrue(jwtTokenProvider.validateToken(access));
+            assertTrue(jwtTokenProvider.validateRefreshToken(refresh));
+            assertEquals("alice", jwtTokenProvider.getUserId(access));
+        }
+
+        @Test
+        @DisplayName("키 회전 중에는 이전 kid 키가 키링에 남아 있으면 검증되고 제거하면 거부된다")
+        void keyRotationAcceptsPreviousKidWhilePresentAndRejectsAfterRemoval() throws Exception {
+            KeyPair oldKp = generateEcKeyPair("secp256r1");
+            KeyPair newKp = generateEcKeyPair("secp256r1");
+            String oldB64 = Base64.getEncoder().encodeToString(oldKp.getPrivate().getEncoded());
+            String newB64 = Base64.getEncoder().encodeToString(newKp.getPrivate().getEncoded());
+
+            JwtTokenProvider oldIssuer = providerWith("k1", "{\"k1\":\"" + oldB64 + "\"}", false, "");
+            String oldToken = oldIssuer.createAccessToken("bob", "ROLE_USER");
+
+            JwtTokenProvider rotated = providerWith(
+                    "k2", "{\"k1\":\"" + oldB64 + "\",\"k2\":\"" + newB64 + "\"}", false, "");
+            assertTrue(rotated.validateToken(oldToken));
+            String newToken = rotated.createAccessToken("bob", "ROLE_USER");
+            assertTrue(rotated.validateToken(newToken));
+
+            JwtTokenProvider trimmed = providerWith("k2", "{\"k2\":\"" + newB64 + "\"}", false, "");
+            assertFalse(trimmed.validateToken(oldToken));
+            assertTrue(trimmed.validateToken(newToken));
+        }
+
+        @Test
+        @DisplayName("ES256 kid 누락·미등록 kid·alg=none·RS256 토큰은 모두 거부한다")
+        void rejectsUnknownKidMissingKidAndDisallowedAlgorithms() throws Exception {
+            String missingKid = Jwts.builder()
+                    .subject("alice")
+                    .claim("typ", "access")
+                    .issuedAt(new Date())
+                    .expiration(new Date(System.currentTimeMillis() + 60_000))
+                    .compact();
+            assertFalse(jwtTokenProvider.validateToken(missingKid));
+
+            KeyPair other = generateEcKeyPair("secp256r1");
+            String unknownKidToken = Jwts.builder()
+                    .header().keyId("unknown-kid").and()
+                    .subject("alice")
+                    .claim("typ", "access")
+                    .issuedAt(new Date())
+                    .expiration(new Date(System.currentTimeMillis() + 60_000))
+                    .signWith(other.getPrivate(), Jwts.SIG.ES256)
+                    .compact();
+            assertFalse(jwtTokenProvider.validateToken(unknownKidToken));
+
+            String esNoKid = Jwts.builder()
+                    .subject("alice")
+                    .claim("typ", "access")
+                    .issuedAt(new Date())
+                    .expiration(new Date(System.currentTimeMillis() + 60_000))
+                    .signWith(other.getPrivate(), Jwts.SIG.ES256)
+                    .compact();
+            assertFalse(jwtTokenProvider.validateToken(esNoKid));
+
+            KeyPairGenerator rsaGen = KeyPairGenerator.getInstance("RSA");
+            rsaGen.initialize(2048);
+            KeyPair rsa = rsaGen.generateKeyPair();
+            String rs256Token = Jwts.builder()
+                    .header().keyId("dev-es256-1").and()
+                    .subject("alice")
+                    .claim("typ", "access")
+                    .issuedAt(new Date())
+                    .expiration(new Date(System.currentTimeMillis() + 60_000))
+                    .signWith(rsa.getPrivate(), Jwts.SIG.RS256)
+                    .compact();
+            assertFalse(jwtTokenProvider.validateToken(rs256Token));
+        }
+
+        @Test
+        @DisplayName("1차 배포 전환 동안은 legacy HMAC 토큰을 수용하고, acceptLegacyHmac=false(2차 배포) 뒤에는 거부한다")
+        void acceptLegacyHmacControlsTransitionalVerification() {
+            String hmac256 = Jwts.builder()
+                    .subject("legacy-user")
+                    .claim("typ", "access")
+                    .issuedAt(new Date())
+                    .expiration(new Date(System.currentTimeMillis() + 60_000))
+                    .signWith(Keys.hmacShaKeyFor(secretKey.getBytes()), Jwts.SIG.HS256)
+                    .compact();
+            assertTrue(jwtTokenProvider.validateToken(hmac256));
+
+            JwtTokenProvider secondDeploy = new JwtTokenProvider();
+            ReflectionTestUtils.setField(secondDeploy, "secretKey", "");
+            ReflectionTestUtils.setField(secondDeploy, "acceptLegacyHmac", false);
+            ReflectionTestUtils.invokeMethod(secondDeploy, "init");
+
+            assertFalse(secondDeploy.validateToken(hmac256));
+            String es256 = secondDeploy.createAccessToken("es-user", "ROLE_USER");
+            assertTrue(secondDeploy.validateToken(es256));
+        }
+
+        @Test
+        @DisplayName("키링 반쪽 설정·prod 누락·prod 커밋 dev 서명키·비P-256 키는 기동을 거부한다")
+        void rejectsInvalidOrCommittedDevAsymmetricKeyring() throws Exception {
+            KeyPair ecKp = generateEcKeyPair("secp256r1");
+            String ecB64 = Base64.getEncoder().encodeToString(ecKp.getPrivate().getEncoded());
+
+            assertThrows(IllegalStateException.class,
+                    () -> providerWith("only-kid", "", true, ""));
+            assertThrows(IllegalStateException.class,
+                    () -> providerWith("", "{\"only-kid\":\"" + ecB64 + "\"}", true, ""));
+
+            JwtTokenProvider prodNoEc = new JwtTokenProvider();
+            ReflectionTestUtils.setField(prodNoEc, "secretKey",
+                    "a-freshly-generated-secret-that-is-long-enough-for-hs512-hmac-key-material-0123456789");
+            ReflectionTestUtils.setField(prodNoEc, "activeProfiles", "prod");
+            assertThrows(IllegalStateException.class, () -> ReflectionTestUtils.invokeMethod(prodNoEc, "init"));
+
+            String devPkcs8 = (String) ReflectionTestUtils.getField(JwtTokenProvider.class, "DEV_ES256_PKCS8_B64");
+            JwtTokenProvider prodDevEc = new JwtTokenProvider();
+            ReflectionTestUtils.setField(prodDevEc, "secretKey",
+                    "a-freshly-generated-secret-that-is-long-enough-for-hs512-hmac-key-material-0123456789");
+            ReflectionTestUtils.setField(prodDevEc, "signingActiveKid", "dev-es256-1");
+            ReflectionTestUtils.setField(prodDevEc, "signingKeysJson", "{\"dev-es256-1\":\"" + devPkcs8 + "\"}");
+            ReflectionTestUtils.setField(prodDevEc, "activeProfiles", "prod");
+            assertThrows(IllegalStateException.class, () -> ReflectionTestUtils.invokeMethod(prodDevEc, "init"));
+
+            KeyPair p384 = generateEcKeyPair("secp384r1");
+            String p384B64 = Base64.getEncoder().encodeToString(p384.getPrivate().getEncoded());
+            assertThrows(IllegalStateException.class,
+                    () -> providerWith("p384", "{\"p384\":\"" + p384B64 + "\"}", true, ""));
+            assertThrows(IllegalStateException.class,
+                    () -> providerWith("bad", "not-json", true, ""));
+            assertThrows(IllegalStateException.class,
+                    () -> providerWith("missing", "{\"other\":\"" + ecB64 + "\"}", true, ""));
+            assertThrows(IllegalStateException.class,
+                    () -> providerWith("badb64", "{\"badb64\":\"not-valid-base64!!!\"}", true, ""));
         }
     }
 }

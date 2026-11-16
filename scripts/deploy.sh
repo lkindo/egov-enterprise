@@ -26,6 +26,10 @@ if ! command -v jq >/dev/null 2>&1; then
     echo "ERROR: release manifest 검증에는 jq가 필요합니다." >&2
     exit 1
 fi
+if ! command -v openssl >/dev/null 2>&1; then
+    echo "ERROR: JWT 비대칭 키쌍 검증에는 openssl이 필요합니다." >&2
+    exit 1
+fi
 RELEASE_MANIFEST="$1"
 if ! MANIFEST_VALUES=$(jq -ers '
     if length != 1 then error("Invalid complete release manifest.") else .[0] end
@@ -58,7 +62,7 @@ MISSING=""
 # [W1-13 정합] MAIL_HOST 는 docker-compose.prod.yml 이 `${MAIL_HOST:?...}` 로 이미 하드 차단한다.
 #   이 목록에서 빠져 있으면 사전 검증을 통과한 뒤 `docker compose up` 단계에서 죽어,
 #   운영자가 받는 안내가 갈린다. 차단 지점을 여기로 앞당겨 메시지를 한 곳으로 모은다.
-for v in JWT_SECRET ALGORITHM_KEY DB_URL DB_USERNAME DB_PASSWORD ADMIN_INITIAL_PASSWORD MAIL_HOST; do
+for v in JWT_SECRET JWT_SIGNING_ACTIVE_KID JWT_SIGNING_KEYS_JSON JWT_VERIFY_KEYS_JSON ALGORITHM_KEY DB_URL DB_USERNAME DB_PASSWORD ADMIN_INITIAL_PASSWORD MAIL_HOST; do
     eval "val=\${$v:-}"
     if [ -z "$val" ]; then
         MISSING="$MISSING $v"
@@ -98,6 +102,80 @@ case "$MFA_REQUIRE_PROTECTED_EFFECTIVE" in
         exit 1
         ;;
 esac
+
+if [ -n "${RRNO_ACTIVE_KEY_ID:-}" ] || [ -n "${RRNO_KEYS_JSON:-}" ]; then
+    for v in RRNO_ACTIVE_KEY_ID RRNO_KEYS_JSON; do
+        eval "val=\${$v:-}"
+        if [ -z "$val" ]; then
+            echo "ERROR: RRNO_ACTIVE_KEY_ID와 RRNO_KEYS_JSON은 함께 설정해야 합니다(누락: $v)." >&2
+            exit 1
+        fi
+    done
+    if ! printf '%s' "$RRNO_KEYS_JSON" | jq -e --arg active "$RRNO_ACTIVE_KEY_ID" '
+        ($active | test("\\A[A-Za-z0-9_-]{1,32}\\z"))
+        and (type == "object")
+        and (length >= 1 and length <= 16)
+        and has($active)
+        and (to_entries | all(
+            (.key | test("\\A[A-Za-z0-9_-]{1,32}\\z"))
+            and (.value | type == "string" and length == 44 and test("\\A[A-Za-z0-9+/]{42}[AEIMQUYcgkosw048]=\\z"))
+        ))
+    ' >/dev/null 2>&1; then
+        echo "ERROR: RRNO 키링 설정(RRNO_ACTIVE_KEY_ID/RRNO_KEYS_JSON)이 올바르지 않습니다. keyId([A-Za-z0-9_-]{1,32}, 최대 16개)와 32바이트 표준 Base64(44자) 및 활성 키 포함 여부를 확인해 주세요." >&2
+        exit 1
+    fi
+fi
+
+# [ADR-0060 1차 배포] ES256 서명 개인키 키링(API)과 공개키(Next) 정합성 및 개발용 키 차단 사전 검증
+if ! printf '%s' "$JWT_SIGNING_KEYS_JSON" | jq -e --arg kid "$JWT_SIGNING_ACTIVE_KID" '
+    ($kid | test("\\A[A-Za-z0-9._-]{1,64}\\z"))
+    and ($kid != "dev-es256-1")
+    and (type == "object")
+    and (length >= 1 and length <= 16)
+    and has($kid)
+    and (to_entries | all(
+        (.key | test("\\A[A-Za-z0-9._-]{1,64}\\z"))
+        and (.value | type == "string" and (gsub("\\s+"; "") | (length >= 4 and (length % 4) == 0 and test("\\A[A-Za-z0-9+/]+={0,2}\\z"))))
+    ))
+' >/dev/null 2>&1; then
+    echo "ERROR: JWT 서명 키링(JWT_SIGNING_ACTIVE_KID/JWT_SIGNING_KEYS_JSON)이 올바르지 않습니다. 운영 키를 생성해 주입해 주세요." >&2
+    exit 1
+fi
+
+DEV_JWT_VERIFY_SPKI_B64="MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFCkLmpfLgQUqDWWzzBAdV7oKO7Hvtltivk4PlGoMa+dn+6myuWj6EcyRdFFvm0CgWhIiqpujMY7lBU5LmpKGsw=="
+if ! printf '%s' "$JWT_VERIFY_KEYS_JSON" | jq -e --arg kid "$JWT_SIGNING_ACTIVE_KID" --arg devPub "$DEV_JWT_VERIFY_SPKI_B64" '
+    (type == "object")
+    and (length >= 1 and length <= 16)
+    and has($kid)
+    and (to_entries | all(
+        (.key | test("\\A[A-Za-z0-9._-]{1,64}\\z"))
+        and (.key != "dev-es256-1")
+        and (.value | type == "string" and (gsub("\\s+"; "") | (length >= 4 and (length % 4) == 0 and test("\\A[A-Za-z0-9+/]+={0,2}\\z") and . != $devPub)))
+    ))
+' >/dev/null 2>&1; then
+    echo "ERROR: JWT 검증 공개키(JWT_VERIFY_KEYS_JSON)가 활성 서명 kid를 포함하지 않거나 개발용 공개키를 사용했습니다." >&2
+    exit 1
+fi
+
+while IFS= read -r signing_kid; do
+    [ -n "$signing_kid" ] || continue
+    DERIVED_SPKI_B64=$(printf '%s' "$JWT_SIGNING_KEYS_JSON" \
+        | jq -r --arg k "$signing_kid" '.[$k]' \
+        | tr -d '[:space:]' \
+        | (base64 -d 2>/dev/null || base64 --decode 2>/dev/null || base64 -D 2>/dev/null) \
+        | openssl pkey -inform DER -pubout -outform DER 2>/dev/null \
+        | base64 \
+        | tr -d '\r\n' || true)
+    if [ -z "$DERIVED_SPKI_B64" ] || [ "$DERIVED_SPKI_B64" = "$DEV_JWT_VERIFY_SPKI_B64" ]; then
+        echo "ERROR: JWT 서명 키링(kid=$signing_kid)이 올바른 운영 PKCS#8 개인키가 아닙니다." >&2
+        exit 1
+    fi
+    EXPECTED_SPKI_B64=$(printf '%s' "$JWT_VERIFY_KEYS_JSON" | jq -r --arg k "$signing_kid" '.[$k] // empty' | tr -d '[:space:]')
+    if [ -n "$EXPECTED_SPKI_B64" ] && [ "$DERIVED_SPKI_B64" != "$EXPECTED_SPKI_B64" ]; then
+        echo "ERROR: JWT 서명 개인키와 검증 공개키(kid=$signing_kid)가 한 키쌍이 아닙니다." >&2
+        exit 1
+    fi
+done < <(printf '%s' "$JWT_SIGNING_KEYS_JSON" | jq -r 'keys[]')
 
 # 현재 공식 compose 형상은 api.depends_on.db와 함께 번들 PostgreSQL을 항상 기동한다.
 # 외부 관리형 DB URL을 받아 놓고 번들 DB도 함께 올리면 백업/복원 대상과 런타임 DB가 갈라지므로

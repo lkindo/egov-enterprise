@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { backendEnvironment, isLocalDatabaseUrl } from './dev.mjs';
+import { backendEnvironment, frontendEnvironment, isLocalDatabaseUrl } from './dev.mjs';
 
 const REMOTE = 'jdbc:postgresql://203.0.113.10:5432/egovdb?currentSchema=public';
 
@@ -68,4 +68,19 @@ test('옵트인 값은 정확히 migrate 일 때만 받는다', () => {
     const result = backendEnvironment({ DB_URL: REMOTE, DEV_REMOTE_FLYWAY: value });
     assert.equal(result.env.SPRING_FLYWAY_ENABLED, 'false', value);
   }
+});
+
+test('프런트엔드 환경은 JWT 서명 개인키 키링을 상속하지 않고 검증 공개키만 유지한다', () => {
+  const source = {
+    JWT_SECRET: 's',
+    JWT_VERIFY_KEYS_JSON: '{"k1":"pub"}',
+    JWT_SIGNING_ACTIVE_KID: 'k1',
+    JWT_SIGNING_KEYS_JSON: '{"k1":"priv"}',
+  };
+  const nextEnv = frontendEnvironment(source);
+  assert.equal(nextEnv.JWT_SIGNING_ACTIVE_KID, undefined);
+  assert.equal(nextEnv.JWT_SIGNING_KEYS_JSON, undefined);
+  assert.equal(nextEnv.JWT_VERIFY_KEYS_JSON, '{"k1":"pub"}');
+  assert.equal(nextEnv.JWT_SECRET, 's');
+  assert.equal(source.JWT_SIGNING_KEYS_JSON, '{"k1":"priv"}', '호출자 환경을 변형하지 않는다.');
 });

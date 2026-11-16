@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, generateKeyPairSync, randomBytes } from 'node:crypto';
 import { request as httpRequest } from 'node:http';
 import { lstatSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -82,7 +82,7 @@ function validateApplicationSmokeImages(images, source) {
       || image.Config.Labels[TREE_LABEL] !== source.sourceTreeSha256) throw failure('image source identity mismatch');
     const inherited = environment(image.Config.Env);
     if (Object.entries(inherited).some(([key, value]) => value &&
-      /^(?:SPRING_|DB_|JWT_SECRET$|ALGORITHM_KEY$|ADMIN_INITIAL_PASSWORD$|NODE_OPTIONS$|JAVA_TOOL_OPTIONS$|JDK_JAVA_OPTIONS$|_JAVA_OPTIONS$|LD_)/u.test(key))) {
+      /^(?:SPRING_|DB_|JWT_SECRET$|JWT_SIGNING_KEYS_JSON$|ALGORITHM_KEY$|ADMIN_INITIAL_PASSWORD$|NODE_OPTIONS$|JAVA_TOOL_OPTIONS$|JDK_JAVA_OPTIONS$|_JAVA_OPTIONS$|LD_)/u.test(key))) {
       throw failure('image contains startup configuration override');
     }
     if (inherited.JAVA_OPTS?.split(/\s+/u).some(option => !SAFE_JAVA_OPTION.test(option))) throw failure('image contains JVM startup override');
@@ -134,12 +134,16 @@ export function createReleaseSmokePlan(rendered, context, credentials) {
       service.environment = { ...service.environment,
         MFA_REQUIRE_PROTECTED: 'false',
         DB_URL: `jdbc:postgresql://db:5432/${context.database}`, DB_USERNAME: 'smoke', DB_PASSWORD: credentials.database,
-        JWT_SECRET: credentials.jwt, ALGORITHM_KEY: credentials.encryption, ADMIN_INITIAL_PASSWORD: credentials.admin,
+        JWT_SECRET: credentials.jwt,
+        JWT_SIGNING_ACTIVE_KID: credentials.jwtSigningActiveKid,
+        JWT_SIGNING_KEYS_JSON: credentials.jwtSigningKeysJson,
+        ALGORITHM_KEY: credentials.encryption, ADMIN_INITIAL_PASSWORD: credentials.admin,
         OLD_ALGORITHM_KEY: '', MAIL_HOST: '127.0.0.1', TRUSTED_PROXIES: `${context.frontendIp}/32`,
         CORS_ORIGIN_1: 'http://edge:8080' };
       service.volumes = [{ type: 'volume', source: 'attachment_storage', target: '/app/storage' }];
     } else if (name === 'frontend') {
       service.environment = { ...service.environment, JWT_SECRET: credentials.jwt,
+        JWT_VERIFY_KEYS_JSON: credentials.jwtVerifyKeysJson, ALLOW_DEV_JWT_VERIFY_KEYS: 'false',
         BACKEND_API_URL: BACKEND_URL, NEXT_PUBLIC_API_URL: BACKEND_URL };
       service.volumes = [];
     } else {
@@ -187,7 +191,9 @@ export function validateReleaseSmokePlan(plan, context, credentials) {
       if (env.SPRING_PROFILES_ACTIVE !== expectedProfile || env.SPRING_FLYWAY_LOCATIONS !== 'classpath:db/migration'
         || env.MFA_REQUIRE_PROTECTED !== 'false'
         || env.DB_URL !== `jdbc:postgresql://db:5432/${context.database}` || env.DB_USERNAME !== 'smoke' || env.DB_PASSWORD !== credentials.database
-        || env.JWT_SECRET !== credentials.jwt || env.ALGORITHM_KEY !== credentials.encryption || env.ADMIN_INITIAL_PASSWORD !== credentials.admin
+        || env.JWT_SECRET !== credentials.jwt || env.JWT_SIGNING_ACTIVE_KID !== credentials.jwtSigningActiveKid
+        || env.JWT_SIGNING_KEYS_JSON !== credentials.jwtSigningKeysJson || env.JWT_VERIFY_KEYS_JSON
+        || env.ALGORITHM_KEY !== credentials.encryption || env.ADMIN_INITIAL_PASSWORD !== credentials.admin
         || env.TRUSTED_PROXIES !== `${context.frontendIp}/32` || env.MAIL_HOST !== '127.0.0.1' || env.CORS_ORIGIN_1 !== 'http://edge:8080'
         || (env.JAVA_OPTS && env.JAVA_OPTS.split(/\s+/u).some(option => !SAFE_JAVA_OPTION.test(option)))
         || JSON.stringify(JSON.parse(env.SPRING_APPLICATION_JSON)) !== '{"management":{"health":{"mail":{"enabled":false}}}}'
@@ -199,7 +205,10 @@ export function validateReleaseSmokePlan(plan, context, credentials) {
       if (env.POSTGRES_DB !== context.database || env.POSTGRES_USER !== 'smoke' || env.POSTGRES_PASSWORD !== credentials.database
         || (service.volumes?.length ?? 0) || JSON.stringify(service.tmpfs) !== '["/var/lib/postgresql/data"]') throw failure('database is not disposable');
     } else if (name === 'frontend') {
-      if (env.JWT_SECRET !== credentials.jwt || env.BACKEND_API_URL !== BACKEND_URL || env.NEXT_PUBLIC_API_URL !== BACKEND_URL
+      if (env.JWT_SECRET !== credentials.jwt || env.JWT_VERIFY_KEYS_JSON !== credentials.jwtVerifyKeysJson
+        || env.ALLOW_DEV_JWT_VERIFY_KEYS !== 'false'
+        || env.JWT_SIGNING_ACTIVE_KID || env.JWT_SIGNING_KEYS_JSON
+        || env.BACKEND_API_URL !== BACKEND_URL || env.NEXT_PUBLIC_API_URL !== BACKEND_URL
         || env.TRUSTED_EDGE_PROXY !== 'true' || env.ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE || (service.volumes?.length ?? 0)
         || service.networks['egov-net'].ipv4_address !== context.frontendIp) throw failure('frontend trust boundary changed');
     } else if (JSON.stringify(service.volumes) !== JSON.stringify([{ type: 'bind', source: path.join(context.directory, 'config/edge/default.conf.template'),
@@ -630,8 +639,17 @@ export async function main(args = process.argv.slice(2)) {
   const parent = path.join(ROOT, '.agent/temp'); mkdirSync(parent, { recursive: true });
   const directory = mkdtempSync(path.join(parent, 'egov-release-smoke-'));
   if (!realpathSync(directory).startsWith(realpathSync(parent) + path.sep)) throw failure('unsafe temporary directory');
-  const credentials = { database: randomBytes(24).toString('hex'), jwt: randomBytes(64).toString('base64'),
-    encryption: randomBytes(24).toString('hex'), admin: `Aa1!${randomBytes(18).toString('hex')}` };
+  const smokeKeyPair = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+  const smokeKid = 'smoke-es256';
+  const credentials = {
+    database: randomBytes(24).toString('hex'),
+    jwt: randomBytes(64).toString('base64'),
+    jwtSigningActiveKid: smokeKid,
+    jwtSigningKeysJson: JSON.stringify({ [smokeKid]: smokeKeyPair.privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64') }),
+    jwtVerifyKeysJson: JSON.stringify({ [smokeKid]: smokeKeyPair.publicKey.export({ format: 'der', type: 'spki' }).toString('base64') }),
+    encryption: randomBytes(24).toString('hex'),
+    admin: `Aa1!${randomBytes(18).toString('hex')}`,
+  };
   const runId = randomBytes(12).toString('hex');
   const copySources = folder => {
     mkdirSync(path.join(folder, 'config/edge'), { recursive: true });
@@ -639,7 +657,11 @@ export async function main(args = process.argv.slice(2)) {
     privateWrite(path.join(folder, 'prod.yml'), prodSource);
     privateWrite(path.join(folder, 'config/edge/default.conf.template'), edgeSource);
     privateWrite(path.join(folder, 'owned.env'), Object.entries({ DB_URL: 'jdbc:postgresql://db:5432/unused', DB_USERNAME: 'smoke',
-      DB_PASSWORD: credentials.database, JWT_SECRET: credentials.jwt, ALGORITHM_KEY: credentials.encryption,
+      DB_PASSWORD: credentials.database, JWT_SECRET: credentials.jwt,
+      JWT_SIGNING_ACTIVE_KID: credentials.jwtSigningActiveKid,
+      JWT_SIGNING_KEYS_JSON: credentials.jwtSigningKeysJson,
+      JWT_VERIFY_KEYS_JSON: credentials.jwtVerifyKeysJson,
+      ALGORITHM_KEY: credentials.encryption,
       ADMIN_INITIAL_PASSWORD: credentials.admin, MAIL_HOST: '127.0.0.1', OLD_ALGORITHM_KEY: '' }).map(([key, value]) => `${key}=${value}`).join('\n'));
   };
   const networkSubnets = docker(['network', 'ls', '-q']).split(/\s+/u).filter(Boolean)

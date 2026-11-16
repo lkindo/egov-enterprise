@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawn, execFileSync } from 'node:child_process';
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, generateKeyPairSync, randomBytes, timingSafeEqual } from 'node:crypto';
 import { constants, fstatSync, lstatSync, realpathSync, mkdirSync, openSync, closeSync, readFileSync, writeFileSync, readdirSync, existsSync, unlinkSync } from 'node:fs';
 import { createServer } from 'node:http';
 import net from 'node:net';
@@ -70,6 +70,26 @@ export function closedEnvironment(source = process.env) {
 export function createIsolatedMfaEnvironment() {
   return { MFA_ACTIVE_KEY_ID: 'e2e', MFA_KEYS_JSON: JSON.stringify({ e2e: randomBytes(32).toString('base64') }),
     MFA_REQUIRE_PROTECTED: 'false' };
+}
+
+/** Fresh P-256 signing/verify keyring for isolated E2E: API signs with PKCS#8, frontend verifies with SPKI only. */
+export function createIsolatedJwtEnvironment() {
+  const kid = 'e2e-es256';
+  const { privateKey, publicKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+  const privateB64 = privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64');
+  const publicB64 = publicKey.export({ format: 'der', type: 'spki' }).toString('base64');
+  const jwtSecret = randomBytes(48).toString('hex');
+  return {
+    api: {
+      JWT_SECRET: jwtSecret,
+      JWT_SIGNING_ACTIVE_KID: kid,
+      JWT_SIGNING_KEYS_JSON: JSON.stringify({ [kid]: privateB64 }),
+    },
+    frontend: {
+      JWT_SECRET: jwtSecret,
+      JWT_VERIFY_KEYS_JSON: JSON.stringify({ [kid]: publicB64 }),
+    },
+  };
 }
 
 export function assertNoDotEnv(directory) {
@@ -489,11 +509,20 @@ export async function main(arguments_ = process.argv.slice(2)) {
   const stopListening = onTermination(abort);
   try {
     let jwtSecret;
+    let jwtVerifyKeysJson;
     let apiPort;
     const webPort = await freePort(ciCompose ? 3001 : 0);
     const webUrl = `http://127.0.0.1:${webPort}`;
     if (ciCompose) {
       const environment = { ...clean, COMPOSE_PROJECT_NAME: process.env.COMPOSE_PROJECT_NAME };
+      const rawVerifyKeys = process.env.JWT_VERIFY_KEYS_JSON;
+      if (!rawVerifyKeys) throw fail('CI compose E2E requires JWT_VERIFY_KEYS_JSON.');
+      let parsedVerify;
+      try { parsedVerify = JSON.parse(rawVerifyKeys); } catch { throw fail('CI compose JWT_VERIFY_KEYS_JSON is invalid JSON.'); }
+      if (!parsedVerify || typeof parsedVerify !== 'object' || Array.isArray(parsedVerify) || !Object.keys(parsedVerify).length) {
+        throw fail('CI compose JWT_VERIFY_KEYS_JSON must be a non-empty object.');
+      }
+      jwtVerifyKeysJson = rawVerifyKeys;
       const ids = service => docker(['ps', '-q', '--filter', `label=com.docker.compose.project=${environment.COMPOSE_PROJECT_NAME}`,
         '--filter', `label=com.docker.compose.service=${service}`]).trim().split(/\s+/).filter(Boolean);
       const databaseIds = ids('db'); const apiIds = ids('api');
@@ -549,11 +578,13 @@ export async function main(arguments_ = process.argv.slice(2)) {
           ...(rehearsal ? { NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'true', NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE' } : {}) };
       }
       apiPort = await freePort();
-      jwtSecret = randomBytes(48).toString('hex');
+      const isolatedJwt = createIsolatedJwtEnvironment();
+      jwtSecret = isolatedJwt.api.JWT_SECRET;
+      jwtVerifyKeysJson = isolatedJwt.frontend.JWT_VERIFY_KEYS_JSON;
       const apiEnvironment = { ...clean, SPRING_PROFILES_ACTIVE: 'e2e',
         ...createIsolatedMfaEnvironment(),
         ...databaseEnvironment,
-        SERVER_ADDRESS: '127.0.0.1', SERVER_PORT: String(apiPort), JWT_SECRET: jwtSecret,
+        SERVER_ADDRESS: '127.0.0.1', SERVER_PORT: String(apiPort), ...isolatedJwt.api,
         CORS_ALLOWED_ORIGINS: webUrl,
         JWT_ACCESS_TOKEN_VALIDITY_MS: '21600000', ALGORITHM_KEY: randomBytes(24).toString('hex'),
         FILE_UPLOAD_PATH: path.join(output, 'uploads'), NURI_LOG_RETENTION_ENABLED: 'false', NURI_ATTACHMENT_INTEGRITY_ENABLED: 'false' };
@@ -575,7 +606,8 @@ export async function main(arguments_ = process.argv.slice(2)) {
     const testAccountEnvironment = vendorRuntime ? { E2E_TEST_USER_PASSWORD: vendorRuntime.user.password } : {};
     const environment = { ...clean, NODE_ENV: 'production', NODE_OPTIONS: '--max-old-space-size=8192',
       NEXT_PUBLIC_API_URL: apiUrl, BACKEND_API_URL: `${apiUrl}/`, BACKEND_ACTUATOR_URL: `http://127.0.0.1:${apiPort}/actuator`,
-      NEXT_PUBLIC_WEB_URL: webUrl, JWT_SECRET: jwtSecret, NEXT_PUBLIC_APP_ENV: 'test', TRUSTED_EDGE_PROXY: '',
+      NEXT_PUBLIC_WEB_URL: webUrl, JWT_SECRET: jwtSecret, JWT_VERIFY_KEYS_JSON: jwtVerifyKeysJson,
+      NEXT_PUBLIC_APP_ENV: 'test', TRUSTED_EDGE_PROXY: '',
       ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE: 'true',
       E2E_ISOLATION_MANIFEST: manifestFile, NO_PROXY: '127.0.0.1,localhost' };
     const next = require.resolve('next/dist/bin/next');

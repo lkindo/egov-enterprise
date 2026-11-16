@@ -1,6 +1,12 @@
 package nuri.foundation.security.jwt;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Header;
+import io.jsonwebtoken.JwsHeader;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.security.InvalidKeyException;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,16 +19,46 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.json.JsonMapper;
 import javax.crypto.SecretKey;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.AlgorithmParameters;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECFieldFp;
+import java.security.spec.ECGenParameterSpec;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.ECPublicKeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 
 @Slf4j
 @Component
 public class JwtTokenProvider {
-    @Value("${jwt.secret}")
+    @Value("${jwt.secret:}")
     private String secretKey;
+
+    @Value("${jwt.signing.active-kid:}")
+    private String signingActiveKid;
+
+    @Value("${jwt.signing.keys-json:}")
+    private String signingKeysJson;
+
+    @Value("${jwt.accept-legacy-hmac:true}")
+    private boolean acceptLegacyHmac = true;
 
     @Value("${jwt.cookie.secure:false}")
     private boolean cookieSecure;
@@ -55,6 +91,10 @@ public class JwtTokenProvider {
     private long refreshTokenValidityInMilliseconds = 604800000L; // 7 days
 
     private SecretKey key;
+    private String activeSigningKid;
+    private ECPrivateKey activeSigningKey;
+    private Map<String, ECPublicKey> ecVerifyKeys = Map.of();
+    private Map<String, String> ecPublicKeyFingerprints = Map.of();
 
     /**
      * 활성 프로파일. 운영에서 <b>공개된 dev 시크릿</b>을 거부하기 위해서만 쓴다.
@@ -77,15 +117,21 @@ public class JwtTokenProvider {
     private static final String DEV_SECRET_SHA256 =
             "650ca76f50223962b2c5aff96509b5dbfe4e4f8d8ee48b41ce258f9ee3bafe91";
 
+    private static final String DEV_ES256_KID = "dev-es256-1";
+    /** ADR-0060: 로컬/개발 전용 ES256(P-256) 키쌍. prod 프로파일에서는 기동을 차단한다. */
+    private static final String DEV_ES256_PKCS8_B64 =
+            "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgTnpdEj1q4iQ2/WkcXWQKoNX1oKrCfYXvtd4zn0Fz8aShRANCAAQUKQual8uBBSoNZbPMEB1Xugo7se+2W2K+Tg+Uagxr52f7qbK5aPoRzJF0UW+bQKBaEiKqm6MxjuUFTkuakoaz";
+    private static final String DEV_ES256_SPKI_SHA256 =
+            "3989a5f13aecbbfa7f7d7156774046dcb86d27b4815459e6555c207e421b35d4";
+    private static final int MAX_SIGNING_KEYS = 16;
+    private static final String KID_PATTERN = "^[A-Za-z0-9._-]{1,64}$";
+
     @org.springframework.beans.factory.annotation.Autowired
     @org.springframework.context.annotation.Lazy
     private UserDetailsService userDetailsService;
 
     @PostConstruct
     protected void init() {
-        if (secretKey == null || secretKey.trim().isEmpty()) {
-            throw new IllegalStateException("JWT Secret is not configured.");
-        }
         // [2026-07-28] 수명이 0 이하면 토큰이 발급 즉시 만료돼 "로그인은 되는데 곧바로 /login" 이라는
         //   원인을 알 수 없는 증상이 된다. 조용히 통과시키지 않고 기동 시점에 즉시 실패시킨다.
         if (accessTokenValidityInMilliseconds <= 0 || refreshTokenValidityInMilliseconds <= 0) {
@@ -93,9 +139,185 @@ public class JwtTokenProvider {
                     + accessTokenValidityInMilliseconds + "ms, refresh="
                     + refreshTokenValidityInMilliseconds + "ms)");
         }
-        rejectCommittedDevSecretInProduction();
-        this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
-        log.info("JWT secret fingerprint = {} (sha256[:8], 값 아님)", secretFingerprint());
+        if (acceptLegacyHmac) {
+            if (secretKey == null || secretKey.trim().isEmpty()) {
+                throw new IllegalStateException("JWT Secret is not configured.");
+            }
+            rejectCommittedDevSecretInProduction();
+            this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
+            log.info("JWT secret fingerprint = {} (sha256[:8], 값 아님)", secretFingerprint());
+        } else {
+            this.key = null;
+        }
+        configureAsymmetricKeyring();
+        log.info("JWT ES256 activeKid={}, verifyKeyFingerprints={} (spki sha256[:8], 값 아님), acceptLegacyHmac={}",
+                activeSigningKid, ecPublicKeyFingerprints, acceptLegacyHmac);
+    }
+
+    private boolean isProdProfile() {
+        return activeProfiles != null
+                && Arrays.stream(activeProfiles.split(","))
+                        .map(String::trim)
+                        .anyMatch("prod"::equalsIgnoreCase);
+    }
+
+    private void configureAsymmetricKeyring() {
+        boolean noKid = signingActiveKid == null || signingActiveKid.isBlank();
+        boolean noKeys = signingKeysJson == null || signingKeysJson.isBlank();
+        if (noKid != noKeys) {
+            throw new IllegalStateException(
+                    "JWT signing active-kid and keys-json must both be set or both omitted");
+        }
+        boolean prod = isProdProfile();
+        String resolvedKid;
+        Map<String, String> encodedKeys;
+        if (noKid) {
+            if (prod) {
+                throw new IllegalStateException(
+                        "[SECURITY] 운영(prod) 프로파일에는 JWT_SIGNING_ACTIVE_KID 와 JWT_SIGNING_KEYS_JSON 을 설정해야 합니다.");
+            }
+            resolvedKid = DEV_ES256_KID;
+            encodedKeys = Map.of(DEV_ES256_KID, DEV_ES256_PKCS8_B64);
+        } else {
+            resolvedKid = signingActiveKid;
+            encodedKeys = parseSigningKeysJson(signingKeysJson);
+            if (!resolvedKid.matches(KID_PATTERN) || !encodedKeys.containsKey(resolvedKid)) {
+                throw new IllegalStateException("Invalid JWT signing keyring: active-kid missing or malformed");
+            }
+        }
+        ECParameterSpec p256Spec = canonicalP256Spec();
+        Map<String, ECPrivateKey> privMap = new LinkedHashMap<>();
+        Map<String, ECPublicKey> pubMap = new LinkedHashMap<>();
+        Map<String, String> fpMap = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : encodedKeys.entrySet()) {
+            String kid = entry.getKey();
+            if (!kid.matches(KID_PATTERN) || entry.getValue() == null || entry.getValue().isBlank()) {
+                throw new IllegalStateException("Invalid JWT signing key entry");
+            }
+            ECPrivateKey ecPriv = decodeP256PrivateKey(entry.getValue(), p256Spec);
+            ECPublicKey ecPub = deriveP256PublicKey(ecPriv, p256Spec);
+            String spkiHash = sha256Hex(ecPub.getEncoded());
+            String fp = spkiHash.substring(0, 8);
+            if (prod && DEV_ES256_SPKI_SHA256.equals(spkiHash)) {
+                throw new IllegalStateException(
+                        "[SECURITY] 운영(prod) 프로파일에 저장소에 커밋된 개발용 JWT 서명키를 사용할 수 없습니다. fingerprint=" + fp);
+            }
+            privMap.put(kid, ecPriv);
+            pubMap.put(kid, ecPub);
+            fpMap.put(kid, fp);
+        }
+        this.activeSigningKid = resolvedKid;
+        this.activeSigningKey = Objects.requireNonNull(privMap.get(resolvedKid));
+        this.ecVerifyKeys = Map.copyOf(pubMap);
+        this.ecPublicKeyFingerprints = Map.copyOf(fpMap);
+    }
+
+    private static Map<String, String> parseSigningKeysJson(String rawJson) {
+        try {
+            var node = JsonMapper.builder().build().readTree(rawJson);
+            if (!node.isObject() || node.size() < 1 || node.size() > MAX_SIGNING_KEYS) {
+                throw new IllegalStateException("Invalid JWT signing keyring JSON");
+            }
+            Map<String, String> keys = new LinkedHashMap<>();
+            for (var entry : node.properties()) {
+                if (!entry.getValue().isString()) {
+                    throw new IllegalStateException("Invalid JWT signing keyring value");
+                }
+                keys.put(entry.getKey(), entry.getValue().asString());
+            }
+            return keys;
+        } catch (RuntimeException ex) {
+            throw new IllegalStateException("Invalid JWT signing keyring JSON", ex);
+        }
+    }
+
+    private static ECParameterSpec canonicalP256Spec() {
+        try {
+            AlgorithmParameters params = AlgorithmParameters.getInstance("EC");
+            params.init(new ECGenParameterSpec("secp256r1"));
+            return params.getParameterSpec(ECParameterSpec.class);
+        } catch (Exception ex) {
+            throw new IllegalStateException("P-256 curve parameters unavailable", ex);
+        }
+    }
+
+    private static ECPrivateKey decodeP256PrivateKey(String pkcs8Base64, ECParameterSpec p256) {
+        byte[] der;
+        try {
+            der = Base64.getDecoder().decode(pkcs8Base64.trim());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalStateException("Invalid base64 in JWT signing key", ex);
+        }
+        try {
+            PrivateKey priv = KeyFactory.getInstance("EC").generatePrivate(new PKCS8EncodedKeySpec(der));
+            if (!(priv instanceof ECPrivateKey ecPriv)) {
+                throw new IllegalStateException("JWT signing key is not EC");
+            }
+            ECParameterSpec spec = ecPriv.getParams();
+            if (!(spec.getCurve().getField() instanceof ECFieldFp fp) || fp.getFieldSize() != 256
+                    || !p256.getOrder().equals(spec.getOrder())
+                    || !p256.getGenerator().equals(spec.getGenerator())
+                    || p256.getCofactor() != spec.getCofactor()) {
+                throw new IllegalStateException("JWT signing key must use NIST P-256");
+            }
+            BigInteger s = ecPriv.getS();
+            if (s.signum() <= 0 || s.compareTo(p256.getOrder()) >= 0) {
+                throw new IllegalStateException("JWT signing key scalar out of range");
+            }
+            return ecPriv;
+        } catch (IllegalStateException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new IllegalStateException("Invalid PKCS#8 EC private key for JWT signing", ex);
+        } finally {
+            Arrays.fill(der, (byte) 0);
+        }
+    }
+
+    private static ECPublicKey deriveP256PublicKey(ECPrivateKey ecPriv, ECParameterSpec p256) {
+        try {
+            BigInteger prime = ((ECFieldFp) p256.getCurve().getField()).getP();
+            BigInteger a = p256.getCurve().getA();
+            ECPoint w = ecMultiply(p256.getGenerator(), ecPriv.getS(), prime, a);
+            PublicKey pub = KeyFactory.getInstance("EC").generatePublic(new ECPublicKeySpec(w, p256));
+            return (ECPublicKey) pub;
+        } catch (Exception ex) {
+            throw new IllegalStateException("Unable to derive EC public key from private key", ex);
+        }
+    }
+
+    private static ECPoint ecMultiply(ECPoint g, BigInteger k, BigInteger p, BigInteger a) {
+        ECPoint result = ECPoint.POINT_INFINITY;
+        ECPoint addend = g;
+        for (int i = 0; i < k.bitLength(); i++) {
+            if (k.testBit(i)) {
+                result = ecAdd(result, addend, p, a);
+            }
+            addend = ecAdd(addend, addend, p, a);
+        }
+        return result;
+    }
+
+    private static ECPoint ecAdd(ECPoint p1, ECPoint p2, BigInteger p, BigInteger a) {
+        if (ECPoint.POINT_INFINITY.equals(p1)) return p2;
+        if (ECPoint.POINT_INFINITY.equals(p2)) return p1;
+        BigInteger x1 = p1.getAffineX();
+        BigInteger y1 = p1.getAffineY();
+        BigInteger x2 = p2.getAffineX();
+        BigInteger y2 = p2.getAffineY();
+        BigInteger lambda;
+        if (x1.equals(x2)) {
+            if (!y1.equals(y2) || y1.signum() == 0) {
+                return ECPoint.POINT_INFINITY;
+            }
+            lambda = x1.multiply(x1).multiply(BigInteger.valueOf(3)).add(a)
+                    .multiply(y1.shiftLeft(1).modInverse(p)).mod(p);
+        } else {
+            lambda = y2.subtract(y1).multiply(x2.subtract(x1).modInverse(p)).mod(p);
+        }
+        BigInteger x3 = lambda.multiply(lambda).subtract(x1).subtract(x2).mod(p);
+        BigInteger y3 = lambda.multiply(x1.subtract(x3)).subtract(y1).mod(p);
+        return new ECPoint(x3, y3);
     }
 
     /**
@@ -114,11 +336,7 @@ public class JwtTokenProvider {
      * (운영 배포가 프로파일 없이 뜨는 경로는 {@code ConfigSafetyLinterTest} 가 별도로 차단한다.)
      */
     private void rejectCommittedDevSecretInProduction() {
-        boolean isProd = activeProfiles != null
-                && java.util.Arrays.stream(activeProfiles.split(","))
-                        .map(String::trim)
-                        .anyMatch("prod"::equalsIgnoreCase);
-        if (!isProd) {
+        if (!isProdProfile()) {
             return;
         }
         if (DEV_SECRET_SHA256.equals(fullSecretHash())) {
@@ -132,17 +350,20 @@ public class JwtTokenProvider {
 
     /** 시크릿의 SHA-256 전체(16진). 비교 전용이며 로그에 남기지 않는다. */
     private String fullSecretHash() {
+        if (secretKey == null) return "";
+        return sha256Hex(secretKey.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static String sha256Hex(byte[] input) {
         try {
-            byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
-                    .digest(secretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(input);
             StringBuilder sb = new StringBuilder(digest.length * 2);
             for (byte b : digest) {
                 sb.append(String.format("%02x", b));
             }
             return sb.toString();
-        } catch (java.security.NoSuchAlgorithmException e) {
-            // SHA-256 은 JRE 필수 알고리즘이라 도달 불가. 도달했다면 검사를 통과시키지 않는다.
-            throw new IllegalStateException("SHA-256 을 사용할 수 없어 시크릿 안전성을 판정할 수 없습니다.", e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 을 사용할 수 없어 키 해시를 계산할 수 없습니다.", e);
         }
     }
 
@@ -155,17 +376,8 @@ public class JwtTokenProvider {
      * 그때 원인을 알려주는 신호가 어디에도 없어 오래 헤맸기에, 양쪽에 대조 가능한 지문을 남긴다.
      */
     private String secretFingerprint() {
-        try {
-            byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
-                    .digest(secretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < 4; i++) {
-                sb.append(String.format("%02x", digest[i]));
-            }
-            return sb.toString();
-        } catch (java.security.NoSuchAlgorithmException e) {
-            return "(지문 계산 실패)";
-        }
+        String full = fullSecretHash();
+        return full.length() >= 8 ? full.substring(0, 8) : "";
     }
 
     /**
@@ -194,6 +406,7 @@ public class JwtTokenProvider {
         Date now = new Date();
         Date validity = new Date(now.getTime() + accessTokenValidityInMilliseconds);
         return Jwts.builder()
+                .header().keyId(activeSigningKid).and()
                 .subject(userId)
                 .claim("role", role)
                 .claim(CLAIM_TOKEN_TYPE, TYPE_ACCESS)
@@ -202,7 +415,7 @@ public class JwtTokenProvider {
                 .claim(CLAIM_SESSION_CYCLE, sessionCycle)
                 .issuedAt(now)
                 .expiration(validity)
-                .signWith(key)
+                .signWith(activeSigningKey, Jwts.SIG.ES256)
                 .compact();
     }
 
@@ -243,6 +456,7 @@ public class JwtTokenProvider {
     public String createRefreshToken(@org.jspecify.annotations.NonNull String userId, Date expiresAt,
             String mfaVersion, java.time.Instant verifiedAt, Integer sessionCycle) {
         return Jwts.builder()
+                .header().keyId(activeSigningKid).and()
                 .subject(userId)
                 .claim(CLAIM_TOKEN_TYPE, TYPE_REFRESH)
                 .claim("mfa_v", mfaVersion)
@@ -250,12 +464,43 @@ public class JwtTokenProvider {
                 .claim(CLAIM_SESSION_CYCLE, sessionCycle)
                 .issuedAt(new Date())
                 .expiration(expiresAt)
-                .signWith(key)
+                .signWith(activeSigningKey, Jwts.SIG.ES256)
                 .compact();
     }
 
+    private Claims parseClaims(String token) {
+        return Jwts.parser()
+                .keyLocator(this::locateVerificationKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    private Key locateVerificationKey(Header header) {
+        if (!(header instanceof JwsHeader jwsHeader)) {
+            throw new UnsupportedJwtException("Signed JWS header is required");
+        }
+        String alg = jwsHeader.getAlgorithm();
+        if ("ES256".equals(alg)) {
+            String kid = jwsHeader.getKeyId();
+            if (kid == null || kid.isBlank()) {
+                throw new InvalidKeyException("Missing ES256 kid header");
+            }
+            ECPublicKey verifyKey = ecVerifyKeys.get(kid);
+            if (verifyKey == null) {
+                throw new InvalidKeyException("Unknown ES256 kid: " + kid);
+            }
+            return verifyKey;
+        }
+        if (acceptLegacyHmac && key != null
+                && ("HS256".equals(alg) || "HS384".equals(alg) || "HS512".equals(alg))) {
+            return key;
+        }
+        throw new UnsupportedJwtException("Unsupported JWT algorithm: " + alg);
+    }
+
     public Authentication getAuthentication(String token) {
-        var claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+        var claims = parseClaims(token);
         UserDetails userDetails = userDetailsService.loadUserByUsername(
                 Objects.requireNonNull(claims.getSubject(), "Subject in JWT token cannot be null"));
         new org.springframework.security.authentication.AccountStatusUserDetailsChecker().check(userDetails);
@@ -271,7 +516,7 @@ public class JwtTokenProvider {
 
     /** 토큰이 담은 세션차수(V2_153). 클레임이 없는 토큰(이전 발급분)은 0 이다. */
     public int getSessionCycle(String token) {
-        return sessionCycle(Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload());
+        return sessionCycle(parseClaims(token));
     }
 
     private static int sessionCycle(io.jsonwebtoken.Claims claims) {
@@ -293,7 +538,7 @@ public class JwtTokenProvider {
     }
 
     public nuri.foundation.security.mfa.MfaSessionEvidence getMfaEvidence(String token) {
-        return mfaEvidence(Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload());
+        return mfaEvidence(parseClaims(token));
     }
 
     private static nuri.foundation.security.mfa.MfaSessionEvidence mfaEvidence(io.jsonwebtoken.Claims claims) {
@@ -364,12 +609,7 @@ public class JwtTokenProvider {
     }
 
     public String getUserId(String token) {
-        return Objects.requireNonNull(Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getSubject(), "Subject in JWT token cannot be null");
+        return Objects.requireNonNull(parseClaims(token).getSubject(), "Subject in JWT token cannot be null");
     }
 
     public String resolveToken(HttpServletRequest request) {
@@ -394,7 +634,7 @@ public class JwtTokenProvider {
      */
     public boolean validateToken(String token) {
         try {
-            var claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+            var claims = parseClaims(token);
             if (TYPE_REFRESH.equals(claims.get(CLAIM_TOKEN_TYPE, String.class))) {
                 log.warn(">>> [JWT] 리프레시 토큰이 액세스 토큰 자리에 제시되었습니다 — 거부합니다.");
                 return false;
@@ -412,6 +652,8 @@ public class JwtTokenProvider {
             log.debug(">>> [JWT] Expired token: {}", e.getMessage());
         } catch (io.jsonwebtoken.MalformedJwtException e) {
             log.warn(">>> [JWT] Malformed token: {}", e.getMessage());
+        } catch (JwtException e) {
+            log.warn(">>> [JWT] Rejected token: {}", e.getMessage());
         } catch (Exception e) {
             // 분류되지 않은 실패만 ERROR 로 남긴다 — 여기 쌓이면 실제로 확인할 가치가 있다.
             log.error(">>> [JWT] Validation failed: {} - {}", e.getClass().getSimpleName(), e.getMessage());
@@ -427,7 +669,7 @@ public class JwtTokenProvider {
      */
     public boolean validateRefreshToken(String token) {
         try {
-            var claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+            var claims = parseClaims(token);
             if (TYPE_ACCESS.equals(claims.get(CLAIM_TOKEN_TYPE, String.class))) {
                 log.warn(">>> [JWT] 액세스 토큰이 재발급 자리에 제시되었습니다 — 거부합니다.");
                 return false;
@@ -444,7 +686,7 @@ public class JwtTokenProvider {
 
     /** 토큰의 만료 시각. 회전 시 절대 만료를 물려주기 위해 쓴다. */
     public Date getExpiration(String token) {
-        return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload().getExpiration();
+        return parseClaims(token).getExpiration();
     }
 
     public void addRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
@@ -474,5 +716,17 @@ public class JwtTokenProvider {
 
     public SecretKey getKeyForTest() {
         return this.key;
+    }
+
+    public ECPublicKey getActiveVerifyKeyForTest() {
+        return this.ecVerifyKeys.get(this.activeSigningKid);
+    }
+
+    public String getActiveKidForTest() {
+        return this.activeSigningKid;
+    }
+
+    public Map<String, String> getVerifyKeyFingerprints() {
+        return this.ecPublicKeyFingerprints;
     }
 }

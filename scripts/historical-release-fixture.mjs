@@ -134,7 +134,7 @@ export function validateHistoricalImages(images) {
       if (index < 1 || !/^[A-Za-z_][A-Za-z0-9_]*$/u.test(name) || Object.hasOwn(environment, name)) throw fail();
       environment[name] = entry.slice(index + 1);
     }
-    if (Object.entries(environment).some(([key, value]) => value && /^(?:SPRING_|DB_|JWT_SECRET$|ALGORITHM_KEY$|ADMIN_INITIAL_PASSWORD$|NODE_OPTIONS$|JAVA_TOOL_OPTIONS$|JDK_JAVA_OPTIONS$|_JAVA_OPTIONS$|LD_)/u.test(key))) throw fail();
+    if (Object.entries(environment).some(([key, value]) => value && /^(?:SPRING_|DB_|JWT_SECRET$|JWT_SIGNING_KEYS_JSON$|ALGORITHM_KEY$|ADMIN_INITIAL_PASSWORD$|NODE_OPTIONS$|JAVA_TOOL_OPTIONS$|JDK_JAVA_OPTIONS$|_JAVA_OPTIONS$|LD_)/u.test(key))) throw fail();
     if (environment.JAVA_OPTS?.split(/\s+/u).some(option => !/^(?:-Xm[sx][1-9]\d*[kKmMgG]|-Xss[1-9]\d*[kKmMgG]|-XX:\+UseParallelGC)$/u.test(option))) throw fail();
     if (role === 'api' ? JSON.stringify(config.Entrypoint) !== JSON.stringify(HISTORICAL_API_ENTRYPOINT)
         || (config.Cmd?.length ?? 0) !== 0 || config.User !== 'spring:spring'

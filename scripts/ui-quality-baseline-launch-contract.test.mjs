@@ -262,6 +262,8 @@ test('compose specification binds immutable images, run-scoped names/network and
     'CORS_ALLOWED_ORIGINS',
     'JWT_ACCESS_TOKEN_VALIDITY_MS',
     'JWT_SECRET',
+    'JWT_SIGNING_ACTIVE_KID',
+    'JWT_SIGNING_KEYS_JSON',
     'MANAGEMENT_HEALTH_MAIL_ENABLED',
     'NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK',
     'NURI_AUTHORIZATION_ISOLATED_CUTOVER',
@@ -272,6 +274,13 @@ test('compose specification binds immutable images, run-scoped names/network and
     'SPRING_FLYWAY_LOCATIONS',
     'SPRING_JPA_HIBERNATE_DDL_AUTO',
     'SPRING_PROFILES_ACTIVE',
+  ]);
+  assert.deepEqual(specification.services.frontend.environment, [
+    'ALLOW_DEV_JWT_VERIFY_KEYS',
+    'BACKEND_API_URL',
+    'JWT_SECRET',
+    'JWT_VERIFY_KEYS_JSON',
+    'NEXT_PUBLIC_API_URL',
   ]);
 });
 

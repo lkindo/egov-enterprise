@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /** A generated product's checks. Upstream framework regression tests run in the producer repository. */
 import { spawnSync } from 'node:child_process';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, generateKeyPairSync, randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -101,8 +101,26 @@ export function vendorArtifactFingerprint(root) {
   return hash.digest('hex');
 }
 
+/** 프런트엔드 프로세스는 JWT 개인 서명 키링을 상속받지 않는다(ADR-0060). */
+export function stripJwtSigningEnv(env) {
+  const { JWT_SIGNING_ACTIVE_KID: _kid, JWT_SIGNING_KEYS_JSON: _keys, ...cleanEnv } = env;
+  return cleanEnv;
+}
+
 /** 생성물 검증 단계가 받는 환경. 앱 문맥을 띄우는 시험이 비밀 값을 요구하므로 실행마다 만든다. */
-export const artifactStepEnvironment = () => ({ ...process.env, TZ: 'Asia/Seoul', JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex') });
+export const artifactStepEnvironment = () => {
+  const ephemeralPublicKey = process.env.JWT_VERIFY_KEYS_JSON
+    || JSON.stringify({
+      'artifact-es256': generateKeyPairSync('ec', { namedCurve: 'prime256v1' })
+        .publicKey.export({ format: 'der', type: 'spki' }).toString('base64'),
+    });
+  return {
+    ...stripJwtSigningEnv(process.env),
+    TZ: 'Asia/Seoul',
+    JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex'),
+    JWT_VERIFY_KEYS_JSON: ephemeralPublicKey,
+  };
+};
 
 export function verifyReusableArtifact({ root, scope = 'full', run = runCommand } = {}) {
   root = resolve(root);
@@ -130,7 +148,8 @@ export function verifyReusableArtifact({ root, scope = 'full', run = runCommand 
     for (const { id, command, args } of steps) {
       process.stdout.write(`[reusable-verify] ${lock.profile}/${layout}: ${command} ${args.join(' ')}\n`);
       step = { id, command: [command, ...args].join(' '), startedAt: Date.now() };
-      run(command, args, { root, env });
+      const stepEnv = id === 'backend' ? env : stripJwtSigningEnv(env);
+      run(command, args, { root, env: stepEnv });
       report.steps.push({ step: step.id, command: step.command, result: 'passed', durationMs: Date.now() - step.startedAt });
       step = undefined;
     }

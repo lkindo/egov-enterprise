@@ -45,7 +45,8 @@ public interface InformalSanctionRepository extends JpaRepository<InformalSancti
             + "(select d.id from InformalSanctionDetail d where d.id.ifmlAtrzSn = s.ifmlAtrzSn "
             + "and d.id.atrzCycl = s.atrzCycl and d.id.userId = :aprvrId and d.aprvYn = 'A') "
             + "or (s.aplcntId <> :aprvrId and not exists (select own.id from InformalSanctionDetail own "
-            + "where own.id.ifmlAtrzSn = s.ifmlAtrzSn and own.id.atrzCycl = s.atrzCycl and own.id.userId = :aprvrId) "
+            + "where own.id.ifmlAtrzSn = s.ifmlAtrzSn and own.id.atrzCycl = s.atrzCycl "
+            + "and (own.id.userId = :aprvrId or own.sbtAprvrId = :aprvrId)) "
             + "and exists (select p.id from InformalSanctionDetail p where p.id.ifmlAtrzSn = s.ifmlAtrzSn "
             + "and p.id.atrzCycl = s.atrzCycl and p.aprvYn = 'A' and p.id.userId in :delegators)))";
 
@@ -59,7 +60,8 @@ public interface InformalSanctionRepository extends JpaRepository<InformalSancti
             + "(select d.id from InformalSanctionDetail d where d.id.ifmlAtrzSn = s.ifmlAtrzSn "
             + "and d.id.atrzCycl = s.atrzCycl and d.id.userId = :aprvrId and d.aprvYn = 'A') "
             + "or (s.aplcntId <> :aprvrId and not exists (select own.id from InformalSanctionDetail own "
-            + "where own.id.ifmlAtrzSn = s.ifmlAtrzSn and own.id.atrzCycl = s.atrzCycl and own.id.userId = :aprvrId) "
+            + "where own.id.ifmlAtrzSn = s.ifmlAtrzSn and own.id.atrzCycl = s.atrzCycl "
+            + "and (own.id.userId = :aprvrId or own.sbtAprvrId = :aprvrId)) "
             + "and exists (select p.id from InformalSanctionDetail p where p.id.ifmlAtrzSn = s.ifmlAtrzSn "
             + "and p.id.atrzCycl = s.atrzCycl and p.aprvYn = 'A' and p.id.userId in :delegators)))")
     long countPendingWithSubstitution(@Param("aprvrId") String aprvrId,

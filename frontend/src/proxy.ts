@@ -6,20 +6,156 @@ import { shouldUseSecureSessionCookie } from '@/lib/auth/session-cookie-policy';
 import { isTrustedEdgeProxyEnabled } from '@/lib/api/forwarded-client-ip';
 
 // ────────────────────────────────────────────────────────────────────────────
-// [보안] JWT 서명 검증 (Edge 런타임 네이티브 Web Crypto, 외부 의존 없음)
-//  - 백엔드(JwtTokenProvider)와 동일 시크릿·동일 바이트 인코딩이어야 한다. 백엔드는 secretKey.getBytes()
-//    (base64 디코드 없이 raw bytes)를 HMAC 키로 쓰므로 여기서도 base64 디코드 금지 — TextEncoder().encode(raw).
-//  - alg 는 시크릿 길이로 자동 추론되어 dev 기본값(88바이트)은 HS512 다. HS256/384/512 를 모두 허용하되
-//    header.alg 를 신뢰하지 않고 화이트리스트로만 매핑한다(alg=none·비대칭 혼동 공격 차단).
-//  - prod 에서 JWT_SECRET 미설정이면 모듈 로드 시 즉시 throw(fail-fast) — 공개된 dev 기본값으로 조용히
-//    서명 검증하는 최악 상태를 방지한다.
+// [보안] JWT 서명 검증 (Edge/Web Crypto 네이티브, 외부 의존 없음 — ADR-0060 1차 배포)
+//  - 신규 발급 토큰(ES256): JWT_VERIFY_KEYS_JSON({"<kid>":"<SPKI Base64>"}) 공개키만으로 검증한다.
+//    Next 프록시는 서명 개인키를 받지 않는다.
+//  - 전환기 호환(JWT_ACCEPT_LEGACY_HMAC !== 'false'): 1차 배포 동안 기존 HMAC(HS256/384/512)
+//    액세스 토큰도 허용하고, 2차 배포 이후 비대칭 서명 단독 검증으로 전환한다.
+//  - header.alg 는 ES256 또는 (전환기) HMAC 화이트리스트만 허용한다(alg=none·RS* 혼동 공격 차단).
+//  - 엄격 운영 모드(NODE_ENV=production && ALLOW_DEV_JWT_VERIFY_KEYS!=='true')에서는
+//    공개키 누락·커밋 개발용 검증키 주입 시 모듈 로드 시점에 즉시 throw(fail-fast)한다.
 // ────────────────────────────────────────────────────────────────────────────
 const DEV_JWT_SECRET = 'dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==';
-if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-  throw new Error('[Middleware] prod 환경에 JWT_SECRET 이 설정되지 않았습니다 (fail-fast: 공개 dev 시크릿 사용 금지).');
+const DEV_JWT_VERIFY_KID = 'dev-es256-1';
+const DEV_JWT_VERIFY_SPKI_B64 =
+  'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFCkLmpfLgQUqDWWzzBAdV7oKO7Hvtltivk4PlGoMa+dn+6myuWj6EcyRdFFvm0CgWhIiqpujMY7lBU5LmpKGsw==';
+const KID_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
+const MAX_VERIFY_KEYS = 16;
+
+const ALLOW_DEV_JWT_VERIFY_KEYS = process.env.ALLOW_DEV_JWT_VERIFY_KEYS === 'true';
+const IS_STRICT_PROD = process.env.NODE_ENV === 'production' && !ALLOW_DEV_JWT_VERIFY_KEYS;
+const ACCEPT_LEGACY_HMAC = process.env.JWT_ACCEPT_LEGACY_HMAC !== 'false';
+
+if (ACCEPT_LEGACY_HMAC && IS_STRICT_PROD && (!process.env.JWT_SECRET || process.env.JWT_SECRET === DEV_JWT_SECRET)) {
+  throw new Error('[Middleware] prod 환경에 유효한 JWT_SECRET 이 설정되지 않았습니다 (fail-fast: 공개 dev 시크릿 사용 금지).');
 }
 const JWT_SECRET = process.env.JWT_SECRET || DEV_JWT_SECRET;
 const HMAC_HASH: Record<string, string> = { HS256: 'SHA-256', HS384: 'SHA-384', HS512: 'SHA-512' };
+
+function standardBase64ToBytes(input: string): Uint8Array<ArrayBuffer> {
+  const clean = input.replace(/\s+/g, '');
+  const bin = atob(clean);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+function canonicalBase64(bytes: Uint8Array<ArrayBuffer>): string {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+function parseVerifyKeyEntries(rawJson: string | undefined, strictProd: boolean): Record<string, string> {
+  if (!rawJson || !rawJson.trim()) {
+    if (strictProd) {
+      throw new Error('[Middleware] prod 환경에 JWT_VERIFY_KEYS_JSON 이 설정되지 않았습니다 (fail-fast: 공개 dev 검증키 사용 금지).');
+    }
+    return Object.assign(Object.create(null), { [DEV_JWT_VERIFY_KID]: DEV_JWT_VERIFY_SPKI_B64 });
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawJson);
+  } catch {
+    throw new Error('[Middleware] JWT_VERIFY_KEYS_JSON JSON 형식이 올바르지 않습니다.');
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('[Middleware] JWT_VERIFY_KEYS_JSON 은 JSON 객체여야 합니다.');
+  }
+  const entries = Object.entries(parsed as Record<string, unknown>);
+  if (entries.length < 1 || entries.length > MAX_VERIFY_KEYS) {
+    throw new Error('[Middleware] JWT_VERIFY_KEYS_JSON 은 1~16개의 키를 담아야 합니다.');
+  }
+  const out: Record<string, string> = Object.create(null);
+  for (const [kid, value] of entries) {
+    if (!KID_PATTERN.test(kid) || typeof value !== 'string' || !value.trim()) {
+      throw new Error('[Middleware] JWT_VERIFY_KEYS_JSON 키·값 형식이 올바르지 않습니다.');
+    }
+    let normalizedB64: string;
+    try {
+      normalizedB64 = canonicalBase64(standardBase64ToBytes(value));
+    } catch {
+      throw new Error('[Middleware] JWT_VERIFY_KEYS_JSON 의 SPKI Base64 를 해석할 수 없습니다.');
+    }
+    if (strictProd && normalizedB64 === DEV_JWT_VERIFY_SPKI_B64) {
+      throw new Error('[Middleware] prod 환경에서 공개 개발용 JWT 검증키를 사용할 수 없습니다.');
+    }
+    out[kid] = normalizedB64;
+  }
+  return out;
+}
+
+const VERIFY_KEYS_B64 = parseVerifyKeyEntries(process.env.JWT_VERIFY_KEYS_JSON, IS_STRICT_PROD);
+const importedEcKeyCache = new Map<string, Promise<CryptoKey>>();
+
+function getEcVerifyKey(kid: string): Promise<CryptoKey> {
+  const cached = importedEcKeyCache.get(kid);
+  if (cached) return cached;
+  const spkiBytes = standardBase64ToBytes(VERIFY_KEYS_B64[kid]);
+  const promise = crypto.subtle.importKey(
+    'spki',
+    spkiBytes,
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['verify']
+  );
+  importedEcKeyCache.set(kid, promise);
+  return promise;
+}
+
+const SHA256_K = [
+  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+  0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+  0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+  0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+  0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+  0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+  0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+];
+
+function rotr(value: number, bits: number): number {
+  return (value >>> bits) | (value << (32 - bits));
+}
+
+function sha256HexPrefix8(data: Uint8Array): string {
+  const bitLen = data.length * 8;
+  const paddedLen = Math.ceil((data.length + 9) / 64) * 64;
+  const padded = new Uint8Array(paddedLen);
+  padded.set(data);
+  padded[data.length] = 0x80;
+  const view = new DataView(padded.buffer);
+  view.setUint32(paddedLen - 8, Math.floor(bitLen / 0x100000000), false);
+  view.setUint32(paddedLen - 4, bitLen >>> 0, false);
+
+  const h = new Uint32Array([
+    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+    0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+  ]);
+  const w = new Uint32Array(64);
+  for (let offset = 0; offset < paddedLen; offset += 64) {
+    for (let i = 0; i < 16; i++) w[i] = view.getUint32(offset + i * 4, false);
+    for (let i = 16; i < 64; i++) {
+      const s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+      const s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+      w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+    }
+    let [a, b, c, d, e, f, g, hh] = h;
+    for (let i = 0; i < 64; i++) {
+      const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      const ch = (e & f) ^ (~e & g);
+      const temp1 = (hh + S1 + ch + SHA256_K[i] + w[i]) | 0;
+      const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const temp2 = (S0 + maj) | 0;
+      hh = g; g = f; f = e; e = (d + temp1) | 0;
+      d = c; c = b; b = a; a = (temp1 + temp2) | 0;
+    }
+    h[0] = (h[0] + a) | 0; h[1] = (h[1] + b) | 0; h[2] = (h[2] + c) | 0; h[3] = (h[3] + d) | 0;
+    h[4] = (h[4] + e) | 0; h[5] = (h[5] + f) | 0; h[6] = (h[6] + g) | 0; h[7] = (h[7] + hh) | 0;
+  }
+  return ((h[0] >>> 0).toString(16).padStart(8, '0')).slice(0, 8);
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 // [진단] 인증 검증 메타 — 결과·설정 출처·환경변수 존재 여부만 최초 1회 남긴다.
@@ -68,15 +204,25 @@ type VerifyVerdict = { subject: string | null; outcome: string };
 function logAuthDiagnosticOnce(outcome: string): void {
   if (authDiagnosticLogged) return;
   authDiagnosticLogged = true;
-  const source = process.env.JWT_SECRET ? '환경변수 JWT_SECRET' : '내장 dev 기본값(DEV_JWT_SECRET)';
+  const verifySource = process.env.JWT_VERIFY_KEYS_JSON
+    ? '환경변수 JWT_VERIFY_KEYS_JSON'
+    : '내장 dev 기본값(dev-es256-1)';
+  const hmacSource = !ACCEPT_LEGACY_HMAC
+    ? '비활성(2차 배포)'
+    : (process.env.JWT_SECRET ? '환경변수 JWT_SECRET' : '내장 dev 기본값(DEV_JWT_SECRET)');
+  const spkiHashes = Object.entries(VERIFY_KEYS_B64)
+    .map(([kid, b64]) => `${kid}=${sha256HexPrefix8(standardBase64ToBytes(b64))}`)
+    .join(',');
   // Edge 샌드박스가 **어떤 env 를 보는가** 자체가 미관측 변수였다(E2E_DIAG 가 전달됐는데도 안 보였다).
-  // 값이 아니라 존재 여부만 남겨 다음 회차에 그 변수를 확정한다.
+  // 값이 아니라 존재 여부·공개키 요약 해시만 남겨 다음 회차에 그 변수를 확정한다.
   const envSeen =
     `NODE_ENV=${process.env.NODE_ENV ? '있음' : '없음'} · ` +
+    `JWT_VERIFY_KEYS_JSON=${process.env.JWT_VERIFY_KEYS_JSON ? '있음' : '없음'} · ` +
+    `JWT_ACCEPT_LEGACY_HMAC=${ACCEPT_LEGACY_HMAC ? 'on' : 'off'} · ` +
     `JWT_SECRET=${process.env.JWT_SECRET ? '있음' : '없음'} · ` +
     `E2E_DIAG=${process.env.E2E_DIAG ? '있음' : '없음'}`;
   console.warn(
-    `[Middleware] JWT 검증 ${outcome}. 미들웨어가 쓰는 시크릿 출처=${source}.\n` +
+    `[Middleware] JWT 검증 ${outcome}. 미들웨어가 쓰는 시크릿 출처=${hmacSource}, 검증키 출처=${verifySource}(spkiSha8=${spkiHashes}).\n` +
       `  Edge env 가시성(존재 여부만): ${envSeen}\n` +
       `  요청별 검증 결과는 x-mw-auth 응답 헤더에서 확인하세요.`
   );
@@ -141,27 +287,43 @@ async function verifyAndExtractSubject(token: string): Promise<VerifyVerdict> {
     const [headerB64, payloadB64, sigB64] = parts;
 
     stage = 'decode-header';
-    const header = JSON.parse(base64UrlDecodeToString(headerB64));
-    const hash = HMAC_HASH[header.alg];
-    if (!hash) {
+    const header = JSON.parse(base64UrlDecodeToString(headerB64)) as { alg?: unknown; kid?: unknown };
+    let valid: boolean;
+    if (header.alg === 'ES256') {
+      if (typeof header.kid !== 'string' || !Object.hasOwn(VERIFY_KEYS_B64, header.kid)) {
+        return { subject: null, outcome: 'kid-unknown' };
+      }
+      stage = 'import-key';
+      const ecKey = await getEcVerifyKey(header.kid);
+      stage = 'decode-sig';
+      const sigBytes = base64UrlToBytes(sigB64);
+      if (sigBytes.byteLength !== 64) {
+        return { subject: null, outcome: 'sig-length' };
+      }
+      stage = 'encode-data';
+      const dataBytes = utf8ToBytes(`${headerB64}.${payloadB64}`);
+      stage = 'verify';
+      valid = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, ecKey, sigBytes, dataBytes);
+    } else if (ACCEPT_LEGACY_HMAC && typeof header.alg === 'string' && Object.hasOwn(HMAC_HASH, header.alg)) {
+      const hash = HMAC_HASH[header.alg];
+      stage = 'import-key';
+      const key = await crypto.subtle.importKey(
+        'raw',
+        utf8ToBytes(JWT_SECRET),
+        { name: 'HMAC', hash: { name: hash } },
+        false,
+        ['verify']
+      );
+      stage = 'decode-sig';
+      const sigBytes = base64UrlToBytes(sigB64);
+      stage = 'encode-data';
+      const dataBytes = utf8ToBytes(`${headerB64}.${payloadB64}`);
+      stage = 'verify';
+      valid = await crypto.subtle.verify('HMAC', key, sigBytes, dataBytes);
+    } else {
       // alg=none·RS*(비대칭) 등 화이트리스트 밖은 거부
       return { subject: null, outcome: 'alg-unsupported' };
     }
-
-    stage = 'import-key';
-    const key = await crypto.subtle.importKey(
-      'raw',
-      utf8ToBytes(JWT_SECRET),
-      { name: 'HMAC', hash: { name: hash } },
-      false,
-      ['verify']
-    );
-    stage = 'decode-sig';
-    const sigBytes = base64UrlToBytes(sigB64);
-    stage = 'encode-data';
-    const dataBytes = utf8ToBytes(`${headerB64}.${payloadB64}`);
-    stage = 'verify';
-    const valid = await crypto.subtle.verify('HMAC', key, sigBytes, dataBytes);
     // 서명 불일치는 위조 또는 설정 비대칭일 수 있으므로 secret-free 진단 메타와 요청 결과를 남긴다.
     stage = 'diagnostic';
     logAuthDiagnosticOnce(valid ? '성공' : '실패(서명 불일치)');

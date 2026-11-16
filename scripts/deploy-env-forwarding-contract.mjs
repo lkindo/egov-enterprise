@@ -86,6 +86,8 @@ export const FRONTEND_FORWARDED_WITHOUT_READ = Object.freeze({
 /** 운영 오버레이의 frontend 환경에 나타나면 안 되는 변수(값 유무와 무관). */
 export const PROD_FORBIDDEN_FRONTEND = Object.freeze({
   ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE: 'ADR-0010 — 운영 배포에서는 인증 쿠키 Secure 를 끌 수 없어야 한다.',
+  JWT_SIGNING_ACTIVE_KID: 'ADR-0060 — Next 서버에는 JWT 서명 개인키 식별자를 전달하지 않는다.',
+  JWT_SIGNING_KEYS_JSON: 'ADR-0060 — Next 서버에는 ES256 서명 개인키를 전달하지 않고 공개키(JWT_VERIFY_KEYS_JSON)만 전달한다.',
 });
 
 const UPPER_ENV_NAME = /^[A-Z][A-Z0-9_]*$/;

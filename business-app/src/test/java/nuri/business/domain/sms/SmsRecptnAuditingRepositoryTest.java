@@ -55,10 +55,19 @@ class SmsRecptnAuditingRepositoryTest {
         repository.saveAndFlush(SmsRecptn.builder().smsTrsmSn(sms.getSmsTrsmSn())
                 .rcptnTelno("01012345678").rsltCd("P").build());
         var pageable = org.springframework.data.domain.PageRequest.of(0, 10);
-        assertThat(smsRepository.searchSms("0", "010-1234-5678", pageable).getContent())
+        assertThat(smsRepository.searchSms("0", "010-1234-5678", "SYSTEM", pageable).getContent())
                 .extracting(Sms::getSmsTrsmSn).containsExactly(sms.getSmsTrsmSn());
-        assertThat(smsRepository.searchSms("0", "1234-5678", pageable).getTotalElements()).isEqualTo(1);
-        assertThat(smsRepository.searchSms("0", "9999", pageable).getContent()).isEmpty();
+        assertThat(smsRepository.searchSms("0", "1234-5678", "SYSTEM", pageable).getTotalElements()).isEqualTo(1);
+        assertThat(smsRepository.searchSms("0", "9999", "SYSTEM", pageable).getContent()).isEmpty();
+        assertThat(smsRepository.searchSms("0", "010-1234-5678", "other_admin", pageable).getContent()).isEmpty();
+        assertThat(smsRepository.searchSms("0", "010-1234-5678", null, pageable).getContent()).isEmpty();
+        assertThat(smsRepository.searchSms("1", "search", "SYSTEM", pageable).getContent())
+                .extracting(Sms::getSmsTrsmSn).containsExactly(sms.getSmsTrsmSn());
+        assertThat(smsRepository.searchSms("1", "search", "other_admin", pageable).getContent()).isEmpty();
+        assertThat(smsRepository.searchSms("1", "search", null, pageable).getContent()).isEmpty();
+        // 키워드가 없는 전체 목록은 타인 조회에서도 발송 건 수 기준 페이지로 열린다(응답 마스킹은 SmsService 담당).
+        assertThat(smsRepository.searchSms("1", "", "other_admin", pageable).getContent())
+                .extracting(Sms::getSmsTrsmSn).containsExactly(sms.getSmsTrsmSn());
     }
 
     @Test
@@ -69,8 +78,8 @@ class SmsRecptnAuditingRepositoryTest {
         // 가장 최근 건이 수신자 셋이다 — 조인 뒤 자르면 첫 쪽을 이 건 하나가 다 차지한다.
         Sms newest = dispatch("newest", "01000000003", "01000000004", "01000000005");
 
-        var firstPage = smsRepository.searchSms(null, null, org.springframework.data.domain.PageRequest.of(0, 2));
-        var secondPage = smsRepository.searchSms(null, null, org.springframework.data.domain.PageRequest.of(1, 2));
+        var firstPage = smsRepository.searchSms(null, null, null, org.springframework.data.domain.PageRequest.of(0, 2));
+        var secondPage = smsRepository.searchSms(null, null, null, org.springframework.data.domain.PageRequest.of(1, 2));
 
         assertThat(firstPage.getContent()).extracting(Sms::getSmsTrsmSn)
                 .as("첫 쪽은 최신 발송 건 둘이어야 한다")
@@ -90,13 +99,13 @@ class SmsRecptnAuditingRepositoryTest {
         // 가장 최근 건의 수신자 셋이 모두 검색어와 맞는다 — 조인 뒤 자르면 첫 쪽을 이 건 하나가 다 차지한다.
         Sms team = dispatch("team", "01055550001", "01055550002", "01055550003");
 
-        var page = smsRepository.searchSms("0", "5555", org.springframework.data.domain.PageRequest.of(0, 2));
+        var page = smsRepository.searchSms("0", "5555", "SYSTEM", org.springframework.data.domain.PageRequest.of(0, 2));
 
         assertThat(page.getContent()).extracting(Sms::getSmsTrsmSn)
                 .as("검색에 맞은 발송 건 둘이 첫 쪽에 실려야 한다")
                 .containsExactly(team.getSmsTrsmSn(), earlier.getSmsTrsmSn());
         assertThat(page.getTotalElements()).isEqualTo(2);
-        assertThat(smsRepository.searchSms("0", "9999", org.springframework.data.domain.PageRequest.of(0, 2))
+        assertThat(smsRepository.searchSms("0", "9999", "SYSTEM", org.springframework.data.domain.PageRequest.of(0, 2))
                 .getContent()).extracting(Sms::getSmsTrsmSn).containsExactly(other.getSmsTrsmSn());
     }
 
