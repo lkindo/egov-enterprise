@@ -51,8 +51,14 @@ import java.util.regex.Pattern;
 @Component
 public class MappingValidator {
 
+    /**
+     * where 조각의 금지어. [2026-11-16] 집합 연산(union·intersect·except·minus)·행 원천(values·table)·쓰기(into·outfile·dumpfile)·
+     * 실행(exec·execute)을 더했다 — PostgreSQL 의 {@code UNION VALUES (...)}·{@code UNION TABLE t} 와 MySQL 의
+     * {@code INTO OUTFILE} 은 select 없이 다른 행을 섞거나 파일을 쓴다. 괄호·따옴표 경계는 {@link #isUnsafeWhere} 가 따로 본다.
+     */
     private static final Pattern UNSAFE_WHERE = Pattern.compile(
-            "(?is)(;|--|/\\*|\\*/|\\b(select|insert|update|delete|merge|drop|alter|create|truncate|call|copy|grant|revoke)\\b)");
+            "(?is)(;|--|/\\*|\\*/|\\b(select|insert|update|delete|merge|drop|alter|create|truncate|call|copy|grant|revoke"
+                    + "|union|intersect|except|minus|values|table|into|outfile|dumpfile|exec|execute)\\b)");
     /** 원장 행 ID 형식(용어 매핑 원장과 같다). */
     private static final Pattern LEDGER_ENTRY = Pattern.compile("[A-Za-z0-9_.-]{1,64}");
     /** 보관 선언 id 형식 — 매핑 id 와 같다(ADR-0029 L3e). 덤프 파일 이름에 들어간다. */
@@ -120,11 +126,11 @@ public class MappingValidator {
             if (!isBlank(t.targetKey())) {
                 validateColumnIdentifier(t.target() + ": targetKey", t.targetKey(), errors);
             }
-            if (!isBlank(t.where()) && UNSAFE_WHERE.matcher(t.where()).find()) {
+            if (!isBlank(t.where()) && isUnsafeWhere(t.where())) {
                 errors.add(t.source() + ": where에는 단일 읽기 조건식만 허용됩니다(주석·세미콜론·SQL 문 금지)");
             }
             for (MappingSpec.Lookup lookup : t.lookups()) {
-                if (lookup != null && !isBlank(lookup.where()) && UNSAFE_WHERE.matcher(lookup.where()).find()) {
+                if (lookup != null && !isBlank(lookup.where()) && isUnsafeWhere(lookup.where())) {
                     errors.add(MappingIndex.label(t) + ".lookups[" + lookup.alias()
                             + "]: where에는 단일 읽기 조건식만 허용됩니다(주석·세미콜론·SQL 문 금지)");
                 }
@@ -362,7 +368,7 @@ public class MappingValidator {
                     errors.add(label + ": orderByKeys 중복 금지: " + key);
                 }
             }
-            if (archive.where() != null && (archive.where().isBlank() || UNSAFE_WHERE.matcher(archive.where()).find())) {
+            if (archive.where() != null && (archive.where().isBlank() || isUnsafeWhere(archive.where()))) {
                 errors.add(label + ": where에는 단일 읽기 조건식만 허용됩니다(주석·세미콜론·SQL 문 금지)");
             }
             MappingSpec.ArchiveDump first = dumpOnlyReads.putIfAbsent(source, archive);
@@ -814,6 +820,41 @@ public class MappingValidator {
 
     private static boolean isBlank(String s) {
         return s == null || s.isBlank();
+    }
+
+    /**
+     * where 조각이 단일 읽기 조건식이 아닌가(2026-11-16). 금지어 외에 조각이 자기 경계를 벗어나는지를 본다. 조회는 조각을
+     * {@code "(" + where + ") AND key IS NOT NULL"} 처럼 감싸 붙이므로, 따옴표 밖 괄호가 먼저 닫히거나({@code x) OR (1=1})
+     * 끝에서 열린 채 남거나, 문자열·인용 식별자가 닫히지 않으면 뒤에 붙는 필수 조건이 조각 안으로 들어가 우회된다. 역슬래시는
+     * 벤더마다 문자열 끝을 다르게 정해(MySQL·MariaDB 는 escape) 경계를 하나로 판정할 수 없어 받지 않는다.
+     */
+    static boolean isUnsafeWhere(String where) {
+        if (UNSAFE_WHERE.matcher(where).find() || where.indexOf('\\') >= 0) {
+            return true;
+        }
+        int depth = 0;
+        char quote = 0;
+        for (int i = 0; i < where.length(); i++) {
+            char c = where.charAt(i);
+            if (quote != 0) {
+                char closing = quote == '[' ? ']' : quote;
+                if (c == closing) {
+                    // 같은 문자를 두 번 쓰면 닫지 않고 그 문자 하나다('' · "" · ``).
+                    if (closing != ']' && i + 1 < where.length() && where.charAt(i + 1) == closing) {
+                        i++;
+                    } else {
+                        quote = 0;
+                    }
+                }
+            } else if (c == '\'' || c == '"' || c == '`' || c == '[') {
+                quote = c;
+            } else if (c == '(') {
+                depth++;
+            } else if (c == ')' && --depth < 0) {
+                return true;
+            }
+        }
+        return depth != 0 || quote != 0;
     }
 
     private static String normalize(String value) {

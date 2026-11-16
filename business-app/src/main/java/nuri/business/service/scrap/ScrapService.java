@@ -53,7 +53,7 @@ public class ScrapService {
 
     public Page<ScrapDto> getScrapList(String userId, @NonNull Pageable pageable) {
         return scrapRepository
-                .findByFrstRgtrIdAndUseYn(Objects.requireNonNull(userId), "Y", Objects.requireNonNull(pageable))
+                .findByFrstRgtrIdAndUseYnOrderByScrapSnDesc(Objects.requireNonNull(userId), "Y", Objects.requireNonNull(pageable))
                 .map(scrapMapper::toDto);
     }
 

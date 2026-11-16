@@ -489,6 +489,46 @@ class MappingValidatorTest {
             assertThat(r.errors()).anySatisfy(e -> assertThat(e).contains("where", "단일 읽기 조건식"));
         }
 
+        @org.junit.jupiter.params.ParameterizedTest
+        @org.junit.jupiter.params.provider.ValueSource(strings = {
+                "1=1 UNION VALUES ('x')",
+                "1=1 union table legacy_secret",
+                "id > 0 INTERSECT TABLE legacy_user",
+                "id > 0 EXCEPT TABLE legacy_user",
+                "id > 0 MINUS TABLE legacy_user",
+                "1=1 INTO OUTFILE '/tmp/dump.csv'",
+                "1=1 INTO DUMPFILE '/tmp/dump.bin'",
+                "1=1 OR EXEC('x') = 1",
+                "use_yn = 'Y') OR (1=1",
+                "use_yn = 'Y' OR (1=1",
+                "nm = 'unterminated",
+                "\"unterminated_ident = 1",
+                "nm = 'a\\' OR 1=1 OR nm = '"})
+        @org.junit.jupiter.api.DisplayName("where는 다른 행 원천·파일 쓰기·괄호 탈출·닫히지 않은 따옴표·역슬래시를 받지 않는다(2026-11-16)")
+        void whereCannotEscapeItsBoundary(String where) {
+            ValidationResult r = withSchema().validate(spec(List.of(
+                    new TableMapping("legacy_user", "tb_user_info", where,
+                            List.of(col("nm", "user_nm")), null))));
+
+            assertThat(r.errors()).anySatisfy(e -> assertThat(e).contains("where", "단일 읽기 조건식"));
+        }
+
+        @org.junit.jupiter.params.ParameterizedTest
+        @org.junit.jupiter.params.provider.ValueSource(strings = {
+                "use_yn = 'Y' AND (reg_dt >= '2020-01-01' OR reg_dt IS NULL)",
+                "status IN ('A', 'B')",
+                "nm <> 'a(b' AND nm <> 'it''s)'",
+                "\"Legacy Col\" = 'x' AND [dept nm] <> ''",
+                "table_cd = 'T1' AND values_yn = 'N'"})
+        @org.junit.jupiter.api.DisplayName("따옴표 안의 괄호·인용 식별자·밑줄로 이어진 이름은 단일 읽기 조건식이다")
+        void ordinaryReadPredicatesStayAllowed(String where) {
+            ValidationResult r = withSchema().validate(spec(List.of(
+                    new TableMapping("legacy_user", "tb_user_info", where,
+                            List.of(col("nm", "user_nm")), null))));
+
+            assertThat(r.errors()).noneSatisfy(e -> assertThat(e).contains("단일 읽기 조건식"));
+        }
+
         @Test
         @DisplayName("단일 orderBy와 복합 orderByKeys의 동시 선언 및 복합키 중복은 차단한다")
         void ambiguousOrDuplicateOrderKeysAreErrors() {
