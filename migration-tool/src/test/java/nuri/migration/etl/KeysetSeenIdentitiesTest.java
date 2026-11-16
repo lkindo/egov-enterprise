@@ -44,12 +44,12 @@ class KeysetSeenIdentitiesTest {
     }
 
     @Test
-    @DisplayName("정렬 키는 다르지만 source identity 가 같은 두 행은 처리 전에 멈춘다 — 다른 쪽에 있어도 잡는다")
-    void duplicateSourceIdentityAcrossTheTableStopsTheLoad() {
+    @DisplayName("정렬 키는 다르지만 source identity 가 같은 두 행은 멈춘다 — 첫 쪽과 다음 쪽에 나뉘어 있어도 잡는다")
+    void duplicateSourceIdentityAcrossPagesStopsTheLoad() {
         Fixture fixture = fixture();
-        fixture.source().update("INSERT INTO LEGACY_DUP VALUES (1, 'A', 'x')");
-        fixture.source().update("INSERT INTO LEGACY_DUP VALUES (2, 'B', 'y')");
-        fixture.source().update("INSERT INTO LEGACY_DUP VALUES (3, 'A', 'z')");
+        // 한 쪽은 500행이다(EtlExecutor.CHUNK). 1행과 마지막 행이 같은 source identity 라 서로 다른 쪽에 있다 — 쪽마다 집합을 새로
+        //   만드는 판정은 이 중복을 놓친다.
+        insertRows(fixture.source(), ROWS, id -> id == ROWS ? "R1" : "R" + id);
 
         var results = new EtlExecutor(new SourceIntrospector(), new TransformerRegistry())
                 .execute(fixture.mapping(), MigrationMode.DRY_RUN, fixture.source(), fixture.target());
@@ -61,20 +61,29 @@ class KeysetSeenIdentitiesTest {
     }
 
     @Test
-    @DisplayName("대조: source identity 가 모두 다르면 같은 매핑이 끝까지 읽는다")
+    @DisplayName("대조: source identity 가 모두 다르면 같은 매핑이 여러 쪽을 끝까지 읽는다")
     void distinctSourceIdentitiesLoadThrough() {
         Fixture fixture = fixture();
-        fixture.source().update("INSERT INTO LEGACY_DUP VALUES (1, 'A', 'x')");
-        fixture.source().update("INSERT INTO LEGACY_DUP VALUES (2, 'B', 'y')");
-        fixture.source().update("INSERT INTO LEGACY_DUP VALUES (3, 'C', 'z')");
+        insertRows(fixture.source(), ROWS, id -> "R" + id);
 
         var results = new EtlExecutor(new SourceIntrospector(), new TransformerRegistry())
                 .execute(fixture.mapping(), MigrationMode.DRY_RUN, fixture.source(), fixture.target());
 
         assertThat(results).singleElement().satisfies(result -> {
-            assertThat(result.read()).isEqualTo(3);
+            assertThat(result.read()).isEqualTo(ROWS);
             assertThat(result.errors()).isEmpty();
         });
+    }
+
+    /** 두 쪽에 걸치는 행 수. */
+    private static final int ROWS = 600;
+
+    private static void insertRows(JdbcTemplate source, int rows, java.util.function.IntFunction<String> rowId) {
+        List<Object[]> values = new java.util.ArrayList<>(rows);
+        for (int id = 1; id <= rows; id++) {
+            values.add(new Object[]{id, rowId.apply(id), "nm" + id});
+        }
+        source.batchUpdate("INSERT INTO LEGACY_DUP VALUES (?, ?, ?)", values);
     }
 
     private static Fixture fixture() {

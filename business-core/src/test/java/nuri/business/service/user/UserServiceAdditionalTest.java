@@ -315,7 +315,23 @@ class UserServiceAdditionalTest {
             var order = inOrder(userRepository);
             order.verify(userRepository).save(user);
             order.verify(userRepository).advanceSessionCycle(java.util.List.of("ESNTL_testUser"));
-            verify(passwordEncoder, never()).encode(any());
+            // 틀린 요청도 새 해시를 한 번 계산한다 — 맞힌 요청만 더 오래 걸리면 잠긴 뒤에도 응답 시간이 정답을 알린다.
+            verify(passwordEncoder).encode("newPassword");
+        }
+
+        @Test
+        @DisplayName("잠긴 동안 '현재=새 비밀번호' 대입은 맞혀도 같은 값 거절(400)이 아니라 비밀번호 불일치로 답한다 — 정답을 알리지 않는다")
+        void sameValueGuessWhileLockedDoesNotRevealTheAnswer() {
+            User user = createBaseUser("testUser").pswd("encodedOld").lckYn("Y").lckCnt(5)
+                    .lckLastPnttm(java.time.LocalDateTime.now().minusMinutes(1)).build();
+            when(userRepository.findById("testUser")).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("guess", "encodedOld")).thenReturn(true);
+
+            assertThatThrownBy(() -> userService.changePassword("testUser", "guess", "guess"))
+                    .hasFieldOrPropertyWithValue("errorCode", UserErrorCode.INVALID_PASSWORD);
+
+            assertThat(user.getPswd()).isEqualTo("encodedOld");
+            assertThat(user.getLckCnt()).isEqualTo(5);
         }
 
         @Test

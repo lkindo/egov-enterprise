@@ -407,15 +407,13 @@ public class UserService extends BaseAbstractService {
         public void changePassword(@NonNull String userId, @NonNull String oldPassword, @NonNull String newPassword) {
                 User user = findByLoginIdOrEsntlIdOrThrow(userId);
                 String observedPassword = user.getPswd();
+                // 새 비밀번호 해시는 현재 비밀번호가 맞든 틀리든 한 번 계산한다. 맞힌 요청만 해시를 더 계산하면 잠긴 뒤에도 응답 시간이
+                //   정답을 알린다. 해시 계산은 잠금 밖에서 한다.
+                String encodedPassword = passwordEncoder.encode(newPassword);
                 if (!passwordEncoder.matches(oldPassword, observedPassword)) {
                         recordCurrentPasswordFailure(user, observedPassword);
                 }
-                // 같은 값으로 바꾸면 임시 비밀번호 표시만 지워져 강제 변경을 건너뛴다.
-                if (oldPassword.equals(newPassword)) {
-                        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "새 비밀번호는 현재 비밀번호와 달라야 합니다.");
-                }
-                String encodedPassword = passwordEncoder.encode(newPassword);
-                // 해시 계산은 잠금 밖에서 한다. 대기 중 초기화됐으면 현재 비밀번호로 다시 검증한다.
+                // 대기 중 초기화됐으면 현재 비밀번호로 다시 검증한다.
                 refreshForUpdateOrThrow(user);
                 if (!java.util.Objects.equals(observedPassword, user.getPswd())
                                 && !passwordEncoder.matches(oldPassword, user.getPswd())) {
@@ -425,6 +423,11 @@ public class UserService extends BaseAbstractService {
                 //   맞힌 요청이 비밀번호를 바꾸면 잠금이 대입을 막지 못한다. 잠금 시간이 지났으면 로그인처럼 풀고 진행한다.
                 if (isLockedNow(user)) {
                         throw new BusinessException(UserErrorCode.INVALID_PASSWORD);
+                }
+                // 같은 값으로 바꾸면 임시 비밀번호 표시만 지워져 강제 변경을 건너뛴다. 잠금 판정 뒤에 본다 — 앞에 두면 잠긴 동안에도
+                //   '현재=새 비밀번호' 대입의 400 이 정답을, 401 이 오답을 알린다.
+                if (oldPassword.equals(newPassword)) {
+                        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "새 비밀번호는 현재 비밀번호와 달라야 합니다.");
                 }
                 user.updatePassword(encodedPassword);
                 // 현재 비밀번호를 증명했다 — 로그인 성공과 같이 연속 실패 횟수를 지운다.

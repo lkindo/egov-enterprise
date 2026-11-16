@@ -503,8 +503,13 @@ class MappingValidatorTest {
                 "use_yn = 'Y' OR (1=1",
                 "nm = 'unterminated",
                 "\"unterminated_ident = 1",
-                "nm = 'a\\' OR 1=1 OR nm = '"})
-        @org.junit.jupiter.api.DisplayName("where는 다른 행 원천·파일 쓰기·괄호 탈출·닫히지 않은 따옴표·역슬래시를 받지 않는다(2026-11-16)")
+                "nm = 'a\\' OR 1=1 OR nm = '",
+                "status = $$'$$) OR (status = $$'$$",
+                "status = $tag$'$tag$) OR (1=1",
+                "use_yn = 'Y' #",
+                "nm = q'[x') OR (1=1]'",
+                "nm = Q'{x}'"})
+        @org.junit.jupiter.api.DisplayName("where는 다른 행 원천·파일 쓰기·괄호 탈출·닫히지 않은 따옴표·벤더마다 다른 인용(역슬래시·$·#·q')을 받지 않는다(2026-11-16)")
         void whereCannotEscapeItsBoundary(String where) {
             ValidationResult r = withSchema().validate(spec(List.of(
                     new TableMapping("legacy_user", "tb_user_info", where,
@@ -519,8 +524,12 @@ class MappingValidatorTest {
                 "status IN ('A', 'B')",
                 "nm <> 'a(b' AND nm <> 'it''s)'",
                 "\"Legacy Col\" = 'x' AND [dept nm] <> ''",
-                "table_cd = 'T1' AND values_yn = 'N'"})
-        @org.junit.jupiter.api.DisplayName("따옴표 안의 괄호·인용 식별자·밑줄로 이어진 이름은 단일 읽기 조건식이다")
+                "table_cd = 'T1' AND values_yn = 'N'",
+                "status = 'TABLE' AND kind <> 'select'",
+                "\"table\" = 1",
+                "nm <> 'a;b -- c /* d $1 #2'",
+                "[a]]b] = 1"})
+        @org.junit.jupiter.api.DisplayName("따옴표 안의 값·괄호·금지어, 인용 식별자, 밑줄로 이어진 이름은 단일 읽기 조건식이다")
         void ordinaryReadPredicatesStayAllowed(String where) {
             ValidationResult r = withSchema().validate(spec(List.of(
                     new TableMapping("legacy_user", "tb_user_info", where,

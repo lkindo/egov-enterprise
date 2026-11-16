@@ -54,7 +54,8 @@ public class MappingValidator {
     /**
      * where 조각의 금지어. [2026-11-16] 집합 연산(union·intersect·except·minus)·행 원천(values·table)·쓰기(into·outfile·dumpfile)·
      * 실행(exec·execute)을 더했다 — PostgreSQL 의 {@code UNION VALUES (...)}·{@code UNION TABLE t} 와 MySQL 의
-     * {@code INTO OUTFILE} 은 select 없이 다른 행을 섞거나 파일을 쓴다. 괄호·따옴표 경계는 {@link #isUnsafeWhere} 가 따로 본다.
+     * {@code INTO OUTFILE} 은 select 없이 다른 행을 섞거나 파일을 쓴다. 따옴표 밖에서만 찾고, 괄호·따옴표 경계는
+     * {@link #isUnsafeWhere} 가 따로 본다.
      */
     private static final Pattern UNSAFE_WHERE = Pattern.compile(
             "(?is)(;|--|/\\*|\\*/|\\b(select|insert|update|delete|merge|drop|alter|create|truncate|call|copy|grant|revoke"
@@ -825,36 +826,54 @@ public class MappingValidator {
     /**
      * where 조각이 단일 읽기 조건식이 아닌가(2026-11-16). 금지어 외에 조각이 자기 경계를 벗어나는지를 본다. 조회는 조각을
      * {@code "(" + where + ") AND key IS NOT NULL"} 처럼 감싸 붙이므로, 따옴표 밖 괄호가 먼저 닫히거나({@code x) OR (1=1})
-     * 끝에서 열린 채 남거나, 문자열·인용 식별자가 닫히지 않으면 뒤에 붙는 필수 조건이 조각 안으로 들어가 우회된다. 역슬래시는
-     * 벤더마다 문자열 끝을 다르게 정해(MySQL·MariaDB 는 escape) 경계를 하나로 판정할 수 없어 받지 않는다.
+     * 끝에서 열린 채 남거나, 문자열·인용 식별자가 닫히지 않으면 뒤에 붙는 필수 조건이 조각 안으로 들어가 우회된다.
+     *
+     * <p>따옴표 경계를 먼저 가르고 금지어·주석·괄호는 따옴표 밖에서만 본다 — 문자열 값({@code status = 'TABLE'})은 SQL 이 아니다.
+     * 경계는 모든 원천 벤더가 같게 읽는 규칙(같은 문자를 두 번 써서 그 문자 하나)만 믿고, 벤더마다 다르게 읽는 문법은 받지 않는다:
+     * 역슬래시(MySQL·MariaDB 는 문자열 escape), {@code $}(PostgreSQL 달러 인용 {@code $$...$$}), {@code #}(MySQL·MariaDB 줄
+     * 주석), {@code q'}(Oracle 대체 인용). 이 문법들은 검사기가 본 경계와 원천 DB 가 읽는 경계를 갈라 위 우회를 연다.
      */
     static boolean isUnsafeWhere(String where) {
-        if (UNSAFE_WHERE.matcher(where).find() || where.indexOf('\\') >= 0) {
-            return true;
-        }
+        StringBuilder outside = new StringBuilder(where.length());
         int depth = 0;
         char quote = 0;
         for (int i = 0; i < where.length(); i++) {
             char c = where.charAt(i);
+            if (c == '\\') {
+                return true;
+            }
             if (quote != 0) {
                 char closing = quote == '[' ? ']' : quote;
                 if (c == closing) {
-                    // 같은 문자를 두 번 쓰면 닫지 않고 그 문자 하나다('' · "" · ``).
-                    if (closing != ']' && i + 1 < where.length() && where.charAt(i + 1) == closing) {
+                    // 같은 문자를 두 번 쓰면 닫지 않고 그 문자 하나다('' · "" · `` · ]]).
+                    if (i + 1 < where.length() && where.charAt(i + 1) == closing) {
                         i++;
                     } else {
                         quote = 0;
                     }
                 }
-            } else if (c == '\'' || c == '"' || c == '`' || c == '[') {
+                outside.append(' ');
+                continue;
+            }
+            if (c == '\'' || c == '"' || c == '`' || c == '[') {
+                if (c == '\'' && i > 0 && (where.charAt(i - 1) == 'q' || where.charAt(i - 1) == 'Q')) {
+                    return true;
+                }
                 quote = c;
-            } else if (c == '(') {
-                depth++;
-            } else if (c == ')' && --depth < 0) {
+                outside.append(' ');
+                continue;
+            }
+            if (c == '$' || c == '#' || (c == ')' && depth == 0)) {
                 return true;
             }
+            if (c == '(') {
+                depth++;
+            } else if (c == ')') {
+                depth--;
+            }
+            outside.append(c);
         }
-        return depth != 0 || quote != 0;
+        return depth != 0 || quote != 0 || UNSAFE_WHERE.matcher(outside).find();
     }
 
     private static String normalize(String value) {
