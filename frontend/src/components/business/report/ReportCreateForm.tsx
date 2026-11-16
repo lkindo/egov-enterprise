@@ -9,6 +9,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { WorkReportDtoRequestSchema } from '@/types/generated-zod';
 import { cn } from '@/lib/utils';
+import { useOptionalAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
+import { AttachmentFileList } from '@/app/components/ui/attachment-file-list';
+import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
+import { fileService } from '@/services/foundation/file/FileService';
+import { useToast } from '@/app/components/ui/toast';
+import { extractErrorMessage } from '@/app/actions/actionUtils';
+
+function reportFilesKey(files: File[]): string {
+    return files.map((file) => `${file.name}:${file.size}:${file.lastModified}`).join('|');
+}
 
 /**
  * 업무 보고 등록 폼.
@@ -66,17 +77,55 @@ export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onS
 
     const { isSubmitting } = form.formState;
     const isSavePending = isSubmitting || isSubmitPending || isPending;
+    const user = useOptionalAuth()?.user;
+    const canUploadAttachments = canPermission(user, 'FILE_UPLOAD');
+    const toastApi = useToast();
+    const existingAtchFileSn = initialData?.atchFileSn ?? undefined;
+    const [attachmentSelection, setAttachmentSelection] = useState<{
+        forSn: number | undefined;
+        files: File[];
+    }>({ forSn: existingAtchFileSn, files: [] });
+    const pendingFiles = attachmentSelection.forSn === existingAtchFileSn ? attachmentSelection.files : [];
+    const [clearedForSn, setClearedForSn] = useState<number | null>(null);
+    const clearedExisting = typeof existingAtchFileSn === 'number' && clearedForSn === existingAtchFileSn;
+    const uploadedSnRef = useRef<{ forSn: number | undefined; key: string; atchFileSn: number } | null>(null);
+
+    const isDirty = form.formState.isDirty || pendingFiles.length > 0 || clearedExisting;
 
     useEffect(() => {
-        onEditStateChange?.({ dirty: form.formState.isDirty, pending: isSavePending });
-    }, [form.formState.isDirty, isSavePending, onEditStateChange]);
+        onEditStateChange?.({ dirty: isDirty, pending: isSavePending });
+    }, [isDirty, isSavePending, onEditStateChange]);
 
     const handleSubmit = async (values: ReportFormValues) => {
         if (submitPendingRef.current) return;
         submitPendingRef.current = true;
         setSubmitPending(true);
         try {
-            await onSubmit(values);
+            let nextAtchFileSn = clearedExisting ? undefined : values.atchFileSn;
+            if (canUploadAttachments && pendingFiles.length > 0) {
+                const key = reportFilesKey(pendingFiles);
+                if (uploadedSnRef.current?.forSn === existingAtchFileSn && uploadedSnRef.current?.key === key) {
+                    nextAtchFileSn = uploadedSnRef.current.atchFileSn;
+                } else {
+                    try {
+                        const uploaded = await fileService.uploadFiles(pendingFiles);
+                        uploadedSnRef.current = { forSn: existingAtchFileSn, key, atchFileSn: uploaded };
+                        nextAtchFileSn = uploaded;
+                    } catch (uploadError) {
+                        const msg = extractErrorMessage(uploadError, '첨부파일을 올리지 못했습니다.');
+                        if (typeof toastApi.error === 'function') {
+                            toastApi.error(msg);
+                        } else {
+                            toastApi.toast(msg, 'error');
+                        }
+                        return;
+                    }
+                }
+            }
+            const payload = nextAtchFileSn === values.atchFileSn
+                ? values
+                : { ...values, atchFileSn: nextAtchFileSn };
+            await onSubmit(payload);
         } catch (error) {
             if (!form.applyServerErrors(error)) throw error;
         } finally {
@@ -158,6 +207,34 @@ export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onS
                         </FormItem>
                     )}
                 />
+
+                {isEdit && typeof existingAtchFileSn === 'number' && existingAtchFileSn > 0 && (
+                    <AttachmentFileList
+                        atchFileSn={existingAtchFileSn}
+                        clearable
+                        cleared={clearedExisting}
+                        onToggleClear={() =>
+                            setClearedForSn((prev) =>
+                                prev === existingAtchFileSn ? null : existingAtchFileSn,
+                            )
+                        }
+                        title="현재 첨부파일"
+                    />
+                )}
+
+                {canUploadAttachments && (
+                    <div className="space-y-1.5">
+                        <span className="text-xs font-bold text-muted-foreground">첨부파일</span>
+                        <StandardFileUploader
+                            key={existingAtchFileSn ?? 'none'}
+                            onFilesChange={(files) => {
+                                setAttachmentSelection({ forSn: existingAtchFileSn, files });
+                                uploadedSnRef.current = null;
+                            }}
+                            disabled={isSavePending}
+                        />
+                    </div>
+                )}
 
                 <div className="flex gap-3 pt-2">
                     <Button type="button" variant="outline" onClick={onCancel} disabled={isSavePending} className="flex-1 rounded-lg font-bold">

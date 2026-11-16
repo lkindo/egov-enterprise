@@ -148,9 +148,10 @@ function updateButtons() {
   document.querySelectorAll('[data-operation-reason]').forEach(node => { node.textContent = `${operationNames[node.dataset.operationReason]}: ${operationStatus(node.dataset.operationReason).message}`; });
   document.querySelectorAll('form button[type="submit"], [data-profile-save]').forEach(button => { button.disabled = busy || !ready; });
   const inputMutationBlocked = busy || !ready || !!state?.activeJobId || workspaceReadOnly();
-  for (const id of ['source-profile-form', 'target-profile-form', 'source-folder-form', 'source-upload-form', 'artifact-upload-form', 'confirmed-ledger-form', 'ledger-form']) {
+  for (const id of ['source-profile-form', 'target-profile-form', 'protection-form', 'source-folder-form', 'source-upload-form', 'artifact-upload-form', 'confirmed-ledger-form', 'ledger-form']) {
     $(id)?.querySelectorAll('button[type="submit"]').forEach(button => { button.disabled = inputMutationBlocked; });
   }
+  if ($('protection-clear')) $('protection-clear').disabled = inputMutationBlocked;
   $('load-ledger').disabled = busy || !ready || ledgerLoadPending;
   $('parse-ledger').disabled = busy || !ready;
   document.querySelectorAll('[data-review-edit]').forEach(input => { input.disabled = busy || ledgerJsonPending || reviewStale() || input.dataset.locked === 'true'; });
@@ -403,6 +404,15 @@ function renderArtifacts() {
   if (!$('ai-artifact-options').children.length) $('ai-artifact-options').append(element('p', { className: 'subtext', text: '용어 후보나 편집 원장을 준비하면 이름과 후보를 문맥으로 선택할 수 있습니다. 소스 근거는 확장 모드에서 별도로 선택하세요.' }));
   invalidatePreview();
 }
+function renderProtectionStatus() {
+  const status = $('protection-status');
+  if (!status) return;
+  const parts = [];
+  if (state?.protection?.algorithmKeyReady) parts.push('ALGORITHM_KEY 준비됨');
+  if (state?.protection?.rrnoKeyringReady) parts.push(`RRNO v2 준비됨 (${state.protection.rrnoActiveKeyId ?? ''})`);
+  status.textContent = parts.length ? parts.join(' · ') : '세션 키 미설정';
+  status.className = `pill ${parts.length ? 'good' : 'neutral'}`;
+}
 function renderState() {
   $('workspace-name').textContent = state.name ?? '레거시 데이터 이관';
   $('workspace-revision').textContent = `저장된 판 ${state.revision} · 로컬 실행기`;
@@ -414,6 +424,7 @@ function renderState() {
   $('pipeline-revision').textContent = String(state.revision);
   $('input-summary').textContent = Object.keys(state.inputs ?? {}).length ? displayJson(state.inputs) : '아직 등록된 자료가 없습니다.';
   syncProfiles(state.profiles);
+  renderProtectionStatus();
   if (!sourcePathDirty) $('source-path').value = state.inputs?.sourceRoot ?? '';
   if (!ledgerDirty && !ledgerLoadPending && ledgerArtifact() && currentReviewSignature() !== reviewSignature && currentReviewSignature() !== ledgerFailedSignature) void loadLedger(false);
   if (ledgerDirty && reviewStale()) feedback('ledger-feedback', '서버 원장 또는 후보가 바뀌었습니다. 미저장 입력은 보존했습니다. 필요한 내용을 복사한 뒤 서버 원장·후보를 다시 불러오세요.', true);
@@ -765,6 +776,37 @@ $('source-folder-form').addEventListener('submit', event => {
 });
 $('source-path').addEventListener('input', () => { sourcePathDirty = true; sourcePathGeneration += 1; updateButtons(); });
 $('profile-forms').addEventListener('input', updateButtons);
+$('protection-form')?.addEventListener('submit', event => {
+  event.preventDefault();
+  const algorithmKey = $('protection-algorithm-key').value;
+  const rrnoActiveKeyId = $('protection-rrno-key-id').value.trim();
+  const rrnoKeysJson = $('protection-rrno-keys-json').value.trim();
+  const body = { revision: state.revision, action: 'replace' };
+  if (algorithmKey) body.algorithmKey = algorithmKey;
+  if (rrnoActiveKeyId || rrnoKeysJson) {
+    body.rrnoActiveKeyId = rrnoActiveKeyId;
+    body.rrnoKeysJson = rrnoKeysJson;
+  }
+  mutation(() => api.protection(body), {
+    target: 'protection-feedback',
+    success: '세션 보호 키를 실행기 메모리에 적용했습니다.',
+    after: () => {
+      $('protection-algorithm-key').value = '';
+      $('protection-rrno-keys-json').value = '';
+    },
+  });
+});
+$('protection-clear')?.addEventListener('click', () => {
+  mutation(() => api.protection({ revision: state.revision, action: 'clear' }), {
+    target: 'protection-feedback',
+    success: '세션 보호 키를 실행기 메모리에서 해제했습니다.',
+    after: () => {
+      $('protection-algorithm-key').value = '';
+      $('protection-rrno-key-id').value = '';
+      $('protection-rrno-keys-json').value = '';
+    },
+  });
+});
 $('confirmed-ledger-form').addEventListener('submit', event => {
   event.preventDefault();
   mutation(() => api.input({ revision: state.revision, kind: 'confirmed-ledger', path: $('confirmed-ledger-path').value.trim() }), { target: 'confirmed-ledger-feedback', success: '확정 원장 경로를 등록했습니다. 기존 CLI의 확인 절차가 이어집니다.' });

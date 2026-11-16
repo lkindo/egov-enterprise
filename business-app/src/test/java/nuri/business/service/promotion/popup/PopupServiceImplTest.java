@@ -426,7 +426,7 @@ class PopupServiceImplTest {
     }
 
     @Test
-    @DisplayName("팝업 수정 - 같은 첨부 유지와 null 분리는 재할당 검증을 건너뛴다")
+    @DisplayName("팝업 수정 - 같은 첨부는 재할당·수거를 건너뛰고, 분리·교체·외부 URL 전환 시 이전 미참조 첨부를 flush 뒤 수거한다")
     void updatePopup_sameOrDetachedAttachmentSkipsAssignmentCheck() {
         authenticate("POPUP_UPDATE");
         Popup popup = Popup.builder()
@@ -438,18 +438,54 @@ class PopupServiceImplTest {
         given(popupRepository.findById(1L)).willReturn(Optional.of(popup));
 
         popupService.updatePopup(1L, "updater", PopupDto.builder()
-                .popupTtlNm("NEW")
+                .popupTtlNm("SAME_ID")
                 .fileUrl("/api/v1/files/download?fileId=101")
                 .version(0)
                 .build());
+        verifyNoInteractions(attachmentAssignmentPolicy);
+
         popupService.updatePopup(1L, "updater", PopupDto.builder()
                 .popupTtlNm("DETACHED")
                 .fileUrl(null)
                 .version(0)
                 .build());
 
-        verifyNoInteractions(attachmentAssignmentPolicy);
+        org.mockito.InOrder inOrder = inOrder(popupRepository, attachmentAssignmentPolicy);
+        inOrder.verify(popupRepository).flush();
+        inOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(101L);
+        verify(attachmentAssignmentPolicy, never()).assertAssignable(anyLong());
         assertThat(popup.getFileUrl()).isNull();
+    }
+
+    @Test
+    @DisplayName("팝업 수정 - 내부 첨부 교체 및 외부 URL 전환 시 flush 뒤 이전 미참조 첨부를 수거한다")
+    void updatePopup_flushesAndReleasesPreviousAttachmentWhenReplacedOrExternalized() {
+        authenticate("POPUP_UPDATE");
+        Popup popup = Popup.builder()
+                .popupSn(1L)
+                .popupTtlNm("OLD")
+                .fileUrl("/api/v1/files/100")
+                .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(popup, "version", 0);
+        given(popupRepository.findById(1L)).willReturn(Optional.of(popup));
+
+        popupService.updatePopup(1L, "updater", PopupDto.builder()
+                .popupTtlNm("REPLACED")
+                .fileUrl("/api/v1/files/202")
+                .version(0)
+                .build());
+        popupService.updatePopup(1L, "updater", PopupDto.builder()
+                .popupTtlNm("EXTERNAL")
+                .fileUrl("https://cdn.example.test/banner.png")
+                .version(0)
+                .build());
+
+        org.mockito.InOrder inOrder = inOrder(attachmentAssignmentPolicy, popupRepository);
+        inOrder.verify(attachmentAssignmentPolicy).assertAssignable(202L);
+        inOrder.verify(popupRepository).flush();
+        inOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(100L);
+        inOrder.verify(popupRepository).flush();
+        inOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(202L);
     }
 
     @Test

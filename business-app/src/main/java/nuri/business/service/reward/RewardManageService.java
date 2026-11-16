@@ -66,10 +66,39 @@ public class RewardManageService {
      * <p>[2026-10-20] 수상자는 있는 사용 중 계정이어야 한다. 종전에는 아무 문자열이나 받아 없는 사람에게 포상이 기록됐다
      * (화면이 식별자를 자유 입력으로 받았다).</p>
      */
+    private static final java.util.regex.Pattern STORAGE_DATE =
+            java.util.regex.Pattern.compile(nuri.foundation.core.validation.Ymd.OPTIONAL_PATTERN);
+
+    private static String normalizeAndValidateDate(String value) {
+        if (value == null || value.isEmpty()) {
+            return null;
+        }
+        if (!STORAGE_DATE.matcher(value).matches()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "유효하지 않은 날짜 형식입니다: " + value);
+        }
+        return value;
+    }
+
+    private static void validateOptionalFields(RewardManageDto dto) {
+        if (dto.getRwardCode() != null && dto.getRwardCode().isBlank()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "포상 구분을 선택해 주세요.");
+        }
+    }
+
+    private static String requireRewardName(String value) {
+        if (value == null || value.isBlank()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "포상 명칭을 입력해 주세요.");
+        }
+        return value.trim();
+    }
+
     @Transactional
     public RewardManageDto createReward(RewardManageDto dto) {
         SecurityUtil.assertPermission("REWARD_CREATE");
         UserSearchDto awardee = requireAssignableAwardee(dto.getRwardwnrId());
+        validateOptionalFields(dto);
+        String rewardName = requireRewardName(dto.getRwardNm());
+        String rewardDate = normalizeAndValidateDate(dto.getRwardDe());
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
@@ -77,8 +106,8 @@ public class RewardManageService {
         RewardManage reward = RewardManage.builder()
                 .rwrdUserId(dto.getRwardwnrId())
                 .rwrdCd(dto.getRwardCode())
-                .rwrdYmd(dto.getRwardDe())
-                .rwrdNm(dto.getRwardNm())
+                .rwrdYmd(rewardDate)
+                .rwrdNm(rewardName)
                 .cntrbCn(dto.getPblenCn())
                 .atchFileSn(atchFileSn)
                 .build();
@@ -101,14 +130,21 @@ public class RewardManageService {
         UserSearchDto awardee = Objects.equals(reward.getRwrdUserId(), dto.getRwardwnrId())
                 ? awardeeProfile(reward.getRwrdUserId())
                 : requireAssignableAwardee(dto.getRwardwnrId());
+        validateOptionalFields(dto);
+        String rewardName = requireRewardName(dto.getRwardNm());
+        String rewardDate = normalizeAndValidateDate(dto.getRwardDe());
+        Long previousAtchFileSn = reward.getAtchFileSn();
         Long atchFileSn = dto.getAtchFileSn();
-        if (atchFileSn != null && !Objects.equals(reward.getAtchFileSn(), atchFileSn)) {
+        if (atchFileSn != null && !Objects.equals(previousAtchFileSn, atchFileSn)) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
         }
-        reward.update(dto.getRwardwnrId(), dto.getRwardCode(), dto.getRwardDe(), dto.getRwardNm(), dto.getPblenCn(),
-                atchFileSn != null ? atchFileSn : reward.getAtchFileSn());
+        reward.update(dto.getRwardwnrId(), dto.getRwardCode(), rewardDate, rewardName, dto.getPblenCn(),
+                atchFileSn != null ? atchFileSn : previousAtchFileSn);
         // 올라간 버전을 응답에 싣는다 — @Version 은 flush 때 오르므로 먼저 내보낸다(결재 임시저장 선례).
         rewardManageRepository.flush();
+        if (previousAtchFileSn != null && !Objects.equals(previousAtchFileSn, reward.getAtchFileSn())) {
+            attachmentAssignmentPolicy.releaseIfUnreferenced(previousAtchFileSn);
+        }
         return convertToDto(reward, awardee);
     }
 

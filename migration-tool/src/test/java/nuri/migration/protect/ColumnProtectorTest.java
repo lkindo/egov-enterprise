@@ -158,6 +158,73 @@ class ColumnProtectorTest {
         }
     }
 
+    @Test
+    @DisplayName("rrno-aes-gcm-v2 는 v2 키링으로 무작위 nonce 봉투를 만들고, 키링 누락·불일치·손상은 fail-closed 다")
+    void rrnoAesGcmV2EncryptsAndFailsClosedOnInvalidConfigOrShape() {
+        String key1 = java.util.Base64.getEncoder().encodeToString(new byte[32]);
+        byte[] raw2 = new byte[32];
+        java.util.Arrays.fill(raw2, (byte) 7);
+        String key2 = java.util.Base64.getEncoder().encodeToString(raw2);
+        String keysJson = "{\"k1\":\"" + key1 + "\",\"k2\":\"" + key2 + "\"}";
+
+        MappingSpec v2Spec = spec(new ColumnMapping("JUMIN", "user_enrrno", "trim", null, null, null, null, "rrno-aes-gcm-v2"));
+        Function<String, String> v2Env = name -> switch (name) {
+            case ColumnProtector.RRNO_ACTIVE_KEY_ID_ENVIRONMENT -> "k2";
+            case ColumnProtector.RRNO_KEYS_JSON_ENVIRONMENT -> keysJson;
+            default -> null;
+        };
+
+        ColumnProtector protector = ColumnProtector.forRun(v2Spec, v2Env);
+        String cipher1 = (String) protector.protect("tb_user_info", "user_enrrno", RRNO);
+        String cipher2 = (String) protector.protect("tb_user_info", "user_enrrno", RRNO);
+        assertThat(cipher1).startsWith("v2:k2:");
+        assertThat(cipher2).startsWith("v2:k2:");
+        assertThat(cipher1).isNotEqualTo(cipher2);
+        assertThat(RrnoAesGcmColumnCipher.isCanonicalEnvelope(cipher1)).isTrue();
+        assertThat(protector.protect("tb_user_info", "user_enrrno", "  ")).isNull();
+
+        RrnoAesGcmColumnCipher directCipher = new RrnoAesGcmColumnCipher("k2", keysJson);
+        assertThat(directCipher.decrypt(cipher1)).isEqualTo(RRNO);
+        assertThat(directCipher.toString()).contains("configuredKeys=2").doesNotContain(key1, key2);
+
+        // 누락·공백·잘못된 키 JSON 은 시작 전 거부, 오류에 키 원문 노출 금지
+        assertThatThrownBy(() -> ColumnProtector.forRun(v2Spec, n -> null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining(ColumnProtector.RRNO_ACTIVE_KEY_ID_ENVIRONMENT)
+                .hasMessageContaining(ColumnProtector.RRNO_KEYS_JSON_ENVIRONMENT);
+        assertThatThrownBy(() -> ColumnProtector.forRun(v2Spec, n -> ColumnProtector.RRNO_ACTIVE_KEY_ID_ENVIRONMENT.equals(n) ? "k2" : " "))
+                .isInstanceOf(IllegalStateException.class);
+        for (String badJson : new String[] {"not-json", "[]", "{}", "{\"bad key!\":\"" + key1 + "\"}",
+                "{\"k2\":123}", "{\"k2\":\"short\"}", "{\"k2\":\"" + key1 + "\",\"k2\":\"" + key2 + "\"}"}) {
+            assertThatThrownBy(() -> ColumnProtector.forRun(v2Spec, name ->
+                    ColumnProtector.RRNO_ACTIVE_KEY_ID_ENVIRONMENT.equals(name) ? "k2" : badJson))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageNotContaining(key1)
+                    .hasMessageNotContaining(key2);
+        }
+        assertThatThrownBy(() -> ColumnProtector.forRun(v2Spec, name ->
+                ColumnProtector.RRNO_ACTIVE_KEY_ID_ENVIRONMENT.equals(name) ? "missing" : keysJson))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageNotContaining(key1);
+
+        // 비정규 v2 봉투 출력은 차단
+        ColumnProtectionPlan.ProtectedColumn v2Col = ColumnProtectionPlan.of(v2Spec).columns().get("tb_user_info.user_enrrno");
+        ColumnProtector fakeV2 = new ColumnProtector(Map.of(ColumnProtectionPlan.key("tb_user_info", "user_enrrno"), v2Col),
+                new FakeCipher(p -> "v2:k2:bad:ct=", c -> pOr(c)));
+        assertThatThrownBy(() -> fakeV2.protect("tb_user_info", "user_enrrno", RRNO))
+                .isInstanceOf(ColumnProtector.ProtectedColumnException.class)
+                .hasMessage("PROTECTED_COLUMN tb_user_info.user_enrrno: 암호문 형식이 아닌 값은 암호화 컬럼에 쓸 수 없습니다");
+        assertThat(RrnoAesGcmColumnCipher.isCanonicalEnvelope(null)).isFalse();
+        assertThat(RrnoAesGcmColumnCipher.isCanonicalEnvelope("v1:k1:a:b")).isFalse();
+        assertThat(RrnoAesGcmColumnCipher.isCanonicalEnvelope("v2:k1:" + "a".repeat(16) + "=" + ":b")).isFalse();
+        assertThatThrownBy(() -> directCipher.decrypt("v2:unknown:" + cipher1.split(":")[2] + ":" + cipher1.split(":")[3]))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    private static String pOr(String value) {
+        return value;
+    }
+
     private static ColumnProtector protectorWith(ColumnCipher cipher) {
         return new ColumnProtector(Map.of(ColumnProtectionPlan.key("tb_user_info", "user_enrrno"), USER_ENRRNO), cipher);
     }

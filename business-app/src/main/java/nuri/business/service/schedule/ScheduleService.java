@@ -170,20 +170,46 @@ public class ScheduleService {
      * 시작일 없이 저장된 일정은 어느 달력에도 나타나지 않았다. 화면은 이 칸을 필수로 받아 왔고, API 를 직접 부르는 경로만
      * 비어 들어왔다. 응답 계약은 그대로 둔다 — 시작일 없이 저장된 기존 일정도 목록에서 계속 읽혀야 한다({@code ScheduleDto}).
      */
+    private static final java.util.regex.Pattern STORAGE_DATE = java.util.regex.Pattern.compile(Ymd.OPTIONAL_PATTERN);
+
     private static void requireStartDate(ScheduleDto dto) {
         if (dto.getSchdlBgngYmd() == null || dto.getSchdlBgngYmd().isBlank()) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "일정 시작일을 입력하세요.");
         }
     }
 
-    private static String normalizeEndDate(String endDate) {
-        return "".equals(endDate) ? null : endDate;
+    private static String requireScheduleName(ScheduleDto dto) {
+        if (dto.getSchdlNm() == null || dto.getSchdlNm().isBlank()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "일정명을 입력해 주세요.");
+        }
+        return dto.getSchdlNm().trim();
+    }
+
+    private static String normalizeAndValidateDate(String value) {
+        if (value == null || value.isEmpty()) {
+            return null;
+        }
+        if (!STORAGE_DATE.matcher(value).matches()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "유효하지 않은 날짜 형식입니다: " + value);
+        }
+        return value;
+    }
+
+    private static String validateEndDateOrder(String startYmd, String rawEndDate) {
+        String endYmd = normalizeAndValidateDate(rawEndDate);
+        if (endYmd != null && endYmd.compareTo(startYmd) < 0) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "일정 종료일은 시작일보다 빠를 수 없습니다.");
+        }
+        return endYmd;
     }
 
     @Transactional
     public Long createSchedule(String userId, ScheduleDto dto) {
         requireStartDate(dto);
         assertScope(dto.getSchdlSeCd());
+        String schdlNm = requireScheduleName(dto);
+        String startYmd = normalizeAndValidateDate(dto.getSchdlBgngYmd());
+        String endYmd = validateEndDateOrder(startYmd, dto.getSchdlEndYmd());
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
@@ -200,10 +226,10 @@ public class ScheduleService {
                 //   끼워 넣을 수 있고, 미전송 시 null 이 되어 부서 목록에서 사라진다.
                 .schdlDeptId(resolveDeptId(userId))
                 .schdlKndCd(dto.getSchdlKndCd())
-                .schdlNm(dto.getSchdlNm())
+                .schdlNm(schdlNm)
                 .schdlCn(dto.getSchdlCn())
-                .schdlBgngYmd(dto.getSchdlBgngYmd())
-                .schdlEndYmd(normalizeEndDate(dto.getSchdlEndYmd()))
+                .schdlBgngYmd(startYmd)
+                .schdlEndYmd(endYmd)
                 .schdlPlcNm(dto.getSchdlPlcNm())
                 .schdlImprtCd(dto.getSchdlImprtCd())
                 .schdlPicId(userId)
@@ -226,20 +252,24 @@ public class ScheduleService {
         // [V2_152] 전사 일정을 고치거나 전사로 바꾸는 일은 대행 권한 보유자만 — 등록자라는 이유로 전사 공지를 고치지 못한다.
         assertCompanyWideUpdate(entity.getSchdlSeCd());
         assertScope(dto.getSchdlSeCd());
+        String schdlNm = requireScheduleName(dto);
+        String startYmd = normalizeAndValidateDate(dto.getSchdlBgngYmd());
+        String endYmd = validateEndDateOrder(startYmd, dto.getSchdlEndYmd());
 
+        Long previousAtchFileSn = entity.getAtchFileSn();
         Long atchFileSn = dto.getAtchFileSn();
-        if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
+        if (atchFileSn != null && !Objects.equals(previousAtchFileSn, atchFileSn)) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
         }
 
         boolean becomesDepartmentShared = "1".equals(dto.getSchdlSeCd()) && !"1".equals(entity.getSchdlSeCd());
         entity.updateAll(
-                dto.getSchdlNm(),
+                schdlNm,
                 dto.getSchdlCn(),
                 dto.getSchdlSeCd(),
                 dto.getSchdlKndCd(),
-                dto.getSchdlBgngYmd(),
-                normalizeEndDate(dto.getSchdlEndYmd()),
+                startYmd,
+                endYmd,
                 dto.getSchdlPlcNm(),
                 dto.getSchdlImprtCd(),
                 // [소유자 불변] 담당자는 등록 시 인증 주체로 고정되며 수정으로 재지정하지 않는다.
@@ -247,13 +277,17 @@ public class ScheduleService {
                 //   ② 타인 loginId 로 바꿔 남의 일정으로 넘길 수 있다. create 만 막으면 이 경로로 우회된다.
                 entity.getSchdlPicId(),
                 dto.getReptSeCd(),
-                atchFileSn != null ? atchFileSn : entity.getAtchFileSn());
+                atchFileSn);
         // 등록 뒤 소유자의 부서가 바뀌었으면 옛 부서에 공유된다. 대행 수정자의 부서로 옮기면 다른 부서에 내용이 열리므로 소유자 기준이다.
         if (becomesDepartmentShared) {
             entity.shareWithDepartment(resolveDeptId(entity.getFrstRgtrId()));
         }
         
         entity.setLastMdfrId(userId);
+        if (previousAtchFileSn != null && !Objects.equals(previousAtchFileSn, entity.getAtchFileSn())) {
+            scheduleRepository.flush();
+            attachmentAssignmentPolicy.releaseIfUnreferenced(previousAtchFileSn);
+        }
     }
 
     @Transactional

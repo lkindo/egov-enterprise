@@ -42,6 +42,22 @@ class ColumnProtectionPlanTest {
         assertThat(planned.targetTable()).isEqualTo("public.TB_USER_INFO");
         assertThat(planned.column()).isEqualTo("USER_ENRRNO");
         assertThat(planned.entry().protection()).isEqualTo(ColumnProtection.ARIA_EGOV_V1);
+        assertThat(planned.protection()).isEqualTo(ColumnProtection.ARIA_EGOV_V1);
+    }
+
+    @Test
+    @DisplayName("user_enrrno 는 rrno-aes-gcm-v2 도 허용하고, 허용 집합 검증이 동작한다")
+    void rrnoAesGcmV2DeclarationIsAccepted() {
+        ColumnProtectionPlan plan = plan(table("public.TB_USER_INFO",
+                column("JUMIN", "USER_ENRRNO", "rrno-aes-gcm-v2"), column("NM", "user_nm", null)));
+
+        assertThat(plan.violations()).isEmpty();
+        ColumnProtectionPlan.ProtectedColumn planned = plan.columns().get("tb_user_info.user_enrrno");
+        assertThat(planned.protection()).isEqualTo(ColumnProtection.RRNO_AES_GCM_V2);
+        assertThat(planned.entry().allows(ColumnProtection.RRNO_AES_GCM_V2)).isTrue();
+        assertThat(planned.entry().allows(ColumnProtection.ARIA_EGOV_V1)).isTrue();
+        assertThat(planned.entry().allows(ColumnProtection.MFA_AES_GCM_V1)).isFalse();
+        assertThat(planned.entry().allows(null)).isFalse();
     }
 
     @Test

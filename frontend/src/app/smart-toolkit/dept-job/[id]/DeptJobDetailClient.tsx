@@ -16,6 +16,7 @@ import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUser
 import { DeptJobForm, DeptJobFormValues, PRIORITY_LABEL } from '@/components/business/deptJob/DeptJobForm';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { UserPicker } from '@/app/components/ui/user-picker';
+import { AttachmentFileList } from '@/app/components/ui/attachment-file-list';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { useDirtyCloseGuard } from '@/hooks/useDirtyCloseGuard';
 import { isConflictError } from '@/lib/query/list-query-defaults';
@@ -315,6 +316,8 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
                                     {job.deptTaskCn?.trim() ? job.deptTaskCn : '작성된 내용이 없습니다.'}
                                 </p>
                             </section>
+
+                            <AttachmentFileList atchFileSn={job.atchFileSn} />
 
                             <section className="grid gap-4 sm:grid-cols-2 border-t border-border pt-6">
                                 <div className="space-y-1">

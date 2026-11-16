@@ -356,6 +356,65 @@ class ScheduleServiceTest {
     }
 
     @Test
+    @DisplayName("일정 수정 — 첨부를 교체하거나 분리하면 flush 뒤 이전 미참조 첨부를 수거하고, 동일 첨부는 수거하지 않는다")
+    void updateSchedule_releasesPreviousAttachmentOnReplaceOrDetach() {
+        Schedule existing = Schedule.builder().schdlSn(1L).schdlNm("제목").schdlBgngYmd("20261020").atchFileSn(100L).build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
+        given(scheduleRepository.findById(1L)).willReturn(Optional.of(existing));
+
+        // 동일 첨부(100L -> 100L): 재할당 검사도 수거도 하지 않는다.
+        scheduleService.updateSchedule(1L, "user1", ScheduleDto.builder()
+                .schdlNm("동일 첨부").schdlBgngYmd("20261020").atchFileSn(100L).version(0).build());
+        org.mockito.Mockito.verifyNoInteractions(attachmentAssignmentPolicy);
+
+        // 교체(100L -> 202L): 새 첨부 할당 검증 → flush → 이전 첨부 수거 순서
+        scheduleService.updateSchedule(1L, "user1", ScheduleDto.builder()
+                .schdlNm("교체 첨부").schdlBgngYmd("20261020").atchFileSn(202L).version(0).build());
+        org.mockito.InOrder replaceOrder = org.mockito.Mockito.inOrder(attachmentAssignmentPolicy, scheduleRepository);
+        replaceOrder.verify(attachmentAssignmentPolicy).assertAssignable(202L);
+        replaceOrder.verify(scheduleRepository).flush();
+        replaceOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(100L);
+        assertThat(existing.getAtchFileSn()).isEqualTo(202L);
+
+        // 분리(202L -> null): flush → 이전 첨부 수거
+        scheduleService.updateSchedule(1L, "user1", ScheduleDto.builder()
+                .schdlNm("첨부 분리").schdlBgngYmd("20261020").atchFileSn(null).version(0).build());
+        org.mockito.InOrder detachOrder = org.mockito.Mockito.inOrder(scheduleRepository, attachmentAssignmentPolicy);
+        detachOrder.verify(scheduleRepository).flush();
+        detachOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(202L);
+        assertThat(existing.getAtchFileSn()).isNull();
+    }
+
+    @Test
+    @DisplayName("[Top 6 A3] 일정 등록·수정 — 역전된 기간, 유효하지 않은 날짜, 공백 일정명은 400 이고 저장·변경하지 않는다")
+    void createAndUpdateRejectReversedOrMalformedDatesAndBlankTitle() {
+        Schedule existing = Schedule.builder().schdlSn(1L).schdlNm("원래 제목")
+                .schdlBgngYmd("20261020").schdlEndYmd("20261022").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
+        given(scheduleRepository.findById(1L)).willReturn(Optional.of(existing));
+
+        List<ScheduleDto> invalidPayloads = List.of(
+                ScheduleDto.builder().schdlNm("   ").schdlBgngYmd("20261020").version(0).build(),
+                ScheduleDto.builder().schdlNm("역전").schdlBgngYmd("20261025").schdlEndYmd("20261020").version(0).build(),
+                ScheduleDto.builder().schdlNm("달력오류").schdlBgngYmd("20260230").version(0).build(),
+                ScheduleDto.builder().schdlNm("종료일공백").schdlBgngYmd("20261020").schdlEndYmd(" ").version(0).build(),
+                ScheduleDto.builder().schdlNm("하이픈날짜").schdlBgngYmd("2026-10-20").version(0).build()
+        );
+        for (ScheduleDto payload : invalidPayloads) {
+            assertThatThrownBy(() -> scheduleService.createSchedule("user1", payload))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+            assertThatThrownBy(() -> scheduleService.updateSchedule(1L, "user1", payload))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        org.mockito.Mockito.verify(scheduleRepository, org.mockito.Mockito.never()).save(any());
+        assertThat(existing.getSchdlNm()).isEqualTo("원래 제목");
+        assertThat(existing.getSchdlBgngYmd()).isEqualTo("20261020");
+        assertThat(existing.getSchdlEndYmd()).isEqualTo("20261022");
+    }
+
+    @Test
     @org.junit.jupiter.api.DisplayName("🔐 이미 부서 공유인 일정을 고쳐도 공유 부서는 그대로다 — 제목만 고친 대행 수정이 다른 부서로 옮기지 않는다")
     void updateSchedule_keepsTheSharedDepartmentOnPlainEdits() {
         Schedule entity = Schedule.builder().schdlSn(1L).schdlNm("일정").schdlSeCd("1").schdlDeptId("ORIGINAL_DEPT").build();

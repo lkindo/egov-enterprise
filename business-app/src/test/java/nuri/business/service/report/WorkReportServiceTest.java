@@ -199,7 +199,7 @@ class WorkReportServiceTest {
     }
 
     @Test
-    @DisplayName("업무보고 수정 - 동일 첨부 유지와 null 분리는 재할당 검증을 하지 않는다")
+    @DisplayName("업무보고 수정 - 동일 첨부 유지는 수거·재검증하지 않고, 첨부 교체·분리는 flush 뒤 이전 미참조 첨부를 수거한다")
     void updateWorkReport_sameOrDetachedAttachmentSkipsAssignmentCheck() {
         WorkReport report = WorkReport.builder().rptpSn(1L).rptTtl("기존").atchFileSn(100L).build();
         org.springframework.test.util.ReflectionTestUtils.setField(report, "version", 0);
@@ -208,12 +208,51 @@ class WorkReportServiceTest {
         try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             workReportService.updateWorkReport(WorkReportDto.builder()
                     .rptpSn(1L).rptTtl("동일").atchFileSn(100L).version(0).build());
+            verifyNoInteractions(attachmentAssignmentPolicy);
+
+            workReportService.updateWorkReport(WorkReportDto.builder()
+                    .rptpSn(1L).rptTtl("교체").atchFileSn(202L).version(0).build());
             workReportService.updateWorkReport(WorkReportDto.builder()
                     .rptpSn(1L).rptTtl("분리").atchFileSn(null).version(0).build());
         }
 
-        verifyNoInteractions(attachmentAssignmentPolicy);
+        org.mockito.InOrder inOrder = inOrder(attachmentAssignmentPolicy, workReportRepository);
+        inOrder.verify(attachmentAssignmentPolicy).assertAssignable(202L);
+        inOrder.verify(workReportRepository).flush();
+        inOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(100L);
+        inOrder.verify(workReportRepository).flush();
+        inOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(202L);
+        verify(attachmentAssignmentPolicy, times(1)).assertAssignable(any());
         assertNull(report.getAtchFileSn());
+    }
+
+    @Test
+    @DisplayName("[Top 6 A3] 업무보고 등록·수정 - 공백 제목과 잘못된 날짜 형식은 400 이고 저장·변경하지 않는다")
+    void createAndUpdateWorkReport_rejectsBlankTitleAndInvalidDate() {
+        authenticateAs("user1", "ROLE_USER");
+        WorkReport existing = WorkReport.builder().rptpSn(1L).rptTtl("기존 제목").rptYmd("20260901").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
+        when(workReportRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        for (WorkReportDto invalid : List.of(
+                WorkReportDto.builder().rptpSn(1L).rptTtl("   ").rptYmd("20260901").version(0).build(),
+                WorkReportDto.builder().rptpSn(1L).rptTtl("보고").rptYmd("20260230").version(0).build(),
+                WorkReportDto.builder().rptpSn(1L).rptTtl("보고").rptYmd(" ").version(0).build(),
+                WorkReportDto.builder().rptpSn(1L).rptTtl("보고").rptYmd("2026-09-01").version(0).build())) {
+            BusinessException createErr = assertThrows(BusinessException.class,
+                    () -> workReportService.createWorkReport(invalid));
+            assertEquals(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE, createErr.getErrorCode());
+
+            try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+                BusinessException updateErr = assertThrows(BusinessException.class,
+                        () -> workReportService.updateWorkReport(invalid));
+                assertEquals(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE, updateErr.getErrorCode());
+            }
+        }
+
+        verify(workReportRepository, never()).save(any());
+        assertEquals("기존 제목", existing.getRptTtl());
+        assertEquals("20260901", existing.getRptYmd());
     }
 
     @Test

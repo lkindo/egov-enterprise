@@ -201,6 +201,8 @@ export default function ScheduleDeptClient() {
             //   (z.string().optional())이 거부해 같은 화면에서 수정할 수 없었다. 중요도와 같게 비어 있으면 비워 둔다.
             schdlKndCd: schedule.schdlKndCd ?? undefined,
             reptSeCd: schedule.reptSeCd ?? undefined,
+            // 기존 일정에 연결된 첨부파일 번호도 함께 왕복시켜 부서 일정 수정 시 첨부가 분리되지 않게 한다.
+            atchFileSn: schedule.atchFileSn ?? undefined,
         });
         validation.setFormErrors({}, false);
         setIsDialogOpen(true);

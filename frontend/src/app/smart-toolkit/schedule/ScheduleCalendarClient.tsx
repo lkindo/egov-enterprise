@@ -8,6 +8,7 @@ import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calendar } from '@/components/ui/calendar';
 import { StandardModal } from '@/app/components/ui/standard-modal';
+import { AttachmentFileList } from '@/app/components/ui/attachment-file-list';
 import { ScheduleCreateForm, type ScheduleFormValues } from '@/components/business/schedule/ScheduleCreateForm';
 import { useWorkHubTabStrip } from '@/components/business/work-hub/work-hub-tabs';
 // sonner 직접 호출은 문자열 정규화 페일세이프가 없어 객체가 들어오면 '[object Object]' 가 노출된다.
@@ -69,6 +70,7 @@ export default function ScheduleCalendarClient({ initialYmd }: ScheduleCalendarC
   // 폼의 미저장 여부. 닫기 가드가 이 값만 본다 — 저장 중 차단은 StandardModal 의
   // closeDisabled 가 따로 소유하므로 여기서 pending 을 다시 판정하지 않는다.
   const [scheduleDirty, setScheduleDirty] = useState(false);
+  const [detailSchedule, setDetailSchedule] = useState<DeptSchedule | null>(null);
   // 진행 중인 동작의 종류와 대상 행을 함께 들고 행별 aria-busy 를 정확히 찍는다.
   const scheduleActionPendingRef = React.useRef(false);
   const [scheduleAction, setScheduleAction] = useState<{ type: 'save' | 'delete'; id?: number } | null>(null);
@@ -217,7 +219,11 @@ export default function ScheduleCalendarClient({ initialYmd }: ScheduleCalendarC
             aria-label={`${item.schdlNm || '제목 없음'} 일정 수정`}
             disabled={scheduleAction !== null}
             className="px-3 text-[10px] font-black uppercase"
-            onClick={() => { setEditingSchedule(item); setScheduleModalOpen(true); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditingSchedule(item);
+              setScheduleModalOpen(true);
+            }}
           >
             수정
           </Button>
@@ -231,7 +237,10 @@ export default function ScheduleCalendarClient({ initialYmd }: ScheduleCalendarC
             aria-busy={scheduleAction?.type === 'delete' && scheduleAction.id === item.schdlSn || undefined}
             disabled={scheduleAction !== null}
             className="px-3 text-[10px] font-black uppercase text-rose-500 hover:bg-rose-500 hover:text-white"
-            onClick={() => handleDeleteSchedule(item)}
+            onClick={(e) => {
+              e.stopPropagation();
+              void handleDeleteSchedule(item);
+            }}
           >
             삭제
           </Button>
@@ -316,6 +325,8 @@ export default function ScheduleCalendarClient({ initialYmd }: ScheduleCalendarC
               data={visibleSchedules}
               loading={isScheduleLoading}
               keyField="schdlSn"
+              onRowClick={(item) => setDetailSchedule(item)}
+              rowActionLabel={(item) => `${item.schdlNm || '제목 없음'} 일정 상세 보기`}
               emptyMessage="등록된 일정이 없습니다."
               // 조회 실패를 '데이터 없음'으로 위장하지 않는다.
               error={isScheduleError ? (scheduleError instanceof Error ? scheduleError : new Error('일정을 불러오지 못했습니다.')) : null}
@@ -325,6 +336,64 @@ export default function ScheduleCalendarClient({ initialYmd }: ScheduleCalendarC
         </div>,
       )}
     </WorkListPage>
+
+      <StandardModal
+        isOpen={detailSchedule !== null}
+        onClose={() => setDetailSchedule(null)}
+        title={detailSchedule?.schdlNm || '일정 상세 정보'}
+        maxWidth="lg"
+        footer={
+          detailSchedule && (
+            <>
+              <Button type="button" variant="ghost" onClick={() => setDetailSchedule(null)}>
+                닫기
+              </Button>
+              {detailSchedule.editable && (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const target = detailSchedule;
+                    setDetailSchedule(null);
+                    setEditingSchedule(target);
+                    setScheduleModalOpen(true);
+                  }}
+                >
+                  일정 수정
+                </Button>
+              )}
+            </>
+          )
+        }
+      >
+        {detailSchedule && (
+          <div className="space-y-4 text-sm">
+            <div className="grid gap-3 sm:grid-cols-2 border-b border-border pb-3">
+              <div>
+                <span className="text-xs font-bold text-muted-foreground">기간</span>
+                <p className="mt-0.5 font-mono text-xs text-foreground">
+                  {detailSchedule.schdlBgngYmd
+                    ? format(parseYmd(detailSchedule.schdlBgngYmd) as Date, 'yyyy-MM-dd (E)', { locale: ko })
+                    : '-'}
+                  {detailSchedule.schdlEndYmd && detailSchedule.schdlEndYmd !== detailSchedule.schdlBgngYmd
+                    ? ` ~ ${format(parseYmd(detailSchedule.schdlEndYmd) as Date, 'yyyy-MM-dd (E)', { locale: ko })}`
+                    : ''}
+                </p>
+              </div>
+              <div>
+                <span className="text-xs font-bold text-muted-foreground">장소</span>
+                <p className="mt-0.5 text-foreground">{detailSchedule.schdlPlcNm || '-'}</p>
+              </div>
+            </div>
+            <div>
+              <span className="text-xs font-bold text-muted-foreground">내용</span>
+              <p className="mt-1 whitespace-pre-wrap leading-relaxed text-foreground">
+                {detailSchedule.schdlCn?.trim() || '등록된 내용이 없습니다.'}
+              </p>
+            </div>
+            <AttachmentFileList atchFileSn={detailSchedule.atchFileSn} />
+          </div>
+        )}
+      </StandardModal>
 
       {/* 일정 등록 다이얼로그 — 캘린더에서 선택한 날짜가 기본값이 된다. */}
       <StandardModal

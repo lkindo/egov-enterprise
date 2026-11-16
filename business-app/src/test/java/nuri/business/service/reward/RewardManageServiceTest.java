@@ -410,8 +410,68 @@ class RewardManageServiceTest {
         verify(attachmentAssignmentPolicy).assertAssignable(202L);
         // 바뀐 수상자는 사용 중인지 본다.
         verify(userRepository).findById("U2");
-        // 응답이 올라간 버전을 싣도록 먼저 내보낸다(@Version 은 flush 때 오른다).
-        verify(rewardManageRepository).flush();
+        // 응답이 올라간 버전을 싣고, flush 뒤 교체된 이전 첨부(100L)를 수거한다.
+        org.mockito.InOrder releaseOrder = org.mockito.Mockito.inOrder(attachmentAssignmentPolicy, rewardManageRepository);
+        releaseOrder.verify(attachmentAssignmentPolicy).assertAssignable(202L);
+        releaseOrder.verify(rewardManageRepository).flush();
+        releaseOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(100L);
+    }
+
+    @Test
+    @DisplayName("[Top 6 A3] 포상 등록·수정 — 잘못된 포상 일자·공백 포상 코드·누락/공백 포상 명칭은 400 이고 저장·변경하지 않는다")
+    void createAndUpdateReward_rejectsInvalidDateOrBlankCode() {
+        authorize("REWARD_CREATE");
+        givenAwardee(AWARDEE, "P");
+        RewardManage existing = RewardManage.builder().rwrdSn(7L).rwrdUserId(AWARDEE).rwrdCd("R01")
+                .rwrdYmd("20260101").rwrdNm("기존").build();
+        ReflectionTestUtils.setField(existing, "version", 0);
+        given(rewardManageRepository.findById(7L)).willReturn(Optional.of(existing));
+
+        for (RewardManageDto invalid : List.of(
+                RewardManageDto.builder().rwardwnrId(AWARDEE).rwardCode("R01").rwardNm(null).rwardDe("20260101").version(0).build(),
+                RewardManageDto.builder().rwardwnrId(AWARDEE).rwardCode("R01").rwardNm("   ").rwardDe("20260101").version(0).build(),
+                RewardManageDto.builder().rwardwnrId(AWARDEE).rwardCode("   ").rwardNm("포상").rwardDe("20260101").version(0).build(),
+                RewardManageDto.builder().rwardwnrId(AWARDEE).rwardCode("R01").rwardNm("포상").rwardDe("20260230").version(0).build(),
+                RewardManageDto.builder().rwardwnrId(AWARDEE).rwardCode("R01").rwardNm("포상").rwardDe(" ").version(0).build(),
+                RewardManageDto.builder().rwardwnrId(AWARDEE).rwardCode("R01").rwardNm("포상").rwardDe("2026-01-01").version(0).build())) {
+            authorize("REWARD_CREATE");
+            assertThatThrownBy(() -> rewardManageService.createReward(invalid))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+
+            authorize("REWARD_UPDATE");
+            assertThatThrownBy(() -> rewardManageService.updateReward(7L, invalid))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        verify(rewardManageRepository, never()).save(any());
+        verify(rewardManageRepository, never()).flush();
+        assertThat(existing.getRwrdCd()).isEqualTo("R01");
+        assertThat(existing.getRwrdYmd()).isEqualTo("20260101");
+        assertThat(existing.getRwrdNm()).isEqualTo("기존");
+    }
+
+    @Test
+    @DisplayName("[Top 6 A3] 포상 등록·수정 — 앞뒤 공백이 있는 포상 명칭은 trim 해서 저장한다")
+    void createAndUpdateReward_trimsRewardName() {
+        authorize("REWARD_CREATE");
+        givenAwardee(AWARDEE, "P");
+        RewardManage saved = RewardManage.builder().rwrdSn(11L).rwrdUserId(AWARDEE).rwrdCd("R01")
+                .rwrdYmd("20260501").rwrdNm("초기").build();
+        ReflectionTestUtils.setField(saved, "version", 0);
+        given(rewardManageRepository.save(any(RewardManage.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(rewardManageRepository.findById(11L)).willReturn(Optional.of(saved));
+
+        RewardManageDto created = rewardManageService.createReward(RewardManageDto.builder()
+                .rwardwnrId(AWARDEE).rwardCode("R01").rwardNm("  우수 사원상  ").rwardDe("20260501").build());
+        assertThat(created.getRwardNm()).isEqualTo("우수 사원상");
+
+        authorize("REWARD_UPDATE");
+        RewardManageDto updated = rewardManageService.updateReward(11L, RewardManageDto.builder()
+                .rwardwnrId(AWARDEE).rwardCode("R01").rwardNm("  최우수상  ").rwardDe("20260502").version(0).build());
+        assertThat(updated.getRwardNm()).isEqualTo("최우수상");
+        assertThat(saved.getRwrdNm()).isEqualTo("최우수상");
     }
 
     @Test

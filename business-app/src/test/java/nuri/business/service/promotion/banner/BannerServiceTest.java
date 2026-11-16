@@ -262,6 +262,28 @@ class BannerServiceTest {
     }
 
     @Test
+    @DisplayName("배너 수정 — 첨부를 교체하면 flush 뒤 이전 미참조 첨부를 수거한다")
+    void updateBanner_flushesAndReleasesPreviousAttachmentWhenReplaced() {
+        authenticate("BANNER_UPDATE");
+        Banner existing = Banner.builder()
+                .bnrSn(1L)
+                .bnrNm("Old Banner")
+                .atchFileSn(100L)
+                .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
+        given(bannerRepository.findById(1L)).willReturn(Optional.of(existing));
+
+        bannerService.updateBanner(BannerDto.builder()
+                .bnrSn(1L).bnrNm("New Banner").atchFileSn(202L).version(0).build());
+
+        assertThat(existing.getAtchFileSn()).isEqualTo(202L);
+        org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(attachmentAssignmentPolicy, bannerRepository);
+        inOrder.verify(attachmentAssignmentPolicy).assertAssignable(202L);
+        inOrder.verify(bannerRepository).flush();
+        inOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(100L);
+    }
+
+    @Test
     @DisplayName("배너 수정 - 실패 (존재하지 않음)")
     void updateBanner_Fail_NotFound() {
         authenticate("BANNER_UPDATE");

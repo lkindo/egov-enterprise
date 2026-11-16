@@ -70,12 +70,17 @@ public class BannerService {
         if (!Objects.equals(entity.getLinkUrl(), dto.getLinkUrl())) {
             assertLinkable(dto.getLinkUrl());
         }
+        Long previousAtchFileSn = entity.getAtchFileSn();
         Long atchFileSn = dto.getAtchFileSn();
-        if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
+        if (atchFileSn != null && !Objects.equals(previousAtchFileSn, atchFileSn)) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
         }
         entity.update(dto.getBnrNm(), dto.getLinkUrl(), dto.getBnrImgNm(),
                 dto.getBnrExpln(), dto.getSortOrdr(), dto.getRfltYn(), atchFileSn);
+        if (previousAtchFileSn != null && !Objects.equals(previousAtchFileSn, entity.getAtchFileSn())) {
+            bannerRepository.flush();
+            attachmentAssignmentPolicy.releaseIfUnreferenced(previousAtchFileSn);
+        }
     }
 
     /**

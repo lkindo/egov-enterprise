@@ -3,6 +3,7 @@ package nuri.migration.protect;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -18,13 +19,35 @@ import java.util.regex.Pattern;
 public final class ProtectedTargetColumns {
 
     /** 보호 컬럼 하나. {@code plaintext} 는 쓰기 직전 값이 평문 형태인지 보는 패턴이다(없으면 null). */
-    public record Entry(String table, String column, ColumnProtection protection, Pattern plaintext) {}
+    public record Entry(
+            String table,
+            String column,
+            ColumnProtection protection,
+            Set<ColumnProtection> allowedProtections,
+            Pattern plaintext) {
+
+        public Entry {
+            allowedProtections = Set.copyOf(allowedProtections);
+            if (!allowedProtections.contains(protection)) {
+                throw new IllegalArgumentException("기본 보호 방식은 허용 목록에 포함되어야 합니다");
+            }
+        }
+
+        public Entry(String table, String column, ColumnProtection protection, Pattern plaintext) {
+            this(table, column, protection, Set.of(protection), plaintext);
+        }
+
+        public boolean allows(ColumnProtection candidate) {
+            return candidate != null && allowedProtections.contains(candidate);
+        }
+    }
 
     /** 온라인 {@code RrnoEncryptionConverter} 의 과거 평문 허용 패턴과 같다. */
     static final Pattern PLAINTEXT_RRNO = Pattern.compile("^\\d{6}-?\\d{7}$");
 
     private static final List<Entry> ENTRIES = List.of(
-            new Entry("tb_user_info", "user_enrrno", ColumnProtection.ARIA_EGOV_V1, PLAINTEXT_RRNO),
+            new Entry("tb_user_info", "user_enrrno", ColumnProtection.ARIA_EGOV_V1,
+                    Set.of(ColumnProtection.ARIA_EGOV_V1, ColumnProtection.RRNO_AES_GCM_V2), PLAINTEXT_RRNO),
             new Entry("tb_auth_otp_cert", "otp_secret_encpt_cn", ColumnProtection.MFA_AES_GCM_V1, null));
 
     private ProtectedTargetColumns() {}

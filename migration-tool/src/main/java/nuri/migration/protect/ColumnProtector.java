@@ -3,8 +3,12 @@ package nuri.migration.protect;
 import nuri.migration.model.MappingSpec;
 
 import java.util.Base64;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -24,15 +28,33 @@ public final class ColumnProtector {
 
     /** 온라인 앱 ALGORITHM_KEY 와 같은 값을 이관 호스트에 주입하는 환경 변수. */
     public static final String KEY_ENVIRONMENT = "MIGRATION_ALGORITHM_KEY";
+    /** 온라인 앱 RRNO_ACTIVE_KEY_ID 와 같은 활성 키 ID 환경 변수({@code rrno-aes-gcm-v2}). */
+    public static final String RRNO_ACTIVE_KEY_ID_ENVIRONMENT = "MIGRATION_RRNO_ACTIVE_KEY_ID";
+    /** 온라인 앱 RRNO_KEYS_JSON 과 같은 JSON 키링 환경 변수({@code rrno-aes-gcm-v2}). */
+    public static final String RRNO_KEYS_JSON_ENVIRONMENT = "MIGRATION_RRNO_KEYS_JSON";
 
-    private static final ColumnProtector NONE = new ColumnProtector(Map.of(), null);
+    private static final ColumnProtector NONE = new ColumnProtector(Map.of(), (ColumnCipher) null);
 
     private final Map<String, ColumnProtectionPlan.ProtectedColumn> columns;
-    private final ColumnCipher cipher;
+    private final Map<ColumnProtection, ColumnCipher> ciphers;
 
     ColumnProtector(Map<String, ColumnProtectionPlan.ProtectedColumn> columns, ColumnCipher cipher) {
+        this(columns, columns.isEmpty() || cipher == null ? Map.of() : uniformCiphers(columns, cipher));
+    }
+
+    private ColumnProtector(Map<String, ColumnProtectionPlan.ProtectedColumn> columns,
+                            Map<ColumnProtection, ColumnCipher> ciphers) {
         this.columns = Map.copyOf(columns);
-        this.cipher = cipher;
+        this.ciphers = Map.copyOf(ciphers);
+    }
+
+    private static Map<ColumnProtection, ColumnCipher> uniformCiphers(
+            Map<String, ColumnProtectionPlan.ProtectedColumn> columns, ColumnCipher cipher) {
+        EnumMap<ColumnProtection, ColumnCipher> map = new EnumMap<>(ColumnProtection.class);
+        for (ColumnProtectionPlan.ProtectedColumn column : columns.values()) {
+            map.put(column.protection(), cipher);
+        }
+        return map;
     }
 
     /** 보호 컬럼이 없는 실행. */
@@ -54,14 +76,41 @@ public final class ColumnProtector {
         if (plan.columns().isEmpty()) {
             return NONE;
         }
-        String key = environment.apply(KEY_ENVIRONMENT);
-        if (key == null || key.isBlank()) {
-            throw new IllegalStateException("보호 컬럼 암호화 키가 없습니다 — 환경 변수 " + KEY_ENVIRONMENT
-                    + " 에 온라인 앱 ALGORITHM_KEY 와 같은 값을 주입하세요: "
-                    + String.join(", ", plan.columns().values().stream()
-                    .map(column -> column.targetTable() + "." + column.column()).sorted().toList()));
+        Set<ColumnProtection> requiredProtections = EnumSet.noneOf(ColumnProtection.class);
+        for (ColumnProtectionPlan.ProtectedColumn column : plan.columns().values()) {
+            requiredProtections.add(column.protection());
         }
-        return new ColumnProtector(plan.columns(), new EgovAriaColumnCipher(key));
+        EnumMap<ColumnProtection, ColumnCipher> configured = new EnumMap<>(ColumnProtection.class);
+        if (requiredProtections.contains(ColumnProtection.ARIA_EGOV_V1)) {
+            String key = environment.apply(KEY_ENVIRONMENT);
+            if (key == null || key.isBlank()) {
+                throw new IllegalStateException("보호 컬럼 암호화 키가 없습니다 — 환경 변수 " + KEY_ENVIRONMENT
+                        + " 에 온라인 앱 ALGORITHM_KEY 와 같은 값을 주입하세요: "
+                        + columnsFor(plan, ColumnProtection.ARIA_EGOV_V1));
+            }
+            configured.put(ColumnProtection.ARIA_EGOV_V1, new EgovAriaColumnCipher(key));
+        }
+        if (requiredProtections.contains(ColumnProtection.RRNO_AES_GCM_V2)) {
+            String activeKeyId = environment.apply(RRNO_ACTIVE_KEY_ID_ENVIRONMENT);
+            String keysJson = environment.apply(RRNO_KEYS_JSON_ENVIRONMENT);
+            if (activeKeyId == null || activeKeyId.isBlank() || keysJson == null || keysJson.isBlank()) {
+                throw new IllegalStateException("보호 컬럼 RRNO v2 키링이 없습니다 — 환경 변수 "
+                        + RRNO_ACTIVE_KEY_ID_ENVIRONMENT + ", " + RRNO_KEYS_JSON_ENVIRONMENT
+                        + " 에 온라인 앱 키링 값을 주입하세요: "
+                        + columnsFor(plan, ColumnProtection.RRNO_AES_GCM_V2));
+            }
+            configured.put(ColumnProtection.RRNO_AES_GCM_V2, new RrnoAesGcmColumnCipher(activeKeyId, keysJson));
+        }
+        return new ColumnProtector(plan.columns(), configured);
+    }
+
+    private static String columnsFor(ColumnProtectionPlan plan, ColumnProtection protection) {
+        List<String> names = plan.columns().values().stream()
+                .filter(column -> column.protection() == protection)
+                .map(column -> column.targetTable() + "." + column.column())
+                .sorted()
+                .toList();
+        return String.join(", ", names);
     }
 
     /** 보호 컬럼이 아니면 값을 그대로 돌려준다. */
@@ -82,11 +131,15 @@ public final class ColumnProtector {
         if (plaintext.isBlank()) {
             return null;
         }
-        String ciphertext = cipher.encrypt(plaintext);
-        requireCiphertext(target.entry(), name, ciphertext);
+        ColumnCipher activeCipher = ciphers.get(target.protection());
+        if (activeCipher == null) {
+            throw new ProtectedColumnException(name, "보호 방식 암호기가 준비되지 않았습니다");
+        }
+        String ciphertext = activeCipher.encrypt(plaintext);
+        requireCiphertext(target, name, ciphertext);
         String readBack;
         try {
-            readBack = cipher.decrypt(ciphertext);
+            readBack = activeCipher.decrypt(ciphertext);
         } catch (RuntimeException unreadable) {
             throw new ProtectedColumnException(name, "온라인 앱이 되읽을 수 없는 값입니다");
         }
@@ -96,10 +149,16 @@ public final class ColumnProtector {
         return ciphertext;
     }
 
-    /** 쓰려는 값이 평문 형태면 멈추고, 표준 Base64 로 쓴 16바이트 배수 암호문이 아니어도 멈춘다. */
-    private static void requireCiphertext(ProtectedTargetColumns.Entry entry, String name, String value) {
-        if (entry.plaintext() != null && entry.plaintext().matcher(value).matches()) {
+    /** 쓰려는 값이 평문 형태면 멈추고, 선택된 보호 방식의 정식 암호문 형식이 아니어도 멈춘다. */
+    private static void requireCiphertext(ColumnProtectionPlan.ProtectedColumn target, String name, String value) {
+        if (target.entry().plaintext() != null && target.entry().plaintext().matcher(value).matches()) {
             throw new ProtectedColumnException(name, "평문 형태의 값은 암호화 컬럼에 쓸 수 없습니다");
+        }
+        if (target.protection() == ColumnProtection.RRNO_AES_GCM_V2) {
+            if (!RrnoAesGcmColumnCipher.isCanonicalEnvelope(value)) {
+                throw new ProtectedColumnException(name, "암호문 형식이 아닌 값은 암호화 컬럼에 쓸 수 없습니다");
+            }
+            return;
         }
         byte[] decoded;
         try {
