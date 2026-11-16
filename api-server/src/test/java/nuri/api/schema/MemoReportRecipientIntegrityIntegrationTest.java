@@ -98,7 +98,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
     private String missing;
     private boolean notificationModule;
     private final List<Long> attachmentGroups = new ArrayList<>();
-    private final List<String> deletedFileIds = new ArrayList<>();
+    private final java.util.Set<String> deletedFileIds = new java.util.LinkedHashSet<>();
 
     @BeforeEach
     void seedOnlyDisposableDatabaseUsers() {
@@ -725,6 +725,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
         long group = files.uploadFiles(List.of(new MockMultipartFile("files", "fixture.txt", "text/plain",
                 "durable fixture".getBytes(java.nio.charset.StandardCharsets.UTF_8))));
         attachmentGroups.add(group);
+        details.findByFileMaster(masters.findById(group).orElseThrow()).forEach(detail -> deletedFileIds.add(detail.getId().toString()));
         return group;
     }
 
@@ -749,6 +750,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
             try {
                 files.updateFiles(group, List.of(new MockMultipartFile("files", "fixture.txt", "text/plain",
                         "durable fixture".getBytes(java.nio.charset.StandardCharsets.UTF_8))));
+                details.findByFileMaster(masters.findById(group).orElseThrow()).forEach(detail -> deletedFileIds.add(detail.getId().toString()));
             } catch (java.io.IOException failure) { throw new java.io.UncheckedIOException(failure); }
         }
     }

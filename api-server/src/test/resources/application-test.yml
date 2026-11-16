@@ -58,9 +58,9 @@ springdoc:
 
 # 파일 업로드 경로 (테스트용)
 file:
-  upload-dir: ./test-uploads
+  upload-dir: ./build/test-uploads
   upload:
-    path: ./test-uploads
+    path: ./build/test-uploads
 
 # JWT 테스트 설정
 jwt:
