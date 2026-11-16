@@ -204,6 +204,7 @@ const PRIVACY_ROW = {
   inqDt: '2026-08-13T10:11:12',
   srvcNm: 'ResidentService',
   inqInfo: 'resident-name',
+  trprId: 'USR_SUBJECT_01',
   dmndUserId: 'privacy-admin',
   dmndUserIpAddr: '10.0.0.4',
 } satisfies PrivacyLogDto;
@@ -303,7 +304,7 @@ describe('dedicated system log clients generated-DTO contracts', () => {
     render(<SystemLogsPrivacyClient />);
 
     const table = within(screen.getByTestId('data-table'));
-    for (const value of ['2026-08-13 10:11:12', 'resident-name', 'ResidentService', 'privacy-admin', '10.0.0.4']) {
+    for (const value of ['2026-08-13 10:11:12', 'resident-name', 'USR_SUBJECT_01', 'ResidentService', 'privacy-admin', '10.0.0.4']) {
       expect(table.getByText(value)).toBeInTheDocument();
     }
     expect(currentTableProps().keyField).toBe('prvcLogSn');

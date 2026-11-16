@@ -73,6 +73,7 @@ public class EventInfoService {
         log.info("Updating event serial number: {}", evntSn);
         EventInfo eventInfo = eventInfoRepository.findByIdForUpdate(Objects.requireNonNull(evntSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        assertUpdateOwnerOrAll(eventInfo);
         nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), eventInfo.getVersion());
         // [V2_152] 정원을 이미 자리를 차지한 신청 수보다 작게 줄이지 않는다 — 줄이면 화면의 남은 자리가 음수가 되고
         //   누구를 떨어뜨릴지 정할 규칙이 없다. 행 잠금(findByIdForUpdate) 뒤라 동시 신청과 맞물리지 않는다.
@@ -128,6 +129,7 @@ public class EventInfoService {
         //   아래 삭제와 함께 CASCADE 로 지워진다 — 신청자는 접수됐다는 응답을 받고도 기록이 사라진다.
         EventInfo eventInfo = eventInfoRepository.findByIdForUpdate(Objects.requireNonNull(evntSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        assertDeleteOwnerOrAll(eventInfo);
         // [2026-09-26 DIP V9] 외부인사가 이 행사를 참조한다(fk_tb_extrl_hr_info_tb_event_info, NO ACTION).
         //   종전에는 삭제가 DB 무결성 오류로 끝나 사용자는 이유를 몰랐다. 건수를 밝혀 거부하고,
         //   외부인사를 자동으로 지우지 않는다 — 명단 삭제는 사용자가 확인하고 할 일이다.
@@ -145,5 +147,13 @@ public class EventInfoService {
         }
         eventInfoRepository.delete(Objects.requireNonNull(eventInfo));
         log.info("Event deleted successfully: {}", evntSn);
+    }
+
+    private static void assertUpdateOwnerOrAll(EventInfo eventInfo) {
+        SecurityUtil.assertOwnerOrPermission(eventInfo.getFrstRgtrId(), "EVENT_UPDATE_ALL");
+    }
+
+    private static void assertDeleteOwnerOrAll(EventInfo eventInfo) {
+        SecurityUtil.assertOwnerOrPermission(eventInfo.getFrstRgtrId(), "EVENT_DELETE_ALL");
     }
 }

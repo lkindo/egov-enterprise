@@ -27,4 +27,11 @@ public interface SmsMapper {
     @Mapping(target = "pendingCnt", ignore = true)
     @Mapping(target = "recipients", expression = "java(new java.util.ArrayList<>())")
     SmsDto toDto(Sms entity);
+
+    @Mapping(target = "recptnCnt", ignore = true)
+    @Mapping(target = "successCnt", ignore = true)
+    @Mapping(target = "failureCnt", ignore = true)
+    @Mapping(target = "pendingCnt", ignore = true)
+    @Mapping(target = "recipients", expression = "java(new java.util.ArrayList<>())")
+    SmsResponseDto toResponseDto(Sms entity);
 }

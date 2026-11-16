@@ -239,7 +239,7 @@ export const PERMISSION_CODES = [
   "BOARD_PIN"
 ] as const;
 export type PermissionCode = (typeof PERMISSION_CODES)[number];
-export const PERMISSION_CATALOG_VERSION = "3037cb41c240f741e7b158702323678b5fda8763eeb0094e6d140eeb8912313e";
+export const PERMISSION_CATALOG_VERSION = "830250fffe166f466f1336f13f57fea236e4a6937690632b1cc74cc16cb4e807";
 export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]>> = {
   "/": [],
   "/admin": [

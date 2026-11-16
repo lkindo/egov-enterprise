@@ -6,7 +6,26 @@
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
 import { ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
-import { ApiResponseExternalHrDtoResponseSchema, ApiResponsePageResponseExternalHrDtoResponseSchema, ExternalHrDtoRequestSchema, ExternalHrDtoResponseSchema, PageResponseExternalHrDtoResponseSchema } from '../generated-zod/externalhr';
+import { ApiResponseExternalHrDtoResponseSchema, ApiResponsePageResponseExternalHrListItemDtoResponseSchema, ExternalHrDtoRequestSchema, ExternalHrDtoResponseSchema, PageResponseExternalHrListItemDtoResponseSchema } from '../generated-zod/externalhr';
+
+export const getExternalHrOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "getExternalHr",
+  method: "get",
+  path: "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "evntSn": z.number().int(), "otsdHrId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.lazy(() => ExternalHrDtoResponseSchema),
+  envelopeSchema: ApiResponseExternalHrDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
 
 export const updateExternalHrOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
@@ -56,10 +75,10 @@ export const getAllExternalHrOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "name": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "evntSn": z.number().int().optional(), "name": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
-  responseSchema: z.lazy(() => PageResponseExternalHrDtoResponseSchema),
-  envelopeSchema: ApiResponsePageResponseExternalHrDtoResponseSchema,
+  responseSchema: z.lazy(() => PageResponseExternalHrListItemDtoResponseSchema),
+  envelopeSchema: ApiResponsePageResponseExternalHrListItemDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

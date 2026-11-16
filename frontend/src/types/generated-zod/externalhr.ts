@@ -37,25 +37,45 @@ export const ApiResponseExternalHrDtoSchema = /*#__PURE__*/ (() => z.object({
 }))();
 export type ApiResponseExternalHrDto = z.infer<typeof ApiResponseExternalHrDtoSchema>;
 
-export const ApiResponsePageResponseExternalHrDtoSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponsePageResponseExternalHrListItemDtoSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.lazy(() => PageResponseExternalHrDtoSchema).optional(),
+  data: z.lazy(() => PageResponseExternalHrListItemDtoSchema).optional(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 }))();
-export type ApiResponsePageResponseExternalHrDto = z.infer<typeof ApiResponsePageResponseExternalHrDtoSchema>;
+export type ApiResponsePageResponseExternalHrListItemDto = z.infer<typeof ApiResponsePageResponseExternalHrListItemDtoSchema>;
 
-export const PageResponseExternalHrDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => ExternalHrDtoSchema)),
+export const ExternalHrListItemDtoSchema = /*#__PURE__*/ (() => z.object({
+  evntSn: z.number().int(),
+  otsdHrId: z.string(),
+  gndrCd: z.string().optional(),
+  otsdHrNm: z.string().optional(),
+  crTypeCd: z.string().optional(),
+  ogdpInstNm: z.string().optional(),
+  brdtYmd: z.string().optional(),
+  areaNo: z.string().optional(),
+  mdTelno: z.string().optional(),
+  endTelno: z.string().optional(),
+  emlAddr: z.string().optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  frstRgtrId: z.string().optional(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  lastMdfrId: z.string().optional(),
+  version: z.number().int().optional(),
+}))();
+export type ExternalHrListItemDto = z.infer<typeof ExternalHrListItemDtoSchema>;
+
+export const PageResponseExternalHrListItemDtoSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => ExternalHrListItemDtoSchema)),
   total: z.number().int(),
   page: z.number().int(),
   size: z.number().int(),
   totalPage: z.number().int(),
 }))();
-export type PageResponseExternalHrDto = z.infer<typeof PageResponseExternalHrDtoSchema>;
+export type PageResponseExternalHrListItemDto = z.infer<typeof PageResponseExternalHrListItemDtoSchema>;
 
 export const ExternalHrDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   evntSn: z.number().int(),
@@ -111,36 +131,70 @@ export const ApiResponseExternalHrDtoResponseSchema = /*#__PURE__*/ (() => z.obj
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 }))();
 
-export const ApiResponsePageResponseExternalHrDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponsePageResponseExternalHrListItemDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.lazy(() => PageResponseExternalHrDtoRequestSchema.strict()).optional(),
+  data: z.lazy(() => PageResponseExternalHrListItemDtoRequestSchema.strict()).optional(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
   errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
 }))();
 
-export const ApiResponsePageResponseExternalHrDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponsePageResponseExternalHrListItemDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional().nullable(),
   status: z.number().int().optional().nullable(),
   code: z.string().optional().nullable(),
   message: z.string().optional().nullable(),
-  data: z.lazy(() => PageResponseExternalHrDtoResponseSchema).optional().nullable(),
+  data: z.lazy(() => PageResponseExternalHrListItemDtoResponseSchema).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 }))();
 
-export const PageResponseExternalHrDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => ExternalHrDtoRequestSchema.strict())),
+export const ExternalHrListItemDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  evntSn: z.number().int(),
+  otsdHrId: z.string(),
+  gndrCd: z.string().optional(),
+  otsdHrNm: z.string().optional(),
+  crTypeCd: z.string().optional(),
+  ogdpInstNm: z.string().optional(),
+  brdtYmd: z.string().optional(),
+  areaNo: z.string().optional(),
+  mdTelno: z.string().optional(),
+  endTelno: z.string().optional(),
+  emlAddr: z.string().optional(),
+  version: z.number().int().optional(),
+}))();
+
+export const ExternalHrListItemDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  evntSn: z.number().int(),
+  otsdHrId: z.string(),
+  gndrCd: z.string().optional().nullable(),
+  otsdHrNm: z.string().optional().nullable(),
+  crTypeCd: z.string().optional().nullable(),
+  ogdpInstNm: z.string().optional().nullable(),
+  brdtYmd: z.string().optional().nullable(),
+  areaNo: z.string().optional().nullable(),
+  mdTelno: z.string().optional().nullable(),
+  endTelno: z.string().optional().nullable(),
+  emlAddr: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  version: z.number().int().optional().nullable(),
+}))();
+
+export const PageResponseExternalHrListItemDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => ExternalHrListItemDtoRequestSchema.strict())),
   total: z.number().int(),
   page: z.number().int(),
   size: z.number().int(),
   totalPage: z.number().int(),
 }))();
 
-export const PageResponseExternalHrDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => ExternalHrDtoResponseSchema)),
+export const PageResponseExternalHrListItemDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => ExternalHrListItemDtoResponseSchema)),
   total: z.number().int(),
   page: z.number().int(),
   size: z.number().int(),

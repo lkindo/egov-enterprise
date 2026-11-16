@@ -135,6 +135,7 @@ class EventInfoServiceTest {
         given(eventInfoRepository.save(any(EventInfo.class))).willAnswer(invocation -> invocation.getArgument(0));
         eventInfoService.createEvent("writer", EventInfoDto.builder().evntNm("새 행사").build());
         EventInfo existing = EventInfo.builder().evntSn(1L).evntNm("기존").build();
+        existing.setFrstRgtrId("operator");
         org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
         given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existing));
         eventInfoService.updateEvent(1L, "writer", EventInfoDto.builder().evntNm("정정").version(0).build());
@@ -172,6 +173,7 @@ class EventInfoServiceTest {
     void capacityCannotDropBelowOccupiedSeats() {
         authenticate(List.of("EVENT_UPDATE"), List.of());
         EventInfo existing = EventInfo.builder().evntSn(1L).evntNm("워크숍").pscpNope(10).build();
+        existing.setFrstRgtrId("operator");
         org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
         given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existing));
         given(eventApplicationRepository.countSeats(1L)).willReturn(5L);
@@ -190,6 +192,7 @@ class EventInfoServiceTest {
     void eventWithOccupiedSeatsIsNotDeleted() {
         authenticate(List.of("EVENT_DELETE"), List.of());
         EventInfo existing = EventInfo.builder().evntSn(1L).evntNm("워크숍").build();
+        existing.setFrstRgtrId("operator");
         given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existing));
         given(eventApplicationRepository.countSeats(1L)).willReturn(2L);
 
@@ -205,6 +208,7 @@ class EventInfoServiceTest {
     void emptyEventIsDeletedUnderTheRowLock() {
         authenticate(List.of("EVENT_DELETE"), List.of());
         EventInfo existing = EventInfo.builder().evntSn(1L).evntNm("워크숍").build();
+        existing.setFrstRgtrId("operator");
         given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existing));
         given(eventApplicationRepository.countSeats(1L)).willReturn(0L);
 
@@ -283,9 +287,9 @@ class EventInfoServiceTest {
     }
 
     @Test
-    @DisplayName("이벤트 수정 - 성공")
+    @DisplayName("이벤트 수정 - 성공(대행 권한)")
     void updateEvent() {
-        authorize("EVENT_UPDATE");
+        authenticate(List.of("EVENT_UPDATE", "EVENT_UPDATE_ALL"), List.of());
         // given
         EventInfo existingEvent = EventInfo.builder().evntSn(1L).evntCn("Old Event").build();
         org.springframework.test.util.ReflectionTestUtils.setField(existingEvent, "version", 0);
@@ -305,10 +309,29 @@ class EventInfoServiceTest {
     }
 
     @Test
+    @DisplayName("H5 부정 증명: 타인 행사를 EVENT_UPDATE 만으로 수정하려 하면 403 이며 버전·정원 검증에 닿지 않는다")
+    void updateEvent_RejectsNonOwnerWithoutOverridePermission() {
+        authorize("EVENT_UPDATE");
+        EventInfo foreign = EventInfo.builder().evntSn(1L).evntCn("Old Event").pscpNope(10).build();
+        org.springframework.test.util.ReflectionTestUtils.setField(foreign, "version", 99);
+        foreign.setFrstRgtrId("foreign-writer");
+        given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(foreign));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                        eventInfoService.updateEvent(1L, "operator",
+                                EventInfoDto.builder().evntCn("Hijacked").pscpNope(1).version(0).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        verify(eventApplicationRepository, org.mockito.Mockito.never()).countSeats(any());
+        assertThat(foreign.getEvntCn()).isEqualTo("Old Event");
+    }
+
+    @Test
     @DisplayName("이벤트 수정 - 버전 누락(400)·낡은 버전(409)은 거부한다")
     void updateEvent_RejectsMissingOrStaleVersion() {
         authorize("EVENT_UPDATE");
         EventInfo existingEvent = EventInfo.builder().evntSn(1L).evntCn("Old Event").build();
+        existingEvent.setFrstRgtrId("operator");
         org.springframework.test.util.ReflectionTestUtils.setField(existingEvent, "version", 2);
         given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existingEvent));
 
@@ -339,9 +362,9 @@ class EventInfoServiceTest {
     }
 
     @Test
-    @DisplayName("이벤트 삭제 - 성공")
+    @DisplayName("이벤트 삭제 - 성공(대행 권한)")
     void deleteEvent() {
-        authorize("EVENT_DELETE");
+        authenticate(List.of("EVENT_DELETE", "EVENT_DELETE_ALL"), List.of());
         // given
         EventInfo existingEvent = EventInfo.builder().evntSn(1L).build();
         existingEvent.setFrstRgtrId("foreign-writer");
@@ -355,10 +378,27 @@ class EventInfoServiceTest {
     }
 
     @Test
+    @DisplayName("H5 부정 증명: 타인 행사를 EVENT_DELETE 만으로 삭제하려 하면 403 이며 외부인사·신청 수 조회에 닿지 않는다")
+    void deleteEvent_RejectsNonOwnerWithoutOverridePermission() {
+        authorize("EVENT_DELETE");
+        EventInfo foreign = EventInfo.builder().evntSn(1L).build();
+        foreign.setFrstRgtrId("foreign-writer");
+        given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(foreign));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> eventInfoService.deleteEvent(1L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        verify(externalHrRepository, org.mockito.Mockito.never()).countByEvntSn(any());
+        verify(eventApplicationRepository, org.mockito.Mockito.never()).countSeats(any());
+        verify(eventInfoRepository, org.mockito.Mockito.never()).delete(any(EventInfo.class));
+    }
+
+    @Test
     @DisplayName("🚨 외부인사가 등록된 행사는 건수를 밝혀 409 로 거부하고 지우지 않는다 (DIP V9)")
     void deleteEvent_rejectsWhenExternalHrExists() {
         authorize("EVENT_DELETE");
         EventInfo existingEvent = EventInfo.builder().evntSn(1L).build();
+        existingEvent.setFrstRgtrId("operator");
         given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existingEvent));
         given(externalHrRepository.countByEvntSn(1L)).willReturn(3L);
 

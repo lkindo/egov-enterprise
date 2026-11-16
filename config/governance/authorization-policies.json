@@ -149,19 +149,19 @@
       "method": "DELETE",
       "path": "/api/v1/admin/operation/events/{evntSn}",
       "handler": "nuri.api.controller.business.operation.EventApiController#deleteEvent",
-      "policy": "ADMIN_OR_SYSTEM",
+      "policy": "OWNER_OR_ADMIN",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.EventApiController#deleteEvent')",
       "routeGate": "OPERATION_PERMISSION",
-      "guardRef": "EventInfoService#deleteEvent"
+      "guardRef": "EventInfoService#assertDeleteOwnerOrAll"
     },
     {
       "method": "PUT",
       "path": "/api/v1/admin/operation/events/{evntSn}",
       "handler": "nuri.api.controller.business.operation.EventApiController#updateEvent",
-      "policy": "ADMIN_OR_SYSTEM",
+      "policy": "OWNER_OR_ADMIN",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.EventApiController#updateEvent')",
       "routeGate": "OPERATION_PERMISSION",
-      "guardRef": "EventInfoService#updateEvent"
+      "guardRef": "EventInfoService#assertUpdateOwnerOrAll"
     },
     {
       "method": "POST",
@@ -2575,6 +2575,30 @@
       }
     },
     {
+      "target": "EventInfoService#assertDeleteOwnerOrAll",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrPermission",
+          "count": 1,
+          "identityAxis": "LOGIN_ID",
+          "permission": "EVENT_DELETE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "EventInfoService#assertUpdateOwnerOrAll",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrPermission",
+          "count": 1,
+          "identityAxis": "LOGIN_ID",
+          "permission": "EVENT_UPDATE_ALL"
+        }
+      ]
+    },
+    {
       "target": "EventInfoService#createEvent",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -2631,6 +2655,18 @@
           "count": 1,
           "identityAxis": "PERMISSION",
           "permission": "EXT_HR_DELETE"
+        }
+      ]
+    },
+    {
+      "target": "ExternalHrService#getExternalHr",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "EXT_HR_READ"
         }
       ]
     },
@@ -5774,7 +5810,7 @@
         "!\"A\".equals(sanction.getAprvYn())",
         "actor.equals(sanction.getAplcntId())",
         "delegators.isEmpty()",
-        "currentLines.stream().anyMatch(d -> actor.equals(d.getId().getUserId()))",
+        "currentLines.stream().anyMatch(d -> actor.equals(d.getId().getUserId()) || actor.equals(d.getSbtAprvrId()))",
         "d.status() == ApprovalStatus.ACTIVE && delegators.contains(d.getId().getUserId())"
       ],
       "forbiddenTokens": [
@@ -6050,6 +6086,13 @@
       "method": "GET",
       "path": "/api/v1/admin/operation/external-hr",
       "handler": "nuri.api.controller.business.operation.ExternalHrApiController#getAllExternalHr",
+      "access": "PERMISSION",
+      "permission": "EXT_HR_READ"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}",
+      "handler": "nuri.api.controller.business.operation.ExternalHrApiController#getExternalHr",
       "access": "PERMISSION",
       "permission": "EXT_HR_READ"
     },

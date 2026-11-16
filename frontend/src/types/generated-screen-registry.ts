@@ -412,8 +412,10 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "permissions": [
       {"code":"EVENT_CREATE","action":"CREATE","source":"write"},
       {"code":"EVENT_DELETE","action":"DELETE","source":"write"},
+      {"code":"EVENT_DELETE_ALL","action":"DELETE_ALL","source":"display"},
       {"code":"EVENT_READ","action":"READ","source":"entry"},
-      {"code":"EVENT_UPDATE","action":"UPDATE","source":"write"}
+      {"code":"EVENT_UPDATE","action":"UPDATE","source":"write"},
+      {"code":"EVENT_UPDATE_ALL","action":"UPDATE_ALL","source":"display"}
     ]
   },
   {

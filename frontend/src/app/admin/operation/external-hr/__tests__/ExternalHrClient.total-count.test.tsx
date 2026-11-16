@@ -2,7 +2,7 @@ import type { PropsWithChildren } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ExternalHr } from '@/services/foundation/operation/ExternalHrAdminService';
+import type { ExternalHrListItem } from '@/services/foundation/operation/ExternalHrAdminService';
 import type { PageResponse } from '@/types/foundation/system';
 import ExternalHrClient from '../ExternalHrClient';
 
@@ -43,9 +43,9 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
   StandardDataTable: ({ error }: { error?: unknown }) => <div data-testid="table-error">{error ? '조회 실패' : ''}</div>,
 }));
 
-const HR: ExternalHr = { evntSn: 1, otsdHrId: 'HR-001', otsdHrNm: '홍길동' };
+const HR: ExternalHrListItem = { evntSn: 1, otsdHrId: 'HR-001', otsdHrNm: '홍길동' };
 
-function renderList(initialPage: PageResponse<ExternalHr> | null) {
+function renderList(initialPage: PageResponse<ExternalHrListItem> | null) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>

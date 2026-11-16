@@ -229,6 +229,50 @@ class ApprovalSubstitutionServiceTest {
     }
 
     @Test
+    @DisplayName("H5 부정 증명: 같은 차수에서 이미 한 번 대리결재한 사람은 순차·병렬 다른 줄을 또 대리결재할 수 없다")
+    void substituteCannotVoteTwiceInSameCycleAcrossSequentialOrParallelLines() {
+        // 순차 2단계: 1단계를 sub 가 대리 승인한 뒤 2단계가 차례(ACTIVE)가 되어도 sub 는 같은 차수에서 두 번 결정 못 함
+        InformalSanction sequentialDoc = document("A");
+        InformalSanctionDetail seq1 = line(1, "first", true);
+        InformalSanctionDetail seq2 = line(2, "second", false);
+        writable(sequentialDoc, List.of(seq1, seq2));
+        delegatorsOfActor("first", "second");
+        service.confirmInformalSanction(7L, "C", "1단계 대리", 0, "first");
+        assertThat(seq1.getSbtAprvrId()).isEqualTo("sub");
+        assertThat(seq2.status()).isEqualTo(ApprovalStatus.ACTIVE);
+
+        assertThatThrownBy(() -> service.confirmInformalSanction(7L, "C", "2단계 이중투표", 0, "second"))
+                .isInstanceOf(BusinessException.class)
+                .extracting(error -> ((BusinessException) error).getErrorCode()).isEqualTo(CommonErrorCode.ACCESS_DENIED);
+        assertThat(seq2.status()).isEqualTo(ApprovalStatus.ACTIVE);
+
+        // 읽기 힌트도 이미 대리결재한 차수에서는 대리 승인 가능 힌트를 끄고 onBehalfOfId 를 비운다.
+        given(informalSanctionRepository.findByIdAndParticipant(7L, "sub")).willReturn(Optional.of(sequentialDoc));
+        given(detailRepository.findForDocuments(List.of(7L))).willReturn(List.of(seq1, seq2));
+        given(historyRepository.findForDocuments(List.of(7L))).willReturn(List.of(InformalSanctionHistory.create(sequentialDoc)));
+        given(commonCodeService.getCodesByGroup(any())).willReturn(List.<CommonCodeDto>of());
+        InformalSanctionDto dto = service.getInformalSanction(7L, "sub");
+        assertThat(dto.isCanApprove()).isFalse();
+        assertThat(dto.getOnBehalfOfId()).isNull();
+
+        // 병렬 합의 2줄: 같은 단계 peer 를 한 줄 대리 승인한 뒤 다른 줄 대리 승인 시도도 403 이다.
+        InformalSanction parallelDoc = document("A");
+        InformalSanctionDetail p1 = line(1, "first", true);
+        InformalSanctionDetail p2 = InformalSanctionDetail.create(
+                new InformalSanctionDetailId(7L, BigDecimal.ONE, BigDecimal.ONE, "peer"),
+                ApprovalStageKind.AGREEMENT, true);
+        writable(parallelDoc, List.of(p1, p2));
+        delegatorsOfActor("first", "peer");
+        service.confirmInformalSanction(7L, "C", "첫 줄 대리", 0, "first");
+        assertThat(p1.getSbtAprvrId()).isEqualTo("sub");
+
+        assertThatThrownBy(() -> service.confirmInformalSanction(7L, "C", "둘째 줄 이중투표", 0, "peer"))
+                .isInstanceOf(BusinessException.class)
+                .extracting(error -> ((BusinessException) error).getErrorCode()).isEqualTo(CommonErrorCode.ACCESS_DENIED);
+        assertThat(p2.status()).isEqualTo(ApprovalStatus.ACTIVE);
+    }
+
+    @Test
     @DisplayName("같은 단계에서 여러 사람이 맡겼는데 원결재자를 고르지 않으면 400 이다")
     void ambiguousSubstitutionNeedsPrincipal() {
         InformalSanction document = document("A");

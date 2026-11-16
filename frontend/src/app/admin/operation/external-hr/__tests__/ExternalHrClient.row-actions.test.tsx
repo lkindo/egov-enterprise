@@ -16,6 +16,7 @@ import ExternalHrClient from '../ExternalHrClient';
 const mocks = vi.hoisted(() => ({
   getEvents: vi.fn(),
   getExternalHrList: vi.fn(),
+  getExternalHr: vi.fn(),
   createExternalHr: vi.fn(),
   updateExternalHr: vi.fn(),
   deleteExternalHr: vi.fn(),
@@ -56,7 +57,12 @@ vi.mock('@/app/components/patterns/work-list-page', () => ({
 }));
 
 vi.mock('@/app/components/patterns/keyword-filter', () => ({
-  KeywordFilter: ({ label }: { label: string }) => <input aria-label={label} />,
+  KeywordFilter: ({ label, children }: { label: string; children?: ReactNode }) => (
+    <div>
+      <input aria-label={label} />
+      {children}
+    </div>
+  ),
 }));
 
 // 행 액션은 표의 열 accessor 안에 산다 — 열을 실제로 렌더하는 표 mock 이어야 버튼이 보인다.
@@ -91,6 +97,7 @@ vi.mock('@/services/foundation/operation/eventService', () => ({
 vi.mock('@/services/foundation/operation/ExternalHrAdminService', () => ({
   externalHrAdminService: {
     getExternalHrList: (...args: unknown[]) => mocks.getExternalHrList(...args),
+    getExternalHr: (...args: unknown[]) => mocks.getExternalHr(...args),
     createExternalHr: (...args: unknown[]) => mocks.createExternalHr(...args),
     updateExternalHr: (...args: unknown[]) => mocks.updateExternalHr(...args),
     deleteExternalHr: (...args: unknown[]) => mocks.deleteExternalHr(...args),
@@ -129,6 +136,7 @@ describe('ExternalHrClient 행 액션', () => {
     vi.clearAllMocks();
     mocks.getEvents.mockResolvedValue({ list: [{ evntSn: 1, evntNm: '가을 워크숍' }], total: 1, page: 1, size: 200, totalPage: 1 });
     mocks.getExternalHrList.mockResolvedValue(pageOf(HR));
+    mocks.getExternalHr.mockResolvedValue(HR);
     mocks.updateExternalHr.mockResolvedValue(HR);
     mocks.deleteExternalHr.mockResolvedValue(undefined);
     mocks.confirm.mockResolvedValue(true);
@@ -156,6 +164,7 @@ describe('ExternalHrClient 행 액션', () => {
 
   it('빈 칸이 많은 행도 이름만 고쳐 저장된다 — 등록 필수 규칙을 수정에 강제하지 않는다', async () => {
     mocks.getExternalHrList.mockResolvedValue(pageOf(SPARSE_HR));
+    mocks.getExternalHr.mockResolvedValue(SPARSE_HR);
     mocks.updateExternalHr.mockResolvedValue(SPARSE_HR);
     renderWithClient(<ExternalHrClient initialPage={pageOf(SPARSE_HR)} />);
 
@@ -174,6 +183,7 @@ describe('ExternalHrClient 행 액션', () => {
 
   it('수정에서도 형식은 본다 — 이메일이 형식에 맞지 않으면 저장하지 않는다', async () => {
     mocks.getExternalHrList.mockResolvedValue(pageOf(SPARSE_HR));
+    mocks.getExternalHr.mockResolvedValue(SPARSE_HR);
     renderWithClient(<ExternalHrClient initialPage={pageOf(SPARSE_HR)} />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'HR-002 수정' }));
@@ -195,7 +205,7 @@ describe('ExternalHrClient 행 액션', () => {
     const modal = await screen.findByRole('region', { name: '외부 인사 정보 등록' });
     const scope = within(modal);
 
-    await screen.findByRole('option', { name: '가을 워크숍' });
+    await scope.findByRole('option', { name: '가을 워크숍' });
     fireEvent.change(scope.getByRole('combobox', { name: /소속 행사/ }), { target: { value: '1' } });
     fireEvent.change(scope.getByRole('textbox', { name: /외부인사 ID/ }), { target: { value: 'HR-003' } });
     fireEvent.change(scope.getByRole('textbox', { name: /^성명/ }), { target: { value: '이영희' } });
@@ -269,5 +279,64 @@ describe('외부인사 쓰기 권한 표시', () => {
     expect(await screen.findByRole('button', { name: '홍길동 삭제' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '홍길동 수정' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '인사 등록' })).not.toBeInTheDocument();
+  });
+
+  it('목록은 마스킹돼 있어도 수정을 누르면 단건 상세 API 로 원문을 불러와 채우고 실패 시 모달을 열지 않는다', async () => {
+    const maskedRow = { ...HR, brdtYmd: '1990****', mdTelno: '****', emlAddr: 'ho***@example.com' };
+    renderWithClient(<ExternalHrClient initialPage={pageOf(maskedRow)} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: '홍길동 수정' }));
+
+    await waitFor(() => expect(mocks.getExternalHr).toHaveBeenCalledWith(1, 'HR-001'));
+    const modal = await screen.findByRole('region', { name: '외부 인사 정보 수정' });
+    const scope = within(modal);
+    expect(scope.getByRole('textbox', { name: /^이메일/ })).toHaveValue('hong@example.com');
+    expect(scope.getByRole('textbox', { name: /생년월일/ })).toHaveValue('19900101');
+    expect(scope.getByRole('textbox', { name: /국번/ })).toHaveValue('1234');
+
+    fireEvent.click(scope.getByRole('button', { name: '모달 닫기 요청' }));
+    mocks.getExternalHr.mockRejectedValueOnce(new Error('상세 조회 실패'));
+    fireEvent.click(screen.getByRole('button', { name: '홍길동 수정' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('상세 조회 실패', 'error'));
+    expect(screen.queryByRole('region', { name: '외부 인사 정보 수정' })).not.toBeInTheDocument();
+  });
+
+  it('참여 행사 필터를 선택하면 evntSn 조건으로 목록을 다시 조회한다', async () => {
+    renderWithClient(<ExternalHrClient initialPage={pageOf(HR)} />);
+
+    const eventSelect = await screen.findByRole('combobox', { name: '참여 행사 필터' });
+    await within(eventSelect).findByRole('option', { name: '가을 워크숍' });
+    fireEvent.change(eventSelect, { target: { value: '1' } });
+
+    await waitFor(() =>
+      expect(mocks.getExternalHrList).toHaveBeenCalledWith(
+        expect.objectContaining({ evntSn: 1, name: '', page: 1, size: 10 }),
+      ));
+  });
+
+  it('상세 조회가 지연된 사이 인사 등록으로 전환해도 늦은 상세 응답이 등록 입력과 모드를 덮어쓰지 않는다', async () => {
+    const pendingEdit = deferred<typeof HR>();
+    mocks.getExternalHr.mockReturnValueOnce(pendingEdit.promise);
+    renderWithClient(<ExternalHrClient initialPage={pageOf(HR)} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: '홍길동 수정' }));
+    fireEvent.click(screen.getByRole('button', { name: /인사 등록/ }));
+
+    const createModal = await screen.findByRole('region', { name: '외부 인사 정보 등록' });
+    const createScope = within(createModal);
+    const idInput = createScope.getByRole('textbox', { name: /외부인사 ID/ });
+    const nameInput = createScope.getByRole('textbox', { name: /^성명/ });
+    fireEvent.change(idInput, { target: { value: 'NEW-HR-9' } });
+    fireEvent.change(nameInput, { target: { value: '새 담당자' } });
+
+    pendingEdit.resolve(HR);
+    await waitFor(() => expect(mocks.getExternalHr).toHaveBeenCalledTimes(1));
+
+    expect(await screen.findByRole('region', { name: '외부 인사 정보 등록' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: '외부 인사 정보 수정' })).not.toBeInTheDocument();
+    expect(idInput).toHaveValue('NEW-HR-9');
+    expect(idInput).not.toBeDisabled();
+    expect(nameInput).toHaveValue('새 담당자');
   });
 });

@@ -15,6 +15,10 @@
       "method": "getAllExternalHr"
     },
     {
+      "controller": "nuri.api.controller.business.operation.ExternalHrApiController",
+      "method": "getExternalHr"
+    },
+    {
       "controller": "nuri.api.controller.business.sms.SmsApiController",
       "method": "getSmsRecipients",
       "note": "[2026-09-02] SMS 도메인에서 타인 연락처가 나가는 유일한 창구다. 목록·상세는 읽기 매퍼가 recipients 를 빈 배열로 채워 연락처를 싣지 않는다."
@@ -106,7 +110,13 @@
       "type": "nuri.business.service.event.dto.ExternalHrDto"
     },
     {
+      "type": "nuri.business.service.event.dto.ExternalHrListItemDto"
+    },
+    {
       "type": "nuri.business.service.sms.dto.SmsRecptnDto"
+    },
+    {
+      "type": "nuri.business.service.sms.dto.SmsRecptnResponseDto"
     },
     {
       "type": "nuri.business.service.addressbook.dto.AddressBookDto"

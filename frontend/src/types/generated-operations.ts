@@ -226,6 +226,7 @@ export { updateBannerOperation } from './generated-operations/banner';
 export { deleteBannerOperation } from './generated-operations/banner';
 export { updateRewardOperation } from './generated-operations/rewardmanage';
 export { deleteRewardOperation } from './generated-operations/rewardmanage';
+export { getExternalHrOperation } from './generated-operations/externalhr';
 export { updateExternalHrOperation } from './generated-operations/externalhr';
 export { deleteExternalHrOperation } from './generated-operations/externalhr';
 export { getEventOperation } from './generated-operations/event';

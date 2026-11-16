@@ -4,6 +4,8 @@ import nuri.business.domain.event.ExternalHr;
 import nuri.business.domain.event.ExternalHrId;
 import nuri.business.domain.event.ExternalHrRepository;
 import nuri.business.service.event.dto.ExternalHrDto;
+import nuri.business.service.event.dto.ExternalHrListItemDto;
+import nuri.foundation.core.audit.SensitiveAuditPort;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.security.service.CustomUserDetails;
@@ -41,6 +43,9 @@ class ExternalHrServiceTest {
     @Mock
     private ExternalHrRepository externalHrRepository;
 
+    @Mock
+    private SensitiveAuditPort sensitiveAuditPort;
+
     @InjectMocks
     private ExternalHrService externalHrService;
 
@@ -60,20 +65,33 @@ class ExternalHrServiceTest {
     }
 
     @Test
-    @DisplayName("외부 인력 전체 조회 - 페이징")
+    @DisplayName("외부 인력 전체 조회 - 페이징 및 민감 필드 마스킹")
     void getExternalHrList_Success() {
         // Given
-        ExternalHr entity = ExternalHr.builder().evntSn(1L).otsdHrId("HR1").otsdHrNm("Name").build();
+        ExternalHr entity = ExternalHr.builder()
+                .evntSn(1L)
+                .otsdHrId("HR1")
+                .otsdHrNm("Name")
+                .brdtYmd("19900101")
+                .areaNo("010")
+                .mdTelno("1234")
+                .endTelno("5678")
+                .emlAddr("hong@example.com")
+                .build();
         given(externalHrRepository.findAll(PAGEABLE)).willReturn(new PageImpl<>(List.of(entity), PAGEABLE, 1));
 
         // When
-        var result = externalHrService.getExternalHrList(null, PAGEABLE);
+        var result = externalHrService.getExternalHrList(null, null, PAGEABLE);
 
         // Then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent().get(0).getEvntSn()).isEqualTo(1L);
-        assertThat(result.getContent().get(0).getOtsdHrNm()).isEqualTo("Name");
+        ExternalHrListItemDto item = result.getContent().get(0);
+        assertThat(item.evntSn()).isEqualTo(1L);
+        assertThat(item.otsdHrNm()).isEqualTo("Name");
+        assertThat(item.brdtYmd()).isEqualTo("1990****");
+        assertThat(item.mdTelno()).isEqualTo("****");
+        assertThat(item.emlAddr()).isEqualTo("ho***@example.com");
     }
 
     @Test
@@ -85,10 +103,85 @@ class ExternalHrServiceTest {
                 .willReturn(new PageImpl<>(List.of(entity), PAGEABLE, 1));
 
         // When
-        var result = externalHrService.getExternalHrList("Test", PAGEABLE);
+        var result = externalHrService.getExternalHrList(null, "Test", PAGEABLE);
 
         // Then
         assertThat(result.getContent()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("행사 번호 및 행사+성명 복합 필터로 외부 인력 검색 - 페이징")
+    void getExternalHrList_SearchByEventAndName() {
+        ExternalHr entity = ExternalHr.builder().evntSn(5L).otsdHrId("HR5").otsdHrNm("Tester").build();
+        given(externalHrRepository.findByEvntSn(5L, PAGEABLE))
+                .willReturn(new PageImpl<>(List.of(entity), PAGEABLE, 1));
+        given(externalHrRepository.findByEvntSnAndOtsdHrNmContaining(5L, "Test", PAGEABLE))
+                .willReturn(new PageImpl<>(List.of(entity), PAGEABLE, 1));
+
+        assertThat(externalHrService.getExternalHrList(5L, null, PAGEABLE).getContent()).hasSize(1);
+        assertThat(externalHrService.getExternalHrList(5L, "Test", PAGEABLE).getContent()).hasSize(1);
+        verify(externalHrRepository).findByEvntSn(5L, PAGEABLE);
+        verify(externalHrRepository).findByEvntSnAndOtsdHrNmContaining(5L, "Test", PAGEABLE);
+    }
+
+    @Test
+    @DisplayName("외부 인력 단건 상세 조회 - 관리자 원문 반환")
+    void getExternalHr_SuccessForAdmin() {
+        authenticateAs("admin_actor", "ADMIN");
+        ExternalHr entity = ExternalHr.builder()
+                .evntSn(1L)
+                .otsdHrId("HR1")
+                .otsdHrNm("홍길동")
+                .brdtYmd("19900101")
+                .mdTelno("1234")
+                .emlAddr("hong@example.com")
+                .build();
+        given(externalHrRepository.findById(new ExternalHrId(1L, "HR1"))).willReturn(Optional.of(entity));
+
+        ExternalHrDto result = externalHrService.getExternalHr(1L, "HR1");
+
+        assertThat(result.getBrdtYmd()).isEqualTo("19900101");
+        assertThat(result.getMdTelno()).isEqualTo("1234");
+        assertThat(result.getEmlAddr()).isEqualTo("hong@example.com");
+        verify(sensitiveAuditPort).recordMutation("EXTERNAL_HR_READ", "EXTERNAL_HR:1:HR1");
+    }
+
+    @Test
+    @DisplayName("다른 행사에서 같은 외부인사 ID 를 조회해도 감사 대상 좌표가 충돌하지 않는다")
+    void getExternalHr_DistinguishesSameIdAcrossEventsInAuditTarget() {
+        authenticateAs("admin_actor", "ADMIN");
+        given(externalHrRepository.findById(new ExternalHrId(1L, "HR001")))
+                .willReturn(Optional.of(ExternalHr.builder().evntSn(1L).otsdHrId("HR001").otsdHrNm("행사1").build()));
+        given(externalHrRepository.findById(new ExternalHrId(2L, "HR001")))
+                .willReturn(Optional.of(ExternalHr.builder().evntSn(2L).otsdHrId("HR001").otsdHrNm("행사2").build()));
+
+        externalHrService.getExternalHr(1L, "HR001");
+        externalHrService.getExternalHr(2L, "HR001");
+
+        verify(sensitiveAuditPort).recordMutation("EXTERNAL_HR_READ", "EXTERNAL_HR:1:HR001");
+        verify(sensitiveAuditPort).recordMutation("EXTERNAL_HR_READ", "EXTERNAL_HR:2:HR001");
+    }
+
+    @Test
+    @DisplayName("일반 사용자는 외부 인력 단건 상세를 조회할 수 없다")
+    void getExternalHr_RejectsNonAdmin() {
+        authenticateAs("ordinary_user", "USER");
+
+        assertThatThrownBy(() -> externalHrService.getExternalHr(1L, "HR1"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        verify(externalHrRepository, never()).findById(any());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 외부 인력 단건 상세는 RESOURCE_NOT_FOUND")
+    void getExternalHr_NotFound() {
+        authenticateAs("admin_actor", "ADMIN");
+        given(externalHrRepository.findById(new ExternalHrId(9L, "NONE"))).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> externalHrService.getExternalHr(9L, "NONE"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
     }
 
     @Test
@@ -118,6 +211,7 @@ class ExternalHrServiceTest {
         assertThat(result.getEvntSn()).isEqualTo(2L);
         assertThat(result.getFrstRgtrId()).isEqualTo("admin_actor");
         assertThat(result.getLastMdfrId()).isEqualTo("admin_actor");
+        verify(sensitiveAuditPort).recordMutation("EXTERNAL_HR_CREATE", "EXTERNAL_HR:2:HR2");
     }
 
     @org.junit.jupiter.params.ParameterizedTest
@@ -132,6 +226,27 @@ class ExternalHrServiceTest {
                 .isInstanceOf(BusinessException.class).hasMessageContaining(expected);
         assertThatThrownBy(() -> externalHrService.updateExternalHr(2L, "HR2", dto))
                 .isInstanceOf(BusinessException.class).hasMessageContaining(expected);
+        verify(externalHrRepository, never()).save(any());
+        verify(externalHrRepository, never()).findById(any());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({
+            "1990****,hong@example.com",
+            "19901340,hong@example.com",
+            "19900101,ho***@example.com"
+    })
+    @DisplayName("마스킹된 값('*')이나 잘못된 생년월일은 등록·수정 모두 400 으로 거부한다")
+    void maskedOrInvalidBirthDateAndEmailAreRejectedOnWrite(String birth, String email) {
+        authenticateAs("admin_actor", "ADMIN");
+        ExternalHrDto dto = ExternalHrDto.builder().evntSn(2L).otsdHrId("HR2").brdtYmd(birth).emlAddr(email).build();
+
+        assertThatThrownBy(() -> externalHrService.createExternalHr(dto))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThatThrownBy(() -> externalHrService.updateExternalHr(2L, "HR2", dto))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
         verify(externalHrRepository, never()).save(any());
         verify(externalHrRepository, never()).findById(any());
     }
@@ -236,6 +351,7 @@ class ExternalHrServiceTest {
         assertThat(entity.getLastMdfrId()).isEqualTo("admin_actor");
         assertThat(result.getLastMdfrId()).isEqualTo("admin_actor");
         assertThat(result.getVersion()).isZero();
+        verify(sensitiveAuditPort).recordMutation("EXTERNAL_HR_UPDATE", "EXTERNAL_HR:1:HR1");
     }
 
     @Test
@@ -269,6 +385,7 @@ class ExternalHrServiceTest {
         externalHrService.deleteExternalHr(1L, "HR1");
 
         verify(externalHrRepository).delete(entity);
+        verify(sensitiveAuditPort).recordMutation("EXTERNAL_HR_DELETE", "EXTERNAL_HR:1:HR1");
     }
 
     @Test

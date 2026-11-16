@@ -1223,7 +1223,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * 외부인사 상세 조회
+         * @description 외부인사 단건 상세 정보(원문)를 조회하고 감사 원장에 대상 좌표를 기록한다.
+         */
+        get: operations["getExternalHr"];
         /**
          * 외부인사 수정
          * @description 외부인사 정보를 수정한다. 식별자(evntSn·otsdHrId)는 바꾸지 않는다.
@@ -3265,7 +3269,7 @@ export interface paths {
         };
         /**
          * 외부인사 목록 조회
-         * @description 외부인사 정보를 페이징하여 조회한다. name 지정 시 성명 부분일치 검색.
+         * @description 외부인사 정보를 페이징하여 조회한다. 민감 필드(생년월일·전화번호 가운데 자리·이메일)는 마스킹해 반환하며, evntSn·name 조건 필터를 지원한다.
          */
         get: operations["getAllExternalHr"];
         put?: never;
@@ -12085,6 +12089,7 @@ export interface components {
             inqDt?: string;
             srvcNm?: string;
             inqInfo?: string;
+            trprId?: string;
             dmndUserId?: string;
             dmndUserIpAddr?: string;
         };
@@ -13248,20 +13253,20 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        ApiResponsePageResponseSmsDto: {
+        ApiResponsePageResponseSmsResponseDto: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["PageResponseSmsDto"];
+            data?: components["schemas"]["PageResponseSmsResponseDto"];
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        PageResponseSmsDto: {
+        PageResponseSmsResponseDto: {
             /** @description 현재 페이지의 항목 */
-            list: components["schemas"]["SmsDto"][];
+            list: components["schemas"]["SmsResponseDto"][];
             /**
              * Format: int64
              * @description 전체 건수
@@ -13283,27 +13288,84 @@ export interface components {
              */
             totalPage: number;
         };
-        ApiResponseSmsDto: {
+        /** @description SMS 조회 응답 객체 */
+        SmsResponseDto: {
+            /**
+             * Format: int64
+             * @description SMS 전송 일련번호
+             */
+            smsTrsmSn?: number;
+            /** @description 발신 번호(발신자 외에는 마스킹) */
+            sndngTelno?: string;
+            /** @description 발신 내용(발신자 본인에게만 실리고 타인 발송 건은 null) */
+            sndngCn?: string | null;
+            /**
+             * Format: int32
+             * @description 수신자 수
+             */
+            readonly recptnCnt?: number;
+            /**
+             * Format: int32
+             * @description 전달 완료 수신자 수
+             */
+            readonly successCnt?: number;
+            /**
+             * Format: int32
+             * @description 전달 실패 수신자 수
+             */
+            readonly failureCnt?: number;
+            /**
+             * Format: int32
+             * @description 대기 중 수신자 수
+             */
+            readonly pendingCnt?: number;
+            /** @description 최초 등록자 */
+            frstRgtrId?: string;
+            /**
+             * Format: date-time
+             * @description 최초 등록 일시
+             */
+            crtDt?: string;
+            /** @description 수신자 목록 — 발송 요청 전용(응답에는 실리지 않는다) */
+            recipients?: components["schemas"]["SmsRecptnDto"][];
+        };
+        ApiResponseSmsResponseDto: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["SmsDto"];
+            data?: components["schemas"]["SmsResponseDto"];
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        ApiResponseListSmsRecptnDto: {
+        ApiResponseListSmsRecptnResponseDto: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["SmsRecptnDto"][];
+            data?: components["schemas"]["SmsRecptnResponseDto"][];
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description SMS 수신자 조회 응답 DTO */
+        SmsRecptnResponseDto: {
+            /**
+             * Format: int64
+             * @description SMS 전송 일련번호
+             */
+            smsTrsmSn?: number;
+            /** @description 수신 번호(발신자 외에는 마스킹) */
+            rcptnTelno?: string;
+            /** @description 수신자 사용자 고유 ID(발신자 본인에게만 실리고 타인 발송 건은 null) */
+            esntlId?: string | null;
+            /** @description 결과 코드 (P:접수·전달 대기 또는 미확정, S:전달 완료, F:명시적 발송·전달 실패) */
+            rsltCd?: string;
+            /** @description 결과 메시지 */
+            rsltMsg?: string;
         };
         ApiResponseSmsDeliveryStatusDto: {
             success?: boolean;
@@ -13360,20 +13422,46 @@ export interface components {
              */
             totalPage: number;
         };
-        ApiResponsePageResponseExternalHrDto: {
+        ApiResponsePageResponseExternalHrListItemDto: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["PageResponseExternalHrDto"];
+            data?: components["schemas"]["PageResponseExternalHrListItemDto"];
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        PageResponseExternalHrDto: {
+        /** @description 외부인사 목록 응답 항목(민감 연락처·생년월일 마스킹) */
+        ExternalHrListItemDto: {
+            /** Format: int64 */
+            evntSn: number;
+            otsdHrId: string;
+            gndrCd?: string;
+            otsdHrNm?: string;
+            crTypeCd?: string;
+            ogdpInstNm?: string;
+            /** @description 마스킹된 생년월일(예: 1990****). 원문은 상세 조회에서만 나간다. */
+            brdtYmd?: string;
+            areaNo?: string;
+            /** @description 마스킹된 전화번호 가운데 자리(예: ****). 원문은 상세 조회에서만 나간다. */
+            mdTelno?: string;
+            endTelno?: string;
+            /** @description 마스킹된 이메일(예: ho***@example.com). 원문은 상세 조회에서만 나간다. */
+            emlAddr?: string;
+            /** Format: date-time */
+            readonly crtDt?: string;
+            readonly frstRgtrId?: string;
+            /** Format: date-time */
+            readonly mdfcnDt?: string;
+            readonly lastMdfrId?: string;
+            /** Format: int32 */
+            version?: number;
+        };
+        PageResponseExternalHrListItemDto: {
             /** @description 현재 페이지의 항목 */
-            list: components["schemas"]["ExternalHrDto"][];
+            list: components["schemas"]["ExternalHrListItemDto"][];
             /**
              * Format: int64
              * @description 전체 건수
@@ -22521,6 +22609,74 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getExternalHr: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                evntSn: number;
+                otsdHrId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseExternalHrDto"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -32047,7 +32203,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponsePageResponseSmsDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseSmsResponseDto"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -32275,6 +32431,7 @@ export interface operations {
     getAllExternalHr: {
         parameters: {
             query?: {
+                evntSn?: number;
                 name?: string;
                 /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
@@ -32295,7 +32452,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponsePageResponseExternalHrDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseExternalHrListItemDto"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -41794,7 +41951,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseSmsDto"];
+                    "application/json": components["schemas"]["ApiResponseSmsResponseDto"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -41862,7 +42019,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseListSmsRecptnDto"];
+                    "application/json": components["schemas"]["ApiResponseListSmsRecptnResponseDto"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */

@@ -31,47 +31,70 @@ export const SmsRecptnDtoSchema = /*#__PURE__*/ (() => z.object({
 }))();
 export type SmsRecptnDto = z.infer<typeof SmsRecptnDtoSchema>;
 
-export const ApiResponsePageResponseSmsDtoSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponsePageResponseSmsResponseDtoSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.lazy(() => PageResponseSmsDtoSchema).optional(),
+  data: z.lazy(() => PageResponseSmsResponseDtoSchema).optional(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 }))();
-export type ApiResponsePageResponseSmsDto = z.infer<typeof ApiResponsePageResponseSmsDtoSchema>;
+export type ApiResponsePageResponseSmsResponseDto = z.infer<typeof ApiResponsePageResponseSmsResponseDtoSchema>;
 
-export const PageResponseSmsDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SmsDtoSchema)),
+export const PageResponseSmsResponseDtoSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => SmsResponseDtoSchema)),
   total: z.number().int(),
   page: z.number().int(),
   size: z.number().int(),
   totalPage: z.number().int(),
 }))();
-export type PageResponseSmsDto = z.infer<typeof PageResponseSmsDtoSchema>;
+export type PageResponseSmsResponseDto = z.infer<typeof PageResponseSmsResponseDtoSchema>;
 
-export const ApiResponseSmsDtoSchema = /*#__PURE__*/ (() => z.object({
+export const SmsResponseDtoSchema = /*#__PURE__*/ (() => z.object({
+  smsTrsmSn: z.number().int().optional(),
+  sndngTelno: z.string().optional(),
+  sndngCn: z.string().optional().nullable(),
+  recptnCnt: z.number().int().optional(),
+  successCnt: z.number().int().optional(),
+  failureCnt: z.number().int().optional(),
+  pendingCnt: z.number().int().optional(),
+  frstRgtrId: z.string().optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  recipients: z.array(z.lazy(() => SmsRecptnDtoSchema)).optional(),
+}))();
+export type SmsResponseDto = z.infer<typeof SmsResponseDtoSchema>;
+
+export const ApiResponseSmsResponseDtoSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.lazy(() => SmsDtoSchema).optional(),
+  data: z.lazy(() => SmsResponseDtoSchema).optional(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 }))();
-export type ApiResponseSmsDto = z.infer<typeof ApiResponseSmsDtoSchema>;
+export type ApiResponseSmsResponseDto = z.infer<typeof ApiResponseSmsResponseDtoSchema>;
 
-export const ApiResponseListSmsRecptnDtoSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponseListSmsRecptnResponseDtoSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.array(z.lazy(() => SmsRecptnDtoSchema)).optional(),
+  data: z.array(z.lazy(() => SmsRecptnResponseDtoSchema)).optional(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 }))();
-export type ApiResponseListSmsRecptnDto = z.infer<typeof ApiResponseListSmsRecptnDtoSchema>;
+export type ApiResponseListSmsRecptnResponseDto = z.infer<typeof ApiResponseListSmsRecptnResponseDtoSchema>;
+
+export const SmsRecptnResponseDtoSchema = /*#__PURE__*/ (() => z.object({
+  smsTrsmSn: z.number().int().optional(),
+  rcptnTelno: z.string().optional(),
+  esntlId: z.string().optional().nullable(),
+  rsltCd: z.string().optional(),
+  rsltMsg: z.string().optional(),
+}))();
+export type SmsRecptnResponseDto = z.infer<typeof SmsRecptnResponseDtoSchema>;
 
 export const ApiResponseSmsDeliveryStatusDtoSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
@@ -132,80 +155,117 @@ export const SmsRecptnDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   rsltMsg: z.string().optional().nullable(),
 }))();
 
-export const ApiResponsePageResponseSmsDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponsePageResponseSmsResponseDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.lazy(() => PageResponseSmsDtoRequestSchema.strict()).optional(),
+  data: z.lazy(() => PageResponseSmsResponseDtoRequestSchema.strict()).optional(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
   errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
 }))();
 
-export const ApiResponsePageResponseSmsDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponsePageResponseSmsResponseDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional().nullable(),
   status: z.number().int().optional().nullable(),
   code: z.string().optional().nullable(),
   message: z.string().optional().nullable(),
-  data: z.lazy(() => PageResponseSmsDtoResponseSchema).optional().nullable(),
+  data: z.lazy(() => PageResponseSmsResponseDtoResponseSchema).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 }))();
 
-export const PageResponseSmsDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SmsDtoRequestSchema.strict())),
+export const PageResponseSmsResponseDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => SmsResponseDtoRequestSchema.strict())),
   total: z.number().int(),
   page: z.number().int(),
   size: z.number().int(),
   totalPage: z.number().int(),
 }))();
 
-export const PageResponseSmsDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SmsDtoResponseSchema)),
+export const PageResponseSmsResponseDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => SmsResponseDtoResponseSchema)),
   total: z.number().int(),
   page: z.number().int(),
   size: z.number().int(),
   totalPage: z.number().int(),
 }))();
 
-export const ApiResponseSmsDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+export const SmsResponseDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  smsTrsmSn: z.number().int().optional(),
+  sndngTelno: z.string().optional(),
+  sndngCn: z.string().optional().nullable(),
+  frstRgtrId: z.string().optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  recipients: z.array(z.lazy(() => SmsRecptnDtoRequestSchema.strict())).optional(),
+}))();
+
+export const SmsResponseDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  smsTrsmSn: z.number().int().optional().nullable(),
+  sndngTelno: z.string().optional().nullable(),
+  sndngCn: z.string().optional().nullable(),
+  recptnCnt: z.number().int().optional().nullable(),
+  successCnt: z.number().int().optional().nullable(),
+  failureCnt: z.number().int().optional().nullable(),
+  pendingCnt: z.number().int().optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+}))();
+
+export const ApiResponseSmsResponseDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.lazy(() => SmsDtoRequestSchema.strict()).optional(),
+  data: z.lazy(() => SmsResponseDtoRequestSchema.strict()).optional(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
   errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
 }))();
 
-export const ApiResponseSmsDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponseSmsResponseDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional().nullable(),
   status: z.number().int().optional().nullable(),
   code: z.string().optional().nullable(),
   message: z.string().optional().nullable(),
-  data: z.lazy(() => SmsDtoResponseSchema).optional().nullable(),
+  data: z.lazy(() => SmsResponseDtoResponseSchema).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 }))();
 
-export const ApiResponseListSmsRecptnDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponseListSmsRecptnResponseDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.array(z.lazy(() => SmsRecptnDtoRequestSchema.strict())).optional(),
+  data: z.array(z.lazy(() => SmsRecptnResponseDtoRequestSchema.strict())).optional(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
   errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
 }))();
 
-export const ApiResponseListSmsRecptnDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponseListSmsRecptnResponseDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional().nullable(),
   status: z.number().int().optional().nullable(),
   code: z.string().optional().nullable(),
   message: z.string().optional().nullable(),
-  data: z.array(z.lazy(() => SmsRecptnDtoResponseSchema)).optional().nullable(),
+  data: z.array(z.lazy(() => SmsRecptnResponseDtoResponseSchema)).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const SmsRecptnResponseDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  smsTrsmSn: z.number().int().optional(),
+  rcptnTelno: z.string().optional(),
+  esntlId: z.string().optional().nullable(),
+  rsltCd: z.string().optional(),
+  rsltMsg: z.string().optional(),
+}))();
+
+export const SmsRecptnResponseDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  smsTrsmSn: z.number().int().optional().nullable(),
+  rcptnTelno: z.string().optional().nullable(),
+  esntlId: z.string().optional().nullable(),
+  rsltCd: z.string().optional().nullable(),
+  rsltMsg: z.string().optional().nullable(),
 }))();
 
 export const ApiResponseSmsDeliveryStatusDtoRequestSchema = /*#__PURE__*/ (() => z.object({

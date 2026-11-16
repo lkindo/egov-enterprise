@@ -86,6 +86,15 @@ const SystemLogsPrivacyClient = () => {
             )
         },
         {
+            header: '정보주체 ID',
+            accessor: (item: PrivacyLog) => (
+                <div className="font-mono text-xs font-bold text-muted-foreground tabular-nums">
+                    {item.trprId || '-'}
+                </div>
+            ),
+            className: 'w-40'
+        },
+        {
             header: '서비스명',
             sortKey: 'srvcNm',
             accessor: (item: PrivacyLog) => (

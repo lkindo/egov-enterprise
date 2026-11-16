@@ -375,7 +375,7 @@ export default function SmsAdminClient({
       header: '메시지 내용',
       accessor: (item: SmsDto) => (
         <div className="max-w-[450px] truncate font-bold text-muted-foreground tracking-tight text-left">
-          {item.sndngCn || '-'}
+          {item.sndngCn ?? '발신자 본인만 내용을 볼 수 있습니다.'}
         </div>
       )
     },

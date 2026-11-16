@@ -5,8 +5,11 @@ import nuri.business.domain.event.ExternalHrId;
 import nuri.business.domain.event.ExternalHrRepository;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.event.dto.ExternalHrDto;
+import nuri.business.service.event.dto.ExternalHrListItemDto;
+import nuri.foundation.core.audit.SensitiveAuditPort;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.foundation.core.validation.Ymd;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,17 +24,37 @@ import java.util.Objects;
 public class ExternalHrService {
 
     private final ExternalHrRepository externalHrRepository;
+    private final SensitiveAuditPort sensitiveAuditPort;
 
     /**
-     * 외부인사 목록 조회(페이징). 성명(name)이 주어지면 부분일치 검색한다.
+     * 외부인사 목록 조회(페이징). evntSn·성명(name) 필터를 지원하며 민감 연락처·생년월일은 마스킹 DTO 로 반환한다.
      * 목록 응답은 컨트롤러에서 {@code PageResponse.of(...)} 로 표준화된다.
      */
-    public Page<ExternalHrDto> getExternalHrList(String name, Pageable pageable) {
+    public Page<ExternalHrListItemDto> getExternalHrList(Long evntSn, String name, Pageable pageable) {
         Pageable page = Objects.requireNonNull(pageable);
-        if (name == null || name.trim().isEmpty()) {
-            return externalHrRepository.findAll(page).map(this::convertToDto);
+        boolean hasName = name != null && !name.trim().isEmpty();
+        if (evntSn != null && hasName) {
+            return externalHrRepository.findByEvntSnAndOtsdHrNmContaining(evntSn, name, page)
+                    .map(ExternalHrListItemDto::from);
         }
-        return externalHrRepository.findByOtsdHrNmContaining(name, page).map(this::convertToDto);
+        if (evntSn != null) {
+            return externalHrRepository.findByEvntSn(evntSn, page)
+                    .map(ExternalHrListItemDto::from);
+        }
+        if (hasName) {
+            return externalHrRepository.findByOtsdHrNmContaining(name, page)
+                    .map(ExternalHrListItemDto::from);
+        }
+        return externalHrRepository.findAll(page).map(ExternalHrListItemDto::from);
+    }
+
+    /** 외부인사 단건 상세 조회(원문) — 복합키 도메인 좌표를 감사 원장에 남긴다. */
+    @Transactional
+    public ExternalHrDto getExternalHr(Long evntSn, String otsdHrId) {
+        SecurityUtil.assertPermission("EXT_HR_READ");
+        ExternalHr hr = findRequired(evntSn, otsdHrId);
+        sensitiveAuditPort.recordMutation("EXTERNAL_HR_READ", auditTarget(hr.getEvntSn(), hr.getOtsdHrId()));
+        return convertToDto(hr);
     }
 
     @Transactional
@@ -58,7 +81,9 @@ public class ExternalHrService {
                 .frstRgtrId(actorLoginId)
                 .lastMdfrId(actorLoginId)
                 .build();
-        return convertToDto(externalHrRepository.save(hr));
+        ExternalHr saved = externalHrRepository.save(hr);
+        sensitiveAuditPort.recordMutation("EXTERNAL_HR_CREATE", auditTarget(saved.getEvntSn(), saved.getOtsdHrId()));
+        return convertToDto(saved);
     }
 
     /**
@@ -75,6 +100,7 @@ public class ExternalHrService {
         nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), hr.getVersion());
         hr.update(dto.getGndrCd(), dto.getOtsdHrNm(), dto.getCrTypeCd(), dto.getOgdpInstNm(), dto.getBrdtYmd(),
                 dto.getAreaNo(), dto.getMdTelno(), dto.getEndTelno(), dto.getEmlAddr(), actorLoginId);
+        sensitiveAuditPort.recordMutation("EXTERNAL_HR_UPDATE", auditTarget(evntSn, otsdHrId));
         return convertToDto(hr);
     }
 
@@ -83,6 +109,11 @@ public class ExternalHrService {
     public void deleteExternalHr(Long evntSn, String otsdHrId) {
         SecurityUtil.assertPermission("EXT_HR_DELETE");
         externalHrRepository.delete(findRequired(evntSn, otsdHrId));
+        sensitiveAuditPort.recordMutation("EXTERNAL_HR_DELETE", auditTarget(evntSn, otsdHrId));
+    }
+
+    private static String auditTarget(Long evntSn, String otsdHrId) {
+        return "EXTERNAL_HR:" + evntSn + ":" + otsdHrId;
     }
 
     // 도메인 조각이 점을 담지 않게 해 조각 경계가 하나로 정해진다 — `[^\s@]+\.[^\s@]+` 꼴은 점 위치를 여러 갈래로 시도해
@@ -96,8 +127,16 @@ public class ExternalHrService {
      * 결정(DEC-OPS-045)을 지킨다.
      */
     private static void requireContactFormats(ExternalHrDto dto) {
-        if (filled(dto.getEmlAddr()) && !EMAIL.matcher(dto.getEmlAddr()).matches()) {
-            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "이메일 형식이 올바르지 않습니다.");
+        if (filled(dto.getBrdtYmd())) {
+            if (dto.getBrdtYmd().contains("*")) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "마스킹된 생년월일은 그대로 저장할 수 없습니다.");
+            }
+            Ymd.validateCompatible(dto.getBrdtYmd());
+        }
+        if (filled(dto.getEmlAddr())) {
+            if (dto.getEmlAddr().contains("*") || !EMAIL.matcher(dto.getEmlAddr()).matches()) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "이메일 형식이 올바르지 않습니다.");
+            }
         }
         for (String part : java.util.Arrays.asList(dto.getAreaNo(), dto.getMdTelno(), dto.getEndTelno())) {
             if (filled(part) && !TELNO_PART.matcher(part).matches()) {

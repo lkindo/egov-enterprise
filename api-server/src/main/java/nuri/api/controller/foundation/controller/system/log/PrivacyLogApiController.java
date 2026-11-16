@@ -111,7 +111,7 @@ public class PrivacyLogApiController {
         List<PrivacyLogDto> rows = privacyLogManageService.selectPrivacyLogList(searchDto).getContent();
 
         return XlsxExport.attachment("privacy-logs.xlsx", "privacy-logs",
-                new String[]{"개인정보 로그 일련번호", "요청 ID", "조회일시", "서비스명", "조회정보", "요청자 ID", "요청 IP"},
+                new String[]{"개인정보 로그 일련번호", "요청 ID", "조회일시", "서비스명", "조회정보", "정보주체 ID", "요청자 ID", "요청 IP"},
                 rows,
                 (row, dto) -> {
                     row.createCell(0).setCellValue(XlsxExport.nullSafe(dto.prvcLogSn()));
@@ -119,8 +119,9 @@ public class PrivacyLogApiController {
                     row.createCell(2).setCellValue(dto.inqDt() != null ? dto.inqDt().toString() : "");
                     row.createCell(3).setCellValue(XlsxExport.nullSafe(dto.srvcNm()));
                     row.createCell(4).setCellValue(XlsxExport.nullSafe(dto.inqInfo()));
-                    row.createCell(5).setCellValue(XlsxExport.nullSafe(dto.dmndUserId()));
-                    row.createCell(6).setCellValue(XlsxExport.nullSafe(dto.dmndUserIpAddr()));
+                    row.createCell(5).setCellValue(XlsxExport.nullSafe(dto.trprId()));
+                    row.createCell(6).setCellValue(XlsxExport.nullSafe(dto.dmndUserId()));
+                    row.createCell(7).setCellValue(XlsxExport.nullSafe(dto.dmndUserIpAddr()));
                 });
     }
 }

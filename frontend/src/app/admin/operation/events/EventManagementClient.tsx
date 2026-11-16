@@ -176,7 +176,18 @@ export default function EventManagementClient() {
   const { user } = useAuth();
   const canCreateEvent = canPermission(user, 'EVENT_CREATE');
   const canUpdateEvent = canPermission(user, 'EVENT_UPDATE');
+  const canUpdateAllEvents = canPermission(user, 'EVENT_UPDATE_ALL');
   const canDeleteEvent = canPermission(user, 'EVENT_DELETE');
+  const canDeleteAllEvents = canPermission(user, 'EVENT_DELETE_ALL');
+
+  const isEventOwner = (event: Pick<EventInfo, 'frstRgtrId'>) =>
+    Boolean(user?.id) && Boolean(event.frstRgtrId) && event.frstRgtrId === user?.id;
+  const canEditEventRow = (event: Pick<EventInfo, 'frstRgtrId'>) =>
+    canUpdateEvent && (canUpdateAllEvents || isEventOwner(event));
+  const canManageApplicantsRow = (event: Pick<EventInfo, 'frstRgtrId'>) =>
+    canUpdateEvent && (canUpdateAllEvents || isEventOwner(event));
+  const canDeleteEventRow = (event: Pick<EventInfo, 'frstRgtrId'>) =>
+    canDeleteEvent && (canDeleteAllEvents || isEventOwner(event));
 
   // 페이지 번호는 URL 파생값이다(공유·새로고침·뒤로가기 복원).
   // ADR-0009는 URL 사용을 의무화하지 않는다. 이 화면은 검색어를 로컬 상태로 유지한다.
@@ -208,8 +219,9 @@ export default function EventManagementClient() {
    */
   const [editingEvent, setEditingEvent] = useState<EventInfo | null>(null);
   const [isLoadingEvent, setIsLoadingEvent] = useState(false);
-  // 수정 권한 없이 연 행은 조회 전용이다 — 같은 창으로 상세 내용·담당자·준비사항을 읽기만 한다.
-  const isViewOnly = !canUpdateEvent && (editingEvent !== null || isLoadingEvent);
+  const [editingViewOnly, setEditingViewOnly] = useState(false);
+  // 수정 권한이 없거나 타인 행사에 *_ALL 대행 권한이 없으면 조회 전용이다 — 같은 창으로 상세 내용·담당자·준비사항을 읽기만 한다.
+  const isViewOnly = editingViewOnly && (editingEvent !== null || isLoadingEvent);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitPendingRef = useRef(false);
   const [deletingEventSn, setDeletingEventSn] = useState<number | null>(null);
@@ -280,6 +292,7 @@ export default function EventManagementClient() {
         await queryClient.invalidateQueries({ queryKey: ['events-list'] });
         setIsCreateModalOpen(false);
         setEditingEvent(null);
+        setEditingViewOnly(false);
         setForm(EMPTY_EVENT_FORM);
         validation.setFormErrors({}, false);
         return;
@@ -306,6 +319,7 @@ export default function EventManagementClient() {
   const handleOpenCreate = () => {
     validation.setFormErrors({}, false);
     setEditingEvent(null);
+    setEditingViewOnly(false);
     setForm(EMPTY_EVENT_FORM);
     setIsCreateModalOpen(true);
   };
@@ -314,11 +328,13 @@ export default function EventManagementClient() {
   const handleOpenEdit = async (event: EventInfo) => {
     if (submitPendingRef.current) return;
     validation.setFormErrors({}, false);
+    setEditingViewOnly(!canEditEventRow(event));
     setIsLoadingEvent(true);
     setIsCreateModalOpen(true);
     try {
       // 목록 응답에 없는 필드(prepMttr 등)까지 받아야 저장 시 지우지 않는다.
       const detail = await eventService.getEvent(event.evntSn);
+      setEditingViewOnly(!canEditEventRow(detail));
       setEditingEvent(detail);
       setForm({
         evntNm: detail.evntNm ?? '',
@@ -333,6 +349,7 @@ export default function EventManagementClient() {
       });
     } catch (loadError: unknown) {
       setIsCreateModalOpen(false);
+      setEditingViewOnly(false);
       toast(extractErrorMessage(loadError, '행사 정보를 불러오지 못했습니다.'), 'error');
     } finally {
       setIsLoadingEvent(false);
@@ -342,7 +359,10 @@ export default function EventManagementClient() {
   const handleCreateModalOpenChange = (open: boolean) => {
     if (!open && submitPendingRef.current) return;
     setIsCreateModalOpen(open);
-    if (!open) setEditingEvent(null);
+    if (!open) {
+      setEditingEvent(null);
+      setEditingViewOnly(false);
+    }
   };
 
   // [2026-10-01] 폼에 입력이 있으면 Esc·배경·X 닫기 전에 확인한다(StandardModal 과 같은 보호).
@@ -416,6 +436,9 @@ export default function EventManagementClient() {
       className: 'text-right w-40',
       accessor: (event: EventInfo) => {
         const isDeleting = deletingEventSn === event.evntSn;
+        const canEditRow = canEditEventRow(event);
+        const canManageApplicants = canManageApplicantsRow(event);
+        const canDeleteRow = canDeleteEventRow(event);
         return (
         <div className="flex items-center justify-end gap-1 pr-4">
           {/* 수정 경로는 서버·서비스에 이미 있었고 화면만 부르지 않았다(2026-08-28). */}
@@ -423,12 +446,13 @@ export default function EventManagementClient() {
             variant="ghost"
             size="icon"
             disabled={deletingEventSn !== null || submitPendingRef.current}
-            aria-label={canUpdateEvent ? `${event.evntNm} 수정` : `${event.evntNm} 상세 보기`}
+            aria-label={canEditRow ? `${event.evntNm} 수정` : `${event.evntNm} 상세 보기`}
             onClick={() => { void handleOpenEdit(event); }}
             className="rounded-md text-muted-foreground"
           >
-            {canUpdateEvent ? <Settings size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+            {canEditRow ? <Settings size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
           </Button>
+          {canManageApplicants && (
           <Button
             variant="ghost"
             size="icon"
@@ -439,7 +463,8 @@ export default function EventManagementClient() {
           >
             <Users size={16} aria-hidden="true" />
           </Button>
-          {canDeleteEvent && (
+          )}
+          {canDeleteRow && (
           <Button
             variant="ghost"
             size="icon"
