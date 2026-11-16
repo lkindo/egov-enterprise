@@ -47,7 +47,7 @@ export async function startWorkspaceServer({ directory, jarPath, javaPath, gitPa
   const store = await openWorkspace({ directory });
   const engine = engineFactory({ store, jarPath, javaPath, gitPath });
   const secrets = new Map();
-  const ai = await aiFactory({ store, engine, approvalPath, codexPath, forbiddenValues: () => [...secrets.values()] });
+  const ai = await aiFactory({ store, engine, approvalPath, codexPath, forbiddenValues: () => [...secrets.values(), ...(engine.protectionForbiddenValues?.() ?? [])] });
   const token = randomBytes(32).toString('base64url'), previews = new Map();
   // 실행 비밀은 터미널에 출력하는 주소의 조각(#launch=)에만 싣고 파일·작업 색인·로그에는 쓰지 않는다.
   // 같은 PC의 다른 OS 계정이나 브라우저 밖 클라이언트는 이 비밀 없이 요청 토큰을 받을 수 없다.
@@ -141,6 +141,10 @@ export async function startWorkspaceServer({ directory, jarPath, javaPath, gitPa
           if (input.password) secrets.set(input.role, input.password); else secrets.delete(input.role);
         }
         respond(response, 200, result); return;
+      }
+      if (url.pathname === '/api/protection' && request.method === 'POST') {
+        exact(input, ['revision', 'action', 'algorithmKey', 'rrnoActiveKeyId', 'rrnoKeysJson']);
+        respond(response, 200, await engine.configureProtection(input, input.revision)); return;
       }
       if (url.pathname === '/api/inputs' && request.method === 'POST') {
         exact(input, ['revision', 'kind', 'path', 'previewId']);

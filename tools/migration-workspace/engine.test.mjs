@@ -824,3 +824,130 @@ test('API envelopes reject unknown fields and unsafe file paths', async t => {
   await assert.rejects(engine.importArtifact('skeleton', '../outside', 0), { code: 'INVALID_PATH' });
   await assert.rejects(engine.cancelJob('no-such-job'), { code: 'JOB_NOT_FOUND' });
 });
+
+test('session protection keys stay in memory only, inject only into target loads, and clear on close/clear', async t => {
+  const { root, engine, store, fake, jarPath, javaPath } = await fixture(t, { uniqueLoadEvidence: true });
+  const keyB64 = Buffer.alloc(32, 0x33).toString('base64');
+  const keysJson = JSON.stringify({ k2: keyB64 });
+
+  await assert.rejects(engine.configureProtection({ revision: 0, action: 'replace', rrnoActiveKeyId: 'k2' }), { code: 'INVALID_PROTECTION_KEY' });
+  await assert.rejects(engine.configureProtection({ revision: 0, action: 'replace', rrnoActiveKeyId: 'missing', rrnoKeysJson: keysJson }), { code: 'INVALID_PROTECTION_KEY' });
+
+  const archiveDirectory = join(root, 'external-archive-protection');
+  await mkdir(archiveDirectory);
+
+  await configure(engine, 'source', source);
+  await configure(engine, 'target', target);
+  const repository = join(root, 'reviewed-protection');
+  await mkdir(join(repository, '.git'), { recursive: true });
+  const ledgerPath = join(repository, 'ledger.json');
+  await writeFile(ledgerPath, '{"schemaVersion":2,"entries":[]}');
+  const skeletonPath = join(root, 'skeleton-protection.json');
+  await writeFile(skeletonPath, JSON.stringify({ tables: [], run: { runId: 'synthetic-success', sourceNamespace: 'synthetic' } }));
+  await engine.importArtifact('skeleton', skeletonPath, (await engine.state()).revision);
+  await engine.importArtifact('confirmed-ledger', ledgerPath, (await engine.state()).revision);
+  await importColumns(engine, root);
+
+  await engine.preflight();
+  for (const operation of ['discover', 'profile', 'term-suggest', 'mapping-generate', 'plan', 'validate']) {
+    const result = await run(engine, operation);
+    assert.equal(result.status, 'succeeded', `${operation}: ${result.errorCode}`);
+  }
+
+  // 보호 키를 validate 이후에 설정·교체해도 validate 완료 상태는 유지된다.
+  const applied = await engine.configureProtection({
+    revision: (await engine.state()).revision,
+    action: 'replace',
+    algorithmKey: 'session-aria-secret-value',
+    rrnoActiveKeyId: 'k2',
+    rrnoKeysJson: keysJson,
+  });
+  assert.deepEqual(applied.protection, { algorithmKeyReady: true, rrnoKeyringReady: true, rrnoActiveKeyId: 'k2' });
+  assert.ok(engine.protectionForbiddenValues().includes('session-aria-secret-value'));
+  assert.ok(engine.protectionForbiddenValues().includes(keyB64));
+  assert.equal(applied.operationReadiness.commit.blockers.includes('VALIDATION_REQUIRED'), false);
+
+  const disk = await readFile(join(store.directory, 'workspace.json'), 'utf8');
+  assert.equal(disk.includes('session-aria-secret-value'), false);
+  assert.equal(disk.includes(keyB64), false);
+
+  await assert.rejects(
+    engine.saveLedger({
+      schemaVersion: 2,
+      entries: [{ id: '1', source: 't.c', grade: 'B', status: 'PROPOSED', note: `leak:${keyB64}` }],
+    }, (await engine.state()).revision),
+    { code: 'SENSITIVE_CONTENT' },
+  );
+
+  const dryRun = await run(engine, 'dry-run', { ackAdapter: 'postgresql-pg-catalog', ackFreeze: true });
+  assert.equal(dryRun.status, 'succeeded', dryRun.errorCode);
+  assert.equal((await engine.state()).operationReadiness.commit.ready, true);
+
+  const nonLoadCalls = fake.calls.filter(call => call.args.some(arg => arg.startsWith('--command=') && arg !== '--command=load'));
+  assert.ok(nonLoadCalls.length >= 1);
+  for (const call of nonLoadCalls) {
+    assert.equal(call.options.env.MIGRATION_ALGORITHM_KEY, undefined);
+    assert.equal(call.options.env.MIGRATION_RRNO_ACTIVE_KEY_ID, undefined);
+    assert.equal(call.options.env.MIGRATION_RRNO_KEYS_JSON, undefined);
+  }
+  const loadCall = fake.calls.find(call => call.args.includes('--command=load'));
+  assert.ok(loadCall);
+  assert.equal(loadCall.options.env.MIGRATION_ALGORITHM_KEY, 'session-aria-secret-value');
+  assert.equal(loadCall.options.env.MIGRATION_RRNO_ACTIVE_KEY_ID, 'k2');
+  assert.equal(loadCall.options.env.MIGRATION_RRNO_KEYS_JSON, keysJson);
+  assert.doesNotMatch(JSON.stringify(loadCall.args), /session-aria-secret-value/);
+
+  // 런처 재시작 직후 보호 키가 메모리에 없으면 commit 이 차단되고, 같은 키 A 를 재입력하면 dry-run 재실행 없이 commit ready 가 복구된다.
+  await store.close();
+  const restartedStore = await openWorkspace({ directory: store.directory });
+  t.after(() => restartedStore.close());
+  const restartedEngine = createEngine({ store: restartedStore, jarPath, javaPath, gitPath: join(root, 'git.exe'), spawnImpl: fake.spawnImpl });
+  await configure(restartedEngine, 'source', source);
+  await configure(restartedEngine, 'target', target);
+  const stateMissingKey = await restartedEngine.state();
+  assert.equal(stateMissingKey.operationReadiness.commit.ready, false);
+  assert.ok(stateMissingKey.operationReadiness.commit.blockers.includes('DRY_RUN_REQUIRED'));
+  await assert.rejects(
+    restartedEngine.startJob({
+      operation: 'commit',
+      requestId: 'commit-after-restart-missing-key',
+      revision: stateMissingKey.revision,
+      options: { ackAdapter: 'postgresql-pg-catalog', ackFreeze: true, confirm: true, targetPhrase: 'COMMIT standard', archiveDirectory },
+    }),
+    { code: 'REHEARSAL_REQUIRED' },
+  );
+
+  const restored = await restartedEngine.configureProtection({
+    revision: (await restartedEngine.state()).revision,
+    action: 'replace',
+    algorithmKey: 'session-aria-secret-value',
+    rrnoActiveKeyId: 'k2',
+    rrnoKeysJson: keysJson,
+  });
+  assert.equal(restored.operationReadiness.commit.ready, true);
+
+  // 같은 key ID(k2)라도 키 값을 교체하면 기존 리허설이 무효화되고 REHEARSAL_REQUIRED 로 COMMIT 이 차단된다.
+  const rotatedKeyB64 = Buffer.alloc(32, 0x77).toString('base64');
+  const rotated = await restartedEngine.configureProtection({
+    revision: restored.revision,
+    action: 'replace',
+    algorithmKey: 'session-aria-secret-value',
+    rrnoActiveKeyId: 'k2',
+    rrnoKeysJson: JSON.stringify({ k2: rotatedKeyB64 }),
+  });
+  assert.ok(rotated.operationReadiness.commit.blockers.includes('DRY_RUN_REQUIRED'));
+  assert.equal(rotated.operationReadiness.commit.ready, false);
+  await assert.rejects(
+    restartedEngine.startJob({
+      operation: 'commit',
+      requestId: 'commit-after-key-rotation',
+      revision: rotated.revision,
+      options: { ackAdapter: 'postgresql-pg-catalog', ackFreeze: true, confirm: true, targetPhrase: 'COMMIT standard', archiveDirectory },
+    }),
+    { code: 'REHEARSAL_REQUIRED' },
+  );
+
+  const cleared = await restartedEngine.configureProtection({ revision: (await restartedEngine.state()).revision, action: 'clear' });
+  assert.deepEqual(cleared.protection, { algorithmKeyReady: false, rrnoKeyringReady: false, rrnoActiveKeyId: null });
+  assert.deepEqual(restartedEngine.protectionForbiddenValues(), []);
+});

@@ -21,7 +21,12 @@ import java.util.Optional;
 public final class ColumnProtectionPlan {
 
     /** 이관 도구가 암호화해 쓸 대상 컬럼. */
-    public record ProtectedColumn(String targetTable, String column, ProtectedTargetColumns.Entry entry) {}
+    public record ProtectedColumn(String targetTable, String column, ProtectedTargetColumns.Entry entry,
+                                   ColumnProtection protection) {
+        public ProtectedColumn(String targetTable, String column, ProtectedTargetColumns.Entry entry) {
+            this(targetTable, column, entry, entry.protection());
+        }
+    }
 
     private final Map<String, ProtectedColumn> columns;
     private final List<String> violations;
@@ -83,7 +88,7 @@ public final class ColumnProtectionPlan {
             violations.add(name + ": 온라인 앱이 암호화하지 않는 컬럼에 encrypt 를 선언했습니다");
             return;
         }
-        if (registered.get().protection() != declared.get()) {
+        if (!registered.get().allows(declared.get())) {
             violations.add(name + ": encrypt 방식이 온라인 앱의 보호 방식과 다릅니다");
             return;
         }
@@ -100,7 +105,7 @@ public final class ColumnProtectionPlan {
             return;
         }
         columns.put(key(table.target(), column.target()),
-                new ProtectedColumn(table.target(), column.target(), registered.get()));
+                new ProtectedColumn(table.target(), column.target(), registered.get(), declared.get()));
     }
 
     /** 보호 컬럼은 암호문이 키가 되므로 idStrategy·identity·복합 FK 의 대상 컬럼으로 쓸 수 없다. */

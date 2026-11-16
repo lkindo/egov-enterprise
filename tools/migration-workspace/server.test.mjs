@@ -298,3 +298,57 @@ test('chat uses the local session, exact request shape and a fixed static field 
   const cleared = await fetch(`${app.url}/api/ai/chat-reset`, { method: 'POST', headers, body: '{}' });
   assert.equal((await cleared.json()).data.cleared, true);
 });
+
+test('POST /api/protection keeps encryption keys in session memory and passes them to AI redaction set', async t => {
+  let receivedForbidden = [];
+  const { app, directory, headers } = await fixture(t, {
+    aiFactory: async ({ forbiddenValues }) => ({
+      status: async () => ({ provider: 'codex', available: true, authenticated: true }),
+      testConnection: async () => ({ provider: 'codex', connectionTest: { status: 'passed' } }),
+      configure: async () => ({}),
+      approveReadPlan: async () => ({}),
+      preview: async () => { receivedForbidden = forbiddenValues(); return { previewId: 'p1', context: {}, excluded: [] }; },
+      ask: async () => ({}),
+      apply: async () => ({}),
+      chat: async () => ({}),
+      resetChat: async () => ({ cleared: true }),
+      login: async () => ({}),
+      cancelLogin: async () => ({}),
+      logout: async () => ({}),
+      close: async () => {},
+    }),
+  });
+
+  const rawKey = Buffer.alloc(32, 0x44).toString('base64');
+  const applyRes = await fetch(`${app.url}/api/protection`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      revision: 0,
+      action: 'replace',
+      algorithmKey: 'http-aria-secret-99',
+      rrnoActiveKeyId: 'k2',
+      rrnoKeysJson: JSON.stringify({ k2: rawKey }),
+    }),
+  });
+  assert.equal(applyRes.status, 200);
+  const body = await applyRes.json();
+  assert.deepEqual(body.data.protection, { algorithmKeyReady: true, rrnoKeyringReady: true, rrnoActiveKeyId: 'k2' });
+
+  const stateRes = await fetch(`${app.url}/api/state`, { headers });
+  const stateJson = await stateRes.json();
+  assert.equal(JSON.stringify(stateJson).includes('http-aria-secret-99'), false);
+  assert.equal(JSON.stringify(stateJson).includes(rawKey), false);
+
+  await fetch(`${app.url}/api/ai/preview`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ mode: 'restricted', artifactIds: [], excerpts: [] }),
+  });
+  assert.ok(receivedForbidden.includes('http-aria-secret-99'));
+  assert.ok(receivedForbidden.includes(rawKey));
+
+  const workspaceOnDisk = await readFile(path.join(directory, 'workspace.json'), 'utf8');
+  assert.equal(workspaceOnDisk.includes('http-aria-secret-99'), false);
+  assert.equal(workspaceOnDisk.includes(rawKey), false);
+});

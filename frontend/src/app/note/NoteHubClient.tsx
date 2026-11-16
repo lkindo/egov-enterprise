@@ -26,6 +26,15 @@ import { failureMessage } from '@/lib/safe-error-log';
 import { noteComposeSchema } from './note-form-validation';
 import { invalidateNoteUnreadCount } from './note-query-keys';
 import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
+import { AttachmentFileList } from '@/app/components/ui/attachment-file-list';
+import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
+import { fileService } from '@/services/foundation/file/FileService';
+import { useOptionalAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
+
+function noteFilesKey(files: File[]): string {
+  return files.map((file) => `${file.name}:${file.size}:${file.lastModified}`).join('|');
+}
 
 const NOTE_FORM_LABELS = {
   rcverId: '받는 사람',
@@ -119,6 +128,16 @@ export default function NoteHubClient() {
   const detailRequestRef = useRef(0);
   const [formData, setFormData] = useState({ rcverId: '', rcverNm: '', noteSj: '', noteCn: '' });
   const [recipients, setRecipients] = useState<{ esntlId: string; name: string }[]>([]);
+  const user = useOptionalAuth()?.user;
+  const canUploadAttachments = canPermission(user, 'FILE_UPLOAD');
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [uploaderKey, setUploaderKey] = useState(0);
+  const uploadedSnRef = useRef<{ key: string; atchFileSn: number } | null>(null);
+  const resetComposeAttachments = useCallback(() => {
+    setPendingFiles([]);
+    setUploaderKey((current) => current + 1);
+    uploadedSnRef.current = null;
+  }, []);
   const [isSending, setIsSending] = useState(false);
   const sendingRef = useRef(false);
   const [deletingRelationSn, setDeletingRelationSn] = useState<number | null>(null);
@@ -220,11 +239,25 @@ export default function NoteHubClient() {
     sendingRef.current = true;
     setIsSending(true);
     try {
-      await noteService.sendNote(validated);
+      let uploadedAtchFileSn: number | undefined;
+      if (canUploadAttachments && pendingFiles.length > 0) {
+        const key = noteFilesKey(pendingFiles);
+        if (uploadedSnRef.current?.key === key) {
+          uploadedAtchFileSn = uploadedSnRef.current.atchFileSn;
+        } else {
+          uploadedAtchFileSn = await fileService.uploadFiles(pendingFiles);
+          uploadedSnRef.current = { key, atchFileSn: uploadedAtchFileSn };
+        }
+      }
+      const payload = uploadedAtchFileSn !== undefined
+        ? { ...validated, atchFileSn: uploadedAtchFileSn }
+        : validated;
+      await noteService.sendNote(payload);
       toast('쪽지가 성공적으로 전송되었습니다.', 'success');
       setWriteOpen(false);
       setFormData({ rcverId: '', rcverNm: '', noteSj: '', noteCn: '' });
       setRecipients([]);
+      resetComposeAttachments();
       validation.setFormErrors({}, false);
       if (tab === 'sent' && tabRef.current === 'sent') void loadNotes('sent');
     } catch (error) {
@@ -275,6 +308,7 @@ export default function NoteHubClient() {
     // 다시 열었을 때 "수신자 없음" 으로 보이는데 숨은 rcverId 로 이전 수신자에게 발송된다.
     setRecipients([]);
     setFormData({ rcverId: '', rcverNm: '', noteSj: '', noteCn: '' });
+    resetComposeAttachments();
     validation.setFormErrors({}, false);
   };
 
@@ -489,6 +523,7 @@ export default function NoteHubClient() {
             size="sm"
             onClick={() => {
               validation.setFormErrors({}, false);
+              resetComposeAttachments();
               setWriteOpen(true);
             }}
             className="gap-2"
@@ -632,6 +667,19 @@ export default function NoteHubClient() {
               placeholder="전할 내용을 입력하세요."
             />
           </FormField>
+          {canUploadAttachments && (
+            <div className="space-y-1.5">
+              <span className="text-xs font-bold text-muted-foreground">첨부파일</span>
+              <StandardFileUploader
+                key={uploaderKey}
+                onFilesChange={(files) => {
+                  setPendingFiles(files);
+                  uploadedSnRef.current = null;
+                }}
+                disabled={isSending}
+              />
+            </div>
+          )}
         </div>
       </StandardModal>
 
@@ -694,6 +742,7 @@ export default function NoteHubClient() {
             <div className="min-h-[160px] whitespace-pre-wrap rounded-md border border-border bg-muted/40 p-3 text-[length:var(--font-size-body)] leading-relaxed text-foreground">
               {selectedNote.noteCn}
             </div>
+            <AttachmentFileList atchFileSn={selectedNote.atchFileSn} />
             {/* [2026-09-26 DIP V3] 보낸 쪽지는 수신자별 읽음을 보여 준다 — 한 쪽지에 수신자가 여럿일 수 있다. */}
             {tab === 'sent' && (selectedNote.recipients?.length ?? 0) > 0 && (
               <section aria-label="수신자별 읽음" className="space-y-1">
@@ -718,6 +767,7 @@ export default function NoteHubClient() {
                   closeDetailModal();
                   applyRecipients([]);
                   setFormData((current) => ({ ...current, noteSj: subject, noteCn: body }));
+                  resetComposeAttachments();
                   validation.setFormErrors({}, false);
                   setWriteOpen(true);
                 }}
@@ -735,6 +785,7 @@ export default function NoteHubClient() {
                     //   칩이 비어 보였고, 수신자를 추가하면 칩 목록으로 다시 계산돼 원 발신자가 빠졌다.
                     applyRecipients(recipientId ? [{ esntlId: recipientId, name: recipientName }] : []);
                     setFormData((current) => ({ ...current, noteSj: subject, noteCn: '' }));
+                    resetComposeAttachments();
                     validation.setFormErrors({}, false);
                     setWriteOpen(true);
                   }}

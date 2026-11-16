@@ -77,6 +77,7 @@ export async function openSession() {
 export const api = {
   state: () => request('/api/state'),
   profile: body => request('/api/profiles', { method: 'POST', body }),
+  protection: body => request('/api/protection', { method: 'POST', body }),
   input: body => request('/api/inputs', { method: 'POST', body }),
   upload: (kind, file, revision) => request(`/api/uploads?kind=${encodeURIComponent(kind)}`, { method: 'POST', raw: true, body: file, headers: { 'Content-Type': 'application/octet-stream', 'X-Workspace-Revision': String(revision) }, timeout: 120000 }),
   job: body => request('/api/jobs', { method: 'POST', body }),

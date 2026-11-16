@@ -11,6 +11,7 @@ import { emptyResultMessage } from '@/app/components/patterns/empty-result-messa
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { reportService, type WorkReport } from '@/services/business/user/ReportService';
 import { StandardModal } from '@/app/components/ui/standard-modal';
+import { AttachmentFileList } from '@/app/components/ui/attachment-file-list';
 import { ReportCreateForm, type ReportFormValues } from '@/components/business/report/ReportCreateForm';
 import { useWorkHubTabStrip, useWorkReportLinks } from '@/components/business/work-hub/work-hub-tabs';
 // sonner 직접 호출은 문자열 정규화 페일세이프가 없어 객체가 들어오면 '[object Object]' 가 노출된다.
@@ -55,6 +56,7 @@ export default function WorkReportClient({ initialYmd }: WorkReportClientProps) 
   // 폼의 미저장 여부. 닫기 가드가 이 값만 본다 — 저장 중 차단은 StandardModal 의
   // closeDisabled 가 따로 소유하므로 여기서 pending 을 다시 판정하지 않는다.
   const [reportDirty, setReportDirty] = useState(false);
+  const [detailReport, setDetailReport] = useState<WorkReport | null>(null);
   // 진행 중인 동작의 종류와 대상 행을 함께 들고 행별 aria-busy 를 정확히 찍는다.
   const reportActionPendingRef = React.useRef(false);
   const [reportAction, setReportAction] = useState<{ type: 'save' | 'delete'; id?: number } | null>(null);
@@ -185,7 +187,11 @@ export default function WorkReportClient({ initialYmd }: WorkReportClientProps) 
             className="font-bold text-[11px] h-[var(--control-h)]"
             aria-label={`${item.rptTtl || '제목 없음'} 보고 수정`}
             disabled={reportAction !== null}
-            onClick={() => { setEditingReport(item); setReportModalOpen(true); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditingReport(item);
+              setReportModalOpen(true);
+            }}
           >
             수정
           </Button>
@@ -196,7 +202,10 @@ export default function WorkReportClient({ initialYmd }: WorkReportClientProps) 
             aria-label={`${item.rptTtl || '제목 없음'} 보고 ${reportAction?.type === 'delete' && reportAction.id === item.rptpSn ? '삭제 중' : '삭제'}`}
             aria-busy={reportAction?.type === 'delete' && reportAction.id === item.rptpSn || undefined}
             disabled={reportAction !== null}
-            onClick={() => handleDeleteReport(item)}
+            onClick={(e) => {
+              e.stopPropagation();
+              void handleDeleteReport(item);
+            }}
           >
             삭제
           </Button>
@@ -270,6 +279,8 @@ export default function WorkReportClient({ initialYmd }: WorkReportClientProps) 
           columns={reportColumns}
           data={reports}
           loading={isReportLoading}
+          onRowClick={(item) => setDetailReport(item)}
+          rowActionLabel={(item) => `${item.rptTtl || '제목 없음'} 업무 보고 상세 보기`}
           emptyMessage={emptyResultMessage(searchKeyword, '등록된 업무 보고가 없습니다.')}
           error={isReportError ? (reportError instanceof Error ? reportError : new Error('업무 보고를 불러오지 못했습니다.')) : null}
           onRetry={() => void refetchReports()}
@@ -284,6 +295,55 @@ export default function WorkReportClient({ initialYmd }: WorkReportClientProps) 
         />,
       )}
     </WorkListPage>
+
+      <StandardModal
+        isOpen={detailReport !== null}
+        onClose={() => setDetailReport(null)}
+        title={detailReport?.rptTtl || '업무 보고 상세'}
+        maxWidth="lg"
+        footer={
+          detailReport && (
+            <>
+              <Button type="button" variant="ghost" onClick={() => setDetailReport(null)}>
+                닫기
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  const target = detailReport;
+                  setDetailReport(null);
+                  setEditingReport(target);
+                  setReportModalOpen(true);
+                }}
+              >
+                보고 수정
+              </Button>
+            </>
+          )
+        }
+      >
+        {detailReport && (
+          <div className="space-y-4 text-sm">
+            <div className="grid gap-3 sm:grid-cols-2 border-b border-border pb-3">
+              <div>
+                <span className="text-xs font-bold text-muted-foreground">보고 일자</span>
+                <p className="mt-0.5 font-mono text-xs text-foreground">{toDisplayYmd(detailReport.rptYmd)}</p>
+              </div>
+              <div>
+                <span className="text-xs font-bold text-muted-foreground">작성자</span>
+                <p className="mt-0.5 text-foreground">{detailReport.userNm || detailReport.userId || '-'}</p>
+              </div>
+            </div>
+            <div>
+              <span className="text-xs font-bold text-muted-foreground">보고 내용</span>
+              <p className="mt-1 whitespace-pre-wrap leading-relaxed text-foreground">
+                {detailReport.rptCn?.trim() || '등록된 내용이 없습니다.'}
+              </p>
+            </div>
+            <AttachmentFileList atchFileSn={detailReport.atchFileSn} />
+          </div>
+        )}
+      </StandardModal>
 
       {/* 업무 보고 등록 다이얼로그 */}
       <StandardModal

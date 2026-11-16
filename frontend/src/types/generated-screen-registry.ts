@@ -1132,7 +1132,10 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
       {"code":"DEPT_BOX_UPDATE","action":"UPDATE","source":"write"},
       {"code":"DEPT_JOB_CREATE","action":"CREATE","source":"write"},
       {"code":"DEPT_JOB_DELETE","action":"DELETE","source":"write"},
-      {"code":"DEPT_READ","action":"READ","source":"display"}
+      {"code":"DEPT_READ","action":"READ","source":"display"},
+      {"code":"FILE_DOWNLOAD","action":"DOWNLOAD","source":"display"},
+      {"code":"FILE_READ","action":"READ","source":"display"},
+      {"code":"FILE_UPLOAD","action":"UPLOAD","source":"write"}
     ]
   },
   {
@@ -1241,6 +1244,9 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"DEPT_READ","action":"READ","source":"display"},
+      {"code":"FILE_DOWNLOAD","action":"DOWNLOAD","source":"display"},
+      {"code":"FILE_READ","action":"READ","source":"display"},
+      {"code":"FILE_UPLOAD","action":"UPLOAD","source":"write"},
       {"code":"NOTE_DELETE","action":"DELETE","source":"write"},
       {"code":"NOTE_SEND","action":"SEND","source":"write"},
       {"code":"USER_READ","action":"READ","source":"display"}
@@ -1295,7 +1301,10 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
       {"code":"DEPT_BOX_UPDATE","action":"UPDATE","source":"write"},
       {"code":"DEPT_JOB_CREATE","action":"CREATE","source":"write"},
       {"code":"DEPT_JOB_DELETE","action":"DELETE","source":"write"},
-      {"code":"DEPT_READ","action":"READ","source":"display"}
+      {"code":"DEPT_READ","action":"READ","source":"display"},
+      {"code":"FILE_DOWNLOAD","action":"DOWNLOAD","source":"display"},
+      {"code":"FILE_READ","action":"READ","source":"display"},
+      {"code":"FILE_UPLOAD","action":"UPLOAD","source":"write"}
     ]
   },
   {
@@ -1308,7 +1317,10 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"DEPT_JOB_DELETE","action":"DELETE","source":"write"},
-      {"code":"DEPT_JOB_UPDATE","action":"UPDATE","source":"write"}
+      {"code":"DEPT_JOB_UPDATE","action":"UPDATE","source":"write"},
+      {"code":"FILE_DOWNLOAD","action":"DOWNLOAD","source":"display"},
+      {"code":"FILE_READ","action":"READ","source":"display"},
+      {"code":"FILE_UPLOAD","action":"UPLOAD","source":"write"}
     ]
   },
   {
@@ -1320,7 +1332,10 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
-      {"code":"DEPT_JOB_CREATE","action":"CREATE","source":"write"}
+      {"code":"DEPT_JOB_CREATE","action":"CREATE","source":"write"},
+      {"code":"FILE_DOWNLOAD","action":"DOWNLOAD","source":"display"},
+      {"code":"FILE_READ","action":"READ","source":"display"},
+      {"code":"FILE_UPLOAD","action":"UPLOAD","source":"write"}
     ]
   },
   {
@@ -1332,6 +1347,9 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
+      {"code":"FILE_DOWNLOAD","action":"DOWNLOAD","source":"display"},
+      {"code":"FILE_READ","action":"READ","source":"display"},
+      {"code":"FILE_UPLOAD","action":"UPLOAD","source":"write"},
       {"code":"SCHEDULE_CREATE","action":"CREATE","source":"write"},
       {"code":"SCHEDULE_DELETE","action":"DELETE","source":"write"},
       {"code":"SCHEDULE_UPDATE","action":"UPDATE","source":"write"},
@@ -1361,6 +1379,9 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
+      {"code":"FILE_DOWNLOAD","action":"DOWNLOAD","source":"display"},
+      {"code":"FILE_READ","action":"READ","source":"display"},
+      {"code":"FILE_UPLOAD","action":"UPLOAD","source":"write"},
       {"code":"WORK_RPT_CREATE","action":"CREATE","source":"write"},
       {"code":"WORK_RPT_DELETE","action":"DELETE","source":"write"},
       {"code":"WORK_RPT_UPDATE","action":"UPDATE","source":"write"}
@@ -1794,8 +1815,15 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/uss/olh/online-manual"
     ],
     "relatedScreens": [
+      "/admin/work-hub",
       "/approvals",
-      "/approvals/draft"
+      "/approvals/draft",
+      "/note",
+      "/smart-toolkit/dept-job",
+      "/smart-toolkit/dept-job/[id]",
+      "/smart-toolkit/dept-job/create",
+      "/smart-toolkit/schedule",
+      "/smart-toolkit/work-report"
     ]
   },
   {
@@ -1814,8 +1842,15 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/system/content-pages"
     ],
     "relatedScreens": [
+      "/admin/work-hub",
       "/approvals",
-      "/approvals/draft"
+      "/approvals/draft",
+      "/note",
+      "/smart-toolkit/dept-job",
+      "/smart-toolkit/dept-job/[id]",
+      "/smart-toolkit/dept-job/create",
+      "/smart-toolkit/schedule",
+      "/smart-toolkit/work-report"
     ]
   },
   {
@@ -1832,8 +1867,15 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/system/content-pages"
     ],
     "relatedScreens": [
+      "/admin/work-hub",
       "/approvals",
-      "/approvals/draft"
+      "/approvals/draft",
+      "/note",
+      "/smart-toolkit/dept-job",
+      "/smart-toolkit/dept-job/[id]",
+      "/smart-toolkit/dept-job/create",
+      "/smart-toolkit/schedule",
+      "/smart-toolkit/work-report"
     ]
   },
   {

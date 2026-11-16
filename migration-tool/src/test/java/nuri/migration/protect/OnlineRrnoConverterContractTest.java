@@ -261,6 +261,68 @@ class OnlineRrnoConverterContractTest {
     }
 
     @Test
+    @DisplayName("rrno-aes-gcm-v2 암호문과 온라인 RrnoKeyring·RrnoEncryptionConverter 는 양방향 호환되고 키 회전·변조를 구분한다")
+    void v2KeyringToolAndOnlineConverterAreBidirectionallyCompatible() throws Exception {
+        requireOnline();
+        String key = KEYS.getFirst();
+        byte[] raw1 = new byte[32];
+        byte[] raw2 = new byte[32];
+        java.util.Arrays.fill(raw1, (byte) 0x11);
+        java.util.Arrays.fill(raw2, (byte) 0x22);
+        String b64K1 = java.util.Base64.getEncoder().encodeToString(raw1);
+        String b64K2 = java.util.Base64.getEncoder().encodeToString(raw2);
+        String keysJson = "{\"k1\":\"" + b64K1 + "\",\"k2\":\"" + b64K2 + "\"}";
+
+        Class<?> keyringClass = onlineLoader.loadClass("nuri.business.domain.common.RrnoKeyring");
+        var configure = keyringClass.getMethod("configure", String.class, Map.class);
+        RrnoAesGcmColumnCipher cipherK1 = new RrnoAesGcmColumnCipher("k1", keysJson);
+        RrnoAesGcmColumnCipher cipherK2 = new RrnoAesGcmColumnCipher("k2", keysJson);
+
+        ColumnProtector protector = ColumnProtector.forRun(
+                new MappingSpec(null, null, List.of(new TableMapping("LEGACY", "tb_user_info", null,
+                        List.of(new ColumnMapping("JUMIN", "user_enrrno", null, null, null, null, null, "rrno-aes-gcm-v2")),
+                        null)), Map.of()),
+                name -> switch (name) {
+                    case ColumnProtector.RRNO_ACTIVE_KEY_ID_ENVIRONMENT -> "k2";
+                    case ColumnProtector.RRNO_KEYS_JSON_ENVIRONMENT -> keysJson;
+                    default -> null;
+                });
+
+        try (OnlineConverter online = OnlineConverter.start(key)) {
+            configure.invoke(null, "k2", Map.of("k1", b64K1, "k2", b64K2));
+            try {
+                for (String rrno : plaintexts()) {
+                    Object written = protector.protect("tb_user_info", "user_enrrno", rrno);
+                    if (rrno.isBlank()) {
+                        assertThat(written).isNull();
+                        assertThat(online.converter().convertToDatabaseColumn(rrno)).isNull();
+                    } else {
+                        String toolEnvelope = (String) written;
+                        assertThat(toolEnvelope).startsWith("v2:k2:");
+                        assertThat(online.converter().convertToEntityAttribute(toolEnvelope)).isEqualTo(rrno);
+
+                        String onlineEnvelope = online.converter().convertToDatabaseColumn(rrno);
+                        assertThat(onlineEnvelope).startsWith("v2:k2:");
+                        assertThat(cipherK2.decrypt(onlineEnvelope)).isEqualTo(rrno);
+
+                        String olderKeyEnvelope = cipherK1.encrypt(rrno);
+                        assertThat(olderKeyEnvelope).startsWith("v2:k1:");
+                        assertThat(online.converter().convertToEntityAttribute(olderKeyEnvelope)).isEqualTo(rrno);
+
+                        String[] parts = onlineEnvelope.split(":");
+                        String tampered = "v2:" + parts[1] + ":" + parts[2] + ":" + parts[3].substring(0, parts[3].length() - 2)
+                                + (parts[3].endsWith("AA") ? "AB" : "AA");
+                        org.assertj.core.api.Assertions.assertThatThrownBy(() -> cipherK2.decrypt(tampered))
+                                .isInstanceOf(IllegalArgumentException.class);
+                    }
+                }
+            } finally {
+                configure.invoke(null, null, null);
+            }
+        }
+    }
+
+    @Test
     @DisplayName("보호 목록은 온라인 엔티티의 @Convert 변환기와 서비스 암호 컬럼과 정확히 같다")
     void protectedColumnListMatchesTheOnlineEntities() throws IOException {
         requireOnline();

@@ -125,6 +125,10 @@ public class PopupService {
                 period[1],
                 dto.getStopvewSetupYn(), dto.getNtceYn());
         popup.setLastMdfrId(userId);
+        if (currentAtchFileSn != null && !Objects.equals(currentAtchFileSn, requestedAtchFileSn)) {
+            popupRepository.flush();
+            attachmentAssignmentPolicy.releaseIfUnreferenced(currentAtchFileSn);
+        }
     }
 
     @Transactional

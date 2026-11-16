@@ -93,6 +93,26 @@ openssl rand -base64 32
   이전 키로 복귀한다.
 - old key를 먼저 폐기하거나 서로 다른 시점의 DB와 key를 조합하지 않는다.
 
+## 7. RRNO v2 키링(`AES-256-GCM`) 로테이션과 데이터 이관(`rrno-aes-gcm-v2`)
+
+온라인 애플리케이션의 `RrnoKeyring`과 `RrnoEncryptionConverter`는 레거시 ARIA(`ALGORITHM_KEY`)에 더해 다중 키 `AES-256-GCM` 봉투(`v2:<keyId>:<nonce>:<ciphertext>`)를 지원한다.
+
+### 7.1 온라인 2단계 롤링 회전(`RRNO_ACTIVE_KEY_ID` · `RRNO_KEYS_JSON`)
+
+- `RRNO_ACTIVE_KEY_ID`: `[A-Za-z0-9_-]{1,32}` 형식의 활성 암호화 키 식별자
+- `RRNO_KEYS_JSON`: 최대 16개 키를 담은 JSON 객체(값은 32바이트 AES 키의 44자 표준 Base64)
+- 둘 중 하나만 설정하거나 `RRNO_ACTIVE_KEY_ID`가 `RRNO_KEYS_JSON`에 없으면 기동 시 즉시 실패한다(fail-closed).
+
+1. **키 추가 배포**: 기존 `RRNO_ACTIVE_KEY_ID=<old>`를 유지한 채 `RRNO_KEYS_JSON`에 `<new>` 키를 먼저 추가해 모든 인스턴스가 새 키를 복호화할 수 있게 배포한다.
+2. **활성 키 전환**: 모든 인스턴스 반영을 확인한 뒤 `RRNO_ACTIVE_KEY_ID=<new>`로 전환해 신규 저장·수정을 새 키로 암호화한다. 기존 `<old>` 키는 `RRNO_KEYS_JSON`에 남겨 둔다.
+3. **재암호화 및 구 키 제거**: DB에서 `v2:<old>:` 접두 행을 모두 `<new>`로 재암호화해 잔여 건수가 0임을 확인한 뒤에만 `RRNO_KEYS_JSON`에서 `<old>` 키를 제거한다.
+
+### 7.2 데이터 이관(`migration-tool` `rrno-aes-gcm-v2` · `tools/migration-workspace`)
+
+- 매핑의 `tb_user_info.user_enrrno`는 `encrypt: aria-egov-v1`(`MIGRATION_ALGORITHM_KEY`) 또는 `encrypt: rrno-aes-gcm-v2`(`MIGRATION_RRNO_ACTIVE_KEY_ID`, `MIGRATION_RRNO_KEYS_JSON`)를 선언할 수 있다.
+- `ColumnProtector.forRun`은 `rrno-aes-gcm-v2` 대상 컬럼이 있으면 실행 시작 전 두 환경 변수를 검증하고, 행 적재 전 `v2:` 정식 봉투 형식과 복호화 왕복을 확인한다(실패 시 키 원문 없이 중단).
+- `tools/migration-workspace`는 보호 키를 디스크(`workspace.json`)나 AI 문맥에 남기지 않고 세션 메모리(`/api/protection`)에만 보관하며 `dry-run`·`commit` 대상 적재 실행 환경에만 주입한다.
+
 ## 완료 체크리스트
 
 - [ ] 실행 직전 대상 행 수 확인

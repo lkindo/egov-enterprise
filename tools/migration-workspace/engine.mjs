@@ -213,7 +213,17 @@ export function buildJdbcProfile(role, input) {
 
 export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = spawn }) {
   const credentials = new Map();
+  const protection = { algorithmKey: undefined, rrnoActiveKeyId: undefined, rrnoKeysJson: undefined, secretValues: [] };
   const active = new Map();
+  const rejectSecrets = (textValue, message = '현재 세션의 비밀정보는 저장할 수 없습니다.') => {
+    if (typeof textValue !== 'string' || !textValue.length) return;
+    for (const secret of [...credentials.values(), ...protection.secretValues]) {
+      if (secret.length >= 4 && textValue.includes(secret)) fail('SENSITIVE_CONTENT', message);
+    }
+  };
+  const protectionDigest = () => (protection.algorithmKey || protection.rrnoKeysJson)
+    ? digest(json({ alg: protection.algorithmKey ?? null, id: protection.rrnoActiveKeyId ?? null, keys: protection.rrnoKeysJson ?? null }))
+    : null;
   let serial = Promise.resolve();
   const exclusive = work => { const result = serial.then(work, work); serial = result.catch(() => {}); return result; };
   const requireIdle = state => { if (state.activeJobId) fail('JOB_ACTIVE', '실행 중인 작업이 끝난 뒤 변경하세요.'); };
@@ -242,6 +252,7 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
     return { metadata, path, bytes };
   }
   async function saveArtifact(name, bytes, format = 'json') {
+    rejectSecrets(Buffer.isBuffer(bytes) ? bytes.toString('utf8') : String(bytes ?? ''), '산출물에 세션 비밀을 저장할 수 없습니다.');
     const file = `${randomUUID()}-${name}.${format === 'yaml' ? 'yml' : 'json'}`;
     await writeNew(await store.resolveArtifact(file), bytes);
     return { file, sha256: digest(bytes), format, bytes: bytes.length };
@@ -282,7 +293,7 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
     if (!committed.equals(bytes) || !(await boundedFile(path)).equals(bytes)) fail('GIT_REVIEW_REQUIRED', '원장 작업 파일이 Git HEAD 확정 판과 다릅니다.');
     return { commit, blob, fileDigest: digest(bytes) };
   }
-  async function profileEnvironment(state, roles) {
+  async function profileEnvironment(state, roles, { includeProtection = false } = {}) {
     const env = {};
     // pgJDBC uses APPDATA/postgresql for its default trusted CA on Windows.
     for (const key of ['SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'APPDATA']) if (typeof process.env[key] === 'string') env[key] = process.env[key];
@@ -294,6 +305,13 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
       env[`${prefix}URL`] = built.url;
       env[`${prefix}USERNAME`] = state.profiles[role].username;
       env[`${prefix}PASSWORD`] = credentials.get(role);
+    }
+    if (includeProtection) {
+      if (protection.algorithmKey) env.MIGRATION_ALGORITHM_KEY = protection.algorithmKey;
+      if (protection.rrnoActiveKeyId && protection.rrnoKeysJson) {
+        env.MIGRATION_RRNO_ACTIVE_KEY_ID = protection.rrnoActiveKeyId;
+        env.MIGRATION_RRNO_KEYS_JSON = protection.rrnoKeysJson;
+      }
     }
     return env;
   }
@@ -351,6 +369,78 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
       const updated = await store.update(revision, draft => { draft.profiles[role] = built.profile; invalidate(draft, role); });
       applyCredential();
       return publicState(updated);
+    });
+  }
+  async function configureProtection(input, revision) {
+    return exclusive(async () => {
+      exact(input, ['revision', 'action', 'algorithmKey', 'rrnoActiveKeyId', 'rrnoKeysJson'], ['revision', 'action']);
+      if (!['replace', 'clear'].includes(input.action)) fail('INVALID_INPUT', '보호 키 작업 형식을 확인하세요.');
+      const state = await store.read();
+      checkRevision(state, revision ?? input.revision);
+      requireIdle(state);
+      if (store.readOnly) fail('WORKSPACE_READ_ONLY', '이 작업공간은 읽기 전용입니다.');
+      const invalidateLoadReadiness = async currentDigest => {
+        const dryRunStale = state.readiness?.dryRun && (state.readiness.dryRun.protectionDigest ?? null) !== currentDigest;
+        const committedStale = state.readiness?.committed && (state.readiness.committed.protectionDigest ?? null) !== currentDigest;
+        if (!dryRunStale && !committedStale) return publicState(state);
+        return publicState(await store.update(revision ?? input.revision, draft => { delete draft.readiness.dryRun; delete draft.readiness.committed; }));
+      };
+      if (input.action === 'clear') {
+        for (const key of ['algorithmKey', 'rrnoActiveKeyId', 'rrnoKeysJson']) {
+          if (input[key] !== undefined && input[key] !== '') fail('INVALID_INPUT', '초기화 요청에는 키 값을 함께 보낼 수 없습니다.');
+        }
+        protection.algorithmKey = undefined;
+        protection.rrnoActiveKeyId = undefined;
+        protection.rrnoKeysJson = undefined;
+        protection.secretValues = [];
+        return invalidateLoadReadiness(null);
+      }
+      const algInput = typeof input.algorithmKey === 'string' && input.algorithmKey.length > 0 ? input.algorithmKey : undefined;
+      if (input.algorithmKey !== undefined && typeof input.algorithmKey !== 'string') fail('INVALID_PROTECTION_KEY', 'ALGORITHM_KEY 형식을 확인하세요.');
+      if (algInput !== undefined && (algInput.length > 4096 || /[\x00\r\n]/.test(algInput))) fail('INVALID_PROTECTION_KEY', 'ALGORITHM_KEY 형식을 확인하세요.');
+      const idInput = typeof input.rrnoActiveKeyId === 'string' && input.rrnoActiveKeyId.length > 0 ? input.rrnoActiveKeyId : undefined;
+      const jsonInput = typeof input.rrnoKeysJson === 'string' && input.rrnoKeysJson.length > 0 ? input.rrnoKeysJson : undefined;
+      if ((input.rrnoActiveKeyId !== undefined && typeof input.rrnoActiveKeyId !== 'string')
+        || (input.rrnoKeysJson !== undefined && typeof input.rrnoKeysJson !== 'string')) {
+        fail('INVALID_PROTECTION_KEY', 'RRNO v2 키링 형식을 확인하세요.');
+      }
+      if ((idInput !== undefined) !== (jsonInput !== undefined)) {
+        fail('INVALID_PROTECTION_KEY', 'RRNO v2 활성 키 ID와 키링 JSON을 모두 입력하세요.');
+      }
+      let nextAlg = algInput ?? protection.algorithmKey;
+      let nextId = protection.rrnoActiveKeyId;
+      let nextJson = protection.rrnoKeysJson;
+      if (idInput !== undefined && jsonInput !== undefined) {
+        if (!/^[A-Za-z0-9_-]{1,32}$/.test(idInput)) fail('INVALID_PROTECTION_KEY', 'RRNO v2 키 ID 형식을 확인하세요.');
+        if (jsonInput.length > 32768 || /[\x00\r\n]/.test(jsonInput)) fail('INVALID_PROTECTION_KEY', 'RRNO v2 키링 JSON 형식을 확인하세요.');
+        let parsed;
+        try { parsed = parseJson(jsonInput).parsed; } catch { fail('INVALID_PROTECTION_KEY', 'RRNO v2 키링 JSON 형식을 확인하세요.'); }
+        if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') fail('INVALID_PROTECTION_KEY', 'RRNO v2 키링은 JSON 객체여야 합니다.');
+        const entries = Object.entries(parsed);
+        if (entries.length < 1 || entries.length > 16 || !Object.hasOwn(parsed, idInput)) {
+          fail('INVALID_PROTECTION_KEY', 'RRNO v2 키링에 활성 키 ID와 1~16개의 유효한 키가 필요합니다.');
+        }
+        for (const [k, v] of entries) {
+          if (!/^[A-Za-z0-9_-]{1,32}$/.test(k) || typeof v !== 'string' || !/^[A-Za-z0-9+/]{43}=$/.test(v)
+            || Buffer.from(v, 'base64').length !== 32 || Buffer.from(v, 'base64').toString('base64') !== v) {
+            fail('INVALID_PROTECTION_KEY', 'RRNO v2 키 값은 32바이트 표준 Base64 문자열이어야 합니다.');
+          }
+        }
+        nextId = idInput;
+        nextJson = jsonInput;
+      }
+      if (!algInput && !idInput) fail('INVALID_PROTECTION_KEY', '적용할 보호 키를 하나 이상 입력하세요.');
+      protection.algorithmKey = nextAlg;
+      protection.rrnoActiveKeyId = nextId;
+      protection.rrnoKeysJson = nextJson;
+      const secretsList = [];
+      if (protection.algorithmKey) secretsList.push(protection.algorithmKey);
+      if (protection.rrnoKeysJson) {
+        secretsList.push(protection.rrnoKeysJson);
+        for (const value of Object.values(parseJson(protection.rrnoKeysJson).parsed)) secretsList.push(value);
+      }
+      protection.secretValues = [...new Set(secretsList)];
+      return invalidateLoadReadiness(protectionDigest());
     });
   }
   async function configureInputs(input, revision) {
@@ -422,7 +512,7 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
   async function buildJob(operation, options, state, runtime) {
     const roles = JOB_ROLES[operation];
     if (operation === 'mapping-generate' && (!state.profiles.source || !state.profiles.target)) fail('PROFILE_REQUIRED', '매핑에 사용할 원천 및 대상 연결 프로필을 준비하세요.');
-    const env = await profileEnvironment(state, roles);
+    const env = await profileEnvironment(state, roles, { includeProtection: LOADS.has(operation) });
     const args = ['-jar', runtime.jarPath, `--command=${LOADS.has(operation) ? 'load' : operation}`];
     if (['mapping-generate', 'plan', 'dry-run', 'commit'].includes(operation)) {
       args.unshift(`-Dmigration.db-columns-path=${(await artifact('standardColumns', state)).path}`);
@@ -468,7 +558,7 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
         if (state.profiles.source.vendor !== 'postgresql') fail('COMMIT_UNVERIFIED', '현재 이 adapter는 공개 COMMIT 자격이 없습니다.');
         if (options.confirm !== true || options.targetPhrase !== `COMMIT ${state.profiles.target.database}`) fail('COMMIT_CONFIRMATION_REQUIRED', '대상 이름과 실제 적재 확인 문구가 필요합니다.');
         const binding = inputDigest(state, runtime.jarDigest);
-        if (state.readiness.validated?.inputDigest !== binding || state.readiness.dryRun?.inputDigest !== binding) fail('REHEARSAL_REQUIRED', '현재 입력의 validate와 DRY_RUN이 모두 통과해야 합니다.');
+        if (state.readiness.validated?.inputDigest !== binding || state.readiness.dryRun?.inputDigest !== binding || (state.readiness.dryRun?.protectionDigest ?? null) !== protectionDigest()) fail('REHEARSAL_REQUIRED', '현재 입력의 validate와 DRY_RUN이 모두 통과해야 합니다.');
         const archive = await regularPath(options.archiveDirectory, { directory: true, outsideGit: true });
         const canonicalBase = await realpath(store.directory);
         const base = process.platform === 'win32' ? canonicalBase.toLowerCase() : canonicalBase;
@@ -485,7 +575,7 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
     const bytes = await boundedFile(path);
     const content = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
     if (!bytes.length) fail('INVALID_ARTIFACT', '완성된 CLI 산출물이 없습니다.');
-    for (const secret of credentials.values()) if (secret.length >= 4 && content.includes(secret)) fail('SENSITIVE_CONTENT', '산출물에서 접속 비밀이 탐지되었습니다.');
+    rejectSecrets(content, '산출물에서 접속 비밀이 탐지되었습니다.');
     if (descriptor.format === 'json') {
       const { parsed, payloadText } = parseJson(content); safeContent(parsed);
       if (kind === 'ledgerDraft') {
@@ -547,8 +637,8 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
             draft.ledger = { reviewSource: 'local-draft' };
           }
           if (job.operation === 'validate') draft.readiness.validated = { inputDigest: job.inputDigest, jobId: job.id };
-          if (job.operation === 'dry-run') draft.readiness.dryRun = { inputDigest: job.inputDigest, jobId: job.id };
-          if (job.operation === 'commit') draft.readiness.committed = { inputDigest: job.inputDigest, jobId: job.id };
+          if (job.operation === 'dry-run') draft.readiness.dryRun = { inputDigest: job.inputDigest, jobId: job.id, protectionDigest: job.protectionDigest ?? null };
+          if (job.operation === 'commit') draft.readiness.committed = { inputDigest: job.inputDigest, jobId: job.id, protectionDigest: job.protectionDigest ?? null };
         }
       });
       active.delete(job.id);
@@ -581,7 +671,7 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
       const beforeFiles = new Set(await readdir(join(store.directory, 'artifacts')));
       // 적재는 계획 파일 이름과 시작 전에 있던 그 계획의 증거 파일을 남긴다. 결과가 불명해져도 이 작업이 만든
       // 증거(.load-*.json)만 골라 사람 확인에 대조할 수 있다.
-      const loadBinding = LOADS.has(request.operation) ? { planFile: state.artifacts.plan.file, evidenceBefore: [...beforeFiles].filter(name => name.startsWith(`${state.artifacts.plan.file}.load-`)).sort() } : {};
+      const loadBinding = LOADS.has(request.operation) ? { planFile: state.artifacts.plan.file, evidenceBefore: [...beforeFiles].filter(name => name.startsWith(`${state.artifacts.plan.file}.load-`)).sort(), protectionDigest: protectionDigest() } : {};
       const job = { id: randomUUID(), requestId: request.requestId, requestDigest, operation: request.operation, status: 'starting', inputDigest: inputDigest(state, runtime.jarDigest), jarDigest: runtime.jarDigest, inputRevision: state.inputRevision ?? 0, startedAt: new Date().toISOString(), capability: LOADS.has(request.operation) ? 'no-safe-pause' : 'cancel-after-process-close', ...loadBinding };
       await store.update(state.revision, draft => {
         draft.jobs.push(job); draft.activeJobId = job.id;
@@ -646,7 +736,7 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
     for (const name of names) {
       const bytes = await boundedFile(await store.resolveArtifact(name));
       const content = bytes.toString('utf8');
-      for (const secret of credentials.values()) if (secret.length >= 4 && content.includes(secret)) fail('SENSITIVE_CONTENT', '실행 증거에서 접속 비밀이 탐지되었습니다.');
+      rejectSecrets(content, '실행 증거에서 접속 비밀이 탐지되었습니다.');
       let record;
       try { record = parseJson(content).parsed; } catch { record = null; }
       files.push({ file: name, sha256: digest(bytes), bytes: bytes.length, ...evidenceSummary(record) });
@@ -670,7 +760,7 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
       exact(input, ['revision', 'note'], ['revision', 'note']);
       const note = typeof input.note === 'string' ? input.note.trim() : '';
       if (!note || note.length > 1000 || /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/.test(note)) fail('INVALID_INPUT', '확인 메모를 1~1000자로 적으세요.');
-      for (const secret of credentials.values()) if (secret.length >= 4 && note.includes(secret)) fail('SENSITIVE_CONTENT', '확인 메모에 접속 비밀을 적을 수 없습니다.');
+      rejectSecrets(note, '확인 메모에 접속 비밀을 적을 수 없습니다.');
       const state = await store.read(); checkRevision(state, input.revision); requireIdle(state);
       if (store.readOnly) fail('WORKSPACE_READ_ONLY', '이 작업공간은 읽기 전용입니다.');
       const job = state.jobs.find(item => item.id === id);
@@ -697,6 +787,11 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
     const result = clone(state);
     for (const job of result.jobs) if (active.get(job.id)?.completionError) { job.status = 'unknown'; job.errorCode = active.get(job.id).completionError; }
     for (const [role, profile] of Object.entries(result.profiles)) profile.credentialReady = credentials.has(role);
+    result.protection = {
+      algorithmKeyReady: Boolean(protection.algorithmKey),
+      rrnoKeyringReady: Boolean(protection.rrnoActiveKeyId && protection.rrnoKeysJson),
+      rrnoActiveKeyId: protection.rrnoActiveKeyId ?? null,
+    };
     result.capabilities = { operations: [...OPERATIONS], safeLoadPause: false, importFormats: ['json'], targetVendor: 'postgresql', confirmedLedger: 'institution-git-import', supportedVendors: Object.keys(VENDORS) };
     const common = [];
     if (store.readOnly) common.push('WORKSPACE_READ_ONLY');
@@ -710,7 +805,8 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
       const marker = state.readiness[key];
       const job = marker && state.jobs.find(item => item.id === marker.jobId);
       return job?.status === 'succeeded' && job.inputRevision === state.inputRevision && marker.inputDigest === job.inputDigest
-        && (!job.jarDigest || inputDigest(state, job.jarDigest) === marker.inputDigest);
+        && (!job.jarDigest || inputDigest(state, job.jarDigest) === marker.inputDigest)
+        && (key === 'validated' || (marker.protectionDigest ?? null) === protectionDigest());
     };
     result.operationReadiness = Object.fromEntries([...OPERATIONS].map(operation => {
       const blockers = [...common];
@@ -732,9 +828,10 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
     }));
     return result;
   }
-  return { configureProfile, configureInputs, importArtifact, saveLedger, startJob, cancelJob, jobEvidence, acknowledgeJob, preflight,
+  return { configureProfile, configureProtection, configureInputs, importArtifact, saveLedger, startJob, cancelJob, jobEvidence, acknowledgeJob, preflight,
+    protectionForbiddenValues: () => [...protection.secretValues],
     state: async () => publicState(await store.read()),
     getArtifact: async kind => { if (!['inventory', 'profile', 'appUsage', 'suggestions', 'ledgerDraft', 'ledger', 'confirmedLedger', 'mapping', 'skeleton', 'standardColumns', 'plan', 'review', 'execution'].includes(kind)) fail('INVALID_ARTIFACT_KIND', '지원하는 산출물 종류가 아닙니다.'); const found = await artifact(kind); return { kind, ...found.metadata, content: found.bytes.toString('utf8') }; },
-    close: async () => { if (active.size) fail('JOB_ACTIVE', '실행 중 작업이 있어 종료할 수 없습니다.'); credentials.clear(); await store.close(); },
+    close: async () => { if (active.size) fail('JOB_ACTIVE', '실행 중 작업이 있어 종료할 수 없습니다.'); credentials.clear(); protection.algorithmKey = undefined; protection.rrnoActiveKeyId = undefined; protection.rrnoKeysJson = undefined; protection.secretValues = []; await store.close(); },
   };
 }

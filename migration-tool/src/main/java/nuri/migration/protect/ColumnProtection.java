@@ -13,6 +13,9 @@ public enum ColumnProtection {
     /** {@code RrnoEncryptionConverter}·{@code CryptoUtil} 의 eGov ARIA-256(ECB·Base64). 키는 앱의 ALGORITHM_KEY 와 같은 값. */
     ARIA_EGOV_V1("aria-egov-v1", true),
 
+    /** {@code RrnoEncryptionConverter}·{@code RrnoKeyring} 의 AES-256-GCM 버전 봉투({@code v2:<keyId>:<nonce>:<ciphertext>}). */
+    RRNO_AES_GCM_V2("rrno-aes-gcm-v2", true),
+
     /** {@code MfaSecretCipher} 의 AES-256-GCM(무작위 nonce, 사용자·자격 버전 결속). 이관하지 않는다. */
     MFA_AES_GCM_V1("mfa-aes-gcm-v1", false);
 

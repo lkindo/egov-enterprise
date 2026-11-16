@@ -21,6 +21,13 @@ import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { useOptionalAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
+import { AttachmentFileList } from '@/app/components/ui/attachment-file-list';
+import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
+import { fileService } from '@/services/foundation/file/FileService';
+
+function scheduleFilesKey(files: File[]): string {
+  return files.map((file) => `${file.name}:${file.size}:${file.lastModified}`).join('|');
+}
 
 const scheduleValidationLabels: Record<string, string> = {
   schdlNm: '일정명',
@@ -127,13 +134,14 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
       schdlSeCd: initialData?.schdlSeCd ?? '2',
       // ⚠ [전체 치환] PUT /schedules/{schdlSn} 는 부분 수정이 아니다 — Schedule.updateAll 이
       //   10개 필드를 통째로 덮어쓰므로, 이 폼이 묻지 않는 필드를 빠뜨리면 null 로 지워진다.
-      //   담당자(schdlPicId)는 서버가 기존 값으로 고정하고 첨부(atchFileSn)는 updateAll 대상이
-      //   아니지만, 아래 3개는 전달하지 않으면 사라진다. 특히 schdlImprtCd(일정 중요도)는
+      //   담당자(schdlPicId)는 서버가 기존 값으로 고정한다. 아래 3개와 첨부(atchFileSn)는
+      //   전달하지 않으면 사라진다. 특히 schdlImprtCd(일정 중요도)는
       //   2026-10-20 전까지 /smart-toolkit/schedule/dept 가 'A' 로 저장했고 기존 행에 그 값이 남아 있어, 같은 일정을 이
       //   모달에서 수정하면 교차 화면 데이터 유실이 된다(ReportCreateForm 의 rptSeCd 왕복과 같은 계약).
       schdlKndCd: initialData?.schdlKndCd ?? undefined,
       schdlImprtCd: initialData?.schdlImprtCd ?? undefined,
       reptSeCd: initialData?.reptSeCd ?? undefined,
+      atchFileSn: initialData?.atchFileSn ?? undefined,
     },
   });
 
@@ -144,17 +152,43 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
   const user = useOptionalAuth()?.user;
   const isCompanyWide = form.watch('schdlSeCd') === '3';
   const canShareCompanyWide = canPermission(user, 'SCHEDULE_UPDATE_ALL');
+  const canUploadAttachments = canPermission(user, 'FILE_UPLOAD');
+  const existingAtchFileSn = initialData?.atchFileSn ?? undefined;
+  const [attachmentSelection, setAttachmentSelection] = useState<{
+    forSn: number | undefined;
+    files: File[];
+  }>({ forSn: existingAtchFileSn, files: [] });
+  const pendingFiles = attachmentSelection.forSn === existingAtchFileSn ? attachmentSelection.files : [];
+  const [clearedForSn, setClearedForSn] = useState<number | null>(null);
+  const clearedExisting = typeof existingAtchFileSn === 'number' && clearedForSn === existingAtchFileSn;
+  const uploadedSnRef = useRef<{ forSn: number | undefined; key: string; atchFileSn: number } | null>(null);
+
+  const isDirty = form.formState.isDirty || pendingFiles.length > 0 || clearedExisting;
 
   useEffect(() => {
-    onEditStateChange?.({ dirty: form.formState.isDirty, pending: isSavePending });
-  }, [form.formState.isDirty, isSavePending, onEditStateChange]);
+    onEditStateChange?.({ dirty: isDirty, pending: isSavePending });
+  }, [isDirty, isSavePending, onEditStateChange]);
 
   const handleSubmit = async (values: ScheduleFormValues) => {
     if (submitPendingRef.current) return;
     submitPendingRef.current = true;
     setSubmitPending(true);
     try {
-      await onSubmit(values);
+      let nextAtchFileSn = clearedExisting ? undefined : values.atchFileSn;
+      if (canUploadAttachments && pendingFiles.length > 0) {
+        const key = scheduleFilesKey(pendingFiles);
+        if (uploadedSnRef.current?.forSn === existingAtchFileSn && uploadedSnRef.current?.key === key) {
+          nextAtchFileSn = uploadedSnRef.current.atchFileSn;
+        } else {
+          const uploaded = await fileService.uploadFiles(pendingFiles);
+          uploadedSnRef.current = { forSn: existingAtchFileSn, key, atchFileSn: uploaded };
+          nextAtchFileSn = uploaded;
+        }
+      }
+      const payload = nextAtchFileSn === values.atchFileSn
+        ? values
+        : { ...values, atchFileSn: nextAtchFileSn };
+      await onSubmit(payload);
     } catch (error: unknown) {
       if (!form.applyServerErrors(error)) {
         toast(extractErrorMessage(error, '일정 저장 중 오류가 발생했습니다.'), 'error');
@@ -321,6 +355,34 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
             </FormItem>
           )}
         />
+
+        {isEdit && typeof existingAtchFileSn === 'number' && existingAtchFileSn > 0 && (
+          <AttachmentFileList
+            atchFileSn={existingAtchFileSn}
+            clearable
+            cleared={clearedExisting}
+            onToggleClear={() =>
+              setClearedForSn((prev) =>
+                prev === existingAtchFileSn ? null : existingAtchFileSn,
+              )
+            }
+            title="현재 첨부파일"
+          />
+        )}
+
+        {canUploadAttachments && (
+          <div className="space-y-1.5">
+            <span className="text-xs font-bold text-muted-foreground">첨부파일</span>
+            <StandardFileUploader
+              key={existingAtchFileSn ?? 'none'}
+              onFilesChange={(files) => {
+                setAttachmentSelection({ forSn: existingAtchFileSn, files });
+                uploadedSnRef.current = null;
+              }}
+              disabled={isSavePending}
+            />
+          </div>
+        )}
 
         <div className="flex gap-3 pt-2">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSavePending} className="flex-1 rounded-lg font-bold">

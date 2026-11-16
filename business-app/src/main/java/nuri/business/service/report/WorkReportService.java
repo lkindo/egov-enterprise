@@ -32,18 +32,40 @@ public class WorkReportService extends BaseAbstractService {
     private final UserRepository userRepository;
     private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
+    private static final java.util.regex.Pattern STORAGE_DATE =
+            java.util.regex.Pattern.compile(nuri.foundation.core.validation.Ymd.OPTIONAL_PATTERN);
+
+    private static String requireReportTitle(WorkReportDto dto) {
+        if (dto.getRptTtl() == null || dto.getRptTtl().isBlank()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "보고 제목을 입력해 주세요.");
+        }
+        return dto.getRptTtl().trim();
+    }
+
+    private static String normalizeAndValidateDate(String value) {
+        if (value == null || value.isEmpty()) {
+            return null;
+        }
+        if (!STORAGE_DATE.matcher(value).matches()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "유효하지 않은 날짜 형식입니다: " + value);
+        }
+        return value;
+    }
+
     @Transactional
     public Long createWorkReport(WorkReportDto dto) {
         String actorLoginId = currentLoginId();
+        String rptTtl = requireReportTitle(dto);
+        String rptYmd = normalizeAndValidateDate(dto.getRptYmd());
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
         }
         WorkReport entity = WorkReport.builder()
-                .rptTtl(dto.getRptTtl())
+                .rptTtl(rptTtl)
                 .rptCn(dto.getRptCn())
                 .rptSeCd(dto.getRptSeCd())
-                .rptYmd(dto.getRptYmd())
+                .rptYmd(rptYmd)
                 // [작성자 고정] 종전에는 dto.getUserId() 를 그대로 복사해 ① 미전송 시 null 이 되고
                 //   ② 타인 명의로 위조할 수 있었다. 인증 주체로 고정한다(Schedule·Board 와 동일 패턴).
                 .userId(actorLoginId)
@@ -62,14 +84,21 @@ public class WorkReportService extends BaseAbstractService {
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "WORK_RPT_UPDATE_ALL");
         // [2026-10-18] 화면이 읽은 버전과 다르면 다른 사람이 먼저 고친 것이다 — 덮지 않고 409 로 알린다(인가 판정 뒤).
         EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
+        String rptTtl = requireReportTitle(dto);
+        String rptYmd = normalizeAndValidateDate(dto.getRptYmd());
 
+        Long previousAtchFileSn = entity.getAtchFileSn();
         Long atchFileSn = dto.getAtchFileSn();
-        if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
+        if (atchFileSn != null && !Objects.equals(previousAtchFileSn, atchFileSn)) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
         }
-        entity.update(dto.getRptTtl(), dto.getRptCn(), atchFileSn, dto.getRptSeCd(), dto.getRptYmd());
+        entity.update(rptTtl, dto.getRptCn(), atchFileSn, dto.getRptSeCd(), rptYmd);
         // lastMdfrId 는 @LastModifiedBy 감사자가 loginId 로 기록한다.
         // 클라이언트 DTO 값(dto.getUserId())으로 세팅하면 감사자 위조가 되므로 수동 설정하지 않는다.
+        if (previousAtchFileSn != null && !Objects.equals(previousAtchFileSn, entity.getAtchFileSn())) {
+            workReportRepository.flush();
+            attachmentAssignmentPolicy.releaseIfUnreferenced(previousAtchFileSn);
+        }
     }
 
     @Transactional
