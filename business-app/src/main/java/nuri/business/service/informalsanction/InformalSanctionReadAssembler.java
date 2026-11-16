@@ -97,7 +97,8 @@ final class InformalSanctionReadAssembler {
                 .map(d -> d.getId().getAtrzCycl()).collect(Collectors.toSet());
         List<InformalSanctionDetail> currentLines = lines.stream()
                 .filter(d -> d.getId().getAtrzCycl().compareTo(sanction.getAtrzCycl()) == 0).toList();
-        boolean ownCurrentLine = currentLines.stream().anyMatch(d -> actor.equals(d.getId().getUserId()));
+        boolean ownCurrentLine = currentLines.stream()
+                .anyMatch(d -> actor.equals(d.getId().getUserId()) || actor.equals(d.getSbtAprvrId()));
         // [V2_151] 지금 대신 결정할 수 있는 원결재자 — 진행 중 문서의 차례인 줄 중 오늘 나에게 맡긴 사람. 기안자이거나 이 차수
         //   결재선에 내가 있으면 대리결재가 없다(InformalSanctionService#substitutableLines 와 같은 판정).
         Optional<String> principal = !"A".equals(sanction.getAprvYn()) || owner || ownCurrentLine || delegators.isEmpty()

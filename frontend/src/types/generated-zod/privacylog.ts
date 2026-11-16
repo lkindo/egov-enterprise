@@ -32,6 +32,7 @@ export const PrivacyLogDtoSchema = /*#__PURE__*/ (() => z.object({
   inqDt: z.iso.datetime({ offset: true, local: true }).optional(),
   srvcNm: z.string().optional(),
   inqInfo: z.string().optional(),
+  trprId: z.string().optional(),
   dmndUserId: z.string().optional(),
   dmndUserIpAddr: z.string().optional(),
 }))();
@@ -79,6 +80,7 @@ export const PrivacyLogDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   inqDt: z.iso.datetime({ offset: true, local: true }).optional(),
   srvcNm: z.string().optional(),
   inqInfo: z.string().optional(),
+  trprId: z.string().optional(),
   dmndUserId: z.string().optional(),
   dmndUserIpAddr: z.string().optional(),
 }))();
@@ -89,6 +91,7 @@ export const PrivacyLogDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   inqDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   srvcNm: z.string().optional().nullable(),
   inqInfo: z.string().optional().nullable(),
+  trprId: z.string().optional().nullable(),
   dmndUserId: z.string().optional().nullable(),
   dmndUserIpAddr: z.string().optional().nullable(),
 }))();

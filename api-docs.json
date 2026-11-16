@@ -11060,6 +11060,95 @@
       }
     },
     "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}": {
+      "get": {
+        "tags": [
+          "ExternalHr"
+        ],
+        "summary": "외부인사 상세 조회",
+        "description": "외부인사 단건 상세 정보(원문)를 조회하고 감사 원장에 대상 좌표를 기록한다.",
+        "operationId": "getExternalHr",
+        "parameters": [
+          {
+            "name": "evntSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "otsdHrId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseExternalHrDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
       "put": {
         "tags": [
           "ExternalHr"
@@ -23864,7 +23953,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponsePageResponseSmsDto"
+                  "$ref": "#/components/schemas/ApiResponsePageResponseSmsResponseDto"
                 }
               }
             }
@@ -24168,9 +24257,18 @@
           "ExternalHr"
         ],
         "summary": "외부인사 목록 조회",
-        "description": "외부인사 정보를 페이징하여 조회한다. name 지정 시 성명 부분일치 검색.",
+        "description": "외부인사 정보를 페이징하여 조회한다. 민감 필드(생년월일·전화번호 가운데 자리·이메일)는 마스킹해 반환하며, evntSn·name 조건 필터를 지원한다.",
         "operationId": "getAllExternalHr",
         "parameters": [
+          {
+            "name": "evntSn",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
           {
             "name": "name",
             "in": "query",
@@ -24224,7 +24322,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponsePageResponseExternalHrDto"
+                  "$ref": "#/components/schemas/ApiResponsePageResponseExternalHrListItemDto"
                 }
               }
             }
@@ -37710,7 +37808,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseSmsDto"
+                  "$ref": "#/components/schemas/ApiResponseSmsResponseDto"
                 }
               }
             }
@@ -37794,7 +37892,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseListSmsRecptnDto"
+                  "$ref": "#/components/schemas/ApiResponseListSmsRecptnResponseDto"
                 }
               }
             }
@@ -54047,6 +54145,9 @@
           "inqInfo": {
             "type": "string"
           },
+          "trprId": {
+            "type": "string"
+          },
           "dmndUserId": {
             "type": "string"
           },
@@ -56664,7 +56765,7 @@
           }
         }
       },
-      "ApiResponsePageResponseSmsDto": {
+      "ApiResponsePageResponseSmsResponseDto": {
         "type": "object",
         "properties": {
           "success": {
@@ -56681,7 +56782,7 @@
             "type": "string"
           },
           "data": {
-            "$ref": "#/components/schemas/PageResponseSmsDto"
+            "$ref": "#/components/schemas/PageResponseSmsResponseDto"
           },
           "timestamp": {
             "type": "string",
@@ -56695,14 +56796,14 @@
           }
         }
       },
-      "PageResponseSmsDto": {
+      "PageResponseSmsResponseDto": {
         "type": "object",
         "properties": {
           "list": {
             "type": "array",
             "description": "현재 페이지의 항목",
             "items": {
-              "$ref": "#/components/schemas/SmsDto"
+              "$ref": "#/components/schemas/SmsResponseDto"
             }
           },
           "total": {
@@ -56734,7 +56835,70 @@
           "totalPage"
         ]
       },
-      "ApiResponseSmsDto": {
+      "SmsResponseDto": {
+        "type": "object",
+        "description": "SMS 조회 응답 객체",
+        "properties": {
+          "smsTrsmSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "SMS 전송 일련번호"
+          },
+          "sndngTelno": {
+            "type": "string",
+            "description": "발신 번호(발신자 외에는 마스킹)"
+          },
+          "sndngCn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "발신 내용(발신자 본인에게만 실리고 타인 발송 건은 null)"
+          },
+          "recptnCnt": {
+            "type": "integer",
+            "format": "int32",
+            "description": "수신자 수",
+            "readOnly": true
+          },
+          "successCnt": {
+            "type": "integer",
+            "format": "int32",
+            "description": "전달 완료 수신자 수",
+            "readOnly": true
+          },
+          "failureCnt": {
+            "type": "integer",
+            "format": "int32",
+            "description": "전달 실패 수신자 수",
+            "readOnly": true
+          },
+          "pendingCnt": {
+            "type": "integer",
+            "format": "int32",
+            "description": "대기 중 수신자 수",
+            "readOnly": true
+          },
+          "frstRgtrId": {
+            "type": "string",
+            "description": "최초 등록자"
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "최초 등록 일시"
+          },
+          "recipients": {
+            "type": "array",
+            "description": "수신자 목록 — 발송 요청 전용(응답에는 실리지 않는다)",
+            "items": {
+              "$ref": "#/components/schemas/SmsRecptnDto"
+            },
+            "writeOnly": true
+          }
+        }
+      },
+      "ApiResponseSmsResponseDto": {
         "type": "object",
         "properties": {
           "success": {
@@ -56751,7 +56915,7 @@
             "type": "string"
           },
           "data": {
-            "$ref": "#/components/schemas/SmsDto"
+            "$ref": "#/components/schemas/SmsResponseDto"
           },
           "timestamp": {
             "type": "string",
@@ -56765,7 +56929,7 @@
           }
         }
       },
-      "ApiResponseListSmsRecptnDto": {
+      "ApiResponseListSmsRecptnResponseDto": {
         "type": "object",
         "properties": {
           "success": {
@@ -56784,7 +56948,7 @@
           "data": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/SmsRecptnDto"
+              "$ref": "#/components/schemas/SmsRecptnResponseDto"
             }
           },
           "timestamp": {
@@ -56796,6 +56960,36 @@
             "items": {
               "$ref": "#/components/schemas/FieldErrorItem"
             }
+          }
+        }
+      },
+      "SmsRecptnResponseDto": {
+        "type": "object",
+        "description": "SMS 수신자 조회 응답 DTO",
+        "properties": {
+          "smsTrsmSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "SMS 전송 일련번호"
+          },
+          "rcptnTelno": {
+            "type": "string",
+            "description": "수신 번호(발신자 외에는 마스킹)"
+          },
+          "esntlId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "수신자 사용자 고유 ID(발신자 본인에게만 실리고 타인 발송 건은 null)"
+          },
+          "rsltCd": {
+            "type": "string",
+            "description": "결과 코드 (P:접수·전달 대기 또는 미확정, S:전달 완료, F:명시적 발송·전달 실패)"
+          },
+          "rsltMsg": {
+            "type": "string",
+            "description": "결과 메시지"
           }
         }
       },
@@ -56926,7 +57120,7 @@
           "totalPage"
         ]
       },
-      "ApiResponsePageResponseExternalHrDto": {
+      "ApiResponsePageResponseExternalHrListItemDto": {
         "type": "object",
         "properties": {
           "success": {
@@ -56943,7 +57137,7 @@
             "type": "string"
           },
           "data": {
-            "$ref": "#/components/schemas/PageResponseExternalHrDto"
+            "$ref": "#/components/schemas/PageResponseExternalHrListItemDto"
           },
           "timestamp": {
             "type": "string",
@@ -56957,14 +57151,83 @@
           }
         }
       },
-      "PageResponseExternalHrDto": {
+      "ExternalHrListItemDto": {
+        "type": "object",
+        "description": "외부인사 목록 응답 항목(민감 연락처·생년월일 마스킹)",
+        "properties": {
+          "evntSn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "otsdHrId": {
+            "type": "string"
+          },
+          "gndrCd": {
+            "type": "string"
+          },
+          "otsdHrNm": {
+            "type": "string"
+          },
+          "crTypeCd": {
+            "type": "string"
+          },
+          "ogdpInstNm": {
+            "type": "string"
+          },
+          "brdtYmd": {
+            "type": "string",
+            "description": "마스킹된 생년월일(예: 1990****). 원문은 상세 조회에서만 나간다."
+          },
+          "areaNo": {
+            "type": "string"
+          },
+          "mdTelno": {
+            "type": "string",
+            "description": "마스킹된 전화번호 가운데 자리(예: ****). 원문은 상세 조회에서만 나간다."
+          },
+          "endTelno": {
+            "type": "string"
+          },
+          "emlAddr": {
+            "type": "string",
+            "description": "마스킹된 이메일(예: ho***@example.com). 원문은 상세 조회에서만 나간다."
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "frstRgtrId": {
+            "type": "string",
+            "readOnly": true
+          },
+          "mdfcnDt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "lastMdfrId": {
+            "type": "string",
+            "readOnly": true
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "evntSn",
+          "otsdHrId"
+        ]
+      },
+      "PageResponseExternalHrListItemDto": {
         "type": "object",
         "properties": {
           "list": {
             "type": "array",
             "description": "현재 페이지의 항목",
             "items": {
-              "$ref": "#/components/schemas/ExternalHrDto"
+              "$ref": "#/components/schemas/ExternalHrListItemDto"
             }
           },
           "total": {

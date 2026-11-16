@@ -18,9 +18,16 @@ const mocks = vi.hoisted(() => ({
 
 // 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 기본은 쓰기 권한을 모두 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
 const READ_ONLY_PERMISSIONS = ['EVENT_READ'];
-const FULL_PERMISSIONS = [...READ_ONLY_PERMISSIONS, 'EVENT_CREATE', 'EVENT_UPDATE', 'EVENT_DELETE'];
+const FULL_PERMISSIONS = [
+  ...READ_ONLY_PERMISSIONS,
+  'EVENT_CREATE',
+  'EVENT_UPDATE',
+  'EVENT_UPDATE_ALL',
+  'EVENT_DELETE',
+  'EVENT_DELETE_ALL',
+];
 const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
-vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'operator', permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
 beforeEach(() => { auth.permissions = FULL_PERMISSIONS; });
 
 vi.mock('next/navigation', () => ({
@@ -368,12 +375,85 @@ describe('EventManagementClient 쓰기 권한 표시', () => {
     expect(screen.getByRole('button', { name: '닫기' })).toBeInTheDocument();
   });
 
-  it('권한은 동작마다 따로 본다 — 수정 권한만 있으면 수정 버튼만 보인다', async () => {
+  it('권한은 동작마다 따로 본다 — 수정 권한만 있으면 본인 행의 수정 버튼만 보인다', async () => {
     auth.permissions = [...READ_ONLY_PERMISSIONS, 'EVENT_UPDATE'];
+    mocks.getEvents.mockResolvedValue({
+      list: [{
+        evntSn: 7,
+        evntNm: '가을 워크숍',
+        evntCn: '본문',
+        evntBgngYmd: '20260901',
+        evntEndYmd: '20260902',
+        evntUseCnt: 20,
+        frstRgtrId: 'operator',
+      }],
+      total: 1,
+    });
     renderClient();
 
     expect(await screen.findByRole('button', { name: '가을 워크숍 수정' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '가을 워크숍 삭제' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /행사 등록/ })).not.toBeInTheDocument();
+  });
+
+  it('타인 행사에서는 *_ALL 대행 권한 없이 수정·신청자·삭제를 숨기고 조회 전용으로 연다', async () => {
+    auth.permissions = [...READ_ONLY_PERMISSIONS, 'EVENT_UPDATE', 'EVENT_DELETE'];
+    mocks.getEvents.mockResolvedValue({
+      list: [{
+        evntSn: 9,
+        evntNm: '타인 워크숍',
+        evntCn: '본문',
+        evntBgngYmd: '20260901',
+        evntEndYmd: '20260902',
+        evntUseCnt: 15,
+        frstRgtrId: 'other-writer',
+      }],
+      total: 1,
+    });
+    mocks.getEvent.mockResolvedValue({
+      evntSn: 9,
+      evntNm: '타인 워크숍',
+      evntCn: '본문',
+      picNm: '박담당',
+      prepMttr: '마이크',
+      evntBgngYmd: '20260901',
+      evntEndYmd: '20260902',
+      evntUseCnt: 15,
+      frstRgtrId: 'other-writer',
+    });
+    renderClient();
+
+    expect(await screen.findByRole('button', { name: '타인 워크숍 상세 보기' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '타인 워크숍 수정' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '타인 워크숍 신청자' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '타인 워크숍 삭제' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '타인 워크숍 상세 보기' }));
+    expect(await screen.findByText('행사 상세')).toBeInTheDocument();
+    const prep = await screen.findByRole('textbox', { name: '준비사항' });
+    await waitFor(() => expect(prep).toHaveValue('마이크'));
+    expect(prep).toBeDisabled();
+    expect(screen.queryByRole('button', { name: '변경 사항 저장' })).not.toBeInTheDocument();
+  });
+
+  it('*_ALL 대행 권한이 있으면 타인 행사에서도 수정·신청자·삭제 버튼이 보인다', async () => {
+    auth.permissions = FULL_PERMISSIONS;
+    mocks.getEvents.mockResolvedValue({
+      list: [{
+        evntSn: 10,
+        evntNm: '전사 행사',
+        evntCn: '본문',
+        evntBgngYmd: '20260901',
+        evntEndYmd: '20260902',
+        evntUseCnt: 30,
+        frstRgtrId: 'other-writer',
+      }],
+      total: 1,
+    });
+    renderClient();
+
+    expect(await screen.findByRole('button', { name: '전사 행사 수정' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '전사 행사 신청자' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '전사 행사 삭제' })).toBeInTheDocument();
   });
 });

@@ -178,18 +178,19 @@ class LogExportEndpointsTest {
     }
 
     @Test
-    @DisplayName("개인정보 조회 로그 — 조회일시를 문자열로 보존한다")
+    @DisplayName("개인정보 조회 로그 — 조회일시와 정보주체 ID를 문자열로 보존한다")
     void exportsPrivacyLogs() throws Exception {
         PrivacyLogDto row = new PrivacyLogDto(9L, "REQ-9", LocalDateTime.of(2026, 8, 26, 9, 30),
-                "UserService", "주민등록번호", "userC", "10.0.0.2");
+                "UserService", "주민등록번호", "USR-9", "userC", "10.0.0.2");
         when(privacyLogManageService.selectPrivacyLogList(any())).thenReturn(pageOf(List.of(row), 1));
 
         byte[] body = download(mvc(privacyLogApiController),
                 "/api/v1/admin/system/logs/privacy/export.xlsx", "privacy-logs.xlsx");
 
-        String[] cells = firstDataRow(body, 3);
+        String[] cells = firstDataRow(body, 6);
         assertThat(cells[0]).isEqualTo("9");
         assertThat(cells[2]).contains("2026-08-26");
+        assertThat(cells[5]).isEqualTo("USR-9");
     }
 
     @Test

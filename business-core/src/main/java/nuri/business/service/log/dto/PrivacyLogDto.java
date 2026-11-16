@@ -30,6 +30,8 @@ public record PrivacyLogDto(
         String srvcNm,
         /** 조회 대상 정보 */
         String inqInfo,
+        /** 정보주체 ID (단건 조회 대상 esntlId, 목록 조회는 null) */
+        String trprId,
         /** 조회자 ID */
         String dmndUserId,
         /** 조회자 IP */
@@ -44,6 +46,7 @@ public record PrivacyLogDto(
                 .inqDt(entity.getInqDt())
                 .srvcNm(entity.getSrvcNm())
                 .inqInfo(entity.getInqInfo())
+                .trprId(entity.getTrprId())
                 .dmndUserId(entity.getDmndUserId())
                 .dmndUserIpAddr(entity.getDmndUserIpAddr())
                 .build();

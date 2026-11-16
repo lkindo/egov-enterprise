@@ -83,4 +83,29 @@ describe('SmsAdminService numeric transmission serial contract', () => {
 
     await expect(smsAdminService.getSms(101)).rejects.toThrow();
   });
+
+  it('accepts masked sender phone, nullable content, and masked recipients without esntlId', async () => {
+    client.get.mockResolvedValueOnce({
+      list: [{
+        smsTrsmSn: 101,
+        sndngTelno: '010****2222',
+        sndngCn: null,
+        recptnCnt: 1,
+      }],
+      total: 1,
+      page: 1,
+      size: 10,
+      totalPage: 1,
+    });
+    const list = await smsAdminService.getSmsList({ page: 1, size: 10 });
+    expect(list.list[0].sndngCn).toBeNull();
+    expect(list.list[0].sndngTelno).toBe('010****2222');
+
+    client.get.mockResolvedValueOnce([
+      { smsTrsmSn: 101, rcptnTelno: '010****4444', esntlId: null, rsltCd: 'S' },
+    ]);
+    const recipients = await smsAdminService.getSmsRecipients(101);
+    expect(recipients[0].rcptnTelno).toBe('010****4444');
+    expect(recipients[0].esntlId).toBeNull();
+  });
 });

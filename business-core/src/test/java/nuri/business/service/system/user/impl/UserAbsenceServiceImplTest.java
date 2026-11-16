@@ -97,6 +97,7 @@ class UserAbsenceServiceImplTest {
     void updateAbsence_Success() {
         // given
         given(userRepository.existsById("user1")).willReturn(true); // [V2_13] 실존 사용자 검증 스텁
+        given(userRepository.findByEsntlIdForUpdate("user1")).willReturn(Optional.of(account("user1", "P", "N")));
         UserAbsence absence = UserAbsence.builder().userId("user1").build();
         given(userAbsenceRepository.findById("user1")).willReturn(Optional.of(absence));
         UserAbsenceDto dto = UserAbsenceDto.builder().userId("user1").userAbsnYn("Y").build();
@@ -222,5 +223,23 @@ class UserAbsenceServiceImplTest {
                 .willReturn(List.of(xDelegatesToA));
 
         assertRejected(delegation("B", "20261112", "20261114"), "다른 사람의 대리결재자");
+    }
+
+    @Test
+    @DisplayName("H5 부정 증명: 이미 다른 사람의 대리결재자인 사람이 대리결재자 없이 부재(Y)로 전환하려 하면 기간 지정·미지정 모두 400 거부")
+    void updateAbsence_RejectsAbsentWithoutSubstituteWhenAlreadyDelegateForAnotherUser() {
+        given(userRepository.existsById("A")).willReturn(true);
+        given(userRepository.findByEsntlIdForUpdate("A")).willReturn(Optional.of(account("A", "P", "N")));
+        UserAbsence xDelegatesToA = UserAbsence.builder().userId("X").userAbsnYn("Y").build();
+        xDelegatesToA.updateDelegation("Y", "A", "20261110", "20261115");
+
+        given(userAbsenceRepository.findOverlappingDelegationsTo("A", "A", "20261112", "20261114"))
+                .willReturn(List.of(xDelegatesToA));
+        assertRejected(UserAbsenceDto.builder().userId("A").userAbsnYn("Y")
+                .absnBgngYmd("20261112").absnEndYmd("20261114").build(), "다른 사람의 대리결재자");
+
+        given(userAbsenceRepository.findOverlappingDelegationsTo("A", "A", "00000101", "99991231"))
+                .willReturn(List.of(xDelegatesToA));
+        assertRejected(UserAbsenceDto.builder().userId("A").userAbsnYn("Y").build(), "다른 사람의 대리결재자");
     }
 }

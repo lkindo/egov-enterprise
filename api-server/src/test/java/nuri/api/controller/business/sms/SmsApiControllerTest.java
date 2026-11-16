@@ -4,6 +4,9 @@ package nuri.api.controller.business.sms;
 import nuri.business.service.sms.SmsService;
 import nuri.business.service.sms.dto.SmsDto;
 import nuri.business.service.sms.dto.SmsRecptnDto;
+import nuri.business.service.sms.dto.SmsRecptnResponseDto;
+import nuri.business.service.sms.dto.SmsResponseDto;
+import nuri.foundation.core.audit.PrivacySubject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -20,6 +23,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import nuri.business.support.ControllerTestSupport;
@@ -35,7 +39,7 @@ class SmsApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser
     @DisplayName("SMS 발송 내역 조회")
     void getSmsList() throws Exception {
-        Page<SmsDto> page = new PageImpl<>(List.of(SmsDto.builder()
+        Page<SmsResponseDto> page = new PageImpl<>(List.of(SmsResponseDto.builder()
                 .smsTrsmSn(1L)
                 .sndngTelno("0212345678")
                 .sndngCn("Content")
@@ -52,7 +56,7 @@ class SmsApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser
     @DisplayName("SMS 상세 조회")
     void getSms() throws Exception {
-        SmsDto dto = SmsDto.builder()
+        SmsResponseDto dto = SmsResponseDto.builder()
                 .smsTrsmSn(1L)
                 .sndngTelno("0212345678")
                 .sndngCn("Content")
@@ -68,14 +72,36 @@ class SmsApiControllerTest extends ControllerTestSupport {
 
     @Test
     @WithMockCustomUser
-    @DisplayName("SMS 수신자 목록 조회")
+    @DisplayName("SMS 수신자 목록 조회 — 단건 esntlId 가 있으면 정보주체를 기록한다")
     void getSmsRecipients() throws Exception {
-        List<SmsRecptnDto> recipients = List.of(SmsRecptnDto.builder().rcptnTelno("01012345678").build());
+        List<SmsRecptnResponseDto> recipients = List.of(SmsRecptnResponseDto.builder()
+                .smsTrsmSn(1L)
+                .rcptnTelno("01012345678")
+                .esntlId("USR_1")
+                .build());
         given(smsService.getSmsRecipients(1L)).willReturn(recipients);
 
         mockMvc.perform(get("/api/v1/admin/operation/sms/1/recipients"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].rcptnTelno").value("01012345678"));
+                .andExpect(jsonPath("$.data[0].rcptnTelno").value("01012345678"))
+                .andExpect(request().attribute(PrivacySubject.REQUEST_ATTRIBUTE, "USR_1"));
+    }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("SMS 수신자 목록 조회 — 마스킹 응답(esntlId null)은 NPE 없이 200 을 반환한다")
+    void getSmsRecipients_allowsMaskedResponseWithoutEsntlId() throws Exception {
+        List<SmsRecptnResponseDto> recipients = List.of(SmsRecptnResponseDto.builder()
+                .smsTrsmSn(1L)
+                .rcptnTelno("010****5678")
+                .esntlId(null)
+                .build());
+        given(smsService.getSmsRecipients(1L)).willReturn(recipients);
+
+        mockMvc.perform(get("/api/v1/admin/operation/sms/1/recipients"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].rcptnTelno").value("010****5678"))
+                .andExpect(request().attribute(PrivacySubject.REQUEST_ATTRIBUTE, org.hamcrest.Matchers.nullValue()));
     }
 
     @Test

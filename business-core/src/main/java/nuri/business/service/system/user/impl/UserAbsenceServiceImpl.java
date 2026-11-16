@@ -75,6 +75,16 @@ public class UserAbsenceServiceImpl implements UserAbsenceService {
                 }
                 assertPeriod(from, to);
             }
+            if ("Y".equals(absent)) {
+                // 다른 사람이 이 사용자를 대리결재자로 지정하는 트랜잭션과 직렬화한다.
+                userRepository.findByEsntlIdForUpdate(userId)
+                        .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+                String checkFrom = from != null ? from : "00000101";
+                String checkTo = to != null ? to : "99991231";
+                if (!userAbsenceRepository.findOverlappingDelegationsTo(userId, userId, checkFrom, checkTo).isEmpty()) {
+                    throw invalid("이 사용자는 그 기간에 다른 사람의 대리결재자입니다. 부재로 전환할 수 없습니다.");
+                }
+            }
         } else {
             assertSubstitute(userId, absent, substitute, from, to);
         }

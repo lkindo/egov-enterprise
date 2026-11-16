@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
 import { ApiResponseLongResponseSchema } from '../generated-zod/_shared';
-import { ApiResponseListSmsRecptnDtoResponseSchema, ApiResponsePageResponseSmsDtoResponseSchema, ApiResponseSmsDeliveryStatusDtoResponseSchema, ApiResponseSmsDtoResponseSchema, PageResponseSmsDtoResponseSchema, SmsDeliveryStatusDtoResponseSchema, SmsDtoRequestSchema, SmsDtoResponseSchema, SmsRecptnDtoResponseSchema } from '../generated-zod/sms-management';
+import { ApiResponseListSmsRecptnResponseDtoResponseSchema, ApiResponsePageResponseSmsResponseDtoResponseSchema, ApiResponseSmsDeliveryStatusDtoResponseSchema, ApiResponseSmsResponseDtoResponseSchema, PageResponseSmsResponseDtoResponseSchema, SmsDeliveryStatusDtoResponseSchema, SmsDtoRequestSchema, SmsRecptnResponseDtoResponseSchema, SmsResponseDtoResponseSchema } from '../generated-zod/sms-management';
 
 export const getSmsListOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
@@ -20,8 +20,8 @@ export const getSmsListOperation = /*#__PURE__*/ (() => {
   pathSchema: null,
   querySchema: z.object({ "searchCondition": z.string().optional(), "searchKeyword": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
-  responseSchema: z.lazy(() => PageResponseSmsDtoResponseSchema),
-  envelopeSchema: ApiResponsePageResponseSmsDtoResponseSchema,
+  responseSchema: z.lazy(() => PageResponseSmsResponseDtoResponseSchema),
+  envelopeSchema: ApiResponsePageResponseSmsResponseDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [["list","*","recipients"]],
   });
@@ -58,8 +58,8 @@ export const getSmsOperation = /*#__PURE__*/ (() => {
   pathSchema: z.object({ "smsTrsmSn": z.number().int() }).strict(),
   querySchema: null,
   requestSchema: null,
-  responseSchema: z.lazy(() => SmsDtoResponseSchema),
-  envelopeSchema: ApiResponseSmsDtoResponseSchema,
+  responseSchema: z.lazy(() => SmsResponseDtoResponseSchema),
+  envelopeSchema: ApiResponseSmsResponseDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [["recipients"]],
   });
@@ -77,8 +77,8 @@ export const getSmsRecipientsOperation = /*#__PURE__*/ (() => {
   pathSchema: z.object({ "smsTrsmSn": z.number().int() }).strict(),
   querySchema: null,
   requestSchema: null,
-  responseSchema: z.array(z.lazy(() => SmsRecptnDtoResponseSchema)),
-  envelopeSchema: ApiResponseListSmsRecptnDtoResponseSchema,
+  responseSchema: z.array(z.lazy(() => SmsRecptnResponseDtoResponseSchema)),
+  envelopeSchema: ApiResponseListSmsRecptnResponseDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

@@ -4,11 +4,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.mockito.Mockito.verify;
 import static org.mockito.ArgumentMatchers.eq;
 
+import nuri.business.domain.event.ExternalHr;
 import nuri.business.security.annotation.WithMockCustomUser;
 import nuri.business.service.event.ExternalHrService;
 import nuri.business.service.event.dto.ExternalHrDto;
+import nuri.business.service.event.dto.ExternalHrListItemDto;
 import nuri.business.support.ControllerTestSupport;
 import nuri.foundation.core.annotation.PrivacyAccess;
+import nuri.foundation.core.audit.PrivacySubject;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +34,7 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -52,23 +56,32 @@ class ExternalHrApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")
     @DisplayName("외부인사 목록을 페이지로 조회한다")
     void getAllExternalHr_returnsPage() throws Exception {
-        ExternalHrDto dto = new ExternalHrDto();
-        dto.setOtsdHrNm("홍길동");
-        Page<ExternalHrDto> page = new PageImpl<>(List.of(dto));
-        given(externalHrService.getExternalHrList(any(), any(Pageable.class))).willReturn(page);
+        ExternalHrListItemDto dto = ExternalHrListItemDto.from(ExternalHr.builder()
+                .evntSn(1L)
+                .otsdHrId("HR001")
+                .otsdHrNm("홍길동")
+                .brdtYmd("19900101")
+                .mdTelno("1234")
+                .emlAddr("hong@example.com")
+                .build());
+        Page<ExternalHrListItemDto> page = new PageImpl<>(List.of(dto));
+        given(externalHrService.getExternalHrList(any(), any(), any(Pageable.class))).willReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/operation/external-hr").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.list").isArray())
-                .andExpect(jsonPath("$.data.list[0].otsdHrNm").value("홍길동"));
+                .andExpect(jsonPath("$.data.list[0].otsdHrNm").value("홍길동"))
+                .andExpect(jsonPath("$.data.list[0].brdtYmd").value("1990****"))
+                .andExpect(jsonPath("$.data.list[0].mdTelno").value("****"))
+                .andExpect(jsonPath("$.data.list[0].emlAddr").value("ho***@example.com"));
     }
 
     @Test
     @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")
     @DisplayName("성명 검색어를 서비스까지 전달한다")
     void getAllExternalHr_passesNameFilter() throws Exception {
-        given(externalHrService.getExternalHrList(any(), any(Pageable.class)))
+        given(externalHrService.getExternalHrList(any(), any(), any(Pageable.class)))
                 .willReturn(new PageImpl<>(List.of()));
 
         mockMvc.perform(get("/api/v1/admin/operation/external-hr")
@@ -77,21 +90,66 @@ class ExternalHrApiControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk());
 
         org.mockito.ArgumentCaptor<String> captor = org.mockito.ArgumentCaptor.forClass(String.class);
-        org.mockito.Mockito.verify(externalHrService).getExternalHrList(captor.capture(), any(Pageable.class));
+        org.mockito.Mockito.verify(externalHrService).getExternalHrList(
+                org.mockito.ArgumentMatchers.isNull(), captor.capture(), any(Pageable.class));
         assertThat(captor.getValue()).isEqualTo("홍길");
     }
 
     @Test
     @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")
-    @DisplayName("성명 검색어가 없으면 null 로 전달한다")
+    @DisplayName("성명·행사 검색어가 없으면 null 로 전달한다")
     void getAllExternalHr_withoutNamePassesNull() throws Exception {
-        given(externalHrService.getExternalHrList(any(), any(Pageable.class)))
+        given(externalHrService.getExternalHrList(any(), any(), any(Pageable.class)))
                 .willReturn(new PageImpl<>(List.of()));
 
         mockMvc.perform(get("/api/v1/admin/operation/external-hr").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        verify(externalHrService).getExternalHrList(org.mockito.ArgumentMatchers.isNull(), any(Pageable.class));
+        verify(externalHrService).getExternalHrList(
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(), any(Pageable.class));
+    }
+
+    @Test
+    @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")
+    @DisplayName("행사 번호 필터(evntSn)를 서비스까지 전달한다")
+    void getAllExternalHr_passesEvntSnFilter() throws Exception {
+        given(externalHrService.getExternalHrList(any(), any(), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/v1/admin/operation/external-hr")
+                        .param("evntSn", "7")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        verify(externalHrService).getExternalHrList(eq(7L), org.mockito.ArgumentMatchers.isNull(), any(Pageable.class));
+    }
+
+    @Test
+    @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")
+    @DisplayName("외부인사 단건 상세 조회는 원문을 반환하고 정보주체·개인정보 증적·권한 계약을 따른다")
+    void getExternalHr_returnsDetailAndMarksPrivacyAccessAndSubject() throws Exception {
+        ExternalHrDto dto = ExternalHrDto.builder()
+                .evntSn(1L)
+                .otsdHrId("HR001")
+                .otsdHrNm("홍길동")
+                .brdtYmd("19900101")
+                .mdTelno("1234")
+                .emlAddr("hong@example.com")
+                .build();
+        given(externalHrService.getExternalHr(1L, "HR001")).willReturn(dto);
+
+        mockMvc.perform(get("/api/v1/admin/operation/external-hr/1/HR001").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.brdtYmd").value("19900101"))
+                .andExpect(jsonPath("$.data.mdTelno").value("1234"))
+                .andExpect(jsonPath("$.data.emlAddr").value("hong@example.com"))
+                .andExpect(request().attribute(PrivacySubject.REQUEST_ATTRIBUTE, org.hamcrest.Matchers.nullValue()));
+
+        Method handler = ExternalHrApiController.class.getMethod("getExternalHr", Long.class, String.class);
+        PrivacyAccess annotation = handler.getAnnotation(PrivacyAccess.class);
+        assertThat(annotation).isNotNull();
+        assertThat(annotation.value()).isNotBlank();
+        nuri.security.support.MethodPermissionContract.assertOperation(handler, "EXT_HR_READ", false);
     }
 
     @Test
@@ -196,7 +254,7 @@ class ExternalHrApiControllerTest extends ControllerTestSupport {
     @DisplayName("목록 조회는 개인정보 접근 증적 대상으로 선언돼 있다")
     void listIsDeclaredAsPrivacyAccess() throws NoSuchMethodException {
         Method handler = ExternalHrApiController.class.getMethod(
-                "getAllExternalHr", String.class, Pageable.class);
+                "getAllExternalHr", Long.class, String.class, Pageable.class);
 
         PrivacyAccess annotation = handler.getAnnotation(PrivacyAccess.class);
         assertThat(annotation)

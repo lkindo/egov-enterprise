@@ -11,6 +11,8 @@ import nuri.business.service.sms.dto.SmsDto;
 import nuri.business.service.sms.dto.SmsRecptnDto;
 import nuri.business.service.sms.dto.SmsMapper;
 import nuri.business.service.sms.dto.SmsRecptnMapper;
+import nuri.business.service.sms.dto.SmsRecptnResponseDto;
+import nuri.business.service.sms.dto.SmsResponseDto;
 import nuri.business.service.user.UserContactService;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -69,14 +71,14 @@ public class SmsService {
                 sender == null || sender.isBlank() ? null : sender.trim());
     }
 
-    public Page<SmsDto> getSmsList(String keyword, Pageable pageable) {
+    public Page<SmsResponseDto> getSmsList(String keyword, Pageable pageable) {
         log.debug("Fetching SMS list");
         return getSmsList("1", keyword, pageable); // Default to content search
     }
 
-    public Page<SmsDto> getSmsList(String searchCondition, String searchKeyword, Pageable pageable) {
+    public Page<SmsResponseDto> getSmsList(String searchCondition, String searchKeyword, Pageable pageable) {
         log.debug("Searching SMS");
-        Page<SmsDto> page = smsRepository.searchSms(searchCondition, searchKeyword, pageable).map(smsMapper::toDto);
+        Page<SmsResponseDto> page = smsRepository.searchSms(searchCondition, searchKeyword, pageable).map(this::toResponseDto);
         attachResultCounts(page.getContent());
         return page;
     }
@@ -85,8 +87,8 @@ public class SmsService {
      * 목록 한 쪽의 발송 건마다 수신자 결과 수를 싣는다(쿼리 한 번). 수신자가 없는 건은 0 이다.
      * 번호는 싣지 않는다 — 수신자별 결과는 종전대로 수신자 결과 조회가 보인다.
      */
-    private void attachResultCounts(List<SmsDto> rows) {
-        List<Long> ids = rows.stream().map(SmsDto::getSmsTrsmSn).filter(Objects::nonNull).toList();
+    private void attachResultCounts(List<SmsResponseDto> rows) {
+        List<Long> ids = rows.stream().map(SmsResponseDto::getSmsTrsmSn).filter(Objects::nonNull).toList();
         Map<Long, Map<String, Long>> counts = new java.util.HashMap<>();
         if (!ids.isEmpty()) {
             for (var row : smsRecptnRepository.countByResult(ids)) {
@@ -94,7 +96,7 @@ public class SmsService {
                         .merge(row.getRsltCd() == null ? "" : row.getRsltCd(), row.getCnt(), Long::sum);
             }
         }
-        for (SmsDto dto : rows) {
+        for (SmsResponseDto dto : rows) {
             Map<String, Long> byResult = counts.getOrDefault(dto.getSmsTrsmSn(), Map.of());
             long total = byResult.values().stream().mapToLong(Long::longValue).sum();
             dto.setRecptnCnt((int) total);
@@ -104,11 +106,30 @@ public class SmsService {
         }
     }
 
-    public SmsDto getSms(Long smsTrsmSn) {
+    public SmsResponseDto getSms(Long smsTrsmSn) {
         log.debug("Fetching SMS details for transmission serial number: {}", smsTrsmSn);
         return smsRepository.findById(Objects.requireNonNull(smsTrsmSn))
-                .map(smsMapper::toDto)
+                .map(this::toResponseDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    private SmsResponseDto toResponseDto(Sms sms) {
+        SmsResponseDto dto = smsMapper.toResponseDto(sms);
+        if (!isSender(sms)) {
+            dto.setSndngTelno(SmsResponseDto.maskPhone(dto.getSndngTelno()));
+            dto.setSndngCn(null);
+        }
+        return dto;
+    }
+
+    private boolean isSender(Sms sms) {
+        String sender = sms.getFrstRgtrId();
+        if (sender == null || sender.isBlank()) {
+            return false;
+        }
+        return nuri.business.security.util.SecurityUtil.getCurrentLoginId()
+                .map(sender::equals)
+                .orElse(false);
     }
 
     @Transactional
@@ -231,9 +252,13 @@ public class SmsService {
         return value != null && !value.isBlank();
     }
 
-    public List<SmsRecptnDto> getSmsRecipients(Long smsTrsmSn) {
+    public List<SmsRecptnResponseDto> getSmsRecipients(Long smsTrsmSn) {
+        Sms sms = smsRepository.findById(Objects.requireNonNull(smsTrsmSn))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        boolean sender = isSender(sms);
         return smsRecptnRepository.findByIdSmsTrsmSn(smsTrsmSn).stream()
                 .map(smsRecptnMapper::toDto)
+                .map(dto -> SmsRecptnResponseDto.from(dto, sender))
                 .collect(Collectors.toList());
     }
 }

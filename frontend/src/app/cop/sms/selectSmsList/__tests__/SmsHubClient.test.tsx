@@ -301,4 +301,23 @@ describe('SmsHubClient send validation', () => {
       }),
     );
   });
+
+  it('타인 발송 건으로 sndngCn 이 null 이면 발신자 전용 안내 문구를 보인다', () => {
+    renderClient({
+      list: [
+        {
+          smsTrsmSn: 7,
+          sndngTelno: '010****0000',
+          sndngCn: null,
+          crtDt: '2026-08-28 10:00',
+        } as never,
+      ],
+      total: 1,
+      page: 1,
+      size: 10,
+      totalPage: 1,
+    });
+
+    expect(screen.getByText('발신자 본인만 내용을 볼 수 있습니다.')).toBeInTheDocument();
+  });
 });

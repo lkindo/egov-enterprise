@@ -6,7 +6,11 @@ import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { externalHrAdminService, type ExternalHr } from '@/services/foundation/operation/ExternalHrAdminService';
+import {
+  externalHrAdminService,
+  type ExternalHr,
+  type ExternalHrListItem,
+} from '@/services/foundation/operation/ExternalHrAdminService';
 import { eventService } from '@/services/foundation/operation/eventService';
 import { fetchAllPages } from '@/lib/api/fetch-all-pages';
 import type { PageResponse } from '@/types/foundation/system';
@@ -121,7 +125,7 @@ const EMPTY_FORM: ExternalHrFormValues = {
 const DEFAULT_PAGE_SIZE = 10;
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
-export default function ExternalHrClient({ initialPage }: { initialPage: PageResponse<ExternalHr> | null }) {
+export default function ExternalHrClient({ initialPage }: { initialPage: PageResponse<ExternalHrListItem> | null }) {
   const queryClient = useQueryClient();
   // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 조회 권한(EXT_HR_READ)만으로 들어온 사람은 종전에 눌러 본 뒤에야 403 을 만났다(표시 판정일 뿐, 서버 인가는 그대로다).
   const { user } = useAuth();
@@ -175,10 +179,14 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
   }, [router, pathname, searchParams]);
 
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [selectedEvntSn, setSelectedEvntSn] = useState<number | undefined>(undefined);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
+  const [loadingEditKey, setLoadingEditKey] = useState<string | null>(null);
   const registerSubmitLock = useRef(false);
+  const editFetchLock = useRef(false);
+  const editRequestSeqRef = useRef(0);
   const confirm = useConfirm();
   /**
    * 수정 대상. null 이면 등록 모달이다.
@@ -196,39 +204,62 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
 
   const closeRegisterModal = () => {
     if (registerSubmitLock.current) return;
+    editRequestSeqRef.current += 1;
+    editFetchLock.current = false;
+    setLoadingEditKey(null);
     setIsModalOpen(false);
     setEditing(null);
   };
 
   const openCreate = () => {
+    editRequestSeqRef.current += 1;
+    editFetchLock.current = false;
+    setLoadingEditKey(null);
     setEditing(null);
     form.reset(EMPTY_FORM);
     setIsModalOpen(true);
   };
 
-  const openEdit = (item: ExternalHr) => {
-    setEditing(item);
-    form.reset({
-      evntSn: item.evntSn,
-      otsdHrId: item.otsdHrId,
-      otsdHrNm: item.otsdHrNm ?? '',
-      ogdpInstNm: item.ogdpInstNm ?? '',
-      areaNo: item.areaNo ?? '',
-      mdTelno: item.mdTelno ?? '',
-      endTelno: item.endTelno ?? '',
-      emlAddr: item.emlAddr ?? '',
-      brdtYmd: item.brdtYmd ?? '',
-      // [2026-09-06] PUT 은 전체 치환이다 — 이 화면이 묻지 않는 성별·구분 코드는 기존 값을 그대로 되돌려 보내
-      //   수정이 그 값을 NULL 로 덮어쓰지 않게 한다. 값이 없으면 여전히 지어내지 않고 보내지 않는다.
-      ...(item.gndrCd ? { gndrCd: item.gndrCd } : {}),
-      ...(item.crTypeCd ? { crTypeCd: item.crTypeCd } : {}),
-    });
-    setIsModalOpen(true);
+  const rowKey = (item: Pick<ExternalHrListItem, 'evntSn' | 'otsdHrId'>) => `${item.evntSn}:${item.otsdHrId}`;
+
+  const openEdit = async (item: ExternalHrListItem) => {
+    if (editFetchLock.current) return;
+    const requestSeq = ++editRequestSeqRef.current;
+    editFetchLock.current = true;
+    const key = rowKey(item);
+    setLoadingEditKey(key);
+    try {
+      const detail = await externalHrAdminService.getExternalHr(item.evntSn, item.otsdHrId);
+      if (editRequestSeqRef.current !== requestSeq) return;
+      setEditing(detail);
+      form.reset({
+        evntSn: detail.evntSn,
+        otsdHrId: detail.otsdHrId,
+        otsdHrNm: detail.otsdHrNm ?? '',
+        ogdpInstNm: detail.ogdpInstNm ?? '',
+        areaNo: detail.areaNo ?? '',
+        mdTelno: detail.mdTelno ?? '',
+        endTelno: detail.endTelno ?? '',
+        emlAddr: detail.emlAddr ?? '',
+        brdtYmd: detail.brdtYmd ?? '',
+        // [2026-09-06] PUT 은 전체 치환이다 — 이 화면이 묻지 않는 성별·구분 코드는 기존 값을 그대로 되돌려 보내
+        //   수정이 그 값을 NULL 로 덮어쓰지 않게 한다. 값이 없으면 여전히 지어내지 않고 보내지 않는다.
+        ...(detail.gndrCd ? { gndrCd: detail.gndrCd } : {}),
+        ...(detail.crTypeCd ? { crTypeCd: detail.crTypeCd } : {}),
+      });
+      setIsModalOpen(true);
+    } catch (error) {
+      if (editRequestSeqRef.current !== requestSeq) return;
+      toast(extractErrorMessage(error, '외부인사 상세 정보를 불러오지 못했습니다.'), 'error');
+    } finally {
+      if (editRequestSeqRef.current === requestSeq) {
+        editFetchLock.current = false;
+        setLoadingEditKey(null);
+      }
+    }
   };
 
-  const rowKey = (item: ExternalHr) => `${item.evntSn}:${item.otsdHrId}`;
-
-  const handleDelete = async (item: ExternalHr) => {
+  const handleDelete = async (item: ExternalHrListItem) => {
     if (deletePendingRef.current) return;
     deletePendingRef.current = true;
     setDeletingKey(rowKey(item));
@@ -257,18 +288,19 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
    * 조회 실패는 삼키지 않고 StandardDataTable 의 error/onRetry 로 화면에 드러낸다.
    */
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['admin-external-hr', searchKeyword, page, pageSize],
+    queryKey: ['admin-external-hr', selectedEvntSn ?? null, searchKeyword, page, pageSize],
     queryFn: () => externalHrAdminService.getExternalHrList({
+      ...(selectedEvntSn !== undefined ? { evntSn: selectedEvntSn } : {}),
       name: searchKeyword,
       page,
       size: pageSize,
     }),
-    // SSR 프리페치 결과는 검색어 없는 1페이지에 한해서만 초기값으로 쓴다.
+    // SSR 프리페치 결과는 검색어·행사 필터 없는 1페이지에 한해서만 초기값으로 쓴다.
     // 서버 프리페치가 실패했으면 initialPage 가 null 이므로 클라이언트가 다시 조회하고 실패를 노출한다.
-    initialData: (!searchKeyword && page === 1 && initialPage) ? initialPage : undefined,
+    initialData: (!searchKeyword && selectedEvntSn === undefined && page === 1 && initialPage) ? initialPage : undefined,
   });
 
-  const rows: ExternalHr[] = data?.list ?? [];
+  const rows: ExternalHrListItem[] = data?.list ?? [];
   const totalItems = data?.total ?? 0;
   const totalPages = data?.totalPage ?? Math.ceil(totalItems / pageSize);
 
@@ -316,8 +348,8 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
     }
   };
 
-  // 컬럼 접근자는 백엔드 ExternalHrDto 필드명(SSOT)만 사용한다.
-  const columns: Column<ExternalHr>[] = [
+  // 컬럼 접근자는 백엔드 ExternalHrListItemDto 필드명(SSOT)만 사용한다.
+  const columns: Column<ExternalHrListItem>[] = [
     {
       header: '번호',
       accessor: (_, index) => (
@@ -394,9 +426,10 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
     ...(canUpdateExternalHr || canDeleteExternalHr ? [{
       header: '관리',
       className: 'text-right w-28',
-      accessor: (item: ExternalHr) => {
+      accessor: (item: ExternalHrListItem) => {
         const key = rowKey(item);
         const isDeleting = deletingKey === key;
+        const isFetchingDetail = loadingEditKey === key;
         const label = item.otsdHrNm || item.otsdHrId;
         return (
           <div className="flex items-center justify-end gap-1 pr-2">
@@ -404,12 +437,15 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
             <Button
               variant="ghost"
               size="icon"
-              disabled={deletingKey !== null || registerLoading}
-              aria-label={`${label} 수정`}
-              onClick={() => openEdit(item)}
+              disabled={loadingEditKey !== null || deletingKey !== null || registerLoading}
+              aria-busy={isFetchingDetail}
+              aria-label={isFetchingDetail ? `${label} 상세 불러오는 중` : `${label} 수정`}
+              onClick={() => { void openEdit(item); }}
               className="rounded-lg hover:bg-muted transition-colors"
             >
-              <Pencil size={16} aria-hidden="true" />
+              {isFetchingDetail
+                ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                : <Pencil size={16} aria-hidden="true" />}
             </Button>
             )}
             {canDeleteExternalHr && (
@@ -466,7 +502,36 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
           placeholder="인사 성명으로 검색"
           value={searchKeyword}
           onSearch={handleSearch}
-        />
+          onReset={() => {
+            if (page !== 1) setPage(1);
+            setSearchKeyword('');
+            setSelectedEvntSn(undefined);
+          }}
+        >
+          <div className="min-w-48 space-y-1">
+            <label htmlFor="external-hr-event-filter" className="text-[length:var(--font-size-body)] font-medium">
+              참여 행사
+            </label>
+            <select
+              id="external-hr-event-filter"
+              aria-label="참여 행사 필터"
+              value={selectedEvntSn ?? ''}
+              onChange={(event) => {
+                const raw = event.target.value;
+                if (page !== 1) setPage(1);
+                setSelectedEvntSn(raw ? Number(raw) : undefined);
+              }}
+              className="h-[var(--control-h)] w-full rounded-lg border border-input bg-background px-3 text-sm"
+            >
+              <option value="">전체 행사</option>
+              {eventOptions.map((ev) => (
+                <option key={ev.evntSn} value={String(ev.evntSn)}>
+                  {ev.evntNm}
+                </option>
+              ))}
+            </select>
+          </div>
+        </KeywordFilter>
       }
     >
       <StandardDataTable
@@ -476,7 +541,10 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
         loading={isLoading}
         error={isError ? (error as Error) : null}
         onRetry={() => refetch()}
-        emptyMessage={emptyResultMessage(searchKeyword, '등록된 외부인사 정보가 없습니다.')}
+        emptyMessage={emptyResultMessage(
+          searchKeyword || (selectedEvntSn !== undefined ? String(selectedEvntSn) : ''),
+          '등록된 외부인사 정보가 없습니다.',
+        )}
         keyField="otsdHrId"
         pagination={{
           currentPage: page,

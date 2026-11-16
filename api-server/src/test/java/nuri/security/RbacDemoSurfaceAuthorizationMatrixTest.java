@@ -157,16 +157,33 @@ class RbacDemoSurfaceAuthorizationMatrixTest {
         if (stored.hasNonNull("version")) {
             updateBody.put("version", stored.get("version").asInt());
         }
+        if (surface.prefix().equals("EVENT")) {
+            mockMvc.perform(put(path)
+                            .with(user(RbacAuthorizationMatrixTest.explicit("http_editor", List.of("CONTENT_OPERATORS"),
+                                    List.of("EVENT_UPDATE"))))
+                            .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(updateBody)))
+                    .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("C010"));
+            mockMvc.perform(delete(path)
+                            .with(user(RbacAuthorizationMatrixTest.explicit("http_remover", List.of("CONTENT_OPERATORS"),
+                                    List.of("EVENT_DELETE")))))
+                    .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("C010"));
+        }
+        List<String> updateGrants = surface.prefix().equals("EVENT")
+                ? List.of("EVENT_UPDATE", "EVENT_UPDATE_ALL")
+                : List.of(surface.prefix() + "_UPDATE");
         mockMvc.perform(put(path)
                         .with(user(RbacAuthorizationMatrixTest.explicit("http_editor", List.of("CONTENT_OPERATORS"),
-                                List.of(surface.prefix() + "_UPDATE"))))
+                                updateGrants)))
                         .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(updateBody)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
         assertStoredName(surface, path, "RBAC updated");
 
+        List<String> deleteGrants = surface.prefix().equals("EVENT")
+                ? List.of("EVENT_DELETE", "EVENT_DELETE_ALL")
+                : List.of(surface.prefix() + "_DELETE");
         mockMvc.perform(delete(path)
                         .with(user(RbacAuthorizationMatrixTest.explicit("http_remover", List.of("CONTENT_OPERATORS"),
-                                List.of(surface.prefix() + "_DELETE")))))
+                                deleteGrants))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
         var reader = RbacAuthorizationMatrixTest.explicit(List.of("CONTENT_READERS"), List.of(surface.readPermission()));
         if (surface.prefix().equals("REWARD")) {

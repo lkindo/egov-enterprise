@@ -9,7 +9,8 @@ import nuri.business.service.sms.SmsService;
 import nuri.foundation.core.annotation.PrivacyAccess;
 import nuri.business.service.sms.dto.SmsDeliveryStatusDto;
 import nuri.business.service.sms.dto.SmsDto;
-import nuri.business.service.sms.dto.SmsRecptnDto;
+import nuri.business.service.sms.dto.SmsRecptnResponseDto;
+import nuri.business.service.sms.dto.SmsResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -56,29 +57,28 @@ public class SmsApiController {
     @Operation(summary = "SMS 발송 내역 조회", description = "발송된 SMS 목록을 페이징 조회합니다.")
     @GetMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.sms.SmsApiController#getSmsList')")
-    public ResponseEntity<ApiResponse<PageResponse<SmsDto>>> getSmsList(
+    public ResponseEntity<ApiResponse<PageResponse<SmsResponseDto>>> getSmsList(
             @RequestParam(required = false) String searchCondition,
             @RequestParam(required = false) String searchKeyword,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<SmsDto> result = smsService.getSmsList(searchCondition, searchKeyword, pageable);
+        Page<SmsResponseDto> result = smsService.getSmsList(searchCondition, searchKeyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
     @Operation(summary = "SMS 상세 조회", description = "특정 SMS의 발송 상세 정보를 조회합니다.")
     @GetMapping("/{smsTrsmSn}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.sms.SmsApiController#getSms')")
-    public ResponseEntity<ApiResponse<SmsDto>> getSms(
+    public ResponseEntity<ApiResponse<SmsResponseDto>> getSms(
             @Parameter(description = "SMS 전송 일련번호") @PathVariable Long smsTrsmSn) {
         return ResponseEntity.ok(ApiResponse.success(smsService.getSms(smsTrsmSn)));
     }
 
     /**
-     * ⚠ 이 응답만 <b>수신자 전화번호 원문</b>을 내보낸다.
+     * ⚠ 발신자 본인에게만 <b>수신자 전화번호·ID 원문</b>을 내보내고 타인 발송 건은 마스킹한다.
      *
      * <p>같은 컨트롤러의 목록·상세({@code getSmsList}·{@code getSms})는 읽기 매퍼가 recipients 를
-     * 항상 빈 배열로 채우므로 연락처가 실리지 않는다. 즉 이 엔드포인트가 SMS 도메인에서
-     * 타인의 개인정보가 나가는 <b>유일한 창구</b>이고, {@code SmsRecptnMapper} 는 단순 필드 복사라
-     * 마스킹이 없다({@code PiiMaskUtil} 은 로그에만 쓰인다 — 로그는 가리면서 응답은 그대로였다).
+     * 항상 빈 배열로 채우므로 수신 연락처가 실리지 않는다. 수신자 목록 엔드포인트가 SMS 도메인에서
+     * 수신 개인정보가 나가는 <b>유일한 창구</b>다.
      *
      * <p>그래서 {@code @PrivacyAccess} 를 붙여 성공 조회를 {@code tb_privacy_log} 에 남긴다.
      * 부착 지점 전수는 {@code PrivacyAccessCensusLinterTest} 가 양방향으로 동결한다.
@@ -87,12 +87,11 @@ public class SmsApiController {
     @PrivacyAccess("SMS 수신자 목록(수신 전화번호)")
     @GetMapping("/{smsTrsmSn}/recipients")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.sms.SmsApiController#getSmsRecipients')")
-    public ResponseEntity<ApiResponse<List<SmsRecptnDto>>> getSmsRecipients(
+    public ResponseEntity<ApiResponse<List<SmsRecptnResponseDto>>> getSmsRecipients(
             @Parameter(description = "SMS 전송 일련번호") @PathVariable Long smsTrsmSn) {
-        List<SmsRecptnDto> recipients = smsService.getSmsRecipients(smsTrsmSn);
-        // [2026-10-18] 수신자가 사용자 한 명이면 그 사람(정보주체)을 개인정보 접근 기록에 남긴다. 여러 명이거나 사용자로
-        //   해석되지 않는 직접 입력 번호가 섞이면 한 칸에 한 사람을 남길 수 없으므로 목록 조회와 같이 비운다.
-        if (recipients.size() == 1) {
+        List<SmsRecptnResponseDto> recipients = smsService.getSmsRecipients(smsTrsmSn);
+        // [2026-10-18] 발신자 본인 단건 수신자(사용자 해석)일 때만 정보주체를 기록한다. 타인 조회는 esntlId 를 비워 열거를 막는다.
+        if (recipients.size() == 1 && recipients.get(0).getEsntlId() != null) {
             nuri.foundation.core.audit.PrivacySubject.identify(recipients.get(0).getEsntlId());
         }
         return ResponseEntity.ok(ApiResponse.success(recipients));

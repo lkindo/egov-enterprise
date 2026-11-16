@@ -10,6 +10,7 @@ import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.event.ExternalHrService;
 import nuri.business.service.event.dto.ExternalHrDto;
+import nuri.business.service.event.dto.ExternalHrListItemDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,15 +27,26 @@ public class ExternalHrApiController {
 
     private final ExternalHrService externalHrService;
 
-    @Operation(summary = "외부인사 목록 조회", description = "외부인사 정보를 페이징하여 조회한다. name 지정 시 성명 부분일치 검색.")
-    @PrivacyAccess("외부인사 목록(생년월일·전화번호·이메일)")
+    @Operation(summary = "외부인사 목록 조회", description = "외부인사 정보를 페이징하여 조회한다. 민감 필드(생년월일·전화번호 가운데 자리·이메일)는 마스킹해 반환하며, evntSn·name 조건 필터를 지원한다.")
+    @PrivacyAccess("외부인사 목록(생년월일·전화번호·이메일 마스킹)")
     @GetMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.ExternalHrApiController#getAllExternalHr')")
-    public ResponseEntity<ApiResponse<PageResponse<ExternalHrDto>>> getAllExternalHr(
+    public ResponseEntity<ApiResponse<PageResponse<ExternalHrListItemDto>>> getAllExternalHr(
+            @RequestParam(required = false) Long evntSn,
             @RequestParam(required = false) String name,
             @PageableDefault(size = 10, sort = "crtDt", direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<ExternalHrDto> result = externalHrService.getExternalHrList(name, pageable);
+        Page<ExternalHrListItemDto> result = externalHrService.getExternalHrList(evntSn, name, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
+    }
+
+    @Operation(summary = "외부인사 상세 조회", description = "외부인사 단건 상세 정보(원문)를 조회하고 감사 원장에 대상 좌표를 기록한다.")
+    @PrivacyAccess("외부인사 상세(생년월일·전화번호·이메일 원문)")
+    @GetMapping("/{evntSn}/{otsdHrId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.ExternalHrApiController#getExternalHr')")
+    public ResponseEntity<ApiResponse<ExternalHrDto>> getExternalHr(
+            @PathVariable Long evntSn,
+            @PathVariable String otsdHrId) {
+        return ResponseEntity.ok(ApiResponse.success(externalHrService.getExternalHr(evntSn, otsdHrId)));
     }
 
     @Operation(summary = "외부인사 등록", description = "외부인사 정보를 등록한다.")

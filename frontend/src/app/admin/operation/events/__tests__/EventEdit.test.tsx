@@ -30,7 +30,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 // 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 쓰기 권한을 모두 가진 관리자로 렌더한다.
-vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: ['EVENT_READ', 'EVENT_CREATE', 'EVENT_UPDATE', 'EVENT_DELETE'], authorizationVersion: 'v1' } }) }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'operator', permissions: ['EVENT_READ', 'EVENT_CREATE', 'EVENT_UPDATE', 'EVENT_DELETE'], authorizationVersion: 'v1' } }) }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mocks.replace }),
   usePathname: () => '/admin/operation/events',
@@ -55,6 +55,7 @@ const ROW = {
   evntBgngYmd: '20261001',
   evntEndYmd: '20261002',
   evntUseCnt: 30,
+  frstRgtrId: 'operator',
 };
 
 /** 목록에는 없고 상세에만 있는 값들 — 저장할 때 이 값들이 지워지면 안 된다. */

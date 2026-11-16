@@ -174,7 +174,7 @@ export default function SmsHubClient({
       header: 'MESSAGE_CONTENT',
       accessor: (item) => (
         <p className="text-sm text-muted-foreground font-bold line-clamp-1 max-w-md group-hover:text-foreground transition-colors">
-          {item.sndngCn}
+          {item.sndngCn ?? '발신자 본인만 내용을 볼 수 있습니다.'}
         </p>
       )
     },

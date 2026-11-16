@@ -7,13 +7,16 @@ import type { components, operations } from '@/types/generated-api';
 import {
   createExternalHrOperation,
   deleteExternalHrOperation,
-  updateExternalHrOperation,
   getAllExternalHrOperation,
+  getExternalHrOperation,
+  updateExternalHrOperation,
 } from '@/types/generated-operations';
 import { ExternalHrDtoRequestSchema } from '@/types/generated-zod';
 
 /** 외부인사정보: OpenAPI ExternalHrDto를 단일 원본으로 사용한다. */
 export type ExternalHr = components['schemas']['ExternalHrDto'];
+/** 외부인사 목록 조회 응답(민감 연락처·생년월일 마스킹): OpenAPI ExternalHrListItemDto 기준. */
+export type ExternalHrListItem = components['schemas']['ExternalHrListItemDto'];
 
 /** 외부인사 요청 입력(등록·수정 공통): OpenAPI readOnly 감사 필드는 요청 타입에서도 제외한다. */
 export type ExternalHrRequestInput = z.input<typeof ExternalHrDtoRequestSchema>;
@@ -31,9 +34,13 @@ class ExternalHrAdminService extends ApiService {
   async getExternalHrList(
     params: ExternalHrSearchParams = {},
     config?: AxiosRequestConfig,
-  ): Promise<PageResponse<ExternalHr>> {
+  ): Promise<PageResponse<ExternalHrListItem>> {
     const response = await this.executeGenerated(getAllExternalHrOperation, { query: params, config });
-    return copyPageResponse<ExternalHr>(response, '운영지원');
+    return copyPageResponse<ExternalHrListItem>(response, '운영지원');
+  }
+
+  async getExternalHr(evntSn: number, otsdHrId: string, config?: AxiosRequestConfig): Promise<ExternalHr> {
+    return this.executeGenerated(getExternalHrOperation, { path: { evntSn, otsdHrId }, config });
   }
 
   async createExternalHr(data: ExternalHrCreateInput, config?: AxiosRequestConfig): Promise<ExternalHr> {

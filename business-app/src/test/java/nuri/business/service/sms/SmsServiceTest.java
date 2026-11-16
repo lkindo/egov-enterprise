@@ -8,11 +8,16 @@ import nuri.business.domain.sms.SmsRecptnRepository;
 import nuri.business.domain.sms.SmsRepository;
 import nuri.business.service.sms.dto.SmsDto;
 import nuri.business.service.sms.dto.SmsRecptnDto;
+import nuri.business.service.sms.dto.SmsRecptnResponseDto;
+import nuri.business.service.sms.dto.SmsResponseDto;
 import nuri.business.service.sms.dto.SmsMapper;
 import nuri.business.service.sms.dto.SmsMapperImpl;
 import nuri.business.service.sms.dto.SmsRecptnMapper;
 import nuri.business.service.sms.dto.SmsRecptnMapperImpl;
 import nuri.business.service.user.UserContactService;
+import nuri.business.support.AuthorizationTestPrincipal;
+import nuri.foundation.security.service.CustomUserDetails;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,6 +28,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -68,6 +76,18 @@ class SmsServiceTest {
             ReflectionTestUtils.setField(saved, "smsTrsmSn", 101L);
             return saved;
         });
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private static void authenticateAs(String loginId, String role) {
+        CustomUserDetails principal = AuthorizationTestPrincipal.principal(loginId, "ESNTL_" + loginId, role);
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+        SecurityContextHolder.setContext(context);
     }
 
     @Test
@@ -121,17 +141,21 @@ class SmsServiceTest {
     @DisplayName("SMS 목록 조회 테스트")
     void getSmsListTest() {
         // Given
+        authenticateAs("sender01", "ADMIN");
         Pageable pageable = PageRequest.of(0, 10);
         Sms sms = sms(101L, "01011112222", "Hello");
+        ReflectionTestUtils.setField(sms, "frstRgtrId", "sender01");
         Page<Sms> page = new PageImpl<>(List.of(sms), pageable, 1);
         when(smsRepository.searchSms(anyString(), anyString(), any(Pageable.class))).thenReturn(page);
 
         // When
-        Page<SmsDto> result = smsService.getSmsList("Hello", pageable);
+        Page<SmsResponseDto> result = smsService.getSmsList("Hello", pageable);
 
         // Then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getSmsTrsmSn()).isEqualTo(101L);
+        assertThat(result.getContent().get(0).getSndngTelno()).isEqualTo("01011112222");
+        assertThat(result.getContent().get(0).getSndngCn()).isEqualTo("Hello");
     }
 
     @Test
@@ -144,13 +168,33 @@ class SmsServiceTest {
         when(smsRecptnRepository.countByResult(List.of(101L, 102L))).thenReturn(List.of(
                 resultCount(101L, "S", 2), resultCount(101L, "F", 1), resultCount(101L, "P", 1)));
 
-        List<SmsDto> rows = smsService.getSmsList("1", "", pageable).getContent();
+        List<SmsResponseDto> rows = smsService.getSmsList("1", "", pageable).getContent();
 
-        assertThat(rows.get(0)).extracting(SmsDto::getRecptnCnt, SmsDto::getSuccessCnt, SmsDto::getFailureCnt,
-                SmsDto::getPendingCnt).containsExactly(4, 2, 1, 1);
-        assertThat(rows.get(1)).extracting(SmsDto::getRecptnCnt, SmsDto::getSuccessCnt, SmsDto::getFailureCnt,
-                SmsDto::getPendingCnt).containsExactly(0, 0, 0, 0);
+        assertThat(rows.get(0)).extracting(SmsResponseDto::getRecptnCnt, SmsResponseDto::getSuccessCnt,
+                SmsResponseDto::getFailureCnt, SmsResponseDto::getPendingCnt).containsExactly(4, 2, 1, 1);
+        assertThat(rows.get(1)).extracting(SmsResponseDto::getRecptnCnt, SmsResponseDto::getSuccessCnt,
+                SmsResponseDto::getFailureCnt, SmsResponseDto::getPendingCnt).containsExactly(0, 0, 0, 0);
         verify(smsRecptnRepository, times(1)).countByResult(any());
+    }
+
+    @Test
+    @DisplayName("타인이 발송한 SMS 목록·상세 조회는 발신번호를 마스킹하고 본문을 감춘다")
+    void getSmsListAndDetail_maskForNonSender() {
+        authenticateAs("other_admin", "ADMIN");
+        Sms sms = sms(101L, "01011112222", "Secret Body");
+        ReflectionTestUtils.setField(sms, "frstRgtrId", "sender01");
+        Pageable pageable = PageRequest.of(0, 10);
+        when(smsRepository.searchSms(anyString(), anyString(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(sms), pageable, 1));
+        when(smsRepository.findById(101L)).thenReturn(Optional.of(sms));
+
+        SmsResponseDto listRow = smsService.getSmsList("Secret", pageable).getContent().get(0);
+        SmsResponseDto detail = smsService.getSms(101L);
+
+        assertThat(listRow.getSndngTelno()).isEqualTo("010****2222");
+        assertThat(listRow.getSndngCn()).isNull();
+        assertThat(detail.getSndngTelno()).isEqualTo("010****2222");
+        assertThat(detail.getSndngCn()).isNull();
     }
 
     private static SmsRecptnRepository.ResultCount resultCount(Long sn, String code, long cnt) {
@@ -165,14 +209,18 @@ class SmsServiceTest {
     @DisplayName("SMS 단건 조회 테스트")
     void getSmsTest() {
         // Given
+        authenticateAs("sender01", "ADMIN");
         Sms sms = sms(101L, "01011112222", "Hello");
+        ReflectionTestUtils.setField(sms, "frstRgtrId", "sender01");
         when(smsRepository.findById(101L)).thenReturn(Optional.of(sms));
 
         // When
-        SmsDto result = smsService.getSms(101L);
+        SmsResponseDto result = smsService.getSms(101L);
 
         // Then
         assertThat(result.getSmsTrsmSn()).isEqualTo(101L);
+        assertThat(result.getSndngTelno()).isEqualTo("01011112222");
+        assertThat(result.getSndngCn()).isEqualTo("Hello");
     }
 
     @Test
@@ -352,18 +400,78 @@ class SmsServiceTest {
     }
 
     @Test
-    @DisplayName("SMS 수신자 목록 조회 테스트")
+    @DisplayName("SMS 수신자 목록 조회 테스트 — 발신자는 원문을 본다")
     void getSmsRecipientsTest() {
         // Given
-        SmsRecptn recptn = SmsRecptn.builder().smsTrsmSn(101L).rcptnTelno("01033334444").rsltCd("S").build();
+        authenticateAs("sender01", "ADMIN");
+        Sms header = sms(101L, "01011112222", "Hello");
+        ReflectionTestUtils.setField(header, "frstRgtrId", "sender01");
+        when(smsRepository.findById(101L)).thenReturn(Optional.of(header));
+        SmsRecptn recptn = SmsRecptn.builder().smsTrsmSn(101L).rcptnTelno("01033334444").rcvrId("USR_1").rsltCd("S").build();
         when(smsRecptnRepository.findByIdSmsTrsmSn(101L)).thenReturn(List.of(recptn));
 
         // When
-        List<SmsRecptnDto> result = smsService.getSmsRecipients(101L);
+        List<SmsRecptnResponseDto> result = smsService.getSmsRecipients(101L);
 
         // Then
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getRcptnTelno()).isEqualTo("01033334444");
+        assertThat(result.get(0).getEsntlId()).isEqualTo("USR_1");
+    }
+
+    @Test
+    @DisplayName("SMS 수신자 목록 조회 — 비발신자는 수신번호 마스킹·esntlId 비노출")
+    void getSmsRecipients_masksForNonSender() {
+        authenticateAs("other_admin", "ADMIN");
+        Sms header = sms(101L, "01011112222", "Hello");
+        ReflectionTestUtils.setField(header, "frstRgtrId", "sender01");
+        when(smsRepository.findById(101L)).thenReturn(Optional.of(header));
+        SmsRecptn recptn = SmsRecptn.builder().smsTrsmSn(101L).rcptnTelno("01033334444").rcvrId("USR_1").rsltCd("S").build();
+        when(smsRecptnRepository.findByIdSmsTrsmSn(101L)).thenReturn(List.of(recptn));
+
+        List<SmsRecptnResponseDto> result = smsService.getSmsRecipients(101L);
+
+        assertThat(result).singleElement().satisfies(row -> {
+            assertThat(row.getRcptnTelno()).isEqualTo("010****4444");
+            assertThat(row.getEsntlId()).isNull();
+        });
+    }
+
+    @Test
+    @DisplayName("H5 부정 증명: 비발신자 조회 시 7~8자리 짧은 발신·수신 번호는 *** 로 전량 마스킹하고 9자리부터 앞뒤를 남긴다")
+    void shortPhoneNumbersAreFullyMaskedForNonSender() {
+        authenticateAs("other_admin", "ADMIN");
+        Sms sevenDigitHeader = sms(101L, "1234567", "Secret7");
+        ReflectionTestUtils.setField(sevenDigitHeader, "frstRgtrId", "sender01");
+        Sms eightDigitHeader = sms(102L, "12345678", "Secret8");
+        ReflectionTestUtils.setField(eightDigitHeader, "frstRgtrId", "sender01");
+        Sms nineDigitHeader = sms(103L, "021234567", "Secret9");
+        ReflectionTestUtils.setField(nineDigitHeader, "frstRgtrId", "sender01");
+        when(smsRepository.findById(101L)).thenReturn(Optional.of(sevenDigitHeader));
+        when(smsRepository.findById(102L)).thenReturn(Optional.of(eightDigitHeader));
+        when(smsRepository.findById(103L)).thenReturn(Optional.of(nineDigitHeader));
+        when(smsRecptnRepository.findByIdSmsTrsmSn(101L)).thenReturn(List.of(
+                SmsRecptn.builder().smsTrsmSn(101L).rcptnTelno("1234567").rcvrId("USR_7").rsltCd("S").build(),
+                SmsRecptn.builder().smsTrsmSn(101L).rcptnTelno("12345678").rcvrId("USR_8").rsltCd("S").build(),
+                SmsRecptn.builder().smsTrsmSn(101L).rcptnTelno("021234567").rcvrId("USR_9").rsltCd("S").build()));
+
+        assertThat(smsService.getSms(101L).getSndngTelno()).isEqualTo("***");
+        assertThat(smsService.getSms(102L).getSndngTelno()).isEqualTo("***");
+        assertThat(smsService.getSms(103L).getSndngTelno()).isEqualTo("021****4567");
+        assertThat(smsService.getSmsRecipients(101L))
+                .extracting(SmsRecptnResponseDto::getRcptnTelno)
+                .containsExactly("***", "***", "021****4567");
+    }
+
+    @Test
+    @DisplayName("없는 발송 건의 수신자 목록 조회는 RESOURCE_NOT_FOUND — 빈 배열로 숨기지 않는다")
+    void getSmsRecipients_notFoundThrows404() {
+        when(smsRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> smsService.getSmsRecipients(999L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
+        verify(smsRecptnRepository, never()).findByIdSmsTrsmSn(any());
     }
 
     @Test

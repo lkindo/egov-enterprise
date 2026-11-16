@@ -170,7 +170,7 @@ public class InformalSanctionService {
                                                                    List<InformalSanctionDetail> currentLines,
                                                                    String actor, Set<String> delegators) {
         if (!"A".equals(sanction.getAprvYn()) || actor.equals(sanction.getAplcntId()) || delegators.isEmpty()
-                || currentLines.stream().anyMatch(d -> actor.equals(d.getId().getUserId()))) {
+                || currentLines.stream().anyMatch(d -> actor.equals(d.getId().getUserId()) || actor.equals(d.getSbtAprvrId()))) {
             return List.of();
         }
         return currentLines.stream()

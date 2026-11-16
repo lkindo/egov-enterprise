@@ -11,10 +11,12 @@ import {
   sendSmsOperation,
 } from '@/types/generated-operations';
 
+/** SMS 발송 요청 계약: OpenAPI SmsDto 입력 검증 필드를 보존한다. */
 export type SmsRequestDto = components['schemas']['SmsDto'];
-export type SmsDto = Omit<components['schemas']['SmsDto'], 'recipients'>;
+/** SMS 조회 응답 행 — 발신자 외에는 발신번호가 마스킹되고 발신 내용은 null 이다. */
+export type SmsDto = Omit<components['schemas']['SmsResponseDto'], 'recipients'>;
 export type SmsDeliveryStatus = components['schemas']['SmsDeliveryStatusDto'];
-type SmsRecptnDto = components['schemas']['SmsRecptnDto'];
+type SmsRecptnDto = components['schemas']['SmsRecptnResponseDto'];
 type SmsSearchParams = NonNullable<operations['getSmsList']['parameters']['query']>;
 
 class SmsAdminService extends ApiService {

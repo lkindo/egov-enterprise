@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import {
     externalHrAdminService,
-    type ExternalHr,
+    type ExternalHrListItem,
 } from '@/services/foundation/operation/ExternalHrAdminService';
 import type { PageResponse } from '@/types/foundation/system';
 import ExternalHrClient from './ExternalHrClient';
@@ -16,7 +16,7 @@ const PAGE_SIZE = 10;
 export default async function ExternalHrPage() {
     // 프리페치 실패를 '빈 페이지'로 바꿔치기하면 화면이 "데이터 0건"으로 거짓말한다(감사 P1-1).
     // 실패 시 null 을 넘겨 클라이언트가 직접 재조회하고, 실패하면 error/onRetry 로 화면에 드러내게 한다.
-    let initialPage: PageResponse<ExternalHr> | null = null;
+    let initialPage: PageResponse<ExternalHrListItem> | null = null;
     try {
         // 서버는 1부터 세는 page 를 받는다(ADR-0036)
         initialPage = await externalHrAdminService.getExternalHrList({ page: 1, size: PAGE_SIZE });

@@ -144,6 +144,22 @@ describe('SMS 발송 건별 결과 수', () => {
       mocks.listData = undefined;
     }
   });
+
+  it('타인 발송 건으로 sndngCn 이 null 이면 발신자 전용 안내 문구를 보인다', () => {
+    mocks.listData = {
+      list: [
+        { smsTrsmSn: 9, sndngTelno: '010****5678', sndngCn: null, recptnCnt: 1, successCnt: 1, failureCnt: 0, pendingCnt: 0 },
+      ],
+      total: 1,
+      totalPage: 1,
+    };
+    try {
+      render(<SmsAdminClient initialSmsList={null} />);
+      expect(screen.getByText('발신자 본인만 내용을 볼 수 있습니다.')).toBeInTheDocument();
+    } finally {
+      mocks.listData = undefined;
+    }
+  });
 });
 
 describe('SMS 조회 조건 전달', () => {
