@@ -77,6 +77,7 @@ export function SurveyStatsBody({ query }: { readonly query: StatsPanelQuery }) 
                 <span className={cn(
                   "px-2 py-0.5 rounded-md text-[10px] font-black tracking-tighter",
                   status === 'active'
+                    // palette-frozen: bg-emerald-500/10 text-emerald-600 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
                     ? "bg-emerald-500/10 text-emerald-600"
                     : "bg-muted text-muted-foreground"
                 )}>

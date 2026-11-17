@@ -1138,10 +1138,50 @@ function classify(recognized, metadata, specialCase) {
   return recognized.kind;
 }
 
+/**
+ * 함수형 노드에서 사람이 부르는 이름을 뽑는다.
+ *
+ * <p>이름 기반 정규식만 쓰면 <b>클래스 프로퍼티 화살표 함수</b>를 소유자로 잡지 못해 호출부가
+ * 엉뚱한 선언(생성자의 {@code super(...)})에 귀속된다 — 1차 시도에서 실제로 그 오탐이 나왔다.
+ * AST 로 네 가지 형태(메서드·함수 선언·프로퍼티 초기화·변수 초기화)를 모두 인식한다.
+ */
+export function functionLikeName(ts, node, sourceFile) {
+  const isFn = (init) => init && (ts.isArrowFunction(init) || ts.isFunctionExpression(init));
+  if (ts.isMethodDeclaration(node) && node.name) return node.name.getText(sourceFile);
+  if (ts.isFunctionDeclaration(node) && node.name) return node.name.getText(sourceFile);
+  if (ts.isPropertyDeclaration(node) && isFn(node.initializer)) return node.name.getText(sourceFile);
+  if (ts.isPropertyAssignment(node) && isFn(node.initializer)) return node.name.getText(sourceFile);
+  if (ts.isVariableDeclaration(node) && isFn(node.initializer)) return node.name.getText(sourceFile);
+  return null;
+}
+
+/**
+ * 해당 라인을 감싸는 **가장 안쪽** 함수형 노드의 이름. 없으면 null(귀속 실패).
+ * 경계 census 가 레코드마다 `enclosingMethod` 로 싣는다 — 소비 census(operation-consumer-census.mjs)가 서비스 메서드 귀속에 쓴다.
+ */
+export function owningMethodAt(ts, sourceFile, line) {
+  const position = ts.getPositionOfLineAndCharacter(sourceFile, Math.max(0, line - 1), 0);
+  let best = null;
+  const visit = (node) => {
+    const start = node.getStart(sourceFile);
+    const end = node.getEnd();
+    if (start <= position && position <= end) {
+      const name = functionLikeName(ts, node, sourceFile);
+      if (name && (!best || end - start < best.width)) best = { name, width: end - start };
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return best?.name ?? null;
+}
+
 function semanticRecord(record) {
+  // 위치(줄·열)는 싣지 않는다(DEC-OPS-420 — 줄만 밀린 커밋의 39%가 이 원장을 다시 썼다). 소유 메서드 이름(enclosingMethod)은 owner 와
+  // 같은 위치 맥락이라 식별자 해시에서 빼고, 스냅숏 대조가 따로 본다(compareBoundaryCensus).
   const {
     column: _column,
     line: _line,
+    enclosingMethod: _enclosingMethod,
     id: _id,
     ...semantic
   } = record;
@@ -1196,8 +1236,7 @@ function scanSourceFile({ absolutePath, repoRoot, operations, descriptors }) {
             file,
             owner,
             ordinal,
-            line: position.line + 1,
-            column: position.character + 1,
+            enclosingMethod: owningMethodAt(ts, sourceFile, position.line + 1),
             classification: classify(recognized, metadata, specialCase),
             transport: recognized.transport,
             callee: recognized.callee ?? expressionName(node.expression),
@@ -1296,12 +1335,12 @@ export function validateBoundaryCensus(census) {
     }
     if (ids.has(record.id)) errors.push(`duplicate boundary id '${record.id}'`);
     ids.add(record.id);
-    if (record.id !== recordId(record)) errors.push(`boundary id drifted at ${record.file}:${record.line}`);
+    if (record.id !== recordId(record)) errors.push(`boundary id drifted at ${boundaryLabel(record)}`);
     if (record.classification === 'special' && !SPECIAL_CASES.includes(record.specialCase)) {
-      errors.push(`special boundary lacks an exact supported case at ${record.file}:${record.line}`);
+      errors.push(`special boundary lacks an exact supported case at ${boundaryLabel(record)}`);
     }
     if (record.classification !== 'special' && record.specialCase !== null) {
-      errors.push(`non-special boundary carries specialCase at ${record.file}:${record.line}`);
+      errors.push(`non-special boundary carries specialCase at ${boundaryLabel(record)}`);
     }
     if (record.classification === 'unmapped' && ![
       'unresolved-target',
@@ -1313,7 +1352,7 @@ export function validateBoundaryCensus(census) {
       'unbound-generated-descriptor',
       'unbound-generated-navigation-helper',
     ].includes(record.mappingStatus)) {
-      errors.push(`unmapped boundary lacks fail-closed mapping status at ${record.file}:${record.line}`);
+      errors.push(`unmapped boundary lacks fail-closed mapping status at ${boundaryLabel(record)}`);
     }
   }
   const expectedSummary = summarize(census.records);
@@ -1595,6 +1634,10 @@ export function compareBoundaryCensus(expected, actual) {
   }
   for (const [id, record] of expectedById) {
     if (!actualById.has(id)) errors.push(`removed or reclassified boundary: ${boundaryLabel(record)}`);
+    // 소비 census 가 이 이름으로 서비스 메서드를 귀속한다 — 이름 없는 콜백 안의 호출은 owner 가 같아도 감싸는 메서드가 바뀔 수 있다.
+    else if ((record.enclosingMethod ?? null) !== (actualById.get(id).enclosingMethod ?? null)) {
+      errors.push(`boundary enclosing method drifted: ${boundaryLabel(record)} (${record.enclosingMethod ?? 'null'} -> ${actualById.get(id).enclosingMethod ?? 'null'})`);
+    }
   }
   for (const classification of ['legacy', 'direct', 'unmapped', 'special']) {
     const before = expected.summary?.byClassification?.[classification] ?? 0;

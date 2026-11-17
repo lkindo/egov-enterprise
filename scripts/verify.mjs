@@ -113,10 +113,10 @@ function runGeneratedFreshness() {
   run('npm run regen -- --check');
 }
 
+// Governance Atlas 의 렌더·상호작용 계약은 수동 실행이다(npm run atlas:contract, DEC-OPS-420) — 문서 경로가 돌리지 않는다.
 function runDocumentationContracts() {
   runGeneratedFreshness();
   runOperationalContracts();
-  run('pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts');
 }
 
 function runFrontendStatic() {
@@ -195,7 +195,7 @@ try {
     runOperationalContracts();
     runBackendSuite();
     // be 단독 실행은 횡단 계약을 직접 실행한다. full에서는 frontend coverage가
-    // Atlas를 포함한 같은 파일들을 실행하므로 그 한 번의 결과를 사용한다.
+    // 같은 파일들을 실행하므로 그 한 번의 결과를 사용한다.
     run('pnpm -C frontend exec vitest run src/__tests__/cross-stack');
   } else if (scope === 'fe') {
     runGeneratedFreshness();

@@ -377,7 +377,7 @@ H2의 테스트 전용 의존성과 메모리 DB 프로필이 유지됨을 재�
 
 [정책 evaluator](../../scripts/sast-policy.mjs)는 [승인 목록](../../config/security/false-positive-review.json)과 정확히 일치한 탐지만 예외 처리한다. 실제 원본 SARIF의 임의 suppression은 효력이 없다. 감사용 SARIF에는 모든 탐지와 예외 ID·사유·만료일을 남기며 14일 artifact로 보존한다. GitHub Security 게시본에서만 승인된 개별 탐지를 제외하고 나머지 탐지와 규칙 metadata는 유지한다. 이는 GitHub가 문서화한 SARIF 지원 항목에 suppression 판정이 없으므로 자체 게이트의 결정을 명시적으로 반영하는 방식이다([GitHub SARIF 지원](https://docs.github.com/en/code-security/reference/code-scanning/sarif-files/sarif-support)).
 
-예외 설정·해시가 잘못되면 모든 탐지를 보존한 리포트를 생성하고 실패한다. 언어별 기존 예외가 사라진 경우도 재검토를 요구한다. 목록 자체는 `HarnessBaselineIntegrityTest`의 registry 해시 동결 대상이므로 변경 시 승인 근거와 baseline diff가 함께 필요하다. 저장소 변경만으로 원격 ruleset이나 메인 반영을 완료한 것으로 보지 않는다.
+예외 설정·해시가 잘못되면 모든 탐지를 보존한 리포트를 생성하고 실패한다. 언어별 기존 예외가 사라진 경우도 재검토를 요구한다. 목록을 바꾸면 그 diff 에 승인 근거를 함께 남긴다(재사용 생성물에서는 `HarnessBaselineIntegrityTest`의 registry 해시 동결 대상이다, DEC-OPS-420). 저장소 변경만으로 원격 ruleset이나 메인 반영을 완료한 것으로 보지 않는다.
 
 ## 근거 소스와 검증
 

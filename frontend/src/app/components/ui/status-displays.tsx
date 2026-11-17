@@ -32,13 +32,18 @@ export function ErrorStateDisplay({
       aria-live="assertive"
       className={cn("flex flex-col items-center justify-center gap-3 py-8 text-center", className)}
     >
+      {/* palette-frozen: bg-rose-50 bg-rose-900/10 border-rose-100 border-rose-900/20 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420) */}
       <div className="w-16 h-16 bg-rose-50 dark:bg-rose-900/10 rounded-full flex items-center justify-center mb-2 relative border-4 border-rose-100 dark:border-rose-900/20 shadow-xl">
+        {/* palette-frozen: text-rose-500 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420) */}
         <AlertCircle size={36} className="text-rose-500" aria-hidden="true" />
       </div>
       <div className="space-y-2">
+        {/* palette-frozen: text-rose-900 text-rose-400 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420) */}
         <p className="text-xl font-bold text-rose-900 dark:text-rose-400 tracking-tighter whitespace-pre-line">데이터를 불러오지 못했습니다</p>
         {detailMessage ? (
+          // palette-frozen: bg-rose-50/50 bg-rose-900/5 border-rose-100 border-rose-900/20 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
           <div className="p-4 bg-rose-50/50 dark:bg-rose-900/5 rounded-lg border border-rose-100 dark:border-rose-900/20 inline-block">
+            {/* palette-frozen: text-rose-800 text-rose-300 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420) */}
             <p className="text-xs font-medium text-rose-800 dark:text-rose-300 tracking-tight opacity-80">
               {detailMessage}
             </p>

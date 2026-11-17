@@ -256,6 +256,7 @@ export default function MailSendHubClient() {
               </div>
               <div className="flex items-center gap-3">
                 {selectedRecipients.length > 0 && (
+                  // palette-frozen: bg-emerald-500 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
                   <Badge className="bg-emerald-500 text-white border-none font-bold text-xs px-3 py-1.5 rounded-lg tracking-tight animate-in zoom-in duration-300">
                     {selectedRecipients.length}명 선택됨
                   </Badge>
@@ -306,6 +307,7 @@ export default function MailSendHubClient() {
                               validation.clearError('recipients');
                               setSelectedRecipients(prev => prev.filter((r) => recipientKey(r) !== key));
                             }}
+                            // palette-frozen: bg-rose-500 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
                             className="w-5 h-5 rounded-md flex items-center justify-center hover:bg-rose-500 transition-colors"
                           >
                             <X size={12} />

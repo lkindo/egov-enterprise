@@ -187,26 +187,11 @@ run_operational_contracts() {
   record_end 0
 }
 
-# Atlas는 전용 docs-as-code 계약을 통과한 경우에만 문서 fast-pass를 허용한다.
-run_atlas_contract() {
-  if [ -n "$CHANGED_FILES" ]; then
-    if [ "$SCOPE_ATLAS" = "true" ]; then
-      # frontend 불변식 및 backend cross-stack 실행은 Atlas를 이미 포함한다.
-      if [ -f frontend/package.json ] && { [ "$SCOPE_BACKEND" = "true" ] || [ "$SCOPE_FRONTEND" = "true" ]; }; then
-        echo "  → atlas: frontend/cross-stack 실행에 포함"
-      else
-        echo "  → atlas: pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts"
-        record_start atlas
-        pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts \
-          || { record_end "$?"; echo "❌ Governance Atlas 계약 실패 — 현행 코드·모듈·접근성 계약과 불일치합니다"; exit 1; }
-        record_end 0
-      fi
-    fi
-  fi
-}
+# [2026-11-18 DEC-OPS-420] Governance Atlas 의 렌더·상호작용 계약은 수동 실행이다(npm run atlas:contract) — 이 훅은 돌리지 않는다.
+# Atlas 카탈로그·결정 색인 분할·렌더 안전성은 운영 계약(scripts/atlas-*.test.mjs)이, 문서 링크는 docs-link-integrity 가 본다.
 
 # 생성물·해시 결속이 낡았는지 맨 앞에서 본다(npm run regen -- --check — 쓰지 않는다, 로컬 약 20초). 생성 계약·권한·슬롯·경계
-# census·화면 목록·URL census(승인 결속)·SAST 예외 해시·하네스 기준선·Atlas 의 각 검사 모드와, regen 이 고치지 않는 손 결속 원장
+# census·화면 목록·URL census·SAST 예외 해시·Atlas 의 각 검사 모드와, regen 이 고치지 않는 손 결속 원장
 # 확인(operation census 의 수·래칫, IA 처분 제안의 라우트 원장 결속 해시, scripts/ledger-precheck.mjs 의 태그 시험 gates.json 등록·
 # 메뉴 snapshot 해시·기본 그룹 없는 권한의 기능 파일 안내·certified 벤더의 인증 입력 해시)이다. 모두 운영 계약·CI codegen 게이트가 같은 판정으로 다시 보는 것이라
 # 새 검사가 아니다 — 11분짜리 운영 계약 뒤가 아니라 처음에 알린다. 문서·원장만 바꿔도 Atlas 카탈로그·해시 결속을 확인하므로 두 경로 모두 돈다.
@@ -223,7 +208,6 @@ record_end 0
 if [ -n "$CHANGED_FILES" ]; then
   if [ "$SCOPE_DOCS_ONLY" = "true" ]; then
     run_operational_contracts
-    run_atlas_contract
     echo "[pre-push] 📝 문서/비코드 변경만 감지됨 — 컴파일 및 하네스 검증 생략 (Fast-pass)"
     echo "  → 변경 파일:"
     echo "$CHANGED_FILES" | sed 's/^/     - /'
@@ -343,6 +327,5 @@ fi
 # 실패가 잦고 짧은 검사(정적 검사·불변식·원문 계약·cross-stack Vitest·하네스)를 모두 통과한 뒤에 비싼 운영 계약을 돌린다.
 # 불변식·원문 계약·cross-stack·하네스를 운영 계약 뒤에 두었을 때 실패한 push 들은 508~859초를 기다린 뒤에야 그 단계에서 붉었다.
 run_operational_contracts
-run_atlas_contract
 
 echo "[pre-push] ✅ 변경 영향 범위의 컴파일·계약·하네스 게이트 통과"

@@ -280,7 +280,8 @@ export const UPSTREAM_ATLAS = Object.freeze({
     'scripts/atlas-catalog.test.mjs',
     'scripts/atlas-generation.test.mjs',
   ]),
-  aliases: Object.freeze(['atlas:build', 'atlas:check']),
+  // atlas:contract 는 수동 렌더 계약(DEC-OPS-420)이라 그 시험과 함께 걷는다.
+  aliases: Object.freeze(['atlas:build', 'atlas:check', 'atlas:contract']),
 });
 
 /**

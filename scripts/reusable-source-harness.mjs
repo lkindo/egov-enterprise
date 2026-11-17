@@ -3,8 +3,8 @@
  * 기준선 매니페스트는 하네스 기준선 도구(harness-baseline-manifest.mjs)의 계산 하나로 쓴다 — 생성물의 메타 게이트가 같은 도구로 대조한다.
  */
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { basename, join, relative } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join, relative } from 'node:path';
 import { MODULES_DIRECTORY, PRESETS_FILE, detectGeneratedComposition } from './composer-modules.mjs';
 import { MANIFEST_PATH, renderHarnessBaselineManifest } from './harness-baseline-manifest-format.mjs';
 import { computeHarnessBaselineEntries } from './harness-baseline-manifest.mjs';
@@ -79,10 +79,9 @@ export function writeHarnessBaseline(output, projection) {
     '# 자동 산출 — reusable-base source projection 기준.',
     '# 남은 게이트/동결 목록을 생성 시점에 고정한다.',
   ];
-  writeFileSync(
-    join(output, ...MANIFEST_PATH.split('/')),
-    renderHarnessBaselineManifest(computeHarnessBaselineEntries(output), header),
-    'utf8',
-  );
+  // 원본 저장소에는 매니페스트(와 그 폴더)가 없다(DEC-OPS-420) — 생성물에서 처음 만든다.
+  const manifest = join(output, ...MANIFEST_PATH.split('/'));
+  mkdirSync(dirname(manifest), { recursive: true });
+  writeFileSync(manifest, renderHarnessBaselineManifest(computeHarnessBaselineEntries(output), header), 'utf8');
 }
 

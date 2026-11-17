@@ -133,7 +133,9 @@ test('remaining routes, URL records and evidence cannot disappear from the activ
 test('approval schema, source binding, unknown-state and reviewer boundaries stay hard requirements', () => {
   const validate = fixture => validateUrlStateApproval(fixture, documents.census, documents.approvalSchema);
   proveRed(documents.approval, validate, [
-    ['stale source hash', fixture => { fixture.manifestRef.sha256 = '0'.repeat(64); }, /manifest hash|production approval matcher/],
+    ['stale pinned record', fixture => { fixture.classes.find(row => row.reviewState === 'approved').selector.recordIds.push('URL-FFFFFFFFFFFFFF'); }, /production approval matcher/],
+    ['approval by state name alone', fixture => { delete fixture.classes.find(row => row.reviewState === 'approved').selector.recordIds; }, /production approval matcher/],
+    ['retired census hash', fixture => { fixture.manifestRef.sha256 = '0'.repeat(64); }, /approval schema/],
     ['duplicate classification', fixture => fixture.classes.push(structuredClone(fixture.classes[0])), /unique|overlap/],
     ['false opaque approval', fixture => { fixture.classes.find(row => row.classId === 'opaque').reviewState = 'approved'; }, /opaque|approval schema|production approval matcher/],
     ['unowned classification', fixture => { fixture.classes[0].owner = ' '; }, /requires owner/],

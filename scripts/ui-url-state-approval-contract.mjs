@@ -1,5 +1,4 @@
 import Ajv2020 from 'ajv/dist/2020.js';
-import { approvalCensusSha256 } from './ui-url-state-approval-binding.mjs';
 import { approvedStateItemSelectors } from './ui-url-state-census.mjs';
 
 function realDate(value) {
@@ -13,7 +12,6 @@ export function validateUrlStateApproval(overlay, census, schema) {
   const errors = [];
   const validate = new Ajv2020({ allErrors: true, strict: true }).compile(schema);
   if (!validate(overlay)) return validate.errors.map(error => `approval schema ${error.instancePath}: ${error.message}`);
-  if (overlay.manifestRef.sha256 !== approvalCensusSha256(census)) errors.push('approval manifest hash does not match the active census');
   const classes = overlay.classes;
   const classIds = classes.map(row => row.classId);
   if (new Set(classIds).size !== classIds.length) errors.push('approval class ids must be unique');

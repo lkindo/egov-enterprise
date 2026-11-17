@@ -40,8 +40,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p><b>[2026-07-26 보강] 동결은 양방향이다.</b> 목록의 엔티티가 <i>수동 PK 를 벗어나는 것</i> 역시
  * 승인 없는 D1 전략 변경이므로 차단한다(69개 엔티티 UUID 일괄 부착 사고의 재발 방지 — 종전 단방향
- * 게이트는 이를 통과시켰다). 베이스라인 자체의 무단 편집은 {@code HarnessBaselineIntegrityTest}
- * (매니페스트 해시 대조)가 별도로 감시한다.
+ * 게이트는 이를 통과시켰다). 베이스라인 자체의 편집은 이 파일의 diff 와 의미 변경 독립 검토가 드러내고, 재사용 생성물에서는
+ * {@code HarnessBaselineIntegrityTest}(매니페스트 해시 대조)가 감시한다(DEC-OPS-420).
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 테스트(엔티티는 클래스패스 스캔·리플렉션).
  */

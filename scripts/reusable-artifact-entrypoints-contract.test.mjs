@@ -281,14 +281,14 @@ test('the upstream Atlas, its generator, contracts and aliases are absent from g
   t.after(() => rmSync(root, { recursive: true, force: true }));
   for (const path of removed) write(root, path === 'frontend/atlas' ? `${path}/atlas.css` : path, 'x\n');
   write(root, 'frontend/public/other.svg', '<svg/>\n');
-  write(root, 'package.json', JSON.stringify({ scripts: { 'atlas:build': 'a', 'atlas:check': 'b', verify: 'c' } }));
+  write(root, 'package.json', JSON.stringify({ scripts: { 'atlas:build': 'a', 'atlas:check': 'b', 'atlas:contract': 'd', verify: 'c' } }));
   assert.deepEqual(pruneUpstreamAtlas(root).files, [...UPSTREAM_ATLAS.gates].sort((a, b) => a.localeCompare(b)));
   for (const path of removed) assert.equal(existsSync(join(root, path)), false, path);
   assert.ok(existsSync(join(root, 'frontend/public/other.svg')), 'only the Atlas assets are removed');
   assert.deepEqual(json(root, 'package.json').scripts, { verify: 'c' });
 
   // 대상이 하나라도 없으면 조용히 넘어가지 않는다 — 규칙이 낡은 채 "0건 제거" 로 통과하지 않게 한다.
-  write(root, 'package.json', JSON.stringify({ scripts: { 'atlas:build': 'a', 'atlas:check': 'b' } }));
+  write(root, 'package.json', JSON.stringify({ scripts: { 'atlas:build': 'a', 'atlas:check': 'b', 'atlas:contract': 'd' } }));
   for (const path of removed.slice(1)) write(root, path === 'frontend/atlas' ? `${path}/atlas.css` : path, 'x\n');
   assert.throws(() => pruneUpstreamAtlas(root), /Upstream Atlas asset is missing.*frontend\/atlas/);
 });

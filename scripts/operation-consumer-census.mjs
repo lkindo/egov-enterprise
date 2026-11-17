@@ -31,7 +31,7 @@
  *
  * <p>축 2 는 예외 목록을 두지 않는다 — 77건을 원장에 적으면 그 목록이 곧 서랍이 된다(H2).
  * 대신 <b>단조 감소 래칫</b>(`expected.screenOrphanMax`) 하나로 신규 유입만 막고, 실패 시 전체
- * 목록을 출력해 불투명해지지 않게 한다(status-color-guard 와 같은 설계).
+ * 목록을 출력해 불투명해지지 않게 한다.
  *
  * <p><b>축 3 (쓰기 권한 표시)</b> — 2026-10-01: 화면이 부르는 <b>쓰기 operation 의 기능 권한</b>을 그 화면이
  * 버튼 노출 판정에 쓰는가. 조회 권한만으로 들어온 사람에게 등록·수정·삭제 버튼이 모두 보이면, 폼을 다 채운
@@ -67,7 +67,7 @@ import { createRequire } from 'node:module';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { collectVerifiedMfaBffOperations } from './generated-boundary-census.mjs';
+import { collectVerifiedMfaBffOperations, functionLikeName } from './generated-boundary-census.mjs';
 import { SLOT_ROOT, slotConsumerPartition, slotPathKind, slotRegistryPath } from './slot-registry.mjs';
 import { PROJECTION_LEDGER_PATH, projectionLedgerErrors } from './reusable-projection-ledger.mjs';
 
@@ -385,39 +385,8 @@ function listSourceFiles(dir, out = []) {
   return out;
 }
 
-/**
- * 함수형 노드에서 사람이 부르는 이름을 뽑는다.
- *
- * <p>이름 기반 정규식만 쓰면 <b>클래스 프로퍼티 화살표 함수</b>를 소유자로 잡지 못해 호출부가
- * 엉뚱한 선언(생성자의 {@code super(...)})에 귀속된다 — 1차 시도에서 실제로 그 오탐이 나왔다.
- * AST 로 네 가지 형태(메서드·함수 선언·프로퍼티 초기화·변수 초기화)를 모두 인식한다.
- */
-function functionLikeName(ts, node, sourceFile) {
-  const isFn = (init) => init && (ts.isArrowFunction(init) || ts.isFunctionExpression(init));
-  if (ts.isMethodDeclaration(node) && node.name) return node.name.getText(sourceFile);
-  if (ts.isFunctionDeclaration(node) && node.name) return node.name.getText(sourceFile);
-  if (ts.isPropertyDeclaration(node) && isFn(node.initializer)) return node.name.getText(sourceFile);
-  if (ts.isPropertyAssignment(node) && isFn(node.initializer)) return node.name.getText(sourceFile);
-  if (ts.isVariableDeclaration(node) && isFn(node.initializer)) return node.name.getText(sourceFile);
-  return null;
-}
-
-/** 해당 라인을 감싸는 **가장 안쪽** 함수형 노드의 이름. 없으면 null(귀속 실패). */
-export function owningMethodAt(ts, sourceFile, line) {
-  const position = ts.getPositionOfLineAndCharacter(sourceFile, Math.max(0, line - 1), 0);
-  let best = null;
-  const visit = (node) => {
-    const start = node.getStart(sourceFile);
-    const end = node.getEnd();
-    if (start <= position && position <= end) {
-      const name = functionLikeName(ts, node, sourceFile);
-      if (name && (!best || end - start < best.width)) best = { name, width: end - start };
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(sourceFile);
-  return best?.name ?? null;
-}
+// 서비스 메서드 귀속은 경계 census 가 레코드마다 싣는 enclosingMethod 다(같은 판정 함수 — 시험이 이 이름으로 부른다).
+export { owningMethodAt } from './generated-boundary-census.mjs';
 
 /**
  * 화면 소비 판정은 **두 호출 형태를 모두 인정**한다.
@@ -447,15 +416,6 @@ export function analyzeScreenReachability({ boundaries, repoRoot = DEFAULT_REPO_
     .map((file) => readFileSync(file, 'utf8'))
     .join('\n');
 
-  const parsed = new Map();
-  const readSource = (absolute) => {
-    if (!parsed.has(absolute)) {
-      const text = readFileSync(absolute, 'utf8');
-      parsed.set(absolute, ts.createSourceFile(absolute, text, ts.ScriptTarget.Latest, true));
-    }
-    return parsed.get(absolute);
-  };
-
   const methods = new Map();
   const unattributed = [];
   for (const record of boundaries.records ?? []) {
@@ -463,9 +423,9 @@ export function analyzeScreenReachability({ boundaries, repoRoot = DEFAULT_REPO_
     if (!record.operationId || !isServiceFile(file) || isTestFile(file)) continue;
     const absolute = resolve(repoRoot, file);
     if (!existsSync(absolute)) continue;
-    const owner = owningMethodAt(ts, readSource(absolute), record.line);
+    const owner = record.enclosingMethod ?? null;
     if (!owner) {
-      unattributed.push({ file, line: record.line, operationId: record.operationId });
+      unattributed.push({ file, owner: record.owner, ordinal: record.ordinal, operationId: record.operationId });
       continue;
     }
     const key = `${file}#${owner}`;
@@ -727,7 +687,7 @@ export function analyzeWritePermissionNeeds({ boundaries, policies, repoRoot = D
     if (!permission) continue;
     const absolute = toPosix(resolve(repoRoot, relative));
     if (!sources.has(absolute)) continue;
-    const owner = owningMethodAt(ts, ast(absolute), record.line);
+    const owner = record.enclosingMethod ?? null;
     if (!owner) continue;
     writeMethods.push({ module: moduleName(absolute), name: owner, permission });
   }

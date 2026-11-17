@@ -89,6 +89,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             <DialogHeader className="flex flex-row items-start gap-4 text-left">
               <div className={cn(
                 "p-2 rounded-lg shrink-0",
+                // palette-frozen: bg-red-100 text-red-600 bg-red-950/30 text-red-400 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
                 options.variant === 'destructive' ? "bg-red-100 text-red-600 dark:bg-red-950/30 dark:text-red-400" : "bg-hub-blue/10 text-hub-blue"
               )}>
                 <AlertCircle size={24} />
@@ -125,6 +126,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
                 onClick={handleConfirm}
                 className={cn(
                   "px-4 py-2 text-sm font-semibold text-white rounded-md shadow-sm transition-colors",
+                  // palette-frozen: bg-red-600 bg-red-700 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
                   options.variant === 'destructive' ? "bg-red-600 hover:bg-red-700" : "bg-primary hover:bg-primary/90"
                 )}
               >

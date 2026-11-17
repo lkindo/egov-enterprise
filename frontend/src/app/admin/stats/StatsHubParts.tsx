@@ -25,7 +25,9 @@ export function useStatsHubNavigation(): ReactNode {
 export function HubErrorState({ message, onRetry }: { message: string, onRetry: () => void }) {
   return (
     <div role="alert" className="h-[400px] flex flex-col items-center justify-center gap-5 text-center">
+      {/* palette-frozen: bg-rose-500/10 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420) */}
       <div className="w-14 h-14 rounded-lg bg-rose-500/10 flex items-center justify-center">
+        {/* palette-frozen: text-rose-600 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420) */}
         <AlertTriangle size={26} className="text-rose-600" />
       </div>
       <div className="space-y-2">

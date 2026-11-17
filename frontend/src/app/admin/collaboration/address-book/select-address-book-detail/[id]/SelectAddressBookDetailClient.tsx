@@ -330,6 +330,7 @@ const SelectAddressBookDetailClient = () => {
             ) : isError ? (
                 /* [P1-1] 조회 실패를 빈 폼으로 위장하지 않는다. */
                 <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 text-center">
+                    {/* palette-frozen: text-rose-500 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420) */}
                     <AlertTriangle className="w-10 h-10 text-rose-500" />
                     <p className="text-sm font-bold text-foreground">주소록 정보를 불러오지 못했습니다.</p>
                     <p className="text-xs text-muted-foreground">{failureMessage(error, '잠시 뒤 다시 시도해 주세요.')}</p>

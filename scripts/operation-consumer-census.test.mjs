@@ -409,7 +409,7 @@ test('화면 소비 판정은 접두가 같은 다른 메서드를 소비로 착
   mkdirSync(dirname(screenFile), { recursive: true });
   writeFileSync(screenFile, 'export default () => thingService.getThingList();\n');
 
-  const boundaries = { records: [{ file: 'frontend/src/services/ThingService.ts', line: 3, operationId: 'getThing' }] };
+  const boundaries = { records: [{ file: 'frontend/src/services/ThingService.ts', enclosingMethod: 'getThing', operationId: 'getThing' }] };
   const result = analyzeScreenReachability({ boundaries, repoRoot: root, ts });
 
   assert.equal(result.unattributed.length, 0);
@@ -437,7 +437,7 @@ test('.bind() 재수출을 named import 로 직접 부르는 형태도 소비로
     'export const loadMonthly = directService.loadMonthly.bind(directService);',
   ].join('\n'));
 
-  const boundaries = { records: [{ file: 'frontend/src/services/DirectService.ts', line: 3, operationId: 'loadMonthly' }] };
+  const boundaries = { records: [{ file: 'frontend/src/services/DirectService.ts', enclosingMethod: 'loadMonthly', operationId: 'loadMonthly' }] };
   const screenFile = join(root, 'frontend/src/app/page.tsx');
   mkdirSync(dirname(screenFile), { recursive: true });
 
@@ -482,7 +482,7 @@ test('서비스 밖 호출부와 테스트 파일은 소비 판정에서 제외�
   mkdirSync(dirname(testFile), { recursive: true });
   writeFileSync(testFile, 'await onlyTestedService.doThing();\n');
 
-  const boundaries = { records: [{ file: 'frontend/src/services/OnlyTestedService.ts', line: 3, operationId: 'doThing' }] };
+  const boundaries = { records: [{ file: 'frontend/src/services/OnlyTestedService.ts', enclosingMethod: 'doThing', operationId: 'doThing' }] };
   assert.deepEqual(
     analyzeScreenReachability({ boundaries, repoRoot: root, ts }).orphans.map((e) => e.method),
     ['doThing'],
@@ -615,8 +615,8 @@ function affordanceFixture(t, files) {
   for (const [relative, lines] of Object.entries(files)) write(relative, lines);
   const inputs = {
     boundaries: { records: [
-      { file: 'frontend/src/services/ThingService.ts', line: 3, method: 'get', target: '/api/v1/things', operationId: 'getThings' },
-      { file: 'frontend/src/services/ThingService.ts', line: 6, method: 'delete', target: '/api/v1/things/{id}', operationId: 'deleteThing' },
+      { file: 'frontend/src/services/ThingService.ts', enclosingMethod: 'getThings', method: 'get', target: '/api/v1/things', operationId: 'getThings' },
+      { file: 'frontend/src/services/ThingService.ts', enclosingMethod: 'deleteThing', method: 'delete', target: '/api/v1/things/{id}', operationId: 'deleteThing' },
     ] },
     policies: { operationBindings: [
       { method: 'GET', path: '/api/v1/things', access: 'PERMISSION', permission: 'THING_READ' },

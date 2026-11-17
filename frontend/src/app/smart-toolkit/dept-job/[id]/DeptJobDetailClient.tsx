@@ -288,6 +288,7 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
                                 disabled={activeAction !== null}
                                 aria-busy={activeAction === 'delete' || undefined}
                                 aria-label={activeAction === 'delete' ? '업무 삭제 중' : '업무 삭제'}
+                                // palette-frozen: text-rose-600 text-rose-700 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
                                 className="font-bold gap-1 text-rose-600 hover:text-rose-700"
                             >
                                 <Trash2 size={14} />

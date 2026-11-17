@@ -8,10 +8,12 @@
  *   node scripts/harness-baseline-manifest.mjs --keys <키…>     # 그 키의 계산값만 보인다(쓰지 않는다)
  *   npm run harness:baseline -- --write
  *
- * 쓰는 곳: 하네스 메타 게이트(HarnessBaselineIntegrityTest)가 `--check` 를 실행한다 — 원본 CI·pre-push·재사용 생성물의 하네스가
- * 모두 이 경로다. 운영 계약(harness-baseline-mirror-contract.test.mjs — 이름은 거울 계약 시절 그대로다)은 같은 계산을 늘 도는 CI 잡에서 커밋본과 대조하고, 재사용 투영
- * 생성기(reusable-source-harness.mjs)는 이 계산으로 생성물의 매니페스트를 쓴다. 종전에는 같은 계산을 메타 게이트(Java)와 생성기(node)가
- * 따로 구현하고 거울 계약이 둘을 맞췄다(2026-10-19 하나로 모았다).
+ * 쓰는 곳: 재사용 투영 생성기(reusable-source-harness.mjs)가 이 계산으로 생성물의 매니페스트를 쓰고, 생성물 하네스의 메타 게이트
+ * (HarnessBaselineIntegrityTest)가 `--check` 를 실행하며, 도입자 등록(adopter-project.mjs, ADR-0057)이 원본 규칙·예외·임계값이 그대로인지
+ * 이 계산으로 본다. **원본 저장소에는 매니페스트를 두지 않는다(DEC-OPS-420)** — 원본에서 `--check` 는 매니페스트가 없음을 확인하고
+ * 완료 문장 ORIGINAL_CHECKED 를 내며, `--write`·`--keys` 는 거부한다. 운영 계약(harness-baseline-mirror-contract.test.mjs)은 계산의
+ * 정의와 검사 동작을 고정물 트리로 시험한다. 종전에는 같은 계산을 메타 게이트(Java)와 생성기(node)가 따로 구현하고 거울 계약이 둘을
+ * 맞췄다(2026-10-19 하나로 모았다).
  *
  * 무엇을 동결하나: 게이트 소스의 `static final` 상수(동결·예외 목록·경로·정규식·숫자 하한), 판정이 메서드 본문에 사는 게이트의 소스
  * 전체(__sourceHash), 게이트 판정 원장과 훅의 내용 해시, registry(gates.json) 밖의 게이트 소스 목록과 registry 에 등록됐는데 census 에
@@ -337,12 +339,36 @@ export function formatHarnessBaselineDiff(diff) {
 
 const USAGE = '사용법: node scripts/harness-baseline-manifest.mjs --check | --write | --keys <키…>';
 
+/**
+ * 재사용 생성물의 표지 — 생성기가 쓰는 생성 잠금이다. 매니페스트는 생성물에만 둔다(DEC-OPS-420): 원본에서는 regen 이 기계적으로 다시
+ * 묶을 뿐 사람이 읽는 신호가 아니었고(실측: 커밋 288건이 매니페스트를 고쳤고 잡은 완화는 0건), 같은 변경은 게이트 소스 diff 와 의미 변경
+ * 독립 검토(DEC-OPS-385 ③)가 드러낸다. 생성물에서는 도입자 등록이 원본 하네스 규칙·예외·임계값을 바꾸지 않았음을 보이는 기준이다(ADR-0057).
+ */
+export const REUSABLE_LOCK_PATH = 'reusable-base-lock.json';
+
+/** 원본 저장소에서 `--check` 가 내는 완료 문장 — 메타 게이트가 생성물의 완료 문장과 함께 받는다. */
+export const ORIGINAL_CHECKED = '원본 저장소에는 하네스 기준선 매니페스트를 두지 않는다(DEC-OPS-420)';
+
+function originalRepositoryMode(root, mode, manifestText, { log, error }) {
+  if (mode !== '--check') {
+    error(`${ORIGINAL_CHECKED} — ${mode} 는 생성물(${REUSABLE_LOCK_PATH} 가 있는 트리)에서만 쓴다.`);
+    return 2;
+  }
+  if (manifestText !== undefined) {
+    error(`${MANIFEST_PATH} 가 원본 저장소에 있다 — ${ORIGINAL_CHECKED}. 생성기가 생성물마다 계산해 쓰므로 이 파일을 지운다.`);
+    return 1;
+  }
+  log(`${ORIGINAL_CHECKED} — 생성물만 대조한다.`);
+  return 0;
+}
+
 /** CLI 본체. 반환값이 종료 코드다. 시험은 `compute`·`log`·`error` 를 바꿔 넘긴다. */
 export function main(argv, { root = repoRoot, compute = computeHarnessBaselineEntries, log = console.log, error = console.error } = {}) {
   const modes = ['--check', '--write', '--keys'].filter(mode => argv.includes(mode));
   if (modes.length !== 1) { error(USAGE); return 2; }
   const manifestFile = path.join(root, ...MANIFEST_PATH.split('/'));
   const text = readTextIfPresent(manifestFile);
+  if (!fs.existsSync(path.join(root, REUSABLE_LOCK_PATH))) return originalRepositoryMode(root, modes[0], text, { log, error });
   const actual = compute(root, { minimumGateSources: MINIMUM_GATE_SOURCES });
 
   if (modes[0] === '--keys') {

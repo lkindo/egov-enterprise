@@ -787,7 +787,7 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
   // 생성기는 원본 Atlas 를 늘 규칙으로 걷는다. 그 자산·검사와 package.json 별칭이 있어야 규칙 제거가 성공한다.
   for (const file of ['frontend/atlas/catalog.json', 'scripts/build-atlas.mjs', 'scripts/atlas-catalog.mjs',
     'frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts', 'scripts/atlas-catalog.test.mjs', 'scripts/atlas-generation.test.mjs']) write(file, '// atlas\n');
-  write('package.json', JSON.stringify({ scripts: { 'atlas:build': 'x', 'atlas:check': 'x' } }));
+  write('package.json', JSON.stringify({ scripts: { 'atlas:build': 'x', 'atlas:check': 'x', 'atlas:contract': 'x' } }));
   // 정밀 점검은 api-docs 를 인가 원장으로 투영한다(10c-2). 이 저장소에는 문서화된 연산이 없다.
   write('api-docs.json', JSON.stringify({ openapi: '3.1.0', paths: {}, components: { schemas: {} } }));
   write('config/governance/authorization-policies.json', JSON.stringify({ operationBindings: [{ method: 'GET', path: '/actuator/health', handler: 'EXTERNAL#/actuator/health' }] }));

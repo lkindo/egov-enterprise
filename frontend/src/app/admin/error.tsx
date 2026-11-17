@@ -47,7 +47,9 @@ export default function AdminError({
     return (
       <ErrorLayout
         icon={<Shield className="w-12 h-12" />}
+        // palette-frozen: text-amber-500 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
         iconColor="text-amber-500"
+        // palette-frozen: bg-amber-500/10 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
         iconBg="bg-amber-500/10"
         title="세션이 만료되었습니다"
         description="보안을 위해 일정 시간 동안 활동이 없으면 자동으로 로그아웃됩니다. 다시 로그인하여 이어서 작업하세요."
@@ -93,7 +95,9 @@ export default function AdminError({
     return (
       <ErrorLayout
         icon={<Shield className="w-12 h-12" />}
+        // palette-frozen: text-red-500 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
         iconColor="text-red-500"
+        // palette-frozen: bg-red-500/10 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
         iconBg="bg-red-500/10"
         title="접근 권한이 없습니다"
         description="이 페이지에 접근할 수 있는 권한이 부여되지 않았습니다. 관리자에게 권한 요청을 하시거나, 다른 메뉴를 이용해 주세요."
@@ -130,7 +134,9 @@ export default function AdminError({
     <ErrorLayout
       digest={error.digest}
       icon={<AlertTriangle className="w-12 h-12" />}
+      // palette-frozen: text-rose-500 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
       iconColor="text-rose-500"
+      // palette-frozen: bg-rose-500/10 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
       iconBg="bg-rose-500/10"
       title="일시적인 오류가 발생했습니다"
       description="서버와의 통신 중 문제가 발생했습니다. 잠시 후 다시 시도하시거나, 문제가 지속되면 관리자에게 문의해 주세요."

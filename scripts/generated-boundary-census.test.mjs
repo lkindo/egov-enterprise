@@ -307,6 +307,39 @@ test('server fetch executor requires the canonical transport import and a genera
   });
 });
 
+test('records carry no source position, and a call moved to another method under the same owner is red until rewritten', () => {
+  withFixture({
+    'frontend/src/types/generated-operations.ts': widgetGeneratedOperations,
+    'frontend/src/services/WidgetService.ts': `
+      import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
+      import { createWidgetOperation } from '@/types/generated-operations';
+      class WidgetService {
+        createOne(body: unknown) {
+          return [body].map(item => executeGeneratedOperation(createWidgetOperation, { body: item }));
+        }
+      }
+      export const widgetService = new WidgetService();
+    `,
+  }, (root) => {
+    const baseline = buildBoundaryCensus({ repoRoot: root });
+    const [record] = baseline.records;
+    // 줄·열을 싣지 않는다(DEC-OPS-420) — 줄만 밀린 편집이 원장을 다시 쓰지 않는다.
+    assert.equal(Object.hasOwn(record, 'line') || Object.hasOwn(record, 'column'), false);
+    assert.equal(record.owner, '<anonymous-function>');
+    assert.equal(record.enclosingMethod, 'createOne', '소비 census 가 서비스 메서드로 귀속하는 이름');
+
+    const service = join(root, 'frontend/src/services/WidgetService.ts');
+    writeFileSync(service, `\n\n${readFileSync(service, 'utf8')}`);
+    assert.deepEqual(compareBoundaryCensus(baseline, buildBoundaryCensus({ repoRoot: root })), [], 'a line shift alone is not drift');
+
+    // 이름 없는 콜백 안의 호출은 owner·식별자가 같아도 감싸는 메서드가 바뀔 수 있다 — 그 귀속은 스냅숏 대조가 잡는다.
+    writeFileSync(service, readFileSync(service, 'utf8').replace('createOne(', 'createMany('));
+    const renamed = buildBoundaryCensus({ repoRoot: root });
+    assert.equal(renamed.records[0].id, record.id);
+    assert.match(compareBoundaryCensus(baseline, renamed).join('\n'), /boundary enclosing method drifted: .*\(createOne -> createMany\)/);
+  });
+});
+
 test('a newly introduced legacy or raw boundary makes the ratchet red', () => {
   withFixture({
     'frontend/src/types/generated-operations.ts': widgetGeneratedOperations,

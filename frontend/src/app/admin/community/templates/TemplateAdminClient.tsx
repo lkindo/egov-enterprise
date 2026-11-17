@@ -261,6 +261,7 @@ export default function TemplateAdminClient({
       accessor: (item: TmplatInfo) => (
         <div className={cn(
           "flex items-center gap-2 px-3 py-1 rounded-lg border w-fit transition-all",
+          // palette-frozen: bg-emerald-50 text-emerald-600 border-emerald-100 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
           item.useYn === 'Y' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-muted text-muted-foreground border-border"
         )}>
           {item.useYn === 'Y' ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
@@ -457,6 +458,7 @@ export default function TemplateAdminClient({
             <div className="space-y-3">
               <label htmlFor="tmplt-path" className="text-xs font-bold text-muted-foreground tracking-tight ml-2">소스 경로</label>
               <div className="relative">
+                {/* palette-frozen: text-slate-300 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420) */}
                 <Code className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={18} aria-hidden="true" />
                 <Input
                   id="tmplt-path"

@@ -117,7 +117,7 @@ export function projectContractCensuses({ sourceRoot, output, removedFiles }) {
     const after = boundaries.summary.byClassification[classification];
     if (after > before) {
       const records = boundaries.records.filter(record => record.classification === classification)
-        .map(record => `${record.file}:${record.line} ${record.callee} -> ${record.target ?? '<unresolved>'}`);
+        .map(record => `${record.file}#${record.owner}[${record.ordinal}] ${record.callee} -> ${record.target ?? '<unresolved>'}`);
       throw new Error(`projected boundary census has ${after} ${classification} boundaries (upstream ${before}):\n${records.join('\n')}`);
     }
   }

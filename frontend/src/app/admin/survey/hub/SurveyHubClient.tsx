@@ -207,9 +207,11 @@ export function SurveyHubClient() {
           <motion.div
             variants={hubItemVariants}
             role="alert"
+            // palette-frozen: border-rose-500/20 bg-rose-500/5 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
             className="mx-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border-2 border-rose-500/20 bg-rose-500/5 px-6 py-5"
           >
             <div className="flex items-start gap-3">
+              {/* palette-frozen: text-rose-500 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420) */}
               <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <p className="text-sm font-bold text-foreground">요약 지표를 불러오지 못했습니다.</p>
@@ -282,7 +284,9 @@ function MetricCard({
   color: 'rose' | 'emerald' | 'primary';
 }) {
   const colorMap: Record<string, string> = {
+    // palette-frozen: text-rose-500 bg-rose-500/5 border-rose-500/10 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
     rose: "text-rose-500 bg-rose-500/5 border-rose-500/10",
+    // palette-frozen: text-emerald-500 bg-emerald-500/5 border-emerald-500/10 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
     emerald: "text-emerald-500 bg-emerald-500/5 border-emerald-500/10",
     primary: "text-primary bg-primary/5 border-primary/10"
   };

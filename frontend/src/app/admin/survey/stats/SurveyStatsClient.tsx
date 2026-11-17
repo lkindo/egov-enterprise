@@ -59,6 +59,7 @@ export default function SurveyStatsClient({ embedded = false }: { embedded?: boo
     {
       header: '여론조사 주제',
       accessor: (poll) => (
+        // palette-frozen: text-amber-600 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
         <span className="text-sm font-bold text-foreground group-hover:text-amber-600 transition-colors tracking-tight">
           {poll.pollNm}
         </span>
@@ -89,8 +90,10 @@ export default function SurveyStatsClient({ embedded = false }: { embedded?: boo
         const status = getPollStatus(poll, todayYmd);
         const tone =
           status === 'active'
+            // palette-frozen: bg-emerald-500/10 text-emerald-600 border-emerald-500/20 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
             ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
             : status === 'scheduled'
+              // palette-frozen: bg-amber-500/10 text-amber-600 border-amber-500/20 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
               ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
               : 'bg-muted text-muted-foreground border-border';
         return (

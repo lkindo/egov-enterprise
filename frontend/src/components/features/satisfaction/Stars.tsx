@@ -22,6 +22,7 @@ export function Stars({
         const star = (
           <Star
             size={size}
+            // palette-frozen: fill-amber-400 text-amber-400 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
             className={cn(filled ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground')}
           />
         );

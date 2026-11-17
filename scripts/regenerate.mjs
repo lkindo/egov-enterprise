@@ -3,18 +3,19 @@
  * 생성물 재생성 한 명령(오케스트레이션 프로토콜 §6.4). 손으로 돌리던 순서를 코드로 둔다.
  *
  * 사용법:
- *   npm run regen                   # 다시 쓴다 — 생성기 사슬 → SAST 예외 해시 확인 → 하네스 기준선 → Atlas 정합성 확인, 끝에 바뀐 파일을 보인다
+ *   npm run regen                   # 다시 쓴다 — 생성기 사슬 → SAST 예외 해시 확인 → (생성물만) 하네스 기준선 → Atlas 정합성 확인, 끝에 바뀐 파일을 보인다
  *   npm run regen -- --check        # 쓰지 않는다 — 낡은 생성물·해시 결속이 있으면 종료 코드 1(pre-push 맨 앞에서 돈다)
  *   npm run regen -- --rebind-sast SAST-FP-001,SAST-FP-002 --note "Re-reviewed 2026-10-19: <무엇이 바뀌었고 어느 방어가 그대로인지>"
  *                                   # 방어 경계를 재검토한 SAST 예외 항목만 소스 해시를 다시 결속하고 사유 끝에 재검토 문장을 붙인다
  *
  * 순서의 근거(실패한 push 의 대부분이 이 순서를 어겼다):
- *   1. 생성기 사슬은 scripts/merge-main-regenerate.mjs 의 GENERATORS 를 그 순서로 돈다 — URL census 뒤에는 같은 파일의
- *      rebindApprovalText 로 승인 해시를 다시 결속한다. 생성기 목록·검사 명령을 이 파일에 다시 적지 않는다(같은 불변식을 두 곳에 두지 않는다).
+ *   1. 생성기 사슬은 scripts/merge-main-regenerate.mjs 의 GENERATORS 를 그 순서로 돈다. 생성기 목록·검사 명령을 이 파일에 다시 적지
+ *      않는다(같은 불변식을 두 곳에 두지 않는다). URL 승인은 census 해시를 결속하지 않는다 — 승인은 기록 ID 고정이다(DEC-OPS-420).
  *   2. SAST 예외 원장(config/security/false-positive-review.json)은 자동으로 다시 결속하지 않는다(H2). 지원 소스 해시가 낡았으면
- *      그 항목과 파일을 보이고 하네스 기준선을 쓰기 전에 멈춘다 — 기준선이 그 원장의 해시를 담기 때문이다. 사람이 방어 경계를 재검토하고
- *      --rebind-sast 로 그 항목만 결속한 뒤 이 명령을 다시 돌린다(몇 번 돌려도 결과가 같다).
- *   3. 하네스 기준선(baseline-manifest.properties)은 손 결속 원장(gates.json·SAST 예외)과 훅·게이트 소스의 해시라 그 뒤에 쓴다.
+ *      그 항목과 파일을 보이고 그 뒤 단계를 쓰기 전에 멈춘다 — 생성물의 하네스 기준선이 그 원장의 해시를 담기 때문이다. 사람이 방어 경계를
+ *      재검토하고 --rebind-sast 로 그 항목만 결속한 뒤 이 명령을 다시 돌린다(몇 번 돌려도 결과가 같다).
+ *   3. 하네스 기준선(baseline-manifest.properties)은 손 결속 원장(gates.json·SAST 예외)과 훅·게이트 소스의 해시라 그 뒤에 쓴다. 재사용
+ *      생성물(생성 잠금이 있는 트리)에만 있다 — 원본 저장소는 매니페스트를 두지 않는다(DEC-OPS-420).
  *   4. Atlas 는 문서·게이트 원장·훅의 인메모리 렌더 정합성과 레거시 커밋 파일 부재를 확인하는 마지막 단계다(DEC-OPS-398).
  *
  * 하지 않는 것: api-docs.json 추출(Gradle)과 메뉴 snapshot(일회용 PostgreSQL)은 §6.3 의 무거운 실행이라 따로 돌린다(--check 는 메뉴
@@ -22,7 +23,7 @@
  * --check 는 빠졌는지만 알린다. 재생성으로 래칫 수치가 오르거나 새 예외가 생기면 받아들이지 않고 원인을 본다(§6.4·H2). 바뀐 파일 목록과
  * diff 를 확인한 뒤 함께 커밋한다.
  *
- * --check 는 각 생성기 자신의 검사 모드(GENERATORS 의 check)를 병렬로 부르고, URL 승인 결속과 SAST 예외 해시, 재생성이 고치지 않는
+ * --check 는 각 생성기 자신의 검사 모드(GENERATORS 의 check)를 병렬로 부르고, SAST 예외 해시와 재생성이 고치지 않는
  * 손 결속 원장 확인(LEDGER_CHECKS)을 함께 본다. 새 판정을 더하지 않는다 — 운영 계약·codegen 게이트가 같은 생성물·원장을 다시 본다.
  * 통과한 검사의 출력은 보이지 않고, 손 결속 사전 점검이 판정 모듈이 없어 건너뛴 점검만 `  ⚠ hand-bound-ledgers: 건너뜀: …` 줄로 남긴다.
  * pre-push 가 이것을 맨 앞에서 돌려, 낡은 생성물과 잊은 손 결속 값을 11분짜리 운영 계약 뒤가 아니라 수십 초 안에 알린다.
@@ -33,7 +34,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { GENERATORS, HARNESS_MANIFEST, HARNESS_MANIFEST_TOOL, URL_APPROVAL, URL_CENSUS, rebindApprovalText } from './merge-main-regenerate.mjs';
+import { GENERATORS } from './merge-main-regenerate.mjs';
+import { MANIFEST_PATH as HARNESS_MANIFEST, REUSABLE_LOCK_PATH } from './harness-baseline-manifest.mjs';
 import { sourceHash } from './sast-exceptions.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -41,6 +43,9 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 export const SAST_LEDGER = 'config/security/false-positive-review.json';
 /** 마지막 생성기. 하네스 기준선을 이 앞에 끼운다. */
 export const ATLAS_STEP = 'atlas';
+
+/** 하네스 기준선 도구 — 재사용 생성물에서만 regen 단계다(DEC-OPS-420). */
+const HARNESS_MANIFEST_TOOL = 'scripts/harness-baseline-manifest.mjs';
 const REVIEW_NOTE = /^Re-reviewed \d{4}-\d{2}-\d{2}: \S.{19,}$/s;
 
 /** 배선 census 는 위반마다 `  - [코드] operation: 메시지` 머리줄을 쓴다 — 긴 목록이 붙어도 머리줄은 남긴다. */
@@ -119,28 +124,27 @@ function generatorStep(generator) {
     requires: generator.requires,
     command: generator.command,
     check: generator.check ?? [],
-    rebindUrlApproval: generator.rebindUrlApproval === true,
     // 슬롯 레지스트리처럼 출력이 디스크에서 정해지는 생성기가 있어 부를 때마다 읽는다.
     files: () => [...generator.outputs, ...(generator.touches ?? [])],
   };
 }
 
 /**
- * 재생성 단계 — GENERATORS 를 그 순서로 두고, Atlas 앞에 SAST 예외 해시 확인과 하네스 기준선을 끼운다(머리 주석의 순서 근거).
- * Atlas 가 없는 저장소(재사용 생성물)에서는 기준선이 마지막이다.
+ * 재생성 단계 — GENERATORS 를 그 순서로 두고, Atlas 앞에 SAST 예외 해시 확인과 (생성물이면) 하네스 기준선을 끼운다(머리 주석의 순서 근거).
+ * Atlas 가 없는 저장소(재사용 생성물)에서는 기준선이 마지막이다. 원본 저장소에는 기준선 단계가 없다(DEC-OPS-420).
  */
-export function regenerationSteps(generators = GENERATORS) {
+export function regenerationSteps(generators = GENERATORS, { harnessBaseline = fs.existsSync(path.join(repoRoot, REUSABLE_LOCK_PATH)) } = {}) {
   const atlasAt = generators.findIndex(generator => generator.id === ATLAS_STEP);
   const head = atlasAt < 0 ? generators : generators.slice(0, atlasAt);
   const tail = atlasAt < 0 ? [] : generators.slice(atlasAt);
   return [
     ...head.map(generatorStep),
     { id: 'sast-exceptions', kind: 'sast', requires: SAST_LEDGER, files: () => [] },
-    {
+    ...(harnessBaseline ? [{
       id: 'harness-baseline', kind: 'generator', requires: HARNESS_MANIFEST_TOOL,
       command: ['node', [HARNESS_MANIFEST_TOOL, '--write']], check: [['node', [HARNESS_MANIFEST_TOOL, '--check']]],
-      rebindUrlApproval: false, files: () => [HARNESS_MANIFEST],
-    },
+      files: () => [HARNESS_MANIFEST],
+    }] : []),
     ...tail.map(generatorStep),
   ];
 }
@@ -240,7 +244,7 @@ export function regenerate({ cwd = repoRoot, steps = regenerationSteps(), runCom
       const stale = staleSastExceptions(cwd);
       if (stale.length) {
         log(sastGuidance(stale));
-        log(`멈췄다 — 하네스 기준선과 그 뒤 단계를 쓰지 않았다. 지금까지 바뀐 파일: ${changed().join(', ') || '없음'}`);
+        log(`멈췄다 — 그 뒤 단계를 쓰지 않았다. 지금까지 바뀐 파일: ${changed().join(', ') || '없음'}`);
         return { status: 'sast-stale', changed: changed(), stale };
       }
       log('확인: sast-exceptions — 결속 해시가 모두 현재 소스와 같다.');
@@ -248,10 +252,6 @@ export function regenerate({ cwd = repoRoot, steps = regenerationSteps(), runCom
     }
     log(`재생성: ${step.id}`);
     runCommand(cwd, step.command);
-    if (step.rebindUrlApproval) {
-      const approval = path.join(cwd, URL_APPROVAL);
-      fs.writeFileSync(approval, rebindApprovalText(fs.readFileSync(approval, 'utf8'), fs.readFileSync(path.join(cwd, URL_CENSUS), 'utf8')));
-    }
   }
   const result = changed();
   log(result.length
@@ -288,13 +288,6 @@ export function checkTasks(cwd, steps = regenerationSteps(), ledgerChecks = LEDG
     if (!step.check.length) throw new Error(`${step.id}: 검사 명령(check)이 없다 — merge-main-regenerate.mjs 의 GENERATORS 에 그 생성기의 검사 모드를 적는다`);
     for (const command of step.check) {
       tasks.push({ id: step.id, label: [command[0], ...command[1]].join(' '), run: () => runAsync(cwd, command) });
-    }
-    if (step.rebindUrlApproval) {
-      tasks.push({ id: `${step.id}:approval`, label: `${URL_APPROVAL} ↔ ${URL_CENSUS}`, run: async () => {
-        const approval = fs.readFileSync(path.join(cwd, URL_APPROVAL), 'utf8');
-        const bound = rebindApprovalText(approval, fs.readFileSync(path.join(cwd, URL_CENSUS), 'utf8')) === approval;
-        return { ok: bound, output: bound ? '' : `${URL_APPROVAL} 의 결속 해시가 ${URL_CENSUS} 와 다르다` };
-      } });
     }
   }
   for (const check of ledgerChecks) if (available(cwd, check)) tasks.push(ledgerTask(cwd, check));
@@ -374,7 +367,7 @@ export async function main(argv, { cwd = repoRoot, log = console.log, error = co
     const note = argv[at('--note') + 1];
     const file = path.join(cwd, SAST_LEDGER);
     fs.writeFileSync(file, rebindSastLedgerText(fs.readFileSync(file, 'utf8'), { ids, note, cwd }));
-    log(`다시 결속했다: ${ids.join(', ')}. 이제 \`npm run regen\` 으로 하네스 기준선을 다시 쓰고 Atlas 정합성을 확인한다.`);
+    log(`다시 결속했다: ${ids.join(', ')}. 이제 \`npm run regen\` 으로 남은 단계를 다시 돌린다.`);
     return 0;
   }
   error(USAGE);

@@ -229,6 +229,7 @@ function LoginContent() {
                                     {authStep === 1 ? (
                                         <Loader2 className="w-10 h-10 text-primary animate-spin" />
                                     ) : (
+                                        // palette-frozen: text-emerald-500 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
                                         <ShieldCheck className="w-10 h-10 text-emerald-500" />
                                     )}
                                 </motion.div>

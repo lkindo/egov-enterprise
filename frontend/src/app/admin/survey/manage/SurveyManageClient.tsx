@@ -104,8 +104,10 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
         const status = getPollStatus(poll, todayYmd);
         const tone =
           status === 'active'
+            // palette-frozen: bg-emerald-500/10 text-emerald-600 border-emerald-500/20 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
             ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
             : status === 'scheduled'
+              // palette-frozen: bg-amber-500/10 text-amber-600 border-amber-500/20 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
               ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
               : 'bg-muted text-muted-foreground border border-border';
         return (
