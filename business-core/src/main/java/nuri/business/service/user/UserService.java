@@ -440,8 +440,9 @@ public class UserService extends BaseAbstractService {
          *
          * <p>로그인 인증과 같은 규칙이다(DEC-OPS-354). 횟수는 행 잠금 아래의 현재 값으로 올린다 — 잠금 없이 읽은 값을 올려 저장하면
          * 동시 요청의 증가가 서로를 덮는다. 이미 잠겨 있으면 횟수를 더 올리지 않는다(고정창). 잠글 때 세션 차수를 올려 그 전에 발급된
-         * 세션을 끊는다(V2_153) — 한 번 틀린 것만으로는 끊지 않는다. 기다리는 사이 비밀번호가 바뀌었으면 옛 해시와 대조한 실패이므로
-         * 세지 않는다.
+         * 세션을 끊는다(V2_153) — 한 번 틀린 것만으로는 끊지 않는다. 이 점은 로그인과 다르다(DEC-OPS-419): 로그인 실패는 누구나 낼 수
+         * 있어 세션을 끊지 않지만, 여기서 대입한 쪽은 이미 세션을 가졌으므로 그 세션(빼앗긴 토큰일 수 있다)을 끊는다. 기다리는 사이
+         * 비밀번호가 바뀌었으면 옛 해시와 대조한 실패이므로 세지 않는다.
          */
         private void recordCurrentPasswordFailure(User user, String observedPassword) {
                 refreshForUpdateOrThrow(user);

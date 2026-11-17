@@ -148,11 +148,11 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
                     log.warn(">>> Account locked for user: {} (연속 실패 {}회 도달, {}분 후 자동 해제)",
                             userId, failures, lockMinutes);
                 }
+                // [2026-11-17 DEC-OPS-419] 로그인 실패로 건 잠금은 새 비밀번호 인증만 막고 이미 받은 세션은 끊지 않는다.
+                //   로그인 실패는 인증 없이 누구나 낼 수 있다 — 종전처럼 여기서 세션차수를 올리면 로그인 ID 만 아는 사람이
+                //   잠금 시간마다 다섯 번 틀려 관리자를 계속 쫓아낼 수 있었다. 세션을 가진 쪽이 현재 비밀번호를 대입해 건
+                //   잠금(비밀번호 변경, DEC-OPS-418)은 그 세션이 의심스러우므로 UserService 가 세션차수를 올린다.
                 userRepository.save(userEntity);
-                if (locked) {
-                    // [V2_153] 잠금은 그 전에 발급된 세션을 끊는다 — 잠금 시간이 지나 스스로 풀려도 옛 토큰은 되살아나지 않는다.
-                    userRepository.advanceSessionCycle(java.util.List.of(userEntity.getEsntlId()));
-                }
                 throw new BadCredentialsException("Invalid User ID or Password");
             }
             
