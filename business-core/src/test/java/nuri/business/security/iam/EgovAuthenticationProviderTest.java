@@ -176,6 +176,34 @@ class EgovAuthenticationProviderTest {
         verifyNoInteractions(egovPasswordEncoder);
     }
 
+    /**
+     * [2026-11-17 Codex 검토] 인증 주체(세션차수·권한)를 쓰기 트랜잭션을 커밋한 뒤에 읽으면, 그 사이 커밋된 비밀번호 변경의 새
+     * 세션차수가 옛 비밀번호로 연 세션에 실린다. 해시 대조는 트랜잭션 밖이지만 주체 계산은 행 잠금을 쥔 트랜잭션 안이어야 한다.
+     */
+    @Test
+    @DisplayName("[2026-11-17] 성공한 로그인의 인증 주체는 행 잠금을 쥔 쓰기 트랜잭션이 커밋되기 전에 계산한다")
+    void principalIsLoadedBeforeTheRowLockTransactionCommits() {
+        User standardUser = User.builder()
+                .userId("standard")
+                .esntlId("USR_0000000000010")
+                .pswd("{bcrypt}current")
+                .userNm("Standard User")
+                .lckYn("N")
+                .build();
+        when(userRepository.findByUserId("standard")).thenReturn(Optional.of(standardUser));
+        when(passwordEncoder.matches("password", "{bcrypt}current")).thenReturn(true);
+
+        authenticationProvider.authenticate(new UsernamePasswordAuthenticationToken("standard", "password"));
+
+        var order = inOrder(userRepository, userDetailsService, transactionManager);
+        order.verify(userRepository).refreshForUpdate(standardUser);
+        order.verify(userRepository).save(standardUser);
+        order.verify(userDetailsService).loadUserByUsername("USR_0000000000010");
+        // 첫 commit 은 1단계(읽기 트랜잭션), 둘째가 행 잠금을 쥔 2단계다 — 주체 계산은 그 앞이다.
+        order.verify(transactionManager).commit(any());
+        verify(transactionManager, times(2)).commit(any());
+    }
+
     @Test
     @DisplayName("낮은 BCrypt 정책은 성공 로그인 시 현재 정책으로 재해시")
     void authenticate_success_outdatedStandardHash_rehashes() {

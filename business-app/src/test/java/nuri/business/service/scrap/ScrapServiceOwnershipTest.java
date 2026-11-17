@@ -360,6 +360,14 @@ class ScrapServiceOwnershipTest {
         ScrapService withoutPort = new ScrapService(scrapRepository, scrapMapper);
         assertThat(withoutPort.getScrapList("owner", page).getContent()).extracting(ScrapDto::getTargetAvailable)
                 .containsExactly(Boolean.FALSE, Boolean.FALSE, null, null, Boolean.FALSE);
+
+        // [2026-11-17 Codex 검토] 게시글 열람 권한(BOARD_READ)이 회수된 보유자 — 상세 API 가 막으므로 글마다 묻지 않고 모두 false 다.
+        //   권한 밖에서 원본의 존재·가용 상태 변화를 알려 주지 않는다.
+        authenticateAs("owner", "NOBODY");
+        org.mockito.Mockito.clearInvocations(boardPostAccess);
+        assertThat(scrapService.getMyScrapList("owner", page).getContent()).extracting(ScrapDto::getTargetAvailable)
+                .containsExactly(Boolean.FALSE, Boolean.FALSE, null, null, Boolean.FALSE);
+        org.mockito.Mockito.verifyNoInteractions(boardPostAccess);
     }
 
     /**

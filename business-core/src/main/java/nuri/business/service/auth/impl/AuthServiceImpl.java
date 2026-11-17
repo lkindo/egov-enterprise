@@ -43,22 +43,27 @@ public class AuthServiceImpl implements AuthService {
     private final nuri.business.domain.user.repository.UserRepository userRepository;
 
     /**
-     * <b>[트랜잭션 경계] 로그인은 바깥 트랜잭션을 열지 않는다(NOT_SUPPORTED).</b>
+     * <b>[트랜잭션 경계] 로그인은 스스로 트랜잭션을 열지 않는다(SUPPORTS).</b>
      *
      * <p>비밀번호 해시 대조(bcrypt, 수백 ms)를 트랜잭션 안에서 하면 그동안 풀 연결을 붙잡는다. 로그인이 몰리면 연결 풀이
      * 바닥나 로그인과 상관없는 요청까지 연결 대기 시간 초과로 실패한다(2026-11-15 부하 시험, bcrypt 비용 12 뒤). 그래서
-     * 단계마다 자기 트랜잭션을 쓴다 — 정책 검증·사용자 조회는 각자의 읽기 트랜잭션, 해시 대조는 트랜잭션 밖,
-     * 실패 카운터·잠금은 {@code EgovAuthenticationProvider} 의 짧은 쓰기 트랜잭션, MFA 시작은 그 서비스의 트랜잭션이다.
+     * 호출자가 트랜잭션을 열지 않은 실제 경로(컨트롤러)에서는 단계마다 자기 트랜잭션을 쓴다 — 정책 검증·사용자 조회는 각자의
+     * 읽기 트랜잭션, 해시 대조는 트랜잭션 밖, 실패 카운터·잠금과 인증 주체 계산은 {@code EgovAuthenticationProvider} 의 짧은
+     * 쓰기 트랜잭션, MFA 시작은 그 서비스의 트랜잭션이다.
      *
-     * <p>종전에는 이 메서드가 트랜잭션을 열고 provider 가 거기에 참여해, 비밀번호 불일치 예외가 바깥 인터셉터까지 올라오면
-     * 카운터와 잠금이 통째로 롤백되는 무음 결함을 {@code noRollbackFor} 두 겹으로 막았다. 이제 provider 가 카운터를
-     * 커밋한 뒤 트랜잭션 밖에서 예외를 던지므로 그 결함 계열이 구조적으로 없다.
+     * <p>호출자가 이미 트랜잭션을 열었으면 종전처럼 거기에 참여한다(그 호출자의 연결로 해시를 대조한다 — 호출자의 선택이다).
+     * 그때 비밀번호 불일치 예외가 이 인터셉터를 지나도 공유 트랜잭션을 롤백 전용으로 만들지 않도록 {@code noRollbackFor} 를 둔다
+     * — 없으면 provider 가 올린 카운터와 잠금이 예외와 함께 통째로 롤백된다(잠금이 영원히 발동하지 않는 무음 결함).
+     * NOT_SUPPORTED 로 호출자 트랜잭션을 멈춰 세우지 않는 이유도 같다 — 호출자가 같은 행을 쥔 채 로그인을 부르면 자기 자신을
+     * 기다리게 된다.
      *
      * <p>회귀 방어: {@code LoginLockoutPersistenceIntegrationTest}(실제 경계에서 카운터·잠금 커밋),
-     * {@code LoginFailureCounterConcurrencyIntegrationTest}(행 잠금 아래 횟수 증가).
+     * {@code LoginFailureCounterConcurrencyIntegrationTest}(행 잠금 아래 횟수 증가·풀 교착 없음),
+     * {@code UserSecurityStateConcurrencyIntegrationTest}(호출자 트랜잭션 안에서 프로필 변경과 겹친 로그인 실패 잠금).
      */
     @Override
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.SUPPORTS,
+            noRollbackFor = org.springframework.security.authentication.BadCredentialsException.class)
     public TokenResponse login(LoginRequest request, String clientIp) {
         try {
             return authenticateAndIssue(request, clientIp);

@@ -125,18 +125,10 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             // 재해시도 잠금·트랜잭션 밖에서 미리 만든다 — 새 해시 계산(비용 12)도 수백 ms 다.
             Rehash rehash = isMatched ? prepareRehash(snapshot, password, encodedPassword) : null;
 
-            String esntlId = new TransactionTemplate(transactionManager).execute(
+            CustomUserDetails userDetails = new TransactionTemplate(transactionManager).execute(
                     status -> settleUnderRowLock(userId, password, encodedPassword, isMatched, rehash));
-            if (esntlId == null) {
+            if (userDetails == null) {
                 throw new BadCredentialsException("Invalid User ID or Password");
-            }
-
-            // 로그인과 JWT/refresh가 동일한 저장소 기반 권한 계산 결과를 사용한다.
-            // 표시용 User.role을 다시 쓰거나, 배정 없음에서 USER로 승격하지 않는다.
-            var loaded = userDetailsService.loadUserByUsername(esntlId);
-            if (!(loaded instanceof CustomUserDetails userDetails)
-                    || !esntlId.equals(userDetails.getUsername())) {
-                throw new AuthenticationServiceException("Authentication principal contract is invalid");
             }
             new AccountStatusUserDetailsChecker().check(userDetails);
             return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
@@ -153,10 +145,10 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
     }
 
     /**
-     * 2단계 — 행 잠금 아래에서 현재 값으로 판정하고 반영한다. 성공이면 esntlId, 비밀번호 불일치면 null(카운터는 이 트랜잭션과
-     * 함께 커밋된다). 잠금 상태 예외는 쓰기 없이 트랜잭션을 되돌린다.
+     * 2단계 — 행 잠금 아래에서 현재 값으로 판정하고 반영한다. 성공이면 잠금을 쥔 채 계산한 인증 주체, 비밀번호 불일치면
+     * null(카운터는 이 트랜잭션과 함께 커밋된다). 잠금 상태 예외는 쓰기 없이 트랜잭션을 되돌린다.
      */
-    private String settleUnderRowLock(String userId, String password, String encodedPassword, boolean verified,
+    private CustomUserDetails settleUnderRowLock(String userId, String password, String encodedPassword, boolean verified,
             Rehash preparedRehash) {
         // [2026-10-18] 실패 횟수의 증가와 잠금 판정은 행 잠금 아래에서 현재 값으로 한다.
         //   종전에는 잠금 없이 읽은 엔티티의 횟수를 메모리에서 올려 저장했다. 같은 계정에 동시에 틀린 비밀번호를 보내면
@@ -164,8 +156,12 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
         //   더 많이 시도할 수 있었다. 해시 검증은 잠금 밖에서 한다 — 잠금을 쥔 채 해시를 계산하면 같은 계정의 요청이 해시
         //   시간만큼 줄을 선다. 잠근 뒤 상태를 다시 판정하므로, 그 사이 다른 요청이 잠갔으면 이 요청은 잠김으로 끝나고
         //   횟수를 더 올리지 않는다(고정창 유지). 회귀 방어: LoginFailureCounterConcurrencyIntegrationTest.
-        User userEntity = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new BadCredentialsException("Invalid User ID or Password"));
+        // 1단계 뒤에 계정이 지워졌으면 쓰기 없이 불일치와 같은 실패로 끝낸다(트랜잭션 안에서 예외를 던져 공유 트랜잭션을 롤백 전용으로
+        //   만들지 않는다 — 호출자가 트랜잭션을 열었을 때 그 안의 다른 쓰기까지 되돌리게 된다).
+        User userEntity = userRepository.findByUserId(userId).orElse(null);
+        if (userEntity == null) {
+            return null;
+        }
         userRepository.refreshForUpdate(userEntity);
         validateAccountStatus(userEntity);
         boolean isMatched = verified;
@@ -185,7 +181,10 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             }
             userEntity.unlockAccount();
             userRepository.save(userEntity);
-            return userEntity.getEsntlId();
+            // 인증 주체(권한·세션차수·MFA 자격 버전)는 행 잠금을 쥔 채로 계산한다. 잠금을 놓은 뒤 읽으면 그 사이 커밋된
+            //   비밀번호 변경의 새 세션차수가 옛 비밀번호로 연 세션에 실린다(변경이 세션을 끊는 의미가 깨진다). 여기서 읽은 차수는
+            //   그 뒤의 변경이 올리는 차수보다 낮아, 이 세션은 변경과 함께 끊긴다.
+            return loadPrincipalUnderLock(userEntity.getEsntlId());
         }
 
         log.warn(">>> Password mismatch for user: {}", userId);
@@ -205,6 +204,18 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
         //   잠금(비밀번호 변경, DEC-OPS-418)은 그 세션이 의심스러우므로 UserService 가 세션차수를 올린다.
         userRepository.save(userEntity);
         return null;
+    }
+
+    /**
+     * 로그인과 JWT/refresh가 동일한 저장소 기반 권한 계산 결과를 사용한다.
+     * 표시용 User.role을 다시 쓰거나, 배정 없음에서 USER로 승격하지 않는다.
+     */
+    private CustomUserDetails loadPrincipalUnderLock(String esntlId) {
+        var loaded = userDetailsService.loadUserByUsername(esntlId);
+        if (!(loaded instanceof CustomUserDetails userDetails) || !esntlId.equals(userDetails.getUsername())) {
+            throw new AuthenticationServiceException("Authentication principal contract is invalid");
+        }
+        return userDetails;
     }
 
     /** 미리 만든 새 해시와 그 사유. 원문·해시는 로그에 남기지 않는다. */

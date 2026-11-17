@@ -54,7 +54,7 @@ public class ScrapService {
 
     /**
      * 내 스크랩 목록. 게시판 글을 가리키는 스크랩에는 지금도 열 수 있는지({@code targetAvailable})를 함께 알린다 — 글이 삭제·비밀글·
-     * 게시 기간 밖이 되었거나 게시판 기능이 빠진 생성물이면 false, 외부·일반 주소는 판정 대상이 아니라 null 이다.
+     * 게시 기간 밖이 되었거나, 게시글 열람 권한(BOARD_READ)이 없거나, 게시판 기능이 빠진 생성물이면 false, 외부·일반 주소는 판정 대상이 아니라 null 이다.
      *
      * <p>판정은 트랜잭션 밖에서 건마다 한다(NOT_SUPPORTED). 판정 쪽({@link BoardPostAccessPort} 구현, @Transactional)이 거부 예외를
      * 던지면 함께 참여한 트랜잭션 전체가 롤백 전용으로 표시되어, 예외를 잡아도 목록 응답이 UnexpectedRollbackException 으로 실패한다.
@@ -65,7 +65,10 @@ public class ScrapService {
         Page<ScrapDto> page = scrapRepository
                 .findByFrstRgtrIdAndUseYnOrderByScrapSnDesc(Objects.requireNonNull(userId), "Y", Objects.requireNonNull(pageable))
                 .map(scrapMapper::toDto);
-        page.getContent().forEach(dto -> dto.setTargetAvailable(boardTargetAvailability(dto.getScrapUrl())));
+        // 게시글 상세 API 는 기능 권한 BOARD_READ 를 요구한다. 판정 포트는 글 단위 조건(게시판·회원·비밀글·게시 기간)만 보므로,
+        //   그 권한이 없으면(회수됐으면) 글마다 묻지 않고 모두 '열 수 없음' 이다 — 권한 밖에서 원본 상태 변화를 알려 주지 않는다.
+        boolean mayReadBoards = SecurityUtil.hasPermission("BOARD_READ");
+        page.getContent().forEach(dto -> dto.setTargetAvailable(boardTargetAvailability(dto.getScrapUrl(), mayReadBoards)));
         return page;
     }
 
@@ -76,7 +79,7 @@ public class ScrapService {
     }
 
     /** 게시판 글 스크랩이면 지금 열 수 있는지, 아니면 null. 읽기 판정의 거부만 '열 수 없음' 으로 바꾸고 다른 오류는 그대로 올린다. */
-    private @Nullable Boolean boardTargetAvailability(@Nullable String storedUrl) {
+    private @Nullable Boolean boardTargetAvailability(@Nullable String storedUrl, boolean mayReadBoards) {
         final java.util.Optional<BoardTarget> target;
         try {
             target = internalBoardTarget(storedUrl == null ? null : storedUrl.strip());
@@ -86,8 +89,8 @@ public class ScrapService {
         if (target.isEmpty()) {
             return null;
         }
-        if (boardPostAccess == null) {
-            return Boolean.FALSE; // 게시판 기능이 빠진 생성물 — 게시판 주소는 열리지 않는다.
+        if (!mayReadBoards || boardPostAccess == null) {
+            return Boolean.FALSE; // 게시글 열람 권한이 없거나 게시판 기능이 빠진 생성물 — 게시판 주소는 열리지 않는다.
         }
         try {
             boardPostAccess.assertScrapablePost(target.get().bbsId(), target.get().pstSn());

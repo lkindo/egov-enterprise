@@ -843,7 +843,9 @@ public class UserService extends BaseAbstractService {
 
         /** 요청이 소속을 실제로 바꿀 때만 검사한다 — 기존 고아 값을 그대로 왕복시키는 수정은 막지 않는다. */
         private void assertDepartmentChange(String requested, String current) {
-                if (requested == null || java.util.Objects.equals(requested, current)) {
+                // null 은 '보내지 않음'. 빈 문자열은 '소속 없음' 이라 저장값 null 과 같은 상태다 — 소속 없는 사용자의 이름만
+                //   고치는 폼은 "" 를 보내므로, 정규화 없이 비교하면 부서 변경으로 오판해 USER_DEPT 없는 담당자를 403 으로 막는다.
+                if (requested == null || java.util.Objects.equals(blankToNull(requested), blankToNull(current))) {
                         return;
                 }
                 // [H3] 소속 변경은 '사용자 · 부서 변경'(USER_DEPT) 권한의 의미다 — 정보 수정(USER_UPDATE)만으로 우회하지 못하게

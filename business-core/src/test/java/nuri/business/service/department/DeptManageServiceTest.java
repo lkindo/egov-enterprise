@@ -169,6 +169,11 @@ class DeptManageServiceTest {
     void deleteDeptManageTest() {
         deptManageService.deleteDeptManage("DEPT1");
         verify(deptManageRepository).deleteById("DEPT1");
+        // [2026-11-17] 부서 행을 먼저 잠근 뒤 담당 업무함을 센다 — 업무함 배정(DeptJobBoxService)이 같은 행을 잠그므로 동시 배정과 직렬화된다.
+        var order = org.mockito.Mockito.inOrder(deptManageRepository, deptJobBoxRepository);
+        order.verify(deptManageRepository).findByIdForUpdate("DEPT1");
+        order.verify(deptJobBoxRepository).findByDeptId("DEPT1");
+        order.verify(deptManageRepository).deleteById("DEPT1");
     }
 
     @Test

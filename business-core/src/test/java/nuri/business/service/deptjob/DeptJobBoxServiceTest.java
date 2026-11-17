@@ -120,7 +120,7 @@ class DeptJobBoxServiceTest {
         dto.setDeptId("DEPT2");
         dto.setSortOrdr(2L);
 
-        when(deptManageRepository.existsById("DEPT2")).thenReturn(true);
+        when(deptManageRepository.findByIdForUpdate("DEPT2")).thenReturn(Optional.of(nuri.business.domain.user.entity.DeptManage.builder().ognzId("DEPT2").build()));
         when(deptJobBoxRepository.save(any(DeptJobBox.class))).thenReturn(deptJobBox);
 
         Long sn = deptJobBoxService.createDeptJobBox("user1", dto);
@@ -150,8 +150,8 @@ class DeptJobBoxServiceTest {
         unassigned.setDeptTaskBoxNm("Shared");
         when(deptJobBoxRepository.save(any(DeptJobBox.class))).thenReturn(deptJobBox);
         deptJobBoxService.createDeptJobBox("user1", unassigned);
-        verify(deptManageRepository, never()).existsById("");
-        verify(deptManageRepository, times(2)).existsById("GHOST");
+        verify(deptManageRepository, never()).findByIdForUpdate("");
+        verify(deptManageRepository, times(2)).findByIdForUpdate("GHOST");
     }
 
     @Test

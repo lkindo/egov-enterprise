@@ -998,6 +998,19 @@ class UserServiceTest {
             userService.updateUser("moved", UserDto.builder().ognzId("DEPT_NEW").build());
             assertEquals("DEPT_NEW", moved.getOgnzId());
             verify(authorizationAdministration, org.mockito.Mockito.times(2)).lockAndAuthorize("USER_DEPT");
+
+            // (라) 소속 없는 사용자의 이름 수정 — 폼은 빈 소속을 "" 로 보낸다. 저장값 null 과 같은 상태라 부서 변경 권한을 묻지 않는다.
+            User unassigned = User.builder().userId("unassigned").userNm("기존").esntlId("ESNTL_UNASSIGNED")
+                    .role(nuri.business.domain.user.entity.Role.USER).build();
+            given(userRepository.findByUserId("unassigned")).willReturn(Optional.of(unassigned));
+            userService.updateUser("unassigned", UserDto.builder().userNm("새 이름").ognzId("").build());
+            assertEquals("새 이름", unassigned.getUserNm());
+            verify(authorizationAdministration, org.mockito.Mockito.times(2)).lockAndAuthorize("USER_DEPT");
+
+            // (마) 실제 소속을 "" 로 지우는 것은 소속 변경이다 — 부서 변경 권한을 다시 묻는다.
+            userService.updateUser("moved", UserDto.builder().ognzId("").build());
+            assertNull(moved.getOgnzId());
+            verify(authorizationAdministration, org.mockito.Mockito.times(3)).lockAndAuthorize("USER_DEPT");
         }
     }
 

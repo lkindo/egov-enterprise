@@ -102,12 +102,15 @@ public class DeptJobBoxService {
     /**
      * 담당 부서는 비워 둘 수 있지만(부서 미지정 업무함), 값을 주면 실제 부서여야 한다. 없는 부서를 담당으로 두면
      * '부서 전체' 열람(DeptJobService)에서 그 업무함이 어느 부서에도 잡히지 않아 조용히 빠진다.
+     *
+     * <p>부서 행을 잠그고(PESSIMISTIC_WRITE) 확인한다 — 부서 삭제({@code DeptManageService#deleteDeptManage})도 같은 행을 먼저
+     * 잠근 뒤 담당 업무함을 세므로, 동시에 들어온 삭제와 배정이 서로의 검사를 비켜 고아 업무함을 남기지 못한다.
      */
     private void assertDepartmentExists(String deptId) {
         if (deptId == null || deptId.isBlank()) {
             return;
         }
-        if (!deptManageRepository.existsById(deptId)) {
+        if (deptManageRepository.findByIdForUpdate(deptId).isEmpty()) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "담당 부서를 찾을 수 없습니다: " + deptId);
         }
     }
