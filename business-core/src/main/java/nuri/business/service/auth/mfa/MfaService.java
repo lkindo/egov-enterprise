@@ -59,6 +59,10 @@ public class MfaService {
     private final MfaOpaqueTokens tokens = new MfaOpaqueTokens();
     private Clock clock = ServiceTime.clock();
 
+    /** 로그인 인증과 같은 연속 실패 잠금 시간(분). 지나면 잠금을 푼다(DEC-OPS-419). */
+    @org.springframework.beans.factory.annotation.Value("${nuri.security.login.lock-minutes:15}")
+    private long lockMinutes = 15;
+
     void useClock(Clock clock) { this.clock = Objects.requireNonNull(clock); }
 
     public Status status() {
@@ -217,8 +221,22 @@ public class MfaService {
     private User lockUser(String subject) {
         User user = users.findByEsntlIdForUpdate(subject).orElseThrow(MfaRejectedException::new);
         entityManager.refresh(user, LockModeType.PESSIMISTIC_WRITE);
-        if (!"P".equals(user.getUserSttsCd()) || "Y".equals(user.getLckYn())) throw new MfaRejectedException();
+        if (!"P".equals(user.getUserSttsCd()) || failureLockActive(user)) throw new MfaRejectedException();
         return user;
+    }
+
+    /**
+     * [2026-11-17 DEC-OPS-419] 연속 실패 잠금은 잠금 시간 동안만 MFA 의 비밀번호·코드 대조를 막는다. 지났으면 로그인 인증처럼
+     * 여기서 푼다. 잠금이 이미 받은 세션을 끊지 않게 된 뒤로, 다시 로그인하지 않은 세션은 잠금 표시가 남은 채 잠금 시간을
+     * 넘길 수 있다 — 표시만 보면 그 세션의 재인증·등록이 다음 로그인이나 관리자 해제 전까지 계속 거부된다.
+     */
+    private boolean failureLockActive(User user) {
+        if (!user.isLocked()) return false;
+        if (user.hasLockExpired(java.time.Duration.ofMinutes(lockMinutes))) {
+            user.unlockAccount();
+            return false;
+        }
+        return true;
     }
 
     private MfaCredential lockCredential(User user, boolean create) {
