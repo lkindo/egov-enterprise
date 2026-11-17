@@ -471,6 +471,28 @@ class MfaServiceTest {
         verifyNoInteractions(refreshTokens, audit);
     }
 
+    /**
+     * [2026-11-17 DEC-OPS-419] 로그인 실패 잠금은 이미 받은 세션을 끊지 않는다. 그 세션은 다시 로그인하지 않아 잠금 표시가 남은 채
+     * 잠금 시간을 넘길 수 있다 — 표시만 보면 재인증이 다음 로그인이나 관리자 해제 전까지 계속 거부됐다(Codex 검토 지적).
+     */
+    @Test
+    void failureLockBlocksReauthenticationOnlyDuringTheLockWindow() {
+        activeCredential(user);
+        user.lockAccount();
+
+        assertThatThrownBy(() -> service.reauthenticate("password-fixture", "081804")).isInstanceOf(MfaRejectedException.class);
+        assertThat(user.isLocked()).isTrue();
+        assertThat(challengeRows).isEmpty();
+
+        org.springframework.test.util.ReflectionTestUtils.setField(user, "lckLastPnttm",
+                java.time.LocalDateTime.now().minusMinutes(16));
+        MfaResults.Reauthentication proof = service.reauthenticate("password-fixture", "081804");
+
+        assertThat(proof.reauthToken()).isNotBlank();
+        assertThat(user.isLocked()).isFalse();
+        assertThat(user.getLckCnt()).isZero();
+    }
+
     @Test
     void mutationProofRequiresSameActorAndReauthPurpose() {
         MfaCredential credential = activeCredential(user);

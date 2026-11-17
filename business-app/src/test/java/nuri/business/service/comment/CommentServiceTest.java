@@ -410,6 +410,102 @@ class CommentServiceTest {
     }
 
     /**
+     * [2026-11-17] 수정·삭제의 소유자 검사를 실제 판정으로 시험한다. 위 시험들은 {@code SecurityUtil} 을 통째로 흉내 내
+     * 소유자 검사가 아무 일도 하지 않았다 — 검사를 지우거나, 작성자 칸이 아닌 다른 칸과 대조하거나, 수정에 삭제 대행 권한을
+     * 받아도 모두 통과했다. 여기서는 검사 본문만 실제로 돌리고 현재 로그인 ID 와 권한만 정한다.
+     *
+     * <p>소유자는 감사 칸 {@code frstRgtrId}(로그인 ID 축)이다. {@code wrterId} 는 내부 식별자 축이라 대조하지 않는다.
+     */
+    @org.junit.jupiter.api.Nested
+    @DisplayName("수정·삭제의 소유자 검사")
+    class OwnerGuard {
+
+        private static final Long ID = 9L;
+
+        private Comment stored(String useYn) {
+            Comment comment = Comment.builder().ansSn(ID).pstSn(3L).bbsId("BBS_01")
+                    .wrterId("OWNER_ESNTL").ansCn("원래 본문").useYn(useYn).build();
+            comment.setFrstRgtrId("owner-login");
+            given(commentRepository.findByIdForUpdate(ID)).willReturn(Optional.of(comment));
+            return comment;
+        }
+
+        /** 검사 본문은 실제로 돌리고, 그 안에서 묻는 현재 로그인 ID 와 권한만 정한다. */
+        private void signedInAs(String loginId, String permission) {
+            java.util.Set<String> granted = permission == null || permission.isEmpty()
+                    ? java.util.Set.of() : java.util.Set.of(permission);
+            __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(
+                    org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenCallRealMethod();
+            __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                    .thenReturn(Optional.ofNullable(loginId));
+            __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission(org.mockito.ArgumentMatchers.anyString()))
+                    .thenAnswer(invocation -> granted.contains(invocation.<String>getArgument(0)));
+        }
+
+        @org.junit.jupiter.params.ParameterizedTest(name = "[{index}] 로그인 {0}·권한 {1} → 허용 {2}")
+        @org.junit.jupiter.params.provider.CsvSource(nullValues = "NULL", value = {
+                "owner-login, '', true",
+                "intruder, '', false",
+                "intruder, COMMENT_UPDATE_ALL, true",
+                "intruder, COMMENT_DELETE_ALL, false",
+                "NULL, '', false"
+        })
+        @DisplayName("수정은 작성자이거나 수정 대행 권한(COMMENT_UPDATE_ALL)이 있어야 하고, 아니면 본문을 바꾸지 않고 거부한다")
+        void updateRequiresOwnerOrUpdateAll(String loginId, String permission, boolean allowed) {
+            Comment comment = stored("Y");
+            signedInAs(loginId, permission);
+
+            if (allowed) {
+                commentService.updateComment(ID, "새 본문");
+                assertThat(comment.getAnsCn()).isEqualTo("새 본문");
+            } else {
+                assertThatThrownBy(() -> commentService.updateComment(ID, "새 본문"))
+                        .isInstanceOf(BusinessException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED);
+                assertThat(comment.getAnsCn()).isEqualTo("원래 본문");
+            }
+        }
+
+        @org.junit.jupiter.params.ParameterizedTest(name = "[{index}] 로그인 {0}·권한 {1} → 허용 {2}")
+        @org.junit.jupiter.params.provider.CsvSource(nullValues = "NULL", value = {
+                "owner-login, '', true",
+                "intruder, '', false",
+                "intruder, COMMENT_DELETE_ALL, true",
+                "intruder, COMMENT_UPDATE_ALL, false",
+                "NULL, '', false"
+        })
+        @DisplayName("삭제는 작성자이거나 삭제 대행 권한(COMMENT_DELETE_ALL)이 있어야 하고, 아니면 지우지도 댓글 수를 알리지도 않는다")
+        void deleteRequiresOwnerOrDeleteAll(String loginId, String permission, boolean allowed) {
+            Comment comment = stored("Y");
+            signedInAs(loginId, permission);
+
+            if (allowed) {
+                commentService.deleteComment(ID);
+                assertThat(comment.getUseYn()).isEqualTo("N");
+                verify(eventPublisher).publishEvent(any(PostCommentCountChangedEvent.class));
+            } else {
+                assertThatThrownBy(() -> commentService.deleteComment(ID))
+                        .isInstanceOf(BusinessException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED);
+                assertThat(comment.getUseYn()).isEqualTo("Y");
+                org.mockito.Mockito.verifyNoInteractions(eventPublisher);
+            }
+        }
+
+        @Test
+        @DisplayName("이미 지운 남의 댓글을 지우려 해도 거부한다 — 상태 확인보다 소유자 검사가 먼저다")
+        void deletingSomeoneElsesDeletedCommentIsStillDenied() {
+            stored("N");
+            signedInAs("intruder", "");
+
+            assertThatThrownBy(() -> commentService.deleteComment(ID))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED);
+            org.mockito.Mockito.verifyNoInteractions(eventPublisher);
+        }
+    }
+
+    /**
      * [2026-08-29] 댓글 수가 영원히 0 이던 결함의 회귀 방지.
      *
      * <p>종전에는 {@code syncCmntCntAtomic} 호출부가 저장소 전체에서 board 의

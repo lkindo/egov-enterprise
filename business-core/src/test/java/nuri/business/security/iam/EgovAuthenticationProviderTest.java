@@ -503,6 +503,9 @@ class EgovAuthenticationProviderTest {
         assertThat(testUser.getLckLastPnttm()).isNotNull();
         // 잠금 상태가 반드시 영속되어야 한다 (@Transactional 롤백에 휩쓸리면 기능 자체가 무음 실패)
         verify(userRepository, times(MAX_FAILURES)).save(any(User.class));
+        // [2026-11-17 DEC-OPS-419] 로그인 실패 잠금은 새 로그인만 막는다 — 세션차수를 올려 이미 로그인한 사람을 쫓아내지 않는다.
+        //   (뮤턴트: 잠글 때 advanceSessionCycle 을 되살리면 킬 — 로그인 ID 만 아는 사람이 관리자를 계속 쫓아낼 수 있다)
+        verify(userRepository, never()).advanceSessionCycle(org.mockito.ArgumentMatchers.anyList());
 
         // 그리고 이후 시도는 BadCredentials 가 아니라 잠금 예외로 전환된다
         Authentication next = new UsernamePasswordAuthenticationToken("testuser", "wrongpassword");

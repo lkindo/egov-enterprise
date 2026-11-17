@@ -91,6 +91,33 @@ class JpaUserAuthAdapterTest {
     }
 
     @Test
+    @DisplayName("[DEC-OPS-419] 연속 실패로 잠긴 계정도 세션 주체는 잠기지 않는다 — 남이 낸 로그인 실패로 이미 로그인한 사람을 쫓아내지 않는다")
+    void failureLockDoesNotLockTheSessionPrincipal() {
+        User locked = user(null);
+        locked.lockAccount();
+
+        var details = (CustomUserDetails) adapter.loadUserByUsername("USR_ESNTL_1");
+
+        assertThat(details.isAccountNonLocked()).isTrue();
+        // 요청마다 토큰 검증·재발급이 부르는 검사도 통과한다.
+        new org.springframework.security.authentication.AccountStatusUserDetailsChecker().check(details);
+    }
+
+    @Test
+    @DisplayName("[DEC-OPS-419] 정지·탈퇴 등 상태로 막은 계정은 세션 주체에서도 그대로 막힌다 — 잠금만 세션에서 뺐다")
+    void inactiveStatusStillDisablesTheSessionPrincipal() {
+        User inactive = user(null);
+        org.springframework.test.util.ReflectionTestUtils.setField(inactive, "userSttsCd", "D");
+
+        var details = (CustomUserDetails) adapter.loadUserByUsername("USR_ESNTL_1");
+
+        assertThat(details.isEnabled()).isFalse();
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                        new org.springframework.security.authentication.AccountStatusUserDetailsChecker().check(details))
+                .isInstanceOf(org.springframework.security.authentication.DisabledException.class);
+    }
+
+    @Test
     void missingInternalSubjectDoesNotFallBackToAnExistingLoginId() {
         var existing = user(null);
         when(userRepository.findByUserId("staff")).thenReturn(Optional.of(existing));
