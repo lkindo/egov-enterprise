@@ -139,9 +139,9 @@ const JSON_FILES = {
     { method: 'POST', path: '/api/v1/things', access: 'PERMISSION', permission: 'THING_CREATE' },
   ] },
   [SCREEN_REGISTRY_INPUTS.boundaries]: { records: [
-    { file: 'frontend/src/services/ThingService.ts', line: 3, method: 'get', target: '/api/v1/things', operationId: 'getThings' },
-    { file: 'frontend/src/services/ThingService.ts', line: 6, method: 'delete', target: '/api/v1/things/{id}', operationId: 'deleteThing' },
-    { file: 'frontend/src/services/ThingService.ts', line: 9, method: 'post', target: '/api/v1/things', operationId: 'createThing' },
+    { file: 'frontend/src/services/ThingService.ts', enclosingMethod: 'getThings', method: 'get', target: '/api/v1/things', operationId: 'getThings' },
+    { file: 'frontend/src/services/ThingService.ts', enclosingMethod: 'deleteThing', method: 'delete', target: '/api/v1/things/{id}', operationId: 'deleteThing' },
+    { file: 'frontend/src/services/ThingService.ts', enclosingMethod: 'createThing', method: 'post', target: '/api/v1/things', operationId: 'createThing' },
   ] },
   [SCREEN_REGISTRY_INPUTS.routes]: { routes: [
     { route: '/', shellAccess: 'authenticated', visibleLabel: '업무 홈' },
