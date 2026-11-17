@@ -4183,6 +4183,9 @@
           "UserService#moveUsersToDept": [
             "USER_DEPT"
           ],
+          "UserService#assertDepartmentChange": [
+            "USER_DEPT"
+          ],
           "UserService#cleanupDependentsAndDelete": [
             "USER_DELETE"
           ],
