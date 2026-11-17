@@ -156,6 +156,11 @@ const ScrapListClient = () => {
                                 {item.scrapUrl || 'URL 없음'}
                             </span>
                         )}
+                        {item.targetAvailable === false ? (
+                            <span className="text-xs font-semibold text-destructive-emphasis">
+                                원본 글을 지금은 열 수 없어요(삭제·비공개 전환·게시 기간 종료 등).
+                            </span>
+                        ) : null}
                         <span className="text-sm text-muted-foreground font-medium truncate max-w-[500px]">
                             {item.scrapExpln || '설명 없음'}
                         </span>

@@ -221,12 +221,12 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
                 <Input
                   {...field}
                   value={field.value ?? ''}
-                  className={cn('rounded-lg text-sm font-bold tracking-tight', fieldState.error && 'border-rose-500')}
+                  className={cn('rounded-lg text-sm font-bold tracking-tight', fieldState.error && 'border-destructive-emphasis')}
                   placeholder="예: 주간 팀 회의"
                   maxLength={300}
                 />
               </FormControl>
-              <FormMessage className="text-xs font-bold text-rose-500 mt-1 ml-1" />
+              <FormMessage className="text-xs font-bold text-destructive-emphasis mt-1 ml-1" />
             </FormItem>
           )}
         />
@@ -242,12 +242,12 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
                 <FormControl>
                   <Input
                     type="date"
-                    className={cn('rounded-lg', fieldState.error && 'border-rose-500')}
+                    className={cn('rounded-lg', fieldState.error && 'border-destructive-emphasis')}
                     value={ymdToInput(field.value)}
                     onChange={(e) => field.onChange(inputToYmd(e.target.value))}
                   />
                 </FormControl>
-                <FormMessage className="text-xs font-bold text-rose-500 mt-1 ml-1" />
+                <FormMessage className="text-xs font-bold text-destructive-emphasis mt-1 ml-1" />
               </FormItem>
             )}
           />
@@ -261,12 +261,12 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
                 <FormControl>
                   <Input
                     type="date"
-                    className={cn('rounded-lg', fieldState.error && 'border-rose-500')}
+                    className={cn('rounded-lg', fieldState.error && 'border-destructive-emphasis')}
                     value={ymdToInput(field.value)}
                     onChange={(e) => field.onChange(inputToYmd(e.target.value))}
                   />
                 </FormControl>
-                <FormMessage className="text-xs font-bold text-rose-500 mt-1 ml-1" />
+                <FormMessage className="text-xs font-bold text-destructive-emphasis mt-1 ml-1" />
               </FormItem>
             )}
           />

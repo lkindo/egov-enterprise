@@ -1770,6 +1770,14 @@ jobs:
             tests: "nuri.business.*"
             threshold: 75
 
+          # [2026-11-17] TOTP 대조·재사용(counter) 차단·복구 코드·MFA 키링 — 백엔드 헌법 제16조의 '보안' 핵심 경계인데 PIT 대상이 아니었다.
+          #   로컬 실측 123 mutations, 92%, 81초(첫 main CI 실측 전 잠정 순서).
+          - scope: foundation-mfa
+            gradle: ":foundation:pitest"
+            classes: "nuri.foundation.security.mfa.*"
+            tests: "nuri.foundation.*"
+            threshold: 75
+
           # 상태변경 요청의 Origin/Referer 검증 우회를 탐지하는 보안 경계다.
           - scope: foundation-security-filter
             gradle: ":foundation:pitest"

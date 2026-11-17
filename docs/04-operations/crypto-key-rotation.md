@@ -101,7 +101,8 @@ openssl rand -base64 32
 - `RRNO_ACTIVE_KEY_ID`: `[A-Za-z0-9_-]{1,32}` 형식의 활성 암호화 키 식별자
 - `RRNO_KEYS_JSON`: 최대 16개 키를 담은 JSON 객체(값은 32바이트 AES 키의 44자 표준 Base64)
 - 둘 중 하나만 설정하거나 `RRNO_ACTIVE_KEY_ID`가 `RRNO_KEYS_JSON`에 없으면 기동 시 즉시 실패한다(fail-closed).
-- `scripts/deploy.sh`도 둘 중 하나라도 설정되면 이미지 pull 전에 `jq`로 쌍 일치·keyId(`[A-Za-z0-9_-]{1,32}`, 최대 16개)·44자 표준 Base64·활성 키 포함 여부를 사전 검증한다(값 원문은 출력하지 않는다).
+- 운영 배포(`scripts/deploy.sh`)는 2026-11-17 부터 두 값을 **필수**로 요구한다 — 비어 있으면 이미지 pull 전에 멈춘다. 키링이 없으면 앱은 새 값을 종전 ARIA 유틸(IV·무결성 없음, 같은 값은 같은 암호문)로 암호화하기 때문이다. 키를 처음 켜도 기존 ARIA 암호문은 그대로 읽히고 새로 쓰는 값부터 v2 봉투가 된다. 키는 §2 와 같이 `openssl rand -base64 32` 로 만들고 MFA 키와 같은 수준으로 백업한다(잃으면 v2 값을 읽지 못한다).
+- `scripts/deploy.sh`는 이미지 pull 전에 `jq`로 쌍 일치·keyId(`[A-Za-z0-9_-]{1,32}`, 최대 16개)·44자 표준 Base64·활성 키 포함 여부를 사전 검증한다(값 원문은 출력하지 않는다). 개발·격리 스모크는 이 스크립트를 쓰지 않아 키링 없이 ARIA 로 동작한다.
 
 1. **키 추가 배포**: 기존 `RRNO_ACTIVE_KEY_ID=<old>`를 유지한 채 `RRNO_KEYS_JSON`에 `<new>` 키를 먼저 추가해 모든 인스턴스가 새 키를 복호화할 수 있게 배포한다.
 2. **활성 키 전환**: 모든 인스턴스 반영을 확인한 뒤 `RRNO_ACTIVE_KEY_ID=<new>`로 전환해 신규 저장·수정을 새 키로 암호화한다. 기존 `<old>` 키는 `RRNO_KEYS_JSON`에 남겨 둔다.

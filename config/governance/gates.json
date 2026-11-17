@@ -2031,6 +2031,13 @@
             "tests": "nuri.foundation.*"
           },
           {
+            "scope": "foundation-mfa",
+            "job": "mutation-scope",
+            "gradle": ":foundation:pitest",
+            "classes": "nuri.foundation.security.mfa.*",
+            "tests": "nuri.foundation.*"
+          },
+          {
             "scope": "migration-transform-registry",
             "job": "mutation-scope-migration",
             "gradle": ":migration-tool:pitest",

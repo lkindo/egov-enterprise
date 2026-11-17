@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -51,15 +52,55 @@ public class ScrapService {
         this(scrapRepository, scrapMapper, null);
     }
 
+    /**
+     * 내 스크랩 목록. 게시판 글을 가리키는 스크랩에는 지금도 열 수 있는지({@code targetAvailable})를 함께 알린다 — 글이 삭제·비밀글·
+     * 게시 기간 밖이 되었거나, 게시글 열람 권한(BOARD_READ)이 없거나, 게시판 기능이 빠진 생성물이면 false, 외부·일반 주소는 판정 대상이 아니라 null 이다.
+     *
+     * <p>판정은 트랜잭션 밖에서 건마다 한다(NOT_SUPPORTED). 판정 쪽({@link BoardPostAccessPort} 구현, @Transactional)이 거부 예외를
+     * 던지면 함께 참여한 트랜잭션 전체가 롤백 전용으로 표시되어, 예외를 잡아도 목록 응답이 UnexpectedRollbackException 으로 실패한다.
+     * 별칭 {@link #getMyScrapList} 는 이 메서드를 자기 호출하므로 같은 전파를 따로 선언한다.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public Page<ScrapDto> getScrapList(String userId, @NonNull Pageable pageable) {
-        return scrapRepository
+        Page<ScrapDto> page = scrapRepository
                 .findByFrstRgtrIdAndUseYnOrderByScrapSnDesc(Objects.requireNonNull(userId), "Y", Objects.requireNonNull(pageable))
                 .map(scrapMapper::toDto);
+        // 게시글 상세 API 는 기능 권한 BOARD_READ 를 요구한다. 판정 포트는 글 단위 조건(게시판·회원·비밀글·게시 기간)만 보므로,
+        //   그 권한이 없으면(회수됐으면) 글마다 묻지 않고 모두 '열 수 없음' 이다 — 권한 밖에서 원본 상태 변화를 알려 주지 않는다.
+        boolean mayReadBoards = SecurityUtil.hasPermission("BOARD_READ");
+        page.getContent().forEach(dto -> dto.setTargetAvailable(boardTargetAvailability(dto.getScrapUrl(), mayReadBoards)));
+        return page;
     }
 
     /** getMyScrapList 별칭 — getScrapList 위임(하위호환). */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public Page<ScrapDto> getMyScrapList(String userId, @NonNull Pageable pageable) {
         return getScrapList(userId, pageable);
+    }
+
+    /** 게시판 글 스크랩이면 지금 열 수 있는지, 아니면 null. 읽기 판정의 거부만 '열 수 없음' 으로 바꾸고 다른 오류는 그대로 올린다. */
+    private @Nullable Boolean boardTargetAvailability(@Nullable String storedUrl, boolean mayReadBoards) {
+        final java.util.Optional<BoardTarget> target;
+        try {
+            target = internalBoardTarget(storedUrl == null ? null : storedUrl.strip());
+        } catch (BusinessException malformedBoardUrl) {
+            return Boolean.FALSE; // 검증 도입 전에 저장된 형식 밖 게시판 주소 — 어느 글로도 열리지 않는다.
+        }
+        if (target.isEmpty()) {
+            return null;
+        }
+        if (!mayReadBoards || boardPostAccess == null) {
+            return Boolean.FALSE; // 게시글 열람 권한이 없거나 게시판 기능이 빠진 생성물 — 게시판 주소는 열리지 않는다.
+        }
+        try {
+            boardPostAccess.assertScrapablePost(target.get().bbsId(), target.get().pstSn());
+            return Boolean.TRUE;
+        } catch (BusinessException denied) {
+            return Boolean.FALSE;
+        }
+    }
+
+    private record BoardTarget(String bbsId, long pstSn) {
     }
 
     public ScrapDto getScrap(@NonNull Long scrapSn) {
@@ -165,8 +206,13 @@ public class ScrapService {
      * fragment({@code #...}) 뒤는 서버 라우팅 대상이 아니므로 버리고, {@code http(s)://} 절대 URL 은 외부 링크로 취급한다.
      */
     private void verifyBoardTargetIfInternal(@Nullable String normalizedUrl) {
+        internalBoardTarget(normalizedUrl).ifPresent(target -> assertBoardTargetScrapable(target.bbsId(), target.pstSn()));
+    }
+
+    /** 내부 게시판 글 주소를 게시판·글 번호로 읽는다. 게시판 주소가 아니면 비어 있고, 게시판 주소인데 형식이 어긋나면 400 이다. */
+    private java.util.Optional<BoardTarget> internalBoardTarget(@Nullable String normalizedUrl) {
         if (normalizedUrl == null || !normalizedUrl.startsWith("/")) {
-            return;
+            return java.util.Optional.empty();
         }
         int fragmentIdx = normalizedUrl.indexOf('#');
         String withoutFragment = fragmentIdx >= 0 ? normalizedUrl.substring(0, fragmentIdx) : normalizedUrl;
@@ -211,7 +257,7 @@ public class ScrapService {
         }
 
         if (!explicitBoardPath && !seenBoardQueryParam) {
-            return;
+            return java.util.Optional.empty();
         }
         if (bbsId == null || bbsId.isEmpty() || bbsId.length() > MAX_BBS_ID_LENGTH
                 || bbsId.chars().anyMatch(Character::isISOControl)) {
@@ -227,7 +273,7 @@ public class ScrapService {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, INVALID_BOARD_SCRAP_URL_MESSAGE);
         }
 
-        assertBoardTargetScrapable(bbsId, pstSn);
+        return java.util.Optional.of(new BoardTarget(bbsId, pstSn));
     }
 
     private void assertBoardTargetScrapable(String bbsId, long pstSn) {

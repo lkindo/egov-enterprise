@@ -32,6 +32,8 @@ public class DeptManageService {
     private final DeptManageMapper deptManageMapper;
     /** 부서 삭제 시 소속 사용자 잔존 여부 확인용. */
     private final UserRepository userRepository;
+    /** 부서 삭제 시 그 부서를 담당으로 둔 업무함 잔존 여부 확인용(tb_dept_job_bx.dept_id 에 DB FK 가 없다). */
+    private final nuri.business.domain.deptjob.DeptJobBoxRepository deptJobBoxRepository;
 
     public Page<DeptManageDto> getDeptManageList(String keyword, @org.jspecify.annotations.NonNull Pageable pageable) {
         return deptManageRepository.searchDeptManages(keyword, pageable).map(deptManageMapper::toDto);
@@ -144,6 +146,9 @@ public class DeptManageService {
     public void deleteDeptManage(String ognzId) {
         nuri.business.security.util.SecurityUtil.assertPermission("DEPT_DELETE");
         Objects.requireNonNull(ognzId);
+        // 부서 행을 먼저 잠근다 — 업무함 생성·담당 부서 변경(DeptJobBoxService)이 같은 행을 잠그고 존재를 확인하므로, 동시에 들어온
+        //   배정과 삭제가 서로의 검사를 비켜 고아 업무함을 남기지 못한다(배정이 먼저면 아래 업무함 수가 그것을 센다).
+        deptManageRepository.findByIdForUpdate(ognzId);
 
         // [삭제 가드] tb_user_info.ognz_id 와 tb_ognz_info.up_ognz_id 모두 DB FK 가 없어(NO_CONSTRAINT)
         //   무조건 삭제하면 고아 참조가 남는다. 참조가 있으면 409 로 막고 사용자가 먼저 정리하게 한다.
@@ -157,6 +162,13 @@ public class DeptManageService {
         if (childCount > 0) {
             throw new BusinessException(
                     "하위 부서가 " + childCount + "개 있어 삭제할 수 없습니다. 하위 부서를 먼저 정리하세요.",
+                    CommonErrorCode.RESOURCE_IN_USE);
+        }
+        // 담당 업무함이 남은 부서를 지우면 그 업무함이 고아가 되어 '부서 전체' 열람에서 조용히 빠진다.
+        long boxCount = deptJobBoxRepository.findByDeptId(ognzId).size();
+        if (boxCount > 0) {
+            throw new BusinessException(
+                    "이 부서를 담당으로 둔 업무함이 " + boxCount + "개 있어 삭제할 수 없습니다. 업무함의 담당 부서를 먼저 바꾸세요.",
                     CommonErrorCode.RESOURCE_IN_USE);
         }
 

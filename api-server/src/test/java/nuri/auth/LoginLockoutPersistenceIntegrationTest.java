@@ -33,12 +33,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * {@code AuthService.login} 이 자기 트랜잭션을 열고 닫는 실제 경계를 그대로 통과시켜야
  * "실패 카운터가 커밋되는가"를 판정할 수 있다.
  *
- * <p><b>[무엇을 고정하는가]</b> 로그인 실패 시 {@code EgovAuthenticationProvider} 는
- * {@code noRollbackFor = BadCredentialsException.class} 로 카운터를 지키려 한다. 그러나 전파가
- * REQUIRED 라 호출자 {@code AuthServiceImpl.login} 과 <b>물리 트랜잭션을 공유</b>하므로,
- * 호출자 쪽에 같은 예외가 롤백 대상으로 남아 있으면 예외가 바깥 인터셉터까지 올라가는 순간
- * <b>카운터와 잠금이 통째로 롤백된다</b>. 그러면 잠금은 영원히 발동하지 않고, 무차별 대입 방어가
- * 서류상으로만 존재하게 된다. 이 테스트는 그 무음 결함을 red 로 만든다.
+ * <p><b>[무엇을 고정하는가]</b> 로그인 실패의 카운터와 잠금은 비밀번호 불일치 예외와 함께 사라지면 안 된다.
+ * 종전에는 provider 가 호출자 {@code AuthServiceImpl.login} 의 트랜잭션에 참여해, 예외가 바깥 인터셉터까지
+ * 올라가는 순간 <b>카운터와 잠금이 통째로 롤백</b>될 수 있었다({@code noRollbackFor} 두 겹으로 막았다).
+ * 2026-11-17 부터는 로그인이 바깥 트랜잭션을 열지 않고(해시 대조가 풀 연결을 붙잡지 않게), provider 가 행 잠금
+ * 아래의 짧은 쓰기 트랜잭션으로 카운터를 커밋한 뒤 트랜잭션 밖에서 예외를 던진다. 경계가 어떻게 바뀌든 잠금이
+ * 영원히 발동하지 않는 무음 결함은 이 테스트가 red 로 만든다.
  */
 @SpringBootTest(classes = nuri.ApiServerApplication.class)
 @ActiveProfiles("test")

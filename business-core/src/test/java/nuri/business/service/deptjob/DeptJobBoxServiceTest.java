@@ -35,6 +35,13 @@ class DeptJobBoxServiceTest {
     @Mock
     private nuri.business.domain.deptjob.DeptJobRepository deptJobRepository;
 
+    @Mock
+    private nuri.business.domain.user.repository.DeptManageRepository deptManageRepository;
+
+    /** 수정은 업무함 행을 잠그고 읽는다(EntityManager.find + PESSIMISTIC_WRITE). */
+    @Mock
+    private jakarta.persistence.EntityManager entityManager;
+
     @InjectMocks
     private DeptJobBoxService deptJobBoxService;
 
@@ -117,6 +124,7 @@ class DeptJobBoxServiceTest {
         dto.setDeptId("DEPT2");
         dto.setSortOrdr(2L);
 
+        when(deptManageRepository.findByIdForUpdate("DEPT2")).thenReturn(Optional.of(nuri.business.domain.user.entity.DeptManage.builder().ognzId("DEPT2").build()));
         when(deptJobBoxRepository.save(any(DeptJobBox.class))).thenReturn(deptJobBox);
 
         Long sn = deptJobBoxService.createDeptJobBox("user1", dto);
@@ -125,9 +133,35 @@ class DeptJobBoxServiceTest {
     }
 
     @Test
+    @DisplayName("부서함 생성·수정 - 없는 담당 부서는 404 로 거부하고 저장하지 않는다. 부서 미지정과 기존 값 왕복은 묻지 않는다")
+    void departmentMustExistWhenAssignedOrChanged() {
+        DeptJobBoxDto ghost = new DeptJobBoxDto();
+        ghost.setDeptTaskBoxNm("Ghost");
+        ghost.setDeptId("GHOST");
+        BusinessException created = assertThrows(BusinessException.class,
+                () -> deptJobBoxService.createDeptJobBox("user1", ghost));
+        assertEquals(CommonErrorCode.RESOURCE_NOT_FOUND, created.getErrorCode());
+        verify(deptJobBoxRepository, never()).save(any(DeptJobBox.class));
+
+        when(entityManager.find(org.mockito.ArgumentMatchers.eq(DeptJobBox.class), org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.eq(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE))).thenReturn(deptJobBox);
+        BusinessException updated = assertThrows(BusinessException.class,
+                () -> deptJobBoxService.updateDeptJobBox(1L, "user1", ghost));
+        assertEquals(CommonErrorCode.RESOURCE_NOT_FOUND, updated.getErrorCode());
+        assertEquals("DEPT1", deptJobBox.getDeptId());
+        assertEquals("Test Box", deptJobBox.getDeptTaskBoxNm());
+
+        DeptJobBoxDto unassigned = new DeptJobBoxDto();
+        unassigned.setDeptTaskBoxNm("Shared");
+        when(deptJobBoxRepository.save(any(DeptJobBox.class))).thenReturn(deptJobBox);
+        deptJobBoxService.createDeptJobBox("user1", unassigned);
+        verify(deptManageRepository, never()).findByIdForUpdate("");
+        verify(deptManageRepository, times(2)).findByIdForUpdate("GHOST");
+    }
+
+    @Test
     @DisplayName("부서함 수정")
     void updateDeptJobBox() {
-        when(deptJobBoxRepository.findById(1L)).thenReturn(Optional.of(deptJobBox));
+        when(entityManager.find(org.mockito.ArgumentMatchers.eq(DeptJobBox.class), org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.eq(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE))).thenReturn(deptJobBox);
 
         DeptJobBoxDto dto = new DeptJobBoxDto();
         dto.setDeptTaskBoxNm("Updated Box");
@@ -142,7 +176,7 @@ class DeptJobBoxServiceTest {
     @Test
     @DisplayName("부서함 수정 - 존재하지 않음")
     void updateDeptJobBox_NotFound() {
-        when(deptJobBoxRepository.findById(99L)).thenReturn(Optional.empty());
+        when(entityManager.find(org.mockito.ArgumentMatchers.eq(DeptJobBox.class), org.mockito.ArgumentMatchers.eq(99L), org.mockito.ArgumentMatchers.eq(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE))).thenReturn(null);
 
         DeptJobBoxDto dto = new DeptJobBoxDto();
 

@@ -159,11 +159,11 @@ export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onS
                                     {...field}
                                     value={field.value ?? ''}
                                     maxLength={100}
-                                    className={cn('rounded-lg text-sm font-bold tracking-tight', fieldState.error && 'border-rose-500')}
+                                    className={cn('rounded-lg text-sm font-bold tracking-tight', fieldState.error && 'border-destructive-emphasis')}
                                     placeholder="예: 7월 3주차 업무 보고"
                                 />
                             </FormControl>
-                            <FormMessage className="text-xs font-bold text-rose-500 mt-1 ml-1" />
+                            <FormMessage className="text-xs font-bold text-destructive-emphasis mt-1 ml-1" />
                         </FormItem>
                     )}
                 />
@@ -178,12 +178,12 @@ export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onS
                             <FormControl>
                                 <Input
                                     type="date"
-                                    className={cn('rounded-lg', fieldState.error && 'border-rose-500')}
+                                    className={cn('rounded-lg', fieldState.error && 'border-destructive-emphasis')}
                                     value={ymdToInput(field.value)}
                                     onChange={(e) => field.onChange(inputToYmd(e.target.value))}
                                 />
                             </FormControl>
-                            <FormMessage className="text-xs font-bold text-rose-500 mt-1 ml-1" />
+                            <FormMessage className="text-xs font-bold text-destructive-emphasis mt-1 ml-1" />
                         </FormItem>
                     )}
                 />

@@ -103,27 +103,30 @@ case "$MFA_REQUIRE_PROTECTED_EFFECTIVE" in
         ;;
 esac
 
-if [ -n "${RRNO_ACTIVE_KEY_ID:-}" ] || [ -n "${RRNO_KEYS_JSON:-}" ]; then
-    for v in RRNO_ACTIVE_KEY_ID RRNO_KEYS_JSON; do
-        eval "val=\${$v:-}"
-        if [ -z "$val" ]; then
-            echo "ERROR: RRNO_ACTIVE_KEY_ID와 RRNO_KEYS_JSON은 함께 설정해야 합니다(누락: $v)." >&2
-            exit 1
-        fi
-    done
-    if ! printf '%s' "$RRNO_KEYS_JSON" | jq -e --arg active "$RRNO_ACTIVE_KEY_ID" '
-        ($active | test("\\A[A-Za-z0-9_-]{1,32}\\z"))
-        and (type == "object")
-        and (length >= 1 and length <= 16)
-        and has($active)
-        and (to_entries | all(
-            (.key | test("\\A[A-Za-z0-9_-]{1,32}\\z"))
-            and (.value | type == "string" and length == 44 and test("\\A[A-Za-z0-9+/]{42}[AEIMQUYcgkosw048]=\\z"))
-        ))
-    ' >/dev/null 2>&1; then
-        echo "ERROR: RRNO 키링 설정(RRNO_ACTIVE_KEY_ID/RRNO_KEYS_JSON)이 올바르지 않습니다. keyId([A-Za-z0-9_-]{1,32}, 최대 16개)와 32바이트 표준 Base64(44자) 및 활성 키 포함 여부를 확인해 주세요." >&2
+# [2026-11-17] 운영 배포는 주민등록번호 키링(AES-256-GCM)을 필수로 요구한다. 비우면 앱이 종전 ARIA 유틸(IV·무결성 없음 —
+#   같은 값은 같은 암호문)로 새 값을 암호화한다. 기존 ARIA 암호문은 키링을 켜도 그대로 읽히고, 새로 쓰는 값부터 v2 봉투가 된다.
+#   키 생성·백업·회전은 docs/04-operations/crypto-key-rotation.md §2·§7.1 을 따른다(잃으면 v2 값을 읽지 못한다).
+#   개발·격리 스모크는 이 스크립트를 쓰지 않으므로 영향이 없다.
+for v in RRNO_ACTIVE_KEY_ID RRNO_KEYS_JSON; do
+    eval "val=\${$v:-}"
+    if [ -z "$val" ]; then
+        echo "ERROR: 운영 배포에는 주민등록번호 키링 RRNO_ACTIVE_KEY_ID와 RRNO_KEYS_JSON이 모두 필요합니다(누락: $v)." >&2
+        echo "       키 생성·보관은 docs/04-operations/crypto-key-rotation.md §2·§7.1 을 따르십시오. 기존 ARIA 암호문은 그대로 읽힙니다." >&2
         exit 1
     fi
+done
+if ! printf '%s' "$RRNO_KEYS_JSON" | jq -e --arg active "$RRNO_ACTIVE_KEY_ID" '
+    ($active | test("\\A[A-Za-z0-9_-]{1,32}\\z"))
+    and (type == "object")
+    and (length >= 1 and length <= 16)
+    and has($active)
+    and (to_entries | all(
+        (.key | test("\\A[A-Za-z0-9_-]{1,32}\\z"))
+        and (.value | type == "string" and length == 44 and test("\\A[A-Za-z0-9+/]{42}[AEIMQUYcgkosw048]=\\z"))
+    ))
+' >/dev/null 2>&1; then
+    echo "ERROR: RRNO 키링 설정(RRNO_ACTIVE_KEY_ID/RRNO_KEYS_JSON)이 올바르지 않습니다. keyId([A-Za-z0-9_-]{1,32}, 최대 16개)와 32바이트 표준 Base64(44자) 및 활성 키 포함 여부를 확인해 주세요." >&2
+    exit 1
 fi
 
 # [ADR-0060 1차 배포] ES256 서명 개인키 키링(API)과 공개키(Next) 정합성 및 개발용 키 차단 사전 검증

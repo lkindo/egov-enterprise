@@ -43,25 +43,27 @@ public class AuthServiceImpl implements AuthService {
     private final nuri.business.domain.user.repository.UserRepository userRepository;
 
     /**
-     * <b>[트랜잭션 경계] {@code noRollbackFor} 는 여기에도 있어야 한다 — 없으면 계정 잠금이 발동하지 않는다.</b>
+     * <b>[트랜잭션 경계] 로그인은 스스로 트랜잭션을 열지 않는다(SUPPORTS).</b>
      *
-     * <p>{@code EgovAuthenticationProvider.authenticate()} 는 실패 카운터·잠금 플래그를 지키려고
-     * {@code noRollbackFor = BadCredentialsException.class} 를 달고 있다. 그러나 전파가 기본값(REQUIRED)이라
-     * 이 메서드와 <b>하나의 물리 트랜잭션을 공유</b>한다. 내부의 {@code noRollbackFor} 는 <i>내부 인터셉터가</i>
-     * rollback-only 를 걸지 않게 할 뿐이고, 예외가 <b>바깥(이 메서드) 인터셉터</b>까지 올라오면
-     * 바깥 규칙이 적용되어 <b>트랜잭션 전체가 롤백</b>된다. 그러면 provider 가 증가시킨 {@code lckCnt} 와
-     * {@code lock()} 이 매 실패마다 통째로 사라져 <b>잠금이 영원히 발동하지 않는다</b> —
-     * provider 주석이 경고한 바로 그 무음 결함이, 나중에 생긴 이 호출 계층에서 실현돼 있었다.
+     * <p>비밀번호 해시 대조(bcrypt, 수백 ms)를 트랜잭션 안에서 하면 그동안 풀 연결을 붙잡는다. 로그인이 몰리면 연결 풀이
+     * 바닥나 로그인과 상관없는 요청까지 연결 대기 시간 초과로 실패한다(2026-11-15 부하 시험, bcrypt 비용 12 뒤). 그래서
+     * 호출자가 트랜잭션을 열지 않은 실제 경로(컨트롤러)에서는 단계마다 자기 트랜잭션을 쓴다 — 정책 검증·사용자 조회는 각자의
+     * 읽기 트랜잭션, 해시 대조는 트랜잭션 밖, 실패 카운터·잠금과 인증 주체 계산은 {@code EgovAuthenticationProvider} 의 짧은
+     * 쓰기 트랜잭션, MFA 시작은 그 서비스의 트랜잭션이다.
      *
-     * <p>비밀번호 불일치는 시스템 장애가 아니라 <b>업무적 결과</b>이므로 그 경로의 쓰기는 커밋되어야 한다.
-     * 실패 경로에서 이 메서드가 남기는 쓰기는 provider 의 인증 상태 필드뿐이다
-     * (정책 검증은 읽기 전용이고, 토큰 발급·감사 로그는 인증 성공 이후에 온다).
+     * <p>호출자가 이미 트랜잭션을 열었으면 종전처럼 거기에 참여한다(그 호출자의 연결로 해시를 대조한다 — 호출자의 선택이다).
+     * 그때 비밀번호 불일치 예외가 이 인터셉터를 지나도 공유 트랜잭션을 롤백 전용으로 만들지 않도록 {@code noRollbackFor} 를 둔다
+     * — 없으면 provider 가 올린 카운터와 잠금이 예외와 함께 통째로 롤백된다(잠금이 영원히 발동하지 않는 무음 결함).
+     * NOT_SUPPORTED 로 호출자 트랜잭션을 멈춰 세우지 않는 이유도 같다 — 호출자가 같은 행을 쥔 채 로그인을 부르면 자기 자신을
+     * 기다리게 된다.
      *
-     * <p>회귀 방어: {@code LoginLockoutPersistenceIntegrationTest} — 이 애노테이션을 되돌리면 red 가 된다.
-     * 목(mock) 기반 단위 테스트와 {@code @Transactional} 통합 테스트는 이 결함을 원리적으로 볼 수 없다.
+     * <p>회귀 방어: {@code LoginLockoutPersistenceIntegrationTest}(실제 경계에서 카운터·잠금 커밋),
+     * {@code LoginFailureCounterConcurrencyIntegrationTest}(행 잠금 아래 횟수 증가·풀 교착 없음),
+     * {@code UserSecurityStateConcurrencyIntegrationTest}(호출자 트랜잭션 안에서 프로필 변경과 겹친 로그인 실패 잠금).
      */
     @Override
-    @Transactional(noRollbackFor = org.springframework.security.authentication.BadCredentialsException.class)
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.SUPPORTS,
+            noRollbackFor = org.springframework.security.authentication.BadCredentialsException.class)
     public TokenResponse login(LoginRequest request, String clientIp) {
         try {
             return authenticateAndIssue(request, clientIp);

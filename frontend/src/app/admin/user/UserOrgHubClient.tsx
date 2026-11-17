@@ -1182,6 +1182,7 @@ export default function UserOrgHubClient({
           onCancel={dialogs.handleCloseUserModal}
           isPending={activeWriteOperation === 'user-form'}
           externalBusy={activeWriteOperation !== null && activeWriteOperation !== 'user-form'}
+          canChangeDepartment={canMoveUserDept}
         />
       </StandardModal>
 

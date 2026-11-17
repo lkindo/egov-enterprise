@@ -967,6 +967,59 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("[H3] 정보 수정으로 소속 부서를 바꾸려면 USER_DEPT 를 확인하고, 거부되면 아무것도 바꾸지 않는다 — 소속을 그대로 둔 수정은 묻지 않는다")
+    void updateUserDepartmentChangeRequiresDepartmentPermission() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+            given(deptManageRepository.existsById("DEPT_NEW")).willReturn(true);
+            // 부서 변경 권한 판정을 한 번만 스텁하고(스텁 호출도 호출로 세므로 기록을 비운다) 거부 여부는 깃발로 바꾼다.
+            BusinessException denied = new BusinessException(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED);
+            java.util.concurrent.atomic.AtomicBoolean deny = new java.util.concurrent.atomic.AtomicBoolean(false);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.assertPermission("USER_DEPT"))
+                    .thenAnswer(invocation -> { if (deny.get()) throw denied; return null; });
+            mockedSecurity.clearInvocations();
+
+            // (가) 소속을 그대로 둔 수정 — 부서 변경 권한을 묻지 않는다.
+            User same = User.builder().userId("same").userNm("기존").esntlId("ESNTL_SAME")
+                    .ognzId("DEPT_OLD").role(nuri.business.domain.user.entity.Role.USER).build();
+            given(userRepository.findByUserId("same")).willReturn(Optional.of(same));
+            userService.updateUser("same", UserDto.builder().userNm("새 이름").ognzId("DEPT_OLD").build());
+            mockedSecurity.verify(() -> nuri.business.security.util.SecurityUtil.assertPermission("USER_DEPT"), never());
+            assertEquals("새 이름", same.getUserNm());
+
+            // (나) 소속을 바꾸는 수정 — USER_DEPT 가 없으면(거부) 이름도 소속도 그대로다.
+            User moved = User.builder().userId("moved").userNm("기존").esntlId("ESNTL_MOVED")
+                    .ognzId("DEPT_OLD").role(nuri.business.domain.user.entity.Role.USER).build();
+            given(userRepository.findByUserId("moved")).willReturn(Optional.of(moved));
+            deny.set(true);
+            assertSame(denied, assertThrows(BusinessException.class, () -> userService.updateUser("moved",
+                    UserDto.builder().userNm("바뀐 이름").ognzId("DEPT_NEW").build())));
+            assertEquals("기존", moved.getUserNm());
+            assertEquals("DEPT_OLD", moved.getOgnzId());
+
+            // (다) 허용되면 소속이 바뀐다.
+            deny.set(false);
+            userService.updateUser("moved", UserDto.builder().ognzId("DEPT_NEW").build());
+            assertEquals("DEPT_NEW", moved.getOgnzId());
+            mockedSecurity.verify(() -> nuri.business.security.util.SecurityUtil.assertPermission("USER_DEPT"), org.mockito.Mockito.times(2));
+
+            // (라) 소속 없는 사용자의 이름 수정 — 폼은 빈 소속을 "" 로 보낸다. 저장값 null 과 같은 상태라 부서 변경 권한을 묻지 않는다.
+            User unassigned = User.builder().userId("unassigned").userNm("기존").esntlId("ESNTL_UNASSIGNED")
+                    .role(nuri.business.domain.user.entity.Role.USER).build();
+            given(userRepository.findByUserId("unassigned")).willReturn(Optional.of(unassigned));
+            userService.updateUser("unassigned", UserDto.builder().userNm("새 이름").ognzId("").build());
+            assertEquals("새 이름", unassigned.getUserNm());
+            mockedSecurity.verify(() -> nuri.business.security.util.SecurityUtil.assertPermission("USER_DEPT"), org.mockito.Mockito.times(2));
+
+            // (마) 실제 소속을 "" 로 지우는 것은 소속 변경이다 — 부서 변경 권한을 다시 묻는다.
+            userService.updateUser("moved", UserDto.builder().ognzId("").build());
+            assertNull(moved.getOgnzId());
+            mockedSecurity.verify(() -> nuri.business.security.util.SecurityUtil.assertPermission("USER_DEPT"), org.mockito.Mockito.times(3));
+        }
+    }
+
+    @Test
     @DisplayName("[DIP B5 F5] 부서 소속 수신자 — 없는 부서는 404, 상한보다 하나 더 읽어 넘치면 상한만 담고 truncated 를 알린다")
     void departmentRecipientsRejectUnknownDepartmentAndReportTruncation() {
         given(deptManageRepository.existsById("GHOST_DEPT")).willReturn(false);

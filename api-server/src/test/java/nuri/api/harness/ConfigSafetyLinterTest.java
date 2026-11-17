@@ -724,17 +724,20 @@ class ConfigSafetyLinterTest {
         List<String> missing = requiredSignals.stream()
                 .filter(signal -> !deployScriptSrc.contains(signal))
                 .toList();
-        int rrnoGuardIndex = deployScriptSrc.indexOf("if [ -n \"${RRNO_ACTIVE_KEY_ID:-}\" ] || [ -n \"${RRNO_KEYS_JSON:-}\" ]; then");
+        // [2026-11-17] 운영 배포는 키링이 필수다 — 쌍 검사가 조건 없이 돌아야 하고, 둘 다 비면 건너뛰던 선택 분기로 되돌리면 red.
+        int rrnoGuardIndex = deployScriptSrc.indexOf("for v in RRNO_ACTIVE_KEY_ID RRNO_KEYS_JSON; do");
+        boolean optionalAgain = deployScriptSrc.contains("if [ -n \"${RRNO_ACTIVE_KEY_ID:-}\" ]")
+                || deployScriptSrc.contains("if [ -n \"${RRNO_KEYS_JSON:-}\" ]");
         int pullIndex = deployScriptSrc.indexOf("docker pull \"$ref\"");
-        if (!missing.isEmpty() || rrnoGuardIndex < 0 || pullIndex < 0 || rrnoGuardIndex > pullIndex) {
-            violations.add(DEPLOY_SCRIPT + ": RRNO 키링 사전 검증이 누락되었거나 docker pull 뒤에 있습니다 — 누락 신호="
+        if (!missing.isEmpty() || optionalAgain || rrnoGuardIndex < 0 || pullIndex < 0 || rrnoGuardIndex > pullIndex) {
+            violations.add(DEPLOY_SCRIPT + ": RRNO 키링 사전 검증이 누락·선택 사항이거나 docker pull 뒤에 있습니다 — 누락 신호="
                     + missing);
         }
         return violations;
     }
 
     @Test
-    @DisplayName("[Top 7 · H5] deploy.sh RRNO 키링 사전 검증이 약화되거나 docker pull 뒤로 밀리면 red")
+    @DisplayName("[Top 7 · H5] deploy.sh RRNO 키링 사전 검증이 약화·선택 사항화되거나 docker pull 뒤로 밀리면 red")
     void rrnoKeyringDeployPreflightRejectsMissingOrLateValidation() throws IOException {
         Path root = resolveRepoRoot();
         String deploySrc = stripComments(HarnessSourceIndex.read(root.resolve(DEPLOY_SCRIPT)));
@@ -752,10 +755,13 @@ class ConfigSafetyLinterTest {
         broken.put("44자 길이 검증 제거", rrnoKeyringDeployPreflightViolations(
                 deploySrc.replace("length == 44", "length >= 1")));
         broken.put("RRNO 검증이 docker pull 뒤로 이동", rrnoKeyringDeployPreflightViolations(
-                deploySrc.replace("if [ -n \"${RRNO_ACTIVE_KEY_ID:-}\" ] || [ -n \"${RRNO_KEYS_JSON:-}\" ]; then",
-                        "MOVED_RRNO_GUARD=")
+                deploySrc.replace("for v in RRNO_ACTIVE_KEY_ID RRNO_KEYS_JSON; do", "for v in MOVED_RRNO_GUARD; do")
                         .replace("docker pull \"$ref\"",
-                                "docker pull \"$ref\"\nif [ -n \"${RRNO_ACTIVE_KEY_ID:-}\" ] || [ -n \"${RRNO_KEYS_JSON:-}\" ]; then")));
+                                "docker pull \"$ref\"\nfor v in RRNO_ACTIVE_KEY_ID RRNO_KEYS_JSON; do")));
+        broken.put("키링이 없으면 건너뛰는 선택 사항으로 되돌림", rrnoKeyringDeployPreflightViolations(
+                deploySrc.replace("for v in RRNO_ACTIVE_KEY_ID RRNO_KEYS_JSON; do",
+                        "if [ -n \"${RRNO_ACTIVE_KEY_ID:-}\" ] || [ -n \"${RRNO_KEYS_JSON:-}\" ]; then\n"
+                                + "for v in RRNO_ACTIVE_KEY_ID RRNO_KEYS_JSON; do")));
         broken.forEach((name, violations) -> assertFalse(violations.isEmpty(), name));
     }
 

@@ -6422,6 +6422,7 @@ export interface components {
             frstRgtrId?: string;
             /** Format: date-time */
             crtDt?: string;
+            readonly targetAvailable?: boolean | null;
         };
         ScheduleDto: {
             /** Format: int64 */

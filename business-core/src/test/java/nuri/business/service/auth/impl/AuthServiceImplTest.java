@@ -208,7 +208,7 @@ class AuthServiceImplTest {
             var bad = new org.springframework.security.authentication.BadCredentialsException("x");
             given(authenticationManager.authenticate(any())).willThrow(bad);
 
-            // 같은 객체여야 noRollbackFor(BadCredentialsException) 가 잠금 카운터를 보존한다.
+            // 같은 예외 객체를 그대로 올린다 — 실패 카운터는 provider 가 예외 전에 자기 트랜잭션으로 커밋했다.
             assertThatThrownBy(() -> authService.login(loginRequest(null), CLIENT_IP)).isSameAs(bad);
             verify(logService).logLogin(LOGIN_ID, CLIENT_IP, "WEB", "Y", "BAD_CRED");
             verify(logService, never()).logLogin(anyString(), anyString(), anyString(), eq("N"), any());

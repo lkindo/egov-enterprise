@@ -45,6 +45,10 @@ class EgovAuthenticationProviderTest {
     @Mock
     private EgovPasswordEncoder egovPasswordEncoder;
 
+    /** 2단계 쓰기 트랜잭션 — 목은 경계만 흉내 낸다(실제 커밋·롤백 의미는 LoginLockoutPersistenceIntegrationTest 가 본다). */
+    @Mock
+    private org.springframework.transaction.PlatformTransactionManager transactionManager;
+
     private EgovAuthenticationProvider authenticationProvider;
 
     private User testUser;
@@ -58,7 +62,7 @@ class EgovAuthenticationProviderTest {
         // EgovPasswordEncoder도 PasswordEncoder를 구현하므로 @InjectMocks 생성자 추론은 두 mock을
         // 모호하게 매칭할 수 있다. 의존성을 명시해 표준/레거시 인코더 경계를 실행 순서와 무관하게 고정한다.
         authenticationProvider = new EgovAuthenticationProvider(
-                userRepository, userDetailsService, passwordEncoder, egovPasswordEncoder);
+                userRepository, userDetailsService, passwordEncoder, egovPasswordEncoder, transactionManager);
         lenient().when(userDetailsService.loadUserByUsername(anyString())).thenAnswer(invocation ->
                 principal(invocation.getArgument(0), List.of("ROLE_USER"), List.of("PROFILE_READ")));
         testUser = User.builder()
@@ -170,6 +174,34 @@ class EgovAuthenticationProviderTest {
         assertThat(standardUser.getPswd()).isEqualTo("{bcrypt}current");
         verify(passwordEncoder, never()).encode(anyString());
         verifyNoInteractions(egovPasswordEncoder);
+    }
+
+    /**
+     * [2026-11-17 Codex 검토] 인증 주체(세션차수·권한)를 쓰기 트랜잭션을 커밋한 뒤에 읽으면, 그 사이 커밋된 비밀번호 변경의 새
+     * 세션차수가 옛 비밀번호로 연 세션에 실린다. 해시 대조는 트랜잭션 밖이지만 주체 계산은 행 잠금을 쥔 트랜잭션 안이어야 한다.
+     */
+    @Test
+    @DisplayName("[2026-11-17] 성공한 로그인의 인증 주체는 행 잠금을 쥔 쓰기 트랜잭션이 커밋되기 전에 계산한다")
+    void principalIsLoadedBeforeTheRowLockTransactionCommits() {
+        User standardUser = User.builder()
+                .userId("standard")
+                .esntlId("USR_0000000000010")
+                .pswd("{bcrypt}current")
+                .userNm("Standard User")
+                .lckYn("N")
+                .build();
+        when(userRepository.findByUserId("standard")).thenReturn(Optional.of(standardUser));
+        when(passwordEncoder.matches("password", "{bcrypt}current")).thenReturn(true);
+
+        authenticationProvider.authenticate(new UsernamePasswordAuthenticationToken("standard", "password"));
+
+        var order = inOrder(userRepository, userDetailsService, transactionManager);
+        order.verify(userRepository).refreshForUpdate(standardUser);
+        order.verify(userRepository).save(standardUser);
+        order.verify(userDetailsService).loadUserByUsername("USR_0000000000010");
+        // 첫 commit 은 1단계(읽기 트랜잭션), 둘째가 행 잠금을 쥔 2단계다 — 주체 계산은 그 앞이다.
+        order.verify(transactionManager).commit(any());
+        verify(transactionManager, times(2)).commit(any());
     }
 
     @Test

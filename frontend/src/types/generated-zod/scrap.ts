@@ -17,6 +17,7 @@ export const ScrapDtoSchema = /*#__PURE__*/ (() => z.object({
   userId: z.string().min(0).max(20).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  targetAvailable: z.boolean().optional().nullable(),
 }))();
 export type ScrapDto = z.infer<typeof ScrapDtoSchema>;
 
@@ -75,6 +76,7 @@ export const ScrapDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   userId: z.string().min(0).max(20).optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  targetAvailable: z.boolean().optional().nullable(),
 }))();
 
 export const ApiResponsePageResponseScrapDtoRequestSchema = /*#__PURE__*/ (() => z.object({

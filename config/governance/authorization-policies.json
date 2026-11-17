@@ -3274,6 +3274,18 @@
       ]
     },
     {
+      "target": "UserService#assertDepartmentChange",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "USER_DEPT"
+        }
+      ]
+    },
+    {
       "target": "PolicyService#updatePolicy",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [

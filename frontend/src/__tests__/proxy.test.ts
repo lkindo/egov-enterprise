@@ -55,6 +55,11 @@ beforeEach(() => {
 
 beforeAll(async () => {
   process.env.JWT_SECRET = SECRET;
+  // 미들웨어는 검증키·전환 설정도 로드 시점에 굳힌다. 바깥 환경(예: 재사용 야간 검증이 생성물에 넘기는 JWT_VERIFY_KEYS_JSON)이
+  //   새어 들면 내장 dev 키 지문을 단언하는 시험이 환경에 따라 갈린다 — 아래 importFreshProxy 의 기본값과 같게 비워 고정한다.
+  vi.stubEnv('JWT_VERIFY_KEYS_JSON', '');
+  vi.stubEnv('ALLOW_DEV_JWT_VERIFY_KEYS', '');
+  vi.stubEnv('JWT_ACCEPT_LEGACY_HMAC', '');
   const serverMod = await import('next/server');
   NextRequestCtor = serverMod.NextRequest;
   proxy = (await import('../proxy')).proxy as typeof proxy;
@@ -62,6 +67,7 @@ beforeAll(async () => {
 
 afterAll(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
   if (originalSecret === undefined) delete process.env.JWT_SECRET;
   else process.env.JWT_SECRET = originalSecret;
 });
