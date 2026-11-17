@@ -326,8 +326,10 @@ class ConfigSafetyLinterTest {
         // ── 14) [2026-11-11 DEC-OPS-415] 운영 보호계정 MFA 기본 강제와 배포 사전 키링 검증
         Path deployScriptPath = root.resolve(DEPLOY_SCRIPT);
         if (Files.isRegularFile(deployScriptPath)) {
-            violations.addAll(prodMfaProtectionViolations(
-                    composeProdSrc, stripComments(HarnessSourceIndex.read(deployScriptPath))));
+            String deployStripped = stripComments(HarnessSourceIndex.read(deployScriptPath));
+            violations.addAll(prodMfaProtectionViolations(composeProdSrc, deployStripped));
+            violations.addAll(rrnoKeyringDeployPreflightViolations(deployStripped));
+            violations.addAll(prodJwtAsymmetricBoundaryViolations(composeProdSrc, deployStripped));
         }
 
         // ── 15) [2026-11-12 Wave 2] 중복 빈 덮어쓰기·순환 참조 조용한 허용 차단 — 운영 base·기본 test base 모두 명시 false,
@@ -708,6 +710,122 @@ class ConfigSafetyLinterTest {
                         .replace("docker pull \"$ref\"",
                                 "docker pull \"$ref\"\nMFA_REQUIRE_PROTECTED_EFFECTIVE=$(printf '%s'"
                                         + " \"${MFA_REQUIRE_PROTECTED:-true}\" | tr '[:upper:]' '[:lower:]')")));
+        broken.forEach((name, violations) -> assertFalse(violations.isEmpty(), name));
+    }
+
+    static List<String> rrnoKeyringDeployPreflightViolations(String deployScriptSrc) {
+        List<String> violations = new ArrayList<>();
+        List<String> requiredSignals = List.of(
+                "for v in RRNO_ACTIVE_KEY_ID RRNO_KEYS_JSON; do",
+                "has($active)",
+                "length == 44",
+                "\\\\A[A-Za-z0-9_-]{1,32}\\\\z",
+                "\\\\A[A-Za-z0-9+/]{42}[AEIMQUYcgkosw048]=\\\\z");
+        List<String> missing = requiredSignals.stream()
+                .filter(signal -> !deployScriptSrc.contains(signal))
+                .toList();
+        int rrnoGuardIndex = deployScriptSrc.indexOf("if [ -n \"${RRNO_ACTIVE_KEY_ID:-}\" ] || [ -n \"${RRNO_KEYS_JSON:-}\" ]; then");
+        int pullIndex = deployScriptSrc.indexOf("docker pull \"$ref\"");
+        if (!missing.isEmpty() || rrnoGuardIndex < 0 || pullIndex < 0 || rrnoGuardIndex > pullIndex) {
+            violations.add(DEPLOY_SCRIPT + ": RRNO 키링 사전 검증이 누락되었거나 docker pull 뒤에 있습니다 — 누락 신호="
+                    + missing);
+        }
+        return violations;
+    }
+
+    @Test
+    @DisplayName("[Top 7 · H5] deploy.sh RRNO 키링 사전 검증이 약화되거나 docker pull 뒤로 밀리면 red")
+    void rrnoKeyringDeployPreflightRejectsMissingOrLateValidation() throws IOException {
+        Path root = resolveRepoRoot();
+        String deploySrc = stripComments(HarnessSourceIndex.read(root.resolve(DEPLOY_SCRIPT)));
+        assertTrue(rrnoKeyringDeployPreflightViolations(deploySrc).isEmpty(),
+                () -> rrnoKeyringDeployPreflightViolations(deploySrc).toString());
+
+        Map<String, List<String>> broken = new LinkedHashMap<>();
+        broken.put("한쪽 누락 쌍 검사 제거", rrnoKeyringDeployPreflightViolations(
+                deploySrc.replace("for v in RRNO_ACTIVE_KEY_ID RRNO_KEYS_JSON; do",
+                        "for v in RRNO_ACTIVE_KEY_ID; do")));
+        broken.put("활성 키 포함 검증 제거", rrnoKeyringDeployPreflightViolations(
+                deploySrc.replace("has($active)", "true")));
+        broken.put("32바이트 Base64 형식·개행 차단 검증 제거", rrnoKeyringDeployPreflightViolations(
+                deploySrc.replace("\\\\A[A-Za-z0-9+/]{42}[AEIMQUYcgkosw048]=\\\\z", ".+")));
+        broken.put("44자 길이 검증 제거", rrnoKeyringDeployPreflightViolations(
+                deploySrc.replace("length == 44", "length >= 1")));
+        broken.put("RRNO 검증이 docker pull 뒤로 이동", rrnoKeyringDeployPreflightViolations(
+                deploySrc.replace("if [ -n \"${RRNO_ACTIVE_KEY_ID:-}\" ] || [ -n \"${RRNO_KEYS_JSON:-}\" ]; then",
+                        "MOVED_RRNO_GUARD=")
+                        .replace("docker pull \"$ref\"",
+                                "docker pull \"$ref\"\nif [ -n \"${RRNO_ACTIVE_KEY_ID:-}\" ] || [ -n \"${RRNO_KEYS_JSON:-}\" ]; then")));
+        broken.forEach((name, violations) -> assertFalse(violations.isEmpty(), name));
+    }
+
+    static List<String> prodJwtAsymmetricBoundaryViolations(String composeProdSrc, String deployScriptSrc) {
+        List<String> violations = new ArrayList<>();
+        String apiBlock = composeServiceBlock(composeProdSrc, "api");
+        if (apiBlock == null
+                || !Pattern.compile("(?m)^\\s*JWT_SIGNING_ACTIVE_KID\\s*:\\s*\\$\\{JWT_SIGNING_ACTIVE_KID:\\?").matcher(apiBlock).find()
+                || !Pattern.compile("(?m)^\\s*JWT_SIGNING_KEYS_JSON\\s*:\\s*\\$\\{JWT_SIGNING_KEYS_JSON:\\?").matcher(apiBlock).find()) {
+            violations.add(COMPOSE_PROD + ": api.environment 는 JWT_SIGNING_ACTIVE_KID·JWT_SIGNING_KEYS_JSON 을 무기본값(:?) 필수로 받아야 합니다.");
+        }
+        String frontendBlock = composeServiceBlock(composeProdSrc, "frontend");
+        if (frontendBlock == null
+                || !Pattern.compile("(?m)^\\s*JWT_VERIFY_KEYS_JSON\\s*:\\s*\\$\\{JWT_VERIFY_KEYS_JSON:\\?").matcher(frontendBlock).find()
+                || !Pattern.compile("(?m)^\\s*ALLOW_DEV_JWT_VERIFY_KEYS\\s*:\\s*\"false\"\\s*$").matcher(frontendBlock).find()) {
+            violations.add(COMPOSE_PROD + ": frontend.environment 는 JWT_VERIFY_KEYS_JSON(:?) 와 ALLOW_DEV_JWT_VERIFY_KEYS: \"false\" 를 선언해야 합니다.");
+        }
+        if (frontendBlock != null && (frontendBlock.contains("JWT_SIGNING_ACTIVE_KID") || frontendBlock.contains("JWT_SIGNING_KEYS_JSON"))) {
+            violations.add(COMPOSE_PROD + ": frontend.environment 에 JWT 서명 개인키 키링을 둘 수 없습니다(ADR-0060).");
+        }
+        List<String> requiredSignals = List.of(
+                "JWT_SIGNING_ACTIVE_KID JWT_SIGNING_KEYS_JSON JWT_VERIFY_KEYS_JSON",
+                "printf '%s' \"$JWT_SIGNING_KEYS_JSON\"",
+                "printf '%s' \"$JWT_VERIFY_KEYS_JSON\"",
+                "openssl pkey -inform DER -pubout -outform DER",
+                "DEV_JWT_VERIFY_SPKI_B64");
+        List<String> missing = requiredSignals.stream().filter(s -> !deployScriptSrc.contains(s)).toList();
+        int jwtGuardIndex = deployScriptSrc.indexOf("printf '%s' \"$JWT_SIGNING_KEYS_JSON\"");
+        int verifyGuardIndex = deployScriptSrc.indexOf("printf '%s' \"$JWT_VERIFY_KEYS_JSON\"");
+        int pairGuardIndex = deployScriptSrc.indexOf("openssl pkey -inform DER -pubout -outform DER");
+        int pullIndex = deployScriptSrc.indexOf("docker pull \"$ref\"");
+        if (!missing.isEmpty() || jwtGuardIndex < 0 || verifyGuardIndex < 0 || pairGuardIndex < 0 || pullIndex < 0
+                || jwtGuardIndex > pullIndex || verifyGuardIndex > pullIndex || pairGuardIndex > pullIndex) {
+            violations.add(DEPLOY_SCRIPT + ": JWT 비대칭 키링·키쌍 일치 사전 검증이 누락되었거나 docker pull 뒤에 있습니다 — 누락 신호="
+                    + missing);
+        }
+        return violations;
+    }
+
+    @Test
+    @DisplayName("[ADR-0060 · H5] 운영 JWT 비대칭 키링 경계·프런트 개인키 차단·deploy 사전 검증 약화는 red")
+    void prodJwtAsymmetricBoundaryRejectsMissingKeyringOrFrontendPrivateKey() throws IOException {
+        Path root = resolveRepoRoot();
+        String prodSrc = stripComments(HarnessSourceIndex.read(root.resolve(COMPOSE_PROD)));
+        String deploySrc = stripComments(HarnessSourceIndex.read(root.resolve(DEPLOY_SCRIPT)));
+        assertTrue(prodJwtAsymmetricBoundaryViolations(prodSrc, deploySrc).isEmpty(),
+                () -> prodJwtAsymmetricBoundaryViolations(prodSrc, deploySrc).toString());
+
+        Map<String, List<String>> broken = new LinkedHashMap<>();
+        broken.put("api 서명 키링 필수 제거", prodJwtAsymmetricBoundaryViolations(
+                prodSrc.replace("${JWT_SIGNING_KEYS_JSON:?JWT_SIGNING_KEYS_JSON 이 필요합니다}", "${JWT_SIGNING_KEYS_JSON:-}"),
+                deploySrc));
+        broken.put("frontend 공개키 필수 제거", prodJwtAsymmetricBoundaryViolations(
+                prodSrc.replace("${JWT_VERIFY_KEYS_JSON:?JWT_VERIFY_KEYS_JSON 이 필요합니다}", ""),
+                deploySrc));
+        broken.put("frontend ALLOW_DEV_JWT_VERIFY_KEYS 완화", prodJwtAsymmetricBoundaryViolations(
+                prodSrc.replace("ALLOW_DEV_JWT_VERIFY_KEYS: \"false\"", "ALLOW_DEV_JWT_VERIFY_KEYS: \"true\""),
+                deploySrc));
+        broken.put("frontend 에 서명 개인키 노출", prodJwtAsymmetricBoundaryViolations(
+                prodSrc.replace("ALLOW_DEV_JWT_VERIFY_KEYS: \"false\"",
+                        "ALLOW_DEV_JWT_VERIFY_KEYS: \"false\"\n      JWT_SIGNING_KEYS_JSON: ${JWT_SIGNING_KEYS_JSON}"),
+                deploySrc));
+        broken.put("deploy JWT 키쌍 유도 비교 제거", prodJwtAsymmetricBoundaryViolations(
+                prodSrc,
+                deploySrc.replace("openssl pkey -inform DER -pubout -outform DER", "cat")));
+        broken.put("deploy JWT 검증이 docker pull 뒤로 이동", prodJwtAsymmetricBoundaryViolations(
+                prodSrc,
+                deploySrc.replace("printf '%s' \"$JWT_VERIFY_KEYS_JSON\"", "MOVED_VERIFY_GUARD")
+                        .replace("docker pull \"$ref\"",
+                                "docker pull \"$ref\"\nprintf '%s' \"$JWT_VERIFY_KEYS_JSON\"")));
         broken.forEach((name, violations) -> assertFalse(violations.isEmpty(), name));
     }
 

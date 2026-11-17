@@ -125,6 +125,11 @@ jwt:
   # 운영은 application-prod.yml에서 무기본값(${JWT_SECRET})으로 재선언해 미설정 시 기동 실패(fail-fast)시킨다.
   # (빈 기본값 ${JWT_SECRET:}는 base=default 프로파일 부팅[npm run dev]까지 JwtTokenProvider.init에서 죽이므로 지양)
   secret: ${JWT_SECRET:dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==}
+  # [ADR-0060 1차 배포] ES256 비대칭 서명 키링(둘 다 비면 prod 외 환경에서 dev-es256-1 개발 키쌍 사용) + 전환용 HMAC 수용 플래그
+  signing:
+    active-kid: ${JWT_SIGNING_ACTIVE_KID:}
+    keys-json: ${JWT_SIGNING_KEYS_JSON:}
+  accept-legacy-hmac: ${JWT_ACCEPT_LEGACY_HMAC:true}
   # [2026-07-28 신설] 토큰 수명. **기본값은 종전 상수와 동일**(액세스 1시간 / 리프레시 7일)이며
   # 운영 동작은 달라지지 않는다. 환경변수로만 재정의할 수 있게 열어 두는 것이 목적이다.
   #

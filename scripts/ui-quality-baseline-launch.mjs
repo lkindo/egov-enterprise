@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { randomBytes as secureRandomBytes } from 'node:crypto';
+import { generateKeyPairSync, randomBytes as secureRandomBytes } from 'node:crypto';
 import {
   closeSync,
   constants as fileConstants,
@@ -250,6 +250,8 @@ export function createBaselineComposeSpecification({
           'CORS_ALLOWED_ORIGINS',
           'JWT_ACCESS_TOKEN_VALIDITY_MS',
           'JWT_SECRET',
+          'JWT_SIGNING_ACTIVE_KID',
+          'JWT_SIGNING_KEYS_JSON',
           'MANAGEMENT_HEALTH_MAIL_ENABLED',
           'NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK',
           'NURI_AUTHORIZATION_ISOLATED_CUTOVER',
@@ -283,8 +285,10 @@ export function createBaselineComposeSpecification({
         restart: 'no',
         ports: Object.freeze([`127.0.0.1:${webPort}:3000`]),
         environment: Object.freeze([
+          'ALLOW_DEV_JWT_VERIFY_KEYS',
           'BACKEND_API_URL',
           'JWT_SECRET',
+          'JWT_VERIFY_KEYS_JSON',
           'NEXT_PUBLIC_API_URL',
         ]),
         depends_on: Object.freeze({
@@ -316,6 +320,14 @@ function createClosedComposeEnvironment({ sourceEnvironment, webOrigin }) {
   const { databaseName, databaseUser } = normalizedDatabaseIdentity(sourceEnvironment);
   const databasePassword = requireExecutionSecret(sourceEnvironment, 'UI_BASELINE_DB_PASSWORD');
   const jwtSecret = requireExecutionSecret(sourceEnvironment, 'UI_BASELINE_JWT_SECRET');
+  const { privateKey, publicKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+  const jwtKid = 'ui-baseline-es256';
+  const jwtSigningKeysJson = JSON.stringify({
+    [jwtKid]: privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64'),
+  });
+  const jwtVerifyKeysJson = JSON.stringify({
+    [jwtKid]: publicKey.export({ format: 'der', type: 'spki' }).toString('base64'),
+  });
   return Object.freeze({
     ...safeSystemEnvironment(sourceEnvironment),
     POSTGRES_DB: databaseName,
@@ -333,6 +345,10 @@ function createClosedComposeEnvironment({ sourceEnvironment, webOrigin }) {
     NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE',
     CORS_ALLOWED_ORIGINS: webOrigin,
     JWT_SECRET: jwtSecret,
+    JWT_SIGNING_ACTIVE_KID: jwtKid,
+    JWT_SIGNING_KEYS_JSON: jwtSigningKeysJson,
+    JWT_VERIFY_KEYS_JSON: jwtVerifyKeysJson,
+    ALLOW_DEV_JWT_VERIFY_KEYS: 'false',
     JWT_ACCESS_TOKEN_VALIDITY_MS: '14400000',
     MANAGEMENT_HEALTH_MAIL_ENABLED: 'false',
     BACKEND_API_URL: 'http://api:8080/api/v1',

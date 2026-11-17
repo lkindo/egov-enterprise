@@ -61,4 +61,29 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
         assertThat(users).hasSize(1);
         assertThat(users.get(0).getId().getUserId()).isEqualTo("user1");
     }
+
+    @Test
+    @DisplayName("승인 회원(P)이면서 운영 중(useYn='Y')인 커뮤니티 ID 만 접근 가능 목록으로 조회한다")
+    void findAccessibleCommunityIdsFiltersApprovedAndActiveCommunities() {
+        Community activeApproved = communityRepository.saveAndFlush(Community.builder()
+                .cmntyNm("활성 승인").useYn("Y").build());
+        Community activePending = communityRepository.saveAndFlush(Community.builder()
+                .cmntyNm("활성 대기").useYn("Y").build());
+        Community closedApproved = communityRepository.saveAndFlush(Community.builder()
+                .cmntyNm("폐쇄 승인").useYn("N").build());
+
+        communityUserRepository.save(CommunityUser.builder()
+                .id(new CommunityUserId(activeApproved.getCmntySn(), "viewer-1"))
+                .mngrYn("N").joinYmd("20261116").useYn("Y").mbrSttsCd("P").build());
+        communityUserRepository.save(CommunityUser.builder()
+                .id(new CommunityUserId(activePending.getCmntySn(), "viewer-1"))
+                .mngrYn("N").joinYmd("20261116").useYn("Y").mbrSttsCd("A").build());
+        communityUserRepository.saveAndFlush(CommunityUser.builder()
+                .id(new CommunityUserId(closedApproved.getCmntySn(), "viewer-1"))
+                .mngrYn("N").joinYmd("20261116").useYn("Y").mbrSttsCd("P").build());
+
+        assertThat(communityUserRepository.findAccessibleCommunityIds("viewer-1"))
+                .containsExactly(activeApproved.getCmntySn());
+        assertThat(communityUserRepository.findAccessibleCommunityIds("outsider")).isEmpty();
+    }
 }

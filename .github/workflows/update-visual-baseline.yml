@@ -48,12 +48,34 @@ jobs:
           jwt_secret="$(openssl rand -hex 44)"
           echo "::add-mask::$jwt_secret"
           echo "JWT_SECRET=$jwt_secret" >> "$GITHUB_ENV"
+          node --input-type=module <<'NODE'
+          import { appendFileSync, chmodSync, writeFileSync } from 'node:fs';
+          import path from 'node:path';
+          import { createIsolatedJwtEnvironment } from './scripts/run-isolated-e2e.mjs';
+          const jwt = createIsolatedJwtEnvironment();
+          for (const v of Object.values(JSON.parse(jwt.api.JWT_SIGNING_KEYS_JSON))) console.log(`::add-mask::${v}`);
+          console.log(`::add-mask::${jwt.api.JWT_SIGNING_KEYS_JSON}`);
+          appendFileSync(process.env.GITHUB_ENV, `JWT_VERIFY_KEYS_JSON=${jwt.frontend.JWT_VERIFY_KEYS_JSON}\n`);
+          const signingFile = path.join(process.env.RUNNER_TEMP, 'visual-jwt-signing.json');
+          writeFileSync(signingFile, JSON.stringify({
+            JWT_SIGNING_ACTIVE_KID: jwt.api.JWT_SIGNING_ACTIVE_KID,
+            JWT_SIGNING_KEYS_JSON: jwt.api.JWT_SIGNING_KEYS_JSON,
+          }), { mode: 0o600, flag: 'wx' });
+          chmodSync(signingFile, 0o600);
+          NODE
 
       - name: Build API image
         run: docker compose build api
 
       - name: Start Docker Infrastructure (DB & API)
         run: |
+          set -euo pipefail
+          SIGNING_FILE="${RUNNER_TEMP}/visual-jwt-signing.json"
+          trap 'rm -f "$SIGNING_FILE"' EXIT
+          JWT_SIGNING_ACTIVE_KID="$(jq -r '.JWT_SIGNING_ACTIVE_KID' "$SIGNING_FILE")"
+          JWT_SIGNING_KEYS_JSON="$(jq -r '.JWT_SIGNING_KEYS_JSON' "$SIGNING_FILE")"
+          export JWT_SIGNING_ACTIVE_KID JWT_SIGNING_KEYS_JSON
+          rm -f "$SIGNING_FILE"
           node scripts/e2e-compose-preflight.mjs
           docker compose up -d db api
 

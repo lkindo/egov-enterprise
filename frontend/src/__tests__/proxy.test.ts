@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
-import { createHmac } from 'node:crypto';
+import { createHmac, generateKeyPairSync, sign as signCrypto, type KeyObject } from 'node:crypto';
 import type { NextRequest } from 'next/server';
 import { PAGE_PERMISSIONS } from '@/types/generated-permissions';
 import { pageInProjection } from '@/test-utils/projection';
@@ -207,6 +207,7 @@ describe('proxy 인증 게이트', () => {
       expect(res.status).toBe(200);
       expect(hasMessage(/JWT 검증 성공/u)).toBe(true);
       expect(hasMessage(/시크릿 출처=환경변수 JWT_SECRET/u)).toBe(true);
+      expect(hasMessage(/spkiSha8=dev-es256-1=3989a5f1/u)).toBe(true);
       expect(hasMessage(/JWT_SECRET=있음/u)).toBe(true);
       expect(hasMessage(/지문|fingerprint/iu)).toBe(false);
       expect(hasMessage(/E2E_DIAG=(?:있음|없음)/u)).toBe(true);
@@ -446,5 +447,136 @@ describe('이중 제출 CSRF 토큰 쿠키 (CredentialCookieCsrfPolicy)', () => 
     const response = await proxy(new NextRequestCtor('http://localhost:3001/api/v1/boards/posts', {
       headers: { cookie: 'accessToken=fixture-token' } }));
     expect(tokenCookie(response)).toBeUndefined();
+  });
+});
+
+describe('ADR-0060 ES256 비대칭 서명 검증 및 1차 배포 전환', () => {
+  beforeEach(() => {
+    fetchMock.mockReset().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({
+      success: true,
+      code: 'S000',
+      message: '성공',
+      data: { id: 'webmaster', esntlId: SUBJECT, groups: ['USER'], permissions: [], authorizationVersion: 'v1' },
+    }))));
+  });
+
+  const b64u = (v: unknown) => Buffer.from(JSON.stringify(v)).toString('base64url');
+  const signEs256 = (
+    payload: Record<string, unknown>,
+    privateKey: KeyObject,
+    kid?: string,
+    alg: string = 'ES256',
+  ): string => {
+    const header = kid === undefined ? { alg, typ: 'JWT' } : { alg, typ: 'JWT', kid };
+    const data = `${b64u(header)}.${b64u({ typ: 'access', ...payload })}`;
+    const sig = signCrypto('sha256', Buffer.from(data), { key: privateKey, dsaEncoding: 'ieee-p1363' }).toString('base64url');
+    return `${data}.${sig}`;
+  };
+
+  async function importFreshProxy(env: {
+    nodeEnv?: string;
+    verifyKeysJson?: string;
+    allowDev?: string;
+    acceptLegacyHmac?: string;
+    jwtSecret?: string;
+  }) {
+    vi.resetModules();
+    if (env.nodeEnv !== undefined) vi.stubEnv('NODE_ENV', env.nodeEnv);
+    if (env.verifyKeysJson === undefined) vi.stubEnv('JWT_VERIFY_KEYS_JSON', '');
+    else vi.stubEnv('JWT_VERIFY_KEYS_JSON', env.verifyKeysJson);
+    if (env.allowDev === undefined) vi.stubEnv('ALLOW_DEV_JWT_VERIFY_KEYS', '');
+    else vi.stubEnv('ALLOW_DEV_JWT_VERIFY_KEYS', env.allowDev);
+    if (env.acceptLegacyHmac === undefined) vi.stubEnv('JWT_ACCEPT_LEGACY_HMAC', '');
+    else vi.stubEnv('JWT_ACCEPT_LEGACY_HMAC', env.acceptLegacyHmac);
+    if (env.jwtSecret === undefined) vi.stubEnv('JWT_SECRET', '');
+    else vi.stubEnv('JWT_SECRET', env.jwtSecret);
+    return (await import('../proxy')).proxy as typeof proxy;
+  }
+
+  it('ES256 공개키(JWT_VERIFY_KEYS_JSON)로 서명 검증하고 위변조·미등록 kid·허용 밖 alg 를 거부한다', async () => {
+    const kp1 = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+    const kp2 = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+    const spki1 = kp1.publicKey.export({ format: 'der', type: 'spki' }).toString('base64');
+    const spki2 = kp2.publicKey.export({ format: 'der', type: 'spki' }).toString('base64');
+    try {
+      const esProxy = await importFreshProxy({
+        verifyKeysJson: JSON.stringify({ k1: spki1, k2: spki2 }),
+        jwtSecret: SECRET,
+      });
+
+      const validK1 = signEs256({ sub: SUBJECT, exp: futureExp() }, kp1.privateKey, 'k1');
+      const validK2 = signEs256({ sub: SUBJECT, exp: futureExp() }, kp2.privateKey, 'k2');
+      expect((await esProxy(requestWith(validK1))).status).toBe(200);
+      expect((await esProxy(requestWith(validK2))).status).toBe(200);
+
+      // 위변조 페이로드
+      const parts = validK1.split('.');
+      const forgedPayload = Buffer.from(JSON.stringify({ typ: 'access', sub: 'ADMIN', exp: futureExp() })).toString('base64url');
+      expect(redirectedToLogin(await esProxy(requestWith(`${parts[0]}.${forgedPayload}.${parts[2]}`)))).toBe(true);
+
+      // 다른 키로 서명한 k1, 미등록 kid, kid 누락, alg=RS256, alg=none, 비정상 서명 길이
+      expect(redirectedToLogin(await esProxy(requestWith(signEs256({ sub: SUBJECT, exp: futureExp() }, kp2.privateKey, 'k1'))))).toBe(true);
+      expect(redirectedToLogin(await esProxy(requestWith(signEs256({ sub: SUBJECT, exp: futureExp() }, kp1.privateKey, 'unknown'))))).toBe(true);
+      expect(redirectedToLogin(await esProxy(requestWith(signEs256({ sub: SUBJECT, exp: futureExp() }, kp1.privateKey, undefined))))).toBe(true);
+      expect(redirectedToLogin(await esProxy(requestWith(signEs256({ sub: SUBJECT, exp: futureExp() }, kp1.privateKey, 'k1', 'RS256'))))).toBe(true);
+      expect(redirectedToLogin(await esProxy(requestWith(`${b64u({ alg: 'none', typ: 'JWT' })}.${parts[1]}.`)))).toBe(true);
+      expect(redirectedToLogin(await esProxy(requestWith(`${parts[0]}.${parts[1]}.short`)))).toBe(true);
+
+      // 전환기에는 HMAC 도 통과한다
+      expect((await esProxy(requestWith(signToken({ sub: SUBJECT, exp: futureExp() }, SECRET, 'HS256')))).status).toBe(200);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('JWT_ACCEPT_LEGACY_HMAC=false(2차 배포)에서는 HMAC 토큰을 거부하고 ES256 만 통과시킨다', async () => {
+    const kp = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+    const spki = kp.publicKey.export({ format: 'der', type: 'spki' }).toString('base64');
+    try {
+      const strictEsProxy = await importFreshProxy({
+        nodeEnv: 'production',
+        verifyKeysJson: JSON.stringify({ 'prod-1': spki }),
+        acceptLegacyHmac: 'false',
+      });
+      const esToken = signEs256({ sub: SUBJECT, exp: futureExp() }, kp.privateKey, 'prod-1');
+      const hsToken = signToken({ sub: SUBJECT, exp: futureExp() }, SECRET, 'HS512');
+      expect((await strictEsProxy(requestWith(esToken))).status).toBe(200);
+      expect(redirectedToLogin(await strictEsProxy(requestWith(hsToken)))).toBe(true);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('prod 엄격 모드에서 JWT_VERIFY_KEYS_JSON 누락·커밋 dev 검증키·잘못된 JSON 은 모듈 로드 시 즉시 실패한다', async () => {
+    const devSpki =
+      'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFCkLmpfLgQUqDWWzzBAdV7oKO7Hvtltivk4PlGoMa+dn+6myuWj6EcyRdFFvm0CgWhIiqpujMY7lBU5LmpKGsw==';
+    try {
+      await expect(importFreshProxy({ nodeEnv: 'production', jwtSecret: SECRET })).rejects.toThrow(
+        /JWT_VERIFY_KEYS_JSON 이 설정되지 않았습니다/,
+      );
+      await expect(
+        importFreshProxy({
+          nodeEnv: 'production',
+          verifyKeysJson: JSON.stringify({ 'dev-es256-1': devSpki }),
+          jwtSecret: SECRET,
+        }),
+      ).rejects.toThrow(/공개 개발용 JWT 검증키/);
+      await expect(
+        importFreshProxy({
+          nodeEnv: 'production',
+          verifyKeysJson: 'not-json',
+          jwtSecret: SECRET,
+        }),
+      ).rejects.toThrow(/JSON 형식/);
+      await expect(
+        importFreshProxy({
+          nodeEnv: 'production',
+          allowDev: 'true',
+          acceptLegacyHmac: 'false',
+        }),
+      ).resolves.toBeTypeOf('function');
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });

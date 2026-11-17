@@ -86,6 +86,7 @@ class SecretLiteralLinterTest {
             "GH_TOKEN",
             "GITHUB_TOKEN",
             "JWT_SECRET",
+            "JWT_SIGNING_KEYS_JSON",
             "MAIL_PASSWORD",
             "POSTGRES_PASSWORD",
             // [2026-09-13] 운영 오버레이가 인증 릴레이 자격을 완화 바인딩 이름으로 전달하기 시작했다.

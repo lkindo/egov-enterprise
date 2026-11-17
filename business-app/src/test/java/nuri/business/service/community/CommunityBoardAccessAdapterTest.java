@@ -81,4 +81,15 @@ class CommunityBoardAccessAdapterTest {
         assertThat(adapter.summary(99L)).isEmpty();
         assertThat(adapter.summary(null)).isEmpty();
     }
+
+    @Test
+    @DisplayName("접근 가능한 커뮤니티 목록은 공백 주체에 대해 빈 집합을 반환하고 유효 주체는 저장소 결과를 돌려준다")
+    void accessibleCommunityIdsChecksBlankAndReturnsRepoResult() {
+        assertThat(adapter.accessibleCommunityIds(null)).isEmpty();
+        assertThat(adapter.accessibleCommunityIds("   ")).isEmpty();
+        verifyNoInteractions(communityUserRepository);
+
+        given(communityUserRepository.findAccessibleCommunityIds("ESNTL_1")).willReturn(java.util.Set.of(10L, 20L));
+        assertThat(adapter.accessibleCommunityIds("ESNTL_1")).containsExactlyInAnyOrder(10L, 20L);
+    }
 }

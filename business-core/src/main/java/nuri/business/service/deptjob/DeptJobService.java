@@ -316,8 +316,9 @@ public class DeptJobService extends BaseAbstractService {
         nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), deptJob.getVersion());
         validatePriority(dto.getPrrtyRnk());
 
+        Long previousAtchFileSn = deptJob.getAtchFileSn();
         if (dto.getAtchFileSn() != null
-                && !Objects.equals(dto.getAtchFileSn(), deptJob.getAtchFileSn())) {
+                && !Objects.equals(dto.getAtchFileSn(), previousAtchFileSn)) {
             assertAttachmentIsAssignable(dto.getAtchFileSn());
         }
 
@@ -341,6 +342,10 @@ public class DeptJobService extends BaseAbstractService {
                 picId,
                 dto.getPrrtyRnk(),
                 dto.getAtchFileSn());
+        if (previousAtchFileSn != null && !Objects.equals(previousAtchFileSn, deptJob.getAtchFileSn())) {
+            deptJobRepository.flush();
+            attachmentAssignmentPolicy.releaseIfUnreferenced(previousAtchFileSn);
+        }
         if (!Objects.equals(previousPicId, picId)) {
             String actor = SecurityUtil.getCurrentEsntlId().orElse(null);
             notifyAssignee(picId, actor, deptJob);
@@ -357,7 +362,12 @@ public class DeptJobService extends BaseAbstractService {
 
         assertPicOrAdmin(deptJob, "DEPT_JOB_DELETE_ALL");
 
+        Long atchFileSn = deptJob.getAtchFileSn();
         deptJobRepository.delete(deptJob);
+        if (atchFileSn != null) {
+            deptJobRepository.flush();
+            attachmentAssignmentPolicy.releaseIfUnreferenced(atchFileSn);
+        }
     }
 
     private static void validatePriority(String priority) {

@@ -297,6 +297,11 @@ export default function MemoReportManagementClient() {
   const [isEditing, setIsEditing] = useState(false);
   const editingRef = useRef(false);
   const [isEditPending, setEditPending] = useState(false);
+  const editFilesRef = useRef<File[]>([]);
+  const editFilesGenerationRef = useRef(0);
+  const [editUploaderKey, setEditUploaderKey] = useState(0);
+  const uploadedEditBundleRef = useRef<{ files: File[]; atchFileSn: number } | null>(null);
+  const [clearExistingAttachment, setClearExistingAttachment] = useState(false);
   const deleteReportRef = useRef(false);
   const [isDeletePending, setDeletePending] = useState(false);
 
@@ -317,6 +322,19 @@ export default function MemoReportManagementClient() {
   */
   const resetEditForm = editForm.reset;
   const resetInstructionForm = instructionForm.reset;
+  const resetEditAttachments = useCallback(() => {
+    editFilesGenerationRef.current += 1;
+    editFilesRef.current = [];
+    uploadedEditBundleRef.current = null;
+    setClearExistingAttachment(false);
+    setEditUploaderKey((prev) => prev + 1);
+  }, []);
+
+  const handleEditFilesChange = useCallback((files: File[]) => {
+    editFilesGenerationRef.current += 1;
+    editFilesRef.current = files;
+  }, []);
+
   const resetDetailEditState = useCallback(() => {
     detailSession.current += 1;
     setDetailSnapshot(null);
@@ -328,10 +346,11 @@ export default function MemoReportManagementClient() {
     setSavingInstruction(false);
     downloadingFileRef.current = null;
     setDownloadingFile(null);
+    resetEditAttachments();
     setIsEditing(false);
     resetEditForm({ rptTtl: '', rptCn: '', rptrId: '' });
     resetInstructionForm({ drctnMttr: '' });
-  }, [resetEditForm, resetInstructionForm]);
+  }, [resetEditAttachments, resetEditForm, resetInstructionForm]);
 
   // 권한·계정 경계가 바뀐 commit 이후에는 앞 계정의 확인 대기·조회 응답을 채택하지 않는다.
   useLayoutEffect(() => {
@@ -431,12 +450,18 @@ export default function MemoReportManagementClient() {
 
   const openEdit = () => {
     if (editingRef.current || deleteReportRef.current || detail == null) return;
+    resetEditAttachments();
     editForm.reset({
       rptTtl: detail.rptTtl ?? '',
       rptCn: detail.rptCn ?? '',
       rptrId: detail.rptrId ?? '',
     });
     setIsEditing(true);
+  };
+
+  const cancelEdit = () => {
+    resetEditAttachments();
+    setIsEditing(false);
   };
 
   const submitEdit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -447,15 +472,42 @@ export default function MemoReportManagementClient() {
     const scope = detailScope;
     setEditPending(true);
     try {
+      const files = editFilesRef.current;
+      let atchFileSn: number | undefined = clearExistingAttachment ? undefined : (detail.atchFileSn ?? undefined);
+      if (files.length > 0) {
+        const filesGeneration = editFilesGenerationRef.current;
+        const cached = uploadedEditBundleRef.current;
+        if (cached && cached.files.length === files.length && cached.files.every((file, idx) => file === files[idx])) {
+          atchFileSn = cached.atchFileSn;
+        } else {
+          let uploadedSn: number;
+          try {
+            uploadedSn = await fileService.uploadFiles(files);
+          } catch (error: unknown) {
+            if (isCurrentDetail(session, scope)) {
+              toast(extractErrorMessage(error, '첨부파일을 올리지 못했습니다.'), 'error');
+            }
+            return;
+          }
+          if (!isCurrentDetail(session, scope)) return;
+          if (editFilesGenerationRef.current !== filesGeneration) {
+            toast('첨부파일 목록이 바뀌어 수정을 중단했습니다. 첨부파일을 확인한 뒤 다시 저장해 주세요.', 'error');
+            return;
+          }
+          uploadedEditBundleRef.current = { files, atchFileSn: uploadedSn };
+          atchFileSn = uploadedSn;
+        }
+      }
       await memoReportService.updateMemoReport(detailTarget.memoRptSn, {
         rptTtl: values.rptTtl,
         rptCn: values.rptCn,
         rptrId: values.rptrId,
         // 전체 치환이므로 화면이 묻지 않는 값도 상세에서 읽어 되돌려 보낸다.
         memoRptYmd: detail.memoRptYmd ?? getTodayYmd(),
-        atchFileSn: detail.atchFileSn ?? undefined,
+        ...(atchFileSn !== undefined ? { atchFileSn } : {}),
         ...(detail.version != null ? { version: detail.version } : {}),
       });
+      resetEditAttachments();
       if (!isCurrentDetail(session, scope)) return;
       toast('보고를 수정했습니다.', 'success');
       setIsEditing(false);
@@ -903,12 +955,46 @@ export default function MemoReportManagementClient() {
                           </FormItem>
                         )}
                       />
+                      {detail.atchFileSn != null ? (
+                        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
+                          <span className="text-xs text-muted-foreground">
+                            {clearExistingAttachment
+                              ? '저장 시 기존 첨부파일을 해제합니다.'
+                              : `현재 첨부파일 ${detail.attachments?.length ?? 1}건이 연결되어 있습니다.`}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={isEditPending}
+                            onClick={() => setClearExistingAttachment((prev) => !prev)}
+                          >
+                            {clearExistingAttachment ? '기존 첨부 유지' : '기존 첨부 해제'}
+                          </Button>
+                        </div>
+                      ) : null}
+                      {canUploadAttachments ? (
+                        <div className="space-y-2">
+                          <span className="text-sm font-bold text-foreground">
+                            {detail.atchFileSn != null ? '새 첨부파일로 교체' : '첨부파일 추가'}
+                          </span>
+                          <StandardFileUploader
+                            key={editUploaderKey}
+                            name="editFiles"
+                            disabled={isEditPending}
+                            onFilesChange={handleEditFilesChange}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            새 파일을 선택하면 저장 시 기존 첨부 대신 올라갑니다.
+                          </p>
+                        </div>
+                      ) : null}
                       <div className="flex justify-end gap-2">
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => setIsEditing(false)}
+                          onClick={cancelEdit}
                           disabled={isEditPending}
                         >
                           취소

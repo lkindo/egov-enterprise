@@ -45,6 +45,16 @@ public interface CommunityBoardAccessPort {
     }
 
     /**
+     * 사용자가 현재 이용 가능({@code useYn='Y'})하고 승인({@code mbrSttsCd='P'})된 커뮤니티 ID 집합.
+     *
+     * <p>구현이 없는 파생 제품(커뮤니티 도메인 제외)이나 미인증 사용자에 대해서는 빈 집합을 반환해
+     * 커뮤니티 귀속 게시판의 댓글·글이 공개로 새지 않도록 닫는다(fail-closed, H3).
+     */
+    default java.util.Set<Long> accessibleCommunityIds(String esntlId) {
+        return java.util.Set.of();
+    }
+
+    /**
      * 커뮤니티 요약.
      *
      * @param cmntyNm 커뮤니티 이름(비어 있을 수 있다)

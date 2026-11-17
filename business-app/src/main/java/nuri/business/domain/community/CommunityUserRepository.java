@@ -45,6 +45,12 @@ public interface CommunityUserRepository
             + " order by cu.id.userId")
     List<String> findOperatorIds(@Param("cmntySn") Long cmntySn);
 
+    /** 사용자가 승인 회원({@code P})으로 속해 있고 활성({@code useYn='Y'})인 커뮤니티 ID 집합. */
+    @Query("select cu.id.cmntySn from CommunityUser cu, Community cm"
+            + " where cu.id.userId = :userId and cu.mbrSttsCd = 'P'"
+            + " and cm.cmntySn = cu.id.cmntySn and cm.useYn = 'Y'")
+    java.util.Set<Long> findAccessibleCommunityIds(@Param("userId") String userId);
+
     // [V2_13 결속] 사용자 삭제 시 커뮤니티 멤버십 정리 (fk_tb_cmnty_user_map_tb_user_info NO ACTION)
     void deleteByIdUserIdIn(List<String> userIds);
 }

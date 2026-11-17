@@ -70,7 +70,15 @@ jobs:
       #   `process.env` 를 **빌드 시점에 인라인**한다(ci.yml 의 2026-07-28 캐시 오염 사례 참조).
       #   기동 직전에 넣으면 번들에는 이미 값이 없는 상태로 박혀 있어 아무 효과가 없다.
       - name: Generate ephemeral JWT secret (측정 전용 · 회차마다 폐기)
-        run: echo "JWT_SECRET=$(openssl rand -hex 44)" >> "$GITHUB_ENV"
+        run: |
+          echo "JWT_SECRET=$(openssl rand -hex 44)" >> "$GITHUB_ENV"
+          node --input-type=module <<'NODE'
+          import { generateKeyPairSync } from 'node:crypto';
+          import { appendFileSync } from 'node:fs';
+          const { publicKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+          const spki = publicKey.export({ format: 'der', type: 'spki' }).toString('base64');
+          appendFileSync(process.env.GITHUB_ENV, `JWT_VERIFY_KEYS_JSON=${JSON.stringify({ 'lh-es256': spki })}\n`);
+          NODE
 
       # lhci 가 startServerCommand 로 `next start` 를 띄우므로 빌드가 선행돼야 한다.
       - name: Build

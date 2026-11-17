@@ -1183,9 +1183,53 @@ class DeptJobServiceTest {
         verify(deptJobRepository).save(saved.capture());
         assertEquals(priority, saved.getValue().getPrrtyRnk());
         when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
-        deptJobService.updateDeptJob(1L, request);
+        DeptJobDto updateKeepingAttachment = DeptJobDto.builder().deptTaskNm("업무").prrtyRnk(priority).atchFileSn(101L).version(0).build();
+        deptJobService.updateDeptJob(1L, updateKeepingAttachment);
         assertEquals(priority, deptJob.getPrrtyRnk(), "null 수정은 기존 우선순위를 지우며 기본값으로 보정하지 않는다");
         verifyNoInteractions(attachmentAssignmentPolicy, eventPublisher);
+    }
+
+    @Test
+    @DisplayName("[Top 4] 부서업무 수정·삭제 — 첨부 교체·제거·삭제 시 flush 뒤 이전 첨부를 수거하고 미첨부는 수거하지 않는다")
+    void updateAndDeleteDeptJob_releasesReplacedClearedAndDeletedAttachments() {
+        authenticateAs("tester", "USER1");
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+
+        DeptJobDto replaceDto = new DeptJobDto();
+        replaceDto.setDeptTaskNm("첨부 교체");
+        replaceDto.setAtchFileSn(202L);
+        replaceDto.setVersion(0);
+        deptJobService.updateDeptJob(1L, replaceDto);
+
+        InOrder replaceOrder = inOrder(attachmentAssignmentPolicy, deptJobRepository);
+        replaceOrder.verify(attachmentAssignmentPolicy).assertAssignable(202L);
+        replaceOrder.verify(deptJobRepository).flush();
+        replaceOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(101L);
+
+        clearInvocations(attachmentAssignmentPolicy, deptJobRepository);
+        DeptJobDto clearDto = new DeptJobDto();
+        clearDto.setDeptTaskNm("첨부 비우기");
+        clearDto.setAtchFileSn(null);
+        clearDto.setVersion(0);
+        deptJobService.updateDeptJob(1L, clearDto);
+
+        InOrder clearOrder = inOrder(attachmentAssignmentPolicy, deptJobRepository);
+        clearOrder.verify(deptJobRepository).flush();
+        clearOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(202L);
+        verify(attachmentAssignmentPolicy, never()).assertAssignable(anyLong());
+
+        clearInvocations(attachmentAssignmentPolicy, deptJobRepository);
+        deptJobService.deleteDeptJob(1L);
+        verify(deptJobRepository).delete(deptJob);
+        verifyNoInteractions(attachmentAssignmentPolicy);
+
+        DeptJob withFile = DeptJob.builder().deptTaskSn(9L).deptTaskBoxSn(1L).deptTaskNm("파일업무").picId("USER1").atchFileSn(303L).build();
+        when(deptJobRepository.findById(9L)).thenReturn(Optional.of(withFile));
+        deptJobService.deleteDeptJob(9L);
+        InOrder deleteOrder = inOrder(attachmentAssignmentPolicy, deptJobRepository);
+        deleteOrder.verify(deptJobRepository).delete(withFile);
+        deleteOrder.verify(deptJobRepository).flush();
+        deleteOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(303L);
     }
 
     @Test

@@ -47,6 +47,12 @@ export function isLocalDatabaseUrl(dbUrl) {
 /** 백엔드가 접속할 수 있는 DB 주소들 — application.yml 의 DB_URL 과, 그것을 덮어쓰는 Spring 환경 변수. */
 const DATABASE_URL_KEYS = ['DB_URL', 'SPRING_DATASOURCE_URL', 'SPRING_DATASOURCE_JDBC_URL', 'SPRING_FLYWAY_URL'];
 
+/** 프런트엔드(Next) 프로세스는 JWT 서명 개인키 키링을 상속하지 않고 공개 검증키만 받는다(ADR-0060). */
+export function frontendEnvironment(env) {
+  const { JWT_SIGNING_ACTIVE_KID: _kid, JWT_SIGNING_KEYS_JSON: _keys, ...cleanEnv } = env;
+  return cleanEnv;
+}
+
 /** 백엔드 자식 프로세스에 넘길 환경. 원격 DB 면 Flyway 를 끄고(옵트인 시 seed-dev 만 뺀다) 그 사유를 돌려준다. */
 export function backendEnvironment(env, { flywayLocation = 'classpath:db/migration' } = {}) {
   if (DATABASE_URL_KEYS.every((key) => isLocalDatabaseUrl(env[key]))) return { env, notice: null };
@@ -95,13 +101,26 @@ function main() {
   const command =
     'npx -y concurrently -n "API,WEB" -c "blue,green" ' +
     `"\\"${gradlew}\\" :api-server:bootRun -Dfile.encoding=UTF-8" ` +
-    '"pnpm -C frontend dev"';
+    `"\\"${process.execPath}\\" scripts/dev.mjs --web-child"`;
 
-  // 프런트도 같은 환경을 받는다 — Flyway 키는 Spring 만 읽으므로 JWT_SECRET 대칭은 그대로다.
+  // 프런트 자식(--web-child)은 frontendEnvironment()로 JWT_SIGNING_* 를 제거한 뒤 pnpm -C frontend dev 를 띄운다.
   const child = spawn(command, { stdio: 'inherit', shell: true, cwd: repoRoot, env: backend.env });
 
   child.on('exit', (code) => process.exit(code ?? 0));
 }
 
+function runWebChild() {
+  const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+  const child = spawn(pnpm, ['-C', 'frontend', 'dev'], {
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+    env: frontendEnvironment(process.env),
+  });
+  child.on('exit', (code) => process.exit(code ?? 0));
+}
+
 // 시험이 판정 함수만 불러갈 때는 서버를 띄우지 않는다.
-if (process.argv[1] && resolve(process.argv[1]).toLowerCase() === fileURLToPath(import.meta.url).toLowerCase()) main();
+if (process.argv[1] && resolve(process.argv[1]).toLowerCase() === fileURLToPath(import.meta.url).toLowerCase()) {
+  if (process.argv.includes('--web-child')) runWebChild();
+  else main();
+}

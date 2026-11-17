@@ -589,7 +589,7 @@ test('every computed Java port connection is an integration or a registration-on
   // [2026-10-18] LoginIdReferenceContributor 12개 — 사용자 등록(core)이 기능마다 로그인 ID 를 주인으로 담은 기록 컬럼을 모은다.
   // [2026-10-20] CommonCodeUsageContributor 2개 — 공통코드 관리(core)가 그룹을 읽는 기능(게시판·결재)의 사용처를 모은다.
   assert.deepEqual(keys, [
-    'board>community (CommunityBoardAccessPort)', 'community>template (TemplateAssignmentPolicy)',
+    'board>community (CommunityBoardAccessPort)', 'comment>community (CommunityBoardAccessPort)', 'community>template (TemplateAssignmentPolicy)',
     'core>addressbook (LoginIdReferenceContributor)',
     'core>board (AttachmentSourceContributor)', 'core>board (CommonCodeUsageContributor)', 'core>board (DashboardItemProvider)',
     'core>board (DataUsageStatisticsContributor)',

@@ -304,6 +304,7 @@ function observeVerification(scope, { source, failCommand, env = {}, recordEvent
       },
       platform: () => 'linux',
       randomBytes: () => ({ toString: () => 'fixture-only' }),
+      generateKeyPairSync: () => ({ publicKey: { export: () => ({ toString: () => 'fixture-spki' }) } }),
       ensureQueued: (kind) => { recordEvents.push({ event: 'queue', kind }); return 'direct'; },
       createRun: (options) => {
         recordEvents.push({ event: 'begin', ...options });

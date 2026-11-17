@@ -344,13 +344,18 @@ public class MemoReportService {
             throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE, "지시가 달린 보고는 고칠 수 없습니다. 새 보고로 올려 주세요.");
         }
         nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
+        Long previousAtchFileSn = entity.getAtchFileSn();
         Long atchFileSn = dto.getAtchFileSn();
-        if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
+        if (atchFileSn != null && !Objects.equals(previousAtchFileSn, atchFileSn)) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
         }
         entity.update(dto.getRptTtl(), dto.getMemoRptYmd(), entity.getUserId(), dto.getRptrId(),
                 dto.getRptCn(), atchFileSn);
         entity.setLastMdfrId(userId);
+        memoReportRepository.flush();
+        if (previousAtchFileSn != null && !Objects.equals(previousAtchFileSn, entity.getAtchFileSn())) {
+            attachmentAssignmentPolicy.releaseIfUnreferenced(previousAtchFileSn);
+        }
     }
 
     @Transactional
@@ -372,7 +377,12 @@ public class MemoReportService {
                 }
             }
         }
+        Long atchFileSn = entity.getAtchFileSn();
         memoReportRepository.delete(entity);
+        if (atchFileSn != null) {
+            memoReportRepository.flush();
+            attachmentAssignmentPolicy.releaseIfUnreferenced(atchFileSn);
+        }
     }
 
     @Transactional

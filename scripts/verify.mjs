@@ -23,7 +23,7 @@
  * 선별은 scripts/integration-precheck.mjs 가 한다.
  */
 import { execSync } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { generateKeyPairSync, randomBytes } from 'node:crypto';
 import { platform } from 'node:os';
 import { ensureQueued } from './heavy-run-queue.mjs';
 import { createRun } from './verification-record.mjs';
@@ -67,19 +67,30 @@ function stageId(command) {
   return labels.find(([fragment]) => command.includes(fragment))?.[1] ?? 'other';
 }
 
+function stripPrivateJwtSigningForFrontend(command, env) {
+  if (!/(?:^|\s)(?:pnpm\s+-C\s+frontend\b|\S*vitest\b)/u.test(command)) return env;
+  const { JWT_SIGNING_ACTIVE_KID: _kid, JWT_SIGNING_KEYS_JSON: _keys, ...safeEnv } = env;
+  return safeEnv;
+}
+
 function run(command, extraEnv = {}) {
   const id = stageId(command);
   record.stepStart(id);
   console.log(`\n▶ ${command}`);
   try {
+    const childEnv = stripPrivateJwtSigningForFrontend(command, {
+      ...process.env,
+      TZ: process.env.TZ || 'Asia/Seoul',
+      ...extraEnv,
+      EGOV_VERIFICATION_RUN_ID: record.runId || '',
+    });
     execSync(command, {
       stdio: 'inherit',
       // 로컬 기본 시간대는 KST 다(개발 기계와 같은 조건). CI 러너는 UTC 로 돈다 — 명시한 TZ 가 이기므로
       // `npx cross-env TZ=UTC npm run verify:<범위>`(셸 중립, 세션에 TZ 를 남기지 않음)로 CI 조건을 그대로 재현한다
       // (시험 JVM 은 build.gradle 이 따로 UTC 로 고정한다). 생성물 검증(verify-reusable-artifact)·T2(reusable-nightly)는
       // CI 에서도 실행기가 자식 환경을 만들어 KST 로 고정하므로 이 손잡이를 두지 않는다.
-      env: { ...process.env, TZ: process.env.TZ || 'Asia/Seoul', ...extraEnv,
-        EGOV_VERIFICATION_RUN_ID: record.runId || '' },
+      env: childEnv,
     });
     record.stepEnd(id, { exitCode: 0 });
   } catch (error) {
@@ -143,9 +154,17 @@ function runFrontendSourceContracts() {
 }
 
 function frontendBuildEnvironment() {
-  return process.env.JWT_SECRET
-    ? {}
-    : { JWT_SECRET: randomBytes(44).toString('hex') };
+  const env = {};
+  if (!process.env.JWT_SECRET) {
+    env.JWT_SECRET = randomBytes(44).toString('hex');
+  }
+  if (!process.env.JWT_VERIFY_KEYS_JSON) {
+    const { publicKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+    env.JWT_VERIFY_KEYS_JSON = JSON.stringify({
+      'build-es256': publicKey.export({ format: 'der', type: 'spki' }).toString('base64'),
+    });
+  }
+  return env;
 }
 
 function runBackendSuite() {

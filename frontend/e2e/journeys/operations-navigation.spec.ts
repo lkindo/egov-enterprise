@@ -130,6 +130,7 @@ test.describe('메모 보고의 읽은 내용과 지시 저장', () => {
             const fileBytes = Buffer.from(`Attachment read before instruction: ${title}\n`, 'utf8');
             let fileGroup = 0;
             let memoId = 0;
+            let attachmentReleased = false;
             const failures: unknown[] = [];
             try {
                 const current = await userRequest.get('/api/v1/auth/me');
@@ -192,6 +193,7 @@ test.describe('메모 보고의 읽은 내용과 지시 저장', () => {
                         data: { ...payload, atchFileSn: null, version: firstRead.version },
                     });
                     expect(detached.status()).toBe(200);
+                    attachmentReleased = true;
                 }
                 const draft = `보존해야 할 지시 초안 ${title}`;
                 const instruction = dialog.getByRole('textbox', { name: '지시사항 남기기 (필수)', exact: true });
@@ -261,14 +263,19 @@ test.describe('메모 보고의 읽은 내용과 지시 저장', () => {
                 if (memoId) {
                     try {
                         expect((await adminRequest.delete(`${memos}/${memoId}`)).status(), '자기 메모 정리').toBe(200);
+                        attachmentReleased = true;
                     } catch (failure) { failures.push(failure); }
                 }
                 if (fileGroup) {
                     try {
                         const remaining = await adminRequest.get(`/api/v1/files/${fileGroup}`);
-                        expect(remaining.status()).toBe(200);
-                        for (const file of (await remaining.json()).data as Array<{ fileSn: number }>) {
-                            expect((await adminRequest.delete(`/api/v1/files/${fileGroup}/${file.fileSn}`)).status(), '자기 첨부 정리').toBe(200);
+                        if (attachmentReleased) {
+                            expect(remaining.status(), '메모 첨부 해제 또는 삭제로 무참조 첨부 그룹이 함께 수거되어야 한다').toBe(404);
+                        } else {
+                            expect(remaining.status()).toBe(200);
+                            for (const file of (await remaining.json()).data as Array<{ fileSn: number }>) {
+                                expect((await adminRequest.delete(`/api/v1/files/${fileGroup}/${file.fileSn}`)).status(), '자기 첨부 정리').toBe(200);
+                            }
                         }
                     } catch (failure) { failures.push(failure); }
                 }

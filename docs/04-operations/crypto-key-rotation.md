@@ -1,8 +1,7 @@
-# ARIA PII 마스터 키 로테이션 런북
+# 암호화·서명 키 로테이션 런북
 
-이 런북은 애플리케이션의 `ALGORITHM_KEY`로 암호화하는 `tb_user_info.user_enrrno`에만 적용한다.
-SSH 키, JWT secret, TLS 인증서, provider credential의 회전 절차가 아니다. 외부 credential 폐기는
-각 provider 런북과 [.agent/memory/known-gaps.md](../../.agent/memory/known-gaps.md)에서 관리한다.
+§1~§6은 애플리케이션의 `ALGORITHM_KEY`로 암호화하는 `tb_user_info.user_enrrno` 레거시 ARIA 경로에 적용하고, §7은 `tb_user_info.user_enrrno`의 RRNO v2(`AES-256-GCM`) 키링에, §8은 JWT ES256 비대칭 키링(ADR-0060) 회전과 2차 배포 전환에 적용한다.
+TLS 인증서, SSH 키, provider credential 폐기는 각 provider 런북과 [.agent/memory/known-gaps.md](../../.agent/memory/known-gaps.md)에서 관리한다.
 
 ## 현재 구현 계약
 
@@ -102,6 +101,7 @@ openssl rand -base64 32
 - `RRNO_ACTIVE_KEY_ID`: `[A-Za-z0-9_-]{1,32}` 형식의 활성 암호화 키 식별자
 - `RRNO_KEYS_JSON`: 최대 16개 키를 담은 JSON 객체(값은 32바이트 AES 키의 44자 표준 Base64)
 - 둘 중 하나만 설정하거나 `RRNO_ACTIVE_KEY_ID`가 `RRNO_KEYS_JSON`에 없으면 기동 시 즉시 실패한다(fail-closed).
+- `scripts/deploy.sh`도 둘 중 하나라도 설정되면 이미지 pull 전에 `jq`로 쌍 일치·keyId(`[A-Za-z0-9_-]{1,32}`, 최대 16개)·44자 표준 Base64·활성 키 포함 여부를 사전 검증한다(값 원문은 출력하지 않는다).
 
 1. **키 추가 배포**: 기존 `RRNO_ACTIVE_KEY_ID=<old>`를 유지한 채 `RRNO_KEYS_JSON`에 `<new>` 키를 먼저 추가해 모든 인스턴스가 새 키를 복호화할 수 있게 배포한다.
 2. **활성 키 전환**: 모든 인스턴스 반영을 확인한 뒤 `RRNO_ACTIVE_KEY_ID=<new>`로 전환해 신규 저장·수정을 새 키로 암호화한다. 기존 `<old>` 키는 `RRNO_KEYS_JSON`에 남겨 둔다.
@@ -122,3 +122,37 @@ openssl rand -base64 32
 - [ ] 새 키 단독 전체 복호화 및 대표 읽기·쓰기 성공
 - [ ] old key 제거 후 재검증
 - [ ] 임시 자산·구 키의 승인된 폐기 확인
+
+## 8. JWT 비대칭 서명 키링(ES256, ADR-0060) 로테이션과 2차 배포 전환
+
+백엔드(`JwtTokenProvider`)만 ES256(P-256) 개인키 키링으로 새 액세스·리프레시 토큰을 서명하고, Next 프록시(`frontend/src/proxy.ts`)는 공개키(SPKI)만 보유해 검증한다.
+
+### 8.1 계약과 운영 강제
+
+- 백엔드 전용(개인키): `JWT_SIGNING_ACTIVE_KID`(`^[A-Za-z0-9._-]{1,64}$`), `JWT_SIGNING_KEYS_JSON`(`{"<kid>":"<PKCS#8 DER Base64>"}`, 최대 16개)
+- Next 전용(공개키): `JWT_VERIFY_KEYS_JSON`(`{"<kid>":"<SPKI DER Base64>"}`, 최대 16개) — `JWT_SIGNING_*`는 Next 컨테이너·자식 프로세스에 전달하지 않는다.
+- 운영(`prod` 오버레이·`scripts/deploy.sh`)은 두 키링과 `ALLOW_DEV_JWT_VERIFY_KEYS=false`를 강제하고, `deploy.sh`는 이미지 pull 전에 개인키 DER에서 유도한 SPKI 공개키와 `JWT_VERIFY_KEYS_JSON`의 일치·비개발 키 여부를 `openssl pkey`와 `jq`로 검증한다.
+- 양쪽 기동·검증 로그는 `spki sha256[:8]` 공개키 요약 해시(백엔드 `verifyKeyFingerprints`, Next `spkiSha8`)만 출력해 키 원문 노출 없이 설정 일치를 대조할 수 있다.
+
+### 8.2 무중단 키쌍 로테이션(3단계 롤링)
+
+```bash
+# 새 P-256 개인키(PKCS#8 DER Base64)와 공개키(SPKI DER Base64) 생성 예시
+# OpenSSL 3.x는 genpkey -outform DER가 SEC1 ECPrivateKey를 낼 수 있으므로 pkcs8 -topk8로 명시 변환한다.
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out jwt-next.pem
+openssl pkcs8 -topk8 -nocrypt -in jwt-next.pem -outform DER -out jwt-next.pkcs8.der
+openssl pkey -in jwt-next.pem -pubout -outform DER -out jwt-next.spki.der
+base64 -w0 jwt-next.pkcs8.der; echo
+base64 -w0 jwt-next.spki.der; echo
+rm -f jwt-next.pem jwt-next.pkcs8.der jwt-next.spki.der
+```
+
+1. **공개키 선배포**: 기존 `<old-kid>`를 유지한 채 백엔드 `JWT_SIGNING_KEYS_JSON`과 Next `JWT_VERIFY_KEYS_JSON`에 `<new-kid>` 공개키/개인키를 추가하고, 먼저 Next(또는 양쪽)에 `<new-kid>` 공개키가 반영됐는지 로그의 `verifyKeyFingerprints`·`spkiSha8`(`spki sha256[:8]`) 값으로 확인한다.
+2. **활성 키 전환**: `JWT_SIGNING_ACTIVE_KID=<new-kid>`로 백엔드를 재배포해 신규 발급 토큰을 `<new-kid>`로 서명한다. `<old-kid>`는 두 키링에 남겨 기존 토큰을 계속 검증한다.
+3. **구 키 제거**: 최대 리프레시 토큰 수명(기본 7일)이 지난 뒤 두 쪽 키링에서 `<old-kid>`를 제거하고 재배포한다.
+
+### 8.3 2차 배포 전환(HMAC 수용 종료)
+
+1. 1차 배포 완료 후 리프레시 토큰 최대 수명(기본 7일) 이상 경과한 시점에 전환 창을 잡는다.
+2. 백엔드·Next 모두 `JWT_ACCEPT_LEGACY_HMAC=false`로 배포해 `HS256/384/512` 수용을 끄고, ES256 단독 검증 상태로 로그인·재발급·화면 이동을 확인한다.
+3. 이상이 없으면 2차 배포 후속 정리에서 `docker-compose.prod.yml`·`application-prod.yml`·`scripts/deploy.sh`·`frontend/src/proxy.ts`·`JwtTokenProvider`의 `JWT_SECRET` 필수 전달 및 HMAC 레거시 경로를 제거한다.

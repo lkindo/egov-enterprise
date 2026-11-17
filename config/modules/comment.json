@@ -84,7 +84,13 @@
   "registrationOnly": {
     "events": [],
     "contributions": [],
-    "ports": []
+    "ports": [
+      {
+        "to": "community",
+        "port": "CommunityBoardAccessPort",
+        "reason": "커뮤니티 기능이 없으면 커뮤니티 회원 전용 게시판도 없어, 댓글 관리 목록을 거를 때 빠지는 것이 없습니다."
+      }
+    ]
   },
   "requirements": [],
   "unassignedPermissions": []

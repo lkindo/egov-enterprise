@@ -54,6 +54,9 @@ services:
       DB_USERNAME: ${DB_USERNAME:?DB_USERNAME 이 필요합니다}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD 가 필요합니다}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 이 필요합니다}
+      # [ADR-0060 1차 배포] 백엔드만 ES256 서명 개인키 키링을 필수로 받는다(프런트는 공개키만).
+      JWT_SIGNING_ACTIVE_KID: ${JWT_SIGNING_ACTIVE_KID:?JWT_SIGNING_ACTIVE_KID 가 필요합니다}
+      JWT_SIGNING_KEYS_JSON: ${JWT_SIGNING_KEYS_JSON:?JWT_SIGNING_KEYS_JSON 이 필요합니다}
       ALGORITHM_KEY: ${ALGORITHM_KEY:?ALGORITHM_KEY 가 필요합니다 (PII 암호화 마스터 키)}
       # 키 회전 창에서만 구키를 함께 주입한다. 재암호화·검증 후 반드시 제거한다.
       OLD_ALGORITHM_KEY: ${OLD_ALGORITHM_KEY}
@@ -153,6 +156,7 @@ services:
       RATE_LIMIT_REQUESTS_PER_MINUTE:
       RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE:
       JWT_REFRESH_TOKEN_VALIDITY_MS:
+      JWT_ACCEPT_LEGACY_HMAC:
       DB_POOL_CONNECTION_TIMEOUT_MS:
       DB_POOL_MAX_SIZE:
       DB_POOL_MIN_IDLE:
@@ -215,6 +219,12 @@ services:
       # 브랜드 프로필·밀도 축(DEC-OPS-015, docs/03-guides/design-tokens.md). 미설정이면 기본 프로필·comfortable.
       BRAND_THEME:
       UI_DENSITY:
+      # [ADR-0060 1차 배포] Next 는 공개키(SPKI)만 받으며 서명 개인키 키링은 받지 않는다.
+      #   전환 기간(1차 배포) 동안만 기존 HMAC 검증을 위해 JWT_SECRET 을 함께 받고, ALLOW_DEV_JWT_VERIFY_KEYS 는 항상 false 다.
+      JWT_VERIFY_KEYS_JSON: ${JWT_VERIFY_KEYS_JSON:?JWT_VERIFY_KEYS_JSON 이 필요합니다}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 이 필요합니다}
+      ALLOW_DEV_JWT_VERIFY_KEYS: "false"
+      JWT_ACCEPT_LEGACY_HMAC:
       # BACKEND_ACTUATOR_URL 은 전달하지 않는다 — 현재 호출 경로(클라이언트 조회 → /actuator rewrite)에서 읽히지 않고,
       #   운영의 actuator 404 는 관리 포트 분리(W1-12)의 의도된 형상이다. 9090 연결은 next.config 가 금지한 권한 완화다.
     # 컨테이너 격리 — api 블록 주석과 같다.

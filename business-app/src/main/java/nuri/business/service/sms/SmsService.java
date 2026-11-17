@@ -78,7 +78,9 @@ public class SmsService {
 
     public Page<SmsResponseDto> getSmsList(String searchCondition, String searchKeyword, Pageable pageable) {
         log.debug("Searching SMS");
-        Page<SmsResponseDto> page = smsRepository.searchSms(searchCondition, searchKeyword, pageable).map(this::toResponseDto);
+        String currentLoginId = nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse(null);
+        Page<SmsResponseDto> page = smsRepository.searchSms(searchCondition, searchKeyword, currentLoginId, pageable)
+                .map(this::toResponseDto);
         attachResultCounts(page.getContent());
         return page;
     }

@@ -10,7 +10,7 @@
  *
  * 판정은 종료 코드가 아니라 작업별 JUnit XML 과 vitest JSON 이다. 보고서가 없거나 모집단이 0이면 실패다.
  */
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, generateKeyPairSync, randomBytes } from 'node:crypto';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -237,7 +237,17 @@ export async function runItem(item, { root = ROOT, contracts = false, run = runC
     const lock = JSON.parse(readFileSync(join(artifact, 'reusable-base-lock.json'), 'utf8'));
     if (normalizeBackendLayout(lock.layout) !== item.layout) throw new Error('generated layout differs from the plan');
     report.compositionHash = lock.composition?.compositionHash ?? null;
-    const env = { ...process.env, TZ: 'Asia/Seoul', JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex') };
+    const verifyKeysJson = process.env.JWT_VERIFY_KEYS_JSON || JSON.stringify({
+      'nightly-es256': generateKeyPairSync('ec', { namedCurve: 'prime256v1' })
+        .publicKey.export({ format: 'der', type: 'spki' }).toString('base64'),
+    });
+    const { JWT_SIGNING_ACTIVE_KID: _kid, JWT_SIGNING_KEYS_JSON: _keys, ...cleanCallerEnv } = process.env;
+    const env = {
+      ...cleanCallerEnv,
+      TZ: 'Asia/Seoul',
+      JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex'),
+      JWT_VERIFY_KEYS_JSON: verifyKeysJson,
+    };
 
     const modules = item.layout === 'multi-module' ? settingsModules(readFileSync(join(artifact, 'settings.gradle'), 'utf8')) : [];
     const plan = testPlan(item.layout, { migrationTests: item.migrationTests, modules });

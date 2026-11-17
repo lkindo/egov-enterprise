@@ -836,7 +836,7 @@ class MemoReportServiceTest {
     }
 
     @Test
-    @DisplayName("메모보고 수정 - 동일 첨부 유지와 null 분리는 재할당 검증을 하지 않는다")
+    @DisplayName("메모보고 수정 - 동일 첨부는 재할당·수거 없이 유지되고 null 분리는 flush 뒤 이전 첨부를 수거한다")
     void updateMemoReport_sameOrDetachedAttachmentSkipsAssignmentCheck() {
         MemoReport existing = MemoReport.builder()
                 .memoRptSn(1L)
@@ -853,6 +853,8 @@ class MemoReportServiceTest {
                 .atchFileSn(100L)
                 .version(0)
                 .build());
+        org.mockito.Mockito.verifyNoInteractions(attachmentAssignmentPolicy);
+
         memoReportService.updateMemoReport(1L, "user1", MemoReportDto.builder()
                 .rptTtl("Detached")
                 .rptrId("reporter")
@@ -860,8 +862,55 @@ class MemoReportServiceTest {
                 .version(0)
                 .build());
 
-        org.mockito.Mockito.verifyNoInteractions(attachmentAssignmentPolicy);
+        org.mockito.InOrder detachOrder = org.mockito.Mockito.inOrder(attachmentAssignmentPolicy, memoReportRepository);
+        detachOrder.verify(memoReportRepository).flush();
+        detachOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(100L);
+        org.mockito.Mockito.verify(attachmentAssignmentPolicy, org.mockito.Mockito.never()).assertAssignable(anyLong());
         assertThat(existing.getAtchFileSn()).isNull();
+    }
+
+    @Test
+    @DisplayName("[Top 4] 메모보고 수정·삭제 — 첨부 교체·삭제 시 flush 뒤 이전 첨부를 수거하고 미첨부는 수거하지 않는다")
+    void updateAndDeleteMemoReport_releaseReplacedOrDeletedAttachments() {
+        MemoReport existing = MemoReport.builder()
+                .memoRptSn(2L)
+                .rptTtl("WithFile")
+                .rptrId("reporter")
+                .atchFileSn(100L)
+                .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
+        given(memoReportRepository.findByIdForUpdate(2L)).willReturn(Optional.of(existing));
+
+        memoReportService.updateMemoReport(2L, "user1", MemoReportDto.builder()
+                .rptTtl("Replaced")
+                .rptrId("reporter")
+                .atchFileSn(202L)
+                .version(0)
+                .build());
+
+        org.mockito.InOrder replaceOrder = org.mockito.Mockito.inOrder(attachmentAssignmentPolicy, memoReportRepository);
+        replaceOrder.verify(attachmentAssignmentPolicy).assertAssignable(202L);
+        replaceOrder.verify(memoReportRepository).flush();
+        replaceOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(100L);
+
+        memoReportService.deleteMemoReport(2L);
+        org.mockito.InOrder deleteOrder = org.mockito.Mockito.inOrder(attachmentAssignmentPolicy, memoReportRepository);
+        deleteOrder.verify(memoReportRepository).delete(existing);
+        deleteOrder.verify(memoReportRepository).flush();
+        deleteOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(202L);
+
+        MemoReport noAttachment = MemoReport.builder()
+                .memoRptSn(3L)
+                .rptTtl("NoFile")
+                .rptrId("reporter")
+                .atchFileSn(null)
+                .build();
+        given(memoReportRepository.findByIdForUpdate(3L)).willReturn(Optional.of(noAttachment));
+        org.mockito.Mockito.clearInvocations(attachmentAssignmentPolicy, memoReportRepository);
+
+        memoReportService.deleteMemoReport(3L);
+        verify(memoReportRepository).delete(noAttachment);
+        org.mockito.Mockito.verifyNoInteractions(attachmentAssignmentPolicy);
     }
 
     @Test
@@ -870,6 +919,7 @@ class MemoReportServiceTest {
         // 지시 변경과 같은 행 잠금을 얻은 뒤 소유권과 삭제 가능 상태를 검사한다.
         Long memoRptSn = 1L;
         nuri.business.domain.memoreport.MemoReport entity = org.mockito.Mockito.mock(nuri.business.domain.memoreport.MemoReport.class);
+        org.mockito.Mockito.when(entity.getAtchFileSn()).thenReturn(null);
         org.mockito.Mockito.when(memoReportRepository.findByIdForUpdate(memoRptSn)).thenReturn(java.util.Optional.of(entity));
 
         // when

@@ -4,13 +4,12 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, rmSync, symlinkSyn
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createServer } from 'node:http';
-import { randomBytes } from 'node:crypto';
-import { createHash } from 'node:crypto';
+import { createHash, generateKeyPairSync, randomBytes, sign as signCrypto, verify as verifyCrypto } from 'node:crypto';
 import fs from 'node:fs';
 import { syncBuiltinESMExports } from 'node:module';
 import { execFileSync } from 'node:child_process';
 import { validateIsolationManifest, assertOwnedDatabase, assertOwnedComposeRuntime, assertIsolatedTarget, validateComposePlan } from './e2e-isolation.mjs';
-import { closedEnvironment, createIsolatedMfaEnvironment, assertNoDotEnv, assertBuildTarget, discoveryArguments,
+import { closedEnvironment, createIsolatedJwtEnvironment, createIsolatedMfaEnvironment, assertNoDotEnv, assertBuildTarget, discoveryArguments,
   isEnterpriseTaskLabSelection, createEnterpriseTaskLabBuildReceipt, safeInputHash, rehearsesAuthorizationContract } from './run-isolated-e2e.mjs';
 import { TASKS, TASK_SEEDS, compareEnterpriseTaskRuns, readEnterpriseTaskRun } from './compare-enterprise-task-lab.mjs';
 
@@ -211,7 +210,16 @@ function releaseSmokeFixture() {
   images.frontend.Config.Env = ['NODE_ENV=production', 'HOSTNAME=0.0.0.0', 'NEXT_TELEMETRY_DISABLED=1'];
   const context = createSmokeContext({ runId: 'c'.repeat(24), phase: 'fresh', images,
     directory: path.resolve('synthetic-release-smoke'), subnet: '10.203.1.0/24' });
-  const credentials = { database: 'fixture-database', jwt: 'fixture-jwt', encryption: 'fixture-key', admin: 'fixture-admin' };
+  const smokeKp = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+  const credentials = {
+    database: 'fixture-database',
+    jwt: 'fixture-jwt',
+    jwtSigningActiveKid: 'smoke-es256',
+    jwtSigningKeysJson: JSON.stringify({ 'smoke-es256': smokeKp.privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64') }),
+    jwtVerifyKeysJson: JSON.stringify({ 'smoke-es256': smokeKp.publicKey.export({ format: 'der', type: 'spki' }).toString('base64') }),
+    encryption: 'fixture-key',
+    admin: 'fixture-admin',
+  };
   const rendered = { services: {
     db: {}, api: { environment: { SPRING_PROFILES_ACTIVE: 'prod', SPRING_FLYWAY_LOCATIONS: 'classpath:db/migration',
       MFA_REQUIRE_PROTECTED: 'true',
@@ -367,6 +375,9 @@ test('production smoke rejects shared resources, public ports, dev seeds, mixed 
     value => { value.plan.services.api.image = 'egov-api:latest'; },
     value => { value.plan.services.api.environment.TRUSTED_PROXIES = '10.203.1.0/24'; },
     value => { value.plan.services.frontend.environment.ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE = 'true'; },
+    value => { value.plan.services.frontend.environment.ALLOW_DEV_JWT_VERIFY_KEYS = 'true'; },
+    value => { value.plan.services.frontend.environment.JWT_SIGNING_KEYS_JSON = value.credentials.jwtSigningKeysJson; },
+    value => { value.plan.services.api.environment.JWT_VERIFY_KEYS_JSON = value.credentials.jwtVerifyKeysJson; },
     value => { value.plan.services.edge.ports.push({ target: 8080, published: '8080', host_ip: '0.0.0.0' }); },
     value => { value.plan.services.api.ports.push({ target: 8080, published: '0', host_ip: '127.0.0.1' }); },
     value => { value.plan.services.api.environment.CORS_ORIGIN_1 = 'http://untrusted.invalid'; },
@@ -551,6 +562,22 @@ test('isolated MFA uses a fresh 256-bit key and never inherits an enforced or ex
   assert.equal(Buffer.from(keys.e2e, 'base64').length, 32);
   assert.ok(Buffer.from(keys.e2e, 'base64').toString('base64') === keys.e2e);
   assert.ok(first.MFA_KEYS_JSON !== second.MFA_KEYS_JSON);
+});
+
+test('isolated JWT generates disposable P-256 signing and verify keypairs cleanly separated by service', () => {
+  const first = createIsolatedJwtEnvironment();
+  const second = createIsolatedJwtEnvironment();
+  assert.deepEqual(Object.keys(first.api).sort(), ['JWT_SECRET', 'JWT_SIGNING_ACTIVE_KID', 'JWT_SIGNING_KEYS_JSON']);
+  assert.deepEqual(Object.keys(first.frontend).sort(), ['JWT_SECRET', 'JWT_VERIFY_KEYS_JSON']);
+  assert.equal(first.api.JWT_SECRET, first.frontend.JWT_SECRET);
+  assert.notEqual(first.api.JWT_SIGNING_KEYS_JSON, second.api.JWT_SIGNING_KEYS_JSON);
+
+  const kid = first.api.JWT_SIGNING_ACTIVE_KID;
+  const privDer = Buffer.from(JSON.parse(first.api.JWT_SIGNING_KEYS_JSON)[kid], 'base64');
+  const pubDer = Buffer.from(JSON.parse(first.frontend.JWT_VERIFY_KEYS_JSON)[kid], 'base64');
+  const payload = Buffer.from('adr-0060-probe');
+  const signature = signCrypto('sha256', payload, { key: privDer, format: 'der', type: 'pkcs8' });
+  assert.equal(verifyCrypto('sha256', payload, { key: pubDer, format: 'der', type: 'spki' }, signature), true);
 });
 
 function mfaWiringSources() {
