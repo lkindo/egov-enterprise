@@ -56,20 +56,16 @@ const BASELINE_BY_FILE: Record<string, number> = {
   'src/app/admin/survey/manage/SurveyManageClient.tsx': 6,
   'src/app/admin/survey/polls/manage/page.tsx': 2,
   'src/app/admin/survey/stats/SurveyStatsClient.tsx': 7,
-  'src/app/admin/system/logs/user/SystemLogsUserClient.tsx': 3,
+  'src/app/admin/system/logs/user/SystemLogsUserClient.tsx': 2,
   'src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx': 3,
   'src/app/components/ui/confirm-modal.tsx': 6,
-  'src/app/components/ui/standard-form.tsx': 1,
   'src/app/components/ui/status-displays.tsx': 13,
   'src/app/global-error.tsx': 6,
   'src/app/login/LoginClient.tsx': 1,
   'src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx': 2,
-  // [업무 허브 분해 W1] 업무 허브 클라이언트의 4건이 두 화면으로 나뉘었다(보고 삭제 2·일정 삭제 2) — 합은 같다.
-  'src/app/smart-toolkit/schedule/ScheduleCalendarClient.tsx': 2,
+  // [업무 허브 분해 W1] 업무 허브 클라이언트의 4건이 두 화면으로 나뉘었다(보고 삭제 2·일정 삭제 2). 일정 삭제 2건과
+  //   일정·업무·보고 작성 폼의 오류 글자·테두리 17건은 대비 4.5:1 을 보장하는 destructive-emphasis 토큰으로 옮겼다(2026-11-17).
   'src/app/smart-toolkit/work-report/WorkReportClient.tsx': 2,
-  'src/components/business/deptJob/DeptJobForm.tsx': 7,
-  'src/components/business/report/ReportCreateForm.tsx': 4,
-  'src/components/business/schedule/ScheduleCreateForm.tsx': 6,
   'src/components/features/dashboard/RealTimeDashboard.tsx': 1,
   'src/components/features/satisfaction/Stars.tsx': 2,
 };

@@ -44,6 +44,13 @@ public class ScrapDto {
     private String userId;
     private String frstRgtrId;
     private LocalDateTime crtDt;
+    /**
+     * 게시판 글 스크랩이 지금도 열리는지 — 글이 삭제·비밀글·게시 기간 밖이 되면 false. 외부·일반 주소는 판정 대상이 아니라 null 이다.
+     * 목록 응답에만 채우는 파생 값이며 요청 본문에서는 받지 않는다.
+     */
+    @Schema(nullable = true, types = {"boolean", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
+    private Boolean targetAvailable;
 
     // 엔티티↔DTO 매핑은 ScrapMapper (MapStruct, 프레임워크 표준) 가 전담한다 — ScrapService 가 이를 호출한다.
 }

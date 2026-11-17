@@ -41,7 +41,7 @@ export const updateScrapOperation = /*#__PURE__*/ (() => {
   requestSchema: ScrapDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["targetAvailable"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -98,7 +98,7 @@ export const createScrapOperation = /*#__PURE__*/ (() => {
   requestSchema: ScrapDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["targetAvailable"]],
   responseForbiddenPaths: [],
   });
 })();

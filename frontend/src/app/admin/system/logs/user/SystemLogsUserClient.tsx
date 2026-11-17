@@ -134,7 +134,7 @@ const SystemLogsUserClient = () => {
                     <span className="text-muted-foreground/40" aria-hidden="true">/</span>
                     <span className="text-muted-foreground font-bold">{item.inqCnt ?? 0}</span>
                     <span className="text-muted-foreground/40" aria-hidden="true">/</span>
-                    <span className="text-rose-500 font-bold">{item.delCnt ?? 0}</span>
+                    <span className="text-destructive-emphasis font-bold">{item.delCnt ?? 0}</span>
                     <span className="text-muted-foreground/40" aria-hidden="true">/</span>
                     <span
                         className="text-muted-foreground font-bold"

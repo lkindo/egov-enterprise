@@ -9,7 +9,8 @@ import { spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { createHash } from 'node:crypto';
 import { publishReleaseImages, runDocker, scanReleaseImages, validateImageScan, validateReleaseManifest, verifyReleaseImages,
-  verifyReleaseScanEvidence, validateImageArchive, readImageArchive, RELEASE_SCANNER_IMAGE, RELEASE_SCAN_RECEIPT } from './release-images.mjs';
+  verifyReleaseScanEvidence, validateImageArchive, readImageArchive, RELEASE_SCANNER_IMAGE, RELEASE_SCAN_RECEIPT,
+  releaseCommandStep, reportBlockingFindings } from './release-images.mjs';
 import { runSmokeStages, smokeCommand, rawSmokeRequest, validateEncodedSmokeProbe, validateSmokeTableCounts,
   validateSmokeSessionCookies, validateSmokeManagementBoundary, readSmokeCsrfToken, withSmokeCsrf,
   internalSmokeHttp, containerSmokeRequest, INTERNAL_SMOKE_HTTP_SCRIPT, probeDirectApiEncodedPaths } from './run-isolated-release-smoke.mjs';
@@ -904,7 +905,7 @@ else if (args[1] === 'inspect') {
 }
 `);
   const run = args => runDocker(args, { executable: process.execPath, prefix: [executablePath] });
-  assert.throws(() => scanReleaseImages(env, { root, run }), { message: 'Release image command failed.' });
+  assert.throws(() => scanReleaseImages(env, { root, run }), { message: 'Release image command failed: scanner image frontend json (exit 17).' });
   assert.throws(() => publishReleaseImages(env, { run, exists: () => false, read: file => readFileSync(join(root, file)),
     write: () => assert.fail('manifest must not be written') }), /scan evidence/u);
   assert.equal(JSON.parse(readFileSync(callsPath, 'utf8')).some(args => args[1] === 'push'), false);
@@ -983,7 +984,45 @@ if (args[1] !== 'push') {
   assert.throws(() => publishReleaseImages(env, { exists: () => false,
     run: (args) => runDocker(args, { executable: process.execPath, prefix: [executablePath] }),
     ...scanEvidenceFixture(),
-    write: (...args) => writes.push(args) }), { message: 'Release image command failed.' });
+    write: (...args) => writes.push(args) }), { message: 'Release image command failed: image push (exit 7).' });
   assert.equal(writes.length, 0);
   assert.equal(JSON.parse(readFileSync(callsPath, 'utf8')).filter((args) => args[1] === 'push').length, 2);
+});
+
+test('a failed engine step is named by fixed subcommand words only, never by its arguments', () => {
+  const scannerRun = format => ['run', '--rm', RELEASE_SCANNER_IMAGE, 'image', '--format', format, '--input', '/input/api.tar'];
+  assert.equal(releaseCommandStep(scannerRun('json')), 'scanner image api json');
+  assert.equal(releaseCommandStep(scannerRun('cyclonedx')), 'scanner image api cyclonedx');
+  assert.equal(releaseCommandStep(['run', '--rm', RELEASE_SCANNER_IMAGE, 'version']), 'scanner version');
+  assert.equal(releaseCommandStep(['pull', RELEASE_SCANNER_IMAGE]), 'pull');
+  assert.equal(releaseCommandStep(['image', 'save', '--output', '/secret/path.tar', 'sha256:x']), 'image save');
+  assert.equal(releaseCommandStep(['image', 'push', 'ghcr.io/private-ns/egov-api:sha-1']), 'image push');
+  assert.equal(releaseCommandStep(['push', 'ghcr.io/private-ns/egov-api:sha-1']), 'engine command');
+  assert.equal(releaseCommandStep(['login', '--password', 'fixture-private-token']), 'engine command');
+  const forged = ['run', '--rm', RELEASE_SCANNER_IMAGE, 'image', '--format', 'fixture-private-format', '--input', '/input/../fixture-private'];
+  assert.equal(releaseCommandStep(forged), 'scanner image unknown unknown');
+});
+
+test('a blocking scan names the public vulnerability facts and stops before evidence is written', t => {
+  const root = temporaryScanRoot(t);
+  const reportPath = join(root, 'api.vuln.json');
+  writeFileSync(reportPath, JSON.stringify({ Results: [
+    { Class: 'os-pkgs', Vulnerabilities: [
+      { VulnerabilityID: 'CVE-2025-0001', PkgName: 'brotli-libs', InstalledVersion: '1.2.0-r1', FixedVersion: '1.2.1-r0', Severity: 'CRITICAL' },
+      { VulnerabilityID: 'CVE-2025-0002', PkgName: 'libexpat', InstalledVersion: '2.9.0-r0', FixedVersion: '2.10.0-r0, 2.11.0-r0', Severity: 'HIGH' },
+      { VulnerabilityID: 'CVE-2025-0003', PkgName: 'low-lib', InstalledVersion: '1', Severity: 'LOW' },
+      { VulnerabilityID: 'fixture-private diagnostic\nwith newline', PkgName: 'x', InstalledVersion: '1', Severity: 'HIGH' },
+    ] }] }));
+  const logged = [];
+  const findings = reportBlockingFindings('api', reportPath, { log: message => logged.push(message) });
+  assert.deepEqual(findings, [
+    'api: CRITICAL CVE-2025-0001 brotli-libs 1.2.0-r1 -> 1.2.1-r0',
+    'api: HIGH CVE-2025-0002 libexpat 2.9.0-r0 -> 2.10.0-r0,2.11.0-r0',
+    'api: HIGH ? x 1 -> (no fix)',
+  ]);
+  assert.equal(logged.length, 1);
+  assert.match(logged[0], /^Blocking api image vulnerabilities \(3\):/u);
+  assert.doesNotMatch(logged[0], /fixture-private/u);
+  assert.deepEqual(reportBlockingFindings('api', join(root, 'missing.json'), { log: message => logged.push(message) }), []);
+  assert.equal(logged.length, 1);
 });

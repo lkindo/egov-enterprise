@@ -25,6 +25,8 @@ public class DeptJobBoxService {
     private final DeptJobBoxRepository deptJobBoxRepository;
     /** 삭제 전 산하 업무 존재 검사용 — 업무함과 업무는 별개 엔티티다(연관관계 매핑 없음). */
     private final DeptJobRepository deptJobRepository;
+    /** 담당 부서 존재 검사용 — tb_dept_job_bx.dept_id 에는 DB FK 가 없다. */
+    private final nuri.business.domain.user.repository.DeptManageRepository deptManageRepository;
 
     public Page<DeptJobBoxDto> getDeptJobBoxList(String keyword, Pageable pageable) {
         return deptJobBoxRepository.findByKeyword(keyword, Objects.requireNonNull(pageable))
@@ -48,6 +50,7 @@ public class DeptJobBoxService {
         // [헌법 제8조 이중검증] 컨트롤러 @PreAuthorize(1차) + 서비스 2차 가드. 부서 업무함은
         // 소유 모델이 없는 공유 관리 자원 → ADMIN/SYSTEM 전용(소유 스코프 승격 시 이 가드를 교체).
         SecurityUtil.assertPermission("DEPT_BOX_CREATE");
+        assertDepartmentExists(dto.getDeptId());
         DeptJobBox entity = DeptJobBox.builder()
                 .deptTaskBoxNm(dto.getDeptTaskBoxNm())
                 .deptId(dto.getDeptId())
@@ -61,6 +64,10 @@ public class DeptJobBoxService {
         SecurityUtil.assertPermission("DEPT_BOX_UPDATE");
         DeptJobBox entity = deptJobBoxRepository.findById(Objects.requireNonNull(deptTaskBoxSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "부서업무함을 찾을 수 없습니다: " + deptTaskBoxSn));
+        // 이미 고아가 된 담당 부서를 그대로 왕복시키는 수정(이름·순서만 고침)은 막지 않는다 — 바뀐 값만 묻는다.
+        if (!Objects.equals(dto.getDeptId(), entity.getDeptId())) {
+            assertDepartmentExists(dto.getDeptId());
+        }
 
         entity.update(
                 dto.getDeptTaskBoxNm(),
@@ -90,5 +97,18 @@ public class DeptJobBoxService {
         }
 
         deptJobBoxRepository.deleteById(boxSn);
+    }
+
+    /**
+     * 담당 부서는 비워 둘 수 있지만(부서 미지정 업무함), 값을 주면 실제 부서여야 한다. 없는 부서를 담당으로 두면
+     * '부서 전체' 열람(DeptJobService)에서 그 업무함이 어느 부서에도 잡히지 않아 조용히 빠진다.
+     */
+    private void assertDepartmentExists(String deptId) {
+        if (deptId == null || deptId.isBlank()) {
+            return;
+        }
+        if (!deptManageRepository.existsById(deptId)) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "담당 부서를 찾을 수 없습니다: " + deptId);
+        }
     }
 }

@@ -245,10 +245,16 @@ export function scanReleaseImages(env, { run = runDocker, root = process.cwd() }
     run(['image', 'save', '--output', archivePath, image.id]);
     const identity = readImageArchive(archivePath, image.id);
     for (const format of ['json', 'cyclonedx']) {
-      run([...scanner, 'image', '--cache-dir', '/cache', '--config', '/dev/null', '--ignorefile', '/dev/null',
-        '--scanners', 'vuln', '--pkg-types', 'os,library', '--list-all-pkgs',
-        '--severity', 'HIGH,CRITICAL', '--exit-code', '1', '--timeout', '15m', '--format', format,
-        '--input', `/input/${role}.tar`, '--output', `/output/${path.basename(scanPath(role, format))}`]);
+      try {
+        run([...scanner, 'image', '--cache-dir', '/cache', '--config', '/dev/null', '--ignorefile', '/dev/null',
+          '--scanners', 'vuln', '--pkg-types', 'os,library', '--list-all-pkgs',
+          '--severity', 'HIGH,CRITICAL', '--exit-code', '1', '--timeout', '15m', '--format', format,
+          '--input', `/input/${role}.tar`, '--output', `/output/${path.basename(scanPath(role, format))}`]);
+      } catch (error) {
+        // 차단 사유를 로그에서 바로 알 수 있게 공개 취약점 정보(패키지·CVE·수정판)만 요약한다 — 엔진 출력은 여전히 옮기지 않는다.
+        if (format === 'json') reportBlockingFindings(role, path.join(root, scanPath(role, 'json')));
+        throw error;
+      }
     }
     const report = readFileSync(path.join(root, scanPath(role, 'json')));
     const sbom = readFileSync(path.join(root, scanPath(role, 'cyclonedx')));
@@ -283,10 +289,45 @@ export function validateReleaseManifest(manifest) {
 }
 
 // Capture engine output: failures must not replay credentials, build arguments or daemon diagnostics.
+//   The error names only the fixed step (subcommand words chosen by this script) and the exit status, so a failed
+//   release run says which step stopped without echoing engine output.
 export function runDocker(args, { executable = 'docker', prefix = [] } = {}) {
   const result = spawnSync(executable, [...prefix, ...args], { encoding: 'utf8', windowsHide: true, maxBuffer: 16 * 1024 * 1024, timeout: 20 * 60 * 1000 });
-  if (result.error || result.status !== 0) throw new Error('Release image command failed.');
+  if (result.error || result.status !== 0) {
+    const outcome = result.error ? 'did not start or timed out' : `exit ${result.status}`;
+    throw new Error(`Release image command failed: ${releaseCommandStep(args)} (${outcome}).`);
+  }
   return result.stdout.trim();
+}
+
+export function releaseCommandStep(args) {
+  if (args[0] === 'run') {
+    const scannerAt = args.indexOf(RELEASE_SCANNER_IMAGE);
+    const subcommand = scannerAt >= 0 ? args[scannerAt + 1] : null;
+    if (subcommand === 'version') return 'scanner version';
+    if (subcommand === 'image') {
+      const role = /^\/input\/(api|frontend)\.tar$/u.exec(args[args.indexOf('--input') + 1] ?? '')?.[1] ?? 'unknown';
+      const format = ['json', 'cyclonedx'].includes(args[args.indexOf('--format') + 1]) ? args[args.indexOf('--format') + 1] : 'unknown';
+      return `scanner image ${role} ${format}`;
+    }
+    return 'run';
+  }
+  if (args[0] === 'image' && ['inspect', 'save', 'push'].includes(args[1])) return `image ${args[1]}`;
+  return args[0] === 'pull' ? 'pull' : 'engine command';
+}
+
+/** Trivy JSON 보고서의 HIGH·CRITICAL 항목을 공개 정보(심각도·ID·패키지·설치판·수정판)로만 요약해 stderr 에 쓴다. */
+export function reportBlockingFindings(role, reportPath, { log = message => console.error(message) } = {}) {
+  let report;
+  try { report = JSON.parse(readFileSync(reportPath, 'utf8')); } catch { return []; }
+  const token = value => (typeof value === 'string' && /^[\w.:+~@/-]{1,128}$/u.test(value) ? value : '?');
+  const findings = (Array.isArray(report?.Results) ? report.Results : [])
+    .flatMap(result => (Array.isArray(result?.Vulnerabilities) ? result.Vulnerabilities : []))
+    .filter(row => row?.Severity === 'CRITICAL' || row?.Severity === 'HIGH')
+    .map(row => `${role}: ${row.Severity} ${token(row.VulnerabilityID)} ${token(row.PkgName)} ${token(row.InstalledVersion)} -> ${row.FixedVersion ? String(row.FixedVersion).split(/,\s*/u).map(token).join(',') : '(no fix)'}`);
+  const unique = [...new Set(findings)];
+  if (unique.length) log(`Blocking ${role} image vulnerabilities (${unique.length}):\n${unique.slice(0, 50).join('\n')}`);
+  return unique;
 }
 
 function releaseImages(env) {

@@ -133,19 +133,24 @@ export function setup() {
 export default function (data) {
   const scenario = Math.random();
 
-  // 40% 로그인 API
-  if (scenario < 0.4) {
+  // [2026-11-17] 로그인 비중 40% → 10%. 2026-11-14 비밀번호 해시 비용을 10 에서 12 로 올리면서(OWASP 하한, 로그인 한 번의
+  //   CPU 작업량 4배) 반복의 40% 를 로그인으로 채우던 혼합은 실제 사용(세션당 한 번 로그인)과 멀어졌고, 같은 러너의 CPU 를
+  //   해시가 차지해 지연 기준이 해시 비용을 재게 됐다. 나머지 셋은 종전 비율(3:2:1)을 그대로 키웠다. 로그인 지연 기준
+  //   (p95<500ms)은 바꾸지 않는다. 함께 고친 것: 로그인이 해시 동안 DB 연결을 붙잡아 다른 요청까지 풀 대기 초과로 실패하던
+  //   결함(EgovAuthenticationProvider) — 혼합만 바꿔 붉은 신호를 지우지 않는다.
+  // 10% 로그인 API
+  if (scenario < 0.1) {
     runLoginTest();
   }
-  // 30% 대시보드 조회
-  else if (scenario < 0.7) {
+  // 45% 대시보드 조회
+  else if (scenario < 0.55) {
     runDashboardTest(data.token);
   }
-  // 20% 사용자 목록 조회
-  else if (scenario < 0.9) {
+  // 30% 사용자 목록 조회
+  else if (scenario < 0.85) {
     runUsersListTest(data.token);
   }
-  // 10% 게시글 등록
+  // 15% 게시글 등록
   else {
     runPostCreateTest(data.token);
   }

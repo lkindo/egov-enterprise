@@ -40208,6 +40208,13 @@
           "crtDt": {
             "type": "string",
             "format": "date-time"
+          },
+          "targetAvailable": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "readOnly": true
           }
         },
         "required": [

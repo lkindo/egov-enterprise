@@ -52,6 +52,9 @@ class DeptManageServiceImplTest {
     @Mock
     private nuri.business.domain.user.repository.UserRepository userRepository;
 
+    @Mock
+    private nuri.business.domain.deptjob.DeptJobBoxRepository deptJobBoxRepository;
+
     // 실제 MapStruct 생성 구현(DeptManageMapperImpl)을 spy 로 주입 — 수기 from() 과 동일 매핑 거동 보장
     @Spy
     private DeptManageMapper deptManageMapper = new DeptManageMapperImpl();

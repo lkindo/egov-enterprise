@@ -22,7 +22,7 @@ export function FormField({
     <div className="space-y-1.5 p-0.5">
       <label htmlFor={htmlFor} className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
         {label}
-        {required ? <span className="text-rose-500 font-bold text-xs" aria-hidden="true">*</span> : null}
+        {required ? <span className="text-destructive-emphasis font-bold text-xs" aria-hidden="true">*</span> : null}
       </label>
       <div className="relative">
         {children}

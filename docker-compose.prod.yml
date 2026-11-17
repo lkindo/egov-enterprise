@@ -127,7 +127,8 @@ services:
       LOGIN_LOCK_MINUTES:
       MFA_ACTIVE_KEY_ID:
       MFA_KEYS_JSON:
-      # [Wave 4] 주민등록번호 키링 — 비우면 종전 ARIA 암호문을 쓴다. 채우면 키를 MFA 키처럼 백업한다(잃으면 v2 값을 읽지 못한다).
+      # [Wave 4] 주민등록번호 키링 — 운영 배포(scripts/deploy.sh)는 2026-11-17 부터 필수로 요구한다(비우면 앱이 종전 ARIA 로
+      #   새 값을 암호화한다 — 키 없이 이 파일로 직접 띄우는 격리 스모크만 그 경로를 쓴다). 키는 MFA 키처럼 백업한다(잃으면 v2 값을 읽지 못한다).
       RRNO_ACTIVE_KEY_ID:
       RRNO_KEYS_JSON:
       # [Wave 4] 첨부 저장소 — 비우면 local(attachment_storage 볼륨). s3 면 아래 설정이 모두 있어야 기동한다.

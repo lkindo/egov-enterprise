@@ -45,6 +45,10 @@ class EgovAuthenticationProviderTest {
     @Mock
     private EgovPasswordEncoder egovPasswordEncoder;
 
+    /** 2단계 쓰기 트랜잭션 — 목은 경계만 흉내 낸다(실제 커밋·롤백 의미는 LoginLockoutPersistenceIntegrationTest 가 본다). */
+    @Mock
+    private org.springframework.transaction.PlatformTransactionManager transactionManager;
+
     private EgovAuthenticationProvider authenticationProvider;
 
     private User testUser;
@@ -58,7 +62,7 @@ class EgovAuthenticationProviderTest {
         // EgovPasswordEncoder도 PasswordEncoder를 구현하므로 @InjectMocks 생성자 추론은 두 mock을
         // 모호하게 매칭할 수 있다. 의존성을 명시해 표준/레거시 인코더 경계를 실행 순서와 무관하게 고정한다.
         authenticationProvider = new EgovAuthenticationProvider(
-                userRepository, userDetailsService, passwordEncoder, egovPasswordEncoder);
+                userRepository, userDetailsService, passwordEncoder, egovPasswordEncoder, transactionManager);
         lenient().when(userDetailsService.loadUserByUsername(anyString())).thenAnswer(invocation ->
                 principal(invocation.getArgument(0), List.of("ROLE_USER"), List.of("PROFILE_READ")));
         testUser = User.builder()

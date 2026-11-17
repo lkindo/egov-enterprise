@@ -333,4 +333,49 @@ class ScrapServiceOwnershipTest {
         assertThat(scrapService.createScrap("owner", ScrapDto.builder()
                 .scrapNm("외부 링크").scrapUrl("https://ext.example.com/view?bbsId=EXT&pstSn=1").useYn("Y").build())).isEqualTo(60L);
     }
+
+    @Test
+    @DisplayName("목록은 게시판 글 스크랩마다 지금 열리는지 알린다 — 거부는 false, 외부·일반 주소는 null, 형식 밖 옛 주소·포트 부재는 false")
+    void listMarksWhetherBoardTargetsCanStillBeOpened() {
+        authenticateAs("owner", "USER");
+        org.springframework.data.domain.PageRequest page = org.springframework.data.domain.PageRequest.of(0, 10);
+        List<Scrap> rows = List.of(
+                ownedBy("owner", 1L, "/admin/community/boards/detail?bbsId=BBS-1&pstSn=31"),
+                ownedBy("owner", 2L, "/admin/community/boards/detail?bbsId=BBS-1&pstSn=32"),
+                ownedBy("owner", 3L, "https://ext.example.com/view?bbsId=EXT&pstSn=1"),
+                ownedBy("owner", 4L, "/admin/dashboard"),
+                ownedBy("owner", 5L, "/admin/community/boards/detail?bbsId=BBS-1&pstSn=abc"));
+        given(scrapRepository.findByFrstRgtrIdAndUseYnOrderByScrapSnDesc("owner", "Y", page))
+                .willReturn(new org.springframework.data.domain.PageImpl<>(rows));
+        // 같은 메서드를 31·32 두 글로 부른다 — 32 만 거부하도록 엄격 스텁 규칙에서 이 스텁을 뺀다.
+        lenient().doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(boardPostAccess).assertScrapablePost("BBS-1", 32L);
+
+        List<ScrapDto> listed = scrapService.getMyScrapList("owner", page).getContent();
+
+        assertThat(listed).extracting(ScrapDto::getTargetAvailable)
+                .containsExactly(Boolean.TRUE, Boolean.FALSE, null, null, Boolean.FALSE);
+        verify(boardPostAccess).assertScrapablePost("BBS-1", 31L);
+
+        ScrapService withoutPort = new ScrapService(scrapRepository, scrapMapper);
+        assertThat(withoutPort.getScrapList("owner", page).getContent()).extracting(ScrapDto::getTargetAvailable)
+                .containsExactly(Boolean.FALSE, Boolean.FALSE, null, null, Boolean.FALSE);
+    }
+
+    /**
+     * 판정 포트(@Transactional)의 거부 예외는 함께 참여한 트랜잭션을 롤백 전용으로 만든다. 목록이 트랜잭션 안에서 판정을 부르면
+     * 예외를 잡아도 응답이 UnexpectedRollbackException 으로 실패하므로, 두 목록 진입점은 트랜잭션 밖(NOT_SUPPORTED)에서 돈다.
+     */
+    @Test
+    @DisplayName("목록 진입점 둘은 트랜잭션 밖에서 판정한다(NOT_SUPPORTED) — 별칭도 자기 호출이라 따로 선언한다")
+    void listEntryPointsRunOutsideTransactions() throws NoSuchMethodException {
+        for (String name : List.of("getScrapList", "getMyScrapList")) {
+            org.springframework.transaction.annotation.Transactional tx = ScrapService.class
+                    .getMethod(name, String.class, org.springframework.data.domain.Pageable.class)
+                    .getAnnotation(org.springframework.transaction.annotation.Transactional.class);
+            assertThat(tx).as(name).isNotNull();
+            assertThat(tx.propagation()).as(name)
+                    .isEqualTo(org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED);
+        }
+    }
 }

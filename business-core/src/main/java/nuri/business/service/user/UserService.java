@@ -846,6 +846,9 @@ public class UserService extends BaseAbstractService {
                 if (requested == null || java.util.Objects.equals(requested, current)) {
                         return;
                 }
+                // [H3] 소속 변경은 '사용자 · 부서 변경'(USER_DEPT) 권한의 의미다 — 정보 수정(USER_UPDATE)만으로 우회하지 못하게
+                //   일괄 이동(moveUsersToDept)과 같은 판정(전역 잠금 뒤 DB 재확인)을 지난다. 소속을 그대로 왕복시키는 수정은 묻지 않는다.
+                authorizationAdministration.lockAndAuthorize("USER_DEPT");
                 assertDepartmentExists(requested);
         }
 }

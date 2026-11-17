@@ -35,6 +35,9 @@ class DeptJobBoxServiceTest {
     @Mock
     private nuri.business.domain.deptjob.DeptJobRepository deptJobRepository;
 
+    @Mock
+    private nuri.business.domain.user.repository.DeptManageRepository deptManageRepository;
+
     @InjectMocks
     private DeptJobBoxService deptJobBoxService;
 
@@ -117,11 +120,38 @@ class DeptJobBoxServiceTest {
         dto.setDeptId("DEPT2");
         dto.setSortOrdr(2L);
 
+        when(deptManageRepository.existsById("DEPT2")).thenReturn(true);
         when(deptJobBoxRepository.save(any(DeptJobBox.class))).thenReturn(deptJobBox);
 
         Long sn = deptJobBoxService.createDeptJobBox("user1", dto);
 
         assertEquals(1L, sn);
+    }
+
+    @Test
+    @DisplayName("부서함 생성·수정 - 없는 담당 부서는 404 로 거부하고 저장하지 않는다. 부서 미지정과 기존 값 왕복은 묻지 않는다")
+    void departmentMustExistWhenAssignedOrChanged() {
+        DeptJobBoxDto ghost = new DeptJobBoxDto();
+        ghost.setDeptTaskBoxNm("Ghost");
+        ghost.setDeptId("GHOST");
+        BusinessException created = assertThrows(BusinessException.class,
+                () -> deptJobBoxService.createDeptJobBox("user1", ghost));
+        assertEquals(CommonErrorCode.RESOURCE_NOT_FOUND, created.getErrorCode());
+        verify(deptJobBoxRepository, never()).save(any(DeptJobBox.class));
+
+        when(deptJobBoxRepository.findById(1L)).thenReturn(Optional.of(deptJobBox));
+        BusinessException updated = assertThrows(BusinessException.class,
+                () -> deptJobBoxService.updateDeptJobBox(1L, "user1", ghost));
+        assertEquals(CommonErrorCode.RESOURCE_NOT_FOUND, updated.getErrorCode());
+        assertEquals("DEPT1", deptJobBox.getDeptId());
+        assertEquals("Test Box", deptJobBox.getDeptTaskBoxNm());
+
+        DeptJobBoxDto unassigned = new DeptJobBoxDto();
+        unassigned.setDeptTaskBoxNm("Shared");
+        when(deptJobBoxRepository.save(any(DeptJobBox.class))).thenReturn(deptJobBox);
+        deptJobBoxService.createDeptJobBox("user1", unassigned);
+        verify(deptManageRepository, never()).existsById("");
+        verify(deptManageRepository, times(2)).existsById("GHOST");
     }
 
     @Test

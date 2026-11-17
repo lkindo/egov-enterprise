@@ -45,6 +45,8 @@ interface UserManageFormProps {
   onCancel: () => void;
   isPending?: boolean;
   externalBusy?: boolean;
+  /** 수정에서 소속 부서를 바꾸려면 '사용자 · 부서 변경'(USER_DEPT)이 필요하다 — 서버가 같은 권한을 다시 확인한다. */
+  canChangeDepartment?: boolean;
 }
 
 export function UserManageForm({
@@ -55,7 +57,9 @@ export function UserManageForm({
   onCancel,
   isPending = false,
   externalBusy = false,
+  canChangeDepartment = true,
 }: UserManageFormProps) {
+  const departmentLocked = mode === 'edit' && !canChangeDepartment;
   const schema = React.useMemo(() => {
     return mode === 'create' ? createUserSchema : userSchema;
   }, [mode]);
@@ -279,6 +283,8 @@ export function UserManageForm({
                 <FormControl>
                   <select
                     {...field}
+                    disabled={departmentLocked}
+                    aria-describedby={departmentLocked ? 'user-form-dept-locked' : undefined}
                     className={cn(
                         "w-full h-[var(--control-h)] px-6 rounded-lg border-2 border-input bg-muted text-xs font-bold outline-none shadow-inner transition-all",
                         fieldState.error ? "border-destructive-emphasis ring-destructive/10 ring-4" : "focus:border-ring focus:ring-4 focus:ring-primary/10"
@@ -292,6 +298,11 @@ export function UserManageForm({
                     ))}
                   </select>
                 </FormControl>
+                {departmentLocked && (
+                  <p id="user-form-dept-locked" className="text-xs text-muted-foreground mt-2 ml-2">
+                    소속 부서는 부서 변경 권한이 있어야 바꿀 수 있어요.
+                  </p>
+                )}
                 <FormMessage className="text-xs font-bold text-destructive-emphasis mt-2 ml-2" />
               </motion.div>
             </FormItem>

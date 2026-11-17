@@ -236,7 +236,7 @@ export default function ScheduleCalendarClient({ initialYmd }: ScheduleCalendarC
             aria-label={`${item.schdlNm || '제목 없음'} 일정 ${scheduleAction?.type === 'delete' && scheduleAction.id === item.schdlSn ? '삭제 중' : '삭제'}`}
             aria-busy={scheduleAction?.type === 'delete' && scheduleAction.id === item.schdlSn || undefined}
             disabled={scheduleAction !== null}
-            className="px-3 text-[10px] font-black uppercase text-rose-500 hover:bg-rose-500 hover:text-white"
+            className="px-3 text-xs font-black uppercase text-destructive-emphasis hover:bg-destructive hover:text-destructive-foreground"
             onClick={(e) => {
               e.stopPropagation();
               void handleDeleteSchedule(item);

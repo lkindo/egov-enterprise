@@ -1131,7 +1131,7 @@ test('PIT registry and CI keep the same exact matrix catalog, and its size is pi
   assert.deepEqual(product.errors, []);
   assert.deepEqual(migration.errors, []);
   // PIT 범위 수의 유일한 확인 지점이다. 범위를 더하거나 걷는 변경은 이 수와 원장·ci.yml 을 함께 고친다(ledger-pin(DEC-OPS-371)).
-  assert.equal(pit.selector.matrixScopes.length, 25, 'PIT matrix scope count changed — update this pin with the registry and ci.yml');
+  assert.equal(pit.selector.matrixScopes.length, 26, 'PIT matrix scope count changed — update this pin with the registry and ci.yml');
   assert.deepEqual(pit.selector.sourceJobIds, ['mutation-scope', 'mutation-scope-migration']);
   const byScope = (a, b) => a.scope.localeCompare(b.scope);
   const declared = pit.selector.matrixScopes.map(({ job, ...rest }) => rest).sort(byScope);
@@ -1161,12 +1161,24 @@ test('PIT critical security targets cannot disappear by narrowing both matching 
   const survey = 'nuri.business.service.survey.SurveyResultService';
   // [2026-10-19 DEC-OPS-366] 설문 결과는 설문 범위가, 사용자 관리의 보안 부작용은 사용자·조직 범위가 지킨다.
   const userOrg = ['nuri.business.service.user.UserService', 'nuri.business.service.user.LoginIdReuseGuard'];
+  const mfa = 'nuri.foundation.security.mfa.*';
   const scope = classes => [
     { scope: 'business-core-auth', classes: classes.join(',') },
     { scope: 'business-app-survey', classes: survey },
     { scope: 'business-core-user-org', classes: userOrg.join(',') },
+    { scope: 'foundation-mfa', classes: mfa },
   ];
   assert.deepEqual(validateCriticalMutationTargets(scope([...retained, ...added])), []);
+  // [2026-11-17] MFA 범위를 걷거나 다른 패키지로 좁히면 두 핵심 대상이 함께 빠진다.
+  assert.deepEqual(validateCriticalMutationTargets(scope([...retained, ...added]).filter(entry => entry.scope !== 'foundation-mfa')), [
+    "PIT foundation-mfa is missing critical target 'nuri.foundation.security.mfa.TotpVerifier'",
+    "PIT foundation-mfa is missing critical target 'nuri.foundation.security.mfa.MfaSecretCipher'",
+  ]);
+  assert.deepEqual(validateCriticalMutationTargets(scope([...retained, ...added]).map(entry => entry.scope === 'foundation-mfa'
+    ? { ...entry, classes: 'nuri.foundation.security.mfa.MfaChallengePolicy' } : entry)), [
+    "PIT foundation-mfa is missing critical target 'nuri.foundation.security.mfa.TotpVerifier'",
+    "PIT foundation-mfa is missing critical target 'nuri.foundation.security.mfa.MfaSecretCipher'",
+  ]);
   for (const missing of added) {
     const fixture = scope([...retained, ...added.filter(target => target !== missing)]);
     assert.deepEqual(validateCriticalMutationTargets(fixture), [
@@ -1185,12 +1197,13 @@ test('PIT critical security targets cannot disappear by narrowing both matching 
       `PIT business-core-user-org is missing critical target '${missing}'`,
     ]);
   }
-  assert.equal(validateCriticalMutationTargets([]).length, added.length + 1 + userOrg.length);
+  const mfaTargets = ['nuri.foundation.security.mfa.TotpVerifier', 'nuri.foundation.security.mfa.MfaSecretCipher'];
+  assert.equal(validateCriticalMutationTargets([]).length, added.length + 1 + userOrg.length + mfaTargets.length);
 
   // Exercise the real registry validator too, so a detached helper cannot satisfy this contract.
   const registry = clone(loadGovernanceRegistry(registryPath));
   const declared = registry.gateSets.find(({ id }) => id === 'GATESET-PIT-MUTATION-AGGREGATE').selector.matrixScopes;
-  const protectedTargets = [...added, survey, ...userOrg];
+  const protectedTargets = [...added, survey, ...userOrg, ...mfaTargets];
   // 실제 범위는 패키지 글롭(survey.*·user.*)으로 대상을 덮으므로, 대상을 덮는 글롭까지 걷어야 두 원장을 함께 좁힌 상태가 된다.
   const covers = (glob, target) => new RegExp('^' + glob.replace(/[.+^${}()|[\]\\]/g, '\\$&').replaceAll('*', '.*') + '$').test(target);
   for (const entry of declared) {

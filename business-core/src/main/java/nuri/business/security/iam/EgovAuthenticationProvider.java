@@ -20,7 +20,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
 
@@ -32,6 +33,8 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
     private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
     private final EgovPasswordEncoder egovPasswordEncoder;
+    /** 2단계(행 잠금·카운터 반영)만 짧은 쓰기 트랜잭션으로 연다 — 해시 계산은 트랜잭션 밖에서 한다. */
+    private final PlatformTransactionManager transactionManager;
     private String unknownIdentityPasswordHash;
 
     /** 현재 표준 인코더의 비용으로 한 번 준비하며 원문·해시는 출력하지 않는다. */
@@ -60,109 +63,79 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
     private long lockMinutes;
 
     /**
-     * <b>[트랜잭션 주의] {@code noRollbackFor = BadCredentialsException.class} 는 이 기능의 핵심이다.</b>
+     * <b>[트랜잭션 경계] 해시 계산은 DB 연결을 쥐지 않고, 실패 카운터는 자기 트랜잭션에서 커밋한다.</b>
      *
-     * <p>{@code BadCredentialsException} 은 {@code RuntimeException} 이므로 기본 롤백 규칙에 걸린다.
-     * 이 애노테이션이 없으면 실패 경로에서 증가시킨 실패 카운터와 잠금 플래그가 <b>예외와 함께 전부
-     * 롤백되어 DB 에 남지 않는다</b>(잠금이 영원히 발동하지 않는 무음 결함). 비밀번호 불일치는
-     * 시스템 장애가 아니라 <b>업무적 결과</b>이므로 커밋되어야 한다.
+     * <p>1단계(트랜잭션 밖): 사용자를 읽고 비밀번호 해시를 대조한다. bcrypt 대조는 CPU 만 쓰는 수백 ms 작업이다 —
+     * 트랜잭션 안에서 하면 그동안 풀 연결을 붙잡아, 로그인이 몰릴 때 연결 풀이 바닥나고 로그인과 상관없는 요청까지
+     * 연결 대기 시간 초과로 실패한다(2026-11-15 부하 시험: bcrypt 비용 10→12 뒤 100명 부하에서 풀 대기 초과 829줄).
+     * 재해시가 필요하면 새 해시도 여기서 미리 만든다.
      *
-     * <p>계정 잠금 예외({@code AccountStatusException})는 목록에 없으므로 그대로 롤백된다 — 해당
-     * 경로는 쓰기가 없어 무해하다.
+     * <p>2단계(짧은 쓰기 트랜잭션): 행을 잠그고 현재 값으로 상태를 다시 판정한 뒤 실패 카운터·잠금·재해시를 반영하고
+     * <b>예외를 던지기 전에 커밋한다</b>. 그래서 {@code BadCredentialsException} 이 트랜잭션 밖에서 던져지고,
+     * 종전처럼 {@code noRollbackFor} 로 카운터를 지킬 필요가 없다(호출자 트랜잭션이 예외와 함께 카운터를 되돌리던
+     * 무음 결함 계열이 구조적으로 없어진다). 잠금 상태 예외는 쓰기 없이 그 트랜잭션을 되돌린다.
+     * 호출자가 이미 트랜잭션을 열었으면 2단계는 거기에 참여한다 — 로그인 서비스는 이 경계를 위해 트랜잭션을 열지 않는다.
      */
     @Override
-    @Transactional(noRollbackFor = BadCredentialsException.class)
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String userId = authentication.getName();
         String password = (String) authentication.getCredentials();
-        
+
         log.debug(">>> [EgovAuthenticationProvider] Authentication attempt received");
-        
+
         try {
             log.debug(">>> [EgovAuthenticationProvider] DB identity lookup started");
-            
+
             // [2026-09-27 DEC-OPS-179] 로그인 입력은 로그인 ID 로만 찾는다. 로그인 정책·OTP 는 입력값을 로그인 ID 로
             //   조회하므로(AuthServiceImpl), 여기서 PK·esntlId 로도 찾으면 비밀번호를 아는 사용자가 esntlId 를 넣어
             //   관리자가 건 IP·시간대·접속 제한과 OTP 를 빈 정책으로 통과한다. 토큰 subject(esntlId)의 해석은
             //   이 경로가 아니라 JpaUserAuthAdapter 가 맡는다.
-            User userEntity = userRepository.findByUserId(userId)
+            // 조회도 자기 읽기 트랜잭션 안에서 끝낸다. 트랜잭션 없이 저장소를 부르면 호출자의 빈 트랜잭션 범위(로그인의
+            //   NOT_SUPPORTED)에 EntityManager 가 묶여 그 연결을 로그인이 끝날 때까지 쥔다 — 해시 동안 연결을 놓지 않고, 2단계가
+            //   연결을 하나 더 요구해 동시 로그인이 풀 크기만큼 모이면 서로를 기다린다(LoginFailureCounterConcurrencyIntegrationTest).
+            TransactionTemplate readOnly = new TransactionTemplate(transactionManager);
+            readOnly.setReadOnly(true);
+            User snapshot = java.util.Optional.ofNullable(readOnly.execute(status -> userRepository.findByUserId(userId).orElse(null)))
                     .orElseThrow(() -> {
                         // 결과에 관계없이 존재하지 않는 계정은 거부한다. 현재 표준 해시의 작업만 동일하게 수행한다.
                         passwordEncoder.matches(password == null ? "" : password, unknownIdentityPasswordHash);
                         log.warn(">>> [EgovAuthenticationProvider] Authentication rejected: unknown identity");
                         return new BadCredentialsException("Invalid User ID or Password");
                     });
-            
+
             // 잠금 없이 먼저 거른다 — 정지·잠김 계정은 비밀번호 검증과 행 잠금 전에 돌려보낸다.
             //   [2026-11-14] 다만 돌려보내기 전에 없는 계정과 같은 더미 해시를 한 번 계산한다. 해시 없이 바로 거부하면 응답이
             //   해시 시간만큼 빨라, 응답 시간만으로 정지·잠김 계정을 가려낼 수 있다(응답 본문은 이미 같다).
             try {
-                validateAccountStatus(userEntity);
+                validateAccountStatus(snapshot);
             } catch (AuthenticationException rejected) {
                 passwordEncoder.matches(password == null ? "" : password, unknownIdentityPasswordHash);
                 throw rejected;
             }
 
             // [보안 A09] 비밀번호 해시(저장/유도)는 어떤 레벨로도 로깅하지 않는다. 추적은 userId 만.
-            log.debug(">>> [EgovAuthenticationProvider] User found: {}", userEntity.getUserId());
+            log.debug(">>> [EgovAuthenticationProvider] User found: {}", snapshot.getUserId());
 
-            String encodedPassword = userEntity.getPswd();
-            boolean isMatched = verifyPassword(userEntity, password, encodedPassword);
+            String encodedPassword = snapshot.getPswd();
+            boolean isMatched = verifyPassword(snapshot, password, encodedPassword);
             if (!isMatched) {
-                // 잠금 밖에서 한다 — 아래 주석과 같은 이유로, 잠금을 쥔 채 해시를 더 계산하지 않는다.
+                // 잠금 밖에서 한다 — 잠금을 쥔 채 해시를 더 계산하지 않는다.
                 padFailedVerificationWork(password, encodedPassword);
             }
+            // 재해시도 잠금·트랜잭션 밖에서 미리 만든다 — 새 해시 계산(비용 12)도 수백 ms 다.
+            Rehash rehash = isMatched ? prepareRehash(snapshot, password, encodedPassword) : null;
 
-            // [2026-10-18] 실패 횟수의 증가와 잠금 판정은 행 잠금 아래에서 현재 값으로 한다.
-            //   종전에는 잠금 없이 읽은 엔티티의 횟수를 메모리에서 올려 저장했다. 같은 계정에 동시에 틀린 비밀번호를 보내면
-            //   모두 같은 횟수를 읽고 같은 값을 써서 증가가 사라졌고(lost update), 임계값에 닿아도 잠기지 않거나 허용 횟수보다
-            //   더 많이 시도할 수 있었다. 해시 검증은 잠금 밖에서 한다 — 잠금을 쥔 채 해시를 계산하면 같은 계정의 요청이 해시
-            //   시간만큼 줄을 선다. 잠근 뒤 상태를 다시 판정하므로, 그 사이 다른 요청이 잠갔으면 이 요청은 잠김으로 끝나고
-            //   횟수를 더 올리지 않는다(고정창 유지). 회귀 방어: LoginFailureCounterConcurrencyIntegrationTest.
-            userRepository.refreshForUpdate(userEntity);
-            validateAccountStatus(userEntity);
-            if (!java.util.Objects.equals(encodedPassword, userEntity.getPswd())) {
-                // 해시 검증과 잠금 사이에 비밀번호가 바뀌었다 — 옛 해시와 맞은 결과로 판정하지 않는다.
-                encodedPassword = userEntity.getPswd();
-                isMatched = verifyPassword(userEntity, password, encodedPassword);
-            }
-
-            if (isMatched) {
-                // 재해시는 잠금·재조회 뒤에 한다 — refresh 가 메모리 변경을 버리기 때문이다.
-                if (isLegacyPassword(encodedPassword)) {
-                    rehashPassword(userEntity, password, "legacy eGov");
-                } else {
-                    upgradeStandardPasswordIfNeeded(userEntity, password, encodedPassword);
-                }
-            }
-
-            if (!isMatched) {
-                log.warn(">>> Password mismatch for user: {}", userId);
-                userEntity.incrementLockCount();
-                // 임계값 도달 → 잠금. lockAccount()가 잠금 시각까지 남기므로 lockMinutes 경과 후 스스로 풀린다.
-                // save() 는 잠금 판정 '뒤'에 와야 lckYn/lckLastPnttm 이 같은 커밋에 함께 실린다.
-                Integer failures = userEntity.getLckCnt();
-                boolean locked = maxLoginFailures > 0 && failures != null && failures >= maxLoginFailures;
-                if (locked) {
-                    userEntity.lockAccount();
-                    log.warn(">>> Account locked for user: {} (연속 실패 {}회 도달, {}분 후 자동 해제)",
-                            userId, failures, lockMinutes);
-                }
-                // [2026-11-17 DEC-OPS-419] 로그인 실패로 건 잠금은 비밀번호·MFA 대조만 막고 이미 받은 세션은 끊지 않는다.
-                //   로그인 실패는 인증 없이 누구나 낼 수 있다 — 종전처럼 여기서 세션차수를 올리면 로그인 ID 만 아는 사람이
-                //   잠금 시간마다 다섯 번 틀려 관리자를 계속 쫓아낼 수 있었다. 세션을 가진 쪽이 현재 비밀번호를 대입해 건
-                //   잠금(비밀번호 변경, DEC-OPS-418)은 그 세션이 의심스러우므로 UserService 가 세션차수를 올린다.
-                userRepository.save(userEntity);
+            String esntlId = new TransactionTemplate(transactionManager).execute(
+                    status -> settleUnderRowLock(userId, password, encodedPassword, isMatched, rehash));
+            if (esntlId == null) {
                 throw new BadCredentialsException("Invalid User ID or Password");
             }
-            
-            userEntity.unlockAccount();
-            userRepository.save(userEntity);
+
             // 로그인과 JWT/refresh가 동일한 저장소 기반 권한 계산 결과를 사용한다.
             // 표시용 User.role을 다시 쓰거나, 배정 없음에서 USER로 승격하지 않는다.
-            var loaded = userDetailsService.loadUserByUsername(userEntity.getEsntlId());
+            var loaded = userDetailsService.loadUserByUsername(esntlId);
             if (!(loaded instanceof CustomUserDetails userDetails)
-                    || !userEntity.getEsntlId().equals(userDetails.getUsername())) {
+                    || !esntlId.equals(userDetails.getUsername())) {
                 throw new AuthenticationServiceException("Authentication principal contract is invalid");
             }
             new AccountStatusUserDetailsChecker().check(userDetails);
@@ -173,9 +146,86 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             throw e;
         } catch (Exception e) {
             // DB/인코더 장애를 BadCredentials(401)로 바꾸면 모니터링은 공격으로 오진하고 클라이언트는
-            // 잘못된 비밀번호로 오인한다. 또한 noRollbackFor에 걸려 부분 변경이 커밋될 수 있다.
+            // 잘못된 비밀번호로 오인한다.
             log.error(">>> Authentication service failure: {}", e.getClass().getSimpleName(), e);
             throw new AuthenticationServiceException("Authentication service unavailable", e);
+        }
+    }
+
+    /**
+     * 2단계 — 행 잠금 아래에서 현재 값으로 판정하고 반영한다. 성공이면 esntlId, 비밀번호 불일치면 null(카운터는 이 트랜잭션과
+     * 함께 커밋된다). 잠금 상태 예외는 쓰기 없이 트랜잭션을 되돌린다.
+     */
+    private String settleUnderRowLock(String userId, String password, String encodedPassword, boolean verified,
+            Rehash preparedRehash) {
+        // [2026-10-18] 실패 횟수의 증가와 잠금 판정은 행 잠금 아래에서 현재 값으로 한다.
+        //   종전에는 잠금 없이 읽은 엔티티의 횟수를 메모리에서 올려 저장했다. 같은 계정에 동시에 틀린 비밀번호를 보내면
+        //   모두 같은 횟수를 읽고 같은 값을 써서 증가가 사라졌고(lost update), 임계값에 닿아도 잠기지 않거나 허용 횟수보다
+        //   더 많이 시도할 수 있었다. 해시 검증은 잠금 밖에서 한다 — 잠금을 쥔 채 해시를 계산하면 같은 계정의 요청이 해시
+        //   시간만큼 줄을 선다. 잠근 뒤 상태를 다시 판정하므로, 그 사이 다른 요청이 잠갔으면 이 요청은 잠김으로 끝나고
+        //   횟수를 더 올리지 않는다(고정창 유지). 회귀 방어: LoginFailureCounterConcurrencyIntegrationTest.
+        User userEntity = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new BadCredentialsException("Invalid User ID or Password"));
+        userRepository.refreshForUpdate(userEntity);
+        validateAccountStatus(userEntity);
+        boolean isMatched = verified;
+        Rehash rehash = preparedRehash;
+        if (!java.util.Objects.equals(encodedPassword, userEntity.getPswd())) {
+            // 해시 검증과 잠금 사이에 비밀번호가 바뀌었다 — 옛 해시와 맞은 결과로 판정하지 않는다(드문 경로라 잠금 안에서 다시 대조).
+            isMatched = verifyPassword(userEntity, password, userEntity.getPswd());
+            rehash = isMatched ? prepareRehash(userEntity, password, userEntity.getPswd()) : null;
+        }
+
+        if (isMatched) {
+            // 재해시는 잠금·재조회 뒤에 반영한다 — refresh 가 메모리 변경을 버리기 때문이다.
+            if (rehash != null) {
+                // 비밀번호 자체는 같다 — 자격 변경 시각을 바꾸면 다른 기기의 세션까지 끊긴다(User#rehashPassword).
+                userEntity.rehashPassword(rehash.hash());
+                log.info(">>> Password rehashed ({}) for user: {}", rehash.reason(), userEntity.getUserId());
+            }
+            userEntity.unlockAccount();
+            userRepository.save(userEntity);
+            return userEntity.getEsntlId();
+        }
+
+        log.warn(">>> Password mismatch for user: {}", userId);
+        userEntity.incrementLockCount();
+        // 임계값 도달 → 잠금. lockAccount()가 잠금 시각까지 남기므로 lockMinutes 경과 후 스스로 풀린다.
+        // save() 는 잠금 판정 '뒤'에 와야 lckYn/lckLastPnttm 이 같은 커밋에 함께 실린다.
+        Integer failures = userEntity.getLckCnt();
+        boolean locked = maxLoginFailures > 0 && failures != null && failures >= maxLoginFailures;
+        if (locked) {
+            userEntity.lockAccount();
+            log.warn(">>> Account locked for user: {} (연속 실패 {}회 도달, {}분 후 자동 해제)",
+                    userId, failures, lockMinutes);
+        }
+        // [2026-11-17 DEC-OPS-419] 로그인 실패로 건 잠금은 비밀번호·MFA 대조만 막고 이미 받은 세션은 끊지 않는다.
+        //   로그인 실패는 인증 없이 누구나 낼 수 있다 — 종전처럼 여기서 세션차수를 올리면 로그인 ID 만 아는 사람이
+        //   잠금 시간마다 다섯 번 틀려 관리자를 계속 쫓아낼 수 있었다. 세션을 가진 쪽이 현재 비밀번호를 대입해 건
+        //   잠금(비밀번호 변경, DEC-OPS-418)은 그 세션이 의심스러우므로 UserService 가 세션차수를 올린다.
+        userRepository.save(userEntity);
+        return null;
+    }
+
+    /** 미리 만든 새 해시와 그 사유. 원문·해시는 로그에 남기지 않는다. */
+    private record Rehash(String hash, String reason) {
+    }
+
+    /**
+     * 성공 로그인의 투명 재해시를 미리 계산한다 — 옛 eGov 해시이거나 현재 표준 인코더의 비용·형식 정책이 올라간 경우다.
+     * 재해시는 방어 심화 작업이라 실패해도 로그인을 막지 않는다(다음 로그인에서 다시 시도한다).
+     */
+    private Rehash prepareRehash(User user, String rawPassword, String encodedPassword) {
+        String reason = isLegacyPassword(encodedPassword) ? "legacy eGov" : "standard policy upgrade";
+        try {
+            if (!isLegacyPassword(encodedPassword) && !passwordEncoder.upgradeEncoding(encodedPassword)) {
+                return null;
+            }
+            return new Rehash(passwordEncoder.encode(rawPassword), reason);
+        } catch (Exception e) {
+            // 호환 로그인은 유지한다. 다음 로그인에서 재시도할 수 있도록 기존 해시는 그대로 둔다.
+            log.error(">>> Password rehash failed ({}) for user: {}", reason, user.getUserId(), e);
+            return null;
         }
     }
 
@@ -272,31 +322,6 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
     private boolean isLegacyPassword(String encodedPassword) {
         return encodedPassword != null
                 && (encodedPassword.startsWith("{egov}") || !encodedPassword.startsWith("{"));
-    }
-
-    /** 현재 표준 인코더의 cost/format 정책이 올라간 경우 성공 로그인 시 투명 재해시한다. */
-    private void upgradeStandardPasswordIfNeeded(User user, String rawPassword, String encodedPassword) {
-        try {
-            if (passwordEncoder.upgradeEncoding(encodedPassword)) {
-                rehashPassword(user, rawPassword, "standard policy upgrade");
-            }
-        } catch (Exception e) {
-            // 재해시는 방어 심화 작업이다. 기존 해시 검증까지 성공했다면 일시적 재해시 실패로 로그인을 막지 않는다.
-            log.error(">>> Password policy upgrade failed for user: {}", user.getUserId(), e);
-        }
-    }
-
-    /** 원문·기존/신규 해시는 로그에 남기지 않고 다음 성공 경로의 save/dirty checking으로 영속화한다. */
-    private void rehashPassword(User user, String rawPassword, String reason) {
-        try {
-            String upgraded = passwordEncoder.encode(rawPassword);
-            // 비밀번호 자체는 같다 — 자격 변경 시각을 바꾸면 다른 기기의 세션까지 끊긴다(User#rehashPassword).
-            user.rehashPassword(upgraded);
-            log.info(">>> Password rehashed ({}) for user: {}", reason, user.getUserId());
-        } catch (Exception e) {
-            // 호환 로그인은 유지한다. 다음 로그인에서 재시도할 수 있도록 기존 해시는 그대로 둔다.
-            log.error(">>> Password rehash failed ({}) for user: {}", reason, user.getUserId(), e);
-        }
     }
 
     /**

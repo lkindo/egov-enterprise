@@ -48,6 +48,9 @@ class DeptManageServiceTest {
     @Mock
     private nuri.business.domain.user.repository.UserRepository userRepository;
 
+    @Mock
+    private nuri.business.domain.deptjob.DeptJobBoxRepository deptJobBoxRepository;
+
     // 실제 MapStruct 생성 구현(DeptManageMapperImpl)을 spy 로 주입 — 수기 from() 과 동일 매핑 거동 보장
     @Spy
     private DeptManageMapper deptManageMapper = new DeptManageMapperImpl();
@@ -194,10 +197,15 @@ class DeptManageServiceTest {
     }
 
     @org.junit.jupiter.params.ParameterizedTest
-    @org.junit.jupiter.params.provider.ValueSource(booleans = {true, false})
-    void refusesDeletionWhileMembersOrChildrenRemain(boolean members) {
-        if (members) given(userRepository.countByOgnzId("D")).willReturn(1L);
-        else given(deptManageRepository.countByUpOgnzId("D")).willReturn(1L);
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"members", "children", "jobBoxes"})
+    void refusesDeletionWhileMembersOrChildrenRemain(String remaining) {
+        switch (remaining) {
+            case "members" -> given(userRepository.countByOgnzId("D")).willReturn(1L);
+            case "children" -> given(deptManageRepository.countByUpOgnzId("D")).willReturn(1L);
+            default -> given(deptJobBoxRepository.findByDeptId("D")).willReturn(List.of(
+                    nuri.business.domain.deptjob.DeptJobBox.builder().deptTaskBoxSn(1L).deptId("D").build(),
+                    nuri.business.domain.deptjob.DeptJobBox.builder().deptTaskBoxSn(2L).deptId("D").build()));
+        }
         BusinessException failure = assertThrows(BusinessException.class, () -> deptManageService.deleteDeptManage("D"));
         assertEquals(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_IN_USE, failure.getErrorCode());
         verify(deptManageRepository, never()).deleteById(any());

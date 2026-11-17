@@ -253,11 +253,11 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, 
                                     {...field}
                                     value={field.value ?? ''}
                                     maxLength={100}
-                                    className={cn('rounded-lg text-sm font-bold tracking-tight', fieldState.error && 'border-rose-500')}
+                                    className={cn('rounded-lg text-sm font-bold tracking-tight', fieldState.error && 'border-destructive-emphasis')}
                                     placeholder="예: 3분기 예산 집행 점검"
                                 />
                             </FormControl>
-                            <FormMessage className="text-xs font-bold text-rose-500 mt-1 ml-1" />
+                            <FormMessage className="text-xs font-bold text-destructive-emphasis mt-1 ml-1" />
                         </FormItem>
                     )}
                 />
@@ -293,7 +293,7 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, 
                                     {' '}저장된 값: {JSON.stringify(initialData.prrtyRnk)}
                                 </FormDescription>
                             )}
-                            <FormMessage className="text-xs font-bold text-rose-500 mt-1 ml-1" />
+                            <FormMessage className="text-xs font-bold text-destructive-emphasis mt-1 ml-1" />
                         </FormItem>
                     )}
                 />
@@ -322,7 +322,7 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, 
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <FormMessage className="text-xs font-bold text-rose-500 mt-1 ml-1" />
+                            <FormMessage className="text-xs font-bold text-destructive-emphasis mt-1 ml-1" />
                         </FormItem>
                     )}
                 />
@@ -415,7 +415,7 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, 
                                 </>
                             )}
 
-                            <FormMessage className="text-xs font-bold text-rose-500 mt-1 ml-1" />
+                            <FormMessage className="text-xs font-bold text-destructive-emphasis mt-1 ml-1" />
                         </FormItem>
                     )}
                 />
@@ -431,11 +431,11 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, 
                                     {...field}
                                     value={field.value ?? ''}
                                     maxLength={4000}
-                                    className={cn('rounded-lg min-h-[140px]', fieldState.error && 'border-rose-500')}
+                                    className={cn('rounded-lg min-h-[140px]', fieldState.error && 'border-destructive-emphasis')}
                                     placeholder="업무의 목적과 범위, 완료 기준을 적어 주세요."
                                 />
                             </FormControl>
-                            <FormMessage className="text-xs font-bold text-rose-500 mt-1 ml-1" />
+                            <FormMessage className="text-xs font-bold text-destructive-emphasis mt-1 ml-1" />
                         </FormItem>
                     )}
                 />

@@ -340,6 +340,8 @@ export function validateCriticalMutationTargets(scopes) {
     // [2026-10-19 DEC-OPS-366] 설문 결과는 설문 범위로 옮겼다. 사용자 관리의 보안 부작용은 사용자·조직 범위가 지킨다.
     'business-app-survey': ['nuri.business.service.survey.SurveyResultService'],
     'business-core-user-org': ['nuri.business.service.user.UserService', 'nuri.business.service.user.LoginIdReuseGuard'],
+    // [2026-11-17] TOTP 대조·재사용 차단과 MFA 비밀 암호화는 백엔드 헌법 제16조의 '보안' 핵심 경계다 — 범위를 걷거나 좁혀 빠지지 않게 한다.
+    'foundation-mfa': ['nuri.foundation.security.mfa.TotpVerifier', 'nuri.foundation.security.mfa.MfaSecretCipher'],
   };
   return Object.entries(required).flatMap(([scope, targets]) => {
     const entry = scopes.find(candidate => candidate?.scope === scope);
