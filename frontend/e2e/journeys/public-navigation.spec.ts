@@ -295,6 +295,7 @@ test.describe('설문 응답 생명주기', () => {
                         const html = adminPage.locator('html');
                         const originalDark = await html.evaluate(element => element.classList.contains('dark'));
                         await adminPage.emulateMedia({ reducedMotion: 'reduce' });
+                        const edgeToggle = adminPage.locator('[data-app-sidebar-edge-toggle]');
                         for (const dark of [false, true]) {
                             if (await html.evaluate(element => element.classList.contains('dark')) !== dark) {
                                 await adminPage.getByRole('button', { name: '테마 변경', exact: true }).click();
@@ -302,6 +303,12 @@ test.describe('설문 응답 생명주기', () => {
                             }
                             for (const viewport of [{ width: 1280, height: 900 }, { width: 768, height: 1024 }, { width: 375, height: 812 }]) {
                                 await adminPage.setViewportSize(viewport);
+                                if (viewport.width >= 1024) {
+                                    await expect(edgeToggle).toBeVisible();
+                                } else {
+                                    await expect(edgeToggle).toBeHidden();
+                                }
+                                await adminPage.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
                                 for (const [control, link] of [['stats', stats], ['detail', detail]] as const) {
                                     await link.scrollIntoViewIfNeeded();
                                     await link.focus();
