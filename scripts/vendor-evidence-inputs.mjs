@@ -132,6 +132,35 @@ export function vendorCiPlan(root, { inputsOf = (ledger, vendorId) => vendorEvid
   return { ledger, tests, removedAssets, vendors: vendors.map(vendor => vendor.id), pullRequestLayout: tests.representativeE2e.layout, inputs };
 }
 
+/*
+ * [ADR-0061 결정 3] 루트 package.json 은 벤더 투영이 scripts 에 별칭을 더하는 자리라 ciOnly 다(project-composer-vendor-project.mjs).
+ * 의존성의 판(값)만 바꾼 변경은 그 자리를 바꾸지 않고 벤더 잡의 스크립트는 npm 패키지를 쓰지 않으므로 잡을 켜지 않는다 — lock 만 바뀐
+ * 변경이 이 잡을 켜지 않는 것과 같은 경계다. 의존성 이름을 더하거나 빼는 변경, 다른 필드의 변경, 읽지 못하거나 모양을 모르는 내용은 켠다.
+ * 인증 입력이 된 파일에는 쓰지 않는다(vendorInputChange).
+ */
+const DEPENDENCY_VERSION_ONLY_FILES = new Set(['package.json']);
+const DEPENDENCY_FIELDS = Object.freeze(['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies']);
+
+function withoutDependencyVersions(text) {
+  let value;
+  try { value = JSON.parse(text); } catch { return null; }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  for (const field of DEPENDENCY_FIELDS) {
+    const dependencies = value[field];
+    if (dependencies === undefined) continue;
+    if (!dependencies || typeof dependencies !== 'object' || Array.isArray(dependencies)) return null;
+    value[field] = Object.keys(dependencies);
+  }
+  return JSON.stringify(value);
+}
+
+/** 두 package.json 이 의존성의 판 값만 다른가. 어느 쪽이든 읽지 못하거나 JSON 객체가 아니면 false 다. */
+export function dependencyVersionsOnly(head, base) {
+  if (typeof head !== 'string' || typeof base !== 'string') return false;
+  const projected = withoutDependencyVersions(head);
+  return projected !== null && projected === withoutDependencyVersions(base);
+}
+
 /** 워크플로의 벤더 잡 정의. 다른 잡을 고친 변경은 이 잡을 돌릴 이유가 없고, 분류 출력과 집계의 결속은 늘 도는 계약이 본다. */
 function vendorJobDefinition(workflow) {
   const lines = workflow.split(/\r?\n/);
@@ -160,6 +189,8 @@ export function vendorInputChange(plan, vendorId, file, { head, readBase }) {
   const declared = owned || files.has(file) || covers(ledger.evidenceInputs.paths) || covers(ledger.evidenceInputs.ciOnly ?? [])
     || (file.startsWith(`${SCHEMA_TESTS}/`) && !replacedSchemaTests(tests).has(file));
   const sensitivePath = isVendorSensitivePath(file);
+  if (head !== null && declared && DEPENDENCY_VERSION_ONLY_FILES.has(file) && !owned && !files.has(file)
+    && !covers(ledger.evidenceInputs.paths) && dependencyVersionsOnly(head, readBase())) return 'none';
   if (head !== null) return declared || (sensitivePath && (VENDOR_SENSITIVE.test(head) || VENDOR_SENSITIVE.test(readBase() ?? ''))) ? 'changed' : 'none';
   // 제거 원장이 가리키는 자산이 사라지면 원장이 낡아 벤더 생성만 멈춘다.
   if (declared || removedAssets.has(file)) return 'deleted';

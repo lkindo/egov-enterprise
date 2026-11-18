@@ -28,7 +28,7 @@
 | [ADR-0019](ADR-0019-client-ip-trust-boundary.md) | 운영 앞단 프록시로 클라이언트 IP 신뢰 경계 수립, 요청 제한 한도 설정화 | Accepted — 일부 DEC-OPS-098·ADR-0035로 대체 |
 | [ADR-0020](ADR-0020-selectable-reusable-backend-layouts.md) | 원본 모듈 구조 유지와 재사용 백엔드 출력 형태 선택 | Accepted — 일부 ADR-0028, DEC-OPS-239, ADR-0047로 대체 |
 | [ADR-0021](ADR-0021-isolated-layered-testing-process.md) | 책임별 테스트 재편·격리 실행·전체 회귀와 영향 shadow | Accepted — 일부 ADR-0022·ADR-0023으로 대체 |
-| [ADR-0022](ADR-0022-ci-independent-module-impact-and-cache.md) | 온라인·이관 독립 영향 분류, 커버리지·required 보존과 Gradle 캐시 | Accepted — 일부 ADR-0023·ADR-0026, DEC-OPS-237로 대체 |
+| [ADR-0022](ADR-0022-ci-independent-module-impact-and-cache.md) | 온라인·이관 독립 영향 분류, 커버리지·required 보존과 Gradle 캐시 | Accepted — 일부 ADR-0023·ADR-0026·ADR-0061, DEC-OPS-237로 대체 |
 | [ADR-0023](ADR-0023-e2e-impact-selection-and-cache-writer.md) | PR E2E 영향 선별·main 전수와 단일 캐시 writer | Accepted |
 | [ADR-0024](ADR-0024-spring-boot-4-two-phase-migration.md) | Spring Boot 4.1 두 단계 전환(Jackson 2 호환 → Jackson 3) | Accepted — 일부 DEC-OPS-124로 대체 |
 | [ADR-0025](ADR-0025-enterprise-completeness-and-durable-operations.md) | D01~D15 A: 보호계정·최소 응답·업무 규칙·MFA·내구 알림/감사/삭제와 검증 범위 | Accepted — 일부 ADR-0054로 대체 |
@@ -53,7 +53,7 @@
 | [ADR-0044](ADR-0044-ci-tuning-values-and-pit-scope-floors.md) | CI 튜닝값(슬롯 수·PIT 선언 순서)은 ci.yml·실측 profile 이 정본, PIT 범위별 하한, api-server 의 PIT 선별 유지 | Accepted |
 | [ADR-0045](ADR-0045-bookmark-cleanup-input-policy-and-memo-read-consistency.md) | 즐겨찾기 기본 보존·명시적 정리, 부서 업무 우선순위·팝업 크기의 엄격 저장, 읽은 메모 본문·첨부 기준 지시 | Accepted — 일부 ADR-0048 대체 |
 | [ADR-0046](ADR-0046-empty-numeric-transition-and-log-duration-standard.md) | 빈 표·정비창 한정 숫자 세 컬럼 NUMERIC 전환과 처리소요밀리초 표준, 공유 DB 실행 별도 승인 | Accepted |
-| [ADR-0047](ADR-0047-multi-database-composer-and-vendor-sql-boundary.md) | 프로젝트 생성기의 다중 DB 선택과 벤더 SQL 경계 — PostgreSQL 단일 정본, 벤더 어댑터, 포트·린터, 차등 시험 | Accepted |
+| [ADR-0047](ADR-0047-multi-database-composer-and-vendor-sql-boundary.md) | 프로젝트 생성기의 다중 DB 선택과 벤더 SQL 경계 — PostgreSQL 단일 정본, 벤더 어댑터, 포트·린터, 차등 시험 | Accepted — 일부 ADR-0061로 대체 |
 | [ADR-0048](ADR-0048-personal-attachment-deletion-and-uploader-window.md) | 업로더 근거의 범위와 개인 귀속 첨부의 개별 삭제 | Accepted |
 | [ADR-0049](ADR-0049-retire-workflow-demo-screens.md) | 워크플로우 목업 3개 화면 퇴역과 기존 WORKFLOW_READ 배정 호환 | Accepted |
 | [ADR-0050](ADR-0050-local-requirements-workspace.md) | 요구사항 로컬 UI·외부 파일 작업공간·분석 기준선·개발 준비·인수 근거 결속 | Accepted |
@@ -67,3 +67,4 @@
 | [ADR-0058](ADR-0058-requirements-question-groups.md) | 요구사항 스튜디오의 같은 것을 묻는 질문은 한 묶음으로 한 번만 답하고, 확정을 막는 기준은 그대로 | Accepted |
 | [ADR-0059](ADR-0059-edge-login-rate-limit.md) | 운영 앞단 프록시(edge)가 로그인·추가 인증·비밀번호 변경을 접속 주소당 백엔드와 같은 한도로 한 번 더 제한 | Accepted |
 | [ADR-0060](ADR-0060-asymmetric-jwt-signing.md) | 접근·재발급 토큰을 ES256 키링으로 서명하고 Next 에는 공개키만 둔다 — 두 번 배포로 전환, 구현은 재기록 묶음 | Accepted |
+| [ADR-0061](ADR-0061-pit-selection-and-vendor-dependency-trigger.md) | 미지 경로는 PIT 가 읽을 때만 PIT 를 고르고(PIT 입력 census), 제품 PIT 시험 대상은 대상 패키지·실제 탐지 시험, 벤더 잡은 루트 의존성 판만 바뀐 변경을 고르지 않는다 | Accepted |

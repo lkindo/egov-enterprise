@@ -252,6 +252,56 @@ function isMigrationToolMutation(file) {
   return matchesAny(file, MIGRATION_MUTATION_RELEVANT);
 }
 
+/*
+ * [ADR-0061 결정 1] 미분류 경로는 다른 축을 모두 고르지만(아래 classifyChangedFiles) 두 PIT 축은 PIT 가 읽을 수 있을 때만 고른다.
+ * PIT 잡은 Gradle 로 네 온라인 모듈(이관은 migration-tool)의 시험만 돌리므로, 모듈 밖에서 그 결과를 바꿀 수 있는 파일은 Gradle 구성·
+ * 컴파일·체크아웃 입력과 그 시험이 실행 중 읽는 저장소 파일뿐이다. 그런 파일 가운데 미분류인 것을 여기에 적는다. 운영 계약
+ * (ci-change-scope-tool-paths.test.mjs 의 PIT 입력 census)이 Gradle 스크립트와 PIT 모듈 Java 소스가 가리키는 저장소 경로를 다시
+ * 세어, 미분류 경로를 가리키는데 PIT 를 고르지 않으면 붉힌다 — 시험이 루트 파일을 새로 읽으면 여기에 더해야 통과한다.
+ */
+const PIT_BUILD_INPUTS = [
+  /^lombok\.config$/, // 모든 모듈의 컴파일
+  /^gradlew(?:\.bat)?$/, // PIT 잡이 실행하는 래퍼
+  /^\.gitattributes$/, // 체크아웃 줄 끝 — 소스·리소스 내용을 바꾼다
+  /^config\/governance\/vendor-test-ledger\.json$/, // api-server 빌드 스크립트가 구성 중 읽는다(PIT 잡도 모든 프로젝트를 구성한다)
+];
+// MappingValidator 의 기본 표준 카탈로그(ADR-0022 결정 3). 온라인 모듈은 읽지 않는다.
+const MIGRATION_PIT_ROOT_INPUTS = [/^db_columns\.json$/];
+
+export const PIT_WORKFLOW = '.github/workflows/ci.yml';
+/** PIT 를 고르고(change-scope), 돌리고, 집계하는 잡. 워크플로의 머리(트리거·env·defaults 등)도 함께 본다. */
+export const PIT_WORKFLOW_JOBS = Object.freeze(['change-scope', 'mutation-scope', 'mutation-scope-migration', 'mutation-test']);
+
+/**
+ * 워크플로에서 PIT 에 닿는 부분 — `jobs:` 앞의 머리와 PIT_WORKFLOW_JOBS 의 잡 정의. 다른 잡만 고친 변경은 PIT 를 고르지 않는다.
+ * `jobs:` 를 찾지 못하면 null 이다(모양을 모르면 바뀐 것으로 본다).
+ */
+export function pitWorkflowDefinition(workflow) {
+  const lines = String(workflow).replace(/\r\n/g, '\n').split('\n');
+  const jobsAt = lines.indexOf('jobs:');
+  if (jobsAt < 0) return null;
+  const kept = lines.slice(0, jobsAt + 1);
+  let keep = false;
+  for (const line of lines.slice(jobsAt + 1)) {
+    const job = /^ {2}([A-Za-z0-9_-]+):\s*$/.exec(line);
+    if (job) keep = PIT_WORKFLOW_JOBS.includes(job[1]);
+    else if (/^\S/.test(line) && !line.startsWith('#')) keep = true; // jobs 밖 최상위 키 — 머리처럼 본다
+    if (keep) kept.push(line);
+  }
+  return kept.join('\n');
+}
+
+/** 이 파일이 PIT 축을 고르는가. 워크플로는 PIT 부분이 바뀐 변경만 고르고, 내용·기준을 읽지 못하면 고른다(fail-closed). */
+function selectsPitFromOutside(file, extraInputs, readSource, readBaseSource) {
+  if (matchesAny(file, PIT_BUILD_INPUTS) || matchesAny(file, extraInputs)) return true;
+  if (file !== PIT_WORKFLOW) return false;
+  const head = readSource(file);
+  const base = readBaseSource(file);
+  if (typeof head !== 'string' || typeof base !== 'string') return true;
+  const headDefinition = pitWorkflowDefinition(head);
+  return headDefinition === null || headDefinition !== pitWorkflowDefinition(base);
+}
+
 const SCHEMA_RELEVANT = [
   /^api-server\/src\/main\/resources\/db\/migration\//,
   /^api-server\/src\/test\/java\/nuri\/api\/schema\//,
@@ -492,13 +542,19 @@ function reusableVendorSelection(files, { noRange, docsOnly, event, readSource, 
  *
  * Unknown or empty input deliberately selects the full pipeline. A false
  * positive costs runner time; a false negative silently removes evidence.
- * The vendor job is the one exception for unknown paths: reusableVendorSelection.
+ * Two exceptions for unknown paths: the vendor job (reusableVendorSelection) and
+ * the two PIT axes, which an unknown path selects only when PIT can read it
+ * (selectsPitFromOutside, ADR-0061). No comparison range and policy files still
+ * select everything.
  */
 export function classifyChangedFiles(changedFiles,
   { forceFull = false, event = '', readSource = readRepositorySource, readBaseSource = () => null, vendorPlan = loadVendorPlan() } = {}) {
   const files = [...new Set(changedFiles.map(normalizeFile).filter(Boolean))].sort();
   const unknownFiles = files.filter(file => !isKnown(file));
-  const full = forceFull || files.length === 0 || unknownFiles.length > 0;
+  const noRange = forceFull || files.length === 0;
+  const full = noRange || unknownFiles.length > 0;
+  // 정책 파일(헌법·AGENTS·SOP)은 실행 증거의 요구를 바꿀 수 있어 PIT 까지 전수로 둔다.
+  const pitFull = noRange || files.some(file => matchesAny(file, POLICY_CRITICAL));
   const docsOnly = !full && files.every(isDocumentationOnly);
   // 생성기·도구 전용 경로는 표의 축만 켠다(GENERATOR_TOOL_PATHS). 재사용 검증은 아래 selectedReusableProfiles 가 고른다 —
   // 이 경로는 기능 소유가 없어 모든 시작 구성이다.
@@ -519,12 +575,14 @@ export function classifyChangedFiles(changedFiles,
   const crossStack = full || files.some(file => matchesAny(file, CROSS_STACK_CONTRACT));
   const schema = full || files.some(file => matchesAny(file, SCHEMA_RELEVANT)) || tool('schema');
   const e2e = full || crossStack || files.some(isE2eRelevant) || tool('e2e');
-  const mutation = full || files.some(file => matchesAny(file, MUTATION_RELEVANT)) || tool('mutation');
-  const mutationMigrationTool = full || files.some(isMigrationToolMutation) || tool('mutationMigrationTool');
+  const mutation = pitFull || files.some(file => matchesAny(file, MUTATION_RELEVANT)) || tool('mutation')
+    || files.some(file => selectsPitFromOutside(file, [], readSource, readBaseSource));
+  const mutationMigrationTool = pitFull || files.some(isMigrationToolMutation) || tool('mutationMigrationTool')
+    || files.some(file => selectsPitFromOutside(file, MIGRATION_PIT_ROOT_INPUTS, readSource, readBaseSource));
   const reusableProfiles = selectedReusableProfiles(files, { full, docsOnly });
   const reusableCustom = reusableProfiles.includes('core');
   const matrix = reusableMatrix(reusableProfiles.length > 0 ? reusableProfiles : undefined, { event });
-  const reusableVendor = reusableVendorSelection(files, { noRange: forceFull || files.length === 0, docsOnly, event, readSource, readBaseSource, plan: vendorPlan });
+  const reusableVendor = reusableVendorSelection(files, { noRange, docsOnly, event, readSource, readBaseSource, plan: vendorPlan });
 
   return {
     files,
