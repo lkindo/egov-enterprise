@@ -514,13 +514,19 @@ test('an unknown path selects PIT only when PIT can read it', () => {
     return [result.mutation, result.mutationMigrationTool];
   };
   // PIT 잡의 Gradle 구성·컴파일·체크아웃 입력은 두 PIT 를 고른다.
-  for (const file of ['lombok.config', 'gradlew', 'gradlew.bat', '.gitattributes', 'config/governance/vendor-test-ledger.json']) {
+  for (const file of ['lombok.config', 'gradlew', 'gradlew.bat', '.gitattributes', 'config/governance/vendor-test-ledger.json',
+    // Gradle 이 저절로 빌드하는 buildSrc 와 Kotlin DSL 스크립트(지금은 없다 — 2026-11-19 독립 검토).
+    'buildSrc/build.gradle.kts', 'buildSrc/src/main/groovy/PitConvention.groovy', 'settings.gradle.kts', 'business-app/build.gradle.kts']) {
+    assert.deepEqual(pitOf([file]), [true, true], file);
+  }
+  // PIT 를 고르고 집계하는 코드 자체 — 분류기는 자기 입력의 변경을 좁게 분류하지 않는다.
+  for (const file of ['scripts/ci-change-scope.mjs', 'scripts/composition-profiles.mjs', 'scripts/vendor-evidence-inputs.mjs', 'scripts/aggregate-required-check.mjs']) {
     assert.deepEqual(pitOf([file]), [true, true], file);
   }
   // 이관 도구만 읽는 루트 카탈로그.
   assert.deepEqual(pitOf(['db_columns.json']), [false, true]);
   // 운영 계약·도구·원장·의존성 선언 — 다른 축은 모두 전수지만 PIT 는 읽지 않는다.
-  for (const file of ['scripts/verify.mjs', 'scripts/ci-change-scope.mjs', 'scripts/ci-change-scope.test.mjs', 'package.json', 'package-lock.json',
+  for (const file of ['scripts/verify.mjs', 'scripts/ci-change-scope.test.mjs', 'package.json', 'package-lock.json',
     'config/governance/gates.json', 'config/pit-duration-profile.json', '.github/required-checks.json', '.githooks/pre-push', 'config/ui-route-capabilities.json']) {
     const result = classifyChangedFiles([file]);
     assert.deepEqual(result.unknownFiles, [file], file);
@@ -557,6 +563,11 @@ test('a workflow change selects PIT only when the part that selects, runs or col
   assert.deepEqual(pitOf(edit(/^( {2}change-scope:\r?\n(?:.*\r?\n)*? {4}timeout-minutes: )5/m, '$16'), workflow), [true, true], 'classifier job changed');
   assert.deepEqual(pitOf(edit(/^( {2}mutation-test:)/m, '  mutation-test-gone:'), workflow), [true, true], 'aggregator renamed');
   assert.deepEqual(pitOf(edit(/^jobs:/m, 'env:\n  ADDED_GLOBALLY: "1"\njobs:'), workflow), [true, true], 'workflow head changed');
+  // PIT 부분이 YAML 별칭으로 잡 밖의 앵커를 끌어오면 앵커 값만 바뀌어도 PIT 가 달라진다 — 워크플로 전체를 비교한다(2026-11-19 독립 검토).
+  const anchored = value => edit(/^( {2}reusable-vendor:\r?\n(?:.*\r?\n)*? {4}timeout-minutes: )45/m, `$1&pit_timeout ${value}`)
+    .replace(/^( {2}mutation-scope:\r?\n(?:.*\r?\n)*? {4}timeout-minutes: )30/m, '$1*pit_timeout');
+  assert.deepEqual(pitOf(anchored(31), anchored(30)), [true, true], 'anchor outside the PIT part changed');
+  assert.deepEqual(pitOf(anchored(30), anchored(30)), [false, false], 'same anchored file');
   assert.deepEqual(pitOf(workflow, null), [true, true], 'unreadable base');
   assert.deepEqual(pitOf(null, workflow), [true, true], 'deleted workflow');
   assert.deepEqual(pitOf('name: no jobs here\n', 'name: no jobs here\n'), [true, true], 'unknown workflow shape');
@@ -1116,35 +1127,6 @@ test('a workflow change selects the vendor job only when that job definition mov
   assert.equal(change(null, workflow), true, 'deleted workflow');
   // 잡 하나를 지운 변경은 정의가 사라지므로 켠다.
   assert.equal(change(workflow.replace(/^ {2}reusable-vendor:/m, '  reusable-vendor-gone:'), workflow), true, 'job removed');
-});
-
-test('a root package.json change whose only difference is dependency versions does not select the vendor job', () => {
-  const manifest = fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8');
-  const parsed = JSON.parse(manifest);
-  const vendorOf = (head, base = manifest) => classifyChangedFiles(['package.json'], { ...PR, readSource: () => head, readBaseSource: () => base }).reusableVendor;
-  const rewrite = mutate => {
-    const copy = structuredClone(parsed);
-    mutate(copy);
-    return `${JSON.stringify(copy, null, 2)}\n`;
-  };
-  const [dependency] = Object.keys(parsed.dependencies);
-  const [devDependency] = Object.keys(parsed.devDependencies);
-  // [ADR-0061 결정 3] 벤더 투영은 scripts 에 별칭을 더하고 벤더 잡 스크립트는 npm 패키지를 쓰지 않는다 — lock 만 바뀐 변경과 같다.
-  assert.equal(vendorOf(rewrite(copy => { copy.dependencies[dependency] = '^999.0.0'; })), false, 'dependency version');
-  assert.equal(vendorOf(rewrite(copy => { copy.devDependencies[devDependency] = '999.0.0'; })), false, 'devDependency version');
-  // 그 밖의 변경은 켠다: 투영이 고칠 자리(scripts), 의존성 이름, 엔진, 모양을 모르는 내용, 읽지 못한 기준.
-  assert.equal(vendorOf(rewrite(copy => { copy.scripts['added:alias'] = 'node scripts/x.mjs'; })), true, 'script added');
-  assert.equal(vendorOf(rewrite(copy => { delete copy.scripts; })), true, 'scripts removed');
-  assert.equal(vendorOf(rewrite(copy => { copy.dependencies['added-package'] = '1.0.0'; })), true, 'dependency added');
-  assert.equal(vendorOf(rewrite(copy => { delete copy.devDependencies[devDependency]; })), true, 'devDependency removed');
-  assert.equal(vendorOf(rewrite(copy => { copy.engines = { node: '>=99' }; })), true, 'engines changed');
-  assert.equal(vendorOf(rewrite(copy => { copy.dependencies = ['not', 'an', 'object']; })), true, 'dependency field shape');
-  assert.equal(vendorOf('{ not json'), true, 'unparseable head');
-  assert.equal(vendorOf(manifest, null), true, 'unreadable base');
-  assert.equal(vendorOf(null), true, 'deleted package.json');
-  // 다른 ciOnly 파일에는 쓰지 않는다 — 판 값처럼 보이는 변경이어도 켠다.
-  const compose = fs.readFileSync(path.join(repoRoot, 'docker-compose.yml'), 'utf8');
-  assert.equal(classifyChangedFiles(['docker-compose.yml'], { ...PR, readSource: () => `${compose}\n`, readBaseSource: () => compose }).reusableVendor, true);
 });
 
 test('every file the vendor source projection edits selects the vendor job', () => {

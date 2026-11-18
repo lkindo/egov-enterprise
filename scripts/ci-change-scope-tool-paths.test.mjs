@@ -552,7 +552,8 @@ test('generator-tool paths do not open a fast path around unknown, policy or cla
       assert.equal(result[field], true, `${extra}: ${field}`);
     }
     // [ADR-0061 결정 1] PIT 는 PIT 가 읽는 미지 경로만 고른다. 기준을 읽지 못한 워크플로는 PIT 부분이 바뀌었다고 본다.
-    const pit = extra === '.github/workflows/ci.yml';
+    // 분류기와 그 입력은 PIT 를 고르는 코드 자체라 PIT 를 고른다.
+    const pit = ['.github/workflows/ci.yml', 'scripts/ci-change-scope.mjs', 'scripts/composition-profiles.mjs'].includes(extra);
     assert.deepEqual([result.mutation, result.mutationMigrationTool], [pit, pit], extra);
   }
   // 표의 경로와 접두만 같은 다른 이름은 표에 맞지 않는다.
@@ -593,28 +594,33 @@ test('Atlas and operation-census tooling retains its audited consumers without u
  * 그래서 PIT 가 읽을 수 있는 미분류 경로는 분류기가 PIT 를 고르게 해야 한다 — 빠지면 그 파일만 바꾼 변경에서 PIT 가 돌지 않는다(거짓 녹색).
  *
  * 읽는 쪽과 그 축:
- *  - Gradle 스크립트(*.gradle): 모든 PIT 잡이 모든 프로젝트를 구성한다 — 두 PIT.
+ *  - Gradle 스크립트(*.gradle·*.gradle.kts)와 buildSrc 소스: 모든 PIT 잡이 모든 프로젝트를 구성한다 — 두 PIT.
  *  - PIT 가 시험을 돌리는 세 온라인 모듈(foundation·business-core·business-app)의 Java(main·test·testFixtures): 제품 PIT.
  *    api-server 는 PIT 가 시험을 돌리지 않고, foundation 시험이 읽는 api-server 소스는 이미 분류된 경로다(ADR-0044 결정 5).
  *  - migration-tool 의 Java: 이관 PIT.
- *  - ci.yml 의 두 PIT 잡이 실행하는 명령(run)과 로컬 액션(uses: ./…): 두 PIT.
- * 판정은 정적 근사다(넓히는 쪽): 주석을 뺀 리터럴(이어진 리터럴 포함)이 저장소 최상위 이름으로 시작하거나 '../' 로 모듈 밖을 가리키면
- * 그 경로(디렉터리면 그 아래 파일)를 읽는 것으로 본다. 홀로 쓴 최상위 디렉터리 이름은 시험 데이터의 흔한 낱말("test")과 구분할 수
- * 없어 세지 않는다 — 이어진 리터럴("config", "governance")과 '/' 가 든 리터럴은 센다.
+ *  - ci.yml 의 두 PIT 잡과 집계 잡이 실행하는 명령(run)과 액션(uses: ./…): 두 PIT.
+ * 판정은 정적 근사다(넓히는 쪽): 주석을 뺀 리터럴이 저장소 최상위 이름으로 시작하거나 '../' 로 모듈 밖을 가리키면 그 경로(디렉터리면
+ * 그 아래 파일)를 읽는 것으로 본다. 리터럴은 ','·').resolve('·').dir('·').file(' 로 이어지면 '/' 로, '+' 로 이어지면 그대로 잇고, 뒤에
+ * 더 이어지는 중간 값은 세지 않는다. 홀로 쓴 최상위 디렉터리 이름은 Java 에서는 시험 데이터의 흔한 낱말("test")과 구분할 수 없어
+ * 세지 않고, Gradle 에서는 경로를 받는 호출(.dir·file·files·fileTree·from·dir:)의 인자일 때 디렉터리 읽기로 센다. 변수로 만든 경로는 보지 못한다(ADR-0061 「결과」의 남는 위험).
  */
 const PIT_READERS = [
-  { pattern: /(?:^|\/)[^/]+\.gradle$/, axes: PIT_AXES },
+  { pattern: /(?:^|\/)[^/]+\.gradle(?:\.kts)?$/, axes: PIT_AXES, gradle: true },
+  { pattern: /^buildSrc\/.+\.(?:groovy|java|kt|kts)$/, axes: PIT_AXES, gradle: true },
   { pattern: /^(?:foundation|business-core|business-app)\/src\/(?:main|test|testFixtures)\/.+\.java$/, axes: ['mutation'] },
   { pattern: /^migration-tool\/src\/(?:main|test|testFixtures)\/.+\.java$/, axes: ['mutationMigrationTool'] },
 ];
-const PIT_JOBS = ['mutation-scope', 'mutation-scope-migration'];
-// Gradle 에서 경로 없는 이름은 변수 디렉터리 기준일 수 있다(new File(frontendProjectDir, 'package.json')). 루트 기준이 확실한 호출만 센다.
+const PIT_JOBS = ['mutation-scope', 'mutation-scope-migration', 'mutation-test'];
+// Gradle 에서 경로 없는 파일 이름은 변수 디렉터리 기준일 수 있다(new File(frontendProjectDir, 'package.json')). 루트 기준이 확실한 호출만 센다.
 const GRADLE_ROOT_CALL = /rootProject\.files?\(\s*(?:(?:'[^']*'|"[^"]*")\s*,\s*)*$/;
+// 경로 없는 디렉터리 이름은 경로를 받는 호출의 인자일 때만 센다 — tasks.named('test')·git 설정 값('.githooks') 같은 이름은 읽기가 아니다.
+const GRADLE_DIRECTORY_CALL = /(?:\.dir|\bfiles?|\bfileTree|\bfrom)\(\s*$|\bdir:\s*$/;
 
-/** Groovy 문자열 리터럴(작은·큰따옴표, 삼중 포함)과 그 앞의 코드. 주석은 버린다. */
+/** Groovy·Kotlin 문자열 리터럴(작은·큰따옴표, 삼중 포함)과 앞 리터럴 뒤의 코드(before)·앞 코드 200자(context). 주석은 버린다. */
 function gradleLiterals(source) {
   const literals = [];
   let code = '';
+  let since = '';
   for (let index = 0; index < source.length;) {
     if (source.startsWith('//', index)) {
       const newline = source.indexOf('\n', index);
@@ -626,22 +632,50 @@ function gradleLiterals(source) {
       const quote = source.startsWith(source[index].repeat(3), index) ? source[index].repeat(3) : source[index];
       let end = index + quote.length;
       while (end < source.length && !source.startsWith(quote, end) && (quote.length === 3 || source[end] !== '\n')) end += source[end] === '\\' ? 2 : 1;
-      literals.push({ value: source.slice(index + quote.length, end), before: code.slice(-200) });
-      code += `${quote}${source.slice(index + quote.length, end)}${quote}`;
+      const value = source.slice(index + quote.length, end);
+      literals.push({ value, before: since, context: code.slice(-200) });
+      code += `${quote}${value}${quote}`;
+      since = '';
       index = end + quote.length;
     } else {
       code += source[index];
+      since += source[index];
       index += 1;
     }
   }
   return literals;
 }
 
+/** 이어진 리터럴의 값들. 경로 이음(','·').resolve('·').dir('·').file(')은 '/', 문자열 덧셈('+')은 그대로 잇는다. */
+function joinedLiterals(spans) {
+  const separatorAfter = index => {
+    const between = spans[index + 1]?.before;
+    if (between === undefined) return null;
+    if (/^\s*\+\s*$/.test(between)) return '';
+    return /^\s*(?:,|\)\s*\.(?:resolve|dir|file)\()\s*$/.test(between) ? '/' : null;
+  };
+  const values = [];
+  for (let start = 0; start < spans.length; start += 1) {
+    let value = spans[start].value;
+    let end = start;
+    let separator = separatorAfter(end);
+    values.push({ value, continues: separator !== null, start });
+    while (separator !== null) {
+      end += 1;
+      value = `${value}${separator}${spans[end].value}`.replace(/\/{2,}/g, '/');
+      separator = separatorAfter(end);
+      values.push({ value, continues: separator !== null, start });
+    }
+  }
+  return values;
+}
+
 /**
  * 리터럴 하나가 가리키는 저장소 경로(없으면 null). `directory` 는 상대 경로의 기준이다 — 시험은 모듈 디렉터리(Gradle Test 의 작업
- * 디렉터리), Gradle 은 그 스크립트의 디렉터리. Spring 속성 기본값(${이름:기본값})은 기본값을 본다. `bare` 가 false 면 '/' 없는 이름은 세지 않는다.
+ * 디렉터리), Gradle 은 그 스크립트의 디렉터리. Spring 속성 기본값(${이름:기본값})은 기본값을 본다. '/' 없는 이름은 `bareFiles` 면 최상위
+ * 파일, `bareDirectories` 면 최상위 디렉터리를 가리키는 것으로 센다.
  */
-function rootPathOf(value, directory, topLevel, { bare = true } = {}) {
+function rootPathOf(value, directory, topLevel, { bareFiles = true, bareDirectories = false } = {}) {
   const fallback = /^\$\{[^:}]+:([^}]+)\}$/.exec(value.trim())?.[1];
   const text = (fallback ?? value).trim().replaceAll('\\', '/').replace(/[*$].*$/s, '').replace(/^\.\//, '').replace(/\/+$/, '');
   if (!text || /[\s"'`<>|?:]/.test(text)) return null;
@@ -651,7 +685,8 @@ function rootPathOf(value, directory, topLevel, { bare = true } = {}) {
   }
   const [first] = text.split('/');
   if (text.includes('/')) return topLevel.directories.has(first) ? text : null;
-  return bare && topLevel.files.has(text) ? text : null;
+  if (bareFiles && topLevel.files.has(text)) return text;
+  return bareDirectories && topLevel.directories.has(text) ? text : null;
 }
 
 /** 워크플로 잡 하나에서 실행하는 명령 줄(run 의 한 줄·여러 줄 블록)과 쓰는 액션(uses). 주석은 버린다. */
@@ -712,16 +747,20 @@ function pitInputEvidence({ files, read }) {
     const reader = PIT_READERS.find(entry => entry.pattern.test(file));
     if (!reader) continue;
     const source = read(file);
-    if (file.endsWith('.gradle')) {
+    if (reader.gradle) {
       const directory = path.posix.dirname(file) === '.' ? '' : path.posix.dirname(file);
-      for (const { value, before } of gradleLiterals(source)) {
-        note(rootPathOf(value, directory, topLevel, { bare: GRADLE_ROOT_CALL.test(before) }), reader.axes, file);
+      const literals = gradleLiterals(source);
+      for (const { value, continues, start } of joinedLiterals(literals)) {
+        if (continues) continue;
+        const single = !value.includes('/') && value === literals[start].value;
+        const { context } = literals[start];
+        note(rootPathOf(value, directory, topLevel, { bareFiles: !single || GRADLE_ROOT_CALL.test(context), bareDirectories: !single || GRADLE_DIRECTORY_CALL.test(context) }),
+          reader.axes, file);
       }
     } else {
       const moduleDirectory = file.split('/')[0];
       const { spans } = javaLiteralSpans(source);
-      // 뒤에 리터럴이 더 이어지는 중간 값(Path.of("..", "docs", …) 의 "../docs")은 디렉터리 읽기가 아니다.
-      for (const { value, continues } of chainedValues(spans, index => /^\s*(?:,|\+|\)\s*\.resolve\(\s*)\s*$/.test(spans[index + 1].before))) {
+      for (const { value, continues } of joinedLiterals(spans)) {
         if (!continues) note(rootPathOf(value, moduleDirectory, topLevel), reader.axes, file);
       }
     }
@@ -734,7 +773,6 @@ function pitInputEvidence({ files, read }) {
   }
   return reads;
 }
-
 
 /** PIT 가 읽는데 분류기가 그 PIT 를 고르지 않는 미분류 경로. */
 function pitInputMismatches({ files, read }) {
@@ -753,12 +791,13 @@ test('every unclassified path PIT can read selects that PIT run', () => {
   assert.deepEqual(pitInputMismatches({ files: repositoryFiles, read: readRepository }), []);
 });
 
-test('the PIT input census is not vacuous: it sees the Gradle ledger read, the migration catalog and the PIT wrapper', () => {
+test('the PIT input census is not vacuous: it sees the Gradle ledger read, the migration catalog, the wrapper and the aggregator', () => {
   const reads = pitInputEvidence({ files: repositoryFiles, read: readRepository });
   const axesOf = file => [...(reads.get(file)?.keys() ?? [])].sort();
   assert.deepEqual(axesOf('config/governance/vendor-test-ledger.json'), ['mutation', 'mutationMigrationTool'], 'api-server/build.gradle');
   assert.ok(axesOf('db_columns.json').includes('mutationMigrationTool'), 'MappingValidator default catalog');
   assert.deepEqual(axesOf('gradlew'), ['mutation', 'mutationMigrationTool'], 'the PIT jobs run ./gradlew');
+  assert.deepEqual(axesOf('scripts/aggregate-required-check.mjs'), ['mutation', 'mutationMigrationTool'], 'the PIT aggregator runs it');
   const readers = repositoryFiles.filter(file => PIT_READERS.some(entry => entry.pattern.test(file)));
   // 2026-11-19 실측: Gradle 스크립트 6·세 온라인 모듈 Java 1,600 이상·migration-tool Java 500 이상.
   assert.ok(readers.filter(file => file.endsWith('.gradle')).length >= 6, 'Gradle scripts are no longer enumerated');
@@ -766,7 +805,27 @@ test('the PIT input census is not vacuous: it sees the Gradle ledger read, the m
   assert.ok(readers.filter(file => /^(?:foundation|business-core|business-app)\//.test(file)).length >= 1000, 'online module sources are no longer enumerated');
 });
 
+test('the classifier and every module it imports select PIT, so a change to the selection itself runs PIT', () => {
+  // 분류기는 자기 입력의 변경을 좁게 분류하지 않는다 — PIT 를 고르는 코드가 바뀌면 그 PR 에서 PIT 가 실제로 돌아야 한다.
+  const seen = new Set();
+  const queue = ['scripts/ci-change-scope.mjs'];
+  while (queue.length > 0) {
+    const file = queue.shift();
+    if (seen.has(file)) continue;
+    seen.add(file);
+    for (const { specifier } of parseModuleReferences(readRepository(file), file).references) {
+      if (/^\.\.?\//.test(specifier)) queue.push(path.posix.normalize(path.posix.join(path.posix.dirname(file), specifier)));
+    }
+  }
+  assert.ok(seen.size >= 3, [...seen].join(', '));
+  for (const file of seen) {
+    const result = classifyChangedFiles([file], { readSource: () => null });
+    assert.deepEqual([result.mutation, result.mutationMigrationTool], [true, true], file);
+  }
+});
+
 test('a PIT module test or Gradle script that starts reading an unclassified path makes the census red', () => {
+  const appBuild = readRepository('business-app/build.gradle');
   const sources = {
     'business-app/src/test/java/nuri/business/service/board/SyntheticPitRootReaderTest.java':
       'class SyntheticPitRootReaderTest { String fixture = Files.readString(Path.of("..", "docs", "pit-synthetic-fixture.json")); }',
@@ -776,6 +835,12 @@ test('a PIT module test or Gradle script that starts reading an unclassified pat
     'config/governance/pit-synthetic-ledger.json': '{}',
     'build.gradle': `${readRepository('build.gradle')}\ndef syntheticPitInput = rootProject.file('config/pit-synthetic-build-input.json')\n`,
     'config/pit-synthetic-build-input.json': '{}',
+    // 독립 검토(2026-11-19)의 두 꼴: 루트 디렉터리를 시험 리소스로 복사하는 Gradle 연쇄와, 문자열 덧셈으로 나눈 파일 이름.
+    'business-app/build.gradle': `${appBuild}\nprocessTestResources { from(rootProject.layout.projectDirectory.dir('config').dir('pit-synthetic-fixtures')) }\n`,
+    'config/pit-synthetic-fixtures/board.json': '{}',
+    'business-app/src/test/java/nuri/business/service/board/SyntheticPitSplitNameTest.java':
+      'class SyntheticPitSplitNameTest { Path fixture = Path.of("..", "config", "pit-synthetic-split", "bo" + "ard.json"); }',
+    'config/pit-synthetic-split/board.json': '{}',
   };
   const files = [...new Set([...repositoryFiles, ...Object.keys(sources)])];
   const problems = pitInputMismatches({ files, read: file => sources[file] ?? readRepository(file) });
@@ -783,9 +848,12 @@ test('a PIT module test or Gradle script that starts reading an unclassified pat
     'config/governance/pit-synthetic-ledger.json: mutationMigrationTool 를 골라야 한다',
     'config/pit-synthetic-build-input.json: mutationMigrationTool 를 골라야 한다',
     'config/pit-synthetic-build-input.json: mutation 를 골라야 한다',
+    'config/pit-synthetic-fixtures/board.json: mutationMigrationTool 를 골라야 한다',
+    'config/pit-synthetic-fixtures/board.json: mutation 를 골라야 한다',
+    'config/pit-synthetic-split/board.json: mutation 를 골라야 한다',
     'docs/pit-synthetic-fixture.json: mutation 를 골라야 한다',
   ].sort());
-  // 주석 속 경로와 홀로 쓴 최상위 디렉터리 이름은 읽기가 아니다.
+  // 주석 속 경로와 Java 에서 홀로 쓴 최상위 디렉터리 이름은 읽기가 아니다.
   const quiet = {
     'business-app/src/test/java/nuri/business/service/board/SyntheticPitQuietTest.java':
       'class SyntheticPitQuietTest { /* docs/pit-synthetic-fixture.json 을 언급만 한다 */ String word = "test"; String user = "docs"; }',

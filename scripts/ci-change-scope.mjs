@@ -262,8 +262,18 @@ function isMigrationToolMutation(file) {
 const PIT_BUILD_INPUTS = [
   /^lombok\.config$/, // 모든 모듈의 컴파일
   /^gradlew(?:\.bat)?$/, // PIT 잡이 실행하는 래퍼
+  /^buildSrc\//, // Gradle 이 저절로 빌드해 모든 빌드 스크립트의 클래스패스에 넣는다(지금은 없다)
+  /(?:^|\/)[^/]+\.gradle\.kts$/, // Kotlin DSL 빌드·설정 스크립트(지금은 없다 — 그루비 스크립트는 SHARED_GRADLE_INPUTS·모듈 경로가 고른다)
   /^\.gitattributes$/, // 체크아웃 줄 끝 — 소스·리소스 내용을 바꾼다
-  /^config\/governance\/vendor-test-ledger\.json$/, // api-server 빌드 스크립트가 구성 중 읽는다(PIT 잡도 모든 프로젝트를 구성한다)
+  // api-server 빌드 스크립트가 가리킨다. 실제로 읽는 곳은 vendorIntegration 속성이 있을 때 등록하는 벤더 통합 시험 구성이라 PIT 실행은
+  // 읽지 않지만, census 가 문자열 근사라 그 구분을 증명하지 못한다 — 보수적으로 둔다.
+  /^config\/governance\/vendor-test-ledger\.json$/,
+  // PIT 를 고르고 집계하는 코드 자체 — 분류기는 자기 입력의 변경을 좁게 분류하지 않는다(GENERATOR_TOOL_PATHS 의 composition-profiles 와
+  // 같은 원칙). 분류기가 가져오는 모듈과 PIT 집계가 실행하는 스크립트는 운영 계약이 이 목록과 대조한다.
+  /^scripts\/ci-change-scope\.mjs$/,
+  /^scripts\/composition-profiles\.mjs$/,
+  /^scripts\/vendor-evidence-inputs\.mjs$/,
+  /^scripts\/aggregate-required-check\.mjs$/,
 ];
 // MappingValidator 의 기본 표준 카탈로그(ADR-0022 결정 3). 온라인 모듈은 읽지 않는다.
 const MIGRATION_PIT_ROOT_INPUTS = [/^db_columns\.json$/];
@@ -291,7 +301,13 @@ export function pitWorkflowDefinition(workflow) {
   return kept.join('\n');
 }
 
-/** 이 파일이 PIT 축을 고르는가. 워크플로는 PIT 부분이 바뀐 변경만 고르고, 내용·기준을 읽지 못하면 고른다(fail-closed). */
+// YAML 별칭(*이름·<<: *이름)은 PIT 잡 밖에 정의한 앵커를 끌어온다. PIT 부분에 별칭이 있으면 그 부분만 비교해서는 바뀐 값을 놓친다.
+const YAML_ALIAS = /(?:^|[:\-[{,]\s*)\*[A-Za-z_][\w-]*\s*(?:$|[,\]}])/m;
+
+/**
+ * 이 파일이 PIT 축을 고르는가. 워크플로는 PIT 부분이 바뀐 변경만 고르고, 내용·기준을 읽지 못하거나 PIT 부분이 YAML 별칭을 쓰면
+ * 워크플로 전체를 비교한다(fail-closed).
+ */
 function selectsPitFromOutside(file, extraInputs, readSource, readBaseSource) {
   if (matchesAny(file, PIT_BUILD_INPUTS) || matchesAny(file, extraInputs)) return true;
   if (file !== PIT_WORKFLOW) return false;
@@ -299,7 +315,12 @@ function selectsPitFromOutside(file, extraInputs, readSource, readBaseSource) {
   const base = readBaseSource(file);
   if (typeof head !== 'string' || typeof base !== 'string') return true;
   const headDefinition = pitWorkflowDefinition(head);
-  return headDefinition === null || headDefinition !== pitWorkflowDefinition(base);
+  const baseDefinition = pitWorkflowDefinition(base);
+  if (headDefinition === null || baseDefinition === null) return true;
+  if (YAML_ALIAS.test(headDefinition) || YAML_ALIAS.test(baseDefinition)) {
+    return head.replace(/\r\n/g, '\n') !== base.replace(/\r\n/g, '\n');
+  }
+  return headDefinition !== baseDefinition;
 }
 
 const SCHEMA_RELEVANT = [

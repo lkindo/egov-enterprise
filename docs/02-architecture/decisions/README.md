@@ -53,7 +53,7 @@
 | [ADR-0044](ADR-0044-ci-tuning-values-and-pit-scope-floors.md) | CI 튜닝값(슬롯 수·PIT 선언 순서)은 ci.yml·실측 profile 이 정본, PIT 범위별 하한, api-server 의 PIT 선별 유지 | Accepted |
 | [ADR-0045](ADR-0045-bookmark-cleanup-input-policy-and-memo-read-consistency.md) | 즐겨찾기 기본 보존·명시적 정리, 부서 업무 우선순위·팝업 크기의 엄격 저장, 읽은 메모 본문·첨부 기준 지시 | Accepted — 일부 ADR-0048 대체 |
 | [ADR-0046](ADR-0046-empty-numeric-transition-and-log-duration-standard.md) | 빈 표·정비창 한정 숫자 세 컬럼 NUMERIC 전환과 처리소요밀리초 표준, 공유 DB 실행 별도 승인 | Accepted |
-| [ADR-0047](ADR-0047-multi-database-composer-and-vendor-sql-boundary.md) | 프로젝트 생성기의 다중 DB 선택과 벤더 SQL 경계 — PostgreSQL 단일 정본, 벤더 어댑터, 포트·린터, 차등 시험 | Accepted — 일부 ADR-0061로 대체 |
+| [ADR-0047](ADR-0047-multi-database-composer-and-vendor-sql-boundary.md) | 프로젝트 생성기의 다중 DB 선택과 벤더 SQL 경계 — PostgreSQL 단일 정본, 벤더 어댑터, 포트·린터, 차등 시험 | Accepted |
 | [ADR-0048](ADR-0048-personal-attachment-deletion-and-uploader-window.md) | 업로더 근거의 범위와 개인 귀속 첨부의 개별 삭제 | Accepted |
 | [ADR-0049](ADR-0049-retire-workflow-demo-screens.md) | 워크플로우 목업 3개 화면 퇴역과 기존 WORKFLOW_READ 배정 호환 | Accepted |
 | [ADR-0050](ADR-0050-local-requirements-workspace.md) | 요구사항 로컬 UI·외부 파일 작업공간·분석 기준선·개발 준비·인수 근거 결속 | Accepted |
@@ -67,4 +67,4 @@
 | [ADR-0058](ADR-0058-requirements-question-groups.md) | 요구사항 스튜디오의 같은 것을 묻는 질문은 한 묶음으로 한 번만 답하고, 확정을 막는 기준은 그대로 | Accepted |
 | [ADR-0059](ADR-0059-edge-login-rate-limit.md) | 운영 앞단 프록시(edge)가 로그인·추가 인증·비밀번호 변경을 접속 주소당 백엔드와 같은 한도로 한 번 더 제한 | Accepted |
 | [ADR-0060](ADR-0060-asymmetric-jwt-signing.md) | 접근·재발급 토큰을 ES256 키링으로 서명하고 Next 에는 공개키만 둔다 — 두 번 배포로 전환, 구현은 재기록 묶음 | Accepted |
-| [ADR-0061](ADR-0061-pit-selection-and-vendor-dependency-trigger.md) | 미지 경로는 PIT 가 읽을 때만 PIT 를 고르고(PIT 입력 census), 제품 PIT 시험 대상은 대상 패키지·실제 탐지 시험, 벤더 잡은 루트 의존성 판만 바뀐 변경을 고르지 않는다 | Accepted |
+| [ADR-0061](ADR-0061-pit-selection-and-test-targets.md) | 미지 경로는 PIT 가 읽을 때만 PIT 를 고르고(PIT 입력 census), 제품 PIT 시험 대상은 대상 패키지와 실제 탐지 시험으로 좁힌다 | Accepted |

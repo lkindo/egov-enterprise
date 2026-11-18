@@ -2,7 +2,6 @@
 
 - 상태: Accepted
 - 결정일: 2026-10-31
-- 후속 결정: D-14 의 `ciOnly` 가운데 루트 `package.json` 의 의존성 판 값만 바뀐 변경은 [ADR-0061](ADR-0061-pit-selection-and-vendor-dependency-trigger.md) 결정 3 이 벤더 잡에서 뺀다(의존성 이름·`scripts` 등 다른 변경은 그대로 고른다).
 - 승인: 2026-10-30 사용자가 생성기에서 PostgreSQL 외 DB 를 선택할 수 있게 설계하라고 요청했고, 2026-10-31 권장안대로 단계 0 진행을 지시했다.
 - 대체: [ADR-0020](ADR-0020-selectable-reusable-backend-layouts.md) 결정 5 의 'PostgreSQL 범위 유지'. 인증한 벤더가 생기기 전까지 실제 선택지는 PostgreSQL 뿐이다.
 - 관련: [다중 DB 설계](../multi-database-composer-design.md), [생성기 설계](../project-composer-design.md), [벤더 SQL 원장](../../../config/governance/vendor-sql-ledger.json), [벤더 시험 원장](../../../config/governance/vendor-test-ledger.json)
