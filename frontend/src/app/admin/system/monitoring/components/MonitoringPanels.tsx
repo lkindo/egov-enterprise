@@ -2,30 +2,8 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { AlertCircle, type LucideIcon } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Tab } from '@/app/components/ui/standard-tabs';
-
-/**
- * 모니터링 허브의 표시 전용 패널 모음.
- *
- * <p>2026-08-05 에 {@code MonitoringHubClient.tsx}(1,387줄)에서 <b>로직 변경 없이 이동</b>했다.
- * 원래 이 컴포넌트들은 허브 본체와 같은 파일의 최상위에 선언돼 있었고, 본체의 상태·쿼리를
- * 전혀 참조하지 않는 순수 표시 컴포넌트다 — 파일을 나눌 때 경계가 이미 거기 있었다.
- *
- * <p>탭 버튼의 탭 값은 문자열이다 — 셸 고유 탭(monitoring-tabs.ts)과 다른 기능의 기여 탭(hub-tabs-monitoring)을 같은 버튼으로 그린다(허브 분해 H3).
- */
-
-export function SampleDataBadge({ className }: { className?: string }) {
-  return (
-    <span className={cn(
-      "inline-flex items-center gap-1.5 rounded border border-warning/40 bg-warning/15 px-2 py-0.5 text-xs text-foreground",
-      className
-    )}>
-      <AlertCircle size={11} aria-hidden="true" /> 샘플 데이터 · 실측 미연동
-    </span>
-  );
-}
-
 
 export function NavButton({ tab, icon, label, active, onClick }: { tab: string, icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
   return (

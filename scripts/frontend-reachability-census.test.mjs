@@ -232,7 +232,6 @@ const CORE_SURVIVORS = [
   'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx',
   'frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx',
   // [GAP-SLOT-001] 허브 탭 레지스트리는 허브마다 따로다. 감시 허브 셸은 자기 허브의 레지스트리만 읽는다.
-  'frontend/src/extensions/generated-hub-tabs-monitoring.ts',
   // [Phase 0c] 통계 셸과 게시판 데이터를 쓰지 않는 통계 화면은 core 다. [허브 분해 H4] 셸은 게시판·설문 탭을 stats-panels
   //   레지스트리로 받는다 — 기능 코드를 다시 import 하거나 레지스트리 렌더가 빠지면 core 투영에서 통계 화면 전체가 연쇄로 사라진다.
   'frontend/src/extensions/generated-stats-panels.ts',
@@ -294,14 +293,6 @@ test('core 프로필에서 살아남아야 하는 파일은 core 투영의 연�
       `${survivor} is removed from the core profile via ${JSON.stringify(coreRemoval?.evidencePath)}`,
     );
   }
-  // [2026-09-27 DIP B5 F11] 하네스 아틀라스(정적 스킬 카탈로그·예시 계측 로그)는 demo pack 소유 샘플이다. 허브에는 시연 기능의
-  //   hub-tabs-monitoring 기여로만 붙으므로(허브 분해 H3), removePaths 에서 빠지면 탭은 사라지고 파일만 core 에 고아로 남는다.
-  const harnessAtlas = byFile(census, 'frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx');
-  assert.equal(
-    harnessAtlas.profileRemovalConstraints.find((constraint) => constraint.profile === 'core')?.removal,
-    'direct',
-    'the harness atlas sample tab must be a demo removePath',
-  );
   // [슬롯 단계 PR-6] 셸 링크·머리글 위젯 기여는 기능과 함께 직접 지워진다(연쇄가 아니다). 알림 벨은 collaboration 에 남는다.
   for (const [file, profiles] of [
     ['frontend/src/extensions/help/shell-links.ts', ['core', 'collaboration']],
@@ -321,8 +312,6 @@ test('core 프로필에서 살아남아야 하는 파일은 core 투영의 연�
     ['frontend/src/components/business/community/knowledge-community-tab.tsx', ['core', 'collaboration']],
     ['frontend/src/app/admin/help/KnowledgeHubClient.tsx', ['core']],
     ['frontend/src/lib/board/qna-status.ts', ['core']],
-    // [허브 분해 H3] 감시 허브의 하네스 아틀라스 탭 기여도 시연 기능과 함께 직접 지워진다(허브는 core 셸이라 남는다).
-    ['frontend/src/extensions/showcase/hub-tabs-monitoring.ts', ['core', 'collaboration']],
     // [허브 분해 H6] 댓글 및 평가 관리는 댓글 기능의 독립 화면이다 — 감시 허브(core)는 남고 이 화면은 댓글과 함께 직접 지워진다.
     ['frontend/src/app/admin/system/comments/CommentModerationClient.tsx', ['core']],
     // [허브 분해 H4] 통계 셸의 게시판·설문 기여도 기능과 함께 직접 지워진다(셸·요약은 core 라 남는다).

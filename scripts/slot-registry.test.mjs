@@ -146,7 +146,7 @@ test('partitioned consumer rows: stats-panels by placement, hub tabs one slot pe
   });
   // 허브 탭 슬롯은 허브마다 하나이고 소비자는 그 허브 셸 하나다(나누지 않은 한 목록). 허브 셸마다 허브 탭 레지스트리 하나다.
   const hubSlots = Object.keys(SLOT_REGISTRY_CONSUMERS).filter(slot => hubOfTabSlot(slot) !== null).sort();
-  assert.deepEqual(hubSlots, ['hub-tabs-collaboration', 'hub-tabs-knowledge', 'hub-tabs-monitoring']);
+  assert.deepEqual(hubSlots, ['hub-tabs-collaboration', 'hub-tabs-knowledge']);
   for (const slot of hubSlots) {
     assert.equal(slotConsumerPartition(slot), null, `${slot} is a flat row`);
     assert.equal(slotConsumerFiles(slot).length, 1, `${slot} has one consumer`);

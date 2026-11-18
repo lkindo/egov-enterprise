@@ -2,9 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MonitoringHubClient from '../MonitoringHubClient';
-import { inProjection } from '@/test-utils/projection';
 
-// 하네스 탭(시연 기능의 hub-tabs-monitoring 기여)의 시험은 그 기여가 투영으로 빠진 생성물에서 등록하지 않는다(원본에서는 그대로다).
 // [허브 분해 H6] 댓글 탭의 시험(검색 없음·확인 후 영구 삭제·동기 선점·삭제 대행 권한 표시)은 댓글 기능의 독립 화면 시험으로 옮겼다
 //   (src/app/admin/system/comments/__tests__/CommentModerationClient.test.tsx). 이 허브에는 댓글 탭이 없다.
 
@@ -119,7 +117,6 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
 }));
 
 vi.mock('../components/MonitoringPanels', () => ({
-  SampleDataBadge: () => <span>샘플 데이터</span>,
   NavButton: ({ label, active, onClick }: any) => (
     <button type="button" role="tab" aria-selected={active} onClick={onClick}>{label}</button>
   ),
@@ -373,20 +370,6 @@ describe('MonitoringHubClient', () => {
     expect(await screen.findByText(/점검을 실행하지 못했습니다/)).toBeInTheDocument();
   });
 
-  // [2026-09-27 DIP B5 F11] 하네스 탭은 시연 기능 소유 파일(HarnessAtlasPanels)로 옮겼고, 허브에는 시연의 hub-tabs-monitoring 기여로 붙는다
-  //   (허브 분해 H3) — 목 없이 실제 레지스트리·상세를 본다. 시연이 빠진 생성물에서는 기여가 원장으로 빠진다.
-  if (inProjection('frontend/src/extensions/showcase/hub-tabs-monitoring.ts')) it('selects both harness catalog item types', async () => {
-    renderHub('tab=harness');
-    fireEvent.click(screen.getByRole('button', { name: /Deep Context Mapper 엔진 상세 보기/ }));
-    let detail = screen.getByRole('region', { name: '선택 항목 상세' });
-    expect(within(detail).getByRole('heading', { name: '스킬 상세' })).toBeInTheDocument();
-    expect(within(detail).getAllByText(/Deep Context Mapper/).length).toBeGreaterThan(0);
-    fireEvent.click(screen.getByRole('button', { name: /QueryCountGuardrailIntegrationTest.*계측 상세 보기/ }));
-    detail = screen.getByRole('region', { name: '선택 항목 상세' });
-    expect(within(detail).getByRole('heading', { name: '테스트 상세' })).toBeInTheDocument();
-    expect(within(detail).getAllByText(/QueryCountGuardrailIntegrationTest/).length).toBeGreaterThan(0);
-  });
-
   // [DEC-OPS-129] 인프라 구성도 탭은 계측 소스 없이 늘 빈 화면이라 네트워크 모니터링과 함께 걷었다.
   //   예전 주소는 없는 탭을 그리지 않고 기본 탭으로 떨어진다.
   it('퇴역한 인프라 구성도 탭 주소는 기본 탭으로 떨어지고 탭 목록에 없다', () => {
@@ -423,8 +406,6 @@ describe('MonitoringHubClient', () => {
     expect(await screen.findByText('시스템 상태: 점검 필요 (health 응답: DOWN)')).toBeInTheDocument();
   });
 
-  // [2026-11-09 DEC-OPS-409] 고정 배열 표본(추세 · 다차원 상태)은 시연 기능의 하네스 탭으로 옮겼다. 가동 상태 탭은 모든 시작 구성에
-  //   실리므로 표본도 샘플 배지도 두지 않는다 — 다시 들어오면 운영 구성에 가짜 숫자가 실린다.
   it('가동 상태 탭에는 고정 배열 표본과 샘플 배지가 없다', async () => {
     renderHub('tab=observability');
 
@@ -435,32 +416,11 @@ describe('MonitoringHubClient', () => {
     expect(screen.getAllByTestId('dynamic-panel').map((chart) => chart.dataset.chart)).toEqual(['CPU 사용률', '메모리 사용률']);
   });
 
-  if (inProjection('frontend/src/extensions/showcase/hub-tabs-monitoring.ts')) it('추세 · 다차원 상태 표본은 하네스 탭에 샘플 배지·차트 셋과 함께 있다', () => {
-    renderHub('tab=harness');
-
-    const heading = screen.getByRole('heading', { name: '추세 · 다차원 상태(미연동)' });
-    expect(within(heading.parentElement as HTMLElement).getByText('샘플 데이터')).toBeInTheDocument();
-    const section = heading.parentElement?.parentElement as HTMLElement;
-    expect(within(section).getAllByTestId('dynamic-panel').map((chart) => [chart.dataset.chart, chart.dataset.points])).toEqual([
-      ['NETWORK_TRAFFIC (PPS)', '7'],
-      ['DB_LATENCY (MS)', '7'],
-      ['HEURISTIC_SYSTEM_HEALTH (샘플)', '6'],
-    ]);
-  });
-
   it('실제 로그 기록의 상세에는 샘플 데이터 고지를 붙이지 않는다', async () => {
     renderHub('tab=system');
     fireEvent.click((await screen.findAllByRole('button', { name: /상세 열기/ }))[0]);
 
     const detail = await screen.findByRole('region', { name: '선택 항목 상세' });
     expect(within(detail).queryByText('샘플 데이터')).toBeNull();
-  });
-
-  if (inProjection('frontend/src/extensions/showcase/hub-tabs-monitoring.ts')) it('하네스 스킬 상세에는 샘플 데이터 고지를 붙인다', () => {
-    renderHub('tab=harness');
-    fireEvent.click(screen.getByRole('button', { name: /Deep Context Mapper 엔진 상세 보기/ }));
-
-    const detail = screen.getByRole('region', { name: '선택 항목 상세' });
-    expect(within(detail).getByText('샘플 데이터')).toBeInTheDocument();
   });
 });
