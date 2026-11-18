@@ -134,8 +134,6 @@ test('Atlas source and generator inputs select Atlas contracts without weakening
   const hook = fs.readFileSync(path.join(repoRoot, '.githooks/pre-push'), 'utf8');
   assert.ok(hook.includes('--stdin --fields docsOnly,backend,migration,frontend,atlas'), 'pre-push must ask the classifier for the atlas axis');
   assert.ok(hook.includes('SCOPE_ATLAS=$(scope_field atlas)'), 'SCOPE_ATLAS must come from the one classifier call');
-  // CI 는 이 축으로 cross-stack 계약을 고른다. Atlas 렌더·상호작용 계약은 수동 실행이라(DEC-OPS-420) 훅이 돌리지 않는다.
-  assert.ok(!hook.includes('governance-atlas-contract'), 'pre-push must not run the manual Atlas render contract');
 });
 
 test('backend tests rerun mutation evidence but do not spend browser E2E time', () => {

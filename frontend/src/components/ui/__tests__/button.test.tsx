@@ -12,7 +12,7 @@ import { describe, it, expect, vi } from 'vitest';
 describe('Button', () => {
   it('renders correctly', () => {
     render(<Button>Click me</Button>);
-    expect(screen.getByRole('button', { name: /click me/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /click me/i })).toBeInTheDocument();
   });
 
   it('handles click events', () => {
@@ -38,7 +38,7 @@ describe('Button', () => {
   it('shows loading state', () => {
     render(<Button isLoading>로딩 중</Button>);
     expect(screen.getByRole('button')).toBeDisabled();
-    expect(screen.getByTestId('icon-loader2')).toBeDefined();
+    expect(screen.getByTestId('icon-loader2')).toBeInTheDocument();
   });
 
   it('keeps the loading lock even when disabled={false} is passed explicitly', () => {

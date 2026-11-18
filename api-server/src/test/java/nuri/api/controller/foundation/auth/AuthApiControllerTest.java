@@ -102,6 +102,7 @@ class AuthApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.accessToken").value("access-token"))
+                .andExpect(jsonPath("$.data.role").value("ROLE_USER"))
                 .andExpect(jsonPath("$.data.groups[0]").value("CONTENT"))
                 .andExpect(jsonPath("$.data.permissions[0]").value("CONTENT_EDIT"))
                 .andExpect(jsonPath("$.data.authorizationVersion").value("v1"))
@@ -122,7 +123,23 @@ class AuthApiControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isInternalServerError());
     }
- 
+
+    @Test
+    @DisplayName("로그인 실패 - 인증 실패(BusinessException LOGIN_FAILED)는 401 과 A005 로 응답한다")
+    void testLoginFailWithLoginFailedCode() throws Exception {
+        // 옛 nuri/web/auth 시험에서 옮긴 사례 — 위 시험은 예상하지 못한 예외의 500 을, 이 시험은 업무 예외의 상태·코드 매핑을 본다.
+        LoginRequest request = LoginRequest.builder().userId("user01").password("wrong-password").build();
+        when(authService.login(any(), anyString())).thenThrow(new nuri.foundation.core.exception.BusinessException(
+                nuri.foundation.core.exception.CommonErrorCode.LOGIN_FAILED));
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("A005"));
+    }
+
     @Test
     @DisplayName("토큰 재발급")
     void testReissue() throws Exception {

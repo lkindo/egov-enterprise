@@ -13,7 +13,7 @@ import { describe, it, expect, vi } from 'vitest';
 describe('Input', () => {
  it('renders correctly', () => {
  render(<Input placeholder="Enter text" />);
- expect(screen.getByPlaceholderText('Enter text')).toBeDefined();
+ expect(screen.getByPlaceholderText('Enter text')).toBeInTheDocument();
  });
 
  it('handles changes', async () => {

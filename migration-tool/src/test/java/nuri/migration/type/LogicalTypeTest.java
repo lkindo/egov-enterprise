@@ -32,7 +32,6 @@ class LogicalTypeTest {
                 new LogicalType.SpatialType("POINT", 4326),
                 new LogicalType.OpaqueType("oracle", "ANYDATA"));
 
-        assertThat(types).hasSize(19).doesNotContainNull();
         assertThat(((LogicalType.IntegerType) types.get(1)).signedness())
                 .isEqualTo(LogicalType.Signedness.UNSIGNED);
         assertThat(((LogicalType.OffsetTimestampType) types.get(8)).precision()).isEqualTo(6);

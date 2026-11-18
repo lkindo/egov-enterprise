@@ -83,15 +83,15 @@ describe('CommentSection Component', () => {
   it('renders comments correctly', async () => {
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
 
-    expect(screen.getByText('First Comment')).toBeDefined();
-    expect(screen.getByText('User One')).toBeDefined();
-    expect(screen.getByRole('heading', { name: '댓글' })).toBeDefined();
+    expect(screen.getByText('First Comment')).toBeInTheDocument();
+    expect(screen.getByText('User One')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '댓글' })).toBeInTheDocument();
   });
 
   it('[DIP B5 F9] 댓글을 받지 않는 게시판은 입력란 대신 사유를 보이고, 이미 달린 댓글은 그대로 보인다', () => {
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} acceptsNewComments={false} />);
 
-    expect(screen.getByText('First Comment')).toBeDefined();
+    expect(screen.getByText('First Comment')).toBeInTheDocument();
     expect(screen.getByRole('note').textContent).toContain('새 댓글을 받지 않습니다');
     expect(screen.queryByLabelText('새 댓글 작성')).toBeNull();
     expect(screen.queryByRole('button', { name: /댓글 등록/ })).toBeNull();
@@ -100,7 +100,7 @@ describe('CommentSection Component', () => {
   it('[2026-10-23 ADR-0040 결정 1] 사용 안 함 게시판은 입력란과 수정·삭제 단추를 감추고 사유를 보이며, 댓글은 그대로 보인다', () => {
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} boardInUse={false} />);
 
-    expect(screen.getByText('First Comment')).toBeDefined();
+    expect(screen.getByText('First Comment')).toBeInTheDocument();
     expect(screen.getByRole('note').textContent).toContain('사용 안 함 게시판이라 댓글을 쓰거나 고칠 수 없습니다');
     expect(screen.queryByLabelText('새 댓글 작성')).toBeNull();
     expect(screen.queryByRole('button', { name: '댓글 수정' })).toBeNull();
@@ -137,7 +137,7 @@ describe('CommentSection Component', () => {
   it('handles empty comment list', async () => {
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[]} />);
 
-    expect(screen.getByText('아직 등록된 댓글이 없습니다. 아래에서 첫 댓글을 남겨 주세요.')).toBeDefined();
+    expect(screen.getByText('아직 등록된 댓글이 없습니다. 아래에서 첫 댓글을 남겨 주세요.')).toBeInTheDocument();
   });
 
   it('submits a new comment', async () => {
@@ -216,7 +216,7 @@ describe('CommentSection Component', () => {
 
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
 
-    expect(screen.getByText('First Comment')).toBeDefined();
+    expect(screen.getByText('First Comment')).toBeInTheDocument();
 
     const editButton = screen.getByTestId('comment-edit-button');
     fireEvent.click(editButton);
@@ -333,7 +333,7 @@ describe('CommentSection Component', () => {
 
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
 
-    expect(screen.getByText('First Comment')).toBeDefined();
+    expect(screen.getByText('First Comment')).toBeInTheDocument();
 
     const deleteButton = screen.getByTestId('comment-delete-button');
     fireEvent.click(deleteButton);
@@ -392,7 +392,7 @@ describe('CommentSection Component', () => {
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[optimisticRow]} />);
 
     // 본문은 보이되(사용자는 자기 글이 올라간 것을 즉시 본다),
-    expect(screen.getByText('Pending Comment')).toBeDefined();
+    expect(screen.getByText('Pending Comment')).toBeInTheDocument();
     // 수정·삭제는 노출되지 않아야 한다.
     expect(screen.queryByTestId('comment-edit-button')).toBeNull();
     expect(screen.queryByTestId('comment-delete-button')).toBeNull();
@@ -411,7 +411,7 @@ describe('CommentSection Component', () => {
 
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[othersComment]} />);
 
-    expect(screen.getByText('First Comment')).toBeDefined();
+    expect(screen.getByText('First Comment')).toBeInTheDocument();
     expect(screen.queryByTestId('comment-edit-button')).toBeNull();
     expect(screen.queryByTestId('comment-delete-button')).toBeNull();
   });

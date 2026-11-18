@@ -7,16 +7,11 @@
  * 메서드 본문이 한 줄씩이라 "테스트할 게 없다"고 보이지만, 아래 항목들은 **틀어져도 컴파일·타입
  * 검사를 모두 통과한 채 런타임에서만 조용히 깨진다**.
  *
- * 1) URL 접두가 형제 서비스와 다르다 — 이 파일에서 가장 위험한 지점이다.
- *    같은 디렉터리의 DeptAdminService·MenuAdminService 등은 `AdminService` 를 상속해
- *    `admin/{category}/…` 접두를 얻는다. 그런데 **HpcmAdminService 는 `ApiService` 를 직접 상속하고
- *    `super('help/hpcm')` 만 넘긴다**(소스 14~17행). 최종 경로는 `help/hpcm` 이며 axios
- *    baseURL('/api/v1')과 합쳐져 `/api/v1/help/hpcm` 이 된다. 백엔드도 관리자 전용이 아니라 업무
+ * 1) URL 이 형제 서비스와 다르다 — 경로는 생성된 operation descriptor 가 소유하고, 이 서비스는 도움말 operation 을
+ *    골라 `help/hpcm` 으로 나간다(axios baseURL 과 합쳐 `/api/v1/help/hpcm`). 백엔드도 관리자 전용이 아니라 업무
  *    컨트롤러 `HelpApiController`(`@RequestMapping("/api/v1/help")` + `@GetMapping("/hpcm")`)가 받는다.
- *    클래스 이름이 "…AdminService" 라서 표준화 명목으로 `extends AdminService` 로 바꾸면 경로가
- *    `admin/system/help/hpcm` 이 되어 **5개 메서드가 한꺼번에 404** 가 된다. 타입은 그대로다.
- *    선행 슬래시가 되살아나면(`/help/hpcm`) axios baseURL 의 경로 세그먼트('/api/v1')가 통째로
- *    날아가 절대 경로로 해석된다.
+ *    클래스 이름이 "…AdminService" 라서 관리자 operation 으로 잘못 고르면 **5개 메서드가 한꺼번에 404** 가 된다.
+ *    선행 슬래시가 붙으면(`/help/hpcm`) axios baseURL 의 경로 세그먼트('/api/v1')가 날아간다.
  *
  * 2) 페이징 파라미터 — [ADR-0036] 이 엔드포인트는 **Spring Data `Pageable`**(`@PageableDefault(size = 10)`)로
  *    바인딩되고 서버가 읽는 키는 `page`(1부터)/`size` 다. 서비스는 두 값을 변환 없이 넘긴다. "정규화"라는 이름으로
@@ -70,15 +65,8 @@ vi.mock('@/lib/api/client', () => ({ default: client }));
 
 import { hpcmAdminService, type Hpcm } from '../HpcmAdminService';
 
-/**
- * 이 서비스의 모든 요청이 공유하는 접두 — **소스 확인값**이다.
- * `HpcmAdminService extends ApiService` + `super('help/hpcm')` → basePath 그대로 `help/hpcm`.
- * (`AdminService` 를 상속하지 않으므로 `admin/system/` 접두가 붙지 않는다. 선행 슬래시도 없다.)
- */
+/** 이 서비스의 모든 요청이 공유하는 접두 — 도움말 operation descriptor 의 경로(선행 슬래시 없음). */
 const BASE = 'help/hpcm';
-
-/** 형제 서비스(AdminService 상속)였다면 나왔을 경로 — 여기로 바뀌면 전 메서드가 404 다. */
-const ADMIN_PREFIXED = 'admin/system/help/hpcm';
 const validHpcm: Hpcm = {
   hlpSn: 1,
   hlpSeCd: '001',
@@ -99,16 +87,9 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
     it('목록은 help/hpcm 으로 나가며 컬렉션 경로에 후행 슬래시가 붙지 않는다', async () => {
       await hpcmAdminService.getHpcmList();
 
-      // path 인자로 빈 문자열('')을 넘기므로 basePath 그대로가 최종 경로다.
+      // 목록 operation 의 경로 그대로다 — 관리자 operation(admin/system/…)을 고르면 이 단언이 붉다.
       expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
       expect(client.get).not.toHaveBeenCalledWith(`${BASE}/`, { params: {} });
-    });
-
-    it('admin/system 접두를 붙이지 않는다 — 이 서비스만 ApiService 를 직접 상속한다', async () => {
-      await hpcmAdminService.getHpcmList();
-
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
-      expect(client.get).not.toHaveBeenCalledWith(ADMIN_PREFIXED, { params: {} });
     });
 
     it('첫 페이지는 1부터 세는 page 1로 그대로 전달한다', async () => {
