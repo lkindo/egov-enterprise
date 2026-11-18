@@ -79,6 +79,15 @@ public class CommentApiController {
      */
     private void assertPostAccess(Long commentNo) {
         CommentService.CommentLocation location = commentService.getCommentLocation(commentNo);
-        boardService.assertCommentAccess(location.bbsId(), location.pstSn());
+        try {
+            boardService.assertCommentAccess(location.bbsId(), location.pstSn());
+        } catch (nuri.foundation.core.exception.BusinessException ex) {
+            if (ex.getErrorCode() == nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED
+                    || ex.getErrorCode() == nuri.business.domain.board.exception.BoardErrorCode.ARTICLE_NOT_FOUND) {
+                throw new nuri.foundation.core.exception.BusinessException(
+                        nuri.business.domain.comment.exception.CommentErrorCode.COMMENT_NOT_FOUND);
+            }
+            throw ex;
+        }
     }
 }

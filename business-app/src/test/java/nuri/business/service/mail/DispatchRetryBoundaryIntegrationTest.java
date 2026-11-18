@@ -39,8 +39,8 @@ class DispatchRetryBoundaryIntegrationTest {
 
     @BeforeEach
     void prepare() throws Exception {
-        when(mails.claimQueued(1L, QUEUED)).thenReturn(1);
-        when(mails.recordResult(eq(1L), eq(QUEUED), anyString())).thenReturn(1);
+        when(mails.claimQueued(eq(1L), eq(QUEUED), any(java.time.LocalDateTime.class))).thenReturn(1);
+        when(mails.recordResult(eq(1L), any(java.time.LocalDateTime.class), anyString())).thenReturn(1);
         SmsRecptn recipient = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("0101").rsltCd("P").build();
         lenient().when(recipients.findById(any())).thenReturn(Optional.of(recipient));
         when(recipients.findByIdForUpdate(any())).thenReturn(Optional.of(recipient));
@@ -118,7 +118,9 @@ class DispatchRetryBoundaryIntegrationTest {
             context.getBean(SmsAsyncProcessor.class).sendToRecipient(1L, "0101", "0102", "body");
             verify(emailSender, times(3)).send(anyString(), anyString(), anyString(), anyString());
             verify(smsSender, times(1)).send("0101", "body", "0102");
-            verify(mails).recordResult(1L, QUEUED, "F");
+            var claimedCaptor = org.mockito.ArgumentCaptor.forClass(java.time.LocalDateTime.class);
+            verify(mails).claimQueued(eq(1L), eq(QUEUED), claimedCaptor.capture());
+            verify(mails).recordResult(1L, claimedCaptor.getValue(), "F");
             assertThat(recipients.findById(new SmsRecptnId(1L, "0101")).orElseThrow().getRsltCd()).isEqualTo("F");
             assertThat(nuri.business.service.sms.SmsReceiptState.display("F", recipients.findById(new SmsRecptnId(1L, "0101")).orElseThrow().getRsltMsg()))
                     .contains("거절");

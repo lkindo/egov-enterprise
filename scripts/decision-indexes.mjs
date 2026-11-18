@@ -89,7 +89,7 @@ export const DECISION_AREA_ROUTES = Object.freeze({
   }),
   migration: Object.freeze({
     paths: Object.freeze([
-      'migration-tool/**', 'tools/migration-workspace/**', 'tools/migration-workspace-prototype/**', 'scripts/*migration*',
+      'migration-tool/**', 'tools/migration-workspace/**', 'scripts/*migration*',
       'config/migration-test-duration-profile.json',
     ]),
     documents: Object.freeze([

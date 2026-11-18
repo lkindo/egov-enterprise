@@ -5368,6 +5368,18 @@
       ]
     },
     {
+      "target": "DeptJobService#getDeptJobList",
+      "source": "business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "!isDeptJobAdmin()",
+        "myDept.equals(box.getDeptId())",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": []
+    },
+    {
       "target": "DeptJobService#assertCanReassign",
       "source": "business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java",
       "policy": "PARTICIPANT_OR_ADMIN",

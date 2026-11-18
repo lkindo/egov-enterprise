@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.charset.StandardCharsets;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -26,6 +27,8 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Objects;
@@ -270,6 +273,66 @@ public class LocalFileStorageService implements FileStorageService {
         } catch (IOException failure) {
             throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * 완료 영수증({@code .done})과 쌍을 이루던 객체·앵커가 사라지고 잠금이 풀린 고아 {@code .lock} 파일 중
+     * {@code minAge} 가 지난 것만 정리한다.
+     *
+     * <p>멱등 삭제 직후 짧은 재전달 창(idempotency window)을 지키기 위해 {@code minAge} 미만 파일과
+     * 진행 중인 삭제({@code .object}/{@code .anchor} 잔존 또는 활성 {@code FileLock})는 건드리지 않는다.
+     */
+    public int pruneCompletedDeletionReceipts(Duration minAge) {
+        if (minAge == null || minAge.isNegative()) {
+            throw new IllegalArgumentException("minAge must be non-negative");
+        }
+        Path deletionsDir = this.rootLocation.resolve(".deletions").toAbsolutePath().normalize();
+        if (!Files.isDirectory(deletionsDir, LinkOption.NOFOLLOW_LINKS)) {
+            return 0;
+        }
+        assertRealPathWithinRoot(deletionsDir);
+        Instant cutoff = Instant.now().minus(minAge);
+        int pruned = 0;
+        try (Stream<Path> entries = Files.list(deletionsDir)) {
+            for (Path entry : entries.toList()) {
+                if (!Files.isRegularFile(entry, LinkOption.NOFOLLOW_LINKS)) {
+                    continue;
+                }
+                Instant modifiedAt = Files.getLastModifiedTime(entry, LinkOption.NOFOLLOW_LINKS).toInstant();
+                if (!modifiedAt.isBefore(cutoff)) {
+                    continue;
+                }
+                String filename = entry.getFileName().toString();
+                if (filename.endsWith(".done")) {
+                    if (Files.deleteIfExists(entry)) {
+                        pruned++;
+                    }
+                    continue;
+                }
+                if (filename.endsWith(".lock")) {
+                    String base = filename.substring(0, filename.length() - ".lock".length());
+                    if (Files.exists(deletionsDir.resolve(base + ".object"), LinkOption.NOFOLLOW_LINKS)
+                            || Files.exists(deletionsDir.resolve(base + ".anchor"), LinkOption.NOFOLLOW_LINKS)) {
+                        continue;
+                    }
+                    boolean unlocked = false;
+                    try (FileChannel channel = FileChannel.open(entry, StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS);
+                            FileLock lock = channel.tryLock()) {
+                        if (lock != null) {
+                            unlocked = true;
+                        }
+                    } catch (IOException | OverlappingFileLockException ignored) {
+                        unlocked = false;
+                    }
+                    if (unlocked && Files.deleteIfExists(entry)) {
+                        pruned++;
+                    }
+                }
+            }
+        } catch (IOException failure) {
+            log.warn("Failed to prune deletion receipts in {}", deletionsDir.getFileName(), failure);
+        }
+        return pruned;
     }
 
     private Path identityAnchor(String identity) {

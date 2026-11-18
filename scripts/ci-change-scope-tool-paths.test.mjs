@@ -473,7 +473,7 @@ test('a synthetic PR touching only generator-tool paths skips backend, migration
 // The packaged workspace test reads only the three engine inputs. UI/server/AI retain their independent contracts.
 test('workspace UI and server changes keep contracts, SAST and reuse checks without migration or product lanes', () => {
   for (const files of [['tools/migration-workspace/server.mjs', 'tools/migration-workspace/public/styles.css'],
-    ['tools/migration-workspace/ai.mjs'], ['tools/migration-workspace-prototype/serve.mjs']]) {
+    ['tools/migration-workspace/ai.mjs']]) {
     const result = classifyChangedFiles(files, { event: 'pull_request' });
     assert.deepEqual(result.unknownFiles, [], files.join(','));
     for (const field of ['backend', 'schema', 'e2e', ...HEAVY_UNRELATED, 'docsOnly', 'atlas']) assert.equal(result[field], false, `${files}: ${field}`);

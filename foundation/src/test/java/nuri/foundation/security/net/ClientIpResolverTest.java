@@ -305,6 +305,22 @@ class ClientIpResolverTest {
         }
 
         @Test
+        @DisplayName("IPv6 CIDR 과 비축약 표기까지 비트 단위로 판정하고 범위 밖 프리픽스는 거부한다")
+        void matchesIpv6CidrAndRejectsOutOfRangePrefix() {
+            ClientIpResolver resolver = new ClientIpResolver("fc00::/7,2001:db8::/32");
+
+            assertEquals("203.0.113.9", resolver.resolve(request("fd12:3456::1", "203.0.113.9")));
+            assertEquals("203.0.113.9", resolver.resolve(request("2001:0db8:0000:0000::99", "203.0.113.9")));
+            assertEquals("2001:db9::1", resolver.resolve(request("2001:db9::1", "203.0.113.9")));
+
+            ClientIpResolver loopback = new ClientIpResolver("::1/128");
+            assertEquals("203.0.113.9", loopback.resolve(request("0:0:0:0:0:0:0:1", "203.0.113.9")));
+
+            ClientIpResolver invalidIpv6 = new ClientIpResolver("::1/129");
+            assertEquals("::1", invalidIpv6.resolve(request("::1", "203.0.113.9")));
+        }
+
+        @Test
         @DisplayName("옥텟이 4개가 아니거나 범위를 벗어나면 IPv4 로 보지 않는다")
         void rejectsMalformedIpv4() {
             // 256 은 옥텟이 아니다. 이것을 통과시키면 마스크 계산이 어긋나 엉뚱한 대역이 신뢰된다.

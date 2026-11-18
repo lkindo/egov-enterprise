@@ -1,8 +1,10 @@
 package nuri.api.websocket;
 
 import nuri.business.service.dashboard.DashboardStatsUpdatedEvent;
-import lombok.RequiredArgsConstructor;
+import nuri.config.websocket.WebSocketAuthorizationInterceptor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Component;
@@ -15,10 +17,23 @@ import java.util.Map;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class DashboardStatsEventListener {
 
     private final SimpMessageSendingOperations messagingTemplate;
+    @Nullable
+    private final WebSocketAuthorizationInterceptor authorizationInterceptor;
+
+    public DashboardStatsEventListener(SimpMessageSendingOperations messagingTemplate) {
+        this(messagingTemplate, null);
+    }
+
+    @Autowired
+    public DashboardStatsEventListener(
+            SimpMessageSendingOperations messagingTemplate,
+            @Nullable WebSocketAuthorizationInterceptor authorizationInterceptor) {
+        this.messagingTemplate = messagingTemplate;
+        this.authorizationInterceptor = authorizationInterceptor;
+    }
 
     /**
      * business-suite 레이어에서 통계 지표가 업데이트되어 발행한 이벤트를 비동기/동기적으로 수신
@@ -30,7 +45,12 @@ public class DashboardStatsEventListener {
 
             // Spring Messaging 7 에 기본 목적지용 convertAndSend(Object payload, Map headers) 가 생겨 (String, Map) 인자가
             //   두 오버로드에 모두 맞는다. payload 를 Object 로 올려 목적지 오버로드를 고른다.
-            messagingTemplate.convertAndSend("/topic/dashboard/stats", (Object) stats);
+            Runnable broadcast = () -> messagingTemplate.convertAndSend("/topic/dashboard/stats", (Object) stats);
+            if (authorizationInterceptor != null) {
+                authorizationInterceptor.runWithBroadcastCache(broadcast);
+            } else {
+                broadcast.run();
+            }
             log.debug("Successfully broadcasted stats via WebSocket: {}", stats);
         } catch (Exception e) {
             log.error("Failed to broadcast stats via WebSocket", e);

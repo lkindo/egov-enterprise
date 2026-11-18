@@ -24,17 +24,26 @@ public interface SentMailRepository extends JpaRepository<SentMail, Long>, SentM
     int claimForResend(@Param("emlDsptchSn") Long emlDsptchSn, @Param("loginId") String loginId,
             @Param("now") java.time.LocalDateTime now, @Param("stuckBefore") java.time.LocalDateTime stuckBefore);
 
-    /** Commit the claim before SMTP; another worker cannot send an uncertain P attempt again. */
+    /**
+     * Commit the claim before SMTP and stamp the claim time into {@code dsptchDt}.
+     * Resend/stuck checks evaluate this claim timestamp so long queue waits are not treated as stuck SMTP.
+     */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("update SentMail m set m.dsptchRsltCd = 'P', m.mdfcnDt = CURRENT_TIMESTAMP where m.emlDsptchSn = :id "
+    @Query("update SentMail m set m.dsptchRsltCd = 'P', m.dsptchDt = :claimedAt, m.mdfcnDt = :claimedAt where m.emlDsptchSn = :id "
             + "and m.dsptchRsltCd = 'Q' and m.dsptchDt = :queuedAt")
-    int claimQueued(@Param("id") Long id, @Param("queuedAt") java.time.LocalDateTime queuedAt);
+    int claimQueued(@Param("id") Long id, @Param("queuedAt") java.time.LocalDateTime queuedAt,
+            @Param("claimedAt") java.time.LocalDateTime claimedAt);
 
-    /** A previous attempt's late result cannot replace the next manually accepted attempt. */
+    /** Compatibility delegate when callers reuse the queued timestamp as the claim stamp. */
+    default int claimQueued(Long id, java.time.LocalDateTime queuedAt) {
+        return claimQueued(id, queuedAt, queuedAt);
+    }
+
+    /** A previous attempt's late result cannot replace the current claim or a newer manual acceptance. */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("update SentMail m set m.dsptchRsltCd = :result, m.mdfcnDt = CURRENT_TIMESTAMP where m.emlDsptchSn = :id "
-            + "and m.dsptchRsltCd = 'P' and m.dsptchDt = :queuedAt")
-    int recordResult(@Param("id") Long id, @Param("queuedAt") java.time.LocalDateTime queuedAt,
+            + "and m.dsptchRsltCd = 'P' and m.dsptchDt = :claimedAt")
+    int recordResult(@Param("id") Long id, @Param("claimedAt") java.time.LocalDateTime claimedAt,
             @Param("result") String result);
 
     // Terminal callbacks share the managed DurableJob: clearing this context would detach its payload cleanup.

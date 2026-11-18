@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { canEnterRegisteredPage, loadPageAuthorization, requiresRegisteredPermission } from '@/lib/auth/page-authorization';
+import { VERIFIED_USER_HEADER, consumeVerifiedPageUser, signVerifiedUserHeader } from '@/lib/auth/verified-user-forward';
 import { loginReturnPath } from '@/lib/auth/login-return-path';
 import { shouldUseSecureSessionCookie } from '@/lib/auth/session-cookie-policy';
 import { isTrustedEdgeProxyEnabled } from '@/lib/api/forwarded-client-ip';
@@ -576,6 +577,7 @@ export async function proxy(request: NextRequest) {
   //   인증 집행은 /api/v1·/actuator 와 동일하게 **백엔드가 authoritative** 하므로 여기서는 토큰만 주입한다.
   if (pathname.startsWith('/api/v1') || pathname.startsWith('/actuator') || pathname.startsWith('/ws')) {
     const requestHeaders = new Headers(request.headers);
+    requestHeaders.delete(VERIFIED_USER_HEADER);
     const accessToken = request.cookies.get('accessToken')?.value;
     // 쿠키를 Bearer 로 바꿔 주는 대상은 화면 코드의 요청과 문서 이동이다. 부속 자원에 주입하면 게시글 본문에 심은
     // <img src="/api/v1/…"> 가 열람자 권한으로 API 를 부른다. 화면의 첨부 그림은 fetch 로 받으므로 영향이 없다.
@@ -621,8 +623,10 @@ export async function proxy(request: NextRequest) {
     ensureCsrfTokenCookie(request, response);
     return response;
   };
-  const nextWithCsp = (): NextResponse => {
+  const nextWithCsp = (verifiedUserHeader?: string): NextResponse => {
     const requestHeaders = new Headers(request.headers);
+    // 외부 요청자가 위조해 실은 내부 전달 헤더는 빈 값으로 덮어써 x-middleware-override-headers 에 포함시키고, 검증 통과 시에만 새로 서명해 싣는다.
+    requestHeaders.set(VERIFIED_USER_HEADER, verifiedUserHeader ?? '');
     requestHeaders.set('content-security-policy', csp);
     // Next 의 자동 nonce 부착은 **Next 가 생성하는** <script> 에만 미친다. 앱/라이브러리가 직접
     // 렌더하는 inline <script>(현재 next-themes 테마 초기화 1건)는 layout 이 headers() 로 이
@@ -668,6 +672,7 @@ export async function proxy(request: NextRequest) {
   //    등록된 개별 정책과 서버의 현재 기능 권한으로 판단한다. 권한이 빈 배열인 /admin 밖 화면은 인증만으로 열린다.
   //    라우트 대소문자를 흉내낸 우회(/Admin/system)와 접두사 오매칭(/administrators)을 모두 막기 위해
   //    소문자로 정규화한 뒤 세그먼트 경계로 비교한다.
+  let signedVerifiedUser: string | undefined;
   const normalizedPath = pathname.toLowerCase();
   if (matchesPrefix(normalizedPath, '/admin') || requiresRegisteredPermission(pathname)) {
     const authorization = accessToken ? await loadPageAuthorization(accessToken, userSubject) : null;
@@ -681,8 +686,14 @@ export async function proxy(request: NextRequest) {
         return denied;
     }
   }
+  if (accessToken && (matchesPrefix(normalizedPath, '/admin') || requiresRegisteredPermission(pathname))) {
+    const verifiedUser = consumeVerifiedPageUser(accessToken);
+    if (verifiedUser) {
+      signedVerifiedUser = (await signVerifiedUserHeader(verifiedUser, accessToken)) ?? undefined;
+    }
+  }
 
-  const pass = nextWithCsp();
+  const pass = nextWithCsp(signedVerifiedUser);
   pass.headers.set('x-mw-auth', authDiag);
   return pass;
 }

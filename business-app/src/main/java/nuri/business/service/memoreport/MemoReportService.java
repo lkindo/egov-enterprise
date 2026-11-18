@@ -171,7 +171,7 @@ public class MemoReportService {
 
     @Transactional
     public MemoReportDto getMemoReport(@NonNull Long memoRptSn) {
-        MemoReport entity = memoReportRepository.findByIdForUpdate(memoRptSn)
+        MemoReport entity = memoReportRepository.findById(memoRptSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         assertParticipantOrAdmin(entity); // [IDOR] 작성자·수신자·관리자만 열람
         String actor = currentEsntlIdOrDeny();
@@ -351,7 +351,7 @@ public class MemoReportService {
         }
         entity.update(dto.getRptTtl(), dto.getMemoRptYmd(), entity.getUserId(), dto.getRptrId(),
                 dto.getRptCn(), atchFileSn);
-        entity.setLastMdfrId(userId);
+        entity.setLastMdfrId(nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse(userId));
         memoReportRepository.flush();
         if (previousAtchFileSn != null && !Objects.equals(previousAtchFileSn, entity.getAtchFileSn())) {
             attachmentAssignmentPolicy.releaseIfUnreferenced(previousAtchFileSn);

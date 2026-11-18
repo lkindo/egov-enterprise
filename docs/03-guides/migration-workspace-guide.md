@@ -19,8 +19,6 @@ npm run migration:ui -- --workspace D:/migration-workspaces/project-a
 - 실행기를 다시 시작하면 비밀이 바뀐다. 이전 탭은 `LAUNCH_REQUIRED`와 터미널에 표시된 주소로 다시 열라는 안내를 표시하므로, 터미널의 새 주소로 다시 연다.
 - 실행기는 비밀을 상수 시간으로 비교하며 헤더가 없거나 틀리거나 중복되면 `403 LAUNCH_REQUIRED`로 요청 토큰을 주지 않는다. 쿼리 문자열로 보낸 비밀은 받지 않는다. 그래서 같은 PC의 다른 OS 계정이나 브라우저 밖 로컬 프로그램은 loopback에 닿아도 요청 토큰을 받지 못한다. Host·Origin·Sec-Fetch·요청 토큰 검사는 그대로다.
 
-프로토타입은 `node tools/migration-workspace-prototype/serve.mjs`로 8769에서 열며 실제 연결과 적재를 하지 않는다. 두 화면은 별개다. 프로토타입이 Windows에서 브라우저를 자동으로 열 때는 `%SystemRoot%\System32\rundll32.exe` 전체 경로를 쓰고(`SystemRoot`가 없거나 로컬 절대 경로가 아니면 `C:\Windows`), 그 파일이 링크가 아닌 일반 파일일 때만 실행한다. 아니면 주소를 직접 열라고 안내한다. `--no-open`으로 자동 열기를 끈다.
-
 ## 실제 작업 순서
 
 1. **연결:** 원천과 대상 프로필을 저장한다. 대상은 PostgreSQL이다. 원천 PostgreSQL 외의 DB는 맞는 JDBC JAR가 필요하고 현재 driver 검증 자격을 유지한다. Oracle service/SID를 지원하며 TNS, SSH 터널 자동 설정, Wallet·통합 인증은 아직 지원하지 않는다. 복잡한 접속은 기관에서 마련한 로컬 네트워크 경로를 먼저 준비한다.
@@ -113,10 +111,9 @@ API 경로는 화면에서 **OpenAI API**를 직접 선택하고 모델명과 AP
 ```powershell
 npm run test:migration-workspace
 node tools/migration-workspace/build-styles.mjs --check
-node tools/migration-workspace-prototype/build-styles.mjs --check
 ```
 
-`npm run test:migration-workspace`는 `tools/migration-workspace/`와 `tools/migration-workspace-prototype/`의 `*.test.mjs`를 모두 찾아 실행한다. 같은 파일이 `npm run test:operational-contracts`에도 들어 있어 필수 CI(`secret-scan`)·pre-push·`npm run verify`에서 돌고, [gate registry](../../config/governance/gates.json)의 운영 계약 카탈로그가 그 안의 `skip`·`only`·`todo`를 막는다. 다루는 범위는 로컬 HTTP 경계(실행 비밀·Host/Origin·요청 토큰), 입력 준비와 업로드 잠금, 저장·재시작 복구, 실행 요청과 결과 불명 작업 확인, AI 문맥 정책·질문 검사·전송 기록, Codex 홈 격리 조건, 시안 서버다.
+`npm run test:migration-workspace`는 `tools/migration-workspace/`의 `*.test.mjs`를 모두 찾아 실행한다. 같은 파일이 `npm run test:operational-contracts`에도 들어 있어 필수 CI(`secret-scan`)·pre-push·`npm run verify`에서 돌고, [gate registry](../../config/governance/gates.json)의 운영 계약 카탈로그가 그 안의 `skip`·`only`·`todo`를 막는다. 다루는 범위는 로컬 HTTP 경계(실행 비밀·Host/Origin·요청 토큰), 입력 준비와 업로드 잠금, 저장·재시작 복구, 실행 요청과 결과 불명 작업 확인, AI 문맥 정책·질문 검사·전송 기록, Codex 홈 격리 조건이다.
 
 [CLI 계약](../../tools/migration-workspace/cli-contract.test.mjs)은 JAR를 실행하지 않는 소스 대조 계약이다. 실행기를 가짜 자식 프로세스로 돌려 받은 인자를 Java CLI와 대조한다 — 명령별 옵션(`WorkflowCliOptions`), `--command`·`--mode` 값, adapter ID, object kind, `-D` 속성. 진단 코드는 `WorkflowFailureDiagnostic` 열거값과 정확히 같아야 하고(`CLI_FAILED`는 공통 기본값) 화면이 코드마다 안내를 가져야 하며, 산출물 형식 판·종류·필드 이름은 Java 상수와 같아야 한다.
 

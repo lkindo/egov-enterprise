@@ -42,4 +42,29 @@ class WorkReportRepositoryTest extends PersistenceTestSupport {
         // 신규 standard getter
         assertThat(result.getContent().get(0).getRptTtl()).isEqualTo("Weekly Report 1");
     }
+
+    @Test
+    @DisplayName("searchCnd=1 이면 내용(rptCn)을 검색하고 그 외에는 제목(rptTtl)을 검색한다")
+    void searchWorkReports_filtersByContentWhenSearchCndIsOne() {
+        workReportRepository.save(WorkReport.builder()
+                .rptTtl("제목 Alpha")
+                .rptCn("본문 키워드 Beta 포함")
+                .rptSeCd("1")
+                .userId("user1")
+                .build());
+        workReportRepository.save(WorkReport.builder()
+                .rptTtl("제목 Beta")
+                .rptCn("본문 다른 내용")
+                .rptSeCd("1")
+                .userId("user1")
+                .build());
+
+        Page<WorkReport> byContent = workReportRepository.searchWorkReports(
+                "user1", null, null, null, "1", "Beta", null, null, PageRequest.of(0, 10));
+        Page<WorkReport> byTitle = workReportRepository.searchWorkReports(
+                "user1", null, null, null, "0", "Beta", null, null, PageRequest.of(0, 10));
+
+        assertThat(byContent.getContent()).extracting(WorkReport::getRptTtl).containsExactly("제목 Alpha");
+        assertThat(byTitle.getContent()).extracting(WorkReport::getRptTtl).containsExactly("제목 Beta");
+    }
 }

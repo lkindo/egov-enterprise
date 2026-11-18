@@ -163,13 +163,21 @@ class MailDeliveryStateIntegrationTest {
             return null;
         }).when(sender).send(anyString(), anyString(), anyString(), anyString());
         var first = dispatch(mail);
-        LocalDateTime next = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
+        LocalDateTime next;
+        LocalDateTime claimedStamp;
         try {
             assertThat(entered.await(10, TimeUnit.SECONDS)).isTrue();
-            assertThat(tx().<Integer>execute(status -> mails.claimForResend(id, "mail-fixture", next, next.minusMinutes(10)))).isEqualTo(1);
+            LocalDateTime immediateNow = VendorTestSql.storedTime(LocalDateTime.now().truncatedTo(ChronoUnit.MICROS));
+            next = immediateNow.plusMinutes(11);
+            assertThat(tx().<Integer>execute(status ->
+                    mails.claimForResend(id, "mail-fixture", immediateNow, immediateNow.minusMinutes(10)))).isZero();
+            claimedStamp = mails.findById(id).orElseThrow().getDsptchDt();
+            assertThat(tx().<Integer>execute(status ->
+                    mails.claimForResend(id, "mail-fixture", next, next.minusMinutes(10)))).isEqualTo(1);
         } finally { release.countDown(); }
         first.get(10, TimeUnit.SECONDS);
         assertThat(code(id)).isEqualTo("Q");
+        assertThat(tx().<Integer>execute(status -> mails.recordResult(id, claimedStamp, "F"))).isZero();
         assertThat(tx().<Integer>execute(status -> mails.recordResult(id, mail.getDsptchDt(), "F"))).isZero();
         assertThat(tx().<Integer>execute(status -> mails.failQueued(id, mail.getDsptchDt()))).isZero();
         assertThat(tx().<Integer>execute(status -> mails.claimQueued(id, mail.getDsptchDt()))).isZero();

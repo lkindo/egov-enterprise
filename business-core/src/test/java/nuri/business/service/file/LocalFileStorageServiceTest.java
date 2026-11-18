@@ -12,8 +12,14 @@ import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.FileTime;
+import java.time.Duration;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -390,5 +396,44 @@ class LocalFileStorageServiceTest {
         assertThat(storageService.exists("../../etc/passwd", "general")).isFalse();
         assertThat(storageService.exists("x.txt", "../..")).isFalse();
         assertThat(storageService.exists("", "")).isFalse();
+    }
+
+    @Test
+    @DisplayName("만료된 .done 영수증과 고아 .lock 만 정리하고 최근 파일·진행 중 .object/.anchor·잠긴 .lock 은 보존한다")
+    void pruneCompletedDeletionReceipts_RemovesOnlyExpiredReceiptsAndOrphanLocks() throws IOException {
+        Path deletions = tempDir.resolve(".deletions");
+        Files.createDirectories(deletions);
+
+        FileTime oldTime = FileTime.from(Instant.now().minus(Duration.ofHours(48)));
+        FileTime freshTime = FileTime.from(Instant.now().minus(Duration.ofMinutes(10)));
+
+        Path oldDone = Files.writeString(deletions.resolve("11111111-1111-1111-1111-111111111111.done"), "done");
+        Path freshDone = Files.writeString(deletions.resolve("22222222-2222-2222-2222-222222222222.done"), "fresh");
+        Path oldOrphanLock = Files.writeString(deletions.resolve("33333333-3333-3333-3333-333333333333.lock"), "");
+        Path oldActiveObject = Files.writeString(deletions.resolve("44444444-4444-4444-4444-444444444444.object"), "obj");
+        Path oldActiveObjectLock = Files.writeString(deletions.resolve("44444444-4444-4444-4444-444444444444.lock"), "");
+        Path oldHeldLock = Files.writeString(deletions.resolve("55555555-5555-5555-5555-555555555555.lock"), "");
+
+        Files.setLastModifiedTime(oldDone, oldTime);
+        Files.setLastModifiedTime(freshDone, freshTime);
+        Files.setLastModifiedTime(oldOrphanLock, oldTime);
+        Files.setLastModifiedTime(oldActiveObject, oldTime);
+        Files.setLastModifiedTime(oldActiveObjectLock, oldTime);
+
+        int pruned;
+        try (FileChannel channel = FileChannel.open(oldHeldLock, StandardOpenOption.WRITE);
+                FileLock held = channel.tryLock()) {
+            assertThat(held).isNotNull();
+            Files.setLastModifiedTime(oldHeldLock, oldTime);
+            pruned = storageService.pruneCompletedDeletionReceipts(Duration.ofHours(24));
+        }
+
+        assertThat(pruned).isEqualTo(2);
+        assertThat(oldDone).doesNotExist();
+        assertThat(oldOrphanLock).doesNotExist();
+        assertThat(freshDone).exists();
+        assertThat(oldActiveObject).exists();
+        assertThat(oldActiveObjectLock).exists();
+        assertThat(oldHeldLock).exists();
     }
 }

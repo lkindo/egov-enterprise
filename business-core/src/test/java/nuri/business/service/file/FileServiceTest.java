@@ -548,7 +548,6 @@ class FileServiceTest {
         Long atchFileSn = 123L;
         FileMaster master = new FileMaster(atchFileSn);
         given(fileMasterRepository.findByIdForUpdate(atchFileSn)).willReturn(Optional.of(master));
-        given(fileDetailRepository.findByFileMaster(master)).willReturn(Collections.emptyList());
 
         // 첫 파일은 정상, 두 번째가 실행파일. 선(先)검증 패스가 없으면 첫 파일이 이미 저장된 뒤
         // 두 번째에서 터져 디스크에 고아 파일이 남는다.
@@ -559,8 +558,7 @@ class FileServiceTest {
         assertThatThrownBy(() -> fileService.updateFiles(atchFileSn, files))
                 .isInstanceOf(BusinessException.class);
 
-        verify(storageService, never()).store(any(MultipartFile.class), anyString());
-        verify(fileDetailRepository, never()).save(any(FileDetail.class));
+        verifyNoInteractions(fileDetailRepository, storageService);
     }
 
     @Test
@@ -735,14 +733,12 @@ class FileServiceTest {
 
         FileMaster master = new FileMaster(123L);
         given(fileMasterRepository.findByIdForUpdate(123L)).willReturn(Optional.of(master));
-        given(fileDetailRepository.findByFileMaster(master)).willReturn(List.of());
         assertThatThrownBy(() -> fileService.updateFiles(123L, List.of(file)))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.UNSUPPORTED_MEDIA_TYPE);
 
         verify(fileMasterRepository, never()).save(any());
-        verify(fileDetailRepository, never()).save(any());
-        verifyNoInteractions(storageService);
+        verifyNoInteractions(fileDetailRepository, storageService);
     }
 
     @ParameterizedTest(name = "위장·잘린 영상 {0}: {1}")
@@ -784,15 +780,13 @@ class FileServiceTest {
     void updateBoardFiles_rejectsMixedInvalidBatchBeforeStorage() {
         FileMaster master = new FileMaster(123L);
         given(fileMasterRepository.findByIdForUpdate(123L)).willReturn(Optional.of(master));
-        given(fileDetailRepository.findByFileMaster(master)).willReturn(List.of());
         MockMultipartFile disguised = new MockMultipartFile("files", "media.mp4", "video/mp4", mp4Header("avif"));
 
         assertThatThrownBy(() -> fileService.updateBoardFiles(123L, List.of(validJpeg("first.jpg"), disguised)))
                 .isInstanceOf(BusinessException.class);
 
         verify(accessPolicy).assertAppendable(master);
-        verify(fileDetailRepository, never()).save(any());
-        verifyNoInteractions(storageService);
+        verifyNoInteractions(fileDetailRepository, storageService);
     }
 
     private Long uploadWithProfile(List<MultipartFile> files, boolean board) throws IOException {

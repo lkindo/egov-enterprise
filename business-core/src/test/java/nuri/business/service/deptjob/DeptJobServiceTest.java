@@ -97,6 +97,7 @@ class DeptJobServiceTest {
                 .build();
         // [2026-10-18 V2_133] 수정은 화면이 읽은 버전을 대조한다. 저장된 행처럼 버전 0 으로 둔다.
         org.springframework.test.util.ReflectionTestUtils.setField(deptJob, "version", 0);
+        lenient().when(deptJobBoxRepository.findById(1L)).thenReturn(Optional.of(deptJobBox));
     }
 
     @AfterEach
@@ -1258,5 +1259,45 @@ class DeptJobServiceTest {
         deptJobService.reassignDeptJob(1L, "USER2", 0);
         assertEquals("USER2", deptJob.getPicId());
         assertEquals("01", deptJob.getPrrtyRnk());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 deptTaskBoxSn 으로 목록을 조회하면 RESOURCE_NOT_FOUND(404) 를 반환한다")
+    void getDeptJobList_missingTaskBoxThrowsNotFound() {
+        authenticateAsAdmin();
+        when(deptJobBoxRepository.findById(999L)).thenReturn(Optional.empty());
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> deptJobService.getDeptJobList(null, 999L, null, null, false, PageRequest.of(0, 10)));
+
+        assertEquals(CommonErrorCode.RESOURCE_NOT_FOUND, error.getErrorCode());
+        verify(deptJobRepository, never()).findAll(any(Predicate.class), any(PageRequest.class));
+    }
+
+    @Test
+    @DisplayName("다른 부서의 deptTaskBoxSn 으로 일반 사용자가 목록을 조회하면 ACCESS_DENIED(403) 를 반환한다")
+    void getDeptJobList_otherDepartmentTaskBoxThrowsAccessDenied() {
+        authenticateAs("member", "ESNTL_MEMBER");
+        givenMemberOf("ESNTL_MEMBER", "DEPT1");
+        DeptJobBox otherBox = DeptJobBox.builder().deptTaskBoxSn(2L).deptTaskBoxNm("Other Box").deptId("DEPT9").build();
+        when(deptJobBoxRepository.findByDeptId("DEPT1")).thenReturn(List.of(deptJobBox));
+        when(deptJobBoxRepository.findById(2L)).thenReturn(Optional.of(otherBox));
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> deptJobService.getDeptJobList(null, 2L, null, null, false, PageRequest.of(0, 10)));
+
+        assertEquals(CommonErrorCode.ACCESS_DENIED, error.getErrorCode());
+        verify(deptJobRepository, never()).findAll(any(Predicate.class), any(PageRequest.class));
+    }
+
+    @Test
+    @DisplayName("검색조건 2(담당자)는 사용자 이름·로그인ID 키워드로 해석한 esntlId 목록까지 함께 매칭한다")
+    void searchCondition2IncludesResolvedUserEsntlIds() {
+        when(userRepository.findEsntlIdsByKeyword("홍길동")).thenReturn(List.of("ESNTL_HONG"));
+
+        String p = capturePredicate(null, 1L, "2", "홍길동");
+
+        assertTrue(p.contains("picId"), "picId 직접 일치 조건이 남아야 한다: " + p);
+        assertTrue(p.contains("ESNTL_HONG"), "사용자 이름으로 찾은 esntlId 조건이 포함돼야 한다: " + p);
     }
 }

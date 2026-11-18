@@ -290,6 +290,24 @@ class BoardMasterRepositoryTest {
         assertThat(results.getContent().get(0).getBbsId()).isEqualTo("BBS_NOT_USED");
     }
 
+    @Test
+    @DisplayName("대상 ID(trgtId) 검색 시 totalElements도 boardUse 조인 조건으로 집계한다")
+    void searchByTrgtIdCountsOnlyMatchedBoardUses() {
+        boardMasterRepository.save(BoardMaster.builder().bbsId("BBS_TRGT_HIT").bbsTtl("Target Match").bbsTypeCd("T1").bbsAtrbCd("A1").useYn("Y").build());
+        boardMasterRepository.save(BoardMaster.builder().bbsId("BBS_TRGT_MISS").bbsTtl("Target Miss").bbsTypeCd("T1").bbsAtrbCd("A1").useYn("Y").build());
+        boardUseRepository.save(BoardUse.builder().bbsId("BBS_TRGT_HIT").trgtId("CMMNTY_100").useYn("Y").build());
+        boardUseRepository.save(BoardUse.builder().bbsId("BBS_TRGT_MISS").trgtId("CMMNTY_999").useYn("Y").build());
+        em.flush();
+        em.clear();
+
+        BoardMasterSearchCondition condition = new BoardMasterSearchCondition();
+        condition.setTrgtId("CMMNTY_100");
+        Page<BoardMasterSearchResult> results = boardMasterRepository.searchBoardMasters(condition, PageRequest.of(0, 10));
+
+        assertThat(results.getContent()).extracting(BoardMasterSearchResult::getBbsId).containsExactly("BBS_TRGT_HIT");
+        assertThat(results.getTotalElements()).isEqualTo(1L);
+    }
+
     private static BoardMaster pagingBoard(String bbsId) {
         return BoardMaster.builder()
                 .bbsId(bbsId)

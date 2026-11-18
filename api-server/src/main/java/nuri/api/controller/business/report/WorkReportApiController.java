@@ -35,7 +35,7 @@ public class WorkReportApiController {
         //   제목 검색(rptTtl.contains)만 하도록 작성자 필터는 비워 둔다.
         //   (작성자로 좁히는 기능이 필요해지면 별도 파라미터로 받아야 한다.)
         Page<WorkReportDto> page = workReportService.getWorkReportList(
-                null, null, searchDto.getSearchKeyword(), pageable);
+                null, null, searchDto.getSearchCondition(), searchDto.getSearchKeyword(), pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
 

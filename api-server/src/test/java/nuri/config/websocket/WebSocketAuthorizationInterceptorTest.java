@@ -31,7 +31,9 @@ import org.springframework.web.socket.WebSocketSession;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -289,6 +291,67 @@ class WebSocketAuthorizationInterceptorTest {
         when(userDetailsService.loadUserByUsername("USR_002")).thenReturn(nextOwner);
         interceptor.preSend(connectMessage(nextOwner, null), channel);
         assertThat(interceptor.outboundInterceptor().preSend(outbound(), channel)).isNull();
+    }
+
+    @Test
+    void unsubscribeRemovesSubscriptionWithoutUserDetailsQueryAndDeniesUnknownSession() {
+        connect(current("v1", true, "N"));
+        subscribeNotifications();
+        clearInvocations(userDetailsService);
+
+        Message<?> unsubscribe = message(StompCommand.UNSUBSCRIBE, null, true);
+        assertThat(interceptor.preSend(unsubscribe, channel)).isSameAs(unsubscribe);
+        verifyNoInteractions(userDetailsService);
+        assertThat(interceptor.outboundInterceptor().preSend(outbound(), channel)).isNull();
+
+        var strangerSub = StompHeaderAccessor.create(StompCommand.UNSUBSCRIBE);
+        strangerSub.setSessionId("session-unknown");
+        strangerSub.setSubscriptionId("notifications");
+        strangerSub.setUser(new UsernamePasswordAuthenticationToken(current("v1", true, "N"), "", List.of()));
+        assertThatThrownBy(() -> interceptor.preSend(
+                MessageBuilder.createMessage(new byte[0], strangerSub.getMessageHeaders()), channel))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void broadcastCacheDeduplicatesUserDetailsLookupsDuringBroadcastAndExpiresOnExit() {
+        CustomUserDetails active = current("v1", true, "N");
+        when(userDetailsService.loadUserByUsername("USR_001")).thenReturn(active);
+        for (String sessionId : List.of("session-1", "session-2")) {
+            var connectAccessor = StompHeaderAccessor.create(StompCommand.CONNECT);
+            connectAccessor.setSessionId(sessionId);
+            connectAccessor.setUser(new UsernamePasswordAuthenticationToken(active, "", active.getAuthorities()));
+            interceptor.preSend(MessageBuilder.createMessage(new byte[0], connectAccessor.getMessageHeaders()), channel);
+
+            var subAccessor = StompHeaderAccessor.create(StompCommand.SUBSCRIBE);
+            subAccessor.setSessionId(sessionId);
+            subAccessor.setSubscriptionId("dashboard");
+            subAccessor.setDestination("/topic/dashboard/stats");
+            subAccessor.setUser(new UsernamePasswordAuthenticationToken(active, "", List.of()));
+            interceptor.preSend(MessageBuilder.createMessage(new byte[0], subAccessor.getMessageHeaders()), channel);
+        }
+        clearInvocations(userDetailsService);
+
+        Message<byte[]> out1 = outboundForSession("session-1", "dashboard", "/topic/dashboard/stats");
+        Message<byte[]> out2 = outboundForSession("session-2", "dashboard", "/topic/dashboard/stats");
+        interceptor.runWithBroadcastCache(() -> {
+            assertThat(interceptor.outboundInterceptor().preSend(out1, channel)).isNotNull();
+            assertThat(interceptor.outboundInterceptor().preSend(out2, channel)).isNotNull();
+        });
+        verify(userDetailsService, times(1)).loadUserByUsername("USR_001");
+
+        // 브로드캐스트 범위가 끝나면 ThreadLocal 캐시는 즉시 비워져 다음 검사는 최신 권한을 다시 조회한다.
+        when(userDetailsService.loadUserByUsername("USR_001")).thenReturn(current("v2", true, "N"));
+        assertThat(interceptor.outboundInterceptor().preSend(out1, channel)).isNull();
+        verify(userDetailsService, times(2)).loadUserByUsername("USR_001");
+    }
+
+    private static Message<byte[]> outboundForSession(String sessionId, String subscriptionId, String destination) {
+        var accessor = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
+        accessor.setSessionId(sessionId);
+        accessor.setSubscriptionId(subscriptionId);
+        accessor.setDestination(destination);
+        return MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
     }
 
     @Test

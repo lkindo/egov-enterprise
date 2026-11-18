@@ -147,4 +147,21 @@ class ScheduleRepositoryOrderTest {
                 .containsExactly(first.getSchdlSn(), second.getSchdlSn());
         assertThat(page2.getContent()).extracting(Schedule::getSchdlSn).containsExactly(later.getSchdlSn());
     }
+
+    @Test
+    @DisplayName("개인 일정 페이지는 시작일 오름차순과 일련번호 오름차순으로 정렬한다")
+    void personalPagesHaveStableOrder() {
+        Schedule later = save("개인 - 늦은 날짜", "20260910");
+        Schedule first = save("개인 - 같은 날 먼저", "20260905");
+        Schedule second = save("개인 - 같은 날 나중", "20260905");
+        scheduleRepository.flush();
+
+        var page1 = scheduleRepository.searchSchedules("2", "USER_A", "개인 -", PageRequest.of(0, 2));
+        var page2 = scheduleRepository.searchSchedules("2", "USER_A", "개인 -", PageRequest.of(1, 2));
+
+        assertThat(page1.getTotalElements()).isEqualTo(3);
+        assertThat(page1.getContent()).extracting(Schedule::getSchdlSn)
+                .containsExactly(first.getSchdlSn(), second.getSchdlSn());
+        assertThat(page2.getContent()).extracting(Schedule::getSchdlSn).containsExactly(later.getSchdlSn());
+    }
 }

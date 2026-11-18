@@ -589,7 +589,7 @@ test('every computed Java port connection is an integration or a registration-on
   // [2026-10-18] LoginIdReferenceContributor 12개 — 사용자 등록(core)이 기능마다 로그인 ID 를 주인으로 담은 기록 컬럼을 모은다.
   // [2026-10-20] CommonCodeUsageContributor 2개 — 공통코드 관리(core)가 그룹을 읽는 기능(게시판·결재)의 사용처를 모은다.
   assert.deepEqual(keys, [
-    'board>community (CommunityBoardAccessPort)', 'comment>community (CommunityBoardAccessPort)', 'community>template (TemplateAssignmentPolicy)',
+    'board>community (CommunityBoardAccessPort)', 'comment>board (BoardPostAccessPort)', 'comment>community (CommunityBoardAccessPort)', 'community>template (TemplateAssignmentPolicy)',
     'core>addressbook (LoginIdReferenceContributor)',
     'core>board (AttachmentSourceContributor)', 'core>board (CommonCodeUsageContributor)', 'core>board (DashboardItemProvider)',
     'core>board (DataUsageStatisticsContributor)',
@@ -616,9 +616,9 @@ test('every computed Java port connection is an integration or a registration-on
     'dashboard>board (PostStatisticsContributor)']);
   const canDegrade = degradationPredicate(catalog.capabilities, catalog.presets);
   // 늘 함께 있는 쌍(요구 폐포 안이고 그 기능을 담은 시작 구성이 모두 상대도 담는 쌍)은 분류하지 않는다.
-  // scrap 은 board 를 필수 요구하므로 scrap>board (BoardPostAccessPort) 는 저하되지 않는 필수 쌍이다.
+  // comment·scrap 은 board 를 필수 요구하므로 두 BoardPostAccessPort 연결은 저하되지 않는 필수 쌍이다.
   const nonDegrading = new Set(ports.connections.filter(row => !canDegrade(row.from, row.to)).map(portKey));
-  assert.deepEqual([...nonDegrading], ['scrap>board (BoardPostAccessPort)']);
+  assert.deepEqual([...nonDegrading], ['comment>board (BoardPostAccessPort)', 'scrap>board (BoardPostAccessPort)']);
   assert.deepEqual(registrationOnlyPorts.map(portKey).sort(), keys.filter(key => !declared.has(key) && !nonDegrading.has(key)));
   for (const row of registrationOnlyPorts) assert.match(row.reason, /^[^A-Za-z]+\.$/, portKey(row));
 });

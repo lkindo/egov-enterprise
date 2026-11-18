@@ -198,6 +198,16 @@ nuri:
       privacy-months: 24        # 개인정보 접근 증적 2년
       sensitive-months: 24      # 응답 전 준비·민감 작업 시도/결과 증적
 
+  # 완료된(SUCCEEDED) 영속 작업(tb_sys_job) 보존·정리. 기본 비활성(false)이며
+  # FAILED·PENDING·RETRY·RUNNING 상태 행은 삭제하지 않는다.
+  durable-work:
+    retention:
+      enabled: ${DURABLE_WORK_RETENTION_ENABLED:false}
+      cron: "${DURABLE_WORK_RETENTION_CRON:0 35 3 * * *}"
+      retention-days: ${DURABLE_WORK_RETENTION_DAYS:30}
+      batch-size: ${DURABLE_WORK_RETENTION_BATCH_SIZE:500}
+      max-batches-per-run: ${DURABLE_WORK_RETENTION_MAX_BATCHES:20}
+
   # 로그인 무차별 대입(brute-force) 방어 — 연속 실패 N회 도달 시 계정 잠금, M분 경과 후 자동 해제.
   # 판정/해제 주체: EgovAuthenticationProvider. 잠금 시각은 tb_user_info.lck_last_pnttm 에 기록된다.
   # ⚠ max-failures 를 0 이하로 두면 잠금이 비활성화된다 — 오설정으로 정상 사용자가 대량 잠기는

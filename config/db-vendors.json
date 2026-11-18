@@ -16,8 +16,7 @@
           "scripts/migration-profile-provenance.mjs",
           "scripts/migration-test-shard.mjs",
           "scripts/migration-verification-contract.test.mjs",
-          "tools/migration-workspace",
-          "tools/migration-workspace-prototype"
+          "tools/migration-workspace"
         ]
       },
       {

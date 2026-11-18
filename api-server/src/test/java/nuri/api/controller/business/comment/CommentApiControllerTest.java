@@ -243,7 +243,7 @@ class CommentApiControllerTest {
     }
 
     @Test
-    @DisplayName("🔐 회원 전용 게시판에서 접근이 거부되면 자기 댓글도 수정·삭제하지 못한다 (DIP S8)")
+    @DisplayName("🔐 회원 전용 게시판에서 접근이 거부되면 댓글 존재 여부를 숨기고 404 COMMENT_NOT_FOUND 로 응답한다")
     void updateAndDeleteComment_deniedPostDoesNotMutate() throws Exception {
         given(commentService.getCommentLocation(1L))
                 .willReturn(new CommentService.CommentLocation("CMNTY_BBS", 7L));
@@ -253,12 +253,34 @@ class CommentApiControllerTest {
         mockMvc.perform(put("/api/v1/comments/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"ansCn\":\"고친 내용\"}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("B003"));
+        mockMvc.perform(delete("/api/v1/comments/1"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("B003"));
+
+        verify(commentService, never()).updateComment(anyLong(), anyString());
+        verify(commentService, never()).deleteComment(anyLong());
+    }
+
+    @Test
+    @DisplayName("읽을 수 있는 게시글에서도 타인의 댓글을 수정·삭제하려 하면 403 ACCESS_DENIED 를 유지한다")
+    void updateAndDeleteComment_otherAuthorOnReadablePostRemainsForbidden() throws Exception {
+        given(commentService.getCommentLocation(1L))
+                .willReturn(new CommentService.CommentLocation("BBS_001", 7L));
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(commentService).updateComment(1L, "고친 내용");
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(commentService).deleteComment(1L);
+
+        mockMvc.perform(put("/api/v1/comments/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"ansCn\":\"고친 내용\"}"))
                 .andExpect(status().isForbidden());
         mockMvc.perform(delete("/api/v1/comments/1"))
                 .andExpect(status().isForbidden());
 
-        verify(commentService, never()).updateComment(anyLong(), anyString());
-        verify(commentService, never()).deleteComment(anyLong());
+        verify(boardService, org.mockito.Mockito.times(2)).assertCommentAccess("BBS_001", 7L);
     }
 
     @Test

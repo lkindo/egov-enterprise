@@ -185,4 +185,20 @@ class PopupApiControllerTest extends ControllerTestSupport {
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.errors[0].field").value("popupWdthSz"));
         org.mockito.Mockito.verifyNoInteractions(popupService);
     }
+
+    @Test
+    @DisplayName("팝업 등록·수정은 감사 컬럼을 위해 esntlId 대신 loginId 를 전달한다")
+    @WithMockCustomUser(username = "login-admin", esntlId = "ESNTL_ADMIN")
+    void createAndUpdatePopupForwardLoginIdInsteadOfEsntlId() throws Exception {
+        given(popupService.createPopup(anyString(), any(PopupDto.class))).willReturn(1L);
+        String body = "{\"popupTtlNm\":\"Popup\",\"ntceYn\":\"Y\",\"stopvewSetupYn\":\"N\",\"version\":0}";
+
+        mockMvc.perform(post("/api/v1/admin/system/popups").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isCreated());
+        mockMvc.perform(put("/api/v1/admin/system/popups/1").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk());
+
+        org.mockito.Mockito.verify(popupService).createPopup(org.mockito.ArgumentMatchers.eq("login-admin"), any(PopupDto.class));
+        org.mockito.Mockito.verify(popupService).updatePopup(org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.eq("login-admin"), any(PopupDto.class));
+    }
 }

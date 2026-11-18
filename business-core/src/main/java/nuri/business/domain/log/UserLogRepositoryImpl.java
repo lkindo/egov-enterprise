@@ -67,14 +67,15 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
         CriteriaQuery<UserLog> cq = cb.createQuery(UserLog.class);
         Root<UserLog> root = cq.from(UserLog.class);
 
-        // JOIN 으로 사용자 정보 조회 (N+1 방지)
-        Join<UserLog, Object> userJoin = root.join("vnUserMaster", JoinType.LEFT);
+        // FETCH JOIN 으로 사용자 정보 한 번에 적재 (N+1 방지)
+        Fetch<UserLog, Object> userFetch = root.fetch("vnUserMaster", JoinType.LEFT);
 
         List<Predicate> predicates = new ArrayList<>();
 
         // 사용자명 검색 조건
         if (searchWrd != null && !searchWrd.isEmpty()) {
-            predicates.add(cb.like(userJoin.get("userNm"), "%" + searchWrd + "%"));
+            Path<?> userPath = (Path<?>) userFetch;
+            predicates.add(cb.like(userPath.get("userNm"), "%" + searchWrd + "%"));
         }
 
         // 발생일자 범위 조건
@@ -86,7 +87,12 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
         }
 
         cq.where(predicates.toArray(new Predicate[0]));
-        cq.orderBy(cb.desc(root.get("ocrnYmd")));
+        cq.orderBy(
+                cb.desc(root.get("ocrnYmd")),
+                cb.asc(root.get("dmndUserId")),
+                cb.asc(root.get("srvcNm")),
+                cb.asc(root.get("mthdNm"))
+        );
 
         TypedQuery<UserLog> query = entityManager.createQuery(cq);
         query.setFirstResult((int) pageable.getOffset());
@@ -97,10 +103,10 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
         // 카운트 쿼리
         CriteriaQuery<Long> countCq = cb.createQuery(Long.class);
         Root<UserLog> countRoot = countCq.from(UserLog.class);
-        Join<UserLog, Object> countUserJoin = countRoot.join("vnUserMaster", JoinType.LEFT);
 
         List<Predicate> countPredicates = new ArrayList<>();
         if (searchWrd != null && !searchWrd.isEmpty()) {
+            Join<UserLog, Object> countUserJoin = countRoot.join("vnUserMaster", JoinType.LEFT);
             countPredicates.add(cb.like(countUserJoin.get("userNm"), "%" + searchWrd + "%"));
         }
         if (searchBgnDe != null && !searchBgnDe.isEmpty() && searchEndDe != null && !searchEndDe.isEmpty()) {

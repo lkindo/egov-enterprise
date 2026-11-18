@@ -36,6 +36,14 @@ public interface DurableJobRepository extends JpaRepository<DurableJob, BigInteg
     @Query("SELECT j FROM DurableJob j WHERE j.jobSn = :id")
     Optional<DurableJob> findLocked(@Param("id") BigInteger id);
 
+    @Query("SELECT j.jobSn FROM DurableJob j WHERE j.prcsSttsNm = 'SUCCEEDED' AND j.jobCmptnDt IS NOT NULL "
+            + "AND j.jobCmptnDt < :cutoff ORDER BY j.jobSn ASC")
+    List<BigInteger> findExpiredSucceededJobSns(@Param("cutoff") LocalDateTime cutoff, Limit limit);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM DurableJob j WHERE j.prcsSttsNm = 'SUCCEEDED' AND j.jobSn IN :jobSns")
+    int deleteSucceededByJobSnIn(@Param("jobSns") Collection<BigInteger> jobSns);
+
     /** Same ownership predicate as DurableJob.ownsAttempt; renewal never consumes an attempt. */
     @org.springframework.data.jpa.repository.Modifying
     @Query("UPDATE DurableJob j SET j.jobPrnmntDt = :leaseUntil "

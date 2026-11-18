@@ -35,7 +35,11 @@ public class WorkReportRepositoryImpl implements WorkReportRepositoryCustom {
         }
 
         if (StringUtils.hasText(searchWrd)) {
-            builder.and(workReport.rptTtl.contains(searchWrd));
+            if ("1".equals(searchCnd)) {
+                builder.and(workReport.rptCn.contains(searchWrd));
+            } else {
+                builder.and(workReport.rptTtl.contains(searchWrd));
+            }
         }
 
         List<WorkReport> results = queryFactory

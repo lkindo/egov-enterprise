@@ -1,10 +1,13 @@
 package nuri.business.service.mail;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import nuri.business.domain.mail.SentMailRepository;
-import lombok.RequiredArgsConstructor;
+import nuri.foundation.core.persistence.PostgresqlSqlDialect;
+import nuri.foundation.core.persistence.VendorSqlDialect;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -19,20 +22,38 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class MailAsyncProcessor {
 
     private final EmailSender emailSender;
     private final SentMailRepository sentMailRepository;
     private final io.micrometer.core.instrument.MeterRegistry meterRegistry;
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+    private final VendorSqlDialect vendorSql;
 
     /** 발신 이력 화면. 실패 알림을 누르면 여기서 결과를 확인하고 다시 보낸다. */
     static final String MAIL_HISTORY_PATH = "/admin/collaboration/mail-history";
 
     private MailAsyncProcessor self;
 
-    @org.springframework.beans.factory.annotation.Autowired
+    public MailAsyncProcessor(EmailSender emailSender, SentMailRepository sentMailRepository,
+            io.micrometer.core.instrument.MeterRegistry meterRegistry,
+            org.springframework.context.ApplicationEventPublisher eventPublisher) {
+        this(emailSender, sentMailRepository, meterRegistry, eventPublisher, new PostgresqlSqlDialect());
+    }
+
+    @Autowired
+    public MailAsyncProcessor(EmailSender emailSender, SentMailRepository sentMailRepository,
+            io.micrometer.core.instrument.MeterRegistry meterRegistry,
+            org.springframework.context.ApplicationEventPublisher eventPublisher,
+            VendorSqlDialect vendorSql) {
+        this.emailSender = emailSender;
+        this.sentMailRepository = sentMailRepository;
+        this.meterRegistry = meterRegistry;
+        this.eventPublisher = eventPublisher;
+        this.vendorSql = vendorSql != null ? vendorSql : new PostgresqlSqlDialect();
+    }
+
+    @Autowired
     public void setSelf(@org.springframework.context.annotation.Lazy MailAsyncProcessor self) {
         this.self = self;
     }
@@ -40,21 +61,26 @@ public class MailAsyncProcessor {
     /** The durable worker awaits this bounded executor task before acknowledging its job. */
     @Async("taskExecutor")
     public java.util.concurrent.CompletableFuture<Void> dispatchCommitted(Long emlDsptchSn,
-            java.time.LocalDateTime queuedAt, String sj, String emailCn, String dsptchPerson, String recptnPerson,
+            LocalDateTime queuedAt, String sj, String emailCn, String dsptchPerson, String recptnPerson,
             String senderEsntlId) {
         if (Thread.currentThread().isInterrupted()) throw new IllegalStateException("Mail delivery interrupted");
-        if (!self.claimQueued(emlDsptchSn, queuedAt)) {
+        LocalDateTime claimedAt = self.claimQueued(emlDsptchSn, queuedAt);
+        if (claimedAt == null) {
             return java.util.concurrent.CompletableFuture.completedFuture(null);
         }
         boolean delivered = self.deliverMail(emlDsptchSn, sj, emailCn, dsptchPerson, recptnPerson);
         meterRegistry.counter("mail.dispatch.total", "result", delivered ? "success" : "failure").increment();
-        self.recordResult(emlDsptchSn, queuedAt, delivered ? "S" : "F", senderEsntlId);
+        self.recordResult(emlDsptchSn, claimedAt, queuedAt, delivered ? "S" : "F", senderEsntlId);
         return java.util.concurrent.CompletableFuture.completedFuture(null);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public boolean claimQueued(Long emlDsptchSn, java.time.LocalDateTime queuedAt) {
-        return sentMailRepository.claimQueued(emlDsptchSn, queuedAt) == 1;
+    public LocalDateTime claimQueued(Long emlDsptchSn, LocalDateTime queuedAt) {
+        LocalDateTime now = vendorSql.storedTimestamp(LocalDateTime.now());
+        LocalDateTime claimedAt = now.equals(queuedAt)
+                ? vendorSql.storedTimestamp(now.plusNanos(1_000_000L))
+                : now;
+        return sentMailRepository.claimQueued(emlDsptchSn, queuedAt, claimedAt) == 1 ? claimedAt : null;
     }
 
     /** 결과 CAS를 이긴 시도의 알림을 같은 트랜잭션에 저장한다. */
@@ -114,12 +140,13 @@ public class MailAsyncProcessor {
         maxAttempts = 3,
         backoff = @org.springframework.retry.annotation.Backoff(delay = 1000)
     )
-    public boolean recordResult(Long emlDsptchSn, java.time.LocalDateTime queuedAt, String resultCode, String senderEsntlId) {
-        return self.markResult(emlDsptchSn, queuedAt, resultCode, senderEsntlId);
+    public boolean recordResult(Long emlDsptchSn, LocalDateTime claimedAt, LocalDateTime queuedAt,
+            String resultCode, String senderEsntlId) {
+        return self.markResult(emlDsptchSn, claimedAt, queuedAt, resultCode, senderEsntlId);
     }
 
     @org.springframework.retry.annotation.Recover
-    public boolean recoverRecording(Exception e, Long emlDsptchSn, java.time.LocalDateTime queuedAt,
+    public boolean recoverRecording(Exception e, Long emlDsptchSn, LocalDateTime claimedAt, LocalDateTime queuedAt,
             String resultCode, String senderEsntlId) {
         log.error("Mail result recording exhausted for dispatch serial number: {}, intendedResult: {}, errorType: {}",
                 emlDsptchSn, resultCode, e.getClass().getSimpleName());
@@ -129,7 +156,7 @@ public class MailAsyncProcessor {
         // 삭제된 발신자 등의 영구 알림 오류가 확정된 F 결과까지 잃게 하지 않는다.
         // 결과 전용 CAS는 한 번만 시도하며 SMTP를 다시 호출하지 않는다.
         try {
-            boolean recorded = self.markFailureWithoutNotice(emlDsptchSn, queuedAt);
+            boolean recorded = self.markFailureWithoutNotice(emlDsptchSn, claimedAt);
             if (recorded && senderEsntlId != null && !senderEsntlId.isBlank()) {
                 meterRegistry.counter("mail.dispatch.failure.notices.lost").increment();
                 log.error("Mail failure notice was not recorded for dispatch serial number: {}, errorType: {}",
@@ -144,12 +171,18 @@ public class MailAsyncProcessor {
         }
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean markResult(Long emlDsptchSn, LocalDateTime stamp, String resultCode, String senderEsntlId) {
+        return markResult(emlDsptchSn, stamp, stamp, resultCode, senderEsntlId);
+    }
+
     /**
      * 발송 결과와 실패 알림을 함께 기록한다. 커밋 실패도 recordResult 프록시가 재시도한다.
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public boolean markResult(Long emlDsptchSn, java.time.LocalDateTime queuedAt, String resultCode, String senderEsntlId) {
-        if (sentMailRepository.recordResult(emlDsptchSn, queuedAt, resultCode) != 1) return false;
+    public boolean markResult(Long emlDsptchSn, LocalDateTime claimedAt, LocalDateTime queuedAt,
+            String resultCode, String senderEsntlId) {
+        if (sentMailRepository.recordResult(emlDsptchSn, claimedAt, resultCode) != 1) return false;
         if ("F".equals(resultCode) && senderEsntlId != null && !senderEsntlId.isBlank()) {
             notifyDeliveryFailure(emlDsptchSn, queuedAt, senderEsntlId);
         }
@@ -158,7 +191,7 @@ public class MailAsyncProcessor {
 
     /** 알림 저장이 소진돼도 확정 실패는 보존한다. 이 저장마저 실패하면 기존 P/UNKNOWN이 남는다. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public boolean markFailureWithoutNotice(Long emlDsptchSn, java.time.LocalDateTime queuedAt) {
-        return sentMailRepository.recordResult(emlDsptchSn, queuedAt, "F") == 1;
+    public boolean markFailureWithoutNotice(Long emlDsptchSn, LocalDateTime claimedAt) {
+        return sentMailRepository.recordResult(emlDsptchSn, claimedAt, "F") == 1;
     }
 }

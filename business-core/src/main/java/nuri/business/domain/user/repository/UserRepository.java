@@ -42,6 +42,11 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
     /** 발송 채널의 수신자 연락처 해석용(UserContactService). esntlId 축 일괄 조회. */
     List<User> findByEsntlIdIn(java.util.Collection<String> esntlIds);
 
+    /** 부서업무 담당자 검색(이름/로그인ID 부분 일치 → picId 축 esntlId 목록 해석). */
+    @Query("SELECT u.esntlId FROM User u WHERE LOWER(u.userNm) LIKE LOWER(CONCAT('%', :keyword, '%')) "
+            + "OR LOWER(u.userId) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    List<String> findEsntlIdsByKeyword(@Param("keyword") String keyword);
+
     /**
      * 기능 권한 하나를 그룹 배정으로 가진 사용 중(P) 사용자의 esntlId(2026-09-26 DIP B5 F1).
      * 알림 수신자를 고르는 용도다 — 인가 판정은 요청마다 AuthorizationSnapshotService 가 한다.

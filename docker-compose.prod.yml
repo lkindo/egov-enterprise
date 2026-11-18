@@ -169,6 +169,12 @@ services:
       ATTACHMENT_INTEGRITY_CRON:
       ATTACHMENT_INTEGRITY_MAX_ITEMS:
       ATTACHMENT_INTEGRITY_REPORT_DIRECTORY:
+      # 완료된(SUCCEEDED) 영속 작업(tb_sys_job) 보존·정리(기본 꺼짐 — FAILED/PENDING/RETRY 는 제외).
+      DURABLE_WORK_RETENTION_ENABLED:
+      DURABLE_WORK_RETENTION_CRON:
+      DURABLE_WORK_RETENTION_DAYS:
+      DURABLE_WORK_RETENTION_BATCH_SIZE:
+      DURABLE_WORK_RETENTION_MAX_BATCHES:
     # [W1-12 보완] 관리 포트를 분리하면 /actuator/** 는 **8080 에서 사라진다**(Spring Boot 가
     #   management 를 별도 웹서버 컨텍스트로 띄운다). base compose 의 헬스체크는
     #   `http://localhost:8080/actuator/health` 를 찌르므로, 오버레이를 얹은 운영 배포에서만

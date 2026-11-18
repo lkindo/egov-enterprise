@@ -479,4 +479,17 @@ class WorkReportServiceTest {
         org.assertj.core.api.Assertions.assertThat(mapping.insertable()).as("rptSttsCd 는 앱이 쓰지 않는다(insertable)").isFalse();
         org.assertj.core.api.Assertions.assertThat(mapping.updatable()).as("rptSttsCd 는 앱이 쓰지 않는다(updatable)").isFalse();
     }
+
+    @Test
+    @DisplayName("5-인자 목록 조회는 searchCnd 를 저장소 searchWorkReports 까지 전달한다")
+    void getWorkReportList_forwardsSearchConditionToRepository() {
+        authenticateAs("admin01", "ROLE_ADMIN");
+        Pageable pageable = PageRequest.of(0, 10);
+        when(workReportRepository.searchWorkReports(any(), any(), any(), any(), eq("1"), eq("핵심"), any(), eq("2"), eq(pageable)))
+                .thenReturn(Page.empty(pageable));
+
+        workReportService.getWorkReportList(null, "2", "1", "핵심", pageable);
+
+        verify(workReportRepository).searchWorkReports(null, null, null, null, "1", "핵심", null, "2", pageable);
+    }
 }

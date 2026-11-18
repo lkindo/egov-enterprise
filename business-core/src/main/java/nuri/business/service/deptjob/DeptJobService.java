@@ -138,6 +138,14 @@ public class DeptJobService extends BaseAbstractService {
         }
 
         if (deptTaskBoxSn != null) {
+            nuri.business.domain.deptjob.DeptJobBox box = deptJobBoxRepository.findById(deptTaskBoxSn)
+                    .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+            if (!isDeptJobAdmin()) {
+                String myDept = currentDeptId().orElse(null);
+                if (myDept == null || !myDept.equals(box.getDeptId())) {
+                    throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+                }
+            }
             builder.and(deptJob.deptTaskBoxSn.eq(deptTaskBoxSn));
         } else if (deptId != null && !deptId.isEmpty()) {
             List<Long> boxSns = deptJobBoxRepository.findByDeptId(deptId).stream()
@@ -155,8 +163,13 @@ public class DeptJobService extends BaseAbstractService {
                 builder.and(deptJob.deptTaskNm.contains(keyword));
             } else if ("1".equals(searchCondition)) { // 부서업무내용
                 builder.and(deptJob.deptTaskCn.contains(keyword));
-            } else if ("2".equals(searchCondition)) { // 담당자ID
-                builder.and(deptJob.picId.contains(keyword));
+            } else if ("2".equals(searchCondition)) { // 담당자 (esntlId·이름·로그인ID)
+                BooleanBuilder assigneeMatch = new BooleanBuilder(deptJob.picId.contains(keyword));
+                List<String> matchedEsntlIds = userRepository.findEsntlIdsByKeyword(keyword);
+                if (!matchedEsntlIds.isEmpty()) {
+                    assigneeMatch.or(deptJob.picId.in(matchedEsntlIds));
+                }
+                builder.and(assigneeMatch);
             }
         }
         Pageable requested = required(pageable, "pageable 는 null 일 수 없습니다");
