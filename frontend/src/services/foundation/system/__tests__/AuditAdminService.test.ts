@@ -8,12 +8,10 @@
  * 여기가 틀어지면 세 화면이 동시에 죽는데, 아래 항목들은 전부 **타입 검사와 컴파일을 통과한 채
  * 런타임에서만 조용히 깨진다** — 화면에는 빈 목록이나 "조회 실패" 토스트 한 줄만 남는다.
  *
- * 1) URL 조합 — `AdminService('/logs/system')` 은 `ApiService` 에서 선행 슬래시가 제거되고
- *    `admin/{category}/` 접두가 붙어 최종 `admin/system/logs/system` 이 된다(category 기본값 'system').
- *    **'system' 이 두 번 나오는 것이 정상**이다(접두의 system + 도메인 경로의 system).
- *    백엔드 실계약도 `/api/v1/admin/system/logs/system` 이다(api-docs.json 확인).
- *    중복처럼 보인다고 한쪽을 지우면 전 화면이 404 가 되고, 선행 슬래시가 붙으면 axios baseURL
- *    (`/api/v1`)의 경로 세그먼트가 통째로 날아간다.
+ * 1) URL — 경로는 생성된 operation descriptor 가 소유한다(`ApiService` 는 descriptor 를 실행만 한다).
+ *    이 서비스가 감사 로그 operation 을 골라 `admin/system/logs/system` 으로 나가는지 본다.
+ *    **'system' 이 두 번 나오는 것이 정상**이다 — 백엔드 실계약도 `/api/v1/admin/system/logs/system` 이다
+ *    (api-docs.json 확인). 선행 슬래시가 붙으면 axios baseURL(`/api/v1`)의 경로 세그먼트가 날아간다.
  *
  * 2) 페이징 파라미터 — [ADR-0036] 화면·서비스·서버가 모두 1부터 세는 `page` 와 `size` 하나를 쓴다.
  *    이 서비스는 받은 `page`·`size` 를 **변환 없이** 그대로 넘긴다. 예전처럼 ±1 변환이나 옛 이름
@@ -59,11 +57,7 @@ vi.mock('@/lib/api/client', () => ({ default: client }));
 
 import { auditAdminService, type AuditLog } from '../AuditAdminService';
 
-/**
- * 이 서비스의 모든 요청이 나가는 유일한 경로.
- * `AdminService('/logs/system')` + category 기본값 'system' → `admin/system/logs/system`
- * (선행 슬래시 없음, 후행 슬래시 없음).
- */
+/** 이 서비스의 모든 요청이 나가는 유일한 경로(감사 로그 operation descriptor 의 경로, 선행·후행 슬래시 없음). */
 const BASE = 'admin/system/logs/system';
 const EMPTY_PAGE = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
 const success = <T,>(data: T) => ({ success: true as const, code: 'S000', message: 'success', data });
@@ -86,27 +80,6 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
       expect(client.get).not.toHaveBeenCalledWith(`/${BASE}`, { params: {} });
     });
 
-    it("접두의 'system' 과 도메인 경로의 'system' 이 둘 다 남는다 — 중복이 아니라 실계약이다", async () => {
-      await auditAdminService.getAuditLogs({});
-
-      const [path] = client.get.mock.calls[0] as GetCall;
-
-      // 백엔드 실계약: /api/v1/admin/system/logs/system (api-docs.json).
-      // 'system' 세그먼트가 2개여야 한다 — 하나로 줄이면 전 화면이 404 다.
-      expect(path.split('/').filter((segment) => segment === 'system')).toHaveLength(2);
-      expect(path).toBe(BASE);
-      expect(path.startsWith('/')).toBe(false);
-      expect(path.endsWith('/')).toBe(false);
-    });
-
-    it('반복 호출해도 경로가 누적되지 않는다 — 싱글턴 인스턴스의 basePath 는 불변이다', async () => {
-      // auditAdminService 는 모듈 스코프 싱글턴이라, basePath 를 건드리는 변경이 생기면
-      // 두 번째 호출부터 경로가 어긋나 앱 수명 내내 복구되지 않는다.
-      await auditAdminService.getAuditLogs({ page: 1 });
-      await auditAdminService.getAuditLogs({ page: 2 });
-
-      expect(client.get.mock.calls.map((call) => call[0])).toEqual([BASE, BASE]);
-    });
   });
 
   describe('페이징 파라미터 전달(ADR-0036)', () => {

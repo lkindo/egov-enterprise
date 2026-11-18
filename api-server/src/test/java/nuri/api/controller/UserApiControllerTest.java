@@ -251,6 +251,7 @@ public class UserApiControllerTest extends BaseControllerTest {
 
         mockMvc.perform(get("/api/v1/admin/system/users/targetUser"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.userId").value("targetUser"))
                 .andExpect(jsonPath("$.data.esntlId").doesNotExist())
                 .andExpect(jsonPath("$.data.emlAddr").doesNotExist());
     }
@@ -415,6 +416,8 @@ public class UserApiControllerTest extends BaseControllerTest {
 
         mockMvc.perform(delete("/api/v1/admin/system/users/targetUser"))
                 .andExpect(status().isOk());
+
+        verify(userService).deleteUser("targetUser");
     }
 
     @Test

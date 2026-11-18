@@ -78,10 +78,10 @@ describe('LoginPage Component', () => {
 
   it('renders login page correctly', () => {
     render(<LoginPage />);
-    expect(screen.getByText(/엔터프라이즈/i)).toBeDefined();
-    expect(screen.getByText(/아이디/i)).toBeDefined();
+    expect(screen.getByText(/엔터프라이즈/i)).toBeInTheDocument();
+    expect(screen.getByText(/아이디/i)).toBeInTheDocument();
     expect(screen.getAllByText(/비밀번호/i).length).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: /로그인/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /로그인/i })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: '아이디' })).toHaveAttribute('aria-required', 'true');
     expect(screen.getByRole('textbox', { name: '아이디' })).toHaveAttribute('maxlength', '20');
     expect(screen.getByLabelText('비밀번호')).toHaveAttribute('aria-required', 'true');

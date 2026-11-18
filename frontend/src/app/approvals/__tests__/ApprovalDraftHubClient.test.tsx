@@ -35,8 +35,8 @@ describe('ApprovalDraftHubClient', () => {
 
   it('기안 권한이 있으면 들어오자마자 기안 창이 열리고, 탭 제목은 화면 이름(새 결재 기안)이다', () => {
     render(<ApprovalDraftPage />);
-    expect(screen.getByRole('heading', { level: 1, name: '새 결재 기안' })).toBeTruthy();
-    expect(screen.getByRole('dialog', { name: '새 결재 기안' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: '새 결재 기안' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: '새 결재 기안' })).toBeInTheDocument();
     // 종전 '결재 양식 작성 예시' 는 목업 시절의 이름이다 — 실제 기안 창을 여는 화면을 예시라고 부르지 않는다.
     expect(String(metadata.title)).toMatch(/^새 결재 기안 \| /);
   });
@@ -46,7 +46,7 @@ describe('ApprovalDraftHubClient', () => {
     fireEvent.click(screen.getByRole('button', { name: '닫기' }));
     expect(screen.queryByRole('dialog', { name: '새 결재 기안' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '기안 작성' }));
-    expect(screen.getByRole('dialog', { name: '새 결재 기안' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: '새 결재 기안' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '상신 완료' }));
     expect(router.push).toHaveBeenCalledTimes(1);
     expect(router.push).toHaveBeenCalledWith('/approvals');

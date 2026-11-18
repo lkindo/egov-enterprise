@@ -25,9 +25,9 @@ describe('Card', () => {
  </Card>
  );
 
- expect(screen.getByText('Card Title')).toBeDefined();
- expect(screen.getByText('Card Content')).toBeDefined();
- expect(screen.getByText('Footer Button')).toBeDefined();
+ expect(screen.getByText('Card Title')).toBeInTheDocument();
+ expect(screen.getByText('Card Content')).toBeInTheDocument();
+ expect(screen.getByText('Footer Button')).toBeInTheDocument();
  });
 
  it('applies custom classes', () => {

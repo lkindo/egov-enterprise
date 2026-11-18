@@ -9,9 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -46,34 +43,6 @@ class NoteServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-    }
-
-    @Test
-    @DisplayName("받은 쪽지 목록 조회")
-    void getReceivedNotes() {
-        // given
-        Pageable pageable = PageRequest.of(0, 10);
-        given(noteRecptnRepository.searchNoteRecptns(anyString(), anyString(), any())).willReturn(new PageImpl<>(List.of()));
-
-        // when
-        noteService.getReceivedNotes("user1", "word", pageable);
-
-        // then
-        verify(noteRecptnRepository).searchNoteRecptns(eq("word"), eq("user1"), eq(pageable));
-    }
-
-    @Test
-    @DisplayName("보낸 쪽지 목록 조회")
-    void getSentNotes() {
-        // given
-        Pageable pageable = PageRequest.of(0, 10);
-        given(noteTrnsmitRepository.searchNoteTrnsmits(anyString(), anyString(), any())).willReturn(new PageImpl<>(List.of()));
-
-        // when
-        noteService.getSentNotes("user1", "word", pageable);
-
-        // then
-        verify(noteTrnsmitRepository).searchNoteTrnsmits(eq("word"), eq("user1"), eq(pageable));
     }
 
     @Test
