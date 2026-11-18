@@ -578,25 +578,31 @@ test('unverified fields require a bounded review and demo cannot leak to core pr
 */
 test('a demo capability sits on a shared screen only as a demo-only slot contribution that the page renders', () => {
   const { manifest } = currentAnalysis();
-  const HUB = '/admin/system/monitoring/hub';
-  const SAMPLE = 'monitoring.sample-widgets';
-  const SHELL = 'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx';
-  const PANEL = 'frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx';
-  const CONTRIBUTION = 'frontend/src/extensions/showcase/hub-tabs-monitoring.ts';
+  const HUB = '/admin/collaboration';
+  const SAMPLE = 'fixture.demo-panel';
+  const SHELL = 'frontend/src/app/admin/collaboration/CollaborationHubClient.tsx';
+  const PANEL = 'frontend/src/app/admin/patterns/page.tsx';
+  const CONTRIBUTION = 'frontend/src/extensions/note/hub-tabs-collaboration.ts';
   const DEMO_ONLY_TEST = 'frontend/src/app/admin/patterns/__tests__/pattern-gallery.test.tsx';
-  const leak = (route) => new RegExp(`route ${route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}: demo capability leaks into a non-demo profile owner`);
+  const leak = (route) => new RegExp('route ' + route + ': demo capability leaks into a non-demo profile owner');
 
+  // 시연 탭이 실제 제품에 없어도 같은 계약을 검증한다. 이 시험의 투영에서만 쪽지 슬롯 기여를 시연 전용으로 만든다.
+  const fixture = structuredClone(repository);
+  const contributionPath = CONTRIBUTION.slice('frontend/'.length);
+  for (const preset of fixture.profileProjections.profiles) {
+    if (preset.profile !== 'demo') preset.removePaths.push(contributionPath);
+  }
   const hub = manifest.routes.find(({ route }) => route === HUB);
-  // 소유는 화면을 싣는 시작 구성 전부이고, 그 가운데 시연 밖 구성이 있어야 허용 조건이 실제로 쓰인다(구성 이름은 열거하지 않는다 — ADR-0028).
+  const gallery = manifest.routes.find(({ route }) => route === '/admin/patterns');
+  const sample = structuredClone(gallery.capabilities.find(({ status }) => status === 'demo'));
+  Object.assign(sample, { id: SAMPLE, evidence: [PANEL, CONTRIBUTION] });
+  hub.capabilities.push(sample);
   assert.deepEqual(hub.profileOwners, hub.directProjectionProfiles);
   assert.ok(hub.profileOwners.some((profile) => profile !== 'demo'));
-  assert.deepEqual(hub.capabilities.find(({ id }) => id === SAMPLE), {
-    ...hub.capabilities.find(({ id }) => id === SAMPLE), status: 'demo', evidence: [PANEL, CONTRIBUTION],
-  });
-  assert.deepEqual(directProjectionProfiles(DEMO_ONLY_TEST, repository.profileProjections), ['demo']);
-  assert.doesNotMatch(validateRouteCapabilities(manifest, repository).errors.join('\n'), leak(HUB));
+  assert.deepEqual(directProjectionProfiles(DEMO_ONLY_TEST, fixture.profileProjections), ['demo']);
+  assert.doesNotMatch(validateRouteCapabilities(manifest, fixture).errors.join('\n'), leak(HUB));
 
-  const errorsWith = (mutate, inspected = repository) => {
+  const errorsWith = (mutate, inspected = fixture) => {
     const copy = structuredClone(manifest);
     const route = copy.routes.find((row) => row.route === HUB);
     mutate(route.capabilities.find(({ id }) => id === SAMPLE), copy);
@@ -605,7 +611,7 @@ test('a demo capability sits on a shared screen only as a demo-only slot contrib
   // ① 모든 구성에 실리는 허브 셸을 증거에 적으면 표본이 그 파일에 있다는 말이다 — 실제로 실리므로 누수다(2026-11-08 철회 사유).
   //   시연 경로를 거쳐 같은 셸을 가리키는 비정규 표기도 같다 — 투영 판정이 원문 접두사를 보므로 시연 전용으로 오판한다(Codex 22차).
   assert.match(errorsWith((sample) => sample.evidence.push(SHELL)), leak(HUB));
-  const TRAVERSAL = 'frontend/src/extensions/showcase/../../app/admin/system/monitoring/MonitoringHubClient.tsx';
+  const TRAVERSAL = 'frontend/src/app/admin/patterns/../collaboration/CollaborationHubClient.tsx';
   assert.deepEqual(directProjectionProfiles(TRAVERSAL, repository.profileProjections), ['demo']);
   assert.ok(fs.statSync(path.join(ROOT, TRAVERSAL)).isFile());
   assert.match(errorsWith((sample) => sample.evidence.push(TRAVERSAL)), leak(HUB));
@@ -620,7 +626,7 @@ test('a demo capability sits on a shared screen only as a demo-only slot contrib
     sample.evidence = [CONTRIBUTION, 'frontend/src/app/admin/patterns/__TESTS__/pattern-gallery.TEST.tsx'];
   }), leak(HUB));
   //   시연 경로 안에서 대소문자만 다른 표기는 투영 판정을 통과하므로 디스크의 실제 이름과 대조해 막는다.
-  assert.match(errorsWith((sample) => { sample.evidence = [CONTRIBUTION, CONTRIBUTION.replace('hub-tabs-monitoring', 'Hub-Tabs-Monitoring')]; }), leak(HUB));
+  assert.match(errorsWith((sample) => { sample.evidence = [CONTRIBUTION, CONTRIBUTION.replace('hub-tabs-collaboration', 'Hub-Tabs-Collaboration')]; }), leak(HUB));
   // ④ 같은 기여를 그 슬롯 소비자를 싣지 않는 화면에 적으면 그 화면에는 붙지 않는다.
   const POLICIES = '/admin/system/policies';
   assert.match(errorsWith((sample, copy) => {
@@ -629,13 +635,13 @@ test('a demo capability sits on a shared screen only as a demo-only slot contrib
     policies.capabilities.push(structuredClone(sample));
   }), leak(POLICIES));
   // ⑤ 시연 밖 구성 하나라도 기여를 싣는 투영이면 누수다.
-  const shipped = structuredClone(repository);
-  const approval = shipped.profileProjections.profiles.find(({ profile }) => profile === 'approval');
-  assert.ok(approval.removePaths.includes('src/extensions/showcase'));
-  approval.removePaths = approval.removePaths.filter((removal) => removal !== 'src/extensions/showcase');
+  const shipped = structuredClone(fixture);
+  const collaboration = shipped.profileProjections.profiles.find(({ profile }) => profile === 'collaboration');
+  collaboration.removePaths = collaboration.removePaths.filter((removal) => removal !== contributionPath);
+  assert.ok(directProjectionProfiles(CONTRIBUTION, shipped.profileProjections).includes('collaboration'));
   assert.match(errorsWith(() => {}, shipped), leak(HUB));
   // ⑥ 자기 구성 하나만 아는 생성물 투영에서는 판정할 수 없으므로 허용하지 않는다.
-  const generated = structuredClone(repository);
+  const generated = structuredClone(fixture);
   generated.profileProjections.projection = true;
   assert.match(errorsWith(() => {}, generated), leak(HUB));
 });

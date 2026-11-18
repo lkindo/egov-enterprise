@@ -1,22 +1,9 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { inProjection } from '@/test-utils/projection';
 
-/**
- * 감시 허브 탭 동등성 그물(허브 분해 H0). 부가 탭(하네스)을 슬롯 기여로 옮기기 전의 탭 동작을 고정한다.
- *
- * 고정하는 것: 권한 집합별 탭 이름·순서(지금은 권한과 무관하게 같다), `?tab=` 해석(대소문자·옛 이름 HEALTH·퇴역 값)과
- * 페이지 기본 탭, 탭 전환의 URL(소문자 탭 값, 쪽 번호를 버린다), 탭별 제목, 상세의 샘플 고지, 반출 안내 문구.
- * 하네스 탭은 그 기여가 투영으로 빠진 생성물에서 기대 목록에서 빠진다. 하네스 탭은 시연 기능의 hub-tabs-monitoring 기여다(허브 분해 H3).
- * [허브 분해 H6 — 의도한 변화] 댓글 탭('사용자 의견 관리')을 걷었다. 댓글 관리는 댓글 기능의 독립 화면(/admin/system/comments)이다 —
- * 그래서 탭 목록에 없고, `?tab=comments` 는 기본 탭을 열며, 반출 안내는 남은 목록 탭 이름만 말한다(종전 안내는 없는 탭 이름
- * '서비스 피드백' 을 가리켰다).
- */
-
-const harnessInProjection = inProjection('frontend/src/extensions/showcase/hub-tabs-monitoring.ts');
-const CORE_TABS = ['시스템 로그(감사 보기)', '시스템 로그', '로그인 시도 이력', '가동 상태'];
-const ALL_TABS = [...CORE_TABS, ...(harnessInProjection ? ['하네스 아틀라스'] : [])];
+/** 실제 등록된 모니터링 탭 목록과 기존 주소의 이동 동작을 확인한다. */
+const ALL_TABS = ['시스템 로그(감사 보기)', '시스템 로그', '로그인 시도 이력', '가동 상태'];
 
 const mocks = vi.hoisted(() => ({
   query: '',
@@ -75,7 +62,7 @@ beforeEach(() => {
   mocks.permissions = ['OPS_READ', 'SYS_LOG_READ', 'WEB_LOG_READ', 'LOGIN_LOG_READ'];
 });
 
-describe('감시 허브 탭 동등성(허브 분해 전)', () => {
+describe('감시 허브 탭과 기존 주소', () => {
   it.each([
     ['로그 조회 권한만', ['OPS_READ', 'SYS_LOG_READ', 'WEB_LOG_READ', 'LOGIN_LOG_READ']],
     ['+ 댓글 전체 조회', ['OPS_READ', 'SYS_LOG_READ', 'WEB_LOG_READ', 'LOGIN_LOG_READ', 'COMMENT_READ_ALL']],
@@ -93,20 +80,13 @@ describe('감시 허브 탭 동등성(허브 분해 전)', () => {
     ['tab=login', '로그인 시도 이력'],
     ['tab=observability', '가동 상태'],
     ['tab=health', '가동 상태'],
+    ['tab=harness', '시스템 로그(감사 보기)'],
     ['tab=topology', '시스템 로그(감사 보기)'],
     ['tab=policy', '시스템 로그(감사 보기)'],
   ])('`?%s` 는 %s 탭을 연다', (query, label) => {
     renderHub(query);
     expect(tabState()).toEqual(selected(label));
     expect(screen.getByRole('heading', { level: 1, name: label })).toBeInTheDocument();
-  });
-
-  if (harnessInProjection) it('`?tab=harness` 는 하네스 탭을 열고, 하네스 상세에는 샘플 고지를 붙인다', () => {
-    renderHub('tab=harness');
-    expect(tabState()).toEqual(selected('하네스 아틀라스'));
-    fireEvent.click(screen.getByRole('button', { name: /Deep Context Mapper 엔진 상세 보기/ }));
-    const detail = screen.getByRole('region', { name: '선택 항목 상세' });
-    expect(within(detail).getByText(/샘플 데이터/)).toBeInTheDocument();
   });
 
   it('[H6] 의견 탭은 없다 — `?tab=comments` 는 기본 탭을 연다', () => {

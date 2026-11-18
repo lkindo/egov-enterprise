@@ -136,10 +136,8 @@ describe('r6 accessibility regressions', () => {
       ['components/admin/user/UserManageForm.tsx', ['flex-1', 'hover:bg-surface-inverse', 'cursor-pointer']],
       ['components/admin/user/DepartmentForm.tsx', ['flex-1', 'hover:bg-surface-inverse', 'cursor-pointer']],
       ['app/admin/security/group/SecurityGroupClient.tsx', ['flex-1', 'hover:bg-surface-inverse', 'cursor-pointer']],
-      ['app/admin/system/monitoring/components/HarnessAtlasPanels.tsx', ['flex-col', 'justify-between', 'bg-muted', 'px-3']],
-      ['app/admin/system/monitoring/components/HarnessAtlasPanels.tsx', ['w-full', 'justify-between', 'px-3', 'text-left']],
     ];
-    // 노트·모니터링(쇼케이스) 화면은 기능 소유라 생성물에서 투영으로 빠질 수 있다 — 원장에 있고 실제로 없는 파일만 뺀다(원본은 6행 그대로).
+    // 노트 화면은 생성물의 기능 선택에 따라 빠질 수 있다.
     // core 소유 3행(사용자·부서·보안 그룹 폼)은 늘 남아 이 단언이 공허해지지 않는다.
     for (const [file, marker] of keepInProjection(buttons, ([file]) => join(SRC, file))) {
       const classes = source(file).split(/["'`]/)

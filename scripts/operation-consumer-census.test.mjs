@@ -919,7 +919,7 @@ test('축 3 — 슬롯 기여의 쓰기는 기여 파일에 귀속되고, 그 �
   [허브 분해 H1·GAP-SLOT-001] 허브 탭은 허브마다 슬롯(hub-tabs-<허브>)과 레지스트리가 따로다. 기여의 쓰기는 그 허브 레지스트리를 읽는
   셸로만 이어진다 — 다른 허브 화면이 그 쓰기를 가진 것처럼 보이지 않고(권한 작업대 오표시), 판정도 엉뚱한 셸의 권한 언급에 기대지 않는다.
 */
-function hubTabFixture(t, { collaboration = 'export const Hub = () => null;', monitoring = 'export const Hub = () => null;', hub = 'collaboration' } = {}) {
+function hubTabFixture(t, { collaboration = 'export const Hub = () => null;', knowledge = 'export const Hub = () => null;', hub = 'collaboration' } = {}) {
   const registry = (target) => (target === hub
     ? [`import things from './things/hub-tabs-${target}';`, 'export const tabs = [things];'] : ['export const tabs = [];']);
   return affordanceFixture(t, {
@@ -936,28 +936,28 @@ function hubTabFixture(t, { collaboration = 'export const Hub = () => null;', mo
       ']);',
     ],
     'frontend/src/extensions/generated-hub-tabs-collaboration.ts': registry('collaboration'),
-    'frontend/src/extensions/generated-hub-tabs-monitoring.ts': registry('monitoring'),
-    ...(hub === 'collaboration' || hub === 'monitoring' ? {} : { [`frontend/src/extensions/generated-hub-tabs-${hub}.ts`]: registry(hub) }),
+    'frontend/src/extensions/generated-hub-tabs-knowledge.ts': registry('knowledge'),
+    ...(hub === 'collaboration' || hub === 'knowledge' ? {} : { [`frontend/src/extensions/generated-hub-tabs-${hub}.ts`]: registry(hub) }),
     'frontend/src/app/admin/collaboration/CollaborationHubClient.tsx': [
       "import { tabs } from '@/extensions/generated-hub-tabs-collaboration';", collaboration, 'export const used = tabs;'],
-    'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx': [
-      "import { tabs } from '@/extensions/generated-hub-tabs-monitoring';", monitoring, 'export const used = tabs;'],
+    'frontend/src/app/admin/help/KnowledgeHubClient.tsx': [
+      "import { tabs } from '@/extensions/generated-hub-tabs-knowledge';", knowledge, 'export const used = tabs;'],
   });
 }
 
 test('축 3 — 허브 탭 기여의 쓰기는 그 허브 레지스트리를 읽는 셸에만 귀속된다(허브 분해 H1·GAP-SLOT-001)', (t) => {
   const gate = "export const Hub = ({ user }) => canPermission(user, 'THING_DELETE');";
-  // 협업 허브 셸이 권한을 보면 가려진다. 감시 허브는 다른 레지스트리를 읽으므로 판정에 끼지 않는다.
+  // 협업 허브 셸이 권한을 보면 가려진다. 지식 허브는 다른 레지스트리를 읽으므로 판정에 끼지 않는다.
   assert.deepEqual(hubTabFixture(t, { collaboration: gate }).analyze().ungated, []);
-  // 감시 허브가 권한을 봐도 협업 허브 탭의 쓰기를 가리지 못한다.
-  assert.deepEqual(hubTabFixture(t, { monitoring: gate }).analyze().ungated.map((entry) => [entry.file, entry.permission]), [
+  // 지식 허브가 권한을 봐도 협업 허브 탭의 쓰기를 가리지 못한다.
+  assert.deepEqual(hubTabFixture(t, { knowledge: gate }).analyze().ungated.map((entry) => [entry.file, entry.permission]), [
     ['frontend/src/app/admin/things/ThingTab.tsx', 'THING_DELETE'],
   ]);
-  // 반대 허브도 같다 — 감시 허브 기여의 쓰기는 협업 허브 셸의 권한 언급으로 가려지지 않는다.
-  assert.equal(hubTabFixture(t, { collaboration: gate, hub: 'monitoring' }).analyze().ungated.length, 1);
-  assert.deepEqual(hubTabFixture(t, { monitoring: gate, hub: 'monitoring' }).analyze().ungated, []);
+  // 반대 허브도 같다 — 지식 허브 기여의 쓰기는 협업 허브 셸의 권한 언급으로 가려지지 않는다.
+  assert.equal(hubTabFixture(t, { collaboration: gate, hub: 'knowledge' }).analyze().ungated.length, 1);
+  assert.deepEqual(hubTabFixture(t, { knowledge: gate, hub: 'knowledge' }).analyze().ungated, []);
   // 아무 셸도 읽지 않는 허브 레지스트리의 기여는 어느 셸에도 귀속되지 않아 부채로 남는다(조용히 가려지지 않는다).
-  assert.equal(hubTabFixture(t, { collaboration: gate, monitoring: gate, hub: 'nowhere' }).analyze().ungated.length, 1);
+  assert.equal(hubTabFixture(t, { collaboration: gate, knowledge: gate, hub: 'nowhere' }).analyze().ungated.length, 1);
 });
 
 test('축 3 — 기여의 판정은 visibleWhen.permissions 원소뿐이다: 사유 문자열에 따옴표 친 권한 이름은 판정이 아니다 (스크랩 슬롯 검토)', (t) => {

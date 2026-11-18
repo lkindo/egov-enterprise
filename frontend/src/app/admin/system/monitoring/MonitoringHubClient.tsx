@@ -40,16 +40,13 @@ const GaugeChart = dynamic(() => import('@/app/components/ui/observability-chart
 
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { SampleDataBadge, NavButton, StatusIndicator } from './components/MonitoringPanels';
+import { NavButton, StatusIndicator } from './components/MonitoringPanels';
 import { toDisplayDateTime } from '@/lib/format-date';
 import { LOGIN_LOG_EXPORT_HEADERS } from './log-export-headers';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { parsePositivePage } from '@/lib/navigation/url-state-values';
 import { MONITORING_TABS, parseMonitoringTab, type MonitoringTab } from './monitoring-tabs';
-import { useAuth } from '@/contexts/AuthContext';
 import { useChartColors } from '@/lib/hooks/useChartColors';
-import { visibleEntries } from '@/extensions/slots';
-import { hubTabsMonitoring } from '@/extensions/generated-hub-tabs-monitoring';
 import { TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 
 /**
@@ -62,11 +59,6 @@ import { TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 const HUB_PARAM_KEYS = ['tab', 'page'] as const;
 
 // 탭 목록과 `?tab=` 해석은 monitoring-tabs.ts 에 있다(탭 목적지 계약이 메뉴·별칭과 대조한다).
-
-// 목록·가동 상태 밖의 부가 탭(2026-09-27 DIP B5 F11)은 다른 기능의 hub-tabs-monitoring 기여다(허브 분해 H3 — 하네스 아틀라스는 시연 기능).
-// 탭 뷰가 본문·개요·선택 항목 찾기·상세를 한 묶음으로 내놓는다. 기여한 기능이 빠진 구성에서는 레지스트리에서 함께 빠진다. 레지스트리는
-// 감시 허브 전용이라(GAP-SLOT-001) 다른 허브의 탭 뷰는 이 화면의 번들에 실리지 않는다.
-
 
 /** 목록 탭(서버 데이터 조회 + 페이저를 쓰는 탭) 여부 */
 const LIST_TABS: readonly string[] = ['SECURITY', 'SYSTEM', 'LOGIN'];
@@ -116,7 +108,6 @@ type ListTabConfig =
   | (BaseListTabConfig<AuditLog> & { kind: 'SECURITY' });
 
 
-/** 실측 소스가 없는 위젯에 붙이는 공용 '샘플 데이터' 배지 */
 export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defaultTab?: MonitoringTab }) {
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -128,12 +119,9 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   //   자기가 다른 화면에 있다는 것을 알 수 없었다. 로그인 정책의 정본은
   //   /admin/security/login-policy 이고 개인정보 정책은 /admin/user/indvdl-info-policy 다.
   //   이제 ?tab=policy 는 어떤 탭에도 맞지 않아 기본 탭으로 내려간다 — 없는 탭을 있는 척하지 않는다.
-  // 부가 탭은 이 구성에서 보이는 기여 탭이다. 해석은 셸 고유 탭과 그 기여 탭 값만 받는다(모르는 값은 기본 탭).
-  const { user } = useAuth();
   const chartColors = useChartColors();
-  const contributedTabs = useMemo(() => visibleEntries(user, hubTabsMonitoring), [user]);
   const fallbackTab = MONITORING_TABS.includes(defaultTab) ? defaultTab : 'SECURITY';
-  const activeTab = parseMonitoringTab(searchParams.get('tab'), contributedTabs.map((tab) => tab.id)) ?? fallbackTab;
+  const activeTab = parseMonitoringTab(searchParams.get('tab')) ?? fallbackTab;
 
   // [P1-7] 페이지도 URL 파생값으로 둔다 → 공유·새로고침·뒤로가기가 조회 위치까지 복원한다.
   //        ADR-0009는 URL 사용을 의무화하지 않으므로 검색어는 이 화면의 로컬 상태로 유지한다.
@@ -280,15 +268,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;
     const idStr = String(selectedItemId);
-    for (const { view } of contributedTabs) {
-      const found = view.find(idStr);
-      if (found) return found;
-    }
+
     if (activeTab === 'SECURITY') return auditLogs.find(l => String(l.sysLogSn) === idStr);
     if (activeTab === 'SYSTEM') return systemLogs.find(l => String(l.sysLogSn) === idStr);
     if (activeTab === 'LOGIN') return loginLogs.find(l => String(l.lgnSn) === idStr);
     return null;
-  }, [selectedItemId, activeTab, auditLogs, systemLogs, loginLogs, contributedTabs]);
+  }, [selectedItemId, activeTab, auditLogs, systemLogs, loginLogs]);
 
   const auditColumns: Column<AuditLog>[] = [
     {
@@ -507,12 +492,6 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         <GaugeChart value={memUsage === null ? null : Number(memUsage.toFixed(1))} title="메모리 사용률" unit="%" color={chartColors.series[0]} />
       </div>
 
-      {/*
-        [2026-11-09 DEC-OPS-409] 실측 소스가 없는 고정 배열 표본(추세 · 다차원 상태 — 스파크라인 2종·레이더)은 시연 기능의
-        하네스 아틀라스 탭(HarnessAtlasPanels)으로 옮겼다. 이 탭은 모든 시작 구성에 실리므로 여기 두면 운영 구성에도 가짜 숫자가 남는다.
-        실제 배선 시 actuator 의 http.server.requests / hikaricp.connections 등 실측 지표로 이 자리에 다시 둔다.
-      */}
-
       <div className="rounded-md border border-surface-inverse-border bg-surface-inverse p-4 text-surface-inverse-foreground">
         <div className="space-y-4">
           <div className="flex items-center gap-2">
@@ -629,15 +608,13 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     LOGIN: '성공·실패·결과 미상 로그인 시도를 조회합니다. 성공 로그인 통계와 집계 범위가 다릅니다.',
     OBSERVABILITY: '애플리케이션 가동 상태와 자원 사용량을 조회합니다.',
   };
-  const extraTab = contributedTabs.find((tab) => tab.id === activeTab)?.view;
 
-  const NAV_ITEMS: Array<{ tab: string; icon: React.ReactNode; label: string }> = [
+  const NAV_ITEMS: Array<{ tab: MonitoringTab; icon: React.ReactNode; label: string }> = [
     { tab: 'SECURITY', icon: <ShieldAlert size={14} />, label: '시스템 로그(감사 보기)' },
     { tab: 'SYSTEM', icon: <Terminal size={14} />, label: '시스템 로그' },
     { tab: 'LOGIN', icon: <LogIn size={14} />, label: '로그인 시도 이력' },
     { tab: 'OBSERVABILITY', icon: <MonitorCheck size={14} />, label: '가동 상태' },
     // 기여 탭은 셸의 로그·가동 상태 탭 뒤에 order 순으로 놓는다(종전 탭 순서 그대로).
-    ...contributedTabs.map(({ id, label, view: { icon: Icon } }) => ({ tab: id, icon: <Icon size={14} />, label })),
   ];
 
   /**
@@ -646,22 +623,11 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
    */
   const LIST_TAB_LABELS = NAV_ITEMS.filter((item) => LIST_TABS.includes(item.tab)).map((item) => item.label).join('·');
 
-  /**
-   * 선택 항목의 상세. 종전에는 우측 3열 패널이었고, 미선택 시 '인텔리전스 대기 중' 장식이 자리를 채웠다. 기여 탭의 항목이면 그 뷰의
-   * 상세를 쓰고, 뷰가 sample 이면 샘플 고지를 단다.
-   */
-  const extraDetail = selectedItem
-    ? contributedTabs.map(({ view }) => {
-        const detail = view.detail(selectedItem);
-        return detail ? { ...detail, sample: view.sample === true } : null;
-      }).find(Boolean) ?? null
-    : null;
-
   return (
     <>
     <WorkListPage
       title={NAV_ITEMS.find((item) => item.tab === activeTab)?.label ?? '시스템 모니터링'}
-      description={TAB_DESCRIPTION[activeTab as MonitoringTab] ?? extraTab?.description}
+      description={TAB_DESCRIPTION[activeTab]}
       breadcrumbItems={[{ label: '시스템관리' }, { label: NAV_ITEMS.find((item) => item.tab === activeTab)?.label ?? '시스템 모니터링' }]}
       filterStateKey="system-monitoring"
       totalCount={listConfig && !listConfig.error ? listConfig.totalCount : undefined}
@@ -734,7 +700,6 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         className="space-y-4"
       >
         {activeTab === 'OBSERVABILITY' ? renderObservability()
-          : extraTab ? extraTab.render({ selectedItemId, onSelect: setSelectedItemId })
           : listConfig ? (
             listConfig.kind === 'SYSTEM' ? (
               <StandardDataTable
@@ -802,8 +767,6 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             )
           ) : null}
 
-        {/* 하네스 탭은 선택 전에도 자체 요약을 갖는다(빈 자리를 채우는 장식이 아니라 그 탭의 내용이다). */}
-        {extraTab && !selectedItem && extraTab.overview()}
 
         {selectedItem && (
           <section
@@ -813,22 +776,18 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             <header className="flex items-start justify-between gap-2 border-b border-border p-[var(--filter-pad)]">
               <div className="min-w-0">
                 <h2 className="text-sm font-semibold text-foreground">
-                  {extraDetail ? extraDetail.title : '선택 항목 상세'}
+                  선택 항목 상세
                 </h2>
                 <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
                   식별자 {selectedItemId}
                 </p>
-                {/* [2026-09-15 DEC-OPS-100] 하네스 스킬·테스트 상세는 정적 카탈로그·표본이라 목록과 같은 고지를 둔다. 기여 뷰가 sample 일 때만이다 — 실제 로그 기록에는 붙이지 않는다(허브 분해 H3). */}
-                {extraDetail?.sample ? <div className="mt-2"><SampleDataBadge /></div> : null}
               </div>
               <Button variant="outline" size="sm" onClick={() => setSelectedItemId(null)}>닫기</Button>
             </header>
             <div className="p-[var(--filter-pad)]">
-              {extraDetail ? extraDetail.view : (
-                <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded border border-border bg-muted p-3 text-xs text-foreground">
-                  {JSON.stringify(selectedItem, null, 2)}
-                </pre>
-              )}
+              <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded border border-border bg-muted p-3 text-xs text-foreground">
+                {JSON.stringify(selectedItem, null, 2)}
+              </pre>
             </div>
           </section>
         )}
