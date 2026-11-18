@@ -1943,98 +1943,98 @@
             "job": "mutation-scope",
             "gradle": ":business-app:pitest",
             "classes": "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.comment.*",
-            "tests": "nuri.business.*"
+            "tests": "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.comment.*"
           },
           {
             "scope": "business-app-workflow",
             "job": "mutation-scope",
             "gradle": ":business-app:pitest",
             "classes": "nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.informalsanction.*",
-            "tests": "nuri.business.*"
+            "tests": "nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.informalsanction.*"
           },
           {
             "scope": "business-app-delivery-operation",
             "job": "mutation-scope",
             "gradle": ":business-app:pitest",
             "classes": "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.event.*,nuri.business.service.reward.*",
-            "tests": "nuri.business.*"
+            "tests": "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.event.*,nuri.business.service.reward.*"
           },
           {
             "scope": "business-core-file",
             "job": "mutation-scope",
             "gradle": ":business-core:pitest",
             "classes": "nuri.business.domain.file.*,nuri.business.service.file.*,nuri.business.service.code.*,nuri.business.domain.log.*,nuri.business.service.deptjob.*",
-            "tests": "nuri.business.*"
+            "tests": "nuri.business.service.file.*,nuri.business.service.code.*,nuri.business.domain.log.*,nuri.business.service.deptjob.*,nuri.business.service.log.SensitiveAuditServiceTest*"
           },
           {
             "scope": "business-app-survey",
             "job": "mutation-scope",
             "gradle": ":business-app:pitest",
             "classes": "nuri.business.service.survey.*",
-            "tests": "nuri.business.*"
+            "tests": "nuri.business.service.survey.*"
           },
           {
             "scope": "business-app-participation",
             "job": "mutation-scope",
             "gradle": ":business-app:pitest",
             "classes": "nuri.business.service.community.*,nuri.business.service.memoreport.*,nuri.business.service.schedule.*",
-            "tests": "nuri.business.*"
+            "tests": "nuri.business.service.community.*,nuri.business.service.memoreport.*,nuri.business.service.schedule.*"
           },
           {
             "scope": "business-core-user-org",
             "job": "mutation-scope",
             "gradle": ":business-core:pitest",
             "classes": "nuri.business.service.user.*,nuri.business.service.group.*,nuri.business.service.department.*,nuri.business.service.system.policy.*,nuri.business.service.system.user.*",
-            "tests": "nuri.business.*"
+            "tests": "nuri.business.service.user.*,nuri.business.service.group.*,nuri.business.service.department.*,nuri.business.service.system.policy.*,nuri.business.service.system.user.*"
           },
           {
             "scope": "business-app-home-promotion",
             "job": "mutation-scope",
             "gradle": ":business-app:pitest",
             "classes": "nuri.business.service.dashboard.*,nuri.business.service.promotion.*",
-            "tests": "nuri.business.*"
+            "tests": "nuri.business.service.dashboard.*,nuri.business.service.promotion.*"
           },
           {
             "scope": "business-core-observability",
             "job": "mutation-scope",
             "gradle": ":business-core:pitest",
             "classes": "nuri.business.service.log.*,nuri.business.service.stats.*,nuri.business.service.system.signal.*",
-            "tests": "nuri.business.*"
+            "tests": "nuri.business.service.log.*,nuri.business.service.stats.*,nuri.business.service.system.signal.*,nuri.business.service.code.CommonCodeUsageCatalogTest*"
           },
           {
             "scope": "foundation-security-filter",
             "job": "mutation-scope",
             "gradle": ":foundation:pitest",
             "classes": "nuri.foundation.security.filter.*",
-            "tests": "nuri.foundation.*"
+            "tests": "nuri.foundation.security.filter.*"
           },
           {
             "scope": "foundation-core-util",
             "job": "mutation-scope",
             "gradle": ":foundation:pitest",
             "classes": "nuri.foundation.core.util.*",
-            "tests": "nuri.foundation.*"
+            "tests": "nuri.foundation.core.util.*"
           },
           {
             "scope": "foundation-jwt",
             "job": "mutation-scope",
             "gradle": ":foundation:pitest",
             "classes": "nuri.foundation.security.jwt.*",
-            "tests": "nuri.foundation.*"
+            "tests": "nuri.foundation.security.jwt.*,nuri.foundation.security.mfa.MfaSessionEvidenceTest*"
           },
           {
             "scope": "foundation-client-ip",
             "job": "mutation-scope",
             "gradle": ":foundation:pitest",
             "classes": "nuri.foundation.security.net.*",
-            "tests": "nuri.foundation.*"
+            "tests": "nuri.foundation.security.net.*"
           },
           {
             "scope": "foundation-mfa",
             "job": "mutation-scope",
             "gradle": ":foundation:pitest",
             "classes": "nuri.foundation.security.mfa.*",
-            "tests": "nuri.foundation.*"
+            "tests": "nuri.foundation.security.mfa.*"
           },
           {
             "scope": "migration-transform-registry",
@@ -2097,28 +2097,28 @@
             "job": "mutation-scope",
             "gradle": ":business-core:pitest",
             "classes": "nuri.business.service.auth.*,nuri.business.service.login.*,nuri.business.security.util.*,nuri.business.service.menu.MenuService,nuri.business.service.menu.MenuStructurePlan,nuri.business.security.iam.EgovAuthenticationProvider,nuri.business.security.filter.RateLimitFilter",
-            "tests": "nuri.business.*"
+            "tests": "nuri.business.service.auth.*,nuri.business.service.login.*,nuri.business.security.util.*,nuri.business.service.menu.*,nuri.business.security.iam.*,nuri.business.security.filter.*"
           },
           {
             "scope": "business-core-code-user-common",
             "job": "mutation-scope",
             "gradle": ":business-core:pitest",
             "classes": "nuri.business.domain.code.*,nuri.business.domain.user.repository.*,nuri.business.domain.common.*",
-            "tests": "nuri.business.*"
+            "tests": "nuri.business.domain.code.*,nuri.business.domain.user.repository.*,nuri.business.domain.common.*,nuri.business.service.code.AdministCodeServiceTest*,nuri.business.service.code.CommonCodeChangeServiceTest*,nuri.business.service.code.CommonCodeServiceTest*"
           },
           {
             "scope": "business-app-knowledge-collab",
             "job": "mutation-scope",
             "gradle": ":business-app:pitest",
             "classes": "nuri.business.service.help.*,nuri.business.service.scrap.*,nuri.business.service.addressbook.*,nuri.business.service.report.*,nuri.business.service.template.*",
-            "tests": "nuri.business.*"
+            "tests": "nuri.business.service.help.*,nuri.business.service.scrap.*,nuri.business.service.addressbook.*,nuri.business.service.report.*,nuri.business.service.template.*"
           },
           {
             "scope": "business-app-cms",
             "job": "mutation-scope",
             "gradle": ":business-app:pitest",
             "classes": "nuri.business.service.cms.*",
-            "tests": "nuri.business.*"
+            "tests": "nuri.business.service.cms.*"
           }
         ]
       },
