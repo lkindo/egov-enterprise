@@ -104,6 +104,21 @@ class NoteServiceImplTest {
                 .containsExactlyInAnyOrder("rcv1", "rcv2");
         // 행 단위 조회로 되돌아가면(N+1) 이 단언이 잡는다.
         verify(noteRecptnRepository, never()).findByNoteDsptchNoteSndngSn(any());
+        verify(noteTrnsmitRepository, times(1)).searchNoteTrnsmits(eq(searchWrd), eq(userId), eq(pageable));
+    }
+
+    @Test
+    @DisplayName("보낸 쪽지가 없으면 수신자를 조회하지 않고 빈 페이지를 돌려준다")
+    void getSentNotesReturnsEmptyPageWithoutRecipientLookup() {
+        // 옛 NoteServiceTest 의 빈 발신함 사례를 옮겼다 — page.isEmpty() 의 조기 반환 분기(NoteService#getSentNotes)를 덮는다.
+        Pageable pageable = PageRequest.of(0, 10);
+        given(noteTrnsmitRepository.searchNoteTrnsmits(eq("word"), eq("user1"), eq(pageable))).willReturn(new PageImpl<>(List.of()));
+
+        Page<NoteDto> result = noteService.getSentNotes("user1", "word", pageable);
+
+        assertThat(result.getContent()).isEmpty();
+        verify(noteTrnsmitRepository, times(1)).searchNoteTrnsmits(eq("word"), eq("user1"), eq(pageable));
+        verify(noteRecptnRepository, never()).findByNoteDsptchNoteSndngSnInAndDelYn(any(), any());
     }
 
     @Test
@@ -180,6 +195,7 @@ class NoteServiceImplTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
+        verify(noteRecptnRepository, times(1)).searchNoteRecptns(eq(searchWrd), eq(userId), eq(pageable));
     }
 
     /**

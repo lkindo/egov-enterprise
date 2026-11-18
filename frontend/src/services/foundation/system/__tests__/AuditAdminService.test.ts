@@ -82,6 +82,15 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
 
   });
 
+  describe('연속 조회', () => {
+    it('두 페이지를 연속 조회하면 페이지마다 같은 경로로 GET 이 한 번씩만 나간다', async () => {
+      await auditAdminService.getAuditLogs({ page: 1 });
+      await auditAdminService.getAuditLogs({ page: 2 });
+
+      expect(client.get.mock.calls.map((call) => call[0])).toEqual([BASE, BASE]);
+    });
+  });
+
   describe('페이징 파라미터 전달(ADR-0036)', () => {
     it('첫 페이지(page 1)는 page 1 그대로 나간다 — 옛 이름·0 기반 변환이 되살아나면 red', async () => {
       await auditAdminService.getAuditLogs({ page: 1 });

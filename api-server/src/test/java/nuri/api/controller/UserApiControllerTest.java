@@ -184,10 +184,15 @@ public class UserApiControllerTest extends BaseControllerTest {
     @DisplayName("아이디 중복 확인 성공")
     void checkIdDplct() throws Exception {
         when(userService.checkIdDplct("testuser")).thenReturn(false);
+        when(userService.checkIdDplct("takenuser")).thenReturn(true);
 
         mockMvc.perform(get("/api/v1/users/check-id").param("userId", "testuser"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value(false));
+        // 이미 쓰는 ID 는 true — 컨트롤러가 늘 false 를 돌려도 위 단언만으로는 통과한다(옛 nuri/web 사례).
+        mockMvc.perform(get("/api/v1/users/check-id").param("userId", "takenuser"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(true));
     }
 
     @Test
@@ -242,8 +247,9 @@ public class UserApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("관리자: 특정 사용자 조회 성공")
     void getUser() throws Exception {
+        // 서비스는 경로 값으로 esntlId 도 찾으므로 응답의 userId 는 경로 값이 아니라 서비스가 돌려준 값이어야 한다.
         UserDto mockDto = UserDto.builder()
-                .userId("targetUser")
+                .userId("resolvedUser")
                 .userNm("홍길동")
                 .pswd("ValidPass123!")
                 .build();
@@ -251,7 +257,7 @@ public class UserApiControllerTest extends BaseControllerTest {
 
         mockMvc.perform(get("/api/v1/admin/system/users/targetUser"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.userId").value("targetUser"))
+                .andExpect(jsonPath("$.data.userId").value("resolvedUser"))
                 .andExpect(jsonPath("$.data.esntlId").doesNotExist())
                 .andExpect(jsonPath("$.data.emlAddr").doesNotExist());
     }
