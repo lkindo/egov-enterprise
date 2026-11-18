@@ -864,7 +864,6 @@ test('dashboard, notifications and optional address book blocks follow their dom
     ['frontend/src/extensions/generated-post-actions.ts', "postActions: readonly SlotContributions<'post-actions'>[] = [];"],
     ['frontend/src/extensions/generated-hub-tabs-collaboration.ts', "hubTabsCollaboration: readonly SlotContributions<'hub-tabs-collaboration'>[] = [];"],
     ['frontend/src/extensions/generated-hub-tabs-knowledge.ts', "hubTabsKnowledge: readonly SlotContributions<'hub-tabs-knowledge'>[] = [];"],
-    ['frontend/src/extensions/generated-hub-tabs-monitoring.ts', "hubTabsMonitoring: readonly SlotContributions<'hub-tabs-monitoring'>[] = [];"],
     ['frontend/src/extensions/generated-home-sections.ts', "homeSections: readonly SlotContributions<'home-sections'>[] = [];"],
   ]) {
     const shellRendered = projector.project(shellRegistry, readFileSync(join(root, shellRegistry), 'utf8')).source;
@@ -1001,8 +1000,8 @@ function contributedTabSources({ routes, tab }, candidates) {
 
 test('every source of a contributed hub tab leaves with the contribution in each selection that keeps the hub', () => {
   const tabs = contributedHubTabs();
-  // 원본에는 협업(쪽지·스크랩)·지식(커뮤니티)·감시(하네스) 허브가 기여 탭을 받는다. 모집단이 비면 시험이 vacuous 하다.
-  assert.deepEqual(tabs.map(row => row.tab).sort(), ['COMMUNITY', 'HARNESS', 'MESSAGES', 'SCRAPS']);
+  // 원본에는 협업(쪽지·스크랩)·지식(커뮤니티) 허브가 기여 탭을 받는다. 모집단이 비면 시험이 vacuous 하다.
+  assert.deepEqual(tabs.map(row => row.tab).sort(), ['COMMUNITY', 'MESSAGES', 'SCRAPS']);
   // 화면 코드만 본다 — e2e 시나리오는 기능별로 투영하지 않는다(생성물의 e2e 는 이 시험의 범위 밖이다).
   const sources = new Map(tabs.map(row => [row, {
     frontend: contributedTabSources(row, frontendFiles.filter(file => file.startsWith('frontend/src/') && isFrontendModuleFile(file))),

@@ -35,6 +35,8 @@ JUnit Platform launcher는 공통 `testRuntimeOnly`로 선언하고 `addJUnitPla
 
 `migration-tool`의 [모듈 설정](../../migration-tool/build.gradle)은 Gradle `test`와 PIT minion 모두에 `migration.drill.classpath`를 전달한다. [프로세스 복구 테스트](../../migration-tool/src/test/java/nuri/migration/EtlCrashRecoveryPostgresIntegrationTest.java)가 새 JVM을 시작할 때 이 classpath를 쓰므로 PostgreSQL/Docker가 필요하다. 자식 JVM 자체가 PIT로 계측되는 것은 아니며, 해당 프로세스 테스트는 종료·재개·중복 방지 계약을 검사하고 in-process 테스트가 mutation 탐지를 보완한다. 일반 classpath/JAR를 시작하는 MySQL·MariaDB·SQL Server·Oracle crash/packaged CLI 시험 8개는 transform 두 클래스와 validate·verify의 네 CI scope에서만 제외한다. ordinary `test`와 로컬 전체 PIT에는 남으며 광역 제외와 미등록 외부 프로세스 시험은 계약이 거부한다.
 
+제품 CI scope의 `targetTests`는 대상 클래스의 패키지 가운데 시험이 있는 것과, 그 밖에서 변이를 kill한 시험 클래스다([ADR-0061](decisions/ADR-0061-pit-selection-and-test-targets.md) 결정 2, main 44334776860 의 `killingTest`). 모듈 시험 전체를 돌던 커버리지 단계를 줄이고 변이 모집단·하한은 그대로다. 밖의 시험이 새로 kill하는 변이는 세지 않으므로 점수는 낮아지는 쪽으로만 움직인다 — 하한에 닿으면 그 시험을 대상에 더하고 하한을 내리지 않는다.
+
 이관 네 CI scope의 `targetTests`는 full-test PIT 보고서에서 실제 변이를 kill한 2~3개 테스트 클래스로 제한한다.
 이는 `targetClasses`나 변이 생성기를 줄이지 않는다. 로컬 비교에서 기존/정밀 실행의 변이 모집단은 registry 39,
 converter 35, validate 220, verify 162개로 같았다. 세 scope의 상태는 완전히 같았고 converter 한 건만

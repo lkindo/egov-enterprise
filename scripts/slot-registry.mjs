@@ -48,7 +48,6 @@ export const SLOT_REGISTRY_CONSUMERS = Object.freeze({
   // 허브 탭(허브 분해 H1~H3, GAP-SLOT-001): 허브마다 슬롯 하나, 소비자는 그 허브 셸 하나다.
   'hub-tabs-collaboration': ['frontend/src/app/admin/collaboration/CollaborationHubClient.tsx'],
   'hub-tabs-knowledge': ['frontend/src/app/admin/help/KnowledgeHubClient.tsx'],
-  'hub-tabs-monitoring': ['frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx'],
   // 머리글 알림 드로어(알림 기능 소유, 앱 틀)가 알림 카드의 바로 처리 단추를 그린다 — 결재 차례 알림의 [승인] 등.
   'notification-actions': ['frontend/src/app/components/ui/app-notification-drawer.tsx'],
   'post-actions': ['frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx'],
@@ -93,7 +92,6 @@ export const SLOT_CONSUMER_KINDS = Object.freeze({
   'home-sections': { 'frontend/src/app/UnifiedDashboardClient.tsx': SHELL, 'frontend/src/app/home-data-boundary.tsx': SHELL },
   'hub-tabs-collaboration': { 'frontend/src/app/admin/collaboration/CollaborationHubClient.tsx': SHELL },
   'hub-tabs-knowledge': { 'frontend/src/app/admin/help/KnowledgeHubClient.tsx': SHELL },
-  'hub-tabs-monitoring': { 'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx': SHELL },
   'notification-actions': { 'frontend/src/app/components/ui/app-notification-drawer.tsx': SHELL },
   'post-actions': { 'frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx': SHELL },
   'recipient-picker-sources': {

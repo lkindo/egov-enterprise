@@ -64,7 +64,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Classify changed paths (unknown means full pipeline except the vendor job)
+      - name: Classify changed paths (unknown means full pipeline except the vendor job and PIT)
         id: scope
         shell: bash
         env:
@@ -1675,24 +1675,27 @@ jobs:
         include:
           # GitHub starts matrix entries in declaration order. 선언 순서는 config/pit-duration-profile.json 의 범위별 job 시간
           # 중앙값이 긴 범위부터다(LPT). threshold 는 그 범위의 PIT 하한이다 — 거버넌스 계약이 gates.json 과 같은지 대조한다.
+          # tests 는 대상 클래스의 패키지 가운데 시험이 있는 것과 그 밖에서 변이를 잡은 시험 클래스다(ADR-0061 결정 2, 2026-11-19
+          # main 44334776860 의 killingTest 실측). 모듈 시험 전체를 돌던 커버리지 단계를 줄인다. 밖의 시험이 새로 잡는 변이는 세지
+          # 않으므로 점수는 낮아지는 쪽으로만 움직인다 — 하한에 닿으면 그 시험을 여기에 더한다(하한을 내리지 않는다).
           # 종전 단일 business-app 범위는 1,279 mutations, 14분 12초였다. 현재 report를
           # 겹침 없는 세 모집단으로 나누고 각 모집단에 75%를 따로 적용해 gate를 강화한다.
           - scope: business-app-board
             gradle: ":business-app:pitest"
             classes: "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.comment.*"
-            tests: "nuri.business.*"
+            tests: "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.comment.*"
             threshold: 86
 
           - scope: business-app-delivery-operation
             gradle: ":business-app:pitest"
             classes: "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.event.*,nuri.business.service.reward.*"
-            tests: "nuri.business.*"
+            tests: "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.event.*,nuri.business.service.reward.*"
             threshold: 75
 
           - scope: business-core-file
             gradle: ":business-core:pitest"
             classes: "nuri.business.domain.file.*,nuri.business.service.file.*,nuri.business.service.code.*,nuri.business.domain.log.*,nuri.business.service.deptjob.*"
-            tests: "nuri.business.*"
+            tests: "nuri.business.service.file.*,nuri.business.service.code.*,nuri.business.domain.log.*,nuri.business.service.deptjob.*,nuri.business.service.log.SensitiveAuditServiceTest*"
             threshold: 75
 
           # 도움말·스크랩(게시판 열람 권한 위임)·주소록(소유·버전 토큰)·업무보고(소유·첨부 정리)·템플릿 참조 차단 경계를 검증한다.
@@ -1700,13 +1703,13 @@ jobs:
           - scope: business-app-knowledge-collab
             gradle: ":business-app:pitest"
             classes: "nuri.business.service.help.*,nuri.business.service.scrap.*,nuri.business.service.addressbook.*,nuri.business.service.report.*,nuri.business.service.template.*"
-            tests: "nuri.business.*"
+            tests: "nuri.business.service.help.*,nuri.business.service.scrap.*,nuri.business.service.addressbook.*,nuri.business.service.report.*,nuri.business.service.template.*"
             threshold: 75
 
           - scope: business-app-workflow
             gradle: ":business-app:pitest"
             classes: "nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.informalsanction.*"
-            tests: "nuri.business.*"
+            tests: "nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.informalsanction.*"
             threshold: 80
 
           # [2026-10-20 DEC-OPS-373] 업무 홈 실시간 방송과 배너·팝업 — 게시 중 팝업만 사용자에게 열고, 버전 409·첨부 배정을 지킨다.
@@ -1714,21 +1717,21 @@ jobs:
           - scope: business-app-home-promotion
             gradle: ":business-app:pitest"
             classes: "nuri.business.service.dashboard.*,nuri.business.service.promotion.*"
-            tests: "nuri.business.*"
+            tests: "nuri.business.service.dashboard.*,nuri.business.service.promotion.*"
             threshold: 75
 
           # [2026-10-19 DEC-OPS-366] 커뮤니티 가입·회원·메모 보고 지시·일정의 소유·상태 판정.
           - scope: business-app-participation
             gradle: ":business-app:pitest"
             classes: "nuri.business.service.community.*,nuri.business.service.memoreport.*,nuri.business.service.schedule.*"
-            tests: "nuri.business.*"
+            tests: "nuri.business.service.community.*,nuri.business.service.memoreport.*,nuri.business.service.schedule.*"
             threshold: 75
 
           # 로그인 IP·시간 정책, refresh 회전, 감사·OTP와 인증 provider·요청 제한·메뉴 순환을 검증한다.
           - scope: business-core-auth
             gradle: ":business-core:pitest"
             classes: "nuri.business.service.auth.*,nuri.business.service.login.*,nuri.business.security.util.*,nuri.business.service.menu.MenuService,nuri.business.service.menu.MenuStructurePlan,nuri.business.security.iam.EgovAuthenticationProvider,nuri.business.security.filter.RateLimitFilter"
-            tests: "nuri.business.*"
+            tests: "nuri.business.service.auth.*,nuri.business.service.login.*,nuri.business.security.util.*,nuri.business.service.menu.*,nuri.business.security.iam.*,nuri.business.security.filter.*"
             threshold: 83
 
           # QueryDSL 조건 누락으로 전체 조회·계정 열거가 되는 회귀와 공용 paging 경계를 검증한다.
@@ -1736,14 +1739,14 @@ jobs:
           - scope: business-core-code-user-common
             gradle: ":business-core:pitest"
             classes: "nuri.business.domain.code.*,nuri.business.domain.user.repository.*,nuri.business.domain.common.*"
-            tests: "nuri.business.*"
+            tests: "nuri.business.domain.code.*,nuri.business.domain.user.repository.*,nuri.business.domain.common.*,nuri.business.service.code.AdministCodeServiceTest*,nuri.business.service.code.CommonCodeChangeServiceTest*,nuri.business.service.code.CommonCodeServiceTest*"
             threshold: 75
 
           # [2026-10-19 DEC-OPS-366] 설문 전체 — 제출자·중복·기간·문항/항목 소속과 응답 표시(SurveyResultService 를 배송·운영에서 옮겼다).
           - scope: business-app-survey
             gradle: ":business-app:pitest"
             classes: "nuri.business.service.survey.*"
-            tests: "nuri.business.*"
+            tests: "nuri.business.service.survey.*"
             threshold: 75
 
           # 콘텐츠 페이지(CMS) 문서 정규화·게시 상태 전이·홈 소개 지정·보관·파기 권한 및 감사를 검증한다.
@@ -1751,7 +1754,7 @@ jobs:
           - scope: business-app-cms
             gradle: ":business-app:pitest"
             classes: "nuri.business.service.cms.*"
-            tests: "nuri.business.*"
+            tests: "nuri.business.service.cms.*"
             threshold: 75
 
           # [2026-10-19 DEC-OPS-366] 사용자·그룹·부서·정책·부재 — 관리자 변경의 권한 재확인·보호 계정·토큰 폐기·감사.
@@ -1759,7 +1762,7 @@ jobs:
           - scope: business-core-user-org
             gradle: ":business-core:pitest"
             classes: "nuri.business.service.user.*,nuri.business.service.group.*,nuri.business.service.department.*,nuri.business.service.system.policy.*,nuri.business.service.system.user.*"
-            tests: "nuri.business.*"
+            tests: "nuri.business.service.user.*,nuri.business.service.group.*,nuri.business.service.department.*,nuri.business.service.system.policy.*,nuri.business.service.system.user.*"
             threshold: 75
 
           # [2026-10-20 DEC-OPS-373] 로그 조회·감사 원장·통계 시계열(기간 상한·빈 날 0 채우기)·관리자 운영 신호의 권한별 포함.
@@ -1767,7 +1770,7 @@ jobs:
           - scope: business-core-observability
             gradle: ":business-core:pitest"
             classes: "nuri.business.service.log.*,nuri.business.service.stats.*,nuri.business.service.system.signal.*"
-            tests: "nuri.business.*"
+            tests: "nuri.business.service.log.*,nuri.business.service.stats.*,nuri.business.service.system.signal.*,nuri.business.service.code.CommonCodeUsageCatalogTest*"
             threshold: 75
 
           # [2026-11-17] TOTP 대조·재사용(counter) 차단·복구 코드·MFA 키링 — 백엔드 헌법 제16조의 '보안' 핵심 경계인데 PIT 대상이 아니었다.
@@ -1775,35 +1778,35 @@ jobs:
           - scope: foundation-mfa
             gradle: ":foundation:pitest"
             classes: "nuri.foundation.security.mfa.*"
-            tests: "nuri.foundation.*"
+            tests: "nuri.foundation.security.mfa.*"
             threshold: 75
 
           # 상태변경 요청의 Origin/Referer 검증 우회를 탐지하는 보안 경계다.
           - scope: foundation-security-filter
             gradle: ":foundation:pitest"
             classes: "nuri.foundation.security.filter.*"
-            tests: "nuri.foundation.*"
+            tests: "nuri.foundation.security.filter.*"
             threshold: 75
 
           # refresh token 검증과 프론트가 대조하는 secret 지문 형식의 회귀를 탐지한다.
           - scope: foundation-jwt
             gradle: ":foundation:pitest"
             classes: "nuri.foundation.security.jwt.*"
-            tests: "nuri.foundation.*"
+            tests: "nuri.foundation.security.jwt.*,nuri.foundation.security.mfa.MfaSessionEvidenceTest*"
             threshold: 75
 
           # PII 마스킹과 고유 ID 재시도처럼 조용히 데이터 노출·PK 충돌을 만드는 공통 경계를 검증한다.
           - scope: foundation-core-util
             gradle: ":foundation:pitest"
             classes: "nuri.foundation.core.util.*"
-            tests: "nuri.foundation.*"
+            tests: "nuri.foundation.core.util.*"
             threshold: 75
 
           # 레이트리밋·로그인 제한·감사 로그가 공유하는 client IP와 신뢰 XFF 경계를 검증한다.
           - scope: foundation-client-ip
             gradle: ":foundation:pitest"
             classes: "nuri.foundation.security.net.*"
-            tests: "nuri.foundation.*"
+            tests: "nuri.foundation.security.net.*"
             threshold: 75
 
     steps:

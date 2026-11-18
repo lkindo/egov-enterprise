@@ -83,9 +83,9 @@ CI 에서만 붉어지지 않도록, 한 범위를 CI 와 같은 하한으로 �
 그대로 넘긴다. 하한을 빼면 build.gradle 이 헌법 하한 75 로 돌아가 큰 범위의 판정이 CI 보다 느슨해진다.
 
 ```powershell
-# 예: business-app-board(2026-10-29 값) — 범위의 값은 ci.yml 의 그 matrix 항목이 정본이니 돌리기 전에 거기서 복사한다
+# 예: business-app-board(2026-11-19 값, ADR-0061 결정 2 로 tests 를 좁혔다) — 범위의 값은 ci.yml 의 그 matrix 항목이 정본이니 돌리기 전에 거기서 복사한다
 $env:PIT_TARGET_CLASSES = 'nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.comment.*'
-$env:PIT_TARGET_TESTS = 'nuri.business.*'
+$env:PIT_TARGET_TESTS = 'nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.comment.*'
 $env:STRICT_MUTATION = 'true'
 $env:PIT_MUTATION_THRESHOLD = '86'
 ./gradlew :business-app:pitest --warning-mode fail --console=plain
@@ -144,7 +144,7 @@ profile을 함께 실행한다. reusable source는 `!cancelled()`와 분류 성�
 frontend 실패·skip에서도 선택된 검증을 실행한다. `secret-scan`은 `always()`를 유지한다. 검사 모집단·
 required context·실패 판정은 바뀌지 않는다.
 
-PR과 **main/master push는 같은 영향 분류**를 적용한다. PR은 base/head, push는 이전/현재 SHA를 비교하며 수동 실행·비교 기준 부재·미지 또는 빈 변경은 전수로 돌아간다. 다만 미지 경로는 `reusable-vendor` 를 켜지 않는다. 재사용 profile의 layout 수만 이벤트로 나뉜다(PR 한 layout, 그 밖 두 layout). 따라서 문서 전용 fast path는 기본 브랜치에도 적용된다. 전수 로컬 `localGate`·`jacocoRootCoverageVerification`은 유지하며, 릴리스는 대상 커밋의 required 성공과 릴리스 고유 증거를 확인한다. 주간 취약점 감사·부하·DR 검증은 각각의 별도 워크플로우와 격리 환경에서 실행한다.
+PR과 **main/master push는 같은 영향 분류**를 적용한다. PR은 base/head, push는 이전/현재 SHA를 비교하며 수동 실행·비교 기준 부재·미지 또는 빈 변경은 전수로 돌아간다. 다만 미지 경로는 `reusable-vendor` 를 켜지 않고, 두 PIT(`mutation-scope`·`mutation-scope-migration`)는 PIT 가 읽는 미지 경로만 켠다 — Gradle 구성·컴파일·체크아웃 입력(`lombok.config`·`gradlew`·`buildSrc`·`*.gradle.kts`·`.gitattributes`·벤더 시험 원장), PIT 를 고르고 집계하는 코드(분류기와 그 import·`aggregate-required-check.mjs`), 이관 PIT 의 `db_columns.json`, `ci.yml` 의 머리와 PIT 를 고르고·돌리고·집계하는 잡(그 부분이 YAML 별칭을 쓰면 워크플로 전체)이다. 비교 범위가 없거나 정책 파일(AGENTS·SOP·헌법)이 바뀌면 PIT 도 전수다. 운영 계약의 PIT 입력 census 가 그 목록을 지킨다([ADR-0061](../02-architecture/decisions/ADR-0061-pit-selection-and-test-targets.md) 결정 1). 재사용 profile의 layout 수만 이벤트로 나뉜다(PR 한 layout, 그 밖 두 layout). 따라서 문서 전용 fast path는 기본 브랜치에도 적용된다. 전수 로컬 `localGate`·`jacocoRootCoverageVerification`은 유지하며, 릴리스는 대상 커밋의 required 성공과 릴리스 고유 증거를 확인한다. 주간 취약점 감사·부하·DR 검증은 각각의 별도 워크플로우와 격리 환경에서 실행한다.
 
 [PR #699](https://github.com/lkindo/egov-enterprise/pull/699)의 [Linux run 35579358480](https://github.com/lkindo/egov-enterprise/actions/runs/35579358480)에서 E2E 본 테스트 135개와 VRT가 통과했다. 두 shard의 Playwright wall time은 135.458/155.931초, GitHub E2E step은 150/171초, job은 623/454초다. workflow 생성부터 `e2e-test` required 완료까지는 695초(11분 35초)로, [이전 전체 PR 35558688331](https://github.com/lkindo/egov-enterprise/actions/runs/35558688331)의 1,984초(33분 4초)보다 짧았다. 상류 잡 대기·runner 배정·준비를 포함한 두 실행의 관측 비교이며 본 테스트 자체나 전체 CI가 같은 비율로 단축됐다는 뜻은 아니다. 최종 커밋의 required 결과와 전체 소요시간 비교는 [PR #699 검증 기록](https://github.com/lkindo/egov-enterprise/pull/699)이 정본이다. [측정 근거와 한계](../02-architecture/testing-process-redesign.md#9-측정유지와-다음-판단)에 표적 PIT 검사와 전체 범위의 차이도 기록한다.
 

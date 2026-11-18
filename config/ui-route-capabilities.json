@@ -3453,7 +3453,6 @@
         "refresh",
         "scan",
         "search",
-        "select-sample-item",
         "view-detail",
         "view-list",
         "view-status"
@@ -3498,7 +3497,6 @@
             "refresh",
             "scan",
             "search",
-            "select-sample-item",
             "view-detail",
             "view-list",
             "view-status"
@@ -3508,7 +3506,7 @@
           "visibleLabel": "시스템 로그(감사 보기)",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E1",
+          "evidenceLevel": "E3",
           "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
@@ -4283,7 +4281,6 @@
         "refresh",
         "scan",
         "search",
-        "select-sample-item",
         "view-detail",
         "view-list",
         "view-status"
@@ -4328,7 +4325,6 @@
             "refresh",
             "scan",
             "search",
-            "select-sample-item",
             "view-detail",
             "view-list",
             "view-status"
@@ -4338,7 +4334,7 @@
           "visibleLabel": "시스템 로그(감사 보기)",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E1",
+          "evidenceLevel": "E3",
           "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
@@ -6695,7 +6691,6 @@
         "refresh",
         "scan",
         "search",
-        "select-sample-item",
         "view-detail",
         "view-list",
         "view-status"
@@ -6740,7 +6735,6 @@
             "refresh",
             "scan",
             "search",
-            "select-sample-item",
             "view-detail",
             "view-list",
             "view-status"
@@ -6750,7 +6744,7 @@
           "visibleLabel": "시스템 로그(감사 보기)",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E1",
+          "evidenceLevel": "E3",
           "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
@@ -9151,7 +9145,6 @@
         "refresh",
         "scan",
         "search",
-        "select-sample-item",
         "view-detail",
         "view-list",
         "view-status"
@@ -9196,7 +9189,6 @@
             "refresh",
             "scan",
             "search",
-            "select-sample-item",
             "view-detail",
             "view-list",
             "view-status"
@@ -9206,7 +9198,7 @@
           "visibleLabel": "시스템 로그(감사 보기)",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E1",
+          "evidenceLevel": "E3",
           "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
@@ -9240,7 +9232,6 @@
         "refresh",
         "scan",
         "search",
-        "select-sample-item",
         "view-detail",
         "view-list",
         "view-status"
@@ -9328,26 +9319,6 @@
             "frontend/src/app/admin/system/monitoring/hub/page.tsx",
             "frontend/src/services/foundation/system/AttachmentIntegrityService.ts",
             "frontend/src/services/foundation/system/MonitoringAdminService.ts"
-          ]
-        },
-        {
-          "id": "monitoring.sample-widgets",
-          "status": "demo",
-          "dataSource": "static-mock",
-          "actions": [
-            "select-sample-item"
-          ],
-          "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "하네스 아틀라스 · 추세·다차원 상태(미연동)",
-          "primaryTask": false,
-          "decisionSafe": false,
-          "evidenceLevel": "E1",
-          "lastVerifiedAt": "2026-11-09",
-          "owner": "product/UX + domain owner",
-          "evidence": [
-            "frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx",
-            "frontend/src/extensions/showcase/hub-tabs-monitoring.ts"
           ]
         }
       ],
