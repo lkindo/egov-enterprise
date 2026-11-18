@@ -1,14 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  DEFAULT_HEADER, HARNESS_SCAN_ROOTS, MANIFEST_PATH, MINIMUM_GATE_SOURCES, REGISTERED_ABSENT_PREFIX, UNREGISTERED_CLASS_PREFIX,
-  computeHarnessBaselineEntries, diffHarnessBaseline, formatHarnessBaselineDiff, main as manifestTool, manifestHeader, parseManifest,
-  renderHarnessBaselineManifest,
+  HARNESS_SCAN_ROOTS, MANIFEST_PATH, MINIMUM_GATE_SOURCES, ORIGINAL_CHECKED, REGISTERED_ABSENT_PREFIX, REUSABLE_LOCK_PATH,
+  UNREGISTERED_CLASS_PREFIX, computeHarnessBaselineEntries, diffHarnessBaseline, formatHarnessBaselineDiff, main as manifestTool,
 } from './harness-baseline-manifest.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -18,42 +17,35 @@ const META_GATE_SOURCE = 'api-server/src/test/java/nuri/api/harness/HarnessBasel
 /**
  * 하네스 기준선 매니페스트의 계산은 scripts/harness-baseline-manifest.mjs 하나다(2026-10-19 — 그 전에는 메타 게이트(Java)와 재사용 투영
  * 생성기(node)가 같은 계산을 따로 구현하고 이 파일이 거울로 맞췄다 — 파일 이름은 그때 것이고, 결정 보관본이 이 경로를 가리켜 그대로 둔다).
- * 메타 게이트 HarnessBaselineIntegrityTest 는 그 도구의 `--check` 를 실행하고, 생성기는 그 계산으로 생성물의 매니페스트를 쓴다.
  *
- * 이 계약은 같은 대조를 **늘 도는 경로**에서 한다 — 운영 계약은 CI 의 무조건 잡과 pre-push 에서 돌고, 메타 게이트는 backend 축이 켜질 때와
- * 생성물 하네스에서 돈다. 저장소 자신에 대해 계산값이 커밋된 매니페스트와 정확히 같아야 한다. 소스를 바꾸고 매니페스트를 다시 쓰지
- * 않았으면 여기서 red 다 — `node scripts/harness-baseline-manifest.mjs --write`(또는 `npm run regen`)로 다시 쓰고 바뀐 키가 모두 정당한지
- * 본다. 병합에서 같은 키가 충돌했으면 `--keys <키…>` 로 그 키의 계산값만 보고 그 값만 옮긴다(오케스트레이션 프로토콜 §6.4).
+ * [2026-11-18 DEC-OPS-420] 매니페스트는 재사용 생성물에만 둔다. 생성기가 생성물마다 계산해 쓰고, 생성물 하네스의 메타 게이트
+ * HarnessBaselineIntegrityTest 가 `--check` 로 대조하며, 도입자 등록(ADR-0057)이 원본 규칙·예외·임계값이 그대로인지 이 계산으로 본다.
+ * 원본 저장소에서는 `--check` 가 매니페스트가 없음을 확인할 뿐이다. 이 계약은 원본의 그 동작과, 고정물 트리로 계산의 정의·검사 동작을 본다.
  */
 let computed;
 const computedEntries = () => (computed ??= computeHarnessBaselineEntries(ROOT, { minimumGateSources: MINIMUM_GATE_SOURCES }));
 
-test('the committed manifest equals the census computed from this repository, and the meta gate reads the completion line', () => {
-  const expected = parseManifest(readFileSync(MANIFEST, 'utf8'));
-  assert.ok(expected.size > 300, `커밋된 매니페스트가 비정상적으로 작다(${expected.size}) — 이 계약이 vacuous 해진다`);
+test('the original repository carries no manifest, and the meta gate accepts the tool\'s original completion line', () => {
+  assert.equal(existsSync(MANIFEST), false, `${MANIFEST_PATH} 가 원본 저장소에 있다 — 원본은 매니페스트를 두지 않는다(DEC-OPS-420)`);
+  assert.equal(existsSync(join(ROOT, REUSABLE_LOCK_PATH)), false, '원본 저장소에 생성 잠금이 있으면 생성물로 오인한다');
+  // 계산 자체는 원본에서도 돈다 — 생성기·도입자 등록이 같은 계산을 쓰므로 스캔이 조용히 붕괴하지 않았는지 본다.
   assert.ok(computedEntries().size > 300, `계산이 비정상적으로 작다(${computedEntries().size}) — 스캔이 조용히 붕괴했을 수 있다`);
 
   const out = [];
-  const code = manifestTool(['--check'], { compute: () => computedEntries(), log: line => out.push(line), error: line => out.push(line) });
-  assert.equal(code, 0, `\n${out.join('\n')}\n\n조치: 정당한 변경이면 node scripts/harness-baseline-manifest.mjs --write(또는 npm run regen)로 다시 쓰고`
-    + ' 바뀐 키가 모두 정당한지 본다. 병합에서 같은 키가 충돌했으면 --keys <키…> 로 그 키의 계산값만 옮긴다(§6.4).\n');
-  // 메타 게이트는 종료 코드와 함께 이 완료 문장을 요구한다 — 문장을 바꾸면 그 게이트가 통과할 수 없다.
-  const checked = readFileSync(join(ROOT, META_GATE_SOURCE), 'utf8').match(/static final String CHECKED = "([^"]+)";/)?.[1];
-  assert.ok(checked, `${META_GATE_SOURCE} 의 완료 문장 상수(CHECKED)를 찾지 못했다`);
-  assert.ok(out.join('\n').includes(checked), `도구의 완료 문장이 메타 게이트가 찾는 "${checked}" 를 담지 않는다:\n${out.join('\n')}`);
-});
-
-test('the manifest tool writes exactly the committed bytes for this repository', () => {
-  assert.deepEqual(manifestHeader(undefined), [...DEFAULT_HEADER], '매니페스트가 없을 때는 기본 머리 주석으로 쓴다');
-  // 로컬 체크아웃은 core.autocrlf 로 CRLF 일 수 있다. 커밋되는 내용(LF)과 같은지를 본다 — CI 체크아웃은 그대로 LF 다.
-  const committed = readFileSync(MANIFEST, 'utf8').replaceAll('\r\n', '\n');
-  const rendered = renderHarnessBaselineManifest(computedEntries(), manifestHeader(committed));
-  if (rendered === committed) return;
-  const [left, right] = [rendered.split('\n'), committed.split('\n')];
-  const at = left.findIndex((line, index) => line !== right[index]);
-  assert.fail(`도구가 쓰는 매니페스트가 커밋본과 다르다(첫 차이 ${at + 1}행).\n`
-    + `  도구: ${JSON.stringify(left[at]?.slice(0, 160))}\n  커밋: ${JSON.stringify(right[at]?.slice(0, 160))}\n`
-    + '키 값이 다르면 위 시험의 조치를 따르고, 값이 같은데 순서·머리 주석·줄 끝만 다르면 도구의 쓰기 형식이 커밋본에서 벗어난 것이다.');
+  const code = manifestTool(['--check'], { log: line => out.push(line), error: line => out.push(line) });
+  assert.equal(code, 0, out.join('\n'));
+  assert.ok(out.join('\n').includes(ORIGINAL_CHECKED), out.join('\n'));
+  for (const mode of [['--write'], ['--keys', 'x']]) {
+    const refused = [];
+    assert.equal(manifestTool(mode, { log: line => refused.push(line), error: line => refused.push(line) }), 2, JSON.stringify(mode));
+    assert.equal(existsSync(MANIFEST), false, `${mode[0]} 가 원본에 매니페스트를 썼다`);
+  }
+  // 메타 게이트는 종료 코드와 함께 두 완료 문장 가운데 하나를 요구한다 — 문장을 바꾸면 그 게이트가 통과할 수 없다.
+  const gate = readFileSync(join(ROOT, META_GATE_SOURCE), 'utf8');
+  for (const name of ['CHECKED', 'ORIGINAL_CHECKED']) {
+    assert.ok(gate.match(new RegExp(`static final String ${name} = "([^"]+)";`)), `${META_GATE_SOURCE} 의 완료 문장 상수(${name})를 찾지 못했다`);
+  }
+  assert.equal(gate.match(/static final String ORIGINAL_CHECKED = "([^"]+)";/)[1], ORIGINAL_CHECKED, '메타 게이트와 도구의 원본 완료 문장이 다르다');
 });
 
 test('the census freezes its own definition and the meta gate that runs it', () => {
@@ -75,6 +67,8 @@ test('the manifest tool checks drift, shows conflicted keys without writing, and
   });
   const file = join(root, MANIFEST_PATH);
   mkdirSync(dirname(file), { recursive: true });
+  // 생성 잠금이 있는 트리만 생성물이다 — 매니페스트를 대조·기록한다(DEC-OPS-420).
+  writeFileSync(join(root, REUSABLE_LOCK_PATH), '{}\n');
   const scanRoot = 'api-server/src/test/java';
   const committed = ['# 머리 1', '# 머리 2', `${UNREGISTERED_CLASS_PREFIX}api-server/A=${scanRoot}`, `${UNREGISTERED_CLASS_PREFIX}api-server/B=${scanRoot}`,
     '__registry.config/governance/gates.json=111111111111', 'api-server/A.X=1:aaaaaaaaaaaa', ''].join('\n');
@@ -146,6 +140,19 @@ test('the manifest tool checks drift, shows conflicted keys without writing, and
   assert.equal(readFileSync(file, 'utf8'), checkedOut, 'a manifest that differs only in line endings is left alone');
 
   for (const argv of [[], ['--check', '--write'], ['--keys']]) assert.equal(run(...argv).code, 2, JSON.stringify(argv));
+
+  // 생성 잠금이 없으면 원본이다 — 남은 매니페스트는 붉고, 지우면 원본 완료 문장으로 통과하며, 쓰기·키 보기는 거부한다.
+  rmSync(join(root, REUSABLE_LOCK_PATH));
+  const stray = run('--check');
+  assert.equal(stray.code, 1);
+  assert.match(stray.out, /원본 저장소에 있다/);
+  rmSync(file);
+  const original = run('--check');
+  assert.equal(original.code, 0);
+  assert.ok(original.out.includes(ORIGINAL_CHECKED), original.out);
+  assert.equal(run('--write').code, 2);
+  assert.equal(existsSync(file), false, 'the original repository never gets a manifest written');
+  assert.equal(run('--keys', 'api-server/A.X').code, 2);
 });
 
 /*

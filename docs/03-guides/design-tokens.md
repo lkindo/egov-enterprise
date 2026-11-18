@@ -109,42 +109,24 @@
 - 다크 서피스 위 투명 오버레이와 중첩 표면
 - 토큰이 아직 표현하지 못하는 파스텔 tint나 구조적 색 단계
 
-예외는 아래 exact baseline 게이트에 동결된다. 기본 방향은 리터럴 감소이며, 감소한 변경은 같은 변경에서 baseline을 낮춘다. 신규 예외 때문에 baseline을 올릴 때는 토큰으로 표현할 수 없는 이유와 시각 검증을 함께 제시한다.
+예외는 그 줄 바로 위의 동결 표지 `palette-frozen:` 으로 남는다(아래 4.1). 기본 방향은 리터럴 감소이며, 고친 클래스는 같은 변경에서 표지에서 지운다. 신규 예외를 둘 때는 토큰으로 표현할 수 없는 이유와 시각 검증을 함께 제시한다.
 
 ### 4.1 하드코딩 차단 게이트
 
-색 부채는 **exact-match 양방향 베이스라인 2종**이 담당한다. 둘의 합집합이 Tailwind 전 팔레트다.
+팔레트 원색은 `eslint.config.mjs`의 `local-theme/enforce-design-tokens` 하나가 막는다(2026-11-18 DEC-OPS-420 — 종전 vitest 가드 두 개의 파일별 동결표를 이 규칙으로 합쳤다). 규칙은 `error` 이고 게이트 원장 `QUALITY-FRONTEND-DESIGN-TOKEN-SEVERITY` 가 그 심각도를 고정한다.
 
-| 게이트 | 커버 계열 | 실행 경로 |
-|---|---|---|
-| [`hardcoded-color-guard.test.ts`](../../frontend/src/__tests__/hardcoded-color-guard.test.ts) | 중립(slate·gray·zinc·neutral·stone) + 브랜드(blue·indigo·sky·violet·purple·cyan·teal·fuchsia) | pre-push(`vitest run src/__tests__`) · CI(`pnpm test`) |
-| [`status-color-guard.test.ts`](../../frontend/src/__tests__/status-color-guard.test.ts) | status(red·green·emerald·rose·amber·orange·yellow·lime·pink) | 동일 |
-
-현재 baseline 값은 각 테스트 소스에서 확인한다. 문서에 복제한 수치를 완화 근거로 사용하지 않는다.
-
-- **양방향 래칫**: 증가뿐 아니라 감소 후 baseline 미갱신도 실패한다. 개선분을 다음 변경의 여유분으로 남기지 않는다.
-- **치환 지침**: green·emerald → `success`, amber·yellow·orange → `warning`, red·rose → `destructive`(강조는 `-emphasis`), 정보성 blue → `info`(기존 가드 소관).
-
-#### ESLint 규칙과의 경계
-
-`eslint.config.mjs`의 `local-theme/enforce-design-tokens`는 `error` 규칙이다(2026-11-10, 게이트 원장 `QUALITY-FRONTEND-DESIGN-TOKEN-SEVERITY` 의 기준도 `error`). 잡은 위반은 한 건이라도 lint 를 실패시킨다. 현재 구현은 JSX의 정적 `className` 문자열과 template literal의 정적 조각에서 다음 항목만 찾는다.
-
-- `bg|text|border|ring` + `red|blue|green|yellow|orange|purple|pink|indigo|teal` + `100`~`900`
-- 투명도 접미사가 없는 불투명 `bg-white` (`bg-white/80` 등은 제외)
-
-동적 클래스 조합(`cn(...)`·다른 prop 으로 넘긴 색), 위 목록 밖의 utility·variant·팔레트는 이 규칙만으로 증명할 수 없다. 그래서 `lint`가 종료 코드 0을 반환했다고 해서 색상 계약이 통과한 것은 아니다. 전 팔레트 회귀의 하드 차단은 위 두 exact-match Vitest 래칫이 소유한다.
+- **범위**: 화면을 그리는 생산 소스(`.tsx`·`.jsx`, 시험 제외)의 모든 문자열과 정규식 — className 리터럴뿐 아니라 `cn(...)`·cva 변형·조건식·템플릿 문자열. 주석은 보지 않는다.
+- **팔레트**: 상태(red·green·emerald·rose·amber·orange·yellow·lime·pink)와 중립·브랜드 액센트(slate·gray·zinc·neutral·stone·blue·indigo·sky·violet·purple·cyan·teal·fuchsia) 전부, utility 는 `text·bg·border·ring·divide·from·to·via·placeholder·fill·stroke·shadow·ring-offset·caret·outline·decoration·accent`, 투명도 접미사 포함. 투명도 접미사가 없는 불투명 `bg-white` 도 같은 규칙이 잡는다.
+- **남은 동결분**: 그 줄 바로 위의 동결 표지 `// palette-frozen: <클래스…> -- <사유>`(JSX 자식 자리에서는 `{/* … */}`)다. 표지는 그 줄에서 나열한 클래스와 개수만 푼다 — 같은 줄에 새 원색을 더하면 붉고, 고쳐서 사라진 클래스가 표지에 남아도 붉다(종전 동결표의 양방향 래칫과 같다). 표지는 팔레트만 풀며 불투명 `bg-white` 검사는 그대로다. 이 규칙을 `eslint-disable` 주석으로 끄지 않는다 — 규칙 시험이 생산 소스에서 막는다.
+- **치환 지침**: green·emerald → `success`, amber·yellow·orange → `warning`, red·rose → `destructive`(강조는 `-emphasis`), 정보성 blue → `info`, 분류 표식은 `hub-*`.
 
 ```bash
-# 빠른 피드백(정적 className 위반은 오류로 막는다)
 pnpm -C frontend run lint
-
-# 팔레트 리터럴 하드 차단 계약
-pnpm -C frontend exec vitest run \
-  src/__tests__/hardcoded-color-guard.test.ts \
-  src/__tests__/status-color-guard.test.ts
+# 규칙 자체의 동작(잡는 형태·동결 표지)
+pnpm -C frontend exec vitest run src/__tests__/eslint-palette-color.test.ts
 ```
 
-래칫 실패는 기본적으로 리터럴을 시맨틱 토큰으로 치환해 해결한다. 감소했다면 같은 변경에서 baseline을 현재 실측값으로 낮추고, 신규 예외로 baseline을 올려야 한다면 토큰으로 표현할 수 없는 이유와 라이트·다크 시각 증거를 리뷰에 남긴다.
+새 동결 표지는 기본적으로 받지 않는다 — 리터럴을 시맨틱 토큰으로 치환해 해결한다. 데이터 시각화처럼 토큰으로 표현할 수 없으면 그 이유를 표지의 사유와 리뷰에 남기고 라이트·다크 시각 증거를 함께 둔다.
 
 > **원칙**: 정적 검증(`tsc`/`next build`)은 통과해도 **색·다크모드 시각 회귀는 잡지 못한다**. 대규모 색 변경 후에는 반드시 라이트/다크 **육안 검증**을 병행한다(프론트 헌법 제6조). 변경 화면은 지원 브랜드 프로필×색상 모드와 forced-colors/high-contrast·reduced-motion 조건에서 브라우저로 확인하며, 시각 결과를 확인하지 않은 작업을 “검증 완료”라고 기록하지 않는다.
 

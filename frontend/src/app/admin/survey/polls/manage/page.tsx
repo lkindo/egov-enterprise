@@ -16,6 +16,7 @@ export default function SurveyPollsManagePage() {
         breadcrumbs={[{ label: '설문조사' }, { label: '여론조사 관리' }]}
       />
       <div className="p-20 text-center bg-card rounded-lg border-2 border-dashed border-border flex flex-col items-center gap-6">
+        {/* palette-frozen: bg-amber-50 text-amber-300 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420) */}
         <div className="w-20 h-11 bg-amber-50 rounded-lg flex items-center justify-center text-amber-300">
             <Vote size={40} />
         </div>

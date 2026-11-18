@@ -1,12 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 import { validateUrlStateApproval } from './ui-url-state-approval-contract.mjs';
-import { APPROVAL_UNBOUND_CENSUS_FIELDS, approvalCensusSha256 } from './ui-url-state-approval-binding.mjs';
 
 import {
   approvedStateItemSelectors,
@@ -82,17 +80,6 @@ function sourceFiles(directory) {
   });
 }
 
-/** 생성물은 LF, Windows 체크아웃은 CRLF 일 수 있다. 정본을 LF 로 정규화해 해시한다. */
-function canonicalSha256(text) {
-  return createHash('sha256').update(text.replace(/\r\n?/gu, '\n'), 'utf8').digest('hex');
-}
-
-/** 결속 함수와 따로 계산한 기대값 — 개수뿐인 summary 만 뺀 census 본문. */
-function boundCensusSha256(source) {
-  const bound = Object.fromEntries(Object.entries(source).filter(([key]) => key !== 'summary'));
-  return canonicalSha256(`${JSON.stringify(bound, null, 2)}\n`);
-}
-
 function stateItemCounts(source) {
   const counts = new Map();
   for (const record of source.records ?? []) {
@@ -151,32 +138,21 @@ test('오버레이는 선언된 JSON Schema를 실제로 통과한다', () => {
   );
 });
 
-test('class registry는 census 특정 버전에 결속되고 search 결정은 class가 소유한다', () => {
+test('class registry는 census 를 가리키고 search 결정은 class가 소유한다', () => {
   assert.equal(overlay.schemaVersion, 1);
   assert.equal(overlay.state, 'class-governed');
   assert.equal(overlay.authority, 'non-normative-url-state-class-registry');
   assert.equal(Object.hasOwn(overlay, 'decisionRef'), false, 'ADR-0009가 검색어 외 기존 승인까지 소유하면 안 된다');
   assert.equal(overlay.schemaRef, 'config/ui-url-state-approval.schema.json');
-  assert.equal(overlay.manifestRef.path, 'config/ui-url-state-census.json');
-
-  assert.equal(
-    overlay.manifestRef.sha256,
-    boundCensusSha256(census),
-    'census 의 record·부정 사례·흐름이 바뀌었다면 오버레이의 판단도 다시 확인해야 한다 — 해시를 갱신하기 전에 분류가 여전히 맞는지 보라',
-  );
-  assert.equal(approvalCensusSha256(census), boundCensusSha256(census), '생성기·계약·병합 도구가 쓰는 결속 함수가 같은 범위를 해시해야 한다');
+  assert.deepEqual(overlay.manifestRef, { path: 'config/ui-url-state-census.json' },
+    'census 전체 해시 결속은 걷었다(DEC-OPS-420) — 승인 경계는 class 의 selector.recordIds 다');
+  for (const cls of overlay.classes.filter((row) => row.reviewState === 'approved')) {
+    assert.ok(Array.isArray(cls.selector.recordIds) && cls.selector.recordIds.length > 0,
+      `${cls.classId}: 승인 부류는 사람이 고른 기록 ID 를 가져야 한다 — 이름만으로 고르면 새 기록까지 조용히 넓힌다`);
+  }
 });
 
-test('승인 해시는 개수뿐인 summary 만 빼고 record·부정 사례·흐름·범위를 결속한다', () => {
-  assert.deepEqual(APPROVAL_UNBOUND_CENSUS_FIELDS, ['summary']);
-  // summary 의 잎이 모두 개수여야 결속에서 빼도 승인 판정이 읽는 사실이 빠지지 않는다.
-  const leaves = [];
-  (function walk(value) {
-    if (value !== null && typeof value === 'object') Object.values(value).forEach(walk);
-    else leaves.push(value);
-  })(census.summary);
-  assert.ok(leaves.length > 0 && leaves.every(Number.isInteger), 'summary 에 개수가 아닌 값이 생기면 결속 범위를 다시 정해야 한다');
-
+test('승인은 기록 ID 고정이다 — 개수 변경은 승인을 건드리지 않고, 키 변경·고정된 기록의 소멸은 붉다', () => {
   const approvedClasses = overlay.classes.filter((row) => row.reviewState === 'approved').length;
   assert.deepEqual(validateUrlStateApproval(overlay, census, schema), []);
 
@@ -187,17 +163,25 @@ test('승인 해시는 개수뿐인 summary 만 빼고 record·부정 사례·�
   assert.deepEqual(validateUrlStateApproval(overlay, counters, schema), [], '개수만 바뀐 census 는 같은 승인으로 열려야 한다');
   assert.equal(approvedStateItemSelectors(overlay, counters).length, approvedClasses);
 
-  // 쿼리 키·record 모집단이 바뀌면 다시 묶기 전까지 승인 계약과 matcher 가 붉다.
+  // 쿼리 키가 바뀌면 그 이름은 어느 부류에도 없다 — 분류가 빠졌다고 붉고 그 키는 승인되지 않는다.
   const renamedKey = structuredClone(census);
   const stateful = renamedKey.records.find((record) => record.stateItems.length > 0);
-  stateful.stateItems[0].name = `${stateful.stateItems[0].name}Renamed`;
+  const renamed = `${stateful.stateItems[0].name}Renamed`;
+  stateful.stateItems[0].name = renamed;
+  assert.match(validateUrlStateApproval(overlay, renamedKey, schema).join('\n'), /state item has no classification/);
+  assert.equal(isUrlStateItemApproved(stateful, stateful.stateItems[0], approvedStateItemSelectors(overlay, renamedKey)), false);
+
+  // 승인 부류가 고정한 기록이 사라지면(관측이 바뀌면 기록 ID 가 바뀐다) 다시 고를 때까지 승인 계약과 matcher 가 붉다.
+  const pinned = new Set(overlay.classes.filter((row) => row.reviewState === 'approved').flatMap((row) => row.selector.recordIds));
   const removedRecord = structuredClone(census);
-  removedRecord.records.pop();
-  for (const [reason, changed] of [['query key renamed', renamedKey], ['record removed', removedRecord]]) {
-    assert.match(validateUrlStateApproval(overlay, changed, schema).join('\n'),
-      /approval manifest hash does not match the active census/, reason);
-    assert.deepEqual(approvedStateItemSelectors(overlay, changed), [], reason);
-  }
+  removedRecord.records = removedRecord.records.filter((record) => record.id !== [...pinned][0]);
+  assert.match(validateUrlStateApproval(overlay, removedRecord, schema).join('\n'), /approved classes do not satisfy the production approval matcher/);
+  assert.ok(approvedStateItemSelectors(overlay, removedRecord).length < approvedClasses, '사라진 기록을 고정한 부류가 승인으로 남았다');
+
+  // 해시를 다시 넣으면 스키마가 막는다 — 재생성이 승인을 다시 묶는 경로를 되살리지 않는다.
+  const rehashed = structuredClone(overlay);
+  rehashed.manifestRef.sha256 = '0'.repeat(64);
+  assert.match(validateUrlStateApproval(rehashed, census, schema).join('\n'), /approval schema/);
 });
 
 test('부류가 census 의 stateItem 을 빠짐없이·중복 없이 덮는다', () => {
@@ -456,7 +440,6 @@ test('검토일 경과 후에도 자격증명 key나 새 free-text search surfac
   future.records.push(alternateName);
 
   const matchingOverlay = structuredClone(overlay);
-  matchingOverlay.manifestRef.sha256 = approvalCensusSha256(future);
   const exemptIds = new Set(fullyApprovedRecords(matchingOverlay, future).map(({ id }) => id));
   assert.equal(exemptIds.has(synthetic.id), false, '같은 q 이름을 쓰는 새 route가 record 승인 없이 승인됐다');
   assert.equal(exemptIds.has(alternateName.id), false, '다른 free-text 이름을 쓰는 새 route가 승인 없이 승인됐다');
@@ -517,10 +500,11 @@ test('정기 검토일이 지나도 동일 근거에 결속된 승인과 검색 
   assert.deepEqual(overlay, registryBefore, '승인 근거·검토일·범위를 자동 갱신하면 안 된다');
 });
 
-test('해시·소유자·검토근거·날짜가 불완전하면 미래에도 승인이 열리지 않는다', (t) => {
+test('기록 ID·소유자·검토근거·날짜가 불완전하면 미래에도 승인이 열리지 않는다', (t) => {
   t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2036-09-14T00:00:00.000Z') });
   const mutations = [
-    ['manifest hash mismatch', (doc) => { doc.manifestRef.sha256 = '0'.repeat(64); }],
+    ['approval by state name alone', (doc) => { delete doc.classes[0].selector.recordIds; }],
+    ['pinned record vanished', (doc) => { doc.classes[0].selector.recordIds.push('URL-FFFFFFFFFFFFFF'); }],
     ['missing owner', (doc) => { doc.classes[0].owner = ' '; }],
     ['missing evidence', (doc) => { doc.classes[0].approvals.securityPrivacy.evidence = []; }],
     ['missing reviewer', (doc) => { doc.classes[0].approvals.domain.reviewer = ''; }],

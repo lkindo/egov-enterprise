@@ -6,7 +6,6 @@ import { aggregateCapabilityStatus, buildUnreviewedBaselineManifest, expectedRou
 import { AUTHORIZATION_POLICY_PATH, PERMISSION_BUNDLES_PATH, PERMISSION_CATALOG_PATH, applyPermissionSourceProjection, applyScreenAndBundleProjection } from './reusable-permission-projection.mjs';
 import { SCREEN_REGISTRY_OUTPUT } from './screen-registry-model.mjs';
 import { approvedStateItemSelectors, buildUrlStateCensus, isUrlStateItemApproved, validateUrlStateCensus } from './ui-url-state-census.mjs';
-import { approvalCensusSha256 } from './ui-url-state-approval-binding.mjs';
 import { createPendingAdoptionReview } from './adoption-review.mjs';
 import { compositionProfiles } from './composition-profiles.mjs';
 import { ACTIVE_ARTIFACTS, UPSTREAM_SOURCES, artifactTextSha256, buildGeneratedMemory, projectedCodeScope, snapshotPathFor, upstreamSnapshotText } from './reusable-governance-integrity.mjs';
@@ -86,9 +85,6 @@ function recordContract(record) {
 
 /** Restrict existing decisions to exactly retained, unchanged observations. Never invent a review. */
 export function projectUrlApproval({ upstreamCensus, upstreamApproval, census, sourceUnchanged, retainedRoutes }) {
-  if (upstreamApproval?.manifestRef?.sha256 !== approvalCensusSha256(upstreamCensus)) {
-    throw new Error('Upstream URL approval is not bound to its census');
-  }
   const selectors = approvedStateItemSelectors(upstreamApproval, upstreamCensus);
   if (selectors.length !== upstreamApproval.classes.filter(row => row.reviewState === 'approved').length) {
     throw new Error('Upstream URL approval contains an invalid approved class');
@@ -115,7 +111,7 @@ export function projectUrlApproval({ upstreamCensus, upstreamApproval, census, s
   });
   return {
     ...structuredClone(upstreamApproval),
-    manifestRef: { path: URL_PATH, sha256: approvalCensusSha256(census) },
+    manifestRef: { path: URL_PATH },
     classes,
   };
 }

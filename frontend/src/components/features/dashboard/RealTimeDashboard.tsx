@@ -101,6 +101,7 @@ export function RealTimeDashboard() {
       <div className="flex items-center gap-2">
         <div className={cn(
           "w-2 h-2 rounded-full",
+          // palette-frozen: bg-green-500 bg-gray-300 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
           isConnected ? "bg-green-500 animate-pulse" : "bg-gray-300"
         )} />
         <span className="text-sm font-bold text-muted-foreground" role="status" aria-live="polite">

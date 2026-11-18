@@ -15,13 +15,12 @@
     "authority": { "const": "non-normative-url-state-class-registry" },
     "schemaRef": { "const": "config/ui-url-state-approval.schema.json" },
     "manifestRef": {
-      "description": "어느 census 의 어느 버전에 대한 판단인지 결속한다. record·부정 사례·흐름·범위가 바뀌면 해시가 어긋나 red 가 되고, 승인이 낡은 생성물을 가리키지 못한다. 개수뿐인 summary 는 결속하지 않는다(scripts/ui-url-state-approval-binding.mjs).",
+      "description": "어느 census 에 대한 판단인지 가리킨다. 승인 경계는 class 의 selector.recordIds 이고, 관측이 바뀌면 기록 ID 가 바뀌어 승인이 풀린다(DEC-OPS-403 ②). census 전체 해시 결속은 DEC-OPS-420 으로 걷었다.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["path", "sha256"],
+      "required": ["path"],
       "properties": {
-        "path": { "const": "config/ui-url-state-census.json" },
-        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        "path": { "const": "config/ui-url-state-census.json" }
       }
     },
     "classes": {

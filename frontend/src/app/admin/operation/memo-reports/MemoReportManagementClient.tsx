@@ -705,6 +705,7 @@ export default function MemoReportManagementClient() {
       accessor: (report) => (
         <div className={cn(
           "inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest transition-all",
+          // palette-frozen: bg-emerald-500/10 text-emerald-600 border-emerald-500/20 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
           report.rptrInqDt ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" : "bg-muted text-muted-foreground border border-border"
         )}>
           {/*

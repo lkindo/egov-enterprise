@@ -25,8 +25,8 @@ base 저장소의 게이트 다수는 "현재 실측값과 정확히 같아야 �
 
 | # | 축 | 동결 위치 | 재동결 방법 |
 |---|---|---|---|
-| 1 | status 색 하드코딩 | [status-color-guard.test.ts](../../frontend/src/__tests__/status-color-guard.test.ts) 의 파일별 `BASELINE_BY_FILE` 표(총계 `BASELINE` 은 표의 합에서 계산) | red 실측 → 표만 갱신 (§3) |
-| 2 | 중립·액센트 색 하드코딩 | [hardcoded-color-guard.test.ts](../../frontend/src/__tests__/hardcoded-color-guard.test.ts) 의 파일별 `BASELINE_BY_FILE` 표(총계는 표의 합에서 계산)와 보조 글자 불투명도 표 `MUTED_OPACITY_BASELINE` | red 실측 → 표만 갱신 (§3) |
+| 1 | 팔레트 원색 하드코딩 | `frontend/eslint.config.mjs` 의 `local-theme/enforce-design-tokens` — 남은 동결분은 그 줄의 동결 표지 `palette-frozen:`(DEC-OPS-420) | 동결표 없음 — 고친 클래스만 표지에서 지운다 (§3) |
+| 2 | 흐린 보조 글자 불투명도 | [hardcoded-color-guard.test.ts](../../frontend/src/__tests__/hardcoded-color-guard.test.ts) 의 `MUTED_OPACITY_BASELINE` 파일별 표 | red 실측 → 표만 갱신 (§3) |
 | 3 | URL 상태 census | [config/ui-url-state-census.json](../../config/ui-url-state-census.json) | `node scripts/ui-url-state-census.mjs --write` (§4) |
 | 4 | 거버넌스 게이트 exact census | [config/governance/gates.json](../../config/governance/gates.json) | manifest 를 실제 게이트 소스와 함께 갱신 (§5) |
 | 5 | 브랜드 프로필 키 패리티 | [theme-token-contract.test.ts](../../frontend/src/__tests__/theme-token-contract.test.ts) | 프로필 CSS·allowlist 3방향 패리티 충족 (§6) |
@@ -36,26 +36,24 @@ base 저장소의 게이트 다수는 "현재 실측값과 정확히 같아야 �
 
 마지막으로 required checks 결속(§8)을 adopter 자신의 원격 저장소에 다시 건다.
 
-## 3. 색 하드코딩 baseline 재측정 — status/hardcoded color guard
+## 3. 색 기준선 — 팔레트 원색과 흐린 보조 글자
 
-두 게이트는 소스 스캔 occurrence 가 파일별 동결표와 **정확히 같아야** green 이다(감소도 red — 개선분을 baseline 하향으로 확정해야 한다).
+팔레트 원색(상태·중립·브랜드 액센트)은 `frontend/eslint.config.mjs` 의 `local-theme/enforce-design-tokens` 가 막고, 남은 동결분은 그 줄 바로 위의 동결 표지 `palette-frozen: <클래스…> -- <사유>` 다(2026-11-18 DEC-OPS-420 — 종전 파일별 동결표 두 개를 걷었다). 투영으로 빠진 파일의 표지는 파일과 함께 사라지므로 재동결할 표가 없다. 기관이 리터럴을 토큰으로 고치면 그 클래스를 표지에서 지운다 — 남겨 두면 lint 가 붉다.
 
-- [status-color-guard.test.ts](../../frontend/src/__tests__/status-color-guard.test.ts) — success/warning/destructive 계열 팔레트 하드코딩.
-- [hardcoded-color-guard.test.ts](../../frontend/src/__tests__/hardcoded-color-guard.test.ts) — 중립+브랜드 액센트 하드코딩과 보조 글자 불투명도(`MUTED_OPACITY_BASELINE`, 파일별).
-
-두 게이트 모두 파일별 `BASELINE_BY_FILE` 표가 실측과 같아야 한다. 총계 `BASELINE` 은 따로 적는 상수가 아니라 투영 뒤 표의 합에서 계산한다. 현재 동결값은 이 문서가 아니라 테스트 파일이 정본이다. 생성기 투영으로 사라진 파일의 항목은 시험이 투영 원장으로 빼므로(`frozenInProjection`, DEC-OPS-259) 손대지 않는다.
+흐린 보조 글자 불투명도는 [hardcoded-color-guard.test.ts](../../frontend/src/__tests__/hardcoded-color-guard.test.ts) 의 파일별 `MUTED_OPACITY_BASELINE` 표가 실측과 같아야 green 이다(감소도 red). 현재 동결값은 이 문서가 아니라 테스트 파일이 정본이다.
 
 절차:
 
-1. adopter 소스가 안정된 시점에 두 테스트를 실행한다.
+1. adopter 소스가 안정된 시점에 lint 와 테스트를 실행한다.
 
    ```powershell
-   pnpm -C frontend exec vitest run src/__tests__/status-color-guard.test.ts src/__tests__/hardcoded-color-guard.test.ts
+   pnpm -C frontend run lint
+   pnpm -C frontend exec vitest run src/__tests__/hardcoded-color-guard.test.ts
    ```
 
-2. red 실패 메시지가 실측 총계와 방향(증가/감소)을 출력한다. **이 출력값이 유일한 재동결 근거다.** 추정·수기 집계로 상수를 바꾸지 않는다.
-3. 감소(개선)면 해당 파일의 `BASELINE_BY_FILE` 값만 실측값으로 내린다(총계는 표의 합이라 따라 내려간다). 증가(악화)면 먼저 토큰 치환으로 줄이는 것이 원칙이고, 불가피하게 올릴 때는 사유를 코드 리뷰에 명시한다(테스트 파일 상단 주석에 규정된 운영 규칙).
-4. 재실행해 green 을 확인하고, baseline 변경을 diff 리뷰로 승인받는다.
+2. red 실패 메시지가 실측과 방향(증가/감소)을 출력한다. **이 출력값이 유일한 재동결 근거다.** 추정·수기 집계로 상수를 바꾸지 않는다.
+3. 감소(개선)면 해당 파일의 값만 실측값으로 내린다. 증가(악화)면 먼저 토큰으로 줄이는 것이 원칙이고, 불가피하게 올릴 때는 사유를 코드 리뷰에 남긴다.
+4. 재실행해 green 을 확인하고, 변경을 diff 리뷰로 승인받는다.
 
 컨트롤 고정 높이 덮어쓰기 동결도 같은 절차다. 차이는 총계 없이 **파일별 수**만 둔다는 점이다. 생성기 투영으로 사라진 파일의 항목은 시험이 투영 원장으로 빼므로 손대지 않고, 기관이 이후 지우거나 바꾼 파일의 항목만 고친다. 수가 늘면 올리지 말고 해당 컨트롤을 `--control-h` 로 되돌린다.
 
@@ -73,7 +71,7 @@ node scripts/ui-url-state-census.mjs --write
 
 - **수기 편집 금지** — 이 파일은 생성물이다. `--write` 로만 재생성한다.
 - 재생성 후 diff 를 리뷰한다: 새로 잡힌 URL 상태가 개인정보·프라이버시 분류 대상인지 확인한다(검색 상태 URL 허용 경계는 [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md), 승인 원장은 [config/ui-url-state-approval.json](../../config/ui-url-state-approval.json)).
-- census 재생성은 사람의 승인을 갱신하지 않는다. 승인 원장의 census hash가 달라지면 관련 분류·범위·근거를 다시 확인한 뒤 원장을 결속한다. 새 검색 surface·자격증명 key는 즉시 차단 대상이며 날짜 연장으로 해결할 수 없다.
+- census 재생성은 사람의 승인을 갱신하지 않는다. 승인 부류가 고정한 기록 ID가 census에서 사라지면 관련 분류·범위·근거를 다시 확인한 뒤 원장의 `selector.recordIds`를 고친다(census 전체 해시 결속은 DEC-OPS-420으로 걷었다). 새 검색 surface·자격증명 key는 즉시 차단 대상이며 날짜 연장으로 해결할 수 없다.
 - `reviewBy`는 기존 정기 검토 일정으로 유지한다. 경과는 `npm run review:status`의 운영 신호이며 정상 코드 계약을 자동 무효화하지 않는다. 원본 snapshot과 기관 `pending` 검토는 별도 자료다.
 
 ## 5. 거버넌스 게이트 exact census — gates.json

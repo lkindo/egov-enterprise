@@ -11,6 +11,29 @@ import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 import nextTypescript from "eslint-config-next/typescript";
 
 // 프론트엔드 UX 헌법 제15조 2항(시맨틱 컬러 토큰 사용 의무)·제6조(디자인 토큰 준수): 임의의 generic Tailwind 원색 계열 남용을 차단하고 HSL 디자인 토큰을 강제하는 커스텀 ESLint 규칙
+//
+// [2026-11-18 DEC-OPS-420] 팔레트 원색 판정은 이 규칙 하나다. 종전에는 className 의 일부 원색만 여기서 막고, 나머지(상태색·중립·브랜드
+//   액센트, cva 변형·조건식의 문자열)는 vitest 가드 두 개(status-color-guard·hardcoded-color-guard)가 파일별 동결표로 셌다 — 같은 불변식이
+//   두 곳에 있었고 줄이거나 옮길 때마다 표를 손으로 고쳤다. 이제 화면을 그리는 생산 소스(.tsx/.jsx, 시험 제외)의 모든 문자열·정규식을 본다.
+//   남은 동결분은 그 줄 바로 위의 동결 표지 `palette-frozen: <원색 클래스…> -- <사유>`(// 또는 {/* */} 주석)로 남는다. 표지는 그 줄에서
+//   허용한 클래스와 개수만 푼다 — 같은 줄에 새 원색을 더하면 붉고, 고쳐서 사라진 클래스가 표지에 남아도 붉다(표지가 스스로 정확해진다).
+//   이 규칙을 eslint-disable 주석으로 끄지 않는다(eslint-palette-color.test.ts 가 생산 소스에서 막는다) — 불투명 흰 배경 검사까지 함께 꺼진다.
+const PALETTE_UTILITIES = "text|bg|border|ring|divide|from|to|via|placeholder|fill|stroke|shadow|ring-offset|caret|outline|decoration|accent";
+// 상태(성공·경고·오류) 계열과 중립·브랜드 액센트 계열 — 두 가드의 합집합이 전 팔레트였다.
+const STATUS_COLORS = "red|green|emerald|rose|amber|orange|yellow|lime|pink";
+const NEUTRAL_AND_BRAND_COLORS = "slate|gray|zinc|neutral|stone|blue|indigo|sky|violet|purple|cyan|teal|fuchsia";
+const PALETTE_SOURCE = `(?:${PALETTE_UTILITIES})-(?:${STATUS_COLORS}|${NEUTRAL_AND_BRAND_COLORS})-[0-9]{2,3}(?:\\/[0-9]{1,3})?`;
+const PALETTE_REGEX = new RegExp(PALETTE_SOURCE, "g");
+const PALETTE_CLASS = new RegExp(`^${PALETTE_SOURCE}$`);
+const FROZEN_MARK = /^\s*palette-frozen:\s*(.*?)\s*(?:--\s*(.*?))?\s*$/s;
+const PALETTE_GUIDE = "프론트엔드 UX 헌법 제15조 2항(시맨틱 컬러 토큰)에 의거하여 시맨틱 토큰을 쓰십시오 — 성공·경고·오류·정보는 success/warning/destructive(-emphasis)/info, 분류 표식은 hub-*, 중립은 foreground·muted·border 계열(docs/03-guides/design-tokens.md).";
+
+/** 팔레트 판정 범위 — 화면을 그리는 생산 소스. 시험과 `__tests__` 는 빼고, .ts 는 화면 문자열을 갖지 않아 종전 가드도 세지 않았다. */
+const isRenderedProductionSource = (filename) => {
+  const path = filename.replaceAll("\\", "/");
+  return /\.(?:tsx|jsx)$/.test(path) && !path.includes("/__tests__/") && !/\.test\./.test(path);
+};
+
 const enforceDesignTokensRule = {
   meta: {
     type: "suggestion",
@@ -22,14 +45,85 @@ const enforceDesignTokensRule = {
     schema: [],
   },
   create(context) {
-    // bg-red-500, text-blue-600 등 임의의 원색 유틸리티 탐지 정규식
-    const BANNED_COLORS_REGEX = /\b(bg|text|border|ring)-(red|blue|green|yellow|orange|purple|pink|indigo|teal)-([1-9]00)\b/g;
     // 불투명 흰 배경(`bg-white`) 탐지 — 다크 테마에서 `--foreground: 210 40% 98%`(흰 글자) 위에 얹혀 대비 ~1.05:1 로 판독 불가가 된다.
     // design-tokens.md R1: 불투명 흰 배경 → `bg-card`, 의도적 다크 서피스 → `bg-surface-inverse`.
     // 반투명 오버레이(`bg-white/10`, `bg-white/80` …)는 의도된 표현이므로 negative lookahead `(?!\/)` 로 제외한다.
     const OPAQUE_WHITE_REGEX = /\bbg-white\b(?!\/)/g;
+    const paletteScope = isRenderedProductionSource(context.filename);
+    /** 줄 번호 → 그 줄에서 시작하는 노드와 그 노드의 팔레트 원색(등장 순서·중복 그대로). */
+    const paletteByLine = new Map();
+
+    const collectPalette = (node, text) => {
+      if (!paletteScope || typeof text !== "string") return;
+      const matches = text.match(PALETTE_REGEX);
+      if (!matches) return;
+      const line = node.loc.start.line;
+      if (!paletteByLine.has(line)) paletteByLine.set(line, []);
+      paletteByLine.get(line).push({ node, matches });
+    };
+
+    /** 동결 표지: 다음 줄 번호 → { comment, allowed(다중 집합), reason } */
+    const frozenMarks = () => {
+      const marks = new Map();
+      for (const comment of context.sourceCode.getAllComments()) {
+        const mark = FROZEN_MARK.exec(comment.value);
+        if (!mark) continue;
+        const tokens = mark[1].split(/\s+/).filter(Boolean);
+        const invalid = tokens.filter((token) => !PALETTE_CLASS.test(token));
+        if (!paletteScope || tokens.length === 0 || invalid.length > 0 || !mark[2]) {
+          context.report({
+            loc: comment.loc,
+            message: `동결 표지 'palette-frozen:' 이 잘못됐습니다 — 화면 생산 소스(.tsx/.jsx)에서 다음 줄의 팔레트 원색 클래스만 공백으로 나열하고 ' -- <사유>' 를 붙인다${invalid.length ? `(원색 클래스가 아닌 항목: ${invalid.join(", ")})` : ""}.`,
+          });
+          continue;
+        }
+        marks.set(comment.loc.end.line + 1, { comment, allowed: tokens });
+      }
+      return marks;
+    };
 
     return {
+      Literal(node) {
+        collectPalette(node, typeof node.value === "string" ? node.value : node.regex?.pattern);
+      },
+      TemplateElement(node) {
+        collectPalette(node, node.value.raw);
+      },
+      JSXText(node) {
+        collectPalette(node, node.value);
+      },
+      "Program:exit"() {
+        const marks = frozenMarks();
+        for (const [line, entries] of paletteByLine) {
+          const remaining = [...(marks.get(line)?.allowed ?? [])];
+          for (const { node, matches } of entries) {
+            const unfrozen = matches.filter((match) => {
+              const at = remaining.indexOf(match);
+              if (at < 0) return true;
+              remaining.splice(at, 1);
+              return false;
+            });
+            if (unfrozen.length === 0) continue;
+            context.report({
+              node,
+              message: `팔레트 원색 '${unfrozen.join(", ")}'의 사용이 감지되었습니다. ${PALETTE_GUIDE} 데이터 시각화처럼 팔레트가 정말 필요한 자리는 그 줄 바로 위에 'palette-frozen: <클래스…> -- <사유>' 표지를 둔다.`,
+            });
+          }
+          if (marks.has(line) && remaining.length > 0) {
+            context.report({
+              loc: marks.get(line).comment.loc,
+              message: `동결 표지의 '${remaining.join(", ")}' 이(가) 다음 줄에 없습니다 — 고쳤으면 표지에서 지운다.`,
+            });
+          }
+          marks.delete(line);
+        }
+        for (const { comment, allowed } of marks.values()) {
+          context.report({
+            loc: comment.loc,
+            message: `동결 표지의 '${allowed.join(", ")}' 이(가) 다음 줄에 없습니다 — 고쳤으면 표지를 지운다.`,
+          });
+        }
+      },
       JSXAttribute(node) {
         if (node.name.name === "className") {
           let classNames = "";
@@ -44,14 +138,6 @@ const enforceDesignTokensRule = {
           }
 
           if (classNames) {
-            const matches = classNames.match(BANNED_COLORS_REGEX);
-            if (matches && matches.length > 0) {
-              context.report({
-                node,
-                message: `generic 원색 유틸리티 '${matches.join(", ")}'의 사용이 감지되었습니다. 프론트엔드 UX 헌법 제15조 2항(시맨틱 컬러 토큰)에 의거하여, 시각적 조화와 다크모드 대응을 위해 HSL 기반 시맨틱 디자인 토큰(예: bg-primary, text-muted-foreground, bg-destructive)을 사용하십시오.`,
-              });
-            }
-
             const whiteMatches = classNames.match(OPAQUE_WHITE_REGEX);
             if (whiteMatches && whiteMatches.length > 0) {
               context.report({

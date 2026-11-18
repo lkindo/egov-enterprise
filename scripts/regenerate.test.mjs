@@ -12,7 +12,8 @@ import { basename, dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { GENERATORS, HARNESS_MANIFEST, HARNESS_MANIFEST_TOOL, URL_APPROVAL, URL_CENSUS } from './merge-main-regenerate.mjs';
+import { GENERATORS, HARNESS_MANIFEST, URL_APPROVAL, URL_CENSUS } from './merge-main-regenerate.mjs';
+const HARNESS_MANIFEST_TOOL = 'scripts/harness-baseline-manifest.mjs';
 import {
   ATLAS_STEP, LEDGER_CHECKS, SAST_LEDGER, checkGenerated, checkTasks, main, rebindSastLedgerText, regenerate, regenerationSteps,
   staleSastExceptions,
@@ -41,19 +42,24 @@ function assertRegenerationOrder(ids) {
   const at = id => ids.indexOf(id);
   const lastGenerator = Math.max(...generatorIds.filter(id => id !== ATLAS_STEP).map(at));
   assert.ok(at('sast-exceptions') > lastGenerator, 'SAST 예외 해시 확인은 생성기 사슬 뒤다');
-  assert.ok(at('harness-baseline') > at('sast-exceptions'), '하네스 기준선은 손 결속(SAST 예외) 확인 뒤다 — 기준선이 그 원장의 해시를 담는다');
   assert.equal(at(ATLAS_STEP), ids.length - 1, 'Atlas 가 마지막이다 — 문서·게이트 원장·훅을 읽는다');
+  // 하네스 기준선은 재사용 생성물에만 있다(DEC-OPS-420). 있으면 SAST 확인 뒤, Atlas 바로 앞이다.
+  if (!ids.includes('harness-baseline')) return;
+  assert.ok(at('harness-baseline') > at('sast-exceptions'), '하네스 기준선은 손 결속(SAST 예외) 확인 뒤다 — 기준선이 그 원장의 해시를 담는다');
   assert.equal(at('harness-baseline'), ids.length - 2, '하네스 기준선은 Atlas 바로 앞, 나머지 재생성 뒤다');
 }
 
-test('재생성 순서: 생성기 사슬 → SAST 예외 해시 확인 → 하네스 기준선 → Atlas', () => {
-  const steps = regenerationSteps();
+test('재생성 순서: 생성기 사슬 → SAST 예외 해시 확인 → (생성물만) 하네스 기준선 → Atlas', () => {
+  // 원본 저장소는 하네스 기준선 매니페스트를 두지 않는다(DEC-OPS-420) — 기준선 단계가 없다.
+  assert.ok(!regenerationSteps().some(step => step.id === 'harness-baseline'), '원본 저장소의 regen 이 하네스 기준선을 쓴다');
+  assertRegenerationOrder(regenerationSteps().map(step => step.id));
+  const steps = regenerationSteps(GENERATORS, { harnessBaseline: true });
   assertRegenerationOrder(steps.map(step => step.id));
   const harness = steps.find(step => step.id === 'harness-baseline');
   assert.deepEqual(harness.command, ['node', [HARNESS_MANIFEST_TOOL, '--write']]);
   assert.deepEqual(harness.files(), [HARNESS_MANIFEST]);
-  // URL census 뒤에는 승인 해시를 다시 결속한다(GENERATORS 의 표지를 그대로 쓴다).
-  assert.deepEqual(steps.filter(step => step.rebindUrlApproval).map(step => step.id), ['url-state-census']);
+  // URL 승인은 다시 결속하지 않는다 — 기록 ID 고정이 승인이다(DEC-OPS-420). 어느 단계도 승인 파일을 쓰지 않는다.
+  assert.ok(steps.every(step => !step.files().includes(URL_APPROVAL)), 'regen 이 URL 승인 파일을 쓴다');
   // 불변식 자체가 순서 위반을 잡는다.
   const ids = steps.map(step => step.id);
   const swapped = [...ids.slice(0, -2), ids.at(-1), ids.at(-2)];
@@ -61,7 +67,7 @@ test('재생성 순서: 생성기 사슬 → SAST 예외 해시 확인 → 하�
   const early = ['harness-baseline', ...ids.filter(id => id !== 'harness-baseline')];
   assert.throws(() => assertRegenerationOrder(early), /하네스 기준선은 손 결속\(SAST 예외\) 확인 뒤다/);
   // Atlas 생성기가 없는 저장소(재사용 생성물)에서는 기준선이 마지막이다.
-  const withoutAtlas = regenerationSteps(GENERATORS.filter(generator => generator.id !== ATLAS_STEP)).map(step => step.id);
+  const withoutAtlas = regenerationSteps(GENERATORS.filter(generator => generator.id !== ATLAS_STEP), { harnessBaseline: true }).map(step => step.id);
   assert.equal(withoutAtlas.at(-1), 'harness-baseline');
 });
 
@@ -75,9 +81,10 @@ test('모든 생성기가 쓰지 않는 검사 명령을 갖고, 그 명령은 �
     }
   }
   const tasks = checkTasks(ROOT).map(task => task.id);
-  for (const id of [...GENERATORS.map(generator => generator.id), 'url-state-census:approval', 'sast-exceptions', 'harness-baseline']) {
+  for (const id of [...GENERATORS.map(generator => generator.id), 'sast-exceptions']) {
     assert.ok(tasks.includes(id), `--check 가 ${id} 를 보지 않는다`);
   }
+  assert.ok(!tasks.includes('harness-baseline'), '원본 저장소의 --check 가 걷은 하네스 기준선을 본다(DEC-OPS-420)');
   // 검사 명령이 빠진 생성기는 낡았는지 알 수 없으므로 통과시키지 않는다.
   const unchecked = regenerationSteps([{ ...GENERATORS[0], check: [] }]);
   assert.throws(() => checkTasks(ROOT, unchecked), /검사 명령\(check\)이 없다/);
@@ -147,16 +154,17 @@ test('통과한 손 결속 확인만 건너뛴 점검을 ⚠ 줄로 보이고, �
   assert.ok(broken.includes('      boom'));
 });
 
-test('regen 은 단계를 순서대로 돌리고 바뀐 파일만 보이며, URL 승인 해시를 다시 결속한다', (t) => {
+test('regen 은 단계를 순서대로 돌리고 바뀐 파일만 보이며, URL 승인 파일은 건드리지 않는다', (t) => {
   const root = scratch(t, 'regenerate-write-');
   const census = '{\n  "records": []\n}\n';
   put(root, URL_CENSUS, '{"records":[1]}\n');
-  put(root, URL_APPROVAL, `${JSON.stringify({ manifestRef: { path: URL_CENSUS, sha256: '0'.repeat(64) } }, null, 2)}\n`);
+  const approvalText = `${JSON.stringify({ manifestRef: { path: URL_CENSUS } }, null, 2)}\n`;
+  put(root, URL_APPROVAL, approvalText);
   put(root, SAST_LEDGER, `${JSON.stringify({ findings: [] }, null, 2)}\n`);
   put(root, 'same.txt', 'same\n');
   const steps = [
     { id: 'first', kind: 'generator', command: ['first'], files: () => ['out/first.txt'] },
-    { id: 'url-state-census', kind: 'generator', command: ['census'], rebindUrlApproval: true, files: () => [URL_CENSUS, URL_APPROVAL] },
+    { id: 'url-state-census', kind: 'generator', command: ['census'], files: () => [URL_CENSUS] },
     { id: 'sast-exceptions', kind: 'sast', files: () => [] },
     { id: 'harness-baseline', kind: 'generator', command: ['harness'], files: () => ['same.txt'] },
     { id: ATLAS_STEP, kind: 'generator', command: ['atlas'], files: () => ['out/atlas.html'] },
@@ -173,12 +181,12 @@ test('regen 은 단계를 순서대로 돌리고 바뀐 파일만 보이며, URL
   const result = regenerate({ cwd: root, steps, runCommand, log: line => logs.push(line) });
   assert.equal(result.status, 'ready');
   assert.deepEqual(ran, ['first', 'census', 'harness', 'atlas']);
-  assert.deepEqual(result.changed, ['config/ui-url-state-approval.json', 'config/ui-url-state-census.json', 'out/atlas.html', 'out/first.txt']);
-  assert.match(logs.join('\n'), /바뀐 파일\(4\)/);
-  assert.notEqual(JSON.parse(readFileSync(join(root, URL_APPROVAL), 'utf8')).manifestRef.sha256, '0'.repeat(64));
+  assert.deepEqual(result.changed, ['config/ui-url-state-census.json', 'out/atlas.html', 'out/first.txt']);
+  assert.match(logs.join('\n'), /바뀐 파일\(3\)/);
+  assert.equal(readFileSync(join(root, URL_APPROVAL), 'utf8'), approvalText, 'URL 승인은 사람이 고치는 원장이다(DEC-OPS-420)');
 });
 
-test('SAST 예외 해시가 낡았으면 자동으로 결속하지 않고 하네스 기준선 앞에서 멈춘다', (t) => {
+test('SAST 예외 해시가 낡았으면 자동으로 결속하지 않고 그 뒤 단계 앞에서 멈춘다', (t) => {
   const root = scratch(t, 'regenerate-sast-');
   put(root, 'src/Guarded.java', 'class Guarded {}\n');
   put(root, 'src/Defense.java', 'class Defense {}\n');

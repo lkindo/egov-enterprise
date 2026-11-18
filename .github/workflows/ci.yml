@@ -407,7 +407,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      # 크로스 스택 계약(frontend/src/__tests__/cross-stack — Atlas 계약 포함)은 백엔드
+      # 크로스 스택 계약(frontend/src/__tests__/cross-stack — 수동 실행인 Atlas 렌더 계약은 vitest 설정이 뺀다, DEC-OPS-420)은 백엔드
       # 소스를 함께 감사하므로 frontend 축이 아니라 여기서도 실행한다. 백엔드-only PR 은
       # frontend-scope 가 skip 되어 이 계약들이 어디서도 돌지 않았다 — 예: 서버 정렬을
       # `.desc()` → `.asc()` 로 바꾸는 변경에서, 정확히 그 드리프트를 잡는 계약이 실행 0 이었다.

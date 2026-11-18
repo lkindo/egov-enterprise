@@ -24,7 +24,7 @@ record**를 전체 승인으로 집계한다. 미승인 부류가 섞인 record�
 | `reviewedAt` | ISO 날짜 |
 | `evidence` | **비어 있지 않은** 문자열 배열 |
 
-계약은 승인된 부류 목록을 exact하게 동결하고, manifest 해시·비규범 top-level authority·부류별 근거·
+계약은 승인된 부류 목록을 exact하게 동결하고, 기록 ID 고정(DEC-OPS-420 뒤 census 해시 대신)·비규범 top-level authority·부류별 근거·
 selector가 어긋나면 fail-closed한다. `decisionRef`는 `search-input`에만 요구하며 다른 부류나 top-level로
 번지면 red다. 새 이름이나 route는 기존 승인에 조용히 편입되지 않는다.
 

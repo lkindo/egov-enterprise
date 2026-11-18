@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "개인정보 접근 증적(@PrivacyAccess) census 의 판정 원장. PrivacyAccessCensusLinterTest 가 읽고, scripts/privacy-access-census-contract.test.mjs 가 항목이 기능 소유대로 재사용 base 생성기의 실제 제거 계획에서 남고 빠지는지 대조한다(소유는 원장에 적지 않고 소스에서 계산한다). 핸들러는 FQN#method 로 식별한다. 편집하면 baseline-manifest 의 __registry 해시도 함께 바뀌어야 한다.",
+  "description": "개인정보 접근 증적(@PrivacyAccess) census 의 판정 원장. PrivacyAccessCensusLinterTest 가 읽고, scripts/privacy-access-census-contract.test.mjs 가 항목이 기능 소유대로 재사용 base 생성기의 실제 제거 계획에서 남고 빠지는지 대조한다(소유는 원장에 적지 않고 소스에서 계산한다). 핸들러는 FQN#method 로 식별한다.",
   "declaredHandlers": [
     {
       "controller": "nuri.api.controller.UserApiController",

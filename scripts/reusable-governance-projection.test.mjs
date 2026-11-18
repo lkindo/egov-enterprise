@@ -7,7 +7,6 @@ import { dirname, join } from 'node:path';
 import { assertSeparateProjectionRoot, isExcludedRedirectTarget, projectUrlApproval, removeRedirectDeclarations } from './reusable-governance-projection.mjs';
 import { planJavaRemoval, resolveDomainRemovalDirectory } from './reusable-source-java.mjs';
 import { approvedStateItemSelectors, isUrlStateItemApproved } from './ui-url-state-census.mjs';
-import { approvalCensusSha256 } from './ui-url-state-approval-binding.mjs';
 import { parseConfigRedirectsSource } from './ui-route-capabilities-contract.mjs';
 import { projectedCodeScope } from './reusable-governance-integrity.mjs';
 import { deriveProjectedReviewManifests, validateReviewScopeContract } from './reusable-review-scopes.mjs';
@@ -31,19 +30,23 @@ test('projection restricts upstream broad names to existing records and preserve
   assert.deepEqual(inherited.selector.recordIds, [existing.id]);
   assert.deepEqual(inherited.approvals, original.approvals);
   assert.equal(inherited.reviewBy, original.reviewBy, 'generation must not renew a human review');
-  assert.equal(projected.manifestRef.sha256, approvalCensusSha256(target));
+  assert.deepEqual(projected.manifestRef, { path: 'config/ui-url-state-census.json' }, 'the census hash binding is retired (DEC-OPS-420)');
   assert.ok(!projected.classes.some(row => row.selector.recordIds?.includes(added.id)), 'same key in a new record is not inherited');
 });
 
-test('changed record or source cannot inherit approval; mismatched upstream binding is red', () => {
+test('changed record or source cannot inherit approval; an upstream approval pinning a vanished record is red', () => {
   const target = structuredClone(census);
   const projected = projectUrlApproval({ upstreamCensus: census, upstreamApproval: approval, census: target,
     sourceUnchanged: () => false, retainedRoutes: new Set() });
   assert.ok(projected.classes.every(row => row.reviewState !== 'approved'));
   const invalid = structuredClone(approval);
-  invalid.manifestRef.sha256 = '0'.repeat(64);
+  invalid.classes.find(row => row.reviewState === 'approved').selector.recordIds.push('URL-FFFFFFFFFFFFFF');
   assert.throws(() => projectUrlApproval({ upstreamCensus: census, upstreamApproval: invalid, census: target,
-    sourceUnchanged: () => true, retainedRoutes: new Set() }), /not bound/);
+    sourceUnchanged: () => true, retainedRoutes: new Set() }), /invalid approved class/);
+  const nameOnly = structuredClone(approval);
+  delete nameOnly.classes.find(row => row.reviewState === 'approved').selector.recordIds;
+  assert.throws(() => projectUrlApproval({ upstreamCensus: census, upstreamApproval: nameOnly, census: target,
+    sourceUnchanged: () => true, retainedRoutes: new Set() }), /invalid approved class/, 'approval by state name alone widens silently');
 });
 
 test('source checkout and parent directory cannot become the projection output', () => {

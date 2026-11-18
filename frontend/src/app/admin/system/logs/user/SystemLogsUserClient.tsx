@@ -128,6 +128,7 @@ const SystemLogsUserClient = () => {
             accessor: (item: UserLogTableRow) => (
                 <div className="flex items-center gap-1.5 font-mono text-xs tabular-nums">
                     <Terminal size={12} className="opacity-30" />
+                    {/* palette-frozen: text-emerald-600 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420) */}
                     <span className="text-emerald-600 font-bold">{item.crtCnt ?? 0}</span>
                     <span className="text-muted-foreground/40" aria-hidden="true">/</span>
                     <span className="text-primary font-bold">{item.mdfcnCnt ?? 0}</span>
@@ -144,6 +145,7 @@ const SystemLogsUserClient = () => {
                         –
                     </span>
                     <span className="text-muted-foreground/40" aria-hidden="true">/</span>
+                    {/* palette-frozen: text-rose-600 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420) */}
                     <span className={(item.errCnt ?? 0) > 0 ? 'text-rose-600 font-black' : 'text-muted-foreground font-bold'}>
                         {item.errCnt ?? 0}
                     </span>

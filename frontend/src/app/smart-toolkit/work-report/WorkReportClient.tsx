@@ -198,6 +198,7 @@ export default function WorkReportClient({ initialYmd }: WorkReportClientProps) 
           <Button
             variant="ghost"
             size="sm"
+            // palette-frozen: text-rose-600 text-rose-700 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
             className="font-bold text-[11px] text-rose-600 hover:text-rose-700 h-[var(--control-h)]"
             aria-label={`${item.rptTtl || '제목 없음'} 보고 ${reportAction?.type === 'delete' && reportAction.id === item.rptpSn ? '삭제 중' : '삭제'}`}
             aria-busy={reportAction?.type === 'delete' && reportAction.id === item.rptpSn || undefined}

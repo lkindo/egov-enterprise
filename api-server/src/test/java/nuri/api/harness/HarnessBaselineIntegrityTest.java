@@ -32,8 +32,11 @@ import static org.junit.jupiter.api.Assertions.fail;
  * 구현하고 거울 계약이 둘을 맞췄다 — census 를 넓힐 때마다 두 언어를 함께 고쳐야 했고, 생성기가 따라가지 않아 생성물이 통째로 red 가 된
  * 적이 있다(2026-09-12 실측: 신설 136 · 누락 54 · 소멸 54). 이제 이 게이트는 그 도구의 {@code --check} 를 실행해 종료 코드와 완료 문장으로
  * 판정한다. 도구와 형식 모듈의 내용 해시가 매니페스트에 실리고({@code __registry.scripts/harness-baseline-manifest*.mjs}) 이 클래스의 본문도
- * {@code __sourceHash} 로 동결되므로, census 정의나 이 실행기를 약하게 고치면 매니페스트가 함께 바뀐다. 원본 CI·pre-push·재사용 생성물의
- * 하네스가 모두 이 경로이고, 늘 도는 운영 계약({@code scripts/harness-baseline-mirror-contract.test.mjs})이 같은 계산을 커밋본과 다시 대조한다.
+ * {@code __sourceHash} 로 동결되므로, census 정의나 이 실행기를 약하게 고치면 매니페스트가 함께 바뀐다.
+ *
+ * <p><b>[2026-11-18 DEC-OPS-420] 매니페스트는 재사용 생성물에만 둔다.</b> 원본에서는 regen 이 기계적으로 다시 묶을 뿐이었고(커밋 288건,
+ * 잡은 완화 0건) 같은 변경은 게이트 소스 diff 와 의미 변경 독립 검토가 드러낸다. 원본에서 이 게이트는 매니페스트가 다시 생기지 않았는지만
+ * 본다(도구의 원본 완료 문장). 생성물에서는 도입자 등록이 원본 규칙·예외·임계값을 바꾸지 않았음을 보이는 기준(ADR-0057)이라 그대로 대조한다.
  *
  * <p>Node 는 하네스의 필수 도구다({@code WorkflowManifestLinterTest} 도 생성물 CI 계약을 Node 로 실행한다). Node 부재·시간 초과·완료 문장
  * 부재는 fail-closed 다. Spring 컨텍스트를 띄우지 않는다.
@@ -48,6 +51,12 @@ class HarnessBaselineIntegrityTest {
 
     /** 도구가 대조를 끝까지 마쳤을 때만 내는 문장 — 종료 코드 0 하나로 통과를 판정하지 않는다(빈 실행의 false-green 차단). */
     private static final String CHECKED = "는 계산값과 같다(";
+
+    /**
+     * 원본 저장소에서 도구가 내는 완료 문장(DEC-OPS-420) — 원본은 매니페스트를 두지 않고, 생성물만 대조한다. 도구는 원본에 매니페스트가
+     * 다시 생기면 붉고, 생성 잠금이 있는 트리(생성물)에서는 위 문장으로만 통과한다.
+     */
+    private static final String ORIGINAL_CHECKED = "원본 저장소에는 하네스 기준선 매니페스트를 두지 않는다(DEC-OPS-420)";
 
     private static final long TIMEOUT_SECONDS = 120;
 
@@ -75,7 +84,7 @@ class HarnessBaselineIntegrityTest {
             if (process.exitValue() != 0) {
                 fail(violationMessage(report));
             }
-            if (!report.contains(CHECKED)) {
+            if (!report.contains(CHECKED) && !report.contains(ORIGINAL_CHECKED)) {
                 fail("게이트 무결성 파손: " + MANIFEST_TOOL + " --check 가 0 으로 끝났지만 대조 완료 문장이 없습니다 — 빈 실행을 통과로 보지 않습니다.\n"
                         + report);
             }
@@ -102,7 +111,7 @@ class HarnessBaselineIntegrityTest {
                 + "\n💡 변경이 정당하다면:\n"
                 + "   1) 사유를 커밋 메시지 또는 PR 설명에 남기고\n"
                 + "   2) 저장소 루트에서 매니페스트를 다시 쓰고, 바뀐 키가 모두 정당한지 diff 로 확인하십시오.\n"
-                + "      node " + MANIFEST_TOOL + " --write   (또는 npm run regen)\n"
+                + "      node " + MANIFEST_TOOL + " --write   (생성물에서만 — 원본 저장소는 매니페스트를 두지 않습니다, DEC-OPS-420)\n"
                 + "      (병합에서 같은 키가 충돌했으면 --keys <키…> 로 그 키의 계산값만 보고 그 값만 옮기십시오 — 통째로 다시 쓰지 않습니다, §6.4)\n";
     }
 }

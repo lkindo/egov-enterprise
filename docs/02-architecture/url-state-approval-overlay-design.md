@@ -26,9 +26,9 @@
 | top-level `decisionRef` | 없음 — 컨테이너 전체를 단일 결정에 결속하지 않음 |
 | `search-input.decisionRef` | `docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md` |
 | `schemaRef` | `config/ui-url-state-approval.schema.json` |
-| `manifestRef` | census 경로와 승인 결속 범위의 SHA-256 — 개수뿐인 `summary`를 뺀 본문([결속 함수](../../scripts/ui-url-state-approval-binding.mjs)) |
+| `manifestRef` | census 경로(`path`). census 전체 해시 결속은 걷었다(DEC-OPS-420) — 승인 경계는 부류의 `selector.recordIds` 다 |
 
-`manifestRef.sha256`이 현재 census와 다르면 승인 selector가 열리지 않고 별도 승인 계약이 실패한다.
+승인은 사람이 고른 기록 ID(`selector.recordIds`)에만 유효하다. 기록 ID는 라우트·키·위험 신호·근거의 해시라 관측이 바뀌면 ID가 바뀌고, 승인 부류가 고정한 기록이 census에서 사라지면 승인 selector가 열리지 않고 별도 승인 계약이 실패한다(DEC-OPS-403 ②). 기록 ID 없이 이름만으로 고른 승인 부류는 열리지 않는다. 종전의 census 전체 해시(`manifestRef.sha256`)는 재생성이 기계적으로 다시 묶을 뿐 사람의 판단이 아니어서 걷었다(DEC-OPS-420).
 승인된 부류도 owner, 실제 검토 일정, 두 승인 축의 reviewer·날짜·비어 있지 않은 evidence가 완결되고
 selector가 현재 census 항목을 정확히 덮을 때만 인정한다. 일정 경과만으로 승인을 폐기하지 않는다.
 새 state item이나 새 route는 기존 이름과 같다는 이유로 변경 검토를 건너뛸 수 없다.
@@ -114,7 +114,7 @@ URL은 인가 증거가 아니다. 검색 결과와 상세 객체의 인증·역
 
 계약 테스트는 최소한 다음 위반을 red로 만든다.
 
-1. census와 `manifestRef.sha256` 불일치
+1. 승인 부류가 고정한 기록 ID가 census에 없음, 또는 기록 ID 없는 승인 부류
 2. 비규범 컨테이너의 `class-governed` state·authority 불일치 또는 `decisionRef`가 `search-input` 밖에 놓임
 3. 승인 근거 누락, 검토 축 미완료, 유령 selector
 4. `search-input`의 recordId·route-key binding 누락 또는 확장

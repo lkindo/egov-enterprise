@@ -1,7 +1,7 @@
 # CODEOWNERS — 게이트·규칙 자산의 리뷰 강제
 #
 # [왜] 저장소 안의 어떤 린터도 "저장소를 편집할 수 있는 주체"를 막지 못한다.
-#   HarnessBaselineIntegrityTest 는 동결 목록 변경을 **드러나게(tamper-evident)** 만들 뿐,
+#   게이트 소스·원장의 diff 와 의미 변경 독립 검토는 동결 목록 변경을 **드러나게(tamper-evident)** 만들 뿐,
 #   막지는(tamper-proof) 못한다. 실제 차단은 원격 측 통제에서만 가능하다.
 #
 # [작동 조건 — 저장소 설정 필요]

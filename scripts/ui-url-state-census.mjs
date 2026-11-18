@@ -41,7 +41,6 @@ import {
 } from './ui-route-capabilities-contract.mjs';
 import { parseModuleReferences } from './frontend-module-graph.mjs';
 import { buildCaseMap, resolveModuleReference } from './frontend-module-resolver.mjs';
-import { approvalCensusSha256 } from './ui-url-state-approval-binding.mjs';
 import {
   SLOT_REGISTRY_CONSUMERS,
   slotConsumerFiles,
@@ -1326,11 +1325,12 @@ function expectedSummary(records, summary) {
  * fail-closed 규칙 셋 — 하나라도 어긋나면 **아무것도 승인되지 않은 것으로 본다.**
  *   1. 오버레이가 없으면 빈 집합(승인이 생겼다고 추정하지 않는다)
  *   2. 파싱 실패·형식 이상도 빈 집합(깨진 오버레이가 승인을 만들면 안 된다)
- *   3. `manifestRef.sha256` 이 지금 census 와 다르면 빈 목록 — **승인은 자기가 본 census 에만
- *      유효하다.** census 가 재생성됐는데 오버레이가 그대로면 그 승인은 다른 문서에 대한 것이다.
- *      결속 범위는 ui-url-state-approval-binding.mjs 가 정한다(개수뿐인 `summary` 는 결속하지 않는다).
- *   4. 오버레이·승인축·검토 일정·selector가 불완전하면 빈 목록. 자유 입력은 exact recordIds 없이
- *      이름만으로 승인할 수 없다. ADR-0018에 따라 reviewBy 경과만으로 승인을 폐기하지 않는다.
+ *   3. 오버레이·승인축·검토 일정·selector가 불완전하거나, selector.recordIds 가 지금 census 에 없는 기록을
+ *      가리키면 빈 목록 — **승인은 사람이 기록 ID 로 고른 관측에만 유효하다**(DEC-OPS-403 ②). 기록 ID 는 라우트·키·
+ *      위험 신호·근거의 해시라 관측이 바뀌면 ID 가 바뀌고 승인이 풀린다. 자유 입력은 exact recordIds 없이 이름만으로
+ *      승인할 수 없다. ADR-0018에 따라 reviewBy 경과만으로 승인을 폐기하지 않는다.
+ *      [2026-11-18 DEC-OPS-420] census 전체 해시(manifestRef.sha256) 결속은 걷었다 — regen 이 기계적으로 다시 묶을
+ *      뿐 사람의 판단이 아니었고(승인 파일 변경의 91%가 해시뿐), 실제 승인 경계는 위 기록 ID 고정이다.
  *
  * 계약은 scripts/ui-url-state-approval-contract.test.mjs 가 별도로 검사한다.
  */
@@ -1345,11 +1345,6 @@ export function approvedStateItemSelectors(overlay, census) {
     || overlay?.authority !== URL_STATE_OVERLAY_AUTHORITY
     || overlay?.schemaRef !== 'config/ui-url-state-approval.schema.json'
     || overlay?.manifestRef?.path !== 'config/ui-url-state-census.json') return empty;
-
-  // census 의 승인 결속 범위 해시로 결속한다. 인자로 받은 census 객체를 정규화해 비교하므로,
-  // 디스크의 파일이 아니라 **지금 검증 중인 문서**에 대한 승인인지 확인한다.
-  const expected = approvalCensusSha256(census);
-  if (overlay?.manifestRef?.sha256 !== expected) return empty;
 
   const censusRecordIds = new Set((census.records ?? []).map((record) => record?.id));
   const selectors = [];
@@ -1396,20 +1391,20 @@ export function approvedStateItemSelectors(overlay, census) {
         || JSON.stringify([...stateItemNames].sort()) !== JSON.stringify(URL_SEARCH_STATE_ITEM_NAMES))) return empty;
 
     const declaredRecordIds = cls?.selector?.recordIds;
+    // 승인은 사람이 고른 기록 ID 로만 한다 — census 해시 결속을 걷은 뒤(DEC-OPS-420) 이름만으로 고른 승인은 새 기록까지 조용히 넓힌다.
+    if (declaredRecordIds === undefined) return empty;
     if (cls.dataClass === 'user-typed-free-text'
-      && (declaredRecordIds === undefined
-        || !Array.isArray(cls?.selector?.routeKeyBindings)
+      && (!Array.isArray(cls?.selector?.routeKeyBindings)
         || cls.selector.routeKeyBindings.length === 0)) return empty;
-    if (declaredRecordIds !== undefined
-      && (!Array.isArray(declaredRecordIds)
-        || declaredRecordIds.length === 0
-        || new Set(declaredRecordIds).size !== declaredRecordIds.length
-        || declaredRecordIds.some((id) => !censusRecordIds.has(id)))) return empty;
+    if (!Array.isArray(declaredRecordIds)
+      || declaredRecordIds.length === 0
+      || new Set(declaredRecordIds).size !== declaredRecordIds.length
+      || declaredRecordIds.some((id) => !censusRecordIds.has(id))) return empty;
 
     selectors.push({
       classId: cls.classId,
       stateItemNames: new Set(stateItemNames),
-      recordIds: declaredRecordIds === undefined ? null : new Set(declaredRecordIds),
+      recordIds: new Set(declaredRecordIds),
     });
   }
   return selectors;
@@ -1490,27 +1485,19 @@ export function hasNoClassifiableUrlState(record) {
 export function validateUrlStateCensus(census, options = {}) {
   const repoRoot = resolve(options.repoRoot ?? DEFAULT_REPO_ROOT);
   const errors = [];
-  // approvalOverlay는 합성 census와 hash가 일치하는 overlay를 주입해 exact record 경계를
-  // 검증하기 위한 순수 테스트 seam이다. CLI/운영 경로는 항상 디스크 registry를 읽는다.
+  // approvalOverlay는 합성 census에 맞춘 overlay를 주입해 exact record 경계를 검증하기 위한 순수 테스트 seam이다.
+  // CLI/운영 경로는 항상 디스크 registry를 읽는다.
   const approvalOverlay = options.approvalOverlay === undefined
     ? readStateApprovalOverlay(repoRoot)
     : options.approvalOverlay;
-  // 새 census 후보를 만들 때 전체 manifest hash가 바뀌어도 기존 exact 검색 record는 판정할 수
-  // 있어야 한다. 즉시 검색 경계는 candidate hash로 재결속한 search-input class를 사용한다.
-  // 실제 승인 원장의 hash 정합은 별도 approval 계약이 검사한다. 새 recordId/key는 여전히 red다.
+  // 즉시 검색 경계는 사람이 기록 ID 로 고른 search-input class 다. 새 recordId/key는 여전히 red다.
   const searchPolicySelectors = approvalOverlay === null
     ? []
-    : approvedStateItemSelectors({
-      ...approvalOverlay,
-      manifestRef: {
-        ...approvalOverlay.manifestRef,
-        sha256: approvalCensusSha256(census),
-      },
-    }, census).filter(({ classId }) => classId === 'search-input');
+    : approvedStateItemSelectors(approvalOverlay, census).filter(({ classId }) => classId === 'search-input');
   // 묶은 기록이 사라지면 승인이 통째로 무효가 되어 아래 검색어 경계가 엉뚱한 기록을 위반으로 보고한다 — 원인을 먼저 적는다.
   for (const { classId, recordId } of approvalOverlay === null ? [] : stalePinnedApprovalRecords(approvalOverlay, census)) {
     errors.push(`approval class '${classId}' pins ${recordId}, which is no longer in the census — the URL state it approved changed; `
-      + 'review the replacing record and edit selector.recordIds in config/ui-url-state-approval.json (re-binding the hash does not approve it)');
+      + 'review the replacing record and edit selector.recordIds in config/ui-url-state-approval.json (regeneration never approves it)');
   }
   if (census?.schemaVersion !== 1) errors.push('schemaVersion must be 1');
   if (census?.authority !== CENSUS_AUTHORITY) errors.push('authority must remain generated evidence, not policy');

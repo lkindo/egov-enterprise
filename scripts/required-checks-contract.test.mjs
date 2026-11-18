@@ -1450,12 +1450,11 @@ test('one operational-contract catalog runs in required CI and before the docs f
   // 다시 적지 않는다(2026-10-28 중복 정리).
   const prePush = fs.readFileSync(path.join(repoRoot, '.githooks', 'pre-push'), 'utf8');
   const operationalGate = prePush.indexOf('npm run test:operational-contracts');
-  const atlasGate = prePush.indexOf('vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts');
   const fastPassExit = prePush.indexOf('문서/비코드 변경만 감지됨');
   assert.ok(operationalGate >= 0 && operationalGate < fastPassExit,
     'operational contracts must run before docs-only fast-pass');
-  assert.ok(atlasGate >= 0 && atlasGate < fastPassExit,
-    'Atlas contract must run before its HTML fast-pass');
+  // Governance Atlas 의 렌더·상호작용 계약은 수동 실행이다(DEC-OPS-420) — 훅이 부르지 않는다.
+  assert.ok(!prePush.includes('governance-atlas-contract.test.ts'), 'pre-push must not run the manual Atlas render contract');
   assert.ok(prePush.includes('--stdin --fields docsOnly,backend,migration,frontend,atlas'));
 });
 

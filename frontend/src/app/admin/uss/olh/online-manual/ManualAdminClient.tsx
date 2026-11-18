@@ -292,6 +292,7 @@ export default function ManualAdminClient({
             aria-busy={deletingManualId === item.onlnMnlSn || undefined}
             disabled={isWritePending}
             onClick={() => handleDelete(item)}
+            // palette-frozen: text-rose-400 text-rose-600 bg-rose-500/10 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
             className="rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-500/10 transition-all"
           >
             {deletingManualId === item.onlnMnlSn

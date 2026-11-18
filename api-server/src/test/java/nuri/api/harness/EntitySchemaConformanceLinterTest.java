@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * </ol>
  *
  * <p>기존 드리프트는 {@link #KNOWN_DRIFT} 로 동결하고 신규 유입만 차단한다(하네스 관행).
- * 이 목록의 편집은 {@code HarnessBaselineIntegrityTest} 매니페스트에 다시 잡힌다.
+ * 이 목록의 편집은 이 파일의 diff 로 드러나며, 재사용 생성물에서는 {@code HarnessBaselineIntegrityTest} 매니페스트에 다시 잡힌다(DEC-OPS-420).
  *
  * <p>규칙 본문은 {@link SchemaConformanceRules} 에 있다. 벤더 프로젝트는 Flyway 가 이 입력을 실행하지 않으므로 이 린터를 빼고
  * {@link VendorCatalogConformanceTest} 가 실제 카탈로그로 같은 규칙을 돌린다.

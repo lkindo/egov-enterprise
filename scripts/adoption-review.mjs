@@ -119,7 +119,7 @@ export function adoptionScope(repoRoot, { product, profile }) {
     'config/frontend-visible-terms.json', 'config/krds-profile-mapping.json',
     'config/governance/permission-catalog.json', 'config/modules',
     'config/governance/reusable-governance-projection.json',
-    'scripts/ui-url-state-census.mjs', 'scripts/ui-url-state-approval-binding.mjs', 'scripts/ui-route-capabilities-contract.mjs',
+    'scripts/ui-url-state-census.mjs', 'scripts/ui-route-capabilities-contract.mjs',
     'scripts/e2e-shard-plan.mjs'];
   const files = new Map();
   function walk(file) {

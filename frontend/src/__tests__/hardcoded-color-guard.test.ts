@@ -7,76 +7,16 @@ import { frozenInProjection, frozenTableDiff } from '@/test-utils/projection';
 import { codeWithoutComments, productionSourceFiles } from '../../../scripts/code-without-comments.mjs';
 
 /**
- * 🔗 하드코딩 색상 차단 게이트 — 브랜딩 토큰화(§2.B) 드리프트 방지.
+ * 색 관련 생산 소스 불변식 가운데 ESLint 로 옮기지 않은 둘 — 흐린 보조 글자의 장식 한정과 HEX 리터럴 금지.
  *
- * 중립(slate/gray/zinc/neutral/stone) + 브랜드 액센트(blue/indigo/sky/violet/purple/cyan/teal/fuchsia)
- * 하드코딩 Tailwind 팔레트 클래스는 globals.css 시맨틱/hub-* 토큰으로 대체해야 한다
- * (docs/03-guides/design-tokens.md). 리브랜딩=토큰 편집을 성립시키는 불변식.
- *
- * 현재 잔여(파스텔 틴트·히트맵 명암스케일 등 의도적 미치환)는 파일별 동결표(BASELINE_BY_FILE)로 동결(grandfather)하고,
- * 증가뿐 아니라 감소 후 기준선 미갱신도 차단한다. status 색(red/green/emerald/rose/amber/orange/yellow/lime/pink)은
- * 성공/경고/오류 시맨틱이라 제외한다(별도 success/warning/destructive 토큰 대상).
- *
- * 신규 코드가 팔레트 리터럴을 추가하면 이 게이트가 실패한다 → 기본 정책은 토큰으로 바꾸는 것이다.
- * 소스와 동결표를 함께 올리는 변경은 자동 게이트가 과거값 없이 구별할 수 없으므로, 불가피한 예외는
- * 사유를 코드 리뷰에 명시해 승인받는다. 기준선의 일반적인 래칫 방향은 감소다.
+ * [2026-11-18 DEC-OPS-420] 팔레트 원색(중립·브랜드 액센트·상태색)의 파일별 동결표는 걷었다. 판정은 eslint.config.mjs 의
+ * local-theme/enforce-design-tokens 하나이고, 남은 동결분은 그 줄 바로 위의 동결 표지(palette-frozen)로 남는다
+ * (eslint-palette-color.test.ts 가 실제 설정으로 확인한다).
  */
 const SRC = join(dirname(fileURLToPath(import.meta.url)), '..');
-const NEUTRAL_AND_BRAND = 'slate|gray|zinc|neutral|stone|blue|indigo|sky|violet|purple|cyan|teal|fuchsia';
-const UTIL = 'text|bg|border|ring|divide|from|to|via|placeholder|fill|stroke|shadow|ring-offset|caret|outline|decoration|accent';
-const VARIANT = '(?:dark:|hover:|focus:|group-hover:|focus-within:|active:|group-focus-within:)?';
-const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]{2,3}(?:\\/[0-9]{1,3})?`, 'g');
-
-// [동결] 브랜딩 토큰화 이후 잔여 census 를 파일별로 동결한다. 자동 검사는 현재 census 와의 exact 일치를 강제하고, 동시 상향 금지는
-//   위 코드 리뷰 정책으로 통제한다. 재사용 생성물에서는 투영으로 빠진 파일의 몫만 뺀다(원장 확인). 총계는 표의 합에서 계산한다 —
-//   총계와 표를 이중으로 동결하면 리터럴을 줄일 때마다 코드를 보지 않는 상수 수정이 붙는다(FE-CONTRACT-07). 리터럴을 줄이거나
-//   옮기면 이 표만 고친다. 기준선 증감의 이력은 git 과 결정 기록에 있다.
-// ⚠ 이 가드는 주석도 센다 — 이행 설명에 클래스 이름을 적으면 그만큼 수치가 남는다(실측).
-const BASELINE_BY_FILE: Record<string, number> = {
-  'src/app/admin/community/templates/TemplateAdminClient.tsx': 1,
-  'src/app/cop/sms/selectSmsList/SmsHubClient.tsx': 1,
-  'src/app/global-error.tsx': 4,
-  'src/app/search/SearchClient.tsx': 1,
-  'src/components/features/dashboard/RealTimeDashboard.tsx': 1,
-};
-
-// 재사용 생성물에서는 투영으로 빠진 파일 몫만 뺀다(원장 확인). 원본에서는 동결표 그대로다. 총계는 그 합이다.
-const FROZEN = frozenInProjection(BASELINE_BY_FILE, (file) => join(SRC, '..', file));
-const BASELINE = Object.values(FROZEN).reduce((sum, count) => sum + count, 0);
 
 /** 색 리터럴을 세는 모집단 — 화면을 그리는 .tsx/.jsx 생산 소스. */
 const colorSources = () => productionSourceFiles(SRC, ['.tsx', '.jsx']);
-
-describe('하드코딩 색상 차단 게이트 (§2.B 브랜딩 토큰화 드리프트 방지)', () => {
-  it(`중립+브랜드액센트 하드코딩 occurrence 는 파일별 동결표(합 ${BASELINE})와 정확히 같아야 한다`, () => {
-    const files = colorSources();
-
-    // 게이트 무결성(false-green 방지): 스캔이 조용히 0건이면 vacuous 통과 → 차단
-    if (files.length < 50) {
-      throw new Error(`게이트 무결성 파손: .tsx/.jsx 스캔 건수(${files.length})가 예상 하한(50) 미만 — 스캔/경로 파손 의심.`);
-    }
-
-    const actual: Record<string, number> = {};
-    for (const f of files) {
-      const m = readFileSync(f, 'utf8').match(PATTERN);
-      if (m && m.length > 0) actual[relative(join(SRC, '..'), f).split(sep).join('/')] = m.length;
-    }
-    const diff = frozenTableDiff(actual, FROZEN);
-    if (diff.length > 0) {
-      const total = Object.values(actual).reduce((sum, count) => sum + count, 0);
-      const direction = total > BASELINE
-        ? `신규 ${total - BASELINE}건 증가`
-        : total < BASELINE
-          ? `${BASELINE - total}건 감소 — 개선분을 확정하려면 BASELINE_BY_FILE 을 실측으로 내릴 것`
-          : '파일 사이에서 옮겨졌다 — 동결표를 실측에 맞출 것';
-      throw new Error(
-        `🔗 [COLOR GUARD] 하드코딩 팔레트 색 ${total}건 != 동결 ${BASELINE}건 — ${direction}.\n` +
-        `globals.css 토큰(hub-*/시맨틱)으로 대체하세요(docs/03-guides/design-tokens.md). status 색은 제외 대상.\n` +
-        diff.join('\n'),
-      );
-    }
-  });
-});
 
 /**
  * [2026-10-01] 흐린 보조 글자(`text-muted-foreground/10~60`, `placeholder:` 포함)는 장식에만 둔다.

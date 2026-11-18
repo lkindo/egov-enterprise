@@ -338,6 +338,7 @@ export default function SmsHubClient({
                                 type="submit"
                                 disabled={isSending || sendMutation.isPending}
                                 aria-busy={(isSending || sendMutation.isPending) || undefined}
+                                // palette-frozen: bg-slate-900 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
                                 className="flex-1 rounded-[var(--radius-hub-item)] bg-slate-900 text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all gap-4 group"
                             >
                                 {isSending || sendMutation.isPending ? 'PROCESSING...' : (
