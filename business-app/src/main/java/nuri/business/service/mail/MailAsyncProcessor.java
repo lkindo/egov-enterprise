@@ -171,11 +171,6 @@ public class MailAsyncProcessor {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public boolean markResult(Long emlDsptchSn, LocalDateTime stamp, String resultCode, String senderEsntlId) {
-        return markResult(emlDsptchSn, stamp, stamp, resultCode, senderEsntlId);
-    }
-
     /**
      * 발송 결과와 실패 알림을 함께 기록한다. 커밋 실패도 recordResult 프록시가 재시도한다.
      */

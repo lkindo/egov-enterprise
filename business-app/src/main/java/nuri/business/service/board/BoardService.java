@@ -719,7 +719,6 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
          * 조회 대행 권한(BOARD_READ_ALL) 보유자는 사용 안 함 게시판의 글에도 닿는다(ADR-0040 결정 1의 운영자 열람 예외 —
          * 상세 화면의 댓글·만족도 조회). 지정 게시판 편집 가드는 두지 않는다 — 일반 사용자의 '내 평가 수정' 을 새로 막는다(H3).
          */
-        @Override
         @Transactional(readOnly = true)
         public void assertCommentReadAccess(String bbsId, Long pstSn) {
                 if (!StringUtils.hasText(bbsId) || pstSn == null) {

@@ -34,11 +34,6 @@ public interface SentMailRepository extends JpaRepository<SentMail, Long>, SentM
     int claimQueued(@Param("id") Long id, @Param("queuedAt") java.time.LocalDateTime queuedAt,
             @Param("claimedAt") java.time.LocalDateTime claimedAt);
 
-    /** Compatibility delegate when callers reuse the queued timestamp as the claim stamp. */
-    default int claimQueued(Long id, java.time.LocalDateTime queuedAt) {
-        return claimQueued(id, queuedAt, queuedAt);
-    }
-
     /** A previous attempt's late result cannot replace the current claim or a newer manual acceptance. */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("update SentMail m set m.dsptchRsltCd = :result, m.mdfcnDt = CURRENT_TIMESTAMP where m.emlDsptchSn = :id "

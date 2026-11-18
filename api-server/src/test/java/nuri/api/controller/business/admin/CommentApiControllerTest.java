@@ -2,10 +2,6 @@ package nuri.api.controller.business.admin;
 
 import nuri.business.service.comment.CommentService;
 import nuri.business.service.comment.dto.CommentDto;
-import nuri.foundation.core.board.BoardPostAccessPort;
-import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.CommonErrorCode;
-import nuri.foundation.core.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,12 +18,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -43,16 +35,12 @@ class CommentApiControllerTest {
     @Mock
     private CommentService commentService;
 
-    @Mock
-    private BoardPostAccessPort boardPostAccess;
-
     @InjectMocks
     private CommentApiController commentApiController;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(commentApiController)
-                .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(nuri.business.support.PageableTestResolvers.standard())
                 .build();
     }
@@ -73,30 +61,10 @@ class CommentApiControllerTest {
     @Test
     @DisplayName("댓글 삭제")
     void deleteComment() throws Exception {
-        when(commentService.getCommentLocation(1L))
-                .thenReturn(new CommentService.CommentLocation("BBS_001", 7L));
-        doNothing().when(boardPostAccess).assertCommentReadAccess("BBS_001", 7L);
         doNothing().when(commentService).deleteComment(1L);
 
         mockMvc.perform(delete("/api/v1/admin/comments/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
-
-        verify(boardPostAccess).assertCommentReadAccess("BBS_001", 7L);
-        verify(commentService).deleteComment(1L);
-    }
-
-    @Test
-    @DisplayName("관리자 댓글 삭제도 부모 게시글 열람 접근이 거부되면 실행되지 않는다")
-    void deleteComment_deniedParentBoardRejects() throws Exception {
-        when(commentService.getCommentLocation(1L))
-                .thenReturn(new CommentService.CommentLocation("BBS_PRIVATE", 7L));
-        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(boardPostAccess).assertCommentReadAccess("BBS_PRIVATE", 7L);
-
-        mockMvc.perform(delete("/api/v1/admin/comments/1"))
-                .andExpect(status().isForbidden());
-
-        verify(commentService, never()).deleteComment(anyLong());
     }
 }

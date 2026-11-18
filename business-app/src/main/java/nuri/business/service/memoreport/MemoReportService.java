@@ -184,7 +184,9 @@ public class MemoReportService {
             // PostgreSQL timestamp(6)에 저장되는 정밀도로 응답도 맞춘다. 첫 응답과 재조회가 같은 최초 시각이다.
             // 열람만으로 @Version·감사 수정자를 올리지 않도록 벌크 조건부 UPDATE 로 기록한다.
             firstReadAt = vendorSql.storedTimestamp(java.time.LocalDateTime.now());
-            memoReportRepository.recordFirstReadIfUnread(memoRptSn, firstReadAt);
+            if (memoReportRepository.recordFirstReadIfUnread(memoRptSn, firstReadAt) == 0) {
+                firstReadAt = memoReportRepository.findRptrInqDtByMemoRptSn(memoRptSn).orElse(firstReadAt);
+            }
         }
         MemoReportDto dto = toDtoWithPermission(entity, participantNames(List.of(entity)));
         if (firstReadAt != null) dto.setRptrInqDt(firstReadAt);

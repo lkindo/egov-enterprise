@@ -187,9 +187,9 @@ class MailAsyncProcessorTest {
         when(sentMailRepository.findById(1L)).thenReturn(Optional.of(mail));
         when(sentMailRepository.recordResult(eq(1L), any(java.time.LocalDateTime.class), eq("F"))).thenReturn(1);
 
-        mailAsyncProcessor.markResult(1L, intentTime, "F", "SENDER-1");
-        mailAsyncProcessor.markResult(1L, intentTime, "F", "SENDER-1");
-        mailAsyncProcessor.markResult(1L, intentTime.plusNanos(1), "F", "SENDER-1");
+        mailAsyncProcessor.markResult(1L, intentTime, intentTime, "F", "SENDER-1");
+        mailAsyncProcessor.markResult(1L, intentTime, intentTime, "F", "SENDER-1");
+        mailAsyncProcessor.markResult(1L, intentTime.plusNanos(1), intentTime.plusNanos(1), "F", "SENDER-1");
 
         var captor = org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
         verify(eventPublisher, times(3)).publishEvent(captor.capture());
@@ -206,7 +206,7 @@ class MailAsyncProcessorTest {
         var failure = new IllegalStateException("synthetic notification failure");
         doThrow(failure).when(eventPublisher).publishEvent(any(Object.class));
 
-        assertThatThrownBy(() -> mailAsyncProcessor.markResult(1L, QUEUED, "F", "SENDER-1"))
+        assertThatThrownBy(() -> mailAsyncProcessor.markResult(1L, QUEUED, QUEUED, "F", "SENDER-1"))
                 .isSameAs(failure);
         verifyNoInteractions(emailSender);
     }

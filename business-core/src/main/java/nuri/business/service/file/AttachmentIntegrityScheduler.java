@@ -2,7 +2,6 @@ package nuri.business.service.file;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,23 +16,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Component
 @ConditionalOnProperty(name = "nuri.attachment.integrity.enabled", havingValue = "true")
 public class AttachmentIntegrityScheduler {
-    private static final Duration RECEIPT_PRUNE_MIN_AGE = Duration.ofHours(24);
-
     private final AttachmentIntegrityService files;
     private final AttachmentReferenceIntegrityService references;
     private final AttachmentIntegrityReportStore store;
     private final MeterRegistry metrics;
     private final AttachmentIntegrityMetrics health;
     private final int maxItems;
-    @Nullable
-    private final LocalFileStorageService localStorage;
     private final AtomicBoolean running = new AtomicBoolean();
 
     @org.springframework.beans.factory.annotation.Autowired
     public AttachmentIntegrityScheduler(AttachmentIntegrityService files, AttachmentReferenceIntegrityService references,
             AttachmentIntegrityReportStore store, MeterRegistry metrics,
-            @Value("${nuri.attachment.integrity.max-items:50000}") int maxItems, AttachmentIntegrityMetrics health,
-            @Nullable LocalFileStorageService localStorage) {
+            @Value("${nuri.attachment.integrity.max-items:50000}") int maxItems, AttachmentIntegrityMetrics health) {
         if (maxItems < 1 || maxItems > 1_000_000) throw new IllegalArgumentException("Invalid attachment scan limit");
         this.files = files;
         this.references = references;
@@ -41,17 +35,11 @@ public class AttachmentIntegrityScheduler {
         this.metrics = metrics;
         this.health = health;
         this.maxItems = maxItems;
-        this.localStorage = localStorage;
-    }
-
-    public AttachmentIntegrityScheduler(AttachmentIntegrityService files, AttachmentReferenceIntegrityService references,
-            AttachmentIntegrityReportStore store, MeterRegistry metrics, int maxItems, AttachmentIntegrityMetrics health) {
-        this(files, references, store, metrics, maxItems, health, null);
     }
 
     public AttachmentIntegrityScheduler(AttachmentIntegrityService files, AttachmentReferenceIntegrityService references,
             AttachmentIntegrityReportStore store, MeterRegistry metrics, int maxItems) {
-        this(files, references, store, metrics, maxItems, new AttachmentIntegrityMetrics(store, metrics, true), null);
+        this(files, references, store, metrics, maxItems, new AttachmentIntegrityMetrics(store, metrics, true));
     }
 
     @Scheduled(cron = "${nuri.attachment.integrity.cron:0 15 3 * * *}", zone = "Asia/Seoul")
@@ -76,14 +64,6 @@ public class AttachmentIntegrityScheduler {
             completed = links.complete() && report.undecidable() == 0;
             outcome = !completed ? "INCOMPLETE"
                     : report.missing() > 0 || links.dangling() > 0 ? "DRIFT" : "PASS";
-            if (localStorage != null) {
-                try {
-                    int prunedReceipts = localStorage.pruneCompletedDeletionReceipts(RECEIPT_PRUNE_MIN_AGE);
-                    summary.put("prunedDeletionReceipts", prunedReceipts);
-                } catch (RuntimeException pruneFailure) {
-                    log.warn("Failed to prune completed deletion receipts during integrity scan", pruneFailure);
-                }
-            }
         } catch (AttachmentIntegrityService.ScanLimitExceededException limit) {
             outcome = "INCOMPLETE";
         } catch (RuntimeException failure) {

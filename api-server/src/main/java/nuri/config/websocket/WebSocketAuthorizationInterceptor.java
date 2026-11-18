@@ -136,20 +136,14 @@ public class WebSocketAuthorizationInterceptor implements ChannelInterceptor {
             }
         }
 
-        if (command == StompCommand.UNSUBSCRIBE) {
-            SessionAuthorization connected = sessions.get(sessionId);
-            if (connected == null) {
-                closeRevokedSession(sessionId);
-                throw new AccessDeniedException("Authenticated WebSocket session required");
-            }
-            connected.subscriptions().remove(requireSubscriptionId(accessor.getSubscriptionId()));
-            return message;
-        }
-
         // HTTP 인증 당시 principal이나 연결 시점의 permission을 계속 신뢰하지 않는다.
         CurrentSession current = requireUnchangedAuthorization(sessionId);
         return switch (command) {
             case ACK, NACK -> message;
+            case UNSUBSCRIBE -> {
+                current.connected().subscriptions().remove(requireSubscriptionId(accessor.getSubscriptionId()));
+                yield message;
+            }
             case SUBSCRIBE -> authorizeSubscription(accessor, current, message);
             // 클라이언트의 broker/app 직접 SEND는 이전과 같이 전부 거부한다.
             default -> throw new AccessDeniedException("STOMP command is not allowed: " + command);

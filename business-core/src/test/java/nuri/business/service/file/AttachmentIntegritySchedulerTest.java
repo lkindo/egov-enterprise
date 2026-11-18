@@ -257,24 +257,4 @@ class AttachmentIntegritySchedulerTest {
         @Override public Instant instant() { return instant; }
     }
 
-    @Test
-    void scanPrunesAgedDeletionReceiptsWhenLocalStorageIsInjected() throws Exception {
-        var files = mock(AttachmentIntegrityService.class);
-        var references = mock(AttachmentReferenceIntegrityService.class);
-        var store = new AttachmentIntegrityReportStore(JsonMapper.builder().configureForJackson2().build(), directory.toString());
-        var metrics = new SimpleMeterRegistry();
-        var localStorage = mock(LocalFileStorageService.class);
-        when(files.scanBounded(eq(10), any(Duration.class))).thenReturn(
-                new AttachmentIntegrityReport(1, 0, List.of(), "root", 1, 0, 0, List.of()));
-        when(references.scan(10)).thenReturn(new AttachmentReferenceIntegrityService.Result(1, 0, 1, true));
-        when(localStorage.pruneCompletedDeletionReceipts(Duration.ofHours(24))).thenReturn(3);
-
-        var scheduler = new AttachmentIntegrityScheduler(
-                files, references, store, metrics, 10, new AttachmentIntegrityMetrics(store, metrics, true), localStorage);
-        scheduler.scan();
-
-        verify(localStorage).pruneCompletedDeletionReceipts(Duration.ofHours(24));
-        assertThat(Files.readString(directory.resolve("latest.json"))).contains("\"prunedDeletionReceipts\":3");
-    }
-
 }

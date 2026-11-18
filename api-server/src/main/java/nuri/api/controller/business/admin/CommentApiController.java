@@ -2,7 +2,6 @@ package nuri.api.controller.business.admin;
 
 import nuri.business.service.comment.CommentService;
 import nuri.business.service.comment.dto.CommentDto;
-import nuri.foundation.core.board.BoardPostAccessPort;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 public class CommentApiController {
 
     private final CommentService commentService;
-    private final BoardPostAccessPort boardPostAccess;
 
     @Operation(summary = "댓글 목록 조회")
     @GetMapping
@@ -42,8 +40,6 @@ public class CommentApiController {
     @DeleteMapping("/{id}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.CommentApiController#deleteComment')")
     public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable Long id) {
-        CommentService.CommentLocation location = commentService.getCommentLocation(id);
-        boardPostAccess.assertCommentReadAccess(location.bbsId(), location.pstSn());
         commentService.deleteComment(id);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

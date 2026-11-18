@@ -60,18 +60,69 @@ describe('verified-user-forward', () => {
     expect(VERIFIED_USER_HEADER).toBe('x-nuri-verified-user');
   });
 
-  it('fails closed in production when neither JWT_SECRET nor JWT_VERIFY_KEYS_JSON is set', async () => {
-    vi.stubEnv('NODE_ENV', 'production');
-    vi.stubEnv('JWT_SECRET', '');
-    vi.stubEnv('JWT_VERIFY_KEYS_JSON', '');
+  it('uses an ephemeral CSPRNG secret when INTERNAL_USER_FORWARD_SECRET and JWT_SECRET are unset and rejects JWT_VERIFY_KEYS_JSON forgeries', async () => {
+    const publicKeysJson = JSON.stringify({ k1: 'public-spki-fixture-value' });
+    try {
+      vi.stubEnv('INTERNAL_USER_FORWARD_SECRET', publicKeysJson);
+      const forgedSameSecret = await signVerifiedUserHeader(FIXTURE_USER, 'token-alpha', { nowMs: 1_000_000 });
+      expect(forgedSameSecret).toBeTruthy();
 
-    await expect(signVerifiedUserHeader(FIXTURE_USER, 'token-alpha')).resolves.toBeNull();
+      vi.stubEnv('NODE_ENV', 'production');
+      vi.stubEnv('INTERNAL_USER_FORWARD_SECRET', '');
+      vi.stubEnv('JWT_SECRET', '');
+      vi.stubEnv('JWT_VERIFY_KEYS_JSON', publicKeysJson);
 
-    vi.stubEnv('NODE_ENV', 'test');
-    const devSigned = await signVerifiedUserHeader(FIXTURE_USER, 'token-alpha', { nowMs: 1_000_000 });
-    expect(devSigned).toBeTruthy();
+      const ephemeralSigned = await signVerifiedUserHeader(FIXTURE_USER, 'token-alpha', { nowMs: 1_000_000 });
+      expect(ephemeralSigned).toBeTruthy();
+      await expect(
+        verifyVerifiedUserHeader(ephemeralSigned, 'token-alpha', { nowMs: 1_001_000 }),
+      ).resolves.toEqual(FIXTURE_USER);
 
-    vi.stubEnv('NODE_ENV', 'production');
-    await expect(verifyVerifiedUserHeader(devSigned, 'token-alpha', { nowMs: 1_001_000 })).resolves.toBeNull();
+      await expect(
+        verifyVerifiedUserHeader(forgedSameSecret, 'token-alpha', { nowMs: 1_001_000 }),
+      ).resolves.toBeNull();
+
+      const [payloadPart] = (ephemeralSigned ?? '').split('.');
+      const rawKey = await globalThis.crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(publicKeysJson),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign'],
+      );
+      const rawSig = await globalThis.crypto.subtle.sign('HMAC', rawKey, new TextEncoder().encode(payloadPart));
+      const rawForged = `${payloadPart}.${Buffer.from(rawSig).toString('base64url')}`;
+      await expect(
+        verifyVerifiedUserHeader(rawForged, 'token-alpha', { nowMs: 1_001_000 }),
+      ).resolves.toBeNull();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('prefers INTERNAL_USER_FORWARD_SECRET independently of JWT_SECRET', async () => {
+    const dedicatedV1 = globalThis.crypto.randomUUID();
+    const dedicatedV2 = globalThis.crypto.randomUUID();
+    const jwtV1 = globalThis.crypto.randomUUID();
+    const jwtV2 = globalThis.crypto.randomUUID();
+    try {
+      vi.stubEnv('INTERNAL_USER_FORWARD_SECRET', dedicatedV1);
+      vi.stubEnv('JWT_SECRET', jwtV1);
+
+      const signed = await signVerifiedUserHeader(FIXTURE_USER, 'token-alpha', { nowMs: 1_000_000 });
+      expect(signed).toBeTruthy();
+
+      vi.stubEnv('JWT_SECRET', jwtV2);
+      await expect(
+        verifyVerifiedUserHeader(signed, 'token-alpha', { nowMs: 1_001_000 }),
+      ).resolves.toEqual(FIXTURE_USER);
+
+      vi.stubEnv('INTERNAL_USER_FORWARD_SECRET', dedicatedV2);
+      await expect(
+        verifyVerifiedUserHeader(signed, 'token-alpha', { nowMs: 1_001_000 }),
+      ).resolves.toBeNull();
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });

@@ -1346,4 +1346,19 @@ class MemoReportServiceTest {
 
         assertThat(existing.getLastMdfrId()).isEqualTo("login-owner");
     }
+
+    @Test
+    @DisplayName("동시 최초 열람에서 조건부 UPDATE가 0건이면 DB에 먼저 저장된 최초 열람 시각을 반환한다")
+    void getMemoReport_concurrentFirstReadReturnsPersistedWinnerTimestamp() {
+        MemoReport report = readableReport(null);
+        java.time.LocalDateTime persistedWinnerTime = java.time.LocalDateTime.of(2026, 11, 19, 8, 30, 0);
+        given(memoReportRepository.recordFirstReadIfUnread(eq(1L), any(java.time.LocalDateTime.class)))
+                .willReturn(0);
+        given(memoReportRepository.findRptrInqDtByMemoRptSn(1L))
+                .willReturn(Optional.of(persistedWinnerTime));
+
+        MemoReportDto detail = memoReportService.getMemoReport(1L);
+
+        assertThat(detail.getRptrInqDt()).isEqualTo(persistedWinnerTime);
+    }
 }

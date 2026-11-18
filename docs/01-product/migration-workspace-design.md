@@ -8,9 +8,9 @@
 
 > 참고: 아래 정적 HTML 시뮬레이터 기동 안내는 은퇴 전 설계 기록으로 보존한다(실제 실행은 `npm run migration:ui` 와 [실행 안내](../03-guides/migration-workspace-guide.md)를 사용한다).
 
-### 화면 열기와 체험 순서
+### 화면 열기와 체험 순서 (은퇴한 정적 시뮬레이터 기록)
 
-최초 설계 단계의 정적 시뮬레이터는 은퇴 전 아래 명령으로 정적 파일만 띄울 수 있었다.
+최초 설계 단계의 정적 시뮬레이터는 은퇴 전 아래 명령으로 정적 파일만 띄울 수 있었다. 현재 실제 실행과 사용 절차는 [migration-workspace-guide.md](../03-guides/migration-workspace-guide.md)를 따른다.
 
 ```powershell
 # (은퇴 전 시뮬레이터 안내 기록 — 현행 실행은 npm run migration:ui)

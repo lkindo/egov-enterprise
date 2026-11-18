@@ -294,14 +294,14 @@ class WebSocketAuthorizationInterceptorTest {
     }
 
     @Test
-    void unsubscribeRemovesSubscriptionWithoutUserDetailsQueryAndDeniesUnknownSession() {
+    void unsubscribeRevalidatesCurrentAuthorizationRemovesSubscriptionAndDeniesUnknownSession() {
         connect(current("v1", true, "N"));
         subscribeNotifications();
         clearInvocations(userDetailsService);
 
         Message<?> unsubscribe = message(StompCommand.UNSUBSCRIBE, null, true);
         assertThat(interceptor.preSend(unsubscribe, channel)).isSameAs(unsubscribe);
-        verifyNoInteractions(userDetailsService);
+        verify(userDetailsService).loadUserByUsername("USR_001");
         assertThat(interceptor.outboundInterceptor().preSend(outbound(), channel)).isNull();
 
         var strangerSub = StompHeaderAccessor.create(StompCommand.UNSUBSCRIBE);
@@ -311,6 +311,19 @@ class WebSocketAuthorizationInterceptorTest {
         assertThatThrownBy(() -> interceptor.preSend(
                 MessageBuilder.createMessage(new byte[0], strangerSub.getMessageHeaders()), channel))
                 .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void unsubscribeClosesRevokedSession() throws Exception {
+        WebSocketSession transport = trackTransport();
+        connect(current("v1", true, "N"));
+        subscribeNotifications();
+        when(userDetailsService.loadUserByUsername("USR_001")).thenReturn(current("v2", true, "N"));
+
+        Message<?> unsubscribe = message(StompCommand.UNSUBSCRIBE, null, true);
+        assertThatThrownBy(() -> interceptor.preSend(unsubscribe, channel))
+                .isInstanceOf(AccessDeniedException.class);
+        verify(transport).close(CloseStatus.POLICY_VIOLATION);
     }
 
     @Test

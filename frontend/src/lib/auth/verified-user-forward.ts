@@ -4,12 +4,17 @@ export const VERIFIED_USER_HEADER = 'x-nuri-verified-user';
 
 const FORWARD_TTL_MS = 5_000;
 const MAX_FORWARD_HEADER_LEN = 16_384;
-const DEV_FORWARD_SECRET = 'nuri-local-dev-forward-secret';
 const VERIFIED_USER_CACHE_MAX_ENTRIES = 128;
+const EPHEMERAL_SECRET_SYMBOL = Symbol.for('nuri.verifiedUserForward.ephemeralSecret');
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const hmacKeyCache = new Map<string, Promise<CryptoKey>>();
+
+interface ForwardSecretMaterial {
+  cacheId: string;
+  keyBytes: Uint8Array<ArrayBuffer>;
+}
 const verifiedPageUsers = new Map<string, { user: UserInfo; exp: number }>();
 
 /**
@@ -53,12 +58,44 @@ interface VerifiedUserEnvelope {
   tokenHash: string;
 }
 
-function resolveForwardSecret(): string | null {
-  const configured = process.env.JWT_SECRET || process.env.JWT_VERIFY_KEYS_JSON;
-  if (process.env.NODE_ENV === 'production' && !configured) {
+function resolveEphemeralSecret(): Uint8Array<ArrayBuffer> | null {
+  const randomValues = globalThis.crypto?.getRandomValues?.bind(globalThis.crypto);
+  if (!randomValues) {
     return null;
   }
-  return configured || DEV_FORWARD_SECRET;
+  const globalStore = globalThis as typeof globalThis & Record<symbol, Uint8Array<ArrayBuffer> | undefined>;
+  let existing = globalStore[EPHEMERAL_SECRET_SYMBOL];
+  if (!existing) {
+    existing = randomValues(new Uint8Array(new ArrayBuffer(32)));
+    globalStore[EPHEMERAL_SECRET_SYMBOL] = existing;
+  }
+  return existing;
+}
+
+function resolveForwardSecret(): ForwardSecretMaterial | null {
+  // JWT_VERIFY_KEYS_JSON 은 공개키 목록이므로 절대 HMAC 공유 시크릿으로 사용하지 않는다.
+  const dedicated = process.env.INTERNAL_USER_FORWARD_SECRET;
+  if (dedicated) {
+    return {
+      cacheId: `dedicated:${dedicated}`,
+      keyBytes: encoder.encode(`nuri-verified-user-forward-v1:dedicated:${dedicated}`),
+    };
+  }
+  const jwtSecret = process.env.JWT_SECRET;
+  if (jwtSecret) {
+    return {
+      cacheId: `jwt:${jwtSecret}`,
+      keyBytes: encoder.encode(`nuri-verified-user-forward-v1:jwt:${jwtSecret}`),
+    };
+  }
+  const ephemeral = resolveEphemeralSecret();
+  if (!ephemeral) {
+    return null;
+  }
+  return {
+    cacheId: 'ephemeral',
+    keyBytes: ephemeral,
+  };
 }
 
 function bytesToBase64Url(bytes: Uint8Array): string {
@@ -91,22 +128,25 @@ async function sha256Base64Url(value: string): Promise<string> {
   return bytesToBase64Url(new Uint8Array(digest));
 }
 
-function getHmacKey(secret: string): Promise<CryptoKey> {
-  const cached = hmacKeyCache.get(secret);
+function getHmacKey(secret: ForwardSecretMaterial): Promise<CryptoKey> {
+  const cached = hmacKeyCache.get(secret.cacheId);
   if (cached) {
     return cached;
   }
-  const promise = globalThis.crypto.subtle.importKey(
-    'raw',
-    encoder.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign', 'verify'],
-  );
+  const promise = (async () => {
+    const derivedKeyBytes = await globalThis.crypto.subtle.digest('SHA-256', secret.keyBytes);
+    return globalThis.crypto.subtle.importKey(
+      'raw',
+      derivedKeyBytes,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign', 'verify'],
+    );
+  })();
   if (hmacKeyCache.size >= 8) {
     hmacKeyCache.clear();
   }
-  hmacKeyCache.set(secret, promise);
+  hmacKeyCache.set(secret.cacheId, promise);
   return promise;
 }
 
