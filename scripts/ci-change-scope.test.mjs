@@ -237,7 +237,8 @@ test('migration-only changes select independent build and PIT scopes without onl
   assert.equal(classifyChangedFiles(['build.gradle']).mutationMigrationTool, true);
   assert.equal(classifyChangedFiles(['settings.gradle']).mutationMigrationTool, true);
   assert.equal(classifyChangedFiles(['migration-tool/build.gradle']).mutationMigrationTool, true);
-  assert.equal(classifyChangedFiles(['unheard-of/path.bin']).mutationMigrationTool, true);
+  // [ADR-0061 결정 1] 미지 경로는 이관 빌드·시험은 고르지만 이관 PIT 는 그 경로를 읽을 때만 고른다.
+  assert.deepEqual([classifyChangedFiles(['unheard-of/path.bin']).migration, classifyChangedFiles(['unheard-of/path.bin']).mutationMigrationTool], [true, false]);
 
   // Both directions matter: always-false drops migration evidence, while the
   // former subset rule unnecessarily starts the entire online pipeline.
@@ -377,12 +378,18 @@ test('target standard catalog and unknown toolchain inputs retain full fallback'
   // MappingValidator's default catalog is the tracked root db_columns.json.
   // Do not classify it as an isolated migration fixture: it represents the
   // online target schema. External mapping paths remain unknown and full too.
-  for (const file of ['db_columns.json', 'gradlew', 'gradlew.bat', '.java-version', 'mapping.yml']) {
+  // [ADR-0061] The PIT axes follow what PIT reads: the wrapper runs every PIT job,
+  // db_columns.json is read by the migration tool only, the rest by neither.
+  const pit = {
+    'db_columns.json': [false, true], gradlew: [true, true], 'gradlew.bat': [true, true], '.java-version': [false, false], 'mapping.yml': [false, false],
+  };
+  for (const [file, [mutation, mutationMigrationTool]] of Object.entries(pit)) {
     const result = classifyChangedFiles([file]);
     assert.deepEqual(result.unknownFiles, [file]);
-    for (const field of ['backend', 'migration', 'frontend', 'schema', 'e2e', 'mutation', 'mutationMigrationTool']) {
+    for (const field of ['backend', 'migration', 'frontend', 'schema', 'e2e']) {
       assert.equal(result[field], true, `${file}: ${field}`);
     }
+    assert.deepEqual([result.mutation, result.mutationMigrationTool], [mutation, mutationMigrationTool], file);
   }
 });
 
@@ -493,11 +500,77 @@ test('unknown and empty change sets fail closed to the full pipeline', () => {
     assert.equal(result.frontend, true);
     assert.equal(result.schema, true);
     assert.equal(result.e2e, true);
-    assert.equal(result.mutation, true);
-    assert.equal(result.mutationMigrationTool, true);
+    // [ADR-0061 결정 1] 미지 경로는 PIT 가 읽지 않으면 PIT 를 고르지 않는다. 비교 범위가 없으면(빈 변경) 무엇이 바뀌었는지 모르므로 고른다.
+    assert.equal(result.mutation, files.length === 0, `mutation: ${files}`);
+    assert.equal(result.mutationMigrationTool, files.length === 0, `mutationMigrationTool: ${files}`);
     assert.equal(result.reusable, true);
     assert.deepEqual(result.reusableProfiles, PRESET_IDS);
   }
+});
+
+test('an unknown path selects PIT only when PIT can read it', () => {
+  const pitOf = (files, options) => {
+    const result = classifyChangedFiles(files, options);
+    return [result.mutation, result.mutationMigrationTool];
+  };
+  // PIT 잡의 Gradle 구성·컴파일·체크아웃 입력은 두 PIT 를 고른다.
+  for (const file of ['lombok.config', 'gradlew', 'gradlew.bat', '.gitattributes', 'config/governance/vendor-test-ledger.json',
+    // Gradle 이 저절로 빌드하는 buildSrc 와 Kotlin DSL 스크립트(지금은 없다 — 2026-11-19 독립 검토).
+    'buildSrc/build.gradle.kts', 'buildSrc/src/main/groovy/PitConvention.groovy', 'settings.gradle.kts', 'business-app/build.gradle.kts']) {
+    assert.deepEqual(pitOf([file]), [true, true], file);
+  }
+  // PIT 를 고르고 집계하는 코드 자체 — 분류기는 자기 입력의 변경을 좁게 분류하지 않는다.
+  for (const file of ['scripts/ci-change-scope.mjs', 'scripts/composition-profiles.mjs', 'scripts/vendor-evidence-inputs.mjs', 'scripts/aggregate-required-check.mjs']) {
+    assert.deepEqual(pitOf([file]), [true, true], file);
+  }
+  // 이관 도구만 읽는 루트 카탈로그.
+  assert.deepEqual(pitOf(['db_columns.json']), [false, true]);
+  // 운영 계약·도구·원장·의존성 선언 — 다른 축은 모두 전수지만 PIT 는 읽지 않는다.
+  for (const file of ['scripts/verify.mjs', 'scripts/ci-change-scope.test.mjs', 'package.json', 'package-lock.json',
+    'config/governance/gates.json', 'config/pit-duration-profile.json', '.github/required-checks.json', '.githooks/pre-push', 'config/ui-route-capabilities.json']) {
+    const result = classifyChangedFiles([file]);
+    assert.deepEqual(result.unknownFiles, [file], file);
+    assert.deepEqual([result.backend, result.e2e, result.reusable], [true, true, true], file);
+    assert.deepEqual([result.mutation, result.mutationMigrationTool], [false, false], file);
+  }
+  // 미지 경로와 PIT 입력이 함께 바뀌면 PIT 입력이 고른다.
+  assert.deepEqual(pitOf(['scripts/verify.mjs', 'business-app/src/main/java/nuri/business/service/board/BoardService.java']), [true, false]);
+  assert.deepEqual(pitOf(['scripts/verify.mjs', 'migration-tool/src/main/java/nuri/migration/Gone.java']), [false, true]);
+  // 비교 범위가 없거나(--full·빈 변경) 정책 파일이 바뀌면 PIT 도 전수다.
+  assert.deepEqual(pitOf(['scripts/verify.mjs'], { forceFull: true }), [true, true]);
+  assert.deepEqual(pitOf([]), [true, true]);
+  for (const file of ['AGENTS.md', 'docs/03-guides/orchestration-protocol.md', '.agent/knowledge/backend-api-constitution/artifacts/constitution.md']) {
+    assert.deepEqual(pitOf([file]), [true, true], file);
+  }
+});
+
+test('a workflow change selects PIT only when the part that selects, runs or collects PIT moves', () => {
+  const workflow = fs.readFileSync(path.join(repoRoot, '.github/workflows/ci.yml'), 'utf8');
+  const pitOf = (head, base) => {
+    const result = classifyChangedFiles(['.github/workflows/ci.yml'], { ...PR, readSource: () => head, readBaseSource: () => base });
+    assert.equal(result.backend, true, 'the workflow stays an unknown path for every other axis');
+    return [result.mutation, result.mutationMigrationTool];
+  };
+  const edit = (from, to) => {
+    const changed = workflow.replace(from, to);
+    assert.notEqual(changed, workflow, `fixture did not change: ${from}`);
+    return changed;
+  };
+  assert.deepEqual(pitOf(workflow, workflow), [false, false], 'same file');
+  assert.deepEqual(pitOf(edit(/^( {2}reusable-vendor:\r?\n(?:.*\r?\n)*? {4}timeout-minutes: )45/m, '$150'), workflow), [false, false], 'another job changed');
+  assert.deepEqual(pitOf(edit(/^( {2}mutation-scope:\r?\n(?:.*\r?\n)*? {4}timeout-minutes: )30/m, '$131'), workflow), [true, true], 'product PIT job changed');
+  assert.deepEqual(pitOf(edit(/^( {2}mutation-scope-migration:\r?\n(?:.*\r?\n)*? {4}timeout-minutes: )30/m, '$131'), workflow), [true, true], 'migration PIT job changed');
+  assert.deepEqual(pitOf(edit(/^( {2}change-scope:\r?\n(?:.*\r?\n)*? {4}timeout-minutes: )5/m, '$16'), workflow), [true, true], 'classifier job changed');
+  assert.deepEqual(pitOf(edit(/^( {2}mutation-test:)/m, '  mutation-test-gone:'), workflow), [true, true], 'aggregator renamed');
+  assert.deepEqual(pitOf(edit(/^jobs:/m, 'env:\n  ADDED_GLOBALLY: "1"\njobs:'), workflow), [true, true], 'workflow head changed');
+  // PIT 부분이 YAML 별칭으로 잡 밖의 앵커를 끌어오면 앵커 값만 바뀌어도 PIT 가 달라진다 — 워크플로 전체를 비교한다(2026-11-19 독립 검토).
+  const anchored = value => edit(/^( {2}reusable-vendor:\r?\n(?:.*\r?\n)*? {4}timeout-minutes: )45/m, `$1&pit_timeout ${value}`)
+    .replace(/^( {2}mutation-scope:\r?\n(?:.*\r?\n)*? {4}timeout-minutes: )30/m, '$1*pit_timeout');
+  assert.deepEqual(pitOf(anchored(31), anchored(30)), [true, true], 'anchor outside the PIT part changed');
+  assert.deepEqual(pitOf(anchored(30), anchored(30)), [false, false], 'same anchored file');
+  assert.deepEqual(pitOf(workflow, null), [true, true], 'unreadable base');
+  assert.deepEqual(pitOf(null, workflow), [true, true], 'deleted workflow');
+  assert.deepEqual(pitOf('name: no jobs here\n', 'name: no jobs here\n'), [true, true], 'unknown workflow shape');
 });
 
 test('reusable-base matrix only retains presets in which a changed feature file survives', () => {
