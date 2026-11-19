@@ -337,15 +337,17 @@ export default function IntelligenceHubClient({
       actions={
         <>
           {refreshButton(seriesQuery.isFetching)}
-          <DataExportExcel
-            scope="loaded"
-            data={exportRows}
-            headers={[
-              { label: '집계 일자', key: 'date' },
-              { label: `${meta.name} 건수`, key: 'value' },
-            ]}
-            filename={`stats_${activeTab.toLowerCase()}`}
-          />
+          {(!isUninstrumentedTab || (!seriesQuery.isError && points.length > 0)) && (
+            <DataExportExcel
+              scope="loaded"
+              data={exportRows}
+              headers={[
+                { label: '집계 일자', key: 'date' },
+                { label: `${meta.name} 건수`, key: 'value' },
+              ]}
+              filename={`stats_${activeTab.toLowerCase()}`}
+            />
+          )}
         </>
       }
       filter={

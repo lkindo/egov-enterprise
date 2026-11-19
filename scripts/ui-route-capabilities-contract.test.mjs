@@ -12,7 +12,6 @@ import {
   expectedEffectiveShellAccess,
   expectedRouting,
   expectedShellAccess,
-  inspectRouteRepository,
   journeyNetworkStubSources,
   journeyTestDeclarations,
   pageLoadsModule,
@@ -26,7 +25,8 @@ import {
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST_PATH = path.join(ROOT, 'config', 'ui-route-capabilities.json');
 
-const repository = inspectRouteRepository(ROOT);
+const baselineAnalysis = analyzeRouteCapabilities(ROOT, MANIFEST_PATH);
+const repository = baselineAnalysis.repository;
 
 // [2026-08-31] 라우트 수의 단일 원본은 파일시스템 스캔이다 — 같은 수(120)가 세 테스트 파일에
 //   각각 하드코딩되어 신규 화면 1개가 리터럴 3곳을 동시 수정하게 만들던 중복을 제거했다.
@@ -35,7 +35,7 @@ const repository = inspectRouteRepository(ROOT);
 const FILESYSTEM_ROUTE_COUNT = discoverPageRoutes(ROOT).length;
 
 function currentAnalysis() {
-  return analyzeRouteCapabilities(ROOT, MANIFEST_PATH);
+  return structuredClone(baselineAnalysis);
 }
 
 test('current manifest covers every filesystem route exactly once without structural errors', () => {
@@ -61,7 +61,7 @@ test('route technical truth is identical at review time and after review deadlin
     '2036-01-01T00:00:00Z',
   ]) {
     t.mock.timers.setTime(Date.parse(timestamp));
-    assert.deepEqual(currentAnalysis().result, baseline.result, timestamp);
+    assert.deepEqual(analyzeRouteCapabilities(ROOT, MANIFEST_PATH).result, baseline.result, timestamp);
   }
 });
 
@@ -392,8 +392,15 @@ test('notification stream separates API failure from empty and the dispatch demo
   assert.equal(notification.capabilities.some(({ id }) => id === 'notifications.dispatch-preview'), false);
   // [2026-09-06 DEC-OPS-042] 'send' 는 데모의 부활이 아니라 실기능이다 — POST /api/v1/admin/notifications/dispatch
   //   (ADMIN/SYSTEM, 수신자 esntlId 서버 해석)를 부르는 notifications.dispatch capability 다. 데모 preview 부재 검사는 그대로다.
-  assert.deepEqual(notification.supportedActions, ['local-search', 'send', 'tab-filter']);
-  assert.equal(notification.capabilities.some(({ id }) => id === 'notifications.dispatch'), true);
+  assert.deepEqual(notification.supportedActions,
+    ['delete', 'mark-all-read', 'mark-read', 'navigate', 'paginate', 'refresh', 'send', 'server-search', 'tab-filter', 'view-list']);
+  const stream = notification.capabilities.find(({ id }) => id === 'notifications.stream');
+  assert.deepEqual(stream.unsupportedVisibleActions, []);
+  assert.equal(stream.evidenceLevel, 'E4');
+  assert.equal(stream.status, 'live');
+  const dispatch = notification.capabilities.find(({ id }) => id === 'notifications.dispatch');
+  assert.equal(dispatch.evidenceLevel, 'E4');
+  assert.equal(dispatch.status, 'live');
 });
 
 test('empty, missing, and duplicate route populations fail closed', () => {
@@ -559,12 +566,10 @@ test('unverified fields require a bounded review and demo cannot leak to core pr
 
   const falseLive = structuredClone(analysis.manifest);
   const notification = falseLive.routes.find(({ route }) => route === '/admin/notifications');
-  // [2026-09-06 DEC-OPS-038] dispatch-preview 데모는 걷었다. [2026-11-08] 화면에 없던 health-metrics 도 걷었다 — E3 까지만 있고
-  //   목업 원천·미지원 동작이 없는 알림 보내기를 live 로 올린다. 그래서 E4·E5 요건 하나만 붉어야 한다(예전 단언은 목업 규칙과의
-  //   '또는' 이라 E4 요건을 지워도 통과했다).
+  // 알림 보내기에서 왕복 근거를 빼고 E3만 남겨 live 판정의 E4·E5 요건을 직접 검증한다.
   const dispatch = notification.capabilities.find(({ id }) => id === 'notifications.dispatch');
-  dispatch.status = 'live';
-  notification.status = 'partial';
+  dispatch.evidenceLevel = 'E3';
+  delete dispatch.roundtrips;
   assert.match(
     validateRouteCapabilities(falseLive, repository).errors.join('\n'),
     /notifications\.dispatch: live requires current E4 or E5 evidence/,
