@@ -375,11 +375,18 @@ test.describe('권한 변경과 충돌 제어', () => {
                 });
                 expect(stale.status(), '오래된 부서 명부는 최신 배정을 덮어쓸 수 없음').toBe(409);
                 expect(await departmentSnapshot(request, auth, departmentId)).toEqual(added);
-                const removed = await request.put(`${AUTHORIZATION}/departments/${departmentId}/memberships`, {
-                    headers: auth,
-                    data: { userIds: [selected.userId], groupCode, action: 'REMOVE', version: added.version, complete: true },
-                });
-                expect(removed.status(), '선택 구성원 그룹 회수').toBe(200);
+                await editor.getByRole('combobox', { name: '변경 방식', exact: true }).selectOption('REMOVE');
+                await editor.getByRole('combobox', { name: '권한 그룹', exact: true }).selectOption(groupCode);
+                await editor.getByRole('list', { name: '부서 전체 구성원', exact: true }).getByRole('listitem')
+                    .filter({ hasText: userA }).getByRole('checkbox').check();
+                await editor.getByRole('button', { name: '선택한 1명에게 적용', exact: true }).click();
+                await expect(confirmation.getByText(/회수합니다/)).toBeVisible();
+                const [removed] = await Promise.all([
+                    page.waitForResponse(response => new URL(response.url()).pathname === `${AUTHORIZATION}/departments/${departmentId}/memberships`
+                        && response.request().method() === 'PUT'),
+                    confirmation.getByRole('button', { name: '확인', exact: true }).click(),
+                ]);
+                expect(removed.status(), '선택 구성원 그룹 회수 UI 저장').toBe(200);
                 const after = await departmentSnapshot(request, auth, departmentId);
                 expect(after.users.find(member => member.loginId === userA)?.groups).toEqual(['ROLE_USER']);
                 expect(after.users.find(member => member.loginId === userB)).toEqual(before.users.find(member => member.loginId === userB));
