@@ -365,6 +365,30 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("현재 비밀번호 실패 예산은 로그인 실패와 독립이며 로그인 성공으로 지워지지 않는다")
+    void changePasswordFailuresKeepASeparateBudget() {
+        org.springframework.test.util.ReflectionTestUtils.setField(userService, "maxLoginFailures", 2);
+        User user = User.builder().esntlId("USR_ESNTL_1").userId("user1")
+                .pswd("oldEncoded").lckCnt(1).build();
+        given(userRepository.findById("user1")).willReturn(Optional.of(user));
+        given(passwordEncoder.matches("wrong", "oldEncoded")).willReturn(false);
+
+        assertThrows(nuri.business.domain.user.exception.CurrentPasswordMismatchException.class,
+                () -> userService.changePassword("user1", "wrong", "new"));
+        assertThat(user.getLckCnt()).isEqualTo(1);
+        assertThat(user.isLocked()).isFalse();
+        verify(userRepository, never()).advanceSessionCycle(anyList());
+
+        user.unlockAccount(); // Successful login or expiry of a login-only lock.
+
+        assertThrows(nuri.business.domain.user.exception.CurrentPasswordMismatchException.class,
+                () -> userService.changePassword("user1", "wrong", "new"));
+        assertThat(user.getLckCnt()).isZero();
+        assertThat(user.isLocked()).isTrue();
+        verify(userRepository).advanceSessionCycle(List.of("USR_ESNTL_1"));
+    }
+
+    @Test
     @DisplayName("사용자 정보 수정 테스트 - 본인 성공")
     void updateUserSelfSuccessTest() {
         User user = mock(User.class);

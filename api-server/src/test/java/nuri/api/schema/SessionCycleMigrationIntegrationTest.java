@@ -17,11 +17,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * 차수는 한 문장 증가로만 오르며 음수가 될 수 없다.
  */
 @Tag("schema-validation")
-@DisplayName("V2_153 사용자 세션차수와 등록일 인덱스")
+@DisplayName("사용자 세션 차수와 비밀번호 오류 횟수의 스키마 확장")
 class SessionCycleMigrationIntegrationTest extends SharedPostgresMigrationTestSupport {
 
     @Test
-    @DisplayName("세션차수를 NOT NULL 기본값 0 으로 더해 기존 행을 0 으로 두고, 표준 용어·CHECK·등록일 인덱스를 둔다")
+    @DisplayName("V2.153 세션 차수를 초기화하고 V2.154에서 기존 계정 상태를 보존한다")
     void addsSessionCycleWithZeroDefaultAndSortIndex() throws Exception {
         AuthorizationCutoverTestSupport.migrate(flyway(MigrationVersion.fromVersion("2.152")));
         long users;
@@ -56,6 +56,19 @@ class SessionCycleMigrationIntegrationTest extends SharedPostgresMigrationTestSu
             assertThatThrownBy(() -> statement.executeUpdate(
                     "UPDATE tb_user_info SET ssn_cycl = -1 WHERE esntl_id = '" + esntlId + "'"))
                     .as("차수는 음수가 될 수 없다").isInstanceOf(SQLException.class);
+            statement.executeUpdate("UPDATE tb_user_info SET lck_cnt = 3 WHERE esntl_id = 'V2153_BEFORE'");
+        }
+
+        flyway(MigrationVersion.fromVersion("2.154")).migrate();
+
+        try (var connection = openConnection(); var statement = connection.createStatement()) {
+            assertThat(number(statement, "SELECT count(*) FROM tb_user_info")).isEqualTo(users);
+            assertThat(text(statement, "SELECT data_type || ':' || numeric_precision || ':' || numeric_scale || ':' || is_nullable"
+                    + " FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'tb_user_info'"
+                    + " AND column_name = 'pswd_fail_nmtm'")).isEqualTo("numeric:10:0:YES");
+            assertThat(number(statement, "SELECT count(*) FROM tb_user_info WHERE esntl_id = 'V2153_BEFORE'"
+                    + " AND ssn_cycl = 1 AND lck_cnt = 3 AND pswd_fail_nmtm IS NULL"))
+                    .as("기존 세션 차수와 실패 이력을 보존하고 새 횟수는 0회에서 시작한다").isEqualTo(1);
         }
     }
 
