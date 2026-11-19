@@ -396,6 +396,8 @@ test('notification stream separates API failure from empty and the dispatch demo
     ['delete', 'mark-all-read', 'mark-read', 'navigate', 'paginate', 'refresh', 'send', 'server-search', 'tab-filter', 'view-list']);
   const stream = notification.capabilities.find(({ id }) => id === 'notifications.stream');
   assert.deepEqual(stream.unsupportedVisibleActions, []);
+  assert.equal(stream.evidenceLevel, 'E4');
+  assert.equal(stream.status, 'live');
   const dispatch = notification.capabilities.find(({ id }) => id === 'notifications.dispatch');
   assert.equal(dispatch.evidenceLevel, 'E4');
   assert.equal(dispatch.status, 'live');
