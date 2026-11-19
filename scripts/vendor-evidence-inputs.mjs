@@ -15,6 +15,7 @@ const VENDOR_JOB_WORKFLOW = '.github/workflows/ci.yml';
 const VENDOR_JOB_HEADER = '  reusable-vendor:';
 const SCHEMA_TESTS = 'api-server/src/test/java/nuri/api/schema';
 const ENTITY_ROOTS = Object.freeze(['foundation/src/main/java', 'business-core/src/main/java', 'business-app/src/main/java', 'api-server/src/main/java']);
+const MODULE_MANIFEST = /^config\/modules\/[a-z][a-z0-9-]*\.json$/;
 /** 중립 모델을 만드는 명령. 이 명령이 가져오는 모듈은 원장이 빼지 않는 한 입력이다. */
 const MODEL_ENTRY = 'scripts/generate-reusable-base-db.mjs';
 const TOOL_IMPORT = /(?:\bfrom\s+|\bimport\s*\(?\s*)['"]\.\/([^'"]+\.mjs)['"]/g;
@@ -60,6 +61,31 @@ function expandDeclaredInput(listed, declared) {
 export function readVendorInput(root, path) {
   try { return readFileSync(join(root, path), 'utf8'); }
   catch (error) { throw inputFailure(path, error); }
+}
+
+/** 체크아웃 설정에 따른 줄 끝을 통일하고, 구성·스키마와 무관한 v2 화면 문구만 인증 입력에서 뺀다. */
+export function vendorEvidenceContent(path, text) {
+  const source = text.replace(/\r\n/g, '\n');
+  if (!MODULE_MANIFEST.test(path)) return source;
+  let manifest;
+  try { manifest = JSON.parse(source); }
+  catch { return source; }
+  if (manifest?.schemaVersion !== 2) return source;
+
+  if (path === 'config/modules/presets.json' && Array.isArray(manifest.presets)) {
+    for (const preset of manifest.presets) {
+      if (typeof preset?.label === 'string') delete preset.label;
+      if (typeof preset?.description === 'string') delete preset.description;
+    }
+  } else if (path === 'config/modules/core.json' && Array.isArray(manifest.presentation?.areas)) {
+    for (const area of manifest.presentation.areas) {
+      if (typeof area?.label === 'string') delete area.label;
+    }
+  } else if (path !== 'config/modules/core.json' && path !== 'config/modules/presets.json'
+      && typeof manifest.presentation?.summary === 'string') {
+    delete manifest.presentation.summary;
+  }
+  return JSON.stringify(manifest);
 }
 
 const sensitiveJavaFiles = (root, listed) => ENTITY_ROOTS.flatMap(directory => filesUnder(listed, directory))
@@ -160,7 +186,13 @@ export function vendorInputChange(plan, vendorId, file, { head, readBase }) {
   const declared = owned || files.has(file) || covers(ledger.evidenceInputs.paths) || covers(ledger.evidenceInputs.ciOnly ?? [])
     || (file.startsWith(`${SCHEMA_TESTS}/`) && !replacedSchemaTests(tests).has(file));
   const sensitivePath = isVendorSensitivePath(file);
-  if (head !== null) return declared || (sensitivePath && (VENDOR_SENSITIVE.test(head) || VENDOR_SENSITIVE.test(readBase() ?? ''))) ? 'changed' : 'none';
+  if (head !== null) {
+    if (declared && MODULE_MANIFEST.test(file)) {
+      const base = readBase();
+      if (typeof base === 'string' && vendorEvidenceContent(file, head) === vendorEvidenceContent(file, base)) return 'none';
+    }
+    return declared || (sensitivePath && (VENDOR_SENSITIVE.test(head) || VENDOR_SENSITIVE.test(readBase() ?? ''))) ? 'changed' : 'none';
+  }
   // 제거 원장이 가리키는 자산이 사라지면 원장이 낡아 벤더 생성만 멈춘다.
   if (declared || removedAssets.has(file)) return 'deleted';
   if (sensitivePath) {

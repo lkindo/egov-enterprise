@@ -1015,6 +1015,22 @@ test('every certification input and CI-only path selects the vendor job on the r
   }
 });
 
+test('presentation copy leaves vendor jobs off while route ownership still selects them', () => {
+  const file = 'config/modules/showcase.json';
+  const original = fs.readFileSync(path.join(repoRoot, file), 'utf8');
+  const changed = JSON.parse(original);
+  const classify = base => classifyChangedFiles([file], {
+    ...PR, readSource: () => JSON.stringify(changed), readBaseSource: () => base,
+  });
+
+  changed.presentation.summary = '시연 구성 표시 문구';
+  assert.equal(classify(original).reusableVendor, false);
+  assert.equal(classify(null).reusableVendor, true);
+
+  changed.owns.routes.pop();
+  assert.deepEqual(vendorFields(classify(original)), { reusableVendor: true, reusableVendorMatrix: ALL_MULTI });
+});
+
 // 쿼리 표지가 아니면 입력이 아닌 파일들이다. @Query·com.querydsl 표지를 좁히면 이 파일들이 조용히 꺼진다.
 // createQuery 는 원장에 있는 파일에만, @Lock 은 @Query 와 함께만 쓰여 실제 파일로 고정하지 못하므로 아래 합성 사례와 증거 시험의 표지 사례가 지킨다.
 const QUERY_FILES = {

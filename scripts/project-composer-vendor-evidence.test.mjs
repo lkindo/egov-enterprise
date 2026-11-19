@@ -341,6 +341,50 @@ test('every SQL, JPQL, QueryDSL, lock and filter marker makes a Java file an inp
   }
 });
 
+test('vendor evidence keeps presentation copy stable and detects a change to route ownership', t => {
+  const root = tinySource(t);
+  const ledger = readLedger(root);
+  const file = 'config/modules/showcase.json';
+  const coreFile = 'config/modules/core.json';
+  const presetsFile = 'config/modules/presets.json';
+  ledger.evidenceInputs.paths.push('config/modules/');
+  const readManifest = path => JSON.parse(readFileSync(join(ROOT, path), 'utf8'));
+  const module = readManifest(file);
+  const core = readManifest(coreFile);
+  const presets = readManifest(presetsFile);
+  put(root, file, JSON.stringify(module));
+  put(root, coreFile, JSON.stringify(core));
+  put(root, presetsFile, JSON.stringify(presets));
+  const before = vendorEvidenceHash(root, ledger, 'oracle');
+
+  module.presentation.summary = '시연 구성 표시 문구';
+  core.presentation.areas[0].label = '영역 표시 이름';
+  presets.presets[0].label = '시작 구성 표시 이름';
+  presets.presets[0].description = '시작 구성 설명';
+  put(root, file, JSON.stringify(module));
+  put(root, coreFile, JSON.stringify(core));
+  put(root, presetsFile, JSON.stringify(presets));
+  assert.equal(vendorEvidenceHash(root, ledger, 'oracle'), before);
+
+  module.owns.routes.pop();
+  put(root, file, JSON.stringify(module));
+  assert.notEqual(vendorEvidenceHash(root, ledger, 'oracle'), before);
+
+  put(root, file, JSON.stringify(readManifest(file)));
+  core.presentation.areas[0].id = 'changed-area-id';
+  put(root, coreFile, JSON.stringify(core));
+  assert.notEqual(vendorEvidenceHash(root, ledger, 'oracle'), before, '영역 식별자는 결속한다');
+
+  put(root, coreFile, JSON.stringify(readManifest(coreFile)));
+  presets.presets[0].ci = { pr: 'different-layout' };
+  put(root, presetsFile, JSON.stringify(presets));
+  assert.notEqual(vendorEvidenceHash(root, ledger, 'oracle'), before, '시작 구성의 CI 실행 범위는 결속한다');
+
+  put(root, presetsFile, JSON.stringify(readManifest(presetsFile)));
+  put(root, file, '{');
+  assert.notEqual(vendorEvidenceHash(root, ledger, 'oracle'), before);
+});
+
 test('the tools behind the model are inputs by default: only a listed reason takes one out', t => {
   const root = tinySource(t);
   const ledger = readLedger(root);
