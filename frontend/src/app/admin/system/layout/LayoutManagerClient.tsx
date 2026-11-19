@@ -107,7 +107,7 @@ export default function LayoutManagerClient() {
             <Badge className="bg-primary/10 text-primary border-none font-bold px-4 py-1 rounded-lg tracking-tighter">디자인 토큰 엔진</Badge>
           </div>
           <h1 className="text-4xl font-bold tracking-tighter flex items-center gap-4 text-foreground">
-            <Settings2 className="w-10 h-10 text-primary" />
+            <Settings2 aria-hidden="true" className="w-10 h-10 text-primary" />
             시스템 테마 및 디자인 토큰 제어
           </h1>
           <p className="mt-3 text-muted-foreground font-bold text-lg">
@@ -121,14 +121,14 @@ export default function LayoutManagerClient() {
             onClick={handleThemeReset}
             className="px-6 rounded-lg font-bold gap-2"
           >
-            <RotateCcw size={18} />
+            <RotateCcw size={18} aria-hidden="true" />
             기본값 복원
           </Button>
           <Button
             onClick={handleThemeSave}
             className="px-10 rounded-lg font-bold gap-3 shadow-2xl shadow-primary/30 bg-primary hover:scale-105 transition-transform"
           >
-            <CheckCircle2 size={22} />
+            <CheckCircle2 size={22} aria-hidden="true" />
             이 브라우저에 적용
           </Button>
         </div>
@@ -140,7 +140,7 @@ export default function LayoutManagerClient() {
 
           <section className="space-y-6">
             <h3 className="text-xl font-bold flex items-center gap-2 text-foreground">
-              <Palette size={20} className="text-primary" />
+              <Palette size={20} aria-hidden="true" className="text-primary" />
               모서리 둥글기
             </h3>
             <Card className="rounded-lg border-none shadow-[0_32px_80px_rgba(0,0,0,0.06)] bg-card/60 backdrop-blur-3xl p-2 overflow-hidden">
@@ -177,7 +177,7 @@ export default function LayoutManagerClient() {
 
           <section className="space-y-6">
             <h3 className="text-xl font-bold flex items-center gap-2 text-foreground">
-              <Brush size={20} className="text-primary" />
+              <Brush size={20} aria-hidden="true" className="text-primary" />
               브랜드 색상
             </h3>
             <Card className="rounded-lg border-none shadow-[0_32px_80px_rgba(0,0,0,0.06)] bg-card/60 backdrop-blur-3xl p-2">

@@ -8069,11 +8069,12 @@
           "visibleLabel": "시스템 테마 및 디자인 토큰 제어",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E1",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-19",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/system/layout/LayoutManagerClient.tsx",
+            "frontend/src/app/admin/system/layout/__tests__/LayoutManagerClient.test.tsx",
             "frontend/src/app/admin/system/layout/page.tsx",
             "frontend/src/types/generated-permissions.ts"
           ]
@@ -8090,11 +8091,12 @@
           "visibleLabel": "실시간 시뮬레이터",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E1",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-19",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/system/layout/LayoutManagerClient.tsx",
+            "frontend/src/app/admin/system/layout/__tests__/LayoutManagerClient.test.tsx",
             "frontend/src/app/admin/system/layout/page.tsx"
           ]
         }
