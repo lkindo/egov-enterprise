@@ -97,6 +97,7 @@ k6 run `
 - exit code와 threshold 결과
 - `test-results/k6/results.json`
 - `test/load-tests/results/report-*.html`
+- `test/load-tests/results/summary-*.json`의 요청별 p95·p99, 오류율과 처리량
 - 같은 시간대의 API/JVM·DB 로그와 자원 메트릭
 - 생성 데이터의 정리 결과
 
