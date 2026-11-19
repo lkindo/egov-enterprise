@@ -752,9 +752,17 @@ test.describe('명령 센터의 현재 계정·권한 경계', () => {
                 groups: ['ROLE_USER'], version: snapshot.version, complete: true,
             } })).status(), '관리자 그룹 회수').toBe(200);
             expect((await request.get('/api/v1/auth/me', { headers: fixture.authorization })).status(), '회수 전에 받은 access token 은 끊긴다').toBe(401);
-            await page.evaluate(() => window.dispatchEvent(new Event('authorization-changed')));
+            const loginUrl = /\/login(?:\?|$)/;
+            // 위젯의 401 처리로 이미 이동 중이면 로그인 화면과 재발급 거부를 같은 단언으로 확인한다.
+            try {
+                if (!loginUrl.test(page.url())) {
+                    await page.evaluate(() => window.dispatchEvent(new Event('authorization-changed')));
+                }
+            } catch (error) {
+                if (!(error instanceof Error) || !error.message.includes('Execution context was destroyed')) throw error;
+            }
             expect((await reissue).status(), '회수 전에 받은 refresh token 의 재발급은 거부된다').toBe(401);
-            await expect(page).toHaveURL(/\/login(?:\?|$)/, { timeout: 15000 });
+            await expect(page).toHaveURL(loginUrl, { timeout: 15000 });
             await expect(page.getByRole('heading', { name: '엔터프라이즈', exact: true })).toBeVisible();
             for (const name of ['주메뉴 네비게이션', '주 메뉴 탐색']) {
                 await expect(page.getByRole('navigation', { name, exact: true }), '로그인 화면에 회수 전 메뉴가 남지 않는다').toHaveCount(0);

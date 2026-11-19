@@ -66,4 +66,4 @@
 - **`VendorTestSql.java` 의 CUBRID 관측 임시 파일** — 시험 스레드가 중단되면 프로세스를 끝내지 않고 지우며 실패를 무시해 임시 파일이 남는다.
 - **은퇴한 정적 시뮬레이터(`tools/migration-workspace-prototype/`) 디렉터리 제거** — `config/governance/vendor-removed-assets.json`·`config/db-vendors.json`(`removedPostgresTools`) 이 벤더 증거 입력에 걸리므로 `gates.json`·`package.json`·`ci-change-scope.mjs`·`.github/CODEOWNERS`·`config/security/codeql.yml`·관련 문서(`migration-workspace-design.md`·`cicd-pipeline.md`·`migration-workspace-guide.md`) 및 계약 시험과 함께 제거.
 - **벤더 대표 E2E 앱 기동 대기 하한(`240초`) 보장** — `scripts/run-isolated-e2e.mjs` 가 `vendorRuntime.engine.maxWaitSeconds * 1000`(`cubrid` `120초`)을 그대로 넘겨 기본값(`180초`)보다 짧아지면서 Windows Docker TCP 의 CUBRID Flyway(`77~92초`)+기동(`~60초`)이 시간 초과되는 문제를 `applicationReadyTimeoutMs`(`Math.max(240_000, maxWaitSeconds * 1000)`) 로 해소(`scripts/project-composer-vendor.test.mjs` 로 고정).
-- **E2E 정리** — `security-administration.spec.ts` 의 완전 회수 단계를 BFF 로그인으로 되돌린다. `authentication.spec.ts` 의 간헐 실패 둘(회수 뒤 이벤트 발생 시 문맥 소멸, 로그아웃과 겹친 배너·팝업 조회)을 고친다 — 허용 항목으로 덮지 않는다.
+- **E2E 정리** — `security-administration.spec.ts` 의 완전 회수 단계를 BFF 로그인으로 되돌린다. `authentication.spec.ts` 에서는 로그아웃과 겹친 배너·팝업 조회의 간헐 실패를 고친다 — 허용 항목으로 덮지 않는다.
