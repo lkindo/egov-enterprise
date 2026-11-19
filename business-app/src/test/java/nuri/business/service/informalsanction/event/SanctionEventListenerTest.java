@@ -43,14 +43,14 @@ class SanctionEventListenerTest {
 
     /** 앱 알림 전 기안자 계정 존재 확인. 기본은 '있다' — 지워진 기안자는 그 시험에서만 따로 정한다. */
     @Mock
-    private nuri.business.domain.user.repository.UserRepository userRepository;
+    private nuri.business.service.informalsanction.ApprovalRecipients approvalRecipients;
 
     private SanctionEventListener sanctionEventListener;
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        sanctionEventListener = new SanctionEventListener(userService, eventPublisher, userRepository);
-        lenient().when(userRepository.existsById(any())).thenReturn(true);
+        sanctionEventListener = new SanctionEventListener(userService, eventPublisher, approvalRecipients);
+        lenient().when(approvalRecipients.exists(any())).thenReturn(true);
         lenient().doAnswer(call -> {
             Object event = call.getArgument(0);
             if (event instanceof SanctionExternalNotificationEvent external) {
@@ -232,12 +232,12 @@ class SanctionEventListenerTest {
         SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
                 11L, "GONE_001", "SANCTIONER_001",
                 nuri.business.domain.informalsanction.SanctionStatus.APPROVED, "승인되었습니다.");
-        given(userRepository.existsById("GONE_001")).willReturn(false);
+        given(approvalRecipients.exists("GONE_001")).willReturn(false);
 
         sanctionEventListener.handleStatusChanged(event);
 
         assertThat(published(NotificationRequestedEvent.class)).isEmpty();
-        verify(userRepository).existsById("GONE_001");
+        verify(approvalRecipients).exists("GONE_001");
     }
 
     /**

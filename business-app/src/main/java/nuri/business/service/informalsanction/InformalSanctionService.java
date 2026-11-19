@@ -47,6 +47,8 @@ public class InformalSanctionService {
     private final nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository;
     /** [V2_151] 대리결재는 응답 전에 민감 작업 감사 원장에 남긴다(같은 트랜잭션). */
     private final nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
+    /** [2026-11-19] 결재 알림을 받을 수 있는 사람(계정이 있는 사람)만 고른다. */
+    private final ApprovalRecipients approvalRecipients;
 
     /** 대리결재의 민감 작업 감사 이름 — 대상은 {@code 문서번호/차수/원결재자}. */
     static final String SUBSTITUTE_AUDIT_OPERATION = "SANCTION_DELEGATED_ACT";
@@ -705,16 +707,11 @@ public class InformalSanctionService {
     }
 
     /**
-     * [2026-11-19] 결재 알림은 실제로 있는 사용자에게만 보낸다. 결재선·기안자·보완 요청 행은 사용자 삭제 뒤에도 남지만(사용자 FK
-     * 없음) 알림 행(tb_user_noti)은 사용자 FK 가 있고 이 업무 트랜잭션 안에서 저장된다 — 지워진 사람에게 보내면 FK 위반으로
-     * 앞 단계 승인·반려·회수·결재자 변경·보완 요청이 모두 되돌아가 DB 를 고치지 않고는 문서를 움직일 수 없었다(참조자 결과 알림은
-     * {@link #publishReferenceResult} 가 먼저 걸렀다). 알림 저장 쪽에서 일괄로 거르지 않는다 — 식별자 축을 잘못 넘긴 다른 기능의
-     * 호출(로그인 ID 등)이 FK 위반으로 드러나는 신호를 지우지 않기 위해서다. 받는 사람은 정렬해 순서를 고정한다. 한 사람씩 예외 없이
-     * 묻는다 — 받는 사람은 한 단계의 결재자 수만큼이다.
+     * [2026-11-19] 결재 알림은 실제로 계정이 있는 사람에게만 보낸다 — 이유와 범위는 {@link ApprovalRecipients}(참조자 결과 알림은
+     * {@link #publishReferenceResult} 가 먼저 걸렀다). 받는 사람은 정렬해 순서를 고정한다.
      */
     private List<String> existingUsers(Collection<String> candidates) {
-        return candidates.stream().filter(Objects::nonNull).distinct().sorted()
-                .filter(userRepository::existsById).toList();
+        return approvalRecipients.existing(candidates);
     }
 
     private void notifyExisting(UUID eventId, Collection<String> receivers, String title, String content, String link) {

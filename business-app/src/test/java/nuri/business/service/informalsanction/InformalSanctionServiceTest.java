@@ -62,6 +62,8 @@ class InformalSanctionServiceTest {
 
     @Mock
     private nuri.business.domain.user.repository.UserRepository userRepository;
+    @org.mockito.Mock
+    private ApprovalRecipients approvalRecipients;
 
     @org.mockito.Spy
     nuri.business.service.informalsanction.dto.InformalSanctionMapper informalSanctionMapper = new nuri.business.service.informalsanction.dto.InformalSanctionMapperImpl();
@@ -86,7 +88,8 @@ class InformalSanctionServiceTest {
     @BeforeEach
     void setUp() {
         // 알림 받는 사람은 기본으로 모두 있는 계정이다 — 지워진 계정은 그 시험에서만 따로 정한다(2026-11-19 결재 알림 필터).
-        org.mockito.Mockito.lenient().when(userRepository.existsById(org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        org.mockito.Mockito.lenient().when(approvalRecipients.existing(org.mockito.ArgumentMatchers.any())).thenAnswer(call ->
+                call.<java.util.Collection<String>>getArgument(0).stream().filter(java.util.Objects::nonNull).distinct().sorted().toList());
         securityUtilMock = mockStatic(SecurityUtil.class);
     }
 
@@ -348,7 +351,9 @@ class InformalSanctionServiceTest {
         given(historyRepository.findById(new nuri.business.domain.informalsanction.InformalSanctionHistoryId(
                 1L, java.math.BigDecimal.ONE))).willReturn(Optional.of(
                 nuri.business.domain.informalsanction.InformalSanctionHistory.create(sanction)));
-        given(userRepository.existsById("gone")).willReturn(false);
+        org.mockito.Mockito.doAnswer(call -> call.<java.util.Collection<String>>getArgument(0).stream()
+                .filter(user -> !"gone".equals(user)).distinct().sorted().toList())
+                .when(approvalRecipients).existing(org.mockito.ArgumentMatchers.any());
 
         informalSanctionService.deleteInformalSanction(1L);
 

@@ -33,14 +33,14 @@ public class SanctionEventListener {
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     /** 앱 알림 전에 기안자 계정이 있는지 본다 — 예외 없이 묻는다(업무 트랜잭션 안이라 던지면 결재까지 되돌아간다). */
-    private final nuri.business.domain.user.repository.UserRepository userRepository;
+    private final nuri.business.service.informalsanction.ApprovalRecipients approvalRecipients;
 
     public SanctionEventListener(nuri.business.service.user.UserService userService,
                                 org.springframework.context.ApplicationEventPublisher eventPublisher,
-                                nuri.business.domain.user.repository.UserRepository userRepository) {
+                                nuri.business.service.informalsanction.ApprovalRecipients approvalRecipients) {
         this.userService = userService;
         this.eventPublisher = eventPublisher;
-        this.userRepository = userRepository;
+        this.approvalRecipients = approvalRecipients;
     }
 
     @EventListener
@@ -155,7 +155,7 @@ public class SanctionEventListener {
         }
         // [2026-11-19] 기안자 계정이 지워졌으면 앱 알림을 남기지 않는다. 결재 행은 사용자 삭제 뒤에도 남지만 알림 행은 사용자
         //   FK 가 있고 이 업무 트랜잭션 안에서 저장된다 — 보내면 FK 위반으로 결재자의 최종 승인·반려가 되돌아갔다.
-        if (!userRepository.existsById(event.getApplicantId())) {
+        if (!approvalRecipients.exists(event.getApplicantId())) {
             log.warn("Applicant account no longer exists; in-app result notice skipped: sanctionSn={}",
                     event.getInformalSanctionSn());
             return;

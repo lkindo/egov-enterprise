@@ -77,6 +77,8 @@ class ApprovalSubstitutionServiceTest {
     @Mock private CommonCodeService commonCodeService;
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private UserRepository userRepository;
+    @org.mockito.Mock
+    private ApprovalRecipients approvalRecipients;
     @Mock private EntityManager entityManager;
     @Mock private UserAbsenceRepository userAbsenceRepository;
     @Mock private AttachmentAssignmentPolicy attachmentAssignmentPolicy;
@@ -88,7 +90,8 @@ class ApprovalSubstitutionServiceTest {
     @BeforeEach
     void setUp() {
         // 알림 받는 사람은 기본으로 모두 있는 계정이다 — 지워진 계정은 그 시험에서만 따로 정한다(2026-11-19 결재 알림 필터).
-        org.mockito.Mockito.lenient().when(userRepository.existsById(org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        org.mockito.Mockito.lenient().when(approvalRecipients.existing(org.mockito.ArgumentMatchers.any())).thenAnswer(call ->
+                call.<java.util.Collection<String>>getArgument(0).stream().filter(java.util.Objects::nonNull).distinct().sorted().toList());
         security = mockStatic(SecurityUtil.class, CALLS_REAL_METHODS);
         security.when(() -> SecurityUtil.hasPermission(anyString())).thenReturn(true);
         security.when(SecurityUtil::getCurrentLoginId).thenReturn(Optional.of("login"));
