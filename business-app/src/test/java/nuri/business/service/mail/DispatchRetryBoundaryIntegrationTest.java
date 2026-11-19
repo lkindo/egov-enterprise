@@ -108,9 +108,14 @@ class DispatchRetryBoundaryIntegrationTest {
         }
     }
 
+    /**
+     * [2026-11-19] 재시도는 연결 단계 실패뿐이다 — 연결 거부는 본문이 나가지 않았으므로 실제 프록시가 3회까지 다시 시도한다.
+     * 결과를 알 수 없는 실패는 아래 시험이 한 번에 그치는 것을 본다.
+     */
     @Test
     void mailRetriesButDefinitiveSmsRejectDoesNotRepeatPost() throws Exception {
-        doThrow(new IllegalStateException("delivery unavailable"))
+        doThrow(new org.springframework.mail.MailSendException("Mail server connection failed",
+                new java.net.ConnectException("Connection refused")))
                 .when(emailSender).send(anyString(), anyString(), anyString(), anyString());
         when(smsSender.send(anyString(), anyString(), anyString())).thenReturn(SmsGatewayResult.rejected(SmsGatewayResult.Reason.PROVIDER_REJECTED));
         try (var context = context()) {
@@ -123,6 +128,22 @@ class DispatchRetryBoundaryIntegrationTest {
             assertThat(nuri.business.service.sms.SmsReceiptState.display("F", recipients.findById(new SmsRecptnId(1L, "0101")).orElseThrow().getRsltMsg()))
                     .contains("거절");
             assertThat(context.getBean(FailingCommitManager.class).commits.get()).isEqualTo(4);
+        }
+    }
+
+    /**
+     * [2026-11-19] SMTP 서버가 본문을 받은 뒤 끊긴 것처럼 결과를 알 수 없는 실패는 실제 프록시로도 다시 보내지 않는다 — 문자와 같은
+     * 원칙이다. 종전에는 모든 예외를 3회 재시도해 같은 메일이 여러 번 나갈 수 있었다.
+     */
+    @Test
+    void ambiguousMailFailureCannotTriggerRetryThroughTheRealProxy() throws Exception {
+        doThrow(new org.springframework.mail.MailSendException("Failed to close server connection after message sending",
+                new jakarta.mail.MessagingException("connection reset")))
+                .when(emailSender).send(anyString(), anyString(), anyString(), anyString());
+        try (var context = context()) {
+            context.getBean(MailAsyncProcessor.class).dispatchCommitted(1L, QUEUED, "title", "body", "from", "to", null).join();
+            verify(emailSender, times(1)).send(anyString(), anyString(), anyString(), anyString());
+            verify(mails).recordResult(1L, QUEUED, "F");
         }
     }
 

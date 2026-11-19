@@ -81,6 +81,8 @@ class InformalSanctionWorkflowServiceTest {
     @Mock private CommonCodeService commonCodeService;
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private UserRepository userRepository;
+    @org.mockito.Mock
+    private ApprovalRecipients approvalRecipients;
     @Mock private EntityManager entityManager;
     @Spy private InformalSanctionMapper informalSanctionMapper = new InformalSanctionMapperImpl();
     /** [V2_151] 첨부 할당·대리결재·민감 감사 — 없으면 @InjectMocks 가 null 을 넣어 열람·목록·결정 경로가 NPE 로 끝난다. */
@@ -92,6 +94,9 @@ class InformalSanctionWorkflowServiceTest {
 
     @BeforeEach
     void setUp() {
+        // 알림 받는 사람은 기본으로 모두 있는 계정이다 — 지워진 계정은 그 시험에서만 따로 정한다(2026-11-19 결재 알림 필터).
+        org.mockito.Mockito.lenient().when(approvalRecipients.existing(org.mockito.ArgumentMatchers.any())).thenAnswer(call ->
+                call.<java.util.Collection<String>>getArgument(0).stream().filter(java.util.Objects::nonNull).distinct().sorted().toList());
         security = mockStatic(SecurityUtil.class, CALLS_REAL_METHODS);
         actor("owner");
         // 기본은 결재 기능 권한을 모두 가진 사용자다. 권한이 빠진 경우는 해당 테스트가 따로 정한다.
@@ -548,6 +553,31 @@ class InformalSanctionWorkflowServiceTest {
         TransactionSynchronizationManager.getSynchronizations().forEach(TransactionSynchronization::afterCommit);
         assertThat(events(NotificationRequestedEvent.class)).extracting(NotificationRequestedEvent::receiverEsntlId)
                 .containsExactly("next");
+    }
+
+    /**
+     * [2026-11-19] 다음 단계 결재자의 계정이 지워졌으면 그 사람에게 '결재 순서 도래' 를 발행하지 않는다. 알림 행은 사용자 FK 가 있고
+     * 같은 트랜잭션에 저장돼, 발행하면 앞 단계 승인 전체가 되돌아갔다(FK 롤백 자체는 ApprovalReferenceNotificationIntegrationTest 가
+     * 참조자 경로로 증명한다). 승인은 진행되고 지워진 사람이 차례가 된다 — 기안자가 결재자를 바꾸거나 회수해 빠져나간다.
+     */
+    @Test
+    @DisplayName("다음 단계 결재자 계정이 지워졌으면 차례 알림 없이 앞 단계 승인이 진행된다")
+    void stageAdvancesWithoutNotifyingADeletedNextApprover() {
+        InformalSanction document = header("A");
+        InformalSanctionDetail first = line(1, 1, "first", true);
+        InformalSanctionDetail gone = line(1, 2, "gone", false);
+        writable(document, List.of(first, gone));
+        actor("first");
+        org.mockito.Mockito.doAnswer(call -> call.<java.util.Collection<String>>getArgument(0).stream()
+                .filter(user -> !"gone".equals(user)).distinct().sorted().toList())
+                .when(approvalRecipients).existing(org.mockito.ArgumentMatchers.any());
+
+        service.confirmInformalSanction(7L, "C", null, 0);
+
+        assertThat(first.status()).isEqualTo(ApprovalStatus.APPROVED);
+        assertThat(gone.status()).isEqualTo(ApprovalStatus.ACTIVE);
+        assertThat(events(NotificationRequestedEvent.class)).isEmpty();
+        verify(approvalRecipients).existing(List.of("gone"));
     }
 
     @Test

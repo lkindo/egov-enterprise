@@ -62,6 +62,8 @@ class InformalSanctionServiceTest {
 
     @Mock
     private nuri.business.domain.user.repository.UserRepository userRepository;
+    @org.mockito.Mock
+    private ApprovalRecipients approvalRecipients;
 
     @org.mockito.Spy
     nuri.business.service.informalsanction.dto.InformalSanctionMapper informalSanctionMapper = new nuri.business.service.informalsanction.dto.InformalSanctionMapperImpl();
@@ -85,6 +87,9 @@ class InformalSanctionServiceTest {
 
     @BeforeEach
     void setUp() {
+        // 알림 받는 사람은 기본으로 모두 있는 계정이다 — 지워진 계정은 그 시험에서만 따로 정한다(2026-11-19 결재 알림 필터).
+        org.mockito.Mockito.lenient().when(approvalRecipients.existing(org.mockito.ArgumentMatchers.any())).thenAnswer(call ->
+                call.<java.util.Collection<String>>getArgument(0).stream().filter(java.util.Objects::nonNull).distinct().sorted().toList());
         securityUtilMock = mockStatic(SecurityUtil.class);
     }
 
@@ -326,6 +331,34 @@ class InformalSanctionServiceTest {
         assertThat(event.receiverEsntlId()).isEqualTo("boss1");
         assertThat(event.title()).isEqualTo("결재가 회수되었습니다");
         assertThat(event.linkUrl()).isEqualTo("/approvals");
+    }
+
+    /**
+     * [2026-11-19] 차례인 결재자의 계정이 지워졌어도 기안자가 회수할 수 있다 — 회수 알림을 지워진 사람에게 발행하지 않는다. 종전에는
+     * 그 알림이 알림 행의 사용자 FK 로 회수 전체를 되돌려, 차례인 결재자가 지워진 문서는 빠져나갈 길이 없었다.
+     */
+    @Test
+    @DisplayName("차례인 결재자 계정이 지워졌어도 회수는 알림 없이 진행된다")
+    void withdraw_skipsDeletedActiveApprover() {
+        InformalSanction sanction = InformalSanction.builder().ifmlAtrzSn(1L).aplcntId("user1").aprvrId("gone")
+                .aprvYn(SanctionStatus.REQUESTED.getCode()).build();
+        given(informalSanctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(sanction));
+        given(detailRepository.findRevision(1L, java.math.BigDecimal.ONE)).willReturn(List.of(
+                nuri.business.domain.informalsanction.InformalSanctionDetail.create(
+                        new nuri.business.domain.informalsanction.InformalSanctionDetailId(
+                                1L, java.math.BigDecimal.ONE, java.math.BigDecimal.ONE, "gone"),
+                        nuri.business.domain.informalsanction.ApprovalStageKind.APPROVAL, true)));
+        given(historyRepository.findById(new nuri.business.domain.informalsanction.InformalSanctionHistoryId(
+                1L, java.math.BigDecimal.ONE))).willReturn(Optional.of(
+                nuri.business.domain.informalsanction.InformalSanctionHistory.create(sanction)));
+        org.mockito.Mockito.doAnswer(call -> call.<java.util.Collection<String>>getArgument(0).stream()
+                .filter(user -> !"gone".equals(user)).distinct().sorted().toList())
+                .when(approvalRecipients).existing(org.mockito.ArgumentMatchers.any());
+
+        informalSanctionService.deleteInformalSanction(1L);
+
+        assertThat(sanction.getAprvYn()).isEqualTo(SanctionStatus.WITHDRAWN.getCode());
+        verify(eventPublisher, never()).publishEvent(any(Object.class));
     }
 
     /**

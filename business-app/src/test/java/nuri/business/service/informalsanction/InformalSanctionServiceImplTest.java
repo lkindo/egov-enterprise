@@ -73,6 +73,8 @@ class InformalSanctionServiceImplTest {
 
     @Mock
     private nuri.business.domain.user.repository.UserRepository userRepository;
+    @org.mockito.Mock
+    private ApprovalRecipients approvalRecipients;
 
     private void activeApprover(String esntlId) {
         given(userRepository.findAllById(any())).willReturn(List.of(nuri.business.domain.user.entity.User.builder()
@@ -108,6 +110,9 @@ class InformalSanctionServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        // 알림 받는 사람은 기본으로 모두 있는 계정이다 — 지워진 계정은 그 시험에서만 따로 정한다(2026-11-19 결재 알림 필터).
+        org.mockito.Mockito.lenient().when(approvalRecipients.existing(org.mockito.ArgumentMatchers.any())).thenAnswer(call ->
+                call.<java.util.Collection<String>>getArgument(0).stream().filter(java.util.Objects::nonNull).distinct().sorted().toList());
         securityUtilMock = mockStatic(SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS);
         securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
     }

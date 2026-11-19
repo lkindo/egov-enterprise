@@ -36,6 +36,15 @@ public class SurveyService {
     private final SurveyQuestionMapper surveyQuestionMapper;
     private final SurveyArticleMapper surveyArticleMapper;
 
+    /**
+     * 선택지 순서 — 순번, 순번이 비면 뒤, 같으면 등록 순(PK)(2026-11-19). DB 의 NULL 정렬은 벤더마다 달라(PostgreSQL·Oracle 은 뒤,
+     * MySQL·SQL Server 는 앞) 저장소 정렬만 믿으면 순번이 빈 옛 선택지와 번호 있는 선택지가 섞인 문항의 순서가 벤더마다 갈리고, 다시
+     * 매기면 그 차이가 저장된다. 조회·다시 매김·복사·통계가 이 한 규칙을 쓴다.
+     */
+    static final java.util.Comparator<SurveyArticle> ARTICLE_ORDER = java.util.Comparator
+            .comparing(SurveyArticle::getArtclSn, java.util.Comparator.nullsLast(java.util.Comparator.<Long>naturalOrder()))
+            .thenComparing(SurveyArticle::getSrvyArtclSn, java.util.Comparator.nullsLast(java.util.Comparator.<Long>naturalOrder()));
+
     // 설문 템플릿
     public Page<SurveyTemplateDto> getTmplatList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
@@ -228,7 +237,8 @@ public class SurveyService {
             return copySn;
         }
         for (SurveyArticle article : iemRepository
-                .findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(copiedQuestionIds.keySet())) {
+                .findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(copiedQuestionIds.keySet())
+                .stream().sorted(ARTICLE_ORDER).toList()) {
             iemRepository.save(Objects.requireNonNull(SurveyArticle.builder()
                     .srvyQstnSn(copiedQuestionIds.get(article.getSrvyQstnSn()))
                     .srvySn(copySn)
@@ -266,7 +276,8 @@ public class SurveyService {
         // 문항마다 getItemList 하던 N+1 을, 전 문항 항목을 단일 IN 조회 후 문항ID 로 그룹핑하는 방식으로 제거.
         java.util.Map<Long, List<SurveyArticleDto>> itemsByQstn = qstnSns.isEmpty()
                 ? java.util.Collections.emptyMap()
-                : iemRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(qstnSns).stream()
+                : iemRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(qstnSns).stream()
+                        .sorted(ARTICLE_ORDER)
                         .collect(Collectors.groupingBy(SurveyArticle::getSrvyQstnSn,
                                 Collectors.mapping(surveyArticleMapper::toDto, Collectors.toList())));
         return questions.stream()
@@ -315,7 +326,7 @@ public class SurveyService {
      * 필수 응답 판정에서도 빠져 그 질문이 조용히 건너뛰어졌다(2026-10-27 실측: 공유 DB 의 주관식 1개가 칸 없이 있었다).
      */
     private void ensureFreeTextArticle(SurveyQuestion question) {
-        if (!question.isFreeText() || !iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(question.getSrvyQstnSn()).isEmpty()) {
+        if (!question.isFreeText() || !iemRepository.findBySrvyQstnSnOrderByArtclSnAscSrvyArtclSnAsc(question.getSrvyQstnSn()).isEmpty()) {
             return;
         }
         iemRepository.save(Objects.requireNonNull(SurveyArticle.builder()
@@ -345,7 +356,7 @@ public class SurveyService {
         }
         Integer maxChcCnt = dto.getMaxChcCnt();
         if (!entity.isFreeText() && SurveyQuestion.TYPE_FREE_TEXT.equals(dto.getQstnTypeCd())) {
-            if (iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(entity.getSrvyQstnSn()).size() > 1) {
+            if (iemRepository.findBySrvyQstnSnOrderByArtclSnAscSrvyArtclSnAsc(entity.getSrvyQstnSn()).size() > 1) {
                 throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                         "주관식으로 바꾸려면 선택 항목을 하나 이하로 줄여 주세요.");
             }
@@ -408,7 +419,8 @@ public class SurveyService {
 
     // 설문 항목
     public List<SurveyArticleDto> getItemList(Long srvyQstnSn) {
-        return iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(Objects.requireNonNull(srvyQstnSn)).stream()
+        return iemRepository.findBySrvyQstnSnOrderByArtclSnAscSrvyArtclSnAsc(Objects.requireNonNull(srvyQstnSn)).stream()
+                .sorted(ARTICLE_ORDER)
                 .map(surveyArticleMapper::toDto)
                 .collect(Collectors.toList());
     }
@@ -418,17 +430,19 @@ public class SurveyService {
         nuri.business.security.util.SecurityUtil.assertPermission("SURVEY_CREATE_ALL");
         SurveyQuestion question = questionAfterSurveyLock(dto.getSrvyQstnSn());
         assertNoResponses(question.getSrvySn());
+        List<SurveyArticle> existing = iemRepository.findBySrvyQstnSnOrderByArtclSnAscSrvyArtclSnAsc(question.getSrvyQstnSn())
+                .stream().sorted(ARTICLE_ORDER).toList();
         // 주관식은 답변 칸 하나에 글로 답한다 — 칸을 더하면 응답 화면이 어느 칸에 답을 담을지 정할 수 없다.
-        if (question.isFreeText() && !iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(question.getSrvyQstnSn()).isEmpty()) {
+        if (question.isFreeText() && !existing.isEmpty()) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                     "주관식 문항에는 답변 칸이 하나만 있습니다. 선택지가 필요하면 객관식 문항으로 만들어 주세요.");
         }
         SurveyArticle item = Objects.requireNonNull(SurveyArticle.builder()
                 .srvyQstnSn(question.getSrvyQstnSn())
                 .srvySn(question.getSrvySn())
-                .artclSn(dto.getArtclSn())
+                .artclSn(nextArticleSn(existing))
                 .artclCn(dto.getArtclCn())
-                .etcAnsYn(dto.getEtcAnsYn())
+                .etcAnsYn(dto.getEtcAnsYn() == null ? "N" : dto.getEtcAnsYn())
                 .srvyTmpltSn(question.getSrvyTmpltSn())
                 .build());
         iemRepository.save(item);
@@ -443,7 +457,26 @@ public class SurveyService {
         if (!Objects.equals(entity.getArtclCn(), dto.getArtclCn())) {
             assertNotAnswered(rsltRepository.countBySrvyQstnSn(entity.getSrvyQstnSn()), "문항");
         }
-        entity.update(dto.getArtclSn(), dto.getArtclCn(), dto.getEtcAnsYn());
+        // [2026-11-19] 비어 온 순번·기타 여부는 지우지 않는다 — 화면은 null 을 떨어뜨려 보내므로(omit-nulls) 빠진 값은 '그대로' 다.
+        entity.update(dto.getArtclSn() != null ? dto.getArtclSn() : entity.getArtclSn(), dto.getArtclCn(),
+                dto.getEtcAnsYn() != null ? dto.getEtcAnsYn() : entity.getEtcAnsYn());
+    }
+
+    /**
+     * [2026-11-19] 선택지 순번은 서버가 매긴다(문항 순번과 같은 규칙). 화면은 순번을 보내지 않아 선택지가 모두 NULL 순번으로 저장됐고,
+     * NULL 끼리는 DB 가 순서를 보장하지 않아 문구를 고치면 선택지 순서가 바뀔 수 있었다. 순번이 빈 옛 선택지가 있으면 지금 보이는
+     * 순서(순번, 같으면 등록 순)대로 1부터 다시 매긴 뒤 그다음을 준다 — 새 선택지가 옛 선택지 앞에 끼지 않는다. 응답이 모인 문항은
+     * 호출 전에 거부되므로 다시 매겨도 답의 뜻은 바뀌지 않는다(답은 순번이 아니라 선택지 식별자를 가리킨다).
+     */
+    private static long nextArticleSn(List<SurveyArticle> existing) {
+        if (existing.stream().anyMatch(item -> item.getArtclSn() == null)) {
+            long sn = 0;
+            for (SurveyArticle item : existing) {
+                item.update(++sn, item.getArtclCn(), item.getEtcAnsYn());
+            }
+            return sn + 1;
+        }
+        return existing.stream().mapToLong(SurveyArticle::getArtclSn).max().orElse(0L) + 1;
     }
 
     @Transactional
@@ -452,7 +485,7 @@ public class SurveyService {
         SurveyArticle item = itemAfterSurveyLock(srvyArtclSn);
         assertNoResponses(rsltRepository.countBySrvyArtclSn(item.getSrvyArtclSn()), "선택 항목");
         boolean freeText = qesitmRepository.findById(item.getSrvyQstnSn()).map(SurveyQuestion::isFreeText).orElse(false);
-        if (freeText && iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(item.getSrvyQstnSn()).size() <= 1) {
+        if (freeText && iemRepository.findBySrvyQstnSnOrderByArtclSnAscSrvyArtclSnAsc(item.getSrvyQstnSn()).size() <= 1) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                     "주관식 문항의 답변 칸은 지울 수 없습니다. 문항이 필요 없으면 문항을 삭제해 주세요.");
         }

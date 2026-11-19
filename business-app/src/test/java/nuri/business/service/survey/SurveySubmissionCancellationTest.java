@@ -51,7 +51,7 @@ class SurveySubmissionCancellationTest {
         when(questionRepository.findBySrvySnOrderByQstnSnAsc(10L)).thenReturn(List.of(
                 SurveyQuestion.builder().srvyQstnSn(30L).srvySn(10L).maxChcCnt(2).build(),
                 SurveyQuestion.builder().srvyQstnSn(31L).srvySn(10L).maxChcCnt(1).build()));
-        when(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(anyCollection())).thenReturn(List.of(
+        when(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(anyCollection())).thenReturn(List.of(
                 SurveyArticle.builder().srvyArtclSn(40L).srvyQstnSn(30L).srvySn(10L).build(),
                 SurveyArticle.builder().srvyArtclSn(41L).srvyQstnSn(30L).srvySn(10L).build(),
                 SurveyArticle.builder().srvyArtclSn(42L).srvyQstnSn(31L).srvySn(10L).build()));
