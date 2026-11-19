@@ -756,7 +756,7 @@ class SurveyResultServiceTest {
         given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(surveyWithPeriod(start, end)));
         given(resultRepository.existsBySrvySnAndFrstRgtrId(201L, "user1")).willReturn(false);
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(301L, "질문1", "1")));
-        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "예")));
 
         try (var dates = org.mockito.Mockito.mockStatic(LocalDate.class, org.mockito.Mockito.CALLS_REAL_METHODS);
