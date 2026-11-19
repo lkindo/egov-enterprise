@@ -1,7 +1,6 @@
 import { Network, ShieldCheck, UserMinus, Users } from 'lucide-react';
-import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
-import type { Department } from '@/services/foundation/system/DeptAdminService';
-import { NavButton, UserListFilterFields, type UserListFilters } from './UserOrgHubParts';
+import type { ReactNode } from 'react';
+import { NavButton } from './UserOrgHubParts';
 import type { UserOrgTab } from './user-org-prefetch';
 
 export function UserOrgTabNav({ activeTab, onTabChange }: { activeTab: UserOrgTab; onTabChange: (tab: UserOrgTab) => void }) {
@@ -18,55 +17,15 @@ export function UserOrgTabNav({ activeTab, onTabChange }: { activeTab: UserOrgTa
   );
 }
 
-/** 조회조건 — 검색어(부서 탭은 부서 검색)와 사용자 탭의 계정 상태·소속 부서·로그인 잠금 조건, 부서 탭의 검색 안내. */
-export function UserOrgFilterBar({
-  isDeptTab,
-  showUserFilters,
-  searchKeyword,
-  onSearch,
-  onReset,
-  userFilterId,
-  userFilters,
-  departments,
-  onChangeFilter,
-}: {
-  isDeptTab: boolean;
-  showUserFilters: boolean;
-  searchKeyword: string;
-  onSearch: (next: string) => void;
-  onReset: () => void;
-  userFilterId: string;
-  userFilters: UserListFilters;
-  departments: Department[];
-  onChangeFilter: (patch: Partial<UserListFilters>) => void;
-}) {
+/** 조회 조건의 배치와 부서 탭의 검색 안내. */
+export function UserOrgFilterBar({ isDeptTab, children }: { isDeptTab: boolean; children: ReactNode }) {
   return (
         <div className="flex flex-wrap items-end gap-2">
           {/* ⚠ min-width 는 sm 이상에서만 건다 — 320px 뷰포트에서 14rem(224px) 하한이 flex-shrink 를
               무력화해 조회조건 영역이 가로로 넘친다(ui-ux-task-flow-optimization 가이드의 320px 무넘침
               의무). 종전 검색 입력에는 하한이 없었다. */}
-          {/* 보이는 라벨과 접근 이름을 같게 둔다(WCAG 2.5.3). e2e(department-hierarchy·security-administration)는
-              이 접근 이름('부서 검색')으로, user-administration 은 placeholder('검색어를 입력하세요...')로 입력을 찾는다 —
-              문구를 바꾸면 그 스펙도 함께 고친다. 검색어가 바뀌면 페이지를 1로 되돌린다(감사 P1-8). */}
           <div className="min-w-0 flex-1 sm:min-w-[14rem]">
-            <KeywordFilter
-              label={isDeptTab ? '부서 검색' : '사용자 검색'}
-              placeholder="검색어를 입력하세요..."
-              value={searchKeyword}
-              onSearch={onSearch}
-              onReset={onReset}
-            >
-              {/* [2026-09-26 DIP B5 F4] 사용자 탭만 계정 상태·소속 부서·로그인 잠금으로 좁힌다.
-                  부재 탭은 부재를 판정하려고 전체 사용자를 보므로 조건을 두지 않는다. 부서는 직속 소속만 본다. */}
-              {showUserFilters && (
-                <UserListFilterFields
-                  userFilterId={userFilterId}
-                  userFilters={userFilters}
-                  departments={departments}
-                  onChangeFilter={onChangeFilter}
-                />
-              )}
-            </KeywordFilter>
+            {children}
           </div>
           {/* 안내는 라벨·placeholder 로 알 수 없는 사실이 있을 때만 둔다 — 사용자 탭의
               '사용자명 또는 ID 로 검색합니다' 는 라벨의 반복이라 한 줄을 더 쓸 값이 없었다. */}

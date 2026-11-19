@@ -25,6 +25,7 @@ import { useToast } from '@/app/components/ui/toast';
 import { StandardDataTable, Column, type ServerSortState } from '@/app/components/ui/standard-data-table';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { MasterDetailLayout } from '@/app/components/patterns/master-detail-page';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
@@ -47,6 +48,7 @@ import {
   COMMON_USER_COLUMNS,
   EMPTY_USER_FILTERS,
   OrgPolicyPanel,
+  UserListFilterFields,
   type UserListFilters,
   UserOrgDetailPanel,
 } from './UserOrgHubParts';
@@ -922,26 +924,38 @@ export default function UserOrgHubClient({
       ) : undefined}
       navigation={<UserOrgTabNav activeTab={activeTab} onTabChange={handleTabChange} />}
       filter={isPolicies ? undefined : (
-        <UserOrgFilterBar
-          isDeptTab={isDeptTab}
-          showUserFilters={activeTab === 'USERS'}
-          searchKeyword={searchKeyword}
-          onSearch={(next) => {
-            setSearchKeyword(next);
-            if (isDeptTab) setSelectedItemId(null);
-            if (userPage !== 1) goToPage(1);
-          }}
-          onReset={() => {
-            setSearchKeyword('');
-            if (isDeptTab) setSelectedItemId(null);
-            else setUserFilters(EMPTY_USER_FILTERS);
-            if (userPage !== 1) goToPage(1);
-          }}
-          userFilterId={userFilterId}
-          userFilters={userFilters}
-          departments={departments}
-          onChangeFilter={applyUserFilter}
-        />
+        <UserOrgFilterBar isDeptTab={isDeptTab}>
+          {/* 보이는 라벨과 접근 이름을 같게 둔다(WCAG 2.5.3). e2e(department-hierarchy·security-administration)는
+              이 접근 이름('부서 검색')으로, user-administration 은 placeholder('검색어를 입력하세요...')로 입력을 찾는다 —
+              문구를 바꾸면 그 스펙도 함께 고친다. 검색어가 바뀌면 페이지를 1로 되돌린다(감사 P1-8). */}
+          <KeywordFilter
+            label={isDeptTab ? '부서 검색' : '사용자 검색'}
+            placeholder="검색어를 입력하세요..."
+            value={searchKeyword}
+            onSearch={(next) => {
+              setSearchKeyword(next);
+              if (isDeptTab) setSelectedItemId(null);
+              if (userPage !== 1) goToPage(1);
+            }}
+            onReset={() => {
+              setSearchKeyword('');
+              if (isDeptTab) setSelectedItemId(null);
+              else setUserFilters(EMPTY_USER_FILTERS);
+              if (userPage !== 1) goToPage(1);
+            }}
+          >
+            {/* [2026-09-26 DIP B5 F4] 사용자 탭만 계정 상태·소속 부서·로그인 잠금으로 좁힌다.
+                부재 탭은 부재를 판정하려고 전체 사용자를 보므로 조건을 두지 않는다. 부서는 직속 소속만 본다. */}
+            {activeTab === 'USERS' && (
+              <UserListFilterFields
+                userFilterId={userFilterId}
+                userFilters={userFilters}
+                departments={departments}
+                onChangeFilter={applyUserFilter}
+              />
+            )}
+          </KeywordFilter>
+        </UserOrgFilterBar>
       )}
       toolbarActions={isPolicies ? undefined : (
         <UserOrgToolbarActions rowRange={userRowRange} refreshing={isUsersLoading || isDeptsLoading} />
