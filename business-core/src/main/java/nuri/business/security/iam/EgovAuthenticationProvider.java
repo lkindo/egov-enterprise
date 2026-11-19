@@ -98,7 +98,7 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             User snapshot = java.util.Optional.ofNullable(readOnly.execute(status -> userRepository.findByUserId(userId).orElse(null)))
                     .orElseThrow(() -> {
                         // 결과에 관계없이 존재하지 않는 계정은 거부한다. 현재 표준 해시의 작업만 동일하게 수행한다.
-                        passwordEncoder.matches(password == null ? "" : password, unknownIdentityPasswordHash);
+                        padRejectedLoginAttempt(password);
                         log.warn(">>> [EgovAuthenticationProvider] Authentication rejected: unknown identity");
                         return new BadCredentialsException("Invalid User ID or Password");
                     });
@@ -109,7 +109,7 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             try {
                 validateAccountStatus(snapshot);
             } catch (AuthenticationException rejected) {
-                passwordEncoder.matches(password == null ? "" : password, unknownIdentityPasswordHash);
+                padRejectedLoginAttempt(password);
                 throw rejected;
             }
 
@@ -261,6 +261,14 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             matched = egovPasswordEncoder.matches(password, cleanHash, userEntity.getEsntlId());
         }
         return matched;
+    }
+
+    /** 정책 선검증 거절 시에도 미지 계정과 같은 더미 해시 작업을 수행해 응답 시간 차이를 없앤다. */
+    public void padRejectedLoginAttempt(String rawPassword) {
+        if (unknownIdentityPasswordHash == null) {
+            return;
+        }
+        passwordEncoder.matches(rawPassword == null ? "" : rawPassword, unknownIdentityPasswordHash);
     }
 
     /** 실패 경로 작업량 맞춤용 검증기 — bcrypt 는 비용을 해시에서 읽으므로 이 인코더의 강도는 결과와 시간에 상관없다. */

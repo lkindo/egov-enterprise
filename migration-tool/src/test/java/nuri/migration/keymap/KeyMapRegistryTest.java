@@ -103,4 +103,37 @@ class KeyMapRegistryTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("conflict");
     }
+
+    @Test
+    void chunkPrefetchCachesHitsAndMissesAndRollbackEvictsPendingMappings() {
+        try (KeyMapRegistry registry = new KeyMapRegistry()) {
+            Checkpoint committed = registry.checkpoint();
+            String committedKey = registry.mintOrGet("legacy_user", "u1", "USR");
+            TypedKeyTuple srcTuple = TypedKeyTuple.of(TypedValue.signedInteger(10));
+            TypedKeyTuple dstTuple = TypedKeyTuple.of(TypedValue.signedInteger(110));
+            registry.register("legacy_order", srcTuple, dstTuple);
+            registry.accept(committed);
+
+            java.util.List<String> bulk = new java.util.ArrayList<>();
+            for (int i = 0; i < 650; i++) {
+                bulk.add("u" + i);
+            }
+            registry.prefetch("LEGACY_USER", bulk);
+            registry.prefetchTyped("LEGACY_ORDER", java.util.List.of(srcTuple, TypedKeyTuple.of(TypedValue.signedInteger(99))));
+
+            assertThat(registry.translate("legacy_user", "u1")).isEqualTo(committedKey);
+            assertThat(registry.translate("legacy_user", "u649")).isNull();
+            assertThat(registry.translate("legacy_order", srcTuple)).isEqualTo(dstTuple);
+            assertThat(registry.translate("legacy_order", TypedKeyTuple.of(TypedValue.signedInteger(99)))).isNull();
+
+            Checkpoint chunk = registry.checkpoint();
+            String pending = registry.mintOrGet("LEGACY_USER", "u649", "USR");
+            assertThat(registry.translate("legacy_user", "u649")).isEqualTo(pending);
+
+            registry.rollback(chunk);
+            assertThat(registry.translate("legacy_user", "u649")).isNull();
+            registry.clearChunkCache();
+            assertThat(registry.translate("legacy_user", "u1")).isEqualTo(committedKey);
+        }
+    }
 }

@@ -178,68 +178,107 @@ public class ClientIpResolver {
     }
 
     /**
-     * IPv4 CIDR 판정. IPv6 는 정확 일치만 지원한다.
-     *
-     * <p>IPv6 를 대충 구현하지 않는 이유: 부분 구현은 "막고 있다"는 착각을 만들고, 이 판정은
-     * 인가·레이트리밋의 입력이라 틀리면 조용히 우회된다. 필요해지면 그때 제대로 넣는다.
+     * IPv4(32비트)와 IPv6(128비트) 리터럴을 DNS 조회 없이 바이트 단위로 비교한다.
+     * 호스트명·범위 밖 프리픽스·형식 오류는 null 로 버린다.
      */
-    private record CidrRange(long network, long mask, String literal) {
+    private static final class CidrRange {
+        private final byte[] network;
+        private final int prefixBits;
+
+        private CidrRange(byte[] network, int prefixBits) {
+            this.network = network;
+            this.prefixBits = prefixBits;
+        }
 
         static CidrRange parse(String token) {
             int slash = token.indexOf('/');
-            String addr = slash < 0 ? token : token.substring(0, slash);
-            Long value = toIpv4Long(addr);
-            if (value == null) {
-                // IPv4 가 아니면 문자열 정확 일치로만 취급한다(::1 등).
-                return new CidrRange(-1L, -1L, addr);
+            String addr = (slash < 0 ? token : token.substring(0, slash)).trim();
+            if (addr.isEmpty()) {
+                return null;
             }
-            int prefix = 32;
+            java.net.InetAddress parsed = parseLiteral(addr);
+            if (parsed == null) {
+                return null;
+            }
+            byte[] bytes = parsed.getAddress();
+            int maxPrefix = bytes.length * 8;
+            int prefix = maxPrefix;
             if (slash >= 0) {
                 try {
-                    prefix = Integer.parseInt(token.substring(slash + 1));
+                    prefix = Integer.parseInt(token.substring(slash + 1).trim());
                 } catch (NumberFormatException e) {
                     return null;
                 }
-                if (prefix < 0 || prefix > 32) {
+                if (prefix < 0 || prefix > maxPrefix) {
                     return null;
                 }
             }
-            long mask = prefix == 0 ? 0L : (0xFFFFFFFFL << (32 - prefix)) & 0xFFFFFFFFL;
-            return new CidrRange(value & mask, mask, null);
+            return new CidrRange(applyMask(bytes, prefix), prefix);
         }
 
         boolean contains(String ip) {
-            if (literal != null) {
-                return literal.equalsIgnoreCase(ip);
+            java.net.InetAddress parsed = parseLiteral(stripOptionalBrackets(ip));
+            if (parsed == null) {
+                return false;
             }
-            Long value = toIpv4Long(ip);
-            return value != null && (value & mask) == network;
+            byte[] candidate = parsed.getAddress();
+            if (candidate.length != network.length) {
+                return false;
+            }
+            int fullBytes = prefixBits / 8;
+            for (int i = 0; i < fullBytes; i++) {
+                if (candidate[i] != network[i]) {
+                    return false;
+                }
+            }
+            int remBits = prefixBits % 8;
+            if (remBits == 0) {
+                return true;
+            }
+            int mask = 0xFF << (8 - remBits);
+            return ((candidate[fullBytes] ^ network[fullBytes]) & mask) == 0;
         }
 
-        private static Long toIpv4Long(String ip) {
-            String[] parts = ip.split("\\.");
-            if (parts.length != 4) {
+        private static java.net.InetAddress parseLiteral(String literal) {
+            if (literal == null || literal.isBlank()) {
                 return null;
             }
-            long result = 0;
-            for (String part : parts) {
-                int octet;
-                try {
-                    octet = Integer.parseInt(part);
-                } catch (NumberFormatException e) {
-                    return null;
-                }
-                if (octet < 0 || octet > 255) {
-                    return null;
-                }
-                result = (result << 8) | octet;
+            try {
+                return com.google.common.net.InetAddresses.forString(literal.trim());
+            } catch (IllegalArgumentException invalidLiteral) {
+                return null;
             }
-            return result;
+        }
+
+        private static String stripOptionalBrackets(String raw) {
+            if (raw == null) {
+                return null;
+            }
+            String trimmed = raw.trim();
+            if (trimmed.startsWith("[")) {
+                int close = trimmed.indexOf(']');
+                return close > 0 ? trimmed.substring(1, close) : null;
+            }
+            return trimmed;
+        }
+
+        private static byte[] applyMask(byte[] raw, int prefixBits) {
+            byte[] masked = Arrays.copyOf(raw, raw.length);
+            int fullBytes = prefixBits / 8;
+            int remBits = prefixBits % 8;
+            if (fullBytes < masked.length) {
+                if (remBits > 0) {
+                    masked[fullBytes] = (byte) (masked[fullBytes] & (0xFF << (8 - remBits)));
+                    fullBytes++;
+                }
+                Arrays.fill(masked, fullBytes, masked.length, (byte) 0);
+            }
+            return masked;
         }
 
         @Override
         public String toString() {
-            return literal != null ? literal : Arrays.toString(new long[] { network, mask });
+            return Arrays.toString(network) + "/" + prefixBits;
         }
     }
 }

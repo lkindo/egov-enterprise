@@ -37,14 +37,16 @@
 
 ### 업무 도메인
 
-- **메일 중복 발송(GAP-MAIL-001 ①)** — `SentMailRepository.claimQueued` 는 접수 시각을 그대로 두는데 재발송 판정이 그 시각으로 '10분 넘게 멈춤' 을 본다. 차지 시각 기준으로 바꾸고 늦은 결과 기록과 실패 처리 결속을 시험한다. (SMTP 프로세스 내 재시도로 인한 중복은 2026-11-19 입력 밖에서 고쳤다.)
+- **메일 중복 발송(GAP-MAIL-001 ①)** — `SentMailRepository.claimQueued` 는 접수 시각을 그대로 두는데 재발송 판정이 그 시각으로 '10분 넘게 멈춤' 을 본다. 차지 시각 기준으로 바꾸고 늦은 결과 기록과 실패 처리 결속을 시험한다(`SentMailRepository.claimQueued(sn, expectedDsptchDt, claimedAt)` 가 `VendorSqlDialect.storedTimestamp` 로 `dsptchDt`·`mdfcnDt` 를 갱신하고 `MailAsyncProcessor` 가 `claimedAt` CAS 토큰과 `queuedAt` 실패 알림 멱등 키를 분리 — `SentMailRepositoryTest`·`MailAsyncProcessorTest`·`MailDeliveryStateIntegrationTest`·`MailFailureNotificationIntegrationTest` 로 검증). (SMTP 프로세스 내 재시도로 인한 중복은 2026-11-19 입력 밖에서 고쳤다.)
 - **메일 사용자별 발송 한도(GAP-MAIL-001 ②)** — `MAIL_SEND` 는 일반 사용자 기능으로 두고 `MailService` 에 기간별 수신자 수 한도를 둔다. 한도 값은 그때 DEC 로 정한다.
 - **결재 실DB 시험: 지워진 결재자(2026-11-19)** — 결재 알림이 지워진 계정을 거르게 한 수정은 단위 시험으로 고정했다. `ApprovalReferenceNotificationIntegrationTest` 에 실 PostgreSQL 시나리오(다음 단계 결재자 삭제 뒤 앞 단계 승인 커밋, 재알림 안내, 결재자 변경으로 이어받기, 회수)를 더한다.
 - **설문 문항·선택지 낙관적 버전(2026-11-19 평가)** — `SurveyQuestion`·`SurveyArticle` 에 `@Version`(스키마 변경, 승인 필요). 두 관리자가 같은 문항을 고치면 나중 저장이 앞 저장을 덮는다.
 - **설문 객관식 글 답** — 지금은 거부 대신 저장하지 않는다. `SurveySubmissionConcurrencyIntegrationTest.answers()` 고정물을 고칠 때 거부(400)로 바꿀지 판단한다.
 - **`User`·`DeptManage` 의 `@Version`, 공통코드 상세 표시 순서 컬럼** — 스키마 변경.
 - **`MenuService` 단건 수정** — `updateMenuManage`·`updateMenuOrders` 가 구조 저장과 같은 검증(3단계·버전·숨김 그룹)을 지나게 하거나 퇴역한다.
-- **`DeptJobService` 등록 시 업무함 부서 확인(의도 확인 뒤)과 `WorkReportRepositoryImpl` 의 안 쓰는 검색 인자**.
+- **`DeptJobService`·`WorkReportRepositoryImpl`·`MemoReportService` 서비스/쿼리 보강** — `WorkReportService`·`WorkReportApiController` 의 `searchCnd` 전달은 벤더 입력 밖에서 반영 완료했고, 묶음에서는 ① `DeptJobService` 미존재 업무함 404 및 담당자(`searchCondition=2`) 이름·로그인ID `JPAExpressions` 서브쿼리 검색(`DeptJobServiceTest` `SubQueryExpression` AST 단언; 업무함 부서 확인 여부는 의도 확인 뒤 반영), ② `WorkReportRepositoryImpl` 안 쓰는 검색 인자 정리, ③ `MemoReportService.updateMemoReport` 직접 호출부의 `lastMdfrId` `loginId` 우선 해석(`MemoReportServiceTest` — 컨트롤러 경유는 이미 반영)을 함께 처리한다.
+- **완료된 영속 작업(`tb_sys_job` `SUCCEEDED`) 보존·배치 정리** — `DurableJobRepository.deleteSucceededCompletedBefore` 와 `DurableJobRetentionScheduler`(`nuri.durable-work.retention.enabled=false` 기본 꺼짐, `retention-days=30`, `batch-size=500`, `max-batches-per-run=20`, `application.yml`·`docker-compose.prod.yml`·`durable-work-recovery.md` 동반 갱신, `FAILED`/`PENDING`/`RETRY` 보존 — `DurableJobRetentionSchedulerTest` 로 검증).
+- **페이지·목록 정렬 결정론 보조 키(PK 타이브레이커)** — `BoardMasterRepositoryImpl`·`WorkReportRepositoryImpl`·`ScheduleRepository`·`UserLogRepositoryImpl` 의 동률 시각/순번 정렬 끝에 PK 보조 정렬을 추가해 페이지 경계 행 누락·중복을 방지(각 `*RepositoryTest`·`ScheduleRepositoryOrderTest` 로 검증).
 - **부서 업무함 FK** — `tb_dept_job_bx.dept_id` → `tb_ognz_info`(NOT VALID → 고아 0건이면 VALIDATE). 스키마 승인 필요.
 - **도움말·온라인 매뉴얼 공개 상태(초안/공개)** — 새 컬럼과 공개 목록 필터. 스키마 승인과 제품 판단이 먼저다.
 - **인덱스 마이그레이션 둘** — `tb_ifml_atrz_info(aplcnt_id, ifml_atrz_sn DESC)`, `tb_note_rcptn(rcvr_id)`. 넣기 전에 EXPLAIN 으로 사용을 확인하고, 공유 OCI 적용은 병합 뒤 따로 승인받는다.
@@ -63,4 +65,6 @@
 - **무거운 검증 대기열의 남은 연결(DEC-OPS-413)** — `run-isolated-e2e.mjs`·`generate-reusable-base-db.mjs` 의 CLI 분기에 `ensureQueued` 를 넣고, 가드의 해당 항목과 SOP §6.3·GAP-AGENT-001 의 '재기록 묶음에서 연결' 문구를 걷는다.
 - **벤더 잡의 Gradle 데몬 재사용(ADR-0061 「하지 않은 것」 R2)** — `project-composer-vendor-integration.mjs` 의 `--no-daemon` 을 CI 에서만 걷고 끝에 `--stop` 한다.
 - **`VendorTestSql.java` 의 CUBRID 관측 임시 파일** — 시험 스레드가 중단되면 프로세스를 끝내지 않고 지우며 실패를 무시해 임시 파일이 남는다.
+- **은퇴한 정적 시뮬레이터(`tools/migration-workspace-prototype/`) 디렉터리 제거** — `config/governance/vendor-removed-assets.json`·`config/db-vendors.json`(`removedPostgresTools`) 이 벤더 증거 입력에 걸리므로 `gates.json`·`package.json`·`ci-change-scope.mjs`·`.github/CODEOWNERS`·`config/security/codeql.yml`·관련 문서(`migration-workspace-design.md`·`cicd-pipeline.md`·`migration-workspace-guide.md`) 및 계약 시험과 함께 제거.
+- **벤더 대표 E2E 앱 기동 대기 하한(`240초`) 보장** — `scripts/run-isolated-e2e.mjs` 가 `vendorRuntime.engine.maxWaitSeconds * 1000`(`cubrid` `120초`)을 그대로 넘겨 기본값(`180초`)보다 짧아지면서 Windows Docker TCP 의 CUBRID Flyway(`77~92초`)+기동(`~60초`)이 시간 초과되는 문제를 `applicationReadyTimeoutMs`(`Math.max(240_000, maxWaitSeconds * 1000)`) 로 해소(`scripts/project-composer-vendor.test.mjs` 로 고정).
 - **E2E 정리** — `security-administration.spec.ts` 의 완전 회수 단계를 BFF 로그인으로 되돌린다. `authentication.spec.ts` 의 간헐 실패 둘(회수 뒤 이벤트 발생 시 문맥 소멸, 로그아웃과 겹친 배너·팝업 조회)을 고친다 — 허용 항목으로 덮지 않는다.

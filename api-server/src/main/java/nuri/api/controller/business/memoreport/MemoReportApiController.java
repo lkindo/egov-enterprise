@@ -86,7 +86,8 @@ public class MemoReportApiController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long memoRptSn,
             @Valid @RequestBody MemoReportDto dto) {
-        memoReportService.updateMemoReport(memoRptSn, userDetails.getUsername(), dto);
+        memoReportService.updateMemoReport(
+                memoRptSn, nuri.business.security.util.SecurityUtil.resolveAuditActor(userDetails), dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

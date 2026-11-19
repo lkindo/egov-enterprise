@@ -10,8 +10,16 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * 레거시 키 → 신규 표준 대리키 대응 레지스트리 — 참조 무결성 보존의 핵심(키스톤).
@@ -33,11 +41,14 @@ public class KeyMapRegistry implements AutoCloseable {
     private final String sourceNamespace;
 
     private static final int PAGE_SIZE = 512;
+    private static final int PREFETCH_BATCH_SIZE = 500;
     private final MigrationScratchIndex index = new MigrationScratchIndex(
             "CREATE TABLE scratch_keymap (source_table VARCHAR NOT NULL, legacy_key VARCHAR NOT NULL,"
                     + " new_key VARCHAR NOT NULL, pending_order BIGINT, PRIMARY KEY(source_table, legacy_key))",
             "CREATE INDEX scratch_pending ON scratch_keymap(pending_order)",
             "CREATE TABLE scratch_reservation_seen (legacy_key VARCHAR PRIMARY KEY)");
+    private final Map<String, Map<String, Optional<String>>> chunkCache = new HashMap<>();
+    private boolean chunkCacheActive;
     private long nextPendingOrder;
     private boolean reservationActive;
 
@@ -93,6 +104,91 @@ public class KeyMapRegistry implements AutoCloseable {
         return targetKey;
     }
 
+    /** 청크 범위 키맵 조회 캐시를 시작한다(기존 디스크/원격 동작과 달리 청크 종료·롤백 시 비워진다). */
+    public void beginChunkCache() {
+        chunkCacheActive = true;
+    }
+
+    /** 청크 종료·롤백 뒤 chunk-scoped 캐시를 비워 stale/rolled-back 매핑이 남지 않게 한다. */
+    public void clearChunkCache() {
+        chunkCacheActive = false;
+        chunkCache.clear();
+    }
+
+    /**
+     * 한 청크에서 조회할 레거시 키 집합을 최대 500개 단위 {@code IN} 배치로 {@code scratch_keymap} 에서 미리 적재한다.
+     */
+    public void prefetch(String sourceTable, Collection<String> legacyKeys) {
+        chunkCacheActive = true;
+        if (legacyKeys == null || legacyKeys.isEmpty()) {
+            return;
+        }
+        String tableKey = key(sourceTable);
+        Map<String, Optional<String>> tableCache = chunkCache.computeIfAbsent(tableKey, ignored -> new HashMap<>());
+        Set<String> missing = new LinkedHashSet<>();
+        for (String legacyKey : legacyKeys) {
+            if (legacyKey != null && !tableCache.containsKey(legacyKey)) {
+                missing.add(legacyKey);
+            }
+        }
+        if (missing.isEmpty()) {
+            return;
+        }
+        List<String> batch = new ArrayList<>(Math.min(missing.size(), PREFETCH_BATCH_SIZE));
+        for (String legacyKey : missing) {
+            batch.add(legacyKey);
+            if (batch.size() == PREFETCH_BATCH_SIZE) {
+                loadPrefetchBatch(tableKey, batch, tableCache);
+                batch.clear();
+            }
+        }
+        if (!batch.isEmpty()) {
+            loadPrefetchBatch(tableKey, batch, tableCache);
+        }
+    }
+
+    /** composite/typed source key 집합을 정본 인코딩 후 배치 선조회한다. */
+    public void prefetchTyped(String sourceTable, Collection<TypedKeyTuple> sourceKeys) {
+        chunkCacheActive = true;
+        if (sourceKeys == null || sourceKeys.isEmpty()) {
+            return;
+        }
+        List<String> encoded = new ArrayList<>(sourceKeys.size());
+        for (TypedKeyTuple sourceKey : sourceKeys) {
+            if (sourceKey == null) {
+                continue;
+            }
+            try {
+                encoded.add(TypedKeyEncoding.encode(sourceKey, KEY_COLUMN_LIMIT, "tb_migration_key_map.legacy_key"));
+            } catch (RuntimeException ignored) {
+                // 인코딩 불가능한 튜플은 행 변환 단계에서 원래 오류 코드로 보고한다.
+            }
+        }
+        prefetch(sourceTable, encoded);
+    }
+
+    private void loadPrefetchBatch(String tableKey, List<String> batch, Map<String, Optional<String>> tableCache) {
+        for (String legacyKey : batch) {
+            tableCache.putIfAbsent(legacyKey, Optional.empty());
+        }
+        String placeholders = String.join(",", Collections.nCopies(batch.size(), "?"));
+        Object[] args = new Object[batch.size() + 1];
+        args[0] = tableKey;
+        for (int i = 0; i < batch.size(); i++) {
+            args[i + 1] = batch.get(i);
+        }
+        index.access(jdbc -> jdbc.query(
+                "SELECT legacy_key, new_key FROM scratch_keymap WHERE source_table=? AND legacy_key IN ("
+                        + placeholders + ")",
+                rs -> {
+                    while (rs.next()) {
+                        tableCache.put(rs.getString(1), Optional.of(rs.getString(2)));
+                    }
+                    return null;
+                },
+                args));
+    }
+
     /**
      * 자식 FK 번역: 부모 테이블의 레거시 키 → 신규 키. 매핑 부재 시 {@code null}(고아). null 입력은 null 반환.
      */
@@ -100,9 +196,24 @@ public class KeyMapRegistry implements AutoCloseable {
         if (legacyKey == null) {
             return null;
         }
+        String tableKey = key(parentSourceTable);
+        if (chunkCacheActive) {
+            Map<String, Optional<String>> tableCache = chunkCache.computeIfAbsent(tableKey, ignored -> new HashMap<>());
+            Optional<String> cached = tableCache.get(legacyKey);
+            if (cached != null) {
+                return cached.orElse(null);
+            }
+            String loaded = querySingleTranslation(tableKey, legacyKey);
+            tableCache.put(legacyKey, Optional.ofNullable(loaded));
+            return loaded;
+        }
+        return querySingleTranslation(tableKey, legacyKey);
+    }
+
+    private String querySingleTranslation(String tableKey, String legacyKey) {
         return index.access(jdbc -> jdbc.query(
                 "SELECT new_key FROM scratch_keymap WHERE source_table=? AND legacy_key=?",
-                (rs, row) -> rs.getString(1), key(parentSourceTable), legacyKey).stream().findFirst().orElse(null));
+                (rs, row) -> rs.getString(1), tableKey, legacyKey).stream().findFirst().orElse(null));
     }
 
     /** typed/composite 자식 FK 번역. legacy 문자열 map으로 묵시 fallback하지 않는다. */
@@ -198,6 +309,7 @@ public class KeyMapRegistry implements AutoCloseable {
     public void rollback(Checkpoint checkpoint) {
         long from = checkedOffset(checkpoint);
         index.access(jdbc -> jdbc.update("DELETE FROM scratch_keymap WHERE pending_order>=?", from));
+        chunkCache.clear();
         nextPendingOrder = from;
     }
 
@@ -216,12 +328,20 @@ public class KeyMapRegistry implements AutoCloseable {
 
     private void insertPending(String sourceTable, String legacyKey, String newKey) {
         long following = Math.addExact(nextPendingOrder, 1);
+        String tableKey = key(sourceTable);
         index.access(jdbc -> jdbc.update("INSERT INTO scratch_keymap VALUES (?, ?, ?, ?)",
-                key(sourceTable), legacyKey, newKey, nextPendingOrder));
+                tableKey, legacyKey, newKey, nextPendingOrder));
+        if (chunkCacheActive) {
+            chunkCache.computeIfAbsent(tableKey, ignored -> new HashMap<>()).put(legacyKey, Optional.of(newKey));
+        }
         nextPendingOrder = following;
     }
 
-    @Override public void close() { index.close(); }
+    @Override
+    public void close() {
+        clearChunkCache();
+        index.close();
+    }
 
     /** Exact duplicate detection for one self-reference reservation pass, without retaining a heap set. */
     public ReservationKeys reservationKeys() {

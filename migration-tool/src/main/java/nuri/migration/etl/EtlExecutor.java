@@ -1191,6 +1191,78 @@ public class EtlExecutor {
                                  TableMapping t, WritePlan writePlan, KeyMapRegistry reg,
                                  MigrationStateStore state, Connection targetConn,
                                  TableCounts counts, List<String> errors) {
+        reg.beginChunkCache();
+        try {
+            prefetchChunkKeys(chunk, t, reg);
+            return processChunkWithCache(chunk, lookups, spec, t, writePlan, reg, state, targetConn, counts, errors);
+        } finally {
+            reg.clearChunkCache();
+        }
+    }
+
+    private void prefetchChunkKeys(List<Map<String, Object>> chunk, TableMapping t, KeyMapRegistry reg) {
+        if (chunk.isEmpty()) {
+            return;
+        }
+        if (t.idStrategy() != null && t.idStrategy().sourceKey() != null) {
+            String keyColumn = t.idStrategy().sourceKey().toLowerCase(Locale.ROOT);
+            List<String> sourceIds = new ArrayList<>(chunk.size());
+            for (Map<String, Object> row : chunk) {
+                Object raw = row.get(keyColumn);
+                if (raw != null) {
+                    sourceIds.add(raw.toString());
+                }
+            }
+            reg.prefetch(t.source(), sourceIds);
+        }
+        for (ColumnMapping col : t.columns()) {
+            if (col.source() == null || col.fkRef() == null || col.fkRef().isBlank()
+                    || !isBlank(col.transform()) || !isBlank(col.codemap())) {
+                continue;
+            }
+            String sourceCol = col.source().toLowerCase(Locale.ROOT);
+            List<String> fkValues = new ArrayList<>(chunk.size());
+            for (Map<String, Object> row : chunk) {
+                Object raw = row.get(sourceCol);
+                if (raw != null) {
+                    fkValues.add(raw.toString());
+                }
+            }
+            reg.prefetch(col.fkRef(), fkValues);
+        }
+        for (CompositeForeignKey fk : t.foreignKeys()) {
+            List<TypedKeyTuple> fkTuples = new ArrayList<>(chunk.size());
+            for (Map<String, Object> row : chunk) {
+                boolean hasNull = fk.sourceComponents().stream()
+                        .anyMatch(component -> valueIgnoreCase(row, component.column()) == null);
+                if (hasNull) {
+                    continue;
+                }
+                try {
+                    fkTuples.add(tupleFromValues(row, fk.sourceComponents()));
+                } catch (RuntimeException ignored) {
+                    // 행 변환 단계에서 원래 오류 코드로 보고한다.
+                }
+            }
+            reg.prefetchTyped(fk.parentSource(), fkTuples);
+        }
+        if (t.identity() != null) {
+            List<TypedKeyTuple> identityTuples = new ArrayList<>(chunk.size());
+            for (Map<String, Object> row : chunk) {
+                try {
+                    identityTuples.add(tupleFromValues(row, t.identity().sourceComponents()));
+                } catch (RuntimeException ignored) {
+                    // 행 변환 단계에서 원래 오류 코드로 보고한다.
+                }
+            }
+            reg.prefetchTyped(t.source(), identityTuples);
+        }
+    }
+
+    private boolean processChunkWithCache(List<Map<String, Object>> chunk, EtlSourceQuerySupport.ChunkLookups lookups, MappingSpec spec,
+                                          TableMapping t, WritePlan writePlan, KeyMapRegistry reg,
+                                          MigrationStateStore state, Connection targetConn,
+                                          TableCounts counts, List<String> errors) {
         long firstOrdinal = counts.read - chunk.size() + 1;
         if (EtlContractSupport.isTargetGenerated(t)) {
             return processGeneratedRows(chunk, lookups, spec, t, writePlan, reg, state, targetConn, counts, errors,

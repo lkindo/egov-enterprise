@@ -5,20 +5,19 @@ import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import Link from 'next/link';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { surveyAdminService } from '@/services/foundation/system/SurveyAdminService';
 import { Survey, SurveyQuestion } from '@/types/business/survey';
-import { PageResponse } from '@/types/foundation/system';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Check, Loader2, Pencil, Plus, Trash2, X, ListChecks, MessageSquareText } from 'lucide-react';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
-import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { SurveyCopyDialog } from './SurveyCopyDialog';
 import { SurveySelectionBar } from './SurveySelectionBar';
-import { useSurveyEditing, type SurveyEditing } from './use-survey-editing';
+import { type SurveyEditing } from './use-survey-editing';
+import { useSurveyQuestionsPanel } from './use-survey-questions-panel';
 import { omitNulls } from '@/lib/api/omit-nulls';
 import { fromDateInputValue, toDateInputValue } from '@/lib/format-date';
 import {
@@ -67,49 +66,66 @@ type ItemCreateValidation = ReturnType<typeof useManualFormValidation<typeof sur
  * 문항별로 항목을 따로 조회하면 프론트에서 N+1 을 되살리는 셈이라 하지 않는다.
  */
 export default function SurveyQuestionsPanel() {
-  const queryClient = useQueryClient();
-  // 파괴적 액션은 native confirm 대신 useConfirm — 본문에 대상과 소실 범위를 노출한다.
-  const confirm = useConfirm();
   // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다. 이 패널은 조회 권한만으로 들어올 수 있어, 종전에는
   //   등록·복제·수정·삭제가 모두 보였고 누른 뒤에야 403 을 만났다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
   const { user } = useAuth();
   const canCreateSurvey = canPermission(user, 'SURVEY_CREATE_ALL');
   const canUpdateSurvey = canPermission(user, 'SURVEY_UPDATE_ALL');
   const canDeleteSurvey = canPermission(user, 'SURVEY_DELETE_ALL');
-  const [srvySn, setSrvySn] = useState<number | null>(null);
-  /** [2026-09-26 DIP B5 F6] 복제 대화상자를 연 원본 설문. */
-  const [copySource, setCopySource] = useState<{ srvySn: number; srvyTtl?: string | null } | null>(null);
-  const [newQuestion, setNewQuestion] = useState('');
-  /** [DIP B4 P6] 새 문항의 선택 방식 — 하나만 고르기(1) 또는 여러 개 고르기(2 이상). */
-  const [newQuestionMultiple, setNewQuestionMultiple] = useState(false);
-  const [newQuestionFreeText, setNewQuestionFreeText] = useState(false);
-  const [newQuestionMaxChoice, setNewQuestionMaxChoice] = useState('2');
-  const [newItemFor, setNewItemFor] = useState<number | null>(null);
-  const [newItemText, setNewItemText] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [deletingTarget, setDeletingTarget] = useState<string | null>(null);
-  const questionPendingRef = useRef(false);
-  const itemPendingRef = useRef(false);
-  const deletePendingRef = useRef(false);
-  const questionValidation = useManualFormValidation(surveyQuestionCreateSchema, {
-    labels: surveyQuestionValidationLabels,
-  });
-  const surveyDeletePendingRef = useRef(false);
-  const itemValidation = useManualFormValidation(surveyItemCreateSchema, {
-    labels: surveyItemValidationLabels,
-  });
 
-  const { data: surveys } = useQuery<PageResponse<Survey>>({
-    queryKey: SURVEYS_FOR_QUESTIONS_KEY,
-    queryFn: () => surveyAdminService.getSurveyList({ page: 1, size: 100 }),
-  });
+  const {
+    queryClient,
+    confirm,
+    srvySn,
+    setSrvySn,
+    copySource,
+    setCopySource,
+    newQuestion,
+    setNewQuestion,
+    newQuestionMultiple,
+    setNewQuestionMultiple,
+    newQuestionFreeText,
+    setNewQuestionFreeText,
+    newQuestionMaxChoice,
+    setNewQuestionMaxChoice,
+    newItemFor,
+    setNewItemFor,
+    newItemText,
+    setNewItemText,
+    error,
+    setError,
+    deletingTarget,
+    setDeletingTarget,
+    questionPendingRef,
+    itemPendingRef,
+    deletePendingRef,
+    surveyDeletePendingRef,
+    releasePendingRef,
+    questionValidation,
+    itemValidation,
+    surveysKey,
+    invalidate,
+    editing,
+    navigate,
+    questions,
+    isLoading,
+    templateOptions,
+    surveyOptions,
+    selectedSurvey,
+  } = useSurveyQuestionsPanel();
 
-  const surveysKey = SURVEYS_FOR_QUESTIONS_KEY;
-  /** 템플릿은 설문지 등록의 필수 입력이다(SurveyInfoDto.srvyTmpltSn @NotNull). */
-  const { data: templates } = useQuery({
-    queryKey: ['admin-survey-templates-for-select'],
-    queryFn: () => surveyAdminService.getTemplateList({ page: 1, size: 100 }),
-  });
+  const {
+    editSurvey,
+    editQuestion,
+    editItem,
+    editingTarget,
+    setEditingTarget,
+    setEditingText,
+    setEditingPeriod,
+    setOriginalEditingPeriod,
+    titleEditValidation,
+    beginEdit,
+  } = editing;
 
   const removeSurvey = useMutation({
     mutationFn: (targetSrvySn: number) => surveyAdminService.deleteSurvey(targetSrvySn),
@@ -124,39 +140,10 @@ export default function SurveyQuestionsPanel() {
     onSettled: () => { surveyDeletePendingRef.current = false; },
   });
 
-  const questionsKey = ['admin-survey-questions', srvySn];
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: questionsKey });
-  // 수정(제목·기간·문항·항목) 상태와 요청 — 한 번에 하나만 고친다(use-survey-editing.ts).
-  const editing = useSurveyEditing({ setError, srvySn, invalidateQuestions: () => { void invalidate(); } });
-  const {
-    editSurvey,
-    editQuestion,
-    editItem,
-    editingTarget,
-    setEditingTarget,
-    editingText,
-    setEditingText,
-    originalEditingText,
-    editingPeriod,
-    setEditingPeriod,
-    originalEditingPeriod,
-    setOriginalEditingPeriod,
-    editPendingRef,
-    titleEditValidation,
-    beginEdit,
-  } = editing;
-  // 설문지 등록 폼의 입력·처리 중 상태는 SurveyCreateForm 이 따로 등록한다(같은 미저장 확인에 모인다).
-  const navigate = useUnsavedChanges(() => ({
-    dirty: Boolean(newQuestion || newItemText || (editingTarget && editingText !== originalEditingText)
-      || (editingTarget === 'survey' && PERIOD_FIELDS.some((name) => editingPeriod[name] !== originalEditingPeriod[name]))),
-    pending: surveyDeletePendingRef.current || questionPendingRef.current || itemPendingRef.current || deletePendingRef.current || editPendingRef.current,
-  }));
-
   /*
     [2026-10-01 결정 21] 공개 전환. 새 설문은 작성 중으로 시작해 응답자 목록에 보이지 않는다 — 문항을 다 넣기 전의
     설문에 응답이 쌓이지 않게 한다. 서버 수정은 전체 치환이라 나머지 필드를 되돌려 싣고 공개 여부만 바꾼다.
   */
-  const releasePendingRef = useRef(false);
   const releaseSurvey = useMutation({
     mutationFn: (payload: { srvySn: number; body: SurveyInfoUpdate }) =>
       surveyAdminService.updateSurvey(payload.srvySn, payload.body),
@@ -193,12 +180,6 @@ export default function SurveyQuestionsPanel() {
       },
     });
   };
-
-  const { data: questions = [], isLoading } = useQuery<SurveyQuestion[]>({
-    queryKey: questionsKey,
-    queryFn: () => surveyAdminService.getQuestions(srvySn!),
-    enabled: srvySn !== null,
-  });
 
   const onError = (e: unknown) => setError(extractErrorMessage(e, '처리에 실패했습니다.'));
 
@@ -295,10 +276,6 @@ export default function SurveyQuestionsPanel() {
     setError(null);
     removeSurvey.mutate(srvySn);
   };
-
-  const templateOptions = templates?.list ?? [];
-  const surveyOptions = surveys?.list ?? [];
-  const selectedSurvey = surveyOptions.find((s) => s.srvySn === srvySn) ?? null;
 
   return (
     <div className="space-y-6">
