@@ -398,6 +398,14 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode",CommonErrorCode.ACCESS_DENIED);
         authenticateOperator();
         replaceGroups("T_STALE_ACTOR",List.of("ROLE_ADMIN"));
+        jdbc.update("UPDATE tb_user_info SET lck_yn='Y', lck_last_pnttm=CURRENT_TIMESTAMP WHERE esntl_id='T_STALE_ACTOR'");
+        authenticate(stale);
+        service.createGroup(new CreateGroup("T_LOCKED_LOGIN_ACTOR","로그인만 잠긴 관리자의 변경",null));
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_authrt_chg_hstry WHERE authrt_cd='T_LOCKED_LOGIN_ACTOR'",Long.class))
+                .isPositive();
+        authenticateOperator();
+        service.deleteGroup("T_LOCKED_LOGIN_ACTOR",service.group("T_LOCKED_LOGIN_ACTOR").version());
+        jdbc.update("UPDATE tb_user_info SET lck_yn='N', lck_last_pnttm=NULL WHERE esntl_id='T_STALE_ACTOR'");
         jdbc.update("UPDATE tb_user_info SET user_stts_cd='C' WHERE esntl_id='T_STALE_ACTOR'");
         authenticate(stale);
         assertThatThrownBy(() -> service.createGroup(new CreateGroup("T_STALE_GROUP","stale",null)))

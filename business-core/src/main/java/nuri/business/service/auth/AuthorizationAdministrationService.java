@@ -660,7 +660,7 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
         }
     }
 
-    /** Recheck after serialization: a principal captured before a competing revocation is insufficient. */
+    /** Recheck current account status and permission after serialization. Login-only lockout preserves an active session. */
     @Transactional(propagation=Propagation.MANDATORY)
     public void lockAndAuthorize(String permission) {
         SecurityUtil.assertPermission(permission);
@@ -670,7 +670,7 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
                   SELECT 1 FROM tb_user_info u
                   JOIN tb_authrt_user_map m ON m.scrty_dcsn_trgt_id=u.esntl_id
                   JOIN tb_authrt_grnt_map g ON g.authrt_cd=m.authrt_cd
-                  WHERE u.esntl_id=? AND u.user_stts_cd='P' AND coalesce(u.lck_yn,'N')<>'Y'
+                  WHERE u.esntl_id=? AND u.user_stts_cd='P'
                     AND g.authrt_type_cd='OPERATION' AND g.authrt_grnt_cd=?
                 """), Boolean.class, actor, permission);
         if (!Boolean.TRUE.equals(allowed)) throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
