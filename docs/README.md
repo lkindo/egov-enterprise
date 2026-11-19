@@ -120,6 +120,7 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [verification-blindspots.md](04-operations/verification-blindspots.md) | **검증 사각지대** — "빌드 성공"과 "실제 작동"의 차이 |
 | [secure-coding-weakness-baseline.md](04-operations/secure-coding-weakness-baseline.md) | 행안부 구현단계 보안약점 49개를 CWE·OWASP·현재 탐지 수단과 대응시킨 사전 점검 기준선(공식 진단을 대신하지 않음) |
 | [pending-decisions.md](04-operations/pending-decisions.md) | 사용자 결정 대기 항목 트래커 |
+| [vendor-rerecord-batch.md](04-operations/vendor-rerecord-batch.md) | 벤더 증거 재기록 묶음 대기 목록 — 인증 벤더의 증거 입력을 바꾸는 작업은 모아서 한 번에(DEC-OPS-421, 모든 에이전트 공용) |
 | [maintainer-handover.md](04-operations/maintainer-handover.md) | **유지보수자 인수인계 지도** — 결정 권한, 정기 실행(한국 시간), 일이 생길 때의 정본, 처음 맡았을 때 확인 순서 |
 | [operational-decisions-index-ci-governance.md](04-operations/operational-decisions-index-ci-governance.md) | CI·훅·게이트·계약·원장·검증 도구 경로에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |
 | [operational-decisions-index-composer.md](04-operations/operational-decisions-index-composer.md) | 프로젝트 생성기·기능 소유·슬롯·재사용 투영 경로에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |

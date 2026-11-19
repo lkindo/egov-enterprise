@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -517,7 +518,7 @@ class SurveyServiceTest {
         given(qesitmRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question));
 
         SurveyArticle item = SurveyArticle.builder().srvyArtclSn(401L).srvyQstnSn(301L).artclSn(1L).build();
-        given(iemRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(anyList())).willReturn(List.of(item));
+        given(iemRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(anyList())).willReturn(List.of(item));
 
         List<SurveyQuestionDto> result = surveyService.getQuestionList(201L);
 
@@ -874,7 +875,7 @@ class SurveyServiceTest {
     @DisplayName("설문 항목 목록 조회")
     void getItemList_Success() {
         SurveyArticle item = SurveyArticle.builder().srvyArtclSn(401L).srvyQstnSn(301L).artclSn(1L).build();
-        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(301L)).willReturn(List.of(item));
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAscSrvyArtclSnAsc(301L)).willReturn(List.of(item));
 
         List<SurveyArticleDto> result = surveyService.getItemList(301L);
 
@@ -898,6 +899,88 @@ class SurveyServiceTest {
         surveyService.insertItem(dto);
 
         verify(iemRepository, times(1)).save(any(SurveyArticle.class));
+    }
+
+    /**
+     * [2026-11-19] 선택지 순번은 서버가 매긴다 — 화면은 순번을 보내지 않아 NULL 로 저장됐고 NULL 끼리는 DB 가 순서를 보장하지 않았다.
+     * 요청에 순번이 실려 와도 따르지 않는다(문항 순번과 같은 규칙).
+     */
+    @Test
+    @DisplayName("선택지 등록 — 순번은 서버가 이 문항의 가장 큰 순번 다음으로 매기고 기타 여부는 비면 N")
+    void insertItem_assignsNextArticleSnOnServer() {
+        givenQuestionSurvey(301L);
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(
+                SurveyQuestion.builder().srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L).build()));
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAscSrvyArtclSnAsc(301L)).willReturn(List.of(
+                SurveyArticle.builder().srvyArtclSn(1L).srvyQstnSn(301L).artclSn(1L).artclCn("가").build(),
+                SurveyArticle.builder().srvyArtclSn(2L).srvyQstnSn(301L).artclSn(4L).artclCn("나").build()));
+
+        surveyService.insertItem(SurveyArticleDto.builder().srvyQstnSn(301L).artclSn(99L).artclCn("다").build());
+
+        ArgumentCaptor<SurveyArticle> saved = ArgumentCaptor.forClass(SurveyArticle.class);
+        verify(iemRepository).save(saved.capture());
+        assertThat(saved.getValue().getArtclSn()).isEqualTo(5L);
+        assertThat(saved.getValue().getEtcAnsYn()).isEqualTo("N");
+    }
+
+    @Test
+    @DisplayName("선택지 등록 — 순번이 빈 옛 선택지는 보이는 순서대로 1부터 다시 매기고 새 선택지는 맨 뒤에 붙는다")
+    void insertItem_renumbersLegacyNullArticleSnBeforeAppending() {
+        givenQuestionSurvey(301L);
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(
+                SurveyQuestion.builder().srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L).build()));
+        SurveyArticle first = SurveyArticle.builder().srvyArtclSn(11L).srvyQstnSn(301L).artclCn("가").build();
+        SurveyArticle second = SurveyArticle.builder().srvyArtclSn(12L).srvyQstnSn(301L).artclCn("나").build();
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAscSrvyArtclSnAsc(301L)).willReturn(List.of(first, second));
+
+        surveyService.insertItem(SurveyArticleDto.builder().srvyQstnSn(301L).artclCn("다").etcAnsYn("Y").build());
+
+        assertThat(first.getArtclSn()).isEqualTo(1L);
+        assertThat(second.getArtclSn()).isEqualTo(2L);
+        ArgumentCaptor<SurveyArticle> saved = ArgumentCaptor.forClass(SurveyArticle.class);
+        verify(iemRepository).save(saved.capture());
+        assertThat(saved.getValue().getArtclSn()).isEqualTo(3L);
+        assertThat(saved.getValue().getEtcAnsYn()).isEqualTo("Y");
+    }
+
+    /**
+     * [2026-11-19 Codex 검토] 순번이 빈 선택지와 번호 있는 선택지가 섞이면 DB 의 NULL 정렬이 벤더마다 다르다(PostgreSQL 은 뒤,
+     * MySQL 은 앞). 저장소가 어느 순서로 주든 '순번, 빈 순번은 뒤, 같으면 등록 순' 한 규칙으로 다시 매겨 같은 번호가 저장된다.
+     */
+    @ParameterizedTest(name = "저장소가 NULL 을 {0} 에 둘 때")
+    @ValueSource(strings = {"앞", "뒤"})
+    @DisplayName("선택지 등록 — NULL 과 번호가 섞여도 벤더의 NULL 정렬과 관계없이 같은 순번으로 다시 매긴다")
+    void insertItem_renumbersMixedNullsWithOneRuleRegardlessOfVendorOrder(String nullPosition) {
+        givenQuestionSurvey(301L);
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(
+                SurveyQuestion.builder().srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L).build()));
+        SurveyArticle unnumbered = SurveyArticle.builder().srvyArtclSn(11L).srvyQstnSn(301L).artclCn("가").build();
+        SurveyArticle numbered = SurveyArticle.builder().srvyArtclSn(12L).srvyQstnSn(301L).artclSn(1L).artclCn("나").build();
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAscSrvyArtclSnAsc(301L))
+                .willReturn("앞".equals(nullPosition) ? List.of(unnumbered, numbered) : List.of(numbered, unnumbered));
+
+        surveyService.insertItem(SurveyArticleDto.builder().srvyQstnSn(301L).artclCn("다").build());
+
+        assertThat(numbered.getArtclSn()).isEqualTo(1L);
+        assertThat(unnumbered.getArtclSn()).isEqualTo(2L);
+        ArgumentCaptor<SurveyArticle> saved = ArgumentCaptor.forClass(SurveyArticle.class);
+        verify(iemRepository).save(saved.capture());
+        assertThat(saved.getValue().getArtclSn()).isEqualTo(3L);
+    }
+
+    @Test
+    @DisplayName("선택지 수정 — 비어 온 순번·기타 여부는 지우지 않는다(화면은 null 을 떨어뜨려 보낸다)")
+    void updateItem_keepsArticleSnAndOtherAnswerWhenOmitted() {
+        SurveyArticle item = SurveyArticle.builder().srvyArtclSn(401L).srvySn(201L)
+                .artclSn(3L).artclCn("OLD").etcAnsYn("Y").build();
+        given(iemRepository.findById(401L)).willReturn(Optional.of(item));
+        givenItemSurvey(401L);
+
+        surveyService.updateItem(SurveyArticleDto.builder().srvyArtclSn(401L).artclCn("NEW").build());
+
+        assertThat(item.getArtclCn()).isEqualTo("NEW");
+        assertThat(item.getArtclSn()).isEqualTo(3L);
+        assertThat(item.getEtcAnsYn()).isEqualTo("Y");
     }
 
     @Test
@@ -932,7 +1015,7 @@ class SurveyServiceTest {
                 .srvyQstnSn(301L).srvySn(201L).qstnTypeCd("1").qstnCn("질문")
                 .qstnSn(2L).maxChcCnt(3).srvyTmpltSn(101L).build();
         given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
-        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(301L)).willReturn(List.of());
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAscSrvyArtclSnAsc(301L)).willReturn(List.of());
 
         surveyService.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(301L).srvySn(201L)
                 .qstnSn(2L).qstnTypeCd("2").qstnCn("질문").maxChcCnt(3).build());
@@ -960,7 +1043,7 @@ class SurveyServiceTest {
                         .srvySn(201L).srvyQstnSn(301L).srvyTmpltSn(101L)
                         .artclSn(order).artclCn("항목 " + order).etcAnsYn("N").build())
                 .toList();
-        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(301L)).willReturn(items);
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAscSrvyArtclSnAsc(301L)).willReturn(items);
 
         assertThatThrownBy(() -> surveyService.updateQuestion(SurveyQuestionDto.builder()
                 .srvyQstnSn(301L).srvySn(201L).qstnSn(8L).qstnTypeCd("2")
@@ -993,7 +1076,7 @@ class SurveyServiceTest {
         SurveyArticle item = SurveyArticle.builder().srvyArtclSn(401L).srvySn(201L)
                 .srvyQstnSn(301L).srvyTmpltSn(101L).artclSn(4L).artclCn("기존 항목").etcAnsYn("Y").build();
         given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
-        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(301L)).willReturn(List.of(item));
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAscSrvyArtclSnAsc(301L)).willReturn(List.of(item));
 
         surveyService.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(301L).srvySn(201L)
                 .qstnSn(2L).qstnTypeCd("2").qstnCn("질문").maxChcCnt(3).build());
@@ -1019,7 +1102,7 @@ class SurveyServiceTest {
                 .srvyQstnSn(301L).srvyTmpltSn(101L).artclSn(1L)
                 .artclCn(SurveyQuestion.FREE_TEXT_ARTICLE_CONTENT).etcAnsYn("N").build();
         given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
-        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(301L)).willReturn(List.of(item));
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAscSrvyArtclSnAsc(301L)).willReturn(List.of(item));
 
         surveyService.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(301L).srvySn(201L)
                 .qstnSn(2L).qstnTypeCd("1").qstnCn("질문").maxChcCnt(3).build());
@@ -1046,7 +1129,7 @@ class SurveyServiceTest {
         given(rsltRepository.countBySrvyQstnSn(301L)).willReturn(3L);
 
         // 선택 항목이 둘 이상이어도 응답된 문항의 의미 보호(409)가 전환 형상 검사(400)보다 먼저다.
-        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(301L)).willReturn(List.of(
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAscSrvyArtclSnAsc(301L)).willReturn(List.of(
                 SurveyArticle.builder().srvyArtclSn(401L).srvySn(201L).srvyQstnSn(301L).build(),
                 SurveyArticle.builder().srvyArtclSn(402L).srvySn(201L).srvyQstnSn(301L).build()));
 
@@ -1099,7 +1182,7 @@ class SurveyServiceTest {
         SurveyArticle item = SurveyArticle.builder().srvyArtclSn(401L).srvySn(201L)
                 .srvyQstnSn(301L).srvyTmpltSn(101L).artclSn(1L).artclCn("기존 답변 칸").etcAnsYn("N").build();
         given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
-        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(301L)).willReturn(List.of(item));
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAscSrvyArtclSnAsc(301L)).willReturn(List.of(item));
         given(rsltRepository.countBySrvyQstnSn(301L)).willReturn(3L);
 
         surveyService.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(301L).srvySn(201L)
@@ -1121,7 +1204,7 @@ class SurveyServiceTest {
         SurveyQuestion freeText = SurveyQuestion.builder().srvyQstnSn(301L).srvySn(201L).qstnTypeCd("2").srvyTmpltSn(101L).build();
         SurveyArticle slot = SurveyArticle.builder().srvyArtclSn(401L).srvySn(201L).srvyQstnSn(301L).build();
         given(qesitmRepository.findById(301L)).willReturn(Optional.of(freeText));
-        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(301L)).willReturn(List.of(slot));
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAscSrvyArtclSnAsc(301L)).willReturn(List.of(slot));
 
         assertThatThrownBy(() -> surveyService.insertItem(SurveyArticleDto.builder().srvyQstnSn(301L).artclCn("둘째 칸").build()))
                 .isInstanceOf(BusinessException.class)
@@ -1202,7 +1285,7 @@ class SurveyServiceTest {
             org.springframework.test.util.ReflectionTestUtils.setField(saved, "srvyQstnSn", questionSerial.incrementAndGet());
             return saved;
         });
-        given(iemRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any())).willReturn(List.of(
+        given(iemRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(any())).willReturn(List.of(
                 SurveyArticle.builder().srvyArtclSn(501L).srvyQstnSn(101L).srvySn(10L).artclSn(1L).artclCn("예").etcAnsYn("N").srvyTmpltSn(3L).build(),
                 SurveyArticle.builder().srvyArtclSn(502L).srvyQstnSn(102L).srvySn(10L).artclSn(1L).artclCn("기타").etcAnsYn("Y").srvyTmpltSn(3L).build()));
 

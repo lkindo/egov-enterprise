@@ -264,10 +264,8 @@ public class InformalSanctionService {
         sanction.withdraw();
         lines.forEach(InformalSanctionDetail::cancel);
         history.updateResult(sanction);
-        UUID eventId = UUID.randomUUID();
-        activeApprovers.stream().sorted().forEach(receiver -> eventPublisher.publishEvent(
-                new NotificationRequestedEvent(eventId, receiver, "결재가 회수되었습니다",
-                        documentLabel(sanction) + "를 신청자가 회수했습니다. 처리할 필요가 없습니다.", "/approvals")));
+        notifyExisting(UUID.randomUUID(), activeApprovers, "결재가 회수되었습니다",
+                documentLabel(sanction) + "를 신청자가 회수했습니다. 처리할 필요가 없습니다.", "/approvals");
     }
 
     @Transactional
@@ -370,9 +368,9 @@ public class InformalSanctionService {
             ownLine.decideAsSubstitute(actor, "C".equals(aprvYn), opinion, LocalDateTime.now());
             sensitiveAudit.recordMutation(SUBSTITUTE_AUDIT_OPERATION,
                     id + "/" + sanction.getAtrzCycl().toPlainString() + "/" + principalId);
-            eventPublisher.publishEvent(new NotificationRequestedEvent(UUID.randomUUID(), principalId,
+            notifyExisting(UUID.randomUUID(), List.of(principalId),
                     "대리결재가 처리되었습니다", documentLabel(sanction) + "를 부재 중 대리결재자가 "
-                            + ("C".equals(aprvYn) ? "승인" : "반려") + "했습니다.", processedLink(id)));
+                            + ("C".equals(aprvYn) ? "승인" : "반려") + "했습니다.", processedLink(id));
         } else {
             ownLine.decide("C".equals(aprvYn), opinion, LocalDateTime.now());
         }
@@ -386,10 +384,8 @@ public class InformalSanctionService {
             lines.forEach(InformalSanctionDetail::cancel);
             history.updateResult(sanction);
             publishFinalStatus(sanction, actor, opinion, lines);
-            UUID eventId = UUID.randomUUID();
-            otherActiveApprovers.forEach(receiver -> eventPublisher.publishEvent(
-                    new NotificationRequestedEvent(eventId, receiver, "결재가 반려되었습니다",
-                            documentLabel(sanction) + "를 다른 결재자가 반려했습니다. 처리할 필요가 없습니다.", "/approvals")));
+            notifyExisting(UUID.randomUUID(), otherActiveApprovers, "결재가 반려되었습니다",
+                    documentLabel(sanction) + "를 다른 결재자가 반려했습니다. 처리할 필요가 없습니다.", "/approvals");
             return;
         }
         BigDecimal stage = ownLine.getId().getAtrzSeq();
@@ -438,9 +434,15 @@ public class InformalSanctionService {
             throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE,
                     "오늘은 이미 재알림을 보냈습니다. 내일 다시 보낼 수 있습니다.");
         }
-        List<String> receivers = detailRepository.findRevision(id, sanction.getAtrzCycl()).stream()
-                .filter(d -> d.status() == ApprovalStatus.ACTIVE).map(d -> d.getId().getUserId()).sorted().toList();
-        if (receivers.isEmpty()) throw new BusinessException(CommonErrorCode.INVALID_STATE, "재알림을 받을 결재자가 없습니다.");
+        List<String> active = detailRepository.findRevision(id, sanction.getAtrzCycl()).stream()
+                .filter(d -> d.status() == ApprovalStatus.ACTIVE).map(d -> d.getId().getUserId()).toList();
+        if (active.isEmpty()) throw new BusinessException(CommonErrorCode.INVALID_STATE, "재알림을 받을 결재자가 없습니다.");
+        // 차례인 결재자의 계정이 모두 지워졌으면 보낼 곳이 없다 — 재알림 기록을 남기지 않고 결재자 변경·회수를 안내한다.
+        List<String> receivers = existingUsers(active);
+        if (receivers.isEmpty()) {
+            throw new BusinessException(CommonErrorCode.INVALID_STATE,
+                    "차례인 결재자의 계정이 없어 재알림을 보낼 수 없습니다. 결재자를 바꾸거나 회수해 주세요.");
+        }
         recordProcess(sanction, ApprovalProcessType.REMIND, sanction.getAplcntId(), null, null, null, LocalDateTime.now());
         UUID eventId = UUID.randomUUID();
         receivers.forEach(receiver -> eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, receiver,
@@ -494,8 +496,9 @@ public class InformalSanctionService {
         recordProcess(sanction, ApprovalProcessType.REPLACE, sanction.getAplcntId(), toUserId, fromUserId, null,
                 LocalDateTime.now());
         UUID eventId = UUID.randomUUID();
-        eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, fromUserId, "결재선에서 빠졌습니다",
-                documentLabel(sanction) + "의 결재자를 기안자가 다른 사람으로 바꿨습니다. 처리할 필요가 없습니다.", "/approvals"));
+        // 빠지는 사람은 계정이 지워졌을 수 있다(그래서 바꾸는 것이다). 새 결재자는 위 validateStages 가 같은 트랜잭션에서 확인했다.
+        notifyExisting(eventId, List.of(fromUserId), "결재선에서 빠졌습니다",
+                documentLabel(sanction) + "의 결재자를 기안자가 다른 사람으로 바꿨습니다. 처리할 필요가 없습니다.", "/approvals");
         if (wasActive) {
             eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, toUserId, "결재 순서 도래",
                     documentLabel(sanction) + "를 확인해 주세요.", pendingLink(id)));
@@ -532,9 +535,9 @@ public class InformalSanctionService {
         }
         recordProcess(sanction, ApprovalProcessType.ASK, actor, sanction.getAplcntId(), null, text, LocalDateTime.now());
         entityManager.lock(sanction, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
-        eventPublisher.publishEvent(new NotificationRequestedEvent(UUID.randomUUID(), sanction.getAplcntId(),
+        notifyExisting(UUID.randomUUID(), List.of(sanction.getAplcntId()),
                 "보완 요청이 왔습니다", documentLabel(sanction)
-                        + "에 결재자가 보완을 요청했습니다. 결재함에서 요청 내용을 확인하고 답해 주세요.", submittedLink(id)));
+                        + "에 결재자가 보완을 요청했습니다. 결재함에서 요청 내용을 확인하고 답해 주세요.", submittedLink(id));
     }
 
     /**
@@ -574,13 +577,13 @@ public class InformalSanctionService {
             entityManager.lock(sanction, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
         }
         UUID eventId = UUID.randomUUID();
-        eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, ask.getChgUserIdntfr(), "보완 답변이 왔습니다",
-                documentLabel(sanction) + "에 기안자가 답했습니다. 내용을 확인하고 결재해 주세요.", pendingLink(id)));
+        notifyExisting(eventId, List.of(ask.getChgUserIdntfr()), "보완 답변이 왔습니다",
+                documentLabel(sanction) + "에 기안자가 답했습니다. 내용을 확인하고 결재해 주세요.", pendingLink(id));
         if (revised) {
-            lines.stream().filter(d -> d.status() == ApprovalStatus.APPROVED).map(d -> d.getId().getUserId())
-                    .distinct().sorted().forEach(receiver -> eventPublisher.publishEvent(new NotificationRequestedEvent(
-                            eventId, receiver, "결재한 문서의 내용이 바뀌었습니다", documentLabel(sanction)
-                                    + "의 내용을 기안자가 보완했습니다. 앞서 한 승인은 그대로입니다.", processedLink(id))));
+            notifyExisting(eventId, lines.stream().filter(d -> d.status() == ApprovalStatus.APPROVED)
+                            .map(d -> d.getId().getUserId()).toList(),
+                    "결재한 문서의 내용이 바뀌었습니다", documentLabel(sanction)
+                            + "의 내용을 기안자가 보완했습니다. 앞서 한 승인은 그대로입니다.", processedLink(id));
         }
     }
 
@@ -696,12 +699,27 @@ public class InformalSanctionService {
     }
 
     private void publishStageAvailable(InformalSanction sanction, List<InformalSanctionDetail> lines) {
-        List<String> receivers = lines.stream().filter(d -> d.status() == ApprovalStatus.ACTIVE)
-                .map(d -> d.getId().getUserId()).toList();
-        UUID eventId = UUID.randomUUID();
-        receivers.stream().sorted().forEach(receiver -> eventPublisher.publishEvent(
-                new NotificationRequestedEvent(eventId, receiver, "결재 순서 도래",
-                        documentLabel(sanction) + "를 확인해 주세요.", pendingLink(sanction.getIfmlAtrzSn()))));
+        notifyExisting(UUID.randomUUID(), lines.stream().filter(d -> d.status() == ApprovalStatus.ACTIVE)
+                        .map(d -> d.getId().getUserId()).toList(),
+                "결재 순서 도래", documentLabel(sanction) + "를 확인해 주세요.", pendingLink(sanction.getIfmlAtrzSn()));
+    }
+
+    /**
+     * [2026-11-19] 결재 알림은 실제로 있는 사용자에게만 보낸다. 결재선·기안자·보완 요청 행은 사용자 삭제 뒤에도 남지만(사용자 FK
+     * 없음) 알림 행(tb_user_noti)은 사용자 FK 가 있고 이 업무 트랜잭션 안에서 저장된다 — 지워진 사람에게 보내면 FK 위반으로
+     * 앞 단계 승인·반려·회수·결재자 변경·보완 요청이 모두 되돌아가 DB 를 고치지 않고는 문서를 움직일 수 없었다(참조자 결과 알림은
+     * {@link #publishReferenceResult} 가 먼저 걸렀다). 알림 저장 쪽에서 일괄로 거르지 않는다 — 식별자 축을 잘못 넘긴 다른 기능의
+     * 호출(로그인 ID 등)이 FK 위반으로 드러나는 신호를 지우지 않기 위해서다. 받는 사람은 정렬해 순서를 고정한다. 한 사람씩 예외 없이
+     * 묻는다 — 받는 사람은 한 단계의 결재자 수만큼이다.
+     */
+    private List<String> existingUsers(Collection<String> candidates) {
+        return candidates.stream().filter(Objects::nonNull).distinct().sorted()
+                .filter(userRepository::existsById).toList();
+    }
+
+    private void notifyExisting(UUID eventId, Collection<String> receivers, String title, String content, String link) {
+        existingUsers(receivers).forEach(receiver -> eventPublisher.publishEvent(
+                new NotificationRequestedEvent(eventId, receiver, title, content, link)));
     }
 
     private void publishFinalStatus(InformalSanction sanction, String actor, String opinion,

@@ -68,7 +68,7 @@
 2. 트랜잭션의 범위는 최소한으로 유지하여 DB 커넥션 점유 시간을 단축한다.
 
 ### 제10조 (외부 연동 및 비동기 작업의 안전성)
-1. 외부 연동 등 비동기 작업 시 재시도(`@Retryable`, Spring Retry)를 적용하여 일시적 장애에 대한 회복탄력성을 확보한다. (현행: `MailAsyncProcessor`·`SmsAsyncProcessor` 가 spring-retry 의 `@Retryable`(maxAttempts=3)+`@Recover` 로 메일·문자 외부 발송 IO 실패를 재시도한다. Spring Framework 7 core retry 로의 전환은 [DEC-OPS-125](../../../memory/decisions.md)에 따라 보류한다.) 서킷 브레이커 패턴은 전용 라이브러리(예: Resilience4j) 미도입 상태로, 현 시점에서는 의무가 아니라 **향후 도입 대상(권고)** 이다.
+1. 외부 연동 등 비동기 작업 시 재시도(`@Retryable`, Spring Retry)를 적용하여 일시적 장애에 대한 회복탄력성을 확보한다. (현행: `MailAsyncProcessor`·`SmsAsyncProcessor` 가 spring-retry 의 `@Retryable`(maxAttempts=3)+`@Recover` 를 쓴다. 외부 전송 자체는 보내지 않았음이 확실한 실패만 다시 보낸다 — 메일은 본문 전송 전의 연결 실패만 재시도하고 문자는 게이트웨이 요청을 다시 보내지 않으며, 결과를 알 수 없는 실패는 중복 발송을 막으려고 실패·미확인으로 기록한다(2026-11-19). 결과 기록(DB)의 일시 실패는 두 처리기 모두 재시도한다. Spring Framework 7 core retry 로의 전환은 [DEC-OPS-125](../../../memory/decisions.md)에 따라 보류한다.) 서킷 브레이커 패턴은 전용 라이브러리(예: Resilience4j) 미도입 상태로, 현 시점에서는 의무가 아니라 **향후 도입 대상(권고)** 이다.
 2. 외부 서버 API나 타 기관 연동 구간은 한쪽의 병목이 전체 스레드 고갈로 전파되지 않도록 작업 공간을 격리한다. 현행 실행자는 [foundation AsyncConfig](../../../../foundation/src/main/java/nuri/foundation/core/config/AsyncConfig.java)의 `logExecutor`(가상 스레드·동시성 상한), `auditExecutor`·`notificationExecutor`(각각 유계 풀·큐)와 [api-server AsyncConfig](../../../../api-server/src/main/java/nuri/config/AsyncConfig.java)의 외부 메일·SMS용 `taskExecutor`(유계 풀·큐)로 분리된다. 감사·알림의 수락 거부는 계측하고, 외부 발송의 거부는 요청 스레드에서 실행하지 않고 예외와 실패 상태로 드러낸다. 이 격리를 정식 서킷 브레이커 도입 완료로 해석하지 않는다. 아래의 호출 유형별 **차등 타임아웃**과 정식 **서킷 브레이커·벌크헤드**(예: Resilience4j)는 현재 미도입으로, 의무가 아니라 도입 시 준수를 지향하는 **권고 기준**이다.
    - **실시간 OLTP 동기 연동**: 최대 3초 이내 타임아웃 및 빠른 실패(Fail-Fast) 지향.
    - **외부 결제/인증 트랜잭션 (PG 등)**: 최대 10초 이내 타임아웃 적용.

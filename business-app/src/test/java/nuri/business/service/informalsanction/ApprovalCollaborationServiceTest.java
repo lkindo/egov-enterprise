@@ -83,6 +83,8 @@ class ApprovalCollaborationServiceTest {
 
     @BeforeEach
     void setUp() {
+        // 알림 받는 사람은 기본으로 모두 있는 계정이다 — 지워진 계정은 그 시험에서만 따로 정한다(2026-11-19 결재 알림 필터).
+        org.mockito.Mockito.lenient().when(userRepository.existsById(org.mockito.ArgumentMatchers.any())).thenReturn(true);
         security = mockStatic(SecurityUtil.class, CALLS_REAL_METHODS);
         actor("owner");
         java.util.Set<String> granted = java.util.Set.of("APPROVAL_APPROVE", "APPROVAL_CANCEL", "APPROVAL_CREATE");
@@ -189,6 +191,30 @@ class ApprovalCollaborationServiceTest {
             assertThat(event.receiverEsntlId()).isEqualTo("second");
             assertThat(event.linkUrl()).isEqualTo("/approvals?tab=PENDING&doc=7");
         });
+    }
+
+    /**
+     * [2026-11-19] 차례인 결재자의 계정이 지워진 문서 — 재알림은 보낼 곳이 없다고 안내하고 기록을 남기지 않으며, 결재자 변경과 회수는
+     * 지워진 사람에게 알림을 발행하지 않고 진행된다. 종전에는 그 알림이 알림 행의 사용자 FK 로 업무 전체를 되돌려 문서가 멈췄다.
+     */
+    @Test
+    @DisplayName("차례인 결재자 계정이 지워졌으면 재알림은 안내만 하고, 결재자 변경은 지워진 사람에게 알리지 않고 진행된다")
+    void deletedActiveApproverCanBeReplacedButNotReminded() {
+        InformalSanction document = header("A");
+        InformalSanctionDetail gone = line(2, "second", ApprovalStatus.ACTIVE);
+        writable(document, List.of(line(1, "first", ApprovalStatus.APPROVED), gone));
+        processes();
+        given(userRepository.existsById("second")).willReturn(false);
+
+        assertThatThrownBy(() -> service.remindApprovers(7L)).isInstanceOf(BusinessException.class)
+                .hasMessageContaining("결재자를 바꾸거나 회수해")
+                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(CommonErrorCode.INVALID_STATE));
+        verify(processRepository, never()).save(any());
+
+        eligible("fourth");
+        service.replaceApprover(7L, "second", "fourth", 3);
+
+        assertThat(notifications()).extracting(NotificationRequestedEvent::receiverEsntlId).containsExactly("fourth");
     }
 
     @Test

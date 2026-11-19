@@ -113,12 +113,28 @@ class ZeroDowntimeMigrationLinterTest {
             "ZDM-2026-0042|api-server/src/main/resources/db/migration/V2_127__drop_retired_program_ledger_and_personal_page_contents.sql|api-server/src/main/resources/db/migration/V2_124__retire_program_permission_grants.sql",
             "ZDM-2026-0043|api-server/src/main/resources/db/migration/V2_127__drop_retired_program_ledger_and_personal_page_contents.sql|api-server/src/main/resources/db/migration/V2_125__retire_my_page_menu.sql");
 
-    private static final Pattern FORBIDDEN_DROP = Pattern.compile(
-            "(?is)\\bALTER\\s+TABLE\\s+\\S+\\s+DROP\\s+(?:COLUMN\\s+)?(?!CONSTRAINT\\b)\\w+");
-    private static final Pattern FORBIDDEN_ALTER_TYPE = Pattern.compile(
-            "(?is)\\bALTER\\s+TABLE\\s+\\S+\\s+ALTER\\s+(?:COLUMN\\s+)?\\S+\\s+TYPE\\s+");
-    private static final Pattern FORBIDDEN_RENAME = Pattern.compile(
-            "(?is)\\bALTER\\s+TABLE\\s+\\S+\\s+RENAME\\s+(?!CONSTRAINT\\b)");
+    /**
+     * ALTER TABLE 한 문장 — {@code IF EXISTS}·{@code ONLY}·이름 뒤 {@code *} 를 건너, 표 이름 다음부터 문장 끝(;)까지를 동작 목록으로
+     * 잡는다(2026-11-19). 종전 세 패턴은 표 이름 바로 뒤의 첫 동작만 보아 {@code ALTER TABLE ONLY t DROP COLUMN c},
+     * {@code ALTER TABLE IF EXISTS t DROP COLUMN c}, {@code ALTER TABLE t ADD …, DROP COLUMN c},
+     * {@code ALTER COLUMN c SET DATA TYPE …} 가 통과했다(헌법 제7조는 모든 타입 변경을 막는다). 표 이름은 공백이 든 인용 식별자도
+     * 읽고, 문장 끝(;)은 작은따옴표 문자열 밖에서만 찾는다({@code DEFAULT ';'} 뒤의 동작을 놓치지 않는다). 동작은 괄호·따옴표·달러
+     * 인용 밖의 쉼표로 나눠 하나씩 본다. 예외 표시({@code linter:ignore})는 종전처럼 문장 첫 줄에서 읽는다.
+     */
+    private static final Pattern ALTER_TABLE_STATEMENT = Pattern.compile(
+            "(?is)\\bALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(?:ONLY\\s+)?(?:\"[^\"]*\"|[^\\s,;(\"])+(?:\\s*\\*)?\\s+"
+                    + "((?:'(?:[^']|'')*'|[^;'])*)");
+    private static final Pattern DOLLAR_QUOTE_TAG = Pattern.compile("\\$(?:[A-Za-z_][A-Za-z0-9_]*)?\\$");
+    private static final Pattern DROP_COLUMN_ACTION = Pattern.compile(
+            "(?is)^DROP\\s+(?:COLUMN\\s+)?(?!CONSTRAINT\\b)\\w+");
+    private static final Pattern ALTER_TYPE_ACTION = Pattern.compile(
+            "(?is)^ALTER\\s+(?:COLUMN\\s+)?\\S+\\s+(?:SET\\s+DATA\\s+)?TYPE\\b");
+    private static final Pattern RENAME_ACTION = Pattern.compile("(?is)^RENAME\\s+(?!CONSTRAINT\\b)");
+    private static final String DROP_COLUMN_MESSAGE =
+            "DROP COLUMN은 하위 호환성을 파괴합니다. Expand-and-Contract 최종 배포에서만 수행하십시오.";
+    private static final String ALTER_TYPE_MESSAGE =
+            "ALTER COLUMN TYPE은 lock/rewrite 위험이 있습니다. 신규 컬럼과 backfill을 사용하십시오.";
+    private static final String RENAME_MESSAGE = "RENAME COLUMN/TABLE은 구버전 소비자를 즉시 파괴합니다.";
     private static final Pattern ADD_CLAUSE_PATTERN = Pattern.compile(
             "(?is)\\bADD\\s+(?:COLUMN\\s+)?(.*?)(?:,|$|;)");
     /** 이름 붙은 CHECK 제약 추가 — 컬럼을 더하지 않으므로 NOT NULL 컬럼 판정 밖이다. */
@@ -134,10 +150,7 @@ class ZeroDowntimeMigrationLinterTest {
      * 구버전 애플리케이션이 참조하던 것을 실제로 제거한다 — 헌법 제7조의 4단계 중 마지막이다.
      * 그래서 이 형태의 waiver 에만 선행 Expand 를 요구한다.
      */
-    private static final Pattern CONTRACT_PHASE_DDL = Pattern.compile(
-            "(?is)\\b(?:DROP\\s+(?:TABLE|SEQUENCE)\\b"
-                    + "|ALTER\\s+TABLE\\s+\\S+\\s+(?:DROP\\s+(?:COLUMN\\s+)?(?!CONSTRAINT\\b)\\w+"
-                    + "|RENAME\\s+(?!CONSTRAINT\\b)))");
+    private static final Pattern CONTRACT_PHASE_OBJECT_DROP = Pattern.compile("(?is)\\bDROP\\s+(?:TABLE|SEQUENCE)\\b");
 
     /** Flyway 버전 접두 — {@code V2_72__...} 의 {@code 2_72} 를 뽑는다. */
     private static final Pattern MIGRATION_VERSION = Pattern.compile("^V(\\d+(?:_\\d+)*)__");
@@ -172,6 +185,62 @@ class ZeroDowntimeMigrationLinterTest {
         violations.clear();
         checkAddNotNullViolation("V9__x.sql", "ALTER TABLE t ADD COLUMN e integer NOT NULL DEFAULT 0;\n", violations);
         assertThat(violations).isEmpty();
+    }
+
+    /**
+     * [2026-11-19] 문법을 조금 바꿔 파괴적 DDL 을 통과시키지 못한다 — 종전 패턴은 표 이름 바로 뒤의 첫 동작만 보아 IF EXISTS·ONLY·
+     * 한 문장의 여러 동작·SET DATA TYPE 이 모두 통과했다(헌법 제7조). 각 형태가 정확히 한 건으로 잡히고, 파괴적이지 않은 형태와
+     * 예외 표시가 있는 문장은 잡히지 않는다.
+     */
+    @Test
+    @DisplayName("ALTER TABLE 의 IF EXISTS·ONLY·여러 동작·SET DATA TYPE 변형도 파괴적 DDL 로 잡는다")
+    void destructiveAlterTableVariantsCannotBypassTheLinter() {
+        for (String sql : List.of(
+                "ALTER TABLE t DROP COLUMN c;",
+                "ALTER TABLE ONLY t DROP COLUMN c;",
+                "ALTER TABLE IF EXISTS t DROP COLUMN c;",
+                "ALTER TABLE IF EXISTS ONLY public.t DROP c;",
+                "ALTER TABLE t ADD COLUMN x numeric(10,2), DROP COLUMN IF EXISTS c;",
+                "ALTER TABLE t\n    ADD COLUMN x integer,\n    DROP COLUMN y;",
+                "ALTER TABLE t ALTER COLUMN c TYPE bigint;",
+                "ALTER TABLE ONLY t ALTER COLUMN c SET DATA TYPE bigint;",
+                "ALTER TABLE t ADD CONSTRAINT ck_t CHECK (a IN ('x,y', 'z')), ALTER c SET DATA TYPE text;",
+                "ALTER TABLE ONLY t RENAME COLUMN a TO b;",
+                "ALTER TABLE IF EXISTS t RENAME TO u;",
+                // 따옴표·주석 경계(Codex 검토): 문자열 속 ; 와 -- 가 뒤 동작을 가리지 않고, 공백 든 인용 식별자도 표 이름이다.
+                "ALTER TABLE t ADD COLUMN x text DEFAULT ';', DROP COLUMN legacy;",
+                "ALTER TABLE t ADD COLUMN x text DEFAULT '--', DROP COLUMN y;",
+                "ALTER TABLE \"my table\" DROP COLUMN c;",
+                // DO 블록 본문은 실행되는 코드다 — 달러 인용 안의 DDL 도 잡는다.
+                "DO $$ BEGIN ALTER TABLE t DROP COLUMN c; END $$;",
+                "DO $$ BEGIN EXECUTE 'ALTER TABLE t DROP COLUMN c'; END $$;")) {
+            List<String> violations = new ArrayList<>();
+            checkAlterTableActions("V9__x.sql", stripSqlComments(sql), violations);
+            assertThat(violations).as(sql).hasSize(1);
+        }
+        for (String sql : List.of(
+                "ALTER TABLE t ADD COLUMN c varchar(30);",
+                "ALTER TABLE ONLY t DROP CONSTRAINT ck_t;",
+                "ALTER TABLE t ALTER COLUMN c DROP DEFAULT, ALTER COLUMN c SET DEFAULT 'a,b';",
+                "ALTER TABLE t RENAME CONSTRAINT a TO b;",
+                "ALTER TABLE t ADD CONSTRAINT ck_t CHECK (a IN ('DROP COLUMN x', 'y'));",
+                "ALTER TABLE ONLY t DROP COLUMN c; -- linter:ignore ZDM-2026-9999 fixture",
+                // 문자열 리터럴 안의 글자는 동작이 아니다.
+                "ALTER TABLE t ADD COLUMN x text DEFAULT $$x, DROP COLUMN fake$$;",
+                "ALTER TABLE t ADD COLUMN x text DEFAULT 'it''s, DROP COLUMN z';",
+                "-- ALTER TABLE t DROP COLUMN c;\nALTER TABLE t ADD COLUMN c integer;",
+                "/* ALTER TABLE t DROP COLUMN c; */ ALTER TABLE t ADD COLUMN c integer;")) {
+            List<String> violations = new ArrayList<>();
+            checkAlterTableActions("V9__x.sql", stripSqlComments(sql), violations);
+            assertThat(violations).as(sql).isEmpty();
+        }
+        // Contract(축소) 판정도 같은 분해를 쓴다 — 열 제거·이름 변경은 어느 위치에 있어도 Contract 다. 타입 변경과 추가는 아니다.
+        assertThat(isContractPhaseDdl("ALTER TABLE ONLY t DROP COLUMN c;")).isTrue();
+        assertThat(isContractPhaseDdl("ALTER TABLE t ADD COLUMN a integer, DROP COLUMN b;")).isTrue();
+        assertThat(isContractPhaseDdl("ALTER TABLE IF EXISTS t RENAME COLUMN a TO b;")).isTrue();
+        assertThat(isContractPhaseDdl("DROP TABLE t;")).isTrue();
+        assertThat(isContractPhaseDdl("ALTER TABLE t ALTER COLUMN c SET DATA TYPE bigint;")).isFalse();
+        assertThat(isContractPhaseDdl("ALTER TABLE t ADD COLUMN c varchar(30);")).isFalse();
     }
 
     @Test
@@ -992,7 +1061,7 @@ class ZeroDowntimeMigrationLinterTest {
         String earlier = "db/migration/V2_13__expand_add_column.sql";
         String later = "db/migration/V2_18__expand_after_contract.sql";
         String additive = "db/migration/V2_10__add_foreign_key_only.sql";
-        // Contract 성격(열 제거)과 비-Contract 성격(추가만)을 CONTRACT_PHASE_DDL 이 실제로 가르는지까지 본다.
+        // Contract 성격(열 제거)과 비-Contract 성격(추가만)을 isContractPhaseDdl 이 실제로 가르는지까지 본다.
         writeFixture(sandbox, contractSql, "ALTER TABLE tb_zdm_fixture DROP COLUMN legacy_col;");
         writeFixture(sandbox, earlier, "ALTER TABLE tb_zdm_fixture ADD COLUMN new_col varchar(30);");
         writeFixture(sandbox, later, "ALTER TABLE tb_zdm_fixture ADD COLUMN later_col varchar(30);");
@@ -1432,17 +1501,8 @@ class ZeroDowntimeMigrationLinterTest {
             }
         }
 
-        String cleanContent = content
-                .replaceAll("(?s)/\\*.*?\\*/", "")
-                .replaceAll("--(?![^\r\n]*linter:ignore)[^\r\n]*", "");
-        checkViolationWithIgnore(path, cleanContent, FORBIDDEN_DROP,
-                "DROP COLUMN은 하위 호환성을 파괴합니다. Expand-and-Contract 최종 배포에서만 수행하십시오.",
-                violations);
-        checkViolationWithIgnore(path, cleanContent, FORBIDDEN_ALTER_TYPE,
-                "ALTER COLUMN TYPE은 lock/rewrite 위험이 있습니다. 신규 컬럼과 backfill을 사용하십시오.",
-                violations);
-        checkViolationWithIgnore(path, cleanContent, FORBIDDEN_RENAME,
-                "RENAME COLUMN/TABLE은 구버전 소비자를 즉시 파괴합니다.", violations);
+        String cleanContent = stripSqlComments(content);
+        checkAlterTableActions(path, cleanContent, violations);
         checkAddNotNullViolation(path, cleanContent, violations);
         checkViolationWithIgnore(path, cleanContent, FORBIDDEN_DROP_TABLE,
                 "DROP TABLE은 최상위 파괴 DDL입니다.", violations);
@@ -1452,6 +1512,135 @@ class ZeroDowntimeMigrationLinterTest {
                 "TRUNCATE는 비가역 데이터 소거입니다.", violations);
         checkViolationWithIgnore(path, cleanContent, FORBIDDEN_SEQ_RENAME,
                 "ALTER SEQUENCE RENAME은 채번 문자열 결속을 파괴합니다.", violations);
+    }
+
+    /** ALTER TABLE 문장마다 동작을 나눠 열 제거·타입 변경·이름 변경을 찾는다. 예외 표시는 문장 첫 줄에서 읽는다. */
+    static void checkAlterTableActions(String path, String content, List<String> violations) {
+        Matcher statement = ALTER_TABLE_STATEMENT.matcher(content);
+        while (statement.find()) {
+            int lineEnd = content.indexOf("\n", statement.start());
+            // 줄바꿈이 없는 마지막 줄도 문장 끝(;) 뒤의 예외 표시까지 읽는다.
+            String firstLine = lineEnd != -1 ? content.substring(statement.start(), lineEnd) : content.substring(statement.start());
+            if (firstLine.contains("linter:ignore")) {
+                continue;
+            }
+            String header = content.substring(statement.start(), statement.start(1));
+            for (String action : topLevelActions(statement.group(1))) {
+                String message = destructiveActionMessage(action);
+                if (message != null) {
+                    violations.add(String.format("%s: %s (구문: %s)",
+                            path, message, (header + action).trim().replaceAll("\\s+", " ")));
+                }
+            }
+        }
+    }
+
+    /** 동작 하나가 파괴적이면 그 안내 문구를, 아니면 null 을 돌려준다. */
+    private static String destructiveActionMessage(String action) {
+        if (DROP_COLUMN_ACTION.matcher(action).find()) return DROP_COLUMN_MESSAGE;
+        if (ALTER_TYPE_ACTION.matcher(action).find()) return ALTER_TYPE_MESSAGE;
+        if (RENAME_ACTION.matcher(action).find()) return RENAME_MESSAGE;
+        return null;
+    }
+
+    /**
+     * 작은따옴표 문자열 밖의 주석만 걷는다(2026-11-19). 종전 정규식은 문자열 속 {@code '--'}·{@code '/*'} 를 주석으로 읽어 같은 줄
+     * 뒤의 DDL 을 지웠다. {@code linter:ignore} 가 든 줄 주석은 남긴다(예외 표시를 읽어야 한다). 달러 인용({@code DO $$ … $$}) 본문은
+     * 실행되는 코드라 문자열로 보지 않는다 — 그 안의 주석은 걷고 DDL 은 검사한다.
+     */
+    static String stripSqlComments(String content) {
+        StringBuilder out = new StringBuilder(content.length());
+        boolean quoted = false;
+        for (int i = 0; i < content.length(); i++) {
+            char ch = content.charAt(i);
+            if (quoted) {
+                out.append(ch);
+                if (ch == '\'') quoted = false;
+                continue;
+            }
+            if (ch == '\'') {
+                quoted = true;
+                out.append(ch);
+            } else if (ch == '/' && i + 1 < content.length() && content.charAt(i + 1) == '*') {
+                int end = content.indexOf("*/", i + 2);
+                i = end == -1 ? content.length() - 1 : end + 1;
+            } else if (ch == '-' && i + 1 < content.length() && content.charAt(i + 1) == '-') {
+                int eol = i;
+                while (eol < content.length() && content.charAt(eol) != '\n' && content.charAt(eol) != '\r') eol++;
+                String comment = content.substring(i, eol);
+                if (comment.contains("linter:ignore")) out.append(comment);
+                i = eol - 1;
+            } else {
+                out.append(ch);
+            }
+        }
+        return out.toString();
+    }
+
+    /** ALTER TABLE 의 동작 목록을 괄호·작은따옴표·큰따옴표·달러 인용 밖의 쉼표로 나눈다. */
+    static List<String> topLevelActions(String actions) {
+        List<String> result = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        int depth = 0;
+        char quote = 0;
+        String dollar = null;
+        for (int i = 0; i < actions.length(); i++) {
+            char ch = actions.charAt(i);
+            if (dollar != null) {
+                if (actions.startsWith(dollar, i)) {
+                    current.append(dollar);
+                    i += dollar.length() - 1;
+                    dollar = null;
+                } else {
+                    current.append(ch);
+                }
+                continue;
+            }
+            if (quote != 0) {
+                if (ch == quote) quote = 0;
+                current.append(ch);
+                continue;
+            }
+            if (ch == '\'' || ch == '"') {
+                quote = ch;
+            } else if (ch == '$') {
+                Matcher tag = DOLLAR_QUOTE_TAG.matcher(actions).region(i, actions.length());
+                if (tag.lookingAt()) {
+                    dollar = tag.group();
+                    current.append(dollar);
+                    i += dollar.length() - 1;
+                    continue;
+                }
+            } else if (ch == '(') {
+                depth++;
+            } else if (ch == ')') {
+                depth = Math.max(0, depth - 1);
+            } else if (depth == 0 && ch == ',') {
+                addAction(result, current);
+                current.setLength(0);
+                continue;
+            }
+            current.append(ch);
+        }
+        addAction(result, current);
+        return result;
+    }
+
+    private static void addAction(List<String> result, StringBuilder action) {
+        String trimmed = action.toString().trim();
+        if (!trimmed.isEmpty()) result.add(trimmed);
+    }
+
+    /** Contract(축소) 성격 — 표·시퀀스 제거, 또는 ALTER TABLE 동작 가운데 열 제거·이름 변경이 하나라도 있다. */
+    static boolean isContractPhaseDdl(String sql) {
+        if (CONTRACT_PHASE_OBJECT_DROP.matcher(sql).find()) return true;
+        Matcher statement = ALTER_TABLE_STATEMENT.matcher(sql);
+        while (statement.find()) {
+            for (String action : topLevelActions(statement.group(1))) {
+                if (DROP_COLUMN_ACTION.matcher(action).find() || RENAME_ACTION.matcher(action).find()) return true;
+            }
+        }
+        return false;
     }
 
     private static void checkViolationWithIgnore(
@@ -1523,7 +1712,7 @@ class ZeroDowntimeMigrationLinterTest {
             violations.add(label + ": waiver 대상 SQL을 읽지 못했습니다 — " + waivedPath);
             return;
         }
-        if (!CONTRACT_PHASE_DDL.matcher(waivedSql).find()) {
+        if (!isContractPhaseDdl(waivedSql)) {
             return; // Contract 성격이 아니면 선행 Expand 를 요구하지 않는다.
         }
 

@@ -73,9 +73,16 @@ public class MailAsyncProcessor {
         return subject + "을 " + receiver + "보내지 못했습니다. 발신 이력에서 결과를 확인하고 다시 보낼 수 있습니다.";
     }
 
-    /** 발송만 재시도한다. 결과 기록이나 커밋 실패는 이 경계로 전파되지 않는다. */
+    /**
+     * 발송만 재시도한다. 결과 기록이나 커밋 실패는 이 경계로 전파되지 않는다.
+     *
+     * <p>[2026-11-19] 서버에 닿지도 못한 것이 확실한 실패({@link #failedBeforeTransmission})만 다시 보낸다. 종전에는 모든 예외를
+     * 3회 재시도해, SMTP 서버가 본문(DATA)을 받은 뒤 응답이나 연결 종료에서 난 오류에도 같은 메일을 다시 보냈다 — 받는 사람은
+     * 두세 통을 받는다. 결과를 알 수 없는 실패는 문자 발송과 같은 원칙으로 한 번에 그친다(SmsAsyncProcessor — 수락 뒤 예외로는
+     * 두 번째 전송을 정당화할 수 없다). 실패로 기록되고 발신자에게 실패 알림이 가며, 발신 이력에서 사람이 다시 보낼 수 있다.
+     */
     @org.springframework.retry.annotation.Retryable(
-        retryFor = { Exception.class },
+        retryFor = { MailNotTransmittedException.class },
         recover = "recoverSending",
         maxAttempts = 3,
         backoff = @org.springframework.retry.annotation.Backoff(delay = 2000)
@@ -89,12 +96,51 @@ public class MailAsyncProcessor {
             log.warn("Mail delivery unavailable for dispatch serial number: {}", emlDsptchSn);
             return false;
         } catch (Exception e) {
-            // Checked Exception을 RuntimeException으로 변환하여 @Retryable이 작동하도록 함
-            throw new RuntimeException("Mail delivery failed, triggering retry", e);
+            if (failedBeforeTransmission(e)) {
+                throw new MailNotTransmittedException(e);
+            }
+            log.warn("Mail delivery outcome unconfirmed; not retried to avoid a duplicate: dispatch serial number: {}, errorType: {}",
+                    emlDsptchSn, e.getClass().getSimpleName());
+            return false;
         }
 
         log.info("Mail sent successfully for dispatch serial number: {}", emlDsptchSn);
         return true;
+    }
+
+    /**
+     * 메일 서버에 연결하지 못한 실패인가 — 연결 거부·호스트 이름 해석 실패·경로 없음과 Angus 의 {@code MailConnectException}(소켓
+     * 연결 시도의 실패, 연결 시간 초과 포함)은 연결 단계에서만 나므로 본문이 나가지 않은 것이 확실하다. 그 밖의 시간 초과(읽기 등)·인증
+     * 실패·전송 중 오류는 다시 보내지 않는다(읽기 시간 초과는 본문 전송 뒤에도 나고, 인증은 2초 뒤에도 같다). Spring 의 연결 실패
+     * 예외와 Jakarta Mail 의 예외는 원인 사슬({@code getCause()})에 이 예외들을 싣는다.
+     */
+    static boolean failedBeforeTransmission(Throwable failure) {
+        Throwable current = failure;
+        for (int depth = 0; current != null && depth < 16; depth++) {
+            if (ANGUS_MAIL_CONNECT_EXCEPTION.equals(current.getClass().getName())
+                    || current instanceof java.net.ConnectException
+                    || current instanceof java.net.UnknownHostException
+                    || current instanceof java.net.NoRouteToHostException) {
+                return true;
+            }
+            Throwable next = current.getCause();
+            if (next == current) break;
+            current = next;
+        }
+        return false;
+    }
+
+    /**
+     * Angus(Jakarta Mail 구현)의 연결 시도 실패 예외. 구현은 런타임 의존이라 컴파일 의존을 늘리지 않고 이름으로 본다 — 이름이 바뀌면
+     * 단위 시험(실제 클래스를 런타임에서 만든다)이 붉어진다.
+     */
+    static final String ANGUS_MAIL_CONNECT_EXCEPTION = "org.eclipse.angus.mail.util.MailConnectException";
+
+    /** 본문을 보내기 전에 연결이 실패해 다시 보내도 중복이 생기지 않는 실패. 이 예외만 재시도한다. */
+    static final class MailNotTransmittedException extends RuntimeException {
+        MailNotTransmittedException(Throwable cause) {
+            super("Mail server connection failed before transmission", cause);
+        }
     }
 
     /**

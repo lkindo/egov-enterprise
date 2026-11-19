@@ -92,6 +92,8 @@ class InformalSanctionWorkflowServiceTest {
 
     @BeforeEach
     void setUp() {
+        // 알림 받는 사람은 기본으로 모두 있는 계정이다 — 지워진 계정은 그 시험에서만 따로 정한다(2026-11-19 결재 알림 필터).
+        org.mockito.Mockito.lenient().when(userRepository.existsById(org.mockito.ArgumentMatchers.any())).thenReturn(true);
         security = mockStatic(SecurityUtil.class, CALLS_REAL_METHODS);
         actor("owner");
         // 기본은 결재 기능 권한을 모두 가진 사용자다. 권한이 빠진 경우는 해당 테스트가 따로 정한다.
@@ -548,6 +550,29 @@ class InformalSanctionWorkflowServiceTest {
         TransactionSynchronizationManager.getSynchronizations().forEach(TransactionSynchronization::afterCommit);
         assertThat(events(NotificationRequestedEvent.class)).extracting(NotificationRequestedEvent::receiverEsntlId)
                 .containsExactly("next");
+    }
+
+    /**
+     * [2026-11-19] 다음 단계 결재자의 계정이 지워졌으면 그 사람에게 '결재 순서 도래' 를 발행하지 않는다. 알림 행은 사용자 FK 가 있고
+     * 같은 트랜잭션에 저장돼, 발행하면 앞 단계 승인 전체가 되돌아갔다(FK 롤백 자체는 ApprovalReferenceNotificationIntegrationTest 가
+     * 참조자 경로로 증명한다). 승인은 진행되고 지워진 사람이 차례가 된다 — 기안자가 결재자를 바꾸거나 회수해 빠져나간다.
+     */
+    @Test
+    @DisplayName("다음 단계 결재자 계정이 지워졌으면 차례 알림 없이 앞 단계 승인이 진행된다")
+    void stageAdvancesWithoutNotifyingADeletedNextApprover() {
+        InformalSanction document = header("A");
+        InformalSanctionDetail first = line(1, 1, "first", true);
+        InformalSanctionDetail gone = line(1, 2, "gone", false);
+        writable(document, List.of(first, gone));
+        actor("first");
+        given(userRepository.existsById("gone")).willReturn(false);
+
+        service.confirmInformalSanction(7L, "C", null, 0);
+
+        assertThat(first.status()).isEqualTo(ApprovalStatus.APPROVED);
+        assertThat(gone.status()).isEqualTo(ApprovalStatus.ACTIVE);
+        assertThat(events(NotificationRequestedEvent.class)).isEmpty();
+        verify(userRepository).existsById("gone");
     }
 
     @Test

@@ -129,6 +129,7 @@
       "target": "user",
       "module": "business-core",
       "types": [
+        "nuri.business.domain.user.repository.UserRepository",
         "nuri.business.service.user.UserService",
         "nuri.business.service.user.dto.UserDto"
       ]

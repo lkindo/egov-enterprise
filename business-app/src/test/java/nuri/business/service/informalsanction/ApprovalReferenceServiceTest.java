@@ -107,6 +107,8 @@ class ApprovalReferenceServiceTest {
 
     @BeforeEach
     void setUp() {
+        // 알림 받는 사람은 기본으로 모두 있는 계정이다 — 지워진 계정은 그 시험에서만 따로 정한다(2026-11-19 결재 알림 필터).
+        org.mockito.Mockito.lenient().when(userRepository.existsById(org.mockito.ArgumentMatchers.any())).thenReturn(true);
         security = mockStatic(SecurityUtil.class, CALLS_REAL_METHODS);
         actor("owner");
         permissions("APPROVAL_READ", "APPROVAL_APPROVE", "APPROVAL_CANCEL", "APPROVAL_CREATE");
