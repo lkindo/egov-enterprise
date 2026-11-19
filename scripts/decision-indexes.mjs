@@ -68,6 +68,7 @@ export const DECISION_AREA_ROUTES = Object.freeze({
       'docs/04-operations/migration-release-log.md', 'docs/04-operations/sast-findings-review.md', 'docs/04-operations/secure-coding-weakness-baseline.md',
       'docs/04-operations/ui-quality-assisted-accessibility.md', 'docs/04-operations/ui-ux-baseline-protocol.md',
       'docs/04-operations/third-party-notices.md', 'docs/04-operations/verification-blindspots.md',
+      'docs/04-operations/vendor-rerecord-batch.md',
     ]),
     conditions: Object.freeze([]),
   }),
@@ -89,7 +90,7 @@ export const DECISION_AREA_ROUTES = Object.freeze({
   }),
   migration: Object.freeze({
     paths: Object.freeze([
-      'migration-tool/**', 'tools/migration-workspace/**', 'scripts/*migration*',
+      'migration-tool/**', 'tools/migration-workspace/**', 'tools/migration-workspace-prototype/**', 'scripts/*migration*',
       'config/migration-test-duration-profile.json',
     ]),
     documents: Object.freeze([

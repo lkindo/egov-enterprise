@@ -124,6 +124,16 @@
       ]
     },
     {
+      "file": "informalsanction/ApprovalRecipients.java",
+      "owner": "informalsanction",
+      "target": "user",
+      "module": "business-core",
+      "types": [
+        "nuri.business.domain.user.entity.User",
+        "nuri.business.domain.user.repository.UserRepository"
+      ]
+    },
+    {
       "file": "informalsanction/event/SanctionEventListener.java",
       "owner": "informalsanction",
       "target": "user",

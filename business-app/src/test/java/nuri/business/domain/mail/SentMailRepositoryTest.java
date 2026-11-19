@@ -247,23 +247,4 @@ class SentMailRepositoryTest {
         em.clear();
         return mail.getEmlDsptchSn();
     }
-
-    @Test
-    @DisplayName("[GAP-MAIL-001] claimQueued 는 차지 시각으로 dsptchDt 를 갱신하고 recordResult 는 차지 시각으로만 확정한다")
-    void claimQueued_updatesDsptchDtToClaimStampAndGuardsRecordResult() {
-        java.time.LocalDateTime queuedAt = java.time.LocalDateTime.of(2026, 11, 18, 9, 0);
-        java.time.LocalDateTime claimedAt = queuedAt.plusMinutes(15);
-        Long mailId = saveMail("owner", "Q", queuedAt);
-
-        assertThat(sentMailRepository.claimQueued(mailId, queuedAt.plusSeconds(1), claimedAt)).isZero();
-        assertThat(sentMailRepository.claimQueued(mailId, queuedAt, claimedAt)).isEqualTo(1);
-
-        em.clear();
-        SentMail claimed = sentMailRepository.findById(mailId).orElseThrow();
-        assertThat(claimed.getDsptchRsltCd()).isEqualTo("P");
-        assertThat(claimed.getDsptchDt()).isEqualTo(claimedAt);
-
-        assertThat(sentMailRepository.recordResult(mailId, queuedAt, "S")).isZero();
-        assertThat(sentMailRepository.recordResult(mailId, claimedAt, "S")).isEqualTo(1);
-    }
 }

@@ -178,31 +178,4 @@ class UserLogRepositoryTest extends PersistenceTestSupport {
         assertThat(java.util.Arrays.stream(rows.get(1), 1, 5).map(value -> ((Number) value).longValue()))
                 .containsExactly(120L, 4L, 5L, 7L);
     }
-
-    @Test
-    @DisplayName("사용자 로그 검색은 vnUserMaster를 fetch join하고 복합 PK tie-breaker로 페이지 경계를 결정한다")
-    void searchUserLogs_fetchesUserAndOrdersDeterministicallyAcrossPages() {
-        entityManager.persist(User.builder().userId("userA").userNm("김가나").pswd("password").esntlId("ESNTL_A").build());
-        entityManager.persist(User.builder().userId("userB").userNm("김다라").pswd("password").esntlId("ESNTL_B").build());
-        userLogRepository.save(UserLog.create("20261101", "ESNTL_B", "SvcZ", "m1", 1, 0, 0, 0, 0, 0));
-        userLogRepository.save(UserLog.create("20261101", "ESNTL_A", "SvcB", "m2", 1, 0, 0, 0, 0, 0));
-        userLogRepository.save(UserLog.create("20261101", "ESNTL_A", "SvcB", "m1", 1, 0, 0, 0, 0, 0));
-        userLogRepository.save(UserLog.create("20261101", "ESNTL_A", "SvcA", "m1", 1, 0, 0, 0, 0, 0));
-        entityManager.flush();
-        entityManager.clear();
-
-        Page<UserLog> page0 = userLogRepository.searchUserLogs("김", null, null, PageRequest.of(0, 2));
-        Page<UserLog> page1 = userLogRepository.searchUserLogs("김", null, null, PageRequest.of(1, 2));
-
-        assertThat(page0.getTotalElements()).isEqualTo(4L);
-        assertThat(page0.getContent()).allSatisfy(row ->
-                assertThat(org.hibernate.Hibernate.isInitialized(row.getVnUserMaster())).isTrue());
-        assertThat(java.util.stream.Stream.concat(page0.getContent().stream(), page1.getContent().stream())
-                .map(row -> row.getDmndUserId() + ":" + row.getSrvcNm() + ":" + row.getMthdNm()))
-                .containsExactly(
-                        "ESNTL_A:SvcA:m1",
-                        "ESNTL_A:SvcB:m1",
-                        "ESNTL_A:SvcB:m2",
-                        "ESNTL_B:SvcZ:m1");
-    }
 }

@@ -124,7 +124,7 @@ public class SurveyResultService {
         Map<Long, SurveyQuestion> questions = questionRepository.findBySrvySnOrderByQstnSnAsc(survey.getSrvySn())
                 .stream().collect(Collectors.toMap(SurveyQuestion::getSrvyQstnSn, Function.identity()));
         Map<Long, SurveyArticle> articles = articleRepository
-                .findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(questions.keySet())
+                .findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(questions.keySet())
                 .stream().collect(Collectors.toMap(SurveyArticle::getSrvyArtclSn, Function.identity()));
         Set<String> answers = new HashSet<>();
         Map<Long, Long> perQuestion = new LinkedHashMap<>();
@@ -197,7 +197,7 @@ public class SurveyResultService {
         Map<Long, SurveyQuestion> questions = questionRepository.findBySrvySnOrderByQstnSnAsc(srvySn).stream()
                 .collect(Collectors.toMap(SurveyQuestion::getSrvyQstnSn, Function.identity()));
         Map<Long, SurveyArticle> articles = articleRepository
-                .findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(questions.keySet()).stream()
+                .findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(questions.keySet()).stream()
                 .collect(Collectors.toMap(SurveyArticle::getSrvyArtclSn, Function.identity()));
 
         // 문항별 중복 항목 선택 방지
@@ -373,9 +373,10 @@ public class SurveyResultService {
                         SurveyResultRepository.QuestionRespondentCount::getCnt));
 
         Map<Long, List<SurveyArticle>> articlesByQuestion = articleRepository
-                .findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(
+                .findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(
                         questions.stream().map(SurveyQuestion::getSrvyQstnSn).toList())
                 .stream()
+                .sorted(SurveyService.ARTICLE_ORDER)
                 .collect(Collectors.groupingBy(SurveyArticle::getSrvyQstnSn, LinkedHashMap::new, Collectors.toList()));
 
         List<SurveyStatsDto> stats = new ArrayList<>();

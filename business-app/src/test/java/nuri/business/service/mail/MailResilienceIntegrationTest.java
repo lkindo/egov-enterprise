@@ -68,8 +68,11 @@ class MailResilienceIntegrationTest {
     @Test
     @DisplayName("회복탄력성 검증 - 외부 연동 장애 시 3회 연속 재시도 작동 및 최종 복구(Recover) 실패 기록 각인 보증")
     void mailDispatch_resilienceAndRetryPolicy_verified() throws Exception {
-        // Given: 1. 인위적으로 외부 SMTP 서버 다운(장애) 상태 모사
-        doThrow(new RuntimeException("SMTP Connection Timeout (External Service Down)"))
+        // Given: 1. 인위적으로 외부 SMTP 서버 다운(장애) 상태 모사 — 연결 거부라 본문이 나가지 않았음이 확실한 실패다.
+        //   [2026-11-19] 재시도는 이런 연결 단계 실패만이다(결과를 알 수 없는 실패는 중복 발송을 막으려고 한 번에 그친다).
+        doThrow(new org.springframework.mail.MailSendException("Mail server connection failed",
+                new jakarta.mail.MessagingException("Couldn't connect to host",
+                        new java.net.ConnectException("Connection refused (External Service Down)"))))
                 .when(emailSender).send(anyString(), anyString(), anyString(), anyString());
 
         // Given: 2. 테스트용 메일 영속 데이터 준비 (초기 상태는 대기 'W')

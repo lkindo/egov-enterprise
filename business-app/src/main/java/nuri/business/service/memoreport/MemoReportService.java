@@ -351,7 +351,7 @@ public class MemoReportService {
         }
         entity.update(dto.getRptTtl(), dto.getMemoRptYmd(), entity.getUserId(), dto.getRptrId(),
                 dto.getRptCn(), atchFileSn);
-        entity.setLastMdfrId(nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse(userId));
+        entity.setLastMdfrId(userId);
         memoReportRepository.flush();
         if (previousAtchFileSn != null && !Objects.equals(previousAtchFileSn, entity.getAtchFileSn())) {
             attachmentAssignmentPolicy.releaseIfUnreferenced(previousAtchFileSn);

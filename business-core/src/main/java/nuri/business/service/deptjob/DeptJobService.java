@@ -14,9 +14,7 @@ import nuri.business.service.deptjob.dto.DeptJobSaveRequest;
 import nuri.business.service.deptjob.dto.DeptJobMapper;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.domain.deptjob.QDeptJob;
-import nuri.business.domain.user.entity.QUser;
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.jpa.JPAExpressions;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -140,8 +138,6 @@ public class DeptJobService extends BaseAbstractService {
         }
 
         if (deptTaskBoxSn != null) {
-            deptJobBoxRepository.findById(deptTaskBoxSn)
-                    .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
             builder.and(deptJob.deptTaskBoxSn.eq(deptTaskBoxSn));
         } else if (deptId != null && !deptId.isEmpty()) {
             List<Long> boxSns = deptJobBoxRepository.findByDeptId(deptId).stream()
@@ -159,15 +155,8 @@ public class DeptJobService extends BaseAbstractService {
                 builder.and(deptJob.deptTaskNm.contains(keyword));
             } else if ("1".equals(searchCondition)) { // 부서업무내용
                 builder.and(deptJob.deptTaskCn.contains(keyword));
-            } else if ("2".equals(searchCondition)) { // 담당자 (esntlId·이름·로그인ID)
-                QUser assignee = new QUser("deptJobAssignee");
-                BooleanBuilder assigneeMatch = new BooleanBuilder(deptJob.picId.contains(keyword));
-                assigneeMatch.or(deptJob.picId.in(
-                        JPAExpressions.select(assignee.esntlId)
-                                .from(assignee)
-                                .where(assignee.userNm.containsIgnoreCase(keyword)
-                                        .or(assignee.userId.containsIgnoreCase(keyword)))));
-                builder.and(assigneeMatch);
+            } else if ("2".equals(searchCondition)) { // 담당자ID
+                builder.and(deptJob.picId.contains(keyword));
             }
         }
         Pageable requested = required(pageable, "pageable 는 null 일 수 없습니다");

@@ -413,6 +413,7 @@ export const GENERATOR_TOOL_PATHS = Object.freeze([
   { path: 'tools/migration-workspace/store.mjs', exact: true, axes: ['backend', 'e2e', 'migration', 'mutationMigrationTool'] },
   { path: 'tools/migration-workspace/inputs.mjs', exact: true, axes: ['backend', 'e2e', 'migration', 'mutationMigrationTool'] },
   { path: 'tools/migration-workspace/', axes: [] },
+  { path: 'tools/migration-workspace-prototype/', axes: [] },
   // 요구분석 작업공간은 독립 Node 실행기다. 운영 계약·SAST·재사용 검증이 해당 소스를 확인한다.
   { path: 'tools/requirements-workspace/', axes: [] },
   // [2026-10-27 DEC-OPS-387] 에이전트 하네스(DEC-OPS-386) — 실행 전 가드·스킬 안내 생성기와 세 도구의 훅 어댑터. 시험은 늘 도는 운영

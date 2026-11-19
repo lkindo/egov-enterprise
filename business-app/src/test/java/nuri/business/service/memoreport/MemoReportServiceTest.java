@@ -1314,31 +1314,4 @@ class MemoReportServiceTest {
         assertThat(result.getEditable()).isEqualTo(update);
         assertThat(result.getDeletable()).isEqualTo(delete);
     }
-
-    @Test
-    @DisplayName("메모보고 수정은 전달된 userId 가 esntlId 여도 감사 수정자(lastMdfrId)에 현재 loginId 를 기록한다")
-    void updateMemoReport_recordsLoginIdInLastMdfrIdWhenAuthenticated() {
-        MemoReport existing = MemoReport.builder()
-                .memoRptSn(1L)
-                .userId("ESNTL_OWNER")
-                .rptrId("ESNTL_RECIPIENT")
-                .rptTtl("원본")
-                .memoRptYmd("20261119")
-                .build();
-        existing.setFrstRgtrId("login-owner");
-        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
-        given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existing));
-        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
-                .thenReturn(Optional.of("login-owner"));
-
-        memoReportService.updateMemoReport(1L, "ESNTL_OWNER", MemoReportDto.builder()
-                .rptTtl("수정됨")
-                .memoRptYmd("20261119")
-                .rptrId("ESNTL_RECIPIENT")
-                .rptCn("내용")
-                .version(0)
-                .build());
-
-        assertThat(existing.getLastMdfrId()).isEqualTo("login-owner");
-    }
 }

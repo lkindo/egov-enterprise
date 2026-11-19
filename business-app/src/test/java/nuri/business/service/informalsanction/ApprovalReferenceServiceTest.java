@@ -96,6 +96,8 @@ class ApprovalReferenceServiceTest {
     @Mock private CommonCodeService commonCodeService;
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private UserRepository userRepository;
+    @org.mockito.Mock
+    private ApprovalRecipients approvalRecipients;
     @Mock private EntityManager entityManager;
     @Spy private InformalSanctionMapper informalSanctionMapper = new InformalSanctionMapperImpl();
     /** [V2_151] 첨부 할당·대리결재·민감 감사 — 없으면 @InjectMocks 가 null 을 넣어 열람·목록·결정 경로가 NPE 로 끝난다. */
@@ -107,6 +109,9 @@ class ApprovalReferenceServiceTest {
 
     @BeforeEach
     void setUp() {
+        // 알림 받는 사람은 기본으로 모두 있는 계정이다 — 지워진 계정은 그 시험에서만 따로 정한다(2026-11-19 결재 알림 필터).
+        org.mockito.Mockito.lenient().when(approvalRecipients.existing(org.mockito.ArgumentMatchers.any())).thenAnswer(call ->
+                call.<java.util.Collection<String>>getArgument(0).stream().filter(java.util.Objects::nonNull).distinct().sorted().toList());
         security = mockStatic(SecurityUtil.class, CALLS_REAL_METHODS);
         actor("owner");
         permissions("APPROVAL_READ", "APPROVAL_APPROVE", "APPROVAL_CANCEL", "APPROVAL_CREATE");

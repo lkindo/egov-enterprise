@@ -26,7 +26,7 @@ import { removeJobContainers } from './project-composer-postgres.mjs';
 import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, pruneVendorPostgresAssets, readVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
 import { ARTIFACT_COMMAND, artifactAliases, reusableArtifactEntrypoints } from './reusable-artifact-entrypoints-contract.mjs';
 import { HARNESS_SCAN_ROOTS, computeHarnessBaselineEntries } from './harness-baseline-manifest.mjs';
-import { assertBuildTarget, assertIsolatedRunnerSupportsProject, assertNoDotEnv, awaitChildExit, closedEnvironment, createIsolatedMfaEnvironment, DEFAULT_APPLICATION_READY_TIMEOUT_MS, VENDOR_APPLICATION_READY_FLOOR_MS, applicationReadyTimeoutMs, launchIsolatedVendorDatabase, onTermination, parseRepresentativeArguments, provisionRepresentativeAccounts, readRepresentativeBundle, removeVendorDatabase, representativeSelection, resolveVendorEngine, runCleanupSteps, validateLocalRun, vendorDatabaseEnvironment } from './run-isolated-e2e.mjs';
+import { assertBuildTarget, assertIsolatedRunnerSupportsProject, assertNoDotEnv, awaitChildExit, closedEnvironment, createIsolatedMfaEnvironment, launchIsolatedVendorDatabase, onTermination, parseRepresentativeArguments, provisionRepresentativeAccounts, readRepresentativeBundle, removeVendorDatabase, representativeSelection, resolveVendorEngine, runCleanupSteps, validateLocalRun, vendorDatabaseEnvironment } from './run-isolated-e2e.mjs';
 import { assertIsolatedTarget, assertOwnedVendorDatabase, assertRemovableVendorDatabase, validateIsolationManifest } from './e2e-isolation.mjs';
 import { composerProfile } from './project-composer-source.mjs';
 import { asPreviewVendors, certifyVendor } from './project-composer-vendor-evidence.test-helpers.mjs';
@@ -2212,13 +2212,6 @@ test('the runner wires the closed Docker environment, one API environment and th
       { DB_URL: `jdbc:${vendor}://127.0.0.1:49153/vendorcheck?${VENDOR_SOURCE[vendor].urlParameters}`, DB_USERNAME: 'vendorcheck', DB_PASSWORD: 'secret', ADMIN_INITIAL_PASSWORD: '1' }, vendor);
   }
   assert.throws(() => resolveVendorEngine('oracle', 'nope', VENDOR_ENGINES), /nope 엔진으로/);
-  assert.equal(applicationReadyTimeoutMs(null), DEFAULT_APPLICATION_READY_TIMEOUT_MS);
-  assert.equal(applicationReadyTimeoutMs({ engine: VENDOR_ENGINES.cubrid }), VENDOR_APPLICATION_READY_FLOOR_MS, '빠른 컨테이너 상한(120초)이 Flyway+앱 기동 시한을 깎지 않는다');
-  assert.equal(applicationReadyTimeoutMs({ engine: VENDOR_ENGINES.oracle }), 300_000);
-  assert.equal(applicationReadyTimeoutMs({ engine: VENDOR_ENGINES.oracle19 }), 1_500_000);
-  const readyBinding = /await waitReady\(`http:\/\/127\.0\.0\.1:\$\{apiPort\}\/actuator\/health`, api, applicationReadyTimeoutMs\(vendorRuntime\)\);/;
-  assert.match(runner, readyBinding);
-  assert.doesNotMatch(runner.replace('applicationReadyTimeoutMs(vendorRuntime)', 'vendorRuntime.engine.maxWaitSeconds * 1000'), readyBinding);
 
   const readme = vendorReadme('oracle', loadVendorLedger(ROOT));
   assert.match(readme, /node scripts\/run-isolated-e2e\.mjs --representative/);

@@ -314,6 +314,15 @@ const eslintConfig = [
         {
           "selector": ":matches(Literal[value=/십시오/], JSXText[value=/십시오/], TemplateElement[value.raw=/십시오/])",
           "message": "'~하십시오' 대신 '~해 주세요' 나 '~하세요' 를 쓰세요(화면 문구 어미 기준 — 서술 ~니다, 요청 ~해 주세요·~하세요)."
+        },
+        // [2026-11-19] console 에 값을 통째로 넘기지 않는다 — axios 오류를 넘기면 config.headers 의 Authorization(Bearer)·
+        //   config.params 의 검색어가 그대로 찍힌다(서버 컴포넌트에서 재현, 2026-11-19 평가). 2026-09-05 에 logErrorSafely 를
+        //   만들고도 세 곳이 다시 원본 오류를 넘겼다. 배열·전개·??·삼항으로 감싼 값과 globalThis.console 도 같다(Codex 검토).
+        //   문자열 리터럴·템플릿·문자열 연결·함수 호출 결과(summarizeError 등)는 걸리지 않는다. 구문만으로는 변수의 타입을 알 수
+        //   없어 문자열 변수도 걸린다 — 템플릿 문자열로 넣는다.
+        {
+          "selector": "CallExpression:matches([callee.object.name='console'], [callee.object.property.name='console']) > :matches(Identifier, MemberExpression, TSAsExpression, TSNonNullExpression, ObjectExpression, ArrayExpression, SpreadElement, LogicalExpression, ConditionalExpression).arguments",
+          "message": "console 에 값을 통째로 넘기지 마세요 — 오류는 logErrorSafely(문구, 오류)로, 그 밖의 값은 필요한 필드만 템플릿 문자열로 남기세요(@/lib/safe-error-log)."
         }
       ],
       // [2026-11-11] 전량 해소한 3개 규칙(set-state-in-effect · refs · no-location-assign-relative-destination)은

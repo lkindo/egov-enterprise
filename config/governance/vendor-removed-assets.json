@@ -16,7 +16,8 @@
     "scripts/run-isolated-release-smoke.mjs",
     "scripts/ui-quality-baseline-build.mjs",
     "scripts/ui-quality-baseline-launch.mjs",
-    "tools/migration-workspace"
+    "tools/migration-workspace",
+    "tools/migration-workspace-prototype"
   ],
   "aliases": [
     "migration:export",

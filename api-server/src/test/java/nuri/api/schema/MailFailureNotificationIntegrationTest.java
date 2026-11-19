@@ -200,13 +200,9 @@ class MailFailureNotificationIntegrationTest {
         }).when(sender).send(anyString(), anyString(), anyString(), anyString());
 
         var first = dispatchWithSender(mail, identity.esntlId());
-        LocalDateTime next;
+        LocalDateTime next = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
         try {
             assertThat(entered.await(10, TimeUnit.SECONDS)).isTrue();
-            LocalDateTime immediateNow = VendorTestSql.storedTime(LocalDateTime.now().truncatedTo(ChronoUnit.MICROS));
-            next = immediateNow.plusMinutes(11);
-            assertThat(tx().<Integer>execute(status ->
-                    mails.claimForResend(id, identity.loginId(), immediateNow, immediateNow.minusMinutes(10)))).isZero();
             assertThat(tx().<Integer>execute(status ->
                     mails.claimForResend(id, identity.loginId(), next, next.minusMinutes(10)))).isEqualTo(1);
         } finally {

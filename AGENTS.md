@@ -77,6 +77,7 @@ Gemini·Claude Code·Codex 등은 같은 워킹트리를 공유하며, 도구별
 - 같은 커밋에 같은 검증 묶음을 되풀이하지 않는다. 넓은 로컬 검증은 푸시 직전에 한 번, 훅이 보지 않는 검사만 고르며, 병합 판정은 required CI가 한다.
 - 무거운 검증([§6.3](docs/03-guides/orchestration-protocol.md#63-무거운-검증은-하나씩)의 목록)은 한 기계에서 하나씩 실행한다. 겹쳐 실행한 결과는 red든 green이든 증거로 쓰지 않는다.
 - main 최신화 뒤 생성물(생성 계약, census, 승인 해시, Atlas)은 손으로 병합하지 않고 생성기로 다시 만든다. 공용 메모리 표는 양쪽 행을 살려 합치고 수치는 원장에서 다시 센다.
+- 인증 벤더의 증거 입력([판정](scripts/vendor-evidence-inputs.mjs))을 바꾸는 작업은 바로 하지 않는다 — 입력 하나만 바뀌어도 인증 벤더 전부의 증거를 다시 기록해야 한다. 바꾸기 전에 입력인지 보고, 바꾼 뒤 `node scripts/regenerate.mjs --check` 가 `VENDOR_EVIDENCE_STALE` 을 내면 되돌린 뒤 [재기록 묶음 대기 목록](docs/04-operations/vendor-rerecord-batch.md)에 더해 묶음 때 한 번에 처리한다. 입력 밖에서 같은 목적을 이룰 수 있으면 그쪽으로 하고, 사용자가 지금 하라고 명시하면 비용을 알린 뒤 따른다(DEC-OPS-421).
 
 ## 공유 워킹트리와 Git
 

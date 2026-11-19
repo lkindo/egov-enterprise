@@ -72,6 +72,8 @@ class ApprovalCollaborationServiceTest {
     @Mock private CommonCodeService commonCodeService;
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private UserRepository userRepository;
+    @org.mockito.Mock
+    private ApprovalRecipients approvalRecipients;
     @Mock private EntityManager entityManager;
     @Spy private InformalSanctionMapper informalSanctionMapper = new InformalSanctionMapperImpl();
     /** [V2_151] 첨부 할당·대리결재·민감 감사 — 없으면 @InjectMocks 가 null 을 넣어 열람·목록·결정 경로가 NPE 로 끝난다. */
@@ -83,6 +85,9 @@ class ApprovalCollaborationServiceTest {
 
     @BeforeEach
     void setUp() {
+        // 알림 받는 사람은 기본으로 모두 있는 계정이다 — 지워진 계정은 그 시험에서만 따로 정한다(2026-11-19 결재 알림 필터).
+        org.mockito.Mockito.lenient().when(approvalRecipients.existing(org.mockito.ArgumentMatchers.any())).thenAnswer(call ->
+                call.<java.util.Collection<String>>getArgument(0).stream().filter(java.util.Objects::nonNull).distinct().sorted().toList());
         security = mockStatic(SecurityUtil.class, CALLS_REAL_METHODS);
         actor("owner");
         java.util.Set<String> granted = java.util.Set.of("APPROVAL_APPROVE", "APPROVAL_CANCEL", "APPROVAL_CREATE");
@@ -189,6 +194,32 @@ class ApprovalCollaborationServiceTest {
             assertThat(event.receiverEsntlId()).isEqualTo("second");
             assertThat(event.linkUrl()).isEqualTo("/approvals?tab=PENDING&doc=7");
         });
+    }
+
+    /**
+     * [2026-11-19] 차례인 결재자의 계정이 지워진 문서 — 재알림은 보낼 곳이 없다고 안내하고 기록을 남기지 않으며, 결재자 변경과 회수는
+     * 지워진 사람에게 알림을 발행하지 않고 진행된다. 종전에는 그 알림이 알림 행의 사용자 FK 로 업무 전체를 되돌려 문서가 멈췄다.
+     */
+    @Test
+    @DisplayName("차례인 결재자 계정이 지워졌으면 재알림은 안내만 하고, 결재자 변경은 지워진 사람에게 알리지 않고 진행된다")
+    void deletedActiveApproverCanBeReplacedButNotReminded() {
+        InformalSanction document = header("A");
+        InformalSanctionDetail gone = line(2, "second", ApprovalStatus.ACTIVE);
+        writable(document, List.of(line(1, "first", ApprovalStatus.APPROVED), gone));
+        processes();
+        org.mockito.Mockito.doAnswer(call -> call.<java.util.Collection<String>>getArgument(0).stream()
+                .filter(user -> !"second".equals(user)).distinct().sorted().toList())
+                .when(approvalRecipients).existing(org.mockito.ArgumentMatchers.any());
+
+        assertThatThrownBy(() -> service.remindApprovers(7L)).isInstanceOf(BusinessException.class)
+                .hasMessageContaining("결재자를 바꾸거나 회수해")
+                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode()).isEqualTo(CommonErrorCode.INVALID_STATE));
+        verify(processRepository, never()).save(any());
+
+        eligible("fourth");
+        service.replaceApprover(7L, "second", "fourth", 3);
+
+        assertThat(notifications()).extracting(NotificationRequestedEvent::receiverEsntlId).containsExactly("fourth");
     }
 
     @Test

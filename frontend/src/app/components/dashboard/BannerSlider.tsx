@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight, ExternalLink, Pause, Play } from 'lucide-react';
 import { bannerService } from '@/services/business/user/BannerService';
-import { isCanceledRequest, isSessionExpiredRejection } from '@/lib/safe-error-log';
+import { isCanceledRequest, isSessionExpiredRejection, logErrorSafely } from '@/lib/safe-error-log';
 import { PublicBanner } from '@/types/foundation/banner';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -56,7 +56,7 @@ export function BannerSlider() {
           if (err.response?.status === 403) {
             console.warn('>>> [BannerSlider] Access denied (403). Banners will not be displayed for this user.');
           } else {
-            console.error('>>> [BannerSlider] Failed to fetch banners:', error);
+            logErrorSafely('>>> [BannerSlider] Failed to fetch banners:', error);
           }
         }
         setBanners([]);

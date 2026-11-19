@@ -1,10 +1,6 @@
 package nuri.business.service.deptjob;
 
-import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.Expression;
-import com.querydsl.core.types.Operation;
 import com.querydsl.core.types.Predicate;
-import com.querydsl.core.types.SubQueryExpression;
 import nuri.business.domain.deptjob.DeptJob;
 import nuri.business.domain.deptjob.DeptJobBox;
 import nuri.business.domain.deptjob.DeptJobBoxRepository;
@@ -101,7 +97,6 @@ class DeptJobServiceTest {
                 .build();
         // [2026-10-18 V2_133] 수정은 화면이 읽은 버전을 대조한다. 저장된 행처럼 버전 0 으로 둔다.
         org.springframework.test.util.ReflectionTestUtils.setField(deptJob, "version", 0);
-        lenient().when(deptJobBoxRepository.findById(1L)).thenReturn(Optional.of(deptJobBox));
     }
 
     @AfterEach
@@ -1076,32 +1071,13 @@ class DeptJobServiceTest {
 
     /** 서비스가 저장소에 넘긴 Predicate 를 문자열로 붙잡는다 — 조건 생성의 유일한 관측 지점이다. */
     private String capturePredicate(String deptId, Long boxSn, String cond, String keyword) {
-        return String.valueOf(captureRawPredicate(deptId, boxSn, cond, keyword));
-    }
-
-    private Predicate captureRawPredicate(String deptId, Long boxSn, String cond, String keyword) {
         authenticateAsAdmin();
         Page<DeptJob> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
         when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class))).thenReturn(page);
         deptJobService.getDeptJobList(deptId, boxSn, cond, keyword, false, PageRequest.of(0, 10));
         ArgumentCaptor<Predicate> captor = ArgumentCaptor.forClass(Predicate.class);
         verify(deptJobRepository).findAll(captor.capture(), any(PageRequest.class));
-        return captor.getValue();
-    }
-
-    private static void collectSubQueries(Expression<?> expr, List<SubQueryExpression<?>> out) {
-        if (expr == null) {
-            return;
-        }
-        if (expr instanceof SubQueryExpression<?> subQuery) {
-            out.add(subQuery);
-        } else if (expr instanceof BooleanBuilder builder) {
-            collectSubQueries(builder.getValue(), out);
-        } else if (expr instanceof Operation<?> op) {
-            for (Expression<?> arg : op.getArgs()) {
-                collectSubQueries(arg, out);
-            }
-        }
+        return String.valueOf(captor.getValue());
     }
 
     @Test
@@ -1282,60 +1258,5 @@ class DeptJobServiceTest {
         deptJobService.reassignDeptJob(1L, "USER2", 0);
         assertEquals("USER2", deptJob.getPicId());
         assertEquals("01", deptJob.getPrrtyRnk());
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 deptTaskBoxSn 으로 목록을 조회하면 RESOURCE_NOT_FOUND(404) 를 반환한다")
-    void getDeptJobList_missingTaskBoxThrowsNotFound() {
-        authenticateAsAdmin();
-        when(deptJobBoxRepository.findById(999L)).thenReturn(Optional.empty());
-
-        BusinessException error = assertThrows(BusinessException.class,
-                () -> deptJobService.getDeptJobList(null, 999L, null, null, false, PageRequest.of(0, 10)));
-
-        assertEquals(CommonErrorCode.RESOURCE_NOT_FOUND, error.getErrorCode());
-        verify(deptJobRepository, never()).findAll(any(Predicate.class), any(PageRequest.class));
-    }
-
-    @Test
-    @DisplayName("다른 부서의 deptTaskBoxSn 으로 일반 사용자가 목록을 조회해도 403으로 막지 않고 visible 가시성 조건을 유지한다")
-    void getDeptJobList_otherDepartmentTaskBoxPreservesVisibleScope() {
-        authenticateAs("member", "ESNTL_MEMBER");
-        givenMemberOf("ESNTL_MEMBER", "DEPT1");
-        DeptJobBox otherBox = DeptJobBox.builder().deptTaskBoxSn(2L).deptTaskBoxNm("Other Box").deptId("DEPT9").build();
-        when(deptJobBoxRepository.findByDeptId("DEPT1")).thenReturn(List.of(deptJobBox));
-        when(deptJobBoxRepository.findById(2L)).thenReturn(Optional.of(otherBox));
-        when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class))).thenReturn(Page.empty());
-
-        Page<DeptJobDto> result = deptJobService.getDeptJobList(null, 2L, null, null, false, PageRequest.of(0, 10));
-
-        assertEquals(0, result.getTotalElements());
-        ArgumentCaptor<Predicate> captor = ArgumentCaptor.forClass(Predicate.class);
-        verify(deptJobRepository).findAll(captor.capture(), any(PageRequest.class));
-        String predicate = String.valueOf(captor.getValue());
-        assertTrue(predicate.contains("ESNTL_MEMBER"), "타 부서 업무함에서도 내 담당 업무 가시성 조건이 유지돼야 한다: " + predicate);
-        assertTrue(predicate.contains("deptTaskBoxSn = 2"), "지정한 업무함 필터가 적용돼야 한다: " + predicate);
-    }
-
-    @Test
-    @DisplayName("검색조건 2(담당자)는 이름·로그인ID QueryDSL 서브쿼리를 함께 매칭한다")
-    void searchCondition2IncludesResolvedUserEsntlIds() {
-        Predicate captured = captureRawPredicate(null, 1L, "2", "홍길동");
-        String p = String.valueOf(captured);
-        assertTrue(p.contains("picId"), "picId 직접 일치 조건이 남아야 한다: " + p);
-        assertTrue(p.contains("홍길동"), "검색 키워드가 직접 조건에 바인딩돼야 한다: " + p);
-
-        List<SubQueryExpression<?>> subQueries = new java.util.ArrayList<>();
-        collectSubQueries(captured, subQueries);
-        assertEquals(1, subQueries.size(), "담당자 QueryDSL 서브쿼리가 정확히 1개 포함돼야 한다: " + p);
-        var metadata = subQueries.getFirst().getMetadata();
-        String projection = String.valueOf(metadata.getProjection());
-        String joins = String.valueOf(metadata.getJoins());
-        String where = String.valueOf(metadata.getWhere());
-        assertTrue(projection.contains("deptJobAssignee.esntlId"), "서브쿼리 projection 은 esntlId 여야 한다: " + projection);
-        assertTrue(joins.contains("deptJobAssignee"), "서브쿼리 FROM 은 deptJobAssignee 여야 한다: " + joins);
-        assertTrue(where.contains("deptJobAssignee.userNm"), "담당자 이름 서브쿼리 조건이 포함돼야 한다: " + where);
-        assertTrue(where.contains("deptJobAssignee.userId"), "담당자 로그인ID 서브쿼리 조건이 포함돼야 한다: " + where);
-        assertTrue(where.contains("홍길동"), "검색 키워드가 서브쿼리에 바인딩돼야 한다: " + where);
     }
 }

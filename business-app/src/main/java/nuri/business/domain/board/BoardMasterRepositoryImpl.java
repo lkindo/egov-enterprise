@@ -84,14 +84,8 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        com.querydsl.jpa.impl.JPAQuery<Long> countQuery = queryFactory.select(Wildcard.count)
-                .from(boardMaster);
-
-        if (StringUtils.hasText(condition.getTrgtId())) {
-            countQuery.join(boardUse).on(boardMaster.bbsId.eq(boardUse.bbsId));
-        }
-
-        Long totalResult = countQuery
+        Long totalResult = queryFactory.select(Wildcard.count)
+                .from(boardMaster)
                 .where(builder)
                 .fetchOne();
         long total = totalResult != null ? totalResult : 0L;

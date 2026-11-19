@@ -39,6 +39,7 @@
 /scripts/              @lkindo
 /.agent/scripts/         @lkindo
 /tools/migration-workspace/*.test.mjs @lkindo
+/tools/migration-workspace-prototype/*.test.mjs @lkindo
 /tools/requirements-workspace/*.test.mjs @lkindo
 /build.gradle          @lkindo
 /settings.gradle       @lkindo

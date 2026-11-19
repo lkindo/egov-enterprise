@@ -12,6 +12,7 @@ paths:
   - scripts
   - .agent/scripts
   - tools/migration-workspace
+  - tools/migration-workspace-prototype
   - tools/requirements-workspace
   - foundation/src/main
   - business-core/src/main
