@@ -12,7 +12,6 @@ import {
   expectedEffectiveShellAccess,
   expectedRouting,
   expectedShellAccess,
-  inspectRouteRepository,
   journeyNetworkStubSources,
   journeyTestDeclarations,
   pageLoadsModule,
@@ -26,7 +25,8 @@ import {
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST_PATH = path.join(ROOT, 'config', 'ui-route-capabilities.json');
 
-const repository = inspectRouteRepository(ROOT);
+const baselineAnalysis = analyzeRouteCapabilities(ROOT, MANIFEST_PATH);
+const repository = baselineAnalysis.repository;
 
 // [2026-08-31] 라우트 수의 단일 원본은 파일시스템 스캔이다 — 같은 수(120)가 세 테스트 파일에
 //   각각 하드코딩되어 신규 화면 1개가 리터럴 3곳을 동시 수정하게 만들던 중복을 제거했다.
@@ -35,7 +35,7 @@ const repository = inspectRouteRepository(ROOT);
 const FILESYSTEM_ROUTE_COUNT = discoverPageRoutes(ROOT).length;
 
 function currentAnalysis() {
-  return analyzeRouteCapabilities(ROOT, MANIFEST_PATH);
+  return structuredClone(baselineAnalysis);
 }
 
 test('current manifest covers every filesystem route exactly once without structural errors', () => {
@@ -61,7 +61,7 @@ test('route technical truth is identical at review time and after review deadlin
     '2036-01-01T00:00:00Z',
   ]) {
     t.mock.timers.setTime(Date.parse(timestamp));
-    assert.deepEqual(currentAnalysis().result, baseline.result, timestamp);
+    assert.deepEqual(analyzeRouteCapabilities(ROOT, MANIFEST_PATH).result, baseline.result, timestamp);
   }
 });
 
@@ -396,6 +396,8 @@ test('notification stream separates API failure from empty and the dispatch demo
     ['delete', 'mark-all-read', 'mark-read', 'navigate', 'paginate', 'refresh', 'send', 'server-search', 'tab-filter', 'view-list']);
   const stream = notification.capabilities.find(({ id }) => id === 'notifications.stream');
   assert.deepEqual(stream.unsupportedVisibleActions, []);
+  assert.equal(stream.evidenceLevel, 'E4');
+  assert.equal(stream.status, 'live');
   const dispatch = notification.capabilities.find(({ id }) => id === 'notifications.dispatch');
   assert.equal(dispatch.evidenceLevel, 'E4');
   assert.equal(dispatch.status, 'live');

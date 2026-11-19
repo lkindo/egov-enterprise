@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { expect,test } from '../fixtures/browser-test';
 import { trackApiRequests, waitForHydration } from '../fixtures/hydration';
+import { createVisualAdmin } from '../fixtures/visual-admin';
 import { NotificationPage } from '../pages/NotificationPage';
 // [2026-07-28 정정] 백엔드 주소를 세 곳에 하드코딩하고 있었다. auth.setup.ts·cleanup-db.ts 는 이미
 //   `process.env.NEXT_PUBLIC_API_URL || 기본값` 패턴을 쓰는데 이 파일만 예외였다. 백엔드를 다른
@@ -276,6 +277,89 @@ test.describe('Notification & Communication Intelligence', () => {
             }
         }
     });
+});
+
+test('Notification: 일반 사용자 알림함의 페이지 이동·갱신·읽음·열기·삭제가 서버 상태에 반영된다', async ({ adminRequest, request, actorPage, baseURL }) => {
+    if (!baseURL) throw new Error('알림 여정에는 격리 브라우저 URL이 필요합니다.');
+    const recipient = await createVisualAdmin(adminRequest, baseURL, { group: 'ROLE_USER' });
+    const keyword = '수신함 검증 알림';
+    const title = (index: number) => `${keyword} ${index}`;
+    const inbox = async () => {
+        const response = await request.get(`${API_BASE}/notifications`, {
+            headers: recipient.authorization,
+            params: { searchWrd: keyword, page: 1, size: 50 },
+        });
+        expect(response.status(), '일반 사용자 본인의 알림 조회').toBe(200);
+        return (await response.json()).data.list as { notiTtlNm: string; readYn: string }[];
+    };
+    try {
+        for (let index = 1; index <= 11; index++) {
+            const sent = await adminRequest.post('/api/v1/admin/notifications/dispatch', {
+                data: {
+                    recipients: [{ esntlId: recipient.esntlId }],
+                    notiTtlNm: title(index),
+                    notiCn: '알림 동작 검증용 내용',
+                    linkUrl: '/',
+                },
+            });
+            expect(sent.status(), '전용 수신자에게 알림 준비').toBe(200);
+            expect((await sent.json()).data).toBe(1);
+        }
+        const { page } = await actorPage({ storageState: recipient.storageState });
+        await page.goto('/admin/notifications');
+        const table = page.getByRole('table', { name: '받은 알림 목록' });
+        const row = (index: number) => table.getByRole('row').filter({
+            has: page.getByText(title(index), { exact: true }),
+        });
+        const search = page.getByLabel('알림 검색어');
+        await waitForHydration(search);
+        await search.fill(keyword);
+        await Promise.all([
+            page.waitForResponse(response => listedWith(response.url(), { searchWrd: keyword, readYn: null }) && response.ok()),
+            search.press('Enter'),
+        ]);
+        await expect(row(11)).toBeVisible();
+        await expect(row(1)).toBeVisible();
+        await page.getByRole('combobox', { name: '페이지당 항목 수' }).click();
+        await page.getByRole('option', { name: '10개씩' }).click();
+        await expect(row(1)).toHaveCount(0);
+        await page.getByRole('button', { name: '다음 페이지' }).click();
+        await expect(row(1)).toBeVisible();
+        await expect(row(11)).toHaveCount(0);
+
+        const [refreshed] = await Promise.all([
+            page.waitForResponse(response => {
+                const url = new URL(response.url());
+                return listedWith(response.url(), { searchWrd: keyword, readYn: null }) && url.searchParams.get('page') === '2';
+            }),
+            page.getByRole('button', { name: '알림 목록 새로고침' }).click(),
+        ]);
+        expect(refreshed.status(), '같은 알림 페이지를 다시 조회').toBe(200);
+        await expect(row(1)).toBeVisible();
+
+        await row(1).getByRole('button', { name: `${title(1)} 읽음 처리` }).click();
+        await expect.poll(async () => (await inbox()).find(item => item.notiTtlNm === title(1))?.readYn).toBe('Y');
+        await expect(row(1).getByRole('button', { name: `${title(1)} 읽음 처리` })).toHaveCount(0);
+        await page.getByRole('button', { name: '이전 페이지' }).click();
+        await row(11).getByRole('button', { name: `${title(11)} 열기` }).click();
+        await expect(page.getByRole('heading', { level: 1, name: '업무 홈' })).toBeVisible();
+        await expect.poll(async () => (await inbox()).find(item => item.notiTtlNm === title(11))?.readYn).toBe('Y');
+
+        await page.goto('/admin/notifications');
+        await expect(row(11)).toBeVisible();
+        await expect(page.getByRole('button', { name: '알림 보내기', exact: true })).toHaveCount(0);
+        await page.getByRole('button', { name: '모두 읽음', exact: true }).click();
+        await expect.poll(async () => (await inbox()).filter(item => item.readYn === 'Y').length).toBe(11);
+        await expect(page.getByRole('button', { name: '모두 읽음', exact: true })).toBeDisabled();
+
+        await row(11).getByRole('button', { name: `${title(11)} 삭제` }).click();
+        await page.getByRole('dialog', { name: '알림 삭제' }).getByRole('button', { name: '삭제', exact: true }).click();
+        await expect(row(11)).toHaveCount(0);
+        await expect.poll(async () => (await inbox()).map(item => item.notiTtlNm)).not.toContain(title(11));
+        await page.goto('about:blank');
+    } finally {
+        await recipient.dispose();
+    }
 });
 
 /** 알림 센터 목록 조회의 조건이 기대와 같은가. readYn 이 null 이면 읽음 조건 없이(전체) 물은 조회다. */

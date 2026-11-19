@@ -36,10 +36,22 @@ const MENU_CENSUS_SOURCE = 'live tb_menu_info structural census only via scripts
 const KNOWN_ROUTE_CAPABILITIES = {
   '/admin/notifications': [
     {
-      id: 'notifications.stream', status: 'partial', candidateStatus: 'live', dataSource: 'notifications-api+websocket', actions: ['delete', 'mark-all-read', 'mark-read', 'navigate', 'paginate', 'refresh', 'server-search', 'tab-filter', 'view-list'],
+      id: 'notifications.stream', status: 'live', dataSource: 'notifications-api+websocket', actions: ['delete', 'mark-all-read', 'mark-read', 'navigate', 'paginate', 'refresh', 'server-search', 'tab-filter', 'view-list'],
       // [2026-11-08] 진입 권한 NOTI_READ 의 기본 그룹에 ROLE_USER 가 있다 — 기본 설치에서 인증 사용자가 쓴다.
       unsupportedVisibleActions: [], actorScope: 'AUTHENTICATED', visibleLabel: '알림 스트림', primaryTask: true,
-      evidenceLevel: 'E3', evidence: ['frontend/src/app/components/ui/__tests__/smart-notification-hub.test.tsx', 'frontend/src/app/admin/notifications/NotificationsClient.tsx', 'frontend/src/app/components/ui/smart-notification-hub.tsx', 'frontend/src/lib/hooks/use-notifications.ts', 'frontend/e2e/journeys/notifications.spec.ts'],
+      evidenceLevel: 'E4', evidence: ['frontend/src/app/components/ui/__tests__/smart-notification-hub.test.tsx', 'frontend/src/app/admin/notifications/NotificationsClient.tsx', 'frontend/src/app/components/ui/smart-notification-hub.tsx', 'frontend/src/lib/hooks/use-notifications.ts', 'frontend/e2e/journeys/notifications.spec.ts'],
+      roundtrips: [
+        {
+          spec: 'frontend/e2e/journeys/notifications.spec.ts',
+          test: 'Notification: 일반 사용자 알림함의 페이지 이동·갱신·읽음·열기·삭제가 서버 상태에 반영된다',
+          actions: ['delete', 'mark-all-read', 'mark-read', 'navigate', 'paginate', 'refresh', 'server-search', 'view-list'],
+        },
+        {
+          spec: 'frontend/e2e/journeys/notifications.spec.ts',
+          test: 'Notification: Hub Search and Filter Verification',
+          actions: ['tab-filter'],
+        },
+      ],
     },
     {
       // [2026-09-06 DEC-OPS-042] 관리자 발송이 실기능이 됐다 — POST /api/v1/admin/notifications/dispatch(ADMIN/SYSTEM).
