@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 414,
-    "eligible": 392,
+    "total": 415,
+    "eligible": 393,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 392,
+      "generated": 393,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "d8631ffbf6b9c7fdca94d3c8290d8e93874aa925f59657a37f42b3db3a93641b",
+  "inventoryHash": "eabf4a186af3d39fc8654d51f236508e180a819138593215e40a5b02f5c2de5f",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -6464,6 +6464,22 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "eb97ca28862a41d00b43"
+    },
+    {
+      "file": "frontend/src/services/foundation/system/UserAdminService.ts",
+      "owner": "UserAdminService.isLoginIdRegistered",
+      "ordinal": 1,
+      "enclosingMethod": "isLoginIdRegistered",
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "this.executeGenerated",
+      "method": "get",
+      "target": "/api/v1/users/check-id",
+      "operationId": "checkIdDplct",
+      "descriptorName": "checkIdDplctOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "d5cd39495c5e2391ded8"
     },
     {
       "file": "frontend/src/services/foundation/system/UserAdminService.ts",

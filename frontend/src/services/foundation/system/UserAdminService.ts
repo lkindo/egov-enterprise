@@ -5,6 +5,7 @@ import type { PageResponse, SearchParams } from '@/types/foundation/system';
 import type { UserManage, UserSearchParams } from '@/types/foundation/user';
 import type { components, operations } from '@/types/generated-api';
 import {
+  checkIdDplctOperation,
   deleteUserOperation,
   deleteUsersOperation,
   getDepartmentRecipientsOperation,
@@ -150,6 +151,11 @@ class UserAdminService extends ApiService {
       body: data as components['schemas']['UserDto'],
       config,
     });
+  }
+
+  /** 등록된 계정만 확인한다. 기존 기록과 동시 등록은 저장할 때 서버가 판정한다. */
+  async isLoginIdRegistered(userId: string): Promise<boolean> {
+    return this.executeGenerated(checkIdDplctOperation, { query: { userId } });
   }
 
   /** 사용자 정보 수정 */

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useAppForm } from '@/hooks/useAppForm';
+import { useWatch } from 'react-hook-form';
 import * as z from 'zod';
 import {
   Form,
@@ -37,12 +38,20 @@ export const createUserSchema = userSchema.extend({
 
 export type UserFormValues = z.infer<typeof userSchema>;
 
+const LOGIN_ID_CHECK_MESSAGES = {
+  checking: '등록된 아이디를 확인하고 있습니다.',
+  registered: '이미 등록된 아이디입니다.',
+  unregistered: '등록된 계정이 없습니다. 등록 가능 여부는 저장할 때 확인합니다.',
+  error: '아이디를 조회하지 못했습니다. 다시 확인하거나 등록을 시도하세요.',
+};
+
 interface UserManageFormProps {
   initialData?: Partial<UserManage>;
   mode: 'create' | 'edit';
   departments: Department[];
   onSubmit: (data: UserFormValues) => Promise<void>;
   onCancel: () => void;
+  onCheckLoginId?: (userId: string) => Promise<boolean>;
   isPending?: boolean;
   externalBusy?: boolean;
   /** 수정에서 소속 부서를 바꾸려면 '사용자 · 부서 변경'(USER_DEPT)이 필요하다 — 서버가 같은 권한을 다시 확인한다. */
@@ -55,6 +64,7 @@ export function UserManageForm({
   departments,
   onSubmit,
   onCancel,
+  onCheckLoginId,
   isPending = false,
   externalBusy = false,
   canChangeDepartment = true,
@@ -78,6 +88,22 @@ export function UserManageForm({
   const { isSubmitting } = form.formState;
   const isWritePending = isSubmitting || isPending;
   const areActionsDisabled = isWritePending || externalBusy;
+  const loginId = useWatch({ control: form.control, name: 'userId' });
+  const [loginIdCheck, setLoginIdCheck] = React.useState<{ id: string; status: keyof typeof LOGIN_ID_CHECK_MESSAGES } | null>(null);
+  const isCheckingLoginId = loginIdCheck?.status === 'checking';
+  const checkedStatus = loginIdCheck?.id === loginId ? loginIdCheck?.status : undefined;
+  const canCheckLoginId = !areActionsDisabled && !isCheckingLoginId && UserDtoSchema.shape.userId.safeParse(loginId).success;
+
+  const handleCheckLoginId = async () => {
+    if (!onCheckLoginId || !canCheckLoginId) return;
+    setLoginIdCheck({ id: loginId, status: 'checking' });
+    try {
+      const exists = await onCheckLoginId(loginId);
+      setLoginIdCheck({ id: loginId, status: exists ? 'registered' : 'unregistered' });
+    } catch {
+      setLoginIdCheck({ id: loginId, status: 'error' });
+    }
+  };
 
   const handleSubmit = async (values: UserFormValues) => {
     if (isPending || externalBusy) return;
@@ -140,6 +166,17 @@ export function UserManageForm({
                     />
                   </FormControl>
                   <FormMessage className="text-xs font-bold text-destructive-emphasis mt-2 ml-2" />
+                  {mode === 'create' && onCheckLoginId && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <Button type="button" size="sm" variant="outline" disabled={!canCheckLoginId}
+                        aria-busy={isCheckingLoginId} onClick={() => void handleCheckLoginId()}>
+                        중복 확인
+                      </Button>
+                      <p role="status" className="text-xs text-muted-foreground">
+                        {checkedStatus && LOGIN_ID_CHECK_MESSAGES[checkedStatus]}
+                      </p>
+                    </div>
+                  )}
                 </motion.div>
               </FormItem>
             )}

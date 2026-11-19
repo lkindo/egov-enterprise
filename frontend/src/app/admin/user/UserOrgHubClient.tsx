@@ -1180,6 +1180,7 @@ export default function UserOrgHubClient({
           departments={departments}
           onSubmit={onUserSubmit}
           onCancel={dialogs.handleCloseUserModal}
+          onCheckLoginId={canCreateUser ? (userId) => userAdminService.isLoginIdRegistered(userId) : undefined}
           isPending={activeWriteOperation === 'user-form'}
           externalBusy={activeWriteOperation !== null && activeWriteOperation !== 'user-form'}
           canChangeDepartment={canMoveUserDept}

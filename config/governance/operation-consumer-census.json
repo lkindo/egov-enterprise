@@ -15,7 +15,7 @@
   ],
   "expected": {
     "operationCount": 451,
-    "unwiredMax": 7,
+    "unwiredMax": 6,
     "screenOrphanMax": 24,
     "ungatedWriteMax": 37
   },
@@ -24,12 +24,6 @@
       "operationId": "checkHealth",
       "category": "unwired",
       "note": "Application-level liveness surface. PD-OPS-003 decided (2026-09-08) to keep the production compose healthcheck pointed at /actuator/health, which also covers registered indicators (DB, disk) — this endpoint only confirms the application answers. Retiring it was considered and deferred because external load balancers or monitoring may already target the path; that needs deployment-environment confirmation, not a repository decision.",
-      "evidence": []
-    },
-    {
-      "operationId": "checkIdDplct",
-      "category": "unwired",
-      "note": "Login-ID duplicate pre-check. DEC-OPS-135 bound it to USER_CREATE, so it is no longer an anonymous enumeration path. The admin user form has no pre-check: insertUser rejects a taken ID with DUPLICATE_USER_ID on save. Wiring a pre-check into that form is feature work, not a missing consumer of an existing flow.",
       "evidence": []
     },
     {
