@@ -88,6 +88,43 @@ describe('CommentSection Component', () => {
     expect(screen.getByRole('heading', { name: '댓글' })).toBeInTheDocument();
   });
 
+  it('인증 상태를 받기 전에는 등록 권한 거부를 표시하지 않는다', () => {
+    const previous = authMock.user;
+    authMock.user = null;
+    try {
+      const { rerender } = render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
+      expect(screen.getByText('First Comment')).toBeInTheDocument();
+      expect(screen.queryByLabelText('새 댓글 작성')).not.toBeInTheDocument();
+      expect(screen.queryByText('댓글을 등록할 권한이 없습니다.')).not.toBeInTheDocument();
+
+      authMock.user = previous;
+      rerender(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
+      expect(screen.getByLabelText('새 댓글 작성')).toBeInTheDocument();
+    } finally {
+      authMock.user = previous;
+    }
+  });
+
+  it('등록 권한 없이도 읽기와 서버가 허용한 수정·삭제를 계속 사용할 수 있다', () => {
+    const previous = authMock.user;
+    authMock.user = { id: 'user01', name: '홍길동', role: 'ROLE_USER', permissions: ['COMMENT_READ', 'COMMENT_UPDATE', 'COMMENT_DELETE'], authorizationVersion: 'v1' };
+    try {
+      const { rerender } = render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
+      expect(screen.getByText('First Comment')).toBeInTheDocument();
+      expect(screen.getByTestId('comment-edit-button')).toBeInTheDocument();
+      expect(screen.getByTestId('comment-delete-button')).toBeInTheDocument();
+      expect(screen.queryByLabelText('새 댓글 작성')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /댓글 등록/ })).not.toBeInTheDocument();
+      expect(screen.getByRole('note')).toHaveTextContent('댓글을 등록할 권한이 없습니다.');
+
+      rerender(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[]} />);
+      expect(screen.getByText('아직 등록된 댓글이 없습니다.')).toBeInTheDocument();
+      expect(screen.queryByText(/첫 댓글을 남겨 주세요/)).not.toBeInTheDocument();
+    } finally {
+      authMock.user = previous;
+    }
+  });
+
   it('[DIP B5 F9] 댓글을 받지 않는 게시판은 입력란 대신 사유를 보이고, 이미 달린 댓글은 그대로 보인다', () => {
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} acceptsNewComments={false} />);
 
