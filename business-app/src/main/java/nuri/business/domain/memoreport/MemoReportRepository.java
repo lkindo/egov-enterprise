@@ -27,9 +27,6 @@ public interface MemoReportRepository extends JpaRepository<MemoReport, Long> {
     @Query("update MemoReport m set m.rptrInqDt = :readAt where m.memoRptSn = :memoRptSn and m.rptrInqDt is null")
     int recordFirstReadIfUnread(@Param("memoRptSn") Long memoRptSn, @Param("readAt") LocalDateTime readAt);
 
-    @Query("select m.rptrInqDt from MemoReport m where m.memoRptSn = :memoRptSn")
-    Optional<LocalDateTime> findRptrInqDtByMemoRptSn(@Param("memoRptSn") Long memoRptSn);
-
     Page<MemoReport> findByUserId(String userId, Pageable pageable);
     Page<MemoReport> findByRptrId(String rptrId, Pageable pageable);
 

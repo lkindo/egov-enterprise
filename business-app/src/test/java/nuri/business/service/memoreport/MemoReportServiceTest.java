@@ -83,8 +83,7 @@ class MemoReportServiceTest {
         MemoReport report = MemoReport.builder().memoRptSn(1L).userId("writer").rptrId("recipient")
                 .rptTtl("제목").rptCn("읽은 본문").memoRptYmd("20261030").atchFileSn(attachmentId).build();
         org.springframework.test.util.ReflectionTestUtils.setField(report, "version", 0);
-        org.mockito.Mockito.lenient().when(memoReportRepository.findById(1L)).thenReturn(Optional.of(report));
-        org.mockito.Mockito.lenient().when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(report));
+        given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(report));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("recipient"));
         __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("FILE_READ"))
@@ -523,7 +522,7 @@ class MemoReportServiceTest {
     @DisplayName("메모보고 상세는 참여자 인가 뒤 이름을 보강한다")
     void detailParticipantNamesPreserveIdentifiersAndPermissionHints() {
         MemoReport report = MemoReport.builder().memoRptSn(1L).userId("esntl-writer").rptrId("esntl-reader").build();
-        given(memoReportRepository.findById(1L)).willReturn(Optional.of(report));
+        given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(report));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-reader"));
         given(userDisplayNameLookup.findDisplayNames(anyCollection())).willReturn(Map.of("esntl-writer", "작성자"));
@@ -662,7 +661,7 @@ class MemoReportServiceTest {
         // given — 참여자 축은 esntlId(userId/rptrId)다. loginId(frstRgtrId)가 아니다.
         Long memoRptSn = 1L;
         MemoReport entity = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-me").build();
-        given(memoReportRepository.findById(memoRptSn)).willReturn(Optional.of(entity));
+        given(memoReportRepository.findByIdForUpdate(memoRptSn)).willReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-me"));
 
@@ -680,7 +679,7 @@ class MemoReportServiceTest {
         // given
         Long memoRptSn = 1L;
         MemoReport entity = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-owner").rptrId("esntl-receiver").build();
-        given(memoReportRepository.findById(memoRptSn)).willReturn(Optional.of(entity));
+        given(memoReportRepository.findByIdForUpdate(memoRptSn)).willReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-stranger"));
 
@@ -696,7 +695,7 @@ class MemoReportServiceTest {
         // given
         Long memoRptSn = 1L;
         MemoReport entity = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-owner").rptrId("esntl-me").build();
-        given(memoReportRepository.findById(memoRptSn)).willReturn(Optional.of(entity));
+        given(memoReportRepository.findByIdForUpdate(memoRptSn)).willReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-me"));
 
@@ -935,7 +934,7 @@ class MemoReportServiceTest {
     void getMemoReport_recipientFirstView() {
         Long memoRptSn = 1L;
         MemoReport entity = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-writer").rptrId("esntl-me").build();
-        when(memoReportRepository.findById(memoRptSn)).thenReturn(Optional.of(entity));
+        when(memoReportRepository.findByIdForUpdate(memoRptSn)).thenReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-me"));
 
@@ -951,7 +950,7 @@ class MemoReportServiceTest {
     void getMemoReport_onlyRecipientFirstViewCounts() {
         Long memoRptSn = 1L;
         MemoReport unread = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-writer").rptrId("esntl-recipient").build();
-        when(memoReportRepository.findById(memoRptSn)).thenReturn(Optional.of(unread));
+        when(memoReportRepository.findByIdForUpdate(memoRptSn)).thenReturn(Optional.of(unread));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-writer"));
 
@@ -962,7 +961,7 @@ class MemoReportServiceTest {
         java.time.LocalDateTime firstView = java.time.LocalDateTime.of(2026, 9, 1, 9, 0);
         MemoReport read = MemoReport.builder().memoRptSn(2L).userId("esntl-writer").rptrId("esntl-recipient").build();
         read.updateInqireDt(firstView);
-        when(memoReportRepository.findById(2L)).thenReturn(Optional.of(read));
+        when(memoReportRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(read));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-recipient"));
 
@@ -1015,7 +1014,6 @@ class MemoReportServiceTest {
     void updateDrctMatter_notifiesAuthor() {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).rptTtl("주간 보고")
                 .userId("esntl-writer").rptrId("esntl-recipient").build();
-        when(memoReportRepository.findById(1L)).thenReturn(Optional.of(entity));
         when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-recipient"));
@@ -1040,7 +1038,6 @@ class MemoReportServiceTest {
     void updateDrctMatter_notifiesChangeToSentTab() {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).rptTtl("주간 보고")
                 .userId("esntl-writer").rptrId("esntl-recipient").build();
-        when(memoReportRepository.findById(1L)).thenReturn(Optional.of(entity));
         when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-recipient"));
@@ -1090,7 +1087,6 @@ class MemoReportServiceTest {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).rptTtl("원래 제목").rptCn("원래 본문")
                 .userId("esntl-writer").rptrId("esntl-recipient").build();
         entity.updateDrctMatter("보완해 주세요", java.time.LocalDateTime.now());
-        when(memoReportRepository.findById(1L)).thenReturn(Optional.of(entity));
         when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(entity));
         __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission(anyString())).thenReturn(true);
 
@@ -1108,7 +1104,6 @@ class MemoReportServiceTest {
     @DisplayName("수신자는 지시사항을 남긴다 (DIP I7)")
     void updateDrctMatter_allowsRecipient() {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-writer").rptrId("esntl-recipient").build();
-        when(memoReportRepository.findById(1L)).thenReturn(Optional.of(entity));
         when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-recipient"));
@@ -1152,7 +1147,7 @@ class MemoReportServiceTest {
     @DisplayName("첨부 없는 보고의 instructable: 지시 기능 권한과 수신자 여부로 판정한다 — 전체 수정 권한은 지시를 열지 않는다")
     void instructableMatchesRecipientOnlyGuard(boolean instruct, boolean updateAll, boolean recipient, boolean expected) {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-writer").rptrId("esntl-recipient").build();
-        given(memoReportRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of(recipient ? "esntl-recipient" : "esntl-admin"));
         // 열람은 수신자이거나 전체 열람 권한으로 통과시킨다 — 판정 대상은 지시 힌트뿐이다.
@@ -1262,7 +1257,7 @@ class MemoReportServiceTest {
             boolean editable, boolean deletable) {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).rptrId("esntl-me").build();
         entity.setFrstRgtrId(owner ? "login-me" : "login-other");
-        given(memoReportRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-me"));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
@@ -1299,7 +1294,7 @@ class MemoReportServiceTest {
             boolean owner, boolean override, boolean update, boolean delete) {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).rptrId("esntl-me").build();
         entity.setFrstRgtrId(owner ? "login-me" : "login-other");
-        given(memoReportRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-me"));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
@@ -1345,20 +1340,5 @@ class MemoReportServiceTest {
                 .build());
 
         assertThat(existing.getLastMdfrId()).isEqualTo("login-owner");
-    }
-
-    @Test
-    @DisplayName("동시 최초 열람에서 조건부 UPDATE가 0건이면 DB에 먼저 저장된 최초 열람 시각을 반환한다")
-    void getMemoReport_concurrentFirstReadReturnsPersistedWinnerTimestamp() {
-        MemoReport report = readableReport(null);
-        java.time.LocalDateTime persistedWinnerTime = java.time.LocalDateTime.of(2026, 11, 19, 8, 30, 0);
-        given(memoReportRepository.recordFirstReadIfUnread(eq(1L), any(java.time.LocalDateTime.class)))
-                .willReturn(0);
-        given(memoReportRepository.findRptrInqDtByMemoRptSn(1L))
-                .willReturn(Optional.of(persistedWinnerTime));
-
-        MemoReportDto detail = memoReportService.getMemoReport(1L);
-
-        assertThat(detail.getRptrInqDt()).isEqualTo(persistedWinnerTime);
     }
 }

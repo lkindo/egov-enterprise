@@ -171,7 +171,7 @@ public class MemoReportService {
 
     @Transactional
     public MemoReportDto getMemoReport(@NonNull Long memoRptSn) {
-        MemoReport entity = memoReportRepository.findById(memoRptSn)
+        MemoReport entity = memoReportRepository.findByIdForUpdate(memoRptSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         assertParticipantOrAdmin(entity); // [IDOR] 작성자·수신자·관리자만 열람
         String actor = currentEsntlIdOrDeny();
@@ -184,9 +184,7 @@ public class MemoReportService {
             // PostgreSQL timestamp(6)에 저장되는 정밀도로 응답도 맞춘다. 첫 응답과 재조회가 같은 최초 시각이다.
             // 열람만으로 @Version·감사 수정자를 올리지 않도록 벌크 조건부 UPDATE 로 기록한다.
             firstReadAt = vendorSql.storedTimestamp(java.time.LocalDateTime.now());
-            if (memoReportRepository.recordFirstReadIfUnread(memoRptSn, firstReadAt) == 0) {
-                firstReadAt = memoReportRepository.findRptrInqDtByMemoRptSn(memoRptSn).orElse(firstReadAt);
-            }
+            memoReportRepository.recordFirstReadIfUnread(memoRptSn, firstReadAt);
         }
         MemoReportDto dto = toDtoWithPermission(entity, participantNames(List.of(entity)));
         if (firstReadAt != null) dto.setRptrInqDt(firstReadAt);
