@@ -220,6 +220,12 @@ export function vendorDatabaseEnvironment(engine, port, password, adminPassword)
   return { DB_URL: engine.integration.url(port), DB_USERNAME: engine.integration.username, DB_PASSWORD: password, ADMIN_INITIAL_PASSWORD: adminPassword };
 }
 
+export const DEFAULT_APPLICATION_READY_TIMEOUT_MS = 180_000;
+export const VENDOR_APPLICATION_READY_FLOOR_MS = 240_000;
+export const applicationReadyTimeoutMs = vendorRuntime => (
+  vendorRuntime ? Math.max(VENDOR_APPLICATION_READY_FLOOR_MS, vendorRuntime.engine.maxWaitSeconds * 1000) : DEFAULT_APPLICATION_READY_TIMEOUT_MS
+);
+
 /**
  * 지우기 전 판정이 실패하면 남의 컨테이너일 수 있어 로그도 읽지 않고 지우지도 않는다.
  * 앞선 실패를 가리지 않도록 던지지 않고 알린다.
@@ -478,7 +484,7 @@ export async function main(arguments_ = process.argv.slice(2)) {
   };
   const inspect = id => JSON.parse(docker(['inspect', id]))[0];
   const isAlive = child => child?.pid && child.exitCode === null && child.signalCode === null;
-  const waitReady = async (url, child, timeout = 180000) => {
+  const waitReady = async (url, child, timeout = DEFAULT_APPLICATION_READY_TIMEOUT_MS) => {
     const deadline = Date.now() + timeout;
     while (Date.now() < deadline) {
       assertActive();
@@ -592,8 +598,8 @@ export async function main(arguments_ = process.argv.slice(2)) {
         '--spring.config.location=classpath:/'], output, apiEnvironment);
     }
     const apiUrl = `http://127.0.0.1:${apiPort}/api/v1`;
-    // 벤더 기준선은 앱 기동 때 Flyway 로 적용되므로 엔진 대기 상한을 그대로 쓴다.
-    await waitReady(`http://127.0.0.1:${apiPort}/actuator/health`, api, vendorRuntime ? vendorRuntime.engine.maxWaitSeconds * 1000 : undefined);
+    // 벤더 기준선은 앱 기동 때 Flyway 로 적용되므로 기본 하한(240초)과 엔진 대기 상한 중 큰 값을 쓴다.
+    await waitReady(`http://127.0.0.1:${apiPort}/actuator/health`, api, applicationReadyTimeoutMs(vendorRuntime));
     if (vendorRuntime) {
       await provisionRepresentativeAccounts({ apiUrl, admin: vendorRuntime.admin, user: vendorRuntime.user,
         verifyOwner: () => { assertActive(); verifyRuntime(); } });
