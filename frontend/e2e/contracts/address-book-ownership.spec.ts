@@ -39,12 +39,13 @@ test.describe('IDOR (authenticated non-owner)', () => {
     // storageState 를 지정하지 않는다 — 세 주체(관리자·피해자·공격자)의 토큰을 요청마다
     // 명시적으로 실어야 "어느 주체로 판정됐는지" 가 분명해진다(E4 와 같은 이유).
     const ADBK_API = `${API}/address-books`;
-    test('사용자 A 의 주소록을 사용자 B 가 조회·수정·삭제할 수 없고 원본이 보존된다', async ({ request }) => {
+    test('주소록 소유자와 대행 관리자의 권한을 구분하고 타인 요청 뒤에도 연락처를 보존한다', async ({ request }) => {
         const adminToken = readAccessToken(ADMIN_AUTH);
         const victimToken = readAccessToken(USER_AUTH); // TEST1
         expect(adminToken && victimToken, 'auth setup 산출물에서 토큰을 얻지 못했다').toBeTruthy();
         const stamp = Date.now().toString().slice(-8);
         const adbkNm = `E2E23_IDOR_${stamp}`;
+        const contactName = `E2E 검증 연락처 ${stamp}`;
         // cleanup-db.ts 는 'e2e_' 접두사 사용자를 청소 대상으로 삼는다 — 그 규약에 맞춘다.
         // (그럼에도 finally 에서 직접 지운다. 청소 스크립트에 의존해 쓰레기를 남기지 않는다.)
         const attackerId = `e2e_idor_${stamp}`;
@@ -72,22 +73,18 @@ test.describe('IDOR (authenticated non-owner)', () => {
             // ── 3) 피해자(A)가 주소록을 만든다
             const mk = await request.post(ADBK_API, {
                 headers: asVictim,
-                data: { adbkNm, rlsScopeCd: 'G', useYn: 'Y' },
+                data: { adbkNm, rlsScopeCd: 'G', useYn: 'Y', adbkMan: [{ nm: contactName }] },
             });
-            expect(mk.ok(), `피해자 주소록 생성 실패: ${mk.status()}`).toBeTruthy();
-            // 등록 API 는 식별자를 돌려주지 않는다(ApiResponse<Void>) — 고유 명칭으로 되찾는다.
-            const listRes = await request.get(`${ADBK_API}?searchWrd=${encodeURIComponent(adbkNm)}&size=100`, {
-                headers: asVictim,
-            });
-            expect(listRes.ok()).toBeTruthy();
-            const listBody = await listRes.json();
-            const list = listBody?.data?.list ?? listBody?.data?.content ?? [];
-            adbkSn = (list as {
-                adbkSn: number;
-                adbkNm: string;
-            }[])
-                .find((a) => a.adbkNm === adbkNm)?.adbkSn;
-            expect(adbkSn, '생성한 주소록을 목록에서 되찾지 못했다').toBeDefined();
+            expect(mk.status()).toBe(201);
+            adbkSn = (await mk.json()).data as number;
+            expect(adbkSn).toEqual(expect.any(Number));
+            const listUrl = `${ADBK_API}?searchWrd=${encodeURIComponent(adbkNm)}`;
+            const ownerList = await request.get(listUrl, { headers: asVictim });
+            await expect(ownerList).toBeOK();
+            expect((await ownerList.json()).data.list).toContainEqual(expect.objectContaining({ adbkSn, adbkNm }));
+            const otherList = await request.get(listUrl, { headers: asAttacker });
+            await expect(otherList).toBeOK();
+            expect((await otherList.json()).data.list).toEqual([]);
             // 정상 소유자의 저장 경로도 검증한다. 유효한 편집 기준을 넣어 400과 인가 거부를 혼동하지 않는다.
             const ownerRead = await request.get(`${ADBK_API}/${adbkSn}`, { headers: asVictim });
             expect(ownerRead.ok()).toBeTruthy();
@@ -117,7 +114,26 @@ test.describe('IDOR (authenticated non-owner)', () => {
             //    "막혔다" 와 "바뀌지 않았다" 를 따로 단언한다.
             const after = await request.get(`${ADBK_API}/${adbkSn}`, { headers: asVictim });
             expect(after.ok(), '소유자가 자기 주소록을 열지 못한다 — 과잉차단 회귀').toBeTruthy();
-            expect((await after.json())?.data?.adbkNm, '공격자의 수정이 반영됐다').toBe(adbkNm);
+            const preserved = (await after.json()).data;
+            expect(preserved).toMatchObject({ adbkNm, adbkMan: [{ nm: contactName }] });
+            expect(preserved.editToken).toBe(currentOwnerBook.editToken);
+
+            // 관리자 대행 권한은 지정한 주소록 상세와 수정에 적용되고, 목록은 계속 본인 소유 범위다.
+            const adminList = await request.get(listUrl, { headers: asAdmin });
+            await expect(adminList).toBeOK();
+            expect((await adminList.json()).data.list).toEqual([]);
+            const delegatedRead = await request.get(`${ADBK_API}/${adbkSn}`, { headers: asAdmin });
+            await expect(delegatedRead).toBeOK();
+            expect((await delegatedRead.json()).data.editToken).toBe(preserved.editToken);
+            const renamed = `${adbkNm}_관리자수정`;
+            const delegatedWrite = await request.put(`${ADBK_API}/${adbkSn}`, {
+                headers: asAdmin,
+                data: { adbkNm: renamed, rlsScopeCd: 'G', editToken: preserved.editToken },
+            });
+            await expect(delegatedWrite).toBeOK();
+            const renamedByAdmin = await request.get(`${ADBK_API}/${adbkSn}`, { headers: asVictim });
+            await expect(renamedByAdmin).toBeOK();
+            expect((await renamedByAdmin.json()).data).toMatchObject({ adbkNm: renamed, adbkMan: preserved.adbkMan });
         }
         finally {
             if (adbkSn !== undefined)
