@@ -8,6 +8,8 @@ import nuri.foundation.core.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -17,6 +19,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -736,6 +740,29 @@ class SurveyResultServiceTest {
 
         try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                    .thenReturn(java.util.Optional.of("user1"));
+
+            assertThat(service.submitResponse(201L, oneAnswer())).isEqualTo(1);
+        }
+        verify(resultRepository).saveAll(any());
+    }
+
+    @ParameterizedTest(name = "기간 {0}~{1}")
+    @CsvSource({"20261119, 20261130", "20261101, 20261119"})
+    @DisplayName("제출 - 서울 날짜가 시작일 또는 종료일과 같아도 응답을 저장한다")
+    void submitIncludesBothPeriodBoundaries(String start, String end) {
+        LocalDate today = LocalDate.of(2026, 11, 19);
+        ZoneId seoul = ZoneId.of("Asia/Seoul");
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(surveyWithPeriod(start, end)));
+        given(resultRepository.existsBySrvySnAndFrstRgtrId(201L, "user1")).willReturn(false);
+        given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(301L, "질문1", "1")));
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+                .willReturn(List.of(article(401L, 301L, "예")));
+
+        try (var dates = org.mockito.Mockito.mockStatic(LocalDate.class, org.mockito.Mockito.CALLS_REAL_METHODS);
+                var security = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            dates.when(() -> LocalDate.now(seoul)).thenReturn(today);
+            security.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
                     .thenReturn(java.util.Optional.of("user1"));
 
             assertThat(service.submitResponse(201L, oneAnswer())).isEqualTo(1);
