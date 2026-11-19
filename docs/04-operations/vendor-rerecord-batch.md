@@ -29,7 +29,6 @@
 ### 인증·권한·보안
 
 - **JWT 비대칭 서명 2차 배포(GAP-JWT-001, ADR-0060)** — 1차 배포 7일 뒤 HMAC 수용을 끄고 Next 의 서명 비밀을 걷는다. 키 교체 런북도 갱신한다.
-- **로그인 잠금 후속(GAP-LOGIN-002 ①, DEC-OPS-419)** — `AuthorizationAdministrationService.lockAndAuthorize` 의 잠김 조건을 걷어 잠긴 관리자의 살아 있는 세션이 관리 작업을 할 수 있게 하고 시험으로 고정한다. `managerCount` 의 같은 조건은 둔다.
 - **설문 응답 진입 권한(DEC-OPS-405)** — `permission-catalog.json` 의 `pagePermissions` 에서 `/survey/response`·`/survey/response/[id]` 를 `SURVEY_RSP_READ` 로 바꾸고, regen 뒤 라우트 원장 두 행(shell `admin-system`, surface `admin-console`, roles `ADMIN·SYSTEM`)과 처분 해시를 맞춘다. 권한 생성물은 regen 으로 다시 만들고, 두 경로의 허용·거부·권한 조회 실패를 시험으로 고정하며, `admin-link-visibility-census` 의 범위를 점검한다.
 - **구 권한 API 7개 제거** — 권한 원장 변경.
 - **주민번호 키링 운영 필수화와 메일 수신주소의 키링 이전** — `RrnoEncryptionConverter` 가 입력이다. 운영 사전 검증을 변환기 밖에 두면 입력 밖에서 할 수도 있다. 메일 수신주소는 ARIA 와 두 갈래 복호로 옮긴다.
