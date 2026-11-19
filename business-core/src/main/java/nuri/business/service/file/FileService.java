@@ -271,17 +271,17 @@ public class FileService extends BaseAbstractService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // 기존 업무 참조를 읽을 수 있다는 사실만으로 파일 그룹 자체를 변경할 수는 없다.
-        // 원 업로더 확인을 상세 조회·물리 저장보다 먼저 수행해 거부된 요청의 부작용을 막는다.
+        // 원 업로더 확인과 업로드 batch 검증을 상세 조회·물리 저장보다 먼저 수행해 거부/오류 요청의 부작용을 막는다.
         // 결재에 묶인 묶음은 원 업로더라도 이 경로로 바꾸지 못한다(재상신이 새 묶음으로 바꾼다).
         accessPolicy.assertAppendable(master);
+
+        // 수정은 빈 목록을 no-op으로 허용하되, 파일이 있으면 업로드와 같은 방어를 적용한다.
+        validateUploadBatch(files, false, profile);
 
         Integer maxSn = fileDetailRepository.findByFileMaster(required(master, "master 는 null 일 수 없습니다")).stream()
                 .mapToInt(detail -> detail.getAtchFileSeq())
                 .max()
                 .orElse(0);
-
-        // 수정은 빈 목록을 no-op으로 허용하되, 파일이 있으면 업로드와 같은 방어를 적용한다.
-        validateUploadBatch(files, false, profile);
 
         storeFileDetails(master, files, maxSn + 1, "general/" + atchFileSn);
     }

@@ -200,7 +200,7 @@ class SurveyResultServiceTest {
         given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L))
                 .willReturn(List.of(question(301L, "만족하십니까", "1"), question(302L, "재이용 의향", "1")));
-        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "예"), article(402L, 301L, "아니오"),
                         article(403L, 302L, "예")));
         // Q1 은 3+1=4건, Q2 는 1건. 설문 전체(5)로 나누면 A1 은 60% 가 되고 Q1 합계가 100% 가 안 된다.
@@ -226,7 +226,7 @@ class SurveyResultServiceTest {
     void statsIncludeZeroCountArticles() {
         given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(301L, "질문", "1")));
-        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "예"), article(402L, 301L, "아니오")));
         given(resultRepository.countGroupedByArticle(201L)).willReturn(List.of(count(401L, 2)));
         given(resultRepository.countRespondentsGroupedByQuestion(201L)).willReturn(List.of(respondents(301L, 2)));
@@ -245,7 +245,7 @@ class SurveyResultServiceTest {
     void statsHandleZeroTotal() {
         given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(301L, "질문", "1")));
-        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "예")));
         given(resultRepository.countGroupedByArticle(201L)).willReturn(List.of());
 
@@ -264,7 +264,7 @@ class SurveyResultServiceTest {
     void statsMultiChoiceUsesRespondents() {
         given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(301L, "관심 분야(복수)", "1")));
-        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "교육"), article(402L, 301L, "복지"), article(403L, 301L, "문화")));
         given(resultRepository.countGroupedByArticle(201L))
                 .willReturn(List.of(count(401L, 10), count(402L, 6), count(403L, 4)));
@@ -315,7 +315,7 @@ class SurveyResultServiceTest {
         given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(301L, "질문", "1")));
-        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "예")));
 
         SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("홍길동",
@@ -340,7 +340,7 @@ class SurveyResultServiceTest {
         given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L))
                 .willReturn(List.of(question(301L, "질문1", "1"), question(302L, "질문2", "1")));
-        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "예"), article(402L, 302L, "예")));
 
         SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("홍길동",
@@ -403,7 +403,7 @@ class SurveyResultServiceTest {
         given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(
                 question(301L, "질문1", "1"), question(302L, "질문2", "1"), question(303L, "선택지 없는 문항", "2")));
-        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "예"), article(402L, 302L, "아니오")));
 
         SurveyResponseSubmitDto partial = new SurveyResponseSubmitDto("홍길동",
@@ -430,7 +430,7 @@ class SurveyResultServiceTest {
         given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L))
                 .willReturn(List.of(question(301L, "만족하십니까", "1"), question(302L, "개선할 점을 적어 주세요", "2")));
-        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "예"), article(402L, 302L, "자유 응답")));
 
         try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
@@ -471,7 +471,7 @@ class SurveyResultServiceTest {
         given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L))
                 .willReturn(List.of(question(301L, "질문1", "1"), question(302L, "질문2", "1")));
-        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "예"), article(402L, 302L, "아니오")));
 
         SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("홍길동", List.of(
@@ -503,7 +503,7 @@ class SurveyResultServiceTest {
         given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(301L, "질문", "1")));
-        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "예")));
         SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("사칭한 이름",
                 List.of(new SurveyResponseSubmitDto.Answer(301L, 401L, null, null)));
@@ -534,7 +534,7 @@ class SurveyResultServiceTest {
                 .qstnTypeCd("1").maxChcCnt(1).build();
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L))
                 .willReturn(List.of(singleChoiceQuestion));
-        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "항목1"), article(402L, 301L, "항목2")));
 
         SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("홍길동", List.of(
@@ -562,7 +562,7 @@ class SurveyResultServiceTest {
                 .qstnTypeCd("1").maxChcCnt(3).build();
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L))
                 .willReturn(List.of(multiChoiceQuestion));
-        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "항목1")));
 
         SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("홍길동", List.of(
@@ -591,7 +591,7 @@ class SurveyResultServiceTest {
                 .qstnTypeCd("1").build();
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L))
                 .willReturn(List.of(nullMaxQuestion));
-        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "항목1"), article(402L, 301L, "항목2")));
 
         SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("홍길동", List.of(
@@ -617,7 +617,7 @@ class SurveyResultServiceTest {
         given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L))
                 .willReturn(List.of(question(301L, "선호 시간대", "1"), question(302L, "개선할 점", "2")));
-        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any())).willReturn(List.of(
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(any())).willReturn(List.of(
                 article(401L, 301L, "오전"),
                 SurveyArticle.builder().srvyArtclSn(402L).srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L).artclSn(2L)
                         .artclCn("기타").etcAnsYn("Y").build(),
@@ -735,7 +735,7 @@ class SurveyResultServiceTest {
         given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(surveyWithPeriod(null, null)));
         given(resultRepository.existsBySrvySnAndFrstRgtrId(201L, "user1")).willReturn(false);
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(301L, "질문1", "1")));
-        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAscSrvyArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "예")));
 
         try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {

@@ -228,9 +228,7 @@ public class ApiSecurityConfig {
                 http
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(csrf -> csrf
-                                                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                                                .ignoringRequestMatchers(
-                                                pathMatcher("/uat/uia/actionLogin.do")))
+                                                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                                 .httpBasic(httpBasic -> httpBasic.disable())
                                 .formLogin(formLogin -> formLogin.disable())
                                 .logout(logout -> logout.disable())
@@ -243,14 +241,7 @@ public class ApiSecurityConfig {
                                                                 pathMatcher("/css/**"),
                                                                 pathMatcher("/js/**"),
                                                                 pathMatcher("/images/**"),
-                                                                pathMatcher("/validator.do"),
-                                                                pathMatcher("/cmm/fms/getImage.do"),
-                                                                pathMatcher("/uat/uia/egovLoginUsr.do"),
-                                                                pathMatcher("/uat/uia/actionLogin.do"),
-                                                                pathMatcher("/uat/uia/actionLogout.do"),
-                                                                pathMatcher("/index.jsp"),
                                                                 pathMatcher("/"),
-                                                                pathMatcher("/uss/olp/qri/**"),
                                                                 pathMatcher("/favicon.ico"),
                                                                 pathMatcher("/error"))
                                                                 .permitAll();

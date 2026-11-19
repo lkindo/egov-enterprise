@@ -2,6 +2,7 @@ package nuri.config.websocket;
 
 import java.security.Principal;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,12 +45,35 @@ public class WebSocketAuthorizationInterceptor implements ChannelInterceptor {
             "/user/queue/notifications", "NOTI_READ",
             "/topic/dashboard/stats", "DASHBOARD_READ");
 
+    private static final ThreadLocal<Map<String, CachedSubject>> BROADCAST_CACHE = new ThreadLocal<>();
+
     private final UserDetailsService userDetailsService;
     private final Map<String, SessionAuthorization> sessions = new ConcurrentHashMap<>();
     private final Map<String, WebSocketSession> transports = new ConcurrentHashMap<>();
 
     public WebSocketAuthorizationInterceptor(UserDetailsService userDetailsService) {
         this.userDetailsService = userDetailsService;
+    }
+
+    /**
+     * 브로드캐스트 fan-out 동안 동일 주체의 사용자·권한 조회 결과를 현재 스레드 범위로 공유한다.
+     *
+     * <p>{@code SimpleBrokerMessageHandler} 는 브로드캐스트 수신자마다 아웃바운드 채널의
+     * {@code preSend} 를 동기 순회하므로, 한 번의 브로드캐스트 안에서 동일 사용자 세션 여러 개나
+     * 반복 발행이 DB 조회를 N번 중복 수행하지 않도록 요청 단위 스코프를 둔다(세션 수명 캐시 아님).
+     */
+    public void runWithBroadcastCache(Runnable action) {
+        Objects.requireNonNull(action, "action must not be null");
+        if (BROADCAST_CACHE.get() != null) {
+            action.run();
+            return;
+        }
+        BROADCAST_CACHE.set(new HashMap<>());
+        try {
+            action.run();
+        } finally {
+            BROADCAST_CACHE.remove();
+        }
     }
 
     @Override
@@ -200,6 +224,26 @@ public class WebSocketAuthorizationInterceptor implements ChannelInterceptor {
     }
 
     private CustomUserDetails loadCurrent(String subject) {
+        Map<String, CachedSubject> cache = BROADCAST_CACHE.get();
+        if (cache == null) {
+            return loadCurrentUncached(subject);
+        }
+        CachedSubject cached = cache.get(subject);
+        if (cached == null) {
+            try {
+                cached = new CachedSubject(loadCurrentUncached(subject), null);
+            } catch (RuntimeException failure) {
+                cached = new CachedSubject(null, failure);
+            }
+            cache.put(subject, cached);
+        }
+        if (cached.failure() != null) {
+            throw cached.failure();
+        }
+        return cached.user();
+    }
+
+    private CustomUserDetails loadCurrentUncached(String subject) {
         var loaded = userDetailsService.loadUserByUsername(subject);
         if (!(loaded instanceof CustomUserDetails current)
                 || subject == null || !subject.equals(current.getUsername())
@@ -234,6 +278,7 @@ public class WebSocketAuthorizationInterceptor implements ChannelInterceptor {
             Map<String, Subscription> subscriptions) {}
     private record CurrentSession(SessionAuthorization connected, CustomUserDetails principal) {}
     private record Subscription(String destination, String permission) {}
+    private record CachedSubject(CustomUserDetails user, RuntimeException failure) {}
 
     private static Message<?> authorizeSubscription(StompHeaderAccessor accessor, CurrentSession current, Message<?> message) {
         String destination = accessor.getDestination();

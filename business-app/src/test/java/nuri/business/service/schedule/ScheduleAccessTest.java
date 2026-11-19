@@ -180,7 +180,11 @@ class ScheduleAccessTest {
                 { "2026/10/01", "20261031" }, { "", "20261031" }, { null, "20261031" } }) {
             assertThatThrownBy(() -> service.getScheduleListByDateRange("owner", range[0], range[1]))
                     .as(java.util.Arrays.toString(range)).isInstanceOf(BusinessException.class);
+            assertThatThrownBy(() -> service.getScheduleListByDateRange("1", "owner", range[0], range[1]))
+                    .as("4-arg " + java.util.Arrays.toString(range)).isInstanceOf(BusinessException.class);
         }
+        assertThat(service.getScheduleListByDateRange("2", "owner", "2026-10-01", "2026-10-31")).isEmpty();
+        verify(repository).findSchedulesByDateRange("2", "owner", "20261001", "20261031");
         verify(repository, org.mockito.Mockito.times(2)).findSchedulesByDateRange(anyString(), anyString(), anyString());
     }
 

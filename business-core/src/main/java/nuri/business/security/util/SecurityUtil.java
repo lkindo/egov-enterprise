@@ -111,6 +111,15 @@ public class SecurityUtil {
         return Optional.empty();
     }
 
+    /** 감사 컬럼(frstRgtrId/lastMdfrId)용 loginId 를 우선 반환하고, 비표준 UserDetails 만 username 으로 폴백한다. */
+    public static String resolveAuditActor(UserDetails principal) {
+        return getCurrentLoginId()
+                .or(() -> principal instanceof CustomUserDetails custom
+                        ? Optional.ofNullable(custom.getLoginId())
+                        : Optional.empty())
+                .orElseGet(() -> principal != null ? principal.getUsername() : "SYSTEM");
+    }
+
     /**
      * 현재 인증 주체의 <b>이름</b>. 이름이 비어 있거나 인증 주체가 없으면 {@code Optional.empty()}.
      * 요청 본문이 주장하는 이름 대신 서버가 기록할 표시 이름이 필요할 때 쓴다(2026-09-26 DIP V8).

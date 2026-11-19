@@ -701,6 +701,25 @@ class AuthServiceImplTest {
             verify(userRepository, times(1)).recordLogout(eq(ESNTL_ID), any());
             verify(userRepository, times(1)).advanceSessionCycle(List.of(ESNTL_ID));
         }
+
+        @Test
+        @DisplayName("로그인 정책 선검증 거절 시에도 미지 계정과 같은 더미 해시 패딩을 실행한다")
+        void policyRejectionPadsWorkBeforeThrowing() {
+            var provider = org.mockito.Mockito.mock(nuri.business.security.iam.EgovAuthenticationProvider.class);
+            var paddedService = new AuthServiceImpl(authenticationManager, jwtTokenProvider,
+                    userDetailsService, refreshTokenRepository, loginPolicyManageService, loginPolicyRepository,
+                    logService, mfaService, userRepository, provider);
+            org.mockito.BDDMockito.willThrow(
+                            new BusinessException(nuri.foundation.core.exception.CommonErrorCode.LOGIN_POLICY_IP_MISMATCH))
+                    .given(loginPolicyManageService).validateLoginPolicy(LOGIN_ID, CLIENT_IP);
+            LoginRequest req = loginRequest(null);
+
+            assertThatThrownBy(() -> paddedService.login(req, CLIENT_IP))
+                    .isInstanceOf(LoginRejectedException.class);
+
+            verify(provider).padRejectedLoginAttempt(req.getPassword());
+            verify(authenticationManager, never()).authenticate(any());
+        }
     }
 
     // ── 픽스처 ────────────────────────────────────────────────────────────────

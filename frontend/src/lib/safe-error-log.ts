@@ -63,6 +63,7 @@ export function summarizeError(error: unknown): SafeErrorSummary {
  * ⚠ 두 번째 인자로 원본 오류를 넘기지 마라 — 그것이 이 함수가 막으려는 것이다.
  */
 export function logErrorSafely(message: string, error: unknown): void {
+  // eslint-disable-next-line no-restricted-syntax -- 이 함수가 그 규칙의 안전한 대체다. 넘기는 것은 문구와 요약뿐이다.
   console.error(message, summarizeError(error));
 }
 

@@ -420,6 +420,44 @@ describe('rewrite 프록시 백엔드 연결 (GAP-FE-002)', () => {
     const response = await proxy(requestWith(null, '/login'));
     expect(response.headers.get('x-middleware-request-connection')).toBeNull();
   });
+
+  it('외부가 위조해 실은 x-nuri-verified-user 헤더를 제거하고, /admin 통과 시에만 서명된 스냅샷을 전달한다', async () => {
+    const spoofed = new NextRequestCtor('http://localhost:3001/', {
+      headers: {
+        cookie: `accessToken=${signToken({ sub: SUBJECT, exp: futureExp() }, SECRET)}`,
+        'x-nuri-verified-user': 'spoofed.signature',
+      },
+    });
+    const publicPass = await proxy(spoofed);
+    expect(publicPass.status).toBe(200);
+    expect(publicPass.headers.get('x-middleware-request-x-nuri-verified-user')).toBe('');
+
+    const permissions = PAGE_PERMISSIONS['/admin/system/menus'];
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({
+      success: true,
+      code: 'S000',
+      message: '성공',
+      data: {
+        id: 'webmaster',
+        name: '웹마스터',
+        esntlId: SUBJECT,
+        groups: ['MENU_EDITOR'],
+        permissions,
+        authorizationVersion: 'v2',
+      },
+    })));
+    const adminReq = new NextRequestCtor('http://localhost:3001/admin/system/menus', {
+      headers: {
+        cookie: `accessToken=${signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() }, SECRET)}`,
+        'x-nuri-verified-user': 'spoofed.signature',
+      },
+    });
+    const adminPass = await proxy(adminReq);
+    expect(adminPass.status).toBe(200);
+    const forwarded = adminPass.headers.get('x-middleware-request-x-nuri-verified-user');
+    expect(forwarded).toBeTruthy();
+    expect(forwarded).not.toBe('spoofed.signature');
+  });
 });
 
 describe('이중 제출 CSRF 토큰 쿠키 (CredentialCookieCsrfPolicy)', () => {

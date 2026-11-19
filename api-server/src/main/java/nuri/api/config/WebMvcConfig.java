@@ -24,24 +24,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
     }
 
     @Override
-
-    public void configureViewResolvers(
-
-            org.springframework.web.servlet.config.annotation.ViewResolverRegistry registry) {
-
-        org.springframework.web.servlet.view.InternalResourceViewResolver resolver = new org.springframework.web.servlet.view.InternalResourceViewResolver();
-
-        resolver.setPrefix("/WEB-INF/jsp/");
-
-        resolver.setSuffix(".jsp");
-
-        resolver.setViewClass(org.springframework.web.servlet.view.JstlView.class);
-
-        registry.viewResolver(resolver);
-
-    }
-
-    @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // 정적 리소스(CSS, JS, Images) 설정 - classpath 접두어 사용으로 안전성 확보
         registry.addResourceHandler("/css/**").addResourceLocations("classpath:/static/css/");

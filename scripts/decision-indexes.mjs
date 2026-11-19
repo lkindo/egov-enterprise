@@ -68,6 +68,7 @@ export const DECISION_AREA_ROUTES = Object.freeze({
       'docs/04-operations/migration-release-log.md', 'docs/04-operations/sast-findings-review.md', 'docs/04-operations/secure-coding-weakness-baseline.md',
       'docs/04-operations/ui-quality-assisted-accessibility.md', 'docs/04-operations/ui-ux-baseline-protocol.md',
       'docs/04-operations/third-party-notices.md', 'docs/04-operations/verification-blindspots.md',
+      'docs/04-operations/vendor-rerecord-batch.md',
     ]),
     conditions: Object.freeze([]),
   }),

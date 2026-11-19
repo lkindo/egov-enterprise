@@ -51,7 +51,9 @@ public class PopupApiController {
     public ResponseEntity<ApiResponse<Long>> createPopup(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody PopupSaveRequest popupDto) {
-        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(popupService.createPopup(userDetails.getUsername(), popupDto.toDto())));
+        String actorLoginId = nuri.business.security.util.SecurityUtil.resolveAuditActor(userDetails);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                .body(ApiResponse.created(popupService.createPopup(actorLoginId, popupDto.toDto())));
     }
 
     @Operation(summary = "팝업 정보 수정", description = "기존 팝업의 정보를 수정합니다.")
@@ -61,7 +63,8 @@ public class PopupApiController {
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "팝업 일련번호") @PathVariable Long popupSn,
             @Valid @RequestBody PopupSaveRequest popupDto) {
-        popupService.updatePopup(popupSn, userDetails.getUsername(), popupDto.toDto());
+        String actorLoginId = nuri.business.security.util.SecurityUtil.resolveAuditActor(userDetails);
+        popupService.updatePopup(popupSn, actorLoginId, popupDto.toDto());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

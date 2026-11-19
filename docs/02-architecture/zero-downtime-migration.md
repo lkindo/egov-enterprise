@@ -27,6 +27,8 @@ PostgreSQL 스키마 변경의 구버전 호환성 파손 위험을 줄이기 �
 7. **`ALTER SEQUENCE ... RENAME` 금지**
    - **원인**: `@SequenceGenerator`와 `nextval` 문자열 소비처가 새 이름과 원자적으로 배포되지 않으면 채번이 실패함.
 
+1~3번은 `ALTER TABLE` 문장 단위로 판정한다. `IF EXISTS`·`ONLY`를 건너 표 이름 뒤의 동작 목록을 괄호·따옴표 밖의 쉼표로 나눠 동작마다 보므로, 한 문장의 둘째 동작(`ADD …, DROP COLUMN …`)과 `ALTER COLUMN … SET DATA TYPE`도 같은 규칙으로 잡는다(2026-11-19 — 종전에는 표 이름 바로 뒤의 첫 동작만 보아 이 변형들이 통과했다). 예외 표시는 문장 첫 줄에서 읽는다.
+
 ## 3. 무중단 4단계 이행 가이드 (Expand and Contract Phase)
 안전한 배포를 위해 다음과 같은 4단계 파이프라인을 따릅니다.
 

@@ -41,11 +41,16 @@ class SanctionEventListenerTest {
     @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
+    /** 앱 알림 전 기안자 계정 존재 확인. 기본은 '있다' — 지워진 기안자는 그 시험에서만 따로 정한다. */
+    @Mock
+    private nuri.business.service.informalsanction.ApprovalRecipients approvalRecipients;
+
     private SanctionEventListener sanctionEventListener;
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        sanctionEventListener = new SanctionEventListener(userService, eventPublisher);
+        sanctionEventListener = new SanctionEventListener(userService, eventPublisher, approvalRecipients);
+        lenient().when(approvalRecipients.exists(any())).thenReturn(true);
         lenient().doAnswer(call -> {
             Object event = call.getArgument(0);
             if (event instanceof SanctionExternalNotificationEvent external) {
@@ -215,6 +220,24 @@ class SanctionEventListenerTest {
         assertThat(requested.receiverEsntlId()).isEqualTo("USER_001");
         assertThat(requested.content()).contains("7").contains("승인되었습니다.");
         assertThat(requested.linkUrl()).isEqualTo("/approvals?tab=SUBMITTED&doc=7");
+    }
+
+    /**
+     * [2026-11-19] 기안자 계정이 지워졌으면 앱 알림을 요청하지 않는다 — 알림 행은 사용자 FK 가 있고 결재와 같은 트랜잭션에 저장돼,
+     * 요청하면 결재자의 최종 승인·반려가 FK 위반으로 되돌아갔다. 존재 확인은 예외를 던지지 않는 저장소 질의로 한다.
+     */
+    @Test
+    @DisplayName("기안자 계정이 지워졌으면 앱 내 알림을 요청하지 않는다")
+    void skipsInAppNotificationForDeletedApplicant() {
+        SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
+                11L, "GONE_001", "SANCTIONER_001",
+                nuri.business.domain.informalsanction.SanctionStatus.APPROVED, "승인되었습니다.");
+        given(approvalRecipients.exists("GONE_001")).willReturn(false);
+
+        sanctionEventListener.handleStatusChanged(event);
+
+        assertThat(published(NotificationRequestedEvent.class)).isEmpty();
+        verify(approvalRecipients).exists("GONE_001");
     }
 
     /**

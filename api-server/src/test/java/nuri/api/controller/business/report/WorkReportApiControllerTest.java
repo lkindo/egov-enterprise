@@ -62,14 +62,23 @@ class WorkReportApiControllerTest {
     @DisplayName("업무보고 목록 조회")
     void getWorkReportList() throws Exception {
         Page<WorkReportDto> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
-        when(workReportService.getWorkReportList(nullable(String.class), nullable(String.class), any(), any())).thenReturn(page);
+        when(workReportService.getWorkReportList(nullable(String.class), nullable(String.class), nullable(String.class), any(), any()))
+                .thenReturn(page);
 
         mockMvc.perform(get("/api/v1/work-reports")
+                        .param("searchCondition", "1")
                         .param("searchKeyword", "test")
                         .param("page", "1")
                         .param("size", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+
+        verify(workReportService).getWorkReportList(
+                org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.eq("1"),
+                org.mockito.ArgumentMatchers.eq("test"),
+                any());
     }
 
     @Test

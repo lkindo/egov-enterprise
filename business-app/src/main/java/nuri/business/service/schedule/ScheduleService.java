@@ -126,6 +126,20 @@ public class ScheduleService {
      * 오류 없이 엉뚱한 범위를 돌려줬다. 두 날짜를 yyyyMMdd 로 맞추고, 순서와 기간 상한을 본다.
      */
     public List<ScheduleDto> getScheduleListByDateRange(String userId, String startDate, String endDate) {
+        String[] bounds = normalizeBoundedRange(startDate, endDate);
+        return scheduleRepository.findSchedulesByDateRange(userId, bounds[0], bounds[1]).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<ScheduleDto> getScheduleListByDateRange(String schdlSeCd, String ownerId, String startDate, String endDate) {
+        String[] bounds = normalizeBoundedRange(startDate, endDate);
+        return scheduleRepository.findSchedulesByDateRange(schdlSeCd, ownerId, bounds[0], bounds[1]).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    private static String[] normalizeBoundedRange(String startDate, String endDate) {
         String from = Ymd.compact(startDate), to = Ymd.compact(endDate);
         if (from == null || from.isEmpty() || to == null || to.isEmpty()) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "조회 시작일과 종료일을 모두 입력해 주세요.");
@@ -136,15 +150,7 @@ public class ScheduleService {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                     "조회 기간은 시작일부터 종료일까지 " + MAX_RANGE_DAYS + "일 이내여야 합니다.");
         }
-        return scheduleRepository.findSchedulesByDateRange(userId, from, to).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    public List<ScheduleDto> getScheduleListByDateRange(String schdlSeCd, String ownerId, String startDate, String endDate) {
-        return scheduleRepository.findSchedulesByDateRange(schdlSeCd, ownerId, startDate, endDate).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        return new String[] { from, to };
     }
 
     public ScheduleDto getSchedule(@NonNull Long schdlSn) {

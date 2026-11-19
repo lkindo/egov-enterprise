@@ -6,12 +6,13 @@ import nuri.foundation.core.util.ServiceTime;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.domain.auth.RefreshTokenDigest;
+import nuri.business.security.iam.EgovAuthenticationProvider;
 import nuri.business.service.auth.AuthService;
 import nuri.business.service.auth.LoginFailureReason;
 import nuri.business.service.auth.LoginRejectedException;
 import nuri.business.service.auth.dto.LoginRequest;
 import nuri.business.service.auth.dto.TokenResponse;
-import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AccountStatusUserDetailsChecker;
@@ -26,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AuthServiceImpl implements AuthService {
 
@@ -41,6 +41,45 @@ public class AuthServiceImpl implements AuthService {
     private final nuri.business.service.auth.mfa.MfaService mfaService;
     /** 로그아웃 시각과 세션차수 기록(access/refresh token 무효화 기준). */
     private final nuri.business.domain.user.repository.UserRepository userRepository;
+    private final @Nullable EgovAuthenticationProvider authenticationProvider;
+
+    public AuthServiceImpl(
+            AuthenticationManager authenticationManager,
+            JwtTokenProvider jwtTokenProvider,
+            UserDetailsService userDetailsService,
+            nuri.business.domain.auth.RefreshTokenRepository refreshTokenRepository,
+            nuri.business.service.login.LoginPolicyManageService loginPolicyManageService,
+            nuri.business.domain.login.LoginPolicyRepository loginPolicyRepository,
+            nuri.business.service.log.LogService logService,
+            nuri.business.service.auth.mfa.MfaService mfaService,
+            nuri.business.domain.user.repository.UserRepository userRepository) {
+        this(authenticationManager, jwtTokenProvider, userDetailsService, refreshTokenRepository,
+                loginPolicyManageService, loginPolicyRepository, logService, mfaService, userRepository, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public AuthServiceImpl(
+            AuthenticationManager authenticationManager,
+            JwtTokenProvider jwtTokenProvider,
+            UserDetailsService userDetailsService,
+            nuri.business.domain.auth.RefreshTokenRepository refreshTokenRepository,
+            nuri.business.service.login.LoginPolicyManageService loginPolicyManageService,
+            nuri.business.domain.login.LoginPolicyRepository loginPolicyRepository,
+            nuri.business.service.log.LogService logService,
+            nuri.business.service.auth.mfa.MfaService mfaService,
+            nuri.business.domain.user.repository.UserRepository userRepository,
+            @Nullable EgovAuthenticationProvider authenticationProvider) {
+        this.authenticationManager = authenticationManager;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.userDetailsService = userDetailsService;
+        this.refreshTokenRepository = refreshTokenRepository;
+        this.loginPolicyManageService = loginPolicyManageService;
+        this.loginPolicyRepository = loginPolicyRepository;
+        this.logService = logService;
+        this.mfaService = mfaService;
+        this.userRepository = userRepository;
+        this.authenticationProvider = authenticationProvider;
+    }
 
     /**
      * <b>[트랜잭션 경계] 로그인은 스스로 트랜잭션을 열지 않는다(SUPPORTS).</b>
@@ -78,7 +117,14 @@ public class AuthServiceImpl implements AuthService {
 
     private TokenResponse authenticateAndIssue(LoginRequest request, String clientIp) {
         // 1. 로그인 정책 검증 (인증 전 수행) — 비밀번호를 평가하기 전에 막아 정답 여부를 알려 주지 않는다.
-        assertLoginPolicy(request.getUserId(), clientIp);
+        try {
+            assertLoginPolicy(request.getUserId(), clientIp);
+        } catch (LoginRejectedException rejected) {
+            if (authenticationProvider != null) {
+                authenticationProvider.padRejectedLoginAttempt(request.getPassword());
+            }
+            throw rejected;
+        }
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUserId(), request.getPassword()));

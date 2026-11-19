@@ -3,6 +3,7 @@ import type { PermissionCode } from '@/types/generated-permissions';
 import { authorizationStateSchema, type AuthorizationState } from '@/lib/auth/authorization-state';
 import { canAnyPermission, canPermission } from '@/lib/auth/permissions';
 import { executeGeneratedFetchOperation } from '@/lib/api/generated-api-client';
+import { rememberVerifiedPageUser } from '@/lib/auth/verified-user-forward';
 import { getCurrentUserOperation } from '@/types/generated-operations';
 
 interface PageAccessSubject {
@@ -80,7 +81,9 @@ export async function loadPageAuthorization(accessToken: string, subject: string
       permissions: values.permissions,
       authorizationVersion: values.authorizationVersion,
     });
-    return parsed.success ? parsed.data : null;
+    if (!parsed.success) return null;
+    rememberVerifiedPageUser(accessToken, data);
+    return parsed.data;
   } catch {
     return null;
   } finally {

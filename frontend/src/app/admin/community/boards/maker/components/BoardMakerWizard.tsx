@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { BoardPreview, type BoardPreviewFeatures } from './BoardPreview';
+import type { BoardPreviewFeatures } from './BoardPreview';
 import * as z from 'zod';
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,20 +25,12 @@ import {
   ShieldCheck,
   Rocket,
   Loader2,
-  HelpCircle,
-  CalendarDays,
-  Book,
-  MessageSquare,
   Settings2,
-  BookOpen,
-  List,
-  ImageIcon,
   ArrowUpRight,
   Info,
   Copy,
-  type LucideIcon
 } from "lucide-react";
-import { BOARD_TYPES, DEFAULT_BOARD_TYPE, boardTemplateName, type BoardTemplateId } from '@/lib/board/board-types';
+import { DEFAULT_BOARD_TYPE, BOARD_TYPES, type BoardTemplateId } from '@/lib/board/board-types';
 import { cn } from "@/lib/utils";
 import { useAppForm } from '@/hooks/useAppForm';
 import { FormErrorSummary } from '@/components/ui/form';
@@ -49,6 +41,30 @@ import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 import { handOffScreen } from '@/lib/navigation/target-handoff';
 import { boardMenuRoute } from '@/lib/board/board-menu-links';
 import { userFacingErrorMessage } from '@/lib/safe-error-log';
+import { BoardMakerStepIndicator } from './BoardMakerStepIndicator';
+import { BoardMakerStep2Fields } from './BoardMakerStep2Fields';
+import {
+  BOARD_MAKER_FIELD_STEPS,
+  BOARD_MAKER_FORM_LABELS,
+  BOARD_MASTER_LIST_ROUTE,
+  BOARD_PURPOSES,
+  BYTES_PER_MB,
+  PRIVATE_POST_POLICY_SUMMARY,
+  PURPOSE_FIELD_LABELS,
+  QUIET,
+  describePurpose,
+  displayCreatedAt,
+  findJustCreatedBoard,
+  responseStatus,
+  templateName,
+  writeOutcomeUnknown,
+  yesNo,
+  type CreatedBoard,
+  type PurposeField,
+  type Recovery,
+} from './board-maker-model';
+
+export { findJustCreatedBoard };
 
 /*
   [2026-10-23 ADR-0040 §5.3] 단계를 다시 짰다. 게시판은 사용 안 함으로 만들고 결과 화면이 운영 화면의 메뉴·접근 탭(공개 준비)으로 이어 준다.
@@ -61,110 +77,6 @@ const STEPS = [
   { id: 2, title: '화면·기능', description: '화면 유형과 댓글·만족도·첨부를 정하세요', icon: Layout },
   { id: 3, title: '최종 확인', description: '만들 설정과 만든 직후의 상태를 확인하세요', icon: Rocket },
 ];
-
-/** 게시판 관리 목록 — '만들기 취소'와 결과 화면의 목록 이동이 간다. */
-const BOARD_MASTER_LIST_ROUTE = '/admin/community/boards/master';
-
-/**
- * [2026-10-26 ADR-0043] 마법사의 요청은 실패를 화면 안(오류 상자)에서 사유와 함께 보인다 — 같은 실패를 전역 토스트로 한 번 더 띄우지
- * 않는다(DEC-OPS-184 실패 한 번에 알림 하나).
- */
-const QUIET = { suppressErrorToast: true } as const;
-
-/** 생성 응답을 받지 못했을 때 '방금 만든 게시판'으로 볼 만든 시각의 범위(서버·브라우저 시계 차이를 함께 품는다). */
-const RECOVERY_WINDOW_MS = 10 * 60 * 1000;
-
-/** 비밀글 정책 세 값(ADR-0040 결정 7). 어휘는 생성 스키마의 enum 이다. */
-type PrivatePostPolicy = NonNullable<z.infer<typeof BoardMasterDtoSchema>['prvtPstPlcyCd']>;
-/** 비밀글 정책 선택 항목 — 값마다 무엇이 달라지는지 함께 말한다(운영 화면 설정 탭과 같은 말). */
-const PRIVATE_POST_POLICY_OPTIONS: Readonly<Record<PrivatePostPolicy, string>> = {
-  NONE: '없음(작성 화면에 선택 없음)',
-  OPTIONAL: '선택(글쓴이가 고름)',
-  REQUIRED: '필수(늘 비밀글로 저장)',
-};
-const PRIVATE_POST_POLICY_SUMMARY: Readonly<Record<PrivatePostPolicy, string>> = { NONE: '없음', OPTIONAL: '선택', REQUIRED: '필수' };
-
-/**
- * 용도 프리셋(설계서 §5.3 표). 용도는 사용자가 아직 직접 바꾸지 않은 칸만 채운다. 파일당 크기는 용도와 무관하게 비워 둔다(전역 상한).
- * 예약·고정·비밀글·추천 칸은 해당 배치(B1~B3)가 구현된 뒤에만 채운다 — [2026-10-23 B1] 예약 게시(공지형만 받음)를, [B2] 상단 고정
- * (공지형만 허용, 상한 5·기본 30일)을, [B3] 비밀글 정책(질의응답형만 선택)과 추천 받기(공지형만 받지 않음)를 채운다.
- */
-const BOARD_PURPOSES = [
-  { id: 'NOTICE', label: '공지형', tmpltId: 'TMPLT_LIST', ansYn: 'N', stsfdgYn: 'N', fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 3, rsvtPstgPsbltyYn: 'Y',
-    upendFixPsbltyYn: 'Y', upendFixUplmtNocs: 5, upendFixBscDayCnt: 30, prvtPstPlcyCd: 'NONE', rcmdtnUseYn: 'N' },
-  { id: 'ARCHIVE', label: '자료실형', tmpltId: 'TMPLT_LIST', ansYn: 'Y', stsfdgYn: 'Y', fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 10, rsvtPstgPsbltyYn: 'N',
-    upendFixPsbltyYn: 'N', upendFixUplmtNocs: 5, upendFixBscDayCnt: 30, prvtPstPlcyCd: 'NONE', rcmdtnUseYn: 'Y' },
-  { id: 'FREE', label: '자유형', tmpltId: 'TMPLT_LIST', ansYn: 'Y', stsfdgYn: 'N', fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 3, rsvtPstgPsbltyYn: 'N',
-    upendFixPsbltyYn: 'N', upendFixUplmtNocs: 5, upendFixBscDayCnt: 30, prvtPstPlcyCd: 'NONE', rcmdtnUseYn: 'Y' },
-  { id: 'QNA', label: '질의응답형', tmpltId: 'TMPLT_QNA', ansYn: 'Y', stsfdgYn: 'Y', fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 3, rsvtPstgPsbltyYn: 'N',
-    upendFixPsbltyYn: 'N', upendFixUplmtNocs: 5, upendFixBscDayCnt: 30, prvtPstPlcyCd: 'OPTIONAL', rcmdtnUseYn: 'Y' },
-] as const satisfies readonly {
-  id: string; label: string; tmpltId: BoardTemplateId; ansYn: 'Y' | 'N'; stsfdgYn: 'Y' | 'N'; fileAtchPsbltyYn: 'Y' | 'N'; atchPsbltyFileQty: number;
-  rsvtPstgPsbltyYn: 'Y' | 'N'; upendFixPsbltyYn: 'Y' | 'N'; upendFixUplmtNocs: number; upendFixBscDayCnt: number;
-  prvtPstPlcyCd: PrivatePostPolicy; rcmdtnUseYn: 'Y' | 'N';
-}[];
-type BoardPurpose = (typeof BOARD_PURPOSES)[number];
-type PurposeField = 'tmpltId' | 'ansYn' | 'stsfdgYn' | 'fileAtchPsbltyYn' | 'atchPsbltyFileQty' | 'rsvtPstgPsbltyYn'
-  | 'upendFixPsbltyYn' | 'upendFixUplmtNocs' | 'upendFixBscDayCnt' | 'prvtPstPlcyCd' | 'rcmdtnUseYn';
-/**
- * [2026-10-26 ADR-0043 WIZ-10] 용도가 채우는 칸과 그 화면 이름. 순서는 2단계 화면의 순서다 — 용도를 고르면 직접 바꾼 칸을 이 이름으로
- * 알린다. 이름은 2단계의 칸 이름과 같게 둔다.
- */
-const PURPOSE_FIELD_LABELS: ReadonlyArray<readonly [PurposeField, string]> = [
-  ['tmpltId', '화면 유형'],
-  ['ansYn', '댓글 받기'],
-  ['stsfdgYn', '만족도 평가 받기'],
-  ['fileAtchPsbltyYn', '파일 첨부 허용'],
-  ['rsvtPstgPsbltyYn', '예약 게시 받기'],
-  ['upendFixPsbltyYn', '상단 고정 받기'],
-  ['rcmdtnUseYn', '추천 받기'],
-  ['atchPsbltyFileQty', '첨부 파일 수'],
-  ['upendFixUplmtNocs', '상단 고정 상한'],
-  ['upendFixBscDayCnt', '상단 고정 기본 일수'],
-  ['prvtPstPlcyCd', '비밀글 정책'],
-];
-const BYTES_PER_MB = 1024 * 1024;
-
-/*
-  [2026-10-16 GAP-BOARD-002, DEC-OPS-332] 유형 코드·템플릿·이름·설명의 정본은 게시판 유형 표(lib/board/board-types)다.
-  종전에는 이 파일이 BBST01~ 과 이름을 손으로 들고 있었고, 서버는 같은 이름을 없는 공통코드 COM004 에서 찾았다.
-  여기에는 카드의 아이콘·색만 둔다 — 표에 템플릿이 늘면 이 표가 빠진 항목을 타입 검사로 잡는다.
-*/
-const TEMPLATE_PRESENTATION = {
-  TMPLT_HUB: { icon: BookOpen, color: 'bg-primary text-primary-foreground' },
-  TMPLT_LIST: { icon: List, color: 'bg-success text-success-foreground' },
-  TMPLT_GALLERY: { icon: ImageIcon, color: 'bg-destructive text-destructive-foreground' },
-  TMPLT_QNA: { icon: HelpCircle, color: 'bg-warning text-warning-foreground' },
-  TMPLT_CALENDAR: { icon: CalendarDays, color: 'bg-info text-info-foreground' },
-  TMPLT_FAQ: { icon: MessageSquare, color: 'bg-primary text-primary-foreground' },
-  TMPLT_WIKI: { icon: Book, color: 'bg-surface-inverse text-surface-inverse-foreground' },
-} satisfies Record<BoardTemplateId, { icon: LucideIcon; color: string }>;
-
-const TEMPLATES = BOARD_TYPES.map((type) => ({
-  id: type.templateId,
-  name: type.name,
-  description: type.description,
-  typeCode: type.code,
-  ...TEMPLATE_PRESENTATION[type.templateId],
-}));
-
-// [2026-10-26 ADR-0043 결정 5] 화면 유형 이름은 정본 함수 하나(board-types)가 템플릿으로 정한다.
-const templateName = (templateId: string | undefined) => boardTemplateName(templateId);
-const yesNo = (value: string | undefined, yes = '받음', no = '받지 않음') => (value === 'N' ? no : yes);
-
-/** [WIZ-10] 용도가 무엇을 채우는지 한 줄로 — 프리셋 값에서 만들어 표와 갈리지 않는다. */
-function describePurpose(preset: BoardPurpose): string {
-  return [
-    `화면 유형 ${templateName(preset.tmpltId)}`,
-    `댓글 ${yesNo(preset.ansYn)}`,
-    `만족도 ${yesNo(preset.stsfdgYn)}`,
-    `추천 ${yesNo(preset.rcmdtnUseYn)}`,
-    `첨부 ${preset.fileAtchPsbltyYn === 'Y' ? `${preset.atchPsbltyFileQty}개` : '허용 안 함'}`,
-    `예약 게시 ${yesNo(preset.rsvtPstgPsbltyYn)}`,
-    `상단 고정 ${preset.upendFixPsbltyYn === 'Y' ? `허용(${preset.upendFixUplmtNocs}건·${preset.upendFixBscDayCnt}일)` : '허용 안 함'}`,
-    `비밀글 ${PRIVATE_POST_POLICY_SUMMARY[preset.prvtPstPlcyCd]}`,
-  ].join(' · ');
-}
 
 import { BoardMasterDtoSchema } from '@/types/generated-zod';
 import { boardMasterKeys, invalidateBoardCaches } from '@/queries/board-master-query-options';
@@ -219,102 +131,6 @@ export const boardMakerFormSchema = BoardMasterDtoSchema.extend({
 });
 
 type FormValues = z.infer<typeof boardMakerFormSchema>;
-
-const BOARD_MAKER_FORM_LABELS: Record<string, string> = {
-  bbsTtl: '게시판 명칭',
-  bbsExpln: '게시판 소개',
-  tmpltId: '화면 유형',
-  atchPsbltyFileQty: '첨부 파일 수',
-  atchPsbltyFileSz: '파일당 크기',
-  rsvtPstgPsbltyYn: '예약 게시',
-  upendFixPsbltyYn: '상단 고정 허용',
-  upendFixUplmtNocs: '상단 고정 상한',
-  upendFixBscDayCnt: '상단 고정 기본 일수',
-  prvtPstPlcyCd: '비밀글 정책',
-  rcmdtnUseYn: '추천 받기',
-  cmntySn: '커뮤니티 귀속',
-  'root.server': '저장 오류',
-};
-
-const BOARD_MAKER_FIELD_STEPS: Record<string, number> = {
-  bbsTtl: 1,
-  bbsExpln: 1,
-  cmntySn: 1,
-  tmpltId: 2,
-  atchPsbltyFileQty: 2,
-  atchPsbltyFileSz: 2,
-  rsvtPstgPsbltyYn: 2,
-  upendFixPsbltyYn: 2,
-  upendFixUplmtNocs: 2,
-  upendFixBscDayCnt: 2,
-  prvtPstPlcyCd: 2,
-  rcmdtnUseYn: 2,
-};
-
-/** 만든 게시판(결과 화면의 대상). communityBound 는 커뮤니티 귀속 여부다 — 입구가 커뮤니티 화면이라 메뉴 안내를 건너뛴다(결정 1). */
-interface CreatedBoard {
-  bbsId: string;
-  bbsTtl: string;
-  communityBound: boolean;
-  inUse: boolean;
-}
-
-/**
- * [2026-10-26 WIZ-15] 생성 응답을 받지 못했을 때 같은 이름으로 방금 만든 게시판을 찾은 결과. 찾으면 그 게시판으로 이어 가자고
- * 제안한다 — 다시 만들면 같은 게시판이 하나 더 생긴다.
- */
-type Recovery =
-  | { status: 'searching' }
-  | { status: 'found'; board: BoardMasterSummary }
-  | { status: 'none' }
-  | { status: 'failed' }
-  | { status: 'unavailable' };
-
-/** 응답의 HTTP 상태. 응답이 없으면(연결 끊김·시간 초과) null 이다. */
-function responseStatus(error: unknown): number | null {
-  if (!error || typeof error !== 'object') return null;
-  const response = (error as { response?: { status?: unknown } }).response;
-  return typeof response?.status === 'number' ? response.status : null;
-}
-
-/** 쓰기 결과를 모르는가 — 응답이 없거나 서버 오류(5xx)면 서버에 반영됐을 수 있다(게시판 생성·사용 전환). 4xx 는 서버가 거부한 확정 결과다. */
-function writeOutcomeUnknown(error: unknown): boolean {
-  const status = responseStatus(error);
-  return status === null || status >= 500;
-}
-
-/** 목록 응답의 만든 시각(시간대 표기 없는 서버 현지 시각 = Asia/Seoul)을 epoch 밀리초로. 해석할 수 없으면 null. */
-function seoulEpoch(value: string | null | undefined): number | null {
-  const raw = value?.trim();
-  if (!raw) return null;
-  const iso = raw.replace(' ', 'T');
-  const time = Date.parse(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(iso) ? iso : `${iso}+09:00`);
-  return Number.isNaN(time) ? null : time;
-}
-
-/** 만든 시각 표시('yyyy-MM-dd HH:mm:ss'). 서버 현지 시각 문자열을 그대로 자른다. */
-function displayCreatedAt(value: string | null | undefined): string {
-  const match = value?.trim().match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})/);
-  return match ? `${match[1]} ${match[2]}` : '알 수 없음';
-}
-
-/**
- * 방금 만든 것으로 볼 게시판 — 이름·화면 유형이 같고, 사용 안 함이며, 만든 시각이 지금에서 RECOVERY_WINDOW_MS 안이다. 만든 시각을 해석할
- * 수 없으면 고르지 않는다(추정으로 남의 게시판을 이어 가지 않는다).
- */
-export function findJustCreatedBoard(
-  list: readonly BoardMasterSummary[],
-  draft: { bbsTtl: string; tmpltId: string; cmntySn?: number | null },
-  now: number = Date.now(),
-): BoardMasterSummary | null {
-  return list.find((board) => {
-    if (board.bbsTtl !== draft.bbsTtl || board.tmpltId !== draft.tmpltId || board.useYn !== 'N') return false;
-    // 귀속 커뮤니티도 같아야 한다 — 같은 이름·유형이라도 귀속이 다르면 이 마법사가 만든 게시판이 아니다.
-    if ((board.community?.cmntySn ?? null) !== (draft.cmntySn ?? null)) return false;
-    const createdAt = seoulEpoch(board.crtDt);
-    return createdAt !== null && Math.abs(now - createdAt) <= RECOVERY_WINDOW_MS;
-  }) ?? null;
-}
 
 export function BoardMakerWizard() {
   const router = useRouter();
@@ -828,39 +644,7 @@ export function BoardMakerWizard() {
       {breadcrumb}
       <h1 className="sr-only">게시판 만들기</h1>
       {/* 단계 표시 — 지금 단계는 aria-current="step" 으로 알린다(시각 표시만으로 전하지 않는다). */}
-      <div className="relative px-4">
-        <div className="absolute left-0 top-4 z-0 h-0.5 w-full bg-muted" aria-hidden="true" />
-        <ol aria-label="게시판 만들기 단계" className="relative z-10 flex items-start justify-between">
-          {STEPS.map((step) => {
-            const Icon = step.icon;
-            const isActive = currentStep === step.id;
-            const isCompleted = currentStep > step.id;
-
-            return (
-              <li key={step.id} aria-current={isActive ? 'step' : undefined} className="flex flex-col items-center gap-1.5">
-                <div
-                  className={cn(
-                    "flex size-8 items-center justify-center rounded-md border transition-colors",
-                    isActive ? "bg-primary border-primary text-primary-foreground" :
-                      isCompleted ? "bg-success border-success text-success-foreground" :
-                        "bg-card border-border text-muted-foreground"
-                  )}
-                >
-                  {isCompleted ? <Check className="size-4" aria-hidden="true" /> : <Icon className="size-4" aria-hidden="true" />}
-                </div>
-                <div className="text-center">
-                  <p className={cn("text-xs", isActive ? "text-primary" : "text-muted-foreground")}>
-                    {step.id}단계{isCompleted && <span className="sr-only">(마침)</span>}
-                  </p>
-                  <p className={cn("whitespace-nowrap text-[length:var(--font-size-body)] font-medium", isActive ? "text-foreground" : "text-muted-foreground")}>
-                    {step.title}
-                  </p>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-      </div>
+      <BoardMakerStepIndicator steps={STEPS} currentStep={currentStep} />
 
       {/* Main Content Card */}
       <Card className="overflow-hidden rounded-md border border-border bg-card py-0 shadow-none">
@@ -1035,195 +819,20 @@ export function BoardMakerWizard() {
               )}
 
               {currentStep === 2 && (
-                <div className="flex flex-col gap-6 text-left lg:flex-row">
-                  <div className="flex-1 space-y-4 text-left">
-                    <div className="space-y-1 text-left">
-                      <h3 className="text-[length:var(--font-size-body)] font-semibold text-foreground text-left">화면 유형</h3>
-                      <p className="text-[length:var(--font-size-body)] text-muted-foreground text-left">게시판 글을 어떤 모양으로 보일지 고르세요. 만든 뒤에는 바꿀 수 없습니다.</p>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2">
-                      {TEMPLATES.map((tpl) => {
-                        const Icon = tpl.icon;
-                        const isSelected = selectedTemplate === tpl.id;
-
-                        return (
-                          <div
-                            key={tpl.id}
-                            role="button"
-                            tabIndex={0}
-                            aria-pressed={isSelected}
-                            onClick={() => { touch('tmpltId'); setTemplate(tpl.id); }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                touch('tmpltId');
-                                setTemplate(tpl.id);
-                              }
-                            }}
-                            className={cn(
-                              "group relative p-8 rounded-md border cursor-pointer flex items-center gap-3 transition-colors",
-                              isSelected ? "border-primary bg-primary/5" : "border-border bg-muted/30 hover:border-primary"
-                            )}
-                          >
-                            <div className={cn(
-                              "flex size-9 shrink-0 items-center justify-center rounded-md",
-                              tpl.color
-                            )}>
-                              <Icon size={18} aria-hidden="true" />
-                            </div>
-
-                            <div className="flex-1 space-y-0.5 text-left">
-                              <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground text-left">
-                                {tpl.name}
-                              </h4>
-                              <p className="text-xs text-muted-foreground leading-snug text-left">
-                                {tpl.description}
-                              </p>
-                            </div>
-
-                            <div className={cn(
-                              "flex size-6 shrink-0 items-center justify-center rounded-md border transition-colors",
-                              isSelected ? "bg-primary border-primary text-primary-foreground" : "border-border text-transparent"
-                            )}>
-                              <Check size={14} strokeWidth={3} aria-hidden="true" />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/*
-                      [2026-09-27 DIP B5 F9] 서버가 새 댓글·새 평가·첨부를 이 값으로 거부하고 게시글 화면이 같은 값으로 입력을 감춘다.
-                      [2026-10-23 §5.3] 파일 수·파일당 크기도 여기서 정한다(만든 뒤에는 운영 화면 설정 탭에서 바꾼다).
-                    */}
-                    <fieldset className="space-y-2 rounded-md border border-border p-3">
-                      <legend className="px-1 text-[length:var(--font-size-body)] font-medium text-foreground">게시판 기능</legend>
-                      {([
-                        ['ansYn', '댓글 받기', '끄면 새 댓글을 받지 않습니다. 이미 달린 댓글은 그대로 보입니다.'],
-                        ['stsfdgYn', '만족도 평가 받기', '끄면 새 만족도 평가를 받지 않습니다.'],
-                        ['fileAtchPsbltyYn', '파일 첨부 허용', '끄면 새 첨부를 받지 않습니다.'],
-                        // [2026-10-23 ADR-0040 결정 3·6] 기본은 받지 않음이다(체크 해제가 'N').
-                        ['rsvtPstgPsbltyYn', '예약 게시 받기', '켜면 오늘보다 뒤의 시작일을 받습니다. 그 글은 시작일까지 작성자와 게시판 관리자에게만 보입니다.'],
-                        // [2026-10-23 ADR-0040 결정 5·6] 기본은 허용 안 함이다. 고정하려면 게시글 상단 고정 권한(BOARD_PIN)도 있어야 한다.
-                        ['upendFixPsbltyYn', '상단 고정 받기', '켜면 운영 화면에서 글을 게시판 목록 맨 위에 고정할 수 있습니다(게시글 상단 고정 권한 필요).'],
-                        // [2026-10-23 ADR-0040 결정 6] 기본은 받음이다. 끄면 새 추천만 막고, 각자 자기 추천은 거둘 수 있다.
-                        ['rcmdtnUseYn', '추천 받기', '끄면 새 추천을 받지 않습니다. 쌓인 추천 수는 그대로이고 각자 자기 추천은 거둘 수 있습니다.'],
-                      ] as const).map(([field, label, help]) => (
-                        <label key={field} className="flex items-start gap-2 text-[length:var(--font-size-body)] text-foreground">
-                          <input
-                            type="checkbox"
-                            className="mt-1 h-4 w-4 accent-primary"
-                            aria-label={label}
-                            checked={watch(field) !== 'N'}
-                            onChange={(event) => { touch(field); setValue(field, event.target.checked ? 'Y' : 'N', { shouldDirty: true }); }}
-                            aria-describedby={`${field}-help`}
-                          />
-                          <span>
-                            <span className="font-medium">{label}</span>
-                            <span id={`${field}-help`} className="block text-xs text-muted-foreground">{help}</span>
-                          </span>
-                        </label>
-                      ))}
-                      <div className="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-2">
-                        <div className="space-y-1">
-                          <Label htmlFor="atchPsbltyFileQty" className="text-xs font-medium text-foreground">첨부 파일 수(0 은 상한 없음)</Label>
-                          <Input
-                            id="atchPsbltyFileQty"
-                            type="number"
-                            min={0}
-                            max={SERVER_MAX_FILES_PER_REQUEST}
-                            aria-invalid={errors.atchPsbltyFileQty ? 'true' : 'false'}
-                            aria-describedby={errors.atchPsbltyFileQty ? 'atchPsbltyFileQty-error' : undefined}
-                            value={Number.isNaN(Number(watch('atchPsbltyFileQty'))) ? '' : String(watch('atchPsbltyFileQty'))}
-                            onChange={(event) => {
-                              touch('atchPsbltyFileQty');
-                              setValue('atchPsbltyFileQty', event.target.value === '' ? Number.NaN : Number(event.target.value), { shouldDirty: true });
-                            }}
-                          />
-                          {errors.atchPsbltyFileQty && <p id="atchPsbltyFileQty-error" className="text-destructive-emphasis text-xs font-bold">{errors.atchPsbltyFileQty.message}</p>}
-                        </div>
-                        <div className="space-y-1">
-                          <Label htmlFor="atchPsbltyFileSz" className="text-xs font-medium text-foreground">파일당 크기(MB, 비우면 전역 상한 {SERVER_MAX_FILE_SIZE_MB}MB)</Label>
-                          <Input
-                            id="atchPsbltyFileSz"
-                            type="number"
-                            min={0}
-                            max={SERVER_MAX_FILE_SIZE_MB}
-                            step="0.5"
-                            aria-invalid={errors.atchPsbltyFileSz ? 'true' : 'false'}
-                            aria-describedby={errors.atchPsbltyFileSz ? 'atchPsbltyFileSz-error' : undefined}
-                            value={fileSizeBytes > 0 ? String(fileSizeBytes / BYTES_PER_MB) : ''}
-                            onChange={(event) => setValue('atchPsbltyFileSz', event.target.value === '' ? 0 : Math.round(Number(event.target.value) * BYTES_PER_MB), { shouldDirty: true })}
-                          />
-                          {errors.atchPsbltyFileSz && <p id="atchPsbltyFileSz-error" className="text-destructive-emphasis text-xs font-bold">{errors.atchPsbltyFileSz.message}</p>}
-                        </div>
-                      </div>
-                      {/* 상단 고정 상한·기본 일수 — 고정을 받지 않는 동안은 읽기 전용이다(값은 그대로 저장돼 나중에 켜면 쓴다). */}
-                      <div className="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-2">
-                        {([
-                          ['upendFixUplmtNocs', '상단 고정 상한(건)', PIN_LIMIT_RANGE],
-                          ['upendFixBscDayCnt', '상단 고정 기본 일수(일)', PIN_DAYS_RANGE],
-                        ] as const).map(([field, label, range]) => (
-                          <div key={field} className="space-y-1">
-                            <Label htmlFor={field} className="text-xs font-medium text-foreground">{label}</Label>
-                            <Input
-                              id={field}
-                              type="number"
-                              min={range.min ?? undefined}
-                              max={range.max ?? undefined}
-                              readOnly={watch('upendFixPsbltyYn') !== 'Y'}
-                              aria-invalid={errors[field] ? 'true' : 'false'}
-                              aria-describedby={errors[field] ? `${field}-error` : undefined}
-                              value={Number.isNaN(Number(watch(field))) ? '' : String(watch(field) ?? '')}
-                              onChange={(event) => {
-                                touch(field);
-                                setValue(field, event.target.value === '' ? Number.NaN : Number(event.target.value), { shouldDirty: true });
-                              }}
-                            />
-                            {errors[field] && <p id={`${field}-error`} className="text-destructive-emphasis text-xs font-bold">{errors[field]?.message}</p>}
-                          </div>
-                        ))}
-                      </div>
-                      {/*
-                        [2026-10-23 ADR-0040 결정 7] 비밀글 정책. 없음은 작성 화면에 선택이 없고(지금 동작), 선택은 글쓴이가 고르며, 필수는
-                        서버가 늘 비밀글로 저장한다. 질의응답형 용도가 선택을 채운다. 만든 뒤에는 운영 화면 설정 탭에서 바꾼다.
-                      */}
-                      <div className="space-y-1 pt-1">
-                        <Label htmlFor="prvtPstPlcyCd" className="text-xs font-medium text-foreground">비밀글 정책</Label>
-                        <select
-                          id="prvtPstPlcyCd"
-                          value={watch('prvtPstPlcyCd') ?? 'NONE'}
-                          aria-describedby="prvtPstPlcyCd-help"
-                          onChange={(event) => {
-                            touch('prvtPstPlcyCd');
-                            setValue('prvtPstPlcyCd', event.target.value as PrivatePostPolicy, { shouldDirty: true });
-                          }}
-                          className="h-[var(--control-h)] w-full rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)] sm:w-60"
-                        >
-                          {(Object.keys(PRIVATE_POST_POLICY_OPTIONS) as PrivatePostPolicy[]).map((policy) => (
-                            <option key={policy} value={policy}>{PRIVATE_POST_POLICY_OPTIONS[policy]}</option>
-                          ))}
-                        </select>
-                        <p id="prvtPstPlcyCd-help" className="text-xs text-muted-foreground">
-                          비밀글은 작성자와 게시판 관리자만 봅니다. 필수면 저장하는 글이 모두 비밀글이 됩니다.
-                        </p>
-                      </div>
-                    </fieldset>
-                  </div>
-
-                  {/* 미리보기는 좁은 폭에서도 보인다(§5.3) — 넓은 화면에서는 옆에, 좁은 화면에서는 아래에 둔다. */}
-                  <div className="flex-1 lg:sticky lg:top-0">
-                    <div className="mb-2">
-                      <h3 className="text-xs font-medium text-muted-foreground lg:text-right">레이아웃 미리보기 · 예시 데이터</h3>
-                    </div>
-                    <BoardPreview
-                      tmpltId={selectedTemplate || DEFAULT_BOARD_TYPE.templateId}
-                      bbsTtl={bbsTtl}
-                      bbsExpln={bbsExpln || ''}
-                      features={previewFeatures}
-                    />
-                  </div>
-                </div>
+                <BoardMakerStep2Fields
+                  selectedTemplate={selectedTemplate}
+                  setTemplate={setTemplate}
+                  touch={touch}
+                  watch={watch}
+                  setValue={setValue}
+                  errors={errors}
+                  fileSizeBytes={fileSizeBytes}
+                  bbsTtl={bbsTtl}
+                  bbsExpln={bbsExpln || ''}
+                  previewFeatures={previewFeatures}
+                  pinLimitRange={PIN_LIMIT_RANGE}
+                  pinDaysRange={PIN_DAYS_RANGE}
+                />
               )}
 
               {currentStep === 3 && (

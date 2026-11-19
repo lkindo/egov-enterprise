@@ -97,13 +97,21 @@ class RequestMatcherBoundaryTest {
     }
 
     @Test
-    @DisplayName("🧭 경계③ securityMatcher 밖의 경로는 legacy 체인이 처리한다 (익명 정적 리소스 401 아님)")
+    @DisplayName("🧭 경계③ securityMatcher 밖의 경로는 legacy 체인이 처리하고(정적 리소스 permitAll) 폐기된 .do/.jsp 표면은 인증·CSRF 뒤로 닫힌다")
     void nonApiPath_isHandledByLegacyChain() throws Exception {
-        // /index.jsp 는 @Order(1) 체인의 securityMatcher("/api/v1/**","/actuator/**") 밖이므로
-        // @Order(2) legacy 체인이 받고, 그 체인은 이 경로를 permitAll 한다.
-        // 401 이 나오면 체인 선택이 바뀐 것이다 — 매처 전환이 가장 크게 깨뜨릴 수 있는 지점이다.
-        mockMvc.perform(get("/index.jsp"))
+        // /favicon.ico 는 @Order(1) 체인의 securityMatcher("/api/v1/**","/actuator/**") 밖이므로
+        // @Order(2) legacy 체인이 받고, 그 체인은 정적 리소스만 permitAll 한다.
+        mockMvc.perform(get("/favicon.ico"))
                 .andExpect(status().is(org.hamcrest.Matchers.not(401)));
+        mockMvc.perform(get("/index.jsp"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/uat/uia/actionLogin.do"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/uat/uia/actionLogin.do"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/uat/uia/actionLogin.do")
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

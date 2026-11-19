@@ -134,6 +134,11 @@ public class WorkReportService extends BaseAbstractService {
      * 무제한 공개로 되돌리지 말 것.
      */
     public Page<WorkReportDto> getWorkReportList(String searchId, String searchSe, String searchWrd, @NonNull Pageable pageable) {
+        return getWorkReportList(searchId, searchSe, null, searchWrd, pageable);
+    }
+
+    public Page<WorkReportDto> getWorkReportList(String searchId, String searchSe, String searchCnd, String searchWrd,
+            @NonNull Pageable pageable) {
         String scopedId = searchId;
         if (!SecurityUtil.hasPermission("WORK_RPT_READ_ALL")) {
             scopedId = SecurityUtil.getCurrentLoginId().orElse(null);
@@ -143,7 +148,7 @@ public class WorkReportService extends BaseAbstractService {
             }
         }
         Page<WorkReport> page = workReportRepository.searchWorkReports(
-                scopedId, null, null, null, null, searchWrd, null, searchSe, Objects.requireNonNull(pageable));
+                scopedId, null, null, null, searchCnd, searchWrd, null, searchSe, Objects.requireNonNull(pageable));
         Map<String, String> authorNames = resolveAuthorNames(page.getContent());
         return page.map(entity -> toDto(entity, lookupName(authorNames, entity.getUserId())));
     }

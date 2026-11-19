@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { hasDeliveryChannel } from '@/lib/delivery-channels';
@@ -21,8 +21,6 @@ import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { getHttpStatus, isConflictError } from '@/lib/query/list-query-defaults';
 import { fileService } from '@/services/foundation/file/FileService';
-import { z } from 'zod';
-import { MemoReportDtoRequestSchema, MemoInstructionRequestRequestSchema } from '@/types/generated-zod';
 import { getTodayYmd } from '@/lib/date/today-ymd';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useAppForm } from '@/hooks/useAppForm';
@@ -39,59 +37,28 @@ import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { parsePositivePage } from '@/lib/navigation/url-state-values';
 import { MEMO_REPORT_TABS as TABS, parseMemoReportTab, type MemoReportTab as ReportTab } from './memo-report-tabs';
 import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
+import {
+  COMPOSE_LABELS,
+  DEFAULT_PAGE_SIZE,
+  INSTRUCTION_LABELS,
+  PAGE_SIZE_OPTIONS,
+  TAB_LABELS,
+  isCompleteInstructionSnapshot,
+  memoComposeSchema,
+  memoInstructionSchema,
+} from './memo-report-model';
+import { buildMemoReportColumns } from './memo-report-columns';
+import {
+  MemoReportAttachmentsSection,
+  MemoReportDetailMetadata,
+  MemoReportInstructionNotice,
+} from './MemoReportDetailSections';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 탭과 페이지를 함께 읽는다.
- *
- * 종전에는 들어온 쿼리를 통째로 복사해 재발행했다 — 모르는 이름이 한 번 들어오면 이동마다
- * 다시 붙는 캐리어였다(DEC-OPS-029 Q2). 새 파라미터를 도입하면 이 목록에 함께 넣어야 하고,
- * 빠뜨리면 이동 시 조용히 사라진다.
+ * (ui-url-state-census 가 파일 내부 상수 선언에서 허용 목록을 정적 해석하므로 이 파일에 둔다.)
  */
 const LIST_PARAM_KEYS = ['page', 'tab'] as const;
-
-/**
- * 보고 작성 스키마.
- *
- * 길이 상한의 SSOT 는 생성 계약(MemoReportDto)이다 — 직접 적으면 서버가 바뀔 때 화면만 낡아
- * 사용자가 다 쓴 뒤 오류로 되돌아온다.
- *
- * ⚠ `rptrId` 는 **esntlId** 다(MemoReportService.assertParticipantOrAdmin 이 esntlId 로
- * 참여자를 판정한다). 사람이 타이핑할 수 있는 값이 아니라 UserPicker 가 채운다 — 폼 필드로
- * 두는 이유는 "받는 사람 없이 등록" 을 다른 필드와 같은 오류 요약·포커스 경로로 잡기 위해서다.
- */
-const memoComposeSchema = MemoReportDtoRequestSchema.pick({ rptTtl: true, rptCn: true, rptrId: true }).extend({
-  rptTtl: z.string().trim()
-    .min(1, '제목을 입력해 주세요.')
-    .max(100, '제목은 100자까지 입력할 수 있습니다.')
-    .pipe(MemoReportDtoRequestSchema.shape.rptTtl),
-  rptCn: z.string().trim()
-    .min(1, '보고 내용을 입력해 주세요.')
-    .max(4000, '보고 내용은 4,000자까지 입력할 수 있습니다.')
-    .pipe(MemoReportDtoRequestSchema.shape.rptCn.unwrap()),
-  rptrId: z.string().trim()
-    .min(1, '받는 사람을 선택해 주세요.')
-    .max(20, '받는 사람 식별자는 20자까지 허용됩니다.')
-    .pipe(MemoReportDtoRequestSchema.shape.rptrId),
-});
-
-const memoInstructionSchema = MemoInstructionRequestRequestSchema.pick({ drctnMttr: true }).extend({
-  drctnMttr: z.string().trim().min(1, '지시사항을 입력해 주세요.').max(2000, '지시사항은 2,000자까지 입력할 수 있습니다.')
-    .pipe(MemoInstructionRequestRequestSchema.shape.drctnMttr),
-});
-
-const COMPOSE_LABELS = { rptTtl: '제목', rptrId: '받는 사람', rptCn: '내용' };
-const INSTRUCTION_LABELS = { drctnMttr: '지시사항' };
-
-// 탭 목록과 `?tab=` 해석은 memo-report-tabs.ts 에 있다(탭 목적지 계약이 서버 알림과 대조한다).
-
-const TAB_LABELS: Record<ReportTab, string> = {
-  RECEIVED: '수신함',
-  MY: '발신함',
-  ALL: '전체',
-};
-
-const DEFAULT_PAGE_SIZE = 10;
-const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 export default function MemoReportManagementClient() {
   const { user } = useAuth();
@@ -328,7 +295,7 @@ export default function MemoReportManagementClient() {
     uploadedEditBundleRef.current = null;
     setClearExistingAttachment(false);
     setEditUploaderKey((prev) => prev + 1);
-  }, []);
+  }, [setClearExistingAttachment, setEditUploaderKey]);
 
   const handleEditFilesChange = useCallback((files: File[]) => {
     editFilesGenerationRef.current += 1;
@@ -350,7 +317,18 @@ export default function MemoReportManagementClient() {
     setIsEditing(false);
     resetEditForm({ rptTtl: '', rptCn: '', rptrId: '' });
     resetInstructionForm({ drctnMttr: '' });
-  }, [resetEditAttachments, resetEditForm, resetInstructionForm]);
+  }, [
+    resetEditAttachments,
+    resetEditForm,
+    resetInstructionForm,
+    setDetailSnapshot,
+    setInstructionRecovery,
+    setLatestError,
+    setLoadingLatest,
+    setSavingInstruction,
+    setDownloadingFile,
+    setIsEditing,
+  ]);
 
   // 권한·계정 경계가 바뀐 commit 이후에는 앞 계정의 확인 대기·조회 응답을 채택하지 않는다.
   useLayoutEffect(() => {
@@ -364,9 +342,6 @@ export default function MemoReportManagementClient() {
   const isCurrentDetail = (session: number, scope: string) => detailSession.current === session
     && currentDetailScope.current === scope;
 
-  const isCompleteInstructionSnapshot = (report: MemoReportInfo | undefined) => !!report
-    && Array.isArray(report.attachments)
-    && MemoInstructionRequestRequestSchema.shape.instructionReadToken.safeParse(report.instructionReadToken).success;
   const attachmentInstructionRestriction = (report: MemoReportInfo | undefined): string | null => {
     // 명시적인 미공개 첨부만 제한 사유로 해석한다. 누락·형식 오류를 권한 없음으로 단정하지 않는다.
     // 수신자와 기능 권한 확인은 사유·보존된 초안을 보여 주기 위한 것이며 서버 저장 힌트를 대신하지 않는다.
@@ -656,78 +631,7 @@ export default function MemoReportManagementClient() {
   //   isLoading 이 아니라 data 로 본다 — 오프라인으로 멈춘 조회는 isLoading 이 false 다.
   const listCountsUnknown = isError || reportsData === undefined;
 
-  const columns: Column<MemoReportInfo>[] = [
-    {
-      header: '번호',
-      accessor: (_, index) => (
-        <span className="font-mono text-xs font-bold text-muted-foreground">
-          {index !== undefined ? (index + 1 + (page - 1) * pageSize).toString().padStart(2, '0') : '-'}
-        </span>
-      ),
-      className: 'w-20 text-center'
-    },
-    {
-      header: '보고 제목',
-      accessor: (report) => (
-        <div className="flex flex-col gap-1 py-1">
-          <div className="flex items-center gap-2">
-            {!report.rptrInqDt && <span className="w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true" />}
-            <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
-              {report.rptTtl}
-            </span>
-          </div>
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
-            {report.memoRptYmd}
-          </span>
-        </div>
-      )
-    },
-    {
-      header: '작성자',
-      accessor: (report) => (
-        <span className="text-xs font-bold text-muted-foreground tracking-tight">
-          {report.wrterNm || report.userId || '-'}
-        </span>
-      ),
-      className: 'w-32'
-    },
-    {
-      header: '수신자',
-      accessor: (report) => (
-        <span className="text-xs font-bold text-muted-foreground tracking-tight">
-          {report.rptrNm || report.rptrId || '-'}
-        </span>
-      ),
-      className: 'w-32'
-    },
-    {
-      header: '상태',
-      accessor: (report) => (
-        <div className={cn(
-          "inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest transition-all",
-          // palette-frozen: bg-emerald-500/10 text-emerald-600 border-emerald-500/20 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
-          report.rptrInqDt ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" : "bg-muted text-muted-foreground border border-border"
-        )}>
-          {/*
-            [2026-08-28] '수신확인' → '열람됨'. 당시 서버는 열람 주체를 구분하지 않아 작성자가
-            자기 보고를 다시 열기만 해도 열람됨이 됐다.
-            [2026-09-25 DIP I7] 서버가 수신자의 첫 열람만 rptrInqDt 로 남기므로 이제 열람됨은
-            "받은 사람이 열어 봤다" 를 뜻한다(MemoReportService.readMemoReport).
-          */}
-          {report.rptrInqDt ? '열람됨' : '미열람'}
-        </div>
-      ),
-      className: 'w-36 text-center'
-    },
-    {
-      // [2026-10-01] 지시가 달린 보고를 목록에서 구분한다 — 응답에 이미 실려 오는데 상세를 열어야만 보였다.
-      header: '지시',
-      accessor: (report) => (report.drctnMttr?.trim()
-        ? <span className="inline-flex items-center rounded-md border border-border px-2 py-0.5 text-xs font-medium text-foreground">지시 있음</span>
-        : <span className="text-xs text-muted-foreground">없음</span>),
-      className: 'w-28 text-center'
-    }
-  ];
+  const columns = buildMemoReportColumns(page, pageSize);
 
   return (
     <WorkListPage
@@ -859,47 +763,19 @@ export default function MemoReportManagementClient() {
             <p className="py-6 text-sm text-muted-foreground">불러오는 중…</p>
           ) : (
             <div className="space-y-6 py-2">
-              {(attachmentRestriction || instructionRecovery || latestError || detailError || (canInstruct(detail) && !hasInstructionSnapshot)) && (
-                <div role={latestError ? 'alert' : 'status'} aria-label="메모 보고 재확인 안내" className="space-y-3 rounded-md border border-border bg-muted p-4 text-sm">
-                  <p>
-                    {attachmentRestriction || latestError || (instructionRecovery === 'review'
-                      ? '최신 본문과 첨부를 불러왔습니다. 내용을 확인한 다음 지시사항을 별도로 저장해 주세요.'
-                      : instructionRecovery === 'conflict'
-                        ? '본문이나 첨부가 변경되어 지시사항을 저장하지 않았습니다. 작성 중인 지시는 유지됩니다. 최신 내용을 불러와 다시 확인해 주세요.'
-                        : '보고의 본문과 첨부를 확인할 수 없어 지시사항을 저장할 수 없습니다. 최신 내용을 다시 불러와 주세요.')}
-                  </p>
-                  {!attachmentRestriction && <div className="flex flex-wrap gap-2">
-                    <Button type="button" variant="outline" size="sm" disabled={isLoadingLatest || isSavingInstruction} aria-busy={isLoadingLatest || undefined} onClick={() => void reloadLatest()}>
-                      최신 내용 불러오기
-                    </Button>
-                    {instructionRecovery === 'review' && (
-                      <Button type="button" size="sm" disabled={!hasInstructionSnapshot || isLoadingLatest || !!detailError || !!latestError || !canInstruct(detail)} onClick={() => setInstructionRecovery(null)}>
-                        내용을 확인했습니다
-                      </Button>
-                    )}
-                  </div>}
-                </div>
-              )}
-              <dl className="grid gap-3 rounded-md bg-muted p-4 sm:grid-cols-2">
-                <div>
-                  <dt className="text-xs text-muted-foreground">작성자</dt>
-                  <dd className="mt-1 text-sm font-semibold text-foreground">{detail?.wrterNm || detail?.userId || '-'}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-muted-foreground">수신자</dt>
-                  <dd className="mt-1 text-sm font-semibold text-foreground">{detail?.rptrNm || detail?.rptrId || '-'}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-muted-foreground">보고 일자</dt>
-                  <dd className="mt-1 text-sm font-semibold text-foreground tabular-nums">{detail?.memoRptYmd || '-'}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-muted-foreground">열람 기록</dt>
-                  <dd className="mt-1 text-sm font-semibold text-foreground tabular-nums">
-                    {detail?.rptrInqDt ? String(detail.rptrInqDt).replace('T', ' ').slice(0, 16) : '없음'}
-                  </dd>
-                </div>
-              </dl>
+              <MemoReportInstructionNotice
+                attachmentRestriction={attachmentRestriction}
+                instructionRecovery={instructionRecovery}
+                latestError={latestError}
+                detailError={detailError}
+                canInstruct={canInstruct(detail)}
+                hasInstructionSnapshot={hasInstructionSnapshot}
+                isLoadingLatest={isLoadingLatest}
+                isSavingInstruction={isSavingInstruction}
+                onReloadLatest={() => void reloadLatest()}
+                onConfirmReviewed={() => setInstructionRecovery(null)}
+              />
+              <MemoReportDetailMetadata detail={detail} />
 
               <section aria-labelledby="memo-report-body-heading" className="space-y-2">
                 <h3 id="memo-report-body-heading" className="text-sm font-bold text-foreground">보고 내용</h3>
@@ -1013,37 +889,12 @@ export default function MemoReportManagementClient() {
                 )}
               </section>
 
-              <section aria-labelledby="memo-report-attachments-heading" className="space-y-2">
-                <h3 id="memo-report-attachments-heading" className="text-sm font-bold text-foreground">첨부파일</h3>
-                {detail.attachments == null ? (
-                  <p className="text-sm text-muted-foreground">첨부 정보를 확인할 수 없습니다.</p>
-                ) : detail.attachments.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">첨부파일이 없습니다.</p>
-                ) : (
-                  <>
-                    <ul className="space-y-2">
-                      {detail.attachments.map((file, index) => {
-                        const name = file.orignlFileNm || '첨부파일';
-                        const key = `${file.atchFileSn}:${file.fileSn}`;
-                        return (
-                          <li key={`${key}:${index}`} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border p-3">
-                            <div className="min-w-0">
-                              <p className="break-words text-sm font-medium">{name}</p>
-                              <p className="text-xs text-muted-foreground">{file.fileExtsn || '형식 정보 없음'} · {file.fileMg == null ? '크기 정보 없음' : `${file.fileMg.toLocaleString('ko-KR')} bytes`}</p>
-                            </div>
-                            <Button type="button" variant="outline" size="sm" aria-label={`${name} 다운로드`} aria-busy={downloadingFile === key || undefined}
-                              disabled={!canDownloadAttachments || downloadingFile !== null || file.atchFileSn == null || file.fileSn == null}
-                              onClick={() => void downloadAttachment(file)}>
-                              {downloadingFile === key ? '내려받는 중…' : '다운로드'}
-                            </Button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                    {!canDownloadAttachments && <p className="text-xs text-muted-foreground">첨부파일 다운로드 권한이 없습니다.</p>}
-                  </>
-                )}
-              </section>
+              <MemoReportAttachmentsSection
+                detail={detail}
+                canDownloadAttachments={canDownloadAttachments}
+                downloadingFile={downloadingFile}
+                onDownloadAttachment={(file) => void downloadAttachment(file)}
+              />
 
               <section aria-labelledby="memo-report-instruction-heading" className="space-y-2">
                 <h3 id="memo-report-instruction-heading" className="text-sm font-bold text-foreground">지시사항</h3>

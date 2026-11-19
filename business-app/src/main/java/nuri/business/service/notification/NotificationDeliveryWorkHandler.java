@@ -7,7 +7,6 @@ import nuri.foundation.core.job.DurableWork;
 import nuri.foundation.core.job.DurableWorkHandler;
 import nuri.foundation.core.notification.NotificationPushPort;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
 /** A retry delivers the existing notification ID; it never inserts another inbox row. */
@@ -24,7 +23,6 @@ public class NotificationDeliveryWorkHandler implements DurableWorkHandler {
     @Override public String type() { return TYPE; }
 
     @Override
-    @Transactional(readOnly = true)
     public void execute(DurableWork work) {
         if (!TYPE.equals(work.type())) throw new IllegalArgumentException("Unexpected work type");
         NotificationDeliveryIntent intent = mapper.readValue(work.payload(), NotificationDeliveryIntent.class);
