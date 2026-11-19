@@ -232,6 +232,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 이 필요합니다}
       ALLOW_DEV_JWT_VERIFY_KEYS: "false"
       JWT_ACCEPT_LEGACY_HMAC:
+      # 내부 X-Verified-User HMAC 전용 시크릿(선택). 다중 Next 인스턴스이거나 ES256 전환 후 JWT_SECRET 을 걷을 때 지정하며, 비우면 JWT_SECRET 또는 프로세스 CSPRNG 임시 키로 동작한다.
+      INTERNAL_USER_FORWARD_SECRET:
       # BACKEND_ACTUATOR_URL 은 전달하지 않는다 — 현재 호출 경로(클라이언트 조회 → /actuator rewrite)에서 읽히지 않고,
       #   운영의 actuator 404 는 관리 포트 분리(W1-12)의 의도된 형상이다. 9090 연결은 next.config 가 금지한 권한 완화다.
     # 컨테이너 격리 — api 블록 주석과 같다.

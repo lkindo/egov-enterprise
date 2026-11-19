@@ -171,18 +171,18 @@
           "version": "19",
           "engine": "oracle19",
           "evidence": {
-            "runId": "oracle19-e053610e27b6-7ec49bb0",
-            "commit": "e053610e27b6c1c106e9b1a1b8bbd0daece8a42f",
-            "recordedAt": "2026-11-19T04:12:53.164+09:00",
-            "inputHash": "d6ced064af4a254cba333c922fcad0f4cc69b92d52d08e9dd54b871f435e28b9",
-            "modelHash": "03cd467ac9a04a7ebe99fa9c6fbbcf0d297e54c668a2ba1ae19ae9956c09f00d",
+            "runId": "oracle19-199fa5b3d91f-d000875a",
+            "commit": "199fa5b3d91f57e380549eecc8d249c4291d900e",
+            "recordedAt": "2026-11-19T18:35:58.477+09:00",
+            "inputHash": "0e6dbbbc4765062fa0ee0400ded7c81d435190e4de3be67fbcefc890172d106f",
+            "modelHash": "493bc4d063ac36802d8f62e13b13c8b90785c1ff317753a6e75add9dd37acd60",
             "image": "fugeritorg/oracle-19.3.0-ee:2025.0@sha256:6a29a3c7924de980b9cf10ef8c7e6120fe2db8e3fc32b2087aa59a845e4c63ac",
             "imageOrigin": "community:fugeritorg",
             "scope": "application-database",
             "composition": {
               "profile": "demo",
               "layout": "multi-module",
-              "compositionHash": "ad35389e749fee53d13a2427bf9683e1aa931b1044b32d5bac5e5aff045ab5e6"
+              "compositionHash": "d7ffac0354593603f7611ccc20a207348be76d9255ec867d5137f6c20e349f21"
             },
             "steps": {
               "verification": {
@@ -238,18 +238,18 @@
           "version": "23",
           "engine": "oracle",
           "evidence": {
-            "runId": "oracle-e053610e27b6-7f50d1b0",
-            "commit": "e053610e27b6c1c106e9b1a1b8bbd0daece8a42f",
-            "recordedAt": "2026-11-19T03:23:43.680+09:00",
-            "inputHash": "d6ced064af4a254cba333c922fcad0f4cc69b92d52d08e9dd54b871f435e28b9",
-            "modelHash": "03cd467ac9a04a7ebe99fa9c6fbbcf0d297e54c668a2ba1ae19ae9956c09f00d",
+            "runId": "oracle-199fa5b3d91f-6e3e4d23",
+            "commit": "199fa5b3d91f57e380549eecc8d249c4291d900e",
+            "recordedAt": "2026-11-19T16:35:46.174+09:00",
+            "inputHash": "0e6dbbbc4765062fa0ee0400ded7c81d435190e4de3be67fbcefc890172d106f",
+            "modelHash": "493bc4d063ac36802d8f62e13b13c8b90785c1ff317753a6e75add9dd37acd60",
             "image": "gvenzl/oracle-free:23-slim-faststart@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093",
             "imageOrigin": "community:gvenzl",
             "scope": "application-database",
             "composition": {
               "profile": "demo",
               "layout": "multi-module",
-              "compositionHash": "ad35389e749fee53d13a2427bf9683e1aa931b1044b32d5bac5e5aff045ab5e6"
+              "compositionHash": "d7ffac0354593603f7611ccc20a207348be76d9255ec867d5137f6c20e349f21"
             },
             "steps": {
               "verification": {
@@ -350,18 +350,18 @@
           "version": "11.4",
           "engine": "mariadb",
           "evidence": {
-            "runId": "mariadb-e053610e27b6-a4b5fe82",
-            "commit": "e053610e27b6c1c106e9b1a1b8bbd0daece8a42f",
-            "recordedAt": "2026-11-19T01:08:33.882+09:00",
-            "inputHash": "725320252f9541b09f196becea7b6f3e55c9606037d4878aabe31d121987c573",
-            "modelHash": "2a340ac9b6c505f4a3d1f60dbedff782cb87a7aa7bd1534ba81293dda2d26268",
+            "runId": "mariadb-199fa5b3d91f-eb0b1887",
+            "commit": "199fa5b3d91f57e380549eecc8d249c4291d900e",
+            "recordedAt": "2026-11-19T20:31:41.989+09:00",
+            "inputHash": "4aca593955a3b995797d7d3b2f94a3612cd914af671b179020c0a675a8a94e59",
+            "modelHash": "35a4029d1f20bdf41705c6653363452a84c9edf2b4ba4f4558fccc2caabaf905",
             "image": "mariadb:11.4@sha256:d1891ede5a559f1086f55053bb8cc1569b0298338c4d72d71725a7f74f6ba620",
             "imageOrigin": "official:docker-library",
             "scope": "application-database",
             "composition": {
               "profile": "demo",
               "layout": "multi-module",
-              "compositionHash": "990bb947be59d9f04c007748f8896436205454f43b46d31aafc578d62b56b26a"
+              "compositionHash": "d558d6f6fb0fe91ccf2c15158131d219c38cab3f6ebc067ae39f073163431629"
             },
             "steps": {
               "verification": {
@@ -455,18 +455,18 @@
           "version": "8.4",
           "engine": "mysql",
           "evidence": {
-            "runId": "mysql-e053610e27b6-3de3c0e5",
-            "commit": "e053610e27b6c1c106e9b1a1b8bbd0daece8a42f",
-            "recordedAt": "2026-11-19T01:45:55.546+09:00",
-            "inputHash": "d41493151444f60eebb1ddce5e207fa924ad9e4430a22dee1a73cc222df945c1",
-            "modelHash": "369d3d5772fdc3a52c680381a58e88f3243bcc1c8e561b4c0b6a3ba6ae8f166f",
+            "runId": "mysql-199fa5b3d91f-dae3980d",
+            "commit": "199fa5b3d91f57e380549eecc8d249c4291d900e",
+            "recordedAt": "2026-11-19T21:57:59.236+09:00",
+            "inputHash": "1b875d7a5182deb73a448418e27d645cb763fc0a130fe2dde6ea93fec84a7fe6",
+            "modelHash": "ae39a0bc86d820ac4f1c2b423f487c4adcde97309864213b0958e6745417653b",
             "image": "mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902",
             "imageOrigin": "official:docker-library",
             "scope": "application-database",
             "composition": {
               "profile": "demo",
               "layout": "multi-module",
-              "compositionHash": "4811668bee20264807f19ab214aed3911a6908ce7b89c4936ad66574c84715a4"
+              "compositionHash": "3d5b5c6ff8f3552ac8db3ca54b8723afcad7529ff748200728515e108d37ac55"
             },
             "steps": {
               "verification": {
@@ -565,18 +565,18 @@
           "version": "2022",
           "engine": "mssql",
           "evidence": {
-            "runId": "mssql-e053610e27b6-009d1b23",
-            "commit": "e053610e27b6c1c106e9b1a1b8bbd0daece8a42f",
-            "recordedAt": "2026-11-19T02:16:06.297+09:00",
-            "inputHash": "4723ecc32412501311a92bf0a501d5cc9d602b8db3f5ae9d0e4299b0976f9f9a",
-            "modelHash": "6cadbe589d58b6c4d3d789407c47c15385368cfca7ea08cad3af3b303c9b3c16",
+            "runId": "mssql-199fa5b3d91f-d4d90eeb",
+            "commit": "199fa5b3d91f57e380549eecc8d249c4291d900e",
+            "recordedAt": "2026-11-19T23:02:27.376+09:00",
+            "inputHash": "9be54c83ecf68e89f2e416a3dd0e82ad4d65ad275dd6ae0dc541a0fcb4e898c9",
+            "modelHash": "bdad6cc4d5494414afcd2d2158e4ac65e90460f0e5e0fb523db3b2527f761308",
             "image": "mcr.microsoft.com/mssql/server:2022-latest@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090",
             "imageOrigin": "official:mcr",
             "scope": "application-database",
             "composition": {
               "profile": "demo",
               "layout": "multi-module",
-              "compositionHash": "755654a294150429d8f440cbdf9c9eafe24dbcc36e43c0ae006d5e31641486b9"
+              "compositionHash": "e9f26896e3d747d4ab127fcef8e394a51a0d9148ca54c805ed819dae666b3abd"
             },
             "steps": {
               "verification": {
@@ -688,18 +688,18 @@
           "version": "11.4",
           "engine": "cubrid",
           "evidence": {
-            "runId": "cubrid-e053610e27b6-e2c02f08",
-            "commit": "e053610e27b6c1c106e9b1a1b8bbd0daece8a42f",
-            "recordedAt": "2026-11-19T02:49:54.510+09:00",
-            "inputHash": "5858cb4a5bd08dafcdc91b85be601f832dda78df184d1461d6c3a61582c07871",
-            "modelHash": "05ad072ddf71222bf14cb1437cdd2ba043f73d8479f1ad1f1e66219e1f21b906",
+            "runId": "cubrid-199fa5b3d91f-fad8fbf1",
+            "commit": "199fa5b3d91f57e380549eecc8d249c4291d900e",
+            "recordedAt": "2026-11-19T15:36:42.782+09:00",
+            "inputHash": "b53d032aed9489a802c4f4a2ae05c19f598f1e29e9499b4508b437f09adab93d",
+            "modelHash": "58ca0cf96b45dac4d0a94655026d10462ea0ec3a4facb3814bb4dcab2f279675",
             "image": "cubrid/cubrid:11.4@sha256:1248b77ad39888df9e064655937188ab99fe056ed7e35b57d06155a015dc1791",
             "imageOrigin": "community:cubrid",
             "scope": "application-database",
             "composition": {
               "profile": "demo",
               "layout": "multi-module",
-              "compositionHash": "b1a1f9d149a3a5630781eedd68355b665bc1986bb29a8d170d5f8c98c5ade45c"
+              "compositionHash": "ba057aa20d34460dbf72e58d837872441c52b21b845d214c96ac650ceeb3d6c8"
             },
             "steps": {
               "verification": {
