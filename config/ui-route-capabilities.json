@@ -3348,9 +3348,16 @@
       "status": "partial",
       "dataSource": "mixed",
       "supportedActions": [
-        "local-search",
+        "delete",
+        "mark-all-read",
+        "mark-read",
+        "navigate",
+        "paginate",
+        "refresh",
         "send",
-        "tab-filter"
+        "server-search",
+        "tab-filter",
+        "view-list"
       ],
       "profileOwners": [
         "collaboration",
@@ -3379,13 +3386,17 @@
           "candidateStatus": "live",
           "dataSource": "notifications-api+websocket",
           "actions": [
-            "local-search",
-            "tab-filter"
-          ],
-          "unsupportedVisibleActions": [
+            "delete",
+            "mark-all-read",
+            "mark-read",
+            "navigate",
+            "paginate",
             "refresh",
-            "row-options"
+            "server-search",
+            "tab-filter",
+            "view-list"
           ],
+          "unsupportedVisibleActions": [],
           "actorScope": "AUTHENTICATED",
           "visibleLabel": "알림 스트림",
           "primaryTask": true,
@@ -3394,6 +3405,7 @@
             "frontend/e2e/journeys/notifications.spec.ts",
             "frontend/src/app/admin/notifications/NotificationsClient.tsx",
             "frontend/src/app/admin/notifications/page.tsx",
+            "frontend/src/app/components/ui/__tests__/smart-notification-hub.test.tsx",
             "frontend/src/app/components/ui/smart-notification-hub.tsx",
             "frontend/src/lib/hooks/use-notifications.ts"
           ],
@@ -3403,8 +3415,7 @@
         },
         {
           "id": "notifications.dispatch",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "admin-notifications-dispatch-api",
           "actions": [
             "send"
@@ -3413,10 +3424,11 @@
           "actorScope": "ADMIN|SYSTEM",
           "visibleLabel": "알림 보내기",
           "primaryTask": false,
-          "evidenceLevel": "E3",
+          "evidenceLevel": "E4",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/notification/NotificationAdminApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/notification/NotificationAdminApiControllerTest.java",
+            "frontend/e2e/journeys/notifications.spec.ts",
             "frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx",
             "frontend/src/app/admin/notifications/__tests__/NotificationDispatchDialog.test.tsx",
             "frontend/src/app/admin/notifications/page.tsx",
@@ -3424,7 +3436,16 @@
           ],
           "decisionSafe": false,
           "lastVerifiedAt": "2026-08-21",
-          "owner": "product/UX + domain owner"
+          "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/notifications.spec.ts",
+              "test": "Notification: 관리자가 화면에서 보낸 알림이 수신자 알림함에 남는다",
+              "actions": [
+                "send"
+              ]
+            }
+          ]
         }
       ],
       "evidence": [
@@ -5300,7 +5321,11 @@
       "dataSource": "mixed",
       "supportedActions": [
         "export",
-        "view-list"
+        "export-recorded",
+        "refresh",
+        "set-period",
+        "view-list",
+        "view-recorded"
       ],
       "profileOwners": [
         "collaboration",
@@ -5324,12 +5349,15 @@
       "capabilities": [
         {
           "id": "stats.data-usage-trend",
-          "status": "unavailable",
-          "dataSource": "none",
-          "actions": [],
-          "unsupportedVisibleActions": [
-            "export"
+          "status": "partial",
+          "dataSource": "recorded-data-usage-api",
+          "actions": [
+            "export-recorded",
+            "refresh",
+            "set-period",
+            "view-recorded"
           ],
+          "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
           "visibleLabel": "자료이용현황 분석",
           "primaryTask": true,
@@ -5343,6 +5371,7 @@
             "business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
+            "frontend/src/app/admin/stats/board/__tests__/BoardStatsTabs.equivalence.test.tsx",
             "frontend/src/app/admin/stats/board/board-stats-series.ts",
             "frontend/src/app/admin/stats/data-usage/page.tsx",
             "frontend/src/extensions/board/stats-panels.ts"

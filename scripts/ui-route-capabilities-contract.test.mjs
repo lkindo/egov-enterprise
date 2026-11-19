@@ -392,8 +392,13 @@ test('notification stream separates API failure from empty and the dispatch demo
   assert.equal(notification.capabilities.some(({ id }) => id === 'notifications.dispatch-preview'), false);
   // [2026-09-06 DEC-OPS-042] 'send' 는 데모의 부활이 아니라 실기능이다 — POST /api/v1/admin/notifications/dispatch
   //   (ADMIN/SYSTEM, 수신자 esntlId 서버 해석)를 부르는 notifications.dispatch capability 다. 데모 preview 부재 검사는 그대로다.
-  assert.deepEqual(notification.supportedActions, ['local-search', 'send', 'tab-filter']);
-  assert.equal(notification.capabilities.some(({ id }) => id === 'notifications.dispatch'), true);
+  assert.deepEqual(notification.supportedActions,
+    ['delete', 'mark-all-read', 'mark-read', 'navigate', 'paginate', 'refresh', 'send', 'server-search', 'tab-filter', 'view-list']);
+  const stream = notification.capabilities.find(({ id }) => id === 'notifications.stream');
+  assert.deepEqual(stream.unsupportedVisibleActions, []);
+  const dispatch = notification.capabilities.find(({ id }) => id === 'notifications.dispatch');
+  assert.equal(dispatch.evidenceLevel, 'E4');
+  assert.equal(dispatch.status, 'live');
 });
 
 test('empty, missing, and duplicate route populations fail closed', () => {
@@ -559,12 +564,10 @@ test('unverified fields require a bounded review and demo cannot leak to core pr
 
   const falseLive = structuredClone(analysis.manifest);
   const notification = falseLive.routes.find(({ route }) => route === '/admin/notifications');
-  // [2026-09-06 DEC-OPS-038] dispatch-preview 데모는 걷었다. [2026-11-08] 화면에 없던 health-metrics 도 걷었다 — E3 까지만 있고
-  //   목업 원천·미지원 동작이 없는 알림 보내기를 live 로 올린다. 그래서 E4·E5 요건 하나만 붉어야 한다(예전 단언은 목업 규칙과의
-  //   '또는' 이라 E4 요건을 지워도 통과했다).
+  // 알림 보내기에서 왕복 근거를 빼고 E3만 남겨 live 판정의 E4·E5 요건을 직접 검증한다.
   const dispatch = notification.capabilities.find(({ id }) => id === 'notifications.dispatch');
-  dispatch.status = 'live';
-  notification.status = 'partial';
+  dispatch.evidenceLevel = 'E3';
+  delete dispatch.roundtrips;
   assert.match(
     validateRouteCapabilities(falseLive, repository).errors.join('\n'),
     /notifications\.dispatch: live requires current E4 or E5 evidence/,

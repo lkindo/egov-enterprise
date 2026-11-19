@@ -143,7 +143,7 @@ describe('통계 허브 게시물·자료 이용 탭', () => {
       ['게시물', BoardStatsPage, '/admin/stats/board', '콘텐츠 지표 분석', '콘텐츠 지표',
         [URL.bbs], 'stats_content_stats', PERIOD_EMPTY, '일자별 등록 건수(작성일 기준) · 예약·비밀·게시 종료 글과 사용 안 함 게시판 글 포함'],
       ['자료 이용', DataUsageStatsPage, '/admin/stats/data-usage', '자료이용현황 분석', '자료이용현황',
-        [URL.dataUsage], 'stats_data_usage', UNINSTRUMENTED_EMPTY, '수집되지 않는다'],
+        [URL.dataUsage], undefined, UNINSTRUMENTED_EMPTY, '수집되지 않는다'],
     ])('%s 화면은 A7 셸의 h1·현재 항목·그 탭의 조회·내보내기 파일명·빈 결과 문구·집계 기준을 지킨다',
       async (_name, Page, pathname, title, activeLabel, expectedUrls, filename, emptyMessage, basis) => {
         renderRoute(Page, pathname);
@@ -153,7 +153,11 @@ describe('통계 허브 게시물·자료 이용 탭', () => {
         expect(navButton(activeLabel)).toHaveAttribute('aria-current', 'page');
         expect(await screen.findByText(emptyMessage)).toBeInTheDocument();
         expect(requestedUrls()).toEqual(expectedUrls);
-        expect(exported.props).toMatchObject({ scope: 'loaded', filename });
+        if (filename) {
+          expect(exported.props).toMatchObject({ scope: 'loaded', filename });
+        } else {
+          expect(exported.props).toBeUndefined();
+        }
         expect(screen.getByTestId('report-basis')).toHaveTextContent(basis);
       });
   });

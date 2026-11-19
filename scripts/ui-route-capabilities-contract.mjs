@@ -36,17 +36,19 @@ const MENU_CENSUS_SOURCE = 'live tb_menu_info structural census only via scripts
 const KNOWN_ROUTE_CAPABILITIES = {
   '/admin/notifications': [
     {
-      id: 'notifications.stream', status: 'partial', candidateStatus: 'live', dataSource: 'notifications-api+websocket', actions: ['local-search', 'tab-filter'],
+      id: 'notifications.stream', status: 'partial', candidateStatus: 'live', dataSource: 'notifications-api+websocket', actions: ['delete', 'mark-all-read', 'mark-read', 'navigate', 'paginate', 'refresh', 'server-search', 'tab-filter', 'view-list'],
       // [2026-11-08] 진입 권한 NOTI_READ 의 기본 그룹에 ROLE_USER 가 있다 — 기본 설치에서 인증 사용자가 쓴다.
-      unsupportedVisibleActions: ['refresh', 'row-options'], actorScope: 'AUTHENTICATED', visibleLabel: '알림 스트림', primaryTask: true,
-      evidenceLevel: 'E3', evidence: ['frontend/src/app/admin/notifications/NotificationsClient.tsx', 'frontend/src/app/components/ui/smart-notification-hub.tsx', 'frontend/src/lib/hooks/use-notifications.ts', 'frontend/e2e/journeys/notifications.spec.ts'],
+      unsupportedVisibleActions: [], actorScope: 'AUTHENTICATED', visibleLabel: '알림 스트림', primaryTask: true,
+      evidenceLevel: 'E3', evidence: ['frontend/src/app/components/ui/__tests__/smart-notification-hub.test.tsx', 'frontend/src/app/admin/notifications/NotificationsClient.tsx', 'frontend/src/app/components/ui/smart-notification-hub.tsx', 'frontend/src/lib/hooks/use-notifications.ts', 'frontend/e2e/journeys/notifications.spec.ts'],
     },
     {
       // [2026-09-06 DEC-OPS-042] 관리자 발송이 실기능이 됐다 — POST /api/v1/admin/notifications/dispatch(ADMIN/SYSTEM).
-      //   live 는 E4(현재 UI→서버 왕복 산출물)가 있어야 하므로 partial + candidateStatus live 로 둔다(결재 허브와 같은 규칙).
-      id: 'notifications.dispatch', status: 'partial', candidateStatus: 'live', dataSource: 'admin-notifications-dispatch-api', actions: ['send'],
+      // 관리자 발송은 브라우저 요청과 수신자 알림함을 함께 확인한 왕복 시험에 결속한다.
+      id: 'notifications.dispatch', status: 'live', dataSource: 'admin-notifications-dispatch-api', actions: ['send'],
       unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: '알림 보내기', primaryTask: false,
-      evidenceLevel: 'E3', evidence: ['frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx', 'frontend/src/app/admin/notifications/__tests__/NotificationDispatchDialog.test.tsx', 'frontend/src/services/foundation/system/NotificationAdminService.ts', 'api-server/src/main/java/nuri/api/controller/business/notification/NotificationAdminApiController.java', 'api-server/src/test/java/nuri/api/controller/business/notification/NotificationAdminApiControllerTest.java'],
+      evidenceLevel: 'E4',
+      roundtrips: [{ spec: 'frontend/e2e/journeys/notifications.spec.ts', test: 'Notification: 관리자가 화면에서 보낸 알림이 수신자 알림함에 남는다', actions: ['send'] }],
+      evidence: ['frontend/e2e/journeys/notifications.spec.ts', 'frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx', 'frontend/src/app/admin/notifications/__tests__/NotificationDispatchDialog.test.tsx', 'frontend/src/services/foundation/system/NotificationAdminService.ts', 'api-server/src/main/java/nuri/api/controller/business/notification/NotificationAdminApiController.java', 'api-server/src/test/java/nuri/api/controller/business/notification/NotificationAdminApiControllerTest.java'],
     },
     // [2026-11-08] notifications.health-metrics('98.2% / ACTIVE')는 화면에 없다(코드 검색 0건) — 원장과 함께 걷었다.
     // [2026-09-23] notifications.dispatch-preview 는 DEC-OPS-038(2026-09-06)이 데모 발송 뷰와 함께
