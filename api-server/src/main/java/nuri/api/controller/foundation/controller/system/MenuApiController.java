@@ -131,7 +131,10 @@ public class MenuApiController {
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
-    @Operation(summary = "권한별 메뉴 할당 저장", description = "특정 권한에 메뉴들을 할당하거나 해제합니다.")
+    @Operation(summary = "이전 권한별 메뉴 할당 저장 (지원 종료)",
+            description = "이 경로는 400으로 응답합니다. 그룹의 최신 버전을 조회한 뒤 PUT /api/v1/admin/authorization/groups/{code}/grants를 사용하세요. "
+                    + "메뉴 구조와 함께 변경하려면 PUT /api/v1/admin/system/menus/structure를 사용하세요.",
+            deprecated = true)
     @PostMapping("/creation/{authorCode}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.MenuApiController#createMenuCreation')")
     public ResponseEntity<ApiResponse<Void>> createMenuCreation(

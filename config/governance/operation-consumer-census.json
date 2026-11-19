@@ -37,7 +37,7 @@
     {
       "operationId": "createMenuCreation",
       "category": "superseded-surface",
-      "note": "The legacy authority→menu \"creation\" surface predates the explicit NAVIGATION grants of ADR-0016. The menus-by-authority screen reads groups and their menus through getAuthors and getAuthorMenus, and grants are saved through the versioned authorization API or the menu structure draft. This handler calls the two-argument MenuService.insertMenuCreatList, which always rejects with INVALID_INPUT_VALUE and points to the unified authorization screen, so it cannot succeed. DEC-OPS-352 removed the dead MenuAdminService.saveMenuCreation; retiring the endpoint is a backend decision — see GAP-WIRING-001.",
+      "note": "The legacy authority→menu \"creation\" surface predates the explicit NAVIGATION grants of ADR-0016. It always returns 400 and now documents both versioned replacements as a deprecated OpenAPI operation. The menus-by-authority screen reads groups and their menus through getAuthors and getAuthorMenus. DEC-OPS-352 removed its frontend write consumer. Removal of the compatibility endpoint requires deployment consumer confirmation — see GAP-WIRING-001.",
       "supersededBy": [
         "authzReplaceGrants",
         "saveMenuStructure"

@@ -99,6 +99,17 @@ class OpenApiDocumentationTest {
   }
 
   @Test
+  @DisplayName("종료된 권한별 메뉴 할당은 OpenAPI에서 대체 API를 안내한다")
+  void legacyMenuAssignment_documentsItsReplacement() throws Exception {
+    var spec = objectMapper.readTree(mockMvc.perform(get("/v3/api-docs"))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
+    var operation = spec.path("paths").path("/api/v1/admin/system/menus/creation/{authorCode}").path("post");
+    assertThat(operation.path("deprecated").asBoolean()).isTrue();
+    assertThat(operation.path("description").asString()).contains("400", "/api/v1/admin/authorization/groups/{code}/grants");
+  }
+
+  @Test
   @DisplayName("서버 URL 과 경로를 이어 붙여도 API 기본 경로가 한 번만 나온다")
   void serverUrls_doNotRepeatThePathPrefix() throws Exception {
     tools.jackson.databind.JsonNode spec = objectMapper.readTree(mockMvc.perform(get("/v3/api-docs"))
