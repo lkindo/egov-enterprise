@@ -4448,6 +4448,10 @@
     "column_name": "ssn_cycl"
   },
   {
+    "table_name": "tb_user_info",
+    "column_name": "pswd_fail_nmtm"
+  },
+  {
     "table_name": "tb_user_log",
     "column_name": "crt_cnt"
   },
