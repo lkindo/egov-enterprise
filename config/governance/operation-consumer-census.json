@@ -15,21 +15,15 @@
   ],
   "expected": {
     "operationCount": 451,
-    "unwiredMax": 7,
+    "unwiredMax": 6,
     "screenOrphanMax": 24,
-    "ungatedWriteMax": 37
+    "ungatedWriteMax": 34
   },
   "entries": [
     {
       "operationId": "checkHealth",
       "category": "unwired",
       "note": "Application-level liveness surface. PD-OPS-003 decided (2026-09-08) to keep the production compose healthcheck pointed at /actuator/health, which also covers registered indicators (DB, disk) — this endpoint only confirms the application answers. Retiring it was considered and deferred because external load balancers or monitoring may already target the path; that needs deployment-environment confirmation, not a repository decision.",
-      "evidence": []
-    },
-    {
-      "operationId": "checkIdDplct",
-      "category": "unwired",
-      "note": "Login-ID duplicate pre-check. DEC-OPS-135 bound it to USER_CREATE, so it is no longer an anonymous enumeration path. The admin user form has no pre-check: insertUser rejects a taken ID with DUPLICATE_USER_ID on save. Wiring a pre-check into that form is feature work, not a missing consumer of an existing flow.",
       "evidence": []
     },
     {
@@ -43,7 +37,7 @@
     {
       "operationId": "createMenuCreation",
       "category": "superseded-surface",
-      "note": "The legacy authority→menu \"creation\" surface predates the explicit NAVIGATION grants of ADR-0016. The menus-by-authority screen reads groups and their menus through getAuthors and getAuthorMenus, and grants are saved through the versioned authorization API or the menu structure draft. This handler calls the two-argument MenuService.insertMenuCreatList, which always rejects with INVALID_INPUT_VALUE and points to the unified authorization screen, so it cannot succeed. DEC-OPS-352 removed the dead MenuAdminService.saveMenuCreation; retiring the endpoint is a backend decision — see GAP-WIRING-001.",
+      "note": "The legacy authority→menu \"creation\" surface predates the explicit NAVIGATION grants of ADR-0016. It always returns 400 and now documents both versioned replacements as a deprecated OpenAPI operation. The menus-by-authority screen reads groups and their menus through getAuthors and getAuthorMenus. DEC-OPS-352 removed its frontend write consumer. Removal of the compatibility endpoint requires deployment consumer confirmation — see GAP-WIRING-001.",
       "supersededBy": [
         "authzReplaceGrants",
         "saveMenuStructure"

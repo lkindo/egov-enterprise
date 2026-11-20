@@ -96,12 +96,16 @@ const KNOWN_ROUTE_CAPABILITIES = {
   '/approvals/draft': [
     {
       // [2026-10-13 DEC-OPS-302] 2026-09-16(434c2111f) 부터 이 화면은 결재함과 같은 기안 창(ApprovalDraftDialog)을 연다 — 기안
-      //   권한이 있으면 들어오자마자 열리고 상신하면 결재함으로 간다. 목업(demo)·비활성 상신(unavailable) 판정이 그 뒤에도 남아,
-      //   인증 시작 구성 '공통 기반 + 결재' 가 시연 기능을 싣는다고 말했다. live 는 E4 가 있어야 하므로 결재 허브와 같게
-      //   partial + candidateStatus live 다.
-      id: 'draft.compose', status: 'partial', candidateStatus: 'live', dataSource: 'approvals-api', actions: ['create', 'back'],
+      //   권한이 있으면 들어오자마자 열리고 상신하면 결재함으로 간다. 격리 브라우저가 이 화면에서 임시저장·결재함 복귀·이어 쓰기·상신과
+      //   실제 결재 목록을 확인했다(2026-11-19).
+      id: 'draft.compose', status: 'live', dataSource: 'approvals-api', actions: ['create', 'back'],
       unsupportedVisibleActions: [], actorScope: 'AUTHENTICATED', visibleLabel: '새 결재 기안', primaryTask: true,
-      evidenceLevel: 'E3', evidence: ['frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx', 'frontend/src/app/approvals/ApprovalDraftDialog.tsx', 'frontend/src/app/approvals/__tests__/ApprovalDraftHubClient.test.tsx', 'frontend/src/app/approvals/__tests__/ApprovalDraftDialog.test.tsx', 'frontend/src/services/business/user/approval/ApprovalUserService.ts'],
+      evidenceLevel: 'E4', evidence: ['frontend/e2e/journeys/approvals.spec.ts', 'frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx', 'frontend/src/app/approvals/ApprovalDraftDialog.tsx', 'frontend/src/app/approvals/__tests__/ApprovalDraftHubClient.test.tsx', 'frontend/src/app/approvals/__tests__/ApprovalDraftDialog.test.tsx', 'frontend/src/services/business/user/approval/ApprovalUserService.ts'],
+      roundtrips: [{
+        spec: 'frontend/e2e/journeys/approvals.spec.ts',
+        test: 'Workflow: 기안을 임시저장하고 닫았다가 이어 써서 상신한다',
+        actions: ['back', 'create'],
+      }],
     },
   ],
   '/admin/survey/polls/manage': [

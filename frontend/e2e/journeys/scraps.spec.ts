@@ -19,7 +19,7 @@ test.describe('Collaboration & Knowledge Extension', () => {
         await scrapPage.goto();
     });
 
-    test('게시글에서 스크랩한 내부 URL을 유지하며 이름과 설명을 수정한다', async ({ page, adminRequest }) => {
+    test('원본 게시글을 삭제한 뒤에도 스크랩 편집을 유지하고 원본 링크는 닫는다', async ({ page, adminRequest }) => {
         const bbsId = 'BBSMSTR_DDDDDDDDDDDD';
         const marker = randomUUID().slice(0, 8);
         const title = `E2E scrap source ${marker}`;
@@ -56,7 +56,7 @@ test.describe('Collaboration & Knowledge Extension', () => {
             await scrapPage.goto();
             let listed = await firstList;
             expect(listed.status()).toBe(200);
-            let result = (await listed.json()).data as { list: { scrapSn: number }[]; totalPage: number };
+            let result = (await listed.json()).data as { list: { scrapSn: number; targetAvailable?: boolean }[]; totalPage: number };
             // 목록은 서버 정렬을 보장하지 않으므로 새 스크랩이 첫 페이지에 있다고 가정하지 않는다.
             for (let pageNo = 1; pageNo < result.totalPage && !result.list.some(item => item.scrapSn === scrapSn); pageNo++) {
                 [listed] = await Promise.all([
@@ -71,6 +71,7 @@ test.describe('Collaboration & Knowledge Extension', () => {
                 result = (await listed.json()).data;
                 await expect(page.getByRole('button', { name: `${pageNo + 1} 페이지`, exact: true })).toHaveAttribute('aria-current', 'page');
             }
+            expect(result.list).toContainEqual(expect.objectContaining({ scrapSn, targetAvailable: true }));
             await page.getByRole('button', { name: title, exact: true }).click();
             const dialog = page.getByRole('dialog', { name: '스크랩 수정', exact: true });
             const url = dialog.getByRole('textbox', { name: /참조 URL/ });
@@ -96,6 +97,22 @@ test.describe('Collaboration & Knowledge Extension', () => {
             await expect(dialog.getByRole('textbox', { name: /스크랩명/ })).toHaveValue(editedName);
             await expect(dialog.getByRole('textbox', { name: '설명', exact: true })).toHaveValue(editedDescription);
             await expect(url).toHaveValue(canonicalPath);
+            await dialog.getByRole('button', { name: '취소', exact: true }).click();
+
+            expect((await adminRequest.delete(`/api/v1/boards/${bbsId}/posts/${pstSn}`)).status()).toBe(200);
+            pstSn = undefined;
+            const [refreshed] = await Promise.all([
+                page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/scraps'
+                    && response.request().method() === 'GET'),
+                page.getByRole('button', { name: '스크랩 목록 새로고침', exact: true }).click(),
+            ]);
+            expect(refreshed.status()).toBe(200);
+            expect((await refreshed.json()).data.list).toContainEqual(expect.objectContaining({
+                scrapSn, scrapNm: editedName, scrapExpln: editedDescription, scrapUrl: canonicalPath, targetAvailable: false,
+            }));
+            const row = page.getByRole('row').filter({ has: page.getByRole('button', { name: editedName, exact: true }) });
+            await expect(row.getByText('원본 글을 지금은 열 수 없어요', { exact: false })).toBeVisible();
+            await expect(row.locator(`a[href="${canonicalPath}"]`)).toHaveCount(0);
             await tracker.settled(page.locator('body'));
         } finally {
             // 열린 화면의 재조회가 삭제된 글·스크랩을 요청하지 않게 먼저 떠난다. 한 정리가 실패해도 나머지는 수행한다.

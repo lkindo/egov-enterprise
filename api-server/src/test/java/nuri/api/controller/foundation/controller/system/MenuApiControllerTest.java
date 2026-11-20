@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import nuri.business.service.menu.MenuService;
 import nuri.business.service.menu.dto.MenuDto;
 import nuri.business.service.menu.dto.MenuStructureDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import org.springframework.http.MediaType;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 
@@ -196,12 +198,16 @@ class MenuApiControllerTest extends BaseControllerTest {
     }
 
     @Test
-    @DisplayName("권한별 메뉴 할당 저장")
-    void testCreateMenuCreation() throws Exception {
+    @DisplayName("이전 권한별 메뉴 할당은 대체 경로를 안내하고 400으로 응답한다")
+    void legacyMenuAssignmentReturnsBadRequest() throws Exception {
+        String guidance = "권한 전체 목록과 버전을 다시 조회한 뒤 통합 권한 화면에서 저장해 주세요.";
+        doThrow(new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, guidance))
+                .when(menuService).insertMenuCreatList("ROLE_ADMIN", "1001,1002");
         mockMvc.perform(post("/api/v1/admin/system/menus/creation/ROLE_ADMIN")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(List.of(1001L, 1002L))))
-                .andExpect(status().isOk());
-        verify(menuService).insertMenuCreatList(eq("ROLE_ADMIN"), anyString());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(guidance));
+        verify(menuService).insertMenuCreatList("ROLE_ADMIN", "1001,1002");
     }
 }

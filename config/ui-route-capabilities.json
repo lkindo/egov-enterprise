@@ -4719,8 +4719,7 @@
       "capabilities": [
         {
           "id": "authorization.department-group-change",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "admin-authorization-api",
           "actions": [
             "assign",
@@ -4732,16 +4731,28 @@
           "visibleLabel": "부서 구성원 그룹 배정",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-19",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/AuthorizationApiController.java",
             "business-core/src/test/java/nuri/business/service/auth/AuthorizationAdministrationServiceTest.java",
+            "frontend/e2e/journeys/security-administration.spec.ts",
             "frontend/src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx",
             "frontend/src/app/admin/security/dept-authority/__tests__/SecurityDeptAuthorityClient.contract.test.tsx",
             "frontend/src/app/admin/security/dept-authority/page.tsx",
             "frontend/src/services/foundation/system/AuthorizationAdminService.ts"
+          ],
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/security-administration.spec.ts",
+              "test": "부서 그룹 추가·회수는 선택한 사용자에게만 적용하고 다른 그룹을 보존한다",
+              "actions": [
+                "assign",
+                "revoke",
+                "select-users"
+              ]
+            }
           ]
         },
         {
@@ -8091,11 +8102,12 @@
           "visibleLabel": "시스템 테마 및 디자인 토큰 제어",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E1",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-19",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/system/layout/LayoutManagerClient.tsx",
+            "frontend/src/app/admin/system/layout/__tests__/LayoutManagerClient.test.tsx",
             "frontend/src/app/admin/system/layout/page.tsx",
             "frontend/src/types/generated-permissions.ts"
           ]
@@ -8112,11 +8124,12 @@
           "visibleLabel": "실시간 시뮬레이터",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E1",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-19",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/system/layout/LayoutManagerClient.tsx",
+            "frontend/src/app/admin/system/layout/__tests__/LayoutManagerClient.test.tsx",
             "frontend/src/app/admin/system/layout/page.tsx"
           ]
         }
@@ -10556,7 +10569,7 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "partial",
+      "status": "live",
       "dataSource": "approvals-api",
       "supportedActions": [
         "back",
@@ -10584,8 +10597,7 @@
       "capabilities": [
         {
           "id": "draft.compose",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "approvals-api",
           "actions": [
             "back",
@@ -10595,8 +10607,9 @@
           "actorScope": "AUTHENTICATED",
           "visibleLabel": "새 결재 기안",
           "primaryTask": true,
-          "evidenceLevel": "E3",
+          "evidenceLevel": "E4",
           "evidence": [
+            "frontend/e2e/journeys/approvals.spec.ts",
             "frontend/src/app/approvals/ApprovalDraftDialog.tsx",
             "frontend/src/app/approvals/__tests__/ApprovalDraftDialog.test.tsx",
             "frontend/src/app/approvals/__tests__/ApprovalDraftHubClient.test.tsx",
@@ -10605,8 +10618,18 @@
             "frontend/src/services/business/user/approval/ApprovalUserService.ts"
           ],
           "decisionSafe": false,
-          "lastVerifiedAt": "2026-10-13",
-          "owner": "product/UX + domain owner"
+          "lastVerifiedAt": "2026-11-19",
+          "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/approvals.spec.ts",
+              "test": "Workflow: 기안을 임시저장하고 닫았다가 이어 써서 상신한다",
+              "actions": [
+                "back",
+                "create"
+              ]
+            }
+          ]
         }
       ],
       "evidence": [

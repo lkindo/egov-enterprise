@@ -1,6 +1,7 @@
 import { expect,test } from '../fixtures/browser-test';
 import { BoardMasterPage } from '../pages/BoardMasterPage';
 import { screenDate } from '../helpers/screen-date';
+import { buildSpecScope } from '../fixtures/error-detector';
 test.describe('Board Master Management (Admin Flow)', () => {
     // Inject Admin Session
     test.use({ storageState: 'playwright/.auth/admin.json' });
@@ -51,6 +52,78 @@ test.describe('Board Master Management (Admin Flow)', () => {
         await boardMasterPage.deactivateFromList(updatedName);
         await expect(row.getByText('사용 안 함', { exact: true })).toBeVisible({ timeout: 15000 });
     });
+
+    test('게시판 설정 충돌 시 최신 값과 내 입력을 다시 비교한 뒤 저장한다', async ({ page, adminPage, adminRequest, consoleGuard }, testInfo) => {
+        const boardName = `E2E_설정충돌_${Date.now()}`;
+        const originalDescription = '처음 저장한 소개';
+        const concurrentDescription = '다른 화면에서 먼저 저장한 소개';
+        const draftDescription = '내가 확인하고 다시 저장할 소개';
+        const boardMasters = '/api/v1/admin/system/board-masters';
+        const created = await adminRequest.post(boardMasters, {
+            data: {
+                bbsTtl: boardName, bbsExpln: originalDescription, bbsTypeCd: 'BBST02', bbsAtrbCd: 'BBSA01', tmpltId: 'TMPLT_LIST',
+                fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 3, atchPsbltyFileSz: 0, useYn: 'N',
+            },
+        });
+        expect(created.status()).toBe(201);
+        const bbsId = (await created.json()).data as string;
+        const endpoint = `${boardMasters}/${bbsId}`;
+        const settings = `/admin/community/boards/master/${bbsId}?tab=settings`;
+
+        try {
+            await page.goto(settings);
+            const panel = page.getByRole('tabpanel', { name: '설정' });
+            const title = panel.getByRole('textbox', { name: '게시판 명칭', exact: true });
+            const description = panel.getByRole('textbox', { name: '게시판 소개', exact: true });
+            const review = page.getByRole('dialog', { name: '변경 내용 확인' });
+            const openReview = panel.getByRole('button', { name: '변경 내용 확인' });
+            const save = review.getByRole('button', { name: '설정 저장' });
+            await expect(description).toHaveValue(originalDescription);
+            await description.fill(draftDescription);
+            await openReview.click();
+            await expect(review.getByRole('cell', { name: originalDescription, exact: true })).toBeVisible();
+
+            const concurrentTitle = `${boardName}_변경`;
+            await adminPage.goto(settings);
+            await new BoardMasterPage(adminPage).updateSettingsOnOperations({ name: concurrentTitle, description: concurrentDescription });
+
+            consoleGuard.expectErrors([{
+                id: 'E2E-BOARD-SETTINGS-VERSION-CONFLICT',
+                specScope: buildSpecScope(testInfo.file, testInfo.title),
+                channel: 'response', urlPattern: new RegExp(`${endpoint}$`),
+                messagePattern: null, method: 'PUT', status: 409, minOccurrences: 1, maxOccurrences: 1,
+                reason: '오래된 게시판 설정은 한 번 거부되고 최신 설정을 확인한 뒤에만 저장한다.',
+                expiresAt: '2027-01-30',
+            }]);
+            const saveThroughBrowser = async () => {
+                const [response] = await Promise.all([
+                    page.waitForResponse(res => new URL(res.url()).pathname === endpoint && res.request().method() === 'PUT'),
+                    save.click(),
+                ]);
+                return response.status();
+            };
+            expect(await saveThroughBrowser()).toBe(409);
+            await expect(review).toBeHidden();
+            await expect(panel.getByRole('alert')).toContainText('다른 사용자가 먼저 수정해 저장하지 않았습니다.');
+            await expect(title).toHaveValue(concurrentTitle);
+            await expect(description).toHaveValue(draftDescription);
+            const stillCurrent = await adminRequest.get(endpoint);
+            await expect(stillCurrent).toBeOK();
+            expect((await stillCurrent.json()).data).toMatchObject({ bbsTtl: concurrentTitle, bbsExpln: concurrentDescription });
+
+            await openReview.click();
+            await expect(review.getByRole('cell', { name: concurrentDescription, exact: true })).toBeVisible();
+            await expect(review.getByRole('cell', { name: draftDescription, exact: true })).toBeVisible();
+            expect(await saveThroughBrowser()).toBe(200);
+            await expect(review).toBeHidden();
+            const saved = await adminRequest.get(endpoint);
+            await expect(saved).toBeOK();
+            expect((await saved.json()).data).toMatchObject({ bbsTtl: concurrentTitle, bbsExpln: draftDescription });
+        } finally {
+            await expect(await adminRequest.delete(endpoint)).toBeOK();
+        }
+    });
+
     // [2026-10-23 ADR-0040 §5.4 B1] 예약 게시판의 예약 글을 운영 화면에서 찾아 일정 바꾸기로 공개하고, 종료일을 한꺼번에 바꾸면
     //   변경 이력에 게시 기간이 남는다. 날짜는 앱과 같은 Asia/Seoul 로 만든다 — 러너는 UTC 다.
     // [B2] 관리자에게는 상단 고정 권한(BOARD_PIN)이 기본 배정되지 않는다(결정 5) — 고정을 받는 게시판이어도 고정 단추가 없고

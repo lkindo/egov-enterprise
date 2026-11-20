@@ -14,7 +14,7 @@
 
 import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { Config } from '../config.js';
+import { Config, defaultOptions } from '../config.js';
 import { AuthTokenManager } from '../utils.js';
 import { hasPageResponse } from '../response-contracts.mjs';
 import { createHtmlReport, textSummary } from '../utils/report.js';
@@ -83,6 +83,7 @@ function selectedScenarios() {
 }
 
 export const options = {
+  summaryTrendStats: defaultOptions.summaryTrendStats,
   tags: {
     api: 'mixed',
     test_type: 'load-level',
@@ -227,16 +228,16 @@ function runUsersListTest(token) {
 function runPostCreateTest(token) {
   const url = `${Config.BASE_URL}${Config.API_PREFIX}/boards/posts`;
   const uniqueId = Math.random().toString(36).substring(2, 10);
+  const expiresOn = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10).replace(/-/g, '');
 
   // [2026-08-09 계약 정정] 종전 필드명은 eGov 레거시(nttSj/nttCn/ntceBgnde/ntceEndde)였다.
-  //   현행 BoardSaveRequest 의 필수 필드는 bbsId·pstTtl·pstCn 이고 기간은 pstBgngYmd/pstEndYmd 다.
+  //   현행 BoardSaveRequest 의 필수 필드는 bbsId·pstTtl·pstCn 이다. 테스트 게시글은 일주일 뒤 게시를 끝낸다.
   //   실측: 옛 필드명으로 POST 하면 **HTTP 400** 이다(검증 실패로 필수 3종이 비어 있다고 판정).
   const payload = {
     bbsId: 'BBSMSTR_AAAAAAAAAAAA',
     pstTtl: `[부하테스트] 게시글 ${uniqueId}`,
     pstCn: `k6 부하 테스트 자동 생성 게시글 (ID: ${uniqueId})`,
-    pstBgngYmd: '20260401',
-    pstEndYmd: '20261231',
+    pstEndYmd: expiresOn,
   };
 
   const response = http.post(url, JSON.stringify(payload), {
@@ -272,6 +273,7 @@ export function handleSummary(data) {
   const reportTitle = `k6 Load Test Report - ${loadLevel} Users (${timestamp})`;
 
   return {
+    [`test/load-tests/results/summary-${loadLevel}-${timestamp}.json`]: JSON.stringify(data, null, 2),
     [`test/load-tests/results/report-${loadLevel}-${timestamp}.html`]: createHtmlReport(data, {
       title: reportTitle,
       theme: 'dark',

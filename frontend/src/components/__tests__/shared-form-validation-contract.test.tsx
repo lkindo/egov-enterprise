@@ -43,6 +43,32 @@ function deferred() {
   return { promise, resolve, reject };
 }
 
+it('사용자 등록에서 유효한 아이디를 사전 조회하고 이전 입력의 응답은 표시하지 않는다', async () => {
+  const pending = deferred();
+  const checkLoginId = vi.fn<(value: string) => Promise<boolean>>()
+    .mockReturnValueOnce(pending.promise.then(() => true))
+    .mockResolvedValueOnce(true);
+  const onSubmit = vi.fn().mockResolvedValue(undefined);
+  const user = userEvent.setup();
+  renderWithClient(<UserManageForm mode="create" departments={[]} onSubmit={onSubmit} onCancel={vi.fn()} onCheckLoginId={checkLoginId} />);
+
+  const input = screen.getByLabelText(/사용자 아이디/);
+  const check = screen.getByRole('button', { name: '중복 확인' });
+  expect(check).toBeDisabled();
+  await user.type(input, 'current_user');
+  await user.click(check);
+  expect(checkLoginId).toHaveBeenCalledWith('current_user');
+  await user.clear(input);
+  await user.type(input, 'another_user');
+  await act(async () => { pending.resolve(); });
+  expect(screen.queryByText('이미 등록된 아이디입니다.')).not.toBeInTheDocument();
+
+  await user.click(check);
+  expect(await screen.findByText('이미 등록된 아이디입니다.')).toBeInTheDocument();
+  expect(checkLoginId).toHaveBeenLastCalledWith('another_user');
+  expect(onSubmit).not.toHaveBeenCalled();
+});
+
 type ContractCase = {
   name: string;
   render: (submit: () => Promise<void>) => ReactElement;

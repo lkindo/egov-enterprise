@@ -197,6 +197,44 @@ class UserSecurityStateConcurrencyIntegrationTest {
         }
     }
 
+    @Test
+    void loginLockAndExpiryDoNotSpendOrResetTheCurrentPasswordBudget() throws Exception {
+        jdbc.update("UPDATE tb_user_info SET lck_cnt=? WHERE esntl_id=?", MAX_FAILURES - 1, subject);
+        int sessionBefore = jdbc.queryForObject("SELECT ssn_cycl FROM tb_user_info WHERE esntl_id=?", Integer.class, subject);
+        runOverlapping(() -> {
+            authenticate(subject, List.of());
+            assertThatThrownBy(() -> users.changePassword(login(subject), REJECTED_PASSWORD, REPLACEMENT_PASSWORD))
+                    .isInstanceOf(nuri.business.domain.user.exception.CurrentPasswordMismatchException.class);
+        }, this::updateOwnProfile);
+        assertThat(jdbc.queryForObject("SELECT user_nm FROM tb_user_info WHERE esntl_id=?", String.class, subject)).isEqualTo(UPDATED_NAME);
+        assertThat(jdbc.queryForObject("SELECT lck_cnt FROM tb_user_info WHERE esntl_id=?", Integer.class, subject))
+                .isEqualTo(MAX_FAILURES - 1);
+        assertThat(jdbc.queryForObject("SELECT pswd_fail_nmtm FROM tb_user_info WHERE esntl_id=?", Integer.class, subject)).isEqualTo(1);
+
+        changeSecurity(SecurityChange.LOGIN_LOCK);
+        assertThat(jdbc.queryForObject("SELECT lck_yn FROM tb_user_info WHERE esntl_id=?", String.class, subject)).isEqualTo("Y");
+        assertThat(jdbc.queryForObject("SELECT ssn_cycl FROM tb_user_info WHERE esntl_id=?", Integer.class, subject))
+                .isEqualTo(sessionBefore);
+        assertThat(jdbc.queryForObject("SELECT pswd_fail_nmtm FROM tb_user_info WHERE esntl_id=?", Integer.class, subject)).isEqualTo(1);
+
+        jdbc.update("UPDATE tb_user_info SET lck_last_pnttm=? WHERE esntl_id=?",
+                java.time.LocalDateTime.now().minusDays(1), subject);
+        assertThat(authentication.login(LoginRequest.builder().userId(login(subject)).password(ORIGINAL_PASSWORD).build(),
+                "127.0.0.1")).isNotNull();
+        assertThat(jdbc.queryForObject("SELECT pswd_fail_nmtm FROM tb_user_info WHERE esntl_id=?", Integer.class, subject)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT lck_yn FROM tb_user_info WHERE esntl_id=?", String.class, subject)).isEqualTo("N");
+        authenticate(subject, List.of());
+        for (int attempt = 1; attempt < MAX_FAILURES; attempt++) {
+            assertThatThrownBy(() -> users.changePassword(login(subject), REJECTED_PASSWORD, REPLACEMENT_PASSWORD))
+                    .isInstanceOf(nuri.business.domain.user.exception.CurrentPasswordMismatchException.class);
+        }
+        assertThat(jdbc.queryForObject("SELECT lck_yn FROM tb_user_info WHERE esntl_id=?", String.class, subject)).isEqualTo("Y");
+        assertThat(jdbc.queryForObject("SELECT lck_cnt FROM tb_user_info WHERE esntl_id=?", Integer.class, subject)).isZero();
+        assertThat(jdbc.queryForObject("SELECT pswd_fail_nmtm FROM tb_user_info WHERE esntl_id=?", Integer.class, subject)).isNull();
+        assertThat(jdbc.queryForObject("SELECT ssn_cycl FROM tb_user_info WHERE esntl_id=?", Integer.class, subject))
+                .isEqualTo(sessionBefore + 1);
+    }
+
     @ParameterizedTest(name = "password change before {0}")
     @EnumSource(AdministrativeChange.class)
     void administrativeWritesPreserveTheConcurrentPasswordChange(AdministrativeChange change) throws Exception {

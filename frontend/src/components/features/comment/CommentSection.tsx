@@ -55,10 +55,13 @@ export default function CommentSection({ pstSn, bbsId, initialComments, totalCom
   const confirm = useConfirm();
   const { user } = useAuth();
 
+  const canCreateComment = boardInUse && acceptsNewComments && canPermission(user, 'COMMENT_CREATE');
+
   // 응답에 로그인 ID를 싣지 않는다. 서버 판정과 현재 기능권한을 모두 충족해야 버튼을 보인다.
   const canManageComment = (comment: CommentView, action: 'UPDATE' | 'DELETE') =>
-    canPermission(user, `COMMENT_${action}`)
-    && (action === 'UPDATE' ? comment.editable === true : comment.deletable === true);
+    action === 'UPDATE'
+      ? canPermission(user, 'COMMENT_UPDATE') && comment.editable === true
+      : canPermission(user, 'COMMENT_DELETE') && comment.deletable === true;
   
   // Optimistic State Management (React 19)
   const [optimisticComments, addOptimisticComment] = useOptimistic<CommentView[], OptimisticCommentAction>(
@@ -104,7 +107,7 @@ export default function CommentSection({ pstSn, bbsId, initialComments, totalCom
   const commentCount = optimisticComments.length + hiddenCommentCount;
 
   const handleCreate = (formData: FormData) => {
-    if (createPendingRef.current) return;
+    if (!canCreateComment || createPendingRef.current) return;
     const validated = createValidation.validate({ pstSn, bbsId, ansCn });
     if (!validated) return;
     createPendingRef.current = true;
@@ -266,7 +269,9 @@ export default function CommentSection({ pstSn, bbsId, initialComments, totalCom
       <div className="divide-y divide-border rounded-[var(--radius)] border border-border">
         {optimisticComments.length === 0 ? (
           <div className="px-[var(--cell-px)] py-6 text-center">
-            <p className="text-[length:var(--font-size-body)] text-muted-foreground">아직 등록된 댓글이 없습니다. 아래에서 첫 댓글을 남겨 주세요.</p>
+            <p className="text-[length:var(--font-size-body)] text-muted-foreground">
+              {canCreateComment ? '아직 등록된 댓글이 없습니다. 아래에서 첫 댓글을 남겨 주세요.' : '아직 등록된 댓글이 없습니다.'}
+            </p>
           </div>
         ) : (
             optimisticComments.map((comment) => (
@@ -408,6 +413,10 @@ export default function CommentSection({ pstSn, bbsId, initialComments, totalCom
       ) : !acceptsNewComments ? (
         <p role="note" className="pt-2 text-[length:var(--font-size-body)] text-muted-foreground">
           이 게시판은 새 댓글을 받지 않습니다.
+        </p>
+      ) : !canCreateComment ? (
+        user && <p role="note" className="pt-2 text-[length:var(--font-size-body)] text-muted-foreground">
+          댓글을 등록할 권한이 없습니다.
         </p>
       ) : (
       <motion.form

@@ -17,7 +17,7 @@ import { composerSourceFingerprint } from './project-composer.mjs';
 import { VENDOR_ENGINES, vendorEngineProblem } from './project-composer-vendor-engine.mjs';
 import { VENDOR_EVIDENCE_SCOPE, VENDOR_LEDGER_PATH, loadVendorLedger, vendorEvidenceProblems } from './project-composer-vendors.mjs';
 import { artifactStepEnvironment, runCommand, vendorArtifactFingerprint, vendorInputPath, vendorIntegrationStep } from './verify-reusable-artifact.mjs';
-import { gitOutput, readVendorInput, vendorEvidenceInputs } from './vendor-evidence-inputs.mjs';
+import { gitOutput, readVendorInput, vendorEvidenceContent, vendorEvidenceInputs } from './vendor-evidence-inputs.mjs';
 
 export { vendorEvidenceInputs };
 
@@ -25,16 +25,18 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const GENERATED_LOCK = 'reusable-base-lock.json';
 const GENERATION_REPORT = 'project-generation-report.json';
 const TEST_LEDGER = 'config/governance/vendor-test-ledger.json';
-const HASH_PREFIX = 'egov-vendor-evidence-inputs-v1\0';
+const HASH_PREFIX = 'egov-vendor-evidence-inputs-v2\0';
 /** 벤더 프로젝트의 보고서 폴더. 생성물 도구가 쓰고 이 명령이 읽는다. build 아래라 커밋되지 않는다. */
 export const vendorEvidenceReportDirectory = engineId => `build/reports/vendor-evidence/${engineId}`;
 
 const readJson = (root, file) => JSON.parse(readFileSync(join(root, file), 'utf8'));
 
-/** 줄 끝을 맞춘다. 체크아웃 설정이 다른 기계의 같은 커밋은 같은 값이어야 한다. */
+/** CI 분류와 같은 인증 내용을 결속한다. */
 export function vendorEvidenceHash(root, ledger, vendorId) {
   const hash = createHash('sha256').update(HASH_PREFIX);
-  for (const path of vendorEvidenceInputs(root, ledger, vendorId)) hash.update(path).update('\0').update(readVendorInput(root, path).replace(/\r\n/g, '\n')).update('\0');
+  for (const path of vendorEvidenceInputs(root, ledger, vendorId)) {
+    hash.update(path).update('\0').update(vendorEvidenceContent(path, readVendorInput(root, path))).update('\0');
+  }
   return hash.digest('hex');
 }
 

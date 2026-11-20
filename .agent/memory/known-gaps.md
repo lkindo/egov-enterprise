@@ -98,7 +98,7 @@ refresh_triggers:
 | GAP-DEPT-001 | P3 | open | department hierarchy | 부서 저장이 상위 연결을 지우던 경로는 닫혔고 이미 지워진 행은 저장소로 알 수 없다 — NULL 집계로 손상을 추정해 보정하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-FILE-001 | P3 | open | attachment cleanup | 첨부 실물 삭제는 영속 작업·제한 재시도로 처리하고 운영 저장소 복구·고아 후보 처리는 미완료다 — 고아 파일을 추정해 지우지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-LOGIN-001 | P3 | open | login policy | 로그인 정책의 `dpcn_prm_yn` 은 읽는 코드가 없고 제품은 단일 세션을 유지한다 — 폐기 규칙을 설계하기 전에는 화면에 열지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
-| GAP-LOGIN-002 | P2 | open | login lockout | 로그인 실패 잠금은 세션을 끊지 않는다(DEC-OPS-419) — 관리 작업 재확인의 잠금 조건과, 실패 횟수 공유로 세션 대입 잠금을 피하는 틈이 남았다(재기록 묶음). | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
+| GAP-LOGIN-002 | P2 | open | login lockout | 잠금 중 관리 작업 및 실패 횟수 분리의 PostgreSQL 통합 시험을 통과했다. 벤더 인증과 반복 잠금에 따른 신규 로그인 지연 위험이 남았다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-JWT-001 | P2 | open | jwt signing transition | ADR-0060 1차는 옛 HMAC 토큰도 받고 Next 에 서명 비밀이 남는다 — 1차 배포 7일 뒤 2차(HMAC 수용 끄기·Next 비밀 제거)를 재기록 묶음과 맞춰 연다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-MAIL-001 | P2 | open | mail delivery | 접수 시각으로 멈춤을 판정해 메일이 두 번 나갈 수 있고 사용자별 발송 한도가 없다 — 고칠 파일이 벤더 증거 입력이라 재기록 묶음에서 고친다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-COMPOSE-001 | P3 | open | composer degraded compositions | 기능 저하 생성물의 화면 일부가 사실과 다르게 말할 수 있다 — 목적지 이름 규칙 밖의 링크·상수를 거친 목적지와 문장 속 메뉴 이름은 아직 기계로 대조하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#composer) |

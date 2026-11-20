@@ -7,6 +7,7 @@ import nuri.business.domain.event.EventInfo;
 import nuri.business.domain.event.EventInfoRepository;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.security.util.SecurityUtil;
+import nuri.foundation.core.event.NotificationRequestedEvent;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import org.junit.jupiter.api.AfterEach;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -36,6 +38,7 @@ import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 /**
  * [V2_152] 행사 참가 신청 — 정원·마감·중복·반려 재신청 거부·본인 취소·관리 인가(H3). 신청·처리는 행사 행을 잠근 뒤 판정한다
@@ -130,10 +133,14 @@ class EventApplicationServiceTest {
         event(null, TOMORROW, TOMORROW);
         EventApplication applied = EventApplication.apply(5L, "me", LocalDateTime.now());
         given(applicationRepository.findByEvntSnAndAplcntId(5L, "me")).willReturn(Optional.of(applied));
-        assertThat(error(() -> service.apply(5L)).getErrorCode()).isEqualTo(CommonErrorCode.DUPLICATE_RESOURCE);
+        BusinessException duplicate = error(() -> service.apply(5L));
+        assertThat(duplicate.getErrorCode()).isEqualTo(CommonErrorCode.DUPLICATE_RESOURCE);
+        assertThat(duplicate).hasMessageContaining("이미 신청한 행사입니다");
 
         applied.reject(LocalDateTime.now());
-        assertThat(error(() -> service.apply(5L)).getErrorCode()).isEqualTo(CommonErrorCode.DUPLICATE_RESOURCE);
+        BusinessException rejected = error(() -> service.apply(5L));
+        assertThat(rejected.getErrorCode()).isEqualTo(CommonErrorCode.DUPLICATE_RESOURCE);
+        assertThat(rejected).hasMessageContaining("반려된 신청은 다시 신청할 수 없습니다");
 
         EventApplication cancelled = EventApplication.apply(5L, "me", LocalDateTime.now());
         cancelled.cancel(LocalDateTime.now());
@@ -176,9 +183,36 @@ class EventApplicationServiceTest {
         given(applicationRepository.findByEvntAplySnAndEvntSn(9L, 5L)).willReturn(Optional.of(applied));
 
         assertThat(error(() -> service.approve(5L, 9L, 2)).getErrorCode()).isEqualTo(CommonErrorCode.CONCURRENT_MODIFICATION);
+        assertThat(applied.status()).isEqualTo(EventApplicationStatus.APPLIED);
+        verifyNoInteractions(eventPublisher);
         service.approve(5L, 9L, 3);
 
         assertThat(applied.status()).isEqualTo(EventApplicationStatus.APPROVED);
-        verify(eventPublisher).publishEvent(any(Object.class));
+        assertApplicantNotification("행사 참가 신청이 승인되었습니다", "「워크숍」 참가 신청이 승인되었습니다.");
+    }
+
+    @Test
+    @DisplayName("행사 등록자는 승인된 신청을 반려하고 해당 신청자에게 반려를 알린다")
+    void ownerRejectsAnApprovedApplication() {
+        security.when(SecurityUtil::getCurrentLoginId).thenReturn(Optional.of("owner-login"));
+        event(null, TOMORROW, TOMORROW);
+        EventApplication application = EventApplication.apply(5L, "applicant", LocalDateTime.now());
+        application.approve(LocalDateTime.now());
+        ReflectionTestUtils.setField(application, "version", 3);
+        given(applicationRepository.findByEvntAplySnAndEvntSn(9L, 5L)).willReturn(Optional.of(application));
+
+        service.reject(5L, 9L, 3);
+
+        assertThat(application.status()).isEqualTo(EventApplicationStatus.REJECTED);
+        assertApplicantNotification("행사 참가 신청이 반려되었습니다", "「워크숍」 참가 신청이 반려되었습니다.");
+    }
+
+    private void assertApplicantNotification(String title, String content) {
+        ArgumentCaptor<NotificationRequestedEvent> sent = ArgumentCaptor.forClass(NotificationRequestedEvent.class);
+        verify(eventPublisher).publishEvent(sent.capture());
+        assertThat(sent.getValue())
+                .extracting(NotificationRequestedEvent::receiverEsntlId, NotificationRequestedEvent::title,
+                        NotificationRequestedEvent::content, NotificationRequestedEvent::linkUrl)
+                .containsExactly("applicant", title, content, "/events");
     }
 }

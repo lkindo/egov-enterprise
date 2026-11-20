@@ -399,9 +399,8 @@ public class UserService extends BaseAbstractService {
         /**
          * 비밀번호 변경
          *
-         * <p>[2026-11-16] 현재 비밀번호가 틀리면 로그인 실패와 같은 횟수를 올린다({@link #recordCurrentPasswordFailure}). 종전에는
-         * 세지 않아, 로그인한 세션(빼앗긴 토큰 포함)으로 현재 비밀번호를 한도 없이 대입할 수 있었다. 그 쓰기는 예외와 함께 커밋된다
-         * ({@code noRollbackFor}) — 로그인의 {@code BadCredentialsException} 과 같은 이유다.
+         * <p>현재 비밀번호가 틀리면 인증된 세션의 실패 횟수를 별도로 올린다({@link #recordCurrentPasswordFailure}).
+         * 실패 횟수는 오류 응답과 함께 커밋된다({@code noRollbackFor}).
          */
         @Transactional(noRollbackFor = nuri.business.domain.user.exception.CurrentPasswordMismatchException.class)
         public void changePassword(@NonNull String userId, @NonNull String oldPassword, @NonNull String newPassword) {
@@ -430,13 +429,13 @@ public class UserService extends BaseAbstractService {
                         throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "새 비밀번호는 현재 비밀번호와 달라야 합니다.");
                 }
                 user.updatePassword(encodedPassword);
-                // 현재 비밀번호를 증명했다 — 로그인 성공과 같이 연속 실패 횟수를 지운다.
+                // 비밀번호 변경으로 현재 비밀번호 실패를 초기화하고, 해당 자격의 로그인 실패도 지운다.
                 user.unlockAccount();
                 revokeRefreshTokens(user);
         }
 
         /**
-         * 현재 비밀번호 불일치를 로그인 실패 횟수에 더하고, 한도에 닿으면 잠근 뒤 {@link CurrentPasswordMismatchException} 을 던진다.
+         * 현재 비밀번호 불일치를 전용 횟수에 더하고, 한도에 닿으면 잠근 뒤 {@link CurrentPasswordMismatchException} 을 던진다.
          *
          * <p>로그인 인증과 같은 규칙이다(DEC-OPS-354). 횟수는 행 잠금 아래의 현재 값으로 올린다 — 잠금 없이 읽은 값을 올려 저장하면
          * 동시 요청의 증가가 서로를 덮는다. 이미 잠겨 있으면 횟수를 더 올리지 않는다(고정창). 잠글 때 세션 차수를 올려 그 전에 발급된
@@ -449,11 +448,12 @@ public class UserService extends BaseAbstractService {
                 if (!java.util.Objects.equals(observedPassword, user.getPswd()) || isLockedNow(user)) {
                         throw new BusinessException(UserErrorCode.INVALID_PASSWORD);
                 }
-                user.incrementLockCount();
-                Integer failures = user.getLckCnt();
-                boolean locked = maxLoginFailures > 0 && failures != null && failures >= maxLoginFailures;
+                int failures = user.incrementCurrentPasswordFailures();
+                boolean locked = maxLoginFailures > 0 && failures >= maxLoginFailures;
                 if (locked) {
                         user.lockAccount();
+                        // 이 실패 주기는 잠금으로 끝난다. 잠금이 풀리면 새 횟수로 시작한다.
+                        user.clearCurrentPasswordFailures();
                         log.warn("Account locked after repeated current-password failures (failures={}, lockMinutes={})",
                                         failures, lockMinutes);
                 }
@@ -714,6 +714,7 @@ public class UserService extends BaseAbstractService {
                 authorizationAdministration.authorizeProtectedAccountChange(user.getEsntlId());
                 refreshForUpdateOrThrow(user);
                 user.unlockAccount();
+                user.clearCurrentPasswordFailures();
         }
 
         /**

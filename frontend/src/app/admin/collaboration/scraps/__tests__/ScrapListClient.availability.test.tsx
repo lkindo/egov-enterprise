@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  *
  * [2026-11-17 평가 후속] 스크랩은 주소만 보관해, 원본 글이 삭제·비공개 전환·게시 기간 종료가 되어도 목록에서는 알 수 없었다.
  * 서버가 게시판 글 스크랩마다 열람 판정을 담아 주고(false = 지금은 열 수 없음, null = 외부·일반 주소라 판정 대상 아님), 화면은
- * false 일 때만 안내를 붙인다. 판정이 없는(null) 행에 안내를 붙이면 외부 주소까지 '열 수 없음' 으로 잘못 말한다.
+ * false이면 주소를 텍스트로 보여 주고 안내를 붙인다. true와 null인 행에는 사용할 수 있는 링크를 표시한다.
  */
 const mocks = vi.hoisted(() => ({ getMyScraps: vi.fn() }));
 
@@ -63,7 +63,7 @@ describe('스크랩 목록 — 원본 글 열람 가능 여부', () => {
     vi.clearAllMocks();
   });
 
-  it('서버가 열 수 없다고 판정한 게시글 스크랩에만 안내를 붙인다 — 열리는 글·외부 주소에는 붙이지 않는다', async () => {
+  it('열 수 없는 게시글은 안내와 주소를 표시하고 열 수 있는 주소는 링크로 표시한다', async () => {
     mocks.getMyScraps.mockResolvedValue({
       list: [
         { scrapSn: 1, scrapNm: '닫힌 글', scrapUrl: '/cop/bbs/selectArticleDetail?bbsId=B1&pstSn=9', useYn: 'Y', targetAvailable: false },
@@ -76,8 +76,15 @@ describe('스크랩 목록 — 원본 글 열람 가능 여부', () => {
     renderList();
 
     await waitFor(() => expect(screen.getByTestId('row-1')).toBeInTheDocument());
-    expect(screen.getByTestId('row-1')).toHaveTextContent(NOTICE);
-    expect(screen.getByTestId('row-2')).not.toHaveTextContent(NOTICE);
-    expect(screen.getByTestId('row-3')).not.toHaveTextContent(NOTICE);
+    const unavailable = screen.getByTestId('row-1');
+    const available = screen.getByTestId('row-2');
+    const external = screen.getByTestId('row-3');
+    expect(unavailable).toHaveTextContent(NOTICE);
+    expect(within(unavailable).getByText('/cop/bbs/selectArticleDetail?bbsId=B1&pstSn=9')).toBeVisible();
+    expect(within(unavailable).queryByRole('link')).not.toBeInTheDocument();
+    expect(available).not.toHaveTextContent(NOTICE);
+    expect(within(available).getByRole('link')).toHaveAttribute('href', '/admin/community/boards/detail?bbsId=B1&pstSn=8');
+    expect(external).not.toHaveTextContent(NOTICE);
+    expect(within(external).getByRole('link')).toHaveAttribute('href', 'https://example.com/a');
   });
 });

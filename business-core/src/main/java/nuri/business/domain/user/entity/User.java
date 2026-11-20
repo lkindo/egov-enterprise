@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.jspecify.annotations.NonNull;
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -19,6 +20,7 @@ import java.util.Objects;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
+    private static final BigInteger MAX_CURRENT_PASSWORD_FAILURES = BigInteger.valueOf(Integer.MAX_VALUE);
 
     @Id
     @Column(name = "esntl_id", length = 20)
@@ -61,6 +63,11 @@ public class User extends BaseEntity implements Serializable {
     private String lckYn = "N";
 
     private Integer lckCnt;
+
+    /** 인증된 세션의 현재 비밀번호 불일치 횟수. 기존 행의 NULL은 0회다. */
+    @Getter(AccessLevel.NONE)
+    @Column(name = "pswd_fail_nmtm", precision = 10, scale = 0)
+    private BigInteger pswdFailNmtm;
 
     private LocalDateTime lckLastPnttm;
 
@@ -232,6 +239,7 @@ public class User extends BaseEntity implements Serializable {
         this.pswd = Objects.requireNonNull(pswd);
         this.chgPswdLastDt = LocalDateTime.now();
         this.tmprPswdYn = "N";
+        clearCurrentPasswordFailures();
     }
 
     /** 관리자가 정한 비밀번호로 바꾸고, 본인이 다시 바꿔야 하는 임시 비밀번호로 표시한다(결정 18). */
@@ -269,6 +277,16 @@ public class User extends BaseEntity implements Serializable {
         } else {
             this.lckCnt++;
         }
+    }
+
+    public int incrementCurrentPasswordFailures() {
+        BigInteger count = pswdFailNmtm == null ? BigInteger.ZERO : pswdFailNmtm;
+        pswdFailNmtm = count.add(BigInteger.ONE).min(MAX_CURRENT_PASSWORD_FAILURES);
+        return pswdFailNmtm.intValueExact();
+    }
+
+    public void clearCurrentPasswordFailures() {
+        pswdFailNmtm = null;
     }
 
     public void updateStatus(String status) {

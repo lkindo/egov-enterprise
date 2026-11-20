@@ -276,9 +276,7 @@ test.describe('Enterprise Workflow & Productivity', () => {
             expect(me.userNm).toBeTruthy();
             expect(approver.esntlId).not.toBe(me.esntlId);
 
-            await page.goto('/approvals');
-            await expect(page.getByRole('heading', { name: '결재 허브' }).first()).toBeVisible();
-            await page.getByRole('button', { name: '새 결재 기안' }).click();
+            await page.goto('/approvals/draft');
             const dialog = page.getByRole('dialog', { name: '새 결재 기안' });
             await expect(dialog).toBeVisible();
             await dialog.getByLabel('제목 (필수)').fill(documentTitle);
@@ -310,11 +308,13 @@ test.describe('Enterprise Workflow & Productivity', () => {
             // 2) 닫기 — 저장했으므로 버릴 입력을 묻지 않고 바로 닫힌다.
             await dialog.getByRole('button', { name: '취소', exact: true }).click();
             await expect(page.getByRole('dialog')).toHaveCount(0);
+            await page.getByRole('link', { name: '결재함으로', exact: true }).click();
+            await expect(page).toHaveURL(/\/approvals$/);
 
-            // 3) 다시 열면 묻지 않고 빈 기안으로 시작하며, 목록에서 골라 이어 쓴다.
+            // 3) 기안 전용 화면에 다시 들어가 빈 기안의 목록에서 골라 이어 쓴다.
             const [reopenList] = await Promise.all([
                 page.waitForResponse(response => response.request().method() === 'GET' && new URL(response.url()).pathname === '/api/v1/approvals/temporary-drafts'),
-                page.getByRole('button', { name: '새 결재 기안' }).click(),
+                page.goto('/approvals/draft'),
             ]);
             expect(reopenList.ok()).toBe(true);
             await expect(dialog).toBeVisible();
@@ -345,6 +345,7 @@ test.describe('Enterprise Workflow & Productivity', () => {
             expect(submittedUrl.searchParams.get('temporaryDraftVersion')).toBe(String(savedDraft.version));
             expect(submitted.request().postDataJSON().stages).toEqual([{ kind: 'APPROVAL', approverIds: [approver.esntlId] }]);
             await expect(dialog).toBeHidden();
+            await expect(page).toHaveURL(/\/approvals$/);
 
             // 5) 상신한 임시저장은 서버에서도, 기안 창의 목록에서도 사라진다.
             expect((await listTemporaryDrafts()).some(draft => draft.temporaryDraftSn === savedDraft.temporaryDraftSn)).toBe(false);
