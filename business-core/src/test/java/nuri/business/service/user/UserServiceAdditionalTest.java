@@ -12,7 +12,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.math.BigInteger;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -269,13 +271,14 @@ class UserServiceAdditionalTest {
     }
 
     @org.junit.jupiter.api.Nested
-    @DisplayName("현재 비밀번호 불일치는 로그인 실패와 같은 횟수로 센다(2026-11-16)")
+    @DisplayName("현재 비밀번호 불일치는 로그인 실패와 별도로 센다")
     class CurrentPasswordFailures {
 
         @Test
-        @DisplayName("한 번 틀리면 행 잠금 아래에서 횟수만 올리고 세션은 끊지 않는다 — 실패 타입은 롤백에서 빠진다")
+        @DisplayName("한 번 틀리면 행 잠금 아래에서 전용 횟수만 올리고 세션은 끊지 않는다")
         void countsUnderRowLockWithoutRevokingSessions() throws Exception {
-            User user = createBaseUser("testUser").pswd("encodedOld").lckCnt(1).build();
+            userService.useLoginFailureLimits(5, 15);
+            User user = createBaseUser("testUser").pswd("encodedOld").lckCnt(4).build();
             when(userRepository.findById("testUser")).thenReturn(Optional.of(user));
             when(passwordEncoder.matches("wrong", "encodedOld")).thenReturn(false);
 
@@ -283,7 +286,8 @@ class UserServiceAdditionalTest {
                     .isInstanceOf(nuri.business.domain.user.exception.CurrentPasswordMismatchException.class)
                     .hasFieldOrPropertyWithValue("errorCode", UserErrorCode.INVALID_PASSWORD);
 
-            assertThat(user.getLckCnt()).isEqualTo(2);
+            assertThat(user.getLckCnt()).isEqualTo(4);
+            assertThat(user).hasFieldOrPropertyWithValue("pswdFailNmtm", BigInteger.ONE);
             assertThat(user.isLocked()).isFalse();
             var order = inOrder(userRepository);
             order.verify(userRepository).refreshForUpdate(user);
@@ -299,17 +303,19 @@ class UserServiceAdditionalTest {
         }
 
         @Test
-        @DisplayName("한도에 닿으면 잠그고 그 전에 발급된 세션 차수를 올린다")
+        @DisplayName("전용 횟수가 한도에 닿으면 잠그고 그 전에 발급된 세션 차수를 올린다")
         void locksAndAdvancesSessionCycleAtTheLimit() {
             userService.useLoginFailureLimits(5, 15);
-            User user = createBaseUser("testUser").pswd("encodedOld").lckCnt(4).build();
+            User user = createBaseUser("testUser").pswd("encodedOld").lckCnt(1).build();
+            ReflectionTestUtils.setField(user, "pswdFailNmtm", BigInteger.valueOf(4));
             when(userRepository.findById("testUser")).thenReturn(Optional.of(user));
             when(passwordEncoder.matches("wrong", "encodedOld")).thenReturn(false);
 
             assertThatThrownBy(() -> userService.changePassword("testUser", "wrong", "newPassword"))
                     .isInstanceOf(nuri.business.domain.user.exception.CurrentPasswordMismatchException.class);
 
-            assertThat(user.getLckCnt()).isEqualTo(5);
+            assertThat(user.getLckCnt()).isEqualTo(1);
+            assertThat(user).hasFieldOrPropertyWithValue("pswdFailNmtm", null);
             assertThat(user.isLocked()).isTrue();
             assertThat(user.getLckLastPnttm()).isNotNull();
             var order = inOrder(userRepository);
