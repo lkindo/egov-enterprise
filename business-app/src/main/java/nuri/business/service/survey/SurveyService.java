@@ -47,10 +47,11 @@ public class SurveyService {
 
     // 설문 템플릿
     public Page<SurveyTemplateDto> getTmplatList(String keyword, Pageable pageable) {
+        Pageable page = SurveyPageSort.newestFirst(Objects.requireNonNull(pageable), "srvyTmpltSn");
         if (keyword == null || keyword.isEmpty()) {
-            return tmplatRepository.findAll(Objects.requireNonNull(pageable)).map(surveyTemplateMapper::toDto);
+            return tmplatRepository.findAll(page).map(surveyTemplateMapper::toDto);
         }
-        return tmplatRepository.findBySrvyTmpltTypeCdContaining(keyword, Objects.requireNonNull(pageable))
+        return tmplatRepository.findBySrvyTmpltTypeCdContaining(keyword, page)
                 .map(surveyTemplateMapper::toDto);
     }
 
@@ -108,7 +109,7 @@ public class SurveyService {
         // [2026-10-01 결정 21] 작성 중인 설문은 설문을 고치는 사람(SURVEY_UPDATE_ALL)에게만 보인다.
         boolean editor = canEditSurveys();
         boolean noKeyword = keyword == null || keyword.isEmpty();
-        Pageable page0 = Objects.requireNonNull(pageable);
+        Pageable page0 = SurveyPageSort.newestFirst(Objects.requireNonNull(pageable), "srvySn");
         Page<SurveyInfoDto> page = (editor
                 ? (noKeyword ? infoRepository.findAll(page0) : infoRepository.findBySrvyTtlContaining(keyword, page0))
                 : (noKeyword ? infoRepository.findByRlsYn("Y", page0) : infoRepository.findByRlsYnAndSrvyTtlContaining("Y", keyword, page0)))

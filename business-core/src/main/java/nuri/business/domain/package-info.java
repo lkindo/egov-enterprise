@@ -1,16 +1,11 @@
 /**
- * 도메인 엔티티 공통 Hibernate 메타데이터 선언.
+ * 도메인 엔티티 공통 패키지.
  *
- * <p>소프트삭제 동적 필터 정의({@code softDeleteFilter})를 이 패키지 레벨에 중앙 선언한다.
- * 개별 소프트삭제 대상 엔티티는 {@code @Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")}
- * 만 선언하면 되며, 필터의 활성/비활성은 {@code nuri.business.core.softdelete.SoftDeleteAspect} 가
- * 서비스/트랜잭션 경계에서 제어한다.
+ * <p>논리 삭제({@code use_yn})는 질의마다 조건으로 가린다 — 살아 있는 행만 볼 질의는 {@code useYn = 'Y'} 를 쓰고, 삭제 행까지
+ * 볼 관리자 경로는 그 조건을 빼는 것을 메서드 이름·인자로 드러낸다(예: {@code findArticleDetailIncludingDeleted}).
  *
- * <p>이전에는 {@code Board} 엔티티가 {@code @FilterDef} 를 호스팅하여 {@code Comment} 등 다른
- * 엔티티가 암묵적으로 의존했으나, 여기로 중앙화하여 결합을 제거했다.
+ * <p>[2026-11-21] 종전에는 이 패키지가 Hibernate 필터({@code softDeleteFilter})를 정의하고 서비스 경계 애스펙트가 켰다.
+ * 애스펙트가 트랜잭션보다 바깥에서 돌아 첫 서비스 진입에서는 켜지 못하고 같은 트랜잭션에서 다른 서비스를 부른 뒤부터만 켜져,
+ * 같은 질의가 호출 경로에 따라 삭제 행을 보이거나 감췄다. 모든 질의가 이미 조건을 명시하고 있어 필터를 걷었다.
  */
-@org.hibernate.annotations.FilterDef(
-        name = "softDeleteFilter",
-        parameters = @org.hibernate.annotations.ParamDef(name = "useYn", type = String.class)
-)
 package nuri.business.domain;

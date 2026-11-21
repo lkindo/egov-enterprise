@@ -6,7 +6,7 @@ vi.mock('next/config', () => ({
 }));
 
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { AuthProvider, useAuth } from '../AuthContext';
+import { AuthProvider, TRANSIENT_AUTH_RETRY_DELAYS_MS, useAuth } from '../AuthContext';
 import { authService } from '@/services/foundation/auth/authService';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
@@ -333,5 +333,85 @@ describe('AuthContext', () => {
     await act(async () => { window.dispatchEvent(new Event(AUTHORIZATION_CHANGED_EVENT)); });
     await act(async () => finishOld({ ...revoked, permissions: ['EXAMPLE_UPDATE'], authorizationVersion: 'old' }));
     expect(result.current.user).toEqual(revoked);
+  });
+
+  it('일시 장애(503·연결 끊김)로 현재 사용자 확인이 실패하면 사용자·조회 캐시를 지우지 않고 다시 물어 회복한다', async () => {
+    const signedIn = { id: 'u1', name: 'User', groups: ['USER'], permissions: [], authorizationVersion: 'v1' };
+    vi.mocked(authService.getCurrentUser).mockReset().mockResolvedValueOnce(signedIn);
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.user?.id).toBe('u1'));
+    queryClient.setQueryData(['private-records'], ['draft-context']);
+
+    vi.useFakeTimers();
+    try {
+      vi.mocked(authService.getCurrentUser)
+        .mockRejectedValueOnce({ response: { status: 503 } })
+        .mockRejectedValueOnce(Object.assign(new Error('Network Error'), { code: 'ERR_NETWORK' }))
+        .mockResolvedValueOnce(signedIn);
+      await act(async () => { await result.current.checkAuth(); });
+
+      expect(result.current.user?.id).toBe('u1');
+      expect(queryClient.getQueryData(['private-records'])).toEqual(['draft-context']);
+
+      await act(async () => { await vi.advanceTimersByTimeAsync(TRANSIENT_AUTH_RETRY_DELAYS_MS[0]); });
+      expect(result.current.user?.id).toBe('u1');
+      await act(async () => { await vi.advanceTimersByTimeAsync(TRANSIENT_AUTH_RETRY_DELAYS_MS[1]); });
+
+      expect(authService.getCurrentUser).toHaveBeenCalledTimes(4);
+      expect(result.current.user?.id).toBe('u1');
+      expect(queryClient.getQueryData(['private-records'])).toEqual(['draft-context']);
+      await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+      expect(authService.getCurrentUser).toHaveBeenCalledTimes(4);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('세션이 끝났다는 답(401)이면 지금처럼 사용자와 조회 캐시를 지운다', async () => {
+    const signedIn = { id: 'u1', name: 'User', groups: ['USER'], permissions: [], authorizationVersion: 'v1' };
+    vi.mocked(authService.getCurrentUser).mockReset().mockResolvedValueOnce(signedIn);
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.user?.id).toBe('u1'));
+    queryClient.setQueryData(['private-records'], ['previous-account']);
+
+    vi.mocked(authService.getCurrentUser).mockRejectedValueOnce({ response: { status: 401 } });
+    await act(async () => { await result.current.checkAuth(); });
+
+    expect(result.current.user).toBeNull();
+    expect(queryClient.getQueryData(['private-records'])).toBeUndefined();
+  });
+
+  it('다른 탭 로그인·권한 변경 신호 뒤의 확인은 답을 받지 못해도 이전 사용자와 캐시를 남기지 않는다', async () => {
+    const signedIn = { id: 'u1', name: 'User', groups: ['ADMIN'], permissions: ['EXAMPLE_UPDATE'], authorizationVersion: 'v1' };
+    for (const signal of ['other-tab-signed-in', 'authorization-changed'] as const) {
+      vi.mocked(authService.getCurrentUser).mockReset().mockResolvedValueOnce(signedIn);
+      const { result, unmount } = renderHook(() => useAuth(), { wrapper });
+      await waitFor(() => expect(result.current.user?.id).toBe('u1'));
+      queryClient.setQueryData(['private-records'], ['previous-account']);
+
+      vi.mocked(authService.getCurrentUser).mockRejectedValueOnce({ response: { status: 503 } });
+      await act(async () => {
+        if (signal === 'other-tab-signed-in') sessionBroadcast.handler?.({ type: 'signed-in' });
+        else window.dispatchEvent(new Event(AUTHORIZATION_CHANGED_EVENT));
+      });
+
+      await waitFor(() => expect(result.current.user, signal).toBeNull());
+      expect(queryClient.getQueryData(['private-records']), signal).toBeUndefined();
+      unmount();
+    }
+  });
+
+  it('받은 답이 계약에 맞지 않으면(상태 코드 없는 검증 오류) 일시 장애로 보지 않고 정리한다', async () => {
+    const signedIn = { id: 'u1', name: 'User', groups: ['USER'], permissions: [], authorizationVersion: 'v1' };
+    vi.mocked(authService.getCurrentUser).mockReset().mockResolvedValueOnce(signedIn);
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.user?.id).toBe('u1'));
+    queryClient.setQueryData(['private-records'], ['previous-account']);
+
+    vi.mocked(authService.getCurrentUser).mockRejectedValueOnce(new Error('생성 API 응답이 OpenAPI 계약과 일치하지 않습니다.'));
+    await act(async () => { await result.current.checkAuth(); });
+
+    expect(result.current.user).toBeNull();
+    expect(queryClient.getQueryData(['private-records'])).toBeUndefined();
   });
 });

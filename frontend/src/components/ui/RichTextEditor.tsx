@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { RICH_TEXT_TABLE_CLASSES } from '@/lib/rich-text-styles';
+import { RICH_TEXT_CONTENT_CLASSES, RICH_TEXT_TABLE_CLASSES } from '@/lib/rich-text-styles';
 import { RichTextTableTools } from './RichTextTableTools';
 import { BoardMediaNode, RichTextMediaContext, type RichTextMediaOptions } from './RichTextMedia';
 import DOMPurify from 'isomorphic-dompurify';
@@ -65,9 +65,8 @@ function buildEditableAttributes({
 }): Record<string, string> {
   return {
     class: cn(
-      'prose dark:prose-invert prose-slate max-w-none min-h-[400px] outline-none p-10 font-sans text-lg focus:ring-0',
-      'prose-headings:font-bold prose-headings:tracking-tighter prose-headings:uppercase',
-      'prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:bg-primary/5 prose-blockquote:px-8 prose-blockquote:py-4 prose-blockquote:rounded-r-2xl',
+      RICH_TEXT_CONTENT_CLASSES,
+      'min-h-[400px] outline-none p-10 font-sans text-lg focus:ring-0',
       enableTables && RICH_TEXT_TABLE_CLASSES,
     ),
     role: 'textbox',

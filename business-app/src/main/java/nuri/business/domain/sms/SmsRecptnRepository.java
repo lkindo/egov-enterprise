@@ -30,6 +30,12 @@ public interface SmsRecptnRepository extends JpaRepository<SmsRecptn, SmsRecptnI
             @org.springframework.data.repository.query.Param("claimedPattern") String claimedPattern,
             org.springframework.data.domain.Pageable pageable);
 
+    /** 보존 정리 전용 — 발송 건을 지우기 전에 그 수신자(번호·결과)를 지운다. */
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
+    @org.springframework.data.jpa.repository.Query("delete from SmsRecptn r where r.id.smsTrsmSn in :smsTrsmSns")
+    int deleteBySmsTrsmSnIn(
+            @org.springframework.data.repository.query.Param("smsTrsmSns") java.util.Collection<Long> smsTrsmSns);
+
     /** 발송 건마다 결과 코드별 수신자 수. 목록 한 쪽을 한 번에 센다 — 행마다 다시 조회하지 않는다. */
     interface ResultCount {
         Long getSmsTrsmSn();

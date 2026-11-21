@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -36,6 +37,11 @@ import static org.mockito.Mockito.*;
 @org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 @DisplayName("SurveyService 단위 테스트 (Full Coverage)")
 class SurveyServiceTest {
+
+    /** 정렬 없는 목록 요청은 최신순(일련번호 역순)으로 저장소에 간다(2026-11-21). */
+    private static final Pageable NEWEST_SURVEY = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "srvySn"));
+    private static final Pageable NEWEST_TEMPLATE = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "srvyTmpltSn"));
+
 
     /** 쓰기 서비스는 현재 권한을 다시 본다(백엔드 헌법 제8조). 권한을 따로 쥐지 않은 시험은 관리자로 돈다. */
     @org.junit.jupiter.api.BeforeEach
@@ -86,7 +92,7 @@ class SurveyServiceTest {
     void getTmplatList_NoKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
         SurveyTemplate tmplat = SurveyTemplate.builder().srvyTmpltSn(101L).srvyTmpltTypeCd("Type1").build();
-        given(tmplatRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(tmplat)));
+        given(tmplatRepository.findAll(NEWEST_TEMPLATE)).willReturn(new PageImpl<>(List.of(tmplat)));
 
         Page<SurveyTemplateDto> result = surveyService.getTmplatList(null, pageable);
 
@@ -243,7 +249,7 @@ class SurveyServiceTest {
         org.springframework.security.core.context.SecurityContextHolder.clearContext();
         Pageable pageable = PageRequest.of(0, 10);
         SurveyInfo info = SurveyInfo.builder().srvySn(201L).srvyTtl("Subject").build();
-        given(infoRepository.findByRlsYn("Y", pageable)).willReturn(new PageImpl<>(List.of(info)));
+        given(infoRepository.findByRlsYn("Y", NEWEST_SURVEY)).willReturn(new PageImpl<>(List.of(info)));
 
         Page<SurveyInfoDto> result = surveyService.getSurveyList(null, pageable);
 
@@ -254,7 +260,7 @@ class SurveyServiceTest {
     @DisplayName("🚨 설문 목록은 현재 사용자의 응답 여부를 한 번의 조회로 싣는다 (2026-10-01)")
     void getSurveyList_marksResponded() {
         Pageable pageable = PageRequest.of(0, 10);
-        given(infoRepository.findByRlsYn("Y", pageable)).willReturn(new PageImpl<>(List.of(
+        given(infoRepository.findByRlsYn("Y", NEWEST_SURVEY)).willReturn(new PageImpl<>(List.of(
                 SurveyInfo.builder().srvySn(201L).build(), SurveyInfo.builder().srvySn(202L).build())));
         given(rsltRepository.findRespondedSurveySns("user1", List.of(201L, 202L))).willReturn(List.of(202L));
 
@@ -275,8 +281,8 @@ class SurveyServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         SurveyInfo draft = SurveyInfo.builder().srvySn(301L).srvyTtl("작성 중").build();
         given(infoRepository.findById(301L)).willReturn(Optional.of(draft));
-        given(infoRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(draft)));
-        given(infoRepository.findByRlsYn("Y", pageable)).willReturn(new PageImpl<>(List.of()));
+        given(infoRepository.findAll(NEWEST_SURVEY)).willReturn(new PageImpl<>(List.of(draft)));
+        given(infoRepository.findByRlsYn("Y", NEWEST_SURVEY)).willReturn(new PageImpl<>(List.of()));
 
         try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId).thenReturn(Optional.empty());

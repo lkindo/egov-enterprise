@@ -15,6 +15,7 @@ import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ArchiveDump;
 import nuri.migration.model.MappingSpec.IdentityComponentSpec;
 import nuri.migration.postgres.TargetConstraintSnapshot;
+import nuri.migration.protect.ProtectedRowChecksum;
 import nuri.migration.source.SourceIntrospector;
 import nuri.migration.state.KeyDiagnostics;
 import nuri.migration.state.MigrationStateStore;
@@ -98,6 +99,17 @@ public class MigrationVerifier {
     private static final int RUNTIME_KEY_MAX = 256;
 
     private final JdbcTypedValueCodec identityCodec = new JdbcTypedValueCodec();
+    /** 무작위 nonce 보호 컬럼의 체크섬 지문 키를 주는 환경 — 적재({@code EtlExecutor})와 같은 경계다(2026-11-21). */
+    private final Function<String, String> environment;
+
+    public MigrationVerifier() {
+        this(System::getenv);
+    }
+
+    /** 시험과 승인된 secret provider adapter 가 같은 키 경계를 쓴다. */
+    public MigrationVerifier(Function<String, String> environment) {
+        this.environment = Objects.requireNonNull(environment, "environment");
+    }
 
     /** 판정 분기 단위 테스트용: 실제 실행 경로는 반드시 선언 spec까지 전달하는 public overload를 사용한다. */
     MigrationReport verify(List<TableResult> results, JdbcTemplate targetJt) {
@@ -597,6 +609,12 @@ public class MigrationVerifier {
             return new ScopedVerification(counts.rows(),
                     "run scoped parity 불일치: checkpoint target key 중복");
         }
+        ProtectedRowChecksum checksums;
+        try {
+            checksums = ProtectedRowChecksum.forRun(spec, environment);
+        } catch (RuntimeException unavailable) {
+            return new ScopedVerification(counts.rows(), "run scoped checksum 보호 컬럼 키를 읽을 수 없음 — 성공을 증명할 수 없음");
+        }
         long observed = 0;
         String cursor = null;
         try {
@@ -605,8 +623,8 @@ public class MigrationVerifier {
                         target, spec.run(), table.source(), table.effectiveId(), cursor, VERIFY_BATCH);
                 if (page.isEmpty() && observed > 0) break;
                 ScopedVerification checked = table.identity() == null
-                        ? verifyLegacyScoped(target, table, page, tally)
-                        : verifyTypedScoped(target, table, page, tally);
+                        ? verifyLegacyScoped(target, table, page, tally, checksums)
+                        : verifyTypedScoped(target, table, page, tally, checksums);
                 if (checked.error() != null) return new ScopedVerification(counts.rows(), checked.error());
                 if (page.isEmpty()) break;
                 observed += page.size();
@@ -624,7 +642,8 @@ public class MigrationVerifier {
     }
 
     private ScopedVerification verifyLegacyScoped(JdbcTemplate target, MappingSpec.TableMapping table,
-                                                   List<MigrationStateStore.CheckpointEntry> checkpoints, TargetTally tally) {
+                                                   List<MigrationStateStore.CheckpointEntry> checkpoints, TargetTally tally,
+                                                   ProtectedRowChecksum checksums) {
         List<String> columns = EtlExecutor.canonicalTargetColumns(table);
         String targetKey = EtlExecutor.targetIdentityColumn(table);
         if (targetKey == null || targetKey.isBlank() || columns.isEmpty()) {
@@ -658,7 +677,8 @@ public class MigrationVerifier {
                         selectPrefix + placeholders + ")", arguments, columns, row -> {
                             Object actualKey = valueIgnoreCase(row, targetKey);
                             return actualKey == null ? null : actualKey.toString();
-                        }, tally == null ? null : tally::observe);
+                        }, tally == null ? null : tally::observe,
+                        row -> checksums.view(table.target(), row));
                 if (rows.missingIdentity()) {
                     return new ScopedVerification(checkpoints.size(),
                             "run scoped target identity가 null: " + targetKey);
@@ -688,7 +708,8 @@ public class MigrationVerifier {
             JdbcTemplate target,
             MappingSpec.TableMapping table,
             List<MigrationStateStore.CheckpointEntry> checkpoints,
-            TargetTally tally
+            TargetTally tally,
+            ProtectedRowChecksum checksums
     ) {
         List<String> columns = EtlExecutor.canonicalTargetColumns(table);
         List<IdentityComponentSpec> components = table.identity().targetComponents();
@@ -745,7 +766,8 @@ public class MigrationVerifier {
                         selectPrefix + typedTuplePredicate(components, batch.size()), arguments,
                         columns, row -> TypedKeyEncoding.encode(tupleFromRow(row, components),
                                 RUNTIME_KEY_MAX, "tb_migration_checkpoint.target_key"),
-                        tally == null ? null : tally::observe);
+                        tally == null ? null : tally::observe,
+                        row -> checksums.view(table.target(), row));
                 for (TypedCheckpoint item : batch) {
                     MigrationStateStore.CheckpointEntry checkpoint = item.checkpoint();
                     TargetRowSummary matched = rows.byKey().get(checkpoint.targetKey());
@@ -774,7 +796,8 @@ public class MigrationVerifier {
      */
     private static TargetBatch readTargetChecksums(
             JdbcTemplate target, String sql, Object[] arguments, List<String> columns,
-            Function<Map<String, Object>, String> identity, BiConsumer<Map<String, Object>, String> observer
+            Function<Map<String, Object>, String> identity, BiConsumer<Map<String, Object>, String> observer,
+            Function<Map<String, Object>, Map<String, ?>> checksumRow
     ) {
         return target.execute((ConnectionCallback<TargetBatch>) connection -> {
             boolean ownTransaction = connection.getAutoCommit();
@@ -816,7 +839,7 @@ public class MigrationVerifier {
                             if (observer != null) {
                                 observer.accept(row, key);
                             }
-                            String checksum = RowChecksum.calculate(columns, row);
+                            String checksum = RowChecksum.calculate(columns, checksumRow.apply(row));
                             summaries.compute(key, (ignored, previous) -> previous == null
                                     ? new TargetRowSummary(1, checksum)
                                     : new TargetRowSummary(previous.count() + 1, previous.checksum()));

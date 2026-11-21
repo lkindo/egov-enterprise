@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import javax.crypto.Cipher;
+import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -148,6 +149,36 @@ final class RrnoAesGcmColumnCipher implements ColumnCipher {
         } catch (GeneralSecurityException authFailure) {
             throw new IllegalArgumentException("RRNO v2 복호화에 실패했습니다", authFailure);
         }
+    }
+
+    /** 체크섬 지문 키를 활성 키에서 끌어낼 때 쓰는 고정 표지. 다른 용도의 HMAC 과 섞이지 않게 한다. */
+    private static final byte[] CHECKSUM_LABEL =
+            "nuri-migration/row-checksum/rrno-aes-gcm-v2".getBytes(StandardCharsets.UTF_8);
+    private static final String HMAC = "HmacSHA256";
+
+    /**
+     * 행 체크섬에 넣을 결정적 표지. 암호문은 암호화마다 nonce 가 달라 같은 값을 다시 적재해도 달라지므로, 암호문을 풀어
+     * 평문을 활성 키에서 끌어낸 HMAC 키로 지문한다 — 키 없이는 평문을 역산할 수 없고 지문에 키 ID 를 실어 키를 바꾸면
+     * 이전 지문과 맞지 않는다(재개가 닫힌 쪽으로 멈춘다).
+     */
+    @Override
+    public String checksumToken(String ciphertext) {
+        String plaintext = decrypt(ciphertext);
+        try {
+            Mac derive = Mac.getInstance(HMAC);
+            derive.init(new SecretKeySpec(keys.get(activeKeyId).getEncoded(), HMAC));
+            Mac fingerprint = Mac.getInstance(HMAC);
+            fingerprint.init(new SecretKeySpec(derive.doFinal(CHECKSUM_LABEL), HMAC));
+            return "v2fp:" + activeKeyId + ":"
+                    + B64_URL_ENCODER.encodeToString(fingerprint.doFinal(plaintext.getBytes(StandardCharsets.UTF_8)));
+        } catch (GeneralSecurityException failure) {
+            throw new IllegalStateException("RRNO v2 체크섬 지문을 만들 수 없습니다", failure);
+        }
+    }
+
+    @Override
+    public boolean randomized() {
+        return true;
     }
 
     static boolean isCanonicalEnvelope(String value) {

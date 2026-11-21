@@ -1304,7 +1304,7 @@ public class EtlExecutor {
                 counts.transformed++;
                 CheckpointEntry checkpoint = null;
                 if (state != null) {
-                    checkpoint = identityCheckpoint(row, out, t, writePlan.targetColumns());
+                    checkpoint = identityCheckpoint(row, out, t, writePlan);
                     // [ADR-0029 L4 D2] 표본은 재개로 건너뛸 행도 포함한다 — 대상에 있는 행이다.
                     counts.reconciliation.accepted(firstOrdinal + index, row, checkpoint.targetKey());
                     CheckpointEntry durable = state.find(t.source(), t.effectiveId(), checkpoint.sourceKey());
@@ -1629,8 +1629,7 @@ public class EtlExecutor {
                         return false;
                     }
                     applyTargetIdentity(transformed, table.identity().targetComponents(), durableTarget);
-                    CheckpointEntry expected = checkpoint(
-                            row, transformed, table, writePlan.targetColumns());
+                    CheckpointEntry expected = checkpoint(row, transformed, table, writePlan);
                     if (!durable.rowChecksum().equals(expected.rowChecksum())
                             || !durable.targetKey().equals(expected.targetKey())
                             || !durable.targetTable().equalsIgnoreCase(expected.targetTable())) {
@@ -1668,8 +1667,7 @@ public class EtlExecutor {
                         table.identity().targetComponents());
                 applyTargetIdentity(transformed, table.identity().targetComponents(), generated);
                 registry.register(table.source(), candidate.sourceIdentity(), generated);
-                durableCheckpoints.add(checkpoint(
-                        candidate.source(), transformed, table, writePlan.targetColumns()));
+                durableCheckpoints.add(checkpoint(candidate.source(), transformed, table, writePlan));
             }
             ordinal = 0L;
             registry.writePending(connection, chunkCheckpoint);
@@ -1715,24 +1713,30 @@ public class EtlExecutor {
 
     /** checkpoint identity 를 만들지 못하면(대리키·target identity 없음) identity 단계의 행 변환 실패다. */
     private CheckpointEntry identityCheckpoint(Map<String, Object> source, Map<String, Object> transformed,
-                                               TableMapping table, List<String> targetColumns) {
+                                               TableMapping table, WritePlan writePlan) {
         try {
-            return checkpoint(source, transformed, table, targetColumns);
+            return checkpoint(source, transformed, table, writePlan);
         } catch (RuntimeException failure) {
             String column = targetIdentityColumn(table);
             throw new RowTransformFailure(column == null ? "<identity>" : column, RowFailureReason.IDENTITY_FAILED);
         }
     }
 
+    /**
+     * 체크섬은 쓴 값에서 만들되 무작위 nonce 암호 컬럼은 평문 지문으로 바꾼다 — 같은 행을 다시 적재해도 같은 체크섬이어야
+     * 재개·재실행이 커밋된 행을 알아본다(2026-11-21, {@code ProtectedRowChecksum}). 검증기도 같은 규칙으로 대상 행을 센다.
+     */
     private CheckpointEntry checkpoint(Map<String, Object> source, Map<String, Object> transformed,
-                                       TableMapping table, List<String> targetColumns) {
+                                       TableMapping table, WritePlan writePlan) {
+        List<String> targetColumns = writePlan.targetColumns();
+        Map<String, ?> checksumRow = writePlan.protector().checksumView(table.target(), transformed);
         if (table.identity() != null) {
             return CheckpointEntry.typed(
                     table.source(),
                     tupleFromValues(source, table.identity().sourceComponents()),
                     table.target(),
                     tupleFromValues(transformed, table.identity().targetComponents()),
-                    RowChecksum.calculate(targetColumns, transformed),
+                    RowChecksum.calculate(targetColumns, checksumRow),
                     table.effectiveId());
         }
         String sourceKey = sourceKey(source, table);
@@ -1741,7 +1745,7 @@ public class EtlExecutor {
             throw new IllegalStateException(table.source() + ": target identity가 null/blank입니다");
         }
         return new CheckpointEntry(table.source(), sourceKey, table.target(), targetValue.toString(),
-                RowChecksum.calculate(targetColumns, transformed), table.effectiveId());
+                RowChecksum.calculate(targetColumns, checksumRow), table.effectiveId());
     }
 
     private String sourceKey(Map<String, Object> source, TableMapping table) {
@@ -2159,7 +2163,7 @@ public class EtlExecutor {
                 Map<String, Object> transformed = transformRow(
                         row.source(), spec, table, registry, writePlan, null, null, null);
                 arguments = toArguments(transformed, writePlan.insertColumns());
-                checkpoints.add(checkpoint(row.source(), transformed, table, writePlan.targetColumns()));
+                checkpoints.add(checkpoint(row.source(), transformed, table, writePlan));
             } catch (RuntimeException failure) {
                 rollbackAndDiscard(connection, registry, chunkCheckpoint, table.target());
                 errors.add(writeFailureMessage(table, row.ordinal(), "ROW_RETRY_TRANSFORM_FAILED", failure));

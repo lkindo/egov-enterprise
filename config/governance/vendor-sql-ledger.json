@@ -219,15 +219,6 @@
       "treatment": "portable-rewrite",
       "reason": "구조 저장의 하위 트리 삭제를 번호 순이 아니라 깊은 메뉴부터 한다. 지연 FK 가 없는 MySQL·MariaDB 는 자기 참조 FK 를 행마다 바로 본다",
       "test": "business-core/src/test/java/nuri/business/service/menu/MenuServiceTest.java"
-    },
-    {
-      "path": "business-core/src/main/java/nuri/business/core/softdelete/SoftDeleteAspect.java",
-      "treatment": "portable-as-is",
-      "reason": "AspectJ 포인트컷의 논리 OR 이다. SQL 이 아니다",
-      "test": "business-app/src/test/java/nuri/business/core/softdelete/SoftDeleteDynamicTest.java",
-      "frozen": {
-        "string-concat": 2
-      }
     }
   ]
 }

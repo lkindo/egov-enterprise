@@ -6,7 +6,7 @@ export const loginFormSchema = LoginRequestSchema.extend({
     .trim()
     .min(1, '아이디를 입력해 주세요.'),
   // 인증 비밀번호는 공백도 자격증명의 일부일 수 있으므로 trim 하지 않는다.
-  password: LoginRequestSchema.shape.password.unwrap()
+  password: LoginRequestSchema.shape.password
     .min(1, '비밀번호를 입력해 주세요.'),
 }).pick({
   userId: true,

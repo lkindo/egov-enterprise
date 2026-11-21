@@ -12,6 +12,8 @@ import nuri.migration.protect.ColumnProtector;
 import nuri.migration.protect.EgovAriaColumnCipher;
 import nuri.migration.source.SourceIntrospector;
 import nuri.migration.transform.TransformerRegistry;
+import nuri.migration.verify.MigrationReport;
+import nuri.migration.verify.MigrationVerifier;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -104,6 +106,63 @@ class EtlProtectedColumnIntegrationTest {
         });
         // 같은 chunk 의 정상 행(u1)도 쓰지 않는다.
         assertThat(fixture.target().queryForObject("SELECT count(*) FROM tb_user_info", Integer.class)).isZero();
+    }
+
+    @Test
+    @DisplayName("rrno-aes-gcm-v2 표도 같은 run 으로 다시 적재하면 커밋된 행을 알아보고 검증을 통과한다 — 암호문이 매번 달라도 체크섬은 같다")
+    void randomizedCipherTableResumesAndVerifies() {
+        Fixture fixture = new Fixture();
+        fixture.seed("('u1', 'Kim', '" + RRNO + "')", "('u2', 'Lee', NULL)");
+        Function<String, String> environment = v2Environment();
+        EtlExecutor executor = new EtlExecutor(new SourceIntrospector(), new TransformerRegistry(), environment);
+        MappingSpec spec = fixture.spec("rrno-aes-gcm-v2");
+
+        List<EtlExecutor.TableResult> first = executor.execute(spec, MigrationMode.COMMIT);
+        assertThat(first).singleElement().satisfies(result -> {
+            assertThat(result.errors()).isEmpty();
+            assertThat(result.written()).isEqualTo(2);
+        });
+        JdbcTemplate target = fixture.target();
+        String stored = target.queryForObject("SELECT user_enrrno FROM tb_user_info WHERE user_nm = 'Kim'", String.class);
+        assertThat(stored).startsWith("v2:k1:").doesNotContain("1234567");
+        MigrationReport firstReport = new MigrationVerifier(environment).verify(spec, first, target);
+        assertThat(firstReport.ok()).withFailMessage(firstReport.toSummary()).isTrue();
+
+        List<EtlExecutor.TableResult> again = executor.execute(spec, MigrationMode.COMMIT);
+
+        assertThat(again).singleElement().satisfies(result -> assertThat(result.errors()).isEmpty());
+        assertThat(target.queryForObject("SELECT count(*) FROM tb_user_info", Integer.class)).isEqualTo(2);
+        assertThat(target.queryForObject("SELECT user_enrrno FROM tb_user_info WHERE user_nm = 'Kim'", String.class))
+                .isEqualTo(stored);
+        MigrationReport againReport = new MigrationVerifier(environment).verify(spec, again, target);
+        assertThat(againReport.ok()).withFailMessage(againReport.toSummary()).isTrue();
+    }
+
+    @Test
+    @DisplayName("rrno-aes-gcm-v2 표를 키링 없이 검증하면 성공을 증명할 수 없어 PASS 가 아니다")
+    void randomizedCipherVerificationWithoutKeyringIsNotProven() {
+        Fixture fixture = new Fixture();
+        fixture.seed("('u1', 'Kim', '" + RRNO + "')");
+        Function<String, String> environment = v2Environment();
+        MappingSpec spec = fixture.spec("rrno-aes-gcm-v2");
+        List<EtlExecutor.TableResult> results = new EtlExecutor(new SourceIntrospector(), new TransformerRegistry(),
+                environment).execute(spec, MigrationMode.COMMIT);
+
+        MigrationReport report = new MigrationVerifier(name -> null).verify(spec, results, fixture.target());
+
+        assertThat(report.ok()).isFalse();
+        assertThat(report.toSummary()).contains("보호 컬럼 키를 읽을 수 없음");
+    }
+
+    private static Function<String, String> v2Environment() {
+        byte[] raw = new byte[32];
+        java.util.Arrays.fill(raw, (byte) 11);
+        String keysJson = "{\"k1\":\"" + java.util.Base64.getEncoder().encodeToString(raw) + "\"}";
+        return name -> switch (name) {
+            case ColumnProtector.RRNO_ACTIVE_KEY_ID_ENVIRONMENT -> "k1";
+            case ColumnProtector.RRNO_KEYS_JSON_ENVIRONMENT -> keysJson;
+            default -> null;
+        };
     }
 
     private static EtlExecutor executor(String key) {

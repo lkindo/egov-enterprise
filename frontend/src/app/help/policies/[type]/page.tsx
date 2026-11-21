@@ -5,6 +5,8 @@ import { policyAdminService, SystemPolicy } from '@/services/foundation/system/P
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Scale } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { RICH_TEXT_CONTENT_CLASSES } from '@/lib/rich-text-styles';
 
 export const metadata: Metadata = {
   title: `약관 및 정책 | ${SITE_IDENTITY.frameworkName}`,
@@ -80,7 +82,7 @@ export default async function PolicyViewPage({
         <CardContent className="p-12">
           {view.kind === 'loaded' ? (
             <div
-              className="prose prose-slate dark:prose-invert max-w-none text-lg leading-relaxed"
+              className={cn(RICH_TEXT_CONTENT_CLASSES, "text-lg leading-relaxed")}
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(view.policy.plcyCn || '') }}
             />
           ) : (

@@ -877,6 +877,26 @@ class JwtTokenProviderTest {
         }
 
         @Test
+        @org.junit.jupiter.api.extension.ExtendWith(org.springframework.boot.test.system.OutputCaptureExtension.class)
+        @DisplayName("헤더 kid 에 개행을 넣은 미인증 토큰은 거부하고 가짜 로그 줄을 만들지 못한다")
+        void forgedKidCannotInjectLogLines(org.springframework.boot.test.system.CapturedOutput output) throws Exception {
+            KeyPair other = generateEcKeyPair("secp256r1");
+            String forged = Jwts.builder()
+                    .header().keyId("x\r\nFORGED-LOG-LINE level=INFO").and()
+                    .subject("alice")
+                    .claim("typ", "access")
+                    .issuedAt(new Date())
+                    .expiration(new Date(System.currentTimeMillis() + 60_000))
+                    .signWith(other.getPrivate(), Jwts.SIG.ES256)
+                    .compact();
+
+            assertFalse(jwtTokenProvider.validateToken(forged));
+
+            assertThat(output.getAll()).contains("Unknown ES256 kid: x__FORGED-LOG-LINE");
+            assertThat(output.getAll()).doesNotContain("\nFORGED-LOG-LINE").doesNotContain("\rFORGED-LOG-LINE");
+        }
+
+        @Test
         @DisplayName("1차 배포 전환 동안은 legacy HMAC 토큰을 수용하고, acceptLegacyHmac=false(2차 배포) 뒤에는 거부한다")
         void acceptLegacyHmacControlsTransitionalVerification() {
             String hmac256 = Jwts.builder()

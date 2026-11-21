@@ -160,6 +160,11 @@ export function reissueSession(): Promise<void> {
   return inFlightReissue;
 }
 
+/** 로그인 화면(`/login`, 그 아래 경로)인가. 경로 어딘가에 `/login` 이 든 관리 화면은 아니다. */
+export function isLoginScreen(pathname: string): boolean {
+  return pathname === '/login' || pathname.startsWith('/login/');
+}
+
 // Response interceptor: 401 시 token refresh
 /**
  * 서버 문구가 없는 요청 실패를 사용자에게 보여 줄 한국어 안내로 바꾼다.
@@ -193,8 +198,10 @@ axiosInstance.interceptors.response.use(
     }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // [2026-11-21] 로그인 화면 자신만 뺀다 — 종전 부분 문자열 판정은 `/admin/security/login-policy`·`/admin/system/logs/login`
+      //   같은 관리 화면도 로그인 화면으로 보아, 그 화면들에서는 세션이 만료돼도 재발급·로그인 이동 없이 요청이 조용히 실패했다.
       if (typeof window !== 'undefined' &&
-        (window.location.pathname.includes('/login') ||
+        (isLoginScreen(window.location.pathname) ||
         originalRequest.url?.includes('/api/auth/login') ||
         originalRequest.url?.includes('/api/auth/reissue'))) {
         return Promise.reject(error);

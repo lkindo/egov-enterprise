@@ -141,6 +141,30 @@ class AuthApiControllerTest {
     }
 
     @Test
+    @DisplayName("빈 비밀번호·상한을 넘는 비밀번호는 인증에 닿기 전에 400 이다 — 계정의 실패 횟수를 올리지 않는다")
+    void blankOrOversizedPasswordIsRejectedBeforeAuthentication() throws Exception {
+        for (String password : new String[] {null, "", "   ", "x".repeat(LoginRequest.MAX_PASSWORD_LENGTH + 1)}) {
+            LoginRequest request = LoginRequest.builder().userId("user01").password(password).build();
+
+            mockMvc.perform(post("/api/v1/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.success").value(false));
+        }
+        org.mockito.Mockito.verify(authService, org.mockito.Mockito.never()).login(any(), anyString());
+
+        LoginRequest longest = LoginRequest.builder().userId("user01")
+                .password("x".repeat(LoginRequest.MAX_PASSWORD_LENGTH)).build();
+        when(authService.login(any(), anyString())).thenThrow(new nuri.foundation.core.exception.BusinessException(
+                nuri.foundation.core.exception.CommonErrorCode.LOGIN_FAILED));
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(longest)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @DisplayName("토큰 재발급")
     void testReissue() throws Exception {
         TokenResponse tokenResponse = TokenResponse.builder()

@@ -34,7 +34,6 @@
 ### 의존성·이미지
 
 - **Dependabot #1052·#1056** — api-server Dockerfile 의 Gradle 이미지, Gradle 라이브러리.
-- **api 런타임 기반 이미지 갱신(릴리스 차단)** — `api-server/Dockerfile` 의 `eclipse-temurin:21-jre-alpine` digest 에 CRITICAL(brotli-libs)·HIGH(libexpat) 취약점이 있어 릴리스 시험 실행이 이미지 검사에서 실패한다. 같은 태그의 새 digest 로 바꾸고 로컬 Trivy 로 HIGH·CRITICAL 0건을 확인한 뒤 `gh workflow run release.yml --ref main`(발행 없는 시험 실행)을 다시 돌린다.
 - **MariaDB BOM ext 3.5.11** — 보안 알림을 닫는다(직접 판을 정한 드라이버도 BOM 관리 판이 그래프에 실린다).
 
 ### 인증·권한·보안

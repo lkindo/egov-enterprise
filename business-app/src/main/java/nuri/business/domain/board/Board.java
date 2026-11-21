@@ -3,7 +3,6 @@ package nuri.business.domain.board;
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.Filter;
 
 import java.io.Serializable;
 
@@ -25,7 +24,6 @@ import java.io.Serializable;
         columnNames = {"bbs_id", "sort_ordr", "ans_sn"}
     )
 })
-@Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 // [W1-17] 변경된 컬럼만 UPDATE 한다.
 //   조회수·좋아요는 원자 네이티브 UPDATE 로 빠졌지만, 그것만으로는 부족하다 —
 //   편집자가 엔티티를 저장하면 전(全)컬럼 UPDATE 가 나가면서 **자기 트랜잭션 시작 시점의 inqCnt** 를

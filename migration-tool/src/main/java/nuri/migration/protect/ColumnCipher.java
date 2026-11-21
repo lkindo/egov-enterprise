@@ -6,4 +6,14 @@ interface ColumnCipher {
     String encrypt(String plaintext);
 
     String decrypt(String ciphertext);
+
+    /** 같은 평문을 다시 암호화하면 암호문이 달라지는가(무작위 nonce). */
+    default boolean randomized() {
+        return false;
+    }
+
+    /** 행 체크섬에 넣을 결정적 값. 결정적 암호는 암호문 그대로다. */
+    default String checksumToken(String ciphertext) {
+        return ciphertext;
+    }
 }

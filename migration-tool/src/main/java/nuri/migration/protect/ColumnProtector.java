@@ -37,6 +37,7 @@ public final class ColumnProtector {
 
     private final Map<String, ColumnProtectionPlan.ProtectedColumn> columns;
     private final Map<ColumnProtection, ColumnCipher> ciphers;
+    private final ProtectedRowChecksum rowChecksum;
 
     ColumnProtector(Map<String, ColumnProtectionPlan.ProtectedColumn> columns, ColumnCipher cipher) {
         this(columns, columns.isEmpty() || cipher == null ? Map.of() : uniformCiphers(columns, cipher));
@@ -46,6 +47,12 @@ public final class ColumnProtector {
                             Map<ColumnProtection, ColumnCipher> ciphers) {
         this.columns = Map.copyOf(columns);
         this.ciphers = Map.copyOf(ciphers);
+        this.rowChecksum = ProtectedRowChecksum.of(this.columns, this.ciphers);
+    }
+
+    /** checkpoint 체크섬에 넣을 행 — 무작위 nonce 암호 컬럼은 평문 지문으로 바꾼다({@link ProtectedRowChecksum}). */
+    public Map<String, ?> checksumView(String targetTable, Map<String, ?> row) {
+        return rowChecksum.view(targetTable, row);
     }
 
     private static Map<ColumnProtection, ColumnCipher> uniformCiphers(
