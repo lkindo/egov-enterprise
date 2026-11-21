@@ -17,6 +17,7 @@
 
 종료한 gap 가운데 이 영역 경로에서 여전히 지켜야 할 위험·재개 조건이다(표의 행이 아니다 — 활성 gap 은 위 표에만 둔다).
 
+- 다른 영역 절의 항목 가운데 이 영역 경로(E2E·CI 워크플로·거버넌스 원장)에서도 지킬 것: `GAP-FE-002`(CI 로그에 `socket hang up`/`ECONNRESET` 이 재발하면 원인을 재검증한다)·`GAP-FE-003`(E2E 는 하이드레이션 전 입력을 `waitForHydration` 으로 기다린다)·`GAP-ARCH-001`(결합 원장에 새 기능 간 edge 를 더하려면 등재와 사유가 있어야 한다)은 [제품 절](#product)의, `GAP-BASE-002`(T2 가 다시 실패하면 새 gap 을 연다)는 [생성기 절](#composer)의 「종료한 항목의 남은 경계」에 전문이 있다.
 - `GAP-DEP-002`: spring-retry 유지 판단·재개 조건은 [후속 결정](../archived/operational-decisions-history.md#dec-ops-125)과 [정리 기록](readiness-followups.md#후속-정리-2026-09-24)을 따른다. 당시 기록한 Boot 4.1 지원 종료는 2027-07-31이며 다음 minor 결정 때 재확인한다.
 
 <a id="composer"></a>

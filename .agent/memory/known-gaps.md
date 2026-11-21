@@ -54,7 +54,7 @@ refresh_triggers:
 
 ### 종료한 항목의 남은 경계
 
-종료·기관 이전의 상세 이력은 [보관 기록](../../docs/archived/operational-decisions-history.md#종료이전-gap-기록)에 둔다. 종료로 없어지지 않은 위험·재개 조건은 모두 특정 경로에서만 필요해 [gap 영역 상세](../../docs/04-operations/known-gaps-detail.md)의 영역 절 끝 「종료한 항목의 남은 경계」에 두고, 활성 gap 과 같은 경로 판정으로 읽는다.
+종료·기관 이전의 상세 이력은 [보관 기록](../../docs/archived/operational-decisions-history.md#종료이전-gap-기록)에 둔다. 종료로 없어지지 않은 위험·재개 조건은 모두 특정 경로에서만 필요해 [gap 영역 상세](../../docs/04-operations/known-gaps-detail.md)의 영역 절 끝 「종료한 항목의 남은 경계」에 두고, 활성 gap 과 같은 경로 판정으로 읽는다. E2E·CI 워크플로·거버넌스 원장 경로에서도 걸리는 제품·생성기 항목은 CI·검증 절이 함께 가리킨다. 아래 목록과 상세의 항목은 [공용 메모리 계약](../../scripts/shared-memory-contract.test.mjs)이 대조한다.
 
 - 제품 동작·화면·도메인: GAP-FE-002·GAP-FE-003·GAP-MEMO-001·GAP-BOARD-002·GAP-BOARD-003·GAP-DOMAIN-001·GAP-BOARD-001·GAP-POLL-001·GAP-POLICY-001·GAP-API-001·GAP-CMTY-001·GAP-ARCH-001
 - 프로젝트 생성기·재사용 투영: GAP-BASE-002
