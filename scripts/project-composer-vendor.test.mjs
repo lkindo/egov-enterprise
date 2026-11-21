@@ -965,7 +965,8 @@ test('only certified vendors can be chosen and the ledger names every vendor', (
   const ledger = loadVendorLedger(ROOT);
   assert.deepEqual(ledger.vendors.map(vendor => vendor.id).sort(), [...VENDOR_IDS].sort());
   // 승격 표시다. 벤더를 올리는 변경이 이 줄을 함께 고친다(설계서 §17). 원장과 대조하면 selectableVendors 를 그 자신과 비교하게 된다.
-  assert.deepEqual(selectableVendors(ledger), ['postgresql', 'oracle', 'mariadb', 'mysql', 'mssql', 'cubrid']);
+  // 2026-11-21 다중 DB 인증을 멈췄다(DEC-OPS-422). 다시 여는 변경이 이 줄을 함께 고친다.
+  assert.deepEqual(selectableVendors(ledger), ['postgresql']);
   for (const id of Object.keys(VENDOR_ADAPTERS)) assert.ok(ledger.vendors.some(vendor => vendor.id === id));
   // 사유는 화면에 그대로 나간다.
   for (const vendor of ledger.vendors.filter(row => row.status !== 'certified')) assert.match(vendor.reason, /습니다\.$/, `${vendor.id}: 사유는 화면에 나가는 문장이라 '…습니다.' 로 끝낸다`);
@@ -1052,13 +1053,14 @@ function everyDegradationModel() {
 
 // 두 벤더가 한 어댑터 파일을 함께 쓰면 파일의 선언 지점은 벤더마다 닿는 것이 다르다(MariaDB 는 긴 유니크를 해시로 받아 접두 저하가 없다).
 // 그래서 문장은 파일이 아니라 벤더가 실제로 낼 수 있는 저하와 양방향으로 맞춘다. 닿지 않는 종류의 문장은 화면에 거짓을 보인다.
-test('every CI vendor shows exactly the degradations its own translation can reach, and the probe model reaches every declaration', () => {
+test('every adapter vendor shows exactly the degradations its own translation can reach, and the probe model reaches every declaration', () => {
   const ledger = loadVendorLedger(ROOT);
   const branches = everyDegradationModel();
   const reached = vendorId => [...new Set(VENDOR_ADAPTERS[vendorId].emitSchema(branches).degradations.map(row => degradationKind(row.name)))].sort();
-  const ciVendors = ledger.vendors.filter(vendor => vendor.ci);
-  assert.deepEqual(ciVendors.map(vendor => vendor.id), ['oracle', 'mariadb', 'mysql', 'mssql', 'cubrid']);
-  for (const vendor of ciVendors) {
+  // 인증을 멈춘 동안(DEC-OPS-422)에도 문장을 맞춰 둔다. 다시 열 때 문장부터 고치지 않게 한다.
+  const adapterVendors = ledger.vendors.filter(vendor => VENDOR_ADAPTERS[vendor.id]);
+  assert.deepEqual(adapterVendors.map(vendor => vendor.id), ['oracle', 'mariadb', 'mysql', 'mssql', 'cubrid']);
+  for (const vendor of adapterVendors) {
     assert.deepEqual(vendor.notices.degradations.map(row => row.kind).sort(), reached(vendor.id), `${vendor.id}: 표시 문장과 번역이 낼 수 있는 저하가 다르다`);
     assert.deepEqual(unshownDegradations(vendor, VENDOR_ADAPTERS[vendor.id].emitSchema(branches).degradations), [], vendor.id);
     // 승격 전(preview)에도 생성할 수 있으므로 인증 조건의 문장 대조를 지금 지난다.
@@ -1692,8 +1694,9 @@ test('the MySQL family signs a unique with its sorted key list, and its session 
 test('the CI vendor job is a certification condition and only opens a vendor whose integration engine exists', () => {
   const ledger = JSON.parse(readFileSync(join(ROOT, 'config/db-vendors.json'), 'utf8'));
   // 단계 5-1 은 CUBRID 의 벤더 잡을 승격 전(preview)에 열었고, 5-2 가 main 의 벤더 잡 통과 뒤 증거를 기록해 올렸다(DEC-OPS-400·402).
-  assert.deepEqual(ledger.vendors.filter(vendor => vendor.ci).map(vendor => vendor.id), ['oracle', 'mariadb', 'mysql', 'mssql', 'cubrid']);
-  assert.equal(ledger.vendors.find(vendor => vendor.id === 'cubrid').status, 'certified');
+  // 2026-11-21 인증을 멈추며 벤더 잡도 닫았다(DEC-OPS-422). 다시 열 때는 같은 순서로 ci 를 먼저 열고 main 통과 뒤 증거를 기록해 올린다 — 그 변경이 이 두 줄을 고친다.
+  assert.deepEqual(ledger.vendors.filter(vendor => vendor.ci).map(vendor => vendor.id), []);
+  assert.deepEqual(ledger.vendors.filter(vendor => VENDOR_ADAPTERS[vendor.id]).map(vendor => vendor.status), ['preview', 'preview', 'preview', 'preview', 'preview']);
   const gate = JSON.parse(readFileSync(join(ROOT, 'config/governance/gates.json'), 'utf8')).gateSets.find(set => set.id === 'GATESET-VENDOR-CONFORMANCE');
   assert.equal(gate.requiredCiContext, 'backend-build', '카탈로그 게이트가 required 잡에서 돌아야 승격할 수 있다');
   const certifiedRow = ledger.vendors.find(vendor => vendor.id === 'oracle');

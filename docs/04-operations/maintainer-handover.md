@@ -31,7 +31,7 @@
 
 | 상황 | 할 일 | 정본 |
 |---|---|---|
-| 마이그레이션·엔티티·쿼리·빌드 파일을 바꾼다 | 여섯 DB 벤더의 인증 증거가 낡는다(`VENDOR_EVIDENCE_STALE`). 바꾼 것을 모아 한 번에 증거를 다시 기록한다(벤더마다 수십 분) | [다중 DB 설계 §7](../02-architecture/multi-database-composer-design.md#7-인증과-검증d-9-d-10), [벤더 원장](../../config/db-vendors.json) |
+| 마이그레이션·엔티티·쿼리·빌드 파일을 바꾼다 | 인증 벤더의 증거가 낡는다(`VENDOR_EVIDENCE_STALE`). 바꾼 것을 모아 한 번에 증거를 다시 기록한다(벤더마다 수십 분). 2026-11-21 부터 PostgreSQL 외 인증을 멈춰 걸리지 않는다([DEC-OPS-422](operational-decisions-index-composer.md)) | [다중 DB 설계 §7](../02-architecture/multi-database-composer-design.md#7-인증과-검증d-9-d-10), [벤더 원장](../../config/db-vendors.json) |
 | 새 Flyway 마이그레이션을 공유 OCI DB 에 적용한다 | 적용마다 승인을 받고 결과를 적용 로그에 남긴다 | [shared-oci-migration-apply-log.md](shared-oci-migration-apply-log.md) |
 | 게이트가 붉은데 원인을 모른다 | 검증 사각지대 런북의 판정 절차를 따른다. 로컬 훅은 빠른 피드백이고 병합 권위는 required CI 다 | [verification-blindspots.md](verification-blindspots.md), [.githooks/README.md](../../.githooks/README.md) |
 | 비밀 키를 바꾼다(JWT·암호화·MFA) | 키 교체 절차와 백업을 따른다 — 잃으면 암호문을 읽지 못한다 | [crypto-key-rotation.md](crypto-key-rotation.md), [mfa-operations.md](mfa-operations.md) |

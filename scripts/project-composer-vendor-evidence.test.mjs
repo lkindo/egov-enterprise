@@ -514,8 +514,9 @@ test('the CI vendor images are pinned by digest and the compose projection pulls
     assert.ok(VENDOR_SOURCE[id].composeService.includes(`image: ${VENDOR_ENGINES[id].image}\n`), `${id}: 개발 compose 와 검증 엔진의 이미지가 갈라졌다`);
     assert.deepEqual(vendorEvidenceProblems(fixtureEvidence(id)), [], `${id}: 엔진 값으로 만든 증거가 형식을 통과한다`);
   }
-  // ci 를 연 벤더는 모두 digest 로 고정한다. 고정하지 않으면 같은 태그의 다른 이미지가 CI 결과가 된다.
-  const ledger = loadVendorLedger(ROOT);
+  // ci 를 열 수 있는 벤더는 모두 digest 로 고정한다. 고정하지 않으면 같은 태그의 다른 이미지가 CI 결과가 된다. 인증을 멈춘 동안(DEC-OPS-422)에도 열 때의 값을 지킨다.
+  const ledger = asPreviewVendors(JSON.parse(readFileSync(join(ROOT, VENDOR_LEDGER_PATH), 'utf8')));
+  assert.ok(ledger.vendors.filter(row => row.ci).length >= 5, 'CI 를 열 수 있는 벤더가 사라지면 이 대조가 비어 초록이 된다');
   for (const vendor of ledger.vendors.filter(row => row.ci)) {
     for (const engine of vendor.engines) assert.match(VENDOR_ENGINES[engine.engine].image, /@sha256:[a-f0-9]{64}$/, `${vendor.id} ${engine.version}`);
   }
