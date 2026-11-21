@@ -4,12 +4,12 @@
 
 ## 인증 중단과 재개
 
-2026-11-21 부터 PostgreSQL 외 다섯 벤더(Oracle·MariaDB·MySQL·SQL Server·CUBRID)의 인증을 멈췄다([DEC-OPS-422](operational-decisions-index-composer.md)). 원장에서 `preview` 이고 `ci`·증거가 없어 생성기는 PostgreSQL 만 고르고, `reusable-vendor` 잡은 돌지 않으며, `VENDOR_EVIDENCE_STALE` 은 나지 않는다.
+2026-11-21 부터 PostgreSQL 외 다섯 벤더(Oracle·MariaDB·MySQL·SQL Server·CUBRID)의 인증을 멈췄다([DEC-OPS-422](operational-decisions-index-composer.md)). 원장에서 `preview` 이고 `ci`·증거가 없어 생성기는 PostgreSQL 만 고르고, `reusable-vendor` 잡은 돌지 않으며, `VENDOR_EVIDENCE_STALE` 은 나지 않는다. 화면·서버는 원장만 보므로 열리지 않고, 명령줄 도구 실행만 `COMPOSER_PREVIEW_VENDOR=<벤더 id>` 를 켜면 preview 벤더의 생성물을 만든다([판정](../../scripts/project-composer-recipe.mjs)) — 벤더 잡과 재개 때의 증거용 생성물이 쓰는 경로이며 인증을 뜻하지 않는다.
 
 - **중단 동안**: 아래 목록의 항목은 벤더 입력이라는 이유로 기다리지 않는다. 스키마·데이터·공유 OCI·인가 같은 다른 승인만 지켜 바로 처리하고, 처리한 항목은 목록에서 지운다. 번역 게이트·벤더 SQL 린터·앱 SQL 포트는 그대로 돈다 — 기본 코드에 PostgreSQL 전용 SQL 이 쌓이지 않게 하는 것이 재개 비용을 줄인다.
 - **재개(사용자가 정한 때)** — [DEC-OPS-400](operational-decisions-index-composer.md) ② 순서를 따른다.
   1. 한 브랜치에서 다섯 벤더에 `ci: true` 를 되돌리고(승격 전 모양 — `preview`·사유 유지), 중단을 단언한 시험을 고친다: `scripts/project-composer-vendor.test.mjs` 의 ci 목록·preview 목록, `scripts/ci-change-scope.test.mjs` 의 인증 중단 시험과 출력 문자열 시험의 벤더 matrix. PR 과 main 의 벤더 잡이 그동안의 깨짐을 드러내면 그 브랜치에서 고친다.
-  2. main 에서 두 레이아웃의 벤더 잡이 통과한 뒤 그 커밋의 demo 멀티모듈 생성물로 엔진마다 증거를 기록한다(`node scripts/project-composer-vendor-evidence.mjs --vendor <id> --version <엔진 버전> --artifact <생성물>`, 다섯 벤더·여섯 엔진에 약 4시간, 기록 중 트리 변경 금지). 그리고 `status` 를 `certified` 로 올리고 사유를 걷으며 선택 표시 시험(`selectableVendors`)을 고친다.
+  2. main 에서 두 레이아웃의 벤더 잡이 통과한 뒤 그 커밋의 demo 멀티모듈 생성물(아직 preview 라 `COMPOSER_PREVIEW_VENDOR` 를 켠 도구 실행으로 만든다)로 엔진마다 증거를 기록한다(`node scripts/project-composer-vendor-evidence.mjs --vendor <id> --version <엔진 버전> --artifact <생성물>`, 다섯 벤더·여섯 엔진에 약 4시간, 기록 중 트리 변경 금지). 그리고 `status` 를 `certified` 로 올리고 사유를 걷으며 선택 표시 시험(`selectableVendors`)을 고친다.
   3. 같은 변경에서 AGENTS.md 의 중단 문장, 이 절, 생성기 가이드·CI 가이드·다중 DB 설계서·인수인계 문서·공용 메모리 CTX-019 의 중단 문장을 걷는다.
   4. 마지막 증거는 원본 커밋 70cccd261 로 기록했다(fc59efbba). 재개 때 깨진 곳을 찾으면 그 커밋부터 벤더 입력의 변경을 거슬러 본다(`git log 70cccd261..main -- <입력 경로>`).
 
