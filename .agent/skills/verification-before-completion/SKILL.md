@@ -5,139 +5,27 @@ source: obra/superpowers (https://github.com/obra/superpowers, 이 저장소에�
 license: MIT — Complete terms in LICENSE.txt
 ---
 
-# Verification Before Completion
+# 완료를 말하기 전에 증거를 낸다
 
-## Overview
+"끝났다·고쳤다·통과한다"고 말하기 전, 커밋이나 PR 을 만들기 전에 쓴다. 상류 스킬의 범용 문구는 걷고 이 저장소에서 무엇이 증거인지만 남겼다.
 
-Claiming work is complete without verification is dishonesty, not efficiency.
+**상위 권위:** [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope) 와 [오케스트레이션 프로토콜](../../../docs/03-guides/orchestration-protocol.md)(§2.3 감사 귀속, §2.4 실패 복구, Stage 4 「필수 증거」, §6 시간 예산). 이 스킬과 어긋나면 그쪽을 따르고 어긋난 점을 보고한다.
 
-**Core principle:** Evidence before claims, always.
+## 무엇이 증거인가
 
-**Violating the letter of this rule is violating the spirit of this rule.**
+- 바꾼 범위의 최소 검증은 AGENTS 의 표가 정한다. 도메인별 증거 유형은 프로토콜 Stage 4 §4.1 의 표다.
+- 실행한 명령의 출력과 종료 코드가 증거다. 실행하지 않은 검증을 실행했다고 쓰지 않는다 — 못 한 것은 이유와 영향 범위를 적는다.
+- 게이트·계약을 새로 만들거나 고쳤으면 초록만으로 부족하다. 의도적 위반을 넣어 그 사유로 붉어지는 것까지 본다(AGENTS H5).
+- 단위 시험 프로파일(H2, `create`)의 초록은 물리 스키마의 증거가 아니다. 엔티티·DDL 을 바꿨으면 `:api-server:schemaValidationTest` 다(전체 실행은 `node scripts/heavy-run-queue.mjs run --kind gradle -- …` 로 감싼다). 그 통과도 변경 전에 live `information_schema` 와 메타 표준을 조회했다는 증거는 아니다(AGENTS H1).
+- pre-push 에는 E2E 가 없다. 화면을 바꾼 작업은 required CI 의 E2E 결과를 직접 확인한 뒤에 완료를 말한다.
+- 하위 에이전트·워크플로의 "통과" 보고는 증거가 아니다. 메인이 diff 를 읽고 게이트를 다시 돌린다(§2.3).
 
-## The Iron Law
+## 흔한 거짓 통과
 
-```
-NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
-```
+- 태그가 붙은 하네스 시험을 기본 `test` 태스크로 고르면 0건이 통과로 끝난다 — `:api-server:harnessTest` 로 돌리고 결과 XML 의 건수를 본다(실행 전 가드가 이 실수를 막는다).
+- Gradle 이 입력이 아니라고 보는 파일(원장·다른 소스)을 바꾼 뒤의 재실행은 `UP-TO-DATE` 로 건너뛸 수 있다 — 붉음 증명에는 태스크 뒤에 `--rerun` 을 붙인다.
+- 다른 무거운 실행과 겹친 결과는 붉든 초록이든 증거로 쓰지 않는다. 단독으로 다시 돌린다(§6.3).
 
-Use evidence for the current code, inputs and environment, and state its exact scope. A new message alone does not invalidate an unchanged result.
+## 겹치지 않게
 
-In this repository, select checks from [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope). Follow [SOP §2.3, §2.4 and §6](../../../docs/03-guides/orchestration-protocol.md): the main agent independently reruns the relevant gates and reviews delegated changes; red/green proof, hooks and required CI remain mandatory. Avoid only the redundant full bundles identified in §6.2, and serialize heavy checks under §6.3.
-
-## The Gate Function
-
-```
-BEFORE claiming any status or expressing satisfaction:
-
-1. IDENTIFY: What command proves this claim?
-2. RUN: Execute the required scope-specific checks when evidence is missing or invalidated; independently verify delegated work
-3. READ: Full output, check exit code, count failures
-4. VERIFY: Does output confirm the claim?
-   - If NO: State actual status with evidence
-   - If YES: State claim WITH evidence
-5. ONLY THEN: Make the claim
-
-Skip any step = lying, not verifying
-```
-
-## Common Failures
-
-| Claim | Requires | Not Sufficient |
-|-------|----------|----------------|
-| Tests pass | Applicable test command output: 0 failures, with scope and code revision | Stale or unrelated run, "should pass" |
-| Linter clean | Linter output: 0 errors | Partial check, extrapolation |
-| Build succeeds | Build command: exit 0 | Linter passing, logs look good |
-| Bug fixed | Test original symptom: passes | Code changed, assumed fixed |
-| Regression test works | Red-green cycle verified | Test passes once |
-| Agent completed | Main agent reviews current diff and independently reruns relevant gates | Agent reports "success" |
-| Requirements met | Line-by-line checklist | Tests passing |
-
-## Red Flags - STOP
-
-- Using "should", "probably", "seems to"
-- Expressing satisfaction before verification ("Great!", "Perfect!", "Done!", etc.)
-- About to commit/push/PR without verification
-- Trusting agent success reports
-- Reporting partial verification as proof of a broader scope
-- Thinking "just this once"
-- Tired and wanting work over
-- **ANY wording implying success without having run verification**
-
-## Rationalization Prevention
-
-| Excuse | Reality |
-|--------|---------|
-| "Should work now" | RUN the verification |
-| "I'm confident" | Confidence ≠ evidence |
-| "Just this once" | No exceptions |
-| "Linter passed" | Linter ≠ compiler |
-| "Agent said success" | Verify independently |
-| "I'm tired" | Exhaustion ≠ excuse |
-| "Partial check proves everything" | A scoped check proves only the behavior and inputs it exercised |
-| "Different words so rule doesn't apply" | Spirit over letter |
-
-## Key Patterns
-
-**Tests:**
-```
-✅ [Run affected tests] [See: 34/34 pass] "The selected 34 tests pass; the remaining checks are listed with the CI job that covers them, and completion waits for that job (SOP §6.2)"
-❌ "Should pass now" / "Looks correct"
-```
-
-**Regression tests (TDD Red-Green):**
-```
-✅ Write → Run (pass) → Revert fix → Run (MUST FAIL) → Restore → Run (pass)
-❌ "I've written a regression test" (without red-green verification)
-```
-
-**Build:**
-```
-✅ [Run build] [See: exit 0] "Build passes"
-❌ "Linter passed" (linter doesn't check compilation)
-```
-
-**Requirements:**
-```
-✅ Re-read plan → Create checklist → Verify each → Report gaps or completion
-❌ "Tests pass, phase complete"
-```
-
-**Agent delegation:**
-```
-✅ Agent reports success → Main agent checks current diff → Independently reruns relevant gates → Reports actual state
-❌ Trust agent report
-```
-
-## Why This Matters
-
-From 24 failure memories:
-- your human partner said "I don't believe you" - trust broken
-- Undefined functions shipped - would crash
-- Missing requirements shipped - incomplete features
-- Time wasted on false completion → redirect → rework
-- Violates: "Honesty is a core value. If you lie, you'll be replaced."
-
-## When To Apply
-
-**ALWAYS before:**
-- ANY variation of success/completion claims
-- ANY expression of satisfaction
-- ANY positive statement about work state
-- Committing, PR creation, task completion
-- Moving to next task
-- Delegating to agents
-
-**Rule applies to:**
-- Exact phrases
-- Paraphrases and synonyms
-- Implications of success
-- ANY communication suggesting completion/correctness
-
-## The Bottom Line
-
-**No shortcuts for verification.**
-
-Check the evidence and its scope. Run missing or invalidated checks. THEN claim only the verified result.
-
-This is non-negotiable.
+pre-push 가 곧 돌릴 묶음 전체를 같은 커밋에서 미리 돌리지 않는다. 대신 훅이 보지 않는 검사 가운데 변경이 요구하는 것을 고른다(§6.2). 작업 브랜치는 push 뒤 `npm run verify:post-push` 가 운영 계약을 돌고, 병합 판정은 `node scripts/pr-checks-wait.mjs --pr <번호> --sha <검증한 커밋>` 이 한다(종료 코드 0 만 통과).
