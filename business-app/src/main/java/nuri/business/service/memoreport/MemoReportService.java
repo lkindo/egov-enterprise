@@ -331,7 +331,7 @@ public class MemoReportService {
     }
 
     @Transactional
-    public void updateMemoReport(Long memoRptSn, String auditActor, MemoReportDto dto) {
+    public void updateMemoReport(Long memoRptSn, String userId, MemoReportDto dto) {
         MemoReport entity = memoReportRepository.findByIdForUpdate(Objects.requireNonNull(memoRptSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "MEMO_RPT_UPDATE_ALL"); // [IDOR] 작성자/관리자만 수정
@@ -351,7 +351,7 @@ public class MemoReportService {
         }
         entity.update(dto.getRptTtl(), dto.getMemoRptYmd(), entity.getUserId(), dto.getRptrId(),
                 dto.getRptCn(), atchFileSn);
-        entity.setLastMdfrId(nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse(auditActor));
+        entity.setLastMdfrId(nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse(userId));
         memoReportRepository.flush();
         if (previousAtchFileSn != null && !Objects.equals(previousAtchFileSn, entity.getAtchFileSn())) {
             attachmentAssignmentPolicy.releaseIfUnreferenced(previousAtchFileSn);
