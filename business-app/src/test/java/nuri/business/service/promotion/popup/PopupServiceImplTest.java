@@ -747,4 +747,35 @@ class PopupServiceImplTest {
         assertThatThrownBy(action).isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
     }
+
+    @Test
+    @DisplayName("JVM 기본 시간대가 UTC 여도 PopupService 는 Asia/Seoul 기준 날짜로 활성·게시 팝업을 판정한다")
+    void utcJvmStillUsesAsiaSeoulForActiveAndPublishedPopup() {
+        java.util.TimeZone previous = java.util.TimeZone.getDefault();
+        java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"));
+        java.time.Instant kstNextDayUtc = java.time.Instant.parse("2026-11-21T16:00:00Z");
+        java.time.Clock fixedKst = java.time.Clock.fixed(kstNextDayUtc, java.time.ZoneId.of("Asia/Seoul"));
+        try (org.mockito.MockedStatic<nuri.foundation.core.util.ServiceTime> serviceTime =
+                     mockStatic(nuri.foundation.core.util.ServiceTime.class)) {
+            serviceTime.when(nuri.foundation.core.util.ServiceTime::clock).thenReturn(fixedKst);
+
+            PopupDomainRepository localRepo = mock(PopupDomainRepository.class);
+            given(localRepo.findActivePopups(LocalDate.of(2026, 11, 22))).willReturn(List.of());
+            Popup kstTodayOnly = Popup.builder()
+                    .popupSn(1L)
+                    .popupTtlNm("KST 오늘 시작 팝업")
+                    .ntceYn("Y")
+                    .ntceBgnde(LocalDate.of(2026, 11, 22))
+                    .ntceEndde(LocalDate.of(2026, 11, 23))
+                    .build();
+            given(localRepo.findById(1L)).willReturn(Optional.of(kstTodayOnly));
+
+            PopupService localService = new PopupService(localRepo, null);
+            assertThat(localService.getActivePopups()).isEmpty();
+            verify(localRepo).findActivePopups(eq(LocalDate.of(2026, 11, 22)));
+            assertThat(localService.getPublishedPopup(1L).getPopupSn()).isEqualTo(1L);
+        } finally {
+            java.util.TimeZone.setDefault(previous);
+        }
+    }
 }

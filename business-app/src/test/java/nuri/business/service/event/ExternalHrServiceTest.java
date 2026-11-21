@@ -448,4 +448,22 @@ class ExternalHrServiceTest {
         verify(externalHrRepository, never()).existsById(any());
         verify(externalHrRepository, never()).save(any());
     }
+
+    @Test
+    @DisplayName("JVM 기본 시간대가 UTC 여도 ExternalHr 생성 시각은 Asia/Seoul 기준을 사용한다")
+    void utcJvmStillUsesAsiaSeoulForExternalHrTimestamps() {
+        java.util.TimeZone previous = java.util.TimeZone.getDefault();
+        java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"));
+        java.time.LocalDateTime expectedKst = java.time.LocalDateTime.of(2026, 11, 22, 1, 0);
+        try (org.mockito.MockedStatic<nuri.foundation.core.util.ServiceTime> serviceTime =
+                     org.mockito.Mockito.mockStatic(nuri.foundation.core.util.ServiceTime.class)) {
+            serviceTime.when(nuri.foundation.core.util.ServiceTime::now).thenReturn(expectedKst);
+
+            ExternalHr hr = ExternalHr.builder().evntSn(1L).otsdHrId("HR1").otsdHrNm("홍길동").build();
+            assertThat(hr.getCrtDt()).isEqualTo(expectedKst);
+            assertThat(hr.getMdfcnDt()).isEqualTo(expectedKst);
+        } finally {
+            java.util.TimeZone.setDefault(previous);
+        }
+    }
 }
