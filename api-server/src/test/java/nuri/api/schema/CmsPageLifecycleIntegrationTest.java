@@ -1,5 +1,6 @@
 package nuri.api.schema;
 
+import nuri.business.core.harness.QueryCountInspector;
 import nuri.business.service.cms.CmsPageAdminService;
 import nuri.business.service.cms.CmsPageReadService;
 import nuri.business.service.cms.dto.CmsPageCreateRequest;
@@ -12,6 +13,7 @@ import nuri.business.service.cms.dto.CmsPageSummaryDto;
 import nuri.business.service.cms.dto.CmsRevisionPurgeRequest;
 import nuri.business.service.cms.dto.CmsRevisionSummaryDto;
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.security.service.CustomUserDetails;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -246,6 +248,34 @@ class CmsPageLifecycleIntegrationTest {
         assertThatThrownBy(() -> adminService.deleteDraftPage(published, adminService.getPage(published).version()))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("게시한 적이 있는 페이지");
+    }
+
+    @Test
+    @DisplayName("게시 이력 요약은 초안·게시본의 본문을 읽지 않고 게시 순번과 현재 게시본을 알려 준다")
+    void revisionHistoryReadsMetadataWithoutDocumentBodies() {
+        long page = createPage("history", document(text("초판 본문")));
+        assertThat(adminService.getRevisions(page)).isEmpty();
+        assertThatThrownBy(() -> adminService.getRevisions(-1L))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        e -> assertThat(e.getErrorCode()).isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND));
+        publish(page);
+        save(page, document(text("개정 본문")));
+        publish(page);
+
+        List<CmsRevisionSummaryDto> history;
+        List<String> sql;
+        QueryCountInspector.start();
+        try {
+            history = adminService.getRevisions(page);
+            sql = QueryCountInspector.getQueries();
+        } finally {
+            QueryCountInspector.clear();
+        }
+
+        assertThat(history).extracting(CmsRevisionSummaryDto::revisionNumber).containsExactly(2L, 1L);
+        assertThat(history).extracting(CmsRevisionSummaryDto::current).containsExactly(true, false);
+        assertThat(sql).as("게시 이력 조회 중 실행한 SQL").isNotEmpty()
+                .allSatisfy(statement -> assertThat(statement).doesNotContainIgnoringCase("conts_doc_cn"));
     }
 
     @Test
