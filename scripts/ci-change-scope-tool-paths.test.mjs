@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { classifyChangedFiles, GENERATOR_TOOL_PATHS, generatorToolEntry, PR_REUSABLE_LAYOUT } from './ci-change-scope.mjs';
 import { presetIds } from './composition-profiles.mjs';
 import { vendorEvidenceInputs } from './vendor-evidence-inputs.mjs';
+import { asPreviewVendors, openedVendorCiPlan } from './project-composer-vendor-evidence.test-helpers.mjs';
 import { parseModuleReferences, tokenizeDependencies } from './frontend-module-graph.mjs';
 import { trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 
@@ -399,9 +400,13 @@ const OFF_VENDOR_JOB_PATH = {
   'scripts/project-composer-server-job.mjs': '화면 서버의 작업 문구다. 서버만 가져오고 잡은 부르지 않는다.',
   'scripts/project-composer-vendor-evidence.mjs': '증거 기록 명령이다. 잡은 부르지 않는다.',
 };
-/** ci 를 연 모든 벤더의 입력. 벤더 하나의 입력만 보면 다른 벤더가 선언한 포트·어댑터가 잡을 켜는지 보지 못한다. */
+/**
+ * ci 를 연 모든 벤더의 입력. 벤더 하나의 입력만 보면 다른 벤더가 선언한 포트·어댑터가 잡을 켜는지 보지 못한다.
+ * 인증을 멈춘 동안(DEC-OPS-422) 원장에는 ci 벤더가 없어 실제 원장으로는 입력이 비고 대조가 초록이 된다. 그래서 벤더를 승격 전 모양(ci 열림)으로 연다.
+ */
+const VENDOR_PLAN = openedVendorCiPlan(repoRoot);
 const vendorInputs = () => {
-  const ledger = JSON.parse(readRepository('config/db-vendors.json'));
+  const ledger = asPreviewVendors(JSON.parse(readRepository('config/db-vendors.json')));
   return [...new Set(ledger.vendors.filter(vendor => vendor.ci === true).flatMap(vendor => vendorEvidenceInputs(repoRoot, ledger, vendor.id)))];
 };
 
@@ -428,7 +433,8 @@ function vendorAxisMismatches({ files, read, inputs, selects }) {
 
 test('the vendor job is bound to its output, reaches the vendor code it verifies and is selected by every input', () => {
   const inputs = vendorInputs();
-  const selects = file => classifyChangedFiles([file]).reusableVendor;
+  assert.ok(inputs.length >= 300, `벤더 입력이 무너지면 아래 대조가 비어 초록이 된다: ${inputs.length}`);
+  const selects = file => classifyChangedFiles([file], { vendorPlan: VENDOR_PLAN }).reusableVendor;
   const check = (read = readRepository) => vendorAxisMismatches({ files: repositoryFiles, read, inputs, selects });
   assert.deepEqual(check(), []);
   const editedCi = (from, to) => {
@@ -582,7 +588,7 @@ test('Atlas and operation-census tooling retains its audited consumers without u
     assert.equal(result.governance, true, file);
     assert.equal(result.sast, true, file);
     assert.equal(result.reusableCustom, true, file);
-    const unknown = classifyChangedFiles([file, 'scripts/new-unmapped-tool.mjs']);
+    const unknown = classifyChangedFiles([file, 'scripts/new-unmapped-tool.mjs'], { vendorPlan: VENDOR_PLAN });
     for (const axis of AXES.filter(axis => !['atlas', ...PIT_AXES].includes(axis))) assert.equal(unknown[axis], true, `${file}: unknown input restores ${axis}`);
     // [ADR-0061 결정 1] PIT 는 PIT 가 읽는 미지 경로만 고른다 — 아래 PIT 입력 census 가 그 경계를 지킨다.
     assert.deepEqual(PIT_AXES.map(axis => unknown[axis]), [false, false], `${file}: an unknown script PIT does not read`);

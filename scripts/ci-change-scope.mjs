@@ -544,7 +544,8 @@ function loadVendorPlan() {
  * 고르지 않아도 matrix 는 비우지 않는다 — 빈 matrix 를 넘기면 잡이 시작도 못 하고 실패한다.
  */
 function reusableVendorSelection(files, { noRange, docsOnly, event, readSource, readBaseSource, plan }) {
-  if (!plan) return { selected: false, matrix: { include: [] } };
+  // 원장에 ci 벤더가 없으면(인증 중단 기간, DEC-OPS-422) 돌 벤더가 없다. 전수 조건에서도 빈 matrix 로 잡을 켜면 시작도 못 하고 실패한다.
+  if (!plan || plan.vendors.length === 0) return { selected: false, matrix: { include: [] } };
   const matrixOf = (vendors, exhaustive) => {
     const layouts = event === 'pull_request' && !exhaustive ? [plan.pullRequestLayout] : REUSABLE_LAYOUTS;
     return { include: vendors.flatMap(vendor => layouts.map(layout => ({ vendor, layout }))) };

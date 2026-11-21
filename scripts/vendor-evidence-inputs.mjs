@@ -142,8 +142,7 @@ export function vendorEvidenceInputs(root, ledger, vendorId) {
  * CI 벤더 잡의 선택 계획. `ci: true` 인 벤더만 고른다(다른 벤더는 모든 생성의 번역 게이트만 받는다). 입력 계산은 저장소의 Java 를 모두 읽으므로 처음 물을 때 한 번만 한다.
  * PR 은 대표 E2E·증거와 같은 레이아웃을 돈다. 다른 레이아웃은 main 과 삭제 전수가 본다.
  */
-export function vendorCiPlan(root, { inputsOf = (ledger, vendorId) => vendorEvidenceInputs(root, ledger, vendorId) } = {}) {
-  const ledger = readJson(root, VENDOR_LEDGER);
+export function vendorCiPlan(root, { ledger = readJson(root, VENDOR_LEDGER), inputsOf = (rows, vendorId) => vendorEvidenceInputs(root, rows, vendorId) } = {}) {
   const tests = readJson(root, TEST_LEDGER);
   const vendors = ledger.vendors.filter(vendor => vendor.ci === true);
   const removedAssets = new Set(readJson(root, REMOVED_ASSETS).assets);

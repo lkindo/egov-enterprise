@@ -2,6 +2,17 @@
 
 인증 벤더의 증거 입력을 바꾸는 작업은 바로 하지 않고 이 목록에 모았다가 한 브랜치에서 한 번에 처리한다([DEC-OPS-421](operational-decisions-index-ci-governance.md)). 모든 에이전트(Claude Code·Codex·Gemini)와 사람이 같은 목록을 쓴다. 이 문서는 대기 작업 목록이며 규범이 아니다 — 규칙은 [AGENTS.md 「연속 작업의 시간 예산」](../../AGENTS.md#연속-작업의-시간-예산)이 정본이다.
 
+## 인증 중단과 재개
+
+2026-11-21 부터 PostgreSQL 외 다섯 벤더(Oracle·MariaDB·MySQL·SQL Server·CUBRID)의 인증을 멈췄다([DEC-OPS-422](operational-decisions-index-composer.md)). 원장에서 `preview` 이고 `ci`·증거가 없어 생성기는 PostgreSQL 만 고르고, `reusable-vendor` 잡은 돌지 않으며, `VENDOR_EVIDENCE_STALE` 은 나지 않는다.
+
+- **중단 동안**: 아래 목록의 항목은 벤더 입력이라는 이유로 기다리지 않는다. 스키마·데이터·공유 OCI·인가 같은 다른 승인만 지켜 바로 처리하고, 처리한 항목은 목록에서 지운다. 번역 게이트·벤더 SQL 린터·앱 SQL 포트는 그대로 돈다 — 기본 코드에 PostgreSQL 전용 SQL 이 쌓이지 않게 하는 것이 재개 비용을 줄인다.
+- **재개(사용자가 정한 때)** — [DEC-OPS-400](operational-decisions-index-composer.md) ② 순서를 따른다.
+  1. 한 브랜치에서 다섯 벤더에 `ci: true` 를 되돌리고(승격 전 모양 — `preview`·사유 유지), 중단을 단언한 시험을 고친다: `scripts/project-composer-vendor.test.mjs` 의 ci 목록·preview 목록, `scripts/ci-change-scope.test.mjs` 의 인증 중단 시험과 출력 문자열 시험의 벤더 matrix. PR 과 main 의 벤더 잡이 그동안의 깨짐을 드러내면 그 브랜치에서 고친다.
+  2. main 에서 두 레이아웃의 벤더 잡이 통과한 뒤 그 커밋의 demo 멀티모듈 생성물로 엔진마다 증거를 기록한다(`node scripts/project-composer-vendor-evidence.mjs --vendor <id> --version <엔진 버전> --artifact <생성물>`, 다섯 벤더·여섯 엔진에 약 4시간, 기록 중 트리 변경 금지). 그리고 `status` 를 `certified` 로 올리고 사유를 걷으며 선택 표시 시험(`selectableVendors`)을 고친다.
+  3. 같은 변경에서 AGENTS.md 의 중단 문장, 이 절, 생성기 가이드·CI 가이드·다중 DB 설계서·인수인계 문서·공용 메모리 CTX-019 의 중단 문장을 걷는다.
+  4. 마지막 증거는 원본 커밋 70cccd261 로 기록했다(fc59efbba). 재개 때 깨진 곳을 찾으면 그 커밋부터 벤더 입력의 변경을 거슬러 본다(`git log 70cccd261..main -- <입력 경로>`).
+
 ## 왜 모으는가
 
 입력 파일을 하나라도 바꾸면 `regen --check` 의 `VENDOR_EVIDENCE_STALE` 이 인증 벤더 전부를 막고, 엔진마다 증거를 다시 기록해야 한다(엔진 하나에 수십 분, Oracle 은 약 76분, 기록 중에는 작업 트리를 바꿀 수 없다 — [ADR-0047](../02-architecture/decisions/ADR-0047-multi-database-composer-and-vendor-sql-boundary.md) D-9). 항목마다 따로 하면 이 비용이 항목 수만큼 곱해진다.
@@ -15,7 +26,7 @@
    - 모델 생성 도구와 그 import 클로저(import 한 줄을 더하면 그 모듈도 입력이 된다)
 2. **바꾼 뒤 확인한다.** `node scripts/regenerate.mjs --check` 가 `VENDOR_EVIDENCE_STALE` 을 내면 입력을 바꾼 것이다(PowerShell 에서는 `npm run regen -- --check` 의 `--` 가 사라지므로 node 로 직접 부른다).
 3. **입력이면 그 변경은 되돌리고 아래 목록에 항목을 더한다.** 무엇을·왜·어느 파일·어떻게 검증할지와 관련 GAP·DEC 를 적는다. 입력 밖에서 같은 목적을 이룰 수 있으면 그쪽으로 한다(예: 질의 애노테이션 대신 파생 질의, 입력 파일 대신 호출자 쪽).
-4. **묶음은 사용자가 여는 때 한 번에 처리한다.** 현재 계획: ADR-0060 2차 배포가 가능해지는 날(1차 배포 7일 뒤) 이후 Spring Boot 4.1.3 갱신과 함께 연다. 처리한 항목은 이 목록에서 지운다.
+4. **묶음은 사용자가 여는 때 한 번에 처리한다.** 인증 중단 동안에는 묶음 없이 바로 처리한다(위 절). 중단 전 계획: ADR-0060 2차 배포가 가능해지는 날(1차 배포 7일 뒤) 이후 Spring Boot 4.1.3 갱신과 함께 연다. 처리한 항목은 이 목록에서 지운다.
 5. 사용자가 어떤 항목을 지금 하라고 명시하면 재기록 비용을 알린 뒤 따른다.
 
 ## 대기 항목
