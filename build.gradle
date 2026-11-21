@@ -157,6 +157,10 @@ subprojects { subproject ->
         options.compilerArgs << "-parameters" << "-Werror" << "-Xlint:unchecked" << "-Xlint:deprecation"
     }
 
+    // 시험을 돌리는 JVM 은 둘이다 — 아래 Test 태스크와, 그 밖에서 자기 JVM 을 띄우는 PIT(아래 pitest 블록). 둘 다 이 값으로
+    // 기본 시간대를 고정하며 시간대 게이트(ServiceTimeZoneLinterTest)가 두 곳을 함께 본다. 다른 시간대 확인: -Dtest.timezone=UTC
+    def testJvmZone = System.getProperty('test.timezone') ?: 'Asia/Seoul'
+
     tasks.withType(Test).configureEach {
         systemProperty 'file.encoding', 'UTF-8'
         useJUnitPlatform()
@@ -167,7 +171,7 @@ subprojects { subproject ->
         // [운영 패리티] 앱은 어디서 돌든 JVM 기본 시간대를 한국 표준시로 고정한다(DEC-OPS-396). 시험도 러너의 시간대가 아니라
         // 같은 값으로 고정해 로컬·CI·운영이 같은 조건이 된다. UTC 로 돌리던 때는 DB 의 CURRENT_DATE 가 한국 날짜보다 하루 뒤처지는
         // 한국 0시~9시마다 날짜 경계 시험이 붉었고, 낮에 도는 CI 는 그것을 보지 못했다. 다른 시간대 확인: -Dtest.timezone=UTC
-        systemProperty 'user.timezone', System.getProperty('test.timezone') ?: 'Asia/Seoul'
+        systemProperty 'user.timezone', testJvmZone
         maxHeapSize = "6144m"
         ignoreFailures = false
         
@@ -342,6 +346,10 @@ subprojects { subproject ->
         outputFormats = ['HTML', 'XML']
         timestampedReports = false
         threads = 4
+        // [운영 패리티] PIT 는 Test 태스크 밖의 자기 JVM 에서 시험을 돌려, 위 Test 태스크의 시간대 고정이 닿지 않는다. 고정이 없던 동안
+        // 변이 시험은 러너 시간대(CI 는 UTC)로 돌았고, JVM 기본 날짜가 한국 날짜보다 하루 늦은 한국 0시~9시에만 오늘 날짜를 읽는
+        // 시험이 "변이 없이도 실패"해 required mutation-test 가 붉었다(2026-11-21 main). Test 태스크와 같은 값으로 고정한다.
+        jvmArgs.add("-Duser.timezone=${testJvmZone}".toString())
         // 대상 글롭이 잘못되거나 제외 규칙이 전부 삼킨 경우 "분석할 mutation 0건"을 성공으로 보지 않는다.
         failWhenNoMutations = true
 

@@ -41,7 +41,7 @@ version: 2.0.0
 
 ## 검증 경계
 
-- `node .agent/scripts/db-bridge.js`는 live metadata와 read-only SQL 조회용이다. DDL을 실행하거나 `BEGIN/COMMIT`으로 syntax를 검증하지 않는다.
+- `node --env-file=.env .agent/scripts/db-bridge.js`(접속 값 `DB_*` 가 이미 환경에 있으면 `--env-file` 없이)는 live metadata와 read-only SQL 조회용이다. DDL을 실행하거나 `BEGIN/COMMIT`으로 syntax를 검증하지 않는다.
 - DDL syntax·Flyway 순서는 격리된 PostgreSQL 테스트 환경과 `schemaValidation` 계열 테스트에서 검증한다.
 - 기존 `linter:ignore`는 안전성 증거가 아니다. 새 예외는 구조화된 사유·범위·만료/제거 조건 없이 추가하지 않는다.
 - “zero downtime”은 정적 lint 통과만으로 증명되지 않는다. 데이터량, lock, 배포 순서, 구버전 호환, 관측·rollback을 함께 확인한다.
