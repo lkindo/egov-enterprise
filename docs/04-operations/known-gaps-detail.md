@@ -2,7 +2,7 @@
 
 > 상태: gap 영역 상세 — 이 저장소(원본)의 미해결 위험 가운데 특정 경로에서만 필요한 행의 전문이다. 에이전트 진입점이 자동으로 읽지 않으며, 레지스트리와 읽는 조건은 [공용 gap 인덱스](../../.agent/memory/known-gaps.md)와 [AGENTS.md 작업 시작 시 필수 읽기](../../AGENTS.md#작업-시작-시-필수-읽기)가 정한다. 재사용 생성물에 복사된 이 파일은 upstream 이력이며 도입 기관의 현재 위험이 아니다.
 
-절은 [영역 결정 색인](../../.agent/memory/decisions.md)과 같은 영역이고, 같은 [경로 원장](../../scripts/decision-indexes.mjs)으로 읽는다 — `node scripts/decision-indexes.mjs --for <경로…>` 가 읽을 절을 출력한다. 우선순위·상태 어휘와 해결 규칙은 공용 gap 인덱스를 따른다. 행마다 공용 gap 인덱스의 「영역 상세 gap 레지스트리」에 ID·우선순위·상태가 같은 줄이 하나씩 있어야 하고, 행 길이·원장 수 재진술·공개 안전 검사는 자동 로드 행과 같다([공용 메모리 계약](../../scripts/shared-memory-contract.test.mjs)). 새 gap 이 특정 경로에서만 필요하면 걸리는 영역 절에 행을 두고 레지스트리 줄을 함께 더한다.
+절은 [영역 결정 색인](../../.agent/memory/decisions.md)과 같은 영역이고, 같은 [경로 원장](../../scripts/decision-indexes.mjs)으로 읽는다 — `node scripts/decision-indexes.mjs --for <경로…>` 가 읽을 절을 출력한다. 우선순위·상태 어휘와 해결 규칙은 공용 gap 인덱스를 따른다. 종료한 gap 의 남은 위험·재개 조건은 각 영역 절 끝의 「종료한 항목의 남은 경계」에 둔다 — 종료 이력 자체는 [보관 기록](../archived/operational-decisions-history.md#종료이전-gap-기록)에 있다. 행마다 공용 gap 인덱스의 「영역 상세 gap 레지스트리」에 ID·우선순위·상태가 같은 줄이 하나씩 있어야 하고, 행 길이·원장 수 재진술·공개 안전 검사는 자동 로드 행과 같다([공용 메모리 계약](../../scripts/shared-memory-contract.test.mjs)). 새 gap 이 특정 경로에서만 필요하면 걸리는 영역 절에 행을 두고 레지스트리 줄을 함께 더한다.
 
 <a id="ci-governance"></a>
 
@@ -13,6 +13,13 @@
 | GAP-E2E-001 | P3 | needs-revalidation | E2E impact selection | 알려진 경로·소비자 누락을 보완하고 검토된 PR 화면만 선별한다. 공유·미지 입력과 main은 전수다. 일반 의존성 완전성·보장 절감률은 검증되지 않았다. 2026-11-10 대조: main CI 60건(10-29~11-09)의 E2E 실패 5건은 재시도 통과 3·Maven 저장소 연결 시간 초과 1·취소 1이라 선별이 놓친 결정적 회귀는 없었다. 같은 기간 성공한 PR 12건은 모두 전수로 돌아(샤드 1 이 main 과 같은 25개) 선별이 쓰인 PR 이 없었다 — 놓침도 절감도 이 표본으로는 판정되지 않는다. | [선별 경계](../../docs/02-architecture/testing-process-redesign.md#54-pr의-검증된-화면-변경만-spec-단위로-선별한다), [planner](../../scripts/e2e-shard-plan.mjs) | 화면만 바꾸는 PR 이 생기면 그 PR 의 선별 결과와 다음 main 전수 결과를 대조한다. 새 소비자는 매핑·부정 검증을 함께 갱신한다. | 테스트/CI 소유자 | 2026-11-10 |
 | GAP-DEP-001 | P1 | needs-revalidation | dependency security | PR의 읽기 전용 Gradle graph producer, checkout/run 없는 trusted publisher, 최대 600초 snapshot readiness와 runtime High 이상 review가 구현돼 있다. readiness는 경고·API 오류를 차단하지만 경고가 없으면 통과하며, base에 publisher가 없는 bootstrap은 명시적으로 허용한다. 양쪽 snapshot이 0일 때 GitHub가 경고를 생략하는 경우와 public fork 고위험 probe는 여전히 별도 검증 대상이다. | [PR producer](../../.github/workflows/dependency-submission.yml), [trusted publisher](../../.github/workflows/dependency-submission-publish.yml), [readiness](../../scripts/dependency-snapshot-readiness.mjs), [NVD workflow](../../.github/workflows/dependency-check.yml), [검증 사각지대](../../docs/04-operations/verification-blindspots.md) | 승인된 public fork probe로 신규 runtime High 차단과 snapshot 부재 경계를 검증한다. base/head 누락은 readiness의 분류·복구 안내를 따르며 PR 코드 실행 잡에 write 권한을 주지 않는다. 주간 NVD full scan은 migration-tool 을 포함한 기대 5모듈을 보고, 2026-09-24 main 수동 실행에서 억제되지 않은 CVSS≥7 이 없었다([회차 기록](../../docs/04-operations/readiness-followups.md#후속-정리-2026-09-24)). 운영 triage·SLA 증거는 계속 별도다. | 보안/사용자 | 2026-09-24 |
 
+### 종료한 항목의 남은 경계
+
+종료한 gap 가운데 이 영역 경로에서 여전히 지켜야 할 위험·재개 조건이다(표의 행이 아니다 — 활성 gap 은 위 표에만 둔다).
+
+- 다른 영역 절의 항목 가운데 이 영역 경로(E2E·CI 워크플로·거버넌스 원장)에서도 지킬 것: `GAP-FE-002`(CI 로그에 `socket hang up`/`ECONNRESET` 이 재발하면 원인을 재검증한다)·`GAP-FE-003`(E2E 는 하이드레이션 전 입력을 `waitForHydration` 으로 기다린다)·`GAP-ARCH-001`(결합 원장에 새 기능 간 edge 를 더하려면 등재와 사유가 있어야 한다)은 [제품 절](#product)의, `GAP-BASE-002`(T2 가 다시 실패하면 새 gap 을 연다)는 [생성기 절](#composer)의 「종료한 항목의 남은 경계」에 전문이 있다.
+- `GAP-DEP-002`: spring-retry 유지 판단·재개 조건은 [후속 결정](../archived/operational-decisions-history.md#dec-ops-125)과 [정리 기록](readiness-followups.md#후속-정리-2026-09-24)을 따른다. 당시 기록한 Boot 4.1 지원 종료는 2027-07-31이며 다음 minor 결정 때 재확인한다.
+
 <a id="composer"></a>
 
 ## 프로젝트 생성기·재사용 투영
@@ -22,6 +29,12 @@
 | GAP-COMPOSE-002 | P3 | open | generated schema changes | 새 Java·미배정 권한은 원본 잠금·승인과 분리한 추가분 등록으로 검사한다(ADR-0057). 기존 소스 수정·새 화면·마이그레이션 연계는 추가 전용 등록의 자동 지원 범위 밖이다. 등록만으로 물리 스키마·API 계약·기관 승인이 충족되지는 않는다. 벤더 스키마 자체는 기존 verify:vendor-schema가 검사한다. | [추가분 가이드](../03-guides/generated-project-additions.md), [ADR-0057](../02-architecture/decisions/ADR-0057-adopter-java-and-permission-registration.md), [등록 명령](../../scripts/adopter-project.mjs) | 더 넓은 변경 범위를 열 때 별도 설계·검증을 추가한다. 원본 인증 해시를 다시 써서 승인을 유지하거나 기존 규칙을 면제하지 않는다. | 아키텍처/제품 소유자 | 2026-11-14 |
 | GAP-COMPOSE-001 | P3 | open | composer degraded compositions | 계획은 기능 저하를 알리지만 저하된 생성물의 화면 일부는 사실과 다르게 말할 수 있다. 알림이 없는 구성의 결재·메모 보고 알림 문구는 전달 채널 슬롯으로 닫았다(DEC-OPS-327) — 재알림 단추와 알림 문장을 감춘다. 서버 재알림 API 는 그대로라 직접 부르면 아무에게도 닿지 않는 '재알림' 처리 기록이 남는다(화면 경로는 없다). 권한이 빠진 투영 묶음은 원본 이름·설명을 들고 가지 않는다(DEC-OPS-330). 협업 허브의 메일 발송 링크는 메일 기여라 메일 없이 쪽지만 고르면 함께 빠진다(허브 분해 H1). 마커 블록 안의 라우트는 계약이 블록 소유와 대조하고, `/admin` 목적지 링크는 T2 가 생성물마다 관리 링크 census 로 본다. 포트 연동(DEC-OPS-288)과 슬롯 기여(DEC-OPS-353)의 연동 분류는 소스로 계산해 선언과 대조한다 — 기여를 값으로 읽는 다른 기능의 화면은 소비자 종류 선언(셸·값)과 import 그래프로 찾는다. 문자열로 적은 화면 경로(이름이 href·url·link·route 로 끝나거나 …Path·fallback 인 속성·변수·매개변수 기본값, router.push·replace·redirect)는 같은 census 파일의 화면 경로 목적지 census 가 이 트리의 화면(page.tsx)과 대조한다 — 원본에서는 불변식이고 T2 에서는 지워진 기능의 화면을 가리키는 남은 링크가 붉다(2026-11-10, 실제 투영 함수로 시작 구성·단독 기능 전부를 재 보니 0건). 남은 것: 이름이 그 규칙 밖인 속성·도우미 인자(이름만 `path` 인 것은 쿠키 옵션과 겹쳐 뺀다), 다른 이름의 상수를 거쳐 넘긴 목적지, 문장 속 메뉴 이름은 보지 않는다. | [연동 선언](../../scripts/project-composer-integrations.mjs), [슬롯 reader 계산](../../scripts/project-composer-slot-readers.mjs), [전달 채널 도우미](../../frontend/src/lib/delivery-channels.ts), [관리·화면 경로 census](../../frontend/src/__tests__/admin-link-visibility-census.test.ts) | 규칙 밖 이름·상수를 거친 목적지와 문장 속 메뉴 이름의 기계 대조는 Phase 3 후보다. | 아키텍처/제품 소유자 | 2026-11-10 |
 
+### 종료한 항목의 남은 경계
+
+종료한 gap 가운데 이 영역 경로에서 여전히 지켜야 할 위험·재개 조건이다(표의 행이 아니다 — 활성 gap 은 위 표에만 둔다).
+
+- `GAP-BASE-002`: T2는 required가 아니며 재실패 시 새 gap을 연다. core의 소비자 없는 게시판 DTO 3개와, 투영 원장이 의도치 않은 연쇄 제거도 기대 부재로 받아들이는 한계는 남는다([범위](../archived/operational-decisions-history.md#gap-base-002)).
+
 <a id="migration"></a>
 
 ## 레거시 이관 도구
@@ -30,6 +43,12 @@
 |---|---|---|---|---|---|---|---|---|
 | GAP-MIG-002 | P2 | open | migration protected keys | 암호화할 소스 컬럼(주민번호 등)은 정렬 키·`idStrategy.sourceKey`·identity·복합 FK·`fkRef` 의 소스로 쓸 수 없다 — 그 값은 평문으로 `tb_migration_checkpoint.source_key`·`tb_migration_key_map.legacy_key` 에 남기 때문이다(검증·적재 시작이 거부한다, DEC-OPS-308). 그래서 주민번호 말고는 행을 가를 키가 없는 레거시 테이블은 지금 적재할 수 없다. 재개 대조 오류의 키 digest 는 프로세스마다 무작위 키의 HMAC 으로 바꿔 전수 대입을 막았다. L3a-2 부터 원장 load 는 내장 변환기만 받아(DEC-OPS-317), 숫자형 보호 소스(Oracle `NUMBER(13)` 주민번호 등)를 문자열로 넘기거나 길이·자릿수를 줄이는 프로젝트 변환기를 승인 workflow 에서 쓸 수 없다 — 그런 컬럼은 지금 옮길 길이 없다. | [보호 선언 대조](../../migration-tool/src/main/java/nuri/migration/protect/ColumnProtectionPlan.java), [이관 도구 설계](../../docs/02-architecture/legacy-migration-tool-design.md#mappingyml-계약), [ADR-0029](../../docs/02-architecture/decisions/ADR-0029-legacy-standardization-migration.md) | 그런 테이블·컬럼이 기관 이관 범위에 있을 때 별도로 설계·승인한다 — 제어 테이블에 원본 키 대신 keyed HMAC 을 저장하는 변경(도구 제어 테이블 변경, 사용자 승인 필요)과 숫자형 보호 소스·축소가 필요한 컬럼을 위한 내장 정규화·축소 변환기가 후보다. 그 전에는 소스에 비민감 대리키가 있는지 먼저 확인한다. | 이관 도구 소유자 | 2026-10-17 |
 | GAP-MIG-001 | P1 | blocked-external | migration-tool | Oracle(Free 23.26.3·19.3 EE)·MySQL·MariaDB·SQL Server 는 discover·가시성·승인 workflow DRY_RUN·LOB 적재·JVM 종료 복구를, CUBRID 는 owner 한정 discovery·엔진 DRY_RUN·내부 COMMIT 만 실측했다. 2026-10-15~16 Oracle Free 로 표준화 파이프라인(수집→원장→mapping 생성→DRY_RUN)과 엔진 COMMIT(격리·시퀀스 재설정, 분할·조회·보관 덤프·load 안 대사)을 리허설했다 — 드러난 결함과 수정은 그 기록에 있다(DEC-OPS-323). vendor 7종은 모두 UNVERIFIED·MANUAL_ONLY 이고 값별 상한·외부 driver·공개 COMMIT 차단은 유지한다. | [Oracle 표준화 리허설](../../docs/04-operations/readiness-followups.md#이관-oracle-free-표준화-리허설), [Oracle 19c 실측](../../docs/04-operations/readiness-followups.md#이관-oracle-19c-후속-단계-실측), [Oracle Free 실측](../../docs/04-operations/readiness-followups.md#이관-oracle-후속-단계-실측), [SQL Server 실측](../../docs/04-operations/readiness-followups.md#이관-sql-server-후속-단계-실측), [MariaDB 실측](../../docs/04-operations/readiness-followups.md#이관-mariadb-후속-단계-실측), [MySQL 실측](../../docs/04-operations/readiness-followups.md#이관-mysql-후속-단계-실측), [CUBRID 실측](../../docs/04-operations/readiness-followups.md#이관-cubrid-실행-환경과-검증-경계), [복구 런북](../../docs/04-operations/migration-recovery-runbook.md) | 실제 도입 버전·driver digest별 COMMIT 자격, 최소권한·일관성(Oracle 은 문장 단위 스냅숏이라 freeze 필수)·운영 규모·cutover·상한 초과 LOB·일광절약 간격의 DATE 값(고정 오프셋 JVM 시간대로 실행)을 검증한다. 이전 LocalDateTime T checkpoint는 별도 reconciliation·승인이 필요하다. Oracle 접속 사용자 이름은 대소문자와 상관없이 쓴다 — 원천 schema 이름과 같은 사용자 이름은 credential 검사에서 뺀다(DEC-OPS-326). Tibero는 license.xml 부재로 기동하지 못했다 — 유효 라이선스·발급 hostname 확보 후 실측한다. 전체 rollback은 승인 백업 복원, upsert/CDC는 별도 설계다. | 사용자/DB 운영 | 2026-10-16 |
+
+### 종료한 항목의 남은 경계
+
+종료한 gap 가운데 이 영역 경로에서 여전히 지켜야 할 위험·재개 조건이다(표의 행이 아니다 — 활성 gap 은 위 표에만 둔다).
+
+- `GAP-ETL-001`: 앞서 커밋한 chunk는 남아 전체 되돌리기는 승인된 백업 복원이다. 이후 도입된 원장 승인 예외 격리와 쓰기 오류 중단을 구분한다([현행 ADR-0031](../02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md), [복구 런북](migration-recovery-runbook.md)).
 
 <a id="product"></a>
 
@@ -51,3 +70,17 @@
 | GAP-JWT-001 | P2 | open | jwt signing transition | [ADR-0060](../02-architecture/decisions/ADR-0060-asymmetric-jwt-signing.md) 1차(2026-11-17 #1114 병합)는 ES256 으로 발급하면서 옛 HMAC 토큰도 받는다 — 백엔드 `accept-legacy-hmac` 기본값이 켜짐이고 Next 에도 서명 비밀 `JWT_SECRET` 이 남는다. 그동안 Next 컨테이너가 침해되면 그 비밀로 임의 사용자(관리자 포함)의 접근 토큰을 만들 수 있다. ADR 은 이 창을 재발급 토큰 수명(7일)으로 한정하고 2차 배포를 미루지 않는다고 정했지만 저장소에 일정이 없었다(2026-11-17 소스 실측 평가). | [백엔드 기본값](../../api-server/src/main/resources/application.yml), [Next 검증](../../frontend/src/proxy.ts), [운영 compose](../../docker-compose.prod.yml) | 1차 배포일 + 7일 뒤(병합 기준 빠르면 2026-11-24) 2차를 연다: 백엔드·Next 의 HMAC 수용을 끄고(기본값 false) 운영 compose·`deploy.sh` 의 Next `JWT_SECRET` 전달을 걷고 키 교체 런북을 고친다. `application.yml` 이 벤더 증거 입력이라 그 시점의 재기록 묶음과 한 브랜치로 맞춘다. 2차 전에 기본값만 먼저 끄지 않는다 — 1차 배포 전 토큰을 가진 사용자가 모두 다시 로그인해야 하고 ADR 결정 5와 어긋난다. | 보안 소유자 | 2026-11-17 |
 | GAP-STD-001 | P2 | open | standard schema metadata | 기승인 version 기술 명칭 예외([DEC-OPS-378](../archived/operational-decisions-history.md#dec-ops-378))와 [2026-11-10 1차 C 유지 승인](standard-metadata-disposition.md#approved-first-phase-20261110)은 승인 범위의 미등록 정정 후보에서 제외한다. 잠정 B 정정·퇴역 후보와 기존 제약 형태 2건은 별도 후속 판단이다. 등록 단어 조합만으로 표준 적합으로 보지 않는다. | [검증기](../../migration-tool/src/main/java/nuri/migration/validate/TargetStandardValidator.java), [메타 계약](../../api-server/src/test/java/nuri/api/schema/MetaStandardTermsExtensionMigrationIntegrationTest.java), [처분안](standard-metadata-disposition.md) | DEC-OPS-307·317의 같은 숫자 종류 허용·nonStandardTarget 사유 경계와 실제 도메인 정합을 구분한다. B·C·A* 및 version 기존 제약 2건을 읽기 실측·개별 패킷으로 판단하고 승인 뒤 변경한다. 기승인 잠정 유지를 영구 예외로 확대하지 않는다. | DB/표준 소유자 | 2026-11-14 |
 | GAP-DATA-002 | P2 | blocked-external | legacy input data | 2026-09-30 OCI 재집계에서 온라인 설문 3행의 시작·종료일은 여전히 잘린 YYYY-MM- 형태다. 행사는 25행으로 줄었고 이름이 비어 있는 행은 0이다(2026-09-10 실측 107행 중 공백 24행은 보정된 것이 아니라 행 자체가 사라졌다, 삭제 원인 미확인). 새 쓰기는 올바른 날짜·행사명을 요구하고 기존 읽기는 보존한다. | [실측과 보정 조건](../../docs/04-operations/readiness-followups.md#날짜입력-계약) | 원래 날짜를 업무 소유자가 확인한 후 설문 3행을 수정한다. 누락 값을 추정하지 않는다. | 업무/DB 소유자 | 2026-09-30 |
+
+### 종료한 항목의 남은 경계
+
+종료한 gap 가운데 이 영역 경로에서 여전히 지켜야 할 위험·재개 조건이다(표의 행이 아니다 — 활성 gap 은 위 표에만 둔다).
+
+- `GAP-FE-002`: CI의 flaky 감소는 반복 실행으로 확인한다. main 로그에 `socket hang up`/`ECONNRESET`이 재발하면 원인을 재검증한다([종료 근거](../archived/operational-decisions-history.md#gap-fe-002)).
+- `GAP-FE-003`: 본문은 여전히 따로 공개되므로 서버에서 오래 걸리는 본문은 늦게 하이드레이션하고, 그 전에 넣은 입력은 React 가 되돌린다 — E2E 는 `waitForHydration` 으로 기다린다. 공급자가 첫 화면 직후 값을 다시 바꾸면 같은 경합이 돌아온다(공급자 단위 시험이 막는다). 미리 채운 캐시(HydrationBoundary)와 그 소비자를 다른 Suspense(`next/dynamic` 의 loading 등)로 나누면 로그아웃의 캐시 비움이 늦은 경계를 빈 캐시로 하이드레이션해 #418 이 난다 — 업무 홈은 한 단위로 묶었고 구조 단언이 막는다(2026-10-23)([종료 근거](../archived/operational-decisions-history.md#gap-fe-003)).
+- `GAP-MEMO-001`: 지시 작성자 컬럼이 없어 변경 전에 수신자 아닌 사람이 남긴 지시 여부는 저장소로 판별할 수 없다([인가 변경 범위](../archived/operational-decisions-history.md#gap-memo-001)).
+- `GAP-BOARD-002`: 2026-10-16 확인한 시드·라이브 게시판 4개의 유형 코드·템플릿 불일치는 보정하지 않았다. 화면은 템플릿 이름에 짝 불일치를 덧붙여 보이며(ADR-0043 결정 5) 데이터 수정은 별도 승인 대상이다([남은 데이터 경계](../archived/operational-decisions-history.md#gap-board-002)).
+- `GAP-BOARD-003`: 비밀·논리 삭제 글에서 `BOARD_READ_ALL`만 있으면 본문은 열리고 첨부는 403인 비대칭은 의도다. 예약 게시는 B1(#966)이 집행하며, 버전이 없는 옛 글은 수정·일정 변경을 400으로 막는다 — 다른 도입 환경의 보정은 별도 데이터 승인이다([종료 근거](../archived/operational-decisions-history.md#gap-board-003)).
+- `GAP-DOMAIN-001`: 추천 이력이 없던 기존 `like_cnt` 값은 유지한다. `GAP-BOARD-001`: 쓰지 않는 게시글 비밀번호 컬럼의 제거는 별도 스키마 승인이다([기존 집계](../archived/operational-decisions-history.md#gap-domain-001), [컬럼 경계](../archived/operational-decisions-history.md#gap-board-001)).
+- `GAP-POLL-001`·`GAP-POLICY-001`: 다른 도입 환경의 기존 NULL 분포는 기관이 읽기 집계로 확인한다. `GAP-API-001`: 내부 확장 Map과 추가 JSON 필드 호환성은 남으며 binary/stream 전송까지 타입화한 결과가 아니다([기존 데이터](../archived/operational-decisions-history.md#gap-poll-001), [타입 경계](../archived/operational-decisions-history.md#gap-api-001)).
+- `GAP-CMTY-001`: 커뮤니티 운영자 위임은 닫혔다 — 운영자는 그 커뮤니티의 승인 회원이면서 `mngrYn='Y'` 이고, 운영 범위는 그 커뮤니티 하나다(다른 커뮤니티·신청·탈퇴·일반 회원 403). 생성 후 게시판 귀속 변경은 쌓인 글의 열람 범위를 소급 바꾸므로 인가 의미 결정이 먼저이고(H3), 게시판 외 회원 전용 자원은 없다. `CommunityUser.userId` 는 esntlId 축이다([종료 근거](../archived/operational-decisions-history.md#gap-cmty-001)).
+- `GAP-ARCH-001`: `business-app` 서비스 계층의 기능 간 결합은 포트·이벤트로 모두 역전했다. 결합 원장이 남은 공통 핵심 참조와 함께 edge 정확 집합으로 감시하며, 새 기능 간 edge 는 원장 등재와 사유가 있어야 통과한다. 감시 범위는 서비스 계층 type 참조다 — 엔티티는 `DomainIsolationTest` 가 보며 게시판↔댓글·스크랩→게시판·포상→결재의 기존 엔티티 결합은 허용 예외로 남는다(그 기능을 따로 지워야 하면 그때 분리한다). 프런트 기능 간 import 는 투영 tsc(GAP-PACK-001)가 본다([종료 근거](../archived/operational-decisions-history.md#gap-arch-001)).

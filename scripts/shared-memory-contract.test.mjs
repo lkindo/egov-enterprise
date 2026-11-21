@@ -1296,6 +1296,97 @@ test('the auto-loaded gap registry and the gap area detail stay one-to-one', () 
 });
 
 /**
+ * [2026-11-22] 종료한 gap 의 남은 경계는 gap 영역 상세의 영역 절 끝 소절에 두고, 자동 로드 쪽에는 영역별 ID 목록만 둔다.
+ * 목록과 소절이 어긋나면(오타·항목 이동·삭제) 경로 판정으로 그 항목에 닿는 길이 조용히 끊긴다 — 양쪽을 ID·영역까지 대조한다.
+ * 다른 영역 경로에서도 걸리는 항목을 가리키는 한 줄(`- 다른 영역 절의 항목…`)은 전문이 아니라 안내이므로, 가리킨 ID 가 어느 영역이든
+ * 전문 항목으로 있는지만 본다.
+ */
+const CLOSED_GAP_HEADING = '### 종료한 항목의 남은 경계';
+const CLOSED_GAP_CROSS_REFERENCE = '- 다른 영역 절의 항목';
+
+export function closedGapBoundaryViolations(knownGaps, detail) {
+  const violations = [];
+  const labels = new Map(DECISION_AREA_INDEXES.map(({ area, label }) => [label, area]));
+  const gapsText = knownGaps.replace(/\r\n?/gu, '\n');
+  const pointerStart = gapsText.indexOf(`\n${CLOSED_GAP_HEADING}\n`);
+  if (pointerStart < 0) return ['known-gaps.md: 「종료한 항목의 남은 경계」 절이 없습니다.'];
+  const pointerEnd = gapsText.indexOf('\n## ', pointerStart + 1);
+  const pointer = new Map();
+  for (const line of gapsText.slice(pointerStart, pointerEnd < 0 ? undefined : pointerEnd).split('\n')) {
+    const match = line.match(/^- ([^:]+): (GAP-.+)$/u);
+    if (!match) continue;
+    const area = labels.get(match[1]);
+    if (!area) { violations.push(`종료 항목 위치 안내의 영역 이름이 영역 결정 색인에 없습니다: ${match[1]}`); continue; }
+    const ids = match[2].split('·');
+    if (ids.some((id) => !/^GAP-[A-Z]+-\d{3}$/u.test(id))) violations.push(`종료 항목 위치 안내의 ID 형식이 틀렸습니다: ${match[2]}`);
+    pointer.set(area, ids);
+  }
+  const detailText = detail.replace(/\r\n?/gu, '\n');
+  const anchors = [...detailText.matchAll(/^<a id="([^"]+)"><\/a>$/gmu)];
+  const primary = new Map();
+  const referenced = [];
+  anchors.forEach((match, index) => {
+    const section = detailText.slice(match.index, anchors[index + 1]?.index ?? detailText.length);
+    const at = section.indexOf(`\n${CLOSED_GAP_HEADING}\n`);
+    const ids = [];
+    if (at >= 0) {
+      for (const line of section.slice(at).split('\n')) {
+        if (line.startsWith(CLOSED_GAP_CROSS_REFERENCE)) {
+          referenced.push(...[...line.matchAll(/`(GAP-[A-Z]+-\d{3})`/gu)].map((found) => ({ id: found[1], from: match[1] })));
+        } else if (line.startsWith('- `GAP-')) {
+          // 항목 머리의 ID 만 센다: `GAP-X`: 또는 `GAP-A`·`GAP-B`: — 문장 속 괄호 언급은 머리가 아니다.
+          ids.push(...[...line.matchAll(/`(GAP-[A-Z]+-\d{3})`(?=[:·])/gu)].map((found) => found[1]));
+        }
+      }
+    }
+    primary.set(match[1], ids);
+  });
+  const everyPrimary = [...primary.values()].flat();
+  for (const id of new Set(everyPrimary)) {
+    if (everyPrimary.filter((other) => other === id).length > 1) violations.push(`${id}: 종료 항목의 전문은 한 영역 절에만 둔다.`);
+  }
+  for (const { area } of DECISION_AREA_INDEXES) {
+    const listed = pointer.get(area) ?? [];
+    const written = primary.get(area) ?? [];
+    for (const id of listed) if (!written.includes(id)) violations.push(`${id}: 위치 안내는 ${area} 절을 가리키는데 그 절의 「종료한 항목의 남은 경계」에 항목이 없습니다.`);
+    for (const id of written) if (!listed.includes(id)) violations.push(`${id}: ${area} 절에 항목이 있는데 자동 로드 위치 안내에 없습니다 — 경로 판정 밖에서는 이 항목이 있는 줄 모른다.`);
+  }
+  for (const { id, from } of referenced) {
+    if (!everyPrimary.includes(id)) violations.push(`${id}: ${from} 절이 가리키는 다른 영역의 종료 항목이 없습니다.`);
+    else if ((primary.get(from) ?? []).includes(id)) violations.push(`${id}: ${from} 절은 자기 절의 항목을 다른 영역 항목으로 가리킵니다.`);
+  }
+  return violations;
+}
+
+test('closed gap boundaries stay reachable: the auto-loaded pointer and the area detail list the same IDs', () => {
+  const knownGaps = readRepoFile('.agent/memory/known-gaps.md');
+  const detail = readRepoFile(GAP_DETAIL);
+  assert.deepEqual(closedGapBoundaryViolations(knownGaps, detail), []);
+
+  const normalized = detail.replace(/\r\n?/gu, '\n');
+  const detailLine = normalized.split('\n').find((line) => line.startsWith('- `GAP-FE-003`:'));
+  assert.ok(detailLine, '상세의 GAP-FE-003 항목을 찾지 못했습니다 — 이 시험의 고정물을 함께 고친다.');
+  const etlLine = normalized.split('\n').find((line) => line.startsWith('- `GAP-ETL-001`:'));
+  const dropLine = (text, line) => text.split('\n').filter((part) => part !== line).join('\n');
+  const cases = [
+    // 2026-11-22 독립 검토의 두 반례 — 종전에는 둘 다 위반 0건이었다.
+    ['위치 안내의 ID 오타', knownGaps.replace('GAP-FE-003', 'GAP-FE-033'), normalized, 'GAP-FE-033: 위치 안내는 product 절을 가리키는데'],
+    ['상세 항목 삭제', knownGaps, dropLine(normalized, detailLine), 'GAP-FE-003: 위치 안내는 product 절을 가리키는데'],
+    ['안내에 없는 상세 항목', knownGaps.replace('·GAP-CMTY-001', ''), normalized, 'GAP-CMTY-001: product 절에 항목이 있는데 자동 로드 위치 안내에 없습니다'],
+    ['다른 영역 절로 옮긴 항목', knownGaps, dropLine(normalized, etlLine).replace(detailLine, `${detailLine}\n${etlLine}`), 'GAP-ETL-001: 위치 안내는 migration 절을 가리키는데'],
+    ['두 절에 적힌 전문', knownGaps, normalized.replace(etlLine, `${etlLine}\n${detailLine}`), 'GAP-FE-003: 종료 항목의 전문은 한 영역 절에만 둔다.'],
+    ['없는 항목을 가리키는 안내', knownGaps, normalized.replace('`GAP-BASE-002`(T2 가', '`GAP-BASE-902`(T2 가'), 'GAP-BASE-902: ci-governance 절이 가리키는 다른 영역의 종료 항목이 없습니다.'],
+    ['모르는 영역 이름', knownGaps.replace('- 레거시 이관 도구: GAP-ETL-001', '- 이관: GAP-ETL-001'), normalized, '영역 이름이 영역 결정 색인에 없습니다: 이관'],
+    ['절 삭제', knownGaps.replace(CLOSED_GAP_HEADING, '### 종료 항목'), normalized, '절이 없습니다'],
+  ];
+  for (const [label, gaps, details, expected] of cases) {
+    assert.ok(gaps !== knownGaps || details !== normalized, `${label}: 변이가 적용되지 않았습니다.`);
+    const messages = closedGapBoundaryViolations(gaps, details);
+    assert.ok(messages.some((message) => message.includes(expected)), `${label}: ${JSON.stringify(messages)}`);
+  }
+});
+
+/**
  * [2026-09-14 AGENTS.md 거버넌스 총량 관리] 공용 메모리는 인덱스다. 행에는 결론·근거 링크·다음 행동만 두고
  * 경위·실측 로그·red 증명 상세는 커밋·PR·링크 문서에 둔다. 결정 행은 소급 편집하지 않으므로 상한은
  * FIRST_CAPPED_DECISION 이후 행에만 적용한다. gap·context 행은 현재 상태라 전부 적용한다.
