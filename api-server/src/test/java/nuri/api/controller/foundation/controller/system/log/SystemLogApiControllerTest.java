@@ -16,6 +16,8 @@ import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -41,15 +43,23 @@ class SystemLogApiControllerTest {
     }
 
     @Test
-    @DisplayName("시스템 로그 목록 조회 성공")
+    @DisplayName("시스템 로그 목록 조회 성공 — 단일 Page 쿼리로 2중 COUNT 를 피한다")
     void testGetSysLogList() throws Exception {
-        when(logManageService.selectSysLogList(any())).thenReturn(Collections.emptyList());
-        when(logManageService.selectSysLogListTotCnt(any())).thenReturn(0);
+        SysLogDto row = SysLogDto.builder().sysLogSn(1L).dmndId("REQ_1").build();
+        when(logManageService.selectSysLogPage(any())).thenReturn(
+                new org.springframework.data.domain.PageImpl<>(
+                        java.util.List.of(row), org.springframework.data.domain.PageRequest.of(0, 10), 1));
 
         mockMvc.perform(get("/api/v1/admin/system/logs/system")
                 .param("page", "1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.page").value(1))
+                .andExpect(jsonPath("$.data.list[0].sysLogSn").value(1));
+
+        verify(logManageService).selectSysLogPage(any());
+        verify(logManageService, never()).selectSysLogListTotCnt(any());
     }
 
     @Test

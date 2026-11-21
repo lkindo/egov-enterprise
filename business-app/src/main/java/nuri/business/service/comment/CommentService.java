@@ -50,7 +50,22 @@ public class CommentService {
                 .map(this::toDto);
     }
 
-    private static final java.time.ZoneId SERVICE_ZONE = java.time.ZoneId.of("Asia/Seoul");
+    private String todayYmd() {
+        return java.time.LocalDate.now(nuri.foundation.core.util.ServiceTime.clock())
+                .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+    }
+
+    private String currentViewerEsntlId() {
+        return nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
+                .filter(id -> !id.isBlank())
+                .orElse(null);
+    }
+
+    private java.util.Set<Long> accessibleCommunitiesFor(String viewerEsntlId) {
+        return communityBoardAccess != null
+                ? communityBoardAccess.accessibleCommunityIds(viewerEsntlId)
+                : java.util.Set.of();
+    }
 
     /**
      * 관리자 댓글 관리 목록. 게시판·글 번호는 선택 조건이며, 둘 다 없으면 살아 있는 전체 댓글을 최신순으로 준다.
@@ -80,16 +95,12 @@ public class CommentService {
             return comments.map(this::toDto);
         }
 
-        String viewerEsntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
-                .filter(id -> !id.isBlank())
-                .orElse(null);
+        String viewerEsntlId = currentViewerEsntlId();
         if (viewerEsntlId == null) {
             return Page.empty(page);
         }
-        String today = java.time.LocalDate.now(SERVICE_ZONE).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
-        java.util.Set<Long> accessibleCommunities = communityBoardAccess != null
-                ? communityBoardAccess.accessibleCommunityIds(viewerEsntlId)
-                : java.util.Set.of();
+        String today = todayYmd();
+        java.util.Set<Long> accessibleCommunities = accessibleCommunitiesFor(viewerEsntlId);
         if (accessibleCommunities == null || accessibleCommunities.isEmpty()) {
             if (hasBoard && pstSn != null) {
                 comments = commentRepository.findVisiblePublicForModerationByBbsIdAndPstSn(
@@ -191,6 +202,36 @@ public class CommentService {
         Comment comment = commentRepository.findByIdForUpdate(commentNo)
                 .orElseThrow(() -> new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(comment.getFrstRgtrId(), "COMMENT_DELETE_ALL"); // [IDOR] 작성자/관리자만 삭제
+        softDelete(comment);
+    }
+
+    /**
+     * 관리자 댓글 삭제. {@code BOARD_READ_ALL} 이 없으면 목록 조회({@link #getCommentsForModeration})와
+     * 같은 게시글·게시판·커뮤니티 열람 경계 안에서만 잠그고 삭제하며, 경계 밖 댓글은 존재를 노출하지 않도록 404 로 거절한다.
+     */
+    @Transactional
+    public void deleteCommentForModeration(Long commentNo) {
+        Comment comment;
+        if (nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")) {
+            comment = commentRepository.findByIdForUpdate(commentNo)
+                    .orElseThrow(() -> new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND));
+        } else {
+            String viewerEsntlId = currentViewerEsntlId();
+            if (viewerEsntlId == null) {
+                throw new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND);
+            }
+            String today = todayYmd();
+            java.util.Set<Long> accessibleCommunities = accessibleCommunitiesFor(viewerEsntlId);
+            java.util.Optional<Comment> visible = (accessibleCommunities == null || accessibleCommunities.isEmpty())
+                    ? commentRepository.findVisiblePublicForModerationUpdate(commentNo, viewerEsntlId, today)
+                    : commentRepository.findVisibleForModerationUpdate(commentNo, viewerEsntlId, today, accessibleCommunities);
+            comment = visible.orElseThrow(() -> new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND));
+        }
+        nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(comment.getFrstRgtrId(), "COMMENT_DELETE_ALL"); // [IDOR] 작성자/관리자만 삭제
+        softDelete(comment);
+    }
+
+    private void softDelete(Comment comment) {
         if (!"Y".equals(comment.getUseYn())) {
             return;
         }

@@ -65,10 +65,35 @@ public class ScrapService {
         Page<ScrapDto> page = scrapRepository
                 .findByFrstRgtrIdAndUseYnOrderByScrapSnDesc(Objects.requireNonNull(userId), "Y", Objects.requireNonNull(pageable))
                 .map(scrapMapper::toDto);
+        if (page.isEmpty()) {
+            return page;
+        }
         // 게시글 상세 API 는 기능 권한 BOARD_READ 를 요구한다. 판정 포트는 글 단위 조건(게시판·회원·비밀글·게시 기간)만 보므로,
         //   그 권한이 없으면(회수됐으면) 글마다 묻지 않고 모두 '열 수 없음' 이다 — 권한 밖에서 원본 상태 변화를 알려 주지 않는다.
         boolean mayReadBoards = SecurityUtil.hasPermission("BOARD_READ");
-        page.getContent().forEach(dto -> dto.setTargetAvailable(boardTargetAvailability(dto.getScrapUrl(), mayReadBoards)));
+        java.util.List<ScrapDto> rows = page.getContent();
+        java.util.List<BoardTarget> parsedTargets = new java.util.ArrayList<>(rows.size());
+        java.util.Set<BoardPostAccessPort.PostRef> queryRefs = new java.util.LinkedHashSet<>();
+        for (ScrapDto dto : rows) {
+            BoardTarget parsed = parseBoardTargetOrNull(dto.getScrapUrl());
+            parsedTargets.add(parsed);
+            if (parsed != null && parsed.valid() && mayReadBoards && boardPostAccess != null) {
+                queryRefs.add(new BoardPostAccessPort.PostRef(parsed.bbsId(), parsed.pstSn()));
+            }
+        }
+        java.util.Set<BoardPostAccessPort.PostRef> accessible =
+                queryRefs.isEmpty() ? java.util.Set.of() : boardPostAccess.findScrapablePosts(queryRefs);
+        for (int i = 0; i < rows.size(); i++) {
+            BoardTarget parsed = parsedTargets.get(i);
+            if (parsed == null) {
+                rows.get(i).setTargetAvailable(null);
+            } else if (!parsed.valid() || !mayReadBoards || boardPostAccess == null) {
+                rows.get(i).setTargetAvailable(Boolean.FALSE);
+            } else {
+                rows.get(i).setTargetAvailable(
+                        accessible.contains(new BoardPostAccessPort.PostRef(parsed.bbsId(), parsed.pstSn())));
+            }
+        }
         return page;
     }
 
@@ -78,29 +103,20 @@ public class ScrapService {
         return getScrapList(userId, pageable);
     }
 
-    /** 게시판 글 스크랩이면 지금 열 수 있는지, 아니면 null. 읽기 판정의 거부만 '열 수 없음' 으로 바꾸고 다른 오류는 그대로 올린다. */
-    private @Nullable Boolean boardTargetAvailability(@Nullable String storedUrl, boolean mayReadBoards) {
-        final java.util.Optional<BoardTarget> target;
+    private @Nullable BoardTarget parseBoardTargetOrNull(@Nullable String storedUrl) {
         try {
-            target = internalBoardTarget(storedUrl == null ? null : storedUrl.strip());
+            return internalBoardTarget(storedUrl == null ? null : storedUrl.strip()).orElse(null);
         } catch (BusinessException malformedBoardUrl) {
-            return Boolean.FALSE; // 검증 도입 전에 저장된 형식 밖 게시판 주소 — 어느 글로도 열리지 않는다.
-        }
-        if (target.isEmpty()) {
-            return null;
-        }
-        if (!mayReadBoards || boardPostAccess == null) {
-            return Boolean.FALSE; // 게시글 열람 권한이 없거나 게시판 기능이 빠진 생성물 — 게시판 주소는 열리지 않는다.
-        }
-        try {
-            boardPostAccess.assertScrapablePost(target.get().bbsId(), target.get().pstSn());
-            return Boolean.TRUE;
-        } catch (BusinessException denied) {
-            return Boolean.FALSE;
+            return BoardTarget.MALFORMED; // 검증 도입 전에 저장된 형식 밖 게시판 주소 — 어느 글로도 열리지 않는다.
         }
     }
 
-    private record BoardTarget(String bbsId, long pstSn) {
+    private record BoardTarget(String bbsId, long pstSn, boolean valid) {
+        private static final BoardTarget MALFORMED = new BoardTarget("", -1L, false);
+
+        private BoardTarget(String bbsId, long pstSn) {
+            this(bbsId, pstSn, true);
+        }
     }
 
     public ScrapDto getScrap(@NonNull Long scrapSn) {

@@ -172,7 +172,7 @@ class CommunityServiceImplTest {
         given(jpaQuery.where(any(BooleanBuilder.class))).willReturn(jpaQuery);
         given(jpaQuery.offset(any(Long.class))).willReturn(jpaQuery);
         given(jpaQuery.limit(any(Long.class))).willReturn(jpaQuery);
-        given(jpaQuery.orderBy(any(OrderSpecifier.class))).willReturn(jpaQuery);
+        given(jpaQuery.orderBy(any(OrderSpecifier[].class))).willReturn(jpaQuery);
         given(jpaQuery.fetch()).willReturn(List.of(community));
         given(queryFactory.select(org.mockito.ArgumentMatchers.<Expression<Long>>any())).willReturn(countQuery);
         given(countQuery.from(QCommunity.community)).willReturn(countQuery);
@@ -201,7 +201,7 @@ class CommunityServiceImplTest {
         given(jpaQuery.where(any(BooleanBuilder.class))).willReturn(jpaQuery);
         given(jpaQuery.offset(any(Long.class))).willReturn(jpaQuery);
         given(jpaQuery.limit(any(Long.class))).willReturn(jpaQuery);
-        given(jpaQuery.orderBy(any(OrderSpecifier.class))).willReturn(jpaQuery);
+        given(jpaQuery.orderBy(any(OrderSpecifier[].class))).willReturn(jpaQuery);
         given(jpaQuery.fetch()).willReturn(List.of(
                 Community.builder().cmntySn(101L).cmntyNm("A").build(),
                 Community.builder().cmntySn(102L).cmntyNm("B").build()));
@@ -230,11 +230,12 @@ class CommunityServiceImplTest {
      * "community.useYn = Y" 형태로 직렬화한다.
      */
     private String capturedWherePredicate(Runnable call) {
+        org.mockito.Mockito.clearInvocations((Object) jpaQuery);
         given(queryFactory.<Community>selectFrom(any())).willReturn(jpaQuery);
         given(jpaQuery.where(any(BooleanBuilder.class))).willReturn(jpaQuery);
         given(jpaQuery.offset(any(Long.class))).willReturn(jpaQuery);
         given(jpaQuery.limit(any(Long.class))).willReturn(jpaQuery);
-        given(jpaQuery.orderBy(any(OrderSpecifier.class))).willReturn(jpaQuery);
+        given(jpaQuery.orderBy(any(OrderSpecifier[].class))).willReturn(jpaQuery);
         given(jpaQuery.fetch()).willReturn(List.of());
         given(queryFactory.select(org.mockito.ArgumentMatchers.<Expression<Long>>any())).willReturn(countQuery);
         given(countQuery.from(QCommunity.community)).willReturn(countQuery);
@@ -265,6 +266,18 @@ class CommunityServiceImplTest {
                 () -> communityService.getCommunityList(null, null, PageRequest.of(0, 10)));
 
         assertThat(predicate).doesNotContain("useYn");
+    }
+
+    @Test
+    @DisplayName("커뮤니티 검색은 searchCnd 가 null·빈 값이면 이름으로, 1 이면 소개로 필터링한다")
+    void getCommunityList_defaultsNullSearchCndToNameAndSupportsIntro() {
+        String namePredicate = capturedWherePredicate(
+                () -> communityService.getCommunityList(null, "복지", PageRequest.of(0, 10)));
+        assertThat(namePredicate).contains("cmntyNm").contains("복지");
+
+        String introPredicate = capturedWherePredicate(
+                () -> communityService.getCommunityList("1", "소통", PageRequest.of(0, 10)));
+        assertThat(introPredicate).contains("cmntyIntroCn").contains("소통");
     }
     
     @Test
@@ -396,13 +409,14 @@ class CommunityServiceImplTest {
     }
     
     @Test
-    @DisplayName("포틀릿용 커뮤니티 목록 조회 - 성공")
+    @DisplayName("포틀릿용 커뮤니티 목록 조회 - 활성 정규 커뮤니티만 최대 10건 조회한다")
     void getCommunityListPortlet() {
         // given
         Community community = Community.builder().cmntySn(101L).build();
         given(queryFactory.<Community>selectFrom(any())).willReturn(jpaQuery);
         given(jpaQuery.where(any(BooleanExpression.class))).willReturn(jpaQuery);
-        given(jpaQuery.orderBy(any(OrderSpecifier.class))).willReturn(jpaQuery);
+        given(jpaQuery.orderBy(any(OrderSpecifier[].class))).willReturn(jpaQuery);
+        given(jpaQuery.limit(10L)).willReturn(jpaQuery);
         given(jpaQuery.fetch()).willReturn(List.of(community));
         
         // when
@@ -411,6 +425,7 @@ class CommunityServiceImplTest {
         // then
         assertThat(list).hasSize(1);
         assertThat(list.get(0).getCmntySn()).isEqualTo(101L);
+        verify(jpaQuery).limit(10L);
     }
 
     @Mock

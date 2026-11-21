@@ -14,10 +14,10 @@ import java.util.Base64;
 @Slf4j
 public class CryptoUtil implements ApplicationContextAware {
 
-    private static EgovCryptoService cryptoService;
-    private static String algorithmKey;
-    private static EgovCryptoService previousCryptoService;
-    private static String previousAlgorithmKey;
+    private static volatile EgovCryptoService cryptoService;
+    private static volatile String algorithmKey;
+    private static volatile EgovCryptoService previousCryptoService;
+    private static volatile String previousAlgorithmKey;
 
     /** eGovFrame 공개 샘플키 등 약한 기본값 — 운영에서 사용 시 경고 대상(재암호화 동반 로테이션 필요). */
     private static final java.util.Set<String> WEAK_DEFAULT_KEYS = java.util.Set.of("egovframe", "egoventerprise0123");

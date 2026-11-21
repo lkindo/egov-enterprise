@@ -74,10 +74,10 @@ public class LoginLogApiController {
             @org.springframework.web.bind.annotation.RequestParam(required = false) String sortBy,
             @org.springframework.web.bind.annotation.RequestParam(required = false) String sortDir) throws Exception {
 
-        List<LoginLogDto> list = loginLogManageService.selectLoginLogList(searchDto, LOGIN_LOG_SORT.resolve(sortBy, sortDir));
-        int totCnt = loginLogManageService.selectLoginLogListTotCnt(searchDto);
+        org.springframework.data.domain.Page<LoginLogDto> page =
+                loginLogManageService.selectLoginLogPage(searchDto, LOGIN_LOG_SORT.resolve(sortBy, sortDir));
 
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchDto.getPageIndex(), searchDto.getPageUnit(), totCnt)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
 
     /**

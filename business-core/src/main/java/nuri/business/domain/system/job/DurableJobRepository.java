@@ -52,6 +52,17 @@ public interface DurableJobRepository extends JpaRepository<DurableJob, BigInteg
     @org.springframework.transaction.annotation.Transactional(readOnly = true, timeout = 5)
     List<QueueStateAggregate> summarizeQueue(@Param("now") LocalDateTime now);
 
+    /** 보존 기간이 지난 성공(SUCCEEDED) 작업 ID 만 오래된 순으로 한 배치씩 고른다. */
+    @Query("SELECT j.jobSn FROM DurableJob j WHERE j.prcsSttsNm = 'SUCCEEDED' "
+            + "AND j.jobCmptnDt IS NOT NULL AND j.jobCmptnDt < :cutoff ORDER BY j.jobCmptnDt ASC, j.jobSn ASC")
+    List<BigInteger> findSucceededIdsCompletedBefore(@Param("cutoff") LocalDateTime cutoff,
+            org.springframework.data.domain.Pageable pageable);
+
+    /** 선택된 성공(SUCCEEDED) 작업 배치만 지운다. 진행 중·실패 작업은 절대 건드리지 않는다. */
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM DurableJob j WHERE j.jobSn IN :ids AND j.prcsSttsNm = 'SUCCEEDED'")
+    int deleteSucceededByIdIn(@Param("ids") Collection<BigInteger> ids);
+
     interface QueueStateAggregate {
         String getStatus();
         Long getJobCount();

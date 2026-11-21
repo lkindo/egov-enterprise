@@ -20,6 +20,8 @@ import java.util.Collections;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -59,12 +61,15 @@ class CommentApiControllerTest {
     }
 
     @Test
-    @DisplayName("댓글 삭제")
+    @DisplayName("관리자 댓글 삭제는 열람 경계가 포함된 deleteCommentForModeration 을 호출한다")
     void deleteComment() throws Exception {
-        doNothing().when(commentService).deleteComment(1L);
+        doNothing().when(commentService).deleteCommentForModeration(1L);
 
         mockMvc.perform(delete("/api/v1/admin/comments/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+
+        verify(commentService).deleteCommentForModeration(1L);
+        verify(commentService, never()).deleteComment(1L);
     }
 }

@@ -25,6 +25,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -622,5 +624,94 @@ class CommentServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
                         .isEqualTo(CommentErrorCode.COMMENT_NOT_FOUND));
+    }
+
+    @Test
+    @DisplayName("BOARD_READ_ALL 없는 관리자 댓글 삭제는 열람 경계 쿼리를 쓰고 경계 밖·익명 요청은 404 로 거절한다")
+    void deleteCommentForModeration_withoutBoardReadAllEnforcesVisibility() {
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL"))
+                .thenReturn(false);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("COMMENT_DELETE_ALL"))
+                .thenReturn(true);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(any(), any()))
+                .thenCallRealMethod();
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> commentService.deleteCommentForModeration(5L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommentErrorCode.COMMENT_NOT_FOUND);
+        org.mockito.Mockito.verifyNoInteractions(commentRepository, eventPublisher);
+
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("VIEWER_ESNTL"));
+        given(communityBoardAccess.accessibleCommunityIds("VIEWER_ESNTL")).willReturn(java.util.Set.of());
+        given(commentRepository.findVisiblePublicForModerationUpdate(eq(5L), eq("VIEWER_ESNTL"), anyString()))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> commentService.deleteCommentForModeration(5L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommentErrorCode.COMMENT_NOT_FOUND);
+        verify(commentRepository, org.mockito.Mockito.never()).findByIdForUpdate(any());
+
+        Comment visibleCommunityComment = Comment.builder()
+                .ansSn(7L).pstSn(20L).bbsId("BBS_CMTY").ansCn("ok").useYn("Y").build();
+        visibleCommunityComment.setFrstRgtrId("writer-login");
+        given(communityBoardAccess.accessibleCommunityIds("VIEWER_ESNTL")).willReturn(java.util.Set.of(10L));
+        given(commentRepository.findVisibleForModerationUpdate(
+                eq(7L), eq("VIEWER_ESNTL"), anyString(), eq(java.util.Set.of(10L))))
+                .willReturn(Optional.of(visibleCommunityComment));
+
+        commentService.deleteCommentForModeration(7L);
+
+        assertThat(visibleCommunityComment.getUseYn()).isEqualTo("N");
+        verify(eventPublisher).publishEvent(new PostCommentCountChangedEvent("BBS_CMTY", 20L, -1));
+    }
+
+    @Test
+    @DisplayName("열람 가능한 글의 댓글이라도 본인·COMMENT_DELETE_ALL 권한이 없으면 관리자 삭제가 거부된다(H3)")
+    void deleteCommentForModeration_visiblePostStillChecksDeletePermission() {
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL"))
+                .thenReturn(false);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("COMMENT_DELETE_ALL"))
+                .thenReturn(false);
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("VIEWER_ESNTL"));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                .thenReturn(Optional.of("other-login"));
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(any(), any()))
+                .thenCallRealMethod();
+
+        Comment visible = Comment.builder().ansSn(8L).pstSn(20L).bbsId("BBS_01").useYn("Y").build();
+        visible.setFrstRgtrId("writer-login");
+        given(communityBoardAccess.accessibleCommunityIds("VIEWER_ESNTL")).willReturn(java.util.Set.of());
+        given(commentRepository.findVisiblePublicForModerationUpdate(eq(8L), eq("VIEWER_ESNTL"), anyString()))
+                .willReturn(Optional.of(visible));
+
+        assertThatThrownBy(() -> commentService.deleteCommentForModeration(8L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED);
+        assertThat(visible.getUseYn()).isEqualTo("Y");
+        org.mockito.Mockito.verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    @DisplayName("BOARD_READ_ALL 권한이 있으면 관리자 삭제는 전체 단건 잠금으로 삭제한다")
+    void deleteCommentForModeration_withBoardReadAllUsesFullLock() {
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL"))
+                .thenReturn(true);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("COMMENT_DELETE_ALL"))
+                .thenReturn(true);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(any(), any()))
+                .thenCallRealMethod();
+
+        Comment target = Comment.builder().ansSn(9L).pstSn(30L).bbsId("BBS_01").useYn("Y").build();
+        given(commentRepository.findByIdForUpdate(9L)).willReturn(Optional.of(target));
+
+        commentService.deleteCommentForModeration(9L);
+
+        assertThat(target.getUseYn()).isEqualTo("N");
+        verify(commentRepository).findByIdForUpdate(9L);
+        verify(eventPublisher).publishEvent(new PostCommentCountChangedEvent("BBS_01", 30L, -1));
     }
 }

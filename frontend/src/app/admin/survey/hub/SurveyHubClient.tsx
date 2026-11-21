@@ -3,13 +3,13 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StandardTabs, TabPanel, standardTabId } from '@/app/components/ui/standard-tabs';
 import { LayoutGrid, BarChart3, Users, Layers, Activity, AlertTriangle, RefreshCcw, ListChecks, LayoutTemplate, Vote } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 // Services
 import { surveyAdminService } from '@/services/foundation/system/SurveyAdminService';
@@ -75,6 +75,15 @@ function resolveTab(raw: string | null): SurveyTab {
 function toCount(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
+
+const SURVEY_HUB_TAB_ITEMS = [
+  { id: 'manage', label: '여론조사 관리', icon: <LayoutGrid size={16} /> },
+  { id: 'questions', label: '설문지·문항', icon: <ListChecks size={16} /> },
+  { id: 'templates', label: '템플릿', icon: <LayoutTemplate size={16} /> },
+  { id: 'stats', label: '결과 통계', icon: <BarChart3 size={16} /> },
+];
+const SURVEY_HUB_ID_PREFIX = 'survey-hub';
+const SURVEY_HUB_PANEL_ID = 'survey-hub-panel';
 
 export function SurveyHubClient() {
   // 투표 관리는 설문과 권한이 다르다(POLL_READ_ALL) — 라우트 게이트와 같은 판정으로만 길을 보인다(DIP B4 P1).
@@ -150,16 +159,17 @@ export function SurveyHubClient() {
         <Link href="/survey/stats" className="text-primary underline">4. 결과 확인</Link>
       </nav>
       {/* 3. Navigation Matrix */}
-      <motion.div variants={hubItemVariants} className="px-2">
-        <Tabs value={currentTab} onValueChange={onTabChange} className="space-y-4">
-          <div className="hub-glass-premium p-2 rounded-lg border-2 border-border/50 shadow-xl inline-flex w-full md:w-auto overflow-x-auto scrollbar-hide">
-            <TabsList className="bg-transparent gap-2 h-auto p-0 border-none">
-              <TabTrigger value="manage" icon={LayoutGrid} label="여론조사 관리" />
-              <TabTrigger value="questions" icon={ListChecks} label="설문지·문항" />
-              <TabTrigger value="templates" icon={LayoutTemplate} label="템플릿" />
-              <TabTrigger value="stats" icon={BarChart3} label="결과 통계" />
-            </TabsList>
-          </div>
+      <motion.div variants={hubItemVariants} className="px-2 space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <StandardTabs
+            items={SURVEY_HUB_TAB_ITEMS}
+            activeTab={currentTab}
+            onChange={onTabChange}
+            label="설문조사 관리 탭"
+            idPrefix={SURVEY_HUB_ID_PREFIX}
+            panelId={SURVEY_HUB_PANEL_ID}
+            className="overflow-x-auto scrollbar-hide"
+          />
           {/* [2026-09-06 DEC-OPS-041] 온라인 투표(항목 하나 고르기)는 문항형 설문조사와 다른 제품이라 허브 탭이 아니라
      별도 화면으로 안내한다(감사 D12-02 — 종전에는 허브 어디에도 투표로 가는 길이 없었다). */}
           {canOpenPolls && (
@@ -170,36 +180,28 @@ export function SurveyHubClient() {
               <Vote size={16} aria-hidden="true" /> 온라인 투표 관리로 이동
             </Link>
           )}
+        </div>
 
-          <div className="mt-4">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentTab}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4, ease: "circOut" }}
-              >
-                <TabsContent value="manage" className="m-0 focus-visible:outline-none">
-                  <SurveyManageClient embedded />
-                </TabsContent>
-
-                <TabsContent value="questions" className="m-0 focus-visible:outline-none">
-                  <SurveyQuestionsPanel />
-                </TabsContent>
-
-                <TabsContent value="templates" className="m-0 focus-visible:outline-none">
-                  <SurveyTemplatesPanel />
-                </TabsContent>
-
-
-                <TabsContent value="stats" className="m-0 focus-visible:outline-none">
-                  <SurveyStatsClient embedded />
-                </TabsContent>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </Tabs>
+        <TabPanel
+          id={SURVEY_HUB_PANEL_ID}
+          aria-labelledby={standardTabId(SURVEY_HUB_ID_PREFIX, currentTab)}
+          className="mt-4 focus-visible:outline-none"
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentTab}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4, ease: "circOut" }}
+            >
+              {currentTab === 'manage' && <SurveyManageClient embedded />}
+              {currentTab === 'questions' && <SurveyQuestionsPanel />}
+              {currentTab === 'templates' && <SurveyTemplatesPanel />}
+              {currentTab === 'stats' && <SurveyStatsClient embedded />}
+            </motion.div>
+          </AnimatePresence>
+        </TabPanel>
       </motion.div>
       <details className="rounded-lg border p-4 space-y-4"><summary className="cursor-pointer font-medium">설문지 및 서비스 이용 현황{hasError ? ' — 일부 조회 실패' : ''}</summary>
         {/* 2. 지표 — 조회 실패 시 0 을 보여주지 않고 실패 사실을 드러낸다(P1-1) */}
@@ -252,17 +254,6 @@ export function SurveyHubClient() {
 
       </details>
     </motion.div>
-  );
-}
-
-function TabTrigger({ value, icon: Icon, label }: { value: string, icon: React.ElementType, label: string }) {
-  return (
-    <TabsTrigger
-      value={value}
-      className="data-[state=active]:bg-surface-inverse data-[state=active]:text-surface-inverse-foreground data-[state=active]:shadow-2xl rounded-lg h-11 px-4 font-bold text-xs tracking-tight gap-3 transition-all border border-transparent data-[state=active]:border-surface-inverse-border hover:bg-muted"
-    >
-      <Icon size={16} /> {label}
-    </TabsTrigger>
   );
 }
 

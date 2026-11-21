@@ -3,7 +3,10 @@ package nuri.business.domain.board;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.jspecify.annotations.NonNull;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
+import nuri.foundation.core.board.BoardPostAccessPort.PostRef;
 
 public interface BoardRepositoryCustom {
     Page<Board> search(BoardSearchCondition condition, @NonNull Pageable pageable);
@@ -39,4 +42,7 @@ public interface BoardRepositoryCustom {
 
     /** @param today 게시 기간(시작일·종료일) 판정 기준일(yyyyMMdd, Asia/Seoul) */
     Optional<BoardDetailResult> findPublicArticleDetail(@NonNull String bbsId, @NonNull Long pstSn, @NonNull String today);
+
+    /** 스크랩 목록 N+1 제거용 일괄 후보 조회(활성 게시판·활성 게시글만). */
+    List<BoardScrapCandidate> findScrapCandidates(@NonNull Collection<PostRef> targets);
 }

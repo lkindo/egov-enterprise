@@ -225,10 +225,11 @@ class EventInfoServiceTest {
     void getEventList() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
+        Pageable expectedOrdered = PageRequest.of(0, 10, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "evntSn"));
         EventInfo eventInfo = EventInfo.builder().evntSn(1L).evntCn("Test Event").build();
         Page<EventInfo> page = new PageImpl<>(List.of(eventInfo));
         
-        given(eventInfoRepository.findAll(pageable)).willReturn(page);
+        given(eventInfoRepository.findAll(expectedOrdered)).willReturn(page);
 
         // when
         Page<EventInfoDto> result = eventInfoService.getEventList(null, pageable);
@@ -239,6 +240,17 @@ class EventInfoServiceTest {
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getEvntSn()).isEqualTo(1L);
         assertThat(result.getContent().get(0).getEvntCn()).isEqualTo("Test Event");
+    }
+
+    @Test
+    @DisplayName("이벤트 목록 조회는 호출부가 정렬을 주면 기본 정렬로 덮어쓰지 않는다")
+    void getEventList_preservesExplicitSort() {
+        Pageable explicitSort = PageRequest.of(0, 10, org.springframework.data.domain.Sort.by("evntNm").ascending());
+        given(eventInfoRepository.findBySearchWrd("Spring", explicitSort)).willReturn(Page.empty(explicitSort));
+
+        eventInfoService.getEventList("Spring", explicitSort);
+
+        verify(eventInfoRepository).findBySearchWrd("Spring", explicitSort);
     }
 
     @Test

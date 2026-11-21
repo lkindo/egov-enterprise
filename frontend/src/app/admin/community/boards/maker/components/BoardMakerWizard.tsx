@@ -130,7 +130,8 @@ export const boardMakerFormSchema = BoardMasterDtoSchema.extend({
   cmntySn: z.string().optional(),
 });
 
-type FormValues = z.infer<typeof boardMakerFormSchema>;
+export type BoardMakerFormValues = z.infer<typeof boardMakerFormSchema>;
+type FormValues = BoardMakerFormValues;
 
 export function BoardMakerWizard() {
   const router = useRouter();

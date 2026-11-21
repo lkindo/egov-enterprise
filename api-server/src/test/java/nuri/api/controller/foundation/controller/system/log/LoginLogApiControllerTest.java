@@ -58,14 +58,22 @@ class LoginLogApiControllerTest {
     }
 
     @Test
-    @DisplayName("로그인 로그 목록 조회 성공")
+    @DisplayName("로그인 로그 목록 조회 성공 — 단일 Page 쿼리로 2중 COUNT 를 피한다")
     void testGetLoginLogList() throws Exception {
-        when(loginLogManageService.selectLoginLogList(any())).thenReturn(Collections.emptyList());
-        when(loginLogManageService.selectLoginLogListTotCnt(any())).thenReturn(0);
+        LoginLogDto row = loginLog(1L, "userA", "10.0.0.1", "PWD", "N", null, "2026-08-01T09:00");
+        when(loginLogManageService.selectLoginLogPage(any(), any())).thenReturn(
+                new org.springframework.data.domain.PageImpl<>(
+                        List.of(row), org.springframework.data.domain.PageRequest.of(0, 10), 1));
 
         mockMvc.perform(get("/api/v1/admin/system/logs/login"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.page").value(1))
+                .andExpect(jsonPath("$.data.list[0].lgnSn").value(1));
+
+        verify(loginLogManageService).selectLoginLogPage(any(), any());
+        verify(loginLogManageService, never()).selectLoginLogListTotCnt(any());
     }
 
     @Test

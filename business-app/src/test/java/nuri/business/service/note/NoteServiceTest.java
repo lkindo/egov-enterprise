@@ -144,4 +144,18 @@ class NoteServiceTest {
         inOrder.verify(noteRepository).flush();
         inOrder.verify(attachmentAssignmentPolicy).releaseIfUnreferenced(777L);
     }
+
+    @Test
+    @DisplayName("쪽지 상세·삭제는 recv·received·sent 외의 type 을 400 으로 거절한다")
+    void rejectsUnknownNoteType() {
+        for (String invalidType : new String[]{null, "", "inbox", "SENT"}) {
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> noteService.getNoteDetail(1L, invalidType, 2L, "USR_1"))
+                    .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> noteService.deleteNote(2L, invalidType, "USR_1"))
+                    .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        org.mockito.Mockito.verifyNoInteractions(noteTrnsmitRepository, noteRecptnRepository);
+    }
 }

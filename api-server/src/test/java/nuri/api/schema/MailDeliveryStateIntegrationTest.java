@@ -152,7 +152,7 @@ class MailDeliveryStateIntegrationTest {
     }
 
     @Test void previousResultCannotOverwriteNewManualAcceptance() throws Exception {
-        SentMail mail = row(LocalDateTime.now().minusMinutes(11).truncatedTo(ChronoUnit.MICROS));
+        SentMail mail = row(LocalDateTime.now().minusMinutes(15).truncatedTo(ChronoUnit.MICROS));
         long id = mail.getEmlDsptchSn();
         jdbc.update("UPDATE tb_email_dsptch_manage SET frst_rgtr_id='mail-fixture' WHERE eml_dsptch_sn=?", id);
         var entered = new CountDownLatch(1);
@@ -163,18 +163,24 @@ class MailDeliveryStateIntegrationTest {
             return null;
         }).when(sender).send(anyString(), anyString(), anyString(), anyString());
         var first = dispatch(mail);
-        LocalDateTime next = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
+        LocalDateTime claimedAt;
         try {
             assertThat(entered.await(10, TimeUnit.SECONDS)).isTrue();
-            assertThat(tx().<Integer>execute(status -> mails.claimForResend(id, "mail-fixture", next, next.minusMinutes(10)))).isEqualTo(1);
+            // claimQueued 가 dsptchDt 를 차지 시각으로 갱신하므로 대기열 지연(15분) 직후에는 멈춤 재발송을 거부한다(GAP-MAIL-001).
+            claimedAt = mails.findById(id).orElseThrow().getDsptchDt();
+            assertThat(claimedAt).isAfter(mail.getDsptchDt());
+            assertThat(tx().<Integer>execute(status -> mails.claimForResend(id, "mail-fixture", claimedAt, claimedAt.minusMinutes(10)))).isZero();
+            LocalDateTime later = claimedAt.plusMinutes(11);
+            assertThat(tx().<Integer>execute(status -> mails.claimForResend(id, "mail-fixture", later, later.minusMinutes(10)))).isEqualTo(1);
         } finally { release.countDown(); }
+        LocalDateTime later = claimedAt.plusMinutes(11);
         first.get(10, TimeUnit.SECONDS);
         assertThat(code(id)).isEqualTo("Q");
-        assertThat(tx().<Integer>execute(status -> mails.recordResult(id, mail.getDsptchDt(), "F"))).isZero();
+        assertThat(tx().<Integer>execute(status -> mails.recordResult(id, claimedAt, "F"))).isZero();
         assertThat(tx().<Integer>execute(status -> mails.failQueued(id, mail.getDsptchDt()))).isZero();
-        assertThat(tx().<Integer>execute(status -> mails.claimQueued(id, mail.getDsptchDt()))).isZero();
-        assertThat(mails.findById(id).orElseThrow().getDsptchDt()).isEqualTo(VendorTestSql.storedTime(next));
-        processor.dispatchCommitted(id, next, "subject", "body", "from@example.invalid", ADDRESS, null).get(10, TimeUnit.SECONDS);
+        assertThat(tx().<Integer>execute(status -> mails.claimQueued(id, mail.getDsptchDt(), later.plusSeconds(1)))).isZero();
+        assertThat(mails.findById(id).orElseThrow().getDsptchDt()).isEqualTo(VendorTestSql.storedTime(later));
+        processor.dispatchCommitted(id, later, "subject", "body", "from@example.invalid", ADDRESS, null).get(10, TimeUnit.SECONDS);
         assertThat(code(id)).isEqualTo("S");
         verify(sender, times(2)).send(anyString(), anyString(), anyString(), anyString());
     }

@@ -1,6 +1,17 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createAppQueryClient } from '@/lib/query/list-query-defaults';
+
+const render = (ui: React.ReactElement) => rtlRender(ui, {
+  wrapper: ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      {children}
+    </QueryClientProvider>
+  ),
+});
 
 const harness = vi.hoisted(() => ({
   getFaqs: vi.fn(),
@@ -150,5 +161,45 @@ describe('HelpClient 조회 상태', () => {
     await user.click(screen.getByRole('tab', { name: /1:1 Q&A 문의/ }));
 
     expect(screen.queryByText('자주 묻는 질문을 불러오지 못했습니다.')).toBeNull();
+  });
+
+  it('운영 QueryClient 설정에서 1페이지 성공 뒤 다음 페이지 503 실패를 오류 경계로 승격하지 않고 인라인 재시도를 유지한다', async () => {
+    class TestBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+      state = { hasError: false };
+      static getDerivedStateFromError() {
+        return { hasError: true };
+      }
+      render() {
+        if (this.state.hasError) {
+          return <div role="alert">전체 화면 오류 경계</div>;
+        }
+        return this.props.children;
+      }
+    }
+
+    const http503 = Object.assign(new Error('Service Unavailable'), { response: { status: 503 } });
+    harness.getFaqs
+      .mockResolvedValueOnce({ list: [{ faqId: '1', qstnTtl: '첫 페이지 질문' }], total: 11, size: 10 })
+      .mockRejectedValueOnce(http503)
+      .mockResolvedValueOnce({ list: [{ faqId: '11', qstnTtl: '두 번째 페이지 질문' }], total: 11, size: 10 });
+
+    const appClient = createAppQueryClient();
+    const user = userEvent.setup();
+    rtlRender(
+      <QueryClientProvider client={appClient}>
+        <TestBoundary>
+          <HelpClient />
+        </TestBoundary>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByRole('button', { name: /첫 페이지 질문/ })).toBeInTheDocument();
+    await user.click(screen.getByRole('link', { name: '다음 페이지로 이동' }));
+
+    expect(await screen.findByText('자주 묻는 질문을 불러오지 못했습니다.')).toBeInTheDocument();
+    expect(screen.queryByText('전체 화면 오류 경계')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: '데이터 다시 불러오기' }));
+    expect(await screen.findByRole('button', { name: /두 번째 페이지 질문/ })).toBeInTheDocument();
   });
 });

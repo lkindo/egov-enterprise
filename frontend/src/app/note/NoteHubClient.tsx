@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
@@ -88,11 +88,6 @@ export default function NoteHubClient() {
   const confirm = useConfirm();
 
   const [tab, setTab] = useState<NoteTab>('received');
-  const tabRef = useRef<NoteTab>('received');
-  const [loading, setLoading] = useState(true);
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [listError, setListError] = useState<Error | null>(null);
-  const listRequestRef = useRef(0);
   /*
    * [2026-09-05] 종전에는 `{ page: 0, size: 20 }` 한 페이지만 받고 페이저가 없어 21번째 쪽지부터
    * 영구히 도달 불가였다. 서버(NoteApiController)는 처음부터 Pageable 을 받는다.
@@ -102,19 +97,11 @@ export default function NoteHubClient() {
   const [pageSize, setPageSize] = useState(20);
   // [2026-09-06 감사 D09-01 후속] 서버는 제목·내용 부분일치(searchWrd)를 받는데 페이징만 붙어 있었다. 로컬 상태다(URL 미승인).
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [total, setTotal] = useState(0);
-  // [2026-09-26 DIP V3] 받은 쪽지함의 미읽음 수. null 은 조회 실패이며 0 으로 말하지 않는다.
-  const [unreadCount, setUnreadCount] = useState<number | null>(null);
+  const [unreadEnabled, setUnreadEnabled] = useState(false);
+  const unreadEnabledRef = useRef(false);
+  const lastUnreadSyncAtRef = useRef(0);
+  const lastListErrorAtRef = useRef(0);
   const queryClient = useQueryClient();
-  const refreshUnreadCount = useCallback(async () => {
-    // 홈의 '안 읽은 쪽지' 카드도 같은 수를 보인다 — 여기서 다시 셀 때 카드 캐시도 낡은 것으로 표시한다.
-    void invalidateNoteUnreadCount(queryClient);
-    try {
-      setUnreadCount(await noteService.getUnreadReceivedCount());
-    } catch {
-      setUnreadCount(null);
-    }
-  }, [queryClient]);
 
   const [isWriteModalOpen, setWriteOpen] = useState(false);
   const [isPickerOpen, setPickerOpen] = useState(false);
@@ -149,47 +136,81 @@ export default function NoteHubClient() {
     },
   });
 
-  const runLoadNotes = useCallback(async (requestId: number, requestedTab: NoteTab) => {
-    try {
+  const listQuery = useQuery({
+    queryKey: ['notes', 'list', tab, page, pageSize, searchKeyword],
+    queryFn: async () => {
       const query = searchKeyword
         ? { page, size: pageSize, searchWrd: searchKeyword }
         : { page, size: pageSize };
-      const res = await (requestedTab === 'received'
+      return tab === 'received'
         ? noteService.getReceivedNotes(query)
-        : noteService.getSentNotes(query));
+        : noteService.getSentNotes(query);
+    },
+    retry: false,
+  });
 
-      if (requestId !== listRequestRef.current || requestedTab !== tabRef.current) return;
-      if (requestedTab === 'received') void refreshUnreadCount();
-      setListError(null);
-      setNotes(res.list || []);
-      setTotal(typeof res.total === 'number' ? res.total : (res.list?.length ?? 0));
-    } catch {
-      if (requestId !== listRequestRef.current || requestedTab !== tabRef.current) return;
-      setListError(new Error('쪽지 목록을 불러오지 못했습니다.'));
-      setNotes([]);
-      toast('쪽지 목록을 불러오지 못했습니다.', 'error');
-    } finally {
-      if (requestId === listRequestRef.current && requestedTab === tabRef.current) setLoading(false);
-    }
-  }, [toast, page, pageSize, searchKeyword, refreshUnreadCount]);
+  const unreadQuery = useQuery({
+    queryKey: ['notes', 'hub-unread-count', user?.esntlId],
+    queryFn: () => noteService.getUnreadReceivedCount(),
+    enabled: unreadEnabled,
+    retry: false,
+  });
 
-  const loadNotes = useCallback(async (requestedTab: NoteTab = tabRef.current) => {
-    if (requestedTab !== tabRef.current) return;
-    const requestId = ++listRequestRef.current;
-    setLoading(true);
-    setListError(null);
-    setNotes([]);
-    await runLoadNotes(requestId, requestedTab);
-  }, [runLoadNotes]);
+  const loading = listQuery.isPending || listQuery.isFetching;
+  const listError = !loading && listQuery.isError
+    ? new Error('쪽지 목록을 불러오지 못했습니다.')
+    : null;
+  const notes = !loading && !listQuery.isError ? (listQuery.data?.list ?? []) : [];
+  const total = listQuery.data
+    ? (typeof listQuery.data.total === 'number' ? listQuery.data.total : (listQuery.data.list?.length ?? 0))
+    : 0;
+  // [2026-09-26 DIP V3] 받은 쪽지함의 미읽음 수. null 은 조회 실패이며 0 으로 말하지 않는다.
+  const unreadCount = unreadQuery.isSuccess ? unreadQuery.data : null;
 
   useEffect(() => {
-    if (tab !== tabRef.current) return;
-    const requestId = ++listRequestRef.current;
-    void runLoadNotes(requestId, tab);
-    return () => {
-      listRequestRef.current += 1;
-    };
-  }, [runLoadNotes, tab]);
+    if (
+      tab === 'received'
+      && listQuery.isSuccess
+      && !listQuery.isFetching
+      && listQuery.dataUpdatedAt > 0
+      && listQuery.dataUpdatedAt !== lastUnreadSyncAtRef.current
+    ) {
+      lastUnreadSyncAtRef.current = listQuery.dataUpdatedAt;
+      if (!unreadEnabledRef.current) {
+        unreadEnabledRef.current = true;
+        setUnreadEnabled(true);
+      } else {
+        void queryClient.invalidateQueries({ queryKey: ['notes', 'hub-unread-count'] });
+      }
+      void invalidateNoteUnreadCount(queryClient);
+    }
+  }, [tab, listQuery.isSuccess, listQuery.isFetching, listQuery.dataUpdatedAt, queryClient]);
+
+  useEffect(() => {
+    if (
+      listQuery.isError
+      && !listQuery.isFetching
+      && listQuery.errorUpdatedAt > 0
+      && listQuery.errorUpdatedAt !== lastListErrorAtRef.current
+    ) {
+      lastListErrorAtRef.current = listQuery.errorUpdatedAt;
+      toast('쪽지 목록을 불러오지 못했습니다.', 'error');
+    }
+  }, [listQuery.isError, listQuery.isFetching, listQuery.errorUpdatedAt, toast]);
+
+  const loadNotes = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['notes', 'list'] });
+  }, [queryClient]);
+
+  const refreshUnreadCount = useCallback(async () => {
+    if (!unreadEnabledRef.current) {
+      unreadEnabledRef.current = true;
+      setUnreadEnabled(true);
+    } else {
+      await queryClient.invalidateQueries({ queryKey: ['notes', 'hub-unread-count'] });
+    }
+    await invalidateNoteUnreadCount(queryClient);
+  }, [queryClient]);
 
   const closeDetailModal = () => {
     detailRequestRef.current += 1;
@@ -202,13 +223,7 @@ export default function NoteHubClient() {
 
   const handleTabChange = (nextTab: NoteTab) => {
     if (nextTab === tab) return;
-    tabRef.current = nextTab;
-    listRequestRef.current += 1;
-    setNotes([]);
-    setTotal(0);
     setPage(1);
-    setListError(null);
-    setLoading(true);
     closeDetailModal();
     setTab(nextTab);
   };
@@ -216,12 +231,9 @@ export default function NoteHubClient() {
   const handleSearch = (keyword: string) => {
     const applied = keyword.trim();
     if (applied === searchKeyword) {
-      void loadNotes();
+      void listQuery.refetch();
       return;
     }
-    setLoading(true);
-    setListError(null);
-    setNotes([]);
     // 3페이지에서 검색해 빈 화면이 되는 것을 막는다.
     if (page !== 1) setPage(1);
     setSearchKeyword(applied);
@@ -259,7 +271,7 @@ export default function NoteHubClient() {
       setRecipients([]);
       resetComposeAttachments();
       validation.setFormErrors({}, false);
-      if (tab === 'sent' && tabRef.current === 'sent') void loadNotes('sent');
+      void queryClient.invalidateQueries({ queryKey: ['notes', 'list', 'sent'] });
     } catch (error) {
       const fieldErrors = extractFieldErrors(error);
       if (fieldErrors) validation.setFormErrors(fieldErrors);
@@ -337,11 +349,17 @@ export default function NoteHubClient() {
 
       if (target.type === 'received') {
         void refreshUnreadCount();
-        setNotes((current) => current.map((item) => (
-          item.noteRcptnSn === target.relationSn
-            ? { ...item, ...detail, noteRcptnSn: target.relationSn, openYn: 'Y' }
-            : item
-        )));
+        queryClient.setQueryData<{ list?: Note[]; total?: number }>(
+          ['notes', 'list', 'received', page, pageSize, searchKeyword],
+          (current) => (current?.list ? {
+            ...current,
+            list: current.list.map((item) => (
+              item.noteRcptnSn === target.relationSn
+                ? { ...item, ...detail, noteRcptnSn: target.relationSn, openYn: 'Y' }
+                : item
+            )),
+          } : current),
+        );
       }
     } catch {
       if (requestId !== detailRequestRef.current) return;
@@ -349,7 +367,7 @@ export default function NoteHubClient() {
     } finally {
       if (requestId === detailRequestRef.current) setDetailLoading(false);
     }
-  }, [refreshUnreadCount, queryClient]);
+  }, [refreshUnreadCount, queryClient, page, pageSize, searchKeyword]);
 
   const handleDetail = (note: Note) => {
     const relationSn = tab === 'received' ? note.noteRcptnSn : note.noteSndngSn;
@@ -389,7 +407,7 @@ export default function NoteHubClient() {
       // 안 읽은 받은 쪽지를 지우면 홈 카드의 수가 줄어든다 — 탭을 바꿔 아래 목록 재조회를 건너뛰어도 무효화한다.
       if (deleteTab === 'received') void invalidateNoteUnreadCount(queryClient);
       toast('삭제되었습니다.', 'success');
-      if (tabRef.current === deleteTab) await loadNotes(deleteTab);
+      await queryClient.invalidateQueries({ queryKey: ['notes', 'list', deleteTab] });
     } catch {
       toast('삭제 중 오류가 발생했습니다.', 'error');
     } finally {
@@ -549,18 +567,12 @@ export default function NoteHubClient() {
           totalPages: Math.max(1, Math.ceil(total / pageSize)),
           onPageChange: (nextPage) => {
             if (nextPage === page) return;
-            setLoading(true);
-            setListError(null);
-            setNotes([]);
             setPage(nextPage);
           },
           // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
           pageSize,
           onPageSizeChange: (size) => {
             if (size === pageSize && page === 1) return;
-            setLoading(true);
-            setListError(null);
-            setNotes([]);
             setPageSize(size);
             setPage(1);
           },

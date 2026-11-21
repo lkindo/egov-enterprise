@@ -27,6 +27,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -3064,6 +3065,40 @@ class BoardServiceTest {
         given(boardRepository.findActiveArticleDetail("BBS_01", 78L)).willReturn(Optional.of(visible));
 
         boardService.assertScrapablePost("BBS_01", 78L);
+        verifyNoInteractions(viewCountService);
+    }
+
+    @Test
+    @DisplayName("일괄 스크랩 가용성 조회는 1회 후보 조회 후 커뮤니티·비밀글·게시기간을 적용한다")
+    void findScrapablePosts_filtersByVisibilityUsingSingleBatchQuery() {
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ")).thenReturn(true);
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")).thenReturn(false);
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("ESNTL_VIEWER"));
+        given(communityBoardAccess.accessibleCommunityIds("ESNTL_VIEWER")).willReturn(java.util.Set.of(10L));
+
+        var openPost = new nuri.foundation.core.board.BoardPostAccessPort.PostRef("BBS_OPEN", 1L);
+        var secretOwn = new nuri.foundation.core.board.BoardPostAccessPort.PostRef("BBS_OPEN", 2L);
+        var secretOther = new nuri.foundation.core.board.BoardPostAccessPort.PostRef("BBS_OPEN", 3L);
+        var expiredPost = new nuri.foundation.core.board.BoardPostAccessPort.PostRef("BBS_OPEN", 4L);
+        var joinedCommunity = new nuri.foundation.core.board.BoardPostAccessPort.PostRef("BBS_CMTY", 5L);
+        var foreignCommunity = new nuri.foundation.core.board.BoardPostAccessPort.PostRef("BBS_FOREIGN", 6L);
+
+        given(boardRepository.findScrapCandidates(anyCollection())).willReturn(List.of(
+                new nuri.business.domain.board.BoardScrapCandidate("BBS_OPEN", 1L, null, "OTHER", "N", null, null),
+                new nuri.business.domain.board.BoardScrapCandidate("BBS_OPEN", 2L, null, "ESNTL_VIEWER", "Y", null, null),
+                new nuri.business.domain.board.BoardScrapCandidate("BBS_OPEN", 3L, null, "OTHER", "Y", null, null),
+                new nuri.business.domain.board.BoardScrapCandidate("BBS_OPEN", 4L, null, "OTHER", "N", "20200101", "20200102"),
+                new nuri.business.domain.board.BoardScrapCandidate("BBS_CMTY", 5L, 10L, "OTHER", "N", null, null),
+                new nuri.business.domain.board.BoardScrapCandidate("BBS_FOREIGN", 6L, 99L, "OTHER", "N", null, null)
+        ));
+
+        java.util.Set<nuri.foundation.core.board.BoardPostAccessPort.PostRef> result = boardService.findScrapablePosts(
+                List.of(openPost, secretOwn, secretOther, expiredPost, joinedCommunity, foreignCommunity));
+
+        assertThat(result).containsExactlyInAnyOrder(openPost, secretOwn, joinedCommunity);
+        verify(boardRepository, times(1)).findScrapCandidates(anyCollection());
+        verify(communityBoardAccess, times(1)).accessibleCommunityIds("ESNTL_VIEWER");
         verifyNoInteractions(viewCountService);
     }
 }

@@ -362,7 +362,7 @@ class WorkReportServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<WorkReport> page = new PageImpl<>(Collections.emptyList(), pageable, 0);
 
-        when(workReportRepository.searchWorkReports(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class))).thenReturn(page);
+        when(workReportRepository.searchWorkReports(any(), any(), any(), any(), any(Pageable.class))).thenReturn(page);
         authenticateAs("admin01", "ROLE_ADMIN"); // 관리자는 전체 조회 — searchId 가 그대로 전달된다
 
         Page<WorkReportDto> result = workReportService.getWorkReportList("user01", null, "", pageable);
@@ -375,7 +375,7 @@ class WorkReportServiceTest {
     @DisplayName("업무보고 목록 — 비관리자는 본인 것으로 강제 스코프된다 (전원 노출 방어)")
     void getWorkReportList_scopedToCurrentUserForNonAdmin() {
         Pageable pageable = PageRequest.of(0, 10);
-        when(workReportRepository.searchWorkReports(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
+        when(workReportRepository.searchWorkReports(any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(Collections.emptyList(), pageable, 0));
         authenticateAs("user01", "ROLE_USER");
 
@@ -383,7 +383,7 @@ class WorkReportServiceTest {
         workReportService.getWorkReportList("someoneElse", null, "", pageable);
 
         ArgumentCaptor<String> searchId = ArgumentCaptor.forClass(String.class);
-        verify(workReportRepository).searchWorkReports(searchId.capture(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class));
+        verify(workReportRepository).searchWorkReports(searchId.capture(), any(), any(), any(), any(Pageable.class));
         assertEquals("user01", searchId.getValue());
     }
 
@@ -396,7 +396,7 @@ class WorkReportServiceTest {
 
         assertEquals(0, result.getTotalElements());
         verify(workReportRepository, never())
-                .searchWorkReports(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class));
+                .searchWorkReports(any(), any(), any(), any(), any(Pageable.class));
     }
 
     // ── 작성자 표시 ──────────────────────────────────────────────────────────────
@@ -420,7 +420,7 @@ class WorkReportServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         WorkReport a = WorkReport.builder().rptpSn(1L).rptTtl("보고 A").userId("user01").build();
         WorkReport b = WorkReport.builder().rptpSn(2L).rptTtl("보고 B").userId("user02").build();
-        when(workReportRepository.searchWorkReports(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
+        when(workReportRepository.searchWorkReports(any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(a, b), pageable, 2));
         when(userRepository.findByUserIdIn(any()))
                 .thenReturn(List.of(userNamed("user01", "홍길동"), userNamed("user02", "김철수")));
@@ -443,7 +443,7 @@ class WorkReportServiceTest {
         authenticateAs("admin01", "ROLE_ADMIN");
         Pageable pageable = PageRequest.of(0, 10);
         WorkReport orphan = WorkReport.builder().rptpSn(3L).rptTtl("탈퇴자 보고").userId("gone01").build();
-        when(workReportRepository.searchWorkReports(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
+        when(workReportRepository.searchWorkReports(any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(orphan), pageable, 1));
         when(userRepository.findByUserIdIn(any())).thenReturn(List.of());
 
@@ -459,7 +459,7 @@ class WorkReportServiceTest {
         authenticateAs("admin01", "ROLE_ADMIN");
         Pageable pageable = PageRequest.of(0, 10);
         WorkReport blank = WorkReport.builder().rptpSn(4L).rptTtl("작성자 없음").build();
-        when(workReportRepository.searchWorkReports(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
+        when(workReportRepository.searchWorkReports(any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(blank), pageable, 1));
 
         workReportService.getWorkReportList(null, null, "", pageable);
@@ -485,11 +485,11 @@ class WorkReportServiceTest {
     void getWorkReportList_forwardsSearchConditionToRepository() {
         authenticateAs("admin01", "ROLE_ADMIN");
         Pageable pageable = PageRequest.of(0, 10);
-        when(workReportRepository.searchWorkReports(any(), any(), any(), any(), eq("1"), eq("핵심"), any(), eq("2"), eq(pageable)))
+        when(workReportRepository.searchWorkReports(any(), eq("1"), eq("핵심"), eq("2"), eq(pageable)))
                 .thenReturn(Page.empty(pageable));
 
         workReportService.getWorkReportList(null, "2", "1", "핵심", pageable);
 
-        verify(workReportRepository).searchWorkReports(null, null, null, null, "1", "핵심", null, "2", pageable);
+        verify(workReportRepository).searchWorkReports(null, "1", "핵심", "2", pageable);
     }
 }

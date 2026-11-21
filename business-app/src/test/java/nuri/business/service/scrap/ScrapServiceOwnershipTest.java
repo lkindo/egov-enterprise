@@ -348,6 +348,8 @@ class ScrapServiceOwnershipTest {
         given(scrapRepository.findByFrstRgtrIdAndUseYnOrderByScrapSnDesc("owner", "Y", page))
                 .willReturn(new org.springframework.data.domain.PageImpl<>(rows));
         // 같은 메서드를 31·32 두 글로 부른다 — 32 만 거부하도록 엄격 스텁 규칙에서 이 스텁을 뺀다.
+        lenient().when(boardPostAccess.findScrapablePosts(org.mockito.ArgumentMatchers.anyCollection()))
+                .thenCallRealMethod();
         lenient().doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
                 .when(boardPostAccess).assertScrapablePost("BBS-1", 32L);
 

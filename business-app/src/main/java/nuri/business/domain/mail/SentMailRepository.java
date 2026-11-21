@@ -24,17 +24,21 @@ public interface SentMailRepository extends JpaRepository<SentMail, Long>, SentM
     int claimForResend(@Param("emlDsptchSn") Long emlDsptchSn, @Param("loginId") String loginId,
             @Param("now") java.time.LocalDateTime now, @Param("stuckBefore") java.time.LocalDateTime stuckBefore);
 
-    /** Commit the claim before SMTP; another worker cannot send an uncertain P attempt again. */
+    /**
+     * Commit the claim before SMTP and bind {@code dsptchDt} to the claim instant;
+     * another worker cannot send an uncertain P attempt again and queue lag cannot trip resend stuck detection.
+     */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("update SentMail m set m.dsptchRsltCd = 'P', m.mdfcnDt = CURRENT_TIMESTAMP where m.emlDsptchSn = :id "
-            + "and m.dsptchRsltCd = 'Q' and m.dsptchDt = :queuedAt")
-    int claimQueued(@Param("id") Long id, @Param("queuedAt") java.time.LocalDateTime queuedAt);
+    @Query("update SentMail m set m.dsptchRsltCd = 'P', m.dsptchDt = :claimedAt, m.mdfcnDt = :claimedAt "
+            + "where m.emlDsptchSn = :id and m.dsptchRsltCd = 'Q' and m.dsptchDt = :queuedAt")
+    int claimQueued(@Param("id") Long id, @Param("queuedAt") java.time.LocalDateTime queuedAt,
+            @Param("claimedAt") java.time.LocalDateTime claimedAt);
 
-    /** A previous attempt's late result cannot replace the next manually accepted attempt. */
+    /** A previous attempt's late result cannot replace the next manually accepted or reclaimed attempt. */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("update SentMail m set m.dsptchRsltCd = :result, m.mdfcnDt = CURRENT_TIMESTAMP where m.emlDsptchSn = :id "
-            + "and m.dsptchRsltCd = 'P' and m.dsptchDt = :queuedAt")
-    int recordResult(@Param("id") Long id, @Param("queuedAt") java.time.LocalDateTime queuedAt,
+            + "and m.dsptchRsltCd = 'P' and m.dsptchDt = :claimedAt")
+    int recordResult(@Param("id") Long id, @Param("claimedAt") java.time.LocalDateTime claimedAt,
             @Param("result") String result);
 
     // Terminal callbacks share the managed DurableJob: clearing this context would detach its payload cleanup.

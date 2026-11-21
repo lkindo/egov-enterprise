@@ -1125,7 +1125,7 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     expect(client).not.toContain('AGGREGATED METRICS');
 
     // 조회 실패를 '없음' 으로 그리지 않는다 — 실패 상태를 남기고, 빈 상태보다 먼저 판정한다.
-    expect(client, '조회 실패 상태가 사라졌다 — 실패가 다시 빈 목록으로 위장한다').toContain('setLoadError');
+    expect(client, '조회 실패 상태가 사라졌다 — 실패가 다시 빈 목록으로 위장한다').toContain('pollListQuery.isError');
     // ⚠ 빈 상태의 **본문 문구**와 비교하면 안 된다. 조건을 뒤로 밀어도 문구는 여전히 뒤에
     //   있어 통과한다(이 계약을 만들며 red 실측 중 실제로 그렇게 새어 나갔다).
     //   두 분기의 **조건끼리** 비교한다.

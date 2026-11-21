@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { DEFAULT_BOARD_TYPE, type BoardTemplateId } from '@/lib/board/board-types';
 import { SERVER_MAX_FILES_PER_REQUEST, SERVER_MAX_FILE_SIZE_MB } from '@/lib/attachments/server-upload-limits';
 import { BoardPreview, type BoardPreviewFeatures } from './BoardPreview';
+import type { BoardMakerFormValues } from './BoardMakerWizard';
 import {
   BYTES_PER_MB,
   PRIVATE_POST_POLICY_OPTIONS,
@@ -34,10 +35,8 @@ interface BoardMakerStep2FieldsProps {
   selectedTemplate: BoardTemplateId | undefined;
   setTemplate: (templateId: BoardTemplateId) => void;
   touch: (field: PurposeField) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  watch: UseFormWatch<any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setValue: UseFormSetValue<any>;
+  watch: UseFormWatch<BoardMakerFormValues>;
+  setValue: UseFormSetValue<BoardMakerFormValues>;
   errors: FieldErrors<{
     atchPsbltyFileQty?: unknown;
     atchPsbltyFileSz?: unknown;

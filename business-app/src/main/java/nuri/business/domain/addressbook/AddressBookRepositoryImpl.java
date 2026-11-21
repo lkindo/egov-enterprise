@@ -27,10 +27,10 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
             Pageable pageable) {
         BooleanExpression condition = null;
         if (StringUtils.hasText(searchWrd)) {
-            if ("0".equals(searchCnd)) {
-                condition = addressBook.adbkNm.contains(searchWrd);
-            } else if ("1".equals(searchCnd)) {
+            if ("1".equals(searchCnd)) {
                 condition = addressBook.wrterId.contains(searchWrd);
+            } else {
+                condition = addressBook.adbkNm.contains(searchWrd);
             }
         }
 

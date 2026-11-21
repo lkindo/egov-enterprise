@@ -32,4 +32,33 @@ class AddressBookRepositoryImplTest {
         assertThat(result).isEmpty();
         verifyNoInteractions(queryFactory);
     }
+
+    @Test
+    @DisplayName("searchCnd 가 null·빈 문자열이면 주소록명(adbkNm) 검색으로 기본 분기한다")
+    void searchAddressBooks_defaultsBlankSearchCndToAddressBookName() {
+        @SuppressWarnings("unchecked")
+        com.querydsl.jpa.impl.JPAQuery<AddressBook> contentQuery = org.mockito.Mockito.mock(com.querydsl.jpa.impl.JPAQuery.class);
+        @SuppressWarnings("unchecked")
+        com.querydsl.jpa.impl.JPAQuery<Long> countQuery = org.mockito.Mockito.mock(com.querydsl.jpa.impl.JPAQuery.class);
+        org.mockito.Mockito.when(queryFactory.selectFrom(QAddressBook.addressBook)).thenReturn(contentQuery);
+        org.mockito.Mockito.when(contentQuery.where(org.mockito.ArgumentMatchers.any(com.querydsl.core.types.Predicate.class)))
+                .thenReturn(contentQuery);
+        org.mockito.Mockito.when(contentQuery.offset(0L)).thenReturn(contentQuery);
+        org.mockito.Mockito.when(contentQuery.limit(10L)).thenReturn(contentQuery);
+        org.mockito.Mockito.when(contentQuery.orderBy(org.mockito.ArgumentMatchers.any(com.querydsl.core.types.OrderSpecifier.class)))
+                .thenReturn(contentQuery);
+        org.mockito.Mockito.when(contentQuery.fetch()).thenReturn(java.util.List.of());
+        org.mockito.Mockito.when(queryFactory.select(QAddressBook.addressBook.count())).thenReturn(countQuery);
+        org.mockito.Mockito.when(countQuery.from(QAddressBook.addressBook)).thenReturn(countQuery);
+        org.mockito.Mockito.when(countQuery.where(org.mockito.ArgumentMatchers.any(com.querydsl.core.types.Predicate.class)))
+                .thenReturn(countQuery);
+        org.mockito.Mockito.when(countQuery.fetchOne()).thenReturn(0L);
+
+        repository.searchAddressBooks(null, null, null, "길동", PageRequest.of(0, 10));
+
+        org.mockito.ArgumentCaptor<com.querydsl.core.types.Predicate> predicateCaptor =
+                org.mockito.ArgumentCaptor.forClass(com.querydsl.core.types.Predicate.class);
+        org.mockito.Mockito.verify(contentQuery).where(predicateCaptor.capture());
+        assertThat(predicateCaptor.getValue().toString()).contains("adbkNm").contains("길동");
+    }
 }

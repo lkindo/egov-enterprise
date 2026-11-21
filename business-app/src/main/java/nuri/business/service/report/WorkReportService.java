@@ -148,7 +148,7 @@ public class WorkReportService extends BaseAbstractService {
             }
         }
         Page<WorkReport> page = workReportRepository.searchWorkReports(
-                scopedId, null, null, null, searchCnd, searchWrd, null, searchSe, Objects.requireNonNull(pageable));
+                scopedId, searchCnd, searchWrd, searchSe, Objects.requireNonNull(pageable));
         Map<String, String> authorNames = resolveAuthorNames(page.getContent());
         return page.map(entity -> toDto(entity, lookupName(authorNames, entity.getUserId())));
     }

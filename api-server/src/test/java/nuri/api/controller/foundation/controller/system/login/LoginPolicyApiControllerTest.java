@@ -45,17 +45,25 @@ class LoginPolicyApiControllerTest {
     }
 
     @Test
-    @DisplayName("로그인 정책 목록 조회 성공")
+    @DisplayName("로그인 정책 목록 조회 성공 — 단일 Page 쿼리로 2중 COUNT 를 피한다")
     void testGetLoginPolicyList() throws Exception {
         // Given
-        when(loginPolicyManageService.selectLoginPolicyList(any())).thenReturn(Collections.emptyList());
-        when(loginPolicyManageService.selectLoginPolicyListTotCnt(any())).thenReturn(0);
+        LoginPolicyDto row = LoginPolicyDto.builder().userId("user01").userNm("사용자1").regYn("Y").build();
+        when(loginPolicyManageService.selectLoginPolicyPage(any())).thenReturn(
+                new org.springframework.data.domain.PageImpl<>(
+                        java.util.List.of(row), org.springframework.data.domain.PageRequest.of(0, 10), 1));
 
         // When & Then
         mockMvc.perform(get("/api/v1/admin/system/login-policies")
                 .param("page", "1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.page").value(1))
+                .andExpect(jsonPath("$.data.list[0].userId").value("user01"));
+
+        verify(loginPolicyManageService).selectLoginPolicyPage(any());
+        verify(loginPolicyManageService, never()).selectLoginPolicyListTotCnt(any());
     }
 
     @Test

@@ -370,7 +370,9 @@ final class InformalSanctionReadAssembler {
     }
 
     static String requestDate(String requestDate) {
-        if (requestDate == null || requestDate.isBlank()) return LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        if (requestDate == null || requestDate.isBlank()) {
+            return LocalDate.now(nuri.foundation.core.util.ServiceTime.clock()).format(DateTimeFormatter.BASIC_ISO_DATE);
+        }
         try {
             return Ymd.compact(requestDate);
         } catch (BusinessException e) {

@@ -136,6 +136,27 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @Query("SELECT c FROM Comment c WHERE c.ansSn = :commentNo AND c.useYn = 'Y'")
     Optional<Comment> findByIdForUpdate(@Param("commentNo") Long commentNo);
 
+    /**
+     * {@code BOARD_READ_ALL} 이 없는 관리자 삭제용 단건 잠금 조회 — 공개 게시판 중 활성 게시판·공개/기간 내 게시글(또는 작성자 본인) 댓글만 반환한다.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM Comment c WHERE c.ansSn = :commentNo AND c.useYn = 'Y' AND " + VISIBLE_PUBLIC_MODERATION_PREDICATE)
+    Optional<Comment> findVisiblePublicForModerationUpdate(
+            @Param("commentNo") Long commentNo,
+            @Param("viewerEsntlId") String viewerEsntlId,
+            @Param("today") String today);
+
+    /**
+     * {@code BOARD_READ_ALL} 이 없는 관리자 삭제용 단건 잠금 조회 — 공개 게시판 또는 가입 커뮤니티 중 열람 가능한 활성 댓글만 반환한다.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM Comment c WHERE c.ansSn = :commentNo AND c.useYn = 'Y' AND " + VISIBLE_COMMUNITY_MODERATION_PREDICATE)
+    Optional<Comment> findVisibleForModerationUpdate(
+            @Param("commentNo") Long commentNo,
+            @Param("viewerEsntlId") String viewerEsntlId,
+            @Param("today") String today,
+            @Param("accessibleCommunityIds") java.util.Collection<Long> accessibleCommunityIds);
+
     // [V2_12 결속] 사용자 삭제 시 댓글 작성자를 시스템 계정으로 재귀속 — 콘텐츠 보존 정책
     // (fk_tb_bbs_comment_tb_user_info NO ACTION 하에서 작성자 행 삭제 전 필수)
     @Modifying(clearAutomatically = true)

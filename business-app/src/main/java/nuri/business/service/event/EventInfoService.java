@@ -30,10 +30,15 @@ public class EventInfoService {
 
     public Page<EventInfoDto> getEventList(String searchWrd, Pageable pageable) {
         log.debug("Fetching event list");
+        Pageable raw = Objects.requireNonNull(pageable);
+        Pageable ordered = raw.getSort().isSorted() ? raw
+                : org.springframework.data.domain.PageRequest.of(
+                        raw.getPageNumber(), raw.getPageSize(),
+                        org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "evntSn"));
         if (searchWrd == null || searchWrd.trim().isEmpty()) {
-            return eventInfoRepository.findAll(Objects.requireNonNull(pageable)).map(eventInfoMapper::toDto);
+            return eventInfoRepository.findAll(ordered).map(eventInfoMapper::toDto);
         }
-        return eventInfoRepository.findBySearchWrd(searchWrd, pageable).map(eventInfoMapper::toDto);
+        return eventInfoRepository.findBySearchWrd(searchWrd, ordered).map(eventInfoMapper::toDto);
     }
  
     public EventInfoDto getEvent(Long evntSn) {
