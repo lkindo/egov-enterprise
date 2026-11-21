@@ -8,7 +8,7 @@ version: 2.0.0
 
 ## 원칙
 
-테스트의 강도는 통과 여부가 아니라 잘못된 동작을 실패시키는지로 평가한다. 저장소 백엔드 mutation 정본은 Gradle PIT 설정과 required `mutation-test` workflow이며 CI strict threshold는 현재 75%다. 로컬 기본 실행은 같은 강도를 보장하지 않는다.
+테스트의 강도는 통과 여부가 아니라 잘못된 동작을 실패시키는지로 평가한다. 저장소 백엔드 mutation 정본은 Gradle PIT 설정과 required `mutation-test` workflow다. CI 하한은 범위마다 다르며 최저 75%이고, 범위별 값은 [게이트 원장](../../../config/governance/gates.json)의 `QUALITY-BACKEND-MUTATION-SCORE`(`scopeFloors`)가 정본이다(ADR-0044). 로컬 기본 실행은 같은 강도를 보장하지 않는다.
 
 ## 절차
 
