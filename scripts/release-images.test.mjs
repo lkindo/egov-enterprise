@@ -812,11 +812,16 @@ function scannerFixture(root, { failScan = 0, badId = false } = {}) {
 
 test('dry-run scans exact saved image IDs with isolated mounts and emits evidence only after both scans and SBOMs', t => {
   const root = temporaryScanRoot(t); const runner = scannerFixture(root);
-  const receipt = scanReleaseImages({ ...env, GITHUB_EVENT_NAME: 'workflow_dispatch' }, { root, run: runner.run });
+  const receipt = scanReleaseImages({ ...env, GITHUB_EVENT_NAME: 'workflow_dispatch' }, { root, run: runner.run, user: '1001:118' });
   assert.equal(receipt.images.length, 2);
   assert.deepEqual(runner.calls.filter(args => args[1] === 'save').map(args => args.at(-1)), ids);
   const scans = runner.calls.filter(args => args[0] === 'run' && !args.includes('version'));
   assert.equal(scans.length, 4);
+  for (const args of [...scans, runner.calls.find(args => args[0] === 'run' && args.includes('version'))]) {
+    // 0700·러너 소유 검사 폴더는 권한을 뺀 root 가 읽고 쓰지 못한다 — 러너 사용자로 돌린다(2026-11-21).
+    assert.equal(args[args.indexOf('--user') + 1], '1001:118');
+    assert.equal(args[args.indexOf('--cap-drop') + 1], 'ALL');
+  }
   for (const args of scans) {
     assert.ok(args.includes(RELEASE_SCANNER_IMAGE)); assert.ok(args.includes('--read-only'));
     assert.equal(args[args.indexOf('--scanners') + 1], 'vuln');
@@ -838,6 +843,18 @@ test('dry-run scans exact saved image IDs with isolated mounts and emits evidenc
   assert.equal(JSON.stringify(receipt).includes('must-not-reach-receipt'), false);
   verifyReleaseScanEvidence(env, ids.map(id => ({ id })), file => readFileSync(join(root, file)),
     (file, id) => readImageArchive(join(root, file), id));
+});
+
+test('a host without POSIX ids runs the scanner without --user, and a malformed user stops before any docker command', t => {
+  const root = temporaryScanRoot(t); const runner = scannerFixture(root);
+  scanReleaseImages({ ...env, GITHUB_EVENT_NAME: 'workflow_dispatch' }, { root, run: runner.run, user: null });
+  assert.equal(runner.calls.filter(args => args[0] === 'run').some(args => args.includes('--user')), false);
+
+  const strict = scannerFixture(temporaryScanRoot(t));
+  for (const user of ['root', '1001', '1001:118 --privileged', '']) {
+    assert.throws(() => scanReleaseImages(env, { root: temporaryScanRoot(t), run: strict.run, user }), /scan evidence|Release image/u, user);
+  }
+  assert.deepEqual(strict.calls, []);
 });
 
 for (const failScan of [1, 2, 3, 4]) test(`scanner command ${failScan} failure leaves no completion receipt`, t => {

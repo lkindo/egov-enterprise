@@ -223,7 +223,19 @@ export function verifyReleaseScanEvidence(env, images, read = readFileSync, read
   } catch { throw scanFailure(); }
 }
 
-export function scanReleaseImages(env, { run = runDocker, root = process.cwd() } = {}) {
+/**
+ * 검사 컨테이너를 돌릴 호스트 사용자(uid:gid). 검사 폴더는 0700·러너 소유인데 컨테이너는 권한을 모두 뺀(--cap-drop ALL) root 라,
+ * 리눅스 러너에서는 root 도 그 폴더를 읽고 쓰지 못해 DB 를 받다 시작 직후 exit 1 로 끝났다(2026-09-28 #792 부터 CI 검사가 끝까지 돌지
+ * 않았다 — 2026-11-21 같은 소유·권한의 볼륨에서 'mkdir /data/cache/db: permission denied' 로 재현). 권한을 넓히지 않고 사용자만 맞춘다.
+ * 바인드 마운트가 권한을 보지 않는 Windows 에서는 null 이다.
+ */
+function hostUser() {
+  return typeof process.getuid === 'function' && typeof process.getgid === 'function'
+    ? `${process.getuid()}:${process.getgid()}` : null;
+}
+
+export function scanReleaseImages(env, { run = runDocker, root = process.cwd(), user = hostUser() } = {}) {
+  if (user !== null && !/^\d{1,10}:\d{1,10}$/u.test(user)) throw scanFailure();
   const images = verifyReleaseImages(env, run);
   const directory = path.resolve(root, 'release-scan');
   const receiptPath = path.resolve(root, RELEASE_SCAN_RECEIPT);
@@ -232,7 +244,7 @@ export function scanReleaseImages(env, { run = runDocker, root = process.cwd() }
   run(['pull', RELEASE_SCANNER_IMAGE]);
   const scannerImageId = run(['image', 'inspect', RELEASE_SCANNER_IMAGE, '--format', '{{.Id}}']);
   if (!IMAGE_ID.test(scannerImageId)) throw scanFailure();
-  const scanner = ['run', '--rm', '--pull', 'never', '--read-only', '--cap-drop', 'ALL',
+  const scanner = ['run', '--rm', '--pull', 'never', '--read-only', '--cap-drop', 'ALL', ...(user ? ['--user', user] : []),
     '--security-opt', 'no-new-privileges', '--tmpfs', '/tmp:rw,noexec,nosuid,size=4g', '--workdir', '/tmp',
     '--mount', `type=bind,source=${path.join(directory, 'input')},target=/input,readonly`,
     '--mount', `type=bind,source=${path.join(directory, 'output')},target=/output`,
