@@ -8,6 +8,7 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { OPERATIONAL_CONTRACTS_RUNNER } from './operational-contracts-runner.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST_RELATIVE_PATH = 'config/ui-route-capabilities.json';
@@ -697,7 +698,7 @@ export function validateSchemaDefinition(schema) {
 
 export function validateOperationalBinding({ packageJson, registry, governanceTestSource }) {
   const errors = [];
-  const expectedCommand = `node -e "require('node:fs').mkdirSync('build/operational-contracts',{recursive:true})" && node --test --test-concurrency=2 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./scripts/node-test-junit-reporter.mjs --test-reporter-destination=build/operational-contracts/junit.xml "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs" "tools/requirements-workspace/*.test.mjs"`;
+  const expectedCommand = OPERATIONAL_CONTRACTS_RUNNER;
   if (packageJson?.scripts?.['test:operational-contracts'] !== expectedCommand) {
     errors.push('package operational runner no longer covers scripts/*.test.mjs exactly');
   }

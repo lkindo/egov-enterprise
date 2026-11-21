@@ -5,8 +5,9 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { test } from 'node:test';
 import { authenticate } from '../frontend/e2e/fixtures/auth-state.mjs';
+import { OPERATIONAL_CONTRACTS_RUNNER } from './operational-contracts-runner.mjs';
 
-const OPERATIONAL_RUNNER = `node -e "require('node:fs').mkdirSync('build/operational-contracts',{recursive:true})" && node --test --test-concurrency=2 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./scripts/node-test-junit-reporter.mjs --test-reporter-destination=build/operational-contracts/junit.xml "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs" "tools/requirements-workspace/*.test.mjs"`;
+const OPERATIONAL_RUNNER = OPERATIONAL_CONTRACTS_RUNNER;
 const CONTRACT_ASSET = 'scripts/playwright-auth-artifact-contract.test.mjs';
 const requireFromFrontend = createRequire(new URL('../frontend/package.json', import.meta.url));
 const ts = requireFromFrontend('typescript');

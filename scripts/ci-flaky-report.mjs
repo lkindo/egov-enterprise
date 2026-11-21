@@ -380,9 +380,19 @@ export function errorSignature(message) {
   return plain.split('\n').map(line => line.trim()).find(Boolean)?.slice(0, 160) ?? '(메시지 없음)';
 }
 
-/** gh GET 실행기 — 5xx 는 두 번까지 다시 묻고, 예산을 넘기면 BudgetError 다. */
+/**
+ * gh GET 실행기 — 5xx 와 응답 없이 끊긴 전송 오류는 간격을 두고 두 번까지 다시 묻고, 예산을 넘기면 BudgetError 다.
+ * [2026-11-22] 종전에는 간격 없이 다시 물어 같은 장애 순간에 세 번이 모두 502 로 떨어졌고, HTTP 상태가 없는 전송 오류
+ * (`stream error: stream ID 1; CANCEL; received from peer`)는 다시 묻지 않아 수백 번의 조회 가운데 한 번의 끊김이 보고 전체를 멈췄다.
+ * 4xx·인증 실패처럼 다시 물어도 같은 답인 실패는 그대로 던진다.
+ */
 export class BudgetError extends Error {}
-export function createGh({ maxCalls, exec = (args, options) => execFileSync('gh', args, options) }) {
+const TRANSIENT_TRANSPORT = /stream error|connection reset|unexpected EOF|i\/o timeout|TLS handshake timeout|server closed idle connection/i;
+export const RETRY_DELAYS_MS = Object.freeze([2000, 6000]);
+function sleepSync(milliseconds) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
+}
+export function createGh({ maxCalls, exec = (args, options) => execFileSync('gh', args, options), sleep = sleepSync }) {
   let calls = 0;
   // binary: 산출물 zip(Buffer), text: 잡 로그(문자열), 기본: JSON.
   const call = (endpoint, { binary = false, text = false } = {}) => {
@@ -394,7 +404,10 @@ export function createGh({ maxCalls, exec = (args, options) => execFileSync('gh'
         return binary || text ? output : JSON.parse(output);
       } catch (error) {
         const stderr = String(error.stderr ?? '');
-        if (attempt < 2 && /HTTP 5\d\d/.test(stderr)) continue;
+        if (attempt < RETRY_DELAYS_MS.length && (/HTTP 5\d\d/.test(stderr) || TRANSIENT_TRANSPORT.test(stderr))) {
+          sleep(RETRY_DELAYS_MS[attempt]);
+          continue;
+        }
         throw error;
       }
     }

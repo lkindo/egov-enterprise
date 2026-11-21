@@ -5,6 +5,7 @@ import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import test, { after } from 'node:test';
+import { OPERATIONAL_CONTRACTS_RUNNER } from './operational-contracts-runner.mjs';
 
 import {
   analyzeVerifyRunnerExecution,
@@ -315,7 +316,7 @@ test('UI/UX foundation contract assets remain present in the required Node catal
   );
   assert.equal(
     operational.selector.packageScript.command,
-    `node -e "require('node:fs').mkdirSync('build/operational-contracts',{recursive:true})" && node --test --test-concurrency=2 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./scripts/node-test-junit-reporter.mjs --test-reporter-destination=build/operational-contracts/junit.xml "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs" "tools/requirements-workspace/*.test.mjs"`,
+    OPERATIONAL_CONTRACTS_RUNNER,
   );
   assert.ok([
     'config/ui-quality-evidence-policy.json',
