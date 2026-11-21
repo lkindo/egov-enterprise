@@ -45147,7 +45147,9 @@
           "password": {
             "type": "string",
             "description": "비밀번호",
-            "example": "admin123"
+            "example": "admin123",
+            "maxLength": 128,
+            "minLength": 1
           },
           "otpCode": {
             "type": "integer",
@@ -45157,6 +45159,7 @@
           }
         },
         "required": [
+          "password",
           "userId"
         ]
       },

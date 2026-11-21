@@ -8,7 +8,7 @@ import { FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorIt
 
 export const LoginRequestSchema = /*#__PURE__*/ (() => z.object({
   userId: z.string().min(0).max(20),
-  password: z.string().optional(),
+  password: z.string().min(1).max(128),
   otpCode: z.number().int().optional(),
 }))();
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
@@ -40,13 +40,13 @@ export type CurrentUserResponse = z.infer<typeof CurrentUserResponseSchema>;
 
 export const LoginRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   userId: z.string().min(0).max(20),
-  password: z.string().optional(),
+  password: z.string().min(1).max(128),
   otpCode: z.number().int().optional(),
 }))();
 
 export const LoginRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   userId: z.string().min(0).max(20),
-  password: z.string().optional().nullable(),
+  password: z.string().min(1).max(128),
   otpCode: z.number().int().optional().nullable(),
 }))();
 

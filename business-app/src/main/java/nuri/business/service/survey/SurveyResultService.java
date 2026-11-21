@@ -46,7 +46,8 @@ public class SurveyResultService {
 
     /** 응답 목록(관리). 응답자명 부분일치. */
     public Page<SurveyResultDto> getResponseList(String keyword, Pageable pageable) {
-        Page<SurveyResult> page = resultRepository.searchByRspnsNm(keyword == null ? "" : keyword, pageable);
+        Page<SurveyResult> page = resultRepository.searchByRspnsNm(keyword == null ? "" : keyword,
+                SurveyPageSort.newestFirst(pageable, "srvyRspnsSn"));
         Map<Long, SurveyArticle> articles = selectedArticles(page.getContent());
         return page.map(result -> toResponseDto(result, articles));
     }

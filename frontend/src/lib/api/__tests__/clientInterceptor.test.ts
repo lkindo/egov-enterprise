@@ -148,6 +148,31 @@ describe('API 클라이언트 인터셉터', () => {
       expect(instance.post).not.toHaveBeenCalled();
     });
 
+    it('경로에 /login 이 든 관리 화면의 401 은 로그인 화면이 아니므로 재발급한다', async () => {
+      for (const pathname of ['/admin/security/login-policy', '/admin/system/logs/login', '/admin/user/login-policy']) {
+        Object.defineProperty(globalThis, 'window', {
+          value: { location: { pathname, href: '' }, dispatchEvent: vi.fn() },
+          configurable: true, writable: true,
+        });
+        const { instance, captured } = await loadClient();
+        instance.post.mockResolvedValueOnce({ data: { success: true, data: authorization } });
+
+        await captured.responseErr!({ response: { status: 401 }, config: { url: '/x' } });
+
+        expect(instance.post, pathname).toHaveBeenCalledWith('/api/auth/reissue', {}, expect.anything());
+      }
+    });
+
+    it('로그인 화면 판정은 /login 과 그 아래 경로만이다', async () => {
+      await loadClient();
+      const { isLoginScreen } = await import('../client');
+      expect(isLoginScreen('/login')).toBe(true);
+      expect(isLoginScreen('/login/mfa')).toBe(true);
+      expect(isLoginScreen('/admin/security/login-policy')).toBe(false);
+      expect(isLoginScreen('/admin/system/logs/login')).toBe(false);
+      expect(isLoginScreen('/loginx')).toBe(false);
+    });
+
     it('재발급 엔드포인트 자신의 401 도 재발급하지 않는다', async () => {
       Object.defineProperty(globalThis, 'window', {
         value: { location: { pathname: '/admin', href: '' } },

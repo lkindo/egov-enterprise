@@ -92,8 +92,25 @@ public class DurableJob extends BaseEntity {
     public void failed(LocalDateTime now, int maximumAttempts) {
         int attempts = rtryNmtm.intValueExact();
         prcsSttsNm = attempts >= maximumAttempts ? "FAILED" : "RETRY";
-        jobPrnmntDt = now.plusSeconds(Math.min(300, 1L << Math.min(attempts, 8)));
+        jobPrnmntDt = now.plusSeconds(retryDelaySeconds(attempts));
         jobNo = null;
+    }
+
+    /** 첫 재시도까지의 대기(초). 실패할 때마다 두 배가 된다. */
+    static final long FIRST_RETRY_DELAY_SECONDS = 30;
+    /** 한 번의 대기 상한(초). */
+    static final long MAXIMUM_RETRY_DELAY_SECONDS = 1800;
+
+    /**
+     * {@code attempts} 번째 시도가 실패한 뒤 다음 시도까지 기다릴 시간.
+     *
+     * <p>[2026-11-21] 종전 간격(2·4·…·128초, 8회 합계 약 254초)은 메일 서버·저장소가 5분만 멈춰도 그동안 접수한 작업을
+     * 모두 {@code FAILED} 로 만들었다 — 메일은 그때 수신 주소를 지워 다시 보낼 수 없다. 30초에서 두 배씩 늘려 30분에서
+     * 멈추면 8회 시도가 약 1시간(30+60+120+240+480+960+1800초) 동안 이어진다.
+     */
+    static long retryDelaySeconds(int attempts) {
+        int doublings = Math.max(0, Math.min(attempts, 7) - 1);
+        return Math.min(MAXIMUM_RETRY_DELAY_SECONDS, FIRST_RETRY_DELAY_SECONDS << doublings);
     }
 
     /** Exhausted jobs resume only while their payload survives; erased snapshots need a new acceptance. */

@@ -24,14 +24,13 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
         /**
          * 게시판 내 최대 정렬순번. <b>네이티브 쿼리인 이유가 핵심이다.</b>
          *
-         * <p>Board 엔티티에는 {@code @Filter(name="softDeleteFilter", condition="use_yn = :useYn")} 가
-         * 걸려 있어, JPQL 로 MAX 를 구하면 <b>숨김(use_yn='N') 행이 집계에서 빠진다.</b> 그런데 유니크 제약
+         * <p>종전 JPQL 은 소프트 삭제 필터(2026-11-21 걷음)에 걸려 <b>숨김(use_yn='N') 행을 집계에서 뺐다.</b> 그런데 유니크 제약
          * {@code uk_tb_bbs_item_thread_pos = UNIQUE(bbs_id, sort_ordr, ans_sn)} 는 숨김 행도 그대로 점유한다.
          * 그래서 상위 순번 글이 숨김 처리되면 MAX 가 낮게 나오고, 새 글이 이미 점유된 순번을 받아
          * <b>duplicate key → 409</b> 로 등록이 영구 실패했다(2026-07-27 신규 DB E2E 재현으로 확인:
          * 전 행이 use_yn='N' 이고 max(sort_ordr)=4 인데 필터된 MAX 는 0 이라 sort_ordr=1 충돌).
          *
-         * <p>네이티브 쿼리는 Hibernate 필터의 영향을 받지 않으므로 <b>제약이 보는 것과 동일한 집합</b>을 본다.
+         * <p>숨김 행 조건을 두지 않아 <b>제약이 보는 것과 동일한 집합</b>을 본다.
          */
         @Query(value = "SELECT COALESCE(MAX(sort_ordr), 0) FROM tb_bbs_item WHERE bbs_id = :bbsId",
                         nativeQuery = true)
@@ -50,8 +49,8 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
          *돌려주고 있었다. 게시글을 하나도 세지 않았다는 뜻이다.
          *
          * <p>⚠ {@code use_yn = 'Y'} 를 <b>명시</b>한다. {@code Board} 의 삭제는 논리 삭제
-         * ({@code delete()} 가 useYn 을 'N' 으로 바꾼다)이고, 이 네이티브 질의에는 JPA
-         * {@code @Filter} 가 걸리지 않는다. 빠뜨리면 <b>지운 글이 통계를 부풀린다.</b>
+         * ({@code delete()} 가 useYn 을 'N' 으로 바꾼다)이고, 논리 삭제는 질의의 조건으로만 가린다.
+         * 빠뜨리면 <b>지운 글이 통계를 부풀린다.</b>
          */
         default List<Object[]> countPostsByDate(String fromDate, String toDate) {
                 return countPostsPerDay(StatsTimestamp.parse(fromDate), StatsTimestamp.parse(toDate));
@@ -92,8 +91,8 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
          * 영구 삭제를 막아야 하는 게시글 보유 게시판 ID를 조회한다. 단건 판정도 이 질의 하나를 쓴다(ADR-0040 A0 —
          * 종전 단건 JPQL COUNT 는 soft-delete 필터에 걸려 논리 삭제 글을 빼고 셌다).
          *
-         * <p>물리 FK가 보는 전체 행과 같은 집합을 봐야 하므로 native query를 사용해
-         * {@code softDeleteFilter}를 우회한다. 숨김 게시글도 남아 있으면 마스터 물리 삭제는 안전하지 않다.
+         * <p>물리 FK가 보는 전체 행과 같은 집합을 봐야 하므로 숨김 행 조건을 두지 않는다.
+         * 숨김 게시글도 남아 있으면 마스터 물리 삭제는 안전하지 않다.
          */
         @Query(value = "SELECT DISTINCT bbs_id FROM tb_bbs_item WHERE bbs_id IN (:bbsIds)", nativeQuery = true)
         List<String> findBbsIdsHavingAnyArticles(@Param("bbsIds") List<String> bbsIds);
@@ -108,8 +107,8 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
          * 건드리지 않아 편집자의 낙관적 락을 오염시키지 않는다.
          * {@code clearAutomatically} 로 1차 캐시의 스테일 엔티티를 비워, 갱신 후 재조회가 실제 값을 읽게 한다.
          *
-         * <p><b>{@code use_yn = 'Y'} 조건이 있는 이유.</b> 네이티브 쿼리는 Hibernate 의
-         * {@code softDeleteFilter} 를 통과하지 않는다(같은 파일 상단 주석 참조). 조건이 없으면
+         * <p><b>{@code use_yn = 'Y'} 조건이 있는 이유.</b> 논리 삭제는 질의의 조건으로만 가린다
+         * (같은 파일 상단 주석 참조). 조건이 없으면
          * <b>숨김 처리된 글에도 좋아요가 올라가고</b>, 종전 경로(엔티티 로드 → 증가)가 지키던
          * "없는 글이면 404" 계약이 조용히 깨진다. 조건을 쿼리에 두면 {@code affected == 0} 이
          * 그대로 404 판정 재료가 되어 원자성과 계약이 <b>한 번의 왕복</b>으로 함께 성립한다.
@@ -142,7 +141,7 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
          *
          * <p>목록 정렬의 고정 판정({@code BoardPredicate.pinActiveOn})과 같은 조건이다: 고정 표시가 Y 이고 종료일이 기준일과 같거나
          * 뒤다. 비밀글·게시 기간 밖의 글로는 거르지 않는다 — 누구에게 보이든 고정 칸을 차지하므로, 보이는 고정 글 수가 늘 센 수
-         * 이하다. 네이티브라 {@code softDeleteFilter} 를 받지 않으므로 {@code use_yn = 'Y'} 를 명시한다(지운 글은 세지 않는다).
+         * 이하다. 논리 삭제는 질의의 조건으로만 가리므로 {@code use_yn = 'Y'} 를 명시한다(지운 글은 세지 않는다).
          * 호출부가 게시판 마스터 행을 잠근 뒤 부른다 — 같은 게시판의 동시 고정이 이 집계를 직렬로 본다.
          */
         @Query(value = """

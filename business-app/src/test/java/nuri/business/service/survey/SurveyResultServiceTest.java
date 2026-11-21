@@ -18,6 +18,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -38,6 +39,11 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 @MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("SurveyResultService 단위 테스트")
 class SurveyResultServiceTest {
+
+    /** 정렬 없는 목록 요청은 최신순(일련번호 역순)으로 저장소에 간다(2026-11-21). */
+    private static final org.springframework.data.domain.Pageable NEWEST =
+            PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "srvyRspnsSn"));
+
 
     @Mock private SurveyResultRepository resultRepository;
     @Mock private SurveyQuestionRepository questionRepository;
@@ -105,7 +111,7 @@ class SurveyResultServiceTest {
         var second = response(2L, 201L, 302L, 402L, "", null);
         var duplicate = response(3L, 201L, 301L, 401L, null, null);
         var pageable = PageRequest.of(0, 10);
-        given(resultRepository.searchByRspnsNm("", pageable))
+        given(resultRepository.searchByRspnsNm("", NEWEST))
                 .willReturn(new PageImpl<>(List.of(first, second, duplicate,
                         response(4L, 201L, 301L, 401L, "직접 쓴 답변", null),
                         response(5L, 201L, 302L, 402L, null, "기타 원문")), pageable, 23));
@@ -130,7 +136,7 @@ class SurveyResultServiceTest {
     @DisplayName("자유서술과 기타 답변이 있으면 원문을 보존하고 항목을 추가 조회하지 않는다")
     void responseListPreservesFreeTextAndOtherAnswersWithoutLookup() {
         var pageable = PageRequest.of(0, 10);
-        given(resultRepository.searchByRspnsNm("응답자", pageable)).willReturn(new PageImpl<>(List.of(
+        given(resultRepository.searchByRspnsNm("응답자", NEWEST)).willReturn(new PageImpl<>(List.of(
                 response(1L, 201L, 301L, 401L, "  자유서술 원문  ", null),
                 response(2L, 201L, 301L, 401L, null, "기타 원문"),
                 response(3L, 201L, 301L, 401L, "기존 답변 우선", "기타 원문"))));
@@ -146,7 +152,7 @@ class SurveyResultServiceTest {
     @DisplayName("타설문·타문항 항목 내용과 삭제된 선택지는 응답에 보강하지 않는다")
     void responseListDoesNotExposeForeignOrDeletedArticleContent() {
         var pageable = PageRequest.of(0, 10);
-        given(resultRepository.searchByRspnsNm("", pageable)).willReturn(new PageImpl<>(List.of(
+        given(resultRepository.searchByRspnsNm("", NEWEST)).willReturn(new PageImpl<>(List.of(
                 response(1L, 201L, 301L, 401L, null, null),
                 response(2L, 201L, 301L, 402L, null, null),
                 response(3L, 201L, 301L, 403L, "", null))));
@@ -176,7 +182,7 @@ class SurveyResultServiceTest {
     @DisplayName("빈 응답 페이지는 선택 항목을 조회하지 않는다")
     void emptyResponsePageDoesNotQueryArticles() {
         var pageable = PageRequest.of(0, 10);
-        given(resultRepository.searchByRspnsNm("", pageable)).willReturn(Page.empty(pageable));
+        given(resultRepository.searchByRspnsNm("", NEWEST)).willReturn(Page.empty(pageable));
 
         assertThat(service.getResponseList(null, pageable)).isEmpty();
 

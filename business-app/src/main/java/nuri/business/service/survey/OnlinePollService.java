@@ -45,8 +45,8 @@ public class OnlinePollService {
      * 투표 목록. kind 가 SATISFACTION 이면 만족도 조사만, POLL 이면 온라인 투표만, 비면 전부다(2026-10-01 결정 21).
      * 종전에는 두 관리 화면이 같은 표를 통째로 보여 서로의 항목이 섞였다.
      */
-    public Page<OnlinePollManageDto> getPollList(String keyword, String kind, Pageable pageable) {
-        Objects.requireNonNull(pageable);
+    public Page<OnlinePollManageDto> getPollList(String keyword, String kind, Pageable request) {
+        Pageable pageable = SurveyPageSort.newestFirst(Objects.requireNonNull(request), "pollSn");
         Page<OnlinePollManage> entities;
         String searchKeyword = (keyword == null) ? "" : keyword;
         if (kind != null && !kind.isBlank()) {

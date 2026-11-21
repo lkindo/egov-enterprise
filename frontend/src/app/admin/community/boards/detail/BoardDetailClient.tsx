@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { BoardRichTextContent } from '@/components/ui/BoardRichTextContent';
 import { cn } from '@/lib/utils';
-import { RICH_TEXT_TABLE_CLASSES } from '@/lib/rich-text-styles';
+import { RICH_TEXT_CONTENT_CLASSES, RICH_TEXT_TABLE_CLASSES } from '@/lib/rich-text-styles';
 import { canPermission } from '@/lib/auth/permissions';
 import { canEditConfiguredBoard } from '@/lib/auth/board-edit-permissions';
 import { Button } from '@/components/ui/button';
@@ -542,11 +542,8 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
 
         <BoardRichTextContent
           className={cn(
-            "prose dark:prose-invert max-w-none text-foreground",
+            RICH_TEXT_CONTENT_CLASSES,
             "leading-relaxed",
-            "prose-headings:font-semibold prose-headings:text-foreground",
-            "prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:px-4 prose-blockquote:py-2 prose-blockquote:not-italic prose-blockquote:text-foreground",
-            "prose-code:bg-muted prose-code:rounded prose-code:px-1 prose-pre:bg-surface-inverse prose-pre:rounded-md",
             RICH_TEXT_TABLE_CLASSES
           )}
           html={article.pstCn || ''}

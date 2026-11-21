@@ -17,6 +17,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Pageable;
 
 import java.util.ArrayList;
@@ -37,6 +38,10 @@ import static org.mockito.Mockito.mockStatic;
 @org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 @DisplayName("OnlinePollService 단위 테스트")
 class OnlinePollServiceTest {
+
+    /** 정렬 없는 목록 요청은 최신순(일련번호 역순)으로 저장소에 간다(2026-11-21). */
+    private static final Pageable NEWEST = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "pollSn"));
+
 
     @org.junit.jupiter.api.AfterEach
     void clearPrincipal() {
@@ -97,7 +102,7 @@ class OnlinePollServiceTest {
     void getPollList_NoKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
         OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).pollNm("Poll 1").build();
-        given(pollManageRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
+        given(pollManageRepository.findAll(NEWEST)).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<OnlinePollManageDto> result = onlinePollService.getPollList(null, null, pageable);
 
@@ -105,25 +110,38 @@ class OnlinePollServiceTest {
     }
 
     @Test
+    @DisplayName("정렬 없는 요청은 쪽 번호·크기를 지킨 채 최신순으로, 정렬을 준 요청은 그 정렬 그대로 저장소에 간다")
+    void getPollList_defaultsToNewestButKeepsRequestedSort() {
+        given(pollManageRepository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of()));
+
+        onlinePollService.getPollList(null, null, PageRequest.of(2, 20));
+        Pageable byName = PageRequest.of(1, 5, Sort.by("pollNm"));
+        onlinePollService.getPollList(null, null, byName);
+
+        verify(pollManageRepository).findAll(PageRequest.of(2, 20, Sort.by(Sort.Direction.DESC, "pollSn")));
+        verify(pollManageRepository).findAll(byName);
+    }
+
+    @Test
     @DisplayName("설문 목록 조회 - 키워드 있음")
     void getPollList_WithKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
         OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).pollNm("Poll 1").build();
-        given(pollManageRepository.findByPollNmContaining(eq("Keyword"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
+        given(pollManageRepository.findByPollNmContaining(eq("Keyword"), eq(NEWEST))).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<OnlinePollManageDto> result = onlinePollService.getPollList("Keyword", null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(pollManageRepository).findByPollNmContaining(eq("Keyword"), eq(pageable));
+        verify(pollManageRepository).findByPollNmContaining(eq("Keyword"), eq(NEWEST));
     }
 
     @Test
     @DisplayName("🚨 종류 조건은 만족도 조사·온라인 투표를 따로 고르고, 어휘 밖 값은 400 이다 (2026-10-01 결정 21)")
     void getPollList_byKind() {
         Pageable pageable = PageRequest.of(0, 10);
-        given(pollManageRepository.findByKind(eq(true), eq(List.of("001", "002")), eq(""), eq(pageable)))
+        given(pollManageRepository.findByKind(eq(true), eq(List.of("001", "002")), eq(""), eq(NEWEST)))
                 .willReturn(new PageImpl<>(List.of(OnlinePollManage.builder().pollSn(1L).pollNm("만족도").build())));
-        given(pollManageRepository.findByKind(eq(false), eq(List.of("001", "002")), eq("투표"), eq(pageable)))
+        given(pollManageRepository.findByKind(eq(false), eq(List.of("001", "002")), eq("투표"), eq(NEWEST)))
                 .willReturn(new PageImpl<>(List.of()));
 
         assertThat(onlinePollService.getPollList(null, "SATISFACTION", pageable).getContent()).hasSize(1);
@@ -139,7 +157,7 @@ class OnlinePollServiceTest {
     void getPollList_EmptyKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
         OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).build();
-        given(pollManageRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
+        given(pollManageRepository.findAll(NEWEST)).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<OnlinePollManageDto> result = onlinePollService.getPollList("", null, pageable);
 
@@ -151,7 +169,7 @@ class OnlinePollServiceTest {
     void getPollList_NoPollArticles() {
         Pageable pageable = PageRequest.of(0, 10);
         OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).build(); // No pollArticles
-        given(pollManageRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
+        given(pollManageRepository.findAll(NEWEST)).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<OnlinePollManageDto> result = onlinePollService.getPollList("", null, pageable);
 

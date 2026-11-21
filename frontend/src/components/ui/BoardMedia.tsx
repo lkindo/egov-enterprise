@@ -107,7 +107,7 @@ function BoardMediaView({ reference, atchFileSn, attachments, pendingFiles }: Bo
   };
 
   return (
-    <div className="not-prose my-2 space-y-2 rounded-md border border-border bg-muted/30 p-3" role="group" aria-label={label}>
+    <div className="my-2 space-y-2 rounded-md border border-border bg-muted/30 p-3" role="group" aria-label={label}>
       {state.status === 'idle' && <Button type="button" variant="outline" onClick={retry}>영상 불러오기</Button>}
       {state.status === 'loading' && <p role="status" className="text-sm text-muted-foreground">{label} 불러오는 중…</p>}
       {(state.status === 'error' || playbackFailed) && (

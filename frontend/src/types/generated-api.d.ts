@@ -8433,7 +8433,7 @@ export interface components {
              * @description 비밀번호
              * @example admin123
              */
-            password?: string;
+            password: string;
             /**
              * Format: int32
              * @description OTP 번호 (선택)

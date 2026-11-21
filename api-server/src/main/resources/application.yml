@@ -154,6 +154,13 @@ nuri:
       registered-sender: ${NURI_SMS_SENS_REGISTERED_SENDER:}
       connect-timeout: ${NURI_SMS_CONNECT_TIMEOUT:3s}
       request-timeout: ${NURI_SMS_REQUEST_TIMEOUT:10s}
+    # [2026-11-21] SMS 발송 이력(수신 번호·본문) 보존·파기(SmsRetentionScheduler). 종전에는 파기 경로가 없었다.
+    #   읽은 알림 정리와 같이 켜는 순간 배포 환경의 이력을 지우므로 기본 꺼짐이고, 도입 기관이 개인정보 처리방침의
+    #   보존 기간을 정한 뒤 SMS_RETENTION_ENABLED 로 켠다. months 가 1 미만이면 지우지 않는다(전량파기 방지).
+    retention:
+      enabled: ${SMS_RETENTION_ENABLED:false}
+      cron: "0 45 4 * * *"      # 매일 04:45 (Asia/Seoul) — 읽은 알림 정리(04:30) 뒤
+      months: ${SMS_RETENTION_MONTHS:6}
 
   # 메일 발신 주소(SMTP From). 화면은 발신자를 입력받지 않으므로 이 설정이 유일한 원천이다.
   # 종전에는 요청 본문의 dsptchPerson 을 그대로 From 으로 썼는데 화면이 그 값을 채우지 않아

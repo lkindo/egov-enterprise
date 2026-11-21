@@ -159,6 +159,47 @@ class ColumnProtectorTest {
     }
 
     @Test
+    @DisplayName("체크섬 보기는 v2 암호문을 평문 지문으로 바꾸고(다시 암호화해도 같다) 결정적 암호·다른 컬럼은 그대로 둔다")
+    void checksumViewFingerprintsOnlyRandomizedCiphertext() {
+        byte[] raw = new byte[32];
+        java.util.Arrays.fill(raw, (byte) 3);
+        String keysJson = "{\"k1\":\"" + java.util.Base64.getEncoder().encodeToString(raw) + "\"}";
+        Function<String, String> v2Env = name -> switch (name) {
+            case ColumnProtector.RRNO_ACTIVE_KEY_ID_ENVIRONMENT -> "k1";
+            case ColumnProtector.RRNO_KEYS_JSON_ENVIRONMENT -> keysJson;
+            default -> null;
+        };
+        MappingSpec v2Spec = spec(new ColumnMapping("JUMIN", "user_enrrno", "trim", null, null, null, null, "rrno-aes-gcm-v2"));
+        ColumnProtector protector = ColumnProtector.forRun(v2Spec, v2Env);
+        String first = (String) protector.protect("tb_user_info", "user_enrrno", RRNO);
+        String second = (String) protector.protect("tb_user_info", "user_enrrno", RRNO);
+        String other = (String) protector.protect("tb_user_info", "user_enrrno", "900101-2345678");
+        assertThat(first).isNotEqualTo(second);
+
+        Map<String, ?> viewFirst = protector.checksumView("tb_user_info", Map.of("USER_ENRRNO", first, "user_nm", "Kim"));
+        Map<String, ?> viewSecond = protector.checksumView("public.TB_USER_INFO", Map.of("user_enrrno", second, "user_nm", "Kim"));
+        assertThat(viewFirst.get("USER_ENRRNO")).isEqualTo(viewSecond.get("user_enrrno"));
+        assertThat((String) viewFirst.get("USER_ENRRNO")).startsWith("v2fp:k1:").doesNotContain("1234567");
+        assertThat(viewFirst.get("user_nm")).isEqualTo("Kim");
+        assertThat(protector.checksumView("tb_user_info", Map.of("user_enrrno", other)).get("user_enrrno"))
+                .isNotEqualTo(viewFirst.get("USER_ENRRNO"));
+        // 검증기는 적재와 같은 환경에서 대상 암호문을 풀어 같은 지문을 만든다.
+        assertThat(ProtectedRowChecksum.forRun(v2Spec, v2Env).view("tb_user_info", Map.of("user_enrrno", second))
+                .get("user_enrrno")).isEqualTo(viewFirst.get("USER_ENRRNO"));
+        // 적재는 암호문을 다시 풀지 않는다 — 이 실행이 만들지 않은 암호문이면 체크섬을 만들지 않고 멈춘다.
+        assertThatThrownBy(() -> ColumnProtector.forRun(v2Spec, v2Env).checksumView("tb_user_info", Map.of("user_enrrno", first)))
+                .isInstanceOf(ColumnProtector.ProtectedColumnException.class)
+                .hasMessageContaining("체크섬 지문을 찾을 수 없습니다");
+
+        Map<String, Object> ariaRow = Map.of("user_enrrno", "ARIA-CIPHERTEXT");
+        ColumnProtector aria = ColumnProtector.forRun(spec(new ColumnMapping("JUMIN", "user_enrrno", "trim", null, null,
+                null, null, "aria-egov-v1")), name -> ColumnProtector.KEY_ENVIRONMENT.equals(name) ? "aria-key" : null);
+        assertThat(aria.checksumView("tb_user_info", ariaRow)).isSameAs(ariaRow);
+        assertThat(ProtectedRowChecksum.forRun(spec(new ColumnMapping("JUMIN", "user_enrrno", "trim", null, null,
+                null, null, "aria-egov-v1")), name -> null).view("tb_user_info", ariaRow)).isSameAs(ariaRow);
+    }
+
+    @Test
     @DisplayName("rrno-aes-gcm-v2 는 v2 키링으로 무작위 nonce 봉투를 만들고, 키링 누락·불일치·손상은 fail-closed 다")
     void rrnoAesGcmV2EncryptsAndFailsClosedOnInvalidConfigOrShape() {
         String key1 = java.util.Base64.getEncoder().encodeToString(new byte[32]);

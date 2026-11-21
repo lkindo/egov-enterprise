@@ -88,6 +88,23 @@ DB 계층이며, 앱과 같은 DB 계정의 실수·주입을 막는다.
 현재 `ix_tb_user_noti_rcvr_id` 하나뿐이고 이 술어용 인덱스가 없다. 인덱스 신설은 DB 스키마 변경이라
 보존 개월 결정과 함께 판단한다([V2_20](../../api-server/src/main/resources/db/migration/V2_20__add_log_retention_index.sql) 선례).
 
+## SMS 발송 이력 보존 (2026-11-21)
+
+`tb_sms_info`(발송 건: 발신 번호·본문 최대 4000자)와 `tb_sms_rcptn`(수신자: 수신 번호가 기본 키)은 개인정보가 담긴
+업무 이력인데 지우거나 보존 기간으로 파기하는 경로가 앱에 없었다. 알림 보존과 같은 모양의 파기 경로를 두되
+**기본 비활성**이다 — 보존 기간은 도입 기관이 개인정보 처리방침으로 정한다.
+
+| 데이터 | 현재 처리 | 설정·제약 | 운영 확인 사항 |
+|---|---|---|---|
+| `tb_sms_info`·`tb_sms_rcptn` | 만료 배치 파기(선택) — 발송 건의 `crt_dt` 가 기준이고 수신자를 먼저 지운다 | `nuri.sms.retention.enabled` 기본 `false`, `months` 기본 `6` — 1 미만이면 켜져 있어도 삭제하지 않는다. 한 번에 500건씩 20묶음까지 따로 커밋한다 | 켜기 전에 보존 기간을 처리방침과 맞춘다. 결과가 확정되지 않은(`P`) 수신자도 기간이 지나면 지운다 — 내구 작업은 발송 건이 없으면 아무것도 하지 않는다 |
+
+정본 구현: [`SmsRetentionScheduler`](../../business-app/src/main/java/nuri/business/service/sms/SmsRetentionScheduler.java),
+[`SmsRepository`](../../business-app/src/main/java/nuri/business/domain/sms/SmsRepository.java)·[`SmsRecptnRepository`](../../business-app/src/main/java/nuri/business/domain/sms/SmsRecptnRepository.java),
+[`application.yml`](../../api-server/src/main/resources/application.yml)의 `nuri.sms.retention.*`.
+기본 cron 은 매일 04:45 Asia/Seoul(읽은 알림 정리 04:30 뒤)이다. 운영 배포는 `docker-compose.prod.yml` 이
+`SMS_RETENTION_ENABLED` 와 `SMS_RETENTION_MONTHS` 를 컨테이너에 전달하므로 `SMS_RETENTION_ENABLED=true` 하나로 켜진다.
+`tb_sms_info.crt_dt` 에도 술어용 인덱스가 없다 — 이력이 많아지면 인덱스 신설을 보존 기간 결정과 함께 판단한다(DB 스키마 변경).
+
 ## 운영 적용·점검
 
 ### 보존 결정 전 읽기 전용 실측

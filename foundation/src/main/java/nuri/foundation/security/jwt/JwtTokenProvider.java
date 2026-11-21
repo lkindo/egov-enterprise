@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import nuri.foundation.security.constants.SecurityConstants;
+import nuri.foundation.security.util.SafeLog;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -641,22 +642,24 @@ public class JwtTokenProvider {
             }
             return true;
         // [W1-13] 로그 레벨 규율.
+        //   [2026-11-21] 예외 메시지는 SafeLog 로 한 줄·유한 길이로 줄인다 — 헤더의 kid·alg 가 메시지에 그대로 실려
+        //   미인증 요청이 개행으로 가짜 로그 줄을 만들 수 있었다(운영 기본 텍스트 로그).
         //   이 세 예외는 전부 **공격자가 제어할 수 있는 입력**으로 발생시킬 수 있다. ERROR 로 두면
         //   ① 정상 동작이 오류로 계상돼 알람이 무뎌지고 ② 임의 요청으로 ERROR 로그를 무한 생성하는
         //   로그 볼륨 공격면이 된다. 등급을 사실에 맞춘다.
         } catch (io.jsonwebtoken.security.SignatureException e) {
             // 서명 불일치 = 변조 또는 키 로테이션 직후. 조사 가치가 있으나 서버 결함은 아니다.
-            log.warn(">>> [JWT] Invalid signature: {}", e.getMessage());
+            log.warn(">>> [JWT] Invalid signature: {}", SafeLog.text(e.getMessage()));
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
             // 만료는 **정상적인 수명 종료**다. 모든 사용자가 매 세션마다 최소 한 번 겪는다.
-            log.debug(">>> [JWT] Expired token: {}", e.getMessage());
+            log.debug(">>> [JWT] Expired token: {}", SafeLog.text(e.getMessage()));
         } catch (io.jsonwebtoken.MalformedJwtException e) {
-            log.warn(">>> [JWT] Malformed token: {}", e.getMessage());
+            log.warn(">>> [JWT] Malformed token: {}", SafeLog.text(e.getMessage()));
         } catch (JwtException e) {
-            log.warn(">>> [JWT] Rejected token: {}", e.getMessage());
+            log.warn(">>> [JWT] Rejected token: {}", SafeLog.text(e.getMessage()));
         } catch (Exception e) {
             // 분류되지 않은 실패만 ERROR 로 남긴다 — 여기 쌓이면 실제로 확인할 가치가 있다.
-            log.error(">>> [JWT] Validation failed: {} - {}", e.getClass().getSimpleName(), e.getMessage());
+            log.error(">>> [JWT] Validation failed: {} - {}", e.getClass().getSimpleName(), SafeLog.text(e.getMessage()));
         }
         return false;
     }
@@ -676,10 +679,10 @@ public class JwtTokenProvider {
             }
             return true;
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
-            log.debug(">>> [JWT] Expired refresh token: {}", e.getMessage());
+            log.debug(">>> [JWT] Expired refresh token: {}", SafeLog.text(e.getMessage()));
         } catch (Exception e) {
             log.warn(">>> [JWT] Refresh token validation failed: {} - {}",
-                    e.getClass().getSimpleName(), e.getMessage());
+                    e.getClass().getSimpleName(), SafeLog.text(e.getMessage()));
         }
         return false;
     }

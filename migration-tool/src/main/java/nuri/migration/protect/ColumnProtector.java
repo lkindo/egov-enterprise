@@ -3,12 +3,18 @@ package nuri.migration.protect;
 import nuri.migration.model.MappingSpec;
 
 import java.util.Base64;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.function.Function;
 
 /**
@@ -37,6 +43,13 @@ public final class ColumnProtector {
 
     private final Map<String, ColumnProtectionPlan.ProtectedColumn> columns;
     private final Map<ColumnProtection, ColumnCipher> ciphers;
+    /** 대상 테이블(스키마 없는 소문자) → 무작위 nonce 암호 컬럼(소문자). */
+    private final Map<String, Set<String>> randomizedColumns;
+    /**
+     * 이 실행이 만든 무작위 nonce 암호문 → 평문 지문. 체크섬을 위해 암호문을 다시 풀지 않도록 암호화하는 순간 기록한다.
+     * 키가 약한 참조라 그 암호문을 담은 행이 끝나면 함께 사라진다.
+     */
+    private final Map<String, String> fingerprints = Collections.synchronizedMap(new WeakHashMap<>());
 
     ColumnProtector(Map<String, ColumnProtectionPlan.ProtectedColumn> columns, ColumnCipher cipher) {
         this(columns, columns.isEmpty() || cipher == null ? Map.of() : uniformCiphers(columns, cipher));
@@ -46,6 +59,41 @@ public final class ColumnProtector {
                             Map<ColumnProtection, ColumnCipher> ciphers) {
         this.columns = Map.copyOf(columns);
         this.ciphers = Map.copyOf(ciphers);
+        Map<String, Set<String>> randomized = new HashMap<>();
+        for (ColumnProtectionPlan.ProtectedColumn column : this.columns.values()) {
+            ColumnCipher columnCipher = this.ciphers.get(column.protection());
+            if (columnCipher != null && columnCipher.randomized()) {
+                randomized.computeIfAbsent(ProtectedTargetColumns.unqualified(column.targetTable()), ignored -> new HashSet<>())
+                        .add(column.column().toLowerCase(Locale.ROOT));
+            }
+        }
+        this.randomizedColumns = Map.copyOf(randomized);
+    }
+
+    /**
+     * checkpoint 체크섬에 넣을 행 — 이 실행이 암호화한 무작위 nonce 컬럼 값은 그 평문 지문으로 바꾼다(검증기는 대상 값을 풀어
+     * 같은 지문을 만든다, {@link ProtectedRowChecksum}). 이 실행이 만들지 않은 암호문이면 체크섬을 만들지 않고 멈춘다.
+     */
+    public Map<String, ?> checksumView(String targetTable, Map<String, ?> row) {
+        if (row == null || targetTable == null || randomizedColumns.isEmpty()) {
+            return row;
+        }
+        Set<String> randomized = randomizedColumns.get(ProtectedTargetColumns.unqualified(targetTable));
+        if (randomized == null) {
+            return row;
+        }
+        Map<String, Object> view = new LinkedHashMap<>(row);
+        for (Map.Entry<String, ?> entry : row.entrySet()) {
+            if (randomized.contains(entry.getKey().toLowerCase(Locale.ROOT))
+                    && entry.getValue() instanceof CharSequence value && !value.isEmpty()) {
+                String fingerprint = fingerprints.get(value.toString());
+                if (fingerprint == null) {
+                    throw new ProtectedColumnException(targetTable + "." + entry.getKey(), "체크섬 지문을 찾을 수 없습니다");
+                }
+                view.put(entry.getKey(), fingerprint);
+            }
+        }
+        return view;
     }
 
     private static Map<ColumnProtection, ColumnCipher> uniformCiphers(
@@ -145,6 +193,9 @@ public final class ColumnProtector {
         }
         if (!plaintext.equals(readBack)) {
             throw new ProtectedColumnException(name, "온라인 앱이 되읽을 수 없는 값입니다");
+        }
+        if (activeCipher.randomized()) {
+            fingerprints.put(ciphertext, activeCipher.plaintextFingerprint(plaintext));
         }
         return ciphertext;
     }

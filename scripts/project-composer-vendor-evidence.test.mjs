@@ -141,8 +141,10 @@ test('the input set holds the design list: model sources, adapter, ports, vendor
     // 벤더 SQL 원장에 없는 네이티브 SQL. 린터 규칙에 안 걸린 구문은 원장으로 찾지 못한다.
     AUTH_SNAPSHOT, 'business-core/src/main/java/nuri/business/domain/menu/MenuRepository.java', 'business-core/src/main/java/nuri/business/domain/log/UserLogRepository.java',
     'business-core/src/main/java/nuri/business/domain/log/LoginLogRepositoryImpl.java', 'business-core/src/main/java/nuri/business/domain/log/SysLogRepositoryImpl.java',
-    'business-core/src/main/java/nuri/business/domain/log/WebLogRepositoryImpl.java', FILTER_DEF,
+    'business-core/src/main/java/nuri/business/domain/log/WebLogRepositoryImpl.java',
   ]) assert.ok(inputs.includes(path), `입력에 없다: ${path}`);
+  // [2026-11-21 DEC-OPS-423] 소프트 삭제 필터 정의를 걷었다 — 표지가 없는 package-info 는 입력이 아니다.
+  assert.ok(!inputs.includes(FILTER_DEF), '표지 없는 package-info 가 입력이다');
   for (const path of Object.keys(ledger.evidenceInputs.excludedModelTools)) assert.ok(!inputs.includes(path), `빼기로 적은 도구가 입력이다: ${path}`);
   assert.ok(!inputs.includes('scripts/frontend-module-graph.mjs'), '뺀 도구가 혼자 가져오는 모듈은 따라 빠진다');
   assert.ok(Object.values(ledger.evidenceInputs.excludedModelTools).every(reason => reason.trim()), '빼는 이유가 없다');
@@ -297,8 +299,9 @@ test('stale evidence: native SQL outside the SQL ledger and the shared filter de
   assert.match(vendorEvidenceStaleErrors(root)[0], staleOracle, '네이티브 SQL 변경');
   writeFileSync(join(root, AUTH_SNAPSHOT), sql);
   assert.deepEqual(vendorEvidenceStaleErrors(root), []);
-  change(root, FILTER_DEF, 'type = String.class', 'type = Boolean.class');
-  assert.match(vendorEvidenceStaleErrors(root)[0], staleOracle, '전 엔티티에 걸리는 필터 정의 변경');
+  // 전 엔티티에 걸리는 필터 정의를 새로 두면 그 파일이 모델 소스가 되어 증거가 낡는다(원본에는 2026-11-21 부터 없다).
+  put(root, FILTER_DEF, '@org.hibernate.annotations.FilterDef(name = "softDeleteFilter")\npackage nuri.business.domain;\n');
+  assert.match(vendorEvidenceStaleErrors(root)[0], staleOracle, '전 엔티티에 걸리는 필터 정의 추가');
 });
 
 test('stale evidence: JPQL and QueryDSL outside the SQL ledger count', t => {

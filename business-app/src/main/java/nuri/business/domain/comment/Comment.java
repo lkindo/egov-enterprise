@@ -5,7 +5,6 @@ import nuri.foundation.domain.common.BaseEntity;
 import nuri.business.domain.board.Board;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.Filter;
 
 /**
  * 게시물 댓글 엔티티 (v5 standardized)
@@ -19,7 +18,6 @@ import org.hibernate.annotations.Filter;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "tb_bbs_comment")
-@Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
 public class Comment extends BaseEntity implements Serializable {
 
     @Id

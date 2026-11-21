@@ -1,6 +1,8 @@
 package nuri.business.core.softdelete;
 
 import nuri.business.domain.board.Board;
+import nuri.business.domain.board.BoardMaster;
+import nuri.business.domain.board.BoardMasterRepository;
 import nuri.business.domain.board.BoardRepository;
 import nuri.business.support.BusinessIntegrationTestSupport;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,12 +11,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * 논리 삭제는 질의마다 쓴 조건({@code useYn = 'Y'}, {@code includeDeleted})만으로 가린다(2026-11-21).
+ *
+ * <p>종전에는 서비스 경계 애스펙트가 Hibernate 필터를 켰다. 그런데 애스펙트가 트랜잭션보다 바깥에서 돌아 컨트롤러에서 들어온
+ * 첫 서비스에서는 켜지 못하고, 그 트랜잭션에서 다른 서비스를 한 번 부른 뒤부터만 켜졌다 — 같은 질의가 호출 경로에 따라
+ * 삭제 글을 보이기도 하고 감추기도 했고, 관리자 복구·감사 경로({@code includeDeleted})가 앞선 서비스 호출 뒤에는 빈 값이 됐다.
+ */
 @SpringBootTest(properties = "spring.main.allow-bean-definition-overriding=true")
-public class SoftDeleteDynamicTest extends BusinessIntegrationTestSupport {
+class SoftDeleteDynamicTest extends BusinessIntegrationTestSupport {
+
+    private static final String BBS_ID = "BBS_SOFTDEL";
 
     private Long activeBoardId;
     private Long deletedBoardId;
@@ -25,62 +34,47 @@ public class SoftDeleteDynamicTest extends BusinessIntegrationTestSupport {
     @Autowired
     private BoardRepository boardRepository;
 
+    @Autowired
+    private BoardMasterRepository boardMasterRepository;
+
     @BeforeEach
     void setUp() {
-        boardRepository.deleteAll(); // 기존 데이터 정화
-
-        // 테스트용 데이터 저장 (use_yn = 'Y' 1개, use_yn = 'N' 1개)
-        Board activeBoard = Board.builder()
-                .bbsId("BBS_TEST")
-                .pstTtl("Active Post")
-                .pstCn("Content")
+        boardRepository.deleteAll();
+        boardMasterRepository.save(BoardMaster.builder()
+                .bbsId(BBS_ID)
+                .bbsTtl("Soft delete board")
+                .bbsTypeCd("COM004")
+                .bbsAtrbCd("COM009")
                 .useYn("Y")
-                .build();
-
-        Board deletedBoard = Board.builder()
-                .bbsId("BBS_TEST")
-                .pstTtl("Deleted Post")
-                .pstCn("Content")
-                .useYn("N")
-                .build();
-
-        activeBoardId = boardRepository.save(activeBoard).getPstSn();
-        deletedBoardId = boardRepository.save(deletedBoard).getPstSn();
+                .build());
+        activeBoardId = boardRepository.save(Board.builder()
+                .bbsId(BBS_ID).pstTtl("Active Post").pstCn("Content").useYn("Y").build()).getPstSn();
+        deletedBoardId = boardRepository.save(Board.builder()
+                .bbsId(BBS_ID).pstTtl("Deleted Post").pstCn("Content").useYn("N").build()).getPstSn();
     }
 
     @Test
-    @DisplayName("일반 서비스 조회 시 삭제된 데이터는 조회되지 않는다")
-    void normalServiceFiltering() {
-        List<Board> results = testService.getAllBoards();
-        
-        // use_yn = 'Y'인 데이터 1개만 조회되어야 함
-        assertThat(results)
-                .extracting(board -> board.getPstSn())
-                .containsExactly(activeBoardId);
+    @DisplayName("관리자의 삭제 글 상세 조회는 앞서 다른 서비스를 불렀어도 삭제 글을 돌려준다")
+    void includeDeletedDetailSurvivesAPriorServiceCall() {
+        assertThat(testService.readIncludingDeletedAfterNestedCall(testService, BBS_ID, deletedBoardId))
+                .hasValueSatisfying(detail -> assertThat(detail.getUseYn()).isEqualTo("N"));
     }
 
     @Test
-    @DisplayName("@DisableSoftDelete 사용 시 삭제된 데이터도 함께 조회된다")
-    void disableSoftDeleteFiltering() {
-        List<Board> results = testService.getAllBoardsWithDeleted();
-        
-        // use_yn = 'Y', 'N' 둘 다 조회되어야 함
-        assertThat(results)
-                .extracting(board -> board.getPstSn())
-                .containsExactlyInAnyOrder(activeBoardId, deletedBoardId);
-    }
-
-    @Test
-    @DisplayName("@DisableSoftDelete 문맥 내부에서 일반 서비스 메서드를 중첩 호출해도 비활성 상태가 유지되고 종료 후 복구된다")
-    void disableSoftDeleteSurvivesNestedRegularServiceCall() {
-        List<Board> results = testService.getAllBoardsAfterNestedRegularCall(testService);
-
-        assertThat(results)
-                .extracting(Board::getPstSn)
-                .containsExactlyInAnyOrder(activeBoardId, deletedBoardId);
-
+    @DisplayName("조건이 없는 질의는 호출 경로와 무관하게 같은 행을 본다 — 숨은 필터가 없다")
+    void unconditionalQuerySeesTheSameRowsOnEveryPath() {
         assertThat(testService.getAllBoards())
                 .extracting(Board::getPstSn)
-                .containsExactly(activeBoardId);
+                .containsExactlyInAnyOrder(activeBoardId, deletedBoardId);
+        assertThat(testService.getAllBoardsAfterNestedCall(testService))
+                .extracting(Board::getPstSn)
+                .containsExactlyInAnyOrder(activeBoardId, deletedBoardId);
+    }
+
+    @Test
+    @DisplayName("일반 상세 조회는 질의의 조건으로 삭제 글을 감춘다")
+    void activeDetailHidesDeletedPostsByItsOwnCondition() {
+        assertThat(boardRepository.findActiveArticleDetail(BBS_ID, activeBoardId)).isPresent();
+        assertThat(boardRepository.findActiveArticleDetail(BBS_ID, deletedBoardId)).isEmpty();
     }
 }
