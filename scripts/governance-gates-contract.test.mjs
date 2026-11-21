@@ -5,6 +5,7 @@ import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import test, { after } from 'node:test';
+import { OPERATIONAL_CONTRACTS_RUNNER } from './operational-contracts-runner.mjs';
 
 import {
   analyzeVerifyRunnerExecution,
@@ -159,7 +160,7 @@ test('shared analysis preserves full validator errors and cannot hide a new or e
   writeFileSync(path.join(root, '.github', 'required-checks.json'), JSON.stringify({ requiredChecks: [{ context: 'probe' }] }));
   writeFileSync(path.join(root, '.github', 'CODEOWNERS'), '** @lkindo\n');
   writeFileSync(path.join(root, 'runner.mjs'), 'run();\n');
-  writeFileSync(path.join(root, 'package.json'), JSON.stringify({ scripts: { test: 'node --test tests/*.test.mjs' } }));
+  writeFileSync(path.join(root, 'package.json'), JSON.stringify({ scripts: { test: 'node --test "tests/*.test.mjs"' } }));
   const fixture = {
     schemaVersion: 1,
     executionProfiles: [{ id: 'EXEC-PROBE', command: 'run', tier: ['local-full'],
@@ -167,8 +168,8 @@ test('shared analysis preserves full validator errors and cannot hide a new or e
     gateSets: [{ id: 'GATESET-PROBE', task: 'test', tier: ['local-full'], requiredCiContext: 'probe',
       category: 'test', owner: 'quality', redProof: 'a skipped test fails', inputs: ['tests'], evidence: ['test output'],
       selector: { type: 'runner-catalog', runner: 'node-test', forbidSkips: true,
-        catalogs: [{ root: 'tests', suffixes: ['.test.mjs'], recursive: true }],
-        packageScript: { source: 'package.json', name: 'test', command: 'node --test tests/*.test.mjs' },
+        catalogs: [{ root: 'tests', suffixes: ['.test.mjs'], recursive: false }],
+        packageScript: { source: 'package.json', name: 'test', command: 'node --test "tests/*.test.mjs"' },
         commandBindings: [{ source: 'runner.mjs', fragment: 'run();', tiers: ['local-full'] }] } }],
     qualityRatchets: [], qualityPopulations: [],
   };
@@ -315,7 +316,7 @@ test('UI/UX foundation contract assets remain present in the required Node catal
   );
   assert.equal(
     operational.selector.packageScript.command,
-    `node -e "require('node:fs').mkdirSync('build/operational-contracts',{recursive:true})" && node --test --test-concurrency=2 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./scripts/node-test-junit-reporter.mjs --test-reporter-destination=build/operational-contracts/junit.xml "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs" "tools/requirements-workspace/*.test.mjs"`,
+    OPERATIONAL_CONTRACTS_RUNNER,
   );
   assert.ok([
     'config/ui-quality-evidence-policy.json',
@@ -354,6 +355,61 @@ test('requirements workspace contracts use the existing required Node runner, ow
   selector.packageScript.command = selector.packageScript.command.replace(' "tools/requirements-workspace/*.test.mjs"', '');
   assert.notEqual(selector.packageScript.command, operational.selector.packageScript.command);
   assert.match(validate(narrowed).join('\n'), /ghost runner selector package script/i);
+  // 원장의 명령과 package.json 을 함께 좁히면 위 대조는 지나간다 — catalog 와 명령의 glob 을 잇는 대조가 따로 잡는다.
+  assert.ok(validate(narrowed).includes(
+    `${operational.id}: runner package script does not run catalog tools/requirements-workspace/*.test.mjs`,
+  ));
+});
+
+test('a node-test runner command selects exactly the globs its catalogs declare', () => {
+  const registry = loadGovernanceRegistry(registryPath);
+  const operationalId = 'GATESET-NODE-OPERATIONAL-CONTRACTS';
+  const binding = (candidate, id) => candidate.gateSets.find((set) => set.id === id).selector;
+  const globErrors = (candidate) => validate(candidate).filter((error) => /runner package script (does not run|runs)|must be non-recursive/.test(error));
+
+  // 현재 원장: 운영 계약(저장소 루트 기준 glob)과 폼 검증(frontend/package.json 기준 glob) 모두 어긋남이 없다.
+  assert.deepEqual(globErrors(registry), []);
+  assert.equal(binding(registry, 'GATESET-FRONTEND-FORM-VALIDATION').packageScript.source, 'frontend/package.json',
+    '패키지 폴더 기준으로 glob 을 푸는 경로가 실제 원장에 있다');
+
+  // 2026-11-22 독립 검토의 반례 — 프로토타입 묶음만 명령에서 빼고 catalog 는 둔다.
+  const dropped = clone(registry);
+  binding(dropped, operationalId).packageScript.command = binding(dropped, operationalId).packageScript.command
+    .replace(' "tools/migration-workspace-prototype/*.test.mjs"', '');
+  assert.deepEqual(globErrors(dropped), [
+    `${operationalId}: runner package script does not run catalog tools/migration-workspace-prototype/*.test.mjs`,
+  ]);
+
+  // 반대 방향 — catalog 에 없는 폴더를 명령이 돈다(원장이 모르는 시험은 skip 금지·소유 검사 밖이다).
+  const extra = clone(registry);
+  binding(extra, operationalId).packageScript.command += ' "tools/unregistered/*.test.mjs"';
+  assert.deepEqual(globErrors(extra), [
+    `${operationalId}: runner package script runs tools/unregistered/*.test.mjs outside the declared catalogs`,
+  ]);
+
+  // 접미사가 다른 glob 은 같은 폴더여도 다른 집합이다.
+  const suffix = clone(registry);
+  binding(suffix, operationalId).packageScript.command = binding(suffix, operationalId).packageScript.command
+    .replace('".agent/scripts/*.test.js"', '".agent/scripts/*.test.mjs"');
+  assert.deepEqual(globErrors(suffix).sort(), [
+    `${operationalId}: runner package script does not run catalog .agent/scripts/*.test.js`,
+    `${operationalId}: runner package script runs .agent/scripts/*.test.mjs outside the declared catalogs`,
+  ]);
+
+  // 재귀 catalog 는 한 단계 glob 으로 적을 수 없다 — 조용히 건너뛰지 않는다.
+  const recursive = clone(registry);
+  binding(recursive, operationalId).catalogs.find(({ root }) => root === 'scripts').recursive = true;
+  assert.ok(globErrors(recursive).includes(
+    `${operationalId}: node-test runner catalog scripts must be non-recursive to bind the package script globs`,
+  ));
+
+  // 패키지 폴더 기준 glob: frontend 의 "scripts/*.test.mjs" 를 다른 폴더로 바꾸면 frontend/ 를 붙인 경로로 알린다.
+  const frontend = clone(registry);
+  binding(frontend, 'GATESET-FRONTEND-FORM-VALIDATION').packageScript.command = 'node --test "tools/*.test.mjs" && pnpm run check:form-validation';
+  assert.deepEqual(globErrors(frontend).sort(), [
+    'GATESET-FRONTEND-FORM-VALIDATION: runner package script does not run catalog frontend/scripts/*.test.mjs',
+    'GATESET-FRONTEND-FORM-VALIDATION: runner package script runs frontend/tools/*.test.mjs outside the declared catalogs',
+  ]);
 });
 
 test('registry keeps the ten authoritative gate sets and seven runner catalogs', () => {

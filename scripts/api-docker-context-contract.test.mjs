@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { OPERATIONAL_CONTRACTS_RUNNER } from './operational-contracts-runner.mjs';
 
 const REQUIRED_CONTEXT_EXCLUSION = 'frontend';
 const REQUIRED_SECRET_EXCLUSIONS = ['.env*', '**/.env*'];
@@ -21,7 +22,7 @@ const REQUIRED_PRIVATE_MATERIAL_EXCLUSIONS = [
   '.kube', '**/.kube',
   '.gnupg', '**/.gnupg',
 ];
-const OPERATIONAL_RUNNER = `node -e "require('node:fs').mkdirSync('build/operational-contracts',{recursive:true})" && node --test --test-concurrency=2 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./scripts/node-test-junit-reporter.mjs --test-reporter-destination=build/operational-contracts/junit.xml "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs" "tools/requirements-workspace/*.test.mjs"`;
+const OPERATIONAL_RUNNER = OPERATIONAL_CONTRACTS_RUNNER;
 
 function normalizedRules(source) {
   return source

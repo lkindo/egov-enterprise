@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deflateRawSync } from 'node:zlib';
 import {
-  BudgetError, UsageError, ciRuleViolations, classifyJob, collectReport, collectScheduled, createGh, dependencyResolutionSignature,
+  BudgetError, RETRY_DELAYS_MS, UsageError, ciRuleViolations, classifyJob, collectReport, collectScheduled, createGh, dependencyResolutionSignature,
   errorSignature, executedJobs, isDependabotRun, matchDiagnosticsArtifact, parseOptions, queueWaits, readZipEntry, recoveredByRerun,
   renderScheduled, renderText, repositoryScheduledWorkflows, scheduledStatus, scheduledWorkflowFiles, stepLogLines, stepNameMatches,
   summarizeQueueWaits, testOutcomes, workflowNeeds,
@@ -124,20 +124,53 @@ test('flaky and unexpected tests are collected through nested suites with a repr
   assert.throws(() => testOutcomes({}), /형식/u);
 });
 
-test('the gh caller retries 5xx twice, never 4xx, and stops at the call budget', () => {
-  const failing = (codes) => {
-    const queue = [...codes];
+test('the gh caller retries 5xx and dropped connections twice with a pause, never 4xx, and stops at the call budget', () => {
+  const failing = (outcomes) => {
+    const queue = [...outcomes];
     return () => {
-      const code = queue.shift();
-      if (code === 200) return '{"ok":true}';
-      throw Object.assign(new Error('gh failed'), { stderr: `HTTP ${code}` });
+      const outcome = queue.shift();
+      if (outcome === 200) return '{"ok":true}';
+      throw Object.assign(new Error('gh failed'), { stderr: typeof outcome === 'number' ? `HTTP ${outcome}` : outcome });
     };
   };
-  assert.deepEqual(createGh({ maxCalls: 10, exec: failing([502, 503, 200]) }).call('x'), { ok: true });
-  assert.throws(() => createGh({ maxCalls: 10, exec: failing([502, 502, 502]) }).call('x'), /gh failed/);
-  const notFound = createGh({ maxCalls: 10, exec: failing([404, 200]) });
+  const paused = () => { const waits = []; return { waits, sleep: (milliseconds) => waits.push(milliseconds) }; };
+  const recovered = paused();
+  assert.deepEqual(createGh({ maxCalls: 10, exec: failing([502, 503, 200]), sleep: recovered.sleep }).call('x'), { ok: true });
+  assert.deepEqual(recovered.waits, [...RETRY_DELAYS_MS], '다시 묻기 전마다 정해진 간격을 둔다');
+  const exhausted = paused();
+  assert.throws(() => createGh({ maxCalls: 10, exec: failing([502, 502, 502]), sleep: exhausted.sleep }).call('x'), /gh failed/);
+  assert.equal(exhausted.waits.length, RETRY_DELAYS_MS.length, '세 번째 실패 뒤에는 기다리지 않고 던진다');
+  // 2026-11-22 실제 실패 문구 — HTTP 상태 없이 끊긴 연결도 다시 묻는다.
+  const dropped = paused();
+  assert.deepEqual(
+    createGh({ maxCalls: 10, exec: failing(['stream error: stream ID 1; CANCEL; received from peer', 200]), sleep: dropped.sleep }).call('x'),
+    { ok: true },
+  );
+  assert.deepEqual(dropped.waits, [RETRY_DELAYS_MS[0]]);
+  const notFound = createGh({ maxCalls: 10, exec: failing([404, 200]), sleep: () => assert.fail('4xx 는 기다리지 않는다') });
   assert.throws(() => notFound.call('x'), /gh failed/);
   assert.equal(notFound.calls(), 1, '4xx 는 다시 묻지 않는다');
+  const unauthenticated = createGh({
+    maxCalls: 10, exec: failing(['gh: To get started with GitHub CLI, please run: gh auth login', 200]),
+    sleep: () => assert.fail('다시 물어도 같은 답인 실패는 기다리지 않는다'),
+  });
+  assert.throws(() => unauthenticated.call('x'), /gh failed/);
+  assert.equal(unauthenticated.calls(), 1, '전송 오류 표지가 없는 실패는 다시 묻지 않는다');
+  // 상태가 있으면 상태로만 판정한다 — 4xx 본문에 'stream error' 를 품은 낱말이 있어도 다시 묻지 않는다.
+  const forbidden = createGh({ maxCalls: 10, exec: failing(['gh: upstream error (HTTP 403)', 200]), sleep: () => assert.fail('4xx 는 기다리지 않는다') });
+  assert.throws(() => forbidden.call('x'), /gh failed/);
+  assert.equal(forbidden.calls(), 1);
+  // 상태 없이 EOF 로 끝난 연결도 전송 오류다.
+  const eof = paused();
+  assert.deepEqual(
+    createGh({ maxCalls: 10, exec: failing(['Get "https://api.github.com/x": EOF', 200]), sleep: eof.sleep }).call('x'),
+    { ok: true },
+  );
+  assert.deepEqual(eof.waits, [RETRY_DELAYS_MS[0]]);
+  // 다시 물을 예산이 없으면 기다리지 않고 BudgetError 다.
+  const lastCall = createGh({ maxCalls: 1, exec: failing([502, 200]), sleep: () => assert.fail('예산이 없으면 기다리지 않는다') });
+  assert.throws(() => lastCall.call('x'), BudgetError);
+  assert.equal(lastCall.calls(), 1);
   const budget = createGh({ maxCalls: 1, exec: failing([200, 200]) });
   budget.call('x');
   assert.throws(() => budget.call('x'), BudgetError);

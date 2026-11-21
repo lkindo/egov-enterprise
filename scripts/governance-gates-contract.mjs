@@ -2359,6 +2359,29 @@ export function validateGovernanceRegistry({ registry, repoRoot, analysis, snaps
             if (actualCommand !== packageBinding.command) {
               errors.push(`${setLabel}: ghost runner selector package script ${packageBinding.name}`);
             }
+            // 명령 문자열이 서로 같은지만 보면, 원장의 명령과 package.json 을 함께 좁힌 변경은 지나간다 — catalog 는 폴더에서 파일을 세고
+            // 명령은 따로 대조돼, 둘을 잇는 검사가 없었다(2026-11-22 독립 검토: catalog 는 두고 명령에서 한 묶음을 빼도 오류 0).
+            // node --test 실행기는 catalog 마다 그 폴더의 glob 을 따옴표로 받으므로, catalog 가 뜻하는 glob 집합과 명령의 glob 집합이 같아야 한다.
+            if (selector.runner === 'node-test') {
+              const base = path.posix.dirname(posix(packageBinding.source));
+              const commandGlobs = new Set([...packageBinding.command.matchAll(/"([^"\s]*\*[^"\s]*)"/g)]
+                .map(([, glob]) => (base === '.' ? glob : `${base}/${glob}`)));
+              const catalogGlobs = new Set();
+              for (const catalog of selector.catalogs) {
+                if (typeof catalog?.root !== 'string' || !Array.isArray(catalog?.suffixes)) continue;
+                if (catalog.recursive === true) {
+                  errors.push(`${setLabel}: node-test runner catalog ${catalog.root} must be non-recursive to bind the package script globs`);
+                  continue;
+                }
+                for (const suffix of catalog.suffixes) catalogGlobs.add(`${catalog.root}/*${suffix}`);
+              }
+              for (const glob of catalogGlobs) {
+                if (!commandGlobs.has(glob)) errors.push(`${setLabel}: runner package script does not run catalog ${glob}`);
+              }
+              for (const glob of commandGlobs) {
+                if (!catalogGlobs.has(glob)) errors.push(`${setLabel}: runner package script runs ${glob} outside the declared catalogs`);
+              }
+            }
           } catch (error) {
             errors.push(`${setLabel}: cannot read runner package ${packageBinding.source}: ${error.message}`);
           }
