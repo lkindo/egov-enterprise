@@ -136,9 +136,8 @@ export default function NoteHubClient() {
     },
   });
 
-  const listQueryKey = ['notes', 'list', tab, page, pageSize, searchKeyword] as const;
   const listQuery = useQuery({
-    queryKey: listQueryKey,
+    queryKey: ['notes', 'list', tab, page, pageSize, searchKeyword],
     queryFn: async () => {
       const query = searchKeyword
         ? { page, size: pageSize, searchWrd: searchKeyword }
