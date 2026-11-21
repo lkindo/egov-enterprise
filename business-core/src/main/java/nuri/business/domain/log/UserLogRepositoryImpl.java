@@ -86,7 +86,9 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
         }
 
         cq.where(predicates.toArray(new Predicate[0]));
-        cq.orderBy(cb.desc(root.get("ocrnYmd")));
+        // 같은 날짜 안에서도 복합 기본키 순서를 고정해 목록의 페이지 경계가 흔들리지 않게 한다.
+        cq.orderBy(cb.desc(root.get("ocrnYmd")), cb.desc(root.get("dmndUserId")),
+                cb.desc(root.get("srvcNm")), cb.desc(root.get("mthdNm")));
 
         TypedQuery<UserLog> query = entityManager.createQuery(cq);
         query.setFirstResult((int) pageable.getOffset());

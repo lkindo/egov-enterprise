@@ -267,8 +267,7 @@
       "capabilities": [
         {
           "id": "admin.dashboard-metrics",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "admin-users+authorities+system-logs-api",
           "actions": [
             "refresh",
@@ -279,13 +278,14 @@
           "visibleLabel": "등록 사용자·권한 그룹·실패 요청 로그",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-10-20",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-22",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/UserApiController.java",
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/AuthorApiController.java",
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/log/SystemLogApiController.java",
+            "frontend/e2e/journeys/application-shell.spec.ts",
             "frontend/src/app/admin/AdminDashboardClient.tsx",
             "frontend/src/app/admin/__tests__/AdminDashboardClient.test.tsx",
             "frontend/src/app/admin/admin-dashboard-queries.ts",
@@ -296,6 +296,16 @@
             "frontend/src/services/foundation/system/__tests__/AuditAdminService.test.ts",
             "frontend/src/services/foundation/system/__tests__/AuthorAdminService.test.ts",
             "frontend/src/services/foundation/system/__tests__/UserAdminService.test.ts"
+          ],
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/application-shell.spec.ts",
+              "test": "관리자 대시보드를 새로고침하면 서버 집계를 표시한다",
+              "actions": [
+                "refresh",
+                "view-stats"
+              ]
+            }
           ]
         },
         {
@@ -2860,8 +2870,7 @@
       "capabilities": [
         {
           "id": "template.list",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "templates-api",
           "actions": [
             "refresh",
@@ -2872,16 +2881,27 @@
           "visibleLabel": "템플릿 목록",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-22",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/template/TemplateApiController.java",
             "api-server/src/test/java/nuri/api/controller/foundation/controller/system/template/TemplateApiControllerTest.java",
+            "frontend/e2e/journeys/board-articles.spec.ts",
             "frontend/src/app/admin/community/templates/TemplateAdminClient.tsx",
             "frontend/src/app/admin/community/templates/__tests__/TemplateAdminClient.test.tsx",
             "frontend/src/app/admin/community/templates/page.tsx",
             "frontend/src/services/foundation/system/TemplateAdminService.ts"
+          ],
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/board-articles.spec.ts",
+              "test": "템플릿 목록을 보고 새로고침한 결과를 서버 원장과 대조한다",
+              "actions": [
+                "refresh",
+                "view-list"
+              ]
+            }
           ]
         },
         {

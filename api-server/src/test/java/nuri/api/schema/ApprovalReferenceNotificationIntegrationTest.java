@@ -1,6 +1,8 @@
 package nuri.api.schema;
 
+import nuri.business.domain.informalsanction.ApprovalProcessType;
 import nuri.business.domain.informalsanction.ApprovalStageKind;
+import nuri.business.domain.informalsanction.ApprovalStatus;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.code.CommonCodeService;
@@ -11,6 +13,7 @@ import nuri.business.service.informalsanction.dto.InformalSanctionDto;
 import nuri.business.service.informalsanction.event.SanctionEventListener;
 import nuri.business.service.notification.NotificationService;
 import nuri.business.service.notification.listener.NotificationRequestListener;
+import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.security.service.CustomUserDetails;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -91,17 +95,7 @@ class ApprovalReferenceNotificationIntegrationTest {
             }
             // 사용자 저장소는 이 클래스에서 목이다 — 이 시험에서는 실제 사용자 행이 있는 사람만 돌려준다(지운 사람은 없다).
             //   응답은 부를 때마다 사용자 행을 다시 본다 — 아래에서 지운 참조자는 승인 시점에 빠진다.
-            org.mockito.Mockito.doAnswer(call -> {
-                List<User> result = new ArrayList<>();
-                Iterable<String> ids = call.getArgument(0);
-                for (String id : ids) {
-                    Integer rows = jdbc.queryForObject("SELECT count(*) FROM tb_user_info WHERE esntl_id=?", Integer.class, id);
-                    if (rows != null && rows > 0) {
-                        result.add(User.builder().esntlId(id).userId(id).userNm(id).userSttsCd("P").build());
-                    }
-                }
-                return result;
-            }).when(users).findAllById(any());
+            usePersistedRecipients();
             when(users.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).thenReturn(List.of(approver));
             when(users.findActiveEsntlIdsHoldingPermission("APPROVAL_READ")).thenReturn(people);
             org.mockito.Mockito.doAnswer(call -> notificationService.createForEvent(call.getArgument(0)))
@@ -134,6 +128,80 @@ class ApprovalReferenceNotificationIntegrationTest {
                 jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", person);
             }
         }
+    }
+
+    @Test
+    void approvalAdvancesPastADeletedNextApproverAndAllowsRecoveryOnPostgres() {
+        String fixture = "WFR" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+        String first = fixture + "A";
+        String deleted = fixture + "D";
+        String replacement = fixture + "R";
+        List<String> approvers = List.of(first, deleted, replacement);
+        try {
+            for (String person : approvers) {
+                jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
+                        + "VALUES(?,?,'approval fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))"),
+                        person, person.toLowerCase(java.util.Locale.ROOT));
+            }
+            usePersistedRecipients();
+            when(users.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).thenReturn(approvers);
+            org.mockito.Mockito.doAnswer(call -> notificationService.createForEvent(call.getArgument(0)))
+                    .when(inAppNotifications).onNotificationRequested(any());
+            authenticate(OWNER);
+            long id = service.registerInformalSanction(document("검토 요청", "다음 결재자가 삭제되는 기안"),
+                    List.of(stage(ApprovalStageKind.APPROVAL, first), stage(ApprovalStageKind.APPROVAL, deleted)));
+            ownDocuments.add(id);
+            assertThat(notificationCount(first)).isEqualTo(1);
+            assertThat(jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", deleted)).isEqualTo(1);
+
+            authenticate(first);
+            service.confirmInformalSanction(id, "C", null, service.getInformalSanction(id, first).getVersion());
+            authenticate(OWNER);
+            var waiting = service.getInformalSanction(id, OWNER);
+            assertThat(waiting.getStages()).extracting(s -> s.status())
+                    .containsExactly(ApprovalStatus.APPROVED, ApprovalStatus.ACTIVE);
+            assertThat(notificationCount(deleted)).isZero();
+            assertThatThrownBy(() -> service.remindApprovers(id)).isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("결재자를 바꾸거나 회수해 주세요");
+            assertThat(service.getInformalSanction(id, OWNER).getProcessHistory()).isEmpty();
+
+            service.replaceApprover(id, deleted, replacement, waiting.getVersion());
+            var recovered = service.getInformalSanction(id, OWNER);
+            assertThat(recovered.getStages()).extracting(s -> s.status())
+                    .containsExactly(ApprovalStatus.APPROVED, ApprovalStatus.ACTIVE);
+            assertThat(recovered.getStages().get(1).approvers()).extracting(p -> p.userId())
+                    .containsExactly(replacement);
+            assertThat(notificationCount(replacement)).isEqualTo(1);
+            assertThat(service.remindApprovers(id)).isEqualTo(1);
+            assertThat(service.getInformalSanction(id, OWNER).getProcessHistory())
+                    .extracting(p -> p.type()).containsExactlyInAnyOrder(ApprovalProcessType.REPLACE, ApprovalProcessType.REMIND);
+
+            service.deleteInformalSanction(id, recovered.getVersion());
+            var withdrawn = service.getInformalSanction(id, OWNER);
+            assertThat(withdrawn.getAprvYn()).isEqualTo("W");
+            assertThat(withdrawn.getStages()).extracting(s -> s.status())
+                    .containsExactly(ApprovalStatus.APPROVED, ApprovalStatus.CANCELLED);
+        } finally {
+            for (String person : approvers) {
+                jdbc.update(VendorTestSql.sql(jdbc, "DELETE FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver'=?"), person);
+                jdbc.update("DELETE FROM tb_user_noti WHERE rcvr_id=?", person);
+                jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", person);
+            }
+        }
+    }
+
+    private void usePersistedRecipients() {
+        org.mockito.Mockito.doAnswer(call -> {
+            List<User> result = new ArrayList<>();
+            Iterable<String> ids = call.getArgument(0);
+            for (String id : ids) {
+                Integer rows = jdbc.queryForObject("SELECT count(*) FROM tb_user_info WHERE esntl_id=?", Integer.class, id);
+                if (rows != null && rows > 0) {
+                    result.add(User.builder().esntlId(id).userId(id).userNm(id).userSttsCd("P").build());
+                }
+            }
+            return result;
+        }).when(users).findAllById(any());
     }
 
     private int notificationCount(String receiver) {
