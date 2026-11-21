@@ -1,6 +1,6 @@
 ---
 name: using-git-worktrees
-description: Use when work needs isolation from the current workspace — in this repository when another operator works in the same worktree at the same time (SOP §6.6) - creates isolated git worktrees with directory selection and safety verification
+description: Use when work in this repository needs a git worktree — points to each tool's fixed worktree, the idle check before reuse, and the approval rule for temporary worktrees (SOP §6.6)
 ---
 
 <!-- npm run regen 이 만든 안내 파일이다(scripts/agent-skill-adapters.mjs). 고치려면 정본을 고친다. -->

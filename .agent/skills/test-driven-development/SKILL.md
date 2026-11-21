@@ -5,375 +5,44 @@ source: obra/superpowers (https://github.com/obra/superpowers, 이 저장소에�
 license: MIT — Complete terms in LICENSE.txt
 ---
 
-# Test-Driven Development (TDD)
+# 시험 먼저
 
-## Overview
+기능이나 버그 수정을 구현하기 전에 쓴다. 실패하는 시험을 먼저 보고, 그 시험을 통과시키는 가장 작은 코드를 쓴 뒤 정리한다. 상류 스킬의 범용 예시와 문구는 걷고 이 저장소에서 필요한 것만 남겼다.
 
-Write the test first. Watch it fail. Write minimal code to pass.
+**상위 권위:** [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope) 와 [오케스트레이션 프로토콜](../../../docs/03-guides/orchestration-protocol.md)(§2.3 감사 귀속, §2.4 실패 복구, §6 시간 예산). 이 스킬과 어긋나면 그쪽을 따르고 어긋난 점을 보고한다.
 
-**Core principle:** If you didn't watch the test fail, you don't know if it tests the right thing.
+## 순서
 
-**Violating the letter of the rules is violating the spirit of the rules.**
+1. **붉음.** 바꿀 동작을 단언하는 시험을 먼저 쓰고 돌려, 기대한 사유로 실패하는지 본다. 아무 실패나 붉음이 아니다 — 컴파일 오류나 다른 단언의 실패는 증명이 아니다.
+2. **초록.** 그 시험을 통과시키는 가장 작은 변경을 한다.
+3. **정리.** 동작을 바꾸지 않고 다듬은 뒤 같은 시험을 다시 돌린다.
 
-## Repository verification scope
+붉음·초록을 도는 동안에는 영향 시험만 돌린다. 완료 전에는 바꾼 범위의 최소 검증을 더한다(AGENTS 표). 무거운 검증은 한 번에 하나씩이다(프로토콜 §6.3).
 
-Use [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope) and [SOP §2.3, §2.4 and §6](../../../docs/03-guides/orchestration-protocol.md). During red/green, run the affected test; before completion, run the additional checks required by the change. Main-agent independent verification, intentional-violation red proof, hooks and required CI are preserved. Heavy checks run one at a time.
+## 어디서 어떻게 돌리나
 
-The TypeScript examples below use a placeholder test path; replace it with the actual affected frontend test. Root `npm test` runs all Gradle tests and does not select a TypeScript file. For a Node contract, use `node --test scripts/shared-memory-contract.test.mjs` when that is the changed contract; for a backend test on Windows, use `.\gradlew.bat :business-core:test --tests '*AffectedTest'` with the actual module and class.
+| 대상 | 영향 시험 |
+|---|---|
+| 백엔드 단위·서비스 | `./gradlew :<모듈>:test --tests '*<시험 클래스>'`(Windows 는 `.\gradlew.bat`) |
+| 하네스·아키텍처 게이트 | `./gradlew :api-server:harnessTest --tests '<클래스>'` — 태그가 붙은 시험을 기본 `test` 로 고르면 0건이 통과로 끝난다 |
+| 엔티티·DDL | `./gradlew :api-server:schemaValidationTest`(Docker 필요). H2 의 초록은 물리 스키마의 증거가 아니다 |
+| 프런트 | `pnpm -C frontend exec vitest run <시험 파일>` |
+| 저장소 스크립트·계약 | `node --test scripts/<파일>.test.mjs` |
 
-## When to Use
+루트 `npm test` 는 Gradle 전체 시험이고 TypeScript 파일을 고르지 않는다. 영향 시험은 `node scripts/impact-tests.mjs --diff origin/main` 이 추천한다.
 
-**Always:**
-- New features
-- Bug fixes
-- Refactoring
-- Behavior changes
+## 이 저장소의 규칙
 
-**Exceptions (record the reason in the report or PR; ask only for a new kind of exception):**
-- Throwaway prototypes outside the repository
-- Generated code — verify it with its generator's check (`npm run regen -- --check`, codegen verify) instead
-- Configuration with no runtime, authorization or gate effect (formatting, comments, editor settings). Configuration that changes behavior — permission ledgers, `application*.yml` limits and security settings, edge or deployment config, gate ledgers — is a behavior change above, and a gate change also needs its red proof (AGENTS.md H5)
+- 시험을 초록으로 만들려고 약화·삭제·건너뛰기를 하지 않는다. 구현·시험·명세 가운데 무엇이 틀렸는지 증거로 판정한다. `skip`·`only`·`todo` 와 조건부 등록(`if (…) it(…)`)은 게이트가 막는다.
+- 게이트·계약을 새로 만들거나 고쳤으면 의도적 위반이 그 사유로 붉어지는 부정 시험까지 둔다(AGENTS H5).
+- 인가(H3)·물리 스키마(H1)·식별자 축을 바꾸는 시험은 통과만이 아니라 **거부되어야 할 경우**를 함께 단언한다.
+- 원장이 세는 수(operation 수, 메뉴 수 등)를 시험에 옮겨 적지 않는다 — 원장에서 읽는다.
+- 날짜·시각은 한국 표준시다. 날짜 경계를 건드리는 시험은 JVM 기본 시간대에 기대지 말고 `ServiceTime` 을 쓴다.
 
-Thinking "skip TDD just this once"? Stop. That's rationalization.
+## 예외
 
-## The Iron Law
+이유를 보고나 PR 에 적는다. 새 종류의 예외일 때만 묻는다.
 
-```
-NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
-```
-
-Write code before the test? Delete it — your own untested code from this task, never another operator's work or code outside the task (AGENTS.md). Start over.
-
-**No exceptions:**
-- Don't keep it as "reference"
-- Don't "adapt" it while writing tests
-- Don't look at it
-- Delete means delete
-
-Implement fresh from tests. Period.
-
-## Red-Green-Refactor
-
-```dot
-digraph tdd_cycle {
-    rankdir=LR;
-    red [label="RED\nWrite failing test", shape=box, style=filled, fillcolor="#ffcccc"];
-    verify_red [label="Verify fails\ncorrectly", shape=diamond];
-    green [label="GREEN\nMinimal code", shape=box, style=filled, fillcolor="#ccffcc"];
-    verify_green [label="Verify passes\nAll green", shape=diamond];
-    refactor [label="REFACTOR\nClean up", shape=box, style=filled, fillcolor="#ccccff"];
-    next [label="Next", shape=ellipse];
-
-    red -> verify_red;
-    verify_red -> green [label="yes"];
-    verify_red -> red [label="wrong\nfailure"];
-    green -> verify_green;
-    verify_green -> refactor [label="yes"];
-    verify_green -> green [label="no"];
-    refactor -> verify_green [label="stay\ngreen"];
-    verify_green -> next;
-    next -> red;
-}
-```
-
-### RED - Write Failing Test
-
-Write one minimal test showing what should happen.
-
-<Good>
-```typescript
-test('retries failed operations 3 times', async () => {
-  let attempts = 0;
-  const operation = () => {
-    attempts++;
-    if (attempts < 3) throw new Error('fail');
-    return 'success';
-  };
-
-  const result = await retryOperation(operation);
-
-  expect(result).toBe('success');
-  expect(attempts).toBe(3);
-});
-```
-Clear name, tests real behavior, one thing
-</Good>
-
-<Bad>
-```typescript
-test('retry works', async () => {
-  const mock = jest.fn()
-    .mockRejectedValueOnce(new Error())
-    .mockRejectedValueOnce(new Error())
-    .mockResolvedValueOnce('success');
-  await retryOperation(mock);
-  expect(mock).toHaveBeenCalledTimes(3);
-});
-```
-Vague name, tests mock not code
-</Bad>
-
-**Requirements:**
-- One behavior
-- Clear name
-- Real code (no mocks unless unavoidable)
-
-### Verify RED - Watch It Fail
-
-**MANDATORY. Never skip.**
-
-```bash
-pnpm -C frontend exec vitest run src/path/to/test.test.ts
-```
-
-Confirm:
-- Test fails (not errors)
-- Failure message is expected
-- Fails because feature missing (not typos)
-
-**Test passes?** You're testing existing behavior. Fix test.
-
-**Test errors?** Inspect the cause and make a targeted correction. Follow SOP §2.4: stop and report after three failures for the same cause, including the first; a failing setup is not the intended red proof.
-
-### GREEN - Minimal Code
-
-Write simplest code to pass the test.
-
-<Good>
-```typescript
-async function retryOperation<T>(fn: () => Promise<T>): Promise<T> {
-  for (let i = 0; i < 3; i++) {
-    try {
-      return await fn();
-    } catch (e) {
-      if (i === 2) throw e;
-    }
-  }
-  throw new Error('unreachable');
-}
-```
-Just enough to pass
-</Good>
-
-<Bad>
-```typescript
-async function retryOperation<T>(
-  fn: () => Promise<T>,
-  options?: {
-    maxRetries?: number;
-    backoff?: 'linear' | 'exponential';
-    onRetry?: (attempt: number) => void;
-  }
-): Promise<T> {
-  // YAGNI
-}
-```
-Over-engineered
-</Bad>
-
-Don't add features, refactor other code, or "improve" beyond the test.
-
-### Verify GREEN - Watch It Pass
-
-**MANDATORY.**
-
-```bash
-pnpm -C frontend exec vitest run src/path/to/test.test.ts
-```
-
-Confirm:
-- Test passes
-- Related tests and the checks required for the change still pass
-- Output pristine (no errors, warnings)
-
-**Test fails?** Fix code, not test.
-
-**Other tests fail?** If your change broke them, fix now. If they were already failing, record and report them, and fix them only within the task's scope (SOP §3.5).
-
-### REFACTOR - Clean Up
-
-After green only:
-- Remove duplication
-- Improve names
-- Extract helpers
-
-Keep tests green. Don't add behavior.
-
-### Repeat
-
-Next failing test for next feature.
-
-## Good Tests
-
-| Quality | Good | Bad |
-|---------|------|-----|
-| **Minimal** | One thing. "and" in name? Split it. | `test('validates email and domain and whitespace')` |
-| **Clear** | Name describes behavior | `test('test1')` |
-| **Shows intent** | Demonstrates desired API | Obscures what code should do |
-
-## Why Order Matters
-
-**"I'll write tests after to verify it works"**
-
-Tests written after code pass immediately. Passing immediately proves nothing:
-- Might test wrong thing
-- Might test implementation, not behavior
-- Might miss edge cases you forgot
-- You never saw it catch the bug
-
-Test-first forces you to see the test fail, proving it actually tests something.
-
-**"I already manually tested all the edge cases"**
-
-Manual testing is ad-hoc. You think you tested everything but:
-- No record of what you tested
-- Can't re-run when code changes
-- Easy to forget cases under pressure
-- "It worked when I tried it" ≠ comprehensive
-
-Automated tests are systematic. They run the same way every time.
-
-**"Deleting X hours of work is wasteful"**
-
-Sunk cost fallacy. The time is already gone. Your choice now:
-- Delete and rewrite with TDD (X more hours, high confidence)
-- Keep it and add tests after (30 min, low confidence, likely bugs)
-
-The "waste" is keeping code you can't trust. Working code without real tests is technical debt.
-
-**"TDD is dogmatic, being pragmatic means adapting"**
-
-TDD IS pragmatic:
-- Finds bugs before commit (faster than debugging after)
-- Prevents regressions (tests catch breaks immediately)
-- Documents behavior (tests show how to use code)
-- Enables refactoring (change freely, tests catch breaks)
-
-"Pragmatic" shortcuts = debugging in production = slower.
-
-**"Tests after achieve the same goals - it's spirit not ritual"**
-
-No. Tests-after answer "What does this do?" Tests-first answer "What should this do?"
-
-Tests-after are biased by your implementation. You test what you built, not what's required. You verify remembered edge cases, not discovered ones.
-
-Tests-first force edge case discovery before implementing. Tests-after verify you remembered everything (you didn't).
-
-30 minutes of tests after ≠ TDD. You get coverage, lose proof tests work.
-
-## Common Rationalizations
-
-| Excuse | Reality |
-|--------|---------|
-| "Too simple to test" | Simple code breaks. Test takes 30 seconds. |
-| "I'll test after" | Tests passing immediately prove nothing. |
-| "Tests after achieve same goals" | Tests-after = "what does this do?" Tests-first = "what should this do?" |
-| "Already manually tested" | Ad-hoc ≠ systematic. No record, can't re-run. |
-| "Deleting X hours is wasteful" | Sunk cost fallacy. Keeping unverified code is technical debt. |
-| "Keep as reference, write tests first" | You'll adapt it. That's testing after. Delete means delete. |
-| "Need to explore first" | Fine. Throw away exploration, start with TDD. |
-| "Test hard = design unclear" | Listen to test. Hard to test = hard to use. |
-| "TDD will slow me down" | TDD faster than debugging. Pragmatic = test-first. |
-| "Manual test faster" | Manual doesn't prove edge cases. You'll re-test every change. |
-| "Existing code has no tests" | You're improving it. Add tests for existing code. |
-
-## Red Flags - STOP and Start Over
-
-- Code before test
-- Test after implementation
-- Test passes immediately
-- Can't explain why test failed
-- Tests added "later"
-- Rationalizing "just this once"
-- "I already manually tested it"
-- "Tests after achieve the same purpose"
-- "It's about spirit not ritual"
-- "Keep as reference" or "adapt existing code"
-- "Already spent X hours, deleting is wasteful"
-- "TDD is dogmatic, I'm being pragmatic"
-- "This is different because..."
-
-**All of these mean: Delete the untested code you wrote for this task. Start over with TDD.**
-
-## Example: Bug Fix
-
-**Bug:** Empty email accepted
-
-**RED**
-```typescript
-test('rejects empty email', async () => {
-  const result = await submitForm({ email: '' });
-  expect(result.error).toBe('Email required');
-});
-```
-
-**Verify RED**
-```bash
-$ pnpm -C frontend exec vitest run src/path/to/test.test.ts
-FAIL: expected 'Email required', got undefined
-```
-
-**GREEN**
-```typescript
-function submitForm(data: FormData) {
-  if (!data.email?.trim()) {
-    return { error: 'Email required' };
-  }
-  // ...
-}
-```
-
-**Verify GREEN**
-```bash
-$ pnpm -C frontend exec vitest run src/path/to/test.test.ts
-PASS
-```
-
-**REFACTOR**
-Extract validation for multiple fields if needed.
-
-## Verification Checklist
-
-Before marking work complete:
-
-- [ ] Every new function/method has a test
-- [ ] Watched each test fail before implementing
-- [ ] Each test failed for expected reason (feature missing, not typo)
-- [ ] Wrote minimal code to pass each test
-- [ ] The affected tests and required scope checks pass; unrun checks are reported separately
-- [ ] Output pristine (no errors, warnings)
-- [ ] Tests use real code (mocks only if unavoidable)
-- [ ] Edge cases and errors covered
-
-Can't check all boxes? You skipped TDD. Start over.
-
-## When Stuck
-
-| Problem | Solution |
-|---------|----------|
-| Don't know how to test | Write wished-for API. Write assertion first. Ask your human partner. |
-| Test too complicated | Design too complicated. Simplify interface. |
-| Must mock everything | Code too coupled. Use dependency injection. |
-| Test setup huge | Extract helpers. Still complex? Simplify design. |
-
-## Debugging Integration
-
-Bug found? Write failing test reproducing it. Follow TDD cycle. Test proves fix and prevents regression.
-
-Never fix bugs without a test.
-
-## Testing Anti-Patterns
-
-When adding mocks or test utilities, read @testing-anti-patterns.md to avoid common pitfalls:
-- Testing mock behavior instead of real behavior
-- Adding test-only methods to production classes
-- Mocking without understanding dependencies
-
-## Final Rule
-
-```
-Production code → test exists and failed first
-Otherwise → not TDD
-```
-
-Exceptions are only the ones listed under "When to Use" — record the reason in the report or PR, and ask only for a new kind of exception.
+- 저장소 밖의 일회용 시제품.
+- 생성물 — 생성기의 검사(`npm run regen -- --check`, codegen verify)로 확인한다.
+- 실행·인가·게이트에 영향이 없는 설정(형식, 주석, 편집기 설정). 동작을 바꾸는 설정(권한 원장, `application*.yml` 의 한도·보안 값, edge·배포 설정, 게이트 원장)은 예외가 아니다.

@@ -59,11 +59,11 @@ A reviewer on the same model tends to share your blind spots. For the required r
 
 | You (main agent) run on | Reviewer candidates from another vendor |
 |---|---|
-| Claude (Claude Code) | Gemini: `agy -p … --model gemini-4-argon-high` · OpenAI: `codex exec -m gpt-6-astra …` |
-| OpenAI (Codex) | Gemini: `agy -p … --model gemini-4-argon-high` · Claude: `claude -p … --model claude-opus-5-5 --permission-mode plan` or `agy -p … --model claude-opus-5-5-high` |
-| Gemini (Antigravity) | OpenAI: `codex exec -m gpt-6-astra …` · Claude: `claude -p … --model claude-opus-5-5 --permission-mode plan` or `agy -p … --model claude-opus-5-5-high` |
+| Claude (Claude Code) | Gemini: `agy -p … --model gemini-4-neon-high` · OpenAI: `codex exec -m gpt-6.2-astra …` |
+| OpenAI (Codex) | Gemini: `agy -p … --model gemini-4-neon-high` · Claude: `claude -p … --model claude-opus-5-5 --permission-mode plan` or `agy -p … --model claude-opus-5-5-high` |
+| Gemini (Antigravity) | OpenAI: `codex exec -m gpt-6.2-astra …` · Claude: `claude -p … --model claude-opus-5-5 --permission-mode plan` or `agy -p … --model claude-opus-5-5-high` |
 
-Check what is installed first (`agy --help`, `codex --help`, `claude --version`); list ids with `agy models` / `codex debug models`. On 2026-10-27 `agy` and `claude` were on PATH; `codex` was not, but the OpenAI IDE extension bundles it as `<extensions dir>/openai.chatgpt-*/bin/windows-x86_64/codex.exe`, run as `codex.exe exec -m gpt-6-astra -c model_reasoning_effort='"high"' -s read-only -C <repo> "<instructions>"`. If no other-vendor model is available (not installed, out of quota), fall back to a fresh-context subagent of your own tool and say so in the PR.
+Check what is installed first (`agy --help`, `codex --help`, `claude --version`); list ids with `agy models` / `codex debug models`. On 2026-10-27 `agy` and `claude` were on PATH; `codex` was not, but the OpenAI IDE extension bundles it as `<extensions dir>/openai.chatgpt-*/bin/windows-x86_64/codex.exe`, run as `codex.exe exec -m gpt-6.2-astra -c model_reasoning_effort='"xhigh"' -s read-only -C <repo> "<instructions>"`. The ids above are the ones last used here (2026-11-22: `agy models` lists `gemini-4-neon-high`; `gpt-6.2-astra` ran from the newest bundled `codex.exe`, while an older npm `codex` rejected that id as `model_not_found`) — ids change, so list them before relying on this table. If no other-vendor model is available (not installed, out of quota), fall back to a fresh-context subagent of your own tool and say so in the PR.
 
 When the reviewer is Codex on Windows PowerShell, start the reviewer instructions with `[Console]::OutputEncoding=[Text.Encoding]::UTF8; $OutputEncoding=[Text.Encoding]::UTF8` and tell it to take line numbers from `rg -n` or `git show <rev>:<path>` rather than console dumps — on 2026-10-28 Codex read the Korean docs as U+FFFD in 450 log lines without it. Its sandbox could not reach GitHub, so pass anything that needs `gh` (PR numbers, check results, review comments) as files you fetched first.
 

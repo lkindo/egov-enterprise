@@ -5,54 +5,25 @@ source: obra/superpowers (https://github.com/obra/superpowers, 이 저장소에�
 license: MIT — Complete terms in LICENSE.txt
 ---
 
-# Brainstorming Ideas Into Designs
+# 설계 전에 의도를 좁힌다
 
-## Overview
+구현 전에 사용자의 의도·요구·설계를 탐색할 때 쓴다. 상류 스킬의 범용 절차는 걷고 이 저장소의 규칙만 남겼다.
 
-Help turn ideas into fully formed designs and specs through natural collaborative dialogue.
+**상위 권위:** [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope) 와 [오케스트레이션 프로토콜](../../../docs/03-guides/orchestration-protocol.md)(§3 Stage 1 승인, §7 설계 검토 예산). 이 스킬과 어긋나면 그쪽을 따르고 어긋난 점을 보고한다.
 
-Start by understanding the current project context, then ask questions one at a time to refine the idea. Once you understand what you're building, present the design in small sections (200-300 words).
+## 언제 묻고 언제 진행하나
 
-**In this repository:** Use [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope) and [the orchestration SOP](../../../docs/03-guides/orchestration-protocol.md) (§3 Stage 1 approval, §2.3 audit, §2.4 failure recovery, §6 time budget). Ask only the questions whose answers change the result; when the request is clear or a standing approval covers the work, state your assumptions and proceed. A design document under review follows SOP §7 (review budget, decision cards with negative tests) instead of section-by-section approval.
+- 답에 따라 결과가 달라지는 질문만 한다. 요청이 분명하거나 현재 요청·상시 승인이 그 작업을 덮으면 가정을 밝히고 진행한다.
+- 묻기 전에 현재 구현을 읽는다 — 대상 파일, 관련 헌법, 걸리는 영역 결정 색인(`node scripts/decision-indexes.mjs --for <경로…>`). 이미 결정된 것을 다시 묻지 않는다.
+- 선택지를 낼 때는 권고안을 먼저 두고, 각 선택지가 무엇을 바꾸는지 한 줄로 적는다.
 
-## The Process
+## 설계를 남길 곳
 
-**Understanding the idea:**
-- Check out the current project state first (files, docs, recent commits)
-- Ask questions one at a time to refine the idea
-- Prefer multiple choice questions when possible, but open-ended is fine too
-- Only one question per message - if a topic needs more exploration, break it into multiple questions
-- Focus on understanding: purpose, constraints, success criteria
+- 일회성 설계는 대화나 PR 설명에 둔다. `docs/plans/` 는 없다.
+- 오래 남길 설계는 `docs/01-product`·`02-architecture`·`03-guides`·`04-operations` 에 kebab-case 문서로 두고 [문서 인덱스](../../../docs/README.md)를 갱신한다(AGENTS.md 「Documentation and memory」).
+- 검토받는 설계 문서는 프로토콜 §7 을 따른다 — 검토 예산, 부정 시험이 딸린 결정 카드. 절마다 승인을 받는 방식이 아니다.
+- 시안 확인은 스키마·데이터·인가·IA 처분·운영 적용의 승인이 아니다(프로토콜 §7.2). 그런 변경은 따로 승인받는다.
 
-**Exploring approaches:**
-- Propose 2-3 different approaches with trade-offs
-- Present options conversationally with your recommendation and reasoning
-- Lead with your recommended option and explain why
+## 다음 단계
 
-**Presenting the design:**
-- Once you believe you understand what you're building, present the design
-- Break it into sections of 200-300 words
-- Ask for confirmation only where an answer would change the design
-- Cover: architecture, components, data flow, error handling, testing
-- Be ready to go back and clarify if something doesn't make sense
-
-## After the Design
-
-**Documentation:**
-- In this repository there is no `docs/plans/`. Keep a one-off design in the conversation or PR description; a durable design goes in a kebab-case file under `docs/01-product`·`02-architecture`·`03-guides`·`04-operations` with the `docs/README.md` index updated (AGENTS.md "Documentation and memory")
-- Use elements-of-style:writing-clearly-and-concisely skill if available
-- Commit within the user's request (for directly assigned work, through its completion scope), only your own paths with `git commit --only -- <paths>`, and stop instead if another task's changes share a path (AGENTS.md "공유 워킹트리와 Git")
-
-**Implementation (if continuing):**
-- If the request or a standing approval covers implementation, continue; otherwise ask whether to implement
-- Use using-git-worktrees when isolation is needed
-- Use writing-plans to create detailed implementation plan
-
-## Key Principles
-
-- **One question at a time** - Don't overwhelm with multiple questions
-- **Multiple choice preferred** - Easier to answer than open-ended when possible
-- **YAGNI ruthlessly** - Remove unnecessary features from all designs
-- **Explore alternatives** - Always propose 2-3 approaches before settling
-- **Incremental validation** - Present design in sections; confirm only what changes the design
-- **Be flexible** - Go back and clarify when something doesn't make sense
+구현으로 넘어갈 때는 프로토콜 §4 의 Task Specification 으로 등급·SCOPE 를 밝힌다. 계획이 여러 단계면 [writing-plans](../writing-plans/SKILL.md)를 본다.

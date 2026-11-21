@@ -5,180 +5,36 @@ source: obra/superpowers (https://github.com/obra/superpowers, 이 저장소에�
 license: MIT — Complete terms in LICENSE.txt
 ---
 
-# Dispatching Parallel Agents
+# 독립된 일을 나눠 맡긴다
 
-## Overview
+서로 상태를 나누지 않는 일이 둘 이상일 때 하위 에이전트에 나눠 맡기는 방법이다. 상류 스킬의 범용 예시는 걷고 이 저장소의 규칙만 남겼다.
 
-When you have multiple unrelated failures (different test files, different subsystems, different bugs), investigating them sequentially wastes time. Each investigation is independent and can happen in parallel.
+**상위 권위:** [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope) 와 [오케스트레이션 프로토콜](../../../docs/03-guides/orchestration-protocol.md)(§2.1 직접·위임, §2.2 위임 패킷, §2.3 감사 귀속, §2.4 실패 복구, §6.3 무거운 검증). 이 스킬과 어긋나면 그쪽을 따르고 어긋난 점을 보고한다.
 
-**Core principle:** Dispatch one agent per independent problem domain. Let them work concurrently.
+## 맡기기 전에
 
-In this repository, include the delegation packet from [SOP §2.2](../../../docs/03-guides/orchestration-protocol.md) and choose checks from [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope). The main agent reviews current diffs and independently reruns the relevant gates (§2.3). Subagents may run affected tests and light static checks; the main agent serializes heavy checks after integration (§6.3). Red/green proof, hooks and required CI are not optional, and same-cause failures stop at three total failures (§2.4).
+- 직접 하는 것이 기본이다. 한두 번의 조회로 끝나거나 대상이 이미 분명하면 맡기지 않는다.
+- 일마다 고치는 파일이 겹치지 않아야 한다. 같은 파일을 고치는 일은 순서대로 돌린다(프로토콜 §6.6).
+- 다중 에이전트 워크플로 도구는 사용자가 직접 요청했을 때만 쓴다. "진행해" 같은 포괄 승인은 그 동의가 아니다(프로토콜 §2.1).
 
-## When to Use
+## 맡길 때 — 위임 패킷
 
-```dot
-digraph when_to_use {
-    "Multiple failures?" [shape=diamond];
-    "Are they independent?" [shape=diamond];
-    "Single agent investigates all" [shape=box];
-    "One agent per problem domain" [shape=box];
-    "Can they work in parallel?" [shape=diamond];
-    "Sequential agents" [shape=box];
-    "Parallel dispatch" [shape=box];
+프로토콜 §2.2 의 다섯 항목을 모두 준다. 컨텍스트 없는 위임은 금지다.
 
-    "Multiple failures?" -> "Are they independent?" [label="yes"];
-    "Are they independent?" -> "Single agent investigates all" [label="no - related"];
-    "Are they independent?" -> "Can they work in parallel?" [label="yes"];
-    "Can they work in parallel?" -> "Parallel dispatch" [label="yes"];
-    "Can they work in parallel?" -> "Sequential agents" [label="no - shared state"];
-}
+```text
+## TASK: {Stage 1 TASK PROPOSAL 전문}
+## CONSTITUTION: {적용 헌법 조항 요약}
+## FILE MAP: {수정/참조 파일 경로 목록}
+## CONSTRAINTS: {금지 패턴 및 필수 규칙}
+## DONE CRITERIA: {빌드/테스트 통과 기준}
 ```
 
-**Use when:**
-- 3+ test files failing with different root causes
-- Multiple subsystems broken independently
-- Each problem can be understood without context from others
-- No shared state between investigations
+- 인가·개인정보(H3)·물리 스키마(H1)·식별자 축·게이트 의미를 바꾸는 일은 사용자 원문 요청과, 그 기준의 수용 결과·금지 결과를 1~3줄로 함께 적는다.
+- 하위 에이전트에는 영향 시험과 가벼운 정적 검사만 맡긴다. Gradle 전체 시험·전체 Vitest·`npm run verify`·격리 E2E 같은 무거운 검증은 통합한 뒤 메인이 하나씩 돌린다(§6.3).
+- 병렬 에이전트(읽기 전용 검토 포함)가 도는 동안에는 메인도 무거운 검증을 시작하지 않는다 — 부하가 거짓 붉음과 거짓 통과를 함께 만든다.
 
-**Don't use when:**
-- Failures are related (fix one might fix others)
-- Need to understand full system state
-- Agents would interfere with each other
+## 돌아온 뒤
 
-## The Pattern
-
-### 1. Identify Independent Domains
-
-Group failures by what's broken:
-- File A tests: Tool approval flow
-- File B tests: Batch completion behavior
-- File C tests: Abort functionality
-
-Each domain is independent - fixing tool approval doesn't affect abort tests.
-
-### 2. Create Focused Agent Tasks
-
-Each agent gets:
-- **Specific scope:** One test file or subsystem
-- **Clear goal:** Find why these tests fail and fix the cause
-- **Constraints:** Don't change other code. Do not weaken a test, baseline, allow-list or threshold to turn it green; report instead (AGENTS.md H2)
-- **Expected output:** Summary of what you found and fixed
-
-### 3. Dispatch in Parallel
-
-```typescript
-// In Claude Code / AI environment
-Task("Fix agent-tool-abort.test.ts failures")
-Task("Fix batch-completion-behavior.test.ts failures")
-Task("Fix tool-approval-race-conditions.test.ts failures")
-// All three run concurrently
-```
-
-### 4. Review and Integrate
-
-When agents return:
-- Read each summary, then review each agent's diff yourself — the summary is not evidence (SOP §2.3)
-- Verify fixes don't conflict
-- Independently run the checks required for the integrated change under SOP §2.3 and §6
-- Integrate all changes
-
-## Agent Prompt Structure
-
-Good agent prompts are:
-1. **Focused** - One clear problem domain
-2. **Self-contained** - All context needed to understand the problem
-3. **Specific about output** - What should the agent return?
-
-```markdown
-Fix the 3 failing tests in src/agents/agent-tool-abort.test.ts:
-
-1. "should abort tool with partial output capture" - expects 'interrupted at' in message
-2. "should handle mixed completed and aborted tools" - fast tool aborted instead of completed
-3. "should properly track pendingToolCount" - expects 3 results but gets 0
-
-These are timing/race condition issues. Your task:
-
-1. Read the test file and understand what each test verifies
-2. Identify root cause - timing issues or actual bugs?
-3. Fix by:
-   - Replacing arbitrary timeouts with event-based waiting
-   - Fixing bugs in abort implementation if found
-   - Adjusting test expectations only when the behavior change was intended and approved — say which change and where it was approved; otherwise report the failure (AGENTS.md H2)
-
-Do NOT just increase timeouts - find the real issue.
-
-Return: Summary of what you found and what you fixed.
-```
-
-## Common Mistakes
-
-❌ **Too broad:** "Fix all the tests" - agent gets lost
-✅ **Specific:** "Fix agent-tool-abort.test.ts" - focused scope
-
-❌ **No context:** "Fix the race condition" - agent doesn't know where
-✅ **Context:** Paste the error messages and test names
-
-❌ **No constraints:** Agent might refactor everything
-✅ **Constraints:** "Do NOT change production code" or "Fix tests only"
-
-❌ **Vague output:** "Fix it" - you don't know what changed
-✅ **Specific:** "Return summary of root cause and changes"
-
-## When NOT to Use
-
-**Related failures:** Fixing one might fix others - investigate together first
-**Need full context:** Understanding requires seeing entire system
-**Exploratory debugging:** You don't know what's broken yet
-**Shared state:** Agents would interfere (editing same files, using same resources)
-
-## Real Example from Session
-
-**Scenario:** 6 test failures across 3 files after major refactoring
-
-**Failures:**
-- agent-tool-abort.test.ts: 3 failures (timing issues)
-- batch-completion-behavior.test.ts: 2 failures (tools not executing)
-- tool-approval-race-conditions.test.ts: 1 failure (execution count = 0)
-
-**Decision:** Independent domains - abort logic separate from batch completion separate from race conditions
-
-**Dispatch:**
-```
-Agent 1 → Fix agent-tool-abort.test.ts
-Agent 2 → Fix batch-completion-behavior.test.ts
-Agent 3 → Fix tool-approval-race-conditions.test.ts
-```
-
-**Results:**
-- Agent 1: Replaced timeouts with event-based waiting
-- Agent 2: Fixed event structure bug (threadId in wrong place)
-- Agent 3: Added wait for async tool execution to complete
-
-**Integration:** All fixes independent, no conflicts, full suite green
-
-**Time saved:** 3 problems solved in parallel vs sequentially
-
-## Key Benefits
-
-1. **Parallelization** - Multiple investigations happen simultaneously
-2. **Focus** - Each agent has narrow scope, less context to track
-3. **Independence** - Agents don't interfere with each other
-4. **Speed** - 3 problems solved in time of 1
-
-## Verification
-
-After agents return:
-1. **Review each summary** - Understand what changed
-2. **Check for conflicts** - Did agents edit same code?
-3. **Run required scope checks independently** - Verify the integrated changes; use SOP §6.4 when branches were combined, without repeating a full bundle for every subtask
-4. **Review every diff** - Agents can make systematic errors; a spot check of summaries does not replace the main agent's diff review (SOP §2.3)
-
-## Real-World Impact
-
-From debugging session (2025-10-03):
-- 6 failures across 3 files
-- 3 agents dispatched in parallel
-- All investigations completed concurrently
-- All fixes integrated successfully
-- Zero conflicts between agent changes
+- 하위 에이전트가 "검증 통과"를 보고해도 완료 증거가 아니다. 메인이 현재 diff 를 직접 읽고 해당 게이트를 다시 돌린다(§2.3).
+- 붉음·초록 증명, 훅, required CI 는 생략하지 않는다.
+- 같은 원인의 실패는 첫 실패를 포함해 세 번에서 멈추고 보고한다(§2.4).
