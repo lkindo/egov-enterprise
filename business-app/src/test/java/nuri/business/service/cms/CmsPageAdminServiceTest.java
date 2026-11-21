@@ -7,6 +7,7 @@ import nuri.business.domain.cms.CmsContentRevision;
 import nuri.business.domain.cms.CmsContentRevisionFile;
 import nuri.business.domain.cms.CmsContentRevisionFileRepository;
 import nuri.business.domain.cms.CmsContentRevisionRepository;
+import nuri.business.domain.cms.CmsRevisionHistoryRow;
 import nuri.business.domain.cms.CmsSiteSetting;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.cms.dto.CmsPageCreateRequest;
@@ -510,12 +511,10 @@ class CmsPageAdminServiceTest {
 
     @Test
     void getRevisionsAndGetRevisionReturnNumberedHistoryAndRejectMissingRevision() {
-        CmsContent published = content(1L, DOCUMENT_JSON, 3);
-        published.publish(20L);
-        when(contentRepository.findById(1L)).thenReturn(Optional.of(published));
         CmsContentRevision r2 = revision(20L, 1L, "개정본", DOCUMENT_JSON);
-        CmsContentRevision r1 = revision(10L, 1L, "초판", DOCUMENT_JSON);
-        when(revisionRepository.findByContsSnOrderByContsRvsnSnDesc(1L)).thenReturn(List.of(r2, r1));
+        when(revisionRepository.findHistory(1L)).thenReturn(List.of(
+                new CmsRevisionHistoryRow(20L, "개정본", "개정", "editor", r2.getCrtDt(), true),
+                new CmsRevisionHistoryRow(10L, "초판", null, "editor", r2.getCrtDt().minusDays(1), false)));
 
         var summaries = service.getRevisions(1L);
         assertThat(summaries).hasSize(2);

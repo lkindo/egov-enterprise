@@ -12,8 +12,15 @@ import java.util.Optional;
 
 public interface CmsContentRevisionRepository extends JpaRepository<CmsContentRevision, Long>, CmsRevisionPurgePermit {
 
-    /** 게시 이력. 최신이 앞이다. 페이지당 게시 횟수는 운영자가 직접 누른 수라 페이징하지 않는다. */
-    List<CmsContentRevision> findByContsSnOrderByContsRvsnSnDesc(Long contsSn);
+    /** 초안·게시본 본문을 제외한 이력. 외부 조인으로 미게시 페이지와 없는 페이지를 구별한다. */
+    @Query("""
+            SELECT new nuri.business.domain.cms.CmsRevisionHistoryRow(
+                r.contsRvsnSn, r.contsTtl, r.rvsnRsn, r.frstRgtrId, r.crtDt,
+                CASE WHEN c.contsRvsnSn = r.contsRvsnSn THEN true ELSE false END)
+            FROM CmsContent c LEFT JOIN CmsContentRevision r ON r.contsSn = c.contsSn
+            WHERE c.contsSn = :contsSn ORDER BY r.contsRvsnSn DESC
+            """)
+    List<CmsRevisionHistoryRow> findHistory(@Param("contsSn") Long contsSn);
 
     Optional<CmsContentRevision> findByContsRvsnSnAndContsSn(Long contsRvsnSn, Long contsSn);
 

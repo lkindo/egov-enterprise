@@ -73,10 +73,8 @@ public class TmplatInfoService extends BaseAbstractService implements TemplateAs
     @Override
     public List<AssignableTemplate> assignableTemplates() {
         SecurityUtil.assertPermission("TEMPLATE_READ");
-        return templateRepository.findAll().stream()
-                .filter(template -> template.getTmpltId() != null && "Y".equals(template.getUseYn()))
-                .sorted(TEMPLATE_ORDER)
-                .map(template -> new AssignableTemplate(template.getTmpltId(), template.getTmpltNm()))
+        return templateRepository.findAssignableByUseYn("Y").stream()
+                .sorted(Comparator.comparing(AssignableTemplate::tmpltNm).thenComparing(AssignableTemplate::tmpltId))
                 .toList();
     }
 

@@ -1,9 +1,70 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
-import { hasPageResponse } from '../test/load-tests/response-contracts.mjs';
+import { hasDashboardResponse, hasPageResponse, verifySettledDashboard } from '../test/load-tests/response-contracts.mjs';
 
 const page = { success: true, data: { list: [], total: 0, page: 1, size: 10, totalPage: 0 } };
+
+test('dashboard load checks compare both widgets with the known board pages', () => {
+  const references = {
+    task: { boardId: 'task', total: 0, ids: [] },
+    notice: { boardId: 'notice', total: 1, ids: [10] },
+  };
+  const data = {
+    taskList: [], taskListTotal: 0, taskListUnavailable: false,
+    notiList: [{ bbsId: 'notice', pstSn: 10 }], notiListTotal: 1, notiListUnavailable: false,
+  };
+  const matches = (overrides, growing = false) =>
+    hasDashboardResponse(JSON.stringify({ success: true, data: { ...data, ...overrides } }), references, growing);
+  assert.equal(matches({}), true);
+  for (const invalid of [
+    { taskListTotal: null }, { taskListUnavailable: true }, { taskListUnavailable: undefined },
+    { notiList: [], notiListTotal: 0 }, { notiList: [] }, { notiListTotal: 2 },
+    { notiList: [{ bbsId: 'task', pstSn: 10 }] }, { notiList: [{ bbsId: 'notice', pstSn: 12 }] },
+  ]) assert.equal(matches(invalid), false);
+  assert.equal(hasDashboardResponse('{"success":false}', references), false);
+  assert.equal(hasDashboardResponse('invalid JSON', references), false);
+  // More than five visible notices can displace the setup post; the task board stays constant.
+  const shifted = { notiListTotal: 6, notiList: [15, 14, 13, 12, 11].map(pstSn => ({ bbsId: 'notice', pstSn })) };
+  assert.equal(matches(shifted, true), true);
+  assert.equal(matches(shifted), false);
+  assert.equal(matches({ ...shifted, taskListTotal: 1 }, true), false);
+  assert.equal(matches({ ...shifted, notiList: [shifted.notiList[0], shifted.notiList[0]] }, true), false);
+  const full = { ...references, notice: { boardId: 'notice', total: 12, ids: [15, 14, 13, 12, 11] } };
+  const withNewNotice = (ids) => hasDashboardResponse(JSON.stringify({ success: true, data: {
+    ...data, notiListTotal: 13, notiList: ids.map(pstSn => ({ bbsId: 'notice', pstSn })),
+  } }), full, true);
+  assert.equal(withNewNotice([16, 15, 14, 13, 12]), true);
+  assert.equal(withNewNotice([16, 15]), false);
+  assert.equal(withNewNotice([20, 19, 18, 17, 16]), false);
+  // An unseeded external board can receive its first post between the page and count queries.
+  const emptyNotice = { ...references, notice: { boardId: 'notice', total: 0, ids: [] } };
+  const firstInsert = JSON.stringify({ success: true, data: { ...data, notiList: [], notiListTotal: 1 } });
+  assert.equal(hasDashboardResponse(firstInsert, emptyNotice, true), true);
+  assert.equal(hasDashboardResponse(firstInsert, emptyNotice), false);
+  const staleAfterGrowth = JSON.stringify({ success: true, data: { ...data, notiListTotal: 6 } });
+  assert.equal(hasDashboardResponse(staleAfterGrowth, references, true), true);
+  assert.equal(hasDashboardResponse(staleAfterGrowth, references, true, 6), false);
+  assert.equal(hasDashboardResponse(JSON.stringify({ success: true, data: { ...data, ...shifted } }), references, true, 6), true);
+  assert.equal(withNewNotice([15, 14, 13, 12, 11]), true); // all five are pinned
+});
+
+test('teardown retries only when reference pages moved, and limits the attempts', () => {
+  const ids = (n) => Array.from({ length: Math.min(5, n) }, (_, i) => n - i);
+  const refs = (n) => ({ task: { boardId: 'task', total: 0, ids: [] }, notice: { boardId: 'notice', total: n, ids: ids(n) } });
+  const dashboard = (n) => JSON.stringify({ success: true, data: {
+    taskList: [], taskListTotal: 0, taskListUnavailable: false,
+    notiList: ids(n).map(pstSn => ({ bbsId: 'notice', pstSn })), notiListTotal: n, notiListUnavailable: false,
+  } });
+  const verify = (pages, responses) => verifySettledDashboard(() => pages.shift(), () => responses.shift());
+  verify([refs(1), refs(2)], [dashboard(2), dashboard(2)]);
+  const fixed = [dashboard(3), dashboard(1)];
+  assert.throws(() => verify([refs(1), refs(1)], fixed), /reference boards/);
+  assert.equal(fixed.length, 1);
+  const moving = [dashboard(8), dashboard(8), dashboard(8), dashboard(4)];
+  assert.throws(() => verify([1, 2, 3, 4].map(refs), moving), /reference boards/);
+  assert.equal(moving.length, 1);
+});
 
 test('current PageResponse accepts empty and populated result pages', () => {
   assert.equal(hasPageResponse(JSON.stringify(page)), true);
@@ -39,6 +100,7 @@ test('scenarios that require every check keep latency out of check() and gate it
   }
   const levels = strict.find(({ file }) => file === 'load-levels.js');
   assert.ok(levels, 'the weekly load-levels scenario must stay a rate==1 scenario');
+  assert.match(levels.source, /check\(response,\s*\{[^}]*hasDashboardResponse\(r\.body, references, true, observedNoticeTotal\)/);
   assert.deepEqual(
     [...levels.source.matchAll(/tags:\s*\{\s*endpoint:\s*'([^']+)'\s*\}/g)].map((match) => match[1]).sort(),
     ['create-post', 'dashboard', 'login', 'users-list'],
