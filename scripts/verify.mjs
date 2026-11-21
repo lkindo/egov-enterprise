@@ -88,7 +88,7 @@ function run(command, extraEnv = {}) {
       stdio: 'inherit',
       // 로컬 기본 시간대는 KST 다(개발 기계와 같은 조건). CI 러너는 UTC 로 돈다 — 명시한 TZ 가 이기므로
       // `npx cross-env TZ=UTC npm run verify:<범위>`(셸 중립, 세션에 TZ 를 남기지 않음)로 CI 조건을 그대로 재현한다
-      // (시험 JVM 은 build.gradle 이 따로 UTC 로 고정한다). 생성물 검증(verify-reusable-artifact)·T2(reusable-nightly)는
+      // (백엔드 시험·변이 시험 JVM 은 build.gradle 이 따로 한국 표준시로 고정한다). 생성물 검증(verify-reusable-artifact)·T2(reusable-nightly)는
       // CI 에서도 실행기가 자식 환경을 만들어 KST 로 고정하므로 이 손잡이를 두지 않는다.
       env: childEnv,
     });

@@ -598,7 +598,7 @@ backend 범위는 컴파일·하네스·스키마 검사이며 모든 일반 테
 working-tree·incremental 검사를 함께 수행한다. 실제 실행 설정은
 [생성물 실행 경로 계약](../../scripts/reusable-artifact-entrypoints-contract.mjs)이 정한다.
 
-생산 저장소의 13개 workflow·required-check 명세·package·pre-push는
+생산 저장소의 workflow 전부·required-check 명세·package·pre-push는
 `config/governance/upstream-verification/`에 SHA-256이 붙은 비활성 이력으로 보존한다. 원본 CodeQL·E2E·mutation과
 배포·예약 작업은 기관 범위에 맞게 다시 결속해야 하며, 생성물 기본 CI가 원본 CI와 동등한 검증이나 운영 인증을
 제공한다고 주장하지 않는다. 생성물의 `.github/required-checks.json`은 `remoteApplied: false`이고 대상 브랜치·App은

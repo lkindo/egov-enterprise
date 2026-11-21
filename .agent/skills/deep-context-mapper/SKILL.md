@@ -44,7 +44,7 @@ Map out the module boundary relationships to understand data flows.
 * **frontend module**: Next.js Server Components, proxy/API clients, and Playwright E2E suites.
 
 ### Phase 2: DB Standard Word Governance (SSOT)
-Use the read-only DB bridge (`node .agent/scripts/db-bridge.js`) to query `information_schema` and the metadata tables (`meta_standard_words`, `meta_standard_domains`, `meta_standard_terms`) when the task depends on a live database.
+Use the read-only DB bridge (`node --env-file=.env .agent/scripts/db-bridge.js`) to query `information_schema` and the metadata tables (`meta_standard_words`, `meta_standard_domains`, `meta_standard_terms`) when the task depends on a live database.
 * Confirm lowercase physical names and types from live evidence before writing JPA mappings or Flyway SQL. Do not substitute H2 or remembered schema details for that evidence.
 
 ### Phase 3: Contract Synchronization Auditing

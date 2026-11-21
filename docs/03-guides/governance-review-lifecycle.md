@@ -173,13 +173,13 @@ snapshot은 과거 근거다. active 원장이나 기관 승인을 대신하지 
 
 온라인 생성물의 CI는 자기 프로필에서 `node scripts/verify-reusable-artifact.mjs`를 직접 실행하는 `artifact-verification` job 하나다. 같은 job에서 기존 버전의 gitleaks working-tree·incremental 검사를 유지한다. 다른 프로필을 다시 생성하거나 원본 시작 구성 matrix를 실행하지 않는다.
 
-생산 저장소의 13개 workflow, required-check 명세, package와 pre-push는 `config/governance/upstream-verification/`에 SHA-256이 붙은 비활성 이력으로 보존된다. 원본 CodeQL·E2E·mutation·배포·예약 작업은 기관 범위에 맞춰 별도로 결속해야 한다. 생성물 기본 CI를 원본 6개 required context와 동등한 검증이나 기관 운영 인증으로 해석하지 않는다.
+생산 저장소의 workflow 전부, required-check 명세, package와 pre-push는 `config/governance/upstream-verification/`에 SHA-256이 붙은 비활성 이력으로 보존된다. 원본 CodeQL·E2E·mutation·배포·예약 작업은 기관 범위에 맞춰 별도로 결속해야 한다. 생성물 기본 CI를 원본 6개 required context와 동등한 검증이나 기관 운영 인증으로 해석하지 않는다.
 
 생성물의 `.github/required-checks.json`은 `artifact-verification` 한 context를 제안하는 기관용 템플릿이다. `remoteApplied: false`, `branch: null`, `integrationId: null`이며 실제 원격 ruleset은 설정하지 않는다. 기관은 대상 브랜치·GitHub App·검토 정책을 정하고 실제 workflow와 ruleset을 연결해야 한다. 생성물의 명령 별칭과 정확한 검사 범위는 [재사용 가이드 §4](reusable-base-guide.md#4-산출물-검증)를 따른다. 실제 기관 브라우저 시나리오 실행은 기본 기술 검사에 포함되지 않는다.
 
 ## 6. 코드·정책이 바뀔 때
 
-소스 census가 바뀌면 승인 원장의 전체 census 해시를 다시 검토해야 한다. 후보 생성 과정은 기존 정확한 검색 record를 판정할 수 있도록 열려 있지만, 승인 원장과 census의 정합은 별도 계약이 계속 차단한다. 해시 갱신 전에 영향 범위와 기존 판단이 여전히 유효한지 확인한다.
+URL 상태 승인 원장은 census 전체 해시에 묶이지 않는다(DEC-OPS-420). 승인은 부류가 고정한 기록 ID(`selector.recordIds`) 단위다 — 기록의 관측이 바뀌면 ID 가 바뀌어 승인이 풀리고, 새 기록은 사람이 그 부류의 기록 ID 에 더하기 전에는 승인되지 않으며, 기록 ID 없는 승인 부류는 열리지 않는다. 후보 생성 과정은 기존 정확한 검색 record를 판정할 수 있도록 열려 있지만, 승인 원장과 census의 정합은 별도 계약이 계속 차단한다. 기록 ID 를 더하기 전에 영향 범위와 기존 판단이 여전히 유효한지 확인한다.
 
 기관 승인은 현재 소스·정책 범위 digest와 evidence 파일 내용에 결속된다. 범위나 근거가 바뀌면 해당 기관 승인을 재검토한다. 운영 환경이 코드 없이 바뀌는 경우에도 담당자가 근거와 승인 기록을 재검토해야 한다. 코드 해시만으로 외부 환경 변경을 발견할 수는 없다.
 

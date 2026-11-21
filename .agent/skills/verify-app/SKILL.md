@@ -27,13 +27,14 @@ PR CI 실패의 절반가량이 E2E 라 그 비용을 앞당기려는 것이다.
 ## 2. Launch — 새 격리 스택
 
 실행기가 일회용 DB 와 자기 소유의 API·프런트 프로세스를 만들고, 인증·fixture·정리 전에 소유를 확인한다.
+격리 E2E 실행기는 아직 스스로 줄을 서지 않으므로 무거운 검증 대기열로 감싸 부른다(SOP §6.3) — 감싸지 않은 직접 호출은 실행 전 가드가 막는다.
 
 ```powershell
 # 바꾼 동선의 spec 만(아래 3) — 가장 흔한 사용
-node scripts/run-isolated-e2e.mjs -- --project=full-suite e2e/journeys/<동선>.spec.ts
+node scripts/heavy-run-queue.mjs run --kind isolated-e2e -- node scripts/run-isolated-e2e.mjs -- --project=full-suite e2e/journeys/<동선>.spec.ts
 # API 계약만
-node scripts/run-isolated-e2e.mjs -- --project=api-contract e2e/contracts/<계약>.spec.ts
-# 전체(푸시 직전 한 번, 넓은 변경일 때만)
+node scripts/heavy-run-queue.mjs run --kind isolated-e2e -- node scripts/run-isolated-e2e.mjs -- --project=api-contract e2e/contracts/<계약>.spec.ts
+# 전체(푸시 직전 한 번, 넓은 변경일 때만) — 스스로 줄을 선다
 npm run verify:e2e
 ```
 

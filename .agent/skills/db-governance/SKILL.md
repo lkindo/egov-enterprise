@@ -33,10 +33,10 @@ live DB를 조회하지 못한 경우 저장소 스키마만으로 “표준 100
 ## 도구 경계
 
 ```bash
-node .agent/scripts/db-bridge.js "SELECT ..."
+node --env-file=.env .agent/scripts/db-bridge.js "SELECT ..."
 ```
 
-`db-bridge.js`는 `SELECT`, `WITH`, `SHOW`, 읽기 전용 `EXPLAIN`, `VALUES`만 허용하는 조회 도구다. DDL 실행·transaction 검증에 사용하지 않는다. DDL은 Flyway와 격리된 테스트 DB에서 검증한다.
+`db-bridge.js`는 `SELECT`, `WITH`, `SHOW`, 읽기 전용 `EXPLAIN`, `VALUES`만 허용하는 조회 도구다. 접속 값은 환경 변수(`DB_*`)에서만 읽으므로 `--env-file=.env` 로 넘기고 `.env` 내용은 출력하지 않는다([SOP Stage 3 §3.1](../../../docs/03-guides/orchestration-protocol.md)). DDL 실행·transaction 검증에 사용하지 않는다. DDL은 Flyway와 격리된 테스트 DB에서 검증한다.
 
 ## 결과
 
