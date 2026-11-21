@@ -387,7 +387,12 @@ export function errorSignature(message) {
  * 4xx·인증 실패처럼 다시 물어도 같은 답인 실패는 그대로 던진다.
  */
 export class BudgetError extends Error {}
-const TRANSIENT_TRANSPORT = /stream error|connection reset|unexpected EOF|i\/o timeout|TLS handshake timeout|server closed idle connection/i;
+const TRANSIENT_TRANSPORT = /\bstream error\b|\bconnection reset\b|\bEOF\b|\bi\/o timeout\b|\bTLS handshake timeout\b|\bserver closed idle connection\b/i;
+/** gh 가 HTTP 상태를 받았으면 그 상태로만 판정한다 — 4xx 본문 속 낱말(예: `upstream error (HTTP 403)`)이 전송 오류로 읽히지 않게 한다. */
+function retryable(stderr) {
+  const status = stderr.match(/HTTP (\d{3})/);
+  return status ? status[1].startsWith('5') : TRANSIENT_TRANSPORT.test(stderr);
+}
 export const RETRY_DELAYS_MS = Object.freeze([2000, 6000]);
 function sleepSync(milliseconds) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
@@ -404,7 +409,9 @@ export function createGh({ maxCalls, exec = (args, options) => execFileSync('gh'
         return binary || text ? output : JSON.parse(output);
       } catch (error) {
         const stderr = String(error.stderr ?? '');
-        if (attempt < RETRY_DELAYS_MS.length && (/HTTP 5\d\d/.test(stderr) || TRANSIENT_TRANSPORT.test(stderr))) {
+        if (attempt < RETRY_DELAYS_MS.length && retryable(stderr)) {
+          // 다시 물을 예산이 없으면 기다려 봐야 다음 차례에 같은 BudgetError 다 — 기다리지 않고 지금 낸다.
+          if (calls >= maxCalls) throw new BudgetError(`API 호출 상한(${maxCalls})에 닿았다`);
           sleep(RETRY_DELAYS_MS[attempt]);
           continue;
         }

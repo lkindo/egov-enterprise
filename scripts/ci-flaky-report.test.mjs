@@ -156,6 +156,21 @@ test('the gh caller retries 5xx and dropped connections twice with a pause, neve
   });
   assert.throws(() => unauthenticated.call('x'), /gh failed/);
   assert.equal(unauthenticated.calls(), 1, '전송 오류 표지가 없는 실패는 다시 묻지 않는다');
+  // 상태가 있으면 상태로만 판정한다 — 4xx 본문에 'stream error' 를 품은 낱말이 있어도 다시 묻지 않는다.
+  const forbidden = createGh({ maxCalls: 10, exec: failing(['gh: upstream error (HTTP 403)', 200]), sleep: () => assert.fail('4xx 는 기다리지 않는다') });
+  assert.throws(() => forbidden.call('x'), /gh failed/);
+  assert.equal(forbidden.calls(), 1);
+  // 상태 없이 EOF 로 끝난 연결도 전송 오류다.
+  const eof = paused();
+  assert.deepEqual(
+    createGh({ maxCalls: 10, exec: failing(['Get "https://api.github.com/x": EOF', 200]), sleep: eof.sleep }).call('x'),
+    { ok: true },
+  );
+  assert.deepEqual(eof.waits, [RETRY_DELAYS_MS[0]]);
+  // 다시 물을 예산이 없으면 기다리지 않고 BudgetError 다.
+  const lastCall = createGh({ maxCalls: 1, exec: failing([502, 200]), sleep: () => assert.fail('예산이 없으면 기다리지 않는다') });
+  assert.throws(() => lastCall.call('x'), BudgetError);
+  assert.equal(lastCall.calls(), 1);
   const budget = createGh({ maxCalls: 1, exec: failing([200, 200]) });
   budget.call('x');
   assert.throws(() => budget.call('x'), BudgetError);
