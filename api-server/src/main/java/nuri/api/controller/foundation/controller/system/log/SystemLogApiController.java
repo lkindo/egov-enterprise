@@ -35,11 +35,7 @@ public class SystemLogApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.SystemLogApiController#getSysLogList')")
     public ResponseEntity<ApiResponse<PageResponse<SysLogDto>>> getSysLogList(
             @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
-        
-        List<SysLogDto> list = logManageService.selectSysLogList(searchDto);
-        int totCnt = logManageService.selectSysLogListTotCnt(searchDto);
-        
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchDto.getPageIndex(), searchDto.getPageUnit(), totCnt)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(logManageService.selectSysLogPage(searchDto))));
     }
 
     /**

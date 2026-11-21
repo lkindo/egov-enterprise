@@ -26,12 +26,16 @@ public class LogManageService extends BaseAbstractService {
         this.sysLogRepository = required(sysLogRepository, "SysLogRepository 는 null 일 수 없습니다");
     }
 
-    public List<SysLogDto> selectSysLogList(@NonNull BaseSearchDto searchVO) {
+    public Page<SysLogDto> selectSysLogPage(@NonNull BaseSearchDto searchVO) {
         Pageable pageable = searchVO.toPageable();
-        Page<SysLog> page = sysLogRepository.searchSysLogs(
+        return sysLogRepository.searchSysLogs(
                 searchVO.getSearchKeyword(), searchVO.getSearchKeywordFrom(), searchVO.getSearchKeywordTo(),
-                required(pageable, "pageable 는 null 일 수 없습니다"));
-        return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
+                required(pageable, "pageable 는 null 일 수 없습니다"))
+                .map(this::toDto);
+    }
+
+    public List<SysLogDto> selectSysLogList(@NonNull BaseSearchDto searchVO) {
+        return selectSysLogPage(searchVO).getContent();
     }
 
     public int selectSysLogListTotCnt(@NonNull BaseSearchDto searchVO) {

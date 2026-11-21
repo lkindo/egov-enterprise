@@ -13,9 +13,11 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.jspecify.annotations.NonNull;
 import org.springframework.util.StringUtils;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import nuri.business.domain.user.entity.QUser;
+import nuri.foundation.core.board.BoardPostAccessPort.PostRef;
 
 public class BoardRepositoryImpl implements BoardRepositoryCustom {
 
@@ -346,5 +348,39 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
 
                 return new PageImpl<>(content, pageable,
                                 totalResult != null ? totalResult : 0L);
+        }
+
+        @Override
+        public List<BoardScrapCandidate> findScrapCandidates(
+                        @NonNull Collection<PostRef> targets) {
+                BooleanBuilder targetPairs = new BooleanBuilder();
+                boolean hasPair = false;
+                for (PostRef ref : targets) {
+                        if (ref == null || !StringUtils.hasText(ref.bbsId())) {
+                                continue;
+                        }
+                        targetPairs.or(QBoard.board.bbsId.eq(ref.bbsId())
+                                        .and(QBoard.board.pstSn.eq(ref.pstSn())));
+                        hasPair = true;
+                }
+                if (!hasPair) {
+                        return List.of();
+                }
+                return queryFactory
+                                .select(Projections.constructor(BoardScrapCandidate.class,
+                                                QBoard.board.bbsId,
+                                                QBoard.board.pstSn,
+                                                QBoardMaster.boardMaster.cmntySn,
+                                                QBoard.board.userId,
+                                                QBoard.board.scrtYn,
+                                                QBoard.board.pstBgngYmd,
+                                                QBoard.board.pstEndYmd))
+                                .from(QBoard.board)
+                                .innerJoin(QBoardMaster.boardMaster)
+                                .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
+                                .where(QBoard.board.useYn.eq("Y"),
+                                                QBoardMaster.boardMaster.useYn.eq("Y"),
+                                                targetPairs)
+                                .fetch();
         }
 }

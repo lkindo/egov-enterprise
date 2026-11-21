@@ -2356,6 +2356,18 @@
       ]
     },
     {
+      "target": "CommentService#deleteCommentForModeration",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrPermission",
+          "count": 1,
+          "identityAxis": "LOGIN_ID",
+          "permission": "COMMENT_DELETE_ALL"
+        }
+      ]
+    },
+    {
       "target": "CommentService#updateComment",
       "policy": "OWNER_OR_ADMIN",
       "mechanisms": [

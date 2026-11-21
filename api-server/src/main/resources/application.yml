@@ -259,6 +259,15 @@ nuri:
       requests-per-minute: ${RATE_LIMIT_REQUESTS_PER_MINUTE:10000}
       login-requests-per-minute: ${RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE:30}
 
+  # 완료된 내구성 후속 작업(tb_sys_job SUCCEEDED) 보존·정리.
+  #   중복 방지 키(job_mng_no) 근거를 겸하므로 기본 비활성이고(opt-in), 운영자가 켠 경우에도 days < 1 이면 건너뛴다.
+  #   FAILED·PENDING·RETRY·RUNNING 작업은 정리 대상에서 제외한다(docs/04-operations/durable-work-recovery.md).
+  durable-work:
+    retention:
+      enabled: ${DURABLE_WORK_RETENTION_ENABLED:false}
+      cron: "0 0 5 * * *"      # 매일 05:00 (Asia/Seoul) — 알림(04:30)·SMS 이력 정리(04:45) 뒤
+      days: ${DURABLE_WORK_RETENTION_DAYS:30}
+
   # 데모 게시판 인스턴스 ID — business-core(BoardIdProperties)가 하드코딩 대신 읽는 설정.
   #   값은 데모 시드(R__seed_demo.sql)의 인스턴스 ID와 동일하며, 미설정 시에도 같은 기본값으로
   #   거동이 완전히 같다. 다른 제품은 코어 수정 없이 이 값만 자기 게시판 ID로 바꾼다.

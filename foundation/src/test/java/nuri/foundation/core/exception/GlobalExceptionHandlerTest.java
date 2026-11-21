@@ -899,4 +899,49 @@ class GlobalExceptionHandlerTest {
         assertEquals(413, tooLarge.getBody().status());
         assertEquals("C001", tooLarge.getBody().code());
     }
+
+    @Test
+    @DisplayName("HandlerMethodValidationException 도 FieldErrorItem 목록과 결정적 정렬로 400 을 내려준다")
+    void testHandleHandlerMethodValidationExceptionExtractsSortedFieldErrors() {
+        HandlerMethodValidationException ex = mock(HandlerMethodValidationException.class);
+        java.lang.reflect.Method method = mock(java.lang.reflect.Method.class);
+        when(ex.getMethod()).thenReturn(method);
+        when(method.getName()).thenReturn("batchSave");
+
+        org.springframework.core.MethodParameter bodyParam = mock(org.springframework.core.MethodParameter.class);
+        when(bodyParam.getParameterName()).thenReturn("items");
+        org.springframework.validation.FieldError second =
+                new org.springframework.validation.FieldError("item", "title", "제목은 필수입니다");
+        org.springframework.validation.FieldError first =
+                new org.springframework.validation.FieldError("item", "code", "코드는 필수입니다");
+        org.springframework.context.MessageSourceResolvable paramErr =
+                new org.springframework.context.support.DefaultMessageSourceResolvable(
+                        new String[]{"Min"}, null, "1 이상이어야 합니다");
+
+        org.springframework.core.MethodParameter queryParam = mock(org.springframework.core.MethodParameter.class);
+        when(queryParam.getParameterName()).thenReturn("limit");
+
+        org.springframework.validation.method.ParameterValidationResult bodyResult =
+                mock(org.springframework.validation.method.ParameterValidationResult.class);
+        when(bodyResult.getMethodParameter()).thenReturn(bodyParam);
+        when(bodyResult.getResolvableErrors()).thenReturn(List.of(second, first));
+
+        org.springframework.validation.method.ParameterValidationResult queryResult =
+                mock(org.springframework.validation.method.ParameterValidationResult.class);
+        when(queryResult.getMethodParameter()).thenReturn(queryParam);
+        when(queryResult.getResolvableErrors()).thenReturn(List.of(paramErr));
+
+        when(ex.getParameterValidationResults()).thenReturn(List.of(bodyResult, queryResult));
+
+        ResponseEntity<ApiResponse<Object>> response = handler.handleHandlerMethodValidationException(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("C001", response.getBody().code());
+        assertEquals(List.of(
+                        new nuri.foundation.core.response.FieldErrorItem("code", "코드는 필수입니다"),
+                        new nuri.foundation.core.response.FieldErrorItem("limit", "1 이상이어야 합니다"),
+                        new nuri.foundation.core.response.FieldErrorItem("title", "제목은 필수입니다")),
+                response.getBody().errors());
+        assertEquals("코드는 필수입니다, 1 이상이어야 합니다, 제목은 필수입니다", response.getBody().message());
+    }
 }

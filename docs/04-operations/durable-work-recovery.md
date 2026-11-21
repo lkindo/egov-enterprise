@@ -68,6 +68,8 @@ SMS 실패 알림은 저장된 초기 POST 거절(`F`, 유효한 내부 `REJECTE
 
 완료된 의도는 이벤트 재발행의 중복 방지 근거이기도 하다. 성공 작업과 삭제 영수증을 별도 정책 없이 일괄 삭제하지 않는다.
 
+운영 환경에서 완료된 작업 행의 장기 누적을 관리해야 할 때는 `DurableJobRetentionScheduler`(`DURABLE_WORK_RETENTION_ENABLED=true`, 기본 `false`)로 보존 기간(`DURABLE_WORK_RETENTION_DAYS`, 기본 `30`일, 최소 `1`일 하한 가드)이 지난 `SUCCEEDED` 행만 배치 단위로 정리할 수 있다. `FAILED`·`PENDING`·`RETRY`·`RUNNING` 작업과 `.deletions` 삭제 영수증 파일은 이 정리 대상에 포함되지 않으며, 활성화 시 설정한 보존 기간보다 오래된 이벤트 재발행 중복 방지는 만료된다.
+
 ## 검증의 범위
 
 `DurableWorkIntegrationTest`의 검사 범위는 격리 PostgreSQL의 업무 롤백·중복 의도·임대 만료·복수 작업자·시도 한도·재처리 감사와 현재 시도만 가능한 임대 갱신, 종료 시 payload 정리다. `DurableWorkSchedulingConfigTest`와 `DurableWorkDispatcherTest`는 실행기 포화·선점 시점·스케줄러 진행·heartbeat 취소, 유형별 선점·슬롯 확보의 원자성, 긴 작업 중 다른 유형의 진행과 예외 후 슬롯 반환을 다룬다. `LocalFileStorageServiceTest`와 `FileDeletionTransactionTest`는 실제 임시 파일의 교체·중단·롤백 경계를 확인한다. 테스트 파일의 존재는 통과 증거가 아니며 실행 결과는 해당 변경의 검증 기록에서 확인한다. 운영 저장소에서의 중단·복구 리허설과 배포는 별도 승인 범위다.

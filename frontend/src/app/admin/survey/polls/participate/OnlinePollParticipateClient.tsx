@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { pollUserService } from '@/services/business/user/poll/PollUserService';
 import { OnlinePollManageDetailVO, OnlinePollItemVO } from '@/types/business/poll';
@@ -12,9 +13,7 @@ import {
   UserCheck,
   Target
 } from 'lucide-react';
-;
 import { Button } from '@/components/ui/button';
-;
 import { cn } from '@/lib/utils';
 import { toDisplayYmd } from '@/lib/format-date';
 import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
@@ -22,71 +21,73 @@ import { getPollStatus, POLL_STATUS_LABEL, isPollActive } from '@/lib/poll-statu
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 
+const POLL_LIST_QUERY_KEY = ['polls', 'participate', 'list'] as const;
+
 export default function OnlinePollParticipateClient() {
   const toast = useToast();
   const confirm = useConfirm();
+  const queryClient = useQueryClient();
   /** 확인 대화상자가 열리기 전의 연속 클릭이 두 번째 확인·제출을 만들지 않게 하는 동기 잠금. */
   const voteLockRef = useRef(false);
-  const [polls, setPolls] = useState<OnlinePollManageDetailVO[]>([]);
-  /** 조회 실패 사유. null 이면 정상 — 실패와 '없음' 을 같은 화면으로 그리지 않는다. */
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [votedPollSns, setVotedPollSns] = useState<number[]>([]);
   const [selectedPoll, setSelectedPoll] = useState<OnlinePollManageDetailVO | null>(null);
   const [pollItems, setPollItems] = useState<OnlinePollItemVO[]>([]);
   const [selectedItemSn, setSelectedItemSn] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'vote' | 'result'>('list');
-  const listRequestRef = useRef(0);
   const selectionRequestRef = useRef(0);
   const selectedPollSnRef = useRef<number | undefined>(undefined);
   const lifecycleRef = useRef(0);
   const completedPollsRef = useRef(new Set<number>());
   const completedPollItemsRef = useRef(new Map<number, { requestId: number; items: OnlinePollItemVO[] }>());
+  const lastErrorAtRef = useRef(0);
   // 저장 포맷과 같은 'yyyyMMdd' 8자 기준일.
   const todayStr = useTodayStorageYmd();
 
-  const runFetchPolls = useCallback(async (requestId: number) => {
-    try {
-      const res = await pollUserService.getPollList({ page: 1, size: 100 });
-      if (requestId !== listRequestRef.current) return;
-      // Support both Spring Data JPA Page (content) and legacy list format
-      setPolls(res.list || []);
-      setLoadError(null);
-    } catch {
-      if (requestId !== listRequestRef.current) return;
-      setLoadError('투표 목록을 불러오지 못했습니다.');
-      toast.error('투표 목록을 불러오지 못했습니다.');
-    } finally {
-      if (requestId === listRequestRef.current) setLoading(false);
-    }
-  }, [toast]);
+  const pollListQuery = useQuery({
+    queryKey: POLL_LIST_QUERY_KEY,
+    queryFn: () => pollUserService.getPollList({ page: 1, size: 100 }),
+    retry: false,
+  });
 
-  const fetchPolls = useCallback(async () => {
-    const requestId = ++listRequestRef.current;
-    setLoading(true);
-    // [2026-08-29] 조회 실패를 '없음'으로 그리지 않는다.
-    //   종전 catch 는 토스트만 띄우고 polls 를 [] 로 둔 채 로딩을 내렸다. 실패 상태를 남기는
-    //   state 도 재시도 경로도 없어, 토스트가 사라지면 화면에는 '활성 설문이 없습니다' 라는
-    //   단정만 남았다 — 사용자는 조회가 실패한 줄 모른다.
-    setLoadError(null);
-    await runFetchPolls(requestId);
-  }, [runFetchPolls]);
+  const polls: OnlinePollManageDetailVO[] = (pollListQuery.data?.list || []).map((poll) => (
+    poll.pollSn !== undefined && votedPollSns.includes(poll.pollSn)
+      ? { ...poll, hasVoted: true }
+      : poll
+  ));
+  /** 조회 실패 사유. null 이면 정상 — 실패와 '없음' 을 같은 화면으로 그리지 않는다. */
+  const loadError = pollListQuery.isError ? '투표 목록을 불러오지 못했습니다.' : null;
+  const listLoading = pollListQuery.isPending || (!pollListQuery.data && pollListQuery.isFetching);
+  const loading = viewMode === 'list' ? listLoading || detailLoading : detailLoading;
 
   useEffect(() => {
-    const requestId = ++listRequestRef.current;
-    void runFetchPolls(requestId);
+    if (
+      pollListQuery.isError
+      && pollListQuery.errorUpdatedAt > 0
+      && pollListQuery.errorUpdatedAt !== lastErrorAtRef.current
+    ) {
+      lastErrorAtRef.current = pollListQuery.errorUpdatedAt;
+      toast.error('투표 목록을 불러오지 못했습니다.');
+    }
+  }, [pollListQuery.isError, pollListQuery.errorUpdatedAt, toast]);
+
+  const fetchPolls = async () => {
+    await pollListQuery.refetch();
+  };
+
+  useEffect(() => {
     return () => {
-      listRequestRef.current += 1;
       selectionRequestRef.current += 1;
       selectedPollSnRef.current = undefined;
       lifecycleRef.current += 1;
     };
-  }, [runFetchPolls]);
+  }, []);
 
   const handleSelectPoll = async (poll: OnlinePollManageDetailVO) => {
     const requestId = ++selectionRequestRef.current;
     selectedPollSnRef.current = poll.pollSn;
-    setLoading(true);
+    setDetailLoading(true);
     try {
       const items = await pollUserService.getPollItemList(poll.pollSn!);
       if (requestId !== selectionRequestRef.current) return;
@@ -109,14 +110,27 @@ export default function OnlinePollParticipateClient() {
       if (requestId !== selectionRequestRef.current) return;
       toast.error('투표 상세 정보를 불러오지 못했습니다.');
     } finally {
-      if (requestId === selectionRequestRef.current) setLoading(false);
+      if (requestId === selectionRequestRef.current) setDetailLoading(false);
     }
   };
 
-  /** 목록 카드와 열린 투표에 참여 완료를 반영한다. 다시 목록으로 돌아가도 같은 투표를 또 열지 않게 한다. */
+  /** 목록 카드와 열린 투표 및 QueryClient 캐시에 참여 완료를 반영한다. 재마운트·목록 복귀 시에도 같은 투표를 또 열지 않게 한다. */
   const markVoted = (pollSn: number | undefined) => {
-    if (pollSn !== undefined) completedPollsRef.current.add(pollSn);
-    setPolls((current) => current.map((poll) => (poll.pollSn === pollSn ? { ...poll, hasVoted: true } : poll)));
+    if (pollSn !== undefined) {
+      completedPollsRef.current.add(pollSn);
+      setVotedPollSns((current) => (current.includes(pollSn) ? current : [...current, pollSn]));
+      queryClient.setQueryData<{ list?: OnlinePollManageDetailVO[] }>(POLL_LIST_QUERY_KEY, (current) => (
+        current?.list
+          ? {
+              ...current,
+              list: current.list.map((poll) => (
+                poll.pollSn === pollSn ? { ...poll, hasVoted: true } : poll
+              )),
+            }
+          : current
+      ));
+      void queryClient.invalidateQueries({ queryKey: POLL_LIST_QUERY_KEY });
+    }
     setSelectedPoll((current) => (current && current.pollSn === pollSn ? { ...current, hasVoted: true } : current));
   };
 

@@ -138,7 +138,9 @@ public class CommunityService {
         }
 
         if (searchWrd != null && !searchWrd.isEmpty()) {
-            if ("0".equals(searchCnd)) {
+            if ("1".equals(searchCnd)) {
+                builder.and(qCommunity.cmntyIntroCn.contains(searchWrd));
+            } else {
                 builder.and(qCommunity.cmntyNm.contains(searchWrd));
             }
         }
@@ -148,7 +150,7 @@ public class CommunityService {
                 .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(qCommunity.crtDt.desc())
+                .orderBy(qCommunity.crtDt.desc(), qCommunity.cmntySn.desc())
                 .fetch();
 
         long totalCount = Objects.requireNonNullElse(queryFactory
@@ -246,12 +248,15 @@ public class CommunityService {
         community.delete();
     }
 
+    private static final int PORTLET_COMMUNITY_LIMIT = 10;
+
     public List<CommunityDto> getCommunityListPortlet() {
         QCommunity qCommunity = QCommunity.community;
         return queryFactory
                 .selectFrom(qCommunity)
-                .where(qCommunity.useYn.eq("Y"))
-                .orderBy(qCommunity.crtDt.desc())
+                .where(qCommunity.regSeCd.eq("REGC01").and(qCommunity.useYn.eq("Y")))
+                .orderBy(qCommunity.crtDt.desc(), qCommunity.cmntySn.desc())
+                .limit(PORTLET_COMMUNITY_LIMIT)
                 .fetch()
                 .stream()
                 .map(this::toDto)

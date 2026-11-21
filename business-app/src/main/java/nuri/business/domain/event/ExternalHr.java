@@ -110,9 +110,9 @@ public class ExternalHr implements Persistable<ExternalHrId> {
         this.endTelno = endTelno;
         this.emlAddr = emlAddr;
         this.frstRgtrId = frstRgtrId;
-        this.crtDt = LocalDateTime.now();
+        this.crtDt = nuri.foundation.core.util.ServiceTime.now();
         this.lastMdfrId = lastMdfrId;
-        this.mdfcnDt = LocalDateTime.now();
+        this.mdfcnDt = nuri.foundation.core.util.ServiceTime.now();
     }
 
     /**
@@ -131,6 +131,6 @@ public class ExternalHr implements Persistable<ExternalHrId> {
         this.endTelno = endTelno;
         this.emlAddr = emlAddr;
         this.lastMdfrId = lastMdfrId;
-        this.mdfcnDt = LocalDateTime.now();
+        this.mdfcnDt = nuri.foundation.core.util.ServiceTime.now();
     }
 }

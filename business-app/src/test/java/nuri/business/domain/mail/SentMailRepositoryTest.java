@@ -247,4 +247,24 @@ class SentMailRepositoryTest {
         em.clear();
         return mail.getEmlDsptchSn();
     }
+
+    @Test
+    @DisplayName("[GAP-MAIL-001] claimQueued 는 dsptchDt 를 차지 시각으로 옮겨 대기열 지연이 재발송 멈춤 오판으로 이어지지 않게 한다")
+    void claimQueued_updatesDsptchDtToClaimedAt() {
+        java.time.LocalDateTime queuedAt = java.time.LocalDateTime.of(2026, 9, 26, 12, 0);
+        java.time.LocalDateTime claimedAt = queuedAt.plusMinutes(15);
+        Long id = saveMail("owner", "Q", queuedAt);
+
+        assertThat(sentMailRepository.claimQueued(id, queuedAt, claimedAt)).isEqualTo(1);
+        SentMail claimed = sentMailRepository.findById(id).orElseThrow();
+        assertThat(claimed.getDsptchRsltCd()).isEqualTo("P");
+        assertThat(claimed.getDsptchDt()).isEqualTo(claimedAt);
+
+        // 대기열 15분 지연 직후 재발송 시도는 방금 시작한 시도를 멈춤으로 오인하지 않는다.
+        assertThat(sentMailRepository.claimForResend(id, "owner", claimedAt, claimedAt.minusMinutes(10))).isZero();
+        // 결과 기록은 새 차지 시각(claimedAt)으로만 성공하고 이전 queuedAt 은 거부된다.
+        assertThat(sentMailRepository.recordResult(id, queuedAt, "S")).isZero();
+        assertThat(sentMailRepository.recordResult(id, claimedAt, "S")).isEqualTo(1);
+        assertThat(sentMailRepository.findById(id).orElseThrow().getDsptchRsltCd()).isEqualTo("S");
+    }
 }

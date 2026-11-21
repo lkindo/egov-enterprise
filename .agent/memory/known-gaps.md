@@ -100,7 +100,7 @@ refresh_triggers:
 | GAP-LOGIN-001 | P3 | open | login policy | 로그인 정책의 `dpcn_prm_yn` 은 읽는 코드가 없고 제품은 단일 세션을 유지한다 — 폐기 규칙을 설계하기 전에는 화면에 열지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-LOGIN-002 | P2 | open | login lockout | 잠금 중 관리 작업 및 실패 횟수 분리의 PostgreSQL 통합 시험을 통과했다. 벤더 인증과 반복 잠금에 따른 신규 로그인 지연 위험이 남았다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-JWT-001 | P2 | open | jwt signing transition | ADR-0060 1차는 옛 HMAC 토큰도 받고 Next 에 서명 비밀이 남는다 — 1차 배포 7일 뒤 2차(HMAC 수용 끄기·Next 비밀 제거)를 재기록 묶음과 맞춰 연다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
-| GAP-MAIL-001 | P2 | open | mail delivery | 접수 시각으로 멈춤을 판정해 메일이 두 번 나갈 수 있고 사용자별 발송 한도가 없다 — 고칠 파일이 벤더 증거 입력이라 재기록 묶음에서 고친다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
+| GAP-MAIL-001 | P2 | open | mail delivery | ① 차지 시각 바인딩(`claimQueued`) 해결 완료(2026-11-21). ② 사용자별 발송 한도 미정. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-COMPOSE-001 | P3 | open | composer degraded compositions | 기능 저하 생성물의 화면 일부가 사실과 다르게 말할 수 있다 — 목적지 이름 규칙 밖의 링크·상수를 거친 목적지와 문장 속 메뉴 이름은 아직 기계로 대조하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#composer) |
 | GAP-COMPOSE-002 | P3 | open | generated schema changes | 새 Java·미배정 권한은 별도 등록으로 지원한다. 기존 소스 수정·새 화면·마이그레이션 연계의 자동 등록은 남아 있다. | [상세](../../docs/04-operations/known-gaps-detail.md#composer) |
 | GAP-MIG-002 | P2 | open | migration protected keys | 암호화할 소스 컬럼은 키로 쓸 수 없어(평문이 제어 표에 남는다) 그런 컬럼만 키인 테이블과 숫자형 보호 소스는 지금 적재할 수 없다. | [상세](../../docs/04-operations/known-gaps-detail.md#migration) |

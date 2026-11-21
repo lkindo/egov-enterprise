@@ -1,5 +1,16 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createAppQueryClient } from '@/lib/query/list-query-defaults';
+
+const render = (ui: React.ReactElement) => rtlRender(ui, {
+  wrapper: ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      {children}
+    </QueryClientProvider>
+  ),
+});
 
 /**
  * [2026-09-26 DIP V7] 투표 참여 화면이 참여 여부(hasVoted)를 쓰는지.
@@ -313,5 +324,43 @@ describe('투표 제출 확인', () => {
     await waitFor(() => expect(mocks.participatePoll).toHaveBeenCalledTimes(1));
     expect(mocks.participatePoll).toHaveBeenCalledWith({ pollSn: 1, pollArtclSn: 12 });
     expect(await screen.findByText('집계 결과')).toBeInTheDocument();
+  });
+
+  it('운영 QueryClient(staleTime 60s)에서 투표 후 언마운트·재마운트해도 참여 완료 캐시를 유지해 결과로 연다', async () => {
+    let votedOnServer = false;
+    mocks.getPollList.mockImplementation(async () => ({
+      list: [{ ...activePoll, pollSn: 1, pollNm: '점심 메뉴', hasVoted: votedOnServer }],
+    }));
+    mocks.participatePoll.mockImplementationOnce(async () => { votedOnServer = true; });
+    mocks.getPollItemList.mockResolvedValue([
+      { pollSn: 1, pollArtclSn: 11, pollArtclNm: '찬성', pollIemCo: null },
+      { pollSn: 1, pollArtclSn: 12, pollArtclNm: '반대', pollIemCo: null },
+    ]);
+    const appClient = createAppQueryClient();
+    const firstView = rtlRender(
+      <QueryClientProvider client={appClient}>
+        <OnlinePollParticipateClient />
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: /점심 메뉴/ }));
+    fireEvent.click(await screen.findByRole('button', { name: '찬성' }));
+    fireEvent.click(screen.getByRole('button', { name: /투표 제출하기/ }));
+    expect(await screen.findByText('집계 결과')).toBeInTheDocument();
+
+    firstView.unmount();
+
+    const remountView = rtlRender(
+      <QueryClientProvider client={appClient}>
+        <OnlinePollParticipateClient />
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText('참여 완료 · 결과 보기')).toBeInTheDocument();
+    expect(mocks.getPollList).toHaveBeenCalledTimes(2);
+    fireEvent.click(screen.getByRole('button', { name: /점심 메뉴/ }));
+    expect(await screen.findByText('집계 결과')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /투표 제출하기/ })).toBeNull();
+    remountView.unmount();
   });
 });

@@ -7,6 +7,7 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.business.core.config.BoardIdProperties;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.board.Board;
+import nuri.business.domain.board.BoardScrapCandidate;
 import nuri.business.domain.board.BoardDetailResult;
 import nuri.business.domain.board.BoardMaster;
 import nuri.business.domain.board.BoardMasterRepository;
@@ -25,6 +26,7 @@ import nuri.business.service.board.dto.BoardPostPinBatchRequest;
 import nuri.business.service.board.dto.BoardPostPinRequest;
 import nuri.business.service.board.dto.BoardSaveRequest;
 import nuri.business.service.board.dto.BoardStatsResponse;
+import nuri.business.service.board.dto.PostingStatus;
 import nuri.foundation.core.event.PostCreatedEvent;
 import nuri.foundation.core.util.EntityVersions;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
@@ -712,6 +714,55 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
         @Transactional(readOnly = true)
         public void assertScrapablePost(String bbsId, Long pstSn) {
                 assertCommentAccess(bbsId, pstSn);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public java.util.Set<PostRef> findScrapablePosts(java.util.Collection<PostRef> targets) {
+                if (targets == null || targets.isEmpty() || !SecurityUtil.hasPermission("BOARD_READ")) {
+                        return java.util.Set.of();
+                }
+                java.util.List<PostRef> distinct = targets.stream()
+                                .filter(ref -> ref != null && StringUtils.hasText(ref.bbsId()) && ref.pstSn() > 0)
+                                .distinct()
+                                .toList();
+                if (distinct.isEmpty()) {
+                        return java.util.Set.of();
+                }
+                java.util.List<BoardScrapCandidate> candidates = boardRepository.findScrapCandidates(distinct);
+                if (candidates.isEmpty()) {
+                        return java.util.Set.of();
+                }
+                boolean readAll = SecurityUtil.hasPermission("BOARD_READ_ALL");
+                String viewerEsntlId = SecurityUtil.getCurrentEsntlId()
+                                .filter(StringUtils::hasText)
+                                .orElse(null);
+                boolean needsCommunityLookup = !readAll && candidates.stream().anyMatch(c -> c.cmntySn() != null);
+                java.util.Set<Long> accessibleCommunities = java.util.Set.of();
+                if (needsCommunityLookup && viewerEsntlId != null && communityBoardAccess != null) {
+                        java.util.Set<Long> resolved = communityBoardAccess.accessibleCommunityIds(viewerEsntlId);
+                        if (resolved != null) {
+                                accessibleCommunities = resolved;
+                        }
+                }
+                String today = today();
+                java.util.Set<PostRef> accessible = new java.util.LinkedHashSet<>();
+                for (BoardScrapCandidate candidate : candidates) {
+                        if (candidate.cmntySn() != null && !readAll
+                                        && !accessibleCommunities.contains(candidate.cmntySn())) {
+                                continue;
+                        }
+                        boolean isOwner = viewerEsntlId != null && viewerEsntlId.equals(candidate.userId());
+                        if ("Y".equalsIgnoreCase(candidate.scrtYn()) && !readAll && !isOwner) {
+                                continue;
+                        }
+                        if (postingStatusOf(candidate.pstBgngYmd(), candidate.pstEndYmd(), today) != PostingStatus.POSTING
+                                        && !readAll && !isOwner) {
+                                continue;
+                        }
+                        accessible.add(new PostRef(candidate.bbsId(), candidate.pstSn()));
+                }
+                return java.util.Collections.unmodifiableSet(accessible);
         }
 
         /**

@@ -42,8 +42,8 @@ class MailAsyncProcessorTest {
     @BeforeEach
     void setUp() {
         mailAsyncProcessor.setSelf(mailAsyncProcessor);
-        lenient().when(sentMailRepository.claimQueued(1L, QUEUED)).thenReturn(1);
-        lenient().when(sentMailRepository.recordResult(eq(1L), eq(QUEUED), anyString())).thenReturn(1);
+        lenient().when(sentMailRepository.claimQueued(eq(1L), eq(QUEUED), any())).thenReturn(1);
+        lenient().when(sentMailRepository.recordResult(eq(1L), any(), anyString())).thenReturn(1);
         lenient().when(meterRegistry.counter(anyString(), any(String[].class)))
             .thenReturn(mock(io.micrometer.core.instrument.Counter.class));
     }
@@ -57,7 +57,7 @@ class MailAsyncProcessorTest {
         mailAsyncProcessor.dispatchCommitted(1L, QUEUED, "Sub", "Cn", "from", "to", null);
 
         verify(emailSender).send(anyString(), anyString(), anyString(), anyString());
-        verify(sentMailRepository).recordResult(1L, QUEUED, "S");
+        verify(sentMailRepository).recordResult(eq(1L), any(), eq("S"));
     }
 
     @Test
@@ -93,7 +93,7 @@ class MailAsyncProcessorTest {
         mailAsyncProcessor.dispatchCommitted(1L, QUEUED, "Sub", "Cn", "from", "to", null);
 
         verify(emailSender, times(1)).send(anyString(), anyString(), anyString(), anyString());
-        verify(sentMailRepository).recordResult(1L, QUEUED, "F");
+        verify(sentMailRepository).recordResult(eq(1L), any(), eq("F"));
     }
 
     @Test
@@ -134,7 +134,7 @@ class MailAsyncProcessorTest {
 
         processor.dispatchCommitted(1L, QUEUED, "Sub", "Cn", "from", "to", null);
 
-        verify(sentMailRepository).recordResult(1L, QUEUED, "F");
+        verify(sentMailRepository).recordResult(eq(1L), any(), eq("F"));
         org.assertj.core.api.Assertions.assertThat(registry.counter("mail.dispatch.total", "result", "failure").count())
                 .isEqualTo(1);
         org.assertj.core.api.Assertions.assertThat(registry.find("mail.dispatch.total").tag("result", "success").counter())
@@ -182,7 +182,7 @@ class MailAsyncProcessorTest {
     @Test
     @DisplayName("비동기 메일 발송 - 엔티티 없음")
     void processSending_NoEntity() throws Exception {
-        given(sentMailRepository.claimQueued(1L, QUEUED)).willReturn(0);
+        given(sentMailRepository.claimQueued(eq(1L), eq(QUEUED), any())).willReturn(0);
 
         mailAsyncProcessor.dispatchCommitted(1L, QUEUED, "Sub", "Cn", "from", "to", null).join();
 
@@ -192,7 +192,7 @@ class MailAsyncProcessorTest {
 
     @Test
     void staleFailureResultDoesNotNotifyTheNewAttempt() {
-        given(sentMailRepository.recordResult(1L, QUEUED, "F")).willReturn(0);
+        given(sentMailRepository.recordResult(eq(1L), any(), eq("F"))).willReturn(0);
         var processor = new MailAsyncProcessor(new LoggingEmailSender(), sentMailRepository,
                 new io.micrometer.core.instrument.simple.SimpleMeterRegistry(), eventPublisher);
         processor.setSelf(processor);
@@ -203,14 +203,15 @@ class MailAsyncProcessorTest {
     @Test
     void failureEventIdentityUsesTheIntentAttemptIncludingNanoseconds() {
         var intentTime = QUEUED.withNano(123456789);
+        var claimedAt = intentTime.plusMinutes(5);
         SentMail mail = SentMail.builder().emlDsptchSn(1L).emlTtl("subject").rcvrNm("recipient").build();
         mail.queueAt(intentTime.truncatedTo(java.time.temporal.ChronoUnit.MICROS));
         when(sentMailRepository.findById(1L)).thenReturn(Optional.of(mail));
-        when(sentMailRepository.recordResult(eq(1L), any(java.time.LocalDateTime.class), eq("F"))).thenReturn(1);
+        when(sentMailRepository.recordResult(eq(1L), eq(claimedAt), eq("F"))).thenReturn(1);
 
-        mailAsyncProcessor.markResult(1L, intentTime, "F", "SENDER-1");
-        mailAsyncProcessor.markResult(1L, intentTime, "F", "SENDER-1");
-        mailAsyncProcessor.markResult(1L, intentTime.plusNanos(1), "F", "SENDER-1");
+        mailAsyncProcessor.markResult(1L, intentTime, claimedAt, "F", "SENDER-1");
+        mailAsyncProcessor.markResult(1L, intentTime, claimedAt, "F", "SENDER-1");
+        mailAsyncProcessor.markResult(1L, intentTime.plusNanos(1), claimedAt, "F", "SENDER-1");
 
         var captor = org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
         verify(eventPublisher, times(3)).publishEvent(captor.capture());
@@ -227,7 +228,7 @@ class MailAsyncProcessorTest {
         var failure = new IllegalStateException("synthetic notification failure");
         doThrow(failure).when(eventPublisher).publishEvent(any(Object.class));
 
-        assertThatThrownBy(() -> mailAsyncProcessor.markResult(1L, QUEUED, "F", "SENDER-1"))
+        assertThatThrownBy(() -> mailAsyncProcessor.markResult(1L, QUEUED, QUEUED, "F", "SENDER-1"))
                 .isSameAs(failure);
         verifyNoInteractions(emailSender);
     }
@@ -239,7 +240,7 @@ class MailAsyncProcessorTest {
         processor.setSelf(processor);
 
         assertThat(processor.recoverRecording(new IllegalStateException("synthetic notice failure"),
-                1L, QUEUED, "F", "SENDER-1")).isTrue();
+                1L, QUEUED, QUEUED, "F", "SENDER-1")).isTrue();
 
         verify(sentMailRepository, times(1)).recordResult(1L, QUEUED, "F");
         assertThat(registry.get("mail.dispatch.recording.failures").counter().count()).isEqualTo(1);
@@ -255,7 +256,7 @@ class MailAsyncProcessorTest {
         when(sentMailRepository.recordResult(1L, QUEUED, "F")).thenReturn(0);
 
         assertThat(processor.recoverRecording(new IllegalStateException("synthetic recording failure"),
-                1L, QUEUED, "F", "SENDER-1")).isFalse();
+                1L, QUEUED, QUEUED, "F", "SENDER-1")).isFalse();
 
         verify(sentMailRepository, times(1)).recordResult(1L, QUEUED, "F");
         assertThat(registry.get("mail.dispatch.recording.failures").counter().count()).isEqualTo(1);
@@ -272,7 +273,7 @@ class MailAsyncProcessorTest {
                 .thenThrow(new org.springframework.dao.TransientDataAccessResourceException("synthetic database outage"));
 
         assertThat(processor.recoverRecording(new IllegalStateException("synthetic notice failure"),
-                1L, QUEUED, "F", "SENDER-1")).isFalse();
+                1L, QUEUED, QUEUED, "F", "SENDER-1")).isFalse();
 
         verify(sentMailRepository, times(1)).recordResult(1L, QUEUED, "F");
         assertThat(registry.get("mail.dispatch.recording.failures").counter().count()).isEqualTo(1);
@@ -287,7 +288,7 @@ class MailAsyncProcessorTest {
         processor.setSelf(processor);
 
         assertThat(processor.recoverRecording(new IllegalStateException("synthetic recording failure"),
-                1L, QUEUED, "S", "SENDER-1")).isFalse();
+                1L, QUEUED, QUEUED, "S", "SENDER-1")).isFalse();
 
         verifyNoInteractions(sentMailRepository, eventPublisher, emailSender);
         assertThat(registry.get("mail.dispatch.recording.failures").counter().count()).isEqualTo(1);
@@ -301,9 +302,9 @@ class MailAsyncProcessorTest {
         processor.setSelf(processor);
 
         assertThat(processor.recoverRecording(new IllegalStateException("synthetic recording failure"),
-                1L, QUEUED, "F", null)).isTrue();
+                1L, QUEUED, QUEUED, "F", null)).isTrue();
         assertThat(processor.recoverRecording(new IllegalStateException("synthetic recording failure"),
-                1L, QUEUED, "F", "  ")).isTrue();
+                1L, QUEUED, QUEUED, "F", "  ")).isTrue();
 
         verify(sentMailRepository, times(2)).recordResult(1L, QUEUED, "F");
         assertThat(registry.get("mail.dispatch.recording.failures").counter().count()).isEqualTo(2);

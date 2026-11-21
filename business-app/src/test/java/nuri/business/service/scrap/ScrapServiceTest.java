@@ -40,12 +40,46 @@ class ScrapServiceTest {
     @Mock
     private ScrapRepository scrapRepository;
 
+    @Mock
+    private nuri.foundation.core.board.BoardPostAccessPort boardPostAccess;
+
     // 매핑은 실제 MapStruct 구현으로 검증한다(모킹 시 URL/설명 누락 회귀를 잡지 못함).
     @Spy
     private ScrapMapper scrapMapper = new ScrapMapperImpl();
 
     @InjectMocks
     private ScrapService scrapService;
+
+    @Test
+    @DisplayName("내 스크랩 목록 조회 — 여러 게시판 글 가용성을 페이지당 1회 일괄 조회로 판정한다(N+1 방지)")
+    void getMyScrapList_batchesBoardTargetAvailabilityInSinglePortCall() {
+        PageRequest pageable = PageRequest.of(0, 10);
+        Scrap visiblePost = Scrap.builder().scrapSn(1L).scrapNm("공개글")
+                .scrapUrl("/admin/community/boards/detail?bbsId=BBS_1&pstSn=10").useYn("Y").build();
+        Scrap hiddenPost = Scrap.builder().scrapSn(2L).scrapNm("비밀글")
+                .scrapUrl("/admin/community/boards/detail?bbsId=BBS_2&pstSn=20").useYn("Y").build();
+        Scrap external = Scrap.builder().scrapSn(3L).scrapNm("외부링크")
+                .scrapUrl("https://example.com").useYn("Y").build();
+        given(scrapRepository.findByFrstRgtrIdAndUseYnOrderByScrapSnDesc(eq("user1"), eq("Y"), eq(pageable)))
+                .willReturn(new PageImpl<>(List.of(visiblePost, hiddenPost, external)));
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ"))
+                .thenReturn(true);
+        nuri.foundation.core.board.BoardPostAccessPort.PostRef ref1 =
+                new nuri.foundation.core.board.BoardPostAccessPort.PostRef("BBS_1", 10L);
+        nuri.foundation.core.board.BoardPostAccessPort.PostRef ref2 =
+                new nuri.foundation.core.board.BoardPostAccessPort.PostRef("BBS_2", 20L);
+        given(boardPostAccess.findScrapablePosts(org.mockito.ArgumentMatchers.anyCollection()))
+                .willReturn(java.util.Set.of(ref1));
+
+        Page<ScrapDto> result = scrapService.getScrapList("user1", pageable);
+
+        assertThat(result.getContent()).extracting(ScrapDto::getTargetAvailable)
+                .containsExactly(Boolean.TRUE, Boolean.FALSE, null);
+        verify(boardPostAccess, org.mockito.Mockito.times(1))
+                .findScrapablePosts(java.util.Set.of(ref1, ref2));
+        verify(boardPostAccess, org.mockito.Mockito.never()).assertScrapablePost(
+                org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyLong());
+    }
 
     @Test
     @DisplayName("내 스크랩 목록 조회")

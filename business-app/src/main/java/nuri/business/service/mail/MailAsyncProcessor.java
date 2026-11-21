@@ -43,18 +43,21 @@ public class MailAsyncProcessor {
             java.time.LocalDateTime queuedAt, String sj, String emailCn, String dsptchPerson, String recptnPerson,
             String senderEsntlId) {
         if (Thread.currentThread().isInterrupted()) throw new IllegalStateException("Mail delivery interrupted");
-        if (!self.claimQueued(emlDsptchSn, queuedAt)) {
+        // MailService.acceptanceTime / isResendState 와 같은 JVM 시계를 써서 UTC/KST 환경 차이에 의한 차지·재발송 판정 불일치를 막는다.
+        java.time.LocalDateTime claimedAt = java.time.LocalDateTime.now()
+                .truncatedTo(java.time.temporal.ChronoUnit.MICROS);
+        if (!self.claimQueued(emlDsptchSn, queuedAt, claimedAt)) {
             return java.util.concurrent.CompletableFuture.completedFuture(null);
         }
         boolean delivered = self.deliverMail(emlDsptchSn, sj, emailCn, dsptchPerson, recptnPerson);
         meterRegistry.counter("mail.dispatch.total", "result", delivered ? "success" : "failure").increment();
-        self.recordResult(emlDsptchSn, queuedAt, delivered ? "S" : "F", senderEsntlId);
+        self.recordResult(emlDsptchSn, queuedAt, claimedAt, delivered ? "S" : "F", senderEsntlId);
         return java.util.concurrent.CompletableFuture.completedFuture(null);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public boolean claimQueued(Long emlDsptchSn, java.time.LocalDateTime queuedAt) {
-        return sentMailRepository.claimQueued(emlDsptchSn, queuedAt) == 1;
+    public boolean claimQueued(Long emlDsptchSn, java.time.LocalDateTime queuedAt, java.time.LocalDateTime claimedAt) {
+        return sentMailRepository.claimQueued(emlDsptchSn, queuedAt, claimedAt) == 1;
     }
 
     /** 결과 CAS를 이긴 시도의 알림을 같은 트랜잭션에 저장한다. */
@@ -160,13 +163,14 @@ public class MailAsyncProcessor {
         maxAttempts = 3,
         backoff = @org.springframework.retry.annotation.Backoff(delay = 1000)
     )
-    public boolean recordResult(Long emlDsptchSn, java.time.LocalDateTime queuedAt, String resultCode, String senderEsntlId) {
-        return self.markResult(emlDsptchSn, queuedAt, resultCode, senderEsntlId);
+    public boolean recordResult(Long emlDsptchSn, java.time.LocalDateTime queuedAt,
+            java.time.LocalDateTime claimedAt, String resultCode, String senderEsntlId) {
+        return self.markResult(emlDsptchSn, queuedAt, claimedAt, resultCode, senderEsntlId);
     }
 
     @org.springframework.retry.annotation.Recover
     public boolean recoverRecording(Exception e, Long emlDsptchSn, java.time.LocalDateTime queuedAt,
-            String resultCode, String senderEsntlId) {
+            java.time.LocalDateTime claimedAt, String resultCode, String senderEsntlId) {
         log.error("Mail result recording exhausted for dispatch serial number: {}, intendedResult: {}, errorType: {}",
                 emlDsptchSn, resultCode, e.getClass().getSimpleName());
         meterRegistry.counter("mail.dispatch.recording.failures").increment();
@@ -175,7 +179,7 @@ public class MailAsyncProcessor {
         // 삭제된 발신자 등의 영구 알림 오류가 확정된 F 결과까지 잃게 하지 않는다.
         // 결과 전용 CAS는 한 번만 시도하며 SMTP를 다시 호출하지 않는다.
         try {
-            boolean recorded = self.markFailureWithoutNotice(emlDsptchSn, queuedAt);
+            boolean recorded = self.markFailureWithoutNotice(emlDsptchSn, claimedAt);
             if (recorded && senderEsntlId != null && !senderEsntlId.isBlank()) {
                 meterRegistry.counter("mail.dispatch.failure.notices.lost").increment();
                 log.error("Mail failure notice was not recorded for dispatch serial number: {}, errorType: {}",
@@ -194,8 +198,9 @@ public class MailAsyncProcessor {
      * 발송 결과와 실패 알림을 함께 기록한다. 커밋 실패도 recordResult 프록시가 재시도한다.
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public boolean markResult(Long emlDsptchSn, java.time.LocalDateTime queuedAt, String resultCode, String senderEsntlId) {
-        if (sentMailRepository.recordResult(emlDsptchSn, queuedAt, resultCode) != 1) return false;
+    public boolean markResult(Long emlDsptchSn, java.time.LocalDateTime queuedAt,
+            java.time.LocalDateTime claimedAt, String resultCode, String senderEsntlId) {
+        if (sentMailRepository.recordResult(emlDsptchSn, claimedAt, resultCode) != 1) return false;
         if ("F".equals(resultCode) && senderEsntlId != null && !senderEsntlId.isBlank()) {
             notifyDeliveryFailure(emlDsptchSn, queuedAt, senderEsntlId);
         }
@@ -204,7 +209,7 @@ public class MailAsyncProcessor {
 
     /** 알림 저장이 소진돼도 확정 실패는 보존한다. 이 저장마저 실패하면 기존 P/UNKNOWN이 남는다. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public boolean markFailureWithoutNotice(Long emlDsptchSn, java.time.LocalDateTime queuedAt) {
-        return sentMailRepository.recordResult(emlDsptchSn, queuedAt, "F") == 1;
+    public boolean markFailureWithoutNotice(Long emlDsptchSn, java.time.LocalDateTime claimedAt) {
+        return sentMailRepository.recordResult(emlDsptchSn, claimedAt, "F") == 1;
     }
 }

@@ -149,13 +149,58 @@ public class GlobalExceptionHandler {
      * <p>Spring 6은 {@code List<@Valid T>}처럼 메서드 수준 제약을
      * {@link HandlerMethodValidationException}으로 전달하므로 일반 DTO 검증과 같은 400 계약으로 맞춘다.</p>
      */
+    /** 검증 오류 항목의 정렬 — 필드/파라미터명, 제약 코드, 문구 순. */
+    private static final java.util.Comparator<ValidationEntry> VALIDATION_ENTRY_ORDER =
+            java.util.Comparator.comparing(ValidationEntry::field,
+                            java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()))
+                    .thenComparing(ValidationEntry::code,
+                            java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()))
+                    .thenComparing(ValidationEntry::message,
+                            java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+
+    private record ValidationEntry(String field, String code, String message) {
+    }
+
     @ExceptionHandler(HandlerMethodValidationException.class)
     protected ResponseEntity<ApiResponse<Object>> handleHandlerMethodValidationException(
             HandlerMethodValidationException e) {
         log.warn(">>> Handler Method Validation Failed: {}", e.getMethod().getName());
+        java.util.List<ValidationEntry> entries = e.getParameterValidationResults().stream()
+                .flatMap(result -> {
+                    String fallbackParam = result.getMethodParameter().getParameterName();
+                    if (fallbackParam == null || fallbackParam.isBlank()) {
+                        fallbackParam = "parameter" + result.getMethodParameter().getParameterIndex();
+                    }
+                    final String paramName = fallbackParam;
+                    return result.getResolvableErrors().stream().map(error -> {
+                        if (error instanceof org.springframework.validation.FieldError fe) {
+                            return new ValidationEntry(fe.getField(), fe.getCode(), fe.getDefaultMessage());
+                        }
+                        String[] codes = error.getCodes();
+                        String code = (codes != null && codes.length > 0) ? codes[0] : null;
+                        return new ValidationEntry(paramName, code, error.getDefaultMessage());
+                    });
+                })
+                .sorted(VALIDATION_ENTRY_ORDER)
+                .toList();
+
+        if (entries.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE,
+                            resolve(CommonErrorCode.INVALID_INPUT_VALUE)));
+        }
+        String message = entries.stream()
+                .map(ValidationEntry::message)
+                .filter(m -> m != null && !m.isBlank())
+                .collect(Collectors.joining(", "));
+        if (message.isBlank()) {
+            message = resolve(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        java.util.List<nuri.foundation.core.response.FieldErrorItem> fieldErrors = entries.stream()
+                .map(entry -> new nuri.foundation.core.response.FieldErrorItem(entry.field(), entry.message()))
+                .toList();
         return ResponseEntity.badRequest()
-                .body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE,
-                        resolve(CommonErrorCode.INVALID_INPUT_VALUE)));
+                .body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE, message, fieldErrors));
     }
 
     /**

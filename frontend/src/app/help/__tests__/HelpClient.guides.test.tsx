@@ -1,6 +1,16 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const render = (ui: React.ReactElement) => rtlRender(ui, {
+  wrapper: ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      {children}
+    </QueryClientProvider>
+  ),
+});
 
 const harness = vi.hoisted(() => ({
   getFaqs: vi.fn(),

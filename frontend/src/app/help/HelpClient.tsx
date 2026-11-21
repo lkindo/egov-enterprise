@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { helpUserService, FAQ, QNA, type HelpGuide } from '@/services/business/user/help/HelpUserService';
+import type { PageResponse } from '@/types/foundation/system';
 import { isQnaSolved, QNA_STATUS_LABELS } from '@/lib/board/qna-status';
 import { QNA_BOARD_ID } from '@/config/board-ids';
 import { useSessionListState } from '@/lib/hooks/use-session-list-state';
@@ -100,17 +102,12 @@ const qnaDetailHref = (item: QNA) =>
 
 export default function HelpClient() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [listState, updateListState] = useSessionListState('help-center', HELP_LIST_STATE_DEFAULTS);
   const tab: HelpTab = isHelpTab(listState.tab) ? listState.tab : 'faq';
   const page = Number.isSafeInteger(listState.page) && listState.page > 0 ? listState.page : 1;
   const searchKeyword = listState.keyword;
   const setPage = (nextPage: number) => updateListState({ page: nextPage });
-  const [faqs, setFaqs] = useState<FAQ[]>([]);
-  const [qnas, setQnas] = useState<QNA[]>([]);
-  const [guides, setGuides] = useState<HelpGuide[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<{ tab: HelpTab; message: string } | null>(null);
-  const [pageInfo, setPageInfo] = useState({ total: 0, size: 10 });
   const [requestSize, setRequestSize] = useState(10);
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
   const [faqDetails, setFaqDetails] = useState<Record<string, FaqDetailState>>({});
@@ -118,68 +115,79 @@ export default function HelpClient() {
   const [askOpen, setAskOpen] = useState(false);
   const [asking, setAsking] = useState(false);
   const askingRef = useRef(false);
-  const [reloadToken, setReloadToken] = useState(0);
 
   const askForm = useAppForm(askSchema, { defaultValues: { pstTtl: '', pstCn: '' } });
 
+  const [debouncedQuery, setDebouncedQuery] = useState<{
+    tab: HelpTab;
+    page: number;
+    size: number;
+    keyword: string;
+  } | null>(null);
+
   useEffect(() => {
-    let cancelled = false;
-    const timer = setTimeout(async () => {
-      try {
-        setLoading(true);
-        setLoadError(null);
-        if (tab === 'faq') {
-          const res = await helpUserService.getFaqs({ page, size: requestSize, keyword: searchKeyword });
-          if (cancelled) return;
-          setFaqs(res.list || []);
-          setPageInfo({ total: res.total ?? 0, size: res.size > 0 ? res.size : requestSize });
-        } else if (tab === 'qna') {
-          const res = await helpUserService.getQnas({ page, size: requestSize, keyword: searchKeyword });
-          if (cancelled) return;
-          setQnas(res.list || []);
-          setPageInfo({ total: res.total ?? 0, size: res.size > 0 ? res.size : requestSize });
-        } else {
-          const query = { page, size: requestSize, keyword: searchKeyword };
-          const res = tab === 'guide'
-            ? await helpUserService.getHelpGuides(query)
-            : await helpUserService.getOnlineManuals(query);
-          if (cancelled) return;
-          setGuides(res.list || []);
-          setPageInfo({ total: res.total ?? 0, size: res.size > 0 ? res.size : requestSize });
-        }
-      } catch {
-        if (cancelled) return;
-        // [2026-09-15 DEC-OPS-100] 종전에는 토스트만 띄우고 목록을 빈 채로 둬서, 토스트가 사라지면
-        //   "등록된 … 없습니다"(데이터 없음)나 "검색 결과가 없습니다"로 읽혔다. 실패를 화면에 남기고,
-        //   직전 검색어의 목록이 새 검색어의 결과처럼 남지 않게 비운다. 서버 문구는 API 공통 토스트가 알린다.
-        if (tab === 'faq') {
-          setFaqs([]);
-          setLoadError({ tab: 'faq', message: '자주 묻는 질문을 불러오지 못했습니다.' });
-        } else if (tab === 'qna') {
-          setQnas([]);
-          setLoadError({ tab: 'qna', message: 'Q&A 문의 내역을 불러오지 못했습니다.' });
-        } else {
-          setGuides([]);
-          setLoadError({ tab, message: GUIDE_TAB_COPY[tab].loadError });
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    const timer = setTimeout(() => {
+      setDebouncedQuery({ tab, page, size: requestSize, keyword: searchKeyword });
     }, 300); // Debounce
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [tab, searchKeyword, reloadToken, page, requestSize]);
+    return () => clearTimeout(timer);
+  }, [tab, page, requestSize, searchKeyword]);
+
+  const isWaitingForDebounce = !debouncedQuery
+    || debouncedQuery.tab !== tab
+    || debouncedQuery.page !== page
+    || debouncedQuery.size !== requestSize
+    || debouncedQuery.keyword !== searchKeyword;
+
+  const listQuery = useQuery<PageResponse<FAQ> | PageResponse<QNA> | PageResponse<HelpGuide>>({
+    queryKey: ['help', 'list', debouncedQuery],
+    enabled: debouncedQuery !== null,
+    retry: false,
+    placeholderData: undefined,
+    queryFn: async () => {
+      const current = debouncedQuery!;
+      const query = { page: current.page, size: current.size, keyword: current.keyword };
+      if (current.tab === 'faq') {
+        return helpUserService.getFaqs(query);
+      }
+      if (current.tab === 'qna') {
+        return helpUserService.getQnas(query);
+      }
+      return current.tab === 'guide'
+        ? helpUserService.getHelpGuides(query)
+        : helpUserService.getOnlineManuals(query);
+    },
+  });
+
+  const loading = isWaitingForDebounce || listQuery.isPending || listQuery.isFetching;
+  const activeData = !loading && !listQuery.isError && debouncedQuery?.tab === tab ? listQuery.data : null;
+  const faqs: FAQ[] = tab === 'faq' && activeData ? ((activeData.list as FAQ[] | undefined) ?? []) : [];
+  const qnas: QNA[] = tab === 'qna' && activeData ? ((activeData.list as QNA[] | undefined) ?? []) : [];
+  const guides: HelpGuide[] = (tab === 'guide' || tab === 'manual') && activeData
+    ? ((activeData.list as HelpGuide[] | undefined) ?? [])
+    : [];
+  const pageInfo = {
+    total: activeData?.total ?? 0,
+    size: activeData && activeData.size > 0 ? activeData.size : requestSize,
+  };
 
   const changeTab = (nextTab: HelpTab) => {
     if (nextTab === tab) return;
     updateListState({ tab: nextTab, page: 1 });
     setRequestSize(10);
     setExpandedFaq(null);
-    setLoading(true);
   };
 
-  const retryLoad = () => setReloadToken((token) => token + 1);
+  const retryLoad = () => {
+    void listQuery.refetch();
+  };
   // [2026-09-15 DEC-OPS-100] 탭을 바꾼 직후 300ms 지연 조회가 시작되기 전에도 다른 탭의 실패를 보이지 않는다.
-  const currentLoadError = loadError?.tab === tab ? loadError.message : null;
+  const currentLoadError = !isWaitingForDebounce && listQuery.isError && debouncedQuery?.tab === tab
+    ? (tab === 'faq'
+      ? '자주 묻는 질문을 불러오지 못했습니다.'
+      : tab === 'qna'
+        ? 'Q&A 문의 내역을 불러오지 못했습니다.'
+        : GUIDE_TAB_COPY[tab].loadError)
+    : null;
 
   const openAsk = () => {
     askForm.reset({ pstTtl: '', pstCn: '' });
@@ -203,8 +211,7 @@ export default function HelpClient() {
       setAskOpen(false);
       // 방금 쓴 글이 목록에 보여야 등록됐다는 것을 사용자가 확인할 수 있다.
       setPage(1);
-      setLoading(true);
-      setReloadToken((token) => token + 1);
+      void queryClient.invalidateQueries({ queryKey: ['help', 'list'] });
     } catch (error: unknown) {
       /*
         구조적 필드 오류는 해당 입력으로 되돌리고, 그 밖의 실패는 토스트로 알린다.
@@ -340,7 +347,6 @@ export default function HelpClient() {
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               updateListState({ keyword: e.target.value, page: 1 });
               setExpandedFaq(null);
-              setLoading(true);
             }}
           />
         </div>
@@ -538,7 +544,6 @@ export default function HelpClient() {
               setPage(nextPage);
               setRequestSize(pageInfo.size);
               setExpandedFaq(null);
-              setLoading(true);
             }}
           />
         )}

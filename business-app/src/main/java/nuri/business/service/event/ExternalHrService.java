@@ -1,5 +1,6 @@
 package nuri.business.service.event;
 
+import nuri.business.domain.event.EventInfoRepository;
 import nuri.business.domain.event.ExternalHr;
 import nuri.business.domain.event.ExternalHrId;
 import nuri.business.domain.event.ExternalHrRepository;
@@ -24,6 +25,7 @@ import java.util.Objects;
 public class ExternalHrService {
 
     private final ExternalHrRepository externalHrRepository;
+    private final EventInfoRepository eventInfoRepository;
     private final SensitiveAuditPort sensitiveAuditPort;
 
     /**
@@ -61,6 +63,9 @@ public class ExternalHrService {
     public ExternalHrDto createExternalHr(ExternalHrDto dto) {
         SecurityUtil.assertPermission("EXT_HR_CREATE");
         requireContactFormats(dto);
+        if (dto.getEvntSn() == null || !eventInfoRepository.existsById(dto.getEvntSn())) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "존재하지 않는 행사입니다.");
+        }
         String actorLoginId = currentLoginId();
         ExternalHrId id = new ExternalHrId(dto.getEvntSn(), dto.getOtsdHrId());
         if (externalHrRepository.existsById(id)) {

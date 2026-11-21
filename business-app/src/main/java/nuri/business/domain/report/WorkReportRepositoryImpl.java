@@ -22,12 +22,12 @@ public class WorkReportRepositoryImpl implements WorkReportRepositoryCustom {
     }
 
     @Override
-    public Page<WorkReport> searchWorkReports(String searchId, String searchDe, String searchBgnDe, String searchEndDe,
-            String searchCnd, String searchWrd, String searchSttus, String searchSe, Pageable pageable) {
+    public Page<WorkReport> searchWorkReports(String searchId, String searchCnd, String searchWrd, String searchSe,
+            Pageable pageable) {
         BooleanBuilder builder = new BooleanBuilder();
 
         if (StringUtils.hasText(searchId)) {
-            builder.and(workReport.userId.eq(searchId)); 
+            builder.and(workReport.userId.eq(searchId));
         }
 
         if (StringUtils.hasText(searchSe)) {
@@ -35,7 +35,13 @@ public class WorkReportRepositoryImpl implements WorkReportRepositoryCustom {
         }
 
         if (StringUtils.hasText(searchWrd)) {
-            builder.and(workReport.rptTtl.contains(searchWrd));
+            if ("1".equals(searchCnd)) {
+                builder.and(workReport.rptCn.contains(searchWrd));
+            } else if ("2".equals(searchCnd)) {
+                builder.and(workReport.rptTtl.contains(searchWrd).or(workReport.rptCn.contains(searchWrd)));
+            } else {
+                builder.and(workReport.rptTtl.contains(searchWrd));
+            }
         }
 
         List<WorkReport> results = queryFactory

@@ -40,7 +40,7 @@ public class CommentApiController {
     @DeleteMapping("/{id}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.CommentApiController#deleteComment')")
     public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable Long id) {
-        commentService.deleteComment(id);
+        commentService.deleteCommentForModeration(id);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

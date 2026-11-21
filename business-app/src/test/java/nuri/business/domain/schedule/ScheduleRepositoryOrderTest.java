@@ -147,4 +147,18 @@ class ScheduleRepositoryOrderTest {
                 .containsExactly(first.getSchdlSn(), second.getSchdlSn());
         assertThat(page2.getContent()).extracting(Schedule::getSchdlSn).containsExactly(later.getSchdlSn());
     }
+
+    @Test
+    @DisplayName("일반 일정 검색(searchSchedules)도 시작일 오름차순·일련번호 오름차순으로 안정 정렬한다")
+    void searchSchedules_ordersByBeginDateThenSerialNumber() {
+        Schedule tenth = save("검색대상 - 10일", "20261110");
+        Schedule fifthFirst = save("검색대상 - 5일 먼저", "20261105");
+        Schedule fifthSecond = save("검색대상 - 5일 나중", "20261105");
+        scheduleRepository.flush();
+
+        var result = scheduleRepository.searchSchedules(null, null, "검색대상", PageRequest.of(0, 10));
+
+        assertThat(result.getContent()).extracting(Schedule::getSchdlSn)
+                .containsExactly(fifthFirst.getSchdlSn(), fifthSecond.getSchdlSn(), tenth.getSchdlSn());
+    }
 }

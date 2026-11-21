@@ -185,7 +185,7 @@ class MailFailureNotificationIntegrationTest {
 
     @Test void lateFailedAttemptCannotNotifyOrChangeANewerManualAcceptance() throws Exception {
         NoticeIdentity identity = noticeIdentity();
-        SentMail mail = row(LocalDateTime.now().minusMinutes(11).truncatedTo(ChronoUnit.MICROS));
+        SentMail mail = row(LocalDateTime.now().minusMinutes(15).truncatedTo(ChronoUnit.MICROS));
         long id = mail.getEmlDsptchSn();
         jdbc.update("UPDATE tb_email_dsptch_manage SET frst_rgtr_id=? WHERE eml_dsptch_sn=?", identity.loginId(), id);
         var observation = noticeFailure.arm(id, identity.esntlId(), 0);
@@ -200,23 +200,28 @@ class MailFailureNotificationIntegrationTest {
         }).when(sender).send(anyString(), anyString(), anyString(), anyString());
 
         var first = dispatchWithSender(mail, identity.esntlId());
-        LocalDateTime next = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
+        LocalDateTime claimedAt;
         try {
             assertThat(entered.await(10, TimeUnit.SECONDS)).isTrue();
+            claimedAt = mails.findById(id).orElseThrow().getDsptchDt();
             assertThat(tx().<Integer>execute(status ->
-                    mails.claimForResend(id, identity.loginId(), next, next.minusMinutes(10)))).isEqualTo(1);
+                    mails.claimForResend(id, identity.loginId(), claimedAt, claimedAt.minusMinutes(10)))).isZero();
+            LocalDateTime later = claimedAt.plusMinutes(11);
+            assertThat(tx().<Integer>execute(status ->
+                    mails.claimForResend(id, identity.loginId(), later, later.minusMinutes(10)))).isEqualTo(1);
         } finally {
             release.countDown();
         }
+        LocalDateTime later = claimedAt.plusMinutes(11);
         first.get(10, TimeUnit.SECONDS);
         assertThat(code(id)).isEqualTo("Q");
-        assertThat(mails.findById(id).orElseThrow().getDsptchDt()).isEqualTo(VendorTestSql.storedTime(next));
+        assertThat(mails.findById(id).orElseThrow().getDsptchDt()).isEqualTo(VendorTestSql.storedTime(later));
         assertThat(observation.events).isEmpty();
         assertThat(notificationCount(jdbc, identity.esntlId())).isZero();
         assertThat(notificationIntentCount(jdbc, identity.esntlId())).isZero();
 
         failSmtpDefinitively(id);
-        processor.dispatchCommitted(id, next, "subject", "body", "from@example.invalid", ADDRESS,
+        processor.dispatchCommitted(id, later, "subject", "body", "from@example.invalid", ADDRESS,
                 identity.esntlId()).get(10, TimeUnit.SECONDS);
         assertThat(noticeBoundary(jdbc, id, identity.esntlId())).isEqualTo(new NoticeBoundary("F", 1, 1));
         assertThat(observation.events).hasSize(1);

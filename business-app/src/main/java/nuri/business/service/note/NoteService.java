@@ -120,9 +120,20 @@ public class NoteService {
      * '상세 조회 및 읽음 처리' 로 이 동작을 약속하고 있었다. 발신자가 자기 보낸 쪽지를 보는
      * 경로에는 읽음 개념이 없으므로 아무것도 바꾸지 않는다.
      */
+    private static boolean isSentNoteType(String type) {
+        if ("sent".equals(type)) {
+            return true;
+        }
+        if ("recv".equals(type) || "received".equals(type)) {
+            return false;
+        }
+        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                "type 은 'recv', 'received' 또는 'sent' 여야 합니다.");
+    }
+
     @Transactional
     public NoteDto getNoteDetail(Long noteSn, String type, Long relationSn, String currentUserId) {
-        if ("sent".equals(type)) {
+        if (isSentNoteType(type)) {
             NoteTrnsmit trnsmit = noteTrnsmitRepository.findById(relationSn)
                     .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
             // [보안 H1] 발신자 본인만 조회 가능(IDOR 차단). 연결 검사보다 먼저 봐야 403/404 차이로 남의 연결을 알 수 없다.
@@ -270,7 +281,7 @@ public class NoteService {
      */
     @Transactional
     public void deleteNote(Long relationSn, String type, String currentUserId) {
-        if ("sent".equals(type)) {
+        if (isSentNoteType(type)) {
             NoteTrnsmit trnsmit = noteTrnsmitRepository.findById(relationSn)
                     .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
             // [보안 H1] 발신자 본인만 삭제 가능(IDOR 차단)

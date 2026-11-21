@@ -131,6 +131,9 @@ class HelpServiceTest {
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getHlpDfn()).isEqualTo("Definition");
+        verify(hpcmRepository).findByHlpDfnContaining("keyword",
+                PageRequest.of(0, 10, org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Direction.DESC, "hlpSn")));
     }
 
     @Test
@@ -240,6 +243,9 @@ class HelpServiceTest {
         Page<OnlineManualDto> result = helpService.getOnlineManualList("keyword", pageable);
 
         assertThat(result.getContent()).hasSize(1);
+        verify(onlineManualRepository).findByOnlnMnlNmContaining("keyword",
+                PageRequest.of(0, 10, org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Direction.DESC, "onlnMnlSn")));
     }
 
     @Test

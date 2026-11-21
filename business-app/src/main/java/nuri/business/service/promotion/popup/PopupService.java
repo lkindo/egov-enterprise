@@ -45,7 +45,7 @@ public class PopupService {
     }
 
     public List<PopupDto> getActivePopups() {
-        return popupRepository.findActivePopups(LocalDate.now()).stream()
+        return popupRepository.findActivePopups(LocalDate.now(nuri.foundation.core.util.ServiceTime.clock())).stream()
                 .map(PopupDto::from)
                 .collect(Collectors.toList());
     }
@@ -65,7 +65,7 @@ public class PopupService {
      * {@link Popup#isPublishedOn} 이다.
      */
     public PopupDto getPublishedPopup(Long popupSn) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(nuri.foundation.core.util.ServiceTime.clock());
         return popupRepository.findById(Objects.requireNonNull(popupSn))
                 .filter(popup -> popup.isPublishedOn(today))
                 .map(PopupDto::from)

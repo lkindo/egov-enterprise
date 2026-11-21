@@ -36,10 +36,18 @@ public class HelpService {
     private static final Sort PUBLIC_HPCM_ORDER = Sort.by(Sort.Order.asc("hlpDfn"), Sort.Order.asc("hlpSn"));
     private static final Sort PUBLIC_MANUAL_ORDER = Sort.by(Sort.Order.asc("onlnMnlNm"), Sort.Order.asc("onlnMnlSn"));
 
+    private static Pageable defaultDescIfUnsorted(Pageable pageable, String idProperty) {
+        Pageable nonNull = Objects.requireNonNull(pageable);
+        return nonNull.getSort().isSorted() ? nonNull
+                : PageRequest.of(nonNull.getPageNumber(), nonNull.getPageSize(),
+                        Sort.by(Sort.Direction.DESC, idProperty));
+    }
+
     // HPCM (Help)
     public Page<HpcmDto> getHpcmList(String keyword, Pageable pageable) {
         return hpcmRepository
-                .findByHlpDfnContaining(Objects.requireNonNullElse(keyword, ""), Objects.requireNonNull(pageable))
+                .findByHlpDfnContaining(Objects.requireNonNullElse(keyword, ""),
+                        defaultDescIfUnsorted(pageable, "hlpSn"))
                 .map(hpcmMapper::toDto);
     }
 
@@ -97,7 +105,8 @@ public class HelpService {
     // Online Manual
     public Page<OnlineManualDto> getOnlineManualList(String keyword, Pageable pageable) {
         return onlineManualRepository
-                .findByOnlnMnlNmContaining(Objects.requireNonNullElse(keyword, ""), Objects.requireNonNull(pageable))
+                .findByOnlnMnlNmContaining(Objects.requireNonNullElse(keyword, ""),
+                        defaultDescIfUnsorted(pageable, "onlnMnlSn"))
                 .map(onlineManualMapper::toDto);
     }
 

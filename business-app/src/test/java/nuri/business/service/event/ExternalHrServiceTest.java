@@ -1,5 +1,6 @@
 package nuri.business.service.event;
 
+import nuri.business.domain.event.EventInfoRepository;
 import nuri.business.domain.event.ExternalHr;
 import nuri.business.domain.event.ExternalHrId;
 import nuri.business.domain.event.ExternalHrRepository;
@@ -44,12 +45,20 @@ class ExternalHrServiceTest {
     private ExternalHrRepository externalHrRepository;
 
     @Mock
+    private EventInfoRepository eventInfoRepository;
+
+    @Mock
     private SensitiveAuditPort sensitiveAuditPort;
 
     @InjectMocks
     private ExternalHrService externalHrService;
 
     private static final Pageable PAGEABLE = PageRequest.of(0, 10);
+
+    @org.junit.jupiter.api.BeforeEach
+    void stubParentEventExists() {
+        org.mockito.Mockito.lenient().when(eventInfoRepository.existsById(any())).thenReturn(true);
+    }
 
     @AfterEach
     void clearSecurityContext() {
@@ -424,5 +433,19 @@ class ExternalHrServiceTest {
         assertThatThrownBy(() -> externalHrService.deleteExternalHr(9L, "NONE"))
                 .isInstanceOf(BusinessException.class);
         verify(externalHrRepository, never()).delete(any(ExternalHr.class));
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 행사(evntSn) 에 외부인사를 등록하면 DB FK 409 대신 404 RESOURCE_NOT_FOUND 로 거절한다")
+    void createExternalHr_whenEventNotFound_throwsResourceNotFound() {
+        authenticateAs("admin_actor", "ADMIN");
+        given(eventInfoRepository.existsById(999L)).willReturn(false);
+        ExternalHrDto dto = ExternalHrDto.builder().evntSn(999L).otsdHrId("HR999").otsdHrNm("Test").build();
+
+        assertThatThrownBy(() -> externalHrService.createExternalHr(dto))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
+        verify(externalHrRepository, never()).existsById(any());
+        verify(externalHrRepository, never()).save(any());
     }
 }

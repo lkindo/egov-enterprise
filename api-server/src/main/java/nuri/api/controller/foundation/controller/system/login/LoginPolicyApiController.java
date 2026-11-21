@@ -44,11 +44,7 @@ public class LoginPolicyApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#getLoginPolicyList')")
     public ResponseEntity<ApiResponse<PageResponse<LoginPolicyDto>>> getLoginPolicyList(
             @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
-
-        List<LoginPolicyDto> list = loginPolicyManageService.selectLoginPolicyList(searchDto);
-        int totCnt = loginPolicyManageService.selectLoginPolicyListTotCnt(searchDto);
-
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchDto.getPageIndex(), searchDto.getPageUnit(), totCnt)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(loginPolicyManageService.selectLoginPolicyPage(searchDto))));
     }
 
     @Operation(summary = "로그인 정책 상세 조회")

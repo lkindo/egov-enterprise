@@ -1,7 +1,17 @@
-import { act, render, screen } from '@testing-library/react';
+import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, render as rtlRender, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations } from '@/test-utils/axe';
+
+const render = (ui: React.ReactElement) => rtlRender(ui, {
+  wrapper: ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      {children}
+    </QueryClientProvider>
+  ),
+});
 
 const harness = vi.hoisted(() => ({
   getFaqs: vi.fn().mockResolvedValue({
@@ -39,6 +49,9 @@ describe('HelpClient accessibility semantics', () => {
       ({ container } = render(<HelpClient />));
       await act(async () => { await vi.advanceTimersByTimeAsync(300); });
       expect(harness.getFaqs).toHaveBeenCalledWith({ page: 1, size: 10, keyword: '' });
+      // React Query v5 notifyManager schedules observer notification on setTimeout(..., 0);
+      // flush it before vi.useRealTimers() clears fake timers.
+      await act(async () => { await vi.advanceTimersByTimeAsync(0); });
     } finally {
       vi.useRealTimers();
     }

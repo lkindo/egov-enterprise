@@ -178,6 +178,33 @@ class CommentRepositoryTest {
         assertThat(commentRepository.findVisibleForModerationByBbsIdAndPstSn(
                         openBoard.getBbsId(), secretPost.getPstSn(), "author1", today, allowedCommunities, PageRequest.of(0, 20)).getContent())
                 .extracting(Comment::getAnsCn).containsExactly("비밀글 댓글");
+
+        // 관리자 단건 삭제 잠금 조회(findVisiblePublicForModerationUpdate / findVisibleForModerationUpdate)도 동일한 열람 경계를 강제한다.
+        Comment secretComment = commentRepository.findVisibleForModerationByBbsIdAndPstSn(
+                openBoard.getBbsId(), secretPost.getPstSn(), "author1", today, allowedCommunities, PageRequest.of(0, 20))
+                .getContent().get(0);
+        Comment communityComment = commentRepository.findVisibleForModerationByBbsId(
+                memberBoard.getBbsId(), "viewer-member", today, allowedCommunities, PageRequest.of(0, 20))
+                .getContent().get(0);
+        Comment publicComment = commentRepository.findVisiblePublicForModerationByBbsId(
+                openBoard.getBbsId(), "outsider", today, PageRequest.of(0, 20))
+                .getContent().get(0);
+
+        assertThat(commentRepository.findVisiblePublicForModerationUpdate(secretComment.getAnsSn(), "outsider", today))
+                .isEmpty();
+        assertThat(commentRepository.findVisiblePublicForModerationUpdate(secretComment.getAnsSn(), "author1", today))
+                .isPresent();
+        assertThat(commentRepository.findVisiblePublicForModerationUpdate(communityComment.getAnsSn(), "viewer-member", today))
+                .isEmpty();
+        assertThat(commentRepository.findVisiblePublicForModerationUpdate(publicComment.getAnsSn(), "outsider", today))
+                .isPresent();
+
+        assertThat(commentRepository.findVisibleForModerationUpdate(
+                communityComment.getAnsSn(), "viewer-member", today, allowedCommunities)).isPresent();
+        assertThat(commentRepository.findVisibleForModerationUpdate(
+                communityComment.getAnsSn(), "outsider", today, java.util.Set.of(999L))).isEmpty();
+        assertThat(commentRepository.findVisibleForModerationUpdate(
+                secretComment.getAnsSn(), "outsider", today, allowedCommunities)).isEmpty();
     }
 
     private nuri.business.domain.board.BoardMaster persistBoard(String bbsId, String useYn, Long cmntySn) {
