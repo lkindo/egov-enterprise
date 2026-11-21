@@ -16,7 +16,7 @@ license: MIT — Complete terms in LICENSE.txt
 - 바꾼 범위의 최소 검증은 AGENTS 의 표가 정한다. 도메인별 증거 유형은 프로토콜 Stage 4 §4.1 의 표다.
 - 실행한 명령의 출력과 종료 코드가 증거다. 실행하지 않은 검증을 실행했다고 쓰지 않는다 — 못 한 것은 이유와 영향 범위를 적는다.
 - 게이트·계약을 새로 만들거나 고쳤으면 초록만으로 부족하다. 의도적 위반을 넣어 그 사유로 붉어지는 것까지 본다(AGENTS H5).
-- 단위 시험 프로파일(H2, `create`)의 초록은 물리 스키마의 증거가 아니다. 엔티티·DDL 을 바꿨으면 `:api-server:schemaValidationTest` 다.
+- 단위 시험 프로파일(H2, `create`)의 초록은 물리 스키마의 증거가 아니다. 엔티티·DDL 을 바꿨으면 `:api-server:schemaValidationTest` 다(전체 실행은 `node scripts/heavy-run-queue.mjs run --kind gradle -- …` 로 감싼다). 그 통과도 변경 전에 live `information_schema` 와 메타 표준을 조회했다는 증거는 아니다(AGENTS H1).
 - pre-push 에는 E2E 가 없다. 화면을 바꾼 작업은 required CI 의 E2E 결과를 직접 확인한 뒤에 완료를 말한다.
 - 하위 에이전트·워크플로의 "통과" 보고는 증거가 아니다. 메인이 diff 를 읽고 게이트를 다시 돌린다(§2.3).
 
@@ -28,4 +28,4 @@ license: MIT — Complete terms in LICENSE.txt
 
 ## 겹치지 않게
 
-pre-push 가 곧 돌릴 묶음 전체를 같은 커밋에서 미리 돌리지 않는다. 대신 훅이 보지 않는 검사 가운데 변경이 요구하는 것을 고른다(§6.2). 작업 브랜치는 push 뒤 `npm run verify:post-push` 가 운영 계약을 돌고, 병합 판정은 `node scripts/pr-checks-wait.mjs` 가 한다.
+pre-push 가 곧 돌릴 묶음 전체를 같은 커밋에서 미리 돌리지 않는다. 대신 훅이 보지 않는 검사 가운데 변경이 요구하는 것을 고른다(§6.2). 작업 브랜치는 push 뒤 `npm run verify:post-push` 가 운영 계약을 돌고, 병합 판정은 `node scripts/pr-checks-wait.mjs --pr <번호> --sha <검증한 커밋>` 이 한다(종료 코드 0 만 통과).

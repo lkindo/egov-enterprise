@@ -25,7 +25,7 @@ license: MIT — Complete terms in LICENSE.txt
 |---|---|
 | 백엔드 단위·서비스 | `./gradlew :<모듈>:test --tests '*<시험 클래스>'`(Windows 는 `.\gradlew.bat`) |
 | 하네스·아키텍처 게이트 | `./gradlew :api-server:harnessTest --tests '<클래스>'` — 태그가 붙은 시험을 기본 `test` 로 고르면 0건이 통과로 끝난다 |
-| 엔티티·DDL | `./gradlew :api-server:schemaValidationTest`(Docker 필요). H2 의 초록은 물리 스키마의 증거가 아니다 |
+| 엔티티·DDL | `./gradlew :api-server:schemaValidationTest --tests '<시험 클래스>'`(Docker 필요). 전체는 `node scripts/heavy-run-queue.mjs run --kind gradle -- ./gradlew :api-server:schemaValidationTest` — 감싸지 않은 전체 실행은 실행 전 가드가 막는다. H2 의 초록은 물리 스키마의 증거가 아니다 |
 | 프런트 | `pnpm -C frontend exec vitest run <시험 파일>` |
 | 저장소 스크립트·계약 | `node --test scripts/<파일>.test.mjs` |
 
@@ -33,16 +33,17 @@ license: MIT — Complete terms in LICENSE.txt
 
 ## 이 저장소의 규칙
 
-- 시험을 초록으로 만들려고 약화·삭제·건너뛰기를 하지 않는다. 구현·시험·명세 가운데 무엇이 틀렸는지 증거로 판정한다. `skip`·`only`·`todo` 와 조건부 등록(`if (…) it(…)`)은 게이트가 막는다.
+- 시험을 초록으로 만들려고 약화·삭제·건너뛰기를 하지 않는다. 구현·시험·명세 가운데 무엇이 틀렸는지 증거로 판정한다. `skip`·`only`·`todo` 와 조건부 등록(`if (…) it(…)`)은 게이트가 막는다 — 예외는 생성물의 투영 원장 도우미(`frontend/src/test-utils/projection.ts` 의 `inProjection(…)` 등)로 가른 등록뿐이고, 이미 그렇게 쓴 시험을 고치지 않는다.
+- 엔티티·DDL·PK 전략을 바꾸기 전에 live `information_schema` 와 메타 표준을 조회한다(AGENTS H1). 스키마 시험은 빈 DB 에 마이그레이션을 올려 매핑을 볼 뿐이라 그 조회를 대신하지 않는다.
 - 게이트·계약을 새로 만들거나 고쳤으면 의도적 위반이 그 사유로 붉어지는 부정 시험까지 둔다(AGENTS H5).
 - 인가(H3)·물리 스키마(H1)·식별자 축을 바꾸는 시험은 통과만이 아니라 **거부되어야 할 경우**를 함께 단언한다.
 - 원장이 세는 수(operation 수, 메뉴 수 등)를 시험에 옮겨 적지 않는다 — 원장에서 읽는다.
-- 날짜·시각은 한국 표준시다. 날짜 경계를 건드리는 시험은 JVM 기본 시간대에 기대지 말고 `ServiceTime` 을 쓴다.
+- 날짜·시각은 한국 표준시다. 백엔드의 날짜 경계 시험은 JVM 기본 시간대에 기대지 말고 `ServiceTime` 을 쓴다. 프런트의 오늘은 브라우저가 아니라 한국 날짜이고 CI 의 프런트 시험은 UTC 로 돌므로, 날짜 경계는 두 시간대에서 확인한다(프로토콜 §6.2).
 
 ## 예외
 
 이유를 보고나 PR 에 적는다. 새 종류의 예외일 때만 묻는다.
 
 - 저장소 밖의 일회용 시제품.
-- 생성물 — 생성기의 검사(`npm run regen -- --check`, codegen verify)로 확인한다.
+- 생성물 — 생성기의 검사(`node scripts/regenerate.mjs --check`, codegen verify)로 확인한다.
 - 실행·인가·게이트에 영향이 없는 설정(형식, 주석, 편집기 설정). 동작을 바꾸는 설정(권한 원장, `application*.yml` 의 한도·보안 값, edge·배포 설정, 게이트 원장)은 예외가 아니다.

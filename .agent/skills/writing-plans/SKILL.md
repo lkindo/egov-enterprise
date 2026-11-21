@@ -13,7 +13,7 @@ license: MIT — Complete terms in LICENSE.txt
 
 ## 계획에 담을 것
 
-- **등급과 범위.** 프로토콜 §4 의 TASK PROPOSAL 형식(TARGET·SCOPE·PROPOSED MODE·CONSTITUTION)으로 적는다. 이미 승인된 작업은 등급·SCOPE 한 줄이면 된다.
+- **등급과 범위.** 프로토콜 §4 의 TASK PROPOSAL 형식(TARGET·SCOPE·PROPOSED MODE·CONSTITUTION)으로 적는다. 설계 문서를 두고 구현 전에 검토하는 작업은 다섯째 칸 DESIGN BRIEF 도 채우고 §7 을 따른다. 이미 승인된 작업은 등급·SCOPE 한 줄이면 된다.
 - **읽을 것.** 대상 경로가 걸리는 영역 결정 색인과 gap 상세 절(`node scripts/decision-indexes.mjs --for <경로…>`), 관련 헌법 조항.
 - **단계마다의 검증.** 그 단계가 바꾸는 범위의 최소 검증(AGENTS 표)과 영향 시험(`node scripts/impact-tests.mjs --diff origin/main`). 게이트·계약을 바꾸는 단계는 의도적 위반이 붉어지는 증명을 함께 적는다(AGENTS H5).
 - **승인이 필요한 지점.** 스키마·데이터·인가·운영 적용·외부 전송처럼 포괄 승인으로 넘을 수 없는 단계를 따로 표시한다.
