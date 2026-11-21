@@ -1,6 +1,9 @@
 package nuri.business.service.deptjob;
 
 import com.querydsl.core.types.Predicate;
+import com.querydsl.core.types.Operation;
+import com.querydsl.core.types.SubQueryExpression;
+import com.querydsl.core.BooleanBuilder;
 import nuri.business.domain.deptjob.DeptJob;
 import nuri.business.domain.deptjob.DeptJobBox;
 import nuri.business.domain.deptjob.DeptJobBoxRepository;
@@ -508,6 +511,7 @@ class DeptJobServiceTest {
     @DisplayName("부서업무 생성 - PK 는 DB가 채번하고 클라이언트 값은 무시한다")
     void createDeptJob() {
         givenActiveAssignee("USR_TESTER");
+        when(deptJobBoxRepository.existsById(1L)).thenReturn(true);
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskSn(999L); // 위조 시도: 신규 엔티티 생성에는 사용하지 않는다
         dto.setDeptTaskBoxSn(1L);
@@ -841,6 +845,7 @@ class DeptJobServiceTest {
         
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("Updated Job");
+        dto.setDeptTaskBoxSn(1L);
         dto.setVersion(0);
 
         // 소유권 가드는 담당자(pic_id=esntlId) 기준이다. SecurityContext 가 없는 단위 테스트에서는
@@ -852,6 +857,8 @@ class DeptJobServiceTest {
         }
 
         assertEquals("Updated Job", deptJob.getDeptTaskNm());
+        assertEquals(1L, deptJob.getDeptTaskBoxSn());
+        verifyNoInteractions(deptJobBoxRepository);
     }
 
     @Test
@@ -861,16 +868,19 @@ class DeptJobServiceTest {
 
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("남의 업무 수정 시도");
+        dto.setDeptTaskBoxSn(99L);
         dto.setVersion(0);
 
         try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                     .thenReturn(Optional.of("USER_INTRUDER"));
 
-            assertThrows(BusinessException.class, () -> deptJobService.updateDeptJob(1L, dto));
+            BusinessException error = assertThrows(BusinessException.class, () -> deptJobService.updateDeptJob(1L, dto));
+            assertEquals(CommonErrorCode.ACCESS_DENIED, error.getErrorCode());
         }
 
         assertEquals("Test Job", deptJob.getDeptTaskNm(), "인가 실패 시 값이 바뀌면 안 된다");
+        verifyNoInteractions(deptJobBoxRepository);
     }
 
     @Test
@@ -1069,21 +1079,21 @@ class DeptJobServiceTest {
     //   조건 생성을 검증하려면 **Predicate 를 캡처해 그 내용을 확인**해야 한다.
     // ─────────────────────────────────────────────────────────────────────────
 
-    /** 서비스가 저장소에 넘긴 Predicate 를 문자열로 붙잡는다 — 조건 생성의 유일한 관측 지점이다. */
-    private String capturePredicate(String deptId, Long boxSn, String cond, String keyword) {
+    /** 서비스가 저장소에 넘긴 Predicate 를 붙잡는다 — 조건 생성의 유일한 관측 지점이다. */
+    private Predicate capturePredicate(String deptId, Long boxSn, String cond, String keyword) {
         authenticateAsAdmin();
         Page<DeptJob> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
         when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class))).thenReturn(page);
         deptJobService.getDeptJobList(deptId, boxSn, cond, keyword, false, PageRequest.of(0, 10));
         ArgumentCaptor<Predicate> captor = ArgumentCaptor.forClass(Predicate.class);
         verify(deptJobRepository).findAll(captor.capture(), any(PageRequest.class));
-        return String.valueOf(captor.getValue());
+        return captor.getValue();
     }
 
     @Test
     @DisplayName("검색조건 0 은 부서업무명에만 건다 (내용·담당자 아님)")
     void searchCondition0BindsTaskNameOnly() {
-        String p = capturePredicate(null, 1L, "0", "KW");
+        String p = capturePredicate(null, 1L, "0", "KW").toString();
         assertTrue(p.contains("deptTaskNm"), "조건 0 은 deptTaskNm 에 걸려야 한다: " + p);
         assertFalse(p.contains("deptTaskCn"), "조건 0 인데 내용에 걸렸다: " + p);
         assertFalse(p.contains("picId"), "조건 0 인데 담당자에 걸렸다: " + p);
@@ -1092,30 +1102,40 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("검색조건 1 은 부서업무내용에만 건다")
     void searchCondition1BindsTaskContentOnly() {
-        String p = capturePredicate(null, 1L, "1", "KW");
+        String p = capturePredicate(null, 1L, "1", "KW").toString();
         assertTrue(p.contains("deptTaskCn"), "조건 1 은 deptTaskCn 에 걸려야 한다: " + p);
         assertFalse(p.contains("deptTaskNm"), "조건 1 인데 업무명에 걸렸다: " + p);
     }
 
     @Test
-    @DisplayName("검색조건 2 는 담당자ID 에만 건다")
-    void searchCondition2BindsPicIdOnly() {
-        String p = capturePredicate(null, 1L, "2", "KW");
-        assertTrue(p.contains("picId"), "조건 2 는 picId 에 걸려야 한다: " + p);
-        assertFalse(p.contains("deptTaskNm"), "조건 2 인데 업무명에 걸렸다: " + p);
+    @DisplayName("담당자 검색은 기존 고유 ID와 이름·로그인 ID 하위 질의를 함께 쓴다")
+    void assigneeSearchIncludesNameAndLoginIdSubquery() {
+        BooleanBuilder predicate = assertInstanceOf(BooleanBuilder.class, capturePredicate(null, null, "2", "KW"));
+        Operation<?> search = assertInstanceOf(Operation.class, predicate.getValue());
+        assertEquals(com.querydsl.core.types.Ops.OR, search.getOperator());
+        var picId = nuri.business.domain.deptjob.QDeptJob.deptJob.picId;
+        assertEquals(picId.contains("KW"), search.getArg(0));
+        Operation<?> match = assertInstanceOf(Operation.class, search.getArg(1));
+        assertEquals(com.querydsl.core.types.Ops.IN, match.getOperator());
+        assertEquals(picId, match.getArg(0));
+        SubQueryExpression<?> users = assertInstanceOf(SubQueryExpression.class, match.getArg(1));
+        var user = nuri.business.domain.user.entity.QUser.user;
+        assertEquals(user.esntlId, users.getMetadata().getProjection());
+        assertEquals(user.userNm.contains("KW").or(user.userId.contains("KW")), users.getMetadata().getWhere());
+        verifyNoInteractions(userRepository);
     }
 
     @Test
     @DisplayName("키워드가 비면 어떤 검색조건도 걸지 않는다")
     void blankKeywordAddsNoSearchPredicate() {
-        String p = capturePredicate(null, 1L, "0", "");
+        String p = capturePredicate(null, 1L, "0", "").toString();
         assertFalse(p.contains("deptTaskNm"), "빈 키워드인데 조건이 붙었다: " + p);
     }
 
     @Test
     @DisplayName("boxId 가 있으면 deptId 조회는 하지 않는다 (else-if 우선순위)")
     void boxIdTakesPrecedenceOverDeptId() {
-        String p = capturePredicate("DEPT1", 1L, null, null);
+        String p = capturePredicate("DEPT1", 1L, null, null).toString();
         assertTrue(p.contains("1"), "boxSn 조건이 걸려야 한다: " + p);
         // else-if 를 if 로 바꾼 뮤턴트는 여기서 죽는다 — deptId 분기가 함께 실행되면 조회가 발생한다.
         verify(deptJobBoxRepository, never()).findByDeptId(anyString());
@@ -1131,6 +1151,35 @@ class DeptJobServiceTest {
 
         assertTrue(result.isEmpty(), "박스 0건이면 빈 페이지로 닫아야 한다");
         verify(deptJobRepository, never()).findAll(any(Predicate.class), any(PageRequest.class));
+    }
+
+    @Test
+    void createDeptJobReturnsNotFoundForMissingBoxBeforeSideEffects() {
+        authenticateAs("actor", "USER1");
+        DeptJobDto request = DeptJobDto.builder().deptTaskBoxSn(99L).deptTaskNm("새 업무")
+                .atchFileSn(999L).build();
+
+        BusinessException error = assertThrows(BusinessException.class, () -> deptJobService.createDeptJob(request));
+
+        assertEquals(CommonErrorCode.RESOURCE_NOT_FOUND, error.getErrorCode());
+        verify(deptJobBoxRepository).existsById(99L);
+        verifyNoInteractions(deptJobRepository, attachmentAssignmentPolicy, eventPublisher);
+    }
+
+    @Test
+    void updateDeptJobReturnsNotFoundForMissingDestinationBoxWithoutMutating() {
+        authenticateAs("actor", "USER1");
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        DeptJobDto request = DeptJobDto.builder().deptTaskBoxSn(99L).deptTaskNm("변경")
+                .atchFileSn(999L).version(0).build();
+
+        BusinessException error = assertThrows(BusinessException.class, () -> deptJobService.updateDeptJob(1L, request));
+
+        assertEquals(CommonErrorCode.RESOURCE_NOT_FOUND, error.getErrorCode());
+        assertEquals(1L, deptJob.getDeptTaskBoxSn());
+        assertEquals("Test Job", deptJob.getDeptTaskNm());
+        verify(deptJobBoxRepository).existsById(99L);
+        verifyNoInteractions(attachmentAssignmentPolicy, eventPublisher);
     }
 
     @ParameterizedTest

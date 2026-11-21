@@ -7,6 +7,7 @@ import nuri.business.domain.deptjob.DeptJob;
 import nuri.business.domain.deptjob.DeptJobRepository;
 import nuri.business.domain.deptjob.DeptJobBoxRepository;
 import nuri.business.domain.organization.OrganizationManageRepository;
+import nuri.business.domain.user.entity.QUser;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.deptjob.dto.DeptJobDto;
@@ -15,6 +16,7 @@ import nuri.business.service.deptjob.dto.DeptJobMapper;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.domain.deptjob.QDeptJob;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.jpa.JPAExpressions;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -155,8 +157,11 @@ public class DeptJobService extends BaseAbstractService {
                 builder.and(deptJob.deptTaskNm.contains(keyword));
             } else if ("1".equals(searchCondition)) { // 부서업무내용
                 builder.and(deptJob.deptTaskCn.contains(keyword));
-            } else if ("2".equals(searchCondition)) { // 담당자ID
-                builder.and(deptJob.picId.contains(keyword));
+            } else if ("2".equals(searchCondition)) { // 담당자 이름·로그인 ID·고유 ID
+                QUser assignee = QUser.user;
+                var matchingAssignees = JPAExpressions.select(assignee.esntlId).from(assignee)
+                        .where(assignee.userNm.contains(keyword).or(assignee.userId.contains(keyword)));
+                builder.and(deptJob.picId.contains(keyword).or(deptJob.picId.in(matchingAssignees)));
             }
         }
         Pageable requested = required(pageable, "pageable 는 null 일 수 없습니다");
@@ -279,6 +284,7 @@ public class DeptJobService extends BaseAbstractService {
     public Long createDeptJob(DeptJobDto dto) {
         String creatorEsntlId = currentEsntlIdOrDeny();
         validatePriority(dto.getPrrtyRnk());
+        assertJobBoxExists(dto.getDeptTaskBoxSn());
         assertAttachmentIsAssignable(dto.getAtchFileSn());
 
         // [담당자 기본값] 등록 폼(DeptJobForm)에는 비동기 검색 담당자 피커가 있고 선택 값이
@@ -315,6 +321,9 @@ public class DeptJobService extends BaseAbstractService {
         //   담당자 재지정(reassignDeptJob)도 버전을 올리므로, 재지정 뒤 옛 화면의 저장은 409 가 된다.
         nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), deptJob.getVersion());
         validatePriority(dto.getPrrtyRnk());
+        if (!Objects.equals(dto.getDeptTaskBoxSn(), deptJob.getDeptTaskBoxSn())) {
+            assertJobBoxExists(dto.getDeptTaskBoxSn());
+        }
 
         Long previousAtchFileSn = deptJob.getAtchFileSn();
         if (dto.getAtchFileSn() != null
@@ -373,6 +382,12 @@ public class DeptJobService extends BaseAbstractService {
     private static void validatePriority(String priority) {
         if (priority != null && !PRIORITY_PATTERN.matcher(priority).matches()) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, DeptJobSaveRequest.PRIORITY_MESSAGE);
+        }
+    }
+
+    private void assertJobBoxExists(Long boxSn) {
+        if (boxSn != null && !deptJobBoxRepository.existsById(boxSn)) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "부서업무함을 찾을 수 없습니다.");
         }
     }
 

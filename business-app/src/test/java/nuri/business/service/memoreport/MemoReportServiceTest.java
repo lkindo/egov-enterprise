@@ -750,9 +750,11 @@ class MemoReportServiceTest {
         org.mockito.Mockito.verifyNoInteractions(memoReportRepository);
     }
 
-    @Test
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.NullSource
+    @org.junit.jupiter.params.provider.ValueSource(strings = "editor-login")
     @DisplayName("메모보고 수정")
-    void updateMemoReport() {
+    void updateMemoReport(String editorLogin) {
         // given
         Long memoRptSn = 1L;
         String userId = "user1";
@@ -768,6 +770,8 @@ class MemoReportServiceTest {
                 .build();
 
         given(memoReportRepository.findByIdForUpdate(memoRptSn)).willReturn(Optional.of(existingEntity));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                .thenReturn(Optional.ofNullable(editorLogin));
 
         // when
         memoReportService.updateMemoReport(memoRptSn, userId, updateDto);
@@ -776,6 +780,7 @@ class MemoReportServiceTest {
         assertThat(existingEntity.getRptTtl()).isEqualTo("Updated Subject");
         assertThat(existingEntity.getMemoRptYmd()).isEqualTo("20240502");
         assertThat(existingEntity.getRptCn()).isEqualTo("Updated Content");
+        assertThat(existingEntity.getLastMdfrId()).isEqualTo(editorLogin != null ? editorLogin : userId);
     }
 
     @Test
