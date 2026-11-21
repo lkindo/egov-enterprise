@@ -141,7 +141,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
 | `JWT_SECRET` | HMAC 비밀 — ES256 전환기 동안 옛 토큰 검증에 쓴다 | 고엔트로피 값 필수, 2차 배포에서 걷는다([ADR-0060](../02-architecture/decisions/ADR-0060-asymmetric-jwt-signing.md)) |
 | `ALGORITHM_KEY` | PII(주민번호 등) 암복호화 마스터키 | **운영 필수**, 로테이션 시 재암호화 선행 |
 | `OLD_ALGORITHM_KEY` | PII 키 회전 중 구키 복호화 폴백 | 평상시 미설정, 회전 창에서만 임시 주입 후 폐기 |
-| `ADMIN_INITIAL_PASSWORD` | 최초 기동의 관리자 비밀번호 | 없으면 관리자 계정이 로그인할 수 없는 상태로 남는다 |
+| `ADMIN_INITIAL_PASSWORD` | 최초 기동에서 관리자 비밀번호를 정한다 | 운영 오버레이와 `deploy.sh` 는 배포할 때마다 이 값이 없으면 기동 전에 중단한다 |
 | `MAIL_HOST` | SMTP 서버 | 없으면 메일이 로그로만 남으므로 운영 오버레이가 기동을 거부한다 |
 | `MFA_ACTIVE_KEY_ID` / `MFA_KEYS_JSON` | 보호계정 MFA 비밀을 암호화하는 키링 | 운영 오버레이 기본값(`MFA_REQUIRE_PROTECTED=true`)에서 필수 — 준비 절차는 [MFA 운영](../04-operations/mfa-operations.md#키-회전백업운영-적용) |
 

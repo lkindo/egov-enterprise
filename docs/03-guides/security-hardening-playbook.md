@@ -69,7 +69,7 @@ flowchart TD
 
 ### 3.2 [HTTP 403] Forbidden 진단 가이드
 
-0. 응답 본문의 `code`를 먼저 본다. `C010`이면 권한 부족이 아니라 CSRF 토큰 누락·불일치다([ADR-0038](../02-architecture/decisions/ADR-0038-credential-cookie-csrf-token.md)) — 쿠키 자격을 실은 쓰기 요청(POST·PUT·PATCH·DELETE)은 `XSRF-TOKEN` 쿠키와 같은 값을 `X-XSRF-TOKEN` 헤더로 보내야 한다. 이때는 요청에 그 쿠키와 헤더가 함께 실렸는지, 값이 같은지를 확인하고 아래 권한 점검으로 넘어가지 않는다. 쿠키 없이 `Authorization` 헤더만 쓰는 클라이언트는 대상이 아니다.
+0. 응답 본문의 `message`를 먼저 본다. CSRF 토큰 누락·불일치와 권한 부족은 둘 다 403 `C010`이고 문구로만 갈린다([ADR-0038](../02-architecture/decisions/ADR-0038-credential-cookie-csrf-token.md)). `message`에 `Request verification token missing or invalid`가 있으면 CSRF 다 — 쿠키 자격을 실은 쓰기 요청(POST·PUT·PATCH·DELETE)은 `XSRF-TOKEN` 쿠키와 같은 값을 `X-XSRF-TOKEN` 헤더로 보내야 하므로, 요청에 그 쿠키와 헤더가 함께 실렸는지와 값이 같은지를 확인하고 아래 권한 점검으로 넘어가지 않는다(쿠키 없이 `Authorization` 헤더만 쓰는 클라이언트는 대상이 아니다). 그 문구가 없으면 권한 문제이니 아래를 계속한다.
 1. 같은 요청의 method/path와 operation binding을 대조하고 요구 permission을 확인한다.
 2. 현재 `tb_authrt_user_map`의 그룹 배정과 `tb_authrt_grnt_map`의 OPERATION을 확인한다. NAVIGATION이나 그룹 이름을 기능 권한으로 오인하지 않는다.
 3. 현재 principal의 enabled·lock·permissions·authorizationVersion을 같은 요청 시점 기준으로 확인한다. ROLE 문자열을 추가하거나 fallback을 열어 해결하지 않는다.

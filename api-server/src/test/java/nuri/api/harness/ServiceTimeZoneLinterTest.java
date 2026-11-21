@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
@@ -41,11 +42,21 @@ class ServiceTimeZoneLinterTest {
     private static final Path APPLICATION = Path.of("api-server/src/main/java/nuri/ApiServerApplication.java");
     private static final Path ROOT_BUILD = Path.of("build.gradle");
 
-    /** 시험 JVM 시간대의 한 값. 다른 시간대 확인은 {@code -Dtest.timezone} 하나로만 한다. */
+    /**
+     * 시험 JVM 시간대의 한 값. 다른 시간대 확인은 {@code -Dtest.timezone} 하나로만 한다. 아래 세 표기는 문장 자리(줄 머리)에서만 센다 —
+     * 줄 끝 주석에 남은 표기는 설정이 아니다.
+     */
     private static final Pattern TEST_JVM_ZONE_DEFAULT = Pattern.compile(
-            "def\\s+testJvmZone\\s*=\\s*System\\.getProperty\\('test\\.timezone'\\)\\s*\\?:\\s*'Asia/Seoul'");
-    private static final Pattern TEST_TASK_ZONE = Pattern.compile("systemProperty\\s+'user\\.timezone'\\s*,\\s*testJvmZone\\b");
-    private static final Pattern PIT_JVM_ZONE = Pattern.compile("jvmArgs\\.add\\(\\s*\"-Duser\\.timezone=\\$\\{testJvmZone\\}\"");
+            "(?m)^[ \\t]*def[ \\t]+testJvmZone[ \\t]*=[ \\t]*System\\.getProperty\\('test\\.timezone'\\)[ \\t]*\\?:[ \\t]*'Asia/Seoul'"
+                    + "[ \\t]*(//.*)?$");
+    private static final Pattern TEST_TASK_ZONE = Pattern.compile(
+            "(?m)^[ \\t]*systemProperty[ \\t]*\\(?[ \\t]*'user\\.timezone'[ \\t]*,[ \\t]*testJvmZone[ \\t]*\\)?[ \\t]*(//.*)?$");
+    private static final Pattern PIT_JVM_ZONE = Pattern.compile(
+            "(?m)^[ \\t]*jvmArgs\\.add\\([ \\t]*\"-Duser\\.timezone=\\$\\{testJvmZone\\}\"(\\.toString\\(\\))?[ \\t]*\\)[ \\t]*(//.*)?$");
+    /** 설정이 있어야 할 자리. 같은 표기라도 다른 블록에 있으면 그 JVM 에 닿지 않는다. */
+    private static final Pattern TEST_TASK_BLOCK = Pattern.compile("(?m)^[ \\t]*tasks\\.withType\\(Test\\)\\.configureEach[ \\t]*\\{");
+    private static final Pattern PIT_BLOCK = Pattern.compile("(?m)^[ \\t]*pitest[ \\t]*\\{");
+    private static final Pattern ZONE_PROPERTY = Pattern.compile("user\\.timezone");
 
     private static final Pattern UTC_REFERENCE = Pattern.compile(
             "ZoneOffset\\.(UTC|ofHours\\(\\s*0\\s*\\)|ofHoursMinutes\\(\\s*0\\s*,\\s*0\\s*\\)|ofTotalSeconds\\(\\s*0\\s*\\))"
@@ -85,18 +96,46 @@ class ServiceTimeZoneLinterTest {
         return script.replaceAll("(?ms)^[ \\t]*/\\*.*?\\*/", "").replaceAll("(?m)^[ \\t]*//.*$", "");
     }
 
-    /** 빌드 파일이 Test 태스크와 PIT 의 JVM 기본 시간대를 같은 한국 표준시 값에 묶는지 본다. 주석으로 꺼 둔 줄은 설정이 아니다. */
+    /** {@code header} 로 여는 첫 블록의 본문(짝이 맞는 닫는 중괄호 앞까지). 없으면 빈 문자열이다. */
+    private static String block(String script, Pattern header) {
+        Matcher opening = header.matcher(script);
+        if (!opening.find()) {
+            return "";
+        }
+        int depth = 1;
+        for (int at = opening.end(); at < script.length(); at++) {
+            char current = script.charAt(at);
+            if (current == '{') {
+                depth++;
+            } else if (current == '}' && --depth == 0) {
+                return script.substring(opening.end(), at);
+            }
+        }
+        return "";
+    }
+
+    /** 블록이 {@code user.timezone} 을 정하는 횟수. 같은 속성을 두 번 정하면 뒤의 것이 이긴다. 줄 끝 주석은 세지 않는다. */
+    private static long zoneSettings(String block) {
+        return ZONE_PROPERTY.matcher(block.replaceAll("(?m)[ \\t]+//.*$", "")).results().count();
+    }
+
+    /**
+     * 빌드 파일이 Test 태스크와 PIT 의 JVM 기본 시간대를 같은 한국 표준시 값에 묶는지 본다. 설정은 그 JVM 을 정하는 블록 안의 문장이어야 하고
+     * 블록마다 하나여야 한다 — 주석으로 꺼 둔 줄, 줄 끝 주석에 남은 표기, 다른 블록으로 옮긴 줄은 설정이 아니다.
+     */
     static List<String> testJvmZoneViolations(String buildScript) {
         String script = withoutBuildComments(buildScript.replace("\r\n", "\n"));
+        String testTask = block(script, TEST_TASK_BLOCK);
+        String pit = block(script, PIT_BLOCK);
         List<String> found = new ArrayList<>();
         if (!TEST_JVM_ZONE_DEFAULT.matcher(script).find()) {
             found.add("시험 JVM 시간대의 기본값이 한국 표준시가 아니다");
         }
-        if (!TEST_TASK_ZONE.matcher(script).find()) {
-            found.add("Test 태스크가 JVM 기본 시간대를 testJvmZone 으로 고정하지 않는다");
+        if (!TEST_TASK_ZONE.matcher(testTask).find() || zoneSettings(testTask) != 1) {
+            found.add("Test 태스크가 JVM 기본 시간대를 testJvmZone 하나로 고정하지 않는다");
         }
-        if (!PIT_JVM_ZONE.matcher(script).find()) {
-            found.add("변이 시험(PIT) JVM 이 기본 시간대를 testJvmZone 으로 고정하지 않는다");
+        if (!PIT_JVM_ZONE.matcher(pit).find() || zoneSettings(pit) != 1) {
+            found.add("변이 시험(PIT) JVM 이 기본 시간대를 testJvmZone 하나로 고정하지 않는다");
         }
         return found;
     }
@@ -153,6 +192,45 @@ class ServiceTimeZoneLinterTest {
     void zonedBuildHasNoViolations() {
         assertThat(testJvmZoneViolations(ZONED_BUILD)).isEmpty();
         assertThat(testJvmZoneViolations(ZONED_BUILD.replace("\n", "\r\n"))).isEmpty();
+    }
+
+    @Test
+    @DisplayName("괄호를 쓴 호출과 줄 끝 주석이 붙은 문장도 같은 설정이다")
+    void equivalentStatementsAreNotViolations() {
+        assertThat(testJvmZoneViolations(ZONED_BUILD.replace(
+                "systemProperty 'user.timezone', testJvmZone", "systemProperty('user.timezone', testJvmZone) // 운영과 같은 값"))).isEmpty();
+        assertThat(testJvmZoneViolations(ZONED_BUILD.replace(
+                "jvmArgs.add(\"-Duser.timezone=${testJvmZone}\".toString())", "jvmArgs.add(\"-Duser.timezone=${testJvmZone}\") // minion"))).isEmpty();
+    }
+
+    static Stream<Arguments> misplacedSettings() {
+        String pitLine = "jvmArgs.add(\"-Duser.timezone=${testJvmZone}\".toString())";
+        String testLine = "systemProperty 'user.timezone', testJvmZone";
+        String pit = "변이 시험(PIT) JVM";
+        return Stream.of(
+                Arguments.of("PIT 줄을 Test 블록으로 옮김",
+                        ZONED_BUILD.replace(pitLine, "").replace(testLine, testLine + "\n        " + pitLine), pit),
+                Arguments.of("PIT 줄이 줄 끝 주석에만 남음",
+                        ZONED_BUILD.replace(pitLine, "threads = 4 // " + pitLine), pit),
+                Arguments.of("PIT 줄 뒤에 다른 값을 한 번 더 정함",
+                        ZONED_BUILD.replace(pitLine, pitLine + "\n        jvmArgs.add(\"-Duser.timezone=UTC\")"), pit),
+                Arguments.of("Test 줄을 pitest 블록으로 옮김",
+                        ZONED_BUILD.replace(testLine, "").replace(pitLine, pitLine + "\n        " + testLine), "Test 태스크"),
+                Arguments.of("Test 줄이 줄 끝 주석에만 남음",
+                        ZONED_BUILD.replace(testLine, "useJUnitPlatform() // " + testLine), "Test 태스크"),
+                Arguments.of("Test 줄 뒤에 다른 값을 한 번 더 정함",
+                        ZONED_BUILD.replace(testLine, testLine + "\n        systemProperty 'user.timezone', 'UTC'"), "Test 태스크"),
+                Arguments.of("기본값이 줄 끝 주석에만 남음",
+                        ZONED_BUILD.replace("def testJvmZone = System.getProperty('test.timezone') ?: 'Asia/Seoul'",
+                                "def testJvmZone = 'UTC' // System.getProperty('test.timezone') ?: 'Asia/Seoul'"),
+                        "기본값이 한국 표준시가 아니다"));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("misplacedSettings")
+    @DisplayName("빌드 파일 규칙은 설정의 자리와 중복을 본다")
+    void buildRuleSeesWhereTheSettingLives(String label, String build, String expected) {
+        assertThat(testJvmZoneViolations(build)).as(label).anySatisfy(reason -> assertThat(reason).contains(expected));
     }
 
     static Stream<Arguments> buildRuleViolations() {
