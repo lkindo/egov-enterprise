@@ -22,7 +22,7 @@ dependencies {
     api 'org.springframework.boot:spring-boot-starter-cache'
     api 'org.springframework.boot:spring-boot-starter-actuator'
     api libs.caffeine
-    api 'com.bucket4j:bucket4j_jdk17-core:8.21.0'
+    api 'com.bucket4j:bucket4j_jdk17-core:8.22.0'
     api 'com.warrenstrange:googleauth:1.5.0'
 
     // JWT
@@ -31,7 +31,7 @@ dependencies {
     runtimeOnly libs.jjwt.jackson
 
     // API Docs / Validation
-    api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.55'
+    api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.56'
 
     // QueryDSL
     // [2026-08-07 이관] com.querydsl -> io.github.openfeign.querydsl (CVE-2024-49203).
