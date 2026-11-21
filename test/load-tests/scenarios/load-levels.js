@@ -271,10 +271,11 @@ function createLoadPost(token, boardId, params = {}) {
     pstEndYmd: expiresOn,
   };
 
-  return http.post(url, JSON.stringify(payload), {
-    headers: Config.getAuthHeaders(token),
-    ...params,
-  });
+  const headers = Config.getAuthHeaders(token);
+  // setup()은 로그인과 같은 쿠키 저장소를 쓴다. 쿠키를 동반한 쓰기는 SPA와 같은 CSRF 헤더가 필요하다.
+  const csrf = http.cookieJar().cookiesForURL(url)['XSRF-TOKEN']?.[0];
+  if (csrf) headers['X-XSRF-TOKEN'] = csrf;
+  return http.post(url, JSON.stringify(payload), { ...params, headers });
 }
 
 function runPostCreateTest(token) {

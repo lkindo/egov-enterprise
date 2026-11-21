@@ -53,3 +53,24 @@ test('only an explicitly selected local fixture seeds empty reference boards', (
   assert.ok(scenario.includes('const references = readDashboardReferences(token, seedEmpty)'));
   assert.ok(workflow.includes("LOAD_TEST_SEED_EMPTY_BOARDS: ${{ secrets.LOAD_TEST_BASE_URL && 'false' || 'true' }}"));
 });
+
+test('board writes forward the CSRF cookie from the setup session as a request header', () => {
+  const start = scenario.indexOf('function createLoadPost(');
+  const end = scenario.indexOf('function runPostCreateTest(', start);
+  assert.ok(start >= 0 && end > start);
+  const url = 'http://localhost/api/v1/boards/posts';
+  for (const csrf of [undefined, 'synthetic-csrf']) {
+    const response = runInNewContext(scenario.slice(start, end) + "\ncreateLoadPost('session', 'notice')", {
+      Config: { BASE_URL: 'http://localhost', API_PREFIX: '/api/v1', getAuthHeaders: () => ({ Authorization: 'synthetic' }) },
+      http: {
+        cookieJar: () => ({ cookiesForURL: target => {
+          assert.equal(target, url);
+          return csrf ? { 'XSRF-TOKEN': [csrf] } : {};
+        } }),
+        post: (_url, _body, params) => params,
+      },
+    }, { timeout: 1000 });
+    assert.equal(response.headers['X-XSRF-TOKEN'], csrf);
+    assert.equal(response.headers.Authorization, 'synthetic');
+  }
+});
