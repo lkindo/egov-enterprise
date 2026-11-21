@@ -51,7 +51,7 @@
 - **설문 객관식 글 답** — 지금은 거부 대신 저장하지 않는다. `SurveySubmissionConcurrencyIntegrationTest.answers()` 고정물을 고칠 때 거부(400)로 바꿀지 판단한다.
 - **`User`·`DeptManage` 의 `@Version`, 공통코드 상세 표시 순서 컬럼** — 스키마 변경.
 - **`MenuService` 단건 수정** — `updateMenuManage`·`updateMenuOrders` 가 구조 저장과 같은 검증(3단계·버전·숨김 그룹)을 지나게 하거나 퇴역한다.
-- **`DeptJobService`·`MemoReportService` 서비스/쿼리 보강** — 업무보고 검색 조건은 #1130에서 반영됐다. 남은 작업은 ① `DeptJobService` 미존재 업무함 404 및 담당자(`searchCondition=2`) 이름·로그인ID `JPAExpressions` 서브쿼리 검색(`DeptJobServiceTest` `SubQueryExpression` AST 단언. 업무함 부서 확인 여부는 의도 확인 뒤 반영), ② `MemoReportService.updateMemoReport` 직접 호출부의 `lastMdfrId` `loginId` 우선 해석(`MemoReportServiceTest`. 컨트롤러 경유는 이미 반영)이다.
+- **부서 업무 이동 시 대상 부서 확인** — 업무 등록·이동은 대상 업무함 존재를 확인한다. 다른 부서 업무함 지정까지 제한할지는 현재 부서 간 배정 유스케이스를 확인한 뒤 결정한다.
 - **부서 업무함 FK** — `tb_dept_job_bx.dept_id` → `tb_ognz_info`(NOT VALID → 고아 0건이면 VALIDATE). 스키마 승인 필요.
 - **도움말·온라인 매뉴얼 공개 상태(초안/공개)** — 새 컬럼과 공개 목록 필터. 스키마 승인과 제품 판단이 먼저다.
 - **인덱스 마이그레이션 둘** — `tb_ifml_atrz_info(aplcnt_id, ifml_atrz_sn DESC)`, `tb_note_rcptn(rcvr_id)`. 넣기 전에 EXPLAIN 으로 사용을 확인하고, 공유 OCI 적용은 병합 뒤 따로 승인받는다.

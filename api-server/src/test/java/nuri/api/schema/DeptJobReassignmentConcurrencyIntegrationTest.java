@@ -110,6 +110,24 @@ class DeptJobReassignmentConcurrencyIntegrationTest {
     }
 
     @Test
+    void assigneeNameAndLoginSearchRetainTheMineScope() {
+        String displayName = fixture + " 담당자";
+        jdbc.update("UPDATE tb_user_info SET user_nm=? WHERE esntl_id IN (?, ?)", displayName, actor, winner);
+        VendorTestSql.insertKey(jdbc, """
+                INSERT INTO tb_dept_task_info
+                    (dept_task_nm, dept_task_cn, pic_id, frst_rgtr_id, last_mdfr_id, crt_dt, mdfcn_dt)
+                VALUES (?, 'another assignee', ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """, "dept_task_sn", fixture + " other", winner, actorLogin, actorLogin);
+
+        var page = org.springframework.data.domain.PageRequest.of(0, 10);
+        for (String keyword : List.of(displayName, actorLogin, actor)) {
+            assertThat(service.getDeptJobList(null, null, "2", keyword, true, page).getContent())
+                    .extracting(DeptJobDto::getDeptTaskSn).containsExactly(task);
+        }
+        assertThat(service.getDeptJobList(null, null, "2", winner, true, page)).isEmpty();
+    }
+
+    @Test
     void latestVersionCommitsOneIncrementAndOneNotification() {
         service.reassignDeptJob(task, winner, 0);
 
