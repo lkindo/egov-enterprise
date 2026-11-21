@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -66,6 +66,20 @@ describe('관리자 홈 — 권한에 맞는 조회와 원천에 맞는 이름',
     api.getUserList.mockResolvedValue({ list: [], total: 2 });
     api.getAuthorList.mockResolvedValue({ list: [], total: 3 });
     api.getOperationalSignals.mockResolvedValue({ observedAt: OBSERVED_AT, signals: [] });
+  });
+
+  it('새로고침은 권한이 있는 원천만 다시 조회하고 새 집계를 반영한다', async () => {
+    signIn(LOG_AUDIT_VIEWER);
+    renderHome();
+    expect(await screen.findByText('61')).toBeVisible();
+    const refresh = screen.getByRole('button', { name: '관리 현황 새로고침' });
+    await waitFor(() => expect(refresh).toHaveAttribute('aria-disabled', 'false'));
+    api.getAuditLogs.mockResolvedValue({ list: [SYS_LOG], total: 62 });
+    fireEvent.click(refresh);
+    expect(await screen.findByText('62')).toBeVisible();
+    expect(api.getOperationalSignals).toHaveBeenCalledTimes(2);
+    expect(api.getUserList).not.toHaveBeenCalled();
+    expect(api.getAuthorList).not.toHaveBeenCalled();
   });
 
   it('관리자 기본 그룹: 세 카드·운영 신호·최근 실패 요청을 그리고 실패 요청은 시스템 로그 화면으로 잇는다', async () => {
