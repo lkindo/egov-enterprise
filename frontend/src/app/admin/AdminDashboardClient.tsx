@@ -100,6 +100,7 @@ export default function AdminDashboardClient() {
   const {
     data: auditData,
     isLoading: isAuditLoading,
+    isFetching: isAuditFetching,
     isError: isAuditError,
     error: auditError,
     refetch: refetchAudit,
@@ -115,6 +116,7 @@ export default function AdminDashboardClient() {
 
   const {
     data: usersData,
+    isFetching: isUsersFetching,
     isError: isUsersError,
     refetch: refetchUsers,
   } = useQuery({
@@ -127,6 +129,7 @@ export default function AdminDashboardClient() {
 
   const {
     data: authorsData,
+    isFetching: isAuthorsFetching,
     isError: isAuthorsError,
     refetch: refetchAuthors,
   } = useQuery({
@@ -139,6 +142,7 @@ export default function AdminDashboardClient() {
 
   const {
     data: signalsData,
+    isFetching: isSignalsFetching,
     isError: isSignalsError,
     refetch: refetchSignals,
   } = useQuery({
@@ -151,6 +155,14 @@ export default function AdminDashboardClient() {
   });
 
   const hasError = isAuditError || isUsersError || isAuthorsError || isSignalsError;
+  const isRefreshing = isAuditFetching || isUsersFetching || isAuthorsFetching || isSignalsFetching;
+  const refresh = () => {
+    if (isRefreshing) return;
+    if (canReadSystemLog) void refetchAudit();
+    if (canReadUsers) void refetchUsers();
+    if (canReadAuthorities) void refetchAuthors();
+    if (canReadSignals) void refetchSignals();
+  };
   const retryAll = React.useCallback(() => {
     if (isAuditError) void refetchAudit();
     if (isUsersError) void refetchUsers();
@@ -196,6 +208,12 @@ export default function AdminDashboardClient() {
         highlight="업무 현황"
         subtitle="사용자·권한 그룹·실패 요청 현황과 운영 신호를 확인하고 관련 관리 화면으로 이동합니다."
         icon={LayoutDashboard}
+        actions={(hasSummaryCards || canReadSignals) && (
+          <Button type="button" variant="outline" size="sm" aria-disabled={isRefreshing} onClick={refresh}>
+            <RefreshCcw size={16} aria-hidden="true" />
+            관리 현황 새로고침
+          </Button>
+        )}
       />
 
       {/* 조회 실패를 '데이터 없음'으로 위장하지 않는다 — 실패 사실과 재시도 경로를 그대로 노출한다. 부르지 않은 조회는 실패가 아니다. */}

@@ -1,8 +1,46 @@
+import { randomUUID } from 'node:crypto';
 import { expect,test } from '../fixtures/browser-test';
 import { trackApiRequests } from '../fixtures/hydration';
 import { getAdminBearerToken } from '../utils/admin-token';
 import { screenYmd } from '../helpers/screen-date';
 test.describe('게시판과 커뮤니티', () => {
+    test('템플릿 목록을 보고 새로고침한 결과를 서버 원장과 대조한다', async ({ adminPage, adminRequest }) => {
+        const templates = '/api/v1/admin/system/templates';
+        const template = {
+            tmpltId: `E2ET_L_${randomUUID().slice(0, 8)}`, tmpltNm: '템플릿 조회 시험',
+            tmpltSeCd: 'TMPT02', tmpltPath: '/e2e/metadata-only', useYn: 'Y',
+        };
+        expect((await adminRequest.post(templates, { data: template })).status()).toBe(201);
+        const endpoint = `${templates}/${template.tmpltId}`;
+        try {
+            await adminPage.goto('/admin/community/templates');
+            const table = adminPage.getByRole('table', { name: '템플릿 목록' });
+            const row = table.getByRole('row').filter({
+                has: adminPage.getByRole('cell', { name: template.tmpltId, exact: true }),
+            });
+            await expect(row.getByRole('cell', { name: template.tmpltNm, exact: true })).toBeVisible();
+
+            const changedName = '템플릿 조회 시험 갱신';
+            const saved = await adminRequest.get(endpoint);
+            await expect(saved).toBeOK();
+            const { version } = (await saved.json()).data;
+            await expect(await adminRequest.put(endpoint, {
+                data: { ...template, tmpltNm: changedName, version },
+            })).toBeOK();
+            const refreshed = adminPage.waitForResponse(response =>
+                response.request().method() === 'GET' && new URL(response.url()).pathname === templates);
+            await adminPage.getByRole('button', { name: '템플릿 목록 새로고침' }).click();
+            const response = await refreshed;
+            expect(response.status()).toBe(200);
+            expect((await response.json()).data).toEqual(expect.arrayContaining([
+                expect.objectContaining({ tmpltId: template.tmpltId, tmpltNm: changedName }),
+            ]));
+            await expect(row.getByRole('cell', { name: changedName, exact: true })).toBeVisible();
+        } finally {
+            await expect(await adminRequest.delete(endpoint)).toBeOK();
+        }
+    });
+
     test('템플릿 안내에서 게시판 유형을 미리 보며 실제 게시글 요청을 보내지 않는다', async ({ adminPage }, testInfo) => {
         await adminPage.setViewportSize({ width: 1440, height: 1000 });
         await adminPage.goto('/admin/community/templates');

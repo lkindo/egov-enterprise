@@ -61,4 +61,40 @@ describe('CommunityManageDialog 실제 Radix 템플릿 선택', () => {
     await waitFor(() => expect(mocks.updateCommunity).toHaveBeenCalledWith(11,
       expect.objectContaining({ tmpltId: undefined })));
   });
+
+  it('대량 후보에서 렌더링을 제한하고 검색으로 뒷부분의 값을 선택해 저장한다', async () => {
+    mocks.getTemplateOptions.mockResolvedValue({
+      available: true,
+      templates: Array.from({ length: 9000 }, (_, index) => ({
+        tmpltId: `OPTION_${index + 1}`,
+        tmpltNm: `템플릿 ${index + 1}`,
+      })),
+    });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const rendered = render(<QueryClientProvider client={client}><CommunityManageDialog isOpen onClose={vi.fn()} /></QueryClientProvider>);
+    fireEvent.click(await screen.findByRole('button', { name: '기존 모임 수정' }));
+    const search = await screen.findByRole('textbox', { name: '템플릿 이름 또는 ID 검색' });
+    const select = screen.getByRole('combobox', { name: '템플릿' });
+    expect(select).toHaveTextContent('OLD_OFF');
+
+    fireEvent.click(select);
+    expect(await screen.findByRole('option', { name: /^템플릿 1$/ })).toBeVisible();
+    expect(screen.getAllByRole('option')).toHaveLength(52);
+    expect(rendered.container.querySelectorAll('select:has(option[value="__none__"]) option')).toHaveLength(52);
+    fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' });
+    fireEvent.click(screen.getByRole('button', { name: '템플릿 목록 다음 페이지' }));
+    fireEvent.click(select);
+    expect(await screen.findByRole('option', { name: /^템플릿 51$/ })).toBeVisible();
+    expect(screen.queryByRole('option', { name: /^템플릿 1$/ })).toBeNull();
+    fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' });
+
+    fireEvent.change(search, { target: { value: 'option_9000' } });
+    fireEvent.click(select);
+    fireEvent.click(await screen.findByRole('option', { name: '템플릿 9000' }));
+    fireEvent.change(search, { target: { value: 'OPTION_1' } });
+    expect(select).toHaveTextContent('템플릿 9000');
+    fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
+    await waitFor(() => expect(mocks.updateCommunity).toHaveBeenCalledWith(11,
+      expect.objectContaining({ tmpltId: 'OPTION_9000' })));
+  });
 });

@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
 
 @Transactional
 @DisplayName("사용자 로그 리포지토리 테스트")
@@ -95,6 +96,40 @@ class UserLogRepositoryTest extends PersistenceTestSupport {
         // then
         assertThat(result.getContent()).isNotEmpty();
         assertThat(result.getContent().get(0).getSrvcNm()).isEqualTo("TestService");
+    }
+
+    @Test
+    @DisplayName("같은 날짜의 로그가 페이지를 넘으면 복합 기본키 순서로 한 번씩 반환된다")
+    void sameDayLogsHaveStablePageBoundaries() {
+        entityManager.persist(User.builder().userId("alpha").userNm("Alpha").pswd("password")
+                .esntlId("LOG_ALPHA").build());
+        entityManager.persist(User.builder().userId("beta").userNm("Beta").pswd("password")
+                .esntlId("LOG_BETA").build());
+        logOnSameDay("LOG_ALPHA", "AlphaService", "alphaMethod");
+        logOnSameDay("LOG_BETA", "BetaService", "alphaMethod");
+        logOnSameDay("LOG_ALPHA", "BetaService", "betaMethod");
+        logOnSameDay("LOG_BETA", "BetaService", "betaMethod");
+        logOnSameDay("LOG_BETA", "AlphaService", "betaMethod");
+        entityManager.flush();
+        entityManager.clear();
+
+        Page<UserLog> first = userLogRepository.searchUserLogs(null, "2026-11-20", "2026-11-20", PageRequest.of(0, 2));
+        Page<UserLog> second = userLogRepository.searchUserLogs(null, "2026-11-20", "2026-11-20", PageRequest.of(1, 2));
+        Page<UserLog> third = userLogRepository.searchUserLogs(null, "2026-11-20", "2026-11-20", PageRequest.of(2, 2));
+        assertThat(first.getTotalElements()).isEqualTo(5);
+        assertThat(first).extracting(UserLog::getDmndUserId, UserLog::getSrvcNm, UserLog::getMthdNm)
+                .containsExactly(tuple("LOG_BETA", "BetaService", "betaMethod"),
+                        tuple("LOG_BETA", "BetaService", "alphaMethod"));
+        assertThat(second).extracting(UserLog::getDmndUserId, UserLog::getSrvcNm, UserLog::getMthdNm)
+                .containsExactly(tuple("LOG_BETA", "AlphaService", "betaMethod"),
+                        tuple("LOG_ALPHA", "BetaService", "betaMethod"));
+        assertThat(third).extracting(UserLog::getDmndUserId, UserLog::getSrvcNm, UserLog::getMthdNm)
+                .containsExactly(tuple("LOG_ALPHA", "AlphaService", "alphaMethod"));
+    }
+
+    private void logOnSameDay(String actor, String service, String method) {
+        userLogRepository.save(UserLog.builder().ocrnYmd("20261120").dmndUserId(actor).srvcNm(service)
+                .mthdNm(method).crtCnt(1).build());
     }
 
     @Test

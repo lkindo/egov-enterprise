@@ -31,10 +31,45 @@ test.describe('공통 셸과 인증', () => {
             test.beforeEach(async ({ page }) => {
                 await page.goto('/admin');
             });
-            test("관리자 대시보드 통계 카드와 실패 요청 타임라인을 표시한다", async ({ page }) => {
-                console.log('>>> Step 1: Verifying Stat Cards');
-                await expect(page.getByText('등록 사용자', { exact: true }).first()).toBeVisible();
-                await expect(page.getByText('권한 그룹', { exact: true }).first()).toBeVisible();
+            test("관리자 대시보드를 새로고침하면 서버 집계를 표시한다", async ({ page, adminRequest }) => {
+                const cards = [
+                    { label: '등록 사용자', endpoint: '/api/v1/admin/system/users', size: '1', suffix: '' },
+                    { label: '권한 그룹', endpoint: '/api/v1/admin/system/authorities', size: '1', suffix: '개 그룹' },
+                    { label: '실패 요청 로그', endpoint: '/api/v1/admin/system/logs/system', size: '5', suffix: '' },
+                ];
+                const refresh = page.getByRole('button', { name: '관리 현황 새로고침' });
+                await expect(refresh).toBeEnabled();
+                const authorityTotal = page.getByRole('link', { name: /^권한 그룹.*상세 화면으로 이동$/ })
+                    .getByText(/^[\d,]+개 그룹$/);
+                await expect(authorityTotal).toBeVisible();
+                const previousTotal = await authorityTotal.innerText();
+                const groups = '/api/v1/admin/authorization/groups';
+                const code = `E2E_DASH_${randomBytes(5).toString('hex').toUpperCase()}`;
+                expect((await adminRequest.post(groups, { data: { code, name: `대시보드 확인 ${code}` } })).status()).toBe(201);
+                try {
+                    const responses = cards.map(({ endpoint, size }) => page.waitForResponse(response => {
+                        const url = new URL(response.url());
+                        return response.request().method() === 'GET' && url.pathname === endpoint &&
+                            url.searchParams.get('page') === '1' && url.searchParams.get('size') === size;
+                    }));
+                    await refresh.click();
+                    const results = await Promise.all(responses);
+                    for (const [index, { label, suffix }] of cards.entries()) {
+                        const response = results[index];
+                        expect(response.status()).toBe(200);
+                        const { data } = await response.json();
+                        expect(Number.isSafeInteger(data.total)).toBe(true);
+                        const shown = data.total.toLocaleString('ko-KR') + suffix;
+                        if (label === '권한 그룹') expect(shown).not.toBe(previousTotal);
+                        const card = page.getByRole('link', { name: new RegExp(`^${label} .*상세 화면으로 이동$`) });
+                        await expect(card.getByText(shown, { exact: true })).toBeVisible();
+                    }
+                } finally {
+                    const created = await adminRequest.get(`${groups}/${code}`);
+                    await expect(created).toBeOK();
+                    const { version } = (await created.json()).data;
+                    await expect(await adminRequest.delete(`${groups}/${code}`, { params: { version } })).toBeOK();
+                }
                 console.log('>>> Step 2: Verifying Audit Intelligence Widget');
                 // [2026-07-27 정정] 종전에는 `.recharts-surface` 를 기다렸으나 **대시보드에는 recharts 가 없다**.
                 // 저장소 전수 확인 결과 recharts 사용처는 admin/stats/IntelligenceHubClient 하나뿐이며,

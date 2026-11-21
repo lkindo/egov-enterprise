@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -37,6 +37,7 @@ const StandardModal = dynamic(
 /** Radix Select 는 빈 문자열 value 를 허용하지 않는다 — '템플릿 없음' 은 별도 sentinel 로 나른다. */
 const NO_TEMPLATE = '__none__';
 const PAGE_SIZE = 10;
+const TEMPLATE_PAGE_SIZE = 50;
 
 /**
  * 커뮤니티 폼 계약. 서버 DTO(CommunityDto)의 필수 이름·300자 상한을 사용한다.
@@ -87,6 +88,9 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
   const [pendingCloseSn, setPendingCloseSn] = useState<number | null>(null);
   const closePendingRef = useRef(false);
   const [membersOf, setMembersOf] = useState<Community | null>(null);
+  const [templateSearch, setTemplateSearch] = useState('');
+  const [templatePage, setTemplatePage] = useState(1);
+  const templateSearchId = useId();
 
   const form = useAppForm(communitySchema, { defaultValues: EMPTY_FORM });
 
@@ -109,6 +113,18 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
   const total = data?.total ?? 0;
   const templateFieldShown = templateOptions?.available !== false;
   const activeTemplates = templateOptions?.templates ?? [];
+  const hasManyTemplates = activeTemplates.length > TEMPLATE_PAGE_SIZE;
+  const matchingTemplates = useMemo(() => {
+    const search = templateSearch.trim().toLowerCase();
+    const candidates = templateOptions?.templates ?? [];
+    if (!search || candidates.length <= TEMPLATE_PAGE_SIZE) return candidates;
+    return candidates.filter(({ tmpltId, tmpltNm }) =>
+      tmpltId.toLowerCase().includes(search) || tmpltNm?.toLowerCase().includes(search));
+  }, [templateSearch, templateOptions]);
+  const lastTemplatePage = Math.max(1, Math.ceil(matchingTemplates.length / TEMPLATE_PAGE_SIZE));
+  const currentTemplatePage = Math.min(templatePage, lastTemplatePage);
+  const firstTemplate = (currentTemplatePage - 1) * TEMPLATE_PAGE_SIZE;
+  const visibleTemplates = matchingTemplates.slice(firstTemplate, firstTemplate + TEMPLATE_PAGE_SIZE);
   const existingTemplateId = editing?.tmpltId;
   const preserveExistingTemplate = !!existingTemplateId
     && !activeTemplates.some(template => template.tmpltId === existingTemplateId);
@@ -200,6 +216,8 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
   const handleDialogClose = () => {
     if (submitLock.current) return;
     startCreate();
+    setTemplateSearch('');
+    setTemplatePage(1);
     setMembersOf(null);
     onClose();
   };
@@ -365,9 +383,40 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
             <ShadcnFormField
               control={form.control}
               name="tmpltId"
-              render={({ field }) => (
-                <FormItem>
+              render={({ field }) => {
+                // Radix needs the selected option to render its label even when the search or page changes.
+                const selectedTemplate = field.value && !visibleTemplates.some(t => t.tmpltId === field.value)
+                  ? activeTemplates.find(t => t.tmpltId === field.value)
+                  : undefined;
+                return <FormItem>
                   <FormLabel>템플릿</FormLabel>
+                  {hasManyTemplates && (
+                    <div className="space-y-2">
+                      <label htmlFor={templateSearchId} className="text-sm">템플릿 이름 또는 ID 검색</label>
+                      <Input
+                        id={templateSearchId}
+                        value={templateSearch}
+                        onChange={(event) => {
+                          setTemplateSearch(event.target.value);
+                          setTemplatePage(1);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' && !event.nativeEvent.isComposing) event.preventDefault();
+                        }}
+                      />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p role="status" className="mr-auto text-xs text-muted-foreground">
+                          {matchingTemplates.length === 0
+                            ? '일치하는 템플릿이 없습니다.'
+                            : `${matchingTemplates.length.toLocaleString()}개 중 ${firstTemplate + 1}–${firstTemplate + visibleTemplates.length}`}
+                        </p>
+                        <Button type="button" variant="outline" size="sm" disabled={currentTemplatePage === 1}
+                          onClick={() => setTemplatePage(currentTemplatePage - 1)}>템플릿 목록 이전 페이지</Button>
+                        <Button type="button" variant="outline" size="sm" disabled={currentTemplatePage === lastTemplatePage}
+                          onClick={() => setTemplatePage(currentTemplatePage + 1)}>템플릿 목록 다음 페이지</Button>
+                      </div>
+                    </div>
+                  )}
                   <Select
                     value={field.value || NO_TEMPLATE}
                     onValueChange={(value) => {
@@ -386,8 +435,10 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                       {preserveExistingTemplate && existingTemplateId && <SelectItem value={existingTemplateId}>
                         {existingTemplateId} (기존 선택 유지·사용 상태 확인 필요)
                       </SelectItem>}
-                      {activeTemplates
-                        .map((template) => (
+                      {selectedTemplate && <SelectItem value={selectedTemplate.tmpltId}>
+                        {selectedTemplate.tmpltNm || selectedTemplate.tmpltId}
+                      </SelectItem>}
+                      {visibleTemplates.map((template) => (
                           <SelectItem key={template.tmpltId} value={template.tmpltId}>
                             {template.tmpltNm || template.tmpltId}
                           </SelectItem>
@@ -396,8 +447,8 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                   </Select>
                   <p className="text-xs text-muted-foreground">새 선택은 사용 중인 원장 항목만 가능합니다. 기존 선택은 유지할 수 있으며 경로 등록만으로 새 화면이 만들어지지는 않습니다.</p>
                   <FormMessage />
-                </FormItem>
-              )}
+                </FormItem>;
+              }}
             />
             )}
             {editing && (
