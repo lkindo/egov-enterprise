@@ -5,8 +5,8 @@ status: active
 authority: derived-active-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-11-12
-verified_against: d27bf0adb37971b3ba002ce47374761eee656014
+verified_at: 2026-11-22
+verified_against: 44ed238d30e1c5b71225cd02d44d19a0c504deba
 canonical_sources:
   - ../../docs/04-operations/known-gaps-detail.md
   - ../../docs/02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md
@@ -36,7 +36,7 @@ refresh_triggers:
 
 ## 범위·상태 정의
 
-이 파일은 현재 코드나 외부 실측으로 재현 가능한 미해결 위험의 얇은 인덱스다. 상세 원장은 링크된 문서·코드이며, 완료 이력은 Git과 보관 기록에 남긴다. 활성 표 밖에는 종료 뒤 남은 경계와 재개 조건만 둔다. 세션마다 자동으로 읽히므로 아래 두 표에는 모든 작업에 걸리거나 글로만 지켜지는 금지가 있는 행만 전문으로 두고, 특정 경로에서만 필요한 행은 「영역 상세 gap 레지스트리」에 한 줄로 남긴 뒤 전문을 [gap 영역 상세](../../docs/04-operations/known-gaps-detail.md)에 둔다.
+이 파일은 현재 코드나 외부 실측으로 재현 가능한 미해결 위험의 얇은 인덱스다. 상세 원장은 링크된 문서·코드이며, 완료 이력은 Git과 보관 기록에 남긴다. 종료 뒤 남은 경계와 재개 조건은 경로에 따라 읽도록 영역 상세에 두고 여기에는 그 위치만 둔다. 세션마다 자동으로 읽히므로 아래 두 표에는 모든 작업에 걸리거나 글로만 지켜지는 금지가 있는 행만 전문으로 두고, 특정 경로에서만 필요한 행은 「영역 상세 gap 레지스트리」에 한 줄로 남긴 뒤 전문을 [gap 영역 상세](../../docs/04-operations/known-gaps-detail.md)에 둔다.
 
 - 우선순위: `P0` 즉시 안전/false-green, `P1` 높은 회귀·운영 위험, `P2` 계획 필요, `P3` 개선.
 - 상태: `open`, `blocked-external`, `deferred`, `accepted-risk`, `needs-revalidation`.
@@ -54,20 +54,12 @@ refresh_triggers:
 
 ### 종료한 항목의 남은 경계
 
-종료·기관 이전의 상세 이력은 [보관 기록](../../docs/archived/operational-decisions-history.md#종료이전-gap-기록)에 둔다. 다음은 종료로 없어지지 않은 위험·재개 조건이다.
+종료·기관 이전의 상세 이력은 [보관 기록](../../docs/archived/operational-decisions-history.md#종료이전-gap-기록)에 둔다. 종료로 없어지지 않은 위험·재개 조건은 모두 특정 경로에서만 필요해 [gap 영역 상세](../../docs/04-operations/known-gaps-detail.md)의 영역 절 끝 「종료한 항목의 남은 경계」에 두고, 활성 gap 과 같은 경로 판정으로 읽는다.
 
-- `GAP-FE-002`: CI의 flaky 감소는 반복 실행으로 확인한다. main 로그에 `socket hang up`/`ECONNRESET`이 재발하면 원인을 재검증한다([종료 근거](../../docs/archived/operational-decisions-history.md#gap-fe-002)).
-- `GAP-FE-003`: 본문은 여전히 따로 공개되므로 서버에서 오래 걸리는 본문은 늦게 하이드레이션하고, 그 전에 넣은 입력은 React 가 되돌린다 — E2E 는 `waitForHydration` 으로 기다린다. 공급자가 첫 화면 직후 값을 다시 바꾸면 같은 경합이 돌아온다(공급자 단위 시험이 막는다). 미리 채운 캐시(HydrationBoundary)와 그 소비자를 다른 Suspense(`next/dynamic` 의 loading 등)로 나누면 로그아웃의 캐시 비움이 늦은 경계를 빈 캐시로 하이드레이션해 #418 이 난다 — 업무 홈은 한 단위로 묶었고 구조 단언이 막는다(2026-10-23)([종료 근거](../../docs/archived/operational-decisions-history.md#gap-fe-003)).
-- `GAP-MEMO-001`: 지시 작성자 컬럼이 없어 변경 전에 수신자 아닌 사람이 남긴 지시 여부는 저장소로 판별할 수 없다([인가 변경 범위](../../docs/archived/operational-decisions-history.md#gap-memo-001)).
-- `GAP-BASE-002`: T2는 required가 아니며 재실패 시 새 gap을 연다. core의 소비자 없는 게시판 DTO 3개와, 투영 원장이 의도치 않은 연쇄 제거도 기대 부재로 받아들이는 한계는 남는다([범위](../../docs/archived/operational-decisions-history.md#gap-base-002)).
-- `GAP-ETL-001`: 앞서 커밋한 chunk는 남아 전체 되돌리기는 승인된 백업 복원이다. 이후 도입된 원장 승인 예외 격리와 쓰기 오류 중단을 구분한다([현행 ADR-0031](../../docs/02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md), [복구 런북](../../docs/04-operations/migration-recovery-runbook.md)).
-- `GAP-BOARD-002`: 2026-10-16 확인한 시드·라이브 게시판 4개의 유형 코드·템플릿 불일치는 보정하지 않았다. 화면은 템플릿 이름에 짝 불일치를 덧붙여 보이며(ADR-0043 결정 5) 데이터 수정은 별도 승인 대상이다([남은 데이터 경계](../../docs/archived/operational-decisions-history.md#gap-board-002)).
-- `GAP-BOARD-003`: 비밀·논리 삭제 글에서 `BOARD_READ_ALL`만 있으면 본문은 열리고 첨부는 403인 비대칭은 의도다. 예약 게시는 B1(#966)이 집행하며, 버전이 없는 옛 글은 수정·일정 변경을 400으로 막는다 — 다른 도입 환경의 보정은 별도 데이터 승인이다([종료 근거](../../docs/archived/operational-decisions-history.md#gap-board-003)).
-- `GAP-DOMAIN-001`: 추천 이력이 없던 기존 `like_cnt` 값은 유지한다. `GAP-BOARD-001`: 쓰지 않는 게시글 비밀번호 컬럼의 제거는 별도 스키마 승인이다([기존 집계](../../docs/archived/operational-decisions-history.md#gap-domain-001), [컬럼 경계](../../docs/archived/operational-decisions-history.md#gap-board-001)).
-- `GAP-DEP-002`: spring-retry 유지 판단·재개 조건은 [후속 결정](../../docs/archived/operational-decisions-history.md#dec-ops-125)과 [정리 기록](../../docs/04-operations/readiness-followups.md#후속-정리-2026-09-24)을 따른다. 당시 기록한 Boot 4.1 지원 종료는 2027-07-31이며 다음 minor 결정 때 재확인한다.
-- `GAP-POLL-001`·`GAP-POLICY-001`: 다른 도입 환경의 기존 NULL 분포는 기관이 읽기 집계로 확인한다. `GAP-API-001`: 내부 확장 Map과 추가 JSON 필드 호환성은 남으며 binary/stream 전송까지 타입화한 결과가 아니다([기존 데이터](../../docs/archived/operational-decisions-history.md#gap-poll-001), [타입 경계](../../docs/archived/operational-decisions-history.md#gap-api-001)).
-- `GAP-CMTY-001`: 커뮤니티 운영자 위임은 닫혔다 — 운영자는 그 커뮤니티의 승인 회원이면서 `mngrYn='Y'` 이고, 운영 범위는 그 커뮤니티 하나다(다른 커뮤니티·신청·탈퇴·일반 회원 403). 생성 후 게시판 귀속 변경은 쌓인 글의 열람 범위를 소급 바꾸므로 인가 의미 결정이 먼저이고(H3), 게시판 외 회원 전용 자원은 없다. `CommunityUser.userId` 는 esntlId 축이다([종료 근거](../../docs/archived/operational-decisions-history.md#gap-cmty-001)).
-- `GAP-ARCH-001`: `business-app` 서비스 계층의 기능 간 결합은 포트·이벤트로 모두 역전했다. 결합 원장이 남은 공통 핵심 참조와 함께 edge 정확 집합으로 감시하며, 새 기능 간 edge 는 원장 등재와 사유가 있어야 통과한다. 감시 범위는 서비스 계층 type 참조다 — 엔티티는 `DomainIsolationTest` 가 보며 게시판↔댓글·스크랩→게시판·포상→결재의 기존 엔티티 결합은 허용 예외로 남는다(그 기능을 따로 지워야 하면 그때 분리한다). 프런트 기능 간 import 는 투영 tsc(GAP-PACK-001)가 본다([종료 근거](../../docs/archived/operational-decisions-history.md#gap-arch-001)).
+- 제품 동작·화면·도메인: GAP-FE-002·GAP-FE-003·GAP-MEMO-001·GAP-BOARD-002·GAP-BOARD-003·GAP-DOMAIN-001·GAP-BOARD-001·GAP-POLL-001·GAP-POLICY-001·GAP-API-001·GAP-CMTY-001·GAP-ARCH-001
+- 프로젝트 생성기·재사용 투영: GAP-BASE-002
+- 레거시 이관 도구: GAP-ETL-001
+- CI·검증·거버넌스: GAP-DEP-002
 
 ## 재검증 대기
 
