@@ -49,6 +49,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -181,11 +182,13 @@ class InformalSanctionWorkflowServiceTest {
         });
         InformalSanctionDto request = draft();
         request.setReqYmd(date);
-        String before = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        // The business day is Korean even when PIT starts its worker JVM in UTC.
+        ZoneId businessZone = ZoneId.of("Asia/Seoul");
+        String before = LocalDate.now(businessZone).format(DateTimeFormatter.BASIC_ISO_DATE);
 
         service.registerInformalSanction(request, List.of(stage(ApprovalStageKind.APPROVAL, "first")));
 
-        String after = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        String after = LocalDate.now(businessZone).format(DateTimeFormatter.BASIC_ISO_DATE);
         ArgumentCaptor<InformalSanction> saved = ArgumentCaptor.forClass(InformalSanction.class);
         verify(informalSanctionRepository).save(saved.capture());
         if (date == null || date.isBlank()) assertThat(saved.getValue().getReqYmd()).isIn(before, after);
