@@ -8,6 +8,7 @@ import nuri.business.domain.cms.CmsContentRevision;
 import nuri.business.domain.cms.CmsContentRevisionFile;
 import nuri.business.domain.cms.CmsContentRevisionFileRepository;
 import nuri.business.domain.cms.CmsContentRevisionRepository;
+import nuri.business.domain.cms.CmsRevisionHistoryRow;
 import nuri.business.domain.cms.CmsSiteSetting;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.cms.CmsDocumentValidator.Mode;
@@ -309,11 +310,18 @@ public class CmsPageAdminService {
     }
 
     public List<CmsRevisionSummaryDto> getRevisions(Long contsSn) {
-        CmsContent content = find(contsSn);
-        List<CmsContentRevision> revisions = revisionRepository.findByContsSnOrderByContsRvsnSnDesc(contsSn);
+        List<CmsRevisionHistoryRow> revisions = revisionRepository.findHistory(Objects.requireNonNull(contsSn));
+        if (revisions.isEmpty()) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "콘텐츠 페이지를 찾을 수 없습니다");
+        }
+        if (revisions.getFirst().contsRvsnSn() == null) {
+            return List.of();
+        }
         List<CmsRevisionSummaryDto> result = new ArrayList<>(revisions.size());
         for (int i = 0; i < revisions.size(); i++) {
-            result.add(summary(revisions.get(i), revisions.size() - i, content.getContsRvsnSn()));
+            CmsRevisionHistoryRow row = revisions.get(i);
+            result.add(new CmsRevisionSummaryDto(row.contsRvsnSn(), revisions.size() - i, row.contsTtl(),
+                    row.rvsnRsn(), row.frstRgtrId(), row.crtDt(), row.current()));
         }
         return result;
     }

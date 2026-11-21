@@ -1,11 +1,13 @@
 package nuri.api.schema;
 
+import nuri.business.core.harness.QueryCountInspector;
 import nuri.business.domain.template.TemplateRepository;
 import nuri.business.service.template.TmplatInfoService;
 import nuri.business.service.template.dto.TemplateDto;
 import nuri.business.service.template.dto.TemplateMapper;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.foundation.core.template.AssignableTemplate;
 import nuri.foundation.security.service.CustomUserDetails;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,9 +21,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -49,13 +53,47 @@ class TemplateCreationIntegrityIntegrationTest {
     @BeforeEach
     void prepareIdentity() {
         templateId = "T_" + UUID.randomUUID().toString().replace("-", "").substring(0, 18);
-        authenticateCreator();
+        authenticate("TEMPLATE_CREATE");
     }
 
     @AfterEach
     void removeOwnFixture() {
         SecurityContextHolder.clearContext();
         jdbc.update("DELETE FROM tb_tmplt_info WHERE tmplt_id=?", templateId);
+    }
+
+    @Test
+    @Transactional
+    void pickerReadsOnlyActiveIdsAndNamesAndKeepsNameThenIdOrder() {
+        String prefix = templateId.substring(0, 19);
+        jdbc.batchUpdate("""
+                INSERT INTO tb_tmplt_info (tmplt_id, tmplt_nm, tmplt_se_cd, tmplt_path, use_yn)
+                VALUES (?, ?, 'TMPT01', '/fixture', ?)
+                """, List.of(
+                new Object[]{prefix + "C", "한국어", "Y"},
+                new Object[]{prefix + "D", "꺼짐", "N"},
+                new Object[]{prefix + "E", "apple", "Y"},
+                new Object[]{prefix + "B", "English", "Y"},
+                new Object[]{prefix + "A", "English", "Y"}));
+        authenticate("TEMPLATE_READ");
+
+        QueryCountInspector.start();
+        try {
+            assertThat(service.assignableTemplates()).filteredOn(item -> item.tmpltId().startsWith(prefix))
+                    .containsExactly(new AssignableTemplate(prefix + "A", "English"),
+                            new AssignableTemplate(prefix + "B", "English"), new AssignableTemplate(prefix + "E", "apple"),
+                            new AssignableTemplate(prefix + "C", "한국어"));
+            assertThat(QueryCountInspector.getQueries()).filteredOn(sql -> sql.contains("tb_tmplt_info"))
+                    .singleElement().satisfies(query -> {
+                        String sql = query.toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
+                        String projection = sql.substring(sql.indexOf("select ") + 7, sql.indexOf(" from "));
+                        assertThat(projection.split(",")).hasSize(2);
+                        assertThat(projection).contains("tmplt_id", "tmplt_nm");
+                        assertThat(sql).containsPattern("\\bwhere\\b.*\\buse_yn\\b");
+                    });
+        } finally {
+            QueryCountInspector.clear();
+        }
     }
 
     @Test
@@ -94,7 +132,7 @@ class TemplateCreationIntegrityIntegrationTest {
         var release = new CountDownLatch(1);
         try (var executor = Executors.newFixedThreadPool(2)) {
             var first = executor.submit(() -> {
-                authenticateCreator();
+                authenticate("TEMPLATE_CREATE");
                 try {
                     new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
                         service.insertTmplatInfo(template("winner"));
@@ -111,7 +149,7 @@ class TemplateCreationIntegrityIntegrationTest {
                 if (!ready && first.isDone()) first.get(1, TimeUnit.SECONDS);
                 assertThat(ready).as("선행 INSERT가 DB에 반영되어야 한다").isTrue();
                 var second = executor.submit(() -> {
-                    authenticateCreator();
+                    authenticate("TEMPLATE_CREATE");
                     try {
                         assertThatThrownBy(() -> new TransactionTemplate(transactionManager)
                                 .executeWithoutResult(status -> {
@@ -148,9 +186,9 @@ class TemplateCreationIntegrityIntegrationTest {
                 .tmpltPath("/" + name).useYn("Y").build();
     }
 
-    private static void authenticateCreator() {
+    private static void authenticate(String permission) {
         var principal = CustomUserDetails.builder().userId("template-creator").esntlId("TEMPLATE_CREATOR")
-                .enabled(true).permissions(List.of("TEMPLATE_CREATE")).build();
+                .enabled(true).permissions(List.of(permission)).build();
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
     }

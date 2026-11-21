@@ -5,6 +5,7 @@ import nuri.business.domain.template.Template;
 import nuri.business.domain.template.TemplateRepository;
 import nuri.business.service.template.dto.TemplateDto;
 import nuri.business.service.template.dto.TemplateMapper;
+import nuri.foundation.core.template.AssignableTemplate;
 import nuri.foundation.core.template.TemplateReferenceContributor;
 import nuri.foundation.security.service.CustomUserDetails;
 import org.junit.jupiter.api.AfterEach;
@@ -99,10 +100,8 @@ class TmplatInfoServiceTest {
     @Test
     @DisplayName("지정 후보는 사용 중 템플릿만 이름 순으로 주고 템플릿 조회 권한을 요구한다")
     void assignableTemplatesAreActiveOnlyAndRequireTemplateRead() {
-        when(templateRepository.findAll()).thenReturn(List.of(
-                Template.builder().tmpltId("B").tmpltNm("나 템플릿").useYn("Y").build(),
-                Template.builder().tmpltId("OFF").tmpltNm("가 꺼짐").useYn("N").build(),
-                Template.builder().tmpltId("A").tmpltNm("가 템플릿").useYn("Y").build()));
+        when(templateRepository.findAssignableByUseYn("Y")).thenReturn(List.of(
+                new AssignableTemplate("B", "나 템플릿"), new AssignableTemplate("A", "가 템플릿")));
 
         authenticate("COMMUNITY_READ_ALL");
         assertDenied(() -> tmplatInfoService.assignableTemplates());
@@ -110,8 +109,8 @@ class TmplatInfoServiceTest {
 
         authenticate("TEMPLATE_READ");
         assertThat(tmplatInfoService.assignableTemplates()).containsExactly(
-                new nuri.foundation.core.template.AssignableTemplate("A", "가 템플릿"),
-                new nuri.foundation.core.template.AssignableTemplate("B", "나 템플릿"));
+                new AssignableTemplate("A", "가 템플릿"), new AssignableTemplate("B", "나 템플릿"));
+        verify(templateRepository, never()).findAll();
     }
 
     @Test

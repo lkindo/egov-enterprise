@@ -16,8 +16,13 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Config, defaultOptions } from '../config.js';
 import { AuthTokenManager } from '../utils.js';
-import { hasPageResponse } from '../response-contracts.mjs';
+import { hasDashboardResponse, hasPageResponse, verifySettledDashboard } from '../response-contracts.mjs';
 import { createHtmlReport, textSummary } from '../utils/report.js';
+
+const NOTICE_BOARD = __ENV.LOAD_TEST_NOTICE_BOARD_ID || 'BBSMSTR_AAAAAAAAAAAA';
+const TASK_BOARD = __ENV.LOAD_TEST_TASK_BOARD_ID || 'BBSMSTR_CCCCCCCCCCCC';
+// k6 isolates module state per VU. The last confirmed count is visible before our next SELECT.
+let observedNoticeTotal = 0;
 
 /** 정의된 부하 레벨 전체. K6_SCENARIO 로 이 중 하나만 골라 돌린다. */
 const ALL_SCENARIOS = {
@@ -111,21 +116,42 @@ export const options = {
 export function setup() {
   console.log(`Starting load level test: ${__ENV.K6_SCENARIO || 'default'}`);
 
-  const authManager = new AuthTokenManager();
+  const token = new AuthTokenManager().login(Config.TEST_USERNAME, Config.TEST_PASSWORD);
+  const loopback = /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(?:\/|$)/i.test(Config.BASE_URL);
+  const seedEmpty = loopback && __ENV.LOAD_TEST_SEED_EMPTY_BOARDS === 'true';
+  const references = readDashboardReferences(token, seedEmpty);
+  if (!hasDashboardResponse(readDashboard(token), references)) throw new Error('Dashboard does not match the reference boards');
+  return { token, references, startTime: new Date().toISOString(), loadLevel: __ENV.K6_SCENARIO || 'default' };
+}
 
-  try {
-    const token = authManager.login(Config.TEST_USERNAME, Config.TEST_PASSWORD);
-    console.log('Login successful, token obtained');
-
-    return {
-      token: token,
-      startTime: new Date().toISOString(),
-      loadLevel: __ENV.K6_SCENARIO || 'default',
-    };
-  } catch (error) {
-    console.error('Setup failed: Could not obtain authentication token');
-    throw error;
+function dashboardBoardReference(token, boardId, seedEmpty) {
+  const headers = Config.getAuthHeaders(token);
+  const url = `${Config.BASE_URL}${Config.API_PREFIX}/boards/${boardId}?page=1&size=5`;
+  const response = http.get(url, { headers });
+  if (response.status !== 200 || !hasPageResponse(response.body)) throw new Error('Cannot read dashboard reference board');
+  const page = response.json('data');
+  if (page.list.length > Math.min(page.total, 5)) throw new Error('Unexpected dashboard reference page size');
+  if (page.total === 0 && seedEmpty) {
+    const created = createLoadPost(token, boardId);
+    if (created.status !== 201 || created.json('success') !== true) throw new Error('Cannot seed dashboard reference board');
+    const id = created.json('data');
+    if (!Number.isSafeInteger(id) || id < 1) throw new Error('Invalid dashboard fixture post ID');
+    return { boardId, total: 1, ids: [id] };
   }
+  return { boardId, total: page.total, ids: page.list.map(item => item.pstSn) };
+}
+
+function readDashboardReferences(token, seedEmpty) {
+  return {
+    task: dashboardBoardReference(token, TASK_BOARD, seedEmpty),
+    notice: dashboardBoardReference(token, NOTICE_BOARD, seedEmpty),
+  };
+}
+
+function readDashboard(token) {
+  const response = http.get(`${Config.BASE_URL}${Config.API_PREFIX}/dashboard`, { headers: Config.getAuthHeaders(token) });
+  if (response.status !== 200) throw new Error('Cannot read dashboard');
+  return response.body;
 }
 
 /**
@@ -145,7 +171,7 @@ export default function (data) {
   }
   // 45% 대시보드 조회
   else if (scenario < 0.55) {
-    runDashboardTest(data.token);
+    runDashboardTest(data.token, data.references);
   }
   // 30% 사용자 목록 조회
   else if (scenario < 0.85) {
@@ -186,7 +212,7 @@ function runLoginTest() {
 /**
  * 대시보드 조회 테스트
  */
-function runDashboardTest(token) {
+function runDashboardTest(token, references) {
   const url = `${Config.BASE_URL}${Config.API_PREFIX}/dashboard`;
 
   const response = http.get(url, {
@@ -196,6 +222,11 @@ function runDashboardTest(token) {
 
   check(response, {
     'dashboard status is 200': (r) => r.status === 200,
+    'dashboard serves both reference boards': (r) => {
+      if (!hasDashboardResponse(r.body, references, true, observedNoticeTotal)) return false;
+      observedNoticeTotal = r.json('data.notiListTotal');
+      return true;
+    },
   });
 
   sleep(2);
@@ -225,7 +256,7 @@ function runUsersListTest(token) {
 /**
  * 게시글 등록 테스트
  */
-function runPostCreateTest(token) {
+function createLoadPost(token, boardId, params = {}) {
   const url = `${Config.BASE_URL}${Config.API_PREFIX}/boards/posts`;
   const uniqueId = Math.random().toString(36).substring(2, 10);
   const expiresOn = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10).replace(/-/g, '');
@@ -234,17 +265,21 @@ function runPostCreateTest(token) {
   //   현행 BoardSaveRequest 의 필수 필드는 bbsId·pstTtl·pstCn 이다. 테스트 게시글은 일주일 뒤 게시를 끝낸다.
   //   실측: 옛 필드명으로 POST 하면 **HTTP 400** 이다(검증 실패로 필수 3종이 비어 있다고 판정).
   const payload = {
-    bbsId: 'BBSMSTR_AAAAAAAAAAAA',
+    bbsId: boardId,
     pstTtl: `[부하테스트] 게시글 ${uniqueId}`,
     pstCn: `k6 부하 테스트 자동 생성 게시글 (ID: ${uniqueId})`,
     pstEndYmd: expiresOn,
   };
 
-  const response = http.post(url, JSON.stringify(payload), {
-    headers: Config.getAuthHeaders(token),
-    tags: { endpoint: 'create-post' },
-  });
+  const headers = Config.getAuthHeaders(token);
+  // setup()은 로그인과 같은 쿠키 저장소를 쓴다. 쿠키를 동반한 쓰기는 SPA와 같은 CSRF 헤더가 필요하다.
+  const csrf = http.cookieJar().cookiesForURL(url)['XSRF-TOKEN']?.[0];
+  if (csrf) headers['X-XSRF-TOKEN'] = csrf;
+  return http.post(url, JSON.stringify(payload), { ...params, headers });
+}
 
+function runPostCreateTest(token) {
+  const response = createLoadPost(token, NOTICE_BOARD, { tags: { endpoint: 'create-post' } });
   check(response, {
     // [ADR-0036] 자원을 만드는 POST 는 201 이다.
     'create post status is 201': (r) => r.status === 201,
@@ -257,6 +292,7 @@ function runPostCreateTest(token) {
  * 정리 함수
  */
 export function teardown(data) {
+  verifySettledDashboard(() => readDashboardReferences(data.token, false), () => readDashboard(data.token));
   console.log('Load level test completed.');
   console.log(`Load Level: ${data.loadLevel}`);
   console.log(`Test started at: ${data.startTime}`);
@@ -264,9 +300,10 @@ export function teardown(data) {
 }
 
 /**
- * HTML 리포트 생성
+ * k6의 setup_data에는 인증 토큰이 있다. 공개 측정값만 JSON·HTML에 전달한다.
  */
-export function handleSummary(data) {
+export function handleSummary({ root_group, options, state, metrics }) {
+  const data = { root_group, options, state, metrics };
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
   const loadLevel = __ENV.K6_SCENARIO || 'all-1600';
 
