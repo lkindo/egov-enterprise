@@ -157,19 +157,40 @@ final class RrnoAesGcmColumnCipher implements ColumnCipher {
     private static final String HMAC = "HmacSHA256";
 
     /**
-     * 행 체크섬에 넣을 결정적 표지. 암호문은 암호화마다 nonce 가 달라 같은 값을 다시 적재해도 달라지므로, 암호문을 풀어
-     * 평문을 활성 키에서 끌어낸 HMAC 키로 지문한다 — 키 없이는 평문을 역산할 수 없고 지문에 키 ID 를 실어 키를 바꾸면
-     * 이전 지문과 맞지 않는다(재개가 닫힌 쪽으로 멈춘다).
+     * 대상에 저장된 암호문의 체크섬 표지 — 검증기가 대상 행을 다시 셀 때 쓴다. 봉투에 적힌 키 ID 로 지문하므로 같은 평문이라도
+     * 다른 키로 암호화된 값으로 바뀌면 적재 때의 체크섬과 맞지 않는다.
      */
     @Override
     public String checksumToken(String ciphertext) {
-        String plaintext = decrypt(ciphertext);
+        String[] parts = splitCanonical(ciphertext);
+        if (parts == null) {
+            throw new IllegalArgumentException("RRNO v2 암호문 형식이 올바르지 않습니다");
+        }
+        return fingerprint(parts[1], decrypt(ciphertext));
+    }
+
+    /**
+     * 행 체크섬에 넣을 결정적 표지. 암호문은 암호화마다 nonce 가 달라 같은 값을 다시 적재해도 달라지므로, 평문을 그 암호문의
+     * 키에서 끌어낸 HMAC 키로 지문한다 — 키 없이는 평문을 역산할 수 없고 지문에 키 ID 를 실어 키를 바꾸면 이전 지문과 맞지
+     * 않는다(재개가 닫힌 쪽으로 멈춘다). 적재는 활성 키로 암호화하는 순간 이 값을 만든다 — 체크섬을 위해 암호문을 다시 풀지 않는다.
+     */
+    @Override
+    public String plaintextFingerprint(String plaintext) {
+        return fingerprint(activeKeyId, plaintext);
+    }
+
+    private String fingerprint(String keyId, String plaintext) {
+        Objects.requireNonNull(plaintext, "plaintext");
+        SecretKey key = keys.get(keyId);
+        if (key == null) {
+            throw new IllegalArgumentException("RRNO v2 키링에 지정한 키 ID 가 없습니다");
+        }
         try {
             Mac derive = Mac.getInstance(HMAC);
-            derive.init(new SecretKeySpec(keys.get(activeKeyId).getEncoded(), HMAC));
+            derive.init(new SecretKeySpec(key.getEncoded(), HMAC));
             Mac fingerprint = Mac.getInstance(HMAC);
             fingerprint.init(new SecretKeySpec(derive.doFinal(CHECKSUM_LABEL), HMAC));
-            return "v2fp:" + activeKeyId + ":"
+            return "v2fp:" + keyId + ":"
                     + B64_URL_ENCODER.encodeToString(fingerprint.doFinal(plaintext.getBytes(StandardCharsets.UTF_8)));
         } catch (GeneralSecurityException failure) {
             throw new IllegalStateException("RRNO v2 체크섬 지문을 만들 수 없습니다", failure);

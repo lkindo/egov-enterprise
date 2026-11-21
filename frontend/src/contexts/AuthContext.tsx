@@ -20,8 +20,13 @@ interface AuthContextType {
   mfaPending: boolean;
   login: (credentials: Record<string, string>) => Promise<AuthLoginData>;
   logout: () => Promise<void>;
-  checkAuth: () => Promise<void>;
+  /** {@code afterAuthorizationChange} 는 서버가 권한 변경(버전 충돌 등)을 알린 뒤의 확인이다 — 답을 받지 못하면 이전 권한을 남기지 않는다. */
+  checkAuth: (options?: AuthCheckOptions) => Promise<void>;
   enterMfaChallenge: () => void;
+}
+
+export interface AuthCheckOptions {
+  afterAuthorizationChange?: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -46,7 +51,7 @@ export function isTransientAuthCheckFailure(error: unknown): boolean {
   return response === undefined && typeof code === 'string' && TRANSPORT_FAILURE_CODES.includes(code);
 }
 
-/** 일시 장애 뒤 다시 묻는 간격(ms). 다음 포커스·권한 변경 신호가 먼저 오면 그 확인이 대신한다. */
+/** 일시 장애 뒤 다시 묻는 간격(ms). 마지막 간격으로 회복될 때까지 계속 묻고, 포커스·온라인·권한 변경 신호가 먼저 오면 그 확인이 대신한다. */
 export const TRANSIENT_AUTH_RETRY_DELAYS_MS = [2_000, 5_000, 15_000, 30_000] as const;
 
 export function AuthProvider({ 
@@ -72,8 +77,8 @@ export function AuthProvider({
   }, []);
   const scheduleTransientRetry = useCallback(() => {
     const retry = transientRetry.current;
-    if (retry.timer || retry.attempt >= TRANSIENT_AUTH_RETRY_DELAYS_MS.length) return;
-    const delay = TRANSIENT_AUTH_RETRY_DELAYS_MS[retry.attempt];
+    if (retry.timer) return;
+    const delay = TRANSIENT_AUTH_RETRY_DELAYS_MS[Math.min(retry.attempt, TRANSIENT_AUTH_RETRY_DELAYS_MS.length - 1)];
     retry.attempt += 1;
     retry.timer = setTimeout(() => {
       retry.timer = null;
@@ -128,8 +133,8 @@ export function AuthProvider({
       } catch (error) {
         if (epoch !== requestEpoch.current) return;
         if (!afterChangeSignal && isTransientAuthCheckFailure(error)) {
-          // 답을 받지 못한 것은 세션이 끝났다는 답이 아니다 — 지금 사용자와 작성 중 입력을 두고 다시 묻는다.
-          if (currentUser.current) scheduleTransientRetry();
+          // 답을 받지 못한 것은 세션이 끝났다는 답이 아니다 — 지금 상태와 작성 중 입력을 두고 회복될 때까지 다시 묻는다.
+          scheduleTransientRetry();
           return;
         }
         // A rejected current-authority response must not preserve old grants.
@@ -146,11 +151,16 @@ export function AuthProvider({
     return pending;
   }, [clearTransientRetry, commitUser, scheduleTransientRetry]);
 
-  const checkAuth = useCallback((): Promise<void> => runAuthCheck(false), [runAuthCheck]);
+  const checkAuth = useCallback((options?: AuthCheckOptions): Promise<void> => {
+    if (!options?.afterAuthorizationChange) return runAuthCheck(false);
+    // 진행 중인 일상 확인이 이 확인을 대신하지 않게 먼저 무효화한다.
+    invalidateAuthCheck();
+    return runAuthCheck(true);
+  }, [invalidateAuthCheck, runAuthCheck]);
 
   useEffect(() => {
-    checkAuthRef.current = checkAuth;
-  }, [checkAuth]);
+    checkAuthRef.current = () => runAuthCheck(false);
+  }, [runAuthCheck]);
 
   const enterMfaChallenge = useCallback(() => {
     // Enrollment revokes the ordinary session. Stop polling/WS and discard delayed auth checks.
@@ -181,6 +191,8 @@ export function AuthProvider({
       // Next.js Route Handler 로그인 호출 (토큰은 쿠키로 설정됨)
       const result = await authService.login(loginData);
       if (epoch !== requestEpoch.current) throw new Error('Superseded authentication attempt');
+      // 공유 세션 쿠키가 이 응답으로 바뀌었다 — 다른 탭이 이전 계정 상태로 남지 않게 현재 사용자 확인보다 먼저 알린다(결정 17).
+      announceSession({ type: 'signed-in' });
       if (result.authenticationStage === 'MFA_REQUIRED' || result.authenticationStage === 'ENROLLMENT_REQUIRED') {
         enterMfaChallenge();
         return result;
@@ -190,8 +202,6 @@ export function AuthProvider({
       const userData = await authService.getCurrentUser();
       if (epoch !== requestEpoch.current) throw new Error('Superseded authentication attempt');
       commitUser(userData);
-      // 다른 탭이 이전 사람의 권한 상태를 들고 있지 않게 알린다(결정 17).
-      announceSession({ type: 'signed-in' });
       return result;
     } catch (error) {
       // 요청 제한·서비스 장애만 따로 말하고 나머지는 같은 문구다(DIP D2).
@@ -245,20 +255,26 @@ export function AuthProvider({
         authorizationChanged();
         return;
       }
-      if (!currentUser.current) return;
+      // 지금 사용자가 없어도 진행 중인 확인이 이전 사용자를 되살리지 않게 먼저 무효화한다.
+      invalidateAuthCheck();
+      if (!currentUser.current) {
+        setLoading(false);
+        return;
+      }
       markSignedOut();
       advanceAuthorizationRequestEpoch();
-      invalidateAuthCheck();
       commitUser(null);
       window.location.replace('/login');
     });
     window.addEventListener('focus', refreshAuthorization);
+    window.addEventListener('online', refreshAuthorization);
     window.addEventListener(AUTHORIZATION_CHANGED_EVENT, authorizationChanged);
     document.addEventListener('visibilitychange', refreshAuthorization);
     return () => {
       stopListening();
       invalidateAuthCheck();
       window.removeEventListener('focus', refreshAuthorization);
+      window.removeEventListener('online', refreshAuthorization);
       window.removeEventListener(AUTHORIZATION_CHANGED_EVENT, authorizationChanged);
       document.removeEventListener('visibilitychange', refreshAuthorization);
     };

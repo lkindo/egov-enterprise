@@ -183,9 +183,13 @@ class ColumnProtectorTest {
         assertThat(viewFirst.get("user_nm")).isEqualTo("Kim");
         assertThat(protector.checksumView("tb_user_info", Map.of("user_enrrno", other)).get("user_enrrno"))
                 .isNotEqualTo(viewFirst.get("USER_ENRRNO"));
-        // 검증기는 적재와 같은 환경에서 같은 지문을 만든다.
+        // 검증기는 적재와 같은 환경에서 대상 암호문을 풀어 같은 지문을 만든다.
         assertThat(ProtectedRowChecksum.forRun(v2Spec, v2Env).view("tb_user_info", Map.of("user_enrrno", second))
                 .get("user_enrrno")).isEqualTo(viewFirst.get("USER_ENRRNO"));
+        // 적재는 암호문을 다시 풀지 않는다 — 이 실행이 만들지 않은 암호문이면 체크섬을 만들지 않고 멈춘다.
+        assertThatThrownBy(() -> ColumnProtector.forRun(v2Spec, v2Env).checksumView("tb_user_info", Map.of("user_enrrno", first)))
+                .isInstanceOf(ColumnProtector.ProtectedColumnException.class)
+                .hasMessageContaining("체크섬 지문을 찾을 수 없습니다");
 
         Map<String, Object> ariaRow = Map.of("user_enrrno", "ARIA-CIPHERTEXT");
         ColumnProtector aria = ColumnProtector.forRun(spec(new ColumnMapping("JUMIN", "user_enrrno", "trim", null, null,

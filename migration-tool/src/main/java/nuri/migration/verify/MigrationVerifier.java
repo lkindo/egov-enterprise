@@ -158,13 +158,26 @@ public class MigrationVerifier {
             overall = Status.FAIL;
         }
 
+        // [2026-11-21] 무작위 nonce 보호 컬럼(rrno-aes-gcm-v2)의 체크섬은 대상 암호문을 풀어 지문으로 센다. 키링이 없으면
+        //   대상 행을 세지 못하므로 run 유무와 무관하게 성공을 증명하지 않는다. 계획은 실행당 한 번 만든다.
+        ProtectedRowChecksum checksums = ProtectedRowChecksum.none();
+        if (commit) {
+            try {
+                checksums = ProtectedRowChecksum.forRun(spec, environment);
+            } catch (RuntimeException unavailable) {
+                tables.add(new TableReport("<protected-columns>", "<protected-columns>",
+                        0L, 0L, 0L, 1L, -1L, Status.FAIL, "보호 컬럼 키를 읽을 수 없음 — 성공을 증명할 수 없음"));
+                overall = Status.FAIL;
+            }
+        }
+
         for (TableResult r : actualResults) {
             MappingSpec.TableMapping mapping = findMapping(spec, r);
             String label = mapping == null ? reportLabel(r) : MappingIndex.label(mapping);
             MappingPlan mappingPlan = reconciliation.active() ? reconciliation.plan().mapping(label) : null;
             TargetTally tally = commit && mappingPlan != null ? reconciliation.targetTally(label) : null;
             ScopedVerification scoped = commit && spec != null && spec.run() != null
-                    ? verifyScoped(targetJt, spec, mapping, r, tally)
+                    ? verifyScoped(targetJt, spec, mapping, r, tally, checksums)
                     : null;
             if (tally != null && (scoped == null || scoped.error() != null)) {
                 // 대상 패스가 끝까지 돌지 않았다 — 대상 쪽 검사는 판정하지 않는다.
@@ -590,7 +603,8 @@ public class MigrationVerifier {
     }
 
     private ScopedVerification verifyScoped(JdbcTemplate target, MappingSpec spec,
-                                             MappingSpec.TableMapping table, TableResult result, TargetTally tally) {
+                                             MappingSpec.TableMapping table, TableResult result, TargetTally tally,
+                                             ProtectedRowChecksum checksums) {
         if (table == null) {
             return new ScopedVerification(-1L, "run scoped 검증 매핑을 찾을 수 없음");
         }
@@ -608,12 +622,6 @@ public class MigrationVerifier {
         if (counts.distinctTargetKeys() != counts.rows()) {
             return new ScopedVerification(counts.rows(),
                     "run scoped parity 불일치: checkpoint target key 중복");
-        }
-        ProtectedRowChecksum checksums;
-        try {
-            checksums = ProtectedRowChecksum.forRun(spec, environment);
-        } catch (RuntimeException unavailable) {
-            return new ScopedVerification(counts.rows(), "run scoped checksum 보호 컬럼 키를 읽을 수 없음 — 성공을 증명할 수 없음");
         }
         long observed = 0;
         String cursor = null;

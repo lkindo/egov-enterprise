@@ -112,7 +112,7 @@ openssl rand -base64 32
 
 - 매핑의 `tb_user_info.user_enrrno`는 `encrypt: aria-egov-v1`(`MIGRATION_ALGORITHM_KEY`) 또는 `encrypt: rrno-aes-gcm-v2`(`MIGRATION_RRNO_ACTIVE_KEY_ID`, `MIGRATION_RRNO_KEYS_JSON`)를 선언할 수 있다.
 - `ColumnProtector.forRun`은 `rrno-aes-gcm-v2` 대상 컬럼이 있으면 실행 시작 전 두 환경 변수를 검증하고, 행 적재 전 `v2:` 정식 봉투 형식과 복호화 왕복을 확인한다(실패 시 키 원문 없이 중단).
-- v2 암호문은 암호화마다 nonce 가 달라, 재개·검증 체크섬은 암호문 대신 활성 키에서 끌어낸 HMAC 키로 만든 평문 지문을 쓴다(`ProtectedRowChecksum`, 2026-11-21 — 종전에는 같은 run 의 재개·재실행이 커밋된 행마다 checksum 불일치로 멈췄다). 지문에는 키 ID 가 실리므로 **한 run 을 재개하는 동안 `MIGRATION_RRNO_ACTIVE_KEY_ID` 를 바꾸지 않는다** — 바꾸면 재개가 checksum 불일치로 멈춘다(닫힌 쪽). load 의 검증도 같은 키링이 있어야 PASS 를 낸다.
+- v2 암호문은 암호화마다 nonce 가 달라, 재개·검증 체크섬은 암호문 대신 활성 키에서 끌어낸 HMAC 키로 만든 평문 지문을 쓴다(`ProtectedRowChecksum`, 2026-11-21 — 종전에는 같은 run 의 재개·재실행이 커밋된 행마다 checksum 불일치로 멈췄다). 지문에는 그 암호문의 키 ID 가 실리므로 **한 run 을 재개하는 동안 `MIGRATION_RRNO_ACTIVE_KEY_ID` 를 바꾸지 않는다** — 바꾸면 재개가 checksum 불일치로 멈추고(닫힌 쪽), 대상 값이 같은 평문의 다른 키 암호문으로 바뀌어도 검증이 PASS 하지 않는다. load 의 검증도 같은 키링이 있어야 PASS 를 낸다(키링이 없으면 run 유무와 무관하게 FAIL). 이 변경 전에 v2 행을 커밋한 run 은 체크포인트가 암호문 기준이라 종전처럼 재개할 수 없다 — 새 run 으로 다시 적재한다.
 - `tools/migration-workspace`는 보호 키를 디스크(`workspace.json`)나 AI 문맥에 남기지 않고 세션 메모리(`/api/protection`)에만 보관하며 `dry-run`·`commit` 대상 적재 실행 환경에만 주입한다.
 
 ## 완료 체크리스트

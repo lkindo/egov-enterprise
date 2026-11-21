@@ -152,6 +152,46 @@ class EtlProtectedColumnIntegrationTest {
 
         assertThat(report.ok()).isFalse();
         assertThat(report.toSummary()).contains("보호 컬럼 키를 읽을 수 없음");
+        // run 없이 부른 검증도 대상 행을 세지 못하면 PASS 가 아니다.
+        MappingSpec withoutRun = new MappingSpec(spec.source(), spec.target(), spec.tables(), spec.codemaps());
+        MigrationReport runless = new MigrationVerifier(name -> null).verify(withoutRun, results, fixture.target());
+        assertThat(runless.ok()).isFalse();
+        assertThat(runless.toSummary()).contains("보호 컬럼 키를 읽을 수 없음");
+    }
+
+    @Test
+    @DisplayName("rrno-aes-gcm-v2 대상 값이 같은 평문의 다른 키 암호문으로 바뀌면 검증이 PASS 하지 않는다")
+    void randomizedCipherVerificationBindsTheEnvelopeKey() {
+        Fixture fixture = new Fixture();
+        fixture.seed("('u1', 'Kim', '" + RRNO + "')");
+        byte[] previous = new byte[32];
+        java.util.Arrays.fill(previous, (byte) 5);
+        byte[] active = new byte[32];
+        java.util.Arrays.fill(active, (byte) 11);
+        String keysJson = "{\"k0\":\"" + java.util.Base64.getEncoder().encodeToString(previous) + "\",\"k1\":\""
+                + java.util.Base64.getEncoder().encodeToString(active) + "\"}";
+        Function<String, String> environment = keyring("k1", keysJson);
+        MappingSpec spec = fixture.spec("rrno-aes-gcm-v2");
+        List<EtlExecutor.TableResult> results = new EtlExecutor(new SourceIntrospector(), new TransformerRegistry(),
+                environment).execute(spec, MigrationMode.COMMIT);
+        JdbcTemplate target = fixture.target();
+        assertThat(new MigrationVerifier(environment).verify(spec, results, target).ok()).isTrue();
+
+        String previousKeyCiphertext = (String) ColumnProtector.forRun(spec, keyring("k0", keysJson))
+                .protect("tb_user_info", "user_enrrno", RRNO);
+        assertThat(previousKeyCiphertext).startsWith("v2:k0:");
+        target.update("UPDATE tb_user_info SET user_enrrno = ? WHERE user_nm = 'Kim'", previousKeyCiphertext);
+
+        MigrationReport report = new MigrationVerifier(environment).verify(spec, results, target);
+        assertThat(report.ok()).withFailMessage(report.toSummary()).isFalse();
+    }
+
+    private static Function<String, String> keyring(String activeKeyId, String keysJson) {
+        return name -> switch (name) {
+            case ColumnProtector.RRNO_ACTIVE_KEY_ID_ENVIRONMENT -> activeKeyId;
+            case ColumnProtector.RRNO_KEYS_JSON_ENVIRONMENT -> keysJson;
+            default -> null;
+        };
     }
 
     private static Function<String, String> v2Environment() {

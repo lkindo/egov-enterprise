@@ -17,6 +17,7 @@ import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { MfaChallengePanel } from '@/components/account/MfaChallengePanel';
 import { loginFormSchema } from './login-form-validation';
+import { announceSession } from '@/lib/auth/session-broadcast';
 
 const LOGIN_FORM_LABELS = {
     userId: '아이디',
@@ -267,7 +268,11 @@ function LoginContent() {
                         (주간 스캔이 그 URL 을 실제로 만들어 냈다). handleSubmit 이 preventDefault 하므로
                         하이드레이션 뒤 동작은 변하지 않고, 그 전 제출은 URL 에 값을 남기지 않는다. */}
                     {mfaStage ? <CardContent className="px-8 pb-8"><MfaChallengePanel stage={mfaStage}
-                        onComplete={() => window.location.replace(redirectUrl)}
+                        onComplete={() => {
+                            // 추가 인증을 마친 이 응답으로 공유 세션이 바뀌었다 — 다른 탭이 이전 계정 상태로 남지 않게 알린다(결정 17).
+                            announceSession({ type: 'signed-in' });
+                            window.location.replace(redirectUrl);
+                        }}
                         onCancel={() => { void logout().finally(() => { setMfaStage(null); justLoggedIn.current = false; }); }}
                     /></CardContent> : <form
                         noValidate

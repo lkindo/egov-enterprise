@@ -26,7 +26,7 @@ public class LoginRequest {
      */
     @Schema(description = "비밀번호", example = "admin123")
     @NotBlank
-    @Size(max = MAX_PASSWORD_LENGTH)
+    @Size(min = 1, max = MAX_PASSWORD_LENGTH)
     private String password;
 
     /** 로그인 비밀번호 입력 상한. */

@@ -124,7 +124,8 @@ export function useMenuBookmarkCleanup(ready: boolean) {
     } catch (error) {
       if (!sameScope()) return;
       if (getHttpStatus(error) === 409) {
-        await checkAuth();
+        // 서버가 권한 버전 충돌을 알렸다 — 답을 받지 못해도 이전 권한을 남기지 않는 확인으로 묻는다.
+        await checkAuth({ afterAuthorizationChange: true });
         await Promise.all([
           invalidateBookmarks(client),
           client.invalidateQueries({ queryKey: ['menus', 'head'] }),

@@ -414,4 +414,70 @@ describe('AuthContext', () => {
     expect(result.current.user).toBeNull();
     expect(queryClient.getQueryData(['private-records'])).toBeUndefined();
   });
+
+  it('로그인 응답으로 공유 세션이 바뀌면 현재 사용자 확인이 실패해도 다른 탭에 먼저 알린다', async () => {
+    vi.mocked(authService.getCurrentUser).mockReset().mockResolvedValueOnce(undefined as never);
+    vi.mocked(authService.login).mockResolvedValue({ role: 'USER' } as never);
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    sessionBroadcast.announce.mockClear();
+
+    vi.mocked(authService.getCurrentUser).mockRejectedValueOnce({ response: { status: 503 } });
+    await act(async () => {
+      await expect(result.current.login({ id: 'next', password: 'password' })).rejects.toThrow();
+    });
+
+    expect(sessionBroadcast.announce).toHaveBeenCalledWith({ type: 'signed-in' });
+  });
+
+  it('서버가 권한 변경을 알린 뒤의 재확인은 답을 받지 못하면 이전 권한을 남기지 않는다', async () => {
+    const signedIn = { id: 'u1', name: 'User', groups: ['ADMIN'], permissions: ['MENU_BOOKMARK'], authorizationVersion: 'v1' };
+    vi.mocked(authService.getCurrentUser).mockReset().mockResolvedValueOnce(signedIn);
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.user?.id).toBe('u1'));
+
+    vi.mocked(authService.getCurrentUser).mockRejectedValueOnce({ response: { status: 503 } });
+    await act(async () => { await result.current.checkAuth({ afterAuthorizationChange: true }); });
+
+    expect(result.current.user).toBeNull();
+  });
+
+  it('일시 장애가 이어지면 마지막 간격으로 계속 묻다가 회복되면 멈춘다 — 사용자가 없던 첫 화면도 같다', async () => {
+    vi.useFakeTimers();
+    try {
+      const transient = { response: { status: 503 } };
+      vi.mocked(authService.getCurrentUser).mockReset()
+        .mockRejectedValueOnce({ response: { status: 502 } })
+        .mockRejectedValueOnce(transient).mockRejectedValueOnce(transient).mockRejectedValueOnce(transient)
+        .mockRejectedValueOnce(transient).mockRejectedValueOnce(transient)
+        .mockResolvedValueOnce({ id: 'u1', name: 'User', groups: [], permissions: [], authorizationVersion: 'v1' });
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+      expect(result.current.loading).toBe(false);
+      expect(result.current.user).toBeNull();
+      const delays = [...TRANSIENT_AUTH_RETRY_DELAYS_MS, TRANSIENT_AUTH_RETRY_DELAYS_MS.at(-1)!, TRANSIENT_AUTH_RETRY_DELAYS_MS.at(-1)!];
+      for (const delay of delays) {
+        await act(async () => { await vi.advanceTimersByTimeAsync(delay); });
+      }
+
+      expect(authService.getCurrentUser).toHaveBeenCalledTimes(7);
+      expect(result.current.user?.id).toBe('u1');
+      await act(async () => { await vi.advanceTimersByTimeAsync(120_000); });
+      expect(authService.getCurrentUser).toHaveBeenCalledTimes(7);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('지금 사용자가 없을 때 다른 탭이 로그아웃해도 진행 중인 확인이 이전 사용자를 되살리지 않는다', async () => {
+    let finish!: (value: Awaited<ReturnType<typeof authService.getCurrentUser>>) => void;
+    vi.mocked(authService.getCurrentUser).mockReset().mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    act(() => sessionBroadcast.handler?.({ type: 'signed-out' }));
+    await act(async () => finish({ id: 'previous', name: 'Previous', groups: ['ADMIN'], permissions: [], authorizationVersion: 'v1' }));
+
+    expect(result.current.user).toBeNull();
+    expect(result.current.loading).toBe(false);
+  });
 });
