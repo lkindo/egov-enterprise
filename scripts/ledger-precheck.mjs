@@ -39,6 +39,7 @@ const TAGGED_GATE_PRECHECK = Object.freeze({
 export const MENU_SNAPSHOT_PRECHECK = Object.freeze({
   code: 'MENU_SNAPSHOT_STALE',
   requires: 'scripts/project-composer-menu-preview.mjs',
+  upstreamOnly: true,
   run: (root, preview) => { preview.loadProjectComposerMenus(root); return []; },
   fix: '`npm run project:menus:refresh`(Docker 의 일회용 PostgreSQL, 무거운 실행)로 스냅숏을 다시 만들어 함께 커밋한다. 메뉴와 무관한'
     + ' 마이그레이션인데 붉으면 해시 포함 규칙(scripts/project-composer-menu-preview.mjs)이 그렇게 본 이유를 먼저 본다.',
@@ -73,7 +74,16 @@ export async function ledgerPrecheck({ root = repoRoot, moduleRoot = repoRoot, c
   const findings = [];
   const ran = [];
   const skipped = [];
+  const isGeneratedArtifact = existsSync(path.join(root, 'reusable-base-lock.json'));
   for (const check of checks) {
+    if (check.upstreamOnly && isGeneratedArtifact) {
+      skipped.push({
+        code: check.code,
+        requires: check.requires,
+        reason: '생성 프로젝트(reusable-base-lock.json)는 투영 마이그레이션을 쓰므로 원본 메뉴 스냅숏 해시를 대조하지 않는다.',
+      });
+      continue;
+    }
     const modulePath = path.join(moduleRoot, check.requires);
     if (!existsSync(modulePath)) {
       skipped.push({ code: check.code, requires: check.requires });
@@ -96,7 +106,8 @@ export async function ledgerPrecheck({ root = repoRoot, moduleRoot = repoRoot, c
  * `건너뜀: ` 으로 시작하는 줄이다(regen --check 가 이 머리말로 알림을 꺼낸다).
  */
 export function formatPrecheck({ findings, ran, skipped }) {
-  const notes = skipped.map(({ code, requires }) => `건너뜀: ${code} — ${requires} 이 이 저장소에 없다.`);
+  const notes = skipped.map(({ code, requires, reason }) =>
+    `건너뜀: ${code} — ${reason ?? `${requires} 이 이 저장소에 없다.`}`);
   if (findings.length === 0) {
     return { ok: true, lines: [...notes, `✅ 손 결속 원장 사전 점검 통과: ${ran.join(', ') || '(돈 점검 없음)'}`] };
   }

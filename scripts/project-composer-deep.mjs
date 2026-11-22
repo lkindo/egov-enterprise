@@ -11,6 +11,8 @@ import { isCopyableSourceFile, normalize } from './reusable-source-tree.mjs';
 import { assertComposerSourceSurvives, composerProfile } from './project-composer-source.mjs';
 import { composerOwnership, loadComposerModules } from './composer-modules.mjs';
 import { withoutRoot } from './project-composer-errors.mjs';
+import { parseRemovalLedger, staleRemovalLedgerEntries } from './reusable-asset-removal.mjs';
+import { ALWAYS_REMOVED_ASSET_RULES } from './reusable-product-assets.mjs';
 import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, parseVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
 import { planPermissionProjection, readPermissionSources } from './reusable-permission-projection.mjs';
 import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
@@ -244,14 +246,37 @@ export function compositionDeepPlan({ root, composition, files, outputParent, ca
     block('RULE_REMOVAL', { message: message(error) });
   }
   ruleRemovals['upstream-atlas'] = [...UPSTREAM_ATLAS.gates].sort((left, right) => left.localeCompare(right));
+  const isPresent = path => kept(path) || relativeFiles.some(file => file.startsWith(`${path}/`) && kept(file));
+  let pkgScripts = {};
+  if (present.has(pathKey('package.json'))) {
+    try {
+      pkgScripts = JSON.parse(readSource(join(root, 'package.json'))).scripts ?? {};
+    } catch (error) {
+      pkgScripts = null;
+      block('RULE_REMOVAL', { message: message(error) });
+    }
+  }
+  for (const { rule, ledgerPath, label } of ALWAYS_REMOVED_ASSET_RULES) {
+    try {
+      const ledger = parseRemovalLedger(readSource(join(root, ledgerPath)), ledgerPath);
+      ruleRemovals[rule] = ledger.gates.map(row => row.file).filter(kept).sort((left, right) => left.localeCompare(right));
+      if (pkgScripts !== null) {
+        const stale = staleRemovalLedgerEntries(ledger, isPresent, pkgScripts);
+        if (stale.length) block('RULE_REMOVAL', { message: `${label}이 낡았다: ${stale.join(', ')}` });
+      }
+    } catch (error) {
+      undeterminedRules.add(rule);
+      block('RULE_REMOVAL', { message: message(error) });
+    }
+  }
   if ((composition.recipe?.database?.vendor ?? 'postgresql') !== 'postgresql') {
     try {
       const ledger = parseVendorAssetLedger(readSource(join(root, VENDOR_ASSET_LEDGER)));
       ruleRemovals[VENDOR_ASSET_RULE] = ledger.gates.map(row => row.file).filter(kept).sort((left, right) => left.localeCompare(right));
-      const present = path => kept(path) || relativeFiles.some(file => file.startsWith(`${path}/`) && kept(file));
-      const scripts = JSON.parse(readSource(join(root, 'package.json'))).scripts;
-      const stale = staleVendorAssets(ledger, present, scripts);
-      if (stale.length) block('RULE_REMOVAL', { message: `벤더 제거 원장이 낡았다: ${stale.join(', ')}` });
+      if (pkgScripts !== null) {
+        const stale = staleVendorAssets(ledger, isPresent, pkgScripts);
+        if (stale.length) block('RULE_REMOVAL', { message: `벤더 제거 원장이 낡았다: ${stale.join(', ')}` });
+      }
       vendorRemoval = { gates: ruleRemovals[VENDOR_ASSET_RULE].length, assets: ledger.assets.length };
     } catch (error) {
       undeterminedRules.add(VENDOR_ASSET_RULE);
@@ -259,10 +284,9 @@ export function compositionDeepPlan({ root, composition, files, outputParent, ca
     }
   }
   try {
-    const scripts = present.has(pathKey('package.json')) ? JSON.parse(readSource(join(root, 'package.json'))).scripts : {};
     const missing = [
-      ...missingUpstreamAtlasAssets(path => kept(path) || relativeFiles.some(file => file.startsWith(`${path}/`) && kept(file))),
-      ...missingUpstreamAtlasAliases(scripts),
+      ...missingUpstreamAtlasAssets(isPresent),
+      ...(pkgScripts === null ? [] : missingUpstreamAtlasAliases(pkgScripts)),
     ];
     if (missing.length) block('RULE_REMOVAL', { message: missing.join(' · ') });
   } catch (error) { block('RULE_REMOVAL', { message: message(error) }); }

@@ -17,8 +17,13 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { JAVA_GATE_SCAN_ROOTS, loadGovernanceRegistry } from './governance-gates-contract.mjs';
 import { GATE_REGISTRY, LEDGER_PRECHECKS, formatPrecheck, ledgerPrecheck, main } from './ledger-precheck.mjs';
 import { LEDGER_CHECKS, checkGenerated, checkTasks, main as regenerateMain } from './regenerate.mjs';
+import { GENERATORS } from './merge-main-regenerate.mjs';
+import { UPSTREAM_ATLAS } from './reusable-harness-census.mjs';
+import { isPathCoveredBy } from './reusable-asset-removal.mjs';
+import { readProducerAssetLedger, readRequirementsAssetLedger } from './reusable-product-assets.mjs';
 import { VENDOR_LEDGER_PATH } from './project-composer-vendors.mjs';
 import { asPreviewVendors } from './project-composer-vendor-evidence.test-helpers.mjs';
+import { PROPOSAL_RELATIVE_PATH as DISPOSITION_OVERLAY } from './ui-navigation-disposition-contract.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MIGRATIONS = 'api-server/src/main/resources/db/migration';
@@ -187,4 +192,64 @@ test('판정 모듈이 없을 때만 건너뛰고, 자료가 없으면 건너뛰
   const thrown = await ledgerPrecheck({ root: empty, checks: [{ code: 'PROBE', requires: 'scripts/ledger-precheck.mjs', fix: 'probe',
     run: () => { throw new Error('first line\n  second line'); } }] });
   assert.deepEqual(thrown.findings, [{ code: 'PROBE', message: 'first line second line', fix: 'probe' }]);
+});
+
+test('생성 프로젝트에서 Phase 3 제거 원장을 적용한 뒤 regen 과 ledger-precheck 의 활성/건너뜀 단계 집합이 정확하다', async (t) => {
+  const producer = readProducerAssetLedger(ROOT);
+  const req = readRequirementsAssetLedger(ROOT);
+  const removed = [...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates, ...producer.assets, ...producer.gates.map(r => r.file),
+    ...req.assets, ...req.gates.map(r => r.file)];
+  const isRemoved = target => removed.some(asset => isPathCoveredBy(target, asset));
+  assert.deepEqual(
+    [...GENERATORS, ...LEDGER_CHECKS].filter(step => step.requires && isRemoved(step.requires)).map(step => step.id),
+    ['atlas', 'ia-disposition-binding'],
+    '생성 프로젝트에서 regen 단계 중 atlas 와 ia-disposition-binding 만 건너뛰고 계약 생성·census·hand-bound 점검은 유지된다',
+  );
+  assert.deepEqual(
+    LEDGER_PRECHECKS.filter(check => isRemoved(check.requires)).map(check => check.code),
+    ['UNASSIGNED_PERMISSION_GUIDANCE', 'VENDOR_EVIDENCE_STALE'],
+    '생성 프로젝트에서 제거 모듈로 건너뛰는 ledger-precheck 는 UNASSIGNED_PERMISSION_GUIDANCE 와 VENDOR_EVIDENCE_STALE 이다',
+  );
+  assert.deepEqual(
+    LEDGER_PRECHECKS.filter(check => check.upstreamOnly).map(check => check.code),
+    ['MENU_SNAPSHOT_STALE'],
+    '생성 프로젝트 잠금(reusable-base-lock.json)으로 건너뛰는 upstreamOnly 점검은 MENU_SNAPSHOT_STALE 이다',
+  );
+
+  // 투영 생성물 모양 픽스처(reusable-base-lock.json + core 활성 표지 + 투영 라우트/낡은 원본 메뉴 스냅숏)에서 실제 실행 시 false positive 없이 통과한다.
+  const root = fixture(t);
+  put(root, 'reusable-base-lock.json', `${JSON.stringify({ profile: 'core', layout: 'multi-module', sourceCommit: '1'.repeat(40) }, null, 2)}\n`);
+  put(root, 'config/modules/presets.json', `${JSON.stringify({ schemaVersion: 2, active: { profile: 'core' } }, null, 2)}\n`);
+  editJson(root, MENU_SNAPSHOT, value => { value.sourceMigrationHash = OLD_MENU_HASH; });
+  put(root, 'config/ui-route-capabilities.json', `${JSON.stringify({ routes: [{ route: '/' }], externalAliases: [] }, null, 2)}\n`);
+  put(root, DISPOSITION_OVERLAY, `${JSON.stringify({ manifestRef: { sha256: '0'.repeat(64) }, routes: { '/extra': {} } }, null, 2)}\n`);
+
+  const moduleRoot = scratch(t, 'ledger-precheck-projected-modules-');
+  for (const rel of ['scripts/governance-gates-contract.mjs', 'scripts/ledger-precheck.mjs',
+    'scripts/operation-consumer-census.mjs', 'scripts/project-composer-menu-preview.mjs']) {
+    put(moduleRoot, rel, `export * from ${JSON.stringify(pathToFileURL(join(ROOT, rel)).href)};\n`);
+  }
+
+  const clean = await ledgerPrecheck({ root, moduleRoot });
+  assert.deepEqual(clean.findings, []);
+  assert.deepEqual(clean.ran, ['TAGGED_GATE_REGISTRY']);
+  assert.deepEqual(clean.skipped.map(entry => entry.code), ['MENU_SNAPSHOT_STALE', 'UNASSIGNED_PERMISSION_GUIDANCE', 'VENDOR_EVIDENCE_STALE']);
+  assert.ok(formatPrecheck(clean).lines.some(line => line.startsWith('건너뜀: MENU_SNAPSHOT_STALE — ')));
+  assert.equal(await main([], { root, moduleRoot, log: () => {}, error: () => {} }), 0);
+  assert.deepEqual(checkTasks(moduleRoot, [], LEDGER_CHECKS).map(task => task.id), ['operation-consumer-census', 'hand-bound-ledgers']);
+
+  // H5 Red 증명 1: 투영 픽스처에서도 미등록 @Tag("schema-validation") 시험 추가 시 TAGGED_GATE_REGISTRY 가 실제로 붉다.
+  put(root, `${SCHEMA_ROOT}/UnregisteredProjectedSchemaTest.java`, schemaTest('UnregisteredProjectedSchemaTest'));
+  const dirty = await ledgerPrecheck({ root, moduleRoot });
+  assert.deepEqual(dirty.findings.map(item => [item.code, item.message]),
+    [['TAGGED_GATE_REGISTRY', unregistered('UnregisteredProjectedSchemaTest')]]);
+  assert.equal(await main([], { root, moduleRoot, log: () => {}, error: () => {} }), 1);
+  rmSync(join(root, `${SCHEMA_ROOT}/UnregisteredProjectedSchemaTest.java`));
+  assert.equal(await main([], { root, moduleRoot, log: () => {}, error: () => {} }), 0);
+
+  // H5 Red 증명 2: reusable-base-lock.json 이 없는 원본 저장소 모양에서는 MENU_SNAPSHOT_STALE 이 실제로 실행되어 실패한다.
+  rmSync(join(root, 'reusable-base-lock.json'));
+  const upstreamRed = await ledgerPrecheck({ root, moduleRoot });
+  assert.deepEqual(upstreamRed.findings.map(item => [item.code, item.message]), [['MENU_SNAPSHOT_STALE', STALE_MENU]]);
+  assert.equal(await main([], { root, moduleRoot, log: () => {}, error: () => {} }), 1);
 });

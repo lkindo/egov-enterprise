@@ -178,17 +178,27 @@ test('the deep plan sees exactly the files the generator copies and projects eve
   const write = (file, text) => { mkdirSync(dirname(join(fixture, file)), { recursive: true }); writeFileSync(join(fixture, file), text); };
   // 합성 저장소의 기능 소유(메일 하나)와 시작 구성 기대치. 시작 구성은 연쇄로 지우는 Java 를 승인해야 생성된다(설계서 C4) —
   // 아래 과거 마이그레이션 검증이 그 연쇄다.
-  const expected = { description: '시험용', gates: [], gateRemovalRules: [{ rule: 'upstream-atlas', reason: '시험용' }],
-    javaCascade: ['api-server/src/test/java/nuri/api/schema/OldMailMigrationIntegrationTest.java'] };
+  const expected = { description: '시험용', gates: [], gateRemovalRules: [
+    { rule: 'upstream-atlas', reason: '시험용' },
+    { rule: 'upstream-producer-tools', reason: '시험용' },
+    { rule: 'requirements-studio', reason: '시험용' },
+  ], javaCascade: ['api-server/src/test/java/nuri/api/schema/OldMailMigrationIntegrationTest.java'] };
   const small = { files: {}, declarations: { features: { mail: {} }, supportFiles: () => new Map() },
     extras: { presetExpectations: { core: expected }, gateOwners: {}, rbac: { file: 'none', domains: [], surfaces: {} } } };
   // 시작 구성 core: 메일을 고르지 않고 demo 화면을 지운다(해석기가 기능 규칙에서 계산하는 제외 경로를 직접 준다).
   const coreOf = removePaths => ({ profile: 'core', packs: ['core'], resolvedDomains: [], frontend: { includedPaths: [], removePaths } });
-  // 원본 Atlas 규칙 제거가 성공하도록 자산과 별칭을 둔다(규칙 제거는 늘 적용된다).
+  // 원본 Atlas 및 항상 제외하는 생산자·요구사항 규칙이 성공하도록 자산과 별칭을 둔다.
+  write('config/governance/producer-removed-assets.json', JSON.stringify({ assets: ['tools/dummy-producer.mjs'], aliases: ['dummy:producer'], gates: [{ file: 'scripts/dummy-producer.test.mjs' }] }));
+  write('config/governance/requirements-removed-assets.json', JSON.stringify({ assets: ['tools/dummy-req.mjs'], aliases: ['dummy:req'], gates: [{ file: 'scripts/dummy-req.test.mjs' }] }));
+  const ruleFixtures = ['tools/dummy-producer.mjs', 'scripts/dummy-producer.test.mjs', 'tools/dummy-req.mjs', 'scripts/dummy-req.test.mjs'];
+  for (const file of ruleFixtures) write(file, '// rule fixture\n');
   const atlas = ['frontend/atlas/catalog.json', ...atlasPaths.filter(path => /\.(?:mjs|ts)$/.test(path)), 'package.json'];
-  for (const file of atlas) write(file, file === 'package.json' ? '{"scripts":{"atlas:build":"x","atlas:check":"x","atlas:contract":"x"}}' : '// atlas\n');
+  for (const file of atlas) write(file, file === 'package.json'
+    ? '{"scripts":{"atlas:build":"x","atlas:check":"x","atlas:contract":"x","dummy:producer":"x","dummy:req":"x"}}'
+    : '// atlas\n');
   const listed = ['business-app/src/main/java/nuri/business/service/mail/MailService.java', 'frontend/src/app/layout.tsx',
-    'frontend/src/app/page.tsx', 'frontend/src/app/login/page.tsx', 'frontend/src/app/demo/page.tsx', ...atlas];
+    'frontend/src/app/page.tsx', 'frontend/src/app/login/page.tsx', 'frontend/src/app/demo/page.tsx', ...atlas, ...ruleFixtures,
+    'config/governance/producer-removed-assets.json', 'config/governance/requirements-removed-assets.json'];
   write(listed[0], 'package nuri.business.service.mail;\npublic class MailService {}\n');
   for (const file of listed.slice(1, 5)) write(file, 'export default function Page() { return null; }\n');
   write('business-app/src/main/java/nuri/business/service/mail/notes.txt', 'ignored by Git, never copied\n');

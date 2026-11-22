@@ -73,7 +73,7 @@ test('every generator failure point becomes a labelled blocker before Docker sta
   const rules = withExpectations('core', expected => { expected.gateRemovalRules = []; });
   deep = checkApprovals(rules);
   assert.deepEqual(codes(deep), ['RULE_UNACKNOWLEDGED']);
-  assert.deepEqual(deep.blockers[0].files, ['historical-migration-tests', 'upstream-atlas']);
+  assert.deepEqual(deep.blockers[0].files, ['historical-migration-tests', 'upstream-atlas', 'upstream-producer-tools', 'requirements-studio']);
   const historical = deep.ruleRemovals['historical-migration-tests'];
   assert.ok(historical.length > 0, 'the rule selects historical tests');
   const withoutHistorical = files.filter(file => !historical.includes(normalize(file)));
@@ -81,10 +81,16 @@ test('every generator failure point becomes a labelled blocker before Docker sta
   assert.deepEqual(codes(deep), ['RULE_STALE']);
   assert.deepEqual(deep.blockers[0].files, ['historical-migration-tests']);
 
-  // 원본 Atlas 자산이 생성물에 없으면 생성기는 규칙 제거에서 실패한다.
+  // 원본 Atlas·생산자·요구사항 자산이 생성물에 없으면 생성기는 규칙 제거에서 실패한다.
   deep = compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition: core, files: files.filter(file => normalize(file) !== 'scripts/build-atlas.mjs') });
   assert.deepEqual(codes(deep), ['RULE_REMOVAL']);
   assert.match(deep.blockers[0].message, /Upstream Atlas asset is missing; review the Atlas removal rule: scripts\/build-atlas\.mjs/);
+  deep = compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition: core, files: files.filter(file => normalize(file) !== 'scripts/project-composer-server.mjs') });
+  assert.deepEqual(codes(deep), ['RULE_REMOVAL']);
+  assert.match(deep.blockers[0].message, /생산자 제거 원장.*scripts\/project-composer-server\.mjs/);
+  deep = compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition: core, files: files.filter(file => !normalize(file).startsWith('tools/requirements-workspace/')) });
+  assert.deepEqual(codes(deep), ['RULE_REMOVAL', 'RULE_STALE']);
+  assert.match(deep.blockers[0].message, /요구사항 스튜디오 제거 원장.*tools\/requirements-workspace/);
 
   // 화면 제외 경로가 루트 레이아웃을 지우면 생성기는 투영 뒤 진입점 검사에서 실패한다(라우트가 아닌 진입점). 생성기·정밀 점검은
   // 제외 경로를 구성(해석기)에서 받는다 — 구성을 고쳐 그 경로를 만든다.

@@ -30,7 +30,7 @@ export const SKILL_DISTRIBUTION = Object.freeze({
   'zero-downtime-migration-planner': 'project',
   'verify-app': 'project',
   'ci-triage': 'project',
-  'requirements-intake': 'project',
+  'requirements-intake': 'repository-only',
   'explain-diff': 'repository-only',
   brainstorming: 'external',
   'dispatching-parallel-agents': 'external',

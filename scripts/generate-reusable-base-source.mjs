@@ -29,6 +29,7 @@ import { adaptGeneratedHarness, assertJavaCascadeAcknowledged, assertRemovedGate
   pruneZeroDowntimeWaivers } from './reusable-source-gates.mjs';
 import { writeHarnessBaseline } from './reusable-source-harness.mjs';
 import { VENDOR_ASSET_RULE, pruneVendorPostgresAssets } from './reusable-vendor-assets.mjs';
+import { PRODUCER_ASSET_RULE, REQUIREMENTS_ASSET_RULE, pruneProducerTools, pruneRequirementsStudio } from './reusable-product-assets.mjs';
 import { pruneJava } from './reusable-source-java.mjs';
 import { ROOT, copySourceTree, fail, git, initializeGeneratedRepository, installDatabaseBundle, isCopyableSourceFile, normalize, readTextIfPresent,
   trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
@@ -80,7 +81,7 @@ function safeOutputPath(requested, profile, shortSha, layout) {
   return output;
 }
 
-export function installReusableVerification(output, layout = 'multi-module') {
+export function installReusableVerification(output, layout = 'multi-module', { upstreamPackageJson } = {}) {
   if (existsSync(join(output, VERIFICATION_HISTORY, 'index.json'))) fail('Verification history is already projected; regenerate from upstream source');
   const path = join(output, 'package.json');
   const pkg = JSON.parse(readFileSync(path, 'utf8'));
@@ -98,7 +99,9 @@ export function installReusableVerification(output, layout = 'multi-module') {
   for (const source of historyFiles) {
     const original = join(output, source);
     if (!existsSync(original)) fail(`Missing upstream verification source: ${source}`);
-    const content = readFileSync(original, 'utf8').replace(/\r\n/g, '\n');
+    const content = (source === 'package.json' && upstreamPackageJson !== undefined
+      ? upstreamPackageJson
+      : readFileSync(original, 'utf8')).replace(/\r\n/g, '\n');
     const snapshot = `${VERIFICATION_HISTORY}/${source}`;
     mkdirSync(dirname(join(output, snapshot)), { recursive: true });
     writeFileSync(join(output, snapshot), content);
@@ -257,16 +260,21 @@ async function main() {
   console.log(`[base-source] ${args.profile}: tracked source tree를 투영한다.`);
   const copiedFiles = trackedAndUntrackedFiles().filter((rel) => isCopyableSourceFile(rel, ROOT));
   copySourceTree(output, { files: copiedFiles });
+  const upstreamPackageJson = readFileSync(join(output, 'package.json'), 'utf8');
   const { java, frontend } = projectSourceTree(output, { ownership, profile, composition, catalog });
   // ⚠ 규칙 기반 제거는 **승인 검사보다 먼저** 해야 한다 — 뒤에 두면 census 가 "0건" 이라고 말한 뒤
   //   게이트 42개가 사라진다(2026-09-12 실측으로 드러난 이 census 자신의 구멍).
   const removedHistoricalMigrationTests = pruneHistoricalMigrationTests(output);
   const removedUpstreamAtlas = pruneUpstreamAtlas(output);
+  const removedProducerTools = pruneProducerTools(output);
+  const removedRequirementsStudio = pruneRequirementsStudio(output);
   // 벤더 프로젝트에서 동작하지 않는 PostgreSQL 전용 자산을 원장대로 걷는다.
   const removedVendorAssets = vendorInput ? pruneVendorPostgresAssets(output) : null;
   const removedGates = assertRemovedGatesAcknowledged(args.profile, profile, java, frontend, {
     'historical-migration-tests': removedHistoricalMigrationTests.files,
     'upstream-atlas': removedUpstreamAtlas.files,
+    [PRODUCER_ASSET_RULE]: removedProducerTools.files,
+    [REQUIREMENTS_ASSET_RULE]: removedRequirementsStudio.files,
     ...(removedVendorAssets ? { [VENDOR_ASSET_RULE]: removedVendorAssets.files } : {}),
   });
   // 프리셋은 연쇄로 지운 Java 를 커밋된 기대치와 대조한다(설계서 C4). 직접 선택은 기대치가 없어 lock 기록(java.cascadeRemoved)만 남긴다.
@@ -287,7 +295,7 @@ async function main() {
   }
   const zdmWaivers = pruneZeroDowntimeWaivers(output);
   const projectedModules = writeProjectedModules(output, modules, composition, activeCompositionEntry(modules, composition, profile, java));
-  installReusableVerification(output, args.layout);
+  installReusableVerification(output, args.layout, { upstreamPackageJson });
   const migration = !vendorInput;
   const layoutProjection = args.layout === 'single-module' ? applySingleModuleLayout(output, { migration }) : null;
   if (args.layout === 'single-module') installSingleModuleRuntime(output, { migration });
