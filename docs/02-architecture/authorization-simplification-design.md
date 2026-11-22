@@ -49,7 +49,7 @@
 - 운영 애플리케이션의 실제 profile/env override·요청 로그·부하·활성 외부 클라이언트는 이번에 실측하지 않았다. 아래 인가 동작은 **현재 소스와 DB 조합의 분석**이다.
 - 동시에 진행 중인 미추적 `ie-deliverables` 문서는 분석 정본으로 사용하지 않았다. 소스 원장은 문서 작성 전 스냅샷이며 이후 문서·Atlas 변경까지 실시간 추적하는 게이트가 아니다.
 
-재조사는 원장의 `selectionRules`를 사용하여 `git ls-files -z`로 tracked 파일을 열거하고, 같은 확장자·제외 경로에 대해 `rg` 또는 정규식 검색 후 심볼 호출부를 확장한다. 구현 시작 때 신규·수정·삭제 파일을 다시 대조한다. `.env`, 빌드 결과, vendor/skills, 미추적 타 작업 자료는 인가 소스 증거에 포함하지 않는다.
+전환 당시의 재조사는 원장의 `selectionRules`(확장자·제외 경로)로 `git ls-files -z`의 tracked 파일을 열거해 `rg` 또는 정규식으로 검색한 뒤 심볼 호출부를 확장하고, 구현 시작 때 신규·수정·삭제 파일을 다시 대조했다. `.env`, 빌드 결과, vendor/skills, 미추적 타 작업 자료는 인가 소스 증거에 포함하지 않았다. 전환은 끝났고 원장은 지웠다 — 같은 조사를 다시 하려면 검색 범위를 현재 [권한 카탈로그](../../config/governance/permission-catalog.json)·[인가 정책](../../config/governance/authorization-policies.json)과 호출부에서 다시 정한다(당시 규칙은 Git 이력의 원장에 있다).
 
 ## 3. 전환 전 OCI와 실행 구조 — 조사 스냅샷
 

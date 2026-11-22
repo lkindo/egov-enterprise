@@ -3,6 +3,7 @@
 - 상태: Accepted
 - 결정일: 2026-11-23
 - 승인: 2026-11-23 사용자가 프로젝트 경량화 권고안(A-A-A)의 Phase 4 로 모든 생성 프로젝트에서 오프라인 이관 도구를 제외하고 독립 이관 제품 내보내기(`npm run migration:export`)는 원본 저장소에 유지하도록 승인했다.
+- 후속 결정: 「유지」의 `tools/migration-workspace*` 와 결정의 제외 대상 가운데 정적 시안(`tools/migration-workspace-prototype`)은 [DEC-OPS-426](../../archived/operational-decisions-history.md#dec-ops-426)이 원본에서 걷었다. 이 ADR 의 결정은 바뀌지 않으며, 제외 대상의 현재 목록과 수는 [이관 제거 원장](../../../config/governance/migration-removed-assets.json)이 정본이다. 아래 본문은 당시 승인 기록이다.
 - 대체: [ADR-0020](ADR-0020-selectable-reusable-backend-layouts.md) 결정 6 의 생성 프로젝트 내 `migration-tool`·`migrationBootJar`·`migrationTest` 보존 부분, [DEC-OPS-263](../../archived/operational-decisions-history.md#dec-ops-263) 의 생성물 루트 `db_columns.json` 재작성 및 스키마 대조 요구.
 - 유지:
   - 원본 저장소의 `migration-tool` 모듈, `tools/migration-workspace*`, 루트 `db_columns.json`, `migration-scope`·`migration-tool.yml` CI 검증.

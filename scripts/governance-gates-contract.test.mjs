@@ -372,12 +372,12 @@ test('a node-test runner command selects exactly the globs its catalogs declare'
   assert.equal(binding(registry, 'GATESET-FRONTEND-FORM-VALIDATION').packageScript.source, 'frontend/package.json',
     '패키지 폴더 기준으로 glob 을 푸는 경로가 실제 원장에 있다');
 
-  // 2026-11-22 독립 검토의 반례 — 한 묶음(요구분석 작업공간)만 명령에서 빼고 catalog 는 둔다.
+  // 2026-11-22 독립 검토의 반례 — 한 묶음(이관 작업공간)만 명령에서 빼고 catalog 는 둔다.
   const dropped = clone(registry);
   binding(dropped, operationalId).packageScript.command = binding(dropped, operationalId).packageScript.command
-    .replace(' "tools/requirements-workspace/*.test.mjs"', '');
+    .replace(' "tools/migration-workspace/*.test.mjs"', '');
   assert.deepEqual(globErrors(dropped), [
-    `${operationalId}: runner package script does not run catalog tools/requirements-workspace/*.test.mjs`,
+    `${operationalId}: runner package script does not run catalog tools/migration-workspace/*.test.mjs`,
   ]);
 
   // 반대 방향 — catalog 에 없는 폴더를 명령이 돈다(원장이 모르는 시험은 skip 금지·소유 검사 밖이다).

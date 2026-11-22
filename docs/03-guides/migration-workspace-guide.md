@@ -125,4 +125,4 @@ node tools/migration-workspace/build-styles.mjs --check
 
 이 디렉터리는 CodeQL JavaScript 분석 범위([codeql.yml](../../config/security/codeql.yml))에 들어 있고 로컬 근사(`npm run sast:approx`)도 같은 범위를 본다. 작업공간의 `engine.mjs`·`store.mjs`·`inputs.mjs` 변경은 실제 실행 시험의 입력이므로 CI의 이관·이관 mutation 검증도 켠다. 생성 Groovy의 경로 참조를 따라가는 기존 보수적 reader 검사는 이 세 파일에 backend·E2E 축도 요구한다. 이 정적 참조는 해당 시험이 엔진 바이트를 직접 실행한다는 증거와 구분한다. 이 세 파일은 이관 독립 제품에 포함하고 이관 도입 승인 digest에도 묶는다. 나머지 UI·서버·AI 경로의 도구 분류는 유지한다([DEC-OPS-391](../archived/operational-decisions-history.md#dec-ops-391)).
 
-이 검사는 실제 기관 DB, Oracle 등 driver별 버전, 실제 AI 계정 로그인·요금·응답 품질, 운영 규모 성능을 검증했다는 뜻이 아니다. 실제 실행 결과를 확인하기 전에는 운영 전환에 사용하지 않는다.
+이 검사는 실제 기관 DB, Oracle 등 driver별 버전, 실제 AI 계정 로그인·요금·응답 품질, 운영 규모 성능을 검증했다는 뜻이 아니다. 실제 실행 결과를 확인하기 전에는 운영 전환에 사용하지 않는다. AI 제안의 품질은 검증하지 않았다 — 제공자 어댑터를 넓히거나 제안 품질을 주장하려면 기준 답이 있는 합성 업무 사례에서 수동 검토 결과와 비교한 증거를 먼저 남긴다(ADR-0041 승인 때의 2차 인수 기준).

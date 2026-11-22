@@ -393,7 +393,7 @@ pnpm -C frontend exec playwright install --with-deps chromium
 
 CI의 `backend-schema-scope`는 classifier가 schema 영향으로 판정한 경우 같은 PostgreSQL 스키마 검증 task를 실행하고, 안정 required context `backend-build`가 그 결과를 집계한다. required check 상태는 현재 커밋에서 직접 확인하며, 일반 `test`나 컴파일 green을 스키마 검증 대체물로 보고하지 않는다.
 
-스키마·migration 테스트 클래스는 `SharedPostgresMigrationTestSupport`의 PostgreSQL 17 컨테이너 하나를 공유하되 테스트 클래스마다 격리 database를 생성·삭제한다. 공유는 startup 비용만 줄이며 DB 이름·Flyway 적용·connection lifecycle 격리 계약은 `SharedPostgresMigrationHarnessContractTest`가 보호한다. Spring `jdbc:tc` 기반 검증은 별도 컨테이너 경로이므로 `schemaValidationTest` 전체 실행에서 PostgreSQL start는 최대 2개다. 독립 `migration-tool`의 프로세스 복구 테스트처럼 다른 task가 시작한 컨테이너는 이 수에 포함하지 않는다.
+`SharedPostgresMigrationTestSupport`를 상속한 스키마·migration 테스트 클래스는 PostgreSQL 17 컨테이너 하나를 공유하되 테스트 클래스마다 격리 database를 생성·삭제한다. 공유는 startup 비용만 줄이며 DB 이름·Flyway 적용·connection lifecycle 격리 계약은 `SharedPostgresMigrationHarnessContractTest`가 보호한다. Spring `jdbc:tc` 기반 검증과 백업 복원 훈련처럼 자기 컨테이너를 따로 띄우는 시험은 이 공유 밖이므로, `schemaValidationTest` 전체가 띄우는 컨테이너 수를 고정값으로 가정하지 않는다.
 
 ### 2. 로컬 훅 경계
 
