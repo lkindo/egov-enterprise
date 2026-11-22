@@ -48,4 +48,4 @@ receipt는 기존 `tb_sms_rcptn.rslt_msg`에 버전이 있는 내부 상태로 �
 
 `SmsServiceTest`는 영속 의도 저장 실패 전파를, `SmsAsyncProcessorTest`와 `SmsDeliveryWorkHandlerTest`는 미선점 수신자만 재개하는 동작과 Future 실패 전파를 검사한다. `SmsDeliveryStateIntegrationTest`의 범위는 격리 PostgreSQL에서 접수·의도의 롤백, 저장된 의도의 재실행, 실제 행 잠금, receipt 상태 전이다. 시험 소스의 존재는 통과나 운영 복구 완료의 증거가 아니며 실행 결과는 해당 변경의 검증 기록에서 확인한다.
 
-백엔드 헌법 §10.1에는 종전 SMS POST의 `@Retryable(maxAttempts=3)` 실행 설명이 있다. 이번 사용자 `/goal`의 명시적 요구인 불확실한 발송 재시도 금지를 우선 적용했다. 결과 저장·GET 조회의 제한된 재시도는 유지하고 헌법 자체의 정책은 변경하지 않았다.
+불확실한 발송은 다시 보내지 않는다 — 백엔드 헌법 제10조 1항도 받는 쪽이 중복을 걸러 내지 못하는 외부 발송의 결과를 모르면 다시 보내지 않도록 정한다. 결과 저장·GET 조회의 제한된 재시도는 유지한다. 종전 조문에 있던 SMS POST 의 `@Retryable(maxAttempts=3)` 서술은 [축약 전 원문](../archived/constitution-compaction-2026-11-22.md)에 있고 현행이 아니다.

@@ -178,6 +178,7 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [authorization-db-evidence.json](archived/authorization-db-evidence.json) | 인가 전환 설계의 2026-09-10 OCI 읽기 전용 스키마·행 수·표준 메타 증거; 전환 실행 증거가 아님 |
 | [standard-length-alignment-runbook.md](archived/standard-length-alignment-runbook.md) | ADR-0013·0014 표준 길이 정합의 단계별 전환·실패·복구 검증 기록(적용 완료) |
 | [legacy-standardization-migration-design.md](archived/legacy-standardization-migration-design.md) | 레거시 표준화 이관의 채택 전 진단(2026-10-13)과 표준용어 식별 방법론 — [ADR-0029](02-architecture/decisions/ADR-0029-legacy-standardization-migration.md)·0031로 채택, 현행 동작은 이관 도구 설계 |
+| [constitution-compaction-2026-11-22.md](archived/constitution-compaction-2026-11-22.md) | 2026-11-22 헌법 조문 축약에서 줄이거나 고친 항의 직전 원문(DEC-OPS-425) — 현행 규범이 아님 |
 
 ### 운영 결정 원문 보존
 

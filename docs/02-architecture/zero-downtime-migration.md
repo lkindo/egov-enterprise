@@ -15,8 +15,8 @@ PostgreSQL 스키마 변경의 구버전 호환성 파손 위험을 줄이기 �
 2. **`ALTER COLUMN ... TYPE` 금지**
    - **원인**: 타입 변환은 변경 형태에 따라 재작성·잠금 비용과 호환성 위험이 달라지므로 정적 린터는 기본 차단한다. 모든 변경이 full rewrite라는 뜻은 아니다. 같은 VARCHAR 타입의 길이 확장처럼 개별 검토한 변경은 실제 schema·데이터와 잠금 제한을 확인하고 승인 waiver를 사용한다([IPv6 확장 검증](../../api-server/src/test/java/nuri/api/schema/IpAddressIpv6MigrationIntegrationTest.java)).
    - **대안**: 새로운 컬럼(Expand) 추가 ➔ 듀얼 라이팅(Dual Writing) ➔ 백필(Backfill) ➔ 구버전 컬럼 삭제.
-3. **`RENAME COLUMN` 금지**
-   - **원인**: 컬럼 명을 바꾸면 구버전 앱에서 즉각적인 SQL 쿼리 실패 발생.
+3. **`RENAME COLUMN`·`RENAME TABLE` 금지**
+   - **원인**: 컬럼·테이블 이름을 바꾸면 구버전 앱에서 즉각적인 SQL 쿼리 실패 발생.
    - **대안**: 새로운 컬럼 추가 및 동기화 이후 참조 변경.
 4. **`ADD COLUMN ... NOT NULL` (without `DEFAULT`) 금지**
    - **원인**: 기본값 없이 NOT NULL 컬럼을 추가하면 구버전 앱이 수행하는 기존 INSERT 쿼리들이 실패함.
