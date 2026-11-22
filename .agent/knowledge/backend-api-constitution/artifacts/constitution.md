@@ -29,8 +29,8 @@
 2. 외부와의 데이터 교환은 반드시 전용 DTO(`Request`, `Response`)를 통해서만 수행한다.
 
 ### 제4조 (변환 책임의 소재)
-1. 최종 API 응답(Response DTO)은 그 기능을 소유한 비즈니스 레이어(`business-core`/`business-app`)의 서비스가 조립해 반환하고, `api-server` 의 컨트롤러는 그것을 공통 응답 래퍼(제6조)에 담아 내보낸다. 컨트롤러는 엔티티를 참조하지 않는다(제3조 1항). 여러 기능의 결과를 한 응답으로 엮어야 하는 경우에 한해 `api-server` 에 조립만 맡는 Facade 를 둘 수 있으며, 업무 규칙과 트랜잭션 경계는 서비스에 남긴다. *(2026-11-22 사용자 결정으로 개정: 종전의 "응답 조립을 `api-server` 의 Facade·Controller-Level Mapper 로 전면 이관" 은 구현된 적이 없어 — 그런 클래스가 하나도 없고 모든 컨트롤러가 비즈니스 계층 DTO 를 그대로 반환한다 — 실제로 지켜지고 게이트가 받치는 경계로 조문을 맞췄다.)*
-2. 서비스가 반환하는 DTO 는 API 계약이며 특정 화면의 표시 방식에 종속되지 않는다 — 화면이 필요로 하는 서버 판정(예: 수정 가능 여부)은 싣되, 문구·색·배치 같은 표현은 싣지 않는다.
+1. 최종 API 응답(Response DTO)은 그 기능을 소유한 비즈니스 레이어(`business-core`/`business-app`)의 서비스가 조립해 반환하는 것이 기본이고, `api-server` 의 컨트롤러는 그것을 공통 응답 래퍼(제6조)에 담아 내보낸다(래퍼의 예외는 제6조 3항). 엔드포인트의 응답 계약이 서비스 DTO 와 달라야 할 때 — 공개 응답에서 내부 식별자·감사 정보를 빼거나, 여러 결과를 한 응답으로 엮거나, 느슨한 내부 값의 타입·필수 여부를 고정할 때 — 에 한해 `api-server` 에 그 엔드포인트의 응답 DTO(또는 조립만 맡는 Facade)를 두고 서비스 DTO 에서 변환한다. 이 변환은 필드 선택·계약값 정규화·조립까지이며 업무 규칙과 트랜잭션 경계는 서비스에 남긴다. 컨트롤러와 그 응답 DTO 는 엔티티를 참조하지 않는다(제3조 1항). 이미 좁혀 둔 응답 계약은 변환 위치를 옮기더라도 넓히지 않는다. *(2026-11-22 사용자 결정으로 개정, DEC-OPS-424: 종전 조문은 응답 조립을 `api-server` 의 Facade·Controller-Level Mapper 로 **전면** 이관하도록 했으나, 실제로는 서비스 DTO 를 그대로 내보내는 컨트롤러가 다수이고 계약을 좁히거나 엮어야 하는 엔드포인트만 `api-server` 의 응답 DTO 로 변환한다. 조문을 실제로 지켜지고 게이트가 받치는 그 경계에 맞췄다.)*
+2. 서비스가 반환하는 DTO 는 API 계약이며 특정 화면의 표시 방식에 종속되지 않는다 — 화면이 필요로 하는 서버 판정(예: 수정 가능 여부)과 사용자가 저장한 표시 설정(예: 팝업의 위치·크기)은 데이터로 싣되, 화면이 정할 안내 문구·색·배치를 서비스가 정해 싣지 않는다.
 3. 데이터의 변경이 없는 단순 복합 조회성 화면의 경우, 비즈니스 서비스나 Entity 맵핑을 거치지 않고 QueryDSL 등을 통해 데이터베이스에서 프레젠테이션 DTO로 직행하는 **조회 전용 프로젝션(CQRS 지향)** 방식을 명시적으로 허용하여 레이어 간 병목을 우회한다.
 
 ### 제5조 (도메인 캡슐화)
@@ -95,7 +95,7 @@
 ### 제13조 (표준 로깅 및 보안)
 1. 모든 로깅은 SLF4J 인터페이스를 통해 수행하며, 로그 레벨(ERROR, WARN, INFO, DEBUG)을 용도에 맞게 엄격히 구분한다.
 2. 로그에 비밀번호, 주민등록번호, 계좌번호 등 **민감한 개인정보가 평문으로 기록되지 않도록** 반드시 마스킹 처리하거나 기록을 금지한다.
-3. 장애 추적을 위해 모든 로그에는 요청의 Trace ID 가 실린다. `traceId` MDC 키는 Micrometer/OTel 브리지가 단독으로 쓰며 애플리케이션 코드는 그 키를 만들거나 덮어쓰지 않는다 — 응답 헤더의 추적 ID 와 로그의 값이 달라지지 않게 한다([MdcLoggingFilter](../../../../business-core/src/main/java/nuri/business/security/filter/MdcLoggingFilter.java)).
+3. 장애 추적을 위해 요청을 처리하는 동안의 로그에는 그 요청의 Trace ID 가 실리게 한다. `traceId` MDC 키는 Micrometer/OTel 브리지가 단독으로 쓰며 애플리케이션 코드는 그 키를 만들거나 덮어쓰지 않는다 — 응답 헤더의 추적 ID 와 로그의 값이 달라지지 않게 한다([MdcLoggingFilter](../../../../business-core/src/main/java/nuri/business/security/filter/MdcLoggingFilter.java)). 추적이 꺼져 있거나 활성 span 이 없어 값이 없을 때에도 임의의 ID 를 만들어 채우지 않는다(응답 헤더는 생략한다).
 4. 민감한 개인정보의 조회·내려받기는 응답을 보내기 전에 접근 기록을 남긴다([ADR-0025](../../../../docs/02-architecture/decisions/ADR-0025-enterprise-completeness-and-durable-operations.md)). 대상 핸들러는 `@PrivacyAccess` 로 선언하고 값에는 항목 설명만 적으며(실제 개인정보 값은 적지 않는다), [PrivacyAccessCensusLinterTest](../../../../api-server/src/test/java/nuri/api/harness/PrivacyAccessCensusLinterTest.java)가 원장과 대조한다.
 
 ---
@@ -108,7 +108,7 @@
    - **XToMany(1:N) 관계 및 페이징 동반 쿼리**: 컬렉션 조회 및 `Pageable` 페이징이 동반된 조회 쿼리에서는 `Fetch Join` 사용을 **절대 금지**하여 메모리 페이징 참사를 막는다. 대신 `application.yml`의 `default_batch_fetch_size` 혹은 엔티티의 `@BatchSize`를 적용한 **In-clause 병합 지연 로딩(Lazy + Batch)** 방식을 표준 방어 기제로 채택한다.
 2. JPA 엔티티에는 `del_yn` 또는 `use_yn` 등 논리 삭제 여부가 명시적으로 설계된 도메인 엔티티에 한하여 `@SQLRestriction("use_yn = 'Y'")` 또는 Hibernate `@Filter`를 선택 적용하며(Hibernate 7에서 `@Where`는 제거됐다. 현행 엔티티는 둘 다 쓰지 않고 질의마다 `use_yn` 조건을 명시한다), 물리 삭제(Hard Delete)를 기본으로 설계된 도메인 테이블의 경우 해당 필터 적용 대상에서 철저히 제외하여 아키텍처 크래시를 원천 방어한다. *(2026-11-21 문구 정정 — 현행 표기 갱신, 정책 불변)*
 3. 본 조의 배치-페치/N+1 방어 전략은 `@QueryCountGuard(max = N)` **표적 통합 가드레일**로 회귀 검증한다 — 대표 조회 경로의 실제 쿼리 실행 횟수를 상한으로 못박아 N+1 재발을 탐지하는 스팟체크이며, 전 엔티티를 훑는 보편 ArchUnit 린터가 아니다. 계측 자체(실제 쿼리 계수·비동기 스레드 추적)는 `QueryCountGuardrailIntegrationTest`가, 도메인별 조회 상한은 그 도메인의 쿼리 수 통합 테스트가 검증한다. 어느 서비스가 표적인지는 이 조문이 아니라 해당 테스트 소스가 정본이다. 신규 컬렉션 조회 경로 추가 시 해당 가드레일 커버리지 확장을 함께 검토한다. *(2026-09-14 문구 정정 — DEC-OPS-084 의 표적 이동 반영, 정책 불변)*
-4. DB 벤더에 따라 달라지는 SQL 구문은 앱 SQL 포트(`VendorSqlDialect`)의 구현에만 둔다 — 정본은 PostgreSQL 이고 다른 DB 는 벤더 어댑터가 맡는다([ADR-0047](../../../../docs/02-architecture/decisions/ADR-0047-multi-database-composer-and-vendor-sql-boundary.md)). 포트 밖의 벤더 구문은 [VendorSqlPortabilityLinterTest](../../../../api-server/src/test/java/nuri/api/harness/VendorSqlPortabilityLinterTest.java)가 막으며, 이 게이트는 구문만 보므로 이식 판정은 벤더 DB 실행으로 한다.
+4. DB 벤더에 따라 달라지는 SQL 구문은 앱 SQL 포트(`VendorSqlDialect`)의 구현에만 둔다 — 정본은 PostgreSQL 이고 다른 DB 는 벤더 어댑터가 맡는다([ADR-0047](../../../../docs/02-architecture/decisions/ADR-0047-multi-database-composer-and-vendor-sql-boundary.md)). 새 질의는 Hibernate 가 벤더 문법을 만들 수 있으면 HQL 로 쓰고, 벤더마다 달라야 하는 것만 포트로 보낸다. 포트 밖에 남은 기존 위치는 [벤더 SQL 원장](../../../../config/governance/vendor-sql-ledger.json)에 처리 방식과 규칙별 개수로 동결돼 있고, [VendorSqlPortabilityLinterTest](../../../../api-server/src/test/java/nuri/api/harness/VendorSqlPortabilityLinterTest.java)가 실제 개수와 원장이 정확히 같은지 본다 — 늘리지 않으며, 줄였으면 같은 변경에서 원장도 낮춘다. 이 게이트는 구문만 보므로 이식 판정은 벤더 DB 실행으로 한다.
 
 ---
 
@@ -117,7 +117,7 @@
 ### 제15조 (동시성 제어 및 데이터 정합성 방어)
 1. 다중 사용자의 동시 접근(수정/삭제)이 예상되는 중요 엔티티(예: 재고, 결재 등)는 JPA `@Version`을 통한 **낙관적 락(Optimistic Lock)** 적용을 기본으로 하여 정합성을 보호한다. 단, 대량 배치 업데이트(Bulk Update) 시에는 JPA 영속성 컨텍스트를 거치지 않고 JPQL/QueryDSL의 벌크 연산(`executeUpdate`)을 사용할 수 있으며, 이 경우 버전 충돌 검증은 애플리케이션 레벨에서 사전/사후 카운트 비교 등 명시적인 대안 정합성 검증 로직으로 대체한다.
 2. 트랜잭션 충돌 비용이 극도로 높은 크리티컬 섹션 로직에 대해서는 **비관적 락(Pessimistic Lock)** 또는 Redis 기반 분산 락 정책을 명시적으로 설계하여 반영해야 한다.
-3. 날짜와 시각은 한국 표준시로 처리한다(DEC-OPS-396). 운영 코드는 UTC 를 시각의 기준으로 쓰지 않고 `ServiceTime` 을 거치며, 시간대 없는 컬럼에 저장하는 엔티티 필드는 `LocalDateTime` 이고 순간 값은 `Instant` 를 쓴다. 앱과 시험·변이 시험 JVM 의 기본 시간대는 한국 표준시로 고정한다. [ServiceTimeZoneLinterTest](../../../../api-server/src/test/java/nuri/api/harness/ServiceTimeZoneLinterTest.java)가 집행한다.
+3. 날짜와 시각은 한국 표준시로 처리한다(DEC-OPS-396). 운영 코드는 UTC 를 시각의 기준으로 쓰지 않고 `ServiceTime` 을 거치며, 시간대 없는 컬럼에 저장하는 엔티티 필드는 `LocalDateTime` 이고 순간 값은 `Instant` 를 쓴다. 앱과 시험·변이 시험 JVM 의 기본 시간대는 한국 표준시다(시험은 `test.timezone` 으로 다른 시간대에서도 돌려 볼 수 있다). 순간 값(`Instant`)의 API 표기(`Z`), 이관 도구, 거버넌스 원장의 UTC 는 이 항의 범위 밖이다. [ServiceTimeZoneLinterTest](../../../../api-server/src/test/java/nuri/api/harness/ServiceTimeZoneLinterTest.java)가 집행한다.
 
 ### 제16조 (Data Validation 연쇄 동기화 및 돌연변이 테스트 증명)
 1. 백엔드 DTO 및 프론트엔드 Zod 유효성 검증의 최대 길이(max) 및 필수 여부(NotNull)는 DB 물리 스키마와 표준 메타의 제약조건에 부합해야 한다. DB→Entity→DTO→OpenAPI→TypeScript/Zod 계약의 현행 검증 범위는 다음과 같다.
@@ -125,7 +125,7 @@
    - `ApiDocsPathCoverageLinterTest`는 Controller `@*Mapping`과 `api-docs.json`의 경로를 오프라인으로 대조한다. CI는 실제 추출 뒤 `git diff --exit-code api-docs.json`으로 신선도를, 프론트엔드 `codegen:verify`·`codegen:verify:zod`는 `generated-api.d.ts`·`generated-zod.ts`·`generated-operations.ts`의 재생성 일치를 검증한다.
    - `:api-server:schemaValidationTest`는 격리 PostgreSQL에 Flyway를 적용하고 Hibernate 매핑 및 표적 스키마·데이터 계약을 검증한다. 승인된 표준 정합의 회귀는 [StandardLengthMigrationIntegrationTest](../../../../api-server/src/test/java/nuri/api/schema/StandardLengthMigrationIntegrationTest.java)와 [DeferredStandardDesignMigrationIntegrationTest](../../../../api-server/src/test/java/nuri/api/schema/DeferredStandardDesignMigrationIntegrationTest.java)가 보호한다.
    - **실행 대상 DB의 live 메타·물리 스키마와 모든 DTO 필수·길이 제약을 직접 전수 대조하는 하네스는 아니다.** 실제 대상의 `information_schema`와 `meta_standard_domains` 조회 및 설계 리뷰를 생략할 수 없다. 남은 의미 계약은 [GAP-CONTRACT-001](../../../memory/known-gaps.md)에 추적한다. 비즈니스 사양에 따라 DB 한계보다 좁은 길이 또는 논리 검증을 각 레이어에 선언할 수 있으나 물리 한계를 약화하지 않는다.
-2. 테스트 코드 무결성을 검증하기 위한 돌연변이 테스트(Mutation Testing)는 전체 모듈이 아닌 핵심 크리티컬 비즈니스 서비스(결제, 보안, 데이터 정합성 등) 및 Git Diff로 탐지된 변경분(Delta)에 한하여 증분식 검증(Incremental Mutation Strategy)을 수행하며, 핵심 서비스 기준 **Mutation Score 75% 이상**을 최저 품질 기준으로 삼는다. 이 기준은 `build.gradle` 의 `mutationThreshold`(환경변수 `STRICT_MUTATION=true` 일 때 75 와 범위별 하한 가운데 큰 값)로 기계 강제하며, 범위별 하한의 정본은 [게이트 원장](../../../../config/governance/gates.json)의 `QUALITY-BACKEND-MUTATION-SCORE`(`scopeFloors`)다([ADR-0044](../../../../docs/02-architecture/decisions/ADR-0044-ci-tuning-values-and-pit-scope-floors.md)). **현행 CI는 제품 스코프의 `mutation-scope`와 이관 도구 스코프의 `mutation-scope-migration` 매트릭스에 각각 `STRICT_MUTATION=true`를 주입하여 범위별 하한(최저 75%)을 하드 게이트한다. 두 잡은 변경 영향 분류(`change-scope`)가 해당 범위를 지목할 때만 실행되며, required check인 `mutation-test`가 두 결과를 따로 집계하므로 실행 대상 스코프 하나라도 미달하거나 기대된 실행이 빠지면 병합이 차단된다.** 로컬에서 `STRICT_MUTATION`을 지정하지 않은 PITest 실행은 `mutationThreshold=0`의 리포트 전용이다. 일반 보조 비즈니스 서비스 및 단순 CRUD 로직은 돌연변이 테스트 강제 의무에서 영구히 면제한다.
+2. 테스트 코드 무결성을 검증하기 위한 돌연변이 테스트(Mutation Testing)는 전체 모듈이 아니라 CI 매트릭스에 범위로 등록한 핵심 크리티컬 비즈니스 서비스(결제, 보안, 데이터 정합성 등)에서 수행한다. 변경 영향 분류가 실행할 범위를 고르고, 고른 범위는 등록된 대상 클래스 전체를 검증한다(변경된 줄만 보는 증분 검증이 아니다). 핵심 서비스 기준 **Mutation Score 75% 이상**을 최저 품질 기준으로 삼는다. 이 기준은 `build.gradle` 의 `mutationThreshold`(환경변수 `STRICT_MUTATION=true` 일 때 75 와 범위별 하한 가운데 큰 값)로 기계 강제하며, 범위별 하한의 정본은 [게이트 원장](../../../../config/governance/gates.json)의 `QUALITY-BACKEND-MUTATION-SCORE`(`scopeFloors`)다([ADR-0044](../../../../docs/02-architecture/decisions/ADR-0044-ci-tuning-values-and-pit-scope-floors.md)). **현행 CI는 제품 스코프의 `mutation-scope`와 이관 도구 스코프의 `mutation-scope-migration` 매트릭스에 각각 `STRICT_MUTATION=true`를 주입하여 범위별 하한(최저 75%)을 하드 게이트한다. 두 잡은 변경 영향 분류(`change-scope`)가 해당 범위를 지목할 때만 실행되며, required check인 `mutation-test`가 두 결과를 따로 집계하므로 실행 대상 스코프 하나라도 미달하거나 기대된 실행이 빠지면 병합이 차단된다.** 로컬에서 `STRICT_MUTATION`을 지정하지 않은 PITest 실행은 `mutationThreshold=0`의 리포트 전용이다. 범위로 등록하지 않은 일반 보조 비즈니스 서비스 및 단순 CRUD 로직은 돌연변이 테스트 강제 의무에서 영구히 면제한다 — 면제 여부는 등록된 대상 클래스 패턴이 정한다.
 
 
 ---
