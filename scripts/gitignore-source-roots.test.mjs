@@ -68,7 +68,7 @@ const TOOL_OUTPUT_NAMES = Object.freeze([
 //   (`*.log`·`.env.*`·`boot_error*`)은 이름을 뽑지 않는다 — 흔한 낱말을 그런 표기로 다시 넣는 것은 GENERIC_NAMES 탐침이 의미로 잡는다.
 const FILE_NAME_RULES = Object.freeze([
   { reason: 'OS·IDE 메타데이터 파일(Windows·macOS 탐색기, Eclipse 프로젝트 설정)', names: ['Thumbs.db', 'Desktop.ini', '.DS_Store', '.AppleDouble', '.project', '.classpath', '.factorypath'] },
-  { reason: 'npm·yarn 잠금 파일(이중 잠금 파일 방지 — 루트 package-lock.json 은 강제 추적한다)', names: ['package-lock.json', 'yarn.lock'] },
+  { reason: 'npm·yarn 잠금 파일(이중 잠금 파일 방지 — 허용된 루트·tools/requirements-workspace package-lock.json 만 예외로 추적한다)', names: ['package-lock.json', 'yarn.lock'] },
   {
     reason: '로컬 비밀·환경별 설정(dotenv, Spring 로컬·개발·운영 프로필 파일)',
     names: ['.env', 'application-local.properties', 'application-local.yml', 'application-dev.properties', 'application-dev.yml',
@@ -303,6 +303,18 @@ test('ⓐ 추적하는 dotenv 견본(.env.example)은 무시되지 않는다', (
   const ignored = ignoringRules(DOTENV_TEMPLATES);
   assert.deepEqual(DOTENV_TEMPLATES.filter((path) => ignored.has(path)).map((path) => `${path} ← ${ignored.get(path)}`), [],
     '견본이 무시됩니다 — 새 클론에서 부트스트랩이 복제할 원본이 빠집니다. **/.env.* 뒤에 !**/.env.example 예외를 둡니다.');
+});
+
+test('ⓐ 허용된 루트·tools/requirements-workspace package-lock.json 은 새 저장소에서도 무시되지 않고 이중 잠금 파일은 계속 가린다', () => {
+  const allowedLocks = ['package-lock.json', 'tools/requirements-workspace/package-lock.json'];
+  assert.deepEqual(allowedLocks.filter((path) => !trackedFiles.includes(path)), [], '허용된 package-lock.json 이 추적되지 않습니다.');
+  const ignoredAllowed = ignoringRules(allowedLocks);
+  assert.deepEqual(allowedLocks.filter((path) => ignoredAllowed.has(path)).map((path) => `${path} ← ${ignoredAllowed.get(path)}`), [],
+    '허용된 package-lock.json 이 무시됩니다 — **\/package-lock.json 뒤에 !/package-lock.json · !/tools/requirements-workspace/package-lock.json 예외를 둡니다.');
+  const guardedDuplicates = ['frontend/package-lock.json', 'api-server/package-lock.json'];
+  const ignoredDuplicates = ignoringRules(guardedDuplicates);
+  assert.deepEqual(guardedDuplicates.filter((path) => !ignoredDuplicates.has(path)), [],
+    '허용 경로 밖의 이중 package-lock.json 이 무시되지 않습니다.');
 });
 
 test('ⓑ 실제 출력 위치는 계속 무시된다', () => {

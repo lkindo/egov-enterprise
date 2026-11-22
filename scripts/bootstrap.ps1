@@ -77,6 +77,13 @@ if (Get-Command pnpm -ErrorAction SilentlyContinue) {
 
 Write-Host "`n[*] Installing root dependencies (concurrently 등)..." -ForegroundColor Gray
 npm install
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+if (Test-Path (Join-Path $rootDir "tools/requirements-workspace/package.json")) {
+    Write-Host "`n[*] Installing requirements workspace dependencies..." -ForegroundColor Gray
+    npm --prefix (Join-Path $rootDir "tools/requirements-workspace") ci --ignore-scripts
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
 
 Write-Host "`n[*] Installing frontend dependencies..." -ForegroundColor Gray
 Set-Location -Path (Join-Path $rootDir "frontend")

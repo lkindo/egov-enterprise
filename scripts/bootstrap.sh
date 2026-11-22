@@ -59,6 +59,12 @@ echo ""
 echo "[*] Installing root dependencies (concurrently 등)..."
 npm install
 
+if [ -f "tools/requirements-workspace/package.json" ]; then
+  echo ""
+  echo "[*] Installing requirements workspace dependencies..."
+  npm --prefix tools/requirements-workspace ci --ignore-scripts
+fi
+
 echo ""
 echo "[*] Installing frontend dependencies..."
 ( cd frontend && pnpm install )

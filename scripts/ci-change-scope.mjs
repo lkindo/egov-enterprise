@@ -429,8 +429,17 @@ export const GENERATOR_TOOL_PATHS = Object.freeze([
   { path: '.agents/hooks.json', axes: [] },
 ].map(entry => Object.freeze({ ...entry, axes: Object.freeze(entry.axes) })));
 
+// 요구분석 도구 코드 파일은 좁은 도구 경로로 분류하되, 의존성 매니페스트·잠금 파일은
+// 루트 package.json·package-lock.json 과 동일하게 미분류(fail-closed)로 두어
+// Dependabot PR 에서도 secret-scan 의 dependency-review-action·스냅숏 검증이 생략되지 않게 한다.
+const TOOL_DEPENDENCY_MANIFESTS = new Set([
+  'tools/requirements-workspace/package.json',
+  'tools/requirements-workspace/package-lock.json',
+]);
+
 export function generatorToolEntry(file) {
   const normalized = normalizeFile(file);
+  if (TOOL_DEPENDENCY_MANIFESTS.has(normalized)) return null;
   return GENERATOR_TOOL_PATHS.find(entry => entry.exact ? normalized === entry.path : normalized.startsWith(entry.path)) ?? null;
 }
 
