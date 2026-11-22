@@ -1128,7 +1128,7 @@ export async function loadInputs(root = ROOT, { rtm, compare, backlog } = {}) {
     baseline = readBaselineManifest(text);
     io.record('(실행 인자) 기준선 manifest.json', textSha256(text));
   }
-  const requireMigrationReview = ledgerMode === 'source' || Boolean(projection?.migrationEnvironmentReview !== false && !lock?.vendorProjection);
+  const requireMigrationReview = ledgerMode === 'source' || Boolean(projection?.migrationEnvironmentReview);
   const migrationAdoptionReview = (requireMigrationReview || existsSync(join(root, 'config/governance/migration-adoption-review.json')))
     ? io.json('config/governance/migration-adoption-review.json')
     : null;

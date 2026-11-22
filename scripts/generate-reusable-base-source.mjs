@@ -13,7 +13,7 @@ import { CURRENT_ARTIFACT_COMMAND, VERIFICATION_HISTORY, artifactAliases, projec
 import { normalizeBackendLayout } from './reusable-layout.mjs';
 import { runReportingChild } from './project-composer-child-failure.mjs';
 import { applySingleModuleLayout } from './reusable-single-module.mjs';
-import { installMultiModuleMigrationRuntime, installSingleModuleRuntime } from './reusable-layout-runtime.mjs';
+import { installSingleModuleRuntime } from './reusable-layout-runtime.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { MODULES_DIRECTORY, MODULES_SCHEMA, PRESETS_FILE, composerOwnership, detectGeneratedComposition, loadComposerModules,
   projectComposerModuleFiles } from './composer-modules.mjs';
@@ -29,12 +29,11 @@ import { adaptGeneratedHarness, assertJavaCascadeAcknowledged, assertRemovedGate
   pruneZeroDowntimeWaivers } from './reusable-source-gates.mjs';
 import { writeHarnessBaseline } from './reusable-source-harness.mjs';
 import { VENDOR_ASSET_RULE, pruneVendorPostgresAssets } from './reusable-vendor-assets.mjs';
-import { PRODUCER_ASSET_RULE, REQUIREMENTS_ASSET_RULE, pruneProducerTools, pruneRequirementsStudio } from './reusable-product-assets.mjs';
+import { PRODUCER_ASSET_RULE, REQUIREMENTS_ASSET_RULE, MIGRATION_ASSET_RULE, pruneProducerTools, pruneRequirementsStudio, pruneMigrationTools, stripMigrationBuildReferences } from './reusable-product-assets.mjs';
 import { pruneJava } from './reusable-source-java.mjs';
 import { ROOT, copySourceTree, fail, git, initializeGeneratedRepository, installDatabaseBundle, isCopyableSourceFile, normalize, readTextIfPresent,
   trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
 import { buildProjectionLedger, writeProjectionLedger } from './reusable-projection-ledger.mjs';
-import { installProjectedColumnCatalog } from './reusable-migration-catalog.mjs';
 import { assertFrontendToolchain, regenerateContractTypes, writeProjectedApiDocs } from './reusable-contract-projection.mjs';
 import { assertContractReferencesSurvive } from './reusable-contract-references.mjs';
 import { ensureQueued } from './heavy-run-queue.mjs';
@@ -127,7 +126,7 @@ export function installReusableVerification(output, layout = 'multi-module', { u
   }, null, 2)}\n`);
   Object.assign(pkg.scripts, artifactAliases);
   for (const alias of Object.keys(pkg.scripts)) {
-    if (alias.startsWith('base:') || alias.startsWith('project:') || ['migration:export', 'verify:e2e', 'verify:ops', '//verify:ops'].includes(alias)) delete pkg.scripts[alias];
+    if (alias.startsWith('base:') || alias.startsWith('project:') || ['migration:export', 'verify:migration', 'verify:e2e', 'verify:ops', '//verify:ops'].includes(alias)) delete pkg.scripts[alias];
   }
   writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`);
   writeFileSync(join(output, 'Makefile'), makefile);
@@ -137,7 +136,7 @@ export function installReusableVerification(output, layout = 'multi-module', { u
   writeFileSync(join(output, 'REUSABLE_VERIFICATION.md'), '# Generated product verification\n\n'
     + '`npm run verify`는 원본 결속을, 생성물 CI는 유효한 등록 유무에 따른 현재 프로젝트의 원장·Java 하네스·스키마·프런트 타입·lint·build를 검증한다. CI는 working-tree·incremental gitleaks 검사도 유지한다.\n\n'
     + '`verify:docs`는 contracts, `verify:be`는 backend, `verify:fe`는 frontend이며 `verify:full`·`verify:fast`는 원본 full, `verify:push`는 현재 프로젝트 검사에 연결한다. 각 scope는 공통 활성 계약을 먼저 실행한다.\n\n'
-    + '생산자 전용 `base:*`·`migration:export`, 기관 실행 환경이 필요한 `verify:e2e`·`verify:ops`는 제공하지 않는다. 독립 이관 제품 export는 원본 저장소에서 실행한다. 기관 브라우저 시나리오와 원격 ruleset은 기관에서 별도로 결속한다.\n\n'
+    + '생산자 전용 `base:*`, 오프라인 이관 도구(`migration-tool`·`migration:*`·`verify:migration`), 기관 실행 환경이 필요한 `verify:e2e`·`verify:ops`는 생성 프로젝트에 포함하지 않는다(ADR-0062). 독립 이관 제품 export(`npm run migration:export`)는 원본 저장소에서 실행한다. 기관 브라우저 시나리오와 원격 ruleset은 기관에서 별도로 결속한다.\n\n'
     + '현재 CI의 required context 제안은 `artifact-verification` 하나이다. `.github/required-checks.json`의 remoteApplied=false는 기관 branch protection을 실제 적용하지 않았다는 뜻이다. 원본 6개 required context와 동등한 보증이 아니다.\n\n'
     + 'Java·미배정 권한을 추가하기 전 `node scripts/adopter-project.mjs init`, 추가 뒤 `register --reason "구체적인 추가 사유"`와 `npm run verify:adopter`를 쓴다. CI·pre-push는 유효한 등록 유무에 따라 현재 프로젝트를 검사한다. 원본 `npm run verify`의 인증 경계는 유지하며 도입자 보고서는 원본 인증·기관 승인을 대체하지 않는다. 자세한 범위는 `docs/03-guides/generated-project-additions.md`를 따른다.\n\n'
     + '원본 workflow·required manifest·package·hook은 `config/governance/upstream-verification/`의 비활성 이력이다. 원본 CodeQL·E2E·mutation·배포·예약 작업은 기관 범위에 맞게 재결속해야 한다. 이력을 복사한 것은 외부 발행이나 기관 운영 승인이 아니다.\n');
@@ -201,21 +200,18 @@ export function writeProjectedModules(output, modules, composition, active) {
 }
 
 /**
- * REUSABLE_BASE.md 의 배치 줄. 벤더 프로젝트는 이관 모듈(멀티모듈은 settings.gradle 의 include, projectVendorSettings)·이관 소스 세트와
- * 별칭이 없고 PostgreSQL 스키마 시험을 검증에서 뺀다(설계서 §8·§17). PostgreSQL 문장은 바이트 그대로 둔다.
+ * REUSABLE_BASE.md 의 배치 줄. ADR-0062 이후 모든 생성 프로젝트(PostgreSQL·벤더, 멀티·단일모듈)에서 이관 모듈·별칭을 뺀다.
  */
 export function reusableBaseLayoutLines(layout, { vendor = null } = {}) {
   if (layout !== 'single-module') {
-    return vendor ? '- 이관 모듈(migration-tool)을 뺀 나머지 Gradle 모듈과 의존 경계를 유지한다.\n' : '- 기존 Gradle 모듈과 의존 경계를 유지한다.\n';
+    return '- 이관 모듈(migration-tool)을 뺀 나머지 Gradle 모듈과 의존 경계를 유지한다.\n';
   }
-  return (vendor
-    ? '- Gradle 프로젝트는 루트 하나이며 기존 디렉터리는 논리 소스 영역이다. 테스트 자원은 별도 source set으로 격리한다.\n'
-    : '- Gradle 프로젝트는 루트 하나이며 기존 디렉터리는 논리 소스 영역이다. 테스트 자원과 offline migration 실행은 별도 source set으로 격리한다.\n') +
-    '- 실행: `./gradlew bootRun`; 온라인 JAR: `./gradlew bootJar` → `build/libs/app.jar`. Windows는 `./gradlew` 대신 `gradlew.bat`을 사용한다.\n' +
-    (vendor
+  return '- Gradle 프로젝트는 루트 하나이며 기존 디렉터리는 논리 소스 영역이다. 테스트 자원은 별도 source set으로 격리한다.\n'
+    + '- 실행: `./gradlew bootRun`; 온라인 JAR: `./gradlew bootJar` → `build/libs/app.jar`. Windows는 `./gradlew` 대신 `gradlew.bat`을 사용한다.\n'
+    + (vendor
       ? `- 전체 테스트: \`./gradlew allTests\`; 하네스: \`./gradlew harnessTest\`; ${vendor} 스키마 변경 검사: \`npm run ${VENDOR_SCHEMA_ALIAS}\`(README 의 데이터베이스 절).\n`
-      : '- 전체 테스트: `./gradlew allTests`; 하네스/DB 검사: `./gradlew harnessTest schemaValidationTest`; 오프라인 이관: `npm run verify:migration`.\n') +
-    '- 폴더별 `build.gradle`은 원본 출처 자료이며 활성 Gradle 설정은 루트 `build.gradle`과 `settings.gradle`이다.\n';
+      : '- 전체 테스트: `./gradlew allTests`; 하네스/DB 검사: `./gradlew harnessTest schemaValidationTest`.\n')
+    + '- 폴더별 `build.gradle`은 원본 출처 자료이며 활성 Gradle 설정은 루트 `build.gradle`과 `settings.gradle`이다.\n';
 }
 
 async function main() {
@@ -268,6 +264,7 @@ async function main() {
   const removedUpstreamAtlas = pruneUpstreamAtlas(output);
   const removedProducerTools = pruneProducerTools(output);
   const removedRequirementsStudio = pruneRequirementsStudio(output);
+  const removedMigrationTools = pruneMigrationTools(output);
   // 벤더 프로젝트에서 동작하지 않는 PostgreSQL 전용 자산을 원장대로 걷는다.
   const removedVendorAssets = vendorInput ? pruneVendorPostgresAssets(output) : null;
   const removedGates = assertRemovedGatesAcknowledged(args.profile, profile, java, frontend, {
@@ -275,6 +272,7 @@ async function main() {
     'upstream-atlas': removedUpstreamAtlas.files,
     [PRODUCER_ASSET_RULE]: removedProducerTools.files,
     [REQUIREMENTS_ASSET_RULE]: removedRequirementsStudio.files,
+    [MIGRATION_ASSET_RULE]: removedMigrationTools.files,
     ...(removedVendorAssets ? { [VENDOR_ASSET_RULE]: removedVendorAssets.files } : {}),
   });
   // 프리셋은 연쇄로 지운 Java 를 커밋된 기대치와 대조한다(설계서 C4). 직접 선택은 기대치가 없어 lock 기록(java.cascadeRemoved)만 남긴다.
@@ -288,18 +286,12 @@ async function main() {
   //   밝히며 멈춘다. 정밀 점검이 같은 판정으로 미리 막는다(사라질 이름은 예측과 다시 만든 파일의 차이가 같아야 한다).
   const contractReferences = assertContractReferencesSurvive({ sourceRoot: ROOT, output, projection: apiDocs, files: copiedFiles });
   installDatabaseBundle(output, dbBundle);
-  // 이관 카탈로그(설계서 B12): 원본 카탈로그를 그대로 두면 구성에서 빠진 표로 가는 매핑도 검증을 통과하고 적재 직전에야 실패한다.
-  if (!vendorInput) {
-    const migrationCatalog = installProjectedColumnCatalog(ROOT, output, dbBundle, dbLock);
-    console.log(`[base-source] ${args.profile}: 이관 카탈로그(db_columns.json)를 번들 스키마로 다시 썼다(표 ${migrationCatalog.tables}개).`);
-  }
   const zdmWaivers = pruneZeroDowntimeWaivers(output);
   const projectedModules = writeProjectedModules(output, modules, composition, activeCompositionEntry(modules, composition, profile, java));
   installReusableVerification(output, args.layout, { upstreamPackageJson });
-  const migration = !vendorInput;
-  const layoutProjection = args.layout === 'single-module' ? applySingleModuleLayout(output, { migration }) : null;
-  if (args.layout === 'single-module') installSingleModuleRuntime(output, { migration });
-  else if (migration) installMultiModuleMigrationRuntime(output);
+  const layoutProjection = args.layout === 'single-module' ? applySingleModuleLayout(output, { migration: false }) : null;
+  if (args.layout === 'single-module') installSingleModuleRuntime(output, { migration: false });
+  stripMigrationBuildReferences(output, args.layout);
   // 벤더 투영은 빌드·설정을 바꾸므로 거버넌스가 증거 범위를 재기 전에 한다. 입력은 DB 생성기가 번들 옆에 둔 재적용 결과다.
   const vendorProjection = vendorInput && projectVendorSources(output, { vendorId, layout: args.layout, input: JSON.parse(vendorInput.toString('utf8')), inputText: vendorInput.toString('utf8') });
   // Ordering invariant: all file/alias/build removals MUST finish before projectReusableGovernance computes codeScope.
@@ -315,7 +307,7 @@ async function main() {
     ownership,
     profile,
     schemaTables: dbLock.tables.length,
-    allowedAbsentScanRoots: removedVendorAssets ? removedVendorAssets.assets : [],
+    allowedAbsentScanRoots: [...removedMigrationTools.assets, ...(removedVendorAssets ? removedVendorAssets.assets : [])],
   });
   // 투영 원장(Phase 2 D6): 복사한 원본 파일 가운데 지금 없는 파일. 파일을 지우는 마지막 단계(검증 설치의 워크플로 정리,
   //   거버넌스 투영의 리다이렉트 페이지 정리) 뒤에 센다 — 앞에서 세면 그 뒤에 지운 파일이 원장에 없다(검토로 드러났다).
@@ -332,6 +324,7 @@ async function main() {
     schemaVersion: 1,
     profile: args.profile,
     layout: args.layout,
+    migrationTool: false,
     layoutProjection,
     modules: projectedModules,
     composition,

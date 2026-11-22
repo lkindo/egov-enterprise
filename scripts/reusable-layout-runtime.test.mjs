@@ -45,7 +45,7 @@ function fixture(t, eol = '\n') {
   ].join(eol));
   write(root, 'scripts/verify.mjs', sourceMigrationCommand + eol);
   write(root, 'scripts/migration-verification-contract.test.mjs', '// Preserved upstream contract\n');
-  write(root, 'reusable-base-lock.json', JSON.stringify({ profile: 'core', layout: 'single-module' }));
+  write(root, 'reusable-base-lock.json', JSON.stringify({ profile: 'core', layout: 'single-module', migrationTool: true }));
   return root;
 }
 
@@ -75,6 +75,22 @@ test('the actual producer runtime sources satisfy the same exact projection cont
   for (const file of requiredFiles) copyFileSync(join(ROOT, file), join(root, file));
   installSingleModuleRuntime(root);
   assert.deepEqual(validateSingleModuleRuntime(root), []);
+
+  // ADR-0062: 기본 생성물(migration: false)은 verify:migration·이관 도구 없이 동작하며 Docker COPY migration-tool/ 을 제거해야 통과한다.
+  const phase4 = fixture(t);
+  for (const file of ['package.json', 'scripts/dev.mjs', 'api-server/Dockerfile']) copyFileSync(join(ROOT, file), join(phase4, file));
+  rmSync(join(phase4, 'scripts/verify.mjs'));
+  rmSync(join(phase4, 'scripts/migration-verification-contract.test.mjs'));
+  const phase4Pkg = json(phase4, 'package.json');
+  delete phase4Pkg.scripts['verify:migration'];
+  write(phase4, 'package.json', `${JSON.stringify(phase4Pkg, null, 2)}\n`);
+  write(phase4, 'reusable-base-lock.json', JSON.stringify({ profile: 'core', layout: 'single-module', migrationTool: false }));
+  installSingleModuleRuntime(phase4, { migration: false });
+  assert.ok(validateSingleModuleRuntime(phase4).some(error => error.includes('Docker still copies migration-tool')));
+  write(phase4, 'api-server/Dockerfile', read(phase4, 'api-server/Dockerfile').replace(/^COPY migration-tool\/build\.gradle [^\n]*\r?\n/m, ''));
+  assert.deepEqual(validateSingleModuleRuntime(phase4), []);
+  write(phase4, 'package.json', JSON.stringify({ ...json(phase4, 'package.json'), scripts: { ...json(phase4, 'package.json').scripts, 'verify:migration': 'echo leaked' } }));
+  assert.ok(validateSingleModuleRuntime(phase4).some(error => error.includes('verify:migration')));
 });
 
 test('missing files and unknown or duplicate executable targets fail before any file is changed', t => {
@@ -131,7 +147,7 @@ test('runtime validator rejects wrong layout, alias drift, missing commands and 
   }
 });
 
-test('migration verification runs only fixed isolated root tasks and propagates failures', t => {
+test('migration verification runs only fixed isolated root tasks for legacy locks and refuses Phase 4 products', t => {
   const root = fixture(t);
   for (const file of ['build.gradle', 'settings.gradle', ...['foundation', 'business-core', 'business-app', 'api-server', 'migration-tool'].map(module => `${module}/build.gradle`)]) {
     mkdirSync(dirname(join(root, file)), { recursive: true });
@@ -152,11 +168,26 @@ test('migration verification runs only fixed isolated root tasks and propagates 
   assert.throws(() => verifySingleModuleMigration({ root, run: () => { throw new Error('deliberate Gradle failure'); } }), /deliberate Gradle failure/);
   write(root, 'settings.gradle', read(root, 'settings.gradle') + "include 'migration-tool'\n");
   assert.throws(() => verifySingleModuleMigration({ root, run: () => assert.fail('invalid layout must not launch Gradle') }), /one project/);
-  write(root, 'reusable-base-lock.json', JSON.stringify({ profile: 'core', layout: 'multi-module' }));
+  write(root, 'reusable-base-lock.json', JSON.stringify({ profile: 'core', layout: 'multi-module', migrationTool: true }));
   assert.throws(() => verifySingleModuleMigration({ root, run: () => assert.fail('invalid lock must not launch Gradle') }), /single-module product lock/);
 });
 
-test('multi-module migration alias dispatches only independent module tasks without upstream CI fixtures', t => {
+test('multi-module migration validation enforces ADR-0062 absence by default and preserves explicit legacy locks', t => {
+  const cleanMulti = fixture(t);
+  write(cleanMulti, 'reusable-base-lock.json', JSON.stringify({ profile: 'core', layout: 'multi-module', migrationTool: false }));
+  write(cleanMulti, 'settings.gradle', "rootProject.name = 'fixture'\ninclude 'foundation'\n");
+  const cleanPkg = json(cleanMulti, 'package.json');
+  delete cleanPkg.scripts['verify:migration'];
+  write(cleanMulti, 'package.json', JSON.stringify(cleanPkg));
+  assert.deepEqual(validateGeneratedMigrationRuntime(cleanMulti), []);
+  assert.throws(() => verifyGeneratedMigration({ root: cleanMulti, run: () => assert.fail('ADR-0062 artifact must not launch Gradle') }), /ADR-0062/);
+
+  write(cleanMulti, 'settings.gradle', "rootProject.name = 'fixture'\ninclude 'migration-tool'\n");
+  assert.ok(validateGeneratedMigrationRuntime(cleanMulti).some(err => err.includes('includes the migration tool')));
+  write(cleanMulti, 'settings.gradle', "rootProject.name = 'fixture'\ninclude 'foundation'\n");
+  write(cleanMulti, 'api-server/Dockerfile', read(cleanMulti, 'api-server/Dockerfile') + 'COPY migration-tool/build.gradle /app/migration-tool/\n');
+  assert.ok(validateGeneratedMigrationRuntime(cleanMulti).some(err => err.includes('Dockerfile still copies migration-tool')));
+
   const root = fixture(t);
   write(root, 'reusable-base-lock.json', JSON.stringify({ profile: 'collaboration', layout: 'multi-module' }));
   write(root, 'settings.gradle', "rootProject.name = 'fixture'\ninclude 'migration-tool'\n");
@@ -174,7 +205,7 @@ test('multi-module migration alias dispatches only independent module tasks with
     ':migration-tool:compileJava', ':migration-tool:compileTestJava', ':migration-tool:test', ':migration-tool:bootJar',
     '--no-daemon', '--warning-mode', 'fail', '--console=plain', '-Dfile.encoding=UTF-8',
   ] }]);
-  write(root, 'reusable-base-lock.json', JSON.stringify({ profile: 'collaboration' }));
+  write(root, 'reusable-base-lock.json', JSON.stringify({ profile: 'collaboration', migrationTool: true }));
   assert.deepEqual(validateGeneratedMigrationRuntime(root), []);
   assert.throws(() => verifyGeneratedMigration({ root, run: () => { throw new Error('deliberate module test failure'); } }), /module test failure/);
   assert.throws(() => installMultiModuleMigrationRuntime(root), /unexpected package verify:migration/);
@@ -182,8 +213,8 @@ test('multi-module migration alias dispatches only independent module tasks with
 
 test('generated migration dispatch rejects unknown locks, inactive module includes and online dependencies', t => {
   const mutations = [
-    ['reusable-base-lock.json', JSON.stringify({ profile: 'core', layout: 'unknown' })],
-    ['reusable-base-lock.json', JSON.stringify({ profile: 'unknown', layout: 'multi-module' })],
+    ['reusable-base-lock.json', JSON.stringify({ profile: 'core', layout: 'unknown', migrationTool: true })],
+    ['reusable-base-lock.json', JSON.stringify({ profile: 'unknown', layout: 'multi-module', migrationTool: true })],
     ['settings.gradle', "// include 'migration-tool'\n"],
     ['settings.gradle', "include 'migration-tool'\ninclude 'migration-tool'\n"],
     ['migration-tool/build.gradle', "dependencies { implementation project(':foundation') }\n"],
@@ -191,7 +222,7 @@ test('generated migration dispatch rejects unknown locks, inactive module includ
   ];
   for (const [file, value] of mutations) {
     const root = fixture(t);
-    write(root, 'reusable-base-lock.json', JSON.stringify({ profile: 'core', layout: 'multi-module' }));
+    write(root, 'reusable-base-lock.json', JSON.stringify({ profile: 'core', layout: 'multi-module', migrationTool: true }));
     write(root, 'settings.gradle', "include 'migration-tool'\n");
     write(root, 'migration-tool/build.gradle', 'dependencies {}\n');
     installMultiModuleMigrationRuntime(root);
@@ -224,7 +255,7 @@ test('installer refuses its own source tree even when the Windows drive letter c
     rmSync(source, { recursive: true, force: true });
   });
   mkdirSync(join(source, 'scripts'));
-  for (const file of ['reusable-layout-runtime.mjs', 'reusable-single-module.mjs', 'composition-profiles.mjs']) {
+  for (const file of ['reusable-layout.mjs', 'reusable-layout-runtime.mjs', 'reusable-single-module.mjs', 'composition-profiles.mjs']) {
     copyFileSync(join(ROOT, 'scripts', file), join(source, 'scripts', file));
   }
   const pkg = `${JSON.stringify({ scripts: { 'verify:migration': 'node scripts/verify.mjs migration', backend: 'gradlew.bat :api-server:bootRun' } }, null, 2)}\n`;

@@ -10,7 +10,8 @@ import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { composerOwnership, loadComposerModules } from './composer-modules.mjs';
 import { UPSTREAM_ATLAS } from './reusable-source-gates.mjs';
 import { isPathCoveredBy } from './reusable-asset-removal.mjs';
-import { PRODUCER_ASSET_LEDGER, REQUIREMENTS_ASSET_LEDGER, readProducerAssetLedger, readRequirementsAssetLedger } from './reusable-product-assets.mjs';
+import { MIGRATION_ASSET_LEDGER, PRODUCER_ASSET_LEDGER, REQUIREMENTS_ASSET_LEDGER,
+  readMigrationAssetLedger, readProducerAssetLedger, readRequirementsAssetLedger } from './reusable-product-assets.mjs';
 import { normalize, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 import { MESSAGE_BUNDLES } from './reusable-source-messages.mjs';
 
@@ -54,7 +55,8 @@ export const compose = (selection, from = catalog) => resolveProjectRecipe({ sch
 // 복사 시간을 줄이려고 이것만 복사한다.
 const alwaysRemoved = [...readProducerAssetLedger(root).assets, ...readProducerAssetLedger(root).gates.map(row => row.file),
   ...readRequirementsAssetLedger(root).assets, ...readRequirementsAssetLedger(root).gates.map(row => row.file),
-  PRODUCER_ASSET_LEDGER, REQUIREMENTS_ASSET_LEDGER];
+  ...readMigrationAssetLedger(root).assets, ...readMigrationAssetLedger(root).gates.map(row => row.file),
+  PRODUCER_ASSET_LEDGER, REQUIREMENTS_ASSET_LEDGER, MIGRATION_ASSET_LEDGER];
 export const atlasPaths = [...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates];
 export const projectionFiles = files.filter(file => {
   const path = normalize(file);

@@ -298,10 +298,9 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
   });
   for (const [key, path] of Object.entries(REVIEW_MANIFEST_PATHS)) writeJson(outputRoot, path, reviewProjection.manifests[key]);
   writeJson(outputRoot, 'config/governance/adoption-review.json', createPendingAdoptionReview({ product: 'online', profile }));
-  // 벤더 프로젝트에는 이관 도구가 없어 승인 원장도 없다.
-  const migrationEnvironmentReview = (composition?.recipe?.database?.vendor ?? 'postgresql') === 'postgresql'
-    ? { path: 'config/governance/migration-adoption-review.json', inherited: false } : undefined;
-  if (migrationEnvironmentReview) writeJson(outputRoot, migrationEnvironmentReview.path, createPendingAdoptionReview({ product: 'migration-tool', profile: null }));
+  // ADR-0062: 생성 애플리케이션 프로젝트에는 오프라인 이관 도구가 없어 이관 승인 원장도 만들지 않는다.
+  rmSync(join(outputRoot, 'config/governance/migration-adoption-review.json'), { force: true });
+  const migrationEnvironmentReview = undefined;
   for (const [path, content] of Object.entries(buildGeneratedMemory({ profile, sourceCommit, migrationEnvironmentReview }))) {
     mkdirSync(dirname(join(outputRoot, path)), { recursive: true });
     writeFileSync(join(outputRoot, path), content, 'utf8');

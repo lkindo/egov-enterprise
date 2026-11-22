@@ -257,6 +257,16 @@ test('explicit allowedAbsentScanRoots skips only declared removed scan roots wit
   assert.throws(() => computeHarnessBaselineEntries(root, { allowedAbsentScanRoots: [] }), /스캔 루트를 찾을 수 없다 — migration-tool\/src\/test\/java/);
   assert.ok(computeHarnessBaselineEntries(root, { allowedAbsentScanRoots: ['migration-tool'] }).size > 0);
 
+  // ADR-0062 생성 프로젝트(reusable-base-lock.json + migration-removed-assets.json)는 벤더 폴더가 없어도 migration-tool 부재를 허용한다.
+  rmSync(join(root, 'api-server/src/main/resources/db/vendor'), { recursive: true, force: true });
+  rmSync(join(root, 'config/governance/vendor-removed-assets.json'));
+  assert.throws(() => computeHarnessBaselineEntries(root), /스캔 루트를 찾을 수 없다 — migration-tool\/src\/test\/java/);
+  writeFileSync(join(root, 'reusable-base-lock.json'), JSON.stringify({ profile: 'core' }));
+  assert.throws(() => computeHarnessBaselineEntries(root), /스캔 루트를 찾을 수 없다 — migration-tool\/src\/test\/java/);
+  writeFileSync(join(root, 'config/governance/migration-removed-assets.json'), JSON.stringify({ assets: ['migration-tool'] }));
+  assert.ok(computeHarnessBaselineEntries(root).size > 0);
+  assert.throws(() => computeHarnessBaselineEntries(root, { allowedAbsentScanRoots: [] }), /스캔 루트를 찾을 수 없다 — migration-tool\/src\/test\/java/);
+
   rmSync(join(root, 'api-server/src/test/java'), { recursive: true, force: true });
   assert.throws(() => computeHarnessBaselineEntries(root, { allowedAbsentScanRoots: ['migration-tool'] }), /스캔 루트를 찾을 수 없다 — api-server\/src\/test\/java/);
 });

@@ -1139,9 +1139,9 @@ test('deleting an input fails closed to every layout even on a pull request', ()
   assert.deepEqual(deleted(ENTITY_FILE), closed, 'unreadable base');
   assert.equal(deleted(ENTITY_FILE, { readBaseSource: () => 'class DemoEntity {}' }).reusableVendor, false);
   // 제거 원장이 가리키는 자산이 사라지면 벤더 생성만 멈춘다.
-  for (const file of ['docker-compose.authz-e2e.yml', 'db_columns.json', 'scripts/ReleaseSmokeProbe.java']) assert.deepEqual(deleted(file), closed, file);
+  for (const file of ['docker-compose.authz-e2e.yml', 'scripts/restore-drill.mjs', 'scripts/ReleaseSmokeProbe.java']) assert.deepEqual(deleted(file), closed, file);
   // 다른 벤더의 입력, 시험, 원장이 이유와 함께 뺀 도구는 지워도 입력이 아니다.
-  for (const file of [POSTGRES_PORT, 'scripts/project-composer-old-thing.test.mjs', 'scripts/project-composer-reasons.mjs', 'frontend/src/app/gone/page.tsx', 'docs/gone.md', 'migration-tool/src/main/java/nuri/migration/Gone.java', 'scripts/ReleaseSmokeProbe.txt']) {
+  for (const file of [POSTGRES_PORT, 'scripts/project-composer-old-thing.test.mjs', 'scripts/project-composer-reasons.mjs', 'frontend/src/app/gone/page.tsx', 'docs/gone.md', 'migration-tool/src/main/java/nuri/migration/Gone.java', 'db_columns.json', 'scripts/ReleaseSmokeProbe.txt']) {
     assert.equal(deleted(file).reusableVendor, false, file);
   }
   // 미지 경로와 겹쳐도 전수다.

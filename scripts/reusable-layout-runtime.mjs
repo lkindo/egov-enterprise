@@ -5,7 +5,10 @@ import { existsSync, readFileSync, realpathSync, statSync, writeFileSync } from 
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compositionProfiles } from './composition-profiles.mjs';
+import { hasMigrationTool } from './reusable-layout.mjs';
 import { groovyCode, inspectSingleModuleLayout } from './reusable-single-module.mjs';
+
+export { hasMigrationTool };
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const MIGRATION_ALIAS = 'node scripts/reusable-layout-runtime.mjs --verify-migration';
@@ -134,8 +137,9 @@ export function validateSingleModuleRuntime(outputRoot) {
       fail('a generated single-module product lock is required');
     }
     const pkg = JSON.parse(read(root, 'package.json'));
+    const migration = hasMigrationTool(lock);
     if (pkg.scripts?.backend !== 'gradlew.bat bootRun') errors.push('single-module runtime: invalid backend alias');
-    if (pkg.scripts?.['verify:migration'] !== (lock.vendorProjection ? undefined : MIGRATION_ALIAS)) errors.push('single-module runtime: invalid verify:migration alias');
+    if (pkg.scripts?.['verify:migration'] !== (migration ? MIGRATION_ALIAS : undefined)) errors.push('single-module runtime: invalid verify:migration alias');
     for (const [alias, , command] of TEST_ALIASES) {
       if (pkg.scripts?.[alias] !== command) errors.push(`single-module runtime: invalid ${alias} alias`);
     }
@@ -145,6 +149,7 @@ export function validateSingleModuleRuntime(outputRoot) {
     const docker = read(root, 'api-server/Dockerfile');
     for (const [, expected] of DOCKER_LINES) exactLine(docker, expected, 'active Docker command', 'docker');
     if (/^[ \t]*RUN\b[^\n]*\s:[\w-]+:/m.test(executable(docker, 'docker'))) errors.push('single-module runtime: Docker still invokes a module task');
+    if (!migration && /^COPY\s+migration-tool\//m.test(executable(docker, 'docker'))) errors.push('single-module runtime: Docker still copies migration-tool');
   } catch (error) { errors.push(error.message); }
   return errors;
 }
@@ -163,13 +168,15 @@ export function validateGeneratedMigrationRuntime(outputRoot) {
     const root = realpathSync(resolve(outputRoot));
     const layout = generatedLayout(root);
     const pkg = JSON.parse(read(root, 'package.json'));
-    const migration = !JSON.parse(read(root, 'reusable-base-lock.json')).vendorProjection;
+    const lock = JSON.parse(read(root, 'reusable-base-lock.json'));
+    const migration = hasMigrationTool(lock);
     if (pkg.scripts?.['verify:migration'] !== (migration ? MIGRATION_ALIAS : undefined)) errors.push('generated migration runtime: invalid verify:migration alias');
     if (layout === 'single-module') errors.push(...inspectSingleModuleLayout(root, { migration }).errors);
     else if (!migration) {
-      // 벤더 프로젝트는 이관 도구를 뺐다. 되살아나면 PostgreSQL 전용 도구가 빌드에 들어온다.
-      if (existsSync(join(root, 'migration-tool'))) errors.push('generated migration runtime: a vendor project keeps the migration tool');
-      if (read(root, 'settings.gradle').includes("include 'migration-tool'")) errors.push('generated migration runtime: a vendor project includes the migration tool');
+      // ADR-0062 이후 생성 프로젝트는 이관 도구를 뺐다. 되살아나면 제외 모듈이 빌드에 들어온다.
+      if (existsSync(join(root, 'migration-tool'))) errors.push('generated migration runtime: generated project still keeps the migration tool');
+      if (read(root, 'settings.gradle').includes("include 'migration-tool'")) errors.push('generated migration runtime: generated project still includes the migration tool');
+      if (/^COPY\s+migration-tool\//m.test(executable(read(root, 'api-server/Dockerfile'), 'docker'))) errors.push('generated migration runtime: Dockerfile still copies migration-tool');
     } else {
       exactLine(read(root, 'settings.gradle'), "include 'migration-tool'", 'independent migration project');
       const moduleBuild = read(root, 'migration-tool/build.gradle');
@@ -181,7 +188,7 @@ export function validateGeneratedMigrationRuntime(outputRoot) {
 
 export function verifyGeneratedMigration({ root, run = runMigrationTasks } = {}) {
   root = realpathSync(resolve(root));
-  if (JSON.parse(read(root, 'reusable-base-lock.json')).vendorProjection) fail('this vendor project has no migration tool; it targets PostgreSQL only');
+  if (!hasMigrationTool(JSON.parse(read(root, 'reusable-base-lock.json')))) fail('this generated project has no migration tool (ADR-0062); export it with npm run migration:export from the upstream repository');
   const errors = validateGeneratedMigrationRuntime(root);
   if (errors.length) fail(errors.join('\n'));
   run([...(generatedLayout(root) === 'single-module' ? MIGRATION_TASKS : MULTI_MIGRATION_TASKS)], root);

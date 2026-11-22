@@ -5,6 +5,7 @@ import { dirname, isAbsolute, normalize, relative, resolve, sep } from 'node:pat
 import { fileURLToPath } from 'node:url';
 import { adoptionScope, containedFile, sha256, validateAdoptionReview } from './adoption-review.mjs';
 import { compositionProfiles } from './composition-profiles.mjs';
+import { hasMigrationTool } from './reusable-layout.mjs';
 import { runCommand } from './verify-reusable-artifact.mjs';
 import { validateReleaseManifest } from './release-images.mjs';
 
@@ -115,6 +116,7 @@ function migrationVerification(root) {
   const layout = lock.layout ?? 'multi-module';
   if (!compositionProfiles().includes(lock.profile)
       || !['multi-module', 'single-module'].includes(layout)) throw new Error('invalid generated migration verification layout');
+  if (!hasMigrationTool(lock)) throw new Error('generated application project excludes migration-tool (ADR-0062); run npm run migration:export in upstream repository');
   containedFile(root, 'scripts/reusable-layout-runtime.mjs');
   return ['scripts/reusable-layout-runtime.mjs', '--verify-migration'];
 }

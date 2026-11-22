@@ -7,8 +7,9 @@
  * 형식은 원본 스키마 검증(SchemaValidationIntegrationTest#render)과 같다 — 표 이름 순(코드 단위), 표 안에서는 컬럼 순번 순.
  * 번들 스키마는 Flyway 없이 만들어 `flyway_schema_history` 가 없으므로 그 표의 항목만 원본 카탈로그에서 가져온다.
  */
-import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { schemaSnapshotHash } from './project-composer-db.mjs';
 
 export const MIGRATION_CATALOG = 'db_columns.json';
@@ -53,13 +54,97 @@ export function projectedColumnCatalog(originCatalogText, schema) {
   return renderColumnCatalog(tables);
 }
 
-/** 생성물 루트의 카탈로그를 DB 번들이 검증한 스키마로 다시 쓴다. 번들 스키마는 lock 의 스키마 해시와 같아야 한다. */
-export function installProjectedColumnCatalog(root, output, dbBundle, dbLock) {
+function renderBundleColumnCatalog(root, dbBundle, dbLock) {
   const contract = JSON.parse(readFileSync(join(dbBundle, 'schema-contract.json'), 'utf8'));
   if (schemaSnapshotHash(contract.snapshot) !== dbLock.schemaSnapshotHash) {
     throw new Error('이관 카탈로그: DB 번들의 schema-contract.json 이 lock 의 스키마 해시와 다르다');
   }
   const text = projectedColumnCatalog(readFileSync(join(root, MIGRATION_CATALOG), 'utf8'), contract.snapshot);
+  return { text, tables: parseColumnCatalog(text).size };
+}
+
+/** Validate a bundle's profile-lock.json and schema-contract.json before rendering its projected db_columns.json. */
+export function readValidatedProjectedColumnCatalog({ sourceRoot, dbBundle }) {
+  const lockPath = join(dbBundle, 'profile-lock.json');
+  const dbLock = JSON.parse(readFileSync(lockPath, 'utf8'));
+  if (dbLock?.validated !== true) throw new Error('이관 카탈로그: 검증 완료(validated: true)된 DB 번들이 필요하다');
+  return renderBundleColumnCatalog(sourceRoot, dbBundle, dbLock);
+}
+
+/** 생성물 루트의 카탈로그를 DB 번들이 검증한 스키마로 다시 쓴다. 번들 스키마는 lock 의 스키마 해시와 같아야 한다. */
+export function installProjectedColumnCatalog(root, output, dbBundle, dbLock) {
+  const { text, tables } = renderBundleColumnCatalog(root, dbBundle, dbLock);
   writeFileSync(join(output, MIGRATION_CATALOG), text, 'utf8');
-  return { tables: parseColumnCatalog(text).size };
+  return { tables };
+}
+
+function canonicalOutputPath(targetPath) {
+  const unresolved = [];
+  let current = resolve(targetPath);
+  for (;;) {
+    try {
+      const real = realpathSync.native ? realpathSync.native(current) : realpathSync(current);
+      return unresolved.length ? join(real, ...unresolved.reverse()) : real;
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+      const parent = dirname(current);
+      if (parent === current) return resolve(targetPath);
+      unresolved.push(relative(parent, current));
+      current = parent;
+    }
+  }
+}
+
+/** Export a target app's projected db_columns.json to an external path for standalone migration-tool CLI validation. */
+export function exportProjectedColumnCatalog({ sourceRoot, dbBundle, outputFile }) {
+  const resolvedSource = realpathSync.native ? realpathSync.native(resolve(sourceRoot)) : realpathSync(resolve(sourceRoot));
+  const resolvedOutput = resolve(outputFile);
+  const canonicalSourceCatalog = join(resolvedSource, MIGRATION_CATALOG);
+  const canonicalOutput = canonicalOutputPath(resolvedOutput);
+  const caseInsensitive = process.platform === 'win32' || process.platform === 'darwin';
+  const sameFile = caseInsensitive
+    ? canonicalOutput.toLowerCase() === canonicalSourceCatalog.toLowerCase()
+    : canonicalOutput === canonicalSourceCatalog;
+  if (sameFile) {
+    throw new Error('이관 카탈로그: 원본 저장소의 db_columns.json 은 덮어쓸 수 없다');
+  }
+  for (let current = dirname(resolvedOutput); ; current = dirname(current)) {
+    if (existsSync(join(current, 'reusable-base-lock.json'))) {
+      throw new Error('생성 애플리케이션 프로젝트 안에는 db_columns.json 을 둘 수 없다(ADR-0062) — 앱 밖 경로에 출력하라');
+    }
+    const parent = dirname(current);
+    if (parent === current) break;
+  }
+  const { text, tables } = readValidatedProjectedColumnCatalog({ sourceRoot: resolvedSource, dbBundle: resolve(dbBundle) });
+  mkdirSync(dirname(resolvedOutput), { recursive: true });
+  writeFileSync(resolvedOutput, text, 'utf8');
+  return { outputFile: resolvedOutput, tables };
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    const argv = process.argv.slice(2);
+    const options = {};
+    for (let index = 0; index < argv.length; index += 2) {
+      const flag = argv[index];
+      const value = argv[index + 1];
+      if (!['--db-bundle', '--output'].includes(flag) || !value || value.startsWith('--') || Object.hasOwn(options, flag)) {
+        throw new Error('usage: reusable-migration-catalog.mjs --db-bundle <dir> --output <file>');
+      }
+      options[flag] = value;
+    }
+    if (!options['--db-bundle'] || !options['--output']) {
+      throw new Error('usage: reusable-migration-catalog.mjs --db-bundle <dir> --output <file>');
+    }
+    const sourceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+    const result = exportProjectedColumnCatalog({
+      sourceRoot,
+      dbBundle: options['--db-bundle'],
+      outputFile: options['--output'],
+    });
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  } catch (error) {
+    process.stderr.write(`${error.message}\n`);
+    process.exitCode = 1;
+  }
 }

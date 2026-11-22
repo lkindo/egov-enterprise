@@ -24,7 +24,7 @@ import { createJobTimeline, verificationStepMarkers } from './project-composer-t
 import { collectResults, launchVendorContainer, parseCount, readByteColumns, readCatalog, readNextValues, readSequenceNextValues, readUniqueColumns, readUniqueSignatures, runAsAdministrator, startVendorEngine, stopVendorEngineReporting, VENDOR_ENGINES, VENDOR_INTROSPECTION, VENDOR_SEQUENCE_NEXT_VALUES, VENDOR_UNIQUE_COLUMNS, VENDOR_UNIQUE_SIGNATURES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
 import { removeJobContainers } from './project-composer-postgres.mjs';
 import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, parseVendorAssetLedger, pruneVendorPostgresAssets, readVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
-import { KEPT_ARTIFACT_SCRIPT_TESTS, readProducerAssetLedger, readRequirementsAssetLedger } from './reusable-product-assets.mjs';
+import { KEPT_ARTIFACT_SCRIPT_TESTS, MIGRATION_ASSET_LEDGER, readMigrationAssetLedger, readProducerAssetLedger, readRequirementsAssetLedger } from './reusable-product-assets.mjs';
 import { findLedgerOverlapErrors, parseRemovalLedger, readRemovalLedger, staleRemovalLedgerEntries } from './reusable-asset-removal.mjs';
 import { extractLocalScriptReferences, findRemovalLeakErrors } from './reusable-asset-removal-leak-check.mjs';
 import { UPSTREAM_ATLAS } from './reusable-harness-census.mjs';
@@ -1837,19 +1837,19 @@ test('the MySQL family README states its own limits and none of the Oracle ones'
   assert.match(vendorReadme('mariadb', ledger), /해시 인덱스/, 'MariaDB 는 긴 유니크를 해시로 받는다');
 });
 
-test('the REUSABLE_BASE layout lines name the vendor schema check and the removed migration module only for a vendor, and keep the PostgreSQL lines byte for byte', () => {
+test('the REUSABLE_BASE layout lines name the excluded migration module for all generated projects and the vendor schema check only for a vendor', () => {
   const postgres = reusableBaseLayoutLines('single-module');
   assert.equal(postgres,
-    '- Gradle 프로젝트는 루트 하나이며 기존 디렉터리는 논리 소스 영역이다. 테스트 자원과 offline migration 실행은 별도 source set으로 격리한다.\n' +
+    '- Gradle 프로젝트는 루트 하나이며 기존 디렉터리는 논리 소스 영역이다. 테스트 자원은 별도 source set으로 격리한다.\n' +
     '- 실행: `./gradlew bootRun`; 온라인 JAR: `./gradlew bootJar` → `build/libs/app.jar`. Windows는 `./gradlew` 대신 `gradlew.bat`을 사용한다.\n' +
-    '- 전체 테스트: `./gradlew allTests`; 하네스/DB 검사: `./gradlew harnessTest schemaValidationTest`; 오프라인 이관: `npm run verify:migration`.\n' +
+    '- 전체 테스트: `./gradlew allTests`; 하네스/DB 검사: `./gradlew harnessTest schemaValidationTest`.\n' +
     '- 폴더별 `build.gradle`은 원본 출처 자료이며 활성 Gradle 설정은 루트 `build.gradle`과 `settings.gradle`이다.\n',
-    'PostgreSQL 단일모듈 문장은 그대로다');
-  assert.equal(reusableBaseLayoutLines('multi-module'), '- 기존 Gradle 모듈과 의존 경계를 유지한다.\n', 'PostgreSQL 멀티모듈 문장은 그대로다');
-  // 벤더 멀티모듈은 settings.gradle 에서 이관 모듈이 빠지므로(projectVendorSettings) '기존 모듈을 유지한다'고 말하면 틀린다.
+    'PostgreSQL 단일모듈 문장은 이관 실행·별칭을 포함하지 않는다');
+  assert.equal(reusableBaseLayoutLines('multi-module'), '- 이관 모듈(migration-tool)을 뺀 나머지 Gradle 모듈과 의존 경계를 유지한다.\n', 'PostgreSQL 멀티모듈 줄은 빠진 이관 모듈을 말한다');
   assert.equal(projectVendorSettings("include 'foundation'\ninclude 'migration-tool'\n"), "include 'foundation'\n");
   assert.equal(reusableBaseLayoutLines('multi-module', { vendor: 'oracle' }), '- 이관 모듈(migration-tool)을 뺀 나머지 Gradle 모듈과 의존 경계를 유지한다.\n',
     '벤더 멀티모듈 줄은 빠진 이관 모듈을 말한다');
+  for (const absent of ['verify:migration', 'offline migration', '오프라인 이관']) assert.ok(!postgres.includes(absent), absent);
 
   const vendor = reusableBaseLayoutLines('single-module', { vendor: 'oracle' });
   assert.ok(vendor.includes(`npm run ${VENDOR_SCHEMA_ALIAS}`), '벤더 스키마 검사 명령을 안내한다');
@@ -1890,6 +1890,7 @@ test('the removal ledger names real files and leaves nothing behind that depends
   const vendorLedger = readVendorAssetLedger(ROOT);
   const producerLedger = readProducerAssetLedger(ROOT);
   const requirementsLedger = readRequirementsAssetLedger(ROOT);
+  const migrationLedger = readMigrationAssetLedger(ROOT);
   const atlasLedger = {
     assets: UPSTREAM_ATLAS.assets,
     gates: UPSTREAM_ATLAS.gates.map(file => ({ file })),
@@ -1900,9 +1901,10 @@ test('the removal ledger names real files and leaves nothing behind that depends
     { name: 'upstream-atlas', ledger: atlasLedger },
     { name: 'producer', ledger: producerLedger },
     { name: 'requirements', ledger: requirementsLedger },
+    { name: 'migration', ledger: migrationLedger },
   ]), []);
   const scripts = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).scripts;
-  for (const [name, ledger] of [['vendor', vendorLedger], ['producer', producerLedger], ['requirements', requirementsLedger]]) {
+  for (const [name, ledger] of [['vendor', vendorLedger], ['producer', producerLedger], ['requirements', requirementsLedger], ['migration', migrationLedger]]) {
     assert.deepEqual(staleRemovalLedgerEntries(ledger, asset => existsSync(join(ROOT, asset)), scripts), [], `${name} stale`);
     for (const row of ledger.gates) {
       assert.ok(existsSync(join(ROOT, row.file)), `${name}: ${row.file} 가 없다`);
@@ -1915,8 +1917,9 @@ test('the removal ledger names real files and leaves nothing behind that depends
   const atlasTestSet = new Set(atlasLedger.gates.map(r => r.file));
   const vendorScriptTests = new Set(vendorLedger.gates.map(r => r.file).filter(f => f.startsWith('scripts/')));
   const producerScriptTests = new Set(producerLedger.gates.map(r => r.file).filter(f => f.startsWith('scripts/')));
+  const migrationScriptTests = new Set(migrationLedger.gates.map(r => r.file).filter(f => f.startsWith('scripts/')));
   for (const file of trackedScriptTests) {
-    const owners = [keptSet.has(file), atlasTestSet.has(file), vendorScriptTests.has(file), producerScriptTests.has(file)].filter(Boolean).length;
+    const owners = [keptSet.has(file), atlasTestSet.has(file), vendorScriptTests.has(file), producerScriptTests.has(file), migrationScriptTests.has(file)].filter(Boolean).length;
     assert.equal(owners, 1, `${file} 의 생성물 시험 분류가 유일해야 한다(현재 ${owners}곳)`);
   }
   const collectDirTests = (relDir) => {
@@ -1939,21 +1942,23 @@ test('the removal ledger names real files and leaves nothing behind that depends
     const discovered = [...new Set(ledger.assets.flatMap(collectDirTests))].sort();
     return { discovered, missing: discovered.filter(file => !registered.has(file)) };
   };
-  for (const [name, ledger] of [['producer', producerLedger], ['requirements', requirementsLedger]]) {
+  for (const [name, ledger] of [['producer', producerLedger], ['requirements', requirementsLedger], ['migration', migrationLedger]]) {
     const { discovered, missing } = unregisteredAssetDirTests(ledger);
     assert.ok(discovered.length > 0, `${name} 제거 디렉터리의 시험 탐색이 비어 있으면 안 된다`);
     assert.deepEqual(missing, [], `${name} 제거 디렉터리 하위 시험은 모두 gates 원장에 등록해야 한다`);
   }
   // H5 Red 증명: 제거 디렉터리 하위 시험 1건을 gates 에서 빼면 즉시 누락으로 잡힌다.
-  const producerDirTests = unregisteredAssetDirTests(producerLedger).discovered;
-  const droppedDirTest = producerDirTests[0];
-  assert.deepEqual(
-    unregisteredAssetDirTests({ ...producerLedger, gates: producerLedger.gates.filter(r => r.file !== droppedDirTest) }).missing,
-    [droppedDirTest],
-  );
+  for (const ledger of [producerLedger, migrationLedger]) {
+    const discoveredTests = unregisteredAssetDirTests(ledger).discovered;
+    const droppedDirTest = discoveredTests[0];
+    assert.deepEqual(
+      unregisteredAssetDirTests({ ...ledger, gates: ledger.gates.filter(r => r.file !== droppedDirTest) }).missing,
+      [droppedDirTest],
+    );
+  }
 
-  // PostgreSQL 생성물: vendor-removed-assets.json 을 적용하지 않으므로 그 원장의 scripts/*.test.* 도 남는다.
-  const pgLedgers = [atlasLedger, producerLedger, requirementsLedger];
+  // PostgreSQL 생성물: vendor-removed-assets.json 을 적용하지 않으므로 그 원장의 scripts/*.test.* 도 남고, migrationLedger 는 제외된다.
+  const pgLedgers = [atlasLedger, producerLedger, requirementsLedger, migrationLedger];
   const pgTests = [...KEPT_ARTIFACT_SCRIPT_TESTS, ...vendorScriptTests];
   const pgLeaks = findRemovalLeakErrors({
     root: ROOT,
@@ -1965,14 +1970,14 @@ test('the removal ledger names real files and leaves nothing behind that depends
   assert.deepEqual(pgLeaks.brokenImports, [], 'PostgreSQL 생성물에 남는 스크립트·시험이 지운 파일을 import 하면 안 된다');
   assert.deepEqual(pgLeaks.leakedAliases, [], 'PostgreSQL 생성물에 남는 별칭이 지운 파일을 부르면 안 된다');
 
-  // H5 Red 증명 (PG 프로필): PG 생성물에 남는 시험이 import 하는 두 모듈을 producer 원장에 잘못 넣으면 즉시 잡힌다.
+  // H5 Red 증명 (PG 프로필): PG 생성물에 남는 시험이 import 하는 모듈을 producer 원장에 잘못 넣거나 migration 별칭을 원장에서 빼면 즉시 잡힌다.
   const withPgBrokenModules = {
     ...producerLedger,
-    assets: [...producerLedger.assets, 'scripts/compare-enterprise-task-lab.mjs', 'scripts/required-checks-contract.mjs'],
+    assets: [...producerLedger.assets, 'scripts/compare-enterprise-task-lab.mjs'],
   };
   const pgRedLeaks = findRemovalLeakErrors({
     root: ROOT,
-    ledgers: [atlasLedger, withPgBrokenModules, requirementsLedger],
+    ledgers: [atlasLedger, withPgBrokenModules, requirementsLedger, migrationLedger],
     allowedAliases: Object.keys(artifactAliases),
     allowedDynamicImports: [],
     artifactTestFiles: pgTests,
@@ -1981,13 +1986,24 @@ test('the removal ledger names real files and leaves nothing behind that depends
     pgRedLeaks.brokenImports.includes('scripts/e2e-isolation.test.mjs (static) -> scripts/compare-enterprise-task-lab.mjs'),
     `PG 잔존 e2e-isolation 시험 누수를 잡아야 한다: ${pgRedLeaks.brokenImports.join(', ')}`,
   );
+  const withoutMigrationExportAlias = {
+    ...migrationLedger,
+    aliases: migrationLedger.aliases.filter(alias => alias !== 'migration:export'),
+  };
+  const pgAliasRedLeaks = findRemovalLeakErrors({
+    root: ROOT,
+    ledgers: [atlasLedger, producerLedger, requirementsLedger, withoutMigrationExportAlias],
+    allowedAliases: Object.keys(artifactAliases),
+    allowedDynamicImports: [],
+    artifactTestFiles: pgTests,
+  });
   assert.ok(
-    pgRedLeaks.brokenImports.includes('scripts/migration-verification-contract.test.mjs (static) -> scripts/required-checks-contract.mjs'),
-    `PG 잔존 migration-verification 시험 누수를 잡아야 한다: ${pgRedLeaks.brokenImports.join(', ')}`,
+    pgAliasRedLeaks.leakedAliases.includes('migration:export'),
+    `PG 이관 별칭 누락 시 leakedAliases 에 잡혀야 한다: ${pgAliasRedLeaks.leakedAliases.join(', ')}`,
   );
 
-  // 비-PostgreSQL 벤더 생성물: 4개 원장 전부 적용
-  const allLedgers = [vendorLedger, atlasLedger, producerLedger, requirementsLedger];
+  // 비-PostgreSQL 벤더 생성물: 5개 원장 전부 적용
+  const allLedgers = [vendorLedger, atlasLedger, producerLedger, requirementsLedger, migrationLedger];
   const { brokenImports, leakedAliases } = findRemovalLeakErrors({
     root: ROOT,
     ledgers: allLedgers,
@@ -2018,7 +2034,7 @@ test('the removal ledger names real files and leaves nothing behind that depends
   };
   const partialLeaks = findRemovalLeakErrors({
     root: ROOT,
-    ledgers: [partialVendor, atlasLedger, producerLedger, requirementsLedger],
+    ledgers: [partialVendor, atlasLedger, producerLedger, requirementsLedger, migrationLedger],
     allowedAliases: Object.keys(artifactAliases),
     allowedDynamicImports: [{ edge: 'scripts/run-isolated-e2e.mjs -> scripts/run-isolated-release-smoke.mjs', guard: 'enterpriseTaskLab' }],
     artifactTestFiles: KEPT_ARTIFACT_SCRIPT_TESTS,
@@ -2035,7 +2051,7 @@ test('the removal ledger names real files and leaves nothing behind that depends
   };
   const serverLeaks = findRemovalLeakErrors({
     root: ROOT,
-    ledgers: [vendorLedger, atlasLedger, withoutServer, requirementsLedger],
+    ledgers: [vendorLedger, atlasLedger, withoutServer, requirementsLedger, migrationLedger],
     allowedAliases: Object.keys(artifactAliases),
     allowedDynamicImports: [{ edge: 'scripts/run-isolated-e2e.mjs -> scripts/run-isolated-release-smoke.mjs', guard: 'enterpriseTaskLab' }],
     artifactTestFiles: KEPT_ARTIFACT_SCRIPT_TESTS,
@@ -2052,7 +2068,7 @@ test('the removal ledger names real files and leaves nothing behind that depends
   };
   const reqAliasLeaks = findRemovalLeakErrors({
     root: ROOT,
-    ledgers: [vendorLedger, atlasLedger, producerLedger, withoutReqAlias],
+    ledgers: [vendorLedger, atlasLedger, producerLedger, withoutReqAlias, migrationLedger],
     allowedAliases: Object.keys(artifactAliases),
     allowedDynamicImports: [{ edge: 'scripts/run-isolated-e2e.mjs -> scripts/run-isolated-release-smoke.mjs', guard: 'enterpriseTaskLab' }],
     artifactTestFiles: KEPT_ARTIFACT_SCRIPT_TESTS,
@@ -2511,17 +2527,23 @@ test('a vendor composition acknowledges the asset rule and a PostgreSQL one does
   assert.equal(rules({ database: { vendor: 'oracle' } }).includes(VENDOR_ASSET_RULE), true);
 });
 
-test('a missing gate scan root stays a failure unless a vendor project removed it by the ledger', () => {
+test('a missing gate scan root stays a failure unless a generated or vendor project removed it by the ledger', () => {
   const root = mkdtempSync(join(tmpdir(), 'vendor-scan-'));
-  const ledger = assets => { mkdirSync(join(root, 'config/governance'), { recursive: true }); writeFileSync(join(root, VENDOR_ASSET_LEDGER), JSON.stringify({ assets })); };
+  const writeLedger = (ledgerPath, assets) => { mkdirSync(join(root, 'config/governance'), { recursive: true }); writeFileSync(join(root, ledgerPath), JSON.stringify({ assets })); };
   try {
     for (const scanRoot of HARNESS_SCAN_ROOTS.filter(item => !item.startsWith('migration-tool/'))) mkdirSync(join(root, scanRoot), { recursive: true });
-    ledger(['migration-tool']);
-    assert.throws(() => computeHarnessBaselineEntries(root), /스캔 루트를 찾을 수 없다 — migration-tool/, '벤더 기준선이 없는 저장소는 예외가 아니다');
+    writeLedger(VENDOR_ASSET_LEDGER, ['migration-tool']);
+    writeLedger(MIGRATION_ASSET_LEDGER, ['migration-tool']);
+    assert.throws(() => computeHarnessBaselineEntries(root), /스캔 루트를 찾을 수 없다 — migration-tool/, '생성 잠금·벤더 기준선이 없는 저장소는 예외가 아니다');
+    writeFileSync(join(root, 'reusable-base-lock.json'), JSON.stringify({ profile: 'core' }));
+    assert.doesNotThrow(() => computeHarnessBaselineEntries(root), 'ADR-0062 생성 프로젝트는 이관 원장대로 migration-tool 부재를 허용한다');
+    writeLedger(MIGRATION_ASSET_LEDGER, ['tools/other']);
+    assert.throws(() => computeHarnessBaselineEntries(root), /스캔 루트를 찾을 수 없다 — migration-tool/, '생성 프로젝트라도 이관 원장에 없으면 예외가 아니다');
+    rmSync(join(root, 'reusable-base-lock.json'));
     mkdirSync(join(root, 'api-server/src/main/resources/db/vendor/oracle'), { recursive: true });
-    ledger(['tools/other']);
+    writeLedger(VENDOR_ASSET_LEDGER, ['tools/other']);
     assert.throws(() => computeHarnessBaselineEntries(root), /스캔 루트를 찾을 수 없다 — migration-tool/, '원장에 없는 경로는 예외가 아니다');
-    ledger(['migration-tool']);
+    writeLedger(VENDOR_ASSET_LEDGER, ['migration-tool']);
     assert.doesNotThrow(() => computeHarnessBaselineEntries(root));
   } finally {
     rmSync(root, { recursive: true, force: true });

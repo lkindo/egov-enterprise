@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { compositionProfiles } from './composition-profiles.mjs';
-import { normalizeBackendLayout } from './reusable-layout.mjs';
+import { hasMigrationTool, normalizeBackendLayout } from './reusable-layout.mjs';
 import { groovyCode, inspectSingleModuleLayout } from './reusable-single-module.mjs';
 import { validateGeneratedMigrationRuntime, validateSingleModuleRuntime } from './reusable-layout-runtime.mjs';
 
@@ -177,7 +177,7 @@ export function validateReusableArtifactEntrypoints(root) {
     const lock = JSON.parse(read('reusable-base-lock.json'));
     const layout = normalizeBackendLayout(lock.layout);
     if (layout === 'single-module') {
-      errors.push(...inspectSingleModuleLayout(root, { migration: !lock.vendorProjection }).errors, ...validateSingleModuleRuntime(root));
+      errors.push(...inspectSingleModuleLayout(root, { migration: hasMigrationTool(lock) }).errors, ...validateSingleModuleRuntime(root));
     } else {
       check(/\binclude\b/.test(groovyCode(read('settings.gradle'))), 'multi-module layout must retain Gradle project includes');
       check(lock.layoutProjection?.id !== 'single-module', 'layout and projection identity differ');
@@ -217,7 +217,10 @@ export function validateReusableArtifactEntrypoints(root) {
     check(read('Makefile') === projectReusableMakefile(read(`${VERIFICATION_HISTORY}/Makefile`), layout),
       'generated Makefile must execute the selected product verification and test suites');
     for (const [alias, command] of Object.entries(artifactAliases)) check(pkg.scripts?.[alias] === command, `incorrect generated alias: ${alias}`);
-    check(!Object.keys(pkg.scripts ?? {}).some(alias => alias.startsWith('base:') || alias.startsWith('project:') || ['migration:export', 'verify:e2e', 'verify:ops'].includes(alias)),
+    const forbiddenAliases = hasMigrationTool(lock)
+      ? ['migration:export', 'verify:e2e', 'verify:ops']
+      : ['migration:export', 'verify:migration', 'verify:e2e', 'verify:ops'];
+    check(!Object.keys(pkg.scripts ?? {}).some(alias => alias.startsWith('base:') || alias.startsWith('project:') || forbiddenAliases.includes(alias)),
       'producer or institution runtime aliases cannot imply inherited applicability');
     check(read('.githooks/pre-push') === `#!/bin/sh\nset -e\n${CURRENT_ARTIFACT_COMMAND}\n`, 'generated pre-push must execute product verification');
     check(existsSync(join(root, 'REUSABLE_VERIFICATION.md')), 'generated verification boundary documentation is required');

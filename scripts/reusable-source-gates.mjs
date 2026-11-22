@@ -36,6 +36,8 @@ const GATE_REMOVAL_RULES = {
     '프로젝트 생성기와 생산자 전용 CI·검증·평가 도구는 생성 프로젝트에 포함하지 않는다. 목록과 사유는 config/governance/producer-removed-assets.json 에 있다',
   'requirements-studio':
     '로컬 요구사항 스튜디오는 원본 저장소 도구이므로 생성 프로젝트에서 제외한다. 목록과 사유는 config/governance/requirements-removed-assets.json 에 있다',
+  'offline-migration-tool':
+    '오프라인 레거시 이관 도구와 그 시험은 생성 애플리케이션 프로젝트에서 제외하고 원본 저장소의 npm run migration:export 로 별도 배포한다(ADR-0062). 목록과 사유는 config/governance/migration-removed-assets.json 에 있다',
   'vendor-postgresql-assets':
     'PostgreSQL 전용 도구는 벤더 프로젝트에서 동작하지 않아 걷는다. 게이트마다 사유와 대체 여부는 config/governance/vendor-removed-assets.json 에 있다',
 };

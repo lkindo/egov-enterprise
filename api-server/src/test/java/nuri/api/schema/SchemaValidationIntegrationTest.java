@@ -131,6 +131,14 @@ class SchemaValidationIntegrationTest {
     @Test
     @DisplayName("이관 표준 스키마 카탈로그(db_columns.json)가 Flyway 적용 스키마와 일치한다")
     void migrationColumnCatalogMatchesMigratedSchema() throws SQLException, IOException {
+        Path root = repoRoot();
+        if (Files.isRegularFile(root.resolve("reusable-base-lock.json"))
+                && !Files.isDirectory(root.resolve("migration-tool"))) {
+            assertThat(Files.exists(root.resolve("db_columns.json")))
+                    .as("ADR-0062: migration-tool 이 제외된 생성 프로젝트에는 db_columns.json 도 남아선 안 된다")
+                    .isFalse();
+            return;
+        }
         Map<String, Set<String>> actual = new TreeMap<>();
         try (Connection conn = dataSource.getConnection();
              Statement st = conn.createStatement();
@@ -144,7 +152,7 @@ class SchemaValidationIntegrationTest {
         }
         assertThat(actual).as("information_schema 질의가 비었다 — 대조가 vacuous 하다").isNotEmpty();
 
-        Path catalog = repoRoot().resolve("db_columns.json");
+        Path catalog = root.resolve("db_columns.json");
         if (Boolean.getBoolean(WRITE_PROPERTY)) {
             Files.writeString(catalog, render(actual), StandardCharsets.UTF_8);
         }
@@ -198,12 +206,12 @@ class SchemaValidationIntegrationTest {
         Path current = Paths.get("").toAbsolutePath();
         for (int depth = 0; depth < 6 && current != null; depth += 1) {
             if (Files.isRegularFile(current.resolve("settings.gradle"))
-                    && Files.isRegularFile(current.resolve("db_columns.json"))) {
+                    && Files.isRegularFile(current.resolve("build.gradle"))) {
                 return current;
             }
             current = current.getParent();
         }
-        throw new IllegalStateException("저장소 루트(db_columns.json)를 찾을 수 없다 — 조용한 skip 은 false-green 이다: "
+        throw new IllegalStateException("저장소 루트(settings.gradle/build.gradle)를 찾을 수 없다 — 조용한 skip 은 false-green 이다: "
                 + Paths.get("").toAbsolutePath());
     }
 }
