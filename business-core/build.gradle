@@ -38,7 +38,7 @@ dependencies {
     annotationProcessor libs.lombok.mapstruct.binding
 
     // API Docs
-    api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.55'
+    api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.56'
 
     // Testing — slice·보안·관측성 test starter 는 아래 testFixturesApi 로 이 모듈의 test 에도 전달된다.
     testImplementation 'org.springframework.security:spring-security-test'
