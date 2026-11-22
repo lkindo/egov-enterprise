@@ -217,7 +217,7 @@ export function validateReusableArtifactEntrypoints(root) {
     check(read('Makefile') === projectReusableMakefile(read(`${VERIFICATION_HISTORY}/Makefile`), layout),
       'generated Makefile must execute the selected product verification and test suites');
     for (const [alias, command] of Object.entries(artifactAliases)) check(pkg.scripts?.[alias] === command, `incorrect generated alias: ${alias}`);
-    check(!Object.keys(pkg.scripts ?? {}).some(alias => alias.startsWith('base:') || ['migration:export', 'verify:e2e', 'verify:ops'].includes(alias)),
+    check(!Object.keys(pkg.scripts ?? {}).some(alias => alias.startsWith('base:') || alias.startsWith('project:') || ['migration:export', 'verify:e2e', 'verify:ops'].includes(alias)),
       'producer or institution runtime aliases cannot imply inherited applicability');
     check(read('.githooks/pre-push') === `#!/bin/sh\nset -e\n${CURRENT_ARTIFACT_COMMAND}\n`, 'generated pre-push must execute product verification');
     check(existsSync(join(root, 'REUSABLE_VERIFICATION.md')), 'generated verification boundary documentation is required');

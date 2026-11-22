@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "authority": "Phase 3 생성 프로젝트 경량화 — 로컬 요구사항 스튜디오(tools/requirements-workspace)와 관련 별칭·시험의 제거 원장이다. 감리 산출물 도구(export-deliverables*.mjs)는 유지한다.",
+  "assets": [
+    "tools/requirements-workspace"
+  ],
+  "aliases": [
+    "requirements:ui",
+    "requirements:ui:css",
+    "test:requirements-workspace",
+    "test:requirements-workspace:browser"
+  ],
+  "gates": [
+    {
+      "file": "tools/requirements-workspace/ai-attachments.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/ai-browser.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/ai-cli.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/ai-context-reconciliation.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/ai-context-windows.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/ai-contract.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/ai-discovery-evidence.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/ai-document-import.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/ai-full-pipeline.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/ai-pipeline-browser.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/ai-pipeline-contract.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/ai-pipeline-discovery.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/ai-prompts.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/ai-ui.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/ai-workflow.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/artifact-extractor.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/artifact-imports.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/assets.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/browser.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/document-inputs.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/document-reader.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/engine.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/privacy-warnings.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/server.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/store.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/studio-browser.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/studio-model.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/requirements-workspace/studio.test.mjs",
+      "reason": "로컬 요구사항 스튜디오 전용 계약·UI 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 test:operational-contracts 및 test:requirements-workspace 에서 계속 실행한다"
+    }
+  ]
+}

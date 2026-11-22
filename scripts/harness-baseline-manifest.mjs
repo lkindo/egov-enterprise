@@ -94,6 +94,7 @@ const GATE_REGISTRIES = [
   'scripts/reusable-layout-runtime.mjs',
   'scripts/reusable-single-module.mjs',
   'scripts/reusable-asset-removal.mjs',
+  'scripts/reusable-product-assets.mjs',
   'scripts/reusable-vendor-assets.mjs',
   // 실행 가능한 생성물 정책도 JSON 원장과 같은 전체 내용 hash 경계에 묶는다.
   'scripts/reusable-artifact-entrypoints-contract.mjs',
@@ -115,6 +116,8 @@ const GATE_REGISTRIES = [
   'config/governance/input-contract-mirror-census.json',
   'config/governance/privacy-access-census.json',
   'config/governance/zdm-waivers.json',
+  'config/governance/producer-removed-assets.json',
+  'config/governance/requirements-removed-assets.json',
   'config/governance/vendor-removed-assets.json',
   'config/security/false-positive-review.json',
 ];

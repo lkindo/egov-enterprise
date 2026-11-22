@@ -24,7 +24,8 @@ import { createJobTimeline, verificationStepMarkers } from './project-composer-t
 import { collectResults, launchVendorContainer, parseCount, readByteColumns, readCatalog, readNextValues, readSequenceNextValues, readUniqueColumns, readUniqueSignatures, runAsAdministrator, startVendorEngine, stopVendorEngineReporting, VENDOR_ENGINES, VENDOR_INTROSPECTION, VENDOR_SEQUENCE_NEXT_VALUES, VENDOR_UNIQUE_COLUMNS, VENDOR_UNIQUE_SIGNATURES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
 import { removeJobContainers } from './project-composer-postgres.mjs';
 import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, parseVendorAssetLedger, pruneVendorPostgresAssets, readVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
-import { findLedgerOverlapErrors, parseRemovalLedger, readRemovalLedger } from './reusable-asset-removal.mjs';
+import { KEPT_ARTIFACT_SCRIPT_TESTS, readProducerAssetLedger, readRequirementsAssetLedger } from './reusable-product-assets.mjs';
+import { findLedgerOverlapErrors, parseRemovalLedger, readRemovalLedger, staleRemovalLedgerEntries } from './reusable-asset-removal.mjs';
 import { extractLocalScriptReferences, findRemovalLeakErrors } from './reusable-asset-removal-leak-check.mjs';
 import { UPSTREAM_ATLAS } from './reusable-harness-census.mjs';
 import { ARTIFACT_COMMAND, artifactAliases, reusableArtifactEntrypoints } from './reusable-artifact-entrypoints-contract.mjs';
@@ -1886,38 +1887,124 @@ test('a failure in the vendor test command is reported as its own command', () =
 });
 
 test('the removal ledger names real files and leaves nothing behind that depends on them', () => {
-  const ledger = readVendorAssetLedger(ROOT);
+  const vendorLedger = readVendorAssetLedger(ROOT);
+  const producerLedger = readProducerAssetLedger(ROOT);
+  const requirementsLedger = readRequirementsAssetLedger(ROOT);
   const atlasLedger = {
     assets: UPSTREAM_ATLAS.assets,
     gates: UPSTREAM_ATLAS.gates.map(file => ({ file })),
     aliases: UPSTREAM_ATLAS.aliases,
   };
   assert.deepEqual(findLedgerOverlapErrors([
-    { name: 'vendor', ledger },
+    { name: 'vendor', ledger: vendorLedger },
     { name: 'upstream-atlas', ledger: atlasLedger },
+    { name: 'producer', ledger: producerLedger },
+    { name: 'requirements', ledger: requirementsLedger },
   ]), []);
   const scripts = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).scripts;
-  assert.deepEqual(staleVendorAssets(ledger, asset => existsSync(join(ROOT, asset)), scripts), []);
-  for (const row of ledger.gates) {
-    assert.ok(existsSync(join(ROOT, row.file)), `${row.file} 가 없다`);
-    assert.ok(row.reason.trim() && Object.hasOwn(row, 'coveredBy'), `${row.file} 는 사유와 대체 여부를 적는다`);
+  for (const [name, ledger] of [['vendor', vendorLedger], ['producer', producerLedger], ['requirements', requirementsLedger]]) {
+    assert.deepEqual(staleRemovalLedgerEntries(ledger, asset => existsSync(join(ROOT, asset)), scripts), [], `${name} stale`);
+    for (const row of ledger.gates) {
+      assert.ok(existsSync(join(ROOT, row.file)), `${name}: ${row.file} 가 없다`);
+      assert.ok(row.reason.trim() && Object.hasOwn(row, 'coveredBy'), `${name}: ${row.file} 는 사유와 대체 여부를 적는다`);
+    }
   }
-  // Phase 2 는 overlap 검사를 실제 벤더·Atlas 원장으로 연결하고, leak 검사는 벤더 원장만 본다(Atlas 와 `test:ci-scope` 정리는 Phase 3 생산자 제거 원장에서 연결).
+  // H2/H5 완전성 가드: 모든 scripts/*.test.* 와 제거 디렉터리 하위 시험은 정확히 하나의 처분 집합에만 속한다.
+  const trackedScriptTests = readdirSync(join(ROOT, 'scripts')).filter(name => /\.test\.(?:mjs|js)$/u.test(name)).map(name => `scripts/${name}`).sort();
+  const keptSet = new Set(KEPT_ARTIFACT_SCRIPT_TESTS);
+  const atlasTestSet = new Set(atlasLedger.gates.map(r => r.file));
+  const vendorScriptTests = new Set(vendorLedger.gates.map(r => r.file).filter(f => f.startsWith('scripts/')));
+  const producerScriptTests = new Set(producerLedger.gates.map(r => r.file).filter(f => f.startsWith('scripts/')));
+  for (const file of trackedScriptTests) {
+    const owners = [keptSet.has(file), atlasTestSet.has(file), vendorScriptTests.has(file), producerScriptTests.has(file)].filter(Boolean).length;
+    assert.equal(owners, 1, `${file} 의 생성물 시험 분류가 유일해야 한다(현재 ${owners}곳)`);
+  }
+  const collectDirTests = (relDir) => {
+    const out = [];
+    const walk = (cur) => {
+      let entries;
+      try { entries = readdirSync(join(ROOT, cur), { withFileTypes: true }); } catch { return; }
+      for (const entry of entries) {
+        if (entry.name === 'node_modules' || entry.name === '.git') continue;
+        const next = `${cur}/${entry.name}`;
+        if (entry.isDirectory()) walk(next);
+        else if (/\.(?:test|spec)\.(?:mjs|cjs|js|mts|cts|ts)$/u.test(entry.name)) out.push(next);
+      }
+    };
+    walk(relDir);
+    return out;
+  };
+  const unregisteredAssetDirTests = (ledger) => {
+    const registered = new Set(ledger.gates.map(r => r.file));
+    const discovered = [...new Set(ledger.assets.flatMap(collectDirTests))].sort();
+    return { discovered, missing: discovered.filter(file => !registered.has(file)) };
+  };
+  for (const [name, ledger] of [['producer', producerLedger], ['requirements', requirementsLedger]]) {
+    const { discovered, missing } = unregisteredAssetDirTests(ledger);
+    assert.ok(discovered.length > 0, `${name} 제거 디렉터리의 시험 탐색이 비어 있으면 안 된다`);
+    assert.deepEqual(missing, [], `${name} 제거 디렉터리 하위 시험은 모두 gates 원장에 등록해야 한다`);
+  }
+  // H5 Red 증명: 제거 디렉터리 하위 시험 1건을 gates 에서 빼면 즉시 누락으로 잡힌다.
+  const producerDirTests = unregisteredAssetDirTests(producerLedger).discovered;
+  const droppedDirTest = producerDirTests[0];
+  assert.deepEqual(
+    unregisteredAssetDirTests({ ...producerLedger, gates: producerLedger.gates.filter(r => r.file !== droppedDirTest) }).missing,
+    [droppedDirTest],
+  );
+
+  // PostgreSQL 생성물: vendor-removed-assets.json 을 적용하지 않으므로 그 원장의 scripts/*.test.* 도 남는다.
+  const pgLedgers = [atlasLedger, producerLedger, requirementsLedger];
+  const pgTests = [...KEPT_ARTIFACT_SCRIPT_TESTS, ...vendorScriptTests];
+  const pgLeaks = findRemovalLeakErrors({
+    root: ROOT,
+    ledgers: pgLedgers,
+    allowedAliases: Object.keys(artifactAliases),
+    allowedDynamicImports: [],
+    artifactTestFiles: pgTests,
+  });
+  assert.deepEqual(pgLeaks.brokenImports, [], 'PostgreSQL 생성물에 남는 스크립트·시험이 지운 파일을 import 하면 안 된다');
+  assert.deepEqual(pgLeaks.leakedAliases, [], 'PostgreSQL 생성물에 남는 별칭이 지운 파일을 부르면 안 된다');
+
+  // H5 Red 증명 (PG 프로필): PG 생성물에 남는 시험이 import 하는 두 모듈을 producer 원장에 잘못 넣으면 즉시 잡힌다.
+  const withPgBrokenModules = {
+    ...producerLedger,
+    assets: [...producerLedger.assets, 'scripts/compare-enterprise-task-lab.mjs', 'scripts/required-checks-contract.mjs'],
+  };
+  const pgRedLeaks = findRemovalLeakErrors({
+    root: ROOT,
+    ledgers: [atlasLedger, withPgBrokenModules, requirementsLedger],
+    allowedAliases: Object.keys(artifactAliases),
+    allowedDynamicImports: [],
+    artifactTestFiles: pgTests,
+  });
+  assert.ok(
+    pgRedLeaks.brokenImports.includes('scripts/e2e-isolation.test.mjs (static) -> scripts/compare-enterprise-task-lab.mjs'),
+    `PG 잔존 e2e-isolation 시험 누수를 잡아야 한다: ${pgRedLeaks.brokenImports.join(', ')}`,
+  );
+  assert.ok(
+    pgRedLeaks.brokenImports.includes('scripts/migration-verification-contract.test.mjs (static) -> scripts/required-checks-contract.mjs'),
+    `PG 잔존 migration-verification 시험 누수를 잡아야 한다: ${pgRedLeaks.brokenImports.join(', ')}`,
+  );
+
+  // 비-PostgreSQL 벤더 생성물: 4개 원장 전부 적용
+  const allLedgers = [vendorLedger, atlasLedger, producerLedger, requirementsLedger];
   const { brokenImports, leakedAliases } = findRemovalLeakErrors({
     root: ROOT,
-    ledgers: [ledger],
+    ledgers: allLedgers,
     allowedAliases: Object.keys(artifactAliases),
     // `assertIsolatedRunnerSupportsProject`가 벤더 프로젝트에서 대표 묶음만 허용하므로 enterpriseTaskLab 분기의 동적 import는 실행되지 않는다.
     allowedDynamicImports: [{ edge: 'scripts/run-isolated-e2e.mjs -> scripts/run-isolated-release-smoke.mjs', guard: 'enterpriseTaskLab' }],
+    artifactTestFiles: KEPT_ARTIFACT_SCRIPT_TESTS,
   });
-  assert.deepEqual(brokenImports, [], '남는 스크립트가 지운 파일을 정적/동적 import 하면 벤더 프로젝트에서 죽는다');
+  assert.deepEqual(brokenImports, [], '남는 스크립트가 지운 파일을 정적/동적 import 하면 생성 프로젝트에서 죽는다');
   assert.deepEqual(leakedAliases, [], '남는 별칭이 지운 파일을 부르면 안 된다');
 
   // H5 Red 증명 1: run-isolated-e2e.mjs 의 enterpriseTaskLab 가드 예외를 빼면 동적 import 누수를 실제로 잡는다.
   const withoutGuardExemption = findRemovalLeakErrors({
     root: ROOT,
-    ledgers: [ledger],
+    ledgers: allLedgers,
     allowedAliases: Object.keys(artifactAliases),
+    artifactTestFiles: KEPT_ARTIFACT_SCRIPT_TESTS,
   });
   assert.ok(
     withoutGuardExemption.brokenImports.includes('scripts/run-isolated-e2e.mjs -> scripts/run-isolated-release-smoke.mjs'),
@@ -1925,19 +2012,54 @@ test('the removal ledger names real files and leaves nothing behind that depends
   );
 
   // H5 Red 증명 2: 제거 원장 대상의 유일한 호출자(ui-quality-baseline-auth.mjs)를 메모리 원장에서 남기면 연쇄 참조가 즉시 붉다.
-  const partialLedger = {
-    ...ledger,
-    assets: ledger.assets.filter(item => item !== 'frontend/scripts/ui-quality-baseline-auth.mjs'),
+  const partialVendor = {
+    ...vendorLedger,
+    assets: vendorLedger.assets.filter(item => item !== 'frontend/scripts/ui-quality-baseline-auth.mjs'),
   };
   const partialLeaks = findRemovalLeakErrors({
     root: ROOT,
-    ledgers: [partialLedger],
+    ledgers: [partialVendor, atlasLedger, producerLedger, requirementsLedger],
     allowedAliases: Object.keys(artifactAliases),
     allowedDynamicImports: [{ edge: 'scripts/run-isolated-e2e.mjs -> scripts/run-isolated-release-smoke.mjs', guard: 'enterpriseTaskLab' }],
+    artifactTestFiles: KEPT_ARTIFACT_SCRIPT_TESTS,
   });
   assert.ok(
     partialLeaks.brokenImports.includes('frontend/scripts/ui-quality-baseline-auth.mjs -> scripts/ui-quality-baseline-launch.mjs'),
     `생존 스크립트의 원장 파일 참조가 붉어야 한다: ${partialLeaks.brokenImports.join(', ')}`,
+  );
+
+  // H5 Red 증명 3: 생산자 스크립트 하나(project-composer-server.mjs)를 원장에서 빼면 제거된 생성기 모듈로의 import 누수를 실제로 잡는다.
+  const withoutServer = {
+    ...producerLedger,
+    assets: producerLedger.assets.filter(item => item !== 'scripts/project-composer-server.mjs'),
+  };
+  const serverLeaks = findRemovalLeakErrors({
+    root: ROOT,
+    ledgers: [vendorLedger, atlasLedger, withoutServer, requirementsLedger],
+    allowedAliases: Object.keys(artifactAliases),
+    allowedDynamicImports: [{ edge: 'scripts/run-isolated-e2e.mjs -> scripts/run-isolated-release-smoke.mjs', guard: 'enterpriseTaskLab' }],
+    artifactTestFiles: KEPT_ARTIFACT_SCRIPT_TESTS,
+  });
+  assert.ok(
+    serverLeaks.brokenImports.some(edge => edge.startsWith('scripts/project-composer-server.mjs -> ')),
+    `생산자 자산 누락 시 실제 import 누수를 잡아야 한다: ${serverLeaks.brokenImports.join(', ')}`,
+  );
+
+  // H5 Red 증명 4: requirements:ui 별칭을 원장에서 빼면 tools/requirements-workspace 참조가 leakedAliases 로 잡힌다.
+  const withoutReqAlias = {
+    ...requirementsLedger,
+    aliases: requirementsLedger.aliases.filter(alias => alias !== 'requirements:ui'),
+  };
+  const reqAliasLeaks = findRemovalLeakErrors({
+    root: ROOT,
+    ledgers: [vendorLedger, atlasLedger, producerLedger, withoutReqAlias],
+    allowedAliases: Object.keys(artifactAliases),
+    allowedDynamicImports: [{ edge: 'scripts/run-isolated-e2e.mjs -> scripts/run-isolated-release-smoke.mjs', guard: 'enterpriseTaskLab' }],
+    artifactTestFiles: KEPT_ARTIFACT_SCRIPT_TESTS,
+  });
+  assert.ok(
+    reqAliasLeaks.leakedAliases.includes('requirements:ui'),
+    `제외 별칭 누락 시 leakedAliases 에 잡혀야 한다: ${reqAliasLeaks.leakedAliases.join(', ')}`,
   );
 });
 

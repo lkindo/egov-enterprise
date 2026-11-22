@@ -9,6 +9,8 @@ import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { composerOwnership, loadComposerModules } from './composer-modules.mjs';
 import { UPSTREAM_ATLAS } from './reusable-source-gates.mjs';
+import { isPathCoveredBy } from './reusable-asset-removal.mjs';
+import { PRODUCER_ASSET_LEDGER, REQUIREMENTS_ASSET_LEDGER, readProducerAssetLedger, readRequirementsAssetLedger } from './reusable-product-assets.mjs';
 import { normalize, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 import { MESSAGE_BUNDLES } from './reusable-source-messages.mjs';
 
@@ -50,11 +52,15 @@ export const compose = (selection, from = catalog) => resolveProjectRecipe({ sch
   database: { vendor: 'postgresql' }, backendLayout: 'multi-module' }, from);
 // 투영과 규칙 제거가 보는 파일: Java·프런트, 원본 Atlas 자산·검사, package.json(Atlas 별칭), 지운 ErrorCode 의 키를 걷는 메시지 번들.
 // 복사 시간을 줄이려고 이것만 복사한다.
+const alwaysRemoved = [...readProducerAssetLedger(root).assets, ...readProducerAssetLedger(root).gates.map(row => row.file),
+  ...readRequirementsAssetLedger(root).assets, ...readRequirementsAssetLedger(root).gates.map(row => row.file),
+  PRODUCER_ASSET_LEDGER, REQUIREMENTS_ASSET_LEDGER];
 export const atlasPaths = [...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates];
 export const projectionFiles = files.filter(file => {
   const path = normalize(file);
   return path.endsWith('.java') || path.startsWith('frontend/') || path === 'package.json'
-    || atlasPaths.some(asset => path === asset || path.startsWith(`${asset}/`)) || MESSAGE_BUNDLES.includes(path);
+    || atlasPaths.some(asset => path === asset || path.startsWith(`${asset}/`))
+    || alwaysRemoved.some(asset => isPathCoveredBy(path, asset)) || MESSAGE_BUNDLES.includes(path);
 });
 export const codes = deep => deep.blockers.map(blocker => blocker.code);
 export const quietly = run => {

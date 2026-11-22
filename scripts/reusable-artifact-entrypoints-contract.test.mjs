@@ -11,6 +11,8 @@ import {
   parseWorkflowJobs, reusableArtifactEntrypoints, upstreamActionPins, validateReusableArtifactEntrypoints,
 } from './reusable-artifact-entrypoints-contract.mjs';
 import { UPSTREAM_ATLAS } from './reusable-harness-census.mjs';
+import { EXCLUDED_ARTIFACT_SKILLS, pruneProducerTools, pruneRequirementsStudio, readProducerAssetLedger,
+  readRequirementsAssetLedger, validateAlwaysRemovedAssetsAbsent } from './reusable-product-assets.mjs';
 import { presetIds } from './composition-profiles.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -240,7 +242,7 @@ test('every supported alias follows the product scope and unsupported aliases ca
   assert.equal(pkg.scripts['verify:push'], CURRENT_ARTIFACT_COMMAND);
   write(root, path, JSON.stringify({ ...pkg, scripts: { ...pkg.scripts, 'verify:push': `${ARTIFACT_COMMAND} --scope contracts` } }));
   assert.ok(validateReusableArtifactEntrypoints(root).some(error => error.includes('incorrect generated alias: verify:push')));
-  for (const alias of ['verify:e2e', 'verify:ops', 'base:verify', 'migration:export']) {
+  for (const alias of ['verify:e2e', 'verify:ops', 'base:verify', 'project:ui', 'migration:export']) {
     write(root, path, JSON.stringify({ ...pkg, scripts: { ...pkg.scripts, [alias]: 'echo inherited' } }));
     assert.ok(validateReusableArtifactEntrypoints(root).some(error => error.includes('inherited applicability')));
   }
@@ -304,4 +306,95 @@ test('the upstream Atlas, its generator, contracts and aliases are absent from g
   write(root, 'package.json', JSON.stringify({ scripts: { 'atlas:build': 'a', 'atlas:check': 'b', 'atlas:contract': 'd' } }));
   for (const path of removed.slice(1)) write(root, path === 'frontend/atlas' ? `${path}/atlas.css` : path, 'x\n');
   assert.throws(() => producer.pruneUpstreamAtlas(root), /Upstream Atlas asset is missing.*frontend\/atlas/);
+});
+
+test('producer tools, requirements studio, their contracts, aliases and repository-only skills are absent from generated products', t => {
+  if (isArtifact) {
+    // T1: 생성 프로젝트에는 생산자 도구·요구사항 스튜디오·저장소 전용 스킬·원본 시험과 별칭이 남지 않는다.
+    assert.deepEqual(validateAlwaysRemovedAssetsAbsent(ROOT), []);
+    const archivedPkg = json(ROOT, `${VERIFICATION_HISTORY}/package.json`);
+    const activePkg = json(ROOT, 'package.json');
+    for (const alias of ['verify:post-push', 'test:governance-gates', 'project:ui', 'requirements:ui', 'atlas:build']) {
+      assert.ok(Object.hasOwn(archivedPkg.scripts ?? {}, alias), `upstream verification history must keep ${alias}`);
+      assert.equal(Object.hasOwn(activePkg.scripts ?? {}, alias), false, `active package.json must omit ${alias}`);
+    }
+    return;
+  }
+  const producerLedger = readProducerAssetLedger(ROOT);
+  const requirementsLedger = readRequirementsAssetLedger(ROOT);
+  const rootScripts = json(ROOT, 'package.json').scripts;
+  for (const ledger of [producerLedger, requirementsLedger]) {
+    for (const asset of ledger.assets) assert.ok(existsSync(join(ROOT, asset)), `missing asset: ${asset}`);
+    for (const gate of ledger.gates) assert.ok(existsSync(join(ROOT, gate.file)), `missing gate: ${gate.file}`);
+    for (const alias of ledger.aliases) assert.ok(Object.hasOwn(rootScripts, alias), `missing alias: ${alias}`);
+  }
+  for (const skill of EXCLUDED_ARTIFACT_SKILLS) {
+    assert.ok(existsSync(join(ROOT, '.agent/skills', skill, 'SKILL.md')), `missing skill: ${skill}`);
+  }
+
+  // 합성 생성 트리에서 생산자·요구사항 제거 후 검증 통과 + 재유입 H5 Red 증명 3종
+  const root = mkdtempSync(join(resolve(tmpdir()), 'egov-product-prune-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const synthProducer = { assets: ['sample-tools/composer', 'sample-scripts/composer-server.mjs'], aliases: ['project:ui'],
+    gates: [{ file: 'sample-scripts/composer.test.mjs', reason: 'r', coveredBy: 'c' }] };
+  const synthReq = { assets: ['sample-tools/requirements'], aliases: ['requirements:ui'],
+    gates: [{ file: 'sample-tools/requirements/server.test.mjs', reason: 'r', coveredBy: 'c' }] };
+  write(root, 'config/governance/producer-removed-assets.json', JSON.stringify(synthProducer));
+  write(root, 'config/governance/requirements-removed-assets.json', JSON.stringify(synthReq));
+  for (const file of ['sample-tools/composer/app.js', 'sample-scripts/composer-server.mjs', 'sample-scripts/composer.test.mjs',
+    'sample-tools/requirements/server.mjs', 'sample-tools/requirements/server.test.mjs', 'sample-scripts/kept.mjs']) write(root, file, 'x\n');
+  write(root, 'package.json', JSON.stringify({ scripts: { 'project:ui': 'p', 'requirements:ui': 'r', verify: 'v' } }));
+
+  assert.deepEqual(pruneProducerTools(root).files, ['sample-scripts/composer.test.mjs']);
+  assert.deepEqual(pruneRequirementsStudio(root).files, ['sample-tools/requirements/server.test.mjs']);
+  assert.ok(existsSync(join(root, 'sample-scripts/kept.mjs')), 'adopter runtime survives pruning');
+  assert.deepEqual(json(root, 'package.json').scripts, { verify: 'v' });
+  assert.deepEqual(validateAlwaysRemovedAssetsAbsent(root), []);
+
+  // H5 Red: 제외 자산·별칭·스킬 중 하나라도 되살아나면 부재 계약이 즉시 실패한다.
+  write(root, 'sample-tools/requirements/server.mjs', 'x\n');
+  assert.ok(validateAlwaysRemovedAssetsAbsent(root).some(msg => msg.includes('sample-tools/requirements')));
+  rmSync(join(root, 'sample-tools/requirements'), { recursive: true, force: true });
+
+  write(root, 'package.json', JSON.stringify({ scripts: { verify: 'v', 'project:ui': 'leaked' } }));
+  assert.ok(validateAlwaysRemovedAssetsAbsent(root).some(msg => msg.includes('project:ui')));
+  write(root, 'package.json', JSON.stringify({ scripts: { verify: 'v' } }));
+
+  write(root, '.agent/skills/requirements-intake/SKILL.md', 'leaked\n');
+  assert.ok(validateAlwaysRemovedAssetsAbsent(root).some(msg => msg.includes('.agent/skills/requirements-intake')));
+
+  // P1 #3 회귀 방지: 별칭 가지치기 뒤 installReusableVerification 호출 시 비활성 검증 이력에는 원본 package.json 을 보존한다.
+  const historyRoot = mkdtempSync(join(resolve(tmpdir()), 'egov-history-preserve-'));
+  t.after(() => rmSync(historyRoot, { recursive: true, force: true }));
+  const copyHistoryInput = rel => {
+    const src = join(ROOT, rel);
+    if (existsSync(src) && (() => { try { readdirSync(src); return true; } catch { return false; } })()) {
+      for (const name of readdirSync(src)) copyHistoryInput(`${rel}/${name}`);
+    } else {
+      mkdirSync(dirname(join(historyRoot, rel)), { recursive: true });
+      copyFileSync(src, join(historyRoot, rel));
+    }
+  };
+  for (const rel of ['package.json', 'Makefile', '.githooks/pre-push', '.github/required-checks.json', '.github/workflows',
+    'build.gradle', 'settings.gradle', 'scripts/dev.mjs', 'scripts/verify.mjs', 'scripts/migration-verification-contract.test.mjs',
+    'api-server/Dockerfile', ...['foundation', 'business-core', 'business-app', 'api-server', 'migration-tool'].map(m => `${m}/build.gradle`)]) {
+    copyHistoryInput(rel);
+  }
+  const upstreamPackageJson = readFileSync(join(historyRoot, 'package.json'), 'utf8');
+  const prunedPkg = json(historyRoot, 'package.json');
+  const preservedAliases = ['verify:post-push', 'test:governance-gates', 'project:ui', 'requirements:ui', 'atlas:build'];
+  for (const alias of preservedAliases) delete prunedPkg.scripts[alias];
+  write(historyRoot, 'package.json', `${JSON.stringify(prunedPkg, null, 2)}\n`);
+  write(historyRoot, 'reusable-base-lock.json', JSON.stringify({ profile: 'core', layout: 'multi-module', sourceCommit: '1'.repeat(40) }));
+  producer.installReusableVerification(historyRoot, 'multi-module', { upstreamPackageJson });
+  installMultiModuleMigrationRuntime(historyRoot);
+  assert.deepEqual(validateReusableArtifactEntrypoints(historyRoot), []);
+  const activeAfter = json(historyRoot, 'package.json').scripts;
+  const archivedText = read(historyRoot, `${VERIFICATION_HISTORY}/package.json`);
+  const archivedScripts = JSON.parse(archivedText).scripts;
+  assert.equal(archivedText, upstreamPackageJson.replace(/\r\n/g, '\n'));
+  for (const alias of preservedAliases) {
+    assert.equal(Object.hasOwn(activeAfter, alias), false, `active package.json must omit ${alias}`);
+    assert.ok(Object.hasOwn(archivedScripts, alias), `archived package.json must preserve ${alias}`);
+  }
 });

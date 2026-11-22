@@ -20,6 +20,7 @@ import { COMPOSER_SELECTION_PATH } from './project-composer-recipe.mjs';
 import { projectSourceApiDocs } from './reusable-contract-projection.mjs';
 import { isContractScopeFile, predictFromProjection, vanishedContractReferences } from './reusable-contract-references.mjs';
 import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, pruneVendorPostgresAssets, readVendorAssetLedger } from './reusable-vendor-assets.mjs';
+import { PRODUCER_ASSET_RULE, REQUIREMENTS_ASSET_RULE, pruneProducerTools, pruneRequirementsStudio } from './reusable-product-assets.mjs';
 import { root, readJson, catalog, modules, ownership, files, compose, projectionFiles, quietly, readRepositorySource } from './project-composer-deep.test-helpers.mjs';
 
 /*
@@ -65,7 +66,8 @@ test('the deep plan removes exactly the files, cascades and gates the generator 
     assert.match(deepSummary(deep), /^제거: Java \d+개\(연쇄 \d+\) · 프런트 \d+개\(연쇄 \d+\) · 검증 게이트 \d+건$/);
 
     // 규칙 제거와 승인 대조도 생성기와 같다: 같은 파일을 고르고, 정밀 점검이 통과라 말한 구성은 생성기 승인 대조도 통과한다.
-    const ruleRemovals = { 'historical-migration-tests': pruneHistoricalMigrationTests(output).files, 'upstream-atlas': pruneUpstreamAtlas(output).files };
+    const ruleRemovals = { 'historical-migration-tests': pruneHistoricalMigrationTests(output).files, 'upstream-atlas': pruneUpstreamAtlas(output).files,
+      [PRODUCER_ASSET_RULE]: pruneProducerTools(output).files, [REQUIREMENTS_ASSET_RULE]: pruneRequirementsStudio(output).files };
     assert.deepEqual(deep.ruleRemovals, ruleRemovals, `${label}: rule removals`);
     assert.ok(ruleRemovals['historical-migration-tests'].length > 0, `${label}: the rule selects real historical tests`);
     quietly(() => assertRemovedGatesAcknowledged(composition.profile, profile, java, frontend, ruleRemovals));
@@ -125,6 +127,7 @@ test('the deep plan names exactly the PostgreSQL-only gates a vendor generation 
   const profile = composerProfile(modules, composition);
   const { java, frontend } = projectSourceTree(output, { ownership, profile: structuredClone(profile), composition, sourceRoot: root, catalog });
   const ruleRemovals = { 'historical-migration-tests': pruneHistoricalMigrationTests(output).files, 'upstream-atlas': pruneUpstreamAtlas(output).files,
+    [PRODUCER_ASSET_RULE]: pruneProducerTools(output).files, [REQUIREMENTS_ASSET_RULE]: pruneRequirementsStudio(output).files,
     [VENDOR_ASSET_RULE]: pruneVendorPostgresAssets(output).files };
   assert.ok(ruleRemovals[VENDOR_ASSET_RULE].length > 0, 'the rule removes real gates');
   assert.deepEqual(deep.ruleRemovals, ruleRemovals);

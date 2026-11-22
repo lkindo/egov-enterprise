@@ -1,0 +1,832 @@
+{
+  "schemaVersion": 1,
+  "authority": "Phase 3 생성 프로젝트 경량화 — 프로젝트 생성기와 생산자 전용 CI·검증·평가 자산의 제거 원장이다. 생성기가 이 목록대로 걷고 생성물 계약이 부재를 대조한다.",
+  "assets": [
+    "scripts/adoption-execute-fixtures.mjs",
+    "scripts/aggregate-required-check.mjs",
+    "scripts/backfill-log-duration.mjs",
+    "scripts/branch-protection-contract.mjs",
+    "scripts/ci-annotate-test-failures.mjs",
+    "scripts/ci-flaky-report.mjs",
+    "scripts/ci-junit-duration-summary.mjs",
+    "scripts/code-census.mjs",
+    "scripts/copyleft-license-policy.mjs",
+    "scripts/dependency-snapshot-readiness.mjs",
+    "scripts/dependency-submission-contract.mjs",
+    "scripts/deploy-env-forwarding-contract.mjs",
+    "scripts/docs-link-integrity.mjs",
+    "scripts/edge-trust-boundary-contract.mjs",
+    "scripts/frontend-audit-policy.mjs",
+    "scripts/frontend-reachability-census.mjs",
+    "scripts/frontend-source-contracts.mjs",
+    "scripts/generate-reusable-base-db.mjs",
+    "scripts/generate-reusable-base-source.mjs",
+    "scripts/governance-review-summary.mjs",
+    "scripts/impact-tests.mjs",
+    "scripts/integration-precheck.mjs",
+    "scripts/ledger-count-restatement.mjs",
+    "scripts/menu-census.mjs",
+    "scripts/observability-alert-rules-contract.mjs",
+    "scripts/pack-tagged-registry.mjs",
+    "scripts/pr-checks-wait.mjs",
+    "scripts/project-composer-child-failure.mjs",
+    "scripts/project-composer-deep.mjs",
+    "scripts/project-composer-deep.test-helpers.mjs",
+    "scripts/project-composer-diff.mjs",
+    "scripts/project-composer-generate.mjs",
+    "scripts/project-composer-job-failure.mjs",
+    "scripts/project-composer-menus-refresh.mjs",
+    "scripts/project-composer-preflight.mjs",
+    "scripts/project-composer-presentation.mjs",
+    "scripts/project-composer-recovery.mjs",
+    "scripts/project-composer-server-job.mjs",
+    "scripts/project-composer-server-shape.mjs",
+    "scripts/project-composer-server.mjs",
+    "scripts/project-composer-timeline.mjs",
+    "scripts/project-composer-unassigned.mjs",
+    "scripts/project-composer-vendor-evidence.mjs",
+    "scripts/project-composer-vendor-evidence.test-helpers.mjs",
+    "scripts/project-composer-vendor-project.mjs",
+    "scripts/project-composer.mjs",
+    "scripts/release-main-history.mjs",
+    "scripts/reusable-asset-removal-leak-check.mjs",
+    "scripts/reusable-base-census.mjs",
+    "scripts/reusable-contract-census.mjs",
+    "scripts/reusable-contract-projection.mjs",
+    "scripts/reusable-contract-references.mjs",
+    "scripts/reusable-governance-projection.mjs",
+    "scripts/reusable-governance-projection.test-helpers.mjs",
+    "scripts/reusable-nightly-judge.mjs",
+    "scripts/reusable-nightly.mjs",
+    "scripts/reusable-reference-data.mjs",
+    "scripts/reusable-source-frontend.mjs",
+    "scripts/reusable-source-gates.mjs",
+    "scripts/reusable-source-harness.mjs",
+    "scripts/reusable-source-java.mjs",
+    "scripts/reusable-source-messages.mjs",
+    "scripts/secure-coding-weaknesses.mjs",
+    "scripts/ui-navigation-disposition-contract.mjs",
+    "scripts/verify-branch-protection.mjs",
+    "scripts/verify-project-composer.mjs",
+    "scripts/verify-reusable-base.mjs",
+    "tools/agent-evaluation",
+    "tools/project-composer"
+  ],
+  "aliases": [
+    "//ci:flaky-report",
+    "//verify:ops",
+    "base:census",
+    "base:generate-db",
+    "base:generate-source",
+    "base:verify",
+    "ci:flaky-report",
+    "evaluate:visual-regression",
+    "project:catalog",
+    "project:create",
+    "project:menus:refresh",
+    "project:plan",
+    "project:ui",
+    "project:ui:css",
+    "test:base-profile",
+    "test:ci-scope",
+    "test:governance-gates",
+    "test:required-checks",
+    "test:sast",
+    "test:shared-memory",
+    "verify:integrate",
+    "verify:ops",
+    "verify:post-push"
+  ],
+  "gates": [
+    {
+      "file": "scripts/a3-1-form-container-census.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/adopter-api-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/adoption-execute-products.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/adoption-execute.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/agent-guard.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/agent-skill-adapters.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/aggregate-required-check.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/api-docker-context-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/backfill-log-duration.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/ci-annotate-test-failures.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/ci-change-scope-tool-paths.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/ci-change-scope.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/ci-flaky-report.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/ci-junit-duration-summary.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/code-census.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/code-without-comments.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/composer-modules.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/composition-profiles.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/copyleft-license-policy.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/credential-request-target-source-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/cross-domain-coupling-census-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/dependency-submission-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/deploy-env-forwarding-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/dev-remote-db-guard.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/docs-link-integrity.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/domain-deletion-plan.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/domain-registration-doctor.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/domain-scaffold-authorization.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/e2e-shard-plan.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/edge-trust-boundary-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/export-deliverables-db.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/export-deliverables-trace.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/export-deliverables-workspace.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/export-deliverables.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/frontend-audit-policy.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/frontend-docker-context-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/frontend-proxy-keepalive-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/frontend-reachability-census.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/frontend-sensitive-console-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/frontend-source-contracts.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/frontend-visible-terms-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/generate-permissions.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/generate-screen-registry.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/generated-boundary-census.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/generated-operations-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/gitignore-source-roots.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/governance-gates-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/governance-policy-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/governance-review.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/harness-baseline-mirror-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/heavy-run-queue.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/impact-tests.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/input-contract-mirror-census-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/integration-precheck.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/krds-profile-mapping-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/ledger-precheck.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/load-test-command-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/load-test-response-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/log-search-url-boundary-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/managed-db-env-check.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/menu-census.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/merge-main-regenerate.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/node-test-junit-reporter.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/observability-alert-rules-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/operation-consumer-census.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/pack-tagged-registry.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/playwright-auth-artifact-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/playwright-result-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/pr-checks-wait.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/pre-push-ref-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/privacy-access-census-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-catalog.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-child-failure.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-db.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-deep-failure-points.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-deep-letter-case.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-deep-parity.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-deep.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-diff.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-errors.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-generate.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-job-failure.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-menu-preview.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-menus-refresh.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-preflight.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-presentation.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-preset-equivalence.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-recipe.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-recovery.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-server-job.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-server.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-slot-readers.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-source.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-timeline.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-vendor-evidence.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer-vendor.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/project-composer.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/read-regular-file.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/regenerate.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/release-main-history.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/required-checks-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/retired-pack-vocabulary.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-base-census.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-contract-census.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-contract-projection.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-contract-references.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-frontend-boundaries-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-governance-projection-profiles-1.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-governance-projection-profiles-2.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-governance-projection-profiles-3.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-governance-projection-profiles-4.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-governance-projection.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-harness-profile-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-layout-runtime.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-layout.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-migration-catalog.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-nightly.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-page-survival.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-permission-projection.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-projection-ledger.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-reference-data.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-single-module.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-source-frontend.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-source-messages.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-verification-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/sast-approximation.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/sast-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/sast-exceptions.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/sast-policy.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/search-url-state-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/shared-memory-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/slot-registry.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/source-control-characters.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/ui-navigation-disposition-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/ui-quality-evidence-durability-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/ui-quality-evidence-publication-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/ui-quality-scenario-contract-hash.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/ui-route-capabilities-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/ui-url-state-approval-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/ui-url-state-census.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/update-visual-baseline-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/verification-record.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/verify-branch-protection.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/vitest-timeout-rerun.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/zap-definition-filter.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "tools/project-composer/ui.test.mjs",
+      "reason": "프로젝트 생성기 브라우저 UI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 e2e-tests 필수 단계(Verify local composer browser flow)에서 계속 실행한다"
+    }
+  ]
+}

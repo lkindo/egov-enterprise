@@ -124,6 +124,14 @@
           {
             "rule": "upstream-atlas",
             "reason": "원본 Atlas HTML 은 원본 저장소의 결정·gap·운영 사실을 담고 로그인 전에 응답된다. 그 생성기는 원본 공용 메모리와 문서를 읽어 생성물 안에서 다시 만들어도 원본 사실이 되살아나므로, Atlas 와 생성기·생성기 테스트·Atlas 계약을 함께 걷는다. 걷은 계약 3건이 지키던 대상(Atlas HTML)이 생성물에 없으므로 보호가 줄지 않는다."
+          },
+          {
+            "rule": "upstream-producer-tools",
+            "reason": "프로젝트 생성기·생산자 CI·원본 운영 계약 시험은 원본 저장소에서 계속 실행하며 생성 프로젝트에는 포함하지 않는다. 목록과 대체 범위는 config/governance/producer-removed-assets.json 에 있다."
+          },
+          {
+            "rule": "requirements-studio",
+            "reason": "로컬 요구사항 스튜디오(tools/requirements-workspace)와 그 시험은 원본 저장소 도구이므로 생성 프로젝트에서 제외한다. 목록과 사유는 config/governance/requirements-removed-assets.json 에 있다."
           }
         ],
         "javaCascade": [
@@ -336,6 +344,14 @@
           {
             "rule": "upstream-atlas",
             "reason": "원본 Atlas HTML 은 원본 저장소의 결정·gap·운영 사실을 담고 로그인 전에 응답된다. 그 생성기는 원본 공용 메모리와 문서를 읽어 생성물 안에서 다시 만들어도 원본 사실이 되살아나므로, Atlas 와 생성기·생성기 테스트·Atlas 계약을 함께 걷는다. 걷은 계약 3건이 지키던 대상(Atlas HTML)이 생성물에 없으므로 보호가 줄지 않는다."
+          },
+          {
+            "rule": "upstream-producer-tools",
+            "reason": "프로젝트 생성기·생산자 CI·원본 운영 계약 시험은 원본 저장소에서 계속 실행하며 생성 프로젝트에는 포함하지 않는다. 목록과 대체 범위는 config/governance/producer-removed-assets.json 에 있다."
+          },
+          {
+            "rule": "requirements-studio",
+            "reason": "로컬 요구사항 스튜디오(tools/requirements-workspace)와 그 시험은 원본 저장소 도구이므로 생성 프로젝트에서 제외한다. 목록과 사유는 config/governance/requirements-removed-assets.json 에 있다."
           }
         ],
         "javaCascade": [
@@ -444,6 +460,14 @@
           {
             "rule": "upstream-atlas",
             "reason": "원본 Atlas HTML 은 원본 저장소의 결정·gap·운영 사실을 담고 로그인 전에 응답된다. 그 생성기는 원본 공용 메모리와 문서를 읽어 생성물 안에서 다시 만들어도 원본 사실이 되살아나므로, Atlas 와 생성기·생성기 테스트·Atlas 계약을 함께 걷는다. 걷은 계약 3건이 지키던 대상(Atlas HTML)이 생성물에 없으므로 보호가 줄지 않는다."
+          },
+          {
+            "rule": "upstream-producer-tools",
+            "reason": "프로젝트 생성기·생산자 CI·원본 운영 계약 시험은 원본 저장소에서 계속 실행하며 생성 프로젝트에는 포함하지 않는다. 목록과 대체 범위는 config/governance/producer-removed-assets.json 에 있다."
+          },
+          {
+            "rule": "requirements-studio",
+            "reason": "로컬 요구사항 스튜디오(tools/requirements-workspace)와 그 시험은 원본 저장소 도구이므로 생성 프로젝트에서 제외한다. 목록과 사유는 config/governance/requirements-removed-assets.json 에 있다."
           }
         ],
         "javaCascade": []
@@ -566,6 +590,14 @@
           {
             "rule": "upstream-atlas",
             "reason": "원본 Atlas HTML 은 원본 저장소의 결정·gap·운영 사실을 담고 로그인 전에 응답된다. 그 생성기는 원본 공용 메모리와 문서를 읽어 생성물 안에서 다시 만들어도 원본 사실이 되살아나므로, Atlas 와 생성기·생성기 테스트·Atlas 계약을 함께 걷는다. 걷은 계약 3건이 지키던 대상(Atlas HTML)이 생성물에 없으므로 보호가 줄지 않는다."
+          },
+          {
+            "rule": "upstream-producer-tools",
+            "reason": "프로젝트 생성기·생산자 CI·원본 운영 계약 시험은 원본 저장소에서 계속 실행하며 생성 프로젝트에는 포함하지 않는다. 목록과 대체 범위는 config/governance/producer-removed-assets.json 에 있다."
+          },
+          {
+            "rule": "requirements-studio",
+            "reason": "로컬 요구사항 스튜디오(tools/requirements-workspace)와 그 시험은 원본 저장소 도구이므로 생성 프로젝트에서 제외한다. 목록과 사유는 config/governance/requirements-removed-assets.json 에 있다."
           }
         ],
         "javaCascade": [
@@ -793,6 +825,14 @@
           {
             "rule": "upstream-atlas",
             "reason": "원본 Atlas HTML 은 원본 저장소의 결정·gap·운영 사실을 담고 로그인 전에 응답된다. 그 생성기는 원본 공용 메모리와 문서를 읽어 생성물 안에서 다시 만들어도 원본 사실이 되살아나므로, Atlas 와 생성기·생성기 테스트·Atlas 계약을 함께 걷는다. 걷은 계약 3건이 지키던 대상(Atlas HTML)이 생성물에 없으므로 보호가 줄지 않는다."
+          },
+          {
+            "rule": "upstream-producer-tools",
+            "reason": "프로젝트 생성기·생산자 CI·원본 운영 계약 시험은 원본 저장소에서 계속 실행하며 생성 프로젝트에는 포함하지 않는다. 목록과 대체 범위는 config/governance/producer-removed-assets.json 에 있다."
+          },
+          {
+            "rule": "requirements-studio",
+            "reason": "로컬 요구사항 스튜디오(tools/requirements-workspace)와 그 시험은 원본 저장소 도구이므로 생성 프로젝트에서 제외한다. 목록과 사유는 config/governance/requirements-removed-assets.json 에 있다."
           }
         ],
         "javaCascade": [
