@@ -82,6 +82,9 @@ export function writeHarnessBaseline(output, projection) {
   // 원본 저장소에는 매니페스트(와 그 폴더)가 없다(DEC-OPS-420) — 생성물에서 처음 만든다.
   const manifest = join(output, ...MANIFEST_PATH.split('/'));
   mkdirSync(dirname(manifest), { recursive: true });
-  writeFileSync(manifest, renderHarnessBaselineManifest(computeHarnessBaselineEntries(output), header), 'utf8');
+  const options = projection?.allowedAbsentScanRoots !== undefined
+    ? { allowedAbsentScanRoots: projection.allowedAbsentScanRoots }
+    : undefined;
+  writeFileSync(manifest, renderHarnessBaselineManifest(computeHarnessBaselineEntries(output, options), header), 'utf8');
 }
 

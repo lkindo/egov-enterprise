@@ -21,21 +21,14 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ComposerError } from './project-composer-errors.mjs';
-import { API_DOCS_PATH, GENERATED_CONTRACT_TYPES, OPENAPI_TYPESCRIPT_CLI, runContractGenerator } from './verify-generated-contracts.mjs';
+import {
+  API_DOCS_PATH, FRONTEND_INSTALL_COMMAND, FRONTEND_TOOLCHAIN, GENERATED_CONTRACT_TYPES,
+  missingFrontendToolchain, regenerateContractTypes as runRegenerateContractTypes,
+} from './verify-generated-contracts.mjs';
 
 /** api-docs.json 과 생성 타입 3종의 경로는 드리프트 검증이 정의한다. 이 모듈의 소비자를 위해 다시 내보낸다. */
-export { API_DOCS_PATH, GENERATED_CONTRACT_TYPES };
+export { API_DOCS_PATH, FRONTEND_INSTALL_COMMAND, FRONTEND_TOOLCHAIN, GENERATED_CONTRACT_TYPES, missingFrontendToolchain };
 export const AUTHORIZATION_POLICIES_PATH = 'config/governance/authorization-policies.json';
-/**
- * 생성 때 쓰는 원본 frontend 도구(U5-A). 원본 frontend 에 의존성을 설치해야 생성할 수 있다 — CI 재사용 잡은 생성 전에 설치하고,
- * 생성기 화면은 사전 점검으로 알린다. TypeScript 는 경계·소비 census(reusable-contract-census.mjs)가, openapi-typescript 는
- * generated-api.d.ts 가 쓴다.
- */
-export const FRONTEND_TOOLCHAIN = Object.freeze({
-  typescript: 'frontend/node_modules/typescript/package.json',
-  openapiTypescript: OPENAPI_TYPESCRIPT_CLI,
-});
-export const FRONTEND_INSTALL_COMMAND = 'pnpm -C frontend install --frozen-lockfile';
 const JAVA_SOURCE_ROOTS = Object.freeze(['api-server', 'business-app', 'business-core', 'foundation'].map(module => `${module}/src/main/java`));
 const HTTP_METHODS = Object.freeze(['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace']);
 const SCHEMA_REF = '#/components/schemas/';
@@ -196,11 +189,6 @@ export function writeProjectedApiDocs(sourceRoot, output) {
   return projection;
 }
 
-/** 원본 frontend 에 설치되지 않은 생성 도구(저장소 기준 경로). 빈 배열이면 모두 있다. */
-export function missingFrontendToolchain(sourceRoot) {
-  return Object.values(FRONTEND_TOOLCHAIN).filter(file => !existsSync(join(sourceRoot, file)));
-}
-
 /** 생성 도구가 없으면 생성기 화면이 설치 안내로 바꿔 말하는 코드(TOOL_UNAVAILABLE, 도구 frontend)로 멈춘다. */
 export function assertFrontendToolchain(sourceRoot) {
   const missing = missingFrontendToolchain(sourceRoot);
@@ -211,15 +199,8 @@ export function assertFrontendToolchain(sourceRoot) {
 }
 
 /**
- * 생성물 api-docs 로 생성 타입 3종을 다시 만든다. 원본의 생성기(codegen-zod.js)와 원본 frontend 의 openapi-typescript 를 쓴다 —
- * 원본 커밋본을 만든 것과 같은 도구이고, 실행 정의(격리 cwd 포함)는 드리프트 검증과 같다. 모든 기능을 고른 구성은 원본
- * 커밋본과 같은 내용이 나온다(계약 시험).
+ * 생성물 api-docs 로 생성 타입 3종을 다시 만든다. 원본의 생성기(codegen-zod.js)와 원본 frontend 의 openapi-typescript 를 쓴다.
  */
 export function regenerateContractTypes({ sourceRoot, output, spawn = spawnSync }) {
-  assertFrontendToolchain(sourceRoot);
-  const specPath = join(output, API_DOCS_PATH);
-  const outputPaths = Object.fromEntries(Object.entries(GENERATED_CONTRACT_TYPES).map(([key, file]) => [key, join(output, file)]));
-  runContractGenerator({ kind: 'zod', toolRoot: sourceRoot, specPath, outputPaths, spawn });
-  runContractGenerator({ kind: 'api', toolRoot: sourceRoot, specPath, outputPaths, spawn });
-  return Object.values(GENERATED_CONTRACT_TYPES);
+  return runRegenerateContractTypes({ sourceRoot, output, spawn, assertToolchain: assertFrontendToolchain });
 }

@@ -5,7 +5,7 @@ import { basename, join } from 'node:path';
 import { containedFile } from './adoption-review.mjs';
 import { projectedCodeEntries, projectedCodeScope, codeScopeForEntries } from './reusable-source-evidence.mjs';
 import { PERMISSION_ARTIFACT_PATHS, PERMISSION_BUNDLES_PATH } from './permission-artifact-paths.mjs';
-import { stripJavaComments } from './reusable-source-java.mjs';
+import { stripJavaComments } from './harness-baseline-manifest.mjs';
 import { computeReusableHarnessCensus } from './reusable-harness-census.mjs';
 import { MANIFEST_PATH, parseManifest } from './harness-baseline-manifest-format.mjs';
 import { API_DOCS_PATH, API_GENERATOR_PATH, isAdopterContractArtifact, validateAdditiveApiDocs } from './adopter-api-contract.mjs';

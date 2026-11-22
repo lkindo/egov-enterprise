@@ -4,6 +4,7 @@
   "assets": [
     "db_columns.json",
     "docker-compose.authz-e2e.yml",
+    "frontend/scripts/ui-quality-baseline-auth.mjs",
     "migration-tool",
     "scripts/ReleaseSmokeProbe.java",
     "scripts/e2e-compose-preflight.mjs",

@@ -1,9 +1,23 @@
 /** Producer and adopter census use the same scanners and predicates. */
 import { readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { stripJavaComments } from './reusable-source-java.mjs';
+import { stripJavaComments } from './harness-baseline-manifest.mjs';
 import { fail, walk } from './reusable-source-tree.mjs';
-import { HISTORICAL_SCHEMA_TEST_DIR } from './reusable-source-gates.mjs';
+
+export const HISTORICAL_SCHEMA_TEST_DIR = 'api-server/src/test/java/nuri/api/schema';
+export const UPSTREAM_ATLAS = Object.freeze({
+  assets: Object.freeze([
+    'frontend/atlas',
+    'scripts/build-atlas.mjs',
+    'scripts/atlas-catalog.mjs',
+  ]),
+  gates: Object.freeze([
+    'frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts',
+    'scripts/atlas-catalog.test.mjs',
+    'scripts/atlas-generation.test.mjs',
+  ]),
+  aliases: Object.freeze(['atlas:build', 'atlas:check', 'atlas:contract']),
+});
 
 export function projectedWriteHandlerCounts(source) {
   const code = stripJavaComments(source);

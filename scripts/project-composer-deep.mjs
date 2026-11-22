@@ -11,7 +11,7 @@ import { isCopyableSourceFile, normalize } from './reusable-source-tree.mjs';
 import { assertComposerSourceSurvives, composerProfile } from './project-composer-source.mjs';
 import { composerOwnership, loadComposerModules } from './composer-modules.mjs';
 import { withoutRoot } from './project-composer-errors.mjs';
-import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, staleVendorAssets } from './reusable-vendor-assets.mjs';
+import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, parseVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
 import { planPermissionProjection, readPermissionSources } from './reusable-permission-projection.mjs';
 import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
 import { projectSourceApiDocs } from './reusable-contract-projection.mjs';
@@ -246,7 +246,7 @@ export function compositionDeepPlan({ root, composition, files, outputParent, ca
   ruleRemovals['upstream-atlas'] = [...UPSTREAM_ATLAS.gates].sort((left, right) => left.localeCompare(right));
   if ((composition.recipe?.database?.vendor ?? 'postgresql') !== 'postgresql') {
     try {
-      const ledger = JSON.parse(readSource(join(root, VENDOR_ASSET_LEDGER)));
+      const ledger = parseVendorAssetLedger(readSource(join(root, VENDOR_ASSET_LEDGER)));
       ruleRemovals[VENDOR_ASSET_RULE] = ledger.gates.map(row => row.file).filter(kept).sort((left, right) => left.localeCompare(right));
       const present = path => kept(path) || relativeFiles.some(file => file.startsWith(`${path}/`) && kept(file));
       const scripts = JSON.parse(readSource(join(root, 'package.json'))).scripts;

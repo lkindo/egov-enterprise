@@ -10,6 +10,31 @@ import { validateGeneratedMigrationRuntime, validateSingleModuleRuntime } from '
 export const VERIFICATION_HISTORY = 'config/governance/upstream-verification';
 export const ARTIFACT_COMMAND = 'node scripts/verify-reusable-artifact.mjs';
 export const CURRENT_ARTIFACT_COMMAND = 'node scripts/adopter-project.mjs verify';
+
+/** Parse top-level job blocks from a GitHub Actions workflow without importing producer-only modules. */
+export function parseWorkflowJobs(ciContent) {
+  const normalized = ciContent.replace(/\r\n/g, '\n');
+  const jobsHeader = /^jobs:\s*(?:#.*)?$/m.exec(normalized);
+  if (!jobsHeader) return new Map();
+
+  const afterHeader = jobsHeader.index + jobsHeader[0].length;
+  const rest = normalized.slice(afterHeader);
+  const nextTopLevel = /^\S[^:\n]*:\s*(?:#.*)?$/m.exec(rest);
+  const section = normalized.slice(
+    jobsHeader.index,
+    nextTopLevel ? afterHeader + nextTopLevel.index : normalized.length,
+  );
+  const jobPattern = /^ {2}([A-Za-z0-9_-]+):\s*(?:#.*)?$/gm;
+  const matches = [...section.matchAll(jobPattern)];
+  const jobs = new Map();
+
+  for (let index = 0; index < matches.length; index += 1) {
+    const match = matches[index];
+    const end = matches[index + 1]?.index ?? section.length;
+    jobs.set(match[1], section.slice(match.index, end));
+  }
+  return jobs;
+}
 export const artifactAliases = Object.freeze({
   verify: ARTIFACT_COMMAND,
   'verify:artifact': ARTIFACT_COMMAND,

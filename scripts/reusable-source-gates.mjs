@@ -3,8 +3,11 @@
  */
 import { closeSync, existsSync, ftruncateSync, openSync, readFileSync, rmSync, writeFileSync, writeSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
-import { stripJavaComments } from './reusable-source-java.mjs';
+import { stripJavaComments } from './harness-baseline-manifest.mjs';
+import { HISTORICAL_SCHEMA_TEST_DIR, UPSTREAM_ATLAS } from './reusable-harness-census.mjs';
 import { fail, normalize, readTextIfPresent, walk } from './reusable-source-tree.mjs';
+
+export { HISTORICAL_SCHEMA_TEST_DIR, UPSTREAM_ATLAS };
 
 /**
  * 제거된 거버넌스 게이트를 **말하고**, manifest 의 명시적 승인과 exact 대조한다.
@@ -248,7 +251,6 @@ export function isHistoricalAuthorizationRehearsal(name, source) {
 }
 
 /** 규칙으로 걷는 과거 마이그레이션 검증을 고른다(지우지 않는다). 생성기와 정밀 점검(plan/deep)이 같이 쓴다. */
-export const HISTORICAL_SCHEMA_TEST_DIR = 'api-server/src/test/java/nuri/api/schema';
 export function selectHistoricalMigrationTests(paths, readSource) {
   return paths.filter(path => /MigrationIntegrationTest\.java$/.test(path)
     || isHistoricalAuthorizationRehearsal(basename(path), readSource(path)));
@@ -268,21 +270,8 @@ export function pruneHistoricalMigrationTests(output) {
  * 원본 Governance & Harness Atlas 와 그 생성·검증 도구. Atlas HTML 은 원본의 결정·gap·운영 사실을
  * 담고 프록시가 인증 전에 응답하는 정적 파일이다. 생성기는 원본 공용 메모리와 문서를 읽으므로
  * 생성물 안에서 다시 만들어도 원본 사실이 되살아난다. 그래서 고치지 않고 통째로 걷는다.
+ * (상수 UPSTREAM_ATLAS 는 reusable-harness-census.mjs 에서 re-export 한다.)
  */
-export const UPSTREAM_ATLAS = Object.freeze({
-  assets: Object.freeze([
-    'frontend/atlas',
-    'scripts/build-atlas.mjs',
-    'scripts/atlas-catalog.mjs',
-  ]),
-  gates: Object.freeze([
-    'frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts',
-    'scripts/atlas-catalog.test.mjs',
-    'scripts/atlas-generation.test.mjs',
-  ]),
-  // atlas:contract 는 수동 렌더 계약(DEC-OPS-420)이라 그 시험과 함께 걷는다.
-  aliases: Object.freeze(['atlas:build', 'atlas:check', 'atlas:contract']),
-});
 
 /**
  * 원본 Atlas 를 걷기 전에 빠진 자산·검사와 package.json 별칭을 찾아 생성기 실패 문장으로 돌려준다(지우지 않는다).

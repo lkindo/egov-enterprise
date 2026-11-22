@@ -56,7 +56,7 @@ export const RETIRED_PACK_VOCABULARY = Object.freeze([
   },
   {
     kind: 'code',
-    paths: ['scripts/reusable-source-java.mjs', 'scripts/project-composer-deep.mjs', 'scripts/generate-reusable-base-db.mjs'],
+    paths: ['scripts/reusable-source-java.mjs', 'scripts/reusable-java-removal-plan.mjs', 'scripts/project-composer-deep.mjs', 'scripts/generate-reusable-base-db.mjs'],
     forbidden: RETIRED_READS,
     basis: 'DEC-OPS-289',
     reason: '생성기·정밀 점검·DB 생성기는 기능 소유로 투영한다 — pack 목록·순위로 판정하면 시작 구성이 직접 선택과 다른 경로를 탄다(11단계 C3)',

@@ -62,6 +62,7 @@
         "label": "화면 기준선 실행기",
         "reason": "PostgreSQL 컨테이너로 화면 기준선을 재는 도구입니다.",
         "paths": [
+          "frontend/scripts/ui-quality-baseline-auth.mjs",
           "scripts/ui-quality-baseline-build-contract.test.mjs",
           "scripts/ui-quality-baseline-build.mjs",
           "scripts/ui-quality-baseline-launch-contract.test.mjs",
