@@ -93,6 +93,7 @@ const GATE_REGISTRIES = [
   'scripts/reusable-layout.mjs',
   'scripts/reusable-layout-runtime.mjs',
   'scripts/reusable-single-module.mjs',
+  'scripts/reusable-asset-removal.mjs',
   'scripts/reusable-vendor-assets.mjs',
   // 실행 가능한 생성물 정책도 JSON 원장과 같은 전체 내용 hash 경계에 묶는다.
   'scripts/reusable-artifact-entrypoints-contract.mjs',
@@ -105,6 +106,7 @@ const GATE_REGISTRIES = [
   'scripts/reusable-harness-census.mjs',
   // 위 생성물 정책이 받는 구성 이름(시작 구성 id·custom)은 이 모듈이 정한다(11단계 C8) — 정책과 같은 경계에 묶는다.
   'scripts/composition-profiles.mjs',
+  'scripts/verify-generated-contracts.mjs',
   'scripts/adopter-api-contract.mjs',
   'config/governance/reusable-harness-profile.json',
   'config/governance/authorization-policies.json',
@@ -250,17 +252,26 @@ function removedForVendor(root, scanRoot) {
   return readVendorAssetLedger(root).assets.some(asset => scanRoot === asset || scanRoot.startsWith(`${asset}/`));
 }
 
+/** 명시적으로 제외한 스캔 루트이거나(생략 시) 벤더 원장대로 뺀 스캔 루트인가. */
+function isAllowedAbsentScanRoot(root, scanRoot, allowedAbsentScanRoots) {
+  if (allowedAbsentScanRoots !== null && allowedAbsentScanRoots !== undefined) {
+    return [...allowedAbsentScanRoots].some(asset => scanRoot === asset || scanRoot.startsWith(`${asset}/`));
+  }
+  return removedForVendor(root, scanRoot);
+}
+
 /**
  * 매니페스트에 적을 키와 값을 `root` 의 실제 소스에서 계산한다. `minimumGateSources` 는 게이트 소스 스캔 건수의 하한이다 — CLI 는
  * MINIMUM_GATE_SOURCES 를 넘기고, 작은 fixture 를 계산하는 시험과 생성기는 0 이다(생성물은 자기 메타 게이트가 CLI 로 다시 본다).
+ * `allowedAbsentScanRoots` 가 주어지면 해당 경로(및 하위)는 생성 단계에서 명시적으로 제외한 스캔 루트로 허용한다.
  */
-export function computeHarnessBaselineEntries(root, { minimumGateSources = 0 } = {}) {
+export function computeHarnessBaselineEntries(root, { minimumGateSources = 0, allowedAbsentScanRoots = null } = {}) {
   const gateSources = new Map();
   for (const scanRoot of HARNESS_SCAN_ROOTS) {
     const dir = path.join(root, ...scanRoot.split('/'));
-    // 스캔 루트 부재를 넘기면 조용한 skip 이고 false-green 이다. 벤더 프로젝트가 원장대로 뺀 모듈만 예외다.
+    // 스캔 루트 부재를 넘기면 조용한 skip 이고 false-green 이다. 명시적 제외 또는 벤더 원장 제외만 예외다.
     if (!fs.existsSync(dir)) {
-      if (removedForVendor(root, scanRoot)) continue;
+      if (isAllowedAbsentScanRoot(root, scanRoot, allowedAbsentScanRoots)) continue;
       fail(`게이트 무결성 파손: 하네스 스캔 루트를 찾을 수 없다 — ${scanRoot}`);
     }
     const module = scanRoot.split('/')[0];

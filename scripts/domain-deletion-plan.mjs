@@ -31,7 +31,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { API_SOURCE_ROOT, apiSourceRequirements, appSourceDomain, javaDomainReferences } from './project-composer-catalog.mjs';
 import { CORE_FILE, MODULES_DIRECTORY, MODULES_SCHEMA, PRESETS_FILE } from './composer-modules.mjs';
 import { supportFileDirectoryDomain, supportFileOwners } from './project-composer-source.mjs';
-import { planJavaRemoval } from './reusable-source-java.mjs';
+import { planJavaRemoval } from './reusable-java-removal-plan.mjs';
 
 const APP_ROOT = 'business-app/src/main/java/nuri/business';
 

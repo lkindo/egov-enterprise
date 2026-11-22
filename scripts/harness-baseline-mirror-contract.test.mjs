@@ -231,3 +231,32 @@ test('the census notices gate deletion, support file deletion, unregistered gate
   put('config/governance/gates.json', '{ not json');
   assert.throws(() => computeHarnessBaselineEntries(root), /gates\.json 를 JSON 으로 읽지 못했다/);
 });
+
+test('explicit allowedAbsentScanRoots skips only declared removed scan roots without requiring a vendor folder', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'harness-baseline-absent-roots-'));
+  t.after(() => {
+    const owned = resolve(root);
+    assert.equal(dirname(owned), resolve(tmpdir()));
+    assert.ok(basename(owned).startsWith('harness-baseline-absent-roots-'));
+    rmSync(owned, { recursive: true, force: true });
+  });
+  for (const scanRoot of HARNESS_SCAN_ROOTS.filter(item => !item.startsWith('migration-tool/'))) {
+    mkdirSync(join(root, scanRoot), { recursive: true });
+  }
+  assert.throws(() => computeHarnessBaselineEntries(root), /스캔 루트를 찾을 수 없다 — migration-tool\/src\/test\/java/);
+  assert.throws(() => computeHarnessBaselineEntries(root, { allowedAbsentScanRoots: [] }), /스캔 루트를 찾을 수 없다 — migration-tool\/src\/test\/java/);
+
+  const entries = computeHarnessBaselineEntries(root, { allowedAbsentScanRoots: ['migration-tool'] });
+  assert.ok(entries.size > 0);
+
+  // 벤더 폴더와 벤더 원장이 함께 있어도 allowedAbsentScanRoots: [] 가 명시되면 빠진 스캔 루트를 건너뛰지 않는다(H5).
+  mkdirSync(join(root, 'api-server/src/main/resources/db/vendor/oracle'), { recursive: true });
+  mkdirSync(join(root, 'config/governance'), { recursive: true });
+  writeFileSync(join(root, 'config/governance/vendor-removed-assets.json'), JSON.stringify({ assets: ['migration-tool'] }));
+  assert.ok(computeHarnessBaselineEntries(root).size > 0);
+  assert.throws(() => computeHarnessBaselineEntries(root, { allowedAbsentScanRoots: [] }), /스캔 루트를 찾을 수 없다 — migration-tool\/src\/test\/java/);
+  assert.ok(computeHarnessBaselineEntries(root, { allowedAbsentScanRoots: ['migration-tool'] }).size > 0);
+
+  rmSync(join(root, 'api-server/src/test/java'), { recursive: true, force: true });
+  assert.throws(() => computeHarnessBaselineEntries(root, { allowedAbsentScanRoots: ['migration-tool'] }), /스캔 루트를 찾을 수 없다 — api-server\/src\/test\/java/);
+});

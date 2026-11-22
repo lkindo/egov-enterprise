@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { EventEmitter } from 'node:events';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, linkSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { buildVendorModel, parseExpression, tablesInDependencyOrder, VendorTranslationGap } from './project-composer-vendor-model.mjs';
 import { assertCatalogParity, assertCoverage, assertUniqueColumns, createEmission, emitRows, exactNumber, nextValues, renderExpression, violationExpression } from './project-composer-vendor-sql.mjs';
 import { degradationKind, fixedDegradations, loadVendorLedger, MODEL_DEGRADATION_KINDS, selectableVendors, translateForAllVendors, unshownDegradations, VENDOR_ADAPTERS, VENDOR_IDS, VENDOR_LEDGER_PATH, vendorChoices, vendorDegradationNotes, vendorNoticeProblems } from './project-composer-vendors.mjs';
@@ -23,7 +23,9 @@ import { failedVerificationStep, verificationLogTail } from './project-composer-
 import { createJobTimeline, verificationStepMarkers } from './project-composer-timeline.mjs';
 import { collectResults, launchVendorContainer, parseCount, readByteColumns, readCatalog, readNextValues, readSequenceNextValues, readUniqueColumns, readUniqueSignatures, runAsAdministrator, startVendorEngine, stopVendorEngineReporting, VENDOR_ENGINES, VENDOR_INTROSPECTION, VENDOR_SEQUENCE_NEXT_VALUES, VENDOR_UNIQUE_COLUMNS, VENDOR_UNIQUE_SIGNATURES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
 import { removeJobContainers } from './project-composer-postgres.mjs';
-import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, pruneVendorPostgresAssets, readVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
+import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, parseVendorAssetLedger, pruneVendorPostgresAssets, readVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
+import { extractLocalScriptReferences, findLedgerOverlapErrors, findRemovalLeakErrors, readRemovalLedger } from './reusable-asset-removal.mjs';
+import { UPSTREAM_ATLAS } from './reusable-harness-census.mjs';
 import { ARTIFACT_COMMAND, artifactAliases, reusableArtifactEntrypoints } from './reusable-artifact-entrypoints-contract.mjs';
 import { HARNESS_SCAN_ROOTS, computeHarnessBaselineEntries } from './harness-baseline-manifest.mjs';
 import { assertBuildTarget, assertIsolatedRunnerSupportsProject, assertNoDotEnv, awaitChildExit, closedEnvironment, createIsolatedMfaEnvironment, launchIsolatedVendorDatabase, onTermination, parseRepresentativeArguments, provisionRepresentativeAccounts, readRepresentativeBundle, removeVendorDatabase, representativeSelection, resolveVendorEngine, runCleanupSteps, validateLocalRun, vendorDatabaseEnvironment } from './run-isolated-e2e.mjs';
@@ -1884,25 +1886,980 @@ test('a failure in the vendor test command is reported as its own command', () =
 
 test('the removal ledger names real files and leaves nothing behind that depends on them', () => {
   const ledger = readVendorAssetLedger(ROOT);
+  const atlasLedger = {
+    assets: UPSTREAM_ATLAS.assets,
+    gates: UPSTREAM_ATLAS.gates.map(file => ({ file })),
+    aliases: UPSTREAM_ATLAS.aliases,
+  };
+  assert.deepEqual(findLedgerOverlapErrors([
+    { name: 'vendor', ledger },
+    { name: 'upstream-atlas', ledger: atlasLedger },
+  ]), []);
   const scripts = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).scripts;
   assert.deepEqual(staleVendorAssets(ledger, asset => existsSync(join(ROOT, asset)), scripts), []);
   for (const row of ledger.gates) {
     assert.ok(existsSync(join(ROOT, row.file)), `${row.file} 가 없다`);
     assert.ok(row.reason.trim() && Object.hasOwn(row, 'coveredBy'), `${row.file} 는 사유와 대체 여부를 적는다`);
   }
-  const removed = new Set([...ledger.assets, ...ledger.gates.map(row => row.file)]);
-  const gone = path => [...removed].some(asset => path === asset || path.startsWith(`${asset}/`));
-  const broken = [];
-  for (const name of readdirSync(join(ROOT, 'scripts')).filter(file => /\.m?js$/.test(file) && !gone(`scripts/${file}`))) {
-    for (const [, target] of readFileSync(join(ROOT, 'scripts', name), 'utf8').matchAll(/from '\.\/([\w.-]+)'/g)) {
-      if (gone(`scripts/${target}`)) broken.push(`${name} -> ${target}`);
-    }
+  // Phase 2 는 overlap 검사를 실제 벤더·Atlas 원장으로 연결하고, leak 검사는 벤더 원장만 본다(Atlas 와 `test:ci-scope` 정리는 Phase 3 생산자 제거 원장에서 연결).
+  const { brokenImports, leakedAliases } = findRemovalLeakErrors({
+    root: ROOT,
+    ledgers: [ledger],
+    allowedAliases: Object.keys(artifactAliases),
+    // `assertIsolatedRunnerSupportsProject`가 벤더 프로젝트에서 대표 묶음만 허용하므로 enterpriseTaskLab 분기의 동적 import는 실행되지 않는다.
+    allowedDynamicImports: [{ edge: 'scripts/run-isolated-e2e.mjs -> scripts/run-isolated-release-smoke.mjs', guard: 'enterpriseTaskLab' }],
+  });
+  assert.deepEqual(brokenImports, [], '남는 스크립트가 지운 파일을 정적/동적 import 하면 벤더 프로젝트에서 죽는다');
+  assert.deepEqual(leakedAliases, [], '남는 별칭이 지운 파일을 부르면 안 된다');
+});
+
+test('generalized ledger checker rejects overlapping ledgers, static/dynamic import leaks, and alias leaks', (t) => {
+  assert.deepEqual(findLedgerOverlapErrors([
+    { name: 'a', ledger: { assets: ['tools/a'], gates: [{ file: 'scripts/a.test.mjs' }], aliases: ['a:ui'] } },
+    { name: 'b', ledger: { assets: ['tools/b'], gates: [{ file: 'scripts/b.test.mjs' }], aliases: ['b:ui'] } },
+  ]), []);
+
+  const overlapErrors = findLedgerOverlapErrors([
+    { name: 'left', ledger: { assets: ['tools/shared', 'scripts/exact.mjs', 'SCRIPTS'], gates: [{ file: 'scripts/dup.test.mjs' }], aliases: ['dup:cmd'] } },
+    { name: 'right', ledger: { assets: ['tools/shared/nested.mjs', 'scripts/exact.mjs'], gates: [{ file: 'scripts/dup.test.mjs' }, { file: 'tools/shared/check.test.mjs' }, { file: 'scripts/case.test.mjs' }], aliases: ['dup:cmd'] } },
+  ]);
+  assert.ok(overlapErrors.some(err => err.includes('tools/shared <-> tools/shared/nested.mjs')), overlapErrors.join('\n'));
+  assert.ok(overlapErrors.some(err => err.includes('scripts/exact.mjs <-> scripts/exact.mjs')), overlapErrors.join('\n'));
+  assert.ok(overlapErrors.some(err => err.includes('asset/gate overlap') && err.includes('tools/shared <-> tools/shared/check.test.mjs')), overlapErrors.join('\n'));
+  assert.ok(overlapErrors.some(err => err.includes('asset/gate overlap') && err.includes('SCRIPTS <-> scripts/case.test.mjs')), overlapErrors.join('\n'));
+  assert.ok(overlapErrors.some(err => err.includes('gate overlap') && err.includes('scripts/dup.test.mjs')), overlapErrors.join('\n'));
+  assert.ok(overlapErrors.some(err => err.includes('alias overlap') && err.includes('dup:cmd')), overlapErrors.join('\n'));
+
+  const refs = extractLocalScriptReferences([
+    '// import "./commented.mjs";',
+    'const sample = "from \'./string-only.mjs\'";',
+    String.raw`const regexWithQuote = /from '\.\/fake\.mjs'/g;`,
+    'import { after } from "./after-regex.mjs";',
+    'import { a } from "./double-static.mjs";',
+    "import './side-effect.mjs';",
+    'init()',
+    "import './after-asi.mjs'",
+    "crInit()\rimport './after-cr-asi.mjs'",
+    "obj.import('./method-call.mjs');",
+    "helper?.import('./optional-chain.mjs');",
+    "if (ok) /'quote'/.test(x)",
+    'const afterIfRegex = `${await import("./after-if-regex.mjs")}`;',
+    'const tpl = `prefix ${({ k: "v" }).k} suffix`;',
+    'const tplDynamic = `${await import("./in-template.mjs")}`;',
+    'import { afterTpl } from "./after-template.mjs";',
+    "const mod = await import('./dynamic-import.mjs');",
+    'const tplMod = await import(`./template-dynamic.mjs`);',
+    "const optMod = await import('./with-options.mjs', { with: { type: 'json' } });",
+    "const escapedMod = await import('./dyn\\u0061mic-esc.mjs');",
+    "const parenMod = await import(('./paren-dyn.mjs'));",
+    "const cjsMod = require('./cjs-rel');",
+    String.raw`{ const x = 1; } /'quote'/.test(x); import './after-block-regex.mjs';`,
+    String.raw`import './stat\u0069c-esc.mjs';`,
+  ].join('\n'));
+  assert.deepEqual(refs.staticRefs, [
+    './after-regex.mjs', './double-static.mjs', './side-effect.mjs', './after-asi.mjs', './after-cr-asi.mjs',
+    './after-template.mjs', './cjs-rel', './after-block-regex.mjs', './static-esc.mjs',
+  ]);
+  assert.deepEqual(refs.dynamicRefs, [
+    './after-if-regex.mjs', './in-template.mjs', './dynamic-import.mjs', './template-dynamic.mjs',
+    './with-options.mjs', './dynamic-esc.mjs', './paren-dyn.mjs',
+  ]);
+
+  const root = mkdtempSync(join(tmpdir(), 'removal-leaks-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const write = (rel, body = '') => { mkdirSync(dirname(join(root, rel)), { recursive: true }); writeFileSync(join(root, rel), body); };
+  const ledger = {
+    assets: ['scripts/gone.mjs', 'tools/removed', '.agent/scripts/db-bridge.js', 'tools/sample/studio.mjs'],
+    gates: [{ file: 'scripts/gone.test.mjs' }],
+    aliases: ['removed:run', 'dev'],
+  };
+  write('package.json', JSON.stringify({
+    scripts: {
+      'removed:run': 'node tools/removed/server.mjs',
+      dev: 'node tools/removed/dev.mjs',
+      frontend: 'pnpm -C frontend dev',
+      'app:run': 'node tools/sample/server.mjs',
+      'leaked:alias': 'node tools/removed/cli.mjs',
+      'leaked:indirect': 'npm run removed:run',
+      'leaked:prefix': 'npm --prefix . run removed:run',
+      'leaked:backslash': 'node tools\\removed\\cli.mjs',
+      'leaked:test-runner': 'node --test scripts/surviving-alias.test.mjs',
+      'leaked:partial-glob': 'node --test scripts/feature-*.test.mjs',
+      'leaked:recursive-glob': 'node --test "scripts/**/*.test.mjs"',
+      'leaked:agent-test': 'node --test .agent/scripts/custom.test.js',
+      'ok:source-map': 'node scripts/gone.mjs.map',
+      'verify:allowed': 'node scripts/gone.mjs',
+    },
+  }));
+  write('scripts/static-double.mjs', 'import { x } from "./gone.mjs?variant";\nexport { x };\n');
+  write('scripts/escaped-static.mjs', 'import { e } from "./gon\\u0065.mjs";\nexport { e };\n');
+  write('scripts/paren-dynamic.mjs', 'export const p = import(("./gone.mjs"));\n');
+  write('scripts/side-effect.mjs', "import './gone.mjs';\n");
+  write('scripts/dynamic-caller.mjs', "export async function run() { return import('./gone.mjs'); }\n");
+  write('scripts/disjunction-caller.mjs', 'export const d = fallback || enterpriseTaskLab ? await import("./gone.mjs") : null;\n');
+  write('scripts/nested-ternary-caller.mjs', 'export const n = enterpriseTaskLab ? (other ? null : null) : await import("./gone.mjs");\n');
+  write('scripts/and-ternary-caller.mjs', 'export const k = enterpriseTaskLab && ready ? 1 : await import("./gone.mjs");\n');
+  write('scripts/if-cond-caller.mjs', 'if ((await import("./gone.mjs")).ready) {}\n');
+  write('scripts/guarded-caller.mjs', [
+    'const first = enterpriseTaskLab ? await import("./gone.mjs") : null;',
+    'const second = await import("./gone.mjs");',
+    'export { first, second };',
+  ].join('\n'));
+  write('tools/sample/server.mjs', "import { boot } from './engine.mjs';\nexport { boot };\n");
+  write('tools/sample/engine.mjs', "import { studio } from './studio.mjs';\nexport const boot = studio;\n");
+  write('scripts/surviving-alias.test.mjs', "import './gone.mjs';\n");
+  write('scripts/feature-alpha.test.mjs', "import './gone.mjs';\n");
+  write('scripts/nested/deep.test.mjs', "import '../gone.mjs';\n");
+  write('.agent/scripts/custom.test.js', "const bridge = require('./db-bridge');\nexport { bridge };\n");
+  write('scripts/reusable-artifact-entrypoints-contract.test.mjs', [
+    'import { existsSync } from "node:fs";',
+    'import { dirname, join, resolve } from "node:path";',
+    'import { fileURLToPath } from "node:url";',
+    'const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");',
+    'const isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));',
+    'import { leak } from "./gone.mjs";',
+    'const guarded = isArtifact ? null : await import("./gone.mjs");',
+    'const disjLeak = fallback || !isArtifact ? await import("./gone.mjs") : null;',
+    'const nestedLeak = isArtifact ? (other ? null : await import("./gone.mjs")) : null;',
+    'const andTernaryLeak = !isArtifact && ready ? 1 : await import("./gone.mjs");',
+    'if (fallback ? true : ready && !isArtifact) await import("./gone.mjs");',
+    'if (isArtifact) if (ready) run(); else await import("./gone.mjs");',
+    'function shadowed(isArtifact = false) { if (!isArtifact) return import("./gone.mjs"); return null; }',
+    'function shadowedLocal() { const isArtifact = probeOther(); if (!isArtifact) return import("./gone.mjs"); return null; }',
+    'export { leak, guarded, disjLeak, nestedLeak, andTernaryLeak, shadowed, shadowedLocal };',
+  ].join('\n'));
+  write('scripts/reusable-ui-governance-contract.test.mjs', [
+    'import { existsSync } from "node:fs";',
+    'import { dirname, join, resolve } from "node:path";',
+    'import { fileURLToPath } from "node:url";',
+    'const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");',
+    'const isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));',
+    'const lazy = isArtifact ? null : await import("./gone.mjs");',
+    'const topUnguarded = await import("./gone.mjs");',
+    'export { lazy, topUnguarded };',
+  ].join('\n'));
+
+  const leaks = findRemovalLeakErrors({
+    root,
+    ledgers: [ledger],
+    allowedAliases: ['verify:allowed'],
+  });
+  assert.deepEqual(leaks.brokenImports, [
+    'scripts/and-ternary-caller.mjs -> scripts/gone.mjs',
+    'scripts/disjunction-caller.mjs -> scripts/gone.mjs',
+    'scripts/dynamic-caller.mjs -> scripts/gone.mjs',
+    'scripts/escaped-static.mjs -> scripts/gone.mjs',
+    'scripts/guarded-caller.mjs -> scripts/gone.mjs',
+    'scripts/if-cond-caller.mjs -> scripts/gone.mjs',
+    'scripts/nested-ternary-caller.mjs -> scripts/gone.mjs',
+    'scripts/paren-dynamic.mjs -> scripts/gone.mjs',
+    'scripts/side-effect.mjs -> scripts/gone.mjs',
+    'scripts/static-double.mjs -> scripts/gone.mjs',
+    'scripts/reusable-artifact-entrypoints-contract.test.mjs (static) -> scripts/gone.mjs',
+    'scripts/reusable-artifact-entrypoints-contract.test.mjs (unguarded dynamic) -> scripts/gone.mjs',
+    'scripts/reusable-ui-governance-contract.test.mjs (unguarded dynamic) -> scripts/gone.mjs',
+    'scripts/surviving-alias.test.mjs -> scripts/gone.mjs',
+    'scripts/feature-alpha.test.mjs -> scripts/gone.mjs',
+    'scripts/nested/deep.test.mjs -> scripts/gone.mjs',
+    '.agent/scripts/custom.test.js -> .agent/scripts/db-bridge.js',
+    'tools/sample/engine.mjs -> tools/sample/studio.mjs',
+  ]);
+  assert.deepEqual(leaks.leakedAliases, ['leaked:alias', 'leaked:backslash', 'leaked:indirect', 'leaked:prefix']);
+
+  assert.throws(
+    () => findRemovalLeakErrors({ root, ledgers: [ledger], allowedDynamicImports: ['scripts/dynamic-caller.mjs -> scripts/gone.mjs'] }),
+    /allowedDynamicImports/,
+  );
+
+  // 가드된 호출만 남기고 두 번째 무조건 호출을 빼면 통과하고, 가드 표현이 사라지면 다시 실패해야 한다.
+  write('scripts/guarded-caller.mjs', 'const first = enterpriseTaskLab ? await import("./gone.mjs") : null;\nexport { first };\n');
+  write('scripts/reusable-artifact-entrypoints-contract.test.mjs', [
+    'import { existsSync } from "node:fs";',
+    'import { dirname, join, resolve } from "node:path";',
+    'import { fileURLToPath } from "node:url";',
+    'const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");',
+    'const isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));',
+    'import { leak } from "./gone.mjs";',
+    'const guarded = isArtifact ? null : await import("./gone.mjs");',
+    'export { leak, guarded };',
+  ].join('\n'));
+  const guardedOk = findRemovalLeakErrors({
+    root,
+    ledgers: [ledger],
+    allowedAliases: ['verify:allowed'],
+    allowedDynamicImports: [
+      { edge: 'scripts/guarded-caller.mjs -> scripts/gone.mjs', guard: 'enterpriseTaskLab' },
+      { edge: 'scripts/disjunction-caller.mjs -> scripts/gone.mjs', guard: 'enterpriseTaskLab' },
+      { edge: 'scripts/nested-ternary-caller.mjs -> scripts/gone.mjs', guard: 'enterpriseTaskLab' },
+      { edge: 'scripts/and-ternary-caller.mjs -> scripts/gone.mjs', guard: 'enterpriseTaskLab' },
+      { edge: 'scripts/dynamic-caller.mjs -> scripts/gone.mjs', guard: 'enterpriseTaskLab' },
+      { edge: 'scripts/static-double.mjs -> scripts/gone.mjs', guard: 'enterpriseTaskLab' },
+    ],
+  });
+  assert.deepEqual(guardedOk.brokenImports, [
+    'scripts/and-ternary-caller.mjs -> scripts/gone.mjs',
+    'scripts/disjunction-caller.mjs -> scripts/gone.mjs',
+    'scripts/dynamic-caller.mjs -> scripts/gone.mjs',
+    'scripts/escaped-static.mjs -> scripts/gone.mjs',
+    'scripts/if-cond-caller.mjs -> scripts/gone.mjs',
+    'scripts/nested-ternary-caller.mjs -> scripts/gone.mjs',
+    'scripts/paren-dynamic.mjs -> scripts/gone.mjs',
+    'scripts/side-effect.mjs -> scripts/gone.mjs',
+    'scripts/static-double.mjs -> scripts/gone.mjs',
+    'scripts/reusable-artifact-entrypoints-contract.test.mjs (static) -> scripts/gone.mjs',
+    'scripts/reusable-ui-governance-contract.test.mjs (unguarded dynamic) -> scripts/gone.mjs',
+    'scripts/surviving-alias.test.mjs -> scripts/gone.mjs',
+    'scripts/feature-alpha.test.mjs -> scripts/gone.mjs',
+    'scripts/nested/deep.test.mjs -> scripts/gone.mjs',
+    '.agent/scripts/custom.test.js -> .agent/scripts/db-bridge.js',
+    'tools/sample/engine.mjs -> tools/sample/studio.mjs',
+  ], 'guard 없는 dynamic, disjunction, nested ternary, static import 는 allowedDynamicImports 로도 면제되지 않는다');
+
+  const artifactHeader = [
+    'import { existsSync } from "node:fs";',
+    'import { dirname, join, resolve } from "node:path";',
+    'import { fileURLToPath } from "node:url";',
+    'const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");',
+    'const isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));',
+  ].join('\n') + '\n';
+  for (const [label, snippet] of [
+    ['and-ternary', `${artifactHeader}export const v = !isArtifact && ready ? 1 : await import("./gone.mjs");\n`],
+    ['dangling-else', `${artifactHeader}if (isArtifact) if (ready) run(); else await import("./gone.mjs");\n`],
+    ['cond-in-if', `${artifactHeader}if (fallback ? true : ready && !isArtifact) await import("./gone.mjs");\n`],
+    ['param-shadow', `${artifactHeader}export function f(isArtifact = false) { return !isArtifact ? import("./gone.mjs") : null; }\n`],
+    ['local-shadow', `${artifactHeader}export function g() { const isArtifact = other(); return !isArtifact ? import("./gone.mjs") : null; }\n`],
+    ['literal-const', 'const isArtifact = false;\nexport const p = isArtifact ? null : await import("./gone.mjs");\n'],
+  ]) {
+    write('scripts/reusable-artifact-entrypoints-contract.test.mjs', snippet);
+    const isolated = findRemovalLeakErrors({ root, ledgers: [ledger], allowedAliases: ['verify:allowed'] });
+    assert.ok(
+      isolated.brokenImports.includes('scripts/reusable-artifact-entrypoints-contract.test.mjs (unguarded dynamic) -> scripts/gone.mjs'),
+      `${label}: 우회 가드가 차단돼야 한다`,
+    );
   }
-  assert.deepEqual(broken, [], '남는 스크립트가 지운 파일을 import 하면 벤더 프로젝트에서 죽는다');
-  const paths = [...removed];
-  const aliases = Object.entries(scripts).filter(([alias, command]) => !ledger.aliases.includes(alias) && !Object.hasOwn(artifactAliases, alias)
-    && paths.some(asset => command.includes(asset))).map(([alias]) => alias);
-  assert.deepEqual(aliases, [], '남는 별칭이 지운 파일을 부르면 안 된다');
+
+  // 인자 없는 `node --test` 별칭은 Node 22 기본 탐색 규칙(test/, frontend/)을 모두 검사해야 한다.
+  const bareRoot = mkdtempSync(join(tmpdir(), 'removal-bare-test-'));
+  t.after(() => rmSync(bareRoot, { recursive: true, force: true }));
+  mkdirSync(join(bareRoot, 'scripts'), { recursive: true });
+  mkdirSync(join(bareRoot, 'test'), { recursive: true });
+  mkdirSync(join(bareRoot, 'frontend'), { recursive: true });
+  writeFileSync(join(bareRoot, 'package.json'), JSON.stringify({ scripts: { 'test:bare': 'node --test' } }));
+  writeFileSync(join(bareRoot, 'scripts/gone.mjs'), '');
+  writeFileSync(join(bareRoot, 'test/check.mjs'), "import '../scripts/gone.mjs';\n");
+  writeFileSync(join(bareRoot, 'frontend/example.test.mjs'), "import '../scripts/gone.mjs';\n");
+  const bareLeaks = findRemovalLeakErrors({ root: bareRoot, ledgers: [{ assets: ['scripts/gone.mjs'], aliases: [], gates: [] }] });
+  assert.deepEqual(bareLeaks.brokenImports, [
+    'frontend/example.test.mjs -> scripts/gone.mjs',
+    'test/check.mjs -> scripts/gone.mjs',
+  ]);
+});
+
+test('pruneAssetLedger validates ledger schema, regular-file gates, package.json bounds/hardlinks, and blocks traversal or junction escapes before deleting', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'ledger-safety-'));
+  const outside = mkdtempSync(join(tmpdir(), 'ledger-outside-'));
+  t.after(() => {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  });
+  const write = (base, rel, body = '') => { mkdirSync(dirname(join(base, rel)), { recursive: true }); writeFileSync(join(base, rel), body); };
+  write(outside, 'keep.txt', 'must survive\n');
+  write(outside, 'outside-pkg.json', JSON.stringify({ scripts: { keep: 'y' } }));
+  write(outside, 'outside-ledger.json', JSON.stringify({ assets: ['stay.txt'], aliases: [], gates: [] }));
+  write(outside, 'pkg-dir/inside.txt', 'dir target\n');
+  write(root, 'package.json', JSON.stringify({ scripts: { keep: 'y' } }));
+  write(root, 'stay.txt', 'safe\n');
+  write(root, 'gate-dir/child.txt', 'keep child\n');
+
+  assert.deepEqual(parseVendorAssetLedger(JSON.stringify({ assets: ['a.mjs'] })).gates, []);
+  assert.throws(() => parseVendorAssetLedger(JSON.stringify({ assets: 'bad' })));
+
+  for (const invalid of [
+    { assets: 'not-array' },
+    { assets: [], aliases: 'bad' },
+    { assets: [], gates: ['bad'] },
+    { assets: ['../outside.txt'] },
+    { assets: ['a\\b'] },
+    { assets: [], gates: [{ file: '../escape.mjs' }] },
+  ]) {
+    write(root, VENDOR_ASSET_LEDGER, JSON.stringify(invalid));
+    assert.throws(() => pruneVendorPostgresAssets(root));
+    assert.equal(existsSync(join(root, 'stay.txt')), true);
+  }
+
+  assert.throws(() => readRemovalLedger(root, '../outside-ledger.json'));
+  const linkLedgerRoot = mkdtempSync(join(tmpdir(), 'ledger-link-file-'));
+  t.after(() => rmSync(linkLedgerRoot, { recursive: true, force: true }));
+  write(linkLedgerRoot, 'package.json', JSON.stringify({ scripts: { keep: 'y' } }));
+  try {
+    symlinkSync(join(outside, 'outside-ledger.json'), join(linkLedgerRoot, 'linked-ledger.json'), 'file');
+    assert.throws(() => readRemovalLedger(linkLedgerRoot, 'linked-ledger.json'), /심볼릭 링크|정션|밖을 가리킨다/);
+  } catch (error) {
+    if (error?.code !== 'EPERM') throw error;
+  }
+
+  write(root, VENDOR_ASSET_LEDGER, JSON.stringify({ assets: ['stay.txt'], aliases: [], gates: [{ file: 'gate-dir' }] }));
+  assert.throws(() => pruneVendorPostgresAssets(root), /일반 파일이어야 한다/);
+  assert.equal(existsSync(join(root, 'stay.txt')), true, '디렉터리 게이트 차단 시 선행 자산도 지우지 않는다');
+  assert.equal(existsSync(join(root, 'gate-dir/child.txt')), true);
+
+  symlinkSync(outside, join(root, 'linked-dir'), process.platform === 'win32' ? 'junction' : 'dir');
+  write(root, VENDOR_ASSET_LEDGER, JSON.stringify({ assets: ['stay.txt', 'linked-dir/keep.txt'], aliases: [], gates: [] }));
+  assert.throws(() => pruneVendorPostgresAssets(root), /심볼릭 링크|정션|밖을 가리킨다/);
+  assert.equal(existsSync(join(root, 'stay.txt')), true, '차단 전에는 선행 정상 자산도 지우지 않는다');
+  assert.equal(existsSync(join(outside, 'keep.txt')), true, '링크/정션 바깥 파일은 지워지지 않는다');
+
+  const pkgLinkRoot = mkdtempSync(join(tmpdir(), 'ledger-pkg-link-'));
+  t.after(() => rmSync(pkgLinkRoot, { recursive: true, force: true }));
+  write(pkgLinkRoot, 'stay.txt', 'safe\n');
+  write(pkgLinkRoot, VENDOR_ASSET_LEDGER, JSON.stringify({ assets: ['stay.txt'], aliases: [], gates: [] }));
+  try {
+    symlinkSync(join(outside, 'outside-pkg.json'), join(pkgLinkRoot, 'package.json'), 'file');
+  } catch (error) {
+    if (error?.code !== 'EPERM') throw error;
+    symlinkSync(join(outside, 'pkg-dir'), join(pkgLinkRoot, 'package.json'), 'junction');
+  }
+  assert.throws(() => pruneVendorPostgresAssets(pkgLinkRoot), /심볼릭 링크|정션|일반 파일이어야 한다|밖을 가리킨다/);
+  assert.equal(existsSync(join(pkgLinkRoot, 'stay.txt')), true);
+  assert.equal(readFileSync(join(outside, 'outside-pkg.json'), 'utf8'), JSON.stringify({ scripts: { keep: 'y' } }));
+
+  const hardlinkRoot = mkdtempSync(join(tmpdir(), 'ledger-pkg-hardlink-'));
+  t.after(() => rmSync(hardlinkRoot, { recursive: true, force: true }));
+  write(hardlinkRoot, 'stay.txt', 'safe\n');
+  write(hardlinkRoot, VENDOR_ASSET_LEDGER, JSON.stringify({ assets: ['stay.txt'], aliases: [], gates: [] }));
+  linkSync(join(outside, 'outside-pkg.json'), join(hardlinkRoot, 'package.json'));
+  assert.throws(() => pruneVendorPostgresAssets(hardlinkRoot), /하드 링크/);
+  assert.equal(existsSync(join(hardlinkRoot, 'stay.txt')), true);
+  assert.equal(readFileSync(join(outside, 'outside-pkg.json'), 'utf8'), JSON.stringify({ scripts: { keep: 'y' } }));
+});
+
+test('reusable asset removal covers destructuring defaults, hoisting/TDZ, TS/CJS/ESM resolution, CLI preloads, and package.json guards', async t => {
+  const { parseRemovalLedger } = await import('./reusable-asset-removal.mjs');
+  const artifactHeader = [
+    'import { existsSync } from "node:fs";',
+    'import { dirname, join, resolve } from "node:path";',
+    'import { fileURLToPath } from "node:url";',
+    'const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");',
+    'const isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));',
+  ].join('\n') + '\n';
+  const makeFixture = (tag, files = {}, ledger = { assets: ['scripts/gone.mjs'], aliases: [], gates: [] }) => {
+    const dir = mkdtempSync(join(tmpdir(), `removal-edge-${tag}-`));
+    t.after(() => rmSync(dir, { recursive: true, force: true }));
+    const put = (rel, content = '') => {
+      mkdirSync(dirname(join(dir, rel)), { recursive: true });
+      writeFileSync(join(dir, rel), content, 'utf8');
+    };
+    for (const [rel, content] of Object.entries(files)) put(rel, content);
+    return { dir, put, ledger };
+  };
+
+  // P1 #1: destructuring defaults & computed keys & surviving frontend/scripts CLIs
+  for (const [label, snippet] of [
+    ['obj-default', 'export async function f(opts = {}) { const { a = await import("./gone.mjs") } = opts; return a; }\n'],
+    ['obj-computed-key', 'export async function f(opts = {}) { const { [await import("./gone.mjs")]: a } = opts; return a; }\n'],
+    ['arr-default', 'export function f(arr = []) { const [a = require("./gone.mjs")] = arr; return a; }\n'],
+    ['param-nested-default', 'export function f({ a = import("./gone.mjs") } = {}) { return a; }\n'],
+    ['for-of-default', 'export async function f(rows = []) { for (const [a = await import("./gone.mjs")] of rows) void a; }\n'],
+  ]) {
+    const { dir } = makeFixture('p1-1', { 'scripts/entry.mjs': snippet });
+    const res = findRemovalLeakErrors({ root: dir, ledgers: [{ assets: ['scripts/gone.mjs'], aliases: [], gates: [] }] });
+    assert.ok(res.brokenImports.includes('scripts/entry.mjs -> scripts/gone.mjs'), `${label}: destructuring default/key leak missed`);
+  }
+  {
+    const { dir, ledger } = makeFixture('p1-1-fe', {
+      'frontend/scripts/ui-leak.mjs': 'import { verify } from "../../scripts/gone.mjs";\nexport { verify };\n',
+    });
+    const res = findRemovalLeakErrors({ root: dir, ledgers: [ledger] });
+    assert.ok(res.brokenImports.includes('frontend/scripts/ui-leak.mjs -> scripts/gone.mjs'), 'surviving frontend/scripts CLI leak must be reported');
+  }
+
+  // P1 #2: approved artifact guard polarity + arbitrary/inverted/spoofed markers rejected
+  const rootDecl = 'import { dirname, join, resolve } from "node:path";\nimport { fileURLToPath } from "node:url";\nconst ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");\n';
+  for (const [label, snippet] of [
+    ['inverted-exists', `import { existsSync } from "node:fs";\n${rootDecl}const isArtifact = !existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n`],
+    ['arbitrary-probe', 'const isArtifact = probeArtifact();\nexport const p = isArtifact ? null : await import("./gone.mjs");\n'],
+    ['wrong-marker', `import { existsSync } from "node:fs";\n${rootDecl}const isArtifact = existsSync(join(ROOT, "package.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n`],
+    ['or-tautology', `import { existsSync } from "node:fs";\n${rootDecl}const isArtifact = existsSync(join(ROOT, "reusable-base-lock.json")) || true;\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n`],
+    ['spoofed-fs', `import { existsSync } from "./fake-fs.mjs";\n${rootDecl}const isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n`],
+    ['unverified-root', 'import { existsSync } from "node:fs";\nimport { join } from "node:path";\nconst isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+    ['wrong-base-dir', 'import { existsSync } from "node:fs";\nimport { join } from "node:path";\nconst isArtifact = existsSync(join(import.meta.dirname, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+    ['non-root-const', 'import { existsSync } from "node:fs";\nimport { dirname, join, resolve } from "node:path";\nimport { fileURLToPath } from "node:url";\nconst ROOT = resolve(dirname(fileURLToPath(import.meta.url)), ".");\nconst isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+    ['mutable-let-root', 'import { existsSync } from "node:fs";\nimport { join, resolve } from "node:path";\nlet ROOT = resolve(import.meta.dirname, "..");\nconst isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+    ['wrong-new-url-marker', 'import { existsSync } from "node:fs";\nconst isArtifact = existsSync(new URL("./reusable-base-lock.json", import.meta.url));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+    ['shadowed-cjs-require', 'const require = makeFixtureLoader();\nconst { existsSync } = require("node:fs");\nconst { join, resolve } = require("node:path");\nconst ROOT = resolve(__dirname, "..");\nconst isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+    ['reassigned-let-exists', 'let { existsSync } = require("node:fs");\nconst { join, resolve } = require("node:path");\nconst ROOT = resolve(__dirname, "..");\nexistsSync = () => false;\nconst isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+    ['mutated-fs-exists', 'const fs = require("node:fs");\nconst { join, resolve } = require("node:path");\nconst ROOT = resolve(__dirname, "..");\nfs.existsSync = () => false;\nconst isArtifact = fs.existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+  ]) {
+    const { dir, ledger } = makeFixture('p1-2-polarity', {
+      'scripts/fake-fs.mjs': 'export const existsSync = () => false;\n',
+      'scripts/reusable-artifact-entrypoints-contract.test.mjs': snippet,
+    });
+    const res = findRemovalLeakErrors({ root: dir, ledgers: [ledger] });
+    assert.ok(
+      res.brokenImports.includes('scripts/reusable-artifact-entrypoints-contract.test.mjs (unguarded dynamic) -> scripts/gone.mjs'),
+      `${label}: invalid or inverted artifact guard must be blocked`,
+    );
+  }
+  for (const [label, snippet] of [
+    ['canonical-or', `import { existsSync } from "node:fs";\n${rootDecl}const artifact = existsSync(join(ROOT, "reusable-base-lock.json")) || existsSync(join(ROOT, "config/governance/reusable-governance-projection.json"));\nexport const p = !artifact ? await import("./gone.mjs") : null;\n`],
+    ['meta-dirname-root', 'import { existsSync } from "node:fs";\nimport { join, resolve } from "node:path";\nconst ROOT = resolve(import.meta.dirname, "..");\nconst isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+    ['new-url-root', 'import { existsSync } from "node:fs";\nconst isArtifact = existsSync(new URL("../reusable-base-lock.json", import.meta.url));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+    ['canonical-cjs-root', 'const { existsSync } = require("node:fs");\nconst { join, resolve } = require("node:path");\nconst ROOT = resolve(__dirname, "..");\nconst isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+  ]) {
+    const { dir, ledger } = makeFixture('p1-2-canonical-ok', {
+      'scripts/reusable-ui-governance-contract.test.mjs': snippet,
+    });
+    assert.deepEqual(findRemovalLeakErrors({ root: dir, ledgers: [ledger] }).brokenImports, [], `${label}: valid repo-root marker must pass`);
+  }
+
+  // P1 #2 (hoisting/TDZ), P1 #3 (switch case ternary var + escaped var), P1 #4 (catch destructuring default), P1 #5 (assignment destructuring shorthand), P2 #2 (TS arrow return type in ternary/switch)
+  for (const [label, snippet] of [
+    ['hoisted-var-nested', `${artifactHeader}export function f() { if (!isArtifact) return import("./gone.mjs"); if (ready) { var isArtifact = false; } }\n`],
+    ['hoisted-var-unicode-escape', `${artifactHeader}export function f() { if (!isArtifact) return import("./gone.mjs"); var isArtif\\u0061ct = false; }\n`],
+    ['hoisted-var-unicode-start-escape', `${artifactHeader}export function f() { if (!isArtifact) return import("./gone.mjs"); var \\u0069sArtifact = false; }\n`],
+    ['switch-case-ternary-var', `${artifactHeader}export function f(key, ok) { if (!isArtifact) return import("./gone.mjs"); switch (key) { case ok ? 1 : 2: var isArtifact; } }\n`],
+    ['block-tdz-const', `${artifactHeader}export function f() { if (!isArtifact) return import("./gone.mjs"); const isArtifact = other(); }\n`],
+    ['block-tdz-let', `${artifactHeader}{ if (!isArtifact) await import("./gone.mjs"); let isArtifact = 1; }\n`],
+    ['block-tdz-function', `${artifactHeader}{ if (!isArtifact) await import("./gone.mjs"); function isArtifact() {} }\n`],
+    ['top-level-tdz-const', `import { existsSync } from "node:fs";\n${rootDecl}export const p = !isArtifact ? await import("./gone.mjs") : null;\nconst isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));\n`],
+    ['param-forward-shadow', `${artifactHeader}export function f(a = (!isArtifact ? import("./gone.mjs") : null), isArtifact = false) { return a; }\n`],
+    ['arrow-param-forward-shadow', `${artifactHeader}export const f = (a = (!isArtifact ? import("./gone.mjs") : null), isArtifact = false) => a;\n`],
+    ['catch-destructure-default', `${artifactHeader}try { throw {}; } catch ({ isArtifact, x = !isArtifact ? import("./gone.mjs") : null }) { void x; }\n`],
+    ['assign-destructure-default', 'let mod; ({ mod = import("./gone.mjs") } = {}); export { mod };\n'],
+    ['assign-destructure-getter-keyword', 'let get; ({ get = import("./gone.mjs") } = {}); export { get };\n'],
+    ['arrow-return-type-param-shadow', `${artifactHeader}export const fn = (isArtifact: boolean): unknown => (!isArtifact ? import("./gone.mjs") : null);\n`],
+    ['arrow-return-type-ternary-true-branch', `${artifactHeader}export const fn = cond ? (isArtifact: boolean): unknown => (!isArtifact ? import("./gone.mjs") : null) : null;\n`],
+    ['arrow-return-type-switch-case', `${artifactHeader}export function sw(v: unknown) { switch (v) { case (isArtifact: boolean): unknown => (!isArtifact ? import("./gone.mjs") : null): break; } }\n`],
+  ]) {
+    const { dir, ledger } = makeFixture('p1-bypass', {
+      'scripts/reusable-artifact-entrypoints-contract.test.mjs': snippet,
+    });
+    const res = findRemovalLeakErrors({ root: dir, ledgers: [ledger] });
+    assert.ok(
+      res.brokenImports.includes('scripts/reusable-artifact-entrypoints-contract.test.mjs (unguarded dynamic) -> scripts/gone.mjs'),
+      `${label}: guard bypass or hidden import must be caught`,
+    );
+  }
+  for (const [label, snippet] of [
+    ['nested-var', `${artifactHeader}export function f() { const inner = () => { var isArtifact = false; }; if (!isArtifact) return import("./gone.mjs"); return inner; }\n`],
+    ['ternary-colon-with-false-arrow', `${artifactHeader}export const ok = cond ? (isArtifact) : x => (!isArtifact ? import("./gone.mjs") : null);\n`],
+    ['switch-case-paren-arrow-stmt', `${artifactHeader}export function f(v: unknown) { switch (v) { case (isArtifact): x => (!isArtifact ? import("./gone.mjs") : null); } }\n`],
+    ['nested-ternary-false-arrow', `${artifactHeader}export const ok = outer ? cond ? (isArtifact) : x => (!isArtifact ? import("./gone.mjs") : null) : null;\n`],
+  ]) {
+    const { dir, ledger } = makeFixture('p1-2-control-ok', {
+      'scripts/reusable-artifact-entrypoints-contract.test.mjs': snippet,
+    });
+    assert.deepEqual(findRemovalLeakErrors({ root: dir, ledgers: [ledger] }).brokenImports, [], `${label}: valid guard must not be over-shadowed`);
+  }
+
+  // P2 #1-#3 & #5: Unicode LS/PS outside comments, TS newline type ASI, ternary+ternary concat, literal const
+  {
+    const { dir, put, ledger } = makeFixture('p2-1-3-5', {
+      'scripts/live.mjs': 'export const ok = true;\n',
+      'scripts/live/gone.mjs': 'export const live = true;\n',
+      'scripts/lib/gone.mjs': '',
+    }, { assets: ['scripts/gone.mjs', 'scripts/lib/gone.mjs'], aliases: [], gates: [] });
+    for (const [label, snippet] of [
+      ['string-const', 'const isArtifact = "";\nexport const p = isArtifact ? null : await import("./gone.mjs");\n'],
+      ['template-const', 'const isArtifact = `no`;\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+      ['concat-import', 'export const p = await import("./" + "gone.mjs");\n'],
+      ['ternary-plus-ternary-import', 'export const p = await import((a ? "./" : "../") + (b ? "gone.mjs" : "live.mjs"));\n'],
+      ['ternary-import-unguarded', 'export const p = await import(ready ? "./gone.mjs" : "./live.mjs");\n'],
+      ['ternary-import-inverted', `${artifactHeader}export const p = await import(isArtifact ? "./gone.mjs" : "./live.mjs");\n`],
+      ['cond-fail-closed', `${artifactHeader}if (fallback ? true : !isArtifact) await import("./gone.mjs");\n`],
+      ['ls-comment', '// comment\u2028export const p = await import("./gone.mjs");\n'],
+      ['ps-comment', '// comment\u2029export const p = await import("./gone.mjs");\n'],
+    ]) {
+      put('scripts/reusable-artifact-entrypoints-contract.test.mjs', snippet);
+      const res = findRemovalLeakErrors({ root: dir, ledgers: [ledger] });
+      assert.ok(
+        res.brokenImports.includes('scripts/reusable-artifact-entrypoints-contract.test.mjs (unguarded dynamic) -> scripts/gone.mjs'),
+        `${label}: should report unguarded dynamic import`,
+      );
+    }
+
+    for (const [label, snippet] of [
+      ['ident-ls', 'foo\u2028import "./gone.mjs";\n'],
+      ['ident-ps', 'bar\u2029import "./gone.mjs";\n'],
+      ['ts-type-newline-asi', 'let x: string\nimport "./gone.mjs"\nexport { x };\n'],
+      ['import-from-ident', 'import from from "./gone.mjs";\nexport { from };\n'],
+    ]) {
+      put('scripts/reusable-artifact-entrypoints-contract.test.mjs', snippet);
+      const res = findRemovalLeakErrors({ root: dir, ledgers: [ledger] });
+      assert.ok(
+        res.brokenImports.includes('scripts/reusable-artifact-entrypoints-contract.test.mjs (static) -> scripts/gone.mjs'),
+        `${label}: should report static import`,
+      );
+    }
+
+    put('scripts/reusable-artifact-entrypoints-contract.test.mjs', `${artifactHeader}export const p = await import(isArtifact ? "./live.mjs" : "./gone.mjs");\nexport const q = await import((isArtifact ? "./live/" : "./") + (b ? "gone.mjs" : "live.mjs"));\n`);
+    assert.deepEqual(findRemovalLeakErrors({ root: dir, ledgers: [ledger] }).brokenImports, [], 'ternary false branch under isArtifact should be allowed');
+
+    put('scripts/reusable-artifact-entrypoints-contract.test.mjs', 'import "./lib%2Fgone.mjs";\n');
+    assert.deepEqual(findRemovalLeakErrors({ root: dir, ledgers: [ledger] }).brokenImports, [], 'percent-encoded path separators (%2F) must not resolve as directory separators');
+  }
+
+  // P2 #4, #5, #6: ESM vs CJS resolution, %67one.mjs, CJS extension precedence, trailing '/', package.json main, createRequire, zero EISDIR
+  {
+    const ledger = {
+      assets: [
+        'scripts/gone.mjs',
+        'scripts/gone.js',
+        'scripts/sub/sub-gone.js',
+        'scripts/dual.js',
+        'scripts/pkg/entry.js',
+        'scripts/pkg2/index.js',
+        'scripts/pkg3/index.js',
+      ],
+      aliases: [],
+      gates: [],
+    };
+    const { dir, put } = makeFixture('p2-4-6', {
+      'scripts/dual.mjs': 'export const ok = true;\n',
+      'scripts/pkg3.mjs': 'export const siblingMjs = true;\n',
+      'scripts/pkg2.js': 'module.exports = { siblingJs: true };\n',
+      'scripts/pkg/package.json': JSON.stringify({ main: './entry.js' }),
+      'scripts/existing-dir/index.mjs': 'export const ok = true;\n',
+      'scripts/entry.mjs': [
+        'import { createRequire } from "node:module";',
+        'import "./%67one.mjs?v=1#top";',
+        'import "./dual.mjs";',
+        'import "./existing-dir";',
+        'const nodeRequire = createRequire(import.meta.url);',
+        'const subRequire = createRequire(new URL("./sub/anchor.mjs", import.meta.url));',
+        'nodeRequire("./gone.js");',
+        'subRequire("./sub-gone.js");',
+        'export const shadowedTest = nodeRequire => nodeRequire("./gone.js");',
+        'export const cjsDual = require("./dual");',
+        'export const cjsPkg = require("./pkg");',
+        'export const cjsPkg2Dir = require("./pkg2/");',
+        'export const cjsPkg2Sibling = require("./pkg2");',
+        'export const cjsPkg3 = require("./pkg3");',
+      ].join('\n'),
+    }, ledger);
+    const res = findRemovalLeakErrors({ root: dir, ledgers: [ledger] });
+    assert.deepEqual(res.brokenImports.sort(), [
+      'scripts/entry.mjs -> scripts/dual.js',
+      'scripts/entry.mjs -> scripts/gone.js',
+      'scripts/entry.mjs -> scripts/gone.mjs',
+      'scripts/entry.mjs -> scripts/pkg/entry.js',
+      'scripts/entry.mjs -> scripts/pkg2/index.js',
+      'scripts/entry.mjs -> scripts/pkg3/index.js',
+      'scripts/entry.mjs -> scripts/sub/sub-gone.js',
+    ]);
+
+    put('scripts/entry.mjs', 'import "./dual.mjs";\nimport "./existing-dir";\nexport const ok = require("./pkg2");\n');
+    assert.deepEqual(findRemovalLeakErrors({ root: dir, ledgers: [ledger] }).brokenImports, [], 'surviving ESM dir import and sibling pkg2.js must not raise EISDIR or leak');
+  }
+
+  // P2 #7, #8, #9: arbitrary CLI dir, CJS -r/--require extensionless & non-scripts preloads, Node 22 test- vs test_, test/ .d.* exclusion, pnpm vs npm flag scoping, post-prune removedAliases
+  {
+    const ledger = { assets: ['scripts/gone.mjs', 'lib/deleted-cli.js'], aliases: ['dev'], gates: [] };
+    const { dir } = makeFixture('p2-7-8-9', {
+      'package.json': JSON.stringify({
+        scripts: {
+          'dev:npm-fe': 'npm run dev --prefix frontend',
+          'dev:pnpm-fe': 'pnpm -C frontend run dev',
+          'dev:pnpm-pass': 'pnpm run dev --prefix frontend',
+          'dev:yarn-fe': 'yarn --cwd frontend dev',
+          'dev:yarn-pass': 'yarn dev --cwd frontend',
+          'dev:wrapper': 'npm run dev',
+          'test:ts': 'node --test',
+          'cli:lib': 'node lib/cli.mjs',
+          'cli:gone': 'node lib/deleted-cli',
+          'preload:esm': 'node --import=./lib/pre.mjs lib/clean.mjs',
+          'preload:cjs': 'node -r ./lib/setup lib/clean.mjs',
+          'app:port': 'node tools/app/cli.mjs -p 3000',
+          'leak:norm': 'node scripts/../scripts/gone.mjs',
+        },
+      }),
+      'lib/cli.mjs': 'import "../scripts/gone.mjs";\n',
+      'lib/clean.mjs': 'export const ok = 1;\n',
+      'lib/pre.mjs': 'import "../scripts/gone.mjs";\n',
+      'lib/setup.js': 'module.exports = require("../scripts/gone.mjs");\n',
+      'tools/app/cli.mjs': 'import "../../scripts/gone.mjs";\n',
+      'test-unit.ts': 'import type { Gone } from "./scripts/gone.mjs";\nexport type T = Gone;\n',
+      'test_helper.ts': 'import "./scripts/gone.mjs";\n',
+      'sub/feat-test.cts': 'const fn = (a: string): string => a;\nvoid fn("ok");\n',
+      'test/types.d.ts': 'export type Dead1 = typeof import("../scripts/gone.mjs");\n',
+      'test/types.d.mts': 'export type Dead2 = typeof import("../scripts/gone.mjs");\n',
+      'test/types.d.cts': 'export type Dead3 = typeof import("../scripts/gone.mjs");\n',
+    }, ledger);
+
+    const res = findRemovalLeakErrors({ root: dir, ledgers: [ledger] });
+    assert.deepEqual(res.brokenImports.sort(), [
+      'lib/cli.mjs -> scripts/gone.mjs',
+      'lib/pre.mjs -> scripts/gone.mjs',
+      'lib/setup.js -> scripts/gone.mjs',
+      'test-unit.ts -> scripts/gone.mjs',
+      'tools/app/cli.mjs -> scripts/gone.mjs',
+    ], 'test_helper.ts outside test/ and test/*.d.* must be ignored while lib/ CLI & CJS/ESM preloads are checked');
+    assert.deepEqual(res.leakedAliases.sort(), [
+      'cli:gone',
+      'dev:pnpm-pass',
+      'dev:wrapper',
+      'dev:yarn-pass',
+      'leak:norm',
+    ]);
+  }
+
+  // P2 #9 & #10: forbid Windows ADS (package.json::$DATA), package.json in pruneAssetLedger, and inspectStrictChild on package.json in findRemovalLeakErrors
+  {
+    assert.throws(
+      () => parseRemovalLedger(JSON.stringify({ assets: ['package.json::$DATA'], aliases: [], gates: [] })),
+      /안전한 POSIX 상대 경로/,
+    );
+
+    const { dir, put } = makeFixture('p2-9-pkg', {
+      'package.json': JSON.stringify({ scripts: { keep: 'node -v' } }),
+      'keep.txt': 'ok\n',
+    });
+    put(VENDOR_ASSET_LEDGER, JSON.stringify({ assets: ['package.json'], aliases: [], gates: [] }));
+    assert.throws(() => pruneVendorPostgresAssets(dir), /package\.json 을 제거 대상으로 포함할 수 없다/);
+    assert.equal(existsSync(join(dir, 'package.json')), true);
+
+    put(VENDOR_ASSET_LEDGER, JSON.stringify({ assets: ['keep.txt'], aliases: [], gates: [{ file: 'PACKAGE.JSON' }] }));
+    assert.throws(() => pruneVendorPostgresAssets(dir), /package\.json 을 제거 대상으로 포함할 수 없다/);
+    assert.equal(existsSync(join(dir, 'keep.txt')), true);
+
+    const pkgDirRoot = makeFixture('p2-10-pkg-dir', {});
+    mkdirSync(join(pkgDirRoot.dir, 'package.json'), { recursive: true });
+    assert.throws(() => findRemovalLeakErrors({ root: pkgDirRoot.dir, ledgers: [] }), /일반 파일이어야 한다/);
+
+    // Enqueue rejects directory named .mjs without EISDIR
+    const dirTarget = makeFixture('p2-9-dir', {
+      'package.json': JSON.stringify({ scripts: { t: 'node --test scripts/dir.mjs' } }),
+    });
+    mkdirSync(join(dirTarget.dir, 'scripts/dir.mjs'), { recursive: true });
+    assert.throws(() => findRemovalLeakErrors({ root: dirTarget.dir, ledgers: [] }), /일반 파일이어야 한다/);
+
+    // Enqueue rejects symlinked script escape
+    const symTarget = makeFixture('p2-9-sym', {
+      'package.json': JSON.stringify({ scripts: { t: 'node --test scripts/linked/a.test.mjs' } }),
+    });
+    const outsideDir = mkdtempSync(join(tmpdir(), 'removal-outside-'));
+    t.after(() => rmSync(outsideDir, { recursive: true, force: true }));
+    writeFileSync(join(outsideDir, 'a.test.mjs'), 'export const x = 1;\n');
+    mkdirSync(join(symTarget.dir, 'scripts'), { recursive: true });
+    symlinkSync(outsideDir, join(symTarget.dir, 'scripts/linked'), process.platform === 'win32' ? 'junction' : 'dir');
+    assert.throws(() => findRemovalLeakErrors({ root: symTarget.dir, ledgers: [] }), /심볼릭 링크|정션|밖을 가리킨다/);
+  }
+
+  // Round 7 P2 #1, #3, #4: frontend/scripts TS seeding, 128-target concat & overflow fail-closed, CJS require(".") / require("..")
+  {
+    const ledger = { assets: ['scripts/gone.mjs', 'scripts/gone.js'], aliases: [], gates: [] };
+    const { dir } = makeFixture('r7-p2-1-3-4', {
+      'package.json': JSON.stringify({ main: './scripts/gone.js' }),
+      'scripts/package.json': JSON.stringify({ main: './gone.js' }),
+      'frontend/scripts/tool.ts': 'import "../../scripts/gone.mjs";\n',
+      'frontend/scripts/tool.mts': 'import "../../scripts/gone.mjs";\n',
+      'frontend/scripts/tool.cts': 'import "../../scripts/gone.mjs";\n',
+      'frontend/scripts/tool.d.ts': 'export type Dead = typeof import("../../scripts/gone.mjs");\n',
+      'frontend/scripts/tool.test.ts': 'import "../../scripts/gone.mjs";\n',
+      'scripts/tail128.mjs': 'export const p = await import("./" + (c1 ? "a/" : "") + (c2 ? "b/" : "") + (c3 ? "c/" : "") + (c4 ? "d/" : "") + (c5 ? "e/" : "") + (c6 ? "f/" : "") + (c7 ? "live.mjs" : "gone.mjs"));\n',
+      'scripts/overflow.mjs': 'export const p = await import("./" + (c1 ? "a/" : "") + (c2 ? "b/" : "") + (c3 ? "c/" : "") + (c4 ? "d/" : "") + (c5 ? "e/" : "") + (c6 ? "f/" : "") + (c7 ? "g/" : "") + (c8 ? "h/" : "") + (c9 ? "i/" : "") + (c10 ? "live.mjs" : "live2.mjs"));\n',
+      'scripts/worker.cjs': 'module.exports = require(".");\n',
+      'scripts/worker2.cjs': 'module.exports = require("..");\n',
+    }, ledger);
+    const res = findRemovalLeakErrors({ root: dir, ledgers: [ledger] });
+    for (const expected of [
+      'frontend/scripts/tool.ts -> scripts/gone.mjs',
+      'frontend/scripts/tool.mts -> scripts/gone.mjs',
+      'frontend/scripts/tool.cts -> scripts/gone.mjs',
+      'scripts/tail128.mjs -> scripts/gone.mjs',
+      'scripts/overflow.mjs (dynamic target limit exceeded at line 1)',
+      'scripts/worker.cjs -> scripts/gone.js',
+      'scripts/worker2.cjs -> scripts/gone.js',
+    ]) {
+      assert.ok(res.brokenImports.includes(expected), `missing expected leak: ${expected}; got ${res.brokenImports.join(', ')}`);
+    }
+    assert.ok(!res.brokenImports.some(item => item.includes('tool.d.ts') || item.includes('tool.test.ts')));
+  }
+
+  // Round 7 P2 #6: createRequire with as/satisfies, forward calls, local `require` name precedence, and valid file: URL
+  {
+    const ledger = { assets: ['scripts/gone.js', 'scripts/sub/sub-gone.js'], aliases: [], gates: [] };
+    const { dir, put } = makeFixture('r7-p2-6', {}, ledger);
+    const subAnchorUrl = pathToFileURL(join(dir, 'scripts/sub/anchor.mjs')).href;
+    put('scripts/as-sat.ts', [
+      'import { createRequire } from "node:module";',
+      'const asLoad = createRequire(import.meta.url) as NodeRequire;',
+      'const satLoad = createRequire(import.meta.url) satisfies NodeRequire;',
+      'export function callLate() { return lateLoad("./sub-gone.js"); }',
+      'const lateLoad = createRequire(new URL("./sub/anchor.mjs", import.meta.url));',
+      'export const a = asLoad("./gone.js");',
+      'export const b = satLoad("./gone.js");',
+    ].join('\n'));
+    put('scripts/shadow-req.mjs', [
+      'import { createRequire } from "node:module";',
+      'const require = createRequire(new URL("./sub/anchor.mjs", import.meta.url));',
+      'export const x = require("./sub-gone.js");',
+    ].join('\n'));
+    put('scripts/file-url-req.mjs', [
+      'import { createRequire } from "node:module";',
+      `const absLoad = createRequire(${JSON.stringify(subAnchorUrl)});`,
+      'const outLoad = createRequire("file:///nonexistent-outside-root/anchor.mjs");',
+      'const badRelLoad = createRequire("./sub/anchor.mjs");',
+      'void outLoad;',
+      'void badRelLoad("./sub-gone.js");',
+      'export const z = absLoad("./sub-gone.js");',
+    ].join('\n'));
+    const res = findRemovalLeakErrors({ root: dir, ledgers: [ledger] });
+    assert.deepEqual(res.brokenImports.sort(), [
+      'scripts/as-sat.ts -> scripts/gone.js',
+      'scripts/as-sat.ts -> scripts/sub/sub-gone.js',
+      'scripts/file-url-req.mjs -> scripts/sub/sub-gone.js',
+      'scripts/shadow-req.mjs -> scripts/sub/sub-gone.js',
+    ]);
+  }
+
+  // Round 7 P2 #7, #8, #9: eval preloads, quoted spaces, --env-file, bare preload non-match, node --test hidden/dist, cd/subshell/echo CWD
+  {
+    const ledger = { assets: ['scripts/gone.mjs'], aliases: ['dev'], gates: [] };
+    const { dir, put } = makeFixture('r7-p2-7-8-9', {
+      'package.json': JSON.stringify({
+        scripts: {
+          'eval:r': 'node -r ./lib/setup -e "0"',
+          'eval:imp': 'node --import=./lib/pre.mjs -p "0"',
+          'cli:space': 'node "scripts/my cli.mjs"',
+          'cli:env': 'node --env-file .env lib/cli.mjs',
+          'bare:preload': 'node -r dotenv -e "0" && node --import tsx lib/clean.mjs',
+          'test:bare': 'node --test',
+          'cd:fe': 'cd frontend && npm run dev',
+          'cd:echo': 'echo npm run dev',
+          'cd:subshell': '(cd frontend && npm run dev) && npm run dev',
+          'cd:back': 'cd frontend && npm --prefix .. run dev',
+        },
+      }),
+      'lib/setup.js': 'module.exports = require("../scripts/gone.mjs");\n',
+      'lib/pre.mjs': 'import "../scripts/gone.mjs";\n',
+      'lib/cli.mjs': 'import "../scripts/gone.mjs";\n',
+      'lib/clean.mjs': 'export const ok = 1;\n',
+      'scripts/my cli.mjs': 'import "./gone.mjs";\n',
+      'dotenv.js': 'module.exports = require("./scripts/gone.mjs");\n',
+      'tsx.js': 'import "./scripts/gone.mjs";\n',
+      '.agent/scripts/hidden.test.js': 'import "../../scripts/gone.mjs";\n',
+      'dist/smoke.test.js': 'import "../scripts/gone.mjs";\n',
+    }, ledger);
+    const res = findRemovalLeakErrors({ root: dir, ledgers: [ledger] });
+    assert.deepEqual(res.brokenImports.sort(), [
+      'dist/smoke.test.js -> scripts/gone.mjs',
+      'lib/cli.mjs -> scripts/gone.mjs',
+      'lib/pre.mjs -> scripts/gone.mjs',
+      'lib/setup.js -> scripts/gone.mjs',
+      'scripts/my cli.mjs -> scripts/gone.mjs',
+    ], 'bare node --test must include dist/, skip hidden .agent/, preserve preloads under -e/-p, and ignore bare dotenv/tsx preloads');
+    assert.deepEqual(res.leakedAliases.sort(), ['cd:back', 'cd:subshell']);
+
+    put('package.json', JSON.stringify({
+      scripts: {
+        'test:agent-explicit': 'node --test .agent/scripts/hidden.test.js',
+        'test:agent-glob': 'node --test ".agent/scripts/*.test.js"',
+      },
+    }));
+    const agentRes = findRemovalLeakErrors({ root: dir, ledgers: [ledger] });
+    assert.deepEqual(agentRes.brokenImports.sort(), [
+      '.agent/scripts/hidden.test.js -> scripts/gone.mjs',
+      'scripts/my cli.mjs -> scripts/gone.mjs',
+    ], 'explicit and dot-prefixed glob .agent tests must still be inspected');
+  }
+
+  // Round 8 H5 regressions: P1 #1/#2 & P2 #2/#6/#7/#8/#9
+  {
+    const ledger = {
+      assets: ['dotenv', 'tsx', 'scripts/gone.mjs', 'scripts/gone.js', 'scripts/shadowed-only-gone.js', 'scripts/sub/sub-gone.js', 'frontend/smoke.test.mjs'],
+      aliases: ['dev'],
+      gates: [],
+    };
+    const { dir, put } = makeFixture('r8-all', {
+      'package.json': JSON.stringify({
+        scripts: {
+          'bare:r': 'node -r dotenv -e "0"',
+          'bare:imp': 'node --import tsx -e "0"',
+          'echo:node': 'echo node scripts/gone.mjs',
+          'pipe:cd': 'cd frontend | npm run dev',
+          'env:fe': 'env -C frontend npm run dev',
+          'env:then-root': 'env -C frontend npm run dev && npm run dev',
+          'print:preload': 'node -p -r ./lib/setup',
+          'imp:query': 'node --import=./lib/pre.mjs?v=7 -p "0"',
+          'cd:agent': 'cd .agent && node --test',
+          'glob:brace': 'node --test "scripts/{alpha,beta}.test.mjs"',
+          'cd:fe-gone-test': 'cd frontend && node --test smoke.test.mjs',
+        },
+      }),
+      'lib/setup.js': 'module.exports = require("../scripts/gone.mjs");\n',
+      'lib/pre.mjs': 'import "../scripts/gone.mjs";\n',
+      '.agent/scripts/hidden.test.js': 'import "../../scripts/gone.mjs";\n',
+      'scripts/alpha.test.mjs': 'import "./gone.mjs";\n',
+      'scripts/beta.test.mjs': 'import "./gone.mjs";\n',
+      'scripts/nested-creq.mjs': [
+        'import { createRequire } from "node:module";',
+        'const dotReq = createRequire(new URL(".", import.meta.url));',
+        'dotReq("./gone.js");',
+        'export function outer() {',
+        '  function inner() { return localLoad("./sub-gone.js"); }',
+        '  const localLoad = createRequire(new URL("./sub/anchor.mjs", import.meta.url));',
+        '  return inner();',
+        '}',
+        'export function shadowedOuter() {',
+        '  function inner(localLoad) { return localLoad("./shadowed-only-gone.js"); }',
+        '  const localLoad = createRequire(import.meta.url);',
+        '  return inner(() => null);',
+        '}',
+      ].join('\n'),
+    }, ledger);
+
+    for (const [label, snippet] of [
+      ['url-empty-str', 'import { existsSync } from "node:fs";\nimport { resolve, join } from "node:path";\nimport { fileURLToPath } from "node:url";\nconst ROOT = resolve(fileURLToPath(new URL("", import.meta.url)), "..");\nconst isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+      ['url-query-str', 'import { existsSync } from "node:fs";\nimport { resolve, join } from "node:path";\nimport { fileURLToPath } from "node:url";\nconst ROOT = resolve(fileURLToPath(new URL("?q=1", import.meta.url)), "..");\nconst isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+      ['block-mutated-fs', 'import fs from "node:fs";\nimport { dirname, join, resolve } from "node:path";\nimport { fileURLToPath } from "node:url";\nconst ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");\n{ fs.existsSync = () => false; }\nconst isArtifact = fs.existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+      ['aliased-fs-mutated', 'import fs from "node:fs";\nimport { dirname, join, resolve } from "node:path";\nimport { fileURLToPath } from "node:url";\nconst ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");\nconst other = fs;\nother.existsSync = () => false;\nconst isArtifact = fs.existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+      ['object-assign-fs', 'import fs from "node:fs";\nimport { dirname, join, resolve } from "node:path";\nimport { fileURLToPath } from "node:url";\nconst ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");\nObject.assign(fs, { existsSync: () => false });\nconst isArtifact = fs.existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+      ['multiline-conditional-ts', `${artifactHeader}export const fn = (isArtifact: boolean): true extends boolean\n  ? unknown\n  : never => (!isArtifact ? import("./gone.mjs") : null);\n`],
+    ]) {
+      put('scripts/reusable-artifact-entrypoints-contract.test.mjs', snippet);
+      const res = findRemovalLeakErrors({ root: dir, ledgers: [ledger] });
+      assert.ok(
+        res.brokenImports.includes('scripts/reusable-artifact-entrypoints-contract.test.mjs (unguarded dynamic) -> scripts/gone.mjs'),
+        `${label}: bypass must be rejected`,
+      );
+      if (label === 'url-empty-str') {
+        assert.deepEqual(res.leakedAliases.sort(), ['cd:fe-gone-test', 'env:then-root', 'pipe:cd']);
+        for (const expected of [
+          '.agent/scripts/hidden.test.js -> scripts/gone.mjs',
+          'lib/pre.mjs -> scripts/gone.mjs',
+          'lib/setup.js -> scripts/gone.mjs',
+          'scripts/alpha.test.mjs -> scripts/gone.mjs',
+          'scripts/beta.test.mjs -> scripts/gone.mjs',
+          'scripts/nested-creq.mjs -> scripts/gone.js',
+          'scripts/nested-creq.mjs -> scripts/sub/sub-gone.js',
+        ]) {
+          assert.ok(res.brokenImports.includes(expected), `missing Round 8 leak: ${expected}; got ${res.brokenImports.join(', ')}`);
+        }
+        assert.ok(
+          !res.brokenImports.includes('scripts/nested-creq.mjs -> scripts/shadowed-only-gone.js'),
+          'shadowed inner parameter localLoad must not leak',
+        );
+      }
+    }
+
+    put(
+      'scripts/reusable-artifact-entrypoints-contract.test.mjs',
+      'import { existsSync } from "node:fs";\nimport { resolve, join } from "node:path";\nimport { fileURLToPath } from "node:url";\nconst ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "..");\nconst isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n',
+    );
+    const ctrlRes = findRemovalLeakErrors({ root: dir, ledgers: [ledger] });
+    assert.ok(
+      !ctrlRes.brokenImports.includes('scripts/reusable-artifact-entrypoints-contract.test.mjs (unguarded dynamic) -> scripts/gone.mjs'),
+      'new URL(".", import.meta.url) resolves to scripts/ so resolve(..., "..") is valid repo root',
+    );
+
+    const opt65 = Array.from({ length: 65 }, (_, idx) => `opt${String(idx + 1).padStart(2, '0')}`);
+    const overflowingBinary = '{a,b}'.repeat(13);
+    const r9Ledger = {
+      assets: [
+        'scripts/gone.mjs',
+        'scripts/gone.js',
+        'root-gone.js',
+        'smoke.test.mjs',
+      ],
+      aliases: ['dev'],
+      gates: [],
+    };
+    const r9OptMap = Object.fromEntries(opt65.map(name => [`scripts/${name}.test.mjs`, '// empty\n']));
+    const r9Fixture = makeFixture('r9-all', {
+      ...r9OptMap,
+      'scripts/opt65.test.mjs': 'import "./gone.mjs";\n',
+      'scripts/a.test.mjs': 'import "./gone.mjs";\n',
+      'scripts/x.test.mjs': 'import "./gone.mjs";\n',
+      'scripts/z.test.mjs': 'import "./gone.mjs";\n',
+      [`scripts/${'a'.repeat(13)}.test.mjs`]: 'import "./gone.mjs";\n',
+      'frontend/smoke.test.mjs': 'console.log("ok");\n',
+      'package.json': JSON.stringify({
+        scripts: {
+          'glob:char-class': 'node --test "scripts/[xy].test.mjs"',
+          'glob:char-range-neg': 'node --test "scripts/[!b-z].test.mjs"',
+          'glob:brace-65': `node --test "scripts/{${opt65.join(',')}}.test.mjs"`,
+          'glob:brace-overflow': `node --test "scripts/${overflowingBinary}.test.mjs"`,
+          'cd:fe-surviving-smoke': 'cd frontend && node --test smoke.test.mjs',
+          'cd:fe-parent-leak': 'cd frontend && node ../scripts/gone.mjs',
+          'cd:opt-or-dev': 'cd optional || npm run dev',
+          'cd:opt-or-semi-dev': 'cd optional || echo fail; npm run dev',
+          'cd:opt-and-or-dev': 'cd optional && echo ok || npm run dev',
+          'cd:fe-or-exit-ok': 'cd frontend || exit 1; npm run dev',
+          'cd:fe-semi-ok': 'cd frontend; npm run dev',
+        },
+      }),
+      'scripts/runner-url-anchor.mjs': [
+        'import { createRequire } from "node:module";',
+        'const anchor = new URL(".", import.meta.url);',
+        'const load = createRequire(anchor);',
+        'load("./gone.js");',
+      ].join('\n'),
+      'scripts/runner-meta-dirname.mjs': [
+        'import { createRequire } from "node:module";',
+        'const load = createRequire(import.meta.dirname);',
+        'load("./root-gone.js");',
+        'load("./gone.js");',
+      ].join('\n'),
+    }, r9Ledger);
+
+    for (const [label, snippet] of [
+      ['posix-dirname-member', 'import fs from "node:fs";\nimport path from "node:path";\nimport { fileURLToPath } from "node:url";\nconst ROOT = path.resolve(path.posix.dirname(fileURLToPath(import.meta.url)), "..");\nconst isArtifact = fs.existsSync(path.join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+      ['posix-dirname-named', 'import { existsSync } from "node:fs";\nimport { posix, join, resolve } from "node:path";\nimport { fileURLToPath } from "node:url";\nconst ROOT = resolve(posix.dirname(fileURLToPath(import.meta.url)), "..");\nconst isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+      ['hoisted-patch-fs-ns', 'import fs from "node:fs";\nimport { dirname, join, resolve } from "node:path";\nimport { fileURLToPath } from "node:url";\nconst ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");\npatch();\nconst isArtifact = fs.existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\nfunction patch() { fs.existsSync = () => false; }\n'],
+      ['hoisted-patch-path', 'import fs from "node:fs";\nimport path from "node:path";\nimport { fileURLToPath } from "node:url";\npatch();\nconst ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");\nconst isArtifact = fs.existsSync(path.join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\nfunction patch() { path.resolve = () => "/tmp"; }\n'],
+      ['late-assign-other-fs', 'import fs from "node:fs";\nimport { dirname, join, resolve } from "node:path";\nimport { fileURLToPath } from "node:url";\nconst ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");\nlet other;\nother = fs;\nother.existsSync = () => false;\nconst isArtifact = fs.existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+      ['block-late-assign-other-fs', 'import fs from "node:fs";\nimport { dirname, join, resolve } from "node:path";\nimport { fileURLToPath } from "node:url";\nconst ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");\nlet other;\n{ other = fs; }\nother.existsSync = () => false;\nconst isArtifact = fs.existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+      ['hoisted-fn-then-late-assign', 'import fs from "node:fs";\nimport { dirname, join, resolve } from "node:path";\nimport { fileURLToPath } from "node:url";\nconst ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");\nlet other;\nfunction patch() { other.existsSync = () => false; }\nother = fs;\npatch();\nconst isArtifact = fs.existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+      ['let-createRequire-fs', 'import { createRequire } from "node:module";\nimport fs from "node:fs";\nimport { dirname, join, resolve } from "node:path";\nimport { fileURLToPath } from "node:url";\nconst ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");\nconst req = createRequire(import.meta.url);\nlet other = req("node:fs");\nother.existsSync = () => false;\nconst isArtifact = fs.existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = !isArtifact ? await import("./gone.mjs") : null;\n'],
+      ['unguarded-new-url-dot', `${artifactHeader}export const p = await import(new URL("./gone.mjs", import.meta.url));\n`],
+      ['unguarded-new-url-bare', `${artifactHeader}export const p = await import(new URL("gone.mjs", import.meta.url));\n`],
+      ['unguarded-url-var', `${artifactHeader}const u = new URL("./gone.mjs", import.meta.url);\nexport const p = await import(u);\n`],
+      ['unguarded-url-var-href', `${artifactHeader}const u = new URL("./gone.mjs", import.meta.url);\nexport const p = await import(u.href);\n`],
+      ['unguarded-pathToFileURL', 'import { existsSync } from "node:fs";\nimport { dirname, join, resolve } from "node:path";\nimport { fileURLToPath, pathToFileURL } from "node:url";\nconst ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");\nconst isArtifact = existsSync(join(ROOT, "reusable-base-lock.json"));\nexport const p = await import(pathToFileURL(join(ROOT, "scripts/gone.mjs")));\n'],
+    ]) {
+      r9Fixture.put('scripts/reusable-artifact-entrypoints-contract.test.mjs', snippet);
+      const r9Res = findRemovalLeakErrors({ root: r9Fixture.dir, ledgers: [r9Ledger] });
+      assert.ok(
+        r9Res.brokenImports.includes('scripts/reusable-artifact-entrypoints-contract.test.mjs (unguarded dynamic) -> scripts/gone.mjs'),
+        `${label}: bypass or URL import must be rejected; got ${r9Res.brokenImports.join(', ')}`,
+      );
+      if (label === 'posix-dirname-member') {
+        assert.deepEqual(
+          r9Res.leakedAliases.sort(),
+          ['cd:fe-parent-leak', 'cd:opt-and-or-dev', 'cd:opt-or-dev', 'cd:opt-or-semi-dev'],
+        );
+        for (const expected of [
+          'scripts/x.test.mjs -> scripts/gone.mjs',
+          'scripts/a.test.mjs -> scripts/gone.mjs',
+          'scripts/opt65.test.mjs -> scripts/gone.mjs',
+          `scripts/${'a'.repeat(13)}.test.mjs -> scripts/gone.mjs`,
+          'scripts/runner-url-anchor.mjs -> scripts/gone.js',
+          'scripts/runner-meta-dirname.mjs -> root-gone.js',
+        ]) {
+          assert.ok(r9Res.brokenImports.includes(expected), `missing Round 9 leak: ${expected}; got ${r9Res.brokenImports.join(', ')}`);
+        }
+        assert.ok(
+          !r9Res.brokenImports.includes('scripts/runner-meta-dirname.mjs -> scripts/gone.js'),
+          'createRequire(import.meta.dirname) in scripts/ resolves against repo root, not scripts/',
+        );
+        assert.ok(
+          !r9Res.brokenImports.includes('scripts/z.test.mjs -> scripts/gone.mjs'),
+          'scripts/z.test.mjs does not match [xy].test.mjs or [!b-z].test.mjs',
+        );
+      }
+    }
+
+    r9Fixture.put(
+      'scripts/reusable-artifact-entrypoints-contract.test.mjs',
+      `${artifactHeader}export const p = !isArtifact ? await import(new URL("./gone.mjs", import.meta.url)) : null;\n`,
+    );
+    const r9GuardedUrlRes = findRemovalLeakErrors({ root: r9Fixture.dir, ledgers: [r9Ledger] });
+    assert.ok(
+      !r9GuardedUrlRes.brokenImports.includes('scripts/reusable-artifact-entrypoints-contract.test.mjs (unguarded dynamic) -> scripts/gone.mjs'),
+      'guarded !isArtifact ? import(new URL("./gone.mjs", import.meta.url)) must pass',
+    );
+  }
 });
 
 test('a vendor project loses the PostgreSQL tools, and a stale ledger stops before anything is removed', () => {

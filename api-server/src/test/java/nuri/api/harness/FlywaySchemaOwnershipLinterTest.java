@@ -77,7 +77,6 @@ class FlywaySchemaOwnershipLinterTest {
         Path root = HarnessSourceIndex.repoRoot();
         String apiBuild = HarnessSourceIndex.read(root.resolve("api-server/build.gradle"));
         String ci = HarnessSourceIndex.read(root.resolve(".github/workflows/ci.yml"));
-        String scope = HarnessSourceIndex.read(root.resolve("scripts/ci-change-scope.mjs"));
         Map<String, String> tc = flattenYaml(root.resolve("api-server/src/test/resources/application-tc.yml"));
 
         List<String> violations = new ArrayList<>();
@@ -89,17 +88,18 @@ class FlywaySchemaOwnershipLinterTest {
             // ADR-0018: 생성물은 change-scope 없이 모든 변경에서 제품 runner의 실제
             // PostgreSQL schemaValidationTest를 실행한다. 생산자 CI 이력은 증거가 아니다.
             WorkflowManifestLinterTest.requireArtifactContract(root);
-        } else if (!ci.contains("./gradlew :api-server:schemaValidationTest")
-                || !ci.contains("needs.change-scope.outputs.schema == 'true'")) {
-            violations.add("required CI의 schemaValidationTest 실행 또는 schema 조건 연결 누락");
-        }
-        if (!ReusableHarnessProfile.current().projected() && (!scope.contains("const SCHEMA_RELEVANT")
-                || !scope.contains("business-core|business-app|foundation")
-                || !scope.contains("src\\/main\\/java\\/.*\\/domain")
-                || !scope.contains("api-server\\/src\\/main\\/resources\\/db\\/migration"))) {
-            violations.add("Entity domain/Flyway 변경을 schema=true로 분류하는 fail-closed 범위 누락");
-        }
-        if (!ReusableHarnessProfile.current().projected()) {
+        } else {
+            String scope = HarnessSourceIndex.read(root.resolve("scripts/ci-change-scope.mjs"));
+            if (!ci.contains("./gradlew :api-server:schemaValidationTest")
+                    || !ci.contains("needs.change-scope.outputs.schema == 'true'")) {
+                violations.add("required CI의 schemaValidationTest 실행 또는 schema 조건 연결 누락");
+            }
+            if (!scope.contains("const SCHEMA_RELEVANT")
+                    || !scope.contains("business-core|business-app|foundation")
+                    || !scope.contains("src\\/main\\/java\\/.*\\/domain")
+                    || !scope.contains("api-server\\/src\\/main\\/resources\\/db\\/migration")) {
+                violations.add("Entity domain/Flyway 변경을 schema=true로 분류하는 fail-closed 범위 누락");
+            }
             violations.addAll(migrationHistoryCheckoutViolations(new Yaml().load(ci)));
         }
         if (!"validate".equals(normalize(tc.get("spring.jpa.hibernate.ddl-auto")))

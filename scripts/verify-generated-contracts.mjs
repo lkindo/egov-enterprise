@@ -14,7 +14,7 @@
  * frontend 축을 켜야 한다(도구 경로 표 계약이 그렇게 계산한다). 이 파일은 표 밖이라 바뀌면 전수 검증이 돈다.
  */
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -69,6 +69,31 @@ export function generatedContractFiles(root, key) {
 
 /** generated-api.d.ts 를 만드는 openapi-typescript CLI(원본 frontend 의존성, 저장소 기준 경로). */
 export const OPENAPI_TYPESCRIPT_CLI = 'frontend/node_modules/openapi-typescript/bin/cli.js';
+export const FRONTEND_TOOLCHAIN = Object.freeze({
+  typescript: 'frontend/node_modules/typescript/package.json',
+  openapiTypescript: OPENAPI_TYPESCRIPT_CLI,
+});
+export const FRONTEND_INSTALL_COMMAND = 'pnpm -C frontend install --frozen-lockfile';
+
+export function missingFrontendToolchain(sourceRoot) {
+  return Object.values(FRONTEND_TOOLCHAIN).filter(file => !existsSync(join(sourceRoot, file)));
+}
+
+export function regenerateContractTypes({ sourceRoot, output, spawn = spawnSync, assertToolchain }) {
+  if (typeof assertToolchain === 'function') {
+    assertToolchain(sourceRoot);
+  } else {
+    const missing = missingFrontendToolchain(sourceRoot);
+    if (missing.length) {
+      throw new Error(`frontend 의존성이 없어 API 계약 생성물을 다시 만들 수 없다(${missing.join(', ')}). 먼저 ${FRONTEND_INSTALL_COMMAND} 를 실행한다.`);
+    }
+  }
+  const specPath = join(output, API_DOCS_PATH);
+  const outputPaths = Object.fromEntries(Object.entries(GENERATED_CONTRACT_TYPES).map(([key, file]) => [key, join(output, file)]));
+  runContractGenerator({ kind: 'zod', toolRoot: sourceRoot, specPath, outputPaths, spawn });
+  runContractGenerator({ kind: 'api', toolRoot: sourceRoot, specPath, outputPaths, spawn });
+  return Object.values(GENERATED_CONTRACT_TYPES);
+}
 const CODEGEN_ZOD = '.agent/scripts/codegen-zod.js';
 const GENERATOR_CWD_PREFIX = 'egov-contract-generator-';
 const VERIFY_PREFIX = 'egov-contract-verify-';

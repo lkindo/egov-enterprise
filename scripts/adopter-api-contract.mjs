@@ -2,8 +2,7 @@
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { GENERATED_CONTRACT_TYPES, generatedContractFiles } from './verify-generated-contracts.mjs';
-import { regenerateContractTypes } from './reusable-contract-projection.mjs';
+import { GENERATED_CONTRACT_TYPES, generatedContractFiles, regenerateContractTypes } from './verify-generated-contracts.mjs';
 
 export const API_DOCS_PATH = 'api-docs.json';
 export const API_GENERATOR_PATH = '.agent/scripts/codegen-zod.js';

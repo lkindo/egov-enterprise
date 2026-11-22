@@ -294,8 +294,7 @@ async function main() {
   else if (migration) installMultiModuleMigrationRuntime(output);
   // 벤더 투영은 빌드·설정을 바꾸므로 거버넌스가 증거 범위를 재기 전에 한다. 입력은 DB 생성기가 번들 옆에 둔 재적용 결과다.
   const vendorProjection = vendorInput && projectVendorSources(output, { vendorId, layout: args.layout, input: JSON.parse(vendorInput.toString('utf8')), inputText: vendorInput.toString('utf8') });
-  // 거버넌스의 sourceUnchanged 는 '생성물 == 원본에 같은 투영' 이다. 생성기와 같은 projector 로 원본을 투영한다.
-  // 레지스트리 렌더는 생성기가 복사한 같은 파일 목록을 쓴다.
+  // Ordering invariant: all file/alias/build removals MUST finish before projectReusableGovernance computes codeScope.
   const sourceProjector = createFrontendProjector({ composition, files: copiedFiles.filter(file => file.startsWith('frontend/')) });
   const governance = projectReusableGovernance({
     sourceRoot: ROOT, outputRoot: output, profile: args.profile, sourceCommit, composition,
@@ -303,7 +302,13 @@ async function main() {
   });
   verifyCompositionDatabaseFiles(join(output, 'api-server/src/main/resources/db/migration'), dbLock);
   adaptGeneratedHarness(output);
-  writeHarnessBaseline(output, { ownership, profile, schemaTables: dbLock.tables.length });
+  // Ordering invariant: writeHarnessBaseline runs before reusable-base-lock.json is written, so absent scan roots must be passed explicitly.
+  writeHarnessBaseline(output, {
+    ownership,
+    profile,
+    schemaTables: dbLock.tables.length,
+    allowedAbsentScanRoots: removedVendorAssets ? removedVendorAssets.assets : [],
+  });
   // 투영 원장(Phase 2 D6): 복사한 원본 파일 가운데 지금 없는 파일. 파일을 지우는 마지막 단계(검증 설치의 워크플로 정리,
   //   거버넌스 투영의 리다이렉트 페이지 정리) 뒤에 센다 — 앞에서 세면 그 뒤에 지운 파일이 원장에 없다(검토로 드러났다).
   //   단일모듈 배치는 build.gradle·settings.gradle 만 바꾸고 소스를 옮기지 않으므로 원장 경로는 그대로 유효하다.

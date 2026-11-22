@@ -4,17 +4,22 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { installReusableVerification } from './generate-reusable-base-source.mjs';
-import { UPSTREAM_ATLAS, pruneUpstreamAtlas } from './reusable-source-gates.mjs';
 import { applySingleModuleLayout } from './reusable-single-module.mjs';
 import { installMultiModuleMigrationRuntime, installSingleModuleRuntime } from './reusable-layout-runtime.mjs';
-import { parseWorkflowJobs, reviewedActionPin } from './required-checks-contract.mjs';
-import { ARTIFACT_COMMAND, CURRENT_ARTIFACT_COMMAND, PRODUCT_CI_ACTIONS, VERIFICATION_HISTORY, reusableArtifactEntrypoints, upstreamActionPins,
-  validateReusableArtifactEntrypoints } from './reusable-artifact-entrypoints-contract.mjs';
+import {
+  ARTIFACT_COMMAND, CURRENT_ARTIFACT_COMMAND, PRODUCT_CI_ACTIONS, VERIFICATION_HISTORY,
+  parseWorkflowJobs, reusableArtifactEntrypoints, upstreamActionPins, validateReusableArtifactEntrypoints,
+} from './reusable-artifact-entrypoints-contract.mjs';
+import { UPSTREAM_ATLAS } from './reusable-harness-census.mjs';
 import { presetIds } from './composition-profiles.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const isArtifact = existsSync(join(ROOT, 'reusable-base-lock.json'));
+const producer = isArtifact ? null : {
+  installReusableVerification: (await import('./generate-reusable-base-source.mjs')).installReusableVerification,
+  pruneUpstreamAtlas: (await import('./reusable-source-gates.mjs')).pruneUpstreamAtlas,
+  reviewedActionPin: (await import('./required-checks-contract.mjs')).reviewedActionPin,
+};
 const read = (root, path) => readFileSync(join(root, path), 'utf8').replace(/\r\n/g, '\n');
 const json = (root, path) => JSON.parse(read(root, path));
 const write = (root, path, value) => { mkdirSync(dirname(join(root, path)), { recursive: true }); writeFileSync(join(root, path), value); };
@@ -42,7 +47,7 @@ function fixture(t, profile = 'core', layout = 'multi-module') {
     for (const path of ['reusable-base-lock.json', VERIFICATION_HISTORY, 'REUSABLE_VERIFICATION.md']) copy(path);
   } else {
     write(root, 'reusable-base-lock.json', JSON.stringify({ profile, layout, sourceCommit: '1'.repeat(40) }));
-    installReusableVerification(root, layout);
+    producer.installReusableVerification(root, layout);
     if (layout === 'single-module') {
       applySingleModuleLayout(root);
       installSingleModuleRuntime(root);
@@ -50,6 +55,13 @@ function fixture(t, profile = 'core', layout = 'multi-module') {
   }
   return root;
 }
+
+const upstreamGradleSetupPin = () => {
+  const upstreamCi = isArtifact ? read(ROOT, `${VERIFICATION_HISTORY}/.github/workflows/ci.yml`) : read(ROOT, '.github/workflows/ci.yml');
+  const pin = upstreamActionPins(upstreamCi)['gradle/actions/setup-gradle'];
+  if (!isArtifact) assert.equal(pin, producer.reviewedActionPin('gradle/actions/setup-gradle'));
+  return pin;
+};
 
 test('producer fixtures and the actual generated product preserve a distinct non-recursive verification contract', t => {
   const profiles = isArtifact ? [json(ROOT, 'reusable-base-lock.json').profile] : presetIds();
@@ -67,7 +79,7 @@ test('producer fixtures and the actual generated product preserve a distinct non
     assert.match(job, /gitleaks detect --source \. --no-banner/);
     assert.match(job, /github\.event\.pull_request\.base\.sha/);
     assert.match(job, /github\.event\.before/);
-    assert.ok(job.includes(`uses: ${reviewedActionPin('gradle/actions/setup-gradle')}\n        with:\n          cache-provider: basic\n          cache-read-only: false\n`),
+    assert.ok(job.includes(`uses: ${upstreamGradleSetupPin()}\n        with:\n          cache-provider: basic\n          cache-read-only: false\n`),
       'product CI must use the reviewed Gradle setup pin with the basic provider as its single cache writer');
     assert.equal(json(root, '.github/required-checks.json').profile, profile);
     assert.equal(json(root, '.github/required-checks.json').remoteApplied, false);
@@ -194,7 +206,7 @@ test('product CI rejects disabled execution, altered scope, recursive generation
     value => value.replace('  pull_request:', "  pull_request:\n    paths: ['docs/**']"),
     value => value.replace('  workflow_dispatch:', "  schedule:\n    - cron: '* * * * *'\n  workflow_dispatch:"),
     value => value.replace('if-no-files-found: error', 'if-no-files-found: warn'),
-    value => value.replace(reviewedActionPin('gradle/actions/setup-gradle'), 'gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70'),
+    value => value.replace(upstreamGradleSetupPin(), 'gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70'),
     value => value.replace('          cache-provider: basic\n', ''),
     value => value.replace('cache-provider: basic', 'cache-provider: enhanced'),
     value => value.replace('          cache-read-only: false\n', ''),
@@ -258,9 +270,10 @@ test('upstream snapshots, profile identity and unapplied institution policy cann
 });
 
 test('missing upstream inputs fail before the product is represented as a valid projection', t => {
+  if (isArtifact) return;
   const root = fixture(t);
   const original = read(root, `${VERIFICATION_HISTORY}/index.json`);
-  assert.throws(() => installReusableVerification(root), /already projected/);
+  assert.throws(() => producer.installReusableVerification(root), /already projected/);
   assert.equal(read(root, `${VERIFICATION_HISTORY}/index.json`), original);
 });
 
@@ -282,7 +295,7 @@ test('the upstream Atlas, its generator, contracts and aliases are absent from g
   for (const path of removed) write(root, path === 'frontend/atlas' ? `${path}/atlas.css` : path, 'x\n');
   write(root, 'frontend/public/other.svg', '<svg/>\n');
   write(root, 'package.json', JSON.stringify({ scripts: { 'atlas:build': 'a', 'atlas:check': 'b', 'atlas:contract': 'd', verify: 'c' } }));
-  assert.deepEqual(pruneUpstreamAtlas(root).files, [...UPSTREAM_ATLAS.gates].sort((a, b) => a.localeCompare(b)));
+  assert.deepEqual(producer.pruneUpstreamAtlas(root).files, [...UPSTREAM_ATLAS.gates].sort((a, b) => a.localeCompare(b)));
   for (const path of removed) assert.equal(existsSync(join(root, path)), false, path);
   assert.ok(existsSync(join(root, 'frontend/public/other.svg')), 'only the Atlas assets are removed');
   assert.deepEqual(json(root, 'package.json').scripts, { verify: 'c' });
@@ -290,5 +303,5 @@ test('the upstream Atlas, its generator, contracts and aliases are absent from g
   // 대상이 하나라도 없으면 조용히 넘어가지 않는다 — 규칙이 낡은 채 "0건 제거" 로 통과하지 않게 한다.
   write(root, 'package.json', JSON.stringify({ scripts: { 'atlas:build': 'a', 'atlas:check': 'b', 'atlas:contract': 'd' } }));
   for (const path of removed.slice(1)) write(root, path === 'frontend/atlas' ? `${path}/atlas.css` : path, 'x\n');
-  assert.throws(() => pruneUpstreamAtlas(root), /Upstream Atlas asset is missing.*frontend\/atlas/);
+  assert.throws(() => producer.pruneUpstreamAtlas(root), /Upstream Atlas asset is missing.*frontend\/atlas/);
 });
