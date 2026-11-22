@@ -113,7 +113,7 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 
 ## 04-operations — 운영
 
-[SAST 오탐 예외 검토 결과](04-operations/sast-findings-review.md)는 시큐어코딩 분석의 소스 근거와 승인된 한정 예외를 기록한다.
+[SAST 오탐 예외 검토 결과](04-operations/sast-findings-review.md)는 승인 예외를 코드에서 해소한 결과(2026-10-21 부터 승인 목록 0건)와 예외를 다시 둘 때의 결속 형식을 기록한다. 그 전의 최초 승인·재검토 기록은 [보관 기록](archived/sast-findings-review-log.md)에 있다.
 
 | 문서 | 내용 |
 |---|---|
@@ -149,8 +149,7 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [load-test-guide.md](04-operations/load-test-guide.md) | k6 부하 테스트 |
 | [dependabot-alert-census.md](04-operations/dependabot-alert-census.md) | 의존성 취약점 판정 절차 |
 | [third-party-notices.md](04-operations/third-party-notices.md) | 서드파티 오픈소스·표준프레임워크(Apache-2.0)·외부 스킬·DB 벤더 드라이버/이미지 라이선스 고지 |
-| [readiness-followups.md](04-operations/readiness-followups.md) | 운영 후속 실측 기록 — 날짜 입력·화면 연결·첨부 점검·혼합 부하, 이관 vendor 리허설(Oracle·MySQL·MariaDB·SQL Server·CUBRID·표준화), IP 신뢰 경계, Spring Boot 4 실측, ZAP 경고 분류, 도메인 정합성, 프록시 연결 경합 |
-| [project-evaluation-adversarial-review-2026-10-21.md](04-operations/project-evaluation-adversarial-review-2026-10-21.md) | Gemini 상세 품질평가 재검토 — 98.3점의 증거 한계, 코드와 충돌하는 주장, 개선안 14개 판정과 후속 우선순위 |
+| [readiness-followups.md](04-operations/readiness-followups.md) | 운영 후속 실측 기록 — 의존성, 날짜 입력·화면 연결·화면 문구 편차, 첨부 점검·혼합 부하, 이관 vendor 리허설(Oracle·MySQL·MariaDB·SQL Server·CUBRID·표준화), IP 신뢰 경계, ZAP 경고 분류, 도메인 정합성, 운영 계약 비용 실측. 후속이 끝난 절은 [보관 기록](archived/readiness-followups-closed.md)에 있다 |
 | [standard-metadata-disposition.md](04-operations/standard-metadata-disposition.md) | 표준 용어가 없거나 도메인과 물리 타입이 다른 컬럼마다 등록·정정·예외 처분 후보와 승인 단위(GAP-STD-001, 승인 전 검토 자료) |
 | [project-safe-deletion-analysis.md](04-operations/project-safe-deletion-analysis.md) | 프레임워크 간접 소비를 포함한 안전 삭제 절차 |
 | [adopter-baseline-refreeze.md](04-operations/adopter-baseline-refreeze.md) | 파생 제품(adopter)이 base 채택 후 밀도·브랜드·래칫 기준선을 자기 실측으로 재동결하는 절차 (D10) |
@@ -158,6 +157,15 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 ## archived — 구버전 보관
 
 > 아래는 **더 이상 현행이 아니다.** 현행 상태를 판단하는 근거로 쓰지 말 것.
+
+**언제 옮기는가(문서 수명).**
+
+- 설계서·제안서는 구현이 끝나면 현행 동작의 사양과 열린 조건만 남기고, 구현 기록·경위·당시 실측은 이곳으로 옮긴다.
+- 날짜가 붙은 검토·평가 의견은 후속 처리가 끝나면 통째로 옮긴다.
+- 실측·재검토를 쌓는 로그형 문서는, 그 절을 근거로 삼는 열린 gap·설정·결정이 없어지면 그 절을 옮긴다. 열린 gap 의 근거인 절은 옮기지 않는다.
+- 닫힌 gap 의 재개 조건이나 결정의 후속 정정처럼 지금도 판단에 쓰이는 문장이 그 절에만 있으면, 옮기지 않거나 옮기기 전에 그 문장을 현행 문서(gap 상세·가이드)로 올린다 — 보관 문서를 "따른다"고 가리키는 현행 문장을 남기지 않는다.
+- 옮기는 변경에서 들어오는 링크를 새 위치로 고친다(결정 보관 원문과 ADR 은 링크 경로만 고치고 문장은 그대로 둔다). 옛 경로에 제목을 남기는 것은 고칠 수 없는 참조 — 적용이 끝난 Flyway 주석 등 — 가 그 경로를 가리킬 때뿐이다(위 「참조 보존 tombstone」).
+- 함께 볼 것: 경로 원장(`scripts/decision-indexes.mjs` 의 문서 배정), 공용 메모리 행 길이 상한, 헌법 `metadata.json` 의 references, 그 문서의 본문을 읽는 계약.
 
 | 문서 | 내용 |
 |---|---|
@@ -179,6 +187,9 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [standard-length-alignment-runbook.md](archived/standard-length-alignment-runbook.md) | ADR-0013·0014 표준 길이 정합의 단계별 전환·실패·복구 검증 기록(적용 완료) |
 | [legacy-standardization-migration-design.md](archived/legacy-standardization-migration-design.md) | 레거시 표준화 이관의 채택 전 진단(2026-10-13)과 표준용어 식별 방법론 — [ADR-0029](02-architecture/decisions/ADR-0029-legacy-standardization-migration.md)·0031로 채택, 현행 동작은 이관 도구 설계 |
 | [constitution-compaction-2026-11-22.md](archived/constitution-compaction-2026-11-22.md) | 2026-11-22 헌법 조문 축약에서 줄이거나 고친 항의 직전 원문(DEC-OPS-425) — 현행 규범이 아님 |
+| [project-evaluation-adversarial-review-2026-10-21.md](archived/project-evaluation-adversarial-review-2026-10-21.md) | Gemini 상세 품질평가 재검토 — 98.3점의 증거 한계, 코드와 충돌하는 주장, 개선안 14개 판정과 후속 우선순위 (2026-10-21 시점의 재검토 의견) |
+| [readiness-followups-closed.md](archived/readiness-followups-closed.md) | 운영 후속 실측 가운데 후속이 끝난 절 — 라우트 기능 원장 정기 검토·E4 결속, Spring Boot 4 호환 실측·적용 결과, 통합 검토 후속, 프록시 연결 재사용 경합(GAP-FE-002) |
+| [sast-findings-review-log.md](archived/sast-findings-review-log.md) | SAST 오탐 예외의 최초 승인과 2026-09-10~10-17 재검토·구현 감사 기록 — 예외는 2026-10-21 에 모두 해소됐다 |
 
 ### 운영 결정 원문 보존
 
