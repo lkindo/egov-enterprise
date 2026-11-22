@@ -315,6 +315,9 @@ jobs:
       - name: Install pinned operational contract dependencies
         run: npm ci --ignore-scripts
 
+      - name: Install pinned requirements workspace dependencies
+        run: npm --prefix tools/requirements-workspace ci --ignore-scripts
+
       # 운영 계약 카탈로그(scripts 의 test.mjs 묶음)에는 frontend 의존성을 실제로 로드하는
       # 계약이 있다 — generated-boundary-census 는 frontend 의 typescript 를 require 해
       # TS 컴파일러 AST 를 쓴다. 그래서 frontend 설치는 그 카탈로그의 전제이며, 카탈로그가

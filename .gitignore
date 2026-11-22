@@ -70,6 +70,8 @@
 # pnpm-lock.yaml     - Committed (primary, SSOT)
 # npm/yarn lockfiles are ignored to prevent dual-lockfile drift (2026-07-11)
 **/package-lock.json
+!/package-lock.json
+!/tools/requirements-workspace/package-lock.json
 **/yarn.lock
 
 # ----- Office Documents (Binary) -----

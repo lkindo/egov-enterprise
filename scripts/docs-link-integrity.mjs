@@ -27,7 +27,8 @@ export function ownedMarkdown(repoRoot) {
 /** Preserve line positions while removing fenced examples and HTML comments. */
 export function withoutBlockExamples(source) {
   let fence = null;
-  return source.replace(/<!--[\s\S]*?-->/g, value => value.replace(/[^\n]/g, ' '))
+  return source.replace(/\r\n?/g, '\n')
+    .replace(/<!--[\s\S]*?-->/g, value => value.replace(/[^\n]/g, ' '))
     .split('\n').map(line => {
       const marker = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
       if (fence) {

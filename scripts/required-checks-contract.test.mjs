@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
@@ -1887,6 +1888,96 @@ test('requirements browser contracts install pinned Chromium and system dependen
   }
 });
 
+test('requirements workspace contracts install pinned standalone dependencies before the Node catalog runs', () => {
+  const stepName = 'Install pinned requirements workspace dependencies';
+  const command = 'run: npm --prefix tools/requirements-workspace ci --ignore-scripts';
+  const isolatedPackages = ['@napi-rs/canvas', 'kordoc', 'pdfjs-dist', 'sharp'];
+
+  function requirementsInstallErrors(content) {
+    const job = parseWorkflowJobs(content.replace(/\r\n/g, '\n')).get('secret-scan') ?? '';
+    const scanner = workflowStep(job, 'Run gitleaks (working tree + incremental)');
+    const install = workflowStep(job, stepName);
+    const runner = workflowStep(job, 'Verify repository operational contracts');
+    const errors = [];
+    if (!install || !install.split('\n').some(line => line.trim() === command)) {
+      errors.push('pinned requirements workspace dependency installation is missing');
+    }
+    if (/^\s+(?:if|continue-on-error):/m.test(install)) {
+      errors.push('requirements workspace dependency installation cannot be conditional or advisory');
+    }
+    if (!scanner || !install || job.indexOf(install) < job.indexOf(scanner)) {
+      errors.push('requirements workspace dependency installation must follow gitleaks working-tree scan');
+    }
+    if (!install || !runner || job.indexOf(install) > job.indexOf(runner)) {
+      errors.push('requirements workspace dependency installation must precede the Node catalog');
+    }
+    if (job.split('\n').filter(line => line.trim() === command).length !== 1) {
+      errors.push('the Node contract job installs requirements workspace dependencies exactly once');
+    }
+    return errors;
+  }
+
+  function rootPackageIsolationErrors(pkg) {
+    const errors = [];
+    for (const section of ['dependencies', 'devDependencies', 'optionalDependencies']) {
+      for (const name of isolatedPackages) {
+        if (Object.hasOwn(pkg[section] ?? {}, name)) {
+          errors.push(`root package.json ${section} must not declare isolated requirements package ${name}`);
+        }
+      }
+    }
+    return errors;
+  }
+
+  assert.deepEqual(requirementsInstallErrors(ciContent), []);
+
+  const job = parseWorkflowJobs(ciContent.replace(/\r\n/g, '\n')).get('secret-scan');
+  const scanner = workflowStep(job, 'Run gitleaks (working tree + incremental)');
+  const install = workflowStep(job, stepName);
+  for (const [mutation, expectedError] of [
+    [current => current.replace(install, ''), /installation is missing/],
+    [current => current.replace(command, 'run: npm ci --ignore-scripts'), /installation is missing/],
+    [current => current.replace(`      - name: ${stepName}`, `      - name: ${stepName}\n        if: false`), /cannot be conditional or advisory/],
+    [current => current.replace(`      - name: ${stepName}`, `      - name: ${stepName}\n        continue-on-error: true`), /cannot be conditional or advisory/],
+    [current => current.replace(install, '').replace(scanner, `${install}\n${scanner}`), /must follow gitleaks working-tree scan/],
+    [current => `${current.replace(install, '')}\n${install}`, /must precede the Node catalog/],
+  ]) {
+    const changed = mutateWorkflowJob(ciContent, 'secret-scan', mutation);
+    assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'), 'the negative fixture must change the workflow');
+    assert.match(requirementsInstallErrors(changed).join('\n'), expectedError);
+  }
+
+  const rootPkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
+  const reqPkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'tools', 'requirements-workspace', 'package.json'), 'utf8'));
+  assert.deepEqual(rootPackageIsolationErrors(rootPkg), []);
+  for (const name of isolatedPackages) {
+    assert.ok(Object.hasOwn(reqPkg.dependencies ?? {}, name), `tools/requirements-workspace/package.json must declare ${name}`);
+    for (const section of ['dependencies', 'optionalDependencies']) {
+      const leaked = { ...rootPkg, [section]: { ...rootPkg[section], [name]: '1.0.0' } };
+      assert.match(rootPackageIsolationErrors(leaked).join('\n'), new RegExp(`must not declare.*${name.replace('/', '\\/')}`));
+    }
+  }
+
+  assert.ok(fs.existsSync(path.join(repoRoot, 'tools', 'requirements-workspace', 'package-lock.json')),
+    'tools/requirements-workspace/package-lock.json must exist');
+  const tracked = execFileSync(
+    'git',
+    ['ls-files', 'tools/requirements-workspace/package.json', 'tools/requirements-workspace/package-lock.json'],
+    { cwd: repoRoot, encoding: 'utf8', windowsHide: true },
+  ).trim().split(/\r?\n/).filter(Boolean);
+  assert.deepEqual(tracked.sort(), [
+    'tools/requirements-workspace/package-lock.json',
+    'tools/requirements-workspace/package.json',
+  ]);
+  assert.throws(
+    () => execFileSync('git', ['check-ignore', '--no-index', '--quiet', 'tools/requirements-workspace/package-lock.json'], {
+      cwd: repoRoot, windowsHide: true,
+    }),
+    error => error && error.status === 1,
+    'tools/requirements-workspace/package-lock.json must not be ignored in fresh generated repositories',
+  );
+});
+
 test('PR dependency review blocks only newly introduced high-risk runtime dependencies', () => {
   const secretScanJob = ciContent.match(
     /^  secret-scan:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
@@ -2075,8 +2166,8 @@ test('secret scanning reports before dependency installation and operational con
   const job = ciContent.match(/^  secret-scan:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m)?.[0] ?? '';
   const scanner = job.indexOf(workflowStep(job, 'Run gitleaks (working tree + incremental)'));
   assert.ok(scanner > job.indexOf('actions/checkout@'));
-  for (const name of ['Install pinned operational contract dependencies', 'Verify repository operational contracts',
-    'Require complete dependency snapshots']) {
+  for (const name of ['Install pinned operational contract dependencies', 'Install pinned requirements workspace dependencies',
+    'Verify repository operational contracts', 'Require complete dependency snapshots']) {
     const step = workflowStep(job, name);
     assert.ok(step.length > 0, name);
     assert.ok(scanner < job.indexOf(step), `gitleaks feedback must not wait for ${name}`);

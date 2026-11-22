@@ -510,6 +510,16 @@ test('requirements workspace selects its Node contracts and SAST without unrelat
   const unknown = 'tools/requirements-workspacex/server.mjs';
   assert.equal(generatorToolEntry(unknown), null);
   assert.deepEqual(classifyChangedFiles([unknown]).unknownFiles, [unknown]);
+  // Dependabot/dependency manifest and lockfile updates remain unclassified (fail-closed) so
+  // dependency snapshot checks and dependency-review-action run just like root package-lock.json PRs.
+  for (const manifestFile of ['tools/requirements-workspace/package.json', 'tools/requirements-workspace/package-lock.json']) {
+    assert.equal(generatorToolEntry(manifestFile), null, manifestFile);
+    const result = classifyChangedFiles([manifestFile], { event: 'pull_request' });
+    assert.deepEqual(result.unknownFiles, [manifestFile], manifestFile);
+    for (const axis of ['secretScan', 'backend', 'migration', 'frontend']) {
+      assert.equal(result[axis], true, `${manifestFile}: ${axis}`);
+    }
+  }
 });
 
 test('actual workspace engine inputs select packaged-test and conservative template-reader axes without prefix lookalikes', () => {

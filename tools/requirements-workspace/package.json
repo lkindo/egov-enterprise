@@ -1,0 +1,14 @@
+{
+  "name": "egov-requirements-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "1.1.0",
+    "kordoc": "4.24.46",
+    "pdfjs-dist": "6.5.438",
+    "sharp": "0.35.5"
+  }
+}

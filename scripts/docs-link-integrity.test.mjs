@@ -125,3 +125,21 @@ test('owned documentation does not revive the retired CI billing-block narrative
     /CI\s*과금\s*차단|과금차단/i.test(fs.readFileSync(path.join(repoRoot, file), 'utf8')));
   assert.deepEqual(stale, [], `Use current workflow evidence instead of retired billing claims: ${stale.join(', ')}`);
 });
+
+test('CRLF fenced tilde and backtick examples are masked identically to LF while keeping outside links', () => {
+  const crlfSource = [
+    '# Title',
+    '',
+    '~~~',
+    '[broken-tilde](missing-tilde.md)',
+    '~~~',
+    '',
+    '```md',
+    '[broken-backtick](missing-backtick.md)',
+    '```',
+    '',
+    '[real-outside](outside.md#section)',
+  ].join('\r\n');
+  assert.deepEqual(documentationLinks(crlfSource), ['outside.md#section']);
+  assert.deepEqual(documentationLinks(crlfSource), documentationLinks(crlfSource.replace(/\r\n/g, '\n')));
+});

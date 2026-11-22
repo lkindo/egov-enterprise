@@ -17,7 +17,7 @@ license: MIT — Complete terms in LICENSE.txt
 2. **유휴인지 확인한다.** `git worktree list --porcelain`, 그 트리의 `git status --short --untracked-files=all`, 브랜치, 실행 중인 서버·검증 프로세스. 유휴 후보는 detached HEAD 이면서 깨끗한 트리뿐이다. 깨끗하다는 것만으로 유휴라고 보지 않는다.
 3. **가드가 사는지 본다.** 대상 트리에서 `echo AGENT_GUARD_CANARY` 가 막혀야 한다.
 4. **작업 브랜치로 시작한다.** `git fetch origin` 뒤, 브랜치를 만들기 직전에 detached HEAD·깨끗한 트리·미사용 상태를 다시 확인한다 — 그 사이 달라졌으면 멈추고 임시 트리로 분리한다. 그대로면 `git switch --no-track -c <고유 작업 브랜치> origin/main`.
-5. **의존성.** 없거나 lockfile 이 바뀌었을 때만 루트 `npm ci`, 프런트 `pnpm -C frontend install --frozen-lockfile`. `frontend/node_modules` 를 링크로 빌려 쓰면 빌드와 격리 E2E 가 실패한다.
+5. **의존성.** 없거나 lockfile 이 바뀌었을 때만 루트 `npm ci`, 요구사항 도구 `npm --prefix tools/requirements-workspace ci --ignore-scripts`, 프런트 `pnpm -C frontend install --frozen-lockfile`. `frontend/node_modules` 를 링크로 빌려 쓰면 빌드와 격리 E2E 가 실패한다.
 6. **끝나면 대기 상태로.** PR 병합과 그 변경이 main 에 들어갔는지 확인하고, 병합된 PR HEAD 와 로컬·원격 작업 브랜치 HEAD 가 같은지(병합 뒤 더해진 커밋이 없는지), 미커밋·미추적 작업물이 없는지 본다. 그런 뒤 `git fetch --no-prune origin`, `git switch --detach origin/main`, 자기 작업 브랜치만 로컬 먼저·원격 나중으로 정리한다 — 순서와 확인은 [finishing-a-development-branch](../finishing-a-development-branch/SKILL.md)가 정본이다. 디렉터리·의존성·캐시는 남긴다.
 
 ## 임시 작업 트리

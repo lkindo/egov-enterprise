@@ -156,7 +156,7 @@ pnpm dev
 #### 1. 필수 요구사항
 - **Java**: 21 (LTS)
 - **Node.js**: 22+ (`.nvmrc` = 22, `frontend/package.json` `engines.node` = `>=22.0.0`)
-- **Package Manager**: 루트 npm(`package-lock.json`), 프런트엔드 pnpm 9(`frontend/pnpm-lock.yaml`)
+- **Package Manager**: 루트 npm(`package-lock.json`), 요구사항 도구 npm(`tools/requirements-workspace/package-lock.json`), 프런트엔드 pnpm 9(`frontend/pnpm-lock.yaml`)
 - **Database**: Docker 또는 PostgreSQL 17
 
 #### 2. 환경 설정 및 데이터베이스 자동 부트스트랩 (Flyway 표준 베이스라인)

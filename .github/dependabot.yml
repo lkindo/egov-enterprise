@@ -172,3 +172,16 @@ updates:
       #   (major 는 파괴적 변경이라 개별 판정이 필요하다).
       minor-and-patch:
         update-types: ["minor", "patch"]
+
+  # ── npm (요구사항 도구) ── tools/requirements-workspace/package-lock.json
+  - package-ecosystem: "npm"
+    directory: "/tools/requirements-workspace"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "03:00"
+      timezone: "Asia/Seoul"
+    open-pull-requests-limit: 3
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
