@@ -90,11 +90,11 @@ export const DECISION_AREA_ROUTES = Object.freeze({
   }),
   migration: Object.freeze({
     paths: Object.freeze([
-      'migration-tool/**', 'tools/migration-workspace/**', 'tools/migration-workspace-prototype/**', 'scripts/*migration*',
+      'migration-tool/**', 'tools/migration-workspace/**', 'scripts/*migration*',
       'config/migration-test-duration-profile.json',
     ]),
     documents: Object.freeze([
-      'docs/01-product/migration-workspace-design.md', 'docs/02-architecture/legacy-migration-tool-design.md',
+      'docs/02-architecture/legacy-migration-tool-design.md',
       'docs/03-guides/legacy-non-data-migration-guide.md', 'docs/03-guides/migration-workspace-guide.md',
       'docs/04-operations/migration-recovery-runbook.md', 'docs/04-operations/standard-metadata-disposition.md',
     ]),

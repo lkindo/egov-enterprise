@@ -47,11 +47,11 @@ pre-push와 `npm run verify`는 CodeQL 분석을 직접 실행하지 않는다. 
 
 ### 입력 의미 계약 게이트
 
-`InputContractMirrorLinterTest`가 등록된 입력 DTO의 문자열 길이·Y/N enum·필수 제약 종류와 validation group을 Entity 저장 상한 및 `api-docs.json`과 대조하고, 중첩 DTO의 cascade·null item 거절·item schema 연결과 서버 소유 필드의 Jackson/OpenAPI read-only 방향도 확인한다. 대상 목록과 필드 수는 [입력 계약 원장](../config/governance/input-contract-mirror-census.json)이 정본이며(baseline `__registry` hash로 동결), 검사 본문은 baseline full-source hash로 보호된다. 원장 항목마다 소유 pack을 적어 재사용 base 축소 프로필에서도 남은 표적을 검사한다(DEC-OPS-090). 하류 `codegen:verify`/`codegen:verify:zod`와 결합해 등록된 길이·enum·required/nullability·중첩 schema·요청 방향의 Entity → DTO → OpenAPI → TypeScript/Zod 드리프트를 pre-push에서 차단한다. `@NotBlank`의 공백 의미 보존과 root controller validation reachability 전수 검사는 아직 이 게이트 범위가 아니다.
+`InputContractMirrorLinterTest`가 등록된 입력 DTO의 문자열 길이·Y/N enum·필수 제약 종류와 validation group을 Entity 저장 상한 및 `api-docs.json`과 대조하고, 중첩 DTO의 cascade·null item 거절·item schema 연결과 서버 소유 필드의 Jackson/OpenAPI read-only 방향도 확인한다. 대상 목록과 필드 수는 [입력 계약 원장](../config/governance/input-contract-mirror-census.json)이 정본이다(재사용 생성물에서는 baseline `__registry` hash로 동결하고 검사 본문도 full-source hash로 보호한다, DEC-OPS-420). 표적을 JSON 원장에 두어 재사용 base 축소 구성에서도 남은 표적을 검사한다(DEC-OPS-090). 하류 `codegen:verify`/`codegen:verify:zod`와 결합해 등록된 길이·enum·required/nullability·중첩 schema·요청 방향의 Entity → DTO → OpenAPI → TypeScript/Zod 드리프트를 pre-push에서 차단한다. `@NotBlank`의 공백 의미 보존과 root controller validation reachability 전수 검사는 아직 이 게이트 범위가 아니다.
 
 ### 첨부 할당 인가 게이트
 
-`AttachmentSourceRegistryLinterTest`는 `atchFileSn`을 가진 엔티티와 참조원 registry를 양방향으로 대조하는 기존 열람 도달성 검사에 더해, `business-core`·`business-app`의 프로덕션 서비스 계층에서 첨부 식별자를 소비하는 메서드를 exact census로 수집한다. 귀속 저장은 `AttachmentAssignmentPolicy`의 원 업로더 가드가 저장보다 먼저 오는지 검사한다. DTO 변환·내용 스냅샷 등 읽기 전용 소비에는 쓰기를 금지하고, 파일 삭제는 `FileAccessPolicy.assertDeletable`이 메타데이터 삭제와 실물 삭제 예약보다 먼저 오는지 검사한다. 미등록 소비·가드 삭제·가드 후행은 하네스를 red로 만들며, 판정 본문은 baseline full-source hash로 보호된다.
+`AttachmentSourceRegistryLinterTest`는 `atchFileSn`을 가진 엔티티와 참조원 registry를 양방향으로 대조하는 기존 열람 도달성 검사에 더해, `business-core`·`business-app`의 프로덕션 서비스 계층에서 첨부 식별자를 소비하는 메서드를 exact census로 수집한다. 귀속 저장은 `AttachmentAssignmentPolicy`의 원 업로더 가드가 저장보다 먼저 오는지 검사한다. DTO 변환·내용 스냅샷 등 읽기 전용 소비에는 쓰기를 금지하고, 파일 삭제는 `FileAccessPolicy.assertDeletable`이 메타데이터 삭제와 실물 삭제 예약보다 먼저 오는지 검사한다. 미등록 소비·가드 삭제·가드 후행은 하네스를 red로 만든다(재사용 생성물에서는 판정 본문을 baseline full-source hash로 보호한다).
 
 ### 대표 거버넌스 하네스
 

@@ -10,7 +10,7 @@
 - **재개(사용자가 정한 때)** — [DEC-OPS-400](operational-decisions-index-composer.md) ② 순서를 따른다.
   1. 한 브랜치에서 다섯 벤더에 `ci: true` 를 되돌리고(승격 전 모양 — `preview`·사유 유지), 중단을 단언한 시험을 고친다: `scripts/project-composer-vendor.test.mjs` 의 ci 목록·preview 목록, `scripts/ci-change-scope.test.mjs` 의 인증 중단 시험과 출력 문자열 시험의 벤더 matrix. PR 과 main 의 벤더 잡이 그동안의 깨짐을 드러내면 그 브랜치에서 고친다.
   2. main 에서 두 레이아웃의 벤더 잡이 통과한 뒤 그 커밋의 demo 멀티모듈 생성물(아직 preview 라 `COMPOSER_PREVIEW_VENDOR` 를 켠 도구 실행으로 만든다)로 엔진마다 증거를 기록한다(`node scripts/project-composer-vendor-evidence.mjs --vendor <id> --version <엔진 버전> --artifact <생성물>`, 다섯 벤더·여섯 엔진에 약 4시간, 기록 중 트리 변경 금지). 그리고 `status` 를 `certified` 로 올리고 사유를 걷으며 선택 표시 시험(`selectableVendors`)을 고친다.
-  3. 같은 변경에서 AGENTS.md 의 중단 문장, 이 절, 생성기 가이드·CI 가이드·다중 DB 설계서·인수인계 문서·공용 메모리 CTX-019 의 중단 문장을 걷는다.
+  3. 같은 변경에서 AGENTS.md 의 중단 문장, 이 절, 생성기 가이드·생성기 설계서(단계 표 E)·CI 가이드·다중 DB 설계서·인수인계 문서·공용 메모리 CTX-019 의 중단 문장을 걷는다.
   4. 마지막 증거는 원본 커밋 70cccd261 로 기록했다(fc59efbba). 재개 때 깨진 곳을 찾으면 그 커밋부터 벤더 입력의 변경을 거슬러 본다(`git log 70cccd261..main -- <입력 경로>`).
 
 ## 왜 모으는가
@@ -70,6 +70,5 @@
 - **무거운 검증 대기열의 남은 연결(DEC-OPS-413)** — `run-isolated-e2e.mjs`·`generate-reusable-base-db.mjs` 의 CLI 분기에 `ensureQueued` 를 넣고, 가드의 해당 항목과 SOP §6.3·GAP-AGENT-001 의 '재기록 묶음에서 연결' 문구를 걷는다.
 - **벤더 잡의 Gradle 데몬 재사용(ADR-0061 「하지 않은 것」 R2)** — `project-composer-vendor-integration.mjs` 의 `--no-daemon` 을 CI 에서만 걷고 끝에 `--stop` 한다.
 - **`VendorTestSql.java` 의 CUBRID 관측 임시 파일** — 시험 스레드가 중단되면 프로세스를 끝내지 않고 지우며 실패를 무시해 임시 파일이 남는다.
-- **은퇴한 정적 시뮬레이터(`tools/migration-workspace-prototype/`) 디렉터리 제거** — `config/governance/vendor-removed-assets.json`·`config/db-vendors.json`(`removedPostgresTools`) 이 벤더 증거 입력에 걸리므로 `gates.json`·`package.json`·`ci-change-scope.mjs`·`.github/CODEOWNERS`·`config/security/codeql.yml`·관련 문서(`migration-workspace-design.md`·`cicd-pipeline.md`·`migration-workspace-guide.md`) 및 계약 시험과 함께 제거.
 - **벤더 대표 E2E 앱 기동 대기 하한(`240초`) 보장** — `scripts/run-isolated-e2e.mjs` 가 `vendorRuntime.engine.maxWaitSeconds * 1000`(`cubrid` `120초`)을 그대로 넘겨 기본값(`180초`)보다 짧아지면서 Windows Docker TCP 의 CUBRID Flyway(`77~92초`)+기동(`~60초`)이 시간 초과되는 문제를 `applicationReadyTimeoutMs`(`Math.max(240_000, maxWaitSeconds * 1000)`) 로 해소(`scripts/project-composer-vendor.test.mjs` 로 고정).
 - **E2E 정리** — `security-administration.spec.ts` 의 완전 회수 단계를 BFF 로그인으로 되돌린다. `authentication.spec.ts` 에서는 로그아웃과 겹친 배너·팝업 조회의 간헐 실패를 고친다 — 허용 항목으로 덮지 않는다.
