@@ -1,6 +1,6 @@
 # 로컬 이관 작업공간 실행 안내
 
-이 도구는 온라인 업무 앱과 별도 URL에서 기존 Java 이관 CLI를 실행한다. 제품 결정은 [ADR-0041](../02-architecture/decisions/ADR-0041-local-migration-workspace-and-ai.md), 화면 예시는 [설계서](../01-product/migration-workspace-design.md)에 있다.
+이 도구는 온라인 업무 앱과 별도 URL에서 기존 Java 이관 CLI를 실행한다. 제품 결정은 [ADR-0041](../02-architecture/decisions/ADR-0041-local-migration-workspace-and-ai.md)에 있다.
 
 ## 시작
 
@@ -18,8 +18,6 @@ npm run migration:ui -- --workspace D:/migration-workspaces/project-a
 - 같은 탭은 새로고침해도 연결이 유지된다. 새 탭이나 북마크처럼 조각 없이 연 화면은 연결되지 않으므로 터미널에 표시된 주소를 다시 연다.
 - 실행기를 다시 시작하면 비밀이 바뀐다. 이전 탭은 `LAUNCH_REQUIRED`와 터미널에 표시된 주소로 다시 열라는 안내를 표시하므로, 터미널의 새 주소로 다시 연다.
 - 실행기는 비밀을 상수 시간으로 비교하며 헤더가 없거나 틀리거나 중복되면 `403 LAUNCH_REQUIRED`로 요청 토큰을 주지 않는다. 쿼리 문자열로 보낸 비밀은 받지 않는다. 그래서 같은 PC의 다른 OS 계정이나 브라우저 밖 로컬 프로그램은 loopback에 닿아도 요청 토큰을 받지 못한다. Host·Origin·Sec-Fetch·요청 토큰 검사는 그대로다.
-
-프로토타입은 `node tools/migration-workspace-prototype/serve.mjs`로 8769에서 열며 실제 연결과 적재를 하지 않는다. 두 화면은 별개다. 프로토타입이 Windows에서 브라우저를 자동으로 열 때는 `%SystemRoot%\System32\rundll32.exe` 전체 경로를 쓰고(`SystemRoot`가 없거나 로컬 절대 경로가 아니면 `C:\Windows`), 그 파일이 링크가 아닌 일반 파일일 때만 실행한다. 아니면 주소를 직접 열라고 안내한다. `--no-open`으로 자동 열기를 끈다.
 
 ## 실제 작업 순서
 
@@ -113,10 +111,9 @@ API 경로는 화면에서 **OpenAI API**를 직접 선택하고 모델명과 AP
 ```powershell
 npm run test:migration-workspace
 node tools/migration-workspace/build-styles.mjs --check
-node tools/migration-workspace-prototype/build-styles.mjs --check
 ```
 
-`npm run test:migration-workspace`는 `tools/migration-workspace/`와 `tools/migration-workspace-prototype/`의 `*.test.mjs`를 모두 찾아 실행한다. 같은 파일이 `npm run test:operational-contracts`에도 들어 있어 필수 CI(`secret-scan`)·pre-push·`npm run verify`에서 돌고, [gate registry](../../config/governance/gates.json)의 운영 계약 카탈로그가 그 안의 `skip`·`only`·`todo`를 막는다. 다루는 범위는 로컬 HTTP 경계(실행 비밀·Host/Origin·요청 토큰), 입력 준비와 업로드 잠금, 저장·재시작 복구, 실행 요청과 결과 불명 작업 확인, AI 문맥 정책·질문 검사·전송 기록, Codex 홈 격리 조건, 시안 서버다.
+`npm run test:migration-workspace`는 `tools/migration-workspace/`의 `*.test.mjs`를 모두 찾아 실행한다. 같은 파일이 `npm run test:operational-contracts`에도 들어 있어 필수 CI(`secret-scan`)·pre-push·`npm run verify`에서 돌고, [gate registry](../../config/governance/gates.json)의 운영 계약 카탈로그가 그 안의 `skip`·`only`·`todo`를 막는다. 다루는 범위는 로컬 HTTP 경계(실행 비밀·Host/Origin·요청 토큰), 입력 준비와 업로드 잠금, 저장·재시작 복구, 실행 요청과 결과 불명 작업 확인, AI 문맥 정책·질문 검사·전송 기록, Codex 홈 격리 조건이다.
 
 [CLI 계약](../../tools/migration-workspace/cli-contract.test.mjs)은 JAR를 실행하지 않는 소스 대조 계약이다. 실행기를 가짜 자식 프로세스로 돌려 받은 인자를 Java CLI와 대조한다 — 명령별 옵션(`WorkflowCliOptions`), `--command`·`--mode` 값, adapter ID, object kind, `-D` 속성. 진단 코드는 `WorkflowFailureDiagnostic` 열거값과 정확히 같아야 하고(`CLI_FAILED`는 공통 기본값) 화면이 코드마다 안내를 가져야 하며, 산출물 형식 판·종류·필드 이름은 Java 상수와 같아야 한다.
 
@@ -124,8 +121,8 @@ node tools/migration-workspace-prototype/build-styles.mjs --check
 
 원본 저장소의 측정 출처 검사는 `refs/remotes/origin/main`과 측정 기준 커밋까지의 이력을 요구한다. 단일 브랜치·얕은 clone에서는 이 참조와 이력을 먼저 가져와야 한다. 내보낸 독립 제품은 승인 lock으로 출처를 확인하므로 기관 저장소에 이 원격 참조를 요구하지 않는다.
 
-`--check`는 파일을 쓰지 않고 커밋본 CSS와 비교해 낡으면 종료 코드 1, 잘못된 인자는 2로 끝난다. 다시 만드는 명령은 `npm run migration:ui:css`이며 시안 CSS에는 frontend 의존성이 필요하다. 운영 계약 시험이 두 CSS의 신선도를 늘 보므로 `premium.css` 토큰·시안 화면 클래스·설치된 Tailwind 판이 바뀌면 다시 만들 때까지 붉다.
+`--check`는 파일을 쓰지 않고 커밋본 CSS와 비교해 낡으면 종료 코드 1, 잘못된 인자는 2로 끝난다. 다시 만드는 명령은 `npm run migration:ui:css`다. 운영 계약 시험이 CSS의 신선도를 늘 보므로 `premium.css` 토큰이나 `styles.input.css`가 바뀌면 다시 만들 때까지 붉다.
 
-두 디렉터리는 CodeQL JavaScript 분석 범위([codeql.yml](../../config/security/codeql.yml))에 들어 있고 로컬 근사(`npm run sast:approx`)도 같은 범위를 본다. 작업공간의 `engine.mjs`·`store.mjs`·`inputs.mjs` 변경은 실제 실행 시험의 입력이므로 CI의 이관·이관 mutation 검증도 켠다. 생성 Groovy의 경로 참조를 따라가는 기존 보수적 reader 검사는 이 세 파일에 backend·E2E 축도 요구한다. 이 정적 참조는 해당 시험이 엔진 바이트를 직접 실행한다는 증거와 구분한다. 이 세 파일은 이관 독립 제품에 포함하고 이관 도입 승인 digest에도 묶는다. 나머지 UI·서버·AI·시안 경로의 도구 분류는 유지한다([DEC-OPS-391](../archived/operational-decisions-history.md#dec-ops-391)).
+이 디렉터리는 CodeQL JavaScript 분석 범위([codeql.yml](../../config/security/codeql.yml))에 들어 있고 로컬 근사(`npm run sast:approx`)도 같은 범위를 본다. 작업공간의 `engine.mjs`·`store.mjs`·`inputs.mjs` 변경은 실제 실행 시험의 입력이므로 CI의 이관·이관 mutation 검증도 켠다. 생성 Groovy의 경로 참조를 따라가는 기존 보수적 reader 검사는 이 세 파일에 backend·E2E 축도 요구한다. 이 정적 참조는 해당 시험이 엔진 바이트를 직접 실행한다는 증거와 구분한다. 이 세 파일은 이관 독립 제품에 포함하고 이관 도입 승인 digest에도 묶는다. 나머지 UI·서버·AI 경로의 도구 분류는 유지한다([DEC-OPS-391](../archived/operational-decisions-history.md#dec-ops-391)).
 
-이 검사는 실제 기관 DB, Oracle 등 driver별 버전, 실제 AI 계정 로그인·요금·응답 품질, 운영 규모 성능을 검증했다는 뜻이 아니다. 실제 실행 결과를 확인하기 전에는 운영 전환에 사용하지 않는다.
+이 검사는 실제 기관 DB, Oracle 등 driver별 버전, 실제 AI 계정 로그인·요금·응답 품질, 운영 규모 성능을 검증했다는 뜻이 아니다. 실제 실행 결과를 확인하기 전에는 운영 전환에 사용하지 않는다. AI 제안의 품질은 검증하지 않았다 — 제공자 어댑터를 넓히거나 제안 품질을 주장하려면 기준 답이 있는 합성 업무 사례에서 수동 검토 결과와 비교한 증거를 먼저 남긴다(ADR-0041 승인 때의 2차 인수 기준).

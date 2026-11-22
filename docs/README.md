@@ -34,8 +34,6 @@
 
 [information-architecture.md](01-product/information-architecture.md) — ADR-0007의 참조-기본 IA와 route disposition 경계. 개인정보성 업무 검색어의 현행 URL 정책은 ADR-0009가 규율한다. 별도의 비규범 `class-governed` 컨테이너에는 4개 부류의 독립 승인 기록과 3개 미해결 부류가 있다.
 
-[migration-workspace-design.md](01-product/migration-workspace-design.md) — 승인된 독립 로컬 이관 작업공간 설계와 합성 시뮬레이션(A1~A8, ADR-0041).
-
 
 ## 02-architecture — 설계
 
@@ -156,15 +154,16 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 
 ## archived — 구버전 보관
 
-> 아래는 **더 이상 현행이 아니다.** 현행 상태를 판단하는 근거로 쓰지 말 것.
+> 아래 문서의 수치·환경 상태·평가는 **적힌 시점의 것**이다. 현재 실측이나 현행 규칙으로 인용하지 말 것. 결정 보관 원문의 유효한 결정은 예외로, 결정의 본문이다.
 
-**언제 옮기는가(문서 수명).**
+**끝난 기록은 지운다(문서 수명, DEC-OPS-426).** 이 저장소는 다른 프로젝트의 베이스다. 여기까지 온 경위는 Git 이력·PR·결정 보관 원문에 있고, 문서로 따로 두면 링크 검사·인덱스·생성물 복사 비용만 남는다. 이곳은 끝난 문서를 모으는 곳이 아니라 아래 예외만 두는 곳이다.
 
-- 설계서·제안서는 구현이 끝나면 현행 동작의 사양과 열린 조건만 남기고, 구현 기록·경위·당시 실측은 이곳으로 옮긴다.
-- 날짜가 붙은 검토·평가 의견은 후속 처리가 끝나면 통째로 옮긴다.
-- 실측·재검토를 쌓는 로그형 문서는, 그 절을 근거로 삼는 열린 gap·설정·결정이 없어지면 그 절을 옮긴다. 열린 gap 의 근거인 절은 옮기지 않는다.
-- 닫힌 gap 의 재개 조건이나 결정의 후속 정정처럼 지금도 판단에 쓰이는 문장이 그 절에만 있으면, 옮기지 않거나 옮기기 전에 그 문장을 현행 문서(gap 상세·가이드)로 올린다 — 보관 문서를 "따른다"고 가리키는 현행 문장을 남기지 않는다.
-- 옮기는 변경에서 들어오는 링크를 새 위치로 고친다(결정 보관 원문과 ADR 은 링크 경로만 고치고 문장은 그대로 둔다). 옛 경로에 제목을 남기는 것은 고칠 수 없는 참조 — 적용이 끝난 Flyway 주석 등 — 가 그 경로를 가리킬 때뿐이다(위 「참조 보존 tombstone」).
+- 설계서·제안서는 구현이 끝나면 현행 동작의 사양과 열린 조건만 남기고, 구현 기록·경위·당시 실측은 지운다.
+- 날짜가 붙은 검토·평가 의견은 후속 처리가 끝나면 통째로 지운다.
+- 실측·재검토를 쌓는 로그형 문서는, 그 절을 근거로 삼는 열린 gap·설정·결정이 없어지면 그 절을 지운다. 열린 gap 의 근거인 절은 지우지 않는다.
+- 지우기 전에 그 문서를 통독해, 지금도 판단에 쓰이는 문장 — 닫힌 gap 의 재개 조건, 결정의 후속 정정, 고치지 않고 남긴 관찰 — 이 그 문서에만 있으면 현행 문서(gap 상세·가이드)로 먼저 올린다. 제목과 요약만 보고 지우지 않는다.
+- 이곳에 남기는 것은 지금의 판단·절차가 의존하는 기록뿐이다 — 현행 문서·ADR·헌법 산출물·열린 gap·설정·워크플로가 근거로 가리키는 기록과, 결정의 본문인 결정 보관 원문·역사 색인. 가리키는 것이 없어지면 지운다. 보관 문서의 절차를 "따른다"고 가리키는 현행 문장은 남기지 않는다 — 그 절차를 현행 문서로 올린다.
+- 지우는 변경에서 들어오는 링크를 함께 걷는다(결정 보관 원문과 ADR 은 링크만 풀고 문장은 그대로 둔다). 옛 경로에 제목을 남기는 것은 고칠 수 없는 참조 — 적용이 끝난 Flyway 주석 등 — 가 그 경로를 가리킬 때뿐이다(위 「참조 보존 tombstone」).
 - 함께 볼 것: 경로 원장(`scripts/decision-indexes.mjs` 의 문서 배정), 공용 메모리 행 길이 상한, 헌법 `metadata.json` 의 references, 그 문서의 본문을 읽는 계약.
 
 | 문서 | 내용 |
@@ -172,18 +171,11 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [PRD.MD](archived/PRD.MD) | 초기 제품 요구의 역사 원본 — 대체 PRD 확정 전 보존 또는 tombstone 축약 |
 | [TRD.MD](archived/TRD.MD) | 초기 기술 요구 역사 원본 — PRD와 함께 보존 여부 결정 |
 | [url-state-classification-draft.md](archived/url-state-classification-draft.md) | ADR-0009 이전 URL-state 분류의 **역사적 결정 입력물**. 검색어 절대 금지·보류 제안은 현행 정책이 아니다. |
-| [governance-atlas-improvement-plan.md](archived/governance-atlas-improvement-plan.md) | Atlas 보강 조사·설계·적용 결과와 검증 경계 |
-| [source-simplification-audit-2026-10-06.md](archived/source-simplification-audit-2026-10-06.md) | 전체 소스 정적 조사 — 미사용·중복·레거시·비표준·복잡도 정비 후보 29개와 근거·검증·실행 순서 |
 | [source-simplification-results-2026-10-06.md](archived/source-simplification-results-2026-10-06.md) | 조사 후 순차 정비 — 변경 범위·입력 호환성·조회 수·검증 결과와 남은 경계 |
 | [source-simplification-recheck-2026-10-07.md](archived/source-simplification-recheck-2026-10-07.md) | PR #846 재검증과 추가 전수 정비 — 부서 트리 회귀 수정, 6단계 정비 범위·바뀐 동작·남긴 것과 검증 결과 |
-| [url-state-privacy-classification-draft.md](archived/url-state-privacy-classification-draft.md) | ADR-0009 이전 URL-state 프라이버시 분류의 **역사적 초안** — 현행 검색 정책은 ADR-0009, 부류별 검토 상태는 비규범 `class-governed` 컨테이너를 확인 |
 | [erp-transformation-master-plan.html](archived/erp-transformation-master-plan.html) | 공통 프레임워크 × ERP·공공 업무시스템 전환 6단계 마스터플랜(2026-08-23, 결정 D1~D10 포함) |
-| [dual-operator-coordination.md](archived/dual-operator-coordination.md) | 레거시 Gemini↔Claude 실시간 조정 설계(구현 보류); 현행 다중 operator 공통 계약은 [AGENTS.md](../AGENTS.md) |
-| [evidence-first-improvement-loop-prompt.md](archived/evidence-first-improvement-loop-prompt.md) | 분야·도메인 재평가의 결함을 승인 범위·부정 검증·종료 조건에 따라 개선하는 실행 프롬프트 |
 | [adversarial-reassessment-2026-09-27.md](archived/adversarial-reassessment-2026-09-27.md) | 0ef8af32f 기준 Claude 평가의 수용·반박, 11개 분야·33개 도메인 잠정 평가와 개선 배치 |
 | [evidence-first-policy-decisions-2026-09-27.md](archived/evidence-first-policy-decisions-2026-09-27.md) | 개선 루프 R4 권한·공개 범위와 R6 삭제 단위의 당시 선택지 — ADR-0025가 결정한 **결정 입력물** |
-| [authorization-source-inventory.json](archived/authorization-source-inventory.json) | 인가 전환 전 권한 관련 소스 검색·참조 확장 스냅샷 887개(2026-09-10); 현재 파일 목록이 아님 |
-| [authorization-db-evidence.json](archived/authorization-db-evidence.json) | 인가 전환 설계의 2026-09-10 OCI 읽기 전용 스키마·행 수·표준 메타 증거; 전환 실행 증거가 아님 |
 | [standard-length-alignment-runbook.md](archived/standard-length-alignment-runbook.md) | ADR-0013·0014 표준 길이 정합의 단계별 전환·실패·복구 검증 기록(적용 완료) |
 | [legacy-standardization-migration-design.md](archived/legacy-standardization-migration-design.md) | 레거시 표준화 이관의 채택 전 진단(2026-10-13)과 표준용어 식별 방법론 — [ADR-0029](02-architecture/decisions/ADR-0029-legacy-standardization-migration.md)·0031로 채택, 현행 동작은 이관 도구 설계 |
 | [constitution-compaction-2026-11-22.md](archived/constitution-compaction-2026-11-22.md) | 2026-11-22 헌법 조문 축약에서 줄이거나 고친 항의 직전 원문(DEC-OPS-425) — 현행 규범이 아님 |
