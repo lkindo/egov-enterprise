@@ -40,7 +40,7 @@
 2026-09-11 사용자는 OCI 메뉴 84개·활성 79개와 실제 구현을 조사한 재편안을 승인했다. **나의 업무 / 소통·지식 / 참여 / 관리 센터**의 전체 배치, 중복 4개 통합, 불필요한 분류 5개 제거, 분류 2개 추가와 화면 구성 예제 숨김의 정본은 [ADR-0017](../02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md)이다. 해당 범위의 메뉴 SQL·NAV 이행·화면 탐색 변경은 승인됐다. 아래 2026-08-21 수치는 역사적 조사이며 오늘의 OCI 상태로 사용하지 않는다. 기관 사용자 연구와 전체 route disposition 승인은 별개다.
 
 - 2026-08-21 live test target의 read-only 구조 census에서 메뉴 88건·활성 77건·숨김 11건, broken 0건, 중복 route group 9건, 부모/자식 동일 route 5건, orphan route 41건을 관측했다. 별도 authority aggregate에서 `ROLE_ADMIN`은 활성 메뉴 77건/배정 사용자 1명, `ROLE_USER`는 33건/23명, `ROLE_ANONYMOUS`와 `ROLE_SYSTEM`은 각 0건으로 관측됐다. endpoint·사용자 식별자·credential은 보존하지 않았다. 이 값은 release SHA에 결속된 synthetic sample-user effective-menu artifact가 아니므로 G1 승인 증거로 승격하지 않는다.
-- [route capability manifest](../../config/ui-route-capabilities.json)의 118개 구현 경로 모두 `roles=["UNVERIFIED"]`, `decisionSafe=false`다. 2026-09-25 정기 검토에서 `menuExposure`는 `tb_menu_info` 구조 관측으로(표시 54·숨김 3·메뉴 없음 61), 페이지 제목과 capability 상태는 코드 대조로 채웠다. 이 값은 그룹별로 실제 보이는 메뉴가 아니다([검토 기록](../04-operations/readiness-followups.md#라우트-기능-원장-정기-검토-2026-09-25)).
+- [route capability manifest](../../config/ui-route-capabilities.json)의 118개 구현 경로 모두 `roles=["UNVERIFIED"]`, `decisionSafe=false`다. 2026-09-25 정기 검토에서 `menuExposure`는 `tb_menu_info` 구조 관측으로(표시 54·숨김 3·메뉴 없음 61), 페이지 제목과 capability 상태는 코드 대조로 채웠다. 이 값은 그룹별로 실제 보이는 메뉴가 아니다([검토 기록](../archived/readiness-followups-closed.md#라우트-기능-원장-정기-검토-2026-09-25)).
 - 실제 사용자, top-task 빈도, 기관별 역할·용어·지원 디바이스와 연구 결과가 없다.
 - 따라서 위 live 구조·authority aggregate는 예비 입력으로만 사용하며, “사용자가 이 구조를 선호한다” 또는 “G1 통과”라고 쓰지 않는다.
 

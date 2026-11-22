@@ -64,12 +64,12 @@
 
 | 원문 주장 | 현재 근거와 판정 | 후속 조건 |
 |---|---|---|
-| 284·298행: 파일을 삭제했다가 롤백 시 복원 | [FileService](../../business-core/src/main/java/nuri/business/service/file/FileService.java) 173~185행은 메타데이터와 삭제 의도를 커밋하고 실물 삭제를 영속 작업으로 미룬다. 롤백 콜백은 삭제 대상 식별 준비물을 해제한다. 설명한 복원 방식과 다르다. | “커밋 후 지연 삭제”로 정정하고 [복구 절차](durable-work-recovery.md)의 재시도 소진·`FAILED`·잔여 준비물 처리 경계를 포함한다. |
-| 1481·1489·1585행: SMS 자동 복구 보장 | [SmsReceiptState](../../business-app/src/main/java/nuri/business/service/sms/SmsReceiptState.java)에는 `UNKNOWN`이 있고 120행은 자동 재발송하지 않는다고 안내한다. [운영 절차](sms-provider-operations.md)는 선점 후 중단의 exactly-once를 보장하지 않는다. | 접수·전달·결과 미확정과 운영자 대조를 구분한다. 불확실한 POST에 재시도를 늘리면 중복 발송 위험이 생기므로 단순 retry 추가에 반대한다. |
+| 284·298행: 파일을 삭제했다가 롤백 시 복원 | [FileService](../../business-core/src/main/java/nuri/business/service/file/FileService.java) 173~185행은 메타데이터와 삭제 의도를 커밋하고 실물 삭제를 영속 작업으로 미룬다. 롤백 콜백은 삭제 대상 식별 준비물을 해제한다. 설명한 복원 방식과 다르다. | “커밋 후 지연 삭제”로 정정하고 [복구 절차](../04-operations/durable-work-recovery.md)의 재시도 소진·`FAILED`·잔여 준비물 처리 경계를 포함한다. |
+| 1481·1489·1585행: SMS 자동 복구 보장 | [SmsReceiptState](../../business-app/src/main/java/nuri/business/service/sms/SmsReceiptState.java)에는 `UNKNOWN`이 있고 120행은 자동 재발송하지 않는다고 안내한다. [운영 절차](../04-operations/sms-provider-operations.md)는 선점 후 중단의 exactly-once를 보장하지 않는다. | 접수·전달·결과 미확정과 운영자 대조를 구분한다. 불확실한 POST에 재시도를 늘리면 중복 발송 위험이 생기므로 단순 retry 추가에 반대한다. |
 | 1759·1793~1796행: 7개 벤더 이관 완비 | [OracleSourceAdapter](../../migration-tool/src/main/java/nuri/migration/adapter/OracleSourceAdapter.java) 26~50행에 `UNVERIFIED`·`MANUAL_ONLY`가 있다. [MigrationWorkflowRunner](../../migration-tool/src/main/java/nuri/migration/MigrationWorkflowRunner.java) 643~645행은 미검증 어댑터의 공개 COMMIT을 거부한다. | 어댑터 존재·discovery·DRY_RUN·엔진 리허설·공개 CLI COMMIT·운영 cutover를 나눈다. PostgreSQL까지 일괄 미검증이라고 해서는 안 된다. 도입할 벤더·버전부터 자격 증거를 확보한다. |
 | 1777행: JDBC read-only가 원천 데이터 변경을 원천 차단 | [SourceAdapter](../../migration-tool/src/main/java/nuri/migration/adapter/SourceAdapter.java) 96행은 읽기 전용이 힌트이며 DB의 SELECT-only 권한 실측이 별도 필요하다고 명시한다. | DB 계정 권한·원천 동결·허용 및 거부 시험을 별도 증거로 요구한다. 읽기 전용 플래그를 권한 통제로 간주하지 않는다. |
 | 1619·1828·1946~1948행: 7일 운영 관측을 물리적으로 강제 | [ZeroDowntimeMigrationLinterTest](../../api-server/src/test/java/nuri/api/harness/ZeroDowntimeMigrationLinterTest.java) 1537~1539행은 실제 배포를 증명하지 않는다고 명시한다. 1573행은 기록 날짜를 검사하며, 정책 전 동결분·승인된 같은 릴리스 예외가 있다. | 기록 형식·순서·기간 검증으로 한정한다. 실제 배포, 구버전 소비 종료, 잠금 시간, 관측·복구는 환경별 증거로 판단한다. |
-| 1952행: 모든 테이블의 감사 4개 컬럼 완비 | 원문 이름과 달리 [BaseEntity](../../foundation/src/main/java/nuri/foundation/domain/common/BaseEntity.java)는 `frstRgtrId`·`lastMdfrId`, [BaseTimeEntity](../../foundation/src/main/java/nuri/foundation/domain/common/BaseTimeEntity.java)는 `crtDt`·`mdfcnDt`다. [DB 헌법](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md)에는 메타·insert-only 예외도 있다. | 전 테이블 단정과 잘못된 이름을 정정한다. [메타 처분 자료](standard-metadata-disposition.md)의 과거 실측은 날짜를 붙여 사용하고, 현재 DB 수치로 재사용하지 않는다. FK 인덱스 존재만으로 대용량 성능을 보장하지 않는다. |
+| 1952행: 모든 테이블의 감사 4개 컬럼 완비 | 원문 이름과 달리 [BaseEntity](../../foundation/src/main/java/nuri/foundation/domain/common/BaseEntity.java)는 `frstRgtrId`·`lastMdfrId`, [BaseTimeEntity](../../foundation/src/main/java/nuri/foundation/domain/common/BaseTimeEntity.java)는 `crtDt`·`mdfcnDt`다. [DB 헌법](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md)에는 메타·insert-only 예외도 있다. | 전 테이블 단정과 잘못된 이름을 정정한다. [메타 처분 자료](../04-operations/standard-metadata-disposition.md)의 과거 실측은 날짜를 붙여 사용하고, 현재 DB 수치로 재사용하지 않는다. FK 인덱스 존재만으로 대용량 성능을 보장하지 않는다. |
 
 ### 기능 범위·소비자·자원 상한
 
@@ -100,7 +100,7 @@
 | 포상 결재 참조 제거 또는 활용 | **제품 결정 필요** | 전자결재 연동·이력 보존·기존 데이터 의미를 먼저 정한다. 코드 미사용만으로 필드 삭제를 승인한 것으로 보지 않는다. |
 | JSP resolver·레거시 매처 정리 | **소비자 조사 후 낮은 우선순위** | 현재 eGov 호환 계약·외부 소비를 확인하고 제거한다. 이관 자격·감사·수정 충돌보다 우선하지 않는다. |
 | migration CLI 원본 stacktrace 별도 저장 | **원문 상시 저장 반대** | [VisibilityFinding](../../migration-tool/src/main/java/nuri/migration/discovery/VisibilityFinding.java)은 벤더 예외의 접속 정보 등 민감 문맥을 이유로 원문 보관을 피한다. 안전한 코드·단계·상관 ID를 먼저 보강하고 비밀 유출 부정 시험을 둔다. |
-| 기존 Flyway waiver 정리 | **재검토 동의, 적용 파일 수정 반대** | [무중단 이행 규칙](../../docs/02-architecture/zero-downtime-migration.md)은 적용된 파일의 checksum 변경을 금지한다. 필요한 시정은 새 forward migration으로 한다. 예외를 무조건 영구화하거나 넓혀 green으로 만드는 것도 반대한다. |
+| 기존 Flyway waiver 정리 | **재검토 동의, 적용 파일 수정 반대** | [무중단 이행 규칙](../02-architecture/zero-downtime-migration.md)은 적용된 파일의 checksum 변경을 금지한다. 필요한 시정은 새 forward migration으로 한다. 예외를 무조건 영구화하거나 넓혀 green으로 만드는 것도 반대한다. |
 
 추가로 놓친 문구 정합성 후보가 있다. 댓글 화면은 “영구 삭제”로 안내하고 코드 주석은 “물리 삭제”라고 설명하지만 [Comment.delete](../../business-app/src/main/java/nuri/business/domain/comment/Comment.java) 85~86행은 `useYn = "N"`이다. 복구 UI가 없다는 사실과 저장된 데이터의 물리 파기는 구분해야 한다. 파기 동작을 임의 변경하지 말고 실제 동작에 맞게 안내를 정리할 수 있다.
 
