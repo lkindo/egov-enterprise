@@ -74,16 +74,16 @@
 
 ### 제10조 (보안 헤더 및 외부 리소스)
 1. 외부 리소스(폰트·이미지·스크립트 출처 등)를 추가·변경할 때는 `src/proxy.ts`의 CSP(및 `next.config.ts`의 정적 보안 헤더)와 충돌 여부를 상시 확인한다. CSP가 차단하는 리소스는 오류 없이 조용히 fallback될 수 있으므로 "적용된 것처럼 보임"을 증거로 삼지 않는다.
-2. **[최소 보안 헤더 베이스라인]** 보안 헤더는 두 소스로 나뉘며, 이 베이스라인의 약화(헤더 삭제·완화)는 헌법 위반으로 간주한다. **CSP는 `src/proxy.ts`(미들웨어)가 단일 소스**다 — nonce는 요청마다 달라야 하므로 정적 `headers()`로는 만들 수 없고, `next.config.ts`에 CSP가 재유입되면 이중 소스가 된다(`csp-policy` 계약이 차단). 문서 응답 격리 헤더(COOP)와 CSP `report-to` 그룹 정의(`Reporting-Endpoints`)도 `src/proxy.ts`가 문서 응답에 부여하고, 요청 무관 정적 헤더는 `next.config.ts`의 `headers()`가 전역 경로(`/:path*`)에 부여한다.
+2. **[최소 보안 헤더 베이스라인]** 보안 헤더는 두 소스로 나뉘며, 이 베이스라인의 약화(헤더 삭제·완화)는 헌법 위반으로 간주한다. **CSP는 `src/proxy.ts`(미들웨어)가 단일 소스**다(`next.config.ts` 재유입은 `csp-policy` 계약이 차단). 문서 응답 격리 헤더(COOP)와 CSP `report-to` 그룹 정의(`Reporting-Endpoints`)도 `src/proxy.ts`가 문서 응답에 부여하고, 요청 무관 정적 헤더는 `next.config.ts`의 `headers()`가 전역 경로(`/:path*`)에 부여한다.
    - **Content-Security-Policy** (proxy.ts): prod `script-src`는 `'self' 'nonce-…'`뿐이다 — `'unsafe-inline'`·`'unsafe-eval'` 없음. `script-src-attr 'none'`으로 inline 이벤트 핸들러를 차단하고, `connect-src`는 `'self'`로 한정한다. prod/dev 공통으로 `object-src 'none'`·`base-uri 'self'`·`frame-ancestors 'none'`·`form-action 'self'`를 선언하며, 위반은 `report-uri /api/security/csp`(+ `Reporting-Endpoints`)로 수집한다. (dev는 HMR을 위해 `'unsafe-eval'`·`ws:`/`wss:`를 한시 허용한다. 정적 Atlas 문서 경로 `/governance_harness_atlas.html` 1건만 nonce를 심을 수 없어 Phase 2 정책 예외이며 — 그 파일은 커밋하지 않고 필요할 때 만든다(DEC-OPS-398) — 예외 확산은 `csp-policy` 계약이 차단한다.)
    - **Strict-Transport-Security**: `max-age=63072000; includeSubDomains; preload`.
    - **X-Frame-Options**: `DENY` · **X-Content-Type-Options**: `nosniff` · **Referrer-Policy**: `strict-origin-when-cross-origin` · **X-XSS-Protection**: `0`(deprecated·XS-Leaks 벡터라 비활성 — 방어는 CSP로 대체).
    - **Cross-Origin-Resource-Policy**: `same-origin` · **Cross-Origin-Embedder-Policy**: `credentialless` · **Permissions-Policy**: 쓰지 않는 강력 기능 `()` 차단 · **Reporting-Endpoints**: CSP `report-to` 그룹 정의. CSP와 같은 경로 상수로 `src/proxy.ts`가 문서 응답에만 단다(단일 소스, `next.config.ts` 재유입은 `csp-policy` 계약이 차단).
    - **Cross-Origin-Opener-Policy**: `same-origin`(`proxy.ts`가 문서 응답에 부여, [DEC-OPS-113](../../../../docs/04-operations/operational-decisions-index-ci-governance.md)).
-3. **[nonce CSP의 전제와 한계의 정직한 기록]** `script-src`의 `'unsafe-inline'`은 2026-08-20 요청별 nonce로 제거됐다(PPR 포기 제품 결정). 이 승격은 두 가지 실측 제약 위에 서 있으며, 본 조는 이를 은폐하지 않고 기록·추적할 것을 의무화한다.
-   - **전 페이지 동적 렌더가 전제다**: 정적 프리렌더 HTML의 inline script에는 요청 nonce가 없어 통째로 차단된다(2026-08-20 CI e2e 실측). `cacheComponents`(PPR) 비활성과 루트 layout의 `force-dynamic`을 `csp-policy` 계약이 고정하며, 되돌리려면 nonce CSP 철회가 선행돼야 한다.
-   - **`'strict-dynamic'`은 채택하지 않는다**: Next.js가 스트리밍 중 삽입하는 lazy chunk `<script src>`에 nonce가 없어 host 허용(`'self'`)이 꺼지면 앱이 전면 파손된다(2026-08-20 CI 실측). 방어는 `'self'`+nonce 조합으로 달성한다.
-   - **잔여 위험**: `style-src`의 `'unsafe-inline'`은 [GAP-FE-001](../../../memory/known-gaps.md)의 accepted-risk다. 2026-08-30 측정과 현재 [csp-policy 계약](../../../../frontend/src/__tests__/csp-policy.test.ts)은 React style prop과 sonner의 nonce 없는 `<style>` 주입 때문에 `style-src-elem`·`style-src-attr` 분리만으로 정책을 좁힐 수 없음을 기록한다. sonner의 nonce 지원 또는 교체 시 재측정하며, CSP 리포트 수집 채널 결정은 별도 추적한다.
+3. **[nonce CSP의 전제와 한계의 정직한 기록]** `script-src`의 `'unsafe-inline'`은 요청별 nonce로 제거됐다(PPR 포기 제품 결정). 이 승격은 두 가지 실측 제약 위에 서 있으며, 본 조는 이를 은폐하지 않고 기록·추적할 것을 의무화한다.
+   - **전 페이지 동적 렌더가 전제다**: 정적 프리렌더 HTML의 inline script에는 요청 nonce가 없어 통째로 차단된다. `cacheComponents`(PPR) 비활성과 루트 layout의 `force-dynamic`을 `csp-policy` 계약이 고정하며, 되돌리려면 nonce CSP 철회가 선행돼야 한다.
+   - **`'strict-dynamic'`은 채택하지 않는다**: Next.js가 스트리밍 중 삽입하는 lazy chunk `<script src>`에 nonce가 없어 host 허용(`'self'`)이 꺼지면 앱이 전면 파손된다. 방어는 `'self'`+nonce 조합으로 달성한다.
+   - **잔여 위험**: `style-src`의 `'unsafe-inline'`은 [GAP-FE-001](../../../memory/known-gaps.md)의 accepted-risk다. [csp-policy 계약](../../../../frontend/src/__tests__/csp-policy.test.ts)은 React style prop과 sonner의 nonce 없는 `<style>` 주입 때문에 `style-src-elem`·`style-src-attr` 분리만으로 정책을 좁힐 수 없음을 기록한다. sonner의 nonce 지원 또는 교체 시 재측정하며, CSP 리포트 수집 채널 결정은 별도 추적한다.
 
 ---
 
@@ -115,7 +115,7 @@
 1. 핵심 컴포넌트는 상태·시맨틱·키보드 계약을 가장 가까운 실행 테스트로 검증하고, 주요 완결 과업은 실제 사용자 UI를 통과하는 E2E와 필요한 수동 평가로 검증한다.
 2. hard gate는 exact 대상 모집단, 실행 경로, required CI 소비자, 소유자, 산출 증거, 빈 모집단 방지, 재현 가능한 판정 red와 실행 binding red, 예외와 만료 정책을 가져야 한다.
 3. local hook은 빠른 피드백이고 병합 권위는 required CI다. 자동 검사 수, snapshot, LOC와 같은 proxy 지표를 사용자 품질이나 표준 준수로 과장하지 않는다.
-4. 컴포넌트 카탈로그를 도입할 경우 public variant·상태를 실제로 렌더하고 CI에서 검증해야 하며, 실행되지 않는 문서를 품질 증거로 간주하지 않는다. Storybook은 CI에서 실행되지 않던 검증 수단이라 2026-08-07 제거했다(커밋 `8af56bdb1`). 다시 들일 때도 이 항의 기준(실제 렌더·CI 검증)을 따른다.
+4. 컴포넌트 카탈로그를 도입할 경우 public variant·상태를 실제로 렌더하고 CI에서 검증해야 하며, 실행되지 않는 문서를 품질 증거로 간주하지 않는다. Storybook은 제거됐으며 다시 들일 때도 이 항의 기준을 따른다.
 
 ---
 
@@ -123,7 +123,7 @@
 
 ### 제15조 (지원 프로필과 색상 모드의 대비 무결성)
 1. 모든 지원 프로필·색상 모드·상호작용 상태는 WCAG 2.2의 적용 성공기준에 따라 정상 텍스트, 큰 텍스트, 비텍스트 UI, focus indicator의 각 대비 하한을 충족해야 한다. 모든 요소에 동일한 4.5:1 수치를 기계적으로 적용하거나 로고·비활성 요소 등의 적용 조건을 무시하지 않는다.
-2. 테마 전환 시 색상 묻힘(Color Bleeding)을 예방하기 위해, 모든 색상 표현은 하드코딩된 단색 값을 지양하고 시맨틱 컬러 토큰(Semantic Color Tokens)을 사용해야 한다. 다만 토큰화가 오히려 시각을 파손하는 특정 패턴 — `bg-clip-text` 텍스트 그라디언트, 의도적 다크 서피스(`surface-inverse`) 위에 중첩되는 다크 패널, 항상-흰 pill/mark 위 고정 다크 텍스트 등 — 은 `docs/03-guides/design-tokens.md`에 미치환 근거를 기록하는 것을 조건으로 예외적 잔존을 허용한다.
+2. 테마 전환 시 색상 묻힘(Color Bleeding)을 예방하기 위해, 모든 색상 표현은 하드코딩된 단색 값을 지양하고 시맨틱 컬러 토큰(Semantic Color Tokens)을 사용해야 한다. 다만 토큰화가 오히려 시각을 파손하는 특정 패턴 — `bg-clip-text` 텍스트 그라디언트, 의도적 다크 서피스(`surface-inverse`) 위에 중첩되는 다크 패널, 항상-흰 pill/mark 위 고정 다크 텍스트 등 — 은 그 줄 위의 동결 표지(`palette-frozen:`)에 사유를 적고 리뷰에 라이트·다크 시각 증거를 남기는 것을 조건으로 예외적 잔존을 허용한다(절차와 예외 패턴은 `docs/03-guides/design-tokens.md` §4).
 3. 다크모드, 반투명·이미지 배경, hover/focus/selected/disabled, forced colors에서 실제 합성 결과를 평가한다. 시맨틱 토큰 사용만으로 대비 준수를 선언하지 않는다.
 
 ### 제16조 (정보 밀도 제어 및 레이아웃 숨통 원칙)
@@ -137,4 +137,4 @@
 ## 제9장 부칙 (Supplementary Provisions)
 
 ### 제17조 (시행일)
-본 헌법은 공포된 즉시 효력을 발생하며, 모든 프론트엔드 개발 및 UI 개선 작업의 최상위 지침으로 적용된다. 2026-08-20 개정은 사용자 명시 승인과 `ADR-0003`에 근거한다. 2026-09-05 제4조 URL-state 개정은 사용자 명시 승인과 `ADR-0009`에 근거하며, 개인정보성 검색어의 URL 허용 범위와 잔여 위험을 화면별 계약으로 제한한다. 같은 날 인증 세션 개정은 사용자가 승인한 헌법·하네스 개선 계획과 `ADR-0010`에 근거하며, `Secure` 미설정을 명시적으로 opt-in한 평문 local loopback 개발·검증으로 제한한다. 구체 구현·평가 절차는 해당 ADR과 연결된 architecture·testing·design-token·security 가이드가 소유한다.
+본 헌법은 공포된 즉시 효력을 발생하며, 모든 프론트엔드 개발 및 UI 개선 작업의 최상위 지침으로 적용된다. 개정 근거는 사용자 승인과 `ADR-0003`이며, 제4조 URL-state는 `ADR-0009`, 인증 세션은 `ADR-0010`이다. 구체 구현·평가 절차는 해당 ADR과 연결된 architecture·testing·design-token·security 가이드가 소유한다.
