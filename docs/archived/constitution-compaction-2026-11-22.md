@@ -8,7 +8,7 @@
 
 ## 백엔드 헌법
 
-전체 21429자 → 19867자. 바뀐 항 19개.
+전체 21429자 → 20199자. 바뀐 항 19개.
 
 ### 백엔드 헌법 제1조 (모듈별 책임 분립) — 6항
 
@@ -106,13 +106,13 @@
 2. 트랜잭션 충돌 비용이 극도로 높은 크리티컬 섹션 로직에 대해서는 **비관적 락(Pessimistic Lock)** 또는 Redis 기반 분산 락 정책을 명시적으로 설계하여 반영해야 한다.
 ~~~
 
-### 백엔드 헌법 제16조 (Data Validation 연쇄 동기화 및 돌연변이 테스트 증명) — 머리 문장
+### 백엔드 헌법 제16조 (Data Validation 연쇄 동기화 및 돌연변이 테스트 증명) — 1항 하위 항목 1
 
 ~~~
    - [InputContractMirrorLinterTest](../../../../api-server/src/test/java/nuri/api/harness/InputContractMirrorLinterTest.java)는 실제 저장 경로가 확인된 표적 필드의 Entity `@Column(length)`와 DTO `@Size(max)`, 필수·enum·중첩 검증·read-only·날짜 계약을 커밋된 OpenAPI와 대조한다. 원장은 [입력 계약 census](../../../../config/governance/input-contract-mirror-census.json)이며, 제약이 있는 요청 DTO를 `@Valid`·`@Validated` 없이 받는 컨트롤러 파라미터도 같은 게이트가 차단한다. DTO 전체의 의미 계약을 전수 보장하는 게이트는 아니다.
 ~~~
 
-### 백엔드 헌법 제16조 (Data Validation 연쇄 동기화 및 돌연변이 테스트 증명) — 머리 문장
+### 백엔드 헌법 제16조 (Data Validation 연쇄 동기화 및 돌연변이 테스트 증명) — 1항 하위 항목 2
 
 ~~~
    - `ApiDocsPathCoverageLinterTest`는 Controller `@*Mapping`과 `api-docs.json`의 경로를 오프라인으로 대조한다. CI는 실제 추출 뒤 `git diff --exit-code api-docs.json`으로 신선도를, 프론트엔드 `codegen:verify`·`codegen:verify:zod`는 `generated-api.d.ts`·`generated-zod.ts`·`generated-operations.ts`의 재생성 일치를 검증한다.
@@ -126,7 +126,7 @@
 
 ## 프런트엔드 헌법
 
-전체 14046자 → 13729자. 바뀐 항 8개.
+전체 14046자 → 13760자. 바뀐 항 8개.
 
 ### 프런트엔드 헌법 제10조 (보안 헤더 및 외부 리소스) — 2항
 
@@ -140,19 +140,19 @@
 3. **[nonce CSP의 전제와 한계의 정직한 기록]** `script-src`의 `'unsafe-inline'`은 2026-08-20 요청별 nonce로 제거됐다(PPR 포기 제품 결정). 이 승격은 두 가지 실측 제약 위에 서 있으며, 본 조는 이를 은폐하지 않고 기록·추적할 것을 의무화한다.
 ~~~
 
-### 프런트엔드 헌법 제10조 (보안 헤더 및 외부 리소스) — 전 페이지 동적 렌더가 전제다
+### 프런트엔드 헌법 제10조 (보안 헤더 및 외부 리소스) — 3항 전 페이지 동적 렌더가 전제다
 
 ~~~
    - **전 페이지 동적 렌더가 전제다**: 정적 프리렌더 HTML의 inline script에는 요청 nonce가 없어 통째로 차단된다(2026-08-20 CI e2e 실측). `cacheComponents`(PPR) 비활성과 루트 layout의 `force-dynamic`을 `csp-policy` 계약이 고정하며, 되돌리려면 nonce CSP 철회가 선행돼야 한다.
 ~~~
 
-### 프런트엔드 헌법 제10조 (보안 헤더 및 외부 리소스) — `'strict-dynamic'`은 채택하지 않는다
+### 프런트엔드 헌법 제10조 (보안 헤더 및 외부 리소스) — 3항 `'strict-dynamic'`은 채택하지 않는다
 
 ~~~
    - **`'strict-dynamic'`은 채택하지 않는다**: Next.js가 스트리밍 중 삽입하는 lazy chunk `<script src>`에 nonce가 없어 host 허용(`'self'`)이 꺼지면 앱이 전면 파손된다(2026-08-20 CI 실측). 방어는 `'self'`+nonce 조합으로 달성한다.
 ~~~
 
-### 프런트엔드 헌법 제10조 (보안 헤더 및 외부 리소스) — 잔여 위험
+### 프런트엔드 헌법 제10조 (보안 헤더 및 외부 리소스) — 3항 잔여 위험
 
 ~~~
    - **잔여 위험**: `style-src`의 `'unsafe-inline'`은 [GAP-FE-001](../../../memory/known-gaps.md)의 accepted-risk다. 2026-08-30 측정과 현재 [csp-policy 계약](../../../../frontend/src/__tests__/csp-policy.test.ts)은 React style prop과 sonner의 nonce 없는 `<style>` 주입 때문에 `style-src-elem`·`style-src-attr` 분리만으로 정책을 좁힐 수 없음을 기록한다. sonner의 nonce 지원 또는 교체 시 재측정하며, CSP 리포트 수집 채널 결정은 별도 추적한다.
@@ -178,7 +178,7 @@
 
 ## DB 표준 헌법
 
-전체 9254자 → 7985자. 바뀐 항 15개.
+전체 9254자 → 8182자. 바뀐 항 15개.
 
 ### DB 표준 헌법 제3조 (유형별 접두사) — 1항
 
@@ -216,37 +216,37 @@
 3. **[하네스 강제 연동 규범]** 본 헌법 제7조의 파괴적 DDL 차단과 예외 수명 주기는 [ZeroDowntimeMigrationLinterTest](../../../../api-server/src/test/java/nuri/api/harness/ZeroDowntimeMigrationLinterTest.java)가 배포 전(테스트 단계)에 기계적으로 강제한다. 본 하네스는 **환경별 차등이나 경고 전용(warn-only) 모드 없이**, 아래 파괴적 DDL 또는 waiver registry 위반이 검출되면 로컬·CI를 불문하고 빌드를 차단(Hard-Stop, JUnit `fail`)한다. 승인된 예외와 checksum으로 동결된 기존 부채의 처리 범위는 아래와 같으며, 정적 검사 통과만으로 실제 무중단 이행을 증명하지 않는다.
 ~~~
 
-### DB 표준 헌법 제7조 (무중단 스키마 진화 정책) — 정적 차단 비대상
+### DB 표준 헌법 제7조 (무중단 스키마 진화 정책) — 3항 정적 차단 비대상
 
 ~~~
    - **정적 차단 비대상**: `ADD CONSTRAINT`(UNIQUE·CHECK·FK 등), `CREATE INDEX`, `DROP CONSTRAINT`, `DROP NOT NULL`(NULL 제약 완화). 이 목록은 해당 린터의 탐지 범위를 설명하며 운영 승인·잠금·데이터 검증을 면제하지 않는다. (구 조문의 "VARCHAR 길이 증가·NULL 완화는 차단 제외" 서술은 오류였다 — NULL 완화만 비대상이며 타입 변경은 VARCHAR 길이 증가를 포함해 차단된다.)
 ~~~
 
-### DB 표준 헌법 제7조 (무중단 스키마 진화 정책) — 전수 스캔
+### DB 표준 헌법 제7조 (무중단 스키마 진화 정책) — 3항 전수 스캔
 
 ~~~
    - **전수 스캔**: 검사 대상은 baseline(`V2_0`)을 포함한 마이그레이션 디렉토리 전체 `.sql`이며, 신규 델타에 한정하지 않는다. 소스 열거는 `HarnessSourceIndex`를 사용한다.
 ~~~
 
-### DB 표준 헌법 제7조 (무중단 스키마 진화 정책) — 신규 예외의 승인 결속
+### DB 표준 헌법 제7조 (무중단 스키마 진화 정책) — 3항 신규 예외의 승인 결속
 
 ~~~
    - **신규 예외의 승인 결속**: 해당 위반 라인의 `-- linter:ignore ZDM-YYYY-NNNN <reason>` 또는 파일 전체의 `-- linter:disable-file ZDM-YYYY-NNNN <reason>`를 [zdm-waivers.json](../../../../config/governance/zdm-waivers.json)의 `id`·`path`·`directive`·`reason`·`owner`·`approvedAt`·`expiresAt`·`evidence`와 1:1로 결속한다. 마커만으로는 통과하지 않으며, 자유형 신규 마커·미등록·중복·사유 누락·만료·경로 불일치를 차단한다.
 ~~~
 
-### DB 표준 헌법 제7조 (무중단 스키마 진화 정책) — 선행 Expand 검증
+### DB 표준 헌법 제7조 (무중단 스키마 진화 정책) — 3항 선행 Expand 검증
 
 ~~~
    - **선행 Expand 검증**: Contract 성격의 `DROP TABLE`·`DROP SEQUENCE`·`DROP COLUMN`·테이블/컬럼 `RENAME` waiver에는 실제 선행 파일을 가리키는 `expandMigration`이 필요하다. 자기참조·후행 버전·해석 불가능한 Flyway 버전은 실패한다. 버전 선후 확인은 Sync·Redirect 완료나 실제 구버전 소비 종료의 자동 증명이 아니다.
 ~~~
 
-### DB 표준 헌법 제7조 (무중단 스키마 진화 정책) — 선행 Expand 배포·관측 기록
+### DB 표준 헌법 제7조 (무중단 스키마 진화 정책) — 3항 선행 Expand 배포·관측 기록
 
 ~~~
    - **선행 Expand 배포·관측 기록**: 2026-09-16 이후 Contract waiver는 `expandRelease{tag,deployedAt,environment,evidence}`를 남기고, 린터가 릴리스 태그 형식·배포일·배포 후 7일 관측 기간과 [릴리스 기록](../../../../docs/04-operations/migration-release-log.md)의 해당 태그 행(선행 Expand 포함·Contract 미포함)을 대조한다([DEC-OPS-101](../../../../docs/04-operations/operational-decisions-index-ci-governance.md)). 예외는 두 가지이며 린터가 `id·path·expandMigration` 조합이 정확히 일치할 때만 이 대조를 건너뛴다 — ① 2026-09-16 이전 승인분(`PRE_POLICY_CONTRACT_WAIVERS`)은 동결분이며 소급 승인이 아니다. ② 사용자가 이 한 건만 승인한 같은 릴리스 예외로, [V2_127](../../../../api-server/src/main/resources/db/migration/V2_127__drop_retired_program_ledger_and_personal_page_contents.sql)의 waiver(`USER_APPROVED_SAME_RELEASE_CONTRACTS`, [DEC-OPS-233](../../../../docs/04-operations/operational-decisions-index-ci-governance.md))다. 두 목록의 항목과 수는 린터의 두 상수와 [waiver registry](../../../../config/governance/zdm-waivers.json)가 정본이고, 남은 경계는 [GAP-ZDM-001](../../../memory/known-gaps.md)이 추적한다. 두 예외 모두 선행 Expand의 실재·버전 선후 검사는 그대로 받고, 운영 중인 도입 기관은 ②를 승계하지 않는다. 이 대조는 기록 검증일 뿐 실제 배포·관측의 증명이 아니다.
 ~~~
 
-### DB 표준 헌법 제7조 (무중단 스키마 진화 정책) — 기존 부채 보존
+### DB 표준 헌법 제7조 (무중단 스키마 진화 정책) — 3항 기존 부채 보존
 
 ~~~
    - **기존 부채 보존**: 레지스트리 도입 전 자유형 마커는 `legacy-debt-unapproved`로 별도 동결한다. 파일 fingerprint·마커 수·owner·reviewBy를 검증하며, 이 동결을 소급 승인으로 해석하거나 적용 완료 Flyway의 checksum을 바꾸지 않는다. 실제 잠금·동기화·배포 순서의 증거는 [이행 가이드](../../../../docs/02-architecture/zero-downtime-migration.md)에 따라 별도 확보한다.

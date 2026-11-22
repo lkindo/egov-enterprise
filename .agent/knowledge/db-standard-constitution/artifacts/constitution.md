@@ -21,7 +21,7 @@
 ## 제2장 오브젝트 명명 (Object Naming)
 
 ### 제3조 (유형별 접두사)
-1. 오브젝트의 유형을 식별하기 위해 다음의 접두사를 명칭의 맨 앞에 반드시 부착한다. 함수·프로시저·트리거 접두는 명명 게이트가 보지 않으므로 설계 리뷰로 지킨다.
+1. 오브젝트의 유형을 식별하기 위해 다음의 접두사를 명칭의 맨 앞에 반드시 부착한다. 명명 게이트(제8조 5항)는 뷰·함수·프로시저·트리거의 접두를 보지 않으므로 설계 리뷰로 지킨다(뷰는 벤더 카탈로그 정합 시험만 본다).
    - **테이블**: `tb_`
    - **뷰**: `vw_`
    - **시퀀스**: `sq_`
@@ -54,7 +54,7 @@
 4. **인덱스(IX)**: `ix_[테이블명]_[컬럼명]`
 5. **체크 제약(CK)**: `ck_[테이블명]_[컬럼명]` (예: `ck_tb_bbs_item_use_yn` — 여부(`_yn`) 컬럼의 `CHECK (col IN ('Y','N'))` 값 무결성 제약)
 6. **[복합키 길이 한계 보완]** 복합 컬럼으로 구성된 제약 조건의 명칭이 PostgreSQL 식별자 최대 길이(63바이트)를 초과할 우려가 있는 경우, 컬럼명을 나열하는 대신 해당 제약의 비즈니스 의미를 축약한 별칭을 사용할 수 있다. (예: `uk_tb_order_item_uniq_pair`)
-7. **[UNIQUE 불변식의 엔티티 미러 의무]** 엔티티(`@Entity`)가 매핑된 테이블에 DB UNIQUE 제약(또는 UNIQUE 인덱스)을 부여할 때에는, 그 불변식을 대응 엔티티에 JPA 레벨로 미러링해야 한다 — `@Table(uniqueConstraints = @UniqueConstraint(columnNames = {...}))`(명명/다중컬럼), 단일 컬럼의 `@Column(unique = true)`, 또는 PK 컬럼셋(`@Id`)과 동일한 경우 중 하나로 표현한다. 이는 `DB → 엔티티` 로 이어지는 SSOT 계약체인(제2조)의 침묵 드리프트, 즉 애플리케이션이 인지하지 못하는 DB 전용 불변식의 발생을 차단하기 위함이다. 집행: [UniqueConstraintMirrorLinterTest](../../../../api-server/src/test/java/nuri/api/harness/UniqueConstraintMirrorLinterTest.java).
+7. **[UNIQUE 불변식의 엔티티 미러 의무]** 엔티티(`@Entity`)가 매핑된 테이블에 DB UNIQUE 제약(또는 UNIQUE 인덱스)을 부여할 때에는, 그 불변식을 대응 엔티티에 JPA 레벨로 미러링해야 한다 — `@Table(uniqueConstraints = @UniqueConstraint(columnNames = {...}))`(명명/다중컬럼), 단일 컬럼의 `@Column(unique = true)`, 또는 PK 컬럼셋(`@Id`)과 동일한 경우 중 하나로 표현한다. 이는 `DB → 엔티티` 로 이어지는 SSOT 계약체인(제2조)의 침묵 드리프트, 즉 애플리케이션이 인지하지 못하는 DB 전용 불변식의 발생을 차단하기 위함이다. 집행: [UniqueConstraintMirrorLinterTest](../../../../api-server/src/test/java/nuri/api/harness/UniqueConstraintMirrorLinterTest.java) — 마이그레이션의 `ADD CONSTRAINT … UNIQUE`·`CREATE UNIQUE INDEX`·`CREATE TABLE` 안의 표 제약을 읽는다. 컬럼 정의에 직접 붙인 `UNIQUE` 는 읽지 않으므로 리뷰로 지키고, 부분 UNIQUE(`WHERE`)는 게이트가 면제한다.
 
 ---
 
@@ -84,9 +84,9 @@
 ### 제8조 (Audit 컬럼 및 삭제 규범)
 1. 시스템의 모든 핵심 비즈니스 데이터 및 설정 테이블은 생성자(`frst_rgtr_id`), 생성일시(`crt_dt`), 수정자(`last_mdfr_id`), 수정일시(`mdfcn_dt`)의 Audit 컬럼 4종을 반드시 포함해야 한다. 단, 비즈니스 특성상 데이터의 수정(UPDATE)이 구조적으로 발생하지 않는 **Insert-Only 성격의 테이블**(이력/로그/감사 추적/다대다 매핑 테이블 등)은 생성자(`frst_rgtr_id`)와 생성일시(`crt_dt`) 2종만 탑재하고, 수정자(`last_mdfr_id`)와 수정일시(`mdfcn_dt`)는 탑재 의무에서 면제한다.
 2. **[논리 삭제 의무 제외]** 데이터 복원력과 이력관리를 위한 모든 비즈니스 테이블의 논리 삭제(`del_yn` 등) 컬럼 의무 탑재 규정은 본 헌법의 필수 요건에서 공식 제외한다. 각 비즈니스 업무 도메인의 특성과 데이터 수명 주기 정책에 맞춰 물리 삭제(`Hard Delete`)를 기본 설계로 채택할 수 있다.
-3. 데이터의 복원이나 이력이 비즈니스 요구사항으로 인해 필수적인 경우에 한하여 선택적으로 논리 삭제 방식을 채택하며, 이 경우 삭제 데이터의 조회 제어는 백엔드 헌법 제14조 2항(질의마다 조건으로 가린다)을 따른다.
+3. 데이터의 복원이나 이력이 비즈니스 요구사항으로 인해 필수적인 경우에 한하여 선택적으로 논리 삭제 방식을 채택하며, 이 경우 삭제 데이터의 조회 제어는 백엔드 헌법 제14조 2항을 따른다.
 4. **[메타 테이블 감사 제외]** 3대 메타 테이블은 공통 Audit 4대 컬럼 탑재 여부를 포함한 모든 헌법적 감사 대상에서 원천적으로 제외한다(정본은 제3조 2항).
-5. **[감사컬럼 표준의 기계 강제 및 그 한계]** 집행: [SchemaNamingLinterTest](../../../../api-server/src/test/java/nuri/api/harness/SchemaNamingLinterTest.java) — 감사컬럼은 신규 `tb_` 테이블의 **최소 2종(`frst_rgtr_id`, `crt_dt`) 탑재**와 수정 감사 짝(`mdfcn_dt`·`last_mdfr_id`)의 **대칭성**만, 명명은 객체 이름의 접두와 소문자 snake_case 까지만 본다(유니크 인덱스는 레거시 `uk_` 허용). 게이트는 Insert-Only 여부(본 조 1항)를 판별하지 못하므로, 가변(수정 발생) 비즈니스 테이블의 감사컬럼 **4종 완비 여부**와 `[테이블명]_[컬럼명]` 구조는 **설계 리뷰로 보증**한다. 이 게이트의 예외는 [명명 예외 대장](../../../../docs/02-architecture/db-naming-exceptions.md)과 동기화된 화이트리스트 및 사유를 병기한 `-- naming-linter:ignore`로만 허용한다.
+5. **[감사컬럼 표준의 기계 강제 및 그 한계]** 집행: [SchemaNamingLinterTest](../../../../api-server/src/test/java/nuri/api/harness/SchemaNamingLinterTest.java) — 감사컬럼은 신규 `tb_` 테이블의 **최소 2종(`frst_rgtr_id`, `crt_dt`) 탑재**와 수정 감사 짝(`mdfcn_dt`·`last_mdfr_id`)의 **대칭성**만, 명명은 델타 SQL 의 테이블·시퀀스·인덱스·제약 이름의 접두와 소문자 snake_case 까지만 본다(유니크 인덱스는 레거시 `uk_` 허용). 게이트는 Insert-Only 여부(본 조 1항)를 판별하지 못하므로, 가변(수정 발생) 비즈니스 테이블의 감사컬럼 **4종 완비 여부**와 `[테이블명]_[컬럼명]` 구조는 **설계 리뷰로 보증**한다. 이 게이트의 예외는 [명명 예외 대장](../../../../docs/02-architecture/db-naming-exceptions.md)과 동기화된 화이트리스트 및 사유를 병기한 `-- naming-linter:ignore`로만 허용한다.
 
 ---
 
