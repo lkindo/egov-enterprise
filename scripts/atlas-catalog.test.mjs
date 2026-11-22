@@ -74,8 +74,6 @@ test('catalog is deterministic and covers source-owned modules, articles, gates 
       .reduce((sum, count) => sum + count, 0));
   assert.ok(baseline.catalogs.constitutions.every(article => article.details.some(item => item.label === '조문 원문' && item.value.length > 0)));
   assert.ok(baseline.catalogs.gaps.every(gap => /^GAP-[A-Z]+-\d{3}$/.test(gap.id)));
-  assert.ok(baseline.catalogs.documents.some(doc => doc.id === 'docs/archived/PRD.MD'));
-  assert.ok(baseline.catalogs.documents.some(doc => doc.id === 'docs/archived/TRD.MD'));
 });
 
 // [DEC-OPS-389] gap 카탈로그는 자동 로드 표에 남은 전문 행과 영역 상세로 옮긴 행을 함께 싣고, 레지스트리 줄은 싣지 않는다.

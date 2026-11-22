@@ -2,7 +2,7 @@
 
 상태: **Accepted — ADR-0016에 따라 구현하는 계약. 운영 DB 적용은 별도 전환 절차**
 
-조사일: 2026-09-10. 소스 기준: `23bdc811459dce5c3b3f8d77592b8450a7eafa38`의 현재 워킹트리. OCI는 읽기 전용으로 확인했다. 최초 조사는 전환 전 스냅샷이며, 구현 승인은 [ADR-0016](decisions/ADR-0016-explicit-permissions-and-multiple-groups.md)에 기록했다. 아래 현재 소스 계약과 전환 전 OCI 실측을 구분한다. OCI 전환 완료를 주장하지 않는다.
+조사일: 2026-09-10. 소스 기준: `23bdc811459dce5c3b3f8d77592b8450a7eafa38`의 현재 워킹트리. OCI는 읽기 전용으로 확인했다. 최초 조사는 전환 전 스냅샷이며, 구현 승인은 [ADR-0016](decisions/ADR-0016-explicit-permissions-and-multiple-groups.md)에 기록했다. 공유 OCI 전환 결과는 [전환 런북의 적용 결과](../04-operations/authorization-cutover-runbook.md#2026-09-11-oci-메뉴-재편-적용-결과)에 있다.
 
 ## 1. 권장 결정과 테이블 수
 
@@ -42,7 +42,7 @@
 - 소스 전수검색 원장(2026-11-23 삭제, Git 이력의 `docs/archived/authorization-source-inventory.json`): tracked 텍스트 **2,670개**를 대상으로 테이블 이름·인가 식별자·인증/관리 경로를 검색하여 **542개** 직접 후보를 찾았다. 백엔드·프론트·스키마의 독립 조사에서 토큰 전달·호출부·계약·회귀 파일을 확장한 최종 합집합은 **887개**다. 각 파일의 분류·검색 줄(해당 시)·LF 정규화 SHA-256을 포함한다.
 - 최종 분류: 백엔드 production 217, 프론트 소스 170, 테스트/fixture 391, Flyway 이력 42, 설정·도구·리소스 37, 생성물/스냅샷 6, 문서·역사 자료 24. **887은 수정 파일 수가 아니다.** 경로·키워드 후보에는 import·주석·부정 테스트도 포함한다. `review-*` 범주는 독립 조사로 확장한 참조이며 범주별 수는 중복된다.
 - 별도 직접 테이블 이름 검색은 **118개** 파일이다. 심볼 경유 사용처까지 포함하는 542개 원장과 모집단이 다르다. 프론트는 별도로 `frontend/src`의 tracked TS/TSX 835개 및 production 후보 519개를 대조했다.
-- 핵심 실행 경로는 아래 근거 파일을 직접 읽고 비교했다. 전수 **검색**과 모든 줄의 제어흐름 증명은 구분한다. 동적 코드·외부 소비자까지 정적 검색으로 완전성을 증명하지 않는다.
+- 핵심 실행 경로는 근거 소스 파일을 직접 읽고 비교했다(당시 근거 표는 Git 이력의 §3). 전수 **검색**과 모든 줄의 제어흐름 증명은 구분한다. 동적 코드·외부 소비자까지 정적 검색으로 완전성을 증명하지 않는다.
 - OCI 실측 원장(2026-11-23 삭제, Git 이력의 `docs/archived/authorization-db-evidence.json`): 컬럼·길이·PK/FK·행 수·메타 표준·롤 연결·메뉴 분포. 사용자 식별값·연결 정보·자격증명은 기록하지 않았다.
 - 별도 읽기 트랜잭션으로 조회했으므로 전체 DB의 단일 시점 스냅샷은 아니다. 적용 직전 하나의 일관된 스냅샷으로 다시 비교해야 한다.
 - 조회 가능한 비시스템 view/materialized view/function 정의의 테이블명 참조와 대상 테이블의 사용자 trigger 검색은 0건이었다. 동적 SQL·외부 배치·연계 서비스의 부재를 보증하지 않는다.
@@ -53,63 +53,7 @@
 
 ## 3. 전환 전 OCI와 실행 구조 — 조사 스냅샷
 
-### OCI 실측
-
-| 테이블 | 행 수 | 판단에 중요한 사실 |
-|---|---:|---|
-| `tb_authrt_info` | 4 | ADMIN, SYSTEM, USER, ANONYMOUS |
-| `tb_user_authrt_map` | 7 | PK가 `scrty_dcsn_trgt_id` 하나라 사용자별 1개만 가능 |
-| `tb_role_info` | 15 | `web-000001`~`web-000012`는 양쪽 매핑 0건; 3개 ROLE 코드는 실제 연결 |
-| `tb_authrt_role_map` | 3 | ADMIN/SYSTEM/USER의 자기 코드 매핑; `role_cd` 실제 FK는 없음 |
-| `tb_role_prgrm_map` | 34 | 17개 프로그램에 ADMIN/SYSTEM 각각 연결 |
-| `tb_role_hierarchy` | 2 | SYSTEM→ADMIN, ADMIN→USER |
-| `tb_menu_crt_dtl` | 111 | ADMIN 84, USER 27; SYSTEM 명시 매핑 0 |
-| `tb_menu_info` | 84 | 사용·미삭제 메뉴 79; 비활성 메뉴도 이관 대상에 포함 |
-| `tb_prgrm_lst` | 18 | 인가 매핑 프로그램 17 외에도 메뉴·프로그램 관리가 사용 |
-| `tb_authrt_group_info` | 0 | 사용자 `group_id` 사용도 0이지만 코드 소비자는 존재 |
-
-### 전환 전 흐름
-
-```mermaid
-flowchart LR
-    U[사용자] --> UA[사용자별 단일 권한 배정]
-    UA --> G[권한 마스터]
-    G --> GR[권한과 롤 매핑]
-    GR --> AUTH[Spring GrantedAuthority]
-    AUTH --> URL[프로그램 URL과 롤 매핑]
-    AUTH --> METHOD[메서드 애노테이션과 계층]
-    AUTH --> MENU[별도 메뉴 권한과 ADMIN 우회]
-    URL --> DOMAIN[소유자와 참여자 등 업무 조건]
-    METHOD --> DOMAIN
-    U --> ENUM[별도 USER 또는 ADMIN enum]
-    UA --> RESPONSE[단일 role 응답]
-    ENUM -. 응답 경로별 사용 또는 폴백 .-> RESPONSE
-    RESPONSE --> UI[프론트 화면 분기]
-```
-
-### 전환을 좌우하는 소스 근거
-
-| 발견 | 근거 | 설계 반영 |
-|---|---|---|
-| 최초 로그인은 단일 authorCode, 후속 JWT 인증은 매핑 롤까지 확장하는 비대칭 | [EgovAuthenticationProvider](../../business-core/src/main/java/nuri/business/security/iam/EgovAuthenticationProvider.java), [JpaUserAuthAdapter](../../business-core/src/main/java/nuri/business/security/iam/JpaUserAuthAdapter.java), [JwtTokenProvider](../../foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java) | 요청별 동일한 effective permission 계산기로 통합 |
-| JWT 인증도 DB에서 사용자를 재조회하지만 응답·UI에는 단일 role이 존재 | [AuthServiceImpl](../../business-core/src/main/java/nuri/business/service/auth/impl/AuthServiceImpl.java), [authService](../../frontend/src/services/foundation/auth/authService.ts), [proxy](../../frontend/src/proxy.ts) | 토큰 배열만 추가하는 것으로 전환이 끝나지 않음 |
-| URL 매니저는 모든 일치 패턴의 롤을 합치며 HTTP method를 구분하지 않음 | [DbUrlAuthorizationManager — 전환 전](https://github.com/lkindo/egov-enterprise/blob/23bdc811459dce5c3b3f8d77592b8450a7eafa38/business-core/src/main/java/nuri/business/security/authorization/DbUrlAuthorizationManager.java) | 광역 `/api/v1/admin/**`에 업무그룹 추가 금지; 실제 핸들러·메서드별 정책으로 대체 |
-| API 체인과 웹 체인이 다르고 대체 security config도 존재 | [ApiSecurityConfig](../../api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java), [SecurityConfig](../../business-core/src/main/java/nuri/business/security/config/SecurityConfig.java) | API·웹·별칭·문서·관리 포트·대체 배포 형태를 각각 검증 |
-| 메뉴는 직접 authority 코드와 ADMIN 특별 처리를 사용 | [MenuService](../../business-core/src/main/java/nuri/business/service/menu/MenuService.java) | 계층 펼치기 결과를 메뉴에 일괄 적용하면 SYSTEM 노출이 달라짐 |
-| 사용자 조회·부서 일괄 배정·레거시 메뉴 SQL이 단일 권한을 가정 | [UserAuthorityRepositoryImpl](../../business-core/src/main/java/nuri/business/domain/auth/UserAuthorityRepositoryImpl.java), [MenuRepositoryImpl — 전환 전](https://github.com/lkindo/egov-enterprise/blob/23bdc811459dce5c3b3f8d77592b8450a7eafa38/business-core/src/main/java/nuri/business/domain/menu/MenuRepositoryImpl.java) | 사용자 페이징과 다중행 서브쿼리를 함께 수정 |
-| 개인정보 로그는 ADMIN이면서 SYSTEM이 아닌 경우만 허용 | [PrivacyAdminOnly — 전환 전](https://github.com/lkindo/egov-enterprise/blob/23bdc811459dce5c3b3f8d77592b8450a7eafa38/foundation/src/main/java/nuri/foundation/security/annotation/PrivacyAdminOnly.java); 현행은 [인가 정책 정본](../../config/governance/authorization-policies.json)의 `excludedGroups`와 [PermissionPolicy](../../business-core/src/main/java/nuri/business/security/authorization/PermissionPolicy.java) | SYSTEM+다른 그룹 조합에도 강제 제외 유지 |
-| 소유자·참여자·개인 파일 예외가 도메인별로 다름 | [인가 정책 정본](../../config/governance/authorization-policies.json), [SecurityUtil](../../business-core/src/main/java/nuri/business/security/util/SecurityUtil.java) | 업무 관계 조건을 단순 관리자 권한으로 치환하지 않음 |
-| 일반 감사 로그에는 권한 변경 전후 값이 없음 | [AuditEvent](../../foundation/src/main/java/nuri/foundation/core/event/AuditEvent.java), [WebAuditLogListener](../../business-core/src/main/java/nuri/business/service/log/WebAuditLogListener.java) | 변경 이력을 별도 동일 트랜잭션으로 저장 |
-
-`role_patrn`의 레거시 `.do` 정규식은 현재 DB URL 매니저의 정책 입력이 아니다. 12개 미연결 롤을 새 업무 권한으로 자동 변환하지 않는다. 미사용 데이터라는 사실과 테이블/관리 API를 제거할 수 있다는 결론은 별도로 확인한다.
-
-### 동등성 기준 확정 전에 확인할 기존 쟁점
-
-- [AttachmentSource](../../business-core/src/main/java/nuri/business/service/file/AttachmentSource.java)의 BOARD 공유 술어는 비밀글 여부를 보지만 커뮤니티 회원 조건을 포함하지 않는다. 게시판 본문은 회원 조건도 검사한다. 첨부가 본문 접근 범위와 이미 완전히 일치한다고 가정하지 말고 실제 참조 데이터와 부정 테스트로 확인한다. 이번 조사에서 운영 취약성을 재현한 것은 아니다.
-- JWT의 DB 사용자 재조회 자체가 계정 정지·잠금 판정을 보장하지는 않는다. `getAuthentication`은 재조회한 사용자를 인증 객체로 감싸므로 로그인·재요청·refresh·장기 연결의 계정 상태 검사를 함께 대조한다.
-- 현재 보호계정 불변식은 `UserService`의 **특정 재귀속 종착 계정 삭제 금지**다. `ROLE_SYSTEM` 보유자 전체의 수정·배정 금지와 다르다. 마지막 관리자 잠금 방지는 이 문서가 추가로 권장하는 정책이며 현행 구현 완료 사실이 아니다.
-
-이 쟁점에서 수정이 필요한 동작을 발견하면 동등성 비교의 ‘승인된 차이’로 별도 기록한다. 의도하지 않은 기존 허용을 무조건 보존하거나 차이를 숨겨 0건으로 만들지 않는다.
+2026-09-10 전환 전 조사(사용자별 단일 권한·권한-롤·URL-롤·롤 계층·그룹별 메뉴 표의 구조, OCI 행 수, 소스 근거, 동등성 비교 전 쟁점)는 Git 이력에 있다. 아래 §4.5·§8·§9·§10 의 전환 수치(ADMIN 84·USER 27·메뉴 매핑 111건·사용자 배정 7건·프로그램 매핑 34건)는 그 조사 시점 값이다.
 
 ## 4. 목표 모델
 
@@ -205,7 +149,7 @@ flowchart TD
 
 ### 4.5 메뉴와 API의 관계
 
-메뉴를 보여줄 권한과 데이터를 읽을 권한은 서로 다르다. NAVIGATION은 그룹 권한 테이블에 저장하며, NAVIGATION 보유만으로 OPERATION을 얻지 못한다. 아래 전환 수치는 §3의 조사 시점 기준이며 현재 배정 건수를 뜻하지 않는다.
+메뉴를 보여줄 권한과 데이터를 읽을 권한은 서로 다르다. NAVIGATION은 그룹 권한 테이블에 저장하며, NAVIGATION 보유만으로 OPERATION을 얻지 못한다. 아래 전환 수치는 2026-09-10 전환 전 OCI 조사 시점 기준이며 현재 배정 건수를 뜻하지 않는다.
 
 - 전환 시 ADMIN 84건, USER 27건의 노출 관계를 NAVIGATION으로 보존한다. 활성 상태·삭제 필터·트리의 부모 유무·경로 해석을 기존 조회 결과와 비교한다. 실제 조회 결과는 111행 자체가 아니다.
 - 신규 메뉴 생성 시 호환 ADMIN 그룹의 NAVIGATION 배정은 같은 트랜잭션에서 처리한다. 루트 메뉴는 기존 자동 배정을 유지하되, 자식 메뉴는 ADMIN에 모든 조상 메뉴의 NAVIGATION이 이미 있을 때만 배정한다. 조상 중 하나라도 해제되어 있으면 새 자식도 자동 배정하지 않으며, 새 메뉴 생성으로 숨겨 둔 부모를 다시 허용하지 않는다.
@@ -249,7 +193,7 @@ flowchart LR
 
 ### 화면과 장기 연결
 
-- `AuthContext`, `useUser`의 `['user','me']` 캐시, 메뉴 캐시, 프론트 proxy를 모두 갱신한다. `useUser`는 5분 stale time, 서버 메뉴는 authorities 기반 키, FE header/sidebar 메뉴는 사용자·권한 버전이 없는 고정 키를 사용한다. 각각의 갱신·계정 전환 격리를 새 계약으로 바꾼다.
+- `AuthContext`, `useUser`의 `['user','me']` 캐시, 메뉴 캐시, 프론트 proxy를 모두 갱신한다. `useUser`는 5분 stale time이고 키에 사용자 ID와 `authorizationVersion`을 싣는다. 헤더·사이드바·명령 센터의 메뉴 키도 같은 권한 범위(`menuAuthorization.scope`)를 싣는다.
 - 로그인 상태 확인 후 `/admin` 진입 여부를 실제 필요한 화면 기능으로 판정한다. 기존 USER 예외 경로·RSC·서버 액션·BFF 경로를 포함한다. proxy가 DB를 직접 읽거나 모든 permission을 쿠키에 넣는 설계는 피하고 서버의 현재 권한 응답을 사용한다.
 - 정적 관리 주소는 동적 상세 주소보다 우선한다. 예를 들어 `/admin/community/boards/master`를 `[id]` 상세 화면으로 해석해 열지 않는다. 일반 조회 API와 관리 기능의 경계도 유지한다. `STATS_READ`·`BANNER_READ`·`POPUP_READ`는 기존 사용자 조회에 남기고 관리자 통계·배너·팝업 API는 각각 `STATS_ADMIN_READ`·`BANNER_ADMIN_READ`·`POPUP_ADMIN_READ`로 판정한다. 관리 화면도 해당 관리 권한을 요구한다. 실제 개인 결재는 `APPROVAL_READ`를 사용하며, 호환용 `WORKFLOW_READ`는 결재 권한이나 퇴역 URL 진입 권한으로 쓰지 않는다(ADR-0049).
 - 간이 결재(ISM) API 와 그 `INFORMAL_*` 권한은 [ADR-0034](decisions/ADR-0034-retire-ended-authorization-surfaces.md)로 걷었다(2026-10-18). 결재는 `/api/v1/approvals` 가 `APPROVAL_*` 권한으로 같은 서비스를 부르고, 서비스의 엄격한 결재자 본인 검사도 그대로다.
@@ -324,33 +268,7 @@ HTTP GET을 전부 하나의 조회 권한으로 합치거나 POST를 전부 등
 
 ## 7. 변경 대상 원장
 
-정확한 검색 파일 목록은 위 소스 전수검색 원장에 있었다. 아래는 구현 단위와 누락하기 쉬운 소비 경로다. 와일드카드 표기는 해당 패키지의 DTO·repository·테스트도 함께 보라는 뜻이며 일괄 수정 승인은 아니다.
-
-| 단계 | 파일·영역 | 필요한 변경 |
-|---|---|---|
-| 인증 기반 | `foundation/security/{jwt,service}`, `UserAuthPort`, `CustomUserDetails` | 다중그룹·기능·현재 계정 상태를 전달하는 공통 계약 |
-| 인증 구현 | `JpaUserAuthAdapter`, `EgovAuthenticationProvider`, `AuthServiceImpl` | 동일 권한 계산 결과 사용, 단일 authorCode·폴백·응답 수정 |
-| 사용자 관리 | `User`, `Role`, `UserService`, `UserDto`, `UserRepository*`, 사용자 API | 가입·등록·편집·일괄 role 변경·삭제·시스템 계정 보호를 함께 전환 |
-| 배정 | `domain/auth/UserAuthority*`, `UserAuthorityManageService`, 배정 DTO/API | 복합키, 사용자 단위 페이징, 다중그룹과 원자적 bulk 처리 |
-| 그룹·권한 | `Authority*`, `AuthorManageService`, `AuthorityRole*`, `AuthorRoleManageService` | 그룹 CRUD, 유형별 grant, 삭제 제한, 신규 변경 이력 |
-| 구 롤 | `RoleInfo*`, `RoleProgramMap*`, `RoleManageService`, `RoleManageDto`, `RoleApiController` | 신규 인가에서 참조 종료 후 CRUD·엔티티 정리 |
-| HTTP·메서드 | `ApiSecurityConfig`, 대체 `SecurityConfig`, `DbUrlAuthorizationManager`, `DbRoleHierarchy`, `RoleHierarchyConfig`, 애노테이션 | 단일 기능 평가기로 연결; 경로/메서드/alias별 정책; hierarchy 종료 |
-| 업무 정책 | `SecurityUtil` 호출부, owner/participant/credential/manual/query guards | 도메인 관리 기능으로 제한하되 엄격한 자기/소유 조건 유지 |
-| 메뉴 | `MenuService`, `MenuRepository*`, `MenuAuthority*`, `MenuWithAuthDto`, 메뉴 생성권한 API | NAVIGATION 이관, 단일 서브쿼리 종료, 캐시 키/무효화 변경 |
-| 레거시 표현 | `MenuIntegrationService`, `GlobalMenuAdvice` | 프로그램 URL·메뉴 소비 경로와 실제 적용 대상 확인. main 에서 도달할 수 없어 2026-10-04 프로그램 목록 퇴역 때 걷었다 |
-| 프로그램 | `ProgramService`, `ProgramRepository` | URL 인가 cache evict·role-map 삭제 참조만 종료, 메뉴 참조는 유지. 2026-10-04 프로그램 목록 퇴역으로 서비스·엔티티를 걷었다(메뉴의 참조 컬럼과 테이블은 2026-10-05 V2_127 이 지웠다 — DEC-OPS-231·234) |
-| 프론트 인증 | `authService.ts`, `auth-context`, `use-user.ts`, `proxy.ts`, 로그인/refresh/logout/me BFF 및 서버 액션 | 단일 role 제거, allowlist 정규화에 배열 계약 추가, 권한 갱신 |
-| 프론트 관리 | `SecurityHubClient`, `SecurityRoleClient`, `SecurityDeptAuthorityClient`, `AuthorForm`, 사용자 관리 화면·서비스 | 두 주 관리 흐름, 복수 선택, 영향 미리보기, 충돌 처리 |
-| 프론트 행동 | `administrative-role.ts` 및 게시판·지식허브·알림·업무보고·댓글·만족도·헤더·work-hub 소비자 | 실제 기능 기반 표시; owner 조건과 조합 |
-| 프론트 메뉴·프로그램 | `MenuAdminClient`, 메뉴 types/store/hook/sidebar, 프로그램 화면·서비스, 내부경로 resolver | 메뉴·프로그램 자체 기능 보존 및 새 권한 표현. 2026-10-04 프로그램 화면·서비스를 걷고 같은 경로를 화면 관리로 바꿨다(DEC-OPS-224) |
-| 장기 연결 | WebSocket 인증·인가 구성, 실시간 이벤트/알림 소비자 | 연결 principal의 오래된 권한 회수 |
-| 계약 생성 | `api-docs.json`, FE OpenAPI 타입·Zod 생성물, operation-consumer census, route catalog | 소스에서 재생성, 독립 수동 타입과 mock 정합 확인 |
-| DB·bootstrap | 새 Flyway, `R__seed_framework.sql`, `R__zz_seed_base_admin.sql`, dev seed, foundation test schema | 구·신 버전 공존, 기본 관리자·USER 배정, 구 테이블 재삽입 방지 |
-| 배포·재사용 | `config/reusable-base-profiles.json`(지금은 기능 선언 `config/modules` — DEC-OPS-294), `scripts/generate-reusable-base-db.mjs`, source generator, release 확인 | 구 10테이블 core 목록과 광역 ADMIN URL anchor 검사 대체 |
-| 회귀·정적 게이트 | 인가 matrix, `SecurityAuthAnnotationLinterTest`, DB schema/PK/FK/ZDM, 프론트·E2E 계약 | 의미가 바뀐 계약을 부정 테스트와 함께 대체; 기존 예외 확대 금지 |
-| 문서·지도 | 보안/재사용 가이드, DB 파생 사전, `menu-census`, `ui-route-capabilities`, Atlas | 구현 완료 뒤 현행 설명을 갱신; Proposed를 현재 사실로 승격하지 않음 |
-
-구현 전 조사 스냅샷은 **371 operations**(GET 174, PUT 54, DELETE 63, POST 71, PATCH 9)이고 당시 write 정책 원장은 **197 endpoint / 72 service guard / 20 manual guard**다. 이 수가 같아야 하는 것은 아니다. GET·다운로드·export·실시간 통신·Actuator·OpenAPI에 없는 MVC 핸들러를 빠뜨리지 않도록 런타임 `RequestMappingHandlerMapping`과 비교한다. 당시 UI route catalog 119개의 role 표기는 UNVERIFIED였으므로 초안 승인 근거로 사용하지 않았다. 현재 페이지 인가는 소스 카탈로그의 정확한 경로·기능 집합으로 판정한다.
+전환 구현 단위 목록과 구현 전 operation 스냅숏(2026-09-10)은 Git 이력에 있다. 현재 endpoint→permission 명세는 `authorization-policies.json`의 exact 바인딩, 화면 진입은 소스 카탈로그가 정본이다.
 
 ## 8. 물리 표준 확인과 이관 계획
 
@@ -403,14 +321,14 @@ Contract 이전에는 새 모델의 업무 쓰기를 개방하지 않으므로 �
 | 데이터 접근 | 목록·검색·count·export에도 같은 범위, 부서 권한 교차 확장 없음, 사용자 페이징 중복 없음 |
 | 인증·회수 | 이전 JWT로 변경 후 API 호출, refresh/me 일치, FE 두 사용자 상태와 메뉴 갱신, 다중 인스턴스·열린 연결 |
 | 장애·동시성 | 권한 조회 장애 기본 거부, 미등록 permission 거부, stale-version 409, 부분 조회/페이지 실패 시 전체 교체 금지와 기존 배정 보존, 변경 이력 실패 시 전체 롤백 |
-| 메뉴 | 현재 매핑111건+ADMIN 전체노출 의미, 부모 누락, 비활성/삭제, 신규 메뉴, SYSTEM 단독, 메뉴 삭제 시 grant 정리 |
+| 메뉴 | 전환 전 매핑 111건(2026-09-10)과 ADMIN 전체노출 의미, 부모 누락, 비활성/삭제, 신규 메뉴, SYSTEM 단독, 메뉴 삭제 시 grant 정리 |
 | DB 이행 | 실제 PostgreSQL 전체 Flyway 경로, 중간버전 구앱 호환, 재실행, orphan/길이/FK/JPA mirror, 기존키/새키 비교 |
 | 배포·재사용 | 빈 DB bootstrap, 기존 OCI 유사 데이터 이관, 구 repeatable 재삽입 차단, core pack 생성 및 release |
 | 게이트 | 등록 누락·광역 URL 우회·틀린 타입·엄격한 owner 우회·SYSTEM 제외 삭제가 실제 red |
 
 실행 계획: 영향 JUnit과 `compileJava compileTestJava`, FE 영향 테스트·`tsc --noEmit`·lint/build, OpenAPI/타입/Zod 생성 계약, PostgreSQL schema 검증, 실제 로그인 기반 E2E, required CI와 release/reusable-base 검증을 순서대로 수행한다. 새 인가 게이트를 만들면 registry·로컬/CI 경로·부정 테스트를 같은 변경에 연결한다.
 
-위 표는 구현 인수 조건이다. 통과 여부는 해당 커밋의 실행 로그와 required CI로 확인하며, 소스의 테스트 존재만으로 운영 검증을 대신하지 않는다. 최초 조사 단계의 문서 검증 이력은 다음과 같다: 이 설계 단계에서는 문서 링크·공용 메모리 계약 23개, Atlas·문서 Node 계약 24개(문서 계약 중복 포함), 프론트 Atlas 계약 17개를 통과했다. 증거 원장 887개 경로·검색 줄·소스 해시와 DB 증거 구조도 확인했다. 이후 편집된 문서와 Atlas는 작성 전 소스 스냅샷의 해시와 달라질 수 있다.
+위 표는 구현 인수 조건이다. 통과 여부는 해당 커밋의 실행 로그와 required CI로 확인하며, 소스의 테스트 존재만으로 운영 검증을 대신하지 않는다.
 
 ## 10. 승인된 기본값과 운영 전환에서 확인할 사항
 
@@ -420,7 +338,7 @@ Contract 이전에는 새 모델의 업무 쓰기를 개방하지 않으므로 �
 | 기능 정의 운영 | 소스 변경·리뷰·배포; 운영자는 그룹 배정만 | 코드 카탈로그 무결성·배포 호환 계약 |
 | 신규 업무그룹 | 기존4개 보존 후 필요한 업무 묶음만 생성 | 조직 업무분장에 맞춘 실제 기능 선택 |
 | 기본 사용자 | 가입 시 명시 USER 배정, 조회 실패/배정 없음 폴백 없음 | 공개·자기 계정 관리 기능의 명시 정책 |
-| 메뉴 | NAVIGATION과 OPERATION을 같은 grant 저장소에서 구분 | 현재111건 및 ADMIN/SYSTEM 예외 동등성 |
+| 메뉴 | NAVIGATION과 OPERATION을 같은 grant 저장소에서 구분 | 전환 전 111건(2026-09-10) 및 ADMIN/SYSTEM 예외 동등성 |
 | 범위 모델 | 현 업무 관계 보존, 신규 기관/부서 범위는 후속 확장 | 범위 요구와 실제 대상 FK |
 | 변경 감사 | 동일 트랜잭션 신규 이력 저장 | 표준 메타, 감사 읽기 권한, 보존·복구 정책 |
 | 전환 개방 | 모든 구 writer 종료 후 복수그룹 허용 | 실제 배포·외부 소비 종료 증거 |

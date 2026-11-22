@@ -93,6 +93,7 @@ refresh_triggers:
 | GAP-LOGIN-002 | P2 | open | login lockout | 잠금 중 관리 작업 및 실패 횟수 분리의 PostgreSQL 통합 시험을 통과했다. 벤더 인증과 반복 잠금에 따른 신규 로그인 지연 위험이 남았다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-JWT-001 | P2 | open | jwt signing transition | ADR-0060 1차는 옛 HMAC 토큰도 받고 Next 에 서명 비밀이 남는다 — 1차 배포 7일 뒤 2차(HMAC 수용 끄기·Next 비밀 제거)를 재기록 묶음과 맞춰 연다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-MAIL-001 | P2 | open | mail delivery | ① 차지 시각 바인딩(`claimQueued`) 해결 완료(2026-11-21). ② 사용자별 발송 한도 미정. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
+| GAP-BOARD-004 | P3 | open | board author fallback | 작성자를 못 찾을 때의 "익명" 대체는 같은 트랜잭션이 rollback-only 가 되어 커밋에서 실패한다 — 계정 삭제 경합에서만 닿고 실행 재현은 하지 않았다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-COMPOSE-001 | P3 | open | composer degraded compositions | 기능 저하 생성물의 화면 일부가 사실과 다르게 말할 수 있다 — 목적지 이름 규칙 밖의 링크·상수를 거친 목적지와 문장 속 메뉴 이름은 아직 기계로 대조하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#composer) |
 | GAP-COMPOSE-002 | P3 | open | generated schema changes | 새 Java·미배정 권한은 별도 등록으로 지원한다. 기존 소스 수정·새 화면·마이그레이션 연계의 자동 등록은 남아 있다. | [상세](../../docs/04-operations/known-gaps-detail.md#composer) |
 | GAP-MIG-002 | P2 | open | migration protected keys | 암호화할 소스 컬럼은 키로 쓸 수 없어(평문이 제어 표에 남는다) 그런 컬럼만 키인 테이블과 숫자형 보호 소스는 지금 적재할 수 없다. | [상세](../../docs/04-operations/known-gaps-detail.md#migration) |
@@ -100,6 +101,7 @@ refresh_triggers:
 | GAP-E2E-001 | P3 | needs-revalidation | E2E impact selection | PR 은 검토된 화면 변경만 E2E 를 spec 단위로 선별하고 공유·미지 입력과 main 은 전수다 — 일반 의존성 완전성과 절감률은 검증되지 않았다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
 | GAP-DATA-002 | P2 | blocked-external | legacy input data | OCI 설문 3행의 시작·종료일이 잘린 채 남아 있다 — 업무 소유자가 원래 날짜를 확인하기 전에는 추정해 보정하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-DEP-001 | P1 | needs-revalidation | dependency security | PR 의존성 snapshot readiness 와 runtime High 차단은 구현됐고, public fork probe 와 양쪽 snapshot 부재 경계는 외부 검증이 남았다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
+| GAP-SEC-007 | P2 | blocked-external | exposed credentials in history | 원본 Git 이력에 한때 커밋된 외부 DB·암호화 키 자격의 폐기·회전 확인 기록이 없다 — 소유자 확인 전에는 이력 삭제나 채택 기관 회전으로 대신하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
 | GAP-MIG-001 | P1 | blocked-external | migration-tool | vendor 7종 이관의 실측 범위가 서로 다르고 모두 UNVERIFIED·MANUAL_ONLY 다 — 도입 버전·driver 별 COMMIT 자격·cutover 는 기관 실측이 필요하다. | [상세](../../docs/04-operations/known-gaps-detail.md#migration) |
 
 ## 해결 규칙

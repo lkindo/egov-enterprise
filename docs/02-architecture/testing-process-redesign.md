@@ -20,18 +20,7 @@
 
 ## 2. 변경 전 진단과 현재 구조
 
-변경 전 [CI run 35555990020](https://github.com/lkindo/egov-enterprise/actions/runs/35555990020)의 두 JSON 리포트에는 `full-suite` **27개 파일·140개 테스트**가 있었다. 테스트별 duration 합은 약 **516.8초**였다. GitHub의 `Run E2E Tests (Sharded)` 스텝은 **shard 1: 132초 / shard 2: 147초**, 준비·업로드를 포함한 전체 잡은 각각 **426초 / 424초**였다. case duration 합, 실행 스텝, 잡 경과시간은 서로 다른 측정값이다. 이는 이전 구조의 단일 실행 표본이며 새 구조의 실측, PR 전체 경과시간 또는 p50/p95가 아니다.
-
-| 변경 전 관측 | 반영한 조치 |
-|---|---|
-| 보안 23번은 37건·약 19.8초, 게시판 마스터는 2건·약 32.4초 | 테스트 개수 대신 준비·행동 비용으로 판단. 개수 감소 목표를 두지 않음 |
-| 04번에 API 거절·추천·초안·VRT·감사 날짜·반응형·axe 혼합 | HTTP 계약, 업무 여정, 품질 파일로 소유권 분리 |
-| 07번의 상태 전이·겹침이라는 이름과 실제 제목/컨트롤 단언 불일치 | 데모 제목으로 이름 교정, 주소록·일정 고유 단언을 실제 여정으로 이전 |
-| 투표 POM의 결과 확인이 목록 제목 검색 | [온라인 투표 여정](../../frontend/e2e/journeys/online-polls.spec.ts)의 이름을 생성·참여·관리자 검색으로 교정. 집계 수치나 별도 설문 기능의 증거로 확대하지 않음 |
-| 정적 캔버스가 단일 단계 결재라는 낡은 설명을 고정 | 당시 다단계 결재와 캔버스 비연동 경계로 설명·검사를 교정했다. 목업과 전용 검사는 이후 [ADR-0049](decisions/ADR-0049-retire-workflow-demo-screens.md)로 퇴역하며 [실제 결재 검사](../../frontend/e2e/journeys/approvals.spec.ts)는 유지한다. |
-| API-only와 다중 역할 검사에도 자동 fixture가 기본 page를 준비 | [API fixture](../../frontend/e2e/fixtures/api-test.ts)와 [브라우저 fixture](../../frontend/e2e/fixtures/browser-test.ts) 분리 |
-
-2026-09-21 이행 시점에 등록된 본 테스트는 API 계약 **36개**, 브라우저 여정·품질 **99개**였다(현재 수는 Playwright 목록에서 센다). 5개 중복을 통합했지만 권한 행렬·IDOR·Origin·XSS·접근성·시각 기준선을 제거하지 않았다. 경로·제목 단언에 그치는 기존 검사는 그 한계를 유지해 기록했고, 이번 이동을 새로운 CRUD·송달·결과 집계 검증으로 계산하지 않았다.
+변경 전 구조(번호순 27개 파일·140개 테스트, [CI run 35555990020](https://github.com/lkindo/egov-enterprise/actions/runs/35555990020))의 진단과 반영 조치는 [PR #699](https://github.com/lkindo/egov-enterprise/pull/699)와 Git 이력에 있다. 현재 구성은 4절, 이전 파일의 이동 지도는 7절이다.
 
 ## 3. 기능 변경 한 건의 표준 흐름
 
@@ -108,7 +97,7 @@ H2/create-drop, mock-security, API 응답을 주입한 컴포넌트 테스트의
 
 API·브라우저 project 모두 setup에 의존하며 서로의 spec을 선택하지 않는다. 기본 전수 등록은 **137개(setup 2 + 본 검사 135)**다. 실행 전 `--list` inventory와 실제 JSON report의 project/test 좌표를 대조하고, spec 누락·중복·잘못된 project·예상 밖 skip·flaky를 [결과 계약](../../scripts/playwright-result-contract.mjs)이 차단한다. 등록 수 확인은 실제 실행 성공과 구분한다.
 
-화면명이 비슷해도 다른 제품이면 소유자를 나눈다. [조직 정책](../../frontend/e2e/journeys/organization-policy.spec.ts)과 [로그인 보안 정책 화면](../../frontend/e2e/journeys/security-administration.spec.ts), [온라인 투표](../../frontend/e2e/journeys/online-polls.spec.ts)와 [일반 설문 목록 접근](../../frontend/e2e/journeys/public-navigation.spec.ts)는 같은 계약이 아니다. 정적 캔버스도 [실제 결재](../../frontend/e2e/journeys/approvals.spec.ts)와 별개였으며 ADR-0049로 목업과 전용 검사만 퇴역한다. 전체 이동 지도는 7절에 있다.
+화면명이 비슷해도 다른 제품이면 소유자를 나눈다. [조직 정책](../../frontend/e2e/journeys/organization-policy.spec.ts)과 [로그인 보안 정책 화면](../../frontend/e2e/journeys/security-administration.spec.ts), [온라인 투표](../../frontend/e2e/journeys/online-polls.spec.ts)와 [일반 설문 목록 접근](../../frontend/e2e/journeys/public-navigation.spec.ts)는 같은 계약이 아니다. 온라인 투표 여정은 생성·참여·관리자 검색을 보며 집계 수치나 별도 설문 기능의 증거가 아니다. 정적 캔버스도 [실제 결재](../../frontend/e2e/journeys/approvals.spec.ts)와 별개였으며 ADR-0049로 목업과 전용 검사만 퇴역한다. 전체 이동 지도는 7절에 있다.
 
 ### 4.2 fixture는 요청한 자원만 준비한다
 

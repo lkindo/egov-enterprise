@@ -70,6 +70,10 @@ PostgreSQL 스키마 변경의 구버전 호환성 파손 위험을 줄이기 �
 
 부모 producer 저장소의 Git 이력을 기준으로 사용하지 않으며, DDL·waiver·생성물 무결성 검사는 유지한다. 일반 소스 archive·미표시 빈 Git 저장소나 잘못된 projection 증거는 실패한다. 정상 생성물·HEAD만 있는 저장소·refs만 있는 저장소·도입 후 SQL 변조·손상된 Git 메타데이터·shallow 저장소를 같은 기존 하네스의 격리 fixture로 검사한다.
 
+### 3.3 여러 파일로 나눈 단계의 배포 경계
+
+한 변경을 여러 Flyway 파일로 나눴다면(예: 길이 확장 → 입력 CHECK → 물리 축소, Expand → Fence → Contract) 운영 중인 환경에서는 단계 사이에 Flyway target 을 그 단계의 버전으로 고정한다. 앱은 기동할 때 적용하지 않은 파일을 모두 적용하므로(`spring.flyway.enabled`), target 없이 새 버전을 띄우면 다음 단계 코드의 배포와 구버전 작업의 소진을 확인하기 전에 축소·Contract 가 함께 실행된다. 서비스가 없는 격리 환경은 단계별 검증 뒤 한 번에 적용해도 된다. 길이 축소는 제한 코드를 먼저 배포하고 CHECK 로 입력을 막은 뒤 초과가 0 인지 다시 확인하고 물리 폭을 줄인다. 넓힌 폭에 새 데이터가 쓰이면 옛 폭으로 되돌리지 않고 forward-fix 한다([ADR-0013](decisions/ADR-0013-standard-text-length-alignment.md) 결정 2·3·결과, [ADR-0014](decisions/ADR-0014-deferred-standard-design-alignment.md) 「단계와 복구」).
+
 ## 4. 모니터링 연동
 이 하네스는 `./gradlew :api-server:harnessTest`에 포함되고, 소스 변경 시 로컬 pre-push와 상위 검증 경로에서 실행된다. 문서-only fast-pass는 이를 실행하지 않는다. 위반 감지 시 JUnit 테스트를 실패시키며, 규칙이나 실행 경로를 바꿀 때는 의도적 위반이 red가 되는지 확인한다.
 

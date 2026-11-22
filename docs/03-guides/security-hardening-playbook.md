@@ -74,6 +74,7 @@ flowchart TD
 2. 현재 `tb_authrt_user_map`의 그룹 배정과 `tb_authrt_grnt_map`의 OPERATION을 확인한다. NAVIGATION이나 그룹 이름을 기능 권한으로 오인하지 않는다.
 3. 현재 principal의 enabled·lock·permissions·authorizationVersion을 같은 요청 시점 기준으로 확인한다. ROLE 문자열을 추가하거나 fallback을 열어 해결하지 않는다.
 4. 소유자 식별 축(loginId/esntlId), 참여자·커뮤니티 승인 관계, 개인 첨부 참조와 SYSTEM 배제 여부를 확인한다. 기능 permission이 있어도 추가 관계 가드는 거부할 수 있다.
+   - 소유 가드의 거부 코드는 도메인마다 다르다. 주소록·스크랩 상세와 비밀글 본문은 남의 자원에 403(`C010`), 없는 번호에 404 로 답해 번호만으로 자원이 있는지 알 수 있다(`SecurityUtil.assertOwnerOrPermission`·`assertOwnerByEsntlId`). 게시 기간 밖의 글·결재선·임시저장·논리 삭제된 커뮤니티의 사용자 상세처럼 존재를 숨기는 곳은 404 로 답한다. 새 소유 가드는 어느 쪽인지 도메인 의미로 정하고(H3), 기존 403 을 404 로 바꾸는 것은 응답 계약과 화면 문구가 걸린 인가 의미 변경이라 따로 결정한다.
 5. WebSocket의 권한 버전이 달라지면 inbound/outbound 전송을 거부하고 연결을 종료한다. 재연결은 현재 계정·권한으로 다시 검증한다.
 
 ## 4. 데이터 암호화 및 마스킹 규범 (Data Protection)

@@ -8,7 +8,7 @@
 부류 파일은 `class-governed`·`non-normative-url-state-class-registry`인 비규범 컨테이너다. 네 부류가
 각자 승인 기록을 가지며 `search-input`만 ADR-0009에 결속한다. exact label/group/order/visibility와
 route별 disposition, 미승인 URL-state 3개 부류는 계속 별도 판단 대상이다.
-`docs/archived/PRD.MD`와 `TRD.MD`는 과거 스냅샷일 뿐 현재 상태의 근거로 사용하지 않는다.
+활성 PRD 는 없다. 2026-03 초기 PRD·TRD 스냅숏은 2026-11-23 지웠다(Git 이력에 있다).
 
 ## 현재 판단에 사용할 원본
 
