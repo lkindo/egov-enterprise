@@ -1,22 +1,6 @@
 # 완성도 후속 보강 — 끝난 기록 (보관)
 
-[완성도 후속 보강과 검증 경계](../04-operations/readiness-followups.md)에서 2026-11-22 에 옮긴 절이다. 후속 조치가 끝났고 이 기록을 근거로 삼는 열린 gap·설정이 없다. **현행 판단 근거로 쓰지 않는다** — 당시의 실측·경위 기록이며, 절 제목과 본문은 옮기기 전 그대로다(본문이 말하는 "현행"은 그 날짜 기준이다).
-
-## 실시간 연결 표시 정정 (2026-09-27)
-
-DEC-OPS-140의 승인 의도는 화면이 서버가 제공하는 값의 의미를 정확히 표시하는 것이다.
-그 결정의 “1분마다 초기화되지 않는 재기동 이후 누적 연결”이라는 구현 전제는 현재 코드와 다르다.
-[RealTimeDashboardService](../../business-app/src/main/java/nuri/business/service/dashboard/RealTimeDashboardService.java)는
-새 WebSocket 연결마다 `visitsPerMinute`를 늘리고, `resetVisitsCounter`의 60,000ms 고정 주기에서 0으로 초기화한다.
-동시에 유지하는 `activeUsers`는 현재 연결 세션 수다. 둘 다 해당 서버 인스턴스의 값이며 고유 사용자 수가 아니다.
-
-[실시간 카드](../../frontend/src/components/features/dashboard/RealTimeDashboard.tsx)는 이를
-“새 연결(이 서버, 1분마다 초기화)”와 “마지막 초기화 이후 연결 횟수”로 표시한다.
-집계 방식·초기화 주기·이벤트 필드는 유지한다. 최근 60초 이동 구간이나 전 서버 합산으로 해석하지 않는다.
-원래 승인 기록은 보존하고 구현 전제와 표시 문구를 이 후속 근거로 정정한다.
-검증 경계는 [서버 초기화 테스트](../../business-app/src/test/java/nuri/business/service/dashboard/RealTimeDashboardServiceTest.java)와
-[초기화 전후 프레임 표시 테스트](../../frontend/src/components/features/dashboard/__tests__/RealTimeDashboard.test.tsx)다.
-이 코드는 스케줄러가 운영에서 지연 없이 실행된다는 실측 증거까지 제공하지는 않는다.
+[완성도 후속 보강과 검증 경계](../04-operations/readiness-followups.md)에서 2026-11-22 에 옮긴 절이다. 후속 조치가 끝났고 이 기록을 근거로 삼는 열린 gap·설정이 없다. **현행 판단 근거로 쓰지 않는다** — 당시의 실측·경위 기록이며, 절 제목과 본문은 옮기기 전 그대로다(본문이 말하는 "현행"은 그 날짜 기준이다). spring-retry 를 유지하는 판단과 재검토 조건의 현행 문장은 [gap 영역 상세](../04-operations/known-gaps-detail.md)의 `GAP-DEP-002` 남은 경계에 있다.
 
 ## 라우트 기능 원장 정기 검토 (2026-09-25)
 

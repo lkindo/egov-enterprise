@@ -25,7 +25,7 @@
 | 매주 월 09:00 | 비밀값 이력 감사 | 이력에 비밀이 들어갔으면 값 교체가 먼저다 | [secret-scan-history.yml](../../.github/workflows/secret-scan-history.yml) |
 | 매주 일요일 | Dependabot 갱신 PR(하나는 매월) | 벤더 DB 증거 입력(빌드 파일·드라이버)을 바꾸는 PR 은 따로 모아 증거를 다시 기록한다. 감사가 새 권고로 모든 PR 을 막을 수 있다 | [dependabot.yml](../../.github/dependabot.yml), [의존성 취약점 판정](dependabot-alert-census.md) |
 | 매주 월 02:00~04:23 | 부하 시험(02:00)·NVD 의존성 검사(03:00)·이관 도구 독립 검증(03:23)·Lighthouse(04:00) | 권고 성격이다. NVD 검사가 갱신 단계에서 멈추면 API 키부터 본다 | [load-test.yml](../../.github/workflows/load-test.yml), [dependency-check.yml](../../.github/workflows/dependency-check.yml), [migration-tool.yml](../../.github/workflows/migration-tool.yml), [lighthouse.yml](../../.github/workflows/lighthouse.yml) |
-| 매주 일 09:00 | OWASP ZAP 동적 검사 | 오탐 판별 절차가 있다 | [zap-scan.yml](../../.github/workflows/zap-scan.yml), [SAST 판정 기록](sast-findings-review.md) |
+| 매주 일 09:00 | OWASP ZAP 동적 검사 | 오탐 판별 절차가 있다 | [zap-scan.yml](../../.github/workflows/zap-scan.yml), [ZAP 경고 분류](readiness-followups.md#zap-주간-스캔-경고-분류) |
 
 ## 3. 일이 생길 때 하는 것
 
