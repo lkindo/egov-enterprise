@@ -49,6 +49,7 @@
     "scripts/project-composer-vendor-project.mjs",
     "scripts/project-composer.mjs",
     "scripts/release-main-history.mjs",
+    "scripts/required-checks-contract.mjs",
     "scripts/reusable-asset-removal-leak-check.mjs",
     "scripts/reusable-base-census.mjs",
     "scripts/reusable-contract-census.mjs",

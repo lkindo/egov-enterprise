@@ -7,3 +7,17 @@ export function normalizeBackendLayout(value = 'multi-module') {
   }
   return value;
 }
+
+/**
+ * ADR-0062: generated application projects set migrationTool: false and carry the offline-migration-tool rule.
+ * Pre-Phase-4 PostgreSQL locks lack both markers and still preserve migration-tool runtime verification.
+ */
+export function hasMigrationTool(lock) {
+  if (!lock || typeof lock !== 'object') return false;
+  if (lock.vendorProjection) return false;
+  if (lock.migrationTool === false) return false;
+  if (lock.migrationTool === true) return true;
+  const rules = lock.removedGates?.rules;
+  if (Array.isArray(rules) && rules.some(entry => entry?.rule === 'offline-migration-tool')) return false;
+  return true;
+}

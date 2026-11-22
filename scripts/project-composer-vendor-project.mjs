@@ -347,11 +347,17 @@ export function projectVendorSources(output, { vendorId, input, inputText, layou
   writeFileSync(common, `${readFileSync(common, 'utf8').replace(/\s*$/, '\n')}${vendorApplicationDocument(vendorId)}`, 'utf8');
 
   const dockerfile = join(output, 'api-server/Dockerfile');
-  writeFileSync(dockerfile, projectVendorDockerfile(readFileSync(dockerfile, 'utf8')), 'utf8');
-  // 단일모듈은 조립할 때 include 를 이미 지웠다.
+  const dockerText = readFileSync(dockerfile, 'utf8');
+  if (/^COPY migration-tool\/build\.gradle [^\n]*\r?\n/m.test(dockerText)) {
+    writeFileSync(dockerfile, projectVendorDockerfile(dockerText), 'utf8');
+  }
+  // 단일모듈은 조립할 때 include 를 이미 지웠고, Phase 4 생성물은 이관 모듈을 먼저 걷었을 수 있다.
   if (layout !== 'single-module') {
     const settings = join(output, 'settings.gradle');
-    writeFileSync(settings, projectVendorSettings(readFileSync(settings, 'utf8')), 'utf8');
+    const settingsText = readFileSync(settings, 'utf8');
+    if (/^include 'migration-tool'\r?\n/m.test(settingsText)) {
+      writeFileSync(settings, projectVendorSettings(settingsText), 'utf8');
+    }
   }
 
   const compose = join(output, 'docker-compose.yml');

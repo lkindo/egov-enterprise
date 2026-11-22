@@ -15,7 +15,7 @@ import {
 } from './reusable-nightly.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const MODULES = ['foundation', 'business-core', 'business-app', 'api-server', 'migration-tool'];
+const MODULES = ['foundation', 'business-core', 'business-app', 'api-server'];
 
 function scratch(t) {
   const root = mkdtempSync(join(tmpdir(), 'egov-nightly-'));
@@ -83,10 +83,8 @@ test('the plan holds every preset and every distinct single-selection closure of
   const dropped = nightlyPlan({ ...input, domains: input.domains.filter((id) => id !== 'event') }, { date: new Date('2026-10-12T00:00:00Z') });
   assert.notDeepEqual(closures(dropped), expectedClosures);
 
-  const largest = [...catalog.presets].sort((a, b) => input.presets.find((p) => p.id === b.id).domains.length
-    - input.presets.find((p) => p.id === a.id).domains.length)[0].id;
-  assert.deepEqual(plan.include.filter((item) => item.migrationTests).map((item) => `${item.target}/${item.layout}`),
-    [`${largest}/multi-module`, `${largest}/single-module`], 'only the largest preset carries the migration tests, in both layouts');
+  assert.equal(plan.include.every((item) => item.migrationTests === false), true,
+    'ADR-0062: generated application projects never carry migration tests');
 });
 
 // ⑨ 카탈로그에 시작 구성이 늘면 이름을 고치지 않아도 계획이 따라간다. 그 시작 구성과 기능 목록이 같은 단독 폐포는 빠지고,
@@ -136,23 +134,21 @@ test('items must keep the plan shape before anything runs', () => {
   }
 });
 
-// ⑦·⑧ 단일 모듈의 test 는 api-server 시험만 돈다. 나머지 모듈과 이관 시험은 이름 있는 작업이며, 원장 밖으로 뺄 수 없다.
-test('test plans run every suite of the layout and exclude only the ledger tasks', () => {
+// ⑦·⑧ 단일 모듈의 test 는 api-server 시험만 돈다. 나머지 모듈은 이름 있는 작업이며, 제외 원장은 비어 있다(ADR-0062).
+test('test plans run every suite of the layout with empty exclusions after ADR-0062', () => {
   const single = testPlan('single-module');
   assert.deepEqual(single.tasks, ['test', 'foundationTest', 'coreTest', 'appTest']);
-  assert.deepEqual(single.excluded, ['migrationTest']);
-  assert.deepEqual(testPlan('single-module', { migrationTests: true }).tasks, ['test', 'foundationTest', 'coreTest', 'appTest', 'migrationTest']);
+  assert.deepEqual(single.excluded, []);
   const multi = testPlan('multi-module', { modules: MODULES });
   assert.deepEqual(multi.tasks, ['test']);
-  assert.deepEqual(multi.excluded, [':migration-tool:test']);
-  assert.deepEqual(gradleTestArgs(multi).slice(0, 3), ['test', '-x', ':migration-tool:test']);
-  assert.deepEqual(testPlan('multi-module', { modules: MODULES, migrationTests: true }).excluded, []);
+  assert.deepEqual(multi.excluded, []);
+  assert.deepEqual(gradleTestArgs(multi).slice(0, 2), ['test', '--continue']);
   for (const [layout, plan] of [['single-module', single], ['multi-module', multi]]) {
     assert.deepEqual(testPlanErrors(plan, layout, MODULES), []);
-    for (const task of plan.excluded) assert.ok(TEST_EXCLUSIONS[layout][task].length > 20, `${task} needs a reason`);
+    assert.deepEqual(TEST_EXCLUSIONS[layout], {});
   }
 
-  const outsideLedger = { ...multi, excluded: [...multi.excluded, ':foundation:test'], units: multi.units.filter((unit) => unit.task !== ':foundation:test') };
+  const outsideLedger = { ...multi, excluded: [':foundation:test'], units: multi.units.filter((unit) => unit.task !== ':foundation:test') };
   assert.deepEqual(testPlanErrors(outsideLedger, 'multi-module', MODULES), ['test task excluded outside the ledger: :foundation:test']);
   const silentlyDropped = { ...single, units: single.units.filter((unit) => unit.task !== 'coreTest') };
   assert.deepEqual(testPlanErrors(silentlyDropped, 'single-module', MODULES), ['test task is neither judged nor excluded: coreTest']);
@@ -191,7 +187,7 @@ test('JUnit judgment needs reports with tests and no failures for every task tha
 
   // ③ 보고서 없음, ④ 시험 0건, 소스가 없는 모듈은 기록만 한다
   const missing = scratch(t);
-  fakeArtifact(missing, 'multi-module', { results: [':foundation:test', ':business-core:test', ':api-server:test', ':migration-tool:test'], sources: MODULES });
+  fakeArtifact(missing, 'multi-module', { results: [':foundation:test', ':business-core:test', ':api-server:test'], sources: MODULES });
   write(missing, 'api-server/build/test-results/test/TEST-nuri.Sample.xml', junit(0));
   assert.deepEqual(judgeJUnit(missing, units).errors, [':business-app:test: no JUnit report in business-app/build/test-results/test',
     ':api-server:test: JUnit reports hold no test']);
@@ -309,10 +305,10 @@ test('a VERIFY_FAILED generation records the failed step and a masked log tail; 
 
 test('run generates, tests and records a passing report', async (t) => {
   const { root, commands, generators, run } = fakeRun(t);
-  const item = { id: 'preset-demo', kind: 'preset', target: 'demo', domains: 'board+comment', layout: 'single-module', migrationTests: true };
+  const item = { id: 'preset-demo', kind: 'preset', target: 'demo', domains: 'board+comment', layout: 'single-module', migrationTests: false };
   const report = await runItem(item, { root, run, generators });
   assert.equal(report.result, 'passed', report.errors.join('\n'));
-  assert.deepEqual(commands[0].slice(0, 6), ['gradle', 'test', 'foundationTest', 'coreTest', 'appTest', 'migrationTest']);
+  assert.deepEqual(commands[0].slice(0, 5), ['gradle', 'test', 'foundationTest', 'coreTest', 'appTest']);
   assert.ok(commands[1].includes('vitest'));
   assert.equal(report.compositionHash, 'f'.repeat(64));
   assert.equal(report.artifact, 'build/reusable-base/source/nightly-0123456789-ab');
@@ -325,11 +321,11 @@ test('run fails on missing suites, failing vitest, failed generation and contrac
   const partial = await runItem(item, { root: onlyApi.root, run: onlyApi.run, generators: onlyApi.generators });
   assert.equal(partial.result, 'failed');
   assert.match(partial.errors.join('\n'), /foundationTest: no JUnit report/);
-  assert.deepEqual(partial.stages.backend.excluded.map((entry) => entry.task), ['migrationTest']);
+  assert.deepEqual(partial.stages.backend.excluded, []);
 
   const multi = fakeRun(t, { layout: 'multi-module', vitest: vitestReport({ numFailedTests: 1, numFailedTestSuites: 1, success: false }) });
   const red = await runItem({ ...item, layout: 'multi-module' }, { root: multi.root, run: multi.run, generators: multi.generators });
-  assert.deepEqual(multi.commands[0].slice(0, 4), ['gradle', 'test', '-x', ':migration-tool:test']);
+  assert.deepEqual(multi.commands[0].slice(0, 2), ['gradle', 'test']);
   assert.match(red.errors.join('\n'), /vitest: 0 failed files, 1 failed suites, 1 failed tests/);
 
   // include 형식이 달라도 모듈이 빠지지 않는다 — gradle 이 0으로 끝나고 XML 이 없으면 보고서 없음으로 실패다.

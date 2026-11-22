@@ -1,12 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { schemaSnapshotHash } from './project-composer-db.mjs';
 import {
-  MIGRATION_CATALOG, installProjectedColumnCatalog, parseColumnCatalog, projectedColumnCatalog, renderColumnCatalog,
+  MIGRATION_CATALOG, exportProjectedColumnCatalog, installProjectedColumnCatalog,
+  parseColumnCatalog, projectedColumnCatalog, renderColumnCatalog,
 } from './reusable-migration-catalog.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -53,4 +55,40 @@ test('the generator rewrites the artifact catalog only from the bundle schema bo
   assert.deepEqual([...parseColumnCatalog(readFileSync(join(output, MIGRATION_CATALOG), 'utf8')).keys()], ['flyway_schema_history', 'tb_a']);
   // lock 이 검증한 스키마가 아니면 쓰지 않는다.
   assert.throws(() => installProjectedColumnCatalog(sourceRoot, output, bundle, { schemaSnapshotHash: 'other' }), /스키마 해시와 다르다/);
+});
+
+test('exportProjectedColumnCatalog writes an external catalog from a validated DB bundle and rejects generated app trees', t => {
+  const dir = mkdtempSync(join(tmpdir(), 'migration-catalog-export-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const origin = renderColumnCatalog(new Map([['flyway_schema_history', ['installed_rank']], ['tb_gone', ['a']]]));
+  const [sourceRoot, bundle, appRoot, outside] = ['source', 'bundle', 'generated-app', 'outside'].map(name => join(dir, name));
+  for (const target of [sourceRoot, bundle, appRoot, outside]) mkdirSync(target, { recursive: true });
+  writeFileSync(join(sourceRoot, MIGRATION_CATALOG), origin);
+  const snapshot = { columns: [column('tb_a', 1, 'id')] };
+  const schemaHash = schemaSnapshotHash(snapshot);
+  writeFileSync(join(bundle, 'schema-contract.json'), JSON.stringify({ snapshot }));
+  writeFileSync(join(bundle, 'profile-lock.json'), JSON.stringify({ validated: false, schemaSnapshotHash: schemaHash }));
+  assert.throws(() => exportProjectedColumnCatalog({ sourceRoot, dbBundle: bundle, outputFile: join(outside, MIGRATION_CATALOG) }), /validated: true/);
+
+  writeFileSync(join(bundle, 'profile-lock.json'), JSON.stringify({ validated: true, schemaSnapshotHash: 'mismatch' }));
+  assert.throws(() => exportProjectedColumnCatalog({ sourceRoot, dbBundle: bundle, outputFile: join(outside, MIGRATION_CATALOG) }), /스키마 해시와 다르다/);
+
+  writeFileSync(join(bundle, 'profile-lock.json'), JSON.stringify({ validated: true, schemaSnapshotHash: schemaHash }));
+  writeFileSync(join(appRoot, 'reusable-base-lock.json'), JSON.stringify({ profile: 'core', migrationTool: false }));
+  assert.throws(() => exportProjectedColumnCatalog({ sourceRoot, dbBundle: bundle, outputFile: join(appRoot, 'sub/db_columns.json') }), /ADR-0062/);
+  assert.throws(() => exportProjectedColumnCatalog({ sourceRoot, dbBundle: bundle, outputFile: join(sourceRoot, MIGRATION_CATALOG) }), /원본 저장소/);
+  if (process.platform === 'win32' || process.platform === 'darwin') {
+    assert.throws(() => exportProjectedColumnCatalog({ sourceRoot, dbBundle: bundle, outputFile: join(sourceRoot, MIGRATION_CATALOG.toUpperCase()) }), /원본 저장소/);
+  }
+
+  const exportedPath = join(outside, 'core-db_columns.json');
+  const result = exportProjectedColumnCatalog({ sourceRoot, dbBundle: bundle, outputFile: exportedPath });
+  assert.equal(result.tables, 2);
+  assert.deepEqual([...parseColumnCatalog(readFileSync(exportedPath, 'utf8')).keys()], ['flyway_schema_history', 'tb_a']);
+
+  const cliOutput = join(outside, 'cli-db_columns.json');
+  const cli = spawnSync(process.execPath, [resolve(dirname(fileURLToPath(import.meta.url)), 'reusable-migration-catalog.mjs'),
+    '--db-bundle', bundle, '--output', cliOutput], { cwd: resolve(root), encoding: 'utf8' });
+  assert.equal(cli.status, 0, cli.stderr);
+  assert.deepEqual([...parseColumnCatalog(readFileSync(cliOutput, 'utf8')).keys()], ['flyway_schema_history', 'tb_a']);
 });

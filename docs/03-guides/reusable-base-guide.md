@@ -176,9 +176,14 @@ DB 번들의 기본 경로(`build/reusable-base/<profile>-<sha>-<timestamp>`)에
 소스 생성기는 DB lock의 프로필·커밋·레이아웃·구성 해시를 현재 릴리스와 대조한 뒤 선택하지 않은 Java 도메인,
 그 도메인에 의존하는 소비자, 프런트 라우트와 전이 importer를 제거한다. 원본 마이그레이션 체인은
 검증된 V1 번들로 교체하고 `REUSABLE_BASE.md`와 `reusable-base-lock.json`을 기록한다.
-루트 이관 카탈로그(`db_columns.json`)는 DB 번들이 검증한 스키마로 다시 쓴다([카탈로그 투영](../../scripts/reusable-migration-catalog.mjs), DEC-OPS-263).
-이관 도구는 이 카탈로그로 매핑 타깃을 판정하므로, 구성에서 빠진 표로 가는 매핑은 검증 단계에서 거부된다.
-Flyway 이력 표 항목만 원본에서 가져오고, 산출물의 스키마 검증이 카탈로그와 적용 스키마를 정확히 대조한다.
+[ADR-0062](../02-architecture/decisions/ADR-0062-exclude-migration-tool-from-generated-projects.md) 에 따라
+오프라인 이관 도구(`migration-tool`·`tools/migration-workspace*`·`db_columns.json`)와 그 시험·별칭은
+[이관 제외 원장](../../config/governance/migration-removed-assets.json)대로 모든 생성 애플리케이션 프로젝트에서 제외하며,
+레거시 데이터 이관이 필요하면 원본 저장소에서 독립 이관 제품(`npm run migration:export`)을 별도로 내보낸다.
+생성된 앱의 축소 스키마를 대상으로 독립 CLI `plan`·`load` 를 실행할 때는
+`npm run migration:export -- --db-bundle <DB번들경로>` 로 대상 스키마 카탈로그를 포함해 내보내거나,
+`node scripts/reusable-migration-catalog.mjs --db-bundle <DB번들경로> --output <외부경로/db_columns.json>` 로
+생성 앱 밖 경로에 카탈로그를 생성한 뒤 독립 이관 CLI 실행 시 `java -Dmigration.db-columns-path=<외부경로/db_columns.json> -jar <JAR> ...` 형태로 전달한다.
 
 권한 정의는 구성으로 함께 투영한다([권한 투영](../../scripts/reusable-permission-projection.mjs), DEC-OPS-287).
 권한 카탈로그는 구성의 권한 코드만 남기고, Java·TS 코드 상수와 시드의 생성 블록도 그 카탈로그에서 다시 만든다.
@@ -517,8 +522,8 @@ UI 시나리오·화면 용어 pilot·KRDS의 적용범위는 [review scope 계�
 시나리오의 경로·step·근거 파일은 실제로 존재해야 하며, 기능 구성과 브랜드 프로필은 별개 축이다.
 원본의 측정 결과를 현재 프로필의 실행 증거로 자동 승격하지 않는다.
 
-`config/governance/adoption-review.json`은 선택한 프로필의 `pending`으로,
-`migration-adoption-review.json`도 독립 이관 제품의 새 `pending`으로 생성한다. 원본 승인 이력이
+`config/governance/adoption-review.json`은 선택한 프로필의 `pending`으로 생성한다(ADR-0062 이후
+생성 애플리케이션 프로젝트에는 오프라인 이관 도구가 없어 `migration-adoption-review.json`을 생성하지 않는다). 원본 승인 이력이
 기관의 데이터 분류·권한·로그·접근성 검토를 대신하지 않는다. 일반 `reviewBy` 경과는 운영 보고에
 표시하며 기술 빌드를 무효화하지 않는다. 실제 기관 사용 승인의 대상·범위·유효기간은 기관 preflight에서
 별도로 차단한다. 명령과 근거 작성은 [검토 수명 가이드](governance-review-lifecycle.md)를 따른다.
@@ -580,14 +585,13 @@ Windows PowerShell에서는 `./gradlew` 대신 `.\gradlew.bat`를 사용할 수 
 | `./gradlew bootRun` | 온라인 API 실행 |
 | `./gradlew bootJar` | 온라인 실행 jar `build/libs/app.jar` 생성 |
 | `./gradlew harnessTest schemaValidationTest` | governance 하네스와 실제 PostgreSQL 스키마 검증 |
-| `./gradlew allTests` | API·foundation·core·app 및 독립 이관 도구의 일반 테스트 suite 실행 |
-| `./gradlew migrationBootJar` | 별도 migration source set으로 오프라인 이관 실행 jar 생성 |
+| `./gradlew allTests` | API·foundation·core·app 일반 테스트 suite 실행 |
 
 `compileTestJava`는 단일모듈의 출처별 테스트 source set도 함께 컴파일한다. 산출물 runner의
 backend 범위는 컴파일·하네스·스키마 검사이며 모든 일반 테스트 실행과 같지 않다. `allTests`는 일반
 테스트를 묶는 별도 task이고 API의 하네스·스키마 태그는 위 이름 있는 task에서 실행한다.
-`migrationBootJar`는 온라인 jar·클래스패스에 이관 코드를 합치지 않는다. jar 빌드나 테스트 통과는
-기관 데이터 이관 실행 승인을 부여하지 않으며 기존 오프라인 승인 절차를 따른다.
+ADR-0062 에 따라 생성 애플리케이션 프로젝트는 `migration-tool`·`migrationBootJar`·`migrationTest` 를 포함하지 않는다.
+오프라인 이관 도구 빌드·검증과 승인 절차는 원본 저장소의 `npm run migration:export` 독립 산출물에서 실행한다.
 
 `fast`·`push`는 기존 호출부와의 보수적인 호환을 위해 `full`에 연결된다. 생산 저장소처럼 비용 순으로
 중첩된 단계가 아니다. 생산자 전용 `base:*`와 기관 환경이 필요한 `verify:e2e`·`verify:ops` 별칭은 생성물에서
@@ -611,7 +615,7 @@ Windows에서는 `./gradlew` 대신 `.\gradlew.bat`을 사용한다. 배포 아�
 기관 도입 검토를 시작할 때는 같은 산출물에서 `npm run review:status`로 현재 검토 상태와 scope digest를
 확인한다. 기관이 원장을 검토·작성한 뒤 `npm run review:adoption -- --environment <실제-환경-ID>`를
 자기 배포 직전 절차에 연결한다. 기본 `pending`은 기관 검토 미완료이며 참조 프레임워크 릴리스의
-전역 차단 조건은 아니다. 독립 이관 도구만 사용하는 프로젝트는 `verify:migration`과 이관 전용 원장을 사용한다.
+전역 차단 조건은 아니다. 독립 이관 도구만 사용하는 배포는 원본 저장소의 `npm run migration:export` 산출물에서 `verify` 와 이관 전용 원장을 사용한다.
 
 ### 4.1 하네스 게이트의 프로필별 기대치
 

@@ -221,16 +221,15 @@ export function registerProfileProjectionTests(shard) {
         pruneFrontend(output, projector.directPaths);
         // 표지는 매니페스트 v2 의 활성 구성이다(11단계 C5). v1 manifest 는 C7 에서 원본에서도 걷었다.
         writeProjectedModules(output, modules, composition, activeCompositionEntry(modules, composition, profile, java));
-        writeFileSync(join(output, 'config/governance/migration-adoption-review.json'), JSON.stringify({ status: 'approved', owner: 'synthetic-upstream-operator' }));
         const result = projectReusableGovernance({
           sourceRoot: ROOT, outputRoot: output, profile: profileName, sourceCommit, composition,
           projectSource: (file, text) => projector.project(file, text).source,
         });
         const projectionLedger = writeProjectionLedger(output, buildProjectionLedger(output, copied));
-        // 지운 파일이 원장에 남는다. 아무것도 걷지 않는 demo 는 빈 원장이다 — 원본에 v1 manifest 가 없어 복사했다 지울 것도 없다(11단계 C7).
-        if (profileName === 'demo') assert.deepEqual(readJson(output, PROJECTION_LEDGER_PATH).removedFiles, []);
+        // 지운 파일이 원장에 남는다. demo 는 도메인·화면 소스를 걷지 않고 ADR-0062 로 이관 승인 원장만 뺀다(11단계 C7·ADR-0062).
+        if (profileName === 'demo') assert.deepEqual(readJson(output, PROJECTION_LEDGER_PATH).removedFiles, ['config/governance/migration-adoption-review.json']);
         else assert.ok(projectionLedger.files > 0, `${profileName}: 지운 파일이 원장에 남는다`);
-        const lock = { schemaVersion: 1, profile: profileName, sourceCommit,
+        const lock = { schemaVersion: 1, profile: profileName, sourceCommit, migrationTool: false,
           composition: { ...composition, sourceCommit }, projectionLedger,
           governance: { path: 'config/governance/reusable-governance-projection.json', projectionSha256: canonicalJsonSha256(result) } };
         writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(lock, null, 2)}\n`);
@@ -308,11 +307,9 @@ export function registerProfileProjectionTests(shard) {
         assert.equal(adoption.profile, profileName);
         assert.equal(adoption.reviewedAt, null);
         assert.deepEqual(adoption.evidence, []);
-        const migrationAdoption = readJson(output, 'config/governance/migration-adoption-review.json');
-        assert.equal(migrationAdoption.status, 'pending');
-        assert.equal(migrationAdoption.owner, null);
-        assert.equal(migrationAdoption.product, 'migration-tool');
-        assert.equal(migrationAdoption.profile, null);
+        assert.equal(result.migrationEnvironmentReview, undefined);
+        assert.equal(existsSync(join(output, 'config/governance/migration-adoption-review.json')), false,
+          'ADR-0062: generated application project must omit migration-adoption-review.json');
         // 공통 기반 + 설문은 설문 문구 파일럿이, 공통 기반 + 결재는 업무 홈의 결재 대기 카드가 더해진다(13b 인증 시작 구성).
         const expectedCounts = { core: [5, 5], collaboration: [7, 6], demo: [8, 8], survey: [5, 6], approval: [5, 5], custom: [5, 5] }[profileName];
         assert.equal(result.projectedReviewScopes.uiQuality.scenarioIds.length, expectedCounts[0]);
@@ -340,7 +337,8 @@ export function registerProfileProjectionTests(shard) {
         for (const path of MEMORY_PATHS) {
           const memory = readFileSync(join(output, path), 'utf8');
           assert.match(memory, /derived-generated-profile-index/);
-          assert.match(memory, /생성 시 두 기관 승인 원장은 pending/);
+          assert.match(memory, /생성 시 기관 승인 원장은 pending/);
+          assert.doesNotMatch(memory, /기관 이관 승인|두 기관 승인/);
           assert.doesNotMatch(memory, /CTX-016|OCI V2_100/);
         }
         assert.ok(result.routes.length > 0);
@@ -451,7 +449,7 @@ export function registerProfileProjectionTests(shard) {
             changed.classes.find(row => row.reviewState === 'approved').selector.stateItemNames.push('token');
             return JSON.stringify(changed);
           }, /Inherited state selector widened|Active URL approval is invalid/);
-          // Rebinding checksums alone cannot shrink declared feature ownership.
+          // Rebinding checksums alone cannot shrink declared feature ownership or restore migration review scope.
           const metadataPath = 'config/governance/reusable-governance-projection.json';
           const oldMetadata = readFileSync(join(output, metadataPath), 'utf8');
           const oldLock = readFileSync(join(output, 'reusable-base-lock.json'), 'utf8');
@@ -463,6 +461,15 @@ export function registerProfileProjectionTests(shard) {
             changedLock.governance.projectionSha256 = canonicalJsonSha256(changed);
             writeFileSync(join(output, 'reusable-base-lock.json'), JSON.stringify(changedLock));
             assert.match(inspectReusableGovernance(output).errors.join('\n'), /review scope metadata drifted/);
+
+            const withMigrationReview = { ...JSON.parse(oldMetadata),
+              migrationEnvironmentReview: { path: 'config/governance/migration-adoption-review.json', inherited: false } };
+            writeFileSync(join(output, metadataPath), JSON.stringify(withMigrationReview));
+            writeFileSync(join(output, 'reusable-base-lock.json'), JSON.stringify({
+              ...JSON.parse(oldLock),
+              governance: { ...JSON.parse(oldLock).governance, projectionSha256: canonicalJsonSha256(withMigrationReview) },
+            }));
+            assert.match(inspectReusableGovernance(output).errors.join('\n'), /Migration review scope differs from the migration-tool boundary/);
           } finally {
             writeFileSync(join(output, metadataPath), oldMetadata);
             writeFileSync(join(output, 'reusable-base-lock.json'), oldLock);

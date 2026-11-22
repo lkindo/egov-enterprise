@@ -6,11 +6,12 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { adoptionScope, containedFile, createPendingAdoptionReview } from './adoption-review.mjs';
 import { MIGRATION_DURATION_PROFILE_PATH, migrationProvenanceDigest, verifySourceMigrationProfileProvenance } from './migration-profile-provenance.mjs';
+import { MIGRATION_CATALOG, readValidatedProjectedColumnCatalog } from './reusable-migration-catalog.mjs';
 
 export const MIGRATION_PRODUCT_INPUTS = Object.freeze([
   'build.gradle', 'gradle.properties', 'gradle', 'gradlew', 'gradlew.bat', '.gitattributes', '.nvmrc',
   'config/dependency-check/suppressions.xml', 'migration-tool/build.gradle', 'migration-tool/src',
-  'config/governance/migration-execution.example.json',
+  'config/governance/migration-execution.example.json', 'db_columns.json',
   // Actual inputs of the packaged workspace integration drill; UI/server/AI remain separate products.
   'tools/migration-workspace/engine.mjs', 'tools/migration-workspace/store.mjs', 'tools/migration-workspace/inputs.mjs',
   'config/migration-test-duration-profile.json', 'scripts/migration-test-shard.mjs', 'scripts/migration-profile-provenance.mjs',
@@ -24,7 +25,7 @@ export const MIGRATION_PRODUCT_INPUTS = Object.freeze([
   '.github/workflows/migration-tool.yml',
 ]);
 
-export function generateMigrationProduct({ sourceRoot, outputRoot } = {}) {
+export function generateMigrationProduct({ sourceRoot, outputRoot, dbBundle } = {}) {
   sourceRoot = realpathSync(sourceRoot);
   const base = resolve(sourceRoot, 'build/migration-product');
   outputRoot = resolve(outputRoot ?? join(base, `source-${randomBytes(8).toString('hex')}`));
@@ -38,6 +39,9 @@ export function generateMigrationProduct({ sourceRoot, outputRoot } = {}) {
     if (parent === sourceRoot) break;
     if (dirname(parent) === parent) throw new Error('export parent escapes the source workspace');
   }
+  const projectedCatalog = dbBundle
+    ? readValidatedProjectedColumnCatalog({ sourceRoot, dbBundle: resolve(sourceRoot, dbBundle) })
+    : null;
   // Fail before creating any output. The adopter's new Git history cannot prove
   // ancestry in this producer, so establish that boundary here and bind the bytes.
   const profileText = readFileSync(containedFile(sourceRoot, MIGRATION_DURATION_PROFILE_PATH), 'utf8');
@@ -66,6 +70,7 @@ export function generateMigrationProduct({ sourceRoot, outputRoot } = {}) {
   };
   for (const input of MIGRATION_PRODUCT_INPUTS) copy(input);
   const write = (path, body) => { mkdirSync(dirname(join(outputRoot, path)), { recursive: true }); writeFileSync(join(outputRoot, path), body); };
+  if (projectedCatalog) write(MIGRATION_CATALOG, projectedCatalog.text);
   write(contractPath, generatedContract);
   write('settings.gradle', "rootProject.name = 'egov-migration-tool'\ninclude 'migration-tool'\n");
   write('package.json', `${JSON.stringify({ name: 'egov-migration-tool', private: true, engines: { node: '>=22.0.0' },
@@ -100,12 +105,16 @@ export function generateMigrationProduct({ sourceRoot, outputRoot } = {}) {
   const scope = adoptionScope(outputRoot, { product: 'migration-tool', profile: null });
   write('migration-product-lock.json', `${JSON.stringify({ schemaVersion: 1, product: 'migration-tool',
     generatedAt: new Date().toISOString(), sourceScope: scope, technicalValidation: 'not-executed',
-    environmentApproval: 'pending', onlineGovernance: 'not-applicable', durationProfileProvenance }, null, 2)}\n`);
+    environmentApproval: 'pending', onlineGovernance: 'not-applicable', durationProfileProvenance,
+    ...(projectedCatalog ? { targetCatalog: { tables: projectedCatalog.tables, source: 'db-bundle' } } : {}) }, null, 2)}\n`);
   write('README.md', '# eGov migration tool\n\n독립 CLI 소스 산출물이다. 생성 성공은 기술 검증이나 운영 이관 승인이 아니다.\n\n'
     + 'Node 22, JDK 21, Docker가 필요하다. 프론트엔드와 npm 설치는 필요하지 않다.\n\n'
     + '```sh\nnode scripts/verify.mjs migration\nnode --test scripts/adoption-execute.test.mjs\n'
     + 'node scripts/governance-review.mjs --product migration-tool --mode report\n```\n\n'
     + '`discover → plan → validate → load` 절차와 기존 plan·endpoint·driver·schema·freeze 검증이 유지된다. '
+    + '타깃 표준 카탈로그(`db_columns.json`)는 기본으로 원본 전체 스키마를 싣고, 생성 앱 대상 이관 시에는 원본 저장소의 '
+    + '`npm run migration:export -- --db-bundle <DB번들경로>` 로 포함하거나 '
+    + '`java -Dmigration.db-columns-path=<외부경로/db_columns.json> -jar <JAR> --command=plan ...` 형태로 외부 투영본을 전달한다. '
     + '직접 `--mapping ... --mode=dry-run|commit` 실행은 거부된다. 접속정보는 환경 변수로 주입한다.\n\n'
     + '기관의 소스/대상·mapping·복구·실행 artifact 증거를 검토한 뒤 `config/governance/migration-adoption-review.json`에 기록한다. '
     + '원본 기관 승인은 복사되지 않는다. `adoption:check -- --execution PATH --environment ID`는 '
@@ -122,8 +131,21 @@ export function generateMigrationProduct({ sourceRoot, outputRoot } = {}) {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    if (process.argv.length !== 2 && !(process.argv.length === 4 && process.argv[2] === '--output')) throw new Error('usage: [--output PATH]');
-    const result = generateMigrationProduct({ sourceRoot: resolve(dirname(fileURLToPath(import.meta.url)), '..'), outputRoot: process.argv[3] });
+    const argv = process.argv.slice(2);
+    const parsed = {};
+    for (let index = 0; index < argv.length; index += 2) {
+      const flag = argv[index];
+      const value = argv[index + 1];
+      if (!['--output', '--db-bundle'].includes(flag) || !value || value.startsWith('--') || Object.hasOwn(parsed, flag)) {
+        throw new Error('usage: [--output PATH] [--db-bundle PATH]');
+      }
+      parsed[flag] = value;
+    }
+    const result = generateMigrationProduct({
+      sourceRoot: resolve(dirname(fileURLToPath(import.meta.url)), '..'),
+      outputRoot: parsed['--output'],
+      dbBundle: parsed['--db-bundle'],
+    });
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   } catch (error) { process.stderr.write(`${error.message}\n`); process.exitCode = 1; }
 }

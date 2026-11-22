@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "authority": "ADR-0062 생성 애플리케이션 프로젝트(PostgreSQL·벤더, 멀티·단일모듈 공통)에서 제외하는 오프라인 레거시 이관 도구 자산의 원장이다. 독립 이관 제품은 원본 저장소의 npm run migration:export 로 별도 생성한다.",
+  "assets": [
+    "config/governance/migration-adoption-review.json",
+    "config/governance/migration-execution.example.json",
+    "config/migration-test-duration-profile.json",
+    "db_columns.json",
+    "migration-tool",
+    "scripts/generate-migration-product.mjs",
+    "scripts/migration-profile-provenance.mjs",
+    "scripts/migration-test-shard.mjs",
+    "scripts/reusable-migration-catalog.mjs",
+    "tools/migration-workspace",
+    "tools/migration-workspace-prototype"
+  ],
+  "aliases": [
+    "migration:export",
+    "migration:ui",
+    "migration:ui:css",
+    "review:adoption:migration",
+    "review:migration",
+    "test:migration-workspace",
+    "verify:migration"
+  ],
+  "gates": [
+    {
+      "file": "migration-tool/src/test/java/nuri/migration/schema/MigrationRuntimeSchemaIsolationTest.java",
+      "reason": "생성 애플리케이션 프로젝트는 오프라인 레거시 이관 도구를 포함하지 않는다(ADR-0062).",
+      "coveredBy": "원본 저장소 CI(migration-scope·migration-tool.yml) 및 독립 이관 제품(npm run migration:export)"
+    },
+    {
+      "file": "scripts/migration-product-contract.test.mjs",
+      "reason": "독립 이관 제품 내보내기·계약 검증 시험으로 생성 애플리케이션 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소 test:operational-contracts"
+    },
+    {
+      "file": "scripts/migration-verification-contract.test.mjs",
+      "reason": "독립 이관 도구 CI·샤드 검증 계약 시험으로 생성 애플리케이션 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소 test:operational-contracts 및 독립 이관 제품"
+    },
+    {
+      "file": "tools/migration-workspace-prototype/build-styles.test.mjs",
+      "reason": "로컬 이관 작업공간 시안 CSS 빌드 시험으로 생성 애플리케이션 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소 test:migration-workspace 및 test:operational-contracts"
+    },
+    {
+      "file": "tools/migration-workspace-prototype/serve.test.mjs",
+      "reason": "로컬 이관 작업공간 시안 서버 시험으로 생성 애플리케이션 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소 test:migration-workspace 및 test:operational-contracts"
+    },
+    {
+      "file": "tools/migration-workspace/ai.test.mjs",
+      "reason": "로컬 이관 작업공간 AI 보조 계약 시험으로 생성 애플리케이션 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소 test:migration-workspace 및 test:operational-contracts"
+    },
+    {
+      "file": "tools/migration-workspace/build-styles.test.mjs",
+      "reason": "로컬 이관 작업공간 CSS 빌드 시험으로 생성 애플리케이션 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소 test:migration-workspace 및 test:operational-contracts"
+    },
+    {
+      "file": "tools/migration-workspace/chat-contract.test.mjs",
+      "reason": "로컬 이관 작업공간 채팅 계약 시험으로 생성 애플리케이션 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소 test:migration-workspace 및 test:operational-contracts"
+    },
+    {
+      "file": "tools/migration-workspace/cli-contract.test.mjs",
+      "reason": "로컬 이관 작업공간 CLI 계약 시험으로 생성 애플리케이션 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소 test:migration-workspace 및 test:operational-contracts"
+    },
+    {
+      "file": "tools/migration-workspace/codex-adapter.test.mjs",
+      "reason": "로컬 이관 작업공간 Codex 어댑터 시험으로 생성 애플리케이션 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소 test:migration-workspace 및 test:operational-contracts"
+    },
+    {
+      "file": "tools/migration-workspace/codex-isolation.test.mjs",
+      "reason": "로컬 이관 작업공간 Codex 격리 시험으로 생성 애플리케이션 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소 test:migration-workspace 및 test:operational-contracts"
+    },
+    {
+      "file": "tools/migration-workspace/engine.test.mjs",
+      "reason": "로컬 이관 작업공간 엔진 시험으로 생성 애플리케이션 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소 test:migration-workspace 및 test:operational-contracts"
+    },
+    {
+      "file": "tools/migration-workspace/inputs.test.mjs",
+      "reason": "로컬 이관 작업공간 입력 검증 시험으로 생성 애플리케이션 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소 test:migration-workspace 및 test:operational-contracts"
+    },
+    {
+      "file": "tools/migration-workspace/server.test.mjs",
+      "reason": "로컬 이관 작업공간 서버 시험으로 생성 애플리케이션 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소 test:migration-workspace 및 test:operational-contracts"
+    },
+    {
+      "file": "tools/migration-workspace/store.test.mjs",
+      "reason": "로컬 이관 작업공간 저장소 시험으로 생성 애플리케이션 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소 test:migration-workspace 및 test:operational-contracts"
+    }
+  ]
+}

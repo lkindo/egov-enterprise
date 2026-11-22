@@ -29,21 +29,16 @@ const ITEM_ID = /^[a-z][a-z0-9-]{0,79}$/;
 const FEATURE = /^[a-z][a-z0-9-]*$/;
 
 /**
- * 구성 잡에서 빼는 시험 작업의 원장이다. 여기 없는 작업을 빼면 run 이 실패한다(testPlanErrors).
- * 이관 도구 시험은 구성과 무관하다 — 고정 픽스처와 자기 V1 스키마를 쓰고, PR 마다 migration-test-scope 가, 매주
- * migration-tool.yml 이 전수로 돈다. 벤더 컨테이너 4종을 구성마다 다시 띄우면 잡이 37~40분으로 는다. 그래서 가장 많은
- * 기능을 담은 시작 구성의 두 레이아웃에서만 생성물의 이관 시험 배선을 본다(nightlyPlan 의 carrier).
+ * 구성 잡에서 빼는 시험 작업의 원장이다. ADR-0062 이후 모든 생성 프로젝트는 이관 모듈을 제외하므로 비어 있다.
  */
-const MIGRATION_REASON = '이관 도구 시험은 구성과 무관하다. PR(migration-test-scope)·매주(migration-tool.yml)가 전수로 돌고, '
-  + '여기서는 가장 많은 기능을 담은 시작 구성의 두 레이아웃에서만 배선을 본다.';
 export const TEST_EXCLUSIONS = Object.freeze({
-  'multi-module': Object.freeze({ ':migration-tool:test': MIGRATION_REASON }),
-  'single-module': Object.freeze({ migrationTest: MIGRATION_REASON }),
+  'multi-module': Object.freeze({}),
+  'single-module': Object.freeze({}),
 });
 
 // 단일 모듈의 test 는 api-server 시험만 돈다. 나머지 모듈은 이름 있는 Test 작업이다(reusable-single-module.mjs).
 const SINGLE_MODULE_SUITES = Object.freeze({
-  test: 'api-server', foundationTest: 'foundation', coreTest: 'business-core', appTest: 'business-app', migrationTest: 'migration-tool',
+  test: 'api-server', foundationTest: 'foundation', coreTest: 'business-core', appTest: 'business-app',
 });
 
 /** 생성물에서 판정할 시험 단위. 멀티 모듈은 settings.gradle 의 모듈마다, 단일 모듈은 이름 있는 Test 작업마다다. */
@@ -139,7 +134,6 @@ export function nightlyPlan({ presets, domains, closureOf }, { compositions = ''
   if (!['auto', 'both', ...BACKEND_LAYOUTS].includes(layout)) throw new Error(`layout must be auto, both, ${BACKEND_LAYOUTS.join(' or ')}`);
   if (presets.length === 0) throw new Error('the catalog declares no preset');
   if (Number.isNaN(date.getTime())) throw new Error('date must be a valid calendar date');
-  const carrier = [...presets].sort((a, b) => b.domains.length - a.domains.length || a.id.localeCompare(b.id))[0].id;
   const presetItem = (preset) => ({ id: `preset-${preset.id}`, kind: 'preset', target: preset.id, domains: preset.domains.join('+') });
   const targets = new Map();
   const tokens = compositions.split(/[\s,]+/).filter(Boolean);
@@ -169,7 +163,7 @@ export function nightlyPlan({ presets, domains, closureOf }, { compositions = ''
   const include = [...targets.values()].flatMap((item) => {
     const layouts = layout === 'both' || (layout === 'auto' && item.kind === 'preset') ? BACKEND_LAYOUTS
       : layout === 'auto' ? [BACKEND_LAYOUTS[(day + order++) % 2]] : [layout];
-    return layouts.map((value) => ({ ...item, layout: value, migrationTests: item.kind === 'preset' && item.target === carrier }));
+    return layouts.map((value) => ({ ...item, layout: value, migrationTests: false }));
   });
   return { include };
 }

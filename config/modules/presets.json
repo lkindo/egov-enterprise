@@ -132,6 +132,10 @@
           {
             "rule": "requirements-studio",
             "reason": "로컬 요구사항 스튜디오(tools/requirements-workspace)와 그 시험은 원본 저장소 도구이므로 생성 프로젝트에서 제외한다. 목록과 사유는 config/governance/requirements-removed-assets.json 에 있다."
+          },
+          {
+            "rule": "offline-migration-tool",
+            "reason": "오프라인 레거시 이관 도구(migration-tool·tools/migration-workspace*·db_columns.json)와 그 시험은 생성 애플리케이션 프로젝트에서 제외하고 원본 저장소의 독립 이관 제품(npm run migration:export)으로 배포한다(ADR-0062). 목록과 사유는 config/governance/migration-removed-assets.json 에 있다."
           }
         ],
         "javaCascade": [
@@ -352,6 +356,10 @@
           {
             "rule": "requirements-studio",
             "reason": "로컬 요구사항 스튜디오(tools/requirements-workspace)와 그 시험은 원본 저장소 도구이므로 생성 프로젝트에서 제외한다. 목록과 사유는 config/governance/requirements-removed-assets.json 에 있다."
+          },
+          {
+            "rule": "offline-migration-tool",
+            "reason": "오프라인 레거시 이관 도구(migration-tool·tools/migration-workspace*·db_columns.json)와 그 시험은 생성 애플리케이션 프로젝트에서 제외하고 원본 저장소의 독립 이관 제품(npm run migration:export)으로 배포한다(ADR-0062). 목록과 사유는 config/governance/migration-removed-assets.json 에 있다."
           }
         ],
         "javaCascade": [
@@ -468,6 +476,10 @@
           {
             "rule": "requirements-studio",
             "reason": "로컬 요구사항 스튜디오(tools/requirements-workspace)와 그 시험은 원본 저장소 도구이므로 생성 프로젝트에서 제외한다. 목록과 사유는 config/governance/requirements-removed-assets.json 에 있다."
+          },
+          {
+            "rule": "offline-migration-tool",
+            "reason": "오프라인 레거시 이관 도구(migration-tool·tools/migration-workspace*·db_columns.json)와 그 시험은 생성 애플리케이션 프로젝트에서 제외하고 원본 저장소의 독립 이관 제품(npm run migration:export)으로 배포한다(ADR-0062). 목록과 사유는 config/governance/migration-removed-assets.json 에 있다."
           }
         ],
         "javaCascade": []
@@ -598,6 +610,10 @@
           {
             "rule": "requirements-studio",
             "reason": "로컬 요구사항 스튜디오(tools/requirements-workspace)와 그 시험은 원본 저장소 도구이므로 생성 프로젝트에서 제외한다. 목록과 사유는 config/governance/requirements-removed-assets.json 에 있다."
+          },
+          {
+            "rule": "offline-migration-tool",
+            "reason": "오프라인 레거시 이관 도구(migration-tool·tools/migration-workspace*·db_columns.json)와 그 시험은 생성 애플리케이션 프로젝트에서 제외하고 원본 저장소의 독립 이관 제품(npm run migration:export)으로 배포한다(ADR-0062). 목록과 사유는 config/governance/migration-removed-assets.json 에 있다."
           }
         ],
         "javaCascade": [
@@ -833,6 +849,10 @@
           {
             "rule": "requirements-studio",
             "reason": "로컬 요구사항 스튜디오(tools/requirements-workspace)와 그 시험은 원본 저장소 도구이므로 생성 프로젝트에서 제외한다. 목록과 사유는 config/governance/requirements-removed-assets.json 에 있다."
+          },
+          {
+            "rule": "offline-migration-tool",
+            "reason": "오프라인 레거시 이관 도구(migration-tool·tools/migration-workspace*·db_columns.json)와 그 시험은 생성 애플리케이션 프로젝트에서 제외하고 원본 저장소의 독립 이관 제품(npm run migration:export)으로 배포한다(ADR-0062). 목록과 사유는 config/governance/migration-removed-assets.json 에 있다."
           }
         ],
         "javaCascade": [

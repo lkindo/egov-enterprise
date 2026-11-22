@@ -209,8 +209,7 @@ required가 아니고 병합을 막지 않는다. 매일 06:17 KST(`17 21 * * *`
 - **생성**: 시작 구성은 PR CI와 같은 `verify-reusable-base.mjs`, 단독 선택은 composer 엔진으로 생성·산출물 검증한다.
   생성기가 생성물의 API 계약을 원본 frontend 도구로 다시 만들므로 생성 전에 원본 frontend 의존성을 설치한다.
 - **시험**: 멀티 모듈은 `test`, 단일 모듈은 `test foundationTest coreTest appTest`를 돈다. 단일 모듈의 `test`는
-  `api-server` 시험만 돈다. 이관 시험은 구성과 무관해 가장 많은 기능을 담은 시작 구성의 두 레이아웃에서만 돌고,
-  제외는 러너의 원장에 사유와 함께 둔다.
+  `api-server` 시험만 돈다. ADR-0062 이후 모든 생성 애플리케이션 프로젝트가 `migration-tool` 을 제외하므로 야간 계획에서는 이관 시험을 돌지 않고(0개), 이관 모듈 시험은 원본 `ci.yml` 의 `migration-scope` 와 주간 `.github/workflows/migration-tool.yml` 에서 실행한다. 제외는 러너의 원장에 사유와 함께 둔다.
 - **판정**: 작업별 JUnit XML과 vitest JSON으로 판정한다. 보고서가 없거나 모집단이 0이거나 명령이 실패하면 실패다.
   vitest 의 실패 파일 수는 `testResults` 에서 세고, describe 블록까지 센 suite 수(`numFailedTestSuites`)는 따로 적는다.
   `summary`는 계획의 모든 구성에 통과 보고서가 있는지 본다. 구성별 보고서는 14일, 실패한 구성의 원본 XML·vitest JSON은 7일 남긴다.

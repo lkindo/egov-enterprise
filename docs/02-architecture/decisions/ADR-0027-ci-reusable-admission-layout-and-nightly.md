@@ -54,6 +54,7 @@ foundation·business-core·business-app·이관 시험은 별도 Test 작업이�
    - 생성은 기존 진입점이다: 시작 구성은 `verifyReusableBase`, 단독 선택은 composer 엔진. 폐포에도 투영 원장
      대조를 부른다.
    - 시험은 레이아웃별 작업이다: 멀티 모듈은 `test`, 단일 모듈은 `test foundationTest coreTest appTest`.
+     *(후속 [ADR-0062](ADR-0062-exclude-migration-tool-from-generated-projects.md) 로 생성 프로젝트에서 `migration-tool` 을 제외하면서 야간 계획의 이관 시험은 중단되고 원본 `migration-scope`·`migration-tool.yml` 이 전담한다.)*
      이관 시험은 가장 많은 기능을 담은 시작 구성의 두 레이아웃에서만 돌고, 제외는 사유와 함께 원장에 둔다.
    - 판정은 작업별 JUnit XML 과 vitest JSON 이다. 보고서가 없거나 모집단이 0이거나 명령이 실패하면 실패다.
    - required 가 아니다. 비밀이 없고 권한은 `contents: read`, Gradle 캐시는 읽기만 하며 동시 10잡, 잡 60분이다.

@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative, resolve, sep } from 'node:path';
-import { BACKEND_LAYOUTS, normalizeBackendLayout } from './reusable-layout.mjs';
+import { BACKEND_LAYOUTS, hasMigrationTool, normalizeBackendLayout } from './reusable-layout.mjs';
 import { presetIds } from './composition-profiles.mjs';
 import { parseSourceArgs } from './generate-reusable-base-source.mjs';
 import { initializeGeneratedRepository } from './reusable-source-tree.mjs';
@@ -73,6 +73,19 @@ test('generated Git boundary stops parent build ignores without staging, committ
   const producer = resolve('.');
   assert.ok(existsSync(join(producer, '.git')));
   assert.throws(() => initializeGeneratedRepository(producer), /새 산출물/);
+});
+
+test('hasMigrationTool distinguishes Phase 4 locks, vendor locks and pre-Phase-4 PostgreSQL locks', () => {
+  assert.equal(hasMigrationTool({ migrationTool: false }), false);
+  assert.equal(hasMigrationTool({ migrationTool: true }), true);
+  assert.equal(hasMigrationTool({ profile: 'core', layout: 'multi-module' }), true);
+  assert.equal(hasMigrationTool({
+    profile: 'core',
+    removedGates: { rules: [{ rule: 'offline-migration-tool', reason: 'ADR-0062' }] },
+  }), false);
+  assert.equal(hasMigrationTool({ migrationTool: true, vendorProjection: { vendor: 'oracle' } }), false);
+  assert.equal(hasMigrationTool(null), false);
+  assert.equal(hasMigrationTool(undefined), false);
 });
 
 test('generated Git boundary accepts an output path whose Windows drive letter case differs from Git', t => {

@@ -26,19 +26,31 @@ test('single-module adoption verifies the active isolated migration runner befor
 });
 
 test('explicit and legacy generated multi-module locks use the product migration verifier', t => {
-  for (const legacy of [false, true]) {
+  for (const lockOverride of [null, { profile: 'core' }, { profile: 'core', migrationTool: true }]) {
     const { root, path, write, approve } = fixture(t, 'multi-module');
-    if (legacy) { write('reusable-base-lock.json', JSON.stringify({ profile: 'core' })); approve(); }
+    if (lockOverride) { write('reusable-base-lock.json', JSON.stringify(lockOverride)); approve(); }
     const calls = [];
     executeAdoption({ root, path, environmentId: 'fixture-env', run: (command, args) => calls.push([command, args]) });
     assert.deepEqual(calls, [['node', ['scripts/reusable-layout-runtime.mjs', '--verify-migration']]]);
   }
 });
 
+test('Phase 4 generated locks without migrationTool refuse migration execution under ADR-0062', t => {
+  for (const layout of ['multi-module', 'single-module']) {
+    for (const marker of [{ migrationTool: false }, { removedGates: { rules: [{ rule: 'offline-migration-tool', reason: 'ADR-0062' }] } }]) {
+      const { root, path, write, approve } = fixture(t, layout);
+      write('reusable-base-lock.json', JSON.stringify({ profile: 'core', layout, ...marker }));
+      approve();
+      assert.throws(() => executeAdoption({ root, path, environmentId: 'fixture-env', execute: true,
+        run: () => assert.fail('Phase 4 generated project may not run migration verification or load') }), /ADR-0062/);
+    }
+  }
+});
+
 test('domain-selected (custom) generated locks use the same layout migration verifier as presets', t => {
   for (const layout of ['multi-module', 'single-module']) {
     const { root, path, write, approve } = fixture(t, layout);
-    write('reusable-base-lock.json', JSON.stringify({ profile: 'custom', layout }));
+    write('reusable-base-lock.json', JSON.stringify({ profile: 'custom', layout, migrationTool: true }));
     approve();
     const calls = [];
     executeAdoption({ root, path, environmentId: 'fixture-env', run: (command, args) => calls.push([command, args]) });
@@ -61,7 +73,7 @@ test('both generated layouts bind verification sources, layout selection and ali
     'scripts/reusable-single-module.mjs', 'scripts/composition-profiles.mjs', 'package.json', 'reusable-base-lock.json']) {
     const { root, path, write } = fixture(t, layout);
     const changed = file === 'reusable-base-lock.json'
-      ? JSON.stringify({ profile: 'core', layout: layout === 'single-module' ? 'multi-module' : 'single-module' })
+      ? JSON.stringify({ profile: 'core', layout: layout === 'single-module' ? 'multi-module' : 'single-module', migrationTool: true })
       : readFileSync(join(root, file), 'utf8') + '\nchanged';
     write(file, changed);
     assert.throws(() => executeAdoption({ root, path, environmentId: 'fixture-env', execute: true,

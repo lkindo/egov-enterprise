@@ -40,6 +40,8 @@ import {
   DEFAULT_HEADER, MANIFEST_PATH, hasConflictMarkers, manifestHeader, parseManifest, renderHarnessBaselineManifest,
 } from './harness-baseline-manifest-format.mjs';
 import { fail, normalize, readTextIfPresent, walk } from './reusable-source-tree.mjs';
+import { readRemovalLedger } from './reusable-asset-removal.mjs';
+import { ALWAYS_REMOVED_ASSET_RULES } from './reusable-product-assets.mjs';
 import { readVendorAssetLedger } from './reusable-vendor-assets.mjs';
 
 export { DEFAULT_HEADER, MANIFEST_PATH, hasConflictMarkers, manifestHeader, parseManifest, renderHarnessBaselineManifest };
@@ -118,6 +120,7 @@ const GATE_REGISTRIES = [
   'config/governance/zdm-waivers.json',
   'config/governance/producer-removed-assets.json',
   'config/governance/requirements-removed-assets.json',
+  'config/governance/migration-removed-assets.json',
   'config/governance/vendor-removed-assets.json',
   'config/security/false-positive-review.json',
 ];
@@ -249,18 +252,30 @@ export function registeredGateClasses(root) {
   return classes;
 }
 
-/** 벤더 프로젝트가 원장대로 뺀 스캔 루트인가. 번역 기준선 폴더가 있는 생성물에서만 참이다. */
-function removedForVendor(root, scanRoot) {
-  if (!fs.existsSync(path.join(root, 'api-server', 'src', 'main', 'resources', 'db', 'vendor'))) return false;
-  return readVendorAssetLedger(root).assets.some(asset => scanRoot === asset || scanRoot.startsWith(`${asset}/`));
+/** 생성물(잠금 존재)의 제거 원장 또는 벤더 기준선 폴더가 뺀 스캔 루트인가. 원본에서는 빈 목록이라 늘 실패한다. */
+function removedByLedger(root, scanRoot) {
+  const assets = [];
+  if (fs.existsSync(path.join(root, 'reusable-base-lock.json'))) {
+    for (const { ledgerPath } of ALWAYS_REMOVED_ASSET_RULES) {
+      try {
+        assets.push(...readRemovalLedger(root, ledgerPath).assets);
+      } catch (error) {
+        if (error?.code !== 'ENOENT') throw error;
+      }
+    }
+  }
+  if (fs.existsSync(path.join(root, 'api-server', 'src', 'main', 'resources', 'db', 'vendor'))) {
+    assets.push(...readVendorAssetLedger(root).assets);
+  }
+  return assets.some(asset => scanRoot === asset || scanRoot.startsWith(`${asset}/`));
 }
 
-/** 명시적으로 제외한 스캔 루트이거나(생략 시) 벤더 원장대로 뺀 스캔 루트인가. */
+/** 명시적으로 제외한 스캔 루트이거나(생략 시) 생성물·벤더 원장대로 뺀 스캔 루트인가. */
 function isAllowedAbsentScanRoot(root, scanRoot, allowedAbsentScanRoots) {
   if (allowedAbsentScanRoots !== null && allowedAbsentScanRoots !== undefined) {
     return [...allowedAbsentScanRoots].some(asset => scanRoot === asset || scanRoot.startsWith(`${asset}/`));
   }
-  return removedForVendor(root, scanRoot);
+  return removedByLedger(root, scanRoot);
 }
 
 /**

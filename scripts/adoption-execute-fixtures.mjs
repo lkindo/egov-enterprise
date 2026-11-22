@@ -21,7 +21,7 @@ export function adoptionExecutionFixture(t, layout) {
   // 승인 실행 사슬이 import 하는 구성 이름 판정(11단계 C8)은 이관 제품에도 복사된다.
   write('scripts/composition-profiles.mjs', '// Synthetic composition profile input; the real module is imported from this repository.\n');
   if (layout !== undefined) {
-    write('reusable-base-lock.json', JSON.stringify({ profile: 'core', layout }));
+    write('reusable-base-lock.json', JSON.stringify({ profile: 'core', layout, migrationTool: true }));
     write('package.json', JSON.stringify({ scripts: { 'verify:migration': 'node scripts/reusable-layout-runtime.mjs --verify-migration' } }));
     for (const file of ['scripts/reusable-layout.mjs', 'scripts/reusable-layout-runtime.mjs', 'scripts/reusable-single-module.mjs']) {
       write(file, '// Synthetic verification input; command execution is intercepted by this test.\n');

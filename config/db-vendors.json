@@ -5,22 +5,6 @@
     "description": "벤더 프로젝트에서 빠지는 것을 생성 전에 보일 문장. paths 는 config/governance/vendor-removed-assets.json 의 자산·게이트를 한 묶음씩 나눠 갖는다. 그 원장에 줄을 더하면 묶음을 정할 때까지 계약이 붉다.",
     "groups": [
       {
-        "label": "레거시 이관 도구",
-        "reason": "대상 DB 가 PostgreSQL 전용입니다.",
-        "paths": [
-          "db_columns.json",
-          "migration-tool",
-          "migration-tool/src/test/java/nuri/migration/schema/MigrationRuntimeSchemaIsolationTest.java",
-          "scripts/generate-migration-product.mjs",
-          "scripts/migration-product-contract.test.mjs",
-          "scripts/migration-profile-provenance.mjs",
-          "scripts/migration-test-shard.mjs",
-          "scripts/migration-verification-contract.test.mjs",
-          "tools/migration-workspace",
-          "tools/migration-workspace-prototype"
-        ]
-      },
-      {
         "label": "백업·복원 훈련",
         "reason": "복원 도구가 pg_dump 전용입니다. 이 DB 의 백업·복원은 도입 기관이 준비합니다.",
         "paths": [

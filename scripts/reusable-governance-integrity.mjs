@@ -9,6 +9,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { containedFile } from './adoption-review.mjs';
 import { compositionProfiles } from './composition-profiles.mjs';
+import { hasMigrationTool } from './reusable-layout.mjs';
 import { buildUrlStateCensus, approvedStateItemSelectors, isUrlStateItemApproved } from './ui-url-state-census.mjs';
 import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
 import { deriveProjectedReviewManifests, REVIEW_MANIFEST_PATHS, REVIEW_SCOPE_PATH } from './reusable-review-scopes.mjs';
@@ -203,8 +204,8 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true, ado
       } else check(!lock.composition, 'Source lock contains an unbound composition');
       errors.push(...inspectProjectionLedger(root, lock));
       errors.push(...vendorProjectionErrors(root, lock));
-      // 이관 승인 원장은 이관 도구가 있는 구성에만 있다.
-      check(Boolean(metadata.migrationEnvironmentReview) === !lock.vendorProjection, 'Migration review scope differs from the vendor projection');
+      // 이관 승인 원장은 이관 도구를 실제로 포함한 구성에만 둔다(ADR-0062 이후 생성물은 미포함).
+      check(Boolean(metadata.migrationEnvironmentReview) === hasMigrationTool(lock), 'Migration review scope differs from the migration-tool boundary');
     }
     check(exact(adopter?.revision.codeScope ?? metadata.codeScope, projectedCodeScope(root)), 'Source evidence scope changed; inherited approval requires review before artifact certification');
     const activeArtifacts = metadata.activeArtifacts ?? [];
@@ -283,6 +284,10 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true, ado
       const review = readJson(root, path);
       check(review.authority === 'adopter-environment-review' && review.product === product && review.profile === profile,
         `Adoption review identity differs from artifact: ${path}`);
+    }
+    if (!metadata.migrationEnvironmentReview) {
+      check(!existsSync(join(root, 'config/governance/migration-adoption-review.json')),
+        'Migration adoption review must not remain without migration-tool');
     }
   } catch (error) { errors.push(error.message); }
   return { errors, metadata, reviewScopes };

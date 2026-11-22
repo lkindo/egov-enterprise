@@ -20,7 +20,7 @@ import { LEDGER_CHECKS, checkGenerated, checkTasks, main as regenerateMain } fro
 import { GENERATORS } from './merge-main-regenerate.mjs';
 import { UPSTREAM_ATLAS } from './reusable-harness-census.mjs';
 import { isPathCoveredBy } from './reusable-asset-removal.mjs';
-import { readProducerAssetLedger, readRequirementsAssetLedger } from './reusable-product-assets.mjs';
+import { readMigrationAssetLedger, readProducerAssetLedger, readRequirementsAssetLedger } from './reusable-product-assets.mjs';
 import { VENDOR_LEDGER_PATH } from './project-composer-vendors.mjs';
 import { asPreviewVendors } from './project-composer-vendor-evidence.test-helpers.mjs';
 import { PROPOSAL_RELATIVE_PATH as DISPOSITION_OVERLAY } from './ui-navigation-disposition-contract.mjs';
@@ -194,11 +194,12 @@ test('판정 모듈이 없을 때만 건너뛰고, 자료가 없으면 건너뛰
   assert.deepEqual(thrown.findings, [{ code: 'PROBE', message: 'first line second line', fix: 'probe' }]);
 });
 
-test('생성 프로젝트에서 Phase 3 제거 원장을 적용한 뒤 regen 과 ledger-precheck 의 활성/건너뜀 단계 집합이 정확하다', async (t) => {
+test('생성 프로젝트에서 Phase 3·4 제거 원장을 적용한 뒤 regen 과 ledger-precheck 의 활성/건너뜀 단계 집합이 정확하다', async (t) => {
   const producer = readProducerAssetLedger(ROOT);
   const req = readRequirementsAssetLedger(ROOT);
+  const migration = readMigrationAssetLedger(ROOT);
   const removed = [...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates, ...producer.assets, ...producer.gates.map(r => r.file),
-    ...req.assets, ...req.gates.map(r => r.file)];
+    ...req.assets, ...req.gates.map(r => r.file), ...migration.assets, ...migration.gates.map(r => r.file)];
   const isRemoved = target => removed.some(asset => isPathCoveredBy(target, asset));
   assert.deepEqual(
     [...GENERATORS, ...LEDGER_CHECKS].filter(step => step.requires && isRemoved(step.requires)).map(step => step.id),

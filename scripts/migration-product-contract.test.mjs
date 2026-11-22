@@ -72,6 +72,9 @@ test('standalone migration export retains independent verification and clears in
   for (const absent of ['server.mjs', 'ai.mjs', 'public']) {
     assert.equal(existsSync(resolve(generatedRoot, 'tools/migration-workspace', absent)), false);
   }
+  assert.equal(readFileSync(resolve(generatedRoot, 'db_columns.json'), 'utf8'),
+    readFileSync(resolve(root, 'db_columns.json'), 'utf8'),
+    'default standalone export includes upstream db_columns.json for target standard validation');
   const isolatedRoot = temporaryRoot(t);
   const outputRoot = resolve(isolatedRoot, 'product');
   cpSync(generatedRoot, outputRoot, { recursive: true });
@@ -293,4 +296,32 @@ test('export cannot target the repository, a parent directory or a sibling produ
   for (const outputRoot of [root, resolve(root, '..'), resolve(root, 'build'), resolve(root, 'build/reusable-base')]) {
     assert.throws(() => generateMigrationProduct({ sourceRoot: root, outputRoot }), /new child directory/);
   }
+});
+
+test('standalone migration export supports targeting a validated generated DB bundle catalog', async (t) => {
+  const { schemaSnapshotHash } = await import('./project-composer-db.mjs');
+  const { parseColumnCatalog } = await import('./reusable-migration-catalog.mjs');
+  const fixture = temporaryRoot(t);
+  const bundle = resolve(fixture, 'core-bundle');
+  mkdirSync(bundle, { recursive: true });
+  const snapshot = { columns: [{ table_name: 'tb_user_info', ordinal_position: 1, column_name: 'user_id' }] };
+  const schemaHash = schemaSnapshotHash(snapshot);
+  writeFileSync(resolve(bundle, 'schema-contract.json'), JSON.stringify({ snapshot }));
+  writeFileSync(resolve(bundle, 'profile-lock.json'), JSON.stringify({ validated: false, schemaSnapshotHash: schemaHash }));
+
+  const base = resolve(root, 'build/migration-product');
+  const rejectedRoot = resolve(base, `contract-bad-bundle-${randomBytes(8).toString('hex')}`);
+  t.after(() => rmSync(rejectedRoot, { recursive: true, force: true }));
+  assert.throws(() => generateMigrationProduct({ sourceRoot: root, outputRoot: rejectedRoot, dbBundle: bundle }), /validated: true/);
+  assert.equal(existsSync(rejectedRoot), false, 'invalid dbBundle must fail before creating outputRoot');
+
+  writeFileSync(resolve(bundle, 'profile-lock.json'), JSON.stringify({ validated: true, schemaSnapshotHash: schemaHash }));
+  const targetedRoot = resolve(base, `contract-targeted-${randomBytes(8).toString('hex')}`);
+  t.after(() => rmSync(targetedRoot, { recursive: true, force: true }));
+  const result = generateMigrationProduct({ sourceRoot: root, outputRoot: targetedRoot, dbBundle: bundle });
+  assert.ok(result.outputRoot);
+  assert.deepEqual([...parseColumnCatalog(readFileSync(resolve(targetedRoot, 'db_columns.json'), 'utf8')).keys()],
+    ['flyway_schema_history', 'tb_user_info']);
+  const targetedLock = JSON.parse(readFileSync(resolve(targetedRoot, 'migration-product-lock.json'), 'utf8'));
+  assert.deepEqual(targetedLock.targetCatalog, { tables: 2, source: 'db-bundle' });
 });

@@ -782,19 +782,21 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
         { rule: 'upstream-atlas', reason: '시험용' },
         { rule: 'upstream-producer-tools', reason: '시험용' },
         { rule: 'requirements-studio', reason: '시험용' },
+        { rule: 'offline-migration-tool', reason: '시험용' },
       ], javaCascade: [] } } } };
   const core = { ...recipe(), selection: { preset: 'core' } };
   git('init', '--quiet');
   write('config/ui-route-capabilities.json', JSON.stringify({ routes: [['/', 'page.tsx'], ['/login', 'login/page.tsx']]
     .map(([route, page]) => ({ route, source: `frontend/src/app/${page}`, routing: { kind: 'page' } })) }));
   for (const file of ['layout.tsx', 'page.tsx', 'login/page.tsx']) write(`frontend/src/app/${file}`);
-  // 생성기는 원본 Atlas 및 생산자·요구사항 자산을 늘 규칙으로 걷는다. 그 자산·검사와 package.json 별칭이 있어야 규칙 제거가 성공한다.
+  // 생성기는 원본 Atlas 및 생산자·요구사항·이관 자산을 늘 규칙으로 걷는다. 그 자산·검사와 package.json 별칭이 있어야 규칙 제거가 성공한다.
   write('config/governance/producer-removed-assets.json', JSON.stringify({ assets: ['tools/dummy-producer.mjs'], aliases: ['dummy:producer'], gates: [{ file: 'scripts/dummy-producer.test.mjs' }] }));
   write('config/governance/requirements-removed-assets.json', JSON.stringify({ assets: ['tools/dummy-req.mjs'], aliases: ['dummy:req'], gates: [{ file: 'scripts/dummy-req.test.mjs' }] }));
-  for (const file of ['tools/dummy-producer.mjs', 'scripts/dummy-producer.test.mjs', 'tools/dummy-req.mjs', 'scripts/dummy-req.test.mjs']) write(file, '// rule fixture\n');
+  write('config/governance/migration-removed-assets.json', JSON.stringify({ assets: ['tools/dummy-mig.mjs'], aliases: ['dummy:mig'], gates: [{ file: 'scripts/dummy-mig.test.mjs' }] }));
+  for (const file of ['tools/dummy-producer.mjs', 'scripts/dummy-producer.test.mjs', 'tools/dummy-req.mjs', 'scripts/dummy-req.test.mjs', 'tools/dummy-mig.mjs', 'scripts/dummy-mig.test.mjs']) write(file, '// rule fixture\n');
   for (const file of ['frontend/atlas/catalog.json', 'scripts/build-atlas.mjs', 'scripts/atlas-catalog.mjs',
     'frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts', 'scripts/atlas-catalog.test.mjs', 'scripts/atlas-generation.test.mjs']) write(file, '// atlas\n');
-  write('package.json', JSON.stringify({ scripts: { 'atlas:build': 'x', 'atlas:check': 'x', 'atlas:contract': 'x', 'dummy:producer': 'x', 'dummy:req': 'x' } }));
+  write('package.json', JSON.stringify({ scripts: { 'atlas:build': 'x', 'atlas:check': 'x', 'atlas:contract': 'x', 'dummy:producer': 'x', 'dummy:req': 'x', 'dummy:mig': 'x' } }));
   // 정밀 점검은 api-docs 를 인가 원장으로 투영한다(10c-2). 이 저장소에는 문서화된 연산이 없다.
   write('api-docs.json', JSON.stringify({ openapi: '3.1.0', paths: {}, components: { schemas: {} } }));
   write('config/governance/authorization-policies.json', JSON.stringify({ operationBindings: [{ method: 'GET', path: '/actuator/health', handler: 'EXTERNAL#/actuator/health' }] }));

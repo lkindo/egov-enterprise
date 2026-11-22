@@ -26,7 +26,7 @@
 | [ADR-0017](ADR-0017-task-oriented-menu-navigation.md) | 현재 제품의 과업 중심 4개 메뉴 영역, 중복 진입점 통합과 NAV 보존 이행 | Accepted |
 | [ADR-0018](ADR-0018-governance-review-lifecycle-and-adoption.md) | 기술 계약·정기 검토·기관별 온라인/이관 도입 승인 분리 | Accepted — 일부 ADR-0028, DEC-OPS-289·291·295로 대체 |
 | [ADR-0019](ADR-0019-client-ip-trust-boundary.md) | 운영 앞단 프록시로 클라이언트 IP 신뢰 경계 수립, 요청 제한 한도 설정화 | Accepted — 일부 DEC-OPS-098·ADR-0035로 대체 |
-| [ADR-0020](ADR-0020-selectable-reusable-backend-layouts.md) | 원본 모듈 구조 유지와 재사용 백엔드 출력 형태 선택 | Accepted — 일부 ADR-0028, DEC-OPS-239, ADR-0047로 대체 |
+| [ADR-0020](ADR-0020-selectable-reusable-backend-layouts.md) | 원본 모듈 구조 유지와 재사용 백엔드 출력 형태 선택 | Accepted — 일부 ADR-0028, DEC-OPS-239, ADR-0047·ADR-0062로 대체 |
 | [ADR-0021](ADR-0021-isolated-layered-testing-process.md) | 책임별 테스트 재편·격리 실행·전체 회귀와 영향 shadow | Accepted — 일부 ADR-0022·ADR-0023으로 대체 |
 | [ADR-0022](ADR-0022-ci-independent-module-impact-and-cache.md) | 온라인·이관 독립 영향 분류, 커버리지·required 보존과 Gradle 캐시 | Accepted — 일부 ADR-0023·ADR-0026·ADR-0061, DEC-OPS-237로 대체 |
 | [ADR-0023](ADR-0023-e2e-impact-selection-and-cache-writer.md) | PR E2E 영향 선별·main 전수와 단일 캐시 writer | Accepted |
@@ -68,3 +68,4 @@
 | [ADR-0059](ADR-0059-edge-login-rate-limit.md) | 운영 앞단 프록시(edge)가 로그인·추가 인증·비밀번호 변경을 접속 주소당 백엔드와 같은 한도로 한 번 더 제한 | Accepted |
 | [ADR-0060](ADR-0060-asymmetric-jwt-signing.md) | 접근·재발급 토큰을 ES256 키링으로 서명하고 Next 에는 공개키만 둔다 — 두 번 배포로 전환, 구현은 재기록 묶음 | Accepted |
 | [ADR-0061](ADR-0061-pit-selection-and-test-targets.md) | 미지 경로는 PIT 가 읽을 때만 PIT 를 고르고(PIT 입력 census), 제품 PIT 시험 대상은 대상 패키지와 실제 탐지 시험으로 좁힌다 | Accepted |
+| [ADR-0062](ADR-0062-exclude-migration-tool-from-generated-projects.md) | 모든 생성 애플리케이션 프로젝트에서 오프라인 이관 도구를 제외하고 원본 독립 `migration:export` 로 분리한다 | Accepted |
