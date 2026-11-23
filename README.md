@@ -204,7 +204,7 @@ make bootstrap
 | [JPA 성능 가드레일](./docs/02-architecture/jpa-performance-guardrail.md) | N+1·페치 전략 |
 | [Zero-Downtime 마이그레이션](./docs/02-architecture/zero-downtime-migration.md) | Expand-and-Contract 패턴 |
 | [Pitest 뮤테이션 테스트](./docs/02-architecture/pitest-mutation-testing.md) | 테스트 방어력 검증 |
-| [레거시 이관 도구 설계](./docs/02-architecture/legacy-migration-tool-design.md) | 다중 source→PostgreSQL 승인형 offline ETL(discover·plan·validate·load) |
+| [레거시 이관 도구 설계](./docs/02-architecture/legacy-migration-tool-design.md) | 다중 source→PostgreSQL 승인형 offline ETL(discover·plan·validate·load). 독립 이관 제품(`npm run migration:export`)의 `docs/` 에 함께 실리고 재사용 생성물에는 싣지 않는다 |
 | [재사용 Base 생성 가이드](./docs/03-guides/reusable-base-guide.md) | 검증된 프로필 기반 프레임워크 추출 절차 |
 
 ### 📗 개발 지침 (`docs/03-guides/`)
