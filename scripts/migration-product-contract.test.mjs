@@ -101,20 +101,29 @@ test('standalone migration export retains independent verification and clears in
     .filter(error => isOwnedDoc(error.split(' -> ')[0])), []);
   // 링크 정리 뒤의 README 가 약속한 문서를 빠짐없이 잇는다 — 대상이 없는 링크는 글자로 바뀌어 여기서 빠진다.
   const productReadme = readFileSync(resolve(generatedRoot, 'README.md'), 'utf8');
-  assert.deepEqual([...new Set([...productReadme.matchAll(/\]\((docs\/[^)#\s]+)(?:#[^)\s]*)?\)/g)].map(match => match[1]))].sort(), promisedDocs);
+  assert.deepEqual([...new Set([...productReadme.matchAll(/\]\((?:\.\/)?(docs\/[^)#\s]+)(?:#[^)\s]*)?\)/g)].map(match => match[1]))].sort(), promisedDocs);
+  // 기관 승인 절차는 도입 가이드의 이관 절(§4)로 잇는다 — 온라인 절로 보내면 다른 원장의 통제를 읽게 된다.
+  assert.ok(productReadme.includes('](docs/03-guides/governance-review-lifecycle.md#4-독립-migration-tool-도입)'));
   // 제품에 싣지 않는 절차(전체 복구)와 원본의 실측 기록은 위치를 글로 알린다.
-  for (const pointer of ['docs/04-operations/backup-and-restore-runbook.md', 'docs/04-operations/known-gaps-detail.md', 'durationProfileProvenance.producerCommit']) {
+  for (const pointer of ['docs/04-operations/backup-and-restore-runbook.md', 'docs/04-operations/known-gaps-detail.md',
+    'docs/04-operations/readiness-followups.md', 'durationProfileProvenance.producerCommit', 'key-id/version']) {
     assert.ok(productReadme.includes(pointer), pointer);
   }
   assert.equal(existsSync(resolve(generatedRoot, 'docs/04-operations/backup-and-restore-runbook.md')), false);
-  // README 가 안내하는 npm 명령은 이 제품에 있다. 설계와 도입 가이드에 남은 원본 전용 이름은 그 줄이나 바로 뒤 문단이 원본 저장소의 이름임을 밝힌다.
+  // README 가 안내하는 npm 명령은 이 제품에 있다. 설계와 도입 가이드에 남은 원본 전용 이름은 그 줄부터 네 줄 안에서 원본 저장소의 이름임을 밝히고
+  // 대응하는 제품의 이름을 함께 적는다.
   const productScripts = Object.keys(JSON.parse(readFileSync(resolve(generatedRoot, 'package.json'), 'utf8')).scripts);
-  const readmeAliases = [...new Set([...productReadme.matchAll(/`npm run ([a-z:-]+)/g)].map(match => match[1]))].sort();
+  const readmeAliases = [...new Set([...productReadme.matchAll(/npm run ([a-z:-]+)/g)].map(match => match[1]))].sort();
   assert.deepEqual(readmeAliases.filter(alias => !productScripts.includes(alias)), ['migration:export']);
+  const productAliasOf = { 'verify:migration': 'verify', 'review:migration': 'review:status', 'review:adoption:migration': 'review:adoption' };
+  for (const alias of Object.values(productAliasOf)) assert.ok(productScripts.includes(alias), alias);
   for (const doc of ['docs/02-architecture/legacy-migration-tool-design.md', 'docs/03-guides/governance-review-lifecycle.md']) {
     const lines = readFileSync(resolve(generatedRoot, doc), 'utf8').split(/\r?\n/);
-    const unexplained = lines.flatMap((line, index) => /npm run (?:verify:migration|review:migration|review:adoption:migration)(?![\w:-])/.test(line)
-      && !/원본 저장소/.test(lines.slice(index, index + 4).join(' ')) ? [`${doc}:${index + 1}`] : []);
+    const unexplained = lines.flatMap((line, index) => [...line.matchAll(/npm run (verify:migration|review:migration|review:adoption:migration)(?![\w:-])/g)]
+      .filter(match => {
+        const near = lines.slice(index, index + 4).join(' ');
+        return !(near.includes('원본 저장소') && new RegExp(`npm run ${productAliasOf[match[1]]}(?![\\w:-])`).test(near));
+      }).map(match => `${doc}:${index + 1} ${match[1]}`));
     assert.deepEqual(unexplained, []);
   }
   const isolatedRoot = temporaryRoot(t);
