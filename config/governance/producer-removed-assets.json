@@ -1,10 +1,9 @@
 {
   "schemaVersion": 1,
-  "authority": "Phase 3 생성 프로젝트 경량화 — 프로젝트 생성기와 생산자 전용 CI·검증·평가 자산, 그 문서와 원본 저장소의 운영 기록 문서(DEC-OPS-427)의 제거 원장이다. 생성기가 이 목록대로 걷고 생성물 계약이 부재를 대조한다.",
+  "authority": "Phase 3 생성 프로젝트 경량화 — 프로젝트 생성기와 생산자 전용 CI·검증·평가 자산, 그 도구만 다루는 문서(DEC-OPS-427)의 제거 원장이다. 생성기가 이 목록대로 걷고 생성물 계약이 부재를 대조한다.",
   "assets": [
     "docs/02-architecture/project-composer-design.md",
     "docs/03-guides/project-composer-guide.md",
-    "docs/04-operations/shared-oci-migration-apply-log.md",
     "docs/04-operations/vendor-rerecord-batch.md",
     "docs/archived/constitution-compaction-2026-11-22.md",
     "scripts/adoption-execute-fixtures.mjs",

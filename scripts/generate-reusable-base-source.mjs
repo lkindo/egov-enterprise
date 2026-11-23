@@ -303,11 +303,6 @@ async function main() {
   });
   verifyCompositionDatabaseFiles(join(output, 'api-server/src/main/resources/db/migration'), dbLock);
   adaptGeneratedHarness(output);
-  // 문서 링크 정리(DEC-OPS-427): 걷은 도구·문서를 가리키던 링크를 글자로 남기고, 남은 문서에 끊긴 링크가 있으면 멈춘다.
-  //   파일을 지우는 단계가 모두 끝난 뒤여야 한다. 문서는 증거 범위(codeScope)·하네스 기준선 밖이라 그 둘의 해시를 바꾸지 않는다.
-  const generatedDocs = projectGeneratedDocs(output);
-  console.log(`[base-source] ${args.profile}: 문서 ${generatedDocs.documents}개 가운데 ${generatedDocs.changedFiles}개의 끊긴 링크를 정리했다`
-    + `(글자로 ${generatedDocs.unlinked}개, 절만 뗀 것 ${generatedDocs.defragmented}개, 인덱스 행 ${generatedDocs.droppedIndexRows}개).`);
   // Ordering invariant: writeHarnessBaseline runs before reusable-base-lock.json is written, so absent scan roots must be passed explicitly.
   writeHarnessBaseline(output, {
     ownership,
@@ -403,6 +398,13 @@ async function main() {
     .replace(/^- 새 Java 소스:.*$/mu,
       '- 새 Java 소스: 별도 추가분 등록으로 검사한다. 기존 소스 변경·새 화면·마이그레이션은 추가 전용 등록의 자동 지원 범위 밖이다. 등록이 물리 스키마나 기관 승인을 만들지 않는다.')
     + '\nJava·권한 추가 절차와 원본 인증의 경계: [도입자 가이드](docs/03-guides/generated-project-additions.md).\n', 'utf8');
+  // 문서 링크 정리(DEC-OPS-427): 걷은 도구·문서를 가리키던 링크를 글자로 남기고, 남은 문서에 끊긴 링크가 있으면 멈춘다.
+  //   생성기가 쓰는 문서(REUSABLE_BASE.md·README)까지 모두 쓴 뒤여야 마지막 상태를 검사한다. 문서는 증거 범위(codeScope)·
+  //   하네스 기준선·잠금의 해시 밖이라 그 뒤에 고쳐도 그 값들이 바뀌지 않는다.
+  const generatedDocs = projectGeneratedDocs(output);
+  console.log(`[base-source] ${args.profile}: 문서 ${generatedDocs.documents}개 가운데 ${generatedDocs.changedFiles}개 파일의 끊긴 링크를 정리했다`
+    + `(글자로 ${generatedDocs.unlinked}개, 절만 뗀 것 ${generatedDocs.defragmented}개, 인덱스 행 ${generatedDocs.droppedIndexRows}개, `
+    + `헌법 metadata 의 끊긴 참조 ${generatedDocs.metadataReferenceErrors}건).`);
   initializeGeneratedRepository(output);
   console.log(`[base-source] PASS: ${normalize(relative(ROOT, output))}`);
   console.log(`[base-source] removed java=${java.removedFiles}, frontend=${frontend.removedFiles}`);
