@@ -10,6 +10,8 @@ export const UPSTREAM_ATLAS = Object.freeze({
     'frontend/atlas',
     'scripts/build-atlas.mjs',
     'scripts/atlas-catalog.mjs',
+    // Atlas 만 다루는 안내 문서. 생성 프로젝트에는 Atlas 도구와 atlas:* 명령이 없다(DEC-OPS-427).
+    'docs/03-guides/governance-atlas-guide.md',
   ]),
   gates: Object.freeze([
     'frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts',

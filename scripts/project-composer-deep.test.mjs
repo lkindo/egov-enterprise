@@ -194,7 +194,7 @@ test('the deep plan sees exactly the files the generator copies and projects eve
   write('config/governance/migration-removed-assets.json', JSON.stringify({ assets: ['tools/dummy-mig.mjs'], aliases: ['dummy:mig'], gates: [{ file: 'scripts/dummy-mig.test.mjs' }] }));
   const ruleFixtures = ['tools/dummy-producer.mjs', 'scripts/dummy-producer.test.mjs', 'tools/dummy-req.mjs', 'scripts/dummy-req.test.mjs', 'tools/dummy-mig.mjs', 'scripts/dummy-mig.test.mjs'];
   for (const file of ruleFixtures) write(file, '// rule fixture\n');
-  const atlas = ['frontend/atlas/catalog.json', ...atlasPaths.filter(path => /\.(?:mjs|ts)$/.test(path)), 'package.json'];
+  const atlas = ['frontend/atlas/catalog.json', ...atlasPaths.filter(path => /\.(?:mjs|ts|md)$/.test(path)), 'package.json'];
   for (const file of atlas) write(file, file === 'package.json'
     ? '{"scripts":{"atlas:build":"x","atlas:check":"x","atlas:contract":"x","dummy:producer":"x","dummy:req":"x","dummy:mig":"x"}}'
     : '// atlas\n');

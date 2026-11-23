@@ -1,7 +1,11 @@
 {
   "schemaVersion": 1,
-  "authority": "Phase 3 생성 프로젝트 경량화 — 프로젝트 생성기와 생산자 전용 CI·검증·평가 자산의 제거 원장이다. 생성기가 이 목록대로 걷고 생성물 계약이 부재를 대조한다.",
+  "authority": "Phase 3 생성 프로젝트 경량화 — 프로젝트 생성기와 생산자 전용 CI·검증·평가 자산, 그 도구만 다루는 문서(DEC-OPS-427)의 제거 원장이다. 생성기가 이 목록대로 걷고 생성물 계약이 부재를 대조한다.",
   "assets": [
+    "docs/02-architecture/project-composer-design.md",
+    "docs/03-guides/project-composer-guide.md",
+    "docs/04-operations/vendor-rerecord-batch.md",
+    "docs/archived/constitution-compaction-2026-11-22.md",
     "scripts/adoption-execute-fixtures.mjs",
     "scripts/aggregate-required-check.mjs",
     "scripts/backfill-log-duration.mjs",
@@ -60,6 +64,7 @@
     "scripts/reusable-nightly-judge.mjs",
     "scripts/reusable-nightly.mjs",
     "scripts/reusable-reference-data.mjs",
+    "scripts/reusable-source-docs.mjs",
     "scripts/reusable-source-frontend.mjs",
     "scripts/reusable-source-gates.mjs",
     "scripts/reusable-source-harness.mjs",
@@ -706,6 +711,11 @@
     },
     {
       "file": "scripts/reusable-single-module.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/reusable-source-docs.test.mjs",
       "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
       "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
     },

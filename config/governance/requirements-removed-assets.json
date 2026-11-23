@@ -1,7 +1,8 @@
 {
   "schemaVersion": 1,
-  "authority": "Phase 3 생성 프로젝트 경량화 — 로컬 요구사항 스튜디오(tools/requirements-workspace)와 관련 별칭·시험의 제거 원장이다. 감리 산출물 도구(export-deliverables*.mjs)는 유지한다.",
+  "authority": "Phase 3 생성 프로젝트 경량화 — 로컬 요구사항 스튜디오(tools/requirements-workspace)와 그 안내 문서, 관련 별칭·시험의 제거 원장이다. 감리 산출물 도구(export-deliverables*.mjs)는 유지한다.",
   "assets": [
+    "docs/03-guides/requirements-workspace-guide.md",
     "tools/requirements-workspace"
   ],
   "aliases": [

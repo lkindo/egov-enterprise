@@ -794,7 +794,7 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
   write('config/governance/requirements-removed-assets.json', JSON.stringify({ assets: ['tools/dummy-req.mjs'], aliases: ['dummy:req'], gates: [{ file: 'scripts/dummy-req.test.mjs' }] }));
   write('config/governance/migration-removed-assets.json', JSON.stringify({ assets: ['tools/dummy-mig.mjs'], aliases: ['dummy:mig'], gates: [{ file: 'scripts/dummy-mig.test.mjs' }] }));
   for (const file of ['tools/dummy-producer.mjs', 'scripts/dummy-producer.test.mjs', 'tools/dummy-req.mjs', 'scripts/dummy-req.test.mjs', 'tools/dummy-mig.mjs', 'scripts/dummy-mig.test.mjs']) write(file, '// rule fixture\n');
-  for (const file of ['frontend/atlas/catalog.json', 'scripts/build-atlas.mjs', 'scripts/atlas-catalog.mjs',
+  for (const file of ['frontend/atlas/catalog.json', 'scripts/build-atlas.mjs', 'scripts/atlas-catalog.mjs', 'docs/03-guides/governance-atlas-guide.md',
     'frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts', 'scripts/atlas-catalog.test.mjs', 'scripts/atlas-generation.test.mjs']) write(file, '// atlas\n');
   write('package.json', JSON.stringify({ scripts: { 'atlas:build': 'x', 'atlas:check': 'x', 'atlas:contract': 'x', 'dummy:producer': 'x', 'dummy:req': 'x', 'dummy:mig': 'x' } }));
   // 정밀 점검은 api-docs 를 인가 원장으로 투영한다(10c-2). 이 저장소에는 문서화된 연산이 없다.
