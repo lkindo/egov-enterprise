@@ -5,7 +5,7 @@
  * 링크가 남는데, 생성 프로젝트에는 문서 링크 검사가 없어 끊긴 채 나갔다. 이 모듈은 남은 문서를 한 번 훑어
  *   - 대상 파일이 없는 인라인 링크·이미지는 글자만 남기고,
  *   - 대상은 있는데 절(#…)이 없는 링크는 절만 떼고,
- *   - 문서 인덱스(docs/README.md)에서 없어진 문서를 소개하는 행은 지운다.
+ *   - 문서 인덱스(docs/README.md)와 루트 README 의 문서 표에서 없어진 문서를 소개하는 행은 지운다.
  * 고친 뒤 원본 저장소와 같은 검사기로 다시 보아, 남은 문서에 끊긴 링크가 하나라도 있으면 생성을 멈춘다.
  *
  * 링크의 범위(글자·목적지·제목·중첩 이미지)는 원본 링크 검사기의 해석기(inlineLinkSpans)를 그대로 쓴다. 검사기가 링크로 보지
@@ -18,13 +18,16 @@ import path from 'node:path';
 import {
   documentAnchors, inlineLinkSpans, isOwnedDoc, maskExamples, validateDocumentationLinks,
 } from './docs-link-integrity.mjs';
+import { readRemovalLedger } from './reusable-asset-removal.mjs';
 import { MEMORY_PATHS } from './reusable-governance-integrity.mjs';
+import { UPSTREAM_ATLAS } from './reusable-harness-census.mjs';
+import { ALWAYS_REMOVED_ASSET_RULES, isUpstreamRuntimeAlias } from './reusable-product-assets.mjs';
+import { readVendorAssetLedger } from './reusable-vendor-assets.mjs';
 
 const DOC_ROOTS = ['docs', '.githooks', '.agent/memory', '.agent/knowledge'];
 const SKIPPED_DIRECTORIES = new Set(['node_modules', '.git', 'build']);
 export const DOCS_INDEX = 'docs/README.md';
-/** 원본 README 의 Atlas 안내 문장. 생성 프로젝트에는 Atlas 도구와 `atlas:*` 명령이 없어 문장째 걷는다. */
-export const UPSTREAM_ATLAS_README_LINE = /^[^\r\n]*`npm run atlas:build`[^\r\n]*\r?\n(?:\r?\n)?/mu;
+export const ROOT_README = 'README.md';
 
 /** 생성물 안의 소유 문서(원본 링크 검사기와 같은 범위). 생성물은 아직 Git 저장소가 아니라 디렉터리를 직접 훑는다. */
 export function ownedDocFiles(root) {
@@ -169,9 +172,183 @@ export function nonInlineLinks(source) {
   ].sort((left, right) => left.line - right.line);
 }
 
-/** 원본 README 의 Atlas 안내 문장을 걷는다(생성 프로젝트에는 그 도구와 명령이 없다). 문장이 없으면 그대로 돌려준다. */
-export function stripUpstreamAtlasMention(readme) {
-  return readme.replace(UPSTREAM_ATLAS_README_LINE, '');
+/*
+ * 생성 프로젝트의 루트 README 투영.
+ *
+ * 루트 README 는 원본을 그대로 실어, 생성 프로젝트에 없는 도구(생성기·오프라인 이관 도구·요구사항 도구·Atlas)와 그 명령을 안내했다.
+ * 원본 README 는 그런 내용을 원본 전용 구간 표지로 감싸고, 생성기는 구간째 걷은 뒤 이 프로젝트의 구성을 머리에 적는다.
+ * 표지 밖에 남은 문장이 걷은 별칭·자산을 말하면 생성이 멈춘다. README 만 고친 변경에는 재사용 생성 잡이 돌지 않으므로,
+ * 원본 문서 계약(reusable-source-docs.test.mjs)이 같은 판정을 원본 README 에 미리 돌린다.
+ */
+export const UPSTREAM_ONLY_START = '<!-- upstream-only:start -->';
+export const UPSTREAM_ONLY_END = '<!-- upstream-only:end -->';
+
+/**
+ * README 가 말하면 안 되는 별칭·자산을 모은다: 상시 제거 원장 셋, Atlas, 원장 없이 규칙으로 걷는 별칭. 벤더 프로젝트는
+ * PostgreSQL 전용 자산의 원장을 더한다.
+ */
+export function upstreamOnlySubjects(root, upstreamScripts = {}, { vendor = false } = {}) {
+  const ledgers = [...ALWAYS_REMOVED_ASSET_RULES.map(({ ledgerPath }) => readRemovalLedger(root, ledgerPath)),
+    ...(vendor ? [readVendorAssetLedger(root)] : [])];
+  const aliases = [...ledgers.flatMap(ledger => ledger.aliases), ...UPSTREAM_ATLAS.aliases,
+    ...Object.keys(upstreamScripts).filter(isUpstreamRuntimeAlias)].filter(alias => !alias.startsWith('//'));
+  return {
+    aliases: [...new Set(aliases)].sort(),
+    assets: [...new Set([...ledgers.flatMap(ledger => ledger.assets), ...UPSTREAM_ATLAS.assets])].sort(),
+  };
+}
+
+/**
+ * 원본 전용 구간을 표지째 걷는다. 표지는 한 줄을 통째로 쓰고, 겹치지 않으며, 코드 예시와 표의 행 사이에 두지 않는다 — 어기면
+ * 던진다(조용히 넘기면 생성 프로젝트에 원본 전용 문장이 남거나 엉뚱한 문단이 사라지고, 표의 행 사이의 표지는 원본의 표를 끊는다).
+ * 걷은 자리의 겹친 빈 줄은 하나로 줄인다.
+ */
+export function dropUpstreamOnlyBlocks(source) {
+  const kept = [];
+  const tableRow = text => /^\s*\|/.test(text);
+  let openedAt = 0;
+  let fence = null;
+  let blocks = 0;
+  let seam = false;
+  let number = 0;
+  let previous = '';
+  let closedAt = 0;
+  for (const line of source.split(/(?<=\n)/)) {
+    number += 1;
+    const body = line.replace(/\r?\n$/, '');
+    const marker = body.trim();
+    const isStart = marker === UPSTREAM_ONLY_START;
+    const isEnd = marker === UPSTREAM_ONLY_END;
+    if (!isStart && !isEnd && /upstream-only:(?:start|end)/.test(body)) {
+      throw new Error(`README ${number}행: 원본 전용 표지는 한 줄을 통째로 쓴다`);
+    }
+    if ((isStart || isEnd) && fence) throw new Error(`README ${number}행: 원본 전용 표지를 코드 예시 안에 둘 수 없다`);
+    if ((isStart && tableRow(previous)) || (closedAt && closedAt === number - 1 && tableRow(body))) {
+      throw new Error(`README ${isStart ? number : closedAt}행: 원본 전용 표지를 표의 행 사이에 둘 수 없다(표는 통째로 감싸거나 행을 표 밖 문장으로 옮긴다)`);
+    }
+    previous = body;
+    const fenced = /^ {0,3}(`{3,}|~{3,})/.exec(body);
+    if (fenced) {
+      if (!fence) fence = fenced[1];
+      else if (fenced[1][0] === fence[0] && fenced[1].length >= fence.length && body.trim() === fenced[1]) fence = null;
+    }
+    if (isStart) {
+      if (openedAt) throw new Error(`README ${number}행: 원본 전용 구간이 겹쳤다(${openedAt}행에서 열림)`);
+      openedAt = number;
+      blocks += 1;
+      continue;
+    }
+    if (isEnd) {
+      if (!openedAt) throw new Error(`README ${number}행: 여는 표지 없는 닫는 표지`);
+      openedAt = 0;
+      closedAt = number;
+      seam = true;
+      continue;
+    }
+    if (openedAt) continue;
+    const blank = /^\r?\n?$/.test(line);
+    if (seam && blank && kept.length && /^\r?\n$/.test(kept.at(-1))) continue;
+    seam = false;
+    kept.push(line);
+  }
+  if (openedAt) throw new Error(`README ${openedAt}행: 원본 전용 구간이 닫히지 않았다`);
+  return { text: kept.join(''), blocks };
+}
+
+/** 생성 프로젝트 README 의 머리. 구성·배치·검증의 정본은 생성기가 함께 쓰는 두 문서다. */
+export function generatedReadmeIntro({ source, features, layout, vendor = null }) {
+  return [
+    '## 이 프로젝트',
+    '',
+    `eGov Enterprise 원본 \`${source}\` 에서 생성한 프로젝트다. 아래는 원본 README 에서 이 프로젝트에 해당하는 설명만 남긴 것이다 — `
+      + '원본 저장소의 생성기·오프라인 이관 도구·요구사항 도구와 그 명령은 이 프로젝트에 없다.',
+    '',
+    `- 기능: ${features.length ? features.join(', ') : '(공통 기반만)'}`,
+    `- backend layout: ${layout}${layout === 'single-module'
+      ? ' — Gradle 프로젝트는 루트 하나다. 아래의 `:api-server:` 접두 명령과 모듈별 빌드 서술은 멀티모듈 기준이며, 이 배치의 실행·테스트 명령은 [REUSABLE_BASE.md](./REUSABLE_BASE.md)를 따른다.'
+      : ''}`,
+    `- 데이터베이스: ${vendor ? `${vendor} — 끝의 「데이터베이스」 절이 아래의 PostgreSQL 안내보다 우선한다` : 'PostgreSQL'}`,
+    '- 구성·배치·제거 내역: [REUSABLE_BASE.md](./REUSABLE_BASE.md)',
+    '- 검증 명령과 CI 범위: [REUSABLE_VERIFICATION.md](./REUSABLE_VERIFICATION.md)',
+    '',
+    '---',
+    '',
+  ];
+}
+
+/** 머리를 첫 2단계 제목 앞에 넣는다(코드 예시 안의 `## ` 는 제목이 아니다). 제목이 없으면 끝에 붙인다. 줄 끝은 본문을 따른다. */
+export function insertGeneratedReadmeIntro(readme, introLines) {
+  const eol = /\r\n/.test(readme) ? '\r\n' : '\n';
+  const intro = introLines.map(line => `${line}${eol}`).join('');
+  const lines = readme.split(/(?<=\n)/);
+  let fence = null;
+  for (let index = 0; index < lines.length; index += 1) {
+    const body = lines[index].replace(/\r?\n$/, '');
+    const fenced = /^ {0,3}(`{3,}|~{3,})/.exec(body);
+    if (fenced) {
+      if (!fence) fence = fenced[1];
+      else if (fenced[1][0] === fence[0] && fenced[1].length >= fence.length && body.trim() === fenced[1]) fence = null;
+      continue;
+    }
+    if (!fence && /^## /.test(body)) return [...lines.slice(0, index), intro, ...lines.slice(index)].join('');
+  }
+  return `${readme.replace(/\s*$/, '')}${eol}${eol}${intro}`;
+}
+
+const escapePattern = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * README 가 생성 프로젝트에 없는 것을 안내하는 줄을 찾는다: 걷은 별칭(`npm run` 유무와 상관없이 낱말로), 걷은 자산의 경로,
+ * 그리고 scripts 를 주면 그 package.json 에 없는 `npm run` 대상. 코드 예시도 본다 — 예시의 명령이 곧 안내다.
+ */
+export function readmeMentionErrors(readme, { removedAliases = [], removedAssets = [], scripts = null } = {}) {
+  const errors = [];
+  const aliasPatterns = removedAliases.map(alias => [alias, new RegExp(`(?<![\\w:-])${escapePattern(alias)}(?![\\w:-])`, 'u')]);
+  const assetPatterns = removedAssets.map(asset => [asset, new RegExp(`(?<![\\w-])${escapePattern(asset)}(?![\\w-])`, 'u')]);
+  readme.split(/\r?\n/).forEach((line, index) => {
+    const at = `README.md:${index + 1}`;
+    for (const [alias, pattern] of aliasPatterns) if (pattern.test(line)) errors.push(`${at} 생성 프로젝트에 없는 명령 \`${alias}\``);
+    for (const [asset, pattern] of assetPatterns) if (pattern.test(line)) errors.push(`${at} 생성 프로젝트에 없는 자산 \`${asset}\``);
+    if (scripts) {
+      for (const match of line.matchAll(/npm run ([a-z][\w:-]*)/gu)) {
+        if (!Object.hasOwn(scripts, match[1]) && !removedAliases.includes(match[1])) {
+          errors.push(`${at} package.json 에 없는 명령 \`npm run ${match[1]}\``);
+        }
+      }
+    }
+  });
+  return errors;
+}
+
+/**
+ * 원본 README 를 생성 프로젝트의 것처럼 줄여 본다: 원본 전용 구간을 걷고, 상시 제거 자산을 없는 파일로 보아 그것을 소개하는
+ * 표의 행과 링크를 정리한다. 구성에 따라 더 빠지는 문서는 생성 때의 링크 정리가 맡는다.
+ */
+export function simulateGeneratedReadme(root, source, removedAssets) {
+  const anchors = new Map();
+  const anchorsOf = (absolute) => {
+    if (!anchors.has(absolute)) {
+      anchors.set(absolute, documentAnchors(fs.readFileSync(absolute, 'utf8'), /\.(?:md|mdx)$/i.test(absolute)));
+    }
+    return anchors.get(absolute);
+  };
+  const removed = relative => removedAssets.some(asset => relative === asset || relative.startsWith(`${asset}/`));
+  const judge = (raw) => {
+    const verdict = judgeDocLink(root, 'README.md', raw, anchorsOf);
+    if (verdict !== 'keep' || /^(?:file:|https?:|mailto:|tel:|table:|\/\/)/i.test(raw)) return verdict;
+    let decoded;
+    try {
+      decoded = decodeURIComponent(raw);
+    } catch {
+      return verdict;
+    }
+    const target = decoded.split('#')[0].split('?')[0];
+    if (!target) return verdict;
+    const relative = path.relative(root, path.resolve(root, target)).split(path.sep).join('/');
+    return removed(relative) ? 'missing-file' : verdict;
+  };
+  const rows = dropDanglingIndexRows(dropUpstreamOnlyBlocks(source).text, judge);
+  return rewriteDanglingLinks(rows.text, judge).text;
 }
 
 /**
@@ -194,8 +371,9 @@ export function projectGeneratedDocs(output) {
     const absolute = path.join(output, file);
     const before = fs.readFileSync(absolute, 'utf8');
     const judge = raw => judgeDocLink(output, file, raw, anchorsOf);
-    let text = file === 'README.md' ? stripUpstreamAtlasMention(before) : before;
-    if (file === DOCS_INDEX) {
+    let text = before;
+    // 문서 인덱스와 루트 README 의 문서 표는 없어진 문서를 소개하는 행째 지운다.
+    if (file === DOCS_INDEX || file === ROOT_README) {
       const index = dropDanglingIndexRows(text, judge);
       text = index.text;
       summary.droppedIndexRows += index.dropped;

@@ -28,6 +28,13 @@ export const ALWAYS_REMOVED_ASSET_RULES = Object.freeze([
   Object.freeze({ rule: MIGRATION_ASSET_RULE, ledgerPath: MIGRATION_ASSET_LEDGER, label: '이관 도구 제거 원장' }),
 ]);
 
+/**
+ * 원장에 없이 규칙으로 걷는 원본 전용 별칭: 생산자 접두사(`base:`·`project:`)와 원본 저장소·기관 실행 환경이 있어야 도는 진입점.
+ * 생성기의 별칭 제거와 생성 프로젝트 README 검사가 같은 판정을 쓴다.
+ */
+export const isUpstreamRuntimeAlias = alias => alias.startsWith('base:') || alias.startsWith('project:')
+  || ['migration:export', 'verify:migration', 'verify:e2e', 'verify:ops', '//verify:ops'].includes(alias);
+
 export const parseProducerAssetLedger = raw => parseRemovalLedger(raw, PRODUCER_ASSET_LEDGER);
 export const readProducerAssetLedger = root => readRemovalLedger(root, PRODUCER_ASSET_LEDGER);
 export const pruneProducerTools = output => pruneAssetLedger(output, {

@@ -7,14 +7,19 @@
 
 ## 📑 프로젝트 개요 (Overview)
 
+<!-- upstream-only:start -->
+<!-- 이 표지 사이의 내용은 원본 저장소에만 해당한다. 생성 프로젝트의 README 에서는 구간째 빠진다(scripts/reusable-source-docs.mjs). 생성 프로젝트에 없는 도구·명령은 표지 안에서만 말한다. -->
 프로젝트 구조·업무 흐름·헌법·검증·운영은 온디맨드로 생성하는 Governance & Harness Atlas(`npm run atlas:build` → `build/atlas/governance_harness_atlas.html`)에서 탐색할 수 있습니다. 설명의 원본과 생성·현행화 방법은 [Atlas 가이드](docs/03-guides/governance-atlas-guide.md)를 참고하세요.
+<!-- upstream-only:end -->
 
 본 프로젝트는 전자정부 표준프레임워크의 방대한 공통 컴포넌트를 최신 기술 스택으로 재구축하여, 엔터프라이즈 환경에서의 확장성, 유연성, 그리고 사용자 경험(UX)을 극대화하는 것을 목표로 합니다.
 
 - **Frontend**: 차세대 React 프레임워크인 Next.js 16을 활용한 고성능 UI/UX 구현.
 - **Backend**: Spring Boot 4.1 및 JPA를 통한 비즈니스 로직의 현대화 및 도메인 중심 설계.
 - **Visual Analytics**: 데이터 시각화 라이브러리를 활용한 통계 대시보드 제공.
+<!-- upstream-only:start -->
 - **재사용 베이스 프레임워크**: 이 저장소는 **신규 SI 구축·레거시 재개발을 위한 참조 구현과 재사용 베이스**다. 프로필 기반 추출과 레거시 이관 경계는 구현되어 있으나, 운영 투입 전에는 [활성 gap](./.agent/memory/known-gaps.md)과 환경별 검증을 확인한다. 시작은 [온보딩 런북](./docs/03-guides/getting-started.md)을 참조한다.
+<!-- upstream-only:end -->
 
 ---
 
@@ -32,12 +37,15 @@
 ### Backend
 - **Core**: Spring Boot 4.1.1(Spring Framework 7), Java 21 (LTS)
 - **Database**: PostgreSQL (JPA/Hibernate)
-- **Architecture**: 멀티 모듈 (`foundation` / `business-core` / `business-app` / `api-server`) + 레거시 이관 도구 `migration-tool`. 단방향 의존·도메인 격리(ArchUnit)
+- **Architecture**: 멀티 모듈 (`foundation` / `business-core` / `business-app` / `api-server`). 단방향 의존·도메인 격리(ArchUnit)
 - **Mapping**: MapStruct (엔티티↔DTO 컴파일타임 매핑 표준)
 - **DB Migration**: Flyway (`V2_0` Postgres 표준 베이스라인 — 빈 DB 부팅 가능)
 - **Security**: Spring Security 7.x, JWT (Json Web Token)
 - **API**: RESTful API with OpenAPI 3.1 (springdoc 3.x)
 - **Build**: Gradle 9.7.1 (Version Catalog)
+<!-- upstream-only:start -->
+- **Legacy migration**: 온라인 모듈과 분리된 오프라인 이관 CLI `migration-tool`(이관할 때만 선택 실행)
+<!-- upstream-only:end -->
 
 ---
 
@@ -51,14 +59,17 @@ egov-enterprise/
 ├── business-core/     # 재사용 필수 코어: user·auth·menu·code·organization·policy + 공용 테스트 하네스
 ├── business-app/      # 선택/참조 도메인: board·survey·community·banner·popup·operation 등 (business-core 확장)
 ├── api-server/        # 진입점(Presentation Layer): Controller·API DTO. business-app/core 서비스 호출 (bootJar 실행 모듈)
-├── migration-tool/    # 레거시→표준 스키마 데이터 이관 ETL CLI (독립 실행, foundation 미의존, 이관 시에만 선택 포함)
 └── frontend/          # Next.js 16 (App Router) 프런트엔드
 ```
 - **의존 방향**: `api-server → business-app → business-core → foundation` (단방향·비순환). `DomainIsolationTest`는 엔티티의 도메인 격리를, `CrossDomainCouplingLinterTest`는 서비스의 교차 도메인 참조를 검사한다. 잔여 결합과 도메인 제거 시 확인할 경계는 [활성 gap](.agent/memory/known-gaps.md)에서 추적한다.
 - **엔티티↔DTO 매핑**: MapStruct `@Mapper` 표준(수기 `from()` 대체). 신규 도메인은 스캐폴드 제너레이터(`scripts/generate-domain.ps1`)로 골격을 뽑되, Service·Controller 는 [getting-started §5.2.1](docs/03-guides/getting-started.md) 의 실존 관례(`ApiResponse` 래퍼·`@PreAuthorize`·`@Transactional(readOnly=true)`·MapStruct)대로 작성한다. 제네릭 `BaseCrudController`/`BaseCrudService`는 존재하지 않으므로 상속 대상으로 가정하지 않는다.
+<!-- upstream-only:start -->
+- **이관 도구**: `migration-tool/` 은 레거시→표준 스키마 데이터 이관 ETL CLI 다(독립 실행, foundation 미의존, 이관할 때만 선택 실행).
+<!-- upstream-only:end -->
 
 ---
 
+<!-- upstream-only:start -->
 ## 📊 현재 제공 범위 (Current Capability Boundary)
 
 완료율이나 과거 Phase 번호 대신 현재 모듈과 실행 가능한 기능을 기준으로 범위를 설명한다. 미해결 위험과 운영 결정은 [.agent/memory/known-gaps.md](./.agent/memory/known-gaps.md) 및 [pending-decisions.md](./docs/04-operations/pending-decisions.md)에서 확인한다.
@@ -81,6 +92,7 @@ egov-enterprise/
 4. **Standalone Admin Pages**: 댓글 전역 관리 화면과 모니터링 허브의 첨부 무결성 점검.
 
 ---
+<!-- upstream-only:end -->
 
 ### 로컬 개발 환경 초기화 (최초 1회 필수)
 프로젝트 복제(clone) 후, 로컬 개발을 시작하기 전에 환경변수 설정, 로컬 Docker DB 실행, 그리고 의존성 패키지 설치를 한 번에 완료하기 위해 아래 명령을 실행합니다.
@@ -90,7 +102,11 @@ make bootstrap
 powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
 ```
 
-부트스트랩은 루트 `.env`와 `frontend/.env.local`을 템플릿에서 만든다. 격리 E2E runner(`npm run verify:e2e`)는 환경 파일이 있는 클론에서 시작하지 않으므로, 브라우저 E2E는 `.env`가 없는 별도 격리 worktree에서 실행한다.
+부트스트랩은 루트 `.env`와 `frontend/.env.local`을 템플릿에서 만든다.
+
+<!-- upstream-only:start -->
+격리 E2E runner(`npm run verify:e2e`)는 환경 파일이 있는 클론에서 시작하지 않으므로, 브라우저 E2E는 `.env`가 없는 별도 격리 worktree에서 실행한다.
+<!-- upstream-only:end -->
 
 ### 로컬 개발 통합 실행
 아래 통합 실행 명령은 루트 `.env`를 읽어 같은 환경으로 백엔드와 프론트엔드를 실행합니다. DB는 앞 단계의 부트스트랩 또는 별도 구성으로 먼저 준비합니다.
@@ -118,6 +134,7 @@ pnpm dev
 
 ---
 
+<!-- upstream-only:start -->
 ## ✅ 검증 진입점 (Verification Entry Points)
 
 다음은 생산 저장소의 명령이다. 온라인 생성물의 명령·CI 범위는 아래 별도 설명과 [재사용 Base 가이드 §4](./docs/03-guides/reusable-base-guide.md#4-산출물-검증)를 따른다.
@@ -138,6 +155,7 @@ pnpm dev
 생산 저장소 CI는 6개 required context와 시작 구성 생성 matrix를 유지한다. 바뀐 파일의 소유 기능을 담은 시작 구성만 고르며, PR은 그중 `ci.pr`이 있는 `core`·`collaboration`·`demo`를 한 레이아웃씩, main은 최대 다섯을 두 레이아웃씩 생성·검증한다(`survey`·`approval`은 `ci.pr`이 null이라 main에서만 돈다). 온라인 생성물의 CI 범위, 명령 별칭과 기관이 다시 결속해야 할 검증은 [시작 가이드 §6.6](./docs/03-guides/getting-started.md#66-재사용-프로필과-기관-도입)과 [재사용 Base 가이드 §4](./docs/03-guides/reusable-base-guide.md#4-산출물-검증)를 따른다.
 
 ---
+<!-- upstream-only:end -->
 
 ## 🛠 모듈러 모놀리스 & 이벤트 중심 설계
 
@@ -145,7 +163,11 @@ pnpm dev
 
 1. **의존 방향 유지**: 상위 모듈이 하위 모듈을 호출하고, 재사용 경계는 port/interface 또는 event를 우선한다. 현재 일부 구체 서비스·타 도메인 repository 결합은 예외로 남아 있으므로 “전부 인터페이스”라고 간주하지 않으며, [활성 gap](./.agent/memory/known-gaps.md)과 격리 테스트로 축소한다.
 2. **이벤트 기반 동기화**: 사용자 삭제(`UserDeletionEvent`) 뒤 각 도메인의 정리, 메일·문자·알림 발송 요청처럼 후속 효과가 적합한 경로는 event를 사용해 결합을 줄인다. 모든 도메인 호출이 event 기반이라는 의미는 아니다.
-3. **독립적 빌드 구성**: 라이브러리 성격의 모듈(`foundation`·`business-core`·`business-app`)은 `bootJar`를 생성하지 않으며, 실행 파일은 진입점 모듈(`api-server`)과 이관 CLI(`migration-tool`)만 생성합니다.
+3. **독립적 빌드 구성**: 라이브러리 성격의 모듈(`foundation`·`business-core`·`business-app`)은 `bootJar`를 생성하지 않으며, 온라인 실행 파일은 진입점 모듈(`api-server`)만 생성합니다.
+<!-- upstream-only:start -->
+
+이관 CLI(`migration-tool`)는 온라인 모듈과 별도의 실행 파일(bootJar)을 만듭니다.
+<!-- upstream-only:end -->
 
 ---
 
@@ -156,8 +178,11 @@ pnpm dev
 #### 1. 필수 요구사항
 - **Java**: 21 (LTS)
 - **Node.js**: 22+ (`.nvmrc` = 22, `frontend/package.json` `engines.node` = `>=22.0.0`)
-- **Package Manager**: 루트 npm(`package-lock.json`), 요구사항 도구 npm(`tools/requirements-workspace/package-lock.json`), 프런트엔드 pnpm 9(`frontend/pnpm-lock.yaml`)
+- **Package Manager**: 루트 npm(`package-lock.json`), 프런트엔드 pnpm 9(`frontend/pnpm-lock.yaml`)
 - **Database**: Docker 또는 PostgreSQL 17
+<!-- upstream-only:start -->
+- **요구사항 도구**: npm(`tools/requirements-workspace/package-lock.json`)
+<!-- upstream-only:end -->
 
 #### 2. 환경 설정 및 데이터베이스 자동 부트스트랩 (Flyway 표준 베이스라인)
 빈 PostgreSQL 데이터베이스를 준비하면 **Flyway가 스키마와 표준 참조 데이터(메타표준·공통코드·역할/권한·메뉴)를 구성**합니다. 현재 테이블·엔티티·컬럼 수는 migration에 따라 바뀌므로 README에 고정하지 않으며, CI의 PostgreSQL schema validation과 [getting-started.md](./docs/03-guides/getting-started.md) §6.1을 기준으로 확인합니다.
@@ -232,6 +257,7 @@ make bootstrap
 
 ---
 
+<!-- upstream-only:start -->
 ## 🤝 기여 가이드
 
 ### Pull Request 전 확인사항
@@ -268,6 +294,7 @@ make bootstrap
 - **기술 문의**: 프로젝트 Discussions
 
 ---
+<!-- upstream-only:end -->
 
 ## 📄 라이선스 (License)
 
