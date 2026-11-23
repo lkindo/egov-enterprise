@@ -29,13 +29,16 @@ export const MIGRATION_PRODUCT_INPUTS = Object.freeze([
 /**
  * 독립 이관 제품에 함께 싣는 문서(DEC-OPS-428). 생성 애플리케이션 프로젝트는 이관 도구를 싣지 않으므로(ADR-0062) 도구의 계약·복구 절차·
  * 방법론은 이 제품으로만 나간다. 생성 프로젝트에서 뺀 이관 문서(이관 제거 원장)는 여기 있어야 한다 — 계약이 대조한다.
+ * 기관 도입 검토 가이드와 ADR-0018 은 생성 프로젝트에도 남지만, 이 제품의 승인 원장·실행 descriptor 절차라 함께 싣는다.
  */
 export const MIGRATION_PRODUCT_DOCS = Object.freeze([
   'docs/02-architecture/legacy-migration-tool-design.md',
   'docs/03-guides/legacy-non-data-migration-guide.md',
+  'docs/03-guides/governance-review-lifecycle.md',
   'docs/04-operations/migration-recovery-runbook.md',
   'docs/archived/legacy-standardization-migration-design.md',
   'docs/02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md',
+  'docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md',
   'docs/02-architecture/decisions/ADR-0029-legacy-standardization-migration.md',
   'docs/02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md',
 ]);
@@ -145,10 +148,20 @@ export function generateMigrationProduct({ sourceRoot, outputRoot, dbBundle } = 
     + '- [이관 도구 설계](docs/02-architecture/legacy-migration-tool-design.md) — 명령·계약·검증 경계\n'
     + '- [승인형 이관과 부분 적재 복구](docs/04-operations/migration-recovery-runbook.md) — 실패·재개·대사·전체 복구 절차\n'
     + '- [비데이터 객체 이관 가이드](docs/03-guides/legacy-non-data-migration-guide.md) — 도구가 옮기지 않는 권한·메뉴·첨부 실물 등\n'
+    + '- [기관 도입 검토와 실행 승인](docs/03-guides/governance-review-lifecycle.md#4-독립-migration-tool-도입) — 승인 원장의 네 통제와 실행 descriptor(§4, 승인 필드의 계약은 §3). '
+    + '이 제품의 명령은 `npm run verify`·`npm run review:status`·`npm run review:adoption`·`npm run adoption:check` 다\n'
     + '- [표준화 이관의 채택 전 진단과 방법론](docs/archived/legacy-standardization-migration-design.md)\n'
     + '- 결정: [ADR-0008](docs/02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md) · '
+    + '[ADR-0018](docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md) · '
     + '[ADR-0029](docs/02-architecture/decisions/ADR-0029-legacy-standardization-migration.md) · '
     + '[ADR-0031](docs/02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md)\n\n'
+    + '이 제품에 싣지 않는 절차와 기록:\n\n'
+    + '- 전체 복구(이관 전 DB·첨부·키 백업 세트의 복원과 검증)는 대상 온라인 애플리케이션 저장소의 '
+    + '`docs/04-operations/backup-and-restore-runbook.md`(번들 PostgreSQL·첨부 볼륨 전용) 또는 기관이 승인한 DB 공급자 절차를 따른다. '
+    + '복구 런북은 복원할 세트와 전환 조건만 정한다.\n'
+    + '- 원천 DB 벤더별 구현 상태와 load 경계는 이관 도구 설계의 「Source adapter와 discovery 범위」 표에, 벤더별 실측 요지는 복구 런북의 「전체 롤백과 cutover」에 있다. '
+    + '실측 기록 원문과 남은 범위(원본의 GAP-MIG-001)는 원본 저장소의 `docs/04-operations/readiness-followups.md`·`docs/04-operations/known-gaps-detail.md` 에 있고, '
+    + '이 제품을 만든 원본 커밋은 `migration-product-lock.json` 의 `durationProfileProvenance.producerCommit` 이다.\n\n'
     + '원본 저장소에만 있는 문서·결정 기록·소스를 가리키던 링크는 글자만 남겼다. 수치와 실측은 원본 저장소 환경의 것이다.\n');
   // 제품에 없는 대상을 가리키는 문서 링크를 글자로 남기고, 끊긴 링크가 남으면 내보내기를 멈춘다(DEC-OPS-428).
   projectGeneratedDocs(outputRoot);

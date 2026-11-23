@@ -25,7 +25,7 @@ npm run review:status
 npm run review:migration
 ```
 
-`review:status`는 온라인 제품의 검토 상태를 JSON으로 출력한다. `review:migration`은 독립 이관 도구 범위를 보고하며 UI 검토를 도입 조건으로 가져오지 않는다. `sourceScope`는 `{product, profile, fileCount, digest}`를 제공한다. 보고는 현재 자료의 최신성을 드러내는 절차이며 일반 일정 경과만으로 기술 CI나 이미 실행 중인 화면을 중단시키지 않는다.
+`review:status`는 온라인 제품의 검토 상태를 JSON으로 출력한다. `review:migration`은 독립 이관 도구 범위를 보고하며 UI 검토를 도입 조건으로 가져오지 않는다. 두 이름은 원본 저장소의 것이다 — 독립 이관 제품에서는 `npm run review:status` 가 이관 도구 범위를 보고한다. `sourceScope`는 `{product, profile, fileCount, digest}`를 제공한다. 보고는 현재 자료의 최신성을 드러내는 절차이며 일반 일정 경과만으로 기술 CI나 이미 실행 중인 화면을 중단시키지 않는다.
 
 생산 저장소의 [예약 워크플로](../../.github/workflows/governance-review.yml)는 코드 변경이 없는 기간에도 같은 보고를 실행한다. 생산 저장소의 required `secret-scan` 보고 step·artifact도 같은 자료를 제공하며 기존 required context 6개를 유지한다. 이 예약 작업은 생성물에서 자동 활성화되지 않는다. 기관은 보고 일정과 배포 직전 검사를 자기 환경에 연결하고, 유효기간과 실제 사용 대상을 아래 preflight에서 다시 확인한다.
 
@@ -122,7 +122,7 @@ npm run adoption:check -- --execution config/governance/execution.json --environ
 npm run verify:migration
 ```
 
-이 명령은 migration-tool의 테스트와 bootJar를 검증한다. 원본 온라인 제품의 프런트 census·UI 검토 날짜를 이관 도구 빌드 조건으로 요구하지 않는다. 전체 온라인 제품 빌드나 운영 데이터 적재를 수행했다는 뜻도 아니다.
+이 명령은 원본 저장소의 이름이며(독립 이관 제품에서는 `npm run verify`) migration-tool의 테스트와 bootJar를 검증한다. 원본 온라인 제품의 프런트 census·UI 검토 날짜를 이관 도구 빌드 조건으로 요구하지 않는다. 전체 온라인 제품 빌드나 운영 데이터 적재를 수행했다는 뜻도 아니다.
 
 프런트와 온라인 모듈이 없는 별도 소스 제품은 생산 저장소에서 생성한다.
 
@@ -147,6 +147,8 @@ npm run migration:export -- --output build/migration-product/my-institution
 npm run review:adoption:migration -- --environment institution-migration
 ```
 
+위 명령은 원본 저장소의 이름이다. 독립 이관 제품에서는 같은 검토가 `npm run review:adoption -- --environment institution-migration` 이다(원본 저장소의 `review:adoption` 은 온라인 제품의 원장을 본다).
+
 이 기관 검토 원장은 [ADR-0008](../02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md)의 discover → plan → validate → load 승인 artifact와 대상 identity 검사를 대체하지 않는다. 원장 검증을 통과해도 실제 쓰기는 이관 도구 자체의 안전 경계와 운영 승인 절차를 거친다. 승인 원장만으로 실제 복구·cutover 검증이 완료되었다고 주장하지 않는다.
 
 이관 실행 descriptor는 `product: migration-tool`, `profile: null`, 실제 `environmentId`와 `migration`을 기록한다. `migration.jar`·`mapping`·`inventory`·`plan`은 각각 `{path, sha256}`이며 저장소 내부의 실재 파일을 가리킨다. 나머지는 `mode: dry-run` 또는 `commit`, `sourceAdapter: postgresql-pg-catalog`, source `schemas` 배열, 실제 동결을 확인한 `ackSourceFreeze: true`다. 선택 항목 `ackControlSchemaUpgrade`(boolean)는 대상의 이미 있는 제어 스키마(`migration_control`)를 이 도구의 버전으로 올리는 확인이며 `mode: commit`에서만 `true`일 수 있다 — 진행 중인 run 이 없을 때만 쓴다(ADR-0029 L3c, DEC-OPS-319). 선택 키 `archiveDir` 는 `commit` 에서만 받는 보관 덤프·격리 키 반출 디렉터리로, 이 저장소 밖의 정규화한 절대 경로여야 하며 load 에 `--archive-dir` 로 전달된다(ADR-0029 L3e). mapping 에 외부 보관이나 `isolate` 가 있으면 commit 은 이 키 없이 시작하지 않는다. 두 선택 키는 함께 쓸 수 있다. wrapper는 현재 built-in PostgreSQL adapter만 지원한다. 기존 CLI의 다른 조사 경로를 지원 완료로 승격하지 않는다.
@@ -164,7 +166,7 @@ npm run review:adoption:migration -- --environment institution-migration
 2. 선택한 프로필의 실제 소스에서 active URL·route census를 재생성한다.
 3. 남은 동일 소스·관측에만 승인 record selector를 제한하고 원본 검토자·날짜·근거는 그대로 둔다. 변경되거나 새로 생긴 검색 범위를 이름만으로 승계하지 않는다.
 4. UI 시나리오·pilot·KRDS 적용범위를 [적용범위 계약](../../config/governance/reusable-review-scopes.json)의 소유 기능(`requiredDomains`)으로 계산한다. 소유 기능이 모두 구성에 있는 행만 남고, 소유 기능이 없는 행은 공통 기반 소유라 모든 구성에 남는다. 적용 대상 파일이 사라졌으면 실패하고, 비대상 범위에는 제외 사유를 남긴다. 브랜드 프로필 세 종류는 별도 축으로 보존한다. 실행·접근성 근거를 자동 생성하지 않는다. 원본 저장소 소유자의 화면 문구 유지 결정(`accepted-by-owner`)은 입력 대기(`blocked-input`)로 되돌린다.
-5. 온라인·독립 이관 환경 검토 모두 새 `pending` 원장으로 생성한다. 공용 메모리도 현재 프로필과 기관 승인 정본을 연결하는 짧은 인덱스로 작성하고, 원본 운영 사실은 upstream 이력으로만 보존한다.
+5. 온라인 환경 검토는 새 `pending` 원장으로 생성한다. 이관 환경 검토 원장은 생성 애플리케이션 프로젝트에 만들지 않는다 — 독립 이관 제품(§4)이 자기 `pending` 원장으로 시작한다(ADR-0062). 공용 메모리도 현재 프로필과 기관 승인 정본을 연결하는 짧은 인덱스로 작성하고, 원본 운영 사실은 upstream 이력으로만 보존한다.
 6. 투영 manifest에 남은·승계한·미검토 범위와 snapshot·소스 결속을 기록하고 프로필 lock과 연결한다.
 
 snapshot은 과거 근거다. active 원장이나 기관 승인을 대신하지 않으며, 과거 근거를 오늘 승인한 것처럼 날짜를 다시 쓰지 않는다. 기관의 실제 메뉴 노출·권한·접근성은 별도로 검토한다.

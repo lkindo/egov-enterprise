@@ -373,7 +373,7 @@ archives:
     retainUntil: 2029-12-31
 ```
 
-- **선언**: mapping-generate 가 원장 외부 보관 행을 (소스 표, 보존 기한)마다 묶어 만든다 — 보존 기한이 다른 행은 같은 덤프에 섞지 않는다. id 는 표 이름(schema 제외)과 보존 기한이다 — schema 는 `source` 에 있다. Oracle 은 로그인 사용자가 schema 소유자여야 가시성을 증명하므로, 소문자로 바꾼 schema 를 id 에 넣으면 사용자 이름을 소문자로 적은 접속 설정에서 그 사본이 실행 증거(보관 기록의 id·덤프 파일 이름)에 실려 credential 검사가 증거 쓰기를 막았다(2026-10-16 O2 리허설의 공개 DRY_RUN 실측). 이 규칙은 소문자 사본만 없앤다 — owner(= 사용자) 이름은 schema 한정 원천 이름으로 모든 산출물에 남고, 사용자 이름을 대문자로 적은 설정은 discover 부터 같은 검사에 멈춘다(GAP-MIG-001). 선언은 mapping digest 에 들어간다(없으면 digest 가 그대로다). 이 규칙 전에 만든 mapping 을 다시 생성하면 보관 id 가 바뀌어 mapping digest 가 달라지므로 plan 부터 다시 승인한다. 보관만 있고 표 매핑이 없는 mapping, 같은 id·같은 컬럼·같은 원장 행의 중복, 암호화 대상(`encrypt`)의 소스 컬럼 보관은 mapping 검증이 거부한다.
+- **선언**: mapping-generate 가 원장 외부 보관 행을 (소스 표, 보존 기한)마다 묶어 만든다 — 보존 기한이 다른 행은 같은 덤프에 섞지 않는다. id 는 표 이름(schema 제외)과 보존 기한이다 — schema 는 `source` 에 있다. Oracle 은 로그인 사용자가 schema 소유자여야 가시성을 증명하므로, 소문자로 바꾼 schema 를 id 에 넣으면 사용자 이름을 소문자로 적은 접속 설정에서 그 사본이 실행 증거(보관 기록의 id·덤프 파일 이름)에 실려 credential 검사가 증거 쓰기를 막았다(2026-10-16 O2 리허설의 공개 DRY_RUN 실측). 이 규칙은 소문자 사본만 없앤다 — owner(= 사용자) 이름은 schema 한정 원천 이름으로 모든 산출물에 남는다. 사용자 이름을 대문자로 적은 설정이 discover 부터 같은 검사에 멈추던 문제는, 원천 schema 이름과 같은 사용자 이름을 대소문자와 상관없이 credential 검사에서 빼도록 고쳐 없앴다(DEC-OPS-326). 선언은 mapping digest 에 들어간다(없으면 digest 가 그대로다). 이 규칙 전에 만든 mapping 을 다시 생성하면 보관 id 가 바뀌어 mapping digest 가 달라지므로 plan 부터 다시 승인한다. 보관만 있고 표 매핑이 없는 mapping, 같은 id·같은 컬럼·같은 원장 행의 중복, 암호화 대상(`encrypt`)의 소스 컬럼 보관은 mapping 검증이 거부한다.
 - **실행 조건**: commit 에 보관 선언이나 `isolate` 가 있으면 `--archive-dir` 가 필요하다(adoption-execute descriptor 의 `archiveDir` — commit 에서만, 저장소 밖의 정규화한 절대 경로). load 는 시작 전에 디렉터리가 절대 경로이고, 경로 어디에도 링크가 없으며(실제 경로와 다르면 거부), mapping·plan·원장·inventory 파일의 디렉터리와 그 아래가 아니고, 그 위 어디에도 `.git` 이 없고, POSIX 에서 다른 사용자(기타)가 쓸 수 없으며, 강제로 끝난 이전 실행이 남긴 임시 파일·빈 예약이 없는지 본다([ArchiveLocationGuard](../../migration-tool/src/main/java/nuri/migration/archive/ArchiveLocationGuard.java)). dry-run 은 파일을 쓰지 않고 덤프할 행 수와 개인정보 모양 수만 센다 — 쓸 수 없는 값 종류는 commit 과 같은 사유로 멈춘다.
 - **매핑된 표**: 보관 컬럼을 적재와 같은 SELECT 에 더하고, 읽은 행을 모두 쓴다 — 재개로 건너뛴 행과 격리한 행도 들어간다. 한 소스를 여러 매핑이 나눠 읽으면(L3c) 보관 컬럼은 keymap 소유 매핑의 읽기에, 소유 매핑이 없으면 id 를 생략한 매핑의 읽기에 붙고 덤프 행 수는 그 매핑의 조회 수와 맞춘다. 둘 다 없으면 mapping 검증이 거부한다. 덤프는 그 매핑의 where 로 걸러진 행만 담으므로 그 매핑에 where 가 없거나 그 소스의 모든 매핑이 같은 where(앞뒤 공백만 무시한 같은 글자)를 써야 한다 — where 로 나눈 다른 매핑이 적재한 행의 보관 값이 빠지기 때문이다. 아니면 mapping 검증·mapping-generate·load 가 거부하고 verify 도 FAIL 이다. 조회만 하는 표(L3d)를 보관하면 덤프만 하는 표로 읽고, 그 처분은 `LOOKUP_INPUT` 이다(`EXPORT_ONLY` 를 따로 요구하지 않는다). 적재·checkpoint 판정은 표 매핑의 컬럼만 쓰므로 더한 컬럼이 그 의미를 바꾸지 않는다.
 - **덤프만 하는 표**: 매핑된 표를 모두 마친 뒤 같은 읽기 세션에서 정렬 키 keyset 으로 읽는다. 정렬 키가 NULL 인 행이 없고 정렬 키가 유일한지 어느 모드든 행을 읽거나 쓰기 전에 증명하고, 증명하지 못하면 적재를 시작하지 않는다(`ORDER_KEY_NULL`·`ORDER_TUPLE_UNIQUENESS_UNPROVEN`). keyset 의 다음 page 조건(`>`·`=`)은 NULL 을 다시 읽지 못해, NULL 을 뒤로 정렬하는 원천(PostgreSQL·Oracle)에서는 첫 page 밖의 NULL 키 행이 조용히 빠지고 읽은 행으로 센 수끼리의 대조도 그 손실을 보지 못하기 때문이다. 매핑된 표도 정렬 키가 있으면 어느 모드든 같은 NULL 검사를 먼저 받는다(`이관 실패(<표>): ORDER_KEY_NULL`). 앞 표에서 run 이 멈췄으면 읽지 않는다.
@@ -563,11 +563,11 @@ tables:
 
 Commit은 같은 load 계약에서 `--mode=commit`을 명시한다. 보관 선언이나 `isolate` 가 있으면 저장소·승인 산출물 밖의 `--archive-dir=<절대 경로>` 를 함께 준다. 외부 source driver는 discover/load 양쪽에 같은 repeatable `--source-driver-jar=<absolute-local.jar>`와 `--source-driver-class=<class>`를 주고 dry-run load에 inventory가 기록한 exact `--ack-source-driver=<sha256>`를 추가한다. 접속정보는 환경 변수나 승인된 secret provider adapter로 주입하고 mapping, artifact, 로그, 명령행에 평문 저장하지 않는다.
 
-배포용 JAR은 `./gradlew :migration-tool:bootJar`로 만들고 `migration-tool/build/libs/`의 실제 산출물 이름을 사용한다. 온라인 UI 없이 테스트·bootJar를 함께 검증하는 진입점은 `npm run verify:migration`이다.
+배포용 JAR은 `./gradlew :migration-tool:bootJar`로 만들고 `migration-tool/build/libs/`의 실제 산출물 이름을 사용한다. 온라인 UI 없이 테스트·bootJar를 함께 검증하는 진입점은 원본 저장소에서 `npm run verify:migration`, 독립 이관 제품(`npm run migration:export` 로 내보낸 저장소)에서 `npm run verify`다.
 
 ## 기관 도입과 실행 승인
 
-[ADR-0018](decisions/ADR-0018-governance-review-lifecycle-and-adoption.md)은 이관 제품의 기술 검증·기관 환경 승인·실제 load 승인을 구분한다. `npm run review:migration`은 제품 범위와 상태를 보고하며 온라인 URL·UI 원장을 이관 검증의 전제 조건으로 가져오지 않는다.
+[ADR-0018](decisions/ADR-0018-governance-review-lifecycle-and-adoption.md)은 이관 제품의 기술 검증·기관 환경 승인·실제 load 승인을 구분한다. 원본 저장소의 `npm run review:migration`(독립 이관 제품에서는 `npm run review:status`)은 제품 범위와 상태를 보고하며 온라인 URL·UI 원장을 이관 검증의 전제 조건으로 가져오지 않는다.
 
 `config/governance/migration-adoption-review.json`은 `product: migration-tool`, `profile: null`, `status: pending`으로 시작한다. 기관은 실제 source/target identity, mapping·schema·driver, 복구·cutover와 실행 artifact를 검토하고 소스 범위 digest·유효기간·근거를 기록한다. 원본 프로젝트의 운영 승인이나 온라인 원장을 복제하여 이관 승인을 대신하지 않는다.
 
@@ -618,6 +618,8 @@ Commit은 같은 load 계약에서 `--mode=commit`을 명시한다. 보관 선�
 ```powershell
 npm run verify:migration
 ```
+
+위 명령은 원본 저장소의 이름이다. 독립 이관 제품에서는 같은 검증을 `npm run verify` 로 실행한다.
 
 현재 테스트 목록은 [migration-tool/src/test/java](../../migration-tool/src/test/java)와 실행 보고서가 정본이다. Mapping/artifact/adapter/discovery/visibility/plan binding, 실제 YAML endpoint binding, 외부 driver 격리, typed·composite·generated identity, 단일 source read session, chunk/row data-keymap-checkpoint 원자성, durable resume/checksum, PostgreSQL target 환경 결속과 strict 종료를 검사한다. [프로세스 종료 회귀](../../migration-tool/src/test/java/nuri/migration/EtlCrashRecoveryPostgresIntegrationTest.java)는 격리 PostgreSQL의 1,501행·30MB 초과 text/bytea를 사용해 실제 자식 JVM 종료, 500행 체크포인트 재개, 재실행 무중복·변조 탐지를 검증한다. Docker가 필요한 경로와 로컬 실행 결과의 범위는 [검증 기록](../04-operations/readiness-followups.md#이관-프로세스-종료와-큰-필드)을 따른다. [대사 통합 시험](../../migration-tool/src/test/java/nuri/migration/ReconciliationPostgresIntegrationTest.java)은 격리 PostgreSQL 에서 대사 검사·물리 제약 증명(트리거 꺼짐·replica 전용·replica 세션)·고아 참조·공통코드 대사와 같은 runId 재적재를 실행 증거 형식 5 까지 검증한다. [Oracle 표준화 리허설](../../migration-tool/src/test/java/nuri/migration/OracleStandardizationRehearsalIntegrationTest.java)은 Oracle Free 원천으로 수집·원장 확정·mapping 생성·공개 DRY_RUN·엔진 COMMIT 을 한 번에 돌린다(합성 데이터, 등급 변화 없음). 다른 source vendor·운영 규모·권한·cutover/rollback 증거는 별도로 필요하다.
 

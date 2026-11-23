@@ -349,7 +349,7 @@ npm run review:migration
 
 온라인 모듈 없이 별도 소스로 시작하려면 생산 저장소에서 `npm run migration:export -- --output build/migration-product/<새-디렉터리>`를 실행한다. 생성물에서는 npm 의존성 설치 없이 `npm run verify`와 `npm run review:status`를 사용한다.
 
-첫 명령은 테스트·bootJar 기술 검증이고 둘째는 이관 제품의 검토 상태 보고다. 실제 실행은 [승인형 CLI 예시](../02-architecture/legacy-migration-tool-design.md)와 [복구 런북](../04-operations/migration-recovery-runbook.md)을 따른다. mapping과 `--mode`만 넘기는 과거 진입점은 dry-run도 차단한다. `load --mode=commit`은 타깃 DB를 변경하므로 승인 plan, source/target identity, 기관 환경 검토와 백업·복구 근거가 필요하다. 기관 원장은 [검토 수명 가이드](governance-review-lifecycle.md)에 따라 작성하며 도구 자체의 쓰기 승인을 대체하지 않는다.
+첫 명령은 테스트·bootJar 기술 검증이고 둘째는 이관 제품의 검토 상태 보고다. 실제 실행은 [승인형 CLI 예시](../02-architecture/legacy-migration-tool-design.md)와 [복구 런북](../04-operations/migration-recovery-runbook.md)을 따른다. 두 문서는 독립 이관 제품의 같은 경로(`docs/02-architecture/legacy-migration-tool-design.md`·`docs/04-operations/migration-recovery-runbook.md`)에 실리고 재사용 생성물에는 싣지 않는다. mapping과 `--mode`만 넘기는 과거 진입점은 dry-run도 차단한다. `load --mode=commit`은 타깃 DB를 변경하므로 승인 plan, source/target identity, 기관 환경 검토와 백업·복구 근거가 필요하다. 기관 원장은 [검토 수명 가이드](governance-review-lifecycle.md)에 따라 작성하며 도구 자체의 쓰기 승인을 대체하지 않는다.
 
 ### 6.6 재사용 프로필과 기관 도입
 

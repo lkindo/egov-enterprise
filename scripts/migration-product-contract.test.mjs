@@ -78,17 +78,45 @@ test('standalone migration export retains independent verification and clears in
   assert.equal(readFileSync(resolve(generatedRoot, 'db_columns.json'), 'utf8'),
     readFileSync(resolve(root, 'db_columns.json'), 'utf8'),
     'default standalone export includes upstream db_columns.json for target standard validation');
-  // 이관 문서는 이 제품으로만 나간다(DEC-OPS-428). 제품에 없는 대상을 가리키던 링크는 글자만 남아 끊긴 링크가 없다.
-  for (const doc of MIGRATION_PRODUCT_DOCS) assert.ok(existsSync(resolve(generatedRoot, doc)), doc);
+  // 이관 문서는 이 제품으로 나간다(DEC-OPS-428). 기대값은 이 시험이 따로 든다 — 생성기의 목록을 기대값으로 쓰면 목록에서 한 줄을 빼도 통과한다.
+  // 생성 애플리케이션 프로젝트에서 뺀 이관 문서(이관 제거 원장)는 여기 실려야 한다. 작업공간 실행 안내만 예외다 — 그 도구는 원본 저장소에서만 돈다.
+  const workspaceGuide = 'docs/03-guides/migration-workspace-guide.md';
+  const removedFromApplications = readMigrationAssetLedger(root).assets.filter(asset => asset.startsWith('docs/'));
+  assert.ok(removedFromApplications.includes(workspaceGuide));
+  const promisedDocs = [
+    ...removedFromApplications.filter(doc => doc !== workspaceGuide),
+    // 기관 승인 원장·실행 descriptor 의 절차와 이 도구의 결정 기록. 생성 프로젝트에도 남는 것이 있어 원장으로는 셀 수 없다.
+    'docs/03-guides/governance-review-lifecycle.md',
+    'docs/02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md',
+    'docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md',
+    'docs/02-architecture/decisions/ADR-0029-legacy-standardization-migration.md',
+    'docs/02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md',
+  ].sort();
+  assert.deepEqual([...MIGRATION_PRODUCT_DOCS].sort(), promisedDocs);
+  for (const doc of promisedDocs) assert.ok(existsSync(resolve(generatedRoot, doc)), doc);
   const productDocs = ownedDocFiles(generatedRoot);
-  assert.ok(productDocs.includes('README.md') && MIGRATION_PRODUCT_DOCS.every(doc => productDocs.includes(doc)));
+  assert.ok(productDocs.includes('README.md') && promisedDocs.every(doc => productDocs.includes(doc)));
+  // 제품에 없는 대상을 가리키던 링크는 글자만 남아 끊긴 링크가 없다.
   assert.deepEqual(validateDocumentationLinks({ repoRoot: generatedRoot, files: productDocs }).errors
     .filter(error => isOwnedDoc(error.split(' -> ')[0])), []);
-  assert.match(readFileSync(resolve(generatedRoot, 'README.md'), 'utf8'), /\[승인형 이관과 부분 적재 복구\]\(docs\/04-operations\/migration-recovery-runbook\.md\)/);
-  // 생성 애플리케이션 프로젝트에서 뺀 이관 문서는 여기 실려야 한다. 작업공간 실행 안내만 예외다 — 그 도구는 원본 저장소에서만 돈다.
-  const removedFromApplications = readMigrationAssetLedger(root).assets.filter(asset => asset.startsWith('docs/'));
-  assert.deepEqual(removedFromApplications.filter(doc => !MIGRATION_PRODUCT_DOCS.includes(doc)),
-    ['docs/03-guides/migration-workspace-guide.md']);
+  // 링크 정리 뒤의 README 가 약속한 문서를 빠짐없이 잇는다 — 대상이 없는 링크는 글자로 바뀌어 여기서 빠진다.
+  const productReadme = readFileSync(resolve(generatedRoot, 'README.md'), 'utf8');
+  assert.deepEqual([...new Set([...productReadme.matchAll(/\]\((docs\/[^)#\s]+)(?:#[^)\s]*)?\)/g)].map(match => match[1]))].sort(), promisedDocs);
+  // 제품에 싣지 않는 절차(전체 복구)와 원본의 실측 기록은 위치를 글로 알린다.
+  for (const pointer of ['docs/04-operations/backup-and-restore-runbook.md', 'docs/04-operations/known-gaps-detail.md', 'durationProfileProvenance.producerCommit']) {
+    assert.ok(productReadme.includes(pointer), pointer);
+  }
+  assert.equal(existsSync(resolve(generatedRoot, 'docs/04-operations/backup-and-restore-runbook.md')), false);
+  // README 가 안내하는 npm 명령은 이 제품에 있다. 설계와 도입 가이드에 남은 원본 전용 이름은 그 줄이나 바로 뒤 문단이 원본 저장소의 이름임을 밝힌다.
+  const productScripts = Object.keys(JSON.parse(readFileSync(resolve(generatedRoot, 'package.json'), 'utf8')).scripts);
+  const readmeAliases = [...new Set([...productReadme.matchAll(/`npm run ([a-z:-]+)/g)].map(match => match[1]))].sort();
+  assert.deepEqual(readmeAliases.filter(alias => !productScripts.includes(alias)), ['migration:export']);
+  for (const doc of ['docs/02-architecture/legacy-migration-tool-design.md', 'docs/03-guides/governance-review-lifecycle.md']) {
+    const lines = readFileSync(resolve(generatedRoot, doc), 'utf8').split(/\r?\n/);
+    const unexplained = lines.flatMap((line, index) => /npm run (?:verify:migration|review:migration|review:adoption:migration)(?![\w:-])/.test(line)
+      && !/원본 저장소/.test(lines.slice(index, index + 4).join(' ')) ? [`${doc}:${index + 1}`] : []);
+    assert.deepEqual(unexplained, []);
+  }
   const isolatedRoot = temporaryRoot(t);
   const outputRoot = resolve(isolatedRoot, 'product');
   cpSync(generatedRoot, outputRoot, { recursive: true });
