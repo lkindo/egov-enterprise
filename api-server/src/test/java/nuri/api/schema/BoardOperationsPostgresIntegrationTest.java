@@ -517,6 +517,79 @@ class BoardOperationsPostgresIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT upend_fix_end_ymd FROM tb_bbs_item WHERE pst_sn = ?", String.class, post)).isNull();
     }
 
+    /**
+     * GAP-BOARD-004 — 사용자 표에 없는 작성자로 게시글·답글을 등록하면 미조회({@code USER_NOT_FOUND})로 실패하고 아무것도 저장하지
+     * 않는다. 이 상태는 인증 뒤 계정이 삭제된 요청에서 생긴다(인증 전에 없던 계정은 인증 단계에서 막힌다) — 시험은 사용자 표에 없는
+     * 내부 식별자로 서비스를 직접 불러 만든다. 종전에는 미조회를 잡아 "익명" 으로 대체했지만 그 이름은 저장되지 않았다 — 게시글의
+     * 작성자 열은 사용자 표를 가리키는 FK(user_id → tb_user_info.esntl_id, V2_12)라 INSERT 가 거부돼, 요청이 미조회가 아니라 무결성
+     * 위반으로 실패했다(2026-11-23 재현).
+     *
+     * <p>단위 시험(BoardServiceTest)은 Mockito 라 트랜잭션 프록시가 없고, H2 스키마는 엔티티로 만들어 이 FK 가 없다 — 등록이 실제로
+     * 어떻게 끝나는지는 Flyway 로 만든 실제 스키마와 실제 트랜잭션에서만 보인다.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"post", "reply"})
+    @DisplayName("PostgreSQL 에서 사용자 표에 없는 작성자의 등록은 USER_NOT_FOUND 로 실패하고 저장되지 않는다")
+    void missingAuthorFailsAsUserNotFound(String kind) {
+        String missing = "NOUSER" + author.substring(3);
+        String title = "missing-author-" + kind;
+        Runnable register = kind.equals("post")
+                ? () -> boardService.createPost(missing, newPost(title))
+                : () -> boardService.replyPost(missing, pstSn("A"), newPost(title));
+
+        assertThatThrownBy(register::run)
+                .isInstanceOfSatisfying(BusinessException.class, failure ->
+                        assertThat(failure.getErrorCode()).isEqualTo(nuri.business.domain.user.exception.UserErrorCode.USER_NOT_FOUND));
+        assertThat(countPosts(title)).as("없는 작성자의 글은 저장되지 않는다").isZero();
+    }
+
+    /**
+     * GAP-BOARD-004 — 있는 작성자의 이름 조회가 미조회 밖의 예외로 실패하면 등록은 그 원래 예외로 실패하고 아무것도 저장하지 않는다.
+     * 사용자 서비스는 클래스에 {@code @Transactional(readOnly = true)} 가 걸려 등록의 쓰기 트랜잭션에 참여하므로, 예외가 그 프록시를
+     * 지나면 트랜잭션은 rollback-only 가 된다. 조회 예외는 주민번호 열의 손상된 암호문으로 만든다 — 변환기가 읽기를 거부한다
+     * (fail-closed). 이 재현 사례에서 종전 코드는 예외를 잡고 "익명" 으로 INSERT 까지 마쳤지만 커밋에서
+     * {@code UnexpectedRollbackException} 으로 실패해 원인이 가려졌다(2026-11-23). 같은 작성자·게시판의 대조 등록이 먼저 커밋되므로
+     * 실패 원인은 이름 조회 하나다.
+     *
+     * <p>작성자는 로그인 ID 와 내부 식별자가 다른 사용자다. 컨트롤러는 내부 식별자({@code getUsername()} = esntlId)로 등록하고 작성자
+     * FK 도 내부 식별자를 가리키는데, 사용자 조회는 로그인 ID 를 먼저 찾는다 — 두 값이 같으면 내부 식별자로 찾는 두 번째 조회가 빠져도
+     * 대조 등록이 통과한다. 공용 fixture(두 값이 같다)는 다른 시험이 쓰므로 이 시험만 따로 둔다.
+     */
+    @Test
+    @DisplayName("실제 트랜잭션에서 작성자 이름 조회가 실패하면 등록은 원래 조회 예외로 실패하고 저장되지 않는다")
+    void authorLookupFailureFailsRegistrationWithOriginalCause() {
+        String esntlId = "BOE" + author.substring(3);
+        String loginId = "BOL" + author.substring(3);
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
+                + "VALUES(?,?,'distinct id author','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))"),
+                esntlId, loginId);
+        try {
+            Long control = boardService.createPost(esntlId, newPost("lookup-control"));
+            assertThat(VendorTestSql.row(jdbc, "SELECT user_id, user_nm FROM tb_bbs_item WHERE pst_sn = ?", control))
+                    .as("조회가 성공하면 내부 식별자로 한 등록은 그 식별자와 실제 이름으로 커밋된다")
+                    .containsEntry("user_id", esntlId).containsEntry("user_nm", "distinct id author");
+
+            jdbc.update("UPDATE tb_user_info SET user_enrrno = '!corrupted-ciphertext!' WHERE esntl_id = ?", esntlId);
+
+            assertThatThrownBy(() -> boardService.createPost(esntlId, newPost("lookup-failure")))
+                    .as("커밋의 UnexpectedRollbackException 이 아니라 조회 예외 자체가 드러난다")
+                    .isInstanceOf(org.springframework.orm.jpa.JpaSystemException.class)
+                    .hasStackTraceContaining("Rrno decryption failed");
+            assertThat(countPosts("lookup-failure")).as("조회가 실패한 등록은 저장되지 않는다").isZero();
+        } finally {
+            jdbc.update("DELETE FROM tb_bbs_item WHERE bbs_id = ? AND user_id = ?", bbsId, esntlId);
+            jdbc.update("DELETE FROM tb_user_info WHERE esntl_id = ?", esntlId);
+        }
+    }
+
+    private BoardSaveRequest newPost(String title) {
+        return new BoardSaveRequest(bbsId, title, "body", null, null, null, null, null, null, "N", "Y", null, null);
+    }
+
+    private long countPosts(String title) {
+        return jdbc.queryForObject("SELECT count(*) FROM tb_bbs_item WHERE bbs_id = ? AND pst_ttl = ?", Long.class, bbsId, title);
+    }
+
     private static void assertSingleDay(List<Object[]> rows) {
         assertThat(rows).hasSize(1);
         assertThat(rows.getFirst()[0]).isEqualTo("2031-03-05");

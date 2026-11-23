@@ -1,6 +1,5 @@
 package nuri.business.service.board;
 import nuri.foundation.core.exception.CommonErrorCode;
-import nuri.business.domain.user.exception.UserErrorCode;
 import nuri.business.domain.board.exception.BoardErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
@@ -32,7 +31,6 @@ import nuri.foundation.core.util.EntityVersions;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.file.FileService;
 import nuri.business.service.user.UserService;
-import nuri.business.service.user.dto.UserDto;
 import nuri.business.security.util.SecurityUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -456,7 +454,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
                                 assertGroupAttachable(master, request.atchFileSn());
                         }
 
-                        // 사용자 정보 조회 (실패 시 익명 처리)
+                        // 작성자 이름 조회 — 실패하면 등록도 실패한다(대체 이름 없음, resolveAuthorName 참조)
                         String userNmToSet = resolveAuthorName(userId);
 
                         Long sortOrdr = boardRepository.findMaxSortOrdr(master.getBbsId()) + 1;
@@ -547,7 +545,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
                         assertGroupAttachable(master, request.atchFileSn());
                 }
 
-                // 사용자 정보 조회 (실패 시 익명 처리)
+                // 작성자 이름 조회 — 실패하면 답글 등록도 실패한다(대체 이름 없음, resolveAuthorName 참조)
                 String userNmToSet = resolveAuthorName(userId);
 
                 Long ansSn = boardRepository.findMaxAnsSn(master.getBbsId(), parent.getSortOrdr()) + 1;
@@ -839,25 +837,17 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
         }
 
         /**
-         * 게시글·답글 작성자의 표시 이름. 사용자를 찾지 못하거나 조회가 실패하면 "익명" 으로 대체한다.
+         * 게시글·답글 작성자의 표시 이름. 대체 이름을 두지 않는다 — 사용자를 찾지 못하면 {@code USER_NOT_FOUND}(404, U001) 업무
+         * 예외로, 그 밖의 조회 실패는 원래 예외로 등록이 실패한다. 미조회는 인증 뒤 계정이 삭제된 요청에서 도달한다(인증 전에 없던
+         * 계정은 인증 단계에서 막힌다).
          *
-         * <p>로그에는 예외 클래스의 단순명만 남긴다(등록 경로의 최소 로깅). 종전 답글 경로는 사용자 식별자와
-         * 스택까지 남겨, 같은 사건이 경로에 따라 다르게 기록됐다.
+         * <p>[2026-11-23 GAP-BOARD-004] 종전에는 예외를 잡아 "익명" 으로 바꿨지만 그 이름은 저장되지 않았다. 재현에서 없는 사용자의
+         * 글은 작성자 FK({@code fk_tb_bbs_item_tb_user_info})가 INSERT 를 거부했다. 사용자 서비스는 등록 트랜잭션에 참여하므로 그
+         * 안에서 난 조회 예외는 트랜잭션을 rollback-only 로 표시한다 — 재현한 사례(주민번호 암호문 손상으로 조회가 실패)에서는 "익명"
+         * INSERT 뒤 커밋이 {@code UnexpectedRollbackException} 으로 실패해 원인이 가려졌다.
          */
         private String resolveAuthorName(String userId) {
-                UserDto author = null;
-                try {
-                        author = userService.getUserById(required(userId, "userId 는 null 일 수 없습니다"));
-                } catch (BusinessException e) {
-                        if (e.getErrorCode() == UserErrorCode.USER_NOT_FOUND) {
-                                log.warn("게시글 작성자를 찾을 수 없어 익명 처리합니다.");
-                        } else {
-                                log.error("게시글 작성자 조회 실패: {}", e.getClass().getSimpleName());
-                        }
-                } catch (Exception e) {
-                        log.error("게시글 작성자 조회 실패: {}", e.getClass().getSimpleName());
-                }
-                return author != null ? author.userNm() : "익명";
+                return userService.getUserById(required(userId, "userId 는 null 일 수 없습니다")).userNm();
         }
 
         /**

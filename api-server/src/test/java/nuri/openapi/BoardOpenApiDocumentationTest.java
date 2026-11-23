@@ -81,6 +81,29 @@ class BoardOpenApiDocumentationTest {
         .isTrue();
   }
 
+  /**
+   * [2026-11-23 GAP-BOARD-004] 작성자 이름 조회에 대체 이름이 없어져, 인증 뒤 작성자 계정이 삭제된 등록은 404(U001)이다. 등록 두 연산은
+   * 경로 변수 유무와 관계없이 404 와 실제로 낼 수 있는 코드(게시판 B001·첨부 묶음 C007·작성자 U001)를 선언해야 한다 — 공통 주입은 경로
+   * 변수가 없는 JSON 등록에 404 를 붙이지 않고, 붙이는 경우에도 C003/C007 만 적는다.
+   */
+  @Test
+  @DisplayName("게시글 등록 두 연산은 404 와 실제 오류 코드(B001·C007·U001)를 문서화한다")
+  void boardPostCreateNotFoundCodes_areDocumented() throws Exception {
+    String content = mockMvc.perform(get("/v3/api-docs")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+    tools.jackson.databind.JsonNode paths =
+        tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build().readTree(content).path("paths");
+    for (String path : java.util.List.of("/api/v1/boards/posts", "/api/v1/boards/{bbsId}/posts/with-files")) {
+      tools.jackson.databind.JsonNode notFound = paths.path(path).path("post").path("responses").path("404");
+      assertThat(notFound.path("description").asString())
+          .as(path).contains("(code: B001/C007/U001)").doesNotContain("C003");
+      assertThat(notFound.path("content").path("application/json").path("schema").path("$ref").asString())
+          .as(path).isEqualTo("#/components/schemas/ApiResponseVoid");
+    }
+  }
+
   @Test
   @DisplayName("게시판 마스터 조회는 쓰기 DTO가 아닌 실제 응답 projection을 문서화한다")
   void boardMasterReadContracts_areDocumented() throws Exception {

@@ -160,6 +160,9 @@ class ConfiguredBoardEditPolicyTest {
     @Test void ordinaryBoardWritingStillWorksWithoutSpecialPermissions() {
         authenticate("BOARD_CREATE");
         when(boards.findByIdWithPessimisticLock("ordinary")).thenReturn(Optional.of(BoardMaster.builder().bbsId("ordinary").build()));
+        // 작성자 이름 조회 — 운영의 getUserById 는 null 을 돌려주지 않는다(종전 "익명" 대체가 스텁 누락을 가렸다, GAP-BOARD-004).
+        when(users.getUserById("editor-key")).thenReturn(
+                nuri.business.service.user.dto.UserDto.builder().userId("editor").userNm("편집자").build());
         when(posts.save(any())).thenReturn(Board.builder().pstSn(8L).build());
         assertThat(service.createPost("editor-key", request("ordinary"))).isEqualTo(8L);
     }
