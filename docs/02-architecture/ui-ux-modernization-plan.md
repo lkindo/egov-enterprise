@@ -24,30 +24,6 @@
 
 ## 1. 최종 판정
 
-### 1.1 결론
-
-원안은 다음 강점을 가진 **프런트엔드 구조 현대화 초안**이다.
-
-- 빅뱅 재작성 대신 점진 이식을 선택했다.
-- 현재 코드의 중복 컴포넌트, 색상 부채, 거대 클라이언트 파일, query key 분산을 계측하려 했다.
-- 테마 토큰, 공통 컴포넌트, 템플릿, 생성기, 재사용 프로필, 품질 게이트를 하나의 로드맵으로 연결했다.
-- URL·메뉴·proxy·재사용 패키지의 연쇄 동기화와 기존 CSP/동적 렌더 제약을 의식했다.
-- 라이트/다크 시각 검증, 래칫, 의도적 위반의 red 증명 같은 좋은 품질 원칙을 포함했다.
-
-그러나 **UI/UX 전면 개선 계획으로는 그대로 승인할 수 없다.** 원안은 사용자·과업·정보구조·콘텐츠·실사용 성과보다 컴포넌트 수와 코드 비율을 우선하며, 몇몇 핵심 전제는 현재 디스크와 모순된다. 그대로 실행하면 다음과 같은 실패가 가능하다.
-
-1. 잘못된 IA와 내부 용어를 더 일관되게 만들어 오히려 변경 비용을 키운다.
-2. 정적 데모와 출처 없는 지표를 더 신뢰성 있어 보이게 만든다.
-3. 실제 사용 중인 파일을 dead code로 오인해 기능을 파손한다.
-4. 이미 존재하는 오류 경계를 페이지마다 복제해 헌법과 회복 범위를 악화한다.
-5. `StandardDataTable`의 기존 pagination/empty 계약 위에 같은 기능을 다시 얹는다.
-6. 접근성 자동 검사 수를 늘리고도 키보드·스크린리더 사용자가 과업을 완료하지 못한다.
-7. 관리자 94화면만 이식하고 일반 사용자 25화면과 관리자→사용자 여정을 방치한다.
-8. proxy allowlist와 메뉴 SQL을 생성기가 추론해 인가·DB 경계를 잘못 변경한다.
-9. `'use client'` 파일 LOC를 줄인 뒤 실제 전송 JS나 사용자 체감 성능이 좋아졌다고 오판한다.
-
-따라서 최적안은 **원안의 P0~P8을 순서만 다듬는 것이 아니라, 제품 증거 → IA·상태 계약 → 기반 → 수직 파일럿 → 패턴 추출 → 여정 웨이브 → 생성기/재사용 산출물 → 최종 감사**로 재구성하는 것이다.
-
 ### 1.2 승인 범위
 
 | 범위 | 판정 | 조건 |
@@ -61,57 +37,9 @@
 | 관리자 웨이브 이식 | 보류 | 해당 route disposition 개별 승인, 기관 채택 시 IA 재검증, 사용자 성과 baseline, 파일럿 gate 통과 필요 |
 | 화면 생성기·메뉴 산출물 | 강한 보류 | 안정된 3개 이상 예시, 인가 분류, DB 별도 승인 경계 필요 |
 
-### 1.3 원안 요소별 처리
-
-| 원안 요소 | 처리 | 이유 |
-|---|---|---|
-| 점진적 rebuild | 유지 | 롤백·회귀 격리에 유리하다. 단, 한 웨이브는 3~5 route 또는 한 종단간 여정으로 제한한다. |
-| KRDS + Premium | 수정 | 하나의 CSS import 선택이 아니라 `brand profile × color mode`의 독립 축으로 설계한다. |
-| admin-first | 조건부 유지 | 화면 수 94/119가 아니라 과업 가치·빈도·위험·준비도로 우선순위를 다시 산정하고 비관리자 후속 웨이브를 명시한다. |
-| 3계층 토큰 | 유지 | KRDS 버전·추적 매트릭스·실제 렌더 검증을 추가한다. component token은 반복 필요가 확인될 때만 만든다. |
-| 컴포넌트 물리 루트 1개 | 폐기 | primitive/shared/feature/route-local이라는 의미 경계가 물리적 단일 루트보다 중요하다. |
-| 10개 primitive 선제 생성 | 축소 | 파일럿이 요구한 최소 컴포넌트부터 계약 기반으로 추가한다. |
-| List/CRUD/Detail/Hub 4 template | 재설계 | 업무 기능을 소유하지 않는 얇은 slot 기반 scaffold로 제한하며 wizard/tree/calendar/composer/matrix는 별도 패턴으로 둔다. |
-| 중앙 `lib/query-keys.ts` | 폐기 | domain-local typed query options/key factory로 전환한다. |
-| client TanStack 기본·Hydration ≤5 | 폐기 | 데이터 소유권과 측정 결과에 따른 route별 선택으로 바꾼다. 숫자 quota를 두지 않는다. |
-| 페이지별 `error.tsx` 확대 | 폐기 | 독립 복구 단위와 query reset 범위에 맞춘 도메인 경계를 사용한다. |
-| axe 전 화면 sweep | 명칭·계약 수정 | `route × role × state × theme × viewport` 대표 자동 검사와 수동 AT 평가로 나눈다. |
-| Client LOC 51.3→45% | 정보성 지표로 강등 | hydration·bundle 비용을 직접 측정하지 못하고 분모 조작이 가능하다. |
-| 생성기의 proxy/menu SQL 자동화 | 제거 | 인가 의미와 live schema/메뉴 결정을 안전하게 추론할 수 없다. 검토용 manifest만 생성한다. |
-| 재사용 프로필 산출물 | 유지·강화 | positive ownership, static route reference, 실제 산출물 install/type/lint/test/build 검증을 추가한다. |
-| 성능·반응형을 P8에서 마감 | 폐기 | 컴포넌트와 모든 이식 웨이브의 DoD에 내장하고 마지막에는 감사만 한다. |
-
-### 1.4 원안 Phase별 재배치
-
-| Claude 원안 | 적대적 판정 | 새 위치 |
-|---|---|---|
-| P0 착수 위생·계측 | 일부 즉시 가능 | Task 0.1~0.5. 단, dead-code·error coverage·client LOC의 측정 정의를 먼저 수정 |
-| P1 KRDS 토큰·테마 | 방향 유지, 선행 결정 누락 | G0/G1의 KRDS profile·접근성 목표 승인 후 Task 2.1~2.2 |
-| P2 component kit·긴급 수리 | 빅뱅 이동·페이지 boundary 증식 거부 | Task 2.3 긴급 접근성 수리 후 Task 2.4 의미 경계별 small batch |
-| P3 template·fetch·generator | 서로 다른 성숙도와 위험을 한 단계에 혼합 | fetch 원칙은 ADR-0003으로 선행, template은 파일럿 후 Task 4.1, generator는 Task 5.1로 지연 |
-| P4 2화면 pilot | 실제 route 전제 오류, archetype 부족 | Task 3.1~3.4의 dense list·cross-role·complex interaction·hub 파일럿 |
-| P5 admin wave | route count 기반이며 user surface 누락 | Task 4.3의 complete journey wave. 비관리자 25 route 포함 |
-| P6 final quality gate | 너무 늦고 axe를 준수와 혼동 | 접근성·반응형·성능을 G2와 모든 wave에 내장, Task 6.1은 최종 감사만 수행 |
-| P7 reusable boundary | 좋은 목표이나 ownership/build 증거 부족 | Task 5.2 positive ownership + clean artifact 검증 |
-| P8 performance·responsive | 사후 마감으로는 재작업 위험 | baseline부터 모든 pilot/wave에 포함하고 D6에서 재측정 |
-
-원안의 P5·P6·P7 병렬화도 그대로 사용하지 않는다. mass route migration, component path 이동, profile cut은 같은 import·route·test 파일을 경쟁적으로 수정하므로, profile/component 경계를 먼저 고정하고 wave owner가 독립적인 파일 집합을 가질 때만 제한적으로 병렬화한다.
-
 ---
 
 ## 2. 검토 방법과 증거 한계
-
-### 2.1 사용한 방법
-
-검토는 원안의 숫자를 그대로 신뢰하지 않고 다음을 현재 디스크에서 다시 확인했다.
-
-1. 라우트·컴포넌트·테스트·오류 경계의 exact census.
-2. route entry에서 시작하는 transitive reachability와 test-only 참조 구분.
-3. 실제 사용자 여정이 UI를 통과하는지 E2E 본문 확인.
-4. 정적 데모·부분 구현·실데이터 화면의 코드상 진실 확인.
-5. 현재 헌법과 원안의 구현 순서·기술 선택 충돌 확인.
-6. Next.js, TanStack Query, WCAG, KRDS의 공식 문서와 현재 계획 비교.
-7. UX, 기술 실현성, 거버넌스·접근성의 독립 레드팀 3개 결과 교차 검증.
 
 ### 2.2 증거의 한계
 
@@ -122,58 +50,7 @@
 
 ---
 
-## 3. 2026-08-20 착수 전 재검증 기준선과 현재 delta
-
-> 이 절의 3.1~3.4는 Claude 원안을 반박하기 위해 동결한 **2026-08-20 boot baseline**이다. 이후 로컬 구현으로 수리된 항목도 당시 결함과 계획 선택의 근거를 보존하기 위해 과거형 기준선으로 남긴다. 현재 상태는 3.5와 실행 계약의 검증 결과를 함께 읽어야 하며, 이 과거 기준선을 현재 미해결 결함 목록으로 인용해서는 안 된다.
-
-### 3.1 구조·코드 기준선
-
-| 항목 | 착수 전 실측 | 해석 |
-|---|---:|---|
-| 전체 `page.tsx` | 119 | route 개수이지 사용자 가치나 작업량이 아니다. |
-| `/admin` 아래 `page.tsx` | 94 | `/admin`에도 일반 USER 접근 가능 화면이 있어 단일 관리자 persona로 간주할 수 없다. |
-| 비관리자 route | 25 | 로그인, 포털, 검색, 설문, 결재, 쪽지, 도움말 등 교차 역할 여정의 사용자 면이 포함된다. |
-| `src/components` TSX | 54 | 테스트 포함 방식에 따라 변동하며 단일화 자체가 품질 목표는 아니다. |
-| `src/app/components` TSX | 52~53 | dashboard 4개와 theme provider까지 있어 `ui/layout`만 옮겨서는 삭제할 수 없다. |
-| `@/app/components/` import | 107 files / 308 sites | 기계 이동 시 client boundary, mock, dynamic import, service/context 결합을 파손할 수 있다. |
-| 코드 census | FE 593 files / 78,371 LOC | 2026-08-20 `node scripts/code-census.mjs --json` 결과. |
-| 직접 client LOC ratio | 51.3% | 파일 내 지시어 휴리스틱과 전체 `src` 분모라 hydration 비용 KPI로 부적합하다. |
-| 600 LOC 초과 FE 파일 | 10 | `UserOrgHubClient` 1,385, Monitoring 990, Banner 968, SecurityHub 877, CommonCode 861 등. 줄 수만으로 분할하지 않는다. |
-| 기존 color guard 탐지 | 103 + 786 = 889 | production TSX/JSX의 특정 Tailwind palette utility 탐지 수이며 전체 색 리터럴 수가 아니다. |
-| `HydrationBoundary` | 1 | 사용 개수는 최적 데이터 전략의 증거가 아니다. |
-| `next/image` production import | 3 | 개수가 아니라 실제 LCP resource·bytes·CLS를 본다. |
-
-### 3.2 컴포넌트·경계의 반례
-
-- `frontend/src/app/components/ui/virtual-scroll-list.tsx`는 `user-picker.tsx`가 import하고 `/note` route가 `UserPicker`를 사용한다. 원안의 dead-code 삭제 후보는 틀렸다.
-- 실제 `/admin/user/manage`는 `UserOrgHubClient`를 렌더한다. 원안이 첫 파일럿의 버그 근거로 든 `UserManageClient.tsx`의 10개 제한은 현재 route가 사용하지 않는 코드다.
-- `StandardDataTable`은 이미 검색, loading/error/empty, 모바일 카드, 선택·일괄 작업, pagination props·계산·UI를 가진 641줄 복합 컴포넌트다. 여기에 `PagePagination`과 `EmptyState`를 조합한 `ListPageTemplate`을 얹으면 중복 계약이 생긴다.
-- `StandardDataTable` 모바일 카드는 클릭 핸들러가 없어도 `role="button"`과 `tabIndex=0`을 가지며, button 역할 컨테이너 안에 checkbox를 중첩한다. 표준으로 승격하기 전에 시맨틱·키보드 계약부터 수리해야 한다.
-- `PageHeader`는 client `DynamicBreadcrumb`에 결합돼 있고 `PageHeader`와 `HubHeader`가 각각 `<h1>`을 가진다. 무조건 합성하면 client graph와 heading 중복이 커진다.
-- root layout이 Header, Sidebar, Footer, AppShell, `max-w-7xl`을 이미 소유한다. 책임 분리 없이 `admin/layout.tsx`를 추가하면 shell과 폭 제한이 중복될 수 있다.
-
-### 3.3 오류·접근성·반응형 기준선
-
-| 항목 | 착수 전 실측 | 적대적 해석 |
-|---|---|---|
-| route `error.tsx` | 10 + `global-error.tsx` 1 | 119 page 모두 조상 error 경계를 가지며 `none`은 0이다. “35 page 미커버”는 사실이 아니다. |
-| 전역 React boundary | `Providers`의 `StandardErrorBoundary` | 파일 수만 늘려도 실제 회복 범위가 개선되지 않는다. |
-| admin retry | 무범위 `queryClient.refetchQueries()` | 도메인 오류 복구가 전체 query refetch storm을 만들 수 있다. |
-| axe 실행 route | 로그인, 관리자 dashboard | `AxeBuilder` 호출 3회지만 고유 화면은 2개다. |
-| 대비 검사 | core E2E 두 곳에서 `color-contrast` 비활성 | 자동 접근성 green이 실제 대비를 증명하지 않는다. |
-| 반응형 E2E | 375/768/1280, `/admin`·`/admin/work-hub` | shell overflow와 sidebar만 보며 업무 액션 parity, zoom, overlay focus는 보지 않는다. |
-| VRT | 사실상 dashboard 1장 | 동적 영역을 mask하고 전체 1%를 허용해 작은 focus/error/action 회귀를 놓칠 수 있다. |
-| Lighthouse | `/login`, performance 0.85 warn, accessibility 0.9 error | 인증 후 핵심 업무 흐름이나 현장 성능의 증거가 아니다. |
-
-### 3.4 제품·여정 기준선
-
-- `docs/01-product/README.md`는 현재 활성 PRD가 없다고 명시한다.
-- `PD-UX-001`의 reference-default IA 방향은 ADR-0007로 승인됐고, exact label/group/order/visibility와 route별 disposition의 개별 owner 승인이 남았다. 원안은 이 경계를 별건으로 미루면서 그보다 먼저 생성기와 메뉴 SQL을 만들려 했다.
-- 설문 E2E의 “Admin Create → User Participate”에서 사용자 투표는 UI가 아니라 API로 직접 수행된다. 이 green은 참여 화면의 사용 가능성을 증명하지 않는다.
-- 배너/팝업, FAQ, 설문, 결재는 관리자 설정과 일반 사용자 경험이 이어지는 종단간 흐름이다. admin 화면만 이식하면 여정이 반쪽으로 남는다.
-- 당시 `/admin/workflow`는 백엔드 미연동 정적 데모였고 `24`, `156`, `99.9%`, `LOW` 같은 고정 지표를 운영 데이터처럼 표시했다. 이후 데모 고지를 거쳐 ADR-0049로 화면을 퇴역한다.
-- 승인 작성 등 일부 화면도 저장 미연동/부분 구현이다. 디자인을 개선하기 전에 `live | partial | demo | unavailable` 상태를 밝혀야 한다.
-- UI에는 `Identity_ID`, `Draft Center`, `Encryption Active`, “인텔리전스”, “노드”, “스트림” 같은 내부 용어와 혼합 언어가 남아 있다. 원안의 “없습니다 문자열 통합”만으로 콘텐츠 문제가 해결되지 않는다.
+## 3. 2026-08-21 로컬 구현 delta
 
 ### 3.5 2026-08-21 로컬 구현 delta
 
@@ -506,7 +383,7 @@ flowchart LR
 
 ## 7. 상세 실행 계획
 
-아래 task는 기본적으로 한 worker가 한 변경 세트를 소유한다. 파일 경로는 현재 예상이며, P0의 census 결과로 exact target을 확정한다. 경계·인가·DB 의미가 달라지면 같은 이름이라는 이유로 기계적 sweep을 하지 않는다.
+아래 task는 기본적으로 한 worker가 한 변경 세트를 소유한다. 파일 경로는 현재 예상이며, P0의 census 결과로 exact target을 확정한다. 경계·인가·DB 의미가 달라지면 같은 이름이라는 이유로 기계적 sweep을 하지 않는다. mass route migration, component path 이동, profile cut은 같은 import·route·test 파일을 경쟁적으로 수정하므로, profile/component 경계를 먼저 고정하고 wave owner가 독립적인 파일 집합을 가질 때만 제한적으로 병렬화한다.
 
 ### Task 0.1 — 원안 supersession과 측정 정의 고정
 
@@ -595,14 +472,14 @@ node --test scripts/shared-memory-contract.test.mjs
 
 **Steps:**
 
-1. filesystem route 119개, proxy access class, DB/menu 노출, redirect/alias, reusable profile ownership을 결합한다.
+1. filesystem route 전부, proxy access class, DB/menu 노출, redirect/alias, reusable profile ownership을 결합한다.
 2. `live | partial | demo | unavailable`을 evidence와 함께 지정한다.
 3. static route string과 dynamic import 소비를 별도로 수집한다.
 4. 모든 route가 exactly once 존재하고 소유자·상태·역할이 비어 있지 않은지 계약화한다.
 5. 남아 있는 부분 구현·시연 화면은 demo 격리 또는 사용자 고지 작업을 연계한다. `/admin/workflow` 등 퇴역 목업은 ADR-0049에 따라 모집단에서 제거한다.
 6. 빈 input, route 누락, 중복 route, demo가 core profile에 남는 fixture가 red인지 증명한다.
 
-**Acceptance Criteria:** 119/119 route가 exact 분류되고 none/unknown이 0이거나 owner·reviewBy가 있는 예외다.
+**Acceptance Criteria:** 모든 filesystem route가 [라우트 원장](../../config/ui-route-capabilities.json)에 exact 분류되고 none/unknown이 0이거나 owner·reviewBy가 있는 예외다.
 
 **Verify:**
 
@@ -698,7 +575,7 @@ node scripts/run-isolated-e2e.mjs -- --project=api-contract --project=full-suite
 3. URL 유지와 navigation label/group/order 변경을 별도 결정한다.
 4. URL parameter는 화면별 route/query key allowlist로 관리한다. 현재 주소창 검색 승인은 `/search?q`와 `/admin/community/boards/select-board-list`의 `searchCnd`·`searchWrd`다(`/admin/community/[id]`는 2026-09-25 page-redirect가 되어 빠졌다, DEC-OPS-130).
 5. 허용된 일반 업무 검색어는 caller가 선언한 key만 재조립하고 unknown query를 버리며 same-view 변경에 `replace`를 사용한다. client log·analytics에는 복제하지 않는다. 앱은 자격증명·token·고유식별정보·고위험 개인정보·응답 본문 용도의 전용 URL field/state를 설계하거나 일반 검색창에서 입력을 요구·유도하지 않는다. 자유 입력값의 예상 밖 붙여넣기는 accepted residual risk이며 고위험 용도 승인이 아니다. credential-name gate는 key 차단이지 DLP가 아니다. 허용은 다른 화면의 URL 동기화를 의무화하지 않는다.
-6. 119 route와 2 alias의 disposition 및 redirect/deep-link/back contract를 owner PR review로 route별 개별 승인한다.
+6. [라우트 원장](../../config/ui-route-capabilities.json)의 route와 별칭의 disposition 및 redirect/deep-link/back contract를 owner PR review로 route별 개별 승인한다.
 
 **Acceptance Criteria:** ADR-0007의 reference-default IA 승인을 유지하되 미승인 route는 menu/generator가 소비하지 않는다. 기관 채택 시 원 G1을 재수행하고, route별 disposition은 개별 승인 근거를 가진다. URL 검색 상태는 ADR-0009와 exact allowlist 계약을 따르며 새 route/key는 승인 기록과 회귀 계약 없이 추가하지 않는다. `PD-UX-002`의 검색어 판단은 이 결정으로 닫혔고 나머지 세 부류는 축소된 범위로 계속 추적한다.
 
@@ -1141,7 +1018,7 @@ priority = (task value × frequency × failure cost × accessibility risk × rea
 
 | Gate | 단계 | 실행 경로 | 반드시 필요한 red/비공허성 | 비고 |
 |---|---|---|---|---|
-| Route capability truth | G1 hard | operational contracts + required consumer | route 누락/중복/unknown/demo leakage | 119 exact census |
+| Route capability truth | G1 hard | operational contracts + required consumer | route 누락/중복/unknown/demo leakage | [라우트 원장](../../config/ui-route-capabilities.json) exact census |
 | KRDS mapping | G2 hard | docs/operational contract | 필수 item 누락, stale version, expired deviation | 준수 claim과 분리 |
 | Theme set equality | G2 hard | Vitest + frontend-build | 한 token 삭제/추가, selector 미적용 | profile×mode |
 | Token contrast preflight | G2 hard | Vitest | foreground=background fixture, pair 누락 | WCAG 충분조건 아님 |
@@ -1162,40 +1039,7 @@ required CI에 연결되지 않은 local hook은 빠른 feedback이지 병합 �
 
 ## 13. 헌법 개정 결정
 
-> **역사적 개정 근거(2026-08-20):** 이 절은 ADR-0003 채택 당시의 개정 전 문제와 처리 결정을 보존한다. 현재 구현에는 [프런트엔드 헌법](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)과 [ADR-0003](decisions/ADR-0003-frontend-ux-modernization-principles.md)을 적용하며, 아래 조항별 표를 새로운 개정 요청이나 현행 규칙으로 사용하지 않는다.
-
-### 13.1 왜 선행 개정이 필요했는가
-
-개정 전 헌법은 시각적 놀라움, 고정 Hub Blue, 필수 micro-interaction을 최상위 미학으로 두며 다음 구현 세부를 절대 규칙으로 만들었다.
-
-- 모든 server fetch/cache를 TanStack Query로만 관리.
-- 민감 데이터를 Zustand 또는 SessionStorage에 저장.
-- 모든 initial data에 HydrationBoundary를 표준 적용.
-- 모든 form에 `useAppForm` 강제.
-- 모든 mutation에 optimistic UI 의무.
-- 모든 UI element에 4.5:1 대비 의무.
-- image `priority`, visualization `ssr:false`, 전역 `refetchQueries()` 같은 구체 API.
-
-이는 브랜드 중립 재사용 base, 당시 의존성, 보안, WCAG 기준, 실제 데이터 소유권, 위험 기반 상호작용과 충돌했다. 원안처럼 P6에서 뒤늦게 개정하면 P1~P5가 개정 전 헌법을 위반한 채 진행되므로, ADR-0003 채택과 헌법 개정을 구현보다 앞서 반영했다.
-
-### 13.2 조항별 처리
-
-| 조항 | 처리 | 새 장기 원칙 | 가이드/ADR로 내릴 세부 |
-|---|---|---|---|
-| 전문, §1~2 | 대폭 개정 | 과업 성공·신뢰·접근성 우선, profile-neutral semantic contract | Hub Blue, glass, gradient, premium recipe |
-| §3 | 개정 | server-first와 최소 client boundary | directive/분할 세부 |
-| §4 | 개정 | state owner 1개, 민감정보 비영속, measured fetch | TanStack API, Zustand, dehydrate quota |
-| §5~6 | 개정 | mobile-first reflow, semantic tokens, reduced motion | exact breakpoint, CSS path, lint level |
-| §7 | 개정 | accessible input·server contract | 모든 form hook 강제 |
-| §8 | 개정 | measured budget·stable loading UX | deprecated/conditional library API |
-| §9·15 | 대폭 개정 | WCAG 2.2 AA, 공공 profile KWCAG/KRDS, actual criteria | axe API와 CI shard name |
-| §10 | 유지하되 정본 연결 | accepted CSP 정책 약화 금지 | 세부 directive는 DEC-OPS-011/contract가 권위 |
-| §11 | 개정 | deterministic hydration과 smallest practical client boundary | 무조건 useEffect/ssr:false 처방 |
-| §12 | 개정 | independent recovery scope와 targeted retry | global refetch와 미학 |
-| §13 | 개정 | reversible/safe mutation만 optimistic | 모든 mutation 강제, exact generated path |
-| §14 | 개정 | population·binding·red proof가 있는 검증 | 도구/샤드/Storybook 역사 전문 |
-| §16 | 개정 | reflow·long content·input-mode parity | hover-only tooltip, 무조건 line-clamp |
-| §17 | 유지 | 승인 즉시 시행 | - |
+> 2026-08-20 ADR-0003 채택 때의 개정 전 문제와 조항별 처리는 Git 이력에 있다. 현행 규범은 [프런트엔드 헌법](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)과 [ADR-0003](decisions/ADR-0003-frontend-ux-modernization-principles.md)이다.
 
 ### 13.3 헌법과 가이드의 경계
 
@@ -1349,10 +1193,10 @@ pnpm -C frontend run bundle:check
 
 다음이 모두 충족될 때만 “UI/UX 전면 개선 완료”라고 표현할 수 있다.
 
-1. 119 route의 role/surface/capability/profile/journey 분류가 현재 구현과 일치한다.
+1. [라우트 원장](../../config/ui-route-capabilities.json)의 모든 route의 role/surface/capability/profile/journey 분류가 현재 구현과 일치한다.
 2. 활성 UX brief/PRD와 top-task baseline/after 결과가 있고 핵심 과업이 악화되지 않았다.
 3. 승인된 IA에서 중복·고아·모호한 항목이 0이거나 명시된 예외다.
-4. 일반 사용자 25 route를 포함한 핵심 complete process가 UI-only journey로 검증된다.
+4. 일반 사용자 route를 포함한 핵심 complete process가 UI-only journey로 검증된다.
 5. live surface의 fake metric, 비동작 action, 미표시 demo가 0이다.
 6. 각 profile이 pinned KRDS mapping과 동일 semantic/accessibility contract를 가진다.
 7. 대표 route×role×state×theme×viewport 자동 검사와 수동 keyboard/AT/reflow 결과가 release sign-off를 충족한다.
@@ -1366,7 +1210,7 @@ pnpm -C frontend run bundle:check
 
 ## 20. ERP 업무 화면 트랙
 
-ERP·공공 업무시스템 화면에 필요한 밀도와 그리드·조회 기능은 이 절이 현행 계획으로 소유한다. 2026-08-23 [ERP 전환 마스터플랜](../archived/erp-transformation-master-plan.html)은 당시 계획 원문으로 보관하고 갱신하지 않는다. 새 업무 화면이 지킬 화면 문법·밀도 규칙은 계획이 아니라 [업무 화면 문법 카탈로그](work-screen-grammar-catalog.md)와 [프런트엔드 헌법](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)이 정하고, census·계약 시험이 집행한다.
+ERP·공공 업무시스템 화면에 필요한 밀도와 그리드·조회 기능은 이 절이 현행 계획으로 소유한다. 2026-08-23 ERP 전환 마스터플랜의 항목과 하지 않을 것을 이 절이 이어받았다(원문은 Git 이력에 있다). 새 업무 화면이 지킬 화면 문법·밀도 규칙은 계획이 아니라 [업무 화면 문법 카탈로그](work-screen-grammar-catalog.md)와 [프런트엔드 헌법](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)이 정하고, census·계약 시험이 집행한다.
 
 ### 20.1 마스터플랜 항목의 현재 상태(2026-10-17 코드 대조)
 
@@ -1393,4 +1237,4 @@ ERP·공공 업무시스템 화면에 필요한 밀도와 그리드·조회 기�
 
 ### 20.3 하지 않을 것
 
-마스터플랜의 anti-goal을 유지한다: ERP 전용 병렬 컴포넌트 트리·두 번째 컴포넌트 라이브러리를 두지 않고, ADR-0006을 깨는 이중 렌더를 하지 않으며, krds-aligned 프로필에 ERP 밀도를 주입하지 않고, baseline을 올리거나 비워 붉은 검사를 숨기지 않는다.
+마스터플랜의 anti-goal을 유지한다: ERP 전용 병렬 컴포넌트 트리·두 번째 컴포넌트 라이브러리를 두지 않고, ADR-0006을 깨는 이중 렌더를 하지 않으며, krds-aligned 프로필에 ERP 밀도를 주입하지 않고, baseline을 올리거나 비워 붉은 검사를 숨기지 않는다. 표는 스타일을 내장한 그리드(AG Grid 류)로 바꾸지 않는다 — 토큰 체계·ADR-0006과 맞지 않아 마스터플랜 D3가 배제했고, 표 내부는 headless TanStack이다(§20.1).

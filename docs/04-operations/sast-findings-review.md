@@ -1,6 +1,6 @@
 # SAST 오탐 예외 검토 결과
 
-> 승인 목록은 2026-10-21 부터 비어 있다. 그 전의 최초 승인·재검토·구현 감사 기록은 2026-11-22 에 [보관 기록](../archived/sast-findings-review-log.md)으로 옮겼다. 이 문서에는 해소 결과와, 앞으로 예외를 다시 둘 때 따를 결속 형식만 둔다.
+> 승인 목록은 2026-10-21 부터 비어 있다. 그 전의 최초 승인·재검토·구현 감사 기록은 2026-11-23 에 지웠다(Git 이력에 있다). 이 문서에는 해소 결과와, 앞으로 예외를 다시 둘 때 따를 결속 형식만 둔다.
 
 ## 2026-10-21 예외의 근본 해소
 
@@ -23,3 +23,5 @@
 [정책 evaluator](../../scripts/sast-policy.mjs)는 [승인 목록](../../config/security/false-positive-review.json)과 정확히 일치한 탐지만 예외 처리한다. 실제 원본 SARIF의 임의 suppression은 효력이 없다. 감사용 SARIF에는 모든 탐지와 예외 ID·사유·만료일을 남기며 14일 artifact로 보존한다. GitHub Security 게시본에서만 승인된 개별 탐지를 제외하고 나머지 탐지와 규칙 metadata는 유지한다. 이는 GitHub가 문서화한 SARIF 지원 항목에 suppression 판정이 없으므로 자체 게이트의 결정을 명시적으로 반영하는 방식이다([GitHub SARIF 지원](https://docs.github.com/en/code-security/reference/code-scanning/sarif-files/sarif-support)).
 
 예외 설정·해시가 잘못되면 모든 탐지를 보존한 리포트를 생성하고 실패한다. 언어별 기존 예외가 사라진 경우도 재검토를 요구한다. 목록을 바꾸면 그 diff 에 승인 근거를 함께 남긴다(재사용 생성물에서는 `HarnessBaselineIntegrityTest`의 registry 해시 동결 대상이다, DEC-OPS-420). 저장소 변경만으로 원격 ruleset이나 메인 반영을 완료한 것으로 보지 않는다.
+
+예외를 다시 둔 뒤 보완 소스가 바뀌어 해시만 다시 결속할 때(`node scripts/regenerate.mjs --rebind-sast <id> --note "Re-reviewed YYYY-MM-DD: …"`)는 소스·보완 소스 해시와 사유만 바뀌고 규칙·파일·행·fingerprint·만료일은 그대로다. 그 근거는 바뀐 소스의 diff 재검토이며 CodeQL 실행 증거가 아니다 — 탐지 위치·fingerprint·건수 일치는 그 변경의 required `secure-coding` 이 판정한다. 예외의 행은 SARIF 가 보고한 시작 행이고 예외 판정 키에 들어가므로, 사람이 해석한 다른 행으로 바꾸지 않는다.

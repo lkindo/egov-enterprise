@@ -29,7 +29,7 @@
 
 ## 이전 기록
 
-이 로그 전의 적용은 운영 결정으로 기록했다. 원문은 소급 편집하지 않고 링크로만 색인한다. 그보다 앞선 적용 가운데 V2_94~96, V2_97, V2_100(메뉴 재편)의 결과는 [표준 길이 런북](../archived/standard-length-alignment-runbook.md), [로그 보존 정책](log-retention-policy.md), [인가 전환 런북](authorization-cutover-runbook.md#2026-09-11-oci-메뉴-재편-적용-결과)에 있다.
+이 로그 전의 적용은 운영 결정으로 기록했다. 원문은 소급 편집하지 않고 링크로만 색인한다. 그보다 앞선 적용 가운데 2026-09-09 의 두 묶음은 이렇다. 12:21 KST 에 V2_89~93 을 적용했다 — V2_89·90 은 [ADR-0012](../02-architecture/decisions/ADR-0012-retire-blog-domain.md)의 블로그 퇴역(적용 전 블로그·멤버십·게시판 연결 데이터 0)이고, V2_91~93 은 [ADR-0013](../02-architecture/decisions/ADR-0013-standard-text-length-alignment.md)의 표준 길이 정합이다. 13:28 KST 에 [ADR-0014](../02-architecture/decisions/ADR-0014-deferred-standard-design-alignment.md)의 V2_94~96 을 적용했다. 두 묶음 모두 적용 전 전체 백업을 일회용 PostgreSQL 에 복원해 같은 파일로 리허설했고, 81개 업무 표의 행 집계 해시가 승인된 변환을 반영한 기대값과 같았으며, 표준 길이 감사 불일치는 30 → 6(V2_93 뒤) → 0(V2_96 뒤)이 됐다. V2_97, V2_100(메뉴 재편)의 결과는 [로그 보존 정책](log-retention-policy.md), [인가 전환 런북](authorization-cutover-runbook.md#2026-09-11-oci-메뉴-재편-적용-결과)에 있다.
 
 - V2_112·114·115: [DEC-OPS-181](../archived/operational-decisions-history.md#dec-ops-181) ①
 - V2_116~118: [DEC-OPS-207](../archived/operational-decisions-history.md#dec-ops-207)

@@ -72,6 +72,10 @@ node scripts/run-isolated-e2e.mjs -- e2e/journeys/department-work.spec.ts --proj
 
 두 검증은 기존 `business-core:test`와 도메인 E2E 실행 경로에 포함한다. [CI](../../.github/workflows/ci.yml)의 `build ... check`와 E2E shard가 이를 소비하므로 같은 목적의 workflow를 추가할 필요가 없다. [PageableConstructionLinterTest](../../api-server/src/test/java/nuri/api/harness/PageableConstructionLinterTest.java)는 DTO 페이징 변환과 `@Valid`를 검사하는 정적 하네스이며, `unpaged`의 런타임 동작까지 보장한다고 해석하지 않는다. 기능 완료 판정은 [검증 범위 체크리스트](../03-guides/testing-guide.md#기능-완료를-판정하는-검증-범위)를 따른다.
 
+## 내보내기 행 상한은 조회 비용을 막지 않는다
+
+설문 통계 엑셀 내보내기는 [컨트롤러](../../api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveySubmissionApiController.java)가 `getStats()` 로 통계 목록을 다 만든 뒤 [XlsxExport](../../api-server/src/main/java/nuri/api/support/XlsxExport.java)의 행 상한(`MAX_EXPORT_ROWS`)을 검사한다. 상한은 엑셀 생성을 막을 뿐 앞선 조회와 목록 생성의 메모리는 제한하지 않는다. 통계 행은 응답 한 건이 아니라 문항·선택지별 집계라 행 수는 설문 구성이 정한다. 대표 규모의 조회량·최대 메모리는 측정하지 않았고 실제 OOM 도 재현하지 않았다(2026-10-21 평가 재검토의 코드 대조, 2026-11-23 재대조). 상한을 통과했다는 사실을 메모리 안전의 증거로 쓰지 않는다.
+
 ## 현재 비결정적·외부 의존 검증
 
 | 경로 | 저장소 실행 계약 | 성공 판정 | 남는 사각지대 |

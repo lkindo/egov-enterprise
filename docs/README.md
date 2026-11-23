@@ -111,7 +111,7 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 
 ## 04-operations — 운영
 
-[SAST 오탐 예외 검토 결과](04-operations/sast-findings-review.md)는 승인 예외를 코드에서 해소한 결과(2026-10-21 부터 승인 목록 0건)와 예외를 다시 둘 때의 결속 형식을 기록한다. 그 전의 최초 승인·재검토 기록은 [보관 기록](archived/sast-findings-review-log.md)에 있다.
+[SAST 오탐 예외 검토 결과](04-operations/sast-findings-review.md)는 승인 예외를 코드에서 해소한 결과(2026-10-21 부터 승인 목록 0건)와 예외를 다시 둘 때의 결속 형식을 기록한다.
 
 | 문서 | 내용 |
 |---|---|
@@ -147,7 +147,7 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [load-test-guide.md](04-operations/load-test-guide.md) | k6 부하 테스트 |
 | [dependabot-alert-census.md](04-operations/dependabot-alert-census.md) | 의존성 취약점 판정 절차 |
 | [third-party-notices.md](04-operations/third-party-notices.md) | 서드파티 오픈소스·표준프레임워크(Apache-2.0)·외부 스킬·DB 벤더 드라이버/이미지 라이선스 고지 |
-| [readiness-followups.md](04-operations/readiness-followups.md) | 운영 후속 실측 기록 — 의존성, 날짜 입력·화면 연결·화면 문구 편차, 첨부 점검·혼합 부하, 이관 vendor 리허설(Oracle·MySQL·MariaDB·SQL Server·CUBRID·표준화), IP 신뢰 경계, ZAP 경고 분류, 도메인 정합성, 운영 계약 비용 실측. 후속이 끝난 절은 [보관 기록](archived/readiness-followups-closed.md)에 있다 |
+| [readiness-followups.md](04-operations/readiness-followups.md) | 운영 후속 실측 기록 — 의존성, 날짜 입력·화면 연결·화면 문구 편차, 첨부 점검·혼합 부하, 이관 vendor 리허설(Oracle·MySQL·MariaDB·SQL Server·CUBRID·표준화), IP 신뢰 경계, ZAP 경고 분류, 도메인 정합성, 운영 계약 비용 실측 |
 | [standard-metadata-disposition.md](04-operations/standard-metadata-disposition.md) | 표준 용어가 없거나 도메인과 물리 타입이 다른 컬럼마다 등록·정정·예외 처분 후보와 승인 단위(GAP-STD-001, 승인 전 검토 자료) |
 | [project-safe-deletion-analysis.md](04-operations/project-safe-deletion-analysis.md) | 프레임워크 간접 소비를 포함한 안전 삭제 절차 |
 | [adopter-baseline-refreeze.md](04-operations/adopter-baseline-refreeze.md) | 파생 제품(adopter)이 base 채택 후 밀도·브랜드·래칫 기준선을 자기 실측으로 재동결하는 절차 (D10) |
@@ -168,20 +168,8 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 
 | 문서 | 내용 |
 |---|---|
-| [PRD.MD](archived/PRD.MD) | 초기 제품 요구의 역사 원본 — 대체 PRD 확정 전 보존 또는 tombstone 축약 |
-| [TRD.MD](archived/TRD.MD) | 초기 기술 요구 역사 원본 — PRD와 함께 보존 여부 결정 |
-| [url-state-classification-draft.md](archived/url-state-classification-draft.md) | ADR-0009 이전 URL-state 분류의 **역사적 결정 입력물**. 검색어 절대 금지·보류 제안은 현행 정책이 아니다. |
-| [source-simplification-results-2026-10-06.md](archived/source-simplification-results-2026-10-06.md) | 조사 후 순차 정비 — 변경 범위·입력 호환성·조회 수·검증 결과와 남은 경계 |
-| [source-simplification-recheck-2026-10-07.md](archived/source-simplification-recheck-2026-10-07.md) | PR #846 재검증과 추가 전수 정비 — 부서 트리 회귀 수정, 6단계 정비 범위·바뀐 동작·남긴 것과 검증 결과 |
-| [erp-transformation-master-plan.html](archived/erp-transformation-master-plan.html) | 공통 프레임워크 × ERP·공공 업무시스템 전환 6단계 마스터플랜(2026-08-23, 결정 D1~D10 포함) |
-| [adversarial-reassessment-2026-09-27.md](archived/adversarial-reassessment-2026-09-27.md) | 0ef8af32f 기준 Claude 평가의 수용·반박, 11개 분야·33개 도메인 잠정 평가와 개선 배치 |
-| [evidence-first-policy-decisions-2026-09-27.md](archived/evidence-first-policy-decisions-2026-09-27.md) | 개선 루프 R4 권한·공개 범위와 R6 삭제 단위의 당시 선택지 — ADR-0025가 결정한 **결정 입력물** |
-| [standard-length-alignment-runbook.md](archived/standard-length-alignment-runbook.md) | ADR-0013·0014 표준 길이 정합의 단계별 전환·실패·복구 검증 기록(적용 완료) |
 | [legacy-standardization-migration-design.md](archived/legacy-standardization-migration-design.md) | 레거시 표준화 이관의 채택 전 진단(2026-10-13)과 표준용어 식별 방법론 — [ADR-0029](02-architecture/decisions/ADR-0029-legacy-standardization-migration.md)·0031로 채택, 현행 동작은 이관 도구 설계 |
 | [constitution-compaction-2026-11-22.md](archived/constitution-compaction-2026-11-22.md) | 2026-11-22 헌법 조문 축약에서 줄이거나 고친 항의 직전 원문(DEC-OPS-425) — 현행 규범이 아님 |
-| [project-evaluation-adversarial-review-2026-10-21.md](archived/project-evaluation-adversarial-review-2026-10-21.md) | Gemini 상세 품질평가 재검토 — 98.3점의 증거 한계, 코드와 충돌하는 주장, 개선안 14개 판정과 후속 우선순위 (2026-10-21 시점의 재검토 의견) |
-| [readiness-followups-closed.md](archived/readiness-followups-closed.md) | 운영 후속 실측 가운데 후속이 끝난 절 — 라우트 기능 원장 정기 검토·E4 결속, Spring Boot 4 호환 실측·적용 결과, 통합 검토 후속, 프록시 연결 재사용 경합(GAP-FE-002) |
-| [sast-findings-review-log.md](archived/sast-findings-review-log.md) | SAST 오탐 예외의 최초 승인과 2026-09-10~10-17 재검토·구현 감사 기록 — 예외는 2026-10-21 에 모두 해소됐다 |
 
 ### 운영 결정 원문 보존
 

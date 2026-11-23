@@ -29,7 +29,7 @@ test('owned scope includes all constitution artifacts without absorbing vendored
   for (const root of CONSTITUTION_ROOTS) assert.equal(isOwnedDoc(`${root}/artifacts/example.md`), true);
   assert.equal(isOwnedDoc('.agent/skills/generic/SKILL.md'), false);
   assert.equal(isOwnedDoc('build/probe.md'), false);
-  assert.equal(isOwnedDoc('docs/archived/PRD.MD'), true);
+  assert.equal(isOwnedDoc('docs/archived/UPPER-EXT.MD'), true);
 });
 
 test('heading anchors preserve Korean and inline code, distinguish duplicates, and support HTML IDs', () => {

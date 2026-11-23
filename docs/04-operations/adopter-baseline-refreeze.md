@@ -1,6 +1,6 @@
 # Adopter 기준선 재동결 절차 (Baseline Refreeze Runbook)
 
-> [ERP 전환 마스터플랜](../archived/erp-transformation-master-plan.html) Track B **D10** 산출물 — 사용자 위임(2026-08-23)에 따른 집행이다.
+> 2026-08-23 사용자 위임으로 도입한 절차다(DEC-OPS-019, 당시 전환 계획의 D10). 재동결 diff 검토 의무는 그 결정의 채택 조건이다.
 > 이 문서는 파생 제품(adopter)이 이 저장소를 base 로 채택한 뒤, 자체 밀도·브랜드·래칫 **기준선을 자기 제품의 실측값으로 재동결**하는 절차를 정의한다.
 
 ## 1. 배경과 원칙
