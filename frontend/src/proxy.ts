@@ -510,7 +510,7 @@ function isEncodedAuthTokenPath(pathname: string): boolean {
     // Reject only aliases of these token endpoints; encoded business resource identifiers remain valid.
     // A `;` path parameter also misses the static route and reaches the rewrite, so strip it before matching.
     const canonical = decodeURIComponent(pathname).replace(/;[^/]*/g, '');
-    return /^\/api\/v1\/auth\/(?:login|reissue|mfa(?:\/.*)?)\/?$/.test(canonical);
+    return /^\/api\/v1\/auth\/(?:login|logout|reissue|mfa(?:\/.*)?)\/?$/.test(canonical);
   } catch {
     // Malformed paths are handled by normal routing/upstream validation, not guessed or recursively decoded.
     return false;

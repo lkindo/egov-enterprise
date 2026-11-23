@@ -92,16 +92,20 @@ function redirectedToLogin(res: Response): boolean {
 describe('proxy 인증 게이트', () => {
   it.each([
     '/api/v1/auth/%6cogin',
+    '/api/v1/auth/%6cogout',
     '/api/v1/auth/%6dfa/verify',
     '/api/v1/%61uth/mfa/enrollment/confirm',
     '/api/v1/auth/mfa/%72eauthenticate',
     '/api/v1/auth/%72eissue',
     '/api/v1/%61uth/login',
+    '/api/v1/%61uth/logout',
     '/api/%76%31/auth/reissue',
     '/a%70i/v1/auth/login',
     '/api/v1/%61uth/%6Cogin',
     '/api/v1/auth/reissue%2f',
+    '/api/v1/auth/logout%2f',
     '/api/v1/auth/login;a=b',
+    '/api/v1/auth/logout;a=b',
     '/api/v1/auth/reissue;x',
     '/api/v1/auth;x=1/login',
     '/api/v1/auth/mfa;x/verify',
@@ -117,7 +121,7 @@ describe('proxy 인증 게이트', () => {
   });
 
   it.each([
-    '/api/v1/auth/login', '/api/v1/auth/reissue',
+    '/api/v1/auth/login', '/api/v1/auth/logout', '/api/v1/auth/reissue',
     '/api/v1/boards/%ED%95%9C%EA%B8%80', '/api/v1/files/fixture%20file',
     '/api/v1/boards/%2572eissue',
     '/api/v1/boards/a;b',

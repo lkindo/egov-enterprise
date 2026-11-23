@@ -40,26 +40,41 @@ public class OriginValidationFilter extends OncePerRequestFilter {
             String source = origin;
             if ((source == null || source.isBlank()) && referer != null && !referer.isBlank()) {
                 try {
-                    URI refererUri = new URI(referer);
-                    source = refererUri.getScheme() + "://" + refererUri.getAuthority();
+                    URI refererUri = new URI(referer.trim());
+                    String scheme = refererUri.getScheme();
+                    String authority = refererUri.getAuthority();
+                    if (scheme == null || authority == null || authority.isBlank()
+                            || (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme))) {
+                        log.warn(">>> [OriginValidationFilter] Blocked invalid Referer scheme/authority for URI: {}",
+                                nuri.foundation.security.util.SafeLog.text(request.getRequestURI()));
+                        rejectInvalidOrigin(response);
+                        return;
+                    }
+                    source = scheme + "://" + authority;
                 } catch (Exception e) {
-                    log.warn(">>> [OriginValidationFilter] Malformed Referer header");
+                    log.warn(">>> [OriginValidationFilter] Blocked malformed Referer header for URI: {}",
+                            nuri.foundation.security.util.SafeLog.text(request.getRequestURI()));
+                    rejectInvalidOrigin(response);
+                    return;
                 }
             }
 
-            if (source != null && !source.isBlank()) {
-                if (!isAllowedOrigin(source, request)) {
-                    log.warn(">>> [OriginValidationFilter] Blocked state-changing request with invalid origin/referer for URI: {}",
-                            nuri.foundation.security.util.SafeLog.text(request.getRequestURI()));
-                    response.setStatus(HttpStatus.FORBIDDEN.value());
-                    response.setContentType("application/json;charset=UTF-8");
-                    response.getWriter().write("{\"success\":false,\"status\":403,\"code\":\"INVALID_ORIGIN\",\"message\":\"Access denied: untrusted Origin or Referer header\"}");
-                    return;
-                }
+            if (source != null && !source.isBlank() && !isAllowedOrigin(source, request)) {
+                log.warn(">>> [OriginValidationFilter] Blocked state-changing request with invalid origin/referer for URI: {}",
+                        nuri.foundation.security.util.SafeLog.text(request.getRequestURI()));
+                rejectInvalidOrigin(response);
+                return;
             }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private static void rejectInvalidOrigin(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpStatus.FORBIDDEN.value());
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(
+                "{\"success\":false,\"status\":403,\"code\":\"INVALID_ORIGIN\",\"message\":\"Access denied: untrusted Origin or Referer header\"}");
     }
 
     private boolean isAllowedOrigin(String sourceOrigin, HttpServletRequest request) {
@@ -79,7 +94,9 @@ public class OriginValidationFilter extends OncePerRequestFilter {
         int serverPort = request.getServerPort();
         String httpScheme = request.getScheme();
 
-        String sameOriginHttp = httpScheme + "://" + serverName + (serverPort == 80 || serverPort == 443 ? "" : ":" + serverPort);
+        boolean isDefaultPort = ("http".equalsIgnoreCase(httpScheme) && serverPort == 80)
+                || ("https".equalsIgnoreCase(httpScheme) && serverPort == 443);
+        String sameOriginHttp = httpScheme + "://" + serverName + (isDefaultPort ? "" : ":" + serverPort);
         if (sameOriginHttp.equalsIgnoreCase(sourceOrigin)) {
             return true;
         }

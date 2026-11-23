@@ -450,12 +450,27 @@ final class BoardPolicySupport {
         return bytes % mb == 0 ? (bytes / mb) + "MB" : bytes + "바이트";
     }
 
+    static final int MAX_CONTENT_LENGTH = 4000;
+
+    static String sanitizeAndValidateContent(String rawContent) {
+        String sanitized = BoardHtmlSanitizer.sanitize(rawContent);
+        if (!StringUtils.hasText(sanitized)) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "게시글 내용이 비어 있거나 허용되지 않는 태그만 포함되어 있습니다.");
+        }
+        if (sanitized.length() > MAX_CONTENT_LENGTH) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "게시글 본문이 허용 길이(" + MAX_CONTENT_LENGTH + "자)를 초과했습니다.");
+        }
+        return sanitized;
+    }
+
     static BoardDto toPublicFaqDetailDto(BoardDetailResult detail) {
         return BoardDto.builder()
                 .bbsId(detail.getBbsId())
                 .pstSn(detail.getPstSn())
                 .pstTtl(detail.getPstTtl())
-                .pstCn(detail.getPstCn())
+                .pstCn(BoardHtmlSanitizer.sanitize(detail.getPstCn()))
                 .inqCnt(detail.getInqCnt())
                 .crtDt(detail.getCrtDt())
                 .useYn(detail.getUseYn())

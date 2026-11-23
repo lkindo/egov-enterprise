@@ -56,9 +56,10 @@ public class CryptoUtil implements ApplicationContextAware {
         log.info("### CryptoUtil: setApplicationContext called");
         var env = applicationContext.getEnvironment();
         if (env != null && env.acceptsProfiles(Profiles.of("prod"))
-                && (algorithmKey == null || algorithmKey.isBlank() || WEAK_DEFAULT_KEYS.contains(algorithmKey))) {
+                && (algorithmKey == null || algorithmKey.isBlank() || algorithmKey.contains("${")
+                        || WEAK_DEFAULT_KEYS.contains(algorithmKey))) {
             throw new IllegalStateException(
-                    "prod 프로파일에서는 약한 기본 암호화 키 또는 빈 키를 사용할 수 없습니다. 외부 시크릿(ALGORITHM_KEY)을 주입하십시오.");
+                    "prod 프로파일에서는 약한 기본 암호화 키, 빈 키 또는 미해결 플레이스홀더를 사용할 수 없습니다. 외부 시크릿(ALGORITHM_KEY)을 주입하십시오.");
         }
         CryptoUtil.cryptoService = (EgovCryptoService) applicationContext.getBean("ariacryptoService");
     }

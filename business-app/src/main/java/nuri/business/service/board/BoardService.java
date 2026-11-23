@@ -474,7 +474,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
                                         .userNm(userNmToSet)
                                         .sortOrdr(sortOrdr)
                                         .pstTtl(request.pstTtl())
-                                        .pstCn(request.pstCn())
+                                        .pstCn(sanitizeAndValidateContent(request.pstCn()))
                                         // [2026-10-23 ADR-0040 결정 12] 빈 날짜는 저장하지 않는다(null).
                                         .pstBgngYmd(pstBgngYmd)
                                         .pstEndYmd(requestedYmd(request.pstEndYmd()))
@@ -566,7 +566,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
                                 .sortOrdr(parent.getSortOrdr())
                                 .ansLv(0)
                                 .pstTtl(request.pstTtl())
-                                .pstCn(request.pstCn())
+                                .pstCn(sanitizeAndValidateContent(request.pstCn()))
                                 .pstBgngYmd(pstBgngYmd)
                                 .pstEndYmd(requestedYmd(request.pstEndYmd()))
                                 .atchFileSn(request.atchFileSn())
@@ -978,7 +978,8 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
                  */
                 String requestedStart = requestedYmd(request.pstBgngYmd());
                 String requestedEnd = requestedYmd(request.pstEndYmd());
-                board.update(request.pstTtl(), request.pstCn(),
+                String sanitizedContent = BoardPolicySupport.sanitizeAndValidateContent(request.pstCn());
+                board.update(request.pstTtl(), sanitizedContent,
                                 board.getUserId(),   // 저자(userId/userNm)는 불변 — request 로 재지정 금지(정체성 위조 방지)
                                 board.getUserNm(),
                                 board.getPswd(),     // [2026-09-27 DIP B5 F9] 폐기 필드 — 요청 값으로 바꾸지 않는다(기존 값은 지우지 않는다).

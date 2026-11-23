@@ -7,6 +7,7 @@ import { POST as login } from '../login/route';
 import { POST as logout } from '../logout/route';
 import { POST as reissue } from '../reissue/route';
 import { POST as aliasLogin } from '../../v1/auth/login/route';
+import { POST as aliasLogout } from '../../v1/auth/logout/route';
 import { POST as aliasReissue } from '../../v1/auth/reissue/route';
 
 /**
@@ -99,6 +100,23 @@ describe.each([
   });
 });
 
+describe('/api/v1/auth/logout 브라우저 별칭 계약', () => {
+  it('/api/auth/logout 과 동일한 핸들러로 세션을 폐기하고 인증·표시 쿠키를 모두 만료시킨다', async () => {
+    expect(aliasLogout).toBe(logout);
+    mockedPost.mockResolvedValue({ status: 200, data: { success: true }, headers: {} });
+
+    const response = await aliasLogout(postRequest('/api/v1/auth/logout', undefined, {
+      cookie: 'accessToken=t; refreshToken=r',
+    }));
+
+    expect(response.status).toBe(200);
+    for (const name of ['accessToken', 'refreshToken', 'session_exp']) {
+      expect(setCookie(response, name)?.value).toBe('');
+      expect(setCookie(response, name)?.attrs.get('expires')).toBe(new Date(0).toUTCString());
+    }
+  });
+});
+
 interface ParsedCookie {
   value: string;
   attrs: Map<string, string>;
@@ -161,6 +179,7 @@ describe.each([
   { path: '/api/auth/login', handler: login, body: { userId: 'fixture', password: 'fixture' }, status: 500 },
   { path: '/api/auth/reissue', handler: reissue, body: undefined, status: 502 },
   { path: '/api/auth/logout', handler: logout, body: undefined, status: 200 },
+  { path: '/api/v1/auth/logout', handler: aliasLogout, body: undefined, status: 200 },
 ])('$path transport failure boundary', ({ path, handler, body, status }) => {
   it('bounds upstream wait and returns only the safe failure contract', async () => {
     const privateDetail = 'synthetic-private-network-detail';

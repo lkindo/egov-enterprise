@@ -24,7 +24,6 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import nuri.business.security.service.EgovPasswordEncoder;
 import nuri.business.security.service.PasswordEncoders;
@@ -126,7 +125,8 @@ public class ApiSecurityConfig {
         public SecurityFilterChain apiSecurityFilterChain(
                         HttpSecurity http,
                         EgovAuthenticationProvider egovAuthenticationProvider,
-                        OperationalAuditInterceptor operationalAuditInterceptor) throws Exception {
+                        OperationalAuditInterceptor operationalAuditInterceptor,
+                        nuri.business.security.authorization.PermissionPolicy permissionPolicy) throws Exception {
                 HttpStatusEntryPoint unauthorizedEntryPoint = new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED);
                 http
                                 .securityMatchers(matchers -> matchers.requestMatchers(
@@ -168,7 +168,7 @@ public class ApiSecurityConfig {
                                                 }
 
                                                 auth.anyRequest().access(new nuri.business.security.authorization.OperationAuthorizationManager(
-                                                        new nuri.business.security.authorization.PermissionPolicy()));
+                                                                permissionPolicy));
                                 })
                                 .exceptionHandling(ex -> ex
                                                 .authenticationEntryPoint((request, response, authenticationException) -> {
@@ -193,22 +193,7 @@ public class ApiSecurityConfig {
                                 // [보안 H3] 활성 체인에 보안 응답 헤더 부여(HSTS/CSP/Referrer/frameOptions 등).
                                 // 이 헤더를 정의한 business-suite SecurityConfig는 @ConditionalOnMissingClass(ApiSecurityConfig)라
                                 // api-server 구동 시 항상 비활성이므로, 여기서 동등 세트를 직접 적용한다.
-                                .headers(headers -> headers
-                                                .frameOptions(frame -> frame.sameOrigin())
-                                                .contentTypeOptions(org.springframework.security.config.Customizer.withDefaults())
-                                                .xssProtection(xss -> xss.headerValue(
-                                                                org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
-                                                .httpStrictTransportSecurity(hsts -> hsts
-                                                                 .maxAgeInSeconds(31536000L)
-                                                                 .includeSubDomains(true)
-                                                                 .preload(true))
-                                                .referrerPolicy(referrer -> referrer.policy(
-                                                                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
-                                                                // [2026-09-23 ZAP 90004] 교차 출처 no-cors 하위 리소스 로드를 막는다. 브라우저가 이 서버의
-                                                                //   바이트를 직접 <img src> 로 읽는 경로는 없다 — 첨부는 전부 인증 axios 로 받아 object URL
-                                                                //   로 바꾸고(FileService.fetchBlob), CORS fetch 는 이 헤더의 대상이 아니다.
-                                                                .crossOriginResourcePolicy(corp -> corp.policy(
-                                                                                org.springframework.security.web.header.writers.CrossOriginResourcePolicyHeaderWriter.CrossOriginResourcePolicy.SAME_ORIGIN)))
+                                .headers(ApiSecurityConfig::configureSecurityHeaders)
                                 .authenticationProvider(egovAuthenticationProvider)
                                 .addFilterBefore(new CredentialRequestTargetFilter(),
                                                 org.springframework.web.filter.CorsFilter.class)
@@ -228,14 +213,17 @@ public class ApiSecurityConfig {
                 http
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(csrf -> csrf
-                                                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                                                .csrfTokenRepository(CredentialCookieCsrfPolicy.tokenRepository(cookieSecure)))
                                 .httpBasic(httpBasic -> httpBasic.disable())
                                 .formLogin(formLogin -> formLogin.disable())
                                 .logout(logout -> logout.disable())
                                 // [2026-09-24 ZAP 90004] CORP 를 API 체인에만 붙여 정작 지적된 /v3/api-docs(이 체인)에는
-                                //   닿지 않았다. 문서·정적 경로도 교차 출처 no-cors 로드를 막는다.
-                                .headers(headers -> headers.crossOriginResourcePolicy(corp -> corp.policy(
-                                                org.springframework.security.web.header.writers.CrossOriginResourcePolicyHeaderWriter.CrossOriginResourcePolicy.SAME_ORIGIN)))
+                                //   닿지 않았다. 문서·정적 경로도 API 체인과 동일한 보안 헤더·CSP·CORP 를 적용한다.
+                                //   비운영 환경의 Swagger UI 스크립트·스타일은 유지하고 prod 에서는 default-src 'none' 으로 잠근다.
+                                .headers(headers -> configureSecurityHeaders(headers,
+                                                environment.acceptsProfiles(org.springframework.core.env.Profiles.of("prod"))
+                                                                ? "default-src 'none'; frame-ancestors 'none'"
+                                                                : "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"))
                                 .authorizeHttpRequests(auth -> {
                                                 auth.requestMatchers(
                                                                 pathMatcher("/css/**"),
@@ -265,8 +253,35 @@ public class ApiSecurityConfig {
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .addFilterBefore(new CredentialRequestTargetFilter(),
-                                                org.springframework.web.filter.CorsFilter.class);
+                                                org.springframework.web.filter.CorsFilter.class)
+                                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
+                                                UsernamePasswordAuthenticationFilter.class);
                 return http.build();
+        }
+
+        private static void configureSecurityHeaders(
+                        org.springframework.security.config.annotation.web.configurers.HeadersConfigurer<HttpSecurity> headers) {
+                configureSecurityHeaders(headers, "default-src 'none'; frame-ancestors 'none'");
+        }
+
+        private static void configureSecurityHeaders(
+                        org.springframework.security.config.annotation.web.configurers.HeadersConfigurer<HttpSecurity> headers,
+                        String cspDirectives) {
+                headers
+                                .frameOptions(frame -> frame.sameOrigin())
+                                .contentTypeOptions(org.springframework.security.config.Customizer.withDefaults())
+                                .xssProtection(xss -> xss.headerValue(
+                                                org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                                .httpStrictTransportSecurity(hsts -> hsts
+                                                .maxAgeInSeconds(31536000L)
+                                                .includeSubDomains(true)
+                                                .preload(true))
+                                .referrerPolicy(referrer -> referrer.policy(
+                                                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                                // [2026-09-23 ZAP 90004] 교차 출처 no-cors 하위 리소스 로드를 막는다.
+                                .crossOriginResourcePolicy(corp -> corp.policy(
+                                                org.springframework.security.web.header.writers.CrossOriginResourcePolicyHeaderWriter.CrossOriginResourcePolicy.SAME_ORIGIN))
+                                .contentSecurityPolicy(csp -> csp.policyDirectives(cspDirectives));
         }
 
         @Bean
