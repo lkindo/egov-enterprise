@@ -42,6 +42,7 @@ mapstruct = "1.6.3"
 #   유지하고 JPA 본체에 Jakarta API를 사용하므로 JPA classifier를 제거하며 APT jakarta는 유지한다.
 querydsl = "7.7"
 lombok-mapstruct-binding = "0.2.0"
+jsoup = "1.23.2"
 
 
 [libraries]
@@ -107,4 +108,5 @@ querydsl-apt = { group = "io.github.openfeign.querydsl", name = "querydsl-apt", 
 #   버전은 Spring Boot BOM 관리(spring-framework 계열과 동일 라인).
 spring-messaging = { group = "org.springframework", name = "spring-messaging" }
 spring-boot-starter-aop = { group = "org.springframework.boot", name = "spring-boot-starter-aspectj" } # Boot 4 에서 starter-aop 가 starter-aspectj 로 개명됐다
+jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
 

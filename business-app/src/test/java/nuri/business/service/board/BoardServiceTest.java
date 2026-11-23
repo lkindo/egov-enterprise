@@ -2817,6 +2817,136 @@ class BoardServiceTest {
     }
 
     @Test
+    @DisplayName("게시글 등록·답글·수정은 본문(pstCn)의 위험 HTML/스크립트를 저장 전에 소독한다")
+    void createReplyAndUpdateSanitizeHtmlContent() {
+        actAs("user1");
+        String dirtyHtml = "<p>안전본문</p><script>alert(1)</script><img src=\"javascript:alert(2)\" onerror=\"alert(3)\">";
+        BoardMaster master = policyMaster("BBS_01", "NONE", null);
+        Board parent = Board.builder().bbsId("BBS_01").pstSn(1L).sortOrdr(100L).ansLv(0).build();
+        UserDto user = UserDto.builder().userId("user1").userNm("Tester").build();
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(userService.getUserById("user1")).willReturn(user);
+        given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
+        given(boardRepository.findMaxAnsSn("BBS_01", 100L)).willReturn(0L);
+        given(boardRepository.findById(1L)).willReturn(Optional.of(parent));
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
+
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "제목", dirtyHtml,
+                null, null, null, null, null, null, null, null, null, null);
+        boardService.createPost("user1", request);
+        Board created = captureSavedBoard();
+        assertThat(created.getPstCn()).isEqualTo("<p>안전본문</p><img>");
+
+        org.mockito.Mockito.reset(boardRepository);
+        given(boardRepository.findById(1L)).willReturn(Optional.of(parent));
+        given(boardRepository.findMaxAnsSn("BBS_01", 100L)).willReturn(0L);
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
+        boardService.replyPost("user1", 1L, request);
+        Board replied = captureSavedBoard();
+        assertThat(replied.getPstCn()).isEqualTo("<p>안전본문</p><img>");
+
+        Board owned = versionedPost("BBS_01", 35L, "user1", null, null);
+        given(boardRepository.findById(35L)).willReturn(Optional.of(owned));
+        BoardSaveRequest updateReq = new BoardSaveRequest("BBS_01", "수정제목", dirtyHtml,
+                null, null, null, null, null, null, null, null, null, 3);
+        boardService.updatePost("BBS_01", 35L, updateReq);
+        assertThat(owned.getPstCn()).isEqualTo("<p>안전본문</p><img>");
+    }
+
+    @Test
+    @DisplayName("공개 FAQ 상세 조회는 기존 DB에 저장된 레거시 HTML 본문도 소독해 반환한다")
+    void getPublicFaqDetailSanitizesLegacyStoredHtml() {
+        given(boardRepository.findPublicArticleDetail("BBSMSTR_AAAAAAAAAAAA", 16L, TODAY)).willReturn(Optional.of(
+                BoardDetailResult.builder()
+                        .pstSn(16L)
+                        .bbsId("BBSMSTR_AAAAAAAAAAAA")
+                        .pstTtl("FAQ")
+                        .pstCn("<p>안내</p><svg onload=\"alert(1)\"></svg><a href=\"https://example.com\">링크</a>")
+                        .useYn("Y")
+                        .build()));
+
+        BoardDto dto = boardService.getPublicFaqDetail(16L);
+
+        assertThat(dto.pstCn())
+                .contains("<p>안내</p>")
+                .contains("rel=\"noopener noreferrer\"")
+                .doesNotContain("<svg")
+                .doesNotContain("onload");
+    }
+
+    @Test
+    @DisplayName("스크립트 등 위험 태그만 남아 소독 후 본문이 비면 등록·답글·수정 모두 400 을 던지고 저장하지 않는다")
+    void blankAfterSanitizeRejectsWithInvalidInputAcrossWrites() {
+        actAs("user1");
+        BoardMaster master = policyMaster("BBS_01", "NONE", null);
+        Board parent = Board.builder().bbsId("BBS_01").pstSn(1L).sortOrdr(100L).ansLv(0).build();
+        Board owned = versionedPost("BBS_01", 36L, "user1", null, null);
+        String originalContent = owned.getPstCn();
+        UserDto user = UserDto.builder().userId("user1").userNm("Tester").build();
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(userService.getUserById("user1")).willReturn(user);
+        given(boardRepository.findById(1L)).willReturn(Optional.of(parent));
+        given(boardRepository.findById(36L)).willReturn(Optional.of(owned));
+
+        BoardSaveRequest scriptOnly = new BoardSaveRequest("BBS_01", "제목", "<script>alert(1)</script>",
+                null, null, null, null, null, null, null, null, null, 3);
+
+        assertThatThrownBy(() -> boardService.createPost("user1", scriptOnly))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThatThrownBy(() -> boardService.replyPost("user1", 1L, scriptOnly))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThatThrownBy(() -> boardService.updatePost("BBS_01", 36L, scriptOnly))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+
+        verify(boardRepository, org.mockito.Mockito.never()).save(any(Board.class));
+        assertThat(owned.getPstCn()).isEqualTo(originalContent);
+    }
+
+    @Test
+    @DisplayName("원문은 4000자 이하라도 소독·엔티티 직렬화 후 4000자를 넘으면 400 을 던지고, 정확히 4000자는 통과한다")
+    void postSanitizeOverMaxLengthRejectsWith400While4000BoundaryPasses() {
+        actAs("user1");
+        BoardMaster master = policyMaster("BBS_01", "NONE", null);
+        Board parent = Board.builder().bbsId("BBS_01").pstSn(1L).sortOrdr(100L).ansLv(0).build();
+        Board owned = versionedPost("BBS_01", 37L, "user1", null, null);
+        String originalContent = owned.getPstCn();
+        UserDto user = UserDto.builder().userId("user1").userNm("Tester").build();
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(userService.getUserById("user1")).willReturn(user);
+        given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
+        given(boardRepository.findById(1L)).willReturn(Optional.of(parent));
+        given(boardRepository.findById(37L)).willReturn(Optional.of(owned));
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
+
+        String raw3993ExpandsTo4005 = "a".repeat(3990) + "&&&";
+        BoardSaveRequest expanding = new BoardSaveRequest("BBS_01", "제목", raw3993ExpandsTo4005,
+                null, null, null, null, null, null, null, null, null, 3);
+
+        assertThatThrownBy(() -> boardService.createPost("user1", expanding))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThatThrownBy(() -> boardService.replyPost("user1", 1L, expanding))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThatThrownBy(() -> boardService.updatePost("BBS_01", 37L, expanding))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+
+        verify(boardRepository, org.mockito.Mockito.never()).save(any(Board.class));
+        assertThat(owned.getPstCn()).isEqualTo(originalContent);
+
+        BoardSaveRequest exact4000 = new BoardSaveRequest("BBS_01", "제목", "a".repeat(4000),
+                null, null, null, null, null, null, null, null, null, null);
+        assertThat(boardService.createPost("user1", exact4000)).isPositive();
+    }
+
+    @Test
     @DisplayName("🚨 추천을 받지 않는 게시판의 새 추천은 400 이고 이력·추천 수를 건드리지 않는다 (ADR-0040 결정 6)")
     void incrementLike_rejectsWhenRecommendationsOff() {
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(policyMaster("BBS_01", null, "N")));

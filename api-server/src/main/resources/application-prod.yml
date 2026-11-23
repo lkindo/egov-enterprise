@@ -1,6 +1,10 @@
 server:
   port: ${SERVER_PORT:8080}
   shutdown: graceful
+  error:
+    include-message: never
+    whitelabel:
+      enabled: false
 
 spring:
   # [W1-05] 운영에서는 스키마 baseline 을 자동으로 잡지 않는다.
@@ -73,7 +77,7 @@ management:
       show-details: when_authorized
   info:
     env:
-      enabled: true
+      enabled: false
 
 logging:
   # [W1-11] 파일 로그 설정 제거 — 운영은 stdout 단독이다(logback-spring.xml 참조).

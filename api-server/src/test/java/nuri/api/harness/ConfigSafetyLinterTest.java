@@ -346,6 +346,7 @@ class ConfigSafetyLinterTest {
             }
         }
         violations.addAll(beanDefinitionOverridingViolations(base, flattenYaml(appTestBaseYml), profileYamls));
+        violations.addAll(prodErrorAndInfoExposureViolations(base, prod));
 
         if (!violations.isEmpty()) {
             StringBuilder sb = new StringBuilder();
@@ -1694,6 +1695,60 @@ class ConfigSafetyLinterTest {
         } catch (NumberFormatException ex) {
             return null;
         }
+    }
+
+    List<String> prodErrorAndInfoExposureViolations(Map<String, String> base, Map<String, String> prod) {
+        List<String> violations = new ArrayList<>();
+        Map<String, String> effectiveProd = effectiveConfig(base, prod);
+        checkProdEffectiveSetting(effectiveProd, "server.error.include-message", "never",
+                "운영 오류 응답에 내부 예외 메시지가 노출됩니다.", violations);
+        checkProdEffectiveSetting(effectiveProd, "server.error.whitelabel.enabled", "false",
+                "운영 서버에서 기본 Whitelabel HTML 에러 페이지가 노출될 수 있습니다.", violations);
+        checkProdEffectiveSetting(effectiveProd, "management.info.env.enabled", "false",
+                "/actuator/info env 노출 설정이 활성화될 수 있습니다.", violations);
+        return violations;
+    }
+
+    private void checkProdEffectiveSetting(
+            Map<String, String> effectiveProd,
+            String key,
+            String expected,
+            String impact,
+            List<String> violations) {
+        String raw = effectiveProd.get(key);
+        String actual = raw == null
+                ? ""
+                : resolvePlaceholderDefault(unquote(raw)).trim().toLowerCase(Locale.ROOT);
+        if (!expected.equals(actual)) {
+            violations.add("application-prod.yml: " + key + " 실효값이 '" + expected + "' 가 아닙니다 ("
+                    + (raw == null ? "<missing>" : raw) + ") — " + impact);
+        }
+    }
+
+    @Test
+    @DisplayName("운영 error 응답·info env 노출 차단 게이트는 완화 값을 즉시 거부한다")
+    void prodErrorAndInfoExposureRejectsPermissiveValues() throws IOException {
+        Path root = resolveRepoRoot();
+        Map<String, String> base = flattenYaml(requireFile(root, APP_YML));
+        Map<String, String> prod = flattenYaml(requireFile(root, APP_PROD_YML));
+        assertTrue(prodErrorAndInfoExposureViolations(base, prod).isEmpty(),
+                () -> prodErrorAndInfoExposureViolations(base, prod).toString());
+
+        Map<String, String> missingErrorOverride = new LinkedHashMap<>(prod);
+        missingErrorOverride.remove("server.error.include-message");
+        assertFalse(prodErrorAndInfoExposureViolations(base, missingErrorOverride).isEmpty());
+
+        Map<String, String> permissiveMessage = new LinkedHashMap<>(prod);
+        permissiveMessage.put("server.error.include-message", "always");
+        assertFalse(prodErrorAndInfoExposureViolations(base, permissiveMessage).isEmpty());
+
+        Map<String, String> whitelabelOn = new LinkedHashMap<>(prod);
+        whitelabelOn.put("server.error.whitelabel.enabled", "${WHITELABEL_ENABLED:true}");
+        assertFalse(prodErrorAndInfoExposureViolations(base, whitelabelOn).isEmpty());
+
+        Map<String, String> infoEnvOn = new LinkedHashMap<>(prod);
+        infoEnvOn.put("management.info.env.enabled", "true");
+        assertFalse(prodErrorAndInfoExposureViolations(base, infoEnvOn).isEmpty());
     }
 
     // ---- 경로 해석 -------------------------------------------------------------------

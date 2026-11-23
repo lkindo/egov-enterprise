@@ -288,7 +288,8 @@ class CryptoUtilTest {
             lenient().when(prodCtx.getBean("ariacryptoService")).thenReturn(cryptoService);
 
             try {
-                for (String weakOrMissing : java.util.Arrays.asList("egovframe", "egoventerprise0123", "", "   ", null)) {
+                for (String weakOrMissing : java.util.Arrays.asList(
+                        "egovframe", "egoventerprise0123", "", "   ", "${ALGORITHM_KEY}", "prefix-${KEY}-suffix", null)) {
                     CryptoUtil candidate = new CryptoUtil();
                     candidate.setAlgorithmKey(weakOrMissing);
                     org.assertj.core.api.Assertions.assertThatThrownBy(() -> candidate.setApplicationContext(prodCtx))

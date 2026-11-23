@@ -19,7 +19,8 @@ public class LegacyConfig {
     public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
         PropertySourcesPlaceholderConfigurer configurer = new PropertySourcesPlaceholderConfigurer();
         configurer.setLocations(new ClassPathResource("egovframework/egovProps/globals.properties"));
-        configurer.setIgnoreUnresolvablePlaceholders(true);
+        // @Value 미해결 프로퍼티 플레이스홀더(${...})를 조용히 리터럴로 통과시키지 않고 기동 시 즉시 실패시킨다(@ConfigurationProperties Binder 경로는 별도 검증 대상).
+        configurer.setIgnoreUnresolvablePlaceholders(false);
         return configurer;
     }
 

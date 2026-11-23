@@ -158,15 +158,81 @@ class OriginValidationFilterTest {
     }
 
     @Test
-    @DisplayName("깨진 Referer 는 출처 복원에 실패해 검사를 건너뛴다 (500 이 아니다)")
-    void malformedRefererDoesNotBreakFilter() throws ServletException, IOException {
+    @DisplayName("깨진 Referer 는 출처 복원에 실패해 fail-closed 로 403 차단한다")
+    void malformedRefererIsBlockedWith403() throws ServletException, IOException {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/x");
         request.addHeader("Referer", "ht!tp://[malformed");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         filter.doFilter(request, response, filterChain);
 
-        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(response.getStatus()).isEqualTo(403);
+        assertThat(response.getContentAsString()).contains("INVALID_ORIGIN");
+        verify(filterChain, never()).doFilter(request, response);
+    }
+
+    @Test
+    @DisplayName("상대 경로·authority 누락·비 HTTP 스킴 Referer 는 403 차단한다")
+    void nonHttpOrAuthorityMissingRefererIsBlockedWith403() throws ServletException, IOException {
+        for (String badReferer : java.util.List.of(
+                "/relative/path",
+                "http:///missing-host",
+                "javascript:alert(1)",
+                "ftp://localhost:3000/page")) {
+            MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/x");
+            request.addHeader("Referer", badReferer);
+            MockHttpServletResponse response = new MockHttpServletResponse();
+
+            filter.doFilter(request, response, filterChain);
+
+            assertThat(response.getStatus()).as("badReferer=" + badReferer).isEqualTo(403);
+            assertThat(response.getContentAsString()).contains("INVALID_ORIGIN");
+        }
+        verify(filterChain, never()).doFilter(any(), any());
+    }
+
+    @Test
+    @DisplayName("동일 출처 기본 포트 판정은 http=80, https=443 쌍을 엄격히 일치시킨다")
+    void sameOriginDefaultPortMatchesSchemeStrictly() throws ServletException, IOException {
+        // http + 443 -> 기본 포트가 아니므로 http://example.com(생략 포트)는 403, :443 명시는 200
+        MockHttpServletRequest http443Mismatch = new MockHttpServletRequest("POST", "/api/v1/x");
+        http443Mismatch.setScheme("http");
+        http443Mismatch.setServerName("example.com");
+        http443Mismatch.setServerPort(443);
+        http443Mismatch.addHeader("Origin", "http://example.com");
+        MockHttpServletResponse mismatchRes = new MockHttpServletResponse();
+        filter.doFilter(http443Mismatch, mismatchRes, filterChain);
+        assertThat(mismatchRes.getStatus()).isEqualTo(403);
+
+        // https + 80 -> 기본 포트가 아니므로 https://example.com(생략 포트)는 403
+        MockHttpServletRequest https80Mismatch = new MockHttpServletRequest("POST", "/api/v1/x");
+        https80Mismatch.setScheme("https");
+        https80Mismatch.setServerName("example.com");
+        https80Mismatch.setServerPort(80);
+        https80Mismatch.addHeader("Origin", "https://example.com");
+        MockHttpServletResponse https80Res = new MockHttpServletResponse();
+        filter.doFilter(https80Mismatch, https80Res, filterChain);
+        assertThat(https80Res.getStatus()).isEqualTo(403);
+
+        // https + 443 -> https://example.com 통과
+        MockHttpServletRequest https443Ok = new MockHttpServletRequest("POST", "/api/v1/x");
+        https443Ok.setScheme("https");
+        https443Ok.setServerName("example.com");
+        https443Ok.setServerPort(443);
+        https443Ok.addHeader("Origin", "https://example.com");
+        MockHttpServletResponse https443Res = new MockHttpServletResponse();
+        filter.doFilter(https443Ok, https443Res, filterChain);
+        assertThat(https443Res.getStatus()).isEqualTo(200);
+
+        // http + 443 -> http://example.com:443 명시 시 통과
+        MockHttpServletRequest http443ExplicitOk = new MockHttpServletRequest("POST", "/api/v1/x");
+        http443ExplicitOk.setScheme("http");
+        http443ExplicitOk.setServerName("example.com");
+        http443ExplicitOk.setServerPort(443);
+        http443ExplicitOk.addHeader("Origin", "http://example.com:443");
+        MockHttpServletResponse explicitRes = new MockHttpServletResponse();
+        filter.doFilter(http443ExplicitOk, explicitRes, filterChain);
+        assertThat(explicitRes.getStatus()).isEqualTo(200);
     }
 
     @Test
