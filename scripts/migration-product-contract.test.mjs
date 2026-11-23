@@ -6,8 +6,11 @@ import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
-import { generateMigrationProduct } from './generate-migration-product.mjs';
+import { isOwnedDoc, validateDocumentationLinks } from './docs-link-integrity.mjs';
+import { MIGRATION_PRODUCT_DOCS, generateMigrationProduct } from './generate-migration-product.mjs';
 import { migrationProvenanceDigest, verifySourceMigrationProfileProvenance } from './migration-profile-provenance.mjs';
+import { readMigrationAssetLedger } from './reusable-product-assets.mjs';
+import { ownedDocFiles } from './reusable-source-docs.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -75,6 +78,17 @@ test('standalone migration export retains independent verification and clears in
   assert.equal(readFileSync(resolve(generatedRoot, 'db_columns.json'), 'utf8'),
     readFileSync(resolve(root, 'db_columns.json'), 'utf8'),
     'default standalone export includes upstream db_columns.json for target standard validation');
+  // 이관 문서는 이 제품으로만 나간다(DEC-OPS-428). 제품에 없는 대상을 가리키던 링크는 글자만 남아 끊긴 링크가 없다.
+  for (const doc of MIGRATION_PRODUCT_DOCS) assert.ok(existsSync(resolve(generatedRoot, doc)), doc);
+  const productDocs = ownedDocFiles(generatedRoot);
+  assert.ok(productDocs.includes('README.md') && MIGRATION_PRODUCT_DOCS.every(doc => productDocs.includes(doc)));
+  assert.deepEqual(validateDocumentationLinks({ repoRoot: generatedRoot, files: productDocs }).errors
+    .filter(error => isOwnedDoc(error.split(' -> ')[0])), []);
+  assert.match(readFileSync(resolve(generatedRoot, 'README.md'), 'utf8'), /\[승인형 이관과 부분 적재 복구\]\(docs\/04-operations\/migration-recovery-runbook\.md\)/);
+  // 생성 애플리케이션 프로젝트에서 뺀 이관 문서는 여기 실려야 한다. 작업공간 실행 안내만 예외다 — 그 도구는 원본 저장소에서만 돈다.
+  const removedFromApplications = readMigrationAssetLedger(root).assets.filter(asset => asset.startsWith('docs/'));
+  assert.deepEqual(removedFromApplications.filter(doc => !MIGRATION_PRODUCT_DOCS.includes(doc)),
+    ['docs/03-guides/migration-workspace-guide.md']);
   const isolatedRoot = temporaryRoot(t);
   const outputRoot = resolve(isolatedRoot, 'product');
   cpSync(generatedRoot, outputRoot, { recursive: true });
