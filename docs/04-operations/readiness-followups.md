@@ -57,6 +57,8 @@ GAP-WIRING-001 행은 그 수를 다시 적지 않고 원장에 링크한다(DEC
 원장은 [operation census](../../config/governance/operation-consumer-census.json)와
 [활성 gap](../../.agent/memory/known-gaps.md)의 GAP-WIRING-001이다.
 
+[라우트 기능 원장](../../config/ui-route-capabilities.json)의 동작 열거는 서버가 그 동작을 처리한다는 뜻이 아니다. 화면 관리(`program.screen-list`)는 원장에 `dataSource: admin-menus-api` 와 `search`·`paginate`·`sort` 를 함께 적지만, 서버에서 읽는 것은 메뉴 연결 상태(`getMenuStructure`)뿐이다 — 화면 목록은 생성된 화면 목록(`SCREEN_REGISTRY`)이고 검색·쪽 나누기·정렬은 브라우저가 한다(`filterScreens`·`slice`). 이 화면에 서버 검색·페이징이 있는 것으로 읽지 않는다.
+
 ## 실시간 연결 표시 정정 (2026-09-27)
 
 DEC-OPS-140의 승인 의도는 화면이 서버가 제공하는 값의 의미를 정확히 표시하는 것이다.

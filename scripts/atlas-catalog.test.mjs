@@ -503,6 +503,12 @@ test('new documentation and a new declared module are visible without editing th
     assert.equal(changed.facts.documentCount, baseline.facts.documentCount + 1);
     assert.ok(changed.catalogs.documents.some(doc => doc.title === '신규 문서'));
   });
+  // 보관 폴더의 대문자 확장자 문서도 수집하고, 선언한 상태와 무관하게 historical 로 둔다 — 지운 PRD.MD·TRD.MD 가 지키던 범위다.
+  add('docs/archived/synthetic-archived-note.MD', '# 보관 합성 문서\n\n상태: 제안\n', () => {
+    const archived = buildAtlasCatalog(fixture).catalogs.documents.find(doc => doc.id === 'docs/archived/synthetic-archived-note.MD');
+    assert.ok(archived, 'docs/archived 의 문서가 카탈로그에서 빠졌다');
+    assert.equal(archived.status, 'historical');
+  });
   add('synthetic-module/build.gradle', "dependencies {\n    implementation project(':foundation')\n}\n", () => {
     mutate('settings.gradle', text => `${text}\ninclude 'synthetic-module'\n`, () => {
       const changed = buildAtlasCatalog(fixture);

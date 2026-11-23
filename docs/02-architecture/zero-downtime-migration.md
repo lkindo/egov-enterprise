@@ -72,7 +72,9 @@ PostgreSQL 스키마 변경의 구버전 호환성 파손 위험을 줄이기 �
 
 ### 3.3 여러 파일로 나눈 단계의 배포 경계
 
-한 변경을 여러 Flyway 파일로 나눴다면(예: 길이 확장 → 입력 CHECK → 물리 축소, Expand → Fence → Contract) 운영 중인 환경에서는 단계 사이에 Flyway target 을 그 단계의 버전으로 고정한다. 앱은 기동할 때 적용하지 않은 파일을 모두 적용하므로(`spring.flyway.enabled`), target 없이 새 버전을 띄우면 다음 단계 코드의 배포와 구버전 작업의 소진을 확인하기 전에 축소·Contract 가 함께 실행된다. 서비스가 없는 격리 환경은 단계별 검증 뒤 한 번에 적용해도 된다. 길이 축소는 제한 코드를 먼저 배포하고 CHECK 로 입력을 막은 뒤 초과가 0 인지 다시 확인하고 물리 폭을 줄인다. 넓힌 폭에 새 데이터가 쓰이면 옛 폭으로 되돌리지 않고 forward-fix 한다([ADR-0013](decisions/ADR-0013-standard-text-length-alignment.md) 결정 2·3·결과, [ADR-0014](decisions/ADR-0014-deferred-standard-design-alignment.md) 「단계와 복구」).
+한 변경을 여러 Flyway 파일로 나눴다면(예: 길이 확장 → 입력 CHECK → 물리 축소, Expand → Fence → Contract) 운영 중인 환경에서는 단계 사이에 Flyway target 을 그 단계의 버전으로 고정한다. target 은 후속 단계 파일까지 읽을 수 있는 실제 Flyway 실행기에 건다 — 앱 기동이 적용하는 환경(`spring.flyway.enabled` 기본값 켜짐)이면 앱의 `spring.flyway.target` 이고, 앱의 Flyway 를 끄고 별도 실행기로 적용하는 환경(공유 DB 를 쓰는 개발 실행기는 `SPRING_FLYWAY_ENABLED=false` 로 띄운다)이면 그 실행기다. 적용하지 않는 쪽에만 걸면 다음 단계 코드의 배포와 구버전 작업의 소진을 확인하기 전에 축소·Contract 가 함께 실행된다. 서비스가 없는 격리 환경은 단계별 검증 뒤 한 번에 적용해도 된다. 길이 축소는 제한 코드를 먼저 배포하고 CHECK 로 입력을 막은 뒤 초과가 0 인지 다시 확인하고 물리 폭을 줄인다. 넓힌 폭에 새 데이터가 쓰이면 옛 폭으로 되돌리지 않고 forward-fix 한다([ADR-0013](decisions/ADR-0013-standard-text-length-alignment.md) 결정 2·3·결과, [ADR-0014](decisions/ADR-0014-deferred-standard-design-alignment.md) 「단계와 복구」).
+
+표준 길이 정합(V2_91~96)을 아직 적용하지 않은 환경에 이 순서를 쓸 때, Flyway 2.88 에서 출발하면 앞선 V2_89·90 이 블로그 도메인을 걷으므로 블로그 데이터가 없는지와 블로그 필드를 읽는 구버전 애플리케이션이 종료됐는지를 먼저 확인한다([ADR-0012](decisions/ADR-0012-retire-blog-domain.md) 결정 4·5). 적용 뒤에는 Flyway 이력 검증, PK/FK·행 수·값 보존, 표준 길이 감사(V2_93 뒤에는 보류 6개만 남고 V2_96 뒤에는 0)와 API 경계·화면 입력·발송 접수 흐름을 다시 확인한다.
 
 ## 4. 모니터링 연동
 이 하네스는 `./gradlew :api-server:harnessTest`에 포함되고, 소스 변경 시 로컬 pre-push와 상위 검증 경로에서 실행된다. 문서-only fast-pass는 이를 실행하지 않는다. 위반 감지 시 JUnit 테스트를 실패시키며, 규칙이나 실행 경로를 바꿀 때는 의도적 위반이 red가 되는지 확인한다.

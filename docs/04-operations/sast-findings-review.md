@@ -24,4 +24,4 @@
 
 예외 설정·해시가 잘못되면 모든 탐지를 보존한 리포트를 생성하고 실패한다. 언어별 기존 예외가 사라진 경우도 재검토를 요구한다. 목록을 바꾸면 그 diff 에 승인 근거를 함께 남긴다(재사용 생성물에서는 `HarnessBaselineIntegrityTest`의 registry 해시 동결 대상이다, DEC-OPS-420). 저장소 변경만으로 원격 ruleset이나 메인 반영을 완료한 것으로 보지 않는다.
 
-예외를 다시 둔 뒤 보완 소스가 바뀌어 해시만 다시 결속할 때(`npm run regen -- --rebind-sast <id> --note "Re-reviewed YYYY-MM-DD: …"`)는 소스·보완 소스 해시와 사유만 바뀌고 규칙·파일·행·fingerprint·만료일은 그대로다. 그 근거는 바뀐 소스의 diff 재검토이며 CodeQL 실행 증거가 아니다 — 탐지 위치·fingerprint·건수 일치는 그 변경의 required `secure-coding` 이 판정한다. 예외의 행은 SARIF 가 보고한 시작 행이고 예외 판정 키에 들어가므로, 사람이 해석한 다른 행으로 바꾸지 않는다.
+예외를 다시 둔 뒤 보완 소스가 바뀌어 해시만 다시 결속할 때(`node scripts/regenerate.mjs --rebind-sast <id> --note "Re-reviewed YYYY-MM-DD: …"`)는 소스·보완 소스 해시와 사유만 바뀌고 규칙·파일·행·fingerprint·만료일은 그대로다. 그 근거는 바뀐 소스의 diff 재검토이며 CodeQL 실행 증거가 아니다 — 탐지 위치·fingerprint·건수 일치는 그 변경의 required `secure-coding` 이 판정한다. 예외의 행은 SARIF 가 보고한 시작 행이고 예외 판정 키에 들어가므로, 사람이 해석한 다른 행으로 바꾸지 않는다.
