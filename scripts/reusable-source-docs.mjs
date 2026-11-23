@@ -19,6 +19,7 @@ import {
   documentAnchors, inlineLinkSpans, isOwnedDoc, maskExamples, validateDocumentationLinks,
 } from './docs-link-integrity.mjs';
 import { readRemovalLedger } from './reusable-asset-removal.mjs';
+import { artifactAliases } from './reusable-artifact-entrypoints-contract.mjs';
 import { MEMORY_PATHS } from './reusable-governance-integrity.mjs';
 import { UPSTREAM_ATLAS } from './reusable-harness-census.mjs';
 import { ALWAYS_REMOVED_ASSET_RULES, isUpstreamRuntimeAlias } from './reusable-product-assets.mjs';
@@ -126,8 +127,10 @@ export function rewriteDanglingLinks(source, judge) {
  * 문서 인덱스에서 없어진 문서를 소개하는 행을 지운다 — 표의 행은 첫 칸이 그 문서의 링크이거나 행의 링크가 그것 하나뿐일 때,
  * 문단 행은 "[문서](경로) — 설명" 으로 시작할 때이고, 모두 그 대상 파일이 없을 때만이다.
  * 절만 없는 링크, 대상이 남아 있는 행, 코드 예시·주석 안의 행은 지우지 않는다.
+ * leadingOnly 면 표에서 첫 칸이 그 문서의 링크인 행만 지운다 — 문서 인덱스가 아닌 글(루트 README)의 표에는 문서 소개가 아닌 행도
+ * 있어, 설명 칸에 끊긴 링크 하나가 있다고 행을 지우면 남아야 할 안내가 사라진다(그런 링크는 글자로만 남긴다).
  */
-export function dropDanglingIndexRows(source, judge) {
+export function dropDanglingIndexRows(source, judge, { leadingOnly = false } = {}) {
   const masked = maskExamples(source);
   const spans = inlineLinkSpans(masked).filter(span => !span.image);
   const kept = [];
@@ -144,7 +147,7 @@ export function dropDanglingIndexRows(source, judge) {
     let introduced = null;
     if (cell) {
       const leads = first && first.start === start + cell[0].length && /^[ \t]*\|/.test(masked.slice(first.end, end));
-      if (leads || inLine.length === 1) introduced = first;
+      if (leads || (!leadingOnly && inLine.length === 1)) introduced = first;
     } else if (first && first.start === start && /^[ \t]+—[ \t]/.test(masked.slice(first.end, end))) introduced = first;
     if (introduced && judge(introduced.raw) === 'missing-file') {
       dropped += 1;
@@ -179,13 +182,16 @@ export function nonInlineLinks(source) {
  * 원본 README 는 그런 내용을 원본 전용 구간 표지로 감싸고, 생성기는 구간째 걷은 뒤 이 프로젝트의 구성을 머리에 적는다.
  * 표지 밖에 남은 문장이 걷은 별칭·자산을 말하면 생성이 멈춘다. README 만 고친 변경에는 재사용 생성 잡이 돌지 않으므로,
  * 원본 문서 계약(reusable-source-docs.test.mjs)이 같은 판정을 원본 README 에 미리 돌린다.
+ *
+ * 검사가 보는 것은 루트 package.json 의 `npm run` 대상, 걷은 별칭, 상시 제거 원장(과 Atlas·벤더 원장)의 자산·시험 경로,
+ * 단일모듈 배치의 Gradle 프로젝트 경로다. 구성에 따라 빠지는 소스·화면·스킬·비활성 워크플로의 경로와 `pnpm`·`make` 대상은 보지 않는다.
  */
 export const UPSTREAM_ONLY_START = '<!-- upstream-only:start -->';
 export const UPSTREAM_ONLY_END = '<!-- upstream-only:end -->';
 
 /**
- * README 가 말하면 안 되는 별칭·자산을 모은다: 상시 제거 원장 셋, Atlas, 원장 없이 규칙으로 걷는 별칭. 벤더 프로젝트는
- * PostgreSQL 전용 자산의 원장을 더한다.
+ * README 가 말하면 안 되는 별칭·자산을 모은다: 상시 제거 원장 셋과 Atlas 의 자산·시험·별칭, 원장 없이 규칙으로 걷는 별칭.
+ * 벤더 프로젝트는 PostgreSQL 전용 자산의 원장을 더한다.
  */
 export function upstreamOnlySubjects(root, upstreamScripts = {}, { vendor = false } = {}) {
   const ledgers = [...ALWAYS_REMOVED_ASSET_RULES.map(({ ledgerPath }) => readRemovalLedger(root, ledgerPath)),
@@ -194,18 +200,30 @@ export function upstreamOnlySubjects(root, upstreamScripts = {}, { vendor = fals
     ...Object.keys(upstreamScripts).filter(isUpstreamRuntimeAlias)].filter(alias => !alias.startsWith('//'));
   return {
     aliases: [...new Set(aliases)].sort(),
-    assets: [...new Set([...ledgers.flatMap(ledger => ledger.assets), ...UPSTREAM_ATLAS.assets])].sort(),
+    assets: [...new Set([...ledgers.flatMap(ledger => [...ledger.assets, ...ledger.gates.map(gate => gate.file)]),
+      ...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates])].sort(),
   };
 }
 
 /**
- * 원본 전용 구간을 표지째 걷는다. 표지는 한 줄을 통째로 쓰고, 겹치지 않으며, 코드 예시와 표의 행 사이에 두지 않는다 — 어기면
- * 던진다(조용히 넘기면 생성 프로젝트에 원본 전용 문장이 남거나 엉뚱한 문단이 사라지고, 표의 행 사이의 표지는 원본의 표를 끊는다).
- * 걷은 자리의 겹친 빈 줄은 하나로 줄인다.
+ * 생성 프로젝트의 루트 package.json 별칭: 원본 별칭에서 걷는 것을 빼고 생성물 진입점(벤더면 스키마 검사)을 더한 것.
+ * 원본 README 계약이 이 계산으로 `npm run` 대상을 미리 보고, 생성기는 실제 package.json 에 이 별칭이 모두 있는지 대조한다.
+ */
+export function expectedGeneratedAliases(root, upstreamScripts, { vendorAlias = null } = {}) {
+  const removed = new Set(upstreamOnlySubjects(root, upstreamScripts, { vendor: Boolean(vendorAlias) }).aliases);
+  return [...new Set([...Object.keys(upstreamScripts).filter(alias => !alias.startsWith('//') && !removed.has(alias)),
+    ...Object.keys(artifactAliases), ...(vendorAlias ? [vendorAlias] : [])])].sort();
+}
+
+/**
+ * 원본 전용 구간을 표지째 걷는다. 표지는 들여쓰지 않고 한 줄을 통째로 쓰며, 겹치지 않고, 코드 예시 안이나 표의 행(`|` 로 시작하는 줄)
+ * 사이에 두지 않는다 — 어기면 던진다(조용히 넘기면 생성 프로젝트에 원본 전용 문장이 남거나 엉뚱한 문단·예시가 사라지고, 표의 행
+ * 사이의 표지는 원본의 표를 끊는다). 걷은 자리의 겹친 빈 줄은 하나로 줄인다.
  */
 export function dropUpstreamOnlyBlocks(source) {
   const kept = [];
   const tableRow = text => /^\s*\|/.test(text);
+  const blank = text => /^\s*$/.test(text);
   let openedAt = 0;
   let fence = null;
   let blocks = 0;
@@ -216,15 +234,15 @@ export function dropUpstreamOnlyBlocks(source) {
   for (const line of source.split(/(?<=\n)/)) {
     number += 1;
     const body = line.replace(/\r?\n$/, '');
-    const marker = body.trim();
+    const marker = body.trimEnd();
     const isStart = marker === UPSTREAM_ONLY_START;
     const isEnd = marker === UPSTREAM_ONLY_END;
     if (!isStart && !isEnd && /upstream-only:(?:start|end)/.test(body)) {
-      throw new Error(`README ${number}행: 원본 전용 표지는 한 줄을 통째로 쓴다`);
+      throw new Error(`README ${number}행: 원본 전용 표지는 들여쓰지 않고 한 줄을 통째로 쓴다`);
     }
     if ((isStart || isEnd) && fence) throw new Error(`README ${number}행: 원본 전용 표지를 코드 예시 안에 둘 수 없다`);
     if ((isStart && tableRow(previous)) || (closedAt && closedAt === number - 1 && tableRow(body))) {
-      throw new Error(`README ${isStart ? number : closedAt}행: 원본 전용 표지를 표의 행 사이에 둘 수 없다(표는 통째로 감싸거나 행을 표 밖 문장으로 옮긴다)`);
+      throw new Error(`README ${isStart ? number : closedAt}행: 원본 전용 표지를 표의 행 사이에 둘 수 없다(표는 통째로 감싸고, 표 앞뒤의 표지는 빈 줄로 띄운다)`);
     }
     previous = body;
     const fenced = /^ {0,3}(`{3,}|~{3,})/.exec(body);
@@ -246,13 +264,17 @@ export function dropUpstreamOnlyBlocks(source) {
       continue;
     }
     if (openedAt) continue;
-    const blank = /^\r?\n?$/.test(line);
-    if (seam && blank && kept.length && /^\r?\n$/.test(kept.at(-1))) continue;
+    if (seam && blank(line) && kept.length && blank(kept.at(-1))) continue;
     seam = false;
     kept.push(line);
   }
   if (openedAt) throw new Error(`README ${openedAt}행: 원본 전용 구간이 닫히지 않았다`);
   return { text: kept.join(''), blocks };
+}
+
+/** 단일모듈 배치의 Gradle 은 루트 프로젝트 하나다. 진입점 태스크의 프로젝트 경로(`:api-server:bootRun`)를 그 배치의 것으로 바꾼다. */
+export function projectReadmeLayout(readme, layout) {
+  return layout === 'single-module' ? readme.replaceAll(':api-server:bootRun', 'bootRun') : readme;
 }
 
 /** 생성 프로젝트 README 의 머리. 구성·배치·검증의 정본은 생성기가 함께 쓰는 두 문서다. */
@@ -263,13 +285,15 @@ export function generatedReadmeIntro({ source, features, layout, vendor = null }
     `eGov Enterprise 원본 \`${source}\` 에서 생성한 프로젝트다. 아래는 원본 README 에서 이 프로젝트에 해당하는 설명만 남긴 것이다 — `
       + '원본 저장소의 생성기·오프라인 이관 도구·요구사항 도구와 그 명령은 이 프로젝트에 없다.',
     '',
-    `- 기능: ${features.length ? features.join(', ') : '(공통 기반만)'}`,
+    `- 기능: ${features.length ? features.join(', ') : '(공통 기반만)'} — 아래의 선택 도메인 예시 가운데 여기 없는 기능은 이 프로젝트에 없다`,
     `- backend layout: ${layout}${layout === 'single-module'
-      ? ' — Gradle 프로젝트는 루트 하나다. 아래의 `:api-server:` 접두 명령과 모듈별 빌드 서술은 멀티모듈 기준이며, 이 배치의 실행·테스트 명령은 [REUSABLE_BASE.md](./REUSABLE_BASE.md)를 따른다.'
+      ? ' — Gradle 프로젝트는 루트 하나다. 아래의 구조도는 논리 소스 영역이고 모듈별 빌드 서술은 멀티모듈 기준이며, 이 배치의 실행·테스트 명령은 [REUSABLE_BASE.md](./REUSABLE_BASE.md)를 따른다.'
       : ''}`,
     `- 데이터베이스: ${vendor ? `${vendor} — 끝의 「데이터베이스」 절이 아래의 PostgreSQL 안내보다 우선한다` : 'PostgreSQL'}`,
     '- 구성·배치·제거 내역: [REUSABLE_BASE.md](./REUSABLE_BASE.md)',
     '- 검증 명령과 CI 범위: [REUSABLE_VERIFICATION.md](./REUSABLE_VERIFICATION.md)',
+    '- Java·권한을 더하기 전에: [도입자 가이드](./docs/03-guides/generated-project-additions.md)의 init → register 절차부터 따른다. '
+      + '아래의 스캐폴드 안내는 골격을 만드는 방법이고, 새 화면·마이그레이션과 기존 소스 수정은 그 등록의 자동 지원 범위 밖이다.',
     '',
     '---',
     '',
@@ -298,22 +322,31 @@ export function insertGeneratedReadmeIntro(readme, introLines) {
 const escapePattern = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
- * README 가 생성 프로젝트에 없는 것을 안내하는 줄을 찾는다: 걷은 별칭(`npm run` 유무와 상관없이 낱말로), 걷은 자산의 경로,
- * 그리고 scripts 를 주면 그 package.json 에 없는 `npm run` 대상. 코드 예시도 본다 — 예시의 명령이 곧 안내다.
+ * README 가 생성 프로젝트에 없는 것을 안내하는 줄을 찾는다. 코드 예시도 본다 — 예시의 명령이 곧 안내다.
+ *   - 걷은 별칭(`npm run` 유무와 상관없이 낱말로)
+ *   - 걷은 자산·시험의 경로(대소문자·`\` 표기를 가리지 않고, 바깥 주소 안의 경로는 빼고)
+ *   - scripts 를 주면 그 루트 package.json 에 없는 `npm run` 대상(옵션이 앞서도 본다. `pnpm run` 은 다른 package.json 이라 보지 않는다)
+ *   - layout 이 single-module 이면 Gradle 프로젝트 경로(`:모듈:태스크`)
  */
-export function readmeMentionErrors(readme, { removedAliases = [], removedAssets = [], scripts = null } = {}) {
+export function readmeMentionErrors(readme, { removedAliases = [], removedAssets = [], scripts = null, layout = null } = {}) {
   const errors = [];
   const aliasPatterns = removedAliases.map(alias => [alias, new RegExp(`(?<![\\w:-])${escapePattern(alias)}(?![\\w:-])`, 'u')]);
-  const assetPatterns = removedAssets.map(asset => [asset, new RegExp(`(?<![\\w-])${escapePattern(asset)}(?![\\w-])`, 'u')]);
+  const assetPatterns = removedAssets.map(asset => [asset, new RegExp(`(?<![\\w-])${escapePattern(asset)}(?![\\w-])`, 'iu')]);
   readme.split(/\r?\n/).forEach((line, index) => {
     const at = `README.md:${index + 1}`;
+    const local = line.replace(/https?:\/\/[^\s)>\]]+/giu, '').replaceAll('\\', '/');
     for (const [alias, pattern] of aliasPatterns) if (pattern.test(line)) errors.push(`${at} 생성 프로젝트에 없는 명령 \`${alias}\``);
-    for (const [asset, pattern] of assetPatterns) if (pattern.test(line)) errors.push(`${at} 생성 프로젝트에 없는 자산 \`${asset}\``);
+    for (const [asset, pattern] of assetPatterns) if (pattern.test(local)) errors.push(`${at} 생성 프로젝트에 없는 자산 \`${asset}\``);
     if (scripts) {
-      for (const match of line.matchAll(/npm run ([a-z][\w:-]*)/gu)) {
+      for (const match of line.matchAll(/(?<![\w-])npm run(?:\s+-{1,2}[\w-]+(?:=\S+)?)*\s+([a-z][\w:-]*)/gu)) {
         if (!Object.hasOwn(scripts, match[1]) && !removedAliases.includes(match[1])) {
           errors.push(`${at} package.json 에 없는 명령 \`npm run ${match[1]}\``);
         }
+      }
+    }
+    if (layout === 'single-module') {
+      for (const match of local.matchAll(/(?<![\w/]):[a-z][\w-]*:[A-Za-z]\w*/gu)) {
+        errors.push(`${at} 단일모듈 배치에 없는 Gradle 프로젝트 경로 \`${match[0]}\``);
       }
     }
   });
@@ -322,9 +355,9 @@ export function readmeMentionErrors(readme, { removedAliases = [], removedAssets
 
 /**
  * 원본 README 를 생성 프로젝트의 것처럼 줄여 본다: 원본 전용 구간을 걷고, 상시 제거 자산을 없는 파일로 보아 그것을 소개하는
- * 표의 행과 링크를 정리한다. 구성에 따라 더 빠지는 문서는 생성 때의 링크 정리가 맡는다.
+ * 문서 표의 행과 링크를 정리하고, 배치에 맞춘다. 구성에 따라 더 빠지는 문서는 생성 때의 링크 정리가 맡는다.
  */
-export function simulateGeneratedReadme(root, source, removedAssets) {
+export function simulateGeneratedReadme(root, source, removedAssets, { layout = 'multi-module' } = {}) {
   const anchors = new Map();
   const anchorsOf = (absolute) => {
     if (!anchors.has(absolute)) {
@@ -334,8 +367,8 @@ export function simulateGeneratedReadme(root, source, removedAssets) {
   };
   const removed = relative => removedAssets.some(asset => relative === asset || relative.startsWith(`${asset}/`));
   const judge = (raw) => {
-    const verdict = judgeDocLink(root, 'README.md', raw, anchorsOf);
-    if (verdict !== 'keep' || /^(?:file:|https?:|mailto:|tel:|table:|\/\/)/i.test(raw)) return verdict;
+    const verdict = judgeDocLink(root, ROOT_README, raw, anchorsOf);
+    if (/^(?:file:|https?:|mailto:|tel:|table:|\/\/)/i.test(raw)) return verdict;
     let decoded;
     try {
       decoded = decodeURIComponent(raw);
@@ -347,7 +380,7 @@ export function simulateGeneratedReadme(root, source, removedAssets) {
     const relative = path.relative(root, path.resolve(root, target)).split(path.sep).join('/');
     return removed(relative) ? 'missing-file' : verdict;
   };
-  const rows = dropDanglingIndexRows(dropUpstreamOnlyBlocks(source).text, judge);
+  const rows = dropDanglingIndexRows(projectReadmeLayout(dropUpstreamOnlyBlocks(source).text, layout), judge, { leadingOnly: true });
   return rewriteDanglingLinks(rows.text, judge).text;
 }
 
@@ -372,9 +405,9 @@ export function projectGeneratedDocs(output) {
     const before = fs.readFileSync(absolute, 'utf8');
     const judge = raw => judgeDocLink(output, file, raw, anchorsOf);
     let text = before;
-    // 문서 인덱스와 루트 README 의 문서 표는 없어진 문서를 소개하는 행째 지운다.
+    // 문서 인덱스와 루트 README 의 문서 표는 없어진 문서를 소개하는 행째 지운다(루트 README 는 첫 칸이 그 문서인 행만).
     if (file === DOCS_INDEX || file === ROOT_README) {
-      const index = dropDanglingIndexRows(text, judge);
+      const index = dropDanglingIndexRows(text, judge, { leadingOnly: file === ROOT_README });
       text = index.text;
       summary.droppedIndexRows += index.dropped;
     }

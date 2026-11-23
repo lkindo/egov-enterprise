@@ -9,8 +9,9 @@ import { VENDOR_SCHEMA_ALIAS, vendorReadme } from './project-composer-vendor-pro
 import { VENDOR_ADAPTERS, loadVendorLedger } from './project-composer-vendors.mjs';
 import { UPSTREAM_ATLAS } from './reusable-harness-census.mjs';
 import {
-  UPSTREAM_ONLY_END, UPSTREAM_ONLY_START, dropDanglingIndexRows, dropUpstreamOnlyBlocks, generatedReadmeIntro, insertGeneratedReadmeIntro,
-  nonInlineLinks, ownedDocFiles, projectGeneratedDocs, readmeMentionErrors, rewriteDanglingLinks, simulateGeneratedReadme, upstreamOnlySubjects,
+  UPSTREAM_ONLY_END, UPSTREAM_ONLY_START, dropDanglingIndexRows, dropUpstreamOnlyBlocks, expectedGeneratedAliases, generatedReadmeIntro,
+  insertGeneratedReadmeIntro, nonInlineLinks, ownedDocFiles, projectGeneratedDocs, projectReadmeLayout, readmeMentionErrors, rewriteDanglingLinks,
+  simulateGeneratedReadme, upstreamOnlySubjects,
 } from './reusable-source-docs.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -259,16 +260,21 @@ test('upstream-only blocks leave the README whole, and a malformed marker stops 
   const source = ['# 제목', '', '남는 문단', '', UPSTREAM_ONLY_START, '원본 전용 문단', '', '```bash', 'npm run base:verify', '```',
     UPSTREAM_ONLY_END, '', '다음 문단', ''].join('\r\n');
   assert.deepEqual(dropUpstreamOnlyBlocks(source), { text: ['# 제목', '', '남는 문단', '', '다음 문단', ''].join('\r\n'), blocks: 1 });
-  // 목록 가운데의 구간은 앞뒤 항목을 붙여 둔다. 표는 통째로 감쌀 수 있다. 표지가 없으면 그대로다.
+  // 목록 가운데의 구간은 앞뒤 항목을 붙여 둔다. 표는 통째로 감쌀 수 있다. 표지 뒤의 공백은 받고, 공백만 든 줄도 빈 줄로 줄인다.
   assert.equal(dropUpstreamOnlyBlocks(`- 가\n${UPSTREAM_ONLY_START}\n- 나\n${UPSTREAM_ONLY_END}\n- 다\n`).text, '- 가\n- 다\n');
   assert.equal(dropUpstreamOnlyBlocks(`글\n\n${UPSTREAM_ONLY_START}\n| 가 |\n|---|\n| 나 |\n${UPSTREAM_ONLY_END}\n\n끝\n`).text, '글\n\n끝\n');
+  assert.equal(dropUpstreamOnlyBlocks(`글\n \n${UPSTREAM_ONLY_START}  \n가\n${UPSTREAM_ONLY_END}\t\n \n끝\n`).text, '글\n \n끝\n');
+  assert.equal(dropUpstreamOnlyBlocks(`글\n${UPSTREAM_ONLY_START}\n가\n${UPSTREAM_ONLY_END}`).text, '글\n', '마지막 줄바꿈 없이 닫혀도 된다');
   assert.deepEqual(dropUpstreamOnlyBlocks('표지 없는 글\n'), { text: '표지 없는 글\n', blocks: 0 });
   for (const [broken, message] of [
     [`${UPSTREAM_ONLY_START}\n가\n`, /1행: 원본 전용 구간이 닫히지 않았다/],
     [`가\n${UPSTREAM_ONLY_END}\n`, /2행: 여는 표지 없는 닫는 표지/],
     [`${UPSTREAM_ONLY_START}\n${UPSTREAM_ONLY_START}\n가\n${UPSTREAM_ONLY_END}\n`, /2행: 원본 전용 구간이 겹쳤다\(1행에서 열림\)/],
-    [`가 ${UPSTREAM_ONLY_START}\n나\n${UPSTREAM_ONLY_END}\n`, /1행: 원본 전용 표지는 한 줄을 통째로 쓴다/],
+    [`가 ${UPSTREAM_ONLY_START}\n나\n${UPSTREAM_ONLY_END}\n`, /1행: 원본 전용 표지는 들여쓰지 않고 한 줄을 통째로 쓴다/],
+    // 들여쓴 표지는 네 칸 들여쓴 코드 예시일 수 있다 — 받으면 예시가 조용히 사라진다.
+    [`    ${UPSTREAM_ONLY_START}\n    예시\n    ${UPSTREAM_ONLY_END}\n`, /1행: 원본 전용 표지는 들여쓰지 않고 한 줄을 통째로 쓴다/],
     [`\`\`\`\n${UPSTREAM_ONLY_START}\n\`\`\`\n`, /2행: 원본 전용 표지를 코드 예시 안에 둘 수 없다/],
+    [`~~~\n${UPSTREAM_ONLY_START}\n~~~\n`, /2행: 원본 전용 표지를 코드 예시 안에 둘 수 없다/],
     [`${UPSTREAM_ONLY_START}\n\`\`\`\n가\n${UPSTREAM_ONLY_END}\n\`\`\`\n`, /4행: 원본 전용 표지를 코드 예시 안에 둘 수 없다/],
     [`| 가 |\n|---|\n${UPSTREAM_ONLY_START}\n| 나 |\n${UPSTREAM_ONLY_END}\n`, /3행: 원본 전용 표지를 표의 행 사이에 둘 수 없다/],
     [`${UPSTREAM_ONLY_START}\n| 가 |\n|---|\n${UPSTREAM_ONLY_END}\n| 나 |\n`, /4행: 원본 전용 표지를 표의 행 사이에 둘 수 없다/],
@@ -281,100 +287,130 @@ test('the generated README states its own composition before the first section',
   assert.ok(out.startsWith('# 제목\r\n\r\n```md\r\n## 예시 안의 제목\r\n```\r\n\r\n## 이 프로젝트\r\n'));
   assert.ok(out.endsWith('---\r\n\r\n## 첫 절\r\n본문\r\n'));
   assert.ok(!/(?<!\r)\n/.test(out), '머리의 줄 끝은 본문을 따른다');
-  for (const expected of ['`v1.2.3`', '- 기능: board, survey', 'single-module — Gradle 프로젝트는 루트 하나다', '- 데이터베이스: oracle',
-    '[REUSABLE_BASE.md](./REUSABLE_BASE.md)', '[REUSABLE_VERIFICATION.md](./REUSABLE_VERIFICATION.md)']) assert.ok(out.includes(expected), expected);
+  for (const expected of ['`v1.2.3`', '- 기능: board, survey — ', 'single-module — Gradle 프로젝트는 루트 하나다', '- 데이터베이스: oracle',
+    '[REUSABLE_BASE.md](./REUSABLE_BASE.md)', '[REUSABLE_VERIFICATION.md](./REUSABLE_VERIFICATION.md)',
+    '[도입자 가이드](./docs/03-guides/generated-project-additions.md)']) assert.ok(out.includes(expected), expected);
   const plain = generatedReadmeIntro({ source: 'abc', features: [], layout: 'multi-module' }).join('\n');
-  for (const expected of ['- 기능: (공통 기반만)\n', '- backend layout: multi-module\n', '- 데이터베이스: PostgreSQL\n']) assert.ok(plain.includes(expected), expected);
+  for (const expected of ['- 기능: (공통 기반만) — ', '- backend layout: multi-module\n', '- 데이터베이스: PostgreSQL\n']) assert.ok(plain.includes(expected), expected);
   assert.equal(insertGeneratedReadmeIntro('제목 없는 글\n', ['## 이 프로젝트', '']), '제목 없는 글\n\n## 이 프로젝트\n\n');
-  // 머리 자체가 걷은 도구의 별칭이나 경로를 말하면 모든 생성이 멈춘다.
-  const subjects = upstreamOnlySubjects(ROOT, JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).scripts);
+  // 머리 자체가 걷은 도구의 별칭·경로나 그 배치에 없는 Gradle 경로를 말하면 모든 생성이 멈춘다.
+  const subjects = upstreamOnlySubjects(ROOT, JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).scripts, { vendor: true });
   for (const lines of [intro, generatedReadmeIntro({ source: 'abc', features: [], layout: 'multi-module' })]) {
-    assert.deepEqual(readmeMentionErrors(lines.join('\n'), { removedAliases: subjects.aliases, removedAssets: subjects.assets, scripts: {} }), []);
+    assert.deepEqual(readmeMentionErrors(lines.join('\n'),
+      { removedAliases: subjects.aliases, removedAssets: subjects.assets, scripts: {}, layout: 'single-module' }), []);
   }
 });
 
-test('a README line that advertises a removed command or asset is reported with its line', () => {
+test('a README line that advertises a removed command, asset or Gradle project is reported with its line', () => {
   const options = { removedAliases: ['verify:migration', 'base:verify'], removedAssets: ['migration-tool', 'tools/requirements-workspace'],
     scripts: { dev: 'x', verify: 'y' } };
   assert.deepEqual(readmeMentionErrors(['# 제목', '`npm run dev` 와 `npm run verify` 는 있다.',
-    '[설계](docs/legacy-migration-tool-design.md) 는 다른 이름이다.', 'verify:migration-extra 와 pre-base:verify 도 다른 이름이다.'].join('\n'), options), []);
+    '[설계](docs/legacy-migration-tool-design.md) 는 다른 이름이다.', 'verify:migration-extra 와 pre-base:verify 도 다른 이름이다.',
+    // 다른 package.json 의 명령과 바깥 주소 안의 경로는 이 프로젝트의 루트 안내가 아니다.
+    'cd frontend && pnpm run type-check', '[원본](https://example.com/egov/migration-tool/README.md)',
+    '`./gradlew :api-server:bootRun`'].join('\n'), options), []);
   assert.deepEqual(readmeMentionErrors(['`npm run verify:migration`', '`review:x` / `base:verify`', '```', 'cd migration-tool/', '```',
-    '`tools/requirements-workspace/package-lock.json`', 'npm run unknown'].join('\r\n'), options), [
+    '`tools/requirements-workspace/package-lock.json`', 'npm run unknown', 'npm run --silent made-up', 'npm run -s made-up -- --flag',
+    'tools\\requirements-workspace\\package.json', 'cd MIGRATION-TOOL/'].join('\r\n'), options), [
     'README.md:1 생성 프로젝트에 없는 명령 `verify:migration`',
     'README.md:2 생성 프로젝트에 없는 명령 `base:verify`',
     'README.md:4 생성 프로젝트에 없는 자산 `migration-tool`',
     'README.md:6 생성 프로젝트에 없는 자산 `tools/requirements-workspace`',
     'README.md:7 package.json 에 없는 명령 `npm run unknown`',
+    'README.md:8 package.json 에 없는 명령 `npm run made-up`',
+    'README.md:9 package.json 에 없는 명령 `npm run made-up`',
+    'README.md:10 생성 프로젝트에 없는 자산 `tools/requirements-workspace`',
+    'README.md:11 생성 프로젝트에 없는 자산 `migration-tool`',
   ]);
-  // scripts 를 주지 않으면(원본 README 계약) package.json 대조는 하지 않는다.
+  // scripts 를 주지 않으면 package.json 대조는 하지 않는다. 단일모듈에는 Gradle 하위 프로젝트가 없다.
   assert.deepEqual(readmeMentionErrors('npm run unknown\n', { removedAliases: ['base:verify'] }), []);
+  assert.deepEqual(readmeMentionErrors('`./gradlew :api-server:bootRun` · `classpath:db/seed-dev` · http://localhost:8080/api\n',
+    { layout: 'single-module' }), ['README.md:1 단일모듈 배치에 없는 Gradle 프로젝트 경로 `:api-server:bootRun`']);
+  assert.equal(projectReadmeLayout('`./gradlew :api-server:bootRun`\n', 'single-module'), '`./gradlew bootRun`\n');
+  assert.equal(projectReadmeLayout('`./gradlew :api-server:bootRun`\n', 'multi-module'), '`./gradlew :api-server:bootRun`\n');
 });
 
 test('the origin README, projected as a generated project sees it, advertises nothing the project lacks', () => {
   // README 만 고친 PR 에는 재사용 생성 잡이 돌지 않는다. 표지 밖에 원본 전용 문장을 더하면 그 PR 은 통과하고 그 뒤 모든 시작 구성의
-  // 생성이 멈춘다 — 문서 변경 시점에 여기서 막는다.
+  // 생성이 멈춘다 — 문서 변경 시점에 여기서 막는다. 벤더 생성은 PR 에서 거의 돌지 않으므로 벤더의 모집단·별칭·덧붙는 절도 여기서 본다.
   const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
   const scripts = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).scripts;
   const subjects = upstreamOnlySubjects(ROOT, scripts);
-  // 모집단: 상시 제거 원장 셋의 별칭·자산, Atlas, 원장 없이 규칙으로 걷는 별칭(verify:e2e 는 규칙에만 있다).
+  const vendorSubjects = upstreamOnlySubjects(ROOT, scripts, { vendor: true });
+  // 모집단: 상시 제거 원장 셋의 별칭·자산·시험, Atlas, 원장 없이 규칙으로 걷는 별칭(verify:e2e 는 규칙에만 있다). 벤더는 원장 하나가 더 있다.
   for (const alias of ['base:verify', 'project:ui', 'migration:export', 'verify:migration', 'verify:e2e', 'verify:ops', 'review:migration',
     'requirements:ui', 'atlas:build']) assert.ok(subjects.aliases.includes(alias), alias);
   assert.ok(subjects.aliases.every(alias => !alias.startsWith('//')));
-  for (const asset of ['migration-tool', 'tools/requirements-workspace', 'frontend/atlas',
+  for (const asset of ['migration-tool', 'tools/requirements-workspace', 'frontend/atlas', 'scripts/atlas-catalog.test.mjs',
     'docs/02-architecture/legacy-migration-tool-design.md']) assert.ok(subjects.assets.includes(asset), asset);
-  const errorsOf = text => readmeMentionErrors(simulateGeneratedReadme(ROOT, text, subjects.assets),
-    { removedAliases: subjects.aliases, removedAssets: subjects.assets });
-  assert.deepEqual(errorsOf(readme), [],
-    '생성 프로젝트에 없는 도구·명령은 원본 전용 구간 표지 안에서만 말한다(README.md 의 upstream-only 표지, reusable-source-docs.mjs)');
-  // 벤더 프로젝트는 PostgreSQL 전용 자산을 더 걷는다. 그 모집단으로 보아도 원본 본문과 벤더가 덧붙이는 「데이터베이스」 절이 깨끗해야 한다
-  // — PR 의 재사용 생성 잡은 벤더를 거의 돌지 않으므로 여기서 본다.
-  const vendorSubjects = upstreamOnlySubjects(ROOT, scripts, { vendor: true });
   for (const alias of ['ui-quality:baseline:build', ...subjects.aliases]) assert.ok(vendorSubjects.aliases.includes(alias), alias);
   assert.ok(vendorSubjects.assets.includes('scripts/restore-drill.mjs') && !subjects.assets.includes('scripts/restore-drill.mjs'));
-  const vendorScripts = Object.fromEntries([...Object.keys(scripts).filter(alias => !vendorSubjects.aliases.includes(alias)), VENDOR_SCHEMA_ALIAS]
-    .map(alias => [alias, 'x']));
+  // 생성 프로젝트의 별칭은 계산으로 본다(생성기가 실제 package.json 과 대조한다): 걷은 것은 없고 생성물 진입점은 있다.
+  const aliasesOf = vendorAlias => expectedGeneratedAliases(ROOT, scripts, { vendorAlias });
+  assert.ok(aliasesOf(null).includes('verify:adopter') && aliasesOf(null).includes('dev') && !aliasesOf(null).includes(VENDOR_SCHEMA_ALIAS));
+  assert.ok(aliasesOf(VENDOR_SCHEMA_ALIAS).includes(VENDOR_SCHEMA_ALIAS) && !aliasesOf(VENDOR_SCHEMA_ALIAS).includes('ui-quality:baseline:build'));
+  assert.ok(aliasesOf(null).every(alias => !subjects.aliases.includes(alias)));
   const vendorLedger = loadVendorLedger(ROOT);
   const vendorIds = Object.keys(VENDOR_ADAPTERS);
   assert.ok(vendorIds.length >= 5, String(vendorIds));
-  for (const vendorId of vendorIds) {
-    const whole = `${simulateGeneratedReadme(ROOT, readme, vendorSubjects.assets)}${vendorReadme(vendorId, vendorLedger)}`;
-    assert.deepEqual(readmeMentionErrors(whole, { removedAliases: vendorSubjects.aliases, removedAssets: vendorSubjects.assets, scripts: vendorScripts }),
-      [], vendorId);
+  /** 원본 README 글(text)을 그 구성의 생성 프로젝트처럼 줄여 검사한다. vendorId 가 있으면 벤더가 덧붙이는 절까지 본다. */
+  const errorsOf = (text, { layout = 'multi-module', vendorId = null } = {}) => {
+    const population = vendorId ? vendorSubjects : subjects;
+    const projected = simulateGeneratedReadme(ROOT, text, population.assets, { layout });
+    const whole = vendorId ? `${projected}${projectReadmeLayout(vendorReadme(vendorId, vendorLedger), layout)}` : projected;
+    return readmeMentionErrors(whole, { removedAliases: population.aliases, removedAssets: population.assets, layout,
+      scripts: Object.fromEntries(aliasesOf(vendorId ? VENDOR_SCHEMA_ALIAS : null).map(alias => [alias, 'x'])) });
+  };
+  for (const layout of ['multi-module', 'single-module']) {
+    assert.deepEqual(errorsOf(readme, { layout }), [],
+      `${layout}: 생성 프로젝트에 없는 도구·명령은 원본 전용 구간 표지 안에서만 말한다(README.md 의 upstream-only 표지, reusable-source-docs.mjs)`);
+    for (const vendorId of vendorIds) assert.deepEqual(errorsOf(readme, { layout, vendorId }), [], `${vendorId} ${layout}`);
   }
   const projected = simulateGeneratedReadme(ROOT, readme, subjects.assets);
   // 구간째 걷어도 글의 뼈대가 남는다: 구분선이 겹치지 않고, 내용 없는 절이 생기지 않는다.
   assert.ok(!/^---\r?\n(?:\r?\n)*---\r?$/m.test(projected), '겹친 구분선');
   assert.ok(!/^#{2,4} [^\r\n]*\r?\n(?:\r?\n)*(?:---\r?$|## )/m.test(projected), '내용 없는 절');
-  // 실행 안내는 남고, 원본 저장소만의 절과 걷힌 문서를 소개하는 표의 행은 빠진다.
-  for (const kept of ['make bootstrap', 'npm run dev', './gradlew :api-server:bootRun', '## 📚 문서 (Documentation)', '## 📄 라이선스 (License)']) {
-    assert.ok(projected.includes(kept), kept);
-  }
-  for (const gone of ['Atlas', '검증 진입점', '기여 가이드', '레거시 이관 도구 설계']) {
+  // 실행 안내는 남고, 원본 저장소만의 절·버전 체인 설명과 걷힌 문서를 소개하는 표의 행은 빠진다.
+  for (const kept of ['make bootstrap', 'npm run dev', './gradlew :api-server:bootRun', '## 📚 문서 (Documentation)', '## 📄 라이선스 (License)',
+    'R__seed_framework']) assert.ok(projected.includes(kept), kept);
+  for (const gone of ['Atlas', '검증 진입점', '기여 가이드', '레거시 이관 도구 설계', '재사용 Base 생성 가이드', 'V2_0', 'V2_2']) {
     assert.ok(readme.includes(gone) && !projected.includes(gone), gone);
   }
+  // 단일모듈에는 Gradle 하위 프로젝트가 없다: 복사해 쓰는 실행 명령이 그 배치의 것이어야 한다.
+  const single = simulateGeneratedReadme(ROOT, readme, subjects.assets, { layout: 'single-module' });
+  assert.ok(single.includes('./gradlew bootRun') && !single.includes(':api-server:'));
   // red 증명: 표지 밖에 원본 전용 명령·자산을 적으면 그 줄이 붉고, 표지를 닫지 않으면 투영이 멈춘다.
   const anchor = '## 📚 문서 (Documentation)';
-  assert.ok(errorsOf(readme.replace(anchor, `\`npm run base:verify\` 로 검증한다.\n\n${anchor}`))
-    .some(error => error.endsWith('생성 프로젝트에 없는 명령 `base:verify`')));
-  assert.ok(errorsOf(readme.replace(anchor, `이관은 \`migration-tool/\` 에서 한다.\n\n${anchor}`))
-    .some(error => error.endsWith('생성 프로젝트에 없는 자산 `migration-tool`')));
+  const withLine = line => readme.replace(anchor, `${line}\n\n${anchor}`);
+  assert.ok(errorsOf(withLine('`npm run base:verify` 로 검증한다.')).some(error => error.endsWith('생성 프로젝트에 없는 명령 `base:verify`')));
+  assert.ok(errorsOf(withLine('이관은 `migration-tool/` 에서 한다.')).some(error => error.endsWith('생성 프로젝트에 없는 자산 `migration-tool`')));
+  assert.ok(errorsOf(withLine('`./gradlew :api-server:test` 로 시험한다.'), { layout: 'single-module' })
+    .some(error => error.endsWith('단일모듈 배치에 없는 Gradle 프로젝트 경로 `:api-server:test`')));
   assert.throws(() => errorsOf(readme.replace(UPSTREAM_ONLY_END, '')), /원본 전용 구간이 겹쳤다|닫히지 않았다/);
+  // 별칭 계산의 양방향: 벤더에만 있는 명령은 PostgreSQL 에서 붉고 벤더에서는 통과하며, 모든 생성 프로젝트에 있는 진입점은 어디서도 통과한다.
+  const vendorOnly = withLine(`\`npm run ${VENDOR_SCHEMA_ALIAS}\` 로 스키마를 본다.`);
+  assert.ok(errorsOf(vendorOnly).some(error => error.endsWith(`package.json 에 없는 명령 \`npm run ${VENDOR_SCHEMA_ALIAS}\``)));
+  assert.deepEqual(errorsOf(vendorOnly, { vendorId: vendorIds[0] }), []);
+  for (const options of [{}, { vendorId: vendorIds[0] }]) assert.deepEqual(errorsOf(withLine('`npm run verify:adopter` 로 검사한다.'), options), []);
   // 함수만 시험하면 생성기가 부르지 않아도 초록이다. 생성기의 README 처리 순서를 본다: 구간 걷기 → 링크 정리 → 마지막 검사.
   const generator = readFileSync(join(ROOT, 'scripts/generate-reusable-base-source.mjs'), 'utf8');
   const main = generator.indexOf('async function main');
-  const order = ['dropUpstreamOnlyBlocks(', 'projectGeneratedDocs(output)', 'readmeMentionErrors('].map(call => generator.indexOf(call, main));
-  assert.ok(main > 0 && order.every(index => index > main) && order[0] < order[1] && order[1] < order[2], String(order));
+  const order = ['dropUpstreamOnlyBlocks(', 'projectGeneratedDocs(output)', 'expectedGeneratedAliases(', 'readmeMentionErrors(']
+    .map(call => generator.indexOf(call, main));
+  assert.ok(main > 0 && order.every(index => index > main) && order.every((index, at) => at === 0 || order[at - 1] < index), String(order));
 });
 
-test('the root README drops the table rows that introduce a removed document, like the docs index', () => {
+test('the root README drops only the table rows whose first cell introduces a removed document', () => {
   const root = artifact({
     'README.md': ['# Product', '', '| 문서 | 설명 |', '|---|---|', '| [남는 문서](docs/kept.md) | 설명 |', '| [없는 문서](docs/gone.md) | 설명 |', '',
+      '| 실행 | 설명 |', '|---|---|', '| `make bootstrap` | [없는 문서](docs/gone.md)도 본다 |', '',
       '본문의 [없는 문서](docs/gone.md) 언급은 글자로 남는다.', ''].join('\n'),
     'docs/kept.md': '# Kept\n',
   });
   try {
     const summary = projectGeneratedDocs(root);
     assert.equal(read(root, 'README.md'), ['# Product', '', '| 문서 | 설명 |', '|---|---|', '| [남는 문서](docs/kept.md) | 설명 |', '',
+      '| 실행 | 설명 |', '|---|---|', '| `make bootstrap` | 없는 문서도 본다 |', '',
       '본문의 없는 문서 언급은 글자로 남는다.', ''].join('\n'));
     assert.equal(summary.droppedIndexRows, 1);
   } finally {

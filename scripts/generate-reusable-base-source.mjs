@@ -31,7 +31,8 @@ import { writeHarnessBaseline } from './reusable-source-harness.mjs';
 import { VENDOR_ASSET_RULE, pruneVendorPostgresAssets } from './reusable-vendor-assets.mjs';
 import { PRODUCER_ASSET_RULE, REQUIREMENTS_ASSET_RULE, MIGRATION_ASSET_RULE, isUpstreamRuntimeAlias, pruneProducerTools, pruneRequirementsStudio, pruneMigrationTools, stripMigrationBuildReferences } from './reusable-product-assets.mjs';
 import {
-  dropUpstreamOnlyBlocks, generatedReadmeIntro, insertGeneratedReadmeIntro, projectGeneratedDocs, readmeMentionErrors, upstreamOnlySubjects,
+  dropUpstreamOnlyBlocks, expectedGeneratedAliases, generatedReadmeIntro, insertGeneratedReadmeIntro, projectGeneratedDocs, projectReadmeLayout,
+  readmeMentionErrors, upstreamOnlySubjects,
 } from './reusable-source-docs.mjs';
 import { pruneJava } from './reusable-source-java.mjs';
 import { ROOT, copySourceTree, fail, git, initializeGeneratedRepository, installDatabaseBundle, isCopyableSourceFile, normalize, readTextIfPresent,
@@ -395,7 +396,7 @@ async function main() {
   const readmePath = join(output, 'README.md');
   // README 투영: 원본 전용 구간(생성기·이관 도구·요구사항 도구·원본 CI 같은 이 프로젝트에 없는 것)을 걷고 이 프로젝트의 구성을
   //   머리에 적는다. 그 뒤에도 없는 명령·자산을 말하는 줄이 남으면 아래 검사가 생성을 멈춘다.
-  const readme = insertGeneratedReadmeIntro(dropUpstreamOnlyBlocks(readFileSync(readmePath, 'utf8')).text, generatedReadmeIntro({
+  const readme = insertGeneratedReadmeIntro(projectReadmeLayout(dropUpstreamOnlyBlocks(readFileSync(readmePath, 'utf8')).text, args.layout), generatedReadmeIntro({
     source: releaseTag ?? sourceCommit.slice(0, 12), features: composition.resolvedDomains, layout: args.layout,
     vendor: vendorInput ? vendorId : null,
   }));
@@ -412,18 +413,19 @@ async function main() {
   console.log(`[base-source] ${args.profile}: 문서 ${generatedDocs.documents}개 가운데 ${generatedDocs.changedFiles}개 파일의 끊긴 링크를 정리했다`
     + `(글자로 ${generatedDocs.unlinked}개, 절만 뗀 것 ${generatedDocs.defragmented}개, 인덱스 행 ${generatedDocs.droppedIndexRows}개, `
     + `헌법 metadata 의 끊긴 참조 ${generatedDocs.metadataReferenceErrors}건).`);
-  // README 검사는 링크 정리 뒤의 마지막 글로 한다(없어진 문서를 소개하던 표의 행이 그때 빠진다). 실제로 걷힌 별칭이 판정의
-  //   모집단(상시 제거 원장·Atlas·규칙)에 없으면 원본 README 계약이 그 별칭을 보지 못하므로, 모집단부터 맞추게 멈춘다.
+  // README 검사는 링크 정리 뒤의 마지막 글로 한다(없어진 문서를 소개하던 표의 행이 그때 빠진다). 원본 README 계약은 생성 없이
+  //   별칭을 계산해 미리 보므로(expectedGeneratedAliases), 그 계산이 말한 별칭이 실제 package.json 에 없으면 계산부터 맞추게 멈춘다.
   const upstreamScripts = JSON.parse(upstreamPackageJson).scripts ?? {};
   const generatedScripts = JSON.parse(readFileSync(join(output, 'package.json'), 'utf8')).scripts ?? {};
   const readmeSubjects = upstreamOnlySubjects(ROOT, upstreamScripts, { vendor: Boolean(vendorInput) });
-  const unknownAliasRemovals = Object.keys(upstreamScripts).filter(alias => !alias.startsWith('//')
-    && !Object.hasOwn(generatedScripts, alias) && !readmeSubjects.aliases.includes(alias));
-  if (unknownAliasRemovals.length) {
-    fail(`생성 프로젝트에서 빠진 별칭을 README 검사가 모른다: ${unknownAliasRemovals.join(', ')} — 제거 원장의 aliases 나 isUpstreamRuntimeAlias 에 적는다.`);
+  const uncountedAliasRemovals = expectedGeneratedAliases(ROOT, upstreamScripts, { vendorAlias: vendorInput ? VENDOR_SCHEMA_ALIAS : null })
+    .filter(alias => !Object.hasOwn(generatedScripts, alias));
+  if (uncountedAliasRemovals.length) {
+    fail(`생성 프로젝트에 없는 별칭을 README 계약은 있다고 계산한다: ${uncountedAliasRemovals.join(', ')} — 제거 원장의 aliases 나 isUpstreamRuntimeAlias,`
+      + ' expectedGeneratedAliases(reusable-source-docs.mjs)를 맞춘다.');
   }
   const readmeErrors = readmeMentionErrors(readFileSync(readmePath, 'utf8'),
-    { removedAliases: readmeSubjects.aliases, removedAssets: readmeSubjects.assets, scripts: generatedScripts });
+    { removedAliases: readmeSubjects.aliases, removedAssets: readmeSubjects.assets, scripts: generatedScripts, layout: args.layout });
   if (readmeErrors.length) {
     fail(`생성 프로젝트의 README 가 이 프로젝트에 없는 것을 안내한다(${readmeErrors.length}건). 원본 README.md 에서 그 문장을 원본 전용 구간 표지`
       + `(<!-- upstream-only:start --> … <!-- upstream-only:end -->)로 감싼다.\n${readmeErrors.join('\n')}`);

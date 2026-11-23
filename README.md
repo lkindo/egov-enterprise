@@ -39,12 +39,13 @@
 - **Database**: PostgreSQL (JPA/Hibernate)
 - **Architecture**: 멀티 모듈 (`foundation` / `business-core` / `business-app` / `api-server`). 단방향 의존·도메인 격리(ArchUnit)
 - **Mapping**: MapStruct (엔티티↔DTO 컴파일타임 매핑 표준)
-- **DB Migration**: Flyway (`V2_0` Postgres 표준 베이스라인 — 빈 DB 부팅 가능)
+- **DB Migration**: Flyway (표준 베이스라인 — 빈 DB 부팅 가능)
 - **Security**: Spring Security 7.x, JWT (Json Web Token)
 - **API**: RESTful API with OpenAPI 3.1 (springdoc 3.x)
 - **Build**: Gradle 9.7.1 (Version Catalog)
 <!-- upstream-only:start -->
 - **Legacy migration**: 온라인 모듈과 분리된 오프라인 이관 CLI `migration-tool`(이관할 때만 선택 실행)
+- **Flyway 기준선**: 원본 저장소의 버전 체인은 `V2_0` Postgres 표준 베이스라인에서 시작한다(생성 프로젝트는 DB 번들의 기준선을 쓴다)
 <!-- upstream-only:end -->
 
 ---
@@ -193,8 +194,10 @@ pnpm dev
 >
 > - **dev / local / e2e**: `spring.flyway.locations`가 `classpath:db/seed-dev`를 함께 적재하여 개발 전용 계정을 넣습니다. 공개 배포나 운영에 이 seed를 포함하지 않습니다.
 > - **운영**: `ADMIN_INITIAL_PASSWORD` 환경변수를 주고 기동하면 `AdminPasswordProvisioner` 가 최초 1회 비밀번호를 설정합니다. 이미 설정된 비밀번호는 절대 덮어쓰지 않으며(재기동마다 되돌아가면 그 자체가 백도어), 로그인 후 즉시 변경하고 환경변수를 제거하십시오. 미설정 시 이 계정은 로그인 불가 상태로 남고 기동 로그에 경고가 남습니다.
->
-> V2_2 는 `ROLE_ADMIN` 등 권한/메뉴 구조를 시드합니다.
+
+<!-- upstream-only:start -->
+원본 저장소의 버전 체인에서는 V2_2 가 `ROLE_ADMIN` 등 권한/메뉴 구조를 시드합니다.
+<!-- upstream-only:end -->
 
 아래 원클릭 부트스트랩 명령을 실행하면 필요한 환경 파일 준비와 로컬 개발 환경 구성이 자동 수행됩니다.
 ```bash
@@ -230,7 +233,10 @@ make bootstrap
 | [Zero-Downtime 마이그레이션](./docs/02-architecture/zero-downtime-migration.md) | Expand-and-Contract 패턴 |
 | [Pitest 뮤테이션 테스트](./docs/02-architecture/pitest-mutation-testing.md) | 테스트 방어력 검증 |
 | [레거시 이관 도구 설계](./docs/02-architecture/legacy-migration-tool-design.md) | 다중 source→PostgreSQL 승인형 offline ETL(discover·plan·validate·load). 독립 이관 제품(`npm run migration:export`)의 `docs/` 에 함께 실리고 재사용 생성물에는 싣지 않는다 |
-| [재사용 Base 생성 가이드](./docs/03-guides/reusable-base-guide.md) | 검증된 프로필 기반 프레임워크 추출 절차 |
+
+<!-- upstream-only:start -->
+프레임워크 추출(재사용 생성물 만들기)은 [재사용 Base 생성 가이드](./docs/03-guides/reusable-base-guide.md)의 절차를 따른다.
+<!-- upstream-only:end -->
 
 ### 📗 개발 지침 (`docs/03-guides/`)
 | 문서 | 설명 |
