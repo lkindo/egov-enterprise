@@ -164,6 +164,15 @@ public class BoardApiController {
             + "게시 기간은 8자리(yyyyMMdd)이며 종료일은 시작일보다 빠를 수 없습니다(400). 예약 게시를 받지 않는 게시판에서 오늘보다 뒤의 "
             + "시작일은 400 입니다. 시작일이 오늘보다 뒤인 글은 그날까지 작성자와 조회 대행 권한자에게만 보입니다. "
             + "비밀글 정책이 REQUIRED 인 게시판은 scrtYn 과 관계없이 비밀글로 저장합니다.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201",
+                    description = "등록 성공 — 새 게시글 번호", useReturnTypeSchema = true),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404",
+                    description = "게시판이 없거나 이용할 수 없음(사용 안 함 게시판은 조회 대행 권한 보유자만 이용, B001), 지정한 첨부 묶음이 "
+                            + "없음(C007), 또는 인증 뒤 작성자 계정이 삭제됨(U001) (code: B001/C007/U001)",
+                    content = @io.swagger.v3.oas.annotations.media.Content(mediaType = "application/json",
+                            schema = @io.swagger.v3.oas.annotations.media.Schema(ref = "#/components/schemas/ApiResponseVoid")))
+    })
     @PostMapping("/posts")
     @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#createPost')")
@@ -184,6 +193,15 @@ public class BoardApiController {
      */
     @Operation(summary = "게시글 등록(첨부 포함)", description = "게시글과 첨부 파일을 함께 등록합니다. 경로와 본문의 게시판이 다르면 400 입니다. "
             + "비밀글 정책이 REQUIRED 인 게시판은 scrtYn 과 관계없이 비밀글로 저장합니다.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201",
+                    description = "등록 성공 — 새 게시글 번호", useReturnTypeSchema = true),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404",
+                    description = "게시판이 없거나 이용할 수 없음(사용 안 함 게시판은 조회 대행 권한 보유자만 이용, B001), 파일 없이 보내며 "
+                            + "지정한 첨부 묶음이 없음(C007), 또는 인증 뒤 작성자 계정이 삭제됨(U001) (code: B001/C007/U001)",
+                    content = @io.swagger.v3.oas.annotations.media.Content(mediaType = "application/json",
+                            schema = @io.swagger.v3.oas.annotations.media.Schema(ref = "#/components/schemas/ApiResponseVoid")))
+    })
     @PostMapping(value = "/{bbsId}/posts/with-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#createPostWithFiles')")

@@ -837,13 +837,14 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
         }
 
         /**
-         * 게시글·답글 작성자의 표시 이름. 대체 이름을 두지 않는다 — 사용자를 찾지 못하면 {@code USER_NOT_FOUND} 업무 예외로,
-         * 그 밖의 조회 실패는 원래 예외로 등록이 실패한다.
+         * 게시글·답글 작성자의 표시 이름. 대체 이름을 두지 않는다 — 사용자를 찾지 못하면 {@code USER_NOT_FOUND}(404, U001) 업무
+         * 예외로, 그 밖의 조회 실패는 원래 예외로 등록이 실패한다. 미조회는 인증 뒤 계정이 삭제된 요청에서 도달한다(인증 전에 없던
+         * 계정은 인증 단계에서 막힌다).
          *
-         * <p>[2026-11-23 GAP-BOARD-004 재현] 종전에는 예외를 잡아 "익명" 으로 바꿨지만 그 이름은 저장될 수 없었다. 작성자 열은
-         * 사용자 표를 가리키는 FK({@code fk_tb_bbs_item_tb_user_info})라 없는 사용자의 글은 INSERT 가 거부되고, 사용자 서비스는
-         * 등록 트랜잭션에 참여하므로 그 안에서 난 조회 예외는 트랜잭션을 rollback-only 로 표시해 커밋이 실패했다. 대체는 원인을
-         * FK 위반·{@code UnexpectedRollbackException} 으로 가리기만 했다.
+         * <p>[2026-11-23 GAP-BOARD-004] 종전에는 예외를 잡아 "익명" 으로 바꿨지만 그 이름은 저장되지 않았다. 재현에서 없는 사용자의
+         * 글은 작성자 FK({@code fk_tb_bbs_item_tb_user_info})가 INSERT 를 거부했다. 사용자 서비스는 등록 트랜잭션에 참여하므로 그
+         * 안에서 난 조회 예외는 트랜잭션을 rollback-only 로 표시한다 — 재현한 사례(주민번호 암호문 손상으로 조회가 실패)에서는 "익명"
+         * INSERT 뒤 커밋이 {@code UnexpectedRollbackException} 으로 실패해 원인이 가려졌다.
          */
         private String resolveAuthorName(String userId) {
                 return userService.getUserById(required(userId, "userId 는 null 일 수 없습니다")).userNm();

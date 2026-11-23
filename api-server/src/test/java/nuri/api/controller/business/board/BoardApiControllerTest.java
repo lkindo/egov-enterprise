@@ -353,6 +353,27 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data").value("1"));
     }
 
+    /**
+     * [2026-11-23 GAP-BOARD-004] 인증 뒤 작성자 계정이 삭제된 요청은 작성자 이름 조회가 미조회로 끝난다 — 등록은 대체 이름 없이
+     * 404 이고 본문 코드는 U001 이다. 이 연산의 OpenAPI 404 선언(code: B001/C007/U001)과 같은 계약이다.
+     */
+    @Test
+    @WithMockCustomUser(username = "testUser", esntlId = "testUser")
+    @DisplayName("게시글 등록 중 작성자 계정이 사라졌으면 404 이고 본문 코드는 U001 이다")
+    void createPost_authorDeletedAfterAuthentication_isNotFoundWithUserCode() throws Exception {
+        given(boardService.createPost(anyString(), any(BoardSaveRequest.class)))
+                .willThrow(new nuri.foundation.core.exception.BusinessException(
+                        nuri.business.domain.user.exception.UserErrorCode.USER_NOT_FOUND));
+
+        mockMvc.perform(post("/api/v1/boards/posts")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"bbsId\":\"BBS_001\", \"pstTtl\":\"Subject\", \"pstCn\":\"Content\"}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("U001"));
+    }
+
     // ── [2026-10-23 ADR-0040 B3] 추천 취소 ─────────────────────────────
 
     @Test

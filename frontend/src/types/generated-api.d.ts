@@ -26749,7 +26749,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 등록 성공 — 새 게시글 번호 */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -26785,7 +26785,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
-            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            /** @description 게시판이 없거나 이용할 수 없음(사용 안 함 게시판은 조회 대행 권한 보유자만 이용, B001), 파일 없이 보내며 지정한 첨부 묶음이 없음(C007), 또는 인증 뒤 작성자 계정이 삭제됨(U001) (code: B001/C007/U001) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -26818,7 +26818,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 등록 성공 — 새 게시글 번호 */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -26847,6 +26847,15 @@ export interface operations {
             };
             /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 게시판이 없거나 이용할 수 없음(사용 안 함 게시판은 조회 대행 권한 보유자만 이용, B001), 지정한 첨부 묶음이 없음(C007), 또는 인증 뒤 작성자 계정이 삭제됨(U001) (code: B001/C007/U001) */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

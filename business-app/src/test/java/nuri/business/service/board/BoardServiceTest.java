@@ -1176,6 +1176,7 @@ class BoardServiceTest {
     /**
      * [2026-11-23 GAP-BOARD-004] 종전 기대("익명" 으로 저장)는 이 Mockito 시험에서만 성립했다. 실제 트랜잭션과 스키마에서는 없는
      * 작성자의 글이 작성자 FK 로 거부됐다(BoardOperationsPostgresIntegrationTest) — 대체 이름을 걷고 미조회를 그대로 실패시킨다.
+     * 미조회는 인증 뒤 계정이 삭제된 요청에서 도달한다(인증 전에 없던 계정은 인증 단계에서 막힌다).
      */
     @Test
     @DisplayName("작성자를 찾을 수 없으면 게시글 등록은 USER_NOT_FOUND 로 실패하고 저장하지 않는다")
@@ -1197,7 +1198,8 @@ class BoardServiceTest {
 
     /**
      * [2026-11-23 GAP-BOARD-004] 사용자 서비스는 등록 트랜잭션에 참여하므로 그 안의 조회 예외는 트랜잭션을 rollback-only 로 만든다.
-     * 종전처럼 잡아서 "익명" 으로 저장해도 커밋에서 실패했다(BoardOperationsPostgresIntegrationTest) — 원래 예외를 그대로 드러낸다.
+     * 재현한 사례(주민번호 암호문 손상으로 조회가 실패)에서는 종전처럼 잡아서 "익명" 으로 저장해도 커밋에서 실패했다
+     * (BoardOperationsPostgresIntegrationTest) — 원래 예외를 그대로 드러낸다.
      */
     @Test
     @DisplayName("사용자 조회가 실패하면 게시글 등록은 원래 예외로 실패하고 저장하지 않는다")
