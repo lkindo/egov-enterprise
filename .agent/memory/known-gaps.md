@@ -59,7 +59,7 @@ refresh_triggers:
 - 제품 동작·화면·도메인: GAP-FE-002·GAP-FE-003·GAP-MEMO-001·GAP-BOARD-002·GAP-BOARD-003·GAP-DOMAIN-001·GAP-BOARD-001·GAP-POLL-001·GAP-POLICY-001·GAP-API-001·GAP-CMTY-001·GAP-ARCH-001
 - 프로젝트 생성기·재사용 투영: GAP-BASE-002
 - 레거시 이관 도구: GAP-ETL-001
-- CI·검증·거버넌스: GAP-DEP-002
+- CI·검증·거버넌스: GAP-DEP-002·GAP-SEC-007
 
 ## 재검증 대기
 
@@ -101,7 +101,6 @@ refresh_triggers:
 | GAP-E2E-001 | P3 | needs-revalidation | E2E impact selection | PR 은 검토된 화면 변경만 E2E 를 spec 단위로 선별하고 공유·미지 입력과 main 은 전수다 — 일반 의존성 완전성과 절감률은 검증되지 않았다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
 | GAP-DATA-002 | P2 | blocked-external | legacy input data | OCI 설문 3행의 시작·종료일이 잘린 채 남아 있다 — 업무 소유자가 원래 날짜를 확인하기 전에는 추정해 보정하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-DEP-001 | P1 | needs-revalidation | dependency security | PR 의존성 snapshot readiness 와 runtime High 차단은 구현됐고, public fork probe 와 양쪽 snapshot 부재 경계는 외부 검증이 남았다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
-| GAP-SEC-007 | P2 | blocked-external | exposed credentials in history | 원본 Git 이력에 커밋됐던 외부 DB 접속 정보·암호화 키·서명 비밀의 폐기·회전 확인 기록이 없고, E2E 인증 상태·DB 덤프는 무효화 필요성이 미판정이다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
 | GAP-MIG-001 | P1 | blocked-external | migration-tool | vendor 7종 이관의 실측 범위가 서로 다르고 모두 UNVERIFIED·MANUAL_ONLY 다 — 도입 버전·driver 별 COMMIT 자격·cutover 는 기관 실측이 필요하다. | [상세](../../docs/04-operations/known-gaps-detail.md#migration) |
 
 ## 해결 규칙
