@@ -167,7 +167,9 @@ export function useAppForm<
     shouldFocusError: props?.shouldFocusError ?? false,
     // resolver 패키지는 구체 Zod 스키마의 입출력을 이 제네릭 경계에서 보존하지 못한다.
     // 소비 폼의 TFieldValues 로 한 번만 좁히고, 이후 register/submit 표면은 강타입으로 유지한다.
-    resolver: zodResolver(schema) as Resolver<TFieldValues, unknown>,
+    // @hookform/resolvers 7.0.7 부터 리졸버가 스키마의 입력·출력 타입을 따로 들고 와 TFieldValues 와 직접 겹치지 않으므로
+    // unknown 을 거친다(런타임 값은 그대로다 — 좁히는 대상과 이유는 위와 같다).
+    resolver: zodResolver(schema) as unknown as Resolver<TFieldValues, unknown>,
   });
 
   const mountedRef = useRef(true);
