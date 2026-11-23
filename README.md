@@ -35,7 +35,7 @@
 - **Icons**: Lucide React
 
 ### Backend
-- **Core**: Spring Boot 4.1.1(Spring Framework 7), Java 21 (LTS)
+- **Core**: Spring Boot 4.1(Spring Framework 7), Java 21 (LTS)
 - **Database**: PostgreSQL (JPA/Hibernate)
 - **Architecture**: 멀티 모듈 (`foundation` / `business-core` / `business-app` / `api-server`). 단방향 의존·도메인 격리(ArchUnit)
 - **Mapping**: MapStruct (엔티티↔DTO 컴파일타임 매핑 표준)
@@ -192,7 +192,7 @@ pnpm dev
 >
 > 빈 DB 부팅 시 repeatable 마이그레이션 `R__seed_framework`가 관리자 역할 계정을 만들지만 **로그인 가능한 비밀번호는 시드하지 않습니다**. 입력과 매칭되지 않는 sentinel 상태로 시작합니다.
 >
-> - **dev / local / e2e**: `spring.flyway.locations`가 `classpath:db/seed-dev`를 함께 적재하여 개발 전용 계정을 넣습니다. 공개 배포나 운영에 이 seed를 포함하지 않습니다.
+> - **dev / e2e 프로필**: `spring.flyway.locations`가 `classpath:db/seed-dev`를 함께 적재하여 개발 전용 계정을 넣습니다(PostgreSQL 기준 — 다른 DB 로 생성한 프로젝트는 이 seed 를 적용하지 않으며 README 끝의 「데이터베이스」 절을 따릅니다). 공개 배포나 운영에 이 seed를 포함하지 않습니다.
 > - **운영**: `ADMIN_INITIAL_PASSWORD` 환경변수를 주고 기동하면 `AdminPasswordProvisioner` 가 최초 1회 비밀번호를 설정합니다. 이미 설정된 비밀번호는 절대 덮어쓰지 않으며(재기동마다 되돌아가면 그 자체가 백도어), 로그인 후 즉시 변경하고 환경변수를 제거하십시오. 미설정 시 이 계정은 로그인 불가 상태로 남고 기동 로그에 경고가 남습니다.
 
 <!-- upstream-only:start -->

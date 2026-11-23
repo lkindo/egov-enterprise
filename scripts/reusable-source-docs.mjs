@@ -127,8 +127,9 @@ export function rewriteDanglingLinks(source, judge) {
  * 문서 인덱스에서 없어진 문서를 소개하는 행을 지운다 — 표의 행은 첫 칸이 그 문서의 링크이거나 행의 링크가 그것 하나뿐일 때,
  * 문단 행은 "[문서](경로) — 설명" 으로 시작할 때이고, 모두 그 대상 파일이 없을 때만이다.
  * 절만 없는 링크, 대상이 남아 있는 행, 코드 예시·주석 안의 행은 지우지 않는다.
- * leadingOnly 면 표에서 첫 칸이 그 문서의 링크인 행만 지운다 — 문서 인덱스가 아닌 글(루트 README)의 표에는 문서 소개가 아닌 행도
- * 있어, 설명 칸에 끊긴 링크 하나가 있다고 행을 지우면 남아야 할 안내가 사라진다(그런 링크는 글자로만 남긴다).
+ * leadingOnly 면 표에서 첫 칸이 그 문서의 링크뿐인 행만 지운다 — 문서 인덱스가 아닌 글(루트 README)에는 문서 소개가 아닌 행과
+ * 문단도 있어, 끊긴 링크 하나가 있다고 줄을 지우면 남아야 할 안내가 사라진다(그런 링크는 글자로만 남긴다). 첫 칸은 원문으로 본다 —
+ * 가린 글에서는 인라인 코드가 공백이라 `명령` [문서](…) 로 시작하는 칸도 링크뿐인 칸처럼 보인다.
  */
 export function dropDanglingIndexRows(source, judge, { leadingOnly = false } = {}) {
   const masked = maskExamples(source);
@@ -146,9 +147,11 @@ export function dropDanglingIndexRows(source, judge, { leadingOnly = false } = {
     const first = inLine[0];
     let introduced = null;
     if (cell) {
-      const leads = first && first.start === start + cell[0].length && /^[ \t]*\|/.test(masked.slice(first.end, end));
+      const text = leadingOnly ? line : masked.slice(start, end);
+      const lead = /^[ \t]*\|[ \t]*/.exec(text);
+      const leads = first && lead && first.start === start + lead[0].length && /^[ \t]*\|/.test(text.slice(first.end - start));
       if (leads || (!leadingOnly && inLine.length === 1)) introduced = first;
-    } else if (first && first.start === start && /^[ \t]+—[ \t]/.test(masked.slice(first.end, end))) introduced = first;
+    } else if (!leadingOnly && first && first.start === start && /^[ \t]+—[ \t]/.test(masked.slice(first.end, end))) introduced = first;
     if (introduced && judge(introduced.raw) === 'missing-file') {
       dropped += 1;
       afterDrop = true;
@@ -272,9 +275,12 @@ export function dropUpstreamOnlyBlocks(source) {
   return { text: kept.join(''), blocks };
 }
 
-/** 단일모듈 배치의 Gradle 은 루트 프로젝트 하나다. 진입점 태스크의 프로젝트 경로(`:api-server:bootRun`)를 그 배치의 것으로 바꾼다. */
+/**
+ * 단일모듈 배치의 Gradle 은 루트 프로젝트 하나다. 진입점 태스크의 프로젝트 경로(`:api-server:bootRun`·`api-server:bootRun`)를
+ * 그 배치의 것으로 바꾼다. 태스크 토큰 전체가 맞을 때만 바꾼다(다른 낱말·주소의 일부는 두고, 남은 경로는 검사가 막는다).
+ */
 export function projectReadmeLayout(readme, layout) {
-  return layout === 'single-module' ? readme.replaceAll(':api-server:bootRun', 'bootRun') : readme;
+  return layout === 'single-module' ? readme.replace(/(?<![\w:/=-]):?api-server:bootRun(?![\w:-])/gu, 'bootRun') : readme;
 }
 
 /** 생성 프로젝트 README 의 머리. 구성·배치·검증의 정본은 생성기가 함께 쓰는 두 문서다. */
@@ -324,30 +330,35 @@ const escapePattern = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /**
  * README 가 생성 프로젝트에 없는 것을 안내하는 줄을 찾는다. 코드 예시도 본다 — 예시의 명령이 곧 안내다.
  *   - 걷은 별칭(`npm run` 유무와 상관없이 낱말로)
- *   - 걷은 자산·시험의 경로(대소문자·`\` 표기를 가리지 않고, 바깥 주소 안의 경로는 빼고)
- *   - scripts 를 주면 그 루트 package.json 에 없는 `npm run` 대상(옵션이 앞서도 본다. `pnpm run` 은 다른 package.json 이라 보지 않는다)
- *   - layout 이 single-module 이면 Gradle 프로젝트 경로(`:모듈:태스크`)
+ *   - 걷은 자산·시험의 경로(저장소 루트 기준 경로의 구성요소로, 대소문자·`\` 표기를 가리지 않고, 바깥 주소 안의 경로는 빼고)
+ *   - scripts 를 주면 그 루트 package.json 에 없는 `npm run <이름>` 대상. 이름은 토큰 전체로 대조하고, 옵션이 이름보다 앞서면 값을
+ *     받는 옵션인지 가릴 수 없어 붉게 한다(이름을 먼저 쓴다). `pnpm run`·`npm --prefix … run` 은 다른 package.json 이라 보지 않는다
+ *   - layout 이 single-module 이면 Gradle 프로젝트 경로(`:모듈:태스크`, `gradlew 모듈:태스크`)
  */
 export function readmeMentionErrors(readme, { removedAliases = [], removedAssets = [], scripts = null, layout = null } = {}) {
   const errors = [];
   const aliasPatterns = removedAliases.map(alias => [alias, new RegExp(`(?<![\\w:-])${escapePattern(alias)}(?![\\w:-])`, 'u')]);
-  const assetPatterns = removedAssets.map(asset => [asset, new RegExp(`(?<![\\w-])${escapePattern(asset)}(?![\\w-])`, 'iu')]);
+  const assetPatterns = removedAssets.map(asset => [asset,
+    new RegExp(`(?<![\\w-])(?<![\\w-]/)${escapePattern(asset)}(?![\\w-]|\\.\\w)`, 'iu')]);
   readme.split(/\r?\n/).forEach((line, index) => {
     const at = `README.md:${index + 1}`;
     const local = line.replace(/https?:\/\/[^\s)>\]]+/giu, '').replaceAll('\\', '/');
     for (const [alias, pattern] of aliasPatterns) if (pattern.test(line)) errors.push(`${at} 생성 프로젝트에 없는 명령 \`${alias}\``);
     for (const [asset, pattern] of assetPatterns) if (pattern.test(local)) errors.push(`${at} 생성 프로젝트에 없는 자산 \`${asset}\``);
     if (scripts) {
-      for (const match of line.matchAll(/(?<![\w-])npm run(?:\s+-{1,2}[\w-]+(?:=\S+)?)*\s+([a-z][\w:-]*)/gu)) {
-        if (!Object.hasOwn(scripts, match[1]) && !removedAliases.includes(match[1])) {
-          errors.push(`${at} package.json 에 없는 명령 \`npm run ${match[1]}\``);
-        }
+      for (const match of line.matchAll(/(?<![\w-])npm run(?![\w-])[ \t]+([^\s`'"]+)/gu)) {
+        const name = match[1].replace(/[.,;:)\]]+$/u, '');
+        if (name.startsWith('-')) errors.push(`${at} 옵션이 앞선 \`npm run\` 은 판정하지 못한다 — 스크립트 이름을 먼저 쓴다`);
+        else if (!Object.hasOwn(scripts, name) && !removedAliases.includes(name)) errors.push(`${at} package.json 에 없는 명령 \`npm run ${name}\``);
       }
     }
     if (layout === 'single-module') {
-      for (const match of local.matchAll(/(?<![\w/]):[a-z][\w-]*:[A-Za-z]\w*/gu)) {
-        errors.push(`${at} 단일모듈 배치에 없는 Gradle 프로젝트 경로 \`${match[0]}\``);
+      const gradlePaths = [...local.matchAll(/(?<![\w/]):[A-Za-z][\w-]*(?::[A-Za-z][\w-]*)+/gu)].map(match => match[0]);
+      // gradlew 의 태스크 인자는 선행 콜론 없이도 프로젝트 경로다(`gradlew api-server:test`).
+      for (const command of local.matchAll(/gradlew(?:\.bat)?((?:[ \t]+[^\s`'"|&;]+)*)/gu)) {
+        gradlePaths.push(...command[1].trim().split(/[ \t]+/).filter(token => /^[A-Za-z][\w-]*(?::[A-Za-z][\w-]*)+$/u.test(token)));
       }
+      for (const found of gradlePaths) errors.push(`${at} 단일모듈 배치에 없는 Gradle 프로젝트 경로 \`${found}\``);
     }
   });
   return errors;

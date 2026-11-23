@@ -308,25 +308,41 @@ test('a README line that advertises a removed command, asset or Gradle project i
     '[설계](docs/legacy-migration-tool-design.md) 는 다른 이름이다.', 'verify:migration-extra 와 pre-base:verify 도 다른 이름이다.',
     // 다른 package.json 의 명령과 바깥 주소 안의 경로는 이 프로젝트의 루트 안내가 아니다.
     'cd frontend && pnpm run type-check', '[원본](https://example.com/egov/migration-tool/README.md)',
-    '`./gradlew :api-server:bootRun`'].join('\n'), options), []);
+    // 실제로 남는 보관 이력의 파일 이름과 다른 깊이의 같은 이름은 걷은 디렉터리가 아니다.
+    '`config/governance/upstream-verification/.github/workflows/migration-tool.yml`', '`docs/tools/requirements-workspace/x`',
+    '`npm run dev`.', 'npm run dev, npm run verify.', 'npm run-script anything',
+    '`./gradlew :api-server:bootRun`', './gradlew api-server:test'].join('\n'), options), []);
   assert.deepEqual(readmeMentionErrors(['`npm run verify:migration`', '`review:x` / `base:verify`', '```', 'cd migration-tool/', '```',
-    '`tools/requirements-workspace/package-lock.json`', 'npm run unknown', 'npm run --silent made-up', 'npm run -s made-up -- --flag',
-    'tools\\requirements-workspace\\package.json', 'cd MIGRATION-TOOL/'].join('\r\n'), options), [
+    '`tools/requirements-workspace/package-lock.json`', 'npm run unknown', 'npm run --silent dev', 'npm run --loglevel warn dev',
+    'tools\\requirements-workspace\\package.json', 'cd MIGRATION-TOOL/', 'npm run --prefix . made-up', 'npm run dev.missing',
+    '[이관](./migration-tool/README.md)'].join('\r\n'), options), [
     'README.md:1 생성 프로젝트에 없는 명령 `verify:migration`',
     'README.md:2 생성 프로젝트에 없는 명령 `base:verify`',
     'README.md:4 생성 프로젝트에 없는 자산 `migration-tool`',
     'README.md:6 생성 프로젝트에 없는 자산 `tools/requirements-workspace`',
     'README.md:7 package.json 에 없는 명령 `npm run unknown`',
-    'README.md:8 package.json 에 없는 명령 `npm run made-up`',
-    'README.md:9 package.json 에 없는 명령 `npm run made-up`',
+    // 옵션이 이름보다 앞서면 값을 받는 옵션인지 가릴 수 없다(`--loglevel warn dev` 의 warn 은 이름이 아니다) — 그 꼴을 붉게 한다.
+    'README.md:8 옵션이 앞선 `npm run` 은 판정하지 못한다 — 스크립트 이름을 먼저 쓴다',
+    'README.md:9 옵션이 앞선 `npm run` 은 판정하지 못한다 — 스크립트 이름을 먼저 쓴다',
     'README.md:10 생성 프로젝트에 없는 자산 `tools/requirements-workspace`',
     'README.md:11 생성 프로젝트에 없는 자산 `migration-tool`',
+    'README.md:12 옵션이 앞선 `npm run` 은 판정하지 못한다 — 스크립트 이름을 먼저 쓴다',
+    'README.md:13 package.json 에 없는 명령 `npm run dev.missing`',
+    'README.md:14 생성 프로젝트에 없는 자산 `migration-tool`',
   ]);
   // scripts 를 주지 않으면 package.json 대조는 하지 않는다. 단일모듈에는 Gradle 하위 프로젝트가 없다.
   assert.deepEqual(readmeMentionErrors('npm run unknown\n', { removedAliases: ['base:verify'] }), []);
-  assert.deepEqual(readmeMentionErrors('`./gradlew :api-server:bootRun` · `classpath:db/seed-dev` · http://localhost:8080/api\n',
-    { layout: 'single-module' }), ['README.md:1 단일모듈 배치에 없는 Gradle 프로젝트 경로 `:api-server:bootRun`']);
-  assert.equal(projectReadmeLayout('`./gradlew :api-server:bootRun`\n', 'single-module'), '`./gradlew bootRun`\n');
+  assert.deepEqual(readmeMentionErrors(['`./gradlew :api-server:bootRun` · `classpath:db/seed-dev` · http://localhost:8080/api · jdbc:oracle:thin:@db',
+    './gradlew api-server:test --tests nuri.FooTest', 'gradlew.bat clean :business-app:domain:Build', './gradlew bootRun -Pprofile=dev:local'].join('\n'),
+  { layout: 'single-module' }), [
+    'README.md:1 단일모듈 배치에 없는 Gradle 프로젝트 경로 `:api-server:bootRun`',
+    'README.md:2 단일모듈 배치에 없는 Gradle 프로젝트 경로 `api-server:test`',
+    'README.md:3 단일모듈 배치에 없는 Gradle 프로젝트 경로 `:business-app:domain:Build`',
+  ]);
+  assert.equal(projectReadmeLayout('`./gradlew :api-server:bootRun` · `./gradlew api-server:bootRun`\n', 'single-module'),
+    '`./gradlew bootRun` · `./gradlew bootRun`\n');
+  assert.equal(projectReadmeLayout(':api-server:bootRunner · my-api-server:bootRun · ?task=:api-server:bootRun\n', 'single-module'),
+    ':api-server:bootRunner · my-api-server:bootRun · ?task=:api-server:bootRun\n', '태스크 토큰 전체가 아니면 그대로 둔다');
   assert.equal(projectReadmeLayout('`./gradlew :api-server:bootRun`\n', 'multi-module'), '`./gradlew :api-server:bootRun`\n');
 });
 
@@ -372,7 +388,7 @@ test('the origin README, projected as a generated project sees it, advertises no
   assert.ok(!/^#{2,4} [^\r\n]*\r?\n(?:\r?\n)*(?:---\r?$|## )/m.test(projected), '내용 없는 절');
   // 실행 안내는 남고, 원본 저장소만의 절·버전 체인 설명과 걷힌 문서를 소개하는 표의 행은 빠진다.
   for (const kept of ['make bootstrap', 'npm run dev', './gradlew :api-server:bootRun', '## 📚 문서 (Documentation)', '## 📄 라이선스 (License)',
-    'R__seed_framework']) assert.ok(projected.includes(kept), kept);
+    'R__seed_framework', 'dev / e2e 프로필']) assert.ok(projected.includes(kept), kept);
   for (const gone of ['Atlas', '검증 진입점', '기여 가이드', '레거시 이관 도구 설계', '재사용 Base 생성 가이드', 'V2_0', 'V2_2']) {
     assert.ok(readme.includes(gone) && !projected.includes(gone), gone);
   }
@@ -386,6 +402,9 @@ test('the origin README, projected as a generated project sees it, advertises no
   assert.ok(errorsOf(withLine('이관은 `migration-tool/` 에서 한다.')).some(error => error.endsWith('생성 프로젝트에 없는 자산 `migration-tool`')));
   assert.ok(errorsOf(withLine('`./gradlew :api-server:test` 로 시험한다.'), { layout: 'single-module' })
     .some(error => error.endsWith('단일모듈 배치에 없는 Gradle 프로젝트 경로 `:api-server:test`')));
+  assert.ok(errorsOf(withLine('`./gradlew api-server:test` 로 시험한다.'), { layout: 'single-module' })
+    .some(error => error.endsWith('단일모듈 배치에 없는 Gradle 프로젝트 경로 `api-server:test`')));
+  assert.deepEqual(errorsOf(withLine('`./gradlew api-server:test` 로 시험한다.')), [], '멀티모듈에서는 맞는 명령이다');
   assert.throws(() => errorsOf(readme.replace(UPSTREAM_ONLY_END, '')), /원본 전용 구간이 겹쳤다|닫히지 않았다/);
   // 별칭 계산의 양방향: 벤더에만 있는 명령은 PostgreSQL 에서 붉고 벤더에서는 통과하며, 모든 생성 프로젝트에 있는 진입점은 어디서도 통과한다.
   const vendorOnly = withLine(`\`npm run ${VENDOR_SCHEMA_ALIAS}\` 로 스키마를 본다.`);
@@ -403,14 +422,18 @@ test('the origin README, projected as a generated project sees it, advertises no
 test('the root README drops only the table rows whose first cell introduces a removed document', () => {
   const root = artifact({
     'README.md': ['# Product', '', '| 문서 | 설명 |', '|---|---|', '| [남는 문서](docs/kept.md) | 설명 |', '| [없는 문서](docs/gone.md) | 설명 |', '',
-      '| 실행 | 설명 |', '|---|---|', '| `make bootstrap` | [없는 문서](docs/gone.md)도 본다 |', '',
+      '| 실행 | 설명 |', '|---|---|', '| `make bootstrap` | [없는 문서](docs/gone.md)도 본다 |',
+      '| `make verify` [없는 문서](docs/gone.md) | 첫 칸에 명령이 함께 있다 |', '',
+      '[없는 문서](docs/gone.md) — 표 밖의 문단은 문서 소개 꼴이어도 남긴다.', '',
       '본문의 [없는 문서](docs/gone.md) 언급은 글자로 남는다.', ''].join('\n'),
     'docs/kept.md': '# Kept\n',
   });
   try {
     const summary = projectGeneratedDocs(root);
     assert.equal(read(root, 'README.md'), ['# Product', '', '| 문서 | 설명 |', '|---|---|', '| [남는 문서](docs/kept.md) | 설명 |', '',
-      '| 실행 | 설명 |', '|---|---|', '| `make bootstrap` | 없는 문서도 본다 |', '',
+      '| 실행 | 설명 |', '|---|---|', '| `make bootstrap` | 없는 문서도 본다 |',
+      '| `make verify` 없는 문서 | 첫 칸에 명령이 함께 있다 |', '',
+      '없는 문서 — 표 밖의 문단은 문서 소개 꼴이어도 남긴다.', '',
       '본문의 없는 문서 언급은 글자로 남는다.', ''].join('\n'));
     assert.equal(summary.droppedIndexRows, 1);
   } finally {
