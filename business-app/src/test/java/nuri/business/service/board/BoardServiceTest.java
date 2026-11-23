@@ -1173,9 +1173,13 @@ class BoardServiceTest {
                         && cond.getEndDate().toLocalDate().equals(java.time.LocalDate.of(2026, 8, 31))), any());
     }
 
+    /**
+     * [2026-11-23 GAP-BOARD-004] 종전 기대("익명" 으로 저장)는 이 Mockito 시험에서만 성립했다. 실제 트랜잭션과 스키마에서는 없는
+     * 작성자의 글이 작성자 FK 로 거부됐다(BoardOperationsPostgresIntegrationTest) — 대체 이름을 걷고 미조회를 그대로 실패시킨다.
+     */
     @Test
-    @DisplayName("작성자를 찾을 수 없는 경우 익명으로 게시글 생성")
-    void createPost_UserNotFound() {
+    @DisplayName("작성자를 찾을 수 없으면 게시글 등록은 USER_NOT_FOUND 로 실패하고 저장하지 않는다")
+    void createPost_UserNotFound_failsWithoutSaving() {
         // given
         String userId = "unknown";
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null);
@@ -1183,36 +1187,33 @@ class BoardServiceTest {
 
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById(userId)).willThrow(new BusinessException(UserErrorCode.USER_NOT_FOUND));
-        given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
-        // when
-        Long pstSn = boardService.createPost(userId, request);
-
-        // then
-        assertThat(pstSn).isEqualTo(1L);
-        verify(boardRepository).save(argThat(b -> "unknown".equals(b.getUserId()) && "익명".equals(b.getUserNm())));
+        // when & then
+        assertThatThrownBy(() -> boardService.createPost(userId, request))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", UserErrorCode.USER_NOT_FOUND);
+        verify(boardRepository, never()).save(any(Board.class));
     }
 
+    /**
+     * [2026-11-23 GAP-BOARD-004] 사용자 서비스는 등록 트랜잭션에 참여하므로 그 안의 조회 예외는 트랜잭션을 rollback-only 로 만든다.
+     * 종전처럼 잡아서 "익명" 으로 저장해도 커밋에서 실패했다(BoardOperationsPostgresIntegrationTest) — 원래 예외를 그대로 드러낸다.
+     */
     @Test
-    @DisplayName("사용자 조회 중 예외 발생 시 익명으로 게시글 생성")
-    void createPost_UserError() {
+    @DisplayName("사용자 조회가 실패하면 게시글 등록은 원래 예외로 실패하고 저장하지 않는다")
+    void createPost_UserLookupError_propagatesWithoutSaving() {
         // given
         String userId = "errorUser";
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
+        RuntimeException lookupFailure = new RuntimeException("DB Error");
 
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
-        given(userService.getUserById(userId)).willThrow(new RuntimeException("DB Error"));
-        given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
+        given(userService.getUserById(userId)).willThrow(lookupFailure);
 
-        // when
-        Long pstSn = boardService.createPost(userId, request);
-
-        // then
-        assertThat(pstSn).isEqualTo(1L);
-        verify(boardRepository).save(argThat(b -> "errorUser".equals(b.getUserId()) && "익명".equals(b.getUserNm())));
+        // when & then
+        assertThatThrownBy(() -> boardService.createPost(userId, request)).isSameAs(lookupFailure);
+        verify(boardRepository, never()).save(any(Board.class));
     }
 
     @Test
@@ -1352,6 +1353,8 @@ class BoardServiceTest {
         BoardMaster master = attachableMaster("BBS_01");
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
+        // 작성자 이름 조회 — 운영의 getUserById 는 null 을 돌려주지 않는다(종전 "익명" 대체가 스텁 누락을 가렸다, GAP-BOARD-004).
+        given(userService.getUserById(userId)).willReturn(UserDto.builder().userId(userId).userNm("Tester").build());
         given(fileService.uploadBoardFiles(files)).willReturn(101L);
         given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
@@ -1398,9 +1401,10 @@ class BoardServiceTest {
         verify(boardRepository, never()).save(any(Board.class));
     }
 
+    /** [2026-11-23 GAP-BOARD-004] 게시글 등록과 같다 — 없는 작성자의 답글은 작성자 FK 로 저장될 수 없어 미조회를 그대로 실패시킨다. */
     @Test
-    @DisplayName("작성자를 찾을 수 없는 경우 익명으로 답글 생성")
-    void replyPost_UserNotFound() {
+    @DisplayName("작성자를 찾을 수 없으면 답글 등록은 USER_NOT_FOUND 로 실패하고 저장하지 않는다")
+    void replyPost_UserNotFound_failsWithoutSaving() {
         // given
         String userId = "unknown";
         Long parentId = 1L;
@@ -1411,14 +1415,12 @@ class BoardServiceTest {
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(userService.getUserById(userId)).willThrow(new BusinessException(UserErrorCode.USER_NOT_FOUND));
-        given(boardRepository.findMaxAnsSn(any(), any())).willReturn(0L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
-        // when
-        boardService.replyPost(userId, parentId, request);
-
-        // then
-        verify(boardRepository).save(argThat(b -> "unknown".equals(b.getUserId()) && "익명".equals(b.getUserNm())));
+        // when & then
+        assertThatThrownBy(() -> boardService.replyPost(userId, parentId, request))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", UserErrorCode.USER_NOT_FOUND);
+        verify(boardRepository, never()).save(any(Board.class));
     }
 
     @Test
@@ -1438,6 +1440,8 @@ class BoardServiceTest {
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
+        // 작성자 이름 조회 — 운영의 getUserById 는 null 을 돌려주지 않는다(종전 "익명" 대체가 스텁 누락을 가렸다, GAP-BOARD-004).
+        given(userService.getUserById(userId)).willReturn(UserDto.builder().userId(userId).userNm("Tester").build());
         given(fileService.uploadBoardFiles(files)).willReturn(101L);
         given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
@@ -1888,8 +1892,10 @@ class BoardServiceTest {
         // create
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
+        // 작성자 이름 조회 — 운영의 getUserById 는 null 을 돌려주지 않는다(종전 "익명" 대체가 스텁 누락을 가렸다, GAP-BOARD-004).
+        given(userService.getUserById(userId)).willReturn(UserDto.builder().userId(userId).userNm("Tester").build());
         given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
-        
+
         boardService.createPostWithFiles(userId, request, null);
         boardService.createPostWithFiles(userId, request, Collections.emptyList());
         
@@ -2164,6 +2170,8 @@ class BoardServiceTest {
     void createPost_storesFutureStartWhenReservationsAreOnAndBlankDatesAsNull() {
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
                 .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").rsvtPstgPsbltyYn("Y").build()));
+        // 작성자 이름 조회 — 운영의 getUserById 는 null 을 돌려주지 않는다(종전 "익명" 대체가 스텁 누락을 가렸다, GAP-BOARD-004).
+        given(userService.getUserById("user1")).willReturn(UserDto.builder().userId("user1").userNm("Tester").build());
         given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
         boardService.createPost("user1", new BoardSaveRequest("BBS_01", "예약", "본문", TOMORROW, "", null,
