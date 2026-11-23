@@ -30,6 +30,7 @@ import { adaptGeneratedHarness, assertJavaCascadeAcknowledged, assertRemovedGate
 import { writeHarnessBaseline } from './reusable-source-harness.mjs';
 import { VENDOR_ASSET_RULE, pruneVendorPostgresAssets } from './reusable-vendor-assets.mjs';
 import { PRODUCER_ASSET_RULE, REQUIREMENTS_ASSET_RULE, MIGRATION_ASSET_RULE, pruneProducerTools, pruneRequirementsStudio, pruneMigrationTools, stripMigrationBuildReferences } from './reusable-product-assets.mjs';
+import { projectGeneratedDocs } from './reusable-source-docs.mjs';
 import { pruneJava } from './reusable-source-java.mjs';
 import { ROOT, copySourceTree, fail, git, initializeGeneratedRepository, installDatabaseBundle, isCopyableSourceFile, normalize, readTextIfPresent,
   trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
@@ -302,6 +303,11 @@ async function main() {
   });
   verifyCompositionDatabaseFiles(join(output, 'api-server/src/main/resources/db/migration'), dbLock);
   adaptGeneratedHarness(output);
+  // 문서 링크 정리(DEC-OPS-427): 걷은 도구·문서를 가리키던 링크를 글자로 남기고, 남은 문서에 끊긴 링크가 있으면 멈춘다.
+  //   파일을 지우는 단계가 모두 끝난 뒤여야 한다. 문서는 증거 범위(codeScope)·하네스 기준선 밖이라 그 둘의 해시를 바꾸지 않는다.
+  const generatedDocs = projectGeneratedDocs(output);
+  console.log(`[base-source] ${args.profile}: 문서 ${generatedDocs.documents}개 가운데 ${generatedDocs.changedFiles}개의 끊긴 링크를 정리했다`
+    + `(글자로 ${generatedDocs.unlinked}개, 절만 뗀 것 ${generatedDocs.defragmented}개, 인덱스 행 ${generatedDocs.droppedIndexRows}개).`);
   // Ordering invariant: writeHarnessBaseline runs before reusable-base-lock.json is written, so absent scan roots must be passed explicitly.
   writeHarnessBaseline(output, {
     ownership,

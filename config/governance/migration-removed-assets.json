@@ -1,11 +1,15 @@
 {
   "schemaVersion": 1,
-  "authority": "ADR-0062 생성 애플리케이션 프로젝트(PostgreSQL·벤더, 멀티·단일모듈 공통)에서 제외하는 오프라인 레거시 이관 도구 자산의 원장이다. 독립 이관 제품은 원본 저장소의 npm run migration:export 로 별도 생성한다.",
+  "authority": "ADR-0062 생성 애플리케이션 프로젝트(PostgreSQL·벤더, 멀티·단일모듈 공통)에서 제외하는 오프라인 레거시 이관 도구 자산과 그 설계·실행·복구 문서의 원장이다. 독립 이관 제품은 원본 저장소의 npm run migration:export 로 별도 생성한다.",
   "assets": [
     "config/governance/migration-adoption-review.json",
     "config/governance/migration-execution.example.json",
     "config/migration-test-duration-profile.json",
     "db_columns.json",
+    "docs/02-architecture/legacy-migration-tool-design.md",
+    "docs/03-guides/migration-workspace-guide.md",
+    "docs/04-operations/migration-recovery-runbook.md",
+    "docs/archived/legacy-standardization-migration-design.md",
     "migration-tool",
     "scripts/generate-migration-product.mjs",
     "scripts/migration-profile-provenance.mjs",

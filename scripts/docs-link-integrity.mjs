@@ -58,7 +58,7 @@ function decodeEntities(value) {
   });
 }
 
-function destination(text) {
+export function linkDestination(text) {
   const angle = /^\s*<([^>]+)>/.exec(text);
   if (angle) return angle[1];
   return /^\s*(\S+?)(?:\s+["'].*|\s*$)/.exec(text)?.[1] ?? text.trim();
@@ -69,7 +69,7 @@ export function documentationLinks(source) {
   const result = [];
   const definitions = new Map();
   for (const match of text.matchAll(/^ {0,3}\[([^\]]+)\]:\s*(.+)$/gm)) {
-    definitions.set(match[1].trim().toLowerCase(), destination(match[2]));
+    definitions.set(match[1].trim().toLowerCase(), linkDestination(match[2]));
   }
   // Balanced parentheses allow relative paths such as guide(part-two).md.
   for (const match of text.matchAll(/(?<!!|\\)\[([^\]\n]*)\](\(|\[([^\]\n]*)\])?/g)) {
@@ -86,7 +86,7 @@ export function documentationLinks(source) {
         if (!angle && char === '(') depth += 1;
         if (!angle && char === ')' && --depth === 0) break;
       }
-      if (depth === 0) result.push(destination(text.slice(offset, end)));
+      if (depth === 0) result.push(linkDestination(text.slice(offset, end)));
     } else if (text[offset] !== ':') {
       const label = (match[3] || match[1]).trim().toLowerCase();
       if (definitions.has(label)) result.push(definitions.get(label));
@@ -94,7 +94,7 @@ export function documentationLinks(source) {
   }
   // Images carry the same local-file integrity requirement as ordinary links.
   for (const match of text.matchAll(/!\[[^\]\n]*\]\((<[^>]+>|[^)\s]+)(?:\s+[^)]*)?\)/g)) {
-    result.push(destination(match[1]));
+    result.push(linkDestination(match[1]));
   }
   for (const match of text.matchAll(/<a\b[^>]*\shref\s*=\s*(["'])(.*?)\1[^>]*>/gi)) {
     result.push(decodeEntities(match[2]));
