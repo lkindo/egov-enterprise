@@ -258,13 +258,15 @@ describe('ExpectedErrorLedger', () => {
 
   // Playwright 1.65 는 새 문서가 커밋될 때 이전 문서의 진행 중 요청을 한꺼번에 ERR_ABORTED 로 보고한 뒤 framenavigated 를
   // 낸다(1.64 는 보고하지 않았다). 순서는 새 문서 응답 → 실패 묶음 → framenavigated 다. 그 묶음 안의 읽기만 통과하고,
-  // 앱이 스스로 취소한 업무 API·쓰기 중단·리다이렉트나 다운로드·204 를 기다리던 중의 취소·끼어든 사건 뒤의 취소는 계속
-  // 결함이어야 한다(2026-11-24 독립 검토의 반례 포함).
+  // 앱이 스스로 취소한 업무 API·쓰기 중단·리다이렉트나 다운로드·204 를 기다리던 중의 취소·끼어든 사건 뒤의 취소·같은 문서
+  // 안 이동 직전의 취소는 계속 결함이어야 한다(2026-11-24 독립 검토 두 차례의 반례 포함).
   describe('새 문서 커밋으로 끊긴 이전 문서의 읽기 요청', () => {
-    type FakeFrame = { name: string };
+    type FakeFrame = { name: string; href: string; url: () => string };
     type FakeRequest = Record<string, () => unknown>;
-    const mainFrame: FakeFrame = { name: 'main' };
-    const childFrame: FakeFrame = { name: 'child' };
+    const frame = (name: string): FakeFrame => {
+      const fake: FakeFrame = { name, href: 'http://localhost:3001/admin/user/manage', url: () => fake.href };
+      return fake;
+    };
     const bookmarks = 'http://localhost:3001/api/v1/menus/bookmarks/status';
     const abortedGetEntry = responseEntry({
       id: 'E2E-RESILIENCE-ABORTED-GET',
@@ -277,30 +279,37 @@ describe('ExpectedErrorLedger', () => {
     });
 
     const makeGuard = async () => {
+      const mainFrame = frame('main');
+      const childFrame = frame('child');
+      let clockMs = now().getTime();
       const listeners = new Map<string, (value: unknown) => void>();
       const page = {
         on: (event: string, listener: (value: unknown) => void) => {
           listeners.set(event, listener);
           return page;
         },
-        url: () => 'http://localhost:3001/admin/user/manage',
+        url: () => mainFrame.href,
         mainFrame: () => mainFrame,
       } as unknown as Page;
-      const guard = new (await import('./error-detector')).ConsoleErrorGuard(page, scope);
+      const guard = new (await import('./error-detector')).ConsoleErrorGuard(page, scope, () => new Date(clockMs));
       await guard.install();
       const emit = (event: string, value: unknown) => listeners.get(event)?.(value);
-      const request = (url: string, method: string, frame: FakeFrame, navigation = false, errorText = 'net::ERR_ABORTED'): FakeRequest => ({
+      const request = (url: string, method: string, target: FakeFrame, navigation = false, errorText = 'net::ERR_ABORTED'): FakeRequest => ({
         url: () => url,
         method: () => method,
         resourceType: () => (navigation ? 'document' : 'xhr'),
         failure: () => ({ errorText }),
         isNavigationRequest: () => navigation,
-        frame: () => frame,
+        frame: () => target,
       });
       return {
         guard,
-        /** 문서 탐색 요청. 응답·실패에 같은 객체를 쓴다. */
-        navigation: (frame: FakeFrame = mainFrame) => request('http://localhost:3001/admin/system/menus', 'GET', frame, true),
+        mainFrame,
+        childFrame,
+        advance: (ms: number) => { clockMs += ms; },
+        /** 문서 탐색 요청. 요청·응답·실패에 같은 객체를 쓴다. */
+        navigation: (target: FakeFrame = mainFrame) => request('http://localhost:3001/admin/system/menus', 'GET', target, true),
+        navigationRequest: (navigation: FakeRequest) => emit('request', navigation),
         navigationResponse: (navigation: FakeRequest, status = 200) => emit('response', {
           status: () => status,
           url: () => navigation.url(),
@@ -308,12 +317,16 @@ describe('ExpectedErrorLedger', () => {
         }),
         /** 응답을 받은 탐색이 다운로드·204 로 끝났거나 다른 탐색에 밀려 탐색 요청 자체가 실패했다. */
         navigationFailed: (navigation: FakeRequest) => emit('requestfailed', navigation),
-        commit: (frame: FakeFrame = mainFrame) => emit('framenavigated', frame),
-        apiFailure: ({ frame = mainFrame, method = 'GET', url = bookmarks, errorText = 'net::ERR_ABORTED' } = {}) =>
-          emit('requestfailed', request(url, method, frame, false, errorText)),
+        /** framenavigated. 주소가 바뀌지 않으면 같은 문서 안 이동(pushState)과 구별되지 않는다. */
+        commit: (target: FakeFrame = mainFrame, href = target.href) => {
+          target.href = href;
+          emit('framenavigated', target);
+        },
+        apiFailure: ({ target = mainFrame, method = 'GET', url = bookmarks, errorText = 'net::ERR_ABORTED' } = {}) =>
+          emit('requestfailed', request(url, method, target, false, errorText)),
         /** 같은 프레임의 다른 네트워크 사건. */
-        sameFrameEvent: (event: 'request' | 'requestfinished' | 'response', frame: FakeFrame = mainFrame) => {
-          const other = request('http://localhost:3001/api/v1/notifications', 'GET', frame);
+        sameFrameEvent: (event: 'request' | 'requestfinished' | 'response', target: FakeFrame = mainFrame) => {
+          const other = request('http://localhost:3001/api/v1/notifications', 'GET', target);
           emit(event, event === 'response' ? { status: () => 200, url: other.url, request: () => other } : other);
         },
       };
@@ -336,9 +349,27 @@ describe('ExpectedErrorLedger', () => {
         replaced.navigationResponse(replaced.navigation());
         replaced.apiFailure({ method });
         replaced.apiFailure({ method, url: 'http://localhost:3001/api/v1/notifications/unread-count' });
-        replaced.commit();
+        replaced.commit(replaced.mainFrame, 'http://localhost:3001/admin/system/menus');
         await expect(replaced.guard.verify()).resolves.toBeUndefined();
       }
+    });
+
+    it('리다이렉트를 거친 문서 교체와 응답 없는 문서(about:blank)로의 교체 묶음도 통과한다', async () => {
+      const redirected = await makeGuard();
+      const first = redirected.navigation();
+      redirected.navigationRequest(first);
+      redirected.navigationResponse(first, 302);
+      const final = redirected.navigation();
+      redirected.navigationRequest(final);
+      redirected.navigationResponse(final);
+      redirected.apiFailure();
+      redirected.commit(redirected.mainFrame, 'http://localhost:3001/login');
+      await expect(redirected.guard.verify()).resolves.toBeUndefined();
+
+      const blank = await makeGuard();
+      blank.apiFailure();
+      blank.commit(blank.mainFrame, 'about:blank');
+      await expect(blank.guard.verify()).resolves.toBeUndefined();
     });
 
     it('기다리던 탐색이 아닌 다른 탐색의 실패(연속 이동)는 커밋 대기를 닫지 않는다', async () => {
@@ -348,14 +379,19 @@ describe('ExpectedErrorLedger', () => {
       consecutive.navigationResponse(second);
       consecutive.navigationFailed(first);
       consecutive.apiFailure();
-      consecutive.commit();
+      consecutive.commit(consecutive.mainFrame, 'http://localhost:3001/admin/system/menus');
       await expect(consecutive.guard.verify()).resolves.toBeUndefined();
     });
 
-    it('탐색 없이 끊긴 업무 API(앱의 AbortSignal 취소)는 잡는다', async () => {
+    it('탐색 없이 끊긴 업무 API(앱의 AbortSignal 취소)는 잡는다 — 뒤이은 같은 문서 안 이동도 덮지 못한다', async () => {
       const appAbort = await makeGuard();
       appAbort.apiFailure();
       await expect(appAbort.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status \(xhr\)/);
+
+      const beforePushState = await makeGuard();
+      beforePushState.apiFailure();
+      beforePushState.commit(beforePushState.mainFrame, 'http://localhost:3001/admin/user/manage?page=2');
+      await expect(beforePushState.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status/);
     });
 
     it('실패 묶음 안이어도 쓰기 요청의 중단은 잡고 읽기는 통과한다', async () => {
@@ -370,24 +406,29 @@ describe('ExpectedErrorLedger', () => {
       }
     });
 
-    it('리다이렉트 응답만 받은 동안(최종 문서를 기다리는 중) 끊긴 읽기는 잡는다', async () => {
+    it('리다이렉트 응답만 받은 동안 끊긴 읽기는 뒤이은 같은 문서 안 이동이 덮지 못한다', async () => {
       const redirect = await makeGuard();
-      redirect.navigationResponse(redirect.navigation(), 302);
+      const first = redirect.navigation();
+      redirect.navigationResponse(first, 302);
+      const final = redirect.navigation();
+      redirect.navigationRequest(final);
       redirect.apiFailure();
-      redirect.navigationResponse(redirect.navigation());
-      redirect.commit();
+      redirect.commit(redirect.mainFrame, 'http://localhost:3001/admin/user/manage?tab=2');
+      redirect.navigationResponse(final);
+      redirect.commit(redirect.mainFrame, 'http://localhost:3001/admin/system/menus');
       await expect(redirect.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status/);
+      expect(await errorCount(redirect.guard)).toBe(1);
     });
 
-    it('응답을 받은 탐색이 다운로드·204 로 끝나면 그 전에 보류한 취소도 잡는다', async () => {
+    it('응답을 받은 탐색이 다운로드·204 로 끝나면 그 전에 보류한 취소를 잡고, 뒤이은 같은 문서 안 이동도 덮지 못한다', async () => {
       const noCommit = await makeGuard();
       const navigation = noCommit.navigation();
       noCommit.navigationResponse(navigation, 204);
       noCommit.apiFailure();
       noCommit.navigationFailed(navigation);
-      noCommit.apiFailure({ url: 'http://localhost:3001/api/v1/notifications' });
+      noCommit.commit(noCommit.mainFrame, 'http://localhost:3001/admin/user/manage?tab=2');
       await expect(noCommit.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status/);
-      expect(await errorCount(noCommit.guard)).toBe(2);
+      expect(await errorCount(noCommit.guard)).toBe(1);
     });
 
     it('보류한 취소와 커밋 사이에 같은 프레임의 네트워크 사건이 끼면 그 취소는 잡는다', async () => {
@@ -405,9 +446,17 @@ describe('ExpectedErrorLedger', () => {
       const otherFrameEvent = await makeGuard();
       otherFrameEvent.navigationResponse(otherFrameEvent.navigation());
       otherFrameEvent.apiFailure();
-      otherFrameEvent.sameFrameEvent('request', childFrame);
+      otherFrameEvent.sameFrameEvent('request', otherFrameEvent.childFrame);
       otherFrameEvent.commit();
       await expect(otherFrameEvent.guard.verify()).resolves.toBeUndefined();
+    });
+
+    it('응답 없는 문서로의 커밋보다 한참 먼저 끊긴 취소는 묶음이 아니다', async () => {
+      const idle = await makeGuard();
+      idle.apiFailure();
+      idle.advance(1000);
+      idle.commit(idle.mainFrame, 'about:blank');
+      await expect(idle.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status/);
     });
 
     it('커밋 뒤·다른 프레임·커밋 없이 끝난 취소와 취소가 아닌 실패는 잡는다', async () => {
@@ -418,9 +467,9 @@ describe('ExpectedErrorLedger', () => {
       await expect(afterCommit.guard.verify()).rejects.toThrow(/NETWORK FAILED/);
 
       const otherFrame = await makeGuard();
-      otherFrame.navigationResponse(otherFrame.navigation(childFrame));
-      otherFrame.apiFailure({ frame: mainFrame });
-      otherFrame.commit(childFrame);
+      otherFrame.navigationResponse(otherFrame.navigation(otherFrame.childFrame));
+      otherFrame.apiFailure({ target: otherFrame.mainFrame });
+      otherFrame.commit(otherFrame.childFrame);
       await expect(otherFrame.guard.verify()).rejects.toThrow(/NETWORK FAILED/);
 
       const neverCommitted = await makeGuard();

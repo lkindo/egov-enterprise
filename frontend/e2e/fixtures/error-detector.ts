@@ -140,6 +140,15 @@ export class ExpectedErrorLedger {
 /** 결과를 받을 문서가 사라지면 잃을 것이 없는 읽기 요청. 쓰기는 끊기면 저장이 잘렸을 수 있다. */
 const READ_METHODS = new Set(['GET', 'HEAD']);
 
+/** 탐색의 리다이렉트 응답. 문서를 바꾸지 않고 다음 요청으로 이어진다. */
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+
+/** 응답 없이 문서가 바뀌는 주소. 같은 문서 안 이동(pushState)으로는 갈 수 없다. */
+const LOCAL_DOCUMENT_URL = /^(?:about|data):/i;
+
+/** 실패 묶음과 framenavigated 는 연달아 도착한다. 응답 없는 커밋에서 이보다 먼저 끊긴 취소는 묶음이 아니다. */
+const COMMIT_BURST_MS = 100;
+
 /** 서비스 워커의 요청은 프레임이 없어 frame() 이 던진다. */
 function frameOf(request: Request): Frame | null {
   try {
@@ -161,17 +170,19 @@ export class ConsoleErrorGuard {
    * `frame._failInflightRequests`; 1.64 까지는 보고 없이 사라졌다). 클라이언트가 받는 순서는 새 문서의 응답 →
    * 실패 묶음 → framenavigated 다(1.65.1, 요청 가로채기를 켜도 같음 — 2026-11-24 실측).
    *
-   * 그래서 탐색 응답을 받은 프레임만 커밋을 기다리는 것으로 보고, 그동안 끊긴 읽기 요청은 바로 버리지 않고
-   * 보류한다. 같은 프레임에 다른 네트워크 사건(요청·응답·완료, 기다리던 탐색의 실패 — 다운로드·204 로 끝난
-   * 탐색)이 끼면 보류분은 앱의 취소로 확정하고, 곧바로 framenavigated 로 이어질 때만 문서 교체로 끊긴 것으로
-   * 면제한다. 검증 때까지 남은 보류분도 결함이다. 남는 틈: 최종 문서 응답과 커밋 사이(수 ms)에 다른 사건 없이
-   * 앱이 취소한 읽기는 묶음과 구별되지 않는다 — 그 문서는 곧 사라지므로 결과를 받을 곳도 없다.
+   * 그래서 끊긴 읽기 요청은 바로 버리지 않고 보류한다. 같은 프레임에 다른 네트워크 사건(요청·응답·완료,
+   * 기다리던 탐색의 실패 — 다운로드·204 로 끝난 탐색)이 끼면 보류분은 앱의 취소로 확정한다. framenavigated 에서는
+   * 문서가 실제로 바뀐 커밋일 때만 보류분을 면제한다: 리다이렉트가 아닌 탐색 응답을 받은 프레임이거나(그 응답이
+   * 앞선 보류분을 이미 확정했으므로 남은 것은 응답 뒤의 묶음이다), 응답 없이 바뀌는 주소(about:blank 등)로
+   * 커밋되며 COMMIT_BURST_MS 안에 끊긴 것. 같은 문서 안 이동(pushState)도 framenavigated 를 내므로 그 밖의
+   * framenavigated 와 검증 때 남은 보류분은 결함이다. 남는 틈: 최종 문서 응답과 커밋 사이(수 ms)에 다른 사건
+   * 없이 앱이 취소한 읽기와 같은 문서 안 이동은 묶음과 구별되지 않는다.
    */
   private readonly awaitingCommit = new Map<Frame, Request>();
-  private readonly abortsBeforeCommit = new Map<Frame, Request[]>();
+  private readonly abortsBeforeCommit = new Map<Frame, Array<{ request: Request; at: number }>>();
 
-  constructor(private readonly page: Page, scope = 'unspecified') {
-    this.ledger = new ExpectedErrorLedger(scope);
+  constructor(private readonly page: Page, scope = 'unspecified', private readonly clock: () => Date = () => new Date()) {
+    this.ledger = new ExpectedErrorLedger(scope, clock);
   }
 
   expectErrors(entries: ExpectedErrorEntry[]): void {
@@ -272,17 +283,23 @@ export class ConsoleErrorGuard {
     this.page.on('requestfinished', interruptAbortsBeforeCommit);
 
     this.page.on('framenavigated', (frame) => {
-      // 커밋을 기다리던 프레임이면 바로 앞까지 보류한 취소는 문서 교체로 끊긴 이전 문서의 읽기다.
-      if (this.awaitingCommit.has(frame)) this.abortsBeforeCommit.delete(frame);
-      else this.settleAbortsAsDefects(frame);
-      this.awaitingCommit.delete(frame);
+      const pending = this.abortsBeforeCommit.get(frame) ?? [];
+      this.abortsBeforeCommit.delete(frame);
+      const networkCommit = this.awaitingCommit.delete(frame);
+      const localCommit = LOCAL_DOCUMENT_URL.test(frame.url());
+      const now = this.clock().getTime();
+      for (const { request, at } of pending) {
+        // 문서가 실제로 바뀐 커밋 직전의 묶음이면 이전 문서의 읽기다. 그 밖(같은 문서 안 이동 등)은 앱의 취소다.
+        if (networkCommit || (localCommit && now - at <= COMMIT_BURST_MS)) continue;
+        this.reportRequestFailure(request, 'net::ERR_ABORTED');
+      }
     });
 
     this.page.on('response', (response) => {
       const request = response.request();
       interruptAbortsBeforeCommit(request);
-      // 리다이렉트 응답이어도 커밋 전에 최종 문서의 요청·응답이 같은 프레임에 끼므로 그 사이 보류분은 앱의 취소로 확정된다.
-      if (request.isNavigationRequest()) {
+      // 리다이렉트 응답은 문서를 바꾸지 않는다 — 최종 문서의 응답부터 커밋을 기다린다.
+      if (request.isNavigationRequest() && !REDIRECT_STATUSES.has(response.status())) {
         const frame = frameOf(request);
         if (frame) this.awaitingCommit.set(frame, request);
       }
@@ -327,11 +344,11 @@ export class ConsoleErrorGuard {
       }
       // ③ 새 문서가 커밋되며 이전 문서의 읽기 요청이 끊김 — 그 문서는 사라져 결과를 받을 곳이 없고, 새 문서가
       //    필요한 조회를 다시 보낸다. 시험이 화면의 첫 조회가 시작된 직후 다음 문서로 이동하면 생긴다. 여기서는
-      //    보류만 하고 판정은 framenavigated·끼어든 사건이 한다(awaitingCommit 설명). 쓰기 요청의 중단은 저장이
-      //    잘렸을 수 있어 보류하지 않는다.
-      if (errorText === 'net::ERR_ABORTED' && frame && this.awaitingCommit.has(frame)
-        && READ_METHODS.has(request.method())) {
-        this.abortsBeforeCommit.set(frame, [...(this.abortsBeforeCommit.get(frame) ?? []), request]);
+      //    보류만 하고 판정은 framenavigated·끼어든 사건·검증이 한다(awaitingCommit 설명). 쓰기 요청의 중단은
+      //    저장이 잘렸을 수 있어 보류하지 않는다.
+      if (errorText === 'net::ERR_ABORTED' && frame && READ_METHODS.has(request.method())) {
+        const pending = this.abortsBeforeCommit.get(frame) ?? [];
+        this.abortsBeforeCommit.set(frame, [...pending, { request, at: this.clock().getTime() }]);
         return;
       }
 
@@ -344,7 +361,7 @@ export class ConsoleErrorGuard {
     const pending = this.abortsBeforeCommit.get(frame);
     if (!pending) return;
     this.abortsBeforeCommit.delete(frame);
-    for (const request of pending) this.reportRequestFailure(request, 'net::ERR_ABORTED');
+    for (const { request } of pending) this.reportRequestFailure(request, 'net::ERR_ABORTED');
   }
 
   private reportRequestFailure(request: Request, errorText: string): void {
