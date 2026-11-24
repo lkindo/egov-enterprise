@@ -523,7 +523,9 @@ class MenuHierarchyIntegrityIntegrationTest {
         return jdbc.queryForObject("SELECT up_menu_sn FROM tb_menu_info WHERE menu_sn=?", Long.class, id);
     }
 
-    private static MenuDto order(long id, Long parent) {
-        return MenuDto.builder().menuNo(id).upMenuSn(parent).menuOrdr(2).build();
+    private MenuDto order(long id, Long parent) {
+        // [V2_155] 메뉴 한 건 수정은 화면이 그 행을 읽은 시점의 버전을 싣는다.
+        Integer version = jdbc.queryForObject("SELECT version FROM tb_menu_info WHERE menu_sn=?", Integer.class, id);
+        return MenuDto.builder().menuNo(id).upMenuSn(parent).menuOrdr(2).version(version).build();
     }
 }

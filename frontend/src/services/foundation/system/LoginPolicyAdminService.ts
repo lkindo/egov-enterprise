@@ -21,6 +21,8 @@ export interface LoginPolicy {
   otpUseYn?: 'Y' | 'N';
   regYn: 'Y' | 'N';
   lastMdfrId?: string;
+  /** 낙관적 잠금 버전(V2_155). 정책이 없는 사용자는 비어 있다 — 수정 요청에 그대로 돌려보낸다. */
+  version?: number | null;
 }
 
 /**

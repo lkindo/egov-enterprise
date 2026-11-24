@@ -9,6 +9,7 @@ import { FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorIt
 export const PolicyUpdateRequestSchema = /*#__PURE__*/ (() => z.object({
   plcyTtl: z.string().min(0).max(100),
   plcyCn: z.string().min(0).max(4000),
+  version: z.number().int().min(0).optional(),
 }))();
 export type PolicyUpdateRequest = z.infer<typeof PolicyUpdateRequestSchema>;
 
@@ -27,6 +28,7 @@ export const PolicySchema = /*#__PURE__*/ (() => z.object({
   plcyTypeCd: z.string().optional(),
   plcyTtl: z.string().optional(),
   plcyCn: z.string().optional(),
+  version: z.number().int().optional(),
 }))();
 export type Policy = z.infer<typeof PolicySchema>;
 
@@ -44,11 +46,13 @@ export type ApiResponsePolicy = z.infer<typeof ApiResponsePolicySchema>;
 export const PolicyUpdateRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   plcyTtl: z.string().min(0).max(100),
   plcyCn: z.string().min(0).max(4000),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const PolicyUpdateRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   plcyTtl: z.string().min(0).max(100),
   plcyCn: z.string().min(0).max(4000),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const ApiResponseListPolicyRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -75,12 +79,14 @@ export const PolicyRequestSchema = /*#__PURE__*/ (() => z.object({
   plcyTypeCd: z.string().optional(),
   plcyTtl: z.string().optional(),
   plcyCn: z.string().optional(),
+  version: z.number().int().optional(),
 }))();
 
 export const PolicyResponseSchema = /*#__PURE__*/ (() => z.object({
   plcyTypeCd: z.string().optional().nullable(),
   plcyTtl: z.string().optional().nullable(),
   plcyCn: z.string().optional().nullable(),
+  version: z.number().int().optional().nullable(),
 }))();
 
 export const ApiResponsePolicyRequestSchema = /*#__PURE__*/ (() => z.object({

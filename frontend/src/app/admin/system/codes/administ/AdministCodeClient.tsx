@@ -163,7 +163,11 @@ export default function AdministCodeClient({
      setRegisterLoading(true);
      if (editing) {
        // 서버 update 는 구분·명칭·상위·사용여부를 갱신한다(식별 코드는 PK 라 대상이 아니다).
-       await codeAdminService.updateAdministCode(editing.admdstCd, values);
+       // [2026-11-25 V2_155] 연 코드의 버전을 함께 보낸다 — 그 사이 다른 관리자가 고쳤으면 서버가 409 로 거부한다.
+       await codeAdminService.updateAdministCode(editing.admdstCd, {
+         ...values,
+         ...(editing.version !== undefined ? { version: editing.version } : {}),
+       });
      } else {
        await codeAdminService.createAdministCode(values);
      }

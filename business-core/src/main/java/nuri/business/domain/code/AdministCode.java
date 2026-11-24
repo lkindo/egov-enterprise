@@ -38,6 +38,10 @@ public class AdministCode extends BaseEntity {
     @Column(length = 8)
     private String ablYmd;
 
+    /** 낙관적 잠금 버전(V2_155). 화면이 읽은 값과 다르면 다른 사람이 먼저 고친 것이다(서비스가 409 로 거부한다). */
+    @jakarta.persistence.Version
+    private Integer version;
+
     private AdministCode(String admdstCd, String admdstSeCd, String admdstZoneNm, String upAdmdstCd,
                          String useYn, String crtYmd, String ablYmd) {
         this.admdstCd = admdstCd;

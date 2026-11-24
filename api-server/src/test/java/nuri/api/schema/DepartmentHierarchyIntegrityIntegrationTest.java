@@ -129,12 +129,18 @@ class DepartmentHierarchyIntegrityIntegrationTest {
         }
     }
 
+    /**
+     * 일반 편집은 조직도 일괄 편집의 행 잠금을 기다리고, 커밋된 상위·순서를 되돌리지 않는다. [2026-11-25 V2_155] 이동 전에 연
+     * 편집 창의 버전은 이동이 올린 버전과 달라 409 로 거부된다(덮어쓰지 않는다). 다시 불러온 버전으로는 저장되고 이동을 지킨다.
+     */
     @Test
     void generalEditWaitsForHierarchyAndPreservesItsCommittedParentAndOrder() throws Exception {
         String application = fixture + "nameedit";
         String renamed = fixture + " renamed";
         var ready = new CountDownLatch(1);
         var release = new CountDownLatch(1);
+        Integer openedVersion = jdbc.queryForObject("SELECT version FROM tb_ognz_info WHERE ognz_id=?", Integer.class, first);
+        String originalName = jdbc.queryForObject("SELECT ognz_nm FROM tb_ognz_info WHERE ognz_id=?", String.class, first);
         try (var executor = Executors.newFixedThreadPool(2)) {
             var hierarchy = executor.submit(() -> {
                 authenticate();
@@ -155,14 +161,29 @@ class DepartmentHierarchyIntegrityIntegrationTest {
                         new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
                             VendorTestSql.nameSession(jdbc, application);
                             departments.updateDeptManage(DeptManageDto.builder().ognzId(first)
-                                    .ognzNm(renamed).ognzExpln("updated description").build());
+                                    .ognzNm(renamed).ognzExpln("updated description").version(openedVersion).build());
                         });
+                        return null;
+                    } catch (BusinessException rejected) {
+                        return rejected.getErrorCode();
                     } finally { SecurityContextHolder.clearContext(); }
                 });
                 try { waitForDatabaseLock(application); }
                 finally { release.countDown(); }
                 hierarchy.get(20, TimeUnit.SECONDS);
-                nameEdit.get(20, TimeUnit.SECONDS);
+                assertThat(nameEdit.get(20, TimeUnit.SECONDS)).isEqualTo(CommonErrorCode.CONCURRENT_MODIFICATION);
+                assertThat(parentOf(first)).isEqualTo(second);
+                assertThat(jdbc.queryForObject("SELECT ognz_nm FROM tb_ognz_info WHERE ognz_id=?", String.class, first))
+                        .isEqualTo(originalName);
+
+                // 다시 불러온 버전으로 저장한다.
+                authenticate();
+                try {
+                    new TransactionTemplate(transactionManager).executeWithoutResult(status ->
+                            departments.updateDeptManage(DeptManageDto.builder().ognzId(first)
+                                    .ognzNm(renamed).ognzExpln("updated description").version(jdbc.queryForObject(
+                                            "SELECT version FROM tb_ognz_info WHERE ognz_id=?", Integer.class, first)).build()));
+                } finally { SecurityContextHolder.clearContext(); }
                 // An unlocked read followed by Hibernate's full-row UPDATE would restore NULL / 0 here.
                 assertThat(parentOf(first)).isEqualTo(second);
                 assertThat(jdbc.queryForObject("SELECT sort_ordr FROM tb_ognz_info WHERE ognz_id=?", Integer.class, first))

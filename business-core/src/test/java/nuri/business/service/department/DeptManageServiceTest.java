@@ -76,7 +76,7 @@ class DeptManageServiceTest {
     @DisplayName("부서 상세 조회 테스트 - 성공")
     void getDeptManageSuccessTest() {
         DeptManage entity = DeptManage.builder().ognzId("DEPT1").ognzNm("부서1").build();
-        given(deptManageRepository.findById("DEPT1")).willReturn(Optional.of(entity));
+        given(deptManageRepository.findById("DEPT1")).willReturn(Optional.of(versioned(entity)));
 
         DeptManageDto result = deptManageService.getDeptManage("DEPT1");
 
@@ -156,18 +156,38 @@ class DeptManageServiceTest {
                 .build();
         
         DeptManage entity = mock(DeptManage.class);
-        given(deptManageRepository.findByIdForUpdate("DEPT1")).willReturn(Optional.of(entity));
 
-        deptManageService.updateDeptManage(dto);
+        org.mockito.Mockito.lenient().when(entity.getVersion()).thenReturn(0);
+        given(deptManageRepository.findByIdForUpdate("DEPT1")).willReturn(Optional.of(versioned(entity)));
+
+        updateVersioned(dto);
 
         verify(entity).update(eq("수정부서"), any());
         verify(deptManageRepository, never()).findById(anyString());
     }
 
     @Test
+    @DisplayName("[2026-11-25 V2_155] 부서 수정 — 버전 누락은 400, 낡은 버전은 409 로 거부하고 이름을 바꾸지 않는다")
+    void updateDeptManage_RejectsMissingOrStaleVersion() {
+        DeptManage entity = DeptManage.builder().ognzId("DEPT1").ognzNm("기존 부서").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 5);
+        given(deptManageRepository.findByIdForUpdate("DEPT1")).willReturn(Optional.of(entity));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> deptManageService.updateDeptManage(
+                        DeptManageDto.builder().ognzId("DEPT1").ognzNm("새 부서").build()))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> deptManageService.updateDeptManage(
+                        DeptManageDto.builder().ognzId("DEPT1").ognzNm("새 부서").version(4).build()))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION);
+        org.assertj.core.api.Assertions.assertThat(entity.getOgnzNm()).isEqualTo("기존 부서");
+    }
+
+    @Test
     @DisplayName("부서 삭제 테스트")
     void deleteDeptManageTest() {
-        given(deptManageRepository.findByIdForUpdate("DEPT1")).willReturn(Optional.of(mock(DeptManage.class)));
+        given(deptManageRepository.findByIdForUpdate("DEPT1")).willReturn(Optional.of(versioned(mock(DeptManage.class))));
         deptManageService.deleteDeptManage("DEPT1");
         verify(deptManageRepository).deleteById("DEPT1");
         // [2026-11-17] 부서 행을 먼저 잠근 뒤 담당 업무함을 센다 — 업무함 배정(DeptJobBoxService)이 같은 행을 잠그므로 동시 배정과 직렬화된다.
@@ -217,7 +237,7 @@ class DeptManageServiceTest {
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.ValueSource(strings = {"members", "children", "jobBoxes"})
     void refusesDeletionWhileMembersOrChildrenRemain(String remaining) {
-        given(deptManageRepository.findByIdForUpdate("D")).willReturn(Optional.of(mock(DeptManage.class)));
+        given(deptManageRepository.findByIdForUpdate("D")).willReturn(Optional.of(versioned(mock(DeptManage.class))));
         switch (remaining) {
             case "members" -> given(userRepository.countByOgnzId("D")).willReturn(1L);
             case "children" -> given(deptManageRepository.countByUpOgnzId("D")).willReturn(1L);
@@ -235,7 +255,7 @@ class DeptManageServiceTest {
     void rootHierarchyPreservesNameAndDefaultsOrder(String parent) {
         var entity = DeptManage.builder().ognzId("D").ognzNm("keep").build();
         givenHierarchy(List.of(entity));
-        given(deptManageRepository.findById("D")).willReturn(Optional.of(entity));
+        given(deptManageRepository.findById("D")).willReturn(Optional.of(versioned(entity)));
         deptManageService.updateDeptHierarchy(List.of(DeptManageDto.builder().ognzId("D").upOgnzId(parent).ognzNm("forged").build()));
         assertEquals("keep", entity.getOgnzNm());
         assertEquals(0, entity.getSortOrdr());
@@ -275,7 +295,7 @@ class DeptManageServiceTest {
         givenHierarchy(hierarchy);
         var items = List.of(DeptManageDto.builder().ognzId("D").upOgnzId("A0").sortOrdr(3).build());
         if (depth == 50) {
-            given(deptManageRepository.findById("D")).willReturn(Optional.of(entity));
+            given(deptManageRepository.findById("D")).willReturn(Optional.of(versioned(entity)));
             deptManageService.updateDeptHierarchy(items);
             assertEquals("A0", entity.getUpOgnzId());
             assertEquals(3, entity.getSortOrdr());
@@ -291,8 +311,8 @@ class DeptManageServiceTest {
         var parent = DeptManage.builder().ognzId("P").ognzNm("parent").build();
         var child = DeptManage.builder().ognzId("C").upOgnzId("P").ognzNm("child").build();
         givenHierarchy(List.of(parent, child));
-        given(deptManageRepository.findById("P")).willReturn(Optional.of(parent));
-        given(deptManageRepository.findById("C")).willReturn(Optional.of(child));
+        given(deptManageRepository.findById("P")).willReturn(Optional.of(versioned(parent)));
+        given(deptManageRepository.findById("C")).willReturn(Optional.of(versioned(child)));
         var parentMove = DeptManageDto.builder().ognzId("P").upOgnzId("C").sortOrdr(2).build();
         var childMove = DeptManageDto.builder().ognzId("C").upOgnzId(null).sortOrdr(1).build();
 
@@ -336,5 +356,19 @@ class DeptManageServiceTest {
                     public String getUpOgnzId() { return department.getUpOgnzId(); }
                 }).toList();
         given(deptManageRepository.findParentLinksForUpdate()).willReturn(links);
+    }
+
+    /** [V2_155] 버전을 싣지 않은 수정 요청에 저장된 행과 같은 버전(0)을 싣는다 — 버전 대조는 전용 시험이 본다. */
+    private void updateVersioned(nuri.business.service.department.dto.DeptManageDto dto) {
+        if (dto.getVersion() == null) dto.setVersion(0);
+        deptManageService.updateDeptManage(dto);
+    }
+
+    /** [V2_155] 저장된 행처럼 버전(0)을 가진 엔티티. mock 은 선언 직후에 getVersion() 을 따로 스텁한다(다른 스텁 안에서 스텁하지 않는다). */
+    private static <T> T versioned(T entity) {
+        if (!org.mockito.Mockito.mockingDetails(entity).isMock() || org.mockito.Mockito.mockingDetails(entity).isSpy()) {
+            org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
+        }
+        return entity;
     }
 }

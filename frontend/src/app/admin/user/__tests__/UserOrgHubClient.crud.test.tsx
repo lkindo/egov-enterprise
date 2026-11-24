@@ -309,8 +309,10 @@ function deferred<T>() {
   return { promise, reject, resolve };
 }
 
-function renderHub(defaultTab: 'USERS' | 'DEPTS' = 'USERS') {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function renderHub(
+  defaultTab: 'USERS' | 'DEPTS' = 'USERS',
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   return render(
     <QueryClientProvider client={queryClient}>
       <Suspense fallback={<div>loading</div>}>
@@ -569,6 +571,67 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     expect(within(dialog).getByRole('button', { name: 'dept-form-submit' })).toBeEnabled();
     expect(cancel).toBeEnabled();
     expect(remove).toBeEnabled();
+  });
+
+  it('[2026-11-25 V2_155] 부서 수정은 조직도에서 연 부서의 버전을 함께 보내고, 동시 수정 거절(409)은 서버 안내를 그대로 보인다', async () => {
+    vi.mocked(deptAdminService.getDeptTree).mockResolvedValue([
+      { ognzId: 'D-100', ognzNm: '기획부', version: 9 },
+      { ognzId: 'D-200', ognzNm: '개발부' },
+    ]);
+    const conflict = '다른 사용자가 먼저 수정했습니다. 저장하지 않았으니 최신 내용을 다시 불러온 뒤 고쳐 주세요.';
+    vi.mocked(deptAdminService.updateDept).mockRejectedValueOnce({ response: { status: 409, data: { success: false, message: conflict } } });
+    renderHub('DEPTS');
+    fireEvent.click((await screen.findByText('기획부')).closest('button')!);
+
+    fireEvent.click(screen.getByRole('button', { name: '정보 수정' }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'dept-form-submit' }));
+
+    await waitFor(() => expect(deptAdminService.updateDept).toHaveBeenCalledWith('D-100', expect.objectContaining({ version: 9 })));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith(conflict, 'error'));
+  });
+
+  it('[2026-11-25 V2_155] 편집 창이 열린 동안 조직도가 다시 조회돼도 저장은 연 때의 버전을 보낸다 — 새 버전으로 남의 변경을 덮지 않는다', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    vi.mocked(deptAdminService.getDeptTree).mockResolvedValue([
+      { ognzId: 'D-100', ognzNm: '기획부', version: 9 },
+      { ognzId: 'D-200', ognzNm: '개발부' },
+    ]);
+    vi.mocked(deptAdminService.updateDept).mockResolvedValue(undefined as never);
+    renderHub('DEPTS', queryClient);
+    fireEvent.click((await screen.findByText('기획부')).closest('button')!);
+    fireEvent.click(screen.getByRole('button', { name: '정보 수정' }));
+    const dialog = await screen.findByRole('dialog');
+
+    // 다른 관리자가 고쳐 버전이 10 이 됐고, 이 화면의 조직도 조회가 그것을 다시 받았다.
+    vi.mocked(deptAdminService.getDeptTree).mockResolvedValue([
+      { ognzId: 'D-100', ognzNm: '기획부', version: 10 },
+      { ognzId: 'D-200', ognzNm: '개발부' },
+    ]);
+    const calls = vi.mocked(deptAdminService.getDeptTree).mock.calls.length;
+    await act(async () => { await queryClient.invalidateQueries({ queryKey: ['admin-depts'] }); });
+    await waitFor(() => expect(vi.mocked(deptAdminService.getDeptTree).mock.calls.length).toBeGreaterThan(calls));
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'dept-form-submit' }));
+
+    await waitFor(() => expect(deptAdminService.updateDept).toHaveBeenCalledWith('D-100', expect.objectContaining({ version: 9 })));
+  });
+
+  it('[2026-11-25 V2_155] 계층 저장이 성공하면 조직도를 다시 받아 옮긴 부서의 새 버전을 쓴다', async () => {
+    vi.mocked(saveDeptHierarchyAction).mockResolvedValueOnce({ success: true, message: '조직 계층을 저장했습니다.' });
+    renderHub('DEPTS');
+    await screen.findByText('기획부');
+    fireEvent.click(screen.getByRole('button', { name: 'test-drag-start' }));
+    fireEvent.click(screen.getByRole('button', { name: 'test-drag-move' }));
+    fireEvent.click(screen.getByRole('button', { name: 'test-drag-end' }));
+    const saveButton = screen.getByRole('button', { name: '조직 계층 저장' });
+    await waitFor(() => expect(saveButton).toBeEnabled());
+    const calls = vi.mocked(deptAdminService.getDeptTree).mock.calls.length;
+
+    fireEvent.click(saveButton);
+
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('조직 계층을 저장했습니다.', 'success'));
+    await waitFor(() => expect(vi.mocked(deptAdminService.getDeptTree).mock.calls.length).toBeGreaterThan(calls));
   });
 
   it('상세 패널의 소속·상태는 상세 API 의 실데이터로 표시한다', async () => {

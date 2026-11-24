@@ -110,6 +110,11 @@ public class MenuDto {
     @Size(max = 1)
     private String useYn;
 
+    @Schema(description = "낙관적 잠금 버전(V2_155). 관리 목록에서 읽은 값을 메뉴 한 건 수정 요청에 그대로 돌려보내며 그때 필수다 "
+            + "— 다르면 409. 등록·순서 일괄 저장·사용자 메뉴 응답에서는 쓰지 않는다.")
+    @jakarta.validation.constraints.Min(0)
+    private Integer version;
+
     @Builder.Default
     @Schema(description = "하위 메뉴 목록")
     private List<MenuDto> children = new ArrayList<>();

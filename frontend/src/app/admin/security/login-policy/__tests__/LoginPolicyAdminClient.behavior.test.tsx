@@ -121,6 +121,20 @@ describe('LoginPolicyAdminClient validation behavior', () => {
     expect(mocks.save).not.toHaveBeenCalled();
   });
 
+  it('[2026-11-25 V2_155] 정책 수정은 연 정책의 버전을 함께 보내고, 동시 수정 거절(409)은 서버 안내를 그대로 보인다', async () => {
+    mocks.list.mockResolvedValue({ list: [{ ...policy, version: 6 }], total: 1, totalPage: 1 });
+    const conflict = '다른 사용자가 먼저 수정했습니다. 저장하지 않았으니 최신 내용을 다시 불러온 뒤 고쳐 주세요.';
+    mocks.save.mockRejectedValueOnce({ response: { status: 409, data: { success: false, message: conflict } } });
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '테스트 사용자 로그인 정책 수정' }));
+    fireEvent.click(screen.getByRole('button', { name: '정책 동기화 적용' }));
+
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledWith('tester', expect.objectContaining({ version: 6 })));
+    expect(mocks.create).not.toHaveBeenCalled();
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(conflict, 'error'));
+  });
+
   /*
     [2026-09-08] 정책 해제.
 

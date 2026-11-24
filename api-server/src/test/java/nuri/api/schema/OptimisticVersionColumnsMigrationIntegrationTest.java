@@ -2,8 +2,11 @@ package nuri.api.schema;
 
 import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -24,7 +27,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * {@code *MigrationIntegrationTest} 를 제거한다.
  */
 @Tag("schema-validation")
-@DisplayName("V2_133 낙관적 잠금 버전 컬럼")
+// 한 클래스가 격리 DB 하나를 쓰므로 마이그레이션 버전 순서대로 돈다(뒤 시험이 스키마를 앞으로 보낸다).
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@DisplayName("V2_133·V2_149·V2_155 낙관적 잠금 버전 컬럼")
 class OptimisticVersionColumnsMigrationIntegrationTest extends SharedPostgresMigrationTestSupport {
 
     private static final List<String> VERSIONED_TABLES = List.of(
@@ -35,9 +40,14 @@ class OptimisticVersionColumnsMigrationIntegrationTest extends SharedPostgresMig
             "tb_hlp_info", "tb_onln_mnl_info", "tb_event_info", "tb_extrl_hr_info", "tb_memo_rpt_info",
             "tb_cmnty_info", "tb_onln_poll_manage", "tb_srvy_tmplt", "tb_tmplt_info");
 
+    /** V2_155(2026-11-25): 관리자가 편집하는 마스터 표 — 정책·메뉴·부서·행정코드·그룹·로그인 정책. */
+    private static final List<String> V2_155_VERSIONED_TABLES = List.of(
+            "tb_plcy_manage", "tb_menu_info", "tb_ognz_info", "tb_admdst_cd", "tb_authrt_group_info", "tb_login_policy");
+
     private static final String AUTH_HISTORY_TARGET_INDEX = "ix_tb_authrt_chg_hstry_scrty_dcsn_trgt_id";
 
     @Test
+    @Order(1)
     @DisplayName("10개 표에 version integer NOT NULL DEFAULT 0 이 생기고, 있던 행은 0, 생략 INSERT 도 0, 음수는 거부한다")
     void addsNonNegativeVersionStartingAtZero() throws Exception {
         AuthorizationCutoverTestSupport.migrate(flyway(MigrationVersion.fromVersion("2.130")));
@@ -83,6 +93,7 @@ class OptimisticVersionColumnsMigrationIntegrationTest extends SharedPostgresMig
     }
 
     @Test
+    @Order(2)
     @DisplayName("V2_149: 나머지 9개 쓰기 표에 version 이 생기고 권한 변경 이력 대상 사용자 인덱스가 실행 계획에 쓰인다")
     void v2_149AddsRemainingOptimisticVersionsAndAuthorizationHistoryIndex() throws Exception {
         AuthorizationCutoverTestSupport.migrate(flyway(MigrationVersion.fromVersion("2.148")));
@@ -135,6 +146,48 @@ class OptimisticVersionColumnsMigrationIntegrationTest extends SharedPostgresMig
             String plan = text(s, "EXPLAIN (FORMAT JSON) SELECT coalesce(max(authrt_chg_hstry_sn), 0)"
                     + " FROM tb_authrt_chg_hstry WHERE scrty_dcsn_trgt_id = 'U0000000042'");
             assertThat(plan).contains(AUTH_HISTORY_TARGET_INDEX);
+        }
+    }
+
+    @Test
+    @Order(3)
+    @DisplayName("V2_155: 관리자가 편집하는 6개 마스터 표에 version 이 생기고, 있던 행은 0, 생략 INSERT 도 0, 음수는 거부한다")
+    void v2_155AddsAdministrativeEditVersions() throws Exception {
+        AuthorizationCutoverTestSupport.migrate(flyway(MigrationVersion.fromVersion("2.154")));
+
+        try (var c = openConnection(); var s = c.createStatement()) {
+            for (String table : V2_155_VERSIONED_TABLES) {
+                assertThat(count(s, "SELECT count(*) FROM information_schema.columns WHERE table_schema = current_schema()"
+                        + " AND table_name = '" + table + "' AND column_name = 'version'"))
+                        .as("%s 에는 V2_155 이전까지 버전 컬럼이 없다", table).isZero();
+            }
+            s.executeUpdate("INSERT INTO tb_plcy_manage (plcy_type_cd, plcy_ttl, plcy_cn) VALUES ('V155OLD', '이전 정책', '이전 본문')");
+            s.executeUpdate("INSERT INTO tb_authrt_group_info (group_id, group_nm) VALUES ('V155OLD', '이전 그룹')");
+        }
+
+        flyway(MigrationVersion.fromVersion("2.155")).migrate();
+
+        try (var c = openConnection(); var s = c.createStatement()) {
+            for (String table : V2_155_VERSIONED_TABLES) {
+                try (ResultSet column = s.executeQuery("SELECT data_type, is_nullable, column_default FROM information_schema.columns"
+                        + " WHERE table_schema = current_schema() AND table_name = '" + table + "' AND column_name = 'version'")) {
+                    assertThat(column.next()).as("%s.version 이 생겼다", table).isTrue();
+                    assertThat(column.getString(1)).as("%s.version 타입", table).isEqualTo("integer");
+                    assertThat(column.getString(2)).as("%s.version 은 NOT NULL", table).isEqualTo("NO");
+                    assertThat(column.getString(3)).as("%s.version 기본값", table).isEqualTo("0");
+                }
+                assertThat(count(s, "SELECT count(*) FROM pg_constraint WHERE conname = 'ck_" + table + "_version'"))
+                        .as("%s 의 음수 버전 CHECK", table).isOne();
+            }
+            assertThat(text(s, "SELECT version FROM tb_plcy_manage WHERE plcy_type_cd = 'V155OLD'")).isEqualTo("0");
+            assertThat(text(s, "SELECT version FROM tb_authrt_group_info WHERE group_id = 'V155OLD'")).isEqualTo("0");
+
+            // 컬럼을 모르는 이전 앱의 INSERT 도 기본값으로 채워진다(Expand).
+            s.executeUpdate("INSERT INTO tb_plcy_manage (plcy_type_cd, plcy_ttl, plcy_cn) VALUES ('V155NEW', '이후 정책', '이후 본문')");
+            assertThat(text(s, "SELECT version FROM tb_plcy_manage WHERE plcy_type_cd = 'V155NEW'")).isEqualTo("0");
+
+            assertThatThrownBy(() -> s.executeUpdate("UPDATE tb_authrt_group_info SET version = -1 WHERE group_id = 'V155OLD'"))
+                    .isInstanceOf(SQLException.class).hasMessageContaining("ck_tb_authrt_group_info_version");
         }
     }
 

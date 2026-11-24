@@ -95,9 +95,11 @@ class DeptManageServiceImplTest {
     @DisplayName("부서 수정 - 성공")
     void updateDeptManage_Success() {
         DeptManage entity = DeptManage.builder().ognzId("OR_01").ognzNm("Old").build();
+        // [V2_155] 저장된 행의 버전과 화면이 읽은 버전이 같다.
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 1);
         given(deptManageRepository.findByIdForUpdate("OR_01")).willReturn(Optional.of(entity));
 
-        DeptManageDto dto = DeptManageDto.builder().ognzId("OR_01").ognzNm("New").build();
+        DeptManageDto dto = DeptManageDto.builder().ognzId("OR_01").ognzNm("New").version(1).build();
         deptManageService.updateDeptManage(dto);
 
         assertThat(entity.getOgnzNm()).isEqualTo("New");

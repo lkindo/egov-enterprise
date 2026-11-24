@@ -264,6 +264,22 @@ describe('SecurityGroupClient', () => {
     expect(await screen.findByText('그룹 ID: 최대 20자까지 입력할 수 있습니다.')).toBeInTheDocument();
   });
 
+  it('[2026-11-25 V2_155] 그룹 수정은 연 그룹의 버전을 함께 보내고, 동시 수정 거절(409)은 서버 안내를 그대로 보인다', async () => {
+    mocks.list.mockResolvedValue({ list: [{ ...group, version: 3 }], page: 1, size: 10, total: 1, totalPage: 1 });
+    const conflict = '다른 사용자가 먼저 수정했습니다. 저장하지 않았으니 최신 내용을 다시 불러온 뒤 고쳐 주세요.';
+    mocks.update.mockRejectedValueOnce({ response: { status: 409, data: { success: false, message: conflict } } });
+    renderClient();
+    await screen.findByText('관리자 그룹');
+
+    fireEvent.click(screen.getByRole('button', { name: '관리자 그룹 그룹 수정' }));
+    fireEvent.change(screen.getByPlaceholderText('그룹 명칭 입력'), { target: { value: '수정 관리자' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Zap그룹 수정' }));
+
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledWith('GROUP_ADMIN',
+      expect.objectContaining({ groupNm: '수정 관리자', version: 3 })));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(conflict, 'error'));
+  });
+
   it('updates and permanently deletes the exact selected group', async () => {
     renderClient();
     await screen.findByText('관리자 그룹');

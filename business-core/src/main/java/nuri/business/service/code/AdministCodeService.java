@@ -50,10 +50,9 @@ public class AdministCodeService {
         SecurityUtil.assertPermission("ADMCODE_CREATE");
         administCodeRepository.lockHierarchy();
 
-        // [2026-09-17] 등록은 신규 전용이다. 이 엔티티는 클라이언트가 보낸 문자열 PK 를 쓰고
-        //   @Version 도 Persistable 도 없어 save() 가 persist 가 아니라 merge 로 간다 — 이미 있는
-        //   코드로 등록하면 기존 행의 상위·구분·명칭이 조용히 덮인다. 화면은 "등록했다" 고 말하지만
-        //   실제로는 남의 행을 바꾼 것이다.
+        // [2026-09-17] 등록은 신규 전용이다. 이 엔티티는 클라이언트가 보낸 문자열 PK 를 쓴다 — 종전에는 @Version 이 없어
+        //   save() 가 merge 로 가서 이미 있는 코드로 등록하면 기존 행이 조용히 덮였다. V2_155 로 버전이 생겨 새 엔티티는
+        //   persist 되지만, 중복을 PK 위반(500)이 아니라 이 안내로 알리기 위해 존재 확인과 insert 를 그대로 둔다.
         if (administCodeRepository.existsById(dto.getAdmdstCd())) {
             throw new BusinessException(CodeErrorCode.DUPLICATE_CODE,
                     "이미 등록된 행정구역 코드입니다: " + dto.getAdmdstCd());
@@ -79,6 +78,8 @@ public class AdministCodeService {
 
         AdministCode entity = administCodeRepository.findById(code)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "행정구역 코드를 찾을 수 없습니다: " + code));
+        // [2026-11-25 V2_155] 화면이 읽은 버전과 대조한다 — 다르면 다른 관리자가 먼저 고친 것이다(409).
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
         assertHierarchy(code, dto.getUpAdmdstCd(), entity.getUpAdmdstCd());
         entity.update(dto.getAdmdstSeCd(), dto.getAdmdstZoneNm(), blankToNull(dto.getUpAdmdstCd()), dto.getUseYn(), userId);
     }
@@ -129,6 +130,7 @@ public class AdministCodeService {
                 .crtDt(entity.getCrtDt())
                 .lastMdfrId(entity.getLastMdfrId())
                 .mdfcnDt(entity.getMdfcnDt())
+                .version(entity.getVersion())
                 .build();
     }
     /**

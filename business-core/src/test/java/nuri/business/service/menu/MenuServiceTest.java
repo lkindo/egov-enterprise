@@ -309,7 +309,7 @@ class MenuServiceTest {
     void calculateUrl_ModernRoute() {
         // given
         Menu menu = Menu.builder().menuSn(1L).modernRoute("/modern").build();
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
+        when(menuRepository.findById(1L)).thenReturn(Optional.of(versioned(menu)));
 
         // when
         MenuDto result = menuService.selectMenuManage(1L);
@@ -323,7 +323,7 @@ class MenuServiceTest {
     void calculateUrl_NoRoute() {
         // given — [2026-10-05] 레거시 파일명으로 추정하지 않는다(V2_126 이 경로를 미리 채웠다).
         Menu menu = Menu.builder().menuSn(1L).build();
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
+        when(menuRepository.findById(1L)).thenReturn(Optional.of(versioned(menu)));
 
         // when
         MenuDto result = menuService.selectMenuManage(1L);
@@ -362,7 +362,7 @@ class MenuServiceTest {
         when(menuRepository.findById(99L)).thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> menuService.updateMenuManage(dto))
+        assertThatThrownBy(() -> updateVersioned(dto))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ENTITY_NOT_FOUND);
     }
@@ -372,7 +372,7 @@ class MenuServiceTest {
         Menu node = hierarchyNode(1L, null);
         givenParentGraph(node);
 
-        assertInvalidHierarchy(() -> menuService.updateMenuManage(MenuDto.builder()
+        assertInvalidHierarchy(() -> updateVersioned(MenuDto.builder()
                 .menuNo(1L).upMenuSn(1L).menuNm("must not change").build()));
 
         assertThat(node.getUpMenuSn()).isNull();
@@ -430,7 +430,7 @@ class MenuServiceTest {
         Menu cycleB = hierarchyNode(11L, 10L);
         givenParentGraph(first, second, cycleA, cycleB);
 
-        menuService.updateMenuManage(MenuDto.builder().menuNo(10L).upMenuSn(11L).menuNm("corrected").build());
+        updateVersioned(MenuDto.builder().menuNo(10L).upMenuSn(11L).menuNm("corrected").build());
         menuService.updateMenuOrders(List.of(order(2L, 1L, 1)));
 
         assertThat(cycleA.getMenuNm()).isEqualTo("corrected");
@@ -455,7 +455,7 @@ class MenuServiceTest {
         Menu node = hierarchyNode(1L, null);
         givenParentGraph(node, hierarchyNode(10L, 11L), hierarchyNode(11L, 10L));
 
-        assertInvalidHierarchy(() -> menuService.updateMenuManage(order(1L, 10L, 1)));
+        assertInvalidHierarchy(() -> updateVersioned(order(1L, 10L, 1)));
 
         assertThat(node.getUpMenuSn()).isNull();
     }
@@ -465,7 +465,7 @@ class MenuServiceTest {
         Menu node = hierarchyNode(1L, null);
         givenParentGraph(node);
 
-        assertInvalidHierarchy(() -> menuService.updateMenuManage(order(1L, 999L, 1)));
+        assertInvalidHierarchy(() -> updateVersioned(order(1L, 999L, 1)));
 
         assertThat(node.getUpMenuSn()).isNull();
     }
@@ -516,7 +516,7 @@ class MenuServiceTest {
                 .map(node -> (MenuRepository.ParentLink) new ParentLinkFixture(node.getMenuSn(), node.getUpMenuSn())).toList();
         lenient().when(menuRepository.findParentLinksForUpdate()).thenReturn(links);
         for (Menu node : nodes) {
-            lenient().when(menuRepository.findById(node.getMenuSn())).thenReturn(Optional.of(node));
+            lenient().when(menuRepository.findById(node.getMenuSn())).thenReturn(Optional.of(versioned(node)));
         }
     }
 
@@ -683,7 +683,7 @@ class MenuServiceTest {
             return List.of(first, second).stream().filter(menu -> ids.contains(menu.getMenuSn())).toList();
         });
         Runnable action = switch (operation) {
-            case "update" -> () -> menuService.updateMenuManage(MenuDto.builder().menuNo(1L)
+            case "update" -> () -> updateVersioned(MenuDto.builder().menuNo(1L)
                     .menuNm("must not change").upMenuSn(2L).menuOrdr(9).build());
             case "order" -> () -> menuService.updateMenuOrders(List.of(order(1L, 2L, 9), order(2L, null, 8)));
             case "delete" -> () -> menuService.deleteMenuManage(MenuDto.builder().menuNo(1L).build());
@@ -716,12 +716,32 @@ class MenuServiceTest {
     void updateMenuManage_Success() {
         MenuDto dto = MenuDto.builder().menuNo(1L).menuNm("Updated").build();
         Menu menu = mock(Menu.class);
+        org.mockito.Mockito.lenient().when(menu.getVersion()).thenReturn(0);
         when(menuRepository.findParentLinksForUpdate()).thenReturn(List.of(new ParentLinkFixture(1L, null)));
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
+        when(menuRepository.findById(1L)).thenReturn(Optional.of(versioned(menu)));
         
-        menuService.updateMenuManage(dto);
+        updateVersioned(dto);
         
         verify(menu).updateWithModernRoute(eq("Updated"), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("[2026-11-25 V2_155] updateMenuManage — 버전 누락은 400, 낡은 버전은 409 로 거부하고 메뉴를 바꾸지 않는다")
+    void updateMenuManage_RejectsMissingOrStaleVersion() {
+        Menu menu = Menu.builder().menuSn(1L).menuNm("기존 메뉴").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(menu, "version", 7);
+        lenient().when(menuRepository.findParentLinksForUpdate()).thenReturn(List.of(new ParentLinkFixture(1L, null)));
+        when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> menuService.updateMenuManage(
+                        MenuDto.builder().menuNo(1L).menuNm("새 메뉴").build()))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> menuService.updateMenuManage(
+                        MenuDto.builder().menuNo(1L).menuNm("새 메뉴").version(6).build()))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION);
+        org.assertj.core.api.Assertions.assertThat(menu.getMenuNm()).isEqualTo("기존 메뉴");
     }
 
     @Test
@@ -1404,5 +1424,19 @@ class MenuServiceTest {
         when(navigationGrantRepository.findAllowedMenuIds(List.of("GROUP_AUDIT", "GROUP_STAFF"))).thenReturn(java.util.Set.of(7L));
 
         assertThat(menuService.allowedMenuIdsForCurrentUser()).containsExactly(7L);
+    }
+
+    /** [V2_155] 버전을 싣지 않은 수정 요청에 저장된 행과 같은 버전(0)을 싣는다 — 버전 대조는 전용 시험이 본다. */
+    private void updateVersioned(nuri.business.service.menu.dto.MenuDto dto) {
+        if (dto.getVersion() == null) dto.setVersion(0);
+        menuService.updateMenuManage(dto);
+    }
+
+    /** [V2_155] 저장된 행처럼 버전(0)을 가진 엔티티. mock 은 선언 직후에 getVersion() 을 따로 스텁한다(다른 스텁 안에서 스텁하지 않는다). */
+    private static <T> T versioned(T entity) {
+        if (!org.mockito.Mockito.mockingDetails(entity).isMock() || org.mockito.Mockito.mockingDetails(entity).isSpy()) {
+            org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
+        }
+        return entity;
     }
 }

@@ -42,6 +42,10 @@ public class LoginPolicy extends BaseEntity {
     @Column(length = 1)
     private String otpUseYn;
 
+    /** 낙관적 잠금 버전(V2_155). 화면이 읽은 값과 다르면 다른 사람이 먼저 고친 것이다(서비스가 409 로 거부한다). */
+    @jakarta.persistence.Version
+    private Integer version;
+
     private LoginPolicy(String userId, String ipAddr, String dpcnPrmYn, String lmtYn, String bgngTm, String endTm, String otpUseYn) {
         this.userId = userId;
         this.ipAddr = ipAddr;

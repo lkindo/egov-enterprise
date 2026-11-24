@@ -91,6 +91,8 @@ class LoginPolicyRepositoryTest extends PersistenceTestSupport {
         assertThat(row.getOtpUseYn())
                 .as("OTP 여부가 결과에 없으면 목록이 전 사용자를 'DISABLED' 로 보여 준다")
                 .isEqualTo("Y");
+        // [2026-11-25 V2_155] 목록이 버전을 실어야 화면이 수정 요청에 그대로 보낼 수 있다(빠지면 모든 수정이 400).
+        assertThat(row.getVersion()).as("등록된 정책의 버전").isZero();
     }
 
     @Test
@@ -110,5 +112,8 @@ class LoginPolicyRepositoryTest extends PersistenceTestSupport {
 
         // then
         assertThat(result.getContent()).anyMatch(r -> r.getUserId().equals("tester02") && r.getRegYn().equals("N"));
+        // 정책이 없는 사용자는 버전도 없다(등록은 버전을 보지 않는다).
+        assertThat(result.getContent()).filteredOn(r -> r.getUserId().equals("tester02"))
+                .singleElement().extracting(LoginPolicySearchResult::getVersion).isNull();
     }
 }

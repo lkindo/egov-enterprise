@@ -49,7 +49,7 @@ class PolicyApiControllerTest {
                 .andExpect(status().isCreated());
         org.mockito.Mockito.verify(policyService).createPolicy("INTERNAL", "기관 정책", "등록된 본문");
         org.mockito.Mockito.verify(policyService, org.mockito.Mockito.never())
-                .updatePolicy(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
+                .updatePolicy(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any());
     }
 
     @Test
@@ -144,10 +144,11 @@ class PolicyApiControllerTest {
     void testUpdatePolicy() throws Exception {
         mockMvc.perform(put("/api/v1/admin/system/policies/copyright")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"plcyTtl\":\"New Title\", \"plcyCn\":\"New Content\"}"))
+                .content("{\"plcyTtl\":\"New Title\", \"plcyCn\":\"New Content\", \"version\":2}"))
                 .andExpect(status().isOk());
 
-        org.mockito.Mockito.verify(policyService).updatePolicy("copyright", "New Title", "New Content");
+        // [2026-11-25 V2_155] 화면이 읽은 버전을 그대로 서비스에 넘긴다(대조는 서비스가 한다).
+        org.mockito.Mockito.verify(policyService).updatePolicy("copyright", "New Title", "New Content", 2);
     }
 
     @Test
@@ -164,6 +165,7 @@ class PolicyApiControllerTest {
         org.mockito.Mockito.verify(policyService, org.mockito.Mockito.never())
                 .updatePolicy(org.mockito.ArgumentMatchers.anyString(),
                         org.mockito.ArgumentMatchers.anyString(),
-                        org.mockito.ArgumentMatchers.anyString());
+                        org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.any());
     }
 }

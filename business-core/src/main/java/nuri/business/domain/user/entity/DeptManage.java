@@ -38,6 +38,14 @@ public class DeptManage extends BaseEntity {
     @Column(name = "sort_ordr")
     private Integer sortOrdr;
 
+    /**
+     * 낙관적 잠금 버전(V2_155). 이름·설명 편집이 화면이 읽은 값과 대조한다(다르면 409). 조직도 일괄 편집(상위·순서)은 대조하지
+     * 않지만 그 행의 버전은 올린다 — 수정자·수정 시각도 함께 바뀌기 때문이다. 그래서 다른 관리자가 끌어 옮긴 부서의 편집 창은
+     * 저장할 때 409 를 받고 다시 불러온다.
+     */
+    @jakarta.persistence.Version
+    private Integer version;
+
     private DeptManage(String ognzId, String ognzNm, String ognzExpln, String upOgnzId, Integer sortOrdr) {
         this.ognzId = ognzId;
         this.ognzNm = ognzNm;

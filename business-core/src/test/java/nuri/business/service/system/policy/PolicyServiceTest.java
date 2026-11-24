@@ -102,10 +102,11 @@ class PolicyServiceTest {
     void updatePolicy_Existing() {
         // given
         SystemPolicy policy = SystemPolicy.builder().plcyTypeCd("COPYRIGHT").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(policy, "version", 3);
         given(systemPolicyRepository.findById("COPYRIGHT")).willReturn(Optional.of(policy));
 
         // when
-        policyService.updatePolicy("COPYRIGHT", "New Title", "New Content");
+        policyService.updatePolicy("COPYRIGHT", "New Title", "New Content", 3);
 
         // then
         assertThat(policy.getPlcyTtl()).isEqualTo("New Title");
@@ -113,13 +114,30 @@ class PolicyServiceTest {
     }
 
     @Test
-    @DisplayName("정책 수정 성공 - 신규 데이터")
+    @DisplayName("[2026-11-25 V2_155] 이미 있는 정책 수정 — 버전 누락은 400, 낡은 버전은 409 로 거부하고 본문을 바꾸지 않는다")
+    void updatePolicy_RejectsMissingOrStaleVersion() {
+        SystemPolicy policy = SystemPolicy.builder().plcyTypeCd("COPYRIGHT").plcyTtl("원래 제목").plcyCn("원래 본문").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(policy, "version", 4);
+        given(systemPolicyRepository.findById("COPYRIGHT")).willReturn(Optional.of(policy));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> policyService.updatePolicy("COPYRIGHT", "T", "C", null))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> policyService.updatePolicy("COPYRIGHT", "T", "C", 3))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION);
+        assertThat(policy.getPlcyTtl()).isEqualTo("원래 제목");
+        verify(systemPolicyRepository, org.mockito.Mockito.never()).save(any());
+    }
+
+    @Test
+    @DisplayName("정책 수정 성공 - 신규 데이터(없는 유형의 첫 저장은 버전을 보지 않는다)")
     void updatePolicy_New() {
         // given
         given(systemPolicyRepository.findById("COPYRIGHT")).willReturn(Optional.empty());
 
         // when
-        policyService.updatePolicy("COPYRIGHT", "New Title", "New Content");
+        policyService.updatePolicy("COPYRIGHT", "New Title", "New Content", null);
 
         // then
         verify(systemPolicyRepository).save(any());
@@ -144,7 +162,7 @@ class PolicyServiceTest {
     @DisplayName("정책 유형 코드가 물리 계약(12자·영대문자/숫자/밑줄)을 어기면 저장 전에 거부한다")
     void updatePolicy_rejectsInvalidType(String type) {
         org.assertj.core.api.Assertions.assertThatThrownBy(
-                        () -> policyService.updatePolicy(type, "T", "C"))
+                        () -> policyService.updatePolicy(type, "T", "C", 0))
                 .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
@@ -159,7 +177,7 @@ class PolicyServiceTest {
         assertThat(twelve).hasSize(12);
         given(systemPolicyRepository.findById(twelve)).willReturn(Optional.empty());
 
-        policyService.updatePolicy(twelve, "T", "C");
+        policyService.updatePolicy(twelve, "T", "C", null);
 
         verify(systemPolicyRepository).save(any());
     }

@@ -30,6 +30,10 @@ public class SystemPolicy extends BaseEntity {
     @Column(columnDefinition = "text", nullable = false, length = 4000)
     private String plcyCn;
 
+    /** 낙관적 잠금 버전(V2_155). 화면이 읽은 값과 다르면 다른 사람이 먼저 고친 것이다(서비스가 409 로 거부한다). */
+    @jakarta.persistence.Version
+    private Integer version;
+
     // 팩토리 위임용 private 생성자 (own 필드 전체)
     private SystemPolicy(String plcyTypeCd, String plcyTtl, String plcyCn) {
         this.plcyTypeCd = plcyTypeCd;

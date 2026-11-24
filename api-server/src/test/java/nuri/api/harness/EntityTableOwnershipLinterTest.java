@@ -93,7 +93,8 @@ class EntityTableOwnershipLinterTest {
                     "nuri.business.domain.user.repository.DeptManageRepository",
                     "nuri.business.domain.organization.OrganizationManage",
                     "nuri.business.domain.organization.OrganizationManageRepository",
-                    Set.of("up_ognz_id", "sort_ordr")));
+                    // [2026-11-25 V2_155] 낙관적 잠금 버전은 쓰는 엔티티(DeptManage)만 매핑한다 — 조회 전용 쪽은 버전을 쓰지 않는다.
+                    Set.of("up_ognz_id", "sort_ordr", "version")));
 
     @Test
     @DisplayName("활성 Entity와 물리 테이블 census: 공유 테이블은 exact FQCN + 단일 쓰기 소유자다")

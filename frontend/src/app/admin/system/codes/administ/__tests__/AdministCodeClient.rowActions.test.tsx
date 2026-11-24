@@ -148,6 +148,26 @@ describe('AdministCodeClient 정정 경로', () => {
     expect(mocks.createAdministCode).not.toHaveBeenCalled();
   });
 
+  it('[2026-11-25 V2_155] 수정 저장은 연 코드의 버전을 함께 보내고, 동시 수정 거절(409)은 서버 안내를 그대로 보인다', async () => {
+    const versioned = { ...SEOUL, version: 2 };
+    mocks.getAdministCodeList.mockResolvedValue({ list: [versioned], total: 1, page: 1, size: 10, totalPage: 1 });
+    const conflict = '다른 사용자가 먼저 수정했습니다. 저장하지 않았으니 최신 내용을 다시 불러온 뒤 고쳐 주세요.';
+    mocks.updateAdministCode.mockRejectedValueOnce({ response: { status: 409, data: { success: false, message: conflict } } });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AdministCodeClient initialData={{ list: [versioned], total: 1, page: 1, size: 10, totalPage: 1 }} />
+      </QueryClientProvider>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: '서울특별시 수정' }));
+    await screen.findByRole('region', { name: '행정 구역 코드 수정' });
+
+    fireEvent.click(screen.getByRole('button', { name: /저장$/ }));
+
+    await waitFor(() => expect(mocks.updateAdministCode).toHaveBeenCalledWith('1100000000', expect.objectContaining({ version: 2 })));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(conflict, 'error'));
+  });
+
   it('상위가 없는 최상위 구역도 저장된다 — 서버에 없는 필수 규칙을 화면이 만들지 않는다', async () => {
     renderClient();
     fireEvent.click(await screen.findByRole('button', { name: '서울특별시 수정' }));

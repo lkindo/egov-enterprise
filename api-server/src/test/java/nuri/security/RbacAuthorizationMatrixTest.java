@@ -203,13 +203,15 @@ class RbacAuthorizationMatrixTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.userId").value(loginId))
                 .andExpect(jsonPath("$.data.regYn").value("Y"))
                 .andExpect(jsonPath("$.data.ipAddr").value("192.0.2.1"))
-                .andExpect(jsonPath("$.data.dpcnPrmYn").value("Y"));
+                .andExpect(jsonPath("$.data.dpcnPrmYn").value("Y"))
+                // [V2_155] 조회가 버전을 돌려주고, 수정은 그 값을 그대로 싣는다.
+                .andExpect(jsonPath("$.data.version").value(0));
 
         mockMvc.perform(put(path).with(user(explicit("policy_editor", List.of("POLICY_OPERATORS"),
                         List.of("LOGIN_POL_UPDATE"))))
                         .contentType(MediaType.APPLICATION_JSON).content("""
                         {"userId":"body_other","ipAddr":"192.0.2.2","lmtYn":"Y",
-                         "bgngTm":"08:00","endTm":"18:00","otpUseYn":"N"}
+                         "bgngTm":"08:00","endTm":"18:00","otpUseYn":"N","version":0}
                         """))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
         mockMvc.perform(get(path).with(user(explicit(List.of("POLICY_READERS"), List.of("LOGIN_POL_READ")))))

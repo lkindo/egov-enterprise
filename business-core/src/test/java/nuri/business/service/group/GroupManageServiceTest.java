@@ -72,7 +72,7 @@ class GroupManageServiceTest {
     void selectGroup_Success() {
         // Given
         GroupManage entity = GroupManage.builder().groupId("G1").groupNm("Group1").build();
-        given(groupManageRepository.findById("G1")).willReturn(Optional.of(entity));
+        given(groupManageRepository.findById("G1")).willReturn(Optional.of(versioned(entity)));
 
         // When
         GroupManageDto result = groupManageService.selectGroup("G1");
@@ -100,25 +100,43 @@ class GroupManageServiceTest {
     void updateGroup_Success() {
         // Given
         GroupManage entity = GroupManage.builder().groupId("G1").build();
-        given(groupManageRepository.findById("G1")).willReturn(Optional.of(entity));
+        given(groupManageRepository.findById("G1")).willReturn(Optional.of(versioned(entity)));
         GroupManageDto dto = GroupManageDto.builder().groupId("G1").groupNm("Updated Name").build();
 
         // When
-        groupManageService.updateGroup(dto);
+        updateVersioned(dto);
 
         // Then
         assertThat(entity.getGroupNm()).isEqualTo("Updated Name");
     }
 
     @Test
+    @DisplayName("[2026-11-25 V2_155] 그룹 수정 — 버전 누락은 400, 낡은 버전은 409 로 거부하고 이름을 바꾸지 않는다")
+    void updateGroup_RejectsMissingOrStaleVersion() {
+        GroupManage entity = GroupManage.builder().groupId("G1").groupNm("기존 이름").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 2);
+        given(groupManageRepository.findById("G1")).willReturn(Optional.of(entity));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> groupManageService.updateGroup(
+                        GroupManageDto.builder().groupId("G1").groupNm("새 이름").build()))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> groupManageService.updateGroup(
+                        GroupManageDto.builder().groupId("G1").groupNm("새 이름").version(1).build()))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION);
+        assertThat(entity.getGroupNm()).isEqualTo("기존 이름");
+    }
+
+    @Test
     @DisplayName("[2026-11-24] 그룹명이 비면 등록·수정을 400 으로 거부하고 기존 이름을 지우지 않는다")
     void blankGroupNameIsRejected() {
         GroupManage entity = GroupManage.builder().groupId("G1").groupNm("기존 이름").build();
-        given(groupManageRepository.findById("G1")).willReturn(Optional.of(entity));
+        given(groupManageRepository.findById("G1")).willReturn(Optional.of(versioned(entity)));
 
         for (String blank : java.util.Arrays.asList(null, "", "   ")) {
             var update = assertThrows(nuri.foundation.core.exception.BusinessException.class,
-                    () -> groupManageService.updateGroup(GroupManageDto.builder().groupId("G1").groupNm(blank).build()));
+                    () -> updateVersioned(GroupManageDto.builder().groupId("G1").groupNm(blank).build()));
             assertThat(update.getErrorCode()).isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
             var insert = assertThrows(nuri.foundation.core.exception.BusinessException.class,
                     () -> groupManageService.insertGroup(GroupManageDto.builder().groupId("NEW").groupNm(blank).build()));
@@ -227,7 +245,7 @@ class GroupManageServiceTest {
 
         // When & Then
         nuri.foundation.core.exception.BusinessException ex = org.junit.jupiter.api.Assertions.assertThrows(
-                nuri.foundation.core.exception.BusinessException.class, () -> groupManageService.updateGroup(dto));
+                nuri.foundation.core.exception.BusinessException.class, () -> updateVersioned(dto));
         org.junit.jupiter.api.Assertions.assertEquals(
                 nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND, ex.getErrorCode());
     }
@@ -265,5 +283,19 @@ class GroupManageServiceTest {
         org.junit.jupiter.api.Assertions.assertEquals(
                 nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE, ex.getErrorCode());
         verifyNoInteractions(userRepository, groupManageRepository);
+    }
+
+    /** [V2_155] 버전을 싣지 않은 수정 요청에 저장된 행과 같은 버전(0)을 싣는다 — 버전 대조는 전용 시험이 본다. */
+    private void updateVersioned(nuri.business.service.group.dto.GroupManageDto dto) {
+        if (dto.getVersion() == null) dto.setVersion(0);
+        groupManageService.updateGroup(dto);
+    }
+
+    /** [V2_155] 저장된 행처럼 버전(0)을 가진 엔티티. mock 은 선언 직후에 getVersion() 을 따로 스텁한다(다른 스텁 안에서 스텁하지 않는다). */
+    private static <T> T versioned(T entity) {
+        if (!org.mockito.Mockito.mockingDetails(entity).isMock() || org.mockito.Mockito.mockingDetails(entity).isSpy()) {
+            org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
+        }
+        return entity;
     }
 }

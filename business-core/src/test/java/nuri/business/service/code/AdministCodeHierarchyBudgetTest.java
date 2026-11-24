@@ -194,6 +194,8 @@ class AdministCodeHierarchyBudgetTest {
     private AdministCode put(int id, String parent) {
         AdministCode row = AdministCode.builder().admdstCd(code(id)).upAdmdstCd(parent)
                 .admdstSeCd("1").admdstZoneNm("Original name").useYn("Y").build();
+        // 저장된 행은 버전을 가진다(V2_155). 계층 예산을 보는 시험이라 버전은 늘 맞는 값으로 둔다.
+        org.springframework.test.util.ReflectionTestUtils.setField(row, "version", 0);
         rows.put(code(id), row);
         return row;
     }
@@ -204,6 +206,6 @@ class AdministCodeHierarchyBudgetTest {
 
     private static AdministCodeDto dto(String parent) {
         return AdministCodeDto.builder().admdstCd(code(0)).upAdmdstCd(parent)
-                .admdstSeCd("1").admdstZoneNm("Updated name").useYn("Y").build();
+                .admdstSeCd("1").admdstZoneNm("Updated name").useYn("Y").version(0).build();
     }
 }

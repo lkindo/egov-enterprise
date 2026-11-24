@@ -83,6 +83,9 @@ public class DeptManageService {
         nuri.business.security.util.SecurityUtil.assertPermission("DEPT_UPDATE");
         DeptManage entity = deptManageRepository.findByIdForUpdate(Objects.requireNonNull(dto.getOgnzId()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        // [2026-11-25 V2_155] 행 잠금은 같은 순간의 저장만 줄 세운다 — 화면이 읽은 버전과 대조해 읽은 뒤 다른 관리자가 고친 내용을
+        //   덮지 않는다(409).
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
         entity.update(dto.getOgnzNm(), dto.getOgnzExpln());
     }
 
