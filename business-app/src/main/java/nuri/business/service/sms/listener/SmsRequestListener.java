@@ -5,6 +5,7 @@ import nuri.business.service.sms.SmsService;
 import nuri.business.service.sms.dto.SmsDto;
 import nuri.business.service.sms.dto.SmsRecptnDto;
 import nuri.foundation.core.event.SmsRequestedEvent;
+import nuri.foundation.core.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -14,7 +15,8 @@ import java.util.List;
 /**
  * 업무 도메인이 요청한 문자를 실제 발송으로 만든다.
  *
- * <p>{@code MailRequestListener} 와 같은 이유로 이벤트로 받고, 같은 이유로 {@code @Async} 를 쓰지 않는다.
+ * <p>{@code MailRequestListener} 와 같은 이유로 이벤트로 받고, 같은 이유로 {@code @Async} 를 쓰지 않는다. 의도 키가 있는 요청을
+ * 한 번만 접수하고 접수 실패를 되던지는 규칙도 같다.
  *
  * <p><b>발신 번호가 여기 있는 이유</b> — {@code nuri.notification.sender.tel} 은 업무 사실이 아니라 배포
  * 설정이고, 그것을 쓰는 것은 sms 도메인이다. 종전에는 {@code SanctionEventListener} 가 들고 있어 결재에서
@@ -56,12 +58,23 @@ public class SmsRequestListener {
             log.warn("문자 발송을 건너뜁니다 — nuri.notification.sender.tel 이 설정되지 않았습니다");
             return;
         }
+        SmsDto sms = SmsDto.builder()
+                .sndngTelno(senderTel)
+                .sndngCn(event.content())
+                .recipients(List.of(recipient(event)))
+                .build();
+        if (event.intentKey() != null) {
+            try {
+                smsService.sendSmsOnce(event.intentKey(), event.requesterId(), sms);
+                log.info("요청된 문자를 접수했습니다");
+            } catch (BusinessException | jakarta.validation.ValidationException rejected) {
+                // 연락처 없음·게이트웨이가 못 보내는 본문은 다시 해도 같다 — 발행부가 재시도하지 않게 삼킨다.
+                log.warn("문자 요청을 접수하지 않았습니다(입력 거절) — 예외유형={}", rejected.getClass().getSimpleName());
+            }
+            return;
+        }
         try {
-            smsService.sendSms(event.requesterId(), SmsDto.builder()
-                    .sndngTelno(senderTel)
-                    .sndngCn(event.content())
-                    .recipients(List.of(recipient(event)))
-                    .build());
+            smsService.sendSms(event.requesterId(), sms);
             log.info("요청된 문자를 발송했습니다");
         } catch (Exception e) {
             log.error("문자 발송 실패(업무 처리에는 영향 없음) — 예외유형={}", e.getClass().getSimpleName());

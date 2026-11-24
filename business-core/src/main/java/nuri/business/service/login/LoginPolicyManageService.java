@@ -32,6 +32,8 @@ public class LoginPolicyManageService {
 
     private final LoginPolicyRepository loginPolicyRepository;
     private final UserRepository userRepository;
+    /** 접속 조건을 걸거나 바꿀 때 그 전에 발급된 세션을 끊는다(refresh token 삭제, 세션차수는 {@link UserRepository}). */
+    private final nuri.business.domain.auth.RefreshTokenRepository refreshTokenRepository;
 
     /**
      * 보호 계정 가드(GAP-SEC-006, 2026-10-03).
@@ -51,6 +53,12 @@ public class LoginPolicyManageService {
      * 정상적인 강화 수단이다). 삭제는 제한을 푸는 일이라 관리자를 줄이지 않는다.
      */
     private final ProtectedAccountChangeGuard protectedAccountGuard;
+
+    /**
+     * 민감 작업 감사(2026-11-25). 등록·변경·삭제 엔드포인트의 표지(@SensitiveOperation)는 시도와 HTTP 결과를 남기고, 이 기록은 실제
+     * 변경과 같은 트랜잭션에서 대상(esntlId)과 함께 커밋된 사실을 남긴다(ADR-0025 D13) — 강제 로그아웃·비밀번호 초기화와 같다.
+     */
+    private final nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
 
     /**
      * 접속 허용 시간창 판정의 기준 시계. 운영에서는 항상 Asia/Seoul 시스템 시계다.
@@ -161,13 +169,82 @@ public class LoginPolicyManageService {
                 // 온라인 투표 등록(pollAtmcDsuseYn)과 같은 형태다. 수정 경로는 기존 값을 유지한다(아래 참조).
                 .dpcnPrmYn(dto.getDpcnPrmYn() != null ? dto.getDpcnPrmYn() : "N")
                 .lmtYn(dto.getLmtYn())
-                .bgngTm(dto.getBgngTm())
-                .endTm(dto.getEndTm())
+                .bgngTm(canonicalClockTime(dto.getBgngTm()))
+                .endTm(canonicalClockTime(dto.getEndTm()))
                 .otpUseYn(dto.getOtpUseYn())
                 .build();
         entity.setFrstRgtrId("SYSTEM"); // 시스템 정책 작성자는 SYSTEM 으로 명시 유지(하위 호환)
         loginPolicyRepository.save(entity);
         keepAnActiveManager(managersBefore);
+        revokeSessionsWhenRestrictionChanges(target, null,
+                LoginRestriction.of(entity.getLmtYn(), entity.getIpAddr(), entity.getBgngTm(), entity.getEndTm()));
+        sensitiveAudit.recordMutation("LOGIN_POLICY_CREATE", target.getEsntlId());
+    }
+
+    /**
+     * 로그인을 막을 수 있는 조건 — 접속 제한(lmtYn='Y')·허용 IP·허용 시간창. 셋 다 없으면 {@code null} 이다.
+     *
+     * <p>[2026-11-25] 비교는 로그인 판정({@link #validateLoginPolicy})과 같은 뜻으로 한다 — 표기만 다른 같은 조건(09:00 과 0900,
+     * 정규화 전 IPv6 표기)은 같고, 판정이 읽지 못해 막는 값은 '읽지 못함' 으로 따로 센다. 시간창은 판정처럼 시작·종료가 모두 비어
+     * 있지 않을 때만 창이고, 같은 시각은 판정이 24시간 허용하므로 창이 아니다.
+     */
+    private record LoginRestriction(boolean limited, String ip, String window) {
+        static LoginRestriction of(String lmtYn, String ipAddr, String bgngTm, String endTm) {
+            boolean limited = "Y".equals(lmtYn);
+            String ip = ipAddr == null || ipAddr.isEmpty() ? null : comparableIp(ipAddr);
+            String window = comparableWindow(bgngTm, endTm);
+            if (!limited && ip == null && window == null) return null;
+            return new LoginRestriction(limited, ip, window);
+        }
+
+        private static String comparableIp(String raw) {
+            try {
+                return IpAddressCanonicalizer.canonicalize(raw);
+            } catch (IllegalArgumentException unreadable) {
+                // 판정은 읽지 못한 IP 와 맞는 접속이 없어 막는다 — 그 상태도 조건이다.
+                return "unreadable:" + raw;
+            }
+        }
+
+        private static String comparableWindow(String start, String end) {
+            if (start == null || start.isEmpty() || end == null || end.isEmpty()) return null;
+            try {
+                java.time.LocalTime from = parseClockTime(start);
+                java.time.LocalTime to = parseClockTime(end);
+                return from.equals(to) ? null : from + "-" + to;
+            } catch (RuntimeException unreadable) {
+                // 판정은 읽지 못한 시간창을 그 사용자의 로그인 차단으로 처리한다.
+                return "unreadable:" + start + "-" + end;
+            }
+        }
+    }
+
+    /**
+     * 저장할 접속 허용 시각 — 판정이 읽는 정본 표기(HH:mm)다. 비었거나 공백뿐이면 {@code null}(시간창 없음)이다.
+     *
+     * <p>[2026-11-25] 종전에는 받은 값을 그대로 저장했다. 공백 한 칸은 저장 검증이 '비어 있음' 으로 보고 통과시켰지만 판정은
+     * 그것을 시각으로 읽으려다 실패해 그 사용자의 로그인을 막았다. 형식은 {@link #requireTimePair} 가 먼저 확인한다.
+     */
+    private static String canonicalClockTime(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        return parseClockTime(raw).format(CLOCK_TIME_FORMATTER);
+    }
+
+    /**
+     * [2026-11-24] 접속 조건을 걸거나 바꾸면 그 사용자의 기존 세션을 끊는다(세션차수 증가 + refresh token 삭제, V2_153).
+     *
+     * <p>로그인 정책은 로그인·재발급 때만 판정한다. 종전에는 접속 제한·IP·허용 시간을 걸어도 이미 받은 access token 이 만료(기본
+     * 1시간)까지 통과했다 — 계정 비활성은 즉시 끊기는데 같은 효과의 접속 제한만 늦게 들었다. 조건이 바뀌면 다시 로그인하게 해 새
+     * 조건으로 판정받게 한다. 조건을 모두 푸는 변경(정책 삭제 포함)은 세션을 끊지 않는다. 로그인 실패 잠금이 세션을 끊지 않는
+     * 결정(DEC-OPS-419)은 관리자가 거는 이 제한과 별개다.
+     */
+    private void revokeSessionsWhenRestrictionChanges(User target, LoginRestriction before, LoginRestriction after) {
+        if (after == null || after.equals(before)) {
+            return;
+        }
+        List<String> esntlIds = List.of(target.getEsntlId());
+        userRepository.advanceSessionCycle(esntlIds);
+        refreshTokenRepository.deleteAllByEsntlIdIn(esntlIds);
     }
 
     /**
@@ -228,13 +305,15 @@ public class LoginPolicyManageService {
         rejectUnsupportedOtp(dto);
         requireTimePair(dto);
         String canonicalIpAddr = canonicalizeConfiguredIp(dto.getIpAddr());
-        LoginPolicy entity = loginPolicyRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         // [GAP-SEC-006] 정책 행이 있으면 FK(fk_tb_login_policy_tb_user_info)로 사용자도 있다. 그래도 사용자를 찾지 못하면
         //   보호 계정인지 판정할 수 없으므로 바꾸지 않고 거부한다(fail-closed). 수정은 제한을 걸거나 푸는 일이라 가린다.
         User target = userRepository.findByUserId(dto.getUserId())
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
         protectedAccountGuard.authorizeProtectedAccountChange(target.getEsntlId());
+        // [2026-11-25] 정책 행은 관리 잠금(위 가드) 뒤에 처음 읽는다 — 등록·삭제와 같은 순서다. 잠금 전에 읽으면 같은 정책을 함께
+        //   저장한 다른 관리자의 변경 전 값을 '이전 조건' 으로 써서, 이미 반영된 같은 조건에 세션을 한 번 더 끊었다.
+        LoginPolicy entity = loginPolicyRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         long managersBefore = protectedAccountGuard.managerCount();
         /*
           중복 로그인 허용 여부는 요청에 없으면 기존 값을 유지한다(GAP-POLICY-001).
@@ -253,8 +332,13 @@ public class LoginPolicyManageService {
           비대칭은 의도다 — 다섯 필드는 컨트롤이 있고 이 하나는 없다. 컨트롤이 생기면 이 분기를 걷는다.
         */
         String dpcnPrmYn = dto.getDpcnPrmYn() != null ? dto.getDpcnPrmYn() : entity.getDpcnPrmYn();
-        entity.update(canonicalIpAddr, dpcnPrmYn, dto.getLmtYn(), dto.getBgngTm(), dto.getEndTm(), dto.getOtpUseYn());
+        LoginRestriction before = LoginRestriction.of(entity.getLmtYn(), entity.getIpAddr(), entity.getBgngTm(), entity.getEndTm());
+        entity.update(canonicalIpAddr, dpcnPrmYn, dto.getLmtYn(), canonicalClockTime(dto.getBgngTm()),
+                canonicalClockTime(dto.getEndTm()), dto.getOtpUseYn());
         keepAnActiveManager(managersBefore);
+        revokeSessionsWhenRestrictionChanges(target, before,
+                LoginRestriction.of(entity.getLmtYn(), entity.getIpAddr(), entity.getBgngTm(), entity.getEndTm()));
+        sensitiveAudit.recordMutation("LOGIN_POLICY_UPDATE", target.getEsntlId());
     }
 
     @Transactional
@@ -262,9 +346,15 @@ public class LoginPolicyManageService {
         SecurityUtil.assertPermission("LOGIN_POL_DELETE");
         // [GAP-SEC-006] 삭제는 보호 계정에 걸린 제한을 푸는 일이다 — 대상 사용자가 있으면 가린다. 사용자가 없으면 FK 때문에
         //   정책 행도 없어 지울 것이 없으므로 종전의 멱등 삭제(없는 행은 아무 일도 하지 않는다)를 그대로 둔다.
-        userRepository.findByUserId(dto.getUserId())
-                .ifPresent(target -> protectedAccountGuard.authorizeProtectedAccountChange(target.getEsntlId()));
+        java.util.Optional<User> policyUser = userRepository.findByUserId(dto.getUserId());
+        policyUser.ifPresent(target -> protectedAccountGuard.authorizeProtectedAccountChange(target.getEsntlId()));
+        // 지울 행이 있었는지는 관리 잠금(위 가드) 뒤에 본다 — 사용자가 없으면 FK 때문에 정책도 없다.
+        boolean existed = policyUser.isPresent() && loginPolicyRepository.existsById(dto.getUserId());
         loginPolicyRepository.deleteById(dto.getUserId());
+        // [2026-11-25] 실제로 지운 경우만 커밋 감사를 남긴다 — 이미 없는 정책의 멱등 삭제는 변경이 아니다.
+        if (existed) {
+            policyUser.ifPresent(target -> sensitiveAudit.recordMutation("LOGIN_POLICY_DELETE", target.getEsntlId()));
+        }
     }
 
     public void validateLoginPolicy(String userId, String clientIp) {

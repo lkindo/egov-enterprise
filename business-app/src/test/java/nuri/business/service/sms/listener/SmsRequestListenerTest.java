@@ -86,6 +86,39 @@ class SmsRequestListenerTest {
     }
 
     @Test
+    @DisplayName("[2026-11-25] 의도 키가 있는 요청은 그 키로 한 번만 접수하는 경로를 탄다")
+    void keyedRequestIsAcceptedOnceByItsKey() {
+        SmsRequestListener listener = new SmsRequestListener(smsService, SENDER_TEL);
+        java.util.UUID key = java.util.UUID.fromString("00000000-0000-0000-0000-000000000011");
+
+        listener.onSmsRequested(new SmsRequestedEvent("SANCTIONER_001", "01011112222", "본문", "USR_A", key));
+
+        ArgumentCaptor<SmsDto> captor = ArgumentCaptor.forClass(SmsDto.class);
+        verify(smsService).sendSmsOnce(eq(key), eq("SANCTIONER_001"), captor.capture());
+        verify(smsService, never()).sendSms(anyString(), any());
+        assertThat(captor.getValue().getSndngTelno()).isEqualTo(SENDER_TEL);
+        assertThat(captor.getValue().getRecipients()).singleElement()
+                .satisfies(recipient -> assertThat(recipient.getEsntlId()).isEqualTo("USR_A"));
+    }
+
+    @Test
+    @DisplayName("[2026-11-25] 의도 키가 있는 요청의 접수 실패는 되던져 발행부가 다시 시도하게 하고, 입력 거절은 삼킨다")
+    void keyedRequestPropagatesStorageFailureButNotRejection() {
+        SmsRequestListener listener = new SmsRequestListener(smsService, SENDER_TEL);
+        java.util.UUID key = java.util.UUID.fromString("00000000-0000-0000-0000-000000000012");
+        SmsRequestedEvent event = new SmsRequestedEvent("SANCTIONER_001", "01011112222", "본문", "USR_A", key);
+
+        doThrow(new IllegalStateException("storage down")).when(smsService).sendSmsOnce(eq(key), anyString(), any());
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> listener.onSmsRequested(event))
+                .isInstanceOf(IllegalStateException.class);
+
+        doThrow(new nuri.foundation.core.exception.BusinessException(
+                nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE))
+                .when(smsService).sendSmsOnce(eq(key), anyString(), any());
+        assertThatCode(() -> listener.onSmsRequested(event)).doesNotThrowAnyException();
+    }
+
+    @Test
     @DisplayName("발송 실패가 발행 측으로 전파되지 않는다")
     void absorbsSendFailure() {
         SmsRequestListener listener = new SmsRequestListener(smsService, SENDER_TEL);

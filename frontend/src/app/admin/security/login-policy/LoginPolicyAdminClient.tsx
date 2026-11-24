@@ -48,6 +48,15 @@ const optionalEndTimeSchema = LoginPolicyDtoSchema.shape.endTm
   .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, '종료 시간은 HH:mm 형식으로 입력해 주세요.')
   .or(z.literal(''));
 
+/**
+ * 저장된 접속 허용 시각을 폼 값(HH:mm)으로 옮긴다(2026-11-25). 서버는 이제 HH:mm 으로 저장하지만 그 전 행에는 옛 표기(0900)가
+ * 남아 있어, 그대로 채우면 IP 만 고치려 해도 시각 검증에 막혔다. 공백뿐인 값은 시간창 없음이다.
+ */
+export function toClockInput(value?: string | null): string {
+  const trimmed = (value ?? '').trim();
+  return /^\d{4}$/.test(trimmed) ? `${trimmed.slice(0, 2)}:${trimmed.slice(2)}` : trimmed;
+}
+
 export const loginPolicySchema = LoginPolicyDtoSchema.extend({
   ipAddr: LoginPolicyDtoSchema.shape.ipAddr
     .unwrap()
@@ -178,8 +187,8 @@ export default function LoginPolicyAdminClient() {
     form.reset({
       ipAddr: policy.ipAddr || '',
       lmtYn: policy.lmtYn || 'N',
-      bgngTm: policy.bgngTm || '',
-      endTm: policy.endTm || '',
+      bgngTm: toClockInput(policy.bgngTm),
+      endTm: toClockInput(policy.endTm),
       otpUseYn: policy.otpUseYn || 'N',
     });
     setIsEditModalOpen(true);

@@ -21,6 +21,7 @@ const TYPE_LABELS: Record<string, string> = {
   FILE_DELETE: '첨부 파일 삭제',
   MAIL_DELIVERY: '메일 발송',
   SMS_DELIVERY: '문자 발송',
+  SANCTION_EXTERNAL_NOTIFICATION: '결재 결과 문자·메일 요청',
 };
 
 const STATUS_LABELS: Record<string, string> = {

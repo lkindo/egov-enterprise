@@ -27,6 +27,21 @@ class SmsRequestedEventTest {
         assertThat(request.requesterId()).isEqualTo("SANCTIONER_001");
         assertThat(request.recipientTelno()).isEqualTo("01011112222");
         assertThat(request.content()).isEqualTo("결재(번호 7)가 승인되었습니다.");
+        assertThat(request.recipientEsntlId()).isNull();
+        assertThat(request.intentKey()).isNull();
+    }
+
+    @Test
+    @DisplayName("[2026-11-24] 정보주체와 의도 키를 싣는 요청 — 키 없는 4인자 요청은 받을 때마다 새로 접수된다")
+    void carriesRecipientSubjectAndIntentKey() {
+        java.util.UUID key = java.util.UUID.fromString("00000000-0000-0000-0000-000000000007");
+        SmsRequestedEvent keyed = new SmsRequestedEvent("SANCTIONER_001", "01011112222", "본문", "ESNTL_1", key);
+        SmsRequestedEvent unkeyed = new SmsRequestedEvent("SANCTIONER_001", "01011112222", "본문", "ESNTL_1");
+
+        assertThat(keyed.recipientEsntlId()).isEqualTo("ESNTL_1");
+        assertThat(keyed.intentKey()).isEqualTo(key);
+        assertThat(unkeyed.recipientEsntlId()).isEqualTo("ESNTL_1");
+        assertThat(unkeyed.intentKey()).isNull();
     }
 
     @ParameterizedTest

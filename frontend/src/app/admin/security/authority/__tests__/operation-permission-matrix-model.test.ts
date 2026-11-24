@@ -59,7 +59,7 @@ describe('기능별 권한 표 모델', () => {
     expect(planBulkToggle(scope, new Set([key('AUTHRT_READ'), key('AUTHRT_AUDIT'), key('AUTHRT_GRANT')]), true))
       .toEqual({ mode: 'clear', keys: [key('AUTHRT_READ'), key('AUTHRT_AUDIT')] });
     expect(planBulkToggle([op('AUTHRT:GRANT')], new Set(), true)).toEqual({ mode: null, keys: [] });
-    expect([...PROTECTED_PERMISSION_CODES].sort()).toEqual(['AUTHRT_ASSIGN', 'AUTHRT_GRANT', 'MFA_RECOVER', 'USER_PASSWORD']);
+    expect([...PROTECTED_PERMISSION_CODES].sort()).toEqual(['ADT_LOG_READ', 'AUTHRT_ASSIGN', 'AUTHRT_GRANT', 'MFA_RECOVER', 'USER_PASSWORD']);
   });
 
   it('보호 권한 집합은 화면 목록 생성물(PROTECTED_PERMISSIONS)과 같다 — 사본 리터럴로 어긋나지 않는다', () => {

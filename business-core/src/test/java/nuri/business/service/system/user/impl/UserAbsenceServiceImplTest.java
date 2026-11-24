@@ -46,6 +46,10 @@ class UserAbsenceServiceImplTest {
     @Mock
     private nuri.business.domain.user.repository.UserRepository userRepository;
 
+    /** 지정의 커밋 사실을 대상과 함께 남긴다(2026-11-25, ADR-0025 D13). */
+    @Mock
+    private nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
+
     // MapStruct 컴파일타임 생성 구현체를 실제로 주입 (수기 from() 대체 매퍼)
     @Spy
     private UserAbsenceMapper userAbsenceMapper = new UserAbsenceMapperImpl();
@@ -107,6 +111,8 @@ class UserAbsenceServiceImplTest {
 
         // then
         verify(userAbsenceRepository).save(any());
+        // [2026-11-25] 지정의 커밋 사실을 대상과 함께 남긴다(ADR-0025 D13).
+        verify(sensitiveAudit).recordMutation("USER_ABSENCE_UPDATE", "user1");
     }
 
     @Test
@@ -118,6 +124,7 @@ class UserAbsenceServiceImplTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> userAbsenceService.updateAbsence("ghost", dto))
                 .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
         verify(userAbsenceRepository, org.mockito.Mockito.never()).save(any());
+        org.mockito.Mockito.verifyNoInteractions(sensitiveAudit);
     }
 
     // ── [V2_151] 대리결재 지정 ──────────────────────────────────────────────────────────────────────────────

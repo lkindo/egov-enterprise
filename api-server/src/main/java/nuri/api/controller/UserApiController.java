@@ -219,6 +219,7 @@ public class UserApiController {
 
 
     @Operation(summary = "사용자 삭제", description = "시스템에서 사용자를 삭제합니다. (관리자 권한)")
+    @nuri.foundation.core.annotation.SensitiveOperation("사용자 삭제")
     @DeleteMapping("/admin/system/users/{userId}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#deleteUser')")
     public ResponseEntity<ApiResponse<Void>> deleteUser(
@@ -229,6 +230,7 @@ public class UserApiController {
 
     @Operation(summary = "사용자 다중 삭제", description = "시스템에서 한 번에 최대 "
             + UserService.MAX_BULK_DELETE_USERS + "명의 사용자를 삭제합니다. (관리자 권한)")
+    @nuri.foundation.core.annotation.SensitiveOperation("사용자 일괄 삭제")
     @DeleteMapping("/admin/system/users")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#deleteUsers')")
     public ResponseEntity<ApiResponse<Void>> deleteUsers(
@@ -253,6 +255,7 @@ public class UserApiController {
     }
 
     @Operation(summary = "계정 잠금 해제", description = "연속 로그인 실패로 잠긴 계정의 잠금을 풉니다. 비밀번호와 세션은 바꾸지 않습니다. (관리자 권한)")
+    @nuri.foundation.core.annotation.SensitiveOperation("계정 잠금 해제")
     @PatchMapping("/admin/system/users/{userId}/unlock")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#unlockUser')")
     public ResponseEntity<ApiResponse<Void>> unlockUser(@PathVariable String userId) {
@@ -270,6 +273,7 @@ public class UserApiController {
     }
 
     @Operation(summary = "사용자 상태 일괄 변경", description = "여러 명의 사용자 상태를 한꺼번에 변경합니다. (관리자 권한)")
+    @nuri.foundation.core.annotation.SensitiveOperation("계정 상태 일괄 변경")
     @PatchMapping("/admin/system/users/status")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#updateUsersStatus')")
     public ResponseEntity<ApiResponse<Void>> updateUsersStatus(
@@ -288,6 +292,7 @@ public class UserApiController {
     }
 
     @Operation(summary = "사용자 권한 일괄 변경", description = "여러 명의 사용자 권한을 한꺼번에 변경합니다. (관리자 권한)")
+    @nuri.foundation.core.annotation.SensitiveOperation("사용자 권한 일괄 변경")
     @PatchMapping("/admin/system/users/role")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#updateUsersRole')")
     public ResponseEntity<ApiResponse<Void>> updateUsersRole(

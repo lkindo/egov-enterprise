@@ -230,6 +230,44 @@ class SmsDeliveryStateIntegrationTest {
         verifyNoInteractions(sender);
     }
 
+    /**
+     * [2026-11-25] 결재 결과 작업처럼 다시 실행될 수 있는 발행부는 같은 의도 키를 싣는다. 동시에 들어온 같은 키도 PostgreSQL
+     * 트랜잭션 잠금으로 직렬화돼 헤더·수신자·발송 작업이 한 벌만 생기고, 둘 다 같은 전송 번호를 받는다.
+     */
+    @Test void concurrentKeyedRequestsAcceptOneBatch() throws Exception {
+        UUID intent = UUID.randomUUID();
+        String content = "owned keyed request " + intent;
+        SmsDto dto = SmsDto.builder().sndngTelno("0212345678").sndngCn(content)
+                .recipients(List.of(SmsRecptnDto.builder().rcptnTelno(PHONE).build())).build();
+        CountDownLatch start = new CountDownLatch(1);
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var first = executor.submit(() -> { start.await(); return service.sendSmsOnce(intent, "owned-test", dto); });
+            var second = executor.submit(() -> { start.await(); return service.sendSmsOnce(intent, "owned-test", dto); });
+            start.countDown();
+            Long a = first.get(20, TimeUnit.SECONDS);
+            Long b = second.get(20, TimeUnit.SECONDS);
+            ownedTransmissions.add(a);
+            ownedTransmissions.add(b);
+            try {
+                assertThat(a).isEqualTo(b);
+                assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_sms_info WHERE sndng_cn=?", Long.class, content))
+                        .isEqualTo(1L);
+                assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_sms_rcptn WHERE sms_trsm_sn=?", Long.class, a))
+                        .isEqualTo(1L);
+                var stored = jobs.findByJobMngNo(intent.toString()).orElseThrow().work();
+                assertThat(stored.type()).isEqualTo(nuri.business.service.sms.SmsDeliveryWorkHandler.TYPE);
+                assertThat(stored.payload()).contains(a.toString()).doesNotContain(PHONE, content);
+                // 다음 요청도 새 접수를 만들지 않는다(작업 완료 기록 전에 끊긴 실행의 재시도).
+                assertThat(service.sendSmsOnce(intent, "owned-test", dto)).isEqualTo(a);
+                assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_sms_info WHERE sndng_cn=?", Long.class, content))
+                        .isEqualTo(1L);
+            } finally {
+                jdbc.update("DELETE FROM tb_sys_job WHERE job_mng_no=?", intent.toString());
+            }
+        }
+        verify(sender, never()).send(anyString(), anyString(), anyString());
+    }
+
     @Test void rollbackRemovesTheIntentAndAFreshHandlerRecoversOnlyTheCommittedBatch() throws Exception {
         AtomicInteger calls = new AtomicInteger();
         AtomicBoolean outsideTransaction = new AtomicBoolean();

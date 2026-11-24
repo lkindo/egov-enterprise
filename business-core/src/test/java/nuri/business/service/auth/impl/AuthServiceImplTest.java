@@ -158,13 +158,37 @@ class AuthServiceImplTest {
     class Login {
 
         @Test
-        @DisplayName("로그인 정책 검증이 인증보다 먼저 호출된다 (검사 제거를 탐지)")
-        void validatesLoginPolicyBeforeAuthenticating() {
+        @DisplayName("로그인 정책 검증이 인증보다 먼저, 그리고 인증 주체를 읽은 뒤 다시 호출된다 (검사 제거를 탐지)")
+        void validatesLoginPolicyBeforeAndAfterAuthenticating() {
             authService.login(loginRequest(null), CLIENT_IP);
 
             // L42 `removed call to validateLoginPolicy` 뮤턴트가 여기서 죽는다.
             // 이 호출이 사라지면 IP·접속시간 제한이 통째로 무력화된다.
-            verify(loginPolicyManageService).validateLoginPolicy(LOGIN_ID, CLIENT_IP);
+            org.mockito.InOrder order = org.mockito.Mockito.inOrder(loginPolicyManageService, authenticationManager);
+            order.verify(loginPolicyManageService).validateLoginPolicy(LOGIN_ID, CLIENT_IP);
+            order.verify(authenticationManager).authenticate(any());
+            order.verify(loginPolicyManageService).validateLoginPolicy(LOGIN_ID, CLIENT_IP);
+        }
+
+        /**
+         * [2026-11-25] 비밀번호를 대조하는 동안 관리자가 접속 제한을 걸면, 그 변경은 세션차수도 올린다. 인증 주체가 그 뒤에 읽히면 오른
+         * 차수로 토큰이 나가 차수 검사까지 통과했다 — 인증 뒤 다시 판정해 토큰을 내지 않는다(MFA 완료 경로와 같은 규칙).
+         */
+        @Test
+        @DisplayName("🔐 인증하는 사이에 걸린 접속 제한은 토큰을 내기 전에 막는다")
+        void restrictionCommittedDuringAuthenticationBlocksTokenIssue() {
+            org.mockito.BDDMockito.willDoNothing()
+                    .willThrow(new BusinessException(nuri.foundation.core.exception.CommonErrorCode.LOGIN_POLICY_LIMITED))
+                    .given(loginPolicyManageService).validateLoginPolicy(LOGIN_ID, CLIENT_IP);
+
+            assertThatThrownBy(() -> authService.login(loginRequest(null), CLIENT_IP))
+                    .isInstanceOf(LoginRejectedException.class)
+                    .satisfies(e -> assertThat(((LoginRejectedException) e).reason()).isEqualTo(LoginFailureReason.POLICY_BLOCKED));
+
+            verify(authenticationManager).authenticate(any());
+            verify(refreshTokenRepository, never()).save(any());
+            verify(logService).logLogin(LOGIN_ID, CLIENT_IP, "WEB", "Y", "POLICY_BLOCK");
+            verify(logService, never()).logLogin(anyString(), anyString(), anyString(), eq("N"), any());
         }
 
         @org.junit.jupiter.params.ParameterizedTest

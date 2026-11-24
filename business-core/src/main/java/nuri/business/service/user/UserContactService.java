@@ -76,6 +76,21 @@ public class UserContactService {
         return contacts;
     }
 
+    /**
+     * 기록에 남길 사용자 이름(2026-11-25) — 상태와 관계없이 있는 계정의 이름이다. 없거나 이름이 비어 있으면 빈 값이고 예외를
+     * 던지지 않는다.
+     *
+     * <p>발송 이력의 발신자 칸처럼 <b>귀속 표시</b>에만 쓴다. 발송 대상을 고르는 해석은 {@link #resolve} 다 — 그것은 사용 중이
+     * 아닌 계정을 거부하므로, 결재 결과처럼 결재자가 퇴직한 뒤에 나가는 발송이 발신자 이름 때문에 통째로 거절되지 않게 둘을 나눈다.
+     * 호출자 트랜잭션에 참여한 채로 예외를 던지면 잡아도 그 트랜잭션이 되돌림 표시를 받으므로 빈 값으로 답한다.
+     */
+    public java.util.Optional<String> nameOf(String esntlId) {
+        if (esntlId == null || esntlId.isBlank()) {
+            return java.util.Optional.empty();
+        }
+        return userRepository.findById(esntlId.trim()).map(User::getUserNm).map(UserContactService::blankToNull);
+    }
+
     private static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }

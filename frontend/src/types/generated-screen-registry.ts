@@ -1905,7 +1905,7 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
     "id": "log-audit-viewer",
     "name": "로그·감사 열람",
     "description": "감사 담당자에게 접속·시스템·사용자·웹·개인정보 로그의 조회와 내보내기, 민감 작업 감사 원장과 권한 변경 이력 조회, 첨부 무결성 점검, 서버 운영 지표(운영 진단) 조회, 통계·관리자 업무 현황·후속 작업 상태 조회를 맡깁니다.",
-    "protected": false,
+    "protected": true,
     "permissions": [
       "ADT_LOG_READ",
       "AUTHRT_AUDIT",
@@ -2064,7 +2064,7 @@ export const PERMISSION_BUNDLES: readonly PermissionBundle[] = GENERATED_BUNDLES
  * 보호 권한 — 서버 SENSITIVE_ADMINISTRATION_PERMISSIONS 와 같은 집합이다(생성기 계약이 대조한다), 코드 순. 그룹에 새로
  * 더하거나 빼는 저장에는 권한 설정(AUTHRT_GRANT)과 권한 배정(AUTHRT_ASSIGN)이 모두 필요하다. 화면은 사본을 두지 않는다.
  */
-export const PROTECTED_PERMISSIONS: readonly PermissionCode[] = ["AUTHRT_ASSIGN", "AUTHRT_GRANT", "MFA_RECOVER", "USER_PASSWORD"];
+export const PROTECTED_PERMISSIONS: readonly PermissionCode[] = ["ADT_LOG_READ", "AUTHRT_ASSIGN", "AUTHRT_GRANT", "MFA_RECOVER", "USER_PASSWORD"];
 
 const DYNAMIC_SEGMENT = /^\[[^.[\]]+\]$/;
 

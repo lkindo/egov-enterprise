@@ -80,6 +80,19 @@ describe('DurableJobsClient', () => {
     expect(screen.queryByRole('button', { name: /다시 처리/ })).toBeNull();
   });
 
+  it('결재 결과 문자·메일 요청 작업을 한국어 유형 이름으로 보인다(2026-11-25)', async () => {
+    mocks.getDurableJobs.mockResolvedValue({
+      list: [
+        { id: '31', type: 'SANCTION_EXTERNAL_NOTIFICATION', status: 'PENDING', attempts: 0, availableAt: '2026-10-01T01:00:00', completedAt: null, retryable: false },
+      ],
+      total: 1,
+      totalPages: 1,
+    });
+    renderClient();
+    expect(await screen.findByText('결재 결과 문자·메일 요청')).toBeInTheDocument();
+    expect(screen.queryByText('SANCTION_EXTERNAL_NOTIFICATION')).toBeNull();
+  });
+
   it('실패한 작업만 확인 뒤 한 번 다시 처리하고, 처리 중에는 다시 누를 수 없다', async () => {
     mocks.permissions = ['DWORK_READ', 'DWORK_RETRY'];
     mocks.confirm.mockResolvedValue(true);

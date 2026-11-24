@@ -24,12 +24,15 @@ public class UserAbsenceServiceImpl implements UserAbsenceService {
     private final UserAbsenceRepository userAbsenceRepository;
     private final UserAbsenceMapper userAbsenceMapper;
     private final UserRepository userRepository;
+    /** 부재·대리결재 지정의 커밋 사실(2026-11-25, ADR-0025 D13) — 엔드포인트 표지는 시도와 HTTP 결과만 남긴다. */
+    private final nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
 
     public UserAbsenceServiceImpl(UserAbsenceRepository userAbsenceRepository, UserAbsenceMapper userAbsenceMapper,
-            UserRepository userRepository) {
+            UserRepository userRepository, nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit) {
         this.userAbsenceRepository = userAbsenceRepository;
         this.userAbsenceMapper = userAbsenceMapper;
         this.userRepository = userRepository;
+        this.sensitiveAudit = sensitiveAudit;
     }
 
     @Override
@@ -92,6 +95,7 @@ public class UserAbsenceServiceImpl implements UserAbsenceService {
                 .orElse(UserAbsence.builder().userId(userId).build());
         absence.updateDelegation(absent, substitute, "Y".equals(absent) ? from : null, "Y".equals(absent) ? to : null);
         userAbsenceRepository.save(absence);
+        sensitiveAudit.recordMutation("USER_ABSENCE_UPDATE", userId);
     }
 
     private void assertSubstitute(String userId, String absent, String substitute, String from, String to) {

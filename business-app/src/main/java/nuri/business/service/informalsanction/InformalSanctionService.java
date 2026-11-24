@@ -722,7 +722,8 @@ public class InformalSanctionService {
     private void publishFinalStatus(InformalSanction sanction, String actor, String opinion,
                                     List<InformalSanctionDetail> lines) {
         SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(sanction.getIfmlAtrzSn(),
-                sanction.getAplcntId(), actor, SanctionStatus.fromCode(sanction.getAprvYn()), opinion, sanction.getDocTtl());
+                sanction.getAplcntId(), actor, SanctionStatus.fromCode(sanction.getAprvYn()), opinion, sanction.getDocTtl(),
+                sanction.getAtrzCycl());
         eventPublisher.publishEvent(event);
         publishReferenceResult(sanction, lines);
     }

@@ -137,14 +137,55 @@ public class SmsService {
     @Transactional
     public Long sendSms(String userId, @Valid SmsDto dto) {
         log.info("SMS dispatch requested");
-        // 게이트웨이가 보낼 수 없는 본문은 접수하지 않는다 — 접수 뒤 수신자 전원이 실패로 끝나는 것보다 지금 알리는 편이 낫다.
+        assertDeliverable(dto);
+        // 수신 번호를 먼저 확정한다 — 해석이 실패하면 수신자 없는 발송 헤더가 남지 않아야 한다.
+        Map<String, String> recipients = resolveRecipients(dto);
+        Long smsTrsmSn = acceptBatch(dto, recipients);
+        if (!recipients.isEmpty()) {
+            // Header, recipients and the bounded delivery reference commit together. A restarted
+            // worker can recover a batch even when the process died before any async submission.
+            durableWork.enqueue(SmsDeliveryWorkHandler.work(smsTrsmSn, currentSenderEsntlId()));
+        }
+        log.info("SMS request registered successfully for transmission serial number: {}", smsTrsmSn);
+        return smsTrsmSn;
+    }
+
+    /**
+     * 같은 의도 키로는 한 번만 접수한다(2026-11-25) — 업무 이벤트({@code SmsRequestedEvent})의 키 경로.
+     *
+     * <p>결재 결과 알림처럼 영속 작업이 발행하는 요청은 그 작업이 완료 기록 전에 끊기면 다시 실행된다. 그때 같은 키가 실리므로
+     * 헤더·수신자와 발송 작업을 새로 만들지 않고 처음 접수의 전송 번호를 돌려준다(백엔드 헌법 제10조 1항). 접수 규칙(본문 거절·
+     * 수신자 해석)은 {@link #sendSms} 와 같다.
+     */
+    @Transactional
+    public Long sendSmsOnce(java.util.UUID intentKey, String userId, @Valid SmsDto dto) {
+        Objects.requireNonNull(intentKey, "intentKey");
+        log.info("Keyed SMS dispatch requested");
+        assertDeliverable(dto);
+        nuri.foundation.core.job.DurableWork work = durableWork.enqueueOnce(intentKey, SmsDeliveryWorkHandler.TYPE, () -> {
+            Map<String, String> recipients = resolveRecipients(dto);
+            if (recipients.isEmpty()) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "수신자를 한 명 이상 지정해 주세요.");
+            }
+            return SmsDeliveryWorkHandler.payload(acceptBatch(dto, recipients), currentSenderEsntlId());
+        });
+        return SmsDeliveryWorkHandler.transmissionId(work);
+    }
+
+    /** 게이트웨이가 보낼 수 없는 본문은 접수하지 않는다 — 접수 뒤 수신자 전원이 실패로 끝나는 것보다 지금 알리는 편이 낫다. */
+    private void assertDeliverable(SmsDto dto) {
         if (smsSender.rejectsMessage(dto.getSndngCn())) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                     "연결된 문자 게이트웨이가 보낼 수 없는 내용입니다. 길이를 줄이거나 지원하지 않는 문자(이모지 등)를 빼 주세요.");
         }
-        // 수신 번호를 먼저 확정한다 — 해석이 실패하면 수신자 없는 발송 헤더가 남지 않아야 한다.
-        Map<String, String> recipients = resolveRecipients(dto);
+    }
 
+    private static String currentSenderEsntlId() {
+        return nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
+    }
+
+    /** 발송 헤더와 수신자 행(결과 P)을 저장한다. 발송 작업은 호출한 접수 경로가 같은 트랜잭션에 저장한다. */
+    private Long acceptBatch(SmsDto dto, Map<String, String> recipients) {
         Sms sms = Sms.builder()
                 .sndngTelno(dto.getSndngTelno())
                 .sndngCn(dto.getSndngCn())
@@ -166,14 +207,7 @@ public class SmsService {
                         .build();
                 smsRecptnRepository.save(Objects.requireNonNull(recptn));
             }
-            
-            // Header, recipients and the bounded delivery reference commit together. A restarted
-            // worker can recover a batch even when the process died before any async submission.
-            String senderEsntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
-            durableWork.enqueue(SmsDeliveryWorkHandler.work(smsTrsmSn, senderEsntlId));
         }
-
-        log.info("SMS request registered successfully for transmission serial number: {}", smsTrsmSn);
         return smsTrsmSn;
     }
 

@@ -403,13 +403,14 @@ public class MailService {
         return value != null && !value.isBlank();
     }
 
-    /** 발신자의 이름. 인증된 발신자는 존재하므로 이름이 비어 있을 때만 식별자를 쓴다. */
+    /**
+     * 발신자의 이름. 이름이 없거나 계정이 없으면 식별자를 쓴다.
+     *
+     * <p>[2026-11-25] 발송 대상 해석({@code resolve})을 쓰지 않는다 — 그것은 사용 중이 아닌 계정을 거부해, 결재자가 퇴직한 뒤
+     * 나가는 결재 결과 메일이 발신자 이름 때문에 접수째 롤백됐다(참여 트랜잭션이라 잡을 수도 없다). 발신자 칸은 귀속 표시일 뿐이다.
+     */
     private String senderDisplayName(String esntlId) {
-        return userContactService.resolve(java.util.List.of(esntlId)).stream()
-                .map(UserContactService.UserContact::userNm)
-                .filter(MailService::hasText)
-                .findFirst()
-                .orElse(esntlId);
+        return userContactService.nameOf(esntlId).filter(MailService::hasText).orElse(esntlId);
     }
 
     /**
@@ -417,7 +418,42 @@ public class MailService {
      * 동일 트랜잭션에 durable intent를 저장한다. 접수 주소는 작업에 암호화하여 보관하고 종료 때 지운다.
      */
     private Long dispatchOne(String userId, SentMailDto dto, ResolvedRecipient recipient) {
-        final String recptnPerson = recipient.address();
+        AcceptedMail accepted = acceptOne(userId, dto, recipient);
+        durableWork.enqueue(MailDeliveryWorkHandler.work(accepted.emlDsptchSn(), accepted.queuedAt(), recipient.address(),
+                systemSenderAddress, accepted.senderEsntlId()));
+        return accepted.emlDsptchSn();
+    }
+
+    /**
+     * 같은 의도 키로는 한 번만 접수한다(2026-11-24) — 업무 이벤트({@code MailRequestedEvent})의 키 경로.
+     *
+     * <p>결재 결과 알림처럼 영속 작업이 발행하는 요청은 그 작업이 완료 기록 전에 끊기면 다시 실행된다. 그때 같은 키가 실리므로
+     * 이력과 발송 작업을 새로 만들지 않고 처음 접수의 발송 번호를 돌려준다 — 받는 쪽이 중복을 거르지 못하는 메일을 두 번 보내지
+     * 않는다(백엔드 헌법 제10조 1항). 처음 접수가 이미 발송을 마쳐 작업 payload 를 비웠으면 번호를 알 수 없으므로 {@code null} 이다.
+     */
+    @Transactional
+    public Long sendToResolvedAddressOnce(java.util.UUID intentKey, String requesterId, SentMailDto dto, String address,
+            String recipientName) {
+        Objects.requireNonNull(intentKey, "intentKey");
+        assertRequiredContent(dto);
+        assertNoAttachment(dto);
+        if (!hasText(address)) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "수신자를 한 명 이상 지정해 주세요.");
+        }
+        ResolvedRecipient recipient = new ResolvedRecipient(address.trim(), displayNameOf(recipientName), null);
+        nuri.foundation.core.job.DurableWork work = durableWork.enqueueOnce(intentKey, MailDeliveryWorkHandler.TYPE, () -> {
+            AcceptedMail accepted = acceptOne(requesterId, dto, recipient);
+            return MailDeliveryWorkHandler.payload(accepted.emlDsptchSn(), accepted.queuedAt(), recipient.address(),
+                    systemSenderAddress, accepted.senderEsntlId());
+        });
+        return MailDeliveryWorkHandler.dispatchIdOf(work).orElse(null);
+    }
+
+    /** 접수한 발송 1건 — 이력 번호, 접수 시각(작업과 이력을 잇는 표지), 접수한 사람. */
+    private record AcceptedMail(Long emlDsptchSn, java.time.LocalDateTime queuedAt, String senderEsntlId) {
+    }
+
+    private AcceptedMail acceptOne(String userId, SentMailDto dto, ResolvedRecipient recipient) {
         String displayName = recipient.displayName();
 
         // 발신자 이력은 **인증 주체**에서 온다. 요청 본문의 dsptchPerson 은 화면이 채우지 않아 늘 null 이었고,
@@ -438,9 +474,7 @@ public class MailService {
                 "Generated email dispatch serial number must not be null");
 
         String senderEsntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
-        durableWork.enqueue(MailDeliveryWorkHandler.work(emlDsptchSn, queuedAt, recptnPerson,
-                systemSenderAddress, senderEsntlId));
-        return emlDsptchSn;
+        return new AcceptedMail(emlDsptchSn, queuedAt, senderEsntlId);
     }
 
     /**

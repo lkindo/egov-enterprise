@@ -132,13 +132,12 @@
       ]
     },
     {
-      "file": "informalsanction/event/SanctionEventListener.java",
+      "file": "informalsanction/event/SanctionExternalNotificationWorkHandler.java",
       "owner": "informalsanction",
       "target": "user",
       "module": "business-core",
       "types": [
-        "nuri.business.service.user.UserService",
-        "nuri.business.service.user.dto.UserDto"
+        "nuri.business.service.user.UserContactService"
       ]
     },
     {

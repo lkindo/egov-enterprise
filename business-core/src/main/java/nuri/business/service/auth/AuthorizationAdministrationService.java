@@ -35,7 +35,10 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
     private static final Set<String> RESERVED = Set.of("ROLE_ADMIN", "ROLE_SYSTEM", "ROLE_USER", "ROLE_ANONYMOUS");
     private static final Set<String> PROTECTED_PERMISSIONS = Set.of("AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD");
     // Recovery authority needs the same trusted administration boundary without changing D02 account classification.
-    private static final Set<String> SENSITIVE_ADMINISTRATION_PERMISSIONS = Set.of("AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD", "MFA_RECOVER");
+    // [2026-11-24] 감사 원장 열람(ADT_LOG_READ)도 같은 경계다 — 권한 배정만 가진 관리자가 자기에게 감사 열람을 붙여 자기 작업의
+    //   기록을 보는 것을 막는다(원장을 보는 사람과 기록되는 작업을 하는 사람을 나눈다, SensitiveAuditQueryService).
+    private static final Set<String> SENSITIVE_ADMINISTRATION_PERMISSIONS =
+            Set.of("AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD", "MFA_RECOVER", "ADT_LOG_READ");
     /**
      * [2026-10-02] 그룹 버전은 그룹 자신의 이력(GROUP·GROUP_GRANT)만 본다. 종전에는 그룹과 사용자를 같은 조건
      * ({@code authrt_cd=? OR scrty_dcsn_trgt_id=?})으로 셌는데, 구성원 추가·회수(USER_GROUP 행)도 {@code authrt_cd} 에
@@ -431,7 +434,7 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
      * <p>버전 대신 변경의 전제(추가 대상은 아직 구성원이 아니고 회수 대상은 지금 구성원이다)로 동시성을 본다 — 다른
      * 관리자가 먼저 바꾼 사람이 있으면 그 사람을 이름으로 밝혀 409 로 전부 거부한다. 그룹 전체 버전으로 막으면 서로 다른
      * 사람을 고친 두 관리자도 충돌하고, 사람별 버전을 받으면 화면이 고른 사람마다 다시 읽어야 한다.
-     * <p>그룹이 보호 권한(AUTHRT_GRANT·AUTHRT_ASSIGN·USER_PASSWORD·MFA_RECOVER)을 가지면 사용자별 배정 변경과 같은 이유로
+     * <p>그룹이 보호 권한(AUTHRT_GRANT·AUTHRT_ASSIGN·USER_PASSWORD·MFA_RECOVER·ADT_LOG_READ)을 가지면 사용자별 배정 변경과 같은 이유로
      * AUTHRT_GRANT·AUTHRT_ASSIGN 둘 다를 요구하며, 마지막 활성 권한관리자를 회수할 수 없다.
      * <p>거부 사유와 응답이 대상의 이름·로그인 ID·구성원 여부를 담으므로 배정 권한(AUTHRT_ASSIGN)과 함께 조회 권한
      * (AUTHRT_READ)도 요구한다.

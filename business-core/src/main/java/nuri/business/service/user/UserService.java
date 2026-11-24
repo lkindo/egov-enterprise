@@ -669,6 +669,16 @@ public class UserService extends BaseAbstractService {
                 deptJobRepository.releasePicByPicIdIn(esntlIds);
                 eventPublisher.publishEvent(new UserDeletionEvent(esntlIds));
                 userRepository.deleteAllInBatch(users);
+                // [2026-11-25] 삭제한 계정을 같은 트랜잭션에 커밋 사실로 남긴다(ADR-0025 D13) — 엔드포인트 표지는 시도·결과만 남긴다.
+                sensitiveAudit.recordMutation("ADMIN_USER_DELETE", auditTargets(esntlIds));
+        }
+
+        /**
+         * 감사 대상 좌표 — 정렬한 esntlId 를 쉼표로 잇는다. 원장은 요청마다 커밋 기록을 한 행만 받으므로(요청 ID·처리 상태 유일) 일괄
+         * 작업도 한 행이다. 일괄 상한({@link #MAX_BULK_USERS})이면 스냅숏 상한(4000자) 안에 든다.
+         */
+        private static String auditTargets(java.util.Collection<String> esntlIds) {
+                return esntlIds.stream().distinct().sorted().collect(Collectors.joining(","));
         }
 
         /**
@@ -786,6 +796,7 @@ public class UserService extends BaseAbstractService {
                 refreshForUpdateOrThrow(user);
                 user.unlockAccount();
                 user.clearCurrentPasswordFailures();
+                sensitiveAudit.recordMutation("ADMIN_UNLOCK", user.getEsntlId());
         }
 
         /**
@@ -805,6 +816,7 @@ public class UserService extends BaseAbstractService {
                 // [V2_153] 상태가 바뀌면(정지·탈퇴·승인 등) 그 전에 발급된 세션을 끊는다 — 다시 활성으로 돌려도 옛 토큰은 되살아나지 않는다.
                 revokeSessions(users.stream().map(User::getEsntlId).toList());
                 authorizationAdministration.protectLastManager(managerCount);
+                sensitiveAudit.recordMutation("ADMIN_STATUS_CHANGE", auditTargets(users.stream().map(User::getEsntlId).toList()));
         }
 
         /**

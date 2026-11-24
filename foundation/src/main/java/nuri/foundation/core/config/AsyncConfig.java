@@ -34,8 +34,8 @@ public class AsyncConfig implements AsyncConfigurer {
     /**
      * [회복탄력성] 비동기 태스크 동시성 상한. SimpleAsyncTaskExecutor는 기본이 무제한(UNBOUNDED)이라
      * 감사/로그/알림 폭주 시 DB 커넥션·다운스트림을 고갈시킬 수 있으므로 세마포어로 상한을 둔다(백프레셔).
-     * 다만 {@code SimpleAsyncTaskExecutor}는 상한 초과 시 제출 스레드를 블로킹하므로({@code SanctionEventListener}의
-     * {@code afterCommit}은 JDBC 연결을 쥔 채 실행), Hikari {@code maximum-pool-size}(20)보다 충분히 큰 64로 유지해
+     * 다만 {@code SimpleAsyncTaskExecutor}는 상한 초과 시 제출 스레드를 블로킹하므로({@code afterCommit}에서 제출하면
+     * JDBC 연결을 쥔 채 실행된다 — 2026-11-25 전 결재 결과 외부 채널 요청이 그랬다), Hikari {@code maximum-pool-size}(20)보다 충분히 큰 64로 유지해
      * 연결을 쥔 요청 스레드가 좁은 세마포어에서 교착·기아 상태에 빠지지 않게 한다.
      */
     private static final int LOG_EXECUTOR_CONCURRENCY_LIMIT = 64;
@@ -64,8 +64,8 @@ public class AsyncConfig implements AsyncConfigurer {
     /**
      * 앱 내 알림 영속화 전용 실행자.
      *
-     * <p>{@code SanctionEventListener}는 {@code logExecutor}에서 실행 중 다시 알림 이벤트를
-     * 발행한다. 알림 리스너도 같은 blocking throttle을 쓰면 64개 부모가 permit을 쥔 채
+     * <p>{@code logExecutor}에서 실행 중 다시 알림 이벤트를 발행하는 작업이 있으면(2026-11-25 전 결재 결과 리스너가 그랬다),
+     * 알림 리스너도 같은 blocking throttle을 쓸 때 64개 부모가 permit을 쥔 채
      * 자식 permit을 기다리는 교착이 생기므로 물리적으로 분리한다. 포화 시에는 발행 스레드를
      * 막거나 깨뜨리지 않고 거부를 계측한다. 영속 재시도는 별도 outbox 과제다.
      */
