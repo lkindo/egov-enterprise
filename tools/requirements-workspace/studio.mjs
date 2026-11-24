@@ -12,6 +12,7 @@ import { ARTIFACT_IDS, ARTIFACT_TYPES, DERIVED_DOCUMENTS, REQUIREMENT_CATEGORIES
 import { createIndex, similarity } from './studio-index.mjs';
 import { DEVELOPMENT_CATEGORIES, QUALITY_CATEGORIES, addCandidate, applyStories, applyTag, baselineContent, clauseKey, clauseMap, createRelations, crossChecks, decideProposal, demoteProgramConflicts, failTag, groupQuestion, initialStudio, itemById, itemReady, itemScore, label, markExtracted, meaningHash, missingFields, neighborIndex, orphanStories, pendingWork, planTargets, raiseQuestions, recordBaseline, removeOrphanStories, resolveIssue, saveItem, searchParts, setItemStatus, settleCandidate, splitQuestion, standsAlone, startJob, ungroupedQuestions, variantCurrent } from './studio-model.mjs';
 import { describeEvidence, documentList, renderDocument } from './studio-render.mjs';
+import { studioHandoffSummary } from './studio-handoff.mjs';
 import { CLAUSE_BATCH, GROUP_BATCH, GROUP_NEAR, MERGE_BATCH, PLAN_BATCH, REQUEST_LIMIT, STUDIO_PROMPT_VERSION, batchClauses, classifyRequest, enrichRequest, extractRequest, fitted, groupRequest, mergeRequest, planRequest, readClassify, readEnrich, readExtract, readGroup, readMerge, readPlan, studioPrompts } from './studio-tasks.mjs';
 
 const fail = code => { throw Object.assign(new Error(code), { code }); };
@@ -459,7 +460,7 @@ export function createStudio({ store, commit, runner = createCliRunner(), now = 
       plan: studio.plan ? { epics: studio.plan.epics, stories, updatedAt: studio.plan.updatedAt } : null, planTargets: planTargets(studio).map(item => item.id), planOrphans: orphans.size,
       pending: { classify: work.classify.length, extract: Object.fromEntries(Object.entries(work.extract).map(([type, list]) => [type, list.length])), merge: work.merge, questions: work.questions, waiting },
       checks, documents: documentList(studio), jobs: studio.jobs, active: active?.id ?? null, prompts: studioPrompts(),
-      sensitivityWarnings: advisories.list,
+      sensitivityWarnings: advisories.list, handoff: studioHandoffSummary(snapshot),
     };
   }
   function document(id) {
