@@ -1,4 +1,4 @@
-import { type Frame, type Page, type Request, expect } from '@playwright/test';
+import { type Frame, type Page, type Request, type Response, expect } from '@playwright/test';
 
 export type ExpectedErrorChannel = 'console' | 'pageerror' | 'response' | 'requestfailed';
 export type ExpectedErrorPattern = string | RegExp;
@@ -140,6 +140,15 @@ export class ExpectedErrorLedger {
 /** 결과를 받을 문서가 사라지면 잃을 것이 없는 읽기 요청. 쓰기는 끊기면 저장이 잘렸을 수 있다. */
 const READ_METHODS = new Set(['GET', 'HEAD']);
 
+/** 문서를 바꾸지 않는 탐색 응답 — 리다이렉트는 다음 요청으로 이어지고, 204·205 는 탐색을 멈춘다. */
+const NON_COMMITTING_STATUSES = new Set([204, 205, 301, 302, 303, 307, 308]);
+
+/** 이 탐색 응답으로 문서가 바뀔 수 있는가. 내려받기로 바뀌는 응답도 문서를 바꾸지 않는다. */
+function mayCommitDocument(response: Response): boolean {
+  if (NON_COMMITTING_STATUSES.has(response.status())) return false;
+  return !/^\s*attachment/i.test(response.headers()['content-disposition'] ?? '');
+}
+
 /** 커밋된 주소는 조각(#…)을 달지만 탐색 요청의 주소에는 없다. */
 const withoutFragment = (url: string) => url.split('#', 1)[0];
 
@@ -173,11 +182,12 @@ export class ConsoleErrorGuard {
    * 그래서 끊긴 읽기 요청은 바로 버리지 않고 보류한다. 같은 프레임에 다른 네트워크 사건(요청·응답·완료,
    * 기다리던 탐색의 실패 — 다운로드·204 로 끝난 탐색)이 끼면 보류분은 앱의 취소로 확정한다. 같은 문서 안
    * 이동(pushState·조각)도 framenavigated 를 내므로, framenavigated 에서는 문서가 실제로 바뀐 커밋일 때만 보류분을
-   * 면제한다: 응답을 받고 기다리던 탐색의 주소로 커밋된 것이거나(그 응답이 앞선 보류분을 이미 확정했으므로 남은
-   * 것은 응답 뒤의 묶음이다. 리다이렉트 응답의 주소로는 커밋되지 않는다), 응답 없이 바뀌는 주소(about:blank 등)로
-   * 커밋되며 COMMIT_BURST_MS 안에 끊긴 것. 그 밖의 framenavigated 와 검증 때 남은 보류분은 결함이다.
-   * 남는 틈: 기다리던 탐색과 같은 주소로의 같은 문서 안 이동, 최종 문서 응답과 커밋 사이(수 ms)에 다른 사건 없이
-   * 앱이 취소한 읽기, 응답 없는 커밋 COMMIT_BURST_MS 안의 앱 취소는 묶음과 구별되지 않는다.
+   * 면제한다: 문서를 바꿀 수 있는 탐색 응답(리다이렉트·204·205·내려받기가 아닌 것)을 받고 기다리던 그 탐색의
+   * 주소로 커밋된 것이거나(그 응답이 앞선 보류분을 이미 확정했으므로 남은 것은 응답 뒤의 묶음이다), 응답 없이
+   * 바뀌는 주소(about:blank 등)로 커밋되며 COMMIT_BURST_MS 안에 끊긴 것. 그 밖의 framenavigated 와 검증 때 남은
+   * 보류분은 결함이다. 남는 틈: 최종 문서 응답과 커밋 사이(수 ms)에 다른 사건 없이 앱이 취소한 읽기나 기다리던
+   * 탐색과 같은 주소로의 같은 문서 안 이동, 응답 없는 커밋 COMMIT_BURST_MS 안의 앱 취소, 형식 때문에 내려받기로
+   * 바뀌는 응답, 요청 가로채기로 바꾼 탐색 주소(E2E 는 쓰지 않는다)는 묶음과 구별되지 않거나 거짓 red 가 된다.
    */
   private readonly awaitingCommit = new Map<Frame, Request>();
   private readonly abortsBeforeCommit = new Map<Frame, Array<{ request: Request; at: number }>>();
@@ -302,8 +312,8 @@ export class ConsoleErrorGuard {
     this.page.on('response', (response) => {
       const request = response.request();
       interruptAbortsBeforeCommit(request);
-      // 리다이렉트를 거치면 다음 요청의 응답이 기다릴 탐색을 바꾼다.
-      if (request.isNavigationRequest()) {
+      // 리다이렉트·204·205·내려받기 응답의 주소로는 커밋되지 않는다 — 기다리지 않는다.
+      if (request.isNavigationRequest() && mayCommitDocument(response)) {
         const frame = frameOf(request);
         if (frame) this.awaitingCommit.set(frame, request);
       }

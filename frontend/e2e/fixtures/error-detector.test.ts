@@ -310,10 +310,11 @@ describe('ExpectedErrorLedger', () => {
         childFrame,
         advance: (ms: number) => { clockMs += ms; },
         /** 문서 탐색 요청. 요청·응답·실패에 같은 객체를 쓴다. */
-        navigation: (target: FakeFrame = mainFrame) => request(menus, 'GET', target, true),
+        navigation: (target: FakeFrame = mainFrame, url = menus) => request(url, 'GET', target, true),
         navigationRequest: (navigation: FakeRequest) => emit('request', navigation),
-        navigationResponse: (navigation: FakeRequest, status = 200) => emit('response', {
+        navigationResponse: (navigation: FakeRequest, status = 200, headers: Record<string, string> = {}) => emit('response', {
           status: () => status,
+          headers: () => headers,
           url: () => navigation.url(),
           request: () => navigation,
         }),
@@ -444,13 +445,46 @@ describe('ExpectedErrorLedger', () => {
       await expect(pushStateFirst.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status/);
 
       // 실패한 탐색은 더는 기다리지 않는다 — 그 뒤 같은 주소로의 같은 문서 안 이동도 커밋이 아니다.
+      // (응답 형식 때문에 내려받기로 바뀐 200 탐색처럼, 응답만으로는 커밋하지 않을 것을 알 수 없는 경우)
       const sameUrlAfterFailure = await makeGuard();
       const failed = sameUrlAfterFailure.navigation();
-      sameUrlAfterFailure.navigationResponse(failed, 204);
+      sameUrlAfterFailure.navigationResponse(failed);
       sameUrlAfterFailure.navigationFailed(failed);
       sameUrlAfterFailure.apiFailure();
       sameUrlAfterFailure.commit(sameUrlAfterFailure.mainFrame, menus);
       await expect(sameUrlAfterFailure.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status/);
+    });
+
+    it('문서를 바꾸지 않는 응답(204·205·리다이렉트·내려받기)은 기다리지 않는다 — 그 주소로의 조각 이동도 커밋이 아니다', async () => {
+      // 204·205 응답 → 앱 취소 → 같은 주소의 조각으로 pushState → 탐색 실패(네 번째 독립 검토의 반례).
+      for (const status of [204, 205]) {
+        const noContent = await makeGuard();
+        const navigation = noContent.navigation();
+        noContent.navigationResponse(navigation, status);
+        noContent.apiFailure();
+        noContent.commit(noContent.mainFrame, `${menus}#tab`);
+        noContent.navigationFailed(navigation);
+        await expect(noContent.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status/);
+      }
+
+      // /r 이 302 로 /final 에 보냄 → /final 이 응답 전에 취소 → 앱 취소 → /r 의 조각으로 pushState.
+      const redirectCancelled = await makeGuard();
+      const original = redirectCancelled.navigation(redirectCancelled.mainFrame, 'http://localhost:3001/r');
+      redirectCancelled.navigationRequest(original);
+      redirectCancelled.navigationResponse(original, 302);
+      const final = redirectCancelled.navigation(redirectCancelled.mainFrame, 'http://localhost:3001/final');
+      redirectCancelled.navigationRequest(final);
+      redirectCancelled.navigationFailed(final);
+      redirectCancelled.apiFailure();
+      redirectCancelled.commit(redirectCancelled.mainFrame, 'http://localhost:3001/r#tab');
+      await expect(redirectCancelled.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status/);
+
+      // 내려받기로 바뀌는 응답.
+      const download = await makeGuard();
+      download.navigationResponse(download.navigation(), 200, { 'content-disposition': 'attachment; filename="report.csv"' });
+      download.apiFailure();
+      download.commit(download.mainFrame, `${menus}#tab`);
+      await expect(download.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status/);
     });
 
     it('기다리는 동안 다른 주소로의 같은 문서 안 이동이 끼어도 뒤이은 문서 교체 묶음은 통과한다', async () => {
