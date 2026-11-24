@@ -57,6 +57,7 @@ public class LoginPolicyApiController {
     }
 
     @Operation(summary = "로그인 정책 등록")
+    @nuri.foundation.core.annotation.SensitiveOperation("로그인 정책 등록")
     @PostMapping("/{userId}")
     @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#insertLoginPolicy')")
@@ -70,6 +71,7 @@ public class LoginPolicyApiController {
     }
 
     @Operation(summary = "로그인 정책 수정")
+    @nuri.foundation.core.annotation.SensitiveOperation("로그인 정책 변경")
     @PutMapping("/{userId}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#updateLoginPolicy')")
     public ResponseEntity<ApiResponse<Void>> updateLoginPolicy(
@@ -81,6 +83,7 @@ public class LoginPolicyApiController {
     }
 
     @Operation(summary = "로그인 정책 삭제")
+    @nuri.foundation.core.annotation.SensitiveOperation("로그인 정책 삭제")
     @DeleteMapping("/{userId}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#deleteLoginPolicy')")
     public ResponseEntity<ApiResponse<Void>> deleteLoginPolicy(

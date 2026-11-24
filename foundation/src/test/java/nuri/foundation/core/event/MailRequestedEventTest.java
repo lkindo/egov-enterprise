@@ -26,6 +26,19 @@ class MailRequestedEventTest {
         assertThat(request.recipientName()).isEqualTo("홍길동");
         assertThat(request.subject()).isEqualTo("[eGov] 결재 상태 변경 알림");
         assertThat(request.content()).isEqualTo("결재(번호 7)가 승인되었습니다.");
+        // 키 없는 요청은 받을 때마다 새로 접수된다.
+        assertThat(request.intentKey()).isNull();
+    }
+
+    @Test
+    @DisplayName("[2026-11-24] 다시 실행될 수 있는 발행부는 같은 사건에 같은 의도 키를 싣는다")
+    void carriesTheIntentKeyOfARepeatableRequest() {
+        java.util.UUID key = java.util.UUID.fromString("00000000-0000-0000-0000-000000000007");
+        MailRequestedEvent request = new MailRequestedEvent(
+                "SANCTIONER_001", "hong@egov.com", "홍길동", "제목", "본문", key);
+
+        assertThat(request.intentKey()).isEqualTo(key);
+        assertThat(request.hasRecipient()).isTrue();
     }
 
     /**

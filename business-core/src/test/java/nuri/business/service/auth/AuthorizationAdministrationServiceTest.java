@@ -229,7 +229,7 @@ class AuthorizationAdministrationServiceTest {
     }
 
     @ParameterizedTest
-    @org.junit.jupiter.params.provider.ValueSource(strings = {"AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD", "MFA_RECOVER"})
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD", "MFA_RECOVER", "ADT_LOG_READ"})
     void protectedGrantAdditionAndRemovalRequireBothAdministrationPermissions(String permission) {
         Grant protectedGrant = new Grant("OPERATION", permission);
         authenticate("operator_login", "OPERATOR_ID", Set.of("AUTHRT_READ", "AUTHRT_GRANT"));
@@ -272,7 +272,7 @@ class AuthorizationAdministrationServiceTest {
     }
 
     @ParameterizedTest
-    @org.junit.jupiter.params.provider.ValueSource(strings = {"USER_PASSWORD", "MFA_RECOVER"})
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"USER_PASSWORD", "MFA_RECOVER", "ADT_LOG_READ"})
     void protectedMembershipAdditionRemovalAndDepartmentBatchRequireBothAdministrationPermissions(String permission) {
         db.groups.put("G_C", new GroupData("Protected", null, List.of(new Grant("OPERATION", permission))));
         authenticate("operator_login", "OPERATOR_ID", Set.of("AUTHRT_READ", "AUTHRT_ASSIGN"));
@@ -289,7 +289,7 @@ class AuthorizationAdministrationServiceTest {
     }
 
     @ParameterizedTest
-    @org.junit.jupiter.params.provider.ValueSource(strings = {"USER_PASSWORD", "MFA_RECOVER"})
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"USER_PASSWORD", "MFA_RECOVER", "ADT_LOG_READ"})
     void deletionCannotRemoveProtectedGrantsOrMembershipsWithOnlyDeleteAuthority(String permission) {
         db.groups.put("G_C", new GroupData("Protected", null, List.of(new Grant("OPERATION", permission))));
         authenticate("operator_login", "OPERATOR_ID", Set.of("AUTHRT_READ", "AUTHRT_DELETE", "USER_DELETE"));
@@ -300,7 +300,7 @@ class AuthorizationAdministrationServiceTest {
     }
 
     @ParameterizedTest
-    @org.junit.jupiter.params.provider.ValueSource(strings = {"USER_PASSWORD", "MFA_RECOVER"})
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"USER_PASSWORD", "MFA_RECOVER", "ADT_LOG_READ"})
     void signupDefaultCannotSilentlyGrantProtectedPermissions(String permission) {
         db.groups.put("ROLE_USER", new GroupData("Default", null, List.of(new Grant("OPERATION", permission))));
         db.memberships.put("U_2", List.of());
@@ -733,7 +733,7 @@ class AuthorizationAdministrationServiceTest {
     }
 
     @ParameterizedTest
-    @org.junit.jupiter.params.provider.ValueSource(strings = {"AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD", "MFA_RECOVER"})
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD", "MFA_RECOVER", "ADT_LOG_READ"})
     void groupMemberDeltaOnProtectedGroupsRequiresBothAdministrationPermissions(String permission) {
         db.groups.put("G_C", new GroupData("Protected", null, List.of(new Grant("OPERATION", permission))));
         authenticate("operator_login", "OPERATOR_ID", Set.of("AUTHRT_READ", "AUTHRT_ASSIGN"));
@@ -812,7 +812,7 @@ class AuthorizationAdministrationServiceTest {
     }
 
     @ParameterizedTest
-    @org.junit.jupiter.params.provider.ValueSource(strings = {"AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD", "MFA_RECOVER"})
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD", "MFA_RECOVER", "ADT_LOG_READ"})
     void copyingProtectedGrantsRequiresBothAdministrationPermissions(String permission) {
         db.groups.put("G_C", new GroupData("Protected", null, List.of(new Grant("OPERATION", permission))));
         authenticate("operator_login", "OPERATOR_ID", Set.of("AUTHRT_READ", "AUTHRT_CREATE", "AUTHRT_GRANT"));
@@ -1004,7 +1004,7 @@ class AuthorizationAdministrationServiceTest {
     }
 
     @ParameterizedTest
-    @org.junit.jupiter.params.provider.ValueSource(strings = {"AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD", "MFA_RECOVER"})
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD", "MFA_RECOVER", "ADT_LOG_READ"})
     void menuStructureProtectedOperationGrantsRequireBothAdministrationPermissions(String permission) {
         authenticate("operator_login", "OPERATOR_ID", Set.of("AUTHRT_READ", "AUTHRT_GRANT"));
         error(CommonErrorCode.ACCESS_DENIED, () -> service.applyMenuStructureGrants(List.of(

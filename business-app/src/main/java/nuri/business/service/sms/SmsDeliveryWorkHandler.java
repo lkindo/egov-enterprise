@@ -23,7 +23,17 @@ public class SmsDeliveryWorkHandler implements DurableWorkHandler {
 
     static DurableWork work(long transmissionId, String senderEsntlId) {
         UUID key = UUID.nameUUIDFromBytes((TYPE + ":" + transmissionId).getBytes(StandardCharsets.UTF_8));
-        return new DurableWork(key, TYPE, JSON.writeValueAsString(new Intent(transmissionId, senderEsntlId)));
+        return new DurableWork(key, TYPE, payload(transmissionId, senderEsntlId));
+    }
+
+    /** 작업 payload — 같은 의도 키로 한 번만 접수하는 경로(enqueueOnce)도 같은 모양을 쓴다. */
+    static String payload(long transmissionId, String senderEsntlId) {
+        return JSON.writeValueAsString(new Intent(transmissionId, senderEsntlId));
+    }
+
+    static long transmissionId(DurableWork work) {
+        if (!TYPE.equals(work.type())) throw new IllegalArgumentException("Unexpected work type");
+        return JSON.readValue(work.payload(), Intent.class).transmissionId();
     }
 
     @Override public String type() { return TYPE; }

@@ -39,7 +39,7 @@ worker 재시도는 기존 알림 ID를 그대로 사용하므로 알림함에 �
 
 [메일 접수](../../business-app/src/main/java/nuri/business/service/mail/MailService.java)는 발송 이력과 `MAIL_DELIVERY` 의도를, [SMS 접수](../../business-app/src/main/java/nuri/business/service/sms/SmsService.java)는 헤더·수신자와 `SMS_DELIVERY` 의도를 각각 같은 트랜잭션에 저장한다. 의도 저장이 실패하면 접수도 롤백한다. 커밋 후 실행기 제출 전에 프로세스가 종료되어도 저장된 의도를 다시 읽을 수 있다. 작업자는 외부 발송 실행기의 Future가 끝난 뒤 작업 완료를 기록한다. 원장의 `SUCCEEDED`가 수신자의 실제 배달·열람까지 뜻하지는 않는다.
 
-이 보장은 **발송 서비스의 접수 트랜잭션부터** 시작한다. 결재 업무 커밋 후 이벤트 listener가 `MailService` 또는 `SmsService`를 호출하기 전에 종료되는 공백까지 업무 트랜잭션과 묶은 것은 아니다. 그 단계는 별도의 최선형 이벤트 전달 경계로 남는다.
+이 보장은 **발송 서비스의 접수 트랜잭션부터** 시작한다. 결재 결과의 문자·메일은 2026-11-25부터 결재 트랜잭션이 `SANCTION_EXTERNAL_NOTIFICATION` 작업을 함께 저장한다([작업 처리기](../../business-app/src/main/java/nuri/business/service/informalsanction/event/SanctionExternalNotificationWorkHandler.java)). 작업에는 결재 번호·차수·상태·기안자·결재자 식별자만 두고 반려 사유·연락처는 두지 않는다. 커밋 뒤 작업자가 연락처와 그 차수 이력의 반려 사유를 읽어 두 채널을 요청하며, 채널마다 작업 키에서 정한 의도 키를 싣는다. 메일·SMS 접수는 그 키로 `enqueueOnce` 해 작업이 완료 기록 전에 끊겨 다시 실행돼도 이력과 발송 작업을 한 번만 만든다. 한 채널의 접수가 실패하면 다른 채널을 요청한 뒤 작업을 다시 시도하고, 입력 거절(연락처 없음·게이트웨이가 보낼 수 없는 본문)은 재시도하지 않는다. 기안자 계정이나 그 차수 이력(문서)이 지워졌으면 건너뛴다. 의도 키 없는 업무 이벤트 요청은 종전처럼 커밋 후 listener가 접수 서비스를 호출하기 전의 공백이 남는 최선형 경계다.
 
 | 유형 | 자동 복구가 발송을 시작할 수 있는 상태 | 복구 시 제외하는 상태 |
 |---|---|---|

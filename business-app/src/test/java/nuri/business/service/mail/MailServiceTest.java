@@ -203,6 +203,47 @@ class MailServiceTest {
                 .isInstanceOf(BusinessException.class);
     }
 
+    @Test
+    @DisplayName("[2026-11-25] 의도 키 발송은 처음 키에서만 이력과 발송 작업을 만들고, 같은 키의 다시 요청은 처음 발송 번호를 돌려준다")
+    void sendToResolvedAddressOnce_acceptsOncePerIntentKey() {
+        java.util.UUID intent = java.util.UUID.fromString("00000000-0000-0000-0000-000000000031");
+        given(sentMailRepository.save(any(SentMail.class)))
+                .willReturn(SentMail.builder().emlDsptchSn(9L).build());
+        java.util.Map<java.util.UUID, DurableWork> stored = new java.util.HashMap<>();
+        given(durableWork.enqueueOnce(any(), anyString(), any())).willAnswer(call -> stored.computeIfAbsent(
+                call.getArgument(0), k -> new DurableWork(k, call.getArgument(1),
+                        call.<java.util.function.Supplier<String>>getArgument(2).get())));
+        SentMailDto mail = SentMailDto.builder().sj("제목").emailCn("본문").build();
+
+        Long first = mailService.sendToResolvedAddressOnce(intent, "SANCTIONER_001", mail, " hong@egov.com ", "홍길동");
+        Long replay = mailService.sendToResolvedAddressOnce(intent, "SANCTIONER_001", mail, " hong@egov.com ", "홍길동");
+
+        assertThat(first).isEqualTo(9L);
+        assertThat(replay).isEqualTo(9L);
+        verify(sentMailRepository, times(1)).save(any(SentMail.class));
+        verify(durableWork, never()).enqueue(any());
+        DurableWork work = stored.get(intent);
+        assertThat(work.type()).isEqualTo(MailDeliveryWorkHandler.TYPE);
+        assertThat(MailDeliveryWorkHandler.intent(work).dispatchId()).isEqualTo(9L);
+        assertThat(MailDeliveryWorkHandler.intent(work).encryptedRecipient()).isEqualTo(encrypted("hong@egov.com"));
+        assertThat(MailDeliveryWorkHandler.intent(work).from()).isEqualTo(SYSTEM_SENDER);
+    }
+
+    @Test
+    @DisplayName("[2026-11-25] 의도 키 발송도 첨부·빈 주소를 작업 저장 전에 거부한다")
+    void sendToResolvedAddressOnce_rejectsInvalidInputBeforeStoringIntent() {
+        java.util.UUID intent = java.util.UUID.fromString("00000000-0000-0000-0000-000000000032");
+
+        assertThatThrownBy(() -> mailService.sendToResolvedAddressOnce(intent, "SANCTIONER_001",
+                SentMailDto.builder().sj("제목").emailCn("본문").atchFileSn(1L).build(), "kim@egov.com", "김"))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> mailService.sendToResolvedAddressOnce(intent, "SANCTIONER_001",
+                SentMailDto.builder().sj("제목").emailCn("본문").build(), " ", "김"))
+                .isInstanceOf(BusinessException.class);
+        verifyNoInteractions(durableWork);
+        verify(sentMailRepository, never()).save(any(SentMail.class));
+    }
+
     @ParameterizedTest
     @NullAndEmptySource
     @ValueSource(strings = { "   ", "\t" })

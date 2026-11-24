@@ -22,14 +22,23 @@ package nuri.foundation.core.event;
  *                         (2026-09-25 DIP D8). 비어 있으면 mail 도메인이 이름 미등록으로 적는다
  * @param subject          메일 제목
  * @param content          메일 본문
+ * @param intentKey        같은 요청을 한 번만 접수하게 하는 키(2026-11-24). 영속 작업처럼 다시 실행될 수 있는 발행부가 같은 사건에
+ *                         같은 키를 싣는다 — mail 도메인은 이 키로 이미 접수한 요청을 다시 만들지 않는다. 없으면 매번 새 접수다
  */
 public record MailRequestedEvent(
         String requesterId,
         String recipientAddress,
         String recipientName,
         String subject,
-        String content
+        String content,
+        java.util.UUID intentKey
 ) implements DomainEvent {
+
+    /** 의도 키 없는 요청 — 받을 때마다 새로 접수한다. */
+    public MailRequestedEvent(String requesterId, String recipientAddress, String recipientName, String subject,
+            String content) {
+        this(requesterId, recipientAddress, recipientName, subject, content, null);
+    }
 
     /** 수신 주소가 없으면 메일을 만들 수 없다 — 발행 측에서 걸러야 하지만 소비 측도 방어한다. */
     public boolean hasRecipient() {

@@ -296,7 +296,7 @@
     {
       "code": "ADT_LOG_READ",
       "bundle": "log-audit-viewer",
-      "protected": false,
+      "protected": true,
       "effect": "민감 작업 감사 원장에서 누가 언제 민감한 조회·변경을 했는지 봅니다."
     },
     {

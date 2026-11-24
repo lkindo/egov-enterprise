@@ -2,7 +2,6 @@ package nuri.business.service.informalsanction.event;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 /**
@@ -13,11 +12,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class SanctionEventListener {
 
-    /** SMS·메일 저장 본문과 앱 알림 본문의 공통 물리 상한. */
-    private static final int CHANNEL_CONTENT_MAX_LENGTH = 4_000;
-
-    private final nuri.business.service.user.UserService userService;
-
     /**
      * 세 채널(문자·메일·앱 내 알림)을 모두 foundation 이벤트로 요청한다.
      *
@@ -25,119 +19,44 @@ public class SanctionEventListener {
      * 결합돼 교차 도메인 결합 census 가 늘어난다. 앱 내 알림은 처음부터 발행만 했고, 문자·메일도 이제
      * 같은 자리로 옮겼다 — GAP-ARCH-001 의 잔여 app→app 4건 중 이 리스너가 갖고 있던 둘이 그것이다.
      * 어느 쪽도 상대를 import 하지 않으므로 census 숫자만 내려가는 것이 아니라 실제로 떼어 낼 수 있다.
-     *
-     * <p><b>발신 번호는 더 이상 여기 없다.</b> {@code nuri.notification.sender.tel} 은 업무 사실이 아니라
-     * 배포 설정이고 그것을 쓰는 것은 sms 도메인이므로 {@code SmsRequestListener} 가 소유한다. 미설정 시
-     * 문자 채널만 건너뛰는 거동은 그대로다.
+     * 문자·메일 요청은 {@link SanctionExternalNotificationWorkHandler} 가 커밋 뒤에 발행한다.
      */
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     /** 앱 알림 전에 기안자 계정이 있는지 본다 — 예외 없이 묻는다(업무 트랜잭션 안이라 던지면 결재까지 되돌아간다). */
     private final nuri.business.service.informalsanction.ApprovalRecipients approvalRecipients;
 
-    public SanctionEventListener(nuri.business.service.user.UserService userService,
-                                org.springframework.context.ApplicationEventPublisher eventPublisher,
-                                nuri.business.service.informalsanction.ApprovalRecipients approvalRecipients) {
-        this.userService = userService;
+    /** 문자·메일 요청 의도를 결재와 같은 트랜잭션에 저장한다. */
+    private final nuri.foundation.core.job.DurableWorkPort durableWork;
+
+    public SanctionEventListener(org.springframework.context.ApplicationEventPublisher eventPublisher,
+                                nuri.business.service.informalsanction.ApprovalRecipients approvalRecipients,
+                                nuri.foundation.core.job.DurableWorkPort durableWork) {
         this.eventPublisher = eventPublisher;
         this.approvalRecipients = approvalRecipients;
+        this.durableWork = durableWork;
     }
 
     @EventListener
     @org.springframework.transaction.annotation.Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
     public void handleStatusChanged(SanctionStatusChangedEvent event) {
-        publishInAppNotification(event);
-        nuri.foundation.core.util.TransactionUtils.runAfterCommit(() ->
-                eventPublisher.publishEvent(new SanctionExternalNotificationEvent(event)));
-    }
-
-    @Async("logExecutor")
-    @EventListener
-    public void handleExternalChannels(SanctionExternalNotificationEvent external) {
-        SanctionStatusChangedEvent event = external.status();
-        log.info(">>> [Event] Sanction Status Changed: sanctionSn={}, status={}",
-                event.getInformalSanctionSn(), event.getNewStatus());
-        
-        // [W1-D5] 이 리스너는 @Async 라 SecurityContext 가 없는 스레드에서 돈다(TaskDecorator 는
-        //   프로덕션에서 의도적 no-op — 전파하면 비동기 경로 전체의 인가 판정 거동이 바뀐다).
-        //   그래서 종전에는 발송 요청자를 리터럴 "SYSTEM" 으로 넘겨, 결재를 실제로 승인/반려한
-        //   사람이 발송 이력에서 사라졌다. 이벤트가 이미 sanctionerId 를 싣고 오므로 그것을 쓴다.
-        //   (sendSms/sendMail 의 첫 인자는 '요청자' 로그·이력 용도이며 인가 판정에 쓰이지 않는다 —
-        //    권한 완화가 아니다. AGENTS.md Evidence guardrails H3)
-        final String actorId = org.springframework.util.StringUtils.hasText(event.getSanctionerId())
-                ? event.getSanctionerId()
-                : "SYSTEM";
-
-        nuri.business.service.user.dto.UserDto user = findApplicant(event);
-        if (user != null) {
-            // [2026-09-05] 종전 본문은 `%s` 에 상태 enum 을 넣어 사용자가 "APPROVED 되었습니다" 를 받았고,
-            //   승인에도 '사유: 없음' 이 붙었다. enum 의 한국어 설명을 쓰고 사유는 반려에만 싣는다.
-            String message = boundChannelContent(String.format(
-                    "[eGov Enterprise] 귀하의 결재(번호 %s)가 %s되었습니다.%s",
-                    event.getInformalSanctionSn(), statusLabel(event), reasonSuffix(event)));
-            sendSms(event, actorId, user, message);
-            sendMail(event, actorId, user, message);
-        }
-
-    }
-
-    private nuri.business.service.user.dto.UserDto findApplicant(SanctionStatusChangedEvent event) {
-        try {
-            nuri.business.service.user.dto.UserDto user = userService.getUserById(event.getApplicantId());
-            if (user == null) {
-                log.warn("Applicant not found: sanctionSn={}, status={}",
-                        event.getInformalSanctionSn(), event.getNewStatus());
-            }
-            return user;
-        } catch (Exception e) {
-            log.error("Failed to load applicant: sanctionSn={}, status={}, exceptionType={}",
-                    event.getInformalSanctionSn(), event.getNewStatus(), e.getClass().getSimpleName());
-            return null;
+        boolean applicantExists = publishInAppNotification(event);
+        if (applicantExists) {
+            requestExternalChannels(event);
         }
     }
 
     /**
-     * 문자 요청.
+     * 문자·메일 요청 의도를 결재와 함께 저장한다(2026-11-25).
      *
-     * <p>연락처가 없으면 <b>발행하지 않는다</b> — 수신 번호 없는 요청은 보낼 곳이 없는 이력만 남긴다.
-     * 발신 번호 미설정으로 건너뛰는 판정은 sms 도메인({@code SmsRequestListener})이 소유한다.
+     * <p>종전에는 커밋 뒤 {@code @Async} 이벤트로 요청해, 그 사이 프로세스 종료·실행기 거부가 외부 통지를 흔적 없이 잃었다.
+     * 이제 의도가 결재와 같이 커밋되고 커밋 뒤 작업자가 요청한다. 저장 실패는 결재도 되돌린다 — 앱 내 알림 의도와 같은 규칙이다.
+     * 기안자 계정이 지워졌으면 저장하지 않는다(보낼 사람이 없다).
      */
-    private void sendSms(SanctionStatusChangedEvent event, String actorId,
-            nuri.business.service.user.dto.UserDto user, String message) {
-        if (!org.springframework.util.StringUtils.hasText(user.mblTelno())) {
-            return;
-        }
-        try {
-            eventPublisher.publishEvent(new nuri.foundation.core.event.SmsRequestedEvent(
-                    actorId, user.mblTelno(), message, user.esntlId()));
-            log.info("SMS notification requested: sanctionSn={}, status={}",
-                    event.getInformalSanctionSn(), event.getNewStatus());
-        } catch (Exception e) {
-            log.error("Failed to request SMS notification: sanctionSn={}, status={}, exceptionType={}",
-                    event.getInformalSanctionSn(), event.getNewStatus(), e.getClass().getSimpleName());
-        }
-    }
-
-    /**
-     * 메일 요청.
-     *
-     * <p>SMTP From 과 발신자 표시명은 {@code MailService} 가 설정({@code nuri.mail.from})과 요청자에서
-     * 정한다 — 여기서 주소를 지어내지 않는다.
-     */
-    private void sendMail(SanctionStatusChangedEvent event, String actorId,
-            nuri.business.service.user.dto.UserDto user, String message) {
-        if (!org.springframework.util.StringUtils.hasText(user.emlAddr())) {
-            return;
-        }
-        try {
-            eventPublisher.publishEvent(new nuri.foundation.core.event.MailRequestedEvent(
-                    actorId, user.emlAddr(), user.userNm(), "[eGov] 결재 상태 변경 알림", message));
-            log.info("Mail notification requested: sanctionSn={}, status={}",
-                    event.getInformalSanctionSn(), event.getNewStatus());
-        } catch (Exception e) {
-            log.error("Failed to request mail notification: sanctionSn={}, status={}, exceptionType={}",
-                    event.getInformalSanctionSn(), event.getNewStatus(), e.getClass().getSimpleName());
-        }
+    private void requestExternalChannels(SanctionStatusChangedEvent event) {
+        durableWork.enqueueOnce(SanctionExternalNotificationWorkHandler.key(event),
+                SanctionExternalNotificationWorkHandler.TYPE,
+                () -> SanctionExternalNotificationWorkHandler.payload(event));
     }
 
     /**
@@ -148,26 +67,30 @@ public class SanctionEventListener {
      * <b>사실상 유일하게 도달하는 통지</b>이므로 부수적인 실패에 함께 묻히지 않게 한다.
      *
      * <p>이 경로는 업무 트랜잭션 안에서 동기 실행한다. 저장 실패를 삼키면 전달 의도를 잃는다.
+     *
+     * @return 기안자 계정이 있으면 true — 외부 채널 의도도 그때만 저장한다
      */
-    private void publishInAppNotification(SanctionStatusChangedEvent event) {
+    private boolean publishInAppNotification(SanctionStatusChangedEvent event) {
         if (!org.springframework.util.StringUtils.hasText(event.getApplicantId())) {
-            return;
+            return false;
         }
         // [2026-11-19] 기안자 계정이 지워졌으면 앱 알림을 남기지 않는다. 결재 행은 사용자 삭제 뒤에도 남지만 알림 행은 사용자
         //   FK 가 있고 이 업무 트랜잭션 안에서 저장된다 — 보내면 FK 위반으로 결재자의 최종 승인·반려가 되돌아갔다.
         if (!approvalRecipients.exists(event.getApplicantId())) {
-            log.warn("Applicant account no longer exists; in-app result notice skipped: sanctionSn={}",
+            log.warn("Applicant account no longer exists; result notices skipped: sanctionSn={}",
                     event.getInformalSanctionSn());
-            return;
+            return false;
         }
-            eventPublisher.publishEvent(new nuri.foundation.core.event.NotificationRequestedEvent(
-                    event.getEventId(),
-                    event.getApplicantId(),
-                    "결재 상태 변경",
-                    boundChannelContent(String.format("%s가 %s되었습니다.%s",
-                            documentLabel(event), statusLabel(event), reasonSuffix(event))),
-                    // [2026-10-03 D1] 결과 알림은 내가 올린 결재의 그 문서로 바로 간다.
-                    "/approvals?tab=SUBMITTED&doc=" + event.getInformalSanctionSn()));
+        eventPublisher.publishEvent(new nuri.foundation.core.event.NotificationRequestedEvent(
+                event.getEventId(),
+                event.getApplicantId(),
+                "결재 상태 변경",
+                SanctionResultText.bound(String.format("%s가 %s되었습니다.%s",
+                        documentLabel(event), SanctionResultText.statusLabel(event.getNewStatus()),
+                        SanctionResultText.reasonSuffix(event.getNewStatus(), event.getReason()))),
+                // [2026-10-03 D1] 결과 알림은 내가 올린 결재의 그 문서로 바로 간다.
+                "/approvals?tab=SUBMITTED&doc=" + event.getInformalSanctionSn()));
+        return true;
     }
 
     /** 제목이 있으면 제목으로, 번호는 결재함 목록에서 찾는 열쇠로 함께 싣는다. 문자·메일 본문은 종전대로 번호만 쓴다. */
@@ -176,33 +99,5 @@ public class SanctionEventListener {
         return org.springframework.util.StringUtils.hasText(event.getDocumentTitle())
                 ? "「" + event.getDocumentTitle().trim() + "」 " + number
                 : number;
-    }
-
-    private static String reasonOrDefault(SanctionStatusChangedEvent event) {
-        return org.springframework.util.StringUtils.hasText(event.getReason()) ? event.getReason() : "없음";
-    }
-
-    /** 사용자에게 보이는 상태 이름 — enum 상수명(APPROVED)이 아니라 한국어 설명(승인)이다. */
-    private static String statusLabel(SanctionStatusChangedEvent event) {
-        return event.getNewStatus() == null ? "처리" : event.getNewStatus().getDescription();
-    }
-
-    /** 사유 절은 반려에만 붙인다. 승인 본문에 '사유: 없음' 을 달지 않는다. */
-    private static String reasonSuffix(SanctionStatusChangedEvent event) {
-        return event.getNewStatus() == nuri.business.domain.informalsanction.SanctionStatus.REJECTED
-                ? " 반려 사유: " + reasonOrDefault(event)
-                : "";
-    }
-
-    /** 접두어를 포함해 완성된 채널 본문을 자르며 UTF-16 surrogate pair는 분리하지 않는다. */
-    private static String boundChannelContent(String content) {
-        if (content.length() <= CHANNEL_CONTENT_MAX_LENGTH) {
-            return content;
-        }
-        int end = CHANNEL_CONTENT_MAX_LENGTH;
-        if (Character.isHighSurrogate(content.charAt(end - 1))) {
-            end--;
-        }
-        return content.substring(0, end);
     }
 }

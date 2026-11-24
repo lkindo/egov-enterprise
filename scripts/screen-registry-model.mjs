@@ -34,7 +34,7 @@ export const SCREEN_REGISTRY_INPUTS = Object.freeze({
  * 모두 가진 관리자만 할 수 있으므로, 묶음의 protected 는 이 권한을 하나라도 품는지와 정확히 같아야 한다. 산출물이
  * 같은 집합을 PROTECTED_PERMISSIONS 로 내보낸다 — 화면은 사본을 두지 않고 그것을 읽는다.
  */
-export const PROTECTED_PERMISSIONS = Object.freeze(['AUTHRT_ASSIGN', 'AUTHRT_GRANT', 'MFA_RECOVER', 'USER_PASSWORD']);
+export const PROTECTED_PERMISSIONS = Object.freeze(['ADT_LOG_READ', 'AUTHRT_ASSIGN', 'AUTHRT_GRANT', 'MFA_RECOVER', 'USER_PASSWORD']);
 
 const BUNDLE_LEDGER_FIELDS = ['schemaVersion', 'description', 'bundles', 'excluded'];
 const BUNDLE_FIELDS = ['id', 'name', 'description', 'protected', 'permissions'];

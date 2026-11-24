@@ -35,6 +35,7 @@ public class UserAbsenceApiController {
     }
 
     @Operation(summary = "사용자 부재 상태 업데이트")
+    @nuri.foundation.core.annotation.SensitiveOperation("부재·대리결재 지정")
     @PutMapping("/{emplyrId}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.user.UserAbsenceApiController#updateAbsence')")
     public ResponseEntity<ApiResponse<Void>> updateAbsence(

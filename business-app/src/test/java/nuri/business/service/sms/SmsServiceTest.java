@@ -260,6 +260,43 @@ class SmsServiceTest {
     }
 
     @Test
+    @DisplayName("[2026-11-25] 의도 키 발송은 처음 키에서만 헤더·수신자·발송 작업을 만들고, 같은 키의 다시 요청은 처음 전송 번호를 돌려준다")
+    void sendSmsOnce_acceptsOncePerIntentKey() {
+        java.util.UUID intent = java.util.UUID.fromString("00000000-0000-0000-0000-000000000041");
+        java.util.Map<java.util.UUID, nuri.foundation.core.job.DurableWork> stored = new java.util.HashMap<>();
+        when(durableWork.enqueueOnce(any(), anyString(), any())).thenAnswer(call -> stored.computeIfAbsent(
+                call.getArgument(0), k -> new nuri.foundation.core.job.DurableWork(k, call.getArgument(1),
+                        call.<java.util.function.Supplier<String>>getArgument(2).get())));
+        when(smsRecptnRepository.save(any(SmsRecptn.class))).thenAnswer(i -> i.getArgument(0));
+        SmsDto dto = SmsDto.builder().sndngTelno("01011112222").sndngCn("결재 결과")
+                .recipients(List.of(SmsRecptnDto.builder().rcptnTelno("01033334444").build())).build();
+
+        Long first = smsService.sendSmsOnce(intent, "SANCTIONER_001", dto);
+        Long replay = smsService.sendSmsOnce(intent, "SANCTIONER_001", dto);
+
+        assertThat(first).isEqualTo(101L);
+        assertThat(replay).isEqualTo(101L);
+        verify(smsRepository, times(1)).save(any(Sms.class));
+        verify(smsRecptnRepository, times(1)).save(any(SmsRecptn.class));
+        verify(durableWork, never()).enqueue(any());
+        nuri.foundation.core.job.DurableWork work = stored.get(intent);
+        assertThat(work.type()).isEqualTo(SmsDeliveryWorkHandler.TYPE);
+        assertThat(work.payload()).contains("101").doesNotContain("결재 결과", "01033334444");
+    }
+
+    @Test
+    @DisplayName("[2026-11-25] 의도 키 발송도 게이트웨이가 보낼 수 없는 본문은 작업 저장 전에 거부한다")
+    void sendSmsOnce_rejectsUndeliverableMessageBeforeStoringIntent() {
+        when(smsSender.rejectsMessage("보낼 수 없는 본문")).thenReturn(true);
+        SmsDto dto = SmsDto.builder().sndngTelno("01011112222").sndngCn("보낼 수 없는 본문")
+                .recipients(List.of(SmsRecptnDto.builder().rcptnTelno("01012345678").build())).build();
+
+        assertThatThrownBy(() -> smsService.sendSmsOnce(java.util.UUID.randomUUID(), "SANCTIONER_001", dto))
+                .isInstanceOf(BusinessException.class);
+        verifyNoInteractions(durableWork, smsRepository, smsRecptnRepository);
+    }
+
+    @Test
     @DisplayName("영속 발송 의도 저장 실패는 성공 접수로 반환하지 않는다")
     void sendSms_durableEnqueueFailurePropagatesForRollback() {
         SmsDto dto = SmsDto.builder()

@@ -22,10 +22,14 @@ public class MailDeliveryWorkHandler implements DurableWorkHandler {
     record Intent(long dispatchId, String queuedAt, String encryptedRecipient, String from, String senderEsntlId) {}
 
     static DurableWork work(long id, LocalDateTime queuedAt, String address, String from, String senderEsntlId) {
+        return new DurableWork(UUID.randomUUID(), TYPE, payload(id, queuedAt, address, from, senderEsntlId));
+    }
+
+    /** 작업 payload — 같은 의도 키로 한 번만 접수하는 경로(enqueueOnce)도 같은 모양을 쓴다. */
+    static String payload(long id, LocalDateTime queuedAt, String address, String from, String senderEsntlId) {
         String encrypted = CryptoUtil.encrypt(address);
         if (encrypted == null || encrypted.isBlank()) throw new IllegalStateException("Missing encrypted recipient");
-        return new DurableWork(UUID.randomUUID(), TYPE,
-                JSON.writeValueAsString(new Intent(id, queuedAt.toString(), encrypted, from, senderEsntlId)));
+        return JSON.writeValueAsString(new Intent(id, queuedAt.toString(), encrypted, from, senderEsntlId));
     }
 
     static Intent intent(DurableWork work) {

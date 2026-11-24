@@ -84,8 +84,7 @@ public class SensitiveAuditInterceptor implements AsyncHandlerInterceptor {
         var mapping = handlers.getIfAvailable();
         if (mapping == null) return;
         var path = PathContainer.parsePath(event.url());
-        mapping.getHandlerMethods().entrySet().stream()
-                .filter(entry -> description(entry.getValue()) != null)
+        markedHandlers(mapping).stream()
                 .filter(entry -> entry.getKey().getMethodsCondition().getMethods().stream()
                         .anyMatch(method -> method.name().equals("HEAD".equals(event.httpMethod()) ? "GET" : event.httpMethod())))
                 .filter(entry -> entry.getKey().getPathPatternsCondition() != null
@@ -101,6 +100,26 @@ public class SensitiveAuditInterceptor implements AsyncHandlerInterceptor {
                     audit.attempted(context);
                     audit.completed(context, Outcome.DENIED, event.statusCode());
                 });
+    }
+
+    /**
+     * 표지가 있는 핸들러 매핑. 매핑은 기동 때 정해지므로 처음 쓸 때 한 번만 거른다(2026-11-24) — 종전에는 인증 전 거부(401·403)마다 전체
+     * 핸들러 매핑을 훑었다. 거부 기록(시도·거부 두 행)은 그대로 남긴다: 줄이면 원장이 보여야 할 시도를 잃는다.
+     */
+    private volatile java.util.List<java.util.Map.Entry<org.springframework.web.servlet.mvc.method.RequestMappingInfo, HandlerMethod>>
+            markedHandlers;
+
+    private java.util.List<java.util.Map.Entry<org.springframework.web.servlet.mvc.method.RequestMappingInfo, HandlerMethod>>
+            markedHandlers(RequestMappingHandlerMapping mapping) {
+        var cached = markedHandlers;
+        if (cached == null) {
+            cached = mapping.getHandlerMethods().entrySet().stream()
+                    .filter(entry -> description(entry.getValue()) != null)
+                    .map(entry -> java.util.Map.entry(entry.getKey(), entry.getValue()))
+                    .toList();
+            markedHandlers = cached;
+        }
+        return cached;
     }
 
     static String description(HandlerMethod method) {

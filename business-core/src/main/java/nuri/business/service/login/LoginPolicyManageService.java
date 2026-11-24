@@ -32,6 +32,8 @@ public class LoginPolicyManageService {
 
     private final LoginPolicyRepository loginPolicyRepository;
     private final UserRepository userRepository;
+    /** 접속 조건을 걸거나 바꿀 때 그 전에 발급된 세션을 끊는다(refresh token 삭제, 세션차수는 {@link UserRepository}). */
+    private final nuri.business.domain.auth.RefreshTokenRepository refreshTokenRepository;
 
     /**
      * 보호 계정 가드(GAP-SEC-006, 2026-10-03).
@@ -168,6 +170,39 @@ public class LoginPolicyManageService {
         entity.setFrstRgtrId("SYSTEM"); // 시스템 정책 작성자는 SYSTEM 으로 명시 유지(하위 호환)
         loginPolicyRepository.save(entity);
         keepAnActiveManager(managersBefore);
+        revokeSessionsWhenRestrictionChanges(target, null,
+                LoginRestriction.of(entity.getLmtYn(), entity.getIpAddr(), entity.getBgngTm(), entity.getEndTm()));
+    }
+
+    /**
+     * 로그인을 막을 수 있는 조건 — 접속 제한(lmtYn='Y')·허용 IP·허용 시간창. 셋 다 없으면 {@code null} 이다. 시간창은 시작·종료가
+     * 짝일 때만 판정에 쓰이므로({@link #validateLoginPolicy}) 짝일 때만 조건으로 센다.
+     */
+    private record LoginRestriction(String lmtYn, String ipAddr, String bgngTm, String endTm) {
+        static LoginRestriction of(String lmtYn, String ipAddr, String bgngTm, String endTm) {
+            String limited = "Y".equals(lmtYn) ? "Y" : null;
+            String ip = ipAddr == null || ipAddr.isBlank() ? null : ipAddr;
+            boolean window = bgngTm != null && !bgngTm.isBlank() && endTm != null && !endTm.isBlank();
+            if (limited == null && ip == null && !window) return null;
+            return new LoginRestriction(limited, ip, window ? bgngTm : null, window ? endTm : null);
+        }
+    }
+
+    /**
+     * [2026-11-24] 접속 조건을 걸거나 바꾸면 그 사용자의 기존 세션을 끊는다(세션차수 증가 + refresh token 삭제, V2_153).
+     *
+     * <p>로그인 정책은 로그인·재발급 때만 판정한다. 종전에는 접속 제한·IP·허용 시간을 걸어도 이미 받은 access token 이 만료(기본
+     * 1시간)까지 통과했다 — 계정 비활성은 즉시 끊기는데 같은 효과의 접속 제한만 늦게 들었다. 조건이 바뀌면 다시 로그인하게 해 새
+     * 조건으로 판정받게 한다. 조건을 모두 푸는 변경(정책 삭제 포함)은 세션을 끊지 않는다. 로그인 실패 잠금이 세션을 끊지 않는
+     * 결정(DEC-OPS-419)은 관리자가 거는 이 제한과 별개다.
+     */
+    private void revokeSessionsWhenRestrictionChanges(User target, LoginRestriction before, LoginRestriction after) {
+        if (after == null || after.equals(before)) {
+            return;
+        }
+        List<String> esntlIds = List.of(target.getEsntlId());
+        userRepository.advanceSessionCycle(esntlIds);
+        refreshTokenRepository.deleteAllByEsntlIdIn(esntlIds);
     }
 
     /**
@@ -253,8 +288,11 @@ public class LoginPolicyManageService {
           비대칭은 의도다 — 다섯 필드는 컨트롤이 있고 이 하나는 없다. 컨트롤이 생기면 이 분기를 걷는다.
         */
         String dpcnPrmYn = dto.getDpcnPrmYn() != null ? dto.getDpcnPrmYn() : entity.getDpcnPrmYn();
+        LoginRestriction before = LoginRestriction.of(entity.getLmtYn(), entity.getIpAddr(), entity.getBgngTm(), entity.getEndTm());
         entity.update(canonicalIpAddr, dpcnPrmYn, dto.getLmtYn(), dto.getBgngTm(), dto.getEndTm(), dto.getOtpUseYn());
         keepAnActiveManager(managersBefore);
+        revokeSessionsWhenRestrictionChanges(target, before,
+                LoginRestriction.of(entity.getLmtYn(), entity.getIpAddr(), entity.getBgngTm(), entity.getEndTm()));
     }
 
     @Transactional
