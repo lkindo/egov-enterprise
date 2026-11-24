@@ -113,7 +113,7 @@ E2E가 방문한 경로에서 기능 단언 외의 브라우저 오류를 놓치
 
 ### 2. Silent HTTP API 에러 탐지 (Network Auditor)
 - **원리**: API fetch 실패(400 이상)나 리소스 로딩 오류가 발생하더라도 프론트엔드가 자체 에러 바운더리나 토스트 메시지로 우회하여 E2E 테스트 검증 요소를 통과하는 '무언의 에러(Silent API Failure)' 현상을 방지합니다.
-- **동작**: `response` 리스너가 4xx/5xx를, `requestfailed`가 전송 실패를 수집한다. ledger에 정확히 등록한 예상 오류 외에는 fixture 종료 시 실패하며 HTTP method·URL·리소스 타입으로 진단한다. 이미지·인증 API를 전역 제외하지 않는다. 브라우저가 취소한 화면 탐색/RSC 요청 등 제한된 기본 필터는 [error-detector.ts](../../frontend/e2e/fixtures/error-detector.ts)가 정본이다.
+- **동작**: `response` 리스너가 4xx/5xx를, `requestfailed`가 전송 실패를 수집한다. ledger에 정확히 등록한 예상 오류 외에는 fixture 종료 시 실패하며 HTTP method·URL·리소스 타입으로 진단한다. 이미지·인증 API를 전역 제외하지 않는다. 브라우저가 취소한 화면 탐색/RSC 요청, 새 문서가 커밋되며 끊긴 이전 문서의 읽기(GET·HEAD) 요청 등 제한된 기본 필터는 [error-detector.ts](../../frontend/e2e/fixtures/error-detector.ts)가 정본이다.
 
 ### 3. 경고 및 콘솔 로그 오류 식별 정책 (Zero-Tolerance Policy)
 - **개념**: E2E가 실제 방문한 화면의 예상하지 않은 `console.log`·`console.warn`을 결함 신호로 취급한다. 미방문 화면이나 운영 환경 전체의 무결성을 보장하지는 않는다.
