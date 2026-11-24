@@ -41,4 +41,21 @@ describe('login policy validation', () => {
     expect(onlyEnd.success).toBe(false);
     expect(onlyEnd.error?.issues[0]?.path).toEqual(['bgngTm']);
   });
+
+  it('시작 시간과 종료 시간이 같으면 종료 시간에 오류를 걸고, 자정 넘는 시간창은 허용한다', () => {
+    const equalWindow = loginPolicySchema.safeParse({
+      ...validPolicy,
+      bgngTm: '09:00',
+      endTm: '09:00',
+    });
+    expect(equalWindow.success).toBe(false);
+    expect(equalWindow.error?.issues[0]?.path).toEqual(['endTm']);
+    expect(equalWindow.error?.issues[0]?.message).toBe('종료 시간은 시작 시간과 다르게 입력해 주세요.');
+
+    expect(loginPolicySchema.safeParse({
+      ...validPolicy,
+      bgngTm: '22:00',
+      endTm: '06:00',
+    }).success).toBe(true);
+  });
 });

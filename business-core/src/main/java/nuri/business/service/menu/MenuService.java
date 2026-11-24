@@ -559,14 +559,28 @@ public class MenuService {
     }
 
     public List<MenuDto> selectMenuManageList(@NonNull BaseSearchDto searchVO) {
-        return menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc().stream()
+        Pageable pageable = Objects.requireNonNull(searchVO.toPageable(
+                Sort.by(Sort.Order.asc("upMenuSn"), Sort.Order.asc("menuOrdr"))));
+        String keyword = normalizedSearchKeyword(searchVO);
+        var page = keyword.isEmpty()
+                ? menuRepository.findAll(pageable)
+                : menuRepository.findByMenuNmContainingIgnoreCase(keyword, pageable);
+        return page.getContent().stream()
                 .map(this::toManageDto)
                 .collect(Collectors.toList());
     }
 
 
     public int selectMenuManageListTotCnt(@NonNull BaseSearchDto searchVO) {
-        return (int) menuRepository.count();
+        String keyword = normalizedSearchKeyword(searchVO);
+        return (int) (keyword.isEmpty()
+                ? menuRepository.count()
+                : menuRepository.countByMenuNmContainingIgnoreCase(keyword));
+    }
+
+    private static String normalizedSearchKeyword(BaseSearchDto searchVO) {
+        String keyword = searchVO.getSearchKeyword();
+        return keyword == null || keyword.isBlank() ? "" : keyword.trim();
     }
 
     public MenuDto selectMenuManage(Long menuNo) {

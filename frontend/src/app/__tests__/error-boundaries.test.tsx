@@ -125,6 +125,26 @@ describe('application error boundaries', () => {
     expect(view.getByText(digest)).toBeInTheDocument();
   });
 
+  it('global-error uses AA-contrast inverse-muted text and rose-600 recovery action without muted-foreground or raw slate', () => {
+    const view = renderGlobalError(Object.assign(new Error('failure'), { digest: '3441716416' }));
+    const description = view.getByText(/애플리케이션 전역 레이어에서/);
+    const hiddenDetailNotice = view.getByText('오류 세부 정보는 안전하게 숨겨졌습니다.');
+    const digestParagraph = view.getByText('3441716416').closest('p');
+    const retryButton = view.getByRole('button', { name: /시스템 리셋 및 복구/ });
+
+    expect(description).toHaveClass('text-surface-inverse-muted');
+    expect(description).not.toHaveClass('text-muted-foreground');
+    expect(description).not.toHaveClass('text-slate-300');
+    expect(hiddenDetailNotice).toHaveClass('text-surface-inverse-muted');
+    expect(hiddenDetailNotice).not.toHaveClass('text-muted-foreground');
+    expect(hiddenDetailNotice).not.toHaveClass('text-slate-300');
+    expect(digestParagraph).toHaveClass('text-surface-inverse-muted');
+    expect(digestParagraph).not.toHaveClass('text-muted-foreground');
+    expect(digestParagraph).not.toHaveClass('text-slate-300');
+    expect(retryButton).toHaveClass('bg-rose-600');
+    expect(retryButton).not.toHaveClass('bg-rose-500');
+  });
+
   it('[DIP B5 F11] digest 가 없으면 참조 번호 줄을 두지 않는다', () => {
     render(
       <QueryClientProvider client={new QueryClient()}>

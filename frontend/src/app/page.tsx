@@ -31,7 +31,7 @@ export default async function UnifiedDashboardPage({
         <div
           role="status"
           data-testid="dashboard-auth-error"
-          className="mx-auto mb-4 max-w-[var(--page-max-w)] rounded-[var(--radius-control)] border border-border bg-muted/40 px-4 py-3 text-sm text-secondary"
+          className="mx-auto mb-4 max-w-[var(--page-max-w)] rounded-[var(--radius-control)] border border-border bg-muted/40 px-4 py-3 text-sm text-secondary-foreground"
         >
           접근 권한이 없어 홈으로 이동했습니다.
         </div>

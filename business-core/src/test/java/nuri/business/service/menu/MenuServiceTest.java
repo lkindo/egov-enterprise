@@ -808,6 +808,8 @@ class MenuServiceTest {
         Menu none = Menu.builder().menuSn(2L).build();
         Menu cleared = Menu.builder().menuSn(3L).modernRoute("").build();
         when(menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc()).thenReturn(List.of(routed, none, cleared));
+        when(menuRepository.findAll(any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(routed, none, cleared)));
 
         List<MenuDto> menus = menuService.getAllMenus();
         assertThat(menus).extracting(MenuDto::getChkURL).containsExactly("/admin/system/menus", "#", "#");
@@ -816,6 +818,50 @@ class MenuServiceTest {
                 .extracting(MenuDto::getMenuNo, MenuDto::getChkURL)
                 .containsExactly(org.assertj.core.groups.Tuple.tuple(1L, "/admin/system/menus"),
                         org.assertj.core.groups.Tuple.tuple(2L, "#"), org.assertj.core.groups.Tuple.tuple(3L, "#"));
+    }
+
+    @Test
+    @DisplayName("selectMenuManageList / TotCnt 는 1-based 페이징과 키워드 검색을 적용한다")
+    void selectMenuManageList_appliesPagingAndSearchKeyword() {
+        Menu menu = Menu.builder().menuSn(10L).menuNm("공지사항").modernRoute("/boards").build();
+        nuri.business.domain.common.BaseSearchDto blankSearch = new nuri.business.domain.common.BaseSearchDto();
+        blankSearch.setPage(2);
+        blankSearch.setSize(25);
+        blankSearch.setSearchKeyword("   ");
+        when(menuRepository.findAll(any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(menu)));
+        when(menuRepository.count()).thenReturn(31L);
+
+        List<MenuDto> blankList = menuService.selectMenuManageList(blankSearch);
+        int blankTotal = menuService.selectMenuManageListTotCnt(blankSearch);
+
+        org.springframework.data.domain.Pageable expectedPageable = org.springframework.data.domain.PageRequest.of(
+                1, 25, org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Order.asc("upMenuSn"),
+                        org.springframework.data.domain.Sort.Order.asc("menuOrdr")));
+        verify(menuRepository).findAll(expectedPageable);
+        verify(menuRepository).count();
+        assertThat(blankList).extracting(MenuDto::getMenuNo).containsExactly(10L);
+        assertThat(blankTotal).isEqualTo(31);
+
+        nuri.business.domain.common.BaseSearchDto keywordSearch = new nuri.business.domain.common.BaseSearchDto();
+        keywordSearch.setPage(1);
+        keywordSearch.setSize(10);
+        keywordSearch.setSearchKeyword("  공지  ");
+        when(menuRepository.findByMenuNmContainingIgnoreCase(eq("공지"), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(menu)));
+        when(menuRepository.countByMenuNmContainingIgnoreCase("공지")).thenReturn(1L);
+
+        List<MenuDto> filteredList = menuService.selectMenuManageList(keywordSearch);
+        int filteredTotal = menuService.selectMenuManageListTotCnt(keywordSearch);
+
+        verify(menuRepository).findByMenuNmContainingIgnoreCase("공지", keywordSearch.toPageable(
+                org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Order.asc("upMenuSn"),
+                        org.springframework.data.domain.Sort.Order.asc("menuOrdr"))));
+        verify(menuRepository).countByMenuNmContainingIgnoreCase("공지");
+        assertThat(filteredList).extracting(MenuDto::getMenuNo).containsExactly(10L);
+        assertThat(filteredTotal).isEqualTo(1);
     }
 
     @Test

@@ -254,6 +254,10 @@ class TmplatInfoServiceTest {
         assertThat(result.getTmpltPath()).isEqualTo("/new");
         assertThat(result.getUseYn()).isEqualTo("N");
         assertThat(result.getVersion()).isZero();
+
+        org.mockito.InOrder inOrder = inOrder(templateRepository, templateMapper);
+        inOrder.verify(templateRepository).flush();
+        inOrder.verify(templateMapper).toDto(template);
     }
 
     @Test

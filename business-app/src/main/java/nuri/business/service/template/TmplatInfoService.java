@@ -105,6 +105,7 @@ public class TmplatInfoService extends BaseAbstractService implements TemplateAs
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.foundation.core.util.EntityVersions.assertCurrent(templateDto.getVersion(), template.getVersion());
         template.update(templateDto.getTmpltNm(), templateDto.getTmpltSeCd(), templateDto.getTmpltPath(), templateDto.getUseYn());
+        templateRepository.flush();
         return templateMapper.toDto(template);
     }
 

@@ -245,6 +245,25 @@ class LoginPolicyManageServiceTest {
         verify(loginPolicyRepository, never()).save(any());
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"09:00,09:00", "0900,09:00", "00:00,0000"})
+    @DisplayName("접속 허용 시간은 시작과 종료가 같으면 등록·수정 모두 400 이고 저장하지 않는다")
+    void timeWindowMustNotHaveEqualStartAndEnd(String start, String end) {
+        LoginPolicyDto dto = new LoginPolicyDto();
+        dto.setUserId("USER1");
+        dto.setBgngTm(start);
+        dto.setEndTm(end);
+
+        authenticate("policy-manager", "LOGIN_POL_UPDATE");
+        BusinessException update = assertThrows(BusinessException.class, () -> loginPolicyManageService.updateLoginPolicy(dto));
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, update.getErrorCode());
+        authenticate("policy-manager", "LOGIN_POL_CREATE");
+        BusinessException insert = assertThrows(BusinessException.class, () -> loginPolicyManageService.insertLoginPolicy(dto));
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, insert.getErrorCode());
+        verify(loginPolicyRepository, never()).findById(any());
+        verify(loginPolicyRepository, never()).save(any());
+    }
+
     @Test
     @DisplayName("로그인 정책 수정 테스트 - 성공")
     void updateLoginPolicySuccessTest() {
@@ -539,6 +558,18 @@ class LoginPolicyManageServiceTest {
         given(loginPolicyRepository.findById("U2"))
                 .willReturn(Optional.of(LoginPolicy.builder().userId("U2").lmtYn("N").bgngTm("").endTm("").build()));
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("U2", "127.0.0.1"));
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"09:00,09:00", "0900,0900", "0900,09:00"})
+    @DisplayName("기존에 저장된 시작·종료 동일 시간창 정책은 GAP-SEC-006 managerCount() 및 업그레이드 호환을 위해 허용을 유지한다")
+    void timeWindow_legacyEqualStartAndEndRemainsCompatibleWithManagerCount(String start, String end) {
+        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow(start, end)));
+
+        for (int hour : new int[] { 9, 12 }) {
+            fixClockAt(hour, 0);
+            assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("U1", "127.0.0.1"));
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────

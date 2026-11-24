@@ -71,6 +71,8 @@ export const loginPolicySchema = LoginPolicyDtoSchema.extend({
     ctx.addIssue({ code: 'custom', path: ['endTm'], message: '종료 시간도 입력하거나 시작 시간을 비워 주세요.' });
   } else if (!hasStart && hasEnd) {
     ctx.addIssue({ code: 'custom', path: ['bgngTm'], message: '시작 시간도 입력하거나 종료 시간을 비워 주세요.' });
+  } else if (hasStart && hasEnd && values.bgngTm === values.endTm) {
+    ctx.addIssue({ code: 'custom', path: ['endTm'], message: '종료 시간은 시작 시간과 다르게 입력해 주세요.' });
   }
 });
 

@@ -203,6 +203,28 @@ class MailServiceTest {
                 .isInstanceOf(BusinessException.class);
     }
 
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = { "   ", "\t" })
+    @DisplayName("메일 발송·이벤트 발송 — 제목 또는 본문이 null/공백이면 저장·발송 전에 400 으로 거부한다")
+    void sendMail_rejectsBlankSubjectOrBodyBeforeDispatch(String blank) {
+        SentMailDto blankSubject = SentMailDto.builder().sj(blank).emailCn("본문")
+                .recptnPerson("receiver@test.com").build();
+        SentMailDto blankBody = SentMailDto.builder().sj("제목").emailCn(blank)
+                .recptnPerson("receiver@test.com").build();
+
+        for (SentMailDto invalid : List.of(blankSubject, blankBody)) {
+            assertThatThrownBy(() -> mailService.sendMail("user1", invalid))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+            assertThatThrownBy(() -> mailService.sendToResolvedAddress("user1", invalid, "receiver@test.com", "수신자"))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        verifyNoInteractions(sentMailRepository, durableWork, userContactService);
+    }
+
     @Test
     @DisplayName("🔐 본문은 발신자 본인에게만 응답한다 — MAIL_READ_ALL 관리자에게도 싣지 않는다 (GAP-DOMAIN-001 ①)")
     void responseCarriesBodyOnlyForSender() {

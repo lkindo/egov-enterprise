@@ -22,6 +22,11 @@ public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRowLockRe
 
     List<Menu> findAllByOrderByUpMenuSnAscMenuOrdrAsc();
 
+    org.springframework.data.domain.Page<Menu> findByMenuNmContainingIgnoreCase(String menuNm,
+            org.springframework.data.domain.Pageable pageable);
+
+    long countByMenuNmContainingIgnoreCase(String menuNm);
+
     int countByUpMenuSn(Long upMenuSn);
 
     // [V2_13 결속] 일괄 삭제 시 "삭제 집합 밖의 자식" 존재 검사 (자기참조 FK 가드)

@@ -181,6 +181,24 @@ class TemplateCreationIntegrityIntegrationTest {
                 .containsExactly("winner");
     }
 
+    @Test
+    void updatingTemplateReturnsIncrementedVersionForConsecutiveSave() {
+        service.insertTmplatInfo(template("initial"));
+        authenticate("TEMPLATE_UPDATE");
+
+        TemplateDto first = service.updateTmplatInfo(templateId, TemplateDto.builder()
+                .tmpltNm("first update").tmpltSeCd("TMPT01").tmpltPath("/first").useYn("Y").version(0).build());
+        assertThat(first.getVersion()).isEqualTo(1);
+
+        TemplateDto second = service.updateTmplatInfo(templateId, TemplateDto.builder()
+                .tmpltNm("second update").tmpltSeCd("TMPT01").tmpltPath("/second").useYn("Y")
+                .version(first.getVersion()).build());
+        assertThat(second.getVersion()).isEqualTo(2);
+        assertThat(jdbc.queryForMap("SELECT tmplt_nm, version FROM tb_tmplt_info WHERE tmplt_id=?", templateId))
+                .containsEntry("tmplt_nm", "second update")
+                .containsEntry("version", 2);
+    }
+
     private TemplateDto template(String name) {
         return TemplateDto.builder().tmpltId(templateId).tmpltNm(name).tmpltSeCd("TMPT01")
                 .tmpltPath("/" + name).useYn("Y").build();

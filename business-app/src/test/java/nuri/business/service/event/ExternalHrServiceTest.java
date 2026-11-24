@@ -360,7 +360,10 @@ class ExternalHrServiceTest {
         assertThat(entity.getLastMdfrId()).isEqualTo("admin_actor");
         assertThat(result.getLastMdfrId()).isEqualTo("admin_actor");
         assertThat(result.getVersion()).isZero();
-        verify(sensitiveAuditPort).recordMutation("EXTERNAL_HR_UPDATE", "EXTERNAL_HR:1:HR1");
+
+        org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(externalHrRepository, sensitiveAuditPort);
+        inOrder.verify(externalHrRepository).flush();
+        inOrder.verify(sensitiveAuditPort).recordMutation("EXTERNAL_HR_UPDATE", "EXTERNAL_HR:1:HR1");
     }
 
     @Test
