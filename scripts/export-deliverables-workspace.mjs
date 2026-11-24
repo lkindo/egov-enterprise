@@ -506,16 +506,24 @@ export function buildContextSnapshot(inputs, options = {}) {
   };
 }
 
+const contextTargetFields = {
+  capability: ['capabilities', 'id'], screen: ['screens', 'route'], interface: ['interfaces', 'id'],
+  table: ['tables', 'id'], gate: ['gates', 'id'], 'migration-mapping': ['migrationMappings', 'id'],
+};
+const normalizeContextTarget = (kind, id) => ['table', 'migration-mapping'].includes(kind) ? String(id).toLowerCase() : String(id);
+
+export function findContextTarget(context, kind, id) {
+  if (!Object.hasOwn(contextTargetFields, kind)) return null;
+  const [catalog, field] = contextTargetFields[kind];
+  const target = normalizeContextTarget(kind, id);
+  return (context?.[catalog] ?? []).find(entry => normalizeContextTarget(kind, entry[field]) === target) ?? null;
+}
+
 /** Bind each requirement only to the catalog entries that it actually references. */
 export function computeContextBindings(pack, contextSnapshot) {
   const canonical = (value) => Array.isArray(value) ? value.map(canonical)
     : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])])) : value;
-  const catalogs = {
-    capability: [contextSnapshot?.capabilities ?? [], 'id'], screen: [contextSnapshot?.screens ?? [], 'route'],
-    interface: [contextSnapshot?.interfaces ?? [], 'id'], table: [contextSnapshot?.tables ?? [], 'id'],
-    gate: [contextSnapshot?.gates ?? [], 'id'], 'migration-mapping': [contextSnapshot?.migrationMappings ?? [], 'id'],
-  };
-  const normalize = (kind, id) => ['table', 'migration-mapping'].includes(kind) ? String(id).toLowerCase() : String(id);
+
   return Object.fromEntries((pack?.businessRequirements ?? []).map((req) => {
     const modules = [...new Set(req.moduleCandidates ?? [])].sort().map((id) => {
       const entry = (contextSnapshot?.modules ?? []).find((module) => module.id === id);
@@ -526,11 +534,9 @@ export function computeContextBindings(pack, contextSnapshot) {
       return [id, semantic];
     });
     const targetKeys = new Map((pack.traceLinks ?? []).filter((link) => link.requirementId === req.id)
-      .map((link) => [`${link.targetKind}\0${normalize(link.targetKind, link.targetId)}`, [link.targetKind, normalize(link.targetKind, link.targetId)]]));
-    const targets = [...targetKeys.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, [kind, id]]) => {
-      const [entries, field] = catalogs[kind] ?? [[], 'id'];
-      return [kind, id, entries.find((entry) => normalize(kind, entry[field]) === id) ?? null];
-    });
+      .map((link) => [`${link.targetKind}\0${normalizeContextTarget(link.targetKind, link.targetId)}`, [link.targetKind, normalizeContextTarget(link.targetKind, link.targetId)]]));
+    const targets = [...targetKeys.entries()].sort(([a], [b]) => a.localeCompare(b))
+      .map(([, [kind, id]]) => [kind, id, findContextTarget(contextSnapshot, kind, id)]);
     return [req.id, sha256(JSON.stringify(canonical(['requirements-context-v1', modules, targets])))];
   }));
 }
@@ -1569,6 +1575,17 @@ export function validateBacklogPack(pack, contextSnapshot = null, { sensitiveDat
   });
 }
 
+export function storyDevelopmentProblems(item, acceptanceCriteria) {
+  const problems = [];
+  if (!ARCHETYPE_CATALOG.some(archetype => archetype.id === item.archetype)) problems.push('a screen archetype is required');
+  const cards = Array.isArray(item.decisionCards) ? item.decisionCards : [];
+  for (const { id } of DECISION_CARD_AXES) {
+    if (!cards.some(card => new RegExp('^' + id + '\\s*:', 'u').test(card) && String(card).split(':').slice(1).join(':').trim())) problems.push(id + ' decision is required');
+  }
+  if (!acceptanceCriteria.some(ac => ac.polarity === 'allow') || !acceptanceCriteria.some(ac => ac.polarity === 'forbid')) problems.push('both Green and Red acceptance criteria are required');
+  return problems;
+}
+
 /** Draft schema validity is intentionally weaker than a development handoff. */
 export function validateDevelopmentReadiness(pack, contextSnapshot = null, options = {}) {
   const structure = validateBacklogPack(pack, contextSnapshot, options);
@@ -1619,10 +1636,7 @@ export function validateDevelopmentReadiness(pack, contextSnapshot = null, optio
     const acs = pack.acceptanceCriteria.filter((ac) => ac.workItemId === item.id);
     if (!acs.length) errors.push(`${tag}: acceptance criteria are required`);
     if (item.workItemType === 'story') {
-      if (!ARCHETYPE_CATALOG.some((archetype) => archetype.id === item.archetype)) errors.push(`${tag}: a screen archetype is required`);
-      const cards = Array.isArray(item.decisionCards) ? item.decisionCards : [];
-      for (const { id } of DECISION_CARD_AXES) if (!cards.some((card) => new RegExp(`^${id}\\s*:`,'u').test(card) && String(card).split(':').slice(1).join(':').trim())) errors.push(`${tag}: ${id} decision is required`);
-      if (!acs.some((ac) => ac.polarity === 'allow') || !acs.some((ac) => ac.polarity === 'forbid')) errors.push(`${tag}: both Green and Red acceptance criteria are required`);
+      for (const problem of storyDevelopmentProblems(item, acs)) errors.push(`${tag}: ${problem}`);
     }
   }
   return { valid: errors.length === 0, errors, warnings };

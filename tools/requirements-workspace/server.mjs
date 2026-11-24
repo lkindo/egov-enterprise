@@ -107,6 +107,15 @@ const messages = {
   STUDIO_ANSWER_NO_ROOM: '답을 적을 자리가 없는 항목이 있습니다(세부 내용과 메모가 모두 한도에 찼습니다). 아무것도 닫지 않았습니다. 그 항목을 정리한 뒤 다시 답해 주세요.',
   STUDIO_ISSUE_NOT_GROUPED: '이 질문은 다른 질문과 묶여 있지 않습니다.',
   STUDIO_GROUP_CHANGED: '같은 것을 묻는 질문의 묶음이 화면에 보인 것과 달라졌습니다. 아무것도 닫지 않았습니다. 지금 묶음을 확인한 뒤 다시 해 주세요.',
+  STUDIO_HANDOFF_BLOCKED: '아직 착수 조건이 남아 있습니다. 개발 인계를 다시 확인해 주세요.',
+  STUDIO_HANDOFF_STALE: '인계한 뒤 관련 입력이나 저장소 원장이 바뀌었습니다. 최신 조건을 확인해 주세요.',
+  STUDIO_HANDOFF_ACTIVE: '진행 중인 인계를 먼저 마치거나 보류해 주세요.',
+  STUDIO_HANDOFF_PAUSED: '인계가 정지되어 있습니다. 재개한 뒤 시작해 주세요.',
+  STUDIO_HANDOFF_DEPENDENCY_CYCLE: '선행 스토리가 서로를 기다립니다. 순서를 다시 확인해 주세요.',
+  STUDIO_HANDOFF_STORY_NOT_FOUND: '현재 스토리를 찾지 못했습니다. 목록을 새로 불러와 주세요.',
+  STUDIO_HANDOFF_NOT_ACTIVE: '이 스토리의 활성 인계가 없습니다. 현재 스토리를 확인해 주세요.',
+  STUDIO_HANDOFF_REPORTED: '현재 버전의 개발 결과가 이미 기록되었습니다.',
+  STUDIO_HANDOFF_INVALID: '저장된 개발 인계 자료의 형식을 확인하지 못했습니다.',
   STUDIO_BASELINE_EMPTY: '확정된 요구사항이 있어야 기준선을 만들 수 있습니다.',
   STUDIO_CAPACITY: '작업공간 하나에 담을 수 있는 항목 수를 넘었습니다. 업무 범위를 나누어 별도 작업공간에서 진행해 주세요.',
   STUDIO_DOCUMENT_NOT_FOUND: '지금은 만들 수 없는 문서입니다. 해당 산출물을 켰는지 확인해 주세요.',
@@ -160,7 +169,7 @@ export async function startRequirementsServer({ workspace, root = ROOT, port = 8
       if (request.method === 'GET' && url.pathname === '/api/state') { json(response, 200, await engine.state()); return; }
       if (request.method === 'GET' && url.pathname === '/api/studio') { json(response, 200, engine.studio.view()); return; }
       const studioDocument = url.pathname.match(/^\/api\/studio\/documents\/([A-Za-z0-9-]{1,80})$/);
-      if (request.method === 'GET' && studioDocument) { json(response, 200, engine.studio.document(studioDocument[1])); return; }
+      if (request.method === 'GET' && studioDocument) { json(response, 200, await engine.studio.document(studioDocument[1])); return; }
       const artifact = url.pathname.match(/^\/api\/artifacts\/([a-zA-Z0-9-]+)$/);
       if (request.method === 'GET' && artifact) { json(response, 200, engine.artifact(artifact[1])); return; }
       if (!['/api/action', '/api/ingest'].includes(url.pathname)) fail('NOT_FOUND', 404);

@@ -304,7 +304,7 @@ function viewPlan() {
   const quality = confirmed.filter(item => view.catalog.quality.includes(item.fields.category)), outside = confirmed.filter(item => !view.catalog.quality.includes(item.fields.category) && !view.catalog.development.includes(item.fields.category));
   const changes = targets + view.planOrphans;
   const start = `<button type="button" class="button" data-a="plan" ${changes && !view.active ? '' : 'disabled'}>${view.plan?.stories.length ? `요구사항 변경 ${changes}건 반영` : '에픽·스토리 만들기'}</button>`;
-  if (!view.plan?.stories.length) return `<section class="panel panel-body st-stack"><h2>에픽·스토리</h2><p>확정한 요구사항만으로 에픽과 스토리, 인수조건을 만듭니다. 초안 상태인 요구사항은 포함하지 않습니다.</p>
+  if (!view.plan?.stories.length) return `<section class="panel panel-body st-stack"><h2>에픽·스토리</h2>${handoffQueue()}<p>확정한 요구사항만으로 에픽과 스토리, 인수조건을 만듭니다. 초안 상태인 요구사항은 포함하지 않습니다.</p>
     <div class="st-kv"><div><b>${targets}</b><span>스토리로 만들 확정 요구사항</span></div><div><b>${quality.length}</b><span>품질 기준으로 붙는 요구사항</span></div><div><b>${drafts}</b><span>초안 (포함하지 않음)</span></div><div><b>${esc(view.baselines.at(-1)?.id ?? '없음')}</b><span>기준선</span></div></div>
     <div class="row-actions">${start}</div><p class="muted st-small">스토리를 만들 때는 요구사항 몇 건과 거기에 연결된 화면·엔터티·프로세스 항목만 AI에 보냅니다. 기능·인터페이스·데이터 요구사항이 스토리가 되고, 성능·보안·품질·제약은 모든 스토리에 붙는 품질 기준이 됩니다.</p></section>`;
   const stories = view.plan.stories;
@@ -314,10 +314,12 @@ function viewPlan() {
       <span class="st-meta">${badge(itemOf(entry.reqId)?.number ?? entry.reqId, 'outline')}${entry.stale ? badge('요구사항이 바뀜', 'amber') : ''}<span class="muted st-small">인수조건 ${entry.green.length + entry.red.length}개</span></span></button>`).join('')}</div>` : ''; }).join('');
   return `<section class="panel"><div class="panel-head"><div><h2>에픽·스토리</h2><small>에픽 ${view.plan.epics.length}개 · 스토리 ${stories.length}건 · 초안 요구사항 ${drafts}건은 포함하지 않음</small></div>
       <div class="row-actions">${changes ? badge(`새로 확정되거나 바뀐 요구사항 ${targets}건${view.planOrphans ? ` · 제외·취소된 요구사항의 스토리 ${view.planOrphans}건` : ''}`, 'amber') : ''}${start}<button type="button" class="button small secondary" data-a="document" data-v="stories">에픽·스토리 문서</button></div></div></section>
+  ${handoffQueue()}
   <div class="st-split"><section class="panel panel-body st-stack">${epics}
       <h3>모든 스토리에 적용하는 품질 기준</h3><div class="st-chips">${quality.map(item => itemButton(item, 'go-requirement')).join('') || '<span class="muted st-small">확정된 성능·보안·품질·제약 요구사항이 없습니다.</span>'}</div>
       ${outside.length ? `<h3>개발 범위 밖 (사업 관리·지원)</h3><div class="st-chips">${outside.map(item => itemButton(item, 'go-requirement')).join('')}</div>` : ''}</section>
     <section class="panel panel-body st-stack"><div class="st-spread"><div class="st-row"><span class="st-code">${esc(story.id)}</span><h2>${esc(story.title)}</h2></div><button type="button" class="button small" data-a="document" data-v="package-${esc(story.id)}">개발 패키지 보기</button></div>
+      ${handoffButton('handoff', story.id, '개발 인계 확인')}
       ${story.stale ? '<p class="st-small st-missing">이 스토리를 쓴 뒤 요구사항이 바뀌었거나 확정에서 빠졌습니다. 위의 반영 단추를 누르면 다시 쓰거나 지웁니다.</p>' : ''}
       <p>${badge('사용자')} ${esc(story.role)} ${badge('하려는 일')} ${esc(story.want)}</p>
       <div><h3>인수조건</h3><ul class="st-list">${story.green.map(line => `<li>${badge('통과', 'green')} ${esc(line)}</li>`).join('')}${story.red.map(line => `<li>${badge('차단', 'red')} ${esc(line)}</li>`).join('')}</ul></div>
@@ -449,6 +451,135 @@ async function documentDialog(id) {
   openDialog(file.filename, `<p class="muted">현재 저장된 내용으로 만든 문서입니다. 내려받은 파일에는 문서 원문이 들어 있을 수 있으니 밖으로 보내기 전에 확인해 주세요.</p><div class="row-actions"><button type="button" class="button small" data-a="download">내려받기</button><button type="button" class="button small secondary" data-a="copy">복사</button></div><pre class="data-preview st-document" id="document-text" tabindex="0" role="region" aria-label="문서 내용">${esc(file.content.replace(/^﻿/, ''))}</pre>`, { wide: true });
   $('#dialog').dataset.filename = file.filename; $('#dialog').dataset.type = file.type; documentDialog.content = file.content;
 }
+
+const handoffNames = {
+  blocked: '개발 인계 대기', ready: '개발 인계 가능', active: '개발 인계 중',
+  stale: '변경됨 · 인계 재확인 필요', reported: '개발 결과 기록됨',
+};
+function handoffProblem(problem) {
+  const item = itemOf(problem.itemId);
+  const name = item?.name ?? problem.itemId ?? '';
+  switch (problem.code) {
+    case 'story-changed': return '요구사항 변경을 스토리에 반영해 주세요.';
+    case 'baseline': return '현재 내용을 확정하고 기준선에 담아 주세요. ' + name;
+    case 'evidence': return '현재 원문 근거를 확인해 주세요. ' + name;
+    case 'setup': return '설계 결정과 저장소 대상을 입력해 주세요.';
+    case 'decision': return '열린 결정에 답해 주세요. ' + name + ' · ' + problem.issueId;
+    case 'proposal': return '변경 제안을 검토해 주세요. ' + name;
+    case 'repository-target': return '저장소 원장과 대상 구분을 확인해 주세요. ' + problem.target.kind + ' · ' + problem.target.id;
+    case 'dependency': return '선행 스토리의 현재 개발 결과를 확인해 주세요. ' + problem.storyId;
+    default: return '화면 유형, 결정 카드와 통과·차단 인수조건을 확인해 주세요.';
+  }
+}
+function handoffQueue() {
+  const { active, paused, stopAfterCurrent } = view.handoff;
+  const hasStory = active && view.plan?.stories.some(story => story.id === active.storyId);
+  if (!active && !paused) return '';
+  const text = paused ? '개발 인계가 정지되어 있습니다.' : stopAfterCurrent
+    ? active.storyId + ' 인계를 마치면 정지합니다.' : active.storyId + ' 개발 인계 중';
+  return `<div class="st-row"><span role="status">${esc(text)}</span>${paused || stopAfterCurrent
+    ? '<button type="button" class="button small secondary" data-a="handoff-resume">인계 재개</button>'
+    : '<button type="button" class="button small secondary" data-a="handoff-pause">현재 스토리 후 정지</button>'}
+    ${active && !hasStory ? '<button type="button" class="button small secondary" data-a="handoff-release">이전 스토리 인계 보류</button>' : ''}</div>`;
+}
+async function inspectHandoff(storyId) {
+  return post('/api/action', { revision: view.revision, action: 'studio.handoff.inspect', payload: { storyId } });
+}
+function handoffButton(action, storyId, name) {
+  return `<button type="button" class="button small secondary" data-a="${action}" data-v="${esc(storyId)}">${esc(name)}</button>`;
+}
+async function handoffDialog(storyId) {
+  const checked = await inspectHandoff(storyId);
+  const active = checked.active?.storyId === storyId;
+  const canStart = checked.status === 'ready' && !checked.active && !checked.paused && !view.readOnly;
+  const setup = checked.setup;
+  const common = `<p><strong>${handoffNames[checked.status]}</strong> · ${esc(storyId)}</p>
+    ${checked.blockers.length ? '<ul class="st-list">' + checked.blockers.map(problem => '<li>' + esc(handoffProblem(problem)) + '</li>').join('') + '</ul>' : ''}
+    ${checked.result ? `<p class="st-small">마지막 결과 · ${esc(checked.result.commit.slice(0, 12))} · ${esc(checked.result.evidence)}</p>` : ''}
+    ${setup ? `<details><summary>저장한 설계 결정과 저장소 대상</summary><ul class="st-list">
+      ${setup.decisions.map((decision, index) => `<li>${esc(checked.axes[index].id)} · ${esc(decision)}</li>`).join('')}
+      ${setup.targets.map(target => `<li>${esc(target.kind)} · ${esc(target.id)} · ${target.intent === 'existing' ? '기존' : '신규 계획'}</li>`).join('')}
+      </ul></details>` : ''}
+    ${setup?.followUp ? `<p>합성 자료 ${esc(setup.followUp.fixture)} · 로컬 범위 ${esc(setup.followUp.localScope)}<br>후속 확인 ${esc(setup.followUp.remaining)} · ${esc(setup.followUp.owner)}</p>` : ''}
+    ${checked.paused ? '<p class="muted">다음 인계를 시작하려면 인계를 재개해 주세요.</p>' : ''}
+    ${checked.active && !active ? '<p class="muted">' + esc(checked.active.storyId) + ' 인계를 먼저 마치거나 보류해 주세요.</p>' : ''}
+    <div class="row-actions">
+      ${active ? `${checked.status === 'active' ? handoffButton('document', 'handoff-' + storyId, '승인된 작업 패키지') + handoffButton('handoff-finish', storyId, '개발 결과 기록') : ''}
+        ${handoffButton('handoff-release', storyId, '인계 보류')}` : view.readOnly ? '' : handoffButton('handoff-configure', storyId, '인계 조건 입력')}
+    </div>`;
+  openDialog('개발 인계 확인', common, {
+    wide: true, submit: '개발 인계 시작',
+    onSubmit: canStart ? async () => {
+      await submitHandoff(checked.revision, 'start', { storyId, digest: checked.digest });
+      await handoffDialog(storyId);
+      return false;
+    } : null,
+  });
+}
+const handoffValue = (data, name) => String(data.get(name) ?? '').trim();
+async function submitHandoff(revision, action, payload, message) {
+  view = await post('/api/action', { revision, action: 'studio.handoff.' + action, payload });
+  render();
+  schedule();
+  if (message) toast(message);
+}
+async function configureHandoff(storyId) {
+  const checked = await inspectHandoff(storyId), setup = checked.setup;
+  const options = (values, selected) => values.map(entry => `<option value="${esc(entry.id)}" ${selected(entry.id) ? 'selected' : ''}>${esc(entry.name)}</option>`).join('');
+  const input = (name, title, value = '', max = 500) => field(name, title, `<input type="text" name="${name}" maxlength="${max}" value="${esc(value)}">`);
+  const text = setup?.targets.map(target => [target.kind, target.id, target.intent].join(' | ')).join('\n') ?? '';
+  const stories = view.plan?.stories.filter(story => story.id !== storyId).map(story => ({ id: story.id, name: story.id + ' · ' + story.title })) ?? [];
+  const followUp = setup?.followUp;
+  openDialog('인계 조건 입력', `${field('archetype', '화면 유형', '<select name="archetype"><option value="">선택</option>' + options(checked.archetypes, id => id === setup?.archetype) + '</select>')}
+    ${checked.axes.map((axis, index) => input('decision-' + index, axis.id + ' ' + axis.axis, setup?.decisions[index])).join('')}
+    ${field('targets', '저장소 대상', '<textarea name="targets" rows="3" maxlength="3000">' + esc(text) + '</textarea>', '한 줄에 한 대상. 예: screen | /reservations | existing. 신규 대상은 planned. 종류: ' + checked.targetKinds.join(', '))}
+    ${stories.length ? field('dependencies', '선행 스토리', '<select name="dependencies" multiple size="4">' + options(stories, id => setup?.dependencies.includes(id)) + '</select>', '여러 개를 선택할 수 있습니다.') : ''}
+    <details ${followUp ? 'open' : ''}><summary>합성 자료와 후속 확인</summary>
+      ${input('fixture', '합성 자료', followUp?.fixture)}${input('localScope', '로컬 검증 범위', followUp?.localScope)}
+      ${input('remaining', '남은 확인', followUp?.remaining)}${input('owner', '후속 확인 담당자', followUp?.owner, 120)}
+    </details>`, {
+    wide: true, onSubmit: async data => {
+      const archetype = handoffValue(data, 'archetype');
+      const decisions = checked.axes.map((_, index) => handoffValue(data, 'decision-' + index));
+      const targets = handoffValue(data, 'targets').split('\n').filter(line => line.trim()).map(line => {
+        const parts = line.split('|').map(part => part.trim());
+        if (parts.length !== 3 || !checked.targetKinds.includes(parts[0]) || !parts[1] || !['existing', 'planned'].includes(parts[2])) throw new Error('저장소 대상은 종류, 식별자, 기존·신규 구분을 모두 입력해 주세요.');
+        const [kind, id, intent] = parts;
+        return { kind, id, intent };
+      });
+      if (!archetype || decisions.some(decision => !decision) || !targets.length) throw new Error('화면 유형과 결정 다섯 가지, 저장소 대상을 입력해 주세요.');
+      const followUp = Object.fromEntries(['fixture', 'localScope', 'remaining', 'owner'].map(name => [name, handoffValue(data, name)]));
+      const hasFollowUp = Object.values(followUp).some(Boolean);
+      if (hasFollowUp && !Object.values(followUp).every(Boolean)) throw new Error('합성 자료와 후속 확인의 네 항목을 모두 입력해 주세요.');
+      await submitHandoff(checked.revision, 'configure', { storyId, archetype, decisions, targets, dependencies: data.getAll('dependencies'), ...(hasFollowUp ? { followUp } : {}) });
+      await handoffDialog(storyId);
+      return false;
+    },
+  });
+}
+async function finishHandoff(storyId) {
+  const checked = await inspectHandoff(storyId);
+  if (checked.status !== 'active') { await handoffDialog(storyId); return; }
+  openDialog('개발 결과 기록', `<p>개발 결과와 검증 근거의 위치를 기록합니다. 기관 인수 판정은 검수에서 기록합니다.</p>
+    ${field('commit', '결과 커밋 SHA', '<input type="text" name="commit" maxlength="40" spellcheck="false">')}
+    ${field('evidence', '검증 근거 참조', '<input type="text" name="evidence" maxlength="500">', '시험 기록, PR 또는 CI 결과를 확인할 수 있는 참조를 입력해 주세요.')}`, {
+    submit: '결과 기록', onSubmit: async data => {
+      const commit = handoffValue(data, 'commit').toLowerCase(), evidence = handoffValue(data, 'evidence');
+      if (!/^[a-f0-9]{40}$/.test(commit) || !evidence) throw new Error('40자리 커밋 SHA와 검증 근거를 입력해 주세요.');
+      await submitHandoff(checked.revision, 'finish', { storyId, digest: checked.digest, commit, evidence }, '개발 결과를 기록했습니다.');
+    },
+  });
+}
+function releaseHandoff() {
+  const active = view.handoff.active;
+  if (!active) return;
+  const revision = view.revision;
+  openDialog('개발 인계 보류', '<p>' + esc(active.storyId) + '의 인계를 보류하고 다음 착수를 정지합니다. 개발 브랜치의 변경은 담당자가 확인합니다.</p>', {
+    submit: '보류', onSubmit: async () => submitHandoff(revision, 'release', { storyId: active.storyId, digest: active.run.digest }, '개발 인계를 보류했습니다.'),
+  });
+}
+
+
 function uploadDialog() {
   openDialog('문서 추가', `${field('files', '문서 파일', '<input type="file" name="files" multiple required>', '여러 개를 한 번에 고를 수 있습니다. 형식과 종류는 가리지 않으며 파일 하나는 20MB까지입니다.')}
     <div class="fields-row">${field('sourceType', '문서 종류', `<select name="sourceType">${SOURCE_TYPES.map(([value, name]) => `<option value="${value}">${esc(name)}</option>`).join('')}</select>`)}${field('classification', '보안 분류', `<select name="classification">${CLASSIFICATIONS.map(([value, name]) => `<option value="${value}">${esc(name)}</option>`).join('')}</select>`)}</div>
@@ -547,6 +678,13 @@ async function handle(action, value) {
     case 'baseline': { const confirmed = requirements().filter(entry => entry.status === 'confirmed').length, drafts = requirements().filter(entry => entry.status === 'draft').length;
       openDialog('기준선 만들기', `<p>지금 확정된 요구사항 <strong>${confirmed}건</strong>과 확정된 산출물 항목을 기준선으로 묶어 보관합니다. 초안 ${drafts}건은 들어가지 않고 계속 고도화할 수 있습니다.</p>${field('name', '기준선 이름', `<input type="text" name="name" value="${view.baselines.length ? '변경 반영' : '1차 요구사항 확정'}" required>`)}<p class="muted">기준선 뒤에도 문서를 넣을 수 있습니다. 기준선에 든 내용이 바뀌면 ‘이후 변경’으로 표시하고 다음 기준선에서 묶습니다.</p>`, { submit: '만들기', onSubmit: async data => submitAction('studio.baseline', { name: String(data.get('name') ?? '') }, '기준선을 만들었습니다.') }); break; }
     case 'enable': await act('studio.enable', { type: value, enabled: true }, (view.pending.waiting[value] ?? 0) ? '켰습니다. ‘AI 분석 진행’을 누르면 표시해 둔 조각으로 초안을 만듭니다.' : '켰습니다. 관련 문서를 넣거나 직접 작성해 주세요.'); selected.type = value; render(); break;
+    case 'handoff': case 'handoff-configure': case 'handoff-finish':
+      try { await ({ handoff: handoffDialog, 'handoff-configure': configureHandoff, 'handoff-finish': finishHandoff })[action](value); }
+      catch (error) { toast(error.message); }
+      break;
+    case 'handoff-pause': await act('studio.handoff.pause', {}, '현재 스토리 이후 인계를 정지합니다.'); break;
+    case 'handoff-resume': await act('studio.handoff.resume', {}, '인계를 재개했습니다.'); break;
+    case 'handoff-release': releaseHandoff(); break;
     case 'document': await documentDialog(value); break;
     case 'download': { const dialog = $('#dialog'), url = URL.createObjectURL(new Blob([documentDialog.content], { type: dialog.dataset.type })), link = document.createElement('a'); link.href = url; link.download = dialog.dataset.filename; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); break; }
     case 'copy': try { await navigator.clipboard.writeText(documentDialog.content.replace(/^﻿/, '')); toast('복사했습니다.'); } catch { const range = document.createRange(); range.selectNodeContents($('#document-text')); getSelection().removeAllRanges(); getSelection().addRange(range); toast('본문을 선택했습니다. 복사 단축키를 눌러 주세요.'); } break;
