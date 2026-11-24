@@ -244,7 +244,10 @@ export function createRequirementsEngine({ store, contextProvider, root, aiRunne
   async function action(revision, actionName, payload) {
     if (typeof actionName !== 'string' || !payload || typeof payload !== 'object' || Array.isArray(payload)) fail('INVALID_REQUEST');
     if (actionName.startsWith('source.ingest') || actionName === 'source.reingest') { await imports.action(revision, actionName, payload); return state(); }
-    if (actionName.startsWith('studio.handoff.')) return handoff.action(revision, actionName, payload);
+    if (actionName.startsWith('studio.handoff.')) {
+      if (actionName === 'studio.handoff.start' && (studio.active || workflow.active || imports.active)) fail('AI_BUSY');
+      return handoff.action(revision, actionName, payload);
+    }
     if (actionName.startsWith('studio.')) return studio.action(actionName, payload);
     if (actionName.startsWith('ai.')) { if (actionName === 'ai.start' && imports.active) fail('AI_DOCUMENTS_PROCESSING'); if (actionName === 'ai.start' && studio.active) fail('AI_BUSY'); await workflow.action(revision, actionName, payload); return state(); }
     const previous = store.read();

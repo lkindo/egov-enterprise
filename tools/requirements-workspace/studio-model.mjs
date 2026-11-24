@@ -545,8 +545,11 @@ export function crossChecks(studio) {
 }
 
 /** The confirmed records a baseline freezes. The caller archives this and records the reference. */
+export function baselineItem({ id, kind, number, name, fields, evidence }) {
+  return { id, kind, number, name, fields, evidence };
+}
 export function baselineContent(studio) {
-  return studio.items.filter(item => item.status === 'confirmed').map(item => ({ id: item.id, kind: item.kind, number: item.number, name: item.name, fields: item.fields, evidence: item.evidence }));
+  return studio.items.filter(item => item.status === 'confirmed').map(baselineItem);
 }
 export function recordBaseline(studio, { name, ref, now }) {
   const title = clean(name, 120);

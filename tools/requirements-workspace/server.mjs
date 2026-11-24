@@ -114,6 +114,7 @@ const messages = {
   STUDIO_HANDOFF_DEPENDENCY_CYCLE: '선행 스토리가 서로를 기다립니다. 순서를 다시 확인해 주세요.',
   STUDIO_HANDOFF_STORY_NOT_FOUND: '현재 스토리를 찾지 못했습니다. 목록을 새로 불러와 주세요.',
   STUDIO_HANDOFF_NOT_ACTIVE: '이 스토리의 활성 인계가 없습니다. 현재 스토리를 확인해 주세요.',
+  STUDIO_HANDOFF_OUTPUT_PENDING: '승인한 신규 대상이 저장소 원장에 등록된 뒤 결과를 기록해 주세요.',
   STUDIO_HANDOFF_REPORTED: '현재 버전의 개발 결과가 이미 기록되었습니다.',
   STUDIO_HANDOFF_INVALID: '저장된 개발 인계 자료의 형식을 확인하지 못했습니다.',
   STUDIO_BASELINE_EMPTY: '확정된 요구사항이 있어야 기준선을 만들 수 있습니다.',

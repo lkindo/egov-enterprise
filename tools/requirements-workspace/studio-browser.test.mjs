@@ -205,12 +205,15 @@ test('documents become requirements, deliverables and stories through the studio
     await page.getByRole('button', { name: '개발 인계 시작', exact: true }).click();
     await page.getByRole('button', { name: '승인된 작업 패키지', exact: true }).click();
     await page.getByRole('heading', { name: 'TASK-PACKAGE-ST-0001.md', exact: true }).waitFor();
-    await page.getByRole('region', { name: '문서 내용', exact: true }).filter({ hasText: '합성 예약 표본' }).waitFor();
+    const handoffPackage = page.getByRole('region', { name: '문서 내용', exact: true }).filter({ hasText: '합성 예약 표본' });
+    await handoffPackage.waitFor();
+    const ticket = (await handoffPackage.textContent()).match(/- 인계 지문 ([a-f0-9]{64})/u)[1];
     await page.getByRole('button', { name: '닫기', exact: true }).click();
     await page.getByRole('button', { name: '현재 스토리 후 정지', exact: true }).click();
     await page.getByText('ST-0001 인계를 마치면 정지합니다.', { exact: true }).waitFor();
     await page.getByRole('button', { name: '개발 인계 확인', exact: true }).click();
     await page.getByRole('button', { name: '개발 결과 기록', exact: true }).click();
+    await page.getByLabel('작업 패키지의 인계 지문', { exact: true }).fill(ticket);
     await page.getByLabel('결과 커밋 SHA', { exact: true }).fill('a'.repeat(40));
     await page.getByLabel('검증 근거 참조', { exact: true }).fill('합성 시험 기록');
     await page.getByRole('button', { name: '결과 기록', exact: true }).click();

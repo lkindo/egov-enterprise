@@ -460,7 +460,7 @@ test('the server serves the studio view and documents only to the workspace sess
 });
 
 test('a selected story needs current human decisions, a baseline and repository targets before handoff', async t => {
-  let currentContext = { ...context, screens: [{ route: '/reservations', title: '예약' }] };
+  let currentContext = { ...context, screens: [{ route: '/reservations/[id]', title: '예약' }] };
   const { engine, act, run } = await fixture(t, { contextProvider: async () => currentContext });
   await act('source.save', rfp);
   await run();
@@ -472,7 +472,7 @@ test('a selected story needs current human decisions, a baseline and repository 
   const setup = {
     storyId, archetype: 'A1',
     decisions: ['기존 예약 목록 유지', '기존 본인 조회 정책 유지', '기존 스키마와 예약 식별자 유지', '기존 입력 계약 유지', '실패 안내와 비허용 조건 검증'],
-    targets: [{ kind: 'screen', id: '/reservations', intent: 'existing' }],
+    targets: [{ kind: 'screen', id: '/reservations/[id]', intent: 'existing' }],
     dependencies: [],
   };
 
@@ -489,7 +489,7 @@ test('a selected story needs current human decisions, a baseline and repository 
   assert.deepEqual(checked.blockers, []);
   currentContext = { ...currentContext, snapshotDigest: 'unrelated', tables: [{ id: 'tb_irrelevant' }] };
   assert.equal((await inspect()).digest, checked.digest, 'unrelated repository changes preserve readiness');
-  currentContext = { ...currentContext, screens: [{ route: '/reservations', title: '예약 관리' }] };
+  currentContext = { ...currentContext, screens: [{ route: '/reservations/[id]', title: '예약 관리' }] };
   await assert.rejects(act('studio.handoff.start', { storyId, digest: checked.digest }), { code: 'STUDIO_HANDOFF_STALE' });
   checked = await inspect();
   await act('studio.handoff.start', { storyId, digest: checked.digest });
@@ -498,7 +498,7 @@ test('a selected story needs current human decisions, a baseline and repository 
   const pack = await engine.studio.document('handoff-' + storyId);
   assert.match(pack.content, /합성 제안요청서/);
   assert.match(pack.content, /D-2.*기존 본인 조회 정책/);
-  assert.match(pack.content, /\/reservations/);
+  assert.match(pack.content, /\/reservations\/\[id\]/);
   assert.match(pack.content, new RegExp(checked.digest));
   assert.match(pack.content, /차단/);
 });
@@ -538,28 +538,63 @@ test('a synthetic handoff pilot releases only current dependencies and stops bet
   const pack = await engine.studio.document('handoff-' + first.id);
   assert.match(pack.content, /합성 예약 데이터/);
   assert.match(pack.content, /기관 코드표 연계/);
-  const firstDigest = (await inspect(first)).digest;
+  const firstCheck = await inspect(first), firstDigest = firstCheck.digest;
   await act('studio.handoff.pause', {});
   assert.equal(engine.studio.view().handoff.stopAfterCurrent, true);
-  await act('studio.handoff.finish', { storyId: first.id, digest: firstDigest, commit: 'a'.repeat(40), evidence: '격리 테스트 결과 4건' });
+  await act('studio.handoff.finish', { storyId: first.id, ticket: firstCheck.active.run.ticket, digest: firstDigest, commit: 'a'.repeat(40), evidence: '격리 테스트 결과 4건' });
   assert.equal((await inspect(first)).status, 'reported');
   assert.equal((await inspect(second)).status, 'ready');
   await assert.rejects(start(other), { code: 'STUDIO_HANDOFF_PAUSED' });
   await act('studio.handoff.resume', {});
   await start(second);
   assert.match((await engine.studio.document('handoff-' + second.id)).content, /격리 테스트 결과 4건/);
-  const beforeEdit = (await inspect(second)).digest;
+  const prior = await inspect(second), beforeEdit = prior.digest;
   const req = engine.studio.view().items.find(item => item.id === second.reqId);
   await act('studio.item.save', { id: req.id, rev: req.rev, kind: req.kind, name: req.name, fields: { ...req.fields, definition: '요구사항 변경' } });
   assert.equal((await inspect(second)).status, 'stale');
   await assert.rejects(engine.studio.document('handoff-' + second.id), { code: 'STUDIO_HANDOFF_STALE' });
-  await assert.rejects(act('studio.handoff.finish', { storyId: second.id, digest: beforeEdit, commit: 'b'.repeat(40), evidence: '이전 시험' }), { code: 'STUDIO_HANDOFF_STALE' });
-  await act('studio.handoff.release', { storyId: second.id, digest: beforeEdit });
+  await assert.rejects(act('studio.handoff.finish', { storyId: second.id, ticket: prior.active.run.ticket, digest: beforeEdit, commit: 'b'.repeat(40), evidence: '이전 시험' }), { code: 'STUDIO_HANDOFF_STALE' });
+  await act('studio.handoff.release', { storyId: second.id, ticket: prior.active.run.ticket });
   assert.equal(engine.studio.view().handoff.paused, true);
   assert.equal((await inspect(other)).status, 'ready');
   const prerequisite = engine.studio.view().items.find(item => item.id === first.reqId);
   await act('studio.item.save', { id: prerequisite.id, rev: prerequisite.rev, kind: prerequisite.kind, name: prerequisite.name, fields: { ...prerequisite.fields, definition: '선행 요구사항 변경' } });
   assert.ok((await inspect(second)).blockers.some(entry => entry.code === 'dependency' && entry.storyId === first.id));
   assert.equal((await inspect(other)).status, 'ready');
+  await run('studio.plan');
+  await configure(other);
+  assert.match((await engine.studio.document('handoff-history')).content, /격리 테스트 결과 4건/);
   assert.equal(store.read().backlog.acceptanceCriteria.length, 0, 'handoff is separate from institution acceptance');
+});
+
+test('a changed repository target is confirmed as output without replacing the original handoff', async t => {
+  let current = { ...context, screens: [{ route: '/reservations', label: '예약' }] };
+  const { engine, act, run } = await fixture(t, { contextProvider: async () => current });
+  await act('source.save', rfp);
+  await run();
+  await act('studio.item.status', { id: named(engine.studio.view(), '시설 예약 신청').id, status: 'confirmed' });
+  await act('studio.baseline', { name: '인계 기준' });
+  const storyId = (await run('studio.plan')).plan.stories[0].id;
+  const inspect = () => act('studio.handoff.inspect', { storyId });
+  await act('studio.handoff.configure', {
+    storyId, archetype: 'A1', decisions: ['목록과 상세 대상', '현행 인가 확인', '현행 스키마 확인', '입력 계약 검증', '거부 검증'],
+    targets: [{ kind: 'screen', id: '/reservations', intent: 'existing' }, { kind: 'screen', id: '/reservation-new', intent: 'planned' }],
+    dependencies: [],
+  });
+  await act('studio.handoff.start', { storyId, digest: (await inspect()).digest });
+  const input = await inspect();
+  const payload = { storyId, ticket: input.active.run.ticket, digest: input.digest, commit: 'a'.repeat(40), evidence: '합성 검증 결과' };
+  await assert.rejects(act('studio.handoff.finish', payload), { code: 'STUDIO_HANDOFF_OUTPUT_PENDING' });
+  current = { ...current, commit: 'b'.repeat(40), screens: [{ route: '/reservations', label: '예약 관리' }, { route: '/reservation-new', label: '신규 예약' }] };
+  const after = await inspect();
+  assert.equal(after.status, 'result-review');
+  await assert.rejects(engine.studio.document('handoff-' + storyId), { code: 'STUDIO_HANDOFF_STALE' });
+  await assert.rejects(act('studio.handoff.finish', { ...payload, digest: after.digest, ticket: 'c'.repeat(64) }), { code: 'STUDIO_HANDOFF_STALE' });
+  await assert.rejects(act('studio.handoff.finish', payload), { code: 'STUDIO_HANDOFF_STALE' });
+  await act('studio.handoff.finish', { ...payload, digest: after.digest });
+  assert.equal((await inspect()).status, 'reported');
+  const history = await engine.studio.document('handoff-history');
+  assert.match(history.content, /합성 검증 결과/);
+  assert.match(history.content, /synthetic/, 'the start revision survives output changes');
+  assert.match(history.content, new RegExp('b'.repeat(40)), 'the output observation has its own revision');
 });
