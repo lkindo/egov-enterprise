@@ -38,13 +38,13 @@ function loadEventUtils() {
       addEventListener(type, listener, options);
     },
   });
-  const module = { exports: {} as EventUtils };
+  const commonJsModule = { exports: {} as EventUtils };
   const localRequire = (request: string) => (request === './random' ? { string: () => Math.random().toString(36).slice(2, 10) } : require(request));
   runInNewContext(readFileSync(eventModulePath, 'utf8'), {
-    module, exports: module.exports, require: localRequire, global: window, setTimeout,
+    module: commonJsModule, exports: commonJsModule.exports, require: localRequire, global: window, setTimeout,
   });
   const pagehide = (persisted: boolean) => window.dispatchEvent(Object.assign(new Event('pagehide'), { persisted }));
-  return { utils: module.exports, registered, pagehide };
+  return { utils: commonJsModule.exports, registered, pagehide };
 }
 
 describe('sockjs-client 페이지 이탈 패치', () => {

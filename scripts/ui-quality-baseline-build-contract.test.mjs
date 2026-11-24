@@ -155,6 +155,7 @@ frontend/next-env.d.ts
   writeFixtureFile(root, 'frontend/Dockerfile', 'FROM scratch\n');
   writeFixtureFile(root, 'frontend/package.json', '{"scripts":{"build":"true"}}\n');
   writeFixtureFile(root, 'frontend/pnpm-lock.yaml', 'lockfileVersion: 9\n');
+  writeFixtureFile(root, 'frontend/patches/fixture@1.0.0.patch', 'diff --git a/index.js b/index.js\n');
   writeFixtureFile(root, 'frontend/next.config.ts', 'export default {};\n');
   writeFixtureFile(root, 'frontend/postcss.config.mjs', 'export default {};\n');
   writeFixtureFile(root, 'frontend/tsconfig.json', '{}\n');
