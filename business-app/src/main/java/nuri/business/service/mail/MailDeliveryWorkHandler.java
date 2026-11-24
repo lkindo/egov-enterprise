@@ -37,6 +37,16 @@ public class MailDeliveryWorkHandler implements DurableWorkHandler {
         return JSON.readValue(work.payload(), Intent.class);
     }
 
+    /**
+     * 접수한 발송 번호(2026-11-25). 발송이 끝나 payload 를 비운 작업({@link #discardPayloadOnCompletion()})이면 비어 있다 — 같은
+     * 의도 키의 다시 요청은 이미 접수됐다는 사실만으로 충분하므로, 비운 payload 를 읽다 실패해 그 요청을 실패로 만들지 않는다.
+     */
+    static java.util.Optional<Long> dispatchIdOf(DurableWork work) {
+        if (!TYPE.equals(work.type())) throw new IllegalArgumentException("Unexpected work type");
+        tools.jackson.databind.JsonNode node = JSON.readTree(work.payload().isBlank() ? "{}" : work.payload());
+        return node.hasNonNull("dispatchId") ? java.util.Optional.of(node.get("dispatchId").asLong()) : java.util.Optional.empty();
+    }
+
     @Override public String type() { return TYPE; }
 
     @Override public int maximumConcurrentExecutions() { return 2; }

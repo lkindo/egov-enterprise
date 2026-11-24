@@ -514,6 +514,8 @@ class UserServiceTest {
             // [V2_12] 종속 정리(권한매핑) 후 일괄 삭제로 전환됨
             verify(authorizationAdministration).removeDeletedUsers(List.of("USR_TEST_ESNTL_0001"));
             verify(userRepository).deleteAllInBatch(List.of(user));
+            // [2026-11-25] 삭제한 계정을 같은 트랜잭션에 커밋 사실로 남긴다(ADR-0025 D13).
+            verify(sensitiveAudit).recordMutation("ADMIN_USER_DELETE", "USR_TEST_ESNTL_0001");
         }
     }
 
@@ -585,6 +587,9 @@ class UserServiceTest {
             verify(refreshTokenRepository).deleteAllByEsntlIdIn(
                     List.of("USR_TEST_ESNTL_0001", "USR_TEST_ESNTL_0002"));
             verify(userRepository).deleteAllInBatch(List.of(user1, user2));
+            // 원장은 요청마다 커밋 기록을 한 행만 받는다(요청 ID·처리 상태 유일) — 일괄 삭제도 대상을 이은 한 행이다.
+            verify(sensitiveAudit).recordMutation("ADMIN_USER_DELETE", "USR_TEST_ESNTL_0001,USR_TEST_ESNTL_0002");
+            verifyNoMoreInteractions(sensitiveAudit);
         }
     }
 
@@ -683,12 +688,14 @@ class UserServiceTest {
             org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
                     nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             User user = mock(User.class);
+            given(user.getEsntlId()).willReturn("USR_STATUS_1");
             given(userRepository.findByUserIdIn(List.of("user1"))).willReturn(List.of(user));
-            
+
             userService.updateUsersStatus(List.of("user1"), "ACTIVE");
             verify(user).updateStatus("ACTIVE");
             verify(userRepository).saveAllAndFlush(List.of(user));
             verify(userRepository, never()).findAllById(anyList());
+            verify(sensitiveAudit).recordMutation("ADMIN_STATUS_CHANGE", "USR_STATUS_1");
         }
     }
 
@@ -823,6 +830,7 @@ class UserServiceTest {
             assertFalse(user.isLocked());
             assertEquals(0, user.getLckCnt());
             verify(refreshTokenRepository, never()).deleteAllByEsntlIdIn(any());
+            verify(sensitiveAudit).recordMutation("ADMIN_UNLOCK", "USR_ESNTL_1");
 
             org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
                     nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_USER"));

@@ -8,8 +8,8 @@ import nuri.business.domain.informalsanction.InformalSanctionHistory;
 import nuri.business.domain.informalsanction.InformalSanctionHistoryId;
 import nuri.business.domain.informalsanction.InformalSanctionHistoryRepository;
 import nuri.business.domain.informalsanction.SanctionStatus;
-import nuri.business.service.user.UserService;
-import nuri.business.service.user.dto.UserDto;
+import nuri.business.service.user.UserContactService;
+import nuri.business.service.user.UserContactService.UserContact;
 import nuri.foundation.core.event.MailRequestedEvent;
 import nuri.foundation.core.event.SmsRequestedEvent;
 import nuri.foundation.core.exception.BusinessException;
@@ -35,6 +35,11 @@ import tools.jackson.databind.json.JsonMapper;
  * 요청에 실어, 메일·문자 서비스가 같은 키의 두 번째 요청에서 이력과 발송 작업을 새로 만들지 않게 한다. 한 채널의 접수가 실패해도
  * 다른 채널은 요청하고, 마지막에 그 실패를 되던져 작업이 다시 시도되게 한다. 입력 거절(연락처 없음·게이트웨이가 못 보내는 본문)은
  * 다시 해도 같으므로 메일·문자 리스너가 재시도 대상에서 뺀다.
+ *
+ * <p><b>받는 사람은 지금 사용 중인 계정의 연락처다</b> — 기안자 식별자(esntlId)로만 해석하고({@link UserContactService}), 실행 때
+ * 이미 비활성·삭제된 계정에는 두 채널 모두 보내지 않는다. 문자 접수는 원래 비활성 수신자를 거절했고 메일만 넘겨받은 주소로
+ * 나갔다 — 두 채널의 수신자 규칙을 같게 한다. 로그인 ID 를 먼저 찾는 관리 조회는 쓰지 않는다(다른 사람의 로그인 ID 가 이 esntlId 와
+ * 같으면 그 사람에게 갈 수 있다).
  */
 @Slf4j
 @Component
@@ -43,14 +48,14 @@ public class SanctionExternalNotificationWorkHandler implements DurableWorkHandl
     static final String MAIL_SUBJECT = "[eGov] 결재 상태 변경 알림";
     private static final JsonMapper JSON = JsonMapper.builder().build();
 
-    private final UserService userService;
+    private final UserContactService userContactService;
     private final InformalSanctionHistoryRepository historyRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-    public SanctionExternalNotificationWorkHandler(UserService userService,
+    public SanctionExternalNotificationWorkHandler(UserContactService userContactService,
                                                    InformalSanctionHistoryRepository historyRepository,
                                                    ApplicationEventPublisher eventPublisher) {
-        this.userService = userService;
+        this.userContactService = userContactService;
         this.historyRepository = historyRepository;
         this.eventPublisher = eventPublisher;
     }
@@ -84,7 +89,7 @@ public class SanctionExternalNotificationWorkHandler implements DurableWorkHandl
         Intent intent = JSON.readValue(work.payload(), Intent.class);
         SanctionStatus status = intent.status() == null ? null : SanctionStatus.valueOf(intent.status());
 
-        UserDto user = findApplicant(intent, status);
+        UserContact user = findApplicant(intent, status);
         if (user == null) {
             return;
         }
@@ -134,19 +139,18 @@ public class SanctionExternalNotificationWorkHandler implements DurableWorkHandl
         }
     }
 
-    /** 기안자 계정이 없으면 건너뛴다(다시 해도 같다). 저장소 장애처럼 다른 실패는 되던져 다시 시도한다. */
-    private UserDto findApplicant(Intent intent, SanctionStatus status) {
+    /**
+     * 기안자의 지금 연락처 — 사용 중인 계정만이다. 없거나 비활성이면 건너뛴다(다시 해도 같다). 저장소 장애처럼 다른 실패는 되던져
+     * 다시 시도한다.
+     */
+    private UserContact findApplicant(Intent intent, SanctionStatus status) {
         if (!StringUtils.hasText(intent.applicantId())) {
             return null;
         }
         try {
-            UserDto user = userService.getUserById(intent.applicantId());
-            if (user == null) {
-                log.warn("Applicant not found: sanctionSn={}, status={}", intent.sanctionSn(), status);
-            }
-            return user;
+            return userContactService.resolve(java.util.List.of(intent.applicantId())).stream().findFirst().orElse(null);
         } catch (BusinessException missing) {
-            log.warn("Applicant not found: sanctionSn={}, status={}, exceptionType={}",
+            log.warn("Applicant is not an active account; external result notice skipped: sanctionSn={}, status={}, exceptionType={}",
                     intent.sanctionSn(), status, missing.getClass().getSimpleName());
             return null;
         }

@@ -136,6 +136,10 @@ public class AuthServiceImpl implements AuthService {
         String esntlId = authentication.getName();   // User @Id · JWT subject · RefreshToken key
         String loginId = request.getUserId();        // TB_LOGIN_POLICY @Id
         CustomUserDetails principal = requireCurrentPrincipal(authentication.getPrincipal(), esntlId);
+        // [2026-11-25] 인증 뒤 정책을 다시 본다 — MFA 완료 경로(completeMfa)와 같다. 비밀번호를 대조하는 동안 관리자가 접속 제한을
+        //   걸면 그 변경은 세션차수도 올리는데, 인증 주체가 그 뒤에 읽히면 오른 차수로 토큰이 나가 차수 검사까지 통과했다. 주체를
+        //   읽은 뒤 다시 판정하면, 그 앞에 커밋된 제한은 여기서 막히고 그 뒤에 커밋된 제한은 옛 차수의 토큰을 무효로 만든다.
+        assertLoginPolicy(loginId, clientIp);
 
         // 과거 OTP 플래그는 제한 등록으로 이행한다. 평문 secret/inline Integer OTP로 업무 토큰을 발급하지 않는다.
         boolean legacyOtpRequired = loginPolicyRepository.findById(loginId)

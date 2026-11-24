@@ -230,6 +230,40 @@ class MailServiceTest {
     }
 
     @Test
+    @DisplayName("[2026-11-25] 같은 키의 처음 접수가 발송을 마쳐 payload 를 비웠어도 다시 요청은 실패하지 않고 새로 접수하지 않는다")
+    void sendToResolvedAddressOnce_replayAfterDeliveryDiscardedThePayload() {
+        java.util.UUID intent = java.util.UUID.fromString("00000000-0000-0000-0000-000000000033");
+        // 발송이 끝나면 작업자는 암호화 주소를 지우려고 payload 를 '{}' 로 비운다(MailDeliveryWorkHandler.discardPayloadOnCompletion).
+        given(durableWork.enqueueOnce(eq(intent), eq(MailDeliveryWorkHandler.TYPE), any()))
+                .willReturn(new DurableWork(intent, MailDeliveryWorkHandler.TYPE, "{}"));
+
+        Long replay = mailService.sendToResolvedAddressOnce(intent, "SANCTIONER_001",
+                SentMailDto.builder().sj("제목").emailCn("본문").build(), "hong@egov.com", "홍길동");
+
+        assertThat(replay).isNull();
+        verify(sentMailRepository, never()).save(any(SentMail.class));
+    }
+
+    @Test
+    @DisplayName("[2026-11-25] 발신자(결재자) 계정이 퇴직·비활성이어도 메일을 접수하고 발신자 칸에는 식별자를 남긴다")
+    void sendToResolvedAddressOnce_acceptsWhenTheRequesterIsNoLongerActive() {
+        java.util.UUID intent = java.util.UUID.fromString("00000000-0000-0000-0000-000000000034");
+        // 발송 대상 해석은 비활성 계정을 거부한다 — 발신자 이름을 그것으로 구하면 접수째 롤백됐다.
+        given(userContactService.resolve(any())).willThrow(new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        given(sentMailRepository.save(any(SentMail.class))).willReturn(SentMail.builder().emlDsptchSn(12L).build());
+        given(durableWork.enqueueOnce(any(), anyString(), any())).willAnswer(call -> new DurableWork(call.getArgument(0),
+                call.getArgument(1), call.<java.util.function.Supplier<String>>getArgument(2).get()));
+
+        Long accepted = mailService.sendToResolvedAddressOnce(intent, "RETIRED_SANCTIONER",
+                SentMailDto.builder().sj("제목").emailCn("본문").build(), "hong@egov.com", "홍길동");
+
+        assertThat(accepted).isEqualTo(12L);
+        org.mockito.ArgumentCaptor<SentMail> saved = org.mockito.ArgumentCaptor.forClass(SentMail.class);
+        verify(sentMailRepository).save(saved.capture());
+        assertThat(saved.getValue().getSndptyNm()).isEqualTo("RETIRED_SANCTIONER");
+    }
+
+    @Test
     @DisplayName("[2026-11-25] 의도 키 발송도 첨부·빈 주소를 작업 저장 전에 거부한다")
     void sendToResolvedAddressOnce_rejectsInvalidInputBeforeStoringIntent() {
         java.util.UUID intent = java.util.UUID.fromString("00000000-0000-0000-0000-000000000032");
@@ -420,8 +454,7 @@ class MailServiceTest {
                 .sj("Subject").emailCn("Content")
                 .recptnPerson("receiver@test.com")
                 .build();
-        given(userContactService.resolve(List.of("USR_SENDER"))).willReturn(List.of(
-                new UserContactService.UserContact("USR_SENDER", "홍발신", "hong@example.com", null)));
+        given(userContactService.nameOf("USR_SENDER")).willReturn(Optional.of("홍발신"));
         given(sentMailRepository.save(any(SentMail.class)))
                 .willReturn(SentMail.builder().emlDsptchSn(11L).build());
 

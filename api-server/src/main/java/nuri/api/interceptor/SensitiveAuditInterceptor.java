@@ -113,11 +113,17 @@ public class SensitiveAuditInterceptor implements AsyncHandlerInterceptor {
             markedHandlers(RequestMappingHandlerMapping mapping) {
         var cached = markedHandlers;
         if (cached == null) {
-            cached = mapping.getHandlerMethods().entrySet().stream()
-                    .filter(entry -> description(entry.getValue()) != null)
-                    .map(entry -> java.util.Map.entry(entry.getKey(), entry.getValue()))
-                    .toList();
-            markedHandlers = cached;
+            // 기동 직후 거절 응답이 겹쳐도 한 번만 거른다 — 첫 초기화만 잠근다.
+            synchronized (this) {
+                cached = markedHandlers;
+                if (cached == null) {
+                    cached = mapping.getHandlerMethods().entrySet().stream()
+                            .filter(entry -> description(entry.getValue()) != null)
+                            .map(entry -> java.util.Map.entry(entry.getKey(), entry.getValue()))
+                            .toList();
+                    markedHandlers = cached;
+                }
+            }
         }
         return cached;
     }

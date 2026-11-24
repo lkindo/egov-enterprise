@@ -10,8 +10,8 @@ import nuri.business.domain.informalsanction.InformalSanctionHistory;
 import nuri.business.domain.informalsanction.InformalSanctionHistoryId;
 import nuri.business.domain.informalsanction.InformalSanctionHistoryRepository;
 import nuri.business.domain.informalsanction.SanctionStatus;
-import nuri.business.service.user.UserService;
-import nuri.business.service.user.dto.UserDto;
+import nuri.business.service.user.UserContactService;
+import nuri.business.service.user.UserContactService.UserContact;
 import nuri.foundation.core.event.MailRequestedEvent;
 import nuri.foundation.core.event.SmsRequestedEvent;
 import nuri.foundation.core.exception.BusinessException;
@@ -41,7 +41,7 @@ import static org.mockito.Mockito.*;
 @DisplayName("SanctionExternalNotificationWorkHandler 단위 테스트")
 class SanctionExternalNotificationWorkHandlerTest {
 
-    @Mock private UserService userService;
+    @Mock private UserContactService userContactService;
     @Mock private InformalSanctionHistoryRepository historyRepository;
     @Mock private ApplicationEventPublisher eventPublisher;
 
@@ -49,7 +49,7 @@ class SanctionExternalNotificationWorkHandlerTest {
 
     @BeforeEach
     void setUp() {
-        handler = new SanctionExternalNotificationWorkHandler(userService, historyRepository, eventPublisher);
+        handler = new SanctionExternalNotificationWorkHandler(userContactService, historyRepository, eventPublisher);
     }
 
     private static DurableWork work(SanctionStatusChangedEvent event) {
@@ -68,8 +68,8 @@ class SanctionExternalNotificationWorkHandlerTest {
         given(historyRepository.findById(new InformalSanctionHistoryId(sn, BigDecimal.ONE))).willReturn(Optional.of(history));
     }
 
-    private static UserDto user(String phone, String mail) {
-        return UserDto.builder().userId("USER_001").esntlId("ESNTL_001").userNm("홍길동").mblTelno(phone).emlAddr(mail).build();
+    private static UserContact user(String phone, String mail) {
+        return new UserContact("ESNTL_001", "홍길동", mail, phone);
     }
 
     private <T> List<T> published(Class<T> type) {
@@ -106,7 +106,7 @@ class SanctionExternalNotificationWorkHandlerTest {
     void requestsBothChannelsWithDerivedIntentKeys() {
         SanctionStatusChangedEvent event = event(1L, "ESNTL_001", "SANCTIONER_001", SanctionStatus.APPROVED, "승인 의견");
         historyHas(1L, null);
-        given(userService.getUserById("ESNTL_001")).willReturn(user("01011112222", "hong@egov.com"));
+        given(userContactService.resolve(List.of("ESNTL_001"))).willReturn(List.of(user("01011112222", "hong@egov.com")));
         DurableWork work = work(event);
 
         handler.execute(work);
@@ -135,7 +135,7 @@ class SanctionExternalNotificationWorkHandlerTest {
     void replayCarriesTheSameIntentKeys() {
         SanctionStatusChangedEvent event = event(2L, "ESNTL_001", "SANCTIONER_001", SanctionStatus.APPROVED, null);
         historyHas(2L, null);
-        given(userService.getUserById("ESNTL_001")).willReturn(user("01011112222", "hong@egov.com"));
+        given(userContactService.resolve(List.of("ESNTL_001"))).willReturn(List.of(user("01011112222", "hong@egov.com")));
         DurableWork work = work(event);
 
         handler.execute(work);
@@ -152,7 +152,7 @@ class SanctionExternalNotificationWorkHandlerTest {
     void rejectionReasonComesFromTheCycleHistory() {
         SanctionStatusChangedEvent event = event(3L, "ESNTL_001", "SANCTIONER_001", SanctionStatus.REJECTED, "예산 코드 누락");
         historyHas(3L, "예산 코드 누락");
-        given(userService.getUserById("ESNTL_001")).willReturn(user("01011112222", null));
+        given(userContactService.resolve(List.of("ESNTL_001"))).willReturn(List.of(user("01011112222", null)));
 
         handler.execute(work(event));
 
@@ -166,7 +166,7 @@ class SanctionExternalNotificationWorkHandlerTest {
     void deletedDocumentIsNotReconstructedFromTheQueue() {
         SanctionStatusChangedEvent event = event(4L, "ESNTL_001", "SANCTIONER_001", SanctionStatus.REJECTED, "사유");
         given(historyRepository.findById(any())).willReturn(Optional.empty());
-        given(userService.getUserById("ESNTL_001")).willReturn(user("01011112222", "hong@egov.com"));
+        given(userContactService.resolve(List.of("ESNTL_001"))).willReturn(List.of(user("01011112222", "hong@egov.com")));
 
         handler.execute(work(event));
 
@@ -178,7 +178,7 @@ class SanctionExternalNotificationWorkHandlerTest {
     void fallsBackToSystemWhenActorAbsent() {
         SanctionStatusChangedEvent event = event(5L, "ESNTL_001", null, SanctionStatus.APPROVED, null);
         historyHas(5L, null);
-        given(userService.getUserById("ESNTL_001")).willReturn(user("01011112222", "hong@egov.com"));
+        given(userContactService.resolve(List.of("ESNTL_001"))).willReturn(List.of(user("01011112222", "hong@egov.com")));
 
         handler.execute(work(event));
 
@@ -187,10 +187,10 @@ class SanctionExternalNotificationWorkHandlerTest {
     }
 
     @Test
-    @DisplayName("기안자 계정이 없으면 다시 시도하지 않고 건너뛴다")
+    @DisplayName("기안자 계정이 없거나 비활성이면 두 채널 모두 요청하지 않고 다시 시도하지도 않는다 — 연락처는 사용 중인 계정만 해석된다")
     void missingApplicantIsSkippedWithoutRetry() {
         SanctionStatusChangedEvent event = event(6L, "GONE_001", "SANCTIONER_001", SanctionStatus.APPROVED, null);
-        given(userService.getUserById("GONE_001")).willThrow(new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        given(userContactService.resolve(List.of("GONE_001"))).willThrow(new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         handler.execute(work(event));
 
@@ -201,7 +201,7 @@ class SanctionExternalNotificationWorkHandlerTest {
     @DisplayName("사용자 저장소 장애는 되던져 작업을 다시 시도한다")
     void userStoreFailureRetriesTheWork() {
         SanctionStatusChangedEvent event = event(7L, "ESNTL_001", "SANCTIONER_001", SanctionStatus.APPROVED, null);
-        given(userService.getUserById("ESNTL_001")).willThrow(new IllegalStateException("user store down"));
+        given(userContactService.resolve(List.of("ESNTL_001"))).willThrow(new IllegalStateException("user store down"));
 
         assertThatThrownBy(() -> handler.execute(work(event))).isInstanceOf(IllegalStateException.class);
         verifyNoInteractions(eventPublisher);
@@ -212,7 +212,7 @@ class SanctionExternalNotificationWorkHandlerTest {
     void skipsChannelsWithoutContact() {
         SanctionStatusChangedEvent event = event(8L, "ESNTL_001", "SANCTIONER_001", SanctionStatus.APPROVED, null);
         historyHas(8L, null);
-        given(userService.getUserById("ESNTL_001")).willReturn(user("", null));
+        given(userContactService.resolve(List.of("ESNTL_001"))).willReturn(List.of(user("", null)));
 
         handler.execute(work(event));
 
@@ -224,7 +224,7 @@ class SanctionExternalNotificationWorkHandlerTest {
     void smsFailureStillRequestsMailThenRetries() {
         SanctionStatusChangedEvent event = event(9L, "ESNTL_001", "SANCTIONER_001", SanctionStatus.REJECTED, "사유");
         historyHas(9L, "사유");
-        given(userService.getUserById("ESNTL_001")).willReturn(user("01011112222", "hong@egov.com"));
+        given(userContactService.resolve(List.of("ESNTL_001"))).willReturn(List.of(user("01011112222", "hong@egov.com")));
         doThrow(new IllegalStateException("sms storage unavailable"))
                 .when(eventPublisher).publishEvent(any(SmsRequestedEvent.class));
 
@@ -238,7 +238,7 @@ class SanctionExternalNotificationWorkHandlerTest {
     void boundsFinalChannelMessagesForMaximumReason() {
         SanctionStatusChangedEvent event = event(10L, "ESNTL_003", "SANCTIONER_001", SanctionStatus.REJECTED, "가".repeat(4_000));
         historyHas(10L, "가".repeat(4_000));
-        given(userService.getUserById("ESNTL_003")).willReturn(user("01011112222", "user3@egov.com"));
+        given(userContactService.resolve(List.of("ESNTL_003"))).willReturn(List.of(user("01011112222", "user3@egov.com")));
 
         handler.execute(work(event));
 
@@ -254,7 +254,7 @@ class SanctionExternalNotificationWorkHandlerTest {
         DurableWork foreign = new DurableWork(java.util.UUID.randomUUID(), "MAIL_DELIVERY", "{}");
 
         assertThatThrownBy(() -> handler.execute(foreign)).isInstanceOf(IllegalArgumentException.class);
-        verifyNoInteractions(userService, historyRepository, eventPublisher);
+        verifyNoInteractions(userContactService, historyRepository, eventPublisher);
     }
 
     @Test
@@ -265,19 +265,18 @@ class SanctionExternalNotificationWorkHandlerTest {
         appender.start();
         logger.addAppender(appender);
         String reason = "PII_REASON\r\nFORGED_REASON";
-        UserDto user = UserDto.builder().userId("PII_USER_ID").esntlId("PII_ESNTL").userNm("PII_USER_NAME")
-                .mblTelno("01098765432").emlAddr("pii-mail-marker@secret.invalid").build();
+        UserContact user = new UserContact("PII_ESNTL", "PII_USER_NAME", "pii-mail-marker@secret.invalid", "01098765432");
         try {
             historyHas(71L, reason);
-            given(userService.getUserById("PII_APPLICANT_SUCCESS")).willReturn(user);
+            given(userContactService.resolve(List.of("PII_APPLICANT_SUCCESS"))).willReturn(List.of(user));
             handler.execute(work(event(71L, "PII_APPLICANT_SUCCESS", "PII_ACTOR", SanctionStatus.REJECTED, reason)));
 
-            given(userService.getUserById("PII_APPLICANT_MISSING"))
+            given(userContactService.resolve(List.of("PII_APPLICANT_MISSING")))
                     .willThrow(new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "PII_LOOKUP\r\nFORGED_LOOKUP"));
             handler.execute(work(event(72L, "PII_APPLICANT_MISSING", "PII_ACTOR", SanctionStatus.REJECTED, reason)));
 
             historyHas(73L, reason);
-            given(userService.getUserById("PII_APPLICANT_CHANNEL")).willReturn(user);
+            given(userContactService.resolve(List.of("PII_APPLICANT_CHANNEL"))).willReturn(List.of(user));
             doThrow(new IllegalArgumentException("PII_SMS_EXCEPTION\r\nFORGED_SMS_EXCEPTION"))
                     .when(eventPublisher).publishEvent(any(SmsRequestedEvent.class));
             doThrow(new UnsupportedOperationException("PII_MAIL_EXCEPTION\r\nFORGED_MAIL_EXCEPTION"))
@@ -286,7 +285,7 @@ class SanctionExternalNotificationWorkHandlerTest {
                     SanctionStatus.REJECTED, reason)))).isInstanceOf(IllegalArgumentException.class);
 
             given(historyRepository.findById(new InformalSanctionHistoryId(74L, BigDecimal.ONE))).willReturn(Optional.empty());
-            given(userService.getUserById("PII_APPLICANT_DELETED")).willReturn(user);
+            given(userContactService.resolve(List.of("PII_APPLICANT_DELETED"))).willReturn(List.of(user));
             handler.execute(work(event(74L, "PII_APPLICANT_DELETED", "PII_ACTOR", SanctionStatus.REJECTED, reason)));
         } finally {
             logger.detachAppender(appender);

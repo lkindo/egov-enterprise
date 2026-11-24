@@ -57,6 +57,10 @@ class LoginPolicyManageServiceTest {
     @Mock
     private nuri.business.domain.auth.RefreshTokenRepository refreshTokenRepository;
 
+    /** 등록·변경·삭제의 커밋 사실을 대상과 함께 남긴다(2026-11-25, ADR-0025 D13). */
+    @Mock
+    private nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
+
     @InjectMocks
     private LoginPolicyManageService loginPolicyManageService;
 
@@ -376,6 +380,12 @@ class LoginPolicyManageServiceTest {
             "조건 없던 정책에 IP 를 걸면 끊는다|''|N|''|''|10.0.0.1|N|''|''|true",
             "같은 조건을 다시 저장하면 끊지 않는다|10.0.0.1|N|0900|1800|10.0.0.1|N|0900|1800|false",
             "조건을 모두 풀면 끊지 않는다|10.0.0.1|Y|0900|1800|''|N|''|''|false",
+            // [2026-11-25] 비교는 로그인 판정과 같은 뜻이다 — 표기만 다른 같은 조건은 같다.
+            "표기만 다른 같은 시간창이면 끊지 않는다|10.0.0.1|N|0900|1800|10.0.0.1|N|09:00|18:00|false",
+            "정규화 전 IPv6 표기의 같은 주소면 끊지 않는다|2001:0DB8:0:0:0:0:0:0001|N|''|''|2001:db8::1|N|''|''|false",
+            "공백 시각은 시간창이 아니다 — 조건을 푸는 것과 같다|10.0.0.1|N|0900|1800|''|N|' '|' '|false",
+            "판정이 읽지 못해 막던 시간창을 고치면 끊는다|10.0.0.1|N|' '|' '|10.0.0.1|N|09:00|18:00|true",
+            "판정이 24시간 허용하던 같은 시각 창에 시간을 걸면 끊는다|''|N|0900|0900|''|N|09:00|18:00|true",
     })
     void updateRevokesSessionsWhenTheRestrictionChanges(String scenario, String ip, String lmt, String bgng, String end,
             String newIp, String newLmt, String newBgng, String newEnd, boolean revokes) {
@@ -401,6 +411,65 @@ class LoginPolicyManageServiceTest {
             verify(userRepository, never()).advanceSessionCycle(any());
             org.mockito.Mockito.verifyNoInteractions(refreshTokenRepository);
         }
+    }
+
+    @Test
+    @DisplayName("[2026-11-25] 접속 허용 시각은 판정이 읽는 HH:mm 으로 저장하고, 공백뿐인 값은 시간창 없음으로 저장해 로그인을 막지 않는다")
+    void storesCanonicalClockTimesAndBlankAsNoWindow() {
+        authenticate("policy-manager", "LOGIN_POL_UPDATE");
+        LoginPolicy entity = LoginPolicy.builder().userId("USER1").dpcnPrmYn("N").lmtYn("N").otpUseYn("N").build();
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(entity));
+        givenPolicyUser("USER1");
+        LoginPolicyDto legacy = LoginPolicyDto.builder().userId("USER1").lmtYn("N").bgngTm("0900").endTm("1800").otpUseYn("N").build();
+
+        loginPolicyManageService.updateLoginPolicy(legacy);
+
+        assertEquals("09:00", entity.getBgngTm());
+        assertEquals("18:00", entity.getEndTm());
+
+        LoginPolicyDto blank = LoginPolicyDto.builder().userId("USER1").lmtYn("N").bgngTm(" ").endTm(" ").otpUseYn("N").build();
+        loginPolicyManageService.updateLoginPolicy(blank);
+
+        assertNull(entity.getBgngTm());
+        assertNull(entity.getEndTm());
+        // 종전에는 공백이 그대로 저장돼 판정이 시각으로 읽다 실패하고 그 사용자의 로그인을 막았다.
+        assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("USER1", "10.0.0.1"));
+    }
+
+    @Test
+    @DisplayName("[2026-11-25] 등록·변경·삭제는 대상 계정(esntlId)과 함께 커밋 감사를 같은 트랜잭션에 남긴다 — 없는 사용자의 삭제는 남길 변경이 없다")
+    void recordsCommittedAuditWithTheTargetAccount() {
+        authenticate("policy-manager", "LOGIN_POL_CREATE", "LOGIN_POL_UPDATE", "LOGIN_POL_DELETE");
+        givenPolicyUser("USER1");
+        loginPolicyManageService.insertLoginPolicy(LoginPolicyDto.builder().userId("USER1").lmtYn("N").otpUseYn("N").build());
+        verify(sensitiveAudit).recordMutation("LOGIN_POLICY_CREATE", "ESNTL_USER1");
+
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(
+                LoginPolicy.builder().userId("USER1").dpcnPrmYn("N").lmtYn("N").otpUseYn("N").build()));
+        loginPolicyManageService.updateLoginPolicy(LoginPolicyDto.builder().userId("USER1").lmtYn("N").otpUseYn("N").build());
+        verify(sensitiveAudit).recordMutation("LOGIN_POLICY_UPDATE", "ESNTL_USER1");
+
+        loginPolicyManageService.deleteLoginPolicy(LoginPolicyDto.builder().userId("USER1").build());
+        verify(sensitiveAudit).recordMutation("LOGIN_POLICY_DELETE", "ESNTL_USER1");
+
+        loginPolicyManageService.deleteLoginPolicy(LoginPolicyDto.builder().userId("nobody").build());
+        verifyNoMoreInteractions(sensitiveAudit);
+    }
+
+    @Test
+    @DisplayName("[2026-11-25] 수정은 관리 잠금(보호 계정 가드)을 얻은 뒤에 정책 행을 처음 읽는다 — 함께 저장한 다른 관리자의 변경 전 값을 쓰지 않는다")
+    void updateReadsThePolicyRowAfterTheAdministrationLock() {
+        authenticate("policy-manager", "LOGIN_POL_UPDATE");
+        LoginPolicy entity = LoginPolicy.builder().userId("USER1").dpcnPrmYn("N").lmtYn("N").otpUseYn("N").build();
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(entity));
+        givenPolicyUser("USER1");
+
+        loginPolicyManageService.updateLoginPolicy(
+                LoginPolicyDto.builder().userId("USER1").ipAddr("10.0.0.1").lmtYn("N").otpUseYn("N").build());
+
+        org.mockito.InOrder order = org.mockito.Mockito.inOrder(protectedAccountGuard, loginPolicyRepository);
+        order.verify(protectedAccountGuard).authorizeProtectedAccountChange("ESNTL_USER1");
+        order.verify(loginPolicyRepository).findById("USER1");
     }
 
     @Test
@@ -842,9 +911,11 @@ class LoginPolicyManageServiceTest {
     }
 
     @Test
-    @DisplayName("수정: 대상 정책이 없으면 RESOURCE_NOT_FOUND 로 끝난다")
+    @DisplayName("수정: 사용자는 있지만 대상 정책이 없으면 RESOURCE_NOT_FOUND 로 끝난다")
     void updateThrowsWhenPolicyMissing() {
         authenticate("policy-manager", "LOGIN_POL_UPDATE");
+        // [2026-11-25] 정책 행은 관리 잠금 뒤에 읽으므로 사용자 확인이 먼저다 — 없는 사용자는 USER_NOT_FOUND 로 먼저 끝난다.
+        givenPolicyUser("ghost");
         given(loginPolicyRepository.findById("ghost")).willReturn(Optional.empty());
         LoginPolicyDto dto = LoginPolicyDto.builder().userId("ghost").build();
 
@@ -1059,7 +1130,8 @@ class LoginPolicyManageServiceTest {
         givenProtectedAndOrdinaryTargets();
         LoginPolicy protectedPolicy = LoginPolicy.builder().userId(PROTECTED_LOGIN)
                 .ipAddr("10.0.0.1").dpcnPrmYn("N").lmtYn("N").otpUseYn("N").build();
-        given(loginPolicyRepository.findById(PROTECTED_LOGIN)).willReturn(Optional.of(protectedPolicy));
+        // [2026-11-25] 정책 행은 가드(관리 잠금) 뒤에 읽으므로 거부된 수정은 행을 읽지도 않는다 — 아래에서 고정한다.
+        lenient().when(loginPolicyRepository.findById(PROTECTED_LOGIN)).thenReturn(Optional.of(protectedPolicy));
         LoginPolicy ordinaryPolicy = mock(LoginPolicy.class);
         given(loginPolicyRepository.findById(ORDINARY_LOGIN)).willReturn(Optional.of(ordinaryPolicy));
 
@@ -1069,6 +1141,7 @@ class LoginPolicyManageServiceTest {
         assertEquals(CommonErrorCode.ACCESS_DENIED, denied.getErrorCode());
         assertEquals("N", protectedPolicy.getLmtYn(), "거부된 수정이 엔티티를 바꾸면 커밋 경로에 따라 제한이 저장된다");
         assertEquals("10.0.0.1", protectedPolicy.getIpAddr());
+        verify(loginPolicyRepository, never()).findById(PROTECTED_LOGIN);
 
         loginPolicyManageService.updateLoginPolicy(
                 LoginPolicyDto.builder().userId(ORDINARY_LOGIN).lmtYn("Y").otpUseYn("N").build());
@@ -1107,7 +1180,7 @@ class LoginPolicyManageServiceTest {
     void updateRejectsPolicyWhoseUserCannotBeResolved() {
         authenticate("policy-manager", "LOGIN_POL_UPDATE");
         LoginPolicy entity = LoginPolicy.builder().userId("orphan").lmtYn("N").otpUseYn("N").build();
-        given(loginPolicyRepository.findById("orphan")).willReturn(Optional.of(entity));
+        lenient().when(loginPolicyRepository.findById("orphan")).thenReturn(Optional.of(entity));
         given(userRepository.findByUserId("orphan")).willReturn(Optional.empty());
 
         BusinessException missingUser = assertThrows(BusinessException.class, () -> loginPolicyManageService.updateLoginPolicy(
@@ -1116,6 +1189,8 @@ class LoginPolicyManageServiceTest {
         assertEquals(UserErrorCode.USER_NOT_FOUND, missingUser.getErrorCode());
         assertEquals("N", entity.getLmtYn());
         verifyNoInteractions(protectedAccountGuard);
+        // [2026-11-25] 사용자 확인·관리 잠금이 정책 행 읽기보다 먼저다.
+        verify(loginPolicyRepository, never()).findById("orphan");
     }
 
     @Test
