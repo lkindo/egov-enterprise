@@ -348,9 +348,13 @@ public class LoginPolicyManageService {
         //   정책 행도 없어 지울 것이 없으므로 종전의 멱등 삭제(없는 행은 아무 일도 하지 않는다)를 그대로 둔다.
         java.util.Optional<User> policyUser = userRepository.findByUserId(dto.getUserId());
         policyUser.ifPresent(target -> protectedAccountGuard.authorizeProtectedAccountChange(target.getEsntlId()));
+        // 지울 행이 있었는지는 관리 잠금(위 가드) 뒤에 본다 — 사용자가 없으면 FK 때문에 정책도 없다.
+        boolean existed = policyUser.isPresent() && loginPolicyRepository.existsById(dto.getUserId());
         loginPolicyRepository.deleteById(dto.getUserId());
-        // 사용자가 없으면 FK 때문에 지울 정책도 없다 — 감사에 남길 변경이 없다.
-        policyUser.ifPresent(target -> sensitiveAudit.recordMutation("LOGIN_POLICY_DELETE", target.getEsntlId()));
+        // [2026-11-25] 실제로 지운 경우만 커밋 감사를 남긴다 — 이미 없는 정책의 멱등 삭제는 변경이 아니다.
+        if (existed) {
+            policyUser.ifPresent(target -> sensitiveAudit.recordMutation("LOGIN_POLICY_DELETE", target.getEsntlId()));
+        }
     }
 
     public void validateLoginPolicy(String userId, String clientIp) {

@@ -449,9 +449,14 @@ class LoginPolicyManageServiceTest {
         loginPolicyManageService.updateLoginPolicy(LoginPolicyDto.builder().userId("USER1").lmtYn("N").otpUseYn("N").build());
         verify(sensitiveAudit).recordMutation("LOGIN_POLICY_UPDATE", "ESNTL_USER1");
 
+        given(loginPolicyRepository.existsById("USER1")).willReturn(true);
         loginPolicyManageService.deleteLoginPolicy(LoginPolicyDto.builder().userId("USER1").build());
         verify(sensitiveAudit).recordMutation("LOGIN_POLICY_DELETE", "ESNTL_USER1");
 
+        // 사용자는 있지만 정책이 이미 없는 멱등 삭제(두 관리자가 함께 해제한 경우)는 변경이 아니다.
+        givenPolicyUser("USER2");
+        loginPolicyManageService.deleteLoginPolicy(LoginPolicyDto.builder().userId("USER2").build());
+        // 없는 사용자의 삭제도 남길 변경이 없다.
         loginPolicyManageService.deleteLoginPolicy(LoginPolicyDto.builder().userId("nobody").build());
         verifyNoMoreInteractions(sensitiveAudit);
     }
@@ -1053,6 +1058,8 @@ class LoginPolicyManageServiceTest {
 
         loginPolicyManageService.deleteLoginPolicy(dto);
 
+        // [2026-11-25] 실제로 지운 경우만 커밋 감사를 남기므로 지우기 전에 행이 있었는지 본다.
+        verify(loginPolicyRepository).existsById("policy-target");
         verify(loginPolicyRepository).deleteById("policy-target");
         verifyNoMoreInteractions(loginPolicyRepository);
         // [GAP-SEC-006] 대상 사용자가 있으면 그 사용자 식별자로 보호 계정 가드를 부른다. 삭제는 제한을 풀 뿐이라

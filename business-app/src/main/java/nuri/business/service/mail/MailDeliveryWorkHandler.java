@@ -43,8 +43,11 @@ public class MailDeliveryWorkHandler implements DurableWorkHandler {
      */
     static java.util.Optional<Long> dispatchIdOf(DurableWork work) {
         if (!TYPE.equals(work.type())) throw new IllegalArgumentException("Unexpected work type");
-        tools.jackson.databind.JsonNode node = JSON.readTree(work.payload().isBlank() ? "{}" : work.payload());
-        return node.hasNonNull("dispatchId") ? java.util.Optional.of(node.get("dispatchId").asLong()) : java.util.Optional.empty();
+        // 비운 표지('{}', 그 표지 전의 빈 문자열)만 '이미 접수됨' 이다. 그 밖의 payload 는 발송 번호가 있어야 한다 — 손상된 행을
+        // 접수된 것으로 덮지 않는다.
+        String payload = work.payload().strip();
+        if (payload.isEmpty() || "{}".equals(payload)) return java.util.Optional.empty();
+        return java.util.Optional.of(intent(work).dispatchId());
     }
 
     @Override public String type() { return TYPE; }

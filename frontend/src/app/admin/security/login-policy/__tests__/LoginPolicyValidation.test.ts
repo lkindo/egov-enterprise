@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { loginPolicySchema } from '../LoginPolicyAdminClient';
+import { loginPolicySchema, toClockInput } from '../LoginPolicyAdminClient';
 
 const validPolicy = {
   ipAddr: '192.168.0.1',
@@ -56,6 +56,20 @@ describe('login policy validation', () => {
       ...validPolicy,
       bgngTm: '22:00',
       endTm: '06:00',
+    }).success).toBe(true);
+  });
+
+  it('[2026-11-25] 옛 표기(0900)로 저장된 시각은 편집 폼에 HH:mm 으로 채워 다른 칸만 고쳐도 저장할 수 있다', () => {
+    expect(toClockInput('0900')).toBe('09:00');
+    expect(toClockInput('09:00')).toBe('09:00');
+    expect(toClockInput(' ')).toBe('');
+    expect(toClockInput(null)).toBe('');
+    expect(toClockInput(undefined)).toBe('');
+    // 채운 값이 그대로 검증을 지난다 — 종전에는 '0900' 이 HH:mm 검증에 막혔다.
+    expect(loginPolicySchema.safeParse({
+      ...validPolicy,
+      bgngTm: toClockInput('0900'),
+      endTm: toClockInput('1800'),
     }).success).toBe(true);
   });
 });

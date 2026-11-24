@@ -855,8 +855,10 @@ class BoardMasterServiceTest {
         verify(boardMasterRepository).deleteAll(List.of(master1, master2));
         verify(boardMasterRepository, never()).findById(anyString());
         verify(boardMasterRepository, never()).delete(any(BoardMaster.class));
-        verify(sensitiveAudit).recordMutation("BOARD_MASTER_PURGE", "BBS_01");
-        verify(sensitiveAudit).recordMutation("BOARD_MASTER_PURGE", "BBS_02");
+        // [2026-11-25] 감사 원장은 요청마다 커밋 기록을 한 행만 받는다 — 대상을 이은 한 행이다(종전의 대상별 기록은 두 번째에서
+        //   유일 제약에 걸려 일괄 삭제 전체를 되돌렸다).
+        verify(sensitiveAudit).recordMutation("BOARD_MASTER_PURGE", "BBS_01,BBS_02");
+        verifyNoMoreInteractions(sensitiveAudit);
     }
 
     @Test

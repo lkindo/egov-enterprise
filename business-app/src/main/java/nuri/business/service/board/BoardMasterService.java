@@ -497,9 +497,10 @@ public class BoardMasterService extends BaseAbstractService {
         // 자식 FK를 남긴다. fetch join으로 적재한 옵션의 cascade를 보존하는 deleteAll을 한 번 호출하며,
         // 실제 DELETE 문은 전역 hibernate.jdbc.batch_size 설정에 따라 JDBC batch로 묶인다.
         boardMasterRepository.deleteAll(masters);
-        for (BoardMaster master : masters) {
-            sensitiveAudit.recordMutation(PURGE_AUDIT_OPERATION, master.getBbsId());
-        }
+        // [2026-11-25] 한 행으로 남긴다 — 감사 원장은 요청마다 커밋 기록을 한 행만 받는다(UNIQUE(요청 ID, 처리 상태)). 대상마다
+        //   남기면 두 번째 기록이 유일 제약에 걸려 일괄 삭제 전체가 503 으로 롤백됐다. 요청 상한(100건)이면 스냅숏 상한 안에 든다.
+        sensitiveAudit.recordMutation(PURGE_AUDIT_OPERATION, masters.stream().map(BoardMaster::getBbsId).sorted()
+                .collect(Collectors.joining(",")));
     }
 
     private List<BoardMaster> loadBoardMastersInRequestOrder(List<String> distinctBbsIds) {
