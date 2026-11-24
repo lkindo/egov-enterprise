@@ -431,11 +431,11 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             사용자는 제목·본문을 다 쓰고 '등록' 을 눌러도 재시도 안내만 받았고, 몇 번을 눌러도
             성공하지 않았다.
 
-            엔드포인트를 여는 대신 어포던스를 걷은 이유: BoardService.replyPost 는 실재하지만
-            **화면에 답글 계층 표현이 전혀 없다** — 목록·상세 어디도 upPstSn·ansLv 를 읽지
-            않는다(전수 grep 0건). 지금 엔드포인트만 열면 답글이 일반 글과 구분되지 않는
-            반쪽 기능이 된다. 서버 구현은 남겨 둔다(요청 밖 삭제 금지) — 계층 표현과 함께
-            설계할 때 되살릴 자산이다.
+            엔드포인트를 여는 대신 어포던스를 걷은 이유: **화면에 답글 계층 표현이 전혀 없다** —
+            목록·상세 어디도 upPstSn·ansLv 를 읽지 않는다(전수 grep 0건). 엔드포인트만 열면
+            답글이 일반 글과 구분되지 않는 반쪽 기능이 된다. [2026-11-25 DEC-OPS-431] 남아 있던
+            서버 구현(BoardService.replyPost)도 걷었다 — 답글을 다시 두려면 계층 표현과 함께
+            설계부터 한다.
           */}
           {showLikeToggle ? (
             <Button

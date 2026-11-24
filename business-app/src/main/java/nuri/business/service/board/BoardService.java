@@ -340,7 +340,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
          * (ADR-0040 결정 1의 운영자 예외). 없는 게시판과 이용자에게 닫힌 사용 안 함 게시판은 같은 404 다 — 목록과 같은 응답이라
          * 존재를 드러내지 않는다. 사용 여부를 커뮤니티 가드보다 먼저 본다(사용 안 함 커뮤니티 게시판의 비회원도 404).
          *
-         * @param pessimisticLock 등록·답글처럼 채번을 직렬화하는 경로는 마스터 행을 잠가 읽는다. 같은 트랜잭션이 잠근 행을 읽으므로
+         * @param pessimisticLock 등록처럼 채번을 직렬화하는 경로는 마스터 행을 잠가 읽는다. 같은 트랜잭션이 잠근 행을 읽으므로
          *                        동시에 사용 안 함으로 바뀌어도 커밋된 값을 본다.
          */
         private BoardMaster loadReadableMaster(String bbsId, boolean pessimisticLock) {
@@ -459,7 +459,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
 
                         Long sortOrdr = boardRepository.findMaxSortOrdr(master.getBbsId()) + 1;
 
-                        // 저자 식별은 인증 주체로 고정 — request.userId()/userNm() 로 저자 위조를 막는다(replyPost 와 동일).
+                        // 저자 식별은 인증 주체로 고정 — request.userId()/userNm() 로 저자 위조를 막는다.
                         String userIdToSet = userId;
 
                         Board board = Board.builder()
@@ -528,95 +528,9 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
                 return createPost(userId, newRequest);
         }
 
-        @Transactional
-        public Long replyPost(@NonNull String userId, @NonNull Long parentSn, @NonNull BoardSaveRequest request) {
-                // [2026-09-08 PD-CMTY-001·2026-10-23 ADR-0040 결정 1] 등록과 같은 경계.
-                BoardMaster master = loadWritableMaster(request.bbsId(), true);
-                // [2026-10-26 ADR-0043] 등록과 같은 Q&A 상태 규칙.
-                assertQnaStatusAllowed(master, request.qnaSttsCd());
-                // [2026-10-23 ADR-0040 결정 3·6] 등록과 같은 예약 게시 규칙.
-                String pstBgngYmd = requestedYmd(request.pstBgngYmd());
-                assertFutureStartAllowed(master, pstBgngYmd, today());
-
-                Board parent = findReplyParent(request.bbsId(), parentSn);
-                if (request.atchFileSn() != null) {
-                        attachmentAssignmentPolicy.assertAssignable(request.atchFileSn());
-                        // [2026-10-26 ADR-0043, SET-02] 미리 올린 묶음을 붙이는 답글도 등록과 같이 게시판 첨부 설정을 지난다.
-                        assertGroupAttachable(master, request.atchFileSn());
-                }
-
-                // 작성자 이름 조회 — 실패하면 답글 등록도 실패한다(대체 이름 없음, resolveAuthorName 참조)
-                String userNmToSet = resolveAuthorName(userId);
-
-                Long ansSn = boardRepository.findMaxAnsSn(master.getBbsId(), parent.getSortOrdr()) + 1;
-
-                String userIdToSet = userId;
-
-                Board board = Board.builder()
-                                .bbsId(master.getBbsId())
-                                .ansSn(ansSn)
-                                .upPstSn(parentSn)
-                                .useYn(request.useYn() != null ? request.useYn() : "Y")
-                                .qnaSttsCd(request.qnaSttsCd() != null ? request.qnaSttsCd() : "OPEN")
-                                .evntDt(parseDateTime(request.evntDt()))
-                                .inqCnt(0)
-                                .likeCnt(0)
-                                .userId(userIdToSet)
-                                .userNm(userNmToSet)
-                                .sortOrdr(parent.getSortOrdr())
-                                .ansLv(0)
-                                .pstTtl(request.pstTtl())
-                                .pstCn(sanitizeAndValidateContent(request.pstCn()))
-                                .pstBgngYmd(pstBgngYmd)
-                                .pstEndYmd(requestedYmd(request.pstEndYmd()))
-                                .atchFileSn(request.atchFileSn())
-                                .qnaCatCd(request.qnaCatCd())
-                                .scrtYn(resolveSecretYn(master, request.scrtYn(), null)) // [ADR-0040 결정 7] 등록과 같은 비밀글 정책.
-                                .pswd(null) // [2026-09-27 DIP B5 F9] 폐기 필드 — 등록과 같이 저장하지 않는다.
-                                .build();
-                
-                Long pstSn = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
-                                "boardRepository.save() 결과는 null 일 수 없습니다")
-                                .getPstSn();
-
-                // 생성 이벤트 — 생성은 공개가 아니다(ADR-0040 결정 3, PostCreatedEvent 참조).
-                nuri.foundation.core.util.TransactionUtils.runAfterCommit(
-                                () -> eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), pstSn, userId)));
-
-                return pstSn;
-        }
-
-        @Transactional
-        public Long replyPostWithFiles(@NonNull String userId, @NonNull Long parentSn,
-                        @NonNull BoardSaveRequest request,
-                        List<MultipartFile> files) throws IOException {
-                BoardMaster master = loadWritableMaster(request.bbsId(), false);
-                // [2026-10-26 ADR-0043] Q&A 상태도 업로드 전에 거부한다(replyPost 가 다시 본다).
-                assertQnaStatusAllowed(master, request.qnaSttsCd());
-                // [2026-10-23 ADR-0040 결정 3·6] 받지 않는 미래 시작일도 업로드 전에 거부한다(replyPost 가 다시 본다).
-                assertFutureStartAllowed(master, requestedYmd(request.pstBgngYmd()), today());
-                findReplyParent(request.bbsId(), parentSn);
-                Long atchFileSn = request.atchFileSn();
-                if (files != null && !files.isEmpty()) {
-                        // [2026-09-27 DIP B5 F9] 답글도 게시판 첨부 설정을 저장 전에 본다(등록과 같은 순서).
-                        assertNewFilesAllowed(master, 0, files);
-                        atchFileSn = fileService.uploadBoardFiles(files);
-                }
-
-                BoardSaveRequest newRequest = withAtchFileSn(request, atchFileSn);
-
-                return replyPost(userId, parentSn, newRequest);
-        }
-
-        /** 답글은 실제 부모 게시판·열람 경계를 지나며 파일 저장보다 먼저 검사한다. */
-        private Board findReplyParent(String bbsId, Long parentSn) {
-                // 논리 삭제된 부모는 findPostInBoard 가 없는 글로 거부한다.
-                Board parent = findPostInBoard(bbsId, parentSn);
-                if ("Y".equalsIgnoreCase(parent.getScrtYn())) {
-                        SecurityUtil.assertOwnerOrPermissionByEsntlId(parent.getUserId(), "BOARD_READ_ALL");
-                }
-                return parent;
-        }
+        // [2026-11-25 DEC-OPS-431] 답글 등록(replyPost·replyPostWithFiles)은 HTTP 경로·화면 없이 서비스에만 남아 있어 걷었다.
+        //   되살리려면 목록·상세의 계층 표현과 함께 설계부터 다시 한다. 이미 저장된 답글 행(up_pst_sn)은 그대로 두며 상단 고정 판정은
+        //   여전히 답글을 거부한다.
 
         /**
          * 게시글 상세. {@code countView=false} 는 조회수를 올리지 않는다 — 수정 화면처럼 글을 "읽는" 것이 아닌
@@ -837,7 +751,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
         }
 
         /**
-         * 게시글·답글 작성자의 표시 이름. 대체 이름을 두지 않는다 — 사용자를 찾지 못하면 {@code USER_NOT_FOUND}(404, U001) 업무
+         * 게시글 작성자의 표시 이름. 대체 이름을 두지 않는다 — 사용자를 찾지 못하면 {@code USER_NOT_FOUND}(404, U001) 업무
          * 예외로, 그 밖의 조회 실패는 원래 예외로 등록이 실패한다. 미조회는 인증 뒤 계정이 삭제된 요청에서 도달한다(인증 전에 없던
          * 계정은 인증 단계에서 막힌다).
          *
@@ -1187,7 +1101,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
          * 400), 상한(400), 해제면 종료일 없음(있으면 400) → 바뀌는 글만 한 문장 UPDATE → 바뀐 항목만 변경 이력(PIN·UNPIN).
          *
          * <p><b>상한의 직렬화.</b> 같은 게시판의 동시 고정이 둘 다 상한 아래로 세고 함께 넘기지 않도록 집계 전에 마스터 행을 잠근다
-         * (등록·답글의 채번과 같은 잠금 — 잠금 순서는 마스터 행 → 게시글 행이다). 판정을 모두 지난 뒤에만 쓴다 — 하나라도 어긋나면
+         * (등록의 채번과 같은 잠금 — 잠금 순서는 마스터 행 → 게시글 행이다). 판정을 모두 지난 뒤에만 쓴다 — 하나라도 어긋나면
          * 아무것도 바꾸지 않고 이력도 남기지 않는다. 쓰기는 게시글 버전을 올리지 않는다 — 운영자 행위라 작성자 수정과 다투지 않는다.
          *
          * <p>정책을 끄거나 상한을 낮춰도 해제는 언제나 된다. 이미 고정 중인 글은 상한 집계에서 새로 세지 않는다(종료일만 바뀐다).

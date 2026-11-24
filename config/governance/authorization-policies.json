@@ -4446,18 +4446,6 @@
       ]
     },
     {
-      "target": "BoardService#findReplyParent",
-      "policy": "OWNER_OR_ADMIN",
-      "mechanisms": [
-        {
-          "helper": "assertOwnerOrPermissionByEsntlId",
-          "count": 1,
-          "identityAxis": "ESNTL_ID",
-          "permission": "BOARD_READ_ALL"
-        }
-      ]
-    },
-    {
       "target": "InformalSanctionService#answerSupplement",
       "policy": "STRICT_OWNER",
       "mechanisms": [

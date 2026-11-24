@@ -518,7 +518,7 @@ class BoardOperationsPostgresIntegrationTest {
     }
 
     /**
-     * GAP-BOARD-004 — 사용자 표에 없는 작성자로 게시글·답글을 등록하면 미조회({@code USER_NOT_FOUND})로 실패하고 아무것도 저장하지
+     * GAP-BOARD-004 — 사용자 표에 없는 작성자로 게시글을 등록하면 미조회({@code USER_NOT_FOUND})로 실패하고 아무것도 저장하지
      * 않는다. 이 상태는 인증 뒤 계정이 삭제된 요청에서 생긴다(인증 전에 없던 계정은 인증 단계에서 막힌다) — 시험은 사용자 표에 없는
      * 내부 식별자로 서비스를 직접 불러 만든다. 종전에는 미조회를 잡아 "익명" 으로 대체했지만 그 이름은 저장되지 않았다 — 게시글의
      * 작성자 열은 사용자 표를 가리키는 FK(user_id → tb_user_info.esntl_id, V2_12)라 INSERT 가 거부돼, 요청이 미조회가 아니라 무결성
@@ -527,17 +527,13 @@ class BoardOperationsPostgresIntegrationTest {
      * <p>단위 시험(BoardServiceTest)은 Mockito 라 트랜잭션 프록시가 없고, H2 스키마는 엔티티로 만들어 이 FK 가 없다 — 등록이 실제로
      * 어떻게 끝나는지는 Flyway 로 만든 실제 스키마와 실제 트랜잭션에서만 보인다.
      */
-    @ParameterizedTest
-    @ValueSource(strings = {"post", "reply"})
+    @Test
     @DisplayName("PostgreSQL 에서 사용자 표에 없는 작성자의 등록은 USER_NOT_FOUND 로 실패하고 저장되지 않는다")
-    void missingAuthorFailsAsUserNotFound(String kind) {
+    void missingAuthorFailsAsUserNotFound() {
         String missing = "NOUSER" + author.substring(3);
-        String title = "missing-author-" + kind;
-        Runnable register = kind.equals("post")
-                ? () -> boardService.createPost(missing, newPost(title))
-                : () -> boardService.replyPost(missing, pstSn("A"), newPost(title));
+        String title = "missing-author-post";
 
-        assertThatThrownBy(register::run)
+        assertThatThrownBy(() -> boardService.createPost(missing, newPost(title)))
                 .isInstanceOfSatisfying(BusinessException.class, failure ->
                         assertThat(failure.getErrorCode()).isEqualTo(nuri.business.domain.user.exception.UserErrorCode.USER_NOT_FOUND));
         assertThat(countPosts(title)).as("없는 작성자의 글은 저장되지 않는다").isZero();

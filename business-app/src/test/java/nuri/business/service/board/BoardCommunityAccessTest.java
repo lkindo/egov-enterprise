@@ -589,10 +589,6 @@ class BoardCommunityAccessTest {
                     () -> service.createPost("writer", request(MISSING)));
             assertSameAsMissing(() -> service.createPostWithFiles("writer", request(CLOSED_COMMUNITY), oneFile()),
                     () -> service.createPostWithFiles("writer", request(MISSING), oneFile()));
-            assertSameAsMissing(() -> service.replyPost("writer", 1L, request(CLOSED_COMMUNITY)),
-                    () -> service.replyPost("writer", 1L, request(MISSING)));
-            assertSameAsMissing(() -> service.replyPostWithFiles("writer", 1L, request(CLOSED_COMMUNITY), oneFile()),
-                    () -> service.replyPostWithFiles("writer", 1L, request(MISSING), oneFile()));
             assertSameAsMissing(() -> service.updatePost(CLOSED_COMMUNITY, 1L, request(CLOSED_COMMUNITY)),
                     () -> service.updatePost(MISSING, 1L, request(MISSING)));
             assertSameAsMissing(() -> service.updatePostWithFiles(CLOSED_COMMUNITY, 1L, request(CLOSED_COMMUNITY), oneFile()),
