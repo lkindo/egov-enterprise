@@ -10,7 +10,7 @@ import nuri.foundation.core.validation.YmdRange;
 import org.jspecify.annotations.NonNull;
 
 /**
- * 게시글 저장 요청(등록·답글·수정).
+ * 게시글 저장 요청(등록·수정).
  *
  * <p>[2026-10-23 ADR-0040 결정 12] 게시 기간은 8자리(yyyyMMdd)만 받고 달력·순서를 서버가 검사한다 — 날짜를 사전순으로 비교해
  * 기간을 집행하므로 형식이 어긋나면 판정이 조용히 틀린다. 수정에서 날짜를 보내지 않거나 비우면 저장값을 그대로 둔다(종료일
@@ -56,6 +56,6 @@ public record BoardSaveRequest(
                 @Size(max = 200) String pswd,
 
                 @Schema(description = "게시글 버전 — 수정 요청에서만 쓴다. 상세 조회의 version 을 그대로 돌려보낸다(없으면 400, 다르면 409). "
-                                + "등록·답글에서는 쓰지 않는다")
+                                + "등록에서는 쓰지 않는다")
                 @Min(0) Integer version) {
 }

@@ -36,11 +36,6 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
                         nativeQuery = true)
         Long findMaxSortOrdr(@Param("bbsId") String bbsId);
 
-        /** 답글 순번도 같은 이유로 네이티브 — 유니크 제약(bbs_id, sort_ordr, ans_sn)이 숨김 행까지 포함하기 때문. */
-        @Query(value = "SELECT COALESCE(MAX(ans_sn), 0) FROM tb_bbs_item WHERE bbs_id = :bbsId AND sort_ordr = :sortOrdr",
-                        nativeQuery = true)
-        Long findMaxAnsSn(@Param("bbsId") String bbsId, @Param("sortOrdr") Long sortOrdr);
-
         /**
          * 날짜별 게시글 등록 건수.
          *

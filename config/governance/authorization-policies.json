@@ -2248,7 +2248,7 @@
       ]
     },
     {
-      "target": "BoardService#assertCommentAccess",
+      "target": "BoardAccessService#assertCommentAccess",
       "policy": "OWNER_OR_ADMIN",
       "mechanisms": [
         {
@@ -2260,7 +2260,7 @@
       ]
     },
     {
-      "target": "BoardService#assertCommentReadAccess",
+      "target": "BoardAccessService#assertCommentReadAccess",
       "policy": "OWNER_OR_ADMIN",
       "mechanisms": [
         {
@@ -4446,18 +4446,6 @@
       ]
     },
     {
-      "target": "BoardService#findReplyParent",
-      "policy": "OWNER_OR_ADMIN",
-      "mechanisms": [
-        {
-          "helper": "assertOwnerOrPermissionByEsntlId",
-          "count": 1,
-          "identityAxis": "ESNTL_ID",
-          "permission": "BOARD_READ_ALL"
-        }
-      ]
-    },
-    {
       "target": "InformalSanctionService#answerSupplement",
       "policy": "STRICT_OWNER",
       "mechanisms": [
@@ -4745,8 +4733,8 @@
       ]
     },
     {
-      "target": "BoardService#assertCommunityAccess",
-      "source": "business-app/src/main/java/nuri/business/service/board/BoardService.java",
+      "target": "BoardAccessService#assertCommunityAccess",
+      "source": "business-app/src/main/java/nuri/business/service/board/BoardAccessService.java",
       "policy": "PARTICIPANT_OR_ADMIN",
       "denyReferences": 1,
       "requiredTokens": [
@@ -4762,8 +4750,8 @@
       ]
     },
     {
-      "target": "BoardService#loadReadableMaster",
-      "source": "business-app/src/main/java/nuri/business/service/board/BoardService.java",
+      "target": "BoardAccessService#loadReadableMaster",
+      "source": "business-app/src/main/java/nuri/business/service/board/BoardAccessService.java",
       "policy": "PARTICIPANT_OR_ADMIN",
       "denyReferences": 0,
       "requiredTokens": [
@@ -4778,8 +4766,8 @@
       ]
     },
     {
-      "target": "BoardService#loadWritableMaster",
-      "source": "business-app/src/main/java/nuri/business/service/board/BoardService.java",
+      "target": "BoardAccessService#loadWritableMaster",
+      "source": "business-app/src/main/java/nuri/business/service/board/BoardAccessService.java",
       "policy": "PARTICIPANT_OR_ADMIN",
       "denyReferences": 0,
       "requiredTokens": [
@@ -4812,8 +4800,8 @@
       "policy": "ADMIN_OR_SYSTEM",
       "denyReferences": 0,
       "requiredTokens": [
-        "BoardMaster master = loadWritableMaster(bbsId, true);",
-        "Board target = findPostInBoard(bbsId, id);",
+        "BoardMaster master = accessGate.loadWritableMaster(bbsId, true);",
+        "Board target = accessGate.findPostInBoard(bbsId, id);",
         "assertPinsAccepted(master);",
         "assertPinLimit(master, newlyActive, boardRepository.countActivePins(bbsId, today));"
       ],

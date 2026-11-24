@@ -45,6 +45,8 @@ import java.io.IOException;
 class BoardServiceTest {
 
     private BoardService boardService;
+    /** [2026-11-25] 댓글·만족도·스크랩 경계는 BoardAccessService 로 옮겼다 — 같은 목·같은 시계로 만든다. */
+    private BoardAccessService boardAccess;
     @Mock
     private BoardRepository boardRepository;
     @Mock
@@ -108,6 +110,9 @@ class BoardServiceTest {
                 //   호출되지 않으며, 귀속 게시판 테스트만 이 목의 응답을 지정한다.
                 communityBoardAccess);
         boardService.useClock(FIXED_CLOCK);
+        boardAccess = new BoardAccessService(boardRepository, boardMasterRepository,
+                new nuri.business.core.config.BoardIdProperties(), communityBoardAccess);
+        boardAccess.useClock(FIXED_CLOCK);
         // [2026-10-23 ADR-0040 결정 1] 쓰기·상세·댓글 경로가 게시판 진입 판정(사용 여부 → 커뮤니티)을 먼저 지난다.
         //   시험이 마스터를 정하지 않으면 그 bbsId 의 사용 중인 일반 게시판으로 본다. 없는·사용 안 함·커뮤니티 게시판은
         //   시험이 직접 정한다(그 스텁이 이 기본값보다 앞선다).
@@ -266,7 +271,7 @@ class BoardServiceTest {
         assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", 5L, false))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
-        assertThatThrownBy(() -> boardService.assertCommentAccess("BBS_01", 5L))
+        assertThatThrownBy(() -> boardAccess.assertCommentAccess("BBS_01", 5L))
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
 
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("ESNTL_owner"));
@@ -460,30 +465,6 @@ class BoardServiceTest {
         verify(eventPublisher, times(1)).publishEvent(any(PostCreatedEvent.class));
     }
 
-    @Test
-    @DisplayName("답글 생성")
-    void replyPost() {
-        // given
-        String userId = "user1";
-        Long parentId = 1L;
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Content", null, null, null, null, null, null, null, null, null, null);
-        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().bbsId("BBS_01").pstSn(parentId).sortOrdr(100L).ansLv(0).build();
-        UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
-
-        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
-        given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
-        given(userService.getUserById(userId)).willReturn(user);
-        given(boardRepository.findMaxAnsSn("BBS_01", 100L)).willReturn(0L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
-
-        // when
-        Long pstSn = boardService.replyPost(userId, parentId, request);
-
-        // then
-        assertThat(pstSn).isPositive();
-    }
-
     /** BoardSaveRequest(bbsId, pstTtl, pstCn, pstBgngYmd, pstEndYmd, atchFileSn, evntDt, qnaSttsCd, qnaCatCd, scrtYn, useYn, pswd) */
     private BoardSaveRequest saveRequest(String evntDt, String qnaSttsCd, String useYn) {
         return new BoardSaveRequest("BBS_01", "Subject", "Content", null, null, null,
@@ -597,30 +578,6 @@ class BoardServiceTest {
     }
 
     @Test
-    @DisplayName("답글 생성 - 답변순번은 형제 최대값 다음이고, 부모/기본 플래그가 정확히 설정된다")
-    void replyPost_appliesDefaultsAndNextAnswerSeq() {
-        Long parentId = 1L;
-        Board parent = Board.builder().bbsId("BBS_01").pstSn(parentId).sortOrdr(100L).ansLv(0).build();
-        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
-                .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").build()));
-        given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
-        given(userService.getUserById("user1")).willReturn(UserDto.builder().userId("user1").userNm("Tester").build());
-        given(boardRepository.findMaxAnsSn("BBS_01", 100L)).willReturn(3L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
-
-        boardService.replyPost("user1", parentId, saveRequest(null, null, null));
-
-        Board saved = captureSavedBoard();
-        // +1 이 빠지면 형제 답글과 순번이 겹쳐 스레드 정렬이 깨진다.
-        assertThat(saved.getAnsSn()).isEqualTo(4L);
-        assertThat(saved.getUpPstSn()).isEqualTo(parentId);
-        assertThat(saved.getUseYn()).isEqualTo("Y");
-        assertThat(saved.getQnaSttsCd()).isEqualTo("OPEN");
-        // 답글도 원글과 동일하게 알림 이벤트를 발행해야 한다(커밋 후 발행).
-        verify(eventPublisher, times(1)).publishEvent(any(PostCreatedEvent.class));
-    }
-
-    @Test
     @DisplayName("게시글 상세 조회")
     void getPostDetail() {
         // given
@@ -657,7 +614,7 @@ class BoardServiceTest {
                 .bbsId("BBS_01").pstSn(21L).scrtYn("N").build();
         given(boardRepository.findActiveArticleDetail("BBS_01", 21L)).willReturn(Optional.of(detail));
 
-        boardService.assertCommentAccess("BBS_01", 21L);
+        boardAccess.assertCommentAccess("BBS_01", 21L);
 
         verify(boardRepository).findActiveArticleDetail("BBS_01", 21L);
         verify(viewCountService, never()).increaseViewCount(anyLong());
@@ -668,7 +625,7 @@ class BoardServiceTest {
     void assertCommentAccess_rejectsMismatchedBoardAndPost() {
         given(boardRepository.findActiveArticleDetail("WRONG_BBS", 22L)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> boardService.assertCommentAccess("WRONG_BBS", 22L))
+        assertThatThrownBy(() -> boardAccess.assertCommentAccess("WRONG_BBS", 22L))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
     }
@@ -682,7 +639,7 @@ class BoardServiceTest {
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("ESNTL_other"));
 
-        assertThatThrownBy(() -> boardService.assertCommentAccess("BBS_01", 23L))
+        assertThatThrownBy(() -> boardAccess.assertCommentAccess("BBS_01", 23L))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
     }
@@ -1253,16 +1210,16 @@ class BoardServiceTest {
         given(boardMasterRepository.findById("ON")).willReturn(Optional.of(
                 BoardMaster.builder().bbsId("ON").ansYn("Y").stsfdgYn("Y").build()));
 
-        assertThatThrownBy(() -> boardService.assertCommentsEnabled("OFF"))
+        assertThatThrownBy(() -> boardAccess.assertCommentsEnabled("OFF"))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
                 .hasMessageContaining("댓글");
-        assertThatThrownBy(() -> boardService.assertSatisfactionEnabled("OFF"))
+        assertThatThrownBy(() -> boardAccess.assertSatisfactionEnabled("OFF"))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
                 .hasMessageContaining("만족도");
-        boardService.assertCommentsEnabled("ON");
-        boardService.assertSatisfactionEnabled("ON");
+        boardAccess.assertCommentsEnabled("ON");
+        boardAccess.assertSatisfactionEnabled("ON");
         // 값을 보내지 않고 만든 게시판은 지금까지의 동작(받음)을 유지한다.
         BoardMaster unspecified = BoardMaster.builder().bbsId("DEFAULT").build();
         assertThat(unspecified.getAnsYn()).isEqualTo("Y");
@@ -1398,96 +1355,6 @@ class BoardServiceTest {
         assertThatThrownBy(() -> boardService.createPost("user1", request))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.BOARD_NOT_FOUND);
-
-        verifyNoInteractions(attachmentAssignmentPolicy);
-        verify(boardRepository, never()).save(any(Board.class));
-    }
-
-    /** [2026-11-23 GAP-BOARD-004] 게시글 등록과 같다 — 없는 작성자의 답글은 작성자 FK 로 저장될 수 없어 미조회를 그대로 실패시킨다. */
-    @Test
-    @DisplayName("작성자를 찾을 수 없으면 답글 등록은 USER_NOT_FOUND 로 실패하고 저장하지 않는다")
-    void replyPost_UserNotFound_failsWithoutSaving() {
-        // given
-        String userId = "unknown";
-        Long parentId = 1L;
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null, null);
-        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().bbsId("BBS_01").pstSn(parentId).sortOrdr(100L).ansLv(0).build();
-
-        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
-        given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
-        given(userService.getUserById(userId)).willThrow(new BusinessException(UserErrorCode.USER_NOT_FOUND));
-
-        // when & then
-        assertThatThrownBy(() -> boardService.replyPost(userId, parentId, request))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", UserErrorCode.USER_NOT_FOUND);
-        verify(boardRepository, never()).save(any(Board.class));
-    }
-
-    @Test
-    @DisplayName("파일을 포함하여 답글 생성")
-    void replyPostWithFiles() throws IOException {
-        // given
-        String userId = "user1";
-        Long parentId = 1L;
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null, null);
-        org.springframework.web.multipart.MultipartFile file = mock(
-                org.springframework.web.multipart.MultipartFile.class);
-        java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
-                .singletonList(file);
-
-        BoardMaster master = attachableMaster("BBS_01");
-        Board parent = Board.builder().bbsId("BBS_01").pstSn(parentId).sortOrdr(100L).ansLv(0).build();
-        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
-        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
-        given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
-        // 작성자 이름 조회 — 운영의 getUserById 는 null 을 돌려주지 않는다(종전 "익명" 대체가 스텁 누락을 가렸다, GAP-BOARD-004).
-        given(userService.getUserById(userId)).willReturn(UserDto.builder().userId(userId).userNm("Tester").build());
-        given(fileService.uploadBoardFiles(files)).willReturn(101L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
-
-        // when
-        boardService.replyPostWithFiles(userId, parentId, request, files);
-
-        // then
-        verify(fileService).uploadBoardFiles(files);
-    }
-
-    @Test
-    @DisplayName("답글 생성 - 타인이 업로드한 첨부는 저장 전에 거부한다")
-    void replyPost_rejectsForeignAttachmentBeforeSave() {
-        Long parentSn = 7L;
-        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
-                .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").build()));
-        given(boardRepository.findById(parentSn))
-                .willReturn(Optional.of(Board.builder().bbsId("BBS_01").pstSn(parentSn).sortOrdr(10L).build()));
-        BoardSaveRequest request = new BoardSaveRequest(
-                "BBS_01", "Reply", "Cont", null, null, 101L,
-                null, null, null, null, null, null, null);
-        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(attachmentAssignmentPolicy).assertAssignable(101L);
-
-        assertThatThrownBy(() -> boardService.replyPost("user1", parentSn, request))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
-
-        verify(boardRepository, never()).save(any(Board.class));
-    }
-
-    @Test
-    @DisplayName("답글 생성 - 없는 부모글은 첨부 식별자를 조회하기 전에 거부한다")
-    void replyPost_missingParentPrecedesAttachmentProbe() {
-        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
-                .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").build()));
-        given(boardRepository.findById(7L)).willReturn(Optional.empty());
-        BoardSaveRequest request = new BoardSaveRequest(
-                "BBS_01", "Reply", "Cont", null, null, 101L,
-                null, null, null, null, null, null, null);
-
-        assertThatThrownBy(() -> boardService.replyPost("user1", 7L, request))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
 
         verifyNoInteractions(attachmentAssignmentPolicy);
         verify(boardRepository, never()).save(any(Board.class));
@@ -1910,13 +1777,6 @@ class BoardServiceTest {
         boardService.updatePostWithFiles("BBS_01", 1L, request, null);
         boardService.updatePostWithFiles("BBS_01", 1L, request, Collections.emptyList());
 
-        // reply
-        Board parent = Board.builder().bbsId("BBS_01").pstSn(1L).sortOrdr(100L).ansLv(0).build();
-        given(boardRepository.findById(1L)).willReturn(Optional.of(parent));
-        
-        boardService.replyPostWithFiles(userId, 1L, request, null);
-        boardService.replyPostWithFiles(userId, 1L, request, Collections.emptyList());
-
         verify(fileService, never()).uploadBoardFiles(any());
         verify(fileService, never()).updateBoardFiles(any(), any());
     }
@@ -2076,9 +1936,9 @@ class BoardServiceTest {
         actAs("ESNTL_other");
         assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", 8L, false))
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
-        assertThatThrownBy(() -> boardService.assertCommentAccess("BBS_01", 8L))
+        assertThatThrownBy(() -> boardAccess.assertCommentAccess("BBS_01", 8L))
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
-        assertThatThrownBy(() -> boardService.assertCommentReadAccess("BBS_01", 8L))
+        assertThatThrownBy(() -> boardAccess.assertCommentReadAccess("BBS_01", 8L))
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
         assertThatThrownBy(() -> boardService.incrementLike("BBS_01", 8L))
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
@@ -2662,22 +2522,6 @@ class BoardServiceTest {
     }
 
     @Test
-    @DisplayName("🔐 비밀글 정책 REQUIRED 게시판의 답글도 비밀글로 저장한다 (ADR-0040 결정 7)")
-    void replyPost_requiredPolicyForcesSecret() {
-        Board parent = Board.builder().bbsId("BBS_01").pstSn(1L).sortOrdr(100L).ansLv(0).scrtYn("N").build();
-        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
-                .willReturn(Optional.of(policyMaster("BBS_01", "REQUIRED", null)));
-        given(boardRepository.findById(1L)).willReturn(Optional.of(parent));
-        given(userService.getUserById("user1")).willReturn(UserDto.builder().userId("user1").userNm("Tester").build());
-        given(boardRepository.findMaxAnsSn("BBS_01", 100L)).willReturn(0L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
-
-        boardService.replyPost("user1", 1L, secretRequest("N", null));
-
-        assertThat(captureSavedBoard().getScrtYn()).isEqualTo("Y");
-    }
-
-    @Test
     @DisplayName("🔐 비밀글 정책 REQUIRED 게시판에서 글을 고치면 요청의 N·빈 값과 공개로 남아 있던 옛 글도 비밀글이 된다 (ADR-0040 결정 7)")
     void updatePost_requiredPolicyForcesSecret() {
         actAs("ESNTL_owner");
@@ -2734,23 +2578,6 @@ class BoardServiceTest {
         assertThat(savedAfterCreate("NONE", null).getScrtYn()).isEqualTo("N");
         assertThat(savedAfterCreate("OPTIONAL", null).getScrtYn()).isEqualTo("N");
         assertThat(savedAfterCreate("REQUIRED", null).getScrtYn()).isEqualTo("Y");
-    }
-
-    @Test
-    @DisplayName("🔐 비밀 여부를 보내지 않은 답글도 N 으로 저장하고, 비밀 여부가 NULL 인 부모에는 지금처럼 남도 답글을 단다")
-    void replyPost_omittedSecretFlagStoresN() {
-        Board parent = Board.builder().bbsId("BBS_01").pstSn(1L).sortOrdr(100L).ansLv(0).userId("ESNTL_owner").build();
-        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
-                .willReturn(Optional.of(policyMaster("BBS_01", "NONE", null)));
-        given(boardRepository.findById(1L)).willReturn(Optional.of(parent));
-        given(userService.getUserById("user1")).willReturn(UserDto.builder().userId("user1").userNm("Tester").build());
-        given(boardRepository.findMaxAnsSn("BBS_01", 100L)).willReturn(0L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
-
-        boardService.replyPost("user1", 1L, secretRequest(null, null));
-
-        assertThat(captureSavedBoard().getScrtYn()).isEqualTo("N");
-        assertThat(parent.getScrtYn()).as("부모 행은 읽기만 한다").isNull();
     }
 
     @Test
@@ -2817,19 +2644,16 @@ class BoardServiceTest {
     }
 
     @Test
-    @DisplayName("게시글 등록·답글·수정은 본문(pstCn)의 위험 HTML/스크립트를 저장 전에 소독한다")
-    void createReplyAndUpdateSanitizeHtmlContent() {
+    @DisplayName("게시글 등록·수정은 본문(pstCn)의 위험 HTML/스크립트를 저장 전에 소독한다")
+    void createAndUpdateSanitizeHtmlContent() {
         actAs("user1");
         String dirtyHtml = "<p>안전본문</p><script>alert(1)</script><img src=\"javascript:alert(2)\" onerror=\"alert(3)\">";
         BoardMaster master = policyMaster("BBS_01", "NONE", null);
-        Board parent = Board.builder().bbsId("BBS_01").pstSn(1L).sortOrdr(100L).ansLv(0).build();
         UserDto user = UserDto.builder().userId("user1").userNm("Tester").build();
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById("user1")).willReturn(user);
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
-        given(boardRepository.findMaxAnsSn("BBS_01", 100L)).willReturn(0L);
-        given(boardRepository.findById(1L)).willReturn(Optional.of(parent));
         given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "제목", dirtyHtml,
@@ -2837,14 +2661,6 @@ class BoardServiceTest {
         boardService.createPost("user1", request);
         Board created = captureSavedBoard();
         assertThat(created.getPstCn()).isEqualTo("<p>안전본문</p><img>");
-
-        org.mockito.Mockito.reset(boardRepository);
-        given(boardRepository.findById(1L)).willReturn(Optional.of(parent));
-        given(boardRepository.findMaxAnsSn("BBS_01", 100L)).willReturn(0L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
-        boardService.replyPost("user1", 1L, request);
-        Board replied = captureSavedBoard();
-        assertThat(replied.getPstCn()).isEqualTo("<p>안전본문</p><img>");
 
         Board owned = versionedPost("BBS_01", 35L, "user1", null, null);
         given(boardRepository.findById(35L)).willReturn(Optional.of(owned));
@@ -2876,27 +2692,22 @@ class BoardServiceTest {
     }
 
     @Test
-    @DisplayName("스크립트 등 위험 태그만 남아 소독 후 본문이 비면 등록·답글·수정 모두 400 을 던지고 저장하지 않는다")
+    @DisplayName("스크립트 등 위험 태그만 남아 소독 후 본문이 비면 등록·수정 모두 400 을 던지고 저장하지 않는다")
     void blankAfterSanitizeRejectsWithInvalidInputAcrossWrites() {
         actAs("user1");
         BoardMaster master = policyMaster("BBS_01", "NONE", null);
-        Board parent = Board.builder().bbsId("BBS_01").pstSn(1L).sortOrdr(100L).ansLv(0).build();
         Board owned = versionedPost("BBS_01", 36L, "user1", null, null);
         String originalContent = owned.getPstCn();
         UserDto user = UserDto.builder().userId("user1").userNm("Tester").build();
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById("user1")).willReturn(user);
-        given(boardRepository.findById(1L)).willReturn(Optional.of(parent));
         given(boardRepository.findById(36L)).willReturn(Optional.of(owned));
 
         BoardSaveRequest scriptOnly = new BoardSaveRequest("BBS_01", "제목", "<script>alert(1)</script>",
                 null, null, null, null, null, null, null, null, null, 3);
 
         assertThatThrownBy(() -> boardService.createPost("user1", scriptOnly))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
-        assertThatThrownBy(() -> boardService.replyPost("user1", 1L, scriptOnly))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
         assertThatThrownBy(() -> boardService.updatePost("BBS_01", 36L, scriptOnly))
@@ -2912,7 +2723,6 @@ class BoardServiceTest {
     void postSanitizeOverMaxLengthRejectsWith400While4000BoundaryPasses() {
         actAs("user1");
         BoardMaster master = policyMaster("BBS_01", "NONE", null);
-        Board parent = Board.builder().bbsId("BBS_01").pstSn(1L).sortOrdr(100L).ansLv(0).build();
         Board owned = versionedPost("BBS_01", 37L, "user1", null, null);
         String originalContent = owned.getPstCn();
         UserDto user = UserDto.builder().userId("user1").userNm("Tester").build();
@@ -2920,7 +2730,6 @@ class BoardServiceTest {
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById("user1")).willReturn(user);
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
-        given(boardRepository.findById(1L)).willReturn(Optional.of(parent));
         given(boardRepository.findById(37L)).willReturn(Optional.of(owned));
         given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
@@ -2929,9 +2738,6 @@ class BoardServiceTest {
                 null, null, null, null, null, null, null, null, null, 3);
 
         assertThatThrownBy(() -> boardService.createPost("user1", expanding))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
-        assertThatThrownBy(() -> boardService.replyPost("user1", 1L, expanding))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
         assertThatThrownBy(() -> boardService.updatePost("BBS_01", 37L, expanding))
@@ -3196,7 +3002,7 @@ class BoardServiceTest {
         securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId("ESNTL_OWNER", "BOARD_READ_ALL"))
                 .thenThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED));
 
-        assertThatThrownBy(() -> boardService.assertScrapablePost("BBS_01", 77L))
+        assertThatThrownBy(() -> boardAccess.assertScrapablePost("BBS_01", 77L))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
 
@@ -3204,7 +3010,7 @@ class BoardServiceTest {
                 .pstSn(78L).bbsId("BBS_01").scrtYn("N").userId("ESNTL_OWNER").build();
         given(boardRepository.findActiveArticleDetail("BBS_01", 78L)).willReturn(Optional.of(visible));
 
-        boardService.assertScrapablePost("BBS_01", 78L);
+        boardAccess.assertScrapablePost("BBS_01", 78L);
         verifyNoInteractions(viewCountService);
     }
 
@@ -3233,7 +3039,7 @@ class BoardServiceTest {
                 new nuri.business.domain.board.BoardScrapCandidate("BBS_FOREIGN", 6L, 99L, "OTHER", "N", null, null)
         ));
 
-        java.util.Set<nuri.foundation.core.board.BoardPostAccessPort.PostRef> result = boardService.findScrapablePosts(
+        java.util.Set<nuri.foundation.core.board.BoardPostAccessPort.PostRef> result = boardAccess.findScrapablePosts(
                 List.of(openPost, secretOwn, secretOther, expiredPost, joinedCommunity, foreignCommunity));
 
         assertThat(result).containsExactlyInAnyOrder(openPost, secretOwn, joinedCommunity);

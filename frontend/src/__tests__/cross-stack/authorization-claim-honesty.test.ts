@@ -14,6 +14,8 @@ const ROOT = path.resolve(__dirname, '..', '..', '..', '..');
 const read = (rel: string) => readFileSync(path.join(ROOT, rel), 'utf8');
 const BOARD_CONTROLLER = 'api-server/src/main/java/nuri/api/controller/business/board/BoardApiController.java';
 const BOARD_SERVICE = 'business-app/src/main/java/nuri/business/service/board/BoardService.java';
+/** [2026-11-25] 게시판 진입 판정(열람·쓰기)과 커뮤니티 회원 가드는 BoardService 에서 이 파일로 옮겼다. */
+const BOARD_ACCESS_SERVICE = 'business-app/src/main/java/nuri/business/service/board/BoardAccessService.java';
 const POLICY = 'business-core/src/main/java/nuri/business/security/authorization/PermissionPolicy.java';
 const HANDLER_PREFIX = 'nuri.api.controller.business.board.BoardApiController#';
 interface Binding { method: string; path: string; handler: string; access: string; permission: string | null; excludedGroups?: string[] }
@@ -135,7 +137,7 @@ describe('현재 집행되는 인가와 화면 안내의 정합', () => {
       const detail = methodBody(service, 'getPostDetail');
       // [2026-10-23 ADR-0040 결정 1] 상세는 열람 판정(사용 여부 → 커뮤니티 회원)을 지난다. 커뮤니티 축은 그 판정 안에 있다.
       expect(detail).toContain('loadReadableMaster(bbsId, false)');
-      expect(methodBody(service, 'loadReadableMaster')).toContain('assertCommunityAccess(master);');
+      expect(methodBody(read(BOARD_ACCESS_SERVICE), 'loadReadableMaster')).toContain('assertCommunityAccess(master);');
       expect(detail).toContain('if ("Y".equalsIgnoreCase(detail.getScrtYn()))');
       expect(detail).toContain('SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL")');
       expect(methodBody(service, 'findOwnedPost')).toContain('SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_UPDATE_ALL")');

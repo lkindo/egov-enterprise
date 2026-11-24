@@ -180,7 +180,7 @@ public class BoardMasterService extends BaseAbstractService {
      * <p>[2026-09-08 PD-CMTY-001] {@code findByCmntySnAndUseYn} 은 V2_0 이후 선언만 있고 호출자가
      * 0 이었다(GAP-CMTY-001). 이 메서드가 그 첫 소비자이며, 회원 자격이 처음으로 무언가를 연다.
      *
-     * <p>인가는 {@link BoardService#assertCommunityAccess} 와 <b>같은 규칙</b>이다 — 관리자는 통과,
+     * <p>인가는 {@code BoardAccessService#assertCommunityAccess} 와 <b>같은 규칙</b>이다 — 관리자는 통과,
      * 그 밖에는 승인된 회원만, 포트가 없으면 거부. 목록만 열고 글 내용은 게시판 진입 시점에 같은
      * 게이트가 다시 판정한다(이중 검증).
      */
@@ -192,7 +192,7 @@ public class BoardMasterService extends BaseAbstractService {
     }
 
     private void assertCommunityMember(Long cmntySn) {
-        // [2026-09-26 DIP B4 P5] 게시판 진입 게이트(BoardService#assertCommunityAccess)가 통과시키는 전체 열람 권한자도
+        // [2026-09-26 DIP B4 P5] 게시판 진입 게이트(BoardAccessService#assertCommunityAccess)가 통과시키는 전체 열람 권한자도
         //   목록을 본다 — 종전에는 목록만 BBS_MST_READ_ALL 로 판정해 들어갈 수 있는 관리자가 목록을 보지 못했다.
         if (nuri.business.security.util.SecurityUtil.hasPermission("BBS_MST_READ_ALL")
                 || nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")) {

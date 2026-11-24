@@ -2,7 +2,7 @@ package nuri.api.controller.business.comment;
 
 import nuri.business.service.comment.CommentService;
 import nuri.business.service.comment.dto.CommentDto;
-import nuri.business.service.board.BoardService;
+import nuri.business.service.board.BoardAccessService;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
@@ -42,7 +42,7 @@ class CommentApiControllerTest {
     private CommentService commentService;
 
     @Mock
-    private BoardService boardService;
+    private BoardAccessService boardAccess;
 
     @InjectMocks
     private CommentApiController commentApiController;
@@ -117,7 +117,7 @@ class CommentApiControllerTest {
                 .andExpect(jsonPath("$.data.list[0].crtDt").value(org.hamcrest.Matchers.nullValue()))
                 .andExpect(jsonPath("$.data.list[0].pswd").doesNotExist());
         // [2026-10-23 ADR-0040 결정 1] 목록은 열람 경계 — 조회 대행 권한자는 사용 안 함 게시판 글의 댓글도 읽는다.
-        verify(boardService).assertCommentReadAccess("BBS_001", 1L);
+        verify(boardAccess).assertCommentReadAccess("BBS_001", 1L);
     }
 
     @Test
@@ -141,14 +141,14 @@ class CommentApiControllerTest {
                 org.mockito.ArgumentMatchers.eq("USRCNFRM_00000000001"),
                 org.mockito.ArgumentMatchers.eq("홍길동"),
                 any(CommentDto.class));
-        verify(boardService).assertCommentAccess("BBS_001", 1L);
+        verify(boardAccess).assertCommentAccess("BBS_001", 1L);
     }
 
     @Test
     @DisplayName("[DIP B5 F9] 댓글을 쓰지 않는 게시판에는 새 댓글을 받지 않는다 — 등록 서비스까지 가지 않는다")
     void createComment_rejectedWhenBoardDisablesComments() throws Exception {
         doThrow(new BusinessException(CommonErrorCode.INVALID_STATE, "이 게시판은 댓글을 받지 않습니다."))
-                .when(boardService).assertCommentsEnabled("BBS_001");
+                .when(boardAccess).assertCommentsEnabled("BBS_001");
 
         mockMvc.perform(post("/api/v1/comments")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -156,7 +156,7 @@ class CommentApiControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
 
-        verify(boardService).assertCommentAccess("BBS_001", 1L);
+        verify(boardAccess).assertCommentAccess("BBS_001", 1L);
         verify(commentService, never()).createComment(anyString(), anyString(), any(CommentDto.class));
     }
 
@@ -216,7 +216,7 @@ class CommentApiControllerTest {
     @DisplayName("비밀글·게시판 불일치 접근이 거부되면 댓글 조회를 실행하지 않는다")
     void getComments_deniedPostDoesNotReadComments() throws Exception {
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(boardService).assertCommentReadAccess("WRONG_BBS", 1L);
+                .when(boardAccess).assertCommentReadAccess("WRONG_BBS", 1L);
 
         mockMvc.perform(get("/api/v1/comments")
                         .param("pstSn", "1")
@@ -238,7 +238,7 @@ class CommentApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
-        verify(boardService).assertCommentAccess("BBS_001", 7L);
+        verify(boardAccess).assertCommentAccess("BBS_001", 7L);
         verify(commentService).deleteComment(1L);
     }
 
@@ -248,7 +248,7 @@ class CommentApiControllerTest {
         given(commentService.getCommentLocation(1L))
                 .willReturn(new CommentService.CommentLocation("CMNTY_BBS", 7L));
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(boardService).assertCommentAccess("CMNTY_BBS", 7L);
+                .when(boardAccess).assertCommentAccess("CMNTY_BBS", 7L);
 
         mockMvc.perform(put("/api/v1/comments/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -272,8 +272,8 @@ class CommentApiControllerTest {
                         .content("{\"ansCn\":\"고친 내용\"}"))
                 .andExpect(status().isOk());
 
-        org.mockito.InOrder order = org.mockito.Mockito.inOrder(boardService, commentService);
-        order.verify(boardService).assertCommentAccess("BBS_001", 7L);
+        org.mockito.InOrder order = org.mockito.Mockito.inOrder(boardAccess, commentService);
+        order.verify(boardAccess).assertCommentAccess("BBS_001", 7L);
         order.verify(commentService).updateComment(1L, "고친 내용");
     }
 }

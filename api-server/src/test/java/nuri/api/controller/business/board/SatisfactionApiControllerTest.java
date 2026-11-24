@@ -1,6 +1,6 @@
 package nuri.api.controller.business.board;
 
-import nuri.business.service.board.BoardService;
+import nuri.business.service.board.BoardAccessService;
 import nuri.business.service.board.SatisfactionService;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
@@ -45,7 +45,7 @@ class SatisfactionApiControllerTest {
 
     // [2026-09-05] 게시글 가시성 가드. 기본 mock 은 아무것도 던지지 않으므로 기존 테스트는 그대로 통과한다.
     @Mock
-    private BoardService boardService;
+    private BoardAccessService boardAccess;
 
     @InjectMocks
     private SatisfactionApiController controller;
@@ -205,7 +205,7 @@ class SatisfactionApiControllerTest {
     @DisplayName("🔒 볼 수 없는 글의 만족도 목록은 403 이고 서비스에 닿지 않는다")
     void listOnInaccessiblePostIsForbiddenBeforeService() throws Exception {
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(boardService).assertCommentReadAccess("BBS_01", 99L);
+                .when(boardAccess).assertCommentReadAccess("BBS_01", 99L);
 
         mockMvc.perform(get("/api/v1/boards/BBS_01/posts/99/satisfactions"))
                 .andExpect(status().isForbidden());
@@ -217,7 +217,7 @@ class SatisfactionApiControllerTest {
     @DisplayName("🔒 볼 수 없는 글의 만족도 평균도 403 이다 — 집계값도 글의 존재를 드러낸다")
     void averageOnInaccessiblePostIsForbidden() throws Exception {
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(boardService).assertCommentReadAccess("BBS_01", 99L);
+                .when(boardAccess).assertCommentReadAccess("BBS_01", 99L);
 
         mockMvc.perform(get("/api/v1/boards/BBS_01/posts/99/satisfactions/average"))
                 .andExpect(status().isForbidden());
@@ -229,7 +229,7 @@ class SatisfactionApiControllerTest {
     @DisplayName("🔒 볼 수 없는 글에는 만족도를 남길 수 없다 — 댓글 등록과 같은 자리의 같은 검사")
     void createOnInaccessiblePostIsForbiddenBeforeService() throws Exception {
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(boardService).assertCommentAccess("BBS_01", 99L);
+                .when(boardAccess).assertCommentAccess("BBS_01", 99L);
 
         mockMvc.perform(post("/api/v1/boards/BBS_01/posts/99/satisfactions")
                         .contentType("application/json")
@@ -243,14 +243,14 @@ class SatisfactionApiControllerTest {
     @DisplayName("[DIP B5 F9] 만족도 조사를 쓰지 않는 게시판에는 새 평가를 받지 않는다 — 등록 서비스까지 가지 않는다")
     void createOnBoardWithoutRatingIsRejectedBeforeService() throws Exception {
         doThrow(new BusinessException(CommonErrorCode.INVALID_STATE, "이 게시판은 만족도 조사를 받지 않습니다."))
-                .when(boardService).assertSatisfactionEnabled("BBS_01");
+                .when(boardAccess).assertSatisfactionEnabled("BBS_01");
 
         mockMvc.perform(post("/api/v1/boards/BBS_01/posts/1/satisfactions")
                         .contentType("application/json")
                         .content("{\"dgstfnScr\":5,\"useYn\":\"Y\"}"))
                 .andExpect(status().isBadRequest());
 
-        verify(boardService).assertCommentAccess("BBS_01", 1L);
+        verify(boardAccess).assertCommentAccess("BBS_01", 1L);
         verify(satisfactionService, never()).createSatisfaction(any());
     }
 
@@ -270,8 +270,8 @@ class SatisfactionApiControllerTest {
 
         // 세 경로 전부 가드를 지났음을 호출 횟수로 고정한다 — 하나라도 빠지면 그 경로가 다시 열린 것이다.
         // [2026-10-23 ADR-0040 결정 1] 조회 둘은 열람 경계, 등록은 엄격 경계다(사용 안 함 게시판은 운영자에게도 새 평가를 받지 않는다).
-        verify(boardService, org.mockito.Mockito.times(2)).assertCommentReadAccess("BBS_01", 1L);
-        verify(boardService).assertCommentAccess("BBS_01", 1L);
+        verify(boardAccess, org.mockito.Mockito.times(2)).assertCommentReadAccess("BBS_01", 1L);
+        verify(boardAccess).assertCommentAccess("BBS_01", 1L);
     }
 
     /**
@@ -283,7 +283,7 @@ class SatisfactionApiControllerTest {
     @DisplayName("🔒 볼 수 없는 글의 평가는 수정·삭제할 수 없다 — 소속 대조와 서비스에 닿지 않는다")
     void updateAndDeleteOnInaccessiblePostAreForbiddenBeforeService(String method) throws Exception {
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(boardService).assertCommentReadAccess("BBS_01", 99L);
+                .when(boardAccess).assertCommentReadAccess("BBS_01", 99L);
 
         mockMvc.perform(modify(method, "/api/v1/boards/BBS_01/posts/99/satisfactions/10"))
                 .andExpect(status().isForbidden());
@@ -303,7 +303,7 @@ class SatisfactionApiControllerTest {
         mockMvc.perform(modify(method, "/api/v1/boards/BBS_01/posts/1/satisfactions/10"))
                 .andExpect(status().isNotFound());
 
-        verify(boardService).assertCommentReadAccess("BBS_01", 1L);
+        verify(boardAccess).assertCommentReadAccess("BBS_01", 1L);
         verify(satisfactionService, never()).updateSatisfaction(any());
         verify(satisfactionService, never()).deleteSatisfaction(anyLong());
     }
@@ -315,8 +315,8 @@ class SatisfactionApiControllerTest {
         mockMvc.perform(modify(method, "/api/v1/boards/BBS_01/posts/1/satisfactions/10"))
                 .andExpect(status().isOk());
 
-        var order = org.mockito.Mockito.inOrder(boardService, satisfactionService);
-        order.verify(boardService).assertCommentReadAccess("BBS_01", 1L);
+        var order = org.mockito.Mockito.inOrder(boardAccess, satisfactionService);
+        order.verify(boardAccess).assertCommentReadAccess("BBS_01", 1L);
         order.verify(satisfactionService).assertLocatedAt(10L, "BBS_01", 1L);
     }
 
@@ -324,7 +324,7 @@ class SatisfactionApiControllerTest {
     @DisplayName("🔒 볼 수 없는 글의 만족도는 대리 삭제할 수 없다 — 소속 대조와 삭제에 닿지 않는다")
     void moderateOnInaccessiblePostIsForbiddenBeforeService() throws Exception {
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(boardService).assertCommentReadAccess("BBS_01", 99L);
+                .when(boardAccess).assertCommentReadAccess("BBS_01", 99L);
 
         mockMvc.perform(delete("/api/v1/boards/BBS_01/posts/99/satisfactions/10/moderate"))
                 .andExpect(status().isForbidden());
@@ -342,7 +342,7 @@ class SatisfactionApiControllerTest {
         mockMvc.perform(delete("/api/v1/boards/BBS_01/posts/1/satisfactions/10/moderate"))
                 .andExpect(status().isNotFound());
 
-        verify(boardService).assertCommentReadAccess("BBS_01", 1L);
+        verify(boardAccess).assertCommentReadAccess("BBS_01", 1L);
         verify(satisfactionService, never()).deleteByModerator(anyLong());
     }
 
@@ -352,8 +352,8 @@ class SatisfactionApiControllerTest {
         mockMvc.perform(delete("/api/v1/boards/BBS_01/posts/1/satisfactions/10/moderate"))
                 .andExpect(status().isOk());
 
-        var order = org.mockito.Mockito.inOrder(boardService, satisfactionService);
-        order.verify(boardService).assertCommentReadAccess("BBS_01", 1L);
+        var order = org.mockito.Mockito.inOrder(boardAccess, satisfactionService);
+        order.verify(boardAccess).assertCommentReadAccess("BBS_01", 1L);
         order.verify(satisfactionService).assertLocatedAt(10L, "BBS_01", 1L);
         order.verify(satisfactionService).deleteByModerator(10L);
     }

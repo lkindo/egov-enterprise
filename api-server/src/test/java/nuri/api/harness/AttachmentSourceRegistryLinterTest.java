@@ -162,11 +162,6 @@ class AttachmentSourceRegistryLinterTest {
                             "boardRepository.save(")),
             entry("business-app/src/main/java/nuri/business/service/board/BoardService.java#createPostWithFiles",
                     delegate("createPost(userId, newRequest)", "boardRepository.save(", "board.update(")),
-            entry("business-app/src/main/java/nuri/business/service/board/BoardService.java#replyPost",
-                    guarded("attachmentAssignmentPolicy.assertAssignable(request.atchFileSn())",
-                            "boardRepository.save(")),
-            entry("business-app/src/main/java/nuri/business/service/board/BoardService.java#replyPostWithFiles",
-                    delegate("replyPost(userId, parentSn, newRequest)", "boardRepository.save(", "board.update(")),
             entry("business-app/src/main/java/nuri/business/service/board/BoardService.java#updateOwnedPost",
                     guarded("attachmentAssignmentPolicy.assertAssignable(request.atchFileSn())", "board.update(")),
             entry("business-app/src/main/java/nuri/business/service/board/BoardService.java#updatePostWithFiles",
@@ -681,11 +676,6 @@ class AttachmentSourceRegistryLinterTest {
                         atchFileSn = fileService.uploadBoardFiles(files);
                         return createPost(userId, request);
                     }
-                    public Long replyPostWithFiles(Long parentSn, Request request, Files files) {
-                        BoardMaster master = loadWritableMaster(request.bbsId(), false);
-                        atchFileSn = fileService.uploadBoardFiles(files);
-                        return replyPost(userId, parentSn, request);
-                    }
                     public void updatePostWithFiles(Long pstSn, Request request, Files files) {
                         BoardMaster master = loadWritableMaster(bbsId, false);
                         Board board = findOwnedPost(bbsId, pstSn);
@@ -741,9 +731,9 @@ class AttachmentSourceRegistryLinterTest {
         assertTrue(boardOwnershipOrderViolations(path, entityUpdateBeforeOwner).stream()
                 .anyMatch(value -> value.contains("updateOwnedPost(") && value.contains("소유권보다 앞")));
 
-        // [2026-10-23 ADR-0040 결정 1] 게시판 판정보다 앞선 파일 저장, 판정 자체의 소실은 등록·답글·수정 모두 red 다.
-        for (String method : List.of("createPostWithFiles", "replyPostWithFiles")) {
-            String next = method.startsWith("create") ? "return createPost(" : "return replyPost(";
+        // [2026-10-23 ADR-0040 결정 1] 게시판 판정보다 앞선 파일 저장, 판정 자체의 소실은 등록·수정 모두 red 다.
+        for (String method : List.of("createPostWithFiles")) {
+            String next = "return createPost(";
             String gateAfterUpload = good.replace(
                     "BoardMaster master = loadWritableMaster(request.bbsId(), false);\n"
                             + "        atchFileSn = fileService.uploadBoardFiles(files);\n        " + next,
@@ -864,7 +854,6 @@ class AttachmentSourceRegistryLinterTest {
         //   게시판에서 거부될 요청이 디스크에 파일을 남기지 않는다(DIP I2 의 순서를 사용 여부까지 넓힌다).
         for (String[] gate : new String[][] {
                 {"createPostWithFiles", "loadWritableMaster(request.bbsId(), false)"},
-                {"replyPostWithFiles", "loadWritableMaster(request.bbsId(), false)"},
                 {"updatePostWithFiles", "loadWritableMaster(bbsId, false)"}}) {
             requireTokenBeforeMutations(methods, path, gate[0], gate[1], BOARD_GATE,
                     List.of("fileService.uploadBoardFiles(", "fileService.updateBoardFiles(",

@@ -3,7 +3,6 @@ package nuri.business.service.board;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import nuri.business.core.config.BoardIdProperties;
 import nuri.business.domain.board.*;
-import nuri.business.domain.board.exception.BoardErrorCode;
 import nuri.business.service.board.dto.BoardMapperImpl;
 import nuri.business.service.board.dto.BoardSaveRequest;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
@@ -74,8 +73,6 @@ class ConfiguredBoardEditPolicyTest {
         List<org.assertj.core.api.ThrowableAssert.ThrowingCallable> actions = List.of(
                 () -> service.createPost("editor-key", request("NOTICE")),
                 () -> service.createPostWithFiles("editor-key", request("NOTICE"), upload),
-                () -> service.replyPost("editor-key", 1L, request("NOTICE")),
-                () -> service.replyPostWithFiles("editor-key", 1L, request("NOTICE"), upload),
                 () -> service.updatePost("NOTICE", 1L, request("ordinary")),
                 () -> service.updatePostWithFiles("NOTICE", 1L, request("ordinary"), upload),
                 () -> service.deletePost("NOTICE", 1L, "editor-key"),
@@ -165,19 +162,5 @@ class ConfiguredBoardEditPolicyTest {
                 nuri.business.service.user.dto.UserDto.builder().userId("editor").userNm("편집자").build());
         when(posts.save(any())).thenReturn(Board.builder().pstSn(8L).build());
         assertThat(service.createPost("editor-key", request("ordinary"))).isEqualTo(8L);
-    }
-
-    @Test void replyCannotSwitchBoardIdsOrReadSecretParentsBeforeUpload() {
-        authenticate("NOTICE_EDIT", "FAQ_EDIT", "BOARD_CREATE");
-        when(boards.findById("ordinary")).thenReturn(Optional.of(BoardMaster.builder().bbsId("ordinary").build()));
-        when(boards.findById("NOTICE")).thenReturn(Optional.of(BoardMaster.builder().bbsId("NOTICE").build()));
-        when(posts.findById(1L)).thenReturn(Optional.of(Board.builder().bbsId("NOTICE").pstSn(1L).build()));
-        assertThatThrownBy(() -> service.replyPostWithFiles("editor-key", 1L, request("ordinary"), List.of()))
-                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
-        when(posts.findById(1L)).thenReturn(Optional.of(Board.builder().bbsId("NOTICE").pstSn(1L).scrtYn("Y").userId("other").build()));
-        assertThatThrownBy(() -> service.replyPostWithFiles("editor-key", 1L, request("NOTICE"), List.of()))
-                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
-        verifyNoInteractions(files, attachments);
-        verify(posts, never()).save(any());
     }
 }
