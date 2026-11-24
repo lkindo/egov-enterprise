@@ -380,6 +380,26 @@ class WorkReportServiceTest {
     }
 
     @Test
+    @DisplayName("[2026-11-24] 힌트의 소유 판정은 쓰기 가드와 같은 frstRgtrId 축이다 — 표시용 userId 가 같아도 등록자가 다르면 거짓")
+    void hintOwnershipFollowsTheAuditRegistrantNotTheDisplayedAuthor() {
+        WorkReport report = WorkReport.builder().rptpSn(8L).rptTtl("이관된 보고").userId("user01").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(report, "frstRgtrId", "migrator");
+        when(workReportRepository.findById(8L)).thenReturn(Optional.of(report));
+        authenticateWithPermissions("user01", "WORK_RPT_READ", "WORK_RPT_READ_ALL", "WORK_RPT_UPDATE", "WORK_RPT_DELETE");
+
+        WorkReportDto seenByDisplayedAuthor = workReportService.getWorkReport(8L);
+        assertEquals(Boolean.FALSE, seenByDisplayedAuthor.getEditable());
+        assertEquals(Boolean.FALSE, seenByDisplayedAuthor.getDeletable());
+        // 쓰기 가드도 같은 축이라 힌트가 거짓이면 실제 수정도 거부된다.
+        assertThrows(BusinessException.class, () -> workReportService.deleteWorkReport(8L));
+
+        authenticateWithPermissions("migrator", "WORK_RPT_READ", "WORK_RPT_UPDATE", "WORK_RPT_DELETE");
+        WorkReportDto seenByRegistrant = workReportService.getWorkReport(8L);
+        assertEquals(Boolean.TRUE, seenByRegistrant.getEditable());
+        assertEquals(Boolean.TRUE, seenByRegistrant.getDeletable());
+    }
+
+    @Test
     @DisplayName("업무보고 상세 — 미존재는 성공 null이 아니라 404 도메인 오류")
     void getWorkReport_notFound() {
         when(workReportRepository.findById(404L)).thenReturn(Optional.empty());

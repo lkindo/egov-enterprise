@@ -74,8 +74,6 @@ class MemoReportServiceTest {
         given(userRepository.findByEsntlIdForUpdate(anyString())).willAnswer(invocation -> Optional.of(
                 nuri.business.domain.user.entity.User.builder().esntlId(invocation.getArgument(0))
                         .userSttsCd("P").build()));
-        // 알림은 받을 계정이 있을 때만 발행한다 — 따로 지운 계정을 다루는 시험만 이 값을 바꾼다.
-        given(userRepository.existsById(anyString())).willReturn(true);
     }
 
     /** 서비스가 정렬 없는 요청에 넣는 기본 정렬. 아래 테스트들은 이미 정렬된 요청을 보내 위임만 본다. */
@@ -1096,7 +1094,8 @@ class MemoReportServiceTest {
         when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(instructed));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-recipient"));
-        given(userRepository.existsById("esntl-writer")).willReturn(false);
+        // 계정 삭제가 커밋된 뒤의 잠금 조회는 행이 없다.
+        given(userRepository.findByEsntlIdForUpdate("esntl-writer")).willReturn(Optional.empty());
 
         String token = memoReportService.getMemoReport(1L).getInstructionReadToken();
         memoReportService.updateDrctMatter(1L, "보완해 주세요", token);
@@ -1106,6 +1105,7 @@ class MemoReportServiceTest {
 
         __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_DELETE_ALL")).thenReturn(true);
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("esntl-admin"));
+        org.mockito.Mockito.clearInvocations(userRepository);
         memoReportService.deleteMemoReport(1L);
 
         verify(memoReportRepository).delete(instructed);
@@ -1114,6 +1114,10 @@ class MemoReportServiceTest {
         verify(eventPublisher).publishEvent(event.capture());
         assertThat(event.getAllValues()).extracting(nuri.foundation.core.event.NotificationRequestedEvent::receiverEsntlId)
                 .containsExactly("esntl-recipient");
+        // 두 당사자는 계정 삭제와 같은 순서(식별자 오름차순)로 먼저 잠근다 — 서로 기다리다 교착하지 않는다.
+        org.mockito.ArgumentCaptor<String> locked = org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(userRepository, org.mockito.Mockito.atLeast(2)).findByEsntlIdForUpdate(locked.capture());
+        assertThat(locked.getAllValues()).startsWith("esntl-recipient", "esntl-writer");
     }
 
     @Test

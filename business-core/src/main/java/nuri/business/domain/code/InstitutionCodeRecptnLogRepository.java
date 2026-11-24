@@ -18,4 +18,10 @@ public interface InstitutionCodeRecptnLogRepository
      */
     Page<InstitutionCodeRecptnLog> findByAllInstNmContainingOrIdInstCdContainingIgnoreCase(
             String allInstNm, String instCd, Pageable pageable);
+
+    /** 수신 처리를 같은 행에서 직렬화한다 — 두 관리자가 같은 건을 처리해도 처음 처리한 사람·시각이 남는다. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("SELECT l FROM InstitutionCodeRecptnLog l WHERE l.id = :id")
+    java.util.Optional<InstitutionCodeRecptnLog> findByIdForUpdate(
+            @org.springframework.data.repository.query.Param("id") InstitutionCodeRecptnLogId id);
 }

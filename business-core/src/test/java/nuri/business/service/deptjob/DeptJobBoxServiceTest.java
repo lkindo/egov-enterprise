@@ -189,24 +189,32 @@ class DeptJobBoxServiceTest {
 
     @Test
     @DisplayName("부서함 삭제 - 산하 업무 없음")
-    void deleteDeptJobBox() {
-        when(deptJobBoxRepository.existsById(1L)).thenReturn(true);
-        when(deptJobRepository.existsByDeptTaskBoxSn(1L)).thenReturn(false);
-        doNothing().when(deptJobBoxRepository).deleteById(1L);
-
-        deptJobBoxService.deleteDeptJobBox(1L);
-
-        verify(deptJobBoxRepository, times(1)).deleteById(1L);
+    /** 삭제도 수정처럼 업무함 행을 잠그고 읽는다 — 없으면 null(대상 없음)이다. */
+    private void lockedBox(long boxSn, DeptJobBox box) {
+        when(entityManager.find(org.mockito.ArgumentMatchers.eq(DeptJobBox.class), org.mockito.ArgumentMatchers.eq(boxSn),
+                org.mockito.ArgumentMatchers.eq(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE))).thenReturn(box);
     }
 
     @Test
-    @DisplayName("[2026-11-24] 부서함 삭제 - 없는 업무함은 성공으로 끝나지 않고 404")
+    @DisplayName("부서함 삭제 - 산하 업무 없음")
+    void deleteDeptJobBox() {
+        lockedBox(1L, deptJobBox);
+        when(deptJobRepository.existsByDeptTaskBoxSn(1L)).thenReturn(false);
+
+        deptJobBoxService.deleteDeptJobBox(1L);
+
+        verify(deptJobBoxRepository, times(1)).delete(deptJobBox);
+    }
+
+    @Test
+    @DisplayName("[2026-11-24] 부서함 삭제 - 없는 업무함(동시 삭제로 먼저 지워진 것 포함)은 성공으로 끝나지 않고 404")
     void deleteDeptJobBox_missingBoxIsNotFound() {
-        when(deptJobBoxRepository.existsById(99L)).thenReturn(false);
+        lockedBox(99L, null);
 
         BusinessException ex = assertThrows(BusinessException.class, () -> deptJobBoxService.deleteDeptJobBox(99L));
 
         assertEquals(CommonErrorCode.RESOURCE_NOT_FOUND, ex.getErrorCode());
+        verify(deptJobBoxRepository, never()).delete(any(DeptJobBox.class));
         verify(deptJobBoxRepository, never()).deleteById(anyLong());
     }
 
@@ -218,13 +226,14 @@ class DeptJobBoxServiceTest {
     @Test
     @DisplayName("부서함 삭제 - 산하 업무가 있으면 409(RESOURCE_IN_USE) 로 차단하고 삭제하지 않는다")
     void deleteDeptJobBox_conflictWhenTasksExist() {
-        when(deptJobBoxRepository.existsById(1L)).thenReturn(true);
+        lockedBox(1L, deptJobBox);
         when(deptJobRepository.existsByDeptTaskBoxSn(1L)).thenReturn(true);
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> deptJobBoxService.deleteDeptJobBox(1L));
 
         assertEquals(CommonErrorCode.RESOURCE_IN_USE, ex.getErrorCode());
+        verify(deptJobBoxRepository, never()).delete(any(DeptJobBox.class));
         verify(deptJobBoxRepository, never()).deleteById(anyLong());
     }
 
@@ -256,6 +265,7 @@ class DeptJobBoxServiceTest {
         setAuthorities("ROLE_USER");
 
         assertThrows(BusinessException.class, () -> deptJobBoxService.deleteDeptJobBox(1L));
+        verify(deptJobBoxRepository, never()).delete(any(DeptJobBox.class));
         verify(deptJobBoxRepository, never()).deleteById(anyLong());
     }
 }

@@ -152,7 +152,7 @@ class InstitutionCodeServiceTest {
     void updateInstitutionCodeRecptn() {
         // given
         InstitutionCodeRecptnLog logEntity = mock(InstitutionCodeRecptnLog.class);
-        when(institutionCodeRecptnLogRepository.findById(any())).thenReturn(Optional.of(logEntity));
+        when(institutionCodeRecptnLogRepository.findByIdForUpdate(any())).thenReturn(Optional.of(logEntity));
 
         // when — 호출자가 엉뚱한 값을 보내거나 아예 빠뜨려도 완료 판정은 서버가 한다.
         InstitutionCodeRecptnDto dto = InstitutionCodeRecptnDto.builder()
@@ -165,6 +165,19 @@ class InstitutionCodeServiceTest {
 
         // then — [2026-11-24] 처리자는 고정값 "SYSTEM" 이 아니라 처리한 관리자의 로그인 ID 다.
         verify(logEntity).updateProcessSe("1", "fixture");
+    }
+
+    @Test
+    @DisplayName("[2026-11-24] 이미 처리한 수신 건은 다시 쓰지 않는다 — 처음 처리한 사람·시각을 남기고 성공으로 끝난다")
+    void updateInstitutionCodeRecptnKeepsTheFirstProcessor() {
+        InstitutionCodeRecptnLog logEntity = mock(InstitutionCodeRecptnLog.class);
+        when(logEntity.getProcSe()).thenReturn("1");
+        when(institutionCodeRecptnLogRepository.findByIdForUpdate(any())).thenReturn(Optional.of(logEntity));
+
+        institutionCodeService.updateInstitutionCodeRecptn(InstitutionCodeRecptnDto.builder()
+                .ocrnYmd("20240101").instCd("I1").jobSn(1L).build());
+
+        verify(logEntity, never()).updateProcessSe(anyString(), anyString());
     }
 
     /**
@@ -183,7 +196,7 @@ class InstitutionCodeServiceTest {
     @DisplayName("수신 처리는 원장을 건드리지 않는다 — 화면 문구가 이 사실과 맞아야 한다")
     void updateInstitutionCodeRecptnDoesNotTouchLedger() {
         InstitutionCodeRecptnLog logEntity = mock(InstitutionCodeRecptnLog.class);
-        when(institutionCodeRecptnLogRepository.findById(any())).thenReturn(Optional.of(logEntity));
+        when(institutionCodeRecptnLogRepository.findByIdForUpdate(any())).thenReturn(Optional.of(logEntity));
 
         institutionCodeService.updateInstitutionCodeRecptn(InstitutionCodeRecptnDto.builder()
                 .ocrnYmd("20240101").instCd("I1").jobSn(1L).build());
@@ -196,7 +209,7 @@ class InstitutionCodeServiceTest {
     @DisplayName("기관코드 수신 처리 — 대상이 없으면 조용히 성공하지 않는다")
     void updateInstitutionCodeRecptnMissingTarget() {
         // given
-        when(institutionCodeRecptnLogRepository.findById(any())).thenReturn(Optional.empty());
+        when(institutionCodeRecptnLogRepository.findByIdForUpdate(any())).thenReturn(Optional.empty());
 
         InstitutionCodeRecptnDto dto = InstitutionCodeRecptnDto.builder()
                 .ocrnYmd("20240101")

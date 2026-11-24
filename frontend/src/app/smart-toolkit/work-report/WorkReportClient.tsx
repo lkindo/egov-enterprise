@@ -97,6 +97,12 @@ export default function WorkReportClient({ initialYmd }: WorkReportClientProps) 
   const reports = reportData?.list || [];
   const reportTotalPages = reportData?.totalPage ?? 1;
   const reportTotal = reportData?.total ?? 0;
+  /*
+    [2026-11-24] 상세 창은 연 시점의 행을 들고 있다. 수정 단추와 수정 창이 쓰는 힌트·버전은 지금 목록의 같은 행에서 읽는다 — 권한이
+    바뀌면 인증 문맥이 조회를 다시 읽게 하므로, 연 시점의 값으로 그리면 회수된 권한의 단추가 남아 저장 때 403 이었다. 목록을 다시
+    읽는 중이거나 목록에서 빠진 행이면 수정 단추를 그리지 않는다.
+  */
+  const liveDetailReport = detailReport ? reports.find((report) => report.rptpSn === detailReport.rptpSn) : undefined;
 
   /** 업무 보고 등록. 작성자(userId)는 서버가 인증 주체로 채우므로 보내지 않는다. */
   const handleSubmitReport = async (values: ReportFormValues) => {
@@ -323,13 +329,12 @@ export default function WorkReportClient({ initialYmd }: WorkReportClientProps) 
               <Button type="button" variant="ghost" onClick={() => setDetailReport(null)}>
                 닫기
               </Button>
-              {detailReport.editable && (
+              {liveDetailReport?.editable && (
                 <Button
                   type="button"
                   onClick={() => {
-                    const target = detailReport;
                     setDetailReport(null);
-                    setEditingReport(target);
+                    setEditingReport(liveDetailReport);
                     setReportModalOpen(true);
                   }}
                 >

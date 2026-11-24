@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { pageInProjection } from '@/test-utils/projection';
@@ -166,6 +166,24 @@ describe('업무 보고 화면 동등성', () => {
     fireEvent.click(screen.getByRole('button', { name: '남의 보고 업무 보고 상세 보기' }));
     const detail = await screen.findByRole('dialog', { name: '남의 보고' });
     expect(within(detail).queryByRole('button', { name: '보고 수정' })).toBeNull();
+  });
+
+  it('열어 둔 상세의 보고 수정은 지금 목록의 힌트를 따른다 — 목록을 다시 읽어 힌트가 꺼지면 단추가 사라진다', async () => {
+    const own = { rptpSn: 31, rptTtl: '내 보고', rptYmd: '20260905', userId: 'writer' };
+    mocks.getReports.mockResolvedValue({ list: [{ ...own, editable: true, deletable: true }], total: 1, totalPage: 1 });
+    await renderScreen();
+    fireEvent.click(await screen.findByRole('button', { name: '내 보고 업무 보고 상세 보기' }));
+    const detail = await screen.findByRole('dialog', { name: '내 보고' });
+    expect(within(detail).getByRole('button', { name: '보고 수정' })).toBeInTheDocument();
+
+    // 권한이 회수돼 목록을 다시 읽으면 같은 행의 힌트가 꺼진다(여기서는 조회로 다시 읽힌다).
+    mocks.getReports.mockResolvedValue({ list: [{ ...own, editable: false, deletable: false }], total: 1, totalPage: 1 });
+    const keyword = within(screen.getByTestId('work-list-filter')).getByLabelText('보고 제목');
+    fireEvent.change(keyword, { target: { value: '내 보고' } });
+    fireEvent.submit(keyword.closest('form')!);
+
+    await waitFor(() => expect(mocks.getReports).toHaveBeenLastCalledWith(expect.objectContaining({ searchWrd: '내 보고' })));
+    await waitFor(() => expect(within(detail).queryByRole('button', { name: '보고 수정' })).toBeNull());
   });
 
   // 메모 보고가 없는 구성에서도 같다 — 링크 기여가 기능과 함께 지워진다.
