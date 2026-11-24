@@ -597,6 +597,8 @@ test('every computed Java port connection is an integration or a registration-on
     'core>board (PostStatisticsContributor)', 'core>cms (AttachmentSourceContributor)', 'core>comment (LoginIdReferenceContributor)',
     'core>community (CommunityBoardAccessPort)', 'core>informalsanction (AttachmentSourceContributor)',
     'core>informalsanction (CommonCodeUsageContributor)',
+    // [2026-11-25] 결재 결과의 문자·메일 요청이 영속 작업이 됐다(SanctionExternalNotificationWorkHandler, DEC-OPS-429).
+    'core>informalsanction (DurableWorkHandler)',
     'core>mail (AttachmentSourceContributor)', 'core>mail (DurableWorkHandler)', 'core>mail (LoginIdReferenceContributor)',
     'core>memoreport (AttachmentSourceContributor)', 'core>memoreport (LoginIdReferenceContributor)',
     'core>note (AttachmentSourceContributor)', 'core>note (LoginIdReferenceContributor)',
