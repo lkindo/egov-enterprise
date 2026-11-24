@@ -65,6 +65,8 @@ const FRONTEND_ARCHIVE_PATHS = Object.freeze([
   'Dockerfile',
   'package.json',
   'pnpm-lock.yaml',
+  // Dockerfile 이 설치 전에 복사한다(lockfile 의 patchedDependencies).
+  'patches',
   // next-env.d.ts 는 추적하지 않는 Next 생성 파일이다 — 빌드(next build)가 만든다(2026-11-09).
   'next.config.ts',
   'postcss.config.mjs',

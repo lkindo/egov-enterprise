@@ -7,14 +7,14 @@ import { containedFileResolver } from './adoption-review.mjs';
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 const CODE_ROOTS = [
   ...['foundation', 'business-core', 'business-app', 'api-server'].flatMap(module => [`${module}/src/main`, `${module}/build.gradle`]),
-  'frontend/src', 'frontend/next.config.ts', 'frontend/package.json', 'frontend/pnpm-lock.yaml', 'frontend/tsconfig.json',
+  'frontend/src', 'frontend/next.config.ts', 'frontend/package.json', 'frontend/pnpm-lock.yaml', 'frontend/patches', 'frontend/tsconfig.json',
   'build.gradle', 'settings.gradle', 'gradle.properties', 'gradle',
   'package.json', 'scripts', '.githooks/pre-push',
   '.github/workflows', '.github/required-checks.json', 'config/governance/upstream-verification',
   'config/governance/authorization-policies.json', 'config/governance/permission-catalog.json',
 ];
 const TEXT = new Set(['.java', '.kt', '.kts', '.json', '.yaml', '.yml', '.xml', '.properties', '.sql', '.js', '.jsx', '.ts', '.tsx',
-  '.mjs', '.cjs', '.css', '.scss', '.html', '.md', '.txt', '.gradle', '.toml', '.lock', '.sh', '.bat', '.ps1']);
+  '.mjs', '.cjs', '.css', '.scss', '.html', '.md', '.txt', '.gradle', '.toml', '.lock', '.sh', '.bat', '.ps1', '.patch']);
 
 export function projectedCodeEntries(root) {
   const files = new Map();

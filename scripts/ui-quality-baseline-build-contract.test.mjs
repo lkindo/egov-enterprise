@@ -33,7 +33,9 @@ import {
   validateBuiltImageInspection,
   writeBaselineBuildAttestation,
 } from './ui-quality-baseline-build.mjs';
-import { REQUIRED_PRODUCTION_BUILD_INPUT_FILES } from '../frontend/scripts/ui-quality-baseline-core.mjs';
+import {
+  PRODUCTION_BUILD_INPUT_PATHS, REQUIRED_PRODUCTION_BUILD_INPUT_FILES, createProductionBuildInputTreeHash, selectProductionBuildInputPaths,
+} from '../frontend/scripts/ui-quality-baseline-core.mjs';
 import { captureReleaseSmokeSource, validateSmokeImages } from './run-isolated-release-smoke.mjs';
 
 const BUILD_SHA = '0123456789abcdef0123456789abcdef01234567';
@@ -155,6 +157,7 @@ frontend/next-env.d.ts
   writeFixtureFile(root, 'frontend/Dockerfile', 'FROM scratch\n');
   writeFixtureFile(root, 'frontend/package.json', '{"scripts":{"build":"true"}}\n');
   writeFixtureFile(root, 'frontend/pnpm-lock.yaml', 'lockfileVersion: 9\n');
+  writeFixtureFile(root, 'frontend/patches/fixture@1.0.0.patch', 'diff --git a/index.js b/index.js\n');
   writeFixtureFile(root, 'frontend/next.config.ts', 'export default {};\n');
   writeFixtureFile(root, 'frontend/postcss.config.mjs', 'export default {};\n');
   writeFixtureFile(root, 'frontend/tsconfig.json', '{}\n');
@@ -388,6 +391,19 @@ test('archive safety rejects gitlinks and archive-transforming attributes', () =
   }
 });
 
+test('a pnpm dependency patch is a production build input: git lookups, selection and the tree hash all see it', () => {
+  // frontend Dockerfile 이 설치 전에 복사하는 patches/ 는 설치되는 코드를 바꾼다. git 조회 경로(작업 트리 변경 감지·추적 목록)와
+  // 파일 선택이 이 경로를 빼면, 패치만 고친 작업 트리가 깨끗하다고 판정되고 같은 빌드 입력 해시를 받는다.
+  const patch = 'frontend/patches/sockjs-client@1.6.1.patch';
+  assert.ok(PRODUCTION_BUILD_INPUT_PATHS.includes('frontend/patches'));
+  assert.ok(selectProductionBuildInputPaths([...REQUIRED_PRODUCTION_BUILD_INPUT_FILES, patch]).includes(patch));
+  const hashWith = patchBytes => createProductionBuildInputTreeHash({
+    trackedPaths: [...REQUIRED_PRODUCTION_BUILD_INPUT_FILES, patch],
+    readCommittedFile: file => Buffer.from(file === patch ? patchBytes : `fixture ${file}\n`),
+  });
+  assert.notEqual(hashWith('diff --git a/lib/utils/event.js\n+pagehide\n'), hashWith('diff --git a/lib/utils/event.js\n+unload\n'));
+});
+
 test('clean committed archives exclude ignored host config and generated sources without reading them', () => {
   const { root, buildSha, ignoredPaths } = createGitFixture();
   const outputDirectory = temporaryDirectory('egov-r13-context-output-');
@@ -410,6 +426,7 @@ test('clean committed archives exclude ignored host config and generated sources
   assert.ok(!rootEntries.includes('scripts/ui-quality-baseline-build.mjs'));
   assert.ok(frontendEntries.includes('src/page.ts'));
   assert.ok(frontendEntries.includes('scripts/validate-api-build-urls.mjs'));
+  assert.ok(frontendEntries.includes('patches/fixture@1.0.0.patch'), 'Dockerfile 이 설치 전에 복사하는 패치가 이미지 문맥에 있어야 한다');
   assert.ok(!frontendEntries.includes('e2e/not-production.spec.ts'));
   for (const ignoredPath of ignoredPaths) {
     assert.ok(!rootEntries.includes(ignoredPath), `${ignoredPath} entered root context`);

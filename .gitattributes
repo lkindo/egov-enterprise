@@ -25,6 +25,11 @@
 *.json text working-tree-encoding=UTF-8
 *.md text working-tree-encoding=UTF-8
 
+# pnpm patches (pnpm.patchedDependencies) are diffs against LF package files. pnpm normalises line endings
+# before hashing, but keep the committed patch bytes identical on every platform: the applied diff and the UI
+# baseline build-input hash (which reads raw worktree bytes) must not change with the checkout platform.
+frontend/patches/*.patch text eol=lf
+
 # The r13 baseline binds these protocol/tooling files to exact Git blob bytes.
 # Force identical checkout bytes on Windows so clean worktrees pass raw equality.
 docs/04-operations/ui-ux-baseline-protocol.md text working-tree-encoding=UTF-8 eol=lf

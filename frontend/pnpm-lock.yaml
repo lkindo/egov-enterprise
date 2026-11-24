@@ -25,6 +25,11 @@ overrides:
   undici@>=8.0.0 <8.12.2: 8.12.2
   '@next/eslint-plugin-next>fast-glob': npm:tinyglobby@0.2.17
 
+patchedDependencies:
+  sockjs-client@1.6.1:
+    hash: dmzmicgobdaahjc7sap3vne4ny
+    path: patches/sockjs-client@1.6.1.patch
+
 importers:
 
   .:
@@ -121,7 +126,7 @@ importers:
         version: 3.11.0(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react-is@19.3.0)(react@19.3.1)(redux@5.0.1)
       sockjs-client:
         specifier: ^1.6.1
-        version: 1.6.1
+        version: 1.6.1(patch_hash=dmzmicgobdaahjc7sap3vne4ny)
       sonner:
         specifier: ^2.0.8
         version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -9764,7 +9769,7 @@ snapshots:
       mrmime: 2.0.1
       totalist: 3.0.1
 
-  sockjs-client@1.6.1:
+  sockjs-client@1.6.1(patch_hash=dmzmicgobdaahjc7sap3vne4ny):
     dependencies:
       debug: 3.2.7
       eventsource: 2.0.2
