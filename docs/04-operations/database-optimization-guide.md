@@ -10,7 +10,7 @@ DB 성능 변경은 추정이나 일반 권장값이 아니라 **현재 workload
 - 기본 데이터소스는 PostgreSQL이며 접속정보는 [`application.yml`](../../api-server/src/main/resources/application.yml)에 있다.
 - `LegacyConfig`가 `spring.datasource`를 Hikari에 직접 바인딩하므로 pool 설정은 nested
   `spring.datasource.hikari.*`가 아니라 `spring.datasource.*` flat key가 정본이다.
-- 현재 기본 pool은 maximum 10, minimum idle 2, connection timeout 3초다. 환경변수 override가 우선한다.
+- 현재 기본 pool은 maximum 20, minimum idle 2, connection timeout 3초다. 환경변수 override가 우선한다.
 - Hibernate batch는 `spring.jpa.properties.hibernate.jdbc.batch_size=25`, insert/update 정렬 활성 상태다.
 - 상세 SQL·binding·Hibernate 통계는
   [`application-dev-performance.yml`](../../api-server/src/main/resources/application-dev-performance.yml)을 명시한

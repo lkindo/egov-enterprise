@@ -89,7 +89,9 @@ class AuditExecutorTest {
                     .isLessThan(Integer.MAX_VALUE);
             assertThat(executor.getCorePoolSize())
                     .as("감사가 Hikari 최대 풀(20)을 다 가져가면 요청 처리가 커넥션을 얻지 못한다")
+                    .isEqualTo(4)
                     .isLessThan(20);
+            assertThat(executor.getMaxPoolSize()).isEqualTo(4);
         } finally {
             executor.shutdown();
         }

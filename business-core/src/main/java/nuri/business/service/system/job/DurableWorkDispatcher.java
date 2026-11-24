@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.locks.ReentrantLock;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import nuri.business.domain.system.job.DurableJobRepository;
@@ -42,6 +43,7 @@ public class DurableWorkDispatcher {
     private final DurableJobRepository repository;
     private final Map<String, DurableWorkHandler> handlers;
     private final Map<String, Integer> runningCounts = new LinkedHashMap<>();
+    private final ReentrantLock claimLock = new ReentrantLock();
     private final TransactionTemplate transaction;
     private final TransactionTemplate heartbeatTransaction;
     private final boolean enabled;
@@ -128,29 +130,39 @@ public class DurableWorkDispatcher {
         }
     }
 
-    /** Claim commit and local reservation are atomic; handler I/O and acknowledgement never hold this monitor. */
-    private synchronized Claim claimAvailable() {
-        List<String> eligibleTypes = handlers.entrySet().stream()
-                .filter(entry -> runningCounts.getOrDefault(entry.getKey(), 0)
-                        < entry.getValue().maximumConcurrentExecutions())
-                .map(Map.Entry::getKey).toList();
-        if (eligibleTypes.isEmpty()) return null;
-        Claim claim = transaction.execute(status -> repository.claimNext(now(), eligibleTypes).map(job -> {
-            DurableWork work = job.work();
-            String attempt = job.claim(now(), MAXIMUM_ATTEMPTS, LEASE_SECONDS);
-            if (attempt == null) completePayload(job, work, false);
-            return new Claim(job.getJobSn(), attempt, work);
-        }).orElse(null));
-        if (claim != null && claim.attempt() != null) {
-            runningCounts.merge(claim.work().type(), 1, Integer::sum);
+    /** Claim commit and local reservation are atomic; handler I/O and acknowledgement never hold this lock. */
+    private Claim claimAvailable() {
+        claimLock.lock();
+        try {
+            List<String> eligibleTypes = handlers.entrySet().stream()
+                    .filter(entry -> runningCounts.getOrDefault(entry.getKey(), 0)
+                            < entry.getValue().maximumConcurrentExecutions())
+                    .map(Map.Entry::getKey).toList();
+            if (eligibleTypes.isEmpty()) return null;
+            Claim claim = transaction.execute(status -> repository.claimNext(now(), eligibleTypes).map(job -> {
+                DurableWork work = job.work();
+                String attempt = job.claim(now(), MAXIMUM_ATTEMPTS, LEASE_SECONDS);
+                if (attempt == null) completePayload(job, work, false);
+                return new Claim(job.getJobSn(), attempt, work);
+            }).orElse(null));
+            if (claim != null && claim.attempt() != null) {
+                runningCounts.merge(claim.work().type(), 1, Integer::sum);
+            }
+            return claim;
+        } finally {
+            claimLock.unlock();
         }
-        return claim;
     }
 
-    private synchronized void releaseExecution(String type) {
-        int remaining = runningCounts.get(type) - 1;
-        if (remaining == 0) runningCounts.remove(type);
-        else runningCounts.put(type, remaining);
+    private void releaseExecution(String type) {
+        claimLock.lock();
+        try {
+            int remaining = runningCounts.get(type) - 1;
+            if (remaining == 0) runningCounts.remove(type);
+            else runningCounts.put(type, remaining);
+        } finally {
+            claimLock.unlock();
+        }
     }
 
     private boolean executeAndAcknowledge(Claim claim) {
