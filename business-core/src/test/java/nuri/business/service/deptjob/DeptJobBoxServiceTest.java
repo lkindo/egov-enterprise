@@ -190,12 +190,24 @@ class DeptJobBoxServiceTest {
     @Test
     @DisplayName("부서함 삭제 - 산하 업무 없음")
     void deleteDeptJobBox() {
+        when(deptJobBoxRepository.existsById(1L)).thenReturn(true);
         when(deptJobRepository.existsByDeptTaskBoxSn(1L)).thenReturn(false);
         doNothing().when(deptJobBoxRepository).deleteById(1L);
 
         deptJobBoxService.deleteDeptJobBox(1L);
 
         verify(deptJobBoxRepository, times(1)).deleteById(1L);
+    }
+
+    @Test
+    @DisplayName("[2026-11-24] 부서함 삭제 - 없는 업무함은 성공으로 끝나지 않고 404")
+    void deleteDeptJobBox_missingBoxIsNotFound() {
+        when(deptJobBoxRepository.existsById(99L)).thenReturn(false);
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> deptJobBoxService.deleteDeptJobBox(99L));
+
+        assertEquals(CommonErrorCode.RESOURCE_NOT_FOUND, ex.getErrorCode());
+        verify(deptJobBoxRepository, never()).deleteById(anyLong());
     }
 
     /**
@@ -206,6 +218,7 @@ class DeptJobBoxServiceTest {
     @Test
     @DisplayName("부서함 삭제 - 산하 업무가 있으면 409(RESOURCE_IN_USE) 로 차단하고 삭제하지 않는다")
     void deleteDeptJobBox_conflictWhenTasksExist() {
+        when(deptJobBoxRepository.existsById(1L)).thenReturn(true);
         when(deptJobRepository.existsByDeptTaskBoxSn(1L)).thenReturn(true);
 
         BusinessException ex = assertThrows(BusinessException.class,

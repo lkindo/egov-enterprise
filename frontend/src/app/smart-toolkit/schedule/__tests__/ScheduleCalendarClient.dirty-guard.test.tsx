@@ -124,7 +124,8 @@ describe('ScheduleCalendarClient 모달 기본 일자와 미저장 이탈 보호
     mocks.scheduleRows = [];
     mocks.scheduleLoading = false;
     mocks.schedulePaused = false;
-    mocks.permissions = [];
+    // 일정 등록 단추는 등록 기능 권한이 있어야 보인다(DEC-OPS-185).
+    mocks.permissions = ['SCHEDULE_CREATE'];
   });
 
   // [2026-11-07 화면 용어 원장 검토] 월별 응답은 배열이라 조회가 끝나기 전 schedules 가 [] 였고, 툴바가 "총 0건" 을
@@ -251,5 +252,11 @@ describe('ScheduleCalendarClient 모달 기본 일자와 미저장 이탈 보호
     mocks.permissions = ['DEPT_BOX_READ'];
     render(<ScheduleCalendarClient initialYmd={TODAY_YMD} />);
     expect(screen.queryByRole('button', { name: '업무함 관리' })).not.toBeInTheDocument();
+  });
+
+  it('[2026-11-24] 등록 기능 권한이 없으면 일정 등록 단추가 없다 — 누르면 403 인 단추를 그리지 않는다', () => {
+    mocks.permissions = ['SCHEDULE_READ', 'SCHEDULE_UPDATE', 'SCHEDULE_DELETE'];
+    render(<ScheduleCalendarClient initialYmd={TODAY_YMD} />);
+    expect(screen.queryByRole('button', { name: /일정 등록/ })).not.toBeInTheDocument();
   });
 });

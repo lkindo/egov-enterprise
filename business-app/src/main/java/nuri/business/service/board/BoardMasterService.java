@@ -400,6 +400,11 @@ public class BoardMasterService extends BaseAbstractService {
             return false;
         }
         BoardMaster master = o.get();
+        // [2026-11-24] 영구 삭제({@link #deleteBoardMasterPhysically})와 같은 판정이다 — 지정 게시판은 사용 안 함·글 0건이어도
+        //   지우지 않는데(ADR-0043 결정 4), 이 판정만 지정을 보지 않아 '삭제 가능' 이라 답한 뒤 실제 삭제가 409 였다.
+        if (!designationsOf(bbsId).isEmpty()) {
+            return false;
+        }
         if (!"N".equals(master.getUseYn())) {
             return false;
         }

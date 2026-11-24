@@ -137,6 +137,37 @@ describe('업무 보고 화면 동등성', () => {
     expect(screen.getByText('받는 사람 없이 남기는 개인 업무 기록입니다. 관리자 권한이면 전체 보고가 조회됩니다.')).toBeInTheDocument();
   });
 
+  /*
+   * [2026-11-24] 쓰기 단추는 그 동작의 권한으로 보인다(DEC-OPS-185). 등록은 기능 권한, 수정·삭제는 서버가 행마다 싣는 힌트다 —
+   * 전체 열람 권한으로 남의 보고를 보는 사람에게 403 을 낼 단추를 그리지 않는다.
+   */
+  it('등록 기능 권한이 없으면 보고 등록 단추가 없다', async () => {
+    mocks.permissions = ['WORK_RPT_READ', 'WORK_RPT_UPDATE', 'WORK_RPT_DELETE'];
+    await renderScreen();
+    expect(await screen.findByText('주간 업무 정리')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '보고 등록' })).toBeNull();
+  });
+
+  it('수정·삭제 단추와 상세의 보고 수정은 서버 힌트가 참인 행에만 있다', async () => {
+    mocks.getReports.mockResolvedValue({
+      list: [
+        { rptpSn: 31, rptTtl: '내 보고', rptYmd: '20260905', userId: 'writer', editable: true, deletable: true },
+        { rptpSn: 32, rptTtl: '남의 보고', rptYmd: '20260905', userId: 'other', editable: false, deletable: false },
+      ],
+      total: 2,
+      totalPage: 1,
+    });
+    await renderScreen();
+    expect(await screen.findByRole('button', { name: '내 보고 보고 수정' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '내 보고 보고 삭제' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '남의 보고 보고 수정' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '남의 보고 보고 삭제' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: '남의 보고 업무 보고 상세 보기' }));
+    const detail = await screen.findByRole('dialog', { name: '남의 보고' });
+    expect(within(detail).queryByRole('button', { name: '보고 수정' })).toBeNull();
+  });
+
   // 메모 보고가 없는 구성에서도 같다 — 링크 기여가 기능과 함께 지워진다.
   if (!pageInProjection(MEMO_REPORTS)) it('메모 보고가 없는 구성에서는 링크와 안내 문장이 없다', async () => {
     await renderScreen();

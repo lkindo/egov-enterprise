@@ -59,4 +59,16 @@ public class WorkReportDto {
     @Min(0)
     private Integer version;
 
+    /**
+     * 현재 사용자가 이 보고를 고칠 수 있는가(서버 판정, 2026-11-24). 수정 기능 권한과 작성자 본인 또는 전체 수정 권한을 함께 본다 —
+     * 일정의 같은 힌트(DEC-OPS-156)와 같은 규칙이다. 표시용이고 인가는 쓰기 경로가 그대로 집행한다.
+     */
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(description = "현재 사용자가 수정할 수 있는지(서버 판정)", accessMode = Schema.AccessMode.READ_ONLY)
+    private Boolean editable;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(description = "현재 사용자가 삭제할 수 있는지(서버 판정)", accessMode = Schema.AccessMode.READ_ONLY)
+    private Boolean deletable;
+
 }

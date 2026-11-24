@@ -167,6 +167,7 @@ class DeptManageServiceTest {
     @Test
     @DisplayName("부서 삭제 테스트")
     void deleteDeptManageTest() {
+        given(deptManageRepository.findByIdForUpdate("DEPT1")).willReturn(Optional.of(mock(DeptManage.class)));
         deptManageService.deleteDeptManage("DEPT1");
         verify(deptManageRepository).deleteById("DEPT1");
         // [2026-11-17] 부서 행을 먼저 잠근 뒤 담당 업무함을 센다 — 업무함 배정(DeptJobBoxService)이 같은 행을 잠그므로 동시 배정과 직렬화된다.
@@ -174,6 +175,18 @@ class DeptManageServiceTest {
         order.verify(deptManageRepository).findByIdForUpdate("DEPT1");
         order.verify(deptJobBoxRepository).findByDeptId("DEPT1");
         order.verify(deptManageRepository).deleteById("DEPT1");
+    }
+
+    @Test
+    @DisplayName("[2026-11-24] 없는 부서 삭제는 성공으로 끝나지 않고 404 — 참조를 세거나 지우지 않는다")
+    void deleteMissingDeptIsNotFound() {
+        given(deptManageRepository.findByIdForUpdate("GHOST")).willReturn(Optional.empty());
+
+        BusinessException missing = assertThrows(BusinessException.class, () -> deptManageService.deleteDeptManage("GHOST"));
+
+        assertEquals(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND, missing.getErrorCode());
+        verify(deptManageRepository, never()).deleteById(anyString());
+        verifyNoInteractions(deptJobBoxRepository);
     }
 
     @Test
@@ -204,6 +217,7 @@ class DeptManageServiceTest {
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.ValueSource(strings = {"members", "children", "jobBoxes"})
     void refusesDeletionWhileMembersOrChildrenRemain(String remaining) {
+        given(deptManageRepository.findByIdForUpdate("D")).willReturn(Optional.of(mock(DeptManage.class)));
         switch (remaining) {
             case "members" -> given(userRepository.countByOgnzId("D")).willReturn(1L);
             case "children" -> given(deptManageRepository.countByUpOgnzId("D")).willReturn(1L);

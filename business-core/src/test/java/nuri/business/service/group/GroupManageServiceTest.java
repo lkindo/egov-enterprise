@@ -18,7 +18,9 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -106,6 +108,24 @@ class GroupManageServiceTest {
 
         // Then
         assertThat(entity.getGroupNm()).isEqualTo("Updated Name");
+    }
+
+    @Test
+    @DisplayName("[2026-11-24] 그룹명이 비면 등록·수정을 400 으로 거부하고 기존 이름을 지우지 않는다")
+    void blankGroupNameIsRejected() {
+        GroupManage entity = GroupManage.builder().groupId("G1").groupNm("기존 이름").build();
+        given(groupManageRepository.findById("G1")).willReturn(Optional.of(entity));
+
+        for (String blank : java.util.Arrays.asList(null, "", "   ")) {
+            var update = assertThrows(nuri.foundation.core.exception.BusinessException.class,
+                    () -> groupManageService.updateGroup(GroupManageDto.builder().groupId("G1").groupNm(blank).build()));
+            assertThat(update.getErrorCode()).isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+            var insert = assertThrows(nuri.foundation.core.exception.BusinessException.class,
+                    () -> groupManageService.insertGroup(GroupManageDto.builder().groupId("NEW").groupNm(blank).build()));
+            assertThat(insert.getErrorCode()).isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        assertThat(entity.getGroupNm()).isEqualTo("기존 이름");
+        verify(groupManageRepository, never()).insert(any(GroupManage.class));
     }
 
     @Test

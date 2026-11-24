@@ -305,7 +305,16 @@ public class MemoReportService {
     }
 
     /** 보고와 알림 의도를 같은 트랜잭션에 저장해 함께 commit/rollback한다. */
+    /**
+     * 받을 계정이 있을 때만 알린다(2026-11-24). 메모 보고 행은 사용자 삭제 뒤에도 작성자·수신자 식별자를 그대로 들고 있지만(사용자 FK
+     * 없음) 알림 행(tb_user_noti)은 사용자 FK 가 있고 업무 트랜잭션 안에서 저장된다. 지워진 당사자에게 보내면 FK 위반으로 지시 저장·
+     * 관리자 삭제가 함께 되돌아가 문서를 움직일 수 없었다 — 결재의 {@code ApprovalRecipients} 와 같은 이유다. 알림 저장 쪽에서 일괄로
+     * 거르지 않는 이유도 같다(식별자 축을 잘못 넘긴 호출이 FK 위반으로 드러나는 신호를 지우지 않는다).
+     */
     private void publishNotification(String receiverEsntlId, String title, String content, String route) {
+        if (!userRepository.existsById(receiverEsntlId)) {
+            return;
+        }
         eventPublisher.publishEvent(
                 new nuri.foundation.core.event.NotificationRequestedEvent(receiverEsntlId, title, content, route));
     }

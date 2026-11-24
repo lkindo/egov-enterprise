@@ -22,6 +22,8 @@ import { scheduleSpanDates } from '@/lib/date/schedule-span';
 import { ko } from 'date-fns/locale';
 import { failureMessage } from '@/lib/safe-error-log';
 import { isConflictError } from '@/lib/query/list-query-defaults';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 import { SCHEDULE_LIST_ROOT, invalidateSchedules } from './schedule-query-keys';
 
 /**
@@ -54,6 +56,9 @@ function parseYmd(ymd?: string | null): Date | null {
 export default function ScheduleCalendarClient({ initialYmd }: ScheduleCalendarClientProps) {
   const queryClient = useQueryClient();
   const tabs = useWorkHubTabStrip(ROUTE);
+  const { user } = useAuth();
+  // [2026-11-24] 등록 단추는 등록 기능 권한으로 보인다(DEC-OPS-185). 수정·삭제는 서버 힌트(editable·deletable)가 기능 권한까지 본다.
+  const canCreateSchedule = canPermission(user, 'SCHEDULE_CREATE');
 
   // 표시 기준 월. 월 이동 시 해당 월의 일정을 다시 조회한다.
   const initialDate = parseYmd(initialYmd);
@@ -263,13 +268,15 @@ export default function ScheduleCalendarClient({ initialYmd }: ScheduleCalendarC
       actions={
         <div className="flex flex-wrap items-center gap-2">
           {tabs.strip}
-          <Button
-            size="sm"
-            disabled={scheduleAction !== null}
-            onClick={() => setScheduleModalOpen(true)}
-          >
-            <Plus size={16} aria-hidden="true" /> 일정 등록
-          </Button>
+          {canCreateSchedule && (
+            <Button
+              size="sm"
+              disabled={scheduleAction !== null}
+              onClick={() => setScheduleModalOpen(true)}
+            >
+              <Plus size={16} aria-hidden="true" /> 일정 등록
+            </Button>
+          )}
         </div>
       }
       /* 일정은 월 단위 조회라 키워드 검색 대상이 아니다 — 동작하지 않는 입력을 만들지 않는다. */

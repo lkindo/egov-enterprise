@@ -74,6 +74,8 @@ class MemoReportServiceTest {
         given(userRepository.findByEsntlIdForUpdate(anyString())).willAnswer(invocation -> Optional.of(
                 nuri.business.domain.user.entity.User.builder().esntlId(invocation.getArgument(0))
                         .userSttsCd("P").build()));
+        // 알림은 받을 계정이 있을 때만 발행한다 — 따로 지운 계정을 다루는 시험만 이 값을 바꾼다.
+        given(userRepository.existsById(anyString())).willReturn(true);
     }
 
     /** 서비스가 정렬 없는 요청에 넣는 기본 정렬. 아래 테스트들은 이미 정렬된 요청을 보내 위임만 본다. */
@@ -1084,6 +1086,34 @@ class MemoReportServiceTest {
         verify(eventPublisher, org.mockito.Mockito.times(2)).publishEvent(event.capture());
         assertThat(event.getAllValues()).extracting(nuri.foundation.core.event.NotificationRequestedEvent::receiverEsntlId)
                 .containsExactly("esntl-writer", "esntl-recipient");
+    }
+
+    @Test
+    @DisplayName("[2026-11-24] 지워진 당사자에게는 알리지 않는다 — 알림 FK 위반으로 지시·관리자 삭제가 되돌아가지 않는다")
+    void notificationsSkipDeletedParties() {
+        MemoReport instructed = MemoReport.builder().memoRptSn(1L).rptTtl("주간 보고")
+                .userId("esntl-writer").rptrId("esntl-recipient").build();
+        when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(instructed));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-recipient"));
+        given(userRepository.existsById("esntl-writer")).willReturn(false);
+
+        String token = memoReportService.getMemoReport(1L).getInstructionReadToken();
+        memoReportService.updateDrctMatter(1L, "보완해 주세요", token);
+
+        assertThat(instructed.getDrctnMttr()).isEqualTo("보완해 주세요");
+        org.mockito.Mockito.verifyNoInteractions(eventPublisher);
+
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_DELETE_ALL")).thenReturn(true);
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("esntl-admin"));
+        memoReportService.deleteMemoReport(1L);
+
+        verify(memoReportRepository).delete(instructed);
+        org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> event =
+                org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
+        verify(eventPublisher).publishEvent(event.capture());
+        assertThat(event.getAllValues()).extracting(nuri.foundation.core.event.NotificationRequestedEvent::receiverEsntlId)
+                .containsExactly("esntl-recipient");
     }
 
     @Test

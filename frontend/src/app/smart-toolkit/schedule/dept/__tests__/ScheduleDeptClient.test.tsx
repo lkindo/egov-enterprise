@@ -9,7 +9,14 @@ const harness = vi.hoisted(() => ({
   deleteDeptSchedule: vi.fn(),
   confirm: vi.fn(),
   toastError: vi.fn(),
+  permissions: ['SCHEDULE_CREATE'] as string[],
 }));
+
+// [2026-11-24] 일정 등록 단추는 등록 기능 권한이 있어야 보인다(DEC-OPS-185) — 기본은 권한을 쥔 주체다.
+vi.mock('@/contexts/AuthContext', () => {
+  const auth = () => ({ user: { role: 'ROLE_USER', permissions: harness.permissions, authorizationVersion: 'v1' } });
+  return { useAuth: auth, useOptionalAuth: auth };
+});
 
 vi.mock('@/services/business/schedule/deptScheduleService', () => ({
   getDeptScheduleList: harness.getDeptScheduleList,
@@ -37,6 +44,14 @@ describe('ScheduleDeptClient 조회 실패 정직성', () => {
     harness.confirm.mockResolvedValue(true);
     harness.deleteDeptSchedule.mockResolvedValue(undefined);
     harness.updateDeptSchedule.mockResolvedValue(undefined);
+    harness.permissions = ['SCHEDULE_CREATE'];
+  });
+
+  it('[2026-11-24] 등록 기능 권한이 없으면 일정 등록 단추가 없다', async () => {
+    harness.permissions = ['SCHEDULE_READ'];
+    render(<ScheduleDeptClient />);
+    expect(await screen.findByText('등록된 부서 일정이 존재하지 않습니다.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /일정 등록/ })).not.toBeInTheDocument();
   });
 
   it.each([10, 4])('페이지 탐색: 서버 페이지 크기 %s에 따라 11번째 일정에 도달하고 검색은 첫 페이지로 돌아간다', async (pageSize) => {

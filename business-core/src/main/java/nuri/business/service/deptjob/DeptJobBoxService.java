@@ -99,6 +99,10 @@ public class DeptJobBoxService {
         SecurityUtil.assertPermission("DEPT_BOX_DELETE");
         Long boxSn = Objects.requireNonNull(deptTaskBoxSn);
 
+        // [2026-11-24] 없는 업무함은 404 다 — deleteById 는 없는 행을 조용히 넘겨 성공으로 끝났다.
+        if (!deptJobBoxRepository.existsById(boxSn)) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
         if (deptJobRepository.existsByDeptTaskBoxSn(boxSn)) {
             throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE);
         }

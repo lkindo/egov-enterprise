@@ -69,9 +69,48 @@ function toHslChannel(hsl: { h: number; s: number; l: number }): string {
   return `${hsl.h} ${hsl.s}% ${hsl.l}%`;
 }
 
-/** 배경 밝기에 따른 전경색 채널(globals.css 의 foreground 토큰과 동일한 값 사용) */
+/** 전경색 후보 두 개(globals.css 의 foreground 토큰과 같은 값). */
+const DARK_FOREGROUND = { channel: '222.2 47.4% 11.2%', hsl: { h: 222.2, s: 47.4, l: 11.2 } } as const;
+const LIGHT_FOREGROUND = { channel: '210 40% 98%', hsl: { h: 210, s: 40, l: 98 } } as const;
+
+/** HSL(도·%·%) → WCAG 2.x 상대 휘도. */
+function relativeLuminance({ h, s, l }: { h: number; s: number; l: number }): number {
+  const saturation = s / 100;
+  const lightness = l / 100;
+  const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+  const sector = (((h % 360) + 360) % 360) / 60;
+  const second = chroma * (1 - Math.abs((sector % 2) - 1));
+  const [r1, g1, b1] = sector < 1 ? [chroma, second, 0]
+    : sector < 2 ? [second, chroma, 0]
+      : sector < 3 ? [0, chroma, second]
+        : sector < 4 ? [0, second, chroma]
+          : sector < 5 ? [second, 0, chroma]
+            : [chroma, 0, second];
+  const offset = lightness - chroma / 2;
+  const linear = (channel: number) => {
+    const value = channel + offset;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * linear(r1) + 0.7152 * linear(g1) + 0.0722 * linear(b1);
+}
+
+/** WCAG 2.x 대비율(1~21). */
+function contrastRatio(a: number, b: number): number {
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+/**
+ * 배경색에 대비가 더 큰 전경색 채널.
+ *
+ * [2026-11-24] 종전에는 HSL 명도 60 을 넘는지로만 골랐다. 명도는 지각 밝기가 아니라 녹색·청록처럼 휘도가 큰 색에서 크게 어긋난다 —
+ * 프리셋 #10b981 은 명도 39 라 흰 글자를 골랐지만 실제 대비는 약 2.4:1(어두운 글자는 약 7:1)이었다. WCAG 상대 휘도로 두 후보의
+ * 대비를 재서 큰 쪽을 쓴다. 기본색(#0050ff)은 종전처럼 밝은 글자다.
+ */
 function foregroundChannelFor(hsl: { h: number; s: number; l: number }): string {
-  return hsl.l > 60 ? '222.2 47.4% 11.2%' : '210 40% 98%';
+  const background = relativeLuminance(hsl);
+  const dark = contrastRatio(background, relativeLuminance(DARK_FOREGROUND.hsl));
+  const light = contrastRatio(background, relativeLuminance(LIGHT_FOREGROUND.hsl));
+  return dark > light ? DARK_FOREGROUND.channel : LIGHT_FOREGROUND.channel;
 }
 
 export function parseBaseRadius(value: string): number {

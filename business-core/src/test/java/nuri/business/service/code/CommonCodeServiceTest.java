@@ -349,12 +349,25 @@ class CommonCodeServiceTest {
 
     @Test
     void insertCmmnCodeUsesCreationOnlyWrite() {
+        given(commonCodeCategoryRepository.existsById("CL1")).willReturn(true);
         commonCodeService.insertCmmnCode(CmmnCodeDto.builder()
                 .cdId("GRP1").cdIdNm("그룹").clsfCd("CL1").useYn("Y").build());
 
         verify(commonCodeGroupRepository).insert(any(CommonCodeGroup.class));
         verify(commonCodeGroupRepository, never()).save(any());
         assertEquals("ADD", savedChange().getChgTypeCd());
+    }
+
+    @Test
+    @DisplayName("[2026-11-24] 공통코드 그룹 등록 - 없는 분류에는 등록하지 않고 404(계층 저장과 같은 판정)")
+    void insertCmmnCodeRejectsGhostClassification() {
+        given(commonCodeCategoryRepository.existsById("GHOST")).willReturn(false);
+
+        BusinessException missing = assertThrows(BusinessException.class, () -> commonCodeService.insertCmmnCode(
+                CmmnCodeDto.builder().cdId("GRP1").cdIdNm("그룹").clsfCd("GHOST").useYn("Y").build()));
+
+        assertEquals(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND, missing.getErrorCode());
+        verify(commonCodeGroupRepository, never()).insert(any(CommonCodeGroup.class));
     }
 
     @Test

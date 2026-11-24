@@ -163,8 +163,8 @@ class InstitutionCodeServiceTest {
                 .build();
         institutionCodeService.updateInstitutionCodeRecptn(dto);
 
-        // then
-        verify(logEntity).updateProcessSe(eq("1"), anyString());
+        // then — [2026-11-24] 처리자는 고정값 "SYSTEM" 이 아니라 처리한 관리자의 로그인 ID 다.
+        verify(logEntity).updateProcessSe("1", "fixture");
     }
 
     /**

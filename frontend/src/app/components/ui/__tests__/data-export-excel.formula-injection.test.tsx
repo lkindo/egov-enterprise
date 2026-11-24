@@ -47,6 +47,7 @@ describe('DataExportExcel 내려받기', () => {
       }
     });
     URL.createObjectURL = vi.fn(() => 'blob:export');
+    URL.revokeObjectURL = vi.fn();
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
   });
 

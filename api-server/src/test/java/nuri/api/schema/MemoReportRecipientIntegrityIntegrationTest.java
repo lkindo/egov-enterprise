@@ -307,6 +307,31 @@ class MemoReportRecipientIntegrityIntegrationTest {
         }
     }
 
+    /**
+     * 사용자 삭제는 메모 보고 행을 지우지 않는다(사용자 FK 없음) — 지워진 작성자를 향한 알림은 알림 표의 사용자 FK 를 어겨 지시 저장과
+     * 관리자 삭제를 함께 되돌렸다(2026-11-24). 지워진 당사자는 건너뛰고 남은 당사자에게만 알린다.
+     */
+    @Test
+    void deletedAuthorNeitherRollsBackInstructionNorAdministratorDeletion() {
+        long id = memoReportService.createMemoReport(sender, memo(active));
+        jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", sender);
+        authenticate(active);
+        String token = memoReportService.getMemoReport(id).getInstructionReadToken();
+
+        memoReportService.updateDrctMatter(id, "instruction for a deleted author", token);
+
+        assertThat(reportRow(id)).containsEntry("drctn_mttr", "instruction for a deleted author");
+        authenticate(waiting, "MEMO_RPT_DELETE_ALL");
+        memoReportService.deleteMemoReport(id);
+
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_memo_rpt_info WHERE memo_rpt_sn=?", Long.class, id)).isZero();
+        if (notificationModule) {
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_user_noti WHERE rcvr_id=?", Long.class, sender)).isZero();
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_user_noti WHERE rcvr_id=? AND noti_ttl_nm=?", Long.class,
+                    active, "지시가 달린 메모 보고가 삭제되었습니다")).isEqualTo(1);
+        }
+    }
+
     @Test
     void unchangedSnapshotKeepsFirstReadAndPermitsInstructionReplacement() {
         long id = memoReportService.createMemoReport(sender, memo(active));

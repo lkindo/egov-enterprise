@@ -86,7 +86,9 @@ public class InstitutionCodeService extends BaseAbstractService {
                 dto.getOcrnYmd(), dto.getInstCd(), dto.getJobSn());
         InstitutionCodeRecptnLog entity = institutionCodeRecptnLogRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(CodeErrorCode.CODE_NOT_FOUND));
-        entity.updateProcessSe(PROC_SE_DONE, "SYSTEM");
+        // [2026-11-24] 처리한 사람을 남긴다 — 이 엔티티는 감사 리스너가 없어 종전의 고정값 "SYSTEM" 이 그대로 저장돼 누가 처리했는지
+        //   알 수 없었다. 감사 컬럼 규약(로그인 ID, LoginUserAuditorAware)과 같은 축이다.
+        entity.updateProcessSe(PROC_SE_DONE, nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse("SYSTEM"));
     }
 
     /**

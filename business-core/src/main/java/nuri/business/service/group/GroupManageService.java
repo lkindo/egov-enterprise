@@ -89,7 +89,7 @@ public class GroupManageService {
 
         GroupManage entity = GroupManage.builder()
                 .groupId(groupId)
-                .groupNm(dto.getGroupNm())
+                .groupNm(requireGroupName(dto))
                 .groupDc(dto.getGroupDc())
                 .build();
         groupManageRepository.insert(Objects.requireNonNull(entity));
@@ -104,7 +104,18 @@ public class GroupManageService {
         nuri.business.security.util.SecurityUtil.assertPermission("CLASS_GRP_UPDATE");
         GroupManage entity = groupManageRepository.findById(Objects.requireNonNull(dto.getGroupId()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "그룹을 찾을 수 없습니다: " + dto.getGroupId()));
-        entity.update(dto.getGroupNm(), dto.getGroupDc());
+        entity.update(requireGroupName(dto), dto.getGroupDc());
+    }
+
+    /**
+     * 그룹명은 필수다(2026-11-24). 요청 DTO 가 조회 응답과 같은 형이라 필드에 필수 제약을 달면 응답 계약까지 필수가 되므로 여기서 본다 —
+     * 종전에는 수정 본문에 이름이 빠지면 기존 이름이 NULL 로 지워졌고(컬럼은 NULL 허용), 이름 없는 그룹도 만들어졌다.
+     */
+    private static String requireGroupName(GroupManageDto dto) {
+        if (dto.getGroupNm() == null || dto.getGroupNm().isBlank()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "그룹명을 입력해 주세요.");
+        }
+        return dto.getGroupNm();
     }
 
     /**
