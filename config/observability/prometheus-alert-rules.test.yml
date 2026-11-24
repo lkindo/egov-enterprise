@@ -461,3 +461,150 @@ tests:
             exp_annotations:
               summary: "로그인 실패(401)가 5분째 분당 20건을 넘습니다"
               description: "요청 제한 로그인 버킷 거절(EgovRateLimitRejectionsSustained, bucket=login)과 함께 오르는지 확인합니다."
+  -
+    interval: "1m"
+    input_series:
+      -
+        series: "http_server_requests_seconds_count{application=\"api-5xx\",outcome=\"SUCCESS\"}"
+        values: "0+90x10 900+100x15"
+      -
+        series: "http_server_requests_seconds_count{application=\"api-5xx\",outcome=\"SERVER_ERROR\"}"
+        values: "0+30x10 300x15"
+      -
+        series: "http_server_requests_seconds_count{application=\"api-5xx-lowvol\",outcome=\"SUCCESS\"}"
+        values: "0+1x20"
+      -
+        series: "http_server_requests_seconds_count{application=\"api-5xx-lowvol\",outcome=\"SERVER_ERROR\"}"
+        values: "0+1x20"
+      -
+        series: "http_server_requests_seconds_count{application=\"api-5xx-lowratio\",outcome=\"SUCCESS\"}"
+        values: "0+195x20"
+      -
+        series: "http_server_requests_seconds_count{application=\"api-5xx-lowratio\",outcome=\"SERVER_ERROR\"}"
+        values: "0+5x20"
+    alert_rule_test:
+      -
+        eval_time: "5m"
+        alertname: "EgovApiServerErrorRateHigh"
+        exp_alerts: []
+      -
+        eval_time: "6m"
+        alertname: "EgovApiServerErrorRateHigh"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "api-5xx"
+              severity: "critical"
+            exp_annotations:
+              summary: "API 5xx 오류율이 5분째 5%를 넘고 분당 5건 이상 발생합니다"
+              description: "http_server_requests_seconds_count(outcome=SERVER_ERROR) 급증 구간입니다. api 오류 로그·DB 연결 상태·최근 배포를 즉시 확인합니다."
+      -
+        eval_time: "16m"
+        alertname: "EgovApiServerErrorRateHigh"
+        exp_alerts: []
+  -
+    interval: "1m"
+    input_series:
+      -
+        series: "hikaricp_connections_timeout_total{application=\"api-pool\",pool=\"egov-hikaricp\"}"
+        values: "0+6x10 60x15"
+    alert_rule_test:
+      -
+        eval_time: "3m"
+        alertname: "EgovDbConnectionPoolTimeout"
+        exp_alerts: []
+      -
+        eval_time: "4m"
+        alertname: "EgovDbConnectionPoolTimeout"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "api-pool"
+              pool: "egov-hikaricp"
+              severity: "critical"
+            exp_annotations:
+              summary: "DB 커넥션 풀 획득 시간 초과가 5분 평균 분당 1건 이상 3분 지속됩니다 (pool=egov-hikaricp)"
+              description: "HikariCP 풀(egov-hikaricp) 고갈로 요청 503 또는 배경 작업 DB 대기가 발생 중입니다. 장기 트랜잭션·잠금 경합·DB_POOL_MAX_SIZE 와 외부 I/O 점유를 즉시 점검합니다."
+      -
+        eval_time: "16m"
+        alertname: "EgovDbConnectionPoolTimeout"
+        exp_alerts: []
+  -
+    interval: "1m"
+    input_series:
+      -
+        series: "hikaricp_connections_pending{application=\"api-pending\",pool=\"egov-hikaricp\",instance=\"a\"}"
+        values: "6x10 0x10"
+      -
+        series: "hikaricp_connections_pending{application=\"api-pending\",pool=\"egov-hikaricp\",instance=\"b\"}"
+        values: "0x20"
+      -
+        series: "hikaricp_connections_pending{application=\"api-pending-replicas\",pool=\"egov-hikaricp\",instance=\"a\"}"
+        values: "3x10"
+      -
+        series: "hikaricp_connections_pending{application=\"api-pending-replicas\",pool=\"egov-hikaricp\",instance=\"b\"}"
+        values: "3x10"
+    alert_rule_test:
+      -
+        eval_time: "4m"
+        alertname: "EgovDbConnectionPoolPendingHigh"
+        exp_alerts: []
+      -
+        eval_time: "5m"
+        alertname: "EgovDbConnectionPoolPendingHigh"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "api-pending"
+              pool: "egov-hikaricp"
+              severity: "warning"
+            exp_annotations:
+              summary: "DB 커넥션 대기 스레드가 5분째 5개 이상입니다 (pool=egov-hikaricp)"
+              description: "단일 복제본 기준 대기 스레드(max)가 누적되어 타임아웃(503) 직전 상태입니다. 슬로우 쿼리와 배경 작업 경합을 점검합니다."
+      -
+        eval_time: "11m"
+        alertname: "EgovDbConnectionPoolPendingHigh"
+        exp_alerts: []
+    promql_expr_test:
+      -
+        expr: "max by (application, pool) (hikaricp_connections_pending{pool=\"egov-hikaricp\"}) >= 5"
+        eval_time: "5m"
+        exp_samples:
+          -
+            labels: "{application=\"api-pending\", pool=\"egov-hikaricp\"}"
+            value: 6
+  -
+    interval: "1m"
+    input_series:
+      -
+        series: "http_server_requests_seconds_count{application=\"api-slow\",outcome=\"SUCCESS\"}"
+        values: "0+60x10 600+60x15"
+      -
+        series: "http_server_requests_seconds_sum{application=\"api-slow\",outcome=\"SUCCESS\"}"
+        values: "0+120x10 1200+30x15"
+      -
+        series: "http_server_requests_seconds_count{application=\"api-slow-lowtraffic\",outcome=\"SUCCESS\"}"
+        values: "0+4x20"
+      -
+        series: "http_server_requests_seconds_sum{application=\"api-slow-lowtraffic\",outcome=\"SUCCESS\"}"
+        values: "0+12x20"
+    alert_rule_test:
+      -
+        eval_time: "5m"
+        alertname: "EgovApiLatencyHigh"
+        exp_alerts: []
+      -
+        eval_time: "6m"
+        alertname: "EgovApiLatencyHigh"
+        exp_alerts:
+          -
+            exp_labels:
+              application: "api-slow"
+              severity: "warning"
+            exp_annotations:
+              summary: "API 평균 응답 시간이 5분째 1.5초를 넘습니다"
+              description: "전체 요청 평균 지연(분당 10건 이상 구간)입니다. 엔드포인트별 지연·DB 풀 대기·외부 연동 응답 시간을 확인합니다. p95/p99가 필요하면 기관에서 percentiles-histogram을 opt-in 합니다."
+      -
+        eval_time: "16m"
+        alertname: "EgovApiLatencyHigh"
+        exp_alerts: []

@@ -53,6 +53,13 @@ test('every way an alert can go silently dark is red', () => {
     ['wrong rule fixture binding', mutate(PATHS.promtoolFixtures, '"prometheus-alert-rules.yml"', '"different.yml"'), /exact current rule file/],
     ['quiet and firing case removed', mutate(PATHS.promtoolFixtures, 'alertname: "EgovAttachmentIntegrityDisabled"', 'alertname: "EgovUnknownAlert"'), /requires both quiet and firing/],
     ['replica sum replaces committed state max', mutate(PATHS.rules, 'max by (application) (nuri_durable_work_jobs{status="FAILED"}) > 0', 'sum by (application) (nuri_durable_work_jobs{status="FAILED"}) > 0'), /query expectation drifted/],
+    ['5xx SERVER_ERROR proof removed', mutate(PATHS.goldenSignalMetricsTest, 'outcome=\\"SERVER_ERROR\\"', 'outcome=\\"CLIENT_ERROR\\"'), /SERVER_ERROR/],
+    ['hikari pool-name config changed', mutate(PATHS.applicationYml, 'pool-name: egov-hikaricp', 'pool-name: other-pool'), /pool-name: egov-hikaricp/],
+    ['hikari pool label typo in rule', mutate(PATHS.rules, 'pool="egov-hikaricp"', 'pool="other-pool"'), /테스트가 확인한 값이 아닙니다/],
+    ['5xx critical alert removed', mutate(PATHS.rules, '- alert: EgovApiServerErrorRateHigh', '- alert: EgovApiErrors'), /EgovApiServerErrorRateHigh 가 없/],
+    ['db timeout critical alert removed', mutate(PATHS.rules, '- alert: EgovDbConnectionPoolTimeout', '- alert: EgovDbTimeouts'), /EgovDbConnectionPoolTimeout 가 없/],
+    ['replica sum replaces pool pending max', mutate(PATHS.rules, 'max by (application, pool) (hikaricp_connections_pending{pool="egov-hikaricp"}) >= 5', 'sum by (application, pool) (hikaricp_connections_pending{pool="egov-hikaricp"}) >= 5'), /query expectation drifted/],
+    ['all critical severities downgraded to warning', mutate(PATHS.rules, 'severity: critical', 'severity: warning'), /최소 1건 이상의 critical 경보가 필요합니다/],
   ];
   for (const [name, files, expected] of cases) {
     const errors = evaluateAlertRules(files);

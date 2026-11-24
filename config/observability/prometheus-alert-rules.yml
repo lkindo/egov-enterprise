@@ -102,3 +102,46 @@ groups:
         annotations:
           summary: "내구 작업 상태 조회가 실패하거나 오래 갱신되지 않았습니다"
           description: "DB 연결과 읽기 권한, 집계 쿼리 제한 시간, 메트릭 갱신 실행 경로를 확인합니다. 마지막 정상 집계는 유지됩니다."
+
+  - name: egov-api-availability
+    rules:
+      # HTTP 5xx(outcome="SERVER_ERROR") 비율과 분당 건수를 함께 본다. 소량 트래픽의 우발 5xx 오탐을 막고
+      # 실제 장애 수준(> 5% AND >= 5/min, 5분 지속)에서만 critical 경보를 울린다.
+      - alert: EgovApiServerErrorRateHigh
+        expr: sum by (application) (rate(http_server_requests_seconds_count{outcome="SERVER_ERROR"}[5m])) / clamp_min(sum by (application) (rate(http_server_requests_seconds_count{}[5m])), 0.001) > 0.05 and sum by (application) (rate(http_server_requests_seconds_count{outcome="SERVER_ERROR"}[5m])) * 60 >= 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API 5xx 오류율이 5분째 5%를 넘고 분당 5건 이상 발생합니다"
+          description: "http_server_requests_seconds_count(outcome=SERVER_ERROR) 급증 구간입니다. api 오류 로그·DB 연결 상태·최근 배포를 즉시 확인합니다."
+
+      # HikariCP 획득 시간 초과가 5분 평균 분당 1건 이상 3분 지속되면 DB 풀 고갈이 진행 중이므로 critical 로 알린다.
+      - alert: EgovDbConnectionPoolTimeout
+        expr: sum by (application, pool) (rate(hikaricp_connections_timeout_total{pool="egov-hikaricp"}[5m])) * 60 >= 1
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "DB 커넥션 풀 획득 시간 초과가 5분 평균 분당 1건 이상 3분 지속됩니다 (pool={{ $labels.pool }})"
+          description: "HikariCP 풀({{ $labels.pool }}) 고갈로 요청 503 또는 배경 작업 DB 대기가 발생 중입니다. 장기 트랜잭션·잠금 경합·DB_POOL_MAX_SIZE 와 외부 I/O 점유를 즉시 점검합니다."
+
+      # 복제본 간 중복 합산을 막기 위해 max 로 단일 인스턴스 최대 대기 스레드 수를 본다.
+      - alert: EgovDbConnectionPoolPendingHigh
+        expr: max by (application, pool) (hikaricp_connections_pending{pool="egov-hikaricp"}) >= 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "DB 커넥션 대기 스레드가 5분째 5개 이상입니다 (pool={{ $labels.pool }})"
+          description: "단일 복제본 기준 대기 스레드(max)가 누적되어 타임아웃(503) 직전 상태입니다. 슬로우 쿼리와 배경 작업 경합을 점검합니다."
+
+      # 전체 HTTP 요청 평균 응답 시간(>= 10 req/min 조건 동시 충족). p95/p99 가 필요하면 기관에서 percentiles-histogram 을 opt-in 한다.
+      - alert: EgovApiLatencyHigh
+        expr: sum by (application) (rate(http_server_requests_seconds_sum{}[5m])) / clamp_min(sum by (application) (rate(http_server_requests_seconds_count{}[5m])), 0.001) > 1.5 and sum by (application) (rate(http_server_requests_seconds_count{}[5m])) * 60 >= 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API 평균 응답 시간이 5분째 1.5초를 넘습니다"
+          description: "전체 요청 평균 지연(분당 10건 이상 구간)입니다. 엔드포인트별 지연·DB 풀 대기·외부 연동 응답 시간을 확인합니다. p95/p99가 필요하면 기관에서 percentiles-histogram을 opt-in 합니다."
