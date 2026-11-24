@@ -10,12 +10,13 @@
 | 메트릭 노출 | api 서비스 관리 포트(9090)의 `/actuator/prometheus`. 컨테이너 네트워크 안에서만 연다(호스트 공개 금지) | [application-prod.yml](../../api-server/src/main/resources/application-prod.yml), [docker-compose.prod.yml](../../docker-compose.prod.yml) |
 | 요청 제한(429) 카운터 | `security_ratelimit_rejected_total{bucket="login"\|"all"}` | [RateLimitFilter](../../business-core/src/main/java/nuri/business/security/filter/RateLimitFilter.java) |
 | 로그인 실패 | 표준 요청 메트릭 `http_server_requests_seconds_count{uri="/api/v1/auth/login",status="401"}` | [로그인 통합 테스트](../../api-server/src/test/java/nuri/auth/AuthenticationControllerIntegrationTest.java) |
-| 콘솔 로그 | 기본은 텍스트. `json-logs` 프로파일로 ECS JSON 전환 | [logback-spring.xml](../../api-server/src/main/resources/logback-spring.xml) |
+| HTTP 5xx·지연·HikariCP | 표준 `http_server_requests_seconds_count`/`_sum` 와 `hikaricp_connections_{timeout_total,pending,active,max}{pool="egov-hikaricp"}` | [GoldenSignalMetricsTest](../../api-server/src/test/java/nuri/api/config/GoldenSignalMetricsTest.java) |
+| 콘솔·파일 로그 PII 마스킹 | 기본은 텍스트(`!json-logs`), `json-logs` 로 ECS·Logstash·GELF JSON 전환. 두 경로 모두 출력 직전 하이픈 주민번호·`01x` 휴대전화·하이픈 유선/`070` 전화번호·이메일·Bearer/JWT 마스킹 적용(무하이픈 13자리·공백/국제 전화·비문자열 `KeyValuePair` 제외) | [logback-spring.xml](../../api-server/src/main/resources/logback-spring.xml), [PiiMaskUtil](../../foundation/src/main/java/nuri/foundation/core/util/PiiMaskUtil.java) |
 | 첨부 점검 상태 | `nuri_attachment_integrity_enabled`·`nuri_attachment_integrity_healthy_age_seconds`·`nuri_attachment_integrity_last_run_unhealthy`·`nuri_attachment_integrity_observation_healthy` — 점검 비활성화 상태에도 등록 | [AttachmentIntegrityMetrics](../../business-core/src/main/java/nuri/business/service/file/AttachmentIntegrityMetrics.java), [상태 저장소](../../business-core/src/main/java/nuri/business/service/file/AttachmentIntegrityReportStore.java) |
 | 내구 작업 상태 | `nuri_durable_work_jobs{status=...}`·`nuri_durable_work_oldest_due_age_seconds{status=...}`·`nuri_durable_work_enabled`·`nuri_durable_work_observation_healthy`·`nuri_durable_work_observation_age_seconds` — 커밋된 작업을 읽기 전용으로 집계 | [DurableWorkMetrics](../../business-core/src/main/java/nuri/business/service/system/job/DurableWorkMetrics.java), [DurableJobRepository](../../business-core/src/main/java/nuri/business/domain/system/job/DurableJobRepository.java), [후속 작업 재처리](durable-work-recovery.md) |
 | 내구 작업 실패 카운터 | `nuri_durable_work_failed_total{type=...}` — 실행기가 재시도 예산 소진에 따른 FAILED 전이를 기록한 보조 신호. 재기동 전 누적 실패와 시도 예산이 이미 소진된 임대 회수는 상태 gauge로 확인 | [DurableWorkDispatcher](../../business-core/src/main/java/nuri/business/service/system/job/DurableWorkDispatcher.java) |
 | OTLP 메트릭 push | 기본 꺼짐. `OTLP_METRICS_EXPORT_ENABLED=true` 와 `OTLP_METRICS_URL` 로 켠다(Boot 4 자체 기본값은 켜짐이라 설정으로 끈다) | [application.yml](../../api-server/src/main/resources/application.yml), [OtlpMetricsExportOptInTest](../../api-server/src/test/java/nuri/api/config/OtlpMetricsExportOptInTest.java) |
-| 경보 규칙 예시 | 429 지속·로그인 실패 급증·첨부 점검 상태 4건·내구 작업 상태 3건, 총 9건 | [prometheus-alert-rules.yml](../../config/observability/prometheus-alert-rules.yml) |
+| 경보 규칙 예시 | 429 지속·로그인 실패·첨부 점검 4건·내구 작업 3건 + API 5xx·지연·Hikari 풀 타임아웃/대기 4건(`critical` 2건·`warning` 11건), 총 13건 | [prometheus-alert-rules.yml](../../config/observability/prometheus-alert-rules.yml) |
 
 ⚠ 요청 제한 필터는 HTTP 관측 필터보다 먼저 응답을 끝낸다. 그래서 **429 는 `http_server_requests` 에 나타나지 않는다.**
 429 추세는 반드시 전용 카운터로 본다.
@@ -50,22 +51,31 @@ npm run verify:alerts
 `prom/prometheus@sha256:2659f4c2ebb718e7695cb9b25ffa7d6be64db013daba13e05c875451cf51b0d3`를 사용한다.
 규칙 디렉터리를 읽기 전용으로 연결하고 네트워크 없이 `check rules`와
 `test rules`를 차례로 실행한다. [합성 시계열](../../config/observability/prometheus-alert-rules.test.yml)은
-12개 테스트 그룹으로 임계값·지속 시간 전후의 침묵과 발화, 상태 해제, 복제본 집계를 검사한다.
+16개 테스트 그룹으로 임계값·지속 시간 전후의 침묵과 발화, 상태 해제, 복제본 집계를 검사한다.
 
-2026-10-01 로컬 검증은 `SUCCESS: 9 rules found`와 12개 테스트 그룹 통과였다. 운영 Prometheus 적재,
+2026-11-24 로컬 검증은 `SUCCESS: 13 rules found`와 16개 테스트 그룹 통과였다. 운영 Prometheus 적재,
 실제 장애 주입, Alertmanager 전달은 실행하지 않았다. 수신자·채널·억제 규칙은 인수처가 정한다.
 
 | 경보 | 조건(시작점) | 먼저 볼 것 |
 |---|---|---|
-| `EgovRateLimitRejectionsSustained` | bucket별 분당 429가 30건을 넘는 상태가 10분 지속 | api 로그의 `[RATE-LIMIT]` 줄(ip·uri). 한도를 방금 낮췄다면 한도 부족을 먼저 의심한다 |
-| `EgovLoginFailureSpike` | 분당 로그인 401이 20건을 넘는 상태가 5분 지속 | 같은 시각의 `bucket=login` 429 여부, 특정 계정 집중 여부 |
-| `EgovAttachmentIntegrityNoHealthyRun` | 마지막 PASS 또는 최초 활성화 후 26시간 초과 상태가 5분 지속 | `health.json`의 최초 활성화·PASS 시각과 `latest.json`의 결과. 활성화 후 한 번도 실행되지 않은 상태도 포함한다 |
-| `EgovAttachmentIntegrityDisabled` | `nuri_attachment_integrity_enabled=0`인 상태가 5분 지속 | `ATTACHMENT_INTEGRITY_ENABLED` 설정과 기관의 점검 정책 |
-| `EgovAttachmentIntegrityUnhealthy` | 최근 실행이 DRIFT·INCOMPLETE·FAILED·REPORT_FAILED인 상태가 5분 지속 | `latest.json`의 결과와 저장소 상태. PASS 시각을 미완료 실행 시각으로 덮지 않는다 |
-| `EgovAttachmentIntegrityObservationFailed` | 활성 점검의 상태 복원·재저장 또는 결과 기록 실패가 5분 지속 | 진단 디렉터리 권한·링크·디스크와 `health.json`의 형식·크기. 비활성화는 별도 경보가 본다 |
-| `EgovDurableWorkFailed` | 커밋된 FAILED 작업이 1건 이상인 상태가 5분 지속 | `DWORK_READ`로 실패 작업을 조회하고 원인을 고친 뒤 `DWORK_RETRY`로 재처리한다 |
-| `EgovDurableWorkDueBacklog` | PENDING·RETRY의 예정 시각 또는 RUNNING의 임대 만료 시각이 15분 이상 지난 상태가 5분 지속 | 실행기·전달 채널과 시도 예산. 미래 예약·재시도 대기·유효 임대는 제외한다 |
-| `EgovDurableWorkObservationFailed` | 집계 실패 또는 마지막 정상 집계 후 90초 초과 상태가 5분 지속 | DB 연결·읽기 권한·집계 제한 시간과 갱신 실행 경로. 이전 정상 집계 값은 유지한다 |
+| `EgovRateLimitRejectionsSustained` | bucket별 분당 429가 30건을 넘는 상태가 10분 지속 (`warning`) | api 로그의 `[RATE-LIMIT]` 줄(ip·uri). 한도를 방금 낮췄다면 한도 부족을 먼저 의심한다 |
+| `EgovLoginFailureSpike` | 분당 로그인 401이 20건을 넘는 상태가 5분 지속 (`warning`) | 같은 시각의 `bucket=login` 429 여부, 특정 계정 집중 여부 |
+| `EgovAttachmentIntegrityNoHealthyRun` | 마지막 PASS 또는 최초 활성화 후 26시간 초과 상태가 5분 지속 (`warning`) | `health.json`의 최초 활성화·PASS 시각과 `latest.json`의 결과. 활성화 후 한 번도 실행되지 않은 상태도 포함한다 |
+| `EgovAttachmentIntegrityDisabled` | `nuri_attachment_integrity_enabled=0`인 상태가 5분 지속 (`warning`) | `ATTACHMENT_INTEGRITY_ENABLED` 설정과 기관의 점검 정책 |
+| `EgovAttachmentIntegrityUnhealthy` | 최근 실행이 DRIFT·INCOMPLETE·FAILED·REPORT_FAILED인 상태가 5분 지속 (`warning`) | `latest.json`의 결과와 저장소 상태. PASS 시각을 미완료 실행 시각으로 덮지 않는다 |
+| `EgovAttachmentIntegrityObservationFailed` | 활성 점검의 상태 복원·재저장 또는 결과 기록 실패가 5분 지속 (`warning`) | 진단 디렉터리 권한·링크·디스크와 `health.json`의 형식·크기. 비활성화는 별도 경보가 본다 |
+| `EgovDurableWorkFailed` | 커밋된 FAILED 작업이 1건 이상인 상태가 5분 지속 (`warning`) | `DWORK_READ`로 실패 작업을 조회하고 원인을 고친 뒤 `DWORK_RETRY`로 재처리한다 |
+| `EgovDurableWorkDueBacklog` | PENDING·RETRY의 예정 시각 또는 RUNNING의 임대 만료 시각이 15분 이상 지난 상태가 5분 지속 (`warning`) | 실행기·전달 채널과 시도 예산. 미래 예약·재시도 대기·유효 임대는 제외한다 |
+| `EgovDurableWorkObservationFailed` | 집계 실패 또는 마지막 정상 집계 후 90초 초과 상태가 5분 지속 (`warning`) | DB 연결·읽기 권한·집계 제한 시간과 갱신 실행 경로. 이전 정상 집계 값은 유지한다 |
+| `EgovApiServerErrorRateHigh` | HTTP 5xx(`outcome="SERVER_ERROR"`) 비율 5% 초과 AND 분당 5건 이상이 5분 지속 (`critical`) | api 오류 로그·DB 연결·최근 배포 및 503 풀 고갈 경보 동반 여부 |
+| `EgovDbConnectionPoolTimeout` | HikariCP 풀(`egov-hikaricp`) 획득 시간 초과가 5분 평균 분당 1건 이상 3분 지속 (`critical`) | 장기 트랜잭션·잠금 경합·`DB_POOL_MAX_SIZE` 와 외부 I/O의 DB 연결 점유 |
+| `EgovDbConnectionPoolPendingHigh` | 단일 복제본 최대 HikariCP 대기 스레드가 5개 이상 5분 지속 (`warning`) | 슬로우 쿼리·배경 실행자와 요청 풀 경합. `503` 타임아웃 전 조기 경보 |
+| `EgovApiLatencyHigh` | 전체 요청 평균 응답 시간이 1.5초 초과(분당 10건 이상) 5분 지속 (`warning`) | 느린 엔드포인트·장시간 내보내기(`XlsxExport`/스트리밍 응답)·DB 대기·외부 발송/SMTP 지연(p95/p99 필요 시 기관에서 histogram opt-in) |
+
+API 가용성 경보 운영 메모:
+- DB 풀이 고갈되면 HTTP 요청이 `503` 으로 실패해 `EgovDbConnectionPoolTimeout` 과 `EgovApiServerErrorRateHigh` 가 함께 발화할 수 있으므로, Alertmanager 도입 시 억제(inhibition) 규칙을 함께 둔다.
+- `EgovDbConnectionPoolPendingHigh` 는 복제본 간 중복 합산을 피하기 위해 `max by (application, pool)` 로 집계하므로, 발화 시 인스턴스별 `hikaricp_connections_pending` 을 조회해 포화 복제본을 특정한다.
+- `EgovApiLatencyHigh` 는 `uri` 구분 없이 전체 HTTP 요청 평균을 측정하므로 대용량 Excel 내보내기 등 정상 장기 요청 트래픽 비중에 따라 기관 환경에서 임계값·제외 URI 를 조정한다.
 
 첨부 상태 파일은 진단 디렉터리의 고정 이름 `health.json`에 집계 값만 저장한다. 최초 활성화 시각·마지막 PASS
 시각·최근 실행 실패 여부는 재기동 후에도 유지되므로, 미실행 유예가 다시 시작되거나 DRIFT가 PASS로 바뀌지 않는다.
@@ -88,9 +98,10 @@ Prometheus 경보는 메트릭 이름이나 라벨이 틀려도 오류를 내지
   원천 코드와 테스트에 대조한다. `npm run test:operational-contracts` 로 실행되며 CI 는 required `secret-scan` 이 돌린다.
 - `RateLimitFilterTest` 는 Prometheus 레지스트리의 실제 scrape 출력으로 카운터 이름을 고정한다.
 - `AuthenticationControllerIntegrationTest` 는 실패한 로그인 요청이 `uri`·`status` 태그로 기록되는지 확인한다.
+- [GoldenSignalMetricsTest](../../api-server/src/test/java/nuri/api/config/GoldenSignalMetricsTest.java) 는 실제 `ServerHttpObservationFilter` 의 `outcome="SERVER_ERROR"`·`http_server_requests_seconds_sum` 및 `DataSourcePoolMetricsAutoConfiguration` 의 `hikaricp_connections_{timeout_total,pending}` (`pool="egov-hikaricp"`) scrape 출력을 고정한다.
 - [AttachmentIntegritySchedulerTest](../../business-core/src/test/java/nuri/business/service/file/AttachmentIntegritySchedulerTest.java)는 실제 Prometheus 노출 이름과 비활성화·미실행·초기 실패·PASS 후 DRIFT 재기동·상태 파일 오류를 확인한다.
 - [DurableWorkIntegrationTest](../../api-server/src/test/java/nuri/api/schema/DurableWorkIntegrationTest.java)는 격리 PostgreSQL의 누적 FAILED·재기동·미래 예약과 만료 임대·소진된 시도 예산·DB 조회 실패 및 스크레이프의 조회 부재를 확인한다.
-- `LogbackConsoleFormatTest` 는 텍스트·ECS·형식 재정의 세 경로의 encoder 와 실제 출력을 고정한다.
+- `LogbackConsoleFormatTest` 는 텍스트·ECS·형식 재정의 경로의 encoder, JSON 구조, `traceId`/`spanId` 보존 및 PII·토큰 마스킹 출력을 고정한다.
 
 required CI의 [`secret-scan`](../../.github/workflows/ci.yml)은 Node 운영 계약과 `npm run verify:alerts`를 모두
 호출하도록 연결되어 있다. 경보 계약은 메트릭·라벨·실제 scrape 근거 삭제와 복제본 `max`의 `sum` 치환뿐 아니라,

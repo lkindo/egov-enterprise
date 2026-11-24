@@ -32,6 +32,7 @@ export const PATHS = Object.freeze({
   durableDispatcher: 'business-core/src/main/java/nuri/business/service/system/job/DurableWorkDispatcher.java',
   durableMetrics: 'business-core/src/main/java/nuri/business/service/system/job/DurableWorkMetrics.java',
   durableWorkTest: 'api-server/src/test/java/nuri/api/schema/DurableWorkIntegrationTest.java',
+  goldenSignalMetricsTest: 'api-server/src/test/java/nuri/api/config/GoldenSignalMetricsTest.java',
   promtoolFixtures: 'config/observability/prometheus-alert-rules.test.yml',
   promtoolRunner: 'scripts/run-prometheus-alert-tests.mjs',
   packageJson: 'package.json',
@@ -42,7 +43,8 @@ export const PATHS = Object.freeze({
 export const REQUIRED_ALERTS = Object.freeze(['EgovRateLimitRejectionsSustained', 'EgovLoginFailureSpike',
   'EgovAttachmentIntegrityNoHealthyRun', 'EgovAttachmentIntegrityDisabled', 'EgovAttachmentIntegrityUnhealthy',
   'EgovAttachmentIntegrityObservationFailed', 'EgovDurableWorkFailed', 'EgovDurableWorkDueBacklog',
-  'EgovDurableWorkObservationFailed']);
+  'EgovDurableWorkObservationFailed', 'EgovApiServerErrorRateHigh', 'EgovDbConnectionPoolTimeout',
+  'EgovDbConnectionPoolPendingHigh', 'EgovApiLatencyHigh']);
 
 const APPLICATION_TAG_EVIDENCE = [PATHS.applicationYml, 'application: ${spring.application.name'];
 
@@ -139,10 +141,42 @@ export const METRIC_BINDINGS = Object.freeze({
     evidence: [
       APPLICATION_TAG_EVIDENCE,
       [PATHS.loginIntegrationTest, 'meterRegistry.find("http.server.requests")'],
+      [PATHS.goldenSignalMetricsTest, 'http_server_requests_seconds_count'],
     ],
     labelValues: {
       uri: { '/api/v1/auth/login': [PATHS.loginIntegrationTest, '.tag("uri", "/api/v1/auth/login")'] },
       status: { 401: [PATHS.loginIntegrationTest, 'loginRequests("401")'] },
+      outcome: { SERVER_ERROR: [PATHS.goldenSignalMetricsTest, 'outcome=\\"SERVER_ERROR\\"'] },
+    },
+  },
+  http_server_requests_seconds_sum: {
+    labels: ['application', 'uri', 'status', 'method', 'outcome', 'exception', 'error'],
+    evidence: [
+      APPLICATION_TAG_EVIDENCE,
+      [PATHS.goldenSignalMetricsTest, 'http_server_requests_seconds_sum'],
+    ],
+    labelValues: {},
+  },
+  hikaricp_connections_timeout_total: {
+    labels: ['application', 'pool'],
+    evidence: [
+      APPLICATION_TAG_EVIDENCE,
+      [PATHS.applicationYml, 'pool-name: egov-hikaricp'],
+      [PATHS.goldenSignalMetricsTest, 'hikaricp_connections_timeout_total'],
+    ],
+    labelValues: {
+      pool: { 'egov-hikaricp': [PATHS.goldenSignalMetricsTest, 'pool=\\"egov-hikaricp\\"'] },
+    },
+  },
+  hikaricp_connections_pending: {
+    labels: ['application', 'pool'],
+    evidence: [
+      APPLICATION_TAG_EVIDENCE,
+      [PATHS.applicationYml, 'pool-name: egov-hikaricp'],
+      [PATHS.goldenSignalMetricsTest, 'hikaricp_connections_pending'],
+    ],
+    labelValues: {
+      pool: { 'egov-hikaricp': [PATHS.goldenSignalMetricsTest, 'pool=\\"egov-hikaricp\\"'] },
     },
   },
 });
@@ -318,6 +352,9 @@ export function evaluateAlertRules(files) {
 
   for (const required of REQUIRED_ALERTS) {
     if (!seen.has(required)) errors.push(`${PATHS.rules}: 템플릿 기본 경보 ${required} 가 없습니다.`);
+  }
+  if (!rules.some((rule) => rule.severity === 'critical')) {
+    errors.push(`${PATHS.rules}: 최소 1건 이상의 critical 경보가 필요합니다.`);
   }
   errors.push(...evaluatePromtoolFixtures(files, rules));
   for (const evidence of [

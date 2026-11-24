@@ -1,5 +1,8 @@
 package nuri.foundation.core.util;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * 로그·에러 메시지에 실릴 개인정보를 마스킹한다.
  *
@@ -14,6 +17,21 @@ package nuri.foundation.core.util;
  * 진짜 오류를 가리는 2차 장애를 만든다.
  */
 public final class PiiMaskUtil {
+
+    private static final Pattern BEARER_TOKEN_PATTERN = Pattern.compile(
+            "(?i)\\b(Bearer[ \\t]+)(?:[A-Za-z0-9._~+/=-]{16,}|[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+)(?![A-Za-z0-9._~+/=-])");
+    private static final Pattern JWT_PATTERN = Pattern.compile(
+            "(?<![A-Za-z0-9_-])eyJ[A-Za-z0-9_-]{8,}\\.eyJ[A-Za-z0-9_-]{8,}\\.[A-Za-z0-9_-]{8,}(?![A-Za-z0-9_-])");
+    private static final Pattern RRNO_PATTERN = Pattern.compile(
+            "(?<![0-9A-Za-z-])(\\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\\d|3[01]))-([1-8]\\d{6})(?![0-9A-Za-z-])");
+    private static final Pattern MOBILE_HYPHEN_PATTERN = Pattern.compile(
+            "(?<![0-9A-Za-z_.-])(01[016789])-(\\d{3,4})-(\\d{4})(?![0-9A-Za-z_-]|\\.\\d)");
+    private static final Pattern MOBILE_COMPACT_PATTERN = Pattern.compile(
+            "(?<![0-9A-Za-z_.-])(01[016789])(\\d{3,4})(\\d{4})(?![0-9A-Za-z_-]|\\.\\d)");
+    private static final Pattern LANDLINE_HYPHEN_PATTERN = Pattern.compile(
+            "(?<![0-9A-Za-z_.-])(02|0[3-6][1-5]|070)-(\\d{3,4})-(\\d{4})(?![0-9A-Za-z_-]|\\.\\d)");
+    private static final Pattern EMAIL_PATTERN = Pattern.compile(
+            "(?<![A-Za-z0-9._%+*-])([A-Za-z0-9._%+-]{1,64})@([A-Za-z0-9-]+(?:\\.[A-Za-z0-9-]+)*\\.[A-Za-z]{2,})(?![A-Za-z0-9-])");
 
     private PiiMaskUtil() {
     }
@@ -52,5 +70,53 @@ public final class PiiMaskUtil {
             return "***";
         }
         return digits.substring(0, 3) + "****" + digits.substring(digits.length() - 4);
+    }
+
+    /**
+     * 주민·외국인등록번호 마스킹. {@code 900101-1234567} → {@code 900101-*******}
+     *
+     * <p>생년월일(앞 6자리)과 형식 외 7자리는 가려 개인 식별을 막는다.
+     */
+    public static String rrno(String value) {
+        if (value == null || value.isBlank()) {
+            return "(none)";
+        }
+        String digits = value.replaceAll("\\D", "");
+        if (digits.length() != 13) {
+            return "***";
+        }
+        return digits.substring(0, 6) + "-*******";
+    }
+
+    /**
+     * 자유 형식 로그 문구·예외 메시지·MDC 값 안의 개인정보와 Bearer/JWT 토큰을 일괄 가린다.
+     *
+     * <p>이미 마스킹된 값({@code ho***@example.com}, {@code 010****5678}, {@code 900101-*******},
+     * {@code Bearer ***})을 다시 넘겨도 멱등하며, traceId(32hex)·spanId(16hex)·UUID·ISO 날짜·객체 해시는 보존한다.
+     */
+    public static String redactText(String text) {
+        if (text == null) {
+            return null;
+        }
+        String masked = BEARER_TOKEN_PATTERN.matcher(text).replaceAll("$1***");
+        masked = JWT_PATTERN.matcher(masked).replaceAll("***(jwt)***");
+        masked = RRNO_PATTERN.matcher(masked).replaceAll("$1-*******");
+        masked = MOBILE_HYPHEN_PATTERN.matcher(masked).replaceAll("$1-****-$3");
+        masked = MOBILE_COMPACT_PATTERN.matcher(masked).replaceAll("$1****$3");
+        masked = LANDLINE_HYPHEN_PATTERN.matcher(masked).replaceAll("$1-****-$3");
+        return maskEmails(masked);
+    }
+
+    private static String maskEmails(String text) {
+        Matcher matcher = EMAIL_PATTERN.matcher(text);
+        if (!matcher.find()) {
+            return text;
+        }
+        StringBuilder sb = new StringBuilder(text.length());
+        do {
+            matcher.appendReplacement(sb, Matcher.quoteReplacement(email(matcher.group(0))));
+        } while (matcher.find());
+        matcher.appendTail(sb);
+        return sb.toString();
     }
 }
