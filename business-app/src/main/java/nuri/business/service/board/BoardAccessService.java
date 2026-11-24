@@ -109,11 +109,11 @@ public class BoardAccessService extends BaseAbstractService implements BoardPost
          * @param pessimisticLock 등록처럼 채번을 직렬화하는 경로는 마스터 행을 잠가 읽는다. 같은 트랜잭션이 잠근 행을 읽으므로
          *                        동시에 사용 안 함으로 바뀌어도 커밋된 값을 본다.
          *
-         * <p>공개 메서드인 것은 인가 원장(수동 가드)이 접근 제한자가 있는 선언만 본문으로 찾기 때문이다 — 판정만 하고 마스터를
-         * 돌려주므로 다른 패키지에서 불러도 우회 경로가 생기지 않는다. 잠금 조회({@code pessimisticLock})는 부르는 쪽의 쓰기
-         * 트랜잭션 안에서만 뜻이 있다.
+         * <p>{@code protected} 인 것은 인가 원장(수동 가드)이 접근 제한자가 있는 선언만 본문으로 찾기 때문이다 — 같은 패키지의
+         * {@link BoardService} 만 부른다. 잠금 조회({@code pessimisticLock})는 부르는 쪽의 쓰기 트랜잭션 안에서만 뜻이 있어
+         * 다른 패키지에 열지 않는다.
          */
-        public BoardMaster loadReadableMaster(String bbsId, boolean pessimisticLock) {
+        protected BoardMaster loadReadableMaster(String bbsId, boolean pessimisticLock) {
                 String id = required(bbsId, "bbsId 는 null 일 수 없습니다");
                 BoardMaster master = (pessimisticLock
                                 ? boardMasterRepository.findByIdWithPessimisticLock(id)
@@ -131,9 +131,9 @@ public class BoardAccessService extends BaseAbstractService implements BoardPost
          *
          * <p>지정 게시판 가드를 맨 앞에 두어도 존재가 드러나지 않는다 — 설정으로 알려진 ID 만 보기 때문이다. 사용 안 함 게시판에
          * 글을 준비·정리하는 운영자도 그 동작의 권한(BOARD_CREATE·BOARD_UPDATE_ALL·BOARD_DELETE_ALL)은 따로 지난다.
-         * 공개인 까닭은 {@link #loadReadableMaster} 와 같다.
+         * {@code protected} 인 까닭은 {@link #loadReadableMaster} 와 같다.
          */
-        public BoardMaster loadWritableMaster(String bbsId, boolean pessimisticLock) {
+        protected BoardMaster loadWritableMaster(String bbsId, boolean pessimisticLock) {
                 assertSpecialBoardEdit(bbsId);
                 return loadReadableMaster(bbsId, pessimisticLock);
         }
