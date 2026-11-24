@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExpectedErrorLedger, type ExpectedErrorEntry } from './error-detector';
 
 const scope = '21-advanced-resilience.spec.ts :: Network Resilience: API 500 Error Interception';
@@ -256,12 +256,26 @@ describe('ExpectedErrorLedger', () => {
     consoleError.mockRestore();
   });
 
-  // Playwright 1.65 는 새 문서가 커밋될 때 이전 문서의 진행 중 요청을 ERR_ABORTED 로 보고한다(1.64 는 보고하지 않았다).
-  // 이벤트 순서는 새 문서 응답 → 이전 문서 요청 실패 → framenavigated 다. 그 창 안의 읽기만 통과하고, 앱이 스스로
-  // 취소한 업무 API·쓰기 중단·커밋 뒤의 취소·다른 프레임의 취소는 계속 결함이어야 한다.
-  it('새 문서 커밋으로 끊긴 이전 문서의 읽기 요청만 통과시키고 앱의 취소·쓰기 중단은 그대로 잡는다', async () => {
-    const mainFrame = { name: 'main' };
-    const childFrame = { name: 'child' };
+  // Playwright 1.65 는 새 문서가 커밋될 때 이전 문서의 진행 중 요청을 한꺼번에 ERR_ABORTED 로 보고한 뒤 framenavigated 를
+  // 낸다(1.64 는 보고하지 않았다). 순서는 새 문서 응답 → 실패 묶음 → framenavigated 다. 그 묶음 안의 읽기만 통과하고,
+  // 앱이 스스로 취소한 업무 API·쓰기 중단·리다이렉트나 다운로드·204 를 기다리던 중의 취소·끼어든 사건 뒤의 취소는 계속
+  // 결함이어야 한다(2026-11-24 독립 검토의 반례 포함).
+  describe('새 문서 커밋으로 끊긴 이전 문서의 읽기 요청', () => {
+    type FakeFrame = { name: string };
+    type FakeRequest = Record<string, () => unknown>;
+    const mainFrame: FakeFrame = { name: 'main' };
+    const childFrame: FakeFrame = { name: 'child' };
+    const bookmarks = 'http://localhost:3001/api/v1/menus/bookmarks/status';
+    const abortedGetEntry = responseEntry({
+      id: 'E2E-RESILIENCE-ABORTED-GET',
+      channel: 'requestfailed',
+      urlPattern: /\/api\/v1\/menus\/bookmarks\/status$/,
+      messagePattern: /^net::ERR_ABORTED$/,
+      method: 'GET',
+      status: null,
+      reason: '앱이 메뉴 조회를 AbortSignal 로 취소하는 반례다.',
+    });
+
     const makeGuard = async () => {
       const listeners = new Map<string, (value: unknown) => void>();
       const page = {
@@ -275,87 +289,168 @@ describe('ExpectedErrorLedger', () => {
       const guard = new (await import('./error-detector')).ConsoleErrorGuard(page, scope);
       await guard.install();
       const emit = (event: string, value: unknown) => listeners.get(event)?.(value);
-      const navigationRequest = (frame: object, url = 'http://localhost:3001/admin/system/menus') => ({
+      const request = (url: string, method: string, frame: FakeFrame, navigation = false, errorText = 'net::ERR_ABORTED'): FakeRequest => ({
         url: () => url,
-        method: () => 'GET',
-        resourceType: () => 'document',
-        failure: () => ({ errorText: 'net::ERR_ABORTED' }),
-        isNavigationRequest: () => true,
+        method: () => method,
+        resourceType: () => (navigation ? 'document' : 'xhr'),
+        failure: () => ({ errorText }),
+        isNavigationRequest: () => navigation,
         frame: () => frame,
       });
       return {
         guard,
-        /** 새 문서의 응답이 도착했다(커밋 전). */
-        navigationResponse: (frame: object = mainFrame) => emit('response', {
-          status: () => 200,
-          url: () => 'http://localhost:3001/admin/system/menus',
-          request: () => navigationRequest(frame),
+        /** 문서 탐색 요청. 응답·실패에 같은 객체를 쓴다. */
+        navigation: (frame: FakeFrame = mainFrame) => request('http://localhost:3001/admin/system/menus', 'GET', frame, true),
+        navigationResponse: (navigation: FakeRequest, status = 200) => emit('response', {
+          status: () => status,
+          url: () => navigation.url(),
+          request: () => navigation,
         }),
-        /** 응답을 받은 탐색이 다운로드·204 로 끝나 탐색 요청 자체가 실패했다. */
-        navigationFailed: (frame: object = mainFrame) => emit('requestfailed', navigationRequest(frame)),
-        commit: (frame: object = mainFrame) => emit('framenavigated', frame),
-        apiFailure: ({ frame = mainFrame as object, method = 'GET', errorText = 'net::ERR_ABORTED' } = {}) => emit('requestfailed', {
-          url: () => 'http://localhost:3001/api/v1/menus/bookmarks/status',
-          method: () => method,
-          resourceType: () => 'xhr',
-          failure: () => ({ errorText }),
-          isNavigationRequest: () => false,
-          frame: () => frame,
-        }),
+        /** 응답을 받은 탐색이 다운로드·204 로 끝났거나 다른 탐색에 밀려 탐색 요청 자체가 실패했다. */
+        navigationFailed: (navigation: FakeRequest) => emit('requestfailed', navigation),
+        commit: (frame: FakeFrame = mainFrame) => emit('framenavigated', frame),
+        apiFailure: ({ frame = mainFrame, method = 'GET', url = bookmarks, errorText = 'net::ERR_ABORTED' } = {}) =>
+          emit('requestfailed', request(url, method, frame, false, errorText)),
+        /** 같은 프레임의 다른 네트워크 사건. */
+        sameFrameEvent: (event: 'request' | 'requestfinished' | 'response', frame: FakeFrame = mainFrame) => {
+          const other = request('http://localhost:3001/api/v1/notifications', 'GET', frame);
+          emit(event, event === 'response' ? { status: () => 200, url: other.url, request: () => other } : other);
+        },
       };
     };
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const errorCount = async (guard: { verify: () => Promise<void> }) => {
+      try {
+        await guard.verify();
+        return 0;
+      } catch (error) {
+        return Number(/Detected (\d+) browser errors/.exec(String((error as Error).message))?.[1] ?? NaN);
+      }
+    };
+    let consoleError: ReturnType<typeof vi.spyOn>;
+    beforeEach(() => { consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined); });
+    afterEach(() => consoleError.mockRestore());
 
-    // 통과: 새 문서 응답과 커밋 사이에 끊긴 GET·HEAD.
-    for (const method of ['GET', 'HEAD']) {
+    it('새 문서 응답과 커밋 사이 실패 묶음의 GET·HEAD 는 통과한다', async () => {
+      for (const method of ['GET', 'HEAD']) {
+        const replaced = await makeGuard();
+        replaced.navigationResponse(replaced.navigation());
+        replaced.apiFailure({ method });
+        replaced.apiFailure({ method, url: 'http://localhost:3001/api/v1/notifications/unread-count' });
+        replaced.commit();
+        await expect(replaced.guard.verify()).resolves.toBeUndefined();
+      }
+    });
+
+    it('기다리던 탐색이 아닌 다른 탐색의 실패(연속 이동)는 커밋 대기를 닫지 않는다', async () => {
+      const consecutive = await makeGuard();
+      const first = consecutive.navigation();
+      const second = consecutive.navigation();
+      consecutive.navigationResponse(second);
+      consecutive.navigationFailed(first);
+      consecutive.apiFailure();
+      consecutive.commit();
+      await expect(consecutive.guard.verify()).resolves.toBeUndefined();
+    });
+
+    it('탐색 없이 끊긴 업무 API(앱의 AbortSignal 취소)는 잡는다', async () => {
+      const appAbort = await makeGuard();
+      appAbort.apiFailure();
+      await expect(appAbort.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status \(xhr\)/);
+    });
+
+    it('실패 묶음 안이어도 쓰기 요청의 중단은 잡고 읽기는 통과한다', async () => {
+      for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
+        const write = await makeGuard();
+        write.navigationResponse(write.navigation());
+        write.apiFailure();
+        write.apiFailure({ method, url: 'http://localhost:3001/api/v1/approvals/temporary-drafts' });
+        write.commit();
+        await expect(write.guard.verify()).rejects.toThrow(/temporary-drafts/);
+        expect(await errorCount(write.guard)).toBe(1);
+      }
+    });
+
+    it('리다이렉트 응답만 받은 동안(최종 문서를 기다리는 중) 끊긴 읽기는 잡는다', async () => {
+      const redirect = await makeGuard();
+      redirect.navigationResponse(redirect.navigation(), 302);
+      redirect.apiFailure();
+      redirect.navigationResponse(redirect.navigation());
+      redirect.commit();
+      await expect(redirect.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status/);
+    });
+
+    it('응답을 받은 탐색이 다운로드·204 로 끝나면 그 전에 보류한 취소도 잡는다', async () => {
+      const noCommit = await makeGuard();
+      const navigation = noCommit.navigation();
+      noCommit.navigationResponse(navigation, 204);
+      noCommit.apiFailure();
+      noCommit.navigationFailed(navigation);
+      noCommit.apiFailure({ url: 'http://localhost:3001/api/v1/notifications' });
+      await expect(noCommit.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status/);
+      expect(await errorCount(noCommit.guard)).toBe(2);
+    });
+
+    it('보류한 취소와 커밋 사이에 같은 프레임의 네트워크 사건이 끼면 그 취소는 잡는다', async () => {
+      for (const event of ['request', 'requestfinished', 'response'] as const) {
+        const interrupted = await makeGuard();
+        interrupted.navigationResponse(interrupted.navigation());
+        interrupted.apiFailure();
+        interrupted.sameFrameEvent(event);
+        interrupted.apiFailure({ url: 'http://localhost:3001/api/v1/notifications/unread-count' });
+        interrupted.commit();
+        await expect(interrupted.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status/);
+        expect(await errorCount(interrupted.guard)).toBe(1);
+      }
+      // 다른 프레임의 사건은 끼어든 것으로 보지 않는다.
+      const otherFrameEvent = await makeGuard();
+      otherFrameEvent.navigationResponse(otherFrameEvent.navigation());
+      otherFrameEvent.apiFailure();
+      otherFrameEvent.sameFrameEvent('request', childFrame);
+      otherFrameEvent.commit();
+      await expect(otherFrameEvent.guard.verify()).resolves.toBeUndefined();
+    });
+
+    it('커밋 뒤·다른 프레임·커밋 없이 끝난 취소와 취소가 아닌 실패는 잡는다', async () => {
+      const afterCommit = await makeGuard();
+      afterCommit.navigationResponse(afterCommit.navigation());
+      afterCommit.commit();
+      afterCommit.apiFailure();
+      await expect(afterCommit.guard.verify()).rejects.toThrow(/NETWORK FAILED/);
+
+      const otherFrame = await makeGuard();
+      otherFrame.navigationResponse(otherFrame.navigation(childFrame));
+      otherFrame.apiFailure({ frame: mainFrame });
+      otherFrame.commit(childFrame);
+      await expect(otherFrame.guard.verify()).rejects.toThrow(/NETWORK FAILED/);
+
+      const neverCommitted = await makeGuard();
+      neverCommitted.navigationResponse(neverCommitted.navigation());
+      neverCommitted.apiFailure();
+      await expect(neverCommitted.guard.verify()).rejects.toThrow(/NETWORK FAILED/);
+
+      const refused = await makeGuard();
+      refused.navigationResponse(refused.navigation());
+      refused.apiFailure({ errorText: 'net::ERR_CONNECTION_REFUSED' });
+      refused.commit();
+      await expect(refused.guard.verify()).rejects.toThrow(/ERR_CONNECTION_REFUSED/);
+    });
+
+    it('앱의 취소로 확정된 보류분은 ledger 로 세고, 실패 묶음의 읽기는 ledger 를 채우지 않는다', async () => {
+      const settled = await makeGuard();
+      settled.guard.expectErrors([abortedGetEntry]);
+      const navigation = settled.navigation();
+      settled.navigationResponse(navigation, 204);
+      settled.apiFailure();
+      settled.navigationFailed(navigation);
+      await expect(settled.guard.verify()).resolves.toBeUndefined();
+
       const replaced = await makeGuard();
-      replaced.navigationResponse();
-      replaced.apiFailure({ method });
+      replaced.guard.expectErrors([abortedGetEntry]);
+      replaced.navigationResponse(replaced.navigation());
+      replaced.apiFailure();
       replaced.commit();
-      await expect(replaced.guard.verify()).resolves.toBeUndefined();
-    }
-
-    // 잡음: 탐색이 없는데 끊긴 업무 API(앱의 AbortSignal 취소).
-    const appAbort = await makeGuard();
-    appAbort.apiFailure();
-    await expect(appAbort.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status \(xhr\)/);
-
-    // 잡음: 같은 창이어도 쓰기 요청의 중단.
-    for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
-      const write = await makeGuard();
-      write.navigationResponse();
-      write.apiFailure({ method });
-      write.commit();
-      await expect(write.guard.verify()).rejects.toThrow(/NETWORK FAILED/);
-    }
-
-    // 잡음: 커밋이 끝난 뒤(새 문서에서) 끊긴 읽기.
-    const afterCommit = await makeGuard();
-    afterCommit.navigationResponse();
-    afterCommit.commit();
-    afterCommit.apiFailure();
-    await expect(afterCommit.guard.verify()).rejects.toThrow(/NETWORK FAILED/);
-
-    // 잡음: 다른 프레임의 탐색이 커밋을 기다리는 동안 끊긴 이 프레임의 읽기.
-    const otherFrame = await makeGuard();
-    otherFrame.navigationResponse(childFrame);
-    otherFrame.apiFailure({ frame: mainFrame });
-    await expect(otherFrame.guard.verify()).rejects.toThrow(/NETWORK FAILED/);
-
-    // 잡음: 응답을 받은 탐색이 다운로드·204 로 끝나 문서가 바뀌지 않은 뒤 끊긴 읽기.
-    const noCommit = await makeGuard();
-    noCommit.navigationResponse();
-    noCommit.navigationFailed();
-    noCommit.apiFailure();
-    await expect(noCommit.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status/);
-
-    // 잡음: 창 안이어도 취소가 아닌 실패.
-    const refused = await makeGuard();
-    refused.navigationResponse();
-    refused.apiFailure({ errorText: 'net::ERR_CONNECTION_REFUSED' });
-    await expect(refused.guard.verify()).rejects.toThrow(/NETWORK FAILED/);
-
-    consoleError.mockRestore();
+      await expect(replaced.guard.verify()).rejects.toThrow(/EXPECTED ERROR 미발생\] E2E-RESILIENCE-ABORTED-GET/);
+    });
   });
 
   it('spec ledger ID는 저장소에서 유일하고 legacy ignore API를 사용하지 않는다', () => {

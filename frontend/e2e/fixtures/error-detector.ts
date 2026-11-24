@@ -154,12 +154,21 @@ export class ConsoleErrorGuard {
   private readonly errors: string[] = [];
   private readonly ledger: ExpectedErrorLedger;
   /**
-   * 새 문서의 응답을 받고 커밋을 기다리는 프레임. Playwright 1.65 부터 새 문서가 커밋되면 이전 문서에서
-   * 진행 중이던 요청을 그 자리에서 `net::ERR_ABORTED` 로 실패 보고한다(1.64 까지는 보고 없이 사라졌다).
-   * 순서는 늘 새 문서 응답 → 이전 문서 요청 실패 → framenavigated 다(1.65.1 의 커밋 처리, 2026-11-24 실측).
-   * 다운로드로 바뀌거나 204 인 탐색은 응답 뒤 탐색 요청 자체가 실패하고 문서는 그대로다.
+   * 새 문서 커밋 때 Playwright 가 합성하는 실패 묶음을 가르는 상태.
+   *
+   * Playwright 1.65 부터 새 문서가 커밋되면 이전 문서에서 진행 중이던 요청을 그 자리에서 한꺼번에
+   * `net::ERR_ABORTED` 로 실패 보고한 뒤 framenavigated 를 낸다(crPage `_onFrameNavigated` →
+   * `frame._failInflightRequests`; 1.64 까지는 보고 없이 사라졌다). 클라이언트가 받는 순서는 새 문서의 응답 →
+   * 실패 묶음 → framenavigated 다(1.65.1, 요청 가로채기를 켜도 같음 — 2026-11-24 실측).
+   *
+   * 그래서 탐색 응답을 받은 프레임만 커밋을 기다리는 것으로 보고, 그동안 끊긴 읽기 요청은 바로 버리지 않고
+   * 보류한다. 같은 프레임에 다른 네트워크 사건(요청·응답·완료, 기다리던 탐색의 실패 — 다운로드·204 로 끝난
+   * 탐색)이 끼면 보류분은 앱의 취소로 확정하고, 곧바로 framenavigated 로 이어질 때만 문서 교체로 끊긴 것으로
+   * 면제한다. 검증 때까지 남은 보류분도 결함이다. 남는 틈: 최종 문서 응답과 커밋 사이(수 ms)에 다른 사건 없이
+   * 앱이 취소한 읽기는 묶음과 구별되지 않는다 — 그 문서는 곧 사라지므로 결과를 받을 곳도 없다.
    */
-  private readonly framesAwaitingCommit = new Set<Frame>();
+  private readonly awaitingCommit = new Map<Frame, Request>();
+  private readonly abortsBeforeCommit = new Map<Frame, Request[]>();
 
   constructor(private readonly page: Page, scope = 'unspecified') {
     this.ledger = new ExpectedErrorLedger(scope);
@@ -254,15 +263,28 @@ export class ConsoleErrorGuard {
       console.error(`🚨 ${message}`);
     });
 
+    // 같은 프레임에 네트워크 사건이 끼면 보류한 취소는 커밋 때의 실패 묶음이 아니다.
+    const interruptAbortsBeforeCommit = (request: Request) => {
+      const frame = frameOf(request);
+      if (frame) this.settleAbortsAsDefects(frame);
+    };
+    this.page.on('request', interruptAbortsBeforeCommit);
+    this.page.on('requestfinished', interruptAbortsBeforeCommit);
+
     this.page.on('framenavigated', (frame) => {
-      this.framesAwaitingCommit.delete(frame);
+      // 커밋을 기다리던 프레임이면 바로 앞까지 보류한 취소는 문서 교체로 끊긴 이전 문서의 읽기다.
+      if (this.awaitingCommit.has(frame)) this.abortsBeforeCommit.delete(frame);
+      else this.settleAbortsAsDefects(frame);
+      this.awaitingCommit.delete(frame);
     });
 
     this.page.on('response', (response) => {
       const request = response.request();
+      interruptAbortsBeforeCommit(request);
+      // 리다이렉트 응답이어도 커밋 전에 최종 문서의 요청·응답이 같은 프레임에 끼므로 그 사이 보류분은 앱의 취소로 확정된다.
       if (request.isNavigationRequest()) {
         const frame = frameOf(request);
-        if (frame) this.framesAwaitingCommit.add(frame);
+        if (frame) this.awaitingCommit.set(frame, request);
       }
 
       const status = response.status();
@@ -285,8 +307,11 @@ export class ConsoleErrorGuard {
     this.page.on('requestfailed', (request) => {
       const errorText = request.failure()?.errorText || 'Unknown error';
       const frame = frameOf(request);
-      // 응답을 받은 탐색이 다운로드·204 로 끝나면 문서는 바뀌지 않는다 — 커밋 대기를 닫는다.
-      if (frame && request.isNavigationRequest()) this.framesAwaitingCommit.delete(frame);
+      // 기다리던 탐색이 다운로드·204 로 끝나면 문서는 바뀌지 않는다 — 보류분은 앱의 취소다.
+      if (frame && this.awaitingCommit.get(frame) === request) {
+        this.awaitingCommit.delete(frame);
+        this.settleAbortsAsDefects(frame);
+      }
 
       // 브라우저가 스스로 취소한 **문서 및 화면 라우트 요청**은 앱 결함이 아니다.
       //   ① 탐색이 다른 탐색으로 대체됨(로그인 리다이렉트 등)
@@ -301,32 +326,47 @@ export class ConsoleErrorGuard {
         return;
       }
       // ③ 새 문서가 커밋되며 이전 문서의 읽기 요청이 끊김 — 그 문서는 사라져 결과를 받을 곳이 없고, 새 문서가
-      //    필요한 조회를 다시 보낸다. 시험이 화면의 첫 조회가 시작된 직후 다음 문서로 이동하면 생긴다. 앱이
-      //    업무 API 를 스스로 취소한 것(AbortSignal 등)과 쓰기 요청의 중단은 커밋 대기 밖이거나 읽기가 아니므로
-      //    그대로 결함이다.
-      if (errorText === 'net::ERR_ABORTED' && frame && this.framesAwaitingCommit.has(frame)
+      //    필요한 조회를 다시 보낸다. 시험이 화면의 첫 조회가 시작된 직후 다음 문서로 이동하면 생긴다. 여기서는
+      //    보류만 하고 판정은 framenavigated·끼어든 사건이 한다(awaitingCommit 설명). 쓰기 요청의 중단은 저장이
+      //    잘렸을 수 있어 보류하지 않는다.
+      if (errorText === 'net::ERR_ABORTED' && frame && this.awaitingCommit.has(frame)
         && READ_METHODS.has(request.method())) {
+        this.abortsBeforeCommit.set(frame, [...(this.abortsBeforeCommit.get(frame) ?? []), request]);
         return;
       }
 
-      const event: ExpectedErrorEvent = {
-        channel: 'requestfailed',
-        url: request.url(),
-        message: errorText,
-        method: request.method(),
-        status: null,
-      };
-      if (this.ledger.consume(event)) return;
-
-      // resourceType 을 함께 남긴다. 취소·실패의 성격은 URL 만으로 판정할 수 없고,
-      // 이것이 없으면 CI 로그만으로 원인을 좁히지 못한다(실제로 한 회차를 그렇게 소모했다).
-      const message = `[NETWORK FAILED]: ${request.url()} (${request.resourceType()}) - ${errorText}`;
-      this.errors.push(message);
-      console.error(`❌ ${message}`);
+      this.reportRequestFailure(request, errorText);
     });
   }
 
+  /** 커밋 전에 보류한 취소를 앱의 취소로 확정한다. */
+  private settleAbortsAsDefects(frame: Frame): void {
+    const pending = this.abortsBeforeCommit.get(frame);
+    if (!pending) return;
+    this.abortsBeforeCommit.delete(frame);
+    for (const request of pending) this.reportRequestFailure(request, 'net::ERR_ABORTED');
+  }
+
+  private reportRequestFailure(request: Request, errorText: string): void {
+    const event: ExpectedErrorEvent = {
+      channel: 'requestfailed',
+      url: request.url(),
+      message: errorText,
+      method: request.method(),
+      status: null,
+    };
+    if (this.ledger.consume(event)) return;
+
+    // resourceType 을 함께 남긴다. 취소·실패의 성격은 URL 만으로 판정할 수 없고,
+    // 이것이 없으면 CI 로그만으로 원인을 좁히지 못한다(실제로 한 회차를 그렇게 소모했다).
+    const message = `[NETWORK FAILED]: ${request.url()} (${request.resourceType()}) - ${errorText}`;
+    this.errors.push(message);
+    console.error(`❌ ${message}`);
+  }
+
   async verify(): Promise<void> {
+    // 커밋으로 이어지지 않은 채 남은 보류분은 앱의 취소다.
+    for (const frame of [...this.abortsBeforeCommit.keys()]) this.settleAbortsAsDefects(frame);
     this.errors.push(...this.ledger.violations());
     if (this.errors.length > 0) {
       const errorSummary = this.errors.join('\n');
