@@ -432,7 +432,8 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             성공하지 않았다.
 
             엔드포인트를 여는 대신 어포던스를 걷은 이유: **화면에 답글 계층 표현이 전혀 없다** —
-            목록·상세 어디도 upPstSn·ansLv 를 읽지 않는다(전수 grep 0건). 엔드포인트만 열면
+            목록·상세 어디도 답글을 원글 아래에 묶어 보이지 않는다(운영 게시물 목록이 upPstSn 을
+            읽는 것은 상단 고정 가능 여부 판정뿐이다). 엔드포인트만 열면
             답글이 일반 글과 구분되지 않는 반쪽 기능이 된다. [2026-11-25 DEC-OPS-431] 남아 있던
             서버 구현(BoardService.replyPost)도 걷었다 — 답글을 다시 두려면 계층 표현과 함께
             설계부터 한다.

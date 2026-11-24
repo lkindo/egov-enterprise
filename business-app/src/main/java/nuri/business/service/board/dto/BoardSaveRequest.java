@@ -56,6 +56,6 @@ public record BoardSaveRequest(
                 @Size(max = 200) String pswd,
 
                 @Schema(description = "게시글 버전 — 수정 요청에서만 쓴다. 상세 조회의 version 을 그대로 돌려보낸다(없으면 400, 다르면 409). "
-                                + "등록·답글에서는 쓰지 않는다")
+                                + "등록에서는 쓰지 않는다")
                 @Min(0) Integer version) {
 }
