@@ -7,17 +7,17 @@
  * (persisted=false — 페이지가 정말 떠날 때)로 바꾼다.
  *
  * 설치된 모듈 파일을 새 vm 문맥에서 평가한다. 모듈은 상태(afterUnload)를 들고, vitest 는 node_modules 의 CommonJS 를
- * 다시 불러오지 않으므로 시험마다 새로 평가해야 서로 영향이 없다.
+ * 다시 불러오지 않으므로 시험마다 새로 평가해야 서로 영향이 없다. 파일은 frontend/node_modules 의 패키지 경로로 읽는다 —
+ * require·createRequire 는 쓰지 않는다(재사용 생성기의 프런트 import 판정이 정적 지정자만 읽는다).
  */
 import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { describe, expect, it, vi } from 'vitest';
 
-const require = createRequire(import.meta.url);
-const sockjsPackage = require('sockjs-client/package.json') as { version: string };
-const eventModulePath = require.resolve('sockjs-client/lib/utils/event.js');
+const sockjsRoot = join(process.cwd(), 'node_modules', 'sockjs-client');
+const sockjsPackage = JSON.parse(readFileSync(join(sockjsRoot, 'package.json'), 'utf8')) as { version: string };
+const eventModulePath = join(sockjsRoot, 'lib', 'utils', 'event.js');
 const frontendPackage = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8')) as {
   pnpm?: { patchedDependencies?: Record<string, string> };
 };
@@ -39,7 +39,11 @@ function loadEventUtils() {
     },
   });
   const commonJsModule = { exports: {} as EventUtils };
-  const localRequire = (request: string) => (request === './random' ? { string: () => Math.random().toString(36).slice(2, 10) } : require(request));
+  // event.js 가 부르는 모듈은 './random' 하나다. 다른 것을 부르면 패치 대상이 바뀐 것이니 멈춘다.
+  const localRequire = (request: string) => {
+    if (request === './random') return { string: () => Math.random().toString(36).slice(2, 10) };
+    throw new Error(`sockjs-client event.js 가 예상하지 않은 모듈을 부른다: ${request}`);
+  };
   runInNewContext(readFileSync(eventModulePath, 'utf8'), {
     module: commonJsModule, exports: commonJsModule.exports, require: localRequire, global: window, setTimeout,
   });

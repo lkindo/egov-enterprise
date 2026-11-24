@@ -9,7 +9,7 @@
 - **Styling**: Tailwind CSS 4, 시맨틱 디자인 토큰
 - **Data Fetching**: Axios(동일 출처 `/api/v1` 프록시), TanStack Query 5.x
 - **State Management**: Zustand, React Context
-- **Real-time**: STOMP over SockJS (동일 출처 `/ws` 프록시). sockjs-client 1.6.1 은 페이지 이탈 감지를 `unload` 대신 `pagehide` 로 바꾼 pnpm 패치(`patches/sockjs-client@1.6.1.patch`)로 쓴다 — 판을 올릴 때는 upstream 이 고쳤는지 보고 패치를 걷거나 다시 만든 뒤 `src/contexts/__tests__/sockjs-pagehide-patch.test.ts` 를 돌린다.
+- **Real-time**: STOMP over SockJS (동일 출처 `/ws` 프록시). sockjs-client 1.6.1 은 페이지 이탈 감지를 `unload` 대신 `pagehide` 로 바꾼 pnpm 패치(`patches/sockjs-client@1.6.1.patch`)로 쓴다 — 판을 올릴 때는 upstream 이 고쳤는지 보고 패치를 걷거나 다시 만든 뒤 `src/contexts/__tests__/sockjs-pagehide-patch.test.ts` 를 돌린다. 마지막 패치를 걷으면 그 시험의 등록 단언, `Dockerfile` 의 `COPY patches`, UI 기준선 빌드 입력(`scripts/ui-quality-baseline-build.mjs` 의 `patches`)도 함께 정리하고, 페이지 이탈 동작 단언은 남긴다.
 - **Validation**: Zod + React Hook Form
 - **Language**: 한국어 UI (`html lang="ko"`), API 오류 ko/en 협상은 백엔드가 담당
 
