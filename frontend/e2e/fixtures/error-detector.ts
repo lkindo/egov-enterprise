@@ -1,4 +1,4 @@
-import { Page, expect } from '@playwright/test';
+import { type Frame, type Page, type Request, expect } from '@playwright/test';
 
 export type ExpectedErrorChannel = 'console' | 'pageerror' | 'response' | 'requestfailed';
 export type ExpectedErrorPattern = string | RegExp;
@@ -137,10 +137,29 @@ export class ExpectedErrorLedger {
   }
 }
 
+/** 결과를 받을 문서가 사라지면 잃을 것이 없는 읽기 요청. 쓰기는 끊기면 저장이 잘렸을 수 있다. */
+const READ_METHODS = new Set(['GET', 'HEAD']);
+
+/** 서비스 워커의 요청은 프레임이 없어 frame() 이 던진다. */
+function frameOf(request: Request): Frame | null {
+  try {
+    return request.frame();
+  } catch {
+    return null;
+  }
+}
+
 /** 전역 브라우저 에러, 콘솔 에러 및 네트워크 리소스 감시 가드. */
 export class ConsoleErrorGuard {
   private readonly errors: string[] = [];
   private readonly ledger: ExpectedErrorLedger;
+  /**
+   * 새 문서의 응답을 받고 커밋을 기다리는 프레임. Playwright 1.65 부터 새 문서가 커밋되면 이전 문서에서
+   * 진행 중이던 요청을 그 자리에서 `net::ERR_ABORTED` 로 실패 보고한다(1.64 까지는 보고 없이 사라졌다).
+   * 순서는 늘 새 문서 응답 → 이전 문서 요청 실패 → framenavigated 다(1.65.1 의 커밋 처리, 2026-11-24 실측).
+   * 다운로드로 바뀌거나 204 인 탐색은 응답 뒤 탐색 요청 자체가 실패하고 문서는 그대로다.
+   */
+  private readonly framesAwaitingCommit = new Set<Frame>();
 
   constructor(private readonly page: Page, scope = 'unspecified') {
     this.ledger = new ExpectedErrorLedger(scope);
@@ -235,11 +254,20 @@ export class ConsoleErrorGuard {
       console.error(`🚨 ${message}`);
     });
 
+    this.page.on('framenavigated', (frame) => {
+      this.framesAwaitingCommit.delete(frame);
+    });
+
     this.page.on('response', (response) => {
+      const request = response.request();
+      if (request.isNavigationRequest()) {
+        const frame = frameOf(request);
+        if (frame) this.framesAwaitingCommit.add(frame);
+      }
+
       const status = response.status();
       if (status < 400) return;
 
-      const request = response.request();
       const event: ExpectedErrorEvent = {
         channel: 'response',
         url: response.url(),
@@ -256,6 +284,9 @@ export class ConsoleErrorGuard {
 
     this.page.on('requestfailed', (request) => {
       const errorText = request.failure()?.errorText || 'Unknown error';
+      const frame = frameOf(request);
+      // 응답을 받은 탐색이 다운로드·204 로 끝나면 문서는 바뀌지 않는다 — 커밋 대기를 닫는다.
+      if (frame && request.isNavigationRequest()) this.framesAwaitingCommit.delete(frame);
 
       // 브라우저가 스스로 취소한 **문서 및 화면 라우트 요청**은 앱 결함이 아니다.
       //   ① 탐색이 다른 탐색으로 대체됨(로그인 리다이렉트 등)
@@ -267,6 +298,14 @@ export class ConsoleErrorGuard {
       const isApiRequest = /\/api\//.test(url);
       if (errorText === 'net::ERR_ABORTED'
         && (!isApiRequest || request.resourceType() === 'document' || /[?&]_rsc=/.test(url))) {
+        return;
+      }
+      // ③ 새 문서가 커밋되며 이전 문서의 읽기 요청이 끊김 — 그 문서는 사라져 결과를 받을 곳이 없고, 새 문서가
+      //    필요한 조회를 다시 보낸다. 시험이 화면의 첫 조회가 시작된 직후 다음 문서로 이동하면 생긴다. 앱이
+      //    업무 API 를 스스로 취소한 것(AbortSignal 등)과 쓰기 요청의 중단은 커밋 대기 밖이거나 읽기가 아니므로
+      //    그대로 결함이다.
+      if (errorText === 'net::ERR_ABORTED' && frame && this.framesAwaitingCommit.has(frame)
+        && READ_METHODS.has(request.method())) {
         return;
       }
 
