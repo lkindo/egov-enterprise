@@ -109,7 +109,7 @@ export function adoptionScope(repoRoot, { product, profile }) {
       'tools/migration-workspace/engine.mjs', 'tools/migration-workspace/store.mjs', 'tools/migration-workspace/inputs.mjs']
     : [...common, ...['foundation', 'business-core', 'business-app', 'api-server'].flatMap((module) =>
       [`${module}/src/main`, `${module}/build.gradle`]),
-    'frontend/src', 'frontend/next.config.ts', 'frontend/package.json', 'frontend/pnpm-lock.yaml',
+    'frontend/src', 'frontend/next.config.ts', 'frontend/package.json', 'frontend/pnpm-lock.yaml', 'frontend/patches',
     'frontend/Dockerfile', 'frontend/.dockerignore', 'frontend/scripts/validate-api-build-urls.mjs',
     'api-server/Dockerfile', 'api-server/.dockerignore', '.dockerignore',
     'docker-compose.yml', 'docker-compose.prod.yml', 'scripts/deploy.sh',

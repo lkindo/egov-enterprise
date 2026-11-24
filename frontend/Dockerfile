@@ -12,7 +12,9 @@ WORKDIR /app
 #   --frozen-lockfile 은 lock 과 package.json 이 어긋나면 빌드를 실패시킨다(의도된 게이트).
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
+# patches/ 는 lockfile 의 patchedDependencies 가 가리킨다 — 없으면 --frozen-lockfile 설치가 멈춘다.
 COPY package.json pnpm-lock.yaml ./
+COPY patches ./patches
 RUN pnpm install --frozen-lockfile
 
 # Stage 2: Builder

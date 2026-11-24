@@ -1,0 +1,21 @@
+diff --git a/lib/utils/event.js b/lib/utils/event.js
+index 9c3bab6c5abdafc5a6c58343db0c5c6b21d64812..da357e9a5927f91b6a08eb2b93f06f639a60e638 100644
+--- a/lib/utils/event.js
++++ b/lib/utils/event.js
+@@ -68,6 +68,15 @@ var unloadTriggered = function() {
+ 
+ // 'unload' alone is not reliable in opera within an iframe, but we
+ // can't use `beforeunload` as IE fires it on javascript: links.
++// [egov-enterprise patch] Chromium is removing 'unload' (disallowed by the default Permissions Policy from
++// Chromium 159): the listener no longer fires and registering it logs a "Permissions policy violation" console
++// error. 'pagehide' with persisted=false is the page actually going away, which is what 'unload' meant here.
++// A persisted pagehide (back/forward cache) must not run these callbacks: afterUnload never resets, so every
++// connection opened after the page is restored would be closed at once.
+ if (!isChromePackagedApp) {
+-  module.exports.attachEvent('unload', unloadTriggered);
++  module.exports.attachEvent('pagehide', function(event) {
++    if (!event || !event.persisted) {
++      unloadTriggered();
++    }
++  });
+ }
