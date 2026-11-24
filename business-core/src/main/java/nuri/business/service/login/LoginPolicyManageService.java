@@ -199,13 +199,28 @@ public class LoginPolicyManageService {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                     "접속 허용 시간은 시작과 종료를 함께 입력하거나 둘 다 비워 주세요.");
         }
-        if (hasStart && !(CLOCK_TIME.matcher(dto.getBgngTm()).matches() && CLOCK_TIME.matcher(dto.getEndTm()).matches())) {
-            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                    "접속 허용 시간은 HH:mm 형식으로 입력해 주세요.");
+        if (hasStart) {
+            if (!(CLOCK_TIME.matcher(dto.getBgngTm()).matches() && CLOCK_TIME.matcher(dto.getEndTm()).matches())) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        "접속 허용 시간은 HH:mm 형식으로 입력해 주세요.");
+            }
+            if (parseClockTime(dto.getBgngTm()).equals(parseClockTime(dto.getEndTm()))) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        "접속 허용 시작 시간과 종료 시간은 같을 수 없습니다. 24시간 허용하려면 둘 다 비워 주세요.");
+            }
         }
     }
 
     private static final java.util.regex.Pattern CLOCK_TIME = java.util.regex.Pattern.compile("([01]\\d|2[0-3]):?[0-5]\\d");
+    private static final java.time.format.DateTimeFormatter CLOCK_TIME_FORMATTER =
+            java.time.format.DateTimeFormatter.ofPattern("HH:mm");
+
+    private static java.time.LocalTime parseClockTime(String raw) {
+        String normalized = (!raw.contains(":") && raw.length() >= 4)
+                ? raw.substring(0, 2) + ":" + raw.substring(2, 4)
+                : raw;
+        return java.time.LocalTime.parse(normalized, CLOCK_TIME_FORMATTER);
+    }
 
     @Transactional
     public void updateLoginPolicy(LoginPolicyDto dto) {
@@ -264,17 +279,10 @@ public class LoginPolicyManageService {
             if (policy.getBgngTm() != null && !policy.getBgngTm().isEmpty() && policy.getEndTm() != null && !policy.getEndTm().isEmpty()) {
                 try {
                     java.time.LocalTime now = java.time.LocalTime.now(clock);
-                    String bgng = policy.getBgngTm();
-                    String end = policy.getEndTm();
-                    if (!bgng.contains(":") && bgng.length() >= 4) {
-                        bgng = bgng.substring(0, 2) + ":" + bgng.substring(2, 4);
-                    }
-                    if (!end.contains(":") && end.length() >= 4) {
-                        end = end.substring(0, 2) + ":" + end.substring(2, 4);
-                    }
-                    
-                    java.time.LocalTime startTime = java.time.LocalTime.parse(bgng, java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
-                    java.time.LocalTime endTime = java.time.LocalTime.parse(end, java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+                    java.time.LocalTime startTime = parseClockTime(policy.getBgngTm());
+                    java.time.LocalTime endTime = parseClockTime(policy.getEndTm());
+                    // 새 쓰기는 requireTimePair 에서 동일 시각을 거부하지만, 기존 동일 시각 행은 업그레이드 호환성과
+                    // AuthorizationAdministrationService.managerCount()(GAP-SEC-006) 정합성을 위해 종전 24시간 허용을 유지한다.
                     // 자정 넘는 허용 창(start > end, 예: 22:00~06:00) 처리: 그 경우 [start,24:00) ∪ [00:00,end] 를 허용.
                     boolean withinWindow = startTime.isBefore(endTime)
                             ? (!now.isBefore(startTime) && !now.isAfter(endTime))

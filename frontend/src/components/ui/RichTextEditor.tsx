@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useEditor, useEditorState, EditorContent, type EditorOptions } from '@tiptap/react';
+import { useEditor, useEditorState, EditorContent, type Editor, type EditorOptions } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
@@ -84,6 +84,20 @@ function buildEditableAttributes({
   };
 }
 
+function insertMediaFiles(
+  editor: Editor | null,
+  media: RichTextMediaOptions | undefined,
+  readOnly: boolean,
+  files: File[],
+  position?: number,
+) {
+  if (!editor || !media || readOnly || media.disabled) return;
+  const references = media.onAddFiles(files);
+  if (references.length === 0) return;
+  const content = [...references.map((attrs) => ({ type: 'boardMedia', attrs })), { type: 'paragraph' }];
+  editor.chain().focus().insertContentAt(position ?? editor.state.selection.from, content).run();
+}
+
 export default function RichTextEditor({
   value,
   onChange,
@@ -105,7 +119,8 @@ export default function RichTextEditor({
   const imageInput = React.useRef<HTMLInputElement>(null);
   const videoInput = React.useRef<HTMLInputElement>(null);
   const mediaContext = React.useMemo(() => media ? { ...media, readOnly } : undefined, [media, readOnly]);
-  const editableAttributes = buildEditableAttributes({
+  const hasMedia = Boolean(media);
+  const editableAttributes = React.useMemo(() => buildEditableAttributes({
     id,
     placeholder,
     ariaLabel,
@@ -117,27 +132,61 @@ export default function RichTextEditor({
     name,
     formFieldName,
     enableTables,
-  });
-  const editorProps: EditorOptions['editorProps'] = {
+  }), [
+    id,
+    placeholder,
+    ariaLabel,
+    ariaLabelledBy,
+    ariaDescribedBy,
+    ariaInvalid,
+    ariaRequired,
+    ariaErrorMessage,
+    name,
+    formFieldName,
+    enableTables,
+  ]);
+  const mediaInteractionRef = React.useRef<{
+    editor: Editor | null;
+    media?: RichTextMediaOptions;
+    readOnly: boolean;
+  }>({ editor: null, media, readOnly });
+  const editorProps = React.useMemo<EditorOptions['editorProps']>(() => ({
     attributes: editableAttributes,
     handleDrop: (view, event, _slice, moved) => {
-      if (!media || moved || !event.dataTransfer?.files.length) return false;
+      const current = mediaInteractionRef.current;
+      if (!current.media || moved || !event.dataTransfer?.files.length) return false;
       event.preventDefault();
-      if (!readOnly) addMedia(Array.from(event.dataTransfer.files), view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos);
+      if (!current.readOnly) {
+        insertMediaFiles(
+          current.editor,
+          current.media,
+          current.readOnly,
+          Array.from(event.dataTransfer.files),
+          view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos,
+        );
+      }
       return true;
     },
     handlePaste: (_view, event) => {
-      if (!media || !event.clipboardData?.files.length) return false;
+      const current = mediaInteractionRef.current;
+      if (!current.media || !event.clipboardData?.files.length) return false;
       event.preventDefault();
-      if (!readOnly) addMedia(Array.from(event.clipboardData.files));
+      if (!current.readOnly) {
+        insertMediaFiles(
+          current.editor,
+          current.media,
+          current.readOnly,
+          Array.from(event.clipboardData.files),
+        );
+      }
       return true;
     },
-    ...(media ? {
+    ...(hasMedia ? {
       transformPastedHTML: (html: string) => DOMPurify.sanitize(html, {
         FORBID_TAGS: ['img', 'video', 'audio', 'source', 'iframe', 'object', 'embed'],
       }),
     } : {}),
-  };
+  }), [editableAttributes, hasMedia]);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -161,7 +210,7 @@ export default function RichTextEditor({
       }),
       CharacterCount,
       ...(enableTables ? [TableKit] : []),
-      ...(media ? [BoardMediaNode] : []),
+      ...(hasMedia ? [BoardMediaNode] : []),
     ],
     content: value,
     immediatelyRender: false,
@@ -169,21 +218,21 @@ export default function RichTextEditor({
       onChange(editor.getHTML());
     },
     editorProps,
-  }, [enableTables, Boolean(media)]);
+  }, [enableTables, hasMedia]);
 
   function addMedia(files: File[], position?: number) {
-    if (!editor || !media || readOnly || media.disabled) return;
-    const references = media.onAddFiles(files);
-    if (references.length === 0) return;
-    const content = [...references.map((attrs) => ({ type: 'boardMedia', attrs })), { type: 'paragraph' }];
-    editor.chain().focus().insertContentAt(position ?? editor.state.selection.from, content).run();
+    insertMediaFiles(editor, media, readOnly, files, position);
   }
 
   React.useEffect(() => {
+    mediaInteractionRef.current = { editor, media, readOnly };
+  }, [editor, media, readOnly]);
+
+  React.useEffect(() => {
     // Explicit extension dependencies preserve the editor instance; keep DOM handlers
-    // synchronized with the latest media files, permissions, and initialized editor.
+    // synchronized with stabilized attributes, media presence, and editability.
     editor?.setOptions({ editorProps, editable: !readOnly });
-  });
+  }, [editor, editorProps, readOnly]);
 
   // Tiptap 3 does not rerender useEditor on selection changes by default.
   useEditorState({ editor, selector: ({ transactionNumber }) => transactionNumber });

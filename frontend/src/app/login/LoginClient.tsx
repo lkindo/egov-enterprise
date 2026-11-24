@@ -290,7 +290,7 @@ function LoginContent() {
                                 <div
                                     role="status"
                                     data-testid="login-session-expired"
-                                    className="text-sm text-center text-secondary bg-muted/40 p-3 rounded-[var(--radius-hub-item)] border border-border"
+                                    className="text-sm text-center text-secondary-foreground bg-muted/40 p-3 rounded-[var(--radius-hub-item)] border border-border"
                                 >
                                     다른 곳에서 로그인했거나 세션이 만료되었습니다. 다시 로그인해 주세요.
                                 </div>

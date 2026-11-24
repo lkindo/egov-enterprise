@@ -46,8 +46,10 @@ describe('권한 부족 되돌림 안내', () => {
   it('auth_error=unauthorized 로 되돌려지면 이유를 말한다', async () => {
     await renderRoot({ auth_error: 'unauthorized' });
 
-    expect(screen.getByTestId('dashboard-auth-error'))
-      .toHaveTextContent('접근 권한이 없어 홈으로 이동했습니다.');
+    const banner = screen.getByTestId('dashboard-auth-error');
+    expect(banner).toHaveTextContent('접근 권한이 없어 홈으로 이동했습니다.');
+    expect(banner).toHaveClass('text-secondary-foreground');
+    expect(banner).not.toHaveClass('text-secondary');
   });
 
   it('평상시 홈 방문에는 안내하지 않는다', async () => {

@@ -105,6 +105,7 @@ public class ExternalHrService {
         nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), hr.getVersion());
         hr.update(dto.getGndrCd(), dto.getOtsdHrNm(), dto.getCrTypeCd(), dto.getOgdpInstNm(), dto.getBrdtYmd(),
                 dto.getAreaNo(), dto.getMdTelno(), dto.getEndTelno(), dto.getEmlAddr(), actorLoginId);
+        externalHrRepository.flush();
         sensitiveAuditPort.recordMutation("EXTERNAL_HR_UPDATE", auditTarget(evntSn, otsdHrId));
         return convertToDto(hr);
     }

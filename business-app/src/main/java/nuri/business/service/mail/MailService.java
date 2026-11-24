@@ -245,6 +245,7 @@ public class MailService {
     @Transactional
     public Long sendMail(String userId, SentMailDto dto) {
         log.info("Mail dispatch requested");
+        assertRequiredContent(dto);
         assertNoAttachment(dto);
         return dispatchAll(userId, dto, resolveRecipients(dto));
     }
@@ -257,12 +258,22 @@ public class MailService {
      */
     @Transactional
     public Long sendToResolvedAddress(String requesterId, SentMailDto dto, String address, String recipientName) {
+        assertRequiredContent(dto);
         assertNoAttachment(dto);
         if (!hasText(address)) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "수신자를 한 명 이상 지정해 주세요.");
         }
         return dispatchAll(requesterId, dto,
                 List.of(new ResolvedRecipient(address.trim(), displayNameOf(recipientName), null)));
+    }
+
+    private static void assertRequiredContent(SentMailDto dto) {
+        if (dto == null || !hasText(dto.getSj())) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "메일 제목을 입력해 주세요.");
+        }
+        if (!hasText(dto.getEmailCn())) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "메일 본문을 입력해 주세요.");
+        }
     }
 
     private Long dispatchAll(String userId, SentMailDto dto, List<ResolvedRecipient> recipients) {

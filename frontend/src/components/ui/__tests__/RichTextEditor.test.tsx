@@ -195,4 +195,25 @@ describe('RichTextEditor toolbar accessibility', () => {
     view.rerender(<RichTextEditor value="<p>복구한 초안</p>" onChange={onChange} />);
     expect(tiptap.editor.commands.setContent).toHaveBeenCalledWith('<p>복구한 초안</p>', { emitUpdate: false });
   });
+
+  it('본문 값이나 인라인 media 객체만 바뀐 재렌더는 setOptions를 반복 호출하지 않고 readOnly/aria-invalid 변경만 반영한다', () => {
+    const onChange = vi.fn();
+    const mediaProps = () => ({ attachments: [], pendingFiles: [], onAddFiles: vi.fn(() => []) });
+    const view = render(<RichTextEditor value="<p>초기</p>" onChange={onChange} media={mediaProps()} />);
+    expect(tiptap.editor.setOptions).toHaveBeenCalledTimes(1);
+
+    tiptap.editor.setOptions.mockClear();
+    view.rerender(<RichTextEditor value="<p>키 입력 변경</p>" onChange={onChange} media={mediaProps()} />);
+    expect(tiptap.editor.setOptions).not.toHaveBeenCalled();
+
+    view.rerender(<RichTextEditor value="<p>키 입력 변경</p>" onChange={onChange} media={mediaProps()} readOnly />);
+    expect(tiptap.editor.setOptions).toHaveBeenCalledTimes(1);
+    expect(tiptap.editor.setOptions).toHaveBeenLastCalledWith(expect.objectContaining({ editable: false }));
+
+    tiptap.editor.setOptions.mockClear();
+    view.rerender(
+      <RichTextEditor value="<p>키 입력 변경</p>" onChange={onChange} media={mediaProps()} readOnly aria-invalid="true" />,
+    );
+    expect(tiptap.editor.setOptions).toHaveBeenCalledTimes(1);
+  });
 });
