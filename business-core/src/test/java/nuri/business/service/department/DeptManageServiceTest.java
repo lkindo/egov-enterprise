@@ -156,7 +156,7 @@ class DeptManageServiceTest {
                 .build();
         
         DeptManage entity = mock(DeptManage.class);
-        
+
         org.mockito.Mockito.lenient().when(entity.getVersion()).thenReturn(0);
         given(deptManageRepository.findByIdForUpdate("DEPT1")).willReturn(Optional.of(versioned(entity)));
 

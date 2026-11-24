@@ -484,6 +484,9 @@ function useUserOrgWriteActions({
       if (res.success) {
         toast(res.message, 'success');
         markDeptChangesSaved();
+        // [2026-11-25 V2_155] 계층 저장은 옮긴 부서의 버전을 올린다 — 조직도 조회를 다시 받아야 이어서 연 편집 창이 새 버전을 보낸다
+        //   (router.refresh 는 서버 초기 자료만 바꾸고 이미 받은 조회 캐시는 그대로 둔다).
+        void queryClient.invalidateQueries({ queryKey: ['admin-depts'] });
         router.refresh();
       } else {
         toast(res.message, 'error');
@@ -820,6 +823,12 @@ export default function UserOrgHubClient({
     }
   };
 
+  /**
+   * [2026-11-25 V2_155] 편집 창을 연 순간의 부서 버전. 창이 열린 동안 조직도가 다시 조회되면 선택 항목은 새 버전으로 바뀌지만
+   * 폼은 연 때의 내용을 그대로 들고 있다 — 저장할 때 새 버전을 보내면 그 사이 다른 관리자가 고친 내용을 덮는다.
+   */
+  const openedDeptVersionRef = useRef<number | undefined>(undefined);
+
   const onDeptSubmit = async (values: DeptFormValues) => {
     const operation = 'dept-form' as const;
     if (!beginNonFormAction(operation)) return;
@@ -828,8 +837,8 @@ export default function UserOrgHubClient({
         await deptAdminService.createDept(values as Department);
         toast('부서가 성공적으로 등록되었습니다.', 'success');
       } else {
-        // [2026-11-25 V2_155] 조직도에서 연 부서의 버전을 함께 보낸다 — 그 사이 다른 관리자가 고치거나 옮겼으면 서버가 409 로 거부한다.
-        const openedVersion = (selectedItem as Department | null)?.version;
+        // [2026-11-25 V2_155] 연 부서의 버전을 함께 보낸다 — 그 사이 다른 관리자가 고치거나 옮겼으면 서버가 409 로 거부한다.
+        const openedVersion = openedDeptVersionRef.current;
         await deptAdminService.updateDept(selectedItemId as string, {
           ...(values as Department),
           ...(openedVersion !== undefined ? { version: openedVersion } : {}),
@@ -887,7 +896,10 @@ export default function UserOrgHubClient({
       canDeleteDept={canDeleteDept}
       locked={isSaving}
       deleteBusy={activeWriteOperation === 'delete-dept'}
-      onOpenEdit={dialogs.handleOpenDeptEdit}
+      onOpenEdit={() => {
+        openedDeptVersionRef.current = (selectedItem as Department | null)?.version;
+        dialogs.handleOpenDeptEdit();
+      }}
       handleDeleteDept={handleDeleteDept}
     />
   ) : (
