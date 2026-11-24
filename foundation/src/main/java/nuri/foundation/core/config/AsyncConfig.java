@@ -34,7 +34,9 @@ public class AsyncConfig implements AsyncConfigurer {
     /**
      * [회복탄력성] 비동기 태스크 동시성 상한. SimpleAsyncTaskExecutor는 기본이 무제한(UNBOUNDED)이라
      * 감사/로그/알림 폭주 시 DB 커넥션·다운스트림을 고갈시킬 수 있으므로 세마포어로 상한을 둔다(백프레셔).
-     * 가상 스레드를 쓰되 동시 실행 수는 이 값으로 제한된다. 필요 시 DB 풀 크기에 맞춰 조정.
+     * 다만 {@code SimpleAsyncTaskExecutor}는 상한 초과 시 제출 스레드를 블로킹하므로({@code SanctionEventListener}의
+     * {@code afterCommit}은 JDBC 연결을 쥔 채 실행), Hikari {@code maximum-pool-size}(20)보다 충분히 큰 64로 유지해
+     * 연결을 쥔 요청 스레드가 좁은 세마포어에서 교착·기아 상태에 빠지지 않게 한다.
      */
     private static final int LOG_EXECUTOR_CONCURRENCY_LIMIT = 64;
 
@@ -117,10 +119,10 @@ public class AsyncConfig implements AsyncConfigurer {
     private static final int AUDIT_QUEUE_CAPACITY = 2_000;
 
     /**
-     * 감사 실행자 스레드 수. Hikari 최대 풀(20)보다 작게 둔다 —
-     * 감사가 커넥션을 다 가져가면 정작 요청 처리가 커넥션을 못 얻는다.
+     * 감사 실행자 스레드 수. 유계 큐(2,000)와 논블로킹 거부로 요청 스레드 블로킹을 피하고,
+     * Hikari 최대 풀(20) 안에서 동시 감사 INSERT 점유를 작게 제한한다.
      */
-    private static final int AUDIT_POOL_SIZE = 8;
+    private static final int AUDIT_POOL_SIZE = 4;
 
     /** 큐 포화로 <b>버려진</b> 감사 태스크 수. 대시보드·알람이 이 이름에 결속한다. */
     public static final String AUDIT_REJECTED_METRIC = "audit.log.executor.rejected";

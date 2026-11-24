@@ -5,6 +5,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import nuri.foundation.core.util.ServiceTime;
 import java.time.Clock;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,7 @@ public class AttachmentIntegrityMetrics {
     private final AttachmentIntegrityReportStore store;
     private final boolean enabled;
     private final Clock clock;
+    private final ReentrantLock stateLock = new ReentrantLock();
     private volatile AttachmentIntegrityReportStore.HealthState state;
     private volatile boolean observationHealthy;
 
@@ -56,16 +58,21 @@ public class AttachmentIntegrityMetrics {
         Gauge.builder(OBSERVATION_HEALTHY, this, value -> value.enabled && value.observationHealthy ? 1 : 0).register(registry);
     }
 
-    public synchronized void recordOutcome(String outcome) {
-        if (!enabled) return;
-        if (!OUTCOMES.contains(outcome)) throw new IllegalArgumentException("Unknown integrity scan outcome");
-        state = new AttachmentIntegrityReportStore.HealthState(1, state.observedSinceEpochSeconds(),
-                "PASS".equals(outcome) ? now() : state.lastHealthyEpochSeconds(), !"PASS".equals(outcome));
+    public void recordOutcome(String outcome) {
+        stateLock.lock();
         try {
-            store.saveHealth(state);
-            observationHealthy = !"REPORT_FAILED".equals(outcome);
-        } catch (Exception unavailable) {
-            observationHealthy = false;
+            if (!enabled) return;
+            if (!OUTCOMES.contains(outcome)) throw new IllegalArgumentException("Unknown integrity scan outcome");
+            state = new AttachmentIntegrityReportStore.HealthState(1, state.observedSinceEpochSeconds(),
+                    "PASS".equals(outcome) ? now() : state.lastHealthyEpochSeconds(), !"PASS".equals(outcome));
+            try {
+                store.saveHealth(state);
+                observationHealthy = !"REPORT_FAILED".equals(outcome);
+            } catch (Exception unavailable) {
+                observationHealthy = false;
+            }
+        } finally {
+            stateLock.unlock();
         }
     }
 

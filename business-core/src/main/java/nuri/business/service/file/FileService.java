@@ -16,9 +16,14 @@ import nuri.business.domain.file.FileMasterRepository;
 import nuri.business.service.file.dto.FileDto;
 import nuri.business.service.file.dto.FileReadSnapshot;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
@@ -27,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -44,6 +50,7 @@ public class FileService extends BaseAbstractService {
     private final FileAccessPolicy accessPolicy;
     private final DurableWorkPort durableWork;
     private final ObjectMapper objectMapper;
+    private final PlatformTransactionManager transactionManager;
 
     // [Security] 허용된 파일 확장자 화이트리스트
     private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList(
@@ -67,36 +74,48 @@ public class FileService extends BaseAbstractService {
             FileAccessPolicy accessPolicy,
             DurableWorkPort durableWork,
             ObjectMapper objectMapper) {
+        this(fileMasterRepository, fileDetailRepository, storageService, accessPolicy, durableWork, objectMapper, null);
+    }
+
+    @Autowired
+    public FileService(FileMasterRepository fileMasterRepository,
+            FileDetailRepository fileDetailRepository,
+            FileStorageService storageService,
+            FileAccessPolicy accessPolicy,
+            DurableWorkPort durableWork,
+            ObjectMapper objectMapper,
+            PlatformTransactionManager transactionManager) {
         this.fileMasterRepository = required(fileMasterRepository, "fileMasterRepository 는 null 일 수 없습니다");
         this.fileDetailRepository = required(fileDetailRepository, "fileDetailRepository 는 null 일 수 없습니다");
         this.storageService = required(storageService, "storageService 는 null 일 수 없습니다");
         this.accessPolicy = required(accessPolicy, "accessPolicy 는 null 일 수 없습니다");
         this.durableWork = required(durableWork, "durableWork 는 null 일 수 없습니다");
         this.objectMapper = required(objectMapper, "objectMapper 는 null 일 수 없습니다");
+        this.transactionManager = transactionManager;
     }
 
     /**
      * 파일 업로드 (멀티파트)
      */
-    @Transactional
+    @Transactional(propagation = Propagation.SUPPORTS)
     public Long uploadFiles(List<MultipartFile> files) throws IOException {
         return createFileGroup(files, UploadProfile.GENERAL);
     }
 
     /** 게시판의 기존 첨부 형식에 MP4·WebM을 더한다. 다른 업무의 허용 범위는 그대로 둔다. */
-    @Transactional
+    @Transactional(propagation = Propagation.SUPPORTS)
     public Long uploadBoardFiles(List<MultipartFile> files) throws IOException {
         return createFileGroup(files, UploadProfile.BOARD);
     }
 
     private Long createFileGroup(List<MultipartFile> files, UploadProfile profile) throws IOException {
-        // 선(先) 검증 패스: 하나라도 거부되면 어떤 DB 행·파일도 쓰지 않는다.
+        // 선(先) 검증 패스: 하나라도 거부되면 어떤 DB 행·파일도 쓰지 않는다(단독 호출에서는 DB 연결을 잡지 않는다).
         validateUploadBatch(files, true, profile);
 
-        FileMaster master = fileMasterRepository.save(FileMaster.create());
+        FileMaster master = executeWrite(() -> fileMasterRepository.save(FileMaster.create()));
         Long atchFileSn = required(master.getAtchFileSn(), "자동 생성된 atchFileSn 은 null 일 수 없습니다");
 
-        storeFileDetails(master, files, 1, "general/" + atchFileSn);
+        storeFileDetails(master, atchFileSn, files, 1, "general/" + atchFileSn);
 
         return atchFileSn;
     }
@@ -140,23 +159,29 @@ public class FileService extends BaseAbstractService {
     }
 
     /**
-     * 파일 다운로드를 위한 리소스 조회
+     * 파일 다운로드를 위한 리소스 조회 — 메타데이터 조회와 인가 판정만 읽기 트랜잭션에서 수행하고,
+     * 저장소 I/O({@code loadAsResource})는 DB 연결을 반납한 뒤 실행한다.
      */
+    @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
     public Resource getFileResource(Long atchFileSn, Integer fileSn) throws IOException {
-        FileDetail detail = fileDetailRepository
-                .findByFileMasterAtchFileSnAndAtchFileSeq(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"),
-                        required(fileSn, "fileSn 는 null 일 수 없습니다"))
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        // [IDOR] 다운로드는 목록보다 노출이 크다 — 같은 도달성 기준을 적용한다.
-        accessPolicy.assertReadable(detail.getFileMaster());
+        StoredResourceRef ref = executeReadOnly(() -> {
+            FileDetail detail = fileDetailRepository
+                    .findByFileMasterAtchFileSnAndAtchFileSeq(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"),
+                            required(fileSn, "fileSn 는 null 일 수 없습니다"))
+                    .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+            // [IDOR] 다운로드는 목록보다 노출이 크다 — 같은 도달성 기준을 적용한다.
+            accessPolicy.assertReadable(detail.getFileMaster());
+            return new StoredResourceRef(
+                    required(detail.getStrgFileNm(), "detail.getStrgFileNm() 는 null 일 수 없습니다"),
+                    required(detail.getFileStrgPath(), "detail.getFileStrgPath() 는 null 일 수 없습니다"),
+                    detail.getOrgnlFileNm());
+        });
 
-        Resource stored = storageService.loadAsResource(required(detail.getStrgFileNm(), "detail.getStrgFileNm() 는 null 일 수 없습니다"),
-                required(detail.getFileStrgPath(), "detail.getFileStrgPath() 는 null 일 수 없습니다"));
-        String originalFilename = detail.getOrgnlFileNm();
-        if (!StringUtils.hasText(originalFilename)) {
+        Resource stored = storageService.loadAsResource(ref.storedFilename(), ref.storagePath());
+        if (!StringUtils.hasText(ref.originalFilename())) {
             return stored;
         }
-        return new NamedResource(stored, originalFilename);
+        return new NamedResource(stored, ref.originalFilename());
     }
 
     private record NamedResource(Resource delegate, String filename) implements Resource {
@@ -283,7 +308,7 @@ public class FileService extends BaseAbstractService {
                 .max()
                 .orElse(0);
 
-        storeFileDetails(master, files, maxSn + 1, "general/" + atchFileSn);
+        storeFileDetails(master, atchFileSn, files, maxSn + 1, "general/" + atchFileSn);
     }
 
     /**
@@ -318,6 +343,19 @@ public class FileService extends BaseAbstractService {
      */
     private void storeFileDetails(
             FileMaster master,
+            Long masterId,
+            List<MultipartFile> files,
+            int firstSequence,
+            String targetPath) {
+        if (transactionManager != null && !TransactionSynchronizationManager.isActualTransactionActive()) {
+            storeFileDetailsOutsideTransaction(masterId, files, firstSequence, targetPath);
+            return;
+        }
+        storeFileDetailsInTransaction(master, files, firstSequence, targetPath);
+    }
+
+    private void storeFileDetailsInTransaction(
+            FileMaster master,
             List<MultipartFile> files,
             int firstSequence,
             String targetPath) {
@@ -333,16 +371,7 @@ public class FileService extends BaseAbstractService {
                 String savedFilename = storageService.store(file, targetPath);
                 storedFilenames.add(savedFilename);
 
-                FileDetail detail = FileDetail.builder()
-                        .fileMaster(master)
-                        .atchFileSeq(fileSequence++)
-                        .fileStrgPath(targetPath)
-                        .strgFileNm(savedFilename)
-                        .orgnlFileNm(file.getOriginalFilename())
-                        .fileEstn(StringUtils.getFilenameExtension(file.getOriginalFilename()))
-                        .fileSz(file.getSize())
-                        .build();
-
+                FileDetail detail = buildFileDetail(master, fileSequence++, targetPath, savedFilename, file);
                 fileDetailRepository.save(detail);
             }
         } catch (RuntimeException failure) {
@@ -355,6 +384,140 @@ public class FileService extends BaseAbstractService {
         TransactionUtils.runAfterRollback(() -> compensateStoredFiles(targetPath, storedInThisCall,
                 new IllegalStateException("upload rolled back")));
     }
+
+    private void storeFileDetailsOutsideTransaction(
+            Long masterId,
+            List<MultipartFile> files,
+            int firstSequence,
+            String targetPath) {
+        List<String> storedFilenames = new ArrayList<>();
+        List<UploadedEntry> uploaded = new ArrayList<>();
+        int fileSequence = firstSequence;
+
+        // Phase 2: 물리 파일 저장은 DB 연결/트랜잭션 밖에서 실행한다.
+        try {
+            for (MultipartFile file : files) {
+                if (file.isEmpty()) {
+                    continue;
+                }
+                String savedFilename = storageService.store(file, targetPath);
+                storedFilenames.add(savedFilename);
+                uploaded.add(new UploadedEntry(
+                        savedFilename,
+                        file.getOriginalFilename(),
+                        StringUtils.getFilenameExtension(file.getOriginalFilename()),
+                        file.getSize(),
+                        fileSequence++));
+            }
+        } catch (RuntimeException failure) {
+            compensateStoredFiles(targetPath, storedFilenames, failure);
+            deleteMasterIfEmptyBestEffort(masterId, failure);
+            throw failure;
+        }
+
+        // Phase 3: 메타데이터 INSERT 만 짧은 쓰기 TX 로 커밋한다.
+        //   Phase 1(FileMaster 생성)과 Phase 3 사이의 비정상 프로세스 종료로 남는 미참조 빈 FileMaster 는
+        //   별도 수거기 없이 잔존할 수 있으며(GAP-FILE-001), 커밋 결과 불명확(STATUS_UNKNOWN) 시에는
+        //   이미 커밋된 상세 행이 가리키는 실물을 잃지 않도록 보상 삭제를 생략한다.
+        boolean[] txCallbackStarted = new boolean[1];
+        boolean[] confirmedRollback = new boolean[1];
+        List<String> storedInThisCall = List.copyOf(storedFilenames);
+        try {
+            executeWriteWithoutResult(() -> {
+                txCallbackStarted[0] = true;
+                TransactionUtils.runAfterRollback(() -> {
+                    confirmedRollback[0] = true;
+                    compensateStoredFiles(targetPath, storedInThisCall,
+                            new IllegalStateException("upload rolled back"));
+                });
+                FileMaster managedMaster = fileMasterRepository.findByIdForUpdate(masterId)
+                        .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+                for (UploadedEntry entry : uploaded) {
+                    FileDetail detail = FileDetail.builder()
+                            .fileMaster(managedMaster)
+                            .atchFileSeq(entry.sequence())
+                            .fileStrgPath(targetPath)
+                            .strgFileNm(entry.savedFilename())
+                            .orgnlFileNm(entry.originalFilename())
+                            .fileEstn(entry.extension())
+                            .fileSz(entry.size())
+                            .build();
+                    fileDetailRepository.save(detail);
+                }
+            });
+        } catch (RuntimeException failure) {
+            if (!txCallbackStarted[0]) {
+                compensateStoredFiles(targetPath, storedFilenames, failure);
+                deleteMasterIfEmptyBestEffort(masterId, failure);
+            } else if (confirmedRollback[0]) {
+                deleteMasterIfEmptyBestEffort(masterId, failure);
+            }
+            throw failure;
+        }
+    }
+
+    private static FileDetail buildFileDetail(
+            FileMaster master,
+            int fileSequence,
+            String targetPath,
+            String savedFilename,
+            MultipartFile file) {
+        return FileDetail.builder()
+                .fileMaster(master)
+                .atchFileSeq(fileSequence)
+                .fileStrgPath(targetPath)
+                .strgFileNm(savedFilename)
+                .orgnlFileNm(file.getOriginalFilename())
+                .fileEstn(StringUtils.getFilenameExtension(file.getOriginalFilename()))
+                .fileSz(file.getSize())
+                .build();
+    }
+
+    private void deleteMasterIfEmptyBestEffort(Long masterId, RuntimeException failure) {
+        try {
+            executeWriteWithoutResult(() -> fileMasterRepository.findByIdForUpdate(masterId).ifPresent(locked -> {
+                if (fileDetailRepository.findByFileMaster(locked).isEmpty()) {
+                    fileMasterRepository.delete(locked);
+                }
+            }));
+        } catch (RuntimeException cleanupFailure) {
+            failure.addSuppressed(cleanupFailure);
+            log.error("Failed to remove empty file master after upload failure", cleanupFailure);
+        }
+    }
+
+    private <T> T executeReadOnly(Supplier<T> action) {
+        if (transactionManager == null || TransactionSynchronizationManager.isActualTransactionActive()) {
+            return action.get();
+        }
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        template.setReadOnly(true);
+        return template.execute(status -> action.get());
+    }
+
+    private <T> T executeWrite(Supplier<T> action) {
+        if (transactionManager == null || TransactionSynchronizationManager.isActualTransactionActive()) {
+            return action.get();
+        }
+        return new TransactionTemplate(transactionManager).execute(status -> action.get());
+    }
+
+    private void executeWriteWithoutResult(Runnable action) {
+        if (transactionManager == null || TransactionSynchronizationManager.isActualTransactionActive()) {
+            action.run();
+            return;
+        }
+        new TransactionTemplate(transactionManager).executeWithoutResult(status -> action.run());
+    }
+
+    private record UploadedEntry(
+            String savedFilename,
+            String originalFilename,
+            String extension,
+            long size,
+            int sequence) {}
+
+    private record StoredResourceRef(String storedFilename, String storagePath, String originalFilename) {}
 
     private void compensateStoredFiles(String targetPath, List<String> storedFilenames, RuntimeException failure) {
         for (int index = storedFilenames.size() - 1; index >= 0; index--) {

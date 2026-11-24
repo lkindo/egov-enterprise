@@ -26,10 +26,10 @@ public class AsyncConfig {
     public Executor taskExecutor(
             org.springframework.beans.factory.ObjectProvider<io.micrometer.core.instrument.MeterRegistry> meterRegistries) {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        // 기본 스레드 수: 10
-        executor.setCorePoolSize(10);
-        // 최대 스레드 수: 50 (부하 시 확장)
-        executor.setMaxPoolSize(50);
+        // 기본 스레드 수: 4
+        executor.setCorePoolSize(4);
+        // 최대 스레드 수: 16 (외부 SMTP/SMS I/O 동시성과 DB 풀 예산 균형)
+        executor.setMaxPoolSize(16);
         // 대기 큐 크기: 100
         executor.setQueueCapacity(100);
         // 스레드 이름 접두사: 모니터링 시 식별 용이

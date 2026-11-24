@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 import lombok.extern.slf4j.Slf4j;
 import nuri.business.domain.system.job.DurableJobRepository;
 import nuri.foundation.core.util.ServiceTime;
@@ -29,6 +30,7 @@ public class DurableWorkMetrics {
     public static final List<String> STATUSES = List.of("PENDING", "RUNNING", "RETRY", "SUCCEEDED", "FAILED");
     private final DurableJobRepository repository;
     private final Clock clock;
+    private final ReentrantLock refreshLock = new ReentrantLock();
     private volatile Snapshot snapshot;
     private volatile boolean observationHealthy;
 
@@ -52,7 +54,8 @@ public class DurableWorkMetrics {
     }
 
     @Scheduled(fixedDelayString = "${nuri.durable-work.metrics-poll-ms:30000}", initialDelayString = "${nuri.durable-work.metrics-initial-delay-ms:1000}")
-    public synchronized void refresh() {
+    public void refresh() {
+        refreshLock.lock();
         try {
             Map<String, State> next = new LinkedHashMap<>();
             for (var row : repository.summarizeQueue(ServiceTime.toLocal(clock.instant()))) {
@@ -66,6 +69,8 @@ public class DurableWorkMetrics {
         } catch (RuntimeException unavailable) {
             observationHealthy = false;
             log.warn("Durable queue metrics refresh failed: {}", unavailable.getClass().getSimpleName());
+        } finally {
+            refreshLock.unlock();
         }
     }
 

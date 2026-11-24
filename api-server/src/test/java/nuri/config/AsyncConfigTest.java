@@ -23,6 +23,9 @@ class AsyncConfigTest {
         ThreadPoolTaskExecutor executor = (ThreadPoolTaskExecutor) new AsyncConfig().taskExecutor(provider);
 
         try {
+            assertThat(executor.getCorePoolSize()).isEqualTo(4);
+            assertThat(executor.getMaxPoolSize()).isEqualTo(16);
+            assertThat(executor.getQueueCapacity()).isEqualTo(100);
             var handler = executor.getThreadPoolExecutor().getRejectedExecutionHandler();
             assertThat(handler).isNotInstanceOf(java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy.class);
             assertThatThrownBy(() -> handler.rejectedExecution(() -> { }, executor.getThreadPoolExecutor()))
