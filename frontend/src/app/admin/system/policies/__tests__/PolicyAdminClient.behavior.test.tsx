@@ -184,4 +184,19 @@ describe('PolicyAdminClient validation behavior', () => {
     expect(screen.getByRole('button', { name: '변경 사항 반영하기' })).toBeInTheDocument();
     expect(mocks.toast).not.toHaveBeenCalledWith(expect.any(String), 'error');
   });
+
+  it('[2026-11-25 V2_155] 수정은 연 정책의 버전을 함께 보내고, 동시 수정 거절(409)은 서버 안내를 그대로 보인다', async () => {
+    mocks.getPolicies.mockResolvedValue([{ ...policy, version: 4 }]);
+    const conflict = '다른 사용자가 먼저 수정했습니다. 저장하지 않았으니 최신 내용을 다시 불러온 뒤 고쳐 주세요.';
+    mocks.update.mockRejectedValueOnce({ response: { status: 409, data: { success: false, message: conflict } } });
+    render(<PolicyAdminClient />);
+    fireEvent.click(await screen.findByRole('button', { name: '개인정보 처리방침 정책 수정' }));
+    fireEvent.change(screen.getByRole('textbox', { name: /^정책 제목/ }), { target: { value: '고친 제목' } });
+
+    fireEvent.click(screen.getByRole('button', { name: '변경 사항 반영하기' }));
+
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledWith('PRIVACY',
+      expect.objectContaining({ plcyTtl: '고친 제목', version: 4 })));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(conflict, 'error'));
+  });
 });

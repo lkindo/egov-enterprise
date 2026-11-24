@@ -32,6 +32,8 @@ public class PolicyService {
         private String plcyTypeCd;
         private String plcyTtl;
         private String plcyCn;
+        /** 낙관적 잠금 버전(V2_155). 수정 요청에 그대로 돌려보낸다 — 다르면 409. */
+        private Integer version;
     }
 
     /**
@@ -40,11 +42,7 @@ public class PolicyService {
     // 늦은 reader가 writer의 evict 뒤에 옛 값을 다시 넣을 수 있어 정책은 DB에서 읽는다.
     public List<Policy> getPolicies() {
         return systemPolicyRepository.findAll().stream()
-                .map(entity -> Policy.builder()
-                        .plcyTypeCd(entity.getPlcyTypeCd())
-                        .plcyTtl(entity.getPlcyTtl())
-                        .plcyCn(entity.getPlcyCn())
-                        .build())
+                .map(PolicyService::toPolicy)
                 .collect(Collectors.toList());
     }
 
@@ -52,25 +50,33 @@ public class PolicyService {
      * 정책 상세 조회
      */
     public Optional<Policy> getPolicy(String type) {
-        return systemPolicyRepository.findById(type)
-                .map(entity -> Policy.builder()
-                        .plcyTypeCd(entity.getPlcyTypeCd())
-                        .plcyTtl(entity.getPlcyTtl())
-                        .plcyCn(entity.getPlcyCn())
-                        .build());
+        return systemPolicyRepository.findById(type).map(PolicyService::toPolicy);
+    }
+
+    private static Policy toPolicy(SystemPolicy entity) {
+        return Policy.builder()
+                .plcyTypeCd(entity.getPlcyTypeCd())
+                .plcyTtl(entity.getPlcyTtl())
+                .plcyCn(entity.getPlcyCn())
+                .version(entity.getVersion())
+                .build();
     }
 
     /**
-     * 정책 수정 구현부
+     * 정책 수정 구현부.
+     *
+     * <p>[2026-11-25 V2_155] 이미 있는 정책은 화면이 읽은 버전과 대조한다 — 두 관리자가 같은 정책을 열고 차례로 저장하면 늦은
+     * 저장이 앞 저장을 알림 없이 덮었다(법적 고지 본문이라 영향이 컸다). 없는 유형은 종전처럼 새로 만들며 버전을 보지 않는다.
      */
     @Transactional
-    public void updatePolicy(String type, String title, String content) {
+    public void updatePolicy(String type, String title, String content, Integer version) {
         nuri.business.security.util.SecurityUtil.assertPermission("POLICY_UPDATE");
         validatePolicyType(type);
-        SystemPolicy policy = systemPolicyRepository.findById(type)
-                .orElseGet(() -> SystemPolicy.builder()
-                        .plcyTypeCd(type)
-                        .build());
+        Optional<SystemPolicy> existing = systemPolicyRepository.findById(type);
+        existing.ifPresent(current -> nuri.foundation.core.util.EntityVersions.assertCurrent(version, current.getVersion()));
+        SystemPolicy policy = existing.orElseGet(() -> SystemPolicy.builder()
+                .plcyTypeCd(type)
+                .build());
 
         policy.update(title, content);
         systemPolicyRepository.save(policy);

@@ -99,6 +99,17 @@ describe('CodeAdminService — 조회 조건이 서버에 실제로 닿는다', 
         expect(params).not.toHaveProperty(key);
       }
     });
+
+    it('[2026-11-25 V2_155] 목록 행에 낙관적 잠금 버전을 남긴다 — 수정 화면이 그 값을 다시 보낸다', async () => {
+      client.get.mockResolvedValueOnce({
+        list: [{ admdstCd: '1100000000', admdstSeCd: '1', admdstZoneNm: '서울특별시', upAdmdstCd: '', useYn: 'Y', version: 5 }],
+        total: 1, page: 1, size: 10, totalPage: 1,
+      });
+
+      const page = await codeAdminService.getAdministCodeList({ page: 1, size: 10 });
+
+      expect(page.list[0]).toMatchObject({ admdstCd: '1100000000', version: 5 });
+    });
   });
 
   describe('기관코드 목록 (getInstitutionCodeList)', () => {

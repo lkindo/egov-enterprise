@@ -828,14 +828,20 @@ export default function UserOrgHubClient({
         await deptAdminService.createDept(values as Department);
         toast('부서가 성공적으로 등록되었습니다.', 'success');
       } else {
-        await deptAdminService.updateDept(selectedItemId as string, values as Department);
+        // [2026-11-25 V2_155] 조직도에서 연 부서의 버전을 함께 보낸다 — 그 사이 다른 관리자가 고치거나 옮겼으면 서버가 409 로 거부한다.
+        const openedVersion = (selectedItem as Department | null)?.version;
+        await deptAdminService.updateDept(selectedItemId as string, {
+          ...(values as Department),
+          ...(openedVersion !== undefined ? { version: openedVersion } : {}),
+        });
         toast('부서 정보가 수정되었습니다.', 'success');
       }
       refetchDepts();
       setIsDeptModalOpen(false);
     } catch (error) {
       if (extractFieldErrors(error)) throw error;
-      toast('부서 저장 중 오류가 발생했습니다.', 'error');
+      // 동시 수정(409)처럼 칸에 붙지 않는 거절은 서버가 준 안내를 그대로 보인다.
+      toast(failureMessage(error, '부서 저장 중 오류가 발생했습니다.'), 'error');
     } finally {
       finishNonFormAction(operation);
     }

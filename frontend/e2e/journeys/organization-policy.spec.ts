@@ -57,12 +57,19 @@ test.describe('Ops Governance', () => {
         const modified = (await reread.json()).data;
         expect(modified).toMatchObject({ plcyTypeCd: code, plcyTtl: updatedTitle });
         expect(modified.plcyCn).toContain(updatedContent);
+        // [2026-11-25 V2_155] 화면 저장이 버전을 실어 보냈고 서버가 하나 올렸다(등록 0 → 수정 1).
+        expect(modified.version).toBe(1);
         // [2026-11-10] 새로고침 — 화면 밖(API)에서 바뀐 제목은 목록의 새로고침 단추가 서버에 다시 물어야 보인다. 저장 뒤 목록 재조회가
         //   끝나(수정한 제목이 보인 뒤) 바꾸므로, 그 다음에 보이는 새 제목은 새로고침이 받아 온 값이다.
         await expect(adminPage.getByRole('button', { name: `${updatedTitle} 정책 수정`, exact: true })).toBeVisible();
         const refreshedTitle = `${title} refreshed`;
+        // 다른 관리자의 저장 — 이 화면이 연 뒤의 버전을 싣는다. 열어 둔 화면의 옛 버전으로 저장하면 409 다.
+        const stale = await adminRequest.put(`/api/v1/admin/system/policies/${code}`, {
+            data: { plcyTtl: refreshedTitle, plcyCn: `<p>${updatedContent}</p>`, version: 0 },
+        });
+        expect(stale.status()).toBe(409);
         const changed = await adminRequest.put(`/api/v1/admin/system/policies/${code}`, {
-            data: { plcyTtl: refreshedTitle, plcyCn: `<p>${updatedContent}</p>` },
+            data: { plcyTtl: refreshedTitle, plcyCn: `<p>${updatedContent}</p>`, version: modified.version },
         });
         expect(changed.status()).toBe(200);
         const [refreshed] = await Promise.all([

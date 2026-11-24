@@ -118,7 +118,8 @@ export default function SecurityGroupClient() {
     onError: (error) => {
       const fieldErrors = extractFieldErrors(error);
       if (fieldErrors) validation.setFormErrors(fieldErrors);
-      else toast('정보 수정 중 시스템 예외가 발생했습니다.', 'error');
+      // [2026-11-25 V2_155] 동시 수정(409)처럼 칸에 붙지 않는 거절은 서버가 준 안내를 그대로 보인다.
+      else toast(extractErrorMessage(error, '정보 수정 중 시스템 예외가 발생했습니다.'), 'error');
     },
     onSettled: () => { submitPendingRef.current = false; },
   });
@@ -226,7 +227,11 @@ export default function SecurityGroupClient() {
     if (!validated) return;
     submitPendingRef.current = true;
     if (editingGroup) {
-      updateMutation.mutate(validated);
+      // [2026-11-25 V2_155] 연 그룹의 버전을 함께 보낸다 — 그 사이 다른 관리자가 고쳤으면 서버가 409 로 거부한다.
+      updateMutation.mutate({
+        ...validated,
+        ...(editingGroup.version !== undefined ? { version: editingGroup.version } : {}),
+      });
     } else {
       createMutation.mutate(validated);
     }

@@ -345,8 +345,10 @@ class AdministCodeHierarchyConcurrencyIntegrationTest {
     }
 
     private AdministCodeDto move(String code, String parent) {
+        // [V2_155] 화면이 그 행을 읽은 시점의 버전을 싣는다.
+        Integer version = jdbc.queryForObject("SELECT version FROM tb_admdst_cd WHERE admdst_cd=?", Integer.class, code);
         return AdministCodeDto.builder().admdstCd(code).admdstSeCd("1").admdstZoneNm(code)
-                .upAdmdstCd(parent).useYn("Y").build();
+                .upAdmdstCd(parent).useYn("Y").version(version).build();
     }
 
     private String parentOf(String code) {

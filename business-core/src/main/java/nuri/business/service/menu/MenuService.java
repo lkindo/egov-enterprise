@@ -285,6 +285,9 @@ public class MenuService {
         Long menuNo = Objects.requireNonNull(vo.getMenuNo());
         Menu menu = menuRepository.findById(menuNo)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
+        // [2026-11-25 V2_155] 메뉴 한 건 수정은 화면이 읽은 버전과 대조한다(다르면 409). 구조 저장(saveMenuStructure)은 구조 전체의
+        //   버전으로 거르고, 순서 일괄 저장(updateMenuOrders)은 상위·순서만 바꾸는 별도 경로라 행마다 대조하지 않는다.
+        nuri.foundation.core.util.EntityVersions.assertCurrent(vo.getVersion(), menu.getVersion());
         // Menu.update 는 null-safe 병합이다 — 전달되지 않은(null) 값은 기존 값을 유지하고, 빈 문자열이면 비운다.
         Long parentId = normalizeUpMenuSn(vo.getUpMenuSn());
         validateParentChanges(parents, Collections.singletonMap(menuNo, parentId));
@@ -604,6 +607,7 @@ public class MenuService {
                 .relImgPath(menu.getRelImgPath())
                 .relImgNm(menu.getRelImgNm())
                 .useYn(menu.getUseYn())
+                .version(menu.getVersion())
                 .build();
     }
 

@@ -7115,6 +7115,11 @@ export interface components {
             plcyTtl: string;
             /** @description 정책 내용 */
             plcyCn: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_155). 조회한 값을 수정 요청에 그대로 돌려보내며 이미 있는 정책을 고칠 때 필수다 — 다르면 409. 등록과 없는 유형의 첫 저장에서는 무시한다.
+             */
+            version?: number;
         };
         /** @description 메뉴 정보 DTO */
         MenuDto: {
@@ -7188,6 +7193,11 @@ export interface components {
              * @example Y
              */
             useYn?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_155). 관리 목록에서 읽은 값을 메뉴 한 건 수정 요청에 그대로 돌려보내며 그때 필수다 — 다르면 409. 등록·순서 일괄 저장·사용자 메뉴 응답에서는 쓰지 않는다.
+             */
+            version?: number;
             /** @description 하위 메뉴 목록 */
             children?: components["schemas"]["MenuDto"][];
         };
@@ -7267,6 +7277,11 @@ export interface components {
             endTm?: string;
             otpUseYn?: string;
             regYn?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_155). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
             frstRgtrId?: string;
             lastMdfrId?: string;
         };
@@ -7275,6 +7290,11 @@ export interface components {
             groupNm?: string;
             groupDc?: string;
             groupCrtDt?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_155). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         /** @description 부서 정보 DTO */
         DeptManageDto: {
@@ -7298,6 +7318,11 @@ export interface components {
              * @description 등록 일시
              */
             crtDt?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_155). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록과 조직도 일괄 편집(상위·순서)에서는 보지 않는다.
+             */
+            version?: number;
         };
         DeptHierarchyItemRequest: {
             ognzId: string;
@@ -7518,6 +7543,11 @@ export interface components {
              * @description 수정일시
              */
             mdfcnDt?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_155). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         /** @description 게시판 설정 수정 요청 — 템플릿·유형·속성·커뮤니티 귀속은 바꾸지 않는다 */
         BoardMasterUpdateRequest: {
@@ -11752,6 +11782,8 @@ export interface components {
             plcyTypeCd?: string;
             plcyTtl?: string;
             plcyCn?: string;
+            /** Format: int32 */
+            version?: number;
         };
         ApiResponsePolicy: {
             success?: boolean;

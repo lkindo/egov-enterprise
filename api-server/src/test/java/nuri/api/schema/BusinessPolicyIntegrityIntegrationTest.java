@@ -99,7 +99,7 @@ class BusinessPolicyIntegrityIntegrationTest {
         assertThatThrownBy(() -> policies.createPolicy(key, "덮어쓸 제목", "덮어쓸 본문"))
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.DUPLICATE_RESOURCE);
         assertThat(policies.getPolicy(key).orElseThrow().getPlcyCn()).isEqualTo("처음 본문");
-        policies.updatePolicy(key, "정정 제목", "정정 본문");
+        policies.updatePolicy(key, "정정 제목", "정정 본문", policies.getPolicy(key).orElseThrow().getVersion());
         assertThat(policies.getPolicy(key).orElseThrow().getPlcyCn()).isEqualTo("정정 본문");
     }
 
@@ -138,7 +138,7 @@ class BusinessPolicyIntegrityIntegrationTest {
 
             Optional<PolicyService.Policy> delayed = finishReadAfterWrite(race,
                     () -> race.service.getPolicy(key),
-                    () -> race.service.updatePolicy(key, "After title", "After content"), reporter);
+                    () -> race.service.updatePolicy(key, "After title", "After content", 0), reporter);
 
             assertThat(delayed).get().extracting(PolicyService.Policy::getPlcyCn).isEqualTo("Before content");
             // The overlapping reader may return its old snapshot. A subsequent request must see the committed value.
@@ -157,7 +157,7 @@ class BusinessPolicyIntegrityIntegrationTest {
 
             List<PolicyService.Policy> delayed = finishReadAfterWrite(race,
                     race.service::getPolicies,
-                    () -> race.service.updatePolicy(key, "After title", "After content"), reporter);
+                    () -> race.service.updatePolicy(key, "After title", "After content", 0), reporter);
 
             assertThat(delayed).filteredOn(policy -> key.equals(policy.getPlcyTypeCd()))
                     .singleElement().extracting(PolicyService.Policy::getPlcyCn).isEqualTo("Before content");

@@ -134,6 +134,24 @@ class AdministCodeServiceTest {
     }
 
     @Test
+    @DisplayName("[2026-11-25 V2_155] 행정코드 수정 — 버전 누락은 400, 낡은 버전은 409 로 거부하고 명칭을 바꾸지 않는다")
+    void updateAdministCode_RejectsMissingOrStaleVersion() {
+        AdministCode entity = AdministCode.builder().admdstCd("1100000000").admdstZoneNm("Old Name").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 3);
+        given(administCodeRepository.findById("1100000000")).willReturn(Optional.of(entity));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> administCodeService.updateAdministCode("1100000000",
+                        AdministCodeDto.builder().admdstZoneNm("New Name").build(), "admin"))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> administCodeService.updateAdministCode("1100000000",
+                        AdministCodeDto.builder().admdstZoneNm("New Name").version(2).build(), "admin"))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION);
+        assertThat(entity.getAdmdstZoneNm()).isEqualTo("Old Name");
+    }
+
+    @Test
     @DisplayName("행정코드 수정 성공")
     void updateAdministCode_Success() {
         // given
@@ -141,14 +159,14 @@ class AdministCodeServiceTest {
                 .admdstCd("1100000000")
                 .admdstZoneNm("Old Name")
                 .build());
-        given(administCodeRepository.findById("1100000000")).willReturn(Optional.of(entity));
+        given(administCodeRepository.findById("1100000000")).willReturn(Optional.of(versioned(entity)));
  
         AdministCodeDto dto = AdministCodeDto.builder()
                 .admdstZoneNm("New Name")
                 .build();
  
         // when
-        administCodeService.updateAdministCode("1100000000", dto, "admin");
+        updateVersioned("1100000000", dto, "admin");
  
         // then
         verify(entity).update(any(), eq("New Name"), any(), any(), eq("admin"));
@@ -168,7 +186,7 @@ class AdministCodeServiceTest {
         // [W1-F3] 미존재는 400 이 아니라 404 다.
         nuri.foundation.core.exception.BusinessException ex = org.junit.jupiter.api.Assertions.assertThrows(
                 nuri.foundation.core.exception.BusinessException.class,
-                () -> administCodeService.updateAdministCode("NOT_FOUND", dto, "admin"));
+                () -> updateVersioned("NOT_FOUND", dto, "admin"));
         org.junit.jupiter.api.Assertions.assertEquals(
                 nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND, ex.getErrorCode());
     }
@@ -177,7 +195,7 @@ class AdministCodeServiceTest {
     @DisplayName("행정코드 삭제 성공 — 하위 코드가 없을 때만 지운다")
     void deleteAdministCode_Success() {
         AdministCode entity = AdministCode.builder().admdstCd("1100000000").admdstZoneNm("서울특별시").build();
-        given(administCodeRepository.findById("1100000000")).willReturn(Optional.of(entity));
+        given(administCodeRepository.findById("1100000000")).willReturn(Optional.of(versioned(entity)));
         given(administCodeRepository.countByUpAdmdstCd("1100000000")).willReturn(0L);
 
         administCodeService.deleteAdministCode("1100000000");
@@ -205,7 +223,7 @@ class AdministCodeServiceTest {
     @DisplayName("하위 행정코드가 남아 있으면 상위 삭제를 거부한다 — 끊긴 상위 참조를 만들지 않는다")
     void deleteAdministCode_WithChildren_Rejected() {
         AdministCode entity = AdministCode.builder().admdstCd("1100000000").admdstZoneNm("서울특별시").build();
-        given(administCodeRepository.findById("1100000000")).willReturn(Optional.of(entity));
+        given(administCodeRepository.findById("1100000000")).willReturn(Optional.of(versioned(entity)));
         given(administCodeRepository.countByUpAdmdstCd("1100000000")).willReturn(3L);
 
         BusinessException error = assertThrows(BusinessException.class,
@@ -226,7 +244,7 @@ class AdministCodeServiceTest {
         BusinessException error = assertThrows(BusinessException.class, () -> {
             switch (operation) {
                 case "create" -> administCodeService.createAdministCode(dto("1100000000", ""), "user");
-                case "update" -> administCodeService.updateAdministCode("1100000000", dto("1100000000", ""), "user");
+                case "update" -> updateVersioned("1100000000", dto("1100000000", ""), "user");
                 case "delete" -> administCodeService.deleteAdministCode("1100000000");
                 default -> throw new AssertionError(operation);
             }
@@ -303,8 +321,8 @@ class AdministCodeServiceTest {
         assertThat(saved.getValue().getUpAdmdstCd()).isNull();
 
         // 반대 방향 — 프런트 목록 파서가 문자열을 요구하므로 응답에서는 null 이 나가면 안 된다.
-        given(administCodeRepository.findById("1100000000")).willReturn(Optional.of(
-                AdministCode.builder().admdstCd("1100000000").admdstZoneNm("서울특별시").build()));
+        given(administCodeRepository.findById("1100000000")).willReturn(Optional.of(versioned(
+                AdministCode.builder().admdstCd("1100000000").admdstZoneNm("서울특별시").build())));
         assertThat(administCodeService.getAdministCodeDetail("1100000000").getUpAdmdstCd()).isEmpty();
     }
 
@@ -313,9 +331,9 @@ class AdministCodeServiceTest {
     void clearingParentOnUpdateStoresNull() {
         AdministCode entity = AdministCode.builder()
                 .admdstCd("1111000000").admdstZoneNm("종로구").upAdmdstCd("1100000000").build();
-        given(administCodeRepository.findById("1111000000")).willReturn(Optional.of(entity));
+        given(administCodeRepository.findById("1111000000")).willReturn(Optional.of(versioned(entity)));
 
-        administCodeService.updateAdministCode("1111000000", dto("1111000000", ""), "admin");
+        updateVersioned("1111000000", dto("1111000000", ""), "admin");
 
         assertThat(entity.getUpAdmdstCd()).isNull();
     }
@@ -328,5 +346,19 @@ class AdministCodeServiceTest {
         dto.setAdmdstZoneNm("시험 구역");
         dto.setUseYn("Y");
         return dto;
+    }
+
+    /** [V2_155] 버전을 싣지 않은 수정 요청에 저장된 행과 같은 버전(0)을 싣는다 — 버전 대조는 전용 시험이 본다. */
+    private void updateVersioned(String code, nuri.business.service.code.dto.AdministCodeDto dto, String userId) {
+        if (dto.getVersion() == null) dto.setVersion(0);
+        administCodeService.updateAdministCode(code, dto, userId);
+    }
+
+    /** [V2_155] 저장된 행처럼 버전(0)을 가진 엔티티. mock 은 선언 직후에 getVersion() 을 따로 스텁한다(다른 스텁 안에서 스텁하지 않는다). */
+    private static <T> T versioned(T entity) {
+        if (!org.mockito.Mockito.mockingDetails(entity).isMock() || org.mockito.Mockito.mockingDetails(entity).isSpy()) {
+            org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
+        }
+        return entity;
     }
 }

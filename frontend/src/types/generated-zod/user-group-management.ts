@@ -11,6 +11,7 @@ export const GroupManageDtoSchema = /*#__PURE__*/ (() => z.object({
   groupNm: z.string().min(0).max(100).optional(),
   groupDc: z.string().min(0).max(4000).optional(),
   groupCrtDt: z.string().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type GroupManageDto = z.infer<typeof GroupManageDtoSchema>;
 
@@ -50,6 +51,7 @@ export const GroupManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   groupNm: z.string().min(0).max(100).optional(),
   groupDc: z.string().min(0).max(4000).optional(),
   groupCrtDt: z.string().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const GroupManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -57,6 +59,7 @@ export const GroupManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   groupNm: z.string().min(0).max(100).optional().nullable(),
   groupDc: z.string().min(0).max(4000).optional().nullable(),
   groupCrtDt: z.string().optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const ApiResponsePageResponseGroupManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({

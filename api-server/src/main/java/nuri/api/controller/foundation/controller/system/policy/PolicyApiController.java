@@ -70,7 +70,7 @@ public class PolicyApiController {
         log.info("Updating policy: type={}, content length={}",
                 nuri.foundation.security.util.SafeLog.text(type), request.plcyCn().length());
 
-        policyService.updatePolicy(type, request.plcyTtl(), request.plcyCn());
+        policyService.updatePolicy(type, request.plcyTtl(), request.plcyCn(), request.version());
 
         return ResponseEntity.ok(ApiResponse.success(null));
     }

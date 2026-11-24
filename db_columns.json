@@ -268,6 +268,10 @@
     "column_name": "last_mdfr_id"
   },
   {
+    "table_name": "tb_admdst_cd",
+    "column_name": "version"
+  },
+  {
     "table_name": "tb_auth_cert_dmnd",
     "column_name": "cert_dmnd_sn"
   },
@@ -558,6 +562,10 @@
   {
     "table_name": "tb_authrt_group_info",
     "column_name": "group_crt_dt"
+  },
+  {
+    "table_name": "tb_authrt_group_info",
+    "column_name": "version"
   },
   {
     "table_name": "tb_authrt_info",
@@ -2872,6 +2880,10 @@
     "column_name": "otp_use_yn"
   },
   {
+    "table_name": "tb_login_policy",
+    "column_name": "version"
+  },
+  {
     "table_name": "tb_memo_rpt_info",
     "column_name": "crt_dt"
   },
@@ -2990,6 +3002,10 @@
   {
     "table_name": "tb_menu_info",
     "column_name": "del_yn"
+  },
+  {
+    "table_name": "tb_menu_info",
+    "column_name": "version"
   },
   {
     "table_name": "tb_note_info",
@@ -3134,6 +3150,10 @@
   {
     "table_name": "tb_ognz_info",
     "column_name": "sort_ordr"
+  },
+  {
+    "table_name": "tb_ognz_info",
+    "column_name": "version"
   },
   {
     "table_name": "tb_onln_mnl_info",
@@ -3306,6 +3326,10 @@
   {
     "table_name": "tb_plcy_manage",
     "column_name": "plcy_ttl"
+  },
+  {
+    "table_name": "tb_plcy_manage",
+    "column_name": "version"
   },
   {
     "table_name": "tb_popup_info",

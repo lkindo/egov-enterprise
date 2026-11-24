@@ -27,6 +27,8 @@ public class LoginPolicySearchResult {
     private String bgngTm; // HHmmss
     private String endTm;  // HHmmss
     private String otpUseYn;
+    /** 낙관적 잠금 버전(V2_155). 정책이 없는 사용자는 null 이다(등록은 버전을 보지 않는다). */
+    private Integer version;
     private String lastMdfrId;
     private LocalDateTime mdfcnDt;
     private String regYn; // Y or N

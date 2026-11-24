@@ -59,6 +59,7 @@ export const MenuDtoSchema = /*#__PURE__*/ (() => z.object({
   modernRoute: z.string().min(0).max(500).regex(new RegExp("^$|^(?:/(?:[^\\s?#/\\\\]+/)*[^\\s?#/\\\\]*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$")).optional(),
   crtrId: z.string().min(0).max(20).optional(),
   useYn: z.string().min(0).max(1).optional(),
+  version: z.number().int().min(0).optional(),
   children: z.array(z.lazy((): z.ZodType => MenuDtoSchema)).optional(),
 }))();
 export type MenuDto = z.infer<typeof MenuDtoSchema>;
@@ -409,6 +410,7 @@ export const MenuDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   modernRoute: z.string().min(0).max(500).regex(new RegExp("^$|^(?:/(?:[^\\s?#/\\\\]+/)*[^\\s?#/\\\\]*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$")).optional(),
   crtrId: z.string().min(0).max(20).optional(),
   useYn: z.string().min(0).max(1).optional(),
+  version: z.number().int().min(0).optional(),
   children: z.array(z.lazy((): z.ZodType => MenuDtoRequestSchema.strict())).optional(),
 }))();
 
@@ -426,6 +428,7 @@ export const MenuDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   modernRoute: z.string().min(0).max(500).regex(new RegExp("^$|^(?:/(?:[^\\s?#/\\\\]+/)*[^\\s?#/\\\\]*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$")).optional().nullable(),
   crtrId: z.string().min(0).max(20).optional().nullable(),
   useYn: z.string().min(0).max(1).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
   children: z.array(z.lazy((): z.ZodType => MenuDtoResponseSchema)).optional().nullable(),
 }))();
 

@@ -27,6 +27,10 @@ public class GroupManage extends BaseEntity {
     // V2_19: 타입(timestamp)-접미사 정합 리네임 group_crt_ymd → group_crt_dt
     private LocalDateTime groupCrtDt = LocalDateTime.now();
 
+    /** 낙관적 잠금 버전(V2_155). 화면이 읽은 값과 다르면 다른 사람이 먼저 고친 것이다(서비스가 409 로 거부한다). */
+    @jakarta.persistence.Version
+    private Integer version;
+
     // @SuperBuilder -> 정적 팩토리 @Builder 전환에 따른 전체 인자 private 생성자
     // groupCrtDt 는 기존 @Builder.Default 재현: null 이면 기본값(LocalDateTime.now()) 병합
     private GroupManage(String groupId, String groupNm, String groupDc, LocalDateTime groupCrtDt) {

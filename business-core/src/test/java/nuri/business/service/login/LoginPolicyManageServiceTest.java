@@ -102,7 +102,7 @@ class LoginPolicyManageServiceTest {
         given(userRepository.findByUserId("USER1")).willReturn(Optional.of(user));
         
         LoginPolicy policy = LoginPolicy.builder().userId("USER1").ipAddr("127.0.0.1").build();
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(policy)));
 
         LoginPolicyDto result = loginPolicyManageService.selectLoginPolicy("USER1");
 
@@ -135,7 +135,7 @@ class LoginPolicyManageServiceTest {
     @DisplayName("로그인 정책 유효성 검증 - 제한 여부 Y")
     void validateLoginPolicyLimitedTest() {
         LoginPolicy policy = LoginPolicy.builder().userId("USER1").lmtYn("Y").build();
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(policy)));
 
         BusinessException ex = assertThrows(BusinessException.class, 
             () -> loginPolicyManageService.validateLoginPolicy("USER1", "127.0.0.1"));
@@ -146,7 +146,7 @@ class LoginPolicyManageServiceTest {
     @DisplayName("로그인 정책 유효성 검증 - IP 불일치")
     void validateLoginPolicyIpMismatchTest() {
         LoginPolicy policy = LoginPolicy.builder().userId("USER1").ipAddr("192.168.0.1").lmtYn("N").build();
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(policy)));
 
         BusinessException ex = assertThrows(BusinessException.class, 
             () -> loginPolicyManageService.validateLoginPolicy("USER1", "127.0.0.1"));
@@ -161,7 +161,7 @@ class LoginPolicyManageServiceTest {
                 .ipAddr("2001:0DB8:0000:0000:0000:0000:0000:0001")
                 .lmtYn("N")
                 .build();
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(expandedUppercase));
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(expandedUppercase)));
 
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("USER1", "2001:db8::1"));
 
@@ -170,7 +170,7 @@ class LoginPolicyManageServiceTest {
                 .ipAddr("2001:db8::1")
                 .lmtYn("N")
                 .build();
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(compressedLowercase));
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(compressedLowercase)));
 
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy(
                 "USER1", "2001:0DB8:0000:0000:0000:0000:0000:0001"));
@@ -188,7 +188,7 @@ class LoginPolicyManageServiceTest {
                 .bgngTm("13:00")
                 .endTm("14:00")
                 .build();
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(policy)));
 
         BusinessException ex = assertThrows(BusinessException.class, 
             () -> loginPolicyManageService.validateLoginPolicy("USER1", "127.0.0.1"));
@@ -209,7 +209,7 @@ class LoginPolicyManageServiceTest {
                 .bgngTm("11:00")
                 .endTm("13:00")
                 .build();
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(policy)));
 
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("USER1", "127.0.0.1"));
     }
@@ -224,7 +224,7 @@ class LoginPolicyManageServiceTest {
         dto.setEndTm(end);
 
         authenticate("policy-manager", "LOGIN_POL_UPDATE");
-        BusinessException update = assertThrows(BusinessException.class, () -> loginPolicyManageService.updateLoginPolicy(dto));
+        BusinessException update = assertThrows(BusinessException.class, () -> updateVersioned(dto));
         assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, update.getErrorCode());
         authenticate("policy-manager", "LOGIN_POL_CREATE");
         BusinessException insert = assertThrows(BusinessException.class, () -> loginPolicyManageService.insertLoginPolicy(dto));
@@ -244,7 +244,7 @@ class LoginPolicyManageServiceTest {
         dto.setEndTm(end);
 
         authenticate("policy-manager", "LOGIN_POL_UPDATE");
-        BusinessException update = assertThrows(BusinessException.class, () -> loginPolicyManageService.updateLoginPolicy(dto));
+        BusinessException update = assertThrows(BusinessException.class, () -> updateVersioned(dto));
         assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, update.getErrorCode());
         authenticate("policy-manager", "LOGIN_POL_CREATE");
         BusinessException insert = assertThrows(BusinessException.class, () -> loginPolicyManageService.insertLoginPolicy(dto));
@@ -263,7 +263,7 @@ class LoginPolicyManageServiceTest {
         dto.setEndTm(end);
 
         authenticate("policy-manager", "LOGIN_POL_UPDATE");
-        BusinessException update = assertThrows(BusinessException.class, () -> loginPolicyManageService.updateLoginPolicy(dto));
+        BusinessException update = assertThrows(BusinessException.class, () -> updateVersioned(dto));
         assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, update.getErrorCode());
         authenticate("policy-manager", "LOGIN_POL_CREATE");
         BusinessException insert = assertThrows(BusinessException.class, () -> loginPolicyManageService.insertLoginPolicy(dto));
@@ -281,10 +281,12 @@ class LoginPolicyManageServiceTest {
         dto.setIpAddr("2001:0DB8:0000:0000:0000:0000:0000:0001");
 
         LoginPolicy entity = mock(LoginPolicy.class);
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(entity));
+
+        org.mockito.Mockito.lenient().when(entity.getVersion()).thenReturn(0);
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(entity)));
         givenPolicyUser("USER1");
 
-        loginPolicyManageService.updateLoginPolicy(dto);
+        updateVersioned(dto);
 
         verify(entity).update(eq("2001:db8::1"), any(), any(), any(), any(), any());
     }
@@ -309,10 +311,10 @@ class LoginPolicyManageServiceTest {
         LoginPolicy entity = LoginPolicy.builder()
                 .userId("USER1").ipAddr("10.0.0.1").dpcnPrmYn("Y").lmtYn("Y")
                 .bgngTm("0900").endTm("1800").otpUseYn("N").build();
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(entity));
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(entity)));
         givenPolicyUser("USER1");
 
-        loginPolicyManageService.updateLoginPolicy(dto);
+        updateVersioned(dto);
 
         // ⚠ 이 단언이 red 가 되면 관리자가 IP 하나를 고칠 때마다 중복 로그인 설정이 사라진다.
         assertEquals("Y", entity.getDpcnPrmYn());
@@ -332,10 +334,10 @@ class LoginPolicyManageServiceTest {
 
         LoginPolicy entity = LoginPolicy.builder()
                 .userId("USER1").ipAddr("10.0.0.1").dpcnPrmYn("Y").build();
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(entity));
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(entity)));
         givenPolicyUser("USER1");
 
-        loginPolicyManageService.updateLoginPolicy(dto);
+        updateVersioned(dto);
 
         // 과잉 교정("항상 기존 값을 쓴다")을 막는 대조군이다.
         assertEquals("N", entity.getDpcnPrmYn());
@@ -392,7 +394,7 @@ class LoginPolicyManageServiceTest {
         authenticate("policy-manager", "LOGIN_POL_UPDATE");
         LoginPolicy entity = LoginPolicy.builder().userId("USER1").ipAddr(ip).dpcnPrmYn("N").lmtYn(lmt)
                 .bgngTm(bgng).endTm(end).otpUseYn("N").build();
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(entity));
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(entity)));
         givenPolicyUser("USER1");
         LoginPolicyDto dto = new LoginPolicyDto();
         dto.setUserId("USER1");
@@ -402,7 +404,7 @@ class LoginPolicyManageServiceTest {
         dto.setEndTm(newEnd);
         dto.setOtpUseYn("N");
 
-        loginPolicyManageService.updateLoginPolicy(dto);
+        updateVersioned(dto);
 
         if (revokes) {
             verify(userRepository).advanceSessionCycle(List.of("ESNTL_USER1"));
@@ -414,21 +416,42 @@ class LoginPolicyManageServiceTest {
     }
 
     @Test
+    @DisplayName("[2026-11-25 V2_155] 로그인 정책 수정 — 버전 누락은 400, 낡은 버전은 409 로 거부하고 조건·세션을 건드리지 않는다")
+    void updateRejectsMissingOrStaleVersion() {
+        authenticate("policy-manager", "LOGIN_POL_UPDATE");
+        LoginPolicy entity = LoginPolicy.builder().userId("USER1").ipAddr("10.0.0.1").dpcnPrmYn("N").lmtYn("N").otpUseYn("N").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 3);
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(entity));
+        givenPolicyUser("USER1");
+
+        BusinessException missing = assertThrows(BusinessException.class, () -> loginPolicyManageService.updateLoginPolicy(
+                LoginPolicyDto.builder().userId("USER1").lmtYn("Y").otpUseYn("N").build()));
+        BusinessException stale = assertThrows(BusinessException.class, () -> loginPolicyManageService.updateLoginPolicy(
+                LoginPolicyDto.builder().userId("USER1").lmtYn("Y").otpUseYn("N").version(2).build()));
+
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, missing.getErrorCode());
+        assertEquals(CommonErrorCode.CONCURRENT_MODIFICATION, stale.getErrorCode());
+        assertEquals("N", entity.getLmtYn());
+        verify(userRepository, never()).advanceSessionCycle(any());
+        verifyNoInteractions(sensitiveAudit);
+    }
+
+    @Test
     @DisplayName("[2026-11-25] 접속 허용 시각은 판정이 읽는 HH:mm 으로 저장하고, 공백뿐인 값은 시간창 없음으로 저장해 로그인을 막지 않는다")
     void storesCanonicalClockTimesAndBlankAsNoWindow() {
         authenticate("policy-manager", "LOGIN_POL_UPDATE");
         LoginPolicy entity = LoginPolicy.builder().userId("USER1").dpcnPrmYn("N").lmtYn("N").otpUseYn("N").build();
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(entity));
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(entity)));
         givenPolicyUser("USER1");
         LoginPolicyDto legacy = LoginPolicyDto.builder().userId("USER1").lmtYn("N").bgngTm("0900").endTm("1800").otpUseYn("N").build();
 
-        loginPolicyManageService.updateLoginPolicy(legacy);
+        updateVersioned(legacy);
 
         assertEquals("09:00", entity.getBgngTm());
         assertEquals("18:00", entity.getEndTm());
 
         LoginPolicyDto blank = LoginPolicyDto.builder().userId("USER1").lmtYn("N").bgngTm(" ").endTm(" ").otpUseYn("N").build();
-        loginPolicyManageService.updateLoginPolicy(blank);
+        updateVersioned(blank);
 
         assertNull(entity.getBgngTm());
         assertNull(entity.getEndTm());
@@ -444,9 +467,9 @@ class LoginPolicyManageServiceTest {
         loginPolicyManageService.insertLoginPolicy(LoginPolicyDto.builder().userId("USER1").lmtYn("N").otpUseYn("N").build());
         verify(sensitiveAudit).recordMutation("LOGIN_POLICY_CREATE", "ESNTL_USER1");
 
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(
-                LoginPolicy.builder().userId("USER1").dpcnPrmYn("N").lmtYn("N").otpUseYn("N").build()));
-        loginPolicyManageService.updateLoginPolicy(LoginPolicyDto.builder().userId("USER1").lmtYn("N").otpUseYn("N").build());
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(
+                LoginPolicy.builder().userId("USER1").dpcnPrmYn("N").lmtYn("N").otpUseYn("N").build())));
+        updateVersioned(LoginPolicyDto.builder().userId("USER1").lmtYn("N").otpUseYn("N").build());
         verify(sensitiveAudit).recordMutation("LOGIN_POLICY_UPDATE", "ESNTL_USER1");
 
         given(loginPolicyRepository.existsById("USER1")).willReturn(true);
@@ -466,10 +489,10 @@ class LoginPolicyManageServiceTest {
     void updateReadsThePolicyRowAfterTheAdministrationLock() {
         authenticate("policy-manager", "LOGIN_POL_UPDATE");
         LoginPolicy entity = LoginPolicy.builder().userId("USER1").dpcnPrmYn("N").lmtYn("N").otpUseYn("N").build();
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(entity));
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(entity)));
         givenPolicyUser("USER1");
 
-        loginPolicyManageService.updateLoginPolicy(
+        updateVersioned(
                 LoginPolicyDto.builder().userId("USER1").ipAddr("10.0.0.1").lmtYn("N").otpUseYn("N").build());
 
         org.mockito.InOrder order = org.mockito.Mockito.inOrder(protectedAccountGuard, loginPolicyRepository);
@@ -558,7 +581,7 @@ class LoginPolicyManageServiceTest {
     @DisplayName("로그인 정책 유효성 검증 - IP 빈 문자열")
     void validateLoginPolicyIpEmptyTest() {
         LoginPolicy policy = LoginPolicy.builder().userId("USER1").ipAddr("").lmtYn("N").build();
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(policy)));
 
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("USER1", "127.0.0.1"));
     }
@@ -567,11 +590,11 @@ class LoginPolicyManageServiceTest {
     @DisplayName("로그인 정책 유효성 검증 - BgngTm, EndTm 빈 문자열 및 null")
     void validateLoginPolicyTimeEmptyNullTest() {
         LoginPolicy policy = LoginPolicy.builder().userId("USER1").lmtYn("N").bgngTm("").endTm("12:00").build();
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(policy)));
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("USER1", "127.0.0.1"));
         
         policy = LoginPolicy.builder().userId("USER1").lmtYn("N").bgngTm("12:00").endTm("").build();
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(policy)));
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("USER1", "127.0.0.1"));
     }
 
@@ -586,7 +609,7 @@ class LoginPolicyManageServiceTest {
                 .bgngTm("1100")
                 .endTm("1300")
                 .build();
-        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(versioned(policy)));
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("USER1", "127.0.0.1"));
     }
 
@@ -620,7 +643,7 @@ class LoginPolicyManageServiceTest {
     @DisplayName("시간창: 현재가 창 안이면 통과한다 (정상 순서 창)")
     void timeWindow_insideNormalWindow_passes() {
         fixClockAt(12, 0);
-        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow("10:00", "14:00")));
+        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(versioned(policyWithWindow("10:00", "14:00"))));
 
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("U1", "127.0.0.1"));
     }
@@ -629,7 +652,7 @@ class LoginPolicyManageServiceTest {
     @DisplayName("시간창: 현재가 창 밖이면 차단한다 (정상 순서 창)")
     void timeWindow_outsideNormalWindow_blocks() {
         fixClockAt(12, 0);
-        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow("08:00", "09:00")));
+        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(versioned(policyWithWindow("08:00", "09:00"))));
 
         // 조건을 뒤집은 뮤턴트는 통과시켜 여기서 죽는다.
         BusinessException ex = assertThrows(BusinessException.class,
@@ -641,7 +664,7 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("시간창: 시작·끝 시각과 정확히 같은 순간은 창 안이다 (양끝 포함)")
     void timeWindow_boundariesAreInclusive() {
-        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow("10:00", "14:00")));
+        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(versioned(policyWithWindow("10:00", "14:00"))));
 
         // `!now.isBefore(start)` / `!now.isAfter(end)` 의 경계 뮤턴트(isBefore↔isAfter, 부정 제거)가 여기서 죽는다.
         fixClockAt(10, 0);
@@ -660,7 +683,7 @@ class LoginPolicyManageServiceTest {
     void timeWindow_insideOvernightWindow_passes() {
         fixClockAt(12, 0);
         // 13:00~12:30 은 start > end 인 '자정 넘는 창' 이고, 12:00 은 [00:00, 12:30] 구간에 든다.
-        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow("13:00", "12:30")));
+        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(versioned(policyWithWindow("13:00", "12:30"))));
 
         // startTime.isBefore(endTime) 분기 선택이 틀리면 여기서 차단되어 죽는다.
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("U1", "127.0.0.1"));
@@ -673,7 +696,7 @@ class LoginPolicyManageServiceTest {
         // 22:00~06:00 창에서 12:00 은 두 구간 모두 밖이다. 이 케이스는 OR↔AND 나 분기 선택 뮤턴트와는
         // 결과가 같아 그것들을 죽이지 못한다(그 몫은 자정 넘김 '안' 테스트들이다). 여기서 죽는 것은
         // 자정 넘김 창에서 차단 자체를 없애는 뮤턴트(`!withinWindow` 부정·throw 제거)다.
-        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow("22:00", "06:00")));
+        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(versioned(policyWithWindow("22:00", "06:00"))));
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> loginPolicyManageService.validateLoginPolicy("U1", "127.0.0.1"));
@@ -684,7 +707,7 @@ class LoginPolicyManageServiceTest {
     @DisplayName("시간창: HHmm(콜론 없음) 형식도 파싱한다")
     void timeWindow_acceptsCompactFormat() {
         fixClockAt(12, 0);
-        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow("1000", "1400")));
+        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(versioned(policyWithWindow("1000", "1400"))));
 
         // `!bgng.contains(":") && length >= 4` 조건을 뒤집으면 파싱이 깨져 catch 로 빠진다.
         // 2026-08-09 fail-closed 전환 이후 catch 는 형식 오류로 **차단**하므로, 허용이어야 할 이 케이스가
@@ -696,11 +719,11 @@ class LoginPolicyManageServiceTest {
     @DisplayName("시간창 미설정이면 시간 검사를 건너뛴다")
     void timeWindow_absentSkipsCheck() {
         given(loginPolicyRepository.findById("U1"))
-                .willReturn(Optional.of(policyWithWindow(null, null)));
+                .willReturn(Optional.of(versioned(policyWithWindow(null, null))));
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("U1", "127.0.0.1"));
 
         given(loginPolicyRepository.findById("U2"))
-                .willReturn(Optional.of(LoginPolicy.builder().userId("U2").lmtYn("N").bgngTm("").endTm("").build()));
+                .willReturn(Optional.of(versioned(LoginPolicy.builder().userId("U2").lmtYn("N").bgngTm("").endTm("").build())));
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("U2", "127.0.0.1"));
     }
 
@@ -708,7 +731,7 @@ class LoginPolicyManageServiceTest {
     @org.junit.jupiter.params.provider.CsvSource({"09:00,09:00", "0900,0900", "0900,09:00"})
     @DisplayName("기존에 저장된 시작·종료 동일 시간창 정책은 GAP-SEC-006 managerCount() 및 업그레이드 호환을 위해 허용을 유지한다")
     void timeWindow_legacyEqualStartAndEndRemainsCompatibleWithManagerCount(String start, String end) {
-        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow(start, end)));
+        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(versioned(policyWithWindow(start, end))));
 
         for (int hour : new int[] { 9, 12 }) {
             fixClockAt(hour, 0);
@@ -741,7 +764,7 @@ class LoginPolicyManageServiceTest {
         // 12:00 을 확실히 벗어난 창 [14:00, 16:00]. 종전에는 상대 창이라 KST 19시 이후 skip 됐다.
         fixClockAt(12, 0);
         LoginPolicy policy = policyWithCompactTimeWindow(LocalTime.of(14, 0), LocalTime.of(16, 0));
-        given(loginPolicyRepository.findById("tester")).willReturn(Optional.of(policy));
+        given(loginPolicyRepository.findById("tester")).willReturn(Optional.of(versioned(policy)));
 
         // 변환 분기(!contains(":") / length >= 4)를 뒤집은 뮤턴트는 parse 실패 → catch 가 형식 오류로 차단한다.
         // 에러 코드는 같으므로, 정상적인 '시간 밖' 차단임을 메시지로 확인해야 이 테스트가 그 뮤턴트를 죽인다.
@@ -756,7 +779,7 @@ class LoginPolicyManageServiceTest {
     void compactTimeFormatAllowsWithinWindow() {
         fixClockAt(12, 0);
         LoginPolicy policy = policyWithCompactTimeWindow(LocalTime.of(11, 0), LocalTime.of(13, 0));
-        given(loginPolicyRepository.findById("tester")).willReturn(Optional.of(policy));
+        given(loginPolicyRepository.findById("tester")).willReturn(Optional.of(versioned(policy)));
 
         // 통과가 '검증이 없어서'가 아니라 '창 안이라서'임을 확인한다.
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("tester", "127.0.0.1"));
@@ -799,8 +822,8 @@ class LoginPolicyManageServiceTest {
     void selectLoginPolicyCopiesEveryPolicyField() {
         User user = User.builder().esntlId("ESNTL01").userId("tester").userNm("테스터").build();
         given(userRepository.findByUserId("tester")).willReturn(Optional.of(user));
-        given(loginPolicyRepository.findById("tester")).willReturn(Optional.of(
-                LoginPolicy.create("tester", "10.0.0.1", "Y", "N", "0900", "1800", "Y")));
+        given(loginPolicyRepository.findById("tester")).willReturn(Optional.of(versioned(
+                LoginPolicy.create("tester", "10.0.0.1", "Y", "N", "0900", "1800", "Y"))));
 
         LoginPolicyDto dto = loginPolicyManageService.selectLoginPolicy("tester");
 
@@ -859,7 +882,7 @@ class LoginPolicyManageServiceTest {
                 () -> loginPolicyManageService.insertLoginPolicy(enable));
         authenticate("policy-manager", "LOGIN_POL_UPDATE");
         BusinessException onUpdate = assertThrows(BusinessException.class,
-                () -> loginPolicyManageService.updateLoginPolicy(enable));
+                () -> updateVersioned(enable));
 
         assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, onInsert.getErrorCode());
         assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, onUpdate.getErrorCode());
@@ -893,7 +916,7 @@ class LoginPolicyManageServiceTest {
                 .build();
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> loginPolicyManageService.updateLoginPolicy(dto));
+                () -> updateVersioned(dto));
 
         assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, ex.getErrorCode());
         assertEquals(org.springframework.http.HttpStatus.BAD_REQUEST, ex.getErrorCode().getStatus());
@@ -926,7 +949,7 @@ class LoginPolicyManageServiceTest {
 
         // orElseThrow 람다의 `replaced return value with null` 뮤턴트가 여기서 죽는다.
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> loginPolicyManageService.updateLoginPolicy(dto));
+                () -> updateVersioned(dto));
         assertEquals(CommonErrorCode.RESOURCE_NOT_FOUND, ex.getErrorCode());
     }
 
@@ -1016,14 +1039,14 @@ class LoginPolicyManageServiceTest {
         authenticate("policy-manager", "LOGIN_POL_UPDATE");
         LoginPolicy entity = LoginPolicy.builder().userId("policy-target")
                 .ipAddr("10.0.0.1").dpcnPrmYn("Y").lmtYn("Y").otpUseYn("N").build();
-        given(loginPolicyRepository.findById("policy-target")).willReturn(Optional.of(entity));
+        given(loginPolicyRepository.findById("policy-target")).willReturn(Optional.of(versioned(entity)));
         LoginPolicyDto dto = LoginPolicyDto.builder().userId("policy-target")
                 .ipAddr("192.168.0.1").lmtYn("N").otpUseYn("N").build();
 
         given(userRepository.findByUserId("policy-target")).willReturn(Optional.of(
                 User.builder().userId("policy-target").esntlId("ESNTL_policy-target").userNm("대상").build()));
 
-        loginPolicyManageService.updateLoginPolicy(dto);
+        updateVersioned(dto);
 
         assertEquals("policy-target", entity.getUserId());
         assertEquals("192.168.0.1", entity.getIpAddr());
@@ -1138,19 +1161,20 @@ class LoginPolicyManageServiceTest {
         LoginPolicy protectedPolicy = LoginPolicy.builder().userId(PROTECTED_LOGIN)
                 .ipAddr("10.0.0.1").dpcnPrmYn("N").lmtYn("N").otpUseYn("N").build();
         // [2026-11-25] 정책 행은 가드(관리 잠금) 뒤에 읽으므로 거부된 수정은 행을 읽지도 않는다 — 아래에서 고정한다.
-        lenient().when(loginPolicyRepository.findById(PROTECTED_LOGIN)).thenReturn(Optional.of(protectedPolicy));
+        lenient().when(loginPolicyRepository.findById(PROTECTED_LOGIN)).thenReturn(Optional.of(versioned(protectedPolicy)));
         LoginPolicy ordinaryPolicy = mock(LoginPolicy.class);
-        given(loginPolicyRepository.findById(ORDINARY_LOGIN)).willReturn(Optional.of(ordinaryPolicy));
+        org.mockito.Mockito.lenient().when(ordinaryPolicy.getVersion()).thenReturn(0);
+        given(loginPolicyRepository.findById(ORDINARY_LOGIN)).willReturn(Optional.of(versioned(ordinaryPolicy)));
 
         // 접속 제한을 걸어 권한관리자의 로그인을 막으려는 수정이다.
-        BusinessException denied = assertThrows(BusinessException.class, () -> loginPolicyManageService.updateLoginPolicy(
+        BusinessException denied = assertThrows(BusinessException.class, () -> updateVersioned(
                 LoginPolicyDto.builder().userId(PROTECTED_LOGIN).ipAddr("192.0.2.9").lmtYn("Y").otpUseYn("N").build()));
         assertEquals(CommonErrorCode.ACCESS_DENIED, denied.getErrorCode());
         assertEquals("N", protectedPolicy.getLmtYn(), "거부된 수정이 엔티티를 바꾸면 커밋 경로에 따라 제한이 저장된다");
         assertEquals("10.0.0.1", protectedPolicy.getIpAddr());
         verify(loginPolicyRepository, never()).findById(PROTECTED_LOGIN);
 
-        loginPolicyManageService.updateLoginPolicy(
+        updateVersioned(
                 LoginPolicyDto.builder().userId(ORDINARY_LOGIN).lmtYn("Y").otpUseYn("N").build());
 
         var order = inOrder(protectedAccountGuard, ordinaryPolicy);
@@ -1187,10 +1211,10 @@ class LoginPolicyManageServiceTest {
     void updateRejectsPolicyWhoseUserCannotBeResolved() {
         authenticate("policy-manager", "LOGIN_POL_UPDATE");
         LoginPolicy entity = LoginPolicy.builder().userId("orphan").lmtYn("N").otpUseYn("N").build();
-        lenient().when(loginPolicyRepository.findById("orphan")).thenReturn(Optional.of(entity));
+        lenient().when(loginPolicyRepository.findById("orphan")).thenReturn(Optional.of(versioned(entity)));
         given(userRepository.findByUserId("orphan")).willReturn(Optional.empty());
 
-        BusinessException missingUser = assertThrows(BusinessException.class, () -> loginPolicyManageService.updateLoginPolicy(
+        BusinessException missingUser = assertThrows(BusinessException.class, () -> updateVersioned(
                 LoginPolicyDto.builder().userId("orphan").lmtYn("Y").otpUseYn("N").build()));
 
         assertEquals(UserErrorCode.USER_NOT_FOUND, missingUser.getErrorCode());
@@ -1259,10 +1283,10 @@ class LoginPolicyManageServiceTest {
         authenticate("rights-admin", "LOGIN_POL_UPDATE");
         givenPolicyUser("rights-admin");
         LoginPolicy entity = LoginPolicy.builder().userId("rights-admin").lmtYn("N").otpUseYn("N").build();
-        given(loginPolicyRepository.findById("rights-admin")).willReturn(Optional.of(entity));
+        given(loginPolicyRepository.findById("rights-admin")).willReturn(Optional.of(versioned(entity)));
         givenLastManagerWouldBeLost();
 
-        BusinessException lastManager = assertThrows(BusinessException.class, () -> loginPolicyManageService.updateLoginPolicy(
+        BusinessException lastManager = assertThrows(BusinessException.class, () -> updateVersioned(
                 LoginPolicyDto.builder().userId("rights-admin").lmtYn("Y").otpUseYn("N").build()));
 
         assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, lastManager.getErrorCode());
@@ -1284,8 +1308,8 @@ class LoginPolicyManageServiceTest {
         assertDoesNotThrow(() -> loginPolicyManageService.insertLoginPolicy(
                 LoginPolicyDto.builder().userId("rights-admin").lmtYn("Y").otpUseYn("N").build()));
         LoginPolicy entity = LoginPolicy.builder().userId("rights-admin").lmtYn("N").otpUseYn("N").build();
-        given(loginPolicyRepository.findById("rights-admin")).willReturn(Optional.of(entity));
-        assertDoesNotThrow(() -> loginPolicyManageService.updateLoginPolicy(
+        given(loginPolicyRepository.findById("rights-admin")).willReturn(Optional.of(versioned(entity)));
+        assertDoesNotThrow(() -> updateVersioned(
                 LoginPolicyDto.builder().userId("rights-admin").lmtYn("Y").otpUseYn("N").build()));
 
         assertEquals("Y", entity.getLmtYn());
@@ -1297,7 +1321,7 @@ class LoginPolicyManageServiceTest {
         BusinessException denied = assertThrows(BusinessException.class, () -> {
             switch (permission) {
                 case "LOGIN_POL_CREATE" -> loginPolicyManageService.insertLoginPolicy(dto);
-                case "LOGIN_POL_UPDATE" -> loginPolicyManageService.updateLoginPolicy(dto);
+                case "LOGIN_POL_UPDATE" -> updateVersioned(dto);
                 case "LOGIN_POL_DELETE" -> loginPolicyManageService.deleteLoginPolicy(dto);
                 default -> throw new IllegalArgumentException("Unknown test operation: " + permission);
             }
@@ -1333,8 +1357,8 @@ class LoginPolicyManageServiceTest {
     void overnightWindowAllowsViaEndBoundaryAlone() {
         fixClockAt(12, 0);
         // start(23:59) > end(23:58) → 자정 넘김 창. now 는 start 이전이므로 첫 항은 false.
-        given(loginPolicyRepository.findById("tester")).willReturn(Optional.of(
-                LoginPolicy.create("tester", null, "Y", "N", "23:59", "23:58", "N")));
+        given(loginPolicyRepository.findById("tester")).willReturn(Optional.of(versioned(
+                LoginPolicy.create("tester", null, "Y", "N", "23:59", "23:58", "N"))));
 
         // `now ≤ end` 를 뒤집은 뮤턴트는 두 항 모두 false 가 되어 차단 → 죽는다.
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("tester", "127.0.0.1"));
@@ -1345,8 +1369,8 @@ class LoginPolicyManageServiceTest {
     void overnightWindowAllowsViaStartBoundaryAlone() {
         fixClockAt(12, 0);
         // start(00:01) > end(00:00) → 자정 넘김 창. now 는 end 이후이므로 둘째 항은 false.
-        given(loginPolicyRepository.findById("tester")).willReturn(Optional.of(
-                LoginPolicy.create("tester", null, "Y", "N", "00:01", "00:00", "N")));
+        given(loginPolicyRepository.findById("tester")).willReturn(Optional.of(versioned(
+                LoginPolicy.create("tester", null, "Y", "N", "00:01", "00:00", "N"))));
 
         // `now ≥ start` 를 뒤집은 뮤턴트는 두 항 모두 false 가 되어 차단 → 죽는다.
         // (첫 시도에서 이 항만 검증되지 않아 뮤턴트가 단축평가로 살아남았다.)
@@ -1365,8 +1389,8 @@ class LoginPolicyManageServiceTest {
         //   "모르겠으니 통과" 는 규칙을 없애는 것과 같다.
         //
         //   "abcd" → 콜론 없음·길이 4 → "ab:cd" 로 재조립 → parse 실패(DateTimeParseException).
-        given(loginPolicyRepository.findById("tester")).willReturn(Optional.of(
-                LoginPolicy.create("tester", null, "Y", "N", "abcd", "efgh", "N")));
+        given(loginPolicyRepository.findById("tester")).willReturn(Optional.of(versioned(
+                LoginPolicy.create("tester", null, "Y", "N", "abcd", "efgh", "N"))));
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> loginPolicyManageService.validateLoginPolicy("tester", "127.0.0.1"));
@@ -1392,5 +1416,19 @@ class LoginPolicyManageServiceTest {
         verify(loginPolicyRepository).searchLoginPolicies(any(), captor.capture());
         assertEquals(2, captor.getValue().getPageNumber(), "1-based 3페이지는 0-based 2");
         assertEquals(10, captor.getValue().getPageSize(), "pageUnit 0 이면 기본 10");
+    }
+
+    /** [V2_155] 버전을 싣지 않은 수정 요청에 저장된 행과 같은 버전(0)을 싣는다 — 버전 대조는 전용 시험이 본다. */
+    private void updateVersioned(nuri.business.service.login.dto.LoginPolicyDto dto) {
+        if (dto.getVersion() == null) dto.setVersion(0);
+        loginPolicyManageService.updateLoginPolicy(dto);
+    }
+
+    /** [V2_155] 저장된 행처럼 버전(0)을 가진 엔티티. mock 은 선언 직후에 getVersion() 을 따로 스텁한다(다른 스텁 안에서 스텁하지 않는다). */
+    private static <T> T versioned(T entity) {
+        if (!org.mockito.Mockito.mockingDetails(entity).isMock() || org.mockito.Mockito.mockingDetails(entity).isSpy()) {
+            org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
+        }
+        return entity;
     }
 }

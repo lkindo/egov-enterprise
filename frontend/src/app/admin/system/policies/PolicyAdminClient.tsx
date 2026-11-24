@@ -33,6 +33,7 @@ import { htmlToSemanticPlainText } from '@/lib/html-to-text';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnsavedCloseGuard } from '@/hooks/useDirtyCloseGuard';
 import { canPermission } from '@/lib/auth/permissions';
+import { extractErrorMessage } from '@/app/actions/actionUtils';
 
 export const policySchema = PolicyUpdateRequestSchema.extend({
   plcyTypeCd: z.string().trim().min(1, '정책 유형 코드를 입력해 주세요.')
@@ -159,14 +160,20 @@ export default function PolicyAdminClient() {
         plcyTtl: values.plcyTtl,
         plcyCn: values.plcyCn
       };
-      if (selectedPolicy) await policyAdminService.updatePolicy(type, payload);
-      else await policyAdminService.createPolicy(type, payload);
+      // [2026-11-25 V2_155] 수정은 연 정책의 버전을 함께 보낸다 — 그 사이 다른 관리자가 고쳤으면 서버가 409 로 거부한다.
+      if (selectedPolicy) {
+        await policyAdminService.updatePolicy(type, {
+          ...payload,
+          ...(selectedPolicy.version !== undefined ? { version: selectedPolicy.version } : {}),
+        });
+      } else await policyAdminService.createPolicy(type, payload);
       toast(selectedPolicy ? '정책이 성공적으로 수정되었습니다' : '정책을 등록했습니다.', 'success');
       setIsEditModalOpen(false);
       fetchPolicies();
     } catch (error: unknown) {
       if (!form.applyServerErrors(error)) {
-        toast('정책 저장에 실패했습니다. 입력값은 유지됩니다.', 'error');
+        // 동시 수정(409)처럼 칸에 붙지 않는 거절은 서버가 준 안내를 그대로 보인다.
+        toast(extractErrorMessage(error, '정책 저장에 실패했습니다. 입력값은 유지됩니다.'), 'error');
       }
     }
   };

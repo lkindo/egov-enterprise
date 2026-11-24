@@ -21,5 +21,15 @@ public record PolicyUpdateRequest(
         @Schema(description = "정책 내용")
         @NotBlank(message = "{validation.required}")
         @Size(max = 4000, message = "{validation.size.max}")
-        String plcyCn) {
+        String plcyCn,
+
+        @Schema(description = "낙관적 잠금 버전(V2_155). 조회한 값을 수정 요청에 그대로 돌려보내며 이미 있는 정책을 고칠 때 필수다 "
+                + "— 다르면 409. 등록과 없는 유형의 첫 저장에서는 무시한다.")
+        @jakarta.validation.constraints.Min(0)
+        Integer version) {
+
+    /** 버전 없는 요청(등록) — 기존 호출 모양을 유지한다. */
+    public PolicyUpdateRequest(String plcyTtl, String plcyCn) {
+        this(plcyTtl, plcyCn, null);
+    }
 }

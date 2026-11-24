@@ -14,6 +14,7 @@ export const DeptManageDtoSchema = /*#__PURE__*/ (() => z.object({
   sortOrdr: z.number().int().optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type DeptManageDto = z.infer<typeof DeptManageDtoSchema>;
 
@@ -74,6 +75,7 @@ export const DeptManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   sortOrdr: z.number().int().optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const DeptManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -84,6 +86,7 @@ export const DeptManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   sortOrdr: z.number().int().optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const DeptHierarchyItemRequestRequestSchema = /*#__PURE__*/ (() => z.object({

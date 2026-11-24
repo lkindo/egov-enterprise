@@ -41941,6 +41941,12 @@
             "description": "정책 내용",
             "maxLength": 4000,
             "minLength": 0
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_155). 조회한 값을 수정 요청에 그대로 돌려보내며 이미 있는 정책을 고칠 때 필수다 — 다르면 409. 등록과 없는 유형의 첫 저장에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -42036,6 +42042,12 @@
             "example": "Y",
             "maxLength": 1,
             "minLength": 0
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_155). 관리 목록에서 읽은 값을 메뉴 한 건 수정 요청에 그대로 돌려보내며 그때 필수다 — 다르면 409. 등록·순서 일괄 저장·사용자 메뉴 응답에서는 쓰지 않는다.",
+            "minimum": 0
           },
           "children": {
             "type": "array",
@@ -42426,6 +42438,12 @@
           "regYn": {
             "type": "string"
           },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_155). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
+          },
           "frstRgtrId": {
             "type": "string"
           },
@@ -42457,6 +42475,12 @@
           },
           "groupCrtDt": {
             "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_155). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         }
       },
@@ -42501,6 +42525,12 @@
             "type": "string",
             "format": "date-time",
             "description": "등록 일시"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_155). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록과 조직도 일괄 편집(상위·순서)에서는 보지 않는다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -43032,6 +43062,12 @@
             "type": "string",
             "format": "date-time",
             "description": "수정일시"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_155). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -53390,6 +53426,10 @@
           },
           "plcyCn": {
             "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

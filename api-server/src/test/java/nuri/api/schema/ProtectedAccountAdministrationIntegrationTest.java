@@ -449,8 +449,11 @@ class ProtectedAccountAdministrationIntegrationTest {
 
     private static String login(String id) { return id + "L"; }
 
-    private static LoginPolicyDto policy(String id, String lmtYn) {
-        return LoginPolicyDto.builder().userId(login(id)).lmtYn(lmtYn).otpUseYn("N").build();
+    private LoginPolicyDto policy(String id, String lmtYn) {
+        // [V2_155] 정책이 이미 있으면 화면이 읽은 시점의 버전을 싣는다(등록은 버전을 보지 않는다).
+        Integer version = jdbc.query("SELECT version FROM tb_login_policy WHERE user_id=?",
+                rows -> rows.next() ? rows.getInt(1) : null, login(id));
+        return LoginPolicyDto.builder().userId(login(id)).lmtYn(lmtYn).otpUseYn("N").version(version).build();
     }
 
     private long policyRows(String id) {

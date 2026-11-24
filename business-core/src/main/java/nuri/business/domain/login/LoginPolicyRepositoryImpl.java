@@ -32,6 +32,7 @@ public class LoginPolicyRepositoryImpl implements LoginPolicyRepositoryCustom {
                         loginPolicy.bgngTm,
                         loginPolicy.endTm,
                         loginPolicy.otpUseYn,
+                        loginPolicy.version,
                         Expressions.stringTemplate("CASE WHEN {0} IS NULL THEN 'N' ELSE 'Y' END", loginPolicy.userId)
                                 .as("regYn")))
                 .from(user)

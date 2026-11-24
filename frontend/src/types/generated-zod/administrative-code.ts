@@ -18,6 +18,7 @@ export const AdministCodeDtoSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   lastMdfrId: z.string().optional(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type AdministCodeDto = z.infer<typeof AdministCodeDtoSchema>;
 
@@ -64,6 +65,7 @@ export const AdministCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   lastMdfrId: z.string().optional(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const AdministCodeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -78,6 +80,7 @@ export const AdministCodeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   lastMdfrId: z.string().optional().nullable(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const ApiResponsePageResponseAdministCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({

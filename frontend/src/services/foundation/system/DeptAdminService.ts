@@ -18,6 +18,8 @@ export interface Department {
   upOgnzId?: string;
   /** 동일 상위 내 정렬 순서. [V2_26] */
   sortOrdr?: number;
+  /** 낙관적 잠금 버전(V2_155). 조직도에서 받은 값을 수정 요청에 그대로 돌려보낸다(다르면 409). */
+  version?: number;
 }
 
 /** 부서(조직) 관리 API 클라이언트 — /api/v1/admin/system/departments */

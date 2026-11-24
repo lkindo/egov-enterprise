@@ -16,6 +16,7 @@ export const LoginPolicyDtoSchema = /*#__PURE__*/ (() => z.object({
   endTm: z.string().min(0).max(6).optional(),
   otpUseYn: z.string().min(0).max(1).optional(),
   regYn: z.string().optional(),
+  version: z.number().int().min(0).optional(),
   frstRgtrId: z.string().optional(),
   lastMdfrId: z.string().optional(),
 }))();
@@ -62,6 +63,7 @@ export const LoginPolicyDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   endTm: z.string().min(0).max(6).optional(),
   otpUseYn: z.string().min(0).max(1).optional(),
   regYn: z.string().optional(),
+  version: z.number().int().min(0).optional(),
   frstRgtrId: z.string().optional(),
   lastMdfrId: z.string().optional(),
 }))();
@@ -76,6 +78,7 @@ export const LoginPolicyDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   endTm: z.string().min(0).max(6).optional().nullable(),
   otpUseYn: z.string().min(0).max(1).optional().nullable(),
   regYn: z.string().optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
   lastMdfrId: z.string().optional().nullable(),
 }))();

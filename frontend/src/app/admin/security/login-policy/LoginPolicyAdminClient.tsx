@@ -251,14 +251,19 @@ export default function LoginPolicyAdminClient() {
       if (isNew) {
         await loginPolicyAdminService.createLoginPolicy(selectedPolicy.userId, payload as Partial<LoginPolicy>);
       } else {
-        await loginPolicyAdminService.saveLoginPolicy(selectedPolicy.userId, payload as Partial<LoginPolicy>);
+        // [2026-11-25 V2_155] 연 정책의 버전을 함께 보낸다 — 그 사이 다른 관리자가 고쳤으면 서버가 409 로 거부한다.
+        await loginPolicyAdminService.saveLoginPolicy(selectedPolicy.userId, {
+          ...(payload as Partial<LoginPolicy>),
+          ...(selectedPolicy.version != null ? { version: selectedPolicy.version } : {}),
+        });
       }
       toast(isNew ? '로그인 정책을 등록했습니다.' : '로그인 정책이 성공적으로 업데이트되었습니다.', 'success');
       setIsEditModalOpen(false);
       queryClient.invalidateQueries({ queryKey: LOGIN_POLICIES_QUERY_KEY });
     } catch (error: unknown) {
       if (!form.applyServerErrors(error)) {
-        toast(isNew ? '정책 등록 중 오류가 발생했습니다.' : '정책 저장 중 오류가 발생했습니다.', 'error');
+        // 동시 수정(409)처럼 칸에 붙지 않는 거절은 서버가 준 안내를 그대로 보인다.
+        toast(extractErrorMessage(error, isNew ? '정책 등록 중 오류가 발생했습니다.' : '정책 저장 중 오류가 발생했습니다.'), 'error');
       }
     }
   };

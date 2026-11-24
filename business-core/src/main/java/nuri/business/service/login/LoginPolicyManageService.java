@@ -111,6 +111,7 @@ public class LoginPolicyManageService {
                 .bgngTm(res.getBgngTm())
                 .endTm(res.getEndTm())
                 .otpUseYn(res.getOtpUseYn())
+                .version(res.getVersion())
                 .build();
     }
 
@@ -138,6 +139,7 @@ public class LoginPolicyManageService {
             dto.setBgngTm(policy.getBgngTm());
             dto.setEndTm(policy.getEndTm());
             dto.setOtpUseYn(policy.getOtpUseYn());
+            dto.setVersion(policy.getVersion());
             dto.setRegYn("Y");
         });
 
@@ -155,8 +157,9 @@ public class LoginPolicyManageService {
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
         // [GAP-SEC-006] 보호 계정에 정책을 거는 것은 그 계정의 로그인을 막는 일이다 — 저장 전에 가린다.
         protectedAccountGuard.authorizeProtectedAccountChange(target.getEsntlId());
-        // [2026-11-14] 정책의 식별자는 사용자 ID 이고 버전 열이 없어, 이미 정책이 있는 사용자에게 save() 하면 등록이 아니라
-        //   기존 정책을 조용히 덮어쓴다(관리자는 '등록'을 눌렀는데 다른 관리자가 건 제한이 사라진다). 바꾸려면 수정 경로를 쓴다.
+        // [2026-11-14] 정책의 식별자는 사용자 ID 다. 종전(버전 열 전)에는 이미 정책이 있는 사용자에게 save() 하면 등록이 아니라
+        //   기존 정책을 조용히 덮어썼다(관리자는 '등록'을 눌렀는데 다른 관리자가 건 제한이 사라진다). V2_155 뒤에는 새 엔티티가
+        //   persist 되지만 중복을 PK 위반이 아니라 이 안내로 알리려고 확인을 둔다. 바꾸려면 수정 경로를 쓴다.
         if (loginPolicyRepository.existsById(dto.getUserId())) {
             throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE, "이미 로그인 정책이 등록된 사용자입니다. 수정에서 바꿔 주세요.");
         }
@@ -314,6 +317,9 @@ public class LoginPolicyManageService {
         //   저장한 다른 관리자의 변경 전 값을 '이전 조건' 으로 써서, 이미 반영된 같은 조건에 세션을 한 번 더 끊었다.
         LoginPolicy entity = loginPolicyRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        // [2026-11-25 V2_155] 화면이 읽은 버전과 대조한다 — 관리 잠금은 같은 순간의 저장만 줄 세우고, 읽은 뒤 다른 관리자가
+        //   고친 조건은 이 대조가 지킨다(409).
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
         long managersBefore = protectedAccountGuard.managerCount();
         /*
           중복 로그인 허용 여부는 요청에 없으면 기존 값을 유지한다(GAP-POLICY-001).

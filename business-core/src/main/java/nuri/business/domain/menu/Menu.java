@@ -66,6 +66,13 @@ public class Menu extends BaseEntity {
     private String useYn = "Y";
 
     /**
+     * 낙관적 잠금 버전(V2_155). 메뉴 한 건을 고치는 경로는 화면이 읽은 값과 대조한다(다르면 409). 구조 저장은 구조 전체의
+     * 버전과 행 잠금으로 이미 거르므로 행마다 대조하지 않고, 바뀐 행의 버전만 오른다.
+     */
+    @jakarta.persistence.Version
+    private Integer version;
+
+    /**
      * 영속 엔티티 생성용 private 생성자.
      * 팩토리(create)에서만 위임 호출한다.
      * (@Builder.Default 재현: useYn 은 null 병합으로 기본값 "Y" 유지, children 은 필드 초기화로 빈 리스트 유지)
