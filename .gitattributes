@@ -25,8 +25,9 @@
 *.json text working-tree-encoding=UTF-8
 *.md text working-tree-encoding=UTF-8
 
-# pnpm patches are applied to LF package files and hashed into the lockfile (pnpm.patchedDependencies).
-# A CRLF checkout would change the hash or fail to apply, so keep the committed bytes on every platform.
+# pnpm patches (pnpm.patchedDependencies) are diffs against LF package files. pnpm normalises line endings
+# before hashing, but keep the committed patch bytes identical on every platform so the applied diff and the
+# source scopes that hash this file (UI baseline build inputs, generated-project codeScope) do not drift.
 frontend/patches/*.patch text eol=lf
 
 # The r13 baseline binds these protocol/tooling files to exact Git blob bytes.

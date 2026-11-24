@@ -187,6 +187,8 @@ test('release evidence binds active CI, required checks and upstream verificatio
       'config/governance/upstream-verification/index.json',
       'config/governance/upstream-verification/.github/workflows/ci.yml',
       'config/governance/upstream-verification/.githooks/pre-push',
+      // 설치되는 의존성 코드를 바꾸는 pnpm 패치도 인증 범위다.
+      'frontend/patches/sockjs-client@1.6.1.patch',
     ];
     for (const path of evidence) write(path, 'synthetic reviewed verification content\n');
     const baseline = projectedCodeScope(output);
@@ -197,6 +199,9 @@ test('release evidence binds active CI, required checks and upstream verificatio
       assert.notEqual(projectedCodeScope(output).sha256, baseline.sha256, `${path}: changed execution or history must invalidate inherited evidence`);
       write(path, 'synthetic reviewed verification content\n');
     }
+    rmSync(join(output, 'frontend/patches/sockjs-client@1.6.1.patch'));
+    assert.notEqual(projectedCodeScope(output).sha256, baseline.sha256, 'a removed dependency patch must change the certified population');
+    write('frontend/patches/sockjs-client@1.6.1.patch', 'synthetic reviewed verification content\n');
     write('.github/workflows/unreviewed.yml', 'run: bypass\n');
     assert.notEqual(projectedCodeScope(output).sha256, baseline.sha256, 'new active workflows must change the certified population');
   } finally { cleanupOwnedFixture(output); }

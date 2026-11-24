@@ -58,6 +58,8 @@ export const PRODUCTION_BUILD_INPUT_PATHS = Object.freeze([
   'frontend/.dockerignore',
   'frontend/package.json',
   'frontend/pnpm-lock.yaml',
+  // Dockerfile 이 설치 전에 복사하는 pnpm 패치(lockfile 의 patchedDependencies). 이것을 바꾸면 설치되는 코드가 바뀐다.
+  'frontend/patches',
   // [2026-11-09] next-env.d.ts 는 이제 추적하지 않는 Next 생성 파일이다. 이 목록은 추적 파일을 고르는 필터라 지금 커밋에서는 아무것도
   //   고르지 않지만, 이 파일을 추적하던 과거 릴리스(v0.1.0)의 운영 입력 식별(파일 수·해시)을 지키려고 남긴다.
   'frontend/next-env.d.ts',
@@ -107,6 +109,7 @@ const PRODUCTION_BUILD_INPUT_EXACT_FILES = new Set(
     'business-app/src/main',
     'business-core/src/main',
     'foundation/src/main',
+    'frontend/patches',
     'frontend/src',
     'frontend/public',
     'frontend/scripts',
@@ -118,6 +121,7 @@ const PRODUCTION_BUILD_INPUT_PREFIXES = Object.freeze([
   'business-app/src/main/',
   'business-core/src/main/',
   'foundation/src/main/',
+  'frontend/patches/',
   'frontend/src/',
   'frontend/public/',
   'frontend/scripts/',

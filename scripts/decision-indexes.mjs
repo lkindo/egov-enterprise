@@ -53,7 +53,7 @@ export const DECISION_AREA_ROUTES = Object.freeze({
       'config/pit-duration-profile.json', 'scripts/**', 'tools/agent-evaluation/**', 'tools/requirements-workspace/**', 'api-server/src/test/**', 'api-server/src/main/resources/db/migration/**',
       'frontend/e2e/**', 'frontend/scripts/**', 'frontend/atlas/**', 'frontend/*.config.*', 'frontend/tsconfig*.json',
       'frontend/vitest.setup.ts', 'frontend/lighthouserc.json', 'frontend/.gitignore', 'frontend/.nvmrc', 'test/load-tests/**',
-      'package.json', 'package-lock.json', 'frontend/package.json', 'frontend/pnpm-lock.yaml',
+      'package.json', 'package-lock.json', 'frontend/package.json', 'frontend/pnpm-lock.yaml', 'frontend/patches/**',
       'gradle/**', '**/*.gradle', 'gradle.properties', 'gradlew', 'gradlew.bat',
     ]),
     documents: Object.freeze([
@@ -104,7 +104,7 @@ export const DECISION_AREA_ROUTES = Object.freeze({
   product: Object.freeze({
     paths: Object.freeze([
       'foundation/**', 'business-core/**', 'business-app/**', 'api-server/src/main/**', 'api-server/src/test/**', 'api-server/Dockerfile',
-      'frontend/src/**', 'frontend/public/**', 'frontend/next.config.*', 'frontend/components.json',
+      'frontend/src/**', 'frontend/public/**', 'frontend/patches/**', 'frontend/next.config.*', 'frontend/components.json',
       'frontend/Dockerfile', 'frontend/.dockerignore', 'frontend/.env.example', 'frontend/README.md', 'frontend/AGENTS.md',
       'frontend/CLAUDE.md', '.agent/knowledge/**', 'lombok.config', 'db_columns.json',
       'config/governance/permission-catalog.json', 'config/governance/authorization-policies.json',
