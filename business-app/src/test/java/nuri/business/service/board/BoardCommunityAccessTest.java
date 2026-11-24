@@ -111,6 +111,12 @@ class BoardCommunityAccessTest {
                 org.mockito.Mockito.mock(BoardChangeRecorder.class), port);
     }
 
+    /** [2026-11-25] 댓글·만족도의 열람 경계는 BoardAccessService 로 옮겼다 — 게시판 서비스와 같은 목을 쓴다. */
+    private BoardAccessService boardAccess(CommunityBoardAccessPort port) {
+        return new BoardAccessService(boardRepository, boardMasterRepository,
+                new nuri.business.core.config.BoardIdProperties(), port);
+    }
+
     private BoardMasterService boardMasterService(CommunityBoardAccessPort port) {
         return new BoardMasterService(boardMasterRepository, boardRepository,
                 new BoardMasterMapperImpl(), port, org.mockito.Mockito.mock(BoardChangeRecorder.class),
@@ -266,9 +272,9 @@ class BoardCommunityAccessTest {
         @DisplayName("댓글 접근도 같은 경계다")
         void commentDenied() {
             given(communityBoardAccess.isApprovedMember(CMNTY_SN, VIEWER)).willReturn(false);
-            BoardService service = boardService(communityBoardAccess);
+            BoardAccessService access = boardAccess(communityBoardAccess);
 
-            assertThatThrownBy(() -> service.assertCommentAccess(COMMUNITY_BBS, 1L))
+            assertThatThrownBy(() -> access.assertCommentAccess(COMMUNITY_BBS, 1L))
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
         }
@@ -583,8 +589,8 @@ class BoardCommunityAccessTest {
                     null, PageRequest.of(0, 10), BoardPostListFilter.NONE));
             assertSameAsMissing(() -> service.getPostDetail(CLOSED_COMMUNITY, 1L, true),
                     () -> service.getPostDetail(MISSING, 1L, true));
-            assertSameAsMissing(() -> service.assertCommentReadAccess(CLOSED_COMMUNITY, 1L),
-                    () -> service.assertCommentReadAccess(MISSING, 1L));
+            assertSameAsMissing(() -> boardAccess(communityBoardAccess).assertCommentReadAccess(CLOSED_COMMUNITY, 1L),
+                    () -> boardAccess(communityBoardAccess).assertCommentReadAccess(MISSING, 1L));
             assertSameAsMissing(() -> service.createPost("writer", request(CLOSED_COMMUNITY)),
                     () -> service.createPost("writer", request(MISSING)));
             assertSameAsMissing(() -> service.createPostWithFiles("writer", request(CLOSED_COMMUNITY), oneFile()),
@@ -632,7 +638,7 @@ class BoardCommunityAccessTest {
 
             assertThat(service.getBoardMeta(CLOSED_PLAIN).inUse()).isFalse();
             assertThat(service.getPostDetail(CLOSED_PLAIN, 3L, false).pstSn()).isEqualTo(3L);
-            service.assertCommentReadAccess(CLOSED_PLAIN, 3L);
+            boardAccess(communityBoardAccess).assertCommentReadAccess(CLOSED_PLAIN, 3L);
             verify(boardRepository, never()).findActiveArticleDetail(anyString(), any());
         }
 
@@ -659,7 +665,7 @@ class BoardCommunityAccessTest {
             BoardService service = boardService(communityBoardAccess);
 
             for (org.assertj.core.api.ThrowableAssert.ThrowingCallable closed : List.<org.assertj.core.api.ThrowableAssert.ThrowingCallable>of(
-                    () -> service.assertCommentAccess(CLOSED_PLAIN, 3L),
+                    () -> boardAccess(communityBoardAccess).assertCommentAccess(CLOSED_PLAIN, 3L),
                     () -> service.incrementLike(CLOSED_PLAIN, 3L),
                     // [ADR-0040 결정 6] 추천 취소도 추천과 같은 엄격 경계다 — 사용 안 함 게시판은 운영자에게도 닫힌다.
                     () -> service.cancelLike(CLOSED_PLAIN, 3L),

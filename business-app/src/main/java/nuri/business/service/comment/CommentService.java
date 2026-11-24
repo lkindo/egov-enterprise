@@ -161,7 +161,7 @@ public class CommentService {
      * 다시 태우기 위해 쓴다(2026-09-25 DIP S8).
      *
      * <p>comment 는 board 를 모른다(GAP-ARCH-001 이 역전시킨 방향) — 그래서 가드는 컨트롤러가
-     * 이 위치로 {@code BoardService.assertCommentAccess} 를 부르는 형태로 둔다. 등록·조회가 이미 그렇게 한다.
+     * 이 위치로 {@code BoardAccessService.assertCommentAccess} 를 부르는 형태로 둔다. 등록·조회가 이미 그렇게 한다.
      */
     @Transactional(readOnly = true)
     public CommentLocation getCommentLocation(Long commentNo) {

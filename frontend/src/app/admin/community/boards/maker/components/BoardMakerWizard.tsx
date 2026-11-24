@@ -120,7 +120,7 @@ export const boardMakerFormSchema = BoardMasterDtoSchema.extend({
     [2026-09-08 PD-CMTY-001] 커뮤니티 귀속(선택).
 
     값이 있으면 그 게시판은 **회원 전용**이 된다 — 승인된 회원과 관리자만 목록·상세·댓글·
-    작성에 접근한다(BoardService.assertCommunityAccess). 빈 문자열은 '귀속 없음' 이며 서버에
+    작성에 접근한다(BoardAccessService.assertCommunityAccess). 빈 문자열은 '귀속 없음' 이며 서버에
     보내지 않는다.
 
     ⚠ 귀속은 **생성 시점에만** 정한다. 나중에 바꾸면 이미 쌓인 글의 열람 범위가 통째로

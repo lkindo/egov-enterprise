@@ -45,6 +45,8 @@ import java.io.IOException;
 class BoardServiceTest {
 
     private BoardService boardService;
+    /** [2026-11-25] 댓글·만족도·스크랩 경계는 BoardAccessService 로 옮겼다 — 같은 목·같은 시계로 만든다. */
+    private BoardAccessService boardAccess;
     @Mock
     private BoardRepository boardRepository;
     @Mock
@@ -108,6 +110,9 @@ class BoardServiceTest {
                 //   호출되지 않으며, 귀속 게시판 테스트만 이 목의 응답을 지정한다.
                 communityBoardAccess);
         boardService.useClock(FIXED_CLOCK);
+        boardAccess = new BoardAccessService(boardRepository, boardMasterRepository,
+                new nuri.business.core.config.BoardIdProperties(), communityBoardAccess);
+        boardAccess.useClock(FIXED_CLOCK);
         // [2026-10-23 ADR-0040 결정 1] 쓰기·상세·댓글 경로가 게시판 진입 판정(사용 여부 → 커뮤니티)을 먼저 지난다.
         //   시험이 마스터를 정하지 않으면 그 bbsId 의 사용 중인 일반 게시판으로 본다. 없는·사용 안 함·커뮤니티 게시판은
         //   시험이 직접 정한다(그 스텁이 이 기본값보다 앞선다).
@@ -266,7 +271,7 @@ class BoardServiceTest {
         assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", 5L, false))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
-        assertThatThrownBy(() -> boardService.assertCommentAccess("BBS_01", 5L))
+        assertThatThrownBy(() -> boardAccess.assertCommentAccess("BBS_01", 5L))
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
 
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("ESNTL_owner"));
@@ -609,7 +614,7 @@ class BoardServiceTest {
                 .bbsId("BBS_01").pstSn(21L).scrtYn("N").build();
         given(boardRepository.findActiveArticleDetail("BBS_01", 21L)).willReturn(Optional.of(detail));
 
-        boardService.assertCommentAccess("BBS_01", 21L);
+        boardAccess.assertCommentAccess("BBS_01", 21L);
 
         verify(boardRepository).findActiveArticleDetail("BBS_01", 21L);
         verify(viewCountService, never()).increaseViewCount(anyLong());
@@ -620,7 +625,7 @@ class BoardServiceTest {
     void assertCommentAccess_rejectsMismatchedBoardAndPost() {
         given(boardRepository.findActiveArticleDetail("WRONG_BBS", 22L)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> boardService.assertCommentAccess("WRONG_BBS", 22L))
+        assertThatThrownBy(() -> boardAccess.assertCommentAccess("WRONG_BBS", 22L))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
     }
@@ -634,7 +639,7 @@ class BoardServiceTest {
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("ESNTL_other"));
 
-        assertThatThrownBy(() -> boardService.assertCommentAccess("BBS_01", 23L))
+        assertThatThrownBy(() -> boardAccess.assertCommentAccess("BBS_01", 23L))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
     }
@@ -1205,16 +1210,16 @@ class BoardServiceTest {
         given(boardMasterRepository.findById("ON")).willReturn(Optional.of(
                 BoardMaster.builder().bbsId("ON").ansYn("Y").stsfdgYn("Y").build()));
 
-        assertThatThrownBy(() -> boardService.assertCommentsEnabled("OFF"))
+        assertThatThrownBy(() -> boardAccess.assertCommentsEnabled("OFF"))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
                 .hasMessageContaining("댓글");
-        assertThatThrownBy(() -> boardService.assertSatisfactionEnabled("OFF"))
+        assertThatThrownBy(() -> boardAccess.assertSatisfactionEnabled("OFF"))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
                 .hasMessageContaining("만족도");
-        boardService.assertCommentsEnabled("ON");
-        boardService.assertSatisfactionEnabled("ON");
+        boardAccess.assertCommentsEnabled("ON");
+        boardAccess.assertSatisfactionEnabled("ON");
         // 값을 보내지 않고 만든 게시판은 지금까지의 동작(받음)을 유지한다.
         BoardMaster unspecified = BoardMaster.builder().bbsId("DEFAULT").build();
         assertThat(unspecified.getAnsYn()).isEqualTo("Y");
@@ -1931,9 +1936,9 @@ class BoardServiceTest {
         actAs("ESNTL_other");
         assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", 8L, false))
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
-        assertThatThrownBy(() -> boardService.assertCommentAccess("BBS_01", 8L))
+        assertThatThrownBy(() -> boardAccess.assertCommentAccess("BBS_01", 8L))
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
-        assertThatThrownBy(() -> boardService.assertCommentReadAccess("BBS_01", 8L))
+        assertThatThrownBy(() -> boardAccess.assertCommentReadAccess("BBS_01", 8L))
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
         assertThatThrownBy(() -> boardService.incrementLike("BBS_01", 8L))
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
@@ -2997,7 +3002,7 @@ class BoardServiceTest {
         securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId("ESNTL_OWNER", "BOARD_READ_ALL"))
                 .thenThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED));
 
-        assertThatThrownBy(() -> boardService.assertScrapablePost("BBS_01", 77L))
+        assertThatThrownBy(() -> boardAccess.assertScrapablePost("BBS_01", 77L))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
 
@@ -3005,7 +3010,7 @@ class BoardServiceTest {
                 .pstSn(78L).bbsId("BBS_01").scrtYn("N").userId("ESNTL_OWNER").build();
         given(boardRepository.findActiveArticleDetail("BBS_01", 78L)).willReturn(Optional.of(visible));
 
-        boardService.assertScrapablePost("BBS_01", 78L);
+        boardAccess.assertScrapablePost("BBS_01", 78L);
         verifyNoInteractions(viewCountService);
     }
 
@@ -3034,7 +3039,7 @@ class BoardServiceTest {
                 new nuri.business.domain.board.BoardScrapCandidate("BBS_FOREIGN", 6L, 99L, "OTHER", "N", null, null)
         ));
 
-        java.util.Set<nuri.foundation.core.board.BoardPostAccessPort.PostRef> result = boardService.findScrapablePosts(
+        java.util.Set<nuri.foundation.core.board.BoardPostAccessPort.PostRef> result = boardAccess.findScrapablePosts(
                 List.of(openPost, secretOwn, secretOther, expiredPost, joinedCommunity, foreignCommunity));
 
         assertThat(result).containsExactlyInAnyOrder(openPost, secretOwn, joinedCommunity);

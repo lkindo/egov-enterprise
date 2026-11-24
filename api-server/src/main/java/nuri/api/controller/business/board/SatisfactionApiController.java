@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import nuri.api.controller.business.board.dto.SatisfactionAverageResponse;
-import nuri.business.service.board.BoardService;
+import nuri.business.service.board.BoardAccessService;
 import nuri.business.service.board.SatisfactionService;
 import nuri.business.service.board.dto.SatisfactionDto;
 import nuri.foundation.core.response.ApiResponse;
@@ -43,7 +43,7 @@ import java.util.List;
 public class SatisfactionApiController {
 
     private final SatisfactionService satisfactionService;
-    private final BoardService boardService;
+    private final BoardAccessService boardAccess;
 
     /*
       [2026-09-05] 게시글 가시성 가드를 조회·등록 경로에 추가했다.
@@ -55,7 +55,7 @@ public class SatisfactionApiController {
         기본 용량이 IP·분당 10,000 이라 열거는 레이트로도 억제되지 않는다.
 
         형제 자원인 댓글(`/api/v1/comments`, 같은 비-admin 경로)은 같은 (bbsId, pstSn) 으로
-        `boardService.assertCommentAccess` 를 불러 활성 글 + 비밀글이면 owner-or-admin 을
+        `boardAccess.assertCommentAccess` 를 불러 활성 글 + 비밀글이면 owner-or-admin 을
         요구한다. 만족도만 그 검사를 빠뜨린 비대칭이었고, 의도라는 근거(DEC·주석·테스트)를
         찾지 못했다. 같은 헬퍼를 재사용해 두 자원의 인가 의미를 맞춘다.
 
@@ -68,7 +68,7 @@ public class SatisfactionApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.SatisfactionApiController#getList')")
     public ResponseEntity<ApiResponse<List<SatisfactionDto>>> getList(
             @PathVariable String bbsId, @PathVariable Long pstSn) {
-        boardService.assertCommentReadAccess(bbsId, pstSn);
+        boardAccess.assertCommentReadAccess(bbsId, pstSn);
         return ResponseEntity.ok(ApiResponse.success(satisfactionService.getSatisfactionList(bbsId, pstSn)));
     }
 
@@ -80,7 +80,7 @@ public class SatisfactionApiController {
             @PathVariable String bbsId, @PathVariable Long pstSn) {
         // ⚠ null 을 0.0 으로 바꾸지 않는다. 종전에는 Map.of 가 null 값을 담지 못해 그럴 수밖에
         //   없었고, 그 결과 "아무도 평가하지 않음" 과 "모두 최하점" 이 화면에서 같아졌다.
-        boardService.assertCommentReadAccess(bbsId, pstSn);
+        boardAccess.assertCommentReadAccess(bbsId, pstSn);
         Double average = satisfactionService.getAverageSatisfaction(bbsId, pstSn);
         return ResponseEntity.ok(ApiResponse.success(SatisfactionAverageResponse.of(average)));
     }
@@ -96,9 +96,9 @@ public class SatisfactionApiController {
         dto.setBbsId(bbsId);
         dto.setPstSn(pstSn);
         // 댓글 등록(CommentApiController:47)과 같은 자리에서 같은 검사를 한다 — 볼 수 없는 글에 평가를 남길 수 없다.
-        boardService.assertCommentAccess(bbsId, pstSn);
+        boardAccess.assertCommentAccess(bbsId, pstSn);
         // [2026-09-27 DIP B5 F9] 만족도 조사를 쓰지 않는 게시판에는 새 평가를 받지 않는다.
-        boardService.assertSatisfactionEnabled(bbsId);
+        boardAccess.assertSatisfactionEnabled(bbsId);
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(satisfactionService.createSatisfaction(dto)));
     }
 
@@ -134,7 +134,7 @@ public class SatisfactionApiController {
     private void assertSatisfactionAccess(String bbsId, Long pstSn, Long dgstfnSn) {
         // [2026-10-23 ADR-0040 결정 1] 열람 경계 — 사용 안 함 게시판은 조회 대행 권한자만 정리한다. 지정 게시판 편집 가드는
         //   두지 않는다(일반 사용자의 '내 평가 수정' 을 새로 막지 않는다, H3).
-        boardService.assertCommentReadAccess(bbsId, pstSn);
+        boardAccess.assertCommentReadAccess(bbsId, pstSn);
         satisfactionService.assertLocatedAt(dgstfnSn, bbsId, pstSn);
     }
 

@@ -6,7 +6,6 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.business.core.config.BoardIdProperties;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.board.Board;
-import nuri.business.domain.board.BoardScrapCandidate;
 import nuri.business.domain.board.BoardDetailResult;
 import nuri.business.domain.board.BoardMaster;
 import nuri.business.domain.board.BoardMasterRepository;
@@ -25,7 +24,6 @@ import nuri.business.service.board.dto.BoardPostPinBatchRequest;
 import nuri.business.service.board.dto.BoardPostPinRequest;
 import nuri.business.service.board.dto.BoardSaveRequest;
 import nuri.business.service.board.dto.BoardStatsResponse;
-import nuri.business.service.board.dto.PostingStatus;
 import nuri.foundation.core.event.PostCreatedEvent;
 import nuri.foundation.core.util.EntityVersions;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
@@ -38,7 +36,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import nuri.foundation.core.board.BoardPostAccessPort;
 import nuri.foundation.core.community.CommunityBoardAccessPort;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -59,7 +56,7 @@ import static nuri.business.service.board.BoardPolicySupport.*;
  */
 @Slf4j
 @Service
-public class BoardService extends BaseAbstractService implements BoardPostAccessPort {
+public class BoardService extends BaseAbstractService {
 
         private final BoardRepository boardRepository;
         private final BoardMasterRepository boardMasterRepository;
@@ -92,6 +89,12 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
 
         /** 운영 처리 이력 — 운영 화면의 게시 기간 변경(B1)과 고정(B2)을 남긴다(ADR-0040 결정 9). */
         private final BoardChangeRecorder changeRecorder;
+
+        /**
+         * 게시판 진입·글 소속·열람 경계 판정. 같은 의존성으로 직접 만든다 — 패키지 범위 헬퍼를 프록시 없이 이 서비스의 트랜잭션
+         * 안에서 부른다(잠금 조회가 등록 트랜잭션에 그대로 참여한다). 댓글·만족도·스크랩은 같은 클래스의 빈을 쓴다.
+         */
+        private final BoardAccessService accessGate;
 
         /**
          * 게시 기간 판정의 시계(ADR-0040 결정 3). 공개 메서드가 요청마다 한 번 {@link #today()} 로 기준일을 계산해 넘긴다.
@@ -127,13 +130,16 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
                                 "recommendationRepository 는 null 일 수 없습니다");
                 this.changeRecorder = required(changeRecorder, "changeRecorder 는 null 일 수 없습니다");
                 // 포트는 선택 주입이다 — 커뮤니티 도메인이 없는 프로필에서는 null 이고, 그때 커뮤니티
-                // 귀속 게시판은 관리자 외에게 닫힌다(아래 assertCommunityAccess).
+                // 귀속 게시판은 관리자 외에게 닫힌다(BoardAccessService#assertCommunityAccess).
                 this.communityBoardAccess = communityBoardAccess;
+                this.accessGate = new BoardAccessService(this.boardRepository, this.boardMasterRepository,
+                                this.boardIdProperties, communityBoardAccess);
         }
 
-        /** 날짜 경계 회귀 시험에서 운영과 같은 시간대의 시계를 고정한다(ADR-0040 결정 3). */
+        /** 날짜 경계 회귀 시험에서 운영과 같은 시간대의 시계를 고정한다(ADR-0040 결정 3). 접근 판정도 같은 시계를 쓴다. */
         void useClock(Clock clock) {
                 this.clock = java.util.Objects.requireNonNull(clock, "clock");
+                accessGate.useClock(clock);
         }
 
         /** 게시 기간 판정의 기준일(yyyyMMdd, Asia/Seoul). 공개 메서드가 요청마다 한 번 부른다. */
@@ -178,8 +184,8 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
                 log.info("Fetching board posts - bbsId: {}, searchApplied: {}, orderBy: {}",
                                 nuri.foundation.security.util.SafeLog.text(bbsId), StringUtils.hasText(searchWrd), nuri.foundation.security.util.SafeLog.text(orderBy));
                 BoardMaster master = operatorMayReadInactive
-                                ? loadReadableMaster(bbsId, false)
-                                : assertActiveBoardMaster(bbsId);
+                                ? accessGate.loadReadableMaster(bbsId, false)
+                                : accessGate.assertActiveBoardMaster(bbsId);
                 BoardSearchCondition condition = buildArticleSearchCondition(
                                 bbsId, searchCnd, searchWrd, orderBy, startDate, endDate, qnaStatus, qnaCategory, dateBasis, today);
                 // 사용 안 함 게시판이 여기까지 왔다면 조회 대행 권한자다(loadReadableMaster). 그때만 마스터 조건을 푼다.
@@ -295,27 +301,15 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
          */
         @Transactional(readOnly = true)
         public nuri.business.service.board.dto.BoardMetaDto getBoardMeta(@NonNull String bbsId) {
-                BoardMaster master = loadReadableMaster(bbsId, false);
-                return nuri.business.service.board.dto.BoardMetaDto.from(master, requiredEditPermissions(bbsId),
+                BoardMaster master = accessGate.loadReadableMaster(bbsId, false);
+                return nuri.business.service.board.dto.BoardMetaDto.from(master, accessGate.requiredEditPermissions(bbsId),
                                 nuri.business.service.board.dto.BoardMasterCommunity.of(master.getCmntySn(), communityBoardAccess));
-        }
-
-        /** 두 설정이 같은 게시판을 가리키면 두 편집 권한이 모두 필요하다. */
-        private List<String> requiredEditPermissions(String bbsId) {
-                var permissions = new java.util.ArrayList<String>();
-                if (bbsId.equals(boardIdProperties.getNoticeId())) permissions.add("NOTICE_EDIT");
-                if (bbsId.equals(boardIdProperties.getFaqId())) permissions.add("FAQ_EDIT");
-                return List.copyOf(permissions);
-        }
-
-        private void assertSpecialBoardEdit(String bbsId) {
-                requiredEditPermissions(bbsId).forEach(SecurityUtil::assertPermission);
         }
 
         @Transactional(readOnly = true)
         public BoardStatsResponse getBoardStats(@NonNull String bbsId) {
                 String today = today();
-                assertActiveBoardMaster(bbsId);
+                accessGate.assertActiveBoardMaster(bbsId);
                 BoardSearchCondition condition = new BoardSearchCondition(bbsId);
                 condition.setUseYn("Y");
                 bindCurrentViewerVisibility(condition, today);
@@ -323,53 +317,12 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
                 return toStatsResponse(stats);
         }
 
-        /**
-         * 엄격한 게시판 진입 판정 — 사용 중인 게시판만 통과한다(운영자 예외 없음). 없는 게시판과 사용 안 함 게시판은 같은
-         * 404 다. 사용 여부를 커뮤니티 가드보다 먼저 본다.
-         */
-        private BoardMaster assertActiveBoardMaster(String bbsId) {
-                BoardMaster master = boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
-                                .filter(candidate -> "Y".equals(candidate.getUseYn()))
-                                .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
-                assertCommunityAccess(master);
-                return master;
-        }
-
-        /**
-         * 열람 판정 — 사용 중인 게시판, 또는 조회 대행 권한(BOARD_READ_ALL) 보유자에게 사용 안 함 게시판이 통과한다
-         * (ADR-0040 결정 1의 운영자 예외). 없는 게시판과 이용자에게 닫힌 사용 안 함 게시판은 같은 404 다 — 목록과 같은 응답이라
-         * 존재를 드러내지 않는다. 사용 여부를 커뮤니티 가드보다 먼저 본다(사용 안 함 커뮤니티 게시판의 비회원도 404).
-         *
-         * @param pessimisticLock 등록처럼 채번을 직렬화하는 경로는 마스터 행을 잠가 읽는다. 같은 트랜잭션이 잠근 행을 읽으므로
-         *                        동시에 사용 안 함으로 바뀌어도 커밋된 값을 본다.
-         */
-        private BoardMaster loadReadableMaster(String bbsId, boolean pessimisticLock) {
-                String id = required(bbsId, "bbsId 는 null 일 수 없습니다");
-                BoardMaster master = (pessimisticLock
-                                ? boardMasterRepository.findByIdWithPessimisticLock(id)
-                                : boardMasterRepository.findById(id))
-                                .filter(candidate -> "Y".equals(candidate.getUseYn())
-                                                || SecurityUtil.hasPermission("BOARD_READ_ALL"))
-                                .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
-                assertCommunityAccess(master);
-                return master;
-        }
-
-        /**
-         * 쓰기 진입 판정 — 지정 게시판 편집 가드, 사용 여부(조회 대행 권한 예외, 404), 커뮤니티 가드를 이 순서로 본다. 글 소속·
-         * 논리 삭제 판정은 호출부가 뒤이어 한다(findPostInBoard). 파일 저장보다 먼저 부른다(ADR-0040 결정 1).
-         *
-         * <p>지정 게시판 가드를 맨 앞에 두어도 존재가 드러나지 않는다 — 설정으로 알려진 ID 만 보기 때문이다. 사용 안 함 게시판에
-         * 글을 준비·정리하는 운영자도 그 동작의 권한(BOARD_CREATE·BOARD_UPDATE_ALL·BOARD_DELETE_ALL)은 따로 지난다.
-         */
-        private BoardMaster loadWritableMaster(String bbsId, boolean pessimisticLock) {
-                assertSpecialBoardEdit(bbsId);
-                return loadReadableMaster(bbsId, pessimisticLock);
-        }
+        // 게시판 진입 판정(엄격 assertActiveBoardMaster·열람 loadReadableMaster·쓰기 loadWritableMaster)과 글 소속(findPostInBoard)은
+        //   [2026-11-25] BoardAccessService 로 옮겼다 — 댓글·만족도·스크랩이 같은 판정을 이 서비스 없이 쓴다. 본문·순서는 같다.
 
         /**
          * 호출자가 이용할 수 있는 게시판 선택지(ADR-0040 결정 11). 사용 중인 게시판만 싣는다 — 조회 대행 권한자에게도 사용 안 함
-         * 게시판은 이용 선택지가 아니다(운영 화면이 따로 연다). 커뮤니티 귀속 게시판은 {@link #assertCommunityAccess} 와 같은 규칙을
+         * 게시판은 이용 선택지가 아니다(운영 화면이 따로 연다). 커뮤니티 귀속 게시판은 {@code BoardAccessService#assertCommunityAccess} 와 같은 규칙을
          * 거부 대신 거르기로 적용한다: 조회 대행 권한(BOARD_READ_ALL) 보유자이거나 승인 회원이어야 하고, 판정 포트가 없으면
          * 뺀다(fail-closed). 커뮤니티마다 한 번만 판정한다. 응답에는 ID·이름만 싣는다.
          */
@@ -387,58 +340,11 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
                                 .toList();
         }
 
-        /**
-         * 커뮤니티 귀속 게시판이면 <b>승인된 회원</b>만 통과시킨다(관리자는 예외).
-         *
-         * <p>[2026-09-08 PD-CMTY-001] {@code cmnty_sn} 은 V2_0 부터 있었지만 읽는 코드가 없어
-         * 귀속이 아무것도 뜻하지 않았다(GAP-CMTY-001 — 회원이 되어도 열리는 기능이 없었다).
-         * 이제 이 값이 있는 게시판은 회원 전용이다.
-         *
-         * <p>귀속이 없는 게시판({@code cmntySn == null})의 거동은 <b>전혀 바뀌지 않는다</b> —
-         * 현재 저장소의 모든 게시판이 여기 해당한다.
-         */
-        private void assertCommunityAccess(BoardMaster master) {
-                Long cmntySn = master == null ? null : master.getCmntySn();
-                if (cmntySn == null) {
-                        return;
-                }
-                // 조회 대행 권한(BOARD_READ_ALL) 보유자는 다른 열람 경로와 같은 이유로 통과한다(운영·감사).
-                if (SecurityUtil.hasPermission("BOARD_READ_ALL")) {
-                        return;
-                }
-                String esntlId = SecurityUtil.getCurrentEsntlId().orElse(null);
-                if (esntlId == null || communityBoardAccess == null
-                                || !communityBoardAccess.isApprovedMember(cmntySn, esntlId)) {
-                        throw new BusinessException(CommonErrorCode.ACCESS_DENIED,
-                                        "커뮤니티 회원만 이용할 수 있는 게시판입니다.");
-                }
-        }
-
-        /**
-         * URL 의 게시판에 실제로 속한 글만 돌려준다 — 다르면 없는 글로 본다. 논리 삭제된 글도 없는 글이다
-         * ([2026-10-23 ADR-0040 결정 1] findById 는 soft-delete 필터를 받지 않아 종전에는 지운 글도 고치고 다시 지웠다).
-         *
-         * <p>[2026-09-14 DEC-OPS-092] 수정·삭제는 커뮤니티 가드를 URL 의 {@code bbsId} 로 판정하는데,
-         * 종전에는 글을 번호로만 읽어 그 글의 실제 게시판과 대조하지 않았다. 그래서 커뮤니티 게시판의 글을
-         * 커뮤니티가 아닌 게시판 ID 로 요청하면 가드를 건너뛸 수 있었다. 상세 조회는 이미 (게시판, 글번호)
-         * 쌍으로 읽어 불일치를 404 로 처리하므로 같은 의미로 맞춘다. 가드를 먼저 두는 순서는 유지한다 —
-         * 뒤로 옮기면 비회원이 404/403 차이로 글의 존재를 알아낼 수 있다.
-         */
-        private Board findPostInBoard(String bbsId, Long pstSn) {
-                Board board = boardRepository
-                                .findById(required(pstSn, "pstSn 는 null 일 수 없습니다"))
-                                .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
-                if (!java.util.Objects.equals(bbsId, board.getBbsId()) || "N".equals(board.getUseYn())) {
-                        throw new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND);
-                }
-                return board;
-        }
-
         @Transactional
         public Long createPost(@NonNull String userId, @NonNull BoardSaveRequest request) {
                 // [2026-10-23 ADR-0040 결정 1] 지정 게시판 가드 → 사용 여부(운영자 예외) → 커뮤니티 가드. 채번 직렬화를 위해
                 //   마스터 행을 잠가 읽는다. [2026-09-08 PD-CMTY-001] 읽을 수 없는 게시판에는 쓸 수도 없다.
-                BoardMaster master = loadWritableMaster(request.bbsId(), true);
+                BoardMaster master = accessGate.loadWritableMaster(request.bbsId(), true);
                 // [2026-10-26 ADR-0043] Q&A 상태는 Q&A 게시판의 글에만 둔다.
                 assertQnaStatusAllowed(master, request.qnaSttsCd());
                 // [2026-10-23 ADR-0040 결정 3·6] 예약 게시를 받지 않는 게시판은 오늘보다 뒤의 새 시작일을 채번 전에 거부한다.
@@ -511,7 +417,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
                 //   createPost 가 없는 게시판·비회원을 거부해, 거부된 요청마다 접근할 수 없는 파일이 디스크에 남았다.
                 //   (그 뒤 단계의 실패는 FileService 가 트랜잭션 롤백 때 이번 호출로 저장한 파일을 지운다.)
                 //   [2026-10-23 ADR-0040 결정 1] 사용 안 함 게시판도 업로드 전에 거부한다.
-                BoardMaster master = loadWritableMaster(request.bbsId(), false);
+                BoardMaster master = accessGate.loadWritableMaster(request.bbsId(), false);
                 // [2026-10-26 ADR-0043] Q&A 상태도 업로드 전에 거부한다(createPost 가 다시 본다).
                 assertQnaStatusAllowed(master, request.qnaSttsCd());
                 // [2026-10-23 ADR-0040 결정 3·6] 받지 않는 미래 시작일도 업로드 전에 거부한다(createPost 가 다시 본다).
@@ -546,7 +452,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
                 // **관리자에게는 열람을 허용**한다. 복구·감사 경로가 404 로 막히면 관리자가 삭제된 글의
                 // 내용을 확인할 방법이 사라진다. 아래 비밀글 소유권 가드는 삭제 여부와 무관하게 계속 적용된다.
                 // '관리자' 판정은 조회 대행 권한 BOARD_READ_ALL 보유 여부다(기본 그룹 ROLE_ADMIN·ROLE_SYSTEM).
-                BoardDetailResult detail = readableDetail(loadReadableMaster(bbsId, false), bbsId, pstSn,
+                BoardDetailResult detail = accessGate.readableDetail(accessGate.loadReadableMaster(bbsId, false), bbsId, pstSn,
                                 SecurityUtil.hasPermission("BOARD_READ_ALL"));
 
                 // 비밀글은 인증됐다는 사실만으로 본문을 공개하지 않는다. Board.userId 는 생성 시
@@ -588,7 +494,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
          */
         @Transactional
         public void markQuestionSolved(@NonNull String bbsId, @NonNull Long pstSn) {
-                BoardMaster master = loadWritableMaster(bbsId, false);
+                BoardMaster master = accessGate.loadWritableMaster(bbsId, false);
                 if (!QNA_TEMPLATE_ID.equals(master.getTmpltId())) {
                         throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                                         "Q&A 게시판의 질문만 해결됨으로 표시할 수 있습니다.");
@@ -597,157 +503,18 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
                 board.markQnaStatus(QNA_SOLVED);
         }
 
-        /**
-         * 댓글·만족도 등록과 추천, 댓글 수정·삭제 전에 게시글의 실제 소속과 현재 사용자의 열람 권한을 확인한다 — <b>엄격</b>
-         * 경계다. 상세 조회와 같은 repository/비밀글 정책을 쓰되 조회수는 올리지 않는다.
-         *
-         * <p>[2026-10-23 ADR-0040 결정 1] 사용 안 함 게시판은 운영자에게도 닫는다(새 참여를 받지 않는다). 열람만 하는
-         * 경로는 {@link #assertCommentReadAccess} 를 쓴다. 이 이름이 엄격 경계로 남아 있어, 옮기지 않은 호출부는 계속 닫힌다.
-         */
-        @Transactional(readOnly = true)
-        public void assertCommentAccess(String bbsId, Long pstSn) {
-                if (!StringUtils.hasText(bbsId) || pstSn == null) {
-                        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                                        "댓글의 bbsId와 pstSn은 필수입니다.");
-                }
-                String today = today();
-                // [2026-09-08 PD-CMTY-001] 상세와 같은 경계 — 회원 전용 게시판의 댓글도 회원만 읽고 쓴다. 사용 여부를 먼저 본다.
-                assertActiveBoardMaster(bbsId);
-                BoardDetailResult detail = boardRepository.findActiveArticleDetail(bbsId, pstSn)
-                                .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
-                if ("Y".equalsIgnoreCase(detail.getScrtYn())) {
-                        SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL");
-                }
-                // [2026-10-01 결정 23·2026-10-23 ADR-0040 결정 3] 게시 기간 밖의 글의 댓글·추천·만족도도 상세와 같은 사람만 닿는다.
-                assertPostingVisible(detail, today);
-        }
-
-        @Override
-        @Transactional(readOnly = true)
-        public void assertScrapablePost(String bbsId, Long pstSn) {
-                assertCommentAccess(bbsId, pstSn);
-        }
-
-        @Override
-        @Transactional(readOnly = true)
-        public java.util.Set<PostRef> findScrapablePosts(java.util.Collection<PostRef> targets) {
-                if (targets == null || targets.isEmpty() || !SecurityUtil.hasPermission("BOARD_READ")) {
-                        return java.util.Set.of();
-                }
-                java.util.List<PostRef> distinct = targets.stream()
-                                .filter(ref -> ref != null && StringUtils.hasText(ref.bbsId()) && ref.pstSn() > 0)
-                                .distinct()
-                                .toList();
-                if (distinct.isEmpty()) {
-                        return java.util.Set.of();
-                }
-                java.util.List<BoardScrapCandidate> candidates = boardRepository.findScrapCandidates(distinct);
-                if (candidates.isEmpty()) {
-                        return java.util.Set.of();
-                }
-                boolean readAll = SecurityUtil.hasPermission("BOARD_READ_ALL");
-                String viewerEsntlId = SecurityUtil.getCurrentEsntlId()
-                                .filter(StringUtils::hasText)
-                                .orElse(null);
-                boolean needsCommunityLookup = !readAll && candidates.stream().anyMatch(c -> c.cmntySn() != null);
-                java.util.Set<Long> accessibleCommunities = java.util.Set.of();
-                if (needsCommunityLookup && viewerEsntlId != null && communityBoardAccess != null) {
-                        java.util.Set<Long> resolved = communityBoardAccess.accessibleCommunityIds(viewerEsntlId);
-                        if (resolved != null) {
-                                accessibleCommunities = resolved;
-                        }
-                }
-                String today = today();
-                java.util.Set<PostRef> accessible = new java.util.LinkedHashSet<>();
-                for (BoardScrapCandidate candidate : candidates) {
-                        if (candidate.cmntySn() != null && !readAll
-                                        && !accessibleCommunities.contains(candidate.cmntySn())) {
-                                continue;
-                        }
-                        boolean isOwner = viewerEsntlId != null && viewerEsntlId.equals(candidate.userId());
-                        if ("Y".equalsIgnoreCase(candidate.scrtYn()) && !readAll && !isOwner) {
-                                continue;
-                        }
-                        if (postingStatusOf(candidate.pstBgngYmd(), candidate.pstEndYmd(), today) != PostingStatus.POSTING
-                                        && !readAll && !isOwner) {
-                                continue;
-                        }
-                        accessible.add(new PostRef(candidate.bbsId(), candidate.pstSn()));
-                }
-                return java.util.Collections.unmodifiableSet(accessible);
-        }
+        // 댓글·만족도·추천·스크랩의 열람 경계(assertCommentAccess·assertCommentReadAccess)와 댓글·만족도 설정 판정, 스크랩 포트
+        //   (BoardPostAccessPort)는 [2026-11-25] BoardAccessService 로 옮겼다.
 
         /**
-         * 댓글 목록, 만족도 목록·평균, 만족도 수정·삭제 전의 <b>열람</b> 경계. 엄격 경계({@link #assertCommentAccess})와 같되
-         * 조회 대행 권한(BOARD_READ_ALL) 보유자는 사용 안 함 게시판의 글에도 닿는다(ADR-0040 결정 1의 운영자 열람 예외 —
-         * 상세 화면의 댓글·만족도 조회). 지정 게시판 편집 가드는 두지 않는다 — 일반 사용자의 '내 평가 수정' 을 새로 막는다(H3).
-         */
-        @Transactional(readOnly = true)
-        public void assertCommentReadAccess(String bbsId, Long pstSn) {
-                if (!StringUtils.hasText(bbsId) || pstSn == null) {
-                        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                                        "댓글의 bbsId와 pstSn은 필수입니다.");
-                }
-                String today = today();
-                BoardDetailResult detail = readableDetail(loadReadableMaster(bbsId, false), bbsId, pstSn, false);
-                if ("Y".equalsIgnoreCase(detail.getScrtYn())) {
-                        SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL");
-                }
-                assertPostingVisible(detail, today);
-        }
-
-        /**
-         * 열람 판정을 지난 게시판에서 글 상세를 읽는다. 사용 중인 게시판이면 활성 경로를, 사용 안 함 게시판(이미 조회 대행 권한으로
-         * 통과했다)이면 운영자 전용 경로를 쓴다.
-         *
-         * @param includeDeleted 논리 삭제 글까지 볼지 — 호출부가 조회 대행 권한을 이미 판정한 경우에만 true 다
-         */
-        private BoardDetailResult readableDetail(BoardMaster master, String bbsId, Long pstSn, boolean includeDeleted) {
-                boolean boardInUse = "Y".equals(master.getUseYn());
-                java.util.Optional<BoardDetailResult> active = boardInUse
-                                ? boardRepository.findActiveArticleDetail(bbsId, pstSn)
-                                : boardRepository.findArticleDetailOnInactiveBoard(bbsId, pstSn, false);
-                return active
-                                .or(() -> !includeDeleted ? java.util.Optional.empty()
-                                                : boardInUse ? boardRepository.findArticleDetailIncludingDeleted(bbsId, pstSn)
-                                                : boardRepository.findArticleDetailOnInactiveBoard(bbsId, pstSn, true))
-                                .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
-        }
-
-        /**
-         * 댓글 등록 전 게시판 설정(댓글 사용 여부 {@code ansYn})을 본다(2026-09-27 DIP B5 F9). 회원·비밀글 가드
-         * ({@link #assertCommentAccess}) 뒤에 부른다. 이미 달린 댓글의 수정·삭제는 막지 않는다 — 설정을 끈 뒤에도
-         * 작성자가 자기 댓글을 정리할 수 있어야 한다.
-         */
-        @Transactional(readOnly = true)
-        public void assertCommentsEnabled(String bbsId) {
-                if (!"Y".equals(findBoardMaster(bbsId).getAnsYn())) {
-                        throw new BusinessException(CommonErrorCode.INVALID_STATE, "이 게시판은 댓글을 받지 않습니다.");
-                }
-        }
-
-        /** 만족도 등록 전 게시판 설정(만족도 조사 사용 여부 {@code stsfdgYn})을 본다(2026-09-27 DIP B5 F9). */
-        @Transactional(readOnly = true)
-        public void assertSatisfactionEnabled(String bbsId) {
-                if (!"Y".equals(findBoardMaster(bbsId).getStsfdgYn())) {
-                        throw new BusinessException(CommonErrorCode.INVALID_STATE, "이 게시판은 만족도 조사를 받지 않습니다.");
-                }
-        }
-
-        /**
-         * 새 추천 전 게시판 설정(추천 받기 {@code rcmdtnUseYn})을 본다(ADR-0040 결정 6). 열람 판정({@link #assertCommentAccess}) 뒤에
-         * 부른다 — 읽을 수 없는 글에는 설정을 드러내지 않는다. 추천 취소({@link #cancelLike})는 부르지 않는다 — 추천을 꺼도 각자
+         * 새 추천 전 게시판 설정(추천 받기 {@code rcmdtnUseYn})을 본다(ADR-0040 결정 6). 열람 판정({@code BoardAccessService#assertCommentAccess})
+         * 뒤에 부른다 — 읽을 수 없는 글에는 설정을 드러내지 않는다. 추천 취소({@link #cancelLike})는 부르지 않는다 — 추천을 꺼도 각자
          * 자기 추천은 거둘 수 있어야 한다. 이미 받은 추천 수는 그대로다.
          */
         private void assertRecommendationEnabled(String bbsId) {
-                if (!findBoardMaster(bbsId).acceptsRecommendations()) {
+                if (!accessGate.findBoardMaster(bbsId).acceptsRecommendations()) {
                         throw new BusinessException(CommonErrorCode.INVALID_STATE, "이 게시판은 추천을 받지 않습니다.");
                 }
-        }
-
-        private BoardMaster findBoardMaster(String bbsId) {
-                return boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
-                                .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
         }
 
         /**
@@ -807,7 +574,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
         @Transactional
         public void updatePost(@NonNull String bbsId, @NonNull Long pstSn, @NonNull BoardSaveRequest request) {
                 // [2026-09-08 PD-CMTY-001·2026-10-23 ADR-0040 결정 1]
-                BoardMaster master = loadWritableMaster(bbsId, false);
+                BoardMaster master = accessGate.loadWritableMaster(bbsId, false);
                 Board board = findOwnedPost(bbsId, pstSn);
                 // [2026-10-26 ADR-0043] Q&A 상태는 Q&A 게시판의 글에만 둔다(소유·존재 판정 뒤).
                 assertQnaStatusAllowed(master, request.qnaSttsCd());
@@ -845,7 +612,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
 
         /** 게시글 변경 및 파일 I/O보다 먼저 현재 주체의 게시글 소유권을 확정한다. */
         private Board findOwnedPost(String bbsId, Long pstSn) {
-                Board board = findPostInBoard(bbsId, pstSn);
+                Board board = accessGate.findPostInBoard(bbsId, pstSn);
 
                 // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrPermissionByEsntlId 기준 비교)
                 SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_UPDATE_ALL");
@@ -914,7 +681,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
                         throws IOException {
                 // [2026-09-14 DEC-OPS-092] JSON 수정(updatePost)과 같은 커뮤니티 가드. 이 경로에만 빠져 있었다.
                 //   [2026-10-23 ADR-0040 결정 1] 사용 여부도 같은 판정에서 본다.
-                BoardMaster master = loadWritableMaster(bbsId, false);
+                BoardMaster master = accessGate.loadWritableMaster(bbsId, false);
                 Board board = findOwnedPost(bbsId, pstSn);
                 // [2026-10-26 ADR-0043] JSON 수정과 같은 Q&A 상태 규칙 — 파일 저장보다 먼저 본다.
                 assertQnaStatusAllowed(master, request.qnaSttsCd());
@@ -964,8 +731,8 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
         @Transactional
         public void updatePostPeriod(@NonNull String bbsId, @NonNull Long pstSn, @NonNull BoardPostPeriodRequest request) {
                 SecurityUtil.assertPermission("BOARD_UPDATE_ALL");
-                BoardMaster master = loadWritableMaster(bbsId, false);
-                Board board = findPostInBoard(bbsId, pstSn);
+                BoardMaster master = accessGate.loadWritableMaster(bbsId, false);
+                Board board = accessGate.findPostInBoard(bbsId, pstSn);
                 assertVersioned(board);
                 EntityVersions.assertCurrent(request.version(), board.getVersion());
 
@@ -1004,7 +771,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
         @Transactional
         public void updatePostPeriodsInBatch(@NonNull String bbsId, @NonNull BoardPostPeriodBatchRequest request) {
                 SecurityUtil.assertPermission("BOARD_UPDATE_ALL");
-                loadWritableMaster(bbsId, false);
+                accessGate.loadWritableMaster(bbsId, false);
 
                 String today = today();
                 String end = requestedYmd(request.pstEndYmd());
@@ -1028,7 +795,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
                 // 1단계: 모든 대상을 읽고 판정한다 — 하나라도 어긋나면 아무것도 바꾸지 않는다.
                 List<Board> targets = new java.util.ArrayList<>();
                 for (Long id : required(request.pstSns(), "pstSns 는 null 일 수 없습니다").stream().distinct().toList()) {
-                        targets.add(findPostInBoard(bbsId, id));
+                        targets.add(accessGate.findPostInBoard(bbsId, id));
                 }
                 // 버전이 비어 있는 옛 글은 고치지 않는다 — 이 경로는 요청 버전을 받지 않지만 저장할 때 버전을 올리므로,
                 //   NULL 이면 Hibernate 가 버전을 늘리다 실패해 500 이 된다. 판정 단계에서 전체를 거절한다.
@@ -1109,11 +876,11 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
         private void applyPins(String bbsId, List<Long> pstSns, String upendFixYn, String requestedEnd) {
                 SecurityUtil.assertPermission("BOARD_PIN");
                 boolean pin = parsePinRequest(upendFixYn);
-                BoardMaster master = loadWritableMaster(bbsId, true);
+                BoardMaster master = accessGate.loadWritableMaster(bbsId, true);
 
                 List<Board> targets = new java.util.ArrayList<>();
                 for (Long id : pstSns.stream().distinct().toList()) {
-                        Board target = findPostInBoard(bbsId, id);
+                        Board target = accessGate.findPostInBoard(bbsId, id);
                         // 고정한 답글이 원글과 떨어져 맨 위로 가지 않게 원글만 다룬다.
                         if (target.getUpPstSn() != null) {
                                 throw new BusinessException(CommonErrorCode.INVALID_STATE,
@@ -1163,8 +930,8 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
 
         @Transactional
         public void deletePost(@NonNull String bbsId, @NonNull Long pstSn, String authorId) {
-                loadWritableMaster(bbsId, false); // [2026-09-08 PD-CMTY-001·2026-10-23 ADR-0040 결정 1]
-                Board board = findPostInBoard(bbsId, pstSn);
+                accessGate.loadWritableMaster(bbsId, false); // [2026-09-08 PD-CMTY-001·2026-10-23 ADR-0040 결정 1]
+                Board board = accessGate.findPostInBoard(bbsId, pstSn);
 
                 // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrPermissionByEsntlId 기준 비교)
                 SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_DELETE_ALL");
@@ -1195,7 +962,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
                 // [2026-09-26 DIP I6 ④] 추천은 글을 읽을 수 있는 사람만, 한 번만 한다.
                 //   종전에는 게시판 일치·커뮤니티 회원·비밀글 판정 없이 카운터만 올려, 읽을 수 없는 글도
                 //   번호만 알면 추천할 수 있었고 같은 사람이 몇 번이고 누를 수 있었다.
-                assertCommentAccess(bbsId, id);
+                accessGate.assertCommentAccess(bbsId, id);
                 String esntlId = SecurityUtil.getCurrentEsntlId()
                                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
                 // [2026-10-23 ADR-0040 결정 6] 추천을 받지 않는 게시판은 새 추천을 400 으로 거부한다. 열람 판정 뒤라 읽을 수 없는
@@ -1224,7 +991,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
          * 이력이 없으면 아무것도 바꾸지 않고 지금 추천 수를 돌려준다(멱등 — 이중 클릭·재시도가 오류가 되지 않는다). 그래서 이력이 없는
          * 옛 추천 수와 남의 추천은 줄지 않는다(GAP-DOMAIN-001 남은 경계). 취소 뒤에는 다시 추천할 수 있다.
          *
-         * <p>판정은 추천과 같은 엄격 경계({@link #assertCommentAccess})다 — 사용 안 함 게시판·읽을 수 없는 글(비밀글·게시 기간 밖)은
+         * <p>판정은 추천과 같은 엄격 경계({@link BoardAccessService#assertCommentAccess})다 — 사용 안 함 게시판·읽을 수 없는 글(비밀글·게시 기간 밖)은
          * 이력을 건드리기 전에 거부한다. 추천 받기 설정은 보지 않는다 — 추천을 꺼도 내 추천은 거둘 수 있다.
          *
          * <p>[동시성] 감소의 근거는 이력 행 DELETE 의 영향 수 하나다. 같은 사람의 동시 취소에서 두 번째 DELETE 는 첫 커밋을 기다렸다가
@@ -1234,7 +1001,7 @@ public class BoardService extends BaseAbstractService implements BoardPostAccess
         @Transactional
         public Integer cancelLike(@NonNull String bbsId, @NonNull Long pstSn) {
                 Long id = required(pstSn, "pstSn 는 null 일 수 없습니다");
-                assertCommentAccess(bbsId, id);
+                accessGate.assertCommentAccess(bbsId, id);
                 String esntlId = SecurityUtil.getCurrentEsntlId()
                                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
                 if (recommendationRepository.deleteRecommendation(id, esntlId) == 1) {

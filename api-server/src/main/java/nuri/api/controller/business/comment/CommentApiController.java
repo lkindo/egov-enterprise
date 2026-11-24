@@ -1,7 +1,7 @@
 package nuri.api.controller.business.comment;
 
 import jakarta.validation.Valid;
-import nuri.business.service.board.BoardService;
+import nuri.business.service.board.BoardAccessService;
 import nuri.business.service.comment.CommentService;
 import nuri.business.service.comment.dto.CommentDto;
 import nuri.foundation.core.response.ApiResponse;
@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class CommentApiController {
 
     private final CommentService commentService;
-    private final BoardService boardService;
+    private final BoardAccessService boardAccess;
 
     @GetMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.comment.CommentApiController#getComments')")
@@ -30,7 +30,7 @@ public class CommentApiController {
             @RequestParam String bbsId,
             @PageableDefault(size = 10) Pageable pageable) {
         // [2026-10-23 ADR-0040 결정 1] 목록은 열람 경계 — 조회 대행 권한자는 사용 안 함 게시판 글의 댓글도 읽는다.
-        boardService.assertCommentReadAccess(bbsId, pstSn);
+        boardAccess.assertCommentReadAccess(bbsId, pstSn);
         Page<CommentDto> result = commentService.getComments(pstSn, bbsId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
@@ -47,8 +47,8 @@ public class CommentApiController {
     public ResponseEntity<ApiResponse<Long>> createComment(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody CommentDto commentDto) {
-        boardService.assertCommentAccess(commentDto.getBbsId(), commentDto.getPstSn());
-        boardService.assertCommentsEnabled(commentDto.getBbsId());
+        boardAccess.assertCommentAccess(commentDto.getBbsId(), commentDto.getPstSn());
+        boardAccess.assertCommentsEnabled(commentDto.getBbsId());
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(
                 commentService.createComment(userDetails.getEsntlId(), userDetails.getUserNm(), commentDto)));
     }
@@ -79,6 +79,6 @@ public class CommentApiController {
      */
     private void assertPostAccess(Long commentNo) {
         CommentService.CommentLocation location = commentService.getCommentLocation(commentNo);
-        boardService.assertCommentAccess(location.bbsId(), location.pstSn());
+        boardAccess.assertCommentAccess(location.bbsId(), location.pstSn());
     }
 }
