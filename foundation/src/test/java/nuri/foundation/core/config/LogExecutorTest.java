@@ -18,6 +18,7 @@ class LogExecutorTest {
     void closeWaitsForRunningLogTask() throws InterruptedException {
         SimpleAsyncTaskExecutor executor =
                 (SimpleAsyncTaskExecutor) new AsyncConfig().logExecutor();
+        assertThat(executor.getConcurrencyLimit()).isEqualTo(64);
         CountDownLatch taskStarted = new CountDownLatch(1);
         CountDownLatch releaseTask = new CountDownLatch(1);
         CountDownLatch taskCompleted = new CountDownLatch(1);

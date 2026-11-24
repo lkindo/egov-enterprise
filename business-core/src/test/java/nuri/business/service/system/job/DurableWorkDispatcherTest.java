@@ -255,6 +255,14 @@ class DurableWorkDispatcherTest {
         assertThat(following.getPrcsSttsNm()).isEqualTo("SUCCEEDED");
     }
 
+    @Test
+    void claimAndReleaseUseExplicitLockInsteadOfSynchronizedMonitors() throws NoSuchMethodException {
+        assertThat(java.lang.reflect.Modifier.isSynchronized(
+                DurableWorkDispatcher.class.getDeclaredMethod("claimAvailable").getModifiers())).isFalse();
+        assertThat(java.lang.reflect.Modifier.isSynchronized(
+                DurableWorkDispatcher.class.getDeclaredMethod("releaseExecution", String.class).getModifiers())).isFalse();
+    }
+
     private DurableJob readyJob() {
         DurableJob job = job(work, 1);
         when(repository.claimNext(any(), anyCollection())).thenReturn(Optional.of(job));

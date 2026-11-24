@@ -12,7 +12,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+import lombok.extern.slf4j.Slf4j;
 import nuri.business.domain.auth.RefreshTokenRepository;
 import nuri.business.domain.auth.mfa.*;
 import nuri.business.domain.user.entity.User;
@@ -30,16 +32,21 @@ import nuri.foundation.security.mfa.MfaChallengePolicy.Purpose;
 import nuri.foundation.security.mfa.MfaOpaqueTokens;
 import nuri.foundation.security.mfa.TotpVerifier;
 import nuri.foundation.security.service.CustomUserDetails;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * 사용자 행→자격 행 순서의 잠금으로 모든 도전·OTP counter·복구코드 소모를 직렬화한다.
  * 실패 횟수는 인증 거부에도 커밋한다. 정상 JWT 발급은 AuthService의 완료 경로만 담당한다.
  */
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MfaService {
     private static final Set<String> PROTECTED = Set.of("USER_PASSWORD", "AUTHRT_GRANT", "AUTHRT_ASSIGN");
@@ -55,9 +62,41 @@ public class MfaService {
     private final MfaSettings settings;
     private final EntityManager entityManager;
     private final nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
+    private final PlatformTransactionManager transactionManager;
     private final TotpVerifier totp = new TotpVerifier();
     private final MfaOpaqueTokens tokens = new MfaOpaqueTokens();
     private Clock clock = ServiceTime.clock();
+
+    public MfaService(UserRepository users, MfaCredentialRepository credentials, MfaChallengeRepository challenges,
+            MfaRecoveryCodeRepository recoveryCodes, RefreshTokenRepository refreshTokens,
+            AuthorizationSnapshotService snapshots, AuthorizationAdministrationService administration,
+            LoginPolicyManageService loginPolicies, PasswordEncoder passwordEncoder, MfaSettings settings,
+            EntityManager entityManager, nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit) {
+        this(users, credentials, challenges, recoveryCodes, refreshTokens, snapshots, administration, loginPolicies,
+                passwordEncoder, settings, entityManager, sensitiveAudit, null);
+    }
+
+    @Autowired
+    public MfaService(UserRepository users, MfaCredentialRepository credentials, MfaChallengeRepository challenges,
+            MfaRecoveryCodeRepository recoveryCodes, RefreshTokenRepository refreshTokens,
+            AuthorizationSnapshotService snapshots, AuthorizationAdministrationService administration,
+            LoginPolicyManageService loginPolicies, PasswordEncoder passwordEncoder, MfaSettings settings,
+            EntityManager entityManager, nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit,
+            PlatformTransactionManager transactionManager) {
+        this.users = users;
+        this.credentials = credentials;
+        this.challenges = challenges;
+        this.recoveryCodes = recoveryCodes;
+        this.refreshTokens = refreshTokens;
+        this.snapshots = snapshots;
+        this.administration = administration;
+        this.loginPolicies = loginPolicies;
+        this.passwordEncoder = passwordEncoder;
+        this.settings = settings;
+        this.entityManager = entityManager;
+        this.sensitiveAudit = sensitiveAudit;
+        this.transactionManager = transactionManager;
+    }
 
     /** 로그인 인증과 같은 연속 실패 잠금 시간(분). 지나면 잠금을 푼다(DEC-OPS-419). */
     @org.springframework.beans.factory.annotation.Value("${nuri.security.login.lock-minutes:15}")
@@ -87,17 +126,50 @@ public class MfaService {
         return beginEnrollment(user, credential);
     }
 
-    @Transactional(noRollbackFor = MfaRejectedException.class)
+    /**
+     * 비밀번호 확인(bcrypt 비용 12)은 읽기·쓰기 트랜잭션과 행 잠금 밖에서 수행하고,
+     * 검증 후 짧은 쓰기 트랜잭션에서 행 잠금·상태 재확인·도전 생성 또는 실패 카운터 커밋을 수행한다.
+     */
+    @Transactional(propagation = Propagation.SUPPORTS, noRollbackFor = MfaRejectedException.class)
     public Enrollment startEnrollment(String password) {
         settings.cipher();
-        User user = lockUser(currentSubject());
-        MfaCredential credential = lockCredential(user, true);
-        assertNotLocked(credential);
-        if (credential.isActive()) throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                "이미 등록되어 있습니다. 인증 수단을 잃었다면 복구 절차를 이용해 주세요.");
-        verifyPassword(user, credential, password);
-        Challenge challenge = beginEnrollment(user, credential);
-        return enrollment(user, credential, challenge.token(), challenge.expiresAt());
+        PreverifiedPassword preverified = preverifyPasswordForEnrollment(password);
+        return executeWriteCommittingRejection(() -> {
+            User user = lockUser(currentSubject());
+            MfaCredential credential = lockCredential(user, true);
+            assertNotLocked(credential);
+            if (credential.isActive()) throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "이미 등록되어 있습니다. 인증 수단을 잃었다면 복구 절차를 이용해 주세요.");
+            verifyPassword(user, credential, password, preverified);
+            Challenge challenge = beginEnrollment(user, credential);
+            return enrollment(user, credential, challenge.token(), challenge.expiresAt());
+        });
+    }
+
+    private PreverifiedPassword preverifyPasswordForEnrollment(String password) {
+        if (!isStandaloneTransaction()) {
+            return null;
+        }
+        String subject = currentSubject();
+        String observedHash = readOnlyTx(status -> {
+            User user = users.findById(subject).orElseThrow(MfaRejectedException::new);
+            if (!"P".equals(user.getUserSttsCd()) || isActiveFailureLock(user)) {
+                throw new MfaRejectedException();
+            }
+            MfaCredential existing = credentials.findBySubject(subject).orElse(null);
+            if (existing != null) {
+                if (MfaChallengePolicy.isAccountLocked(instant(existing.getLockedAt()), clock.instant())) {
+                    throw new MfaRejectedException();
+                }
+                if (existing.isActive()) {
+                    throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                            "이미 등록되어 있습니다. 인증 수단을 잃었다면 복구 절차를 이용해 주세요.");
+                }
+            }
+            return user.getPswd();
+        });
+        boolean matched = password != null && passwordEncoder.matches(password, observedHash);
+        return new PreverifiedPassword(observedHash, matched);
     }
 
     @Transactional(noRollbackFor = MfaRejectedException.class)
@@ -155,16 +227,40 @@ public class MfaService {
         return completed(credential, List.of());
     }
 
-    @Transactional(noRollbackFor = MfaRejectedException.class)
+    @Transactional(propagation = Propagation.SUPPORTS, noRollbackFor = MfaRejectedException.class)
     public Reauthentication reauthenticate(String password, String code) {
-        User user = lockUser(currentSubject());
-        MfaCredential credential = lockCredential(user, false);
-        if (credential == null || !credential.isActive()) throw new MfaRejectedException();
-        assertNotLocked(credential);
-        verifyPassword(user, credential, password);
-        verifyTotp(credential, null, code);
-        Challenge proof = issueChallenge(user, credential, Purpose.REAUTH, "REAUTH");
-        return new Reauthentication(proof.token(), proof.expiresAt());
+        PreverifiedPassword preverified = preverifyPasswordForReauthentication(password);
+        return executeWriteCommittingRejection(() -> {
+            User user = lockUser(currentSubject());
+            MfaCredential credential = lockCredential(user, false);
+            if (credential == null || !credential.isActive()) throw new MfaRejectedException();
+            assertNotLocked(credential);
+            verifyPassword(user, credential, password, preverified);
+            verifyTotp(credential, null, code);
+            Challenge proof = issueChallenge(user, credential, Purpose.REAUTH, "REAUTH");
+            return new Reauthentication(proof.token(), proof.expiresAt());
+        });
+    }
+
+    private PreverifiedPassword preverifyPasswordForReauthentication(String password) {
+        if (!isStandaloneTransaction()) {
+            return null;
+        }
+        String subject = currentSubject();
+        String observedHash = readOnlyTx(status -> {
+            User user = users.findById(subject).orElseThrow(MfaRejectedException::new);
+            if (!"P".equals(user.getUserSttsCd()) || isActiveFailureLock(user)) {
+                throw new MfaRejectedException();
+            }
+            MfaCredential existing = credentials.findBySubject(subject).orElse(null);
+            if (existing == null || !existing.isActive()
+                    || MfaChallengePolicy.isAccountLocked(instant(existing.getLockedAt()), clock.instant())) {
+                throw new MfaRejectedException();
+            }
+            return user.getPswd();
+        });
+        boolean matched = password != null && passwordEncoder.matches(password, observedHash);
+        return new PreverifiedPassword(observedHash, matched);
     }
 
     @Transactional(noRollbackFor = MfaRejectedException.class)
@@ -299,8 +395,11 @@ public class MfaService {
         return new Challenge(stage, token, now.plus(MfaChallengePolicy.LIFETIME));
     }
 
-    private void verifyPassword(User user, MfaCredential credential, String password) {
-        if (password == null || !passwordEncoder.matches(password, user.getPswd())) {
+    private void verifyPassword(User user, MfaCredential credential, String password, PreverifiedPassword preverified) {
+        boolean matched = preverified != null && Objects.equals(preverified.observedHash(), user.getPswd())
+                ? preverified.matched()
+                : (password != null && passwordEncoder.matches(password, user.getPswd()));
+        if (!matched) {
             fail(credential, null);
             throw new MfaRejectedException();
         }
@@ -390,7 +489,41 @@ public class MfaService {
         entity.setLastMdfrId(user.getUserId());
     }
 
+    private boolean isActiveFailureLock(User user) {
+        return user.isLocked() && !user.hasLockExpired(java.time.Duration.ofMinutes(lockMinutes));
+    }
+
+    private boolean isStandaloneTransaction() {
+        return transactionManager != null && !TransactionSynchronizationManager.isActualTransactionActive();
+    }
+
+    private <T> T readOnlyTx(TransactionCallback<T> action) {
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        template.setReadOnly(true);
+        return template.execute(action);
+    }
+
+    private <T> T executeWriteCommittingRejection(Supplier<T> action) {
+        if (!isStandaloneTransaction()) {
+            return action.get();
+        }
+        AtomicReference<MfaRejectedException> rejected = new AtomicReference<>();
+        T result = new TransactionTemplate(transactionManager).execute(status -> {
+            try {
+                return action.get();
+            } catch (MfaRejectedException ex) {
+                rejected.set(ex);
+                return null;
+            }
+        });
+        if (rejected.get() != null) {
+            throw rejected.get();
+        }
+        return result;
+    }
+
     private LocalDateTime storedNow() { return ServiceTime.toLocal(clock.instant()); }
     private static Instant instant(LocalDateTime value) { return value == null ? null : ServiceTime.toInstant(value); }
+    private record PreverifiedPassword(String observedHash, boolean matched) {}
     private record LockedChallenge(User user, MfaCredential credential, MfaChallenge challenge) {}
 }

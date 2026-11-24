@@ -23,15 +23,21 @@ import nuri.business.service.user.dto.UserSearchDto;
 import nuri.business.service.user.dto.UserSignupRequest;
 import nuri.business.service.user.event.UserDeletionEvent;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -98,6 +104,7 @@ public class UserService extends BaseAbstractService {
         private final nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
         private final nuri.business.domain.auth.mfa.MfaCredentialRepository mfaCredentials;
         private final LoginIdReuseGuard loginIdReuseGuard;
+        private final PlatformTransactionManager transactionManager;
 
         public UserService(UserRepository userRepository,
                         RefreshTokenRepository refreshTokenRepository, LoginPolicyRepository loginPolicyRepository,
@@ -112,6 +119,27 @@ public class UserService extends BaseAbstractService {
                         nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit,
                         nuri.business.domain.auth.mfa.MfaCredentialRepository mfaCredentials,
                         LoginIdReuseGuard loginIdReuseGuard) {
+                this(userRepository, refreshTokenRepository, loginPolicyRepository, userAbsenceRepository,
+                                userLogRepository, deptJobRepository, deptManageRepository, passwordEncoder,
+                                eventPublisher, authorizationSnapshots, authorizationAdministration,
+                                sensitiveAudit, mfaCredentials, loginIdReuseGuard, null);
+        }
+
+        @Autowired
+        public UserService(UserRepository userRepository,
+                        RefreshTokenRepository refreshTokenRepository, LoginPolicyRepository loginPolicyRepository,
+                        nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository,
+                        nuri.business.domain.log.UserLogRepository userLogRepository,
+                        nuri.business.domain.deptjob.DeptJobRepository deptJobRepository,
+                        nuri.business.domain.user.repository.DeptManageRepository deptManageRepository,
+                        PasswordEncoder passwordEncoder,
+                        ApplicationEventPublisher eventPublisher,
+                        nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots,
+                        nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration,
+                        nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit,
+                        nuri.business.domain.auth.mfa.MfaCredentialRepository mfaCredentials,
+                        LoginIdReuseGuard loginIdReuseGuard,
+                        PlatformTransactionManager transactionManager) {
                 this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
                 this.refreshTokenRepository = required(refreshTokenRepository,
                                 "RefreshTokenRepository 는 null 일 수 없습니다");
@@ -130,6 +158,7 @@ public class UserService extends BaseAbstractService {
                 this.sensitiveAudit = required(sensitiveAudit);
                 this.mfaCredentials = required(mfaCredentials);
                 this.loginIdReuseGuard = required(loginIdReuseGuard);
+                this.transactionManager = transactionManager;
         }
 
         /**
@@ -399,43 +428,84 @@ public class UserService extends BaseAbstractService {
         /**
          * 비밀번호 변경
          *
-         * <p>현재 비밀번호가 틀리면 인증된 세션의 실패 횟수를 별도로 올린다({@link #recordCurrentPasswordFailure}).
-         * 실패 횟수는 오류 응답과 함께 커밋된다({@code noRollbackFor}).
+         * <p>단독 호출에서는 사용자 조회(읽기 TX), 비밀번호 해시 대조/생성(트랜잭션 밖), 행 잠금 후 갱신/실패 기록
+         * (짧은 쓰기 TX)을 한 흐름 안에서 분리해 bcrypt 비용 12 동안 DB 풀 연결을 쥐지 않는다. 외부 트랜잭션이 이미
+         * 열려 있으면 기존처럼 참여하며, 현재 비밀번호 불일치 시 {@link CurrentPasswordMismatchException} ({@code noRollbackFor}) 으로
+         * 실패 카운터·잠금을 커밋한다.
          */
-        @Transactional(noRollbackFor = nuri.business.domain.user.exception.CurrentPasswordMismatchException.class)
+        @Transactional(propagation = Propagation.SUPPORTS,
+                        noRollbackFor = nuri.business.domain.user.exception.CurrentPasswordMismatchException.class)
         public void changePassword(@NonNull String userId, @NonNull String oldPassword, @NonNull String newPassword) {
-                User user = findByLoginIdOrEsntlIdOrThrow(userId);
-                String observedPassword = user.getPswd();
+                boolean standalone = isStandaloneTransaction();
+                PasswordSnapshot snapshot = executeReadOnly(() -> {
+                        User user = findByLoginIdOrEsntlIdOrThrow(userId);
+                        String observedPassword = user.getPswd();
+                        return new PasswordSnapshot(user, user.getEsntlId(), observedPassword);
+                });
+                String observedPassword = snapshot.observedPassword();
                 // 새 비밀번호 해시는 현재 비밀번호가 맞든 틀리든 한 번 계산한다. 맞힌 요청만 해시를 더 계산하면 잠긴 뒤에도 응답 시간이
                 //   정답을 알린다. 해시 계산은 잠금 밖에서 한다.
                 String encodedPassword = passwordEncoder.encode(newPassword);
-                if (!passwordEncoder.matches(oldPassword, observedPassword)) {
-                        recordCurrentPasswordFailure(user, observedPassword);
+                boolean matched = passwordEncoder.matches(oldPassword, observedPassword);
+
+                Boolean mismatchRecorded = executeWrite(() -> {
+                        User user = standalone
+                                        ? userRepository.findById(snapshot.esntlId())
+                                                        .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND))
+                                        : snapshot.user();
+                        if (!matched) {
+                                applyCurrentPasswordFailure(user, observedPassword);
+                                return Boolean.TRUE;
+                        }
+                        // 대기 중 초기화됐으면 현재 비밀번호로 다시 검증한다.
+                        refreshForUpdateOrThrow(user);
+                        if (!java.util.Objects.equals(observedPassword, user.getPswd())
+                                        && !passwordEncoder.matches(oldPassword, user.getPswd())) {
+                                throw new BusinessException(UserErrorCode.INVALID_PASSWORD);
+                        }
+                        // 잠금 안에서 다시 본다. 같은 세션으로 동시에 보낸 대입 요청은 잠금 전에 인증을 지나왔을 수 있다 — 한도에 닿아 잠긴 뒤
+                        //   맞힌 요청이 비밀번호를 바꾸면 잠금이 대입을 막지 못한다. 잠금 시간이 지났으면 로그인처럼 풀고 진행한다.
+                        if (isLockedNow(user)) {
+                                throw new BusinessException(UserErrorCode.INVALID_PASSWORD);
+                        }
+                        // 같은 값으로 바꾸면 임시 비밀번호 표시만 지워져 강제 변경을 건너뛴다. 잠금 판정 뒤에 본다 — 앞에 두면 잠긴 동안에도
+                        //   '현재=새 비밀번호' 대입의 400 이 정답을, 401 이 오답을 알린다.
+                        if (oldPassword.equals(newPassword)) {
+                                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "새 비밀번호는 현재 비밀번호와 달라야 합니다.");
+                        }
+                        user.updatePassword(encodedPassword);
+                        // 비밀번호 변경으로 현재 비밀번호 실패를 초기화하고, 해당 자격의 로그인 실패도 지운다.
+                        user.unlockAccount();
+                        revokeRefreshTokens(user);
+                        return Boolean.FALSE;
+                });
+                if (Boolean.TRUE.equals(mismatchRecorded)) {
+                        throw new nuri.business.domain.user.exception.CurrentPasswordMismatchException();
                 }
-                // 대기 중 초기화됐으면 현재 비밀번호로 다시 검증한다.
-                refreshForUpdateOrThrow(user);
-                if (!java.util.Objects.equals(observedPassword, user.getPswd())
-                                && !passwordEncoder.matches(oldPassword, user.getPswd())) {
-                        throw new BusinessException(UserErrorCode.INVALID_PASSWORD);
+        }
+
+        private boolean isStandaloneTransaction() {
+                return transactionManager != null && !TransactionSynchronizationManager.isActualTransactionActive();
+        }
+
+        private <T> T executeReadOnly(Supplier<T> action) {
+                if (!isStandaloneTransaction()) {
+                        return action.get();
                 }
-                // 잠금 안에서 다시 본다. 같은 세션으로 동시에 보낸 대입 요청은 잠금 전에 인증을 지나왔을 수 있다 — 한도에 닿아 잠긴 뒤
-                //   맞힌 요청이 비밀번호를 바꾸면 잠금이 대입을 막지 못한다. 잠금 시간이 지났으면 로그인처럼 풀고 진행한다.
-                if (isLockedNow(user)) {
-                        throw new BusinessException(UserErrorCode.INVALID_PASSWORD);
+                TransactionTemplate readOnly = new TransactionTemplate(transactionManager);
+                readOnly.setReadOnly(true);
+                return readOnly.execute(status -> action.get());
+        }
+
+        private <T> T executeWrite(Supplier<T> action) {
+                if (!isStandaloneTransaction()) {
+                        return action.get();
                 }
-                // 같은 값으로 바꾸면 임시 비밀번호 표시만 지워져 강제 변경을 건너뛴다. 잠금 판정 뒤에 본다 — 앞에 두면 잠긴 동안에도
-                //   '현재=새 비밀번호' 대입의 400 이 정답을, 401 이 오답을 알린다.
-                if (oldPassword.equals(newPassword)) {
-                        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "새 비밀번호는 현재 비밀번호와 달라야 합니다.");
-                }
-                user.updatePassword(encodedPassword);
-                // 비밀번호 변경으로 현재 비밀번호 실패를 초기화하고, 해당 자격의 로그인 실패도 지운다.
-                user.unlockAccount();
-                revokeRefreshTokens(user);
+                return new TransactionTemplate(transactionManager).execute(status -> action.get());
         }
 
         /**
-         * 현재 비밀번호 불일치를 전용 횟수에 더하고, 한도에 닿으면 잠근 뒤 {@link CurrentPasswordMismatchException} 을 던진다.
+         * 현재 비밀번호 불일치를 전용 횟수에 더하고, 한도에 닿으면 잠근 뒤 호출자가 {@link CurrentPasswordMismatchException} 을 던지게 한다.
          *
          * <p>로그인 인증과 같은 규칙이다(DEC-OPS-354). 횟수는 행 잠금 아래의 현재 값으로 올린다 — 잠금 없이 읽은 값을 올려 저장하면
          * 동시 요청의 증가가 서로를 덮는다. 이미 잠겨 있으면 횟수를 더 올리지 않는다(고정창). 잠글 때 세션 차수를 올려 그 전에 발급된
@@ -443,7 +513,7 @@ public class UserService extends BaseAbstractService {
          * 있어 세션을 끊지 않지만, 여기서 대입한 쪽은 이미 세션을 가졌으므로 그 세션(빼앗긴 토큰일 수 있다)을 끊는다. 기다리는 사이
          * 비밀번호가 바뀌었으면 옛 해시와 대조한 실패이므로 세지 않는다.
          */
-        private void recordCurrentPasswordFailure(User user, String observedPassword) {
+        private void applyCurrentPasswordFailure(User user, String observedPassword) {
                 refreshForUpdateOrThrow(user);
                 if (!java.util.Objects.equals(observedPassword, user.getPswd()) || isLockedNow(user)) {
                         throw new BusinessException(UserErrorCode.INVALID_PASSWORD);
@@ -461,8 +531,9 @@ public class UserService extends BaseAbstractService {
                 if (locked) {
                         userRepository.advanceSessionCycle(List.of(user.getEsntlId()));
                 }
-                throw new nuri.business.domain.user.exception.CurrentPasswordMismatchException();
         }
+
+        private record PasswordSnapshot(User user, String esntlId, String observedPassword) {}
 
         /** 잠겨 있고 잠금 시간이 아직 지나지 않았는가. 지났으면 로그인 인증처럼 여기서 풀고 false 다. */
         private boolean isLockedNow(User user) {

@@ -58,8 +58,8 @@ spring:
     #   ①(GlobalExceptionHandler.handleConnectionUnavailable → 503 + Retry-After)을 먼저 넣은 뒤에만
     #   이 값을 낮춰야 한다. 순서를 뒤집으면 대량 500 이 발생한다.
     connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT_MS:3000}
-    # 실제 기본 최대값(10)은 유지하고 최소 유휴 연결만 2로 명시해 DB 예산을 과점유하지 않는다.
-    maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+    # 기본 최대 풀(20)로 요청 처리와 배경 실행자(audit 4·notification 2·durable-work 4·taskExecutor 4~16·logExecutor 등)의 경합 여유를 확보하고 유휴 연결은 2로 유지한다.
+    maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
     minimum-idle: ${DB_POOL_MIN_IDLE:2}
     pool-name: egov-hikaricp
 

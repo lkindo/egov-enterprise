@@ -619,6 +619,181 @@ class MfaServiceTest {
         verifyNoInteractions(refreshTokens, recoveryCodes, audit);
     }
 
+    @Test
+    void standaloneStartEnrollmentAndReauthenticateRunBcryptOutsideTransactionsAndCommitFailures() {
+        var txManager = new RecordingTransactionManager();
+        replaceService(settings, txManager);
+        when(users.findById(SUBJECT)).thenAnswer(i -> Optional.ofNullable(userRows.get(i.getArgument(0))));
+        java.util.List<Boolean> txStatesDuringMatches = new java.util.ArrayList<>();
+        when(passwords.matches(anyString(), anyString())).thenAnswer(inv -> {
+            txStatesDuringMatches.add(org.springframework.transaction.support.TransactionSynchronizationManager
+                    .isActualTransactionActive());
+            return "password-fixture".equals(inv.getArgument(0)) && "hash-fixture".equals(inv.getArgument(1));
+        });
+
+        assertThatThrownBy(() -> service.startEnrollment("wrong-password"))
+                .isInstanceOf(MfaRejectedException.class);
+        assertThat(credentialRows.get(SUBJECT).failures()).isEqualTo(1);
+        assertThat(txStatesDuringMatches).containsExactly(false);
+        assertThat(txManager.commits).isEqualTo(2);
+        assertThat(txManager.rollbacks).isZero();
+
+        MfaResults.Enrollment enrolled = service.startEnrollment("password-fixture");
+        assertThat(txStatesDuringMatches).containsExactly(false, false);
+        assertThat(txManager.commits).isEqualTo(4);
+
+        credentialRows.get(SUBJECT).activate();
+        assertThatThrownBy(() -> service.reauthenticate("wrong-password", code(enrolled.secret())))
+                .isInstanceOf(MfaRejectedException.class);
+        assertThat(credentialRows.get(SUBJECT).failures()).isEqualTo(2);
+        assertThat(txStatesDuringMatches).containsExactly(false, false, false);
+        assertThat(txManager.commits).isEqualTo(6);
+
+        assertThatThrownBy(() -> service.reauthenticate("password-fixture", "000000"))
+                .isInstanceOf(MfaRejectedException.class);
+        assertThat(credentialRows.get(SUBJECT).failures()).isEqualTo(3);
+        assertThat(txStatesDuringMatches).containsExactly(false, false, false, false);
+        assertThat(txManager.commits).isEqualTo(8);
+
+        MfaResults.Reauthentication reauth = service.reauthenticate("password-fixture", code(enrolled.secret()));
+        assertThat(reauth.reauthToken()).isNotBlank();
+        assertThat(txStatesDuringMatches).containsExactly(false, false, false, false, false);
+        assertThat(txManager.readOnlyFlags).containsExactly(
+                true, false, true, false, true, false, true, false, true, false);
+        assertThat(txManager.commits).isEqualTo(10);
+        assertThat(txManager.rollbacks).isZero();
+    }
+
+    @Test
+    void standalonePrechecksRespectActiveAndExpiredUserFailureLocks() {
+        var txManager = new RecordingTransactionManager();
+        replaceService(settings, txManager);
+        when(users.findById(SUBJECT)).thenAnswer(i -> Optional.ofNullable(userRows.get(i.getArgument(0))));
+        when(passwords.matches(anyString(), anyString())).thenAnswer(inv -> {
+            assertThat(org.springframework.transaction.support.TransactionSynchronizationManager
+                    .isActualTransactionActive()).isFalse();
+            return "password-fixture".equals(inv.getArgument(0)) && "hash-fixture".equals(inv.getArgument(1));
+        });
+
+        MfaCredential cred = activeCredential(user);
+        user.lockAccount();
+
+        assertThatThrownBy(() -> service.reauthenticate("password-fixture", code(RFC6238_SHA1_BASE32_VECTOR)))
+                .isInstanceOf(MfaRejectedException.class);
+        cred.revoke(false);
+        assertThatThrownBy(() -> service.startEnrollment("password-fixture"))
+                .isInstanceOf(MfaRejectedException.class);
+        verify(passwords, never()).matches(anyString(), anyString());
+
+        ReflectionTestUtils.setField(user, "lckLastPnttm", LocalDateTime.now().minusMinutes(16));
+        MfaResults.Enrollment enrolled = service.startEnrollment("password-fixture");
+        assertThat(enrolled.secret()).isNotBlank();
+        assertThat(user.isLocked()).isFalse();
+
+        credentialRows.get(SUBJECT).activate();
+        user.lockAccount();
+        ReflectionTestUtils.setField(user, "lckLastPnttm", LocalDateTime.now().minusMinutes(16));
+        MfaResults.Reauthentication proof = service.reauthenticate("password-fixture", code(enrolled.secret()));
+        assertThat(proof.reauthToken()).isNotBlank();
+        assertThat(user.isLocked()).isFalse();
+        assertThat(txManager.readOnlyFlags).containsExactly(true, true, true, false, true, false);
+        assertThat(txManager.commits).isEqualTo(4);
+        assertThat(txManager.rollbacks).isEqualTo(2);
+    }
+
+    @Test
+    void standalonePasswordVerificationFallsBackOnConcurrentHashChange() {
+        var txManager = new RecordingTransactionManager();
+        replaceService(settings, txManager);
+        when(users.findById(SUBJECT)).thenAnswer(i -> Optional.ofNullable(userRows.get(i.getArgument(0))));
+        when(passwords.matches("new-password-fixture", "new-hash-fixture")).thenReturn(true);
+        doAnswer(inv -> {
+            user.updatePassword("new-hash-fixture");
+            return null;
+        }).when(entities).refresh(user, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+
+        MfaResults.Enrollment enrolled = service.startEnrollment("new-password-fixture");
+        assertThat(enrolled.secret()).isNotBlank();
+        credentialRows.get(SUBJECT).activate();
+
+        doAnswer(inv -> {
+            user.updatePassword("rotated-hash-fixture");
+            return null;
+        }).when(entities).refresh(user, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+
+        assertThatThrownBy(() -> service.reauthenticate("new-password-fixture", code(enrolled.secret())))
+                .isInstanceOf(MfaRejectedException.class);
+        assertThat(credentialRows.get(SUBJECT).failures()).isEqualTo(1);
+        assertThat(txManager.commits).isEqualTo(4);
+        assertThat(txManager.rollbacks).isZero();
+    }
+
+    @Test
+    void standalonePrechecksRejectUnavailableStatesBeforeRunningBcrypt() {
+        var txManager = new RecordingTransactionManager();
+        replaceService(settings, txManager);
+        when(users.findById(SUBJECT)).thenAnswer(i -> Optional.ofNullable(userRows.get(i.getArgument(0))));
+
+        // Reauthentication without credential or inactive credential
+        assertThatThrownBy(() -> service.reauthenticate("password-fixture", "000000"))
+                .isInstanceOf(MfaRejectedException.class);
+
+        MfaCredential cred = MfaCredential.create(SUBJECT);
+        ReflectionTestUtils.setField(cred, "id", nextCredentialId++);
+        credentialRows.put(SUBJECT, cred);
+        assertThatThrownBy(() -> service.reauthenticate("password-fixture", "000000"))
+                .isInstanceOf(MfaRejectedException.class);
+
+        // Active credential: startEnrollment rejects with BusinessException, active lock rejects on reauth
+        cred = activeCredential(user);
+        assertThatThrownBy(() -> service.startEnrollment("password-fixture"))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        ex -> assertThat(ex.getErrorCode()).isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE));
+
+        ReflectionTestUtils.setField(cred, "lockedAt", ServiceTime.toLocal(now));
+        assertThatThrownBy(() -> service.reauthenticate("password-fixture", "000000"))
+                .isInstanceOf(MfaRejectedException.class);
+
+        // Credential locked during startEnrollment
+        cred.revoke(false);
+        ReflectionTestUtils.setField(cred, "lockedAt", ServiceTime.toLocal(now));
+        assertThatThrownBy(() -> service.startEnrollment("password-fixture"))
+                .isInstanceOf(MfaRejectedException.class);
+
+        // Inactive or locked user rejects both startEnrollment and reauthenticate before bcrypt
+        user.lockAccount();
+        assertThatThrownBy(() -> service.startEnrollment("password-fixture")).isInstanceOf(MfaRejectedException.class);
+        assertThatThrownBy(() -> service.reauthenticate("password-fixture", "000000")).isInstanceOf(MfaRejectedException.class);
+        user.updateStatus("D");
+        assertThatThrownBy(() -> service.startEnrollment("password-fixture")).isInstanceOf(MfaRejectedException.class);
+        assertThatThrownBy(() -> service.reauthenticate("password-fixture", "000000")).isInstanceOf(MfaRejectedException.class);
+
+        verify(passwords, never()).matches(anyString(), anyString());
+    }
+
+    @Test
+    void outerTransactionJoinsSingleTransactionPathWithoutPreverifySplit() {
+        var txManager = new RecordingTransactionManager();
+        replaceService(settings, txManager);
+        java.util.List<Boolean> txStatesDuringMatches = new java.util.ArrayList<>();
+        when(passwords.matches(anyString(), anyString())).thenAnswer(inv -> {
+            txStatesDuringMatches.add(org.springframework.transaction.support.TransactionSynchronizationManager
+                    .isActualTransactionActive());
+            return "password-fixture".equals(inv.getArgument(0)) && "hash-fixture".equals(inv.getArgument(1));
+        });
+
+        var txTemplate = new org.springframework.transaction.support.TransactionTemplate(txManager);
+        MfaResults.Enrollment enrolled = txTemplate.execute(status -> service.startEnrollment("password-fixture"));
+        credentialRows.get(SUBJECT).activate();
+        MfaResults.Reauthentication reauth = txTemplate
+                .execute(status -> service.reauthenticate("password-fixture", code(enrolled.secret())));
+
+        assertThat(reauth.reauthToken()).isNotBlank();
+        assertThat(txStatesDuringMatches).containsExactly(true, true);
+        assertThat(txManager.commits).isEqualTo(2);
+        verify(users, never()).findById(anyString());
+    }
+
     private MfaSettings configuredSettings(boolean requireProtected) {
         byte[] key = new byte[32];
         new SecureRandom().nextBytes(key);
@@ -626,10 +801,42 @@ class MfaServiceTest {
     }
 
     private void replaceService(MfaSettings configured) {
+        replaceService(configured, null);
+    }
+
+    private void replaceService(MfaSettings configured,
+            org.springframework.transaction.PlatformTransactionManager transactionManager) {
         settings = configured;
         service = new MfaService(users, credentials, challenges, recoveryCodes, refreshTokens, snapshots,
-                administration, loginPolicies, passwords, settings, entities, audit);
+                administration, loginPolicies, passwords, settings, entities, audit, transactionManager);
         service.useClock(Clock.fixed(now, ZoneOffset.UTC));
+    }
+
+    private static final class RecordingTransactionManager
+            extends org.springframework.transaction.support.AbstractPlatformTransactionManager {
+        private final java.util.List<Boolean> readOnlyFlags = new java.util.ArrayList<>();
+        private int commits;
+        private int rollbacks;
+
+        @Override
+        protected Object doGetTransaction() {
+            return new Object();
+        }
+
+        @Override
+        protected void doBegin(Object transaction, org.springframework.transaction.TransactionDefinition definition) {
+            readOnlyFlags.add(definition.isReadOnly());
+        }
+
+        @Override
+        protected void doCommit(org.springframework.transaction.support.DefaultTransactionStatus status) {
+            commits++;
+        }
+
+        @Override
+        protected void doRollback(org.springframework.transaction.support.DefaultTransactionStatus status) {
+            rollbacks++;
+        }
     }
 
     private User addUser(String subject, String loginId) {

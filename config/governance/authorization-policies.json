@@ -5649,7 +5649,7 @@
       "denyReferences": 0,
       "requiredTokens": [
         "lockUser(currentSubject())",
-        "verifyPassword(user, credential, password)"
+        "verifyPassword(user, credential, password, preverified)"
       ],
       "forbiddenTokens": []
     },
@@ -5660,8 +5660,21 @@
       "denyReferences": 0,
       "requiredTokens": [
         "lockUser(currentSubject())",
-        "verifyPassword(user, credential, password)",
+        "verifyPassword(user, credential, password, preverified)",
         "verifyTotp(credential, null, code)"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "MfaService#verifyPassword",
+      "source": "business-core/src/main/java/nuri/business/service/auth/mfa/MfaService.java",
+      "policy": "SELF_WITH_CREDENTIAL",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "Objects.equals(preverified.observedHash(), user.getPswd())",
+        "passwordEncoder.matches(password, user.getPswd())",
+        "fail(credential, null);",
+        "throw new MfaRejectedException();"
       ],
       "forbiddenTokens": []
     },
