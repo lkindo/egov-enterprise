@@ -99,11 +99,16 @@ public class DeptJobBoxService {
         SecurityUtil.assertPermission("DEPT_BOX_DELETE");
         Long boxSn = Objects.requireNonNull(deptTaskBoxSn);
 
+        // [2026-11-24] 없는 업무함은 404 다 — deleteById 는 없는 행을 조용히 넘겨 성공으로 끝났다. 수정과 같은 행 잠금으로 읽어,
+        //   같은 업무함을 동시에 지우는 두 요청 가운데 뒤 요청도 앞 삭제가 커밋된 뒤의 상태(없음)를 보고 404 가 된다.
+        DeptJobBox entity = java.util.Optional.ofNullable(entityManager.find(DeptJobBox.class, boxSn,
+                        jakarta.persistence.LockModeType.PESSIMISTIC_WRITE))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "부서업무함을 찾을 수 없습니다: " + boxSn));
         if (deptJobRepository.existsByDeptTaskBoxSn(boxSn)) {
             throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE);
         }
 
-        deptJobBoxRepository.deleteById(boxSn);
+        deptJobBoxRepository.delete(entity);
     }
 
     /**

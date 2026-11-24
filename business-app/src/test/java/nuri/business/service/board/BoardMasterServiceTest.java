@@ -750,6 +750,16 @@ class BoardMasterServiceTest {
     }
 
     @Test
+    @DisplayName("[2026-11-24] 물리삭제 가능 여부 — 지정 게시판은 사용 안 함·글 0건이어도 false(실제 삭제의 409 와 같은 판정)")
+    void isDeletable_DesignatedBoard() {
+        BoardMaster notice = BoardMaster.builder().bbsId("BBSMSTR_AAAAAAAAAAAA").useYn("N").build();
+        given(boardMasterRepository.findById("BBSMSTR_AAAAAAAAAAAA")).willReturn(Optional.of(notice));
+
+        assertThat(boardMasterService.isDeletable("BBSMSTR_AAAAAAAAAAAA")).isFalse();
+        verify(boardRepository, never()).findBbsIdsHavingAnyArticles(any());
+    }
+
+    @Test
     @DisplayName("물리삭제 실행 - 성공")
     void deleteBoardMasterPhysically_Success() {
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();

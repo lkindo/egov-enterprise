@@ -220,7 +220,26 @@ public class WorkReportService extends BaseAbstractService {
                 .userNm(authorName)
                 .atchFileSn(entity.getAtchFileSn())
                 .version(entity.getVersion())
+                .editable(canModify(entity, "WORK_RPT_UPDATE", "WORK_RPT_UPDATE_ALL"))
+                .deletable(canModify(entity, "WORK_RPT_DELETE", "WORK_RPT_DELETE_ALL"))
                 .build();
+    }
+
+    /**
+     * 수정·삭제 가능 여부 — 컨트롤러의 기능 권한과 {@code assertOwnerOrPermission(frstRgtrId, 전체권한)} 을 예외 대신 boolean 으로
+     * 계산한다(2026-11-24, 일정의 DEC-OPS-156 힌트와 같은 규칙). 전체 열람 권한자는 남의 보고도 보지만 고칠 수 있는 사람은 작성자와
+     * 전체 권한자뿐이라, 화면이 소유를 모르고 버튼을 그리면 누를 때마다 403 이 났다. 표시용 힌트이고 인가는 쓰기 경로가 집행한다.
+     */
+    private static boolean canModify(WorkReport entity, String operationPermission, String overridePermission) {
+        if (!SecurityUtil.hasPermission(operationPermission)) {
+            return false;
+        }
+        if (SecurityUtil.hasPermission(overridePermission)) {
+            return true;
+        }
+        String owner = entity.getFrstRgtrId();
+        return org.springframework.util.StringUtils.hasText(owner)
+                && SecurityUtil.getCurrentLoginId().filter(owner::equals).isPresent();
     }
 
     /** 인증 주체의 loginId가 없으면 가짜 소유자를 만들지 않고 저장 전에 거부한다. */

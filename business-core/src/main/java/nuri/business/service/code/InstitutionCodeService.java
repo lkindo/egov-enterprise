@@ -84,9 +84,16 @@ public class InstitutionCodeService extends BaseAbstractService {
         nuri.business.security.util.SecurityUtil.assertPermission("INST_CODE_IMPORT");
         InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId id = new InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId(
                 dto.getOcrnYmd(), dto.getInstCd(), dto.getJobSn());
-        InstitutionCodeRecptnLog entity = institutionCodeRecptnLogRepository.findById(id)
+        InstitutionCodeRecptnLog entity = institutionCodeRecptnLogRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new BusinessException(CodeErrorCode.CODE_NOT_FOUND));
-        entity.updateProcessSe(PROC_SE_DONE, "SYSTEM");
+        // [2026-11-24] 이미 처리한 건은 다시 쓰지 않는다 — 두 관리자가 같은 대기 건을 열고 차례로 완료하면 뒤 요청이 처리자·시각을 덮어
+        //   실제로 처리한 사람이 사라졌다. 행을 잠근 뒤 판정하므로 동시 요청도 처음 처리한 기록을 남긴다(완료는 그대로 성공 응답이다).
+        if (PROC_SE_DONE.equals(entity.getProcSe())) {
+            return;
+        }
+        // [2026-11-24] 처리한 사람을 남긴다 — 이 엔티티는 감사 리스너가 없어 종전의 고정값 "SYSTEM" 이 그대로 저장돼 누가 처리했는지
+        //   알 수 없었다. 감사 컬럼 규약(로그인 ID, LoginUserAuditorAware)과 같은 축이다.
+        entity.updateProcessSe(PROC_SE_DONE, nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse("SYSTEM"));
     }
 
     /**

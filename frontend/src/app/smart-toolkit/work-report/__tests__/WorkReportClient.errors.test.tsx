@@ -37,8 +37,9 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),
+  // 행은 작성자 본인의 보고다 — 서버가 수정·삭제 힌트를 참으로 싣는다(행이 따로 정하면 그 값을 쓴다).
   useQuery: () => ({
-    data: { list: mocks.reportRows, totalPage: 1, total: mocks.reportRows.length },
+    data: { list: mocks.reportRows.map((row) => ({ editable: true, deletable: true, ...row })), totalPage: 1, total: mocks.reportRows.length },
     isLoading: false,
     isError: false,
     error: null,
@@ -94,9 +95,9 @@ vi.mock('@/services/business/user/ReportService', () => ({
 }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
-// 이 스펙은 쓰기 계약만 본다 — 메모 보고 링크는 대상이 아니므로 권한 없는 주체로 고정한다.
+// 이 스펙은 쓰기 계약만 본다 — 보고 등록 기능 권한만 주고, 메모 보고 링크(MEMO_RPT_READ)는 대상이 아니므로 주지 않는다.
 vi.mock('@/contexts/AuthContext', () => {
-  const auth = () => ({ user: { role: 'ROLE_USER', permissions: [] as string[], authorizationVersion: 'v1' } });
+  const auth = () => ({ user: { role: 'ROLE_USER', permissions: ['WORK_RPT_CREATE'], authorizationVersion: 'v1' } });
   return { useAuth: auth, useOptionalAuth: auth };
 });
 

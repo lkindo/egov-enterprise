@@ -83,6 +83,9 @@ export function DataExportExcel<T extends object = object>({
  document.body.appendChild(link);
  link.click();
  document.body.removeChild(link);
+ // [2026-11-24] 내려받기를 시작했으면 Blob URL 을 놓는다 — 종전에는 내보낼 때마다 파일 전체가 문서가 닫힐 때까지 메모리에 남았다.
+ //   클릭 처리 뒤에 놓도록 다음 차례로 미룬다(FileService·감사 원장 내보내기와 같은 방식).
+ setTimeout(() => URL.revokeObjectURL(url), 0);
  };
 
  return (

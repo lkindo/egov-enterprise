@@ -305,7 +305,25 @@ public class MemoReportService {
     }
 
     /** 보고와 알림 의도를 같은 트랜잭션에 저장해 함께 commit/rollback한다. */
+    /**
+     * 받을 계정이 있을 때만 알린다(2026-11-24). 메모 보고 행은 사용자 삭제 뒤에도 작성자·수신자 식별자를 그대로 들고 있지만(사용자 FK
+     * 없음) 알림 행(tb_user_noti)은 사용자 FK 가 있고 업무 트랜잭션 안에서 저장된다. 지워진 당사자에게 보내면 FK 위반으로 지시 저장·
+     * 관리자 삭제가 함께 되돌아가 문서를 움직일 수 없었다 — 결재의 {@code ApprovalRecipients} 와 같은 이유다. 알림 저장 쪽에서 일괄로
+     * 거르지 않는 이유도 같다(식별자 축을 잘못 넘긴 호출이 FK 위반으로 드러나는 신호를 지우지 않는다).
+     *
+     * <p>존재는 사용자 행을 잠그고 본다 — 잠그지 않고 보면 아직 커밋되지 않은 계정 삭제 앞의 행을 보고 발행했다가 삭제가 먼저 커밋되면
+     * 같은 FK 위반이 났다(Codex 검토). 잠금은 계정 삭제({@code UserService} 의 사용자 행 잠금)와 직렬화되고, 삭제가 이기면 행이 없어
+     * 건너뛴다. 당사자가 둘이면 호출부가 먼저 {@link #lockPartiesInIdOrder} 로 삭제 경로와 같은 순서(식별자 오름차순)로 잠근다.
+     */
+    /** 여러 당사자의 사용자 행을 계정 삭제와 같은 순서(식별자 오름차순)로 잠근다 — 서로 기다리다 교착하지 않게 한다. */
+    private void lockPartiesInIdOrder(java.util.Collection<String> esntlIds) {
+        esntlIds.stream().distinct().sorted().forEach(userRepository::findByEsntlIdForUpdate);
+    }
+
     private void publishNotification(String receiverEsntlId, String title, String content, String route) {
+        if (userRepository.findByEsntlIdForUpdate(receiverEsntlId).isEmpty()) {
+            return;
+        }
         eventPublisher.publishEvent(
                 new nuri.foundation.core.event.NotificationRequestedEvent(receiverEsntlId, title, content, route));
     }
@@ -371,10 +389,11 @@ public class MemoReportService {
                         "지시가 달린 보고는 지울 수 없습니다. 지시를 받은 뒤의 기록이라 그대로 둡니다.");
             }
             String actor = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
-            for (String party : new LinkedHashSet<>(java.util.Arrays.asList(entity.getUserId(), entity.getRptrId()))) {
-                if (org.springframework.util.StringUtils.hasText(party) && !party.equals(actor)) {
-                    publishNotification(party, "지시가 달린 메모 보고가 삭제되었습니다", titleOf(entity.getRptTtl()), MEMO_REPORT_ROUTE);
-                }
+            java.util.Set<String> parties = new LinkedHashSet<>(java.util.Arrays.asList(entity.getUserId(), entity.getRptrId()));
+            parties.removeIf(party -> !org.springframework.util.StringUtils.hasText(party) || party.equals(actor));
+            lockPartiesInIdOrder(parties);
+            for (String party : parties) {
+                publishNotification(party, "지시가 달린 메모 보고가 삭제되었습니다", titleOf(entity.getRptTtl()), MEMO_REPORT_ROUTE);
             }
         }
         Long atchFileSn = entity.getAtchFileSn();

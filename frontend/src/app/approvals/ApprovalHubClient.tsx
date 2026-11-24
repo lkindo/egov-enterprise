@@ -495,7 +495,17 @@ function useApprovalDocumentActions({
       });
       if (!ok) return;
       await cancelMutation.mutateAsync({ ifmlAtrzSn: item.ifmlAtrzSn, version: item.version });
-      const latest = await queryClient.fetchQuery(approvalQueryOptions.detail(item.ifmlAtrzSn));
+      let latest: InformalSanctionDto;
+      try {
+        latest = await queryClient.fetchQuery(approvalQueryOptions.detail(item.ifmlAtrzSn));
+      } catch {
+        // [2026-11-24] 회수는 이미 끝났다 — 이어서 최신 문서를 읽지 못한 것을 회수 실패로 말하지 않는다(종전에는 아래 catch 로 떨어져
+        //   '회수하지 못했습니다' 라고 안내했다). 문서는 회수된 채로 남고 '수정 후 재상신' 으로 이어 올릴 수 있다.
+        void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
+        setActionError('문서를 회수했지만 최신 문서를 불러오지 못해 편집을 열지 못했습니다. 문서를 다시 열어 ‘수정 후 재상신’ 으로 올려 주세요.');
+        toast('문서를 회수했습니다. 편집은 열지 못했습니다.', 'info');
+        return;
+      }
       if (!latest.canResubmit) {
         setActionError('문서를 회수했지만 지금은 다시 올릴 수 없습니다. 최신 상태를 확인해 주세요.');
         return;

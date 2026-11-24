@@ -1087,6 +1087,40 @@ class MemoReportServiceTest {
     }
 
     @Test
+    @DisplayName("[2026-11-24] 지워진 당사자에게는 알리지 않는다 — 알림 FK 위반으로 지시·관리자 삭제가 되돌아가지 않는다")
+    void notificationsSkipDeletedParties() {
+        MemoReport instructed = MemoReport.builder().memoRptSn(1L).rptTtl("주간 보고")
+                .userId("esntl-writer").rptrId("esntl-recipient").build();
+        when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(instructed));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-recipient"));
+        // 계정 삭제가 커밋된 뒤의 잠금 조회는 행이 없다.
+        given(userRepository.findByEsntlIdForUpdate("esntl-writer")).willReturn(Optional.empty());
+
+        String token = memoReportService.getMemoReport(1L).getInstructionReadToken();
+        memoReportService.updateDrctMatter(1L, "보완해 주세요", token);
+
+        assertThat(instructed.getDrctnMttr()).isEqualTo("보완해 주세요");
+        org.mockito.Mockito.verifyNoInteractions(eventPublisher);
+
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_DELETE_ALL")).thenReturn(true);
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("esntl-admin"));
+        org.mockito.Mockito.clearInvocations(userRepository);
+        memoReportService.deleteMemoReport(1L);
+
+        verify(memoReportRepository).delete(instructed);
+        org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> event =
+                org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
+        verify(eventPublisher).publishEvent(event.capture());
+        assertThat(event.getAllValues()).extracting(nuri.foundation.core.event.NotificationRequestedEvent::receiverEsntlId)
+                .containsExactly("esntl-recipient");
+        // 두 당사자는 계정 삭제와 같은 순서(식별자 오름차순)로 먼저 잠근다 — 서로 기다리다 교착하지 않는다.
+        org.mockito.ArgumentCaptor<String> locked = org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(userRepository, org.mockito.Mockito.atLeast(2)).findByEsntlIdForUpdate(locked.capture());
+        assertThat(locked.getAllValues()).startsWith("esntl-recipient", "esntl-writer");
+    }
+
+    @Test
     @DisplayName("[DIP B4 P9] 지시가 달린 보고는 관리자도 본문을 고칠 수 없다(409) — 수정 힌트도 닫는다")
     void updateMemoReport_rejectedAfterInstruction() {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).rptTtl("원래 제목").rptCn("원래 본문")

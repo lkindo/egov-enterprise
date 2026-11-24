@@ -22,6 +22,8 @@ import { toDisplayYmd } from '@/lib/format-date';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { failureMessage } from '@/lib/safe-error-log';
 import { isConflictError } from '@/lib/query/list-query-defaults';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 /**
  * 업무 보고 화면(/smart-toolkit/work-report, 업무 허브 분해 W1).
@@ -42,6 +44,13 @@ export default function WorkReportClient({ initialYmd }: WorkReportClientProps) 
   const queryClient = useQueryClient();
   const tabs = useWorkHubTabStrip(ROUTE);
   const links = useWorkReportLinks();
+  const { user } = useAuth();
+  /*
+    [2026-11-24] 쓰기 버튼은 그 동작의 기능 권한으로 보인다(DEC-OPS-185). 등록은 기능 권한 하나로 정해지고, 수정·삭제는 작성자 본인 또는
+    전체 권한이 함께 필요해 서버가 행마다 싣는 힌트(editable·deletable)로 그린다 — 일정·부서 업무와 같은 방식(DEC-OPS-156).
+    종전에는 권한이 없거나 전체 열람 권한만 가진 사람에게도 단추가 보여 누르면 403 이었다. 인가는 서버가 그대로 집행한다.
+  */
+  const canCreateReport = canPermission(user, 'WORK_RPT_CREATE');
 
   // 조회어. KeywordFilter 는 '조회' 버튼·Enter 로만 제출하는 명시 제출 컴포넌트이므로
   // 이 값은 타이핑이 아니라 onSearch 에서만 갱신된다 — 디바운스가 필요 없고 실제로도 없다.
@@ -88,6 +97,12 @@ export default function WorkReportClient({ initialYmd }: WorkReportClientProps) 
   const reports = reportData?.list || [];
   const reportTotalPages = reportData?.totalPage ?? 1;
   const reportTotal = reportData?.total ?? 0;
+  /*
+    [2026-11-24] 상세 창은 연 시점의 행을 들고 있다. 수정 단추와 수정 창이 쓰는 힌트·버전은 지금 목록의 같은 행에서 읽는다 — 권한이
+    바뀌면 인증 문맥이 조회를 다시 읽게 하므로, 연 시점의 값으로 그리면 회수된 권한의 단추가 남아 저장 때 403 이었다. 목록을 다시
+    읽는 중이거나 목록에서 빠진 행이면 수정 단추를 그리지 않는다.
+  */
+  const liveDetailReport = detailReport ? reports.find((report) => report.rptpSn === detailReport.rptpSn) : undefined;
 
   /** 업무 보고 등록. 작성자(userId)는 서버가 인증 주체로 채우므로 보내지 않는다. */
   const handleSubmitReport = async (values: ReportFormValues) => {
@@ -181,35 +196,39 @@ export default function WorkReportClient({ initialYmd }: WorkReportClientProps) 
       header: '관리',
       accessor: (item) => (
         <div className="flex justify-end gap-1 pr-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="font-bold text-[11px] h-[var(--control-h)]"
-            aria-label={`${item.rptTtl || '제목 없음'} 보고 수정`}
-            disabled={reportAction !== null}
-            onClick={(e) => {
-              e.stopPropagation();
-              setEditingReport(item);
-              setReportModalOpen(true);
-            }}
-          >
-            수정
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            // palette-frozen: text-rose-600 text-rose-700 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
-            className="font-bold text-[11px] text-rose-600 hover:text-rose-700 h-[var(--control-h)]"
-            aria-label={`${item.rptTtl || '제목 없음'} 보고 ${reportAction?.type === 'delete' && reportAction.id === item.rptpSn ? '삭제 중' : '삭제'}`}
-            aria-busy={reportAction?.type === 'delete' && reportAction.id === item.rptpSn || undefined}
-            disabled={reportAction !== null}
-            onClick={(e) => {
-              e.stopPropagation();
-              void handleDeleteReport(item);
-            }}
-          >
-            삭제
-          </Button>
+          {item.editable && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="font-bold text-[11px] h-[var(--control-h)]"
+              aria-label={`${item.rptTtl || '제목 없음'} 보고 수정`}
+              disabled={reportAction !== null}
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditingReport(item);
+                setReportModalOpen(true);
+              }}
+            >
+              수정
+            </Button>
+          )}
+          {item.deletable && (
+            <Button
+              variant="ghost"
+              size="sm"
+              // palette-frozen: text-rose-600 text-rose-700 -- 동결 부채: 시맨틱 토큰 이행 전(종전 색 동결표 승계, DEC-OPS-420)
+              className="font-bold text-[11px] text-rose-600 hover:text-rose-700 h-[var(--control-h)]"
+              aria-label={`${item.rptTtl || '제목 없음'} 보고 ${reportAction?.type === 'delete' && reportAction.id === item.rptpSn ? '삭제 중' : '삭제'}`}
+              aria-busy={reportAction?.type === 'delete' && reportAction.id === item.rptpSn || undefined}
+              disabled={reportAction !== null}
+              onClick={(e) => {
+                e.stopPropagation();
+                void handleDeleteReport(item);
+              }}
+            >
+              삭제
+            </Button>
+          )}
         </div>
       ),
       className: 'w-32 text-right'
@@ -248,13 +267,15 @@ export default function WorkReportClient({ initialYmd }: WorkReportClientProps) 
               </Link>
             </Button>
           ))}
-          <Button
-            size="sm"
-            disabled={reportAction !== null}
-            onClick={() => setReportModalOpen(true)}
-          >
-            <Plus size={16} aria-hidden="true" /> 보고 등록
-          </Button>
+          {canCreateReport && (
+            <Button
+              size="sm"
+              disabled={reportAction !== null}
+              onClick={() => setReportModalOpen(true)}
+            >
+              <Plus size={16} aria-hidden="true" /> 보고 등록
+            </Button>
+          )}
         </div>
       }
       filter={
@@ -308,17 +329,18 @@ export default function WorkReportClient({ initialYmd }: WorkReportClientProps) 
               <Button type="button" variant="ghost" onClick={() => setDetailReport(null)}>
                 닫기
               </Button>
-              <Button
-                type="button"
-                onClick={() => {
-                  const target = detailReport;
-                  setDetailReport(null);
-                  setEditingReport(target);
-                  setReportModalOpen(true);
-                }}
-              >
-                보고 수정
-              </Button>
+              {liveDetailReport?.editable && (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setDetailReport(null);
+                    setEditingReport(liveDetailReport);
+                    setReportModalOpen(true);
+                  }}
+                >
+                  보고 수정
+                </Button>
+              )}
             </>
           )
         }

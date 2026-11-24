@@ -269,6 +269,13 @@ public class CommonCodeService extends BaseAbstractService {
                                 .existsById(required(dto.getCdId(), "dto.getCdId() 는 null 일 수 없습니다"))) {
                         throw new BusinessException(CodeErrorCode.DUPLICATE_CODE);
                 }
+                // [2026-11-24] 소속 분류가 실제로 있어야 한다 — 일괄 계층 저장(updateCmmnCodeHierarchy)과 같은 검사다. tb_com_cd.clsf_cd
+                //   에는 FK 가 없고 관리 목록은 분류와 inner join 하므로, 없는 분류로 등록한 그룹은 목록에서 조용히 사라졌다.
+                String clsfCd = required(dto.getClsfCd(), "dto.getClsfCd() 는 null 일 수 없습니다");
+                if (!commonCodeCategoryRepository.existsById(clsfCd)) {
+                        throw new BusinessException("상위 분류코드가 존재하지 않습니다: " + clsfCd,
+                                        CommonErrorCode.RESOURCE_NOT_FOUND);
+                }
                 CommonCodeGroup entity = CommonCodeGroup.builder()
                                 .cdId(required(dto.getCdId(), "dto.getCdId() 는 null 일 수 없습니다"))
                                 .cdIdNm(required(dto.getCdIdNm(), "dto.getCdIdNm() 는 null 일 수 없습니다"))

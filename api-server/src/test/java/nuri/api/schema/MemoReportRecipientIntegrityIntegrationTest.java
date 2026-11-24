@@ -307,6 +307,66 @@ class MemoReportRecipientIntegrityIntegrationTest {
         }
     }
 
+    /**
+     * 사용자 삭제는 메모 보고 행을 지우지 않는다(사용자 FK 없음) — 지워진 작성자를 향한 알림은 알림 표의 사용자 FK 를 어겨 지시 저장과
+     * 관리자 삭제를 함께 되돌렸다(2026-11-24). 지워진 당사자는 건너뛰고 남은 당사자에게만 알린다.
+     */
+    @Test
+    void deletedAuthorNeitherRollsBackInstructionNorAdministratorDeletion() {
+        long id = memoReportService.createMemoReport(sender, memo(active));
+        jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", sender);
+        authenticate(active);
+        String token = memoReportService.getMemoReport(id).getInstructionReadToken();
+
+        memoReportService.updateDrctMatter(id, "instruction for a deleted author", token);
+
+        assertThat(reportRow(id)).containsEntry("drctn_mttr", "instruction for a deleted author");
+        authenticate(waiting, "MEMO_RPT_DELETE_ALL");
+        memoReportService.deleteMemoReport(id);
+
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_memo_rpt_info WHERE memo_rpt_sn=?", Long.class, id)).isZero();
+        if (notificationModule) {
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_user_noti WHERE rcvr_id=?", Long.class, sender)).isZero();
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_user_noti WHERE rcvr_id=? AND noti_ttl_nm=?", Long.class,
+                    active, "지시가 달린 메모 보고가 삭제되었습니다")).isEqualTo(1);
+        }
+    }
+
+    /**
+     * 계정 삭제가 아직 커밋되지 않은 사이에 지시를 남기면 — 잠그지 않은 존재 확인은 삭제 앞의 행을 보고 발행했고, 삭제가 먼저 커밋되면
+     * 알림 INSERT 의 FK 확인이 실패해 지시가 되돌아갔다(Codex 검토). 사용자 행 잠금이 삭제를 기다렸다가 지워진 작성자를 건너뛴다.
+     */
+    @Test
+    void instructionWaitsForUncommittedAccountDeletionAndSkipsTheDeletedAuthor() throws Exception {
+        long id = memoReportService.createMemoReport(sender, memo(active));
+        authenticate(active);
+        String token = memoReportService.getMemoReport(id).getInstructionReadToken();
+        var recipientAuthentication = SecurityContextHolder.getContext().getAuthentication();
+        String application = fixtureId + "userdel";
+        try (var deletion = dataSource.getConnection(); var executor = Executors.newSingleThreadExecutor()) {
+            deletion.setAutoCommit(false);
+            try (var delete = deletion.prepareStatement("DELETE FROM tb_user_info WHERE esntl_id=?")) {
+                delete.setString(1, sender);
+                assertThat(delete.executeUpdate()).isEqualTo(1);
+            }
+            Future<?> instruction = executor.submit(() -> {
+                SecurityContextHolder.getContext().setAuthentication(recipientAuthentication);
+                try {
+                    new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+                        VendorTestSql.nameSession(jdbc, application);
+                        memoReportService.updateDrctMatter(id, "instruction during account deletion", token);
+                    });
+                } finally { SecurityContextHolder.clearContext(); }
+            });
+            try { waitForDatabaseLock(application, 1); } finally { deletion.commit(); }
+            instruction.get(20, TimeUnit.SECONDS);
+        }
+        assertThat(reportRow(id)).containsEntry("drctn_mttr", "instruction during account deletion");
+        if (notificationModule) {
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_user_noti WHERE rcvr_id=?", Long.class, sender)).isZero();
+        }
+    }
+
     @Test
     void unchangedSnapshotKeepsFirstReadAndPermitsInstructionReplacement() {
         long id = memoReportService.createMemoReport(sender, memo(active));

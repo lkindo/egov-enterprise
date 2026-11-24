@@ -110,7 +110,8 @@ describe('Demo user services', () => {
   });
 
   it('reportService rejects every server-owned report field before transport', async () => {
-    const serverOwnedFields = ['rptpSn', 'userId', 'userNm', 'rptTypeCd'] as const;
+    // [2026-11-24] 수정·삭제 힌트(editable·deletable)도 서버가 판정해 싣는 읽기 전용 값이다.
+    const serverOwnedFields = ['rptpSn', 'userId', 'userNm', 'rptTypeCd', 'editable', 'deletable'] as const;
     type ServerOwnedField = Extract<keyof WorkReportInput, (typeof serverOwnedFields)[number]>;
     expectTypeOf<ServerOwnedField>().toEqualTypeOf<never>();
 

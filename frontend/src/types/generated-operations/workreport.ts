@@ -41,7 +41,7 @@ export const updateWorkReportOperation = /*#__PURE__*/ (() => {
   requestSchema: WorkReportDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [["rptpSn"],["userId"],["userNm"],["rptTypeCd"]],
+  requestForbiddenPaths: [["rptpSn"],["userId"],["userNm"],["rptTypeCd"],["editable"],["deletable"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -98,7 +98,7 @@ export const createWorkReportOperation = /*#__PURE__*/ (() => {
   requestSchema: WorkReportDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [["rptpSn"],["userId"],["userNm"],["rptTypeCd"]],
+  requestForbiddenPaths: [["rptpSn"],["userId"],["userNm"],["rptTypeCd"],["editable"],["deletable"]],
   responseForbiddenPaths: [],
   });
 })();

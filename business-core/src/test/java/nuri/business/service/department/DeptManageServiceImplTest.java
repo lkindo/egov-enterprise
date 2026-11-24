@@ -106,6 +106,8 @@ class DeptManageServiceImplTest {
     @Test
     @DisplayName("부서 삭제")
     void deleteDeptManage() {
+        given(deptManageRepository.findByIdForUpdate("OR_01"))
+                .willReturn(Optional.of(DeptManage.builder().ognzId("OR_01").ognzNm("Dept").build()));
         deptManageService.deleteDeptManage("OR_01");
         verify(deptManageRepository).deleteById("OR_01");
     }

@@ -835,6 +835,28 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     expect(mocks.toast).toHaveBeenCalledWith('결재를 회수하지 못했습니다.', 'error');
     expect(screen.queryByRole('dialog', { name: '새 결재 기안' })).not.toBeInTheDocument();
   });
+
+  it('[2026-11-24] 고쳐서 다시 올리기에서 회수 뒤 최신 문서를 못 읽으면 회수 실패가 아니라 편집을 열지 못했다고 말한다', async () => {
+    mocks.getMyHistory.mockResolvedValue({ list: [{ ...pendingApproval, ifmlAtrzSn: 74 }], total: 1 });
+    const detail = mocks.getDetail.getMockImplementation()!;
+    // 회수가 성공한 뒤의 상세 조회만 실패한다 — 회수 전 상세(단추를 그리는 조회)는 그대로 읽힌다.
+    mocks.getDetail.mockImplementation(async (id: number) => {
+      if (mocks.cancelDraft.mock.calls.length > 0) throw new Error('일시적인 연결 오류');
+      return detail(id);
+    });
+    renderClient();
+    fireEvent.click(await screen.findByRole('tab', { name: '내가 올린 결재' }));
+    fireEvent.click(await screen.findByRole('button', { name: '고쳐서 다시 올리기' }));
+
+    await waitFor(() => expect(mocks.cancelDraft).toHaveBeenCalledTimes(1));
+    // 같은 조회 실패를 상세 영역도 따로 알린다 — 처리 안내는 그 가운데 하나다.
+    await waitFor(() => expect(screen.getAllByRole('alert').map(alert => alert.textContent))
+      .toContainEqual(expect.stringContaining('문서를 회수했지만 최신 문서를 불러오지 못해 편집을 열지 못했습니다.')));
+    expect(screen.queryByText(/문서를 회수하지 못했습니다/)).not.toBeInTheDocument();
+    expect(mocks.toast).toHaveBeenCalledWith('문서를 회수했습니다. 편집은 열지 못했습니다.', 'info');
+    expect(mocks.toast).not.toHaveBeenCalledWith('결재를 회수하지 못했습니다.', 'error');
+    expect(screen.queryByRole('dialog', { name: '새 결재 기안' })).not.toBeInTheDocument();
+  });
 });
 
 /** 2026-10-03 결재 동선 개선 검토(F4~F25) — 되돌리기·집중 모드·알림 링크·여러 건 승인의 결함 수정. */

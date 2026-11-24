@@ -37,6 +37,8 @@ import { isConflictError } from '@/lib/query/list-query-defaults';
 import { failureMessage } from '@/lib/safe-error-log';
 import { deptScheduleFormSchema } from './schedule-form-validation';
 import { PagePagination } from '@/components/common/PagePagination';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 const SCHEDULE_FORM_LABELS = {
     schdlNm: '일정명',
@@ -69,6 +71,9 @@ const toError = (value: unknown): Error => {
 
 export default function ScheduleDeptClient() {
     const toast = useToast();
+    const { user } = useAuth();
+    // [2026-11-24] 등록 단추는 등록 기능 권한으로 보인다(DEC-OPS-185). 수정·삭제는 서버 힌트(editable·deletable)가 기능 권한까지 본다.
+    const canCreateSchedule = canPermission(user, 'SCHEDULE_CREATE');
     const [schedules, setSchedules] = useState<DeptSchedule[]>([]);
     const [loading, setLoading] = useState(true);
     // 조회 실패를 "등록된 일정 없음"으로 위장하지 않기 위해 실패 사유를 목록 영역에 그대로 노출한다.
@@ -280,14 +285,16 @@ export default function ScheduleDeptClient() {
         <div className="space-y-6 p-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold tracking-tight">부서 일정 관리</h1>
-                <Button
-                    onClick={handleCreate}
-                    disabled={isSaving || deletingScheduleSn !== null}
-                    className="rounded-lg shadow-lg font-bold"
-                >
-                    <Plus className="mr-2 h-4 w-4" />
-                    일정 등록
-                </Button>
+                {canCreateSchedule && (
+                    <Button
+                        onClick={handleCreate}
+                        disabled={isSaving || deletingScheduleSn !== null}
+                        className="rounded-lg shadow-lg font-bold"
+                    >
+                        <Plus className="mr-2 h-4 w-4" />
+                        일정 등록
+                    </Button>
+                )}
             </div>
 
             <div className="flex items-center space-x-2 bg-muted p-4 rounded-lg border border-border">

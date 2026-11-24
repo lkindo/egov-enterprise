@@ -30,6 +30,11 @@ vi.mock('@/app/components/ui/standard-modal', () => ({ StandardModal: () => null
 vi.mock('@/components/business/schedule/ScheduleCreateForm', () => ({ ScheduleCreateForm: () => null }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => vi.fn() }));
+// 등록 단추가 현재 사용자의 권한을 본다 — 이 스펙은 달력 표시만 보므로 권한 없는 주체로 둔다.
+vi.mock('@/contexts/AuthContext', () => {
+  const auth = () => ({ user: { role: 'ROLE_USER', permissions: [] as string[], authorizationVersion: 'v1' } });
+  return { useAuth: auth, useOptionalAuth: auth };
+});
 vi.mock('@/services/business/schedule/deptScheduleService', () => ({
   getDeptScheduleMonthList: vi.fn(),
   createDeptSchedule: vi.fn(),

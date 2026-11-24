@@ -144,7 +144,8 @@ describe('WorkReportClient 모달 기본 일자와 미저장 이탈 보호', () 
     mocks.deleteReport.mockResolvedValue(undefined);
     mocks.reportRows = [];
     mocks.reportTotal = null;
-    mocks.permissions = [];
+    // 보고 등록 단추는 등록 기능 권한이 있어야 보인다(DEC-OPS-185).
+    mocks.permissions = ['WORK_RPT_CREATE'];
   });
 
   it('보고 등록의 기본 일자는 서버 렌더 시점의 오늘(initialYmd)이다', async () => {

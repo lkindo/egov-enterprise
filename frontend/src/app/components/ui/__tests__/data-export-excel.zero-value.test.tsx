@@ -19,6 +19,7 @@ describe('DataExportExcel 값 표기', () => {
       }
     });
     URL.createObjectURL = vi.fn(() => 'blob:export');
+    URL.revokeObjectURL = vi.fn();
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
   });
 
@@ -43,5 +44,23 @@ describe('DataExportExcel 값 표기', () => {
     fireEvent.click(screen.getByRole('button', { name: /엑셀 내보내기/ }));
 
     expect(chunks.join('')).toContain('"20260915","0",""');
+  });
+
+  it('[2026-11-24] 내려받기를 시작한 뒤 Blob URL 을 놓는다', () => {
+    vi.useFakeTimers();
+    try {
+      const revoke = vi.fn();
+      URL.revokeObjectURL = revoke;
+      render(<DataExportExcel scope="loaded" data={[{ statsCo: 1 }]} headers={[{ label: '접속 건수', key: 'statsCo' }]} />);
+
+      fireEvent.click(screen.getByRole('button', { name: /엑셀 내보내기/ }));
+      expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(1);
+      expect(revoke).not.toHaveBeenCalled();
+
+      vi.runAllTimers();
+      expect(revoke).toHaveBeenCalledWith('blob:export');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

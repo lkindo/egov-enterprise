@@ -333,6 +333,72 @@ class WorkReportServiceTest {
         assertEquals("20260906", result.getRptYmd());
     }
 
+    /** 권한 목록을 그대로 쥔 인증 주체 — 기본 그룹 전개 없이 힌트 판정의 경계를 하나씩 본다. */
+    private static void authenticateWithPermissions(String loginId, String... permissions) {
+        CustomUserDetails principal = CustomUserDetails.builder().userId(loginId).esntlId("ESNTL_" + loginId)
+                .userNm(loginId).password("test").groups(java.util.List.of("ROLE_USER"))
+                .permissions(java.util.List.of(permissions)).enabled(true).lockAt("N")
+                .authorizationVersion(nuri.business.security.authorization.PermissionCodes.CATALOG_VERSION).build();
+        SecurityContext ctx = SecurityContextHolder.createEmptyContext();
+        ctx.setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+        SecurityContextHolder.setContext(ctx);
+    }
+
+    private WorkReportDto detailOfReportWrittenBy(String author) {
+        WorkReport report = WorkReport.builder().rptpSn(7L).rptTtl("주간보고").userId(author).build();
+        org.springframework.test.util.ReflectionTestUtils.setField(report, "frstRgtrId", author);
+        when(workReportRepository.findById(7L)).thenReturn(Optional.of(report));
+        return workReportService.getWorkReport(7L);
+    }
+
+    @Test
+    @DisplayName("[2026-11-24] 수정·삭제 힌트는 쓰기 경로와 같은 판정이다 — 기능 권한 + (작성자 본인 또는 전체 권한)")
+    void editableAndDeletableHintsFollowTheWriteGuards() {
+        authenticateWithPermissions("user01", "WORK_RPT_READ", "WORK_RPT_UPDATE", "WORK_RPT_DELETE");
+        WorkReportDto own = detailOfReportWrittenBy("user01");
+        assertEquals(Boolean.TRUE, own.getEditable());
+        assertEquals(Boolean.TRUE, own.getDeletable());
+
+        // 전체 열람 권한으로 남의 보고를 보지만 전체 수정·삭제 권한은 없다 — 서버가 403 을 낼 단추를 그리지 않는다.
+        authenticateWithPermissions("viewer", "WORK_RPT_READ", "WORK_RPT_READ_ALL", "WORK_RPT_UPDATE", "WORK_RPT_DELETE");
+        WorkReportDto others = detailOfReportWrittenBy("user01");
+        assertEquals(Boolean.FALSE, others.getEditable());
+        assertEquals(Boolean.FALSE, others.getDeletable());
+
+        // 작성자라도 기능 권한이 회수됐으면 컨트롤러가 막는다.
+        authenticateWithPermissions("user01", "WORK_RPT_READ");
+        WorkReportDto revoked = detailOfReportWrittenBy("user01");
+        assertEquals(Boolean.FALSE, revoked.getEditable());
+        assertEquals(Boolean.FALSE, revoked.getDeletable());
+
+        // 전체 권한자는 남의 보고도 고치고 지운다 — 수정과 삭제는 따로 판정한다.
+        authenticateWithPermissions("admin01", "WORK_RPT_READ", "WORK_RPT_READ_ALL", "WORK_RPT_UPDATE",
+                "WORK_RPT_UPDATE_ALL", "WORK_RPT_DELETE");
+        WorkReportDto administered = detailOfReportWrittenBy("user01");
+        assertEquals(Boolean.TRUE, administered.getEditable());
+        assertEquals(Boolean.FALSE, administered.getDeletable());
+    }
+
+    @Test
+    @DisplayName("[2026-11-24] 힌트의 소유 판정은 쓰기 가드와 같은 frstRgtrId 축이다 — 표시용 userId 가 같아도 등록자가 다르면 거짓")
+    void hintOwnershipFollowsTheAuditRegistrantNotTheDisplayedAuthor() {
+        WorkReport report = WorkReport.builder().rptpSn(8L).rptTtl("이관된 보고").userId("user01").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(report, "frstRgtrId", "migrator");
+        when(workReportRepository.findById(8L)).thenReturn(Optional.of(report));
+        authenticateWithPermissions("user01", "WORK_RPT_READ", "WORK_RPT_READ_ALL", "WORK_RPT_UPDATE", "WORK_RPT_DELETE");
+
+        WorkReportDto seenByDisplayedAuthor = workReportService.getWorkReport(8L);
+        assertEquals(Boolean.FALSE, seenByDisplayedAuthor.getEditable());
+        assertEquals(Boolean.FALSE, seenByDisplayedAuthor.getDeletable());
+        // 쓰기 가드도 같은 축이라 힌트가 거짓이면 실제 수정도 거부된다.
+        assertThrows(BusinessException.class, () -> workReportService.deleteWorkReport(8L));
+
+        authenticateWithPermissions("migrator", "WORK_RPT_READ", "WORK_RPT_UPDATE", "WORK_RPT_DELETE");
+        WorkReportDto seenByRegistrant = workReportService.getWorkReport(8L);
+        assertEquals(Boolean.TRUE, seenByRegistrant.getEditable());
+        assertEquals(Boolean.TRUE, seenByRegistrant.getDeletable());
+    }
+
     @Test
     @DisplayName("업무보고 상세 — 미존재는 성공 null이 아니라 404 도메인 오류")
     void getWorkReport_notFound() {

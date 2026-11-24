@@ -17,6 +17,8 @@ export const WorkReportDtoSchema = /*#__PURE__*/ (() => z.object({
   rptYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   rptTypeCd: z.string().optional().nullable(),
   version: z.number().int().min(0).optional(),
+  editable: z.boolean().optional(),
+  deletable: z.boolean().optional(),
 }))();
 export type WorkReportDto = z.infer<typeof WorkReportDtoSchema>;
 
@@ -71,6 +73,8 @@ export const WorkReportDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   rptYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
   rptTypeCd: z.string().optional().nullable(),
   version: z.number().int().min(0).optional().nullable(),
+  editable: z.boolean().optional().nullable(),
+  deletable: z.boolean().optional().nullable(),
 }))();
 
 export const ApiResponsePageResponseWorkReportDtoRequestSchema = /*#__PURE__*/ (() => z.object({
