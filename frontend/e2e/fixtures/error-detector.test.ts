@@ -268,6 +268,8 @@ describe('ExpectedErrorLedger', () => {
       return fake;
     };
     const bookmarks = 'http://localhost:3001/api/v1/menus/bookmarks/status';
+    /** 시험의 탐색 요청이 향하는 주소. 이 주소로의 framenavigated 가 문서 교체 커밋이다. */
+    const menus = 'http://localhost:3001/admin/system/menus';
     const abortedGetEntry = responseEntry({
       id: 'E2E-RESILIENCE-ABORTED-GET',
       channel: 'requestfailed',
@@ -308,7 +310,7 @@ describe('ExpectedErrorLedger', () => {
         childFrame,
         advance: (ms: number) => { clockMs += ms; },
         /** 문서 탐색 요청. 요청·응답·실패에 같은 객체를 쓴다. */
-        navigation: (target: FakeFrame = mainFrame) => request('http://localhost:3001/admin/system/menus', 'GET', target, true),
+        navigation: (target: FakeFrame = mainFrame) => request(menus, 'GET', target, true),
         navigationRequest: (navigation: FakeRequest) => emit('request', navigation),
         navigationResponse: (navigation: FakeRequest, status = 200) => emit('response', {
           status: () => status,
@@ -317,8 +319,8 @@ describe('ExpectedErrorLedger', () => {
         }),
         /** 응답을 받은 탐색이 다운로드·204 로 끝났거나 다른 탐색에 밀려 탐색 요청 자체가 실패했다. */
         navigationFailed: (navigation: FakeRequest) => emit('requestfailed', navigation),
-        /** framenavigated. 주소가 바뀌지 않으면 같은 문서 안 이동(pushState)과 구별되지 않는다. */
-        commit: (target: FakeFrame = mainFrame, href = target.href) => {
+        /** framenavigated. 기본은 탐색 요청의 주소로의 커밋이고, 다른 주소면 같은 문서 안 이동(pushState·조각)이다. */
+        commit: (target: FakeFrame = mainFrame, href = menus) => {
           target.href = href;
           emit('framenavigated', target);
         },
@@ -363,7 +365,7 @@ describe('ExpectedErrorLedger', () => {
       redirected.navigationRequest(final);
       redirected.navigationResponse(final);
       redirected.apiFailure();
-      redirected.commit(redirected.mainFrame, 'http://localhost:3001/login');
+      redirected.commit();
       await expect(redirected.guard.verify()).resolves.toBeUndefined();
 
       const blank = await makeGuard();
@@ -429,6 +431,35 @@ describe('ExpectedErrorLedger', () => {
       noCommit.commit(noCommit.mainFrame, 'http://localhost:3001/admin/user/manage?tab=2');
       await expect(noCommit.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status/);
       expect(await errorCount(noCommit.guard)).toBe(1);
+    });
+
+    it('기다리던 탐색이 실패하기 전에 같은 문서 안 이동이 와도 그 사이의 앱 취소를 잡는다', async () => {
+      // 204 응답 → 앱 취소 → pushState → 탐색 실패(세 번째 독립 검토의 반례).
+      const pushStateFirst = await makeGuard();
+      const navigation = pushStateFirst.navigation();
+      pushStateFirst.navigationResponse(navigation, 204);
+      pushStateFirst.apiFailure();
+      pushStateFirst.commit(pushStateFirst.mainFrame, 'http://localhost:3001/admin/user/manage?tab=2');
+      pushStateFirst.navigationFailed(navigation);
+      await expect(pushStateFirst.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status/);
+
+      // 실패한 탐색은 더는 기다리지 않는다 — 그 뒤 같은 주소로의 같은 문서 안 이동도 커밋이 아니다.
+      const sameUrlAfterFailure = await makeGuard();
+      const failed = sameUrlAfterFailure.navigation();
+      sameUrlAfterFailure.navigationResponse(failed, 204);
+      sameUrlAfterFailure.navigationFailed(failed);
+      sameUrlAfterFailure.apiFailure();
+      sameUrlAfterFailure.commit(sameUrlAfterFailure.mainFrame, menus);
+      await expect(sameUrlAfterFailure.guard.verify()).rejects.toThrow(/NETWORK FAILED.*bookmarks\/status/);
+    });
+
+    it('기다리는 동안 다른 주소로의 같은 문서 안 이동이 끼어도 뒤이은 문서 교체 묶음은 통과한다', async () => {
+      const fragmentFirst = await makeGuard();
+      fragmentFirst.navigationResponse(fragmentFirst.navigation());
+      fragmentFirst.commit(fragmentFirst.mainFrame, 'http://localhost:3001/admin/user/manage#tab');
+      fragmentFirst.apiFailure();
+      fragmentFirst.commit(fragmentFirst.mainFrame, `${menus}#section`);
+      await expect(fragmentFirst.guard.verify()).resolves.toBeUndefined();
     });
 
     it('보류한 취소와 커밋 사이에 같은 프레임의 네트워크 사건이 끼면 그 취소는 잡는다', async () => {

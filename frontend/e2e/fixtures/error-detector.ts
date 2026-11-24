@@ -140,8 +140,8 @@ export class ExpectedErrorLedger {
 /** 결과를 받을 문서가 사라지면 잃을 것이 없는 읽기 요청. 쓰기는 끊기면 저장이 잘렸을 수 있다. */
 const READ_METHODS = new Set(['GET', 'HEAD']);
 
-/** 탐색의 리다이렉트 응답. 문서를 바꾸지 않고 다음 요청으로 이어진다. */
-const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+/** 커밋된 주소는 조각(#…)을 달지만 탐색 요청의 주소에는 없다. */
+const withoutFragment = (url: string) => url.split('#', 1)[0];
 
 /** 응답 없이 문서가 바뀌는 주소. 같은 문서 안 이동(pushState)으로는 갈 수 없다. */
 const LOCAL_DOCUMENT_URL = /^(?:about|data):/i;
@@ -171,12 +171,13 @@ export class ConsoleErrorGuard {
    * 실패 묶음 → framenavigated 다(1.65.1, 요청 가로채기를 켜도 같음 — 2026-11-24 실측).
    *
    * 그래서 끊긴 읽기 요청은 바로 버리지 않고 보류한다. 같은 프레임에 다른 네트워크 사건(요청·응답·완료,
-   * 기다리던 탐색의 실패 — 다운로드·204 로 끝난 탐색)이 끼면 보류분은 앱의 취소로 확정한다. framenavigated 에서는
-   * 문서가 실제로 바뀐 커밋일 때만 보류분을 면제한다: 리다이렉트가 아닌 탐색 응답을 받은 프레임이거나(그 응답이
-   * 앞선 보류분을 이미 확정했으므로 남은 것은 응답 뒤의 묶음이다), 응답 없이 바뀌는 주소(about:blank 등)로
-   * 커밋되며 COMMIT_BURST_MS 안에 끊긴 것. 같은 문서 안 이동(pushState)도 framenavigated 를 내므로 그 밖의
-   * framenavigated 와 검증 때 남은 보류분은 결함이다. 남는 틈: 최종 문서 응답과 커밋 사이(수 ms)에 다른 사건
-   * 없이 앱이 취소한 읽기와 같은 문서 안 이동은 묶음과 구별되지 않는다.
+   * 기다리던 탐색의 실패 — 다운로드·204 로 끝난 탐색)이 끼면 보류분은 앱의 취소로 확정한다. 같은 문서 안
+   * 이동(pushState·조각)도 framenavigated 를 내므로, framenavigated 에서는 문서가 실제로 바뀐 커밋일 때만 보류분을
+   * 면제한다: 응답을 받고 기다리던 탐색의 주소로 커밋된 것이거나(그 응답이 앞선 보류분을 이미 확정했으므로 남은
+   * 것은 응답 뒤의 묶음이다. 리다이렉트 응답의 주소로는 커밋되지 않는다), 응답 없이 바뀌는 주소(about:blank 등)로
+   * 커밋되며 COMMIT_BURST_MS 안에 끊긴 것. 그 밖의 framenavigated 와 검증 때 남은 보류분은 결함이다.
+   * 남는 틈: 기다리던 탐색과 같은 주소로의 같은 문서 안 이동, 최종 문서 응답과 커밋 사이(수 ms)에 다른 사건 없이
+   * 앱이 취소한 읽기, 응답 없는 커밋 COMMIT_BURST_MS 안의 앱 취소는 묶음과 구별되지 않는다.
    */
   private readonly awaitingCommit = new Map<Frame, Request>();
   private readonly abortsBeforeCommit = new Map<Frame, Array<{ request: Request; at: number }>>();
@@ -285,8 +286,11 @@ export class ConsoleErrorGuard {
     this.page.on('framenavigated', (frame) => {
       const pending = this.abortsBeforeCommit.get(frame) ?? [];
       this.abortsBeforeCommit.delete(frame);
-      const networkCommit = this.awaitingCommit.delete(frame);
+      const awaited = this.awaitingCommit.get(frame);
+      const networkCommit = awaited !== undefined && withoutFragment(frame.url()) === withoutFragment(awaited.url());
       const localCommit = LOCAL_DOCUMENT_URL.test(frame.url());
+      // 같은 문서 안 이동이면 기다리던 탐색은 아직 커밋 전이다.
+      if (networkCommit || localCommit) this.awaitingCommit.delete(frame);
       const now = this.clock().getTime();
       for (const { request, at } of pending) {
         // 문서가 실제로 바뀐 커밋 직전의 묶음이면 이전 문서의 읽기다. 그 밖(같은 문서 안 이동 등)은 앱의 취소다.
@@ -298,8 +302,8 @@ export class ConsoleErrorGuard {
     this.page.on('response', (response) => {
       const request = response.request();
       interruptAbortsBeforeCommit(request);
-      // 리다이렉트 응답은 문서를 바꾸지 않는다 — 최종 문서의 응답부터 커밋을 기다린다.
-      if (request.isNavigationRequest() && !REDIRECT_STATUSES.has(response.status())) {
+      // 리다이렉트를 거치면 다음 요청의 응답이 기다릴 탐색을 바꾼다.
+      if (request.isNavigationRequest()) {
         const frame = frameOf(request);
         if (frame) this.awaitingCommit.set(frame, request);
       }
