@@ -36,6 +36,8 @@ pnpm -C frontend run lint
 
 `test:form-validation`은 native/member form, form 없는 editable write, 직접 editable DOM이 없는 action-only screen의 write control을 AST로 다시 수집한다. custom child Form은 parent가 `onSubmit` adapter를 제공하는 형태와 import한 Form이 write를 자체 소유하는 형태를 모두 parent aggregate의 exact composition ledger로 연결한다. child의 `useAppForm` lock·실제 submit pending control, parent의 `isPending` 전달, `onWritePendingChange` 같은 pending bridge가 공유 parent ref에 연결되는지도 함께 해석한다. sibling parent write action이 없는 pure child composition에는 존재하지 않는 mutual-lock/external-busy를 요구하지 않는다. 검색·필터·UI primitive callback은 concrete service/action/mutation write sink에 도달하지 않으면 모집단에 들어오지 않는다. form-less owner의 schema-backed primary submit은 aggregate validated boundary가 소유하고, 같은 primary submit adapter를 호출하는 외부 control은 secondary로 중복 집계하지 않는다. 그 밖의 저장·이동·삭제·말소·가입·추천 control은 exact secondary action으로 분리한다. secondary action은 실제 write sink를 지배하는 guard→ref claim→write→`finally`/mutation `onSettled` release를 추적하고, lock helper와 callback wrapper도 실제 sink에 연결될 때만 인정한다. 실제 control의 `disabled`·`aria-busy`는 같은 action-specific pending state를 공유해야 하며, 그 state의 claim은 실제 sink보다 앞서고 release는 `finally`/`onSettled`에서 settlement 뒤에 이뤄져야 한다. 별도 action이 같은 generic busy identity를 빌리거나 handler ref와 무관한 pending state를 control에 붙이면 실패한다. 실패 feedback은 해당 `catch`/`onError` branch 안에 있어야 한다.
 
+처리기·잠금을 훅 파일로 나눠도 census 는 같은 경계를 같은 근거로 읽는다(2026-11-25). 이름은 그것을 참조한 코드의 파일에서 찾고, 그 파일에 선언이 없으면 구조 분해로 받은 훅 호출(`const { handleDelete } = useItemActions()`, 훅 결과를 담은 변수를 한 번 거친 것 포함)을 따라 그 훅 — 같은 파일의 함수이거나 상대·`@/` 경로로 가져온 모듈 — 이 돌려주는 선언으로 간다. 한 파일에 같은 이름이 여럿이면(훅마다 `mutation` 을 두는 등) 참조를 감싸는 범위의 선언을 고르고, 가져오지 않은 파일의 같은 이름은 보지 않는다. 그래서 화면을 나누는 리팩터는 census 기대 개수를 바꾸지 않아야 하며, 바뀌면 판독이 달라진 것이다.
+
 행동 증거는 한 action-specific test block 안에서 같은 sink의 호출 1회와 실패 주입, 같은 trigger control의 중복 실행·disabled·`aria-busy`, visible feedback을 함께 증명해야 한다. 테스트 제목에 action token만 넣고 다른 save/delete control의 assertion을 차용할 수 없다. composed child form은 manifest의 exact `composedChildContracts`(component, child handler/write sinks, 충돌하는 parent action handlers)를 기준으로 child→parent와 parent→child 양방향 잠금, child 자체 pending control, 외부 busy 전달을 별도 증거로 확인한다. 같은 파일의 관련 없는 ref·control·오류 UI나 일반 문자열은 다른 action의 증거가 될 수 없다. 신규·삭제·재분류·만료 예외·FormLabel 문맥 위반·중복 inline alert·모호한 compliance metadata·관련 없는 test evidence가 있으면 실패한다. 같은 gate는 pre-push, `scripts/verify.mjs`, required frontend CI에 연결되어 있다.
 
 ## RED 증명
@@ -58,6 +60,7 @@ pnpm -C frontend run lint
 - custom child Form parent aggregate, child로 전달되는 `handle*` write callback, 가입·추천 action을 ledger에서 누락
 - action 행동 assertion을 여러 test block에 분산하거나, 같은 block 안에서 다른 sink·control의 assertion을 차용
 - composed child submit과 parent action의 aggregate ref/pending 신호만 제시하고 exact 양방향 mutual-lock을 누락
+- 쓰기 훅을 다른 파일로 옮겼을 때 처리기·쓰기·잠금·처리 중 근거가 사라지거나, 같은 파일의 다른 훅에 있는 같은 이름 선언을 빌림
 - `messageProps(...)` inline 오류에 중복 `role="alert"`를 추가
 - 다른 화면의 테스트를 evidence로 연결하거나 예외 만료
 - `WRITE_NOT_IMPLEMENTED=true`, 501 안내, exact control `disabled` 중 하나를 제거해 compile-time-disabled write 예외를 활성 경계로 바꿈

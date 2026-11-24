@@ -98,6 +98,29 @@ describe('메뉴 즐겨찾기 토글', () => {
     await waitFor(() => expect(toggle).not.toBeDisabled());
   });
 
+  it('즐겨찾기를 빼는 중에도 요청은 하나만 나가고 단추가 잠기며, 실패하면 서버 사유를 알리고 상태를 둔다', async () => {
+    // [2026-11-25] 빼기 경로(removeBookmark)도 추가와 같은 잠금·실패 안내를 지난다 — 폼 census 가 이 단추의 쓰기 경계로 읽는 경로다.
+    const user = userEvent.setup();
+    let reject: (error: Error) => void = () => undefined;
+    mocks.removeBookmark.mockImplementation(() => new Promise((_, r) => { reject = r; }));
+    renderWithClient(<NavBookmarkToggle menuNo={10} menuNm="공지" />);
+    const toggle = screen.getByRole('button', { name: '공지 즐겨찾기' });
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-pressed', 'true'));
+    await waitFor(() => expect(toggle).not.toBeDisabled());
+
+    await user.click(toggle);
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-busy', 'true'));
+    expect(toggle).toBeDisabled();
+    toggle.click();
+    expect(mocks.removeBookmark).toHaveBeenCalledTimes(1);
+
+    reject(new Error('즐겨찾기를 빼지 못했습니다. 잠시 뒤 다시 시도해 주세요.'));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('즐겨찾기를 빼지 못했습니다. 잠시 뒤 다시 시도해 주세요.', 'error'));
+    await waitFor(() => expect(toggle).not.toBeDisabled());
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    expect(mocks.addBookmark).not.toHaveBeenCalled();
+  });
+
   it('같은 틱에 두 번 불러도 요청은 하나만 나간다 — 화면이 다시 그려지기 전의 연타를 막는다', async () => {
     let resolve: () => void = () => undefined;
     mocks.addBookmark.mockImplementation(() => new Promise<void>((r) => { resolve = r; }));

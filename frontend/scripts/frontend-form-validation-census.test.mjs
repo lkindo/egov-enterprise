@@ -2374,3 +2374,182 @@ test('empty discovery and stale manifest entries fail closed', () => {
     subject.cleanup();
   }
 });
+
+
+// [2026-11-25 품질 평가 3순위 12] 화면을 훅 파일로 나눠도 census 가 같은 쓰기 경계를 같은 근거로 읽는다. 종전에는 처리기·잠금을
+//   같은 파일 안에서만 이름으로 찾아, 쓰기 훅을 다른 파일로 옮기면 단추의 쓰기 경계가 census 에서 조용히 빠졌다.
+const HOOK_BODY = `
+  const [deletePending, setDeletePending] = useState(false);
+  const deleteRef = useRef(false);
+  const beginDelete = () => {
+    if (deleteRef.current) return false;
+    deleteRef.current = true;
+    setDeletePending(true);
+    return true;
+  };
+  const finishDelete = () => {
+    deleteRef.current = false;
+    setDeletePending(false);
+  };
+  const handleDelete = async () => {
+    if (!beginDelete()) return;
+    try { await deleteItem(itemId); }
+    catch (error) { toast(failureMessage(error, 'delete failed')); }
+    finally { finishDelete(); }
+  };
+  const handleMove = async () => {
+    if (!beginDelete()) return;
+    try { await moveItems([itemId], targetId); }
+    catch (error) { toast(failureMessage(error, 'move failed')); }
+    finally { finishDelete(); }
+  };
+  const itemBulkActions = [{ label: '일괄 이동', onClick: handleMove }];
+  return { deletePending, handleDelete, itemBulkActions };
+`;
+const OWNER_BODY = `
+  const { deletePending, handleDelete, itemBulkActions } = useItemActions();
+  return <>
+    <input value={name} onChange={(event) => setName(event.target.value)} />
+    <button onClick={handleDelete} disabled={deletePending} aria-busy={deletePending}>delete</button>
+    <StandardDataTable data={items} columns={columns} bulkActions={itemBulkActions} />
+  </>;
+`;
+
+function comparableCandidates(discovery, ownerFile) {
+  return discovery.candidates
+    .filter(({ file }) => file === ownerFile)
+    .map(({ kind, owner, handler, writeSinks, signals }) => ({ kind, owner, handler, writeSinks, signals }));
+}
+
+test('a write hook moved to its own module keeps the same handlers, sinks, lock and pending evidence', () => {
+  const sameFile = fixture({
+    'frontend/src/ItemOwner.tsx': `
+      import { deleteItem, moveItems } from './itemActions';
+      function useItemActions(){${HOOK_BODY}}
+      export function ItemOwner(){${OWNER_BODY}}
+    `,
+  });
+  const split = fixture({
+    'frontend/src/use-item-actions.ts': `
+      import { deleteItem, moveItems } from './itemActions';
+      export function useItemActions(){${HOOK_BODY}}
+    `,
+    'frontend/src/ItemOwner.tsx': `
+      import { useItemActions } from './use-item-actions';
+      export function ItemOwner(){${OWNER_BODY}}
+    `,
+  });
+  try {
+    const expected = comparableCandidates(sameFile.discovery, 'frontend/src/ItemOwner.tsx');
+    const actions = expected.filter(({ kind }) => kind === 'secondary-action');
+    // 전제: 한 파일일 때 단추와 일괄 동작이 쓰기 경계로 읽힌다 — 비교가 빈 목록끼리의 통과가 아니다.
+    assert.deepEqual(actions.map(({ handler }) => handler).sort(), ['bulkAction:일괄 이동', 'handleDelete'].sort());
+    assert.deepEqual(actions.find(({ handler }) => handler === 'handleDelete')?.writeSinks, ['deleteItem']);
+    assert.equal(actions.find(({ handler }) => handler === 'handleDelete')?.signals.implementation.actionControlHasDisabled, true);
+    assert.deepEqual(comparableCandidates(split.discovery, 'frontend/src/ItemOwner.tsx'), expected);
+    // 요약은 파일 수만 다르다(훅 파일 하나가 늘었다).
+    const withoutFiles = ({ sourceFiles, ...rest }) => (sourceFiles === undefined ? rest : rest);
+    assert.equal(split.discovery.summary.sourceFiles, sameFile.discovery.summary.sourceFiles + 1);
+    assert.deepEqual(withoutFiles(split.discovery.summary), withoutFiles(sameFile.discovery.summary));
+  } finally {
+    sameFile.cleanup();
+    split.cleanup();
+  }
+});
+
+test('an imported hook binding resolves only through the module the owner imports it from', () => {
+  // 같은 이름의 처리기가 import 하지 않은 파일에 있어도 빌려 오지 않는다 — 판정은 구조 분해한 훅 호출을 따라간다.
+  const subject = fixture({
+    'frontend/src/unrelated-actions.ts': `
+      import { deleteItem } from './itemActions';
+      export function useOther(){ const handleDelete = () => deleteItem(1); return { handleDelete }; }
+    `,
+    'frontend/src/use-item-view.ts': `
+      export function useItemView(){ const handleDelete = () => setOpen(true); return { handleDelete }; }
+    `,
+    'frontend/src/ViewOwner.tsx': `
+      import { useItemView } from './use-item-view';
+      export function ViewOwner(){
+        const { handleDelete } = useItemView();
+        return <><input value={name} /><button onClick={handleDelete}>open</button></>;
+      }
+    `,
+  });
+  try {
+    assert.equal(subject.discovery.candidates.filter(({ kind, file }) => kind === 'secondary-action'
+      && file === 'frontend/src/ViewOwner.tsx').length, 0);
+  } finally {
+    subject.cleanup();
+  }
+});
+
+test('when one module declares the same name in several hooks the enclosing hook wins', () => {
+  // 한 파일의 두 훅이 저마다 `mutation` 을 두면 처리기가 속한 훅의 것을 읽는다 — 파일의 첫 선언을 빌리면 다른 훅의 쓰기 경로를 읽는다.
+  const subject = fixture({
+    'frontend/src/use-two-hooks.ts': `
+      export function useCleanup(){
+        const mutation = useMutation({ mutationFn: () => cleanupService.purgeAll() });
+        return { mutation };
+      }
+      export function useRemove(id){
+        const removeRef = useRef(false);
+        const mutation = useMutation({ mutationFn: () => itemService.removeItem(id) });
+        const remove = async () => {
+          if (removeRef.current) return;
+          removeRef.current = true;
+          try { await mutation.mutateAsync(); } catch (error) { toast(String(error)); } finally { removeRef.current = false; }
+        };
+        return { remove };
+      }
+    `,
+    'frontend/src/RemoveOwner.tsx': `
+      import { useRemove } from './use-two-hooks';
+      export function RemoveOwner(){
+        const { remove } = useRemove(1);
+        return <><input value={name} /><button onClick={remove}>remove</button></>;
+      }
+    `,
+  });
+  try {
+    const action = subject.discovery.candidates.find(({ kind, file }) => kind === 'secondary-action' && file === 'frontend/src/RemoveOwner.tsx');
+    assert.ok(action, 'the imported remove handler is a write boundary');
+    assert.equal(action.writeSinks.includes('itemService.removeItem'), true, JSON.stringify(action.writeSinks));
+    assert.equal(action.writeSinks.includes('cleanupService.purgeAll'), false, JSON.stringify(action.writeSinks));
+  } finally {
+    subject.cleanup();
+  }
+});
+
+test('a hook result held in a variable and destructured later resolves to the same hook', () => {
+  // 허브가 `const lock = useLock(); const { begin } = lock;` 로 받는 형태 — 한 파일일 때와 같은 경계를 읽어야 한다.
+  const ownerBody = OWNER_BODY.replace(
+    'const { deletePending, handleDelete, itemBulkActions } = useItemActions();',
+    'const actions = useItemActions();\n  const { deletePending, handleDelete, itemBulkActions } = actions;',
+  );
+  assert.notEqual(ownerBody, OWNER_BODY);
+  const sameFile = fixture({
+    'frontend/src/ItemOwner.tsx': `
+      import { deleteItem, moveItems } from './itemActions';
+      function useItemActions(){${HOOK_BODY}}
+      export function ItemOwner(){${ownerBody}}
+    `,
+  });
+  const split = fixture({
+    'frontend/src/use-item-actions.ts': `
+      import { deleteItem, moveItems } from './itemActions';
+      export function useItemActions(){${HOOK_BODY}}
+    `,
+    'frontend/src/ItemOwner.tsx': `
+      import { useItemActions } from './use-item-actions';
+      export function ItemOwner(){${ownerBody}}
+    `,
+  });
+  try {
+    const expected = comparableCandidates(sameFile.discovery, 'frontend/src/ItemOwner.tsx');
+    assert.equal(expected.filter(({ kind }) => kind === 'secondary-action').length, 2);
+    assert.deepEqual(comparableCandidates(split.discovery, 'frontend/src/ItemOwner.tsx'), expected);
+  } finally {
+    sameFile.cleanup();
+    split.cleanup();
+  }
+});

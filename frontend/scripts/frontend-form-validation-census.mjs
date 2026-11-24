@@ -157,12 +157,130 @@ function resolvedHandlerContract(formNode, ownerNode) {
   return { explicit: true, text: `${initializerText} ${definitions.join(' ')}` };
 }
 
-function localDeclaration(sourceFile, name) {
-  return sourceFile.getDescendantsOfKind(SyntaxKind.FunctionDeclaration)
-    .find((declaration) => declaration.getName() === name)
-    ?? sourceFile.getDescendantsOfKind(SyntaxKind.VariableDeclaration)
-      .find((declaration) => declaration.getName() === name)
-    ?? null;
+/**
+ * 이름의 선언. 먼저 그 파일 안에서 이름으로 찾는다. 없으면 [2026-11-25] 그 파일이 훅 호출을 구조 분해해 받은 이름인지 보고
+ * (`const { handleDelete } = useItemActions(...)`), 그 훅(같은 파일의 함수이거나 가져온 로컬 모듈의 함수) 본문에서 돌려주는
+ * 선언으로 따라간다. 화면을 훅 파일로 나눠도 단추의 처리기·쓰기·잠금을 같은 근거로 읽기 위해서다 — 종전에는 파일 하나 안에서만
+ * 찾아, 처리기를 다른 파일로 옮기면 그 쓰기 경계가 census 에서 조용히 빠졌다. 가져오지 않은 파일의 같은 이름은 보지 않는다.
+ */
+function localDeclaration(sourceFile, name, from = null) {
+  return sameFileDeclaration(sourceFile, name, from) ?? hookBindingDeclaration(sourceFile, name);
+}
+
+/**
+ * 파일 안의 선언. 같은 이름이 여럿이면(한 파일의 여러 훅이 저마다 `mutation` 을 두는 등) 참조한 노드({@code from})를 감싸는 가장
+ * 가까운 범위의 선언을 고른다 — 종전처럼 파일의 첫 선언을 고르면 다른 훅의 것을 빌려 쓰기 경로를 잘못 읽었다(2026-11-25).
+ * 감싸는 범위의 선언이 없거나 {@code from} 을 모르면 종전처럼 첫 선언이다.
+ */
+function sameFileDeclaration(sourceFile, name, from = null) {
+  const candidates = [
+    ...sourceFile.getDescendantsOfKind(SyntaxKind.FunctionDeclaration).filter((declaration) => declaration.getName() === name),
+    ...sourceFile.getDescendantsOfKind(SyntaxKind.VariableDeclaration).filter((declaration) => declaration.getName() === name),
+  ];
+  if (candidates.length <= 1 || !from || from.getSourceFile() !== sourceFile) return candidates[0] ?? null;
+  const enclosing = new Set([from, ...from.getAncestors()]);
+  let best = null;
+  let bestDepth = -1;
+  const scopeOf = (node) => {
+    let current = node.getParent();
+    while (current && !Node.isSourceFile(current) && !Node.isFunctionDeclaration(current)
+      && !Node.isArrowFunction(current) && !Node.isFunctionExpression(current) && !Node.isMethodDeclaration(current)) {
+      current = current.getParent();
+    }
+    return current ?? node.getSourceFile();
+  };
+  for (const candidate of candidates) {
+    const scope = scopeOf(candidate);
+    if (!enclosing.has(scope)) continue;
+    const depth = scope.getAncestors().length;
+    if (depth > bestDepth) {
+      best = candidate;
+      bestDepth = depth;
+    }
+  }
+  return best ?? candidates[0];
+}
+
+function hookBindingDeclaration(sourceFile, name) {
+  for (const declaration of sourceFile.getDescendantsOfKind(SyntaxKind.VariableDeclaration)) {
+    const pattern = declaration.getNameNode();
+    if (!Node.isObjectBindingPattern(pattern)) continue;
+    const element = pattern.getElements().find((candidate) => candidate.getNameNode().getText() === name);
+    if (!element) continue;
+    let initializer = declaration.getInitializer();
+    // `const lock = useLock(); const { begin } = lock;` — 훅 결과를 담은 변수를 한 번 거친 구조 분해도 같은 훅으로 따라간다.
+    if (initializer && Node.isIdentifier(initializer)) {
+      const holder = sameFileDeclaration(sourceFile, initializer.getText(), declaration);
+      initializer = holder && Node.isVariableDeclaration(holder) ? holder.getInitializer() : null;
+    }
+    if (!initializer || !Node.isCallExpression(initializer) || !Node.isIdentifier(initializer.getExpression())) continue;
+    const hook = hookDefinition(sourceFile, initializer.getExpression().getText());
+    if (!hook) continue;
+    const property = element.getPropertyNameNode()?.getText() ?? name;
+    const local = returnedLocalName(hook, property);
+    const found = hook.getDescendantsOfKind(SyntaxKind.FunctionDeclaration).find((candidate) => candidate.getName() === local)
+      ?? hook.getDescendantsOfKind(SyntaxKind.VariableDeclaration).find((candidate) => candidate.getName() === local);
+    if (found) return found;
+  }
+  return null;
+}
+
+/** 훅이 돌려주는 객체에서 {@code property} 가 가리키는 지역 이름 — `{ property }` 면 그대로, `{ property: other }` 면 other 다. */
+function returnedLocalName(hook, property) {
+  for (const statement of hook.getDescendantsOfKind(SyntaxKind.ReturnStatement)) {
+    const returned = statement.getExpression();
+    if (!returned || !Node.isObjectLiteralExpression(returned)) continue;
+    const member = returned.getProperty(property);
+    if (member && Node.isPropertyAssignment(member) && Node.isIdentifier(member.getInitializer())) {
+      return member.getInitializer().getText();
+    }
+  }
+  return property;
+}
+
+/** 이름이 가리키는 훅 함수 — 같은 파일의 최상위 함수이거나, 이 파일이 상대·`@/` 경로로 가져온 모듈이 내보낸 함수다. */
+function hookDefinition(sourceFile, name) {
+  const local = topLevelFunction(sourceFile, name);
+  if (local) return local;
+  for (const declaration of sourceFile.getImportDeclarations()) {
+    let exportName = null;
+    if (declaration.getDefaultImport()?.getText() === name) exportName = 'default';
+    for (const named of declaration.getNamedImports()) {
+      if ((named.getAliasNode()?.getText() ?? named.getName()) === name) exportName = named.getName();
+    }
+    if (!exportName) continue;
+    const target = localModuleSource(sourceFile, declaration.getModuleSpecifierValue());
+    if (!target) return null;
+    return exportName === 'default'
+      ? target.getFunctions().find((candidate) => candidate.isDefaultExport()) ?? null
+      : topLevelFunction(target, exportName);
+  }
+  return null;
+}
+
+function topLevelFunction(sourceFile, name) {
+  const fn = sourceFile.getFunctions().find((candidate) => candidate.getName() === name);
+  if (fn) return fn;
+  const initializer = sourceFile.getVariableDeclarations().find((candidate) => candidate.getName() === name)?.getInitializer();
+  return initializer && (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer)) ? initializer : null;
+}
+
+/** 상대 경로와 `@/`(frontend/src) 로 가져온 모듈의 소스 — 프로젝트에 실린 생산 소스만 본다. */
+function localModuleSource(sourceFile, moduleName) {
+  const filePath = posix(sourceFile.getFilePath());
+  const marker = '/frontend/src/';
+  const markerIndex = filePath.lastIndexOf(marker);
+  const base = moduleName.startsWith('@/') && markerIndex >= 0
+    ? `${filePath.slice(0, markerIndex + marker.length)}${moduleName.slice(2)}`
+    : moduleName.startsWith('.')
+      ? posix(resolve(dirname(filePath), moduleName))
+      : null;
+  if (!base) return null;
+  const project = sourceFile.getProject();
+  return [...SOURCE_EXTENSIONS]
+    .flatMap((extension) => [`${base}${extension}`, `${base}/index${extension}`])
+    .map((candidate) => project.getSourceFile(candidate))
+    .find(Boolean) ?? null;
 }
 
 function stateSetterName(sourceFile, stateName) {
@@ -220,21 +338,8 @@ function resolvedControlContract(controlNode) {
   const initializer = attribute.getInitializer();
   if (!initializer) return null;
   const sourceFile = controlNode.getSourceFile();
-  const nodes = [initializer];
-  const seenDeclarations = new Set();
-  const queuedNames = [];
   const expression = Node.isJsxExpression(initializer) ? initializer.getExpression() : null;
-  if (expression && Node.isIdentifier(expression)) queuedNames.push(expression.getText());
-  queuedNames.push(...referencedLocalNames(initializer));
-
-  for (let index = 0; index < queuedNames.length; index += 1) {
-    const name = queuedNames[index];
-    const declaration = localDeclaration(sourceFile, name);
-    if (!declaration || seenDeclarations.has(declaration)) continue;
-    seenDeclarations.add(declaration);
-    nodes.push(declaration);
-    queuedNames.push(...referencedLocalNames(declaration));
-  }
+  const nodes = collectReferencedDeclarations(initializer, expression);
 
   const directNames = [];
   if (expression && Node.isIdentifier(expression)) directNames.push(expression.getText());
@@ -264,21 +369,30 @@ function resolvedControlContract(controlNode) {
   };
 }
 
-function resolvedInitializerContract(initializer, sourceFile, handlerOverride = null) {
+/**
+ * 처리기 식에서 닿는 선언을 모은다. 이름은 그것을 참조한 노드의 파일에서 푼다 — 훅 파일로 따라간 선언 안의 이름(잠금 도우미 등)은
+ * 그 훅 파일에서 찾는다(2026-11-25). 같은 파일이면 종전과 같다.
+ */
+function collectReferencedDeclarations(initializer, expression) {
   const nodes = [initializer];
   const seenDeclarations = new Set();
-  const queuedNames = [];
-  const expression = Node.isJsxExpression(initializer) ? initializer.getExpression() : initializer;
-  if (expression && Node.isIdentifier(expression)) queuedNames.push(expression.getText());
-  queuedNames.push(...referencedLocalNames(initializer));
-  for (let index = 0; index < queuedNames.length; index += 1) {
-    const name = queuedNames[index];
-    const declaration = localDeclaration(sourceFile, name);
+  const queued = [];
+  if (expression && Node.isIdentifier(expression)) queued.push({ name: expression.getText(), from: initializer });
+  queued.push(...referencedLocalNames(initializer).map((name) => ({ name, from: initializer })));
+  for (let index = 0; index < queued.length; index += 1) {
+    const { name, from } = queued[index];
+    const declaration = localDeclaration(from.getSourceFile(), name, from);
     if (!declaration || seenDeclarations.has(declaration)) continue;
     seenDeclarations.add(declaration);
     nodes.push(declaration);
-    queuedNames.push(...referencedLocalNames(declaration));
+    queued.push(...referencedLocalNames(declaration).map((next) => ({ name: next, from: declaration })));
   }
+  return nodes;
+}
+
+function resolvedInitializerContract(initializer, sourceFile, handlerOverride = null) {
+  const expression = Node.isJsxExpression(initializer) ? initializer.getExpression() : initializer;
+  const nodes = collectReferencedDeclarations(initializer, expression);
   const directNames = [];
   if (expression && Node.isIdentifier(expression)) directNames.push(expression.getText());
   for (const call of initializer.getDescendantsOfKind(SyntaxKind.CallExpression)) {
@@ -325,7 +439,8 @@ function bulkActionContracts(controlNode) {
     if (Node.isArrayLiteralExpression(node)) return node.getElements().flatMap((item) => collectObjects(item, nextSeen));
     if (Node.isConditionalExpression(node)) return [...collectObjects(node.getWhenTrue(), nextSeen), ...collectObjects(node.getWhenFalse(), nextSeen)];
     if (Node.isIdentifier(node)) {
-      const declaration = localDeclaration(controlNode.getSourceFile(), node.getText());
+      // 배열 안의 이름은 그 배열이 있는 파일에서 푼다(훅 파일로 따라간 배열이면 훅 파일).
+      const declaration = localDeclaration(node.getSourceFile(), node.getText());
       return declaration && Node.isVariableDeclaration(declaration) ? collectObjects(declaration.getInitializer(), nextSeen) : [];
     }
     return Node.isObjectLiteralExpression(node) ? [node] : [];
@@ -339,7 +454,7 @@ function bulkActionContracts(controlNode) {
     const triggerLabel = labelInitializer.getLiteralText();
     return [{
       ariaBusy: propertyInitializer(element, 'ariaBusy'),
-      contract: resolvedInitializerContract(handlerInitializer, controlNode.getSourceFile(), `bulkAction:${triggerLabel}`),
+      contract: resolvedInitializerContract(handlerInitializer, handlerInitializer.getSourceFile(), `bulkAction:${triggerLabel}`),
       disabled: propertyInitializer(element, 'disabled'),
       line: handlerInitializer.getStartLineNumber(),
       triggerLabel,
@@ -388,7 +503,7 @@ function blockingRefNames(contract) {
         const helperName = callName(call);
         const escaped = helperName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         if (new RegExp('!\\s*' + escaped + '\\s*\\(').test(condition.getText())) continue;
-        const declaration = localDeclaration(sourceFile, helperName);
+        const declaration = localDeclaration(call.getSourceFile(), helperName);
         if (declaration) addPositiveRefs(declaration.getText());
       }
     }
@@ -630,7 +745,8 @@ function discoverComposedChildContracts(ownerNode, jsxElements, repoRoot, projec
   });
 }
 
-function actionWriteCalls(contract, sourceFile) {
+/** 서비스·액션·API 모듈에서 가져온 이름 — 호출이 있는 파일의 import 로 본다(훅 파일의 호출은 훅 파일의 import). */
+function importedWriteNamesOf(sourceFile) {
   const importedWriteNames = new Set();
   for (const declaration of sourceFile.getImportDeclarations()) {
     if (!/(?:service|actions?|api)/i.test(declaration.getModuleSpecifierValue())) continue;
@@ -640,10 +756,24 @@ function actionWriteCalls(contract, sourceFile) {
       importedWriteNames.add(namedImport.getAliasNode()?.getText() ?? namedImport.getName());
     }
   }
+  return importedWriteNames;
+}
+
+/** 두 번째 인자는 호출부 서명을 위해 남긴다 — 가져온 이름은 호출이 있는 파일의 import 로 푼다(2026-11-25). */
+function actionWriteCalls(contract, _sourceFile) {
+  const importsByFile = new Map();
+  const importedWriteNames = {
+    has(call, name) {
+      const file = call.getSourceFile();
+      if (!importsByFile.has(file)) importsByFile.set(file, importedWriteNamesOf(file));
+      return importsByFile.get(file).has(name);
+    },
+  };
   const callsByPosition = new Map();
   for (const node of contract.nodes) {
     for (const call of node.getDescendantsOfKind(SyntaxKind.CallExpression)) {
-      callsByPosition.set(call.getStart(), call);
+      // 노드가 여러 파일에 걸칠 수 있어 위치에 파일을 붙인다.
+      callsByPosition.set(`${call.getSourceFile().getFilePath()}:${call.getStart()}`, call);
     }
   }
   const calls = [...callsByPosition.values()];
@@ -652,7 +782,7 @@ function actionWriteCalls(contract, sourceFile) {
     if (/^(?:mutate|mutateAsync)$/.test(name)) return true;
     if (isWriteName(name) && !/^submitHandler$/i.test(name)) {
       const expression = call.getExpression();
-      if (Node.isIdentifier(expression) && importedWriteNames.has(expression.getText())) return true;
+      if (Node.isIdentifier(expression) && importedWriteNames.has(call, expression.getText())) return true;
       if (Node.isPropertyAccessExpression(expression)) {
         if (/(?:service|api|actions?|client)/i.test(expression.getExpression().getText())) return true;
       }
@@ -686,7 +816,7 @@ function synchronousRefLockNames(contract) {
       .filter((call) => Node.isIdentifier(call.getExpression()))
       .map((call) => callName(call));
     const positiveHelper = helperCallNames.some((name) => {
-      const declaration = localDeclaration(sourceFile, name);
+      const declaration = localDeclaration(statement.getSourceFile(), name);
       if (!declaration || !new RegExp(`\\b${escaped}\\.current\\b`).test(declaration.getText())) return false;
       const helperEscaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       if (new RegExp(`!\\s*${helperEscaped}\\s*\\(`).test(condition)) return false;
