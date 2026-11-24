@@ -138,7 +138,7 @@ function storyLines(studio, context, story) {
   lines.push('', '## 사용자 스토리', '', `- 사용자: ${story.role}`, `- 하려는 일: ${story.want}`, '', '## 인수조건', '', ...story.green.map((line, index) => `- [통과 ${index + 1}] ${line}`), ...story.red.map((line, index) => `- [차단 ${index + 1}] ${line}`), '');
   if (!requirement) return lines;
   lines.push('## 요구사항', '', table(['항목', '내용'], [['정의', requirement.fields.definition], ['세부 내용', requirement.fields.details.map(detail => `- ${detail}`).join('\n')], ['제약·전제', requirement.fields.constraints.join('\n')], ['검증 방법·기준', requirement.fields.verification], ['출처', sourceLines(requirement, context.clauses).join('\n')]]), '', '## 관련 산출물', '');
-  const related = context.related(requirement).filter(item => item.kind !== REQUIREMENT_KIND);
+  const related = context.related(requirement).filter(item => item.kind !== REQUIREMENT_KIND && (!context.relatedIds || context.relatedIds.has(item.id)));
   if (!related.length) lines.push('(연결된 산출물 항목 없음)', '');
   for (const item of related) lines.push(`### ${kindName(item.kind)} · ${item.name}`, '', ...fieldsOf(item.kind).filter(spec => isFilled(item.fields[spec.key])).map(spec => `- ${spec.label}: ${fieldText(spec, item.fields[spec.key])}`), ...(item.note ? [`- 결정·메모: ${item.note}`] : []), '');
   const quality = live(studio, REQUIREMENT_KIND).filter(item => item.status === 'confirmed' && QUALITY_CATEGORIES.includes(item.fields.category)).sort(byNumber);
@@ -174,7 +174,9 @@ export function renderDocument(studio, id, input) {
   if (typeof id === 'string' && id.startsWith('package-')) {
     const story = studio.plan?.stories.find(entry => entry.id === id.slice('package-'.length));
     if (!story) fail('STUDIO_DOCUMENT_NOT_FOUND');
-    return markdown(`개발패키지-${story.id}`, storyLines(studio, context, story).join('\n'));
+    const lines = storyLines(studio, context, story);
+    if (!context.relatedIds) lines.splice(2, 0, '> 개발 인계 전 미리보기입니다. 현재 작업의 착수 조건은 개발 인계 확인에서 검증하세요.', '');
+    return markdown(`개발패키지-${story.id}`, lines.join('\n'));
   }
   const entry = documentList(studio).find(document => document.id === id);
   if (!entry) fail('STUDIO_DOCUMENT_NOT_FOUND');

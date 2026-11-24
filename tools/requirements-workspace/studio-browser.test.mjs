@@ -34,7 +34,7 @@ test('documents become requirements, deliverables and stories through the studio
   let app, browser;
   try {
     const studio = studioRunner({ overrides: { 'studio-extract': worded } }), reading = { calls: 0, hold: false, release: null };
-    app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async input => {
+    app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => ({ ...context, screens: [{ route: '/reservations' }] }), aiRunner: async input => {
       if (input.request.phase !== 'reading') return studio(input);
       reading.calls += 1;
       // A held reading stands in for the minutes a real document can take, so the progress shown meanwhile can be checked.
@@ -178,6 +178,49 @@ test('documents become requirements, deliverables and stories through the studio
     await page.getByText(/# ST-0001 시설 예약 신청/).waitFor();
     await page.getByText(/PER-001 응답 시간/).first().waitFor();
 
+    await page.getByRole('button', { name: '닫기', exact: true }).click();
+
+    // Handoff uses the authenticated HTTP path, a real workspace commit, and the current repository fixture.
+    await page.getByRole('button', { name: '개발 인계 확인', exact: true }).click();
+    await page.getByText('개발 인계 대기', { exact: true }).waitFor();
+    assert.equal(await page.getByRole('button', { name: '개발 인계 시작', exact: true }).count(), 0);
+    await page.getByRole('button', { name: '인계 조건 입력', exact: true }).click();
+    await page.getByLabel('화면 유형', { exact: true }).selectOption('A1');
+    for (const [index, value] of ['기존 예약 목록', '본인 자료만 조회', '기존 예약번호 사용', '예약 입력 계약 유지', '비허용 상태 차단 확인'].entries()) {
+      await page.getByLabel(new RegExp('^D-' + (index + 1) + ' ')).fill(value);
+    }
+    await page.getByLabel('저장소 대상', { exact: true }).fill('screen | /reservations | existing');
+    await page.getByText('합성 자료와 후속 확인', { exact: true }).click();
+    await page.getByLabel('합성 자료', { exact: true }).fill('합성 예약 표본');
+    await page.getByLabel('로컬 검증 범위', { exact: true }).fill('예약 목록과 오류 안내');
+    await page.getByLabel('남은 확인', { exact: true }).fill('기관 자료로 대조');
+    await page.getByLabel('후속 확인 담당자', { exact: true }).fill('기관 검수 담당');
+    await page.setViewportSize({ width: 390, height: 800 });
+    await audit(page, 'studio-handoff-mobile');
+    assert.equal(await page.locator('#dialog').evaluate(dialog => dialog.scrollWidth <= dialog.clientWidth), true);
+    await page.getByRole('button', { name: '저장', exact: true }).focus();
+    await page.keyboard.press('Enter');
+    await page.getByText('개발 인계 가능', { exact: true }).waitFor();
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.getByRole('button', { name: '개발 인계 시작', exact: true }).click();
+    await page.getByRole('button', { name: '승인된 작업 패키지', exact: true }).click();
+    await page.getByRole('heading', { name: 'TASK-PACKAGE-ST-0001.md', exact: true }).waitFor();
+    const handoffPackage = page.getByRole('region', { name: '문서 내용', exact: true }).filter({ hasText: '합성 예약 표본' });
+    await handoffPackage.waitFor();
+    const ticket = (await handoffPackage.textContent()).match(/- 인계 지문 ([a-f0-9]{64})/u)[1];
+    await page.getByRole('button', { name: '닫기', exact: true }).click();
+    await page.getByRole('button', { name: '현재 스토리 후 정지', exact: true }).click();
+    await page.getByText('ST-0001 인계를 마치면 정지합니다.', { exact: true }).waitFor();
+    await page.getByRole('button', { name: '개발 인계 확인', exact: true }).click();
+    await page.getByRole('button', { name: '개발 결과 기록', exact: true }).click();
+    await page.getByLabel('작업 패키지의 인계 지문', { exact: true }).fill(ticket);
+    await page.getByLabel('결과 커밋 SHA', { exact: true }).fill('a'.repeat(40));
+    await page.getByLabel('검증 근거 참조', { exact: true }).fill('합성 시험 기록');
+    await page.getByRole('button', { name: '결과 기록', exact: true }).click();
+    await page.getByText('개발 인계가 정지되어 있습니다.', { exact: true }).waitFor();
+    await page.getByRole('button', { name: '인계 재개', exact: true }).click();
+    await page.getByRole('button', { name: '개발 인계 확인', exact: true }).click();
+    await page.getByText('개발 결과 기록됨', { exact: true }).waitFor();
     await page.getByRole('button', { name: '닫기', exact: true }).click();
 
     // Three records ask the same open point. It is one decision on screen: counted once, answered once for all of them.
