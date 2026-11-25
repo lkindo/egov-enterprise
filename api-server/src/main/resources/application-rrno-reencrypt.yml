@@ -1,0 +1,9 @@
+# 주민등록번호 재암호화 일회성 실행 프로필(RrnoReencryptionRunner, 2026-11-25).
+#   java -jar app.jar --spring.profiles.active=prod,rrno-reencrypt [--nuri.crypto.rrno.reencrypt.apply=true]
+# 웹 서버를 띄우지 않고(포트 점유·외부 요청 없음), Flyway 를 돌리지 않는다 — 점검(dry-run)이 스키마를 바꾸지 않게 한다.
+# 스키마는 앱이 평소 배포 절차로 이미 최신이어야 한다(엔티티 검증이 어긋나면 기동이 멈춘다).
+spring:
+  main:
+    web-application-type: none
+  flyway:
+    enabled: false

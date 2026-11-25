@@ -120,6 +120,36 @@ class JwtTokenProviderTest {
         }
 
         @Test
+        @DisplayName("🚨 WAR(외부 서블릿 컨테이너) 배포는 내장 서버 이벤트가 없다 — 기동 시점에 막고, server.address 루프백도 예외가 아니다")
+        void externalServletContainerRejectsDevKeyAtStartupUnlessOptedIn() {
+            for (String address : new String[] { "", "127.0.0.1" }) {
+                JwtTokenProvider p = new JwtTokenProvider();
+                ReflectionTestUtils.setField(p, "serverAddress", address);
+                ReflectionTestUtils.setField(p, "externalServletContainer", true);
+                IllegalStateException e = assertThrows(IllegalStateException.class, () -> ReflectionTestUtils.invokeMethod(p, "init"),
+                        "WAR 배포는 server.address='" + address + "' 여도 막혀야 한다");
+                assertThat(e.getMessage()).contains("WAR").contains("allow-dev-key-on-network");
+            }
+            JwtTokenProvider optedIn = new JwtTokenProvider();
+            ReflectionTestUtils.setField(optedIn, "externalServletContainer", true);
+            ReflectionTestUtils.setField(optedIn, "allowDevKeyOnNetwork", true);
+            assertDoesNotThrow(() -> ReflectionTestUtils.invokeMethod(optedIn, "init"));
+        }
+
+        @Test
+        @DisplayName("WAR 배포여도 새로 만든 키링이면 막지 않는다")
+        void externalServletContainerWithFreshKeyringStarts() throws Exception {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
+            kpg.initialize(new ECGenParameterSpec("secp256r1"));
+            String pkcs8 = Base64.getEncoder().encodeToString(kpg.generateKeyPair().getPrivate().getEncoded());
+            JwtTokenProvider p = new JwtTokenProvider();
+            ReflectionTestUtils.setField(p, "signingActiveKid", "k1");
+            ReflectionTestUtils.setField(p, "signingKeysJson", "{\"k1\":\"" + pkcs8 + "\"}");
+            ReflectionTestUtils.setField(p, "externalServletContainer", true);
+            assertDoesNotThrow(() -> ReflectionTestUtils.invokeMethod(p, "init"));
+        }
+
+        @Test
         @DisplayName("키링에 개발용 키를 명시해 넣어도 같은 규칙이다 — 그 개인키는 공개돼 있다")
         void explicitKeyringContainingCommittedDevKeyIsTreatedAsDevKey() {
             String devPkcs8 = (String) ReflectionTestUtils.getField(JwtTokenProvider.class, "DEV_ES256_PKCS8_B64");

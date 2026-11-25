@@ -40,6 +40,9 @@ SPRING_PROFILES_ACTIVE: prod,json-logs
 ## 3. 경보 규칙 적재
 
 1. Prometheus 가 egov-net 안에서 api 서비스 관리 포트(9090)의 `/actuator/prometheus` 를 스크레이프하도록 설정한다.
+   운영 오버레이는 2026-11-25 부터 관리 포트를 컨테이너 안 루프백(`MANAGEMENT_ADDRESS=127.0.0.1`)에만 연다(DEC-OPS-432) —
+   스크레이퍼를 egov-net 에 붙일 때는 호스트 환경(.env)에 `MANAGEMENT_ADDRESS=0.0.0.0` 을 명시해야 `api:9090` 에 닿는다.
+   그 네트워크에 함께 둘 컨테이너를 먼저 판정한다(관리 포트에는 인증이 없다). 주지 않으면 헬스체크는 통과해도 외부 스크레이프는 연결이 거부된다.
 2. `rule_files` 에 [prometheus-alert-rules.yml](../../config/observability/prometheus-alert-rules.yml) 을 넣는다.
 3. 적재 전에 고정 digest의 Prometheus 2.55.1 `promtool`로 문법과 합성 시계열의 발화·해제를 확인한다.
 

@@ -117,6 +117,42 @@ public class CryptoUtil implements ApplicationContextAware {
         }
     }
 
+    /**
+     * 현재 키와(있으면) 이전 키로 각각 풀어 본 결과를 순서대로 돌려준다 — 예외가 난 키의 결과는 빠진다.
+     *
+     * <p>[왜 따로 두는가 — 2026-11-25 Codex 검토] {@link #decrypt} 는 현재 키에서 예외가 날 때만 이전 키를 쓴다. 그런데 ARIA 는
+     * 다른 키로 풀어도 예외 없이 엉뚱한 바이트를 돌려줄 수 있어, 키 교체 중에는 이전 키로 만든 값을 현재 키로 '성공적으로'
+     * 잘못 읽을 수 있다. 다시 쓰는 일괄 작업은 두 결과를 모두 받아 형식으로 판정하고, 하나로 정하지 못하면 쓰지 않는다.
+     * 원문·키는 로그에 남기지 않는다.
+     */
+    public static java.util.List<String> decryptCandidates(String encryptedData) {
+        if (encryptedData == null || cryptoService == null || algorithmKey == null) {
+            return java.util.List.of();
+        }
+        byte[] decoded;
+        try {
+            decoded = Base64.getDecoder().decode(encryptedData);
+        } catch (IllegalArgumentException notBase64) {
+            return java.util.List.of();
+        }
+        java.util.List<String> candidates = new java.util.ArrayList<>(2);
+        try {
+            candidates.add(new String(cryptoService.decrypt(decoded, algorithmKey), StandardCharsets.UTF_8));
+        } catch (Exception activeKeyFailure) {
+            // 현재 키로 풀리지 않는다 — 이전 키 결과만 남긴다.
+        }
+        EgovCryptoService previous = previousCryptoService;
+        String previousKey = previousAlgorithmKey;
+        if (previous != null && previousKey != null) {
+            try {
+                candidates.add(new String(previous.decrypt(decoded, previousKey), StandardCharsets.UTF_8));
+            } catch (Exception previousKeyFailure) {
+                // 이전 키로도 풀리지 않는다.
+            }
+        }
+        return java.util.List.copyOf(candidates);
+    }
+
     /** 활성 빈과 분리된 이전 키 전용 ARIA 인스턴스를 만든다. */
     private static EgovCryptoService createAriaService(String key) {
         EgovPasswordEncoder encoder = new EgovPasswordEncoder();

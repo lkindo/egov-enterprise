@@ -17,11 +17,10 @@ import org.springframework.stereotype.Component;
  * 주민등록번호 재암호화 일회성 실행기(2026-11-25). {@code rrno-reencrypt} 프로필로 띄우면 기동 직후 한 번 돌고 종료 코드를 남기며 끝난다.
  *
  * <pre>
- *   # 대상 수만 센다(기본)
- *   java -jar app.jar --spring.profiles.active=prod,rrno-reencrypt --spring.main.web-application-type=none
- *   # 다시 쓴다
- *   java -jar app.jar --spring.profiles.active=prod,rrno-reencrypt --spring.main.web-application-type=none \
- *        --nuri.crypto.rrno.reencrypt.apply=true
+ *   # 모든 값을 판독하고 대상 수만 센다(기본) — application-rrno-reencrypt.yml 이 웹 서버·Flyway 를 끈다
+ *   java -jar app.jar --spring.profiles.active=prod,rrno-reencrypt
+ *   # 판독이 모두 성공하면 다시 쓴다
+ *   java -jar app.jar --spring.profiles.active=prod,rrno-reencrypt --nuri.crypto.rrno.reencrypt.apply=true
  * </pre>
  *
  * <p>키링(RRNO_ACTIVE_KEY_ID·RRNO_KEYS_JSON)과 이전 ARIA 키(ALGORITHM_KEY, 키 교체 중이면 OLD_ALGORITHM_KEY)를 앱과 같이 준다.
@@ -59,8 +58,13 @@ public class RrnoReencryptionRunner implements ApplicationRunner {
                     result.targets(), result.rewritten(), result.changedMeanwhile(),
                     apply ? "" : " (다시 쓰려면 --nuri.crypto.rrno.reencrypt.apply=true)");
             code = result.changedMeanwhile() == 0 ? 0 : 2;
+        } catch (RrnoReencryptionService.ReencryptionStopped stopped) {
+            // 이 예외의 메시지는 건수·행 식별자만 담는다(값·DB 오류 원문 없음).
+            log.error("[RRNO] 재암호화 멈춤: {}", stopped.getMessage());
+            code = 1;
         } catch (RuntimeException failure) {
-            log.error("[RRNO] 재암호화 실패: {}", failure.getMessage());
+            // 그 밖의 예외 메시지는 DB 오류 상세(행의 값)를 담을 수 있어 종류만 남긴다.
+            log.error("[RRNO] 재암호화 실패: {}", failure.getClass().getName());
             code = 1;
         }
         int finalCode = code;

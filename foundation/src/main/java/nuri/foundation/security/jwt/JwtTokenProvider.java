@@ -65,6 +65,14 @@ public class JwtTokenProvider {
     @Value("${server.address:}")
     private String serverAddress;
 
+    /**
+     * 외부 서블릿 컨테이너에 WAR 로 배포됐는가 — {@code ApiServerApplication.configure()} 가 표지로 준다(2026-11-25 Codex 검토).
+     * 그때는 내장 서버가 없어 {@code WebServerInitializedEvent} 가 오지 않고, 커넥터 바인딩도 이 앱의 {@code server.address} 가
+     * 아니라 컨테이너가 정한다. 그래서 루프백 예외 없이 기동 시점에 판정한다.
+     */
+    @Value("${nuri.deployment.external-servlet-container:false}")
+    private boolean externalServletContainer;
+
     @Value("${jwt.cookie.secure:false}")
     private boolean cookieSecure;
 
@@ -131,6 +139,28 @@ public class JwtTokenProvider {
         configureAsymmetricKeyring();
         log.info("JWT ES256 activeKid={}, verifyKeyFingerprints={} (spki sha256[:8], 값 아님)",
                 activeSigningKid, ecPublicKeyFingerprints);
+        if (externalServletContainer) {
+            rejectCommittedDevKeyInExternalContainer();
+        }
+    }
+
+    /**
+     * WAR 배포에서는 커넥터 주소를 이 앱이 알 수 없으므로, 저장소에 커밋된 개발용 서명키는 명시 허용
+     * ({@code jwt.signing.allow-dev-key-on-network=true})일 때만 쓴다 — {@code server.address} 루프백 예외가 없다.
+     */
+    void rejectCommittedDevKeyInExternalContainer() {
+        if (!usingCommittedDevKey) {
+            return;
+        }
+        if (allowDevKeyOnNetwork) {
+            log.warn("[SECURITY] 외부 서블릿 컨테이너(WAR)에서 저장소에 커밋된 개발용 JWT 서명키를 씁니다 "
+                    + "(jwt.signing.allow-dev-key-on-network=true). 이 서버에 닿는 사람은 누구나 토큰을 만들 수 있습니다.");
+            return;
+        }
+        throw new IllegalStateException(
+                "[SECURITY] JWT 서명 키링(JWT_SIGNING_ACTIVE_KID·JWT_SIGNING_KEYS_JSON)이 없어 저장소에 커밋된 개발용 서명키를 쓰려 했지만 "
+                + "외부 서블릿 컨테이너(WAR)에 배포됐습니다 — 커넥터 바인딩을 이 앱이 정하지 않으므로 server.address 루프백 예외가 없습니다. "
+                + "키링을 주거나, 개발 서버면 jwt.signing.allow-dev-key-on-network=true 를 명시하십시오.");
     }
 
     /**

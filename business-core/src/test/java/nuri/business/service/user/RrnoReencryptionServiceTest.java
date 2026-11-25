@@ -39,18 +39,27 @@ class RrnoReencryptionServiceTest {
     private JdbcTemplate jdbc;
     private RrnoReencryptionService service;
 
-    @BeforeEach
-    void setUp() throws Exception {
-        // ARIA 는 그 값의 Base64 를 '암호문'으로 돌려주는 대역으로 둔다 — 변환기가 쓰는 CryptoUtil 경로를 그대로 탄다.
+    /** "<접두>:<원문>" 을 암호문으로 돌려주는 ARIA 대역 — 다른 접두의 값을 풀면 예외 대신 엉뚱한 바이트를 준다(실제 ARIA 와 같은 성질). */
+    private static EgovCryptoService aria(String prefix, String garbageOnWrongKey) throws Exception {
         EgovCryptoService aria = Mockito.mock(EgovCryptoService.class);
-        when(aria.encrypt(any(byte[].class), any(String.class))).thenAnswer(inv -> ("aria:" + new String(
+        when(aria.encrypt(any(byte[].class), any(String.class))).thenAnswer(inv -> (prefix + ":" + new String(
                 (byte[]) inv.getArgument(0), StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8));
         when(aria.decrypt(any(byte[].class), any(String.class))).thenAnswer(inv -> {
             String raw = new String((byte[]) inv.getArgument(0), StandardCharsets.UTF_8);
-            if (!raw.startsWith("aria:")) throw new IllegalArgumentException("not aria");
-            return raw.substring(5).getBytes(StandardCharsets.UTF_8);
+            if (raw.startsWith(prefix + ":")) return raw.substring(prefix.length() + 1).getBytes(StandardCharsets.UTF_8);
+            if (garbageOnWrongKey != null) return garbageOnWrongKey.getBytes(StandardCharsets.UTF_8);
+            throw new IllegalArgumentException("not this key");
         });
-        ReflectionTestUtils.setField(CryptoUtil.class, "cryptoService", aria);
+        return aria;
+    }
+
+    private static String ariaCiphertext(String prefix, String plaintext) {
+        return Base64.getEncoder().encodeToString((prefix + ":" + plaintext).getBytes(StandardCharsets.UTF_8));
+    }
+
+    @BeforeEach
+    void setUp() throws Exception {
+        ReflectionTestUtils.setField(CryptoUtil.class, "cryptoService", aria("cur", null));
         ReflectionTestUtils.setField(CryptoUtil.class, "algorithmKey", "egovframe");
         ReflectionTestUtils.setField(CryptoUtil.class, "previousCryptoService", null);
         ReflectionTestUtils.setField(CryptoUtil.class, "previousAlgorithmKey", null);
@@ -65,6 +74,8 @@ class RrnoReencryptionServiceTest {
     @AfterEach
     void tearDown() {
         RrnoKeyring.configure(null, null);
+        ReflectionTestUtils.setField(CryptoUtil.class, "previousCryptoService", null);
+        ReflectionTestUtils.setField(CryptoUtil.class, "previousAlgorithmKey", null);
         database.shutdown();
     }
 
@@ -88,9 +99,9 @@ class RrnoReencryptionServiceTest {
     }
 
     @Test
-    @DisplayName("dry-run 은 ARIA·평문·이전 키 v2 를 세기만 하고, 빈 값·활성 키 v2 는 세지 않는다")
+    @DisplayName("점검은 ARIA·평문·이전 키 v2 를 세기만 하고, 빈 값·활성 키 v2 는 세지 않는다")
     void dryRunCountsOnlyNonActiveValues() {
-        String ariaValue = new RrnoEncryptionConverter().convertToDatabaseColumn("900101-1234567");
+        String ariaValue = ariaCiphertext("cur", "900101-1234567");
         RrnoKeyring.configure("old", Map.of("old", KEY_OLD));
         String oldEnvelope = RrnoKeyring.encrypt("800101-2234567");
         RrnoKeyring.configure("new", Map.of("old", KEY_OLD, "new", KEY_NEW));
@@ -112,18 +123,18 @@ class RrnoReencryptionServiceTest {
     }
 
     @Test
-    @DisplayName("apply 는 모든 대상을 활성 키 v2 로 다시 쓰고 값은 그대로 읽힌다 — 다시 돌리면 대상이 0 이다")
+    @DisplayName("적용은 모든 대상을 활성 키 v2 로 다시 쓰고 값은 그대로 읽힌다 — 다시 돌리면 대상이 0 이다")
     void applyRewritesEveryTargetToActiveKeyAndIsIdempotent() {
-        String ariaValue = new RrnoEncryptionConverter().convertToDatabaseColumn("900101-1234567");
+        String ariaValue = ariaCiphertext("cur", "900101-1234567");
         RrnoKeyring.configure("old", Map.of("old", KEY_OLD));
         String oldEnvelope = RrnoKeyring.encrypt("800101-2234567");
         RrnoKeyring.configure("new", Map.of("old", KEY_OLD, "new", KEY_NEW));
         insert("U1", ariaValue);
         insert("U2", "750101-1234567");
         insert("U3", oldEnvelope);
-        // 한 페이지보다 많은 행에서도 키셋 페이징이 끝까지 간다
+        // 한 쪽보다 많은 행에서도 키셋 페이징이 끝까지 간다
         for (int i = 0; i < RrnoReencryptionService.CHUNK + 5; i++) {
-            insert(String.format("Z%05d", i), "750101-12345" + (i % 10) + (i % 7));
+            insert(String.format("Z%05d", i), String.format("750101-12%05d", i));
         }
 
         var result = service.run(true);
@@ -141,13 +152,60 @@ class RrnoReencryptionServiceTest {
     }
 
     @Test
-    @DisplayName("🚨 풀 수 없는 값을 만나면 멈추고 그 행을 덮어쓰지 않는다 — 로그·예외에 값이 없다")
-    void stopsOnUndecipherableValueWithoutOverwriting() {
+    @DisplayName("🚨 풀 수 없는 값이 하나라도 있으면 판독 단계에서 멈추고 아무 행도 쓰지 않는다 — 메시지에 값이 없다")
+    void stopsBeforeAnyWriteWhenAValueCannotBeResolved() {
         RrnoKeyring.configure("new", Map.of("new", KEY_NEW));
+        String good = ariaCiphertext("cur", "900101-1234567");
+        insert("A1", good);
         insert("U1", "corrupted-value");
 
-        assertThatThrownBy(() -> service.run(true)).isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("esntl_id=U1").hasMessageNotContaining("corrupted-value");
+        for (boolean apply : new boolean[] { false, true }) {
+            assertThatThrownBy(() -> service.run(apply))
+                    .isInstanceOf(RrnoReencryptionService.ReencryptionStopped.class)
+                    .hasMessageContaining("U1").hasMessageContaining("1 stored value")
+                    .hasMessageNotContaining("corrupted-value").hasMessageNotContaining("900101");
+        }
+        assertThat(stored("A1")).isEqualTo(good);
         assertThat(stored("U1")).isEqualTo("corrupted-value");
+    }
+
+    @Test
+    @DisplayName("🚨 이전 v2 키를 키링에서 빠뜨리면 점검이 먼저 멈춘다 — 앞 행을 쓰고 나서야 실패하지 않는다")
+    void missingPreviousEnvelopeKeyStopsAtDryRun() {
+        RrnoKeyring.configure("old", Map.of("old", KEY_OLD));
+        String oldEnvelope = RrnoKeyring.encrypt("800101-2234567");
+        RrnoKeyring.configure("new", Map.of("new", KEY_NEW)); // old 키를 빠뜨렸다
+        insert("A1", ariaCiphertext("cur", "900101-1234567"));
+        insert("U3", oldEnvelope);
+
+        assertThatThrownBy(() -> service.run(false)).isInstanceOf(RrnoReencryptionService.ReencryptionStopped.class)
+                .hasMessageContaining("U3").hasMessageContaining("RRNO_KEYS_JSON");
+        assertThatThrownBy(() -> service.run(true)).isInstanceOf(RrnoReencryptionService.ReencryptionStopped.class);
+        assertThat(stored("A1")).isEqualTo(ariaCiphertext("cur", "900101-1234567"));
+    }
+
+    @Test
+    @DisplayName("🚨 ARIA 키 교체 중: 현재 키가 예외 없이 엉뚱한 값을 내도 이전 키의 주민번호 꼴 결과를 쓴다 — 둘 다 꼴이 맞으면 멈춘다")
+    void ariaKeyRotationResolvesByFormatAndStopsWhenAmbiguous() throws Exception {
+        RrnoKeyring.configure("new", Map.of("new", KEY_NEW));
+        // 현재 키: 이전 키 암호문을 풀면 예외 없이 형식 밖의 바이트를 준다
+        ReflectionTestUtils.setField(CryptoUtil.class, "cryptoService", aria("cur", "\u0001garbage\u0002"));
+        ReflectionTestUtils.setField(CryptoUtil.class, "previousCryptoService", aria("old", null));
+        ReflectionTestUtils.setField(CryptoUtil.class, "previousAlgorithmKey", "previous");
+        insert("U1", ariaCiphertext("old", "800101-2234567"));
+        insert("U2", ariaCiphertext("cur", "900101-1234567"));
+
+        var result = service.run(true);
+        assertThat(result.rewritten()).isEqualTo(2);
+        assertThat(read(stored("U1"))).isEqualTo("800101-2234567");
+        assertThat(read(stored("U2"))).isEqualTo("900101-1234567");
+
+        // 현재 키가 다른 키의 암호문을 '주민번호 꼴'로 잘못 푸는 경우 — 어느 키의 값인지 알 수 없으므로 쓰지 않는다
+        ReflectionTestUtils.setField(CryptoUtil.class, "cryptoService", aria("cur", "111111-1111111"));
+        String ambiguous = ariaCiphertext("old", "800101-2234567");
+        insert("U9", ambiguous);
+        assertThatThrownBy(() -> service.run(true)).isInstanceOf(RrnoReencryptionService.ReencryptionStopped.class)
+                .hasMessageContaining("U9");
+        assertThat(stored("U9")).isEqualTo(ambiguous);
     }
 }

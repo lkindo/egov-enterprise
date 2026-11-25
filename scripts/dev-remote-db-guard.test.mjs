@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { backendEnvironment, frontendEnvironment, isLocalDatabaseUrl } from './dev.mjs';
+import { backendEnvironment, frontendEnvironment, FRONTEND_WITHHELD_SIGNING_ENV, isLocalDatabaseUrl } from './dev.mjs';
 
 const REMOTE = 'jdbc:postgresql://203.0.113.10:5432/egovdb?currentSchema=public';
 
@@ -70,17 +71,37 @@ test('옵트인 값은 정확히 migrate 일 때만 받는다', () => {
   }
 });
 
-test('프런트엔드 환경은 JWT 서명 개인키 키링을 상속하지 않고 검증 공개키만 유지한다', () => {
+test('프런트엔드 환경은 서명 비밀(ES256 개인키 키링·퇴역한 HMAC 비밀)을 상속하지 않고 검증 공개키만 유지한다', () => {
   const source = {
     JWT_SECRET: 's',
+    JWT_ACCEPT_LEGACY_HMAC: 'true',
     JWT_VERIFY_KEYS_JSON: '{"k1":"pub"}',
     JWT_SIGNING_ACTIVE_KID: 'k1',
     JWT_SIGNING_KEYS_JSON: '{"k1":"priv"}',
+    PATH: '/bin',
   };
   const nextEnv = frontendEnvironment(source);
   assert.equal(nextEnv.JWT_SIGNING_ACTIVE_KID, undefined);
   assert.equal(nextEnv.JWT_SIGNING_KEYS_JSON, undefined);
+  assert.equal(nextEnv.JWT_SECRET, undefined, 'ADR-0060 2차: Next 는 HMAC 비밀도 갖지 않는다.');
+  assert.equal(nextEnv.JWT_ACCEPT_LEGACY_HMAC, undefined);
   assert.equal(nextEnv.JWT_VERIFY_KEYS_JSON, '{"k1":"pub"}');
-  assert.equal(nextEnv.JWT_SECRET, 's');
+  assert.equal(nextEnv.PATH, '/bin');
   assert.equal(source.JWT_SIGNING_KEYS_JSON, '{"k1":"priv"}', '호출자 환경을 변형하지 않는다.');
+});
+
+test('verify.mjs 가 프런트 명령에서 걷는 서명 비밀 목록은 dev.mjs 정본과 같다', () => {
+  // verify.mjs 는 독립 이관 제품에 단독으로 복사돼 dev.mjs 를 import 할 수 없다 — 사본이 어긋나면 이 시험이 붉다.
+  const verifySource = readFileSync(new URL('./verify.mjs', import.meta.url), 'utf8');
+  const copy = /const FRONTEND_WITHHELD_SIGNING_ENV = \[([^\]]*)\];/u.exec(verifySource)?.[1];
+  assert.ok(copy, 'verify.mjs 에 FRONTEND_WITHHELD_SIGNING_ENV 사본이 있어야 한다.');
+  const names = [...copy.matchAll(/'([A-Z_]+)'/gu)].map((match) => match[1]);
+  assert.deepEqual([...names].sort(), [...FRONTEND_WITHHELD_SIGNING_ENV].sort());
+  assert.match(verifySource, /for \(const name of FRONTEND_WITHHELD_SIGNING_ENV\) delete safeEnv\[name\];/u);
+});
+
+test('프런트만 띄우는 npm run frontend 도 서명 비밀을 걷는 --web-child 진입점을 쓴다', () => {
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.match(pkg.scripts.frontend, /^node scripts\/dev\.mjs --web-child$/u,
+    'pnpm -C frontend dev 를 직접 부르면 셸의 JWT_SIGNING_KEYS_JSON 이 Next 로 넘어간다.');
 });

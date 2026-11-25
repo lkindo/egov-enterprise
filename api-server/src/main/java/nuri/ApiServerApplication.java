@@ -42,9 +42,12 @@ public class ApiServerApplication extends SpringBootServletInitializer {
                 ServiceTime.applyToJvm();
         }
 
+        /** 외부 서블릿 컨테이너(WAR) 배포임을 알리는 표지. 내장 서버 이벤트가 없는 이 경로에서 JWT 개발키 검사가 쓴다(JwtTokenProvider). */
+        static final String EXTERNAL_SERVLET_CONTAINER_MARKER = "nuri.deployment.external-servlet-container=true";
+
         @Override
         protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-                return application.sources(ApiServerApplication.class);
+                return application.sources(ApiServerApplication.class).properties(EXTERNAL_SERVLET_CONTAINER_MARKER);
         }
 
         public static void main(String[] args) {

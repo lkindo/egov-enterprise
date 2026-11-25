@@ -117,20 +117,20 @@ openssl rand -base64 32
 
 ### 7.3 기존 값 재암호화 명령(`rrno-reencrypt` 프로필, 2026-11-25)
 
-활성 키의 v2 봉투가 **아닌** 모든 값(종전 ARIA 암호문·과거 평문·이전 키의 v2 봉투)을 활성 키로 다시 쓴다(`RrnoReencryptionService`). 앱과 같은 키(`ALGORITHM_KEY`, 키 교체 중이면 `OLD_ALGORITHM_KEY`, 그리고 `RRNO_*`)를 준 채 웹 서버 없이 한 번 돌고 끝난다.
+활성 키의 v2 봉투가 **아닌** 모든 값(종전 ARIA 암호문·과거 평문·이전 키의 v2 봉투)을 활성 키로 다시 쓴다(`RrnoReencryptionService`). 앱과 같은 키(`ALGORITHM_KEY`, 키 교체 중이면 `OLD_ALGORITHM_KEY`, 그리고 `RRNO_*` — 이전 v2 키도 `RRNO_KEYS_JSON` 에 남긴다)를 준 채 한 번 돌고 끝난다. `rrno-reencrypt` 프로필(`application-rrno-reencrypt.yml`)이 웹 서버와 Flyway 를 끄므로 포트를 잡지 않고 점검이 스키마를 바꾸지 않는다 — 스키마는 평소 배포로 이미 최신이어야 한다.
 
 ```bash
-# 1) 대상 수만 센다(기본 — 아무것도 바꾸지 않는다)
-java -jar app.jar --spring.profiles.active=prod,rrno-reencrypt --spring.main.web-application-type=none
+# 1) 점검(기본): 모든 값을 판독하고 대상 수만 센다 — 아무것도 바꾸지 않는다
+java -jar app.jar --spring.profiles.active=prod,rrno-reencrypt
 # 2) §4.1 처럼 백업한 뒤 다시 쓴다
-java -jar app.jar --spring.profiles.active=prod,rrno-reencrypt --spring.main.web-application-type=none \
-     --nuri.crypto.rrno.reencrypt.apply=true
+java -jar app.jar --spring.profiles.active=prod,rrno-reencrypt --nuri.crypto.rrno.reencrypt.apply=true
 # 3) 1) 을 다시 돌려 대상이 0 인지 확인한다
 ```
 
-- 읽은 암호문이 그대로일 때만 바꾸는 조건부 UPDATE 라, 그 사이 앱이 고친 행은 건너뛰고 센다(종료 코드 2 — 다시 돌리면 남은 행부터 잇는다). 행마다 커밋되므로 중간에 멈춰도 다시 돌리면 된다.
-- 풀 수 없는 값을 만나면 그 행에서 멈춘다(종료 코드 1, 행 식별자만 로그에 남는다) — 키링·ARIA 키를 확인하고 그 행을 따로 판정한 뒤 다시 돌린다.
-- 로그·예외에는 건수와 행 식별자만 남고 값(암호문·평문)은 남지 않는다. 공유 OCI(`egovdb`)는 2026-11-25 기준 주민번호 값이 0건이라 대상이 없다.
+- **두 단계로 돈다.** 먼저 모든 행을 판독해 값마다 원문을 하나로 정하고(활성 키 봉투도 키가 맞는지 풀어 본다), 하나라도 정하지 못하면 점검이든 적용이든 **아무 행도 쓰지 않고** 멈춘다(종료 코드 1, 건수와 행 식별자 최대 20개만 로그에 남는다). 키링·ARIA 키를 확인하고 그 행을 따로 판정한 뒤 다시 돌린다.
+- ARIA 는 다른 키로 풀어도 예외 없이 엉뚱한 값을 낼 수 있어, 키 교체 중이면 현재·이전 키로 각각 풀고 주민등록번호 꼴인 결과가 정확히 하나일 때만 쓴다 — 둘 다 꼴이 맞으면 어느 키의 값인지 알 수 없으므로 멈춘다.
+- 적용은 읽은 암호문이 그대로일 때만 바꾸는 조건부 UPDATE 라, 판독 뒤 앱이 고친 행은 건너뛰고 센다(종료 코드 2 — 다시 돌리면 남은 행부터 잇는다). 행마다 커밋되므로 쓰기 중 DB 오류로 멈춰도(종료 코드 1, 오류 종류만 남는다) 원인을 고치고 다시 돌리면 된다.
+- 로그·예외에는 건수와 행 식별자만 남고 값(암호문·평문)과 DB 오류 원문은 남지 않는다. 공유 OCI(`egovdb`)는 2026-11-25 기준 주민번호 값이 0건이라 대상이 없다.
 
 ## 완료 체크리스트
 
@@ -180,4 +180,4 @@ rm -f jwt-next.pem jwt-next.pkcs8.der jwt-next.spki.der
 
 ### 8.4 개발용 서명키의 바인딩 제한(2026-11-25)
 
-키링 없이 띄운 백엔드는 저장소에 커밋된 개발용 키쌍(`dev-es256-1`)으로 서명한다. 그 개인키는 공개돼 있으므로, `server.address` 가 루프백이 아니면 기동을 멈춘다. `bootRun`(`npm run dev`·`npm run backend`)은 `SERVER_ADDRESS` 가 없으면 `127.0.0.1` 에 바인딩하고, 개발 compose 만 `JWT_SIGNING_ALLOW_DEV_KEY_ON_NETWORK=true` 로 컨테이너 안 바인딩을 허용한 채 호스트에는 `127.0.0.1:8080` 으로만 연다. 다른 주소가 필요하면 키링을 준다.
+키링 없이 띄운 백엔드는 저장소에 커밋된 개발용 키쌍(`dev-es256-1`)으로 서명한다. 그 개인키는 공개돼 있으므로, `server.address` 가 루프백이 아니면 기동을 멈춘다. `bootRun`(`npm run dev`·`npm run backend`)은 `SERVER_ADDRESS` 가 없으면 `127.0.0.1` 에 바인딩하고, 개발 compose 만 `JWT_SIGNING_ALLOW_DEV_KEY_ON_NETWORK=true` 로 컨테이너 안 바인딩을 허용한 채 호스트에는 `127.0.0.1:8080` 으로만 열고, 그 api 로 요청을 넘기는 프런트도 `127.0.0.1:3000` 으로만 연다(`FRONTEND_HOST_BIND` 로 열기 전에 자체 키쌍을 준다). WAR 로 외부 서블릿 컨테이너에 배포하면 커넥터 주소를 앱이 알 수 없어 루프백 예외 없이 명시 허용일 때만 개발키를 쓴다. 다른 주소가 필요하면 키링을 준다. Next 는 어느 기동 경로(`npm run dev`·`npm run frontend`·검증 스크립트)로도 서명 개인키·`JWT_SECRET` 을 받지 않는다(`scripts/dev.mjs` `frontendEnvironment`).

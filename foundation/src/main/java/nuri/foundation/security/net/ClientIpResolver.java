@@ -31,10 +31,12 @@ import java.util.List;
  * </ul>
  * 즉 백엔드 포트가 실수로 외부에 열려도 이 판정은 깨지지 않는다.
  *
- * <p><b>기본값이 사설 대역인 이유.</b> 이 배포는 브라우저 → Next → 백엔드 단일 홉이고 백엔드의
- * 피어는 항상 컨테이너 네트워크 안의 Next 서버다. 신뢰 목록을 비워 두면 XFF 를 전면 불신하게 되어
- * <b>모든 트래픽이 Next 서버 1개 IP 로 수렴</b>하고, 그러면 레이트리밋이 전역 단일 버킷이 되어
- * 스스로를 막는다(자기 DoS). 목록을 비우려면 레이트리밋 용량을 함께 재설계해야 한다.
+ * <p><b>기본값은 루프백뿐이다(2026-11-25 DEC-OPS-432).</b> 종전 기본값은 사설 대역 셋(10/8·172.16/12·192.168/16)이었고,
+ * 그러면 사내망의 다른 접속자도 신뢰 프록시가 되어 자기 XFF 로 요청 한도·감사 IP 를 바꿀 수 있었다. 이 기본값은
+ * {@code application.yml} 의 {@code nuri.security.trusted-proxies} 를 빠뜨린 배포(설정을 통째로 바꾼 생성 프로젝트·기관 배포)에서만
+ * 쓰이므로 좁은 쪽으로 둔다. 실제 배포는 Next 의 고정 주소를 명시한다(compose 의 {@code TRUSTED_PROXIES}).
+ * 신뢰 목록을 비워 두면 XFF 를 전면 불신해 <b>모든 트래픽이 Next 서버 1개 IP 로 수렴</b>하고, 레이트리밋이 전역 단일
+ * 버킷이 되어 스스로를 막는다(자기 DoS) — 프록시 뒤에 둘 때는 그 주소를 꼭 준다.
  *
  * <p>⚠ <b>이 클래스를 바꿀 때 레이트리밋 용량을 같은 배포에 함께 조정하지 말 것.</b>
  * 순서는 ① 신뢰 경계 주입 → ② 관측 → ③ 용량 조정이다. 둘을 묶으면 전사 로그인 장애가 된다.
@@ -49,7 +51,7 @@ public class ClientIpResolver {
     private final List<CidrRange> trustedProxies;
 
     public ClientIpResolver(
-            @Value("${nuri.security.trusted-proxies:127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}") String trustedProxiesCsv) {
+            @Value("${nuri.security.trusted-proxies:127.0.0.1/32,::1/128}") String trustedProxiesCsv) {
         this.trustedProxies = parse(trustedProxiesCsv);
         if (this.trustedProxies.isEmpty()) {
             log.warn("[ClientIpResolver] 신뢰 프록시 목록이 비어 있습니다 — X-Forwarded-For 를 전면 불신합니다. "

@@ -43,9 +43,19 @@ export function isLocalDatabaseUrl(dbUrl) {
 /** 백엔드가 접속할 수 있는 DB 주소들 — application.yml 의 DB_URL 과, 그것을 덮어쓰는 Spring 환경 변수. */
 const DATABASE_URL_KEYS = ['DB_URL', 'SPRING_DATASOURCE_URL', 'SPRING_DATASOURCE_JDBC_URL', 'SPRING_FLYWAY_URL'];
 
-/** 프런트엔드(Next) 프로세스는 JWT 서명 개인키 키링을 상속하지 않고 공개 검증키만 받는다(ADR-0060). */
+/**
+ * Next 프로세스에 넘기지 않는 서명 비밀 — ES256 개인키 키링과, ADR-0060 2차로 퇴역한 1차 배포의 HMAC 비밀·수용 스위치.
+ * 셸이나 루트 .env 에 남아 있어도 Next 가 서명 비밀을 갖지 않게 한다(2026-11-25 Codex 검토).
+ * scripts/verify.mjs 가 같은 목록의 사본을 둔다(독립 이관 제품이 그 파일만 복사한다) — dev-remote-db-guard 시험이 대조한다.
+ */
+export const FRONTEND_WITHHELD_SIGNING_ENV = Object.freeze([
+  'JWT_SIGNING_ACTIVE_KID', 'JWT_SIGNING_KEYS_JSON', 'JWT_SECRET', 'JWT_ACCEPT_LEGACY_HMAC',
+]);
+
+/** 프런트엔드(Next) 프로세스는 서명 비밀을 상속하지 않고 공개 검증키(JWT_VERIFY_KEYS_JSON)만 받는다(ADR-0060). */
 export function frontendEnvironment(env) {
-  const { JWT_SIGNING_ACTIVE_KID: _kid, JWT_SIGNING_KEYS_JSON: _keys, ...cleanEnv } = env;
+  const cleanEnv = { ...env };
+  for (const name of FRONTEND_WITHHELD_SIGNING_ENV) delete cleanEnv[name];
   return cleanEnv;
 }
 
@@ -95,7 +105,8 @@ function main() {
     `"\\"${gradlew}\\" :api-server:bootRun -Dfile.encoding=UTF-8" ` +
     `"\\"${process.execPath}\\" scripts/dev.mjs --web-child"`;
 
-  // 프런트 자식(--web-child)은 frontendEnvironment()로 JWT_SIGNING_* 를 제거한 뒤 pnpm -C frontend dev 를 띄운다.
+  // 프런트 자식(--web-child)은 frontendEnvironment()로 서명 비밀을 제거한 뒤 pnpm -C frontend dev 를 띄운다.
+  // 프런트만 띄우는 `npm run frontend` 도 같은 --web-child 진입점을 쓴다(package.json).
   const child = spawn(command, { stdio: 'inherit', shell: true, cwd: repoRoot, env: backend.env });
 
   child.on('exit', (code) => process.exit(code ?? 0));

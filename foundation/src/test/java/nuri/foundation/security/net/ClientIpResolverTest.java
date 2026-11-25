@@ -20,7 +20,21 @@ import org.junit.jupiter.api.Nested;
 @DisplayName("ClientIpResolver 신뢰 경계 판정")
 class ClientIpResolverTest {
 
+    /** 판정 규칙 시험용 넓은 목록 — 앱 기본값이 아니다(기본값은 아래 시험이 루프백뿐임을 고정한다). */
     private static final String DEFAULTS = "127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16";
+
+    @Test
+    @DisplayName("🚨 설정을 빠뜨린 배포의 자체 기본값은 루프백뿐이다 — 사설 대역이면 사내망의 다른 접속자가 XFF 로 한도·감사 IP 를 바꾼다")
+    void builtInDefaultTrustsOnlyLoopback() throws NoSuchMethodException {
+        org.springframework.beans.factory.annotation.Value value = ClientIpResolver.class.getConstructor(String.class)
+                .getParameters()[0].getAnnotation(org.springframework.beans.factory.annotation.Value.class);
+        assertEquals("${nuri.security.trusted-proxies:127.0.0.1/32,::1/128}", value.value());
+
+        ClientIpResolver builtIn = new ClientIpResolver("127.0.0.1/32,::1/128");
+        assertEquals("10.1.2.3", builtIn.resolve(request("10.1.2.3", "198.51.100.7")),
+                "사설 대역 피어의 XFF 를 기본으로 믿으면 안 된다");
+        assertEquals("198.51.100.7", builtIn.resolve(request("127.0.0.1", "198.51.100.7")));
+    }
 
     private MockHttpServletRequest request(String remoteAddr, String xff) {
         MockHttpServletRequest req = new MockHttpServletRequest();

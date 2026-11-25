@@ -67,9 +67,14 @@ function stageId(command) {
   return labels.find(([fragment]) => command.includes(fragment))?.[1] ?? 'other';
 }
 
+// 프런트 명령에 넘기지 않는 서명 비밀. 정본은 scripts/dev.mjs 의 FRONTEND_WITHHELD_SIGNING_ENV 이고 이 목록은 그 사본이다 —
+// 독립 이관 제품이 이 파일만 복사하므로 dev.mjs 를 import 하지 않는다. 두 목록이 같은지는 dev-remote-db-guard 시험이 본다.
+const FRONTEND_WITHHELD_SIGNING_ENV = ['JWT_SIGNING_ACTIVE_KID', 'JWT_SIGNING_KEYS_JSON', 'JWT_SECRET', 'JWT_ACCEPT_LEGACY_HMAC'];
+
 function stripPrivateJwtSigningForFrontend(command, env) {
   if (!/(?:^|\s)(?:pnpm\s+-C\s+frontend\b|\S*vitest\b)/u.test(command)) return env;
-  const { JWT_SIGNING_ACTIVE_KID: _kid, JWT_SIGNING_KEYS_JSON: _keys, ...safeEnv } = env;
+  const safeEnv = { ...env };
+  for (const name of FRONTEND_WITHHELD_SIGNING_ENV) delete safeEnv[name];
   return safeEnv;
 }
 

@@ -773,18 +773,64 @@ class ConfigSafetyLinterTest {
      */
     static List<String> apiPortExposureViolations(String composeBaseSrc, String composeProdSrc) {
         List<String> violations = new ArrayList<>();
-        String baseApi = composeServiceBlock(composeBaseSrc, "api");
-        if (baseApi == null || !Pattern.compile("(?m)^\\s*-\\s*\"127\\.0\\.0\\.1:8080:8080\"\\s*$").matcher(baseApi).find()
-                || Pattern.compile("(?m)^\\s*-\\s*\"?(?:0\\.0\\.0\\.0:)?8080:8080\"?\\s*$").matcher(baseApi).find()) {
-            violations.add("docker-compose.yml: api 는 \"127.0.0.1:8080:8080\" 로만 열어야 합니다 — 개발용 서명키를 쓰는 스택입니다.");
+        // 항목 하나를 찾는 것으로는 부족하다 — 기대 줄을 둔 채 두 번째 매핑을 더하면 그 매핑이 공개된다(2026-11-25 Codex 검토).
+        // 그래서 ports 목록 전체가 정확히 기대 항목 하나인지 본다.
+        ComposePorts baseApi = composePorts(composeServiceBlock(composeBaseSrc, "api"));
+        if (baseApi == null || !baseApi.entries().equals(List.of("\"127.0.0.1:8080:8080\""))) {
+            violations.add("docker-compose.yml: api.ports 는 \"127.0.0.1:8080:8080\" 하나여야 합니다 — 개발용 서명키를 쓰는 스택입니다. 실제: "
+                    + (baseApi == null ? "없음" : baseApi.entries()));
         }
-        String prodApi = composeServiceBlock(composeProdSrc, "api");
-        if (prodApi == null || !Pattern.compile("(?m)^\\s*ports\\s*:\\s*!override\\s*\\n\\s*-\\s*\"\\$\\{API_HOST_BIND:-127\\.0\\.0\\.1}:8080:8080\"\\s*$")
-                .matcher(prodApi).find()) {
+        // base 프런트는 그 개발키 api 로 요청을 넘기므로 프런트를 모든 주소에 열면 api 포트를 닫은 효과가 없다.
+        ComposePorts baseFrontend = composePorts(composeServiceBlock(composeBaseSrc, "frontend"));
+        if (baseFrontend == null || !baseFrontend.entries().equals(List.of("\"${FRONTEND_HOST_BIND:-127.0.0.1}:3000:3000\""))) {
+            violations.add("docker-compose.yml: frontend.ports 는 \"${FRONTEND_HOST_BIND:-127.0.0.1}:3000:3000\" 하나여야 합니다 —"
+                    + " 개발키 api 앞의 Next 입니다. 실제: " + (baseFrontend == null ? "없음" : baseFrontend.entries()));
+        }
+        ComposePorts prodApi = composePorts(composeServiceBlock(composeProdSrc, "api"));
+        if (prodApi == null || !"!override".equals(prodApi.tag())
+                || !prodApi.entries().equals(List.of("\"${API_HOST_BIND:-127.0.0.1}:8080:8080\""))) {
             violations.add(COMPOSE_PROD + ": api.ports 는 `!override` 로 \"${API_HOST_BIND:-127.0.0.1}:8080:8080\" 하나여야 합니다 —"
-                    + " base 목록이 이어 붙으면 공개가 남습니다.");
+                    + " base 목록이 이어 붙거나 매핑이 더해지면 공개가 남습니다. 실제: " + (prodApi == null ? "없음" : prodApi));
         }
         return violations;
+    }
+
+    /** 서비스 블록의 {@code ports:} 키 — 태그(!override·!reset, 없으면 빈 문자열)와 목록 항목(따옴표 포함 원문, 흐름 목록이면 그 원문 한 개). */
+    record ComposePorts(String tag, List<String> entries) {
+    }
+
+    static ComposePorts composePorts(String serviceBlock) {
+        if (serviceBlock == null) {
+            return null;
+        }
+        String[] lines = serviceBlock.split("\n", -1);
+        for (int i = 0; i < lines.length; i++) {
+            java.util.regex.Matcher key = Pattern.compile("^(\\s*)ports\\s*:\\s*(!\\w+)?\\s*(.*?)\\s*$").matcher(lines[i]);
+            if (!key.matches()) {
+                continue;
+            }
+            int indent = key.group(1).length();
+            String tag = key.group(2) == null ? "" : key.group(2);
+            List<String> entries = new ArrayList<>();
+            if (!key.group(3).isEmpty()) {
+                entries.add(key.group(3));
+                return new ComposePorts(tag, entries);
+            }
+            for (int j = i + 1; j < lines.length; j++) {
+                String line = lines[j];
+                if (line.isBlank()) {
+                    continue;
+                }
+                int lineIndent = line.length() - line.stripLeading().length();
+                if (lineIndent <= indent) {
+                    break;
+                }
+                String item = line.strip();
+                entries.add(item.startsWith("-") ? item.substring(1).strip() : item);
+            }
+            return new ComposePorts(tag, entries);
+        }
+        return null;
     }
 
     @Test
@@ -805,7 +851,20 @@ class ConfigSafetyLinterTest {
                 baseSrc, prodSrc.replace("ports: !override", "ports:")));
         broken.put("운영 기본 바인딩을 모든 주소로", apiPortExposureViolations(
                 baseSrc, prodSrc.replace("${API_HOST_BIND:-127.0.0.1}", "${API_HOST_BIND:-0.0.0.0}")));
+        broken.put("운영 오버레이가 기대 줄을 둔 채 두 번째 매핑을 더함", apiPortExposureViolations(
+                baseSrc, prodSrc.replace("\"${API_HOST_BIND:-127.0.0.1}:8080:8080\"",
+                        "\"${API_HOST_BIND:-127.0.0.1}:8080:8080\"\n      - \"18080:8080\"")));
+        broken.put("base 가 루프백 줄을 둔 채 두 번째 매핑을 더함", apiPortExposureViolations(
+                baseSrc.replace("\"127.0.0.1:8080:8080\"", "\"127.0.0.1:8080:8080\"\n      - \"0.0.0.0:18080:8080\""), prodSrc));
+        broken.put("base 프런트를 모든 주소에 공개", apiPortExposureViolations(
+                baseSrc.replace("\"${FRONTEND_HOST_BIND:-127.0.0.1}:3000:3000\"", "\"3000:3000\""), prodSrc));
+        broken.put("운영 api.ports 를 흐름 목록으로 둘 공개", apiPortExposureViolations(
+                baseSrc, prodSrc.replace("ports: !override\n      - \"${API_HOST_BIND:-127.0.0.1}:8080:8080\"",
+                        "ports: !override [\"${API_HOST_BIND:-127.0.0.1}:8080:8080\", \"8081:8080\"]")));
         broken.forEach((name, violations) -> assertFalse(violations.isEmpty(), name));
+        // 부정 사례가 실제로 원문을 바꿨는지(치환이 헛돌면 거짓 red 가 아니라 거짓 green 이다) 확인한다.
+        assertTrue(prodSrc.contains("ports: !override\n      - \"${API_HOST_BIND:-127.0.0.1}:8080:8080\""),
+                "운영 api.ports 원문 꼴이 바뀌었다 — 위 흐름 목록 부정 사례의 치환 원문을 맞춘다.");
     }
 
     static List<String> prodJwtAsymmetricBoundaryViolations(String composeProdSrc, String deployScriptSrc) {

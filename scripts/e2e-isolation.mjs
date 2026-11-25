@@ -1,3 +1,4 @@
+import { createPrivateKey } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 const failure = () => new Error('E2E isolation verification failed; start a fresh run with scripts/run-isolated-e2e.mjs.');
@@ -55,7 +56,24 @@ function assertIsolatedDatasource(dbEnv, apiEnv, api) {
       || datasource?.hikari?.['jdbc-url'] !== databaseUrl
       || datasource?.username !== dbEnv.POSTGRES_USER || datasource?.password !== dbEnv.POSTGRES_PASSWORD
       // 회차마다 만든 서명 키링으로 돌아야 한다 — 비면 저장소의 개발용 키쌍이다(ADR-0060 2차로 JWT_SECRET 은 걷었다).
-      || !apiEnv.JWT_SIGNING_ACTIVE_KID || !apiEnv.JWT_SIGNING_KEYS_JSON) throw failure();
+      || !usableSigningKeyring(apiEnv.JWT_SIGNING_ACTIVE_KID, apiEnv.JWT_SIGNING_KEYS_JSON)) throw failure();
+}
+
+/**
+ * 백엔드가 그 키링으로 기동할 수 있는가 — 활성 kid 가 JSON 키링에 있고 그 값이 P-256(ES256) PKCS#8 개인키여야 한다.
+ * 존재만 보면 임의 바이트도 통과해 이 검사의 green 이 '기동 가능한 키를 준비했다' 는 증거가 되지 못한다(2026-11-25 Codex 검토).
+ */
+export function usableSigningKeyring(activeKid, keysJson) {
+  if (typeof activeKid !== 'string' || !/^[A-Za-z0-9._-]{1,64}$/.test(activeKid) || typeof keysJson !== 'string') return false;
+  let keys;
+  try { keys = JSON.parse(keysJson); } catch { return false; }
+  if (!keys || typeof keys !== 'object' || Array.isArray(keys) || typeof keys[activeKid] !== 'string') return false;
+  try {
+    const key = createPrivateKey({ key: Buffer.from(keys[activeKid], 'base64'), format: 'der', type: 'pkcs8' });
+    return key.asymmetricKeyType === 'ec' && key.asymmetricKeyDetails?.namedCurve === 'prime256v1';
+  } catch {
+    return false;
+  }
 }
 
 function mergedImageEnvironment(image, overrides) {

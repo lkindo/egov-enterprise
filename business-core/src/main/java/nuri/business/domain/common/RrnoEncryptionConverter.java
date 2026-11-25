@@ -19,6 +19,11 @@ public class RrnoEncryptionConverter implements AttributeConverter<String, Strin
     private static final java.util.regex.Pattern LEGACY_PLAINTEXT_RRNO =
             java.util.regex.Pattern.compile("^\\d{6}-?\\d{7}$");
 
+    /** 주민등록번호 꼴(앞 6자리·선택적 하이픈·뒤 7자리)인가 — 과거 평문 판정과 재암호화의 복호 결과 검증이 같은 규칙을 쓴다. */
+    public static boolean isRrnoFormat(String value) {
+        return value != null && LEGACY_PLAINTEXT_RRNO.matcher(value).matches();
+    }
+
     @Override
     public String convertToDatabaseColumn(String attribute) {
         if (attribute == null || attribute.trim().isEmpty()) {

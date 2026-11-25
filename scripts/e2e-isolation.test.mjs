@@ -8,7 +8,7 @@ import { createHash, generateKeyPairSync, randomBytes, sign as signCrypto, verif
 import fs from 'node:fs';
 import { syncBuiltinESMExports } from 'node:module';
 import { execFileSync } from 'node:child_process';
-import { validateIsolationManifest, assertOwnedDatabase, assertOwnedComposeRuntime, assertIsolatedTarget, validateComposePlan } from './e2e-isolation.mjs';
+import { validateIsolationManifest, assertOwnedDatabase, assertOwnedComposeRuntime, assertIsolatedTarget, validateComposePlan, usableSigningKeyring } from './e2e-isolation.mjs';
 import { closedEnvironment, createIsolatedJwtEnvironment, createIsolatedMfaEnvironment, assertNoDotEnv, assertBuildTarget, discoveryArguments,
   isEnterpriseTaskLabSelection, createEnterpriseTaskLabBuildReceipt, safeInputHash, rehearsesAuthorizationContract } from './run-isolated-e2e.mjs';
 import { TASKS, TASK_SEEDS, compareEnterpriseTaskRuns, readEnterpriseTaskRun } from './compare-enterprise-task-lab.mjs';
@@ -705,6 +705,9 @@ test('manifest requires a matching live owner, rejects replay/foreign attestatio
   } finally { if (server.listening) await new Promise(resolve => server.close(resolve)); rmSync(directory, { recursive: true, force: true }); }
 });
 
+// 회차 키링 고정물은 실제 P-256 PKCS#8 개인키다 — 검사가 키를 판독하므로 임의 바이트는 통과하지 않는다.
+const FIXTURE_ES256_PKCS8 = generateKeyPairSync('ec', { namedCurve: 'P-256' }).privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64');
+
 function composeFixture() {
   const env = { CI: 'true', GITHUB_ACTIONS: 'true', GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '2', COMPOSE_PROJECT_NAME: 'egov-e2e-123-2-0' };
   const project = env.COMPOSE_PROJECT_NAME;
@@ -721,7 +724,7 @@ function composeFixture() {
   api.Config.Env = ['SPRING_PROFILES_ACTIVE=e2e', 'NURI_AUTHORIZATION_ISOLATED_CUTOVER=true',
     'NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK=CONFIRMED_DISPOSABLE_AUTHZ_DATABASE',
     'JWT_SIGNING_ACTIVE_KID=e2e-es256',
-    `JWT_SIGNING_KEYS_JSON=${JSON.stringify({ 'e2e-es256': randomBytes(32).toString('base64') })}`,
+    `JWT_SIGNING_KEYS_JSON=${JSON.stringify({ 'e2e-es256': FIXTURE_ES256_PKCS8 })}`,
     'JAVA_OPTS=-Xms512m -Xmx512m -XX:+UseParallelGC',
     `SPRING_APPLICATION_JSON=${JSON.stringify({ spring: { datasource: { url, 'jdbc-url': url, hikari: { 'jdbc-url': url }, username: 'egov', password: 'synthetic' } } })}`];
   db.Mounts = [{ Type: 'volume', Destination: '/var/lib/postgresql/data', Name: `${project}-database` }];
@@ -743,8 +746,30 @@ test('CI compose validates actual isolated datasource, owned volume/network and 
     // 회차마다 만든 서명 키링이 없으면(저장소의 개발용 키쌍으로 도는 API) 소유 증명이 아니다
     value => { value.api.Config.Env = value.api.Config.Env.filter(entry => !entry.startsWith('JWT_SIGNING_KEYS_JSON=')); },
     value => { value.api.Config.Env = value.api.Config.Env.filter(entry => !entry.startsWith('JWT_SIGNING_ACTIVE_KID=')); },
+    // 존재만으로는 부족하다 — 백엔드가 그 키로 기동할 수 있어야 한다(2026-11-25 Codex 검토)
+    value => { value.api.Config.Env = value.api.Config.Env.map(entry => entry.startsWith('JWT_SIGNING_KEYS_JSON=') ? `JWT_SIGNING_KEYS_JSON=${JSON.stringify({ 'e2e-es256': randomBytes(32).toString('base64') })}` : entry); },
+    value => { value.api.Config.Env = value.api.Config.Env.map(entry => entry.startsWith('JWT_SIGNING_ACTIVE_KID=') ? 'JWT_SIGNING_ACTIVE_KID=other-kid' : entry); },
   ];
   for (const change of changes) { const changed = composeFixture(); change(changed); assert.throws(() => assertOwnedComposeRuntime(changed.db, changed.api, changed.volume, changed.network, changed.env, now)); }
+});
+
+test('회차 서명 키링 판독: 활성 kid 가 JSON 에 있고 P-256 PKCS#8 개인키일 때만 기동 가능한 키링이다', () => {
+  const keyring = kid => JSON.stringify({ [kid]: FIXTURE_ES256_PKCS8 });
+  assert.equal(usableSigningKeyring('e2e-es256', keyring('e2e-es256')), true);
+  const p384 = generateKeyPairSync('ec', { namedCurve: 'P-384' }).privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64');
+  const rsa = generateKeyPairSync('rsa', { modulusLength: 2048 }).privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64');
+  const spki = generateKeyPairSync('ec', { namedCurve: 'P-256' }).publicKey.export({ format: 'der', type: 'spki' }).toString('base64');
+  for (const [name, kid, json] of [
+    ['임의 32바이트', 'k', JSON.stringify({ k: randomBytes(32).toString('base64') })],
+    ['활성 kid 가 키링에 없음', 'k', keyring('other')],
+    ['JSON 이 아님', 'k', 'k=' + FIXTURE_ES256_PKCS8],
+    ['배열 키링', 'k', JSON.stringify([FIXTURE_ES256_PKCS8])],
+    ['P-384 키', 'k', JSON.stringify({ k: p384 })],
+    ['RSA 키', 'k', JSON.stringify({ k: rsa })],
+    ['개인키 자리에 공개키', 'k', JSON.stringify({ k: spki })],
+    ['kid 형식 밖', 'k k', JSON.stringify({ 'k k': FIXTURE_ES256_PKCS8 })],
+    ['kid 없음', undefined, keyring('k')],
+  ]) assert.equal(usableSigningKeyring(kid, json), false, name);
 });
 
 test('CI API launch cannot replace inspected datasource through JVM, application arguments, or alternate configuration', () => {
