@@ -7,7 +7,7 @@
   },
   "packageManager": "pnpm@9.15.0",
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 next dev -p 3001",
+    "dev": "node scripts/next-dev.mjs",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 next build",
     "bundle:check": "node scripts/check-bundle-budget.mjs",
     "prototype:kit": "node scripts/prototype-token-kit.mjs",

@@ -112,6 +112,8 @@ server {
 #   인증서 경로·HSTS 기간은 기관 정책으로 정한다. 평문 8080 을 남기면 HTTPS 로만 넘기는 server 로 바꾼다.
 #   운영 오버레이의 edge 헬스체크는 평문 http://127.0.0.1:8080/__edge/health 를 부른다 — 8080 리스너를 닫으면 그 헬스체크도
 #   새 리스너로 옮기거나(location = /__edge/health 를 함께 옮긴다) 8080 에 그 location 만 남긴다. 그러지 않으면 edge 가 unhealthy 가 된다.
+#   nginx 는 자기 add_header 가 있는 location 에 server 수준 add_header 를 물려주지 않는다 — location @edge_login_limited 를 옮길 때
+#   그 안에도 Strict-Transport-Security 를 넣는다(넣지 않으면 로그인 한도 429 응답에 HSTS 가 빠진다).
 #
 # server {
 #     listen 8443 ssl;

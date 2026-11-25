@@ -28,8 +28,20 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 @EnableAsync
 @EnableRetry
-@EnableScheduling
 public class AsyncConfig implements AsyncConfigurer {
+
+    /**
+     * {@code @Scheduled} 작업을 켠다. {@code nuri.scheduling.enabled=false} 면 켜지 않는다(기본은 켠다, 2026-11-25).
+     *
+     * <p>일회성 실행 프로필(주민번호 재암호화 {@code rrno-reencrypt})은 운영 설정 그대로 앱 전체를 띄우므로, 켜 두면 그 프로세스가
+     * 실행되는 동안 내구 작업 워커(메일·문자 발송)·보존 삭제·집계 같은 예약 작업까지 돌려 대상과 무관한 운영 쓰기를 한다.
+     */
+    @Configuration(proxyBeanMethods = false)
+    @EnableScheduling
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "nuri.scheduling.enabled",
+            havingValue = "true", matchIfMissing = true)
+    static class SchedulingActivation {
+    }
 
     /**
      * [회복탄력성] 비동기 태스크 동시성 상한. SimpleAsyncTaskExecutor는 기본이 무제한(UNBOUNDED)이라

@@ -53,17 +53,21 @@ public class RrnoEncryptionConverter implements AttributeConverter<String, Strin
                 throw new IllegalStateException("Rrno decryption failed; keyring or ciphertext integrity check required", e);
             }
         }
-        try {
-            return CryptoUtil.decrypt(dbData);
-        } catch (Exception e) {
-            // 과거 평문 행만 좁게 호환한다. 임의 문자열/구키 암호문을 주민번호 값처럼 반환하면
-            // 애플리케이션이 손상된 암호문을 정상 PII로 오인하므로 그 밖은 fail-closed 한다.
-            if (LEGACY_PLAINTEXT_RRNO.matcher(dbData).matches()) {
-                log.warn("Legacy plaintext rrno detected; it will be encrypted on the next write.");
-                return dbData;
-            }
-            log.error("Rrno decryption failed — refusing to expose undecipherable data", e);
-            throw new IllegalStateException("Rrno decryption failed; key rotation or ciphertext integrity check required", e);
+        // [2026-11-25 Codex 2차] ARIA 는 IV·MAC 이 없어 다른 키로 풀어도 예외 없이 엉뚱한 바이트를 돌려줄 수 있다. 키 교체 중
+        //   (ALGORITHM_KEY·OLD_ALGORITHM_KEY 둘 다)에는 현재 키가 이전 키 암호문을 '성공적으로' 잘못 풀어, 사용자 수정이 그 값을 새 키로
+        //   다시 암호화해 원문을 잃었다. 두 키의 결과 가운데 주민등록번호 꼴인 것을 현재 키부터 고른다. 꼴인 결과가 없으면 종전과 같이
+        //   현재 키 결과(현재 키가 예외면 이전 키 결과)를 돌려준다 — 형식 밖의 기존 값을 새로 막지 않는다.
+        java.util.List<String> candidates = CryptoUtil.decryptCandidates(dbData);
+        if (!candidates.isEmpty()) {
+            return candidates.stream().filter(RrnoEncryptionConverter::isRrnoFormat).findFirst().orElse(candidates.getFirst());
         }
+        // 두 키 모두 풀지 못했다(또는 Base64 가 아니다). 과거 평문 행만 좁게 호환한다. 임의 문자열/구키 암호문을 주민번호 값처럼
+        // 반환하면 애플리케이션이 손상된 암호문을 정상 PII로 오인하므로 그 밖은 fail-closed 한다.
+        if (LEGACY_PLAINTEXT_RRNO.matcher(dbData).matches()) {
+            log.warn("Legacy plaintext rrno detected; it will be encrypted on the next write.");
+            return dbData;
+        }
+        log.error("Rrno decryption failed — refusing to expose undecipherable data");
+        throw new IllegalStateException("Rrno decryption failed; key rotation or ciphertext integrity check required");
     }
 }

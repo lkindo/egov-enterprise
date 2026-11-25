@@ -60,16 +60,24 @@ function assertIsolatedDatasource(dbEnv, apiEnv, api) {
 }
 
 /**
- * 백엔드가 그 키링으로 기동할 수 있는가 — 활성 kid 가 JSON 키링에 있고 그 값이 P-256(ES256) PKCS#8 개인키여야 한다.
+ * 백엔드가 그 키링으로 기동할 수 있는가 — 활성 kid 가 JSON 키링에 있고, 모든 항목(16개까지)이 P-256(ES256) PKCS#8 개인키여야 한다.
  * 존재만 보면 임의 바이트도 통과해 이 검사의 green 이 '기동 가능한 키를 준비했다' 는 증거가 되지 못한다(2026-11-25 Codex 검토).
  */
 export function usableSigningKeyring(activeKid, keysJson) {
-  if (typeof activeKid !== 'string' || !/^[A-Za-z0-9._-]{1,64}$/.test(activeKid) || typeof keysJson !== 'string') return false;
+  const KID = /^[A-Za-z0-9._-]{1,64}$/;
+  if (typeof activeKid !== 'string' || !KID.test(activeKid) || typeof keysJson !== 'string') return false;
   let keys;
   try { keys = JSON.parse(keysJson); } catch { return false; }
   if (!keys || typeof keys !== 'object' || Array.isArray(keys) || typeof keys[activeKid] !== 'string') return false;
+  // 백엔드는 키링의 모든 항목을 기동 때 판독하고 16개까지만 받는다(JwtTokenProvider) — 이전 키 하나만 손상돼도 기동이 멈춘다.
+  const entries = Object.entries(keys);
+  if (entries.length > 16) return false;
+  return entries.every(([kid, value]) => KID.test(kid) && typeof value === 'string' && isP256Pkcs8(value));
+}
+
+function isP256Pkcs8(base64) {
   try {
-    const key = createPrivateKey({ key: Buffer.from(keys[activeKid], 'base64'), format: 'der', type: 'pkcs8' });
+    const key = createPrivateKey({ key: Buffer.from(base64, 'base64'), format: 'der', type: 'pkcs8' });
     return key.asymmetricKeyType === 'ec' && key.asymmetricKeyDetails?.namedCurve === 'prime256v1';
   } catch {
     return false;

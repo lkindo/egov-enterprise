@@ -69,13 +69,13 @@ function stageId(command) {
 
 // 프런트 명령에 넘기지 않는 서명 비밀. 정본은 scripts/dev.mjs 의 FRONTEND_WITHHELD_SIGNING_ENV 이고 이 목록은 그 사본이다 —
 // 독립 이관 제품이 이 파일만 복사하므로 dev.mjs 를 import 하지 않는다. 두 목록이 같은지는 dev-remote-db-guard 시험이 본다.
+// Windows 의 환경 변수 이름은 대소문자를 가리지 않으므로 대문자로 맞춰 거른다.
 const FRONTEND_WITHHELD_SIGNING_ENV = ['JWT_SIGNING_ACTIVE_KID', 'JWT_SIGNING_KEYS_JSON', 'JWT_SECRET', 'JWT_ACCEPT_LEGACY_HMAC'];
 
 function stripPrivateJwtSigningForFrontend(command, env) {
   if (!/(?:^|\s)(?:pnpm\s+-C\s+frontend\b|\S*vitest\b)/u.test(command)) return env;
-  const safeEnv = { ...env };
-  for (const name of FRONTEND_WITHHELD_SIGNING_ENV) delete safeEnv[name];
-  return safeEnv;
+  const withheld = new Set(FRONTEND_WITHHELD_SIGNING_ENV);
+  return Object.fromEntries(Object.entries(env).filter(([name]) => !withheld.has(name.toUpperCase())));
 }
 
 function run(command, extraEnv = {}) {

@@ -48,6 +48,19 @@ class RrnoReencryptionRunnerTest {
     }
 
     @Test
+    @DisplayName("🚨 rrno-reencrypt 프로필은 웹 서버·Flyway·예약 작업·내구 작업을 끈다 — 점검이 스키마를 바꾸거나 메일·삭제 작업을 돌리지 않게")
+    void profileSwitchesOffEverythingButTheBatch() {
+        var yaml = new org.springframework.beans.factory.config.YamlPropertiesFactoryBean();
+        yaml.setResources(new org.springframework.core.io.ClassPathResource("application-rrno-reencrypt.yml"));
+        java.util.Properties properties = yaml.getObject();
+        assertThat(properties).isNotNull();
+        assertThat(properties).containsEntry("spring.main.web-application-type", "none")
+                .containsEntry("spring.flyway.enabled", false)
+                .containsEntry("nuri.scheduling.enabled", false)
+                .containsEntry("nuri.durable-work.enabled", false);
+    }
+
+    @Test
     @DisplayName("🚨 멈춤 사유(건수·행 식별자)는 남기고, 그 밖의 예외 메시지(DB 오류 원문 — 행의 값을 담을 수 있다)는 남기지 않는다")
     void logsOnlyOwnStopMessagesNotForeignExceptionText() {
         Logger logger = (Logger) LoggerFactory.getLogger(RrnoReencryptionRunner.class);

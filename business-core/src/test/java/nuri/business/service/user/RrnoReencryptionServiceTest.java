@@ -162,8 +162,8 @@ class RrnoReencryptionServiceTest {
         for (boolean apply : new boolean[] { false, true }) {
             assertThatThrownBy(() -> service.run(apply))
                     .isInstanceOf(RrnoReencryptionService.ReencryptionStopped.class)
-                    .hasMessageContaining("U1").hasMessageContaining("1 stored value")
-                    .hasMessageNotContaining("corrupted-value").hasMessageNotContaining("900101");
+                    .hasMessageContaining(RrnoReencryptionService.rowRef("U1")).hasMessageContaining("1 stored value")
+                    .hasMessageNotContaining("U1").hasMessageNotContaining("corrupted-value").hasMessageNotContaining("900101");
         }
         assertThat(stored("A1")).isEqualTo(good);
         assertThat(stored("U1")).isEqualTo("corrupted-value");
@@ -179,9 +179,47 @@ class RrnoReencryptionServiceTest {
         insert("U3", oldEnvelope);
 
         assertThatThrownBy(() -> service.run(false)).isInstanceOf(RrnoReencryptionService.ReencryptionStopped.class)
-                .hasMessageContaining("U3").hasMessageContaining("RRNO_KEYS_JSON");
+                .hasMessageContaining(RrnoReencryptionService.rowRef("U3")).hasMessageContaining("RRNO_KEYS_JSON");
         assertThatThrownBy(() -> service.run(true)).isInstanceOf(RrnoReencryptionService.ReencryptionStopped.class);
         assertThat(stored("A1")).isEqualTo(ariaCiphertext("cur", "900101-1234567"));
+    }
+
+    @Test
+    @DisplayName("🚨 판독 뒤 다른 쓰기가 값을 정할 수 없게 바꾸면 적용 단계가 그 자리에서 멈춘다 — 경합으로 세고 성공(종료 0)하지 않는다")
+    void applyStopsWhenAValueBecomesUnresolvableAfterVerification() {
+        RrnoKeyring.configure("old", Map.of("old", KEY_OLD));
+        String oldEnvelope = RrnoKeyring.encrypt("800101-2234567");
+        RrnoKeyring.configure("new", Map.of("old", KEY_OLD, "new", KEY_NEW));
+        insert("A1", ariaCiphertext("cur", "900101-1234567"));
+        insert("U2", oldEnvelope);
+        String corruptedActive = "v2:new:AAAAAAAAAAAAAAAA:BBBBBBBBBBBBBBBBBBBBBBBB";
+
+        // 판독 단계가 끝나고(두 번째 쪽이 비어 돌아온 뒤) 적용 단계의 첫 쪽을 읽기 직전에 다른 쓰기가 U2 를 손상된 활성 키 봉투로 바꾼다.
+        java.util.concurrent.atomic.AtomicInteger pages = new java.util.concurrent.atomic.AtomicInteger();
+        JdbcTemplate racing = new JdbcTemplate(database) {
+            @Override
+            public <T> java.util.List<T> query(org.springframework.jdbc.core.PreparedStatementCreator creator,
+                    org.springframework.jdbc.core.RowMapper<T> mapper) {
+                if (pages.incrementAndGet() == 3) {
+                    jdbc.update("UPDATE tb_user_info SET user_enrrno = ? WHERE esntl_id = 'U2'", corruptedActive);
+                }
+                return super.query(creator, mapper);
+            }
+        };
+
+        assertThatThrownBy(() -> new RrnoReencryptionService(racing).run(true))
+                .isInstanceOf(RrnoReencryptionService.ReencryptionStopped.class)
+                .hasMessageContaining("while writing").hasMessageContaining(RrnoReencryptionService.rowRef("U2"))
+                .hasMessageNotContaining(corruptedActive);
+        assertThat(read(stored("A1"))).as("앞서 다시 쓴 행은 판독한 원문이다").isEqualTo("900101-1234567");
+        assertThat(stored("U2")).isEqualTo(corruptedActive);
+    }
+
+    @Test
+    @DisplayName("행 참조는 식별자의 SHA-256 앞 16자다 — 식별자 원문이 아니다")
+    void rowRefIsANonIdentifyingDigest() {
+        assertThat(RrnoReencryptionService.rowRef("USRCNFRM_00000000001")).matches("[0-9a-f]{16}")
+                .isNotEqualTo(RrnoReencryptionService.rowRef("USRCNFRM_00000000002"));
     }
 
     @Test
@@ -205,7 +243,7 @@ class RrnoReencryptionServiceTest {
         String ambiguous = ariaCiphertext("old", "800101-2234567");
         insert("U9", ambiguous);
         assertThatThrownBy(() -> service.run(true)).isInstanceOf(RrnoReencryptionService.ReencryptionStopped.class)
-                .hasMessageContaining("U9");
+                .hasMessageContaining(RrnoReencryptionService.rowRef("U9"));
         assertThat(stored("U9")).isEqualTo(ambiguous);
     }
 }

@@ -69,6 +69,19 @@ class SchedulingTaskSchedulerTest {
                 });
     }
 
+    @Test
+    @DisplayName("🚨 nuri.scheduling.enabled=false 면 @Scheduled 작업을 켜지 않는다 — 일회성 실행 프로필이 운영 예약 작업을 돌리지 않게")
+    void schedulingCanBeSwitchedOff() {
+        runner.withPropertyValues("nuri.scheduling.enabled=false").run(context -> {
+            assertThat(context).hasNotFailed();
+            assertThat(context).doesNotHaveBean(
+                    org.springframework.scheduling.config.TaskManagementConfigUtils.SCHEDULED_ANNOTATION_PROCESSOR_BEAN_NAME);
+            assertThat(context.getBean(ProbeJob.class).ran.await(2, TimeUnit.SECONDS)).isFalse();
+        });
+        runner.run(context -> assertThat(context).hasBean(
+                org.springframework.scheduling.config.TaskManagementConfigUtils.SCHEDULED_ANNOTATION_PROCESSOR_BEAN_NAME));
+    }
+
     @Configuration(proxyBeanMethods = false)
     static class BrokerSchedulerConfig {
         @Bean

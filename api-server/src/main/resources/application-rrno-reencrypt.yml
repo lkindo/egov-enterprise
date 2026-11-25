@@ -1,9 +1,17 @@
 # 주민등록번호 재암호화 일회성 실행 프로필(RrnoReencryptionRunner, 2026-11-25).
 #   java -jar app.jar --spring.profiles.active=prod,rrno-reencrypt [--nuri.crypto.rrno.reencrypt.apply=true]
-# 웹 서버를 띄우지 않고(포트 점유·외부 요청 없음), Flyway 를 돌리지 않는다 — 점검(dry-run)이 스키마를 바꾸지 않게 한다.
+# 운영 앱과 같은 환경(.env)으로 띄운다 — prod 의 필수 설정 검사(ProdRequiredPropertiesGuard)를 그대로 지난다.
+# 웹 서버를 띄우지 않고(포트 점유·외부 요청 없음), Flyway 를 돌리지 않고(점검이 스키마를 바꾸지 않게),
+# 예약 작업을 켜지 않는다(내구 작업 워커의 메일·문자 발송, 보존 삭제, 집계가 이 프로세스에서 돌지 않게).
 # 스키마는 앱이 평소 배포 절차로 이미 최신이어야 한다(엔티티 검증이 어긋나면 기동이 멈춘다).
 spring:
   main:
     web-application-type: none
   flyway:
+    enabled: false
+nuri:
+  scheduling:
+    enabled: false
+  # 예약 작업을 끄면 워커도 깨지 않지만, 내구 작업 디스패처 자체도 꺼 둔다(같은 이유의 이중 차단).
+  durable-work:
     enabled: false

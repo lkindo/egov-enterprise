@@ -26,6 +26,8 @@ class RrnoEncryptionConverterTest {
         // CryptoUtil에 mock 주입
         ReflectionTestUtils.setField(CryptoUtil.class, "cryptoService", mockCryptoService);
         ReflectionTestUtils.setField(CryptoUtil.class, "algorithmKey", "egovframe");
+        ReflectionTestUtils.setField(CryptoUtil.class, "previousCryptoService", null);
+        ReflectionTestUtils.setField(CryptoUtil.class, "previousAlgorithmKey", null);
         RrnoKeyring.configure(null, null);
     }
 
@@ -109,6 +111,42 @@ class RrnoEncryptionConverterTest {
                         () -> converter.convertToEntityAttribute("invalidBase64OrDecrypError"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("decryption failed");
+    }
+
+    @Test
+    @DisplayName("🚨 ARIA 키 교체 중: 현재 키가 이전 키 암호문을 예외 없이 엉뚱하게 풀어도 이전 키의 주민번호 꼴 결과를 읽는다")
+    void ariaKeyRotationPrefersTheCandidateInRrnoFormat() throws Exception {
+        // 현재 키는 예외 없이 형식 밖의 바이트를, 이전 키는 원문을 낸다(실제 ARIA 의 성질 — IV·MAC 이 없다).
+        when(mockCryptoService.decrypt(any(byte[].class), any(String.class)))
+                .thenReturn("\u0001garbage\u0002".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        EgovCryptoService previous = Mockito.mock(EgovCryptoService.class);
+        when(previous.decrypt(any(byte[].class), any(String.class)))
+                .thenReturn("800101-2234567".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        ReflectionTestUtils.setField(CryptoUtil.class, "previousCryptoService", previous);
+        ReflectionTestUtils.setField(CryptoUtil.class, "previousAlgorithmKey", "previous");
+        try {
+            String stored = java.util.Base64.getEncoder().encodeToString("old-key-ciphertext".getBytes());
+            assertThat(converter.convertToEntityAttribute(stored)).isEqualTo("800101-2234567");
+
+            // 둘 다 꼴이 맞으면 현재 키 결과(종전 우선순위)
+            when(previous.decrypt(any(byte[].class), any(String.class)))
+                    .thenReturn("700101-1234567".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            when(mockCryptoService.decrypt(any(byte[].class), any(String.class)))
+                    .thenReturn("900101-1234567".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            assertThat(converter.convertToEntityAttribute(stored)).isEqualTo("900101-1234567");
+        } finally {
+            ReflectionTestUtils.setField(CryptoUtil.class, "previousCryptoService", null);
+            ReflectionTestUtils.setField(CryptoUtil.class, "previousAlgorithmKey", null);
+        }
+    }
+
+    @Test
+    @DisplayName("교체 중이 아니면 형식 밖의 복호 결과도 종전처럼 돌려준다 — 기존 값의 읽기를 새로 막지 않는다")
+    void outOfFormatValueWithoutRotationIsReturnedAsBefore() throws Exception {
+        when(mockCryptoService.decrypt(any(byte[].class), any(String.class)))
+                .thenReturn("9001011234567X".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        String stored = java.util.Base64.getEncoder().encodeToString("legacy".getBytes());
+        assertThat(converter.convertToEntityAttribute(stored)).isEqualTo("9001011234567X");
     }
 
     @Test

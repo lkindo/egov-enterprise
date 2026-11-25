@@ -769,7 +769,13 @@ test('회차 서명 키링 판독: 활성 kid 가 JSON 에 있고 P-256 PKCS#8 �
     ['개인키 자리에 공개키', 'k', JSON.stringify({ k: spki })],
     ['kid 형식 밖', 'k k', JSON.stringify({ 'k k': FIXTURE_ES256_PKCS8 })],
     ['kid 없음', undefined, keyring('k')],
+    // 활성 항목이 정상이어도 백엔드는 모든 항목을 판독하고 16개까지만 받는다
+    ['손상된 이전 키', 'k', JSON.stringify({ k: FIXTURE_ES256_PKCS8, old: randomBytes(32).toString('base64') })],
+    ['형식 밖 이전 kid', 'k', JSON.stringify({ k: FIXTURE_ES256_PKCS8, 'old kid': FIXTURE_ES256_PKCS8 })],
+    ['17개 키링', 'k0', JSON.stringify(Object.fromEntries(Array.from({ length: 17 }, (_, i) => [`k${i}`, FIXTURE_ES256_PKCS8])))],
   ]) assert.equal(usableSigningKeyring(kid, json), false, name);
+  assert.equal(usableSigningKeyring('k0', JSON.stringify(Object.fromEntries(Array.from({ length: 16 }, (_, i) => [`k${i}`, FIXTURE_ES256_PKCS8])))), true,
+    '16개까지는 받는다');
 });
 
 test('CI API launch cannot replace inspected datasource through JVM, application arguments, or alternate configuration', () => {
