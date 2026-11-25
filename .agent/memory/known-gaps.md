@@ -5,7 +5,7 @@ status: active
 authority: derived-active-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-11-22
+verified_at: 2026-11-25
 verified_against: 44ed238d30e1c5b71225cd02d44d19a0c504deba
 canonical_sources:
   - ../../docs/04-operations/known-gaps-detail.md
@@ -100,6 +100,7 @@ refresh_triggers:
 | GAP-DATA-002 | P2 | blocked-external | legacy input data | OCI 설문 3행의 시작·종료일이 잘린 채 남아 있다 — 업무 소유자가 원래 날짜를 확인하기 전에는 추정해 보정하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-DEP-001 | P1 | needs-revalidation | dependency security | PR 의존성 snapshot readiness 와 runtime High 차단은 구현됐고, public fork probe 와 양쪽 snapshot 부재 경계는 외부 검증이 남았다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
 | GAP-MIG-001 | P1 | blocked-external | migration-tool | vendor 7종 이관의 실측 범위가 서로 다르고 모두 UNVERIFIED·MANUAL_ONLY 다 — 도입 버전·driver 별 COMMIT 자격·cutover 는 기관 실측이 필요하다. | [상세](../../docs/04-operations/known-gaps-detail.md#migration) |
+| GAP-WIN-001 | P3 | accepted-risk | windows contract coverage | DEC-OPS-433으로 로컬 운영 계약을 폐기해 win32 분기 시험의 병합 전 자동 실행이 없다 — Windows 스크립트·훅 변경 시 전체 계약 또는 대상 시험으로 수동 검증한다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
 
 ## 해결 규칙
 

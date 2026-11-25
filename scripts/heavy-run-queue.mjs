@@ -10,7 +10,7 @@
  *   않는다 — 사람이 `confirm-idle --run <runId>` 로 확인한다. 강제 종료된 실행이 만들던 컨테이너도 그 표식이 덮는다.
  * - 안쪽 실행은 EGOV_HEAVY_RUN_LOCK 의 토큰을 보유자에게 확인한 뒤에만 같은 실행으로 친다. 같은 저장소 토큰의 확인이 실패하면
  *   다시 줄을 서지 않고 실패한다(자기 조상을 기다리는 교착 방지).
- * - 증거 판정은 바꾸지 않는다. 병합 증거는 지금처럼 실행 기록(scripts/verification-record.mjs)과 pr-checks-wait 가 정한다.
+ * - 증거 판정은 바꾸지 않는다. 병합 증거는 required CI(pr-checks-wait)가 정한다.
  * - 비Windows·Git 밖·시험 안(NODE_TEST_CONTEXT)·EGOV_HEAVY_RUN_QUEUE=off 는 대기열 없이 그대로 돈다.
  *
  * 명령: run --kind <k> -- <명령…> | classify | confirm-idle --run <runId> | status

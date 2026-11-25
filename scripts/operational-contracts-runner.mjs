@@ -11,12 +11,29 @@
  */
 export const OPERATIONAL_CONTRACTS_CONCURRENCY = 4;
 
+export const OPERATIONAL_CONTRACT_CATALOGS = Object.freeze([
+  Object.freeze({ root: 'scripts', suffix: '.test.mjs' }),
+  Object.freeze({ root: '.agent/scripts', suffix: '.test.js' }),
+  Object.freeze({ root: 'tools/migration-workspace', suffix: '.test.mjs' }),
+  Object.freeze({ root: 'tools/requirements-workspace', suffix: '.test.mjs' }),
+]);
+
+export function operationalContractsNodeArgs(junitPath = 'build/operational-contracts/junit.xml') {
+  return [
+    '--test',
+    `--test-concurrency=${OPERATIONAL_CONTRACTS_CONCURRENCY}`,
+    '--test-reporter=spec',
+    '--test-reporter-destination=stdout',
+    '--test-reporter=./scripts/node-test-junit-reporter.mjs',
+    `--test-reporter-destination=${junitPath}`,
+  ];
+}
+
 export const OPERATIONAL_CONTRACTS_RUNNER = [
   `node -e "require('node:fs').mkdirSync('build/operational-contracts',{recursive:true})"`,
   '&&',
-  `node --test --test-concurrency=${OPERATIONAL_CONTRACTS_CONCURRENCY}`,
-  '--test-reporter=spec --test-reporter-destination=stdout',
-  '--test-reporter=./scripts/node-test-junit-reporter.mjs --test-reporter-destination=build/operational-contracts/junit.xml',
+  'node',
+  ...operationalContractsNodeArgs(),
   '"scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs"',
   '"tools/requirements-workspace/*.test.mjs"',
 ].join(' ');

@@ -851,15 +851,52 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
     }
   }
 
+  const composerOutputWire = (changeScopeJob ?? '').match(/^ {6}composer-contracts:\s*(.+)$/m)?.[1]?.trim();
+  if (composerOutputWire !== '${{ steps.scope.outputs.composer_contracts }}') {
+    errors.push("change-scope must wire output 'composer-contracts' to '${{ steps.scope.outputs.composer_contracts }}'");
+  }
+
   const secretScanJob = jobs.get('secret-scan');
   if (secretScanJob) {
+    const steps = parseNamedSteps(secretScanJob);
+    const validateStepName = 'Validate operational contracts scope output';
+    const validateStep = steps.get(validateStepName);
+    if (!validateStep) {
+      errors.push(`required operational contracts guard step '${validateStepName}' is missing from job 'secret-scan'`);
+    } else {
+      if (stepScalar(validateStep, 'if') !== null) {
+        errors.push('operational contracts scope guard step cannot use a step-level if');
+      }
+      if (stepScalar(validateStep, 'continue-on-error') !== null) {
+        errors.push('operational contracts scope guard step cannot use continue-on-error');
+      }
+      if (stepScalar(validateStep, 'shell') !== null) {
+        errors.push('operational contracts scope guard step cannot override the runner shell');
+      }
+      if (nestedScalarMap(validateStep, 'env', 8)?.get('COMPOSER_CONTRACTS') !== '${{ needs.change-scope.outputs.composer-contracts }}') {
+        errors.push('operational contracts scope guard step must read COMPOSER_CONTRACTS from needs.change-scope.outputs.composer-contracts');
+      }
+      const expectedGuardRun = [
+        'case "$COMPOSER_CONTRACTS" in',
+        '  true|false) ;;',
+        '  *)',
+        '    echo "::error::unexpected change-scope output composer-contracts=\'${COMPOSER_CONTRACTS}\' (expected \'true\' or \'false\')"',
+        '    exit 1',
+        '    ;;',
+        'esac',
+      ].join('\n');
+      if (stepRun(validateStep) !== expectedGuardRun) {
+        errors.push('operational contracts scope guard step must fail closed on unexpected composer-contracts values');
+      }
+    }
+
     const operationalStepName = 'Verify repository operational contracts';
-    const operationalStep = parseNamedSteps(secretScanJob).get(operationalStepName);
+    const operationalStep = steps.get(operationalStepName);
     if (!operationalStep) {
       errors.push(`required operational contracts step '${operationalStepName}' is missing from job 'secret-scan'`);
     } else {
-      if (stepScalar(operationalStep, 'if') !== null) {
-        errors.push('required operational contracts step cannot use a step-level if');
+      if (stepScalar(operationalStep, 'if') !== "needs.change-scope.outputs.composer-contracts == 'true'") {
+        errors.push("required operational contracts full step must run iff needs.change-scope.outputs.composer-contracts == 'true'");
       }
       if (stepScalar(operationalStep, 'continue-on-error') !== null) {
         errors.push('required operational contracts step cannot use continue-on-error');
@@ -868,7 +905,26 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
         errors.push('required operational contracts step cannot override the runner shell');
       }
       if (stepRun(operationalStep) !== 'npm run test:operational-contracts') {
-        errors.push("required operational contracts step must run 'npm run test:operational-contracts' exactly");
+        errors.push("required operational contracts full step must run 'npm run test:operational-contracts'");
+      }
+    }
+
+    const coreStepName = 'Verify repository operational contracts (core)';
+    const coreStep = steps.get(coreStepName);
+    if (!coreStep) {
+      errors.push(`required operational contracts step '${coreStepName}' is missing from job 'secret-scan'`);
+    } else {
+      if (stepScalar(coreStep, 'if') !== "needs.change-scope.outputs.composer-contracts == 'false'") {
+        errors.push("required operational contracts core step must run iff needs.change-scope.outputs.composer-contracts == 'false'");
+      }
+      if (stepScalar(coreStep, 'continue-on-error') !== null) {
+        errors.push('required operational contracts core step cannot use continue-on-error');
+      }
+      if (stepScalar(coreStep, 'shell') !== null) {
+        errors.push('required operational contracts core step cannot override the runner shell');
+      }
+      if (stepRun(coreStep) !== 'npm run test:operational-contracts:core') {
+        errors.push("required operational contracts core step must run 'npm run test:operational-contracts:core'");
       }
     }
     // 단계가 없으면 criticalSteps 대조가 따로 붉다 — 있을 때 내려받은 실행 파일의 무결성 확인을 본다.

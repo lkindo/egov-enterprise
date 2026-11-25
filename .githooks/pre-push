@@ -30,9 +30,8 @@ ZERO_OID="0000000000000000000000000000000000000000"
 DELETION_REFS=0
 OBJECT_REFS=0
 RANGES=""
-# [DEC-OPS-410] 작업 브랜치만 push 하면 운영 계약을 push 뒤로 미룬다(아래 run_operational_contracts). PR 을 거치는 ref 라 required CI
-# (secret-scan)가 병합 전에 같은 계약을 돌고, 병합 대기 도구가 같은 SHA 의 Windows 로컬 기록을 요구한다. CI 가 미리 막지 않는 ref
-# (main·master·태그·refs/heads 밖)나 ref 를 모르는 push(stdin 없음)가 하나라도 있으면 지금처럼 여기서 돈다.
+# [DEC-OPS-433] 작업 브랜치만 push 하면 운영 계약은 PR Required CI(secret-scan)에서 검증하므로 여기서는 생략한다.
+# CI 가 미리 막지 않는 ref(main·master·태그·refs/heads 밖)나 ref 를 모르는 push(stdin 없음)가 하나라도 있으면 지금처럼 여기서 돈다.
 CONTRACTS_DEFERRABLE=1
 while read local_ref local_sha remote_ref remote_sha; do
   if [ "$local_sha" = "$ZERO_OID" ]; then
@@ -171,13 +170,12 @@ trap 'RECORD_SIGNAL=SIGTERM; exit 143' 15
 # DEC-OPS-364 와 readiness-followups 「운영 계약 비용 재측정 (2026-11-07)」).
 # 문서 전용이면 연결·메모리·생성물 계약을 확인하고 끝난다. 소스 변경이면 컴파일·타입·lint·폼 census 같은 정적 검사와
 # 불변식·원문 계약·cross-stack Vitest·하네스가 먼저 실패를 알린 뒤 맨 끝에 실행한다(fail-fast). 두 경로 모두 정확히 한 번 돈다(삭제 전용 push 는 그 전에 끝난다).
-# [DEC-OPS-410] 작업 브랜치만 push 하면(CONTRACTS_DEFERRABLE) 여기서 돌지 않고 push 뒤 'npm run verify:post-push' 가 같은 커밋의 깨끗한
-# 트리에서 전체 범위를 한 번 돈다 — 범위는 줄지 않고 시점만 옮긴다. 미룬 사실은 실행 기록에 남기고, 병합 대기 도구가 그 커밋의 기록을 요구한다.
+# [DEC-OPS-433] 작업 브랜치만 push 하면(CONTRACTS_DEFERRABLE) 운영 계약은 PR Required CI(secret-scan)가 권위로 검증하므로
+# 로컬 pre-push 에서는 생략한다.
 run_operational_contracts() {
   if [ "$CONTRACTS_DEFERRABLE" = "1" ]; then
-    echo "  → governance: 운영 계약은 push 뒤로 미룬다(DEC-OPS-410) — push 가 끝나면 이 커밋의 깨끗한 트리에서 'npm run verify:post-push' 를 돌린다"
-    echo "     (병합 대기 도구 scripts/pr-checks-wait.mjs 가 같은 SHA 의 통과 기록을 요구한다. required CI 의 secret-scan 도 같은 계약을 돈다)"
-    [ -z "$RECORD_ID" ] || node "$RECORD_SCRIPT" --root "$RECORD_ROOT" skip "$RECORD_ID" operational-contracts post-push-deferred || :
+    echo "  → governance: 운영 계약은 PR Required CI(secret-scan — 일반 PR 은 :core, 생성기/화면/업무/스킬/정책/main 은 전체)에서 검증한다 — 로컬 재확인은 'node scripts/heavy-run-queue.mjs run --kind node-test -- npm run test:operational-contracts:core'(composer·Windows 분기는 전체 'npm run test:operational-contracts')를 사용한다(DEC-OPS-433)"
+    [ -z "$RECORD_ID" ] || node "$RECORD_SCRIPT" --root "$RECORD_ROOT" skip "$RECORD_ID" operational-contracts ci-authoritative || :
     return 0
   fi
   echo "  → governance: npm run test:operational-contracts"
