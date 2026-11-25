@@ -144,7 +144,8 @@ export default function NoteHubClient() {
   });
 
   const listQuery = useQuery({
-    queryKey: noteListKey(tab, page, pageSize, searchKeyword),
+    // 키는 읽음 반영(setQueryData)과 같은 팩토리에서 만든다. 배열로 펼쳐 적어 페이지 크기 census 가 크기 결속을 본다.
+    queryKey: [...noteListKey(tab, page, pageSize, searchKeyword)],
     queryFn: async () => {
       const query = searchKeyword
         ? { page, size: pageSize, searchWrd: searchKeyword }

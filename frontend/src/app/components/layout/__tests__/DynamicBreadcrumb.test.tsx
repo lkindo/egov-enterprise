@@ -16,6 +16,7 @@ vi.mock('next/link', () => ({
 vi.mock('@/services/business/user/MenuService', () => ({ menuService: { getHeadMenus: nav.getHeadMenus } }));
 
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { rememberBrowserQueryClient } from '@/lib/query/browser-query-client';
 import { DynamicBreadcrumb } from '../DynamicBreadcrumb';
 
 const menus = [{
@@ -75,7 +76,7 @@ describe('DynamicBreadcrumb', () => {
   });
 
   it('[2026-11-25] 로그인한 화면에서는 머리글·사이드바가 켜 둔 메뉴 조회 캐시를 쓴다 — 이동마다 다시 읽지 않는다', async () => {
-    const client = new QueryClient();
+    const client = rememberBrowserQueryClient(new QueryClient());
     client.setQueryData(['menus', 'head', 'u1', 'v1'], menus);
     // 머리글 대역 — 사용자·인가 버전이 든 키로 메뉴 조회를 켜 둔다(실제 머리글도 같은 키 모양이다).
     function HeaderStub() {
@@ -90,5 +91,6 @@ describe('DynamicBreadcrumb', () => {
     );
     await waitFor(() => expect(crumbs()).toEqual(['홈', '관리 센터', '메뉴 관리']));
     expect(nav.getHeadMenus).not.toHaveBeenCalled();
+    rememberBrowserQueryClient(undefined);
   });
 });

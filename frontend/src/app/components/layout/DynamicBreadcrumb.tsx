@@ -1,7 +1,7 @@
 'use client';
 
-import { useContext, useState, useEffect } from 'react';
-import { QueryClientContext } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { browserQueryClient } from '@/lib/query/browser-query-client';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Home, ChevronRight } from 'lucide-react';
@@ -39,10 +39,10 @@ export function DynamicBreadcrumb({ customItems = [], currentLabel }: { customIt
   // [2026-11-25 품질 평가] 머리글·사이드바가 쓰는 메뉴 조회 캐시를 함께 쓴다 — 종전에는 주소가 바뀔 때마다 따로 읽었다. 그 조회의 키에는
   //   사용자·인가 버전이 들어가므로 키를 다시 만들지 않고, 지금 켜져 있는(관찰자가 있는) 머리글 메뉴 조회를 찾아 그 키로 읽는다. 없으면
   //   (로그인 전·공급자 없는 렌더) 종전처럼 직접 읽는다. 늦게 도착한 이전 주소의 응답은 버린다 — 빠르게 옮기면 이전 경로가 덮어썼다.
-  const queryClient = useContext(QueryClientContext);
-
+  //   클라이언트는 컨텍스트가 아니라 앱 공급자가 기억한 것을 읽는다(react-query 를 대역으로 바꾼 화면 시험이 그대로 돌게).
   useEffect(() => {
     let cancelled = false;
+    const queryClient = browserQueryClient();
     const loadMenus = () => {
       const shared = queryClient?.getQueryCache().findAll({ queryKey: ['menus', 'head'], type: 'active' })
         .sort((left, right) => right.state.dataUpdatedAt - left.state.dataUpdatedAt)[0];
@@ -82,7 +82,7 @@ export function DynamicBreadcrumb({ customItems = [], currentLabel }: { customIt
 
     void fetchPath();
     return () => { cancelled = true; };
-  }, [pathname, searchKey, queryClient]);
+  }, [pathname, searchKey]);
 
   // 하위 화면의 마지막 한 단계 — 화면 제목이 있으면 그것을, 없으면 화면이 넘긴 경로의 마지막 항목을 쓴다.
   const lastStep = currentLabel ? { name: currentLabel } : customItems.at(-1);

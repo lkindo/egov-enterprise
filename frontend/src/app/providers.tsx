@@ -51,6 +51,7 @@ z.setErrorMap((issue) => {
 
 import { UserInfo } from '@/services/foundation/auth/authService';
 import { createAppQueryClient } from '@/lib/query/list-query-defaults';
+import { rememberBrowserQueryClient } from '@/lib/query/browser-query-client';
 import { RouteHistoryRecorder } from '@/app/components/navigation/RouteHistoryRecorder';
 
 export default function Providers({
@@ -61,7 +62,8 @@ export default function Providers({
   initialUser?: UserInfo | null;
 }) {
   // 기본 설정(조회 중 이전 페이지 유지 — C1, 오류 승격 규칙 — C2)은 lib/query/list-query-defaults 가 소유한다.
-  const [queryClient] = useState(createAppQueryClient);
+  // 브라우저에서는 공급자 밖 공용 부품(브레드크럼)이 같은 캐시를 쓰도록 기억해 둔다(서버에서는 기억하지 않는다).
+  const [queryClient] = useState(() => rememberBrowserQueryClient(createAppQueryClient()));
 
   // Page Visibility API 연동: 탭이 보이지 않을 때 불필요한 백그라운드 폴링 중단
   useEffect(() => {
