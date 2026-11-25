@@ -159,7 +159,7 @@ class InformalSanctionWorkflowServiceTest {
                 .map(userId -> User.builder().esntlId(userId).userId(userId).userNm(userId)
                         .pswd("{bcrypt}x").userSttsCd("P").build()).toList());
         // 결재선 검증은 결재자의 결재 권한(APPROVAL_APPROVE)도 본다 — 기본은 모두 가진 것으로 둔다.
-        org.mockito.Mockito.lenient().when(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE"))
+        org.mockito.Mockito.lenient().when(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of(userIds));
     }
 
@@ -389,7 +389,7 @@ class InformalSanctionWorkflowServiceTest {
     void approverWithoutApprovePermissionIsRejectedByName() {
         knownTask();
         activeUsers("second", "next");
-        given(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).willReturn(List.of("second"));
+        given(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).willReturn(List.of("second"));
 
         assertThatThrownBy(() -> service.registerInformalSanction(draft(), List.of(
                 stage(ApprovalStageKind.AGREEMENT, "second"), stage(ApprovalStageKind.APPROVAL, "next"))))

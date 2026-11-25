@@ -367,24 +367,22 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void logout(String userId, String refreshToken) {
-        try {
-            if (userId != null) {
-                log.info(">>> [Logout] Deleting refresh token for user: {}", userId);
-                refreshTokenRepository.findById(userId).ifPresent(this::deleteNow);
-                recordLogout(userId);
-                return;
-            }
-            // [2026-09-25 DIP D7] 액세스 토큰이 만료돼 신원이 없어도, 쿠키로 제시된 리프레시 토큰의 행은 지운다.
-            //   종전에는 인증된 요청만 받아서, 만료 뒤 누른 로그아웃은 브라우저 쿠키만 지우고 서버 세션은 남겼다 —
-            //   그 토큰을 가진 다른 사람은 최대 7일 동안 계속 재발급할 수 있었다. 원문을 가진 것이 곧 증명이다.
-            if (refreshToken != null && !refreshToken.isBlank()) {
-                refreshTokenRepository.findByRfshTkn(RefreshTokenDigest.of(refreshToken)).ifPresent(token -> {
-                    deleteNow(token);
-                    recordLogout(token.getUserId());
-                });
-            }
-        } catch (Exception e) {
-            log.warn(">>> [Logout] RefreshToken already deleted or error occurred. Type: {}", e.getClass().getSimpleName());
+        // [2026-11-25 품질 평가] 예외를 삼키지 않는다 — 종전 catch(Exception) 는 세션차수 증가·로그아웃 시각 기록(이미 받은 access
+        //   token 을 끊는 일)이 실패해도 로그아웃을 성공처럼 끝냈다. 이미 지워진 토큰은 아래 ifPresent·0행 삭제가 받으므로 예외가 아니다.
+        if (userId != null) {
+            log.info(">>> [Logout] Deleting refresh token for user: {}", userId);
+            refreshTokenRepository.findById(userId).ifPresent(this::deleteNow);
+            recordLogout(userId);
+            return;
+        }
+        // [2026-09-25 DIP D7] 액세스 토큰이 만료돼 신원이 없어도, 쿠키로 제시된 리프레시 토큰의 행은 지운다.
+        //   종전에는 인증된 요청만 받아서, 만료 뒤 누른 로그아웃은 브라우저 쿠키만 지우고 서버 세션은 남겼다 —
+        //   그 토큰을 가진 다른 사람은 최대 7일 동안 계속 재발급할 수 있었다. 원문을 가진 것이 곧 증명이다.
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            refreshTokenRepository.findByRfshTkn(RefreshTokenDigest.of(refreshToken)).ifPresent(token -> {
+                deleteNow(token);
+                recordLogout(token.getUserId());
+            });
         }
     }
 

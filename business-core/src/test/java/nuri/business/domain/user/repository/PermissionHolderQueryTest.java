@@ -11,6 +11,7 @@ import nuri.business.support.PersistenceTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Limit;
 
 /**
  * 알림 수신자를 고르는 권한 보유자 조회(2026-09-26 DIP B5 F1).
@@ -41,7 +42,7 @@ class PermissionHolderQueryTest extends PersistenceTestSupport {
         em.persist(AuthorityGrant.create("GRP_OTHER", "OPERATION", "USER_READ"));
         em.flush();
 
-        assertThat(userRepository.findActiveEsntlIdsHoldingPermission("USER_STATUS"))
+        assertThat(userRepository.findActiveEsntlIdsHoldingPermission("USER_STATUS", Limit.unlimited()))
                 .containsExactly("USR_HOLDER");
     }
 
@@ -55,8 +56,47 @@ class PermissionHolderQueryTest extends PersistenceTestSupport {
         em.persist(AuthorityGrant.create("GRP_B", "OPERATION", "USER_STATUS"));
         em.flush();
 
-        assertThat(userRepository.findActiveEsntlIdsHoldingPermission("USER_STATUS"))
+        assertThat(userRepository.findActiveEsntlIdsHoldingPermission("USER_STATUS", Limit.unlimited()))
                 .containsExactly("USR_TWICE");
+    }
+
+    @Test
+    @DisplayName("상한을 주면 식별자 순으로 그만큼만 읽는다 — 보유자 전체를 메모리로 올리지 않는다")
+    void limitCapsHoldersInIdentifierOrder() {
+        for (String id : java.util.List.of("USR_C", "USR_A", "USR_B")) {
+            user(id, id.toLowerCase(java.util.Locale.ROOT), "P");
+            assign(id, "GRP_APPROVER");
+        }
+        em.persist(AuthorityGrant.create("GRP_APPROVER", "OPERATION", "USER_STATUS"));
+        em.flush();
+
+        assertThat(userRepository.findActiveEsntlIdsHoldingPermission("USER_STATUS", Limit.of(2)))
+                .containsExactly("USR_A", "USR_B");
+    }
+
+    @Test
+    @DisplayName("후보 중 보유자 — 후보 밖의 보유자는 읽지 않고, 후보라도 메뉴 배정·비활성·다른 권한·중복은 같은 규칙으로 거른다")
+    void amongCandidatesAppliesTheSameRulesOnlyToCandidates() {
+        user("USR_HOLDER", "holder", "P");
+        user("USR_OUTSIDE", "outside", "P");
+        user("USR_INACTIVE", "inactive", "D");
+        user("USR_NAV_ONLY", "navonly", "P");
+        user("USR_OTHER", "other", "P");
+        assign("USR_HOLDER", "GRP_APPROVER");
+        assign("USR_HOLDER", "GRP_SECOND");
+        assign("USR_OUTSIDE", "GRP_APPROVER");
+        assign("USR_INACTIVE", "GRP_APPROVER");
+        assign("USR_NAV_ONLY", "GRP_NAV");
+        assign("USR_OTHER", "GRP_OTHER");
+        em.persist(AuthorityGrant.create("GRP_APPROVER", "OPERATION", "USER_STATUS"));
+        em.persist(AuthorityGrant.create("GRP_SECOND", "OPERATION", "USER_STATUS"));
+        em.persist(AuthorityGrant.create("GRP_NAV", "NAVIGATION", "USER_STATUS"));
+        em.persist(AuthorityGrant.create("GRP_OTHER", "OPERATION", "USER_READ"));
+        em.flush();
+
+        assertThat(userRepository.findActiveEsntlIdsHoldingPermissionAmong("USER_STATUS",
+                java.util.List.of("USR_HOLDER", "USR_INACTIVE", "USR_NAV_ONLY", "USR_OTHER", "USR_MISSING")))
+                .containsExactly("USR_HOLDER");
     }
 
     private void user(String esntlId, String loginId, String status) {

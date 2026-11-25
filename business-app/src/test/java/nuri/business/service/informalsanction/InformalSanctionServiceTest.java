@@ -79,7 +79,7 @@ class InformalSanctionServiceTest {
         given(userRepository.findAllById(any())).willReturn(List.of(nuri.business.domain.user.entity.User.builder()
                 .esntlId(esntlId).userId(esntlId).userNm("결재자").pswd("{bcrypt}x").userSttsCd(userSttsCd).build()));
         // 결재선 검증은 결재자의 결재 권한(APPROVAL_APPROVE)도 본다.
-        org.mockito.Mockito.lenient().when(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE"))
+        org.mockito.Mockito.lenient().when(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of(esntlId));
     }
 

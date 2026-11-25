@@ -608,7 +608,8 @@ class CommunityServiceImplTest {
         Community community = Community.builder().cmntySn(101L).cmntyNm("사진 동호회").useYn("Y").build();
         given(communityRepository.findById(101L)).willReturn(Optional.of(community));
         given(communityUserRepository.findByIdForUpdate(any())).willReturn(Optional.empty());
-        given(userRepository.findActiveEsntlIdsHoldingPermission("COMMUNITY_APPROVE"))
+        // 보유자는 알림 상한(20) + 1 까지만 읽는다 — 상한이 바뀌거나 전체를 읽으면 이 스텁이 맞지 않아 알림이 비고 시험이 붉어진다.
+        given(userRepository.findActiveEsntlIdsHoldingPermission("COMMUNITY_APPROVE", org.springframework.data.domain.Limit.of(21)))
                 .willReturn(List.of("ADMIN_1", "user1", "ADMIN_2"));
 
         communityService.joinCommunity(101L, "user1");

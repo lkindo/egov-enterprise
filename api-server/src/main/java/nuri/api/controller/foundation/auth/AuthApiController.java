@@ -74,8 +74,14 @@ public class AuthApiController {
         String esntlId = auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof CustomUserDetails principal
                 ? principal.getUsername()
                 : null;
-        authService.logout(esntlId, refreshToken);
-        jwtTokenProvider.removeRefreshTokenCookie(response);
+        // [2026-11-25 품질 평가] 서버 쪽 세션 폐기가 실패해도 이 브라우저의 리프레시 쿠키는 지운다 — 사용자가 이 브라우저의 세션을
+        //   끊을 수 있게 한다. 실패 자체는 삼키지 않고 응답으로 알린다(종전 서비스의 catch 는 실제 트랜잭션에서 rollback-only 로
+        //   커밋이 실패해 성공처럼 끝나지도 못했고, 그때는 쿠키도 지우지 못했다).
+        try {
+            authService.logout(esntlId, refreshToken);
+        } finally {
+            jwtTokenProvider.removeRefreshTokenCookie(response);
+        }
         return ApiResponse.success("Logged out successfully");
     }
 

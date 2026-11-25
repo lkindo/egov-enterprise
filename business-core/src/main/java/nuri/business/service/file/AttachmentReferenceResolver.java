@@ -50,6 +50,10 @@ public interface AttachmentReferenceResolver {
      *                   PERSONAL 당사자 판정과 삭제·재연결 권한에는 영향을 주지 않는다
      * @param adminDeleteDenied 소유자 본인만 하나씩 빼는 참조원(결재 임시저장)이 이 첨부를 가리키고 현재 사용자가 그 소유자가
      *                   아닌가 — 관리자 삭제({@code FILE_DELETE_ALL})도 막는다
+     * @param referenced 어느 업무 참조원(파생 로그 제외)이든 이 첨부를 가리키는가 — {@link #referenced(Long)} 와 같은 판정을 같은
+     *                   조회에서 얻는다(2026-11-25 품질 평가: 업로더 판정이 참조원을 두 번 훑지 않게). 조회에 실패한 참조원이 있으면
+     *                   참조가 있는 것으로 본다(fail-closed). 이 값을 받지 않는 생성자는 인터페이스 기본 {@code referenced} 처럼
+     *                   참조가 있다고 둔다
      */
     record Grants(
             boolean sharedGrant,
@@ -59,7 +63,16 @@ public interface AttachmentReferenceResolver {
             boolean resolutionFailed,
             boolean personalReaderGrant,
             boolean readDenied,
-            boolean adminDeleteDenied) {
+            boolean adminDeleteDenied,
+            boolean referenced) {
+
+        /** 참조 여부를 따로 받지 않는 판정 — 참조가 있다고 둔다(미첨부 창으로 보지 않는다). */
+        public Grants(boolean sharedGrant, boolean ownerGrant, boolean personalReference,
+                boolean personalOwnerGrant, boolean resolutionFailed, boolean personalReaderGrant, boolean readDenied,
+                boolean adminDeleteDenied) {
+            this(sharedGrant, ownerGrant, personalReference, personalOwnerGrant, resolutionFailed,
+                    personalReaderGrant, readDenied, adminDeleteDenied, true);
+        }
 
         /** 관리자 삭제 거부 근거가 없는 판정(결재 임시저장 밖의 참조원만 걸린 첨부). */
         public Grants(boolean sharedGrant, boolean ownerGrant, boolean personalReference,

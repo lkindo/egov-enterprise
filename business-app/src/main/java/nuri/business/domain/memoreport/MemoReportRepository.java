@@ -27,6 +27,10 @@ public interface MemoReportRepository extends JpaRepository<MemoReport, Long> {
     @Query("update MemoReport m set m.rptrInqDt = :readAt where m.memoRptSn = :memoRptSn and m.rptrInqDt is null")
     int recordFirstReadIfUnread(@Param("memoRptSn") Long memoRptSn, @Param("readAt") LocalDateTime readAt);
 
+    /** 보고의 수신자(esntlId) — 상세 조회가 수신자 열람일 때만 행을 잠그도록 먼저 가른다. 수신자는 등록 뒤 바뀌지 않는다. */
+    @Query("select m.rptrId from MemoReport m where m.memoRptSn = :memoRptSn")
+    Optional<String> findRecipientId(@Param("memoRptSn") Long memoRptSn);
+
     Page<MemoReport> findByUserId(String userId, Pageable pageable);
     Page<MemoReport> findByRptrId(String rptrId, Pageable pageable);
 

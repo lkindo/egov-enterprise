@@ -163,7 +163,7 @@ class ApprovalCollaborationServiceTest {
         given(userRepository.findAllById(any())).willReturn(java.util.Arrays.stream(userIds)
                 .map(userId -> User.builder().esntlId(userId).userId(userId).userNm(userId)
                         .pswd("{bcrypt}x").userSttsCd("P").build()).toList());
-        lenient().when(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).thenReturn(List.of(userIds));
+        lenient().when(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).thenReturn(List.of(userIds));
     }
 
     private List<NotificationRequestedEvent> notifications() {
@@ -302,7 +302,7 @@ class ApprovalCollaborationServiceTest {
                 .hasMessageContaining("이미 결재선에 있는 사람");
         given(userRepository.findAllById(any())).willReturn(List.of(User.builder().esntlId("fourth").userId("fourth")
                 .userNm("네번째").pswd("{bcrypt}x").userSttsCd("P").build()));
-        given(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).willReturn(List.of());
+        given(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).willReturn(List.of());
         assertThatThrownBy(() -> service.replaceApprover(7L, "second", "fourth", 3)).isInstanceOf(BusinessException.class)
                 .hasMessageContaining("결재 권한이 없는 사용자는 결재자로 지정할 수 없습니다: 네번째");
         verify(detailRepository, never()).delete(any());

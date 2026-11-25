@@ -344,7 +344,7 @@ class ApprovalSubstitutionServiceTest {
         given(commonCodeService.getCodesByGroup(any())).willReturn(List.of(new CommonCodeDto("COM075", "TASK", "업무", null, "Y")));
         given(userRepository.findAllById(any())).willReturn(List.of(nuri.business.domain.user.entity.User.builder()
                 .esntlId("first").userId("first").userNm("결재자").pswd("{bcrypt}x").userSttsCd("P").build()));
-        given(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).willReturn(List.of("first"));
+        given(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).willReturn(List.of("first"));
         given(informalSanctionRepository.save(any())).willAnswer(invocation -> {
             InformalSanction saved = invocation.getArgument(0);
             ReflectionTestUtils.setField(saved, "ifmlAtrzSn", 7L);
@@ -369,7 +369,7 @@ class ApprovalSubstitutionServiceTest {
         given(commonCodeService.getCodesByGroup(any())).willReturn(List.of(new CommonCodeDto("COM075", "TASK", "업무", null, "Y")));
         given(userRepository.findAllById(any())).willReturn(List.of(nuri.business.domain.user.entity.User.builder()
                 .esntlId("first").userId("first").userNm("결재자").pswd("{bcrypt}x").userSttsCd("P").build()));
-        given(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).willReturn(List.of("first"));
+        given(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).willReturn(List.of("first"));
         org.mockito.Mockito.doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
                 .when(attachmentAssignmentPolicy).assertAssignable(901L);
         InformalSanctionDto draft = InformalSanctionDto.builder().taskSeCd("TASK").aplcntId("drafter").reqYmd("20261112")

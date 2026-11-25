@@ -225,23 +225,38 @@ class FileAccessPolicyTest {
     }
 
     @Test
-    @DisplayName("미첨부 창의 업로더는 근거 판정을 거치지 않는다")
-    void unattachedUploadDoesNotResolveGrants() {
+    @DisplayName("업로더 판정은 참조원을 한 번만 훑는다 — 참조 여부를 따로 조회하지 않고 판정 결과의 참조 여부를 쓴다")
+    void uploaderDecisionScansReferenceSourcesOnce() {
         authenticate(UPLOADER_LOGIN_ID, "USR_0000000000000001", "ROLE_USER");
+        int[] resolved = {0};
         FileAccessPolicy policy = new FileAccessPolicy(new AttachmentReferenceResolver() {
             @Override
             public Grants resolve(Long atchFileSn, String loginId, String esntlId) {
-                throw new AssertionError("미첨부 창에서는 근거를 판정하지 않는다");
+                resolved[0]++;
+                return notReferenced(Grants.none());
             }
 
             @Override
             public boolean referenced(Long atchFileSn) {
-                return false;
+                throw new AssertionError("열람·삭제 판정은 참조 여부를 따로 조회하지 않는다(참조원을 두 번 훑는다)");
             }
         });
 
-        assertThatCode(() -> policy.assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
-                .doesNotThrowAnyException();
+        assertThatCode(() -> policy.assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID))).doesNotThrowAnyException();
+        assertThatCode(() -> policy.assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID))).doesNotThrowAnyException();
+        assertThat(resolved[0]).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("🚨 참조원 하나라도 판정하지 못하면 업로더도 미첨부 창으로 보지 않는다 — 실패는 참조로 센다(fail-closed)")
+    void uploaderWithUnresolvedReferenceIsNotTreatedAsUnattached() {
+        authenticate(UPLOADER_LOGIN_ID, "USR_0000000000000001", "ROLE_USER");
+        var failedButUnreferenced = new AttachmentReferenceResolver.Grants(false, false, false, false, true, false, false, false, false);
+
+        assertThatThrownBy(() -> policy(failedButUnreferenced).assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> policy(failedButUnreferenced).assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .isInstanceOf(BusinessException.class);
     }
 
     @Test
@@ -675,19 +690,15 @@ class FileAccessPolicyTest {
         });
     }
 
-    /** 어느 업무 행도 가리키지 않는 첨부(미첨부 창). */
+    /** 어느 업무 행도 가리키지 않는 첨부(미첨부 창) — 판정 결과의 참조 여부가 거짓이다. */
     private FileAccessPolicy unattached(AttachmentReferenceResolver.Grants grants) {
-        return new FileAccessPolicy(new AttachmentReferenceResolver() {
-            @Override
-            public Grants resolve(Long atchFileSn, String loginId, String esntlId) {
-                return grants;
-            }
+        AttachmentReferenceResolver.Grants unreferenced = notReferenced(grants);
+        return new FileAccessPolicy((atchFileSn, loginId, esntlId) -> unreferenced);
+    }
 
-            @Override
-            public boolean referenced(Long atchFileSn) {
-                return false;
-            }
-        });
+    private static AttachmentReferenceResolver.Grants notReferenced(AttachmentReferenceResolver.Grants g) {
+        return new AttachmentReferenceResolver.Grants(g.sharedGrant(), g.ownerGrant(), g.personalReference(),
+                g.personalOwnerGrant(), g.resolutionFailed(), g.personalReaderGrant(), g.readDenied(), g.adminDeleteDenied(), false);
     }
 
     private AttachmentReferenceResolver.Grants grantsNone() {

@@ -209,8 +209,8 @@ class ApprovalReferenceServiceTest {
             }
             return found;
         });
-        lenient().when(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).thenReturn(List.of(ids));
-        lenient().when(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_READ"))
+        lenient().when(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).thenReturn(List.of(ids));
+        lenient().when(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_READ"), org.mockito.ArgumentMatchers.anyCollection()))
                 .thenReturn(Arrays.stream(ids).filter(id -> !id.startsWith("noread")).toList());
     }
 
@@ -476,7 +476,7 @@ class ApprovalReferenceServiceTest {
         service.registerInformalSanction(draft(), approver("boss"));
 
         verify(referenceRepository, never()).saveAll(any());
-        verify(userRepository, never()).findActiveEsntlIdsHoldingPermission("APPROVAL_READ");
+        verify(userRepository, never()).findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_READ"), org.mockito.ArgumentMatchers.anyCollection());
         assertThat(notifications("참조로 지정되었습니다")).isEmpty();
     }
 
@@ -527,8 +527,8 @@ class ApprovalReferenceServiceTest {
             }
             return found;
         });
-        given(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).willReturn(List.of("boss"));
-        given(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_READ")).willReturn(List.of("boss"));
+        given(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).willReturn(List.of("boss"));
+        given(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_READ"), org.mockito.ArgumentMatchers.anyCollection())).willReturn(List.of("boss"));
 
         assertThat(rejection(() -> service.registerInformalSanction(draft(), approver("boss"), List.of("blank")))
                 .getMessage()).endsWith(": 이름 없는 사용자");
@@ -547,8 +547,8 @@ class ApprovalReferenceServiceTest {
             for (String id : requested) found.add(user(id, "P"));
             return found;
         });
-        given(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).willReturn(List.of("boss"));
-        given(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_READ")).willReturn(
+        given(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).willReturn(List.of("boss"));
+        given(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_READ"), org.mockito.ArgumentMatchers.anyCollection())).willReturn(
                 Stream.concat(Stream.of("boss"), twenty.stream()).toList());
         registerSaves();
 

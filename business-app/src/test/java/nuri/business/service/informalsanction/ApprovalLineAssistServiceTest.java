@@ -86,10 +86,10 @@ class ApprovalLineAssistServiceTest {
         }
         lenient().when(userRepository.findProfilesByEsntlIds(any())).thenReturn(profiles);
         lenient().when(userRepository.findAllById(any())).thenReturn(rows);
-        lenient().when(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE"))
+        lenient().when(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection()))
                 .thenReturn(Arrays.stream(active).filter(id -> !id.equals("noperm")).toList());
         // [D4] 참조자는 결재 조회 권한으로 판정한다 — noread 만 그 권한이 없다.
-        lenient().when(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_READ"))
+        lenient().when(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_READ"), org.mockito.ArgumentMatchers.anyCollection()))
                 .thenReturn(Arrays.stream(active).filter(id -> !id.equals("noread")).toList());
     }
 
@@ -150,6 +150,11 @@ class ApprovalLineAssistServiceTest {
                         tuple("noperm", false, "NO_PERMISSION", "이름-noperm"),
                         tuple("off1", false, "INACTIVE", null),
                         tuple("ghost", false, "NOT_FOUND", null));
+        // 권한 보유자 전체가 아니라 확인한 사람(중복 제거)만 묻는다(2026-11-25 품질 평가).
+        verify(userRepository).findActiveEsntlIdsHoldingPermissionAmong("APPROVAL_APPROVE",
+                List.of("a", "owner", "noperm", "off1", "ghost"));
+        verify(userRepository).findActiveEsntlIdsHoldingPermissionAmong("APPROVAL_READ",
+                List.of("a", "owner", "noperm", "off1", "ghost"));
     }
 
     /**

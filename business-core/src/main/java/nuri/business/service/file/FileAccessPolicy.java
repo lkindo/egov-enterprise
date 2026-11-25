@@ -65,12 +65,14 @@ public class FileAccessPolicy {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
         }
 
+        // 참조원을 한 번만 훑는다 — 미첨부 창 판정(참조 여부)과 근거를 같은 조회에서 얻는다(2026-11-25 품질 평가, 종전에는
+        // 업로더 판정에서 참조 여부를 먼저 따로 조회해 최대 두 번 훑었다).
+        AttachmentReferenceResolver.Grants grants = referenceResolver.resolve(atchFileSn, loginId, esntlId);
+
         // 1. 업로더 본인 — 미첨부 창.
-        if (isUnattachedUpload(master, loginId)) {
+        if (isUnattachedUpload(master, loginId, grants)) {
             return;
         }
-
-        AttachmentReferenceResolver.Grants grants = referenceResolver.resolve(atchFileSn, loginId, esntlId);
 
         // 2. 참조원 하나라도 판정하지 못했다면 앞뒤에서 확인한 모든 근거보다 실패가 우선한다.
         if (grants.resolutionFailed()) {
@@ -138,12 +140,13 @@ public class FileAccessPolicy {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
         }
 
+        // 참조원을 한 번만 훑는다(열람 판정과 같다).
+        AttachmentReferenceResolver.Grants grants = referenceResolver.resolve(atchFileSn, loginId, esntlId);
+
         // 1. 업로더 본인 — 미첨부 창.
-        if (isUnattachedUpload(master, loginId)) {
+        if (isUnattachedUpload(master, loginId, grants)) {
             return;
         }
-
-        AttachmentReferenceResolver.Grants grants = referenceResolver.resolve(atchFileSn, loginId, esntlId);
 
         // 2. 참조원 하나라도 판정하지 못했다면 확인된 소유·관리자 근거보다 실패가 우선한다.
         if (grants.resolutionFailed()) {
@@ -173,23 +176,16 @@ public class FileAccessPolicy {
         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
     }
 
-    /** 내가 올렸고 아직 어느 업무 행도 가리키지 않는 첨부인가. 참조 조회에 실패하면 참조가 있는 것으로 본다(fail-closed). */
-    private boolean isUnattachedUpload(FileMaster master, String loginId) {
+    /**
+     * 내가 올렸고 아직 어느 업무 행도 가리키지 않는 첨부인가. 참조 조회에 실패하면 참조가 있는 것으로 본다(fail-closed —
+     * {@link AttachmentReferenceResolver.Grants#referenced()} 가 그 실패를 참조로 센다).
+     */
+    private static boolean isUnattachedUpload(FileMaster master, String loginId, AttachmentReferenceResolver.Grants grants) {
+        // 판정 실패를 정책에서도 한 번 더 본다 — 참조 여부를 실패와 따로 싣는 판정기가 와도 미첨부 창이 열리지 않는다.
         return loginId != null && loginId.equals(master.getFrstRgtrId())
-                && !referenceResolver.referenced(master.getAtchFileSn());
+                && !grants.referenced() && !grants.resolutionFailed();
     }
 
-    /**
-     * 현재 인증 주체가 이 첨부를 다른 업무 자원에 연결할 수 있는지 검증한다.
-     *
-     * <p>열람 가능성과 재게시 가능성은 다르다. 공유 게시물의 첨부나 기존 참조의 당사자는 파일을 읽을 수
-     * 있지만, 그 사실만으로 동일 파일을 새 공유 자원에 연결하도록 허용하면 개인 귀속 첨부의 접근 범위를
-     * 넓힐 수 있다. 따라서 새 참조 생성은 원 업로더에게만 허용하며 소유·공유 참조와 관리자 역할은 연결
-     * 근거로 사용하지 않는다.
-     *
-     * @param master 대상 첨부 마스터(존재 검증은 호출부에서 이미 수행)
-     * @throws BusinessException ACCESS_DENIED(403) — 연결 권한이 없을 때
-     */
     /**
      * 현재 인증 주체가 이 첨부 묶음에 파일을 더할 수 있는지 검증한다. 원 업로더여야 하고({@link #assertAttachable}), 묶음을 바꿀 수 없는
      * 업무 참조원(상신한 결재 문서·결재 차수 이력)이 가리키지 않아야 한다 — 결재에 묶인 묶음을 게시글 첨부 추가 같은 다른 경로로 바꾸면
@@ -206,6 +202,17 @@ public class FileAccessPolicy {
         }
     }
 
+    /**
+     * 현재 인증 주체가 이 첨부를 다른 업무 자원에 연결할 수 있는지 검증한다.
+     *
+     * <p>열람 가능성과 재게시 가능성은 다르다. 공유 게시물의 첨부나 기존 참조의 당사자는 파일을 읽을 수
+     * 있지만, 그 사실만으로 동일 파일을 새 공유 자원에 연결하도록 허용하면 개인 귀속 첨부의 접근 범위를
+     * 넓힐 수 있다. 따라서 새 참조 생성은 원 업로더에게만 허용하며 소유·공유 참조와 관리자 역할은 연결
+     * 근거로 사용하지 않는다.
+     *
+     * @param master 대상 첨부 마스터(존재 검증은 호출부에서 이미 수행)
+     * @throws BusinessException ACCESS_DENIED(403) — 연결 권한이 없을 때
+     */
     public void assertAttachable(FileMaster master) {
         Long atchFileSn = master.getAtchFileSn();
         String loginId = SecurityUtil.getCurrentLoginId().orElse(null);

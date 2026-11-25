@@ -277,7 +277,7 @@ class CommunityOperatorServiceTest {
     @Test
     @DisplayName("가입 신청은 그 커뮤니티의 운영자에게도 알린다 — 신청자 본인과 이미 알린 권한 보유자는 빼고, 링크는 커뮤니티 상세다")
     void joinRequestNotifiesOperators() {
-        when(users.findActiveEsntlIdsHoldingPermission("COMMUNITY_APPROVE")).thenReturn(List.of("ESNTL_ADMIN"));
+        when(users.findActiveEsntlIdsHoldingPermission(eq("COMMUNITY_APPROVE"), any(org.springframework.data.domain.Limit.class))).thenReturn(List.of("ESNTL_ADMIN"));
         when(memberships.findOperatorIds(A)).thenReturn(List.of(OPERATOR, "ESNTL_ADMIN"));
 
         service.joinCommunity(A, "ESNTL_NEWCOMER");

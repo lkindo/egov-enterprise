@@ -4953,7 +4953,7 @@
       "requiredTokens": [
         "SecurityUtil.getCurrentLoginId()",
         "SecurityUtil.getCurrentEsntlId()",
-        "if (isUnattachedUpload(master, loginId))",
+        "if (isUnattachedUpload(master, loginId, grants))",
         "if (grants.resolutionFailed())",
         "if (grants.personalReference()) { log.warn(\"[FileAccess] 첨부 삭제 거부 — 개인 귀속 참조 atchFileSn={} loginId={}\", atchFileSn, loginId); throw new BusinessException(CommonErrorCode.ACCESS_DENIED); }",
         "if (grants.ownerGrant()) { return; }",
