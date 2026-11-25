@@ -1,38 +1,90 @@
 /**
- * 로그아웃 직전에 끝내야 하는 일(2026-11-25 품질 평가).
+ * 로그아웃 직전·세션을 잃었을 때 끝내야 하는 일(2026-11-25 품질 평가).
  *
- * <p>로그아웃은 가장 먼저 {@code markSignedOut()} 으로 그 뒤의 요청을 막는다(DIP B4). 그래서 화면이 사라지며 보내던 일 —
- * 결재함의 되돌리기 대기 중 승인 — 이 그 표지에 막혀 조용히 사라졌다. 그런 일은 여기에 등록하고, 로그아웃은 표지를 세우기 전에
- * 등록된 일을 끝까지(상한 시간까지) 기다린다. 실패는 등록한 쪽이 처리하고 로그아웃을 막지 않는다.
+ * <p>로그아웃은 {@code markSignedOut()} 으로 그 뒤의 요청을 막는다(DIP B4). 그래서 화면이 사라지며 보내던 일 — 결재함의 되돌리기 대기 중
+ * 승인 — 이 그 표지에 막혀 조용히 사라졌다. 그런 일은 여기에 등록하고, 로그아웃은 표지를 세우기 전에 등록된 일을 끝까지(상한 시간까지)
+ * 기다린다. 다른 탭의 로그아웃·세션 만료처럼 이미 세션이 끝나 보낼 수 없는 경로는 {@link runOnSessionLost} 로 남은 일을 정리하고, 사용자가
+ * 다시 로그인할 때 볼 안내({@link rememberSignOutNotice})를 남긴다.
  *
- * <p>기능 모듈이 이 코어 모듈에 등록한다(역방향 import 없음) — 기능이 빠진 생성물에는 등록도 없다.
+ * <p>기능 모듈이 이 코어 모듈에 등록한다(역방향 import 없음) — 기능이 빠진 생성물에는 등록도 없다. 등록은 기능별 고정 키라 모듈이 다시
+ * 평가돼도(HMR) 하나만 남는다.
  */
 type BeforeSignOutTask = () => Promise<unknown> | unknown;
 
-const tasks = new Set<BeforeSignOutTask>();
+const beforeSignOut = new Map<string, BeforeSignOutTask>();
+const onSessionLost = new Map<string, () => void>();
 
-/** 로그아웃 직전에 할 일을 등록한다. 돌려준 함수로 등록을 푼다. */
-export function registerBeforeSignOut(task: BeforeSignOutTask): () => void {
-  tasks.add(task);
+/** 로그아웃 직전에 할 일을 기능별 키로 등록한다. 돌려준 함수로 등록을 푼다. */
+export function registerBeforeSignOut(key: string, task: BeforeSignOutTask): () => void {
+  beforeSignOut.set(key, task);
   return () => {
-    tasks.delete(task);
+    if (beforeSignOut.get(key) === task) beforeSignOut.delete(key);
   };
 }
 
-/** 로그아웃이 기다리는 상한 — 서버가 느려도 로그아웃이 멈추지 않는다. */
-export const BEFORE_SIGN_OUT_TIMEOUT_MS = 5_000;
+/**
+ * 로그아웃이 기다리는 상한. API 요청 시간 제한(15초, lib/api/client)보다 길게 둔다 — 그 안에 대기 중 승인의 성공·실패가 정해져
+ * 결과를 모른 채 로그아웃하지 않는다. 그래도 넘기면 남은 일은 {@link runOnSessionLost} 로 넘겨 안내를 남긴다.
+ */
+export const BEFORE_SIGN_OUT_TIMEOUT_MS = 20_000;
 
 /** 등록된 일을 모두 시작하고, 모두 끝나거나 상한 시간이 지날 때까지 기다린다. 실패는 삼킨다(등록한 쪽이 알린다). */
-export async function runBeforeSignOut(timeoutMs: number = BEFORE_SIGN_OUT_TIMEOUT_MS): Promise<void> {
-  if (tasks.size === 0) return;
-  const running = [...tasks].map((task) => Promise.resolve().then(task).catch(() => undefined));
+export async function runBeforeSignOut(timeoutMs: number = BEFORE_SIGN_OUT_TIMEOUT_MS): Promise<{ timedOut: boolean }> {
+  if (beforeSignOut.size === 0) return { timedOut: false };
+  const running = [...beforeSignOut.values()].map((task) => Promise.resolve().then(task).catch(() => undefined));
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const deadline = new Promise<void>((resolve) => {
-    timer = setTimeout(resolve, timeoutMs);
+  const deadline = new Promise<'timeout'>((resolve) => {
+    timer = setTimeout(() => resolve('timeout'), timeoutMs);
   });
   try {
-    await Promise.race([Promise.allSettled(running).then(() => undefined), deadline]);
+    const outcome = await Promise.race([Promise.allSettled(running).then(() => 'done' as const), deadline]);
+    return { timedOut: outcome === 'timeout' };
   } finally {
     if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
+/** 세션이 이미 끝나 보낼 수 없을 때(다른 탭 로그아웃·만료·상한 초과) 할 일을 기능별 키로 등록한다. 동기로 끝내야 한다. */
+export function registerOnSessionLost(key: string, task: () => void): () => void {
+  onSessionLost.set(key, task);
+  return () => {
+    if (onSessionLost.get(key) === task) onSessionLost.delete(key);
+  };
+}
+
+/** 등록된 세션 상실 정리를 부른다. 하나의 실패가 나머지를 막지 않는다. 페이지를 떠나기 직전에 부른다. */
+export function runOnSessionLost(): void {
+  for (const task of onSessionLost.values()) {
+    try {
+      task();
+    } catch {
+      // 정리 실패가 로그아웃·이동을 막지 않는다.
+    }
+  }
+}
+
+const NOTICE_KEY = 'egov.sign-out-notices.v1';
+
+/** 다시 로그인할 때 보일 안내를 남긴다(이 탭의 세션 저장소, 문장만 — 식별자·내용은 싣지 않는다). */
+export function rememberSignOutNotice(message: string): void {
+  try {
+    const current = JSON.parse(window.sessionStorage.getItem(NOTICE_KEY) ?? '[]') as unknown;
+    const list = Array.isArray(current) ? current.filter((item): item is string => typeof item === 'string') : [];
+    if (!list.includes(message)) list.push(message);
+    window.sessionStorage.setItem(NOTICE_KEY, JSON.stringify(list.slice(-5)));
+  } catch {
+    // 저장소를 쓸 수 없으면 안내만 잃는다.
+  }
+}
+
+/** 남긴 안내를 읽고 지운다. */
+export function takeSignOutNotices(): string[] {
+  try {
+    const raw = window.sessionStorage.getItem(NOTICE_KEY);
+    window.sessionStorage.removeItem(NOTICE_KEY);
+    const parsed = JSON.parse(raw ?? '[]') as unknown;
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
+  } catch {
+    return [];
   }
 }

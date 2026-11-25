@@ -81,7 +81,17 @@ export function DynamicBreadcrumb({ customItems = [], currentLabel }: { customIt
     };
 
     void fetchPath();
-    return () => { cancelled = true; };
+    // 같은 주소에서 사용자·인가 버전이 바뀌면 머리글 메뉴 조회가 새 값으로 바뀐다 — 그때 경로를 다시 계산한다(Codex 검토: 종전에는 이전
+    //   메뉴 이름·링크가 남았다).
+    const unsubscribe = queryClient?.getQueryCache().subscribe((event) => {
+      const key = event.query.queryKey;
+      if (key[0] !== 'menus' || key[1] !== 'head') return;
+      if (event.type === 'updated' && event.action.type === 'success') void fetchPath();
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, [pathname, searchKey]);
 
   // 하위 화면의 마지막 한 단계 — 화면 제목이 있으면 그것을, 없으면 화면이 넘긴 경로의 마지막 항목을 쓴다.

@@ -161,7 +161,7 @@ describe('AuthContext', () => {
   it('[2026-11-25] 로그아웃은 등록된 정리(대기 중 승인 전송)를 요청 차단 표지보다 먼저 끝낸다', async () => {
     (authService.logout as any).mockResolvedValue({});
     const signedOutWhileRunning: boolean[] = [];
-    const release = registerBeforeSignOut(async () => {
+    const release = registerBeforeSignOut('auth-context-test', async () => {
       await Promise.resolve();
       signedOutWhileRunning.push(isSignedOut());
     });
@@ -170,6 +170,32 @@ describe('AuthContext', () => {
       await act(async () => { await result.current.logout(); });
 
       expect(signedOutWhileRunning).toEqual([false]);
+      expect(isSignedOut()).toBe(true);
+    } finally {
+      release();
+      markSignedIn();
+    }
+  });
+
+  it('[Codex 검토] 겹친 로그아웃은 같은 정리를 기다린다 — 둘째가 첫째의 정리를 추월해 세션을 먼저 닫지 않는다', async () => {
+    (authService.logout as any).mockResolvedValue({});
+    let finish: () => void = () => {};
+    const task = vi.fn(() => new Promise<void>((resolve) => { finish = resolve; }));
+    const release = registerBeforeSignOut('auth-context-concurrent', task);
+    try {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      let first!: Promise<void>;
+      let second!: Promise<void>;
+      await act(async () => {
+        first = result.current.logout();
+        second = result.current.logout();
+        await Promise.resolve();
+      });
+      expect(isSignedOut()).toBe(false);
+      await act(async () => { finish(); await Promise.all([first, second]); });
+
+      expect(task).toHaveBeenCalledTimes(1);
+      expect(authService.logout).toHaveBeenCalledTimes(1);
       expect(isSignedOut()).toBe(true);
     } finally {
       release();

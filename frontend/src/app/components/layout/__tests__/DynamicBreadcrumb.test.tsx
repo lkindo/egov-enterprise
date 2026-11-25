@@ -93,4 +93,27 @@ describe('DynamicBreadcrumb', () => {
     expect(nav.getHeadMenus).not.toHaveBeenCalled();
     rememberBrowserQueryClient(undefined);
   });
+  it('[Codex 검토] 같은 주소에서 사용자·인가 버전이 바뀌면 머리글 메뉴의 새 이름으로 경로를 다시 그린다', async () => {
+    const client = rememberBrowserQueryClient(new QueryClient());
+    const renamed = [{ ...menus[0], menuNm: '운영 센터' }];
+    function HeaderStub({ scope, data }: { scope: string; data: typeof menus }) {
+      useQuery({ queryKey: ['menus', 'head', scope, 'v'], queryFn: () => data, staleTime: 5 * 60 * 1000 });
+      return null;
+    }
+    const view = (scope: string, data: typeof menus) => (
+      <QueryClientProvider client={client}>
+        <HeaderStub scope={scope} data={data} />
+        <DynamicBreadcrumb customItems={[{ name: '메뉴 관리' }]} />
+      </QueryClientProvider>
+    );
+    try {
+      const { rerender } = render(view('u1', menus));
+      await waitFor(() => expect(crumbs()).toEqual(['홈', '관리 센터', '메뉴 관리']));
+      rerender(view('u2', renamed));
+      await waitFor(() => expect(crumbs()).toEqual(['홈', '운영 센터', '메뉴 관리']));
+      expect(nav.getHeadMenus).not.toHaveBeenCalled();
+    } finally {
+      rememberBrowserQueryClient(undefined);
+    }
+  });
 });

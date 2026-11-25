@@ -9,7 +9,8 @@ import {
   scheduleApprovalCommit,
   subscribeApprovalCommits,
 } from '../approval-undo-queue';
-import { runBeforeSignOut } from '@/lib/auth/before-sign-out';
+import { runBeforeSignOut, runOnSessionLost, takeSignOutNotices } from '@/lib/auth/before-sign-out';
+import { markSignedIn, markSignedOut } from '@/lib/auth/authorization-state';
 
 /** 승인 되돌리기 대기열 — 언제 보내는지만 정하고, 누른 승인이 조용히 사라지지 않게 한다. */
 describe('approval-undo-queue', () => {
@@ -39,6 +40,46 @@ describe('approval-undo-queue', () => {
 
     expect(run).toHaveBeenCalledTimes(1);
     expect(pendingApprovalCommits()).toEqual([]);
+  });
+
+  it('[Codex 검토] 로그아웃은 이미 보낸 승인의 응답까지 기다리고, 그동안 새 승인을 받지 않는다', async () => {
+    let answer: () => void = () => {};
+    const slow = vi.fn(() => new Promise<void>((resolve) => { answer = resolve; }));
+    scheduleApprovalCommit(8, slow);
+    void commitApprovalNow(8); // '지금 처리' — 대기 목록에서는 빠졌지만 응답 전이다.
+
+    let settled = false;
+    const signingOut = runBeforeSignOut().then(() => { settled = true; });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(scheduleApprovalCommit(9, vi.fn())).toBe(false);
+    expect(settled).toBe(false);
+
+    answer();
+    await signingOut;
+    expect(settled).toBe(true);
+    expect(scheduleApprovalCommit(10, vi.fn().mockResolvedValue(undefined))).toBe(true);
+  });
+
+  it('[Codex 검토] 로그아웃한 뒤에는 승인을 대기시키지 않는다', () => {
+    markSignedOut();
+    try {
+      expect(scheduleApprovalCommit(11, vi.fn())).toBe(false);
+    } finally {
+      markSignedIn();
+    }
+  });
+
+  it('[Codex 검토] 세션을 이미 잃었으면 대기 승인을 보내지 않고 거두며, 다시 로그인할 때 볼 안내를 남긴다', async () => {
+    const run = vi.fn().mockResolvedValue(undefined);
+    scheduleApprovalCommit(12, run);
+    scheduleApprovalCommit(13, run);
+
+    runOnSessionLost();
+
+    expect(pendingApprovalCommits()).toEqual([]);
+    await vi.advanceTimersByTimeAsync(APPROVAL_UNDO_MS);
+    expect(run).not.toHaveBeenCalled();
+    expect(takeSignOutNotices()).toEqual(['로그아웃되어 보내지 못한 승인이 2건 있습니다. 결재함에서 다시 처리해 주세요.']);
   });
 
   it('같은 문서를 다시 잡지 않는다 — 연타가 두 번 보내지 않는다', async () => {

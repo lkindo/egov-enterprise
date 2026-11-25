@@ -18,6 +18,7 @@ import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { MfaChallengePanel } from '@/components/account/MfaChallengePanel';
 import { loginFormSchema } from './login-form-validation';
 import { announceSession } from '@/lib/auth/session-broadcast';
+import { takeSignOutNotices } from '@/lib/auth/before-sign-out';
 
 const LOGIN_FORM_LABELS = {
     userId: '아이디',
@@ -101,6 +102,13 @@ function LoginContent() {
     //   **왜 갑자기 로그인 화면인지는 듣지 못했다.** 작업 중 튕긴 사용자에게 가장 먼저 필요한 정보다.
     //   값 비교는 'true' 정확 일치다 — 존재만 보면 `?expired=false` 도 만료로 읽힌다.
     const sessionExpired = searchParams.get('expired') === 'true';
+    // [2026-11-25 품질 평가] 세션이 끝나며 보내지 못했거나 결과를 모르는 일(결재 대기 승인)의 안내 — 이 탭이 남긴 것을 한 번 읽는다.
+    //   서버 렌더와 첫 화면이 같도록 마운트 뒤에 읽는다(읽으면 지운다 — Strict Mode 의 두 번째 실행은 빈 목록이라 덮지 않는다).
+    const [signOutNotices, setSignOutNotices] = React.useState<string[]>([]);
+    React.useEffect(() => {
+        const notices = takeSignOutNotices();
+        if (notices.length > 0) setSignOutNotices(notices);
+    }, []);
 
     // 이번 제출로 인증된 것인지(=세션 경계), 이미 인증된 상태로 이 페이지를 방문한 것인지 구분한다.
     // 두 경우는 필요한 이동 방식이 다르다(아래 각 주석 참조). ref 이므로 렌더를 유발하지 않는다.
@@ -293,6 +301,16 @@ function LoginContent() {
                                     className="text-sm text-center text-secondary-foreground bg-muted/40 p-3 rounded-[var(--radius-hub-item)] border border-border"
                                 >
                                     다른 곳에서 로그인했거나 세션이 만료되었습니다. 다시 로그인해 주세요.
+                                </div>
+                            )}
+
+                            {signOutNotices.length > 0 && (
+                                <div
+                                    role="status"
+                                    data-testid="login-sign-out-notices"
+                                    className="text-sm text-secondary-foreground bg-muted/40 p-3 rounded-[var(--radius-hub-item)] border border-border space-y-1"
+                                >
+                                    {signOutNotices.map((notice) => <p key={notice}>{notice}</p>)}
                                 </div>
                             )}
 

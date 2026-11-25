@@ -1,4 +1,5 @@
-import { registerBeforeSignOut } from '@/lib/auth/before-sign-out';
+import { isSignedOut } from '@/lib/auth/authorization-state';
+import { registerBeforeSignOut, registerOnSessionLost, rememberSignOutNotice } from '@/lib/auth/before-sign-out';
 
 /**
  * 승인 되돌리기 대기열(2026-10-03 결재 동선 개선).
@@ -12,9 +13,6 @@ import { registerBeforeSignOut } from '@/lib/auth/before-sign-out';
  */
 export const APPROVAL_UNDO_MS = 10_000;
 
-// [2026-11-25 품질 평가] 로그아웃도 화면을 떠나는 일이다 — 로그아웃이 요청을 막기 전에 대기 중인 승인을 보낸다. 종전에는 로그아웃이
-//   먼저 요청을 막아, 승인을 누르고 10초 안에 로그아웃하면 그 승인이 조용히 사라졌다.
-registerBeforeSignOut(() => flushApprovalCommits());
 
 interface PendingCommit {
   timer: ReturnType<typeof setTimeout>;
@@ -41,6 +39,10 @@ export interface ScheduleApprovalOptions {
 }
 
 const pending = new Map<number, PendingCommit>();
+/** 이미 보낸(서버 응답을 기다리는) 승인. 로그아웃은 이것까지 기다린다 — 대기 목록에서는 보내는 순간 빠진다. */
+const inFlight = new Set<Promise<void>>();
+/** 로그아웃이 대기 승인을 보내는 동안 새 승인을 받지 않는다 — 시작한 정리의 대상에서 빠져 사라지지 않게. */
+let closing = false;
 const listeners = new Set<() => void>();
 /** useSyncExternalStore 가 같은 값이면 같은 참조를 받아야 하므로 바뀔 때만 새 배열을 만든다. */
 let snapshot: number[] = [];
@@ -66,7 +68,8 @@ export function pendingApprovalCommits(): number[] {
  */
 export function scheduleApprovalCommit(ifmlAtrzSn: number, run: () => Promise<void>,
   { delayMs = APPROVAL_UNDO_MS, onCancel, label }: ScheduleApprovalOptions = {}): boolean {
-  if (pending.has(ifmlAtrzSn)) return false;
+  // 로그아웃 중이거나 로그아웃한 뒤면 받지 않는다 — 보낼 수 없는 승인을 대기시키지 않는다.
+  if (pending.has(ifmlAtrzSn) || closing || isSignedOut()) return false;
   const timer = setTimeout(() => { void commit(ifmlAtrzSn); }, delayMs);
   pending.set(ifmlAtrzSn, { timer, run, onCancel, label });
   notify();
@@ -95,7 +98,13 @@ async function commit(ifmlAtrzSn: number): Promise<void> {
   clearTimeout(entry.timer);
   pending.delete(ifmlAtrzSn);
   notify();
-  await entry.run();
+  const sending = entry.run();
+  inFlight.add(sending);
+  try {
+    await sending;
+  } finally {
+    inFlight.delete(sending);
+  }
 }
 
 /** 기다리지 않고 지금 보낸다(‘지금 처리’ 또는 화면을 떠날 때). */
@@ -106,3 +115,39 @@ export function commitApprovalNow(ifmlAtrzSn: number): Promise<void> {
 export function flushApprovalCommits(): Promise<void[]> {
   return Promise.all([...pending.keys()].map(commit));
 }
+
+/**
+ * 로그아웃 직전 — 새 승인을 막고, 대기 중인 승인을 지금 보내고, 이미 보낸 승인의 응답까지 기다린다(2026-11-25 품질 평가). 종전에는
+ * 로그아웃이 먼저 요청을 막아 승인을 누르고 10초 안에 로그아웃하면 그 승인이 조용히 사라졌고, 겹친 로그아웃은 보내는 중인 승인을
+ * 추월했다.
+ */
+export async function settleApprovalCommitsForSignOut(): Promise<void> {
+  closing = true;
+  try {
+    await flushApprovalCommits();
+    await Promise.allSettled([...inFlight]);
+  } finally {
+    closing = false;
+  }
+}
+
+/**
+ * 세션이 이미 끝났을 때(다른 탭의 로그아웃·만료·로그아웃 대기 상한 초과) — 보낼 수 없는 대기 승인을 거두고, 다시 로그인할 때 볼 안내를
+ * 남긴다. 이미 보낸 승인은 결과를 모른다고 알린다(서버가 반영했을 수 있다).
+ */
+export function abandonApprovalCommitsOnSessionLost(): void {
+  const unsent = pending.size;
+  const unconfirmed = inFlight.size;
+  for (const entry of pending.values()) clearTimeout(entry.timer);
+  pending.clear();
+  notify();
+  if (unsent > 0) {
+    rememberSignOutNotice(`로그아웃되어 보내지 못한 승인이 ${unsent}건 있습니다. 결재함에서 다시 처리해 주세요.`);
+  }
+  if (unconfirmed > 0) {
+    rememberSignOutNotice(`결과를 확인하지 못한 승인이 ${unconfirmed}건 있습니다. 결재함에서 처리 결과를 확인해 주세요.`);
+  }
+}
+
+registerBeforeSignOut('approval-undo-queue', settleApprovalCommitsForSignOut);
+registerOnSessionLost('approval-undo-queue', abandonApprovalCommitsOnSessionLost);

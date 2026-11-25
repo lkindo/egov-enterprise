@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { useQueryClient } from '@tanstack/react-query';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
 import { advanceAuthorizationRequestEpoch, AUTHORIZATION_CHANGED_EVENT, markSignedIn, markSignedOut } from '@/lib/auth/authorization-state';
-import { runBeforeSignOut } from '@/lib/auth/before-sign-out';
+import { runBeforeSignOut, runOnSessionLost } from '@/lib/auth/before-sign-out';
 import type { AuthLoginData } from '@/lib/auth/auth-bff-contract';
 import { loginErrorMessage } from '@/lib/auth/login-error';
 import { getHttpStatus } from '@/lib/query/list-query-defaults';
@@ -70,6 +70,8 @@ export function AuthProvider({
   const requestEpoch = useRef(0);
   const inFlightCheck = useRef<Promise<void> | null>(null);
   const mfaPending = useRef(false);
+  /** 진행 중인 로그아웃 — 겹친 로그아웃(만료 감시·수동)이 같은 정리를 기다리게 한다. 둘째가 첫째의 정리를 추월하지 않는다. */
+  const signingOut = useRef<Promise<void> | null>(null);
   const checkAuthRef = useRef<() => Promise<void>>(() => Promise.resolve());
   const transientRetry = useRef<{ timer: ReturnType<typeof setTimeout> | null; attempt: number }>({ timer: null, attempt: 0 });
   const clearTransientRetry = useCallback(() => {
@@ -212,10 +214,11 @@ export function AuthProvider({
     }
   }, [clearTransientRetry, commitUser, enterMfaChallenge]);
 
-  const logout = useCallback(async () => {
+  const signOut = useCallback(async () => {
     // [2026-11-25 품질 평가] 로그아웃 표지를 세우기 전에 등록된 일을 끝낸다 — 결재함의 되돌리기 대기 중 승인처럼 화면이 사라지며
-    //   보내던 요청이 아래 markSignedOut 에 막혀 조용히 사라지지 않게 한다(상한 시간까지만 기다린다).
-    await runBeforeSignOut();
+    //   보내던 요청이 아래 markSignedOut 에 막혀 조용히 사라지지 않게 한다. 상한을 넘기면 남은 일은 결과를 모른다고 안내를 남긴다.
+    const { timedOut } = await runBeforeSignOut();
+    if (timedOut) runOnSessionLost();
     mfaPending.current = false;
     setMfaPending(false);
     // 캐시를 비우기 전에 막는다 — 비운 순간 다시 렌더되는 화면의 조회가 여기서 취소된다(DIP B4).
@@ -239,6 +242,18 @@ export function AuthProvider({
       announceSession({ type: 'signed-out' });
     }
   }, [clearTransientRetry, commitUser]);
+
+  /** 겹친 로그아웃(만료 감시·수동 클릭)은 같은 정리를 기다린다 — 둘째가 첫째가 보내는 중인 승인을 추월해 세션을 먼저 닫지 않는다. */
+  const logout = useCallback(async () => {
+    if (signingOut.current) return signingOut.current;
+    const run = signOut();
+    signingOut.current = run;
+    try {
+      await run;
+    } finally {
+      if (signingOut.current === run) signingOut.current = null;
+    }
+  }, [signOut]);
 
   useEffect(() => {
     // 구 키는 owner를 판별할 수 없어 어느 계정에도 안전하게 귀속할 수 없다. 복원하지 않고 제거한다.
@@ -265,6 +280,8 @@ export function AuthProvider({
         setLoading(false);
         return;
       }
+      // 세션은 이미 끝났다(다른 탭의 로그아웃) — 보낼 수 없는 대기 일을 거두고 다시 로그인할 때 볼 안내를 남긴다.
+      runOnSessionLost();
       markSignedOut();
       advanceAuthorizationRequestEpoch();
       commitUser(null);

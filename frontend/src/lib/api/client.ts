@@ -2,6 +2,7 @@ import axios from 'axios';
 import { AUTH_BROWSER_REQUEST_TIMEOUT_MS } from '@/lib/auth/auth-request-policy';
 import type { AxiosRequestConfig } from 'axios';
 import { cache } from 'react';
+import { runOnSessionLost } from '@/lib/auth/before-sign-out';
 
 import { authReissueResponseSchema } from '@/lib/auth/auth-reissue-contract';
 import { forwardedClientIpHeaders } from '@/lib/api/forwarded-client-ip';
@@ -258,6 +259,8 @@ axiosInstance.interceptors.response.use(
         isRetrying = false;
 
         if (typeof window !== 'undefined' && !superseded) {
+          // 세션은 이미 끝났다 — 보낼 수 없는 대기 일(결재 대기 승인)을 거두고 다시 로그인할 때 볼 안내를 남긴다(2026-11-25).
+          runOnSessionLost();
           // 세션 만료 시 로그인 화면으로 포워딩
           // [결정 17] 경로와 구조 키(게시판·글·탭·쪽)만 넘겨, 다시 로그인하면 보던 자리로 돌아간다.
           hardNavigateToInternalRoute(
