@@ -57,7 +57,8 @@ export function useUserOrgSelection({ activeTab, selectedItemId, users, departme
    * ("" = 지움, UserService.updateUser 참조)에 따라 실제 소속 부서를 지워버린다.
    * 실존 상세 API(GET /admin/system/users/{userId})로 전체 레코드를 가져와 패널·수정 폼에 쓴다.
    */
-  const { data: selectedUserDetail } = useQuery({
+  // [V2_156] isFetching — 409·부서 이동 뒤 상세를 다시 읽는 동안에는 수정 창을 열지 않는다(옛 편집 버전을 잡지 않게).
+  const { data: selectedUserDetail, isFetching: isSelectedUserDetailFetching } = useQuery({
     queryKey: ['admin-user-detail', selectedItemId],
     queryFn: () => userAdminService.getUser(selectedItemId as string),
     enabled: Boolean(selectedUser) && activeTab !== 'DEPTS',
@@ -65,5 +66,8 @@ export function useUserOrgSelection({ activeTab, selectedItemId, users, departme
   const displayedUser: UserManage | undefined =
     activeTab !== 'DEPTS' ? ((selectedUserDetail as UserManage | undefined) ?? selectedUser) : undefined;
 
-  return { deptMembersLabel, selectedDept, selectedFlatDept, selectedDeptParentId, selectedItem, selectedUserDetail, displayedUser };
+  return {
+    deptMembersLabel, selectedDept, selectedFlatDept, selectedDeptParentId, selectedItem, selectedUserDetail, displayedUser,
+    isSelectedUserDetailFetching,
+  };
 }

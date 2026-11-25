@@ -55,7 +55,8 @@ const LABELS: Record<keyof FormValues, string> = {
  * 가려내고 그 뒤 같은 정규식(생성 스키마의 것을 그대로 재사용한다 — 복제하지 않는다)으로 형식을
  * 본다. 순서를 뒤집으면 이름을 지운 사용자에게 "형식이 올바르지 않습니다" 만 보인다.
  */
-export const profileEditSchema = UserSelfProfileUpdateRequestSchema.extend({
+// 편집 버전(V2_156)은 입력 칸이 아니라 조회한 값을 그대로 싣는 값이다 — 폼 값 검증에서 빼고 제출할 때 따로 싣는다.
+export const profileEditSchema = UserSelfProfileUpdateRequestSchema.omit({ version: true }).extend({
   userNm: z
     .string()
     .min(1, '이름을 입력해 주세요.')
@@ -69,6 +70,8 @@ export const profileEditSchema = UserSelfProfileUpdateRequestSchema.extend({
 export interface ProfileEditFormProps {
   /** 서버가 내려준 현재 값. 여기 없는 필드는 서버에서 null(미설정)이다. */
   initialValues: Partial<FormValues>;
+  /** 프로필 편집 버전(V2_156) — 내 정보 조회가 준 값. 저장 요청에 그대로 싣는다(다르면 409). */
+  editVersion?: number;
   /** 서버 호출은 부모가 소유한다. 실패는 그대로 throw 해야 이 폼이 필드 오류·안내를 처리한다. */
   onSubmit: (patch: SelfProfileUpdate) => Promise<void>;
   onCancel: () => void;
@@ -99,7 +102,7 @@ function toFormValues(initial: Partial<FormValues>): FormValues {
  * <p>소속 그룹·부서·기관은 이 경계가 역직렬화하지 않는다(`UserSelfProfileUpdateRequest` 의
  * `@JsonIgnoreProperties`) — 관리자 소유 필드라 폼에도 두지 않고 그 사실을 화면이 말한다.
  */
-export function ProfileEditForm({ initialValues, onSubmit, onCancel, isPending = false }: ProfileEditFormProps) {
+export function ProfileEditForm({ initialValues, editVersion, onSubmit, onCancel, isPending = false }: ProfileEditFormProps) {
   const { toast } = useToast();
   const initial = useMemo(() => toFormValues(initialValues), [initialValues]);
   const [values, setValues] = useState<FormValues>(initial);
@@ -132,8 +135,13 @@ export function ProfileEditForm({ initialValues, onSubmit, onCancel, isPending =
     const validated = validation.validate(values);
     if (!validated) return;
 
-    // 이름은 서버 필수(@NotBlank)라 늘 싣고, 나머지는 초기값과 달라진 것만 싣는다.
-    const patch: SelfProfileUpdate = { userNm: validated.userNm };
+    // [V2_156] 연 때의 편집 버전이 없으면 저장하지 않는다 — 서버가 400 으로 거부하고, 다시 열면 최신 값을 읽는다.
+    if (editVersion === undefined) {
+      toast('내 정보를 다시 불러온 뒤 저장해 주세요.', 'error');
+      return;
+    }
+    // 이름은 서버 필수(@NotBlank)라 늘 싣고, 나머지는 초기값과 달라진 것만 싣는다. 편집 버전은 늘 싣는다.
+    const patch: SelfProfileUpdate = { userNm: validated.userNm, version: editVersion };
     for (const key of OPTIONAL_KEYS) {
       if (values[key] !== initial[key]) patch[key] = values[key];
     }

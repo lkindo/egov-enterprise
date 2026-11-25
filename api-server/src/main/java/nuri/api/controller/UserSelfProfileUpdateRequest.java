@@ -31,7 +31,12 @@ public record UserSelfProfileUpdateRequest(
         @Size(max = 50)
         @Pattern(regexp = "^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")
         String emlAddr,
-        @Size(max = 300) String ofcpsNm
+        @Size(max = 300) String ofcpsNm,
+        @io.swagger.v3.oas.annotations.media.Schema(description = "프로필 편집 버전(V2_156). 조회한 값을 그대로 돌려보낸다 — 다르면 409, 없으면 400.",
+                requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED)
+        @jakarta.validation.constraints.NotNull
+        @jakarta.validation.constraints.Min(0)
+        Integer version
 ) {
     UserDto toUserDto() {
         return UserDto.builder()
@@ -48,6 +53,7 @@ public record UserSelfProfileUpdateRequest(
                 .mblTelno(mblTelno)
                 .emlAddr(emlAddr)
                 .ofcpsNm(ofcpsNm)
+                .version(version)
                 .build();
     }
 }

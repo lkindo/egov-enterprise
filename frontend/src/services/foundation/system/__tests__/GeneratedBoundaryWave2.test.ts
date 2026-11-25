@@ -57,12 +57,13 @@ describe('foundation generated operation wave2 경계', () => {
     await userAdminService.updateUser('user_1', {
       userNm: '변경 사용자',
       emlAddr: 'changed@example.com',
+      version: 2,
     });
 
     expect(client.requestRaw).toHaveBeenCalledWith({
       url: 'admin/system/users/user_1',
       method: 'put',
-      data: { userNm: '변경 사용자', emlAddr: 'changed@example.com' },
+      data: { userNm: '변경 사용자', version: 2, emlAddr: 'changed@example.com' },
     });
   });
 
@@ -135,6 +136,7 @@ describe('foundation generated operation wave2 경계', () => {
       emlAddr: 'updated@example.com',
       mblTelno: '01012345678',
       ognzId: 'ORG_001',
+      version: 5,
     };
 
     await userAdminService.updateUser('user_4', formPayload);
@@ -144,6 +146,7 @@ describe('foundation generated operation wave2 경계', () => {
       method: 'put',
       data: {
         userNm: '수정 사용자',
+        version: 5,
         emlAddr: 'updated@example.com',
         mblTelno: '01012345678',
         ognzId: 'ORG_001',

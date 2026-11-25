@@ -360,6 +360,10 @@ public class UserService extends BaseAbstractService {
                         authorizationAdministration.lockAdministration();
                 }
                 refreshForUpdateOrThrow(user);
+                // [2026-11-25 V2_156] 행 잠금 뒤 읽은 편집 버전과 대조한다 — 두 관리자(또는 관리자와 본인)가 같은 사용자를 열고 차례로
+                //   저장하면 늦은 저장이 앞 저장을 알림 없이 덮었다. 없으면 400, 다르면 409. 로그인 실패 횟수 같은 보안 상태 쓰기는
+                //   이 버전을 올리지 않는다(User.editVersion 주석).
+                nuri.foundation.core.util.EntityVersions.assertCurrent(userDto.version(), user.getEditVersion());
 
                 // [2026-08-12 결함 수정] **보내지 않은 필드가 지워지던 것**을 막는다.
                 //
@@ -409,6 +413,7 @@ public class UserService extends BaseAbstractService {
                                 keepIfAbsent(userDto.pstinstCd(), user.getPstinstCd()),
                                 user.getRole(),
                                 user.getCertDnVl());
+                user.markProfileEdited();
         }
 
         /**

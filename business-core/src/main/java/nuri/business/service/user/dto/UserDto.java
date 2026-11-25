@@ -153,7 +153,14 @@ public record UserDto(
     @Schema(accessMode = Schema.AccessMode.READ_ONLY) Boolean passwordChangeRequired,
     /** 인증앱 추가 인증을 쓰고 있는가(결정 18). 상세 조회만 채우며, 복구 승인 대상인지 화면이 판단한다. */
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    @Schema(accessMode = Schema.AccessMode.READ_ONLY) Boolean mfaEnabled
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY) Boolean mfaEnabled,
+    /**
+     * 프로필 편집 버전(V2_156). 상세·내 프로필 조회가 채우고, 프로필 수정 요청이 읽은 값을 그대로 돌려보낸다 — 다르면 409,
+     * 없으면 400. 등록에서는 무시한다. 목록 행은 채우지 않는다(수정 폼은 상세를 읽은 뒤 연다).
+     */
+    @Schema(description = "프로필 편집 버전(V2_156). 조회한 값을 프로필 수정 요청에 그대로 돌려보낸다 — 다르면 409, 없으면 400.")
+    @jakarta.validation.constraints.Min(0)
+    Integer version
 ) {
     public UserDto withAuthorization(nuri.business.security.authorization.AuthorizationSnapshotService.Snapshot snapshot) {
         return toBuilder().groups(snapshot.groups()).permissions(snapshot.permissions())
@@ -221,7 +228,8 @@ public record UserDto(
             userSttsCd,
             lckYn,
             crtDt,
-            java.util.List.of(), java.util.List.of(), null, null, null
+            java.util.List.of(), java.util.List.of(), null, null, null,
+            null // version — 목록 행은 편집 버전을 싣지 않는다
         );
     }
 
@@ -257,6 +265,7 @@ public record UserDto(
                 .userSttsCd(user.getUserSttsCd())
                 .lckYn(user.getLckYn())
                 .crtDt(user.getCrtDt())
+                .version(user.getEditVersion())
                 .build();
     }
 

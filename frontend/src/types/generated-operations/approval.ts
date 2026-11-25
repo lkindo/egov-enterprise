@@ -398,7 +398,7 @@ export const cancelApprovalOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: z.object({ "id": z.number().int() }).strict(),
-  querySchema: z.object({ "version": z.number().int().min(0).optional() }).strict(),
+  querySchema: z.object({ "version": z.number().int().min(0) }).strict(),
   requestSchema: null,
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,

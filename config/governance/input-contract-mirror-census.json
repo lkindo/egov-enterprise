@@ -1866,6 +1866,11 @@
           "field": "userNm",
           "constraint": "NotBlank",
           "groups": []
+        },
+        {
+          "field": "version",
+          "constraint": "NotNull",
+          "groups": []
         }
       ]
     },
@@ -1875,6 +1880,11 @@
         {
           "field": "userNm",
           "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "version",
+          "constraint": "NotNull",
           "groups": []
         }
       ]

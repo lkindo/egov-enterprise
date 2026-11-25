@@ -56,7 +56,7 @@ class UserUpdateContractIntegrationTest {
      * 이 폼은 값을 담지 않는다(defaultValues 의 {@code pswd: ''}).
      */
     private static final String UPDATE_BODY_AS_SENT_BY_UI = """
-            {"userId":"e2e_b6n70i","userNm":"E2E User B6N70I UPD","emlAddr":"e2e_b6n70i@egov.kr","mblTelno":"","ognzId":"","pswd":""}
+            {"userId":"e2e_b6n70i","userNm":"E2E User B6N70I UPD","emlAddr":"e2e_b6n70i@egov.kr","mblTelno":"","ognzId":"","pswd":"","version":0}
             """;
 
     /**
@@ -65,7 +65,7 @@ class UserUpdateContractIntegrationTest {
      * 방금 만든 사용자는 항상 이메일이 비어 있다. 폼은 미입력을 {@code ""} 로 보낸다.
      */
     private static final String UPDATE_BODY_WITH_EMPTY_OPTIONALS = """
-            {"userId":"e2e_2na9p","userNm":"E2E User 2NA9P UPD","emlAddr":"","mblTelno":"","ognzId":"","pswd":""}
+            {"userId":"e2e_2na9p","userNm":"E2E User 2NA9P UPD","emlAddr":"","mblTelno":"","ognzId":"","pswd":"","version":0}
             """;
 
     @Test
@@ -96,7 +96,7 @@ class UserUpdateContractIntegrationTest {
         mockMvc.perform(put("/api/v1/admin/system/users/e2e_2na9p")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"userId":"e2e_2na9p","userNm":"E2E User","emlAddr":"not-an-email","mblTelno":"","ognzId":"","pswd":""}
+                                {"userId":"e2e_2na9p","userNm":"E2E User","emlAddr":"not-an-email","mblTelno":"","ognzId":"","pswd":"","version":0}
                                 """))
                 .andExpect(status().isBadRequest());
     }

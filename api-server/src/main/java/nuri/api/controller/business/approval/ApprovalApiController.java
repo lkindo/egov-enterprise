@@ -238,11 +238,14 @@ public class ApprovalApiController {
     /** The service checks ownership and retains the document and completed decisions on withdrawal. */
     @Operation(summary = "Cancel My Approval Draft",
             description = "신청자 본인이 상신한 결재 중 대기(신청) 상태인 건을 취소(철회)합니다. "
-                    + "내용과 처리 이력은 보존됩니다. 신청자 본인만 가능하며 관리자도 대리 회수할 수 없습니다.")
+                    + "내용과 처리 이력은 보존됩니다. 신청자 본인만 가능하며 관리자도 대리 회수할 수 없습니다. "
+                    + "상세·목록에서 받은 버전(version)이 필수이며 없으면 400, 다르면 409 입니다.")
     @DeleteMapping("/{id}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#cancelApproval')")
     public ResponseEntity<ApiResponse<Void>> cancelApproval(@PathVariable Long id,
-            @RequestParam(required = false) @jakarta.validation.constraints.Min(0) Integer version) {
+            // [2026-11-25 품질 평가 과제 6] 다른 결재 쓰기(승인·재상신·보완·결재자 교체·참조자 추가)처럼 읽은 버전을 필수로 받는다 —
+            //   선택이면 버전 없이 보낸 회수가 그 사이 바뀐 문서를 대조 없이 닫는다.
+            @RequestParam @jakarta.validation.constraints.Min(0) Integer version) {
         approvalService.deleteInformalSanction(id, version);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

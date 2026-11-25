@@ -199,6 +199,17 @@ public class User extends BaseEntity implements Serializable {
     @Column(length = 12)
     private String userSttsCd = "P";
 
+    /**
+     * 프로필 편집 버전(V2_156). JPA {@code @Version} 이 아니다 — 이 표는 로그인 실패 횟수·잠금·세션차수 같은 보안 상태를 자주 쓰므로
+     * 모든 쓰기에 버전 대조를 걸면 로그인과 관리 작업이 서로 충돌한다. 프로필을 고치는 경로(UserService.updateUser)만 읽은 버전을
+     * 대조하고 {@link #markProfileEdited()} 로 올린다. 소속을 바꾸는 부서 일괄 이동도 올린다.
+     */
+    // 기본값을 매핑에도 둔다 — 시험의 H2 스키마는 엔티티에서 만들어져, 없으면 기존 원시 INSERT(시험 고정물)가 NOT NULL 에 걸린다.
+    //   PostgreSQL 은 V2_156 의 DEFAULT 0 이 같은 역할을 한다.
+    @Column(name = "version", nullable = false)
+    @org.hibernate.annotations.ColumnDefault("0")
+    private Integer editVersion = 0;
+
     @Column(updatable = false, length = 8)
     private String sbscrbYmd;
 
@@ -295,6 +306,12 @@ public class User extends BaseEntity implements Serializable {
 
     public void updateOrgnztId(String ognzId) {
         this.ognzId = ognzId;
+        markProfileEdited();
+    }
+
+    /** 프로필 편집 버전을 올린다 — 이 행을 읽고 프로필 수정 폼을 연 다른 사람의 저장은 409 가 된다. */
+    public void markProfileEdited() {
+        this.editVersion = editVersion == null ? 1 : editVersion + 1;
     }
 
     private User(String esntlId, String userId, String userTypeCd, String userNm, String pswd,

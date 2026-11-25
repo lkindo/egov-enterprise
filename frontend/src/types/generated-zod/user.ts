@@ -20,6 +20,7 @@ export const UserSelfProfileUpdateRequestSchema = /*#__PURE__*/ (() => z.object(
   mblTelno: z.string().min(0).max(11).optional(),
   emlAddr: z.string().min(0).max(50).regex(new RegExp("^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")).optional(),
   ofcpsNm: z.string().min(0).max(300).optional(),
+  version: z.number().int().min(0),
 }))();
 export type UserSelfProfileUpdateRequest = z.infer<typeof UserSelfProfileUpdateRequestSchema>;
 
@@ -46,6 +47,7 @@ export const UserProfileUpdateRequestSchema = /*#__PURE__*/ (() => z.object({
   groupId: z.string().min(0).max(20).optional(),
   ognzId: z.string().min(0).max(20).optional(),
   pstinstCd: z.string().min(0).max(12).optional(),
+  version: z.number().int().min(0),
 }))();
 export type UserProfileUpdateRequest = z.infer<typeof UserProfileUpdateRequestSchema>;
 
@@ -112,6 +114,7 @@ export const UserDtoSchema = /*#__PURE__*/ (() => z.object({
   authorizationVersion: z.string(),
   passwordChangeRequired: z.boolean().optional(),
   mfaEnabled: z.boolean().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type UserDto = z.infer<typeof UserDtoSchema>;
 
@@ -239,6 +242,7 @@ export const UserSelfProfileUpdateRequestRequestSchema = /*#__PURE__*/ (() => z.
   mblTelno: z.string().min(0).max(11).optional(),
   emlAddr: z.string().min(0).max(50).regex(new RegExp("^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")).optional(),
   ofcpsNm: z.string().min(0).max(300).optional(),
+  version: z.number().int().min(0),
 }))();
 
 export const UserSelfProfileUpdateRequestResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -255,6 +259,7 @@ export const UserSelfProfileUpdateRequestResponseSchema = /*#__PURE__*/ (() => z
   mblTelno: z.string().min(0).max(11).optional().nullable(),
   emlAddr: z.string().min(0).max(50).regex(new RegExp("^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")).optional().nullable(),
   ofcpsNm: z.string().min(0).max(300).optional().nullable(),
+  version: z.number().int().min(0),
 }))();
 
 export const PasswordChangeRequestRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -284,6 +289,7 @@ export const UserProfileUpdateRequestRequestSchema = /*#__PURE__*/ (() => z.obje
   groupId: z.string().min(0).max(20).optional(),
   ognzId: z.string().min(0).max(20).optional(),
   pstinstCd: z.string().min(0).max(12).optional(),
+  version: z.number().int().min(0),
 }))();
 
 export const UserProfileUpdateRequestResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -303,6 +309,7 @@ export const UserProfileUpdateRequestResponseSchema = /*#__PURE__*/ (() => z.obj
   groupId: z.string().min(0).max(20).optional().nullable(),
   ognzId: z.string().min(0).max(20).optional().nullable(),
   pstinstCd: z.string().min(0).max(12).optional().nullable(),
+  version: z.number().int().min(0),
 }))();
 
 export const UserSignupRequestRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -384,6 +391,7 @@ export const UserDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   userSttsCd: z.string().min(0).max(12).optional(),
   lckYn: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const UserDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -419,6 +427,7 @@ export const UserDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   authorizationVersion: z.string(),
   passwordChangeRequired: z.boolean().optional().nullable(),
   mfaEnabled: z.boolean().optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const AdminPasswordChangeRequestRequestSchema = /*#__PURE__*/ (() => z.object({
