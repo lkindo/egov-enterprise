@@ -342,7 +342,9 @@ public class CommunityService {
 
     /** 가입 승인 권한자에게 새 신청을 알린다. 신청자 자신은 빼고, 수신자는 상한까지만 둔다. */
     private void notifyApprovers(Community community, String applicantEsntlId) {
-        List<String> approvers = userRepository.findActiveEsntlIdsHoldingPermission("COMMUNITY_APPROVE").stream()
+        // 상한 + 1 만 읽는다 — 신청자 자신이 보유자여도 빼고 나서 상한을 채운다(보유자 전체를 메모리로 올리지 않는다).
+        List<String> approvers = userRepository.findActiveEsntlIdsHoldingPermission("COMMUNITY_APPROVE",
+                        org.springframework.data.domain.Limit.of(MAX_APPROVER_NOTICES + 1)).stream()
                 .filter(id -> !id.equals(applicantEsntlId))
                 .limit(MAX_APPROVER_NOTICES)
                 .toList();

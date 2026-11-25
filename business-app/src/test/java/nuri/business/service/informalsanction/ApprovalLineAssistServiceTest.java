@@ -86,11 +86,11 @@ class ApprovalLineAssistServiceTest {
         }
         lenient().when(userRepository.findProfilesByEsntlIds(any())).thenReturn(profiles);
         lenient().when(userRepository.findAllById(any())).thenReturn(rows);
-        lenient().when(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE"))
-                .thenReturn(Arrays.stream(active).filter(id -> !id.equals("noperm")).toList());
+        lenient().when(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection()))
+                .thenAnswer(holdersAmong(Arrays.stream(active).filter(id -> !id.equals("noperm")).toList()));
         // [D4] 참조자는 결재 조회 권한으로 판정한다 — noread 만 그 권한이 없다.
-        lenient().when(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_READ"))
-                .thenReturn(Arrays.stream(active).filter(id -> !id.equals("noread")).toList());
+        lenient().when(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_READ"), org.mockito.ArgumentMatchers.anyCollection()))
+                .thenAnswer(holdersAmong(Arrays.stream(active).filter(id -> !id.equals("noread")).toList()));
     }
 
     @Test
@@ -150,6 +150,11 @@ class ApprovalLineAssistServiceTest {
                         tuple("noperm", false, "NO_PERMISSION", "이름-noperm"),
                         tuple("off1", false, "INACTIVE", null),
                         tuple("ghost", false, "NOT_FOUND", null));
+        // 권한 보유자 전체가 아니라 확인한 사람(중복 제거)만 묻는다(2026-11-25 품질 평가).
+        verify(userRepository).findActiveEsntlIdsHoldingPermissionAmong("APPROVAL_APPROVE",
+                List.of("a", "owner", "noperm", "off1", "ghost"));
+        verify(userRepository).findActiveEsntlIdsHoldingPermissionAmong("APPROVAL_READ",
+                List.of("a", "owner", "noperm", "off1", "ghost"));
     }
 
     /**
@@ -197,5 +202,13 @@ class ApprovalLineAssistServiceTest {
         assertThatThrownBy(() -> service.checkApprovers("owner", List.of(" a")))
                 .isInstanceOf(BusinessException.class);
         verify(userRepository, never()).findAllById(any());
+    }
+
+    /** 권한 보유자 조회 스텁 — 실제 저장소처럼 넘긴 후보 가운데 보유자만 돌려준다(후보 인자를 잘못 넘기면 시험이 붉어지게, 2026-11-25 Codex 검토). */
+    private static org.mockito.stubbing.Answer<java.util.List<String>> holdersAmong(java.util.Collection<String> holders) {
+        return invocation -> {
+            java.util.Collection<String> candidates = invocation.getArgument(1);
+            return holders.stream().filter(candidates::contains).distinct().sorted().toList();
+        };
     }
 }

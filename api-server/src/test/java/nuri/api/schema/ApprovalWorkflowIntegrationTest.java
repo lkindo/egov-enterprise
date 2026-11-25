@@ -106,10 +106,10 @@ class ApprovalWorkflowIntegrationTest {
             return result;
         });
         // 결재선 검증은 결재자의 결재 권한(APPROVAL_APPROVE)도 본다.
-        when(users.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).thenReturn(List.of(FIRST, SECOND, FINAL));
+        when(users.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).thenAnswer(holdersAmong(List.of(FIRST, SECOND, FINAL)));
         // 참조자는 결재 조회 권한으로 판정한다 — 결재자들도 조회 권한은 있다.
-        when(users.findActiveEsntlIdsHoldingPermission("APPROVAL_READ"))
-                .thenReturn(List.of(FIRST, SECOND, FINAL, REFERENCE, LATE_REFERENCE));
+        when(users.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_READ"), org.mockito.ArgumentMatchers.anyCollection()))
+                .thenAnswer(holdersAmong(List.of(FIRST, SECOND, FINAL, REFERENCE, LATE_REFERENCE)));
     }
 
     @AfterEach
@@ -445,7 +445,7 @@ class ApprovalWorkflowIntegrationTest {
                 .containsExactly(org.assertj.core.groups.Tuple.tuple(sn, "팀장 결재"));
 
         // 저장한 뒤 SECOND 가 결재 권한을 잃었다 — 불러오면 이름 없이 빠지고 그 수만 온다.
-        when(users.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).thenReturn(List.of(FIRST, FINAL));
+        when(users.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).thenAnswer(holdersAmong(List.of(FIRST, FINAL)));
         var loaded = savedLines.getSavedLine(DRAFTER, sn);
         assertThat(loaded.droppedApproverCount()).isEqualTo(1);
         assertThat(loaded.droppedStageCount()).isZero();
@@ -716,7 +716,7 @@ class ApprovalWorkflowIntegrationTest {
         var measurementFilter = nuri.business.service.informalsanction.ApprovalListFilter.of(measurementTitle, null, null, null);
         List<String> eligibleApprovers = new ArrayList<>(List.of(FIRST, SECOND, FINAL));
         eligibleApprovers.addAll(previous);
-        when(users.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).thenReturn(eligibleApprovers);
+        when(users.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).thenAnswer(holdersAmong(eligibleApprovers));
         when(users.findProfilesByEsntlIds(any())).thenAnswer(call -> {
             List<nuri.business.service.user.dto.UserSearchDto> result = new ArrayList<>();
             Iterable<String> ids = call.getArgument(0);
@@ -1096,5 +1096,13 @@ class ApprovalWorkflowIntegrationTest {
                 }
             };
         }
+    }
+
+    /** 권한 보유자 조회 스텁 — 실제 저장소처럼 넘긴 후보 가운데 보유자만 돌려준다(후보 인자를 잘못 넘기면 시험이 붉어지게, 2026-11-25 Codex 검토). */
+    private static org.mockito.stubbing.Answer<java.util.List<String>> holdersAmong(java.util.Collection<String> holders) {
+        return invocation -> {
+            java.util.Collection<String> candidates = invocation.getArgument(1);
+            return holders.stream().filter(candidates::contains).distinct().sorted().toList();
+        };
     }
 }

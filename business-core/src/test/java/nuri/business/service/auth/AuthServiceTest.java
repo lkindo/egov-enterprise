@@ -412,13 +412,16 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("로그아웃 예외 처리")
+    @DisplayName("[2026-11-25] 로그아웃 중 저장소 예외는 삼키지 않는다 — 브라우저 쿠키는 컨트롤러가 실패해도 지운다")
     void testLogoutException() {
         // Given
         String userId = "user1";
-        when(refreshTokenRepository.findById(userId)).thenThrow(new RuntimeException("DB Error"));
+        RuntimeException dbError = new RuntimeException("DB Error");
+        when(refreshTokenRepository.findById(userId)).thenThrow(dbError);
 
-        // When
-        assertDoesNotThrow(() -> authService.logout(userId, null));
+        // When / Then — 종전에는 삼켰지만 실제 트랜잭션에서는 rollback-only 로 커밋이 실패해 성공처럼 끝나지도 못했다
+        //   (AuthServiceImplTest#doesNotSwallowRepositoryFailure·AuthApiControllerTest#failedLogoutStillClearsTheBrowserCookie).
+        assertSame(dbError, assertThrows(RuntimeException.class, () -> authService.logout(userId, null)));
+        verify(userRepository, never()).advanceSessionCycle(any());
     }
 }

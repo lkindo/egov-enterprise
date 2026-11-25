@@ -770,6 +770,91 @@ class MemoReportRecipientIntegrityIntegrationTest {
         }
     }
 
+    /**
+     * [2026-11-25 Codex 검토] 작성자 열람은 쓰기 잠금 대신 공유 잠금을 잡는다 — 그래도 진행 중인 첨부 교체를 기다려야 한다. 잠그지 않으면
+     * 옛 첨부 번호를 읽은 뒤 교체가 옛 묶음을 지워(마지막 참조) 첨부 조회가 404 가 된다(다른 탭에서 고치는 정상 동선).
+     */
+    @Test
+    void authorDetailWaitsForAttachmentReplacementAndReadsTheCommittedGroup() throws Exception {
+        long oldGroup = upload();
+        long newGroup = upload();
+        long id = attachedMemo(oldGroup);
+        var ready = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var blockerPid = new AtomicInteger();
+        String application = fixtureId + "author";
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            Future<?> writer = executor.submit(() -> {
+                authenticate(sender);
+                try {
+                    new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+                        blockerPid.set(VendorTestSql.sessionId(jdbc));
+                        MemoReportDto changed = memo(active);
+                        changed.setAtchFileSn(newGroup);
+                        memoReportService.updateMemoReport(id, sender, changed);
+                        entityManager.flush();
+                        ready.countDown();
+                        await(release);
+                    });
+                } finally { SecurityContextHolder.clearContext(); }
+            });
+            Future<MemoReportDto> reader;
+            try {
+                awaitReady(ready, writer);
+                reader = executor.submit(() -> {
+                    authenticate(sender);
+                    try {
+                        return new TransactionTemplate(transactionManager).execute(status -> {
+                            VendorTestSql.nameSession(jdbc, application);
+                            return memoReportService.getMemoReport(id);
+                        });
+                    } finally { SecurityContextHolder.clearContext(); }
+                });
+                waitForBlockingPid(application, blockerPid.get(), "tb_memo_rpt_info", reader);
+            } finally { release.countDown(); }
+            writer.get(20, TimeUnit.SECONDS);
+            MemoReportDto response = reader.get(20, TimeUnit.SECONDS);
+            assertThat(response.getAtchFileSn()).isEqualTo(newGroup);
+            assertThat(response.getAttachments()).as("교체된 묶음의 첨부를 읽는다").isNotEmpty();
+            assertThat(masters.findById(oldGroup)).as("교체로 마지막 참조가 사라진 옛 묶음은 지워졌다 — 기다리지 않았다면 404 였다").isEmpty();
+        }
+    }
+
+    /**
+     * [2026-11-25 Codex 2차 검토] 작성자 열람은 쓰기 잠금이 아니라 공유 잠금이다 — 한 열람이 트랜잭션을 열어 둔 동안 같은 보고의 다른
+     * 작성자 열람이 기다리지 않고 끝난다. 쓰기 잠금으로 되돌리면 두 번째 열람이 첫 트랜잭션이 끝날 때까지(또는 잠금 대기 초과까지) 막힌다.
+     */
+    @Test
+    void authorReadsDoNotWaitForEachOther() throws Exception {
+        long id = memoReportService.createMemoReport(sender, memo(active));
+        var holding = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            Future<?> first = executor.submit(() -> {
+                authenticate(sender);
+                try {
+                    new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+                        memoReportService.getMemoReport(id);
+                        holding.countDown();
+                        await(release);
+                    });
+                } finally { SecurityContextHolder.clearContext(); }
+            });
+            try {
+                awaitReady(holding, first);
+                Future<MemoReportDto> second = executor.submit(() -> {
+                    authenticate(sender);
+                    try {
+                        return new TransactionTemplate(transactionManager).execute(status -> memoReportService.getMemoReport(id));
+                    } finally { SecurityContextHolder.clearContext(); }
+                });
+                // 첫 열람이 잠금을 쥔 채로 있는 동안 끝나야 한다(잠금 대기 상한 5초보다 짧게 본다).
+                assertThat(second.get(3, TimeUnit.SECONDS).getRptCn()).isEqualTo("original");
+            } finally { release.countDown(); }
+            first.get(20, TimeUnit.SECONDS);
+        }
+    }
+
     private static String login(String id) { return id + "L"; }
 
     private void authenticate(String id, String... permissions) {

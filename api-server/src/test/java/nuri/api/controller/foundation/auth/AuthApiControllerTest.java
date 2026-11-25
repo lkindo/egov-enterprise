@@ -352,4 +352,17 @@ class AuthApiControllerTest {
         org.mockito.Mockito.verify(authService).logout(null, null);
         SecurityContextHolder.clearContext();
     }
+
+    @Test
+    @DisplayName("🚨 [2026-11-25] 서버 세션 폐기가 실패하면 실패로 알리되, 이 브라우저의 리프레시 쿠키는 지운다")
+    void failedLogoutStillClearsTheBrowserCookie() throws Exception {
+        org.mockito.Mockito.doThrow(new org.springframework.dao.DataAccessResourceFailureException("connection lost"))
+                .when(authService).logout(null, "cookie-token");
+
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .cookie(new jakarta.servlet.http.Cookie("refreshToken", "cookie-token")))
+                .andExpect(status().is5xxServerError());
+
+        org.mockito.Mockito.verify(jwtTokenProvider).removeRefreshTokenCookie(org.mockito.ArgumentMatchers.any());
+    }
 }

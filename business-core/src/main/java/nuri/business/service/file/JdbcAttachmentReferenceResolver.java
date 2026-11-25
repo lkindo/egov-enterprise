@@ -90,6 +90,7 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
         boolean resolutionFailed = false;
         boolean readDenied = false;
         boolean adminDeleteDenied = false;
+        boolean referenced = false;
 
         for (AttachmentSource source : sources) {
             if (source.sensitivity() == AttachmentSource.Sensitivity.DERIVED) {
@@ -98,6 +99,7 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
             }
             try {
                 SourceHit hit = query(source, atchFileSn, loginId, esntlId);
+                referenced |= hit.referenced();
                 // 일정 본문·결재 임시저장을 읽지 못하면 다른 공유 참조나 FILE_READ_ALL로 첨부만 열 수 없다.
                 // 삭제에는 이 제한을 적용하지 않으므로 owner와 별도로 집계한다.
                 readDenied |= (source == AttachmentSource.SCHEDULE || source == AttachmentSource.APPROVAL_DRAFT)
@@ -114,10 +116,11 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
                 log.error("[FileAccess] 참조원 조회 실패 — fail-closed 로 처리한다. source={} table={} atchFileSn={}",
                         source, source.table(), atchFileSn, ex);
                 resolutionFailed = true;
+                referenced = true; // 판정하지 못한 참조원은 가리키는 것으로 본다 — referenced(Long) 와 같다.
             }
         }
         return new Grants(shared, owner, personal, personalOwner, resolutionFailed, personalReader, readDenied,
-                adminDeleteDenied);
+                adminDeleteDenied, referenced);
     }
 
     @Override
