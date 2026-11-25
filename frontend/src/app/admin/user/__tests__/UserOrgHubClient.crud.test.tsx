@@ -706,6 +706,33 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     await waitFor(() => expect(userAdminService.getUser).toHaveBeenCalledTimes(2));
   });
 
+  it('[V2_156] 상세를 다시 읽는 동안에는 수정 창을 열 수 없고, 다 읽은 뒤 연 창은 새 편집 버전으로 저장한다', async () => {
+    const conflict = Object.assign(new Error('다른 사용자가 먼저 수정했습니다.'), { response: { status: 409 } });
+    vi.mocked(userAdminService.updateUser).mockRejectedValueOnce(conflict).mockResolvedValueOnce(undefined);
+    let releaseRefetch: (value: unknown) => void = () => {};
+    vi.mocked(userAdminService.getUser)
+      .mockResolvedValueOnce(detailRecord as any)
+      .mockReturnValueOnce(new Promise(resolve => { releaseRefetch = resolve; }) as any);
+    await selectFirstRow();
+
+    await screen.findByText('기획부 (D-100)');
+    fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]);
+    await screen.findByText('사용자 정보 수정');
+    fireEvent.click(screen.getByText('form-submit'));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('다른 사용자가 먼저 수정했습니다.', 'error'));
+
+    // 재조회가 끝나기 전 — 수정 버튼이 잠겨 옛 버전(7)을 잡을 수 없다.
+    await waitFor(() => expect(userAdminService.getUser).toHaveBeenCalledTimes(2));
+    for (const button of screen.getAllByRole('button', { name: /정보 수정/ })) expect(button).toBeDisabled();
+
+    await act(async () => releaseRefetch({ ...detailRecord, version: 8 }));
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /정보 수정/ })[0]).toBeEnabled());
+    fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]);
+    await screen.findByText('사용자 정보 수정');
+    fireEvent.click(screen.getByText('form-submit'));
+    await waitFor(() => expect(userAdminService.updateUser).toHaveBeenLastCalledWith('user1', expect.objectContaining({ version: 8 })));
+  });
+
   it('수정 인가 실패(403) 시 서버 메시지를 그대로 표시한다', async () => {
     vi.mocked(userAdminService.updateUser).mockRejectedValue(new Error('접근 권한이 없습니다.'));
     await selectFirstRow();

@@ -878,6 +878,7 @@ export default function UserOrgHubClient({
 
   const {
     deptMembersLabel, selectedDept, selectedFlatDept, selectedDeptParentId, selectedItem, selectedUserDetail, displayedUser,
+    isSelectedUserDetailFetching,
   } = useUserOrgSelection({ activeTab, selectedItemId, users, departments, flattenedDepts });
 
   const {
@@ -927,7 +928,8 @@ export default function UserOrgHubClient({
       canForceLogout={canChangeUserStatus}
       canDeleteUser={canDeleteUser}
       locked={isSaving}
-      detailLoaded={Boolean(selectedUserDetail)}
+      // [V2_156] 상세를 다시 읽는 중이면 아직 열지 않는다 — 열면 옛 편집 버전을 잡아 다음 저장도 409 가 된다.
+      detailLoaded={Boolean(selectedUserDetail) && !isSelectedUserDetailFetching}
       unlockBusy={activeWriteOperation === 'unlock-user'}
       forceLogoutBusy={activeWriteOperation === 'force-logout'}
       deleteBusy={activeWriteOperation === 'delete-user'}
