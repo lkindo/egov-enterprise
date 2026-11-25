@@ -64,6 +64,7 @@ class BoardPostPeriodIntegrationTest {
     private static final String FAR_END = "20991231";
 
     @Autowired private BoardService boardService;
+    @Autowired private BoardPostOperationService boardPostOperations;
     @Autowired private BoardMasterService boardMasterService;
     @Autowired private BoardRepository boardRepository;
     @Autowired private BoardMasterRepository boardMasterRepository;
@@ -102,7 +103,7 @@ class BoardPostPeriodIntegrationTest {
         assertThat(version(pstSn)).isZero();
 
         actAs("operator", "BOARD_UPDATE_ALL");
-        boardService.updatePostPeriodsInBatch(bbsId, new BoardPostPeriodBatchRequest("END_DATE", List.of(pstSn), FAR_END));
+        boardPostOperations.updatePostPeriodsInBatch(bbsId, new BoardPostPeriodBatchRequest("END_DATE", List.of(pstSn), FAR_END));
         assertThat(version(pstSn)).as("작성자 폼과 같은 컬럼을 바꾸므로 버전이 오른다").isEqualTo(1);
         assertThat(postChanges()).extracting(BoardChange::getChgTypeCd, BoardChange::getChgArtclNm, BoardChange::getChgAftrCn)
                 .containsExactly(org.assertj.core.groups.Tuple.tuple("PERIOD", "게시 종료일", FAR_END));
@@ -121,10 +122,10 @@ class BoardPostPeriodIntegrationTest {
         // 단건 빠른 편집도 같은 버전 규칙이다 — 같은 값이면 버전도 이력도 그대로다.
         actAs("operator", "BOARD_UPDATE_ALL");
         int current = version(pstSn);
-        boardService.updatePostPeriod(bbsId, pstSn, new BoardPostPeriodRequest(null, FAR_END, current));
+        boardPostOperations.updatePostPeriod(bbsId, pstSn, new BoardPostPeriodRequest(null, FAR_END, current));
         assertThat(version(pstSn)).isEqualTo(current);
         assertThat(postChanges()).hasSize(1);
-        assertThatThrownBy(() -> boardService.updatePostPeriod(bbsId, pstSn,
+        assertThatThrownBy(() -> boardPostOperations.updatePostPeriod(bbsId, pstSn,
                 new BoardPostPeriodRequest(null, "20991130", current - 1)))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
     }
@@ -136,7 +137,7 @@ class BoardPostPeriodIntegrationTest {
         Long lateStart = createPost("20991201");
 
         actAs("operator", "BOARD_UPDATE_ALL");
-        assertThatThrownBy(() -> boardService.updatePostPeriodsInBatch(bbsId,
+        assertThatThrownBy(() -> boardPostOperations.updatePostPeriodsInBatch(bbsId,
                 new BoardPostPeriodBatchRequest("END_DATE", List.of(open, lateStart), "20991130")))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
@@ -154,7 +155,7 @@ class BoardPostPeriodIntegrationTest {
         Long pstSn = createPost(null);
 
         actAs("operator", "BOARD_PIN");
-        boardService.updatePostPin(bbsId, pstSn,
+        boardPostOperations.updatePostPin(bbsId, pstSn,
                 new nuri.business.service.board.dto.BoardPostPinRequest("Y", FAR_END));
         assertThat(version(pstSn)).as("고정은 운영자 행위라 작성자 버전을 올리지 않는다").isZero();
         assertThat(boardRepository.findById(pstSn).orElseThrow())
@@ -181,24 +182,24 @@ class BoardPostPeriodIntegrationTest {
         Long second = createPost(null);
 
         actAs("operator", "BOARD_PIN");
-        boardService.updatePostPinsInBatch(bbsId,
+        boardPostOperations.updatePostPinsInBatch(bbsId,
                 new nuri.business.service.board.dto.BoardPostPinBatchRequest(List.of(first), "Y", null));
         int changes = postChanges().size();
 
-        assertThatThrownBy(() -> boardService.updatePostPin(bbsId, second,
+        assertThatThrownBy(() -> boardPostOperations.updatePostPin(bbsId, second,
                 new nuri.business.service.board.dto.BoardPostPinRequest("Y", null)))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
                 .hasMessageContaining("최대 1건까지 둡니다(지금 1건)");
-        assertThatThrownBy(() -> boardService.updatePostPinsInBatch(bbsId,
+        assertThatThrownBy(() -> boardPostOperations.updatePostPinsInBatch(bbsId,
                 new nuri.business.service.board.dto.BoardPostPinBatchRequest(List.of(second, Long.MAX_VALUE), "N", null)))
                 .hasFieldOrPropertyWithValue("errorCode", nuri.business.domain.board.exception.BoardErrorCode.ARTICLE_NOT_FOUND);
         assertThat(boardRepository.findById(second).orElseThrow().getUpendFixYn()).isEqualTo("N");
         assertThat(postChanges()).as("거부된 고정은 이력을 남기지 않는다").hasSize(changes);
 
         // 해제는 설정·상한과 상관없이 되고 종료일을 비운다. 그 뒤에는 두 번째 글을 고정할 수 있다.
-        boardService.updatePostPin(bbsId, first, new nuri.business.service.board.dto.BoardPostPinRequest("N", null));
-        boardService.updatePostPin(bbsId, second, new nuri.business.service.board.dto.BoardPostPinRequest("Y", null));
+        boardPostOperations.updatePostPin(bbsId, first, new nuri.business.service.board.dto.BoardPostPinRequest("N", null));
+        boardPostOperations.updatePostPin(bbsId, second, new nuri.business.service.board.dto.BoardPostPinRequest("Y", null));
         assertThat(boardRepository.findById(first).orElseThrow().getUpendFixEndYmd()).isNull();
         assertThat(boardRepository.findById(second).orElseThrow().getUpendFixYn()).isEqualTo("Y");
         assertThat(version(first)).isZero();

@@ -37,7 +37,7 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
 
     /** [2026-10-23 ADR-0040 결정 3·10] 운영 화면의 게시글 단위 처리(게시 기간). */
     @MockitoBean
-    private nuri.business.service.board.BoardService boardService;
+    private nuri.business.service.board.BoardPostOperationService boardPostOperations;
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
@@ -328,7 +328,7 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
-        org.mockito.Mockito.verify(boardService).updatePostPeriod(eq("BBS_001"), eq(7L),
+        org.mockito.Mockito.verify(boardPostOperations).updatePostPeriod(eq("BBS_001"), eq(7L),
                 argThat((nuri.business.service.board.dto.BoardPostPeriodRequest request) ->
                         "20261101".equals(request.pstBgngYmd()) && "20261130".equals(request.pstEndYmd())
                                 && request.version() == 3));
@@ -348,7 +348,7 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
                 .content(body)
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
-        org.mockito.Mockito.verifyNoInteractions(boardService);
+        org.mockito.Mockito.verifyNoInteractions(boardPostOperations);
     }
 
     @Test
@@ -360,7 +360,7 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
-        org.mockito.Mockito.verify(boardService).updatePostPeriodsInBatch(eq("BBS_001"),
+        org.mockito.Mockito.verify(boardPostOperations).updatePostPeriodsInBatch(eq("BBS_001"),
                 argThat((nuri.business.service.board.dto.BoardPostPeriodBatchRequest request) ->
                         "END_DATE".equals(request.action()) && List.of(3L, 4L).equals(request.pstSns())
                                 && "20261130".equals(request.pstEndYmd())));
@@ -384,7 +384,7 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
                     .accept(MediaType.APPLICATION_JSON))
                     .andExpect(status().isBadRequest());
         }
-        org.mockito.Mockito.verifyNoInteractions(boardService);
+        org.mockito.Mockito.verifyNoInteractions(boardPostOperations);
     }
 
     /**
@@ -446,7 +446,7 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
-        org.mockito.Mockito.verify(boardService).updatePostPin(eq("BBS_001"), eq(7L),
+        org.mockito.Mockito.verify(boardPostOperations).updatePostPin(eq("BBS_001"), eq(7L),
                 argThat((nuri.business.service.board.dto.BoardPostPinRequest request) ->
                         "Y".equals(request.upendFixYn()) && "20261130".equals(request.upendFixEndYmd())));
     }
@@ -465,7 +465,7 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
                 .content(body)
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
-        org.mockito.Mockito.verifyNoInteractions(boardService);
+        org.mockito.Mockito.verifyNoInteractions(boardPostOperations);
     }
 
     @Test
@@ -477,7 +477,7 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
-        org.mockito.Mockito.verify(boardService).updatePostPinsInBatch(eq("BBS_001"),
+        org.mockito.Mockito.verify(boardPostOperations).updatePostPinsInBatch(eq("BBS_001"),
                 argThat((nuri.business.service.board.dto.BoardPostPinBatchRequest request) ->
                         "N".equals(request.upendFixYn()) && List.of(3L, 4L).equals(request.pstSns())
                                 && request.upendFixEndYmd() == null));
@@ -501,7 +501,7 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
                     .accept(MediaType.APPLICATION_JSON))
                     .andExpect(status().isBadRequest());
         }
-        org.mockito.Mockito.verifyNoInteractions(boardService);
+        org.mockito.Mockito.verifyNoInteractions(boardPostOperations);
     }
 
     /**

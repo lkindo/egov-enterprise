@@ -108,7 +108,13 @@ class BoardCommunityAccessTest {
         return new BoardService(boardRepository, boardMasterRepository, userService, fileService,
                 attachmentAssignmentPolicy, eventPublisher, new SimpleMeterRegistry(), viewCountService,
                 new BoardMapperImpl(), new nuri.business.core.config.BoardIdProperties(), recommendationRepository,
-                org.mockito.Mockito.mock(BoardChangeRecorder.class), port);
+                port);
+    }
+
+    /** [2026-11-25] 운영 화면의 게시 기간·상단 고정은 BoardPostOperationService 로 옮겼다 — 게시판 서비스와 같은 목을 쓴다. */
+    private BoardPostOperationService boardOperations(CommunityBoardAccessPort port) {
+        return new BoardPostOperationService(boardRepository, boardMasterRepository,
+                new nuri.business.core.config.BoardIdProperties(), org.mockito.Mockito.mock(BoardChangeRecorder.class), port);
     }
 
     /** [2026-11-25] 댓글·만족도의 열람 경계는 BoardAccessService 로 옮겼다 — 게시판 서비스와 같은 목을 쓴다. */
@@ -314,10 +320,10 @@ class BoardCommunityAccessTest {
             given(communityBoardAccess.isApprovedMember(CMNTY_SN, VIEWER)).willReturn(false);
             BoardService service = boardService(communityBoardAccess);
 
-            assertThatThrownBy(() -> service.updatePostPeriod(COMMUNITY_BBS, 1L,
+            assertThatThrownBy(() -> boardOperations(communityBoardAccess).updatePostPeriod(COMMUNITY_BBS, 1L,
                     new nuri.business.service.board.dto.BoardPostPeriodRequest(null, "20991231", 0)))
                     .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
-            assertThatThrownBy(() -> service.updatePostPeriodsInBatch(COMMUNITY_BBS,
+            assertThatThrownBy(() -> boardOperations(communityBoardAccess).updatePostPeriodsInBatch(COMMUNITY_BBS,
                     new nuri.business.service.board.dto.BoardPostPeriodBatchRequest("CLEAR_END", List.of(1L), null)))
                     .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
             verify(boardRepository, never()).findById(any());
@@ -333,10 +339,10 @@ class BoardCommunityAccessTest {
             given(communityBoardAccess.isApprovedMember(CMNTY_SN, VIEWER)).willReturn(false);
             BoardService service = boardService(communityBoardAccess);
 
-            assertThatThrownBy(() -> service.updatePostPin(COMMUNITY_BBS, 1L,
+            assertThatThrownBy(() -> boardOperations(communityBoardAccess).updatePostPin(COMMUNITY_BBS, 1L,
                     new nuri.business.service.board.dto.BoardPostPinRequest("Y", null)))
                     .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
-            assertThatThrownBy(() -> service.updatePostPinsInBatch(COMMUNITY_BBS,
+            assertThatThrownBy(() -> boardOperations(communityBoardAccess).updatePostPinsInBatch(COMMUNITY_BBS,
                     new nuri.business.service.board.dto.BoardPostPinBatchRequest(List.of(1L), "N", null)))
                     .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
             verify(boardRepository, never()).findById(any());
@@ -703,7 +709,7 @@ class BoardCommunityAccessTest {
             BoardService service = boardService(communityBoardAccess);
 
             for (String board : List.of(CLOSED_PLAIN, CLOSED_COMMUNITY)) {
-                assertThatThrownBy(() -> service.updatePostPin(board, 3L,
+                assertThatThrownBy(() -> boardOperations(communityBoardAccess).updatePostPin(board, 3L,
                         new nuri.business.service.board.dto.BoardPostPinRequest("Y", null)))
                         .isInstanceOf(BusinessException.class)
                         .hasFieldOrPropertyWithValue("errorCode", nuri.business.domain.board.exception.BoardErrorCode.BOARD_NOT_FOUND);

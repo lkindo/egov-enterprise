@@ -113,7 +113,7 @@ class BoardAttachmentAccessTest {
         boards = new BoardService(repository, masters, mock(UserService.class), mock(FileService.class),
                 mock(AttachmentAssignmentPolicy.class), mock(ApplicationEventPublisher.class), new SimpleMeterRegistry(),
                 mock(BoardViewCountService.class), mapper, new BoardIdProperties(),
-                mock(BoardRecommendationRepository.class), mock(BoardChangeRecorder.class), null);
+                mock(BoardRecommendationRepository.class), null);
         boards.useClock(FIXED);
 
         AttachmentSourceContributor source = () -> List.of(AttachmentSource.BOARD);

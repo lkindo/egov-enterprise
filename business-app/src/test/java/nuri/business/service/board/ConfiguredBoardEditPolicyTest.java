@@ -46,13 +46,16 @@ class ConfiguredBoardEditPolicyTest {
     @Mock BoardChangeRecorder changes;
     BoardIdProperties ids;
     BoardService service;
+    /** [2026-11-25] 운영 화면의 게시 기간·상단 고정은 BoardPostOperationService 로 옮겼다. */
+    BoardPostOperationService operations;
 
     @BeforeEach void prepare() {
         ids = new BoardIdProperties();
         ids.setNoticeId("NOTICE");
         ids.setFaqId("NOTICE");
         service = new BoardService(posts, boards, users, files, attachments, events, new SimpleMeterRegistry(),
-                views, new BoardMapperImpl(), ids, recommendations, changes, communities);
+                views, new BoardMapperImpl(), ids, recommendations, communities);
+        operations = new BoardPostOperationService(posts, boards, ids, changes, communities);
     }
     @AfterEach void clear() { SecurityContextHolder.clearContext(); }
 
@@ -92,9 +95,9 @@ class ConfiguredBoardEditPolicyTest {
         authenticate(List.of("BOARD_UPDATE_ALL", "NOTICE_EDIT", "FAQ_EDIT").stream()
                 .filter(permission -> !permission.equals(missing)).toArray(String[]::new));
         List<org.assertj.core.api.ThrowableAssert.ThrowingCallable> actions = List.of(
-                () -> service.updatePostPeriod("NOTICE", 1L,
+                () -> operations.updatePostPeriod("NOTICE", 1L,
                         new nuri.business.service.board.dto.BoardPostPeriodRequest(null, "20991231", 0)),
-                () -> service.updatePostPeriodsInBatch("NOTICE",
+                () -> operations.updatePostPeriodsInBatch("NOTICE",
                         new nuri.business.service.board.dto.BoardPostPeriodBatchRequest("END_DATE", List.of(1L), "20991231")));
         actions.forEach(action -> assertThatThrownBy(action).isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED));
@@ -111,8 +114,8 @@ class ConfiguredBoardEditPolicyTest {
         authenticate(List.of("BOARD_PIN", "NOTICE_EDIT", "FAQ_EDIT").stream()
                 .filter(permission -> !permission.equals(missing)).toArray(String[]::new));
         List<org.assertj.core.api.ThrowableAssert.ThrowingCallable> actions = List.of(
-                () -> service.updatePostPin("NOTICE", 1L, new nuri.business.service.board.dto.BoardPostPinRequest("Y", null)),
-                () -> service.updatePostPinsInBatch("NOTICE",
+                () -> operations.updatePostPin("NOTICE", 1L, new nuri.business.service.board.dto.BoardPostPinRequest("Y", null)),
+                () -> operations.updatePostPinsInBatch("NOTICE",
                         new nuri.business.service.board.dto.BoardPostPinBatchRequest(List.of(1L), "N", null)));
         actions.forEach(action -> assertThatThrownBy(action).isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED));
@@ -127,7 +130,7 @@ class ConfiguredBoardEditPolicyTest {
         when(posts.countActivePins(eq("NOTICE"), anyString())).thenReturn(0L);
         when(posts.updatePin(eq("NOTICE"), eq(List.of(1L)), eq("Y"), anyString())).thenReturn(1);
 
-        service.updatePostPin("NOTICE", 1L, new nuri.business.service.board.dto.BoardPostPinRequest("Y", null));
+        operations.updatePostPin("NOTICE", 1L, new nuri.business.service.board.dto.BoardPostPinRequest("Y", null));
 
         verify(posts).updatePin(eq("NOTICE"), eq(List.of(1L)), eq("Y"), anyString());
     }

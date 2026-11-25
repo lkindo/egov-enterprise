@@ -47,6 +47,7 @@ class BoardServiceTest {
     private BoardService boardService;
     /** [2026-11-25] 댓글·만족도·스크랩 경계는 BoardAccessService 로 옮겼다 — 같은 목·같은 시계로 만든다. */
     private BoardAccessService boardAccess;
+    private BoardPostOperationService boardOperations;
     @Mock
     private BoardRepository boardRepository;
     @Mock
@@ -104,8 +105,6 @@ class BoardServiceTest {
                 // 아래 FAQ 테스트들의 기존 리터럴 기대값을 그대로 두어 기본값 동작 불변을 검증한다.
                 new nuri.business.core.config.BoardIdProperties(),
                 recommendationRepository,
-                // [2026-10-23 ADR-0040 결정 9] 운영 화면 게시 기간 변경 이력.
-                changeRecorder,
                 // [2026-09-08 PD-CMTY-001] 커뮤니티 접근 포트. 대부분의 시나리오는 귀속 없는 게시판이라
                 //   호출되지 않으며, 귀속 게시판 테스트만 이 목의 응답을 지정한다.
                 communityBoardAccess);
@@ -113,6 +112,10 @@ class BoardServiceTest {
         boardAccess = new BoardAccessService(boardRepository, boardMasterRepository,
                 new nuri.business.core.config.BoardIdProperties(), communityBoardAccess);
         boardAccess.useClock(FIXED_CLOCK);
+        // [2026-11-25] 운영 화면의 게시 기간·상단 고정은 BoardPostOperationService 로 옮겼다 — 같은 목·같은 시계로 만든다.
+        boardOperations = new BoardPostOperationService(boardRepository, boardMasterRepository,
+                new nuri.business.core.config.BoardIdProperties(), changeRecorder, communityBoardAccess);
+        boardOperations.useClock(FIXED_CLOCK);
         // [2026-10-23 ADR-0040 결정 1] 쓰기·상세·댓글 경로가 게시판 진입 판정(사용 여부 → 커뮤니티)을 먼저 지난다.
         //   시험이 마스터를 정하지 않으면 그 bbsId 의 사용 중인 일반 게시판으로 본다. 없는·사용 안 함·커뮤니티 게시판은
         //   시험이 직접 정한다(그 스텁이 이 기본값보다 앞선다).
@@ -2116,9 +2119,9 @@ class BoardServiceTest {
     @Test
     @DisplayName("🚨 운영 일정 변경은 BOARD_UPDATE_ALL 이 없으면 저장소를 읽기 전에 403 이다")
     void updatePostPeriod_requiresUpdateAllBeforeReading() {
-        assertThatThrownBy(() -> boardService.updatePostPeriod("BBS_01", 30L, period(null, TOMORROW, 3)))
+        assertThatThrownBy(() -> boardOperations.updatePostPeriod("BBS_01", 30L, period(null, TOMORROW, 3)))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
-        assertThatThrownBy(() -> boardService.updatePostPeriodsInBatch("BBS_01", batch("END_DATE", TOMORROW, 30L)))
+        assertThatThrownBy(() -> boardOperations.updatePostPeriodsInBatch("BBS_01", batch("END_DATE", TOMORROW, 30L)))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
         verifyNoInteractions(boardRepository, changeRecorder);
         verify(boardMasterRepository, never()).findById(anyString());
@@ -2128,17 +2131,17 @@ class BoardServiceTest {
     @DisplayName("운영 일정 변경은 쓰기 진입 판정을 지난다 — 지정 게시판 편집 권한 403, 사용 안 함 게시판 404, 다른 게시판 글 404")
     void updatePostPeriod_passesWriteGateAndBoardMembership() {
         allow("BOARD_UPDATE_ALL");
-        assertThatThrownBy(() -> boardService.updatePostPeriod("BBSMSTR_AAAAAAAAAAAA", 30L, period(null, TOMORROW, 3)))
+        assertThatThrownBy(() -> boardOperations.updatePostPeriod("BBSMSTR_AAAAAAAAAAAA", 30L, period(null, TOMORROW, 3)))
                 .as("공지·FAQ 지정 게시판은 그 편집 권한도 필요하다")
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
 
         given(boardMasterRepository.findById("CLOSED")).willReturn(Optional.of(
                 BoardMaster.builder().bbsId("CLOSED").useYn("N").build()));
-        assertThatThrownBy(() -> boardService.updatePostPeriod("CLOSED", 30L, period(null, TOMORROW, 3)))
+        assertThatThrownBy(() -> boardOperations.updatePostPeriod("CLOSED", 30L, period(null, TOMORROW, 3)))
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.BOARD_NOT_FOUND);
 
         given(boardRepository.findById(30L)).willReturn(Optional.of(versionedPost("OTHER", 30L, "ESNTL_owner", null, null)));
-        assertThatThrownBy(() -> boardService.updatePostPeriod("BBS_01", 30L, period(null, TOMORROW, 3)))
+        assertThatThrownBy(() -> boardOperations.updatePostPeriod("BBS_01", 30L, period(null, TOMORROW, 3)))
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
         verifyNoInteractions(changeRecorder);
     }
@@ -2150,17 +2153,17 @@ class BoardServiceTest {
         Board board = versionedPost("BBS_01", 31L, "ESNTL_owner", "20261001", "20261031");
         given(boardRepository.findById(31L)).willReturn(Optional.of(board));
 
-        assertThatThrownBy(() -> boardService.updatePostPeriod("BBS_01", 31L, period(null, "20261130", 2)))
+        assertThatThrownBy(() -> boardOperations.updatePostPeriod("BBS_01", 31L, period(null, "20261130", 2)))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
-        assertThatThrownBy(() -> boardService.updatePostPeriod("BBS_01", 31L, period(null, YESTERDAY, 3)))
+        assertThatThrownBy(() -> boardOperations.updatePostPeriod("BBS_01", 31L, period(null, YESTERDAY, 3)))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
-        assertThatThrownBy(() -> boardService.updatePostPeriod("BBS_01", 31L, period(TOMORROW, null, 3)))
+        assertThatThrownBy(() -> boardOperations.updatePostPeriod("BBS_01", 31L, period(TOMORROW, null, 3)))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE);
         verifyNoInteractions(changeRecorder);
         assertThat(board.getPstEndYmd()).isEqualTo("20261031");
 
         // 대행 권한 경로라 공개 뒤 시작일도 바꾼다(오늘 이전). 같은 종료일은 변경이 아니다.
-        boardService.updatePostPeriod("BBS_01", 31L, period("20261015", "20261031", 3));
+        boardOperations.updatePostPeriod("BBS_01", 31L, period("20261015", "20261031", 3));
 
         assertThat(board.getPstBgngYmd()).isEqualTo("20261015");
         assertThat(board.getPstEndYmd()).isEqualTo("20261031");
@@ -2179,7 +2182,7 @@ class BoardServiceTest {
         given(boardRepository.findById(41L)).willReturn(Optional.of(fine));
         given(boardRepository.findById(42L)).willReturn(Optional.of(late));
 
-        assertThatThrownBy(() -> boardService.updatePostPeriodsInBatch("BBS_01", batch("END_DATE", "20261130", 41L, 42L)))
+        assertThatThrownBy(() -> boardOperations.updatePostPeriodsInBatch("BBS_01", batch("END_DATE", "20261130", 41L, 42L)))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
                 .hasMessageContaining("42");
         assertThat(fine.getPstEndYmd()).isNull();
@@ -2187,7 +2190,7 @@ class BoardServiceTest {
         verifyNoInteractions(changeRecorder);
 
         given(boardRepository.findById(43L)).willReturn(Optional.of(versionedPost("OTHER", 43L, "ESNTL_c", null, null)));
-        assertThatThrownBy(() -> boardService.updatePostPeriodsInBatch("BBS_01", batch("END_DATE", "20261130", 41L, 43L)))
+        assertThatThrownBy(() -> boardOperations.updatePostPeriodsInBatch("BBS_01", batch("END_DATE", "20261130", 41L, 43L)))
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
         assertThat(fine.getPstEndYmd()).isNull();
         verifyNoInteractions(changeRecorder);
@@ -2207,11 +2210,11 @@ class BoardServiceTest {
         given(boardRepository.findById(61L)).willReturn(Optional.of(fine));
         given(boardRepository.findById(62L)).willReturn(Optional.of(legacy));
 
-        assertThatThrownBy(() -> boardService.updatePostPeriodsInBatch("BBS_01", batch("END_DATE", "20261130", 61L, 62L)))
+        assertThatThrownBy(() -> boardOperations.updatePostPeriodsInBatch("BBS_01", batch("END_DATE", "20261130", 61L, 62L)))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
                 .hasMessageContaining("버전 정보가 없는 옛 글")
                 .hasMessageContaining("62");
-        assertThatThrownBy(() -> boardService.updatePostPeriod("BBS_01", 62L, period(null, "20261130", 0)))
+        assertThatThrownBy(() -> boardOperations.updatePostPeriod("BBS_01", 62L, period(null, "20261130", 0)))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE);
         actAs("ESNTL_owner");
         assertThatThrownBy(() -> boardService.updatePost("BBS_01", 62L, edit("BBS_01", null, null, null)))
@@ -2232,7 +2235,7 @@ class BoardServiceTest {
         given(boardRepository.findById(51L)).willReturn(Optional.of(open));
         given(boardRepository.findById(52L)).willReturn(Optional.of(same));
 
-        boardService.updatePostPeriodsInBatch("BBS_01", batch("END_DATE", "20261130", 51L, 52L, 51L));
+        boardOperations.updatePostPeriodsInBatch("BBS_01", batch("END_DATE", "20261130", 51L, 52L, 51L));
 
         assertThat(open.getPstEndYmd()).isEqualTo("20261130");
         verify(changeRecorder, times(1)).recordPost("BBS_01", 51L, BoardChangeRecorder.ChangeType.PERIOD, "게시 종료일",
@@ -2240,7 +2243,7 @@ class BoardServiceTest {
         verify(changeRecorder, never()).recordPost(eq("BBS_01"), eq(52L), any(), any(), any(), any());
         verify(boardRepository, times(1)).findById(51L);
 
-        boardService.updatePostPeriodsInBatch("BBS_01", batch("CLEAR_END", null, 51L, 52L));
+        boardOperations.updatePostPeriodsInBatch("BBS_01", batch("CLEAR_END", null, 51L, 52L));
         assertThat(open.getPstEndYmd()).isNull();
         assertThat(same.getPstEndYmd()).isNull();
         verify(changeRecorder).recordPost("BBS_01", 52L, BoardChangeRecorder.ChangeType.PERIOD, "게시 종료일",
@@ -2253,7 +2256,7 @@ class BoardServiceTest {
         allow("BOARD_UPDATE_ALL");
         for (var request : java.util.List.of(batch("END_DATE", null, 61L), batch("END_DATE", YESTERDAY, 61L),
                 batch("CLEAR_END", TOMORROW, 61L))) {
-            assertThatThrownBy(() -> boardService.updatePostPeriodsInBatch("BBS_01", request))
+            assertThatThrownBy(() -> boardOperations.updatePostPeriodsInBatch("BBS_01", request))
                     .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
         }
         verify(boardRepository, never()).findById(anyLong());
@@ -2288,9 +2291,9 @@ class BoardServiceTest {
     void pin_requiresBoardPinBeforeLockingOrReading() {
         allow("BOARD_UPDATE_ALL", "BBS_MST_UPDATE");
 
-        assertThatThrownBy(() -> boardService.updatePostPin("BBS_01", 71L, pin("Y", null)))
+        assertThatThrownBy(() -> boardOperations.updatePostPin("BBS_01", 71L, pin("Y", null)))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
-        assertThatThrownBy(() -> boardService.updatePostPinsInBatch("BBS_01", pins("N", null, 71L)))
+        assertThatThrownBy(() -> boardOperations.updatePostPinsInBatch("BBS_01", pins("N", null, 71L)))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
         verifyNoInteractions(boardRepository, changeRecorder);
         verify(boardMasterRepository, never()).findByIdWithPessimisticLock(anyString());
@@ -2305,7 +2308,7 @@ class BoardServiceTest {
         given(boardRepository.countActivePins("BBS_01", TODAY)).willReturn(2L);
         given(boardRepository.updatePin("BBS_01", java.util.List.of(71L), "Y", "20261122")).willReturn(1);
 
-        boardService.updatePostPin("BBS_01", 71L, pin("Y", null));
+        boardOperations.updatePostPin("BBS_01", 71L, pin("Y", null));
 
         org.mockito.InOrder order = inOrder(boardMasterRepository, boardRepository, changeRecorder);
         order.verify(boardMasterRepository).findByIdWithPessimisticLock("BBS_01");
@@ -2325,7 +2328,7 @@ class BoardServiceTest {
         givenPinBoard("N", 5);
         given(boardRepository.findById(72L)).willReturn(Optional.of(pinnablePost("BBS_01", 72L, "Y", "20261130")));
 
-        assertThatThrownBy(() -> boardService.updatePostPin("BBS_01", 72L, pin("Y", "20261201")))
+        assertThatThrownBy(() -> boardOperations.updatePostPin("BBS_01", 72L, pin("Y", "20261201")))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
                 .hasMessage("이 게시판은 상단 고정을 받지 않습니다.");
@@ -2333,7 +2336,7 @@ class BoardServiceTest {
         verifyNoInteractions(changeRecorder);
 
         given(boardRepository.updatePin("BBS_01", java.util.List.of(72L), "N", null)).willReturn(1);
-        boardService.updatePostPinsInBatch("BBS_01", pins("N", null, 72L));
+        boardOperations.updatePostPinsInBatch("BBS_01", pins("N", null, 72L));
 
         verify(boardRepository, never()).countActivePins(anyString(), anyString());
         verify(changeRecorder).recordPost("BBS_01", 72L, BoardChangeRecorder.ChangeType.UNPIN, "상단 고정", "Y", "N");
@@ -2352,16 +2355,16 @@ class BoardServiceTest {
         given(boardRepository.updatePin(eq("BBS_01"), anyList(), eq("Y"), anyString())).willReturn(1);
 
         // 73 은 이미 고정 중, 74 는 종료일이 지난 옛 고정이라 새로 센다 → 2 + 1 > 2.
-        assertThatThrownBy(() -> boardService.updatePostPinsInBatch("BBS_01", pins("Y", "20261201", 73L, 74L)))
+        assertThatThrownBy(() -> boardOperations.updatePostPinsInBatch("BBS_01", pins("Y", "20261201", 73L, 74L)))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
                 .hasMessageContaining("최대 2건까지 둡니다(지금 2건)");
         verify(boardRepository, never()).updatePin(anyString(), any(), anyString(), any());
         verifyNoInteractions(changeRecorder);
 
-        boardService.updatePostPinsInBatch("BBS_01", pins("Y", "20261201", 73L));
+        boardOperations.updatePostPinsInBatch("BBS_01", pins("Y", "20261201", 73L));
         verify(boardRepository).updatePin("BBS_01", java.util.List.of(73L), "Y", "20261201");
 
-        boardService.updatePostPin("BBS_01", 74L, pin("Y", null));
+        boardOperations.updatePostPin("BBS_01", 74L, pin("Y", null));
         verify(boardRepository).updatePin("BBS_01", java.util.List.of(74L), "Y", "20261122");
     }
 
@@ -2372,16 +2375,16 @@ class BoardServiceTest {
         givenPinBoard("Y", 5);
         given(boardRepository.findById(75L)).willReturn(Optional.of(pinnablePost("BBS_01", 75L, "N", null)));
 
-        assertThatThrownBy(() -> boardService.updatePostPin("BBS_01", 75L, pin("Y", YESTERDAY)))
+        assertThatThrownBy(() -> boardOperations.updatePostPin("BBS_01", 75L, pin("Y", YESTERDAY)))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
-        assertThatThrownBy(() -> boardService.updatePostPin("BBS_01", 75L, pin("N", TOMORROW)))
+        assertThatThrownBy(() -> boardOperations.updatePostPin("BBS_01", 75L, pin("N", TOMORROW)))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
                 .hasMessageContaining("고정 해제에는 고정 종료일을 보내지 않습니다");
         verify(boardRepository, never()).updatePin(anyString(), any(), anyString(), any());
 
         given(boardRepository.countActivePins("BBS_01", TODAY)).willReturn(0L);
         given(boardRepository.updatePin("BBS_01", java.util.List.of(75L), "Y", TODAY)).willReturn(1);
-        boardService.updatePostPin("BBS_01", 75L, pin("Y", TODAY));
+        boardOperations.updatePostPin("BBS_01", 75L, pin("Y", TODAY));
         verify(boardRepository).updatePin("BBS_01", java.util.List.of(75L), "Y", TODAY);
     }
 
@@ -2398,11 +2401,11 @@ class BoardServiceTest {
         Board reply = Board.builder().bbsId("BBS_01").pstSn(79L).upPstSn(76L).build();
         given(boardRepository.findById(79L)).willReturn(Optional.of(reply));
 
-        assertThatThrownBy(() -> boardService.updatePostPinsInBatch("BBS_01", pins("Y", null, 76L, 77L)))
+        assertThatThrownBy(() -> boardOperations.updatePostPinsInBatch("BBS_01", pins("Y", null, 76L, 77L)))
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
-        assertThatThrownBy(() -> boardService.updatePostPin("BBS_01", 78L, pin("N", null)))
+        assertThatThrownBy(() -> boardOperations.updatePostPin("BBS_01", 78L, pin("N", null)))
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
-        assertThatThrownBy(() -> boardService.updatePostPinsInBatch("BBS_01", pins("Y", null, 76L, 79L)))
+        assertThatThrownBy(() -> boardOperations.updatePostPinsInBatch("BBS_01", pins("Y", null, 76L, 79L)))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
                 .hasMessageContaining("답글은 상단에 고정할 수 없습니다");
         verify(boardRepository, never()).countActivePins(anyString(), anyString());
@@ -2419,8 +2422,8 @@ class BoardServiceTest {
         given(boardRepository.findById(81L)).willReturn(Optional.of(pinnablePost("BBS_01", 81L, "N", null)));
         given(boardRepository.countActivePins("BBS_01", TODAY)).willReturn(1L);
 
-        boardService.updatePostPinsInBatch("BBS_01", pins("Y", null, 80L, 80L));
-        boardService.updatePostPin("BBS_01", 81L, pin("N", null));
+        boardOperations.updatePostPinsInBatch("BBS_01", pins("Y", null, 80L, 80L));
+        boardOperations.updatePostPin("BBS_01", 81L, pin("N", null));
 
         verify(boardRepository, times(1)).findById(80L);
         verify(boardRepository, never()).updatePin(anyString(), any(), anyString(), any());
@@ -2437,7 +2440,7 @@ class BoardServiceTest {
         given(boardRepository.countActivePins("BBS_01", TODAY)).willReturn(0L);
         given(boardRepository.updatePin("BBS_01", java.util.List.of(82L, 83L), "Y", "20261122")).willReturn(1);
 
-        assertThatThrownBy(() -> boardService.updatePostPinsInBatch("BBS_01", pins("Y", null, 82L, 83L)))
+        assertThatThrownBy(() -> boardOperations.updatePostPinsInBatch("BBS_01", pins("Y", null, 82L, 83L)))
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
         verifyNoInteractions(changeRecorder);
     }
