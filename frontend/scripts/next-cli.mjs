@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 /**
- * Next CLI 진입점 — frontend/package.json 의 dev·build·start 가 이 파일을 지난다(2026-11-25 DEC-OPS-432, Codex 2·3차 검토).
+ * Next CLI 진입점 — frontend/package.json 의 dev·build·start·type-check(typegen) 가 이 파일을 지난다(2026-11-25 DEC-OPS-432, Codex 2·3차 검토).
  * 어느 경로로 띄워도(`npm run dev`·`npm run frontend`·`pnpm -C frontend build`·`cd frontend && pnpm dev`) 같은 규칙이다.
  *
  * ① 서명 비밀을 넘기지 않는다 — 백엔드용 ES256 개인키 키링(JWT_SIGNING_*)과 퇴역한 HMAC 비밀(JWT_SECRET·JWT_ACCEPT_LEGACY_HMAC)이
  *    셸에 남아 있어도 Next 프로세스는 받지 않는다(ADR-0060: Next 는 JWT_VERIFY_KEYS_JSON 공개키로만 검증한다). Windows 의 환경 변수
  *    이름은 대소문자를 가리지 않으므로 이름을 대문자로 맞춰 거른다.
- * ② Next 가 스스로 읽는 dotenv(frontend/.env·.env.local·.env.<mode>[.local])에 그 이름이 있으면 시작하지 않는다 — 래퍼는 Next 가
- *    나중에 읽는 파일을 거를 수 없다. 1차 전환 때 넣어 둔 JWT_SECRET 같은 줄을 지우라고 알리고, 값은 출력하지 않는다.
+ * ② Next 가 스스로 읽는 dotenv(frontend/.env·.env.local·.env.<mode>[.local])에 그 이름이 있으면 dev·build·start 를 시작하지 않는다 —
+ *    래퍼는 Next 가 나중에 읽는 파일을 거를 수 없다. 1차 전환 때 넣어 둔 JWT_SECRET 같은 줄을 지우라고 알리고, 값은 출력하지 않는다.
+ *    한계: 시작할 때 한 번 본다. 실행 중인 `next dev` 가 저장된 .env.local 을 다시 읽는 경우와 Next 의 [directory] 인자로 다른 폴더를
+ *    줄 때는 보지 않는다 — Next 코드는 이 이름들을 읽지 않으므로 값이 들어가도 서명에 쓰이지 않는다.
  * ③ dev 는 루프백에 바인딩한다 — `next dev` 의 기본은 모든 주소다. 키링 없이 띄운 백엔드는 공개 저장소의 개발용 서명키를 쓰고
  *    루프백에만 열리는데, 그 앞의 Next 가 모든 주소에 열리면 같은 망의 누구나 Next 를 거쳐 그 백엔드에 닿는다. 다른 기기에서 열어야
  *    하면 자체 키쌍을 준 뒤 `-H 0.0.0.0` 처럼 직접 지정한다(지정하면 그 값을 쓴다). 포트를 주지 않으면 3001 이다.
@@ -33,7 +35,9 @@ export const NEXT_DOTENV_FILES = Object.freeze([
   '.env.test', '.env.test.local',
 ]);
 
-const SUBCOMMANDS = new Set(['dev', 'build', 'start']);
+const SUBCOMMANDS = new Set(['dev', 'build', 'start', 'typegen']);
+// Next 가 앱을 띄우거나 빌드하는 명령만 dotenv 를 확인한다(typegen 은 라우트 타입만 만든다 — 서명 비밀만 걷는다).
+const DOTENV_CHECKED = new Set(['dev', 'build', 'start']);
 const HEAP_LIMITED = new Set(['dev', 'build']);
 
 export function withoutSigningSecrets(env) {
@@ -46,7 +50,8 @@ export function withheldNamesIn(dotenvText) {
   const withheld = new Set(WITHHELD_SIGNING_ENV);
   const names = [];
   for (const line of dotenvText.split(/\r?\n/u)) {
-    const name = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=/u.exec(line)?.[1];
+    // dotenv 는 `이름=값` 과 `이름: 값` 을 모두 받는다.
+    const name = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*[=:]/u.exec(line)?.[1];
     if (name && withheld.has(name.toUpperCase())) names.push(name);
   }
   return names;
@@ -66,7 +71,7 @@ export function dotenvSigningSecrets(frontendRoot) {
 const givenOption = (args, short, long) => args.some((arg) => arg === short || arg === long || arg.startsWith(`${long}=`));
 
 export function nextArguments(subcommand, args) {
-  if (!SUBCOMMANDS.has(subcommand)) throw new Error(`next-cli: dev·build·start 만 받는다(받은 값: ${subcommand ?? '없음'})`);
+  if (!SUBCOMMANDS.has(subcommand)) throw new Error(`next-cli: dev·build·start·typegen 만 받는다(받은 값: ${subcommand ?? '없음'})`);
   if (subcommand !== 'dev') return [subcommand, ...args];
   return [
     'dev',
@@ -92,7 +97,7 @@ function main() {
   const [subcommand, ...args] = process.argv.slice(2);
   const frontendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const nextArgs = nextArguments(subcommand, args);
-  const leaked = dotenvSigningSecrets(frontendRoot);
+  const leaked = DOTENV_CHECKED.has(subcommand) ? dotenvSigningSecrets(frontendRoot) : [];
   if (leaked.length > 0) {
     console.error(`[next-cli] 프런트 dotenv 에 서명 비밀이 있어 시작하지 않습니다 — ${leaked.join(', ')}.`);
     console.error('[next-cli] Next 는 JWT_VERIFY_KEYS_JSON 공개키로만 검증합니다(ADR-0060 2차). 그 줄을 지우고 다시 실행하세요.');

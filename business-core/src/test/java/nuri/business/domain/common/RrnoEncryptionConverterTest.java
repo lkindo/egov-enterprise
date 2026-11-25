@@ -153,6 +153,10 @@ class RrnoEncryptionConverterTest {
         try {
             String stored = java.util.Base64.getEncoder().encodeToString("old-key-ciphertext".getBytes());
             assertThat(converter.convertToEntityAttribute(stored)).isEqualTo("9001011234567X");
+            // 탭·줄바꿈이 섞인 기존 원문도 깨진 바이트가 아니다
+            when(previous.decrypt(any(byte[].class), any(String.class)))
+                    .thenReturn("900101 1234567\t".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            assertThat(converter.convertToEntityAttribute(stored)).isEqualTo("900101 1234567\t");
         } finally {
             ReflectionTestUtils.setField(CryptoUtil.class, "previousCryptoService", null);
             ReflectionTestUtils.setField(CryptoUtil.class, "previousAlgorithmKey", null);

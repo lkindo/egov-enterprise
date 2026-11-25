@@ -24,10 +24,14 @@ public class RrnoEncryptionConverter implements AttributeConverter<String, Strin
         return value != null && LEGACY_PLAINTEXT_RRNO.matcher(value).matches();
     }
 
-    /** 깨진 바이트가 없는 글인가 — UTF-8 치환 문자(U+FFFD)와 제어 문자가 없다. 다른 키로 푼 ARIA 결과를 가려내는 데 쓴다. */
+    /**
+     * 깨진 바이트가 없는 글인가 — UTF-8 치환 문자(U+FFFD)와 제어 문자가 없다(탭·줄바꿈은 글에 흔하므로 허용한다, Codex 4차).
+     * 다른 키로 푼 ARIA 결과를 가려내는 데 쓴다.
+     */
     static boolean isCleanText(String value) {
         return value != null && !value.isEmpty()
-                && value.codePoints().noneMatch(cp -> cp == 0xFFFD || Character.isISOControl(cp));
+                && value.codePoints().noneMatch(cp -> cp == 0xFFFD
+                        || (Character.isISOControl(cp) && cp != '\t' && cp != '\n' && cp != '\r'));
     }
 
     @Override

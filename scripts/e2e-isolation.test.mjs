@@ -777,6 +777,9 @@ test('회차 서명 키링 판독: 활성 kid 가 JSON 에 있고 P-256 PKCS#8 �
   ]) assert.equal(usableSigningKeyring(kid, json), false, name);
   assert.equal(usableSigningKeyring('k0', JSON.stringify(Object.fromEntries(Array.from({ length: 16 }, (_, i) => [`k${i}`, FIXTURE_ES256_PKCS8])))), true,
     '16개까지는 받는다');
+  // 백엔드가 받는 꼴은 사전 검사도 받는다 — 앞뒤 공백(trim), 패딩 생략
+  assert.equal(usableSigningKeyring('k', JSON.stringify({ k: ` ${FIXTURE_ES256_PKCS8}\n` })), true, '앞뒤 공백');
+  assert.equal(usableSigningKeyring('k', JSON.stringify({ k: FIXTURE_ES256_PKCS8.replace(/=+$/u, '') })), true, '패딩 생략');
 });
 
 test('CI API launch cannot replace inspected datasource through JVM, application arguments, or alternate configuration', () => {

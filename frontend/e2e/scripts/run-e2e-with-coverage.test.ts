@@ -111,18 +111,26 @@ describe('instrumented build configuration ownership', () => {
     mkdirSync(path.join(directory, '.next'));
     writeFileSync(path.join(directory, '.next', 'stale'), 'stale');
     const failure = new Error('synthetic build failure');
+    // 셸에 남은 백엔드 서명 비밀은 Next 빌드에 넘기지 않는다(이름 대소문자 무관, ADR-0060 2차).
+    vi.stubEnv('JWT_SIGNING_KEYS_JSON', 'synthetic-private-keyring');
+    vi.stubEnv('jwt_secret', 'synthetic-hmac');
+    vi.stubEnv('JWT_VERIFY_KEYS_JSON', 'synthetic-public-keys');
     const execute = vi.fn((command: string, args: string[], options: { env: Record<string, string> }) => {
       expect(existsSync(path.join(directory, '.babelrc'))).toBe(false);
       expect(command).toBe(process.execPath);
       expect(args.slice(1)).toEqual(['build', '--webpack']);
       expect(args[0]).toMatch(/next[\\/]dist[\\/]bin[\\/]next$/);
       expect(options.env.NEXT_PUBLIC_COVERAGE).toBe('true');
+      expect(Object.keys(options.env).map(name => name.toUpperCase())).not.toContain('JWT_SIGNING_KEYS_JSON');
+      expect(Object.keys(options.env).map(name => name.toUpperCase())).not.toContain('JWT_SECRET');
+      expect(options.env.JWT_VERIFY_KEYS_JSON).toBe('synthetic-public-keys');
       expect(options).not.toHaveProperty('shell');
       expect(existsSync(path.join(directory, '.next', 'stale'))).toBe(false);
       if (shouldFail) throw failure;
     });
     if (shouldFail) expect(() => runInstrumentedBuild({ directory, execute, logger })).toThrow(failure);
     else runInstrumentedBuild({ directory, execute, logger });
+    vi.unstubAllEnvs();
     expect(execute).toHaveBeenCalledOnce();
     expect(existsSync(path.join(directory, '.babelrc'))).toBe(false);
   });
