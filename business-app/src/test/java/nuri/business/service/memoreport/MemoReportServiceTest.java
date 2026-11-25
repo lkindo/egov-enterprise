@@ -84,7 +84,8 @@ class MemoReportServiceTest {
      * 늘 쓰기 잠금이다. 상세 조회를 부르는 시험이 쓴다 — 쓰기만 하는 시험은 쓰기 잠금 조회만 스텁해 쓰기 경로가 잠금을 잃으면 붉어지게 둔다.
      */
     private void stubReport(Long memoRptSn, MemoReport report) {
-        given(memoReportRepository.findRecipientId(memoRptSn)).willReturn(Optional.ofNullable(report.getRptrId()));
+        given(memoReportRepository.findParties(memoRptSn)).willReturn(Optional.of(
+                new nuri.business.domain.memoreport.MemoReportParties(report.getUserId(), report.getRptrId())));
         given(memoReportRepository.findByIdForShare(memoRptSn)).willReturn(Optional.of(report));
         given(memoReportRepository.findByIdForUpdate(memoRptSn)).willReturn(Optional.of(report));
     }
@@ -991,7 +992,8 @@ class MemoReportServiceTest {
     void getMemoReport_recipientReadLocksTheRow() {
         Long memoRptSn = 1L;
         MemoReport unread = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-writer").rptrId("esntl-recipient").build();
-        given(memoReportRepository.findRecipientId(memoRptSn)).willReturn(Optional.of("esntl-recipient"));
+        given(memoReportRepository.findParties(memoRptSn)).willReturn(Optional.of(
+                new nuri.business.domain.memoreport.MemoReportParties("esntl-writer", "esntl-recipient")));
         given(memoReportRepository.findByIdForUpdate(memoRptSn)).willReturn(Optional.of(unread));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-recipient"));
@@ -1003,7 +1005,7 @@ class MemoReportServiceTest {
     @Test
     @DisplayName("수신자 선조회에 행이 없으면 바로 404 다 — 그 사이 커밋된 행을 잠금 없이 수신자 경로로 읽지 않는다")
     void getMemoReport_missingRowIsNotFoundBeforeLoading() {
-        given(memoReportRepository.findRecipientId(9L)).willReturn(Optional.empty());
+        given(memoReportRepository.findParties(9L)).willReturn(Optional.empty());
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-recipient"));
 
@@ -1015,11 +1017,27 @@ class MemoReportServiceTest {
     }
 
     @Test
+    @DisplayName("당사자도 관리자도 아니면 행을 잠그기 전에 거절한다 — 남의 보고 요청이 진행 중인 수정을 기다리지 않는다")
+    void getMemoReport_strangerIsDeniedBeforeLocking() {
+        given(memoReportRepository.findParties(1L)).willReturn(Optional.of(
+                new nuri.business.domain.memoreport.MemoReportParties("esntl-writer", "esntl-recipient")));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-stranger"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.getMemoReport(1L))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode()).isEqualTo(CommonErrorCode.ACCESS_DENIED);
+        verify(memoReportRepository, org.mockito.Mockito.never()).findByIdForShare(anyLong());
+        verify(memoReportRepository, org.mockito.Mockito.never()).findByIdForUpdate(anyLong());
+    }
+
+    @Test
     @DisplayName("작성자 열람은 공유 잠금이다 — 진행 중인 수정은 기다리되 다른 열람과는 서로 기다리지 않고, 최초 열람을 기록하지 않는다")
     void getMemoReport_authorReadTakesOnlyASharedLock() {
         Long memoRptSn = 1L;
         MemoReport report = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-writer").rptrId("esntl-recipient").build();
-        given(memoReportRepository.findRecipientId(memoRptSn)).willReturn(Optional.of("esntl-recipient"));
+        given(memoReportRepository.findParties(memoRptSn)).willReturn(Optional.of(
+                new nuri.business.domain.memoreport.MemoReportParties("esntl-writer", "esntl-recipient")));
         given(memoReportRepository.findByIdForShare(memoRptSn)).willReturn(Optional.of(report));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-writer"));

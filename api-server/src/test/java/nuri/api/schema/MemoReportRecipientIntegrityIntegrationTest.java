@@ -820,6 +820,41 @@ class MemoReportRecipientIntegrityIntegrationTest {
         }
     }
 
+    /**
+     * [2026-11-25 Codex 2차 검토] 작성자 열람은 쓰기 잠금이 아니라 공유 잠금이다 — 한 열람이 트랜잭션을 열어 둔 동안 같은 보고의 다른
+     * 작성자 열람이 기다리지 않고 끝난다. 쓰기 잠금으로 되돌리면 두 번째 열람이 첫 트랜잭션이 끝날 때까지(또는 잠금 대기 초과까지) 막힌다.
+     */
+    @Test
+    void authorReadsDoNotWaitForEachOther() throws Exception {
+        long id = memoReportService.createMemoReport(sender, memo(active));
+        var holding = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            Future<?> first = executor.submit(() -> {
+                authenticate(sender);
+                try {
+                    new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+                        memoReportService.getMemoReport(id);
+                        holding.countDown();
+                        await(release);
+                    });
+                } finally { SecurityContextHolder.clearContext(); }
+            });
+            try {
+                awaitReady(holding, first);
+                Future<MemoReportDto> second = executor.submit(() -> {
+                    authenticate(sender);
+                    try {
+                        return new TransactionTemplate(transactionManager).execute(status -> memoReportService.getMemoReport(id));
+                    } finally { SecurityContextHolder.clearContext(); }
+                });
+                // 첫 열람이 잠금을 쥔 채로 있는 동안 끝나야 한다(잠금 대기 상한 5초보다 짧게 본다).
+                assertThat(second.get(3, TimeUnit.SECONDS).getRptCn()).isEqualTo("original");
+            } finally { release.countDown(); }
+            first.get(20, TimeUnit.SECONDS);
+        }
+    }
+
     private static String login(String id) { return id + "L"; }
 
     private void authenticate(String id, String... permissions) {
