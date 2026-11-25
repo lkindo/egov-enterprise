@@ -216,6 +216,47 @@ class RrnoReencryptionServiceTest {
     }
 
     @Test
+    @DisplayName("🚨 run 은 트랜잭션 밖(NOT_SUPPORTED)에서 돈다 — 클래스 기본 readOnly 를 물려받으면 UPDATE 가 거부되고 행마다 커밋하지 않는다")
+    void runExecutesOutsideTransactions() throws NoSuchMethodException {
+        var classLevel = RrnoReencryptionService.class.getAnnotation(org.springframework.transaction.annotation.Transactional.class);
+        assertThat(classLevel).isNotNull();
+        assertThat(classLevel.readOnly()).isTrue();
+        var run = RrnoReencryptionService.class.getMethod("run", boolean.class)
+                .getAnnotation(org.springframework.transaction.annotation.Transactional.class);
+        assertThat(run).isNotNull();
+        assertThat(run.propagation()).isEqualTo(org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED);
+    }
+
+    @Test
+    @DisplayName("트랜잭션 프록시를 거쳐 불러도 행을 다시 쓰고 커밋한다 — 운영 앱과 같은 빈 배선")
+    void runsThroughTheTransactionalProxyAndCommits() {
+        RrnoKeyring.configure("new", Map.of("new", KEY_NEW));
+        insert("U1", "750101-1234567");
+        try (var context = new org.springframework.context.annotation.AnnotationConfigApplicationContext()) {
+            context.registerBean(JdbcTemplate.class, () -> jdbc);
+            context.registerBean(org.springframework.transaction.PlatformTransactionManager.class,
+                    () -> new org.springframework.jdbc.datasource.DataSourceTransactionManager(database));
+            context.register(TransactionConfig.class);
+            context.registerBean(RrnoReencryptionService.class);
+            context.refresh();
+            RrnoReencryptionService proxied = context.getBean(RrnoReencryptionService.class);
+            assertThat(org.springframework.aop.support.AopUtils.isAopProxy(proxied)).isTrue();
+
+            var result = proxied.run(true);
+
+            assertThat(result.rewritten()).isEqualTo(1);
+        }
+        // 다른 연결로 읽어도 바뀌어 있다 — 커밋됐다
+        assertThat(RrnoKeyring.isActiveKeyEnvelope(stored("U1"))).isTrue();
+        assertThat(read(stored("U1"))).isEqualTo("750101-1234567");
+    }
+
+    @org.springframework.context.annotation.Configuration(proxyBeanMethods = false)
+    @org.springframework.transaction.annotation.EnableTransactionManagement
+    static class TransactionConfig {
+    }
+
+    @Test
     @DisplayName("행 참조는 식별자의 SHA-256 앞 16자다 — 식별자 원문이 아니다")
     void rowRefIsANonIdentifyingDigest() {
         // SHA-256("abc") 의 알려진 값(FIPS 180-2 시험 벡터)의 앞 16자 — 런북 §7.3 의 SQL 이 같은 값을 낸다.

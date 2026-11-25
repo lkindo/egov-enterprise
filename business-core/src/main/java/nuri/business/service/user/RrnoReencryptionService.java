@@ -11,6 +11,8 @@ import nuri.foundation.core.util.CryptoUtil;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 저장된 주민등록번호를 지금 활성 키의 v2 키링 암호문으로 다시 쓴다(2026-11-25, 품질 평가 개선 과제 3).
@@ -36,6 +38,7 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
+@Transactional(readOnly = true)
 public class RrnoReencryptionService {
 
     static final int CHUNK = 200;
@@ -73,6 +76,10 @@ public class RrnoReencryptionService {
      * @param apply false 면 판독만 하고 대상 수를 센다(점검). true 면 판독이 모두 성공한 뒤에만 다시 쓴다.
      * @throws ReencryptionStopped 키링이 없거나, 원문을 하나로 정하지 못한 행이 있거나, 쓰기가 DB 오류로 실패했을 때
      */
+    // 트랜잭션 밖에서 돈다(NOT_SUPPORTED) — 클래스 기본(readOnly)이면 UPDATE 가 거부되고, 한 트랜잭션이면 행마다 커밋해 멈춘 자리부터
+    // 다시 잇는 성질과 판독 뒤 조건부 UPDATE 의 경합 판정이 사라진다. 데이터소스는 자동 커밋(Hikari 기본)이라 문장마다 커밋된다.
+    // 이 범위에 묶이는 연결 하나는 일회성 실행 프로세스 하나만 쓴다(JPA 를 부르지 않는다).
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public Result run(boolean apply) {
         if (!RrnoKeyring.active()) {
             throw new ReencryptionStopped("Rrno keyring is not configured — set RRNO_ACTIVE_KEY_ID and RRNO_KEYS_JSON before re-encryption");
