@@ -916,6 +916,7 @@ test('GitHub outputs are explicit strings for job conditions', () => {
     e2e: 'false',
     mutation: 'false',
     mutation_migration_tool: 'false',
+    composer_contracts: 'true',
     reusable: 'false',
     reusable_custom: 'false',
     reusable_vendor: 'false',
@@ -1415,4 +1416,30 @@ test('an unverified push base forces the full pipeline while a verified one keep
   assert.equal(present.forceFull, false);
   const off = await applyPushBaseCheck({ ...base, verifyPushBaseRun: false }, { verify: async () => { throw new Error('must not be called'); } });
   assert.equal(off.forceFull, false);
+});
+
+test('pull_request narrows operational contracts to core unless composer/frontend/business-app/skill/policy/unknown paths or non-PR events apply', () => {
+  for (const files of [
+    ['docs/03-guides/e2e-test-guide.md'],
+    ['foundation/src/main/java/nuri/foundation/core/util/ServiceTime.java'],
+    ['tools/requirements-workspace/server.mjs'],
+  ]) {
+    assert.equal(classifyChangedFiles(files, { event: 'pull_request' }).composerContracts, false, files.join(', '));
+  }
+  for (const files of [
+    ['frontend/src/app/board/page.tsx'],
+    ['business-app/src/main/java/nuri/business/service/board/BoardService.java'],
+    ['.agent/skills/new/SKILL.md'],
+    ['docs/README.md'],
+    ['scripts/project-composer.mjs'],
+    ['config/modules/board.json'],
+    ['config/governance/producer-removed-assets.json'],
+    ['AGENTS.md'],
+    ['unknown-root-file.txt'],
+    [],
+  ]) {
+    assert.equal(classifyChangedFiles(files, { event: 'pull_request' }).composerContracts, true, files.join(', '));
+  }
+  assert.equal(classifyChangedFiles(['docs/03-guides/e2e-test-guide.md'], { event: 'push' }).composerContracts, true);
+  assert.equal(classifyChangedFiles(['docs/03-guides/e2e-test-guide.md'], { event: 'workflow_dispatch' }).composerContracts, true);
 });

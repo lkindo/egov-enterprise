@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { isComposerOperationalContract } from './run-operational-contracts.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = () => fs.readFileSync(path.join(root, 'scripts/generate-domain.ps1'), 'utf8').replace(/\r\n/g, '\n');
@@ -88,6 +89,15 @@ test('missing guard, wrong handler and role-based or public fallback are red', (
 test('scaffolder authorization contract is included in local and required CI operational execution', () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
   assert.ok(pkg.scripts['test:operational-contracts'].includes('"scripts/*.test.mjs"'));
+  assert.equal(
+    isComposerOperationalContract('scripts/domain-scaffold-authorization.test.mjs'),
+    false,
+    'scaffolder authorization contract must stay in core operational execution',
+  );
+  assert.ok(
+    fs.readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8').includes('npm run test:operational-contracts:core'),
+    '.github/workflows/ci.yml',
+  );
   for (const file of ['scripts/verify.mjs', '.githooks/pre-push', '.github/workflows/ci.yml']) {
     assert.ok(fs.readFileSync(path.join(root, file), 'utf8').includes('npm run test:operational-contracts'), file);
   }

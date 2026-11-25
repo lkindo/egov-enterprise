@@ -674,7 +674,8 @@ const GRADLE_AGGREGATES = new Set(['check', 'build', 'onlineBuild', 'localGate',
   'jacocoOnlineReport', 'jacocoMigrationReport', 'jacocoOnlineReportInputs', 'jacocoMigrationReportInputs']);
 const BROAD_TEST_FILTER = /^\*+(?:Tests?|IT)?\*?$/;
 // 격리 E2E·DB 번들 생성은 벤더 증거 입력이라 스스로 줄을 서는 연결을 다음 벤더 재기록 묶음으로 미뤘다 — 그때까지 직접 부르면 여기서 막는다.
-const ROOT_HEAVY_SCRIPTS = new Set(['test', 'test:ci', 'test:coverage', 'test:operational-contracts', 'test:e2e:isolated',
+const ROOT_HEAVY_SCRIPTS = new Set(['test', 'test:ci', 'test:coverage', 'test:operational-contracts',
+  'test:operational-contracts:core', 'test:operational-contracts:composer', 'test:e2e:isolated',
   'test:e2e:enterprise-task-lab', 'base:generate-db']);
 const UNWRAPPED_ENTRY_SCRIPTS = /(?:^|[\\/])(run-isolated-e2e|generate-reusable-base-db)\.mjs$/i;
 const FRONTEND_HEAVY_SCRIPTS = new Set(['test', 'test:coverage', 'test:e2e', 'test:e2e:full', 'test:e2e:coverage', 'test:e2e:ui', 'test:e2e:debug']);
@@ -1351,7 +1352,7 @@ export const RULES = Object.freeze([
   },
   {
     id: 'heavy-run-unqueued', decision: 'deny',
-    why: '전체 시험(Gradle 시험 태스크·전체 Vitest·운영 계약·Playwright)은 한 기계에서 하나씩 돈다(SOP §6.3) — 대기열 밖에서 돌리면 다른 세션의 post-push·pre-push 와 겹쳐 양쪽 모두 그 커밋의 증거가 되지 않는다(DEC-OPS-413).',
+    why: '전체 시험(Gradle 시험 태스크·전체 Vitest·운영 계약·Playwright)은 한 기계에서 하나씩 돈다(SOP §6.3) — 대기열 밖에서 돌리면 다른 세션의 pre-push·검증과 겹쳐 양쪽 모두 그 커밋의 증거가 되지 않는다(DEC-OPS-413).',
     fix: '`node scripts/heavy-run-queue.mjs run --kind <종류> -- <같은 명령>` 으로 감싸 차례를 기다린다(`npm run verify*`·`base:verify`·`base:generate-source`·`project:menus:refresh` 는 스스로 줄을 선다). 영향 시험만 볼 거면 대상을 좁힌다 — `--tests <클래스>`, `vitest run <파일>`, `node --test <파일>`.',
     // 명령 자리는 commandAt 으로 찾는다 — 환경 대입·셸 예약어·PowerShell 호출 연산자(`& node …`·`&"…\node.exe" …`)를 건너뛴다(Codex 43 지적 4).
     match: ({ code, raw, cwd }) => {

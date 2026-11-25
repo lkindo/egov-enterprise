@@ -875,7 +875,7 @@ test('workflow bindings bind to a job and declare conditional steps honestly', (
 
   // ③ 반대 방향(stale 선언)도 red — 조건이 사라지면 registry 도 함께 바뀌어야 한다.
   const staleCondition = clone(registry);
-  staleCondition.gateSets.find(({ id }) => id === 'GATESET-NODE-OPERATIONAL-CONTRACTS')
+  staleCondition.gateSets.find(({ id }) => id === 'GATESET-FRONTEND-INVARIANTS')
     .selector.commandBindings.find((b) => b.source.includes('ci.yml')).conditional = true;
   assert.match(validate(staleCondition).join('\n'), /declares conditional: true but the step/);
 

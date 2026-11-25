@@ -369,10 +369,29 @@ const CROSS_STACK_CONTRACT = [
   /^Dockerfile$/,
 ];
 
+const COMPOSER_CONTRACTS_RELEVANT = [
+  /^config\/modules\//,
+  /^config\/project-composer-menus\.json$/,
+  /^config\/db-vendors\.json$/,
+  /^config\/governance\/(?:producer|requirements|migration|vendor)-removed-assets\.json$/,
+  /^config\/governance\/reusable-review-scopes\.json$/,
+  /^config\/(?:frontend-visible-terms|krds-profile-mapping|ui-quality-scenarios|ui-route-capabilities|ui-url-state-approval|ui-url-state-census)\.json$/,
+  /^tools\/project-composer\//,
+  /^frontend\/src\//,
+  /^frontend\/(?:package\.json|tsconfig\.json|next\.config\.[^/]+)$/,
+  /^frontend\/e2e\/synthetic-test-credentials\.mjs$/,
+  /^frontend\/scripts\/ui-quality-baseline-core\.mjs$/,
+  /^business-app\/src\//,
+  /^\.(?:agent|agents|claude)\/skills\//,
+  /^\.agent\/skillsets\//,
+  /^docs\/README\.md$/,
+  /^scripts\/(?:atlas-|build-atlas\.mjs$|project-composer|reusable-|composer-|generate-reusable-base-|verify-reusable-|verify-project-composer|slot-registry|domain-deletion-|domain-scaffold-|frontend-reachability-census|frontend-module-graph|composition-profiles|pack-tagged-registry|retired-pack-vocabulary|run-operational-contracts|operational-contracts-runner)/,
+];
+
 /**
  * 생성기·도구 전용 경로(11단계 C11, CI 2차-b — 설계 13장 '투영 무영향 경로 목록은 계약으로 고정'). 재사용 생성기·생성기
  * 화면·기능 선언만 바꾼 변경은 종전에 미분류 경로라 전 파이프라인을 돌았다(병합 PR 41개 중 16개). 이 표의 경로는 알려진
- * 경로다 — 모든 시작 구성과 사용자 구성의 재사용 검증, 늘 도는 운영 계약(secret-scan), SAST 를 고르고, 그 밖의 축은
+ * 경로다 — 모든 시작 구성과 사용자 구성의 재사용 검증, 운영 계약(secret-scan — 핵심 :core 항상, 생성기·관련 입력은 전체), SAST 를 고르고, 그 밖의 축은
  * 항목의 `axes` 만 켠다. 경로 문자열의 접두로 맞추고 먼저 맞는 항목이 이긴다.
  *
  * `axes` 는 그 경로를 문자열로 가리키거나(디렉터리째 읽기 포함) 실행하는 시험·조건부 CI 진입점이 도는 축이다. 운영 계약
@@ -405,7 +424,7 @@ export const GENERATOR_TOOL_PATHS = Object.freeze([
   { path: 'scripts/verify-reusable-', axes: ['backend', 'e2e', 'schema'] },
   // 생성기 화면. 화면 시험(ui.test.mjs)은 e2e 0번 샤드에서만 돈다.
   { path: 'tools/project-composer/', axes: ['e2e'] },
-  // [DEC-OPS-383] 로컬 이관 작업공간(ADR-0041). 시험은 늘 도는 운영 계약(secret-scan)에서, 코드는 SAST 에서 본다.
+  // [DEC-OPS-383] 로컬 이관 작업공간(ADR-0041). 시험은 핵심 운영 계약(secret-scan :core)에서, 코드는 SAST 에서 본다.
   // 실제 packaged workspace 시험의 엔진 3파일은 이관 축, 생성 Groovy의 경로를 따라가는 보수적 reader는 backend/e2e도 고른다.
   // backend/e2e의 정적 참조를 엔진 바이트의 직접 실행 증거로 해석하지 않는다. 나머지 UI/server/AI 는
   // 기존 운영 계약·SAST·재사용 검증 경계를 유지한다. 파일 접두가 같은 다른 이름까지 새 축에 포함하지 않는다.
@@ -613,6 +632,8 @@ export function classifyChangedFiles(changedFiles,
   const reusableCustom = reusableProfiles.includes('core');
   const matrix = reusableMatrix(reusableProfiles.length > 0 ? reusableProfiles : undefined, { event });
   const reusableVendor = reusableVendorSelection(files, { noRange, docsOnly, event, readSource, readBaseSource, plan: vendorPlan });
+  const composerContracts = full || pitFull || event !== 'pull_request'
+    || files.some(file => matchesAny(file, COMPOSER_CONTRACTS_RELEVANT));
 
   return {
     files,
@@ -629,6 +650,7 @@ export function classifyChangedFiles(changedFiles,
     e2e,
     mutation,
     mutationMigrationTool,
+    composerContracts,
     // PR 에서 고른 시작 구성이 모두 PR 제외(ci.pr: null)면 생성할 항목이 없다 — 빈 matrix 를 넘기면 잡이 시작도 못 하고 실패한다.
     reusable: reusableProfiles.length > 0 && matrix.include.length > 0,
     reusableCustom,
@@ -678,6 +700,7 @@ export function githubOutputs(result) {
     e2e: bool(result.e2e),
     mutation: bool(result.mutation),
     mutation_migration_tool: bool(result.mutationMigrationTool),
+    composer_contracts: bool(result.composerContracts),
     reusable: bool(result.reusable),
     reusable_custom: bool(result.reusableCustom),
     reusable_matrix: JSON.stringify(result.reusableMatrix),

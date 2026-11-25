@@ -319,7 +319,7 @@ test('producer tools, requirements studio, offline migration tool, their contrac
     assert.deepEqual(validateAlwaysRemovedAssetsAbsent(ROOT), []);
     const archivedPkg = json(ROOT, `${VERIFICATION_HISTORY}/package.json`);
     const activePkg = json(ROOT, 'package.json');
-    for (const alias of ['verify:post-push', 'test:governance-gates', 'project:ui', 'requirements:ui', 'atlas:build', 'migration:export', 'verify:migration', 'migration:ui']) {
+    for (const alias of ['test:operational-contracts:core', 'test:governance-gates', 'project:ui', 'requirements:ui', 'atlas:build', 'migration:export', 'verify:migration', 'migration:ui']) {
       assert.ok(Object.hasOwn(archivedPkg.scripts ?? {}, alias), `upstream verification history must keep ${alias}`);
       assert.equal(Object.hasOwn(activePkg.scripts ?? {}, alias), false, `active package.json must omit ${alias}`);
     }
@@ -400,7 +400,7 @@ test('producer tools, requirements studio, offline migration tool, their contrac
   }
   const upstreamPackageJson = readFileSync(join(historyRoot, 'package.json'), 'utf8');
   const prunedPkg = json(historyRoot, 'package.json');
-  const preservedAliases = ['verify:post-push', 'test:governance-gates', 'project:ui', 'requirements:ui', 'atlas:build', 'migration:export', 'verify:migration', 'migration:ui'];
+  const preservedAliases = ['test:operational-contracts:core', 'test:governance-gates', 'project:ui', 'requirements:ui', 'atlas:build', 'migration:export', 'verify:migration', 'migration:ui'];
   for (const alias of preservedAliases) delete prunedPkg.scripts[alias];
   write(historyRoot, 'package.json', `${JSON.stringify(prunedPkg, null, 2)}\n`);
   write(historyRoot, 'reusable-base-lock.json', JSON.stringify({ profile: 'core', layout: 'multi-module', migrationTool: false, sourceCommit: '1'.repeat(40) }));

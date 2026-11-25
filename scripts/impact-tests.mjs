@@ -2,7 +2,7 @@
 /**
  * push 전에 같이 돌릴 시험을 고른다 — 바꾼 파일을 실제로 읽는 시험(2026-11-10).
  *
- * 로컬 표적 시험이 통과한 변경이 post-push·CI 에서만 붉어지는 일이 반복됐다. 2026-11-09 next-env.d.ts 추적 해제(#1072)는 표적 시험
+ * 로컬 표적 시험이 통과한 변경이 CI 에서만 붉어지는 일이 반복됐다. 2026-11-09 next-env.d.ts 추적 해제(#1072)는 표적 시험
  * 4개가 녹색이었는데 두 곳이 붉었다 — 과거 릴리스 식별 시험은 바꾼 모듈을 두 단계 건너 import 했고(release-images.test.mjs →
  * historical-release-fixture.mjs → ui-quality-baseline-core.mjs), Java 하네스 시험은 바꾼 스크립트의 경로를 문자열로 적고 그 명령을
  * 고정했다(WorkflowManifestLinterTest). 이 도구는 그 두 연결을 찾는다.
@@ -13,7 +13,7 @@
  * - 프런트 소스는 vitest 의 related(바꾼 파일을 import 하는 단위 시험)로 넘긴다.
  *
  * 추천일 뿐 게이트가 아니다 — 경로를 조각으로 이어 붙이거나 디렉터리를 훑는 시험은 찾지 못한다. 범위별 최소 검증(AGENTS.md)과
- * post-push·required CI 를 대신하지 않는다. Java 시험은 태그별 Gradle 작업으로 돌려야 한다(태그 시험을 :test 로 돌리면 0건이다).
+ * required CI 를 대신하지 않는다. Java 시험은 태그별 Gradle 작업으로 돌려야 한다(태그 시험을 :test 로 돌리면 0건이다).
  *
  * 사용법: node scripts/impact-tests.mjs --diff <base> | --for <경로…> [--json]
  */
@@ -195,7 +195,7 @@ function render(result) {
   if (result.helpers.length) {
     lines.push('', `시험 메서드가 없는 Java 도우미 ${result.helpers.length}개는 돌리지 않고 그 이름을 적은 시험으로 넘겼다: ${result.helpers.join(', ')}`);
   }
-  lines.push('', '추천이다. 경로를 조각으로 잇거나 디렉터리를 훑는 시험은 못 찾는다 — post-push·required CI 를 대신하지 않는다.');
+  lines.push('', '추천이다. 경로를 조각으로 잇거나 디렉터리를 훑는 시험은 못 찾는다 — required CI 를 대신하지 않는다.');
   return lines.join('\n');
 }
 
