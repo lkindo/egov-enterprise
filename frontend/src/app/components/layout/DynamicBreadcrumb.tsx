@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useContext, useState, useEffect } from 'react';
+import { QueryClientContext } from '@tanstack/react-query';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Home, ChevronRight } from 'lucide-react';
@@ -35,10 +36,28 @@ export function DynamicBreadcrumb({ customItems = [], currentLabel }: { customIt
   // 메뉴 트리에서 찾은 경로가 현재 화면 자체(정확 일치)인지, 그 상위 메뉴인지.
   const [exactMatch, setExactMatch] = useState(false);
 
+  // [2026-11-25 품질 평가] 머리글·사이드바가 쓰는 메뉴 조회 캐시를 함께 쓴다 — 종전에는 주소가 바뀔 때마다 따로 읽었다. 그 조회의 키에는
+  //   사용자·인가 버전이 들어가므로 키를 다시 만들지 않고, 지금 켜져 있는(관찰자가 있는) 머리글 메뉴 조회를 찾아 그 키로 읽는다. 없으면
+  //   (로그인 전·공급자 없는 렌더) 종전처럼 직접 읽는다. 늦게 도착한 이전 주소의 응답은 버린다 — 빠르게 옮기면 이전 경로가 덮어썼다.
+  const queryClient = useContext(QueryClientContext);
+
   useEffect(() => {
+    let cancelled = false;
+    const loadMenus = () => {
+      const shared = queryClient?.getQueryCache().findAll({ queryKey: ['menus', 'head'], type: 'active' })
+        .sort((left, right) => right.state.dataUpdatedAt - left.state.dataUpdatedAt)[0];
+      return queryClient && shared
+        ? queryClient.fetchQuery({
+          queryKey: shared.queryKey,
+          queryFn: () => menuService.getHeadMenus(),
+          staleTime: 5 * 60 * 1000,
+        })
+        : menuService.getHeadMenus();
+    };
     const fetchPath = async () => {
       try {
-        const menus = await menuService.getHeadMenus() || [];
+        const menus = await loadMenus() || [];
+        if (cancelled) return;
         const path: BreadcrumbItem[] = [];
         
         if (!Array.isArray(menus)) {
@@ -57,12 +76,13 @@ export function DynamicBreadcrumb({ customItems = [], currentLabel }: { customIt
         setItems(path);
         setExactMatch(lastPath === currentPath);
       } catch {
-        setItems([]);
+        if (!cancelled) setItems([]);
       }
     };
 
-    fetchPath();
-  }, [pathname, searchKey]);
+    void fetchPath();
+    return () => { cancelled = true; };
+  }, [pathname, searchKey, queryClient]);
 
   // 하위 화면의 마지막 한 단계 — 화면 제목이 있으면 그것을, 없으면 화면이 넘긴 경로의 마지막 항목을 쓴다.
   const lastStep = currentLabel ? { name: currentLabel } : customItems.at(-1);

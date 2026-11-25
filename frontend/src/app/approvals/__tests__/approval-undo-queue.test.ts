@@ -9,6 +9,7 @@ import {
   scheduleApprovalCommit,
   subscribeApprovalCommits,
 } from '../approval-undo-queue';
+import { runBeforeSignOut } from '@/lib/auth/before-sign-out';
 
 /** 승인 되돌리기 대기열 — 언제 보내는지만 정하고, 누른 승인이 조용히 사라지지 않게 한다. */
 describe('approval-undo-queue', () => {
@@ -26,6 +27,16 @@ describe('approval-undo-queue', () => {
     await vi.advanceTimersByTimeAsync(APPROVAL_UNDO_MS - 1);
     expect(run).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(1);
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(pendingApprovalCommits()).toEqual([]);
+  });
+
+  it('[2026-11-25] 로그아웃 직전에 대기 중인 승인을 보낸다 — 로그아웃이 요청을 막기 전에 끝난다', async () => {
+    const run = vi.fn().mockResolvedValue(undefined);
+    scheduleApprovalCommit(7, run);
+
+    await runBeforeSignOut();
+
     expect(run).toHaveBeenCalledTimes(1);
     expect(pendingApprovalCommits()).toEqual([]);
   });

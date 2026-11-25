@@ -1,3 +1,5 @@
+import { registerBeforeSignOut } from '@/lib/auth/before-sign-out';
+
 /**
  * 승인 되돌리기 대기열(2026-10-03 결재 동선 개선).
  *
@@ -9,6 +11,10 @@
  * 이탈 확인으로 막는다(대기 중 승인이 있으면 미저장 변경으로 본다).
  */
 export const APPROVAL_UNDO_MS = 10_000;
+
+// [2026-11-25 품질 평가] 로그아웃도 화면을 떠나는 일이다 — 로그아웃이 요청을 막기 전에 대기 중인 승인을 보낸다. 종전에는 로그아웃이
+//   먼저 요청을 막아, 승인을 누르고 10초 안에 로그아웃하면 그 승인이 조용히 사라졌다.
+registerBeforeSignOut(() => flushApprovalCommits());
 
 interface PendingCommit {
   timer: ReturnType<typeof setTimeout>;

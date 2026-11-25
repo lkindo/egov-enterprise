@@ -12,6 +12,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AUTHORIZATION_CHANGED_EVENT, isSignedOut, markSignedIn } from '@/lib/auth/authorization-state';
+import { registerBeforeSignOut } from '@/lib/auth/before-sign-out';
 
 const sessionBroadcast = vi.hoisted(() => ({
   handler: null as null | ((message: { type: 'signed-out' } | { type: 'signed-in' }) => void),
@@ -155,6 +156,25 @@ describe('AuthContext', () => {
     expect(result.current.mfaPending).toBe(false);
     expect(result.current.loading).toBe(false);
     expect(result.current.user?.id ?? null).toBe(latest === 'login' ? 'current' : null);
+  });
+
+  it('[2026-11-25] 로그아웃은 등록된 정리(대기 중 승인 전송)를 요청 차단 표지보다 먼저 끝낸다', async () => {
+    (authService.logout as any).mockResolvedValue({});
+    const signedOutWhileRunning: boolean[] = [];
+    const release = registerBeforeSignOut(async () => {
+      await Promise.resolve();
+      signedOutWhileRunning.push(isSignedOut());
+    });
+    try {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await act(async () => { await result.current.logout(); });
+
+      expect(signedOutWhileRunning).toEqual([false]);
+      expect(isSignedOut()).toBe(true);
+    } finally {
+      release();
+      markSignedIn();
+    }
   });
 
   it('로그아웃 시 사용자 세션 정보가 비워져야 함', async () => {

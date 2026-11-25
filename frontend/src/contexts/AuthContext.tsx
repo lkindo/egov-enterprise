@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { useQueryClient } from '@tanstack/react-query';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
 import { advanceAuthorizationRequestEpoch, AUTHORIZATION_CHANGED_EVENT, markSignedIn, markSignedOut } from '@/lib/auth/authorization-state';
+import { runBeforeSignOut } from '@/lib/auth/before-sign-out';
 import type { AuthLoginData } from '@/lib/auth/auth-bff-contract';
 import { loginErrorMessage } from '@/lib/auth/login-error';
 import { getHttpStatus } from '@/lib/query/list-query-defaults';
@@ -212,6 +213,9 @@ export function AuthProvider({
   }, [clearTransientRetry, commitUser, enterMfaChallenge]);
 
   const logout = useCallback(async () => {
+    // [2026-11-25 품질 평가] 로그아웃 표지를 세우기 전에 등록된 일을 끝낸다 — 결재함의 되돌리기 대기 중 승인처럼 화면이 사라지며
+    //   보내던 요청이 아래 markSignedOut 에 막혀 조용히 사라지지 않게 한다(상한 시간까지만 기다린다).
+    await runBeforeSignOut();
     mfaPending.current = false;
     setMfaPending(false);
     // 캐시를 비우기 전에 막는다 — 비운 순간 다시 렌더되는 화면의 조회가 여기서 취소된다(DIP B4).

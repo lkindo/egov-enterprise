@@ -24,7 +24,14 @@ import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { failureMessage } from '@/lib/safe-error-log';
 import { noteComposeSchema } from './note-form-validation';
-import { invalidateNoteUnreadCount } from './note-query-keys';
+import {
+  invalidateNoteUnreadCount,
+  NOTE_HUB_UNREAD_COUNT_ROOT,
+  NOTE_LIST_ROOT,
+  noteHubUnreadCountKey,
+  noteListKey,
+  noteListTabKey,
+} from './note-query-keys';
 import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 import { AttachmentFileList } from '@/app/components/ui/attachment-file-list';
 import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
@@ -137,7 +144,7 @@ export default function NoteHubClient() {
   });
 
   const listQuery = useQuery({
-    queryKey: ['notes', 'list', tab, page, pageSize, searchKeyword],
+    queryKey: noteListKey(tab, page, pageSize, searchKeyword),
     queryFn: async () => {
       const query = searchKeyword
         ? { page, size: pageSize, searchWrd: searchKeyword }
@@ -150,7 +157,7 @@ export default function NoteHubClient() {
   });
 
   const unreadQuery = useQuery({
-    queryKey: ['notes', 'hub-unread-count', user?.esntlId],
+    queryKey: noteHubUnreadCountKey(user?.esntlId),
     queryFn: () => noteService.getUnreadReceivedCount(),
     enabled: unreadEnabled,
     retry: false,
@@ -180,7 +187,7 @@ export default function NoteHubClient() {
         unreadEnabledRef.current = true;
         setUnreadEnabled(true);
       } else {
-        void queryClient.invalidateQueries({ queryKey: ['notes', 'hub-unread-count'] });
+        void queryClient.invalidateQueries({ queryKey: NOTE_HUB_UNREAD_COUNT_ROOT });
       }
       void invalidateNoteUnreadCount(queryClient);
     }
@@ -199,7 +206,7 @@ export default function NoteHubClient() {
   }, [listQuery.isError, listQuery.isFetching, listQuery.errorUpdatedAt, toast]);
 
   const loadNotes = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: ['notes', 'list'] });
+    await queryClient.invalidateQueries({ queryKey: NOTE_LIST_ROOT });
   }, [queryClient]);
 
   const refreshUnreadCount = useCallback(async () => {
@@ -207,7 +214,7 @@ export default function NoteHubClient() {
       unreadEnabledRef.current = true;
       setUnreadEnabled(true);
     } else {
-      await queryClient.invalidateQueries({ queryKey: ['notes', 'hub-unread-count'] });
+      await queryClient.invalidateQueries({ queryKey: NOTE_HUB_UNREAD_COUNT_ROOT });
     }
     await invalidateNoteUnreadCount(queryClient);
   }, [queryClient]);
@@ -271,7 +278,7 @@ export default function NoteHubClient() {
       setRecipients([]);
       resetComposeAttachments();
       validation.setFormErrors({}, false);
-      void queryClient.invalidateQueries({ queryKey: ['notes', 'list', 'sent'] });
+      void queryClient.invalidateQueries({ queryKey: noteListTabKey('sent') });
     } catch (error) {
       const fieldErrors = extractFieldErrors(error);
       if (fieldErrors) validation.setFormErrors(fieldErrors);
@@ -350,7 +357,7 @@ export default function NoteHubClient() {
       if (target.type === 'received') {
         void refreshUnreadCount();
         queryClient.setQueryData<{ list?: Note[]; total?: number }>(
-          ['notes', 'list', 'received', page, pageSize, searchKeyword],
+          noteListKey('received', page, pageSize, searchKeyword),
           (current) => (current?.list ? {
             ...current,
             list: current.list.map((item) => (
@@ -407,7 +414,7 @@ export default function NoteHubClient() {
       // 안 읽은 받은 쪽지를 지우면 홈 카드의 수가 줄어든다 — 탭을 바꿔 아래 목록 재조회를 건너뛰어도 무효화한다.
       if (deleteTab === 'received') void invalidateNoteUnreadCount(queryClient);
       toast('삭제되었습니다.', 'success');
-      await queryClient.invalidateQueries({ queryKey: ['notes', 'list', deleteTab] });
+      await queryClient.invalidateQueries({ queryKey: noteListTabKey(deleteTab) });
     } catch {
       toast('삭제 중 오류가 발생했습니다.', 'error');
     } finally {
