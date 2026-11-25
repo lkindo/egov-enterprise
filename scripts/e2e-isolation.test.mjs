@@ -772,6 +772,7 @@ test('회차 서명 키링 판독: 활성 kid 가 JSON 에 있고 P-256 PKCS#8 �
     // 활성 항목이 정상이어도 백엔드는 모든 항목을 판독하고 16개까지만 받는다
     ['손상된 이전 키', 'k', JSON.stringify({ k: FIXTURE_ES256_PKCS8, old: randomBytes(32).toString('base64') })],
     ['형식 밖 이전 kid', 'k', JSON.stringify({ k: FIXTURE_ES256_PKCS8, 'old kid': FIXTURE_ES256_PKCS8 })],
+    ['줄바꿈으로 감싼 이전 키(백엔드 디코더가 거부)', 'k', JSON.stringify({ k: FIXTURE_ES256_PKCS8, old: FIXTURE_ES256_PKCS8.replace(/(.{64})/gu, '$1\n') })],
     ['17개 키링', 'k0', JSON.stringify(Object.fromEntries(Array.from({ length: 17 }, (_, i) => [`k${i}`, FIXTURE_ES256_PKCS8])))],
   ]) assert.equal(usableSigningKeyring(kid, json), false, name);
   assert.equal(usableSigningKeyring('k0', JSON.stringify(Object.fromEntries(Array.from({ length: 16 }, (_, i) => [`k${i}`, FIXTURE_ES256_PKCS8])))), true,

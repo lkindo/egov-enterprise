@@ -46,7 +46,7 @@ const DATABASE_URL_KEYS = ['DB_URL', 'SPRING_DATASOURCE_URL', 'SPRING_DATASOURCE
 /**
  * Next 프로세스에 넘기지 않는 서명 비밀 — ES256 개인키 키링과, ADR-0060 2차로 퇴역한 1차 배포의 HMAC 비밀·수용 스위치.
  * 셸이나 루트 .env 에 남아 있어도 Next 가 서명 비밀을 갖지 않게 한다(2026-11-25 Codex 검토).
- * scripts/verify.mjs·frontend/scripts/next-dev.mjs 가 같은 목록의 사본을 둔다(독립 이관 제품은 verify.mjs 만, 프런트는 자기 폴더만
+ * scripts/verify.mjs·frontend/scripts/next-cli.mjs 가 같은 목록의 사본을 둔다(독립 이관 제품은 verify.mjs 만, 프런트는 자기 폴더만
  * 복사된다) — dev-remote-db-guard 시험이 대조한다. Windows 의 환경 변수 이름은 대소문자를 가리지 않으므로 대문자로 맞춰 거른다.
  */
 export const FRONTEND_WITHHELD_SIGNING_ENV = Object.freeze([
@@ -106,7 +106,7 @@ function main() {
     `"\\"${process.execPath}\\" scripts/dev.mjs --web-child"`;
 
   // 프런트 자식(--web-child)은 frontendEnvironment()로 서명 비밀을 제거한 뒤 pnpm -C frontend dev 를 띄운다.
-  // 그 dev 스크립트(frontend/scripts/next-dev.mjs)도 같은 비밀을 걷고 루프백에 바인딩한다 — 프런트만 띄우는 경로도 같은 규칙이다.
+  // 그 dev 스크립트(frontend/scripts/next-cli.mjs)도 같은 비밀을 걷고 루프백에 바인딩한다 — 프런트만 띄우는 경로도 같은 규칙이다.
   const child = spawn(command, { stdio: 'inherit', shell: true, cwd: repoRoot, env: backend.env });
 
   child.on('exit', (code, signal) => process.exit(code ?? (signal ? 1 : 0)));

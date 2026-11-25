@@ -57,7 +57,8 @@ class RrnoReencryptionRunnerTest {
         assertThat(properties).containsEntry("spring.main.web-application-type", "none")
                 .containsEntry("spring.flyway.enabled", false)
                 .containsEntry("nuri.scheduling.enabled", false)
-                .containsEntry("nuri.durable-work.enabled", false);
+                .containsEntry("nuri.durable-work.enabled", false)
+                .containsEntry("nuri.attachment.integrity.enabled", false);
     }
 
     @Test

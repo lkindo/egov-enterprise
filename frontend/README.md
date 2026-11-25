@@ -25,7 +25,7 @@ pnpm install
 pnpm dev
 ```
 
-`scripts/next-dev.mjs` 가 `next dev` 를 `127.0.0.1:3001` 에 띄운다. 셸에 백엔드용 서명 키링(`JWT_SIGNING_*`)이나 `JWT_SECRET` 이 있어도 Next 에는 넘기지 않는다 — Next 는 `JWT_VERIFY_KEYS_JSON` 공개키로만 검증한다(ADR-0060). 다른 기기에서 열려면 자체 키쌍을 준 뒤 `pnpm dev -H 0.0.0.0` 처럼 주소를 직접 지정한다.
+`dev`·`build`·`start` 는 `scripts/next-cli.mjs` 를 지난다. 셸에 백엔드용 서명 키링(`JWT_SIGNING_*`)이나 `JWT_SECRET` 이 있어도 Next 에는 넘기지 않는다 — Next 는 `JWT_VERIFY_KEYS_JSON` 공개키로만 검증한다(ADR-0060). 이 폴더의 `.env`·`.env.local`·`.env.<mode>[.local]` 에 그 이름이 있으면 시작하지 않으므로(1차 전환 때 넣은 `JWT_SECRET` 줄 등) 그 줄을 지운다. `dev` 는 `127.0.0.1:3001` 에 띄우며, 다른 기기에서 열려면 자체 키쌍을 준 뒤 `pnpm dev -H 0.0.0.0` 처럼 주소를 직접 지정한다.
 
 ### 3. 빌드 및 타입 체크
 ```bash

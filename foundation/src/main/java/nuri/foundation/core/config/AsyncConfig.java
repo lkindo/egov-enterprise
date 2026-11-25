@@ -38,9 +38,22 @@ public class AsyncConfig implements AsyncConfigurer {
      */
     @Configuration(proxyBeanMethods = false)
     @EnableScheduling
-    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "nuri.scheduling.enabled",
-            havingValue = "true", matchIfMissing = true)
+    @org.springframework.context.annotation.Conditional(SchedulingNotSwitchedOff.class)
     static class SchedulingActivation {
+    }
+
+    /**
+     * 값이 정확히 {@code false}(대소문자 무관)일 때만 끈다. {@code havingValue="true"} 로 두면 {@code on}·{@code 1}·오타가 모두
+     * '켜지 않음' 이 되어, 앱은 정상으로 뜨는데 메일·문자 워커와 보존 작업이 조용히 멈췄다(2026-11-25 Codex 3차). 끄는 쪽만 명시
+     * 값으로 받고 그 밖은 켠 채로 둔다.
+     */
+    static final class SchedulingNotSwitchedOff implements org.springframework.context.annotation.Condition {
+        @Override
+        public boolean matches(org.springframework.context.annotation.ConditionContext context,
+                org.springframework.core.type.AnnotatedTypeMetadata metadata) {
+            String value = context.getEnvironment().getProperty("nuri.scheduling.enabled");
+            return value == null || !"false".equalsIgnoreCase(value.trim());
+        }
     }
 
     /**

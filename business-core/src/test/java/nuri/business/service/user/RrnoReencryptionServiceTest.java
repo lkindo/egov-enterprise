@@ -218,6 +218,8 @@ class RrnoReencryptionServiceTest {
     @Test
     @DisplayName("행 참조는 식별자의 SHA-256 앞 16자다 — 식별자 원문이 아니다")
     void rowRefIsANonIdentifyingDigest() {
+        // SHA-256("abc") 의 알려진 값(FIPS 180-2 시험 벡터)의 앞 16자 — 런북 §7.3 의 SQL 이 같은 값을 낸다.
+        assertThat(RrnoReencryptionService.rowRef("abc")).isEqualTo("ba7816bf8f01cfea");
         assertThat(RrnoReencryptionService.rowRef("USRCNFRM_00000000001")).matches("[0-9a-f]{16}")
                 .isNotEqualTo(RrnoReencryptionService.rowRef("USRCNFRM_00000000002"));
     }

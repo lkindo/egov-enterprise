@@ -82,6 +82,19 @@ class SchedulingTaskSchedulerTest {
                 org.springframework.scheduling.config.TaskManagementConfigUtils.SCHEDULED_ANNOTATION_PROCESSOR_BEAN_NAME));
     }
 
+    @Test
+    @DisplayName("🚨 끄는 값은 false 하나다 — on·1·오타는 켠 채로 둔다(메일·문자 워커와 보존 작업이 조용히 멈추지 않게)")
+    void onlyAnExplicitFalseSwitchesSchedulingOff() {
+        for (String value : new String[] { "true", "on", "1", "yes", "ture", "" }) {
+            runner.withPropertyValues("nuri.scheduling.enabled=" + value).run(context -> assertThat(context).as(value).hasBean(
+                    org.springframework.scheduling.config.TaskManagementConfigUtils.SCHEDULED_ANNOTATION_PROCESSOR_BEAN_NAME));
+        }
+        for (String value : new String[] { "false", "FALSE", " False " }) {
+            runner.withPropertyValues("nuri.scheduling.enabled=" + value).run(context -> assertThat(context).as(value).doesNotHaveBean(
+                    org.springframework.scheduling.config.TaskManagementConfigUtils.SCHEDULED_ANNOTATION_PROCESSOR_BEAN_NAME));
+        }
+    }
+
     @Configuration(proxyBeanMethods = false)
     static class BrokerSchedulerConfig {
         @Bean

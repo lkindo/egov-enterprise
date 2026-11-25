@@ -141,6 +141,25 @@ class RrnoEncryptionConverterTest {
     }
 
     @Test
+    @DisplayName("🚨 ARIA 키 교체 중 형식 밖의 기존 값: 주민번호 꼴 후보가 없으면 깨진 바이트가 없는 후보(이전 키 결과)를 읽는다")
+    void ariaKeyRotationPrefersCleanTextWhenNoCandidateIsInRrnoFormat() throws Exception {
+        // 현재 키는 이전 키 암호문을 예외 없이 깨진 UTF-8 로 푼다(실제 ARIA 의 성질), 이전 키는 형식 밖의 기존 원문을 낸다.
+        when(mockCryptoService.decrypt(any(byte[].class), any(String.class))).thenReturn(new byte[] { (byte) 0xC3, (byte) 0x28, 0x41, 0x07 });
+        EgovCryptoService previous = Mockito.mock(EgovCryptoService.class);
+        when(previous.decrypt(any(byte[].class), any(String.class)))
+                .thenReturn("9001011234567X".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        ReflectionTestUtils.setField(CryptoUtil.class, "previousCryptoService", previous);
+        ReflectionTestUtils.setField(CryptoUtil.class, "previousAlgorithmKey", "previous");
+        try {
+            String stored = java.util.Base64.getEncoder().encodeToString("old-key-ciphertext".getBytes());
+            assertThat(converter.convertToEntityAttribute(stored)).isEqualTo("9001011234567X");
+        } finally {
+            ReflectionTestUtils.setField(CryptoUtil.class, "previousCryptoService", null);
+            ReflectionTestUtils.setField(CryptoUtil.class, "previousAlgorithmKey", null);
+        }
+    }
+
+    @Test
     @DisplayName("교체 중이 아니면 형식 밖의 복호 결과도 종전처럼 돌려준다 — 기존 값의 읽기를 새로 막지 않는다")
     void outOfFormatValueWithoutRotationIsReturnedAsBefore() throws Exception {
         when(mockCryptoService.decrypt(any(byte[].class), any(String.class)))

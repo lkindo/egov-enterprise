@@ -810,9 +810,17 @@ class ConfigSafetyLinterTest {
             return null;
         }
         String[] lines = serviceBlock.split("\n", -1);
+        // 서비스 직속 키의 들여쓰기는 블록의 첫 키 줄에서 정한다 — 고정 칸 수로 두면 정상 재정렬(6칸)이 거짓 red 가 된다(Codex 3차).
+        int childIndent = -1;
+        for (String line : lines) {
+            if (!line.isBlank()) {
+                childIndent = line.length() - line.stripLeading().length();
+                break;
+            }
+        }
         for (int i = 0; i < lines.length; i++) {
-            java.util.regex.Matcher key = Pattern.compile("^( {4})ports\\s*:\\s*(!\\w+)?\\s*(.*?)\\s*$").matcher(lines[i]);
-            if (!key.matches()) {
+            java.util.regex.Matcher key = Pattern.compile("^( *)ports\\s*:\\s*(!\\w+)?\\s*(.*?)\\s*$").matcher(lines[i]);
+            if (!key.matches() || key.group(1).length() != childIndent) {
                 continue;
             }
             int indent = key.group(1).length();
@@ -872,6 +880,9 @@ class ConfigSafetyLinterTest {
         broken.put("확장 블록에 중첩된 ports 가 실제 공개 매핑을 가림", apiPortExposureViolations(
                 baseSrc.replace("    ports:\n      - \"127.0.0.1:8080:8080\"",
                         "    x-example:\n      ports:\n        - \"127.0.0.1:8080:8080\"\n    ports:\n      - \"8080:8080\""), prodSrc));
+        // 정상 재정렬(서비스 직속 키를 6칸으로)은 같은 렌더 결과이므로 위반이 아니다 — 고정 칸 수의 거짓 red 회귀 방지.
+        String reindentedApi = composeServiceBlock(baseSrc, "api").replaceAll("(?m)^    ", "      ");
+        org.junit.jupiter.api.Assertions.assertEquals(List.of("\"127.0.0.1:8080:8080\""), composePorts(reindentedApi).entries());
         broken.put("운영 api.ports 를 흐름 목록으로 둘 공개", apiPortExposureViolations(
                 baseSrc, prodSrc.replace("ports: !override\n      - \"${API_HOST_BIND:-127.0.0.1}:8080:8080\"",
                         "ports: !override [\"${API_HOST_BIND:-127.0.0.1}:8080:8080\", \"8081:8080\"]")));

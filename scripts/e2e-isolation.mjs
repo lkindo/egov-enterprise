@@ -76,6 +76,8 @@ export function usableSigningKeyring(activeKid, keysJson) {
 }
 
 function isP256Pkcs8(base64) {
+  // 백엔드(Java Base64 기본 디코더)는 줄바꿈·공백이 섞인 값을 거부한다 — Node 는 받으므로 표준 Base64 꼴을 먼저 본다(Codex 3차).
+  if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u.test(base64) || base64.length === 0) return false;
   try {
     const key = createPrivateKey({ key: Buffer.from(base64, 'base64'), format: 'der', type: 'pkcs8' });
     return key.asymmetricKeyType === 'ec' && key.asymmetricKeyDetails?.namedCurve === 'prime256v1';
