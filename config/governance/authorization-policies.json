@@ -2308,7 +2308,7 @@
       ]
     },
     {
-      "target": "BoardService#updatePostPeriod",
+      "target": "BoardPostOperationService#updatePostPeriod",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
         {
@@ -2320,7 +2320,7 @@
       ]
     },
     {
-      "target": "BoardService#updatePostPeriodsInBatch",
+      "target": "BoardPostOperationService#updatePostPeriodsInBatch",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
         {
@@ -2332,7 +2332,7 @@
       ]
     },
     {
-      "target": "BoardService#applyPins",
+      "target": "BoardPostOperationService#applyPins",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
         {
@@ -4795,8 +4795,8 @@
       ]
     },
     {
-      "target": "BoardService#applyPins",
-      "source": "business-app/src/main/java/nuri/business/service/board/BoardService.java",
+      "target": "BoardPostOperationService#applyPins",
+      "source": "business-app/src/main/java/nuri/business/service/board/BoardPostOperationService.java",
       "policy": "ADMIN_OR_SYSTEM",
       "denyReferences": 0,
       "requiredTokens": [

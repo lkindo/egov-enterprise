@@ -86,6 +86,7 @@ class BoardOperationsPostgresIntegrationTest {
 
     @Autowired private BoardRepository boards;
     @Autowired private BoardService boardService;
+    @Autowired private nuri.business.service.board.BoardPostOperationService boardPostOperations;
     @Autowired private DtaUseStatsRepository usage;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PlatformTransactionManager transactionManager;
@@ -224,14 +225,14 @@ class BoardOperationsPostgresIntegrationTest {
             try {
                 attempts.add(executor.submit(() -> attempt(() -> new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
                     leadingPid.set(VendorTestSql.sessionId(jdbc));
-                    boardService.updatePostPin(bbsId, first, new BoardPostPinRequest("Y", null));
+                    boardPostOperations.updatePostPin(bbsId, first, new BoardPostPinRequest("Y", null));
                     applied.countDown();
                     await(release);
                 }))));
                 assertThat(applied.await(15, TimeUnit.SECONDS)).as("선행 고정이 마스터 행 잠금을 쥔 채 고정을 반영함").isTrue();
                 attempts.add(executor.submit(() -> attempt(() -> new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
                     VendorTestSql.nameSession(jdbc, application);
-                    boardService.updatePostPin(bbsId, second, new BoardPostPinRequest("Y", null));
+                    boardPostOperations.updatePostPin(bbsId, second, new BoardPostPinRequest("Y", null));
                 }))));
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(4);
                 while (waits.isEmpty() && !attempts.get(1).isDone() && System.nanoTime() < deadline) {

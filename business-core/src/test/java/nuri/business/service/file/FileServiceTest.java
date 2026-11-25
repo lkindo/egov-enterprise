@@ -403,6 +403,63 @@ class FileServiceTest {
         verify(accessPolicy).assertReadable(master);
     }
 
+    /**
+     * [2026-11-25 품질 평가 3순위 14] 원래 파일 이름을 붙인 다운로드 리소스는 이름만 바꾸고 나머지는 저장소 리소스에 그대로 맡긴다 — 길이가
+     * 0 으로 새면 응답 길이가 틀려 내려받기가 잘리고, 존재·읽기 가능 여부가 뒤집히면 없는 파일을 내보낸다. 참·거짓 두 저장소 리소스로 보고,
+     * 서로 다른 메서드끼리 위임을 바꿔도 드러나게 boolean 넷은 조합을 바꿔 가며 준다.
+     */
+    @Test
+    @DisplayName("원래 이름을 붙인 다운로드 리소스는 이름 밖의 모든 값을 저장소 리소스에 맡긴다")
+    void namedDownloadResourceDelegatesEverythingButTheFilename() throws IOException {
+        FileMaster master = new FileMaster(123L);
+        FileDetail detail = FileDetail.builder().fileMaster(master).orgnlFileNm("보고서_원본.pdf")
+                .strgFileNm("stored.pdf").fileStrgPath("path").build();
+        given(fileDetailRepository.findByFileMasterAtchFileSnAndAtchFileSeq(anyLong(), anyInt())).willReturn(Optional.of(detail));
+
+        // exists·isReadable·isOpen·isFile 의 값 조합 — 어느 두 메서드의 위임을 맞바꿔도 한 조합에서는 값이 갈리고, 넷 모두 참·거짓을 한 번씩 받는다.
+        boolean[][] patterns = {{true, true, false, false}, {true, false, true, false}, {false, false, false, true}};
+        for (boolean[] pattern : patterns) {
+            boolean flag = pattern[0];
+            Resource stored = mock(Resource.class);
+            Resource relative = mock(Resource.class);
+            java.net.URL url = java.net.URI.create("file:/stored/" + flag).toURL();
+            java.io.File file = new java.io.File("stored-" + flag);
+            java.nio.channels.ReadableByteChannel channel = mock(java.nio.channels.ReadableByteChannel.class);
+            java.io.InputStream stream = new java.io.ByteArrayInputStream(new byte[] {1});
+            given(stored.exists()).willReturn(pattern[0]);
+            given(stored.isReadable()).willReturn(pattern[1]);
+            given(stored.isOpen()).willReturn(pattern[2]);
+            given(stored.isFile()).willReturn(pattern[3]);
+            given(stored.getURL()).willReturn(url);
+            given(stored.getURI()).willReturn(java.net.URI.create("file:/stored/" + flag));
+            given(stored.getFile()).willReturn(file);
+            given(stored.readableChannel()).willReturn(channel);
+            given(stored.contentLength()).willReturn(flag ? 4096L : 7L);
+            given(stored.lastModified()).willReturn(flag ? 1_700_000_000_000L : 9L);
+            given(stored.createRelative("next")).willReturn(relative);
+            given(stored.getDescription()).willReturn("stored " + flag);
+            given(stored.getInputStream()).willReturn(stream);
+            given(storageService.loadAsResource("stored.pdf", "path")).willReturn(stored);
+
+            Resource named = fileService.getFileResource(123L, 1);
+
+            assertThat(named.getFilename()).isEqualTo("보고서_원본.pdf");
+            assertThat(named.exists()).isEqualTo(pattern[0]);
+            assertThat(named.isReadable()).isEqualTo(pattern[1]);
+            assertThat(named.isOpen()).isEqualTo(pattern[2]);
+            assertThat(named.isFile()).isEqualTo(pattern[3]);
+            assertThat(named.getURL()).isSameAs(url);
+            assertThat(named.getURI()).isEqualTo(java.net.URI.create("file:/stored/" + flag));
+            assertThat(named.getFile()).isSameAs(file);
+            assertThat(named.readableChannel()).isSameAs(channel);
+            assertThat(named.contentLength()).isEqualTo(flag ? 4096L : 7L);
+            assertThat(named.lastModified()).isEqualTo(flag ? 1_700_000_000_000L : 9L);
+            assertThat(named.createRelative("next")).isSameAs(relative);
+            assertThat(named.getDescription()).isEqualTo("stored " + flag);
+            assertThat(named.getInputStream()).isSameAs(stream);
+        }
+    }
+
     @Test
     @DisplayName("[IDOR] 단건 상세도 인가 가드를 통과한다")
     void getFileDetail_passesThroughAccessPolicy() {

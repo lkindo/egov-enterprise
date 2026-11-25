@@ -5,7 +5,7 @@ import nuri.api.support.PageRequests;
 import nuri.api.support.UnsortedPageable;
 import nuri.business.service.board.BoardChangeService;
 import nuri.business.service.board.BoardMasterService;
-import nuri.business.service.board.BoardService;
+import nuri.business.service.board.BoardPostOperationService;
 import nuri.business.service.board.dto.BoardChangeDto;
 import nuri.business.service.board.dto.BoardMasterBatchStatusRequest;
 import nuri.business.service.board.dto.BoardMasterDto;
@@ -38,7 +38,7 @@ public class BoardMasterApiController {
     private final BoardMasterService boardMasterService;
     private final BoardChangeService boardChangeService;
     /** 운영 화면의 게시글 단위 처리(게시 기간·상단 고정의 빠른 편집·일괄 처리, ADR-0040 결정 3·5·10). */
-    private final BoardService boardService;
+    private final BoardPostOperationService boardPostOperations;
 
     @Operation(summary = "게시판 마스터 목록 조회",
             description = "searchUseYn 을 비우면 전체, Y·N 이면 그 사용 상태만입니다(그 밖의 값은 400). "
@@ -174,7 +174,7 @@ public class BoardMasterApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPeriod')")
     public ResponseEntity<ApiResponse<Void>> updatePostPeriod(@PathVariable String bbsId, @PathVariable Long pstSn,
             @Valid @RequestBody BoardPostPeriodRequest request) {
-        boardService.updatePostPeriod(bbsId, pstSn, request);
+        boardPostOperations.updatePostPeriod(bbsId, pstSn, request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -188,7 +188,7 @@ public class BoardMasterApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPeriodsInBatch')")
     public ResponseEntity<ApiResponse<Void>> updatePostPeriodsInBatch(@PathVariable String bbsId,
             @Valid @RequestBody BoardPostPeriodBatchRequest request) {
-        boardService.updatePostPeriodsInBatch(bbsId, request);
+        boardPostOperations.updatePostPeriodsInBatch(bbsId, request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -203,7 +203,7 @@ public class BoardMasterApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPin')")
     public ResponseEntity<ApiResponse<Void>> updatePostPin(@PathVariable String bbsId, @PathVariable Long pstSn,
             @Valid @RequestBody BoardPostPinRequest request) {
-        boardService.updatePostPin(bbsId, pstSn, request);
+        boardPostOperations.updatePostPin(bbsId, pstSn, request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -217,7 +217,7 @@ public class BoardMasterApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPinsInBatch')")
     public ResponseEntity<ApiResponse<Void>> updatePostPinsInBatch(@PathVariable String bbsId,
             @Valid @RequestBody BoardPostPinBatchRequest request) {
-        boardService.updatePostPinsInBatch(bbsId, request);
+        boardPostOperations.updatePostPinsInBatch(bbsId, request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

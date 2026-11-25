@@ -797,6 +797,24 @@ class WorkflowManifestLinterTest {
         if (!violations.isEmpty()) {
             fail("zap-scan.yml 이 API 를 인증 상태로 스캔하지 않습니다:\n  - " + String.join("\n  - ", violations));
         }
+        // [2026-11-25] 잡 환경의 한도·잠금 값은 기본 compose 가 api 컨테이너로 넘겨야 닿는다(운영 오버레이만 넘기면 스캔 스택에는 없다).
+        Path composePath = repoRoot.resolve("docker-compose.yml");
+        assertThat(zapComposeForwardingViolations(HarnessSourceIndex.read(composePath)))
+                .as("기본 compose 의 api 가 ZAP 잡의 한도·잠금 값을 넘긴다")
+                .isEmpty();
+        String forwarding = """
+                services:
+                  api:
+                    environment:
+                      RATE_LIMIT_REQUESTS_PER_MINUTE:
+                      RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE:
+                      LOGIN_MAX_FAILURES:
+                """;
+        assertThat(zapComposeForwardingViolations(forwarding)).as("세 값을 넘기는 compose 는 통과한다").isEmpty();
+        assertThat(zapComposeForwardingViolations(forwarding.replace("      LOGIN_MAX_FAILURES:\n", "")))
+                .as("잠금 한도를 넘기지 않는 compose 는 red").anyMatch(violation -> violation.contains("LOGIN_MAX_FAILURES"));
+        assertThat(zapComposeForwardingViolations(forwarding.replace("      LOGIN_MAX_FAILURES:\n", "      LOGIN_MAX_FAILURES: '0'\n")))
+                .as("compose 가 잠금 한도 값을 고정하면 red").anyMatch(violation -> violation.contains("값을 고정"));
         Path specPath = repoRoot.resolve("api-docs.json");
         if (!Files.isRegularFile(specPath)) {
             fail("게이트 무결성 파손: 커밋된 api-docs.json 을 찾을 수 없습니다 — " + specPath.toAbsolutePath());
@@ -816,6 +834,7 @@ class WorkflowManifestLinterTest {
                   zap_scan:
                     env:
                       RATE_LIMIT_REQUESTS_PER_MINUTE: '1000000'
+                      LOGIN_MAX_FAILURES: '0'
                       ZAP_SESSION_ENDING_OPERATIONS: 'POST /api/v1/auth/logout'
                     steps:
                       - name: Authenticate API scanner
@@ -849,6 +868,8 @@ class WorkflowManifestLinterTest {
         mutations.put("세션 확인 제거", new String[]{compliant.replace("$SCANNER_TOKEN", "$OTHER"), "세션 유지"});
         mutations.put("세션 확인이 실패하지 않음", new String[]{compliant.replace("          exit 1\n", ""), "세션 유지"});
         mutations.put("요청 제한 한도를 올리지 않음", new String[]{compliant.replace("RATE_LIMIT_REQUESTS_PER_MINUTE: '1000000'", "OTHER: '1'"), "요청 제한 한도"});
+        mutations.put("로그인 실패 잠금을 그대로 둠", new String[]{compliant.replace("LOGIN_MAX_FAILURES: '0'", "LOGIN_MAX_FAILURES: '5'"), "로그인 실패 잠금"});
+        mutations.put("로그인 실패 잠금 설정 없음", new String[]{compliant.replace("      LOGIN_MAX_FAILURES: '0'\n", ""), "로그인 실패 잠금"});
         mutations.put("제외 목록에 연산 추가", new String[]{compliant.replace("'POST /api/v1/auth/logout'",
                 "'POST /api/v1/auth/logout; POST /api/v1/auth/login'"), "세션 종료 연산 목록"});
         mutations.put("제외 목록을 다른 연산으로", new String[]{compliant.replace("'POST /api/v1/auth/logout'", "'POST /api/v1/auth/login'"), "세션 종료 연산 목록"});
@@ -870,6 +891,25 @@ class WorkflowManifestLinterTest {
             assertThat(zapScanViolations(fixture[0])).as(label).anyMatch(violation -> violation.contains(fixture[1]));
         });
         log.info("✅ ZAP API 스캔: OpenAPI 사본·세션 종료 연산 제외 목록·로그인·상한·세션 확인 결속, 변형 {}종 red.", mutations.size());
+    }
+
+    /** 주간 ZAP 잡이 정하고 api 컨테이너가 읽어야 하는 값 — 기본 compose 가 넘기지 않으면 잡의 값이 앱에 닿지 않는다. */
+    private static final List<String> ZAP_FORWARDED_API_ENV =
+            List.of("RATE_LIMIT_REQUESTS_PER_MINUTE", "RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE", "LOGIN_MAX_FAILURES");
+
+    private List<String> zapComposeForwardingViolations(String composeSource) {
+        Map<?, ?> api = asMap(asMap(asMap(new Yaml().load(composeSource)).get("services")).get("api"));
+        Map<?, ?> environment = asMap(api.get("environment"));
+        List<String> violations = new ArrayList<>();
+        for (String name : ZAP_FORWARDED_API_ENV) {
+            if (!environment.containsKey(name)) {
+                violations.add("docker-compose.yml 의 api 가 " + name + " 를 넘기지 않는다 — ZAP 잡이 정한 값이 스캔 스택의 앱에 닿지 않는다");
+            } else if (environment.get(name) != null) {
+                // 값을 적으면 잡의 값을 덮고 개발·compose E2E 에도 그 값이 고정된다 — 호스트 값만 넘기는 빈 전달이어야 한다.
+                violations.add("docker-compose.yml 의 api 가 " + name + " 에 값을 고정한다(" + environment.get(name) + ") — 값 없이 호스트 값만 넘겨야 한다");
+            }
+        }
+        return violations;
     }
 
     /** 주간 ZAP 이 정의 사본에서 빼는 연산의 정확한 목록이다. 넓히거나 줄이려면 이 상수와 사유를 함께 바꾼다. */
@@ -899,6 +939,10 @@ class WorkflowManifestLinterTest {
         String limit = Objects.toString(env.get("RATE_LIMIT_REQUESTS_PER_MINUTE"), "");
         if (!limit.matches("\\d+") || Long.parseLong(limit) < 100_000) {
             violations.add("스캔 잡이 요청 제한 한도를 올리지 않는다 — 스캐너 요청이 429 로 막혀 공격이 핸들러에 닿지 않는다");
+        }
+        // [2026-11-25] 현재 비밀번호 칸의 공격 값이 실패 잠금에 닿으면 스캐너 계정이 잠기고 세션이 끊긴다(2026-11-22).
+        if (!"0".equals(Objects.toString(env.get("LOGIN_MAX_FAILURES"), ""))) {
+            violations.add("스캔 잡이 로그인 실패 잠금을 끄지 않는다(LOGIN_MAX_FAILURES 0) — 현재 비밀번호 대입이 스캐너 계정을 잠가 세션을 끊는다");
         }
         List<String> excluded = java.util.Arrays.stream(Objects.toString(env.get("ZAP_SESSION_ENDING_OPERATIONS"), "").split(";"))
                 .map(String::trim)
