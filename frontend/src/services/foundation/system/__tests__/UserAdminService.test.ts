@@ -244,7 +244,7 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
 
   describe('수정 (updateUser)', () => {
     it('전달받은 userId 로만 PUT 하고 다른 계정 경로로는 나가지 않는다', async () => {
-      const payload = { userNm: '변경된이름' };
+      const payload = { userNm: '변경된이름', version: 0 };
 
       await userAdminService.updateUser('USR010', payload, { timeout: 2000 });
 
@@ -260,6 +260,7 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
         emlAddr: 'hong@example.com',
         mblTelno: '01000000000',
         ognzId: 'ORG_0002',
+        version: 4,
       };
 
       await userAdminService.updateUser('USR010', payload);
@@ -368,7 +369,7 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
       await userAdminService.getUserList({});
       await userAdminService.getUser('USR001');
       await userAdminService.createUser({ userId: 'USR001', userNm: '사용자', pswd: 'Password1!' });
-      await userAdminService.updateUser('USR001', { userNm: '사용자' });
+      await userAdminService.updateUser('USR001', { userNm: '사용자', version: 0 });
       await userAdminService.deleteUser('USR001');
       await userAdminService.deleteUsers(['USR001']);
       await userAdminService.updatePassword('USR001', { newPassword: 'Password2!' });

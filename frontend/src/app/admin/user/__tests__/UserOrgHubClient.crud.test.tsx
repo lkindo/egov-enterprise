@@ -284,6 +284,8 @@ const detailRecord = {
   userSttsCd: 'P',
   emplNo: 'EMP-7',
   groups: ['ROLE_USER', 'ROLE_REPORTER'],
+  // [V2_156] 상세 응답의 프로필 편집 버전 — 수정 저장이 연 때의 값을 그대로 돌려보낸다.
+  version: 7,
 };
 
 const listPage = { list: [listRow], total: 1, page: 1, size: 10, totalPage: 3 };
@@ -683,7 +685,7 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     await waitFor(() => {
       expect(userAdminService.updateUser).toHaveBeenCalledWith(
         'user1',
-        expect.objectContaining({ ognzId: 'D-100' }),
+        expect.objectContaining({ ognzId: 'D-100', version: 7 }),
       );
     });
     expect(mockToast).toHaveBeenCalledWith('사용자 정보가 수정되었습니다.', 'success');

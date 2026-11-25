@@ -244,10 +244,11 @@ class ApprovalUserService extends ApiService {
   /**
    * 내가 올린 결재 회수. 신청자·상태·버전은 서버가 재검증하며 문서와 차수 이력을 보존한다.
    */
-  async cancelDraft(ifmlAtrzSn: number, version?: number): Promise<void> {
+  async cancelDraft(ifmlAtrzSn: number, version: number): Promise<void> {
+    // [2026-11-25] 다른 결재 쓰기처럼 읽은 버전이 필수다 — 없으면 서버가 400, 다르면 409 로 거부한다.
     return this.executeGenerated(cancelApprovalOperation, {
       path: { id: ifmlAtrzSn },
-      ...(version === undefined ? {} : { query: { version } }),
+      query: { version },
     });
   }
 

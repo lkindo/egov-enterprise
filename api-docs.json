@@ -32379,7 +32379,7 @@
           "Approval"
         ],
         "summary": "Cancel My Approval Draft",
-        "description": "신청자 본인이 상신한 결재 중 대기(신청) 상태인 건을 취소(철회)합니다. 내용과 처리 이력은 보존됩니다. 신청자 본인만 가능하며 관리자도 대리 회수할 수 없습니다.",
+        "description": "신청자 본인이 상신한 결재 중 대기(신청) 상태인 건을 취소(철회)합니다. 내용과 처리 이력은 보존됩니다. 신청자 본인만 가능하며 관리자도 대리 회수할 수 없습니다. 상세·목록에서 받은 버전(version)이 필수이며 없으면 400, 다르면 409 입니다.",
         "operationId": "cancelApproval",
         "parameters": [
           {
@@ -32394,7 +32394,7 @@
           {
             "name": "version",
             "in": "query",
-            "required": false,
+            "required": true,
             "schema": {
               "type": "integer",
               "format": "int32",
@@ -40149,10 +40149,17 @@
             "type": "string",
             "maxLength": 300,
             "minLength": 0
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "프로필 편집 버전(V2_156). 조회한 값을 그대로 돌려보낸다 — 다르면 409, 없으면 400.",
+            "minimum": 0
           }
         },
         "required": [
-          "userNm"
+          "userNm",
+          "version"
         ]
       },
       "PasswordChangeRequest": {
@@ -41478,10 +41485,17 @@
             "type": "string",
             "maxLength": 12,
             "minLength": 0
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "프로필 편집 버전(V2_156). 조회한 값을 그대로 돌려보낸다 — 다르면 409, 없으면 400.",
+            "minimum": 0
           }
         },
         "required": [
-          "userNm"
+          "userNm",
+          "version"
         ]
       },
       "UserAbsenceDto": {
@@ -45693,6 +45707,12 @@
           "mfaEnabled": {
             "type": "boolean",
             "readOnly": true
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "프로필 편집 버전(V2_156). 조회한 값을 프로필 수정 요청에 그대로 돌려보낸다 — 다르면 409, 없으면 400.",
+            "minimum": 0
           }
         },
         "required": [

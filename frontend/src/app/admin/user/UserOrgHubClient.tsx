@@ -798,6 +798,12 @@ export default function UserOrgHubClient({
   });
   const { isDeptsLoading, isDeptsError, refetchDepts, departments, deptTotal, flattenedDepts, hasDeptChanges } = deptTree;
 
+  /**
+   * [2026-11-25 V2_156] 사용자 수정 창을 연 순간의 프로필 편집 버전(상세 응답). 창이 열린 동안 상세가 다시 조회돼도 폼은 연 때의 내용을
+   * 들고 있으므로, 새 버전을 보내면 그 사이 다른 사람의 저장을 덮는다 — 부서 편집(openedDeptVersionRef)과 같은 이유다.
+   */
+  const openedUserVersionRef = useRef<number | undefined>(undefined);
+
   const onUserSubmit = async (values: UserFormValues) => {
     const operation = 'user-form' as const;
     if (!beginNonFormAction(operation)) return;
@@ -806,7 +812,13 @@ export default function UserOrgHubClient({
         await userAdminService.createUser(values as UserManage);
         toast('사용자가 성공적으로 등록되었습니다.', 'success');
       } else {
-        await userAdminService.updateUser(selectedItemId as string, values as UserManage);
+        // [2026-11-25 V2_156] 연 사용자의 편집 버전을 함께 보낸다 — 그 사이 다른 관리자(또는 본인)가 고쳤으면 서버가 409 로 거부한다.
+        const openedVersion = openedUserVersionRef.current;
+        if (openedVersion === undefined) {
+          toast('사용자 정보를 다시 불러온 뒤 수정해 주세요.', 'error');
+          return;
+        }
+        await userAdminService.updateUser(selectedItemId as string, { ...(values as UserManage), version: openedVersion });
         toast('사용자 정보가 수정되었습니다.', 'success');
       }
       refetchUsers();
@@ -914,7 +926,10 @@ export default function UserOrgHubClient({
       unlockBusy={activeWriteOperation === 'unlock-user'}
       forceLogoutBusy={activeWriteOperation === 'force-logout'}
       deleteBusy={activeWriteOperation === 'delete-user'}
-      onOpenEdit={dialogs.handleOpenUserEdit}
+      onOpenEdit={() => {
+        openedUserVersionRef.current = (selectedUserDetail as UserManage | undefined)?.version;
+        dialogs.handleOpenUserEdit();
+      }}
       onOpenPasswordReset={dialogs.handleOpenPasswordReset}
       onUnlock={() => void handleUnlockUser()}
       onForceLogout={() => void handleForceLogout()}

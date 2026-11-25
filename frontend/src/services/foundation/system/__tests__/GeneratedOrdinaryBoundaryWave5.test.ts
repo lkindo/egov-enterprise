@@ -175,7 +175,7 @@ describe('ordinary generated boundary wave5', () => {
     client.getRaw.mockResolvedValueOnce(success(me));
     await expect(userService.getMe()).resolves.toStrictEqual(me);
     await userService.changePassword('Oldpass1!', 'Newpass1!');
-    await userService.updateMe({ userNm: '김철수' });
+    await userService.updateMe({ userNm: '김철수', version: 1 });
 
     expect(client.getRaw).toHaveBeenCalledWith('users/me', undefined);
     expect(client.requestRaw).toHaveBeenCalledWith({
@@ -186,7 +186,7 @@ describe('ordinary generated boundary wave5', () => {
     expect(client.requestRaw).toHaveBeenCalledWith({
       url: 'users/me',
       method: 'put',
-      data: { userNm: '김철수' },
+      data: { userNm: '김철수', version: 1 },
     });
     expect(client.put).not.toHaveBeenCalled();
   });

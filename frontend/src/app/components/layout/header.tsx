@@ -383,6 +383,7 @@ export function Header({
           <ProfileEditForm
             isPending={isProfilePending}
             initialValues={profileInitial}
+            editVersion={profileInitial.version}
             onCancel={() => { if (!isProfilePending) setProfileInitial(null); }}
             onSubmit={async (patch) => {
               if (profilePendingRef.current) return;
