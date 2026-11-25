@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import nuri.api.support.SortableBy;
 import nuri.api.support.UnsortedPageable;
 import nuri.foundation.core.exception.InvalidSortParameterException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.MethodParameter;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -29,7 +30,9 @@ import java.util.regex.Pattern;
  * 목록에 있어야 하고, 표시가 없으면 형식이 맞아도 400 이다. 속성은 손으로 쪼개지 않고 핸들러가 실제로 받을 정렬을 Spring Data 의
  * 정렬 리졸버로 만들어 본다(공백·옵션 위치까지 리졸버와 같게, Codex 검토). 대소문자 무시({@code ignorecase})는 허용 목록이 열어 둘 때만
  * 받는다 — 숫자 열에 붙으면 저장소가 문자열 함수로 감싸 실패한다. {@link UnsortedPageable} 은 종전대로 받되 걷어 낸다(ADR-0036).
- * 정렬 인자가 없는 핸들러는 형식만 본다. 정렬 파라미터 이름은 리졸버 설정({@code spring.data.web.sort.sort-parameter})과 같다.
+ * 정렬 인자가 없는 핸들러는 형식만 본다. 정렬 파라미터 이름은 리졸버 설정({@code spring.data.web.sort.sort-parameter})과 같고,
+ * {@code @Qualifier} 가 붙은 인자는 리졸버처럼 {@code 한정자_이름} 을 읽는다 — 인자마다 그 인자가 실제로 받는 키만 보고, 모든 정렬 인자에
+ * 정책을 적용한다(Codex 2차 검토).
  */
 public class SortParameterGuard implements HandlerInterceptor {
 
@@ -52,24 +55,8 @@ public class SortParameterGuard implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        String[] values = request.getParameterValues(sortParameter);
-        if (values == null) {
-            return true;
-        }
-        boolean anyToken = false;
-        for (String value : values) {
-            for (String token : value.split(",")) {
-                String trimmed = token.trim();
-                if (trimmed.isEmpty()) {
-                    continue;
-                }
-                if (!TOKEN.matcher(trimmed).matches()) {
-                    throw new InvalidSortParameterException();
-                }
-                anyToken = true;
-            }
-        }
-        if (!anyToken || !(handler instanceof HandlerMethod method)) {
+        assertFormat(request.getParameterValues(sortParameter));
+        if (!(handler instanceof HandlerMethod method)) {
             return true;
         }
         for (MethodParameter parameter : method.getMethodParameters()) {
@@ -77,12 +64,18 @@ public class SortParameterGuard implements HandlerInterceptor {
             if (!Pageable.class.isAssignableFrom(type) && !Sort.class.isAssignableFrom(type)) {
                 continue;
             }
+            String key = parameterKey(parameter);
+            String[] values = request.getParameterValues(key);
+            if (values == null) {
+                continue; // 이 인자는 정렬을 받지 않았다 — 리졸버의 기본 정렬(@SortDefault·@PageableDefault)은 명시 정렬이 아니다.
+            }
+            assertFormat(values);
             if (parameter.hasParameterAnnotation(UnsortedPageable.class)) {
-                return true; // 받되 핸들러가 걷어 낸다(PageRequests.unsorted).
+                continue; // 받되 핸들러가 걷어 낸다(PageRequests.unsorted).
             }
             Sort requested = sortResolver.resolveArgument(parameter, null, new ServletWebRequest(request), null);
             if (requested.isUnsorted()) {
-                return true; // 방향만 온 값 — 정렬할 속성이 없다.
+                continue; // 방향만 온 값 — 정렬할 속성이 없다.
             }
             SortableBy sortable = parameter.getParameterAnnotation(SortableBy.class);
             if (sortable == null) {
@@ -94,8 +87,27 @@ public class SortParameterGuard implements HandlerInterceptor {
                     throw new InvalidSortParameterException();
                 }
             }
-            return true;
         }
         return true;
+    }
+
+    /** 리졸버가 이 인자에서 읽는 정렬 키 — {@code @Qualifier("left")} 면 {@code left_sort}(Spring Data 기본 구분자). */
+    private String parameterKey(MethodParameter parameter) {
+        Qualifier qualifier = parameter.getParameterAnnotation(Qualifier.class);
+        return qualifier == null || qualifier.value().isEmpty() ? sortParameter : qualifier.value() + "_" + sortParameter;
+    }
+
+    private static void assertFormat(String[] values) {
+        if (values == null) {
+            return;
+        }
+        for (String value : values) {
+            for (String token : value.split(",")) {
+                String trimmed = token.trim();
+                if (!trimmed.isEmpty() && !TOKEN.matcher(trimmed).matches()) {
+                    throw new InvalidSortParameterException();
+                }
+            }
+        }
     }
 }

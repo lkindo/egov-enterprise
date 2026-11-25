@@ -52,6 +52,8 @@ class SortParameterGuardTest {
         void unsorted(@UnsortedPageable Pageable pageable) { }
         void sortable(@SortableBy({"hlpSn", "crtDt"}) Pageable pageable) { }
         void sortableIgnoringCase(@SortableBy(value = {"hlpNm"}, ignoreCase = true) Pageable pageable) { }
+        void two(@org.springframework.beans.factory.annotation.Qualifier("left") @SortableBy("hlpSn") Pageable left,
+                @org.springframework.beans.factory.annotation.Qualifier("right") Pageable right) { }
     }
 
     private boolean allowsOn(String method, String... sorts) throws NoSuchMethodException {
@@ -60,8 +62,9 @@ class SortParameterGuardTest {
 
     private static boolean allowsOn(SortParameterGuard target, String parameter, String method, String... sorts)
             throws NoSuchMethodException {
-        Class<?>[] types = method.equals("plain") ? new Class<?>[] {String.class} : new Class<?>[] {Pageable.class};
-        var handler = new HandlerMethod(new Handlers(), Handlers.class.getDeclaredMethod(method, types));
+        var declared = java.util.Arrays.stream(Handlers.class.getDeclaredMethods()).filter(m -> m.getName().equals(method))
+                .findFirst().orElseThrow(() -> new NoSuchMethodException(method));
+        var handler = new HandlerMethod(new Handlers(), declared);
         var request = new MockHttpServletRequest();
         request.addParameter(parameter, sorts);
         return target.preHandle(request, new MockHttpServletResponse(), handler);
@@ -117,5 +120,14 @@ class SortParameterGuardTest {
         assertThatThrownBy(() -> allowsOn(renamed, "order", "open", "crtDt,DESC")).isInstanceOf(InvalidSortParameterException.class);
         assertThat(allowsOn(renamed, "order", "sortable", "hlpSn,DESC")).isTrue();
         assertThat(allowsOn(renamed, "sort", "open", "crtDt,DESC")).as("리졸버가 읽지 않는 이름은 정렬이 아니다").isTrue();
+    }
+    @Test
+    @DisplayName("[Codex 2차 검토] @Qualifier 인자는 리졸버처럼 한정자_sort 를 읽고, 모든 정렬 인자에 정책을 적용한다")
+    void qualifiedPageablesAreCheckedByTheirOwnKeys() throws Exception {
+        assertThat(allowsOn(guard, "left_sort", "two", "hlpSn,DESC")).isTrue();
+        assertThatThrownBy(() -> allowsOn(guard, "left_sort", "two", "crtDt")).isInstanceOf(InvalidSortParameterException.class);
+        assertThatThrownBy(() -> allowsOn(guard, "right_sort", "two", "crtDt")).as("둘째 인자도 본다").isInstanceOf(InvalidSortParameterException.class);
+        assertThat(allowsOn(guard, "sort", "two", "crtDt")).as("어느 인자도 읽지 않는 키는 정렬이 아니다").isTrue();
+        assertThatThrownBy(() -> allowsOn(guard, "right_sort", "two", "[crtDt]")).as("한정 키도 형식을 본다").isInstanceOf(InvalidSortParameterException.class);
     }
 }

@@ -135,6 +135,10 @@ class OpenApiDocumentationTest {
           if (sortDescription != null && !sortDescription.startsWith("정렬 — 속성,방향")) {
             offenders.add(method.toUpperCase(java.util.Locale.ROOT) + " " + path);
           }
+          // 쪽지 받은 목록이 있는 구성이면 정렬을 받지 않는다(허용 목록 없음) — 접두사 검사로는 다시 실려도 놓칠 수 있어 직접 본다.
+          if ("/api/v1/notes/received".equals(path) && "get".equals(method)) {
+            assertThat(sortDescription).as(docs + " 쪽지 받은 목록 정렬").isNull();
+          }
           // 도움말 목록이 있는 구성이면 그 정렬은 정확히 hlpSn 하나를 허용한다.
           if ("/api/v1/help/hpcm".equals(path) && "get".equals(method)) {
             assertThat(sortDescription).as(docs + " 도움말 목록 정렬").contains("허용 속성: hlpSn.");
