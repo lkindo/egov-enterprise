@@ -1,6 +1,5 @@
 import { AxiosRequestConfig } from 'axios';
 import { ApiService } from '@/services/core/ApiService';
-import { toSortList } from '@/services/core/admin-page-query';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { Popup } from '@/types/foundation/banner';
 import type { GeneratedOperationRequest } from '@/types/generated-operations';
@@ -21,7 +20,6 @@ export type PopupInput = GeneratedOperationRequest<'createPopup'>;
 class PopupAdminService extends ApiService {
   /** 팝업창 목록 조회 */
   async getPopupList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Popup>> {
-    const sort = toSortList(params?.sort);
     const generatedConfig = config ? { ...config } : undefined;
     if (generatedConfig) delete generatedConfig.params;
     return this.executeGenerated(getPopupsOperation, {
@@ -31,7 +29,6 @@ class PopupAdminService extends ApiService {
           : {}),
         ...(params?.page !== undefined ? { page: params.page } : {}),
         ...(params?.size !== undefined ? { size: params.size } : {}),
-        ...(sort !== undefined ? { sort } : {}),
       },
       config: generatedConfig,
     }) as Promise<PageResponse<Popup>>;

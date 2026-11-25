@@ -42,7 +42,6 @@ type SurveyPageQuery = {
   keyword?: string;
   page?: number;
   size?: number;
-  sort?: string[];
 };
 
 /**
@@ -52,13 +51,11 @@ type SurveyPageQuery = {
 function toSurveyPageQuery(params?: SearchParams): SurveyPageQuery {
   const page = typeof params?.page === 'number' ? params.page : undefined;
   const size = typeof params?.size === 'number' ? params.size : undefined;
-  const sort = params?.sort;
 
   return {
     keyword: params?.keyword || params?.searchKeyword || params?.searchWrd || '',
     ...(page !== undefined ? { page } : {}),
     ...(size !== undefined ? { size } : {}),
-    ...(sort !== undefined ? { sort: sort as string[] } : {}),
   };
 }
 

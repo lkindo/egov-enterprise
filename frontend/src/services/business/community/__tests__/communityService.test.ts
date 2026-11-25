@@ -47,7 +47,7 @@ describe('communityUserService 목록·상세 generated contract', () => {
 
   it.each([
     ['communityUserService', communityUserService],
-  ] as const)('%s는 같은 목록 계약에서 page와 명시 검색 키를 우선한다', async (_name, service) => {
+  ] as const)('%s는 같은 목록 계약에서 page와 명시 검색 키를 우선하고, 서버가 받지 않는 정렬은 싣지 않는다(2026-11-25 정렬 허용 목록)', async (_name, service) => {
     const params = {
       page: 2, pageIndex: 8, pageNo: 9,
       size: 15, pageUnit: 20, pageSize: 30,
@@ -60,7 +60,7 @@ describe('communityUserService 목록·상세 generated contract', () => {
     await service.getCommunityList(params);
 
     expect(client.getRaw).toHaveBeenCalledWith('communities', {
-      params: { page: 2, size: 15, searchCnd: '0', searchWrd: '개발', sort: ['cmntyNm,asc'] },
+      params: { page: 2, size: 15, searchCnd: '0', searchWrd: '개발' },
     });
     expect(params).toStrictEqual(before);
   });

@@ -15,16 +15,12 @@ export function toCommunityListQuery(params: CommunitySearchParams): CommunityLi
   const size = typeof params.size === 'number' ? params.size : undefined;
   const searchCnd = typeof raw.searchCnd === 'string' ? raw.searchCnd : params.searchCondition;
   const searchWrd = typeof raw.searchWrd === 'string' ? raw.searchWrd : params.searchKeyword;
-  const sort = Array.isArray(raw.sort) && raw.sort.every((item) => typeof item === 'string')
-    ? raw.sort as string[]
-    : undefined;
 
   return {
     ...(page === undefined ? {} : { page }),
     ...(size === undefined ? {} : { size }),
     ...(searchCnd === undefined ? {} : { searchCnd }),
     ...(searchWrd === undefined ? {} : { searchWrd }),
-    ...(sort === undefined ? {} : { sort }),
     ...(params.joined === true ? { joined: true } : {}),
   };
 }

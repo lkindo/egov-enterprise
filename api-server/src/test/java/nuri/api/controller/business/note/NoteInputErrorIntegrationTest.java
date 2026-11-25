@@ -32,15 +32,19 @@ class NoteInputErrorIntegrationTest {
     @Autowired
     MockMvc mvc;
 
+    /**
+     * [2026-11-25 품질 평가] 쪽지 목록은 클라이언트 정렬을 받지 않는다(정렬 허용 목록 없음, 화면이 보내지 않는다) — 형식이 맞는
+     * 실제 필드({@code noteRcptnSn,DESC})도 400 이다. 종전에는 형식만 보아 받았다. 정렬 없는 요청은 그대로 통과한다.
+     */
     @Test
-    @DisplayName("없는 필드나 정렬 식이 아닌 값으로 정렬하면 400 이고, 올바른 정렬은 그대로 통과한다")
+    @DisplayName("없는 필드·정렬 식이 아닌 값·허용 목록 밖 정렬은 400 이고, 정렬 없는 요청은 그대로 통과한다")
     void invalidSortIsBadRequestAndValidSortStillWorks() throws Exception {
-        for (String sort : new String[] {"nope", "[noteRcptnSn,DESC]"}) {
+        for (String sort : new String[] {"nope", "[noteRcptnSn,DESC]", "noteRcptnSn,DESC"}) {
             mvc.perform(get(RECEIVED).param("page", "1").param("size", "10").param("sort", sort))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("C001"));
         }
-        mvc.perform(get(RECEIVED).param("page", "1").param("size", "10").param("sort", "noteRcptnSn,DESC"))
+        mvc.perform(get(RECEIVED).param("page", "1").param("size", "10"))
                 .andExpect(status().isOk());
     }
 }
