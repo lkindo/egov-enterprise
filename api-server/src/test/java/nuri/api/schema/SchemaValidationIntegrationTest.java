@@ -141,8 +141,10 @@ class SchemaValidationIntegrationTest {
                 assertThat(rs.next()).as("V2_156 의 CHECK 가 있어야 한다").isTrue();
                 assertThat(rs.getBoolean(1)).as("V2_158 이 기존 행까지 검증해야 한다").isTrue();
             }
+            // 게시판 기능을 뺀 재사용 생성물에는 tb_bbs_item 이 없다 — 그때는 검색 인덱스를 묻지 않는다.
             boolean trigram;
-            try (ResultSet rs = st.executeQuery("SELECT count(*) FROM pg_extension WHERE extname = 'pg_trgm'")) {
+            try (ResultSet rs = st.executeQuery(
+                    "SELECT count(*) FROM pg_extension WHERE extname = 'pg_trgm' AND to_regclass('tb_bbs_item') IS NOT NULL")) {
                 rs.next();
                 trigram = rs.getInt(1) == 1;
             }
@@ -173,6 +175,10 @@ class SchemaValidationIntegrationTest {
     @Test
     @DisplayName("🚨 V2_157 은 유효한 같은 인덱스는 건너뛰고, 쓸 수 없거나 정의가 다른 같은 이름·게시글이 많은 표에서는 멈추며, 적으면 만든다")
     void trigramMigrationGuardsUnusableIndexesAndLargeTables() throws Exception {
+        // 재사용 생성물은 V2 체인 대신 기준선 덤프(V1_0__baseline)로 스키마를 만든다 — V2_157 본문이 없으니 원본 저장소에서만 본다.
+        if (Files.isRegularFile(repoRoot().resolve("reusable-base-lock.json"))) {
+            return;
+        }
         String script;
         try (var in = getClass().getClassLoader().getResourceAsStream("db/migration/V2_157__index_board_post_search_trgm.sql")) {
             assertThat(in).as("V2_157 이 classpath 에 있어야 한다").isNotNull();
