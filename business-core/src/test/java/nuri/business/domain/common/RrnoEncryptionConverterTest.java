@@ -196,4 +196,70 @@ class RrnoEncryptionConverterTest {
         }
         assertThat(RrnoKeyring.active()).isFalse();
     }
+
+    // ── [2026-11-25 품질 평가 3순위 14] 키링 경계값 — 변이 시험이 경계 비교와 예외 종류를 놓치던 자리 ─────────────────
+
+    @Test
+    @DisplayName("키링은 키 16개까지 받고 17개면 기동을 멈춘다")
+    void keyringAcceptsAtMostSixteenKeys() {
+        java.util.Map<String, String> sixteen = new java.util.HashMap<>();
+        for (int index = 0; index < 16; index++) sixteen.put("k" + index, KEY_A);
+        RrnoKeyring.configure("k0", sixteen);
+        assertThat(RrnoKeyring.active()).isTrue();
+
+        java.util.Map<String, String> seventeen = new java.util.HashMap<>(sixteen);
+        seventeen.put("k16", KEY_A);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> RrnoKeyring.configure("k0", seventeen))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invalid rrno encryption keyring");
+    }
+
+    @Test
+    @DisplayName("빈 평문의 암호문(인증 태그 16바이트뿐)은 풀지 않는다 — 1바이트 평문은 푼다")
+    void ciphertextMustCarryMoreThanTheAuthenticationTag() {
+        RrnoKeyring.configure("k1", java.util.Map.of("k1", KEY_A));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> RrnoKeyring.decrypt(RrnoKeyring.encrypt("")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invalid rrno ciphertext");
+        assertThat(RrnoKeyring.decrypt(RrnoKeyring.encrypt("1"))).isEqualTo("1");
+    }
+
+    @Test
+    @DisplayName("인증 태그가 맞지 않는 암호문은 같은 형식 오류로 거부한다 — 다른 예외로 새지 않는다")
+    void tamperedCiphertextFailsWithTheCiphertextError() {
+        RrnoKeyring.configure("k1", java.util.Map.of("k1", KEY_A));
+        String envelope = RrnoKeyring.encrypt("9001011234567");
+        String[] parts = envelope.split(":", -1);
+        byte[] body = java.util.Base64.getUrlDecoder().decode(parts[3]);
+        body[0] ^= 0x01;
+        String tampered = String.join(":", parts[0], parts[1], parts[2], java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(body));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> RrnoKeyring.decrypt(tampered))
+                .isExactlyInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invalid rrno ciphertext");
+    }
+
+    @Test
+    @DisplayName("봉투 길이 상한은 256자다 — 정확히 256자인 정상 봉투는 풀고 257자는 형식 검사 전에 거부한다")
+    void envelopeLengthLimitIsInclusive() {
+        // 봉투 = "v2:" + 키 ID + ":" + 논스 16자 + ":" + 본문 Base64(4자 단위). 길이가 256 이 되려면 키 ID 가 3자여야 한다.
+        RrnoKeyring.configure("abc", java.util.Map.of("abc", KEY_A));
+        String atLimit = envelopeOfLength(256);
+        assertThat(atLimit).hasSize(256);
+        assertThat(RrnoKeyring.decrypt(atLimit)).isNotEmpty();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> RrnoKeyring.decrypt(atLimit + "A"))
+                .isExactlyInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invalid rrno ciphertext");
+    }
+
+    /** 평문 길이를 늘려 가며 정확히 {@code length} 자인 봉투를 만든다(Base64 4자 단위라 평문 3바이트마다 4자씩 는다). */
+    private static String envelopeOfLength(int length) {
+        for (int size = 1; size < 200; size++) {
+            String envelope = RrnoKeyring.encrypt("x".repeat(size));
+            if (envelope.length() == length) return envelope;
+        }
+        throw new IllegalStateException("no envelope of length " + length);
+    }
 }

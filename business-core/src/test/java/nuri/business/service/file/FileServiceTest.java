@@ -403,6 +403,59 @@ class FileServiceTest {
         verify(accessPolicy).assertReadable(master);
     }
 
+    /**
+     * [2026-11-25 품질 평가 3순위 14] 원래 파일 이름을 붙인 다운로드 리소스는 이름만 바꾸고 나머지는 저장소 리소스에 그대로 맡긴다 — 길이가
+     * 0 으로 새면 응답 길이가 틀려 내려받기가 잘리고, 존재·읽기 가능 여부가 뒤집히면 없는 파일을 내보낸다. 참·거짓 두 저장소 리소스로 본다.
+     */
+    @Test
+    @DisplayName("원래 이름을 붙인 다운로드 리소스는 이름 밖의 모든 값을 저장소 리소스에 맡긴다")
+    void namedDownloadResourceDelegatesEverythingButTheFilename() throws IOException {
+        FileMaster master = new FileMaster(123L);
+        FileDetail detail = FileDetail.builder().fileMaster(master).orgnlFileNm("보고서_원본.pdf")
+                .strgFileNm("stored.pdf").fileStrgPath("path").build();
+        given(fileDetailRepository.findByFileMasterAtchFileSnAndAtchFileSeq(anyLong(), anyInt())).willReturn(Optional.of(detail));
+
+        for (boolean flag : new boolean[] {true, false}) {
+            Resource stored = mock(Resource.class);
+            Resource relative = mock(Resource.class);
+            java.net.URL url = java.net.URI.create("file:/stored/" + flag).toURL();
+            java.io.File file = new java.io.File("stored-" + flag);
+            java.nio.channels.ReadableByteChannel channel = mock(java.nio.channels.ReadableByteChannel.class);
+            java.io.InputStream stream = new java.io.ByteArrayInputStream(new byte[] {1});
+            given(stored.exists()).willReturn(flag);
+            given(stored.isReadable()).willReturn(flag);
+            given(stored.isOpen()).willReturn(flag);
+            given(stored.isFile()).willReturn(flag);
+            given(stored.getURL()).willReturn(url);
+            given(stored.getURI()).willReturn(java.net.URI.create("file:/stored/" + flag));
+            given(stored.getFile()).willReturn(file);
+            given(stored.readableChannel()).willReturn(channel);
+            given(stored.contentLength()).willReturn(flag ? 4096L : 7L);
+            given(stored.lastModified()).willReturn(flag ? 1_700_000_000_000L : 9L);
+            given(stored.createRelative("next")).willReturn(relative);
+            given(stored.getDescription()).willReturn("stored " + flag);
+            given(stored.getInputStream()).willReturn(stream);
+            given(storageService.loadAsResource("stored.pdf", "path")).willReturn(stored);
+
+            Resource named = fileService.getFileResource(123L, 1);
+
+            assertThat(named.getFilename()).isEqualTo("보고서_원본.pdf");
+            assertThat(named.exists()).isEqualTo(flag);
+            assertThat(named.isReadable()).isEqualTo(flag);
+            assertThat(named.isOpen()).isEqualTo(flag);
+            assertThat(named.isFile()).isEqualTo(flag);
+            assertThat(named.getURL()).isSameAs(url);
+            assertThat(named.getURI()).isEqualTo(java.net.URI.create("file:/stored/" + flag));
+            assertThat(named.getFile()).isSameAs(file);
+            assertThat(named.readableChannel()).isSameAs(channel);
+            assertThat(named.contentLength()).isEqualTo(flag ? 4096L : 7L);
+            assertThat(named.lastModified()).isEqualTo(flag ? 1_700_000_000_000L : 9L);
+            assertThat(named.createRelative("next")).isSameAs(relative);
+            assertThat(named.getDescription()).isEqualTo("stored " + flag);
+            assertThat(named.getInputStream()).isSameAs(stream);
+        }
+    }
+
     @Test
     @DisplayName("[IDOR] 단건 상세도 인가 가드를 통과한다")
     void getFileDetail_passesThroughAccessPolicy() {
