@@ -56,7 +56,7 @@ export const getEventApplicationsOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: z.object({ "evntSn": z.number().int() }).strict(),
-  querySchema: z.object({ "status": z.enum(["APPLIED","APPROVED","REJECTED","CANCELLED"]).optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "status": z.enum(["APPLIED","APPROVED","REJECTED","CANCELLED"]).optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseEventApplicationDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseEventApplicationDtoResponseSchema,

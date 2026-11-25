@@ -33,7 +33,8 @@ public class HelpApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#getHpcmList')")
     public ResponseEntity<ApiResponse<PageResponse<HpcmDto>>> getHpcmList(
             @RequestParam(required = false) String keyword,
-            @PageableDefault(size = 10) Pageable pageable) {
+            // 관리 화면이 최신순(hlpSn,DESC)으로 보낸다 — 기본 키라 인덱스가 받친다.
+            @PageableDefault(size = 10) @nuri.api.support.SortableBy("hlpSn") Pageable pageable) {
         Page<HpcmDto> result = helpService.getHpcmList(keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }

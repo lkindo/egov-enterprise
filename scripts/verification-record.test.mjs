@@ -82,7 +82,7 @@ test('records step outcomes, explicit skips and diagnostic Git changes without e
   }
 });
 
-// 모든 실행 기록은 진단 전용(diagnostic-only) 권한만 싣는다(DEC-OPS-433).
+// 모든 실행 기록은 진단 전용(diagnostic-only) 권한만 싣는다(DEC-OPS-434).
 test('every verification record carries diagnostic-only authority', t => {
   const root = fixture(t, { git: true });
   const authorityOf = (entrypoint, scope) => {

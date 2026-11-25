@@ -13739,18 +13739,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -14017,18 +14005,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -14484,18 +14460,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -14677,18 +14641,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -14939,18 +14891,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -15120,7 +15060,7 @@
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+            "description": "정렬 — 속성,방향(asc·desc). 허용 속성: hlpSn. 그 밖의 속성은 400 이다.",
             "required": false,
             "schema": {
               "type": "array",
@@ -16171,18 +16111,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -19564,18 +19492,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -19738,18 +19654,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -20098,18 +20002,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -20272,18 +20164,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -20448,18 +20328,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -21435,18 +21303,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -23759,18 +23615,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -23944,18 +23788,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -24120,21 +23952,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "default": [
-                "crtDt,DESC"
-              ],
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -24310,21 +24127,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "default": [
-                "crtDt,DESC"
-              ],
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -24499,18 +24301,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -24766,18 +24556,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -25178,18 +24956,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -28038,18 +27804,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -28144,18 +27898,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -28571,18 +28313,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -28677,18 +28407,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -29012,18 +28730,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -29118,18 +28824,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -30325,18 +30019,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -30751,18 +30433,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -30950,18 +30620,6 @@
               "default": 20,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -31410,18 +31068,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -31787,18 +31433,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -31894,18 +31528,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -33316,18 +32938,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -37179,18 +36789,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -38077,18 +37675,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -38334,18 +37920,6 @@
               "maximum": 100,
               "minimum": 1
             }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
           }
         ],
         "responses": {
@@ -38582,18 +38156,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],
@@ -39091,18 +38653,6 @@
               "default": 10,
               "maximum": 100,
               "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           }
         ],

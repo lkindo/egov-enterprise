@@ -250,7 +250,7 @@ test('empty stdin and a new ref retain their fail-closed verification paths', ()
   assert.ok(emptyInput.gitCalls.some((call) => call.includes('origin/main..HEAD')));
 
   // 새 작업 브랜치의 첫 push 는 origin/main 과의 전체 차이를 본다. 운영 계약은 작업 브랜치 push 라 Required CI(secret-scan)로
-  //   일원화하고 로컬 훅에서는 생략한다(DEC-OPS-433).
+  //   일원화하고 로컬 훅에서는 생략한다(DEC-OPS-434).
   const newRef = runHook(
     `${pushLine('refs/heads/new-branch', LOCAL_OID, 'refs/heads/new-branch', ZERO_OID)}\n`,
   );
@@ -460,7 +460,7 @@ test('verify profiles run static checks before the operational contracts and sto
     assert.deepEqual(observed.commands, commands, scope);
     assert.deepEqual(observed.exits, [], `${scope}: the success path must not exit early`);
   }
-  // post-push 범위는 폐기됐다 — 알 수 없는 범위로 exit 2 거부한다(DEC-OPS-433).
+  // post-push 범위는 폐기됐다 — 알 수 없는 범위로 exit 2 거부한다(DEC-OPS-434).
   assert.deepEqual(observeVerification('post-push').exits, [2], 'retired post-push scope must fail closed with exit 2');
   // ops·migration 은 운영 계약을 부르지 않고 자기 검사만 돈다(README·verify.mjs 의 '운영 계약을 부르는 범위').
   for (const scope of ['ops', 'migration']) {
@@ -922,7 +922,7 @@ test('pre-push blocks the push when the operational contracts fail on the docume
 });
 
 /*
-  [2026-11-25 DEC-OPS-433] 작업 브랜치만 push 하면 운영 계약은 PR Required CI(secret-scan)에서 검증하므로 로컬 pre-push 에서는 생략한다.
+  [2026-11-25 DEC-OPS-434] 작업 브랜치만 push 하면 운영 계약은 PR Required CI(secret-scan)에서 검증하므로 로컬 pre-push 에서는 생략한다.
   CI 가 미리 막지 않는 ref(main·master·태그·refs/heads 밖)나 ref 를 모르는 push 가 하나라도 있으면 지금처럼 여기서 돈다. 생략 사실은
   실행 기록에 skip(ci-authoritative) 으로 남긴다.
 */

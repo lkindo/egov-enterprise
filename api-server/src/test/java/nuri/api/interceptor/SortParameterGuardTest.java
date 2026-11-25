@@ -5,6 +5,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import nuri.api.support.SortableBy;
+import nuri.api.support.UnsortedPageable;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.method.HandlerMethod;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -37,5 +41,93 @@ class SortParameterGuardTest {
             assertThatThrownBy(() -> allows(sort)).as(sort.length() > 40 ? sort.substring(0, 40) : sort)
                     .isInstanceOf(InvalidSortParameterException.class);
         }
+    }
+    // ---------------------------------------------------------------- 허용 목록(2026-11-25 품질 평가)
+
+    /** 정렬 정책별 핸들러 모양. */
+    @SuppressWarnings("unused")
+    static class Handlers {
+        void plain(String keyword) { }
+        void open(Pageable pageable) { }
+        void unsorted(@UnsortedPageable Pageable pageable) { }
+        void sortable(@SortableBy({"hlpSn", "crtDt"}) Pageable pageable) { }
+        void sortableIgnoringCase(@SortableBy(value = {"hlpNm"}, ignoreCase = true) Pageable pageable) { }
+        void two(@org.springframework.beans.factory.annotation.Qualifier("left") @SortableBy("hlpSn") Pageable left,
+                @org.springframework.beans.factory.annotation.Qualifier("right") Pageable right) { }
+    }
+
+    private boolean allowsOn(String method, String... sorts) throws NoSuchMethodException {
+        return allowsOn(guard, "sort", method, sorts);
+    }
+
+    private static boolean allowsOn(SortParameterGuard target, String parameter, String method, String... sorts)
+            throws NoSuchMethodException {
+        var declared = java.util.Arrays.stream(Handlers.class.getDeclaredMethods()).filter(m -> m.getName().equals(method))
+                .findFirst().orElseThrow(() -> new NoSuchMethodException(method));
+        var handler = new HandlerMethod(new Handlers(), declared);
+        var request = new MockHttpServletRequest();
+        request.addParameter(parameter, sorts);
+        return target.preHandle(request, new MockHttpServletResponse(), handler);
+    }
+
+    @Test
+    @DisplayName("표시 없는 Pageable 은 형식이 맞아도 클라이언트 정렬을 받지 않는다 — 방향만 오면 통과한다")
+    void unannotatedPageableRejectsAnyProperty() throws Exception {
+        assertThatThrownBy(() -> allowsOn("open", "crtDt,DESC")).isInstanceOf(InvalidSortParameterException.class);
+        assertThatThrownBy(() -> allowsOn("open", "crtDt")).isInstanceOf(InvalidSortParameterException.class);
+        assertThat(allowsOn("open", "")).isTrue();
+        assertThat(allowsOn("open", "DESC")).isTrue();
+    }
+
+    @Test
+    @DisplayName("@SortableBy 는 허용 속성만 받는다 — 방향·대소문자 옵션은 속성이 아니고, 목록 밖 속성이 하나라도 있으면 400 이다")
+    void sortableAcceptsOnlyListedProperties() throws Exception {
+        assertThat(allowsOn("sortable", "hlpSn,DESC")).isTrue();
+        assertThat(allowsOn("sortable", "crtDt,asc", "hlpSn", "hlpSn,crtDt,Desc")).isTrue();
+        assertThatThrownBy(() -> allowsOn("sortable", "hlpExpln,asc")).isInstanceOf(InvalidSortParameterException.class);
+        assertThatThrownBy(() -> allowsOn("sortable", "hlpSn,DESC", "user.userNm")).isInstanceOf(InvalidSortParameterException.class);
+        assertThatThrownBy(() -> allowsOn("sortable", "HLPSN")).as("대소문자까지 정확히 일치").isInstanceOf(InvalidSortParameterException.class);
+    }
+
+    @Test
+    @DisplayName("@UnsortedPageable 은 종전대로 받아 핸들러가 걷어 내고, 정렬 인자가 없는 핸들러는 형식만 본다")
+    void unsortedAndNonPagingHandlersKeepFormatOnlyBehaviour() throws Exception {
+        assertThat(allowsOn("unsorted", "userId,DESC")).isTrue();
+        assertThat(allowsOn("plain", "anything,asc")).isTrue();
+        assertThatThrownBy(() -> allowsOn("unsorted", "[userId,DESC]")).isInstanceOf(InvalidSortParameterException.class);
+    }
+    @Test
+    @DisplayName("[Codex 검토] 속성은 Spring Data 리졸버가 실제로 읽는 대로 본다 — 공백 붙은 방향·중간의 방향 낱말은 속성이다")
+    void propertiesFollowTheSpringDataResolver() throws Exception {
+        // 리졸버는 방향·ignorecase 를 끝에서만 소비하고 " DESC" 는 대문자로 바꿔도 방향이 아니라 속성으로 읽는다.
+        assertThatThrownBy(() -> allowsOn("sortable", "hlpSn, DESC")).isInstanceOf(InvalidSortParameterException.class);
+        assertThatThrownBy(() -> allowsOn("sortable", "hlpSn,desc,hlpSn")).isInstanceOf(InvalidSortParameterException.class);
+    }
+
+    @Test
+    @DisplayName("[Codex 검토] 대소문자 무시 정렬은 허용 목록이 열어 둘 때만 받는다 — 숫자 열에 붙으면 저장소가 실패한다")
+    void ignoreCaseRequiresExplicitOptIn() throws Exception {
+        assertThatThrownBy(() -> allowsOn("sortable", "hlpSn,DESC,ignorecase")).isInstanceOf(InvalidSortParameterException.class);
+        assertThat(allowsOn("sortableIgnoringCase", "hlpNm,asc,ignorecase")).isTrue();
+    }
+
+    @Test
+    @DisplayName("[Codex 검토] 정렬 파라미터 이름을 바꾼 배포에서도 리졸버가 읽는 이름으로 허용 목록을 본다")
+    void followsTheConfiguredSortParameterName() throws Exception {
+        var resolver = new org.springframework.data.web.SortHandlerMethodArgumentResolver();
+        resolver.setSortParameter("order");
+        var renamed = new SortParameterGuard(resolver, "order");
+        assertThatThrownBy(() -> allowsOn(renamed, "order", "open", "crtDt,DESC")).isInstanceOf(InvalidSortParameterException.class);
+        assertThat(allowsOn(renamed, "order", "sortable", "hlpSn,DESC")).isTrue();
+        assertThat(allowsOn(renamed, "sort", "open", "crtDt,DESC")).as("리졸버가 읽지 않는 이름은 정렬이 아니다").isTrue();
+    }
+    @Test
+    @DisplayName("[Codex 2차 검토] @Qualifier 인자는 리졸버처럼 한정자_sort 를 읽고, 모든 정렬 인자에 정책을 적용한다")
+    void qualifiedPageablesAreCheckedByTheirOwnKeys() throws Exception {
+        assertThat(allowsOn(guard, "left_sort", "two", "hlpSn,DESC")).isTrue();
+        assertThatThrownBy(() -> allowsOn(guard, "left_sort", "two", "crtDt")).isInstanceOf(InvalidSortParameterException.class);
+        assertThatThrownBy(() -> allowsOn(guard, "right_sort", "two", "crtDt")).as("둘째 인자도 본다").isInstanceOf(InvalidSortParameterException.class);
+        assertThat(allowsOn(guard, "sort", "two", "crtDt")).as("어느 인자도 읽지 않는 키는 정렬이 아니다").isTrue();
+        assertThatThrownBy(() -> allowsOn(guard, "right_sort", "two", "[crtDt]")).as("한정 키도 형식을 본다").isInstanceOf(InvalidSortParameterException.class);
     }
 }
