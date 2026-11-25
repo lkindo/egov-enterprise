@@ -39,12 +39,11 @@ describe('ManualAdminService generated operation 계약', () => {
     client.requestRaw.mockResolvedValue(success(null));
   });
 
-  it('목록 조회는 OpenAPI의 keyword/page/size/sort 이름을 그대로 사용한다', async () => {
+  it('목록 조회는 OpenAPI의 keyword/page/size 이름을 그대로 사용한다(정렬은 받지 않는다 — 2026-11-25 정렬 허용 목록)', async () => {
     await manualAdminService.getManualList({
       keyword: '결재',
       page: 1,
       size: 20,
-      sort: ['onlnMnlSn,desc'],
     });
 
     expect(client.getRaw).toHaveBeenCalledWith('help/manuals', {
@@ -52,7 +51,6 @@ describe('ManualAdminService generated operation 계약', () => {
         keyword: '결재',
         page: 1,
         size: 20,
-        sort: ['onlnMnlSn,desc'],
       },
     });
   });

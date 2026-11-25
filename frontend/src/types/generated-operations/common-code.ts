@@ -322,7 +322,7 @@ export const getChangeHistoryOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "cdId": z.string().optional(), "clsfCd": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "cdId": z.string().optional(), "clsfCd": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseCommonCodeChangeDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseCommonCodeChangeDtoResponseSchema,
