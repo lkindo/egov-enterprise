@@ -158,37 +158,31 @@ function resolvedHandlerContract(formNode, ownerNode) {
 }
 
 /**
- * 이름의 선언. 먼저 그 파일 안에서 이름으로 찾는다. 없으면 [2026-11-25] 그 파일이 훅 호출을 구조 분해해 받은 이름인지 보고
- * (`const { handleDelete } = useItemActions(...)`), 그 훅(같은 파일의 함수이거나 가져온 로컬 모듈의 함수) 본문에서 돌려주는
- * 선언으로 따라간다. 화면을 훅 파일로 나눠도 단추의 처리기·쓰기·잠금을 같은 근거로 읽기 위해서다 — 종전에는 파일 하나 안에서만
- * 찾아, 처리기를 다른 파일로 옮기면 그 쓰기 경계가 census 에서 조용히 빠졌다. 가져오지 않은 파일의 같은 이름은 보지 않는다.
+ * 이름의 선언. 먼저 그 파일 안에서 이름으로 찾는다. 없으면 [2026-11-25] 참조한 코드({@code from})를 감싸는 범위에서 훅 호출을
+ * 구조 분해해 받은 이름인지 보고(`const { handleDelete } = useItemActions(...)`), 그 훅(같은 파일의 함수이거나 가져온 로컬 모듈의
+ * 함수)이 실제로 돌려주는 값으로 따라간다. 화면을 훅 파일로 나눠도 단추의 처리기·쓰기·잠금을 같은 근거로 읽기 위해서다 — 종전에는
+ * 파일 하나 안에서만 찾아, 처리기를 다른 파일로 옮기면 그 쓰기 경계가 census 에서 조용히 빠졌다. 가져오지 않은 파일의 같은 이름,
+ * 참조를 감싸지 않는 다른 컴포넌트의 구조 분해, 훅이 돌려주지 않는 같은 이름의 지역 함수는 보지 않는다.
  */
-function localDeclaration(sourceFile, name, from = null) {
-  return sameFileDeclaration(sourceFile, name, from) ?? hookBindingDeclaration(sourceFile, name);
+function localDeclaration(sourceFile, name, from = null, depth = 0) {
+  return sameFileDeclaration(sourceFile, name, from) ?? hookBindingDeclaration(sourceFile, name, from, depth);
 }
 
-/**
- * 파일 안의 선언. 같은 이름이 여럿이면(한 파일의 여러 훅이 저마다 `mutation` 을 두는 등) 참조한 노드({@code from})를 감싸는 가장
- * 가까운 범위의 선언을 고른다 — 종전처럼 파일의 첫 선언을 고르면 다른 훅의 것을 빌려 쓰기 경로를 잘못 읽었다(2026-11-25).
- * 감싸는 범위의 선언이 없거나 {@code from} 을 모르면 종전처럼 첫 선언이다.
- */
-function sameFileDeclaration(sourceFile, name, from = null) {
-  const candidates = [
-    ...sourceFile.getDescendantsOfKind(SyntaxKind.FunctionDeclaration).filter((declaration) => declaration.getName() === name),
-    ...sourceFile.getDescendantsOfKind(SyntaxKind.VariableDeclaration).filter((declaration) => declaration.getName() === name),
-  ];
-  if (candidates.length <= 1 || !from || from.getSourceFile() !== sourceFile) return candidates[0] ?? null;
+/** 선언이 사는 함수 범위(최상위면 파일). */
+function scopeOf(node) {
+  let current = node.getParent();
+  while (current && !Node.isSourceFile(current) && !Node.isFunctionDeclaration(current)
+    && !Node.isArrowFunction(current) && !Node.isFunctionExpression(current) && !Node.isMethodDeclaration(current)) {
+    current = current.getParent();
+  }
+  return current ?? node.getSourceFile();
+}
+
+/** {@code from} 을 감싸는 범위의 후보 가운데 가장 안쪽 것. 감싸는 후보가 없으면 null 이다. */
+function innermostEnclosing(candidates, from) {
   const enclosing = new Set([from, ...from.getAncestors()]);
   let best = null;
   let bestDepth = -1;
-  const scopeOf = (node) => {
-    let current = node.getParent();
-    while (current && !Node.isSourceFile(current) && !Node.isFunctionDeclaration(current)
-      && !Node.isArrowFunction(current) && !Node.isFunctionExpression(current) && !Node.isMethodDeclaration(current)) {
-      current = current.getParent();
-    }
-    return current ?? node.getSourceFile();
-  };
   for (const candidate of candidates) {
     const scope = scopeOf(candidate);
     if (!enclosing.has(scope)) continue;
@@ -198,46 +192,96 @@ function sameFileDeclaration(sourceFile, name, from = null) {
       bestDepth = depth;
     }
   }
-  return best ?? candidates[0];
+  return best;
 }
 
-function hookBindingDeclaration(sourceFile, name) {
-  for (const declaration of sourceFile.getDescendantsOfKind(SyntaxKind.VariableDeclaration)) {
+/**
+ * 파일 안의 선언. 같은 이름이 여럿이면(한 파일의 여러 훅이 저마다 `mutation` 을 두는 등) 참조한 노드({@code from})를 감싸는 가장
+ * 가까운 범위의 선언을 고른다 — 종전처럼 파일의 첫 선언을 고르면 다른 훅의 것을 빌려 쓰기 경로를 잘못 읽었다(2026-11-25).
+ * 감싸는 범위의 선언이 없거나 {@code from} 을 모르면 종전처럼 첫 선언이다(같은 이름이 하나면 범위를 보지 않는 종전 규칙도 그대로다 —
+ * 매개변수로 받은 잠금 객체의 출처는 따라가지 않는다. 가이드의 '남은 한계' 참조).
+ */
+function sameFileDeclaration(sourceFile, name, from = null) {
+  const candidates = [
+    ...sourceFile.getDescendantsOfKind(SyntaxKind.FunctionDeclaration).filter((declaration) => declaration.getName() === name),
+    ...sourceFile.getDescendantsOfKind(SyntaxKind.VariableDeclaration).filter((declaration) => declaration.getName() === name),
+  ];
+  if (candidates.length <= 1 || !from || from.getSourceFile() !== sourceFile) return candidates[0] ?? null;
+  return innermostEnclosing(candidates, from) ?? candidates[0];
+}
+
+/**
+ * 구조 분해로 받은 이름 → 훅이 돌려주는 값. 같은 이름을 구조 분해한 곳이 여럿이면 {@code from} 을 감싸는 것만 보고, {@code from} 을
+ * 모르면 하나일 때만 따라간다(다른 컴포넌트의 구조 분해를 빌리지 않는다). 훅의 반환 객체에 그 속성이 없으면 따라가지 않는다.
+ */
+function hookBindingDeclaration(sourceFile, name, from = null, depth = 0) {
+  if (depth > 4) return null;
+  const bindings = sourceFile.getDescendantsOfKind(SyntaxKind.VariableDeclaration).filter((declaration) => {
     const pattern = declaration.getNameNode();
-    if (!Node.isObjectBindingPattern(pattern)) continue;
-    const element = pattern.getElements().find((candidate) => candidate.getNameNode().getText() === name);
-    if (!element) continue;
-    let initializer = declaration.getInitializer();
-    // `const lock = useLock(); const { begin } = lock;` — 훅 결과를 담은 변수를 한 번 거친 구조 분해도 같은 훅으로 따라간다.
-    if (initializer && Node.isIdentifier(initializer)) {
-      const holder = sameFileDeclaration(sourceFile, initializer.getText(), declaration);
-      initializer = holder && Node.isVariableDeclaration(holder) ? holder.getInitializer() : null;
+    return Node.isObjectBindingPattern(pattern)
+      && pattern.getElements().some((candidate) => candidate.getNameNode().getText() === name);
+  });
+  // 참조를 감싸는 구조 분해를 먼저 본다. 감싸는 것이 없으면(처리기를 매개변수로 받은 열 정의 등) 그 이름의 구조 분해가 파일에
+  //   하나뿐일 때만 따라간다 — 같은 이름이 하나면 범위를 보지 않는 종전 이름 규칙과 같고, 둘 이상이면 어느 것인지 모르므로 따라가지 않는다.
+  const binding = (from && from.getSourceFile() === sourceFile ? innermostEnclosing(bindings, from) : null)
+    ?? (bindings.length === 1 ? bindings[0] : null);
+  if (!binding) return null;
+  const element = binding.getNameNode().getElements().find((candidate) => candidate.getNameNode().getText() === name);
+  let initializer = binding.getInitializer();
+  // `const lock = useLock(); const { begin } = lock;` — 훅 결과를 담은 변수를 한 번 거친 구조 분해도 같은 훅으로 따라간다.
+  if (initializer && Node.isIdentifier(initializer)) {
+    const holder = sameFileDeclaration(sourceFile, initializer.getText(), binding);
+    initializer = holder && Node.isVariableDeclaration(holder) ? holder.getInitializer() : null;
+  }
+  if (!initializer || !Node.isCallExpression(initializer) || !Node.isIdentifier(initializer.getExpression())) return null;
+  const hook = hookDefinition(sourceFile, initializer.getExpression().getText());
+  if (!hook) return null;
+  const member = returnedMember(hook, element.getPropertyNameNode()?.getText() ?? name);
+  if (!member) return null;
+  if (member.node) return member.node;
+  return localDeclaration(hook.getSourceFile(), member.name, member.from, depth + 1);
+}
+
+/** 가장 가까운 함수(화살표·함수식 포함). */
+function nearestFunction(node) {
+  let current = node.getParent();
+  while (current && !Node.isFunctionDeclaration(current) && !Node.isArrowFunction(current)
+    && !Node.isFunctionExpression(current) && !Node.isMethodDeclaration(current)) {
+    current = current.getParent();
+  }
+  return current ?? null;
+}
+
+/**
+ * 훅이 돌려주는 객체의 {@code property}. `{ property }`·`{ property: local }` 이면 그 지역 이름과 참조 위치를, `{ property: () => … }`
+ * 처럼 식을 바로 돌려주면 그 식을 돌려준다. 훅 자신의 return(안쪽 콜백의 return 이 아니다)만 보고, 그 속성이 없으면 null 이다 —
+ * 속성 이름과 같은 다른 지역 함수로 되돌아가지 않는다.
+ */
+function returnedMember(hook, property) {
+  const returnedObjects = [];
+  if (Node.isArrowFunction(hook)) {
+    let body = hook.getBody();
+    while (body && Node.isParenthesizedExpression(body)) body = body.getExpression();
+    if (body && Node.isObjectLiteralExpression(body)) returnedObjects.push(body);
+  }
+  for (const statement of hook.getDescendantsOfKind(SyntaxKind.ReturnStatement)) {
+    if (nearestFunction(statement) !== hook) continue;
+    const returned = statement.getExpression();
+    if (returned && Node.isObjectLiteralExpression(returned)) returnedObjects.push(returned);
+  }
+  for (const returned of returnedObjects) {
+    const member = returned.getProperty(property);
+    if (!member) continue;
+    if (Node.isShorthandPropertyAssignment(member)) return { name: property, from: member };
+    if (Node.isPropertyAssignment(member)) {
+      const value = member.getInitializer();
+      if (value && Node.isIdentifier(value)) return { name: value.getText(), from: member };
+      if (value) return { node: value };
     }
-    if (!initializer || !Node.isCallExpression(initializer) || !Node.isIdentifier(initializer.getExpression())) continue;
-    const hook = hookDefinition(sourceFile, initializer.getExpression().getText());
-    if (!hook) continue;
-    const property = element.getPropertyNameNode()?.getText() ?? name;
-    const local = returnedLocalName(hook, property);
-    const found = hook.getDescendantsOfKind(SyntaxKind.FunctionDeclaration).find((candidate) => candidate.getName() === local)
-      ?? hook.getDescendantsOfKind(SyntaxKind.VariableDeclaration).find((candidate) => candidate.getName() === local);
-    if (found) return found;
+    return null;
   }
   return null;
 }
-
-/** 훅이 돌려주는 객체에서 {@code property} 가 가리키는 지역 이름 — `{ property }` 면 그대로, `{ property: other }` 면 other 다. */
-function returnedLocalName(hook, property) {
-  for (const statement of hook.getDescendantsOfKind(SyntaxKind.ReturnStatement)) {
-    const returned = statement.getExpression();
-    if (!returned || !Node.isObjectLiteralExpression(returned)) continue;
-    const member = returned.getProperty(property);
-    if (member && Node.isPropertyAssignment(member) && Node.isIdentifier(member.getInitializer())) {
-      return member.getInitializer().getText();
-    }
-  }
-  return property;
-}
-
 /** 이름이 가리키는 훅 함수 — 같은 파일의 최상위 함수이거나, 이 파일이 상대·`@/` 경로로 가져온 모듈이 내보낸 함수다. */
 function hookDefinition(sourceFile, name) {
   const local = topLevelFunction(sourceFile, name);
@@ -283,6 +327,25 @@ function localModuleSource(sourceFile, moduleName) {
     .find(Boolean) ?? null;
 }
 
+/** 근거 노드들이 사는 파일 전부에서 상태의 setter 이름을 찾는다 — 상태가 훅 파일에 있으면 그 파일에서 찾는다(2026-11-25). */
+function contractStateSetterName(contract, stateName) {
+  const files = [...new Set(contract.nodes.map((node) => node.getSourceFile()))];
+  for (const file of files) {
+    const setter = stateSetterName(file, stateName);
+    if (setter) return setter;
+  }
+  return null;
+}
+
+/** 쓰기 근거 위치 — 호출이 다른 파일(훅 파일)에 있으면 그 파일의 경로·줄을 쓴다(2026-11-25). */
+function writeEvidenceLocation(call, ownerFile) {
+  const filePath = posix(call.getSourceFile().getFilePath());
+  const marker = '/frontend/src/';
+  const index = filePath.lastIndexOf(marker);
+  const file = index >= 0 ? `frontend/src/${filePath.slice(index + marker.length)}` : ownerFile;
+  return `${file}:${call.getStartLineNumber()}:${call.getExpression().getText()}`;
+}
+
 function stateSetterName(sourceFile, stateName) {
   for (const declaration of sourceFile.getDescendantsOfKind(SyntaxKind.VariableDeclaration)) {
     const nameNode = declaration.getNameNode();
@@ -313,8 +376,9 @@ function referencedLocalNames(node) {
     }
     for (const argument of call.getArguments()) {
       if (!Node.isIdentifier(argument)) continue;
-      const declaration = localDeclaration(node.getSourceFile(), argument.getText());
-      const initializer = Node.isVariableDeclaration(declaration) ? declaration.getInitializer() : null;
+      const declaration = localDeclaration(node.getSourceFile(), argument.getText(), argument);
+      // 훅이 식을 바로 돌려주면 그 식이 선언 자리에 온다.
+      const initializer = Node.isVariableDeclaration(declaration) ? declaration.getInitializer() : declaration;
       if (Node.isFunctionDeclaration(declaration)
         || Node.isArrowFunction(initializer)
         || Node.isFunctionExpression(initializer)) names.push(argument.getText());
@@ -345,15 +409,15 @@ function resolvedControlContract(controlNode) {
   if (expression && Node.isIdentifier(expression)) directNames.push(expression.getText());
   for (const call of initializer.getDescendantsOfKind(SyntaxKind.CallExpression)) {
     const callExpression = call.getExpression();
-    if (Node.isIdentifier(callExpression) && localDeclaration(sourceFile, callExpression.getText())) {
+    if (Node.isIdentifier(callExpression) && localDeclaration(sourceFile, callExpression.getText(), call)) {
       directNames.push(callExpression.getText());
     } else {
       const receiver = rootIdentifier(callExpression);
-      if (receiver && localDeclaration(sourceFile, receiver)) directNames.push(receiver);
+      if (receiver && localDeclaration(sourceFile, receiver, call)) directNames.push(receiver);
     }
   }
   const delegatedWriteHandler = directNames.find((name) => {
-    const declaration = localDeclaration(sourceFile, name);
+    const declaration = localDeclaration(sourceFile, name, initializer);
     return declaration && actionWriteCalls({ nodes: [declaration] }, sourceFile).length > 0;
   });
   const handler = directNames.find((name) => /^(?:begin|handle|on|delete|remove|save|submit|send|create|update)/i.test(name))
@@ -397,15 +461,15 @@ function resolvedInitializerContract(initializer, sourceFile, handlerOverride = 
   if (expression && Node.isIdentifier(expression)) directNames.push(expression.getText());
   for (const call of initializer.getDescendantsOfKind(SyntaxKind.CallExpression)) {
     const callExpression = call.getExpression();
-    if (Node.isIdentifier(callExpression) && localDeclaration(sourceFile, callExpression.getText())) {
+    if (Node.isIdentifier(callExpression) && localDeclaration(sourceFile, callExpression.getText(), call)) {
       directNames.push(callExpression.getText());
     } else {
       const receiver = rootIdentifier(callExpression);
-      if (receiver && localDeclaration(sourceFile, receiver)) directNames.push(receiver);
+      if (receiver && localDeclaration(sourceFile, receiver, call)) directNames.push(receiver);
     }
   }
   const delegatedWriteHandler = directNames.find((name) => {
-    const declaration = localDeclaration(sourceFile, name);
+    const declaration = localDeclaration(sourceFile, name, initializer);
     return declaration && actionWriteCalls({ nodes: [declaration] }, sourceFile).length > 0;
   });
   const handler = handlerOverride
@@ -429,8 +493,9 @@ function bulkActionContracts(controlNode) {
   const expression = initializer && Node.isJsxExpression(initializer) ? initializer.getExpression() : null;
   let array = expression;
   if (array && Node.isIdentifier(array)) {
-    const declaration = localDeclaration(controlNode.getSourceFile(), array.getText());
-    array = declaration && Node.isVariableDeclaration(declaration) ? declaration.getInitializer() : null;
+    const declaration = localDeclaration(controlNode.getSourceFile(), array.getText(), array);
+    array = declaration && Node.isVariableDeclaration(declaration) ? declaration.getInitializer()
+      : declaration && !Node.isFunctionDeclaration(declaration) ? declaration : null;
   }
   const collectObjects = (node, seen = new Set()) => {
     if (!node || seen.has(node)) return [];
@@ -440,8 +505,9 @@ function bulkActionContracts(controlNode) {
     if (Node.isConditionalExpression(node)) return [...collectObjects(node.getWhenTrue(), nextSeen), ...collectObjects(node.getWhenFalse(), nextSeen)];
     if (Node.isIdentifier(node)) {
       // 배열 안의 이름은 그 배열이 있는 파일에서 푼다(훅 파일로 따라간 배열이면 훅 파일).
-      const declaration = localDeclaration(node.getSourceFile(), node.getText());
-      return declaration && Node.isVariableDeclaration(declaration) ? collectObjects(declaration.getInitializer(), nextSeen) : [];
+      const declaration = localDeclaration(node.getSourceFile(), node.getText(), node);
+      if (!declaration || Node.isFunctionDeclaration(declaration)) return [];
+      return collectObjects(Node.isVariableDeclaration(declaration) ? declaration.getInitializer() : declaration, nextSeen);
     }
     return Node.isObjectLiteralExpression(node) ? [node] : [];
   };
@@ -503,7 +569,7 @@ function blockingRefNames(contract) {
         const helperName = callName(call);
         const escaped = helperName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         if (new RegExp('!\\s*' + escaped + '\\s*\\(').test(condition.getText())) continue;
-        const declaration = localDeclaration(call.getSourceFile(), helperName);
+        const declaration = localDeclaration(call.getSourceFile(), helperName, call);
         if (declaration) addPositiveRefs(declaration.getText());
       }
     }
@@ -816,7 +882,7 @@ function synchronousRefLockNames(contract) {
       .filter((call) => Node.isIdentifier(call.getExpression()))
       .map((call) => callName(call));
     const positiveHelper = helperCallNames.some((name) => {
-      const declaration = localDeclaration(statement.getSourceFile(), name);
+      const declaration = localDeclaration(statement.getSourceFile(), name, statement);
       if (!declaration || !new RegExp(`\\b${escaped}\\.current\\b`).test(declaration.getText())) return false;
       const helperEscaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       if (new RegExp(`!\\s*${helperEscaped}\\s*\\(`).test(condition)) return false;
@@ -1031,7 +1097,7 @@ function pendingStateIdentifiers(initializerOrAttribute) {
     const name = queued[index];
     if (seen.has(name)) continue;
     seen.add(name);
-    const declaration = localDeclaration(expression.getSourceFile(), name);
+    const declaration = localDeclaration(expression.getSourceFile(), name, expression);
     if (!declaration || !Node.isVariableDeclaration(declaration)) continue;
     const declarationInitializer = declaration.getInitializer();
     if (!declarationInitializer) continue;
@@ -1074,7 +1140,7 @@ function pendingStateSpansWrite(contract, identifier) {
   }
   const sourceFile = contract.nodes[0]?.getSourceFile();
   if (!sourceFile) return false;
-  const setter = stateSetterName(sourceFile, identifier)
+  const setter = contractStateSetterName(contract, identifier)
     ?? 'set' + (identifier[0]?.toUpperCase() ?? '') + identifier.slice(1);
   const writes = actionWriteCalls(contract, sourceFile);
   if (writes.length === 0) return false;
@@ -1187,8 +1253,7 @@ function linkedPendingControl(disabled, ariaBusy, contract = null) {
       const escapedRoot = root.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       return new RegExp(`\\b${escapedRoot}\\.(?:mutate|mutateAsync)\\s*\\(`).test(contract.text);
     }
-    const sourceFile = contract.nodes[0]?.getSourceFile();
-    const setter = (sourceFile ? stateSetterName(sourceFile, identifier) : null)
+    const setter = contractStateSetterName(contract, identifier)
       ?? `set${identifier[0]?.toUpperCase() ?? ''}${identifier.slice(1)}`;
     return new RegExp(`\\b${setter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\(`).test(contract.text);
   });
@@ -1312,7 +1377,7 @@ function actionValidationMetadata(contract) {
       const adapter = rootIdentifier(expression.getExpression());
       if (!adapter) continue;
       adapters.push(adapter);
-      const declaration = localDeclaration(node.getSourceFile(), adapter);
+      const declaration = localDeclaration(node.getSourceFile(), adapter, node);
       const initializer = declaration && Node.isVariableDeclaration(declaration) ? declaration.getInitializer() : null;
       if (initializer && Node.isCallExpression(initializer) && callName(initializer) === 'useManualFormValidation') {
         const schema = initializer.getArguments()[0];
@@ -1449,7 +1514,7 @@ function collectSignals(ownerNode, formNode, sourceText, file, kind) {
     primitiveSignal,
     searchSignal,
     strongWrite,
-    writeEvidence: uniqueSorted(writes.slice(0, 8).map((call) => `${file}:${call.getStartLineNumber()}:${call.getExpression().getText()}`)),
+    writeEvidence: uniqueSorted(writes.slice(0, 8).map((call) => writeEvidenceLocation(call, file))),
     implementation: {
       applyServerErrors,
       compileTimeDisabledWrite: compileTimeDisabledWrite(
@@ -1658,7 +1723,7 @@ export function discoverFormValidationBoundaries({
             primitiveSignal: false,
             searchSignal: false,
             strongWrite: true,
-            writeEvidence: uniqueSorted(writes.map((call) => `${file}:${call.getStartLineNumber()}:${call.getExpression().getText()}`)),
+            writeEvidence: uniqueSorted(writes.map((call) => writeEvidenceLocation(call, file))),
             evidenceTokens: uniqueSorted([...actionEvidenceTokens(writes, bulkAction.contract.handler), bulkAction.triggerLabel]),
             controlEvidenceTokens: [bulkAction.triggerLabel],
             implementation: {
@@ -1730,7 +1795,7 @@ export function discoverFormValidationBoundaries({
           primitiveSignal: false,
           searchSignal: false,
           strongWrite: true,
-          writeEvidence: uniqueSorted(writes.map((call) => `${file}:${call.getStartLineNumber()}:${call.getExpression().getText()}`)),
+          writeEvidence: uniqueSorted(writes.map((call) => writeEvidenceLocation(call, file))),
           evidenceTokens: uniqueSorted([
             ...actionEvidenceTokens(writes, contract.handler),
             ...actionControlTokens,

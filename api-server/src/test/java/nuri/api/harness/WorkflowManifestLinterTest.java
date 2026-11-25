@@ -813,6 +813,8 @@ class WorkflowManifestLinterTest {
         assertThat(zapComposeForwardingViolations(forwarding)).as("세 값을 넘기는 compose 는 통과한다").isEmpty();
         assertThat(zapComposeForwardingViolations(forwarding.replace("      LOGIN_MAX_FAILURES:\n", "")))
                 .as("잠금 한도를 넘기지 않는 compose 는 red").anyMatch(violation -> violation.contains("LOGIN_MAX_FAILURES"));
+        assertThat(zapComposeForwardingViolations(forwarding.replace("      LOGIN_MAX_FAILURES:\n", "      LOGIN_MAX_FAILURES: '0'\n")))
+                .as("compose 가 잠금 한도 값을 고정하면 red").anyMatch(violation -> violation.contains("값을 고정"));
         Path specPath = repoRoot.resolve("api-docs.json");
         if (!Files.isRegularFile(specPath)) {
             fail("게이트 무결성 파손: 커밋된 api-docs.json 을 찾을 수 없습니다 — " + specPath.toAbsolutePath());
@@ -902,6 +904,9 @@ class WorkflowManifestLinterTest {
         for (String name : ZAP_FORWARDED_API_ENV) {
             if (!environment.containsKey(name)) {
                 violations.add("docker-compose.yml 의 api 가 " + name + " 를 넘기지 않는다 — ZAP 잡이 정한 값이 스캔 스택의 앱에 닿지 않는다");
+            } else if (environment.get(name) != null) {
+                // 값을 적으면 잡의 값을 덮고 개발·compose E2E 에도 그 값이 고정된다 — 호스트 값만 넘기는 빈 전달이어야 한다.
+                violations.add("docker-compose.yml 의 api 가 " + name + " 에 값을 고정한다(" + environment.get(name) + ") — 값 없이 호스트 값만 넘겨야 한다");
             }
         }
         return violations;

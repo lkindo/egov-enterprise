@@ -2418,7 +2418,9 @@ const OWNER_BODY = `
 function comparableCandidates(discovery, ownerFile) {
   return discovery.candidates
     .filter(({ file }) => file === ownerFile)
-    .map(({ kind, owner, handler, writeSinks, signals }) => ({ kind, owner, handler, writeSinks, signals }));
+    // 쓰기 근거 위치는 호출이 있는 파일을 적으므로(훅 파일) 경로만 빼고 비교한다 — 줄·쓰기 이름은 같아야 한다.
+    .map(({ kind, owner, handler, writeSinks, signals }) => ({ kind, owner, handler, writeSinks,
+      signals: { ...signals, writeEvidence: (signals.writeEvidence ?? []).map((entry) => entry.replace(/^[^:]+:/, '')) } }));
 }
 
 test('a write hook moved to its own module keeps the same handlers, sinks, lock and pending evidence', () => {
@@ -2551,5 +2553,127 @@ test('a hook result held in a variable and destructured later resolves to the sa
   } finally {
     sameFile.cleanup();
     split.cleanup();
+  }
+});
+
+test('two components that destructure the same handler name from different hooks each keep their own hook', () => {
+  // [Codex 검토 반례] 같은 파일의 두 컴포넌트가 다른 훅에서 같은 이름을 받으면 각자의 훅을 읽는다 — 잠금 없는 쪽이 잠긴 쪽의 근거를 빌리지 않는다.
+  const subject = fixture({
+    'frontend/src/use-guarded.ts': `
+      import { deleteItem } from './itemActions';
+      export function useGuarded(){
+        const [pending, setPending] = useState(false);
+        const lockRef = useRef(false);
+        const handleDelete = async () => {
+          if (lockRef.current) return;
+          lockRef.current = true;
+          setPending(true);
+          try { await deleteItem(1); } catch (error) { toast(String(error)); } finally { lockRef.current = false; setPending(false); }
+        };
+        return { handleDelete, pending };
+      }
+    `,
+    'frontend/src/use-unguarded.ts': `
+      import { removeItem } from './itemActions';
+      export function useUnguarded(){
+        const handleDelete = async () => { await removeItem(1); };
+        return { handleDelete };
+      }
+    `,
+    'frontend/src/TwoOwners.tsx': `
+      import { useGuarded } from './use-guarded';
+      import { useUnguarded } from './use-unguarded';
+      export function GuardedOwner(){
+        const { handleDelete, pending } = useGuarded();
+        return <><input value={name} /><button onClick={handleDelete} disabled={pending} aria-busy={pending}>delete</button></>;
+      }
+      export function UnguardedOwner(){
+        const { handleDelete } = useUnguarded();
+        return <><input value={name} /><button onClick={handleDelete}>purge</button></>;
+      }
+    `,
+  });
+  try {
+    const actions = subject.discovery.candidates.filter(({ kind, file }) => kind === 'secondary-action' && file === 'frontend/src/TwoOwners.tsx');
+    const guarded = actions.find(({ owner }) => owner === 'GuardedOwner');
+    const unguarded = actions.find(({ owner }) => owner === 'UnguardedOwner');
+    assert.deepEqual(guarded?.writeSinks, ['deleteItem']);
+    assert.deepEqual(unguarded?.writeSinks, ['removeItem']);
+    assert.equal(guarded.signals.implementation.actionHandlerHasSynchronousRef, true);
+    assert.equal(unguarded.signals.implementation.actionHandlerHasSynchronousRef, false);
+    assert.equal(unguarded.signals.implementation.actionHandlerHasFailureFeedback, false);
+  } finally {
+    subject.cleanup();
+  }
+});
+
+test('a hook that returns an inline handler is read from that expression, not from a same-named local', () => {
+  // [Codex 검토 반례] 훅이 `{ toggle: async () => … }` 를 돌려주면 그 식을 읽는다 — 남아 있는 같은 이름의 잠긴 지역 함수를 빌리지 않는다.
+  const subject = fixture({
+    'frontend/src/use-toggle.ts': `
+      import { saveToggle } from './itemActions';
+      export function useToggle(){
+        const toggleRef = useRef(false);
+        const toggle = async () => {
+          if (toggleRef.current) return;
+          toggleRef.current = true;
+          try { await saveToggle(1); } catch (error) { toast(String(error)); } finally { toggleRef.current = false; }
+        };
+        void toggle;
+        return { toggle: async () => { await saveToggle(2); } };
+      }
+    `,
+    'frontend/src/ToggleOwner.tsx': `
+      import { useToggle } from './use-toggle';
+      export function ToggleOwner(){
+        const { toggle } = useToggle();
+        return <><input value={name} /><button onClick={toggle}>toggle</button></>;
+      }
+    `,
+  });
+  try {
+    const action = subject.discovery.candidates.find(({ kind, file }) => kind === 'secondary-action' && file === 'frontend/src/ToggleOwner.tsx');
+    assert.ok(action, 'the inline returned handler is still a write boundary');
+    assert.equal(action.signals.implementation.actionHandlerHasSynchronousRef, false);
+    assert.equal(action.signals.implementation.actionHandlerHasFailureFeedback, false);
+  } finally {
+    subject.cleanup();
+  }
+});
+
+test('pending state declared in a hook keeps its setter link even when the setter is not named setX', () => {
+  // [Codex 검토 반례] 상태 선언이 훅 파일에 있으면 setter 이름을 그 파일에서 찾는다 — 화면 파일에서만 찾으면 관례 밖 이름이 거짓 붉음이 된다.
+  const hookFor = (setter) => `
+    import { deleteItem } from './itemActions';
+    export function usePending(){
+      const [busy, ${setter}] = useState(false);
+      const busyRef = useRef(false);
+      const handleDelete = async () => {
+        if (busyRef.current) return;
+        busyRef.current = true;
+        ${setter}(true);
+        try { await deleteItem(1); } catch (error) { toast(String(error)); } finally { busyRef.current = false; ${setter}(false); }
+      };
+      return { handleDelete, busy };
+    }
+  `;
+  const owner = `
+    import { usePending } from './use-pending';
+    export function PendingOwner(){
+      const { handleDelete, busy } = usePending();
+      return <><input value={name} /><button onClick={handleDelete} disabled={busy} aria-busy={busy}>delete</button></>;
+    }
+  `;
+  const conventional = fixture({ 'frontend/src/use-pending.ts': hookFor('setBusy'), 'frontend/src/PendingOwner.tsx': owner });
+  const unconventional = fixture({ 'frontend/src/use-pending.ts': hookFor('markBusy'), 'frontend/src/PendingOwner.tsx': owner });
+  try {
+    const read = (subject) => subject.discovery.candidates
+      .find(({ kind, file }) => kind === 'secondary-action' && file === 'frontend/src/PendingOwner.tsx')?.signals.implementation;
+    assert.equal(read(conventional)?.actionControlHasDisabled, true);
+    assert.equal(read(unconventional)?.actionControlHasDisabled, true);
+    assert.equal(read(unconventional)?.actionControlHasAriaBusy, true);
+  } finally {
+    conventional.cleanup();
+    unconventional.cleanup();
   }
 });

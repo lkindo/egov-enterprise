@@ -241,15 +241,20 @@ class RrnoEncryptionConverterTest {
     }
 
     @Test
-    @DisplayName("봉투 길이 상한은 256자다 — 정확히 256자인 정상 봉투는 풀고 257자는 형식 검사 전에 거부한다")
+    @DisplayName("봉투 길이 상한은 256자다 — 정확히 256자인 정상 봉투는 풀고, 정상 암호화로 만든 257자 봉투는 거부한다")
     void envelopeLengthLimitIsInclusive() {
-        // 봉투 = "v2:" + 키 ID + ":" + 논스 16자 + ":" + 본문 Base64(4자 단위). 길이가 256 이 되려면 키 ID 가 3자여야 한다.
+        // 봉투 = "v2:" + 키 ID + ":" + 논스 16자 + ":" + 본문(URL 안전 Base64, 덧붙임 없음). 평문 길이로 봉투 길이를 맞춘다.
         RrnoKeyring.configure("abc", java.util.Map.of("abc", KEY_A));
         String atLimit = envelopeOfLength(256);
         assertThat(atLimit).hasSize(256);
         assertThat(RrnoKeyring.decrypt(atLimit)).isNotEmpty();
 
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> RrnoKeyring.decrypt(atLimit + "A"))
+        // 257자도 형식·인증 태그는 맞는 봉투다 — 길이 검사가 없으면 풀리므로 이 거부는 길이 상한에서만 나온다. 덧붙임 없는 Base64 는
+        //   4로 나눠 1이 남는 길이가 없어, 키 ID 를 4자로 바꿔 만든다.
+        RrnoKeyring.configure("abcd", java.util.Map.of("abcd", KEY_A));
+        String overLimit = envelopeOfLength(257);
+        assertThat(overLimit).hasSize(257);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> RrnoKeyring.decrypt(overLimit))
                 .isExactlyInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Invalid rrno ciphertext");
     }
