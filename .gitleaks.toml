@@ -29,19 +29,8 @@ useDefault = true
 description = "값 단위 예외 — 각 항목의 사유는 아래 주석 참조"
 
 regexes = [
-  # ── §1 공개 dev JWT 시크릿 (dev·e2e 설정 여러 곳에서 동일 값) ─────────────────────────────────
-  #   이 값은 **의도적으로 공개**된 개발 기본값이다. 백엔드(JwtTokenProvider)와 프론트
-  #   미들웨어가 같은 raw bytes 로 HMAC 해야 로그인이 성립하므로 dev/e2e 양쪽에 같은 값을 둔다.
-  #   운영에서 이 값이 쓰이는 경로는 차단돼 있다:
-  #     · frontend/src/middleware.ts — NODE_ENV=production 이고 JWT_SECRET 미설정이면 모듈 로드 시 throw
-  #     · docker-compose.prod.yml — `${JWT_SECRET:?...}` 로 미설정 시 기동 거부
-  #     · SecretLiteralLinterTest — 운영 설정 파일에 시크릿 리터럴이 들어오면 별도로 red
-  #   즉 "노출된 값" 이 아니라 "노출을 전제로 설계된 값" 이다.
-  '''dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==''',
-
-  # ── §2 명시적 더미 값 ────────────────────────────────────────────────────────────
-  #   application-e2e.yml 의 OpenAI 키. 값 자체가 'dummy...' 이고 해당 기능은 enabled: false 다.
-  '''dummy-api-key-for-e2e''',
+  # [2026-11-25] §1 공개 dev JWT HMAC 시크릿·§2 e2e 더미 키·§4 테스트 시크릿 셋은 쓰는 곳이 사라져 걷었다
+  #   (ADR-0060 2차로 HMAC 서명 비밀을 저장소 전체에서 걷었다 — 예외는 줄이는 쪽으로만 바꾼다).
 
   # ── §3 위조 토큰 (거부되는 것을 증명하는 테스트 자산) ──────────────────────────────
   #   frontend/e2e/journeys/authentication.spec.ts 가 미들웨어의 서명 검증·alg 화이트리스트를
@@ -49,15 +38,6 @@ regexes = [
   #   어떤 시스템에서도 유효하지 않다. 이 토큰이 통과하면 그게 결함이고, 그것을 잡는 것이 이 테스트다.
   '''eyJhbGciOiJIUzUxMiJ9\.eyJzdWIiOiJVU1JDTkZSTV8wMDAwMDAwMDAwMSIsInJvbGUiOiJST0xFX0FETUlOIiwiZXhwIjo5OTk5OTk5OTk5fQ\.invalidsig''',
   '''eyJhbGciOiJub25lIn0\.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJST0xFX0FETUlOIiwiZXhwIjo5OTk5OTk5OTk5fQ\.''',
-
-  # ── §4 테스트 전용 리터럴 (이름 자체가 용도를 밝힌다) ────────────────────────────────
-  #   frontend/src/__tests__/middleware.test.ts — 서명 검증이 **다른 키를 거부하는지** 증명하려면
-  #   서로 다른 두 시크릿이 소스에 있어야 한다. 값 이름이 곧 용도다.
-  '''middleware-test-secret-0123456789-abcdefghijklmnop''',
-  '''a-different-secret-that-must-not-verify-0987654321''',
-  #   api-server/src/test/resources/application.yml — 테스트 컨텍스트 전용 jwt.secret.
-  #   이 파일은 test 소스셋에만 있어 배포 아티팩트에 포함되지 않는다.
-  '''9dd453ca8e726ed8e34d809cd15ce34477f5c2cd136cf9ce0c035513d8d4b492''',
 ]
 
 # ── §4 경로 단위 예외 (불가피한 경우만) ────────────────────────────────────────────

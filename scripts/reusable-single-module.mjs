@@ -131,7 +131,7 @@ sourceSets {
 springBoot { mainClass = 'nuri.ApiServerApplication' }
 bootJar { enabled = true; archiveFileName = 'app.jar' }
 jar { enabled = false }
-tasks.named('bootRun') { workingDir file('api-server') }
+tasks.named('bootRun') { workingDir file('api-server'); if (!System.getenv('SERVER_ADDRESS')) { systemProperty 'server.address', '127.0.0.1' } }
 
 // Verification compiles preserve the original one-way production boundaries.
 // They are test inputs only: bootJar still contains one merged main compilation.
@@ -391,7 +391,7 @@ export function inspectSingleModuleLayout(outputRoot, { migration = true } = {})
     "tasks.matching { it.name == 'vendorIntegrationTest' }.configureEach { workingDir file('api-server'); classpath = sourceSets.test.runtimeClasspath }",
     "tasks.matching { it.name == 'vendorConformanceTest' }.configureEach { workingDir file('api-server'); classpath = sourceSets.test.runtimeClasspath }",
     "tasks.matching { it.name == 'vendorFlywayMigrate' }.configureEach { classpath = sourceSets.test.runtimeClasspath }",
-    "tasks.named('bootRun') { workingDir file('api-server') }", "tasks.named('assemble') { dependsOn 'bootJar', 'migrationBootJar' }",
+    "tasks.named('bootRun') { workingDir file('api-server'); if (!System.getenv('SERVER_ADDRESS')) { systemProperty 'server.address', '127.0.0.1' } }", "tasks.named('assemble') { dependsOn 'bootJar', 'migrationBootJar' }",
     "appVerification: ['foundationVerification', 'coreVerification']",
     'sourceSets.fixtures.compileClasspath += sourceSets.foundationVerification.output + sourceSets.coreVerification.output',
     'suite.compileClasspath += logicalOutputs + fixtures', 'suite.runtimeClasspath += logicalOutputs + fixtures',

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
-import { createHmac, generateKeyPairSync, sign as signCrypto, type KeyObject } from 'node:crypto';
+import { createHash, createHmac, generateKeyPairSync, sign as signCrypto, type KeyObject } from 'node:crypto';
 import type { NextRequest } from 'next/server';
 import { PAGE_PERMISSIONS } from '@/types/generated-permissions';
 import { pageInProjection } from '@/test-utils/projection';
@@ -10,31 +10,38 @@ import { pageInProjection } from '@/test-utils/projection';
  *
  * [존재 이유] 이 경로에는 테스트가 단 한 건도 없었다. 그 공백에서 2026-07-19 에
  * "로그인은 200 인데 페이지 진입에서 /login 으로 되돌아가는" 무음 루프가 발생했다.
- * 원인은 백엔드와 미들웨어의 JWT 시크릿 비대칭이었다 — 백엔드는 루트 .env 의 값으로 서명하고,
+ * 원인은 백엔드와 미들웨어의 JWT 서명 키 비대칭이었다 — 백엔드는 루트 .env 의 값으로 서명하고,
  * 미들웨어는 그 값을 못 받아 내장 dev 기본값으로 검증해 서명 검증이 전량 실패했다.
  *
  * 그래서 이 테스트가 고정하는 최소 명제는 이것이다:
  *   "백엔드가 서명한 토큰은 미들웨어를 통과하고, 다른 키로 서명된 토큰은 통과하지 못한다."
  *
- * 미들웨어는 모듈 로드 시점에 process.env.JWT_SECRET 을 읽어 상수로 굳히므로,
- * 반드시 env 를 먼저 세팅한 뒤 동적 import 해야 한다.
+ * 미들웨어는 모듈 로드 시점에 process.env.JWT_VERIFY_KEYS_JSON 을 읽어 상수로 굳히므로,
+ * 반드시 env 를 먼저 세팅한 뒤 동적 import 해야 한다. ADR-0060 2차(2026-11-25) 뒤 미들웨어는 ES256 만 받는다 —
+ * 시험은 실행 중에 만든 P-256 키쌍의 공개키를 검증키로 주고 그 개인키로 서명한다(개인키 리터럴을 소스에 두지 않는다).
  */
 
-const SECRET = 'middleware-test-secret-0123456789-abcdefghijklmnop';
-const OTHER_SECRET = 'a-different-secret-that-must-not-verify-0987654321';
+const TEST_KID = 'test-es256';
+const TEST_KEYS = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+/** 같은 kid 를 달고 다른 키로 서명한다 — 좌우 키 비대칭의 관측 형태. */
+const OTHER_KEYS = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+const TEST_SPKI_B64 = TEST_KEYS.publicKey.export({ format: 'der', type: 'spki' }).toString('base64');
+const TEST_SPKI_SHA8 = createHash('sha256').update(Buffer.from(TEST_SPKI_B64, 'base64')).digest('hex').slice(0, 8);
 
-const HASH: Record<string, string> = { HS256: 'sha256', HS384: 'sha384', HS512: 'sha512' };
+/** 백엔드(JwtTokenProvider)와 같은 꼴로 ES256(IEEE P1363 서명) 접근 토큰을 만든다. */
+function signToken(payload: Record<string, unknown>, key: KeyObject = TEST_KEYS.privateKey, kid = TEST_KID): string {
+  const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const data = `${b64({ alg: 'ES256', typ: 'JWT', kid })}.${b64({ typ: 'access', ...payload })}`;
+  const sig = signCrypto('sha256', Buffer.from(data), { key, dsaEncoding: 'ieee-p1363' }).toString('base64url');
+  return `${data}.${sig}`;
+}
 
-/** 백엔드(JwtTokenProvider)와 동일한 방식으로 서명한다 — 시크릿을 raw UTF-8 바이트로 쓴다. */
-function signToken(
-  payload: Record<string, unknown>,
-  secret: string,
-  alg: 'HS256' | 'HS384' | 'HS512' = 'HS384'
-): string {
+/** 걷은 HMAC 꼴의 토큰 — 어떤 비밀을 써도 거부돼야 한다. */
+function signHmacToken(payload: Record<string, unknown>, secret: string, alg: 'HS256' | 'HS384' | 'HS512'): string {
+  const hash = { HS256: 'sha256', HS384: 'sha384', HS512: 'sha512' }[alg];
   const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
   const data = `${b64({ alg, typ: 'JWT' })}.${b64({ typ: 'access', ...payload })}`;
-  const sig = createHmac(HASH[alg], Buffer.from(secret, 'utf8')).update(data).digest('base64url');
-  return `${data}.${sig}`;
+  return `${data}.${createHmac(hash, Buffer.from(secret, 'utf8')).update(data).digest('base64url')}`;
 }
 
 const futureExp = () => Math.floor(Date.now() / 1000) + 3600;
@@ -42,7 +49,6 @@ const pastExp = () => Math.floor(Date.now() / 1000) - 3600;
 
 let proxy: (req: NextRequest) => Promise<Response>;
 let NextRequestCtor: typeof NextRequest;
-const originalSecret = process.env.JWT_SECRET;
 const fetchMock = vi.fn();
 const SUBJECT = 'USRCNFRM_fixture_001';
 
@@ -54,12 +60,10 @@ beforeEach(() => {
 });
 
 beforeAll(async () => {
-  process.env.JWT_SECRET = SECRET;
-  // 미들웨어는 검증키·전환 설정도 로드 시점에 굳힌다. 바깥 환경(예: 재사용 야간 검증이 생성물에 넘기는 JWT_VERIFY_KEYS_JSON)이
-  //   새어 들면 내장 dev 키 지문을 단언하는 시험이 환경에 따라 갈린다 — 아래 importFreshProxy 의 기본값과 같게 비워 고정한다.
-  vi.stubEnv('JWT_VERIFY_KEYS_JSON', '');
+  // 미들웨어는 검증키를 로드 시점에 굳힌다. 바깥 환경(예: 재사용 야간 검증이 생성물에 넘기는 JWT_VERIFY_KEYS_JSON)이
+  //   새어 들지 않게 이 시험의 키로 고정한다.
+  vi.stubEnv('JWT_VERIFY_KEYS_JSON', JSON.stringify({ [TEST_KID]: TEST_SPKI_B64 }));
   vi.stubEnv('ALLOW_DEV_JWT_VERIFY_KEYS', '');
-  vi.stubEnv('JWT_ACCEPT_LEGACY_HMAC', '');
   const serverMod = await import('next/server');
   NextRequestCtor = serverMod.NextRequest;
   proxy = (await import('../proxy')).proxy as typeof proxy;
@@ -68,8 +72,6 @@ beforeAll(async () => {
 afterAll(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
-  if (originalSecret === undefined) delete process.env.JWT_SECRET;
-  else process.env.JWT_SECRET = originalSecret;
 });
 
 // 예시 화면이 투영으로 빠진 생성물에서는 그 예시만 뺀다 — 라우트의 page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
@@ -206,19 +208,19 @@ describe('proxy 인증 게이트', () => {
     });
   });
 
-  it('같은 시크릿의 토큰은 통과하고 진단은 비밀 파생값 없이 필요한 메타만 남긴다', async () => {
+  it('같은 키쌍의 토큰은 통과하고 진단은 비밀 파생값 없이 필요한 메타만 남긴다', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     try {
-      const res = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET)));
+      const res = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() })));
       const messages = warn.mock.calls.map(([message]) => String(message));
       const hasMessage = (pattern: RegExp) => messages.some((message) => pattern.test(message));
 
       expect(redirectedToLogin(res)).toBe(false);
       expect(res.status).toBe(200);
       expect(hasMessage(/JWT 검증 성공/u)).toBe(true);
-      expect(hasMessage(/시크릿 출처=환경변수 JWT_SECRET/u)).toBe(true);
-      expect(hasMessage(/spkiSha8=dev-es256-1=3989a5f1/u)).toBe(true);
-      expect(hasMessage(/JWT_SECRET=있음/u)).toBe(true);
+      expect(hasMessage(/검증키 출처=환경변수 JWT_VERIFY_KEYS_JSON/u)).toBe(true);
+      expect(hasMessage(new RegExp(`spkiSha8=${TEST_KID}=${TEST_SPKI_SHA8}`, 'u'))).toBe(true);
+      expect(hasMessage(/JWT_SECRET|HMAC|시크릿 출처/u)).toBe(false);
       expect(hasMessage(/지문|fingerprint/iu)).toBe(false);
       expect(hasMessage(/E2E_DIAG=(?:있음|없음)/u)).toBe(true);
     } finally {
@@ -226,20 +228,25 @@ describe('proxy 인증 게이트', () => {
     }
   });
 
-  it.each(['HS256', 'HS384', 'HS512'] as const)('%s 로 서명해도 통과한다(alg 화이트리스트)', async (alg) => {
-    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET, alg);
-    expect((await proxy(requestWith(token))).status).toBe(200);
+  it.each(['HS256', 'HS384', 'HS512'] as const)('🚨 %s 토큰은 어떤 비밀로 서명해도 거부한다(ADR-0060 2차 — ES256 만 받는다)', async (alg) => {
+    // 검증 공개키 바이트를 HMAC 비밀로 쓰는 alg 혼동 위조도 같은 경로로 막힌다.
+    for (const secret of ['former-shared-hmac-secret-0123456789', TEST_SPKI_B64]) {
+      const token = signHmacToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, secret, alg);
+      const response = await proxy(requestWith(token));
+      expect(redirectedToLogin(response)).toBe(true);
+      expect(response.headers.get('x-mw-auth')).toContain('alg-unsupported');
+    }
   });
 
-  it('[회귀] 다른 시크릿으로 서명된 토큰은 통과하지 못한다 — 좌우 시크릿 비대칭의 관측 형태', async () => {
+  it('[회귀] 다른 키로 서명된 토큰은 통과하지 못한다 — 좌우 키 비대칭의 관측 형태', async () => {
     // 백엔드가 .env 값으로 서명하고 미들웨어가 dev 기본값으로 검증하던 상태가 정확히 이것이다.
     // 로그인 자체는 200 이므로(미들웨어를 우회한다) 사용자에겐 "인증 완료 후 로그인창" 으로만 보였다.
-    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, OTHER_SECRET);
+    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, OTHER_KEYS.privateKey);
     expect(redirectedToLogin(await proxy(requestWith(token)))).toBe(true);
   });
 
   it('만료된 토큰은 통과하지 못한다', async () => {
-    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: pastExp() }, SECRET);
+    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: pastExp() });
     expect(redirectedToLogin(await proxy(requestWith(token)))).toBe(true);
   });
 
@@ -250,7 +257,7 @@ describe('proxy 인증 게이트', () => {
   });
 
   it('서명부를 변조한 토큰은 거부한다', async () => {
-    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET);
+    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() });
     const tampered = token.slice(0, -4) + 'AAAA';
     expect(redirectedToLogin(await proxy(requestWith(tampered)))).toBe(true);
   });
@@ -264,7 +271,7 @@ describe('proxy 인증 게이트', () => {
   });
 
   it('an old ADMIN claim cannot reopen a page after the server revokes its permission', async () => {
-    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET);
+    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() });
     const response = await proxy(requestWith(token, '/admin/system/menus'));
     expect(response.headers.get('x-mw-auth')).toContain('deny=permission');
     expect(new URL(response.headers.get('location')!).pathname).toBe('/');
@@ -278,7 +285,7 @@ describe('proxy 인증 게이트', () => {
     '/admin/community/boards/master/BBSMSTR_AAAAAAAAAAAA/not-registered',
     '/admin/survey/polls/participate/not-registered',
   ])('does not inherit a parent shell allowance for a direct URL to %s', async (route) => {
-    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET);
+    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() });
     const response = await proxy(requestWith(token, route));
     expect(response.headers.get('x-mw-auth')).toContain('deny=permission');
     expect(new URL(response.headers.get('location')!).searchParams.get('auth_error')).toBe('unauthorized');
@@ -291,7 +298,7 @@ describe('proxy 인증 게이트', () => {
     ['/admin/collaboration/scraps/insertScrap', '/admin/collaboration/scraps/insertScrap'],
     ['/admin/collaboration/scraps/selectScrapDetail/fixture-scrap', '/admin/collaboration/scraps/selectScrapDetail/[id]'],
   ] as const).filter(([, page]) => pageInProjection(page)).map(([route]) => route))('preserves explicitly registered authenticated routes, including case-sensitive paths: %s', async (route) => {
-    const response = await proxy(requestWith(signToken({ sub: SUBJECT, exp: futureExp() }, SECRET), route));
+    const response = await proxy(requestWith(signToken({ sub: SUBJECT, exp: futureExp() }), route));
     expect(response.status).toBe(200);
     expect(response.headers.get('location')).toBeNull();
   });
@@ -305,7 +312,7 @@ describe('proxy 인증 게이트', () => {
     '/admin/community/templates',
     '/admin/system/menus',
   ].filter((route) => pageInProjection(route)))('requires current management permission before serving the static route %s', async (route) => {
-    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET);
+    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() });
     const response = await proxy(requestWith(token, route));
     expect(response.headers.get('x-mw-auth')).toContain('deny=permission');
     expect(new URL(response.headers.get('location')!).searchParams.get('auth_error')).toBe('unauthorized');
@@ -313,14 +320,14 @@ describe('proxy 인증 게이트', () => {
 
   // 게시판 운영 화면(동적 [id])도 그 페이지의 권한으로 막고 연다 — 관리자 역할 주장만으로는 열리지 않는다.
   if (pageInProjection('/admin/community/boards/master/[id]')) it('the board operations screen requires its own page permission', async () => {
-    const denied = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET),
+    const denied = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }),
       '/admin/community/boards/master/BBSMSTR_AAAAAAAAAAAA'));
     expect(denied.headers.get('x-mw-auth')).toContain('deny=permission');
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ success: true, code: 'S000', message: '성공', data: {
       id: 'webmaster', esntlId: SUBJECT, groups: ['BOARD_OPERATOR'], permissions: [...PAGE_PERMISSIONS['/admin/community/boards/master/[id]']],
       authorizationVersion: 'v2',
     } })));
-    const allowed = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() }, SECRET),
+    const allowed = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() }),
       '/admin/community/boards/master/BBSMSTR_AAAAAAAAAAAA'));
     expect(allowed.status).toBe(200);
   });
@@ -331,7 +338,7 @@ describe('proxy 인증 게이트', () => {
   const SMS_LEGACY = '/cop/sms/selectSmsList';
   if (pageInProjection(SMS_LEGACY)) it('gates a page outside /admin when the catalog registers a permission for it', async () => {
     expect((PAGE_PERMISSIONS as Record<string, readonly string[]>)[SMS_LEGACY]?.length).toBeGreaterThan(0);
-    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET);
+    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() });
     const denied = await proxy(requestWith(token, SMS_LEGACY));
     expect(denied.headers.get('x-mw-auth')).toContain('deny=permission');
     expect(new URL(denied.headers.get('location')!).searchParams.get('auth_error')).toBe('unauthorized');
@@ -342,14 +349,14 @@ describe('proxy 인증 게이트', () => {
       id: 'webmaster', esntlId: SUBJECT, groups: ['SMS_OPERATOR'],
       permissions: [...(PAGE_PERMISSIONS as Record<string, readonly string[]>)[SMS_LEGACY]], authorizationVersion: 'v2',
     } })));
-    const allowed = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() }, SECRET), SMS_LEGACY));
+    const allowed = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() }), SMS_LEGACY));
     expect(allowed.status).toBe(200);
     expect(allowed.headers.get('location')).toBeNull();
   });
 
   it('does not load authorization for a page outside /admin that only requires sign-in', async () => {
     expect(PAGE_PERMISSIONS['/']).toEqual([]);
-    const response = await proxy(requestWith(signToken({ sub: SUBJECT, exp: futureExp() }, SECRET), '/'));
+    const response = await proxy(requestWith(signToken({ sub: SUBJECT, exp: futureExp() }), '/'));
     expect(response.status).toBe(200);
     expect(response.headers.get('location')).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
@@ -361,7 +368,7 @@ describe('proxy 인증 게이트', () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ success: true, code: 'S000', message: '성공', data: {
       id: 'webmaster', esntlId: SUBJECT, groups: ['MENU_EDITOR'], permissions, authorizationVersion: 'v2',
     } })));
-    const token = signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() }, SECRET);
+    const token = signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() });
     const response = await proxy(requestWith(token, '/admin/system/menus'));
     expect(response.status).toBe(200);
     expect(response.headers.get('location')).toBeNull();
@@ -372,7 +379,7 @@ describe('proxy 인증 게이트', () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ success: true, code: 'S000', message: '성공', data: {
       id: SUBJECT, esntlId: 'USRCNFRM_other_002', groups: ['MENU_EDITOR'], permissions: [...PAGE_PERMISSIONS['/admin/system/menus']], authorizationVersion: 'v2',
     } })));
-    const response = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() }, SECRET), '/admin/system/menus'));
+    const response = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() }), '/admin/system/menus'));
     expect(response.headers.get('x-mw-auth')).toContain('deny=permission');
     expect(new URL(response.headers.get('location')!).pathname).toBe('/');
   });
@@ -383,7 +390,7 @@ describe('proxy 인증 게이트', () => {
     { sub: SUBJECT, role: 'ADMIN' },
   ])('rejects the wrong token kind or incomplete signed identity before querying permissions', async (payload) => {
     // 권한 조회가 반드시 따르는 관리 화면(모든 생성물에 있다)으로 본다 — 조회 없이 끝나는 경로에서는 아래 단언이 비게 된다.
-    expect(redirectedToLogin(await proxy(requestWith(signToken(payload, SECRET), '/admin/system/menus')))).toBe(true);
+    expect(redirectedToLogin(await proxy(requestWith(signToken(payload), '/admin/system/menus')))).toBe(true);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
@@ -428,7 +435,7 @@ describe('rewrite 프록시 백엔드 연결 (GAP-FE-002)', () => {
   it('외부가 위조해 실은 x-nuri-verified-user 헤더를 제거하고, /admin 통과 시에만 서명된 스냅샷을 전달한다', async () => {
     const spoofed = new NextRequestCtor('http://localhost:3001/', {
       headers: {
-        cookie: `accessToken=${signToken({ sub: SUBJECT, exp: futureExp() }, SECRET)}`,
+        cookie: `accessToken=${signToken({ sub: SUBJECT, exp: futureExp() })}`,
         'x-nuri-verified-user': 'spoofed.signature',
       },
     });
@@ -452,7 +459,7 @@ describe('rewrite 프록시 백엔드 연결 (GAP-FE-002)', () => {
     })));
     const adminReq = new NextRequestCtor('http://localhost:3001/admin/system/menus', {
       headers: {
-        cookie: `accessToken=${signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() }, SECRET)}`,
+        cookie: `accessToken=${signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() })}`,
         'x-nuri-verified-user': 'spoofed.signature',
       },
     });
@@ -498,7 +505,7 @@ describe('이중 제출 CSRF 토큰 쿠키 (CredentialCookieCsrfPolicy)', () => 
   });
 });
 
-describe('ADR-0060 ES256 비대칭 서명 검증 및 1차 배포 전환', () => {
+describe('ADR-0060 ES256 비대칭 서명 검증(2차 배포 뒤)', () => {
   beforeEach(() => {
     fetchMock.mockReset().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({
       success: true,
@@ -525,8 +532,6 @@ describe('ADR-0060 ES256 비대칭 서명 검증 및 1차 배포 전환', () => 
     nodeEnv?: string;
     verifyKeysJson?: string;
     allowDev?: string;
-    acceptLegacyHmac?: string;
-    jwtSecret?: string;
   }) {
     vi.resetModules();
     if (env.nodeEnv !== undefined) vi.stubEnv('NODE_ENV', env.nodeEnv);
@@ -534,10 +539,6 @@ describe('ADR-0060 ES256 비대칭 서명 검증 및 1차 배포 전환', () => 
     else vi.stubEnv('JWT_VERIFY_KEYS_JSON', env.verifyKeysJson);
     if (env.allowDev === undefined) vi.stubEnv('ALLOW_DEV_JWT_VERIFY_KEYS', '');
     else vi.stubEnv('ALLOW_DEV_JWT_VERIFY_KEYS', env.allowDev);
-    if (env.acceptLegacyHmac === undefined) vi.stubEnv('JWT_ACCEPT_LEGACY_HMAC', '');
-    else vi.stubEnv('JWT_ACCEPT_LEGACY_HMAC', env.acceptLegacyHmac);
-    if (env.jwtSecret === undefined) vi.stubEnv('JWT_SECRET', '');
-    else vi.stubEnv('JWT_SECRET', env.jwtSecret);
     return (await import('../proxy')).proxy as typeof proxy;
   }
 
@@ -549,7 +550,6 @@ describe('ADR-0060 ES256 비대칭 서명 검증 및 1차 배포 전환', () => 
     try {
       const esProxy = await importFreshProxy({
         verifyKeysJson: JSON.stringify({ k1: spki1, k2: spki2 }),
-        jwtSecret: SECRET,
       });
 
       const validK1 = signEs256({ sub: SUBJECT, exp: futureExp() }, kp1.privateKey, 'k1');
@@ -570,24 +570,25 @@ describe('ADR-0060 ES256 비대칭 서명 검증 및 1차 배포 전환', () => 
       expect(redirectedToLogin(await esProxy(requestWith(`${b64u({ alg: 'none', typ: 'JWT' })}.${parts[1]}.`)))).toBe(true);
       expect(redirectedToLogin(await esProxy(requestWith(`${parts[0]}.${parts[1]}.short`)))).toBe(true);
 
-      // 전환기에는 HMAC 도 통과한다
-      expect((await esProxy(requestWith(signToken({ sub: SUBJECT, exp: futureExp() }, SECRET, 'HS256')))).status).toBe(200);
+      // 2차 배포 뒤에는 HMAC 꼴 토큰이 들어올 길이 없다
+      expect(redirectedToLogin(await esProxy(requestWith(signHmacToken({ sub: SUBJECT, exp: futureExp() }, spki1, 'HS256'))))).toBe(true);
     } finally {
       vi.unstubAllEnvs();
     }
   });
 
-  it('JWT_ACCEPT_LEGACY_HMAC=false(2차 배포)에서는 HMAC 토큰을 거부하고 ES256 만 통과시킨다', async () => {
+  it('운영 엄격 모드에서도 HMAC 토큰을 거부하고 ES256 만 통과시킨다 — 남은 JWT_ACCEPT_LEGACY_HMAC·JWT_SECRET 은 효과가 없다', async () => {
     const kp = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
     const spki = kp.publicKey.export({ format: 'der', type: 'spki' }).toString('base64');
     try {
       const strictEsProxy = await importFreshProxy({
         nodeEnv: 'production',
         verifyKeysJson: JSON.stringify({ 'prod-1': spki }),
-        acceptLegacyHmac: 'false',
       });
+      vi.stubEnv('JWT_ACCEPT_LEGACY_HMAC', 'true');
+      vi.stubEnv('JWT_SECRET', 'leftover-shared-secret-0123456789');
       const esToken = signEs256({ sub: SUBJECT, exp: futureExp() }, kp.privateKey, 'prod-1');
-      const hsToken = signToken({ sub: SUBJECT, exp: futureExp() }, SECRET, 'HS512');
+      const hsToken = signHmacToken({ sub: SUBJECT, exp: futureExp() }, 'leftover-shared-secret-0123456789', 'HS512');
       expect((await strictEsProxy(requestWith(esToken))).status).toBe(200);
       expect(redirectedToLogin(await strictEsProxy(requestWith(hsToken)))).toBe(true);
     } finally {
@@ -599,31 +600,41 @@ describe('ADR-0060 ES256 비대칭 서명 검증 및 1차 배포 전환', () => 
     const devSpki =
       'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFCkLmpfLgQUqDWWzzBAdV7oKO7Hvtltivk4PlGoMa+dn+6myuWj6EcyRdFFvm0CgWhIiqpujMY7lBU5LmpKGsw==';
     try {
-      await expect(importFreshProxy({ nodeEnv: 'production', jwtSecret: SECRET })).rejects.toThrow(
+      await expect(importFreshProxy({ nodeEnv: 'production' })).rejects.toThrow(
         /JWT_VERIFY_KEYS_JSON 이 설정되지 않았습니다/,
       );
       await expect(
         importFreshProxy({
           nodeEnv: 'production',
           verifyKeysJson: JSON.stringify({ 'dev-es256-1': devSpki }),
-          jwtSecret: SECRET,
         }),
       ).rejects.toThrow(/공개 개발용 JWT 검증키/);
       await expect(
         importFreshProxy({
           nodeEnv: 'production',
           verifyKeysJson: 'not-json',
-          jwtSecret: SECRET,
         }),
       ).rejects.toThrow(/JSON 형식/);
       await expect(
         importFreshProxy({
           nodeEnv: 'production',
           allowDev: 'true',
-          acceptLegacyHmac: 'false',
         }),
       ).resolves.toBeTypeOf('function');
     } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('검증키를 주지 않은 개발 모드는 저장소의 개발용 공개키(dev-es256-1)로 검증한다 — 백엔드 개발용 키쌍과 같은 지문이다', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const devProxy = await importFreshProxy({ nodeEnv: 'development' });
+      await devProxy(requestWith(signToken({ sub: SUBJECT, exp: futureExp() }, OTHER_KEYS.privateKey, 'dev-es256-1')));
+      const messages = warn.mock.calls.map(([message]) => String(message));
+      expect(messages.some((message) => /검증키 출처=내장 dev 기본값\(dev-es256-1\)\(spkiSha8=dev-es256-1=3989a5f1\)/u.test(message))).toBe(true);
+    } finally {
+      warn.mockRestore();
       vi.unstubAllEnvs();
     }
   });

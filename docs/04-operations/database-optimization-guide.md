@@ -51,11 +51,11 @@ FROM flyway_schema_history;
 
 ### 뒤처진 환경 현행화
 
-Flyway 는 앱 기동 시 실행된다(별도 CLI 태스크 없음). 기본 프로필은 `JWT_SECRET` 만 요구하므로
-데이터소스 3개만 덮어 기동하면 마이그레이션이 적용된다(`prod` 프로필은 메일·암호화 키까지 요구한다).
+Flyway 는 앱 기동 시 실행된다(별도 CLI 태스크 없음). 기본 프로필은 비밀 값을 요구하지 않으므로(서명은 저장소의 개발용 키쌍,
+`bootRun` 은 127.0.0.1 바인딩) 데이터소스 3개만 덮어 기동하면 마이그레이션이 적용된다(`prod` 프로필은 메일·암호화 키·서명 키링까지 요구한다).
 
 ```bash
-DB_URL=jdbc:postgresql://<host>:<port>/<db>?currentSchema=public&prepareThreshold=0 DB_USERNAME=<user> DB_PASSWORD=<pass> JWT_SECRET=<secret> ./gradlew :api-server:bootRun
+DB_URL=jdbc:postgresql://<host>:<port>/<db>?currentSchema=public&prepareThreshold=0 DB_USERNAME=<user> DB_PASSWORD=<pass> ./gradlew :api-server:bootRun
 ```
 
 ⚠ **데이터 정합성 가드에서 멈출 수 있다.** bigint identity 계열 마이그레이션은 부모 없는 자식 행이나

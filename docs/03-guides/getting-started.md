@@ -138,7 +138,6 @@ powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
 | `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | PostgreSQL 접속 | 운영은 기본값 없음(강제 주입) |
 | `JWT_SIGNING_ACTIVE_KID` / `JWT_SIGNING_KEYS_JSON` | 접근·재발급 토큰의 ES256 서명 개인키 키링(API 만 받는다) | 생성·교체는 [키 교체 런북 8절](../04-operations/crypto-key-rotation.md) |
 | `JWT_VERIFY_KEYS_JSON` | Next 프록시가 토큰을 검증하는 공개키 | 개인키는 Next 에 두지 않는다 |
-| `JWT_SECRET` | HMAC 비밀 — ES256 전환기 동안 옛 토큰 검증에 쓴다 | 고엔트로피 값 필수, 2차 배포에서 걷는다([ADR-0060](../02-architecture/decisions/ADR-0060-asymmetric-jwt-signing.md)) |
 | `ALGORITHM_KEY` | PII(주민번호 등) 암복호화 마스터키 | **운영 필수**, 로테이션 시 재암호화 선행 |
 | `OLD_ALGORITHM_KEY` | PII 키 회전 중 구키 복호화 폴백 | 평상시 미설정, 회전 창에서만 임시 주입 후 폐기 |
 | `ADMIN_INITIAL_PASSWORD` | 최초 기동에서 관리자 비밀번호를 정한다 | 운영 오버레이와 `deploy.sh` 는 배포할 때마다 이 값이 없으면 기동 전에 중단한다 |
@@ -171,7 +170,7 @@ docker compose up -d db     # postgres:17 (docker-compose.yml)
 
 ```bash
 # 개발 서버(백엔드+프론트 동시)
-npm run dev              # = node scripts/dev.mjs (루트 .env 로드 후 API bootRun + FE 동시 기동; JWT_SECRET 대칭 주입으로 서명검증 비대칭 로그인 루프 방지)
+npm run dev              # = node scripts/dev.mjs (루트 .env 로드 후 API bootRun + FE 동시 기동; 같은 환경의 JWT 키링 주입으로 서명검증 비대칭 로그인 루프 방지, API 는 127.0.0.1 바인딩)
 
 # 개별
 npm run backend          # gradlew :api-server:bootRun

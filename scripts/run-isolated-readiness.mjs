@@ -93,7 +93,7 @@ try {
   const environment = {
     ...inheritedEnvironment, DB_URL: `jdbc:postgresql://127.0.0.1:${port}/${databaseName}?socketTimeout=3&connectTimeout=3&ApplicationName=readiness-api`,
     DB_USERNAME: 'drill', DB_PASSWORD: dbPassword, SPRING_PROFILES_ACTIVE: 'e2e', SERVER_ADDRESS: '127.0.0.1', SERVER_PORT: '8080',
-    ALGORITHM_KEY: randomBytes(24).toString('hex'), JWT_SECRET: randomBytes(64).toString('base64'),
+    ALGORITHM_KEY: randomBytes(24).toString('hex'),
     NURI_LOG_RETENTION_ENABLED: 'false', NURI_ATTACHMENT_INTEGRITY_ENABLED: 'false',
     NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'true',
     NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE',

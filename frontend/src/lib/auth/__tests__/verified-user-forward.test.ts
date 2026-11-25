@@ -23,7 +23,7 @@ describe('verified-user-forward', () => {
 
   it('signs and verifies a short-lived user handoff bound to the accessToken', async () => {
     vi.stubEnv('NODE_ENV', 'test');
-    vi.stubEnv('JWT_SECRET', 'unit-test-forward-secret-0123456789');
+    vi.stubEnv('INTERNAL_USER_FORWARD_SECRET', 'unit-test-forward-secret-0123456789');
 
     const header = await signVerifiedUserHeader(FIXTURE_USER, 'token-alpha', { nowMs: 1_000_000 });
     expect(header).toBeTruthy();
@@ -34,7 +34,7 @@ describe('verified-user-forward', () => {
 
   it('rejects expired, tampered, wrong-token, and malformed headers fail-closed', async () => {
     vi.stubEnv('NODE_ENV', 'test');
-    vi.stubEnv('JWT_SECRET', 'unit-test-forward-secret-0123456789');
+    vi.stubEnv('INTERNAL_USER_FORWARD_SECRET', 'unit-test-forward-secret-0123456789');
 
     const header = await signVerifiedUserHeader(FIXTURE_USER, 'token-alpha', { nowMs: 1_000_000, ttlMs: 5_000 });
     expect(header).toBeTruthy();
@@ -60,7 +60,7 @@ describe('verified-user-forward', () => {
     expect(VERIFIED_USER_HEADER).toBe('x-nuri-verified-user');
   });
 
-  it('uses an ephemeral CSPRNG secret when INTERNAL_USER_FORWARD_SECRET and JWT_SECRET are unset and rejects JWT_VERIFY_KEYS_JSON forgeries', async () => {
+  it('uses an ephemeral CSPRNG secret when INTERNAL_USER_FORWARD_SECRET is unset and rejects JWT_VERIFY_KEYS_JSON forgeries', async () => {
     const publicKeysJson = JSON.stringify({ k1: 'public-spki-fixture-value' });
     try {
       vi.stubEnv('INTERNAL_USER_FORWARD_SECRET', publicKeysJson);
@@ -100,19 +100,17 @@ describe('verified-user-forward', () => {
     }
   });
 
-  it('prefers INTERNAL_USER_FORWARD_SECRET independently of JWT_SECRET', async () => {
+  it('binds signing to INTERNAL_USER_FORWARD_SECRET and ignores a leftover JWT_SECRET (ADR-0060 2차)', async () => {
     const dedicatedV1 = globalThis.crypto.randomUUID();
     const dedicatedV2 = globalThis.crypto.randomUUID();
-    const jwtV1 = globalThis.crypto.randomUUID();
-    const jwtV2 = globalThis.crypto.randomUUID();
     try {
       vi.stubEnv('INTERNAL_USER_FORWARD_SECRET', dedicatedV1);
-      vi.stubEnv('JWT_SECRET', jwtV1);
+      vi.stubEnv('JWT_SECRET', globalThis.crypto.randomUUID());
 
       const signed = await signVerifiedUserHeader(FIXTURE_USER, 'token-alpha', { nowMs: 1_000_000 });
       expect(signed).toBeTruthy();
 
-      vi.stubEnv('JWT_SECRET', jwtV2);
+      vi.stubEnv('JWT_SECRET', globalThis.crypto.randomUUID());
       await expect(
         verifyVerifiedUserHeader(signed, 'token-alpha', { nowMs: 1_001_000 }),
       ).resolves.toEqual(FIXTURE_USER);
@@ -121,6 +119,26 @@ describe('verified-user-forward', () => {
       await expect(
         verifyVerifiedUserHeader(signed, 'token-alpha', { nowMs: 1_001_000 }),
       ).resolves.toBeNull();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('🚨 a leftover JWT_SECRET is never used as the forward key — without a dedicated secret the ephemeral key decides', async () => {
+    const leftover = 'leftover-jwt-secret-from-the-first-deployment-0123456789';
+    try {
+      vi.stubEnv('INTERNAL_USER_FORWARD_SECRET', '');
+      vi.stubEnv('JWT_SECRET', leftover);
+      const signed = await signVerifiedUserHeader(FIXTURE_USER, 'token-alpha', { nowMs: 1_000_000 });
+      const [payloadPart] = (signed ?? '').split('.');
+      // 종전 대체 경로(nuri-verified-user-forward-v1:jwt:<JWT_SECRET>)로 만든 서명은 통과하지 않는다.
+      const legacyKey = await globalThis.crypto.subtle.importKey('raw',
+        new TextEncoder().encode(`nuri-verified-user-forward-v1:jwt:${leftover}`),
+        { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+      const legacySig = await globalThis.crypto.subtle.sign('HMAC', legacyKey, new TextEncoder().encode(payloadPart));
+      await expect(verifyVerifiedUserHeader(`${payloadPart}.${Buffer.from(legacySig).toString('base64url')}`,
+        'token-alpha', { nowMs: 1_001_000 })).resolves.toBeNull();
+      await expect(verifyVerifiedUserHeader(signed, 'token-alpha', { nowMs: 1_001_000 })).resolves.toEqual(FIXTURE_USER);
     } finally {
       vi.unstubAllEnvs();
     }

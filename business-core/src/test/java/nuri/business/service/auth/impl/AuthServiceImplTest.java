@@ -122,8 +122,6 @@ class AuthServiceImplTest {
     @DisplayName("설정된 실제 JWT 만료를 최초·재로그인 저장과 토큰 회전에서 동일하게 유지한다")
     void refreshExpiryMatchesSignedTokenAcrossLoginAndRotation(long validityMs, boolean relogin) {
         JwtTokenProvider realProvider = new JwtTokenProvider();
-        org.springframework.test.util.ReflectionTestUtils.setField(realProvider, "secretKey",
-                "refresh-expiry-test-key-material-only-not-a-deployment-secret-01234567890123456789");
         org.springframework.test.util.ReflectionTestUtils.setField(realProvider, "refreshTokenValidityInMilliseconds", validityMs);
         org.springframework.test.util.ReflectionTestUtils.invokeMethod(realProvider, "init");
         AuthServiceImpl service = new AuthServiceImpl(authenticationManager, realProvider,
@@ -603,8 +601,6 @@ class AuthServiceImplTest {
                 return 1;
             });
             var provider = new JwtTokenProvider();
-            org.springframework.test.util.ReflectionTestUtils.setField(provider, "secretKey",
-                    "logout-test-signing-key-only-for-this-fixture-64-characters-long!!");
             org.springframework.test.util.ReflectionTestUtils.setField(provider, "userDetailsService", userDetailsService);
             org.springframework.test.util.ReflectionTestUtils.invokeMethod(provider, "init");
             String beforeLogout = provider.createAccessToken(ESNTL_ID, "ROLE_USER", null, null, cycle.get());

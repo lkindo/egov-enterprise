@@ -23,7 +23,7 @@
  * 선별은 scripts/integration-precheck.mjs 가 한다.
  */
 import { execSync } from 'node:child_process';
-import { generateKeyPairSync, randomBytes } from 'node:crypto';
+import { generateKeyPairSync } from 'node:crypto';
 import { platform } from 'node:os';
 import { ensureQueued } from './heavy-run-queue.mjs';
 import { createRun } from './verification-record.mjs';
@@ -153,11 +153,9 @@ function runFrontendSourceContracts() {
   run(`pnpm -C frontend exec vitest run ${list}`);
 }
 
+/** 운영 모드 빌드는 회차마다 만든 임시 검증 공개키로만 돈다 — 공개 dev 키로의 조용한 폴백을 막는다(ADR-0060, 서명 비밀은 2차로 걷음). */
 function frontendBuildEnvironment() {
   const env = {};
-  if (!process.env.JWT_SECRET) {
-    env.JWT_SECRET = randomBytes(44).toString('hex');
-  }
   if (!process.env.JWT_VERIFY_KEYS_JSON) {
     const { publicKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
     env.JWT_VERIFY_KEYS_JSON = JSON.stringify({

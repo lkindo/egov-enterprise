@@ -7,7 +7,6 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.InvalidKeyException;
-import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,9 +20,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
-import javax.crypto.SecretKey;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.AlgorithmParameters;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -49,17 +46,24 @@ import java.util.Objects;
 @Slf4j
 @Component
 public class JwtTokenProvider {
-    @Value("${jwt.secret:}")
-    private String secretKey;
-
     @Value("${jwt.signing.active-kid:}")
     private String signingActiveKid;
 
     @Value("${jwt.signing.keys-json:}")
     private String signingKeysJson;
 
-    @Value("${jwt.accept-legacy-hmac:true}")
-    private boolean acceptLegacyHmac = true;
+    /**
+     * 저장소에 커밋된 개발용 서명키를 루프백이 아닌 주소에 바인딩한 서버에서도 쓰도록 허용한다(기본 false).
+     *
+     * <p>개발용 키쌍은 공개 저장소에 있으므로, 그 키로 서명하는 서버에 네트워크로 닿는 사람은 누구나 임의 사용자의
+     * 토큰을 만들 수 있다. 그래서 그 키는 {@code server.address} 가 루프백일 때만 쓰고, 컨테이너 안에서 모든 주소에
+     * 바인딩해야 하는 개발 스택(docker-compose.yml)만 이 값을 명시해 켠다 — 그 스택은 호스트의 루프백에만 포트를 연다.
+     */
+    @Value("${jwt.signing.allow-dev-key-on-network:false}")
+    private boolean allowDevKeyOnNetwork;
+
+    @Value("${server.address:}")
+    private String serverAddress;
 
     @Value("${jwt.cookie.secure:false}")
     private boolean cookieSecure;
@@ -91,32 +95,16 @@ public class JwtTokenProvider {
     @Value("${jwt.refresh-token-validity-ms:604800000}")
     private long refreshTokenValidityInMilliseconds = 604800000L; // 7 days
 
-    private SecretKey key;
     private String activeSigningKid;
     private ECPrivateKey activeSigningKey;
     private Map<String, ECPublicKey> ecVerifyKeys = Map.of();
     private Map<String, String> ecPublicKeyFingerprints = Map.of();
+    /** 저장소에 커밋된 개발용 키쌍으로 서명하는가(키링을 주지 않은 비운영 기동). */
+    private boolean usingCommittedDevKey;
 
-    /**
-     * 활성 프로파일. 운영에서 <b>공개된 dev 시크릿</b>을 거부하기 위해서만 쓴다.
-     * (주입 실패 시 빈 배열이라 검사가 조용히 꺼진다 — 그 경우는 아래 §운영 여부 판정 참조.)
-     */
+    /** 활성 프로파일. 운영에서 저장소에 커밋된 개발용 서명키를 거부하기 위해서만 쓴다. */
     @Value("${spring.profiles.active:}")
     private String activeProfiles;
-
-    /**
-     * 저장소에 커밋된 개발 기본 시크릿의 SHA-256. [W0-P0-4-c 보완 — 2026-08-03]
-     *
-     * <p>값 자체를 상수로 두면 이 파일이 또 하나의 노출 지점이 되므로 해시만 둔다.
-     * (원본은 docker-compose.yml · application.yml · frontend/src/proxy.ts 에 있는 그 값이다.)
-     *
-     * <p>[왜 필요한가] 종전 prod 방어는 {@code ${JWT_SECRET}} 무기본값 fail-fast 뿐이었다.
-     * 그것이 검사하는 것은 <b>변수의 존재</b>이지 <b>값의 안전성</b>이 아니다 —
-     * 운영자가 저장소에 커밋된 그 값을 그대로 {@code JWT_SECRET} 에 주입하면 prod 가 정상 기동한다.
-     * 공개 저장소이므로 그 상태는 "누구나 임의 esntlId 로 토큰을 위조할 수 있음" 과 같다.
-     */
-    private static final String DEV_SECRET_SHA256 =
-            "650ca76f50223962b2c5aff96509b5dbfe4e4f8d8ee48b41ce258f9ee3bafe91";
 
     private static final String DEV_ES256_KID = "dev-es256-1";
     /** ADR-0060: 로컬/개발 전용 ES256(P-256) 키쌍. prod 프로파일에서는 기동을 차단한다. */
@@ -140,19 +128,69 @@ public class JwtTokenProvider {
                     + accessTokenValidityInMilliseconds + "ms, refresh="
                     + refreshTokenValidityInMilliseconds + "ms)");
         }
-        if (acceptLegacyHmac) {
-            if (secretKey == null || secretKey.trim().isEmpty()) {
-                throw new IllegalStateException("JWT Secret is not configured.");
-            }
-            rejectCommittedDevSecretInProduction();
-            this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
-            log.info("JWT secret fingerprint = {} (sha256[:8], 값 아님)", secretFingerprint());
-        } else {
-            this.key = null;
-        }
         configureAsymmetricKeyring();
-        log.info("JWT ES256 activeKid={}, verifyKeyFingerprints={} (spki sha256[:8], 값 아님), acceptLegacyHmac={}",
-                activeSigningKid, ecPublicKeyFingerprints, acceptLegacyHmac);
+        log.info("JWT ES256 activeKid={}, verifyKeyFingerprints={} (spki sha256[:8], 값 아님)",
+                activeSigningKid, ecPublicKeyFingerprints);
+    }
+
+    /**
+     * 기본 웹 서버가 바인딩된 직후 개발용 서명키의 노출을 판정한다. 관리 포트 같은 보조 서버(이름공간이 있는 서버)는 보지 않고,
+     * 웹 서버를 띄우지 않는 맥락(단위 시험·MOCK 웹 환경)은 이 이벤트가 없어 판정하지 않는다 — 네트워크로 닿을 서버가 없다.
+     * 여기서 던지면 컨텍스트 새로 고침이 실패해 기동이 멈춘다.
+     */
+    @org.springframework.context.event.EventListener
+    public void onWebServerInitialized(org.springframework.boot.web.server.context.WebServerInitializedEvent event) {
+        if (event.getApplicationContext().getServerNamespace() != null) {
+            return;
+        }
+        rejectCommittedDevKeyOnNetwork();
+    }
+
+    /**
+     * 저장소에 커밋된 개발용 서명키는 루프백에 바인딩한 서버에서만 쓴다(ADR-0060 2차, 2026-11-25).
+     *
+     * <p>Spring 의 기본 바인딩은 모든 주소(0.0.0.0)다. 키링 없이 dev·local·기본 프로파일로 띄운 서버가 네트워크에 열려
+     * 있으면, 그 서버에 닿는 사람은 공개 저장소의 개인키로 임의 사용자(고정 관리자 ID 포함)의 토큰을 만들 수 있었다.
+     * {@code server.address} 를 정하지 않았거나 루프백이 아니면 기동을 멈춘다 — 개발 스택처럼 컨테이너 안에서 모든 주소에
+     * 바인딩해야 하는 경우만 {@code jwt.signing.allow-dev-key-on-network=true} 로 명시하고, 그때는 경고를 남긴다.
+     */
+    void rejectCommittedDevKeyOnNetwork() {
+        if (!usingCommittedDevKey) {
+            return;
+        }
+        if (isLoopbackAddress(serverAddress)) {
+            return;
+        }
+        if (allowDevKeyOnNetwork) {
+            log.warn("[SECURITY] 저장소에 커밋된 개발용 JWT 서명키를 루프백이 아닌 주소(server.address='{}')에서 씁니다 "
+                    + "(jwt.signing.allow-dev-key-on-network=true). 이 서버에 닿는 사람은 누구나 토큰을 만들 수 있습니다.",
+                    serverAddress == null ? "" : serverAddress);
+            return;
+        }
+        throw new IllegalStateException(
+                "[SECURITY] JWT 서명 키링(JWT_SIGNING_ACTIVE_KID·JWT_SIGNING_KEYS_JSON)이 없어 저장소에 커밋된 개발용 서명키를 쓰려 했지만 "
+                + "server.address 가 루프백이 아닙니다(현재 '" + (serverAddress == null ? "" : serverAddress) + "'). "
+                + "키링을 주거나, server.address=127.0.0.1 로 루프백에만 바인딩하거나, 개발 스택이면 "
+                + "jwt.signing.allow-dev-key-on-network=true 를 명시하십시오.");
+    }
+
+    static boolean isLoopbackAddress(String address) {
+        if (address == null || address.isBlank()) {
+            return false;
+        }
+        String trimmed = address.trim();
+        if ("localhost".equalsIgnoreCase(trimmed)) {
+            return true;
+        }
+        try {
+            // 숫자 주소만 판정한다 — 호스트 이름을 DNS 로 풀어 판정하지 않는다(localhost 는 위에서 다뤘다).
+            if (!trimmed.matches("[0-9.]+|\\[?[0-9a-fA-F:]+]?")) {
+                return false;
+            }
+            return java.net.InetAddress.getByName(trimmed.replace("[", "").replace("]", "")).isLoopbackAddress();
+        } catch (java.net.UnknownHostException ex) {
+            return false;
+        }
     }
 
     private boolean isProdProfile() {
@@ -179,7 +217,9 @@ public class JwtTokenProvider {
             }
             resolvedKid = DEV_ES256_KID;
             encodedKeys = Map.of(DEV_ES256_KID, DEV_ES256_PKCS8_B64);
+            usingCommittedDevKey = true;
         } else {
+            usingCommittedDevKey = false;
             resolvedKid = signingActiveKid;
             encodedKeys = parseSigningKeysJson(signingKeysJson);
             if (!resolvedKid.matches(KID_PATTERN) || !encodedKeys.containsKey(resolvedKid)) {
@@ -199,9 +239,13 @@ public class JwtTokenProvider {
             ECPublicKey ecPub = deriveP256PublicKey(ecPriv, p256Spec);
             String spkiHash = sha256Hex(ecPub.getEncoded());
             String fp = spkiHash.substring(0, 8);
-            if (prod && DEV_ES256_SPKI_SHA256.equals(spkiHash)) {
-                throw new IllegalStateException(
-                        "[SECURITY] 운영(prod) 프로파일에 저장소에 커밋된 개발용 JWT 서명키를 사용할 수 없습니다. fingerprint=" + fp);
+            if (DEV_ES256_SPKI_SHA256.equals(spkiHash)) {
+                if (prod) {
+                    throw new IllegalStateException(
+                            "[SECURITY] 운영(prod) 프로파일에 저장소에 커밋된 개발용 JWT 서명키를 사용할 수 없습니다. fingerprint=" + fp);
+                }
+                // 키링에 개발용 키를 명시해 넣어도 그 개인키는 공개돼 있다 — 기본 키와 같은 바인딩 규칙을 적용한다.
+                usingCommittedDevKey = true;
             }
             privMap.put(kid, ecPriv);
             pubMap.put(kid, ecPub);
@@ -321,40 +365,6 @@ public class JwtTokenProvider {
         return new ECPoint(x3, y3);
     }
 
-    /**
-     * 운영에서 <b>저장소에 커밋된 dev 시크릿</b>을 거부한다. [W0-P0-4-c 보완]
-     *
-     * <p>{@code ${JWT_SECRET}} 무기본값 fail-fast 는 <b>변수가 있는가</b>만 본다. 공개 저장소의
-     * 그 값을 그대로 주입하면 통과한다 — 그 상태에서는 누구나 임의 {@code esntlId} 를 subject 로 하는
-     * 토큰을 위조할 수 있으므로, 인증 체계 전체가 무의미해진다. 값 수준에서 막는다.
-     *
-     * <p>[왜 운영에서만] dev·test·e2e 는 그 값을 <b>일부러</b> 쓴다(백엔드와 프론트 미들웨어가 같은
-     * raw bytes 로 HMAC 해야 로그인이 성립한다). 전 프로파일에서 막으면 개발·CI 가 통째로 멈춘다.
-     *
-     * <p>[판정 불가는 통과로 두지 않는다] 활성 프로파일을 읽지 못하면(빈 문자열) 운영 여부를 알 수 없다.
-     * 그러나 이 경우를 실패로 다루면 프로파일 없이 뜨는 정상 개발 경로가 막히므로, <b>경고를 남기고</b>
-     * 통과시킨다 — 대신 그 경고가 로그에 남아 사후 추적이 가능하다.
-     * (운영 배포가 프로파일 없이 뜨는 경로는 {@code ConfigSafetyLinterTest} 가 별도로 차단한다.)
-     */
-    private void rejectCommittedDevSecretInProduction() {
-        if (!isProdProfile()) {
-            return;
-        }
-        if (DEV_SECRET_SHA256.equals(fullSecretHash())) {
-            throw new IllegalStateException(
-                    "[SECURITY] 운영(prod) 프로파일에 **저장소에 커밋된 개발용 JWT_SECRET** 이 주입되었습니다. "
-                    + "이 값은 공개 저장소에 있으므로 누구나 임의 사용자로 토큰을 위조할 수 있습니다. "
-                    + "JWT_SECRET 을 새로 생성한 값으로 교체하십시오 "
-                    + "(예: openssl rand -base64 64). fingerprint=" + secretFingerprint());
-        }
-    }
-
-    /** 시크릿의 SHA-256 전체(16진). 비교 전용이며 로그에 남기지 않는다. */
-    private String fullSecretHash() {
-        if (secretKey == null) return "";
-        return sha256Hex(secretKey.getBytes(StandardCharsets.UTF_8));
-    }
-
     private static String sha256Hex(byte[] input) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256").digest(input);
@@ -366,19 +376,6 @@ public class JwtTokenProvider {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 을 사용할 수 없어 키 해시를 계산할 수 없습니다.", e);
         }
-    }
-
-    /**
-     * 시크릿의 SHA-256 앞 8자. 값 자체는 절대 로그에 남기지 않는다.
-     *
-     * [존재 이유] 프론트 프록시(frontend/src/proxy.ts)가 같은 규칙으로 지문을 찍는다.
-     * 두 지문이 다르면 좌우 시크릿 비대칭이고, 그 상태에서는 서명 검증이 전량 실패해
-     * "로그인은 200 인데 페이지 진입에서 /login 으로 되돌아가는" 무음 루프가 된다(2026-07-19 발생).
-     * 그때 원인을 알려주는 신호가 어디에도 없어 오래 헤맸기에, 양쪽에 대조 가능한 지문을 남긴다.
-     */
-    private String secretFingerprint() {
-        String full = fullSecretHash();
-        return full.length() >= 8 ? full.substring(0, 8) : "";
     }
 
     /**
@@ -493,10 +490,7 @@ public class JwtTokenProvider {
             }
             return verifyKey;
         }
-        if (acceptLegacyHmac && key != null
-                && ("HS256".equals(alg) || "HS384".equals(alg) || "HS512".equals(alg))) {
-            return key;
-        }
+        // ADR-0060 2차(2026-11-25): HMAC(HS256/384/512) 토큰은 더 받지 않는다 — 서명 비밀(JWT_SECRET)을 걷었다.
         throw new UnsupportedJwtException("Unsupported JWT algorithm: " + alg);
     }
 
@@ -715,10 +709,6 @@ public class JwtTokenProvider {
     public void removeRefreshTokenCookie(HttpServletResponse response) {
         org.springframework.http.ResponseCookie responseCookie = nuri.foundation.security.util.CookieUtil.deleteRefreshTokenCookie(cookieSecure);
         response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, responseCookie.toString());
-    }
-
-    public SecretKey getKeyForTest() {
-        return this.key;
     }
 
     public ECPublicKey getActiveVerifyKeyForTest() {

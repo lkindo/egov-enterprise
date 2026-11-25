@@ -217,13 +217,15 @@ function releaseSmokeFixture() {
     jwtSigningActiveKid: 'smoke-es256',
     jwtSigningKeysJson: JSON.stringify({ 'smoke-es256': smokeKp.privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64') }),
     jwtVerifyKeysJson: JSON.stringify({ 'smoke-es256': smokeKp.publicKey.export({ format: 'der', type: 'spki' }).toString('base64') }),
+    rrnoActiveKeyId: 'smoke-rrno',
+    rrnoKeysJson: JSON.stringify({ 'smoke-rrno': 'fixture-rrno-key' }),
     encryption: 'fixture-key',
     admin: 'fixture-admin',
   };
   const rendered = { services: {
     db: {}, api: { environment: { SPRING_PROFILES_ACTIVE: 'prod', SPRING_FLYWAY_LOCATIONS: 'classpath:db/migration',
       MFA_REQUIRE_PROTECTED: 'true',
-      MANAGEMENT_PORT: '9090', MANAGEMENT_ADDRESS: '0.0.0.0', SPRING_APPLICATION_JSON: '{"management":{"health":{"mail":{"enabled":false}}}}' } },
+      MANAGEMENT_PORT: '9090', MANAGEMENT_ADDRESS: '127.0.0.1', SPRING_APPLICATION_JSON: '{"management":{"health":{"mail":{"enabled":false}}}}' } },
     frontend: { environment: { TRUSTED_EDGE_PROXY: 'true' } }, edge: {},
   } };
   const plan = createReleaseSmokePlan(rendered, context, credentials);
@@ -256,6 +258,17 @@ test('historical plans have distinct owned databases and cannot relax current im
   const historicalPlan = createReleaseSmokePlan({ services: Object.fromEntries(Object.entries(fixture.plan.services).filter(([name]) => name !== 'bootstrap')) }, historical, fixture.credentials);
   const changed = structuredClone(historicalPlan); changed.services.api.environment.DB_URL = `jdbc:postgresql://db:5432/${upgraded.database}`;
   assert.throws(() => validateReleaseSmokePlan(changed, historical, fixture.credentials), /datasource/);
+  // [ADR-0060 2차] HMAC 서명 비밀은 그 전 릴리스 이미지를 띄우는 단계에만 들어가고, 현재 이미지 단계에는 없어야 한다.
+  for (const service of ['api', 'bootstrap', 'frontend']) {
+    assert.equal(historicalPlan.services[service].environment.JWT_SECRET, fixture.credentials.jwt, service);
+    assert.equal(fixture.plan.services[service].environment.JWT_SECRET, undefined, service);
+  }
+  const leaked = structuredClone(fixture.plan); leaked.services.api.environment.JWT_SECRET = fixture.credentials.jwt;
+  assert.throws(() => validateReleaseSmokePlan(leaked, fixture.context, fixture.credentials), /production boundary/);
+  const leakedFrontend = structuredClone(fixture.plan); leakedFrontend.services.frontend.environment.JWT_SECRET = fixture.credentials.jwt;
+  assert.throws(() => validateReleaseSmokePlan(leakedFrontend, fixture.context, fixture.credentials), /frontend trust boundary/);
+  const missingLegacy = structuredClone(historicalPlan); delete missingLegacy.services.api.environment.JWT_SECRET;
+  assert.throws(() => validateReleaseSmokePlan(missingLegacy, historical, fixture.credentials), /production boundary/);
 });
 
 test('production smoke has a separate owned plan and requires actual dirty source image labels', () => {
@@ -378,6 +391,9 @@ test('production smoke rejects shared resources, public ports, dev seeds, mixed 
     value => { value.plan.services.frontend.environment.ALLOW_DEV_JWT_VERIFY_KEYS = 'true'; },
     value => { value.plan.services.frontend.environment.JWT_SIGNING_KEYS_JSON = value.credentials.jwtSigningKeysJson; },
     value => { value.plan.services.api.environment.JWT_VERIFY_KEYS_JSON = value.credentials.jwtVerifyKeysJson; },
+    value => { delete value.plan.services.api.environment.RRNO_KEYS_JSON; },
+    value => { value.plan.services.api.environment.RRNO_ACTIVE_KEY_ID = 'other'; },
+    value => { value.plan.services.api.environment.MANAGEMENT_ADDRESS = '0.0.0.0'; },
     value => { value.plan.services.edge.ports.push({ target: 8080, published: '8080', host_ip: '0.0.0.0' }); },
     value => { value.plan.services.api.ports.push({ target: 8080, published: '0', host_ip: '127.0.0.1' }); },
     value => { value.plan.services.api.environment.CORS_ORIGIN_1 = 'http://untrusted.invalid'; },
@@ -567,9 +583,9 @@ test('isolated MFA uses a fresh 256-bit key and never inherits an enforced or ex
 test('isolated JWT generates disposable P-256 signing and verify keypairs cleanly separated by service', () => {
   const first = createIsolatedJwtEnvironment();
   const second = createIsolatedJwtEnvironment();
-  assert.deepEqual(Object.keys(first.api).sort(), ['JWT_SECRET', 'JWT_SIGNING_ACTIVE_KID', 'JWT_SIGNING_KEYS_JSON']);
-  assert.deepEqual(Object.keys(first.frontend).sort(), ['JWT_SECRET', 'JWT_VERIFY_KEYS_JSON']);
-  assert.equal(first.api.JWT_SECRET, first.frontend.JWT_SECRET);
+  // ADR-0060 2차: HMAC 서명 비밀(JWT_SECRET)은 어느 쪽에도 없다 — 프런트는 공개키만 받는다.
+  assert.deepEqual(Object.keys(first.api).sort(), ['JWT_SIGNING_ACTIVE_KID', 'JWT_SIGNING_KEYS_JSON']);
+  assert.deepEqual(Object.keys(first.frontend).sort(), ['JWT_VERIFY_KEYS_JSON']);
   assert.notEqual(first.api.JWT_SIGNING_KEYS_JSON, second.api.JWT_SIGNING_KEYS_JSON);
 
   const kid = first.api.JWT_SIGNING_ACTIVE_KID;
@@ -704,7 +720,8 @@ function composeFixture() {
   const url = 'jdbc:postgresql://db:5432/authz_e2e';
   api.Config.Env = ['SPRING_PROFILES_ACTIVE=e2e', 'NURI_AUTHORIZATION_ISOLATED_CUTOVER=true',
     'NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK=CONFIRMED_DISPOSABLE_AUTHZ_DATABASE',
-    `JWT_SECRET=${randomBytes(32).toString('base64')}`,
+    'JWT_SIGNING_ACTIVE_KID=e2e-es256',
+    `JWT_SIGNING_KEYS_JSON=${JSON.stringify({ 'e2e-es256': randomBytes(32).toString('base64') })}`,
     'JAVA_OPTS=-Xms512m -Xmx512m -XX:+UseParallelGC',
     `SPRING_APPLICATION_JSON=${JSON.stringify({ spring: { datasource: { url, 'jdbc-url': url, hikari: { 'jdbc-url': url }, username: 'egov', password: 'synthetic' } } })}`];
   db.Mounts = [{ Type: 'volume', Destination: '/var/lib/postgresql/data', Name: `${project}-database` }];
@@ -723,6 +740,9 @@ test('CI compose validates actual isolated datasource, owned volume/network and 
     value => { value.api.Config.Env[value.api.Config.Env.length - 1] = value.api.Config.Env.at(-1).replaceAll('db:5432', 'remote:5432'); },
     value => { value.api.NetworkSettings.Networks = {}; },
     value => { value.api.Config.Env.push('SPRING_CONFIG_LOCATION=file:/shared-config/'); },
+    // 회차마다 만든 서명 키링이 없으면(저장소의 개발용 키쌍으로 도는 API) 소유 증명이 아니다
+    value => { value.api.Config.Env = value.api.Config.Env.filter(entry => !entry.startsWith('JWT_SIGNING_KEYS_JSON=')); },
+    value => { value.api.Config.Env = value.api.Config.Env.filter(entry => !entry.startsWith('JWT_SIGNING_ACTIVE_KID=')); },
   ];
   for (const change of changes) { const changed = composeFixture(); change(changed); assert.throws(() => assertOwnedComposeRuntime(changed.db, changed.api, changed.volume, changed.network, changed.env, now)); }
 });

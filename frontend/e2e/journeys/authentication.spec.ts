@@ -458,7 +458,7 @@ test.describe('인증 경계', () => {
                     reason: '거부 후 도착한 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
                     expiresAt: '2026-12-31',
                 }]);
-            // alg 화이트리스트(HS256/384/512) 밖은 거부. header.alg='none'.
+            // alg 화이트리스트(ES256 하나 — ADR-0060 2차) 밖은 거부. header.alg='none'.
             const NONE_ALG_TOKEN = 'eyJhbGciOiJub25lIn0.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJST0xFX0FETUlOIiwiZXhwIjo5OTk5OTk5OTk5fQ.';
             await context.addCookies([
                 { name: 'accessToken', value: NONE_ALG_TOKEN, url: baseURL!, httpOnly: true, sameSite: 'Strict' },

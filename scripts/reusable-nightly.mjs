@@ -235,11 +235,10 @@ export async function runItem(item, { root = ROOT, contracts = false, run = runC
       'nightly-es256': generateKeyPairSync('ec', { namedCurve: 'prime256v1' })
         .publicKey.export({ format: 'der', type: 'spki' }).toString('base64'),
     });
-    const { JWT_SIGNING_ACTIVE_KID: _kid, JWT_SIGNING_KEYS_JSON: _keys, ...cleanCallerEnv } = process.env;
+    const { JWT_SIGNING_ACTIVE_KID: _kid, JWT_SIGNING_KEYS_JSON: _keys, JWT_SECRET: _secret, ...cleanCallerEnv } = process.env;
     const env = {
       ...cleanCallerEnv,
       TZ: 'Asia/Seoul',
-      JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex'),
       JWT_VERIFY_KEYS_JSON: verifyKeysJson,
     };
 

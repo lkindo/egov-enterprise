@@ -101,12 +101,12 @@ openssl rand -base64 32
 - `RRNO_ACTIVE_KEY_ID`: `[A-Za-z0-9_-]{1,32}` 형식의 활성 암호화 키 식별자
 - `RRNO_KEYS_JSON`: 최대 16개 키를 담은 JSON 객체(값은 32바이트 AES 키의 44자 표준 Base64)
 - 둘 중 하나만 설정하거나 `RRNO_ACTIVE_KEY_ID`가 `RRNO_KEYS_JSON`에 없으면 기동 시 즉시 실패한다(fail-closed).
-- 운영 배포(`scripts/deploy.sh`)는 2026-11-17 부터 두 값을 **필수**로 요구한다 — 비어 있으면 이미지 pull 전에 멈춘다. 키링이 없으면 앱은 새 값을 종전 ARIA 유틸(IV·무결성 없음, 같은 값은 같은 암호문)로 암호화하기 때문이다. 키를 처음 켜도 기존 ARIA 암호문은 그대로 읽히고 새로 쓰는 값부터 v2 봉투가 된다. 키는 §2 와 같이 `openssl rand -base64 32` 로 만들고 MFA 키와 같은 수준으로 백업한다(잃으면 v2 값을 읽지 못한다).
-- `scripts/deploy.sh`는 이미지 pull 전에 `jq`로 쌍 일치·keyId(`[A-Za-z0-9_-]{1,32}`, 최대 16개)·44자 표준 Base64·활성 키 포함 여부를 사전 검증한다(값 원문은 출력하지 않는다). 개발·격리 스모크는 이 스크립트를 쓰지 않아 키링 없이 ARIA 로 동작한다.
+- 운영은 두 값을 **필수**로 요구한다 — `scripts/deploy.sh` 는 2026-11-17 부터 이미지 pull 전에, 앱은 2026-11-25 부터 `prod` 프로필 기동 때(`ProdRequiredPropertiesGuard`·`application-prod.yml` 무기본값·운영 오버레이 `:?`) 멈춘다. 키링이 없으면 앱은 새 값을 종전 ARIA 유틸(IV·무결성 없음, 같은 값은 같은 암호문)로 암호화하기 때문이다. 키를 처음 켜도 기존 ARIA 암호문은 그대로 읽히고 새로 쓰는 값부터 v2 봉투가 된다 — 기존 값은 아래 §7.3 명령으로 다시 쓴다. 키는 §2 와 같이 `openssl rand -base64 32` 로 만들고 MFA 키와 같은 수준으로 백업한다(잃으면 v2 값을 읽지 못한다).
+- `scripts/deploy.sh`는 이미지 pull 전에 `jq`로 쌍 일치·keyId(`[A-Za-z0-9_-]{1,32}`, 최대 16개)·44자 표준 Base64·활성 키 포함 여부를 사전 검증한다(값 원문은 출력하지 않는다). 개발 스택은 키링 없이 ARIA 로 동작하고, 격리 릴리스 스모크는 회차마다 키링을 만들어 준다.
 
 1. **키 추가 배포**: 기존 `RRNO_ACTIVE_KEY_ID=<old>`를 유지한 채 `RRNO_KEYS_JSON`에 `<new>` 키를 먼저 추가해 모든 인스턴스가 새 키를 복호화할 수 있게 배포한다.
 2. **활성 키 전환**: 모든 인스턴스 반영을 확인한 뒤 `RRNO_ACTIVE_KEY_ID=<new>`로 전환해 신규 저장·수정을 새 키로 암호화한다. 기존 `<old>` 키는 `RRNO_KEYS_JSON`에 남겨 둔다.
-3. **재암호화 및 구 키 제거**: DB에서 `v2:<old>:` 접두 행을 모두 `<new>`로 재암호화해 잔여 건수가 0임을 확인한 뒤에만 `RRNO_KEYS_JSON`에서 `<old>` 키를 제거한다.
+3. **재암호화 및 구 키 제거**: DB에서 `v2:<old>:` 접두 행을 모두 `<new>`로 재암호화해(§7.3) 잔여 건수가 0임을 확인한 뒤에만 `RRNO_KEYS_JSON`에서 `<old>` 키를 제거한다.
 
 ### 7.2 데이터 이관(`migration-tool` `rrno-aes-gcm-v2` · `tools/migration-workspace`)
 
@@ -114,6 +114,23 @@ openssl rand -base64 32
 - `ColumnProtector.forRun`은 `rrno-aes-gcm-v2` 대상 컬럼이 있으면 실행 시작 전 두 환경 변수를 검증하고, 행 적재 전 `v2:` 정식 봉투 형식과 복호화 왕복을 확인한다(실패 시 키 원문 없이 중단).
 - v2 암호문은 암호화마다 nonce 가 달라, 재개·검증 체크섬은 암호문 대신 활성 키에서 끌어낸 HMAC 키로 만든 평문 지문을 쓴다(`ProtectedRowChecksum`, 2026-11-21 — 종전에는 같은 run 의 재개·재실행이 커밋된 행마다 checksum 불일치로 멈췄다). 지문에는 그 암호문의 키 ID 가 실리므로 **한 run 을 재개하는 동안 `MIGRATION_RRNO_ACTIVE_KEY_ID` 를 바꾸지 않는다** — 바꾸면 재개가 checksum 불일치로 멈추고(닫힌 쪽), 대상 값이 같은 평문의 다른 키 암호문으로 바뀌어도 검증이 PASS 하지 않는다. load 의 검증도 같은 키링이 있어야 PASS 를 낸다(키링이 없으면 run 유무와 무관하게 FAIL). 이 변경 전에 v2 행을 커밋한 run 은 체크포인트가 암호문 기준이라 종전처럼 재개할 수 없다 — 새 run 으로 다시 적재한다.
 - `tools/migration-workspace`는 보호 키를 디스크(`workspace.json`)나 AI 문맥에 남기지 않고 세션 메모리(`/api/protection`)에만 보관하며 `dry-run`·`commit` 대상 적재 실행 환경에만 주입한다.
+
+### 7.3 기존 값 재암호화 명령(`rrno-reencrypt` 프로필, 2026-11-25)
+
+활성 키의 v2 봉투가 **아닌** 모든 값(종전 ARIA 암호문·과거 평문·이전 키의 v2 봉투)을 활성 키로 다시 쓴다(`RrnoReencryptionService`). 앱과 같은 키(`ALGORITHM_KEY`, 키 교체 중이면 `OLD_ALGORITHM_KEY`, 그리고 `RRNO_*`)를 준 채 웹 서버 없이 한 번 돌고 끝난다.
+
+```bash
+# 1) 대상 수만 센다(기본 — 아무것도 바꾸지 않는다)
+java -jar app.jar --spring.profiles.active=prod,rrno-reencrypt --spring.main.web-application-type=none
+# 2) §4.1 처럼 백업한 뒤 다시 쓴다
+java -jar app.jar --spring.profiles.active=prod,rrno-reencrypt --spring.main.web-application-type=none \
+     --nuri.crypto.rrno.reencrypt.apply=true
+# 3) 1) 을 다시 돌려 대상이 0 인지 확인한다
+```
+
+- 읽은 암호문이 그대로일 때만 바꾸는 조건부 UPDATE 라, 그 사이 앱이 고친 행은 건너뛰고 센다(종료 코드 2 — 다시 돌리면 남은 행부터 잇는다). 행마다 커밋되므로 중간에 멈춰도 다시 돌리면 된다.
+- 풀 수 없는 값을 만나면 그 행에서 멈춘다(종료 코드 1, 행 식별자만 로그에 남는다) — 키링·ARIA 키를 확인하고 그 행을 따로 판정한 뒤 다시 돌린다.
+- 로그·예외에는 건수와 행 식별자만 남고 값(암호문·평문)은 남지 않는다. 공유 OCI(`egovdb`)는 2026-11-25 기준 주민번호 값이 0건이라 대상이 없다.
 
 ## 완료 체크리스트
 
@@ -153,8 +170,14 @@ rm -f jwt-next.pem jwt-next.pkcs8.der jwt-next.spki.der
 2. **활성 키 전환**: `JWT_SIGNING_ACTIVE_KID=<new-kid>`로 백엔드를 재배포해 신규 발급 토큰을 `<new-kid>`로 서명한다. `<old-kid>`는 두 키링에 남겨 기존 토큰을 계속 검증한다.
 3. **구 키 제거**: 최대 리프레시 토큰 수명(기본 7일)이 지난 뒤 두 쪽 키링에서 `<old-kid>`를 제거하고 재배포한다.
 
-### 8.3 2차 배포 전환(HMAC 수용 종료)
+### 8.3 2차 배포 전환(HMAC 수용 종료) — 2026-11-25 저장소 반영
 
-1. 1차 배포 완료 후 리프레시 토큰 최대 수명(기본 7일) 이상 경과한 시점에 전환 창을 잡는다.
-2. 백엔드·Next 모두 `JWT_ACCEPT_LEGACY_HMAC=false`로 배포해 `HS256/384/512` 수용을 끄고, ES256 단독 검증 상태로 로그인·재발급·화면 이동을 확인한다.
-3. 이상이 없으면 2차 배포 후속 정리에서 `docker-compose.prod.yml`·`application-prod.yml`·`scripts/deploy.sh`·`frontend/src/proxy.ts`·`JwtTokenProvider`의 `JWT_SECRET` 필수 전달 및 HMAC 레거시 경로를 제거한다.
+1차 배포(2026-11-17 병합) 뒤 리프레시 토큰 최대 수명(7일)이 지나 2차를 저장소에 반영했다. 백엔드·Next 모두 `HS256/384/512` 토큰을 받지 않고, `JWT_SECRET`·`JWT_ACCEPT_LEGACY_HMAC` 설정과 그 전달(`docker-compose*.yml`·`application*.yml`·`scripts/deploy.sh`·CI·격리 실행기)을 걷었다. 다시 넣으면 `ConfigSafetyLinterTest`·`WorkflowManifestLinterTest` 가 붉다.
+
+1. 이 저장소에서 파생한 배포가 아직 1차 상태면, 그 배포의 1차 시점에서 리프레시 토큰 최대 수명(기본 7일) 이상이 지났는지 확인한 뒤 이 판으로 올린다 — 7일 전에 올리면 그 전에 받은 HMAC 토큰의 사용자는 다시 로그인한다.
+2. 배포 환경에서 `JWT_SECRET`·`JWT_ACCEPT_LEGACY_HMAC` 를 지운다(남아 있어도 읽지 않는다). Next 인스턴스가 여럿이면 `X-Verified-User` 전달 서명용 `INTERNAL_USER_FORWARD_SECRET`(32자 이상)을 같은 값으로 준다 — 없으면 프로세스마다 임시 키를 쓰고, 맞지 않는 요청은 백엔드 조회로 돌아간다.
+3. 로그인·재발급·화면 이동을 확인한다.
+
+### 8.4 개발용 서명키의 바인딩 제한(2026-11-25)
+
+키링 없이 띄운 백엔드는 저장소에 커밋된 개발용 키쌍(`dev-es256-1`)으로 서명한다. 그 개인키는 공개돼 있으므로, `server.address` 가 루프백이 아니면 기동을 멈춘다. `bootRun`(`npm run dev`·`npm run backend`)은 `SERVER_ADDRESS` 가 없으면 `127.0.0.1` 에 바인딩하고, 개발 compose 만 `JWT_SIGNING_ALLOW_DEV_KEY_ON_NETWORK=true` 로 컨테이너 안 바인딩을 허용한 채 호스트에는 `127.0.0.1:8080` 으로만 연다. 다른 주소가 필요하면 키링을 준다.

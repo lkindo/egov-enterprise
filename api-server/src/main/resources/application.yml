@@ -121,15 +121,14 @@ spring:
 
 
 jwt:
-  # [보안 C1] JWT 서명 키 — algorithmKey와 동일 관례: base는 dev-safe 기본값(dev/local/e2e 프로파일과 동일 값),
-  # 운영은 application-prod.yml에서 무기본값(${JWT_SECRET})으로 재선언해 미설정 시 기동 실패(fail-fast)시킨다.
-  # (빈 기본값 ${JWT_SECRET:}는 base=default 프로파일 부팅[npm run dev]까지 JwtTokenProvider.init에서 죽이므로 지양)
-  secret: ${JWT_SECRET:dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==}
-  # [ADR-0060 1차 배포] ES256 비대칭 서명 키링(둘 다 비면 prod 외 환경에서 dev-es256-1 개발 키쌍 사용) + 전환용 HMAC 수용 플래그
+  # [ADR-0060] ES256 비대칭 서명 키링. 둘 다 비면 prod 외 환경에서 저장소의 개발용 키쌍(dev-es256-1)을 쓴다 —
+  #   운영은 application-prod.yml 이 무기본값으로 강제한다. 2차 배포(2026-11-25)로 HMAC 서명 비밀(jwt.secret)과 그 토큰의
+  #   수용을 걷었다. 개발용 키쌍은 server.address 가 루프백일 때만 쓰고(bootRun 은 기본 127.0.0.1), 컨테이너 안에서 모든 주소에
+  #   바인딩하는 개발 스택만 allow-dev-key-on-network 를 켠다(docker-compose.yml — 그 스택은 호스트 루프백에만 포트를 연다).
   signing:
     active-kid: ${JWT_SIGNING_ACTIVE_KID:}
     keys-json: ${JWT_SIGNING_KEYS_JSON:}
-  accept-legacy-hmac: ${JWT_ACCEPT_LEGACY_HMAC:true}
+    allow-dev-key-on-network: ${JWT_SIGNING_ALLOW_DEV_KEY_ON_NETWORK:false}
   # [2026-07-28 신설] 토큰 수명. **기본값은 종전 상수와 동일**(액세스 1시간 / 리프레시 7일)이며
   # 운영 동작은 달라지지 않는다. 환경변수로만 재정의할 수 있게 열어 두는 것이 목적이다.
   #
@@ -237,10 +236,11 @@ nuri:
     #     (순서 지뢰 1: XFF 불신 + 분당 10회 제한을 함께 넣으면 전사 로그인이 즉시 막힌다).
     #     순서: ① 신뢰 대역 주입 → ② 관측 → ③ 용량 조정.
     #
-    #   ⚠ base 기본값은 로컬·개발 프록시를 위해 사설 대역을 포함한다. 운영 compose 는 egov-net
-    #     대역으로 좁히며 ConfigSafetyLinterTest 가 compose 서브넷과의 정합을 강제한다.
-    #     LB·nginx·CDN 추가 등 운영 홉이 바뀌면 둘을 함께 재판정한다.
-    trusted-proxies: ${TRUSTED_PROXIES:127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
+    #   ⚠ [2026-11-25] base 기본값은 루프백뿐이다(로컬 Next → 127.0.0.1). 종전 기본값은 사설 대역 전체였고, compose 밖
+    #     (예: k8s·사내 VM)에 그대로 배포하면 같은 사설망의 아무 클라이언트가 XFF 로 IP 제한·요청 한도를 우회할 수 있었다.
+    #     컨테이너 배포는 프록시 주소를 명시한다 — 개발 compose 와 운영 오버레이는 Next 고정 주소(172.28.0.10/32) 하나를 주고
+    #     ConfigSafetyLinterTest 가 compose 의 frontend 고정 주소와의 정합을 강제한다. LB·nginx·CDN 을 더하면 다시 판정한다.
+    trusted-proxies: ${TRUSTED_PROXIES:127.0.0.1/32,::1/128}
 
     # [2026-09-14 ADR-0019] 클라이언트 IP 당 분당 요청 한도(RateLimitFilter). 종전에는 JVM 시스템 프로퍼티로만 바뀌어
     #   운영에서 조정할 수 없었다. 1 미만은 기동을 거부한다.

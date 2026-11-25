@@ -55,14 +55,15 @@ fi
 export API_IMAGE_REF="$MANIFEST_API_IMAGE" FRONTEND_IMAGE_REF="$MANIFEST_FRONTEND_IMAGE"
 
 # 1. 배포 필수 시크릿 검증
-#    [W0-04] 종전에는 JWT_SECRET 미설정 시 **저장소에 커밋된 dev 키를 경고만 남기고 그대로 주입**했다.
+#    [W0-04] 종전에는 서명 비밀 미설정 시 **저장소에 커밋된 dev 키를 경고만 남기고 그대로 주입**했다.
 #    공개 저장소의 서명 키로 운영 토큰을 서명하면 임의 esntlId 를 subject 로 하는 토큰을 누구나 위조할 수 있다.
-#    조용한 대체를 금지하고 배포를 중단한다.
+#    조용한 대체를 금지하고 배포를 중단한다. [ADR-0060 2차 · 2026-11-25] 서명은 ES256 키링(아래 둘)만 쓰고
+#    HMAC 서명 비밀(JWT_SECRET)은 요구·전달하지 않는다 — Next 에 서명 비밀을 두지 않기 위해서다.
 MISSING=""
 # [W1-13 정합] MAIL_HOST 는 docker-compose.prod.yml 이 `${MAIL_HOST:?...}` 로 이미 하드 차단한다.
 #   이 목록에서 빠져 있으면 사전 검증을 통과한 뒤 `docker compose up` 단계에서 죽어,
 #   운영자가 받는 안내가 갈린다. 차단 지점을 여기로 앞당겨 메시지를 한 곳으로 모은다.
-for v in JWT_SECRET JWT_SIGNING_ACTIVE_KID JWT_SIGNING_KEYS_JSON JWT_VERIFY_KEYS_JSON ALGORITHM_KEY DB_URL DB_USERNAME DB_PASSWORD ADMIN_INITIAL_PASSWORD MAIL_HOST; do
+for v in JWT_SIGNING_ACTIVE_KID JWT_SIGNING_KEYS_JSON JWT_VERIFY_KEYS_JSON ALGORITHM_KEY DB_URL DB_USERNAME DB_PASSWORD ADMIN_INITIAL_PASSWORD MAIL_HOST; do
     eval "val=\${$v:-}"
     if [ -z "$val" ]; then
         MISSING="$MISSING $v"

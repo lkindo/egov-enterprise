@@ -766,6 +766,48 @@ class ConfigSafetyLinterTest {
         broken.forEach((name, violations) -> assertFalse(violations.isEmpty(), name));
     }
 
+    /**
+     * [2026-11-25 사용자 결정] api 8080 은 호스트 루프백에만 연다. 개발 스택(base)은 키링 없이 저장소의 개발용 서명키로 토큰을 만들므로
+     * 모든 주소에 열면 이 기계에 닿는 누구나 토큰을 만들 수 있었고, 운영 오버레이는 base 목록을 바꿔 쓰지 않아 edge(로그인 한도·TLS)를
+     * 우회하는 공개 경로가 남았다. 운영은 {@code API_HOST_BIND} 로만 다시 연다.
+     */
+    static List<String> apiPortExposureViolations(String composeBaseSrc, String composeProdSrc) {
+        List<String> violations = new ArrayList<>();
+        String baseApi = composeServiceBlock(composeBaseSrc, "api");
+        if (baseApi == null || !Pattern.compile("(?m)^\\s*-\\s*\"127\\.0\\.0\\.1:8080:8080\"\\s*$").matcher(baseApi).find()
+                || Pattern.compile("(?m)^\\s*-\\s*\"?(?:0\\.0\\.0\\.0:)?8080:8080\"?\\s*$").matcher(baseApi).find()) {
+            violations.add("docker-compose.yml: api 는 \"127.0.0.1:8080:8080\" 로만 열어야 합니다 — 개발용 서명키를 쓰는 스택입니다.");
+        }
+        String prodApi = composeServiceBlock(composeProdSrc, "api");
+        if (prodApi == null || !Pattern.compile("(?m)^\\s*ports\\s*:\\s*!override\\s*\\n\\s*-\\s*\"\\$\\{API_HOST_BIND:-127\\.0\\.0\\.1}:8080:8080\"\\s*$")
+                .matcher(prodApi).find()) {
+            violations.add(COMPOSE_PROD + ": api.ports 는 `!override` 로 \"${API_HOST_BIND:-127.0.0.1}:8080:8080\" 하나여야 합니다 —"
+                    + " base 목록이 이어 붙으면 공개가 남습니다.");
+        }
+        return violations;
+    }
+
+    @Test
+    @DisplayName("[2026-11-25 · H5] api 8080 의 모든 주소 공개(base)·운영 오버레이의 루프백 기본값 제거는 red")
+    void apiPortIsLoopbackByDefault() throws IOException {
+        Path root = resolveRepoRoot();
+        String baseSrc = stripComments(HarnessSourceIndex.read(root.resolve("docker-compose.yml")));
+        String prodSrc = stripComments(HarnessSourceIndex.read(root.resolve(COMPOSE_PROD)));
+        if (ReusableHarnessProfile.current().projected() && composeServiceBlock(baseSrc, "api") == null) {
+            return;
+        }
+        assertTrue(apiPortExposureViolations(baseSrc, prodSrc).isEmpty(), () -> apiPortExposureViolations(baseSrc, prodSrc).toString());
+
+        Map<String, List<String>> broken = new LinkedHashMap<>();
+        broken.put("base 가 모든 주소에 공개", apiPortExposureViolations(
+                baseSrc.replace("\"127.0.0.1:8080:8080\"", "\"8080:8080\""), prodSrc));
+        broken.put("운영 오버레이가 base 목록을 이어 붙임", apiPortExposureViolations(
+                baseSrc, prodSrc.replace("ports: !override", "ports:")));
+        broken.put("운영 기본 바인딩을 모든 주소로", apiPortExposureViolations(
+                baseSrc, prodSrc.replace("${API_HOST_BIND:-127.0.0.1}", "${API_HOST_BIND:-0.0.0.0}")));
+        broken.forEach((name, violations) -> assertFalse(violations.isEmpty(), name));
+    }
+
     static List<String> prodJwtAsymmetricBoundaryViolations(String composeProdSrc, String deployScriptSrc) {
         List<String> violations = new ArrayList<>();
         String apiBlock = composeServiceBlock(composeProdSrc, "api");
@@ -782,6 +824,20 @@ class ConfigSafetyLinterTest {
         }
         if (frontendBlock != null && (frontendBlock.contains("JWT_SIGNING_ACTIVE_KID") || frontendBlock.contains("JWT_SIGNING_KEYS_JSON"))) {
             violations.add(COMPOSE_PROD + ": frontend.environment 에 JWT 서명 개인키 키링을 둘 수 없습니다(ADR-0060).");
+        }
+        // [ADR-0060 2차 · 2026-11-25] 어느 쪽에도 HMAC 서명 비밀과 그 수용 플래그를 다시 넘기지 않는다 — Next 가 서명 비밀을
+        //   가지면 Next 침해가 임의 사용자 토큰 위조로 이어졌다(1차 배포의 전환 기간 위험).
+        for (var entry : java.util.Map.of("api", apiBlock == null ? "" : apiBlock,
+                "frontend", frontendBlock == null ? "" : frontendBlock).entrySet()) {
+            for (String legacy : List.of("JWT_SECRET", "JWT_ACCEPT_LEGACY_HMAC")) {
+                if (Pattern.compile("(?m)^\\s*" + legacy + "\\s*:").matcher(entry.getValue()).find()) {
+                    violations.add(COMPOSE_PROD + ": " + entry.getKey() + ".environment 에 " + legacy
+                            + " 를 둘 수 없습니다 — ADR-0060 2차로 HMAC 서명과 그 비밀을 걷었습니다.");
+                }
+            }
+        }
+        if (deployScriptSrc.matches("(?s).*\\bJWT_SECRET\\b.*")) {
+            violations.add(DEPLOY_SCRIPT + ": JWT_SECRET 을 요구·전달하지 않습니다 — ADR-0060 2차로 HMAC 서명 비밀을 걷었습니다.");
         }
         List<String> requiredSignals = List.of(
                 "JWT_SIGNING_ACTIVE_KID JWT_SIGNING_KEYS_JSON JWT_VERIFY_KEYS_JSON",
@@ -825,6 +881,18 @@ class ConfigSafetyLinterTest {
                 prodSrc.replace("ALLOW_DEV_JWT_VERIFY_KEYS: \"false\"",
                         "ALLOW_DEV_JWT_VERIFY_KEYS: \"false\"\n      JWT_SIGNING_KEYS_JSON: ${JWT_SIGNING_KEYS_JSON}"),
                 deploySrc));
+        broken.put("frontend 에 HMAC 서명 비밀 재유입", prodJwtAsymmetricBoundaryViolations(
+                prodSrc.replace("ALLOW_DEV_JWT_VERIFY_KEYS: \"false\"",
+                        "ALLOW_DEV_JWT_VERIFY_KEYS: \"false\"\n      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 이 필요합니다}"),
+                deploySrc));
+        broken.put("api 에 HMAC 수용 플래그 재유입", prodJwtAsymmetricBoundaryViolations(
+                prodSrc.replace("      JWT_SIGNING_ACTIVE_KID: ${JWT_SIGNING_ACTIVE_KID:?",
+                        "      JWT_ACCEPT_LEGACY_HMAC:\n      JWT_SIGNING_ACTIVE_KID: ${JWT_SIGNING_ACTIVE_KID:?"),
+                deploySrc));
+        broken.put("deploy 가 JWT_SECRET 을 다시 요구", prodJwtAsymmetricBoundaryViolations(
+                prodSrc,
+                deploySrc.replace("JWT_SIGNING_ACTIVE_KID JWT_SIGNING_KEYS_JSON JWT_VERIFY_KEYS_JSON",
+                        "JWT_SECRET JWT_SIGNING_ACTIVE_KID JWT_SIGNING_KEYS_JSON JWT_VERIFY_KEYS_JSON")));
         broken.put("deploy JWT 키쌍 유도 비교 제거", prodJwtAsymmetricBoundaryViolations(
                 prodSrc,
                 deploySrc.replace("openssl pkey -inform DER -pubout -outform DER", "cat")));

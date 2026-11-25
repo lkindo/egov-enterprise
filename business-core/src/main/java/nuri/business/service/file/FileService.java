@@ -51,6 +51,8 @@ public class FileService extends BaseAbstractService {
     private final DurableWorkPort durableWork;
     private final ObjectMapper objectMapper;
     private final PlatformTransactionManager transactionManager;
+    /** 업로드 내용 검사 연동 지점(UploadContentScanner). 기관이 빈을 등록하지 않으면 형식 검사만 적용된다. */
+    private UploadContentScanner uploadContentScanner = UploadContentScanner.ALLOW_ALL;
 
     // [Security] 허용된 파일 확장자 화이트리스트
     private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList(
@@ -92,6 +94,12 @@ public class FileService extends BaseAbstractService {
         this.durableWork = required(durableWork, "durableWork 는 null 일 수 없습니다");
         this.objectMapper = required(objectMapper, "objectMapper 는 null 일 수 없습니다");
         this.transactionManager = transactionManager;
+    }
+
+    /** 기관이 등록한 업로드 내용 검사기를 쓴다(없으면 {@link UploadContentScanner#ALLOW_ALL}). */
+    @Autowired(required = false)
+    public void setUploadContentScanner(UploadContentScanner uploadContentScanner) {
+        this.uploadContentScanner = uploadContentScanner == null ? UploadContentScanner.ALLOW_ALL : uploadContentScanner;
     }
 
     /**
@@ -569,6 +577,7 @@ public class FileService extends BaseAbstractService {
 
             String extension = validateFileExtension(file.getOriginalFilename(), profile);
             validateFileSignature(file, extension);
+            validateFileContentScan(file, extension);
         }
 
         if (requireNonEmpty && !containsFile) {
@@ -597,6 +606,24 @@ public class FileService extends BaseAbstractService {
             throw new BusinessException(CommonErrorCode.UNSUPPORTED_MEDIA_TYPE);
         }
         return extension;
+    }
+
+    /**
+     * 기관이 연동한 내용 검사기(악성코드 검사)를 부른다. 거부하거나 검사기가 실패하면 저장하지 않는다(fail-closed).
+     * 사유 문구에 파일명·검사기 응답을 싣지 않는다.
+     */
+    private void validateFileContentScan(MultipartFile file, String extension) {
+        boolean clean;
+        try {
+            clean = uploadContentScanner.isClean(file, extension);
+        } catch (IOException | RuntimeException failure) {
+            log.warn("Upload content scanner failed; rejecting upload (type={})", failure.getClass().getSimpleName());
+            throw new BusinessException(CommonErrorCode.UNSUPPORTED_MEDIA_TYPE, "파일 검사를 마치지 못해 올리지 않았습니다. 잠시 후 다시 시도해 주세요.");
+        }
+        if (!clean) {
+            log.warn("Blocked file upload by content scanner: extension={}", extension);
+            throw new BusinessException(CommonErrorCode.UNSUPPORTED_MEDIA_TYPE, "파일 검사에서 차단된 파일입니다.");
+        }
     }
 
     /**

@@ -54,7 +54,8 @@ function assertIsolatedDatasource(dbEnv, apiEnv, api) {
       || datasource?.url !== databaseUrl || datasource?.['jdbc-url'] !== databaseUrl
       || datasource?.hikari?.['jdbc-url'] !== databaseUrl
       || datasource?.username !== dbEnv.POSTGRES_USER || datasource?.password !== dbEnv.POSTGRES_PASSWORD
-      || !apiEnv.JWT_SECRET) throw failure();
+      // 회차마다 만든 서명 키링으로 돌아야 한다 — 비면 저장소의 개발용 키쌍이다(ADR-0060 2차로 JWT_SECRET 은 걷었다).
+      || !apiEnv.JWT_SIGNING_ACTIVE_KID || !apiEnv.JWT_SIGNING_KEYS_JSON) throw failure();
 }
 
 function mergedImageEnvironment(image, overrides) {
@@ -212,8 +213,7 @@ export function assertOwnedComposeRuntime(database, api, volume, network, enviro
   if (!database.NetworkSettings.Networks[network.Name]?.Aliases?.includes('db')) throw failure();
   const bindings = api.NetworkSettings.Ports?.['8080/tcp'];
   if (!bindings?.some(binding => ['127.0.0.1', '0.0.0.0'].includes(binding.HostIp) && binding.HostPort === '8080')) throw failure();
-  if (!apiEnv.JWT_SECRET) throw failure();
-  return { databaseId: database.Id, apiId: api.Id, jwtSecret: apiEnv.JWT_SECRET };
+  return { databaseId: database.Id, apiId: api.Id };
 }
 
 export async function assertIsolatedTarget(environment = process.env) {

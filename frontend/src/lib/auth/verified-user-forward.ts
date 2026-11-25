@@ -74,18 +74,13 @@ function resolveEphemeralSecret(): Uint8Array<ArrayBuffer> | null {
 
 function resolveForwardSecret(): ForwardSecretMaterial | null {
   // JWT_VERIFY_KEYS_JSON 은 공개키 목록이므로 절대 HMAC 공유 시크릿으로 사용하지 않는다.
+  // [ADR-0060 2차 · 2026-11-25] 토큰 서명 비밀(JWT_SECRET)은 Next 에서 걷었다 — 전용 비밀이 없으면 프로세스 임시 키를 쓰고,
+  //   검증이 맞지 않으면 서버 컴포넌트는 백엔드 조회로 돌아간다(verifyVerifiedUserHeader 의 fail-closed).
   const dedicated = process.env.INTERNAL_USER_FORWARD_SECRET;
   if (dedicated) {
     return {
       cacheId: `dedicated:${dedicated}`,
       keyBytes: encoder.encode(`nuri-verified-user-forward-v1:dedicated:${dedicated}`),
-    };
-  }
-  const jwtSecret = process.env.JWT_SECRET;
-  if (jwtSecret) {
-    return {
-      cacheId: `jwt:${jwtSecret}`,
-      keyBytes: encoder.encode(`nuri-verified-user-forward-v1:jwt:${jwtSecret}`),
     };
   }
   const ephemeral = resolveEphemeralSecret();

@@ -101,9 +101,9 @@ export function vendorArtifactFingerprint(root) {
   return hash.digest('hex');
 }
 
-/** 프런트엔드 프로세스는 JWT 개인 서명 키링을 상속받지 않는다(ADR-0060). */
+/** 프런트엔드 프로세스는 JWT 개인 서명 키링도, 걷은 HMAC 서명 비밀(JWT_SECRET, ADR-0060 2차)도 상속받지 않는다. */
 export function stripJwtSigningEnv(env) {
-  const { JWT_SIGNING_ACTIVE_KID: _kid, JWT_SIGNING_KEYS_JSON: _keys, ...cleanEnv } = env;
+  const { JWT_SIGNING_ACTIVE_KID: _kid, JWT_SIGNING_KEYS_JSON: _keys, JWT_SECRET: _secret, ...cleanEnv } = env;
   return cleanEnv;
 }
 
@@ -117,7 +117,6 @@ export const artifactStepEnvironment = () => {
   return {
     ...stripJwtSigningEnv(process.env),
     TZ: 'Asia/Seoul',
-    JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex'),
     JWT_VERIFY_KEYS_JSON: ephemeralPublicKey,
   };
 };

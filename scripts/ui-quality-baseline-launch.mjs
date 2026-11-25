@@ -249,7 +249,6 @@ export function createBaselineComposeSpecification({
         environment: Object.freeze([
           'CORS_ALLOWED_ORIGINS',
           'JWT_ACCESS_TOKEN_VALIDITY_MS',
-          'JWT_SECRET',
           'JWT_SIGNING_ACTIVE_KID',
           'JWT_SIGNING_KEYS_JSON',
           'MANAGEMENT_HEALTH_MAIL_ENABLED',
@@ -287,7 +286,6 @@ export function createBaselineComposeSpecification({
         environment: Object.freeze([
           'ALLOW_DEV_JWT_VERIFY_KEYS',
           'BACKEND_API_URL',
-          'JWT_SECRET',
           'JWT_VERIFY_KEYS_JSON',
           'NEXT_PUBLIC_API_URL',
         ]),
@@ -319,7 +317,7 @@ export function createBaselineComposeSpecification({
 function createClosedComposeEnvironment({ sourceEnvironment, webOrigin }) {
   const { databaseName, databaseUser } = normalizedDatabaseIdentity(sourceEnvironment);
   const databasePassword = requireExecutionSecret(sourceEnvironment, 'UI_BASELINE_DB_PASSWORD');
-  const jwtSecret = requireExecutionSecret(sourceEnvironment, 'UI_BASELINE_JWT_SECRET');
+  // ADR-0060 2차: 서명 비밀(JWT_SECRET)은 걷었다 — 회차별 ES256 키쌍만 쓴다.
   const { privateKey, publicKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
   const jwtKid = 'ui-baseline-es256';
   const jwtSigningKeysJson = JSON.stringify({
@@ -344,7 +342,6 @@ function createClosedComposeEnvironment({ sourceEnvironment, webOrigin }) {
     NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'true',
     NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE',
     CORS_ALLOWED_ORIGINS: webOrigin,
-    JWT_SECRET: jwtSecret,
     JWT_SIGNING_ACTIVE_KID: jwtKid,
     JWT_SIGNING_KEYS_JSON: jwtSigningKeysJson,
     JWT_VERIFY_KEYS_JSON: jwtVerifyKeysJson,
@@ -919,7 +916,6 @@ export function launchAttestedBaseline(input = {}, {
     throw new Error('baseline launch requires the exact clean attested commit');
   }
   requireExecutionSecret(sourceEnvironment, 'UI_BASELINE_DB_PASSWORD');
-  requireExecutionSecret(sourceEnvironment, 'UI_BASELINE_JWT_SECRET');
   requireExecutionSecret(sourceEnvironment, 'UI_BASELINE_ADMIN_ID');
   requireExecutionSecret(sourceEnvironment, 'UI_BASELINE_ADMIN_SECRET');
   executeContracts(executeCommand, repositoryRoot, sourceEnvironment);

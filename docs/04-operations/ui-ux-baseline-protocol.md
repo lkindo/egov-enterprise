@@ -166,7 +166,7 @@ wrapper는 Docker 호출 전에 tracked·untracked dirty 상태, HEAD/build SHA,
 
 검사 계약은 합성 inspect 응답뿐 아니라 실제 명령에 전달하는 Go template의 JSON 구조도 확인한다. ID·두 라벨을 넣은 결과에서 `Labels`와 최상위 객체가 모두 닫혀야 하며, 닫는 괄호 누락은 기존 검사에서 실패한다. 전체 이미지 환경을 읽어 파싱 오류를 우회하지 않는다.
 
-attested image의 표준 기동·실행 진입점은 아래 root package command다. 실행 전 `UI_BASELINE_DB_PASSWORD`, `UI_BASELINE_JWT_SECRET`, `UI_BASELINE_ADMIN_ID`, `UI_BASELINE_ADMIN_SECRET`을 현재 process에 안전하게 주입해야 하며 실제 값은 문서·명령 인자·로그에 쓰지 않는다. DB 이름과 사용자는 `UI_BASELINE_DB_NAME`, `UI_BASELINE_DB_USER`로 선택 주입할 수 있다. DB 이름은 기본 `authz_e2e`이며 `authz_e2e_` 뒤에 소문자·숫자 1~40자를 붙인 격리 이름만 추가 허용한다. 실행기는 새 전용 컨테이너에서 고정 `e2e` 프로필과 명시적 disposable Contract 승인을 사용하고, V2_99→Contract→후속 migration→합성 관리자 공지·FAQ 편집 권한 fixture 순서를 거친다. 운영 DB에는 적용하지 않으며 스키마 설정은 `validate`로 고정한다.
+attested image의 표준 기동·실행 진입점은 아래 root package command다. 실행 전 `UI_BASELINE_DB_PASSWORD`, `UI_BASELINE_ADMIN_ID`, `UI_BASELINE_ADMIN_SECRET`을 현재 process에 안전하게 주입해야 하며(JWT 는 실행기가 회차마다 ES256 키쌍을 만든다 — 서명 비밀은 ADR-0060 2차로 걷었다) 실제 값은 문서·명령 인자·로그에 쓰지 않는다. DB 이름과 사용자는 `UI_BASELINE_DB_NAME`, `UI_BASELINE_DB_USER`로 선택 주입할 수 있다. DB 이름은 기본 `authz_e2e`이며 `authz_e2e_` 뒤에 소문자·숫자 1~40자를 붙인 격리 이름만 추가 허용한다. 실행기는 새 전용 컨테이너에서 고정 `e2e` 프로필과 명시적 disposable Contract 승인을 사용하고, V2_99→Contract→후속 migration→합성 관리자 공지·FAQ 편집 권한 fixture 순서를 거친다. 운영 DB에는 적용하지 않으며 스키마 설정은 `validate`로 고정한다.
 
 ```powershell
 npm run ui-quality:baseline:launch -- --attestation <absolute-outside-repository-attestation-path> --attestation-sha256 <64-lowercase-hex> --web-port <loopback-host-port> --api-port <different-loopback-host-port> --execute confirmed

@@ -90,6 +90,12 @@ public final class RrnoKeyring {
         return value != null && value.startsWith(PREFIX);
     }
 
+    /** 이 값이 지금 활성 키로 쓴 v2 암호문인가 — 재암호화(RrnoReencryptionService)가 건너뛸 값이다. 키링이 없으면 false. */
+    public static boolean isActiveKeyEnvelope(String value) {
+        Ring current = ring;
+        return current != null && value != null && value.startsWith(PREFIX + current.activeKeyId() + ":");
+    }
+
     /** 활성 키로 암호화한다. 키링이 없으면 호출하지 않는다(IllegalStateException). */
     public static String encrypt(String plaintext) {
         Ring current = ring;

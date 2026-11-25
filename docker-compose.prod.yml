@@ -37,6 +37,12 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:?번들 DB의 DB_PASSWORD 가 필요합니다}
 
   api:
+    # [2026-11-25 사용자 결정] api 8080 은 호스트 루프백에만 연다(기본). 브라우저는 edge → Next → api 로만 오고(Next 는
+    #   /api/v1·/ws 를 같은 출처로 프록시한다), 공개 포트로 직접 온 요청은 edge 의 로그인 한도·TLS 자리를 우회했다.
+    #   호스트 밖 비브라우저 소비자에게 직접 열어야 하면 API_HOST_BIND=0.0.0.0 을 명시한다(그 경우 앞단 방화벽·TLS 를 함께 판정한다).
+    #   compose 는 ports 를 이어 붙이므로 base 의 목록을 `!override` 로 바꾼다.
+    ports: !override
+      - "${API_HOST_BIND:-127.0.0.1}:8080:8080"
     environment:
       # 로그 수집기를 붙일 때는 `prod,json-logs` 로 바꿔 ECS JSON 콘솔 로그를 켠다
       #   (docs/04-operations/observability-baseline.md). prod 는 빼지 않는다.
@@ -53,10 +59,12 @@ services:
       DB_URL: ${DB_URL:?DB_URL 이 필요합니다}
       DB_USERNAME: ${DB_USERNAME:?DB_USERNAME 이 필요합니다}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD 가 필요합니다}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 이 필요합니다}
-      # [ADR-0060 1차 배포] 백엔드만 ES256 서명 개인키 키링을 필수로 받는다(프런트는 공개키만).
+      # [ADR-0060] 백엔드만 ES256 서명 개인키 키링을 필수로 받는다(프런트는 공개키만). 2차 배포(2026-11-25)로 HMAC 서명 비밀
+      #   JWT_SECRET 과 그 토큰 수용(JWT_ACCEPT_LEGACY_HMAC)을 양쪽에서 걷었다 — 다시 넘기면 ConfigSafetyLinterTest 가 red 다.
       JWT_SIGNING_ACTIVE_KID: ${JWT_SIGNING_ACTIVE_KID:?JWT_SIGNING_ACTIVE_KID 가 필요합니다}
       JWT_SIGNING_KEYS_JSON: ${JWT_SIGNING_KEYS_JSON:?JWT_SIGNING_KEYS_JSON 이 필요합니다}
+      # base(개발 스택)가 켜는 개발용 서명키의 네트워크 허용을 운영에서 되돌린다. 키링이 필수라 효과는 없지만 기본값을 남기지 않는다.
+      JWT_SIGNING_ALLOW_DEV_KEY_ON_NETWORK: "false"
       ALGORITHM_KEY: ${ALGORITHM_KEY:?ALGORITHM_KEY 가 필요합니다 (PII 암호화 마스터 키)}
       # 키 회전 창에서만 구키를 함께 주입한다. 재암호화·검증 후 반드시 제거한다.
       OLD_ALGORITHM_KEY: ${OLD_ALGORITHM_KEY}
@@ -72,10 +80,12 @@ services:
       NURI_SMS_SENS_REGISTERED_SENDER: ${NURI_SMS_SENS_REGISTERED_SENDER:-}
       NURI_SMS_CONNECT_TIMEOUT: ${NURI_SMS_CONNECT_TIMEOUT:-3s}
       NURI_SMS_REQUEST_TIMEOUT: ${NURI_SMS_REQUEST_TIMEOUT:-10s}
-      # [W1-12] 관리(actuator) 포트. 컨테이너 네트워크 안에서만 접근한다 — ports 로 호스트에 노출하지 않는다.
-      #   스크레이퍼는 egov-net 안에서 api:9090 으로 접근한다.
+      # [W1-12] 관리(actuator) 포트. ports 로 호스트에 노출하지 않는다.
+      #   [2026-11-25] 기본 바인딩은 컨테이너 루프백이다 — 헬스체크(아래, 컨테이너 안 wget)는 그대로 돈다. 종전 기본값
+      #   0.0.0.0 은 egov-net 의 아무 컨테이너나 인증 없는 /actuator/prometheus(경로·오류율·JVM 내부)를 읽게 했다.
+      #   스크레이퍼를 egov-net 에 붙일 때만 MANAGEMENT_ADDRESS=0.0.0.0 을 명시한다(그 네트워크에 둘 컨테이너를 함께 판정한다).
       MANAGEMENT_PORT: ${MANAGEMENT_PORT:-9090}
-      MANAGEMENT_ADDRESS: ${MANAGEMENT_ADDRESS:-0.0.0.0}
+      MANAGEMENT_ADDRESS: ${MANAGEMENT_ADDRESS:-127.0.0.1}
       # [W1-J1] 신뢰 프록시 대역. 이 한 줄이 레이트리밋 키·로그인 잠금 IP 판정·감사 IP 를 함께 정한다.
       #   base 기본값(application.yml)은 개발 프록시를 위해 사설 대역을 포함하지만, 운영은 아래
       #   Next(frontend) 고정 주소 하나만 신뢰해 '홉이 전부 신뢰 대역' 분기를 실제 프록시 요청에 한정한다.
@@ -130,10 +140,12 @@ services:
       LOGIN_LOCK_MINUTES:
       MFA_ACTIVE_KEY_ID:
       MFA_KEYS_JSON:
-      # [Wave 4] 주민등록번호 키링 — 운영 배포(scripts/deploy.sh)는 2026-11-17 부터 필수로 요구한다(비우면 앱이 종전 ARIA 로
-      #   새 값을 암호화한다 — 키 없이 이 파일로 직접 띄우는 격리 스모크만 그 경로를 쓴다). 키는 MFA 키처럼 백업한다(잃으면 v2 값을 읽지 못한다).
-      RRNO_ACTIVE_KEY_ID:
-      RRNO_KEYS_JSON:
+      # [Wave 4] 주민등록번호 키링 — 운영은 필수다(2026-11-25 부터 앱도 prod 에서 없으면 기동을 멈춘다; deploy.sh 는 11-17 부터
+      #   요구). 비우면 종전 ARIA(IV·MAC 없는 결정적 암호)로 새 값을 쓰던 경로다. 키는 MFA 키처럼 백업한다(잃으면 v2 값을 읽지 못한다).
+      #   기존 ARIA 암호문은 `java -jar app.jar --spring.profiles.active=prod,rrno-reencrypt` 로 키링 봉투로 다시 쓴다
+      #   (docs/04-operations/crypto-key-rotation.md).
+      RRNO_ACTIVE_KEY_ID: ${RRNO_ACTIVE_KEY_ID:?RRNO_ACTIVE_KEY_ID 가 필요합니다 (주민등록번호 키링)}
+      RRNO_KEYS_JSON: ${RRNO_KEYS_JSON:?RRNO_KEYS_JSON 이 필요합니다 (주민등록번호 키링)}
       # [Wave 4] 첨부 저장소 — 비우면 local(attachment_storage 볼륨). s3 면 아래 설정이 모두 있어야 기동한다.
       FILE_STORAGE_TYPE:
       FILE_STORAGE_S3_ENDPOINT:
@@ -160,7 +172,6 @@ services:
       RATE_LIMIT_REQUESTS_PER_MINUTE:
       RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE:
       JWT_REFRESH_TOKEN_VALIDITY_MS:
-      JWT_ACCEPT_LEGACY_HMAC:
       DB_POOL_CONNECTION_TIMEOUT_MS:
       DB_POOL_MAX_SIZE:
       DB_POOL_MIN_IDLE:
@@ -225,13 +236,12 @@ services:
       # 브랜드 프로필·밀도 축(DEC-OPS-015, docs/03-guides/design-tokens.md). 미설정이면 기본 프로필·comfortable.
       BRAND_THEME:
       UI_DENSITY:
-      # [ADR-0060 1차 배포] Next 는 공개키(SPKI)만 받으며 서명 개인키 키링은 받지 않는다.
-      #   전환 기간(1차 배포) 동안만 기존 HMAC 검증을 위해 JWT_SECRET 을 함께 받고, ALLOW_DEV_JWT_VERIFY_KEYS 는 항상 false 다.
+      # [ADR-0060] Next 는 공개키(SPKI)만 받으며 서명 개인키 키링도, 서명 비밀(JWT_SECRET — 2차 배포로 걷음)도 받지 않는다.
+      #   ALLOW_DEV_JWT_VERIFY_KEYS 는 항상 false 다.
       JWT_VERIFY_KEYS_JSON: ${JWT_VERIFY_KEYS_JSON:?JWT_VERIFY_KEYS_JSON 이 필요합니다}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 이 필요합니다}
       ALLOW_DEV_JWT_VERIFY_KEYS: "false"
-      JWT_ACCEPT_LEGACY_HMAC:
-      # 내부 X-Verified-User HMAC 전용 시크릿(선택). 다중 Next 인스턴스이거나 ES256 전환 후 JWT_SECRET 을 걷을 때 지정하며, 비우면 JWT_SECRET 또는 프로세스 CSPRNG 임시 키로 동작한다.
+      # 내부 X-Verified-User HMAC 전용 시크릿(선택, 32자 이상). Next 인스턴스가 여럿이면 같은 값을 준다. 비우면 프로세스마다
+      #   CSPRNG 임시 키로 동작한다(단일 인스턴스 기본). 이 값은 토큰 서명에 쓰이지 않는다.
       INTERNAL_USER_FORWARD_SECRET:
       # BACKEND_ACTUATOR_URL 은 전달하지 않는다 — 현재 호출 경로(클라이언트 조회 → /actuator rewrite)에서 읽히지 않고,
       #   운영의 actuator 404 는 관리 포트 분리(W1-12)의 의도된 형상이다. 9090 연결은 next.config 가 금지한 권한 완화다.
@@ -243,7 +253,7 @@ services:
       - no-new-privileges:true
 
   # [2026-09-14 ADR-0019 · GAP-SEC-004] 클라이언트 IP 신뢰 경계. 설정과 이유는 config/edge/default.conf.template 머리주석.
-  #   api 8080 은 그대로 공개한다(브라우저 직접 도달 형상 — docker-compose.yml egov-net 주석). 직접 온 요청은
+  #   api 8080 은 2026-11-25 부터 호스트 루프백에만 연다(위 api.ports). API_HOST_BIND 로 다시 열어 직접 온 요청은
   #   백엔드가 신뢰하는 Next 고정 주소(TRUSTED_PROXIES)가 아니므로 X-Forwarded-For 를 무시하고 접속 주소를 쓴다.
   #   ⚠ 이 성질은 신뢰 목록이 /32 일 때만 성립한다 — 서브넷을 신뢰하던 종전 형상은 게이트웨이 경유 직접 요청에서
   #     위조가 통했다(2026-09-14 리허설 실측, GAP-SEC-004).

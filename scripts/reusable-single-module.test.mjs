@@ -36,7 +36,7 @@ test('single root preserves upstream security conventions and isolated source/te
   for (const token of ['mavenBom "org.springframework.boot:spring-boot-dependencies:', "ext['tomcat.version']", "version { require '", "key != 'user.dir'", '"-Werror"',
     'minimum = 0.85', 'minimum = 0.70', 'minimum = 0.80', 'minimum = 0.55', "archiveFileName = 'app.jar'",
     "migration.drill.classpath", "migration.drill.jar", 'ignoreFailures = false',
-    "tasks.named('bootRun') { workingDir file('api-server') }", "tasks.named('assemble') { dependsOn 'bootJar', 'migrationBootJar' }"]) assert.ok(build.includes(token), token);
+    "tasks.named('bootRun') { workingDir file('api-server'); if (!System.getenv('SERVER_ADDRESS')) { systemProperty 'server.address', '127.0.0.1' } }", "tasks.named('assemble') { dependsOn 'bootJar', 'migrationBootJar' }"]) assert.ok(build.includes(token), token);
   assert.doesNotMatch(groovyCode(build), /\bproject\s*\(/);
   assert.match(build, /suite\.compileClasspath \+= logicalOutputs \+ fixtures/);
   assert.match(build, /sourceSets\.fixtures\.compileClasspath \+= sourceSets\.foundationVerification\.output \+ sourceSets\.coreVerification\.output/);

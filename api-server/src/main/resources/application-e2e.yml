@@ -51,9 +51,6 @@ logging:
     org.hibernate.SQL: warn
     org.springframework.security: warn
 
-jwt:
-  secret: ${JWT_SECRET:dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==}
-
 management:
   health:
     mail:
