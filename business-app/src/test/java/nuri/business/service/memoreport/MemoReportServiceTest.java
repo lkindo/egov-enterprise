@@ -80,12 +80,12 @@ class MemoReportServiceTest {
     private static final Sort NEWEST_FIRST = Sort.by(Sort.Direction.DESC, "memoRptSn");
 
     /**
-     * 상세 조회는 수신자 열람만 잠그고(findByIdForUpdate) 작성자·관리자 열람은 잠그지 않는다(findById). 지시·수정·삭제는 늘 잠근다.
-     * 상세 조회를 부르는 시험이 쓴다 — 쓰기만 하는 시험은 잠금 조회만 스텁해 쓰기 경로가 잠금을 잃으면 붉어지게 둔다.
+     * 상세 조회는 수신자 열람만 쓰기 잠금(findByIdForUpdate)이고 작성자·관리자 열람은 공유 잠금(findByIdForShare)이다. 지시·수정·삭제는
+     * 늘 쓰기 잠금이다. 상세 조회를 부르는 시험이 쓴다 — 쓰기만 하는 시험은 쓰기 잠금 조회만 스텁해 쓰기 경로가 잠금을 잃으면 붉어지게 둔다.
      */
     private void stubReport(Long memoRptSn, MemoReport report) {
         given(memoReportRepository.findRecipientId(memoRptSn)).willReturn(Optional.ofNullable(report.getRptrId()));
-        given(memoReportRepository.findById(memoRptSn)).willReturn(Optional.of(report));
+        given(memoReportRepository.findByIdForShare(memoRptSn)).willReturn(Optional.of(report));
         given(memoReportRepository.findByIdForUpdate(memoRptSn)).willReturn(Optional.of(report));
     }
 
@@ -670,7 +670,8 @@ class MemoReportServiceTest {
     void getMemoReport() {
         // given — 참여자 축은 esntlId(userId/rptrId)다. loginId(frstRgtrId)가 아니다.
         Long memoRptSn = 1L;
-        MemoReport entity = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-me").build();
+        // 수신자는 스키마상 비어 있을 수 없다(rptr_id NOT NULL) — 상세 조회는 수신자를 먼저 읽어 잠금을 고른다.
+        MemoReport entity = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-me").rptrId("esntl-recipient").build();
         stubReport(memoRptSn, entity);
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-me"));
@@ -996,16 +997,30 @@ class MemoReportServiceTest {
                 .thenReturn(Optional.of("esntl-recipient"));
 
         assertThat(memoReportService.getMemoReport(memoRptSn).getRptrInqDt()).isNotNull();
-        verify(memoReportRepository, org.mockito.Mockito.never()).findById(anyLong());
+        verify(memoReportRepository, org.mockito.Mockito.never()).findByIdForShare(anyLong());
     }
 
     @Test
-    @DisplayName("작성자 열람은 행을 잠그지 않는다 — 토큰도 최초 열람도 없어 작성자의 재조회가 수정·지시 저장과 서로 기다리지 않는다")
-    void getMemoReport_authorReadDoesNotLockTheRow() {
+    @DisplayName("수신자 선조회에 행이 없으면 바로 404 다 — 그 사이 커밋된 행을 잠금 없이 수신자 경로로 읽지 않는다")
+    void getMemoReport_missingRowIsNotFoundBeforeLoading() {
+        given(memoReportRepository.findRecipientId(9L)).willReturn(Optional.empty());
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-recipient"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.getMemoReport(9L))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode()).isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND);
+        verify(memoReportRepository, org.mockito.Mockito.never()).findByIdForShare(anyLong());
+        verify(memoReportRepository, org.mockito.Mockito.never()).findByIdForUpdate(anyLong());
+    }
+
+    @Test
+    @DisplayName("작성자 열람은 공유 잠금이다 — 진행 중인 수정은 기다리되 다른 열람과는 서로 기다리지 않고, 최초 열람을 기록하지 않는다")
+    void getMemoReport_authorReadTakesOnlyASharedLock() {
         Long memoRptSn = 1L;
         MemoReport report = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-writer").rptrId("esntl-recipient").build();
         given(memoReportRepository.findRecipientId(memoRptSn)).willReturn(Optional.of("esntl-recipient"));
-        given(memoReportRepository.findById(memoRptSn)).willReturn(Optional.of(report));
+        given(memoReportRepository.findByIdForShare(memoRptSn)).willReturn(Optional.of(report));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-writer"));
 

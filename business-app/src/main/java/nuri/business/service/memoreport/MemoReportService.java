@@ -171,16 +171,19 @@ public class MemoReportService {
 
     @Transactional
     public MemoReportDto getMemoReport(@NonNull Long memoRptSn) {
-        // [2026-11-25 품질 평가] 수신자 열람만 행을 잠근다. 수신자 응답만 지시 토큰과 최초 열람 시각을 싣고, 둘은 진행 중인 수정이
-        //   커밋된 뒤의 한 버전(본문·첨부)이어야 한다 — 잠그지 않으면 본문과 첨부를 서로 다른 커밋에서 읽을 수 있다
-        //   (MemoReportRecipientIntegrityIntegrationTest#detailWaitsForBodyWriter…). 작성자·관리자 열람은 토큰도 최초 열람도
-        //   없으므로 잠그지 않는다 — 종전에는 작성자의 재조회도 쓰기 잠금을 쥐어 수정·지시 저장과 서로 기다렸다.
-        //   수신자는 바뀌지 않으므로(수정이 거부한다) 잠그기 전에 읽어 갈라도 된다. 인가는 아래에서 불러온 행으로 그대로 한다.
+        // [2026-11-25 품질 평가] 수신자 열람만 쓰기 잠금을 잡는다. 어느 열람이든 진행 중인 수정이 커밋된 뒤의 한 버전(본문·첨부)을
+        //   읽어야 한다 — 잠그지 않으면 본문과 첨부를 서로 다른 커밋에서 읽고, 수정이 옛 첨부 묶음을 지운 뒤라면 첨부 조회가 404 다
+        //   (MemoReportRecipientIntegrityIntegrationTest#detailWaitsForBodyWriter… · authorDetailWaitsForAttachmentReplacement…).
+        //   수신자는 최초 열람을 같은 트랜잭션에서 기록하므로 쓰기 잠금이고, 작성자·관리자는 공유 잠금이라 열람끼리는 서로 기다리지
+        //   않는다(종전에는 모든 열람이 쓰기 잠금이라 작성자의 재조회도 줄을 섰다). 수신자는 등록 뒤 바뀌지 않고(수정이 거부한다)
+        //   비어 있을 수 없어(NOT NULL) 잠그기 전에 읽어 갈라도 된다 — 선조회에 행이 없으면 바로 404 다(그 사이 커밋된 행을 잠금 없이
+        //   수신자 경로로 읽지 않게). 인가는 아래에서 불러온 행으로 그대로 한다.
+        String recipientId = memoReportRepository.findRecipientId(memoRptSn)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         boolean recipientRead = nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
-                .flatMap(current -> memoReportRepository.findRecipientId(memoRptSn).map(current::equals))
-                .orElse(false);
+                .map(recipientId::equals).orElse(false);
         MemoReport entity = (recipientRead ? memoReportRepository.findByIdForUpdate(memoRptSn)
-                : memoReportRepository.findById(memoRptSn))
+                : memoReportRepository.findByIdForShare(memoRptSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         assertParticipantOrAdmin(entity); // [IDOR] 작성자·수신자·관리자만 열람
         String actor = currentEsntlIdOrDeny();

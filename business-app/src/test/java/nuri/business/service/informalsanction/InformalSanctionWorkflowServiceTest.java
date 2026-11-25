@@ -160,7 +160,7 @@ class InformalSanctionWorkflowServiceTest {
                         .pswd("{bcrypt}x").userSttsCd("P").build()).toList());
         // 결재선 검증은 결재자의 결재 권한(APPROVAL_APPROVE)도 본다 — 기본은 모두 가진 것으로 둔다.
         org.mockito.Mockito.lenient().when(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection()))
-                .thenReturn(List.of(userIds));
+                .thenAnswer(holdersAmong(List.of(userIds)));
     }
 
     private void knownTask() {
@@ -389,7 +389,7 @@ class InformalSanctionWorkflowServiceTest {
     void approverWithoutApprovePermissionIsRejectedByName() {
         knownTask();
         activeUsers("second", "next");
-        given(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).willReturn(List.of("second"));
+        given(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).willAnswer(holdersAmong(List.of("second")));
 
         assertThatThrownBy(() -> service.registerInformalSanction(draft(), List.of(
                 stage(ApprovalStageKind.AGREEMENT, "second"), stage(ApprovalStageKind.APPROVAL, "next"))))
@@ -903,5 +903,13 @@ class InformalSanctionWorkflowServiceTest {
         verify(commonCodeService).getCodesByGroup("COM075");
         verifyNoMoreInteractions(informalSanctionRepository, detailRepository, historyRepository, processRepository,
                 referenceRepository, userRepository, commonCodeService);
+    }
+
+    /** 권한 보유자 조회 스텁 — 실제 저장소처럼 넘긴 후보 가운데 보유자만 돌려준다(후보 인자를 잘못 넘기면 시험이 붉어지게, 2026-11-25 Codex 검토). */
+    private static org.mockito.stubbing.Answer<java.util.List<String>> holdersAmong(java.util.Collection<String> holders) {
+        return invocation -> {
+            java.util.Collection<String> candidates = invocation.getArgument(1);
+            return holders.stream().filter(candidates::contains).distinct().sorted().toList();
+        };
     }
 }

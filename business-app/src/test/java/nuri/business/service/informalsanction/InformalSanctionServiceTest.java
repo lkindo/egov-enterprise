@@ -80,7 +80,7 @@ class InformalSanctionServiceTest {
                 .esntlId(esntlId).userId(esntlId).userNm("결재자").pswd("{bcrypt}x").userSttsCd(userSttsCd).build()));
         // 결재선 검증은 결재자의 결재 권한(APPROVAL_APPROVE)도 본다.
         org.mockito.Mockito.lenient().when(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection()))
-                .thenReturn(List.of(esntlId));
+                .thenAnswer(holdersAmong(List.of(esntlId)));
     }
 
     private MockedStatic<SecurityUtil> securityUtilMock;
@@ -449,5 +449,13 @@ class InformalSanctionServiceTest {
         assertThat(informalSanctionService.getTaskTypes()).isEmpty();
 
         verify(commonCodeService).getCodesByGroup("COM075");
+    }
+
+    /** 권한 보유자 조회 스텁 — 실제 저장소처럼 넘긴 후보 가운데 보유자만 돌려준다(후보 인자를 잘못 넘기면 시험이 붉어지게, 2026-11-25 Codex 검토). */
+    private static org.mockito.stubbing.Answer<java.util.List<String>> holdersAmong(java.util.Collection<String> holders) {
+        return invocation -> {
+            java.util.Collection<String> candidates = invocation.getArgument(1);
+            return holders.stream().filter(candidates::contains).distinct().sorted().toList();
+        };
     }
 }

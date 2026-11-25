@@ -87,10 +87,10 @@ class ApprovalLineAssistServiceTest {
         lenient().when(userRepository.findProfilesByEsntlIds(any())).thenReturn(profiles);
         lenient().when(userRepository.findAllById(any())).thenReturn(rows);
         lenient().when(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection()))
-                .thenReturn(Arrays.stream(active).filter(id -> !id.equals("noperm")).toList());
+                .thenAnswer(holdersAmong(Arrays.stream(active).filter(id -> !id.equals("noperm")).toList()));
         // [D4] 참조자는 결재 조회 권한으로 판정한다 — noread 만 그 권한이 없다.
         lenient().when(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_READ"), org.mockito.ArgumentMatchers.anyCollection()))
-                .thenReturn(Arrays.stream(active).filter(id -> !id.equals("noread")).toList());
+                .thenAnswer(holdersAmong(Arrays.stream(active).filter(id -> !id.equals("noread")).toList()));
     }
 
     @Test
@@ -202,5 +202,13 @@ class ApprovalLineAssistServiceTest {
         assertThatThrownBy(() -> service.checkApprovers("owner", List.of(" a")))
                 .isInstanceOf(BusinessException.class);
         verify(userRepository, never()).findAllById(any());
+    }
+
+    /** 권한 보유자 조회 스텁 — 실제 저장소처럼 넘긴 후보 가운데 보유자만 돌려준다(후보 인자를 잘못 넘기면 시험이 붉어지게, 2026-11-25 Codex 검토). */
+    private static org.mockito.stubbing.Answer<java.util.List<String>> holdersAmong(java.util.Collection<String> holders) {
+        return invocation -> {
+            java.util.Collection<String> candidates = invocation.getArgument(1);
+            return holders.stream().filter(candidates::contains).distinct().sorted().toList();
+        };
     }
 }
