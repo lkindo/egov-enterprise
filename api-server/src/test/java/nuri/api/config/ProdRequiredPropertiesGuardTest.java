@@ -54,6 +54,33 @@ class ProdRequiredPropertiesGuardTest {
                 .hasMessageContaining("spring.datasource.password");
     }
 
+    /** [2026-11-25] 운영은 주민등록번호 키링이 없으면 기동하지 않는다 — 비우면 종전 ARIA 결정적 암호로 새 값을 쓰던 경로다. */
+    @Test
+    void missingRrnoKeyringFailsWithBothKeyNamesAndNoSecretLeak() throws IOException {
+        Map<String, Object> envVars = completeProdEnvVars();
+        envVars.remove("RRNO_ACTIVE_KEY_ID");
+        envVars.put("RRNO_KEYS_JSON", " ");
+
+        MockEnvironment environment = buildProdEnvironment(envVars, Map.of());
+        ProdRequiredPropertiesGuard guard = new ProdRequiredPropertiesGuard(environment);
+
+        assertThatThrownBy(guard::validate)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("nuri.crypto.rrno.active-key-id")
+                .hasMessageContaining("nuri.crypto.rrno.keys-json")
+                .hasMessageNotContaining("super-secret");
+    }
+
+    /** ADR-0060 2차 뒤 운영은 HMAC 서명 비밀을 요구하지 않는다 — JWT_SECRET 없이 기동한다. */
+    @Test
+    void prodNoLongerRequiresHmacSecret() throws IOException {
+        Map<String, Object> envVars = completeProdEnvVars();
+        assertThat(envVars).doesNotContainKey("JWT_SECRET");
+        MockEnvironment environment = buildProdEnvironment(envVars, Map.of());
+        assertThat(environment.getProperty("jwt.secret")).isNull();
+        assertThatCode(new ProdRequiredPropertiesGuard(environment)::validate).doesNotThrowAnyException();
+    }
+
     @Test
     void unresolvedExtraPlaceholderInProdSourceFailsWithKeyName() throws IOException {
         Map<String, Object> envVars = completeProdEnvVars();
@@ -153,9 +180,10 @@ class ProdRequiredPropertiesGuardTest {
         vars.put("DB_USERNAME", "egov_app");
         vars.put("DB_PASSWORD", "super-secret-db-password");
         vars.put("ALGORITHM_KEY", "super-secret-algorithm-key");
-        vars.put("JWT_SECRET", "super-secret-jwt-value");
         vars.put("JWT_SIGNING_ACTIVE_KID", "prod-kid-1");
         vars.put("JWT_SIGNING_KEYS_JSON", "[{\"kid\":\"prod-kid-1\",\"secret\":\"super-secret-jwt-value\"}]");
+        vars.put("RRNO_ACTIVE_KEY_ID", "rrno-1");
+        vars.put("RRNO_KEYS_JSON", "{\"rrno-1\":\"super-secret-rrno-key\"}");
         return vars;
     }
 }

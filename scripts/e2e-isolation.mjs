@@ -1,3 +1,4 @@
+import { createPrivateKey } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 const failure = () => new Error('E2E isolation verification failed; start a fresh run with scripts/run-isolated-e2e.mjs.');
@@ -54,7 +55,37 @@ function assertIsolatedDatasource(dbEnv, apiEnv, api) {
       || datasource?.url !== databaseUrl || datasource?.['jdbc-url'] !== databaseUrl
       || datasource?.hikari?.['jdbc-url'] !== databaseUrl
       || datasource?.username !== dbEnv.POSTGRES_USER || datasource?.password !== dbEnv.POSTGRES_PASSWORD
-      || !apiEnv.JWT_SECRET) throw failure();
+      // 회차마다 만든 서명 키링으로 돌아야 한다 — 비면 저장소의 개발용 키쌍이다(ADR-0060 2차로 JWT_SECRET 은 걷었다).
+      || !usableSigningKeyring(apiEnv.JWT_SIGNING_ACTIVE_KID, apiEnv.JWT_SIGNING_KEYS_JSON)) throw failure();
+}
+
+/**
+ * 백엔드가 그 키링으로 기동할 수 있는가 — 활성 kid 가 JSON 키링에 있고, 모든 항목(16개까지)이 P-256(ES256) PKCS#8 개인키여야 한다.
+ * 존재만 보면 임의 바이트도 통과해 이 검사의 green 이 '기동 가능한 키를 준비했다' 는 증거가 되지 못한다(2026-11-25 Codex 검토).
+ */
+export function usableSigningKeyring(activeKid, keysJson) {
+  const KID = /^[A-Za-z0-9._-]{1,64}$/;
+  if (typeof activeKid !== 'string' || !KID.test(activeKid) || typeof keysJson !== 'string') return false;
+  let keys;
+  try { keys = JSON.parse(keysJson); } catch { return false; }
+  if (!keys || typeof keys !== 'object' || Array.isArray(keys) || typeof keys[activeKid] !== 'string') return false;
+  // 백엔드는 키링의 모든 항목을 기동 때 판독하고 16개까지만 받는다(JwtTokenProvider) — 이전 키 하나만 손상돼도 기동이 멈춘다.
+  const entries = Object.entries(keys);
+  if (entries.length > 16) return false;
+  return entries.every(([kid, value]) => KID.test(kid) && typeof value === 'string' && isP256Pkcs8(value));
+}
+
+function isP256Pkcs8(base64) {
+  // 백엔드는 값을 trim() 한 뒤 Java Base64 기본 디코더로 푼다 — 안쪽 줄바꿈·공백은 거부하고 패딩 생략은 받는다. Node 는 안쪽 공백도
+  // 받으므로 같은 꼴을 먼저 본다(Codex 3·4차).
+  const value = base64.trim();
+  if (!/^[A-Za-z0-9+/]+={0,2}$/u.test(value) || value.replace(/=+$/u, '').length % 4 === 1) return false;
+  try {
+    const key = createPrivateKey({ key: Buffer.from(value, 'base64'), format: 'der', type: 'pkcs8' });
+    return key.asymmetricKeyType === 'ec' && key.asymmetricKeyDetails?.namedCurve === 'prime256v1';
+  } catch {
+    return false;
+  }
 }
 
 function mergedImageEnvironment(image, overrides) {
@@ -212,8 +243,7 @@ export function assertOwnedComposeRuntime(database, api, volume, network, enviro
   if (!database.NetworkSettings.Networks[network.Name]?.Aliases?.includes('db')) throw failure();
   const bindings = api.NetworkSettings.Ports?.['8080/tcp'];
   if (!bindings?.some(binding => ['127.0.0.1', '0.0.0.0'].includes(binding.HostIp) && binding.HostPort === '8080')) throw failure();
-  if (!apiEnv.JWT_SECRET) throw failure();
-  return { databaseId: database.Id, apiId: api.Id, jwtSecret: apiEnv.JWT_SECRET };
+  return { databaseId: database.Id, apiId: api.Id };
 }
 
 export async function assertIsolatedTarget(environment = process.env) {

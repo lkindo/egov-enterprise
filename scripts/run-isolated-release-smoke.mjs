@@ -109,6 +109,12 @@ export function createSmokeContext({ runId = randomBytes(12).toString('hex'), ph
     frontendIp: subnet.replace('0/24', '10'), ids: {} };
 }
 
+/** 그 전 릴리스 이미지(HMAC 서명, ADR-0060 1차 이전)를 띄우는 단계 — 그 이미지만 서명 비밀을 요구한다. */
+const LEGACY_JWT_PHASES = new Set(['historical', 'rollback']);
+const legacyJwtSecret = (context, credentials) => (LEGACY_JWT_PHASES.has(context.phase) ? { JWT_SECRET: credentials.jwt } : {});
+const legacyJwtSecretMismatch = (env, context, credentials) => (LEGACY_JWT_PHASES.has(context.phase)
+  ? env.JWT_SECRET !== credentials.jwt : env.JWT_SECRET !== undefined);
+
 export function createReleaseSmokePlan(rendered, context, credentials) {
   if (Object.keys(rendered.services ?? {}).sort().join() !== 'api,db,edge,frontend') throw failure('unexpected production services');
   const plan = structuredClone(rendered);
@@ -134,15 +140,17 @@ export function createReleaseSmokePlan(rendered, context, credentials) {
       service.environment = { ...service.environment,
         MFA_REQUIRE_PROTECTED: 'false',
         DB_URL: `jdbc:postgresql://db:5432/${context.database}`, DB_USERNAME: 'smoke', DB_PASSWORD: credentials.database,
-        JWT_SECRET: credentials.jwt,
+        // [ADR-0060 2차] 현재 이미지는 HMAC 서명 비밀을 받지 않는다 — 그 전 릴리스 이미지를 띄우는 단계만 그 이미지가 요구하는 값을 준다.
+        ...legacyJwtSecret(context, credentials),
         JWT_SIGNING_ACTIVE_KID: credentials.jwtSigningActiveKid,
         JWT_SIGNING_KEYS_JSON: credentials.jwtSigningKeysJson,
+        RRNO_ACTIVE_KEY_ID: credentials.rrnoActiveKeyId, RRNO_KEYS_JSON: credentials.rrnoKeysJson,
         ALGORITHM_KEY: credentials.encryption, ADMIN_INITIAL_PASSWORD: credentials.admin,
         OLD_ALGORITHM_KEY: '', MAIL_HOST: '127.0.0.1', TRUSTED_PROXIES: `${context.frontendIp}/32`,
         CORS_ORIGIN_1: 'http://edge:8080' };
       service.volumes = [{ type: 'volume', source: 'attachment_storage', target: '/app/storage' }];
     } else if (name === 'frontend') {
-      service.environment = { ...service.environment, JWT_SECRET: credentials.jwt,
+      service.environment = { ...service.environment, ...legacyJwtSecret(context, credentials),
         JWT_VERIFY_KEYS_JSON: credentials.jwtVerifyKeysJson, ALLOW_DEV_JWT_VERIFY_KEYS: 'false',
         BACKEND_API_URL: BACKEND_URL, NEXT_PUBLIC_API_URL: BACKEND_URL };
       service.volumes = [];
@@ -191,8 +199,9 @@ export function validateReleaseSmokePlan(plan, context, credentials) {
       if (env.SPRING_PROFILES_ACTIVE !== expectedProfile || env.SPRING_FLYWAY_LOCATIONS !== 'classpath:db/migration'
         || env.MFA_REQUIRE_PROTECTED !== 'false'
         || env.DB_URL !== `jdbc:postgresql://db:5432/${context.database}` || env.DB_USERNAME !== 'smoke' || env.DB_PASSWORD !== credentials.database
-        || env.JWT_SECRET !== credentials.jwt || env.JWT_SIGNING_ACTIVE_KID !== credentials.jwtSigningActiveKid
+        || legacyJwtSecretMismatch(env, context, credentials) || env.JWT_SIGNING_ACTIVE_KID !== credentials.jwtSigningActiveKid
         || env.JWT_SIGNING_KEYS_JSON !== credentials.jwtSigningKeysJson || env.JWT_VERIFY_KEYS_JSON
+        || env.RRNO_ACTIVE_KEY_ID !== credentials.rrnoActiveKeyId || env.RRNO_KEYS_JSON !== credentials.rrnoKeysJson
         || env.ALGORITHM_KEY !== credentials.encryption || env.ADMIN_INITIAL_PASSWORD !== credentials.admin
         || env.TRUSTED_PROXIES !== `${context.frontendIp}/32` || env.MAIL_HOST !== '127.0.0.1' || env.CORS_ORIGIN_1 !== 'http://edge:8080'
         || (env.JAVA_OPTS && env.JAVA_OPTS.split(/\s+/u).some(option => !SAFE_JAVA_OPTION.test(option)))
@@ -200,12 +209,12 @@ export function validateReleaseSmokePlan(plan, context, credentials) {
         || JSON.stringify(service.volumes) !== JSON.stringify([{ type: 'volume', source: 'attachment_storage', target: '/app/storage' }])) throw failure('API datasource or production boundary changed');
       if (name === 'bootstrap' ? env.NURI_AUTHORIZATION_ISOLATED_CUTOVER !== 'true' || env.NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK !== BOOTSTRAP_ACK
         : Object.keys(env).some(key => key.startsWith('NURI_AUTHORIZATION_'))) throw failure('cutover opt-in boundary changed');
-      if (name === 'api' && (env.MANAGEMENT_PORT !== '9090' || env.MANAGEMENT_ADDRESS !== '0.0.0.0')) throw failure('management boundary changed');
+      if (name === 'api' && (env.MANAGEMENT_PORT !== '9090' || env.MANAGEMENT_ADDRESS !== '127.0.0.1')) throw failure('management boundary changed');
     } else if (name === 'db') {
       if (env.POSTGRES_DB !== context.database || env.POSTGRES_USER !== 'smoke' || env.POSTGRES_PASSWORD !== credentials.database
         || (service.volumes?.length ?? 0) || JSON.stringify(service.tmpfs) !== '["/var/lib/postgresql/data"]') throw failure('database is not disposable');
     } else if (name === 'frontend') {
-      if (env.JWT_SECRET !== credentials.jwt || env.JWT_VERIFY_KEYS_JSON !== credentials.jwtVerifyKeysJson
+      if (legacyJwtSecretMismatch(env, context, credentials) || env.JWT_VERIFY_KEYS_JSON !== credentials.jwtVerifyKeysJson
         || env.ALLOW_DEV_JWT_VERIFY_KEYS !== 'false'
         || env.JWT_SIGNING_ACTIVE_KID || env.JWT_SIGNING_KEYS_JSON
         || env.BACKEND_API_URL !== BACKEND_URL || env.NEXT_PUBLIC_API_URL !== BACKEND_URL
@@ -647,6 +656,8 @@ export async function main(args = process.argv.slice(2)) {
     jwtSigningActiveKid: smokeKid,
     jwtSigningKeysJson: JSON.stringify({ [smokeKid]: smokeKeyPair.privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64') }),
     jwtVerifyKeysJson: JSON.stringify({ [smokeKid]: smokeKeyPair.publicKey.export({ format: 'der', type: 'spki' }).toString('base64') }),
+    rrnoActiveKeyId: 'smoke-rrno',
+    rrnoKeysJson: JSON.stringify({ 'smoke-rrno': randomBytes(32).toString('base64') }),
     encryption: randomBytes(24).toString('hex'),
     admin: `Aa1!${randomBytes(18).toString('hex')}`,
   };
@@ -657,10 +668,11 @@ export async function main(args = process.argv.slice(2)) {
     privateWrite(path.join(folder, 'prod.yml'), prodSource);
     privateWrite(path.join(folder, 'config/edge/default.conf.template'), edgeSource);
     privateWrite(path.join(folder, 'owned.env'), Object.entries({ DB_URL: 'jdbc:postgresql://db:5432/unused', DB_USERNAME: 'smoke',
-      DB_PASSWORD: credentials.database, JWT_SECRET: credentials.jwt,
+      DB_PASSWORD: credentials.database,
       JWT_SIGNING_ACTIVE_KID: credentials.jwtSigningActiveKid,
       JWT_SIGNING_KEYS_JSON: credentials.jwtSigningKeysJson,
       JWT_VERIFY_KEYS_JSON: credentials.jwtVerifyKeysJson,
+      RRNO_ACTIVE_KEY_ID: credentials.rrnoActiveKeyId, RRNO_KEYS_JSON: credentials.rrnoKeysJson,
       ALGORITHM_KEY: credentials.encryption,
       ADMIN_INITIAL_PASSWORD: credentials.admin, MAIL_HOST: '127.0.0.1', OLD_ALGORITHM_KEY: '' }).map(([key, value]) => `${key}=${value}`).join('\n'));
   };

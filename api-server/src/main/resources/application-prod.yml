@@ -104,8 +104,7 @@ Globals:
 
 # [보안] JWT refresh 쿠키를 운영에서 Secure(HTTPS 전용)로 강제 (base 기본값 false 오버라이드)
 jwt:
-  # [보안 C1] 운영은 JWT_SECRET·비대칭 서명 키링 무기본값 강제 → 미설정 시 기동 실패(fail-fast).
-  secret: ${JWT_SECRET}
+  # [보안 C1] 운영은 비대칭 서명 키링 무기본값 강제 → 미설정 시 기동 실패(fail-fast). HMAC 서명 비밀은 ADR-0060 2차로 걷었다.
   signing:
     active-kid: ${JWT_SIGNING_ACTIVE_KID}
     keys-json: ${JWT_SIGNING_KEYS_JSON}
@@ -121,6 +120,12 @@ springdoc:
 
 # Read-only, bounded daily storage/reference audit; snapshots contain aggregate counts only.
 nuri:
+  # [2026-11-25] 운영은 주민등록번호를 키링(AES-256-GCM v2)으로만 새로 쓴다 — 무기본값으로 재선언해 미설정 시 기동 실패(fail-fast).
+  #   비우면 종전 ARIA(IV·MAC 없는 결정적 암호)로 저장되던 경로다. ProdRequiredPropertiesGuard 가 두 키를 함께 요구한다.
+  crypto:
+    rrno:
+      active-key-id: ${RRNO_ACTIVE_KEY_ID}
+      keys-json: ${RRNO_KEYS_JSON}
   attachment:
     integrity:
       enabled: ${ATTACHMENT_INTEGRITY_ENABLED:true}

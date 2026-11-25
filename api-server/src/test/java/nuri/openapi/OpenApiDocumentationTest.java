@@ -568,7 +568,9 @@ class OpenApiDocumentationTest {
         "--spring.jpa.hibernate.ddl-auto=create",
         "--spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
         "--nuri.durable-work.enabled=false",
-        "--server.port=0"
+        "--server.port=0",
+        // 키링 없이 저장소의 개발용 서명키로 실제 웹 서버를 띄우므로 루프백에만 바인딩한다(ADR-0060 2차 — 아니면 기동을 멈춘다).
+        "--server.address=127.0.0.1"
     };
 
     java.util.Set<String> postgresLiveMetadataBarriers = java.util.Set.of(

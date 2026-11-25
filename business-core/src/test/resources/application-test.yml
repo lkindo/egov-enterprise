@@ -1,7 +1,3 @@
-# JWT Properties for Integration Tests
-jwt:
-  secret: dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==
-
 # H2 Database for Integration Tests
 spring:
   datasource:

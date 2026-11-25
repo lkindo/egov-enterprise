@@ -64,7 +64,6 @@ file:
 
 # JWT 테스트 설정
 jwt:
-  secret: test-secret-key-for-unit-testing-purposes-only-12345678901234567890
   expiration: 3600000
 
 cors:

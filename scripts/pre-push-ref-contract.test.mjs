@@ -820,7 +820,8 @@ test('the frontend type gate regenerates route types and keeps the next dev copy
   const ts = frontendRequire('typescript');
   const { getDevTypesPath, getTypeDefinitionGlobPatterns } = frontendRequire('next/dist/lib/typescript/type-paths.js');
   const scripts = JSON.parse(readFileSync(path.join(frontendRoot, 'package.json'), 'utf8')).scripts;
-  assert.equal(scripts['type-check'], 'next typegen && tsc --noEmit', 'route types must be regenerated before tsc, and a typegen failure must stop it');
+  // [2026-11-25] typegen 은 서명 비밀을 걷는 래퍼(scripts/next-cli.mjs)로 부른다 — 순서와 `&&`(실패하면 tsc 를 돌리지 않음)는 같다.
+  assert.equal(scripts['type-check'], 'node scripts/next-cli.mjs typegen && tsc --noEmit', 'route types must be regenerated before tsc, and a typegen failure must stop it');
 
   const { config, error } = ts.readConfigFile(path.join(frontendRoot, 'tsconfig.json'), ts.sys.readFile);
   assert.equal(error, undefined);

@@ -28,8 +28,17 @@ function runInstrumentedBuild(dependencies = {}) {
   removeGeneratedDirectory(directory, '.next');
   execute(process.execPath, [require.resolve('next/dist/bin/next'), 'build', '--webpack'], {
     cwd: directory, stdio: 'inherit', windowsHide: true,
-    env: { ...process.env, NEXT_PUBLIC_COVERAGE: 'true', NODE_OPTIONS: '--max-old-space-size=8192' },
+    env: { ...withoutSigningSecrets(process.env), NEXT_PUBLIC_COVERAGE: 'true', NODE_OPTIONS: '--max-old-space-size=8192' },
   });
+}
+
+// Next 에 넘기지 않는 서명 비밀 — scripts/next-cli.mjs 와 같은 목록의 사본이다(이 파일은 CommonJS 라 ESM 래퍼를 불러오지 않는다).
+// 두 목록이 같은지는 scripts/dev-remote-db-guard.test.mjs 가 본다. Windows 의 환경 변수 이름은 대소문자를 가리지 않는다.
+const FRONTEND_WITHHELD_SIGNING_ENV = ['JWT_SIGNING_ACTIVE_KID', 'JWT_SIGNING_KEYS_JSON', 'JWT_SECRET', 'JWT_ACCEPT_LEGACY_HMAC'];
+
+function withoutSigningSecrets(env) {
+  const withheld = new Set(FRONTEND_WITHHELD_SIGNING_ENV);
+  return Object.fromEntries(Object.entries(env).filter(([name]) => !withheld.has(name.toUpperCase())));
 }
 
 if (require.main === module) {

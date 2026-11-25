@@ -131,7 +131,7 @@ cd frontend
 pnpm install
 pnpm dev
 ```
-- Web Interface: `http://localhost:3001`
+- Web Interface: `http://localhost:3001` — `pnpm dev`(`frontend/scripts/next-cli.mjs`)는 `127.0.0.1` 에만 바인딩하고 셸의 서명 비밀(`JWT_SIGNING_*`·`JWT_SECRET`)을 Next 에 넘기지 않는다. 다른 기기에서 열려면 자체 키쌍을 준 뒤 `pnpm dev -H 0.0.0.0` 으로 띄운다.
 
 ---
 

@@ -20,7 +20,7 @@ import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { createComposerEngine } from './project-composer.mjs';
 import { BACKEND_LAYOUTS, normalizeBackendLayout } from './reusable-layout.mjs';
 import { judgeJUnit, judgeVitest, summarize } from './reusable-nightly-judge.mjs';
-import { runCommand, verifyReusableArtifact } from './verify-reusable-artifact.mjs';
+import { runCommand, stripJwtSigningEnv, verifyReusableArtifact } from './verify-reusable-artifact.mjs';
 import { assertProjectionLedgerCoverage, verifyReusableBase } from './verify-reusable-base.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -235,11 +235,11 @@ export async function runItem(item, { root = ROOT, contracts = false, run = runC
       'nightly-es256': generateKeyPairSync('ec', { namedCurve: 'prime256v1' })
         .publicKey.export({ format: 'der', type: 'spki' }).toString('base64'),
     });
-    const { JWT_SIGNING_ACTIVE_KID: _kid, JWT_SIGNING_KEYS_JSON: _keys, ...cleanCallerEnv } = process.env;
+    // 서명 비밀은 생성물 검증과 같은 필터로 걷는다(이름 대소문자 무관, 2026-11-25 Codex 3차).
+    const cleanCallerEnv = stripJwtSigningEnv(process.env);
     const env = {
       ...cleanCallerEnv,
       TZ: 'Asia/Seoul',
-      JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex'),
       JWT_VERIFY_KEYS_JSON: verifyKeysJson,
     };
 

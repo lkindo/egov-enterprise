@@ -41,13 +41,10 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
-      # 백엔드/프론트가 같은 시크릿으로 서명·검증해야 한다(ci.yml e2e 잡과 동일 규율).
-      # 어긋나면 로그인 후 곧바로 /login 으로 되돌아가 대시보드를 캡처할 수 없다.
-      - name: Generate ephemeral JWT secret (backend/frontend 대칭)
+      # 백엔드는 회차별 개인키로 서명하고 프론트는 그 공개키로 검증한다(ci.yml e2e 잡과 동일 규율, ADR-0060).
+      # 어긋나면 로그인 후 곧바로 /login 으로 되돌아가 대시보드를 캡처할 수 없다. 서명 비밀(JWT_SECRET)은 2차 배포로 걷었다.
+      - name: Generate ephemeral JWT keyring (backend 개인키 · frontend 공개키)
         run: |
-          jwt_secret="$(openssl rand -hex 44)"
-          echo "::add-mask::$jwt_secret"
-          echo "JWT_SECRET=$jwt_secret" >> "$GITHUB_ENV"
           node --input-type=module <<'NODE'
           import { appendFileSync, chmodSync, writeFileSync } from 'node:fs';
           import path from 'node:path';

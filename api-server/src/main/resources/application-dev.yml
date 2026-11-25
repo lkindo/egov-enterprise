@@ -52,7 +52,3 @@ logging:
     org.springframework.orm.jpa: debug
     org.springframework.security: debug
 
-jwt:
-  # CRITICAL: JWT_SECRET environment variable MUST be set in production.
-  # Using a default secure length string for local development to prevent startup failures.
-  secret: ${JWT_SECRET:dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==}

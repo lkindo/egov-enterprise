@@ -261,7 +261,6 @@ test('compose specification binds immutable images, run-scoped names/network and
   assert.deepEqual(specification.services.api.environment, [
     'CORS_ALLOWED_ORIGINS',
     'JWT_ACCESS_TOKEN_VALIDITY_MS',
-    'JWT_SECRET',
     'JWT_SIGNING_ACTIVE_KID',
     'JWT_SIGNING_KEYS_JSON',
     'MANAGEMENT_HEALTH_MAIL_ENABLED',
@@ -278,7 +277,6 @@ test('compose specification binds immutable images, run-scoped names/network and
   assert.deepEqual(specification.services.frontend.environment, [
     'ALLOW_DEV_JWT_VERIFY_KEYS',
     'BACKEND_API_URL',
-    'JWT_SECRET',
     'JWT_VERIFY_KEYS_JSON',
     'NEXT_PUBLIC_API_URL',
   ]);
@@ -300,10 +298,11 @@ test('root package and protocol expose the exact contract-first launch and bound
   assert.match(protocol, /npm run ui-quality:baseline:launch -- --recover-project egov-uiux-baseline-r13-<32-lowercase-hex> --execute confirmed/u);
   for (const name of [
     'UI_BASELINE_DB_PASSWORD',
-    'UI_BASELINE_JWT_SECRET',
     'UI_BASELINE_ADMIN_ID',
     'UI_BASELINE_ADMIN_SECRET',
   ]) assert.match(protocol, new RegExp(`\\b${name}\\b`, 'u'));
+  // ADR-0060 2차: HMAC 서명 비밀은 걷었다 — 실행 비밀로 요구하지 않는다.
+  assert.doesNotMatch(protocol, /\bUI_BASELINE_JWT_SECRET\b/u);
 
   const launcherSource = readFileSync(
     path.join(repositoryRoot, 'scripts/ui-quality-baseline-launch.mjs'),

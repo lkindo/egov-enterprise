@@ -23,7 +23,7 @@
  * 선별은 scripts/integration-precheck.mjs 가 한다.
  */
 import { execSync } from 'node:child_process';
-import { generateKeyPairSync, randomBytes } from 'node:crypto';
+import { generateKeyPairSync } from 'node:crypto';
 import { platform } from 'node:os';
 import { ensureQueued } from './heavy-run-queue.mjs';
 import { createRun } from './verification-record.mjs';
@@ -67,10 +67,15 @@ function stageId(command) {
   return labels.find(([fragment]) => command.includes(fragment))?.[1] ?? 'other';
 }
 
+// 프런트 명령에 넘기지 않는 서명 비밀. 정본은 scripts/dev.mjs 의 FRONTEND_WITHHELD_SIGNING_ENV 이고 이 목록은 그 사본이다 —
+// 독립 이관 제품이 이 파일만 복사하므로 dev.mjs 를 import 하지 않는다. 두 목록이 같은지는 dev-remote-db-guard 시험이 본다.
+// Windows 의 환경 변수 이름은 대소문자를 가리지 않으므로 대문자로 맞춰 거른다.
+const FRONTEND_WITHHELD_SIGNING_ENV = ['JWT_SIGNING_ACTIVE_KID', 'JWT_SIGNING_KEYS_JSON', 'JWT_SECRET', 'JWT_ACCEPT_LEGACY_HMAC'];
+
 function stripPrivateJwtSigningForFrontend(command, env) {
   if (!/(?:^|\s)(?:pnpm\s+-C\s+frontend\b|\S*vitest\b)/u.test(command)) return env;
-  const { JWT_SIGNING_ACTIVE_KID: _kid, JWT_SIGNING_KEYS_JSON: _keys, ...safeEnv } = env;
-  return safeEnv;
+  const withheld = new Set(FRONTEND_WITHHELD_SIGNING_ENV);
+  return Object.fromEntries(Object.entries(env).filter(([name]) => !withheld.has(name.toUpperCase())));
 }
 
 function run(command, extraEnv = {}) {
@@ -153,11 +158,9 @@ function runFrontendSourceContracts() {
   run(`pnpm -C frontend exec vitest run ${list}`);
 }
 
+/** 운영 모드 빌드는 회차마다 만든 임시 검증 공개키로만 돈다 — 공개 dev 키로의 조용한 폴백을 막는다(ADR-0060, 서명 비밀은 2차로 걷음). */
 function frontendBuildEnvironment() {
   const env = {};
-  if (!process.env.JWT_SECRET) {
-    env.JWT_SECRET = randomBytes(44).toString('hex');
-  }
   if (!process.env.JWT_VERIFY_KEYS_JSON) {
     const { publicKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
     env.JWT_VERIFY_KEYS_JSON = JSON.stringify({

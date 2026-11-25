@@ -8,7 +8,7 @@ import { createHash, generateKeyPairSync, randomBytes, sign as signCrypto, verif
 import fs from 'node:fs';
 import { syncBuiltinESMExports } from 'node:module';
 import { execFileSync } from 'node:child_process';
-import { validateIsolationManifest, assertOwnedDatabase, assertOwnedComposeRuntime, assertIsolatedTarget, validateComposePlan } from './e2e-isolation.mjs';
+import { validateIsolationManifest, assertOwnedDatabase, assertOwnedComposeRuntime, assertIsolatedTarget, validateComposePlan, usableSigningKeyring } from './e2e-isolation.mjs';
 import { closedEnvironment, createIsolatedJwtEnvironment, createIsolatedMfaEnvironment, assertNoDotEnv, assertBuildTarget, discoveryArguments,
   isEnterpriseTaskLabSelection, createEnterpriseTaskLabBuildReceipt, safeInputHash, rehearsesAuthorizationContract } from './run-isolated-e2e.mjs';
 import { TASKS, TASK_SEEDS, compareEnterpriseTaskRuns, readEnterpriseTaskRun } from './compare-enterprise-task-lab.mjs';
@@ -217,13 +217,15 @@ function releaseSmokeFixture() {
     jwtSigningActiveKid: 'smoke-es256',
     jwtSigningKeysJson: JSON.stringify({ 'smoke-es256': smokeKp.privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64') }),
     jwtVerifyKeysJson: JSON.stringify({ 'smoke-es256': smokeKp.publicKey.export({ format: 'der', type: 'spki' }).toString('base64') }),
+    rrnoActiveKeyId: 'smoke-rrno',
+    rrnoKeysJson: JSON.stringify({ 'smoke-rrno': 'fixture-rrno-key' }),
     encryption: 'fixture-key',
     admin: 'fixture-admin',
   };
   const rendered = { services: {
     db: {}, api: { environment: { SPRING_PROFILES_ACTIVE: 'prod', SPRING_FLYWAY_LOCATIONS: 'classpath:db/migration',
       MFA_REQUIRE_PROTECTED: 'true',
-      MANAGEMENT_PORT: '9090', MANAGEMENT_ADDRESS: '0.0.0.0', SPRING_APPLICATION_JSON: '{"management":{"health":{"mail":{"enabled":false}}}}' } },
+      MANAGEMENT_PORT: '9090', MANAGEMENT_ADDRESS: '127.0.0.1', SPRING_APPLICATION_JSON: '{"management":{"health":{"mail":{"enabled":false}}}}' } },
     frontend: { environment: { TRUSTED_EDGE_PROXY: 'true' } }, edge: {},
   } };
   const plan = createReleaseSmokePlan(rendered, context, credentials);
@@ -256,6 +258,17 @@ test('historical plans have distinct owned databases and cannot relax current im
   const historicalPlan = createReleaseSmokePlan({ services: Object.fromEntries(Object.entries(fixture.plan.services).filter(([name]) => name !== 'bootstrap')) }, historical, fixture.credentials);
   const changed = structuredClone(historicalPlan); changed.services.api.environment.DB_URL = `jdbc:postgresql://db:5432/${upgraded.database}`;
   assert.throws(() => validateReleaseSmokePlan(changed, historical, fixture.credentials), /datasource/);
+  // [ADR-0060 2차] HMAC 서명 비밀은 그 전 릴리스 이미지를 띄우는 단계에만 들어가고, 현재 이미지 단계에는 없어야 한다.
+  for (const service of ['api', 'bootstrap', 'frontend']) {
+    assert.equal(historicalPlan.services[service].environment.JWT_SECRET, fixture.credentials.jwt, service);
+    assert.equal(fixture.plan.services[service].environment.JWT_SECRET, undefined, service);
+  }
+  const leaked = structuredClone(fixture.plan); leaked.services.api.environment.JWT_SECRET = fixture.credentials.jwt;
+  assert.throws(() => validateReleaseSmokePlan(leaked, fixture.context, fixture.credentials), /production boundary/);
+  const leakedFrontend = structuredClone(fixture.plan); leakedFrontend.services.frontend.environment.JWT_SECRET = fixture.credentials.jwt;
+  assert.throws(() => validateReleaseSmokePlan(leakedFrontend, fixture.context, fixture.credentials), /frontend trust boundary/);
+  const missingLegacy = structuredClone(historicalPlan); delete missingLegacy.services.api.environment.JWT_SECRET;
+  assert.throws(() => validateReleaseSmokePlan(missingLegacy, historical, fixture.credentials), /production boundary/);
 });
 
 test('production smoke has a separate owned plan and requires actual dirty source image labels', () => {
@@ -378,6 +391,9 @@ test('production smoke rejects shared resources, public ports, dev seeds, mixed 
     value => { value.plan.services.frontend.environment.ALLOW_DEV_JWT_VERIFY_KEYS = 'true'; },
     value => { value.plan.services.frontend.environment.JWT_SIGNING_KEYS_JSON = value.credentials.jwtSigningKeysJson; },
     value => { value.plan.services.api.environment.JWT_VERIFY_KEYS_JSON = value.credentials.jwtVerifyKeysJson; },
+    value => { delete value.plan.services.api.environment.RRNO_KEYS_JSON; },
+    value => { value.plan.services.api.environment.RRNO_ACTIVE_KEY_ID = 'other'; },
+    value => { value.plan.services.api.environment.MANAGEMENT_ADDRESS = '0.0.0.0'; },
     value => { value.plan.services.edge.ports.push({ target: 8080, published: '8080', host_ip: '0.0.0.0' }); },
     value => { value.plan.services.api.ports.push({ target: 8080, published: '0', host_ip: '127.0.0.1' }); },
     value => { value.plan.services.api.environment.CORS_ORIGIN_1 = 'http://untrusted.invalid'; },
@@ -567,9 +583,9 @@ test('isolated MFA uses a fresh 256-bit key and never inherits an enforced or ex
 test('isolated JWT generates disposable P-256 signing and verify keypairs cleanly separated by service', () => {
   const first = createIsolatedJwtEnvironment();
   const second = createIsolatedJwtEnvironment();
-  assert.deepEqual(Object.keys(first.api).sort(), ['JWT_SECRET', 'JWT_SIGNING_ACTIVE_KID', 'JWT_SIGNING_KEYS_JSON']);
-  assert.deepEqual(Object.keys(first.frontend).sort(), ['JWT_SECRET', 'JWT_VERIFY_KEYS_JSON']);
-  assert.equal(first.api.JWT_SECRET, first.frontend.JWT_SECRET);
+  // ADR-0060 2차: HMAC 서명 비밀(JWT_SECRET)은 어느 쪽에도 없다 — 프런트는 공개키만 받는다.
+  assert.deepEqual(Object.keys(first.api).sort(), ['JWT_SIGNING_ACTIVE_KID', 'JWT_SIGNING_KEYS_JSON']);
+  assert.deepEqual(Object.keys(first.frontend).sort(), ['JWT_VERIFY_KEYS_JSON']);
   assert.notEqual(first.api.JWT_SIGNING_KEYS_JSON, second.api.JWT_SIGNING_KEYS_JSON);
 
   const kid = first.api.JWT_SIGNING_ACTIVE_KID;
@@ -689,6 +705,9 @@ test('manifest requires a matching live owner, rejects replay/foreign attestatio
   } finally { if (server.listening) await new Promise(resolve => server.close(resolve)); rmSync(directory, { recursive: true, force: true }); }
 });
 
+// 회차 키링 고정물은 실제 P-256 PKCS#8 개인키다 — 검사가 키를 판독하므로 임의 바이트는 통과하지 않는다.
+const FIXTURE_ES256_PKCS8 = generateKeyPairSync('ec', { namedCurve: 'P-256' }).privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64');
+
 function composeFixture() {
   const env = { CI: 'true', GITHUB_ACTIONS: 'true', GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '2', COMPOSE_PROJECT_NAME: 'egov-e2e-123-2-0' };
   const project = env.COMPOSE_PROJECT_NAME;
@@ -704,7 +723,8 @@ function composeFixture() {
   const url = 'jdbc:postgresql://db:5432/authz_e2e';
   api.Config.Env = ['SPRING_PROFILES_ACTIVE=e2e', 'NURI_AUTHORIZATION_ISOLATED_CUTOVER=true',
     'NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK=CONFIRMED_DISPOSABLE_AUTHZ_DATABASE',
-    `JWT_SECRET=${randomBytes(32).toString('base64')}`,
+    'JWT_SIGNING_ACTIVE_KID=e2e-es256',
+    `JWT_SIGNING_KEYS_JSON=${JSON.stringify({ 'e2e-es256': FIXTURE_ES256_PKCS8 })}`,
     'JAVA_OPTS=-Xms512m -Xmx512m -XX:+UseParallelGC',
     `SPRING_APPLICATION_JSON=${JSON.stringify({ spring: { datasource: { url, 'jdbc-url': url, hikari: { 'jdbc-url': url }, username: 'egov', password: 'synthetic' } } })}`];
   db.Mounts = [{ Type: 'volume', Destination: '/var/lib/postgresql/data', Name: `${project}-database` }];
@@ -723,8 +743,43 @@ test('CI compose validates actual isolated datasource, owned volume/network and 
     value => { value.api.Config.Env[value.api.Config.Env.length - 1] = value.api.Config.Env.at(-1).replaceAll('db:5432', 'remote:5432'); },
     value => { value.api.NetworkSettings.Networks = {}; },
     value => { value.api.Config.Env.push('SPRING_CONFIG_LOCATION=file:/shared-config/'); },
+    // 회차마다 만든 서명 키링이 없으면(저장소의 개발용 키쌍으로 도는 API) 소유 증명이 아니다
+    value => { value.api.Config.Env = value.api.Config.Env.filter(entry => !entry.startsWith('JWT_SIGNING_KEYS_JSON=')); },
+    value => { value.api.Config.Env = value.api.Config.Env.filter(entry => !entry.startsWith('JWT_SIGNING_ACTIVE_KID=')); },
+    // 존재만으로는 부족하다 — 백엔드가 그 키로 기동할 수 있어야 한다(2026-11-25 Codex 검토)
+    value => { value.api.Config.Env = value.api.Config.Env.map(entry => entry.startsWith('JWT_SIGNING_KEYS_JSON=') ? `JWT_SIGNING_KEYS_JSON=${JSON.stringify({ 'e2e-es256': randomBytes(32).toString('base64') })}` : entry); },
+    value => { value.api.Config.Env = value.api.Config.Env.map(entry => entry.startsWith('JWT_SIGNING_ACTIVE_KID=') ? 'JWT_SIGNING_ACTIVE_KID=other-kid' : entry); },
   ];
   for (const change of changes) { const changed = composeFixture(); change(changed); assert.throws(() => assertOwnedComposeRuntime(changed.db, changed.api, changed.volume, changed.network, changed.env, now)); }
+});
+
+test('회차 서명 키링 판독: 활성 kid 가 JSON 에 있고 P-256 PKCS#8 개인키일 때만 기동 가능한 키링이다', () => {
+  const keyring = kid => JSON.stringify({ [kid]: FIXTURE_ES256_PKCS8 });
+  assert.equal(usableSigningKeyring('e2e-es256', keyring('e2e-es256')), true);
+  const p384 = generateKeyPairSync('ec', { namedCurve: 'P-384' }).privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64');
+  const rsa = generateKeyPairSync('rsa', { modulusLength: 2048 }).privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64');
+  const spki = generateKeyPairSync('ec', { namedCurve: 'P-256' }).publicKey.export({ format: 'der', type: 'spki' }).toString('base64');
+  for (const [name, kid, json] of [
+    ['임의 32바이트', 'k', JSON.stringify({ k: randomBytes(32).toString('base64') })],
+    ['활성 kid 가 키링에 없음', 'k', keyring('other')],
+    ['JSON 이 아님', 'k', 'k=' + FIXTURE_ES256_PKCS8],
+    ['배열 키링', 'k', JSON.stringify([FIXTURE_ES256_PKCS8])],
+    ['P-384 키', 'k', JSON.stringify({ k: p384 })],
+    ['RSA 키', 'k', JSON.stringify({ k: rsa })],
+    ['개인키 자리에 공개키', 'k', JSON.stringify({ k: spki })],
+    ['kid 형식 밖', 'k k', JSON.stringify({ 'k k': FIXTURE_ES256_PKCS8 })],
+    ['kid 없음', undefined, keyring('k')],
+    // 활성 항목이 정상이어도 백엔드는 모든 항목을 판독하고 16개까지만 받는다
+    ['손상된 이전 키', 'k', JSON.stringify({ k: FIXTURE_ES256_PKCS8, old: randomBytes(32).toString('base64') })],
+    ['형식 밖 이전 kid', 'k', JSON.stringify({ k: FIXTURE_ES256_PKCS8, 'old kid': FIXTURE_ES256_PKCS8 })],
+    ['줄바꿈으로 감싼 이전 키(백엔드 디코더가 거부)', 'k', JSON.stringify({ k: FIXTURE_ES256_PKCS8, old: FIXTURE_ES256_PKCS8.replace(/(.{64})/gu, '$1\n') })],
+    ['17개 키링', 'k0', JSON.stringify(Object.fromEntries(Array.from({ length: 17 }, (_, i) => [`k${i}`, FIXTURE_ES256_PKCS8])))],
+  ]) assert.equal(usableSigningKeyring(kid, json), false, name);
+  assert.equal(usableSigningKeyring('k0', JSON.stringify(Object.fromEntries(Array.from({ length: 16 }, (_, i) => [`k${i}`, FIXTURE_ES256_PKCS8])))), true,
+    '16개까지는 받는다');
+  // 백엔드가 받는 꼴은 사전 검사도 받는다 — 앞뒤 공백(trim), 패딩 생략
+  assert.equal(usableSigningKeyring('k', JSON.stringify({ k: ` ${FIXTURE_ES256_PKCS8}\n` })), true, '앞뒤 공백');
+  assert.equal(usableSigningKeyring('k', JSON.stringify({ k: FIXTURE_ES256_PKCS8.replace(/=+$/u, '') })), true, '패딩 생략');
 });
 
 test('CI API launch cannot replace inspected datasource through JVM, application arguments, or alternate configuration', () => {

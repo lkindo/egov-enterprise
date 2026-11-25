@@ -30,9 +30,12 @@ public class ProdRequiredPropertiesGuard implements InitializingBean {
             "spring.datasource.username",
             "spring.datasource.password",
             "Globals.File.algorithmKey",
-            "jwt.secret",
             "jwt.signing.active-kid",
-            "jwt.signing.keys-json"
+            "jwt.signing.keys-json",
+            // [2026-11-25] 운영은 주민등록번호를 키링(AES-256-GCM v2 봉투)으로만 새로 쓴다. 비우면 종전 ARIA(IV·MAC 없는
+            //   결정적 암호)로 저장돼 같은 번호가 같은 암호문이 되고 변조를 알 수 없었다 — deploy.sh 만 요구하던 것을 앱도 요구한다.
+            "nuri.crypto.rrno.active-key-id",
+            "nuri.crypto.rrno.keys-json"
     );
 
     private static final Pattern UNRESOLVED_PLACEHOLDER_PATTERN = Pattern.compile("\\$\\{[^}]+}");

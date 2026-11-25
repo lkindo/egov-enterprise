@@ -34,9 +34,6 @@ file:
   upload:
     path: ./build/test-uploads
 
-jwt:
-  secret: 9dd453ca8e726ed8e34d809cd15ce34477f5c2cd136cf9ce0c035513d8d4b492
-
 # main application.yml 을 가리므로 같은 개발 기본 CORS 허용 오리진을 둔다 — LegacyConfig 의
 # ignoreUnresolvablePlaceholders(false) 이후 test 프로파일 없이 기동하는 전체 빈 그래프 검증이
 # ${cors.allowed-origins} 미해결로 실패하지 않도록 맞춘다(test 프로파일은 application-test.yml 이 덮어쓴다).

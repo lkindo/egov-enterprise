@@ -2,21 +2,18 @@
 /**
  * 개발 서버 통합 기동 진입점 (백엔드 bootRun + 프론트 next dev).
  *
- * [존재 이유] JWT 서명 시크릿의 좌우 비대칭을 구조적으로 막는다.
+ * [존재 이유] 두 자식 프로세스를 **하나의 환경**에서 낳아 서명·검증 키 설정의 좌우 비대칭을 막는다.
  *
- * 백엔드(JwtTokenProvider)와 프론트 Proxy(frontend/src/proxy.ts)는 **같은 시크릿**으로
- * 서명·검증해야 한다. 그런데 둘은 서로 다른 프로세스라 각자 환경변수를 따로 해석하고,
- * 어느 한쪽만 루트 .env 를 받으면 서명 검증이 전량 실패한다. 그 실패는 조용하다 —
- * 로그인 API 는 200 을 주고(백엔드 담당), 그 다음 페이지 진입에서 미들웨어가 307 로 /login 에
- * 되돌려보내므로 "인증 완료 후 다시 로그인창" 이라는 무한 루프로만 드러난다. (2026-07-19 실제 발생)
+ * 백엔드(JwtTokenProvider)는 ES256 개인키로 서명하고 프론트 Proxy(frontend/src/proxy.ts)는 공개키로 검증한다
+ * (ADR-0060). 한쪽만 루트 .env 의 키링을 받으면 서명 검증이 전량 실패하고, 그 실패는 "인증 완료 후 다시 로그인창"
+ * 이라는 무음 루프로만 드러난다(2026-07-19 실제 발생). package.json 의 dev 스크립트가
+ * `node --env-file-if-exists=.env` 로 이 파일을 실행하므로, 루트 .env 가 있으면 그 키링이, 없으면 양쪽 다
+ * 저장소의 개발용 키쌍이 쓰인다. 프론트 자식은 개인키를 상속하지 않는다(frontendEnvironment). 양쪽 모두 기동 시
+ * 공개키 지문(SHA-256 앞 8자)을 로그로 남기므로, 따로 띄웠을 때는 두 로그의 지문을 대조한다.
  *
- * 이 스크립트는 두 자식 프로세스를 **하나의 환경**에서 낳아 그 비대칭을 원천 차단한다.
- * package.json 의 dev 스크립트가 `node --env-file-if-exists=.env` 로 이 파일을 실행하므로,
- * 루트 .env 가 있으면 그 값이, 없으면 양쪽 다 각자의 dev 기본값이 쓰인다 — 어느 쪽이든 대칭이다.
- *
- * ⚠ 백엔드만 / 프론트만 따로 띄우는 경우(npm run backend, npm run frontend)는 이 보장이 없다.
- *   한쪽만 .env 가 실린 셸에서 띄우면 비대칭이 재발한다. 그 경우를 위해 양쪽 모두 기동 시
- *   시크릿 지문(SHA-256 앞 8자)을 로그로 남기므로, 두 로그의 지문을 눈으로 대조하면 즉시 판별된다.
+ * [루프백 바인딩] 키링 없이 띄운 백엔드는 공개 저장소의 개발용 서명키를 쓰므로, 네트워크로 닿는 사람은 누구나 토큰을
+ * 만들 수 있다. 그래서 bootRun 은 SERVER_ADDRESS 를 주지 않으면 127.0.0.1 에만 바인딩하고(api-server/build.gradle),
+ * 백엔드도 키링 없이 루프백이 아닌 주소에 바인딩하면 기동을 멈춘다(ADR-0060 2차).
  *
  * [원격 DB 보호] 루트 .env 의 DB_URL 이 공유 DB 를 가리키면, 백엔드가 기동하는 순간 Flyway 가
  * 작업 브랜치의 미병합 마이그레이션을 그 DB 에 적용한다 — 스키마 변경 승인과 공유 DB 적용 절차
@@ -25,7 +22,6 @@
  * 준다 — 그때도 개발 시드(db/seed-dev: 알려진 개발 자격)는 넣지 않는다.
  */
 import { spawn } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
@@ -47,10 +43,20 @@ export function isLocalDatabaseUrl(dbUrl) {
 /** 백엔드가 접속할 수 있는 DB 주소들 — application.yml 의 DB_URL 과, 그것을 덮어쓰는 Spring 환경 변수. */
 const DATABASE_URL_KEYS = ['DB_URL', 'SPRING_DATASOURCE_URL', 'SPRING_DATASOURCE_JDBC_URL', 'SPRING_FLYWAY_URL'];
 
-/** 프런트엔드(Next) 프로세스는 JWT 서명 개인키 키링을 상속하지 않고 공개 검증키만 받는다(ADR-0060). */
+/**
+ * Next 프로세스에 넘기지 않는 서명 비밀 — ES256 개인키 키링과, ADR-0060 2차로 퇴역한 1차 배포의 HMAC 비밀·수용 스위치.
+ * 셸이나 루트 .env 에 남아 있어도 Next 가 서명 비밀을 갖지 않게 한다(2026-11-25 Codex 검토).
+ * scripts/verify.mjs·frontend/scripts/next-cli.mjs 가 같은 목록의 사본을 둔다(독립 이관 제품은 verify.mjs 만, 프런트는 자기 폴더만
+ * 복사된다) — dev-remote-db-guard 시험이 대조한다. Windows 의 환경 변수 이름은 대소문자를 가리지 않으므로 대문자로 맞춰 거른다.
+ */
+export const FRONTEND_WITHHELD_SIGNING_ENV = Object.freeze([
+  'JWT_SIGNING_ACTIVE_KID', 'JWT_SIGNING_KEYS_JSON', 'JWT_SECRET', 'JWT_ACCEPT_LEGACY_HMAC',
+]);
+
+/** 프런트엔드(Next) 프로세스는 서명 비밀을 상속하지 않고 공개 검증키(JWT_VERIFY_KEYS_JSON)만 받는다(ADR-0060). */
 export function frontendEnvironment(env) {
-  const { JWT_SIGNING_ACTIVE_KID: _kid, JWT_SIGNING_KEYS_JSON: _keys, ...cleanEnv } = env;
-  return cleanEnv;
+  const withheld = new Set(FRONTEND_WITHHELD_SIGNING_ENV);
+  return Object.fromEntries(Object.entries(env).filter(([name]) => !withheld.has(name.toUpperCase())));
 }
 
 /** 백엔드 자식 프로세스에 넘길 환경. 원격 DB 면 Flyway 를 끄고(옵트인 시 seed-dev 만 뺀다) 그 사유를 돌려준다. */
@@ -78,14 +84,10 @@ export function projectFlywayLocation(root) {
 }
 
 function main() {
-  // 기동 시점에 시크릿 지문을 찍어 둔다. 값 자체는 절대 출력하지 않는다(지문만으로 대조에 충분).
-  const secret = process.env.JWT_SECRET;
-  const fingerprint = secret ? createHash('sha256').update(secret).digest('hex').slice(0, 8) : null;
-  console.log(
-    fingerprint
-      ? `[dev] JWT_SECRET 주입됨 (지문 ${fingerprint}) — 백엔드/프론트 양쪽에 동일하게 전달합니다.`
-      : '[dev] JWT_SECRET 미설정 — 백엔드/프론트 양쪽이 각자의 dev 기본값을 씁니다(값이 같으므로 대칭).'
-  );
+  // 키링 주입 여부만 알린다. 키 값은 출력하지 않는다(공개키 지문은 백엔드·프런트가 각자 기동 로그에 남긴다).
+  console.log(process.env.JWT_SIGNING_KEYS_JSON
+    ? '[dev] JWT 서명 키링 주입됨 — 백엔드는 개인키, 프런트는 JWT_VERIFY_KEYS_JSON 의 공개키를 씁니다.'
+    : '[dev] JWT 서명 키링 미설정 — 백엔드·프런트가 저장소의 개발용 키쌍을 씁니다(백엔드는 루프백에만 바인딩).');
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
   const backend = backendEnvironment(process.env, { flywayLocation: projectFlywayLocation(root) });
   if (backend.notice) console.log(backend.notice);
@@ -103,10 +105,11 @@ function main() {
     `"\\"${gradlew}\\" :api-server:bootRun -Dfile.encoding=UTF-8" ` +
     `"\\"${process.execPath}\\" scripts/dev.mjs --web-child"`;
 
-  // 프런트 자식(--web-child)은 frontendEnvironment()로 JWT_SIGNING_* 를 제거한 뒤 pnpm -C frontend dev 를 띄운다.
+  // 프런트 자식(--web-child)은 frontendEnvironment()로 서명 비밀을 제거한 뒤 pnpm -C frontend dev 를 띄운다.
+  // 그 dev 스크립트(frontend/scripts/next-cli.mjs)도 같은 비밀을 걷고 루프백에 바인딩한다 — 프런트만 띄우는 경로도 같은 규칙이다.
   const child = spawn(command, { stdio: 'inherit', shell: true, cwd: repoRoot, env: backend.env });
 
-  child.on('exit', (code) => process.exit(code ?? 0));
+  child.on('exit', (code, signal) => process.exit(code ?? (signal ? 1 : 0)));
 }
 
 function runWebChild() {
@@ -116,7 +119,7 @@ function runWebChild() {
     shell: process.platform === 'win32',
     env: frontendEnvironment(process.env),
   });
-  child.on('exit', (code) => process.exit(code ?? 0));
+  child.on('exit', (code, signal) => process.exit(code ?? (signal ? 1 : 0)));
 }
 
 // 시험이 판정 함수만 불러갈 때는 서버를 띄우지 않는다.

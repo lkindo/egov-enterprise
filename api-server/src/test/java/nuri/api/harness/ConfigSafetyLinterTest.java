@@ -766,6 +766,135 @@ class ConfigSafetyLinterTest {
         broken.forEach((name, violations) -> assertFalse(violations.isEmpty(), name));
     }
 
+    /**
+     * [2026-11-25 사용자 결정] api 8080 은 호스트 루프백에만 연다. 개발 스택(base)은 키링 없이 저장소의 개발용 서명키로 토큰을 만들므로
+     * 모든 주소에 열면 이 기계에 닿는 누구나 토큰을 만들 수 있었고, 운영 오버레이는 base 목록을 바꿔 쓰지 않아 edge(로그인 한도·TLS)를
+     * 우회하는 공개 경로가 남았다. 운영은 {@code API_HOST_BIND} 로만 다시 연다.
+     */
+    static List<String> apiPortExposureViolations(String composeBaseSrc, String composeProdSrc) {
+        List<String> violations = new ArrayList<>();
+        // 항목 하나를 찾는 것으로는 부족하다 — 기대 줄을 둔 채 두 번째 매핑을 더하면 그 매핑이 공개된다(2026-11-25 Codex 검토).
+        // 그래서 ports 목록 전체가 정확히 기대 항목 하나인지 본다.
+        ComposePorts baseApi = composePorts(composeServiceBlock(composeBaseSrc, "api"));
+        // base 에 태그(!reset·!override)가 붙으면 목록이 같아 보여도 렌더 결과가 달라진다 — !reset 이면 호스트 포트가 사라져
+        // CI 헬스체크가 닿지 않는다(2026-11-25 Codex 2차). 그래서 태그가 없는지도 본다.
+        if (baseApi == null || !baseApi.tag().isEmpty() || !baseApi.entries().equals(List.of("\"127.0.0.1:8080:8080\""))) {
+            violations.add("docker-compose.yml: api.ports 는 태그 없이 \"127.0.0.1:8080:8080\" 하나여야 합니다 — 개발용 서명키를 쓰는 스택입니다. 실제: "
+                    + (baseApi == null ? "없음" : baseApi));
+        }
+        // base 프런트는 그 개발키 api 로 요청을 넘기므로 프런트를 모든 주소에 열면 api 포트를 닫은 효과가 없다.
+        ComposePorts baseFrontend = composePorts(composeServiceBlock(composeBaseSrc, "frontend"));
+        if (baseFrontend == null || !baseFrontend.tag().isEmpty()
+                || !baseFrontend.entries().equals(List.of("\"${FRONTEND_HOST_BIND:-127.0.0.1}:3000:3000\""))) {
+            violations.add("docker-compose.yml: frontend.ports 는 태그 없이 \"${FRONTEND_HOST_BIND:-127.0.0.1}:3000:3000\" 하나여야 합니다 —"
+                    + " 개발키 api 앞의 Next 입니다. 실제: " + (baseFrontend == null ? "없음" : baseFrontend));
+        }
+        ComposePorts prodApi = composePorts(composeServiceBlock(composeProdSrc, "api"));
+        if (prodApi == null || !"!override".equals(prodApi.tag())
+                || !prodApi.entries().equals(List.of("\"${API_HOST_BIND:-127.0.0.1}:8080:8080\""))) {
+            violations.add(COMPOSE_PROD + ": api.ports 는 `!override` 로 \"${API_HOST_BIND:-127.0.0.1}:8080:8080\" 하나여야 합니다 —"
+                    + " base 목록이 이어 붙거나 매핑이 더해지면 공개가 남습니다. 실제: " + (prodApi == null ? "없음" : prodApi));
+        }
+        return violations;
+    }
+
+    /**
+     * 서비스 블록의 {@code ports:} 키 — 태그(!override·!reset, 없으면 빈 문자열)와 목록 항목(따옴표 포함 원문, 흐름 목록이면 그 원문 한 개).
+     * 서비스의 직속 키(들여쓰기 4칸)만 본다 — 확장 블록(x-…) 안에 중첩된 ports 가 실제 매핑을 가리지 않게 한다(2026-11-25 Codex 2차).
+     */
+    record ComposePorts(String tag, List<String> entries) {
+    }
+
+    static ComposePorts composePorts(String serviceBlock) {
+        if (serviceBlock == null) {
+            return null;
+        }
+        String[] lines = serviceBlock.split("\n", -1);
+        // 서비스 직속 키의 들여쓰기는 블록의 첫 키 줄에서 정한다 — 고정 칸 수로 두면 정상 재정렬(6칸)이 거짓 red 가 된다(Codex 3차).
+        int childIndent = -1;
+        for (String line : lines) {
+            if (!line.isBlank()) {
+                childIndent = line.length() - line.stripLeading().length();
+                break;
+            }
+        }
+        for (int i = 0; i < lines.length; i++) {
+            java.util.regex.Matcher key = Pattern.compile("^( *)ports\\s*:\\s*(!\\w+)?\\s*(.*?)\\s*$").matcher(lines[i]);
+            if (!key.matches() || key.group(1).length() != childIndent) {
+                continue;
+            }
+            int indent = key.group(1).length();
+            String tag = key.group(2) == null ? "" : key.group(2);
+            List<String> entries = new ArrayList<>();
+            if (!key.group(3).isEmpty()) {
+                entries.add(key.group(3));
+                return new ComposePorts(tag, entries);
+            }
+            for (int j = i + 1; j < lines.length; j++) {
+                String line = lines[j];
+                if (line.isBlank()) {
+                    continue;
+                }
+                int lineIndent = line.length() - line.stripLeading().length();
+                if (lineIndent <= indent) {
+                    break;
+                }
+                String item = line.strip();
+                entries.add(item.startsWith("-") ? item.substring(1).strip() : item);
+            }
+            return new ComposePorts(tag, entries);
+        }
+        return null;
+    }
+
+    @Test
+    @DisplayName("[2026-11-25 · H5] api 8080 의 모든 주소 공개(base)·운영 오버레이의 루프백 기본값 제거는 red")
+    void apiPortIsLoopbackByDefault() throws IOException {
+        Path root = resolveRepoRoot();
+        String baseSrc = stripComments(HarnessSourceIndex.read(root.resolve("docker-compose.yml")));
+        String prodSrc = stripComments(HarnessSourceIndex.read(root.resolve(COMPOSE_PROD)));
+        if (ReusableHarnessProfile.current().projected() && composeServiceBlock(baseSrc, "api") == null) {
+            return;
+        }
+        assertTrue(apiPortExposureViolations(baseSrc, prodSrc).isEmpty(), () -> apiPortExposureViolations(baseSrc, prodSrc).toString());
+
+        Map<String, List<String>> broken = new LinkedHashMap<>();
+        broken.put("base 가 모든 주소에 공개", apiPortExposureViolations(
+                baseSrc.replace("\"127.0.0.1:8080:8080\"", "\"8080:8080\""), prodSrc));
+        broken.put("운영 오버레이가 base 목록을 이어 붙임", apiPortExposureViolations(
+                baseSrc, prodSrc.replace("ports: !override", "ports:")));
+        broken.put("운영 기본 바인딩을 모든 주소로", apiPortExposureViolations(
+                baseSrc, prodSrc.replace("${API_HOST_BIND:-127.0.0.1}", "${API_HOST_BIND:-0.0.0.0}")));
+        broken.put("운영 오버레이가 기대 줄을 둔 채 두 번째 매핑을 더함", apiPortExposureViolations(
+                baseSrc, prodSrc.replace("\"${API_HOST_BIND:-127.0.0.1}:8080:8080\"",
+                        "\"${API_HOST_BIND:-127.0.0.1}:8080:8080\"\n      - \"18080:8080\"")));
+        broken.put("base 가 루프백 줄을 둔 채 두 번째 매핑을 더함", apiPortExposureViolations(
+                baseSrc.replace("\"127.0.0.1:8080:8080\"", "\"127.0.0.1:8080:8080\"\n      - \"0.0.0.0:18080:8080\""), prodSrc));
+        broken.put("base 프런트를 모든 주소에 공개", apiPortExposureViolations(
+                baseSrc.replace("\"${FRONTEND_HOST_BIND:-127.0.0.1}:3000:3000\"", "\"3000:3000\""), prodSrc));
+        broken.put("base api 에 !reset 을 붙여 렌더 결과에서 포트가 사라짐", apiPortExposureViolations(
+                baseSrc.replace("    ports:\n      - \"127.0.0.1:8080:8080\"", "    ports: !reset\n      - \"127.0.0.1:8080:8080\""), prodSrc));
+        broken.put("base 프런트에 !override 를 붙임", apiPortExposureViolations(
+                baseSrc.replace("    ports:\n      - \"${FRONTEND_HOST_BIND:-127.0.0.1}:3000:3000\"",
+                        "    ports: !override\n      - \"${FRONTEND_HOST_BIND:-127.0.0.1}:3000:3000\""), prodSrc));
+        broken.put("확장 블록에 중첩된 ports 가 실제 공개 매핑을 가림", apiPortExposureViolations(
+                baseSrc.replace("    ports:\n      - \"127.0.0.1:8080:8080\"",
+                        "    x-example:\n      ports:\n        - \"127.0.0.1:8080:8080\"\n    ports:\n      - \"8080:8080\""), prodSrc));
+        // 정상 재정렬(서비스 직속 키를 6칸으로)은 같은 렌더 결과이므로 위반이 아니다 — 고정 칸 수의 거짓 red 회귀 방지.
+        String reindentedApi = composeServiceBlock(baseSrc, "api").replaceAll("(?m)^    ", "      ");
+        org.junit.jupiter.api.Assertions.assertEquals(List.of("\"127.0.0.1:8080:8080\""), composePorts(reindentedApi).entries());
+        broken.put("운영 api.ports 를 흐름 목록으로 둘 공개", apiPortExposureViolations(
+                baseSrc, prodSrc.replace("ports: !override\n      - \"${API_HOST_BIND:-127.0.0.1}:8080:8080\"",
+                        "ports: !override [\"${API_HOST_BIND:-127.0.0.1}:8080:8080\", \"8081:8080\"]")));
+        broken.forEach((name, violations) -> assertFalse(violations.isEmpty(), name));
+        // 부정 사례가 실제로 원문을 바꿨는지(치환이 헛돌면 거짓 red 가 아니라 거짓 green 이다) 확인한다.
+        assertTrue(prodSrc.contains("ports: !override\n      - \"${API_HOST_BIND:-127.0.0.1}:8080:8080\""),
+                "운영 api.ports 원문 꼴이 바뀌었다 — 위 흐름 목록 부정 사례의 치환 원문을 맞춘다.");
+        assertTrue(baseSrc.contains("    ports:\n      - \"127.0.0.1:8080:8080\"")
+                        && baseSrc.contains("    ports:\n      - \"${FRONTEND_HOST_BIND:-127.0.0.1}:3000:3000\""),
+                "base ports 원문 꼴이 바뀌었다 — 위 태그·중첩 부정 사례의 치환 원문을 맞춘다.");
+    }
+
     static List<String> prodJwtAsymmetricBoundaryViolations(String composeProdSrc, String deployScriptSrc) {
         List<String> violations = new ArrayList<>();
         String apiBlock = composeServiceBlock(composeProdSrc, "api");
@@ -782,6 +911,20 @@ class ConfigSafetyLinterTest {
         }
         if (frontendBlock != null && (frontendBlock.contains("JWT_SIGNING_ACTIVE_KID") || frontendBlock.contains("JWT_SIGNING_KEYS_JSON"))) {
             violations.add(COMPOSE_PROD + ": frontend.environment 에 JWT 서명 개인키 키링을 둘 수 없습니다(ADR-0060).");
+        }
+        // [ADR-0060 2차 · 2026-11-25] 어느 쪽에도 HMAC 서명 비밀과 그 수용 플래그를 다시 넘기지 않는다 — Next 가 서명 비밀을
+        //   가지면 Next 침해가 임의 사용자 토큰 위조로 이어졌다(1차 배포의 전환 기간 위험).
+        for (var entry : java.util.Map.of("api", apiBlock == null ? "" : apiBlock,
+                "frontend", frontendBlock == null ? "" : frontendBlock).entrySet()) {
+            for (String legacy : List.of("JWT_SECRET", "JWT_ACCEPT_LEGACY_HMAC")) {
+                if (Pattern.compile("(?m)^\\s*" + legacy + "\\s*:").matcher(entry.getValue()).find()) {
+                    violations.add(COMPOSE_PROD + ": " + entry.getKey() + ".environment 에 " + legacy
+                            + " 를 둘 수 없습니다 — ADR-0060 2차로 HMAC 서명과 그 비밀을 걷었습니다.");
+                }
+            }
+        }
+        if (deployScriptSrc.matches("(?s).*\\bJWT_SECRET\\b.*")) {
+            violations.add(DEPLOY_SCRIPT + ": JWT_SECRET 을 요구·전달하지 않습니다 — ADR-0060 2차로 HMAC 서명 비밀을 걷었습니다.");
         }
         List<String> requiredSignals = List.of(
                 "JWT_SIGNING_ACTIVE_KID JWT_SIGNING_KEYS_JSON JWT_VERIFY_KEYS_JSON",
@@ -825,6 +968,18 @@ class ConfigSafetyLinterTest {
                 prodSrc.replace("ALLOW_DEV_JWT_VERIFY_KEYS: \"false\"",
                         "ALLOW_DEV_JWT_VERIFY_KEYS: \"false\"\n      JWT_SIGNING_KEYS_JSON: ${JWT_SIGNING_KEYS_JSON}"),
                 deploySrc));
+        broken.put("frontend 에 HMAC 서명 비밀 재유입", prodJwtAsymmetricBoundaryViolations(
+                prodSrc.replace("ALLOW_DEV_JWT_VERIFY_KEYS: \"false\"",
+                        "ALLOW_DEV_JWT_VERIFY_KEYS: \"false\"\n      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 이 필요합니다}"),
+                deploySrc));
+        broken.put("api 에 HMAC 수용 플래그 재유입", prodJwtAsymmetricBoundaryViolations(
+                prodSrc.replace("      JWT_SIGNING_ACTIVE_KID: ${JWT_SIGNING_ACTIVE_KID:?",
+                        "      JWT_ACCEPT_LEGACY_HMAC:\n      JWT_SIGNING_ACTIVE_KID: ${JWT_SIGNING_ACTIVE_KID:?"),
+                deploySrc));
+        broken.put("deploy 가 JWT_SECRET 을 다시 요구", prodJwtAsymmetricBoundaryViolations(
+                prodSrc,
+                deploySrc.replace("JWT_SIGNING_ACTIVE_KID JWT_SIGNING_KEYS_JSON JWT_VERIFY_KEYS_JSON",
+                        "JWT_SECRET JWT_SIGNING_ACTIVE_KID JWT_SIGNING_KEYS_JSON JWT_VERIFY_KEYS_JSON")));
         broken.put("deploy JWT 키쌍 유도 비교 제거", prodJwtAsymmetricBoundaryViolations(
                 prodSrc,
                 deploySrc.replace("openssl pkey -inform DER -pubout -outform DER", "cat")));

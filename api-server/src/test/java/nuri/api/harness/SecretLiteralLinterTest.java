@@ -89,6 +89,8 @@ class SecretLiteralLinterTest {
             "JWT_SIGNING_KEYS_JSON",
             "MAIL_PASSWORD",
             "POSTGRES_PASSWORD",
+            // [2026-11-25] 운영 오버레이가 주민등록번호 키링을 필수(${RRNO_KEYS_JSON:?…})로 받기 시작했다.
+            "RRNO_KEYS_JSON",
             // [2026-09-13] 운영 오버레이가 인증 릴레이 자격을 완화 바인딩 이름으로 전달하기 시작했다.
             //   MAIL_PASSWORD 만으로는 `${SPRING_MAIL_PASSWORD:-리터럴}` 이 이름 경계에서 매칭되지 않는다.
             "SPRING_MAIL_PASSWORD",
@@ -243,7 +245,8 @@ class SecretLiteralLinterTest {
         auditE2eDbConfig(root, appE2e, violations);
         boolean localDbConfigScanned = auditLocalDbConfigIfPresent(root, appLocal, violations);
 
-        // vacuity 하한(실측: JWT_SECRET·ALGORITHM_KEY·OLD_ALGORITHM_KEY·DB_PASSWORD·ADMIN_INITIAL_PASSWORD = 5종)
+        // vacuity 하한(실측 2026-11-25: JWT_SIGNING_KEYS_JSON·ALGORITHM_KEY·OLD_ALGORITHM_KEY·DB_PASSWORD·ADMIN_INITIAL_PASSWORD·RRNO_KEYS_JSON = 6종.
+        //   JWT_SECRET 은 ADR-0060 2차로 운영 설정에서 걷었지만 보호 목록에는 남겨 리터럴 재유입을 막는다)
         if (secretsSeen.size() < 3) {
             fail("게이트 무결성 파손: 운영 설정에서 참조되는 시크릿 이름이 " + secretsSeen.size()
                     + "종 — 하한(3) 미만입니다 (실측 5종). 파일 내용/파싱 파손 또는 시크릿 주입 경로 소멸 의심: " + secretsSeen);

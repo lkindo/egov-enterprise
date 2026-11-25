@@ -67,6 +67,15 @@ bootJar {
     enabled = true
 }
 
+// [ADR-0060 2차 · 2026-11-25] 개발 기동(bootRun — npm run dev·npm run backend·IDE)은 SERVER_ADDRESS 를 주지 않으면 루프백에만
+//   바인딩한다. 키링 없이 띄운 백엔드는 공개 저장소의 개발용 서명키를 쓰므로 네트워크에 열면 누구나 토큰을 만들 수 있고,
+//   JwtTokenProvider 는 그 상태(키링 없음 + 루프백 아님)에서 기동을 멈춘다. 다른 주소가 필요하면 SERVER_ADDRESS 와 키링을 준다.
+tasks.named('bootRun') {
+    if (!System.getenv('SERVER_ADDRESS')) {
+        systemProperty 'server.address', '127.0.0.1'
+    }
+}
+
 jar {
     enabled = false
 }

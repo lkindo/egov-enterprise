@@ -7,20 +7,25 @@ import {
 
 const workflowUrl = new URL('../.github/workflows/update-visual-baseline.yml', import.meta.url);
 
+/**
+ * 회차별 서명 개인키는 파일·환경에 남기기 전에 마스킹한다. ADR-0060 2차(2026-11-25)로 HMAC 서명 비밀(JWT_SECRET)을 걷었으므로
+ * 마스킹 대상은 남은 비밀인 서명 개인키다 — 그 비밀이 다시 들어오면 그것도 위반이다.
+ */
 function validateMaskedJwt(source) {
   const step = source.match(
-    /- name: Generate ephemeral JWT secret \(backend\/frontend 대칭\)([\s\S]*?)(?=\n\s+- name:)/u,
+    /- name: Generate ephemeral JWT keyring \(backend 개인키 · frontend 공개키\)([\s\S]*?)(?=\n\s+- name:)/u,
   )?.[1] ?? '';
-  const assignment = 'jwt_secret="$(openssl rand -hex 44)"';
-  const mask = 'echo "::add-mask::$jwt_secret"';
-  const persist = 'echo "JWT_SECRET=$jwt_secret" >> "$GITHUB_ENV"';
-  const order = [assignment, mask, persist].map((token) => step.indexOf(token));
+  const generate = 'const jwt = createIsolatedJwtEnvironment();';
+  const maskEach = 'console.log(`::add-mask::${v}`)';
+  const maskJson = 'console.log(`::add-mask::${jwt.api.JWT_SIGNING_KEYS_JSON}`)';
+  const persist = 'writeFileSync(signingFile';
+  const order = [generate, maskEach, maskJson, persist].map((token) => step.indexOf(token));
 
   return [
-    step ? null : 'ephemeral JWT 생성 step이 없습니다.',
-    order.every((index) => index >= 0) ? null : 'JWT 생성·마스킹·GITHUB_ENV 기록 계약이 불완전합니다.',
-    order[0] < order[1] && order[1] < order[2] ? null : 'JWT는 GITHUB_ENV 기록 전에 add-mask 해야 합니다.',
-    /JWT_SECRET=\$\(openssl/u.test(step) ? '생성 값을 직접 GITHUB_ENV에 쓰면 마스킹 전에 노출됩니다.' : null,
+    step ? null : 'ephemeral JWT 키링 생성 step이 없습니다.',
+    order.every((index) => index >= 0) ? null : 'JWT 키링 생성·마스킹·기록 계약이 불완전합니다.',
+    order[0] < order[1] && order[1] < order[3] && order[2] < order[3] ? null : '서명 개인키는 파일에 쓰기 전에 add-mask 해야 합니다.',
+    /JWT_SECRET/u.test(step) ? 'HMAC 서명 비밀(JWT_SECRET)은 ADR-0060 2차로 걷었습니다 — 다시 만들지 않습니다.' : null,
   ].filter(Boolean);
 }
 
@@ -41,19 +46,20 @@ test('visual baseline workflow masks its ephemeral JWT before later steps can lo
   assert.deepEqual(validateMaskedJwt(source), []);
 });
 
-test('removing or delaying add-mask is a reproducible red', () => {
+test('removing or delaying add-mask, or reintroducing JWT_SECRET, is a reproducible red', () => {
   const source = readWorkflow();
-  assert.match(
-    validateMaskedJwt(source.replace('echo "::add-mask::$jwt_secret"', '')).join('\n'),
-    /마스킹/u,
-  );
-  assert.match(
-    validateMaskedJwt(source.replace(
-      'echo "::add-mask::$jwt_secret"\n          echo "JWT_SECRET=$jwt_secret" >> "$GITHUB_ENV"',
-      'echo "JWT_SECRET=$jwt_secret" >> "$GITHUB_ENV"\n          echo "::add-mask::$jwt_secret"',
-    )).join('\n'),
-    /전에 add-mask/u,
-  );
+  const maskJson = '          console.log(`::add-mask::${jwt.api.JWT_SIGNING_KEYS_JSON}`);\n';
+  assert.ok(source.includes(maskJson), '마스킹 줄을 찾지 못하면 아래 red 증명이 공회전한다');
+  assert.match(validateMaskedJwt(source.replace(maskJson, '')).join('\n'), /불완전/u);
+  const persistStart = source.indexOf('          const signingFile');
+  const persistEnd = source.indexOf('          chmodSync(signingFile, 0o600);\n') + '          chmodSync(signingFile, 0o600);\n'.length;
+  const persistBlock = source.slice(persistStart, persistEnd);
+  const maskEach = '          for (const v of Object.values(JSON.parse(jwt.api.JWT_SIGNING_KEYS_JSON))) console.log(`::add-mask::${v}`);\n';
+  const reordered = source.replace(persistBlock, '').replace(maskEach, persistBlock + maskEach);
+  assert.notEqual(reordered, source);
+  assert.match(validateMaskedJwt(reordered).join('\n'), /전에 add-mask/u);
+  assert.match(validateMaskedJwt(source.replace(maskEach, `${maskEach}          appendFileSync(process.env.GITHUB_ENV, 'JWT_SECRET=x\\n');\n`)).join('\n'),
+    /JWT_SECRET/u);
 });
 
 /**

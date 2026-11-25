@@ -429,8 +429,10 @@ class WorkflowManifestLinterTest {
         if (ReusableHarnessProfile.current().projected()) {
             requireArtifactContract(root);
             String runner = HarnessSourceIndex.read(root.resolve("scripts/verify-reusable-artifact.mjs"));
-            assertThat(runner).contains("randomBytes(44)", "JWT_SECRET", "result.status !== 0",
+            // [ADR-0060 2차] 운영 모드 빌드·시험은 회차마다 만든 검증 공개키로 돈다 — HMAC 서명 비밀(JWT_SECRET)은 걷었다.
+            assertThat(runner).contains("generateKeyPairSync('ec'", "JWT_VERIFY_KEYS_JSON", "result.status !== 0",
                     "throw new Error", "report.result = 'failed'; throw error");
+            assertThat(runner).doesNotContain("JWT_SECRET: process.env");
             assertArtifactBoundaryDocumentation(root);
             return;
         }
@@ -441,7 +443,7 @@ class WorkflowManifestLinterTest {
         String auditPolicy = HarnessSourceIndex.read(root.resolve("scripts/frontend-audit-policy.mjs"));
 
         List<String> violations = new ArrayList<>();
-        int secretIndex = ci.indexOf("Generate ephemeral JWT secret (frontend build only)");
+        int secretIndex = ci.indexOf("Generate ephemeral JWT verify key (frontend build only)");
         int buildIndex = ci.indexOf("pnpm run build", secretIndex);
         int bundleIndex = ci.indexOf("pnpm run bundle:check", buildIndex);
         int testIndex = ci.indexOf("pnpm run test", bundleIndex);
@@ -461,9 +463,12 @@ class WorkflowManifestLinterTest {
                 || !auditPolicy.contains("process.exitCode = 2")) {
             violations.add("audit 정책이 조회·형식 오류에서 fail-closed 하지 않음");
         }
-        if (secretIndex < 0 || !ci.substring(secretIndex, Math.max(secretIndex, buildIndex))
-                .contains("openssl rand -hex 44")) {
-            violations.add("frontend-build의 운영 모드 빌드 전에 회차별 JWT_SECRET 생성이 없음");
+        String keyStep = secretIndex < 0 ? "" : ci.substring(secretIndex, Math.max(secretIndex, buildIndex));
+        if (secretIndex < 0 || !keyStep.contains("generateKeyPairSync('ec'") || !keyStep.contains("JWT_VERIFY_KEYS_JSON=")) {
+            violations.add("frontend-build의 운영 모드 빌드 전에 회차별 JWT 검증 공개키 생성이 없음");
+        }
+        if (keyStep.contains("JWT_SECRET")) {
+            violations.add("frontend-build가 걷은 HMAC 서명 비밀(JWT_SECRET)을 다시 만든다 — ADR-0060 2차");
         }
         if (!(secretIndex < buildIndex && buildIndex < bundleIndex && bundleIndex < testIndex)) {
             violations.add("frontend-build가 build → bundle:check → test를 강제 순서로 실행하지 않음");
@@ -474,9 +479,9 @@ class WorkflowManifestLinterTest {
         if (!verify.contains("run('pnpm -C frontend run bundle:check')")) {
             violations.add("로컬 통합 verify가 번들 예산을 실행하지 않음");
         }
-        if (!verify.contains("randomBytes(44)") || !verify.contains("frontendBuildEnv")
-                || !verify.contains("JWT_SECRET")) {
-            violations.add("로컬 통합 verify가 운영 빌드용 일회성 JWT_SECRET을 안전하게 생성하지 않음");
+        if (!verify.contains("generateKeyPairSync('ec'") || !verify.contains("frontendBuildEnv")
+                || !verify.contains("JWT_VERIFY_KEYS_JSON")) {
+            violations.add("로컬 통합 verify가 운영 빌드용 일회성 JWT 검증 공개키를 안전하게 생성하지 않음");
         }
         if (!budget.contains("BUDGETS") || !budget.contains("gzipSync")
                 || !budget.contains(".byteLength")) {
@@ -490,7 +495,7 @@ class WorkflowManifestLinterTest {
             fail("\n📦 [FRONTEND BUILD GATE] 운영 빌드 또는 성능 예산 우회 경로가 열렸습니다:\n❌ "
                     + String.join("\n❌ ", violations));
         }
-        log.info("✅ frontend-build와 local verify가 임시 JWT_SECRET 및 고정 gzip 번들 예산을 강제합니다.");
+        log.info("✅ frontend-build와 local verify가 임시 JWT 검증 공개키 및 고정 gzip 번들 예산을 강제합니다.");
     }
 
     /**

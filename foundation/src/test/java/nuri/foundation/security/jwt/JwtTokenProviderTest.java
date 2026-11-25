@@ -32,8 +32,7 @@ import org.junit.jupiter.api.Nested;
 class JwtTokenProviderTest {
 
     private JwtTokenProvider jwtTokenProvider;
-    private final String secretKey = "testSecretKeytestSecretKeytestSecretKeytestSecretKey";
-    
+
     @Mock
     private UserDetailsService userDetailsService;
 
@@ -41,63 +40,36 @@ class JwtTokenProviderTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         jwtTokenProvider = new JwtTokenProvider();
-        ReflectionTestUtils.setField(jwtTokenProvider, "secretKey", secretKey);
         ReflectionTestUtils.setField(jwtTokenProvider, "cookieSecure", false);
         ReflectionTestUtils.invokeMethod(jwtTokenProvider, "init");
         ReflectionTestUtils.setField(jwtTokenProvider, "userDetailsService", userDetailsService);
     }
 
-    @Test
-    @DisplayName("SecretKey 누락 시 예외 발생")
-    void init_Fail() {
-        JwtTokenProvider provider = new JwtTokenProvider();
-        ReflectionTestUtils.setField(provider, "secretKey", "");
-        assertThrows(IllegalStateException.class, () -> ReflectionTestUtils.invokeMethod(provider, "init"));
-    }
-
-    /**
-     * [W0-P0-4-c 회귀 방지 / 2026-08-03] 저장소에 커밋된 dev 시크릿을 운영에 주입하면 기동을 거부한다.
-     *
-     * <p>종전 prod 방어({@code ${JWT_SECRET}} 무기본값)는 <b>변수의 존재</b>만 검사했다.
-     * 공개 저장소의 그 값을 그대로 주입하면 통과했고, 그 상태에서는 누구나 임의 esntlId 로
-     * 토큰을 위조할 수 있다 — 인증 체계 전체가 무의미해진다.
-     */
-    @Test
-    @DisplayName("[보안] prod 에 저장소 커밋 dev 시크릿을 주입하면 기동 거부")
-    void init_rejectsCommittedDevSecretInProd() {
-        JwtTokenProvider provider = new JwtTokenProvider();
-        ReflectionTestUtils.setField(provider, "secretKey", COMMITTED_DEV_SECRET);
-        ReflectionTestUtils.setField(provider, "activeProfiles", "prod");
-
-        IllegalStateException e = assertThrows(IllegalStateException.class,
-                () -> ReflectionTestUtils.invokeMethod(provider, "init"));
-        assertThat(e.getMessage())
-                .as("거부 사유가 메시지에 드러나야 한다")
-                .contains("커밋된 개발용 JWT_SECRET");
-    }
-
-    @Test
-    @DisplayName("[보안] 같은 시크릿이라도 dev·e2e 프로파일에서는 허용된다 (개발 경로 차단 금지)")
-    void init_allowsCommittedDevSecretOutsideProd() {
-        for (String profiles : new String[] { "", "dev", "test,e2e", "local" }) {
-            JwtTokenProvider provider = new JwtTokenProvider();
-            ReflectionTestUtils.setField(provider, "secretKey", COMMITTED_DEV_SECRET);
-            ReflectionTestUtils.setField(provider, "activeProfiles", profiles);
-            ReflectionTestUtils.invokeMethod(provider, "init"); // 예외가 나면 이 테스트가 실패한다
+    /** 저장소에 커밋된 개발용 서명 개인키(이미 공개된 값). 클레임을 직접 짠 토큰을 그 키로 서명한다. */
+    private static java.security.PrivateKey devSigningKey() {
+        String b64 = (String) ReflectionTestUtils.getField(JwtTokenProvider.class, "DEV_ES256_PKCS8_B64");
+        try {
+            return java.security.KeyFactory.getInstance("EC")
+                    .generatePrivate(new java.security.spec.PKCS8EncodedKeySpec(Base64.getDecoder().decode(b64)));
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
         }
     }
 
+    /** 기본 제공자(개발용 키링)가 받는 ES256 서명으로 마무리한다. */
+    private static String devSigned(io.jsonwebtoken.JwtBuilder builder) {
+        return builder.header().keyId("dev-es256-1").and().signWith(devSigningKey(), Jwts.SIG.ES256).compact();
+    }
+
     @Test
-    @DisplayName("[보안] prod 여도 새로 만든 시크릿과 EC 서명키면 기동한다 — 값 기준 판정이지 프로파일 기준이 아니다")
-    void init_allowsFreshSecretInProd() throws Exception {
+    @DisplayName("[보안] prod 여도 새로 만든 EC 서명키면 기동한다 — 값 기준 판정이지 프로파일 기준이 아니다")
+    void init_allowsFreshSigningKeyInProd() throws Exception {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
         kpg.initialize(new ECGenParameterSpec("secp256r1"));
         KeyPair kp = kpg.generateKeyPair();
         String pkcs8 = Base64.getEncoder().encodeToString(kp.getPrivate().getEncoded());
 
         JwtTokenProvider provider = new JwtTokenProvider();
-        ReflectionTestUtils.setField(provider, "secretKey",
-                "a-freshly-generated-secret-that-is-long-enough-for-hs512-hmac-key-material-0123456789");
         ReflectionTestUtils.setField(provider, "signingActiveKid", "prod-es256-1");
         ReflectionTestUtils.setField(provider, "signingKeysJson", "{\"prod-es256-1\":\"" + pkcs8 + "\"}");
         ReflectionTestUtils.setField(provider, "activeProfiles", "prod");
@@ -106,12 +78,120 @@ class JwtTokenProviderTest {
     }
 
     /**
-     * docker-compose.yml · application.yml · frontend/src/proxy.ts 에 있는 그 값이다.
-     * 이미 공개된 값이라 테스트에 두는 것이 새로운 노출을 만들지 않으며,
-     * 여기 두어야 "이 값이 운영에 들어오면 막힌다" 를 실제로 증명할 수 있다.
+     * [ADR-0060 2차 · 2026-11-25] 저장소에 커밋된 개발용 서명키는 루프백에 바인딩한 서버에서만 쓴다.
+     * 키링 없이 모든 주소에 바인딩한 서버는 그 서버에 닿는 누구나 공개된 개인키로 토큰을 만들 수 있었다.
      */
-    private static final String COMMITTED_DEV_SECRET =
-            "dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==";
+    @Nested
+    @DisplayName("개발용 서명키의 네트워크 노출 차단")
+    class DevKeyNetworkExposure {
+
+        private JwtTokenProvider devKeyProvider(String serverAddress, boolean allowOnNetwork) {
+            JwtTokenProvider p = new JwtTokenProvider();
+            ReflectionTestUtils.setField(p, "serverAddress", serverAddress);
+            ReflectionTestUtils.setField(p, "allowDevKeyOnNetwork", allowOnNetwork);
+            ReflectionTestUtils.invokeMethod(p, "init");
+            return p;
+        }
+
+        @Test
+        @DisplayName("🚨 키링 없이 server.address 가 비었거나(모든 주소) 루프백이 아니면 기동을 멈춘다")
+        void rejectsCommittedDevKeyWhenNotLoopback() {
+            for (String address : new String[] { "", "0.0.0.0", "192.168.0.10", "::", "example.internal" }) {
+                JwtTokenProvider p = devKeyProvider(address, false);
+                IllegalStateException e = assertThrows(IllegalStateException.class, p::rejectCommittedDevKeyOnNetwork,
+                        "주소 '" + address + "' 에서 개발용 키를 쓰면 막혀야 한다");
+                assertThat(e.getMessage()).contains("server.address").contains("allow-dev-key-on-network");
+            }
+        }
+
+        @Test
+        @DisplayName("루프백 주소(127.0.0.1·::1·localhost)에서는 개발용 키를 쓴다")
+        void allowsCommittedDevKeyOnLoopback() {
+            for (String address : new String[] { "127.0.0.1", "127.0.1.1", "::1", "[::1]", "localhost" }) {
+                JwtTokenProvider p = devKeyProvider(address, false);
+                assertDoesNotThrow(p::rejectCommittedDevKeyOnNetwork, "루프백 '" + address + "' 은 허용돼야 한다");
+            }
+        }
+
+        @Test
+        @DisplayName("개발 스택이 명시적으로 허용하면 모든 주소에서도 쓴다")
+        void allowsCommittedDevKeyWhenExplicitlyOptedIn() {
+            assertDoesNotThrow(devKeyProvider("0.0.0.0", true)::rejectCommittedDevKeyOnNetwork);
+        }
+
+        @Test
+        @DisplayName("🚨 WAR(외부 서블릿 컨테이너) 배포는 내장 서버 이벤트가 없다 — 기동 시점에 막고, server.address 루프백도 예외가 아니다")
+        void externalServletContainerRejectsDevKeyAtStartupUnlessOptedIn() {
+            for (String address : new String[] { "", "127.0.0.1" }) {
+                JwtTokenProvider p = new JwtTokenProvider();
+                ReflectionTestUtils.setField(p, "serverAddress", address);
+                ReflectionTestUtils.setField(p, "externalServletContainer", true);
+                IllegalStateException e = assertThrows(IllegalStateException.class, () -> ReflectionTestUtils.invokeMethod(p, "init"),
+                        "WAR 배포는 server.address='" + address + "' 여도 막혀야 한다");
+                assertThat(e.getMessage()).contains("WAR").contains("allow-dev-key-on-network");
+            }
+            JwtTokenProvider optedIn = new JwtTokenProvider();
+            ReflectionTestUtils.setField(optedIn, "externalServletContainer", true);
+            ReflectionTestUtils.setField(optedIn, "allowDevKeyOnNetwork", true);
+            assertDoesNotThrow(() -> ReflectionTestUtils.invokeMethod(optedIn, "init"));
+        }
+
+        @Test
+        @DisplayName("WAR 배포여도 새로 만든 키링이면 막지 않는다")
+        void externalServletContainerWithFreshKeyringStarts() throws Exception {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
+            kpg.initialize(new ECGenParameterSpec("secp256r1"));
+            String pkcs8 = Base64.getEncoder().encodeToString(kpg.generateKeyPair().getPrivate().getEncoded());
+            JwtTokenProvider p = new JwtTokenProvider();
+            ReflectionTestUtils.setField(p, "signingActiveKid", "k1");
+            ReflectionTestUtils.setField(p, "signingKeysJson", "{\"k1\":\"" + pkcs8 + "\"}");
+            ReflectionTestUtils.setField(p, "externalServletContainer", true);
+            assertDoesNotThrow(() -> ReflectionTestUtils.invokeMethod(p, "init"));
+        }
+
+        @Test
+        @DisplayName("키링에 개발용 키를 명시해 넣어도 같은 규칙이다 — 그 개인키는 공개돼 있다")
+        void explicitKeyringContainingCommittedDevKeyIsTreatedAsDevKey() {
+            String devPkcs8 = (String) ReflectionTestUtils.getField(JwtTokenProvider.class, "DEV_ES256_PKCS8_B64");
+            JwtTokenProvider p = new JwtTokenProvider();
+            ReflectionTestUtils.setField(p, "signingActiveKid", "dev-es256-1");
+            ReflectionTestUtils.setField(p, "signingKeysJson", "{\"dev-es256-1\":\"" + devPkcs8 + "\"}");
+            ReflectionTestUtils.setField(p, "serverAddress", "0.0.0.0");
+            ReflectionTestUtils.invokeMethod(p, "init");
+            assertThrows(IllegalStateException.class, p::rejectCommittedDevKeyOnNetwork);
+        }
+
+        @Test
+        @DisplayName("새로 만든 키링이면 어느 주소에 바인딩해도 막지 않는다")
+        void freshKeyringIsNotRestrictedByBinding() throws Exception {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
+            kpg.initialize(new ECGenParameterSpec("secp256r1"));
+            String pkcs8 = Base64.getEncoder().encodeToString(kpg.generateKeyPair().getPrivate().getEncoded());
+            JwtTokenProvider p = new JwtTokenProvider();
+            ReflectionTestUtils.setField(p, "signingActiveKid", "k1");
+            ReflectionTestUtils.setField(p, "signingKeysJson", "{\"k1\":\"" + pkcs8 + "\"}");
+            ReflectionTestUtils.setField(p, "serverAddress", "0.0.0.0");
+            ReflectionTestUtils.invokeMethod(p, "init");
+            assertDoesNotThrow(p::rejectCommittedDevKeyOnNetwork);
+        }
+
+        @Test
+        @DisplayName("판정은 기본 웹 서버가 바인딩될 때 한다 — 관리 포트 같은 보조 서버의 이벤트는 보지 않는다")
+        void judgesOnlyTheMainWebServer() {
+            JwtTokenProvider p = devKeyProvider("0.0.0.0", false);
+            var mainContext = mock(org.springframework.boot.web.server.context.WebServerApplicationContext.class);
+            var management = mock(org.springframework.boot.web.server.context.WebServerApplicationContext.class);
+            when(mainContext.getServerNamespace()).thenReturn(null);
+            when(management.getServerNamespace()).thenReturn("management");
+            var mainEvent = mock(org.springframework.boot.web.server.context.WebServerInitializedEvent.class);
+            var managementEvent = mock(org.springframework.boot.web.server.context.WebServerInitializedEvent.class);
+            when(mainEvent.getApplicationContext()).thenReturn(mainContext);
+            when(managementEvent.getApplicationContext()).thenReturn(management);
+
+            assertDoesNotThrow(() -> p.onWebServerInitialized(managementEvent));
+            assertThrows(IllegalStateException.class, () -> p.onWebServerInitialized(mainEvent));
+        }
+    }
 
     /**
      * [회귀 방지 / 2026-07-28] 토큰 수명을 상수에서 `@Value` 주입으로 바꾸면서 **필드 초기화값을
@@ -124,7 +204,6 @@ class JwtTokenProviderTest {
     @DisplayName("Spring 주입이 없어도 기본 수명이 유지된다 (필드 초기화값 누락 회귀 방지)")
     void defaultValidity_survivesWithoutSpringInjection() {
         JwtTokenProvider provider = new JwtTokenProvider();
-        ReflectionTestUtils.setField(provider, "secretKey", secretKey);
         // 수명 필드는 일부러 주입하지 않는다 — 초기화값이 없으면 init() 이 즉시 예외를 던진다.
         ReflectionTestUtils.invokeMethod(provider, "init");
 
@@ -152,7 +231,6 @@ class JwtTokenProviderTest {
     @DisplayName("토큰 수명이 0 이하이면 기동 시점에 실패한다")
     void init_Fail_whenValidityNotPositive() {
         JwtTokenProvider provider = new JwtTokenProvider();
-        ReflectionTestUtils.setField(provider, "secretKey", secretKey);
         ReflectionTestUtils.setField(provider, "accessTokenValidityInMilliseconds", 0L);
 
         // 조용히 통과해 "로그인은 되는데 곧바로 /login" 이 되는 것을 막는다.
@@ -199,13 +277,11 @@ class JwtTokenProviderTest {
         // deny-list 로 판정하는 이유의 근거. allow-list(typ=="access" 를 요구)로 만들면
         // 배포 이전에 발급된 무-typ 액세스 토큰이 신 노드에서 전량 401 이 되어
         // 롤링 배포 중 대량 로그아웃이 난다.
-        // 프로바이더와 같은 방식으로 키를 유도해(JwtTokenProvider.init 참조) typ 클레임 없는 토큰을 만든다.
-        String legacy = io.jsonwebtoken.Jwts.builder()
+        // 제공자가 쓰는 개발용 키로 서명해 typ 클레임 없는 토큰을 만든다.
+        String legacy = devSigned(io.jsonwebtoken.Jwts.builder()
                 .subject("testuser")
                 .issuedAt(new java.util.Date())
-                .expiration(new java.util.Date(System.currentTimeMillis() + 60_000))
-                .signWith(io.jsonwebtoken.security.Keys.hmacShaKeyFor(secretKey.getBytes()))
-                .compact();
+                .expiration(new java.util.Date(System.currentTimeMillis() + 60_000)));
 
         assertThat(jwtTokenProvider.validateToken(legacy)).isTrue();
         assertThat(jwtTokenProvider.validateRefreshToken(legacy)).isTrue();
@@ -272,10 +348,9 @@ class JwtTokenProviderTest {
 
         private String accessTokenIssuedAt(java.time.Instant issuedAt) {
             var builder = Jwts.builder().subject("subject").claim("typ", "access")
-                    .expiration(new Date(System.currentTimeMillis() + 3_600_000L))
-                    .signWith(Keys.hmacShaKeyFor(secretKey.getBytes()));
+                    .expiration(new Date(System.currentTimeMillis() + 3_600_000L));
             if (issuedAt != null) builder.issuedAt(Date.from(issuedAt));
-            return builder.compact();
+            return devSigned(builder);
         }
 
         private void currentAccount(java.time.Instant credentialsChangedAt) {
@@ -333,10 +408,9 @@ class JwtTokenProviderTest {
 
         private String accessTokenIssuedAt(java.time.Instant issuedAt) {
             var builder = Jwts.builder().subject("subject").claim("typ", "access")
-                    .expiration(new Date(System.currentTimeMillis() + 3_600_000L))
-                    .signWith(Keys.hmacShaKeyFor(secretKey.getBytes()));
+                    .expiration(new Date(System.currentTimeMillis() + 3_600_000L));
             if (issuedAt != null) builder.issuedAt(Date.from(issuedAt));
-            return builder.compact();
+            return devSigned(builder);
         }
 
         private void currentAccount(java.time.Instant lastLogoutAt, java.time.Instant credentialsChangedAt) {
@@ -456,11 +530,14 @@ class JwtTokenProviderTest {
 
     @Test
     @DisplayName("서명 오류 토큰 검증 실패 (Signature)")
-    void validateToken_Signature_fail() {
-        // 다른 키로 사인된 토큰
+    void validateToken_Signature_fail() throws Exception {
+        // 같은 kid 를 달고 다른 P-256 키로 사인된 토큰
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
+        kpg.initialize(new ECGenParameterSpec("secp256r1"));
         String otherKeyToken = Jwts.builder()
+                .header().keyId("dev-es256-1").and()
                 .subject("testuser")
-                .signWith(Keys.hmacShaKeyFor("anotherSecretKeyanotherSecretKeyanotherSecretKey".getBytes()))
+                .signWith(kpg.generateKeyPair().getPrivate(), Jwts.SIG.ES256)
                 .compact();
         assertThat(jwtTokenProvider.validateToken(otherKeyToken)).isFalse();
     }
@@ -468,12 +545,10 @@ class JwtTokenProviderTest {
     @Test
     @DisplayName("만료된 토큰 검증 실패 (Expired)")
     void validateToken_Expired_fail() {
-        String expiredToken = Jwts.builder()
+        String expiredToken = devSigned(Jwts.builder()
                 .subject("testuser")
                 .issuedAt(new Date(System.currentTimeMillis() - 2000))
-                .expiration(new Date(System.currentTimeMillis() - 1000))
-                .signWith(jwtTokenProvider.getKeyForTest())
-                .compact();
+                .expiration(new Date(System.currentTimeMillis() - 1000)));
         assertThat(jwtTokenProvider.validateToken(expiredToken)).isFalse();
     }
 
@@ -571,15 +646,13 @@ class JwtTokenProviderTest {
     //   "호출부는 테스트했는데 구현은 아무도 안 봤다" 는 이 저장소에서 반복된 형태다.
     // ─────────────────────────────────────────────────────────────────────────
 
-    /** 다른 시크릿과 다른 P-256 서명키로 초기화된 별도 제공자 — 서명 비대칭 상황을 만든다. */
+    /** 같은 kid 에 다른 P-256 서명키로 초기화된 별도 제공자 — 서명 비대칭 상황을 만든다. */
     private JwtTokenProvider providerWithOtherSecret() {
         try {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
             kpg.initialize(new ECGenParameterSpec("secp256r1"));
             String otherPkcs8 = Base64.getEncoder().encodeToString(kpg.generateKeyPair().getPrivate().getEncoded());
             JwtTokenProvider other = new JwtTokenProvider();
-            ReflectionTestUtils.setField(other, "secretKey",
-                    "anotherSecretKeyanotherSecretKeyanotherSecretKeyXX");
             ReflectionTestUtils.setField(other, "signingActiveKid", "dev-es256-1");
             ReflectionTestUtils.setField(other, "signingKeysJson", "{\"dev-es256-1\":\"" + otherPkcs8 + "\"}");
             ReflectionTestUtils.setField(other, "cookieSecure", false);
@@ -715,7 +788,6 @@ class JwtTokenProviderTest {
             //   원인을 알 수 없는 증상이 된다. 조용히 통과시키면 안 된다.
             for (long[] pair : new long[][] { { 0L, 1000L }, { 1000L, 0L }, { -1L, 1000L } }) {
                 JwtTokenProvider p = new JwtTokenProvider();
-                ReflectionTestUtils.setField(p, "secretKey", secretKey);
                 ReflectionTestUtils.setField(p, "accessTokenValidityInMilliseconds", pair[0]);
                 ReflectionTestUtils.setField(p, "refreshTokenValidityInMilliseconds", pair[1]);
                 assertThrows(IllegalStateException.class,
@@ -728,42 +800,18 @@ class JwtTokenProviderTest {
         void acceptsSmallestPositiveValidity() {
             // `<= 0` 의 경계를 옮긴 뮤턴트가 여기서 죽는다.
             JwtTokenProvider p = new JwtTokenProvider();
-            ReflectionTestUtils.setField(p, "secretKey", secretKey);
             ReflectionTestUtils.setField(p, "accessTokenValidityInMilliseconds", 1L);
             ReflectionTestUtils.setField(p, "refreshTokenValidityInMilliseconds", 1L);
             assertDoesNotThrow(() -> ReflectionTestUtils.invokeMethod(p, "init"));
         }
 
         @Test
-        @DisplayName("시크릿 지문은 8자 16진이고 시크릿마다 다르다")
-        void fingerprintIsEightHexAndSecretSpecific() {
-            // [존재 이유] 프론트 미들웨어가 **같은 규칙**으로 지문을 찍는다. 두 지문이 다르면
-            //   좌우 시크릿 비대칭이고, 그 상태에서는 서명 검증이 전량 실패해
-            //   "로그인은 200 인데 페이지 진입에서 /login 으로 되돌아가는" 무음 루프가 된다.
-            //   즉 **길이와 형식이 계약**이다 — 4바이트(8자)가 아니면 대조가 성립하지 않는다.
-            String fp = ReflectionTestUtils.invokeMethod(jwtTokenProvider, "secretFingerprint");
+        @DisplayName("공개키 지문은 8자 16진이고 키마다 다르다 — 백엔드·Next 키링 대조의 계약이다")
+        void verifyKeyFingerprintIsEightHexAndKeySpecific() {
+            String fp = jwtTokenProvider.getVerifyKeyFingerprints().get("dev-es256-1");
             assertNotNull(fp);
-            assertEquals(8, fp.length());
             assertTrue(fp.matches("[0-9a-f]{8}"), "16진 소문자 8자여야 한다: " + fp);
-
-            String otherFp = ReflectionTestUtils.invokeMethod(
-                    providerWithOtherSecret(), "secretFingerprint");
-
-            // 지문이 같아지면 비대칭을 탐지하지 못한다 — 그 자체가 이 장치의 목적이다.
-            assertNotEquals(fp, otherFp);
-        }
-
-        @Test
-        @DisplayName("전체 해시는 64자 16진이고 지문은 그 앞부분이다")
-        void fullHashIsSha256HexAndFingerprintIsItsPrefix() {
-            String full = ReflectionTestUtils.invokeMethod(jwtTokenProvider, "fullSecretHash");
-            String fp = ReflectionTestUtils.invokeMethod(jwtTokenProvider, "secretFingerprint");
-
-            // 버퍼 크기 계산(digest.length * 2)을 나눗셈으로 바꾼 뮤턴트는 길이 단언에서 죽는다.
-            assertNotNull(full);
-            assertEquals(64, full.length());
-            assertTrue(full.matches("[0-9a-f]{64}"));
-            assertTrue(full.startsWith(fp), "지문은 전체 해시의 앞 8자여야 한다");
+            assertNotEquals(fp, providerWithOtherSecret().getVerifyKeyFingerprints().get("dev-es256-1"));
         }
     }
 
@@ -777,12 +825,10 @@ class JwtTokenProviderTest {
             return kpg.generateKeyPair();
         }
 
-        private JwtTokenProvider providerWith(String activeKid, String keysJson, boolean acceptLegacyHmac, String profiles) {
+        private JwtTokenProvider providerWith(String activeKid, String keysJson, String profiles) {
             JwtTokenProvider p = new JwtTokenProvider();
-            ReflectionTestUtils.setField(p, "secretKey", secretKey);
             ReflectionTestUtils.setField(p, "signingActiveKid", activeKid);
             ReflectionTestUtils.setField(p, "signingKeysJson", keysJson);
-            ReflectionTestUtils.setField(p, "acceptLegacyHmac", acceptLegacyHmac);
             ReflectionTestUtils.setField(p, "activeProfiles", profiles);
             ReflectionTestUtils.invokeMethod(p, "init");
             return p;
@@ -817,16 +863,16 @@ class JwtTokenProviderTest {
             String oldB64 = Base64.getEncoder().encodeToString(oldKp.getPrivate().getEncoded());
             String newB64 = Base64.getEncoder().encodeToString(newKp.getPrivate().getEncoded());
 
-            JwtTokenProvider oldIssuer = providerWith("k1", "{\"k1\":\"" + oldB64 + "\"}", false, "");
+            JwtTokenProvider oldIssuer = providerWith("k1", "{\"k1\":\"" + oldB64 + "\"}", "");
             String oldToken = oldIssuer.createAccessToken("bob", "ROLE_USER");
 
             JwtTokenProvider rotated = providerWith(
-                    "k2", "{\"k1\":\"" + oldB64 + "\",\"k2\":\"" + newB64 + "\"}", false, "");
+                    "k2", "{\"k1\":\"" + oldB64 + "\",\"k2\":\"" + newB64 + "\"}", "");
             assertTrue(rotated.validateToken(oldToken));
             String newToken = rotated.createAccessToken("bob", "ROLE_USER");
             assertTrue(rotated.validateToken(newToken));
 
-            JwtTokenProvider trimmed = providerWith("k2", "{\"k2\":\"" + newB64 + "\"}", false, "");
+            JwtTokenProvider trimmed = providerWith("k2", "{\"k2\":\"" + newB64 + "\"}", "");
             assertFalse(trimmed.validateToken(oldToken));
             assertTrue(trimmed.validateToken(newToken));
         }
@@ -897,25 +943,23 @@ class JwtTokenProviderTest {
         }
 
         @Test
-        @DisplayName("1차 배포 전환 동안은 legacy HMAC 토큰을 수용하고, acceptLegacyHmac=false(2차 배포) 뒤에는 거부한다")
-        void acceptLegacyHmacControlsTransitionalVerification() {
-            String hmac256 = Jwts.builder()
-                    .subject("legacy-user")
-                    .claim("typ", "access")
-                    .issuedAt(new Date())
-                    .expiration(new Date(System.currentTimeMillis() + 60_000))
-                    .signWith(Keys.hmacShaKeyFor(secretKey.getBytes()), Jwts.SIG.HS256)
-                    .compact();
-            assertTrue(jwtTokenProvider.validateToken(hmac256));
-
-            JwtTokenProvider secondDeploy = new JwtTokenProvider();
-            ReflectionTestUtils.setField(secondDeploy, "secretKey", "");
-            ReflectionTestUtils.setField(secondDeploy, "acceptLegacyHmac", false);
-            ReflectionTestUtils.invokeMethod(secondDeploy, "init");
-
-            assertFalse(secondDeploy.validateToken(hmac256));
-            String es256 = secondDeploy.createAccessToken("es-user", "ROLE_USER");
-            assertTrue(secondDeploy.validateToken(es256));
+        @DisplayName("🚨 ADR-0060 2차: HMAC(HS256·HS384·HS512) 토큰은 비밀을 알아도 늘 거부하고 ES256 만 통과한다")
+        void rejectsEveryHmacSignedToken() {
+            // 2차 배포 전 Next 가 가졌던 것과 같은 꼴(HS512 에 충분한 길이)의 공유 비밀이다 — 이런 비밀로 만든 토큰은 이제 어디서도 받지 않는다.
+            byte[] formerSharedSecret = "former-shared-hmac-secret-of-the-first-deployment-padding-to-64-bytes!!"
+                    .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            for (var alg : java.util.List.of(Jwts.SIG.HS256, Jwts.SIG.HS384, Jwts.SIG.HS512)) {
+                String hmac = Jwts.builder()
+                        .subject("admin")
+                        .claim("typ", "access")
+                        .issuedAt(new Date())
+                        .expiration(new Date(System.currentTimeMillis() + 60_000))
+                        .signWith(Keys.hmacShaKeyFor(formerSharedSecret), alg)
+                        .compact();
+                assertFalse(jwtTokenProvider.validateToken(hmac), alg.getId() + " 토큰은 거부돼야 한다");
+                assertFalse(jwtTokenProvider.validateRefreshToken(hmac), alg.getId() + " 재발급 토큰도 거부돼야 한다");
+            }
+            assertTrue(jwtTokenProvider.validateToken(jwtTokenProvider.createAccessToken("es-user", "ROLE_USER")));
         }
 
         @Test
@@ -925,20 +969,16 @@ class JwtTokenProviderTest {
             String ecB64 = Base64.getEncoder().encodeToString(ecKp.getPrivate().getEncoded());
 
             assertThrows(IllegalStateException.class,
-                    () -> providerWith("only-kid", "", true, ""));
+                    () -> providerWith("only-kid", "", ""));
             assertThrows(IllegalStateException.class,
-                    () -> providerWith("", "{\"only-kid\":\"" + ecB64 + "\"}", true, ""));
+                    () -> providerWith("", "{\"only-kid\":\"" + ecB64 + "\"}", ""));
 
             JwtTokenProvider prodNoEc = new JwtTokenProvider();
-            ReflectionTestUtils.setField(prodNoEc, "secretKey",
-                    "a-freshly-generated-secret-that-is-long-enough-for-hs512-hmac-key-material-0123456789");
             ReflectionTestUtils.setField(prodNoEc, "activeProfiles", "prod");
             assertThrows(IllegalStateException.class, () -> ReflectionTestUtils.invokeMethod(prodNoEc, "init"));
 
             String devPkcs8 = (String) ReflectionTestUtils.getField(JwtTokenProvider.class, "DEV_ES256_PKCS8_B64");
             JwtTokenProvider prodDevEc = new JwtTokenProvider();
-            ReflectionTestUtils.setField(prodDevEc, "secretKey",
-                    "a-freshly-generated-secret-that-is-long-enough-for-hs512-hmac-key-material-0123456789");
             ReflectionTestUtils.setField(prodDevEc, "signingActiveKid", "dev-es256-1");
             ReflectionTestUtils.setField(prodDevEc, "signingKeysJson", "{\"dev-es256-1\":\"" + devPkcs8 + "\"}");
             ReflectionTestUtils.setField(prodDevEc, "activeProfiles", "prod");
@@ -947,13 +987,13 @@ class JwtTokenProviderTest {
             KeyPair p384 = generateEcKeyPair("secp384r1");
             String p384B64 = Base64.getEncoder().encodeToString(p384.getPrivate().getEncoded());
             assertThrows(IllegalStateException.class,
-                    () -> providerWith("p384", "{\"p384\":\"" + p384B64 + "\"}", true, ""));
+                    () -> providerWith("p384", "{\"p384\":\"" + p384B64 + "\"}", ""));
             assertThrows(IllegalStateException.class,
-                    () -> providerWith("bad", "not-json", true, ""));
+                    () -> providerWith("bad", "not-json", ""));
             assertThrows(IllegalStateException.class,
-                    () -> providerWith("missing", "{\"other\":\"" + ecB64 + "\"}", true, ""));
+                    () -> providerWith("missing", "{\"other\":\"" + ecB64 + "\"}", ""));
             assertThrows(IllegalStateException.class,
-                    () -> providerWith("badb64", "{\"badb64\":\"not-valid-base64!!!\"}", true, ""));
+                    () -> providerWith("badb64", "{\"badb64\":\"not-valid-base64!!!\"}", ""));
         }
     }
 }

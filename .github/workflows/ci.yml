@@ -906,11 +906,11 @@ jobs:
         run: node ../scripts/copyleft-license-policy.mjs --frontend
         working-directory: frontend
 
-      # 프로덕션 미들웨어는 공개 dev 시크릿으로의 조용한 폴백을 금지한다. 이 잡은 백엔드를
-      # 기동하지 않으므로 대칭값은 불필요하지만, 빌드 자체에는 회차별 임시값이 반드시 필요하다.
-      - name: Generate ephemeral JWT secret (frontend build only)
+      # 프로덕션 미들웨어는 공개 dev 검증키로의 조용한 폴백을 금지한다. 이 잡은 백엔드를
+      # 기동하지 않으므로 짝이 되는 개인키는 불필요하지만, 빌드 자체에는 회차별 임시 공개키가 반드시 필요하다.
+      # (HMAC 서명 비밀 JWT_SECRET 은 ADR-0060 2차로 걷었다.)
+      - name: Generate ephemeral JWT verify key (frontend build only)
         run: |
-          echo "JWT_SECRET=$(openssl rand -hex 44)" >> "$GITHUB_ENV"
           node --input-type=module <<'NODE'
           import { generateKeyPairSync } from 'node:crypto';
           import { appendFileSync } from 'node:fs';
@@ -974,9 +974,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         working-directory: frontend
-
-      - name: Generate ephemeral JWT secret (frontend tests only)
-        run: echo "JWT_SECRET=$(openssl rand -hex 44)" >> "$GITHUB_ENV"
 
       - name: Frontend unit and coverage suite
         id: fe-coverage
@@ -1265,8 +1262,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 프로덕션 미들웨어는 JWT_SECRET·JWT_VERIFY_KEYS_JSON 부재나 공개 dev 기본값으로의 폴백을 거부한다.
-      # 백엔드만 ES256 개인키 키링을 받고, 프론트에는 공개키(JWT_VERIFY_KEYS_JSON)와 전환기 HMAC 시크릿만 전달한다.
+      # 프로덕션 미들웨어는 JWT_VERIFY_KEYS_JSON 부재나 공개 dev 기본값으로의 폴백을 거부한다.
+      # 백엔드만 ES256 개인키 키링을 받고, 프론트에는 공개키(JWT_VERIFY_KEYS_JSON)만 전달한다(ADR-0060 2차로 HMAC 비밀은 걷었다).
       - name: Generate ephemeral JWT keyring (isolated E2E)
         run: |
           node --input-type=module <<'NODE'
@@ -1274,11 +1271,9 @@ jobs:
           import path from 'node:path';
           import { createIsolatedJwtEnvironment } from './scripts/run-isolated-e2e.mjs';
           const jwt = createIsolatedJwtEnvironment();
-          console.log(`::add-mask::${jwt.api.JWT_SECRET}`);
           for (const v of Object.values(JSON.parse(jwt.api.JWT_SIGNING_KEYS_JSON))) console.log(`::add-mask::${v}`);
           console.log(`::add-mask::${jwt.api.JWT_SIGNING_KEYS_JSON}`);
-          appendFileSync(process.env.GITHUB_ENV,
-            `JWT_SECRET=${jwt.frontend.JWT_SECRET}\nJWT_VERIFY_KEYS_JSON=${jwt.frontend.JWT_VERIFY_KEYS_JSON}\n`);
+          appendFileSync(process.env.GITHUB_ENV, `JWT_VERIFY_KEYS_JSON=${jwt.frontend.JWT_VERIFY_KEYS_JSON}\n`);
           const signingFile = path.join(process.env.RUNNER_TEMP, 'e2e-jwt-signing.json');
           writeFileSync(signingFile, JSON.stringify({
             JWT_SIGNING_ACTIVE_KID: jwt.api.JWT_SIGNING_ACTIVE_KID,

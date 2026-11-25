@@ -49,8 +49,11 @@ services:
     # audit/notification/log executors each drain accepted work for up to 60s during
     # Spring shutdown. Keep the container alive for all three drains plus lifecycle overhead.
     stop_grace_period: 200s
+    # [2026-11-25] 호스트 루프백에만 연다. 이 스택은 키링 없이 저장소의 개발용 서명키로 토큰을 만들므로, 모든 주소에 열면
+    #   이 기계에 닿는 누구나 임의 사용자 토큰을 만들 수 있었다. 브라우저는 같은 출처(Next)로만 부르고 컨테이너 사이는 egov-net 이다.
+    #   운영 오버레이는 이 목록을 `!reset` 으로 바꿔 쓴다(API_HOST_BIND, 기본 루프백).
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
       SPRING_APPLICATION_JSON: >
         {
@@ -89,7 +92,17 @@ services:
       #   classpath:db/seed-dev 로 이설됐다. 이 스택은 개발·E2E 용이므로 그 시드를 적재한다.
       #   운영 오버레이(docker-compose.prod.yml)는 이 값을 db/migration 단독으로 되돌린다.
       SPRING_FLYWAY_LOCATIONS: ${SPRING_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/seed-dev}
-      JWT_SECRET: ${JWT_SECRET:-dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==}
+      # [ADR-0060 2차 · 2026-11-25] 키링(JWT_SIGNING_*)을 주지 않으면 저장소의 개발용 서명키를 쓴다. 컨테이너 안에서는 모든 주소에
+      #   바인딩해야 Next 가 닿으므로 그 키의 네트워크 사용을 명시해 켠다 — 호스트에는 위 ports 가 루프백으로만 연다.
+      #   운영 오버레이는 키링을 필수로 받아 이 값이 효과가 없다(키링이 있으면 판정하지 않는다).
+      JWT_SIGNING_ALLOW_DEV_KEY_ON_NETWORK: ${JWT_SIGNING_ALLOW_DEV_KEY_ON_NETWORK:-true}
+      #   호스트(.env)에 자체 키쌍을 두면 서명 키링도 api 에 넘긴다 — 프런트만 JWT_VERIFY_KEYS_JSON 을 받고 api 가 개발키로 서명하면
+      #   로그인 직후 모든 화면 검증이 거부된다(2026-11-25 Codex 검토). 값 없이 전달하므로 호스트에 없으면 컨테이너에도 없고
+      #   양쪽 다 개발용 키쌍이다(`:-` 로 빈 문자열을 넣으면 앱 기본값·필수 검증을 가린다 — deploy-env-forwarding 계약).
+      JWT_SIGNING_ACTIVE_KID:
+      JWT_SIGNING_KEYS_JSON:
+      # [2026-11-25] 앱 기본 신뢰 프록시가 루프백뿐이 되어(application.yml) 컨테이너 스택은 Next 고정 주소를 명시한다 — 운영 오버레이와 같다.
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.28.0.10/32}
       # [2026-07-28 신설] 액세스 토큰 수명(ms). 기본값은 종전과 동일한 1시간이며, E2E 처럼 실행이
       #   1시간을 넘길 수 있는 환경에서만 바깥에서 늘린다(CI 의 e2e 잡이 주입). 늘리지 않으면
       #   토큰이 중간에 만료돼 이후 테스트가 전부 /login 리다이렉트로 죽는다(실측: CI shard 2, 66분).
@@ -136,20 +149,19 @@ services:
         NEXT_PUBLIC_API_URL: http://api:8080/api/v1
     container_name: egov-frontend
     restart: always
+    # [2026-11-25 DEC-OPS-432] 호스트 루프백에만 연다. 이 base 스택의 api 는 기본으로 공개 저장소의 개발용 서명키를 쓰므로,
+    #   프런트를 모든 인터페이스에 열면 같은 망의 누구나 Next 를 거쳐 그 api 에 닿는다(api 포트만 닫은 효과가 없어진다).
+    #   다른 기기에서 열어야 하면 자체 키쌍(.env 의 JWT_SIGNING_*·JWT_VERIFY_KEYS_JSON)을 준 뒤 FRONTEND_HOST_BIND 로 연다.
+    #   운영 오버레이는 이 목록을 `!reset` 으로 비우고 edge 하나만 연다.
     ports:
-      - "3000:3000"
+      - "${FRONTEND_HOST_BIND:-127.0.0.1}:3000:3000"
     environment:
       BACKEND_API_URL: http://api:8080/api/v1
       NEXT_PUBLIC_API_URL: http://api:8080/api/v1
-      # [2026-08-08 신설] frontend 미들웨어는 JWT 를 **자기가 검증**하므로 서명 키가 필요하다.
-      #   없으면 prod 환경에서 fail-fast 로 죽고 **모든 요청이 500** 이 된다:
-      #     Error: [Middleware] prod 환경에 JWT_SECRET 이 설정되지 않았습니다
-      #   종전에는 api 에만 주고 frontend 에는 주지 않았다. 이미지를 띄우는 경로가
-      #   zap-scan 하나뿐이었고 그것이 고장나 있어 드러나지 않았다.
-      #   ⚠ api 와 **반드시 같은 값**이어야 한다 — 다르면 발급한 토큰을 프론트가 거부한다.
-      #   기본값은 api 쪽(위 JWT_SECRET)과 동일한 dev 편의용이며 운영은 바깥에서 주입한다.
-      JWT_SECRET: ${JWT_SECRET:-dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==}
-      # [ADR-0060 1차 배포] Next 는 공개키(JWT_VERIFY_KEYS_JSON)만 받는다. prod 오버레이는 ALLOW_DEV_JWT_VERIFY_KEYS 를 false 로 덮어쓴다.
+      # [2026-08-08 신설 · ADR-0060] frontend 미들웨어는 JWT 를 **자기가 검증**하므로 검증 공개키가 필요하다(prod 모드에서
+      #   없으면 fail-fast). 서명 비밀(JWT_SECRET)은 2차 배포(2026-11-25)로 걷었다 — Next 는 공개키만 받는다.
+      #   ⚠ api 의 서명 키링과 **같은 키쌍**이어야 한다 — 비우면 양쪽 모두 저장소의 개발용 키쌍(dev-es256-1)을 쓴다.
+      #   prod 오버레이는 ALLOW_DEV_JWT_VERIFY_KEYS 를 false 로 덮어쓴다.
       JWT_VERIFY_KEYS_JSON: ${JWT_VERIFY_KEYS_JSON:-}
       ALLOW_DEV_JWT_VERIFY_KEYS: ${ALLOW_DEV_JWT_VERIFY_KEYS:-true}
     depends_on:
@@ -189,6 +201,8 @@ networks:
     #
     #   운영 토폴로지가 확정됐다(사용자 답변): ① 브라우저 → Next(3001) → 백엔드(8080) 단일 홉이고,
     #   ② 백엔드 8080 이 브라우저에서 **직접 도달 가능**하다(위 api 서비스가 8080 을 호스트에 노출한다).
+    #   [2026-11-25 DEC-OPS-432] ② 의 공개 바인딩은 걷었다 — 프런트가 /api/v1·/ws 를 같은 출처로 Next 를 거쳐 부르므로
+    #   8080 은 호스트 루프백에만 연다(운영은 API_HOST_BIND 로만 다시 연다). 아래 신뢰 경계 서술은 그 경로가 열렸을 때를 위해 남긴다.
     #
     #   ② 때문에 remoteAddr 이 두 종류가 된다 — 프록시를 거친 요청은 이 네트워크의 주소가 찍히고,
     #   직접 온 요청은 **실제 클라이언트 주소**가 찍힌다. 종전 신뢰 목록은 사설 대역 전체

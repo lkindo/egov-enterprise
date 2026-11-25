@@ -7,16 +7,14 @@ import { shouldUseSecureSessionCookie } from '@/lib/auth/session-cookie-policy';
 import { isTrustedEdgeProxyEnabled } from '@/lib/api/forwarded-client-ip';
 
 // ────────────────────────────────────────────────────────────────────────────
-// [보안] JWT 서명 검증 (Edge/Web Crypto 네이티브, 외부 의존 없음 — ADR-0060 1차 배포)
-//  - 신규 발급 토큰(ES256): JWT_VERIFY_KEYS_JSON({"<kid>":"<SPKI Base64>"}) 공개키만으로 검증한다.
-//    Next 프록시는 서명 개인키를 받지 않는다.
-//  - 전환기 호환(JWT_ACCEPT_LEGACY_HMAC !== 'false'): 1차 배포 동안 기존 HMAC(HS256/384/512)
-//    액세스 토큰도 허용하고, 2차 배포 이후 비대칭 서명 단독 검증으로 전환한다.
-//  - header.alg 는 ES256 또는 (전환기) HMAC 화이트리스트만 허용한다(alg=none·RS* 혼동 공격 차단).
+// [보안] JWT 서명 검증 (Edge/Web Crypto 네이티브, 외부 의존 없음 — ADR-0060)
+//  - 토큰(ES256)은 JWT_VERIFY_KEYS_JSON({"<kid>":"<SPKI Base64>"}) 공개키만으로 검증한다.
+//    Next 프록시는 서명 개인키도, 서명 비밀도 받지 않는다 — 2차 배포(2026-11-25)로 HMAC(HS256/384/512)
+//    수용과 JWT_SECRET 을 걷었다. Next 가 침해돼도 토큰을 만들 수 없다.
+//  - header.alg 는 ES256 하나만 허용한다(alg=none·HS*·RS* 혼동 공격 차단).
 //  - 엄격 운영 모드(NODE_ENV=production && ALLOW_DEV_JWT_VERIFY_KEYS!=='true')에서는
 //    공개키 누락·커밋 개발용 검증키 주입 시 모듈 로드 시점에 즉시 throw(fail-fast)한다.
 // ────────────────────────────────────────────────────────────────────────────
-const DEV_JWT_SECRET = 'dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==';
 const DEV_JWT_VERIFY_KID = 'dev-es256-1';
 const DEV_JWT_VERIFY_SPKI_B64 =
   'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFCkLmpfLgQUqDWWzzBAdV7oKO7Hvtltivk4PlGoMa+dn+6myuWj6EcyRdFFvm0CgWhIiqpujMY7lBU5LmpKGsw==';
@@ -25,13 +23,6 @@ const MAX_VERIFY_KEYS = 16;
 
 const ALLOW_DEV_JWT_VERIFY_KEYS = process.env.ALLOW_DEV_JWT_VERIFY_KEYS === 'true';
 const IS_STRICT_PROD = process.env.NODE_ENV === 'production' && !ALLOW_DEV_JWT_VERIFY_KEYS;
-const ACCEPT_LEGACY_HMAC = process.env.JWT_ACCEPT_LEGACY_HMAC !== 'false';
-
-if (ACCEPT_LEGACY_HMAC && IS_STRICT_PROD && (!process.env.JWT_SECRET || process.env.JWT_SECRET === DEV_JWT_SECRET)) {
-  throw new Error('[Middleware] prod 환경에 유효한 JWT_SECRET 이 설정되지 않았습니다 (fail-fast: 공개 dev 시크릿 사용 금지).');
-}
-const JWT_SECRET = process.env.JWT_SECRET || DEV_JWT_SECRET;
-const HMAC_HASH: Record<string, string> = { HS256: 'SHA-256', HS384: 'SHA-384', HS512: 'SHA-512' };
 
 function standardBase64ToBytes(input: string): Uint8Array<ArrayBuffer> {
   const clean = input.replace(/\s+/g, '');
@@ -208,9 +199,6 @@ function logAuthDiagnosticOnce(outcome: string): void {
   const verifySource = process.env.JWT_VERIFY_KEYS_JSON
     ? '환경변수 JWT_VERIFY_KEYS_JSON'
     : '내장 dev 기본값(dev-es256-1)';
-  const hmacSource = !ACCEPT_LEGACY_HMAC
-    ? '비활성(2차 배포)'
-    : (process.env.JWT_SECRET ? '환경변수 JWT_SECRET' : '내장 dev 기본값(DEV_JWT_SECRET)');
   const spkiHashes = Object.entries(VERIFY_KEYS_B64)
     .map(([kid, b64]) => `${kid}=${sha256HexPrefix8(standardBase64ToBytes(b64))}`)
     .join(',');
@@ -219,11 +207,9 @@ function logAuthDiagnosticOnce(outcome: string): void {
   const envSeen =
     `NODE_ENV=${process.env.NODE_ENV ? '있음' : '없음'} · ` +
     `JWT_VERIFY_KEYS_JSON=${process.env.JWT_VERIFY_KEYS_JSON ? '있음' : '없음'} · ` +
-    `JWT_ACCEPT_LEGACY_HMAC=${ACCEPT_LEGACY_HMAC ? 'on' : 'off'} · ` +
-    `JWT_SECRET=${process.env.JWT_SECRET ? '있음' : '없음'} · ` +
     `E2E_DIAG=${process.env.E2E_DIAG ? '있음' : '없음'}`;
   console.warn(
-    `[Middleware] JWT 검증 ${outcome}. 미들웨어가 쓰는 시크릿 출처=${hmacSource}, 검증키 출처=${verifySource}(spkiSha8=${spkiHashes}).\n` +
+    `[Middleware] JWT 검증 ${outcome}. 검증키 출처=${verifySource}(spkiSha8=${spkiHashes}).\n` +
       `  Edge env 가시성(존재 여부만): ${envSeen}\n` +
       `  요청별 검증 결과는 x-mw-auth 응답 헤더에서 확인하세요.`
   );
@@ -272,7 +258,7 @@ function utf8ToBytes(input: string): Uint8Array<ArrayBuffer> {
 }
 
 /**
- * accessToken 의 HMAC 서명·만료·토큰 종류를 검증하고 서명된 subject만 반환한다.
+ * accessToken 의 ES256 서명·만료·토큰 종류를 검증하고 서명된 subject만 반환한다.
  * 서명 위조·만료·구조 이상·알 수 없는 alg 는 전부 null(=미인증)로 처리한다.
  */
 async function verifyAndExtractSubject(token: string): Promise<VerifyVerdict> {
@@ -305,24 +291,8 @@ async function verifyAndExtractSubject(token: string): Promise<VerifyVerdict> {
       const dataBytes = utf8ToBytes(`${headerB64}.${payloadB64}`);
       stage = 'verify';
       valid = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, ecKey, sigBytes, dataBytes);
-    } else if (ACCEPT_LEGACY_HMAC && typeof header.alg === 'string' && Object.hasOwn(HMAC_HASH, header.alg)) {
-      const hash = HMAC_HASH[header.alg];
-      stage = 'import-key';
-      const key = await crypto.subtle.importKey(
-        'raw',
-        utf8ToBytes(JWT_SECRET),
-        { name: 'HMAC', hash: { name: hash } },
-        false,
-        ['verify']
-      );
-      stage = 'decode-sig';
-      const sigBytes = base64UrlToBytes(sigB64);
-      stage = 'encode-data';
-      const dataBytes = utf8ToBytes(`${headerB64}.${payloadB64}`);
-      stage = 'verify';
-      valid = await crypto.subtle.verify('HMAC', key, sigBytes, dataBytes);
     } else {
-      // alg=none·RS*(비대칭) 등 화이트리스트 밖은 거부
+      // alg=none·HS*(2차 배포로 걷음)·RS* 등 ES256 밖은 거부
       return { subject: null, outcome: 'alg-unsupported' };
     }
     // 서명 불일치는 위조 또는 설정 비대칭일 수 있으므로 secret-free 진단 메타와 요청 결과를 남긴다.

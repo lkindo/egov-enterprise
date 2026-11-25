@@ -813,6 +813,36 @@ class FileServiceTest {
     }
 
     @Test
+    @DisplayName("🚨 업로드 내용 검사기가 거부하거나 실패하면 저장하지 않는다(fail-closed) — 통과하면 형식 검사를 지난 파일마다 한 번 묻는다")
+    void contentScannerRejectionOrFailureBlocksUpload() throws IOException {
+        fileService.setUploadContentScanner((file, extension) -> false);
+        assertThatThrownBy(() -> fileService.uploadFiles(List.of(validJpeg("infected.jpg"))))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.UNSUPPORTED_MEDIA_TYPE)
+                .hasMessageContaining("차단");
+
+        fileService.setUploadContentScanner((file, extension) -> {
+            throw new IOException("scanner unavailable");
+        });
+        assertThatThrownBy(() -> fileService.uploadBoardFiles(List.of(validJpeg("unscanned.jpg"))))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("검사를 마치지 못해")
+                .hasMessageNotContaining("scanner unavailable");
+        verifyNoInteractions(fileMasterRepository, fileDetailRepository, storageService);
+
+        java.util.List<String> scanned = new java.util.ArrayList<>();
+        fileService.setUploadContentScanner((file, extension) -> scanned.add(extension));
+        given(fileMasterRepository.save(any(FileMaster.class))).willReturn(new FileMaster(123L));
+        given(storageService.store(any(MultipartFile.class), anyString())).willReturn("stored.bin");
+        assertThat(fileService.uploadFiles(List.of(validJpeg("clean.jpg")))).isEqualTo(123L);
+        assertThat(scanned).containsExactly("jpg");
+
+        // 등록이 없으면(null) 형식 검사만 적용하는 기본값으로 돌아간다
+        fileService.setUploadContentScanner(null);
+        assertThat(fileService.uploadFiles(List.of(validJpeg("default.jpg")))).isEqualTo(123L);
+    }
+
+    @Test
     @DisplayName("게시판 영상 추가도 원 업로더 확인 뒤 기존 묶음의 다음 순번에 저장한다")
     void updateBoardFiles_appendsVideoAfterAuthorization() throws IOException {
         FileMaster master = new FileMaster(123L);

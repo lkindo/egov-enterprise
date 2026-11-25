@@ -69,6 +69,32 @@ class SchedulingTaskSchedulerTest {
                 });
     }
 
+    @Test
+    @DisplayName("🚨 nuri.scheduling.enabled=false 면 @Scheduled 작업을 켜지 않는다 — 일회성 실행 프로필이 운영 예약 작업을 돌리지 않게")
+    void schedulingCanBeSwitchedOff() {
+        runner.withPropertyValues("nuri.scheduling.enabled=false").run(context -> {
+            assertThat(context).hasNotFailed();
+            assertThat(context).doesNotHaveBean(
+                    org.springframework.scheduling.config.TaskManagementConfigUtils.SCHEDULED_ANNOTATION_PROCESSOR_BEAN_NAME);
+            assertThat(context.getBean(ProbeJob.class).ran.await(2, TimeUnit.SECONDS)).isFalse();
+        });
+        runner.run(context -> assertThat(context).hasBean(
+                org.springframework.scheduling.config.TaskManagementConfigUtils.SCHEDULED_ANNOTATION_PROCESSOR_BEAN_NAME));
+    }
+
+    @Test
+    @DisplayName("🚨 끄는 값은 false 하나다 — on·1·오타는 켠 채로 둔다(메일·문자 워커와 보존 작업이 조용히 멈추지 않게)")
+    void onlyAnExplicitFalseSwitchesSchedulingOff() {
+        for (String value : new String[] { "true", "on", "1", "yes", "ture", "" }) {
+            runner.withPropertyValues("nuri.scheduling.enabled=" + value).run(context -> assertThat(context).as(value).hasBean(
+                    org.springframework.scheduling.config.TaskManagementConfigUtils.SCHEDULED_ANNOTATION_PROCESSOR_BEAN_NAME));
+        }
+        for (String value : new String[] { "false", "FALSE", " False " }) {
+            runner.withPropertyValues("nuri.scheduling.enabled=" + value).run(context -> assertThat(context).as(value).doesNotHaveBean(
+                    org.springframework.scheduling.config.TaskManagementConfigUtils.SCHEDULED_ANNOTATION_PROCESSOR_BEAN_NAME));
+        }
+    }
+
     @Configuration(proxyBeanMethods = false)
     static class BrokerSchedulerConfig {
         @Bean

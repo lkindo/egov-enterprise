@@ -101,10 +101,15 @@ export function vendorArtifactFingerprint(root) {
   return hash.digest('hex');
 }
 
-/** 프런트엔드 프로세스는 JWT 개인 서명 키링을 상속받지 않는다(ADR-0060). */
+/** 프런트엔드 프로세스는 JWT 개인 서명 키링도, 걷은 HMAC 서명 비밀(JWT_SECRET, ADR-0060 2차)도 상속받지 않는다. */
+// 프런트 명령에 넘기지 않는 서명 비밀. 정본은 scripts/dev.mjs 의 FRONTEND_WITHHELD_SIGNING_ENV 이고 이 목록은 그 사본이다 —
+// 생성물 검증이 개발 기동 스크립트(dev.mjs)에 기대지 않게 사본을 둔다. 두 목록이 같은지는 dev-remote-db-guard 시험이 본다.
+// Windows 의 환경 변수 이름은 대소문자를 가리지 않으므로 대문자로 맞춰 거른다(2026-11-25 Codex 3차).
+const FRONTEND_WITHHELD_SIGNING_ENV = ['JWT_SIGNING_ACTIVE_KID', 'JWT_SIGNING_KEYS_JSON', 'JWT_SECRET', 'JWT_ACCEPT_LEGACY_HMAC'];
+
 export function stripJwtSigningEnv(env) {
-  const { JWT_SIGNING_ACTIVE_KID: _kid, JWT_SIGNING_KEYS_JSON: _keys, ...cleanEnv } = env;
-  return cleanEnv;
+  const withheld = new Set(FRONTEND_WITHHELD_SIGNING_ENV);
+  return Object.fromEntries(Object.entries(env).filter(([name]) => !withheld.has(name.toUpperCase())));
 }
 
 /** 생성물 검증 단계가 받는 환경. 앱 문맥을 띄우는 시험이 비밀 값을 요구하므로 실행마다 만든다. */
@@ -117,7 +122,6 @@ export const artifactStepEnvironment = () => {
   return {
     ...stripJwtSigningEnv(process.env),
     TZ: 'Asia/Seoul',
-    JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex'),
     JWT_VERIFY_KEYS_JSON: ephemeralPublicKey,
   };
 };

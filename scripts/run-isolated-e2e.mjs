@@ -78,15 +78,13 @@ export function createIsolatedJwtEnvironment() {
   const { privateKey, publicKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
   const privateB64 = privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64');
   const publicB64 = publicKey.export({ format: 'der', type: 'spki' }).toString('base64');
-  const jwtSecret = randomBytes(48).toString('hex');
+  // ADR-0060 2차: HMAC 서명 비밀은 어느 쪽에도 주지 않는다.
   return {
     api: {
-      JWT_SECRET: jwtSecret,
       JWT_SIGNING_ACTIVE_KID: kid,
       JWT_SIGNING_KEYS_JSON: JSON.stringify({ [kid]: privateB64 }),
     },
     frontend: {
-      JWT_SECRET: jwtSecret,
       JWT_VERIFY_KEYS_JSON: JSON.stringify({ [kid]: publicB64 }),
     },
   };
@@ -508,7 +506,6 @@ export async function main(arguments_ = process.argv.slice(2)) {
   const abort = () => { aborted = true; ready = false; abortCleanup = Promise.all([...children].map(stopChild)); };
   const stopListening = onTermination(abort);
   try {
-    let jwtSecret;
     let jwtVerifyKeysJson;
     let apiPort;
     const webPort = await freePort(ciCompose ? 3001 : 0);
@@ -536,7 +533,6 @@ export async function main(arguments_ = process.argv.slice(2)) {
       };
       const runtime = verifyRuntime();
       manifest.databaseId = runtime.databaseId;
-      jwtSecret = runtime.jwtSecret;
       apiPort = 8080;
     } else {
       const java = clean.JAVA_HOME ? path.join(clean.JAVA_HOME, 'bin', process.platform === 'win32' ? 'java.exe' : 'java') : 'java';
@@ -579,7 +575,6 @@ export async function main(arguments_ = process.argv.slice(2)) {
       }
       apiPort = await freePort();
       const isolatedJwt = createIsolatedJwtEnvironment();
-      jwtSecret = isolatedJwt.api.JWT_SECRET;
       jwtVerifyKeysJson = isolatedJwt.frontend.JWT_VERIFY_KEYS_JSON;
       const apiEnvironment = { ...clean, SPRING_PROFILES_ACTIVE: 'e2e',
         ...createIsolatedMfaEnvironment(),
@@ -606,7 +601,7 @@ export async function main(arguments_ = process.argv.slice(2)) {
     const testAccountEnvironment = vendorRuntime ? { E2E_TEST_USER_PASSWORD: vendorRuntime.user.password } : {};
     const environment = { ...clean, NODE_ENV: 'production', NODE_OPTIONS: '--max-old-space-size=8192',
       NEXT_PUBLIC_API_URL: apiUrl, BACKEND_API_URL: `${apiUrl}/`, BACKEND_ACTUATOR_URL: `http://127.0.0.1:${apiPort}/actuator`,
-      NEXT_PUBLIC_WEB_URL: webUrl, JWT_SECRET: jwtSecret, JWT_VERIFY_KEYS_JSON: jwtVerifyKeysJson,
+      NEXT_PUBLIC_WEB_URL: webUrl, JWT_VERIFY_KEYS_JSON: jwtVerifyKeysJson,
       NEXT_PUBLIC_APP_ENV: 'test', TRUSTED_EDGE_PROXY: '',
       ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE: 'true',
       E2E_ISOLATION_MANIFEST: manifestFile, NO_PROXY: '127.0.0.1,localhost' };
