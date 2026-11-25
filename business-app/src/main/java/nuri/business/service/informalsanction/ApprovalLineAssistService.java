@@ -166,9 +166,10 @@ public class ApprovalLineAssistService {
         Map<String, String> statuses = userRepository.findAllById(ids).stream()
                 .collect(Collectors.toMap(User::getEsntlId, u -> u.getUserSttsCd() == null ? "" : u.getUserSttsCd(),
                         (first, second) -> first));
-        Set<String> approvers = new HashSet<>(userRepository.findActiveEsntlIdsHoldingPermission(APPROVE_PERMISSION));
+        // 보유자 전체가 아니라 확인할 사람 가운데 보유자만 읽는다(2026-11-25 품질 평가 — 결재 권한은 거의 모든 직원이 가진다).
+        Set<String> approvers = new HashSet<>(userRepository.findActiveEsntlIdsHoldingPermissionAmong(APPROVE_PERMISSION, ids));
         // [2026-10-04 D4] 참조자는 결재 권한이 아니라 결재 조회 권한으로 판정한다(지정해도 읽을 수 없는 사람을 막는다).
-        Set<String> readers = new HashSet<>(userRepository.findActiveEsntlIdsHoldingPermission(READ_PERMISSION));
+        Set<String> readers = new HashSet<>(userRepository.findActiveEsntlIdsHoldingPermissionAmong(READ_PERMISSION, ids));
         Map<String, ApproverProfileDto> result = new LinkedHashMap<>();
         for (String id : ids) {
             UserSearchDto profile = found.get(id);

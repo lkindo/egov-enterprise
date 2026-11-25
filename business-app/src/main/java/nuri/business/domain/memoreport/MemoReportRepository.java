@@ -20,12 +20,24 @@ public interface MemoReportRepository extends JpaRepository<MemoReport, Long> {
     Optional<MemoReport> findByIdForUpdate(@Param("memoRptSn") Long memoRptSn);
 
     /**
+     * 작성자·관리자 상세 열람 — 공유 잠금이라 열람끼리는 서로 기다리지 않고, 진행 중인 수정·지시·삭제가 커밋된 뒤의 한 버전을 읽는다
+     * (2026-11-25 품질 평가). 같은 트랜잭션에서 이 행을 고치는 경로에는 쓰지 않는다 — 공유 잠금을 쓰기 잠금으로 올리면 교착이 생긴다.
+     */
+    @Lock(LockModeType.PESSIMISTIC_READ)
+    @Query("select m from MemoReport m where m.memoRptSn = :memoRptSn")
+    Optional<MemoReport> findByIdForShare(@Param("memoRptSn") Long memoRptSn);
+
+    /**
      * 수신자의 최초 열람 시각만 기록한다. 관리 엔티티를 더럽히지 않아 열람만으로 @Version 이나 최종수정자 감사 필드가
      * 바뀌어 작성자의 진행 중 수정을 거짓 409 로 막지 않게 한다.
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update MemoReport m set m.rptrInqDt = :readAt where m.memoRptSn = :memoRptSn and m.rptrInqDt is null")
     int recordFirstReadIfUnread(@Param("memoRptSn") Long memoRptSn, @Param("readAt") LocalDateTime readAt);
+
+    /** 보고의 당사자 — 상세 조회가 잠그기 전에 거절할 요청을 거르고 수신자 열람일 때만 쓰기 잠금을 고르도록 먼저 읽는다. */
+    @Query("select new nuri.business.domain.memoreport.MemoReportParties(m.userId, m.rptrId) from MemoReport m where m.memoRptSn = :memoRptSn")
+    Optional<MemoReportParties> findParties(@Param("memoRptSn") Long memoRptSn);
 
     Page<MemoReport> findByUserId(String userId, Pageable pageable);
     Page<MemoReport> findByRptrId(String rptrId, Pageable pageable);

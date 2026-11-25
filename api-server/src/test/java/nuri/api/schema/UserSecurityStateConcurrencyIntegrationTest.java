@@ -553,7 +553,10 @@ class UserSecurityStateConcurrencyIntegrationTest {
 
     private void updateOwnProfile() {
         authenticate(subject, List.of());
-        users.updateUser(login(subject), UserDto.builder().userId(login(subject)).userNm(UPDATED_NAME).build());
+        // [V2_156] 프로필 수정은 읽은 편집 버전을 보낸다. 겹치는 보안 상태 변경(비밀번호·잠금)은 이 버전을 올리지 않으므로
+        //   읽은 값 그대로 통과해야 한다 — 올렸다면 이 동시 수정이 409 로 깨진다.
+        Integer version = users.getUserById(login(subject)).version();
+        users.updateUser(login(subject), UserDto.builder().userId(login(subject)).userNm(UPDATED_NAME).version(version).build());
     }
 
     private void changeSecurity(SecurityChange change) {

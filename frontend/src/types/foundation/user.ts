@@ -15,6 +15,8 @@ export interface UserManage {
   passwordChangeRequired?: boolean | null;
   /** 인증앱 추가 인증 사용 여부. 상세 응답에서만 온다(결정 18). */
   mfaEnabled?: boolean | null;
+  /** 프로필 편집 버전(V2_156). 상세 응답에서만 온다 — 수정 요청이 연 때의 값을 그대로 돌려보낸다(다르면 409). */
+  version?: number;
   sbscrbDe?: string;
   esntlId?: string;
   mblTelno?: string;
@@ -75,4 +77,6 @@ export interface UserDto {
   crtDt?: string;
   emlAddr?: string;
   mblTelno?: string;
+  /** 프로필 편집 버전(V2_156) — 내 프로필 수정 요청에 그대로 싣는다. */
+  version?: number;
 }

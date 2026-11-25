@@ -330,12 +330,17 @@ class JdbcAttachmentReferenceResolverTest {
                 .as("참조가 없으면 관리자 우회를 막을 이유도 없다")
                 .isFalse();
         assertThat(grants.resolutionFailed()).isFalse();
+        assertThat(grants.referenced()).as("판정 결과의 참조 여부도 referenced(Long) 와 같이 거짓이다").isFalse();
     }
 
     @Test
     @DisplayName("참조 여부 — 참조 행이 없으면 지워도 되고, 한 참조원이라도 행이 있으면 지우지 않는다(ADR-0042)")
     void referencedReportsAnySourceRow() {
         assertThat(new CapturingJdbc(0, 0, 0).resolver().referenced(ATCH_FILE_SN)).isFalse();
+        // 근거 판정도 같은 조회에서 참조 여부를 싣는다 — 근거가 하나도 서지 않는 참조(남의 비공개 행)도 참조다.
+        assertThat(new CapturingJdbc(source -> source == AttachmentSource.CMS_PAGE
+                ? new SourceCounts(1, 0, 0) : SourceCounts.NONE).resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID).referenced())
+                .isTrue();
         assertThat(new CapturingJdbc(source -> source == AttachmentSource.BOARD
                 ? new SourceCounts(1, 0, 0) : SourceCounts.NONE).resolver().referenced(ATCH_FILE_SN)).isTrue();
         assertThat(new CapturingJdbc(source -> source == AttachmentSource.CMS_PAGE
@@ -368,6 +373,7 @@ class JdbcAttachmentReferenceResolverTest {
         assertThat(grants.resolutionFailed())
                 .as("인가 판정에서 '모르는 것' 은 허용이 아니다 — 별도 실패 신호로 전부 닫는다")
                 .isTrue();
+        assertThat(grants.referenced()).as("판정하지 못한 참조원은 가리키는 것으로 본다 — 업로더의 미첨부 창이 열리지 않는다").isTrue();
     }
 
     @Test

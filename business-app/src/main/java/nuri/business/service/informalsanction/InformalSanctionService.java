@@ -795,7 +795,8 @@ public class InformalSanctionService {
         if (!active.containsAll(fresh)) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "참조자로 지정할 수 없는 사용자입니다.");
         }
-        Set<String> readers = new HashSet<>(userRepository.findActiveEsntlIdsHoldingPermission(READ_PERMISSION));
+        // 지정한 사람 가운데 보유자만 읽는다(2026-11-25 품질 평가 — 보유자 전체를 읽지 않는다). fresh 는 위에서 비어 있지 않다.
+        Set<String> readers = new HashSet<>(userRepository.findActiveEsntlIdsHoldingPermissionAmong(READ_PERMISSION, fresh));
         List<String> unreadableNames = found.stream()
                 .filter(u -> !readers.contains(u.getEsntlId()))
                 .map(u -> u.getUserNm() == null || u.getUserNm().isBlank() ? "이름 없는 사용자" : u.getUserNm())
@@ -852,7 +853,9 @@ public class InformalSanctionService {
         }
         // [2026-10-01] 결재 권한(APPROVAL_APPROVE)이 없는 사람에게 올리면 그 단계에서 문서가 멈춘다 — 서버가 그 사람의
         //   승인을 403 으로 거부하고, 대신 처리할 경로도 없다. 상신 시점에 이름을 밝혀 거부한다(사용 중지 계정과 같은 형태).
-        Set<String> approvers = new HashSet<>(userRepository.findActiveEsntlIdsHoldingPermission(APPROVE_PERMISSION));
+        //   보유자 전체가 아니라 지정한 결재자 가운데 보유자만 읽는다(2026-11-25 품질 평가).
+        Set<String> approvers = participants.isEmpty() ? Set.of()
+                : new HashSet<>(userRepository.findActiveEsntlIdsHoldingPermissionAmong(APPROVE_PERMISSION, participants));
         List<String> unauthorizedNames = found.stream()
                 .filter(u -> !approvers.contains(u.getEsntlId()))
                 .map(u -> u.getUserNm() == null || u.getUserNm().isBlank() ? "이름 없는 사용자" : u.getUserNm())

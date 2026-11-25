@@ -4887,7 +4887,7 @@ export interface paths {
         post?: never;
         /**
          * Cancel My Approval Draft
-         * @description 신청자 본인이 상신한 결재 중 대기(신청) 상태인 건을 취소(철회)합니다. 내용과 처리 이력은 보존됩니다. 신청자 본인만 가능하며 관리자도 대리 회수할 수 없습니다.
+         * @description 신청자 본인이 상신한 결재 중 대기(신청) 상태인 건을 취소(철회)합니다. 내용과 처리 이력은 보존됩니다. 신청자 본인만 가능하며 관리자도 대리 회수할 수 없습니다. 상세·목록에서 받은 버전(version)이 필수이며 없으면 400, 다르면 409 입니다.
          */
         delete: operations["cancelApproval"];
         options?: never;
@@ -6404,6 +6404,11 @@ export interface components {
             mblTelno?: string;
             emlAddr?: string;
             ofcpsNm?: string;
+            /**
+             * Format: int32
+             * @description 프로필 편집 버전(V2_156). 조회한 값을 그대로 돌려보낸다 — 다르면 409, 없으면 400.
+             */
+            version: number;
         };
         /** @description 비밀번호 변경 요청 DTO */
         PasswordChangeRequest: {
@@ -6897,6 +6902,11 @@ export interface components {
             groupId?: string;
             ognzId?: string;
             pstinstCd?: string;
+            /**
+             * Format: int32
+             * @description 프로필 편집 버전(V2_156). 조회한 값을 그대로 돌려보낸다 — 다르면 409, 없으면 400.
+             */
+            version: number;
         };
         UserAbsenceDto: {
             userId: string;
@@ -8619,6 +8629,11 @@ export interface components {
             readonly authorizationVersion: string;
             readonly passwordChangeRequired?: boolean;
             readonly mfaEnabled?: boolean;
+            /**
+             * Format: int32
+             * @description 프로필 편집 버전(V2_156). 조회한 값을 프로필 수정 요청에 그대로 돌려보낸다 — 다르면 409, 없으면 400.
+             */
+            version?: number;
         };
         /** @description 사용자 권한 정보 DTO */
         UserAuthorityDto: {
@@ -38559,8 +38574,8 @@ export interface operations {
     };
     cancelApproval: {
         parameters: {
-            query?: {
-                version?: number;
+            query: {
+                version: number;
             };
             header?: never;
             path: {

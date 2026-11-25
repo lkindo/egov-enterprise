@@ -36,7 +36,12 @@ public record UserProfileUpdateRequest(
         @Size(max = 300) String ofcpsNm,
         @Size(max = 20) String groupId,
         @Size(max = 20) String ognzId,
-        @Size(max = 12) String pstinstCd
+        @Size(max = 12) String pstinstCd,
+        @io.swagger.v3.oas.annotations.media.Schema(description = "프로필 편집 버전(V2_156). 조회한 값을 그대로 돌려보낸다 — 다르면 409, 없으면 400.",
+                requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED)
+        @jakarta.validation.constraints.NotNull
+        @jakarta.validation.constraints.Min(0)
+        Integer version
 ) {
     UserDto toUserDto() {
         return UserDto.builder()
@@ -56,6 +61,7 @@ public record UserProfileUpdateRequest(
                 .groupId(groupId)
                 .ognzId(ognzId)
                 .pstinstCd(pstinstCd)
+                .version(version)
                 .build();
     }
 }

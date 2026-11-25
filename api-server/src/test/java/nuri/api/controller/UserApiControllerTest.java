@@ -98,7 +98,7 @@ public class UserApiControllerTest extends BaseControllerTest {
 
         mockMvc.perform(put("/api/v1/users/me")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"userNm\":\"홍길동\"}"))
+                .content("{\"userNm\":\"홍길동\",\"version\":0}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
@@ -111,6 +111,7 @@ public class UserApiControllerTest extends BaseControllerTest {
                 .content("""
                         {
                           "userNm": "홍길동",
+                          "version": 0,
                           "groupId": "FORGED_GROUP",
                           "ognzId": "FORGED_ORG",
                           "pstinstCd": "FORGED_INST"
@@ -287,8 +288,22 @@ public class UserApiControllerTest extends BaseControllerTest {
 
         mockMvc.perform(put("/api/v1/admin/system/users/targetUser")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"userNm\":\"홍길동\"}"))
+                .content("{\"userNm\":\"홍길동\",\"version\":0}"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("[V2_156] 프로필 수정은 읽은 편집 버전이 필수다 — 없으면 400 이고 서비스에 닿지 않는다(관리자·본인)")
+    void profileUpdatesRequireTheEditVersion() throws Exception {
+        mockMvc.perform(put("/api/v1/admin/system/users/targetUser")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userNm\":\"홍길동\"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(put("/api/v1/users/me")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userNm\":\"홍길동\"}"))
+                .andExpect(status().isBadRequest());
+        verify(userService, org.mockito.Mockito.never()).updateUser(anyString(), any(UserDto.class));
     }
 
     @Test
@@ -296,12 +311,15 @@ public class UserApiControllerTest extends BaseControllerTest {
     void updateUser_rejectsMaskedMobileNumber() throws Exception {
         mockMvc.perform(put("/api/v1/admin/system/users/targetUser")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"userNm\":\"홍길동\",\"mblTelno\":\"010****5678\"}"))
-                .andExpect(status().isBadRequest());
+                .content("{\"userNm\":\"홍길동\",\"version\":0,\"mblTelno\":\"010****5678\"}"))
+                .andExpect(status().isBadRequest())
+                // 버전은 실었으므로 이 400 은 가린 휴대전화 때문이어야 한다(버전 누락 400 에 가려지지 않게, Codex 검토).
+                .andExpect(jsonPath("$.errors[*].field").value(org.hamcrest.Matchers.contains("mblTelno")));
         mockMvc.perform(put("/api/v1/admin/system/users/targetUser")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"userNm\":\"홍길동\",\"emlAddr\":\"ho***@example.com\"}"))
-                .andExpect(status().isBadRequest());
+                .content("{\"userNm\":\"홍길동\",\"version\":0,\"emlAddr\":\"ho***@example.com\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[*].field").value(org.hamcrest.Matchers.contains("emlAddr")));
 
         verify(userService, org.mockito.Mockito.never()).updateUser(anyString(), any(UserDto.class));
     }
@@ -323,7 +341,7 @@ public class UserApiControllerTest extends BaseControllerTest {
 
     /** 관리자 수정 화면이 실제로 보내는 페이로드. userId·pswd 를 포함하되 pswd 는 빈 문자열이다. */
     private static final String UPDATE_PAYLOAD_AS_SENT_BY_UI = """
-            {"userId":"targetUser","userNm":"홍길동","emlAddr":"target@egov.kr","mblTelno":"01012345678","ognzId":"","pswd":""}
+            {"userId":"targetUser","userNm":"홍길동","emlAddr":"target@egov.kr","mblTelno":"01012345678","ognzId":"","pswd":"","version":0}
             """;
 
     @Test
@@ -348,7 +366,7 @@ public class UserApiControllerTest extends BaseControllerTest {
         mockMvc.perform(put("/api/v1/users/me")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"userId":"testuser","userNm":"테스트","emlAddr":"me@egov.kr","pswd":""}
+                        {"userId":"testuser","userNm":"테스트","emlAddr":"me@egov.kr","pswd":"","version":0}
                         """))
                 .andExpect(status().isOk());
 
@@ -363,7 +381,7 @@ public class UserApiControllerTest extends BaseControllerTest {
         mockMvc.perform(put("/api/v1/users/me")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"userNm":"테스트","emlAddr":"me@egov.kr"}
+                        {"userNm":"테스트","emlAddr":"me@egov.kr","version":2}
                         """))
                 .andExpect(status().isOk());
 
@@ -371,7 +389,8 @@ public class UserApiControllerTest extends BaseControllerTest {
                 "테스트".equals(dto.userNm())
                         && "me@egov.kr".equals(dto.emlAddr())
                         && dto.userId() == null
-                        && dto.pswd() == null));
+                        && dto.pswd() == null
+                        && Integer.valueOf(2).equals(dto.version())));
     }
 
     @Test

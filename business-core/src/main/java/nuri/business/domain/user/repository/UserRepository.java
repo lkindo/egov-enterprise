@@ -43,8 +43,10 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
     List<User> findByEsntlIdIn(java.util.Collection<String> esntlIds);
 
     /**
-     * 기능 권한 하나를 그룹 배정으로 가진 사용 중(P) 사용자의 esntlId(2026-09-26 DIP B5 F1).
+     * 기능 권한 하나를 그룹 배정으로 가진 사용 중(P) 사용자의 esntlId 를 식별자 순으로 {@code limit} 까지(2026-09-26 DIP B5 F1).
      * 알림 수신자를 고르는 용도다 — 인가 판정은 요청마다 AuthorizationSnapshotService 가 한다.
+     * [2026-11-25 품질 평가] 보유자 전체를 읽지 않게 상한을 받는다 — 결재 권한처럼 거의 모든 직원이 가진 권한은 보유자가
+     * 사용자 수만큼이다. 특정 사람이 권한을 가졌는지는 {@link #findActiveEsntlIdsHoldingPermissionAmong} 으로 본다.
      */
     @Query("""
             SELECT DISTINCT u.esntlId FROM User u, nuri.business.domain.auth.UserAuthority m,
@@ -53,11 +55,30 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
               AND g.authrtTypeCd = 'OPERATION' AND g.authrtGrntCd = :permission AND u.userSttsCd = 'P'
             ORDER BY u.esntlId
             """)
-    List<String> findActiveEsntlIdsHoldingPermission(@org.springframework.data.repository.query.Param("permission") String permission);
+    List<String> findActiveEsntlIdsHoldingPermission(@org.springframework.data.repository.query.Param("permission") String permission,
+            org.springframework.data.domain.Limit limit);
+
+    /**
+     * 후보 가운데 기능 권한을 그룹 배정으로 가진 사용 중(P) 사용자의 esntlId — 결재자·참조자 지정 검사용(2026-11-25 품질 평가).
+     * 종전에는 보유자 전체를 읽어 후보와 대조했다. 후보는 호출자가 상한을 둔 작은 목록이어야 하고 비어 있으면 부르지 않는다.
+     */
+    @Query("""
+            SELECT DISTINCT u.esntlId FROM User u, nuri.business.domain.auth.UserAuthority m,
+                nuri.business.domain.auth.AuthorityGrant g
+            WHERE m.scrtyDcsnTrgtId = u.esntlId AND g.authrtCd = m.authrtId
+              AND g.authrtTypeCd = 'OPERATION' AND g.authrtGrntCd = :permission AND u.userSttsCd = 'P'
+              AND u.esntlId IN :candidates
+            ORDER BY u.esntlId
+            """)
+    List<String> findActiveEsntlIdsHoldingPermissionAmong(
+            @org.springframework.data.repository.query.Param("permission") String permission,
+            @org.springframework.data.repository.query.Param("candidates") java.util.Collection<String> candidates);
 
     // [V2_13 결속] 권한그룹 삭제 시 사용자 참조 해제 (fk_tb_user_info_tb_authrt_group_info NO ACTION)
     @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
-    @Query("UPDATE User u SET u.groupId = null WHERE u.groupId IN :groupIds")
+    // [2026-11-25 V2_156] 분류 그룹은 프로필 칸이다 — 해제하면서 편집 버전도 올린다. 올리지 않으면 그 사이 열어 둔 수정 폼이
+    //   옛 버전으로 통과해 해제된 값을 되살리거나 FK 충돌을 낸다(Codex 검토).
+    @Query("UPDATE User u SET u.groupId = null, u.editVersion = u.editVersion + 1 WHERE u.groupId IN :groupIds")
     int clearGroupIdByGroupIdIn(@Param("groupIds") List<String> groupIds);
 
     /**

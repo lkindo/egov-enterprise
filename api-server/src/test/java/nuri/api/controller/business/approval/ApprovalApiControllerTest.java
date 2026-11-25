@@ -216,13 +216,19 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
 
     @Test
     @WithMockCustomUser(username = "applicant", esntlId = "APPLICANT_ESNTL")
-    @DisplayName("신청자 본인은 대기 중인 결재를 DELETE로 취소할 수 있다")
+    @DisplayName("신청자 본인은 대기 중인 결재를 읽은 버전과 함께 DELETE 로 회수한다 — 버전이 없으면 400 이고 서비스를 부르지 않는다")
     void cancelsApprovalDraft() throws Exception {
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/approvals/42")
-                        .with(csrf()))
+                        .queryParam("version", "3").with(csrf()))
                 .andExpect(status().isOk());
+        verify(approvalService).deleteInformalSanction(42L, 3);
 
-        verify(approvalService).deleteInformalSanction(42L, null);
+        // [2026-11-25 품질 평가 과제 6] 다른 결재 쓰기처럼 버전이 필수다 — 대조 없이 문서를 닫지 않는다.
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/approvals/43")
+                        .with(csrf()))
+                .andExpect(status().isBadRequest());
+        verify(approvalService, org.mockito.Mockito.never()).deleteInformalSanction(org.mockito.ArgumentMatchers.eq(43L),
+                org.mockito.ArgumentMatchers.any());
     }
 
     @Test

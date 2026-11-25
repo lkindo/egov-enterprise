@@ -260,12 +260,9 @@ public class SmsService {
         Map<String, String> receivers = new LinkedHashMap<>();
         for (SmsRecptnDto recipient : recipients) {
             if (hasText(recipient.getEsntlId())) {
+                // 번호가 없는 사용자는 위에서 모두 거부했다 — 여기의 연락처는 늘 번호가 있다(2026-11-25 품질 평가: 같은 확인을
+                //   두 번 하던 분기를 걷었다).
                 UserContactService.UserContact contact = contacts.get(recipient.getEsntlId().trim());
-                if (contact == null || contact.mblTelno() == null) {
-                    String name = contact == null ? recipient.getEsntlId().trim() : contact.userNm();
-                    throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                            "'" + name + "' 님은 등록된 휴대전화 번호가 없어 문자를 보낼 수 없습니다.");
-                }
                 addReceiver(receivers, nuri.business.domain.sms.SmsRecipientNumber.requireValid(contact.mblTelno()),
                         recipient.getEsntlId().trim());
             } else {

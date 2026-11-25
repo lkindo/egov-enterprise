@@ -26,9 +26,10 @@ const INITIAL = {
 function renderForm(
   onSubmit = vi.fn().mockResolvedValue(undefined),
   initialValues: Record<string, string> = INITIAL,
+  editVersion = 3,
 ) {
   const onCancel = vi.fn();
-  render(<ProfileEditForm initialValues={initialValues} onSubmit={onSubmit} onCancel={onCancel} />);
+  render(<ProfileEditForm initialValues={initialValues} editVersion={editVersion} onSubmit={onSubmit} onCancel={onCancel} />);
   return { onSubmit, onCancel };
 }
 
@@ -38,6 +39,17 @@ const change = (label: string, value: string) =>
 const submit = () => fireEvent.click(screen.getByRole('button', { name: '저장' }));
 
 describe('ProfileEditForm', () => {
+
+  it('[V2_156] 내 정보 조회의 편집 버전이 없으면 저장하지 않고 다시 불러오라고 알린다', async () => {
+    // 기본 매개변수에 undefined 를 넘기면 기본값이 쓰이므로 편집 버전 없이 직접 그린다.
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    render(<ProfileEditForm initialValues={INITIAL} onSubmit={onSubmit} onCancel={vi.fn()} />);
+    change('휴대전화', '01099998888');
+    submit();
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('내 정보를 다시 불러온 뒤 저장해 주세요.', 'error'));
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
   beforeEach(() => vi.clearAllMocks());
 
   it('서버가 내려준 현재 값으로 폼을 채운다', () => {
@@ -54,7 +66,7 @@ describe('ProfileEditForm', () => {
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     // 이름은 서버 필수(@NotBlank)라 늘 싣는다. 손대지 않은 사번·이메일은 싣지 않는다.
-    expect(onSubmit).toHaveBeenCalledWith({ userNm: '홍길동', mblTelno: '01099998888' });
+    expect(onSubmit).toHaveBeenCalledWith({ userNm: '홍길동', mblTelno: '01099998888', version: 3 });
   });
 
   it('비운 칸은 빈 문자열로 보낸다 — 지움 의도가 서버까지 간다', async () => {
@@ -63,7 +75,7 @@ describe('ProfileEditForm', () => {
     submit();
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
-    expect(onSubmit).toHaveBeenCalledWith({ userNm: '홍길동', emplNo: '' });
+    expect(onSubmit).toHaveBeenCalledWith({ userNm: '홍길동', emplNo: '', version: 3 });
   });
 
   it('원래 비어 있던 칸을 그대로 두면 보내지 않는다 — null 을 빈 문자열로 바꾸지 않는다', async () => {
@@ -71,7 +83,7 @@ describe('ProfileEditForm', () => {
     submit();
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
-    expect(onSubmit).toHaveBeenCalledWith({ userNm: '홍길동' });
+    expect(onSubmit).toHaveBeenCalledWith({ userNm: '홍길동', version: 3 });
   });
 
   it('이름이 비면 transport 전에 막는다', async () => {

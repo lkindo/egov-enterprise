@@ -2,6 +2,7 @@ package nuri.business.service.memoreport;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.business.domain.memoreport.MemoReport;
+import nuri.business.domain.memoreport.MemoReportParties;
 import nuri.business.domain.memoreport.MemoReportRepository;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
@@ -171,7 +172,21 @@ public class MemoReportService {
 
     @Transactional
     public MemoReportDto getMemoReport(@NonNull Long memoRptSn) {
-        MemoReport entity = memoReportRepository.findByIdForUpdate(memoRptSn)
+        // [2026-11-25 품질 평가] 수신자 열람만 쓰기 잠금을 잡는다. 어느 열람이든 진행 중인 수정이 커밋된 뒤의 한 버전(본문·첨부)을
+        //   읽어야 한다 — 잠그지 않으면 본문과 첨부를 서로 다른 커밋에서 읽고, 수정이 옛 첨부 묶음을 지운 뒤라면 첨부 조회가 404 다
+        //   (MemoReportRecipientIntegrityIntegrationTest#detailWaitsForBodyWriter… · authorDetailWaitsForAttachmentReplacement…).
+        //   수신자는 최초 열람을 같은 트랜잭션에서 기록하므로 쓰기 잠금이고, 작성자·관리자는 공유 잠금이라 열람끼리는 서로 기다리지
+        //   않는다(종전에는 모든 열람이 쓰기 잠금이라 작성자의 재조회도 줄을 섰다). 수신자는 등록 뒤 바뀌지 않고(수정이 거부한다)
+        //   비어 있을 수 없어(NOT NULL) 잠그기 전에 읽어 갈라도 된다 — 선조회에 행이 없으면 바로 404 다(그 사이 커밋된 행을 잠금 없이
+        //   수신자 경로로 읽지 않게). 당사자도 관리자도 아니면 잠그기 전에 거절한다 — 남의 보고 요청이 진행 중인 수정을 기다리다
+        //   잠금 대기 초과(409)로 끝나지 않게(2026-11-25 Codex 검토). 최종 인가는 아래에서 잠근 행으로 다시 한다.
+        MemoReportParties parties = memoReportRepository.findParties(memoRptSn)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        assertPartyOrAdminBeforeLock(parties);
+        boolean recipientRead = nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
+                .map(current -> current.equals(parties.recipientId())).orElse(false);
+        MemoReport entity = (recipientRead ? memoReportRepository.findByIdForUpdate(memoRptSn)
+                : memoReportRepository.findByIdForShare(memoRptSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         assertParticipantOrAdmin(entity); // [IDOR] 작성자·수신자·관리자만 열람
         String actor = currentEsntlIdOrDeny();
@@ -258,6 +273,20 @@ public class MemoReportService {
         }
         String esntlId = currentEsntlIdOrDeny();
         if (!esntlId.equals(entity.getUserId()) && !esntlId.equals(entity.getRptrId())) {
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+        }
+    }
+
+    /**
+     * 잠그기 전 선거절 — {@link #assertParticipantOrAdmin(MemoReport)} 와 같은 판정을 선조회한 당사자로 한다(2026-11-25 Codex 검토).
+     * 남의 보고 요청이 진행 중인 수정을 기다리지 않게 한다. 최종 판정은 잠근 행으로 다시 한다.
+     */
+    private void assertPartyOrAdminBeforeLock(MemoReportParties parties) {
+        if (nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_READ_ALL")) {
+            return;
+        }
+        String esntlId = currentEsntlIdOrDeny();
+        if (!esntlId.equals(parties.authorId()) && !esntlId.equals(parties.recipientId())) {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
         }
     }

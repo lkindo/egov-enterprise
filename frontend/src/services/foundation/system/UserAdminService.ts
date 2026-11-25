@@ -86,6 +86,8 @@ function toUserManage(item: UserResponse): UserManage {
     // [2026-10-01 결정 18] 상세 조회만 싣는 비밀번호 변경 필요·추가 인증 사용 여부.
     'passwordChangeRequired',
     'mfaEnabled',
+    // [V2_156] 상세 조회만 싣는 프로필 편집 버전 — 수정 폼이 연 때의 값을 돌려보낸다.
+    'version',
   ] as const;
   for (const field of optionalFields) {
     const value = item[field];
@@ -95,7 +97,8 @@ function toUserManage(item: UserResponse): UserManage {
 }
 
 function toUserProfileUpdate(data: UserProfileUpdate): UserProfileUpdate {
-  const result: UserProfileUpdate = { userNm: data.userNm };
+  // [V2_156] 프로필 편집 버전은 필수다 — 연 때의 값이 아니면 서버가 409 로 거부한다(빠뜨리면 400).
+  const result: UserProfileUpdate = { userNm: data.userNm, version: data.version };
   const optionalFields = [
     'emplNo',
     'areaNo',

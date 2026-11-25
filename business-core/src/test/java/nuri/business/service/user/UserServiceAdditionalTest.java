@@ -81,7 +81,8 @@ class UserServiceAdditionalTest {
         return UserDto.builder()
                 .userId(userId)
                 .esntlId("ESNTL_" + userId)
-                .userNm("Name_" + userId);
+                .userNm("Name_" + userId)
+                .version(0);
     }
 
     @Test
@@ -111,7 +112,47 @@ class UserServiceAdditionalTest {
             assertThat(user.getUserNm()).isEqualTo("New Name");
             assertThat(user.getEmplNo()).isEqualTo("EMP001");
             assertThat(user.getOfcpsNm()).isEqualTo("Manager");
+            assertThat(user.getEditVersion()).as("저장하면 편집 버전이 오른다(V2_156)").isEqualTo(1);
         }
+    }
+
+    @Test
+    @DisplayName("🚨 [V2_156] 읽은 뒤 다른 사람이 먼저 저장했으면 409 이고 아무것도 바꾸지 않는다 — 버전이 없으면 400")
+    void updateUser_rejectsStaleOrMissingEditVersion() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentEsntlId()).thenReturn(Optional.of("ADMIN"));
+            String userId = "testUser";
+            User user = createBaseUser(userId).userNm("Old Name").build();
+            user.markProfileEdited(); // 다른 관리자가 먼저 저장했다 — 지금 버전 1
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+            BusinessException stale = org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class,
+                    () -> userService.updateUser(userId, createBaseUserDto(userId).userNm("Stale Name").version(0).build()));
+            assertThat(stale.getErrorCode()).isEqualTo(nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION);
+
+            BusinessException missing = org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class,
+                    () -> userService.updateUser(userId, createBaseUserDto(userId).userNm("No Version").version(null).build()));
+            assertThat(missing.getErrorCode()).isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+
+            assertThat(user.getUserNm()).isEqualTo("Old Name");
+            assertThat(user.getEditVersion()).isEqualTo(1);
+
+            userService.updateUser(userId, createBaseUserDto(userId).userNm("Fresh Name").version(1).build());
+            assertThat(user.getUserNm()).isEqualTo("Fresh Name");
+            assertThat(user.getEditVersion()).isEqualTo(2);
+        }
+    }
+
+    @Test
+    @DisplayName("[V2_156] 부서 일괄 이동도 소속 칸을 바꾸므로 편집 버전을 올린다 — 그 사이 열어 둔 수정 폼의 저장은 409 가 된다")
+    void departmentMoveBumpsEditVersion() {
+        User user = createBaseUser("mover").build();
+        assertThat(user.getEditVersion()).isZero();
+        user.updateOrgnztId("DEPT_NEW");
+        assertThat(user.getEditVersion()).isEqualTo(1);
+        assertThat(UserDto.from(user).version()).as("상세 응답이 버전을 싣는다").isEqualTo(1);
     }
 
     /**
@@ -145,7 +186,7 @@ class UserServiceAdditionalTest {
                     .build();
 
             // 관리자 수정 폼이 실제로 보내는 필드 집합 — 나머지는 null 이다.
-            UserDto formPayload = UserDto.builder()
+            UserDto formPayload = UserDto.builder().version(0)
                     .userId(userId)
                     .userNm("New Name")
                     .emlAddr("new@egov.kr")
@@ -185,7 +226,7 @@ class UserServiceAdditionalTest {
             String userId = "testUser";
             User user = createBaseUser(userId).ofcpsNm("팀장").build();
 
-            UserDto clearing = UserDto.builder()
+            UserDto clearing = UserDto.builder().version(0)
                     .userId(userId)
                     .userNm("Name")
                     .ofcpsNm("")          // 사용자가 칸을 비웠다

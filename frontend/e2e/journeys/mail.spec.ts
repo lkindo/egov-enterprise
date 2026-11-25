@@ -87,10 +87,12 @@ test.describe('Enterprise Mail System E2E', () => {
         const me: {
             userNm?: string;
             emlAddr?: string;
+            version?: number;
         } = (await meRes.json()).data;
         expect(me.userNm, '현재 사용자 표시 이름이 있어야 피커로 찾을 수 있다').toBeTruthy();
         const email = me.emlAddr && me.emlAddr.includes('@') ? me.emlAddr : 'e2e-admin@example.com';
-        const putRes = await request.put(`${API_BASE}/users/me`, { headers, data: { userNm: me.userNm, emlAddr: email } });
+        // [V2_156] 프로필 수정은 방금 읽은 편집 버전을 함께 보낸다(없으면 400, 다르면 409).
+        const putRes = await request.put(`${API_BASE}/users/me`, { headers, data: { userNm: me.userNm, emlAddr: email, version: me.version } });
         expect(putRes.ok(), `내 프로필 갱신 실패: ${putRes.status()}`).toBeTruthy();
         const subject = `PICK ${Date.now()}`;
         await mailPage.navigateToSend();

@@ -312,7 +312,7 @@ function useApprovalDocumentActions({
   toast: ReturnType<typeof useToast>['toast'];
   confirm: ReturnType<typeof useConfirm>;
   confirmMutation: { mutateAsync: (decision: ApprovalDecision) => Promise<unknown> };
-  cancelMutation: { mutateAsync: (variables: { ifmlAtrzSn: number; version?: number }) => Promise<unknown> };
+  cancelMutation: { mutateAsync: (variables: { ifmlAtrzSn: number; version: number }) => Promise<unknown> };
   supplementMutation: { mutateAsync: (variables: { ifmlAtrzSn: number; question: string; version: number }) => Promise<unknown> };
   decisionValidation: { setFormErrors: (errors: ManualFormErrors, focus?: boolean) => void };
   pendingActionRef: MutableRefObject<boolean>;
@@ -460,6 +460,13 @@ function useApprovalDocumentActions({
     setPendingAction('CANCEL');
 
     try {
+      // [2026-11-25] 회수는 읽은 버전이 필수다 — 버전이 없는 항목(지난 차수 보기 등)은 최신 상태를 다시 읽게 한다.
+      const version = item.version;
+      if (typeof version !== 'number') {
+        setActionError('문서의 최신 상태를 불러오지 못했습니다. 목록을 새로 고친 뒤 다시 시도해 주세요.');
+        void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
+        return;
+      }
       const ok = await confirm({
         title: '결재 회수',
         message: `‘${documentLabel(item)}’ 문서를 회수하면 진행 중인 결재와 남은 결재가 종료됩니다. 문서와 처리 이력은 보존되고 수정 후 새 차수로 재상신할 수 있습니다.`,
@@ -468,7 +475,7 @@ function useApprovalDocumentActions({
       });
       if (!ok) return;
 
-      await cancelMutation.mutateAsync({ ifmlAtrzSn: item.ifmlAtrzSn, version: item.version });
+      await cancelMutation.mutateAsync({ ifmlAtrzSn: item.ifmlAtrzSn, version });
       toast('문서를 회수했습니다. 처리 이력은 보존됩니다.', 'success');
       setActionError('');
     } catch (error) {
@@ -488,13 +495,20 @@ function useApprovalDocumentActions({
     pendingActionRef.current = true;
     setPendingAction('REVISE');
     try {
+      // [2026-11-25] 회수는 읽은 버전이 필수다 — 버전이 없는 항목(지난 차수 보기 등)은 최신 상태를 다시 읽게 한다.
+      const version = item.version;
+      if (typeof version !== 'number') {
+        setActionError('문서의 최신 상태를 불러오지 못했습니다. 목록을 새로 고친 뒤 다시 시도해 주세요.');
+        void queryClient.invalidateQueries({ queryKey: approvalKeys.all });
+        return;
+      }
       const ok = await confirm({
         title: '고쳐서 다시 올리기',
         message: `‘${documentLabel(item)}’ 문서를 회수하고 바로 고쳐 새 차수로 올립니다. 편집을 닫으면 문서는 회수된 채로 남고, 나중에 ‘수정 후 재상신’ 으로 올릴 수 있습니다.`,
         confirmText: '회수하고 고치기',
       });
       if (!ok) return;
-      await cancelMutation.mutateAsync({ ifmlAtrzSn: item.ifmlAtrzSn, version: item.version });
+      await cancelMutation.mutateAsync({ ifmlAtrzSn: item.ifmlAtrzSn, version });
       let latest: InformalSanctionDto;
       try {
         latest = await queryClient.fetchQuery(approvalQueryOptions.detail(item.ifmlAtrzSn));

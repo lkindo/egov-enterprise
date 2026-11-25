@@ -117,6 +117,7 @@ describe('Header 내 정보 수정 경계', () => {
       userNm: '홍길동',
       emplNo: 'E-1001',
       mblTelno: '01012345678',
+      version: 6,
     });
     testState.updateMe.mockResolvedValue(undefined);
   });
@@ -146,7 +147,8 @@ describe('Header 내 정보 수정 경계', () => {
 
     await waitFor(() => expect(testState.updateMe).toHaveBeenCalledTimes(1));
     // 바꾼 필드만 나간다 — 서버가 null 을 '보내지 않음'(유지)으로 보기 때문이다.
-    expect(testState.updateMe).toHaveBeenCalledWith({ userNm: '홍길동', mblTelno: '01099998888' });
+    // [V2_156] 내 정보 조회가 준 편집 버전을 그대로 싣는다.
+    expect(testState.updateMe).toHaveBeenCalledWith({ userNm: '홍길동', mblTelno: '01099998888', version: 6 });
 
     const pendingButton = screen.getByRole('button', { name: '저장 중…' });
     expect(pendingButton).toBeDisabled();

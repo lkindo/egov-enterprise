@@ -96,8 +96,8 @@ class ApprovalReferenceNotificationIntegrationTest {
             // 사용자 저장소는 이 클래스에서 목이다 — 이 시험에서는 실제 사용자 행이 있는 사람만 돌려준다(지운 사람은 없다).
             //   응답은 부를 때마다 사용자 행을 다시 본다 — 아래에서 지운 참조자는 승인 시점에 빠진다.
             usePersistedRecipients();
-            when(users.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).thenReturn(List.of(approver));
-            when(users.findActiveEsntlIdsHoldingPermission("APPROVAL_READ")).thenReturn(people);
+            when(users.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).thenAnswer(holdersAmong(List.of(approver)));
+            when(users.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_READ"), org.mockito.ArgumentMatchers.anyCollection())).thenAnswer(holdersAmong(people));
             org.mockito.Mockito.doAnswer(call -> notificationService.createForEvent(call.getArgument(0)))
                     .when(inAppNotifications).onNotificationRequested(any());
 
@@ -144,7 +144,7 @@ class ApprovalReferenceNotificationIntegrationTest {
                         person, person.toLowerCase(java.util.Locale.ROOT));
             }
             usePersistedRecipients();
-            when(users.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).thenReturn(approvers);
+            when(users.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).thenAnswer(holdersAmong(approvers));
             org.mockito.Mockito.doAnswer(call -> notificationService.createForEvent(call.getArgument(0)))
                     .when(inAppNotifications).onNotificationRequested(any());
             authenticate(OWNER);
@@ -223,5 +223,13 @@ class ApprovalReferenceNotificationIntegrationTest {
                 .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new).toList();
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(principal, null, authorities));
+    }
+
+    /** 권한 보유자 조회 스텁 — 실제 저장소처럼 넘긴 후보 가운데 보유자만 돌려준다(후보 인자를 잘못 넘기면 시험이 붉어지게, 2026-11-25 Codex 검토). */
+    private static org.mockito.stubbing.Answer<java.util.List<String>> holdersAmong(java.util.Collection<String> holders) {
+        return invocation -> {
+            java.util.Collection<String> candidates = invocation.getArgument(1);
+            return holders.stream().filter(candidates::contains).distinct().sorted().toList();
+        };
     }
 }

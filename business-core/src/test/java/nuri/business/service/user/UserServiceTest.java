@@ -82,7 +82,7 @@ class UserServiceTest {
                 nuri.business.support.AuthorizationTestPrincipal.authentication("target", "USR_TARGET", "ROLE_USER"));
 
         BusinessException failure = assertThrows(BusinessException.class, () ->
-                userService.updateUser("target", UserDto.builder().userNm("Changed").build()));
+                userService.updateUser("target", UserDto.builder().version(0).userNm("Changed").build()));
 
         assertEquals(nuri.business.domain.user.exception.UserErrorCode.USER_NOT_FOUND, failure.getErrorCode());
         assertEquals("Original", user.getUserNm());
@@ -395,14 +395,16 @@ class UserServiceTest {
         given(userRepository.findById("user1")).willReturn(Optional.of(user));
         // 소유권 가드는 esntlId 축으로 비교한다. 대상 사용자의 esntlId 를 세워야 '본인' 이 성립한다.
         given(user.getEsntlId()).willReturn("user1");
+        given(user.getEditVersion()).willReturn(0);
 
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
             org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
                     nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_USER"));
             
-            userService.updateUser("user1", UserDto.builder().build());
+            userService.updateUser("user1", UserDto.builder().version(0).build());
             verify(user).update(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
+            verify(user).markProfileEdited();
             verify(authorizationAdministration, never()).lockAdministration();
         }
     }
@@ -992,7 +994,7 @@ class UserServiceTest {
             User existing = User.builder().userId("orphan").userNm("기존").esntlId("ESNTL_ORPHAN")
                     .ognzId("GHOST_DEPT").role(nuri.business.domain.user.entity.Role.USER).build();
             given(userRepository.findByUserId("orphan")).willReturn(Optional.of(existing));
-            userService.updateUser("orphan", UserDto.builder().userNm("바뀐 이름")
+            userService.updateUser("orphan", UserDto.builder().version(0).userNm("바뀐 이름")
                     .ognzId("GHOST_DEPT").build());
             assertEquals("바뀐 이름", existing.getUserNm(), "고아 소속 때문에 이름 수정이 막혔다");
         }
@@ -1016,7 +1018,7 @@ class UserServiceTest {
             User same = User.builder().userId("same").userNm("기존").esntlId("ESNTL_SAME")
                     .ognzId("DEPT_OLD").role(nuri.business.domain.user.entity.Role.USER).build();
             given(userRepository.findByUserId("same")).willReturn(Optional.of(same));
-            userService.updateUser("same", UserDto.builder().userNm("새 이름").ognzId("DEPT_OLD").build());
+            userService.updateUser("same", UserDto.builder().version(0).userNm("새 이름").ognzId("DEPT_OLD").build());
             mockedSecurity.verify(() -> nuri.business.security.util.SecurityUtil.assertPermission("USER_DEPT"), never());
             assertEquals("새 이름", same.getUserNm());
 
@@ -1026,13 +1028,13 @@ class UserServiceTest {
             given(userRepository.findByUserId("moved")).willReturn(Optional.of(moved));
             deny.set(true);
             assertSame(denied, assertThrows(BusinessException.class, () -> userService.updateUser("moved",
-                    UserDto.builder().userNm("바뀐 이름").ognzId("DEPT_NEW").build())));
+                    UserDto.builder().version(0).userNm("바뀐 이름").ognzId("DEPT_NEW").build())));
             assertEquals("기존", moved.getUserNm());
             assertEquals("DEPT_OLD", moved.getOgnzId());
 
             // (다) 허용되면 소속이 바뀐다.
             deny.set(false);
-            userService.updateUser("moved", UserDto.builder().ognzId("DEPT_NEW").build());
+            userService.updateUser("moved", UserDto.builder().version(0).ognzId("DEPT_NEW").build());
             assertEquals("DEPT_NEW", moved.getOgnzId());
             mockedSecurity.verify(() -> nuri.business.security.util.SecurityUtil.assertPermission("USER_DEPT"), org.mockito.Mockito.times(2));
 
@@ -1040,12 +1042,12 @@ class UserServiceTest {
             User unassigned = User.builder().userId("unassigned").userNm("기존").esntlId("ESNTL_UNASSIGNED")
                     .role(nuri.business.domain.user.entity.Role.USER).build();
             given(userRepository.findByUserId("unassigned")).willReturn(Optional.of(unassigned));
-            userService.updateUser("unassigned", UserDto.builder().userNm("새 이름").ognzId("").build());
+            userService.updateUser("unassigned", UserDto.builder().version(0).userNm("새 이름").ognzId("").build());
             assertEquals("새 이름", unassigned.getUserNm());
             mockedSecurity.verify(() -> nuri.business.security.util.SecurityUtil.assertPermission("USER_DEPT"), org.mockito.Mockito.times(2));
 
-            // (마) 실제 소속을 "" 로 지우는 것은 소속 변경이다 — 부서 변경 권한을 다시 묻는다.
-            userService.updateUser("moved", UserDto.builder().ognzId("").build());
+            // (마) 실제 소속을 "" 로 지우는 것은 소속 변경이다 — 부서 변경 권한을 다시 묻는다. (다)의 저장으로 편집 버전이 1 이 됐다.
+            userService.updateUser("moved", UserDto.builder().version(1).ognzId("").build());
             assertNull(moved.getOgnzId());
             mockedSecurity.verify(() -> nuri.business.security.util.SecurityUtil.assertPermission("USER_DEPT"), org.mockito.Mockito.times(3));
         }

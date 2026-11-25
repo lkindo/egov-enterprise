@@ -209,9 +209,9 @@ class ApprovalReferenceServiceTest {
             }
             return found;
         });
-        lenient().when(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).thenReturn(List.of(ids));
-        lenient().when(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_READ"))
-                .thenReturn(Arrays.stream(ids).filter(id -> !id.startsWith("noread")).toList());
+        lenient().when(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).thenAnswer(holdersAmong(List.of(ids)));
+        lenient().when(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_READ"), org.mockito.ArgumentMatchers.anyCollection()))
+                .thenAnswer(holdersAmong(Arrays.stream(ids).filter(id -> !id.startsWith("noread")).toList()));
     }
 
     private void knownTask() {
@@ -476,7 +476,7 @@ class ApprovalReferenceServiceTest {
         service.registerInformalSanction(draft(), approver("boss"));
 
         verify(referenceRepository, never()).saveAll(any());
-        verify(userRepository, never()).findActiveEsntlIdsHoldingPermission("APPROVAL_READ");
+        verify(userRepository, never()).findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_READ"), org.mockito.ArgumentMatchers.anyCollection());
         assertThat(notifications("참조로 지정되었습니다")).isEmpty();
     }
 
@@ -527,8 +527,8 @@ class ApprovalReferenceServiceTest {
             }
             return found;
         });
-        given(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).willReturn(List.of("boss"));
-        given(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_READ")).willReturn(List.of("boss"));
+        given(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).willAnswer(holdersAmong(List.of("boss")));
+        given(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_READ"), org.mockito.ArgumentMatchers.anyCollection())).willAnswer(holdersAmong(List.of("boss")));
 
         assertThat(rejection(() -> service.registerInformalSanction(draft(), approver("boss"), List.of("blank")))
                 .getMessage()).endsWith(": 이름 없는 사용자");
@@ -547,9 +547,9 @@ class ApprovalReferenceServiceTest {
             for (String id : requested) found.add(user(id, "P"));
             return found;
         });
-        given(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).willReturn(List.of("boss"));
-        given(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_READ")).willReturn(
-                Stream.concat(Stream.of("boss"), twenty.stream()).toList());
+        given(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).willAnswer(holdersAmong(List.of("boss")));
+        given(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_READ"), org.mockito.ArgumentMatchers.anyCollection())).willAnswer(holdersAmong(
+                Stream.concat(Stream.of("boss"), twenty.stream()).toList()));
         registerSaves();
 
         service.registerInformalSanction(draft(), approver("boss"), twenty);
@@ -960,5 +960,13 @@ class ApprovalReferenceServiceTest {
                 .isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> InformalSanctionReference.designate(header("A", 1), "cc", "owner", null, LocalDateTime.now()))
                 .isInstanceOf(NullPointerException.class);
+    }
+
+    /** 권한 보유자 조회 스텁 — 실제 저장소처럼 넘긴 후보 가운데 보유자만 돌려준다(후보 인자를 잘못 넘기면 시험이 붉어지게, 2026-11-25 Codex 검토). */
+    private static org.mockito.stubbing.Answer<java.util.List<String>> holdersAmong(java.util.Collection<String> holders) {
+        return invocation -> {
+            java.util.Collection<String> candidates = invocation.getArgument(1);
+            return holders.stream().filter(candidates::contains).distinct().sorted().toList();
+        };
     }
 }

@@ -344,7 +344,7 @@ class ApprovalSubstitutionServiceTest {
         given(commonCodeService.getCodesByGroup(any())).willReturn(List.of(new CommonCodeDto("COM075", "TASK", "업무", null, "Y")));
         given(userRepository.findAllById(any())).willReturn(List.of(nuri.business.domain.user.entity.User.builder()
                 .esntlId("first").userId("first").userNm("결재자").pswd("{bcrypt}x").userSttsCd("P").build()));
-        given(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).willReturn(List.of("first"));
+        given(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).willAnswer(holdersAmong(List.of("first")));
         given(informalSanctionRepository.save(any())).willAnswer(invocation -> {
             InformalSanction saved = invocation.getArgument(0);
             ReflectionTestUtils.setField(saved, "ifmlAtrzSn", 7L);
@@ -369,7 +369,7 @@ class ApprovalSubstitutionServiceTest {
         given(commonCodeService.getCodesByGroup(any())).willReturn(List.of(new CommonCodeDto("COM075", "TASK", "업무", null, "Y")));
         given(userRepository.findAllById(any())).willReturn(List.of(nuri.business.domain.user.entity.User.builder()
                 .esntlId("first").userId("first").userNm("결재자").pswd("{bcrypt}x").userSttsCd("P").build()));
-        given(userRepository.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).willReturn(List.of("first"));
+        given(userRepository.findActiveEsntlIdsHoldingPermissionAmong(org.mockito.ArgumentMatchers.eq("APPROVAL_APPROVE"), org.mockito.ArgumentMatchers.anyCollection())).willAnswer(holdersAmong(List.of("first")));
         org.mockito.Mockito.doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
                 .when(attachmentAssignmentPolicy).assertAssignable(901L);
         InformalSanctionDto draft = InformalSanctionDto.builder().taskSeCd("TASK").aplcntId("drafter").reqYmd("20261112")
@@ -395,5 +395,13 @@ class ApprovalSubstitutionServiceTest {
             assertThat(document.getAtchFileSn()).isEqualTo(902L);
             assertThat(InformalSanctionHistory.create(document).getAtchFileSn()).isEqualTo(902L);
         }
+    }
+
+    /** 권한 보유자 조회 스텁 — 실제 저장소처럼 넘긴 후보 가운데 보유자만 돌려준다(후보 인자를 잘못 넘기면 시험이 붉어지게, 2026-11-25 Codex 검토). */
+    private static org.mockito.stubbing.Answer<java.util.List<String>> holdersAmong(java.util.Collection<String> holders) {
+        return invocation -> {
+            java.util.Collection<String> candidates = invocation.getArgument(1);
+            return holders.stream().filter(candidates::contains).distinct().sorted().toList();
+        };
     }
 }

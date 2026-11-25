@@ -265,6 +265,7 @@ class RequestResponseSchemaValidationTest extends BaseControllerTest {
         String validRequest = """
                 {
                   "userNm": "수정사용자",
+                  "version": 0,
                   "groupId": "GROUP_ADMIN",
                   "ognzId": "ORG_ADMIN",
                   "pstinstCd": "INST_ADMIN"

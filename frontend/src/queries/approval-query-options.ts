@@ -236,7 +236,7 @@ export const approvalMutationOptions = {
   }),
   /** 회수 후에도 같은 문서의 상세와 차수 이력을 최신화한다. */
   cancel: (queryClient: QueryClient) => mutationOptions({
-    mutationFn: async ({ ifmlAtrzSn, version }: { ifmlAtrzSn: number; version?: number }) => {
+    mutationFn: async ({ ifmlAtrzSn, version }: { ifmlAtrzSn: number; version: number }) => {
       await approvalUserService.cancelDraft(ifmlAtrzSn, version);
       await queryClient.invalidateQueries({ queryKey: approvalKeys.lists() });
       await queryClient.invalidateQueries({ queryKey: approvalKeys.detail(ifmlAtrzSn) });

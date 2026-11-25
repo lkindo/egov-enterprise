@@ -645,13 +645,16 @@ class AuthServiceImplTest {
         }
 
         @Test
-        @DisplayName("삭제 중 예외가 나도 로그아웃은 실패하지 않는다")
-        void swallowsRepositoryFailure() {
-            given(refreshTokenRepository.findById(ESNTL_ID))
-                    .willThrow(new IllegalStateException("detached"));
+        @DisplayName("[2026-11-25] 세션 조회·삭제 중 예외는 삼키지 않는다 — 브라우저 쿠키는 컨트롤러가 실패해도 지운다")
+        void doesNotSwallowRepositoryFailure() {
+            IllegalStateException detached = new IllegalStateException("detached");
+            given(refreshTokenRepository.findById(ESNTL_ID)).willThrow(detached);
 
-            // 로그아웃이 예외로 실패하면 사용자는 세션을 끊을 방법이 없어진다.
-            authService.logout(ESNTL_ID, null);
+            // 종전에는 삼켰지만 실제 트랜잭션에서는 저장소 예외가 rollback-only 를 남겨 커밋이 실패했다 — 성공처럼 끝나지도 못했다.
+            //   사용자가 이 브라우저의 세션을 끊는 길은 AuthApiController 가 실패해도 쿠키를 지우는 것으로 지킨다.
+            assertThat(org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
+                    () -> authService.logout(ESNTL_ID, null))).isSameAs(detached);
+            verify(userRepository, never()).advanceSessionCycle(any());
         }
 
         @Test
@@ -695,6 +698,19 @@ class AuthServiceImplTest {
             verify(userRepository).recordLogout(eq(ESNTL_ID), at.capture());
             verify(userRepository).advanceSessionCycle(List.of(ESNTL_ID));
             assertThat(at.getValue()).isBetween(before, java.time.LocalDateTime.now());
+        }
+
+        @Test
+        @DisplayName("🚨 [2026-11-25] 세션차수 증가(토큰 폐기)가 실패하면 로그아웃도 실패한다 — 성공처럼 끝나 이미 받은 access token 이 살아 있지 않게")
+        void revocationFailureIsNotSwallowed() {
+            given(refreshTokenRepository.findById(ESNTL_ID)).willReturn(Optional.empty());
+            org.springframework.dao.DataAccessResourceFailureException down =
+                    new org.springframework.dao.DataAccessResourceFailureException("connection lost");
+            given(userRepository.advanceSessionCycle(List.of(ESNTL_ID))).willThrow(down);
+
+            assertThat(org.junit.jupiter.api.Assertions.assertThrows(
+                    org.springframework.dao.DataAccessResourceFailureException.class, () -> authService.logout(ESNTL_ID, null)))
+                    .isSameAs(down);
         }
 
         @Test

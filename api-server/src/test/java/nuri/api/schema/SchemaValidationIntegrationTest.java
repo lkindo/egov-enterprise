@@ -128,6 +128,106 @@ class SchemaValidationIntegrationTest {
      * {@code scripts/reusable-migration-catalog.mjs}). 종전에는 원본 카탈로그를 그대로 복사하고 이 대조를 양쪽에 있는 표로
      * 좁혀, 구성에서 빠진 표로 가는 매핑이 이관 검증을 통과하고 적재 직전에야 실패했다.
      */
+    /**
+     * [2026-11-25 V2_156·V2_157·V2_158] 새 DB 에 적용한 결과를 본다 — 게시글 검색 trigram 인덱스 셋이 유효한 GIN 으로 있고(확장이 있을 때),
+     * 사용자 편집 버전 CHECK 가 V2_158 로 검증된 상태다. V2_157 이 확장을 건너뛸 수 있는 환경(확장 없음)은 인덱스를 묻지 않는다.
+     */
+    @Test
+    @DisplayName("게시글 검색 trigram 인덱스는 유효한 GIN 이고 사용자 편집 버전 CHECK 는 검증된 상태다")
+    void searchIndexesAndEditVersionCheckAreInPlace() throws SQLException {
+        try (Connection conn = dataSource.getConnection(); Statement st = conn.createStatement()) {
+            try (ResultSet rs = st.executeQuery(
+                    "SELECT convalidated FROM pg_constraint WHERE conname = 'ck_tb_user_info_version' AND conrelid = 'tb_user_info'::regclass")) {
+                assertThat(rs.next()).as("V2_156 의 CHECK 가 있어야 한다").isTrue();
+                assertThat(rs.getBoolean(1)).as("V2_158 이 기존 행까지 검증해야 한다").isTrue();
+            }
+            // 게시판 기능을 뺀 재사용 생성물에는 tb_bbs_item 이 없다 — 그때는 검색 인덱스를 묻지 않는다.
+            boolean trigram;
+            try (ResultSet rs = st.executeQuery(
+                    "SELECT count(*) FROM pg_extension WHERE extname = 'pg_trgm' AND to_regclass('tb_bbs_item') IS NOT NULL")) {
+                rs.next();
+                trigram = rs.getInt(1) == 1;
+            }
+            if (!trigram) {
+                return;
+            }
+            try (ResultSet rs = st.executeQuery("""
+                    SELECT ic.relname, i.indisvalid, i.indisready, pg_get_indexdef(i.indexrelid)
+                      FROM pg_index i JOIN pg_class ic ON ic.oid = i.indexrelid
+                     WHERE i.indrelid = 'tb_bbs_item'::regclass AND ic.relname LIKE 'ix_tb_bbs_item_%_trgm'
+                     ORDER BY ic.relname""")) {
+                java.util.List<String> names = new java.util.ArrayList<>();
+                while (rs.next()) {
+                    names.add(rs.getString(1));
+                    assertThat(rs.getBoolean(2) && rs.getBoolean(3)).as(rs.getString(1) + " 은 유효해야 한다").isTrue();
+                    assertThat(rs.getString(4)).as(rs.getString(1)).contains("USING gin (").contains("gin_trgm_ops)");
+                }
+                assertThat(names).containsExactly(
+                        "ix_tb_bbs_item_pst_cn_trgm", "ix_tb_bbs_item_pst_ttl_trgm", "ix_tb_bbs_item_user_nm_trgm");
+            }
+        }
+    }
+
+    /**
+     * [2026-11-25 Codex 2차] V2_157 본문을 같은 DB 에 다시 돌려 경계 상황을 본다. 각 상황은 트랜잭션 안에서 만들고 되돌린다(PostgreSQL
+     * DDL 은 트랜잭션에 묶인다 — 다른 시험에 남지 않는다). 카탈로그 조작(pg_index·pg_class)은 시험 컨테이너의 superuser 로만 한다.
+     */
+    @Test
+    @DisplayName("🚨 V2_157 은 유효한 같은 인덱스는 건너뛰고, 쓸 수 없거나 정의가 다른 같은 이름·게시글이 많은 표에서는 멈추며, 적으면 만든다")
+    void trigramMigrationGuardsUnusableIndexesAndLargeTables() throws Exception {
+        // 재사용 생성물은 V2 체인 대신 기준선 덤프(V1_0__baseline)로 스키마를 만든다 — V2_157 본문이 없으니 원본 저장소에서만 본다.
+        if (Files.isRegularFile(repoRoot().resolve("reusable-base-lock.json"))) {
+            return;
+        }
+        String script;
+        try (var in = getClass().getClassLoader().getResourceAsStream("db/migration/V2_157__index_board_post_search_trgm.sql")) {
+            assertThat(in).as("V2_157 이 classpath 에 있어야 한다").isNotNull();
+            script = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        }
+        try (Connection conn = dataSource.getConnection(); Statement st = conn.createStatement()) {
+            try (ResultSet rs = st.executeQuery("SELECT count(*) FROM pg_extension WHERE extname = 'pg_trgm'")) {
+                rs.next();
+                if (rs.getInt(1) != 1) {
+                    return; // 확장이 없는 환경은 V2_157 이 인덱스를 건너뛴다 — 위 시험이 그 경로를 본다.
+                }
+            }
+            conn.setAutoCommit(false);
+            try {
+                // (가) 유효한 같은 인덱스가 이미 있다 — 생성문 없이 통과한다.
+                st.execute(script);
+                conn.rollback();
+
+                // (나) 같은 이름인데 정의가 다르다(B-tree) — 멈춘다.
+                st.execute("DROP INDEX ix_tb_bbs_item_pst_ttl_trgm");
+                st.execute("CREATE INDEX ix_tb_bbs_item_pst_ttl_trgm ON tb_bbs_item (pst_ttl)");
+                org.assertj.core.api.Assertions.assertThatThrownBy(() -> st.execute(script)).hasMessageContaining("정의가 다릅니다");
+                conn.rollback();
+
+                // (다) 같은 이름이 INVALID(CONCURRENTLY 실패 잔여) — 멈춘다(IF NOT EXISTS 로 건너뛰어 성공 이력만 남기지 않는다).
+                st.execute("UPDATE pg_index SET indisvalid = false WHERE indexrelid = 'ix_tb_bbs_item_user_nm_trgm'::regclass");
+                org.assertj.core.api.Assertions.assertThatThrownBy(() -> st.execute(script)).hasMessageContaining("INVALID");
+                conn.rollback();
+
+                // (라) 하나가 없는데 게시글이 많다(추정 60,000행) — 쓰기를 막는 생성 대신 멈추고 사전 생성을 요구한다.
+                st.execute("DROP INDEX ix_tb_bbs_item_pst_cn_trgm");
+                st.execute("UPDATE pg_class SET reltuples = 60000 WHERE oid = 'tb_bbs_item'::regclass");
+                org.assertj.core.api.Assertions.assertThatThrownBy(() -> st.execute(script)).hasMessageContaining("게시글이 많아");
+                conn.rollback();
+
+                // (마) 하나가 없고 게시글이 적다 — 만든다.
+                st.execute("DROP INDEX ix_tb_bbs_item_pst_cn_trgm");
+                st.execute(script);
+                try (ResultSet rs = st.executeQuery(
+                        "SELECT indisvalid FROM pg_index WHERE indexrelid = 'ix_tb_bbs_item_pst_cn_trgm'::regclass")) {
+                    assertThat(rs.next() && rs.getBoolean(1)).as("다시 만든 본문 인덱스는 유효해야 한다").isTrue();
+                }
+            } finally {
+                conn.rollback();
+                conn.setAutoCommit(true);
+            }
+        }
+    }
+
     @Test
     @DisplayName("이관 표준 스키마 카탈로그(db_columns.json)가 Flyway 적용 스키마와 일치한다")
     void migrationColumnCatalogMatchesMigratedSchema() throws SQLException, IOException {
