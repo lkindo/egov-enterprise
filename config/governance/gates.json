@@ -1460,8 +1460,7 @@
             "fragment": "run('npm run test:operational-contracts');",
             "tiers": [
               "local-full",
-              "local-e2e",
-              "local-post-push"
+              "local-e2e"
             ]
           },
           {
@@ -1470,7 +1469,17 @@
             "tiers": [
               "ci"
             ],
-            "job": "secret-scan"
+            "job": "secret-scan",
+            "conditional": true
+          },
+          {
+            "source": ".github/workflows/ci.yml",
+            "fragment": "run: npm run test:operational-contracts:core",
+            "tiers": [
+              "ci"
+            ],
+            "job": "secret-scan",
+            "conditional": true
           }
         ]
       },
@@ -1478,7 +1487,6 @@
         "pre-push",
         "local-full",
         "local-e2e",
-        "local-post-push",
         "ci"
       ],
       "task": "npm run test:operational-contracts",
@@ -1491,7 +1499,9 @@
         "tools/migration-workspace/*.test.mjs",
         "tools/requirements-workspace/*.test.mjs",
         "package.json",
-        "scripts/node-test-junit-reporter.mjs"
+        "scripts/node-test-junit-reporter.mjs",
+        "scripts/operational-contracts-runner.mjs",
+        "scripts/run-operational-contracts.mjs"
       ],
       "evidence": [
         "Node test spec output, per-file JUnit build/operational-contracts/junit.xml and process exit status"

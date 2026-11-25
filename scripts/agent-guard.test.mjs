@@ -206,7 +206,8 @@ const CASES = {
       './gradlew jacocoRootCoverageVerification', './gradlew :api-server:vendorConformanceTest', 'npx cross-env TZ=Asia/Seoul gradlew.bat test',
       'pnpm -C frontend test', 'pnpm -C frontend run test:coverage', 'pnpm -C frontend exec vitest run', 'npx vitest run', 'cd frontend && pnpm test',
       'pnpm -C frontend run test:e2e -- --list', 'pnpm -C frontend exec playwright test e2e/a.spec.ts', 'npm --prefix frontend test',
-      'npm run test:operational-contracts', 'npm test', 'npm run test:coverage', 'node --test', 'node --test "scripts/*.test.mjs"',
+      'npm run test:operational-contracts', 'npm run test:operational-contracts:core', 'npm run test:operational-contracts:composer',
+      'npm test', 'npm run test:coverage', 'node --test', 'node --test "scripts/*.test.mjs"',
       'TZ=Asia/Seoul ./gradlew test', 'bash -lc "./gradlew :api-server:test"',
       // 벤더 증거 입력이라 아직 스스로 줄을 서지 않는 진입점(다음 재기록 묶음에서 연결).
       'npm run test:e2e:isolated', 'npm run test:e2e:isolated -- --representative', 'npm run base:generate-db -- --profile core',
@@ -221,7 +222,7 @@ const CASES = {
       './gradlew compileJava compileTestJava', './gradlew :api-server:jacocoTestReport', './gradlew :api-server:bootJar',
       'pnpm -C frontend test -- src/a.test.ts', 'pnpm -C frontend exec vitest run src/a.test.ts', 'pnpm -C frontend exec vitest related src/a.ts',
       'pnpm -C frontend exec vitest run --list', 'pnpm -C frontend exec playwright test --list', 'pnpm -C frontend run type-check', 'pnpm -C frontend run lint',
-      'node --test scripts/a.test.mjs scripts/b.test.mjs', 'npm run test:shared-memory', 'npm run verify:post-push', 'npm run base:verify -- --profile core',
+      'node --test scripts/a.test.mjs scripts/b.test.mjs', 'npm run test:shared-memory', 'npm run verify:docs', 'npm run base:verify -- --profile core',
       'node scripts/heavy-run-queue.mjs run --kind gradle -- .\\gradlew.bat :api-server:test', 'git commit --only -m "./gradlew test 는 대기열로" -- a.md',
       'node scripts/heavy-run-queue.mjs run --kind isolated-e2e -- npm run test:e2e:isolated', 'npm run base:generate-source -- --profile core',
       'node --test scripts/run-isolated-e2e.test.mjs', 'pnpm install', 'pnpm run lint', '& node scripts/heavy-run-queue.mjs status',

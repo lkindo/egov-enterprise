@@ -70,6 +70,7 @@
     "scripts/reusable-source-harness.mjs",
     "scripts/reusable-source-java.mjs",
     "scripts/reusable-source-messages.mjs",
+    "scripts/run-operational-contracts.mjs",
     "scripts/secure-coding-weaknesses.mjs",
     "scripts/ui-navigation-disposition-contract.mjs",
     "scripts/verify-branch-protection.mjs",
@@ -96,12 +97,13 @@
     "test:base-profile",
     "test:ci-scope",
     "test:governance-gates",
+    "test:operational-contracts:composer",
+    "test:operational-contracts:core",
     "test:required-checks",
     "test:sast",
     "test:shared-memory",
     "verify:integrate",
-    "verify:ops",
-    "verify:post-push"
+    "verify:ops"
   ],
   "gates": [
     {
@@ -731,6 +733,11 @@
     },
     {
       "file": "scripts/reusable-verification-contract.test.mjs",
+      "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
+      "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
+    },
+    {
+      "file": "scripts/run-operational-contracts.test.mjs",
       "reason": "프로젝트 생성기 및 원본 저장소 전용 운영·CI 계약 시험으로 생성 프로젝트에서 제외된다.",
       "coveredBy": "원본 저장소의 npm run test:operational-contracts 에서 계속 실행한다"
     },

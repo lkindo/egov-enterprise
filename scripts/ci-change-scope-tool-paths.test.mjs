@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -10,6 +10,7 @@ import { vendorEvidenceInputs } from './vendor-evidence-inputs.mjs';
 import { asPreviewVendors, openedVendorCiPlan } from './project-composer-vendor-evidence.test-helpers.mjs';
 import { parseModuleReferences, tokenizeDependencies } from './frontend-module-graph.mjs';
 import { trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
+import { partitionOperationalContracts } from './run-operational-contracts.mjs';
 
 /*
  * 생성기·도구 전용 경로 표(GENERATOR_TOOL_PATHS, 11단계 C11 — CI 2차-b)의 축이 사실인지 소스에서 다시 계산한다.
@@ -34,7 +35,7 @@ import { trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
  *  - 실행: JS 의 상대 import·require, node 를 띄우는 JS(execPath·'node …')와 Java(ProcessBuilder + "node")가 가리키는 JS 파일,
  *    계산된 동적 import 가 있는 JS 가 가리키는 JS 파일, CI 가 node 로 실행하는 파일. 실행한 표 안 모듈이 다시 실행·읽는 표 안
  *    파일도 그 시험이 읽는 것으로 본다(표 안 사슬). 표 밖 모듈(verify.mjs 같은 허브)의 사슬은 따라가지 않는다 — 그 모듈이 바뀌면
- *    미분류 경로라 전수이고, 표 안 모듈 자체의 동작은 늘 도는 운영 계약이 본다.
+ *    미분류 경로라 전수이고, 표 안 모듈 자체의 동작은 운영 계약(:core 항상, 관련 변경·main 은 전체)이 본다.
  */
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -876,4 +877,58 @@ test('a PIT module test or Gradle script that starts reading an unclassified pat
     'docs/pit-synthetic-fixture.json': '{}',
   };
   assert.deepEqual(pitInputMismatches({ files: [...new Set([...repositoryFiles, ...Object.keys(quiet)])], read: file => quiet[file] ?? readRepository(file) }), []);
+});
+
+function composerTriggerMisses(paths, classify = (file) => classifyChangedFiles([file], { event: 'pull_request' })) {
+  return paths.filter((file) => !classify(file).composerContracts);
+}
+
+test('every composer-group operational contract and its transitive local imports select composerContracts on pull_request', () => {
+  const isFile = (relPath) => {
+    try { return statSync(path.join(repoRoot, relPath)).isFile(); } catch { return false; }
+  };
+  const { composer } = partitionOperationalContracts(repoRoot);
+  const visited = new Set();
+  const queue = [...composer];
+  while (queue.length > 0) {
+    const file = queue.shift();
+    if (visited.has(file) || !isFile(file)) continue;
+    visited.add(file);
+    const source = readRepository(file);
+    for (const ref of parseModuleReferences(source, file).references) {
+      if (!ref.specifier.startsWith('.')) continue;
+      const resolved = path.relative(repoRoot, path.resolve(repoRoot, path.dirname(file), ref.specifier)).replaceAll('\\', '/');
+      if (isFile(resolved)) queue.push(resolved);
+    }
+  }
+
+  assert.ok(visited.size >= 150, `composer transitive closure is unexpectedly small: ${visited.size}`);
+  assert.deepEqual(composerTriggerMisses([...visited].sort()), []);
+
+  const composerToolFiles = repositoryFiles.filter((file) => [
+    'scripts/atlas-',
+    'scripts/build-atlas.mjs',
+    'config/modules/',
+    'config/project-composer-menus.json',
+    'scripts/composer-modules',
+    'scripts/project-composer',
+    'scripts/reusable-',
+    'scripts/verify-project-composer',
+    'scripts/verify-reusable-',
+    'tools/project-composer/',
+  ].some((prefix) => (prefix.endsWith('/') || prefix.endsWith('-') ? file.startsWith(prefix) : file === prefix)));
+  assert.ok(composerToolFiles.length >= 20, `composer tool file set is unexpectedly small: ${composerToolFiles.length}`);
+  assert.deepEqual(composerTriggerMisses(composerToolFiles), []);
+
+  // H5 Red 증명: 일반 문서·스캐폴더는 :core 에 있어야 하며 composer 트리거로 덮이지 않는 경로를 넣으면 누락이 즉시 드러난다.
+  assert.deepEqual(
+    composerTriggerMisses(['docs/03-guides/e2e-test-guide.md', 'scripts/generate-domain.ps1']),
+    ['docs/03-guides/e2e-test-guide.md', 'scripts/generate-domain.ps1'],
+  );
+  // 또한 기존 composer test 가 읽는 파일에서 트리거를 뺀 가상 분류기도 즉시 붉다.
+  const narrowed = composerTriggerMisses(
+    ['scripts/build-atlas.mjs', 'frontend/scripts/ui-quality-baseline-core.mjs'],
+    () => ({ composerContracts: false }),
+  );
+  assert.deepEqual(narrowed, ['scripts/build-atlas.mjs', 'frontend/scripts/ui-quality-baseline-core.mjs']);
 });

@@ -1459,39 +1459,69 @@ test('one operational-contract catalog runs in required CI and before the docs f
   assert.ok(prePush.includes('--stdin --fields docsOnly,backend,migration,frontend,atlas'));
 });
 
-test('required operational-contract step is exact and cannot be converted into a decoy', () => {
+test('required operational-contract steps and scope guard are exact and fail-closed', () => {
+  const normalizedCi = ciContent.replace(/\r\n/g, '\n');
   const mutations = [
     [
-      ciContent.replace(
-        '      - name: Verify repository operational contracts',
-        '      - name: Verify repository operational contracts\n        if: false',
+      normalizedCi.replace(
+        '      composer-contracts: ${{ steps.scope.outputs.composer_contracts }}\n',
+        '',
       ),
-      /operational contracts.*step-level if/i,
+      /change-scope must wire output 'composer-contracts'/i,
     ],
     [
-      ciContent.replace(
+      normalizedCi.replace(
+        '      - name: Validate operational contracts scope output',
+        '      - name: Validate operational contracts scope output\n        if: false',
+      ),
+      /scope guard step cannot use a step-level if/i,
+    ],
+    [
+      normalizedCi.replace(
+        '            true|false) ;;',
+        '            true|false|"") ;;',
+      ),
+      /scope guard step must fail closed/i,
+    ],
+    [
+      normalizedCi.replace(
+        "        if: needs.change-scope.outputs.composer-contracts == 'true'",
+        '        if: false',
+      ),
+      /operational contracts full step must run iff/i,
+    ],
+    [
+      normalizedCi.replace(
         '      - name: Verify repository operational contracts',
         '      - name: Verify repository operational contracts\n        continue-on-error: true',
       ),
       /operational contracts.*continue-on-error/i,
     ],
     [
-      ciContent.replace(
-        '      - name: Verify repository operational contracts',
-        '      - name: Verify repository operational contracts\n        shell: echo {0}',
+      normalizedCi.replace(
+        '      - name: Verify repository operational contracts (core)',
+        '      - name: Verify repository operational contracts (core)\n        shell: echo {0}',
       ),
-      /operational contracts.*shell/i,
+      /operational contracts core step cannot override the runner shell/i,
     ],
     [
-      ciContent.replace(
-        '        run: npm run test:operational-contracts',
-        '        run: echo npm run test:operational-contracts',
+      normalizedCi.replace(
+        '        run: npm run test:operational-contracts\n',
+        '        run: npm run test:operational-contracts:core\n',
       ),
-      /operational contracts.*must run.*exactly/i,
+      /operational contracts full step must run/i,
+    ],
+    [
+      normalizedCi.replace(
+        '        run: npm run test:operational-contracts:core',
+        '        run: echo skipped',
+      ),
+      /operational contracts core step must run/i,
     ],
   ];
 
   for (const [mutated, expectedError] of mutations) {
+    assert.notEqual(mutated, normalizedCi, `mutation must modify workflow: ${expectedError}`);
     assert.match(validateStaticContract({ manifest, ciContent: mutated }).join('\n'), expectedError);
   }
 });
