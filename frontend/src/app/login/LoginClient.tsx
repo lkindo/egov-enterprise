@@ -18,7 +18,11 @@ import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { MfaChallengePanel } from '@/components/account/MfaChallengePanel';
 import { loginFormSchema } from './login-form-validation';
 import { announceSession } from '@/lib/auth/session-broadcast';
-import { takeSignOutNotices } from '@/lib/auth/before-sign-out';
+import {
+    serverSignOutNoticesSnapshot,
+    signOutNoticesSnapshot,
+    subscribeSignOutNotices,
+} from '@/lib/auth/before-sign-out';
 
 const LOGIN_FORM_LABELS = {
     userId: '아이디',
@@ -103,12 +107,8 @@ function LoginContent() {
     //   값 비교는 'true' 정확 일치다 — 존재만 보면 `?expired=false` 도 만료로 읽힌다.
     const sessionExpired = searchParams.get('expired') === 'true';
     // [2026-11-25 품질 평가] 세션이 끝나며 보내지 못했거나 결과를 모르는 일(결재 대기 승인)의 안내 — 이 탭이 남긴 것을 한 번 읽는다.
-    //   서버 렌더와 첫 화면이 같도록 마운트 뒤에 읽는다(읽으면 지운다 — Strict Mode 의 두 번째 실행은 빈 목록이라 덮지 않는다).
-    const [signOutNotices, setSignOutNotices] = React.useState<string[]>([]);
-    React.useEffect(() => {
-        const notices = takeSignOutNotices();
-        if (notices.length > 0) setSignOutNotices(notices);
-    }, []);
+    //   서버 렌더와 하이드레이션은 빈 목록이고, 그 뒤 브라우저가 한 번 꺼낸 목록을 같은 화면 동안 그대로 보인다.
+    const signOutNotices = React.useSyncExternalStore(subscribeSignOutNotices, signOutNoticesSnapshot, serverSignOutNoticesSnapshot);
 
     // 이번 제출로 인증된 것인지(=세션 경계), 이미 인증된 상태로 이 페이지를 방문한 것인지 구분한다.
     // 두 경우는 필요한 이동 방식이 다르다(아래 각 주석 참조). ref 이므로 렌더를 유발하지 않는다.

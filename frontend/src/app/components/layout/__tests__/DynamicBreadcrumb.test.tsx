@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
@@ -15,7 +15,7 @@ vi.mock('next/link', () => ({
 }));
 vi.mock('@/services/business/user/MenuService', () => ({ menuService: { getHeadMenus: nav.getHeadMenus } }));
 
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, QueryObserver, useQuery } from '@tanstack/react-query';
 import { rememberBrowserQueryClient } from '@/lib/query/browser-query-client';
 import { DynamicBreadcrumb } from '../DynamicBreadcrumb';
 
@@ -112,6 +112,22 @@ describe('DynamicBreadcrumb', () => {
       rerender(view('u2', renamed));
       await waitFor(() => expect(crumbs()).toEqual(['홈', '운영 센터', '메뉴 관리']));
       expect(nav.getHeadMenus).not.toHaveBeenCalled();
+    } finally {
+      rememberBrowserQueryClient(undefined);
+    }
+  });
+  it('[Codex 2차 검토] 공급자가 클라이언트를 나중에 기억해도(첫 마운트의 효과 순서) 이어서 그 캐시를 구독한다', async () => {
+    const client = new QueryClient();
+    const renamed = [{ ...menus[0], menuNm: '운영 센터' }];
+    try {
+      render(<QueryClientProvider client={client}><DynamicBreadcrumb customItems={[{ name: '메뉴 관리' }]} /></QueryClientProvider>);
+      await waitFor(() => expect(crumbs()).toEqual(['홈', '관리 센터', '메뉴 관리']));
+      // 공급자 효과가 뒤늦게 기억한다 — 그다음 머리글 메뉴 조회가 켜지고 새 이름을 받는다.
+      act(() => { rememberBrowserQueryClient(client); });
+      const observer = new QueryObserver(client, { queryKey: ['menus', 'head', 'u1', 'v'], queryFn: () => renamed });
+      const stop = observer.subscribe(() => {});
+      await waitFor(() => expect(crumbs()).toEqual(['홈', '운영 센터', '메뉴 관리']));
+      stop();
     } finally {
       rememberBrowserQueryClient(undefined);
     }

@@ -1,4 +1,4 @@
-import { isSignedOut } from '@/lib/auth/authorization-state';
+import { getAuthorizationRequestEpoch, isSignedOut } from '@/lib/auth/authorization-state';
 import { registerBeforeSignOut, registerOnSessionLost, rememberSignOutNotice } from '@/lib/auth/before-sign-out';
 
 /**
@@ -41,8 +41,11 @@ export interface ScheduleApprovalOptions {
 const pending = new Map<number, PendingCommit>();
 /** 이미 보낸(서버 응답을 기다리는) 승인. 로그아웃은 이것까지 기다린다 — 대기 목록에서는 보내는 순간 빠진다. */
 const inFlight = new Set<Promise<void>>();
-/** 로그아웃이 대기 승인을 보내는 동안 새 승인을 받지 않는다 — 시작한 정리의 대상에서 빠져 사라지지 않게. */
-let closing = false;
+/**
+ * 로그아웃이 대기 승인을 보내는 동안 새 승인을 받지 않는다 — 시작한 정리의 대상에서 빠져 사라지지 않게. 그 로그아웃을 시작한 인증 epoch 에
+ * 묶는다 — 정리가 상한을 넘겨 늦게 끝나도, 그 사이 다시 로그인한 세션(epoch 가 바뀐다)의 승인은 막지 않는다(Codex 2차 검토).
+ */
+let closingEpoch: number | undefined | null = null;
 const listeners = new Set<() => void>();
 /** useSyncExternalStore 가 같은 값이면 같은 참조를 받아야 하므로 바뀔 때만 새 배열을 만든다. */
 let snapshot: number[] = [];
@@ -69,6 +72,7 @@ export function pendingApprovalCommits(): number[] {
 export function scheduleApprovalCommit(ifmlAtrzSn: number, run: () => Promise<void>,
   { delayMs = APPROVAL_UNDO_MS, onCancel, label }: ScheduleApprovalOptions = {}): boolean {
   // 로그아웃 중이거나 로그아웃한 뒤면 받지 않는다 — 보낼 수 없는 승인을 대기시키지 않는다.
+  const closing = closingEpoch !== null && closingEpoch === getAuthorizationRequestEpoch();
   if (pending.has(ifmlAtrzSn) || closing || isSignedOut()) return false;
   const timer = setTimeout(() => { void commit(ifmlAtrzSn); }, delayMs);
   pending.set(ifmlAtrzSn, { timer, run, onCancel, label });
@@ -122,12 +126,13 @@ export function flushApprovalCommits(): Promise<void[]> {
  * 추월했다.
  */
 export async function settleApprovalCommitsForSignOut(): Promise<void> {
-  closing = true;
+  const epoch = getAuthorizationRequestEpoch();
+  closingEpoch = epoch;
   try {
     await flushApprovalCommits();
     await Promise.allSettled([...inFlight]);
   } finally {
-    closing = false;
+    if (closingEpoch === epoch) closingEpoch = null;
   }
 }
 
@@ -142,7 +147,7 @@ export function abandonApprovalCommitsOnSessionLost(): void {
   pending.clear();
   notify();
   if (unsent > 0) {
-    rememberSignOutNotice(`로그아웃되어 보내지 못한 승인이 ${unsent}건 있습니다. 결재함에서 다시 처리해 주세요.`);
+    rememberSignOutNotice(`세션이 끝나 보내지 못한 승인이 ${unsent}건 있습니다. 결재함에서 다시 처리해 주세요.`);
   }
   if (unconfirmed > 0) {
     rememberSignOutNotice(`결과를 확인하지 못한 승인이 ${unconfirmed}건 있습니다. 결재함에서 처리 결과를 확인해 주세요.`);

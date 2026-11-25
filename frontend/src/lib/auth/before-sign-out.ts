@@ -30,6 +30,7 @@ export const BEFORE_SIGN_OUT_TIMEOUT_MS = 20_000;
 
 /** 등록된 일을 모두 시작하고, 모두 끝나거나 상한 시간이 지날 때까지 기다린다. 실패는 삼킨다(등록한 쪽이 알린다). */
 export async function runBeforeSignOut(timeoutMs: number = BEFORE_SIGN_OUT_TIMEOUT_MS): Promise<{ timedOut: boolean }> {
+  forgetShownSignOutNotices();
   if (beforeSignOut.size === 0) return { timedOut: false };
   const running = [...beforeSignOut.values()].map((task) => Promise.resolve().then(task).catch(() => undefined));
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -54,6 +55,7 @@ export function registerOnSessionLost(key: string, task: () => void): () => void
 
 /** 등록된 세션 상실 정리를 부른다. 하나의 실패가 나머지를 막지 않는다. 페이지를 떠나기 직전에 부른다. */
 export function runOnSessionLost(): void {
+  forgetShownSignOutNotices();
   for (const task of onSessionLost.values()) {
     try {
       task();
@@ -67,6 +69,7 @@ const NOTICE_KEY = 'egov.sign-out-notices.v1';
 
 /** 다시 로그인할 때 보일 안내를 남긴다(이 탭의 세션 저장소, 문장만 — 식별자·내용은 싣지 않는다). */
 export function rememberSignOutNotice(message: string): void {
+  forgetShownSignOutNotices();
   try {
     const current = JSON.parse(window.sessionStorage.getItem(NOTICE_KEY) ?? '[]') as unknown;
     const list = Array.isArray(current) ? current.filter((item): item is string => typeof item === 'string') : [];
@@ -75,6 +78,35 @@ export function rememberSignOutNotice(message: string): void {
   } catch {
     // 저장소를 쓸 수 없으면 안내만 잃는다.
   }
+}
+
+/**
+ * 로그인 화면이 보일 안내의 스냅숏(useSyncExternalStore) — 처음 읽을 때 남긴 안내를 꺼내 고정한다. 같은 화면의 다시 그리기와 Strict Mode 의
+ * 이중 렌더가 같은 목록을 보고, 로그아웃이 시작되거나 새 안내가 남으면 비운다(다음 로그인 화면이 새로 꺼낸다). 서버 렌더는 빈 목록이다.
+ */
+const NO_NOTICES: readonly string[] = Object.freeze([]);
+let shownNotices: readonly string[] | null = null;
+
+export function signOutNoticesSnapshot(): readonly string[] {
+  if (shownNotices === null) {
+    const taken = takeSignOutNotices();
+    shownNotices = taken.length === 0 ? NO_NOTICES : Object.freeze(taken);
+  }
+  return shownNotices;
+}
+
+export function serverSignOutNoticesSnapshot(): readonly string[] {
+  return NO_NOTICES;
+}
+
+/** 안내는 바깥에서 바뀌지 않는다(로그인 화면에 있는 동안 새로 남지 않는다) — 구독할 것이 없다. */
+export function subscribeSignOutNotices(): () => void {
+  return () => {};
+}
+
+/** 보인 안내를 잊는다 — 로그아웃이 시작되거나 새 안내가 남을 때(다음 로그인 화면은 새로 꺼낸다). 로그인 화면에 머무는 동안은 그대로 둔다. */
+export function forgetShownSignOutNotices(): void {
+  shownNotices = null;
 }
 
 /** 남긴 안내를 읽고 지운다. */

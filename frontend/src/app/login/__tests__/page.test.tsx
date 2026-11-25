@@ -6,7 +6,7 @@ import { resolveInternalRedirect } from '../LoginClient';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { rememberSignOutNotice, takeSignOutNotices } from '@/lib/auth/before-sign-out';
+import { forgetShownSignOutNotices, rememberSignOutNotice, takeSignOutNotices } from '@/lib/auth/before-sign-out';
 
 const LOGIN_ERROR_COPY = '로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요.';
 
@@ -358,12 +358,13 @@ describe('세션 만료 안내', () => {
   });
 
   it('[2026-11-25] 세션이 끝나며 보내지 못한 일의 안내를 한 번 보이고 지운다', async () => {
-    rememberSignOutNotice('로그아웃되어 보내지 못한 승인이 1건 있습니다. 결재함에서 다시 처리해 주세요.');
+    rememberSignOutNotice('세션이 끝나 보내지 못한 승인이 1건 있습니다. 결재함에서 다시 처리해 주세요.');
 
     await act(async () => { render(<LoginPage />); });
 
     expect(screen.getByTestId('login-sign-out-notices')).toHaveTextContent('보내지 못한 승인이 1건');
     expect(takeSignOutNotices()).toEqual([]);
+    forgetShownSignOutNotices();
   });
 
   it('만료 파라미터가 없으면 안내하지 않는다 — 평상시 로그인은 사고가 아니다', async () => {

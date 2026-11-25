@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { browserQueryClient } from '@/lib/query/browser-query-client';
+import { useState, useEffect, useSyncExternalStore } from 'react';
+import { browserQueryClient, subscribeBrowserQueryClient } from '@/lib/query/browser-query-client';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Home, ChevronRight } from 'lucide-react';
@@ -40,9 +40,29 @@ export function DynamicBreadcrumb({ customItems = [], currentLabel }: { customIt
   //   사용자·인가 버전이 들어가므로 키를 다시 만들지 않고, 지금 켜져 있는(관찰자가 있는) 머리글 메뉴 조회를 찾아 그 키로 읽는다. 없으면
   //   (로그인 전·공급자 없는 렌더) 종전처럼 직접 읽는다. 늦게 도착한 이전 주소의 응답은 버린다 — 빠르게 옮기면 이전 경로가 덮어썼다.
   //   클라이언트는 컨텍스트가 아니라 앱 공급자가 기억한 것을 읽는다(react-query 를 대역으로 바꾼 화면 시험이 그대로 돌게).
+  //   클라이언트는 공급자가 기억한 것을 구독한다 — 첫 마운트에서는 자식(브레드크럼) 효과가 공급자 효과보다 먼저 돌아 아직 없을 수 있다.
+  const queryClient = useSyncExternalStore(subscribeBrowserQueryClient, browserQueryClient, () => undefined);
+
   useEffect(() => {
     let cancelled = false;
-    const queryClient = browserQueryClient();
+    // 같은 효과 안에서도 가장 나중의 계산만 반영한다 — 느린 직접 조회가 그 뒤의 캐시 갱신을 옛 이름으로 덮지 않게(Codex 2차 검토).
+    let latest = 0;
+    const applyMenus = (menus: unknown) => {
+      if (!Array.isArray(menus)) {
+        setItems([]);
+        return;
+      }
+      const path: BreadcrumbItem[] = [];
+      const match = findActiveMenu(menus, pathname || '', new URLSearchParams(searchKey));
+      for (const menu of match?.path ?? []) {
+        path.push({ name: menu.menuNm, href: resolveMenuInternalRoute(menu) ?? undefined });
+      }
+      const lastHref = path.at(-1)?.href;
+      const lastPath = lastHref ? new URL(lastHref, 'https://egov.invalid').pathname.replace(/\/+$/, '') || '/' : null;
+      const currentPath = (pathname || '').replace(/\/+$/, '') || '/';
+      setItems(path);
+      setExactMatch(lastPath === currentPath);
+    };
     const loadMenus = () => {
       const shared = queryClient?.getQueryCache().findAll({ queryKey: ['menus', 'head'], type: 'active' })
         .sort((left, right) => right.state.dataUpdatedAt - left.state.dataUpdatedAt)[0];
@@ -55,44 +75,31 @@ export function DynamicBreadcrumb({ customItems = [], currentLabel }: { customIt
         : menuService.getHeadMenus();
     };
     const fetchPath = async () => {
+      const mine = ++latest;
       try {
         const menus = await loadMenus() || [];
-        if (cancelled) return;
-        const path: BreadcrumbItem[] = [];
-        
-        if (!Array.isArray(menus)) {
-          setItems([]);
-          return;
-        }
-        
-        const match = findActiveMenu(menus, pathname || '', new URLSearchParams(searchKey));
-        for (const menu of match?.path ?? []) {
-          path.push({ name: menu.menuNm, href: resolveMenuInternalRoute(menu) ?? undefined });
-        }
-        const lastHref = path.at(-1)?.href;
-        const lastPath = lastHref ? new URL(lastHref, 'https://egov.invalid').pathname.replace(/\/+$/, '') || '/' : null;
-        const currentPath = (pathname || '').replace(/\/+$/, '') || '/';
-
-        setItems(path);
-        setExactMatch(lastPath === currentPath);
+        if (!cancelled && mine === latest) applyMenus(menus);
       } catch {
-        if (!cancelled) setItems([]);
+        if (!cancelled && mine === latest) setItems([]);
       }
     };
 
     void fetchPath();
-    // 같은 주소에서 사용자·인가 버전이 바뀌면 머리글 메뉴 조회가 새 값으로 바뀐다 — 그때 경로를 다시 계산한다(Codex 검토: 종전에는 이전
-    //   메뉴 이름·링크가 남았다).
+    // 같은 주소에서 사용자·인가 버전이 바뀌면 머리글 메뉴 조회가 새 값으로 바뀐다 — 그 캐시 값으로 경로를 다시 계산한다(Codex 검토: 종전에는
+    //   이전 메뉴 이름·링크가 남았다). 진행 중인 직접 조회는 이 계산보다 오래됐으므로 버린다.
     const unsubscribe = queryClient?.getQueryCache().subscribe((event) => {
       const key = event.query.queryKey;
       if (key[0] !== 'menus' || key[1] !== 'head') return;
-      if (event.type === 'updated' && event.action.type === 'success') void fetchPath();
+      if (event.type === 'updated' && event.action.type === 'success' && event.query.isActive()) {
+        latest += 1;
+        if (!cancelled) applyMenus(event.query.state.data);
+      }
     });
     return () => {
       cancelled = true;
       unsubscribe?.();
     };
-  }, [pathname, searchKey]);
+  }, [pathname, searchKey, queryClient]);
 
   // 하위 화면의 마지막 한 단계 — 화면 제목이 있으면 그것을, 없으면 화면이 넘긴 경로의 마지막 항목을 쓴다.
   const lastStep = currentLabel ? { name: currentLabel } : customItems.at(-1);

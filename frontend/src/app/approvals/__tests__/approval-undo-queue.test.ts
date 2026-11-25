@@ -10,7 +10,7 @@ import {
   subscribeApprovalCommits,
 } from '../approval-undo-queue';
 import { runBeforeSignOut, runOnSessionLost, takeSignOutNotices } from '@/lib/auth/before-sign-out';
-import { markSignedIn, markSignedOut } from '@/lib/auth/authorization-state';
+import { advanceAuthorizationRequestEpoch, markSignedIn, markSignedOut } from '@/lib/auth/authorization-state';
 
 /** 승인 되돌리기 대기열 — 언제 보내는지만 정하고, 누른 승인이 조용히 사라지지 않게 한다. */
 describe('approval-undo-queue', () => {
@@ -60,6 +60,21 @@ describe('approval-undo-queue', () => {
     expect(scheduleApprovalCommit(10, vi.fn().mockResolvedValue(undefined))).toBe(true);
   });
 
+  it('[Codex 2차 검토] 로그아웃 정리가 늦게 끝나도, 그 사이 다시 로그인한 세션(인증 epoch 가 바뀐다)의 승인은 막지 않는다', async () => {
+    let answer: () => void = () => {};
+    scheduleApprovalCommit(20, () => new Promise<void>((resolve) => { answer = resolve; }));
+    void commitApprovalNow(20);
+    const signingOut = runBeforeSignOut();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(scheduleApprovalCommit(21, vi.fn())).toBe(false);
+
+    advanceAuthorizationRequestEpoch();
+    expect(scheduleApprovalCommit(22, vi.fn().mockResolvedValue(undefined))).toBe(true);
+
+    answer();
+    await signingOut;
+  });
+
   it('[Codex 검토] 로그아웃한 뒤에는 승인을 대기시키지 않는다', () => {
     markSignedOut();
     try {
@@ -79,7 +94,7 @@ describe('approval-undo-queue', () => {
     expect(pendingApprovalCommits()).toEqual([]);
     await vi.advanceTimersByTimeAsync(APPROVAL_UNDO_MS);
     expect(run).not.toHaveBeenCalled();
-    expect(takeSignOutNotices()).toEqual(['로그아웃되어 보내지 못한 승인이 2건 있습니다. 결재함에서 다시 처리해 주세요.']);
+    expect(takeSignOutNotices()).toEqual(['세션이 끝나 보내지 못한 승인이 2건 있습니다. 결재함에서 다시 처리해 주세요.']);
   });
 
   it('같은 문서를 다시 잡지 않는다 — 연타가 두 번 보내지 않는다', async () => {

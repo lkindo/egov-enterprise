@@ -70,8 +70,11 @@ export function AuthProvider({
   const requestEpoch = useRef(0);
   const inFlightCheck = useRef<Promise<void> | null>(null);
   const mfaPending = useRef(false);
-  /** 진행 중인 로그아웃 — 겹친 로그아웃(만료 감시·수동)이 같은 정리를 기다리게 한다. 둘째가 첫째의 정리를 추월하지 않는다. */
-  const signingOut = useRef<Promise<void> | null>(null);
+  /**
+   * 진행 중인 로그아웃과 그것을 시작한 사용자 — 같은 사용자의 겹친 로그아웃(만료 감시·수동)만 같은 정리를 기다린다. 그 사이 다른 탭의
+   * 로그인으로 사용자가 바뀌었으면 새 사용자의 로그아웃은 따로 한다(Codex 2차 검토).
+   */
+  const signingOut = useRef<{ run: Promise<void>; userId: string | null } | null>(null);
   const checkAuthRef = useRef<() => Promise<void>>(() => Promise.resolve());
   const transientRetry = useRef<{ timer: ReturnType<typeof setTimeout> | null; attempt: number }>({ timer: null, attempt: 0 });
   const clearTransientRetry = useCallback(() => {
@@ -245,13 +248,15 @@ export function AuthProvider({
 
   /** 겹친 로그아웃(만료 감시·수동 클릭)은 같은 정리를 기다린다 — 둘째가 첫째가 보내는 중인 승인을 추월해 세션을 먼저 닫지 않는다. */
   const logout = useCallback(async () => {
-    if (signingOut.current) return signingOut.current;
+    const userId = currentUser.current?.id ?? null;
+    if (signingOut.current && signingOut.current.userId === userId) return signingOut.current.run;
     const run = signOut();
-    signingOut.current = run;
+    const entry = { run, userId };
+    signingOut.current = entry;
     try {
       await run;
     } finally {
-      if (signingOut.current === run) signingOut.current = null;
+      if (signingOut.current === entry) signingOut.current = null;
     }
   }, [signOut]);
 
@@ -276,12 +281,13 @@ export function AuthProvider({
       }
       // 지금 사용자가 없어도 진행 중인 확인이 이전 사용자를 되살리지 않게 먼저 무효화한다.
       invalidateAuthCheck();
+      // 세션은 이미 끝났다(다른 탭의 로그아웃) — 사용자 재확인이 먼저 실패해 사용자가 비었어도 보낼 수 없는 대기 일을 거두고 다시
+      //   로그인할 때 볼 안내를 남긴다(Codex 2차 검토). 요청 차단 표지는 사용자가 있던 탭에만 세운다 — 익명 화면의 공개 조회를 막지 않는다.
+      runOnSessionLost();
       if (!currentUser.current) {
         setLoading(false);
         return;
       }
-      // 세션은 이미 끝났다(다른 탭의 로그아웃) — 보낼 수 없는 대기 일을 거두고 다시 로그인할 때 볼 안내를 남긴다.
-      runOnSessionLost();
       markSignedOut();
       advanceAuthorizationRequestEpoch();
       commitUser(null);
