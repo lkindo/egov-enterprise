@@ -110,6 +110,31 @@ class OpenApiDocumentationTest {
   }
 
   @Test
+  @DisplayName("[DEC-OPS-433] 스펙의 sort 는 정렬 허용 목록(@SortableBy) 핸들러에만 있고 허용 속성을 설명에 싣는다")
+  void sortParameterAppearsOnlyForAllowlistedHandlers() throws Exception {
+    var spec = objectMapper.readTree(mockMvc.perform(get("/v3/api-docs"))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
+    java.util.List<String> offenders = new java.util.ArrayList<>();
+    int paged = 0;
+    for (String path : spec.path("paths").propertyNames()) {
+      var operations = spec.path("paths").path(path);
+      for (String method : operations.propertyNames()) {
+        for (var parameter : operations.path(method).path("parameters")) {
+          if (!"query".equals(parameter.path("in").asString())) continue;
+          if ("page".equals(parameter.path("name").asString())) paged++;
+          if ("sort".equals(parameter.path("name").asString())
+              && !parameter.path("description").asString().startsWith("정렬 — 속성,방향")) {
+            offenders.add(method.toUpperCase(java.util.Locale.ROOT) + " " + path);
+          }
+        }
+      }
+    }
+    assertThat(paged).as("페이지 연산이 하나도 없다 — 검사가 빈다").isPositive();
+    assertThat(offenders).as("허용 목록 없이 sort 를 싣는 연산 — Pageable 은 기본으로 클라이언트 정렬을 받지 않는다").isEmpty();
+  }
+
+  @Test
   @DisplayName("서버 URL 과 경로를 이어 붙여도 API 기본 경로가 한 번만 나온다")
   void serverUrls_doNotRepeatThePathPrefix() throws Exception {
     tools.jackson.databind.JsonNode spec = objectMapper.readTree(mockMvc.perform(get("/v3/api-docs"))

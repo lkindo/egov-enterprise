@@ -24761,8 +24761,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -24956,8 +24954,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -25323,8 +25319,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -25450,8 +25444,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -25642,8 +25634,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -25766,7 +25756,7 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                /** @description 정렬 — 속성,방향(asc·desc). 허용 속성: hlpSn. 그 밖의 속성은 400 이다. */
                 sort?: string[];
             };
             header?: never;
@@ -26522,8 +26512,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -29160,8 +29148,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -29284,8 +29270,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -29550,8 +29534,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -29674,8 +29656,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -29798,8 +29778,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -30499,8 +30477,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -32125,8 +32101,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -32250,8 +32224,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -32374,8 +32346,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -32499,8 +32469,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -32632,8 +32600,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -32826,8 +32792,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -33139,8 +33103,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -35361,8 +35323,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -35425,8 +35385,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -35771,8 +35729,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -35835,8 +35791,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -36090,8 +36044,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -36154,8 +36106,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -37067,8 +37017,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -37375,8 +37323,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -37507,8 +37453,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path: {
@@ -37800,8 +37744,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path: {
@@ -38090,8 +38032,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -38154,8 +38094,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -39154,8 +39092,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -41544,8 +41480,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -42195,8 +42129,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path: {
@@ -42383,8 +42315,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path: {
@@ -42572,8 +42502,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -42932,8 +42860,6 @@ export interface operations {
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
             };
             header?: never;
             path?: never;

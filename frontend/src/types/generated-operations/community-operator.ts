@@ -75,7 +75,7 @@ export const getOperatorMembersOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: z.object({ "cmntySn": z.number().int() }).strict(),
-  querySchema: z.object({ "status": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "status": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseCommunityMemberDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseCommunityMemberDtoResponseSchema,

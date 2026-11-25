@@ -95,11 +95,21 @@ public class OpenApiConfig {
             if (operation.getParameters() == null) {
                 return operation;
             }
-            boolean unsorted = java.util.Arrays.stream(handlerMethod.getMethodParameters())
-                    .anyMatch(parameter -> org.springframework.data.domain.Pageable.class.isAssignableFrom(parameter.getParameterType())
-                            && parameter.hasParameterAnnotation(nuri.api.support.UnsortedPageable.class));
-            operation.getParameters().removeIf(parameter -> unsorted
+            // [2026-11-25 품질 평가] Pageable 은 기본으로 클라이언트 정렬을 받지 않는다 — @SortableBy 가 있을 때만 sort 를 싣고 허용 속성을
+            //   설명에 적는다. @UnsortedPageable 과 표시 없는 Pageable 은 sort 를 뺀다(SortParameterGuard 가 같은 규칙으로 거부·무시한다).
+            var pageable = java.util.Arrays.stream(handlerMethod.getMethodParameters())
+                    .filter(parameter -> org.springframework.data.domain.Pageable.class.isAssignableFrom(parameter.getParameterType()))
+                    .findFirst();
+            nuri.api.support.SortableBy sortable = pageable
+                    .map(parameter -> parameter.getParameterAnnotation(nuri.api.support.SortableBy.class)).orElse(null);
+            operation.getParameters().removeIf(parameter -> pageable.isPresent() && sortable == null
                     && "query".equals(parameter.getIn()) && "sort".equals(parameter.getName()));
+            if (sortable != null) {
+                operation.getParameters().stream()
+                        .filter(parameter -> "query".equals(parameter.getIn()) && "sort".equals(parameter.getName()))
+                        .forEach(parameter -> parameter.setDescription("정렬 — 속성,방향(asc·desc). 허용 속성: "
+                                + String.join(", ", sortable.value()) + ". 그 밖의 속성은 400 이다."));
+            }
             operation.getParameters().forEach(parameter -> {
                 if (!"query".equals(parameter.getIn()) || parameter.getSchema() == null) {
                     return;

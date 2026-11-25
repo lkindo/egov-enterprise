@@ -13,7 +13,7 @@ export function toSortList(sort: unknown): string[] | undefined {
 }
 
 /**
- * 목록 인자에서 페이지 query(`page`·`size`·`sort`)만 골라 낸다. `page` 는 1부터이고 서버가 받는 그대로 넘긴다(ADR-0036).
+ * 목록 인자에서 페이지 query(`page`·`size`)만 골라 낸다. `page` 는 1부터이고 서버가 받는 그대로 넘긴다(ADR-0036).
  *
  * <p>종전에는 0 기반 `page` 와 1 기반 `pageIndex`·`pageNo`, 크기 별칭 `pageUnit`·`pageSize`·`recordCountPerPage` 를
  * 우선순위대로 골라 ±1 변환했다. 요청·응답·화면이 모두 1 기반으로 같아져 변환할 것이 없다.
@@ -21,11 +21,11 @@ export function toSortList(sort: unknown): string[] | undefined {
 export function toAdminPageQuery(params: SearchParams): {
   page?: number;
   size?: number;
-  sort?: string[];
 } {
+  // 정렬(`sort`)은 싣지 않는다 — 이 도우미를 쓰는 목록(배너·커뮤니티)은 클라이언트 정렬을 받지 않는다(2026-11-25 정렬 허용 목록,
+  // 서버 SortableBy). 정렬을 받는 목록은 허용 속성을 서비스가 직접 `toSortList` 로 싣는다.
   return {
     ...(params.page === undefined ? {} : { page: params.page }),
     ...(params.size === undefined ? {} : { size: params.size }),
-    ...(params.sort === undefined ? {} : { sort: params.sort as string[] }),
   };
 }

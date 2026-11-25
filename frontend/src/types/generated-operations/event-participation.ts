@@ -37,7 +37,7 @@ export const getOpenEventsOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseOpenEventDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseOpenEventDtoResponseSchema,

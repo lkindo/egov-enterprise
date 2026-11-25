@@ -196,7 +196,8 @@ describe('generated system boundary wave 3', () => {
   });
 
   it('생성 query·request·response 계약 위반을 transport 전에 또는 응답 경계에서 차단한다', async () => {
-    await expect(bannerAdminService.getBannerList({ sort: 'invalid-sort' }))
+    // page 는 1 이상이다(ADR-0036) — 계약 밖 값은 전송 전에 막힌다.
+    await expect(bannerAdminService.getBannerList({ page: 0 }))
       .rejects.toThrow('생성 API 쿼리 파라미터가 OpenAPI 계약과 일치하지 않습니다.');
     expect(client.getRaw).not.toHaveBeenCalled();
 

@@ -93,7 +93,7 @@ describe('BannerAdminService — 배너 관리자 API 계약', () => {
   });
 
   describe('배너 목록 조회(getBannerList)', () => {
-    it('옛 페이지·크기 별칭이 섞여 와도 page·size 만 그대로 보내고 정렬 조건을 보존한다(ADR-0036)', async () => {
+    it('옛 페이지·크기 별칭이 섞여 와도 page·size 만 그대로 보내고, 서버가 받지 않는 정렬은 싣지 않는다(ADR-0036·2026-11-25 정렬 허용 목록)', async () => {
       const params = {
         pageIndex: 3, page: 8, pageNo: 9,
         size: 15, pageUnit: 20, pageSize: 30, recordCountPerPage: 40,
@@ -104,7 +104,7 @@ describe('BannerAdminService — 배너 관리자 API 계약', () => {
       await bannerAdminService.getBannerList(params);
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { keyword: '메인', page: 8, size: 15, sort: ['bnrNm,asc'] },
+        params: { keyword: '메인', page: 8, size: 15 },
       });
       expect(params).toStrictEqual(before);
     });
