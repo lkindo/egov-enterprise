@@ -182,7 +182,7 @@ public class MemoReportService {
         //   잠금 대기 초과(409)로 끝나지 않게(2026-11-25 Codex 검토). 최종 인가는 아래에서 잠근 행으로 다시 한다.
         MemoReportParties parties = memoReportRepository.findParties(memoRptSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        assertParticipantOrAdmin(parties.authorId(), parties.recipientId());
+        assertPartyOrAdminBeforeLock(parties);
         boolean recipientRead = nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
                 .map(current -> current.equals(parties.recipientId())).orElse(false);
         MemoReport entity = (recipientRead ? memoReportRepository.findByIdForUpdate(memoRptSn)
@@ -268,15 +268,25 @@ public class MemoReportService {
      * <b>esntlId</b> 축이며, loginId 로 비교하면 수신자가 자기 앞으로 온 보고를 열지 못하는 오탐이 난다.</p>
      */
     private void assertParticipantOrAdmin(MemoReport entity) {
-        assertParticipantOrAdmin(entity.getUserId(), entity.getRptrId());
-    }
-
-    private void assertParticipantOrAdmin(String authorId, String recipientId) {
         if (nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_READ_ALL")) {
             return;
         }
         String esntlId = currentEsntlIdOrDeny();
-        if (!esntlId.equals(authorId) && !esntlId.equals(recipientId)) {
+        if (!esntlId.equals(entity.getUserId()) && !esntlId.equals(entity.getRptrId())) {
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+        }
+    }
+
+    /**
+     * 잠그기 전 선거절 — {@link #assertParticipantOrAdmin(MemoReport)} 와 같은 판정을 선조회한 당사자로 한다(2026-11-25 Codex 검토).
+     * 남의 보고 요청이 진행 중인 수정을 기다리지 않게 한다. 최종 판정은 잠근 행으로 다시 한다.
+     */
+    private void assertPartyOrAdminBeforeLock(MemoReportParties parties) {
+        if (nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_READ_ALL")) {
+            return;
+        }
+        String esntlId = currentEsntlIdOrDeny();
+        if (!esntlId.equals(parties.authorId()) && !esntlId.equals(parties.recipientId())) {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
         }
     }

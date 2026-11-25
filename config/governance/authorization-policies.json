@@ -5026,6 +5026,18 @@
       "forbiddenTokens": []
     },
     {
+      "target": "MemoReportService#assertPartyOrAdminBeforeLock",
+      "source": "business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.hasPermission(\"MEMO_RPT_READ_ALL\")",
+        "!esntlId.equals(parties.authorId()) && !esntlId.equals(parties.recipientId())",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": []
+    },
+    {
       "target": "MemoReportService#readAttachments",
       "source": "business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java",
       "policy": "REACHABILITY_WITH_PRIVACY",
