@@ -57,7 +57,9 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
 
     // [V2_13 결속] 권한그룹 삭제 시 사용자 참조 해제 (fk_tb_user_info_tb_authrt_group_info NO ACTION)
     @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
-    @Query("UPDATE User u SET u.groupId = null WHERE u.groupId IN :groupIds")
+    // [2026-11-25 V2_156] 분류 그룹은 프로필 칸이다 — 해제하면서 편집 버전도 올린다. 올리지 않으면 그 사이 열어 둔 수정 폼이
+    //   옛 버전으로 통과해 해제된 값을 되살리거나 FK 충돌을 낸다(Codex 검토).
+    @Query("UPDATE User u SET u.groupId = null, u.editVersion = u.editVersion + 1 WHERE u.groupId IN :groupIds")
     int clearGroupIdByGroupIdIn(@Param("groupIds") List<String> groupIds);
 
     /**

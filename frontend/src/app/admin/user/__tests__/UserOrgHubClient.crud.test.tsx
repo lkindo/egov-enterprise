@@ -691,6 +691,21 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     expect(mockToast).toHaveBeenCalledWith('사용자 정보가 수정되었습니다.', 'success');
   });
 
+  it('[V2_156] 동시 수정(409)으로 저장이 막히면 상세(편집 버전)를 다시 읽는다 — 다시 연 창이 옛 버전을 또 보내지 않는다', async () => {
+    const conflict = Object.assign(new Error('다른 사용자가 먼저 수정했습니다.'), { response: { status: 409 } });
+    vi.mocked(userAdminService.updateUser).mockRejectedValue(conflict);
+    await selectFirstRow();
+
+    await screen.findByText('기획부 (D-100)');
+    expect(userAdminService.getUser).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]);
+    await screen.findByText('사용자 정보 수정');
+    fireEvent.click(screen.getByText('form-submit'));
+
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('다른 사용자가 먼저 수정했습니다.', 'error'));
+    await waitFor(() => expect(userAdminService.getUser).toHaveBeenCalledTimes(2));
+  });
+
   it('수정 인가 실패(403) 시 서버 메시지를 그대로 표시한다', async () => {
     vi.mocked(userAdminService.updateUser).mockRejectedValue(new Error('접근 권한이 없습니다.'));
     await selectFirstRow();

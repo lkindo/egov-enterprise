@@ -8,9 +8,12 @@
 --
 -- [무중단·호환성] Expand 전용이다. PostgreSQL 11+ 의 상수 DEFAULT 0 추가는 테이블 재작성 없이 메타데이터로 즉시 반영되고,
 --   이전 앱은 이 컬럼을 읽지도 쓰지도 않는다. 정수형 기술 컬럼 예외(DEC-OPS-378·V2_133·V2_149·V2_155 선례).
+--   CHECK 는 NOT VALID 로 더한다 — 이 트랜잭션은 ADD COLUMN 의 ACCESS EXCLUSIVE 잠금을 쥐고 있어, 여기서 기존 행을 검증하면
+--   사용자 표가 클수록 로그인·조회가 그 시간만큼 기다린다(2026-11-25 Codex 검토). 새 쓰기는 즉시 검사되고, 기존 행(모두 0)의
+--   검증은 V2_158 이 다른 트랜잭션에서 쓰기를 막지 않는 잠금(SHARE UPDATE EXCLUSIVE)으로 한다(V2_6→V2_9·V2_102 선례).
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '60s';
 
 ALTER TABLE tb_user_info ADD COLUMN version integer NOT NULL DEFAULT 0;
-ALTER TABLE tb_user_info ADD CONSTRAINT ck_tb_user_info_version CHECK (version >= 0);
+ALTER TABLE tb_user_info ADD CONSTRAINT ck_tb_user_info_version CHECK (version >= 0) NOT VALID;
 COMMENT ON COLUMN tb_user_info.version IS '프로필 편집 버전 (관리자·본인 프로필 수정 때만 오른다)';

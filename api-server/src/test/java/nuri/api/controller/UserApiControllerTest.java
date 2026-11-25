@@ -311,12 +311,15 @@ public class UserApiControllerTest extends BaseControllerTest {
     void updateUser_rejectsMaskedMobileNumber() throws Exception {
         mockMvc.perform(put("/api/v1/admin/system/users/targetUser")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"userNm\":\"홍길동\",\"mblTelno\":\"010****5678\"}"))
-                .andExpect(status().isBadRequest());
+                .content("{\"userNm\":\"홍길동\",\"version\":0,\"mblTelno\":\"010****5678\"}"))
+                .andExpect(status().isBadRequest())
+                // 버전은 실었으므로 이 400 은 가린 휴대전화 때문이어야 한다(버전 누락 400 에 가려지지 않게, Codex 검토).
+                .andExpect(jsonPath("$.errors[*].field").value(org.hamcrest.Matchers.contains("mblTelno")));
         mockMvc.perform(put("/api/v1/admin/system/users/targetUser")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"userNm\":\"홍길동\",\"emlAddr\":\"ho***@example.com\"}"))
-                .andExpect(status().isBadRequest());
+                .content("{\"userNm\":\"홍길동\",\"version\":0,\"emlAddr\":\"ho***@example.com\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[*].field").value(org.hamcrest.Matchers.contains("emlAddr")));
 
         verify(userService, org.mockito.Mockito.never()).updateUser(anyString(), any(UserDto.class));
     }

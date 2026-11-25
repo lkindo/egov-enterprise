@@ -2,6 +2,7 @@
 
 import { useState, use, useRef, useTransition, useCallback, useId, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { isConflictError } from '@/lib/query/list-query-defaults';
 import { Button } from '@/components/ui/button';
 import {
   Network,
@@ -462,6 +463,8 @@ function useUserOrgWriteActions({
       if (res.success) {
         toast(res.message, 'success');
         refetchUsers();
+        // [V2_156] 부서 이동은 편집 버전을 올린다 — 옮긴 사용자의 상세(와 버전)를 다시 읽어야 다음 수정이 409 로 막히지 않는다.
+        void queryClient.invalidateQueries({ queryKey: ['admin-user-detail'] });
         setIsBulkMoveModalOpen(false);
       } else {
         toast(res.message, 'error');
@@ -826,6 +829,8 @@ export default function UserOrgHubClient({
       setIsUserModalOpen(false);
     } catch (error) {
       if (extractFieldErrors(error)) throw error;
+      // [V2_156] 동시 수정(409)이면 상세(와 편집 버전)를 다시 읽는다 — 창을 다시 열 때 캐시의 옛 버전을 또 보내지 않게 한다.
+      if (isConflictError(error)) void queryClient.invalidateQueries({ queryKey: ['admin-user-detail'] });
       // 인가 실패(403 등)를 포함한 서버 메시지를 그대로 보여준다 — 일반 문구로 뭉개면
       // 사용자는 권한 문제인지 입력 문제인지 알 수 없다(H3 의미 보존, 감사 m-2).
       const message = failureMessage(error, '사용자 저장 중 오류가 발생했습니다.');

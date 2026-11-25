@@ -40,6 +40,22 @@ class UserRepositoryTest extends PersistenceTestSupport {
     }
 
     @Test
+    @DisplayName("🚨 [V2_156] 그룹 삭제의 벌크 그룹 해제는 그 사용자의 편집 버전을 올리고, 다른 사용자는 그대로 둔다")
+    void groupReleaseBumpsEditVersion() {
+        userRepository.saveAndFlush(User.builder().userId("member").esntlId("USR_MEMBER_00001").userNm("소속").pswd("p")
+                .groupId("GRP_GONE").role(Role.USER).build());
+
+        int cleared = userRepository.clearGroupIdByGroupIdIn(java.util.List.of("GRP_GONE"));
+        em.clear();
+
+        assertThat(cleared).isEqualTo(1);
+        User reloaded = userRepository.findByUserId("member").orElseThrow();
+        assertThat(reloaded.getGroupId()).isNull();
+        assertThat(reloaded.getEditVersion()).as("그 사이 열어 둔 수정 폼의 저장은 409 가 된다").isEqualTo(1);
+        assertThat(userRepository.findByUserId("testUser").orElseThrow().getEditVersion()).isZero();
+    }
+
+    @Test
     @DisplayName("사용자 ID로 조회")
     void findById() {
         Optional<User> found = userRepository.findByUserId("testUser");
