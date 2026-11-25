@@ -112,26 +112,38 @@ class OpenApiDocumentationTest {
   @Test
   @DisplayName("[DEC-OPS-433] 스펙의 sort 는 정렬 허용 목록(@SortableBy) 핸들러에만 있고 허용 속성을 설명에 싣는다")
   void sortParameterAppearsOnlyForAllowlistedHandlers() throws Exception {
-    var spec = objectMapper.readTree(mockMvc.perform(get("/v3/api-docs"))
-        .andExpect(status().isOk())
-        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
-    java.util.List<String> offenders = new java.util.ArrayList<>();
-    int paged = 0;
-    for (String path : spec.path("paths").propertyNames()) {
-      var operations = spec.path("paths").path(path);
-      for (String method : operations.propertyNames()) {
-        for (var parameter : operations.path(method).path("parameters")) {
-          if (!"query".equals(parameter.path("in").asString())) continue;
-          if ("page".equals(parameter.path("name").asString())) paged++;
-          if ("sort".equals(parameter.path("name").asString())
-              && !parameter.path("description").asString().startsWith("정렬 — 속성,방향")) {
+    // 기본 문서와 그룹 문서(all) 모두 본다 — 그룹 문서는 전역 사용자화만 받는다(Codex 검토).
+    for (String docs : new String[] {"/v3/api-docs", "/v3/api-docs/all"}) {
+      var spec = objectMapper.readTree(mockMvc.perform(get(docs))
+          .andExpect(status().isOk())
+          .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
+      java.util.List<String> offenders = new java.util.ArrayList<>();
+      int paged = 0;
+      for (String path : spec.path("paths").propertyNames()) {
+        var operations = spec.path("paths").path(path);
+        for (String method : operations.propertyNames()) {
+          var parameters = operations.path(method).path("parameters");
+          boolean pageable = false;
+          String sortDescription = null;
+          for (var parameter : parameters) {
+            if (!"query".equals(parameter.path("in").asString())) continue;
+            if ("page".equals(parameter.path("name").asString())) pageable = true;
+            if ("sort".equals(parameter.path("name").asString())) sortDescription = parameter.path("description").asString();
+          }
+          if (!pageable) continue;
+          paged++;
+          if (sortDescription != null && !sortDescription.startsWith("정렬 — 속성,방향")) {
             offenders.add(method.toUpperCase(java.util.Locale.ROOT) + " " + path);
+          }
+          // 도움말 목록이 있는 구성이면 그 정렬은 정확히 hlpSn 하나를 허용한다.
+          if ("/api/v1/help/hpcm".equals(path) && "get".equals(method)) {
+            assertThat(sortDescription).as(docs + " 도움말 목록 정렬").contains("허용 속성: hlpSn.");
           }
         }
       }
+      assertThat(paged).as(docs + " 페이지 연산이 하나도 없다 — 검사가 빈다").isPositive();
+      assertThat(offenders).as(docs + " 허용 목록 없이 sort 를 싣는 페이지 연산 — Pageable 은 기본으로 클라이언트 정렬을 받지 않는다").isEmpty();
     }
-    assertThat(paged).as("페이지 연산이 하나도 없다 — 검사가 빈다").isPositive();
-    assertThat(offenders).as("허용 목록 없이 sort 를 싣는 연산 — Pageable 은 기본으로 클라이언트 정렬을 받지 않는다").isEmpty();
   }
 
   @Test

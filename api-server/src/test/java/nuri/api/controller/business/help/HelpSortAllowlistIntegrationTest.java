@@ -30,7 +30,8 @@ class HelpSortAllowlistIntegrationTest {
     void onlyListedSortPropertiesAreAccepted() throws Exception {
         mvc.perform(get(HPCM).param("page", "1").param("size", "10").param("sort", "hlpSn,DESC"))
                 .andExpect(status().isOk());
-        for (String sort : new String[] {"hlpExpln,asc", "hlpSn,DESC&sort=hlpDfn"}) {
+        // ignorecase 는 숫자 키(hlpSn)에 붙으면 저장소가 문자열 함수로 감싸 실패한다 — 허용 목록이 열지 않았으므로 400.
+        for (String sort : new String[] {"hlpExpln,asc", "hlpSn,DESC&sort=hlpDfn", "hlpSn,DESC,ignorecase"}) {
             mvc.perform(get(HPCM).param("page", "1").param("size", "10").param("sort", sort.split("&sort=")))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("C001"));

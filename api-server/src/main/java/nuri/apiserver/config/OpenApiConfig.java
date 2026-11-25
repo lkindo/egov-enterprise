@@ -86,11 +86,15 @@ public class OpenApiConfig {
      * 그래서 이름이 {@code page}·{@code size} 인 query 파라미터를 HTTP 경계({@code PaginationRequestFilter})와 같은 범위로
      * 맞춘다. 스펙의 {@code page}·{@code size} 는 목록 연산에만 있다(PageableConstructionLinterTest 가 스펙으로 확인).
      *
-     * <p>{@link nuri.api.support.UnsortedPageable} 이 붙은 {@code Pageable} 은 서버가 정렬을 받지 않으므로 {@code sort} 를 뺀다 —
-     * 받지 않는 파라미터를 광고하지 않는다.
+     * <p>정렬({@code sort})은 {@link nuri.api.support.SortableBy} 가 붙은 {@code Pageable}·{@code Sort} 에만 싣고 허용 속성을 설명에 적는다 —
+     * 표시가 없거나 {@link nuri.api.support.UnsortedPageable} 이면 서버가 정렬을 받지 않으므로 뺀다(DEC-OPS-433). 받지 않는 파라미터를
+     * 광고하지 않는다.
      */
     @Bean
-    public org.springdoc.core.customizers.OperationCustomizer paginationParameterCustomizer() {
+    // [2026-11-25 Codex 검토] 전역 사용자화로 둔다 — 일반 OperationCustomizer 는 기본 문서에만 붙어 그룹 문서(all·admin)에는
+    //   정렬 허용 목록이 빠졌다(쪽지 목록에 sort 가 남았다).
+    public org.springdoc.core.customizers.GlobalOperationCustomizer paginationParameterCustomizer(
+            @org.springframework.beans.factory.annotation.Value("${spring.data.web.sort.sort-parameter:sort}") String sortParameter) {
         return (operation, handlerMethod) -> {
             if (operation.getParameters() == null) {
                 return operation;
@@ -98,15 +102,16 @@ public class OpenApiConfig {
             // [2026-11-25 품질 평가] Pageable 은 기본으로 클라이언트 정렬을 받지 않는다 — @SortableBy 가 있을 때만 sort 를 싣고 허용 속성을
             //   설명에 적는다. @UnsortedPageable 과 표시 없는 Pageable 은 sort 를 뺀다(SortParameterGuard 가 같은 규칙으로 거부·무시한다).
             var pageable = java.util.Arrays.stream(handlerMethod.getMethodParameters())
-                    .filter(parameter -> org.springframework.data.domain.Pageable.class.isAssignableFrom(parameter.getParameterType()))
+                    .filter(parameter -> org.springframework.data.domain.Pageable.class.isAssignableFrom(parameter.getParameterType())
+                            || org.springframework.data.domain.Sort.class.isAssignableFrom(parameter.getParameterType()))
                     .findFirst();
             nuri.api.support.SortableBy sortable = pageable
                     .map(parameter -> parameter.getParameterAnnotation(nuri.api.support.SortableBy.class)).orElse(null);
             operation.getParameters().removeIf(parameter -> pageable.isPresent() && sortable == null
-                    && "query".equals(parameter.getIn()) && "sort".equals(parameter.getName()));
+                    && "query".equals(parameter.getIn()) && sortParameter.equals(parameter.getName()));
             if (sortable != null) {
                 operation.getParameters().stream()
-                        .filter(parameter -> "query".equals(parameter.getIn()) && "sort".equals(parameter.getName()))
+                        .filter(parameter -> "query".equals(parameter.getIn()) && sortParameter.equals(parameter.getName()))
                         .forEach(parameter -> parameter.setDescription("정렬 — 속성,방향(asc·desc). 허용 속성: "
                                 + String.join(", ", sortable.value()) + ". 그 밖의 속성은 400 이다."));
             }

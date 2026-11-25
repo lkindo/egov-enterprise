@@ -21,4 +21,10 @@ public @interface SortableBy {
 
     /** 허용하는 엔티티 속성 경로(대소문자 구분, 정확히 일치). */
     String[] value();
+
+    /**
+     * 대소문자 무시 정렬({@code ignorecase})을 받는가. 기본은 받지 않는다 — 숫자·날짜 열에 붙으면 저장소가 문자열 함수로 감싸 실패한다.
+     * 허용 속성이 모두 문자열일 때만 연다.
+     */
+    boolean ignoreCase() default false;
 }
