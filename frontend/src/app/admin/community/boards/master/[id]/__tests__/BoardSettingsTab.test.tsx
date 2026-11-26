@@ -134,7 +134,9 @@ describe('BoardSettingsTab', () => {
     expect(changesStatus()).toHaveTextContent('변경 0건');
     // 이름·사용 여부는 목록·이용 화면 메타·선택지·변경 이력·커뮤니티 게시판 목록에도 보인다 — 모두 다시 읽는다.
     expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['board-masters'] });
+    /* reusable-base:community:start */
     expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['community-boards'] });
+    /* reusable-base:community:end */
   });
 
   // [2026-10-26 ADR-0043 SET-06] 이름을 바꿔도 연결 메뉴 이름은 그대로다 — 연결 메뉴를 보이고 메뉴 관리로 넘긴다.

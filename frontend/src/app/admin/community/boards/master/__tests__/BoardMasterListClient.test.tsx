@@ -126,7 +126,9 @@ describe('BoardMasterListClient', () => {
     expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ title: '게시판 사용으로 바꾸기' }));
     // 사용 여부는 운영 화면 상세(버전)·이용 화면 메타·선택지에도 보인다 — 목록만이 아니라 뿌리 키 전체를 다시 읽는다.
     await waitFor(() => expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['board-masters'] }));
+    /* reusable-base:community:start */
     expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['community-boards'] });
+    /* reusable-base:community:end */
   });
 
   it('확인을 취소하면 바꾸지 않는다', async () => {
