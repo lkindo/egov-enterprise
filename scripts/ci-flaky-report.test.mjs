@@ -250,6 +250,8 @@ test('the added step rules name real ci.yml steps, templated names match execute
   for (const [jobName, step, cause] of [
     ['secret-scan', 'Verify repository operational contracts', 'test:operational-contracts'],
     ['secret-scan', 'Verify repository operational contracts (core)', 'test:operational-contracts'],
+    ['secret-scan', 'Verify repository operational contracts (composer)', 'test:operational-contracts'],
+    ['secret-scan', 'Verify repository operational contracts (requirements)', 'test:operational-contracts'],
     ['migration-test-scope (2/3)', 'Run measured migration test shard (2/3)', 'test:migration'],
     ['migration-scope', 'Require every migration test shard to succeed', 'derived'],
     ['reusable-base (core, multi-module)', 'Generate and verify reusable profile', 'test:reusable-profile'],

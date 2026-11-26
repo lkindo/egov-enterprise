@@ -1460,6 +1460,10 @@ test('one operational-contract catalog runs in required CI and before the docs f
 
 test('required operational-contract steps and scope guard are exact and fail-closed', () => {
   const normalizedCi = ciContent.replace(/\r\n/g, '\n');
+  const fullIf = "needs.change-scope.outputs.composer-contracts == 'true' && needs.change-scope.outputs.requirements-contracts == 'true'";
+  const coreIf = "needs.change-scope.outputs.composer-contracts == 'false' || needs.change-scope.outputs.requirements-contracts == 'false'";
+  const composerIf = "needs.change-scope.outputs.composer-contracts == 'true' && needs.change-scope.outputs.requirements-contracts == 'false'";
+  const reqIf = "needs.change-scope.outputs.composer-contracts == 'false' && needs.change-scope.outputs.requirements-contracts == 'true'";
   const mutations = [
     [
       normalizedCi.replace(
@@ -1467,6 +1471,13 @@ test('required operational-contract steps and scope guard are exact and fail-clo
         '',
       ),
       /change-scope must wire output 'composer-contracts'/i,
+    ],
+    [
+      normalizedCi.replace(
+        '      requirements-contracts: ${{ steps.scope.outputs.requirements_contracts }}\n',
+        '',
+      ),
+      /change-scope must wire output 'requirements-contracts'/i,
     ],
     [
       normalizedCi.replace(
@@ -1484,17 +1495,38 @@ test('required operational-contract steps and scope guard are exact and fail-clo
     ],
     [
       normalizedCi.replace(
-        "        if: needs.change-scope.outputs.composer-contracts == 'true'",
+        `        if: ${fullIf}`,
         '        if: false',
       ),
       /operational contracts full step must run iff/i,
     ],
     [
       normalizedCi.replace(
+        `        if: ${coreIf}`,
+        "        if: needs.change-scope.outputs.composer-contracts == 'false'",
+      ),
+      /operational contracts core step must run iff/i,
+    ],
+    [
+      normalizedCi.replace(
+        `        if: ${composerIf}`,
+        "        if: needs.change-scope.outputs.composer-contracts == 'true'",
+      ),
+      /operational contracts composer step must run iff/i,
+    ],
+    [
+      normalizedCi.replace(
+        `        if: ${reqIf}`,
+        "        if: needs.change-scope.outputs.requirements-contracts == 'true'",
+      ),
+      /operational contracts requirements step must run iff/i,
+    ],
+    [
+      normalizedCi.replace(
         '      - name: Verify repository operational contracts',
         '      - name: Verify repository operational contracts\n        continue-on-error: true',
       ),
-      /operational contracts.*continue-on-error/i,
+      /operational contracts full step cannot use continue-on-error/i,
     ],
     [
       normalizedCi.replace(
@@ -1516,6 +1548,20 @@ test('required operational-contract steps and scope guard are exact and fail-clo
         '        run: echo skipped',
       ),
       /operational contracts core step must run/i,
+    ],
+    [
+      normalizedCi.replace(
+        '        run: npm run test:operational-contracts:composer',
+        '        run: echo skipped',
+      ),
+      /operational contracts composer step must run/i,
+    ],
+    [
+      normalizedCi.replace(
+        '        run: npm run test:operational-contracts:requirements',
+        '        run: echo skipped',
+      ),
+      /operational contracts requirements step must run/i,
     ],
   ];
 
@@ -1829,9 +1875,11 @@ test('backend cross-stack contracts run once, owned by full frontend coverage wh
   assert.match(crossStackBindingErrors(conditionalInstall).join('\n'), /install must stay unconditional/i);
 });
 
-test('requirements browser contracts install pinned Chromium and system dependencies before the Node catalog runs', () => {
+test('requirements browser contracts install pinned Chromium and system dependencies iff requirements-contracts runs', () => {
   const stepName = 'Install Chromium for requirements workspace browser contracts';
   const command = 'run: pnpm -C frontend exec playwright install --with-deps chromium';
+  const reqCondition = "needs.change-scope.outputs.requirements-contracts == 'true'";
+  const stepIf = step => step.match(/^ {8}if: (.+)$/m)?.[1]?.trim() ?? null;
   function bootstrapErrors(content) {
     const jobs = parseWorkflowJobs(content.replace(/\r\n/g, '\n'));
     const job = jobs.get('secret-scan') ?? '';
@@ -1843,6 +1891,7 @@ test('requirements browser contracts install pinned Chromium and system dependen
     const browserRestore = workflowStep(job, 'Restore Playwright Browsers');
     const install = workflowStep(job, stepName);
     const runner = workflowStep(job, 'Verify repository operational contracts');
+    const reqRunner = workflowStep(job, 'Verify repository operational contracts (requirements)');
     const e2eAptKey = workflowStep(e2eJob, 'Resolve Playwright system package cache key');
     const e2eAptRestore = workflowStep(e2eJob, 'Restore Playwright system packages');
     const e2eBrowserCache = workflowStep(e2eJob, 'Cache Playwright Browsers');
@@ -1850,10 +1899,19 @@ test('requirements browser contracts install pinned Chromium and system dependen
     const runBody = step => step.slice(step.indexOf('        run: |\n')).trim();
     const errors = [];
     if (!install || !install.split('\n').some(line => line.trim() === command)) errors.push('pinned Chromium and system dependency installation is missing');
-    if (/^\s+(?:if|continue-on-error):/m.test(install)) errors.push('browser installation cannot be conditional or advisory');
+    if (/^\s+continue-on-error:/m.test(install)) errors.push('browser installation cannot be advisory');
+    for (const [label, step] of [
+      ['Resolve Playwright system package cache key', aptKey],
+      ['Restore Playwright system packages', aptRestore],
+      ['Restore Playwright Browsers', browserRestore],
+      [stepName, install],
+    ]) {
+      if (stepIf(step) !== reqCondition) errors.push(`${label} must run iff ${reqCondition}`);
+    }
     if (!/^ {8}timeout-minutes: 15$/m.test(install)) errors.push('browser installation needs a 15-minute step timeout to surface install stalls before job cancellation');
-    if (!dependencies || !runner || !install || job.indexOf(install) < job.indexOf(dependencies) || job.indexOf(install) > job.indexOf(runner)) {
-      errors.push('browser installation must follow frontend dependencies and precede the Node catalog');
+    if (!dependencies || !runner || !reqRunner || !install || job.indexOf(install) < job.indexOf(dependencies)
+      || job.indexOf(install) > job.indexOf(runner) || job.indexOf(install) > job.indexOf(reqRunner)) {
+      errors.push('browser installation must follow frontend dependencies and precede requirements contract runners');
     }
     if (job.split('\n').filter(line => line.trim() === command).length !== 1) errors.push('the Node contract job installs Chromium exactly once');
     if (!aptKey.includes('prefix="playwright-debs-${ImageOS:-unknown}-${RUNNER_ARCH}-${playwright}-"')
@@ -1868,7 +1926,7 @@ test('requirements browser contracts install pinned Chromium and system dependen
       || !aptRestore.includes('${{ steps.secret-scan-apt-key.outputs.prefix }}')) {
       errors.push('secret-scan must restore Playwright system packages read-only from the shared e2e-tests path and prefix');
     }
-    if (!/^ {8}if: steps\.secret-scan-apt-restore\.outputs\.cache-matched-key != ''$/m.test(aptSeed)
+    if (stepIf(aptSeed) !== `${reqCondition} && steps.secret-scan-apt-restore.outputs.cache-matched-key != ''`
       || !aptSeed.includes('debs=("$RUNNER_TEMP"/playwright-debs/*.deb)')
       || !aptSeed.includes('/var/cache/apt/archives/')) {
       errors.push('secret-scan must seed /var/cache/apt/archives from exact or prefix-matched Playwright .deb cache hits');
@@ -1883,7 +1941,7 @@ test('requirements browser contracts install pinned Chromium and system dependen
     if (/uses: actions\/cache(?:\/save)?@[0-9a-f]{40}/.test(job)) {
       errors.push('secret-scan must remain a read-only Playwright cache consumer');
     }
-    const order = [dependencies, aptKey, aptRestore, aptSeed, browserRestore, install, runner].map(step => (step ? job.indexOf(step) : -1));
+    const order = [dependencies, aptKey, aptRestore, aptSeed, browserRestore, install, runner, reqRunner].map(step => (step ? job.indexOf(step) : -1));
     if (order.some(at => at < 0) || order.some((at, index) => index > 0 && at <= order[index - 1])) {
       errors.push('Playwright cache restore and apt seeding must run after frontend dependencies and before Chromium installation');
     }
@@ -1897,15 +1955,16 @@ test('requirements browser contracts install pinned Chromium and system dependen
   for (const [targetJob, mutation, expectedError] of [
     ['secret-scan', current => current.replace(install, ''), /installation is missing/],
     ['secret-scan', current => current.replace('--with-deps chromium', 'chromium'), /installation is missing/],
-    ['secret-scan', current => current.replace(`      - name: ${stepName}`, `      - name: ${stepName}\n        if: false`), /cannot be conditional or advisory/],
-    ['secret-scan', current => current.replace(`      - name: ${stepName}`, `      - name: ${stepName}\n        continue-on-error: true`), /cannot be conditional or advisory/],
+    ['secret-scan', current => current.replace(install, install.replace(`if: ${reqCondition}`, 'if: false')), new RegExp(`${stepName} must run iff`)],
+    ['secret-scan', current => current.replace(install, install.replace(`if: ${reqCondition}\n`, '')), new RegExp(`${stepName} must run iff`)],
+    ['secret-scan', current => current.replace(`      - name: ${stepName}`, `      - name: ${stepName}\n        continue-on-error: true`), /cannot be advisory/],
     ['secret-scan', current => current.replace('        timeout-minutes: 15\n', ''), /15-minute step timeout/],
-    ['secret-scan', current => `${current.replace(install, '')}\n${install}`, /precede the Node catalog/],
+    ['secret-scan', current => `${current.replace(install, '')}\n${install}`, /precede requirements contract runners/],
     ['secret-scan', current => current.replace(browserRestore, ''), /restore pinned Playwright browsers read-only/],
     ['secret-scan', current => `${current}\n      - name: Save cache from secret-scan\n        uses: actions/cache/save@${saveAction}\n`, /read-only Playwright cache consumer/],
     ['secret-scan', current => current.replace('uses: actions/cache/restore@', 'uses: actions/cache@'), /read-only Playwright cache consumer/],
     ['secret-scan', current => current.replace('path: ${{ runner.temp }}/playwright-debs', 'path: ${{ runner.temp }}/apt-debs'), /shared e2e-tests path and prefix/],
-    ['secret-scan', current => current.replace("if: steps.secret-scan-apt-restore.outputs.cache-matched-key != ''", "if: steps.secret-scan-apt-restore.outputs.cache-hit == 'true'"), /seed \/var\/cache\/apt\/archives/],
+    ['secret-scan', current => current.replace(`${reqCondition} && steps.secret-scan-apt-restore.outputs.cache-matched-key != ''`, `${reqCondition} && steps.secret-scan-apt-restore.outputs.cache-hit == 'true'`), /seed \/var\/cache\/apt\/archives/],
     ['e2e-tests', current => current.replace('prefix="playwright-debs-', 'prefix="playwright-debs-v2-'), /exact same Playwright system package cache key script as e2e-tests/],
     ['e2e-tests', current => current.replace("key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/pnpm-lock.yaml') }}", "key: ${{ runner.os }}-playwright-v2-${{ hashFiles('frontend/pnpm-lock.yaml') }}"), /exact e2e-tests cache path and key/],
   ]) {
@@ -1915,9 +1974,10 @@ test('requirements browser contracts install pinned Chromium and system dependen
   }
 });
 
-test('requirements workspace contracts install pinned standalone dependencies before the Node catalog runs', () => {
+test('requirements workspace contracts install pinned standalone dependencies iff requirements-contracts runs', () => {
   const stepName = 'Install pinned requirements workspace dependencies';
   const command = 'run: npm --prefix tools/requirements-workspace ci --ignore-scripts';
+  const reqCondition = "needs.change-scope.outputs.requirements-contracts == 'true'";
   const isolatedPackages = ['@napi-rs/canvas', 'kordoc', 'pdfjs-dist', 'sharp'];
 
   function requirementsInstallErrors(content) {
@@ -1925,18 +1985,22 @@ test('requirements workspace contracts install pinned standalone dependencies be
     const scanner = workflowStep(job, 'Run gitleaks (working tree + incremental)');
     const install = workflowStep(job, stepName);
     const runner = workflowStep(job, 'Verify repository operational contracts');
+    const reqRunner = workflowStep(job, 'Verify repository operational contracts (requirements)');
     const errors = [];
     if (!install || !install.split('\n').some(line => line.trim() === command)) {
       errors.push('pinned requirements workspace dependency installation is missing');
     }
-    if (/^\s+(?:if|continue-on-error):/m.test(install)) {
-      errors.push('requirements workspace dependency installation cannot be conditional or advisory');
+    if ((install.match(/^ {8}if: (.+)$/m)?.[1]?.trim() ?? null) !== reqCondition) {
+      errors.push(`requirements workspace dependency installation must run iff ${reqCondition}`);
+    }
+    if (/^\s+continue-on-error:/m.test(install)) {
+      errors.push('requirements workspace dependency installation cannot be advisory');
     }
     if (!scanner || !install || job.indexOf(install) < job.indexOf(scanner)) {
       errors.push('requirements workspace dependency installation must follow gitleaks working-tree scan');
     }
-    if (!install || !runner || job.indexOf(install) > job.indexOf(runner)) {
-      errors.push('requirements workspace dependency installation must precede the Node catalog');
+    if (!install || !runner || !reqRunner || job.indexOf(install) > job.indexOf(runner) || job.indexOf(install) > job.indexOf(reqRunner)) {
+      errors.push('requirements workspace dependency installation must precede requirements contract runners');
     }
     if (job.split('\n').filter(line => line.trim() === command).length !== 1) {
       errors.push('the Node contract job installs requirements workspace dependencies exactly once');
@@ -1964,10 +2028,11 @@ test('requirements workspace contracts install pinned standalone dependencies be
   for (const [mutation, expectedError] of [
     [current => current.replace(install, ''), /installation is missing/],
     [current => current.replace(command, 'run: npm ci --ignore-scripts'), /installation is missing/],
-    [current => current.replace(`      - name: ${stepName}`, `      - name: ${stepName}\n        if: false`), /cannot be conditional or advisory/],
-    [current => current.replace(`      - name: ${stepName}`, `      - name: ${stepName}\n        continue-on-error: true`), /cannot be conditional or advisory/],
+    [current => current.replace(install, install.replace(`if: ${reqCondition}`, 'if: false')), /requirements workspace dependency installation must run iff/],
+    [current => current.replace(install, install.replace(`if: ${reqCondition}\n`, '')), /requirements workspace dependency installation must run iff/],
+    [current => current.replace(`      - name: ${stepName}`, `      - name: ${stepName}\n        continue-on-error: true`), /cannot be advisory/],
     [current => current.replace(install, '').replace(scanner, `${install}\n${scanner}`), /must follow gitleaks working-tree scan/],
-    [current => `${current.replace(install, '')}\n${install}`, /must precede the Node catalog/],
+    [current => `${current.replace(install, '')}\n${install}`, /must precede requirements contract runners/],
   ]) {
     const changed = mutateWorkflowJob(ciContent, 'secret-scan', mutation);
     assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'), 'the negative fixture must change the workflow');

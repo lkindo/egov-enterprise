@@ -862,6 +862,7 @@ test('GitHub outputs are explicit strings for job conditions', () => {
     mutation: 'false',
     mutation_migration_tool: 'false',
     composer_contracts: 'true',
+    requirements_contracts: 'true',
     reusable: 'false',
     reusable_custom: 'false',
     reusable_vendor: 'false',
@@ -1387,4 +1388,43 @@ test('pull_request narrows operational contracts to core unless composer/fronten
   }
   assert.equal(classifyChangedFiles(['docs/03-guides/e2e-test-guide.md'], { event: 'push' }).composerContracts, true);
   assert.equal(classifyChangedFiles(['docs/03-guides/e2e-test-guide.md'], { event: 'workflow_dispatch' }).composerContracts, true);
+});
+
+test('pull_request skips requirements contracts unless requirements workspace, deliverables/token inputs, policy, unknown paths, or non-PR events apply', () => {
+  for (const files of [
+    ['docs/03-guides/e2e-test-guide.md'],
+    ['foundation/src/main/java/nuri/foundation/core/util/ServiceTime.java'],
+    ['business-app/src/main/java/nuri/business/service/board/BoardService.java'],
+    ['frontend/src/app/board/page.tsx'],
+    ['tools/migration-workspace/server.mjs'],
+    ['.agent/skills/new/SKILL.md'],
+  ]) {
+    assert.equal(classifyChangedFiles(files, { event: 'pull_request' }).requirementsContracts, false, files.join(', '));
+  }
+  for (const files of [
+    ['tools/requirements-workspace/server.mjs'],
+    ['tools/requirements-workspace/package.json'],
+    ['scripts/export-deliverables-workspace.mjs'],
+    ['scripts/export-deliverables.mjs'],
+    ['frontend/scripts/prototype-token-kit.mjs'],
+    ['frontend/src/styles/themes/premium.css'],
+    ['frontend/src/app/globals.css'],
+    ['frontend/src/types/generated-screen-registry.ts'],
+    ['frontend/package.json'],
+    ['frontend/pnpm-lock.yaml'],
+    ['api-docs.json'],
+    ['db_columns.json'],
+    ['config/modules/board.json'],
+    ['config/governance/permission-catalog.json'],
+    ['config/governance/gates.json'],
+    ['config/security/secure-coding-weaknesses.json'],
+    ['AGENTS.md'],
+    ['unknown-root-file.txt'],
+    [],
+  ]) {
+    assert.equal(classifyChangedFiles(files, { event: 'pull_request' }).requirementsContracts, true, files.join(', '));
+  }
+  assert.equal(classifyChangedFiles(['docs/03-guides/e2e-test-guide.md'], { event: 'push' }).requirementsContracts, true);
+  assert.equal(classifyChangedFiles(['docs/03-guides/e2e-test-guide.md'], { event: 'workflow_dispatch' }).requirementsContracts, true);
+  assert.equal(classifyChangedFiles(['docs/03-guides/e2e-test-guide.md'], { event: 'pull_request', forceFull: true }).requirementsContracts, true);
 });

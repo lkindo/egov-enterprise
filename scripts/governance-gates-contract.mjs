@@ -2421,6 +2421,26 @@ export function validateGovernanceRegistry({ registry, repoRoot, analysis, snaps
           .replace('invalid execution binding', 'invalid runner command binding')
           .replace('ghost execution binding', 'ghost runner command binding');
       }
+      if (set.id === 'GATESET-NODE-OPERATIONAL-CONTRACTS') {
+        const ciPath = path.join(repoRoot, '.github/workflows/ci.yml');
+        if (snapshot.isFile(ciPath)) {
+          const ciText = snapshot.read(ciPath, 'utf8').replace(/\r\n/g, '\n');
+          const ciLines = ciText.split('\n');
+          const start = ciLines.findIndex((line) => /^ {2}secret-scan:\s*(?:#.*)?$/.test(line));
+          const end = start < 0 ? -1 : ciLines.findIndex((line, i) => i > start && /^ {2}[A-Za-z0-9_-]+:\s*(?:#.*)?$/.test(line));
+          const secretScan = start < 0 ? '' : ciLines.slice(start + 1, end < 0 ? ciLines.length : end).join('\n');
+          const ciFragments = [...secretScan.matchAll(/^ {8}(run: npm run test:operational-contracts(?::(?:core|composer|requirements))?)\s*$/gm)]
+            .map((m) => m[1]);
+          const declaredCi = new Set(commandBindings
+            .filter((b) => b?.source === '.github/workflows/ci.yml' && b?.job === 'secret-scan')
+            .map((b) => b.fragment));
+          for (const fragment of ciFragments) {
+            if (!declaredCi.has(fragment)) {
+              errors.push(`${setLabel}: missing CI command binding for .github/workflows/ci.yml: ${fragment}`);
+            }
+          }
+        }
+      }
 
       for (const bindingSource of selector.catalogCoverage ?? []) {
         if (!isSafeRelative(bindingSource) || !snapshot.isFile(path.join(repoRoot, bindingSource))) {
