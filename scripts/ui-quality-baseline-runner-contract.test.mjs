@@ -977,7 +977,8 @@ test('wizard probes follow the actual step heading level and validation message'
   assert.ok(steps, 'the wizard must declare its ordered steps');
   const titles = [...steps.matchAll(/title: '([^']+)'/g)].map((match) => match[1]);
   assert.equal(titles.length, 3);
-  const heading = source.match(/<h([1-6])\b[^>]*>\s*\{STEPS\[currentStep - 1\]\.title\}\s*<\/h\1>/);
+  // [2026-11-26 PR-3b] 색인 접근 검사(noUncheckedIndexedAccess) 뒤로 단계 색인은 `?.` 로 읽는다 — 같은 현재 단계 제목이다.
+  const heading = source.match(/<h([1-6])\b[^>]*>\s*\{STEPS\[currentStep - 1\]\??\.title\}\s*<\/h\1>/);
   assert.ok(heading, 'the real step heading must have a semantic level');
   const consumers = [...runnerSource.matchAll(/getByRole\('heading', \{ level: ([1-6]), name: '([^']+)', exact: true \}\)/g)]
     .filter((match) => titles.includes(match[2]));
