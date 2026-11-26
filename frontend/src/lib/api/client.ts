@@ -2,6 +2,7 @@ import axios from 'axios';
 import { AUTH_BROWSER_REQUEST_TIMEOUT_MS } from '@/lib/auth/auth-request-policy';
 import type { AxiosRequestConfig } from 'axios';
 import { cache } from 'react';
+import { runOnSessionLost } from '@/lib/auth/before-sign-out';
 
 import { authReissueResponseSchema } from '@/lib/auth/auth-reissue-contract';
 import { forwardedClientIpHeaders } from '@/lib/api/forwarded-client-ip';
@@ -258,6 +259,8 @@ axiosInstance.interceptors.response.use(
         isRetrying = false;
 
         if (typeof window !== 'undefined' && !superseded) {
+          // 세션은 이미 끝났다 — 보낼 수 없는 대기 일(결재 대기 승인)을 거두고 다시 로그인할 때 볼 안내를 남긴다(2026-11-25).
+          runOnSessionLost();
           // 세션 만료 시 로그인 화면으로 포워딩
           // [결정 17] 경로와 구조 키(게시판·글·탭·쪽)만 넘겨, 다시 로그인하면 보던 자리로 돌아간다.
           hardNavigateToInternalRoute(
@@ -313,10 +316,7 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-/**
- * 표준화된 API 클라이언트
- * Optimization: Priority 3 - React.cache를 사용한 서버 사이드 요청 중복 제거
- */
+/** 생성 operation 의 query 를 OpenAPI 기본 style=form·explode=true wire 형식으로 직렬화한다(배열은 같은 key 반복). */
 function serializeGeneratedFormExplodeQuery(params: unknown): string {
   if (typeof params !== 'object' || params === null || Array.isArray(params)) {
     throw new Error('생성 API 쿼리 파라미터를 wire 형식으로 직렬화할 수 없습니다.');
@@ -351,7 +351,13 @@ function withGeneratedQuerySerializer(config?: AxiosRequestConfig): AxiosRequest
 }
 
 const client = {
-  /** Generated operation 경계가 공통 envelope를 직접 검증할 수 있도록 원문 body를 보존한다. */
+  /**
+   * Generated operation 경계가 공통 envelope를 직접 검증할 수 있도록 원문 body를 보존한다.
+   *
+   * <p>[2026-11-25 품질 평가] React.cache 는 서버 컴포넌트 렌더 한 번 안에서 <b>같은 인자</b>로 부른 결과만 재사용한다 — 브라우저에서는
+   * 효과가 없고, 서버에서도 호출마다 새 config 객체를 넘기면(쿠키 전달 등) 재사용되지 않는다. 일반적인 요청 중복 제거로 기대하지 않는다
+   * (화면의 중복 조회는 React Query 키가 맡는다).
+   */
   getRaw: cache(async (url: string, config?: AxiosRequestConfig): Promise<unknown> => {
     const res = await axiosInstance.get<unknown>(url, withGeneratedQuerySerializer(config));
     return res.data;

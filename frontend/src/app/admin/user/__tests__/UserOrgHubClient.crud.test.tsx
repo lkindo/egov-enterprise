@@ -419,7 +419,8 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     expect(remove).not.toHaveAttribute('aria-busy');
 
     await act(async () => pending.reject(new Error('계층 저장 API 장애')));
-    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('구조 저장 중 오류 발생', 'error'));
+    // 원인 문구를 살린다(2026-11-25 품질 평가 — 종전에는 오류 객체를 버리고 고정 문구만 보였다).
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('계층 저장 API 장애', 'error'));
     expect(screen.getByRole('button', { name: '조직 계층 저장' })).toBeEnabled();
     // 저장이 실패해도 선택한 상세가 남아 있어야 한다. 드래그를 시작한 부서가 선택되므로
     // 대상은 하네스가 끄는 D-200(개발부)이다 — 이름이 아니라 '선택 유지'가 이 단언의 뜻이다.
@@ -902,7 +903,7 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     expect(bulkDelete).not.toHaveAttribute('aria-busy');
 
     await act(async () => pending.reject(new Error('상태 변경 API 장애')));
-    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('상태 변경 중 오류 발생', 'error'));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('상태 변경 API 장애', 'error'));
     expect(screen.getByText('사용자 상태 일괄 변경')).toBeVisible();
     expect(screen.getByRole('button', { name: '상태 일괄 적용' })).toBeEnabled();
   });
@@ -969,7 +970,7 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     expect(busy).toHaveAttribute('aria-busy', 'true');
 
     await act(async () => pending.reject(new Error('부서 이동 API 장애')));
-    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('부서 이동 중 오류 발생', 'error'));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('부서 이동 API 장애', 'error'));
     expect(screen.getByText('부서 일괄 이동')).toBeVisible();
     expect(screen.getByRole('radio', { name: /개발부/ })).toBeChecked();
     expect(screen.getByRole('button', { name: '부서 이동 실행' })).toBeEnabled();

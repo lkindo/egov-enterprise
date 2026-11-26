@@ -444,8 +444,9 @@ function useUserOrgWriteActions({
       } else {
         toast(res.message, 'error');
       }
-    } catch {
-      toast('상태 변경 중 오류 발생', 'error');
+    } catch (error) {
+      // 같은 화면의 다른 처리기처럼 원인 문구를 살린다(2026-11-25 품질 평가 — 종전에는 오류 객체를 버렸다).
+      toast(failureMessage(error, '상태 변경 중 오류가 발생했습니다.'), 'error');
     } finally {
       finishNonFormAction(operation);
     }
@@ -469,8 +470,8 @@ function useUserOrgWriteActions({
       } else {
         toast(res.message, 'error');
       }
-    } catch {
-      toast('부서 이동 중 오류 발생', 'error');
+    } catch (error) {
+      toast(failureMessage(error, '부서 이동 중 오류가 발생했습니다.'), 'error');
     } finally {
       finishNonFormAction(operation);
     }
@@ -494,8 +495,8 @@ function useUserOrgWriteActions({
       } else {
         toast(res.message, 'error');
       }
-    } catch {
-      toast('구조 저장 중 오류 발생', 'error');
+    } catch (error) {
+      toast(failureMessage(error, '구조 저장 중 오류가 발생했습니다.'), 'error');
     } finally {
       finishNonFormAction(operation);
     }
