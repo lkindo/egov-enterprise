@@ -32,7 +32,7 @@
 | 중립 바탕/보조 | `--background`·`--card`·`--muted`·`--border`·`--muted-foreground` |
 | 강조 카테고리(대시보드 위젯) | `--hub-blue`·`--hub-orange`·`--hub-purple`·… (다크 전경 재정의 포함) |
 | 다계열 차트 마크 | `--chart-1`~`--chart-5` (라이트/다크 모두 표면 대비 3:1 이상, `useChartColors().series`) |
-| 상태색 | `--success`·`--warning`·`--info`·`--destructive` (+ `-foreground`/`-emphasis`) |
+| 상태색 | `--success`·`--warning`·`--info`·`--destructive` (+ `-foreground`; `-emphasis` 는 success·destructive 만 — 페이지·카드와 자기 색 5~20% 틴트 위 모두 4.5:1) |
 
 ---
 
@@ -45,10 +45,11 @@
 | 은은한 바탕 / 보조 텍스트 | `bg-muted` / `text-muted-foreground` | flip |
 | 강조 바탕 | `bg-secondary` · `bg-accent` | flip |
 | 경계 / 링 / 구분선 | `border-border` · `ring-ring` · `ring-border` · `divide-border` | flip |
-| 입력 경계·스위치 OFF | `border-input` · `bg-input`. 인접 면 대비 3:1 이상이다. 입력 컨트롤에 `border-border` 를 쓰지 않는다 | flip |
+| 입력 경계·스위치 OFF | `border-input` · `bg-input`. 인접 면 대비 3:1 이상이다. 입력 컨트롤에 `border-border` 를 쓰지 않는다. 브라우저 기본 선택 목록은 `NativeSelect`(`@/components/ui/native-select`)이고 화면의 날 `<select>` 는 lint 가 막는다 | flip |
 | 다크 입력 채움 | `bg-input-fill/30` 등. `--input` 을 반투명 채움으로 쓰지 않는다 | flip |
 | 주 브랜드 | `bg-primary` / `text-primary` / `border-primary` / `ring-primary` | flip |
 | 상태 | `bg-success`·`bg-warning`·`bg-info`·`bg-destructive` (+ `-foreground`) | flip |
+| 상태 표지(배지) | `Badge` 변형 하나 — 채움 `success`·`destructive`·`info`·`muted`, 연한 `*-soft`(틴트 `/15`·테두리 `/40`, 글자는 success·destructive 가 `-emphasis`, warning·info·primary 가 `text-foreground`), 작은 표지는 `size="sm"`. 도메인 배지(StatusBadge·HubStatusBadge·AbsenceBadge·게시 상태)는 상태→변형만 정한다 | flip |
 | **다계열 차트** | `useChartColors().series` (`--chart-1`~`--chart-5`) | flip (양 모드 3:1 이상) |
 | **카테고리 액센트** | `bg-hub-blue`·`bg-hub-indigo`·`bg-hub-purple`·`bg-hub-emerald`·`bg-hub-rose`·`bg-hub-amber`·`bg-hub-orange` | 고정색(다중 색조 변이) |
 | **의도적 다크 서피스** | **`bg-surface-inverse` / `text-surface-inverse-foreground` / `text-surface-inverse-muted` / `border-surface-inverse-border`** | **항상 어두움(고정)** |
@@ -119,6 +120,7 @@
 - **팔레트**: 상태(red·green·emerald·rose·amber·orange·yellow·lime·pink)와 중립·브랜드 액센트(slate·gray·zinc·neutral·stone·blue·indigo·sky·violet·purple·cyan·teal·fuchsia) 전부, utility 는 `text·bg·border·ring·divide·from·to·via·placeholder·fill·stroke·shadow·ring-offset·caret·outline·decoration·accent`, 투명도 접미사 포함. 투명도 접미사가 없는 불투명 `bg-white` 도 같은 규칙이 잡는다.
 - **남은 동결분**: 그 줄 바로 위의 동결 표지 `// palette-frozen: <클래스…> -- <사유>`(JSX 자식 자리에서는 `{/* … */}`)다. 표지는 그 줄에서 나열한 클래스와 개수만 푼다 — 같은 줄에 새 원색을 더하면 붉고, 고쳐서 사라진 클래스가 표지에 남아도 붉다(종전 동결표의 양방향 래칫과 같다). 표지는 팔레트만 풀며 불투명 `bg-white` 검사는 그대로다. 이 규칙을 `eslint-disable` 주석으로 끄지 않는다 — 규칙 시험이 생산 소스에서 막는다.
 - **치환 지침**: green·emerald → `success`, amber·yellow·orange → `warning`, red·rose → `destructive`(강조는 `-emphasis`), 정보성 blue → `info`, 분류 표식은 `hub-*`.
+- **정의되지 않은 시맨틱 색**: 같은 규칙이 `globals.css` `@theme` 에 `--color-<이름>` 이 없는 상태색 이름(`text-warning-emphasis` 등)도 잡는다 — Tailwind 는 그런 클래스를 만들지 않아 색이 조용히 빠진다(2026-11-26, 17개 파일 21곳). 경고·정보 글자는 틴트와 `text-foreground` 로 말한다.
 
 ```bash
 pnpm -C frontend run lint

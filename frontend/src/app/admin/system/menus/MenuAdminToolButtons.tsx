@@ -56,7 +56,7 @@ export function MenuAdminToolButtons({
                 (2차 리뷰: 두 자리 수 배지가 단추를 153px 로 늘려 도구 줄이 제목 아래로 내려갔다). */}
             <span
               data-blocking-badge=""
-              className="absolute -right-2 -top-2 inline-flex items-center gap-0.5 rounded-full border border-warning/50 bg-card px-1 text-xs font-semibold leading-4 text-warning-emphasis tabular-nums"
+              className="absolute -right-2 -top-2 inline-flex items-center gap-0.5 rounded-full border border-warning/50 bg-card px-1 text-xs font-semibold leading-4 text-foreground tabular-nums"
             >
               <AlertTriangle aria-hidden="true" className="size-3" />
               <span aria-hidden="true">{blockingCount > 99 ? '99+' : blockingCount.toLocaleString()}</span>

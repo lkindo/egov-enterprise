@@ -16,6 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 /* reusable-base:community:start */
 import { useQuery } from "@tanstack/react-query";
 import { communityUserService } from '@/services/business/user/community/CommunityUserService';
+import { NativeSelect } from "@/components/ui/native-select";
 /* reusable-base:community:end */
 import {
   ChevronRight,
@@ -797,10 +798,10 @@ export function BoardMakerWizard() {
                     <Label htmlFor="cmntySn" className="text-[length:var(--font-size-body)] font-medium text-foreground">
                       커뮤니티 귀속
                     </Label>
-                    <select
+                    <NativeSelect
                       id="cmntySn"
                       aria-describedby="cmntySn-help"
-                      className="h-[var(--control-h)] w-full rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                      className="w-full bg-card"
                       {...register('cmntySn')}
                     >
                       <option value="">귀속하지 않음 (모든 인증 사용자 열람)</option>
@@ -809,7 +810,7 @@ export function BoardMakerWizard() {
                           {community.cmntyNm}
                         </option>
                       ))}
-                    </select>
+                    </NativeSelect>
                     <p id="cmntySn-help" className="text-[length:var(--font-size-body)] text-muted-foreground">
                       커뮤니티에 귀속하면 <strong>승인된 회원과 관리자만</strong> 이 게시판의 글을 보고 쓸 수 있고,
                       통합 검색 결과에서도 제외됩니다. 귀속은 생성 후에는 바꿀 수 없습니다.

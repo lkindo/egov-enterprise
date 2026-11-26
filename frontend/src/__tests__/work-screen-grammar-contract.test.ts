@@ -99,7 +99,7 @@ describe('Work screen grammar catalog ↔ density token contract', () => {
  *      밀도 토큰도 닿지 않았다. 그래서 같은 폼에서 입력칸은 44px, 선택칸은 36px 이었다.
  *
  * 이 계약이 지키는 것:
- *   ③ 기본 컴포넌트 3종(button·input·select)이 기본 높이를 토큰으로 선언한다.
+ *   ③ 기본 컴포넌트(button·input·select·native-select)가 기본 높이를 토큰으로 선언한다.
  *   ④ 밀도 대상 컨트롤에 붙은 고정 높이 덮어쓰기는 **파일별 exact 동결**이다 — 늘면 red(새 덮어쓰기),
  *      줄었는데 동결을 안 내려도 red(기록이 사실과 어긋남). 파일 단위라 한 파일에서 지우고 다른
  *      파일에 더하는 교체도 red 다. 조회조건 바는 전용 토큰 `--filter-control-h` 를 쓴다.
@@ -115,8 +115,10 @@ const CONTROL_DEFINITIONS = new Set([
   'components/ui/button.tsx',
   'components/ui/input.tsx',
   'components/ui/select.tsx',
+  'components/ui/native-select.tsx',
 ]);
-const DENSITY_BOUND_TAGS = new Set(['Button', 'Input', 'SelectTrigger', 'button', 'input', 'select']);
+// [2026-11-26] 화면의 날 select 는 ESLint 가 막고 NativeSelect 로 옮겼다 — 래퍼를 보지 않으면 감시 대상이 조용히 준다.
+const DENSITY_BOUND_TAGS = new Set(['Button', 'Input', 'SelectTrigger', 'NativeSelect', 'button', 'input', 'select']);
 /** 텍스트 컨트롤이 아닌 input — 높이가 `--control-h` 의 대상이 아니다. */
 const NON_TEXT_INPUT_TYPES = new Set(['checkbox', 'radio', 'hidden', 'range', 'color']);
 /** 변형 접두(`md:` 등)를 뗀 유틸리티가 고정 높이인가. `h-[var(--…)]` 는 토큰이라 걸리지 않는다. */
@@ -227,6 +229,7 @@ describe('Control height ↔ density token contract', () => {
       select,
       'SelectTrigger 기본 높이가 다시 고정됐다 — compact 밀도가 선택 컨트롤에 닿지 않는다',
     ).not.toMatch(/data-\[size=(?:default|sm)\]:h-(?:\d|\[\d)/);
+    expect(readFileSync(join(UI_DIR, 'native-select.tsx'), 'utf8')).toContain('h-[var(--control-h)]');
   });
 
   it('attributes class strings inside cn(...), conditionals and templates to the owning control', () => {

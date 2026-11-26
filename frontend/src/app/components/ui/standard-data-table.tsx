@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Search, X, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import {
   Select,
   SelectContent,
@@ -688,8 +689,8 @@ export function StandardDataTable<T extends object>({
               {leafColumns.some((c) => c.getCanSort()) || serverSortColumns.length > 0 ? (
                 <label className="flex items-center gap-2 text-sm">
                   정렬 기준
-                  <select
-                    className="h-[var(--control-h-sm)] rounded-md border border-input bg-background px-2 text-sm"
+                  <NativeSelect
+                    className="h-[var(--control-h-sm)] px-2 text-sm"
                     value={(() => {
                       if (serverSort?.sortBy && serverSortColumns.some((c) => c.serverSortKey === serverSort.sortBy)) {
                         return `server:${serverSort.sortBy}:${serverSort.sortDir ?? 'asc'}`;
@@ -727,7 +728,7 @@ export function StandardDataTable<T extends object>({
                         <option key={`${tanColumn.id}:desc`} value={`${tanColumn.id}:desc`}>{`${column.header} 내림차순`}</option>,
                       ];
                     })}
-                  </select>
+                  </NativeSelect>
                 </label>
               ) : null}
             </div>

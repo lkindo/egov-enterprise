@@ -1,7 +1,9 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { codeWithoutComments } from '../../../scripts/code-without-comments.mjs';
 
 const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const THEMES_DIR = join(FRONTEND_DIR, 'src', 'styles', 'themes');
@@ -38,6 +40,26 @@ function contrast(a: string, b: string): number {
   const parse = (v: string) => v.trim().split(/\s+/).map((n) => parseFloat(n)) as [number, number, number];
   const la = relativeLuminance(hslToRgb(...parse(a)));
   const lb = relativeLuminance(hslToRgb(...parse(b)));
+  const [hi, lo] = la > lb ? [la, lb] : [lb, la];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+function parseHsl(value: string): [number, number, number] {
+  const [h = Number.NaN, s = Number.NaN, l = Number.NaN] = value.trim().split(/\s+/).map((n) => parseFloat(n));
+  return [h, s, l];
+}
+
+/** `bg-{top}/{alpha}` 가 `under` 면 위에 놓였을 때 보이는 색(sRGB 알파 합성). */
+function tint(top: string, alpha: number, under: string): [number, number, number] {
+  const [tr, tg, tb] = hslToRgb(...parseHsl(top));
+  const [ur, ug, ub] = hslToRgb(...parseHsl(under));
+  const mix = (t: number, u: number) => t * alpha + u * (1 - alpha);
+  return [mix(tr, ur), mix(tg, ug), mix(tb, ub)];
+}
+
+function contrastRgb(a: [number, number, number], b: [number, number, number]): number {
+  const la = relativeLuminance(a);
+  const lb = relativeLuminance(b);
   const [hi, lo] = la > lb ? [la, lb] : [lb, la];
   return (hi + 0.05) / (lo + 0.05);
 }
@@ -116,6 +138,50 @@ describe.each(PROFILE_FILES)('상태색 WCAG 대비 계약 — %s', (profileFile
     },
   );
 
+  // [2026-11-26] emphasis 글자는 자기 색 연한 틴트(bg-success/15 등) 위에도 얹힌다 — 연한 배지(Badge success-soft·destructive-soft)와
+  //   안내 줄 60여 곳. 위 축은 페이지·카드만 봐서, 기본 프로필(premium) 라이트의 success 가 틴트 위 3.27:1 인 것을 놓쳤다.
+  //   Tailwind 4 의 `bg-x/15` 는 투명과의 색 혼합이라 결과는 아래 면 위 알파 합성과 같다.
+  it.each(['success', 'destructive'] as const)(
+    '연한 틴트 위 텍스트: --%s-emphasis 가 자기 색 5~20% 틴트(페이지·카드·muted 위) 위에서 라이트·다크 모두 4.5:1 이상이다',
+    (status) => {
+      for (const [mode, tokens] of [['light', light], ['dark', dark]] as const) {
+        const value = get(tokens, `--${status}-emphasis`);
+        for (const under of ['--background', '--card', '--muted'] as const) {
+          for (const alpha of [0.05, 0.1, 0.15, 0.2]) {
+            const surface = tint(get(tokens, `--${status}`), alpha, get(tokens, under));
+            const ratio = contrastRgb(hslToRgb(...parseHsl(value)), surface);
+            expect(
+              ratio,
+              `[${mode}] --${status}-emphasis(${value}) on --${status} ${alpha * 100}% over ${under} = ${ratio.toFixed(2)}:1 — ` +
+                '연한 배지·안내 줄의 글자가 AA 를 깨뜨립니다. 임계값이 아니라 emphasis 명도를 조정한다.',
+            ).toBeGreaterThanOrEqual(AA_TEXT);
+          }
+        }
+      }
+    },
+  );
+
+  it('흐린 배지: --muted-foreground 가 --muted 위에서 라이트·다크 모두 4.5:1 이상이다(Badge muted)', () => {
+    for (const [mode, tokens] of [['light', light], ['dark', dark]] as const) {
+      const ratio = contrast(get(tokens, '--muted-foreground'), get(tokens, '--muted'));
+      expect(ratio, `[${mode}] --muted-foreground on --muted = ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(AA_TEXT);
+    }
+  });
+
+  it.each(['success', 'warning', 'info', 'destructive', 'primary'] as const)(
+    '연한 배지 글자: --foreground 가 %s 15% 틴트(페이지·카드·muted 위) 위에서 라이트·다크 모두 4.5:1 이상이다',
+    (tone) => {
+      // warning·info·primary 는 emphasis 토큰이 없어 연한 배지가 --foreground 글자를 쓴다(Badge *-soft).
+      for (const [mode, tokens] of [['light', light], ['dark', dark]] as const) {
+        for (const under of ['--background', '--card', '--muted'] as const) {
+          const surface = tint(get(tokens, `--${tone}`), 0.15, get(tokens, under));
+          const ratio = contrastRgb(hslToRgb(...parseHsl(get(tokens, '--foreground'))), surface);
+          expect(ratio, `[${mode}] --foreground on --${tone} 15% over ${under} = ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(AA_TEXT);
+        }
+      }
+    },
+  );
+
   it('surface-inverse 위 상태 텍스트: --warning 이 고정 다크 서피스에서 4.5:1 이상이다', () => {
     // 이 조합을 쓰던 목업은 퇴역했지만 공용 토큰의 대비 하한은 유지한다. surface-inverse 는
     // 모드와 무관하게 어두운 고정 서피스이므로 라이트 값 기준 한 번만 검사한다.
@@ -182,19 +248,20 @@ describe.each(PROFILE_FILES)('상태색 WCAG 대비 계약 — %s', (profileFile
 });
 
 describe('입력 경계 토큰의 소비', () => {
-  const ui = (name: string) => readFileSync(join(FRONTEND_DIR, 'src', 'components', 'ui', `${name}.tsx`), 'utf8');
+  // 주석은 뺀다 — native-select.tsx 의 설명 주석이 'border-input' 을 말해, 클래스에서 빼도 낱말이 남아 통과했다(2026-11-26 red 증명).
+  const ui = (name: string) => codeWithoutComments(readFileSync(join(FRONTEND_DIR, 'src', 'components', 'ui', `${name}.tsx`), 'utf8'), `${name}.tsx`);
   /** 클래스 낱말. 부분 문자열로 보면 dark: 등 변형 접두사가 붙어도 통과한다. */
   const classes = (name: string) => new Set(ui(name).split(/[\s"'`]+/));
 
   it('입력 컨트롤과 스위치 OFF 가 3:1 을 보장한 --input 을 쓴다', () => {
-    for (const name of ['input', 'textarea', 'select', 'checkbox']) {
+    for (const name of ['input', 'textarea', 'select', 'native-select', 'checkbox']) {
       expect(classes(name).has('border-input'), `${name} 의 경계가 --input 이 아닙니다`).toBe(true);
     }
     expect(classes('switch').has('data-[state=unchecked]:bg-input'), '라이트·다크 모두 꺼진 스위치가 --input 이어야 합니다').toBe(true);
   });
 
   it('입력의 포커스·오류 경계가 3:1 을 보장한 토큰을 쓴다', () => {
-    for (const name of ['input', 'select', 'checkbox']) {
+    for (const name of ['input', 'select', 'native-select', 'checkbox']) {
       expect(classes(name).has('focus-visible:border-ring'), `${name} 포커스 경계`).toBe(true);
       expect(classes(name).has('aria-invalid:border-destructive-emphasis'), `${name} 오류 경계`).toBe(true);
       expect(classes(name).has('aria-invalid:border-destructive'), `${name} 오류 경계가 다크에서 약합니다`).toBe(false);
@@ -208,7 +275,7 @@ describe('입력 경계 토큰의 소비', () => {
   });
 
   it('공용 컴포넌트가 --input 을 반투명 채움으로 쓰지 않는다(경계를 올리면 채움이 함께 밝아진다)', () => {
-    for (const name of ['button', 'checkbox', 'input', 'select', 'tabs', 'textarea', 'switch']) {
+    for (const name of ['button', 'checkbox', 'input', 'select', 'native-select', 'tabs', 'textarea', 'switch']) {
       expect(ui(name), `${name} 는 채움에 --input-fill 을 쓰세요`).not.toMatch(/\bbg-input\/\d/);
     }
   });

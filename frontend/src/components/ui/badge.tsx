@@ -19,10 +19,26 @@ const badgeVariants = cva(
  ghost: "[a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
  link: "text-primary underline-offset-4 [a&]:hover:underline",
  success: "bg-success text-success-foreground [a&]:hover:bg-success/90 focus-visible:ring-success/20",
+ info: "bg-info text-info-foreground [a&]:hover:bg-info/90",
+ // 꺼짐·종료·미사용처럼 한 발 물러선 상태. muted 위 muted-foreground 는 두 프로필 모두 AA 다.
+ muted: "bg-muted text-muted-foreground",
+ // 연한(soft) 변형 — 표 칸·제목 옆처럼 채움 배지가 시끄러운 자리. 색은 틴트·테두리가 말하고 글자는 AA 가 계약된 토큰만 쓴다
+ // (emphasis 는 자기 틴트 위 4.5:1 을, 나머지는 foreground 를 — status-token-contrast 계약).
+ "success-soft": "border-success/40 bg-success/15 text-success-emphasis",
+ "destructive-soft": "border-destructive/40 bg-destructive/15 text-destructive-emphasis",
+ "warning-soft": "border-warning/40 bg-warning/15 text-foreground",
+ "info-soft": "border-info/40 bg-info/15 text-foreground",
+ "primary-soft": "border-primary/40 bg-primary/10 text-foreground",
+ },
+ size: {
+ default: "",
+ // 제목 옆·이름 옆에 붙는 작은 표지.
+ sm: "rounded px-1.5 text-xs",
  },
  },
  defaultVariants: {
  variant: "default",
+ size: "default",
  },
  }
 )
@@ -30,6 +46,7 @@ const badgeVariants = cva(
 function Badge({
  className,
  variant = "default",
+ size = "default",
  asChild = false,
  children,
  ...props
@@ -41,7 +58,7 @@ function Badge({
  <Comp
  data-slot="badge"
  data-variant={variant}
- className={cn(badgeVariants({ variant }), className)}
+ className={cn(badgeVariants({ variant, size }), className)}
  {...props}
  >
  {asChild ? (
@@ -53,4 +70,6 @@ function Badge({
  )
 }
 
-export { Badge, badgeVariants }
+type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>["variant"]>
+
+export { Badge, badgeVariants, type BadgeVariant }

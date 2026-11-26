@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { ArrowDown, ArrowUp, Copy, FilePlus, ImagePlus, ListPlus, Plus, Search, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AttachmentImage } from '@/app/components/ui/attachment-image';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
@@ -40,7 +41,7 @@ const CmsRichTextEditor = dynamic(
   { ssr: false, loading: () => <div className="h-32 animate-pulse rounded-md bg-muted" /> },
 );
 
-const SELECT_CLASS = 'h-[var(--control-h)] rounded-md border border-input bg-transparent px-2 text-[length:var(--font-size-body)] text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50';
+const SELECT_CLASS = 'bg-transparent px-2';
 const KIND_LABELS: Record<CmsCell['kind'], string> = { rich: '본문·표', image: '이미지', links: '바로가기', files: '내려받기 파일' };
 const IMAGE_ACCEPT = CMS_IMAGE_EXTENSIONS.map((extension) => `.${extension}`).join(',');
 const FILE_ACCEPT = CMS_FILE_EXTENSIONS.map((extension) => `.${extension}`).join(',');
@@ -167,36 +168,36 @@ export function SectionEditor({
         </label>
         <label className="flex flex-col gap-1 text-sm text-muted-foreground">
           단 구성
-          <select
+          <NativeSelect
             className={SELECT_CLASS}
             value={section.layout}
             disabled={readOnly}
             onChange={(event) => onLayoutChange(event.target.value as CmsLayout)}
           >
             {Object.entries(CMS_LAYOUT_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-          </select>
+          </NativeSelect>
         </label>
         <label className="flex flex-col gap-1 text-sm text-muted-foreground">
           배경
-          <select
+          <NativeSelect
             className={SELECT_CLASS}
             value={section.tone}
             disabled={readOnly}
             onChange={(event) => onChange({ ...section, tone: event.target.value as CmsTone })}
           >
             {Object.entries(CMS_TONE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-          </select>
+          </NativeSelect>
         </label>
         <label className="flex flex-col gap-1 text-sm text-muted-foreground">
           간격
-          <select
+          <NativeSelect
             className={SELECT_CLASS}
             value={section.spacing}
             disabled={readOnly}
             onChange={(event) => onChange({ ...section, spacing: event.target.value as CmsSpacing })}
           >
             {Object.entries(CMS_SPACING_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-          </select>
+          </NativeSelect>
         </label>
         <div className="flex items-center gap-1 pb-0.5">
           <Button type="button" variant="outline" size="icon" aria-label={`${name} 위로 옮기기`}
@@ -323,7 +324,7 @@ function CellEditor({ cell, cellIndex, label, idPrefix, issues, issueId, readOnl
       <div className="flex flex-wrap items-center gap-2">
         <label className="flex items-center gap-2 text-sm text-muted-foreground">
           {label} 내용
-          <select
+          <NativeSelect
             className={SELECT_CLASS}
             value={pendingKind ?? cell.kind}
             disabled={readOnly}
@@ -337,7 +338,7 @@ function CellEditor({ cell, cellIndex, label, idPrefix, issues, issueId, readOnl
             }}
           >
             {Object.entries(KIND_LABELS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
-          </select>
+          </NativeSelect>
         </label>
         {pendingKind && (
           <div role="alert" className="flex flex-wrap items-center gap-2 text-sm">
@@ -524,7 +525,7 @@ function LinksCellEditor({ cell, idPrefix, readOnly, issueId, onChange }: CellCo
                   https 주소, /로 시작하는 사이트 내부 경로, mailto·tel 만 쓸 수 있습니다.
                 </p>
               )}
-              {warning && <p id={warningId} className="basis-full text-sm text-warning-emphasis">{warning}</p>}
+              {warning && <p id={warningId} className="basis-full text-sm">{warning}</p>}
             </li>
           );
         })}

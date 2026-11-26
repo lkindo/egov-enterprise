@@ -8,6 +8,7 @@ import { History, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Switch } from '@/components/ui/switch';
 import { FormErrorSummary } from '@/components/ui/form';
 import { StandardModal } from '@/app/components/ui/standard-modal';
@@ -715,17 +716,17 @@ export function BoardSettingsTab({ detail, onReload }: {
           <p className="text-xs text-muted-foreground">끄면 새 입력만 막고 이미 있는 댓글·평가·첨부·추천은 그대로 둡니다.</p>
           <div className="space-y-1.5">
             <Label htmlFor="board-settings-private-policy">비밀글 정책</Label>
-            <select
+            <NativeSelect
               id="board-settings-private-policy"
               value={toPrivatePostPolicy(value('prvtPstPlcyCd'))}
               disabled={!canUpdate || saving}
               aria-describedby={['board-settings-private-policy-hint', policyWarnings.length > 0 ? 'board-settings-private-policy-warning' : null]
                 .filter(Boolean).join(' ')}
               onChange={(event) => edit('prvtPstPlcyCd', toPrivatePostPolicy(event.target.value))}
-              className="h-[var(--control-h)] w-full rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)] sm:w-60"
+              className="w-full bg-card sm:w-60"
             >
               {PRIVATE_POST_POLICIES.map((policy) => <option key={policy} value={policy}>{PRIVATE_POST_POLICY_OPTIONS[policy]}</option>)}
-            </select>
+            </NativeSelect>
             <p id="board-settings-private-policy-hint" className="text-xs text-muted-foreground">
               정책은 앞으로 저장하는 글에 적용되고, 이미 있는 비밀글은 정책을 바꿔도 계속 보호됩니다. 기존 게시판 기본값: 없음.
             </p>

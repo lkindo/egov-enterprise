@@ -4,6 +4,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { BookUser, Building2, Search, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { NativeSelect } from '@/components/ui/native-select';
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
 import { AbsenceBadge } from '@/app/components/ui/absence-badge';
 import type {
@@ -402,17 +403,17 @@ export function RecipientPicker({
               <Button type="button" variant="outline" size="sm" onClick={() => void loadDepartments()}>다시 시도</Button>
             </div>
           ) : (
-            <select
+            <NativeSelect
               id="recipient-department"
               value={selectedDepartmentId}
               onChange={(event) => handleDepartmentChange(event.target.value)}
-              className="w-full h-[var(--control-h)] rounded-lg border border-input bg-background px-3 text-sm"
+              className="w-full rounded-lg text-sm"
             >
               <option value="">부서를 고르세요</option>
               {departments.map((item) => (
                 <option key={item.id} value={item.id}>{`${'　'.repeat(item.depth)}${item.name}`}</option>
               ))}
-            </select>
+            </NativeSelect>
           )}
           {departmentsState === 'done' && departments.length === 0 && (
             <p className="text-xs text-muted-foreground">등록된 부서가 없습니다.</p>
@@ -440,7 +441,7 @@ export function RecipientPicker({
             </div>
           )}
           {departmentTruncated && departmentMembersState === 'done' && (
-            <p role="status" className="text-xs font-bold text-warning-emphasis">
+            <p role="status" className="text-xs font-bold">
               이 부서는 인원이 많아 앞의 {departmentRecipients.length}명만 표시합니다. 나머지는 사용자 검색으로 찾아 주세요.
             </p>
           )}
@@ -495,17 +496,17 @@ export function RecipientPicker({
               <Button type="button" variant="outline" size="sm" onClick={() => void loadBooks()}>다시 시도</Button>
             </div>
           ) : (
-            <select
+            <NativeSelect
               id="recipient-address-book"
               value={selectedBookSn}
               onChange={(event) => handleBookChange(event.target.value)}
-              className="w-full h-[var(--control-h)] rounded-lg border border-input bg-background px-3 text-sm"
+              className="w-full rounded-lg text-sm"
             >
               <option value="">주소록을 고르세요</option>
               {books.map((book) => (
                 <option key={book.id} value={String(book.id)}>{book.name}</option>
               ))}
-            </select>
+            </NativeSelect>
           )}
           {booksState === 'done' && books.length === 0 && (
             <p className="text-xs text-muted-foreground">사용할 수 있는 주소록이 없습니다. 주소록 관리에서 먼저 만들어 주세요.</p>

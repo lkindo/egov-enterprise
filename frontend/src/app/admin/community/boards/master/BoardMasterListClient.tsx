@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Plus, ArrowRight, Zap, Lock, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { NativeSelect } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import {
   boardAdminService,
@@ -395,27 +396,27 @@ export function BoardMasterListClient() {
         >
           <div className="space-y-1">
             <label htmlFor="board-master-use-filter" className="text-[length:var(--font-size-body)] font-medium">게시판 사용</label>
-            <select
+            <NativeSelect
               id="board-master-use-filter"
               value={useDraft}
               onChange={(event) => setUseDraft(event.target.value as UseFilter)}
-              className="h-[var(--control-h)] rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)]"
+              className="bg-card"
             >
               {USE_FILTER_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
+            </NativeSelect>
           </div>
           <div className="space-y-1">
             <label htmlFor="board-master-menu-filter" className="text-[length:var(--font-size-body)] font-medium">메뉴 연결</label>
-            <select
+            <NativeSelect
               id="board-master-menu-filter"
               value={menuFilterUnavailable ? '' : menuDraft}
               onChange={(event) => setMenuDraft(event.target.value as MenuFilter)}
               disabled={menuFilterUnavailable}
               aria-describedby="board-master-menu-filter-help"
-              className="h-[var(--control-h)] rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)] disabled:opacity-60"
+              className="bg-card disabled:opacity-60"
             >
               {MENU_FILTER_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
+            </NativeSelect>
             <p id="board-master-menu-filter-help" className="text-xs text-muted-foreground">
               {menuFilterUnavailable ? '메뉴 원장을 볼 권한이 없어 거를 수 없습니다.' : '현재 페이지의 게시판만 거릅니다.'}
             </p>

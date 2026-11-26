@@ -10,6 +10,7 @@ import { surveyAdminService } from '@/services/foundation/system/SurveyAdminServ
 import { Survey, SurveyQuestion } from '@/types/business/survey';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Check, Loader2, Pencil, Plus, Trash2, X, ListChecks, MessageSquareText } from 'lucide-react';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { FormErrorSummary } from '@/components/ui/form';
@@ -533,7 +534,7 @@ function SurveyCreateForm({ templateOptions, setError }: {
           </div>
           <div className="space-y-1.5 sm:w-64">
             <label htmlFor="new-survey-template" className="text-xs font-bold text-muted-foreground">템플릿</label>
-            <select
+            <NativeSelect
               id="new-survey-template"
               {...surveyValidation.fieldProps('srvyTmpltSn')}
               value={newSurveyTemplate}
@@ -541,7 +542,7 @@ function SurveyCreateForm({ templateOptions, setError }: {
                 surveyValidation.clearError('srvyTmpltSn');
                 setNewSurveyTemplate(e.target.value);
               }}
-              className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
+              className="h-auto w-full rounded-lg bg-card py-2 text-sm"
             >
               <option value="">— 템플릿을 선택하세요 —</option>
               {templateOptions.map((template) => (
@@ -549,7 +550,7 @@ function SurveyCreateForm({ templateOptions, setError }: {
                   {template.srvyTmpltExpln || `템플릿 ${template.srvyTmpltSn}`}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
             {surveyValidation.errors.srvyTmpltSn ? (
               <p {...surveyValidation.messageProps('srvyTmpltSn')} className="text-xs text-destructive-emphasis" />
             ) : null}
@@ -778,9 +779,9 @@ function SurveyQuestionCreateForm({
             <div className="flex flex-wrap items-center gap-3 text-sm">
               <label className="flex items-center gap-2">
                 <span className="text-muted-foreground">선택 방식</span>
-                <select
+                <NativeSelect
                   aria-label="선택 방식"
-                  className="h-[var(--control-h)] rounded-md border border-input bg-background px-2 text-sm"
+                  className="px-2 text-sm"
                   value={newQuestionFreeText ? 'free-text' : newQuestionMultiple ? 'multiple' : 'single'}
                   onChange={(e) => {
                     questionValidation.clearError('maxChcCnt');
@@ -791,7 +792,7 @@ function SurveyQuestionCreateForm({
                   <option value="single">하나만 고르기</option>
                   <option value="multiple">여러 개 고르기</option>
                   <option value="free-text">글로 답하기(주관식)</option>
-                </select>
+                </NativeSelect>
               </label>
               {newQuestionMultiple && (
                 <label className="flex items-center gap-2">

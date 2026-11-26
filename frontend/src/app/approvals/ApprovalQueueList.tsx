@@ -170,7 +170,7 @@ export function ApprovalQueueList({
                   ) : turn && turn.days !== null && turn.days > 0 ? (
                     <span className="mt-1 block text-xs text-muted-foreground">{turn.days}일째 대기</span>
                   ) : null}
-                  {item.openSupplement && <span className="mt-1 block text-xs font-semibold text-warning-emphasis">보완 요청 중</span>}
+                  {item.openSupplement && <span className="mt-1 block text-xs font-semibold">보완 요청 중</span>}
                   <span className="mt-2 flex items-baseline justify-between gap-3">
                     <span className="min-w-0 truncate text-xs text-muted-foreground">
                       {/* 알림이 '결재(번호 N)' 으로 문서를 가리킨다 — 목록에서 같은 번호로 찾을 수 있어야 한다. */}

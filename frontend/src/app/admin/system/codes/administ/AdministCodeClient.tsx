@@ -16,6 +16,7 @@ import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import { z } from 'zod';
 import { useAppForm } from '@/hooks/useAppForm';
 import { useAuth } from '@/contexts/AuthContext';
@@ -435,10 +436,10 @@ export default function AdministCodeClient({
            <FormItem>
              <FormLabel className="text-[length:var(--font-size-body)] font-medium">구분</FormLabel>
              <FormControl>
-               <select {...field} className="h-[var(--control-h)] w-full rounded-md border border-input bg-transparent px-3 text-[length:var(--font-size-body)] text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50">
+               <NativeSelect {...field} className="w-full bg-transparent">
                  <option value="1">법정동</option>
                  <option value="2">행정동</option>
-               </select>
+               </NativeSelect>
              </FormControl>
              <FormMessage />
            </FormItem>
@@ -480,10 +481,10 @@ export default function AdministCodeClient({
            <FormItem>
              <FormLabel className="text-[length:var(--font-size-body)] font-medium">사용 여부</FormLabel>
              <FormControl>
-               <select {...field} className="h-[var(--control-h)] w-full rounded-md border border-input bg-transparent px-3 text-[length:var(--font-size-body)] text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50">
+               <NativeSelect {...field} className="w-full bg-transparent">
                  <option value="Y">활성 (사용함)</option>
                  <option value="N">중단 (사용안함)</option>
-               </select>
+               </NativeSelect>
              </FormControl>
              <FormMessage />
            </FormItem>

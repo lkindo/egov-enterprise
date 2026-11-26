@@ -7,6 +7,7 @@
   - 비동기 조회 시작 상태 전이는 이벤트 핸들러/초기 상태와 비동기 완료 구간으로 분리하고, 외부 저장소 복원은 `useSyncExternalStore`(SSR snapshot `null`)를 쓴다.
   - 인증 만료·오류 바운더리의 의도된 전체 페이지 재적재는 `hardNavigateToInternalRoute`(`src/lib/navigation/internal-route.ts`) 동일 출처 경계를 거친다.
 */
+import { readFileSync } from "node:fs";
 import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 import nextTypescript from "eslint-config-next/typescript";
 
@@ -27,6 +28,17 @@ const PALETTE_REGEX = new RegExp(PALETTE_SOURCE, "g");
 const PALETTE_CLASS = new RegExp(`^${PALETTE_SOURCE}$`);
 const FROZEN_MARK = /^\s*palette-frozen:\s*(.*?)\s*(?:--\s*(.*?))?\s*$/s;
 const PALETTE_GUIDE = "프론트엔드 UX 헌법 제15조 2항(시맨틱 컬러 토큰)에 의거하여 시맨틱 토큰을 쓰십시오 — 성공·경고·오류·정보는 success/warning/destructive(-emphasis)/info, 분류 표식은 hub-*, 중립은 foreground·muted·border 계열(docs/03-guides/design-tokens.md).";
+
+// [2026-11-26 PR-3b 6번] 정의되지 않은 시맨틱 상태색. `text-warning-emphasis` 처럼 globals.css 의 @theme 에 `--color-<이름>` 이 없는
+//   이름은 Tailwind 가 클래스를 만들지 않아 색이 조용히 빠진다 — 두 파일 주석이 함정으로 적어 두었는데도 17개 파일 21곳이 그 클래스를
+//   썼다(경고 글자가 본문색으로 보였다). 허용 목록은 @theme 에서 읽으므로 토큰을 정의하면 그대로 풀린다.
+const THEME_COLOR_NAMES = new Set(
+  [...readFileSync(new URL("./src/app/globals.css", import.meta.url), "utf8").matchAll(/--color-([a-z0-9-]+)\s*:/g)].map((m) => m[1]),
+);
+const SEMANTIC_STATUS_REGEX = new RegExp(
+  `(?<![\\w-])(?:${PALETTE_UTILITIES})-((?:success|warning|info|destructive|primary)(?:-[a-z]+)*)(?:\\/[0-9]{1,3})?(?![\\w-])`,
+  "g",
+);
 
 /** 팔레트 판정 범위 — 화면을 그리는 생산 소스. 시험과 `__tests__` 는 빼고, .ts 는 화면 문자열을 갖지 않아 종전 가드도 세지 않았다. */
 const isRenderedProductionSource = (filename) => {
@@ -55,6 +67,15 @@ const enforceDesignTokensRule = {
 
     const collectPalette = (node, text) => {
       if (!paletteScope || typeof text !== "string") return;
+      const undefinedNames = [...text.matchAll(SEMANTIC_STATUS_REGEX)]
+        .map((match) => match[1])
+        .filter((name) => !THEME_COLOR_NAMES.has(name));
+      if (undefinedNames.length > 0) {
+        context.report({
+          node,
+          message: `정의되지 않은 시맨틱 색 '${[...new Set(undefinedNames)].join(", ")}' — globals.css @theme 에 --color-<이름> 이 없어 Tailwind 가 클래스를 만들지 않는다(색이 조용히 빠진다). 정의된 토큰을 쓰거나, 경고·정보는 틴트(bg-warning/15·Badge warning-soft)와 text-foreground 로 말한다.`,
+        });
+      }
       const matches = text.match(PALETTE_REGEX);
       if (!matches) return;
       const line = node.loc.start.line;
@@ -274,11 +295,11 @@ const eslintConfig = [
         },
         // 입력 컨트롤의 경계는 3:1 을 보장한 border-input 이다. border-border 나 색 없는 border 는 다시 보이지 않게 된다(WCAG 1.4.11).
         {
-          "selector": "JSXOpeningElement[name.name=/^(input|select|textarea|Input|Textarea|SelectTrigger|Checkbox|Switch)$/] > JSXAttribute[name.name='className'] Literal[value=/(^|\\s)([^\\s]*:)?border-border(\\/\\d+)?(\\s|$)/]",
+          "selector": "JSXOpeningElement[name.name=/^(input|select|textarea|Input|Textarea|SelectTrigger|NativeSelect|Checkbox|Switch)$/] > JSXAttribute[name.name='className'] Literal[value=/(^|\\s)([^\\s]*:)?border-border(\\/\\d+)?(\\s|$)/]",
           "message": "입력 컨트롤의 경계는 인접 면 대비 3:1 을 보장한 border-input 을 쓰세요(status-token-contrast 계약)."
         },
         {
-          "selector": "JSXOpeningElement[name.name=/^(input|select|textarea|Input|Textarea|SelectTrigger|Checkbox|Switch)$/] > JSXAttribute[name.name='className'] TemplateElement[value.raw=/(^|\\s)([^\\s]*:)?border-border(\\/\\d+)?(\\s|$)/]",
+          "selector": "JSXOpeningElement[name.name=/^(input|select|textarea|Input|Textarea|SelectTrigger|NativeSelect|Checkbox|Switch)$/] > JSXAttribute[name.name='className'] TemplateElement[value.raw=/(^|\\s)([^\\s]*:)?border-border(\\/\\d+)?(\\s|$)/]",
           "message": "입력 컨트롤의 경계는 인접 면 대비 3:1 을 보장한 border-input 을 쓰세요(status-token-contrast 계약)."
         },
         {
@@ -296,6 +317,12 @@ const eslintConfig = [
         {
           "selector": "JSXAttribute[name.name='role'] Literal[value=/^tab(list|panel)?$/]",
           "message": "손으로 쓴 탭 역할 금지 — @/app/components/ui/standard-tabs 의 TabList·Tab·TabPanel 을 쓰세요(방향키·roving tabindex·aria-controls 를 갖춘 탭 원천)."
+        },
+        // [2026-11-26 품질 평가 PR-3b 6번] 날 select 금지 — 모양·초점 고리·오류 표시를 한 곳에서 갖는 NativeSelect(@/components/ui/native-select)를
+        //   쓴다. 화면마다 높이·배경·초점 고리를 따로 적던 46곳을 옮겼다.
+        {
+          "selector": "JSXOpeningElement[name.name='select']",
+          "message": "날 <select> 금지 — @/components/ui/native-select 의 NativeSelect 를 쓰세요(기본 모양·초점 고리·aria-invalid 표시를 갖춘 디자인 시스템 래퍼). 화면은 폭·배치만 덧붙입니다."
         },
         // [2026-11-26 품질 평가 PR-3b] 이중 단언(`x as unknown as T`)은 두 타입의 차이(선택·필수, 없는 필드)를 통째로 숨긴다 — 제품 코드의 13건 중
         //   12건을 실제 값 확인·변환 함수·타입 정렬로 걷었다. 표현할 수 없는 라이브러리 경계(폼 resolver 1건)만 그 줄에 사유를 단 예외 주석을 둔다.

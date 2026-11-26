@@ -12,6 +12,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Button } from '@/components/ui/button';
 import { Department } from '@/services/foundation/system/DeptAdminService';
 import { Zap } from 'lucide-react';
@@ -144,16 +145,16 @@ export function DepartmentForm({
                   상위 부서
                 </FormLabel>
                 <FormControl>
-                  <select
+                  <NativeSelect
                     {...field}
                     value={field.value ?? ''}
-                    className="h-[var(--control-h)] w-full rounded-lg border border-input bg-card px-3 text-sm font-bold"
+                    className="w-full rounded-lg bg-card text-sm font-bold"
                   >
                     <option value="">최상위 (상위 부서 없음)</option>
                     {parentOptions.map((option) => (
                       <option key={option.ognzId} value={option.ognzId}>{option.label}</option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </FormControl>
                 <FormMessage className="text-xs font-bold text-destructive-emphasis mt-2 ml-2" />
               </FormItem>

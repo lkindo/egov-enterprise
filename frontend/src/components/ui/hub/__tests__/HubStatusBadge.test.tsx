@@ -30,7 +30,7 @@ const SRC = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..'
 
 function classesOf(ui: React.ReactElement): string {
   const { container } = render(ui);
-  const badge = container.querySelector('.hub-badge-status');
+  const badge = container.querySelector('[data-slot="badge"]');
   if (!badge) throw new Error('배지 루트를 찾지 못했습니다');
   return badge.className;
 }

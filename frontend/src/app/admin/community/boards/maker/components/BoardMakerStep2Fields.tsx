@@ -4,6 +4,7 @@ import type { FieldErrors, UseFormSetValue, UseFormWatch } from 'react-hook-form
 import { Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
 import { cn } from '@/lib/utils';
 import { DEFAULT_BOARD_TYPE, type BoardTemplateId } from '@/lib/board/board-types';
 import { SERVER_MAX_FILES_PER_REQUEST, SERVER_MAX_FILE_SIZE_MB } from '@/lib/attachments/server-upload-limits';
@@ -237,7 +238,7 @@ export function BoardMakerStep2Fields({
             <Label htmlFor="prvtPstPlcyCd" className="text-xs font-medium text-foreground">
               비밀글 정책
             </Label>
-            <select
+            <NativeSelect
               id="prvtPstPlcyCd"
               value={watch('prvtPstPlcyCd') ?? 'NONE'}
               aria-describedby="prvtPstPlcyCd-help"
@@ -245,14 +246,14 @@ export function BoardMakerStep2Fields({
                 touch('prvtPstPlcyCd');
                 setValue('prvtPstPlcyCd', event.target.value as PrivatePostPolicy, { shouldDirty: true });
               }}
-              className="h-[var(--control-h)] w-full rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)] sm:w-60"
+              className="w-full bg-card sm:w-60"
             >
               {(Object.keys(PRIVATE_POST_POLICY_OPTIONS) as PrivatePostPolicy[]).map((policy) => (
                 <option key={policy} value={policy}>
                   {PRIVATE_POST_POLICY_OPTIONS[policy]}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
             <p id="prvtPstPlcyCd-help" className="text-xs text-muted-foreground">
               비밀글은 작성자와 게시판 관리자만 봅니다. 필수면 저장하는 글이 모두 비밀글이 됩니다.
             </p>

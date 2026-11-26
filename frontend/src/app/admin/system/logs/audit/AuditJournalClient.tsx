@@ -13,6 +13,7 @@ import { StandardModal } from '@/app/components/ui/standard-modal';
 import { useToast } from '@/app/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { FormErrorSummary } from '@/components/ui/form';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
@@ -216,15 +217,15 @@ export default function AuditJournalClient() {
         >
           <div className="space-y-1">
             <label htmlFor={operationId} className="text-[length:var(--font-size-body)] font-medium">작업 종류</label>
-            <select
+            <NativeSelect
               id={operationId}
               value={operation}
               onChange={(event) => { setOperation(event.target.value); setPage(1); }}
-              className="block h-[var(--control-h)] max-w-xs rounded-md border border-input bg-background px-3 text-sm"
+              className="block max-w-xs text-sm"
             >
               <option value="">전체 작업</option>
               {operationOptions.map((name) => <option key={name} value={name}>{name}</option>)}
-            </select>
+            </NativeSelect>
           </div>
           <PeriodFilter label="기간(작업 일시)" value={period} onChange={(next) => { setPeriod(next); setPage(1); }} />
         </KeywordFilter>

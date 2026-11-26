@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { NativeSelect } from '@/components/ui/native-select';
 import { PROTECTED_PERMISSIONS } from '@/types/generated-screen-registry';
 import type { EntryFix } from '@/app/admin/security/authority/components/operation-permission-matrix-model';
 import { describeRoute, entryFixFor, permissionText } from './menuScreens';
@@ -159,7 +160,7 @@ export function MenuGroupVisibility({
               </div>
               {fix && (
                 <div className="flex flex-wrap items-center gap-2 pl-6 text-xs">
-                  <span className="text-warning-emphasis">진입 권한 없음 — {fixText(fix)}</span>
+                  <span>진입 권한 없음 — {fixText(fix)}</span>
                   {editable && !locked && fix.kind !== 'unfixable' && (anonymous
                     ? <span className="text-muted-foreground">공개 메뉴용 그룹에는 기능 권한을 줄 수 없습니다.</span>
                     : protectedFix
@@ -167,14 +168,14 @@ export function MenuGroupVisibility({
                       : (
                         <>
                           {fix.kind === 'choose' && (
-                            <select
+                            <NativeSelect
                               aria-label={`${group.name} 진입 권한 선택`}
-                              className="h-[var(--control-h-sm)] rounded-md border border-input bg-background px-2"
+                              className="h-[var(--control-h-sm)] px-2 text-xs"
                               value={choice ?? ''}
                               onChange={(event) => setChoices((previous) => ({ ...previous, [group.code]: event.target.value }))}
                             >
                               {fix.candidates.map((code) => <option key={code} value={code}>{permissionText(code, screen)}</option>)}
-                            </select>
+                            </NativeSelect>
                           )}
                           <Button
                             type="button"

@@ -229,7 +229,7 @@ export default function MailSendHubClient() {
             role="status"
             className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 px-5 py-4"
           >
-            <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warning-emphasis" aria-hidden="true" />
+            <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warning" aria-hidden="true" />
             <div className="space-y-1 text-xs font-bold leading-relaxed text-foreground">
               <p>{deliveryStatus ? '이 배포에는 메일 발송 설정(SMTP)이 없어 지금은 메일이 실제로 발송되지 않습니다.' : '메일 발송 설정을 확인하지 못했습니다.'}</p>
               <p className="font-normal">

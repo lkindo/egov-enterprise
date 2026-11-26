@@ -301,7 +301,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                           {isOpenState ? '사용' : '사용 안 함'}
                         </span>
                         {pendingMembers > 0 && (
-                          <span className="shrink-0 rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-bold text-warning-emphasis">
+                          <span className="shrink-0 rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-bold text-foreground">
                             가입 신청 {pendingMembers}
                           </span>
                         )}

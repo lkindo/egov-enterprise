@@ -284,10 +284,6 @@
     @apply bg-card/95 text-foreground border border-border/60 backdrop-blur-md p-12 rounded-[var(--radius-hub-section)] shadow-[var(--shadow-hub-premium)] relative overflow-hidden transition-all duration-500 hover:shadow-lg hover:shadow-primary/5;
   }
 
-  .hub-badge-status {
-    @apply flex items-center gap-2 px-4 py-1.5 bg-white/10 dark:bg-muted rounded-lg text-[length:var(--font-size-hub-subtitle)] font-[number:var(--font-weight-hub-title)] tracking-tight;
-  }
-
   .hub-table-container {
     @apply rounded-lg border border-border/60 overflow-hidden bg-card/80 shadow-sm transition-all duration-500;
   }

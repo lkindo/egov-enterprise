@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { toDisplayYmd } from '@/lib/format-date';
 import { isQnaSolved, qnaStatusLabel } from '@/lib/board/qna-status';
@@ -14,7 +15,8 @@ const SCHEDULED_NOTE = '게시 시작일 전이라 다른 사용자에게는 보
 const ENDED_NOTE = '게시 종료일이 지나 다른 사용자에게는 보이지 않습니다.';
 const PINNED_NOTE = '게시판 목록 맨 위에 고정한 글입니다.';
 
-const BADGE_CLASS = 'ml-1.5 inline-flex shrink-0 items-center rounded px-1.5 py-0.5 align-middle text-xs font-semibold';
+// [2026-11-26 PR-3b 6번] 모양은 Badge 의 작은(sm) 연한 변형에서 온다 — 여기는 제목 옆 배치만 더한다.
+const BADGE_CLASS = 'ml-1.5 align-middle font-semibold';
 
 /**
  * 이용 화면의 게시 상태 표지(목록 제목 옆·상세 제목 아래). 예약·게시 종료 글은 서버가 작성자와 조회 대행 권한자(BOARD_READ_ALL)에게만
@@ -29,23 +31,25 @@ export function PostingStatusBadge({ status, startYmd }: {
   if (status === 'SCHEDULED') {
     const start = toDisplayYmd(startYmd, '');
     return (
-      <span
-        className={cn(BADGE_CLASS, 'border border-info/40 bg-info/15 text-foreground')}
+      <Badge
+        variant="info-soft"
+        size="sm"
+        className={BADGE_CLASS}
         title={start ? `게시 시작일 ${start} 전이라 다른 사용자에게는 보이지 않습니다.` : SCHEDULED_NOTE}
       >
         예약
         {start ? <span className="sr-only"> · 게시 시작일 {start}</span> : null}
         {/* [2026-10-26 ADR-0043 1차 UX-14] 설명을 마우스 올림(title)에만 두지 않는다 — 화면 낭독기에도 전한다. */}
         <span className="sr-only"> · 다른 사용자에게는 아직 보이지 않습니다</span>
-      </span>
+      </Badge>
     );
   }
   if (status === 'ENDED') {
     return (
-      <span className={cn(BADGE_CLASS, 'bg-muted text-muted-foreground')} title={ENDED_NOTE}>
+      <Badge variant="muted" size="sm" className={BADGE_CLASS} title={ENDED_NOTE}>
         게시 종료
         <span className="sr-only"> · 다른 사용자에게는 보이지 않습니다</span>
-      </span>
+      </Badge>
     );
   }
   return null;
@@ -62,14 +66,16 @@ export function PinnedBadge({ pinned, endYmd }: { pinned?: boolean | null; endYm
   if (pinned !== true) return null;
   const end = toDisplayYmd(endYmd, '');
   return (
-    <span
-      className={cn(BADGE_CLASS, 'border border-primary/40 bg-primary/10 text-foreground')}
+    <Badge
+      variant="primary-soft"
+      size="sm"
+      className={BADGE_CLASS}
       title={end ? `${end}까지 게시판 목록 맨 위에 고정한 글입니다.` : PINNED_NOTE}
     >
       상단 고정
       {end ? <span className="sr-only"> · {end}까지</span> : null}
       <span className="sr-only"> · 게시판 목록 맨 위에 고정한 글</span>
-    </span>
+    </Badge>
   );
 }
 
@@ -78,6 +84,9 @@ const LABELS: Readonly<Record<BoardPostingStatus, string>> = {
   POSTING: '게시 중',
   ENDED: '게시 종료',
 };
+
+/** 점과 글자로 그리는 운영 화면 상태 칸 — Badge 의 작은 외곽선 변형에 점 간격·모서리·보통 굵기만 더한다. */
+const DOT_LABEL_CLASS = 'gap-1.5 rounded-md font-normal';
 
 const DOT_CLASS: Readonly<Record<BoardPostingStatus, string>> = {
   SCHEDULED: 'bg-info',
@@ -92,10 +101,10 @@ const DOT_CLASS: Readonly<Record<BoardPostingStatus, string>> = {
 export function PostingStatusLabel({ status }: { status?: BoardPostingStatus | null }) {
   if (!status || !(status in LABELS)) return <span className="text-muted-foreground">—</span>;
   return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-border px-1.5 py-0.5 text-xs text-foreground">
+    <Badge variant="outline" size="sm" className={DOT_LABEL_CLASS}>
       <span className={cn('size-1.5 rounded-full', DOT_CLASS[status])} aria-hidden="true" />
       {LABELS[status]}
-    </span>
+    </Badge>
   );
 }
 
@@ -106,9 +115,9 @@ export function PostingStatusLabel({ status }: { status?: BoardPostingStatus | n
 export function QnaStatusLabel({ qnaSttsCd }: { qnaSttsCd?: string | null }) {
   const solved = isQnaSolved(qnaSttsCd ?? undefined);
   return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-border px-1.5 py-0.5 text-xs text-foreground">
+    <Badge variant="outline" size="sm" className={DOT_LABEL_CLASS}>
       <span className={cn('size-1.5 rounded-full', solved ? 'bg-success' : 'bg-warning')} aria-hidden="true" />
       {qnaStatusLabel(qnaSttsCd)}
-    </span>
+    </Badge>
   );
 }

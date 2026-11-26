@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { CalendarClock, CalendarX, History, Loader2, MessageSquare, Pin, PinOff, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { NativeSelect } from '@/components/ui/native-select';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
@@ -476,48 +477,48 @@ export function BoardPostsTab({ detail }: { detail: BoardMasterDetail }) {
         >
           <div className="space-y-1">
             <label htmlFor="board-posts-search-condition" className="text-[length:var(--font-size-body)] font-medium">검색 구분</label>
-            <select
+            <NativeSelect
               id="board-posts-search-condition"
               value={searchCndDraft}
               onChange={(event) => setSearchCndDraft(asSearchCondition(event.target.value))}
-              className="h-[var(--control-h)] rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)]"
+              className="bg-card"
             >
               {SEARCH_CONDITION_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
+            </NativeSelect>
           </div>
           <div className="space-y-1">
             <label htmlFor="board-posts-status-filter" className="text-[length:var(--font-size-body)] font-medium">게시 상태</label>
-            <select
+            <NativeSelect
               id="board-posts-status-filter"
               value={statusDraft}
               onChange={(event) => setStatusDraft(event.target.value as PostingStatusFilter)}
-              className="h-[var(--control-h)] rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)]"
+              className="bg-card"
             >
               {POSTING_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
+            </NativeSelect>
           </div>
           <div className="space-y-1">
             <label htmlFor="board-posts-pinned-filter" className="text-[length:var(--font-size-body)] font-medium">상단 고정</label>
-            <select
+            <NativeSelect
               id="board-posts-pinned-filter"
               value={pinnedDraft}
               onChange={(event) => setPinnedDraft(event.target.value as PinnedFilter)}
-              className="h-[var(--control-h)] rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)]"
+              className="bg-card"
             >
               {PINNED_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
+            </NativeSelect>
           </div>
           {isQna && (
             <div className="space-y-1">
               <label htmlFor="board-posts-qna-status-filter" className="text-[length:var(--font-size-body)] font-medium">해결 상태</label>
-              <select
+              <NativeSelect
                 id="board-posts-qna-status-filter"
                 value={qnaStatusDraft}
                 onChange={(event) => setQnaStatusDraft(asQnaStatus(event.target.value))}
-                className="h-[var(--control-h)] rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)]"
+                className="bg-card"
               >
                 {QNA_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-              </select>
+              </NativeSelect>
             </div>
           )}
         </KeywordFilter>
