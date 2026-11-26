@@ -137,11 +137,12 @@ export function extractAtchFileSn(fileUrl?: string | null): number | null {
   if (!fileUrl) return null;
   if (/^https?:\/\//i.test(fileUrl)) return null;
 
-  const legacy = fileUrl.match(/[?&]fileId=([^&]+)/);
-  if (legacy) return parseAttachmentSn(legacy[1]);
+  // 두 정규식 모두 필수 묶음 하나라 맞으면 첫 묶음이 늘 있다 — 맞지 않으면 undefined 다.
+  const legacy = fileUrl.match(/[?&]fileId=([^&]+)/)?.[1];
+  if (legacy !== undefined) return parseAttachmentSn(legacy);
 
-  const canonical = fileUrl.match(/\/api\/v1\/files\/([^/?#]+)/);
-  if (canonical) return parseAttachmentSn(canonical[1]);
+  const canonical = fileUrl.match(/\/api\/v1\/files\/([^/?#]+)/)?.[1];
+  if (canonical !== undefined) return parseAttachmentSn(canonical);
 
   return null;
 }

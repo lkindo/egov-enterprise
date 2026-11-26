@@ -87,10 +87,11 @@ function PermissionChip({ permission }: { permission: { code: string; name: stri
 export function ScreenEntryCell({ screen }: { screen: ScreenRegistryEntry }) {
   const summary = screenEntrySummary(screen);
   const marker = screenEntryMarker(screen);
-  if (summary.permissions.length === 0) {
+  const [first, ...rest] = summary.permissions;
+  // 첫 권한이 없으면(권한 0개) 열리는 조건 문장이다 — 종전의 길이 0 검사와 같다.
+  if (!first) {
     return <span className="block text-left text-xs text-muted-foreground">{summary.rule}</span>;
   }
-  const [first, ...rest] = summary.permissions;
   if (!marker || rest.length === 0) {
     return <span className="flex items-center text-left"><PermissionChip permission={first} /></span>;
   }
@@ -147,11 +148,12 @@ export function ScreenMenuLinkCellView({ cell }: { cell: ScreenMenuLinkCell }) {
     // 이름만으로 그 메뉴를 가리킨다 — ID 는 생략하는 보조 정보다). [2026-10-05 반박 리뷰] 종전에는 title 에도 두었는데, 포커스를
     // 받지 않는 칸에서 마우스를 올려야만 보여 키보드·터치 사용자에게 같은 길이 없었다(헌법 제16조 3항). 메뉴가 여럿이거나
     // 사용 안 함·다른 경로를 거치면 펼침이 ID 를 보인다. sr-only 글자를 품으므로 위치 기준을 둔다(스크롤 상자 계약).
+    // 'linked' 칸은 메뉴가 하나 이상일 때만 만들어진다(createScreenMenuLinkLookup). 없으면 같은 요소를 빈 글자로 그린다.
     const [menu] = cell.menus;
     return (
       <span className="relative block text-left text-sm text-foreground">
         {summary}
-        <span className="sr-only">{` (메뉴 ID: ${menu.menuNo})`}</span>
+        <span className="sr-only">{menu ? ` (메뉴 ID: ${menu.menuNo})` : ''}</span>
       </span>
     );
   }

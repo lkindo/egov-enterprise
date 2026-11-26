@@ -39,7 +39,7 @@ export type RouteDescription =
 export function describeRoute(route: string | null | undefined): RouteDescription {
   const value = (route ?? '').trim();
   if (!value) return { kind: 'none' };
-  const path = value.split(/[?#]/, 1)[0];
+  const [path = ''] = value.split(/[?#]/, 1);
   if (/\.do$/i.test(path)) return { kind: 'legacy' };
   const normalized = path.replace(/\/+$/, '') || '/';
   const alias = SCREEN_ALIASES.find((candidate) => candidate.route === normalized);
@@ -75,5 +75,5 @@ export function entryFixFor(menu: { code: string; name: string; route: string | 
     [{ code: menu.code, name: menu.name, parentCode: null, route, useYn: 'Y' }],
     selection,
   );
-  return missing.length === 0 ? null : planEntryFixes(missing, new Set<string>(PERMISSION_CODES))[0];
+  return missing.length === 0 ? null : planEntryFixes(missing, new Set<string>(PERMISSION_CODES))[0] ?? null;
 }

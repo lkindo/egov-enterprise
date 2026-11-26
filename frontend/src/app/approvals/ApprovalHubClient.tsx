@@ -213,7 +213,7 @@ function useApprovalQueue({
     if (found) return found;
     // 알림으로 연 문서는 목록의 이 페이지에 없어도 상세를 불러온다.
     if (selectedItemId && selectedItemId === linkedId) return { ifmlAtrzSn: Number(selectedItemId) } as InformalSanctionDto;
-    return list.length > 0 ? list[0] : null;
+    return list[0] ?? null;
   }, [list, selectedItemId, rejectReason, opinionDocument, linkedId]);
   const detailQuery = useQuery({
     ...approvalQueryOptions.detail(selectedListItem?.ifmlAtrzSn ?? 0),

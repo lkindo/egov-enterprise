@@ -217,7 +217,7 @@ export function GroupComparison({ selection, onSelectionChange, onEdit }: {
                                   <span className="block font-medium">{row.label}</span>
                                   <span className="block text-xs text-muted-foreground">{row.domain}</span>
                                 </th>
-                                {columns.map((cell, index) => <td key={PERMISSION_MATRIX_COLUMNS[index].action} className={cn(CELL_CLASS, differsPresence(cell) && DIFFERS_CLASS)}>{operationCell(cell)}</td>)}
+                                {columns.map((cell, index) => <td key={PERMISSION_MATRIX_COLUMNS[index]?.action} className={cn(CELL_CLASS, differsPresence(cell) && DIFFERS_CLASS)}>{operationCell(cell)}</td>)}
                                 <td className="border-b border-border px-[var(--cell-px)] py-[var(--cell-py)]">
                                   <ul className="flex flex-wrap gap-2 text-xs">
                                     {others.filter((cell) => cell.presence).map((cell) => (

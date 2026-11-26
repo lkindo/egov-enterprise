@@ -34,7 +34,7 @@ const CMS_PAGE_PATH = /^\/pages\/([^/]+)\/?$/;
 
 /** 주소가 콘텐츠 페이지(/pages/<주소>)를 가리키면 그 페이지 주소, 아니면 null. 쿼리·해시는 떼고 본다. */
 export function cmsPageAddressOf(url: string): string | null {
-  const path = url.trim().split(/[?#]/, 1)[0];
+  const [path = ''] = url.trim().split(/[?#]/, 1);
   return CMS_PAGE_PATH.exec(path)?.[1] ?? null;
 }
 
@@ -55,7 +55,7 @@ export const ADMIN_SCREEN_NOTE = '관리 화면의 주소입니다. 관리 권�
 export function internalPathWarning(url: string, published: PublishedPageLookup): string | null {
   const href = safeHref(url);
   if (!href || !isInternalHref(href)) return null;
-  const path = href.split(/[?#]/, 1)[0];
+  const [path = ''] = href.split(/[?#]/, 1);
   if (path === '/api' || path.startsWith('/api/')) return API_PATH_WARNING;
   const address = cmsPageAddressOf(path);
   if (address !== null) {

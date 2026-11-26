@@ -92,6 +92,10 @@ export function BannerSlider() {
   }
 
   const currentBanner = banners[currentIndex];
+  // 순번이 목록 밖이면 배너가 없을 때처럼 그리지 않는다.
+  if (!currentBanner) {
+    return null;
+  }
   // 현재 이미지 정책은 외부 호스트를 허용하지 않는다. 파일명과 무관하게 유효한 첨부만
   // 인증된 blob으로 읽고, 첨부가 없거나 ID가 잘못되면 공통 빈 이미지 상태를 표시한다.
   const attachmentId = typeof currentBanner.atchFileSn === 'number'

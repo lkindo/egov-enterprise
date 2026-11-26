@@ -151,7 +151,7 @@ function compareKeys(left: string, right: string): number {
 }
 
 function isGatedPath(route: string): boolean {
-  const path = route.split(/[?#]/, 1)[0].toLowerCase();
+  const path = (route.split(/[?#]/, 1)[0] ?? '').toLowerCase();
   return path === '/admin' || path.startsWith('/admin/');
 }
 
@@ -254,7 +254,7 @@ export function previewMenuVisibility(input: MenuVisibilityPreviewInput): MenuVi
     if (own) reason = own;
     else if (!serverVisible.get(entry.key)) reason = 'parent-hidden';
     else if (route !== null && canEnter === false) {
-      reason = isGatedPath(route) && registeredPageEntry(route.split(/[?#]/, 1)[0]) === null ? 'unregistered-route' : 'no-entry-permission';
+      reason = isGatedPath(route) && registeredPageEntry(route.split(/[?#]/, 1)[0] ?? '') === null ? 'unregistered-route' : 'no-entry-permission';
     } else if (route === null) reason = 'no-openable-children';
     // 열 수 있는 경로인데 빠졌다면 화면 걸러내기에서 상위가 빠진 경우뿐이다(열 수 있는 하위가 있으면 상위는 남으므로 실제로는 없다).
     else reason = 'parent-hidden';

@@ -120,8 +120,8 @@ export function moveGroupNodeToCluster(
   let insertionIndex = targetClusterIndex + 1;
   while (
     insertionIndex < remainingNodes.length
-    && remainingNodes[insertionIndex].type === 'group'
-    && remainingNodes[insertionIndex].parentId === targetParentId
+    && remainingNodes[insertionIndex]?.type === 'group'
+    && remainingNodes[insertionIndex]?.parentId === targetParentId
   ) {
     insertionIndex += 1;
   }

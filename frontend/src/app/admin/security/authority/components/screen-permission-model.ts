@@ -101,7 +101,8 @@ export const menuRowKey = (code: string): string => `menu:${code}`;
 const screenRowKey = (route: string): string => `screen:${route}`;
 
 function pathOf(route: string): string {
-  return route.split(/[?#]/, 1)[0];
+  // split 은 빈 문자열에도 마디 하나를 돌려주므로 늘 있다 — `?? ''` 는 타입만 좁힌다.
+  return route.split(/[?#]/, 1)[0] ?? '';
 }
 
 /** 타인 자료 권한(…_ALL — 타인 자료 조회·수정·삭제, 관리자 등록 등). 본인 자료 권한과 인가 의미가 다르다(H3). */

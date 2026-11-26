@@ -63,9 +63,9 @@ export default function LayoutManagerClient() {
   const themeConfig = draftThemeConfig ?? savedThemeConfig ?? DEFAULT_THEME_CONFIG;
 
   // 미리보기 전용 CSS 변수 (전역 오염 없음)
-  // CSS 커스텀 프로퍼티는 React.CSSProperties 에 인덱스 시그니처가 없어 이중 캐스팅이 필요하다.
-  const previewVars = useMemo(
-    () => buildTokenVars(themeConfig) as unknown as React.CSSProperties,
+  // CSS 사용자 정의 속성(--이름)은 src/types/react-css-custom-properties.d.ts 가 스타일 타입에 더한다.
+  const previewVars = useMemo<React.CSSProperties>(
+    () => buildTokenVars(themeConfig),
     [themeConfig],
   );
 

@@ -196,6 +196,8 @@ export function isHandOffMenuRoute(route: string): boolean {
     const parts = pair.split('=');
     if (parts.length !== 2) return false;
     const [key, value] = parts;
+    // 둘 다 있음은 바로 위 길이 검사가 보장한다 — undefined 검사는 타입만 좁힌다.
+    if (key === undefined || value === undefined) return false;
     if (!ROUTE_QUERY_KEY.test(key) || !ROUTE_QUERY_VALUE.test(value) || seen.has(key)) return false;
     seen.add(key);
   }

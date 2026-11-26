@@ -35,7 +35,7 @@ function standardBase64ToBytes(input: string): Uint8Array<ArrayBuffer> {
 
 function canonicalBase64(bytes: Uint8Array<ArrayBuffer>): string {
   let bin = '';
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  for (const byte of bytes) bin += String.fromCharCode(byte);
   return btoa(bin);
 }
 
@@ -84,7 +84,10 @@ const importedEcKeyCache = new Map<string, Promise<CryptoKey>>();
 function getEcVerifyKey(kid: string): Promise<CryptoKey> {
   const cached = importedEcKeyCache.get(kid);
   if (cached) return cached;
-  const spkiBytes = standardBase64ToBytes(VERIFY_KEYS_B64[kid]);
+  const encoded = VERIFY_KEYS_B64[kid];
+  // 부르는 쪽이 등록된 kid 인지 먼저 본다(Object.hasOwn). 없는 kid 를 받으면 키를 만들지 않고 거부한다 — 검증 실패로 이어진다.
+  if (encoded === undefined) return Promise.reject(new Error('unknown verify key id'));
+  const spkiBytes = standardBase64ToBytes(encoded);
   const promise = crypto.subtle.importKey(
     'spki',
     spkiBytes,
@@ -126,28 +129,31 @@ function sha256HexPrefix8(data: Uint8Array): string {
     0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
   ]);
   const w = new Uint32Array(64);
+  // 형식 배열의 색인은 모두 고정 길이 안이다(w·SHA256_K 는 64, h 는 8) — 아래 단언(!)은 그 경계를 적은 것이다.
   for (let offset = 0; offset < paddedLen; offset += 64) {
     for (let i = 0; i < 16; i++) w[i] = view.getUint32(offset + i * 4, false);
     for (let i = 16; i < 64; i++) {
-      const s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3);
-      const s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
-      w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+      const w15 = w[i - 15]!;
+      const w2 = w[i - 2]!;
+      const s0 = rotr(w15, 7) ^ rotr(w15, 18) ^ (w15 >>> 3);
+      const s1 = rotr(w2, 17) ^ rotr(w2, 19) ^ (w2 >>> 10);
+      w[i] = (w[i - 16]! + s0 + w[i - 7]! + s1) | 0;
     }
-    let [a, b, c, d, e, f, g, hh] = h;
+    let a = h[0]!, b = h[1]!, c = h[2]!, d = h[3]!, e = h[4]!, f = h[5]!, g = h[6]!, hh = h[7]!;
     for (let i = 0; i < 64; i++) {
       const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
       const ch = (e & f) ^ (~e & g);
-      const temp1 = (hh + S1 + ch + SHA256_K[i] + w[i]) | 0;
+      const temp1 = (hh + S1 + ch + SHA256_K[i]! + w[i]!) | 0;
       const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
       const maj = (a & b) ^ (a & c) ^ (b & c);
       const temp2 = (S0 + maj) | 0;
       hh = g; g = f; f = e; e = (d + temp1) | 0;
       d = c; c = b; b = a; a = (temp1 + temp2) | 0;
     }
-    h[0] = (h[0] + a) | 0; h[1] = (h[1] + b) | 0; h[2] = (h[2] + c) | 0; h[3] = (h[3] + d) | 0;
-    h[4] = (h[4] + e) | 0; h[5] = (h[5] + f) | 0; h[6] = (h[6] + g) | 0; h[7] = (h[7] + hh) | 0;
+    const rounds = [a, b, c, d, e, f, g, hh];
+    for (let i = 0; i < 8; i++) h[i] = (h[i]! + rounds[i]!) | 0;
   }
-  return ((h[0] >>> 0).toString(16).padStart(8, '0')).slice(0, 8);
+  return ((h[0]! >>> 0).toString(16).padStart(8, '0')).slice(0, 8);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -272,7 +278,8 @@ async function verifyAndExtractSubject(token: string): Promise<VerifyVerdict> {
     if (parts.length !== 3) {
       return { subject: null, outcome: `parts-${parts.length}` };
     }
-    const [headerB64, payloadB64, sigB64] = parts;
+    // 바로 위에서 셋인지 확인했다 — 빈 값 대체는 쓰이지 않고, 쓰이더라도 디코딩·서명 검증에서 거부된다.
+    const [headerB64 = '', payloadB64 = '', sigB64 = ''] = parts;
 
     stage = 'decode-header';
     const header = JSON.parse(base64UrlDecodeToString(headerB64)) as { alg?: unknown; kid?: unknown };

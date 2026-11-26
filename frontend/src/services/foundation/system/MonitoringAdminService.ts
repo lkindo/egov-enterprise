@@ -138,7 +138,8 @@ class MonitoringAdminService {
   async getUptime(): Promise<number> {
     try {
       const data = await this.getMetric('process.uptime');
-      return data.measurements[0].value; // seconds
+      // 측정값이 비면 종전처럼(예외 → catch) 0 이다.
+      return data.measurements[0]?.value ?? 0; // seconds
     } catch {
       return 0;
     }

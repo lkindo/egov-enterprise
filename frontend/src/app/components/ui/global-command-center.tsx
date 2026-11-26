@@ -317,14 +317,15 @@ export function GlobalCommandCenter() {
         // 결과 항목(option)은 tabindex=-1 이다 — 방향키로 고르는 항목을 Tab 순서에 다시 넣지 않는다.
         && element.getAttribute('tabindex') !== '-1');
 
-      if (focusableElements.length === 0) {
+      // 처음·끝 요소가 없으면(갈 곳 0개) 대화상자 자신에 머문다 — 종전의 길이 0 검사와 같다.
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements.at(-1);
+      if (!firstElement || !lastElement) {
         e.preventDefault();
         dialog.focus();
         return;
       }
 
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
       const activeElement = document.activeElement;
 
       if (e.shiftKey && (activeElement === firstElement || !dialog.contains(activeElement))) {
@@ -342,7 +343,9 @@ export function GlobalCommandCenter() {
       setSelectedIndex(prev => (prev - 1 + filteredItems.length) % filteredItems.length);
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      void handleSelect(filteredItems[selectedIndex]);
+      // 결과가 비어 고른 항목이 없으면 아무것도 하지 않는다 — handleSelect 의 빈 항목 처리와 같다.
+      const selected = filteredItems[selectedIndex];
+      if (selected) void handleSelect(selected);
     } else if (e.key === 'Escape') {
       e.preventDefault();
       closeCommandCenter();

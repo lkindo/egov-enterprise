@@ -14,7 +14,8 @@ import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { toSeoulDisplayDateTime } from '@/lib/format-date';
 import { operationsRecordAdminService, type DurableJobStatus } from '@/services/foundation/system/OperationsRecordAdminService';
 
-const PAGE_SIZE_OPTIONS = [20, 50, 100];
+// 첫 선택지가 기본 쪽 크기다 — 비어 있지 않은 목록임을 타입으로 둔다.
+const PAGE_SIZE_OPTIONS: [number, ...number[]] = [20, 50, 100];
 
 const TYPE_LABELS: Record<string, string> = {
   NOTIFICATION_DELIVERY: '알림 전달',

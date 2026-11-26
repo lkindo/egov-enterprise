@@ -457,6 +457,8 @@ export function RecipientPicker({
               <ul aria-label="부서 소속 인원" className="divide-y">
                 {departmentMembers.map((member, index) => {
                   const recipient = departmentRecipients[index];
+                  // departmentRecipients 는 departmentMembers 를 1:1 로 옮긴 배열이라 늘 있다 — 없으면 그 줄을 그리지 않는다.
+                  if (!recipient) return null;
                   const key = recipientKey(recipient);
                   const checkboxId = `recipient-dept-user-${member.esntlId}`;
                   return (

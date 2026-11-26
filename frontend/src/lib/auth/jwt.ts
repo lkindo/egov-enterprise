@@ -46,8 +46,10 @@ export function getJwtExpiryMs(token: string): number | null {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
+    // 길이 3 을 위에서 확인해 늘 있다 — 빈 값이면 아래 JSON 해석이 실패해 null 이 된다.
+    const [, encodedPayload = ''] = parts;
 
-    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const base64 = encodedPayload.replace(/-/g, '+').replace(/_/g, '/');
     const binary =
       typeof atob === 'function'
         ? atob(base64)

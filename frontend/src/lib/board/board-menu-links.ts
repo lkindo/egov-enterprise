@@ -73,8 +73,8 @@ function linkBasis(bbsId: string, route: string): LinkBasis | null {
   if (!(KNOWLEDGE_TAB_HUB.routes as readonly string[]).includes(path)) return null;
   // 허브는 ?bbsId= 가 탭이 그리는 게시판일 때만 그 탭을 연다(?tab= 보다 먼저) — 그때만 그 탭으로 연결이다.
   const entryBoard = url.searchParams.get('bbsId');
-  const entryTabs = knowledgeTabsForBoard(entryBoard);
-  if (entryTabs.length > 0) return entryBoard === bbsId ? { kind: 'hub-tab', tab: entryTabs[0] } : null;
+  const [entryTab] = knowledgeTabsForBoard(entryBoard);
+  if (entryTab !== undefined) return entryBoard === bbsId ? { kind: 'hub-tab', tab: entryTab } : null;
   const tab = url.searchParams.get('tab');
   if (tab === null || tab === '') return knowledgeTabsForBoard(bbsId).length > 0 ? { kind: 'hub-default' } : null;
   return knowledgeTabBoard(tab) === bbsId ? { kind: 'hub-tab', tab: tab.toUpperCase() } : null;

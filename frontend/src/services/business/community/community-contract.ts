@@ -29,5 +29,6 @@ export function toCommunityListQuery(params: CommunitySearchParams): CommunityLi
 export function requireCommunityPage(
   response: components['schemas']['PageResponseCommunityDto'],
 ): PageResponse<CommunityVO> {
-  return requirePageResponse(response as unknown as PageResponse<CommunityVO>, '커뮤니티');
+  // 소개(cmntyIntroCn)는 서버에서 선택이다 — 화면 타입도 선택이고 화면은 빈 소개를 안내 문구로 그린다.
+  return requirePageResponse<CommunityVO>(response, '커뮤니티');
 }

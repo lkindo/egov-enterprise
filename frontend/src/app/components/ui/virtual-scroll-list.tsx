@@ -32,7 +32,9 @@ export function VirtualScrollList<T>({
   const endIndex = Math.min(items.length - 1, Math.floor((scrollTop + containerHeight) / itemHeight) + 2);
 
   const visibleItems = [];
-  for (let i = startIndex; i <= endIndex; i++) {
+  // 보이는 구간 [startIndex, endIndex] 를 잘라 돈다 — 종전 색인 반복과 같은 항목이며, 구간이 비면 아무것도 그리지 않는다.
+  for (const [offset, item] of items.slice(startIndex, endIndex + 1).entries()) {
+    const i = startIndex + offset;
     visibleItems.push(
       <div
         key={i}
@@ -43,7 +45,7 @@ export function VirtualScrollList<T>({
           height: itemHeight
         }}
       >
-        {renderItem(items[i], i)}
+        {renderItem(item, i)}
       </div>
     );
   }

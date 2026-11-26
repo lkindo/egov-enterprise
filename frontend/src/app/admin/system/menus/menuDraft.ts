@@ -60,20 +60,19 @@ export const operationKey = (code: string): string => `OPERATION:${code}`;
 
 /** 메뉴와 그 하위 전부가 목록에서 차지하는 구간의 끝(포함하지 않음). */
 function blockEnd(items: readonly FlattenedItem[], start: number): number {
-  const depth = items[start].depth;
+  const depth = items[start]?.depth;
+  if (depth === undefined) return start;
   let end = start + 1;
-  while (end < items.length && items[end].depth > depth) end += 1;
+  while ((items[end]?.depth ?? depth) > depth) end += 1;
   return end;
 }
 
 /** 하위 메뉴가 몇 단계 더 내려가는가(하위가 없으면 0). */
 export function subtreeHeight(items: readonly FlattenedItem[], menuNo: number): number {
   const start = items.findIndex((item) => item.menuNo === menuNo);
-  if (start < 0) return 0;
-  const base = items[start].depth;
-  let height = 0;
-  for (let i = start + 1; i < blockEnd(items, start); i += 1) height = Math.max(height, items[i].depth - base);
-  return height;
+  const node = items[start];
+  if (!node) return 0;
+  return items.slice(start + 1, blockEnd(items, start)).reduce((height, item) => Math.max(height, item.depth - node.depth), 0);
 }
 
 /** 메뉴의 모든 하위(자기 자신 제외) 번호. */
@@ -81,7 +80,7 @@ export function descendantIds(items: readonly FlattenedItem[], menuNo: number): 
   const start = items.findIndex((item) => item.menuNo === menuNo);
   const ids = new Set<number>();
   if (start < 0) return ids;
-  for (let i = start + 1; i < blockEnd(items, start); i += 1) ids.add(items[i].menuNo);
+  for (const item of items.slice(start + 1, blockEnd(items, start))) ids.add(item.menuNo);
   return ids;
 }
 
@@ -122,7 +121,8 @@ export function moveBlock(
   index: number,
 ): readonly FlattenedItem[] | null {
   const start = items.findIndex((item) => item.menuNo === menuNo);
-  if (start < 0) return null;
+  const node = items[start];
+  if (!node) return null;
   const end = blockEnd(items, start);
   const block = items.slice(start, end);
   const target = parentKeyOf(newParent);
@@ -133,10 +133,10 @@ export function moveBlock(
   let newDepth = 0;
   if (target !== null) {
     parentIndex = rest.findIndex((item) => item.menuNo === target);
-    if (parentIndex < 0) return null;
-    newDepth = rest[parentIndex].depth + 1;
+    const parent = rest[parentIndex];
+    if (!parent) return null;
+    newDepth = parent.depth + 1;
   }
-  const node = items[start];
   const height = block.reduce((max, item) => Math.max(max, item.depth - node.depth), 0);
   if (newDepth + height > MAX_MENU_DEPTH) return null;
 
@@ -151,9 +151,8 @@ export function moveBlock(
     if (original === position) return items;
   }
 
-  let insertAt: number;
-  if (position < siblingStarts.length) insertAt = siblingStarts[position];
-  else insertAt = target === null ? rest.length : blockEnd(rest, parentIndex);
+  // 형제 자리가 있으면 그 앞에, 없으면(맨 끝) 상위 구간의 끝에 넣는다.
+  const insertAt = siblingStarts[position] ?? (target === null ? rest.length : blockEnd(rest, parentIndex));
 
   const delta = newDepth - node.depth;
   const moved = block.map((item, i) => (i === 0
@@ -187,16 +186,17 @@ function longestIncreasingPositions(sequence: readonly number[]): Set<number> {
   sequence.forEach((value, i) => {
     let low = 0;
     let high = tails.length;
+    // tails·previous 의 색인은 모두 sequence 안이다(이진 탐색 범위와 forEach 색인) — 단언(!)은 그 경계를 적은 것이다.
     while (low < high) {
       const mid = (low + high) >> 1;
-      if (sequence[tails[mid]] < value) low = mid + 1;
+      if (sequence[tails[mid]!]! < value) low = mid + 1;
       else high = mid;
     }
-    previous[i] = low > 0 ? tails[low - 1] : -1;
+    previous[i] = low > 0 ? tails[low - 1]! : -1;
     tails[low] = i;
   });
   const positions = new Set<number>();
-  for (let i = tails.length > 0 ? tails[tails.length - 1] : -1; i >= 0; i = previous[i]) positions.add(i);
+  for (let i = tails.at(-1) ?? -1; i >= 0; i = previous[i]!) positions.add(i);
   return positions;
 }
 
@@ -250,8 +250,8 @@ export function revertMenu(
   const baseSiblings = siblingOrder(baseline).get(parent) ?? [];
   const currentSiblings = (siblingOrder(current).get(parent) ?? []).filter((id) => id !== menuNo);
   let index = 0;
-  for (let k = baseSiblings.indexOf(menuNo) - 1; k >= 0; k -= 1) {
-    const position = currentSiblings.indexOf(baseSiblings[k]);
+  for (const before of baseSiblings.slice(0, Math.max(0, baseSiblings.indexOf(menuNo))).reverse()) {
+    const position = currentSiblings.indexOf(before);
     if (position >= 0) { index = position + 1; break; }
   }
   return moveBlock(current, menuNo, parent, index);

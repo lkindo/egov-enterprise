@@ -505,7 +505,8 @@ export function MenuBoard(props: MenuBoardProps) {
   const area = areas.find((candidate) => candidate.menuNo === activeArea) ?? null;
   const start = area ? items.indexOf(area) : -1;
   let end = start + 1;
-  while (start >= 0 && end < items.length && items[end].depth > 0) end += 1;
+  // end 는 길이 검사로 범위 안이라 items[end] 는 늘 있다 — `?? 0` 은 타입만 좁힌다(없으면 영역이 끝난 것으로 본다).
+  while (start >= 0 && end < items.length && (items[end]?.depth ?? 0) > 0) end += 1;
   const areaItems = start >= 0 ? items.slice(start + 1, end) : [];
   const cards = areaItems.filter((item) => item.depth === 1);
   const panelEntries = area ? [area, ...areaItems] : [];

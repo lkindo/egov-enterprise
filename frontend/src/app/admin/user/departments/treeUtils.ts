@@ -54,6 +54,7 @@ export const listToDeptTree = (flatDepts: Department[]): DepartmentTreeNode[] =>
   flatDepts.forEach((d) => {
     if (!d || !d.ognzId) return;
     const item = map[d.ognzId];
+    if (!item) return;
 
     const parentId = d.upOgnzId || null;
 
@@ -82,10 +83,13 @@ export const getDeptProjection = (
 ) => {
   const oldIndex = items.findIndex((m) => m.ognzId === activeId);
   const newIndex = items.findIndex((m) => m.ognzId === overId);
+  // 끄는 부서·놓을 자리를 목록에서 찾지 못하면(목록이 바뀐 직후) 투영하지 않는다 — 부르는 쪽이 투영 없음으로 다룬다.
+  if (oldIndex < 0 || newIndex < 0) return null;
   const newItems = arrayMove(items, oldIndex, newIndex);
   
   const previousItem = newItems[newIndex - 1];
   const dragItem = newItems[newIndex];
+  if (!dragItem) return null;
   
   const projectedDepth = dragItem.depth + Math.round(dragOffset / indentationWidth);
   const minDepth = 0;
@@ -99,9 +103,9 @@ export const getDeptProjection = (
     if (depth === previousItem.depth + 1) {
       parentId = previousItem.ognzId || null;
     } else {
-      for (let i = newIndex - 1; i >= 0; i--) {
-        if (newItems[i].depth === depth - 1) {
-          parentId = newItems[i].ognzId || null;
+      for (const candidate of newItems.slice(0, newIndex).reverse()) {
+        if (candidate.depth === depth - 1) {
+          parentId = candidate.ognzId || null;
           break;
         }
       }
@@ -113,7 +117,8 @@ export const getDeptProjection = (
 
 function arrayMove<T>(array: T[], from: number, to: number): T[] {
   const newArray = array.slice();
-  newArray.splice(to, 0, newArray.splice(from, 1)[0]);
+  const [moved] = newArray.splice(from, 1);
+  if (moved !== undefined) newArray.splice(to, 0, moved);
   return newArray;
 }
 
@@ -162,9 +167,10 @@ export function changedDeptHierarchy(
 
 /** 부서와 그 하위 전부가 평탄화 목록에서 차지하는 구간 [start, end). */
 function blockRange(items: readonly FlattenedDept[], start: number): [number, number] {
-  const depth = items[start].depth;
+  const depth = items[start]?.depth;
+  if (depth === undefined) return [start, start];
   let end = start + 1;
-  while (end < items.length && items[end].depth > depth) end += 1;
+  while ((items[end]?.depth ?? depth) > depth) end += 1;
   return [start, end];
 }
 
@@ -179,8 +185,8 @@ export function reparentFlattened(
   newParentId: string | null,
 ): FlattenedDept[] | null {
   const start = items.findIndex((n) => n.ognzId === ognzId);
-  if (start < 0) return null;
   const node = items[start];
+  if (!node) return null;
   if ((node.parentId ?? null) === newParentId && !node.unloadedParentId) return null;
   const [, end] = blockRange(items, start);
   const block = items.slice(start, end);
@@ -190,8 +196,9 @@ export function reparentFlattened(
   let newDepth = 0;
   if (newParentId !== null) {
     const parentIndex = rest.findIndex((n) => n.ognzId === newParentId);
-    if (parentIndex < 0) return null;
-    newDepth = rest[parentIndex].depth + 1;
+    const parent = rest[parentIndex];
+    if (!parent) return null;
+    newDepth = parent.depth + 1;
     insertAt = blockRange(rest, parentIndex)[1];
   }
   const delta = newDepth - node.depth;
@@ -211,18 +218,19 @@ export function shiftFlattened(
   direction: 'up' | 'down',
 ): FlattenedDept[] | null {
   const start = items.findIndex((n) => n.ognzId === ognzId);
-  if (start < 0) return null;
   const node = items[start];
-  if (node.unloadedParentId) return null;
+  if (!node || node.unloadedParentId) return null;
   const [, end] = blockRange(items, start);
   const isSibling = (n: FlattenedDept) => n.depth === node.depth && (n.parentId ?? null) === (node.parentId ?? null) && !n.unloadedParentId;
   if (direction === 'up') {
     let prev = start - 1;
-    while (prev >= 0 && items[prev].depth > node.depth) prev -= 1;
-    if (prev < 0 || !isSibling(items[prev])) return null;
+    while ((items[prev]?.depth ?? node.depth) > node.depth) prev -= 1;
+    const previous = items[prev];
+    if (!previous || !isSibling(previous)) return null;
     return [...items.slice(0, prev), ...items.slice(start, end), ...items.slice(prev, start), ...items.slice(end)];
   }
-  if (end >= items.length || !isSibling(items[end])) return null;
+  const next = items[end];
+  if (!next || !isSibling(next)) return null;
   const [, nextEnd] = blockRange(items, end);
   return [...items.slice(0, start), ...items.slice(end, nextEnd), ...items.slice(start, end), ...items.slice(nextEnd)];
 }

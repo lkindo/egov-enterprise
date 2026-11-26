@@ -238,12 +238,15 @@ export function MasterDetailLayout({
     const nextIndex = currentIndex < 0
       ? (delta > 0 ? 0 : items.length - 1)
       : Math.min(items.length - 1, Math.max(0, currentIndex + delta));
+    // nextIndex 는 바로 위에서 [0, items.length - 1] 로 묶였고 목록은 비지 않았다 — 늘 있으며, 이 검사는 타입만 좁힌다.
+    const nextItem = items[nextIndex];
+    if (!nextItem) return;
 
     event.preventDefault();
-    items[nextIndex].focus();
+    nextItem.focus();
     arrowSelectingRef.current = true;
     try {
-      items[nextIndex].click();
+      nextItem.click();
     } finally {
       arrowSelectingRef.current = false;
     }
@@ -393,12 +396,15 @@ export function MasterDetailPage({
     const nextIndex = currentIndex < 0
       ? fallbackIndex
       : Math.min(items.length - 1, Math.max(0, currentIndex + delta));
+    // nextIndex 는 바로 위에서 [0, items.length - 1] 로 묶였고 목록은 비지 않았다 — 늘 있으며, 이 검사는 타입만 좁힌다.
+    const nextItem = items[nextIndex];
+    if (!nextItem) return;
 
     event.preventDefault();
-    items[nextIndex].focus();
+    nextItem.focus();
     arrowSelectingRef.current = true;
     try {
-      items[nextIndex].click();
+      nextItem.click();
     } finally {
       arrowSelectingRef.current = false;
     }

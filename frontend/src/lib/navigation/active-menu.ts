@@ -27,8 +27,9 @@ export function* walkMenuTree(menus: readonly MenuInfo[]): Generator<MenuTreeEnt
     if (visited.has(item) || item.useYn === 'N') continue;
     visited.add(item);
     yield entry;
-    for (let index = (item.children?.length ?? 0) - 1; index >= 0; index--) {
-      pending.push({ item: item.children![index], ancestors: [...ancestors, item], topMenuNo });
+    // 자식을 뒤에서부터 쌓아 앞의 자식부터 꺼낸다(종전 역순 색인 반복과 같은 순서).
+    for (const child of [...(item.children ?? [])].reverse()) {
+      pending.push({ item: child, ancestors: [...ancestors, item], topMenuNo });
     }
   }
 }
@@ -64,7 +65,10 @@ export function findActiveMenu(menus: readonly MenuInfo[], pathname: string, sea
       if ((boardMatch || pathMatch) && queryMatches) {
         const score = [Number(boardMatch), Number(exactPath), path.length, url.searchParams.size, ancestors.length];
         const firstDifference = best ? score.findIndex((value, index) => value !== best!.score[index]) : -1;
-        if (!best || (firstDifference >= 0 && score[firstDifference] > best.score[firstDifference])) {
+        // 처음 다른 항목에서 큰 쪽이 앞선다. 다른 항목이 없으면(-1) 두 값이 모두 없어 바꾸지 않는다 — 종전 `>= 0` 검사와 같다.
+        const ours = score[firstDifference];
+        const theirs = best?.score[firstDifference];
+        if (!best || (ours !== undefined && theirs !== undefined && ours > theirs)) {
           best = { match: { menuNo: item.menuNo, topMenuNo, ancestorMenuNos: ancestors.map((ancestor) => ancestor.menuNo), path: [...ancestors, item] }, score };
         }
       }

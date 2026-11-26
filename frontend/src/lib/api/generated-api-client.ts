@@ -16,6 +16,29 @@ import type {
   GeneratedOperationResponse,
 } from '@/types/generated-operations';
 
+/** 생성 실행기 인자의 실행 시점 모양 — 호출부 타입은 descriptor 마다 다르므로 실행기는 이 네 칸만 읽는다. */
+interface RuntimeOperationArguments {
+  path?: unknown;
+  query?: unknown;
+  body?: unknown;
+  config?: unknown;
+}
+
+/** 인자 객체에서 네 칸을 읽는다(없는 칸은 없음). 이중 단언 대신 실제 객체를 확인한다. */
+function runtimeArgumentsOf(args: unknown): RuntimeOperationArguments {
+  if (typeof args !== 'object' || args === null) return {};
+  return {
+    path: 'path' in args ? args.path : undefined,
+    query: 'query' in args ? args.query : undefined,
+    body: 'body' in args ? args.body : undefined,
+    config: 'config' in args ? args.config : undefined,
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 function buildGeneratedMultipartBody<Descriptor extends GeneratedMultipartDescriptor>(
   descriptor: Descriptor,
   value: unknown,
@@ -27,12 +50,14 @@ function buildGeneratedMultipartBody<Descriptor extends GeneratedMultipartDescri
     throw new Error('생성 API multipart part metadata가 누락되었습니다.');
   }
 
-  let parsed: Record<string, unknown>;
+  let parsed: unknown;
   try {
-    parsed = parseGeneratedOperationRequest(descriptor, value) as unknown as Record<string, unknown>;
+    parsed = parseGeneratedOperationRequest(descriptor, value);
   } catch {
     throw new Error('생성 API multipart 요청이 OpenAPI part 계약과 일치하지 않습니다.');
   }
+  // multipart 요청 본문은 part 이름을 열쇠로 하는 객체다 — 그 밖의 모양은 part 계약과 맞지 않는다.
+  if (!isRecord(parsed)) throw new Error('생성 API multipart 요청이 OpenAPI part 계약과 일치하지 않습니다.');
 
   const formData = new FormData();
   try {
@@ -63,12 +88,7 @@ export async function executeGeneratedOperation<const Descriptor extends Generat
   descriptor: Descriptor,
   args: GeneratedOperationArguments<Descriptor>,
 ): Promise<GeneratedOperationResponse<Descriptor>> {
-  const runtimeArgs = args as unknown as {
-    path?: unknown;
-    query?: unknown;
-    body?: unknown;
-    config?: unknown;
-  };
+  const runtimeArgs = runtimeArgumentsOf(args);
   const url = buildGeneratedOperationPath(descriptor, runtimeArgs.path as never);
   const query = parseGeneratedOperationQuery(descriptor, runtimeArgs.query);
   const body = parseGeneratedOperationRequest(descriptor, runtimeArgs.body);
@@ -111,7 +131,7 @@ export async function executeGeneratedFetchOperation<const Descriptor extends Ge
   if (descriptor.method !== 'get' || descriptor.requestKind !== 'none' || descriptor.responseKind !== 'json') {
     throw new Error('서버 조회 transport는 생성 JSON GET 계약만 허용합니다.');
   }
-  const runtimeArgs = args as unknown as { path?: unknown; query?: unknown; body?: unknown; config?: unknown };
+  const runtimeArgs = runtimeArgumentsOf(args);
   if (runtimeArgs.config !== undefined || runtimeArgs.body !== undefined) throw new Error('조회 계약을 호출부에서 덮어쓸 수 없습니다.');
   const baseUrl = new URL(`${transport.baseUrl.replace(/\/$/, '')}/`);
   if (!['http:', 'https:'].includes(baseUrl.protocol) || baseUrl.username || baseUrl.password) throw new Error('유효한 서버 API 주소가 필요합니다.');

@@ -79,7 +79,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export async function POST(request: NextRequest) {
-  const type = (request.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+  // split 은 빈 문자열에도 마디 하나를 돌려주므로 첫 마디는 늘 있다 — `?? ''` 는 타입만 좁힌다.
+  const type = ((request.headers.get('content-type') || '').split(';')[0] ?? '').trim().toLowerCase();
   if (!ALLOWED_TYPES.includes(type)) return new NextResponse(null, { status: 415 });
 
   // 공격자가 큰 body를 선언한 경우 stream을 열기 전에 거부한다. 헤더가 없거나 거짓으로 작으면

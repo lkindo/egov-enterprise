@@ -700,10 +700,10 @@ export function BoardMakerWizard() {
           <CardHeader className="relative border-b border-border bg-muted p-4 text-foreground">
             <div className="relative z-10 space-y-1 text-left">
               <h2 className="text-lg font-bold text-left">
-                {STEPS[currentStep - 1].title}
+                {STEPS[currentStep - 1]?.title}
               </h2>
               <p className="text-[length:var(--font-size-body)] text-muted-foreground text-left">
-                {STEPS[currentStep - 1].description}
+                {STEPS[currentStep - 1]?.description}
               </p>
             </div>
           </CardHeader>

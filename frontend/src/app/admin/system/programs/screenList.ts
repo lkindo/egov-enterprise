@@ -183,6 +183,8 @@ export function screenMenuLinkSummary(cell: ScreenMenuLinkCell): string {
   switch (cell.kind) {
     case 'linked': {
       const [first] = cell.menus;
+      // 'linked' 는 메뉴가 하나 이상일 때만 만든다(createScreenMenuLinkLookup). 비었으면 'none' 과 같게 말한다.
+      if (first === undefined) return '연결 없음';
       const rest = cell.menus.length - 1;
       const head = rest > 0 ? `${first.menuNm} 외 ${rest}개` : first.menuNm;
       if (cell.menus.some((menu) => menu.inUse)) return head;

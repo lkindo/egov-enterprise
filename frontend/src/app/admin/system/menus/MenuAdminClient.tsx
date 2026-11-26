@@ -310,9 +310,10 @@ export default function MenuAdminClient({
   /** 찾는 말이 지금 영역에 없고 다른 영역에 있으면 첫 일치 영역을 연다(Enter 를 누르기 전에 어디 있는지 보인다). */
   const openMatchArea = (value: string) => {
     const found = menuSearchMatches(draft.items, value);
-    if (found.length === 0 || currentArea === null) return;
+    const [firstFound] = found;
+    if (firstFound === undefined || currentArea === null) return;
     if (found.some((menuNo) => areaOf(draft.items, menuNo) === currentArea)) return;
-    const area = areaOf(draft.items, found[0]);
+    const area = areaOf(draft.items, firstFound);
     if (area === null || area === currentArea) return;
     // 탭을 누른 것과 같다 — 고른 메뉴가 그 영역에 없으면 선택을 푼다(보드에 없는 메뉴의 상세를 남기지 않는다, A2).
     activateArea(area);

@@ -951,6 +951,13 @@ jobs:
           pnpm run bundle:check
         working-directory: frontend
 
+      # [2026-11-26 품질 평가 PR-3b] 색인 접근(noUncheckedIndexedAccess) 단계 도입 — 1단계는 제품 소스만(tsconfig.index-access.json,
+      #   시험 파일 제외). next build 가 만든 라우트 타입(.next/types)을 쓰므로 빌드 뒤에 둔다. 로컬은 type-check 스크립트가 같은 검사를 돈다.
+      - name: Type check (index access — 제품 소스, 단계 도입)
+        id: fe-typecheck-index-access
+        run: npx tsc -p tsconfig.index-access.json --noEmit
+        working-directory: frontend
+
       # [2026-09-01 제거] `next-build-cache` 업로드를 걷어낸다.
       #
       # 이 아티팩트는 워크플로 어디서도 내려받지 않는 죽은 업로드였다. e2e 샤드가 콜드 Next
@@ -966,7 +973,7 @@ jobs:
       - name: Surface failure detail (annotations)
         if: failure()
         run: |
-          echo "::error title=실패 스텝 판정::install=${{ steps.fe-install.outcome }} / form-validation=${{ steps.fe-form-validation.outcome }} / codegen=${{ steps.fe-codegen.outcome }} / typecheck-e2e=${{ steps.fe-typecheck-e2e.outcome }} / lint=${{ steps.fe-lint.outcome }} / audit=${{ steps.fe-audit.outcome }} / build=${{ steps.fe-build.outcome }}"
+          echo "::error title=실패 스텝 판정::install=${{ steps.fe-install.outcome }} / form-validation=${{ steps.fe-form-validation.outcome }} / codegen=${{ steps.fe-codegen.outcome }} / typecheck-e2e=${{ steps.fe-typecheck-e2e.outcome }} / lint=${{ steps.fe-lint.outcome }} / audit=${{ steps.fe-audit.outcome }} / build=${{ steps.fe-build.outcome }} / typecheck-index-access=${{ steps.fe-typecheck-index-access.outcome }}"
           for f in /tmp/fe-build.log; do
             [ -f "$f" ] || continue
             echo "::error title=$(basename $f) 마지막 출력::$(tail -c 2000 "$f" | paste -sd' ' -)"

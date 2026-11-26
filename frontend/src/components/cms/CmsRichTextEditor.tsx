@@ -278,14 +278,16 @@ export function CmsRichTextEditor({
     const index = toolRefs.current.findIndex((button) => button === event.target);
     if (index < 0 || usable.length === 0) return;
     const at = usable.indexOf(index);
-    let next: number;
+    let next: number | undefined;
     switch (event.key) {
       case 'ArrowRight': next = usable[(at + 1) % usable.length]; break;
       case 'ArrowLeft': next = usable[(at - 1 + usable.length) % usable.length]; break;
       case 'Home': next = usable[0]; break;
-      case 'End': next = usable[usable.length - 1]; break;
+      case 'End': next = usable.at(-1); break;
       default: return;
     }
+    // 옮길 단추를 찾지 못하면 키를 가로채지 않는다(위에서 usable 이 비지 않음을 확인해 실제로는 늘 찾는다).
+    if (next === undefined) return;
     event.preventDefault();
     setFocusIndex(next);
     toolRefs.current[next]?.focus();

@@ -186,9 +186,10 @@ export function planEntryFixes(missing: readonly MenuMissingEntryPermission[], c
         ? { kind: 'auto', menu, codes: candidates }
         : { kind: 'unfixable', menu, reason: '이 화면이 요구하는 권한 일부가 현재 기능 목록에 없습니다. 다시 조회해 주세요.' };
     }
-    if (candidates.length === 0) return { kind: 'unfixable', menu, reason: '이 화면이 요구하는 권한이 현재 기능 목록에 없습니다. 다시 조회해 주세요.' };
+    const [firstCandidate] = candidates;
+    if (firstCandidate === undefined) return { kind: 'unfixable', menu, reason: '이 화면이 요구하는 권한이 현재 기능 목록에 없습니다. 다시 조회해 주세요.' };
     if (candidates.length === 1) return { kind: 'auto', menu, codes: candidates };
-    return { kind: 'choose', menu, candidates, preferred: candidates.find((code) => code.endsWith('_READ')) ?? candidates[0] };
+    return { kind: 'choose', menu, candidates, preferred: candidates.find((code) => code.endsWith('_READ')) ?? firstCandidate };
   });
 }
 

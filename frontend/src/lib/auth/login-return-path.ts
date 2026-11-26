@@ -19,7 +19,8 @@ export function restorableQuery(search: string | URLSearchParams | null | undefi
   const kept = new URLSearchParams();
   for (const [key, pattern] of Object.entries(RESTORABLE_KEYS)) {
     const values = params.getAll(key);
-    if (values.length === 1 && pattern.test(values[0])) kept.set(key, values[0]);
+    const [value] = values;
+    if (values.length === 1 && value !== undefined && pattern.test(value)) kept.set(key, value);
   }
   const query = kept.toString();
   return query ? `?${query}` : '';

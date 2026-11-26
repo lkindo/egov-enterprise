@@ -282,11 +282,11 @@ export function PopupManager() {
         fetchPopups();
     }, []);
 
-    if (popups.length === 0) return null;
-
     // 다 닫았으면(index 가 끝을 지나면) 대화상자를 닫되, 닫히는 동안에는 마지막 공지를 그대로 그린다.
     const shownIndex = Math.min(index, popups.length - 1);
     const current = popups[shownIndex];
+    // 공지가 없으면 그리지 않는다 — 종전의 길이 0 검사와 같다(공지가 있으면 shownIndex 는 늘 범위 안이다).
+    if (!current) return null;
     const open = index < popups.length;
     const showNext = () => setIndex(prev => prev + 1);
     return (

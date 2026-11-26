@@ -104,6 +104,18 @@ describe('CommentAdminService generated contract', () => {
     await expect(commentAdminService.getComments({ page: 1, size: 50 })).resolves.toBe(page);
   });
 
+  it('[PR-3b] 삭제·이동에 쓰는 식별자가 없는 댓글 행은 계약 위반으로 거부한다 — 이중 단언으로 흘려보내지 않는다', async () => {
+    client.getRaw.mockResolvedValueOnce(success({
+      list: [{ pstSn: 1, bbsId: 'BBSMSTR_000000000001', ansCn: '식별자 없음' }],
+      total: 1,
+      page: 1,
+      size: 50,
+      totalPage: 1,
+    }));
+
+    await expect(commentAdminService.getComments({ page: 1, size: 50 })).rejects.toThrow('댓글 페이지 응답이 필수 계약과 일치하지 않습니다.');
+  });
+
   it('페이지 필수 metadata가 빠지면 fail-closed한다', async () => {
     client.getRaw.mockResolvedValueOnce(success({ list: [] }));
 
