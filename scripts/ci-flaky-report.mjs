@@ -79,6 +79,8 @@ export const STEP_RULES = Object.freeze([
   ['Build and Test with Gradle', 'test:backend'],
   ['Verify repository operational contracts', 'test:operational-contracts'],
   ['Verify repository operational contracts (core)', 'test:operational-contracts'],
+  ['Verify repository operational contracts (composer)', 'test:operational-contracts'],
+  ['Verify repository operational contracts (requirements)', 'test:operational-contracts'],
   ['Run measured migration test shard (${{ matrix.shard }})', 'test:migration'],
   // migration-scope 의 샤드 집계 스텝만 파생이다. 같은 잡의 'Verify the independent migration module'(실제 검증)은 그대로 분류된다.
   ['Require every migration test shard to succeed', 'derived'],

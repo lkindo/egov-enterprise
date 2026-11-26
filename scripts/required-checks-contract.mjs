@@ -855,6 +855,10 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
   if (composerOutputWire !== '${{ steps.scope.outputs.composer_contracts }}') {
     errors.push("change-scope must wire output 'composer-contracts' to '${{ steps.scope.outputs.composer_contracts }}'");
   }
+  const requirementsOutputWire = (changeScopeJob ?? '').match(/^ {6}requirements-contracts:\s*(.+)$/m)?.[1]?.trim();
+  if (requirementsOutputWire !== '${{ steps.scope.outputs.requirements_contracts }}') {
+    errors.push("change-scope must wire output 'requirements-contracts' to '${{ steps.scope.outputs.requirements_contracts }}'");
+  }
 
   const secretScanJob = jobs.get('secret-scan');
   if (secretScanJob) {
@@ -873,8 +877,12 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
       if (stepScalar(validateStep, 'shell') !== null) {
         errors.push('operational contracts scope guard step cannot override the runner shell');
       }
-      if (nestedScalarMap(validateStep, 'env', 8)?.get('COMPOSER_CONTRACTS') !== '${{ needs.change-scope.outputs.composer-contracts }}') {
+      const validateEnv = nestedScalarMap(validateStep, 'env', 8);
+      if (validateEnv?.get('COMPOSER_CONTRACTS') !== '${{ needs.change-scope.outputs.composer-contracts }}') {
         errors.push('operational contracts scope guard step must read COMPOSER_CONTRACTS from needs.change-scope.outputs.composer-contracts');
+      }
+      if (validateEnv?.get('REQUIREMENTS_CONTRACTS') !== '${{ needs.change-scope.outputs.requirements-contracts }}') {
+        errors.push('operational contracts scope guard step must read REQUIREMENTS_CONTRACTS from needs.change-scope.outputs.requirements-contracts');
       }
       const expectedGuardRun = [
         'case "$COMPOSER_CONTRACTS" in',
@@ -884,47 +892,73 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
         '    exit 1',
         '    ;;',
         'esac',
+        'case "$REQUIREMENTS_CONTRACTS" in',
+        '  true|false) ;;',
+        '  *)',
+        '    echo "::error::unexpected change-scope output requirements-contracts=\'${REQUIREMENTS_CONTRACTS}\' (expected \'true\' or \'false\')"',
+        '    exit 1',
+        '    ;;',
+        'esac',
       ].join('\n');
       if (stepRun(validateStep) !== expectedGuardRun) {
-        errors.push('operational contracts scope guard step must fail closed on unexpected composer-contracts values');
+        errors.push('operational contracts scope guard step must fail closed on unexpected composer-contracts or requirements-contracts values');
       }
     }
 
-    const operationalStepName = 'Verify repository operational contracts';
-    const operationalStep = steps.get(operationalStepName);
-    if (!operationalStep) {
-      errors.push(`required operational contracts step '${operationalStepName}' is missing from job 'secret-scan'`);
-    } else {
-      if (stepScalar(operationalStep, 'if') !== "needs.change-scope.outputs.composer-contracts == 'true'") {
-        errors.push("required operational contracts full step must run iff needs.change-scope.outputs.composer-contracts == 'true'");
-      }
-      if (stepScalar(operationalStep, 'continue-on-error') !== null) {
-        errors.push('required operational contracts step cannot use continue-on-error');
-      }
-      if (stepScalar(operationalStep, 'shell') !== null) {
-        errors.push('required operational contracts step cannot override the runner shell');
-      }
-      if (stepRun(operationalStep) !== 'npm run test:operational-contracts') {
-        errors.push("required operational contracts full step must run 'npm run test:operational-contracts'");
+    const reqInstallStep = steps.get('Install pinned requirements workspace dependencies');
+    const chromiumInstallStep = steps.get('Install Chromium for requirements workspace browser contracts');
+    for (const [label, gatedStep] of [
+      ['requirements install step', reqInstallStep],
+      ['Chromium install step', chromiumInstallStep],
+    ]) {
+      if (validateStep && gatedStep && secretScanJob.indexOf(validateStep) > secretScanJob.indexOf(gatedStep)) {
+        errors.push(`operational contracts scope guard step must precede ${label}`);
       }
     }
 
-    const coreStepName = 'Verify repository operational contracts (core)';
-    const coreStep = steps.get(coreStepName);
-    if (!coreStep) {
-      errors.push(`required operational contracts step '${coreStepName}' is missing from job 'secret-scan'`);
-    } else {
-      if (stepScalar(coreStep, 'if') !== "needs.change-scope.outputs.composer-contracts == 'false'") {
-        errors.push("required operational contracts core step must run iff needs.change-scope.outputs.composer-contracts == 'false'");
+    const operationalSteps = [
+      {
+        label: 'full',
+        name: 'Verify repository operational contracts',
+        expectedIf: "needs.change-scope.outputs.composer-contracts == 'true' && needs.change-scope.outputs.requirements-contracts == 'true'",
+        expectedRun: 'npm run test:operational-contracts',
+      },
+      {
+        label: 'core',
+        name: 'Verify repository operational contracts (core)',
+        expectedIf: "needs.change-scope.outputs.composer-contracts == 'false' || needs.change-scope.outputs.requirements-contracts == 'false'",
+        expectedRun: 'npm run test:operational-contracts:core',
+      },
+      {
+        label: 'composer',
+        name: 'Verify repository operational contracts (composer)',
+        expectedIf: "needs.change-scope.outputs.composer-contracts == 'true' && needs.change-scope.outputs.requirements-contracts == 'false'",
+        expectedRun: 'npm run test:operational-contracts:composer',
+      },
+      {
+        label: 'requirements',
+        name: 'Verify repository operational contracts (requirements)',
+        expectedIf: "needs.change-scope.outputs.composer-contracts == 'false' && needs.change-scope.outputs.requirements-contracts == 'true'",
+        expectedRun: 'npm run test:operational-contracts:requirements',
+      },
+    ];
+    for (const spec of operationalSteps) {
+      const step = steps.get(spec.name);
+      if (!step) {
+        errors.push(`required operational contracts step '${spec.name}' is missing from job 'secret-scan'`);
+        continue;
       }
-      if (stepScalar(coreStep, 'continue-on-error') !== null) {
-        errors.push('required operational contracts core step cannot use continue-on-error');
+      if (stepScalar(step, 'if') !== spec.expectedIf) {
+        errors.push(`required operational contracts ${spec.label} step must run iff ${spec.expectedIf}`);
       }
-      if (stepScalar(coreStep, 'shell') !== null) {
-        errors.push('required operational contracts core step cannot override the runner shell');
+      if (stepScalar(step, 'continue-on-error') !== null) {
+        errors.push(`required operational contracts ${spec.label} step cannot use continue-on-error`);
       }
-      if (stepRun(coreStep) !== 'npm run test:operational-contracts:core') {
-        errors.push("required operational contracts core step must run 'npm run test:operational-contracts:core'");
+      if (stepScalar(step, 'shell') !== null) {
+        errors.push(`required operational contracts ${spec.label} step cannot override the runner shell`);
+      }
+      if (stepRun(step) !== spec.expectedRun) {
+        errors.push(`required operational contracts ${spec.label} step must run '${spec.expectedRun}'`);
       }
     }
     // 단계가 없으면 criticalSteps 대조가 따로 붉다 — 있을 때 내려받은 실행 파일의 무결성 확인을 본다.

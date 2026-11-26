@@ -792,6 +792,19 @@ test('the operational catalog cannot narrow its glob or detach from a required e
   const detachedContracts = detached.gateSets.find(({ id }) => id === 'GATESET-NODE-OPERATIONAL-CONTRACTS');
   detachedContracts.selector.commandBindings[2].fragment = 'npm run test:ghost-operational-contracts';
   assert.match(validate(detached).join('\n'), /ghost runner command binding.*ci\.yml/i);
+
+  for (const fragment of [
+    'run: npm run test:operational-contracts',
+    'run: npm run test:operational-contracts:core',
+    'run: npm run test:operational-contracts:composer',
+    'run: npm run test:operational-contracts:requirements',
+  ]) {
+    const omitted = clone(loadGovernanceRegistry(registryPath));
+    const omittedContracts = omitted.gateSets.find(({ id }) => id === 'GATESET-NODE-OPERATIONAL-CONTRACTS');
+    omittedContracts.selector.commandBindings = omittedContracts.selector.commandBindings
+      .filter((binding) => binding.fragment !== fragment);
+    assert.match(validate(omitted).join('\n'), new RegExp(`missing CI command binding.*${fragment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
+  }
 });
 
 test('comment-only text cannot impersonate an executable runner binding', () => {

@@ -137,7 +137,7 @@ echo "  → scope: docsOnly=$SCOPE_DOCS_ONLY / backend=$SCOPE_BACKEND / migratio
 # 로컬 pre-push 에서는 생략한다.
 run_operational_contracts() {
   if [ "$CONTRACTS_DEFERRABLE" = "1" ]; then
-    echo "  → governance: 운영 계약은 PR Required CI(secret-scan — 일반 PR 은 :core, 생성기/화면/업무/스킬/정책/main 은 전체)에서 검증한다 — 로컬 재확인은 'node scripts/heavy-run-queue.mjs run --kind node-test -- npm run test:operational-contracts:core'(composer·Windows 분기는 전체 'npm run test:operational-contracts')를 사용한다(DEC-OPS-434)"
+    echo "  → governance: 운영 계약은 PR Required CI(secret-scan — 일반 PR 은 :core, 의존 경로별 :composer/:requirements 또는 전체)에서 검증한다 — 로컬 재확인은 'node scripts/heavy-run-queue.mjs run --kind node-test -- npm run test:operational-contracts:core'(composer·requirements·Windows 분기는 해당 분할 또는 전체 'npm run test:operational-contracts')를 사용한다(DEC-OPS-434·438)"
     return 0
   fi
   echo "  → governance: npm run test:operational-contracts"

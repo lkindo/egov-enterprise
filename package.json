@@ -33,6 +33,7 @@
     "test:operational-contracts": "node -e \"require('node:fs').mkdirSync('build/operational-contracts',{recursive:true})\" && node --test --test-concurrency=4 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./scripts/node-test-junit-reporter.mjs --test-reporter-destination=build/operational-contracts/junit.xml \"scripts/*.test.mjs\" \".agent/scripts/*.test.js\" \"tools/migration-workspace/*.test.mjs\" \"tools/requirements-workspace/*.test.mjs\"",
     "test:operational-contracts:core": "node scripts/run-operational-contracts.mjs --group core",
     "test:operational-contracts:composer": "node scripts/run-operational-contracts.mjs --group composer",
+    "test:operational-contracts:requirements": "node scripts/run-operational-contracts.mjs --group requirements",
     "verify:alerts": "node scripts/run-prometheus-alert-tests.mjs",
     "test:required-checks": "node --test scripts/required-checks-contract.test.mjs",
     "test:shared-memory": "node --test scripts/shared-memory-contract.test.mjs",

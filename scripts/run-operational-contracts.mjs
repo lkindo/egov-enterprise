@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
- * 운영 계약(Node test) 분할 실행기 — Core vs Composer/Reusable.
+ * 운영 계약(Node test) 분할 실행기 — Core vs Composer/Reusable vs Requirements Workspace.
  *
  * `npm run test:operational-contracts` 전체 카탈로그는 유지하되, 일반 PR CI에서는
- * 생성기/재사용 투영 계약(Composer)을 제외한 Core 계약만 실행하고, 생성기/재사용 경로·
- * 정책 파일·main push·수동 실행에서는 전체를 실행한다.
+ * 생성기/재사용 투영 계약(`composer`)과 요구분석 작업공간 계약(`requirements`)을 제외한
+ * 핵심 계약(`core`)만 실행하고, 각 의존 경로·정책 파일·main push·수동 실행에서는
+ * 해당 그룹 또는 전체를 실행한다.
  *
- * 분할은 상호 배타적이고 완전 분할(core ∩ composer = ∅, core ∪ composer = all)이어야 하며,
+ * 분할은 상호 배타적이고 완전 분할(세 집합 쌍마다 교집합 = ∅, 합집합 = all)이어야 하며,
  * `scripts/run-operational-contracts.test.mjs`가 이를 강제한다.
  */
 import { spawnSync } from 'node:child_process';
@@ -21,6 +22,7 @@ import {
 const DEFAULT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 export const COMPOSER_CONTRACT_PATTERN = /^scripts\/(?:project-composer|reusable-|composer-modules|slot-registry|domain-deletion-plan|frontend-reachability-census|composition-profiles|pack-tagged-registry).*\.test\.mjs$/;
+export const REQUIREMENTS_CONTRACT_PATTERN = /^tools\/requirements-workspace\/.*\.test\.mjs$/;
 
 // 문서·README 투영 가드와 이관/제품 공통코드 불변식 가드는 일반/이관 PR에서도 항상 실행돼야 main 회귀를 막는다.
 export const CORE_CONTRACT_OVERRIDES = Object.freeze(new Set([
@@ -32,6 +34,11 @@ export function isComposerOperationalContract(relativePath) {
   const normalized = String(relativePath).replaceAll('\\', '/');
   if (CORE_CONTRACT_OVERRIDES.has(normalized)) return false;
   return COMPOSER_CONTRACT_PATTERN.test(normalized);
+}
+
+export function isRequirementsOperationalContract(relativePath) {
+  const normalized = String(relativePath).replaceAll('\\', '/');
+  return REQUIREMENTS_CONTRACT_PATTERN.test(normalized);
 }
 
 export function discoverOperationalContractFiles(repoRoot = DEFAULT_ROOT) {
@@ -51,12 +58,14 @@ export function discoverOperationalContractFiles(repoRoot = DEFAULT_ROOT) {
 export function partitionOperationalContracts(repoRoot = DEFAULT_ROOT) {
   const all = discoverOperationalContractFiles(repoRoot);
   const composer = [];
+  const requirements = [];
   const core = [];
   for (const file of all) {
-    if (isComposerOperationalContract(file)) composer.push(file);
+    if (isRequirementsOperationalContract(file)) requirements.push(file);
+    else if (isComposerOperationalContract(file)) composer.push(file);
     else core.push(file);
   }
-  return { all, core, composer };
+  return { all, core, composer, requirements };
 }
 
 export function parseArgs(argv) {
@@ -78,14 +87,14 @@ export function parseArgs(argv) {
       throw new Error(`unknown argument: ${arg}`);
     }
   }
-  if (!['core', 'composer', 'all'].includes(group)) {
-    throw new Error(`--group must be one of core|composer|all (got ${JSON.stringify(group)})`);
+  if (!['core', 'composer', 'requirements', 'all'].includes(group)) {
+    throw new Error(`--group must be one of core|composer|requirements|all (got ${JSON.stringify(group)})`);
   }
-  const resolvedJunit = junitPath ?? (
-    group === 'composer'
-      ? 'build/operational-contracts/junit-composer.xml'
-      : 'build/operational-contracts/junit.xml'
-  );
+  const defaultJunitByGroup = {
+    composer: 'build/operational-contracts/junit-composer.xml',
+    requirements: 'build/operational-contracts/junit-requirements.xml',
+  };
+  const resolvedJunit = junitPath ?? defaultJunitByGroup[group] ?? 'build/operational-contracts/junit.xml';
   return { group, list, junitPath: resolvedJunit };
 }
 

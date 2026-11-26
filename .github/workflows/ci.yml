@@ -47,6 +47,7 @@ jobs:
       mutation: ${{ steps.scope.outputs.mutation }}
       mutation-migration-tool: ${{ steps.scope.outputs.mutation_migration_tool }}
       composer-contracts: ${{ steps.scope.outputs.composer_contracts }}
+      requirements-contracts: ${{ steps.scope.outputs.requirements_contracts }}
       reusable: ${{ steps.scope.outputs.reusable }}
       reusable-custom: ${{ steps.scope.outputs.reusable_custom }}
       reusable-matrix: ${{ steps.scope.outputs.reusable_matrix }}
@@ -308,6 +309,27 @@ jobs:
             fi
           done
 
+      # change-scope 출력이 true/false 밖(빈 문자열 등)이면 설치 생략 전 단계에서 fail-closed 로 즉시 실패한다.
+      - name: Validate operational contracts scope output
+        env:
+          COMPOSER_CONTRACTS: ${{ needs.change-scope.outputs.composer-contracts }}
+          REQUIREMENTS_CONTRACTS: ${{ needs.change-scope.outputs.requirements-contracts }}
+        run: |
+          case "$COMPOSER_CONTRACTS" in
+            true|false) ;;
+            *)
+              echo "::error::unexpected change-scope output composer-contracts='${COMPOSER_CONTRACTS}' (expected 'true' or 'false')"
+              exit 1
+              ;;
+          esac
+          case "$REQUIREMENTS_CONTRACTS" in
+            true|false) ;;
+            *)
+              echo "::error::unexpected change-scope output requirements-contracts='${REQUIREMENTS_CONTRACTS}' (expected 'true' or 'false')"
+              exit 1
+              ;;
+          esac
+
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -316,6 +338,7 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Install pinned requirements workspace dependencies
+        if: needs.change-scope.outputs.requirements-contracts == 'true'
         run: npm --prefix tools/requirements-workspace ci --ignore-scripts
 
       # 운영 계약 카탈로그(scripts 의 test.mjs 묶음)에는 frontend 의존성을 실제로 로드하는
@@ -332,11 +355,12 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: frontend
 
-      # The standalone requirements browser checks are part of the same required
-      # Node catalog and use the Playwright version pinned by the frontend lockfile.
-      # Restore main's Playwright .deb and browser caches read-only so apt/Chromium
-      # bootstrap does not stall on Ubuntu mirror slowness or transient DNS outages.
+      # The standalone requirements browser checks are part of the requirements group
+      # and use the Playwright version pinned by the frontend lockfile.
+      # Restore main's Playwright .deb and browser caches read-only when requirements
+      # contracts run so apt/Chromium bootstrap skips ordinary non-requirements PRs safely.
       - name: Resolve Playwright system package cache key
+        if: needs.change-scope.outputs.requirements-contracts == 'true'
         id: secret-scan-apt-key
         working-directory: frontend
         run: |
@@ -347,6 +371,7 @@ jobs:
           echo "key=${prefix}${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
 
       - name: Restore Playwright system packages
+        if: needs.change-scope.outputs.requirements-contracts == 'true'
         id: secret-scan-apt-restore
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
@@ -356,7 +381,7 @@ jobs:
             ${{ steps.secret-scan-apt-key.outputs.prefix }}
 
       - name: Seed apt archive with restored Playwright packages
-        if: steps.secret-scan-apt-restore.outputs.cache-matched-key != ''
+        if: needs.change-scope.outputs.requirements-contracts == 'true' && steps.secret-scan-apt-restore.outputs.cache-matched-key != ''
         env:
           MATCHED_KEY: ${{ steps.secret-scan-apt-restore.outputs.cache-matched-key }}
         run: |
@@ -366,6 +391,7 @@ jobs:
           if [ "${#debs[@]}" -gt 0 ]; then sudo cp --no-clobber -- "${debs[@]}" /var/cache/apt/archives/; fi
 
       - name: Restore Playwright Browsers
+        if: needs.change-scope.outputs.requirements-contracts == 'true'
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
@@ -374,26 +400,14 @@ jobs:
             ${{ runner.os }}-playwright-
 
       - name: Install Chromium for requirements workspace browser contracts
+        if: needs.change-scope.outputs.requirements-contracts == 'true'
         timeout-minutes: 15
         run: pnpm -C frontend exec playwright install --with-deps chromium
 
       # 우회 가능한 로컬 훅에 의존하지 않도록 저장소 운영 계약을 required CI에서 다시 검증한다.
-      # 생성기/재사용/화면/업무/스킬·정책 파일·main push·미지 범위는 전체 카탈로그를, 그 밖의 PR은 핵심 계약(:core)을 실행한다.
-      # change-scope 출력이 true/false 밖(빈 문자열 등)이면 fail-closed 로 즉시 실패한다.
-      - name: Validate operational contracts scope output
-        env:
-          COMPOSER_CONTRACTS: ${{ needs.change-scope.outputs.composer-contracts }}
-        run: |
-          case "$COMPOSER_CONTRACTS" in
-            true|false) ;;
-            *)
-              echo "::error::unexpected change-scope output composer-contracts='${COMPOSER_CONTRACTS}' (expected 'true' or 'false')"
-              exit 1
-              ;;
-          esac
-
+      # composer·requirements 둘 다 켜지면 전체 카탈로그를, 그 외 PR은 :core 와 켜진 선택 그룹을 실행한다.
       - name: Verify repository operational contracts
-        if: needs.change-scope.outputs.composer-contracts == 'true'
+        if: needs.change-scope.outputs.composer-contracts == 'true' && needs.change-scope.outputs.requirements-contracts == 'true'
         env:
           # PR/push 전체 변경 구간의 immutable base를 사용한다. 수동 실행에는
           # 신뢰 가능한 predecessor가 없으므로 durability gate가 의도적으로 fail-closed한다.
@@ -401,18 +415,41 @@ jobs:
         run: npm run test:operational-contracts
 
       - name: Verify repository operational contracts (core)
-        if: needs.change-scope.outputs.composer-contracts == 'false'
+        if: needs.change-scope.outputs.composer-contracts == 'false' || needs.change-scope.outputs.requirements-contracts == 'false'
         env:
           # PR/push 전체 변경 구간의 immutable base를 사용한다. 수동 실행에는
           # 신뢰 가능한 predecessor가 없으므로 durability gate가 의도적으로 fail-closed한다.
           UI_QUALITY_INDEX_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: npm run test:operational-contracts:core
 
+      - name: Verify repository operational contracts (composer)
+        if: needs.change-scope.outputs.composer-contracts == 'true' && needs.change-scope.outputs.requirements-contracts == 'false'
+        env:
+          UI_QUALITY_INDEX_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: npm run test:operational-contracts:composer
+
+      - name: Verify repository operational contracts (requirements)
+        if: needs.change-scope.outputs.composer-contracts == 'false' && needs.change-scope.outputs.requirements-contracts == 'true'
+        env:
+          UI_QUALITY_INDEX_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: npm run test:operational-contracts:requirements
+
       # 운영 계약의 파일별 시간 합과 느린 시험(scripts/node-test-junit-reporter.mjs 가 쓴 보고서). 파일 경로·시험 이름·시간만 싣고
-      # 명령·출력 원문은 싣지 않는다. 실패한 실행에서도 남기며, 보고서가 없으면 그 사실만 적고 성공한다(결과 판정은 위 단계다).
+      # 명령·출력 원문은 싣지 않는다. 선택된 분할의 실행이 보고서를 남기기 전에 실패해도 그 사실이 summary 에 드러나도록
+      # scope 출력 기준으로 호출하고, 보고서 부재가 결과를 가리지는 않는다(결과 판정은 위 단계다).
       - name: Summarize operational contract durations
         if: always()
-        run: node scripts/ci-junit-duration-summary.mjs --node-junit build/operational-contracts/junit.xml >> "$GITHUB_STEP_SUMMARY"
+        env:
+          COMPOSER_CONTRACTS: ${{ needs.change-scope.outputs.composer-contracts }}
+          REQUIREMENTS_CONTRACTS: ${{ needs.change-scope.outputs.requirements-contracts }}
+        run: |
+          node scripts/ci-junit-duration-summary.mjs --node-junit build/operational-contracts/junit.xml >> "$GITHUB_STEP_SUMMARY"
+          if [ "$COMPOSER_CONTRACTS" = "true" ] && [ "$REQUIREMENTS_CONTRACTS" = "false" ]; then
+            node scripts/ci-junit-duration-summary.mjs --node-junit build/operational-contracts/junit-composer.xml >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ "$COMPOSER_CONTRACTS" = "false" ] && [ "$REQUIREMENTS_CONTRACTS" = "true" ]; then
+            node scripts/ci-junit-duration-summary.mjs --node-junit build/operational-contracts/junit-requirements.xml >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Verify Prometheus alert firing and recovery
         run: npm run verify:alerts
