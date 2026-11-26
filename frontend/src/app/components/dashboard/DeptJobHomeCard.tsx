@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { homeKeys } from '@/queries/home-keys';
 import { useAuth } from '@/contexts/AuthContext';
 import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
 import { HomeSummaryCard, summaryValue } from './HomeSummaryCard';
@@ -18,7 +19,7 @@ const MAX_ITEMS = 2;
 export function DeptJobHomeCard() {
   const { user } = useAuth();
   const jobs = useQuery({
-    queryKey: ['home', 'dept-jobs-mine', user?.id],
+    queryKey: [...homeKeys.all, 'dept-jobs-mine', user?.id] as const,
     queryFn: () => deptJobUserService.getDeptJobList({ page: 1, size: MAX_ITEMS, scope: 'mine' }),
     retry: false,
   });

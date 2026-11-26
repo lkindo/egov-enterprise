@@ -21,6 +21,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PagePagination } from '@/components/common/PagePagination';
 import { invalidateMembershipQueries } from './group-member-queries';
+import { authorizationKeys } from '@/queries/authorization-keys';
 
 const PAGE_SIZE = 20;
 
@@ -38,7 +39,7 @@ export function GroupMemberAddDialog({ code, name, onClose }: { code: string; na
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const scope = ['authorization', user?.id, user?.authorizationVersion];
+  const scope = authorizationKeys.scope(user?.id, user?.authorizationVersion);
   const canAssign = canPermission(user, 'AUTHRT_ASSIGN') && canPermission(user, 'AUTHRT_READ');
   const [tab, setTab] = useState<'search' | 'department'>('search');
   const [keyword, setKeyword] = useState('');

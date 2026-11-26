@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { userOrgKeys } from '@/queries/user-org-keys';
 
 /**
  * 사용자·조직 허브 결과 툴바의 보조 동작 — 보고 있는 구간과 새로고침(2026-10-18 허브 분해 때 UserOrgHubClient 에서 옮겼다 —
@@ -32,8 +33,8 @@ export function UserOrgToolbarActions({ rowRange, refreshing }: {
       // 무인자 invalidateQueries() 는 메뉴·알림 등 이 화면과 무관한 캐시까지
       // 전부 재요청시킨다 — 이 화면이 쓰는 두 키로 좁힌다(감사 P2).
       onClick={() => {
-        queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-        queryClient.invalidateQueries({ queryKey: ['admin-depts'] });
+        queryClient.invalidateQueries({ queryKey: userOrgKeys.users.all });
+        queryClient.invalidateQueries({ queryKey: userOrgKeys.depts.all });
       }}
       className="gap-1.5"
     >

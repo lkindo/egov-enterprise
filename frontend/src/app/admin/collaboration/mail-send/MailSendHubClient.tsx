@@ -28,6 +28,7 @@ import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUti
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { mailService } from '@/services/business/mail/MailService';
+import { mailHistoryKeys } from '@/queries/mail-keys';
 import { MailRecipientDtoSchema, SentMailDtoSchema } from '@/types/generated-zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
@@ -181,7 +182,7 @@ export default function MailSendHubClient() {
       completedRef.current = true;
       toast('메일이 발송 요청되었습니다.', 'success');
       // [2026-10-01] 이력 화면이 60초 캐시를 보여 방금 보낸 메일이 없는 목록이 뜨지 않게 한다.
-      void queryClient.invalidateQueries({ queryKey: ['mail-history'] });
+      void queryClient.invalidateQueries({ queryKey: mailHistoryKeys.all });
       router.push('/admin/collaboration/mail-history');
     } catch (error: unknown) {
       const fieldErrors = extractFieldErrors(error);

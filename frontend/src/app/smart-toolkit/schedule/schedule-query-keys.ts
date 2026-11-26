@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
+import { homeKeys } from '@/queries/home-keys';
 
 /**
  * 일정 조회 키(2026-11-14). 일정 화면의 월 목록과 업무 홈의 '오늘 일정' 카드가 같은 일정 API 를 읽는다 — 종전에는 일정을
@@ -7,7 +8,7 @@ import type { QueryClient } from '@tanstack/react-query';
  * 일정 기능이 소유하는 경로에 둔다 — 일정을 뺀 구성에서는 이 파일도 홈 카드와 함께 빠진다.
  */
 export const SCHEDULE_LIST_ROOT = ['work-schedules'] as const;
-export const SCHEDULE_HOME_ROOT = ['home', 'schedule-today'] as const;
+export const SCHEDULE_HOME_ROOT = [...homeKeys.all, 'schedule-today'] as const;
 
 export function scheduleHomeKey(userId: string | undefined, yearMonth: string) {
   return [...SCHEDULE_HOME_ROOT, userId, yearMonth] as const;

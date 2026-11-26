@@ -16,6 +16,7 @@ import {
   type CommunityMember,
   type CommunityMemberStatusFilter,
 } from '@/services/foundation/system/CommunityAdminService';
+import { communityKeys } from '@/queries/community-keys';
 
 const PAGE_SIZE = 20;
 
@@ -73,7 +74,7 @@ export function CommunityMembersPanel({ community, onBack }: CommunityMembersPan
   const actionLockRef = useRef(false);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['admin-communities', 'members', community.cmntySn, filter, page],
+    queryKey: communityKeys.adminMembers(community.cmntySn, filter, page),
     queryFn: () => communityAdminService.getMembers(community.cmntySn, {
       status: filter === 'ALL' ? undefined : filter,
       page,
@@ -85,9 +86,9 @@ export function CommunityMembersPanel({ community, onBack }: CommunityMembersPan
   const total = data?.total ?? 0;
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ['admin-communities', 'members', community.cmntySn] });
+    queryClient.invalidateQueries({ queryKey: communityKeys.adminMembersOf(community.cmntySn) });
     // 사용자 상세 화면의 '내 멤버십' 도 같은 행을 읽는다.
-    queryClient.invalidateQueries({ queryKey: ['community-membership', community.cmntySn] });
+    queryClient.invalidateQueries({ queryKey: communityKeys.membership(community.cmntySn) });
   };
 
   const changeFilter = (next: CommunityMemberStatusFilter) => {

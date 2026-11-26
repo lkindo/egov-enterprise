@@ -2,6 +2,7 @@
 
 import { useReturnToList } from '@/lib/navigation/use-return-to-list';
 import { useQuery } from '@tanstack/react-query';
+import { surveyKeys } from '@/queries/survey-keys';
 import { getQustnrRespondInfoDetail } from '@/lib/api/survey';
 ;
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +16,7 @@ export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsS
     const returnToList = useReturnToList({ fallback: '/survey/response', origins: ['/survey/response', '/admin/survey/hub'] });
 
     const { data: response, isLoading, isError, error } = useQuery({
-        queryKey: ['survey-response-detail', srvyRspnsSn],
+        queryKey: surveyKeys.responseDetail(srvyRspnsSn),
         queryFn: () => getQustnrRespondInfoDetail(srvyRspnsSn),
         retry: 1
     });

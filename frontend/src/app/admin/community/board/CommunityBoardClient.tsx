@@ -21,6 +21,7 @@ import { HubListSkeleton } from '@/components/ui/hub/HubSkeleton';
 import { NOTICE_BOARD_ID } from '@/config/board-ids';
 import { useBoardOptions } from '@/hooks/api/use-board-options';
 import { normalizeRouteKey } from '@/lib/navigation/url-state-values';
+import { communityKeys } from '@/queries/community-keys';
 
 const DEFAULT_BBS_ID = NOTICE_BOARD_ID; // 공지사항 기본값
 
@@ -47,7 +48,7 @@ function CommunityBoardContent() {
   // 타이핑 도중에도 조회했다. searchWrd 는 적용된 검색어이고, 입력 중인 값은 KeywordFilter 가 갖는다.
   // 감사 P1-1: isError/error/refetch 를 구조분해해 조회 실패를 "게시글 0건"으로 위장하지 않는다.
   const { data: boardData, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ['community-board', bbsId, searchWrd, page],
+    queryKey: [...communityKeys.boardPostsRoot, bbsId, searchWrd, page],
     queryFn: () => boardUserService.getPosts(bbsId, {
       page: page,
       size: PAGE_SIZE,

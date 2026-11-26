@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import { surveyKeys } from '@/queries/survey-keys';
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCcw } from "lucide-react";
 import { SurveyFormDialog } from './SurveyFormDialog';
@@ -50,7 +51,7 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
   const [keyword, setKeyword] = useState('');
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['admin-polls', page, keyword, pageSize],
+    queryKey: [...surveyKeys.adminPollsRoot, page, keyword, pageSize] as const,
     // [결정 21] 여론조사(유형 001·002)만 — 온라인 투표는 투표 관리 화면이 소유한다.
     queryFn: () => getPollList({ page, size: pageSize, searchKeyword: keyword, kind: 'SATISFACTION' }),
   });

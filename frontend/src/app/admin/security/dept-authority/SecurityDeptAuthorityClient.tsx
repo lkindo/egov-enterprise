@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { notifyAuthorizationChanged } from '@/lib/auth/authorization-state';
 import { authorizationAdminService } from '@/services/foundation/system/AuthorizationAdminService';
+import { authorizationKeys } from '@/queries/authorization-keys';
 import { authorizationDepartmentChangeSchema, type AuthorizationDepartmentSnapshot, type AuthorizationGroupSummary } from '@/lib/auth/authorization-management-contract';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { FormErrorSummary } from '@/components/ui/form';
@@ -23,14 +24,14 @@ export default function SecurityDeptAuthorityClient() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const canRead = canPermission(user, 'AUTHRT_READ');
-  const scope = ['authorization', user?.id, user?.authorizationVersion];
+  const scope = authorizationKeys.scope(user?.id, user?.authorizationVersion);
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [filter, setFilter] = useState('');
   const departments = useQuery({ queryKey: [...scope, 'departments'], queryFn: () => authorizationAdminService.getDepartments(), enabled: canRead, retry: false });
   const groups = useQuery({ queryKey: [...scope, 'groups'], queryFn: () => authorizationAdminService.getGroups(), enabled: canRead, retry: false });
   const roster = useQuery({ queryKey: [...scope, 'department-memberships', selectedDepartment], queryFn: () => authorizationAdminService.getDepartmentMemberships(selectedDepartment), enabled: canRead && !!selectedDepartment, retry: false });
   const error = departments.error || groups.error || roster.error;
-  const refresh = async () => { await queryClient.invalidateQueries({ queryKey: ['authorization'] }); };
+  const refresh = async () => { await queryClient.invalidateQueries({ queryKey: authorizationKeys.all }); };
   return (
     <WorkListPage title="부서별 그룹 배정" description="부서 구성원을 확인한 뒤 선택한 사용자에게 그룹을 추가하거나 회수합니다." breadcrumbItems={[{ label: '보안' }, { label: '부서별 권한 그룹' }]}
       actions={<Button type="button" variant="outline" onClick={() => void refresh()}>새로 조회</Button>}

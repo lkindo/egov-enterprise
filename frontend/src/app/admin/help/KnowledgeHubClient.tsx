@@ -38,6 +38,7 @@ import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 import { parseKnowledgeTab, type KnowledgeShellTab } from './knowledge-tabs';
 import { KNOWLEDGE_SHELL_TAB_BOARDS } from './knowledge-tab-boards';
+import { knowledgeKeys } from '@/queries/knowledge-keys';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. `bbsId` 는 진입 전용이라 카테고리를 바꾸면 버린다(종전 delete 와 같은 결과).
@@ -194,7 +195,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
     error: articlesError,
     refetch: refetchArticles,
   } = useQuery({
-    queryKey: ['knowledge-articles', activeCategory, searchQuery, sortBy, page, qnaStatus ?? 'ALL'],
+    queryKey: [...knowledgeKeys.articlesRoot, activeCategory, searchQuery, sortBy, page, qnaStatus ?? 'ALL'],
     queryFn: () => knowledgeService.getArticles({
       bbsId: currentBbsId,
       category: activeCategory,
@@ -208,12 +209,12 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
   });
 
   const { data: hotData, isError: isHotError } = useQuery({
-    queryKey: ['hot-articles', activeCategory],
+    queryKey: [...knowledgeKeys.hotRoot, activeCategory],
     queryFn: () => knowledgeService.getHotArticles(currentBbsId),
   });
 
   const { data: statsData, isError: isStatsError, isLoading: isStatsLoading } = useQuery({
-    queryKey: ['knowledge-stats', activeCategory],
+    queryKey: [...knowledgeKeys.statsRoot, activeCategory],
     queryFn: () => knowledgeService.getStats(currentBbsId),
   });
 
@@ -222,7 +223,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
   // [2026-10-26 ADR-0043] 기본 목록은 상단 고정 글을 먼저 싣는다(서버 정렬, 바꾸지 않는다). 그래서 오래된 고정 글이 '최근 활동' 맨 위에
   //   최신 글처럼 보였다 — 고정 글에는 상단 고정 표지를 붙이고(서버 판정 pinned 만 본다) 절 설명이 그 순서를 말한다.
   const { data: activityData, isError: isActivityError } = useQuery({
-    queryKey: ['knowledge-articles', activeCategory, '', 'latest', 1, 'ALL'],
+    queryKey: [...knowledgeKeys.articlesRoot, activeCategory, '', 'latest', 1, 'ALL'],
     queryFn: () => knowledgeService.getArticles({
       bbsId: currentBbsId,
       category: activeCategory,

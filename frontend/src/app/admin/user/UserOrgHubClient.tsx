@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
+import { userOrgKeys } from '@/queries/user-org-keys';
 import { UserManage } from '@/types/foundation/user';
 import { deptAdminService, Department } from '@/services/foundation/system/DeptAdminService';
 import {
@@ -185,7 +186,7 @@ function useUserOrgUsers({ activeTab, searchKeyword, userPage, userPageSize, ini
   const appliedUserSort = activeTab === 'USERS' ? userSort : {};
   const hasUserFilter = Boolean(appliedUserFilters.userSttsCd || appliedUserFilters.ognzId || appliedUserFilters.lckYn);
   const { data: usersData, isLoading: isUsersLoading, isError: isUsersError, error: usersError, refetch: refetchUsers } = useQuery({
-    queryKey: ['admin-users', searchKeyword, userPage, userPageSize, appliedUserFilters, appliedUserSort],
+    queryKey: [...userOrgKeys.users.all, searchKeyword, userPage, userPageSize, appliedUserFilters, appliedUserSort] as const,
     // 서버(GET /admin/system/users)는 searchKeyword + page(1부터)·size 를 읽는다(ADR-0036).
     // 종전의 옛 페이지 이름은 서버가 읽지 않아 그대로 무시됐고,
     // 몇 페이지를 눌러도 항상 첫 페이지가 왔다(死 페이저 — 감사 m-2).
@@ -293,7 +294,7 @@ function useUserOrgWriteActions({
           : `${user.userNm ?? user.userId}님을 복귀 처리했습니다.`,
         'success',
       );
-      queryClient.invalidateQueries({ queryKey: ['admin-user-absences'] });
+      queryClient.invalidateQueries({ queryKey: userOrgKeys.absences.all });
     } catch (error) {
       toast(failureMessage(error, '부재 상태를 변경하지 못했습니다.'), 'error');
     } finally {
@@ -312,7 +313,7 @@ function useUserOrgWriteActions({
     try {
       await userAdminService.unlockUser(selectedItemId as string);
       toast('계정 잠금을 해제했습니다.', 'success');
-      await queryClient.invalidateQueries({ queryKey: ['admin-user-detail', selectedItemId] });
+      await queryClient.invalidateQueries({ queryKey: userOrgKeys.userDetail.detail(selectedItemId) });
     } catch (error) {
       toast(failureMessage(error, '계정 잠금을 해제하지 못했습니다.'), 'error');
     } finally {
@@ -465,7 +466,7 @@ function useUserOrgWriteActions({
         toast(res.message, 'success');
         refetchUsers();
         // [V2_156] 부서 이동은 편집 버전을 올린다 — 옮긴 사용자의 상세(와 버전)를 다시 읽어야 다음 수정이 409 로 막히지 않는다.
-        void queryClient.invalidateQueries({ queryKey: ['admin-user-detail'] });
+        void queryClient.invalidateQueries({ queryKey: userOrgKeys.userDetail.all });
         setIsBulkMoveModalOpen(false);
       } else {
         toast(res.message, 'error');
@@ -490,7 +491,7 @@ function useUserOrgWriteActions({
         markDeptChangesSaved();
         // [2026-11-25 V2_155] 계층 저장은 옮긴 부서의 버전을 올린다 — 조직도 조회를 다시 받아야 이어서 연 편집 창이 새 버전을 보낸다
         //   (router.refresh 는 서버 초기 자료만 바꾸고 이미 받은 조회 캐시는 그대로 둔다).
-        void queryClient.invalidateQueries({ queryKey: ['admin-depts'] });
+        void queryClient.invalidateQueries({ queryKey: userOrgKeys.depts.all });
         router.refresh();
       } else {
         toast(res.message, 'error');
@@ -826,12 +827,12 @@ export default function UserOrgHubClient({
         toast('사용자 정보가 수정되었습니다.', 'success');
       }
       refetchUsers();
-      queryClient.invalidateQueries({ queryKey: ['admin-user-detail'] });
+      queryClient.invalidateQueries({ queryKey: userOrgKeys.userDetail.all });
       setIsUserModalOpen(false);
     } catch (error) {
       if (extractFieldErrors(error)) throw error;
       // [V2_156] 동시 수정(409)이면 상세(와 편집 버전)를 다시 읽는다 — 창을 다시 열 때 캐시의 옛 버전을 또 보내지 않게 한다.
-      if (isConflictError(error)) void queryClient.invalidateQueries({ queryKey: ['admin-user-detail'] });
+      if (isConflictError(error)) void queryClient.invalidateQueries({ queryKey: userOrgKeys.userDetail.all });
       // 인가 실패(403 등)를 포함한 서버 메시지를 그대로 보여준다 — 일반 문구로 뭉개면
       // 사용자는 권한 문제인지 입력 문제인지 알 수 없다(H3 의미 보존, 감사 m-2).
       const message = failureMessage(error, '사용자 저장 중 오류가 발생했습니다.');

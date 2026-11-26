@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useReturnToList } from '@/lib/navigation/use-return-to-list';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { deptJobKeys } from '@/queries/dept-job-keys';
 import { useToast } from '@/app/components/ui/toast';
 import { ArrowLeft, ChevronRight, Home, Pencil, Trash2, User, Flag, Inbox } from 'lucide-react';
 
@@ -103,7 +104,7 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
             exitEdit();
             queryClient.invalidateQueries({ queryKey: ['dept-job', deptTaskSn] });
             // 업무 워크플로우 탭의 목록도 갱신 대상이다.
-            queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
+            queryClient.invalidateQueries({ queryKey: deptJobKeys.jobsRoot });
         },
         onError: (error) => {
             if (isConflictError(error)) {
@@ -120,7 +121,7 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
         mutationFn: () => deptJobUserService.deleteDeptJob(deptTaskSn),
         onSuccess: () => {
             toast.success('업무가 삭제되었습니다.');
-            queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
+            queryClient.invalidateQueries({ queryKey: deptJobKeys.jobsRoot });
             // 이 이동은 '작업 완료 후 복귀'다 — 미저장 가드가 막으면 화면이 삭제된 업무에 머문다.
             completedRef.current = true;
             router.push('/smart-toolkit/dept-job');
@@ -147,7 +148,7 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
             await deptJobUserService.reassignDeptJob(deptTaskSn, picId, reassignVersion);
             toast.success(`담당자를 ${picNm}님으로 바꿨습니다.`);
             await queryClient.invalidateQueries({ queryKey: ['dept-job', deptTaskSn] });
-            queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
+            queryClient.invalidateQueries({ queryKey: deptJobKeys.jobsRoot });
         } catch (error) {
             if (isConflictError(error)) {
                 toast.error(extractErrorMessage(error, '다른 사용자가 먼저 수정했습니다. 최신 내용을 확인한 뒤 담당자를 다시 골라 주세요.'));

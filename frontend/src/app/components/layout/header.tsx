@@ -38,6 +38,7 @@ import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useMenuAuthorizationScope } from '@/hooks/api/use-menu-authorization-scope';
+import { menuKeys } from '@/queries/menu-keys';
 import { menuService } from '@/services/business/user/MenuService';
 import { MenuInfo } from '@/types/foundation/menu';
 import { openableMenus } from '@/lib/navigation/openable-menus';
@@ -141,7 +142,7 @@ export function Header({
   // 기존에는 서버가 준 값을 그대로 쓰기만 해(const menus = resolvedMenus) 복구 수단이 전혀 없었다.
   // Sidebar 와 동일한 queryKey 를 사용하므로 캐시를 공유하며 중복 요청은 발생하지 않는다.
   const { data: assignedMenus = NO_MENUS } = useQuery({
-    queryKey: ['menus', 'head', ...menuAuthorization.scope],
+    queryKey: menuKeys.head(menuAuthorization.scope),
     queryFn: () => menuService.getHeadMenus(),
     initialData: menuAuthorization.acceptsInitialMenus && resolvedMenus.length > 0 ? resolvedMenus : undefined,
     enabled: menuAuthorization.authenticated,

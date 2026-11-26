@@ -19,6 +19,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { PagePagination } from '@/components/common/PagePagination';
 import { GroupMemberAddDialog } from './GroupMemberAddDialog';
 import { invalidateMembershipQueries } from './group-member-queries';
+import { authorizationKeys } from '@/queries/authorization-keys';
 
 const PAGE_SIZE = 20;
 
@@ -48,7 +49,7 @@ export function AuthorizationGroupMembers({ code, name, anonymous, protectedGran
   const { toast } = useToast();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
-  const scope = ['authorization', user?.id, user?.authorizationVersion];
+  const scope = authorizationKeys.scope(user?.id, user?.authorizationVersion);
   const [page, setPage] = useState(1);
   const [chosen, setChosen] = useState<ReadonlyMap<string, AuthorizationUserChoice>>(() => new Map());
   const [revokePending, setRevokePending] = useState(false);

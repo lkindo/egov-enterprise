@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
+import { userOrgKeys } from '@/queries/user-org-keys';
 import type { UserManage } from '@/types/foundation/user';
 import type { Department } from '@/services/foundation/system/DeptAdminService';
 import { DEPT_MEMBER_PREVIEW, formatDeptMembersLabel } from './UserOrgHubParts';
@@ -59,7 +60,7 @@ export function useUserOrgSelection({ activeTab, selectedItemId, users, departme
    */
   // [V2_156] isFetching — 409·부서 이동 뒤 상세를 다시 읽는 동안에는 수정 창을 열지 않는다(옛 편집 버전을 잡지 않게).
   const { data: selectedUserDetail, isFetching: isSelectedUserDetailFetching } = useQuery({
-    queryKey: ['admin-user-detail', selectedItemId],
+    queryKey: userOrgKeys.userDetail.detail(selectedItemId),
     queryFn: () => userAdminService.getUser(selectedItemId as string),
     enabled: Boolean(selectedUser) && activeTab !== 'DEPTS',
   });

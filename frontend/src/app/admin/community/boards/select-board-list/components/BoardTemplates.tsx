@@ -34,6 +34,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { knowledgeService } from '@/services/business/knowledge/knowledgeService';
+import { boardPostKeys } from '@/queries/board-post-keys';
 import { BoardPost } from '@/types/business/board';
 import { HighlightText } from './HighlightText';
 import { format } from 'date-fns';
@@ -456,7 +457,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
 const FAQItem = ({ item, bbsId, querySearchWrd }: { item: BoardPost; bbsId: string; querySearchWrd: string }) => {
   const [isOpen, setIsOpen] = useState(false);
   const answer = useQuery({
-    queryKey: ['boardArticle', bbsId, item.pstSn],
+    queryKey: boardPostKeys.article(bbsId, item.pstSn),
     queryFn: () => knowledgeService.getArticle(bbsId, item.pstSn),
     enabled: isOpen && !!bbsId,
   });

@@ -11,6 +11,7 @@ import { PagePagination } from '@/components/common/PagePagination';
 import { cn } from '@/lib/utils';
 import { describeChange, formatChangedAt, personLabel } from './AuthorizationHistory';
 import { PermissionScrollRegion } from './PermissionScrollRegion';
+import { authorizationKeys } from '@/queries/authorization-keys';
 
 const PAGE_SIZE = 20;
 /** [2026-10-05 한 화면 압축] 업무 표 행 토큰(카탈로그 §4) — 권한 작업대의 두 표와 같은 행 높이다(등재: WORK_TABLE_TOKEN_OWNERS). */
@@ -28,7 +29,7 @@ const CELL_PAD = 'px-[var(--work-cell-px)] py-[var(--work-cell-py)]';
 export function GroupChangeHistory({ code, fill = false }: { code: string; fill?: boolean }) {
   const { user } = useAuth();
   const canAudit = canPermission(user, 'AUTHRT_AUDIT');
-  const scope = ['authorization', user?.id, user?.authorizationVersion];
+  const scope = authorizationKeys.scope(user?.id, user?.authorizationVersion);
   const [page, setPage] = useState(1);
   const filters = { groupCode: code };
   const history = useQuery({

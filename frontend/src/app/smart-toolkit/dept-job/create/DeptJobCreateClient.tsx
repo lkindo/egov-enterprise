@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { deptJobKeys } from '@/queries/dept-job-keys';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Briefcase, ArrowLeft } from 'lucide-react';
@@ -38,7 +39,7 @@ export default function DeptJobCreateClient() {
       const newSn = await deptJobUserService.createDeptJob(values);
       completedRef.current = true;
       toast.success('업무가 등록되었습니다.');
-      await queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
+      await queryClient.invalidateQueries({ queryKey: deptJobKeys.jobsRoot });
       // 응답에 식별자가 없으면(구버전 서버 등) 목록으로 되돌린다.
       router.push(newSn ? `/smart-toolkit/dept-job/${newSn}` : '/smart-toolkit/dept-job');
     } catch (error) {

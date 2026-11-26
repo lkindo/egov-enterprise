@@ -38,6 +38,9 @@ import { matchesRoute, previousRoute } from '@/lib/navigation/previous-route';
 import { qnaCategoryLabel, qnaStatusLabel } from '@/lib/board/qna-status';
 import { boardMasterKeys } from '@/queries/board-master-query-options';
 import { commentKeys } from '@/queries/comment-query-options';
+import { boardPostKeys } from '@/queries/board-post-keys';
+import { communityKeys } from '@/queries/community-keys';
+import { knowledgeKeys } from '@/queries/knowledge-keys';
 import { PinnedBadge, PostingStatusBadge } from '../components/PostingStatusBadge';
 import { normalizeRouteKey } from '@/lib/navigation/url-state-values';
 
@@ -65,8 +68,14 @@ const BOARD_LIST_ORIGINS = [
  * 아니라 화면이 다시 조회한다. 지운 글의 상세는 다시 읽지 않는다(404).
  */
 function invalidateDeletedPostLists(queryClient: QueryClient, bbsId: string | null) {
-  const keys: QueryKey[] = [['boardList', bbsId], ['knowledge-articles'], ['hot-articles'], ['knowledge-stats'], commentKeys.adminLists()];
-  if (bbsId) keys.push(boardMasterKeys.operationPostsAll(bbsId), ['community-board', bbsId]);
+  const keys: QueryKey[] = [
+    boardPostKeys.lists(bbsId),
+    knowledgeKeys.articlesRoot,
+    knowledgeKeys.hotRoot,
+    knowledgeKeys.statsRoot,
+    commentKeys.adminLists(),
+  ];
+  if (bbsId) keys.push(boardMasterKeys.operationPostsAll(bbsId), [...communityKeys.boardPostsRoot, bbsId]);
   for (const queryKey of keys) void queryClient.invalidateQueries({ queryKey });
 }
 
@@ -146,7 +155,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   });
 
   const { data: article } = useQuery({
-    queryKey: ['article-detail', bbsId, pstSn],
+    queryKey: boardPostKeys.detail(bbsId, pstSn),
     // [2026-11-14] 조회수는 서버가 첫 화면을 그릴 때(BoardDetailServer) 한 번 센다. 이 쿼리는 해결 표시·추천 실패 뒤 무효화나
     //   창 복귀 때 다시 읽는 것이라 세지 않는다 — 종전에는 다시 읽을 때마다 조회수가 1씩 올랐다.
     queryFn: () => knowledgeService.getArticle(bbsId!, pstSn, { countView: false }),
@@ -168,7 +177,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
     isError: isAttachmentError,
     refetch: refetchAttachments,
   } = useQuery({
-    queryKey: ['article-files', atchFileSn],
+    queryKey: boardPostKeys.files(atchFileSn),
     queryFn: () => fileService.getFileList(atchFileSn!),
     enabled: !!atchFileSn,
   });
@@ -197,7 +206,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
     setActiveAction('solve');
     try {
       await boardUserService.markQuestionSolved(bbsId, pstSn);
-      await queryClient.invalidateQueries({ queryKey: ['article-detail', bbsId, pstSn] });
+      await queryClient.invalidateQueries({ queryKey: boardPostKeys.detail(bbsId, pstSn) });
       toast('질문을 해결됨으로 표시했습니다.', 'success');
     } catch (solveError) {
       toast(extractErrorMessage(solveError, '해결 표시 중 오류가 발생했습니다.'), 'error');
@@ -240,7 +249,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
       setLikeOverride({ base: article, ...before });
       // 이미 추천했거나(409) 읽을 수 없는 글이면(403·404) 서버가 사유를 말한다(DIP I6 ④).
       toast(extractErrorMessage(likeError, cancelling ? '추천 취소 중 오류가 발생했습니다.' : '추천 처리 중 오류가 발생했습니다.'), 'error');
-      void queryClient.invalidateQueries({ queryKey: ['article-detail', bbsId, pstSn] });
+      void queryClient.invalidateQueries({ queryKey: boardPostKeys.detail(bbsId, pstSn) });
     } finally {
       actionPendingRef.current = false;
       setActiveAction(null);
@@ -307,7 +316,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
         if (status === 403) {
           toast('이 게시글을 삭제할 권한이 없습니다. 권한이 바뀌었을 수 있습니다. 게시글은 그대로입니다.', 'error');
         } else if (status === 404) {
-          if (bbsId) void queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
+          if (bbsId) void queryClient.invalidateQueries({ queryKey: boardPostKeys.lists(bbsId) });
           toast('이미 삭제됐거나 찾을 수 없는 게시글입니다. 목록으로 돌아가 확인하세요.', 'error');
         } else {
           toast(res.message || '게시글을 삭제하지 못했습니다. 잠시 후 다시 시도하세요.', 'error');

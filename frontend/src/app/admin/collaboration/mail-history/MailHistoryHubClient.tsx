@@ -17,6 +17,7 @@ import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
+import { mailHistoryKeys } from '@/queries/mail-keys';
 
 const PAGE_SIZE = 20;
 
@@ -101,7 +102,7 @@ export default function MailHistoryHubClient() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ['mail-history', searchField, debouncedKeyword, resultFilter, page],
+    queryKey: mailHistoryKeys.list(searchField, debouncedKeyword, resultFilter, page),
     queryFn: () => mailService.getSentMails({
       page,
       size: PAGE_SIZE,
@@ -135,7 +136,7 @@ export default function MailHistoryHubClient() {
       toast('메일 이력이 삭제되었습니다.', 'success');
       setSelectedMailId((current) => (current === emlDsptchSn ? null : current));
       searchInputRef.current?.focus();
-      void queryClient.invalidateQueries({ queryKey: ['mail-history'] });
+      void queryClient.invalidateQueries({ queryKey: mailHistoryKeys.all });
     },
     onError: () => {
       toast('메일 삭제에 실패했습니다.', 'error');
@@ -151,11 +152,11 @@ export default function MailHistoryHubClient() {
     onSuccess: () => {
       toast('메일을 다시 보냈습니다. 결과는 잠시 뒤 이 목록에 반영됩니다.', 'success');
       pollUntilRef.current = Date.now() + PENDING_POLL_WINDOW_MS;
-      void queryClient.invalidateQueries({ queryKey: ['mail-history'] });
+      void queryClient.invalidateQueries({ queryKey: mailHistoryKeys.all });
     },
     onError: (error) => {
       toast(extractErrorMessage(error, '메일을 다시 보내지 못했습니다.'), 'error');
-      void queryClient.invalidateQueries({ queryKey: ['mail-history'] });
+      void queryClient.invalidateQueries({ queryKey: mailHistoryKeys.all });
     },
   });
 

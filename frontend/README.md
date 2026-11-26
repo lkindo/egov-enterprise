@@ -43,7 +43,7 @@ pnpm dlx shadcn@<고정버전> add <component>
 
 - `src/app`: App Router 기반 페이지 구성. 화면 공용 조합 부품은 `src/app/components/ui`(standard-*·picker·toast)
 - `src/components`: 기본 부품(`ui` — 서비스·라우터·인증 문맥을 모른다)과 업무 컴포넌트
-- `src/services`: API 통신 레이어, `src/queries`: TanStack Query 조회 옵션·키
+- `src/services`: API 통신 레이어, `src/queries`: TanStack Query 조회 옵션·키. 여러 파일이 함께 쓰는 쿼리 키는 `src/queries/<도메인>-keys.ts`(import 없는 계층형 팩토리)에 두고, 리터럴 키 이름공간은 한 파일만 쓴다 — 무효화 키가 조회 키와 맞는지와 함께 [쿼리 키 계약](src/__tests__/query-key-consistency.test.ts)이 본다
 - `src/types`: TypeScript 인터페이스 정의(`generated-*` 는 생성물)
 - `src/hooks`: 서비스·권한을 아는 공용 훅, `src/lib/hooks`: 화면·업무를 모르는 범용 훅(예외: 알림 훅)
 

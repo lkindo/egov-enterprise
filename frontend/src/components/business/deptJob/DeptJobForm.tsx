@@ -35,6 +35,7 @@ import { canPermission } from '@/lib/auth/permissions';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { useQuery } from '@tanstack/react-query';
+import { deptJobKeys } from '@/queries/dept-job-keys';
 import { cn } from '@/lib/utils';
 
 function attachmentFilesKey(files: File[]): string {
@@ -117,7 +118,7 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, 
     // 업무함 목록. 조회 권한(DEPT_BOX_READ)은 기본 배정상 일반 사용자도 가지므로 일반 사용자도 선택할 수 있다
     // (등록·수정·삭제만 DEPT_BOX_CREATE·UPDATE·DELETE 권한이 필요하다).
     const { data: boxData } = useQuery({
-        queryKey: ['dept-job-boxes'],
+        queryKey: deptJobKeys.boxesRoot,
         queryFn: () => deptJobUserService.getDeptJobBoxes({}),
         staleTime: 5 * 60 * 1000,
     });

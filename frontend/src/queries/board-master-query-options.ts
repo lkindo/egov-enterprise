@@ -5,6 +5,10 @@ import {
 } from '@/services/foundation/system/BoardAdminService';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import type { BoardPostingStatus } from '@/types/business/board';
+import { boardPostKeys } from './board-post-keys';
+/* reusable-base:community:start */
+import { communityKeys } from './community-keys';
+/* reusable-base:community:end */
 
 /**
  * 운영 화면 게시물 탭의 조회 조건(ADR-0040 §5.4). URL 밖 상태이고 `조회`·Enter 로 적용한 값만 담는다. 쪽은 1 기반이다(ADR-0036).
@@ -32,7 +36,9 @@ export function invalidateBoardCaches(queryClient: QueryClient, options: { remov
   if (options.removedBbsId) queryClient.removeQueries({ queryKey: boardMasterKeys.detail(options.removedBbsId) });
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: boardMasterKeys.all }),
-    queryClient.invalidateQueries({ queryKey: ['community-boards'] }),
+    /* reusable-base:community:start */
+    queryClient.invalidateQueries({ queryKey: communityKeys.boardsRoot }),
+    /* reusable-base:community:end */
   ]);
 }
 
@@ -106,7 +112,7 @@ export function invalidateBoardOperationPosts(queryClient: QueryClient, bbsId: s
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: boardMasterKeys.operationPostsAll(bbsId) }),
     queryClient.invalidateQueries({ queryKey: boardMasterKeys.changeHistories(bbsId) }),
-    queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] }),
-    queryClient.invalidateQueries({ queryKey: ['article-detail', bbsId] }),
+    queryClient.invalidateQueries({ queryKey: boardPostKeys.lists(bbsId) }),
+    queryClient.invalidateQueries({ queryKey: boardPostKeys.details(bbsId) }),
   ]);
 }

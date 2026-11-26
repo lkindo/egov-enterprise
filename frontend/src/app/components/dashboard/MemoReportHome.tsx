@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { homeKeys } from '@/queries/home-keys';
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
 import { memoReportService } from '@/services/business/memoreport/memoReportService';
@@ -21,7 +22,7 @@ const MAX_ITEMS = 2;
 export function MemoReportReceivedCard() {
   const { user } = useAuth();
   const received = useQuery({
-    queryKey: ['home', 'memo-reports-received', user?.id],
+    queryKey: [...homeKeys.all, 'memo-reports-received', user?.id] as const,
     queryFn: () => memoReportService.getReceivedReports({ page: 1, size: PAGE_LIMIT }),
     retry: false,
   });

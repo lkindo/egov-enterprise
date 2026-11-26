@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { deptJobKeys } from '@/queries/dept-job-keys';
 import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { z } from 'zod';
 import { useAppForm } from '@/hooks/useAppForm';
@@ -88,7 +89,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
   const form = useAppForm(deptJobBoxSchema, { defaultValues: EMPTY_FORM });
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['dept-job-boxes', 'manage', page],
+    queryKey: deptJobKeys.boxesManage(page),
     queryFn: () => deptJobUserService.getDeptJobBoxes({ page, size: PAGE_SIZE }),
     enabled: isOpen,
   });
@@ -114,8 +115,8 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
 
   const invalidate = () => {
     // 업무 등록 폼의 선택지(['dept-job-boxes'])와 워크허브 업무 목록의 업무함 이름(['work-jobs'])을 함께 갱신한다.
-    queryClient.invalidateQueries({ queryKey: ['dept-job-boxes'] });
-    queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
+    queryClient.invalidateQueries({ queryKey: deptJobKeys.boxesRoot });
+    queryClient.invalidateQueries({ queryKey: deptJobKeys.jobsRoot });
   };
 
   const startCreate = () => {

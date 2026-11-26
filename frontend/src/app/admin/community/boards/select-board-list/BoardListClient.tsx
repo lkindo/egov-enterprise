@@ -7,6 +7,7 @@ import { extractErrorMessage } from '@/app/actions/actionUtils';
 import Link from 'next/link';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { useBoardList, type BoardListParams } from '@/hooks/api/use-board-list';
+import { boardPostKeys } from '@/queries/board-post-keys';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Plus, Settings2, X, AlertTriangle } from "lucide-react";
@@ -278,7 +279,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
     startDate: queryStartDate || undefined,
     endDate: queryEndDate || undefined,
   };
- const queryKey = ['boardList', bbsId, listParams];
+ const queryKey = boardPostKeys.list(bbsId, listParams);
 
  // useQuery는 URL 파라미터가 변경될 때만 실행됨 (조회 버튼 클릭 시 router.replace 로 트리거)
  // 감사 P1-1: isError/error/refetch 를 구조분해해 조회 실패를 "게시글 0건"으로 위장하지 않는다.
@@ -320,7 +321,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
   },
   onSettled: () => {
   // 최종적으로 서버 데이터와 동기화
-  queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
+  queryClient.invalidateQueries({ queryKey: boardPostKeys.lists(bbsId) });
   }
  });
 

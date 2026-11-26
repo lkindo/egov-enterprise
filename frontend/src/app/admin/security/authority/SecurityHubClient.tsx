@@ -9,6 +9,7 @@ import { canPermission } from '@/lib/auth/permissions';
 import { notifyAuthorizationChanged } from '@/lib/auth/authorization-state';
 import { cn } from '@/lib/utils';
 import { authorizationAdminService } from '@/services/foundation/system/AuthorizationAdminService';
+import { authorizationKeys } from '@/queries/authorization-keys';
 import { useToast } from '@/app/components/ui/toast';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
@@ -50,7 +51,7 @@ export default function SecurityHubClient() {
   const canAudit = canPermission(user, 'AUTHRT_AUDIT');
   // 그룹 복제는 그룹 등록과 권한 설정을 함께 요구한다(서버가 집행한다).
   const canCopy = canCreate && canPermission(user, 'AUTHRT_GRANT');
-  const scope = ['authorization', user?.id, user?.authorizationVersion];
+  const scope = authorizationKeys.scope(user?.id, user?.authorizationVersion);
   // [2026-10-01] 사용자 상세에서 넘어온 대상(탭 세션 인계, URL 비노출). 탭·대상을 직접 고르기 전까지만 쓴다.
   const assignTarget = useTargetHandoff('authority-user');
   const historyTarget = useTargetHandoff('authority-history-user');
@@ -132,7 +133,7 @@ export default function SecurityHubClient() {
     if (!selectedGroup && !creating && firstGroup) setSelectedGroup(firstGroup.code);
   }
 
-  const refresh = async () => { await queryClient.invalidateQueries({ queryKey: ['authorization'] }); };
+  const refresh = async () => { await queryClient.invalidateQueries({ queryKey: authorizationKeys.all }); };
   /** 쓰기 응답 스냅샷을 조회 캐시에 바로 쓴다 — 다시 읽기 전에도 편집기가 최신 기준선으로 본다. */
   const adoptSnapshot = (saved: AuthorizationGroupSnapshot) => { queryClient.setQueryData([...scope, 'group', saved.code], saved); };
   useEffect(() => {

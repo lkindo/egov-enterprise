@@ -8,6 +8,7 @@ import {
   PRESENT,
   userAbsenceAdminService,
 } from '@/services/foundation/system/UserAbsenceAdminService';
+import { userOrgKeys } from '@/queries/user-org-keys';
 
 /**
  * 사용자·조직 허브의 부재 상태 조회(2026-10-18 허브 분해 때 UserOrgHubClient 에서 옮겼다 — 동작 변경 없음). 부재·복귀
@@ -31,7 +32,7 @@ export function useUserOrgAbsences(enabled: boolean) {
     error: absencesError,
     refetch: refetchAbsences,
   } = useQuery({
-    queryKey: ['admin-user-absences'],
+    queryKey: userOrgKeys.absences.all,
     queryFn: () => userAbsenceAdminService.getAbsences(),
     enabled,
   });

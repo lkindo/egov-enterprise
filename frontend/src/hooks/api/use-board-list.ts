@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { BoardPost } from '@/types/business/board';
+import { boardPostKeys } from '@/queries/board-post-keys';
 
 export interface BoardListParams {
   bbsId: string;
@@ -20,7 +21,7 @@ export interface BoardListParams {
 export const useBoardList = (params: BoardListParams, initialData?: { list: BoardPost[]; total: number; totalPage: number }) => {
   const { bbsId } = params;
   return useQuery({
-    queryKey: ['boardList', bbsId, params],
+    queryKey: boardPostKeys.list(bbsId, params),
     initialData,
     queryFn: async () => {
       const { page, size, searchWrd, searchCnd, orderBy, startDate, endDate, dateBasis } = params;

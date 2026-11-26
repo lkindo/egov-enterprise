@@ -22,6 +22,7 @@ import {
   type ComparedOperationCell,
   type ScreenCompareCell,
 } from './group-comparison-model';
+import { authorizationKeys } from '@/queries/authorization-keys';
 
 /** 비교에서 편집으로 옮길 곳 — 그 그룹의 편집기 탭과(화면별 권한이면) 메뉴 줄. */
 export type ComparisonEditTarget = { menuCode: string | null; tab: 'screens' | 'operations' };
@@ -70,7 +71,7 @@ export function GroupComparison({ selection, onSelectionChange, onEdit }: {
 }) {
   const { user } = useAuth();
   const id = useId();
-  const scope = ['authorization', user?.id, user?.authorizationVersion];
+  const scope = authorizationKeys.scope(user?.id, user?.authorizationVersion);
   const canRead = canPermission(user, 'AUTHRT_READ');
   const canEdit = canPermission(user, 'AUTHRT_GRANT');
   const catalog = useQuery({ queryKey: [...scope, 'catalog'], queryFn: () => authorizationAdminService.getCatalog(), enabled: canRead, retry: false });
