@@ -32,13 +32,24 @@ const PALETTE_GUIDE = "프론트엔드 UX 헌법 제15조 2항(시맨틱 컬러 
 // [2026-11-26 PR-3b 6번] 정의되지 않은 시맨틱 상태색. `text-warning-emphasis` 처럼 globals.css 의 @theme 에 `--color-<이름>` 이 없는
 //   이름은 Tailwind 가 클래스를 만들지 않아 색이 조용히 빠진다 — 두 파일 주석이 함정으로 적어 두었는데도 17개 파일 21곳이 그 클래스를
 //   썼다(경고 글자가 본문색으로 보였다). 허용 목록은 @theme 에서 읽으므로 토큰을 정의하면 그대로 풀린다.
+//   주석 안의 선언은 정의가 아니다(주석 처리해 퇴역시킨 토큰을 허용하지 않는다). 방향 테두리(border-t-…)와 숫자 단계(bg-warning-500)도
+//   같은 함정이고, 화면 클래스를 담는 .ts 색상표(board-maker-model.ts 등)도 본다.
 const THEME_COLOR_NAMES = new Set(
-  [...readFileSync(new URL("./src/app/globals.css", import.meta.url), "utf8").matchAll(/--color-([a-z0-9-]+)\s*:/g)].map((m) => m[1]),
+  [
+    ...readFileSync(new URL("./src/app/globals.css", import.meta.url), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .matchAll(/--color-([a-z0-9-]+)\s*:/g),
+  ].map((m) => m[1]),
 );
 const SEMANTIC_STATUS_REGEX = new RegExp(
-  `(?<![\\w-])(?:${PALETTE_UTILITIES})-((?:success|warning|info|destructive|primary)(?:-[a-z]+)*)(?:\\/[0-9]{1,3})?(?![\\w-])`,
+  `(?<![\\w-])(?:${PALETTE_UTILITIES}|border-[xytrblse])-((?:success|warning|info|destructive|primary)(?:-[a-z0-9]+)*)(?:\\/[0-9]{1,3})?(?![\\w-])`,
   "g",
 );
+/** 미정의 시맨틱 색 판정 범위 — 시험을 뺀 생산 소스 전부(.ts 색상표 포함). */
+const isProductionSource = (filename) => {
+  const path = filename.replaceAll("\\", "/");
+  return /\/src\//.test(path) && /\.(?:tsx|jsx|ts)$/.test(path) && !path.includes("/__tests__/") && !/\.test\./.test(path);
+};
 
 /** 팔레트 판정 범위 — 화면을 그리는 생산 소스. 시험과 `__tests__` 는 빼고, .ts 는 화면 문자열을 갖지 않아 종전 가드도 세지 않았다. */
 const isRenderedProductionSource = (filename) => {
@@ -65,8 +76,19 @@ const enforceDesignTokensRule = {
     /** 줄 번호 → 그 줄에서 시작하는 노드와 그 노드의 팔레트 원색(등장 순서·중복 그대로). */
     const paletteByLine = new Map();
 
+    const semanticScope = isProductionSource(context.filename);
     const collectPalette = (node, text) => {
-      if (!paletteScope || typeof text !== "string") return;
+      if (typeof text !== "string") return;
+      if (semanticScope) reportUndefinedSemantic(node, text);
+      if (!paletteScope) return;
+      const matches = text.match(PALETTE_REGEX);
+      if (!matches) return;
+      const line = node.loc.start.line;
+      if (!paletteByLine.has(line)) paletteByLine.set(line, []);
+      paletteByLine.get(line).push({ node, matches });
+    };
+
+    function reportUndefinedSemantic(node, text) {
       const undefinedNames = [...text.matchAll(SEMANTIC_STATUS_REGEX)]
         .map((match) => match[1])
         .filter((name) => !THEME_COLOR_NAMES.has(name));
@@ -76,12 +98,7 @@ const enforceDesignTokensRule = {
           message: `정의되지 않은 시맨틱 색 '${[...new Set(undefinedNames)].join(", ")}' — globals.css @theme 에 --color-<이름> 이 없어 Tailwind 가 클래스를 만들지 않는다(색이 조용히 빠진다). 정의된 토큰을 쓰거나, 경고·정보는 틴트(bg-warning/15·Badge warning-soft)와 text-foreground 로 말한다.`,
         });
       }
-      const matches = text.match(PALETTE_REGEX);
-      if (!matches) return;
-      const line = node.loc.start.line;
-      if (!paletteByLine.has(line)) paletteByLine.set(line, []);
-      paletteByLine.get(line).push({ node, matches });
-    };
+    }
 
     /** 동결 표지: 다음 줄 번호 → { comment, allowed(다중 집합), reason } */
     const frozenMarks = () => {

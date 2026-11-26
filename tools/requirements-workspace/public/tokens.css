@@ -3,7 +3,7 @@
  * 값의 정본은 아래 원본이다. 이 파일은 그 값을 그대로 옮긴다.
  *   - src/styles/themes/premium.css sha256:2c1b640c9ab9318d342af93ab00809c721bae9e464810d86dea0c376a058ec45
  *   - src/styles/themes/krds-aligned.css sha256:b9fb2b88e7ce8d26f49e95551cd3f3a352ca9a5e767c58b906beb8a45ac012f3
- *   - src/app/globals.css sha256:7e9a7381220bc250094b18078baa5cdb1723a9be8eadf2b326749960a082823d
+ *   - src/app/globals.css sha256:9cb361fe6fdd3dddb61a44d80b362cd795a4bedd41f9b59518e3f0f15ade1342
  * 쓰는 법: <html data-brand-theme="premium"> 또는 "krds-aligned", 다크는 class="dark".
  *   배경과 글자는 시맨틱 짝(예: var(--color-primary) 위에 var(--color-primary-foreground))으로만 쓰고 hex 를 새로 고르지 않는다.
  */

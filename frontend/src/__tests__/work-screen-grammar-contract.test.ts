@@ -229,7 +229,13 @@ describe('Control height ↔ density token contract', () => {
       select,
       'SelectTrigger 기본 높이가 다시 고정됐다 — compact 밀도가 선택 컨트롤에 닿지 않는다',
     ).not.toMatch(/data-\[size=(?:default|sm)\]:h-(?:\d|\[\d)/);
-    expect(readFileSync(join(UI_DIR, 'native-select.tsx'), 'utf8')).toContain('h-[var(--control-h)]');
+    // 래퍼는 아래 고정 높이 동결에서 빠지므로(CONTROL_DEFINITIONS) 여기서 본다 — 기본 클래스 끝에 h-9 를 더하면 병합 결과가 h-9 가 된다.
+    const nativeSelect = readFileSync(join(UI_DIR, 'native-select.tsx'), 'utf8');
+    expect(nativeSelect).toContain('h-[var(--control-h)]');
+    expect(
+      nativeSelect.split(/[\s"'`,()]+/).filter((token) => FIXED_HEIGHT.test((token.split(':').pop() ?? '').replace(/^!|!$/g, ''))),
+      'NativeSelect 기본 높이가 고정됐다 — compact 밀도가 선택 목록에 닿지 않는다',
+    ).toEqual([]);
   });
 
   it('attributes class strings inside cn(...), conditionals and templates to the owning control', () => {

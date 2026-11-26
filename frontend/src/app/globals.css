@@ -8,6 +8,11 @@
 @import "../styles/themes/premium.css";
 @import "../styles/themes/krds-aligned.css";
 
+/* [2026-11-26] dark: 는 색 토큰과 같은 축(<html class="dark">, ThemeProvider attribute="class")을 따른다. 정의가 없으면 Tailwind 4 의
+   dark: 는 OS 설정(prefers-color-scheme)을 따라, OS 다크·앱 라이트에서 dark:bg-destructive/60 같은 유틸리티가 라이트 토큰 위에 켜졌다
+   (흰 카드 위 반려 배지 2.90:1). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Preserve scroll-lock inheritance and let the browser compare numeric gap values. */
 @property --removed-body-scroll-bar-size {
   syntax: "<length>";

@@ -9,17 +9,24 @@ import { cn } from "@/lib/utils"
  * WCAG 2.4.7). 기본 모양은 Input 과 같은 결로 여기 한 곳에 두고, 화면은 폭·배치만 덧붙인다(같은 성질의 클래스는 호출부가 이긴다).
  * 경계는 3:1 을 보장한 border-input 이다(status-token-contrast 계약). 목록이 짧고 브라우저 기본 동작(모바일 선택기·키보드 탐색)이
  * 나은 자리에 쓴다 — 검색·여러 선택이 필요하면 Radix Select 를 쓴다.
+ *
+ * <p>초점: outline-hidden 은 평소엔 윤곽선을 지우고 고리(box-shadow)로 보이지만, 강제 색상 모드(Windows 고대비)에서는 고리가 사라지므로
+ * 투명 윤곽선을 시스템 색으로 남긴다(outline-none 은 그때도 지운다). 목록형(multiple·size>1)은 여러 행을 보여야 하므로 높이를 고정하지 않는다.
  */
 const NativeSelect = React.forwardRef<HTMLSelectElement, React.ComponentProps<"select">>(
- ({ className, ...props }, ref) => {
+ ({ className, multiple, size, ...props }, ref) => {
+ const listBox = multiple === true || (size ?? 1) > 1
  return (
  // eslint-disable-next-line no-restricted-syntax -- 디자인 시스템 래퍼 자신이다(화면은 이 부품을 쓴다).
  <select
  data-slot="native-select"
+ multiple={multiple}
+ size={size}
  className={cn(
- "h-[var(--control-h)] min-w-0 rounded-md border border-input bg-background px-3 text-[length:var(--font-size-body)] text-foreground shadow-xs transition-[color,box-shadow] outline-none disabled:cursor-not-allowed disabled:opacity-50",
+ "h-[var(--control-h)] min-w-0 rounded-md border border-input bg-background px-3 text-[length:var(--font-size-body)] text-foreground shadow-xs transition-[color,box-shadow] outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
  "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
  "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive-emphasis",
+ listBox && "h-auto py-1",
  className
  )}
  ref={ref}

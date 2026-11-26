@@ -151,6 +151,19 @@ describe('r6 accessibility regressions', () => {
     }
   });
 
+  it('기본 입력 컴포넌트는 강제 색상 모드에서도 초점 윤곽선을 남긴다(outline-none 이 아니라 outline-hidden)', () => {
+    // [2026-11-26] 이 부품들은 초점을 고리(box-shadow)로 보이는데, Windows 고대비 같은 강제 색상 모드에서는 box-shadow 가 사라진다.
+    //   outline-none 은 그때도 윤곽선을 지워 초점이 보이지 않고(WCAG 2.4.7), outline-hidden 은 투명 윤곽선을 시스템 색으로 남긴다.
+    for (const name of ['input', 'textarea', 'select', 'native-select', 'checkbox']) {
+      // 주석은 뺀다 — native-select.tsx 의 설명 주석이 두 낱말을 모두 말한다.
+      const code = source(`components/ui/${name}.tsx`).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+      // 변형 접두(focus-visible: 등)를 뗀 마지막 조각으로 본다.
+      const utilities = code.split(/[\s"'`]+/).map((token) => token.split(':').pop());
+      expect(utilities, `${name}: 강제 색상 모드에서 초점을 지우는 outline-none`).not.toContain('outline-none');
+      expect(utilities, `${name}: outline-hidden 이 없다`).toContain('outline-hidden');
+    }
+  });
+
   it('globals.css 의 초점 기본값은 특이성 0 의 base 층 규칙이라 컴포넌트의 초점 모양과 다투지 않는다', () => {
     const globals = source('app/globals.css').replace(/\/\*[\s\S]*?\*\//g, '');
     const base = globals.match(/@layer base \{([\s\S]*?)\n\}/)?.[1] ?? '';
