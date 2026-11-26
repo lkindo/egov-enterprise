@@ -1,7 +1,7 @@
 'use client';
 
-import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
-import { usePathname } from 'next/navigation';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'use-intl';
 import { I18nProvider } from './I18nProvider';
 import type { AppMessages } from './catalog';
@@ -17,6 +17,11 @@ interface BoundaryState {
 }
 
 const BoundaryContext = createContext<BoundaryState | null>(null);
+
+/** 하이드레이션 판별용 — 서버·하이드레이션 렌더는 false, 그 뒤 클라이언트 렌더는 true 다. 바뀌지 않으므로 구독할 것이 없다. */
+const subscribeNothing = () => () => {};
+const clientSnapshot = () => true;
+const serverSnapshot = () => false;
 
 /**
  * 사용자가 고른 로케일. 번역을 마치지 않은 화면은 한국어 카탈로그로 그리므로 `useLocale()` 은 그 화면의 로케일(한국어)을 준다 — 언어
@@ -89,12 +94,21 @@ export function LocaleBoundary({ preferred, messages, koreanMessages, children }
  * (임시 비밀번호 변경 관문) 쓴다. 안의 공용 부품은 처음부터 한국어 카탈로그로 그리고(서버 렌더 포함), 화면이 떠 있는 동안 경계가 문서
  * 언어·API 언어·안내를 한국어 화면으로 맞춘다. 그리는 쪽은 자기 최상위 요소에 `lang="ko"` 를 단다(문서 언어가 맞춰지기 전의 첫 화면).
  * 탭 제목은 경로의 메타데이터가 정한다(클라이언트가 덮어쓰면 Next 의 제목 갱신과 겨룬다) — 관문이 남는 /login 은 그 메타데이터가 관문
- * 제목을 낸다.
+ * 제목을 낸다. 서버가 그린 문서가 아니라 열려 있던 번역 화면 위에 나중에 나타나면(다른 탭의 로그인으로 사용자를 다시 읽음) 서버 렌더를
+ * 다시 받아 그 경로의 메타데이터가 이 화면을 반영하게 한다.
  */
 export function KoreanOnlyScreen({ children }: { children: ReactNode }) {
   const boundary = useContext(BoundaryContext);
   const claim = boundary?.claimKoreanOnly;
+  const router = useRouter();
+  const pathname = usePathname();
+  // 첫 렌더가 하이드레이션이면 서버가 이 화면을 그린 것이다(메타데이터도 이미 맞다). 클라이언트에서 새로 나타났을 때만 다시 받는다.
+  const [mountedOnClient] = useState(useSyncExternalStore(subscribeNothing, clientSnapshot, serverSnapshot));
+  const overTranslatedRoute = !!boundary && effectiveLocale(boundary.preferred, pathname) !== 'ko';
   useLayoutEffect(() => claim?.(), [claim]);
+  useEffect(() => {
+    if (mountedOnClient && overTranslatedRoute) router.refresh();
+  }, [mountedOnClient, overTranslatedRoute, router]);
   if (!boundary) return <>{children}</>;
   return <I18nProvider locale="ko" messages={boundary.koreanMessages}>{children}</I18nProvider>;
 }

@@ -94,7 +94,13 @@ const isSourceModule = (file: string | undefined): file is string => !!file && /
 function identifiersIn(node: ts.Node): string[] {
   const found: string[] = [];
   const visit = (child: ts.Node) => {
-    if (ts.isIdentifier(child) && !(ts.isPropertyAccessExpression(child.parent) && child.parent.name === child)) found.push(child.text);
+    // 값을 가리키는 식별자만 — 속성 접근의 이름(ns.label 의 label), 객체 리터럴의 키({ label: … }), 선언되는 이름은 빼고, 단축
+    //   속성({ label })은 변수를 가리키므로 넣는다.
+    const parent = child.parent;
+    const namePosition = (ts.isPropertyAccessExpression(parent) && parent.name === child)
+      || ((ts.isPropertyAssignment(parent) || ts.isMethodDeclaration(parent) || ts.isPropertyDeclaration(parent)
+        || ts.isVariableDeclaration(parent) || ts.isParameter(parent) || ts.isBindingElement(parent)) && parent.name === child);
+    if (ts.isIdentifier(child) && !namePosition) found.push(child.text);
     ts.forEachChild(child, visit);
   };
   visit(node);
