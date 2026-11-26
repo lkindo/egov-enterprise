@@ -32,17 +32,31 @@ const PALETTE_GUIDE = "프론트엔드 UX 헌법 제15조 2항(시맨틱 컬러 
 // [2026-11-26 PR-3b 6번] 정의되지 않은 시맨틱 상태색. `text-warning-emphasis` 처럼 globals.css 의 @theme 에 `--color-<이름>` 이 없는
 //   이름은 Tailwind 가 클래스를 만들지 않아 색이 조용히 빠진다 — 두 파일 주석이 함정으로 적어 두었는데도 17개 파일 21곳이 그 클래스를
 //   썼다(경고 글자가 본문색으로 보였다). 허용 목록은 @theme 에서 읽으므로 토큰을 정의하면 그대로 풀린다.
-//   주석 안의 선언은 정의가 아니다(주석 처리해 퇴역시킨 토큰을 허용하지 않는다). 방향 테두리(border-t-…)와 숫자 단계(bg-warning-500)도
-//   같은 함정이고, 화면 클래스를 담는 .ts 색상표(board-maker-model.ts 등)도 본다.
+//   유틸리티를 만드는 것은 @theme 블록의 선언뿐이다 — 주석 안(퇴역시킨 토큰)이나 :root 의 --color-* 는 정의가 아니다. 방향 테두리
+//   (border-t-…·논리 방향 border-bs-…)와 숫자 단계(bg-warning-500)도 같은 함정이고, 화면 클래스를 담는 .ts 색상표도 본다.
+/** CSS 에서 `@theme …{ … }` 블록 본문들(중첩 중괄호까지)만 이어 붙인다. */
+const themeBlocks = (css) => {
+  const bodies = [];
+  for (const match of css.matchAll(/@theme\b[^{]*\{/g)) {
+    let depth = 1;
+    let index = match.index + match[0].length;
+    const start = index;
+    for (; index < css.length && depth > 0; index += 1) {
+      if (css[index] === "{") depth += 1;
+      else if (css[index] === "}") depth -= 1;
+    }
+    bodies.push(css.slice(start, index - 1));
+  }
+  return bodies.join("\n");
+};
 const THEME_COLOR_NAMES = new Set(
   [
-    ...readFileSync(new URL("./src/app/globals.css", import.meta.url), "utf8")
-      .replace(/\/\*[\s\S]*?\*\//g, "")
+    ...themeBlocks(readFileSync(new URL("./src/app/globals.css", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, ""))
       .matchAll(/--color-([a-z0-9-]+)\s*:/g),
   ].map((m) => m[1]),
 );
 const SEMANTIC_STATUS_REGEX = new RegExp(
-  `(?<![\\w-])(?:${PALETTE_UTILITIES}|border-[xytrblse])-((?:success|warning|info|destructive|primary)(?:-[a-z0-9]+)*)(?:\\/[0-9]{1,3})?(?![\\w-])`,
+  `(?<![\\w-])(?:${PALETTE_UTILITIES}|border-(?:[xytrblse]|bs|be))-((?:success|warning|info|destructive|primary)(?:-[a-z0-9]+)*)(?:\\/[0-9]{1,3})?(?![\\w-])`,
   "g",
 );
 /** 미정의 시맨틱 색 판정 범위 — 시험을 뺀 생산 소스 전부(.ts 색상표 포함). */

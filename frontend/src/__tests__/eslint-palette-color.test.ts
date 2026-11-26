@@ -59,8 +59,8 @@ export function Probe({ ok }: { ok: boolean }) {
 `)).toEqual(['warning-emphasis', 'info-subtle']);
     // 방향 테두리·숫자 단계(Codex 검토 2026-11-26)와 화면 클래스를 담는 .ts 색상표.
     expect(await undefinedNames(`
-export const Probe = () => <p className="hover:border-t-warning-emphasis bg-warning-500">x</p>;
-`)).toEqual(['warning-emphasis, warning-500']);
+export const Probe = () => <p className="hover:border-t-warning-emphasis bg-warning-500 border-bs-info-subtle">x</p>;
+`)).toEqual(['warning-emphasis, warning-500, info-subtle']);
     expect((await lint(`export const TONE = { color: 'text-warning-emphasis' };\n`, 'src/app/__rule_probe__/probe-model.ts'))
       .filter((message) => message.startsWith('정의되지 않은 시맨틱 색'))).toHaveLength(1);
     expect(await undefinedNames(`

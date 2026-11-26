@@ -73,7 +73,7 @@
 - 간격·반경·z-index·motion은 기존 컴포넌트와 §5 밀도 토큰이 정한 값을 재사용한다. 임의 수치를 새 전역 규약처럼 문서화하지 않는다.
 - 브랜드 프로필과 light/dark/high-contrast 전략은 서로 독립된 축이다. 지원하는 모든 조합이 같은 시맨틱 토큰 이름과 접근성 하한을 제공해야 한다.
 - `dark:` 변형은 토큰과 같은 `<html class="dark">` 를 따른다(`globals.css` 의 `@custom-variant dark`). OS 설정을 따르게 두면 OS 다크·앱 라이트에서 `dark:` 유틸리티가 라이트 토큰 위에 켜진다.
-- 입력 부품의 초점은 `outline-hidden` + 고리다. `outline-none` 은 강제 색상 모드(Windows 고대비)에서 고리와 함께 초점 표시를 모두 지운다.
+- 입력 부품의 초점은 `focus-visible:outline-hidden` + 고리다. `outline-none` 은 강제 색상 모드(Windows 고대비)에서 고리와 함께 초점 표시를 모두 지우고, 접두 없는 `outline-hidden` 은 초점이 없는 칸에도 같은 윤곽선을 그린다.
 
 ---
 

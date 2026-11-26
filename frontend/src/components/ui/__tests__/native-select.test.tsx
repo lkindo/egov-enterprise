@@ -24,7 +24,7 @@ describe('NativeSelect', () => {
     expect(select).toBeDisabled();
     expect(select).toHaveAttribute('name', 'target');
     expect(select).toHaveAttribute('data-slot', 'native-select');
-    expect(select).toHaveClass('h-[var(--control-h)]', 'border-input', 'outline-hidden', 'w-36');
+    expect(select).toHaveClass('h-[var(--control-h)]', 'border-input', 'focus-visible:outline-hidden', 'w-36');
     expect(select).not.toHaveClass('h-auto');
   });
 
