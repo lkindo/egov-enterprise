@@ -4,11 +4,17 @@ import nuri.business.security.annotation.WithMockCustomUser;
 import nuri.business.service.cms.CmsPageAdminService;
 import nuri.business.service.cms.dto.CmsPageCreateRequest;
 import nuri.business.support.ControllerTestSupport;
+import nuri.foundation.core.annotation.SensitiveOperation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import java.lang.reflect.Method;
+import java.util.Arrays;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -129,5 +135,30 @@ class CmsPageAdminApiControllerTest extends ControllerTestSupport {
                         .content("{\"version\":2,\"caseReference\":\"INC-2026.001\"}"))
                 .andExpect(status().isOk());
         verify(cmsPageAdminService).purgeRevision(eq(3L), eq(7L), any());
+    }
+
+    @Test
+    @DisplayName("게시·게시 중지·초안 삭제·페이지 파기·게시본 파기는 민감 작업 감사 표지가 있고, 비민감 상태 변경은 없다")
+    void sensitiveMutationsCarrySensitiveOperationAnnotations() {
+        for (String[] handler : new String[][] {
+                {"publish", "콘텐츠 페이지 게시"},
+                {"unpublish", "콘텐츠 페이지 게시 중지"},
+                {"deleteDraftPage", "콘텐츠 초안 페이지 삭제"},
+                {"purgePage", "콘텐츠 페이지 파기"},
+                {"purgeRevision", "콘텐츠 게시본 파기"}
+        }) {
+            Method method = Arrays.stream(CmsPageAdminApiController.class.getDeclaredMethods())
+                    .filter(candidate -> candidate.getName().equals(handler[0]))
+                    .findFirst().orElseThrow();
+            SensitiveOperation marker = method.getAnnotation(SensitiveOperation.class);
+            assertThat(marker).as(handler[0]).isNotNull();
+            assertThat(marker.value()).isEqualTo(handler[1]);
+        }
+        for (String nonSensitive : new String[] {"createPage", "saveDraft", "archive", "unarchive"}) {
+            Method method = Arrays.stream(CmsPageAdminApiController.class.getDeclaredMethods())
+                    .filter(candidate -> candidate.getName().equals(nonSensitive))
+                    .findFirst().orElseThrow();
+            assertThat(method.getAnnotation(SensitiveOperation.class)).as(nonSensitive).isNull();
+        }
     }
 }

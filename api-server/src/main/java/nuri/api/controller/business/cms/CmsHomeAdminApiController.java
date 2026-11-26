@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import nuri.business.service.cms.CmsHomeService;
 import nuri.business.service.cms.dto.CmsHomeDto;
 import nuri.business.service.cms.dto.CmsHomeUpdateRequest;
+import nuri.foundation.core.annotation.SensitiveOperation;
 import nuri.foundation.core.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,6 +37,7 @@ public class CmsHomeAdminApiController {
 
     @Operation(summary = "업무 홈 소개 지정", description = "게시 중인 페이지를 지정하거나 비워서 해제합니다. 읽은 설정 버전과 다르면 409 입니다.")
     @PutMapping
+    @SensitiveOperation("업무 홈 소개 지정")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.cms.CmsHomeAdminApiController#updateHome')")
     public ResponseEntity<ApiResponse<CmsHomeDto>> updateHome(@Valid @RequestBody CmsHomeUpdateRequest request) {
         return ResponseEntity.ok(ApiResponse.success(cmsHomeService.updateHome(request)));

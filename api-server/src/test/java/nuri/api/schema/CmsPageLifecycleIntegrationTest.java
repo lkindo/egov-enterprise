@@ -1,8 +1,10 @@
 package nuri.api.schema;
 
 import nuri.business.core.harness.QueryCountInspector;
+import nuri.business.service.cms.CmsHomeService;
 import nuri.business.service.cms.CmsPageAdminService;
 import nuri.business.service.cms.CmsPageReadService;
+import nuri.business.service.cms.dto.CmsHomeUpdateRequest;
 import nuri.business.service.cms.dto.CmsPageCreateRequest;
 import nuri.business.service.cms.dto.CmsPageDetailDto;
 import nuri.business.service.cms.dto.CmsPageDraftRequest;
@@ -12,6 +14,7 @@ import nuri.business.service.cms.dto.CmsPageStateRequest;
 import nuri.business.service.cms.dto.CmsPageSummaryDto;
 import nuri.business.service.cms.dto.CmsRevisionPurgeRequest;
 import nuri.business.service.cms.dto.CmsRevisionSummaryDto;
+import nuri.foundation.core.audit.SensitiveAuditPort;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.security.service.CustomUserDetails;
@@ -26,11 +29,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +63,8 @@ class CmsPageLifecycleIntegrationTest {
 
     @Autowired private CmsPageAdminService adminService;
     @Autowired private CmsPageReadService readService;
+    @Autowired private CmsHomeService homeService;
+    @Autowired private SensitiveAuditPort sensitiveAudit;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PlatformTransactionManager transactionManager;
     @Autowired private javax.sql.DataSource dataSource;
@@ -68,6 +76,7 @@ class CmsPageLifecycleIntegrationTest {
     private final List<Long> attachments = new ArrayList<>();
     /** 시험이 만든 파일 상세 id. 파기·초안 정리가 파일을 지우면 이 id 로 실물 삭제 작업(FILE_DELETE)이 쌓인다. */
     private final List<String> fileDetails = new ArrayList<>();
+    private final List<String> auditRequestIds = new ArrayList<>();
 
     @BeforeEach
     void signIn() {
@@ -81,6 +90,7 @@ class CmsPageLifecycleIntegrationTest {
 
     @AfterEach
     void cleanUp() {
+        RequestContextHolder.resetRequestAttributes();
         SecurityContextHolder.clearContext();
         new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
             VendorTestSql.permitLedgerDeletion(jdbc, "nuri.cms_purge");
@@ -106,6 +116,9 @@ class CmsPageLifecycleIntegrationTest {
         AuditLedgerFixtures.delete(jdbc,
                 "DELETE FROM tb_sys_adt_log WHERE job_nm IN ('CMS_PAGE_DELETE', 'CMS_PAGE_PURGE') AND adt_cn LIKE ?",
                 "%" + suffix + "%");
+        for (String requestId : auditRequestIds) {
+            AuditLedgerFixtures.delete(jdbc, "DELETE FROM tb_sys_adt_log WHERE dmnd_idntfr = ?", requestId);
+        }
     }
 
     private static Map<String, Object> document(Map<String, Object> cell) {
@@ -433,5 +446,60 @@ class CmsPageLifecycleIntegrationTest {
             assertThat(jdbc.update("DELETE FROM tb_cms_conts_rvsn WHERE conts_sn = ?", page)).isEqualTo(1);
             VendorTestSql.revokeLedgerPermit(jdbc, "nuri.cms_purge");
         });
+    }
+
+    @Test
+    @DisplayName("@SensitiveOperation 요청 안에서 홈 해제와 함께 게시 중지·파기해도 단일 COMMITTED 감사로 503 없이 완료된다")
+    void unpublishAndPurgeWithHomeReleaseStaySingleCommittedAuditUnderSensitiveRequest() {
+        long page = createPage("home-audit", document(text("홈 소개 본문")));
+        publish(page);
+        var homeBefore = homeService.getHome();
+        homeService.updateHome(CmsHomeUpdateRequest.builder().contsSn(page).version(homeBefore.version()).build());
+
+        String unpublishRequestId = bindSensitiveRequest("CMS_PAGE_UNPUBLISH", "콘텐츠 페이지 게시 중지");
+        try {
+            CmsPageDetailDto afterUnpublish = adminService.unpublish(page,
+                    CmsPageStateRequest.builder().version(adminService.getPage(page).version()).build());
+            assertThat(afterUnpublish.home()).isFalse();
+        } finally {
+            RequestContextHolder.resetRequestAttributes();
+        }
+        assertThat(count("SELECT count(*) FROM tb_sys_adt_log WHERE dmnd_idntfr = ? AND prcs_stts_nm = 'ATTEMPTED'",
+                unpublishRequestId)).isEqualTo(1);
+        assertThat(count("SELECT count(*) FROM tb_sys_adt_log WHERE dmnd_idntfr = ? AND prcs_stts_nm = 'COMMITTED'"
+                        + " AND job_nm = 'CMS_PAGE_UNPUBLISH' AND adt_cn LIKE ?",
+                unpublishRequestId, "%\"targetId\":\"" + page + ":home-released\"%")).isEqualTo(1);
+
+        // 비정상 상태로 남은 홈 포인터를 강제로 재현한 뒤 파기에서도 단일 COMMITTED 감사만 남는지 본다.
+        jdbc.update("UPDATE tb_cms_site_stng SET conts_sn = ? WHERE stng_cd = 'HOME_INTRO'", page);
+        String purgeRequestId = bindSensitiveRequest("CMS_PAGE_PURGE", "콘텐츠 페이지 파기");
+        try {
+            adminService.purgePage(page, CmsPagePurgeRequest.builder()
+                    .version(adminService.getPage(page).version())
+                    .contsPathNm("home-audit-" + suffix)
+                    .caseReference("INC-" + suffix)
+                    .build());
+        } finally {
+            RequestContextHolder.resetRequestAttributes();
+        }
+        assertThat(count("SELECT count(*) FROM tb_sys_adt_log WHERE dmnd_idntfr = ? AND prcs_stts_nm = 'ATTEMPTED'",
+                purgeRequestId)).isEqualTo(1);
+        assertThat(count("SELECT count(*) FROM tb_sys_adt_log WHERE dmnd_idntfr = ? AND prcs_stts_nm = 'COMMITTED'"
+                        + " AND job_nm = 'CMS_PAGE_PURGE' AND adt_cn LIKE ? AND adt_cn LIKE ?",
+                purgeRequestId,
+                "%\"targetId\":\"" + page + ":home-audit-" + suffix + ":home-released\"%",
+                "%reference=INC-" + suffix + "%")).isEqualTo(1);
+    }
+
+    private String bindSensitiveRequest(String operation, String description) {
+        String requestId = "cms-" + UUID.randomUUID();
+        auditRequestIds.add(requestId);
+        var context = new SensitiveAuditPort.Context(requestId, operation, login, "CMSE" + suffix, "127.0.0.1",
+                description, null);
+        sensitiveAudit.attempted(context);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setAttribute(SensitiveAuditPort.REQUEST_ATTRIBUTE, context);
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+        return requestId;
     }
 }
