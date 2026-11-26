@@ -1234,17 +1234,8 @@ export function collectKeyUses(files: readonly SourceFileEntry[]): KeyCensus {
     if (ts.isConditionalExpression(target)) {
       return derivedValue(target.whenTrue, derived, depth + 1) || derivedValue(target.whenFalse, derived, depth + 1);
     }
-    // `custom ?? defaults`·`a || b`·`a && b` 는 어느 쪽이든 값이 될 수 있다.
-    if (ts.isBinaryExpression(target) && [ts.SyntaxKind.QuestionQuestionToken, ts.SyntaxKind.BarBarToken,
-      ts.SyntaxKind.AmpersandAmpersandToken].includes(target.operatorToken.kind)) {
-      return derivedValue(target.left, derived, depth + 1) || derivedValue(target.right, derived, depth + 1);
-    }
-    // `useMemo(() => (enabled ? keys : []), …)` 는 콜백이 돌려주는 값이다.
-    if (ts.isCallExpression(target) && resolver.callName(target) === 'useMemo' && target.arguments[0]) {
-      const callback = unwrap(target.arguments[0]);
-      return (ts.isArrowFunction(callback) || ts.isFunctionExpression(callback))
-        && returnedExpressions(callback).some((value) => derivedValue(value, derived, depth + 1));
-    }
+    // `??`·`||`·`&&`·`useMemo` 로 고르거나 바꾼 값은 목록 값으로 보지 않는다 — 조건에만 쓴 목록, 원소 하나만 고른 것, 변환한
+    // 키까지 원소로 보면 정상 코드가 붉어진다(Codex 10회차). 그런 목록의 오타는 남은 경계다.
     if (ts.isPropertyAccessExpression(target) || ts.isElementAccessExpression(target) || ts.isCallExpression(target)) {
       return derivedValue(target.expression, derived, depth + 1);
     }
@@ -1739,19 +1730,15 @@ describe('쿼리 키 일관성', () => {
       {
         // 9회차 — 8회차 반영이 부모보다 나빠진 판정.
         path: 'qk-self/h.tsx',
-        text: "import { useMemo } from 'react'; import { useQuery, type QueryKey, type QueryClient } from '@tanstack/react-query';\n"
-          + 'declare const qc: QueryClient; declare const queryFn: () => Promise<number>; declare const range: string; declare const enabled: boolean; declare const custom: QueryKey[] | undefined;\n'
+        text: "import { useQuery, type QueryKey, type QueryClient } from '@tanstack/react-query';\n"
+          + 'declare const qc: QueryClient; declare const queryFn: () => Promise<number>; declare const range: string;\n'
           + "const drafts: QueryKey[] = [['h-draft', 3]]; qc.setQueryData(['h-draft', 3], 'saved');\n"
           + 'for (const key of drafts) { if (qc.getQueryState(key)) qc.removeQueries({ queryKey: key }); }\n' // 4: 섞여도 정확 읽기는 저장의 짝 — 맞음
           + "const mixed: QueryKey[] = [['h-stats', 1], ['h-surveys']]; useQuery({ queryKey: ['h-stats', 1], queryFn }); useQuery({ queryKey: ['h-surveys', 'list'], queryFn });\n"
           + 'function invalidateH(key: QueryKey, exact: boolean) { return qc.invalidateQueries({ queryKey: key, exact }); }\n'
           + "for (const key of mixed) { if (key[0] === 'h-stats') void invalidateH(key, true); else void invalidateH(key, false); }\n" // 7: 같은 함수의 두 호출 — 맞음
-          + "const memoKeys: QueryKey[] = [['h-board-lsit']]; useQuery({ queryKey: ['h-board-list'], queryFn });\n" // 8: 고아
-          + 'export function MemoH() { const keys = useMemo(() => (enabled ? memoKeys : []), []); for (const key of keys) void qc.invalidateQueries({ queryKey: key }); return null; }\n'
-          + "const defaultsH: QueryKey[] = [['h-survey-lsit']]; useQuery({ queryKey: ['h-survey-list'], queryFn });\n" // 10: 고아
-          + 'const keysH = custom ?? defaultsH; for (const key of keysH) void qc.invalidateQueries({ queryKey: key });\n'
           + "interface HPanel { queryKey: readonly unknown[] } const hPanel: HPanel = { queryKey: ['h-series'] };\n"
-          + 'useQuery({ queryKey: [...hPanel.queryKey, range], queryFn }); qc.getQueryData(hPanel.queryKey);\n', // 13: 기간이 빠진 정확 읽기 → 고아
+          + 'useQuery({ queryKey: [...hPanel.queryKey, range], queryFn }); qc.getQueryData(hPanel.queryKey);\n', // 9: 기간이 빠진 정확 읽기 → 고아
       },
     ]);
     expect(orphansOf(result, 'qk-self/a.tsx'), orphansOf(result, 'qk-self/a.tsx').join(' | ')).toEqual([
@@ -1827,9 +1814,7 @@ describe('쿼리 키 일관성', () => {
       '25:["g-mail","completed"]',
     ]);
     expect(orphansOf(result, 'qk-self/h.tsx'), orphansOf(result, 'qk-self/h.tsx').join(' | ')).toEqual([
-      '8:["h-board-lsit"]',
-      '10:["h-survey-lsit"]',
-      '13:["h-series"]',
+      '9:["h-series"]',
     ]);
     expect(markerProblems(result)).toEqual([
       'qk-self/d.tsx:37 사유가 없다',
