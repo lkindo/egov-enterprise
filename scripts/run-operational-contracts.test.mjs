@@ -8,26 +8,34 @@ import { OPERATIONAL_CONTRACT_CATALOGS } from './operational-contracts-runner.mj
 import {
   discoverOperationalContractFiles,
   isComposerOperationalContract,
+  isRequirementsOperationalContract,
   partitionOperationalContracts,
 } from './run-operational-contracts.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-function partitionErrors({ all, core, composer }) {
+function partitionErrors({ all, core, composer, requirements }) {
   const errors = [];
-  const coreSet = new Set(core);
-  const composerSet = new Set(composer);
-  if (core.length === 0) errors.push('core partition must not be empty');
-  if (composer.length === 0) errors.push('composer partition must not be empty');
-  if (coreSet.size !== core.length) errors.push('core partition contains duplicate files');
-  if (composerSet.size !== composer.length) errors.push('composer partition contains duplicate files');
-  for (const file of core) {
-    if (composerSet.has(file)) errors.push(`overlap between core and composer: ${file}`);
+  const groups = { core, composer, requirements };
+  const sets = Object.fromEntries(Object.entries(groups).map(([name, items]) => [name, new Set(items)]));
+  for (const [name, items] of Object.entries(groups)) {
+    if (items.length === 0) errors.push(`${name} partition must not be empty`);
+    if (sets[name].size !== items.length) errors.push(`${name} partition contains duplicate files`);
   }
-  const union = [...core, ...composer].sort();
+  const names = Object.keys(groups);
+  for (let i = 0; i < names.length; i += 1) {
+    for (let j = i + 1; j < names.length; j += 1) {
+      const left = names[i];
+      const right = names[j];
+      for (const file of groups[left]) {
+        if (sets[right].has(file)) errors.push(`overlap between ${left} and ${right}: ${file}`);
+      }
+    }
+  }
+  const union = [...core, ...composer, ...requirements].sort();
   const sortedAll = [...all].sort();
   if (JSON.stringify(union) !== JSON.stringify(sortedAll)) {
-    const missing = sortedAll.filter(file => !coreSet.has(file) && !composerSet.has(file));
+    const missing = sortedAll.filter(file => !sets.core.has(file) && !sets.composer.has(file) && !sets.requirements.has(file));
     const extra = union.filter(file => !sortedAll.includes(file));
     if (missing.length) errors.push(`missing from partition: ${missing.join(', ')}`);
     if (extra.length) errors.push(`extra in partition: ${extra.join(', ')}`);
@@ -35,15 +43,20 @@ function partitionErrors({ all, core, composer }) {
   return errors;
 }
 
-test('core and composer partitions form an exact disjoint cover of all operational contracts', () => {
+test('core, composer, and requirements partitions form an exact disjoint cover of all operational contracts', () => {
   const partitioned = partitionOperationalContracts(ROOT);
   assert.deepEqual(partitionErrors(partitioned), []);
 
-  // partitionErrors 계약이 dropped/overlap 입력을 즉시 red 로 거부하는지 확인한다(실제 분류 정확도는 아래 대표 그룹 단언이 검증).
+  // partitionErrors 계약이 dropped/empty/overlap 입력을 즉시 red 로 거부하는지 확인한다(실제 분류 정확도는 아래 대표 그룹 단언이 검증).
   const droppedCore = { ...partitioned, core: partitioned.core.slice(1) };
   assert.ok(partitionErrors(droppedCore).some(msg => msg.includes('missing from partition')));
-  const overlap = { ...partitioned, core: [...partitioned.core, partitioned.composer[0]] };
-  assert.ok(partitionErrors(overlap).some(msg => msg.includes('overlap between core and composer')));
+  const droppedReq = { ...partitioned, requirements: partitioned.requirements.slice(1) };
+  assert.ok(partitionErrors(droppedReq).some(msg => msg.includes('missing from partition')));
+  assert.ok(partitionErrors({ ...partitioned, requirements: [] }).some(msg => msg.includes('requirements partition must not be empty')));
+  for (const [left, right] of [['core', 'composer'], ['core', 'requirements'], ['composer', 'requirements']]) {
+    const overlap = { ...partitioned, [left]: [...partitioned[left], partitioned[right][0]] };
+    assert.ok(partitionErrors(overlap).some(msg => msg.includes(`overlap between ${left} and ${right}`)));
+  }
 });
 
 test('catalog roots match GATESET-NODE-OPERATIONAL-CONTRACTS in config/governance/gates.json', () => {
@@ -61,10 +74,11 @@ test('catalog roots match GATESET-NODE-OPERATIONAL-CONTRACTS in config/governanc
   );
 });
 
-test('representative security, CI, API, migration and composer tests land in the expected group', () => {
-  const { core, composer } = partitionOperationalContracts(ROOT);
+test('representative security, CI, API, migration, composer and requirements tests land in the expected group', () => {
+  const { core, composer, requirements } = partitionOperationalContracts(ROOT);
   const coreSet = new Set(core);
   const composerSet = new Set(composer);
+  const requirementsSet = new Set(requirements);
 
   for (const expectedCore of [
     'scripts/required-checks-contract.test.mjs',
@@ -77,10 +91,10 @@ test('representative security, CI, API, migration and composer tests land in the
     'scripts/retired-pack-vocabulary.test.mjs',
     '.agent/scripts/db-bridge.test.js',
     'tools/migration-workspace/engine.test.mjs',
-    'tools/requirements-workspace/server.test.mjs',
   ]) {
     assert.ok(coreSet.has(expectedCore), `expected in core: ${expectedCore}`);
     assert.equal(isComposerOperationalContract(expectedCore), false, expectedCore);
+    assert.equal(isRequirementsOperationalContract(expectedCore), false, expectedCore);
   }
 
   for (const expectedComposer of [
@@ -92,17 +106,36 @@ test('representative security, CI, API, migration and composer tests land in the
   ]) {
     assert.ok(composerSet.has(expectedComposer), `expected in composer: ${expectedComposer}`);
     assert.equal(isComposerOperationalContract(expectedComposer), true, expectedComposer);
+    assert.equal(isRequirementsOperationalContract(expectedComposer), false, expectedComposer);
+  }
+
+  for (const expectedRequirements of [
+    'tools/requirements-workspace/server.test.mjs',
+    'tools/requirements-workspace/browser.test.mjs',
+    'tools/requirements-workspace/studio-browser.test.mjs',
+    'tools/requirements-workspace/engine.test.mjs',
+  ]) {
+    assert.ok(requirementsSet.has(expectedRequirements), `expected in requirements: ${expectedRequirements}`);
+    assert.equal(isRequirementsOperationalContract(expectedRequirements), true, expectedRequirements);
+    assert.equal(isComposerOperationalContract(expectedRequirements), false, expectedRequirements);
   }
 });
 
 test('CLI --list prints the selected group and invalid --group fails closed with exit 2', () => {
-  const { core } = partitionOperationalContracts(ROOT);
+  const { core, requirements } = partitionOperationalContracts(ROOT);
   const listed = spawnSync(process.execPath, ['scripts/run-operational-contracts.mjs', '--group', 'core', '--list'], {
     cwd: ROOT,
     encoding: 'utf8',
   });
   assert.equal(listed.status, 0, listed.stderr);
   assert.deepEqual(listed.stdout.trim().split(/\r?\n/), core);
+
+  const listedReq = spawnSync(process.execPath, ['scripts/run-operational-contracts.mjs', '--group', 'requirements', '--list'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  });
+  assert.equal(listedReq.status, 0, listedReq.stderr);
+  assert.deepEqual(listedReq.stdout.trim().split(/\r?\n/), requirements);
 
   const invalid = spawnSync(process.execPath, ['scripts/run-operational-contracts.mjs', '--group', 'unknown'], {
     cwd: ROOT,

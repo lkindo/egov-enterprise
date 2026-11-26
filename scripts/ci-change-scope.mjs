@@ -388,6 +388,23 @@ const COMPOSER_CONTRACTS_RELEVANT = [
   /^scripts\/(?:project-composer|reusable-|composer-|generate-reusable-base-|verify-reusable-|verify-project-composer|slot-registry|domain-deletion-|domain-scaffold-|frontend-reachability-census|frontend-module-graph|composition-profiles|pack-tagged-registry|retired-pack-vocabulary|run-operational-contracts|operational-contracts-runner)/,
 ];
 
+const REQUIREMENTS_CONTRACTS_RELEVANT = [
+  /^tools\/requirements-workspace\//,
+  /^scripts\/(?:export-deliverables|composer-modules|composition-profiles|project-composer|reusable-|screen-registry-model|slot-registry|run-operational-contracts|operational-contracts-runner|ci-change-scope|e2e-shard-plan|frontend-module-|read-regular-file|source-lexing|ui-route-capabilities-contract|vendor-evidence-inputs)/,
+  /^frontend\/scripts\/prototype-token-kit\.mjs$/,
+  /^frontend\/src\/styles\/themes\//,
+  /^frontend\/src\/app\/globals\.css$/,
+  /^frontend\/src\/types\/generated-screen-registry\.ts$/,
+  /^frontend\/(?:package\.json|pnpm-lock\.yaml)$/,
+  /^api-docs\.json$/,
+  /^db_columns\.json$/,
+  /^config\/modules\//,
+  /^config\/project-composer-menus\.json$/,
+  /^config\/ui-(?:route-capabilities|quality-scenarios|url-state-approval)\.json$/,
+  /^config\/governance\/(?:gates|permission-catalog|permission-bundles|authorization-policies|zdm-waivers|adoption-review|migration-adoption-review)\.json$/,
+  /^config\/security\/(?:secure-coding-weaknesses|false-positive-review)\.json$/,
+];
+
 /**
  * 생성기·도구 전용 경로(11단계 C11, CI 2차-b — 설계 13장 '투영 무영향 경로 목록은 계약으로 고정'). 재사용 생성기·생성기
  * 화면·기능 선언만 바꾼 변경은 종전에 미분류 경로라 전 파이프라인을 돌았다(병합 PR 41개 중 16개). 이 표의 경로는 알려진
@@ -623,6 +640,8 @@ export function classifyChangedFiles(changedFiles,
   const reusableVendor = reusableVendorSelection(files, { noRange, docsOnly, event, readSource, readBaseSource, plan: vendorPlan });
   const composerContracts = full || pitFull || event !== 'pull_request'
     || files.some(file => matchesAny(file, COMPOSER_CONTRACTS_RELEVANT));
+  const requirementsContracts = full || pitFull || event !== 'pull_request'
+    || files.some(file => matchesAny(file, REQUIREMENTS_CONTRACTS_RELEVANT));
 
   return {
     files,
@@ -639,6 +658,7 @@ export function classifyChangedFiles(changedFiles,
     mutation,
     mutationMigrationTool,
     composerContracts,
+    requirementsContracts,
     // PR 에서 고른 시작 구성이 모두 PR 제외(ci.pr: null)면 생성할 항목이 없다 — 빈 matrix 를 넘기면 잡이 시작도 못 하고 실패한다.
     reusable: reusableProfiles.length > 0 && matrix.include.length > 0,
     reusableCustom,
@@ -688,6 +708,7 @@ export function githubOutputs(result) {
     mutation: bool(result.mutation),
     mutation_migration_tool: bool(result.mutationMigrationTool),
     composer_contracts: bool(result.composerContracts),
+    requirements_contracts: bool(result.requirementsContracts),
     reusable: bool(result.reusable),
     reusable_custom: bool(result.reusableCustom),
     reusable_matrix: JSON.stringify(result.reusableMatrix),

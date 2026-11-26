@@ -928,3 +928,60 @@ test('every composer-group operational contract and its transitive local imports
   );
   assert.deepEqual(narrowed, ['scripts/reusable-source-gates.mjs', 'frontend/scripts/ui-quality-baseline-core.mjs']);
 });
+
+function requirementsTriggerMisses(paths, classify = (file) => classifyChangedFiles([file], { event: 'pull_request' })) {
+  return paths.filter((file) => !classify(file).requirementsContracts);
+}
+
+test('every requirements-group operational contract, its transitive local imports, and snapshot/token inputs select requirementsContracts on pull_request', () => {
+  const isFile = (relPath) => {
+    try { return statSync(path.join(repoRoot, relPath)).isFile(); } catch { return false; }
+  };
+  const { requirements } = partitionOperationalContracts(repoRoot);
+  const visited = new Set();
+  const queue = [...requirements];
+  while (queue.length > 0) {
+    const file = queue.shift();
+    if (visited.has(file) || !isFile(file)) continue;
+    visited.add(file);
+    const source = readRepository(file);
+    for (const ref of parseModuleReferences(source, file).references) {
+      if (!ref.specifier.startsWith('.')) continue;
+      const resolved = path.relative(repoRoot, path.resolve(repoRoot, path.dirname(file), ref.specifier)).replaceAll('\\', '/');
+      if (isFile(resolved)) queue.push(resolved);
+    }
+  }
+
+  assert.ok(visited.size >= 50, `requirements transitive closure is unexpectedly small: ${visited.size}`);
+  assert.deepEqual(requirementsTriggerMisses([...visited].sort()), []);
+
+  const requirementsRuntimeInputs = [
+    ...repositoryFiles.filter((file) => file.startsWith('tools/requirements-workspace/') || file.startsWith('scripts/export-deliverables')),
+    'frontend/scripts/prototype-token-kit.mjs',
+    'frontend/src/styles/themes/premium.css',
+    'frontend/src/styles/themes/krds-aligned.css',
+    'frontend/src/app/globals.css',
+    'frontend/src/types/generated-screen-registry.ts',
+    'frontend/package.json',
+    'frontend/pnpm-lock.yaml',
+    'api-docs.json',
+    'db_columns.json',
+    'config/modules/core.json',
+    'config/governance/permission-catalog.json',
+    'config/governance/authorization-policies.json',
+    'config/governance/gates.json',
+    'config/ui-route-capabilities.json',
+  ];
+  assert.deepEqual(requirementsTriggerMisses(requirementsRuntimeInputs), []);
+
+  // H5 Red 증명: 무관한 문서는 requirements 트리거로 덮이지 않으며, 가상 분류기가 의존 입력을 누락하면 즉시 드러난다.
+  assert.deepEqual(
+    requirementsTriggerMisses(['docs/03-guides/e2e-test-guide.md', 'tools/migration-workspace/server.mjs']),
+    ['docs/03-guides/e2e-test-guide.md', 'tools/migration-workspace/server.mjs'],
+  );
+  const narrowed = requirementsTriggerMisses(
+    ['scripts/export-deliverables-workspace.mjs', 'frontend/scripts/prototype-token-kit.mjs'],
+    () => ({ requirementsContracts: false }),
+  );
+  assert.deepEqual(narrowed, ['scripts/export-deliverables-workspace.mjs', 'frontend/scripts/prototype-token-kit.mjs']);
+});

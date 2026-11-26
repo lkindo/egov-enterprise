@@ -1480,6 +1480,24 @@
             ],
             "job": "secret-scan",
             "conditional": true
+          },
+          {
+            "source": ".github/workflows/ci.yml",
+            "fragment": "run: npm run test:operational-contracts:composer",
+            "tiers": [
+              "ci"
+            ],
+            "job": "secret-scan",
+            "conditional": true
+          },
+          {
+            "source": ".github/workflows/ci.yml",
+            "fragment": "run: npm run test:operational-contracts:requirements",
+            "tiers": [
+              "ci"
+            ],
+            "job": "secret-scan",
+            "conditional": true
           }
         ]
       },

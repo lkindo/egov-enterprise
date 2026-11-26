@@ -98,6 +98,7 @@
     "test:governance-gates",
     "test:operational-contracts:composer",
     "test:operational-contracts:core",
+    "test:operational-contracts:requirements",
     "test:required-checks",
     "test:sast",
     "test:shared-memory",
