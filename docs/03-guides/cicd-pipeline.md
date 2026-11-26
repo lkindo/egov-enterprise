@@ -184,7 +184,7 @@ core가 선택되면 custom composition의 두 layout은 `reusable-custom`에서
 빈 runner를 쓴다. profile은 frontend production 완료 뒤 함께 입장한다. 문서 전용 변경은 둘 다 명시적으로 skip하며 실패·취소·예상 밖 skip은 `backend-build`의 독립
 집계에서 통과하지 않는다. 원본 제품 회귀 테스트는 기존 실행 경로에 남는다.
 
-PostgreSQL 외 DB 는 `reusable-vendor` 가 본다. [원장](../../config/db-vendors.json)의 `ci: true` 벤더(2026-11-21 인증 중단 뒤로는 없다 — [DEC-OPS-422](../04-operations/operational-decisions-index-composer.md))로 대표 구성을 생성해 전체 검증을 돌리고 `backend-build` 에 집계한다.
+PostgreSQL 외 DB 는 `reusable-vendor` 가 본다. [원장](../../config/db-vendors.json)의 `ci: true` 벤더(2026-11-21 인증 중단 뒤로는 없다 — [DEC-OPS-422](../archived/operational-decisions-history.md#dec-ops-422))로 대표 구성을 생성해 전체 검증을 돌리고 `backend-build` 에 집계한다.
 고르는 기준은 인증 입력과 원장의 `ciOnly` 경로다. 다른 벤더의 입력, PostgreSQL 포트, 미지 경로, 벤더 분기가 없는 공통 생성기 코드, 표지 없는 파생 쿼리·서비스 코드만 고친 변경은 고르지 않는다. 비교 범위가 없는 실행과 입력을 고친 main 은 두 layout 이고, PR 도 입력을 지우면 두 layout 전수다. 시간·슬롯의 근거와 경계는 [설계서 §10](../02-architecture/multi-database-composer-design.md#10-cid-14)이 소유하고, 러너 소요는 아직 어림이다.
 
 로컬 진입점은 `npm run base:verify -- --profile core`이며 [생성 가이드](reusable-base-guide.md)를 따른다.

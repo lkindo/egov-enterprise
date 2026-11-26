@@ -7,11 +7,10 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CONTRACT_PATH = path.join(ROOT, 'config/frontend-visible-terms.json');
-// 운영 결정은 공용·영역·역사 색인이 나눠 가진다(DEC-OPS-381) — 결정 참조는 어느 색인에 있어도 실재다.
-const readDecisionIndexes = () => ALL_DECISION_INDEXES
+// 운영 결정은 공용 결정 인덱스와 보관 원문이 소유한다 — 결정 참조는 두 곳에서 실재를 확인한다.
+const readDecisionIndexes = () => ['.agent/memory/decisions.md', 'docs/archived/operational-decisions-history.md']
   .map((file) => fs.readFileSync(path.join(ROOT, file), 'utf8')).join('\n');
 
-import { ALL_DECISION_INDEXES } from './decision-indexes.mjs';
 import { validateVisibleTerms as validateContract } from './frontend-visible-terms-contract.mjs';
 import { discoverPageRoutes, expectedRouting, inspectRouteRepository } from './ui-route-capabilities-contract.mjs';
 

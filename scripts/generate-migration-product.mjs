@@ -161,7 +161,7 @@ export function generateMigrationProduct({ sourceRoot, outputRoot, dbBundle } = 
     + '관리형·외부 DB 이면 DB 는 기관이 승인한 DB 공급자 절차로, 첨부는 그 저장소의 절차로, 암호화 키는 백업 시점의 key-id/version 에 대응하는 기관 비밀 관리 절차로 각각 복구하고, 셋이 같은 백업 시점의 세트인지(DB 가 가리키는 첨부가 있고 그 키로 암호문이 풀리는지) 확인한 뒤에만 전환한다. '
     + '복구 런북은 복원할 세트와 전환 조건만 정한다.\n'
     + '- 원천 DB 벤더별 구현 상태와 load 경계는 이관 도구 설계의 「Source adapter와 discovery 범위」 표에, 벤더별 실측 요지는 복구 런북의 「전체 롤백과 cutover」에 있다(CUBRID 는 설계 표에만 있다). '
-    + '실측 기록 원문과 남은 범위(원본의 GAP-MIG-001)는 원본 저장소의 `docs/04-operations/readiness-followups.md`·`docs/04-operations/known-gaps-detail.md` 에 있고, '
+    + '실측 기록 원문과 남은 범위(원본의 GAP-MIG-001)는 원본 저장소의 `docs/04-operations/readiness-followups.md`·`.agent/memory/known-gaps.md` 에 있고, '
     + '이 제품을 내보낼 당시 원본 저장소의 HEAD 는 `migration-product-lock.json` 의 `durationProfileProvenance.producerCommit` 이다'
     + '(내보낼 때 커밋하지 않은 수정이 있었다면 그 SHA 로 재현되지 않는다).\n\n'
     + '원본 저장소에만 있는 문서·결정 기록·소스를 가리키던 링크는 글자만 남겼다. 수치와 실측은 원본 저장소 환경의 것이다.\n');

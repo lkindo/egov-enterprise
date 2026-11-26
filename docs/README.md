@@ -14,7 +14,7 @@
 | 생성 프로젝트에 **Java·미배정 권한을 추가**한다 | [generated-project-additions.md](03-guides/generated-project-additions.md) — 원본 인증·승인과 분리한 추가분 등록·검증 |
 | **초기 요구사항 수집부터 단계별로 에이전트에게 작업을 지시**한다(`P0~P5`) | [design-to-deliverables-guide.md §7](03-guides/design-to-deliverables-guide.md#7-요구사항-입구intake통합-전환cutover최종-종료closeout-연결) — 요구사항 작업공간 CLI·3축 Fit-Gap·에이전트 지시 플레이북 |
 | **에이전트로 작업**한다(작업 등급·승인·검증 절차) | [orchestration-protocol.md](03-guides/orchestration-protocol.md) — SOP |
-| 이 저장소의 **코드를 처음 고친다**(무엇을 읽고 무엇을 돌리나) | [AGENTS.md 작업 시작 시 필수 읽기](../AGENTS.md#작업-시작-시-필수-읽기) → 고칠 경로의 결정 색인은 `node scripts/decision-indexes.mjs --for <경로>` → 그 변경을 읽는 시험은 `node scripts/impact-tests.mjs --diff origin/main` → 범위별 검증은 [AGENTS.md 검증 표](../AGENTS.md#verification-by-change-scope)와 [.githooks/README.md](../.githooks/README.md)(무거운 검증은 [대기열](03-guides/orchestration-protocol.md#63-무거운-검증은-하나씩)이 하나씩 돌린다). 모듈 지도는 [project-context.md](../.agent/memory/project-context.md#모듈런타임-지도) |
+| 이 저장소의 **코드를 처음 고친다**(무엇을 읽고 무엇을 돌리나) | [AGENTS.md 작업 시작 시 필수 읽기](../AGENTS.md#작업-시작-시-필수-읽기) → 자동 로드되는 [decisions.md](../.agent/memory/decisions.md)(`Do-Not-Break`)·[known-gaps.md](../.agent/memory/known-gaps.md) 확인 → 그 변경을 읽는 시험은 `node scripts/impact-tests.mjs --diff origin/main` → 범위별 검증은 [AGENTS.md 검증 표](../AGENTS.md#verification-by-change-scope)와 [.githooks/README.md](../.githooks/README.md)(무거운 검증은 [대기열](03-guides/orchestration-protocol.md#63-무거운-검증은-하나씩)이 하나씩 돌린다). 모듈 지도는 [project-context.md](../.agent/memory/project-context.md#모듈런타임-지도) |
 | **테스트를 쓴다** | [testing-guide.md](03-guides/testing-guide.md) (SSOT) → [e2e-test-guide.md](03-guides/e2e-test-guide.md) |
 | 이 저장소의 **유지보수를 넘겨받는다**(정기 작업·결정 권한) | [maintainer-handover.md](04-operations/maintainer-handover.md) — 정본 링크 지도 |
 | **게이트가 red 인데 원인을 모른다** | [verification-blindspots.md](04-operations/verification-blindspots.md) · [.githooks/README.md](../.githooks/README.md) |
@@ -77,7 +77,7 @@ DB 전환 승인: [ADR-0046](02-architecture/decisions/ADR-0046-empty-numeric-tr
 
 ### 02-architecture/decisions — ADR
 
-ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decisions/README.md)가 정본이다. Accepted ADR의 행은 [공용 결정 인덱스](../.agent/memory/decisions.md)(어느 경로를 고치든 걸리는 것)와 그 「영역 결정 색인」 표가 가리키는 영역 색인(나머지)이 겹치지 않게 나눠 갖고, 공용 결정 인덱스는 나머지의 ID·제목도 영역별로 싣는다. 계약이 둘의 합을 ADR 색인과 대조한다.
+ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decisions/README.md)가 정본이며, 저장소 전역 활성 운영 결정과 `Do-Not-Break` 체크리스트는 [공용 결정 인덱스](../.agent/memory/decisions.md), 모든 운영 결정(DEC) 전문은 [운영 결정 보관 원문](archived/operational-decisions-history.md)에 있다.
 
 ## 03-guides — 개발 지침
 
@@ -120,11 +120,6 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [pending-decisions.md](04-operations/pending-decisions.md) | 사용자 결정 대기 항목 트래커 |
 | [vendor-rerecord-batch.md](04-operations/vendor-rerecord-batch.md) | 벤더 증거 재기록 묶음 대기 목록 — 인증 벤더의 증거 입력을 바꾸는 작업은 모아서 한 번에(DEC-OPS-421, 모든 에이전트 공용) |
 | [maintainer-handover.md](04-operations/maintainer-handover.md) | **유지보수자 인수인계 지도** — 결정 권한, 정기 실행(한국 시간), 일이 생길 때의 정본, 처음 맡았을 때 확인 순서 |
-| [operational-decisions-index-ci-governance.md](04-operations/operational-decisions-index-ci-governance.md) | CI·훅·게이트·계약·원장·검증 도구 경로에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |
-| [operational-decisions-index-composer.md](04-operations/operational-decisions-index-composer.md) | 프로젝트 생성기·기능 소유·슬롯·재사용 투영 경로에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |
-| [operational-decisions-index-migration.md](04-operations/operational-decisions-index-migration.md) | 독립 이관 도구(migration-tool)와 로컬 이관 작업공간에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |
-| [operational-decisions-index-product.md](04-operations/operational-decisions-index-product.md) | 제품 백엔드·화면·스키마·권한 원장·운영 배포 경로에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |
-| [known-gaps-detail.md](04-operations/known-gaps-detail.md) | 특정 경로에서만 필요한 미해결 위험(gap) 행의 영역별 전문 — 자동 로드하지 않으며 레지스트리와 읽는 조건은 [공용 gap 인덱스](../.agent/memory/known-gaps.md)의 「영역 상세 gap 레지스트리」 |
 | [url-state-class-approval-evidence.md](04-operations/url-state-class-approval-evidence.md) | URL-state 부류별 owner 승인 근거와 현재 판정 — 비규범 컨테이너 안의 4개 독립 승인(`search-input`만 ADR-0009 `accepted-risk`), 3개 미해결 |
 | [ui-ux-baseline-protocol.md](04-operations/ui-ux-baseline-protocol.md) | 긴급 수리 후·파일럿 전 8개 대표 시나리오 reference baseline·접근성·성능·증거 수집 프로토콜 |
 | [ui-quality-assisted-accessibility.md](04-operations/ui-quality-assisted-accessibility.md) | 수동 접근성 평가를 대체하지 않는 keyboard·viewport·forced-colors·reduced-motion 자동 보조 증거 |
@@ -161,10 +156,10 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 - 설계서·제안서는 구현이 끝나면 현행 동작의 사양과 열린 조건만 남기고, 구현 기록·경위·당시 실측은 지운다.
 - 날짜가 붙은 검토·평가 의견은 후속 처리가 끝나면 통째로 지운다.
 - 실측·재검토를 쌓는 로그형 문서는, 그 절을 근거로 삼는 열린 gap·설정·결정이 없어지면 그 절을 지운다. 열린 gap 의 근거인 절은 지우지 않는다.
-- 지우기 전에 그 문서를 통독해, 지금도 판단에 쓰이는 문장 — 닫힌 gap 의 재개 조건, 결정의 후속 정정, 고치지 않고 남긴 관찰 — 이 그 문서에만 있으면 현행 문서(gap 상세·가이드)로 먼저 올린다. 제목과 요약만 보고 지우지 않는다.
+- 지우기 전에 그 문서를 통독해, 지금도 판단에 쓰이는 문장 — 닫힌 gap 의 재개 조건, 결정의 후속 정정, 고치지 않고 남긴 관찰 — 이 그 문서에만 있으면 현행 문서([known-gaps.md](../.agent/memory/known-gaps.md)·가이드)로 먼저 올린다. 제목과 요약만 보고 지우지 않는다.
 - 이곳에 남기는 것은 지금의 판단·절차가 의존하는 기록뿐이다 — 현행 문서·ADR·헌법 산출물·열린 gap·설정·워크플로가 근거로 가리키는 기록과, 결정의 본문인 결정 보관 원문·역사 색인. 가리키는 것이 없어지면 지운다. 보관 문서의 절차를 "따른다"고 가리키는 현행 문장은 남기지 않는다 — 그 절차를 현행 문서로 올린다.
 - 지우는 변경에서 들어오는 링크를 함께 걷는다(결정 보관 원문과 ADR 은 링크만 풀고 문장은 그대로 둔다). 옛 경로에 제목을 남기는 것은 고칠 수 없는 참조 — 적용이 끝난 Flyway 주석 등 — 가 그 경로를 가리킬 때뿐이다(위 「참조 보존 tombstone」).
-- 함께 볼 것: 경로 원장(`scripts/decision-indexes.mjs` 의 문서 배정), 공용 메모리 행 길이 상한, 헌법 `metadata.json` 의 references, 그 문서의 본문을 읽는 계약.
+- 함께 볼 것: 헌법 `metadata.json` 의 references, 그 문서의 본문을 읽는 계약.
 
 | 문서 | 내용 |
 |---|---|
@@ -173,9 +168,9 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 
 ### 운영 결정 원문 보존
 
-[operational-decisions-history.md](archived/operational-decisions-history.md)는 [공용 결정 인덱스](../.agent/memory/decisions.md)와 영역 결정 색인이 가리키는 기존 운영 결정 전문과 종료 gap 근거다. 위치 이동은 승인 취소를 뜻하지 않는다. 결정의 현재 효력은 후속 ADR과 `supersedes`를 함께 확인하며, 당시 실행 결과·수치를 현재 상태로 사용하지 않는다.
+[operational-decisions-history.md](archived/operational-decisions-history.md)는 저장소의 모든 운영 결정(DEC) 전문과 종료 gap 근거다. 위치 이동은 승인 취소를 뜻하지 않는다. 결정의 현재 효력은 후속 ADR과 `supersedes`를 함께 확인하며, 당시 실행 결과·수치를 현재 상태로 사용하지 않는다.
 
-[operational-decisions-index-historical.md](archived/operational-decisions-index-historical.md)는 지금의 작업을 제약하지 않는 운영 결정(퇴역·전부 대체·일회성 실행·구현 기록)의 짧은 역사 색인이다. 공용 결정 인덱스·영역 결정 색인과 함께 보관 원문의 모든 DEC를 한 번씩 색인하며, 에이전트 진입점은 자동으로 읽지 않는다.
+[operational-decisions-index-historical.md](archived/operational-decisions-index-historical.md)는 과거 운영 결정의 역사 색인 보관본이며, 에이전트 진입점은 자동으로 읽지 않는다.
 
 ---
 

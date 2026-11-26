@@ -1,8 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { CURRENT_DECISION_INDEX, DECISION_ARCHIVE, DECISION_AREA_INDEXES, GAP_DETAIL, GAP_INDEX, HISTORICAL_DECISION_INDEX } from './decision-indexes.mjs';
 import { parseWorkflowJobs } from './required-checks-contract.mjs';
 import { BACKEND_LAYOUTS } from './reusable-layout.mjs';
+
+const CURRENT_DECISION_INDEX = '.agent/memory/decisions.md';
+const DECISION_ARCHIVE = 'docs/archived/operational-decisions-history.md';
+const GAP_INDEX = '.agent/memory/known-gaps.md';
 
 const compare = (left, right) => left < right ? -1 : left > right ? 1 : 0;
 const normalize = text => text.replace(/\r\n?/g, '\n');
@@ -468,96 +471,67 @@ export function buildAtlasCatalog(repoRoot) {
   }
   requireValue(historyHeadings.length === historyRows.length, 'decision history headings and rows differ');
   const decisionHistory = new Map(historyRows.map(row => [row.cells[0], row]));
-  // Operational decisions are split between the auto-loaded current index (decisions that bind every change), the area
-  // indexes read when their paths change (DEC-OPS-381) and a historical index (retired, fully superseded, one-off runs,
-  // implementation records). Together they index every archived decision exactly once. Accepted ADRs sit in the current index
-  // when they bind every change and at the top of an area index otherwise (DEC-OPS-385); an ID appears in one index only.
-  const historicalIndexSource = HISTORICAL_DECISION_INDEX;
-  const HISTORICAL_KINDS = new Set(['퇴역', '대체됨', '일회성 실행', '구현 기록']);
-  const indexRowPrefix = '(?:ADR-\\d{4}|DEC-OPS-\\d{3}) \\|';
-  const decisionIndexRows = [
-    ...tableRows(decisionText, indexRowPrefix).map(row => ({ ...row, source: decisionSource, historical: false })),
-    ...DECISION_AREA_INDEXES.flatMap(({ label, path: source }) =>
-      tableRows(io.read(source), indexRowPrefix).map(row => ({ ...row, source, historical: false, area: label }))),
-    ...tableRows(io.read(historicalIndexSource), indexRowPrefix).map(row => ({ ...row, source: historicalIndexSource, historical: true })),
-  ];
-  const indexedIds = decisionIndexRows.map(row => row.cells[0]);
-  for (const id of new Set(indexedIds)) {
-    requireValue(indexedIds.filter(other => other === id).length === 1,
-      `${id} is indexed more than once across the decision indexes`);
-  }
-  const indexedDecisionIds = indexedIds.filter(id => id.startsWith('DEC-'));
-  for (const id of decisionHistory.keys()) {
-    requireValue(indexedDecisionIds.includes(id), `${id} archived decision is missing from every decision index`);
-  }
-  // The ADR registry owns each ADR's link (the memory row keeps only its summary). Its ID format and uniqueness belong to the
-  // shared memory contract (acceptedAdrIds); here the registry only resolves the same-ID ADR file.
-  const adrRegistrySource = 'docs/02-architecture/decisions/README.md';
-  const adrRegistry = new Map(tableRows(io.read(adrRegistrySource), '\\[ADR-\\d{4}\\]\\(')
-    .map(row => [row.cells[0].match(/^\[(ADR-\d{4})\]/)?.[1], row]).filter(([id]) => id));
-  const decisionRecords = decisionIndexRows.map(({ raw, cells, source, historical, area }) => {
+
+  // Validate active repo-wide summary rows in .agent/memory/decisions.md against the single canonical DEC archive (DEC-OPS-435).
+  const activeDecRows = tableRows(decisionText, 'DEC-OPS-\\d{3} \\|');
+  unique(activeDecRows.map(row => ({ id: row.cells[0] })), 'active decision summary');
+  for (const { cells } of activeDecRows) {
     const id = cells[0];
-    let links = localLinks(raw, source);
-    let fullCells = cells;
-    let fullRaw = raw;
-    // Index rows (ADR, current, area): ID | 상태 | 결정 | 시행일 | supersedes — a DEC ID is the archive anchor and an ADR ID is
-    // the ADR registry key, so neither repeats its reason or source (DEC-OPS-381). Historical rows add 분류 | 근거 after them.
-    const isDecision = id.startsWith('DEC-');
-    if (historical) requireValue(isDecision, `${id} historical decision index accepts only operational decisions`);
-    const columns = historical ? 7 : 5;
-    requireValue(cells.length === columns,
-      `${id} ${historical ? 'historical ' : ''}decision index row requires ${columns === 5 ? 'five' : 'seven'} columns`);
-    if (historical) requireValue(HISTORICAL_KINDS.has(cells[5]), `${id} historical decision kind must be one of ${[...HISTORICAL_KINDS].join(', ')}`);
-    const dateIndex = 3;
-    const supersedesIndex = 4;
-    if (!isDecision) {
-      // references stay the index row's own text: the registry row only supplies the ADR link.
-      const registered = requireValue(adrRegistry.get(id), `${id} is missing from the ADR registry`);
-      links =[...localLinks(registered.cells[0], adrRegistrySource), ...links];
-    }
-    if (isDecision) {
-      requireValue(links.every(link => link.path.split('#')[0] !== decisionHistorySource),
-        `${id} must not link a decision history section; its ID is the archive anchor`);
-      const historical = requireValue(decisionHistory.get(id), `${id} decision history section missing; its ID is the archive anchor`);
-      requireValue([[1, 1], [5, 3], [6, 4]].every(([history, index]) => historical.cells[history] === cells[index]),
-        `${id} decision history status/date/supersedes differs from index`);
-      links = [{ label: '원문', path: `${decisionHistorySource}#${id.toLowerCase()}` }, ...links];
-      fullCells = historical.cells;
-      fullRaw = historical.raw;
-      for (const link of localLinks(fullRaw, decisionHistorySource)) {
-        if (!links.some(existing => existing.label === link.label && existing.path === link.path)) links.push(link);
-      }
-    }
-    // Keep the memory row's stable ID/source. Only the registry's same-ID ADR is authoritative;
-    // related decisions and similarly named documents must not supply approval or search content.
+    requireValue(cells.length === 5, `${id} decision index row requires five columns`);
+    const archived = requireValue(decisionHistory.get(id), `${id} decision history section missing; its ID is the archive anchor`);
+    requireValue([[1, 1], [5, 3], [6, 4]].every(([history, index]) => archived.cells[history] === cells[index]),
+      `${id} decision history status/date/supersedes differs from index`);
+  }
+
+  // Canonical Accepted/Superseded ADRs come directly from docs/02-architecture/decisions/README.md.
+  const adrRegistrySource = 'docs/02-architecture/decisions/README.md';
+  const adrRegistryRows = tableRows(io.read(adrRegistrySource), '\\[ADR-\\d{4}\\]\\(');
+  const adrRecords = adrRegistryRows.map(({ raw, cells }) => {
+    const id = requireValue(cells[0].match(/^\[(ADR-\d{4})\]/)?.[1], 'ADR ID missing in registry');
+    const summaryText = cells[1] ?? '';
+    const statusText = cells[2] ?? '';
+    const status = /^Accepted\b/i.test(statusText) ? 'accepted' : 'superseded';
+    const links = localLinks(raw, adrRegistrySource);
     const adrPaths = [...new Set(links.map(link => link.path.split('#')[0]).filter(source =>
       source.startsWith('docs/02-architecture/decisions/') && path.posix.basename(source).startsWith(`${id}-`)))];
-    let adrTitle;
-    let adrText = '';
-    let adrStatus;
-    if (id.startsWith('ADR-')) {
-      requireValue(adrPaths.length === 1, `${id} must link exactly one same-ID ADR`);
-      const text = io.read(adrPaths[0]);
-      adrTitle = heading(text, '');
-      requireValue(new RegExp(`^${id}(?:\\s|:|：|—|$)`).test(adrTitle), `${id} canonical ADR heading differs`);
-      adrStatus = declaredDocumentStatus(text, adrPaths[0]);
-      if (cells[1] === 'accepted' && /^Accepted\b/i.test(adrStatus)) adrText = text;
-    }
-    const searchCells = fullCells === cells ? cells : [...cells, ...fullCells];
-    const referenceText = fullRaw === raw ? raw : `${raw}\n${fullRaw}`;
-    return record(id, adrTitle || id, excerpt(cells[2] ?? ''), cells[1], source, {
-      details: [detail('결정 원문', fullCells[2]), ...(isDecision ? [detail('이유', fullCells[3])] : []), detail('시행일', cells[dateIndex]),
-        ...(area ? [detail('결정 영역', area)] : []),
-        ...(adrTitle ? [detail('ADR 선언 상태', adrStatus)] : []), detail('대체 범위 원문', cells[supersedesIndex]),
-        ...(historical ? [detail('역사 분류', cells[5]), detail('역사 분류 근거', cells[6])] : []),
-        detail('효력 주의', '요약이며 원문이 우선합니다. 시행일·당시 수치는 역사 기록이고 accepted라도 일부 범위가 후속 결정으로 대체될 수 있습니다.')],
-      supersedes: cells[supersedesIndex], references: [...new Set([...referenceText.matchAll(/\b(?:ADR-\d{4}|DEC-OPS-\d{3})\b/g)].map(match => match[0]).filter(id => id !== cells[0]))],
+    requireValue(adrPaths.length === 1, `${id} must link exactly one same-ID ADR`);
+    const text = io.read(adrPaths[0]);
+    const adrTitle = heading(text, '');
+    requireValue(new RegExp(`^${id}(?:\\s|:|：|—|$)`).test(adrTitle), `${id} canonical ADR heading differs`);
+    const adrStatus = declaredDocumentStatus(text, adrPaths[0]);
+    const adrDate = text.match(/^(?:>\s*|-\s*)?(?:\*\*)?(?:작성일|결정일|날짜|Date)(?:\*\*)?\s*[:：]\s*(\d{4}-\d{2}-\d{2})/im)?.[1] ?? '-';
+    const adrText = (status === 'accepted' && /^Accepted\b/i.test(adrStatus)) ? text : '';
+    const supersedesMatch = statusText.match(/(?:일부\s+)?(.+?)(?:(?:로|으로)?\s*대체)/);
+    const supersedes = supersedesMatch ? supersedesMatch[1] : '-';
+    return record(id, adrTitle || id, excerpt(summaryText), status, adrRegistrySource, {
+      details: [detail('결정 원문', summaryText), detail('상태 원문', statusText),
+        detail('ADR 선언 상태', adrStatus), detail('대체 범위 원문', supersedes),
+        detail('효력 주의', '요약이며 원문이 우선합니다. accepted라도 일부 범위가 후속 결정으로 대체될 수 있습니다.')],
+      supersedes,
+      references: [...new Set([...`${raw}\n${text}`.matchAll(/\b(?:ADR-\d{4}|DEC-OPS-\d{3})\b/g)].map(match => match[0]).filter(cited => cited !== id))],
       links,
-      searchText: [...searchCells, adrText].join('\n'),
+      searchText: [id, adrTitle, summaryText, statusText, adrText].filter(Boolean).join('\n'),
+      verifiedAt: adrDate,
     });
   });
-  // [DEC-OPS-389] 역방향 대체 표시: 뒤 결정의 supersedes 칸이 이 결정을 인용하면 그 ID 를 보인다. 색인 행은 당시 기록 그대로라
-  // 고치지 않고(소급 편집 금지) Atlas 가 계산해 보인다. '재확인' 같은 맥락 인용도 섞일 수 있어 대체 범위는 인용한 결정에서 확인한다.
+
+  // Canonical DEC records come directly from the single canonical archive (operational-decisions-history.md).
+  const decRecords = historyRows.map(({ raw, cells }) => {
+    const id = cells[0];
+    const links = [{ label: '원문', path: `${decisionHistorySource}#${id.toLowerCase()}` }, ...localLinks(raw, decisionHistorySource)];
+    return record(id, id, excerpt(cells[2] ?? ''), cells[1], decisionHistorySource, {
+      details: [detail('결정 원문', cells[2]), detail('이유', cells[3]), detail('시행일', cells[5]),
+        detail('대체 범위 원문', cells[6]),
+        detail('효력 주의', '요약이며 원문이 우선합니다. 시행일·당시 수치는 역사 기록이고 accepted라도 일부 범위가 후속 결정으로 대체될 수 있습니다.')],
+      supersedes: cells[6],
+      references: [...new Set([...raw.matchAll(/\b(?:ADR-\d{4}|DEC-OPS-\d{3})\b/g)].map(match => match[0]).filter(cited => cited !== id))],
+      links,
+      searchText: cells.join('\n'),
+    });
+  });
+
+  const decisionRecords = [...adrRecords, ...decRecords];
+  // [DEC-OPS-389] 역방향 대체 표시: 뒤 결정의 supersedes 칸이 이 결정을 인용하면 그 ID 를 보인다.
   const citedBy = new Map();
   for (const { id, supersedes } of decisionRecords) {
     for (const cited of new Set(String(supersedes ?? '').match(/\b(?:ADR-\d{4}|DEC-OPS-\d{3})\b/g) ?? [])) {
@@ -571,11 +545,11 @@ export function buildAtlasCatalog(repoRoot) {
       item.details.push(detail('뒤 결정의 대체 범위에 인용', `${item.supersededBy.join(', ')} — 일부·전부 대체인지는 그 결정의 대체 범위 원문을 확인합니다.`));
     }
   }
-  // 자동 로드 표에 남은 행과 영역 상세로 옮긴 행(DEC-OPS-389)의 전문(9열)만 싣는다 — 레지스트리 줄(6열)은 상세 행의 요약이다.
-  const gapRecords = [GAP_INDEX, GAP_DETAIL].flatMap(gapSource => tableRows(io.read(gapSource), 'GAP-[A-Z]+-\\d{3} \\|')
+  // 단일 활성 gap 인덱스(.agent/memory/known-gaps.md)만 읽는다(DEC-OPS-435).
+  const gapRecords = tableRows(io.read(GAP_INDEX), 'GAP-[A-Z]+-\\d{3} \\|')
     .filter(({ cells }) => cells.length === 9).map(({ raw, cells }) =>
-      record(cells[0], `${cells[0]} · ${cells[3]}`, cells[4], cells[2], gapSource,
-        { priority: cells[1], verifiedAt: cells.at(-1), details: [detail('다음 행동 / 재개 조건', cells[6]), detail('결정권자', cells[7]), detail('기록된 검증일', cells.at(-1))], links: localLinks(raw, gapSource) })));
+      record(cells[0], `${cells[0]} · ${cells[3]}`, cells[4], cells[2], GAP_INDEX,
+        { priority: cells[1], verifiedAt: cells.at(-1), details: [detail('다음 행동 / 재개 조건', cells[6]), detail('결정권자', cells[7]), detail('기록된 검증일', cells.at(-1))], links: localLinks(raw, GAP_INDEX) }));
   const contextSource = '.agent/memory/project-context.md';
   const memoryRecords = tableRows(io.read(contextSource), 'CTX-\\d{3} \\|').map(({ raw, cells }) =>
     record(cells[0], cells[0], cells[1], 'derived-fact', contextSource,

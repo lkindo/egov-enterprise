@@ -51,7 +51,7 @@ checkpoint 삭제·checksum 검증 해제로 우회하지 않는다.
 
 ## 전체 롤백과 cutover
 
-아래 벤더별 문단은 실측의 요지다(CUBRID 는 문단이 없고 설계 표에만 있다). 벤더별 구현 상태와 load 경계의 표는 [이관 도구 설계](../02-architecture/legacy-migration-tool-design.md#source-adapter와-discovery-범위)에 있고, 실측 기록 원문과 남은 범위는 원본 저장소의 `docs/04-operations/readiness-followups.md` 와 [GAP-MIG-001](known-gaps-detail.md#migration)(`docs/04-operations/known-gaps-detail.md`)에 있다.
+아래 벤더별 문단은 실측의 요지다(CUBRID 는 문단이 없고 설계 표에만 있다). 벤더별 구현 상태와 load 경계의 표는 [이관 도구 설계](../02-architecture/legacy-migration-tool-design.md#source-adapter와-discovery-범위)에 있고, 실측 기록 원문과 남은 범위는 원본 저장소의 `docs/04-operations/readiness-followups.md` 와 [GAP-MIG-001](../../.agent/memory/known-gaps.md)에 있다.
 
 Oracle 후속 단계의 실제 경계는 [2026-09-15 실측](readiness-followups.md#이관-oracle-후속-단계-실측)을 따른다.
 명시한 local owner의 테이블·컬럼·기본키 범위에서 승인 plan·validate·dry-run과 직접 엔진의 BLOB/CLOB

@@ -31,13 +31,13 @@
 
 | 상황 | 할 일 | 정본 |
 |---|---|---|
-| 마이그레이션·엔티티·쿼리·빌드 파일을 바꾼다 | 인증 벤더의 증거가 낡는다(`VENDOR_EVIDENCE_STALE`). 바꾼 것을 모아 한 번에 증거를 다시 기록한다(벤더마다 수십 분). 2026-11-21 부터 PostgreSQL 외 인증을 멈춰 걸리지 않는다([DEC-OPS-422](operational-decisions-index-composer.md)) | [다중 DB 설계 §7](../02-architecture/multi-database-composer-design.md#7-인증과-검증d-9-d-10), [벤더 원장](../../config/db-vendors.json) |
+| 마이그레이션·엔티티·쿼리·빌드 파일을 바꾼다 | 인증 벤더의 증거가 낡는다(`VENDOR_EVIDENCE_STALE`). 바꾼 것을 모아 한 번에 증거를 다시 기록한다(벤더마다 수십 분). 2026-11-21 부터 PostgreSQL 외 인증을 멈춰 걸리지 않는다([DEC-OPS-422](../archived/operational-decisions-history.md#dec-ops-422)) | [다중 DB 설계 §7](../02-architecture/multi-database-composer-design.md#7-인증과-검증d-9-d-10), [벤더 원장](../../config/db-vendors.json) |
 | 새 Flyway 마이그레이션을 공유 OCI DB 에 적용한다 | 적용마다 승인을 받고 결과를 적용 로그에 남긴다 | [shared-oci-migration-apply-log.md](shared-oci-migration-apply-log.md) |
 | 게이트가 붉은데 원인을 모른다 | 검증 사각지대 런북의 판정 절차를 따른다. 로컬 훅은 빠른 피드백이고 병합 권위는 required CI 다 | [verification-blindspots.md](verification-blindspots.md), [.githooks/README.md](../../.githooks/README.md) |
 | 비밀 키를 바꾼다(JWT·암호화·MFA) | 키 교체 절차와 백업을 따른다 — 잃으면 암호문을 읽지 못한다 | [crypto-key-rotation.md](crypto-key-rotation.md), [mfa-operations.md](mfa-operations.md) |
 | 백업·복원 | 앱 중지 창의 한 세트(덤프·첨부·manifest)로 받고 훈련 도구로 복원을 확인한다 | [backup-and-restore-runbook.md](backup-and-restore-runbook.md) |
 | 운영 배포 | 운영 오버레이와 배포 스크립트의 사전 검증을 지난다 | [docker-compose.prod.yml](../../docker-compose.prod.yml), [deploy.sh](../../scripts/deploy.sh) |
-| 위험이 새로 보인다 | 재현할 수 있으면 gap 으로 남긴다. 추측은 남기지 않는다 | [known-gaps.md](../../.agent/memory/known-gaps.md), [gap 영역 상세](known-gaps-detail.md) |
+| 위험이 새로 보인다 | 재현할 수 있으면 gap 으로 남긴다. 추측은 남기지 않는다 | [known-gaps.md](../../.agent/memory/known-gaps.md) |
 | 결정을 내린다 | 아키텍처·제품 경계는 ADR, 앞으로의 작업을 제약하는 운영 규칙·승인은 DEC 로 남긴다 | [AGENTS.md Documentation and memory](../../AGENTS.md#documentation-and-memory), [ADR 색인](../02-architecture/decisions/README.md) |
 
 ## 4. 처음 맡았을 때 확인 순서
