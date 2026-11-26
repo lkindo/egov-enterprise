@@ -52,7 +52,10 @@ export class NotificationPage {
         // 접근 이름은 단추 안의 sr-only 글자다(header-notifications.tsx) — 화면에 보이는 9+ 배지가 아니라 정확한 건수를 싣는다.
         const name = await bell.locator('.sr-only').first().textContent() ?? '';
         const unread = /읽지 않음\s*(\d+)건/.exec(name);
-        return unread ? Number(unread[1]) : 0;
+        const count = unread ? Number(unread[1]) : 0;
+        // 건수가 있으면 화면에 보이는 숫자 배지도 있어야 한다 — 접근 이름만 보면 배지가 사라져도 통과한다(Codex 검토).
+        if (count > 0) await expect(bell.locator('[data-slot="badge"]')).toBeVisible();
+        return count;
     }
 
     async verifyNotificationExists(title: string) {

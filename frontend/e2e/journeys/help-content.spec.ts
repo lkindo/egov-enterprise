@@ -43,7 +43,8 @@ test.describe('공개 포털', () => {
                     if (faqVisible)
                         break;
                     console.log(`>>> [FAQ] Not found (attempt ${i + 1}), searching/reloading...`);
-                    // [2026-11-26 PR-3b] 도움말 검색 칸은 이 화면에 늘 있다 — 없으면(이름이 바뀌면) 새로고침으로 넘어가지 않고 실패한다.
+                    // [2026-11-26 PR-3b] 도움말 검색 칸은 조회 조건을 접지 않은 새 화면(이 여정)에 있다 — 없으면(이름이 바뀌면) 새로고침으로
+                    //   넘어가지 않고 실패한다.
                     const searchInput = userPage.getByRole('textbox', { name: '도움말 키워드 검색', exact: true });
                     await expect(searchInput).toBeVisible();
                     await searchInput.fill(faqQuestion);
