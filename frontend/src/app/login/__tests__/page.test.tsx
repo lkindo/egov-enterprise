@@ -367,6 +367,19 @@ describe('세션 만료 안내', () => {
     forgetShownSignOutNotices();
   });
 
+  it('[ADR-0063] 카탈로그에 없는 안내 키만 남았으면 빈 상태 영역도 그리지 않는다', async () => {
+    forgetShownSignOutNotices();
+    window.sessionStorage.setItem('egov.sign-out-notices.v2', JSON.stringify([{ key: 'signOut.future' }]));
+    try {
+      await act(async () => { render(<LoginPage />); });
+
+      expect(screen.queryByTestId('login-sign-out-notices')).toBeNull();
+    } finally {
+      // 꺼내 고정한 안내가 다음 시험의 로그인 화면으로 넘어가지 않게 한다.
+      forgetShownSignOutNotices();
+    }
+  });
+
   it('만료 파라미터가 없으면 안내하지 않는다 — 평상시 로그인은 사고가 아니다', async () => {
     await act(async () => { render(<LoginPage />); });
 

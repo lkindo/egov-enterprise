@@ -57,8 +57,22 @@ export function effectiveLocale(preferred: AppLocale, pathname: string | null | 
   return preferred !== DEFAULT_LOCALE && isTranslatedRoute(pathname) ? preferred : DEFAULT_LOCALE;
 }
 
-/** 브라우저에서 지금 화면의 로케일(서버에서는 기본값). */
+/**
+ * 이 탭이 지금 그린 로케일 — 로케일 경계가 알린다. 쿠키는 탭끼리 함께 쓰므로 다른 탭이 바꿀 수 있고, 선택기는 쿠키를 먼저 쓰고 다시
+ * 그리기를 기다린다. 요청 언어는 쿠키가 아니라 이 값을 본다(경계가 아직 그리지 않았으면 쿠키다).
+ */
+let renderedLocale: { preferred: AppLocale; koreanOnly: boolean } | undefined;
+
+export function rememberRenderedLocale(rendered: { preferred: AppLocale; koreanOnly: boolean }): () => void {
+  renderedLocale = rendered;
+  return () => {
+    if (renderedLocale === rendered) renderedLocale = undefined;
+  };
+}
+
+/** 브라우저에서 지금 화면의 로케일(서버에서는 기본값) — API 요청의 Accept-Language 다. */
 export function effectiveBrowserLocale(): AppLocale {
   if (typeof window === 'undefined') return DEFAULT_LOCALE;
-  return effectiveLocale(readBrowserLocale(), window.location.pathname);
+  if (renderedLocale?.koreanOnly) return DEFAULT_LOCALE;
+  return effectiveLocale(renderedLocale?.preferred ?? readBrowserLocale(), window.location.pathname);
 }

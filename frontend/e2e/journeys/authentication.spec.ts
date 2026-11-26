@@ -427,6 +427,8 @@ test.describe('인증 경계', () => {
             await expect(page.locator('html')).toHaveAttribute('lang', 'ko');
             await page.getByRole('group', { name: '언어' }).getByRole('button', { name: 'English' }).click();
             await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+            // 문서 제목도 화면 로케일을 따른다(사이트 이름 접미사는 번역하지 않는 고유 이름이다).
+            await expect(page).toHaveTitle(/^Sign in \| /);
             const signIn = page.getByRole('button', { name: 'Sign in', exact: true });
             await expect(signIn).toBeVisible();
             await expect(page.getByRole('textbox', { name: 'User ID', exact: true })).toBeVisible();

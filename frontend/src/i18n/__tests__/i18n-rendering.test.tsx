@@ -24,6 +24,7 @@ import { LocaleBoundary } from '../LocaleBoundary';
 import { messagesFor } from '../messages';
 import { catalogKey } from '../catalog';
 import type { AppLocale } from '../locales';
+import { effectiveBrowserLocale } from '../surfaces';
 import { ApplicationFrame } from '@/app/components/layout/ApplicationFrame';
 import { LocaleSwitcher } from '@/app/components/layout/LocaleSwitcher';
 import { FormErrorSummary } from '@/components/ui/form';
@@ -182,6 +183,30 @@ describe('i18n 렌더링', () => {
     render(<Boundary preferred="en"><Form /></Boundary>);
     act(() => screen.getByRole('button', { name: 'check' }).click());
     expect(screen.getByTestId('memo')).toHaveTextContent('Memo: enter up to 3 characters.');
+  });
+
+  it('API 요청 언어는 쿠키가 아니라 이 탭이 그린 로케일이다 — 다른 탭이 한국어를 골라도 이 탭의 영어 로그인은 영어 문구를 받는다', () => {
+    nav.pathname = '/login';
+    window.history.replaceState({}, '', '/login');
+    try {
+      document.cookie = 'NEXT_LOCALE=ko; path=/';
+      const view = render(<Boundary preferred="en"><p>x</p></Boundary>);
+      expect(effectiveBrowserLocale()).toBe('en');
+      view.unmount();
+      // 경계가 없으면(그리기 전) 쿠키다.
+      expect(effectiveBrowserLocale()).toBe('ko');
+    } finally {
+      window.history.replaceState({}, '', '/');
+      document.cookie = 'NEXT_LOCALE=; path=/; max-age=0';
+    }
+  });
+
+  it('개발·시험 공급자는 빠진 ICU 인자도 숨기지 않고 실패한다(시험 대역과 같은 기준)', () => {
+    const MissingArgument = () => {
+      const t = useTranslations('form');
+      return <p>{(t as unknown as (key: string) => string)('summaryCount')}</p>;
+    };
+    expect(() => render(<I18nProvider locale="en" messages={messagesFor('en')}><MissingArgument /></I18nProvider>)).toThrow();
   });
 
   it('서버 문구가 없는 전송 실패의 전역 알림은 지금 화면의 로케일로 그린다', () => {

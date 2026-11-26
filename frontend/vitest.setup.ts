@@ -43,7 +43,7 @@ vi.mock('use-intl', async (importOriginal) => {
   // 실제 훅처럼 같은 네임스페이스에는 같은 함수를 준다 — 번역 함수를 의존성으로 둔 콜백·효과가 렌더마다 다시 돌지 않게.
   //   없는 키·빠진 인자는 개발 공급자(I18nProvider)처럼 던진다 — 모의가 결함을 키 이름 대체 표시로 숨기지 않게(Codex 검토).
   const translators = new Map<string, ReturnType<typeof actual.createTranslator>>();
-  const failLoudly = (error: Error) => { throw error; };
+  const failLoudly = (error: Error & { code?: string }) => { if (error.code !== 'ENVIRONMENT_FALLBACK') throw error; };
   return {
     ...actual,
     useTranslations: (namespace?: string) => {

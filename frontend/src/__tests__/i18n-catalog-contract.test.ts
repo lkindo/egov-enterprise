@@ -25,6 +25,9 @@ const LANGUAGE_NEUTRAL_IMPORTS: Record<string, Record<string, string>> = {
   'src/lib/auth/login-error.ts': {
     loginErrorKind: 'BFF 응답 본문 문구를 보이지 않고 실패 종류만 돌려준다 — 화면은 카탈로그로 그린다',
   },
+  'src/types/generated-zod.ts': {
+    LoginRequestSchema: '문구를 적지 않은 생성 계약 스키마(한글은 같은 모듈의 다른 스키마) — 검증 문구는 전역 오류 맵에서 오고 수동 폼 검증이 로케일별로 바꾼다',
+  },
   'src/lib/auth/mfa-bff-contract.ts': {
     MFA_CODE_PATTERN: '형식 정규식',
     MFA_RECOVERY_CODE_PATTERN: '형식 정규식',
@@ -68,6 +71,80 @@ function resolveLocalImport(from: string, specifier: string): string | undefined
     if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return path.relative(FRONTEND, candidate).split(path.sep).join('/');
   }
   throw new Error(`${from}: 가져온 모듈을 찾지 못했다 — ${specifier}`);
+}
+
+const isSourceModule = (file: string | undefined): file is string => !!file && /\.(ts|tsx)$/.test(file);
+
+/**
+ * 모듈이 다른 지역 모듈의 값을 그대로 내보내는 곳 — `export … from`, 가져온 이름의 `export { 이름 }`·`export default 이름`·
+ * `export const X = 이름`. 한글 문구를 가진 모듈을 한 번 거쳐 내보내면 거친 모듈에는 한글 글자가 없다(Codex 2차 검토 반례).
+ */
+function reexportSources(file: string): string[] {
+  const source = parse(file);
+  const imported = new Map<string, string>();
+  for (const statement of source.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier) || statement.importClause?.isTypeOnly) continue;
+    const target = resolveLocalImport(file, statement.moduleSpecifier.text);
+    if (!isSourceModule(target)) continue;
+    const clause = statement.importClause;
+    if (clause?.name) imported.set(clause.name.text, target);
+    const bindings = clause?.namedBindings;
+    if (bindings && ts.isNamespaceImport(bindings)) imported.set(bindings.name.text, target);
+    if (bindings && ts.isNamedImports(bindings)) for (const element of bindings.elements) imported.set(element.name.text, target);
+  }
+  const sources = new Set<string>();
+  for (const statement of source.statements) {
+    if (ts.isExportDeclaration(statement) && !statement.isTypeOnly) {
+      if (statement.moduleSpecifier && ts.isStringLiteral(statement.moduleSpecifier)) {
+        const target = resolveLocalImport(file, statement.moduleSpecifier.text);
+        if (isSourceModule(target)) sources.add(target);
+      } else if (statement.exportClause && ts.isNamedExports(statement.exportClause)) {
+        for (const element of statement.exportClause.elements) {
+          const origin = imported.get((element.propertyName ?? element.name).text);
+          if (origin) sources.add(origin);
+        }
+      }
+    }
+    if (ts.isExportAssignment(statement) && ts.isIdentifier(statement.expression)) {
+      const origin = imported.get(statement.expression.text);
+      if (origin) sources.add(origin);
+    }
+    if (ts.isVariableStatement(statement) && statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword)) {
+      for (const declaration of statement.declarationList.declarations) {
+        const origin = declaration.initializer && ts.isIdentifier(declaration.initializer) ? imported.get(declaration.initializer.text) : undefined;
+        if (origin) sources.add(origin);
+      }
+    }
+  }
+  return [...sources];
+}
+
+/** 이 모듈이나 이 모듈이 그대로 내보내는 모듈(재수출을 따라)에 한글 문구가 있는가. */
+function koreanBearing(file: string, seen = new Set<string>()): boolean {
+  if (seen.has(file)) return false;
+  seen.add(file);
+  return hangulLiterals(file).length > 0 || reexportSources(file).some((origin) => koreanBearing(origin, seen));
+}
+
+/**
+ * 번역 화면 파일이 JSX 글자로 그리는 사이트 정체(`{SITE_IDENTITY.키}`)는 감싼 요소가 `lang={contentLang(SITE_IDENTITY.키)}` 를 단다
+ * (결정 6) — 도입 기관이 로고 표기·이름을 한글로 바꿔도 영어 화면에서 표지 없는 한글이 생기지 않는다.
+ */
+function unmarkedIdentity(file: string): string[] {
+  const source = parse(file);
+  const found: string[] = [];
+  const visit = (node: ts.Node) => {
+    if (ts.isJsxExpression(node) && node.expression && ts.isPropertyAccessExpression(node.expression)
+      && ts.isIdentifier(node.expression.expression) && node.expression.expression.text === 'SITE_IDENTITY' && ts.isJsxElement(node.parent)) {
+      const key = node.expression.name.text;
+      const lang = node.parent.openingElement.attributes.properties.find((attribute) => ts.isJsxAttribute(attribute) && attribute.name.getText(source) === 'lang');
+      const marked = lang && ts.isJsxAttribute(lang) && lang.initializer?.getText(source).replace(/\s/g, '') === `{contentLang(SITE_IDENTITY.${key})}`;
+      if (!marked) found.push(`${file}:${source.getLineAndCharacterOfPosition(node.getStart()).line + 1} SITE_IDENTITY.${key}`);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return found;
 }
 
 /** 번역 화면 파일이 값으로 가져오는 지역 모듈과 그 이름(타입 전용 가져오기는 화면에 닿지 않아 뺀다). */
@@ -128,7 +205,7 @@ describe('i18n 카탈로그 완결성 (ADR-0063)', () => {
     const used = new Map<string, Set<string>>();
     for (const file of surfaceFiles) {
       for (const { module, names } of valueImports(file)) {
-        if (surfaceFiles.has(module) || hangulLiterals(module).length === 0) continue;
+        if (surfaceFiles.has(module) || !isSourceModule(module) || !koreanBearing(module)) continue;
         const allowed = LANGUAGE_NEUTRAL_IMPORTS[module] ?? {};
         for (const name of names) {
           if (name in allowed) used.set(module, (used.get(module) ?? new Set()).add(name));
@@ -141,6 +218,12 @@ describe('i18n 카탈로그 완결성 (ADR-0063)', () => {
     const stale = Object.entries(LANGUAGE_NEUTRAL_IMPORTS).flatMap(([module, names]) =>
       Object.keys(names).filter((name) => !used.get(module)?.has(name)).map((name) => `${module}#${name}`));
     expect(stale).toEqual([]);
+  });
+
+  it('번역 화면 파일이 글자로 그리는 사이트 정체는 내용 언어 표지를 단다', () => {
+    const scanned = [...surfaceFiles].filter((file) => fs.readFileSync(path.join(FRONTEND, file), 'utf8').includes('{SITE_IDENTITY.'));
+    expect(scanned.length, '사이트 정체를 그리는 번역 화면 파일이 없다 — 검사가 빈다').toBeGreaterThan(0);
+    expect(scanned.flatMap(unmarkedIdentity)).toEqual([]);
   });
 
   it('proxy 는 레이아웃이 읽는 요청 경로 헤더를 문서 요청마다 덮어 싣는다', () => {

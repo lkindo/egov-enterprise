@@ -144,14 +144,18 @@ const LEGACY_NOTICE_PATTERNS: readonly [RegExp, SignOutNoticeKey][] = [
 function legacyNotices(raw: string | null): SignOutNotice[] {
   const parsed = JSON.parse(raw ?? '[]') as unknown;
   if (!Array.isArray(parsed)) return [];
-  return parsed.flatMap((item): SignOutNotice[] => {
-    if (typeof item !== 'string') return [];
+  // 종전 형식은 같은 종류의 문장이 건수만 달리 여럿 쌓일 수 있었다 — 새 형식처럼 같은 키는 나중 것(최신)만 남긴다.
+  const byKey = new Map<SignOutNoticeKey, SignOutNotice>();
+  for (const item of parsed) {
+    if (typeof item !== 'string') continue;
     for (const [pattern, key] of LEGACY_NOTICE_PATTERNS) {
       const count = pattern.exec(item)?.[1];
-      if (count !== undefined) return [{ key, values: { count: Number(count) } }];
+      if (count === undefined) continue;
+      byKey.delete(key);
+      byKey.set(key, { key, values: { count: Number(count) } });
     }
-    return [];
-  });
+  }
+  return [...byKey.values()];
 }
 
 /** 남긴 안내를 읽고 지운다(종전 형식이 남긴 안내도 옮겨 함께 꺼낸다). 같은 키는 새 형식의 것이 남는다. */

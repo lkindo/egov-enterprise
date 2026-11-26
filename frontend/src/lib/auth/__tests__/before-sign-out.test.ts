@@ -94,6 +94,14 @@ describe('before-sign-out', () => {
     expect(takeSignOutNotices()).toEqual([]);
   });
 
+  it('종전 형식에 같은 종류가 건수만 달리 여럿 쌓였으면 나중 것 하나만 옮긴다', () => {
+    window.sessionStorage.setItem('egov.sign-out-notices.v1', JSON.stringify([
+      '세션이 끝나 보내지 못한 승인이 1건 있습니다. 결재함에서 다시 처리해 주세요.',
+      '세션이 끝나 보내지 못한 승인이 2건 있습니다. 결재함에서 다시 처리해 주세요.',
+    ]));
+    expect(takeSignOutNotices()).toEqual([{ key: 'signOut.unsentApprovals', values: { count: 2 } }]);
+  });
+
   it('저장소에 남은 모르는 키는 안내로 꺼내지 않는다(다른 기능·조작된 값)', () => {
     window.sessionStorage.setItem('egov.sign-out-notices.v2', JSON.stringify([{ key: 'login.submit' }, { key: 'signOut.unsentApprovals', values: { count: 1 } }]));
     expect(takeSignOutNotices()).toEqual([{ key: 'signOut.unsentApprovals', values: { count: 1 } }]);

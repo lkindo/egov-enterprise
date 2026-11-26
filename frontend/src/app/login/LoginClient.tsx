@@ -111,7 +111,9 @@ function LoginContent() {
     const sessionExpired = searchParams.get('expired') === 'true';
     // [2026-11-25 품질 평가] 세션이 끝나며 보내지 못했거나 결과를 모르는 일(결재 대기 승인)의 안내 — 이 탭이 남긴 것을 한 번 읽는다.
     //   서버 렌더와 하이드레이션은 빈 목록이고, 그 뒤 브라우저가 한 번 꺼낸 목록을 같은 화면 동안 그대로 보인다.
-    const signOutNotices = React.useSyncExternalStore(subscribeSignOutNotices, signOutNoticesSnapshot, serverSignOutNoticesSnapshot);
+    const storedSignOutNotices = React.useSyncExternalStore(subscribeSignOutNotices, signOutNoticesSnapshot, serverSignOutNoticesSnapshot);
+    // 카탈로그에 없는 키(다른 판이 남긴 안내·조작된 저장소 값)는 보이지 않는다 — 빈 상태 영역도 만들지 않는다.
+    const signOutNotices = React.useMemo(() => storedSignOutNotices.filter((notice) => tRoot.has(notice.key)), [storedSignOutNotices, tRoot]);
 
     // 이번 제출로 인증된 것인지(=세션 경계), 이미 인증된 상태로 이 페이지를 방문한 것인지 구분한다.
     // 두 경우는 필요한 이동 방식이 다르다(아래 각 주석 참조). ref 이므로 렌더를 유발하지 않는다.
@@ -315,7 +317,7 @@ function LoginContent() {
                                     data-testid="login-sign-out-notices"
                                     className="text-sm text-secondary-foreground bg-muted/40 p-3 rounded-[var(--radius-hub-item)] border border-border space-y-1"
                                 >
-                                    {signOutNotices.filter((notice) => tRoot.has(notice.key)).map((notice) => <p key={notice.key}>{tRoot(notice.key, notice.values)}</p>)}
+                                    {signOutNotices.map((notice) => <p key={notice.key}>{tRoot(notice.key, notice.values)}</p>)}
                                 </div>
                             )}
 

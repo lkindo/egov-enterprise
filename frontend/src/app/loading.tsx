@@ -1,5 +1,6 @@
 import { SITE_IDENTITY } from '@/config/site-identity';
 import { CommonText } from './components/layout/ShellText';
+import { contentLang } from '@/i18n/content-lang';
 
 export default function GlobalLoading() {
   return (
@@ -17,7 +18,7 @@ export default function GlobalLoading() {
         {/* Center Logo/Icon */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/40 rotate-12 animate-bounce">
-            <span className="text-primary-foreground font-bold text-sm">{SITE_IDENTITY.logoMark}</span>
+            <span lang={contentLang(SITE_IDENTITY.logoMark)} className="text-primary-foreground font-bold text-sm">{SITE_IDENTITY.logoMark}</span>
           </div>
         </div>
       </div>
