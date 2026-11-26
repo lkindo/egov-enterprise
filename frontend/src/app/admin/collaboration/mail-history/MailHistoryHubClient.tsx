@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, RefreshCcw, RotateCw, Search, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import { PagePagination } from '@/components/common/PagePagination';
 import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
 import { useToast } from '@/app/components/ui/toast';
@@ -277,26 +278,26 @@ export default function MailHistoryHubClient() {
           />
           {/* [2026-09-26 DIP V4] 발신자 칸에 이름이 저장되므로 발신자로도 찾는다. 이전 이력은 식별자가 남아 있어
               이름으로 찾아지지 않는다. */}
-          <select
+          <NativeSelect
             aria-label="검색 대상"
             value={searchField}
             onChange={(event) => handleSearchFieldChange(event.target.value === '3' ? '3' : '1')}
-            className="mt-2 h-[var(--control-h-sm)] rounded-md border border-input bg-background px-2 text-xs"
+            className="mt-2 h-[var(--control-h-sm)] px-2 text-xs"
           >
             <option value="1">제목</option>
             <option value="3">발신자</option>
-          </select>
-          <select
+          </NativeSelect>
+          <NativeSelect
             aria-label="발송 결과"
             value={resultFilter}
             onChange={(event) => handleResultFilterChange(event.target.value)}
-            className="ml-2 mt-2 h-[var(--control-h-sm)] rounded-md border border-input bg-background px-2 text-xs"
+            className="ml-2 mt-2 h-[var(--control-h-sm)] px-2 text-xs"
           >
             <option value="">결과 전체</option>
             <option value="F">실패만</option>
             <option value="P">대기만</option>
             <option value="S">성공만</option>
-          </select>
+          </NativeSelect>
         </div>
       )}
       master={(

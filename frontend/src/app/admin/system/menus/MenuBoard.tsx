@@ -83,7 +83,7 @@ const BADGE_TONE: Record<MenuBadgeKind, string> = {
   new: 'bg-success/15 text-success-emphasis',
   deleted: 'bg-destructive/10 text-destructive-emphasis',
   move: 'bg-primary/10 text-primary',
-  order: 'bg-warning/15 text-warning-emphasis',
+  order: 'bg-warning/15 text-foreground',
   edited: 'bg-primary/10 text-primary',
 };
 
@@ -476,7 +476,7 @@ function AreaTab({ area, items, selected, count, menuCount, panelId, tabId, onAc
       </span>
       {count > 0 && ' '}
       {count > 0 && (
-        <span className="ml-0.5 rounded bg-warning/15 px-1 text-xs font-semibold text-warning-emphasis">
+        <span className="ml-0.5 rounded bg-warning/15 px-1 text-xs font-semibold text-foreground">
           {/* 접근 이름은 숨긴 문장 하나로 만든다 — 숫자와 '건 변경' 을 다른 요소로 나누면 Chrome 이 화면 밖(absolute) 요소
               앞뒤에 공백을 넣어 '1 건 변경' 으로 읽는다(jsdom 은 붙여 읽어 단위 테스트로는 보이지 않았다). */}
           <span aria-hidden="true">{count.toLocaleString()}</span>

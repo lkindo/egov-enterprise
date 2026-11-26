@@ -8,6 +8,11 @@
 @import "../styles/themes/premium.css";
 @import "../styles/themes/krds-aligned.css";
 
+/* [2026-11-26] dark: 는 색 토큰과 같은 축(<html class="dark">, ThemeProvider attribute="class")을 따른다. 정의가 없으면 Tailwind 4 의
+   dark: 는 OS 설정(prefers-color-scheme)을 따라, OS 다크·앱 라이트에서 dark:bg-destructive/60 같은 유틸리티가 라이트 토큰 위에 켜졌다
+   (흰 카드 위 반려 배지 2.90:1). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Preserve scroll-lock inheritance and let the browser compare numeric gap values. */
 @property --removed-body-scroll-bar-size {
   syntax: "<length>";
@@ -284,10 +289,6 @@
     @apply bg-card/95 text-foreground border border-border/60 backdrop-blur-md p-12 rounded-[var(--radius-hub-section)] shadow-[var(--shadow-hub-premium)] relative overflow-hidden transition-all duration-500 hover:shadow-lg hover:shadow-primary/5;
   }
 
-  .hub-badge-status {
-    @apply flex items-center gap-2 px-4 py-1.5 bg-white/10 dark:bg-muted rounded-lg text-[length:var(--font-size-hub-subtitle)] font-[number:var(--font-weight-hub-title)] tracking-tight;
-  }
-
   .hub-table-container {
     @apply rounded-lg border border-border/60 overflow-hidden bg-card/80 shadow-sm transition-all duration-500;
   }
@@ -439,6 +440,13 @@
     [aria-selected="true"] {
       outline: 2px solid Highlight;
       outline-offset: 1px;
+    }
+
+    /* [2026-11-26] 목록 항목의 강조(Radix Select·Command 의 data-highlighted)는 배경색으로만 말해 포인터로 가리킨 항목이 평평해진다
+       — 방향키는 :focus-visible 윤곽선이 남지만 포인터 초점은 :focus-visible 이 아니다. 선택 표시와 겹치지 않게 점선으로 둔다. */
+    [role="option"][data-highlighted] {
+      outline: 2px dashed Highlight;
+      outline-offset: -2px;
     }
   }
 }

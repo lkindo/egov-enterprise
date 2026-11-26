@@ -21,6 +21,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { type LucideIcon, Building2, ChevronRight, GripVertical, Info, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { NativeSelect } from '@/components/ui/native-select';
 import { useOverflowRegion } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import type { UserManage } from '@/types/foundation/user';
@@ -491,7 +492,7 @@ const USER_LOCK_FILTER_OPTIONS = [
   { value: 'Y', label: '잠김' },
   { value: 'N', label: '잠기지 않음' },
 ] as const;
-const FILTER_SELECT_CLASS = 'h-[var(--control-h)] rounded-md border border-input bg-background px-2 text-[length:var(--font-size-body)]';
+const FILTER_SELECT_CLASS = 'px-2';
 
 export function formatDeptMembersLabel(deptMembersQuery: {
   isError: boolean;
@@ -596,7 +597,7 @@ export function UserListFilterFields({
     <>
       <div className="space-y-1">
         <label htmlFor={`${userFilterId}-status`} className="text-[length:var(--font-size-body)] font-medium">계정 상태</label>
-        <select
+        <NativeSelect
           id={`${userFilterId}-status`}
           value={userFilters.userSttsCd}
           onChange={(event) => onChangeFilter({ userSttsCd: event.target.value })}
@@ -606,11 +607,11 @@ export function UserListFilterFields({
           {Object.entries(USER_STATUS_LABELS).map(([code, status]) => (
             <option key={code} value={code}>{status.label}</option>
           ))}
-        </select>
+        </NativeSelect>
       </div>
       <div className="space-y-1">
         <label htmlFor={`${userFilterId}-dept`} className="text-[length:var(--font-size-body)] font-medium">소속 부서</label>
-        <select
+        <NativeSelect
           id={`${userFilterId}-dept`}
           value={userFilters.ognzId}
           onChange={(event) => onChangeFilter({ ognzId: event.target.value })}
@@ -620,11 +621,11 @@ export function UserListFilterFields({
           {(departments || []).filter((dept) => dept?.ognzId).map((dept) => (
             <option key={dept.ognzId} value={dept.ognzId}>{dept.ognzNm || dept.ognzId}</option>
           ))}
-        </select>
+        </NativeSelect>
       </div>
       <div className="space-y-1">
         <label htmlFor={`${userFilterId}-lock`} className="text-[length:var(--font-size-body)] font-medium">로그인 잠금</label>
-        <select
+        <NativeSelect
           id={`${userFilterId}-lock`}
           value={userFilters.lckYn}
           onChange={(event) => onChangeFilter({ lckYn: event.target.value })}
@@ -633,7 +634,7 @@ export function UserListFilterFields({
           {USER_LOCK_FILTER_OPTIONS.map((option) => (
             <option key={option.value || 'all'} value={option.value}>{option.label}</option>
           ))}
-        </select>
+        </NativeSelect>
       </div>
     </>
   );
@@ -721,7 +722,7 @@ export function UserOrgDetailPanel({
             )}
             {/* [결정 18] 관리자가 초기화한 임시 비밀번호 — 본인이 바꾸기 전까지 다른 기능을 쓸 수 없다. */}
             {!isDeptTab && displayedUser?.passwordChangeRequired && (
-              <span className="rounded bg-warning/15 px-1.5 py-0.5 text-xs font-semibold text-warning-emphasis">
+              <span className="rounded bg-warning/15 px-1.5 py-0.5 text-xs font-semibold text-foreground">
                 비밀번호 변경 필요
               </span>
             )}

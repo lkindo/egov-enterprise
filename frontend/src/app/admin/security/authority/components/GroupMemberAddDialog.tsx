@@ -17,6 +17,7 @@ import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PagePagination } from '@/components/common/PagePagination';
 import { invalidateMembershipQueries } from './group-member-queries';
@@ -135,10 +136,10 @@ export function GroupMemberAddDialog({ code, name, onClose }: { code: string; na
           </TabsContent>
           <TabsContent value="department" className="space-y-3">
             <label className="block space-y-1 text-sm">부서
-              <select className="block h-[var(--control-h)] w-full max-w-md rounded-md border border-input bg-background px-3" value={departmentId} onChange={(event) => setDepartmentId(event.target.value)}>
+              <NativeSelect className="block w-full max-w-md" value={departmentId} onChange={(event) => setDepartmentId(event.target.value)}>
                 <option value="">부서를 선택하세요</option>
                 {(departments.data ?? []).map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
-              </select>
+              </NativeSelect>
             </label>
             {departments.isError && <p role="alert">{extractErrorMessage(departments.error, '부서를 불러오지 못했습니다.')}</p>}
             {departmentId && roster.isPending && <p role="status">부서 구성원을 불러오는 중입니다…</p>}

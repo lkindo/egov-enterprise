@@ -12,6 +12,7 @@ import { motion } from 'framer-motion';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { BoardPost } from '@/types/business/board';
 import { Button } from '@/components/ui/button';
+import { NativeSelect } from '@/components/ui/native-select';
 import { cn } from '@/lib/utils';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
@@ -103,13 +104,13 @@ function CommunityBoardContent() {
             }}
           >
             <div className="flex items-end gap-3">
-              <select
+              <NativeSelect
                 value={bbsId}
                 onChange={(e) => {
                   setBbsId(e.target.value);
                   setPage(1);
                 }}
-                className="h-[var(--control-h)] px-8 bg-card border-2 border-input rounded-lg font-bold text-xs tracking-widest outline-none focus:border-ring transition-all shadow-sm"
+                className="px-8 bg-card border-2 rounded-lg font-bold text-xs tracking-widest focus:border-ring transition-all shadow-sm"
                 aria-label="게시판 선택"
               >
                 {/* 현재 선택값(주소의 bbsId·기본값)이 선택지에 없으면 선택이 풀린 것처럼 보이므로 그 값을 남겨 둔다.
@@ -120,7 +121,7 @@ function CommunityBoardContent() {
                 {boardOptions.map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
-              </select>
+              </NativeSelect>
               {/* 감사 P1-6: 핸들러가 없던 '상세 필터' 버튼은 삭제하고, 실제로 동작하는 새로고침(refetch)만 남긴다. */}
               <Button
                 type="button"

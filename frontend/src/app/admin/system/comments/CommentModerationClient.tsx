@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { MessageSquare, RefreshCcw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { NativeSelect } from '@/components/ui/native-select';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -284,15 +285,15 @@ export default function CommentModerationClient() {
           >
             <div className="space-y-1">
               <label htmlFor="comment-board-filter" className="text-[length:var(--font-size-body)] font-medium">게시판</label>
-              <select
+              <NativeSelect
                 id="comment-board-filter"
                 value={boardDraft}
                 onChange={(event) => setBoardDraft(event.target.value)}
-                className="h-[var(--control-h)] max-w-xs rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)]"
+                className="max-w-xs bg-card"
               >
                 <option value="">전체 게시판</option>
                 {boardChoices.map((choice) => <option key={choice.value} value={choice.value}>{choice.label}</option>)}
-              </select>
+              </NativeSelect>
             </div>
           </KeywordFilter>
           {postNumberError && <p role="alert" className="text-[length:var(--font-size-body)] text-destructive">{postNumberError}</p>}

@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Button } from '@/components/ui/button';
 import { UserManage } from '@/types/foundation/user';
 import { Department } from '@/services/foundation/system/DeptAdminService';
@@ -318,12 +319,12 @@ export function UserManageForm({
                   소속 부서
                 </FormLabel>
                 <FormControl>
-                  <select
+                  <NativeSelect
                     {...field}
                     disabled={departmentLocked}
                     aria-describedby={departmentLocked ? 'user-form-dept-locked' : undefined}
                     className={cn(
-                        "w-full h-[var(--control-h)] px-6 rounded-lg border-2 border-input bg-muted text-xs font-bold outline-none shadow-inner transition-all",
+                        "w-full px-6 rounded-lg border-2 bg-muted text-xs font-bold shadow-inner transition-all",
                         fieldState.error ? "border-destructive-emphasis ring-destructive/10 ring-4" : "focus:border-ring focus:ring-4 focus:ring-primary/10"
                     )}
                   >
@@ -333,7 +334,7 @@ export function UserManageForm({
                     {(departments || []).filter(Boolean).map((d) => (
                       <option key={d.ognzId} value={d.ognzId}>{d.ognzNm}</option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </FormControl>
                 {departmentLocked && (
                   <p id="user-form-dept-locked" className="text-xs text-muted-foreground mt-2 ml-2">

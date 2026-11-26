@@ -18,12 +18,12 @@ export function RouteFacts({ route }: { route: string | null }) {
       return <p className="text-xs text-muted-foreground">이전 방식(.do) 경로입니다. 앱 화면 목록에는 없습니다.</p>;
     case 'alias':
       return (
-        <p className="text-xs text-warning-emphasis">
+        <p className="text-xs">
           다른 화면으로 넘어가는 경로입니다: {described.target ?? '목적지 미확인'}. 넘어간 화면의 경로로 연결하는 것이 좋습니다.
         </p>
       );
     case 'unknown':
-      return <p className="text-xs text-warning-emphasis">화면 목록에 없는 경로입니다. 이 메뉴를 누르면 화면을 찾지 못할 수 있습니다. 경로를 확인하세요.</p>;
+      return <p className="text-xs">화면 목록에 없는 경로입니다. 이 메뉴를 누르면 화면을 찾지 못할 수 있습니다. 경로를 확인하세요.</p>;
     case 'screen': {
       const { screen } = described;
       return (

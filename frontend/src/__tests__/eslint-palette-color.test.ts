@@ -47,6 +47,29 @@ export function Probe() {
     expect(await palette(`export const fixture = 'text-red-500';\n`, 'src/app/__rule_probe__/__tests__/Probe.test.tsx')).toEqual([]);
   });
 
+  it('globals.css @theme 에 없는 시맨틱 상태색은 잡고, 정의된 이름·불투명도·변형 접두·CSS 변수 안의 이름은 잡지 않는다', async () => {
+    // [2026-11-26] text-warning-emphasis 는 토큰이 없어 Tailwind 가 클래스를 만들지 않는다 — 17개 파일 21곳의 경고 글자색이 조용히 빠져 있었다.
+    const undefinedNames = async (source: string) =>
+      (await lint(source)).filter((message) => message.startsWith('정의되지 않은 시맨틱 색')).map((message) => /'([^']+)'/.exec(message)?.[1]);
+    expect(await undefinedNames(`
+const tones = { warn: 'bg-warning/15 text-warning-emphasis' };
+export function Probe({ ok }: { ok: boolean }) {
+  return <p className={ok ? 'hover:border-info-subtle/40' : tones.warn}>상태</p>;
+}
+`)).toEqual(['warning-emphasis', 'info-subtle']);
+    // 방향 테두리·숫자 단계(Codex 검토 2026-11-26)와 화면 클래스를 담는 .ts 색상표.
+    expect(await undefinedNames(`
+export const Probe = () => <p className="hover:border-t-warning-emphasis bg-warning-500 border-bs-info-subtle">x</p>;
+`)).toEqual(['warning-emphasis, warning-500, info-subtle']);
+    expect((await lint(`export const TONE = { color: 'text-warning-emphasis' };\n`, 'src/app/__rule_probe__/probe-model.ts'))
+      .filter((message) => message.startsWith('정의되지 않은 시맨틱 색'))).toHaveLength(1);
+    expect(await undefinedNames(`
+export function Probe() {
+  return <p className="text-success-emphasis bg-destructive/15 dark:text-destructive-emphasis ring-offset-primary text-primary-foreground/80 text-[color:var(--warning-emphasis)]">상태</p>;
+}
+`)).toEqual([]);
+  });
+
   it('동결 표지는 그 줄에서 허용한 클래스와 개수만 풀고, 같은 줄의 새 원색·흰 배경은 그대로 잡는다', async () => {
     expect(await lint(`
 export function Probe() {

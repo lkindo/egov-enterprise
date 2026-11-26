@@ -215,7 +215,7 @@ export function CommunityMembersPanel({ community, onBack }: CommunityMembersPan
                   <span className="flex items-center gap-2 text-sm font-bold text-foreground">
                     <span className="truncate">{displayName(member)}</span>
                     <span
-                      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${isRequested ? 'bg-warning/10 text-warning-emphasis' : member.status === 'APPROVED' ? 'bg-success/10 text-success-emphasis' : 'bg-muted text-muted-foreground'}`}
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${isRequested ? 'bg-warning/10 text-foreground' : member.status === 'APPROVED' ? 'bg-success/10 text-success-emphasis' : 'bg-muted text-muted-foreground'}`}
                     >
                       {STATUS_LABEL[member.status ?? ''] ?? `알 수 없음(${member.mbrSttsCd})`}
                     </span>

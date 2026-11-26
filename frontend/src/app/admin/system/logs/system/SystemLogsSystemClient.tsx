@@ -150,7 +150,7 @@ const SystemLogsSystemClient = () => {
                     <span className={
                         item.errSeCd === 'SERVER'
                             ? 'px-2 py-0.5 rounded-md border text-xs font-bold tabular-nums bg-destructive/10 text-destructive-emphasis border-destructive/30'
-                            : 'px-2 py-0.5 rounded-md border text-xs font-bold tabular-nums bg-warning/10 text-warning-emphasis border-warning/30'
+                            : 'px-2 py-0.5 rounded-md border text-xs font-bold tabular-nums bg-warning/10 text-foreground border-warning/30'
                     }>
                         {item.rspnsCd || '-'}
                     </span>

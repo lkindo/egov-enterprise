@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { FormErrorSummary } from '@/components/ui/form';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Check, X, Plus, Trash2, MessageSquareReply, Copy, PencilLine } from 'lucide-react';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { useToast } from '@/app/components/ui/toast';
@@ -585,35 +586,35 @@ function ApprovalQueueFilter({
       {showStatus && (
         <div className="space-y-1">
           <label htmlFor={statusFilterId} className="text-[length:var(--font-size-body)] font-medium">문서 상태</label>
-          <select
+          <NativeSelect
             id={statusFilterId}
             value={statusFilter}
             onChange={(event) => {
               const next = event.target.value as '' | SanctionStatusCode;
               applyListFilter(() => setStatusFilter(next));
             }}
-            className="h-[var(--control-h)] rounded-md border border-input bg-background px-2 text-[length:var(--font-size-body)]"
+            className="px-2"
           >
             {STATUS_FILTER_OPTIONS.map((option) => (
               <option key={option.value || 'all'} value={option.value}>{option.label}</option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
       )}
       <div className="space-y-1">
         <label htmlFor={sortId} className="text-[length:var(--font-size-body)] font-medium">정렬</label>
-        <select
+        <NativeSelect
           id={sortId}
           value={sortDir}
           onChange={(event) => {
             const next = event.target.value as '' | 'asc' | 'desc';
             applyListFilter(() => setSortDir(next));
           }}
-          className="h-[var(--control-h)] rounded-md border border-input bg-background px-2 text-[length:var(--font-size-body)]"
+          className="px-2"
         >
           <option value="">최신 문서 먼저</option>
           <option value="asc">오래된 문서 먼저</option>
-        </select>
+        </NativeSelect>
       </div>
     </KeywordFilter>
   );

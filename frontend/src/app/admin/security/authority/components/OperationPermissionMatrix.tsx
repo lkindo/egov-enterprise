@@ -3,6 +3,7 @@
 import { useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { WORK_FILL_REGION_CLASS } from '@/app/components/patterns/work-fill';
@@ -176,10 +177,10 @@ export function OperationPermissionMatrix({
         </label>
         <label className="flex items-center gap-2 text-sm">
           <span className="shrink-0">업무 분류</span>
-          <select className="block h-[var(--control-h-sm)] rounded-md border border-input bg-background px-2 text-sm" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
+          <NativeSelect className="block h-[var(--control-h-sm)] px-2 text-sm" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
             <option value="">전체 분류</option>
             {categories.map((category) => <option key={category.key} value={category.key}>{category.label}</option>)}
-          </select>
+          </NativeSelect>
         </label>
         {/* [2026-10-05 반박 리뷰 반영] 도구 줄을 한 줄로 — 결과 수는 거를 때만(거르지 않으면 표시 수와 전체 수가 같다), '보호' 표시의
             뜻은 '이 표 읽는 법'으로 옮겼다. 표가 남은 높이를 더 받는다. */}

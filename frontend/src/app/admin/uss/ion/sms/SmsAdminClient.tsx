@@ -24,6 +24,7 @@ import { useRecipientAddressBook } from '@/app/components/ui/recipient-picker-so
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
@@ -461,10 +462,10 @@ export default function SmsAdminClient({
               <label htmlFor="sms-search-condition" className="text-[length:var(--font-size-body)] font-medium">
                 조회 조건
               </label>
-              <select
+              <NativeSelect
                 id="sms-search-condition"
                 aria-label="문자 발송 이력 검색 조건"
-                className="block h-[var(--control-h)] rounded-[var(--radius-control)] border border-input bg-card px-2 text-[length:var(--font-size-body)]"
+                className="block rounded-[var(--radius-control)] bg-card px-2"
                 value={searchCondition}
                 onChange={(e) => {
                   setSearchCondition(e.target.value as '0' | '1');
@@ -473,7 +474,7 @@ export default function SmsAdminClient({
               >
                 <option value="1">내용</option>
                 <option value="0">수신번호</option>
-              </select>
+              </NativeSelect>
             </div>
           </KeywordFilter>
         }
@@ -500,7 +501,7 @@ export default function SmsAdminClient({
             role="status"
             className="mb-6 flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 px-5 py-4"
           >
-            <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warning-emphasis" aria-hidden="true" />
+            <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warning" aria-hidden="true" />
             <div className="text-xs font-bold leading-relaxed text-foreground space-y-1">
               <p>문자 게이트웨이가 연동되어 있지 않아 지금은 문자가 실제로 발송되지 않습니다.</p>
               <p className="font-normal">

@@ -25,7 +25,7 @@ export function HubSectionCard({
     <div className={cn("hub-card-section", className)}>
       <div className="flex flex-col md:flex-row items-center gap-10 relative z-10">
         <div className="w-24 h-24 bg-white/10 dark:bg-primary/5 rounded-lg flex items-center justify-center p-6 backdrop-blur-3xl border border-white/20">
-          <Icon size={48} className="text-primary-foreground dark:text-primary" />
+          <Icon size={48} className="text-primary" />
         </div>
         <div className="space-y-3 flex-1 text-center md:text-left">
           <h2 className="text-[length:var(--font-size-hub-title)] font-[number:var(--font-weight-hub-title)] tracking-[var(--letter-spacing-hub)]">

@@ -122,6 +122,15 @@ describe('브랜드 프로필 토큰 계약', () => {
     expect(css, '프로필 CSS import 가 사라졌습니다.').toMatch(/@import\s+"\.\.\/styles\/themes\//);
   });
 
+  it('dark: 변형은 색 토큰과 같은 .dark 클래스 축을 따른다(OS 설정이 아니다)', () => {
+    // [2026-11-26] 정의가 없으면 Tailwind 4 의 dark: 는 prefers-color-scheme 를 따른다. 토큰은 <html class="dark"> 를 따르므로
+    //   OS 다크·앱 라이트에서 dark:bg-destructive/60 이 라이트 토큰 위에 켜져 흰 카드 위 반려 배지가 2.90:1 이 됐다.
+    const css = readFileSync(GLOBALS, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(css).toMatch(/@custom-variant\s+dark\s+\(&:where\(\.dark,\s*\.dark \*\)\);/);
+    const layout = readFileSync(join(FRONTEND_DIR, 'src', 'app', 'layout.tsx'), 'utf8');
+    expect(layout, 'ThemeProvider 가 클래스 전략이 아니면 위 변형이 테마와 다시 갈린다').toMatch(/<ThemeProvider[\s\S]*?attribute="class"/);
+  });
+
   it('루트 레이아웃이 서버 검증된 env 값으로 <html data-brand-theme> 를 전역 배선한다', () => {
     // 프로필 CSS 는 data-brand-theme 속성이 있어야 활성화된다. 배선이 없으면 비기본 프로필은
     // 전 번들에 실려 나가는 죽은 CSS 다. 배선은 ①전역 1곳(<html>) — 라우트별 배정은

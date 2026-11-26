@@ -8,6 +8,7 @@ import { WORK_FILL_REGION_CLASS } from '@/app/components/patterns/work-fill';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
@@ -407,16 +408,16 @@ export default function MenuAdminClient({
               />
             </div>
             {canReadGroups && (
-              <select
+              <NativeSelect
                 aria-label="그룹 미리보기"
                 value={previewGroup}
                 disabled={groupState !== 'ready'}
                 onChange={(event) => setPreviewGroup(event.target.value)}
-                className="h-[var(--control-h-sm)] w-36 rounded-md border border-input bg-background px-2 text-sm"
+                className="h-[var(--control-h-sm)] w-36 px-2 text-sm"
               >
                 <option value="">그룹 미리보기 안 함</option>
                 {groups.map((group) => <option key={group.code} value={group.code}>{group.name} ({group.code})</option>)}
-              </select>
+              </NativeSelect>
             )}
             {canUpdate && (
               <MenuAdminToolButtons

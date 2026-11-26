@@ -109,7 +109,7 @@ export function MenuChangeList({
           {conflicts.map((conflict, conflictIndex) => (
             <div key={conflict.id} className="space-y-1 rounded bg-card px-2 py-1">
               <p className="flex items-start gap-1 text-foreground">
-                <AlertTriangle size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-warning-emphasis" />
+                <AlertTriangle size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-warning" />
                 <span>{conflict.text}</span>
               </p>
               <div className="flex flex-wrap gap-1">

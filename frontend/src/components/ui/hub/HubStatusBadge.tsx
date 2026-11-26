@@ -1,34 +1,37 @@
 import { LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Badge, type BadgeVariant } from '@/components/ui/badge';
+
+type HubStatusVariant = 'default' | 'success' | 'warning' | 'error' | 'secondary';
 
 interface HubStatusBadgeProps {
   label?: string;
   status?: string;
   labels?: Record<string, string>;
   icon?: LucideIcon;
-  variant?: 'default' | 'success' | 'warning' | 'error' | 'secondary';
+  variant?: HubStatusVariant;
   className?: string;
 }
 
-export function HubStatusBadge({ 
-  label, 
+// [2026-11-26 PR-3b 6번] 모양은 Badge 의 연한 변형에서 온다. 종전 자체 쌍 가운데 success(bg-success/15 위 text-success-emphasis)는
+// 기본 프로필 라이트에서 3.79:1 이었다 — 토큰을 고쳐 Badge 계약(자기 틴트 위 4.5:1)으로 묶었다.
+// default 는 라이트에서 순백 카드 위 slate-200(1.23:1)으로 상태 라벨이 보이지 않던 실측 결함이라 secondary 와 같은 muted 다.
+const BADGE_VARIANT: Record<HubStatusVariant, BadgeVariant> = {
+  default: 'muted',
+  secondary: 'muted',
+  success: 'success-soft',
+  warning: 'warning-soft',
+  error: 'destructive-soft',
+};
+
+export function HubStatusBadge({
+  label,
   status,
   labels,
-  icon: Icon, 
+  icon: Icon,
   variant = 'default',
-  className 
+  className
 }: HubStatusBadgeProps) {
   const displayLabel = labels && status ? labels[status] : (label || status || 'N/A');
-  
-  // default 는 라이트에서 순백 카드 위 slate-200(1.23:1)으로 상태 라벨이 보이지 않던 실측 결함.
-  // secondary 와 동일한 muted pair 로 통일해 다크는 바이트 불변, 깨진 라이트 경로만 이동한다.
-  const variantStyles = {
-    default: 'bg-muted text-muted-foreground',
-    secondary: 'bg-muted text-muted-foreground',
-    success: 'bg-success/15 text-success-emphasis',
-    warning: 'bg-warning/15 text-warning-foreground',
-    error: 'bg-destructive/15 text-destructive-emphasis'
-  };
 
   // Auto-variant based on status if not provided.
   // ⚠ [2026-09-22] 이 목록은 **편의이지 보장이 아니다.** 목록 밖 문구를 status 로만 넘기면
@@ -43,13 +46,9 @@ export function HubStatusBadge({
   }
 
   return (
-    <div className={cn(
-      "hub-badge-status border border-border/10 whitespace-nowrap w-fit",
-      variantStyles[activeVariant],
-      className
-    )}>
-      {Icon && <Icon size={12} />}
+    <Badge variant={BADGE_VARIANT[activeVariant]} className={className}>
+      {Icon && <Icon size={12} aria-hidden="true" />}
       <span className="leading-none">{displayLabel}</span>
-    </div>
+    </Badge>
   );
 }

@@ -3,6 +3,7 @@
 import { useId, useState } from 'react';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { NativeSelect } from '@/components/ui/native-select';
 import type { FlattenedDept } from './departments/treeUtils';
 
 const ROOT = '';
@@ -61,12 +62,12 @@ export function DeptPlacementControls({
       <div className="flex flex-wrap items-end gap-2">
         <label htmlFor={selectId} className="flex flex-col gap-1 text-xs font-medium text-foreground">
           상위 부서
-          <select
+          <NativeSelect
             id={selectId}
             value={parentChoice}
             disabled={disabled}
             onChange={(event) => setParentChoice(event.target.value)}
-            className="h-[var(--control-h)] min-w-48 rounded-md border border-input bg-background px-2 text-sm"
+            className="min-w-48 px-2 text-sm"
           >
             <option value={ROOT}>최상위</option>
             {depts.filter((d) => d.ognzId && !blocked.has(d.ognzId)).map((d) => (
@@ -74,7 +75,7 @@ export function DeptPlacementControls({
                 {`${'　'.repeat(d.depth)}${d.ognzNm || d.ognzId}`}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </label>
         <Button type="button" size="sm" variant="outline" disabled={disabled} onClick={move}>상위 부서로 옮기기</Button>
         <Button type="button" size="sm" variant="outline" disabled={disabled} onClick={() => shift('up')}>

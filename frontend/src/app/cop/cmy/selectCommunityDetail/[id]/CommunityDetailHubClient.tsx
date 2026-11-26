@@ -182,7 +182,7 @@ export default function CommunityDetailHubClient({
                 origins={['/cop/cmy/selectCommunityList', '/admin/help']}
               />
               {membershipStatus === 'REQUESTED' ? (
-                <span role="status" className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-warning/10 px-3 text-xs font-bold text-warning-emphasis">
+                <span role="status" className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-warning/10 px-3 text-xs font-bold text-foreground">
                   <UserPlus size={16} aria-hidden="true" /> 가입 승인 대기 중
                 </span>
               ) : membershipStatus === 'MEMBER' ? (

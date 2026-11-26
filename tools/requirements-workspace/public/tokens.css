@@ -1,9 +1,9 @@
 /*
  * eGov Enterprise 시안 토큰 키트 — 생성물, 직접 고치지 않는다(pnpm -C frontend run prototype:kit).
  * 값의 정본은 아래 원본이다. 이 파일은 그 값을 그대로 옮긴다.
- *   - src/styles/themes/premium.css sha256:7cf44767c78804b21bd0968b4369f85c3589ade3a4322ae6c2c2f58f7b153529
- *   - src/styles/themes/krds-aligned.css sha256:fab339f6dfa3e753b6f81ba7b267af44dce4d4e518749c02373e0783613e8739
- *   - src/app/globals.css sha256:1de590f4307f4fe30c9030ced756a358b2f1f3e4d21d10c95d9772af048b5212
+ *   - src/styles/themes/premium.css sha256:2c1b640c9ab9318d342af93ab00809c721bae9e464810d86dea0c376a058ec45
+ *   - src/styles/themes/krds-aligned.css sha256:b9fb2b88e7ce8d26f49e95551cd3f3a352ca9a5e767c58b906beb8a45ac012f3
+ *   - src/app/globals.css sha256:1844935c2c4eee976990b11620d68153481c0c900346d9414993e97b410efac2
  * 쓰는 법: <html data-brand-theme="premium"> 또는 "krds-aligned", 다크는 class="dark".
  *   배경과 글자는 시맨틱 짝(예: var(--color-primary) 위에 var(--color-primary-foreground))으로만 쓰고 hex 를 새로 고르지 않는다.
  */
@@ -65,14 +65,17 @@
     --destructive-foreground: 210 40% 98%;
     /* [I-1] 전경(텍스트·아이콘) 전용 위험색. --destructive 는 `bg-destructive` 용으로 설계된
        어두운 빨강이라, 그대로 텍스트에 쓰면 다크 모드에서 대비가 1.99:1(카드 위 1.78:1)까지 떨어진다.
-       배경용과 전경용은 요구가 정반대이므로 토큰을 나눈다. 라이트에서는 기존 값이 이미 5.42:1 이라 동일. */
-    --destructive-emphasis: 0 84.2% 45%;
+       배경용과 전경용은 요구가 정반대이므로 토큰을 나눈다.
+       [2026-11-26] 전경 토큰은 자기 색의 연한 틴트(bg-destructive/5~20) 위에도 얹힌다(배지·안내 줄 60여 곳). 45% 는 그 위에서
+       3.52:1 이라 38% 로 낮췄다 — 틴트 위 4.57:1, 페이지 위 7.04:1(status-token-contrast 계약). */
+    --destructive-emphasis: 0 84.2% 38%;
 
     /* [I-1] bg-success 위 흰 전경이 4.5:1 을 넘도록 배경 명도를 36.3%→30% 로 낮췄다(3.0 → 4.62). */
     --success: 142.1 76.2% 30%;
     --success-foreground: 0 0% 100%;
-    /* bg-success와 분리한 전경 전용 성공색. 라이트 배경 대비를 위해 배경 토큰과 같은 짙은 값을 쓴다. */
-    --success-emphasis: 142.1 76.2% 30%;
+    /* bg-success와 분리한 전경 전용 성공색. [2026-11-26] 배경 토큰과 같은 30% 는 자기 색 연한 틴트(bg-success/5~20) 위에서
+       3.27:1 이었다(배지·안내 줄) — 24.5% 로 낮춰 틴트 위 4.50:1, 페이지 위 6.36:1 이다. */
+    --success-emphasis: 142.1 76.2% 24.5%;
 
     /* [I-1] 종전 amber-100 전경은 amber-500 배경 위에서 1.92:1 이었다 — 라이트/다크 공통 실패.
        같은 색상(hue)의 어두운 값으로 바꿔 6.67:1 확보. */
@@ -164,8 +167,9 @@
     --destructive-foreground: 210 40% 98%;
     /* [I-1] 다크에서 --destructive(30.6% 명도)를 텍스트로 쓰면 배경 대비 1.99:1 · 카드 위 1.78:1 로
        WCAG AA(4.5:1)의 절반에도 못 미친다. 전경 전용 토큰은 반대로 밝게 가야 한다 → 6.04:1 / 5.41:1.
-       (--destructive 자체를 밝히면 bg-destructive 19곳이 밝은 빨강 배경이 되어 파손된다.) */
-    --destructive-emphasis: 0 91% 65%;
+       (--destructive 자체를 밝히면 bg-destructive 19곳이 밝은 빨강 배경이 되어 파손된다.)
+       [2026-11-26] 자기 색 연한 틴트(bg-destructive/5~20, muted 위) 위 4.33:1 이라 65%→66.5% 로 올렸다(4.52:1). */
+    --destructive-emphasis: 0 91% 66.5%;
 
     /* 다크 카드 위 텍스트·아이콘은 밝은 성공색으로 4.5:1 이상 대비를 확보한다. */
     --success-emphasis: 142 70% 55%;
@@ -328,7 +332,7 @@
     --accent-foreground: 210 10% 96.1%; /* #F4F5F6 gray-5 */
     --destructive: 10.2 80.4% 30%; /* #8A240F danger-70 */
     --destructive-foreground: 0 0% 100%; /* #FFFFFF gray-0 */
-    --destructive-emphasis: 0 91% 65%; /* 0 91% 65% DEVIATION: 공식 danger 단계(5/50/70) 중 다크 4.5:1 을 만족하는 유채색 없음(50=4.04) — premium 다크값 유지 */
+    --destructive-emphasis: 0 91% 72.5%; /* 0 91% 72.5% DEVIATION: 공식 danger 단계(5/50/70) 중 다크 4.5:1 을 만족하는 유채색 없음(50=4.04) — premium 다크 색상·채도에 명도만 65%→72.5%(자기 색 연한 틴트 위 3.61→4.56:1, 2026-11-26) */
     --success-emphasis: 142 70% 55%; /* 142 70% 55% DEVIATION: 공식 success 단계 중 다크 4.5:1 을 만족하는 유채색 없음(50=4.03) — premium 다크값 유지 */
     /* hub 장식 액센트 다크 전경값 — 라이트 축(hue/sat)을 유지하고 명도만 올린 DEVIATION.
        실측(card 12.9% / background 8% 기준): emerald 8.50/9.68 · rose 5.61/6.39 ·

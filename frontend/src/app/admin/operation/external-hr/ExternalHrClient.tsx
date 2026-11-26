@@ -20,6 +20,7 @@ import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import { z } from 'zod';
 import { useAppForm } from '@/hooks/useAppForm';
 import {
@@ -512,7 +513,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
             <label htmlFor="external-hr-event-filter" className="text-[length:var(--font-size-body)] font-medium">
               참여 행사
             </label>
-            <select
+            <NativeSelect
               id="external-hr-event-filter"
               aria-label="참여 행사 필터"
               value={selectedEvntSn ?? ''}
@@ -521,7 +522,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                 if (page !== 1) setPage(1);
                 setSelectedEvntSn(raw ? Number(raw) : undefined);
               }}
-              className="h-[var(--control-h)] w-full rounded-lg border border-input bg-background px-3 text-sm"
+              className="w-full rounded-lg text-sm"
             >
               <option value="">전체 행사</option>
               {eventOptions.map((ev) => (
@@ -529,7 +530,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                   {ev.evntNm}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
         </KeywordFilter>
       }
@@ -623,12 +624,12 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">소속 행사</FormLabel>
                   <FormControl>
-                    <select
+                    <NativeSelect
                       {...field}
                       value={field.value || ''}
                       disabled={editing !== null}
                       onChange={(event) => field.onChange(event.target.value ? Number(event.target.value) : 0)}
-                      className="h-[var(--control-h)] w-full rounded-lg border border-input bg-muted px-3 text-sm disabled:opacity-60"
+                      className="w-full rounded-lg bg-muted text-sm disabled:opacity-60"
                     >
                       <option value="">— 행사를 선택하세요 —</option>
                       {eventOptions.map((event) => (
@@ -636,7 +637,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                           {event.evntNm}
                         </option>
                       ))}
-                    </select>
+                    </NativeSelect>
                   </FormControl>
                   {eventOptions.length === 0 ? (
                     // 행사가 없으면 외부인사를 붙일 곳이 없다. 빈 셀렉트만 두면 이유를 알 수 없다.

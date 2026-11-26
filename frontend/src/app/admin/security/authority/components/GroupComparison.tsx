@@ -10,6 +10,7 @@ import { authorizationAdminService } from '@/services/foundation/system/Authoriz
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { NativeSelect } from '@/components/ui/native-select';
 import { useOverflowRegion } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
@@ -35,7 +36,7 @@ export const EMPTY_COMPARISON_SELECTION: ComparisonSelection = { a: '', b: '', v
 const CELL_CLASS = 'border-b border-border px-[var(--cell-px)] py-[var(--cell-py)] text-center align-middle';
 const HEAD_CLASS = 'sticky top-0 z-20 whitespace-nowrap border-b border-border bg-muted px-[var(--cell-px)] py-[var(--cell-py)] text-center text-xs font-semibold';
 const DIFFERS_CLASS = 'bg-primary/10 font-medium';
-const SELECT_CLASS = 'block h-[var(--control-h)] min-w-[14rem] rounded-md border border-input bg-background px-3';
+const SELECT_CLASS = 'block min-w-[14rem]';
 const SCROLL_CLASS = 'relative max-h-[min(70vh,48rem)] overflow-auto rounded-md border border-border';
 
 /**
@@ -123,16 +124,16 @@ export function GroupComparison({ selection, onSelectionChange, onEdit }: {
       <p className="text-sm text-muted-foreground">두 그룹의 저장된 기능권한과 메뉴 표시를 나란히 봅니다. 이 화면에서는 바꾸지 않습니다 — 고칠 줄의 편집 버튼으로 그 그룹의 권한 설정으로 옮기세요.</p>
       <div className="flex flex-wrap items-end gap-3">
         <label className="block space-y-1 text-sm">A 그룹
-          <select className={SELECT_CLASS} value={aCode} onChange={(event) => update({ a: event.target.value })}>
+          <NativeSelect className={SELECT_CLASS} value={aCode} onChange={(event) => update({ a: event.target.value })}>
             <option value="">그룹 고르기</option>
             {groups.map((group) => <option key={group.code} value={group.code}>{group.name} ({group.code})</option>)}
-          </select>
+          </NativeSelect>
         </label>
         <label className="block space-y-1 text-sm">B 그룹
-          <select className={SELECT_CLASS} value={bCode} onChange={(event) => update({ b: event.target.value })}>
+          <NativeSelect className={SELECT_CLASS} value={bCode} onChange={(event) => update({ b: event.target.value })}>
             <option value="">그룹 고르기</option>
             {groups.map((group) => <option key={group.code} value={group.code}>{group.name} ({group.code})</option>)}
-          </select>
+          </NativeSelect>
         </label>
         <span className="flex items-center gap-2 text-sm">
           <Checkbox id={`${id}-only-differences`} checked={onlyDifferences} onCheckedChange={(next) => update({ onlyDifferences: next === true })} />

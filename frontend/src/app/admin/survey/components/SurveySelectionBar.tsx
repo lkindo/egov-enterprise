@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { Copy, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { NativeSelect } from '@/components/ui/native-select';
 import type { Survey } from '@/types/business/survey';
 
 /**
@@ -49,14 +50,14 @@ export function SurveySelectionBar({
       <label htmlFor="questions-srvy" className="text-sm font-bold shrink-0">
         설문 선택
       </label>
-      <select
+      <NativeSelect
         id="questions-srvy"
         value={srvySn ?? ''}
         onChange={(e) => {
           const next = e.target.value ? Number(e.target.value) : null;
           onSelect(next);
         }}
-        className="border border-input rounded-lg px-3 py-2 text-sm bg-card max-w-md w-full"
+        className="h-auto rounded-lg py-2 text-sm bg-card max-w-md w-full"
       >
         <option value="">— 설문을 선택하세요 —</option>
         {surveyOptions.map((s) => (
@@ -64,7 +65,7 @@ export function SurveySelectionBar({
             {s.srvyTtl}{s.rlsYn === 'N' ? ' (작성 중)' : ''}
           </option>
         ))}
-      </select>
+      </NativeSelect>
       {/*
         [2026-08-28] 설문지 삭제. deleteSurvey 도 소비자가 0건이었다 — 잘못 만든 설문지를
         지울 방법이 없어 선택기에 영원히 쌓였다. 문항·응답이 함께 사라지므로 확인에서 말한다.
