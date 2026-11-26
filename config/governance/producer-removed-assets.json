@@ -28,7 +28,6 @@
     "scripts/governance-review-summary.mjs",
     "scripts/impact-tests.mjs",
     "scripts/integration-precheck.mjs",
-    "scripts/ledger-count-restatement.mjs",
     "scripts/menu-census.mjs",
     "scripts/observability-alert-rules-contract.mjs",
     "scripts/pack-tagged-registry.mjs",

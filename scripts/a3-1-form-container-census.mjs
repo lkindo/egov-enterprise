@@ -37,8 +37,8 @@ const ROOT = resolve(dirname(SCRIPT_PATH), '..');
 const CENSUS_PATH = join(ROOT, 'config', 'governance', 'a3-1-form-container-census.json');
 const APP_ROOT = join(ROOT, 'frontend', 'src', 'app');
 const MIGRATION_ROOT = join(ROOT, 'api-server', 'src', 'main', 'resources', 'db', 'migration');
-// gap ID 는 자동 로드 인덱스(전문 행·레지스트리 줄)와 영역 상세(DEC-OPS-389) 어디에 있든 실재한다.
-const GAPS_PATHS = [join(ROOT, '.agent', 'memory', 'known-gaps.md'), join(ROOT, 'docs', '04-operations', 'known-gaps-detail.md')];
+// gap ID 는 단일 활성 gap 인덱스(known-gaps.md)에서 실재 여부를 확인한다.
+const GAPS_PATHS = [join(ROOT, '.agent', 'memory', 'known-gaps.md')];
 
 /**
  * 탐지 술어 — 느슨하게 잡고(후보를 놓치지 않고) 판정은 census 가 한다.

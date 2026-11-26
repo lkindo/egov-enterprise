@@ -1,6 +1,6 @@
 # 프로젝트 생성기 다중 DB 설계
 
-- 상태: 승인([ADR-0047](decisions/ADR-0047-multi-database-composer-and-vendor-sql-boundary.md)). 단계 0~5 완료. Oracle(23·19c)·MariaDB(11.4)·MySQL(8.4)·SQL Server(2022)·CUBRID(11.4, 제한 지원)를 인증했고, 2026-11-21 사용자 결정으로 인증을 멈춰 지금은 `preview` 다 — PostgreSQL 만 고를 수 있고 벤더 잡도 닫았다([DEC-OPS-422](../04-operations/operational-decisions-index-composer.md), 재개 절차는 [재기록 묶음](../04-operations/vendor-rerecord-batch.md#인증-중단과-재개)). 다음은 Tibero 다(D-15, §16~§20)
+- 상태: 승인([ADR-0047](decisions/ADR-0047-multi-database-composer-and-vendor-sql-boundary.md)). 단계 0~5 완료. Oracle(23·19c)·MariaDB(11.4)·MySQL(8.4)·SQL Server(2022)·CUBRID(11.4, 제한 지원)를 인증했고, 2026-11-21 사용자 결정으로 인증을 멈춰 지금은 `preview` 다 — PostgreSQL 만 고를 수 있고 벤더 잡도 닫았다([DEC-OPS-422](../archived/operational-decisions-history.md#dec-ops-422), 재개 절차는 [재기록 묶음](../04-operations/vendor-rerecord-batch.md#인증-중단과-재개)). 다음은 Tibero 다(D-15, §16~§20)
 - 기준 커밋: 수정안 실측 `ce06495c7`(V2_146까지 포함).
 - 실측: 2026-10-30~31, 이 기계의 일회용 컨테이너. 저장소 변경 없음.
 - 관련: [생성기 설계](project-composer-design.md) §6·§8 E, ADR-0020, ADR-0008, DEC-OPS-239·262·263

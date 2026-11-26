@@ -22,9 +22,9 @@ Gemini·Claude Code·Codex 등은 같은 워킹트리를 공유하며, 도구별
 1. 현재 디스크의 `git status`와 대상 파일을 직접 확인한다. 과거 세션의 상태를 가정하지 않는다.
 2. 다음 공용 메모리 3개를 읽고, 사실은 링크된 원본에서 재확인한다.
    - [project-context.md](.agent/memory/project-context.md)
-   - [decisions.md](.agent/memory/decisions.md)
+   - [decisions.md](.agent/memory/decisions.md) (`Do-Not-Break` 체크리스트 포함)
    - [known-gaps.md](.agent/memory/known-gaps.md)
-3. 변경 작업은 오케스트레이션 프로토콜에서 등급과 승인 경계를 확인하고, 관련 헌법·KI·스킬과 [decisions.md](.agent/memory/decisions.md) 「영역 결정 색인」 표에서 대상 경로가 걸리는 영역 결정 색인과 [gap 영역 상세](docs/04-operations/known-gaps-detail.md)의 같은 영역 절만 읽는다. 대상 경로는 작업이 직접 고치는 입력 파일이다(생성물·공용 메모리·결정 색인 제외 — 그 변경을 부른 입력 경로로 판정한다). 걸리는 색인은 `node scripts/decision-indexes.mjs --for <경로…>`(또는 `--diff <base>`)가 그 표와 같은 원장으로 출력한다. 어느 원장에도 걸리지 않거나 걸리는지 판단이 서지 않으면 그 표의 색인을 모두 읽는다. Accepted ADR 은 [decisions.md](.agent/memory/decisions.md)의 영역별 ID·제목 목록에서 작업과 닿는 것을 영역과 상관없이 읽는다.
+3. 변경 작업은 오케스트레이션 프로토콜에서 등급과 승인 경계를 확인하고, 관련 헌법·KI·스킬과 자동 로드된 [decisions.md](.agent/memory/decisions.md)(`Do-Not-Break` 체크리스트·공통 활성 결정) 및 [known-gaps.md](.agent/memory/known-gaps.md)를 확인한다. 아키텍처·제품 결정이나 과거 운영 결정 원문이 필요하면 [ADR 목록](docs/02-architecture/decisions/README.md)과 [운영 결정 보관 원문](docs/archived/operational-decisions-history.md)에서 해당 ID를 조회한다.
 4. 스킬 지시가 헌법·이 파일·현재 코드와 충돌하거나 낡았으면 상위 원본을 따르고 충돌을 보고한다.
 
 ## 공통 작업 원칙
@@ -67,7 +67,7 @@ Gemini·Claude Code·Codex 등은 같은 워킹트리를 공유하며, 도구별
 
 - 새 게이트·계약·census를 만들기 전에 같은 불변식을 이미 보는 게이트([gate registry](config/governance/gates.json), `scripts/*.test.mjs`, 하네스)를 찾는다. 기존 게이트를 확장해 해결되면 확장한다. 새로 만들면 확장할 수 없는 이유를 변경 설명에 남긴다.
 - 변경 후 두 게이트가 같은 불변식을 검사하면 같은 변경에서 하나로 합치거나 약한 쪽을 걷는다. 걷은 뒤 남은 게이트로 red 증명을 다시 확인한다. 적용 범위가 줄지 않는 중복 제거는 H2의 신호 은폐가 아니다.
-- 공용 메모리와 결정 색인의 행에는 결론·근거 링크·다음 행동만 적는다. 경위·실측 로그·red 증명 상세는 커밋·PR·링크 문서에 둔다. 행 길이와 자동 로드 파일의 전체 크기 상한은 [공용 메모리 계약](scripts/shared-memory-contract.test.mjs)이 검사한다. 상한에 닿으면 행을 줄이거나 기준상 더는 늘 걸리지 않게 된 행만 옮긴다. 늘 걸리는 행을 크기 때문에 옮기거나 상한을 올리는 것은 H2 판단이다.
+- 공용 메모리 행에는 결론·근거 링크·다음 행동만 적는다. 경위·실측 로그·red 증명 상세는 커밋·PR·링크 문서에 둔다.
 
 ## 연속 작업의 시간 예산
 
@@ -92,8 +92,8 @@ Gemini·Claude Code·Codex 등은 같은 워킹트리를 공유하며, 도구별
 
 - 새 일반 문서는 `docs/01-product`, `02-architecture`, `03-guides`, `04-operations`, `archived` 중 하나에 kebab-case로 두고 [문서 인덱스](docs/README.md)를 갱신한다.
 - `.agent/memory/`는 공용 운영 메모리만을 위한 예외 경로이며 규범 SSOT가 아니다.
-- 지속 가능한 프로젝트 사실은 `project-context.md`, 사용자 승인 결정은 ADR 후 결정 색인(`decisions.md`와 그 「영역 결정 색인」 표가 가리키는 색인), 재현 가능한 미해결 위험은 `known-gaps.md`에 링크와 검증일을 남긴다 — 모든 작업에 걸리거나 글로만 지켜지고 어기면 검증 신호·인가·데이터·식별자를 해치는 금지가 있는 위험만 전문을 두고, 특정 경로에서만 필요한 위험은 그 레지스트리에 한 줄을 두며 전문을 [gap 영역 상세](docs/04-operations/known-gaps-detail.md)의 영역 절에 둔다.
-- 운영 결정(DEC)은 앞으로의 작업을 제약하는 규칙·경계이거나 사용자 승인(정책·데이터·외부 반영)일 때만 쓰고, 한 번의 사용자 결정으로 진행한 배치는 DEC 하나로 쓴다. 새 DEC 행은 그 결정이 걸리는 경로의 영역 결정 색인에 쓰고, 모든 변경에 걸리는 작업·기록·승인 절차이거나 시험·계약이 막지 못해 글로만 지켜지고 어기면 검증 신호·인가·데이터·식별자를 해치는 경계일 때만 자동 로드되는 `decisions.md` 운영 결정 표에 쓴다. 구현 기록·고정값 변경·커버리지 상향·리팩터링은 PR·커밋 설명에 둔다. 공유 OCI DB 마이그레이션 적용의 승인과 결과는 DEC 대신 [적용 로그](docs/04-operations/shared-oci-migration-apply-log.md)에 남긴다.
+- 지속 가능한 프로젝트 사실은 `project-context.md`, 자동 게이트 미커버 확정 경계(`Do-Not-Break` 체크리스트)와 저장소 공통 활성 운영 결정은 `decisions.md`, 모든 미해결 위험은 `known-gaps.md`에 링크와 검증일을 남긴다. 사용자 승인 아키텍처 결정 정본은 [ADR 목록](docs/02-architecture/decisions/README.md), 운영 결정(DEC) 전문 정본은 [운영 결정 보관 원문](docs/archived/operational-decisions-history.md)에 둔다.
+- 운영 결정(DEC)은 앞으로의 작업을 제약하는 규칙·경계이거나 사용자 승인(정책·데이터·외부 반영)일 때만 쓰고, 한 번의 사용자 결정으로 진행한 배치는 DEC 하나로 쓴다. 새 DEC 전문은 [운영 결정 보관 원문](docs/archived/operational-decisions-history.md)에 두고, 저장소 전역 작업에 걸리는 핵심 규율·금지만 `decisions.md`의 `Do-Not-Break` 체크리스트 또는 활성 결정 표에 요약한다. 구현 기록·고정값 변경·커버리지 상향·리팩터링은 PR·커밋 설명에 둔다. 공유 OCI DB 마이그레이션 적용의 승인과 결과는 DEC 대신 [적용 로그](docs/04-operations/shared-oci-migration-apply-log.md)에 남긴다.
 - 진행률·세션 TODO·추측·원시 로그는 공용 메모리에 넣지 않는다. 도구별 세션 저널도 저장소에 만들지 않는다.
 - 공용 메모리는 실시간 락·presence·작업 claim 버스가 아니다. 동시 작업 조정은 현재 디스크와 별도 조정 메커니즘으로 한다.
 

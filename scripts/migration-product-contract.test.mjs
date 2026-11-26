@@ -105,7 +105,7 @@ test('standalone migration export retains independent verification and clears in
   // 기관 승인 절차는 도입 가이드의 이관 절(§4)로 잇는다 — 온라인 절로 보내면 다른 원장의 통제를 읽게 된다.
   assert.ok(productReadme.includes('](docs/03-guides/governance-review-lifecycle.md#4-독립-migration-tool-도입)'));
   // 제품에 싣지 않는 절차(전체 복구)와 원본의 실측 기록은 위치를 글로 알린다.
-  for (const pointer of ['docs/04-operations/backup-and-restore-runbook.md', 'docs/04-operations/known-gaps-detail.md',
+  for (const pointer of ['docs/04-operations/backup-and-restore-runbook.md', '.agent/memory/known-gaps.md',
     'docs/04-operations/readiness-followups.md', 'durationProfileProvenance.producerCommit', 'key-id/version']) {
     assert.ok(productReadme.includes(pointer), pointer);
   }

@@ -5,19 +5,15 @@ status: active
 authority: derived-active-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-11-25
-verified_against: 44ed238d30e1c5b71225cd02d44d19a0c504deba
+verified_at: 2026-11-26
+verified_against: b4a98d72d6723bbf66a063c86ebb77d20238f025
 canonical_sources:
-  - ../../docs/04-operations/known-gaps-detail.md
   - ../../docs/02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md
   - ../../docs/02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md
   - ../../docs/archived/operational-decisions-history.md
   - ../../docs/02-architecture/decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md
   - ../../docs/02-architecture/testing-process-redesign.md
   - ../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md
-  - ../../docs/04-operations/authorization-cutover-runbook.md
-  - ../../docs/02-architecture/decisions/ADR-0012-retire-blog-domain.md
-  - ../../docs/03-guides/governance-atlas-guide.md
   - ../../docs/02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md
   - ../../docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md
   - ../../docs/02-architecture/legacy-migration-tool-design.md
@@ -32,76 +28,42 @@ refresh_triggers:
 
 # 공용 활성 Gap 인덱스
 
-`verified_at`·`verified_against`는 인덱스 구조·참조를 점검한 날짜와 작업 시작 커밋이다. 이 점검은 과거 승인·DB·CI·운영 실측을 재실행한 것이 아니다. 행의 검증일은 그 행의 근거를 마지막으로 대조한 날이며, 2026-10-17로 갱신한 행은 링크된 원장·코드·문서를 다시 대조했고 DB·운영 실측은 다시 하지 않았다.
-
-## 범위·상태 정의
-
-이 파일은 현재 코드나 외부 실측으로 재현 가능한 미해결 위험의 얇은 인덱스다. 상세 원장은 링크된 문서·코드이며, 완료 이력은 Git과 보관 기록에 남긴다. 종료 뒤 남은 경계와 재개 조건은 경로에 따라 읽도록 영역 상세에 두고 여기에는 그 위치만 둔다. 세션마다 자동으로 읽히므로 아래 두 표에는 모든 작업에 걸리거나 글로만 지켜지는 금지가 있는 행만 전문으로 두고, 특정 경로에서만 필요한 행은 「영역 상세 gap 레지스트리」에 한 줄로 남긴 뒤 전문을 [gap 영역 상세](../../docs/04-operations/known-gaps-detail.md)에 둔다.
+현재 코드·외부 실측으로 재현 가능한 미해결 위험의 단일 활성 인덱스다. 완료·종료 이력은 [보관 기록](../../docs/archived/operational-decisions-history.md#종료이전-gap-기록)과 Git 이력에, 자동 게이트가 못 막는 확정 경계는 [decisions.md Do-Not-Break](decisions.md#do-not-break-체크리스트-자동-게이트-미커버-확정-규칙)에 둔다. 추측으로 새 gap을 만들지 않으며, `needs-revalidation`·`blocked-external`은 날짜 있는 실측 증거를 확보한 뒤에만 닫는다.
 
 - 우선순위: `P0` 즉시 안전/false-green, `P1` 높은 회귀·운영 위험, `P2` 계획 필요, `P3` 개선.
 - 상태: `open`, `blocked-external`, `deferred`, `accepted-risk`, `needs-revalidation`.
-- 추측이나 과거 task의 unchecked 항목만으로 새 gap을 만들지 않는다.
 
-## 활성 Gap registry
-
-| GAP-ID | 우선순위 | 상태 | 영역 | 요약 | 근거 | 다음 행동/재개 조건 | 결정권자 | 검증일 |
-|---|---|---|---|---|---|---|---|---|
-| GAP-PACK-001 | P2 | open | reusable feature boundaries | 기능 소유(`config/modules`)에 따른 Java·frontend 투영과 시작 구성 CI 경로가 있다. 시작 구성도 기능 단위로 투영해 pack·순위 축이 없고(11단계 C3~C7), 같은 기능 목록의 직접 선택과 결과가 같다(ADR-0028, DEC-OPS-285·289). 검색·모니터링·게시판 마법사의 상위 기능 import 를 분리하고, 제거된 원본 목적지의 alias·redirect 와 UI 원장의 적용범위를 투영한다. 적용 대상 소스 부재는 비대상으로 숨기지 않는다. 소유 판정은 선언이 아니라 연쇄 실측이다 — 자기 파일이 어느 기능 경로에도 없어도 다른 기능 소유 타입을 import 하면(타입 전용 참조 포함) 함께 빠지며, 투영 tsc 와 생존 목록이 그것을 잡는다. 남은 경계는 모든 일반 링크·업무 흐름의 런타임 의미를 포괄하는 검증이다. | [프로필 검증](../../scripts/verify-reusable-base.mjs), [기능 선언](../../config/modules/), [preset 동치 계약](../../scripts/project-composer-preset-equivalence.test.mjs), [투영 무결성](../../scripts/reusable-governance-integrity.mjs), [생존 가드](../../scripts/frontend-reachability-census.test.mjs) | 새 링크·흐름 변경은 실제 생성물과 기관 시나리오로 검증하며 마커로 정상 기능을 과잉 은폐하지 않는다. 한 테스트 파일이 여러 기능의 서비스를 다시 섞지 않게 유지한다. 기술 runner 결과를 기관 업무·운영 승인으로 승격하지 않는다. 리다이렉트 페이지 제거는 동거 테스트를 연쇄하지 않는다 — 연쇄로 바꾸면 목적지 소실이 조용히 통과한다. 남는 화면은 생성기·정밀 점검·무결성 검사가 기능 소유 기대값과 양방향으로 대조하고(DEC-OPS-265), 시작 구성의 비화면 파일은 동치 계약이 같은 목록의 직접 선택과 대조한다. | 아키텍처/제품 소유자 | 2026-10-20 |
-| GAP-ZDM-001 | P2 | open | zero-downtime | 구조화 waiver와, 승인과 구분된 동결 부채인 2026-09-16 이전 자유형 예외(V2_8~V2_83)가 있다 — 건수·대상·만료는 [waiver 원장](../../config/governance/zdm-waivers.json)과 린터의 두 예외 상수가 정본이다(DEC-OPS-340). Contract 성격 waiver의 `expandMigration`은 실제 존재하며 더 이른 Flyway 버전이어야 한다. 파괴적 DDL·예외 메타데이터·선행 Expand와 그 릴리스 기록·관측 기간은 검사하지만 실제 배포·backfill 완료·릴리스 간 호환 창까지 증명하지 않는다. 2026-09-16 이전 승인 동결분과 사용자 승인 V2_127(DEC-OPS-233)은 릴리스 기록·관측 기간 검사에서 빠진다(id·대상·선행 Expand 조합 고정). 2026-09-14 OCI 읽기 실측에서 레거시 부채 마이그레이션은 모두 성공 적용됐고 재사용 DB 번들은 V2 체인 대신 `V1_0__baseline.sql` 덤프를 써서, 이미 적용된 부채가 다시 실행될 경로가 없어 P2로 둔다. 적용된 마이그레이션은 수정할 수 없으므로 건수를 줄이는 것은 목표가 아니다. | [ZeroDowntimeMigrationLinterTest](../../api-server/src/test/java/nuri/api/harness/ZeroDowntimeMigrationLinterTest.java), [waiver registry](../../config/governance/zdm-waivers.json), [무중단 이행 가이드](../../docs/02-architecture/zero-downtime-migration.md), [재사용 DB 번들 생성기](../../scripts/generate-reusable-base-db.mjs) | 새 Contract waiver는 `expandRelease`로 선행 Expand의 릴리스 태그·배포일·환경·기록 행을 남기고, 린터가 7일 관측 기간과 같은 릴리스 동시 반영을 막는다(DEC-OPS-101). 남은 과제는 그 기록이 실제 배포·관측을 뜻한다는 운영 증거다. 레거시 부채 마이그레이션(V2_8~V2_83)을 다 적용하지 않은 채 멈춘 환경이 새로 확인되면 P1로 되돌린다. 소스 버전 선후만으로 무중단 적용 완료를 주장하지 않는다. | DB/사용자 | 2026-10-27 |
-| GAP-UIQ-001 | P2 | deferred | ui quality evidence | 8개 시나리오는 partial-automated-evidence이며 currentBaseline은 unmeasured다. r12에는 실행 시점 protocol hash가 없어 ADR-0005의 measured 자격이 없고, 현재 8개 화면 모두 r12 이후 변경됐다. 수동 접근성 48건 중 전문가 검토 40건·NVDA/Chrome 외부 차단 8건은 미완료다. 2026-11-08 재검토(사용자 승인, 상태 불변)로 asOf와 28개 reviewBy(2027-02-06)를 옮겼고 근거 목록에 빠진 화면 부품 38개를 보강했다. 90일 기록 상한은 유지한다. ADR-0018 이후 일정 경과는 운영 보고의 overdue이며 기술 CI 자동 실패가 아니다. | [사용자 런북 §8](../../docs/04-operations/ui-ux-modernization-user-action-runbook.md), [baseline protocol §13](../../docs/04-operations/ui-ux-baseline-protocol.md), [ADR-0005](../../docs/02-architecture/decisions/ADR-0005-ui-quality-durable-evidence.md), [ADR-0018](../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md) | 지정 평가자와 승인된 Windows 환경을 확보하면 protocol hash를 실행 시점에 기록한 새 run과 수동 48건을 같은 combined summary로 발행한다. 그전까지 measured 선언·hash 소급 대입·수동 항목 자동 충족은 금지다. 정기 검토와 기관 accessibility preflight는 [검토 수명 가이드](../../docs/03-guides/governance-review-lifecycle.md)를 따른다. | 접근성 소유자/사용자 | 2026-11-08 |
-| GAP-AGENT-001 | P2 | accepted-risk | coordination | 공용 메모리는 실시간 claim·lock·presence 조정 기능이 없다. 무거운 검증은 Windows 에서 대기열이 참여 실행을 직렬화한다(DEC-OPS-413). 남는 것: 비참여 실행(사람이 직접 연 터미널·다른 클론·병렬 검토 에이전트), 지원하지 않는 세션 조합(관리자·일반 혼용·다른 계정·원격 데스크톱), 고정 트리의 같은 도구 동시 진입(DEC-OPS-395), 대기열이 관측하지 못하는 남은 실행(도구 이름 밖의 후손, 세 설정 파일 밖의 Docker live-restore — 2026-11-10 사용자가 수용, DEC-OPS-413 ⑦), 아직 스스로 줄을 서지 않는 격리 E2E·DB 번들 생성 진입점(벤더 재기록 묶음에서 연결), Codex 의 작업 트리 승인 창이 빠지는 경우(모델이 명령마다 cmd 셸을 고름·다른 Codex 규칙 파일이 깨져 규칙이 통째로 빠짐 — 2026-11-11 사용자가 수용, DEC-OPS-414 ⑤), 가드가 문자열로 못 보는 드문 셸 문법(변수로 만든 명령 이름·Invoke-Expression·별칭)의 작업 트리 생성. | [SOP §6.6](../../docs/03-guides/orchestration-protocol.md#66-작업-트리), [SOP §6.3](../../docs/03-guides/orchestration-protocol.md#63-무거운-검증은-하나씩), [대기열](../../scripts/heavy-run-queue.mjs), [가드](../../scripts/agent-guard.mjs) | 사용 중이거나 불명확한 트리는 보존하고 승인을 받아 임시 트리로 분리한다. Codex 버전·셸 설정을 바꾸면 승인 창의 틈을 다시 확인한다. 비참여 실행과의 겹침은 실행 기록이 잡는다. 대기열이 알 수 없음으로 자주 멈추거나 겹침이 다시 반복되면 조정 수단을 다시 설계한다. | 사용자 | 2026-11-11 |
-| GAP-WIRING-001 | P3 | open | api surface | 어떤 생산 TypeScript 모듈도 부르지 않고 대체 표면·BFF 같은 원장의 다른 사유도 없는 operation(unwired, 축 1의 부채)과, operation 을 부르는 프런트 서비스 메서드가 services·시험 밖에서 불리지 않는 화면 고아(축 2)가 남아 있다. 축 1 의 소비는 생산 TS 모듈이 부른다는 뜻이지 화면이 쓴다는 뜻이 아니므로 unwired 는 화면 미사용 기능의 하한이며 총량이 아니다(DEC-OPS-050). operation 수와 두 상한은 [원장](../../config/governance/operation-consumer-census.json)의 `expected`가 정본이며 이 행은 다시 적지 않는다(DEC-OPS-340 — 공용 메모리 계약은 라벨 가까이의 수치 표기를 막고, 라벨에서 떨어진 서술은 보지 않는다). 설문 템플릿 상세 조회·수정과 결재 상세·재상신은 실제 화면에 연결했다. 2026-10-18 재분류(DEC-OPS-352): 늘 거부되거나 다른 화면 경로가 같은 일을 하는 메뉴 서비스 메서드 셋을 걷고, 가입·사용자 접속 통계·권한별 메뉴 목록을 대체된 표면으로 옮겼다. 남은 화면 고아는 목록과 같은 값을 주는 단건 조회와, 제품·개인정보 결정이 걸린 발신 메일 상세·주소록 사용자 검색·커뮤니티 포틀릿·기간별 일정이다. 목록과 같은 값을 주는 단건 조회를 래칫을 내리려고 배선하지 않는다(DEC-OPS-062). 이름 기반 census는 동명 메서드를 혼동할 수 있으므로 숫자만으로 기능 완성 여부를 판정하지 않는다. | [원장](../../config/governance/operation-consumer-census.json), [재진술 금지 계약](../../scripts/shared-memory-contract.test.mjs), [배선과 분석 한계](../../docs/04-operations/readiness-followups.md#api와-화면-연결), [제품 결정](../../docs/04-operations/operational-decisions-index-product.md) | 남은 조회 경로의 실제 소비 목적과 제품 결정을 대조한다. 메일 이력의 개인정보 경계 등 기존 결정을 유지하며 미소비 항목을 일괄 연결·삭제하지 않는다. | API/제품 소유자 | 2026-10-18 |
-
-### 종료한 항목의 남은 경계
-
-종료·기관 이전의 상세 이력은 [보관 기록](../../docs/archived/operational-decisions-history.md#종료이전-gap-기록)에 둔다. 종료로 없어지지 않은 위험·재개 조건은 모두 특정 경로에서만 필요해 [gap 영역 상세](../../docs/04-operations/known-gaps-detail.md)의 영역 절 끝 「종료한 항목의 남은 경계」에 두고, 활성 gap 과 같은 경로 판정으로 읽는다. E2E·CI 워크플로·거버넌스 원장 경로에서도 걸리는 제품·생성기 항목은 CI·검증 절이 함께 가리킨다. 아래 목록과 상세의 항목은 [공용 메모리 계약](../../scripts/shared-memory-contract.test.mjs)이 대조한다.
-
-- 제품 동작·화면·도메인: GAP-FE-002·GAP-FE-003·GAP-MEMO-001·GAP-BOARD-002·GAP-BOARD-003·GAP-DOMAIN-001·GAP-BOARD-001·GAP-POLL-001·GAP-POLICY-001·GAP-API-001·GAP-CMTY-001·GAP-ARCH-001
-- 프로젝트 생성기·재사용 투영: GAP-BASE-002
-- 레거시 이관 도구: GAP-ETL-001
-- CI·검증·거버넌스: GAP-DEP-002·GAP-SEC-007
-
-## 재검증 대기
-
-`needs-revalidation`과 `blocked-external` 항목은 외부 상태가 바뀌었다는 주장만으로 닫지 않는다. 날짜가 있는 API/UI 실측이나 운영 증거를 확보한 뒤 상태를 갱신한다.
-
-외부 증거가 있어야 닫히는 항목은 아래 표로 분리한다. 저장소 안에서 진행할 수 있는 일이 없다는 뜻이지,
-위험이 사라졌다는 뜻이 아니다. 활성 표는 저장소에서 다음에 할 일을 보기 위한 것이고, 이 표는
-증거 확보의 수신자와 조건을 기록한다.
+## 활성 Gap
 
 | GAP-ID | 우선순위 | 상태 | 영역 | 요약 | 근거 | 다음 행동/재개 조건 | 결정권자 | 검증일 |
 |---|---|---|---|---|---|---|---|---|
-| GAP-SEC-004 | P1 | needs-revalidation | client IP trust boundary | ADR-0019 형상(edge가 `X-Forwarded-For`를 덮어씀, Next 비공개, `TRUSTED_EDGE_PROXY`)을 2026-09-14 격리 운영 오버레이 스택에서 전체 경로로 실측했다. edge 경로는 위조 IP를 기록하지 않았고 IP 제한도 우회되지 않았다. 그러나 신뢰 대역이 서브넷 전체라 도커 게이트웨이도 신뢰되어, api 공개 포트 직접 요청에서 위조 IP가 기록되고 IP 제한이 우회됐다. 신뢰 대상을 Next 고정 주소 /32로 좁힌 뒤(DEC-OPS-098) 같은 시험에서 둘 다 막혔다. 남은 것: egov-net 안의 다른 컨테이너가 Next에 직접 보내는 위조 XFF, 운영 호스트의 LB·TLS·iptables·IPv6 경로. | [리허설 결과](../../docs/04-operations/readiness-followups.md#클라이언트-ip-신뢰-경계-리허설), [ADR-0019](../../docs/02-architecture/decisions/ADR-0019-client-ip-trust-boundary.md), [ConfigSafetyLinterTest](../../api-server/src/test/java/nuri/api/harness/ConfigSafetyLinterTest.java), [edge 템플릿](../../config/edge/default.conf.template) | 운영 배포 때 네트워크를 재생성(`down`→`up`)해 고정 주소를 반영하고, 실제 호스트에서 위조 헤더 로그인의 기록 IP와 IP 제한 허용·거부를 다시 본다. 부가 컨테이너는 egov-net에 두지 않거나 Next 직접 도달을 막는다. 로그인 한도 기본값은 ADR-0035 로 IP당 분당 30 으로 낮췄다 — 운영 배포에서 [RATE-LIMIT] 거절을 관측해 조정한다. 키링 없는 수동 운영 오버레이 리허설은 `MFA_REQUIRE_PROTECTED=false` 를 명시한다(ADR-0054). | 보안/운영 소유자 | 2026-09-14 |
-
-기관으로 이전한 `GAP-OPS-002`·`GAP-SEC-001`·`GAP-DATA-001`·`GAP-AUTH-003`은 `backup-recovery`·`crypto-lifecycle`·`authorization` 통제에서, `GAP-SEC-003`·`GAP-STORAGE-001`·`GAP-OPS-001`은 `attachment-operations`·`operational-assurance`에서 증거를 확보한다. 원본의 종료는 기관 의무 면제가 아니다. 직접 DB 쓰기·import의 첨부 provenance 강제 설계는 여전히 별도다. [기관 도입 가이드](../../docs/03-guides/governance-review-lifecycle.md#3-온라인-제품의-기관-도입), [이전 근거 1](../../docs/archived/operational-decisions-history.md#gap-ops-002), [이전 근거 2](../../docs/archived/operational-decisions-history.md#gap-sec-003).
-
-## 영역 상세 gap 레지스트리
-
-아래 gap 은 특정 경로에서만 필요해 전문을 [gap 영역 상세](../../docs/04-operations/known-gaps-detail.md)의 영역 절로 옮겼다(DEC-OPS-389). 영역 결정 색인과 같은 경로 판정으로 읽는다 — 대상 경로가 그 영역에 걸리면 그 절을 읽고, `node scripts/decision-indexes.mjs --for <경로…>` 가 절을 알려 준다. 모든 작업에 걸리거나, 시험·계약·자동 로드 규칙이 막지 못해 글로만 지켜지고 어기면 검증 신호·인가·데이터·식별자를 해치는 금지가 있는 행은 위 표에 전문으로 둔다. 레지스트리 줄은 ID·우선순위·상태·영역과 160자 이하 요약만 두며, 상세 행과 ID·우선순위·상태가 같아야 한다(공용 메모리 계약). 상세 행을 고치거나 새 행을 더하면 이 줄도 함께 고친다.
-
-| GAP-ID | 우선순위 | 상태 | 영역 | 한 줄 요약 | 상세 |
-|---|---|---|---|---|---|
-| GAP-UIF-001 | P3 | open | font token scope | Next/font 변수 범위는 고쳤고 OS·브라우저별 렌더링 차이와 재생성한 시각 기준선의 사람 검토가 남았다 — Linux CI 결과를 다른 OS·브라우저의 증거로 쓰지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
-| GAP-CONTRACT-001 | P2 | open | API/DTO | 입력 계약 원장 표적의 제약을 게이트가 검사하고 `@Valid` 없는 제약 DTO 도 막는다 — 원장 밖 요청 본문은 저장 경로가 생기면 다시 판정한다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
-| GAP-FE-001 | P3 | accepted-risk | frontend security | `style-src` 의 `unsafe-inline` 은 sonner 가 nonce 를 지원하거나 교체될 때까지 받아들인 위험이다 — 세분화하면 `csp-policy` 계약이 붉다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
-| GAP-CODE-001 | P3 | accepted-risk | institution code | 기관코드 원장·수신 로그에는 앱 쓰기 경로가 없고 수신 확인은 `procSe` 만 바꾼다 — 쓰기 경로와 그 권한은 공급처 명세가 확정된 뒤에 설계한다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
-| GAP-UI-001 | P3 | open | table sorting | 사용자·로그인 로그·결재 목록은 허용 목록과 인덱스가 받치는 열로 서버 정렬한다 — 나머지 로그 열은 현재 페이지 정렬이고, 인덱스 없는 열은 서버 정렬로 올리지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
-| GAP-COPY-001 | P3 | open | visible copy norms | 화면 용어 원장의 규범 검토에서 기록한 편차(날짜 형식·확인 문구·대기 라벨 등)가 남았다 — 화면별로 처분하고 일괄 치환하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
-| GAP-DEPT-001 | P3 | open | department hierarchy | 부서 저장이 상위 연결을 지우던 경로는 닫혔고 이미 지워진 행은 저장소로 알 수 없다 — NULL 집계로 손상을 추정해 보정하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
-| GAP-FILE-001 | P3 | open | attachment cleanup | 첨부 실물 삭제는 영속 작업·제한 재시도로 처리하고 운영 저장소 복구·고아 후보 처리는 미완료다 — 고아 파일을 추정해 지우지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
-| GAP-LOGIN-001 | P3 | open | login policy | 로그인 정책의 `dpcn_prm_yn` 은 읽는 코드가 없고 제품은 단일 세션을 유지한다 — 폐기 규칙을 설계하기 전에는 화면에 열지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
-| GAP-LOGIN-002 | P2 | open | login lockout | 잠금 중 관리 작업 및 실패 횟수 분리의 PostgreSQL 통합 시험을 통과했다. 벤더 인증과 반복 잠금에 따른 신규 로그인 지연 위험이 남았다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
-| GAP-MAIL-001 | P2 | open | mail delivery | ① 차지 시각 바인딩(`claimQueued`) 해결 완료(2026-11-21). ② 사용자별 발송 한도 미정. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
-| GAP-COMPOSE-001 | P3 | open | composer degraded compositions | 기능 저하 생성물의 화면 일부가 사실과 다르게 말할 수 있다 — 목적지 이름 규칙 밖의 링크·상수를 거친 목적지와 문장 속 메뉴 이름은 아직 기계로 대조하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#composer) |
-| GAP-COMPOSE-002 | P3 | open | generated schema changes | 새 Java·미배정 권한은 별도 등록으로 지원한다. 기존 소스 수정·새 화면·마이그레이션 연계의 자동 등록은 남아 있다. | [상세](../../docs/04-operations/known-gaps-detail.md#composer) |
-| GAP-MIG-002 | P2 | open | migration protected keys | 암호화할 소스 컬럼은 키로 쓸 수 없어(평문이 제어 표에 남는다) 그런 컬럼만 키인 테이블과 숫자형 보호 소스는 지금 적재할 수 없다. | [상세](../../docs/04-operations/known-gaps-detail.md#migration) |
-| GAP-STD-001 | P2 | open | standard schema metadata | 기승인 기술·1차 유지 예외는 승인 범위의 미등록 정정 후보에서 제외하고 잠정 정정·퇴역은 후속 판단한다. 등록 단어 조합만으로 표준 적합으로 보지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
-| GAP-E2E-001 | P3 | needs-revalidation | E2E impact selection | PR 은 검토된 화면 변경만 E2E 를 spec 단위로 선별하고 공유·미지 입력과 main 은 전수다 — 일반 의존성 완전성과 절감률은 검증되지 않았다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
-| GAP-DATA-002 | P2 | blocked-external | legacy input data | OCI 설문 3행의 시작·종료일이 잘린 채 남아 있다 — 업무 소유자가 원래 날짜를 확인하기 전에는 추정해 보정하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
-| GAP-DEP-001 | P1 | needs-revalidation | dependency security | PR 의존성 snapshot readiness 와 runtime High 차단은 구현됐고, public fork probe 와 양쪽 snapshot 부재 경계는 외부 검증이 남았다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
-| GAP-MIG-001 | P1 | blocked-external | migration-tool | vendor 7종 이관의 실측 범위가 서로 다르고 모두 UNVERIFIED·MANUAL_ONLY 다 — 도입 버전·driver 별 COMMIT 자격·cutover 는 기관 실측이 필요하다. | [상세](../../docs/04-operations/known-gaps-detail.md#migration) |
-| GAP-WIN-001 | P3 | accepted-risk | windows contract coverage | DEC-OPS-434으로 로컬 운영 계약을 폐기해 win32 분기 시험의 병합 전 자동 실행이 없다 — Windows 스크립트·훅 변경 시 전체 계약 또는 대상 시험으로 수동 검증한다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
+| GAP-DEP-001 | P1 | needs-revalidation | dependency security | PR 의존성 snapshot readiness·runtime High 차단은 구현됨; 양쪽 snapshot 0건 경고 생략·public fork probe 검증 미완. | [readiness](../../scripts/dependency-snapshot-readiness.mjs), [검증 사각지대](../../docs/04-operations/verification-blindspots.md) | 승인된 public fork probe로 신규 High 차단·부재 경계 검증. | 보안/사용자 | 2026-09-24 |
+| GAP-MIG-001 | P1 | blocked-external | migration-tool | Oracle·MySQL·MariaDB·SQL Server·CUBRID 리허설만 완료, 7종 모두 UNVERIFIED·MANUAL_ONLY; Tibero는 라이선스 부재로 미기동. | [이관 실측](../../docs/04-operations/readiness-followups.md#이관-oracle-free-표준화-리허설), [복구 런북](../../docs/04-operations/migration-recovery-runbook.md) | 도입 버전·driver별 COMMIT 자격·cutover 기관 실측 확보. | 사용자/DB 운영 | 2026-10-16 |
+| GAP-SEC-004 | P1 | needs-revalidation | client IP trust boundary | Next 고정 주소 `/32` 신뢰 경계는 격리 compose에서 검증됨; 부가 컨테이너는 `egov-net`에 두지 않거나 Next 직접 도달을 차단하며 LB·TLS·iptables·IPv6·내부 컨테이너 직접 요청 경로 미검증. | [ADR-0019](../../docs/02-architecture/decisions/ADR-0019-client-ip-trust-boundary.md), [edge 템플릿](../../config/edge/default.conf.template) | 운영 배포 호스트에서 위조 XFF·로그인 한도(`ADR-0035`) 실측. | 보안/운영 소유자 | 2026-09-14 |
+| GAP-CONTRACT-001 | P2 | open | API/DTO | `input-contract-mirror-census.json` 표적의 제약·`@Valid` 누락을 차단함; 원장 밖 비저장 요청 본문과 공백/교차필드 의미는 미포괄. | [입력 계약 게이트](../../api-server/src/test/java/nuri/api/harness/InputContractMirrorLinterTest.java), [입력 계약 원장](../../config/governance/input-contract-mirror-census.json) | 새 쓰기 DTO 및 저장 경로 추가 시 원장에 등재한다. | API 소유자 | 2026-10-23 |
+| GAP-DATA-002 | P2 | blocked-external | legacy input data | OCI 온라인 설문 3행 시작·종료일이 `YYYY-MM-` 형태로 잘린 채 남아 있음(추정 보정 금지). | [날짜계약](../../docs/04-operations/readiness-followups.md#날짜입력-계약) | 업무 소유자가 원래 날짜를 확인한 뒤 3행을 수정한다. | 업무/DB 소유자 | 2026-09-30 |
+| GAP-LOGIN-002 | P2 | open | login lockout | 잠금 중 관리 재확인·`pswd_fail_nmtm` 분리는 PostgreSQL 통합 검증 통과; 반복 잠금 지연 및 벤더 인증 남음. | [AuthorizationAdministrationService](../../business-core/src/main/java/nuri/business/service/auth/AuthorizationAdministrationService.java), [V2_154](../../api-server/src/main/resources/db/migration/V2_154__separate_current_password_failure_count.sql) | 공유 DB 적용 시 별도 승인, 반복 잠금 시 IP+계정 창 설계. | 보안/제품 소유자 | 2026-11-19 |
+| GAP-MAIL-001 | P2 | open | mail delivery | ① 차지 시각 바인딩(`claimQueued`) 해결 완료. ② 일반 사용자 `MAIL_SEND` 기본 배정 및 기간 발송 한도 미정. | [MailService](../../business-app/src/main/java/nuri/business/service/mail/MailService.java), [권한 원장](../../config/governance/permission-catalog.json) | 사용자별 기간 발송 한도 값 제품·보안 결정 후 구현. | 제품/보안 소유자 | 2026-11-21 |
+| GAP-MIG-002 | P2 | open | migration protected keys | 암호화 보호 컬럼은 평문 체크포인트 키로 사용 불가·숫자형 보호 소스 축소 변환기 미지원. | [ColumnProtectionPlan](../../migration-tool/src/main/java/nuri/migration/protect/ColumnProtectionPlan.java), [ADR-0029](../../docs/02-architecture/decisions/ADR-0029-legacy-standardization-migration.md) | 해당 테이블 이관 시 keyed HMAC·내장 정규화 변환기 설계 승인. | 이관 도구 소유자 | 2026-10-17 |
+| GAP-PACK-001 | P2 | open | reusable feature boundaries | `config/modules` 연쇄 제거·투영 tsc·생존 가드 정합 완료; 리다이렉트 페이지 제거는 동거 테스트를 연쇄하지 않으며(목적지 소실 은폐 방지) 모든 일반 링크·업무 흐름 런타임 의미 전수 검증은 남음. | [프로필 검증](../../scripts/verify-reusable-base.mjs), [기능 선언](../../config/modules/) | 새 링크·흐름 변경 시 실제 생성물과 기관 시나리오로 검증. | 아키텍처/제품 소유자 | 2026-10-20 |
+| GAP-STD-001 | P2 | open | standard schema metadata | 기승인 `version` 예외(`DEC-OPS-378`)·1차 C 유지 승인은 정정 제외; 잠정 B 정정·퇴역 후보 및 기존 제약 2건 남음. | [TargetStandardValidator](../../migration-tool/src/main/java/nuri/migration/validate/TargetStandardValidator.java), [처분안](../../docs/04-operations/standard-metadata-disposition.md#approved-first-phase-20261110) | 읽기 실측·개별 패킷으로 B·C·제약 2건 승인 후 반영. | DB/표준 소유자 | 2026-11-14 |
+| GAP-UIQ-001 | P2 | deferred | ui quality evidence | reference r12 이후 8개 화면 모두 변경됨; protocol hash·수동 접근성 48건 미완료(`measured` 선언 금지). | [런북 §8](../../docs/04-operations/ui-ux-modernization-user-action-runbook.md), [ADR-0005](../../docs/02-architecture/decisions/ADR-0005-ui-quality-durable-evidence.md) | 지정 평가자·Windows 환경에서 protocol hash 포함 combined summary 발행. | 접근성 소유자/사용자 | 2026-11-08 |
+| GAP-ZDM-001 | P2 | open | zero-downtime | 구조화 waiver·동결 부채(`V2_8~V2_83`)를 린터가 검사하나 `expandRelease` 대조는 기록 검증일 뿐 실제 배포·관측 증명은 아님. | [ZeroDowntimeMigrationLinterTest](../../api-server/src/test/java/nuri/api/harness/ZeroDowntimeMigrationLinterTest.java), [waiver 원장](../../config/governance/zdm-waivers.json) | 새 Contract waiver는 7일 관측 기록 유지; 도입 시 `V2_127` 예외 비승계; 미적용 레거시 부채(`V2_8~V2_83`) 환경 확인 시 P1 복귀. | DB/사용자 | 2026-10-27 |
+| GAP-AGENT-001 | P2 | accepted-risk | coordination | 공용 메모리는 실시간 claim/lock 버스가 아니며, 대기열(`heavy-run-queue`) 관측 밖 실행과 Codex `cmd`/규칙 틈은 수용 위험. | [SOP §6.6](../../docs/03-guides/orchestration-protocol.md#66-작업-트리), [SOP §6.3](../../docs/03-guides/orchestration-protocol.md#63-무거운-검증은-하나씩), [대기열](../../scripts/heavy-run-queue.mjs), [가드](../../scripts/agent-guard.mjs) | 사용 중이거나 불명확한 트리는 보존하고 승인 후 임시 트리로 분리. | 사용자 | 2026-11-11 |
+| GAP-CODE-001 | P3 | accepted-risk | institution code | 기관코드 원장·수신 로그 앱 쓰기 경로 없음(`procSe` 변경만), `chgSeCd` 공급처 명세 미확정. | [InstitutionCodeService](../../business-core/src/main/java/nuri/business/service/code/InstitutionCodeService.java), [보류 결정](../../docs/04-operations/pending-decisions.md) | 공급처 명세 확정 시 쓰기 경로·권한 설계. | 코드 표준/DB 소유자 | 2026-10-18 |
+| GAP-COMPOSE-001 | P3 | open | composer degraded compositions | 기능 저하 생성물의 채널 슬롯·포틀릿 정리를 반영했으나 이름 규칙 밖 경로 속성·간접 상수·문장 속 메뉴 이름 기계 대조 미완. | [연동 선언](../../scripts/project-composer-integrations.mjs), [admin-link census](../../frontend/src/__tests__/admin-link-visibility-census.test.ts) | Phase 3 이후 간접 상수 경로·메뉴 문구 대조 보완. | 아키텍처/제품 소유자 | 2026-11-10 |
+| GAP-COMPOSE-002 | P3 | open | generated schema changes | 생성 프로젝트 새 Java·미배정 권한 추가 등록(`ADR-0057`) 지원; 기존 소스 수정·새 화면·마이그레이션 연계 자동 지원 미완. | [추가분 가이드](../../docs/03-guides/generated-project-additions.md), [ADR-0057](../../docs/02-architecture/decisions/ADR-0057-adopter-java-and-permission-registration.md) | 변경 범위 확대 시 별도 설계·검증 추가(원본 해시 위조 금지). | 아키텍처/제품 소유자 | 2026-11-14 |
+| GAP-COPY-001 | P3 | open | visible copy norms | 화면 용어 원장의 비결함 편차(날짜 형식·확인 문구·대기 라벨·오프라인 빈 표 등) 잔존(`reviewBy` 2027-02-05). | [편차 목록](../../docs/04-operations/readiness-followups.md#화면-문구-규범-편차), [용어 원장](../../config/frontend-visible-terms.json) | 정기 검토에서 화면별 처분(일괄 치환 금지). | 콘텐츠·제품 소유자 | 2026-11-15 |
+| GAP-DEPT-001 | P3 | open | department hierarchy | 저장 시 상위 소실 경로 닫힘; 기존 `up_ognz_id IS NULL` 손상 복원·undo 미지원 및 5분 캐시 만료 재조회 5xx 경계 남음. | [treeUtils](../../frontend/src/app/admin/user/departments/treeUtils.ts), [deptActions](../../frontend/src/app/actions/deptActions.ts) | 기존 손상은 업무 소유자 판정; 재조회 5xx 재현 후 QueryClient 시험 고정. | 도메인/제품 소유자 | 2026-11-23 |
+| GAP-E2E-001 | P3 | needs-revalidation | E2E impact selection | PR 검토된 화면 변경만 E2E 선별, 공유·미지·main 전수; 일반 의존성 완전성·실제 절감률은 표본 부족으로 미확정. | [선별 경계](../../docs/02-architecture/testing-process-redesign.md#54-pr의-검증된-화면-변경만-spec-단위로-선별한다), [planner](../../scripts/e2e-shard-plan.mjs) | 화면 변경 PR 선별 결과와 다음 main 전수 결과 대조. | 테스트/CI 소유자 | 2026-11-10 |
+| GAP-FE-001 | P3 | accepted-risk | frontend security | `script-src`는 요청별 nonce 적용, `style-src`의 `'unsafe-inline'`은 `sonner` nonce 미지원으로 수용 위험. | [proxy.ts](../../frontend/src/proxy.ts), [csp-policy.test.ts](../../frontend/src/__tests__/csp-policy.test.ts) | `sonner` nonce 지원·교체 시 `style-src-elem` nonce 전환. | 보안/제품 소유자 | 2026-11-10 |
+| GAP-FILE-001 | P3 | open | attachment cleanup | 커밋 후 영속 삭제·재시도 격리 검증 완료; 운영 저장소 복구·고아 후보 처분 및 quota 미완. | [durable-work-recovery](../../docs/04-operations/durable-work-recovery.md), [ADR-0025 D14](../../docs/02-architecture/decisions/ADR-0025-enterprise-completeness-and-durable-operations.md) | 기관 `attachment-operations` 통제에서 복구·고아 처분 승인. | 파일/운영 소유자 | 2026-09-28 |
+| GAP-LOGIN-001 | P3 | open | login policy | `dpcn_prm_yn` 컬럼은 존재하나 제품 단일 세션 유지(D5, `DEC-OPS-158`)로 읽지 않으며 UI 미노출. | [LoginPolicy](../../business-core/src/main/java/nuri/business/domain/login/LoginPolicy.java), [V2_24](../../api-server/src/main/resources/db/migration/V2_24__add_yn_check_and_meta_fk_index.sql) | 중복 로그인 요구 시 refresh token 폐기 설계 선행. | 제품/보안 소유자 | 2026-09-26 |
+| GAP-UI-001 | P3 | open | table sorting | 주요 목록은 `ServerSortWhitelist`·`@SortableBy` 인덱스 열로 서버 정렬, 나머지 로그 열은 현재 페이지 정렬 고지. | [ServerSortWhitelist](../../business-core/src/main/java/nuri/business/domain/common/ServerSortWhitelist.java), [서버 정렬 계약](../../frontend/src/app/components/ui/__tests__/standard-data-table-server-sort.test.tsx) | 실제 요구·인덱스가 확인된 열만 허용 목록에 추가. | API/DB 소유자 | 2026-11-12 |
+| GAP-UIF-001 | P3 | open | font token scope | Next/font 변수는 `:root`로 수정 완료; OS/브라우저별 글꼴 렌더링과 재생성 시각 기준선 사람 검토 남음. | [design-tokens](../../docs/03-guides/design-tokens.md), [layout.tsx](../../frontend/src/app/layout.tsx) | 시각 회귀 기준선 검토 후 종료(Linux 결과 타 OS 승격 금지). | 프런트엔드/디자인 소유자 | 2026-11-15 |
+| GAP-WIN-001 | P3 | accepted-risk | windows contract coverage | `DEC-OPS-434`로 작업 브랜치 로컬 운영 계약·`verify:post-push` 폐기 → `win32` 분기 계약의 PR 병합 전 자동 실행 없음. | [DEC-OPS-434](../../docs/archived/operational-decisions-history.md#dec-ops-434), [pre-push](../../.githooks/pre-push), [run-operational-contracts](../../scripts/run-operational-contracts.mjs) | `heavy-run-queue`·`agent-guard`·`pre-push`·생성기 등 Windows 분기 변경 시 수동 검증. | 사용자 | 2026-11-25 |
+| GAP-WIRING-001 | P3 | open | api surface | 미소비(unwired)·화면 고아 operation 잔존(`expected` 상한은 원장이 정본, 이름 기반 census 숫자만으로 기능 완성 판정 금지); 동일 목록 단건 조회 등 의도적 미배선·개인정보 경계 유지. | [배선 원장](../../config/governance/operation-consumer-census.json), [DEC-OPS-352](../../docs/archived/operational-decisions-history.md#dec-ops-352) | 실제 소비 목적·개인정보 경계를 대조해 개별 판단. | API/제품 소유자 | 2026-10-18 |
 
 ## 해결 규칙
 
-gap을 해결하면 정본 코드·문서·테스트를 먼저 갱신하고, 회귀 방지 실행 경로와 red 증거를 확인한 뒤 활성 표에서 제거한다. 장기 결정이 생기면 ADR 또는 [decisions.md](decisions.md)에 링크하고 상세 이력은 중복 복사하지 않는다.
+gap을 해결하면 정본 코드·문서·테스트를 먼저 갱신하고, 회귀 방지 실행 경로와 red 증거를 확인한 뒤 활성 표에서 제거한다. 장기 결정이 생기면 ADR·[운영 결정 보관 원문](../../docs/archived/operational-decisions-history.md)에, 게이트가 못 잡는 불변식은 [decisions.md Do-Not-Break](decisions.md#do-not-break-체크리스트-자동-게이트-미커버-확정-규칙)에 남긴다.
