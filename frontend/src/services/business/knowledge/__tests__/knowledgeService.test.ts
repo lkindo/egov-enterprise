@@ -210,7 +210,7 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
     it('상세 조회는 쿼리 파라미터를 붙이지 않는다(페이징 변환이 개입하지 않는다)', async () => {
       await knowledgeService.getArticle(BBS.NOTICE, 7);
 
-      const [, config] = client.getRaw.mock.calls[0];
+      const [, config] = client.getRaw.mock.calls[0]!;
       // 기본 상세 조회는 쿼리 값을 싣지 않는다(서버 기본값 countView=true).
       expect(config).toEqual({ params: {} });
     });
@@ -220,7 +220,7 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
 
       await knowledgeService.getArticle(BBS.NOTICE, 7, { countView: false });
 
-      const [url, config] = client.getRaw.mock.calls[0];
+      const [url, config] = client.getRaw.mock.calls[0]!;
       expect(url).toBe(`boards/${BBS.NOTICE}/posts/7`);
       expect(config).toEqual(expect.objectContaining({ params: { countView: false } }));
     });

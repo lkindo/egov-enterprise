@@ -45,8 +45,8 @@ function payloadKeys(): string[] {
   const literal = SOURCE.match(/const articleData: BoardArticle = \{([\s\S]*?)\n {4}\};/);
   expect(literal, 'articleData 리터럴을 찾지 못했다 — 계약이 vacuous 하게 통과한다').not.toBeNull();
 
-  const fromLiteral = [...literal![1].matchAll(/^\s*([A-Za-z_$][\w$]*)\s*[:,]/gm)].map((m) => m[1]);
-  const fromAssign = [...SOURCE.matchAll(/articleData\.([A-Za-z_$][\w$]*)\s*=/g)].map((m) => m[1]);
+  const fromLiteral = [...literal![1]!.matchAll(/^\s*([A-Za-z_$][\w$]*)\s*[:,]/gm)].map((m) => m[1]!);
+  const fromAssign = [...SOURCE.matchAll(/articleData\.([A-Za-z_$][\w$]*)\s*=/g)].map((m) => m[1]!);
   return [...new Set([...fromLiteral, ...fromAssign])];
 }
 

@@ -798,7 +798,7 @@ test.describe('명령 센터의 현재 계정·권한 경계', () => {
             if (!fixture.refreshToken) throw new Error('The fixture login did not set a refresh cookie.');
             const [accessCookie] = fixture.storageState.cookies;
             actor = await actorPage({ storageState: { ...fixture.storageState, cookies: [
-                accessCookie, { ...accessCookie, name: 'refreshToken', value: fixture.refreshToken },
+                accessCookie!, { ...accessCookie!, name: 'refreshToken', value: fixture.refreshToken },
             ] } });
             const { page, guard } = actor;
             guard.expectErrors([

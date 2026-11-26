@@ -408,7 +408,7 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
 
     await waitFor(() => expect(saveDeptHierarchyAction).toHaveBeenCalledTimes(1));
     // [DIP C5] 저장은 서버에서 읽은 기준선을 함께 넘겨 달라진 부서만 보낸다.
-    const [current, baseline] = vi.mocked(saveDeptHierarchyAction).mock.calls[0];
+    const [current, baseline] = vi.mocked(saveDeptHierarchyAction).mock.calls[0]!;
     expect(baseline).toBeDefined();
     expect(baseline!.map((dept) => dept.ognzId).sort()).toEqual(current.map((dept) => dept.ognzId).sort());
     const busy = screen.getByRole('button', { name: '조직 계층 저장 중…' });
@@ -677,7 +677,7 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
 
     // 상세가 도착한 뒤 수정 모달을 연다(실사용 순서와 동일).
     await screen.findByText('기획부 (D-100)');
-    fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]!);
     await screen.findByText('사용자 정보 수정');
     expect(screen.getByTestId('user-form-mode').textContent).toBe('edit');
     expect(screen.getByTestId('user-form-initial').textContent).toContain('"ognzId":"D-100"');
@@ -699,7 +699,7 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
 
     await screen.findByText('기획부 (D-100)');
     expect(userAdminService.getUser).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]!);
     await screen.findByText('사용자 정보 수정');
     fireEvent.click(screen.getByText('form-submit'));
 
@@ -717,7 +717,7 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     await selectFirstRow();
 
     await screen.findByText('기획부 (D-100)');
-    fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]!);
     await screen.findByText('사용자 정보 수정');
     fireEvent.click(screen.getByText('form-submit'));
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('다른 사용자가 먼저 수정했습니다.', 'error'));
@@ -728,7 +728,7 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
 
     await act(async () => releaseRefetch({ ...detailRecord, version: 8 }));
     await waitFor(() => expect(screen.getAllByRole('button', { name: /정보 수정/ })[0]).toBeEnabled());
-    fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]!);
     await screen.findByText('사용자 정보 수정');
     fireEvent.click(screen.getByText('form-submit'));
     await waitFor(() => expect(userAdminService.updateUser).toHaveBeenLastCalledWith('user1', expect.objectContaining({ version: 8 })));
@@ -739,7 +739,7 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     await selectFirstRow();
 
     await screen.findByText('기획부 (D-100)');
-    fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]!);
     await screen.findByText('사용자 정보 수정');
     fireEvent.click(screen.getByText('form-submit'));
 
@@ -754,7 +754,7 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     vi.mocked(userAdminService.deleteUser).mockReturnValueOnce(pending.promise as any);
     await selectFirstRow();
     await screen.findByText('기획부 (D-100)');
-    fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]!);
     const dialog = await screen.findByRole('dialog');
     const formSubmit = within(dialog).getByRole('button', { name: 'form-submit' });
     const formCancel = within(dialog).getByRole('button', { name: 'user-form-cancel' });
@@ -851,7 +851,7 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     fireEvent.click(await screen.findByRole('button', { name: '사용자 삭제' }));
     await waitFor(() => expect(mockConfirm).toHaveBeenCalled());
 
-    const { message } = mockConfirm.mock.calls[0][0] as { message: string };
+    const { message } = mockConfirm.mock.calls[0]![0] as { message: string };
     expect(message).toContain('게시글·댓글·주소록은 시스템 관리자 계정으로 옮겨지고');
     expect(message).toContain('알림·커뮤니티 가입 정보·로그인 정책은 함께 삭제됩니다');
     expect(message).toContain('로그인만 막으려면 삭제하지 말고 계정 상태를 비활성으로 바꾸세요');

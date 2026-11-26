@@ -40,7 +40,7 @@ function bodyCellTexts(columnIndex: number): string[] {
   return within(table)
     .getAllByRole('row')
     .slice(1) // 머리글 행 제외
-    .map((row) => within(row).getAllByRole('cell')[columnIndex].textContent ?? '');
+    .map((row) => within(row).getAllByRole('cell')[columnIndex]!.textContent ?? '');
 }
 
 describe('StandardDataTable 정렬 계약 (opt-in sortKey)', () => {
@@ -70,9 +70,9 @@ describe('StandardDataTable 정렬 계약 (opt-in sortKey)', () => {
     const amountHeader = screen.getAllByRole('columnheader')[1];
     expect(amountHeader).toHaveAttribute('aria-sort', 'none');
     // 비정렬 열은 여전히 버튼이 없다 (혼입 방지 대조군)
-    expect(within(screen.getAllByRole('columnheader')[0]).queryByRole('button')).not.toBeInTheDocument();
+    expect(within(screen.getAllByRole('columnheader')[0]!).queryByRole('button')).not.toBeInTheDocument();
 
-    const sortButton = within(amountHeader).getByRole('button', { name: /금액/ });
+    const sortButton = within(amountHeader!).getByRole('button', { name: /금액/ });
     // 서버 페이지네이션 하에서 현재 페이지만 정렬함을 정직하게 문서화한다.
     expect(sortButton).toHaveAttribute('title', expect.stringContaining('현재 페이지'));
 
@@ -101,7 +101,7 @@ describe('StandardDataTable 정렬 계약 (opt-in sortKey)', () => {
     render(<StandardDataTable columns={columns} data={rows} keyField="id" />);
 
     const nameHeader = screen.getAllByRole('columnheader')[0];
-    const sortButton = within(nameHeader).getByRole('button', { name: /이름/ });
+    const sortButton = within(nameHeader!).getByRole('button', { name: /이름/ });
     sortButton.focus();
     expect(sortButton).toHaveFocus();
     await user.keyboard('{Enter}');

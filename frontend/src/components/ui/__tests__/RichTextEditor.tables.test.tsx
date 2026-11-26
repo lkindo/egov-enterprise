@@ -47,8 +47,8 @@ async function getEditor() {
 function selectCell(editor: Editor, row = 0, column = 0) {
   const table = editor.view.dom.querySelector('table');
   expect(table).not.toBeNull();
-  const cell = table!.rows[row].cells[column];
-  act(() => { editor.commands.setTextSelection(editor.view.posAtDOM(cell, 0) + 1); });
+  const cell = table!.rows[row]!.cells[column];
+  act(() => { editor.commands.setTextSelection(editor.view.posAtDOM(cell!, 0) + 1); });
 }
 
 async function tableAction(user: ReturnType<typeof userEvent.setup>, name: string) {
@@ -117,27 +117,27 @@ describe('RichTextEditor actual table editing', () => {
 
     for (const name of ['열 왼쪽에 추가', '열 오른쪽에 추가']) {
       selectCell(editor, 0, 0);
-      const previous = table().rows[0].cells.length;
+      const previous = table().rows[0]!.cells.length;
       await tableAction(user, name);
-      expect(table().rows[0].cells).toHaveLength(previous + 1);
+      expect(table().rows[0]!.cells).toHaveLength(previous + 1);
     }
     selectCell(editor, 0, 0);
     await tableAction(user, '열 삭제');
-    expect(table().rows[0].cells).toHaveLength(3);
+    expect(table().rows[0]!.cells).toHaveLength(3);
 
     selectCell(editor, 0, 0);
     await tableAction(user, '머리글 행 전환');
-    expect(table().rows[0].querySelectorAll('th')).toHaveLength(0);
+    expect(table().rows[0]!.querySelectorAll('th')).toHaveLength(0);
     await tableAction(user, '머리글 행 전환');
-    expect(table().rows[0].querySelectorAll('th')).toHaveLength(3);
+    expect(table().rows[0]!.querySelectorAll('th')).toHaveLength(3);
 
     selectCell(editor, 1, 0);
     await tableAction(user, '머리글 열 전환');
-    expect(Array.from(table().rows).every(row => row.cells[0].tagName === 'TH')).toBe(true);
+    expect(Array.from(table().rows).every(row => row.cells[0]!.tagName === 'TH')).toBe(true);
     await tableAction(user, '머리글 열 전환');
     // Removing a header column preserves its intersection with a header row.
-    expect(table().rows[0].cells[0].tagName).toBe('TH');
-    expect(Array.from(table().rows).slice(1).every(row => row.cells[0].tagName === 'TD')).toBe(true);
+    expect(table().rows[0]!.cells[0]!.tagName).toBe('TH');
+    expect(Array.from(table().rows).slice(1).every(row => row.cells[0]!.tagName === 'TD')).toBe(true);
 
     await tableAction(user, '표 삭제');
     expect(editor.view.dom.querySelector('table')).toBeNull();
@@ -187,14 +187,14 @@ describe('RichTextEditor actual table editing', () => {
     selectCell(editor, 1, 1);
     await tableAction(user, '이 셀까지 선택');
     await tableAction(user, '셀 병합');
-    expect(table().rows[1].cells).toHaveLength(1);
-    expect(table().rows[1].cells[0]).toHaveAttribute('colspan', '2');
-    expect(table().rows[1].cells[0]).toHaveTextContent('사무용품12');
+    expect(table().rows[1]!.cells).toHaveLength(1);
+    expect(table().rows[1]!.cells[0]).toHaveAttribute('colspan', '2');
+    expect(table().rows[1]!.cells[0]).toHaveTextContent('사무용품12');
     expect(onChange.mock.lastCall?.[0]).toContain('colspan="2"');
 
     selectCell(editor, 1, 0);
     await tableAction(user, '셀 분할');
-    expect(table().rows[1].cells).toHaveLength(2);
+    expect(table().rows[1]!.cells).toHaveLength(2);
     expect(table()).toHaveTextContent('사무용품');
     expect(table()).toHaveTextContent('12');
   });

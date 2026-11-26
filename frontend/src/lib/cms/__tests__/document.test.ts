@@ -64,9 +64,9 @@ describe('편집 도우미', () => {
     const { sections, moved } = changeSectionLayout(document.sections, index, 'one');
     expect(moved).toBe(2);
     expect(sections).toHaveLength(document.sections.length + 2);
-    expect(sections[index].cells).toHaveLength(1);
-    expect(sections[index + 1].cells[0]).toBe(document.sections[index].cells[1]);
-    expect(sections[index + 2].cells[0]).toBe(document.sections[index].cells[2]);
+    expect(sections[index]!.cells).toHaveLength(1);
+    expect(sections[index + 1]!.cells[0]).toBe(document.sections[index]!.cells[1]);
+    expect(sections[index + 2]!.cells[0]).toBe(document.sections[index]!.cells[2]);
     expect(new Set(sections.map((section) => section.id)).size).toBe(sections.length);
     expect(normalizeCmsDocument({ schemaVersion: 1, sections }, 'publish').ok).toBe(true);
   });
@@ -75,7 +75,7 @@ describe('편집 도우미', () => {
     const sections = [createSection([], 'one')];
     const result = changeSectionLayout(sections, 0, 'three');
     expect(result.moved).toBe(0);
-    expect(result.sections[0].cells).toHaveLength(3);
+    expect(result.sections[0]!.cells).toHaveLength(3);
   });
 
   it('같은 문서 판정은 편집기 기본 속성과 키 순서를 무시한다', () => {
@@ -130,7 +130,7 @@ describe('초안·게시 판정(ADR-0042)', () => {
   it('게시를 막는 칸을 한 번에 모두 모은다', () => {
     const issues = cmsPublishIssues(draftWithGaps());
     expect(issues.map(({ section, cell }) => [section, cell])).toEqual([[0, 0], [1, 0]]);
-    expect(issues[1].message).toContain('값을 입력해 주세요');
+    expect(issues[1]!.message).toContain('값을 입력해 주세요');
   });
 
   it('완성된 문서에는 게시를 막는 문제가 없다', () => {
@@ -145,12 +145,12 @@ describe('초안·게시 판정(ADR-0042)', () => {
 
   it('다른 페이지를 시작점으로 쓰면 첨부만 떼고 나머지는 그대로 둔다', () => {
     const source = draftWithGaps();
-    source.sections[0].cells[0] = { kind: 'image', atchFileSn: 7, alt: '안내도', decorative: false, caption: '그림 1' };
-    source.sections[1].cells[0] = { kind: 'files', items: [{ atchFileSn: 8, title: '신청서' }] };
+    source.sections[0]!.cells[0] = { kind: 'image', atchFileSn: 7, alt: '안내도', decorative: false, caption: '그림 1' };
+    source.sections[1]!.cells[0] = { kind: 'files', items: [{ atchFileSn: 8, title: '신청서' }] };
     const copy = withoutAttachments(source);
-    expect(copy.sections[0].cells[0]).toEqual({ kind: 'image', atchFileSn: 0, alt: '안내도', decorative: false, caption: '그림 1' });
-    expect(copy.sections[1].cells[0]).toEqual({ kind: 'files', items: [] });
-    expect(copy.sections[0].cells[1]).toEqual(source.sections[0].cells[1]);
+    expect(copy.sections[0]!.cells[0]).toEqual({ kind: 'image', atchFileSn: 0, alt: '안내도', decorative: false, caption: '그림 1' });
+    expect(copy.sections[1]!.cells[0]).toEqual({ kind: 'files', items: [] });
+    expect(copy.sections[0]!.cells[1]).toEqual(source.sections[0]!.cells[1]);
     expect(normalizeCmsDocument(copy, 'draft').ok).toBe(true);
   });
 });

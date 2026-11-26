@@ -96,7 +96,7 @@ test.describe('설문 응답 생명주기', () => {
                 const owned = templates.list.filter(template => template.srvyTmpltTypeCd === templateCode
                     && template.srvyTmpltExpln === templateDescription);
                 expect(owned).toHaveLength(1);
-                templateId = owned[0].srvyTmpltSn;
+                templateId = owned[0]!.srvyTmpltSn;
 
                 await adminPage.goto('/admin/survey/hub?tab=questions');
                 // 보이는 본문만 본다 — 첫 화면 직후 셸을 브라우저가 다시 그리면 서버 사본이 숨은 `div#S:n` 안에 잠시 남아
@@ -115,9 +115,9 @@ test.describe('설문 응답 생명주기', () => {
                 const ownedSurveys = surveys.list.filter(survey => survey.srvyTtl === surveyTitle
                     && survey.srvyTmpltSn === templateId);
                 expect(ownedSurveys).toHaveLength(1);
-                surveyId = ownedSurveys[0].srvySn;
-                expect(ownedSurveys[0].srvyBgngYmd).toBe(initial.begin.replaceAll('-', ''));
-                expect(ownedSurveys[0].srvyEndYmd).toBe(initial.end.replaceAll('-', ''));
+                surveyId = ownedSurveys[0]!.srvySn;
+                expect(ownedSurveys[0]!.srvyBgngYmd).toBe(initial.begin.replaceAll('-', ''));
+                expect(ownedSurveys[0]!.srvyEndYmd).toBe(initial.end.replaceAll('-', ''));
             });
 
             await test.step('저장된 기간을 다시 열어 수정하고 서버 값과 재진입 값을 확인한다', async () => {
@@ -154,7 +154,7 @@ test.describe('설문 응답 생명주기', () => {
                     const questions = await readData<Question[]>(adminRequest, `${SURVEYS}/${surveyId}/questions`);
                     const owned = questions.filter(question => question.srvySn === surveyId && question.qstnCn === questionText);
                     expect(owned).toHaveLength(1);
-                    const questionId = owned[0].srvyQstnSn;
+                    const questionId = owned[0]!.srvyQstnSn;
                     for (const [index, label] of [choiceLabel, unselectedLabel].entries()) {
                         const item = await adminRequest.post(`${SURVEYS}/questions/${questionId}/items`, {
                             data: { artclSn: index + 1, artclCn: label, etcAnsYn: 'N' },
@@ -165,7 +165,7 @@ test.describe('설문 응답 생명주기', () => {
                     const selected = populated.find(question => question.srvyQstnSn === questionId)?.items
                         .filter(item => item.artclCn === choiceLabel) ?? [];
                     expect(selected).toHaveLength(1);
-                    selectedAnswers.push({ srvyQstnSn: questionId, srvyArtclSn: selected[0].srvyArtclSn, choiceLabel });
+                    selectedAnswers.push({ srvyQstnSn: questionId, srvyArtclSn: selected[0]!.srvyArtclSn, choiceLabel });
                 }
                 expect(selectedAnswers).toHaveLength(2);
                 expect(new Set(selectedAnswers.map(answer => answer.srvyQstnSn)).size).toBe(2);
@@ -261,9 +261,9 @@ test.describe('설문 응답 생명주기', () => {
                             && response.srvyQstnSn === srvyQstnSn && response.srvyArtclSn === srvyArtclSn);
                         if (owned.length) {
                             expect(owned).toHaveLength(1);
-                            expect(owned[0].rspdntAnsCn).toBe(choiceLabel);
-                            responseIds.set(srvyArtclSn, owned[0].srvyRspnsSn);
-                            respondentName = owned[0].rspnsNm ?? '';
+                            expect(owned[0]!.rspdntAnsCn).toBe(choiceLabel);
+                            responseIds.set(srvyArtclSn, owned[0]!.srvyRspnsSn);
+                            respondentName = owned[0]!.rspnsNm ?? '';
                         }
                     }
                 }
@@ -287,7 +287,7 @@ test.describe('설문 응답 생명주기', () => {
                     await expect(row.getByRole('cell').nth(1)).toHaveText(choiceLabel);
                     await expect(detail).toHaveAccessibleName(`${respondentName || '설문'} 응답 상세보기`);
                     await expect(detail.getByRole('button')).toHaveCount(0);
-                    if (srvyArtclSn === selectedAnswers[0].srvyArtclSn) {
+                    if (srvyArtclSn === selectedAnswers[0]!.srvyArtclSn) {
                         const stats = main.getByRole('link', { name: '통계 보기', exact: true });
                         await expect(stats).toHaveAttribute('href', '/survey/stats');
                         await expect(stats.getByRole('button')).toHaveCount(0);
@@ -399,7 +399,7 @@ test.describe('설문 응답 생명주기', () => {
                 await expect(respondentRows).toHaveCount(2);
             });
             await test.step('한 답변에서 전체 제출을 취소하면 두 문항이 사라지고 기간 안에 다시 제출할 수 있다', async () => {
-                const anchor = responseIds.get(selectedAnswers[0].srvyArtclSn)!;
+                const anchor = responseIds.get(selectedAnswers[0]!.srvyArtclSn)!;
                 await adminPage.goto('/survey/response');
                 const main = adminPage.locator('main#main-content').filter({ visible: true });
                 const selector = `a[href="/survey/response/${anchor}"]`;

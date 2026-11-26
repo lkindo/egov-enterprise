@@ -102,8 +102,8 @@ describe('DurableJobsClient', () => {
     const buttons = await screen.findAllByRole('button', { name: /다시 처리/ });
     expect(buttons).toHaveLength(1);
 
-    fireEvent.click(buttons[0]);
-    fireEvent.click(buttons[0]);
+    fireEvent.click(buttons[0]!);
+    fireEvent.click(buttons[0]!);
     await waitFor(() => expect(mocks.retryDurableJob).toHaveBeenCalledTimes(1));
     expect(mocks.retryDurableJob).toHaveBeenCalledWith('11');
     expect(mocks.confirm).toHaveBeenCalledTimes(1);

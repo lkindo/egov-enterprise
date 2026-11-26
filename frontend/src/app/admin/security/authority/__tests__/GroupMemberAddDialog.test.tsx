@@ -107,7 +107,7 @@ describe('GroupMemberAddDialog — 구성원 추가', () => {
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
     expect(mocks.toast).toHaveBeenCalledWith('구성원 1명을 추가했습니다. 지금 구성원은 3명입니다.', 'success');
     expect(invalidate).toHaveBeenCalledTimes(1);
-    const filters: InvalidateQueryFilters | undefined = invalidate.mock.calls[0][0];
+    const filters: InvalidateQueryFilters | undefined = invalidate.mock.calls[0]![0];
     const predicate = filters?.predicate;
     if (!predicate) throw new Error('구성원 변경 뒤 무효화에 predicate 가 없습니다.');
     // predicate 는 queryKey 만 읽는다 — 시험용 조회 객체는 그 필드만 갖는다.

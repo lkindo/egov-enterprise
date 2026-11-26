@@ -187,7 +187,7 @@ describe('BoardRegistClient validation contract', () => {
     fireEvent.submit(screen.getByRole('button', { name: '게시글 등록' }).closest('form')!);
 
     await waitFor(() => expect(mocks.saveBoardArticle).toHaveBeenCalledTimes(1));
-    const formData = mocks.saveBoardArticle.mock.calls[0][1] as FormData;
+    const formData = mocks.saveBoardArticle.mock.calls[0]![1] as FormData;
     expect(formData.get('pstCn')).toBe(content);
   });
 
@@ -283,7 +283,7 @@ describe('BoardRegistClient validation contract', () => {
     fireEvent.submit(screen.getByRole('button', { name: '게시글 등록' }).closest('form')!);
 
     await waitFor(() => expect(mocks.saveBoardArticle).toHaveBeenCalledTimes(1));
-    const formData = mocks.saveBoardArticle.mock.calls[0][1] as FormData;
+    const formData = mocks.saveBoardArticle.mock.calls[0]![1] as FormData;
     expect(formData.get('pstBgngYmd')).toBe('20261101');
     expect(formData.get('pstEndYmd')).toBe('20261130');
     expect(formData.get('version')).toBeNull();
@@ -342,7 +342,7 @@ describe('BoardRegistClient validation contract', () => {
 
     fireEvent.submit(screen.getByRole('button', { name: '게시글 수정' }).closest('form')!);
     await waitFor(() => expect(mocks.saveBoardArticle).toHaveBeenCalledTimes(1));
-    const formData = mocks.saveBoardArticle.mock.calls[0][1] as FormData;
+    const formData = mocks.saveBoardArticle.mock.calls[0]![1] as FormData;
     expect(formData.get('version')).toBe('5');
     expect(formData.get('pstBgngYmd')).toBe('20261001');
   });

@@ -200,7 +200,7 @@ function factoryModule(sourceFile: ts.SourceFile, name: string): string | undefi
 function factoryKey(sourceFile: ts.SourceFile, factory: ts.CallExpression): string {
   const callee = calleePath(factory);
   if (callee === undefined) return `${lineOf(sourceFile, factory)}행: factory 를 이름으로 부르지 않는다`;
-  const moduleName = factoryModule(sourceFile, callee.split('.')[0]);
+  const moduleName = factoryModule(sourceFile, callee.split('.')[0]!);
   return moduleName === undefined ? `${lineOf(sourceFile, factory)}행: factory 를 import 하지 않는다` : `${moduleName}#${callee}`;
 }
 
@@ -225,7 +225,7 @@ const FACTORY_KEY_TESTS: Readonly<Record<string, string>> = {
 /** 표 키의 모듈 이름과 callee. 형식이 아니면 undefined. */
 function parseFactoryKey(key: string): { module: string; callee: string } | undefined {
   const match = /^@\/queries\/([\w-]+)#([\w$]+(?:\.[\w$]+)*)$/.exec(key);
-  return match === null ? undefined : { module: match[1], callee: match[2] };
+  return match === null ? undefined : { module: match[1]!, callee: match[2]! };
 }
 
 /** 표 행이 가리키는 factory 모듈과 그 단위 시험 파일(절대 경로). */
@@ -256,7 +256,7 @@ function keyTestProblems(testSource: string, testFile: string, callee: string, t
     if (name !== undefined && (ts.isStringLiteral(name) || ts.isNoSubstitutionTemplateLiteral(name)) && name.text === title) blocks.push(node);
   });
   if (blocks.length !== 1) return [`${testFile}: it('${title}') 가 ${blocks.length}개다 — 하나여야 한다`];
-  const body = blocks[0].arguments[1];
+  const body = blocks[0]!.arguments[1];
   let calls = 0;
   let readsKey = false;
   let assertsDifferent = false;
@@ -410,7 +410,7 @@ describe('페이지당 건수 채택 census', () => {
       const rows = keepInProjection(keyRows, ({ parsed }) => (parsed === undefined ? [] : factoryKeyFiles(parsed.module)));
       const problems = rows.flatMap(({ parsed, title }) => {
         if (parsed === undefined) return [];
-        const testFile = factoryKeyFiles(parsed.module)[1];
+        const testFile = factoryKeyFiles(parsed.module)[1]!;
         return keyTestProblems(readFileSync(testFile, 'utf8'), frontendPath(testFile), parsed.callee, title);
       });
       expect(problems, 'factory 키 결속 단위 시험이 표와 맞지 않습니다').toEqual([]);

@@ -88,8 +88,8 @@ describe('화면별 권한 표 모델 — 실제 화면 목록과의 정합', ()
     const navigation = [
       { code: 'AREA', name: '영역', parentCode: null, route: null, useYn: 'Y' as const },
       { code: 'ALIAS', name: '별칭 메뉴', parentCode: 'AREA', route: alias!.route, useYn: 'Y' as const },
-      { code: 'USED', name: '사용 메뉴', parentCode: 'AREA', route: `${used.route}?tab=TEST`, useYn: 'Y' as const },
-      { code: 'UNUSED', name: '사용 안 함 메뉴', parentCode: 'AREA', route: unusedOnly.route, useYn: 'N' as const },
+      { code: 'USED', name: '사용 메뉴', parentCode: 'AREA', route: `${used!.route}?tab=TEST`, useYn: 'Y' as const },
+      { code: 'UNUSED', name: '사용 안 함 메뉴', parentCode: 'AREA', route: unusedOnly!.route, useYn: 'N' as const },
     ];
     const built = buildScreenPermissionModel(buildNavigationPermissionTree(navigation), operationCodes);
     for (const menu of navigation) {
@@ -98,8 +98,8 @@ describe('화면별 권한 표 모델 — 실제 화면 목록과의 정합', ()
     const unmatched = built.byKey.get(UNMATCHED_GROUP_KEY)!.childKeys.map((childKey) => built.byKey.get(childKey)!.route);
     expect(unmatched).toEqual(screensWithoutMenu(navigation).map((screen) => screen.route).sort());
     expect(unmatched).not.toContain(aliasTarget);
-    expect(unmatched).not.toContain(used.route);
-    expect(unmatched).toContain(unusedOnly.route);
+    expect(unmatched).not.toContain(used!.route);
+    expect(unmatched).toContain(unusedOnly!.route);
   });
 
   it('모든 화면에서 칸 코드는 진입 밖 화면 권한이고, 일괄 코드는 보호·타인 자료·진입 권한을 뺀 부분집합이다', () => {

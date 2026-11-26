@@ -216,7 +216,7 @@ describe('공통코드 — 분류·그룹 구조 편집', () => {
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    const message = String(mocks.confirm.mock.calls[0][0].message);
+    const message = String(mocks.confirm.mock.calls[0]![0].message);
     expect(message).toContain('2개');
     expect(message).toContain('사라집니다');
     await waitFor(() => expect(mocks.saveClCode).toHaveBeenCalledTimes(1));
@@ -253,7 +253,7 @@ describe('공통코드 — 분류·그룹 구조 편집', () => {
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
 
     await waitFor(() => expect(mocks.saveClCode).toHaveBeenCalledTimes(1));
-    expect(mocks.saveClCode.mock.calls[0][1]).toMatchObject({ isNew: true });
+    expect(mocks.saveClCode.mock.calls[0]![1]).toMatchObject({ isNew: true });
     await waitFor(() => expect(mocks.refresh).toHaveBeenCalled());
   });
 
@@ -263,6 +263,6 @@ describe('공통코드 — 분류·그룹 구조 편집', () => {
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
 
     await waitFor(() => expect(mocks.saveCmmnCode).toHaveBeenCalledTimes(1));
-    expect(mocks.saveCmmnCode.mock.calls[0][1]).toMatchObject({ isNew: false });
+    expect(mocks.saveCmmnCode.mock.calls[0]![1]).toMatchObject({ isNew: false });
   });
 });

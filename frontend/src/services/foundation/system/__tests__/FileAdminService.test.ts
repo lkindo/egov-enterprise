@@ -75,7 +75,7 @@ describe('FileAdminService generated multipart contract', () => {
     expect(body.has('file')).toBe(false);
     expect(body.has('files[0]')).toBe(false);
     expect(fileParts(body)).toStrictEqual([first, second]);
-    expect(fileParts(body)[1].type).toBe('image/png');
+    expect(fileParts(body)[1]!.type).toBe('image/png');
   });
 
   it('호출마다 새 FormData를 만들고 필수 복수 part의 빈 배열은 transport 전에 거부한다', async () => {

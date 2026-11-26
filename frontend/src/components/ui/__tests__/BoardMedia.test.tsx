@@ -47,7 +47,7 @@ describe('BoardMedia 인증 미디어 표시', () => {
     await screen.findByRole('img', { name: image.label });
     expect(files.getFileList).toHaveBeenCalledWith(11, expect.objectContaining({ signal: expect.any(AbortSignal), suppressErrorToast: true }));
     expect(files.fetchBlob).toHaveBeenCalledWith(11, 2, expect.objectContaining({ signal: expect.any(AbortSignal), suppressErrorToast: true }));
-    expect((createUrl.mock.calls[0][0] as Blob).type).toBe('image/png');
+    expect((createUrl.mock.calls[0]![0] as Blob).type).toBe('image/png');
   });
 
   it('영상은 사용자가 불러오기를 누른 뒤 내려받고 재생 컨트롤을 제공한다', async () => {
@@ -89,7 +89,7 @@ describe('BoardMedia 인증 미디어 표시', () => {
     files.fetchBlob.mockReturnValue(new Promise<Blob>(done => { resolve = done; }));
     const view = render(<BoardMedia reference={image} atchFileSn={11} attachments={[attachment]} />);
     await waitFor(() => expect(files.fetchBlob).toHaveBeenCalled());
-    const config = files.fetchBlob.mock.calls[0][2] as { signal: AbortSignal };
+    const config = files.fetchBlob.mock.calls[0]![2] as { signal: AbortSignal };
     view.unmount();
     expect(config.signal.aborted).toBe(true);
     await act(async () => { resolve(new Blob(['late'])); });

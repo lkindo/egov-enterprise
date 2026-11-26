@@ -230,7 +230,7 @@ describe('MailSendHubClient validation', () => {
     await user.click(screen.getByRole('button', { name: /메일 발송/ }));
 
     await waitFor(() => expect(mocks.sendMail).toHaveBeenCalledTimes(1));
-    const payload = mocks.sendMail.mock.calls[0][0];
+    const payload = mocks.sendMail.mock.calls[0]![0];
     expect(payload.recipients).toEqual([{ emlAddr: 'receiver@example.com' }]);
     expect(payload).not.toHaveProperty('recptnPerson');
   });
@@ -257,7 +257,7 @@ describe('MailSendHubClient validation', () => {
     await user.click(screen.getByRole('button', { name: /메일 발송/ }));
 
     await waitFor(() => expect(mocks.sendMail).toHaveBeenCalledTimes(1));
-    expect(mocks.sendMail.mock.calls[0][0].recipients).toEqual([
+    expect(mocks.sendMail.mock.calls[0]![0].recipients).toEqual([
       { emlAddr: 'receiver@example.com' },
       { esntlId: 'USR_A' },
       { emlAddr: 'park@partner.example' },
@@ -276,7 +276,7 @@ describe('MailSendHubClient validation', () => {
 
     await user.click(screen.getByRole('button', { name: /메일 발송/ }));
     await waitFor(() => expect(mocks.sendMail).toHaveBeenCalledTimes(1));
-    expect(mocks.sendMail.mock.calls[0][0].recipients).toEqual([
+    expect(mocks.sendMail.mock.calls[0]![0].recipients).toEqual([
       { emlAddr: 'receiver@example.com' },
       { emlAddr: 'park@partner.example' },
     ]);

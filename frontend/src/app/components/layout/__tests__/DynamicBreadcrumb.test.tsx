@@ -95,7 +95,7 @@ describe('DynamicBreadcrumb', () => {
   });
   it('[Codex 검토] 같은 주소에서 사용자·인가 버전이 바뀌면 머리글 메뉴의 새 이름으로 경로를 다시 그린다', async () => {
     const client = rememberBrowserQueryClient(new QueryClient());
-    const renamed = [{ ...menus[0], menuNm: '운영 센터' }];
+    const renamed = [{ ...menus[0]!, menuNm: '운영 센터' }];
     function HeaderStub({ scope, data }: { scope: string; data: typeof menus }) {
       useQuery({ queryKey: ['menus', 'head', scope, 'v'], queryFn: () => data, staleTime: 5 * 60 * 1000 });
       return null;
@@ -118,7 +118,7 @@ describe('DynamicBreadcrumb', () => {
   });
   it('[Codex 2차 검토] 공급자가 클라이언트를 나중에 기억해도(첫 마운트의 효과 순서) 이어서 그 캐시를 구독한다', async () => {
     const client = new QueryClient();
-    const renamed = [{ ...menus[0], menuNm: '운영 센터' }];
+    const renamed = [{ ...menus[0]!, menuNm: '운영 센터' }];
     try {
       render(<QueryClientProvider client={client}><DynamicBreadcrumb customItems={[{ name: '메뉴 관리' }]} /></QueryClientProvider>);
       await waitFor(() => expect(crumbs()).toEqual(['홈', '관리 센터', '메뉴 관리']));

@@ -98,7 +98,7 @@ describe('SystemLogsUserClient scoped error recovery', () => {
     //   단일 표 트리로 바뀌어 정확히 1벌이다 — 계약 완화가 아니라 실제 DOM 수의 정정이다.
     expect(screen.getAllByTestId('error-state-display')).toHaveLength(1);
 
-    await user.click(retryButtons[0]);
+    await user.click(retryButtons[0]!);
 
     await waitFor(() => expect(failureProbeAttempts).toBe(2));
     await screen.findAllByText(`"${FAILURE_PROBE}"에 대한 검색 결과가 없습니다.`);

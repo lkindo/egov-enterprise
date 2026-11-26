@@ -194,7 +194,7 @@ describe('AdministCodeClient 정정 경로', () => {
       message: expect.stringContaining('1100000000'),
     }));
     // 하위 코드 제약을 확인 본문이 미리 말한다 — 눌러 보고 실패로 알게 하지 않는다.
-    expect(mocks.confirm.mock.calls[0][0].message).toContain('하위 코드');
+    expect(mocks.confirm.mock.calls[0]![0].message).toContain('하위 코드');
     expect(mocks.deleteAdministCode).not.toHaveBeenCalled();
   });
 

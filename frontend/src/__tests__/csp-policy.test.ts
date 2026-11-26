@@ -136,7 +136,7 @@ describe('CSP nonce 계약', () => {
     const body = extractFunctionBody('buildAppCsp');
     const directives = [...body.matchAll(/media-src\s+([^;]+);/g)];
     expect(directives, 'media-src를 한 번 명시해야 Blob 영상 재생과 허용 범위를 함께 검증할 수 있다').toHaveLength(1);
-    expect(directives[0][1].trim().split(/\s+/)).toEqual(["'self'", 'blob:']);
+    expect(directives[0]![1]!.trim().split(/\s+/)).toEqual(["'self'", 'blob:']);
   });
 
   it('퇴역한 Atlas unsafe-inline CSP 예외가 proxy.ts 에 재유입되지 않는다', () => {
@@ -152,7 +152,7 @@ describe('CSP nonce 계약', () => {
       "proxy.ts 코드 어디에도 script-src 에 'unsafe-inline' 을 허용하는 별도 CSP 가 없어야 합니다.",
     ).not.toMatch(scriptUnsafeInlinePattern);
 
-    const cspAssignments = [...proxyCode.matchAll(/\.set\(\s*['"]content-security-policy['"]\s*,\s*([^)]+)\)/gi)].map((m) => m[1].trim());
+    const cspAssignments = [...proxyCode.matchAll(/\.set\(\s*['"]content-security-policy['"]\s*,\s*([^)]+)\)/gi)].map((m) => m[1]!.trim());
     expect(cspAssignments.length).toBeGreaterThanOrEqual(2);
     expect(
       cspAssignments.every((expr) => expr === 'csp'),
@@ -273,7 +273,7 @@ describe('CSP nonce 계약', () => {
       'report-to 그룹 이름이 Reporting-Endpoints 의 키와 달라 그룹이 해석되지 않습니다',
     ).toContain('report-to csp-endpoint;');
 
-    const collector = join(FRONTEND_DIR, 'src', 'app', reportPath.replace(/^\//, ''), 'route.ts');
+    const collector = join(FRONTEND_DIR, 'src', 'app', reportPath!.replace(/^\//, ''), 'route.ts');
     expect(existsSync(collector), `수집기 라우트가 없습니다: ${collector}`).toBe(true);
     const collectorSource = readFileSync(collector, 'utf8');
     expect(

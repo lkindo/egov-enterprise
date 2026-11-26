@@ -315,7 +315,7 @@ describe('ExpectedErrorLedger', () => {
         navigationResponse: (navigation: FakeRequest, status = 200, headers: Record<string, string> = {}) => emit('response', {
           status: () => status,
           headers: () => headers,
-          url: () => navigation.url(),
+          url: () => navigation.url!(),
           request: () => navigation,
         }),
         /** 응답을 받은 탐색이 다운로드·204 로 끝났거나 다른 탐색에 밀려 탐색 요청 자체가 실패했다. */
@@ -582,9 +582,9 @@ describe('ExpectedErrorLedger', () => {
         .not.toMatch(/consoleGuard\.addIgnorePattern\s*\(/);
       for (const match of source.matchAll(/\bid:\s*['"](E2E-[A-Z0-9-]+)['"]/g)) {
         const id = match[1];
-        expect(seen.get(id), `expected-error ID ${id} 중복: ${seen.get(id)} / ${fileName}`)
+        expect(seen.get(id!), `expected-error ID ${id} 중복: ${seen.get(id!)} / ${fileName}`)
           .toBeUndefined();
-        seen.set(id, fileName);
+        seen.set(id!, fileName);
       }
     }
 

@@ -538,8 +538,8 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     fireEvent.click(cancel);
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    expect(mocks.confirm.mock.calls[0][0].message).toContain('#74');
-    expect(mocks.confirm.mock.calls[0][0].variant).toBe('destructive');
+    expect(mocks.confirm.mock.calls[0]![0].message).toContain('#74');
+    expect(mocks.confirm.mock.calls[0]![0].variant).toBe('destructive');
     await waitFor(() => expect(mocks.cancelDraft).toHaveBeenCalledWith(74, 2));
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('문서를 회수했습니다. 처리 이력은 보존됩니다.', 'success'));
   });
@@ -934,7 +934,7 @@ describe('ApprovalHubClient 결재 동선 검토 수정', () => {
     fireEvent.click(screen.getByRole('button', { name: '선택한 2건 승인' }));
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    const message = mocks.confirm.mock.calls[0][0].message as string;
+    const message = mocks.confirm.mock.calls[0]![0].message as string;
     expect(message).not.toContain('다음 단계 결재자에게 차례가 넘어갑니다');
     expect(message).toContain('합의 단계 1건은 동의');
     expect(message).toContain('마지막 단계면 완료됩니다');

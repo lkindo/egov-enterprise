@@ -29,7 +29,7 @@ describe('AppNotificationDrawer 필터', () => {
   });
 
   it('읽지 않은 최근 알림이 없으면 전체가 아니라 최근 알림 범위라고 말한다', async () => {
-    render(<AppNotificationDrawer isOpen notifications={[notifications[0]]} {...handlers} />);
+    render(<AppNotificationDrawer isOpen notifications={[notifications[0]!]} {...handlers} />);
     await userEvent.click(screen.getByRole('button', { name: '읽지 않음' }));
     expect(screen.getByText('최근 알림 가운데 읽지 않은 알림이 없습니다')).toBeInTheDocument();
   });

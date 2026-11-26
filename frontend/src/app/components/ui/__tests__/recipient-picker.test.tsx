@@ -98,7 +98,7 @@ describe('RecipientPicker', () => {
     await user.click(screen.getByRole('button', { name: '선택 추가 (2)' }));
 
     expect(mocks.onConfirm).toHaveBeenCalledTimes(1);
-    expect(mocks.onConfirm.mock.calls[0][0]).toEqual([
+    expect(mocks.onConfirm.mock.calls[0]![0]).toEqual([
       { kind: 'user', esntlId: 'USR_A', name: '김갑', deptNm: '총무과' },
       { kind: 'user', esntlId: 'USR_B', name: '김을', deptNm: undefined },
     ]);
@@ -139,7 +139,7 @@ describe('RecipientPicker', () => {
 
     await user.click(screen.getByRole('button', { name: '선택 추가 (2)' }));
 
-    expect(mocks.onConfirm.mock.calls[0][0]).toEqual([
+    expect(mocks.onConfirm.mock.calls[0]![0]).toEqual([
       { kind: 'contact', name: '박외부', email: 'park@partner.example', phone: undefined },
       { kind: 'contact', name: '이번호없음', email: 'lee@partner.example', phone: undefined },
     ]);
@@ -158,7 +158,7 @@ describe('RecipientPicker', () => {
     await user.click(within(list).getByRole('checkbox', { name: '최메일없음 선택' }));
     await user.click(screen.getByRole('button', { name: '선택 추가 (1)' }));
 
-    expect(mocks.onConfirm.mock.calls[0][0]).toEqual([
+    expect(mocks.onConfirm.mock.calls[0]![0]).toEqual([
       { kind: 'contact', name: '최메일없음', email: undefined, phone: '01099998888' },
     ]);
   });

@@ -103,7 +103,7 @@ describe('DeptJob attachments', () => {
     fireEvent.click(screen.getByRole('button', { name: '업무 등록' }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
-    expect(onSubmit.mock.calls[0][0]).toMatchObject({ deptTaskNm: '취약점 점검', atchFileSn: 77 });
+    expect(onSubmit.mock.calls[0]![0]).toMatchObject({ deptTaskNm: '취약점 점검', atchFileSn: 77 });
   });
 
   it('FILE_UPLOAD 권한이 없으면 업로더를 숨기고 기존 첨부 제거 시 atchFileSn 을 비운다', async () => {
@@ -125,7 +125,7 @@ describe('DeptJob attachments', () => {
     fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
-    expect(onSubmit.mock.calls[0][0].atchFileSn).toBeUndefined();
+    expect(onSubmit.mock.calls[0]![0].atchFileSn).toBeUndefined();
   });
 
   it('상세 조회 화면에서 첨부파일 목록과 내려받기를 표시한다', async () => {

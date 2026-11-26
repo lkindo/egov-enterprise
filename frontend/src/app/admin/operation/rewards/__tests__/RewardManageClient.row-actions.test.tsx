@@ -143,7 +143,7 @@ describe('RewardManageClient 행 액션', () => {
 
     await waitFor(() => expect(mocks.updateReward).toHaveBeenCalledTimes(1));
     expect(mocks.updateReward).toHaveBeenCalledWith(7, expect.objectContaining({ rwardNm: '우수 사원상', rwardCode: 'R01' }));
-    expect(mocks.updateReward.mock.calls[0][1]).not.toHaveProperty('confmAt');
+    expect(mocks.updateReward.mock.calls[0]![1]).not.toHaveProperty('confmAt');
     expect(mocks.createReward).not.toHaveBeenCalled();
   });
 

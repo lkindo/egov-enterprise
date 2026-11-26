@@ -104,7 +104,7 @@ const editing = (scrtYn: 'Y' | 'N') => ({
 async function submittedSecretYn(buttonName: '게시글 등록' | '게시글 수정'): Promise<FormDataEntryValue | null> {
   fireEvent.submit(screen.getByRole('button', { name: buttonName }).closest('form')!);
   await waitFor(() => expect(mocks.saveBoardArticle).toHaveBeenCalledTimes(1));
-  return (mocks.saveBoardArticle.mock.calls[0][1] as FormData).get('scrtYn');
+  return (mocks.saveBoardArticle.mock.calls[0]![1] as FormData).get('scrtYn');
 }
 
 function fillNewPost() {

@@ -36,12 +36,12 @@ describe('목록 템플릿 추천 버튼', () => {
     const done = screen.getAllByRole('button', { name: '추천한 글 추천함' })[0];
     expect(done).toBeDisabled();
     expect(done).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(done);
+    fireEvent.click(done!);
     expect(handleLike).not.toHaveBeenCalled();
 
     const open = screen.getAllByRole('button', { name: '새 글 추천' })[0];
     expect(open).toHaveAttribute('aria-pressed', 'false');
-    fireEvent.click(open);
+    fireEvent.click(open!);
     expect(handleLike).toHaveBeenCalledWith(expect.anything(), 71);
   });
 

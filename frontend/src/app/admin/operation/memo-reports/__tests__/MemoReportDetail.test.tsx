@@ -576,7 +576,7 @@ describe('메모보고 열람', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: '지시사항 바꾸기' }));
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    expect(mocks.confirm.mock.calls[0][0]).toEqual(expect.objectContaining({ title: '지시 바꾸기', message }));
+    expect(mocks.confirm.mock.calls[0]![0]).toEqual(expect.objectContaining({ title: '지시 바꾸기', message }));
     await waitFor(() => expect(mocks.updateDrctMatter).toHaveBeenCalledWith(5, { drctnMttr: '10월로 미룹니다.', instructionReadToken: READ_TOKEN }));
   });
 
@@ -681,7 +681,7 @@ describe('메모보고 열람', () => {
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
 
     await waitFor(() => expect(mocks.updateMemoReport).toHaveBeenCalledTimes(1));
-    const [sn, body] = mocks.updateMemoReport.mock.calls[0];
+    const [sn, body] = mocks.updateMemoReport.mock.calls[0]!;
     expect(sn).toBe(ROW.memoRptSn);
     // 화면이 묻지 않는 수신자·보고일자·버전도 상세에서 읽어 되돌려 보낸다 — 빠지면 서버가 지우거나 충돌을 모른다.
     expect(body).toMatchObject({
@@ -721,7 +721,7 @@ describe('메모보고 열람', () => {
 
     // 저장하지 않고 닫는다.
     const footerClose = screen.getAllByRole('button', { name: '닫기' });
-    fireEvent.click(footerClose[footerClose.length - 1]);
+    fireEvent.click(footerClose[footerClose.length - 1]!);
 
     // B 를 연다.
     fireEvent.click(await screen.findByRole('button', { name: '보안 점검 보고 보고 열기' }));
@@ -740,7 +740,7 @@ describe('메모보고 열람', () => {
     // ④ 저장 본문이 B 의 수신자로 나가야 한다 — A 의 rptrId 가 실리면 수신자 재배정이다.
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
     await waitFor(() => expect(mocks.updateMemoReport).toHaveBeenCalledTimes(1));
-    const [sn, body] = mocks.updateMemoReport.mock.calls[0];
+    const [sn, body] = mocks.updateMemoReport.mock.calls[0]!;
     expect(sn).toBe(OTHER.memoRptSn);
     expect(body).toMatchObject({ rptTtl: '보안 점검 보고', rptrId: OTHER.rptrId });
   });
@@ -777,7 +777,7 @@ describe('메모보고 열람', () => {
     fireEvent.click(screen.getByRole('button', { name: '삭제' }));
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    expect(mocks.confirm.mock.calls[0][0].message).toContain('3분기 운영 보고');
+    expect(mocks.confirm.mock.calls[0]![0].message).toContain('3분기 운영 보고');
     expect(mocks.deleteMemoReport).not.toHaveBeenCalled();
   });
 });
@@ -821,13 +821,13 @@ describe('메모보고 수정 첨부파일', () => {
 
     await waitFor(() => expect(mocks.uploadFiles).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(mocks.updateMemoReport).toHaveBeenCalledTimes(1));
-    expect(mocks.uploadFiles.mock.calls[0][0]).toEqual([replacement]);
-    expect(mocks.updateMemoReport.mock.calls[0][1]).toMatchObject({ atchFileSn: 99 });
+    expect(mocks.uploadFiles.mock.calls[0]![0]).toEqual([replacement]);
+    expect(mocks.updateMemoReport.mock.calls[0]![1]).toMatchObject({ atchFileSn: 99 });
 
     fireEvent.click(dialog.getByRole('button', { name: '저장' }));
     await waitFor(() => expect(mocks.updateMemoReport).toHaveBeenCalledTimes(2));
     expect(mocks.uploadFiles).toHaveBeenCalledTimes(1);
-    expect(mocks.updateMemoReport.mock.calls[1][1]).toMatchObject({ atchFileSn: 99 });
+    expect(mocks.updateMemoReport.mock.calls[1]![1]).toMatchObject({ atchFileSn: 99 });
   });
 
   it('FILE_UPLOAD 권한이 없어도 기존 첨부를 유지하거나 해제해 저장할 수 있다', async () => {
@@ -839,7 +839,7 @@ describe('메모보고 수정 첨부파일', () => {
     fireEvent.click(dialog.getByRole('button', { name: '저장' }));
 
     await waitFor(() => expect(mocks.updateMemoReport).toHaveBeenCalledTimes(1));
-    expect(mocks.updateMemoReport.mock.calls[0][1]).toMatchObject({ atchFileSn: 77 });
+    expect(mocks.updateMemoReport.mock.calls[0]![1]).toMatchObject({ atchFileSn: 77 });
     expect(mocks.uploadFiles).not.toHaveBeenCalled();
 
     fireEvent.click(await screen.findByRole('button', { name: '수정' }));
@@ -848,7 +848,7 @@ describe('메모보고 수정 첨부파일', () => {
     fireEvent.click(dialog.getByRole('button', { name: '저장' }));
 
     await waitFor(() => expect(mocks.updateMemoReport).toHaveBeenCalledTimes(2));
-    expect(mocks.updateMemoReport.mock.calls[1][1].atchFileSn).toBeUndefined();
+    expect(mocks.updateMemoReport.mock.calls[1]![1].atchFileSn).toBeUndefined();
     expect(mocks.uploadFiles).not.toHaveBeenCalled();
   });
 
@@ -936,7 +936,7 @@ describe('메모보고 작성', () => {
     fireEvent.click(form.getByRole('button', { name: '보고 등록' }));
 
     await waitFor(() => expect(mocks.createMemoReport).toHaveBeenCalledTimes(1));
-    expect(mocks.createMemoReport.mock.calls[0][0]).toMatchObject({
+    expect(mocks.createMemoReport.mock.calls[0]![0]).toMatchObject({
       rptTtl: '4분기 계획',
       rptCn: '증설 예산이 필요합니다.',
       rptrId: 'USR_B',
@@ -1038,8 +1038,8 @@ describe('메모보고 작성', () => {
 
     await waitFor(() => expect(mocks.uploadFiles).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(mocks.createMemoReport).toHaveBeenCalledTimes(1));
-    expect(mocks.uploadFiles.mock.calls[0][0]).toEqual([attachment]);
-    expect(mocks.createMemoReport.mock.calls[0][0]).toMatchObject({
+    expect(mocks.uploadFiles.mock.calls[0]![0]).toEqual([attachment]);
+    expect(mocks.createMemoReport.mock.calls[0]![0]).toMatchObject({
       rptTtl: '첨부 보고',
       rptCn: '첨부 본문',
       rptrId: 'USR_B',
@@ -1052,7 +1052,7 @@ describe('메모보고 작성', () => {
     fireEvent.click(form.getByRole('button', { name: '보고 등록' }));
     await waitFor(() => expect(mocks.createMemoReport).toHaveBeenCalledTimes(2));
     expect(mocks.uploadFiles).toHaveBeenCalledTimes(1);
-    expect(mocks.createMemoReport.mock.calls[1][0]).toMatchObject({ atchFileSn: 88 });
+    expect(mocks.createMemoReport.mock.calls[1]![0]).toMatchObject({ atchFileSn: 88 });
   });
 
   it('첨부파일 업로드에 실패하면 보고 등록을 호출하지 않고 사유와 입력을 유지한다', async () => {
@@ -1122,7 +1122,7 @@ describe('메모보고 작성', () => {
     });
 
     await waitFor(() => expect(mocks.createMemoReport).toHaveBeenCalledTimes(1));
-    expect(mocks.createMemoReport.mock.calls[0][0]).toMatchObject({ atchFileSn: 77 });
+    expect(mocks.createMemoReport.mock.calls[0]![0]).toMatchObject({ atchFileSn: 77 });
   });
 
   it('업로드 중 첨부가 동기적으로 바뀌면 이전 atchFileSn 으로 등록하지 않고 다음 재시도에 반영한다', async () => {
@@ -1164,7 +1164,7 @@ describe('메모보고 작성', () => {
     fireEvent.click(form.getByRole('button', { name: '보고 등록' }));
     await waitFor(() => expect(mocks.createMemoReport).toHaveBeenCalledTimes(1));
     expect(mocks.uploadFiles).toHaveBeenCalledTimes(1);
-    expect(mocks.createMemoReport.mock.calls[0][0]).not.toHaveProperty('atchFileSn');
+    expect(mocks.createMemoReport.mock.calls[0]![0]).not.toHaveProperty('atchFileSn');
   });
 
   it('FILE_UPLOAD 권한이 없으면 작성 모달에 파일 업로더를 보이지 않고 첨부 없이 등록한다', async () => {
@@ -1182,7 +1182,7 @@ describe('메모보고 작성', () => {
 
     await waitFor(() => expect(mocks.createMemoReport).toHaveBeenCalledTimes(1));
     expect(mocks.uploadFiles).not.toHaveBeenCalled();
-    expect(mocks.createMemoReport.mock.calls[0][0]).not.toHaveProperty('atchFileSn');
+    expect(mocks.createMemoReport.mock.calls[0]![0]).not.toHaveProperty('atchFileSn');
   });
 });
 

@@ -30,8 +30,8 @@ describe('통계 요약 — 게시판의 전체 등록 건수 칸', () => {
 
     const titles = ['누적 사용자', '금일 성공 로그인', '전체 등록 건수'];
     const order = titles.map((title) => summaryCard(title));
-    expect(order[0].compareDocumentPosition(order[2]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(order[1].compareDocumentPosition(order[2]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(order[0]!.compareDocumentPosition(order[2]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(order[1]!.compareDocumentPosition(order[2]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(summaryCard('전체 등록 건수')).getByText('0')).toBeInTheDocument();
   });
 

@@ -39,7 +39,7 @@ function fastGlobMembers(): Set<string> {
     const source = readFileSync(file, 'utf8');
     for (const binding of source.matchAll(/(\w+)\s*=\s*require\(["']fast-glob["']\)/g)) {
       for (const use of source.matchAll(new RegExp(`\\b${binding[1]}\\.(\\w+)`, 'g'))) {
-        members.add(use[1]);
+        members.add(use[1]!);
       }
     }
   }

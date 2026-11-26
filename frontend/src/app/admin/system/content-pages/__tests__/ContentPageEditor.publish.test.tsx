@@ -171,8 +171,8 @@ describe('ContentPageEditor — 게시 대화상자(PublishDialog)', () => {
 
     fireEvent.click(within(dialog).getByRole('button', { name: '저장하고 게시' }));
     await waitFor(() => expect(mocks.publish).toHaveBeenCalledWith(7, 4, undefined));
-    expect(mocks.saveDraft.mock.calls[0][1]).toMatchObject({ contsExpln: '새 요약', version: 3 });
-    expect(mocks.saveDraft.mock.invocationCallOrder[0]).toBeLessThan(mocks.publish.mock.invocationCallOrder[0]);
+    expect(mocks.saveDraft.mock.calls[0]![1]).toMatchObject({ contsExpln: '새 요약', version: 3 });
+    expect(mocks.saveDraft.mock.invocationCallOrder[0]).toBeLessThan(mocks.publish.mock.invocationCallOrder[0]!);
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(mocks.toast).not.toHaveBeenCalledWith(expect.stringContaining('초안을 저장했습니다'), 'success');
     expect(mocks.toast).toHaveBeenCalledWith(expect.stringContaining('게시했습니다'), 'success');
@@ -210,7 +210,7 @@ describe('ContentPageEditor — 게시 대화상자(PublishDialog)', () => {
     expect(items[1]).toHaveTextContent('2번 영역 ‘사진’ 1단 — 이미지를 선택해 주세요');
     expect(within(dialog).getByRole('button', { name: '게시' })).toBeDisabled();
 
-    fireEvent.click(within(items[1]).getByRole('button', { name: '이 칸으로 가기' }));
+    fireEvent.click(within(items[1]!).getByRole('button', { name: '이 칸으로 가기' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     const photo = container.querySelector<HTMLElement>('[data-section-index="1"]')!;
     expect(within(photo).getByText('사진에 고칠 곳이 1개 있습니다.')).toBeInTheDocument();

@@ -16,7 +16,7 @@ const PRESET_COLORS = ['#0050ff', '#10b981', '#f43f5e', '#8b5cf6'];
 function luminanceOfHex(hex: string): number {
   const channels = [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16) / 255);
   const [r, g, b] = channels.map((value) => (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4));
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
 }
 
 function contrast(hexA: string, hexB: string): number {
@@ -25,7 +25,7 @@ function contrast(hexA: string, hexB: string): number {
 }
 
 function foregroundFor(primaryColor: string): string {
-  return buildTokenVars({ ...DEFAULT_THEME_CONFIG, primaryColor })['--primary-foreground'];
+  return buildTokenVars({ ...DEFAULT_THEME_CONFIG, primaryColor })['--primary-foreground']!;
 }
 
 /** 0x00·0x33·…·0xff 여섯 단계를 세 채널로 짠 216색. */
@@ -43,14 +43,14 @@ describe('layout-theme 전경색 선택', () => {
   });
 
   it('두 토큰이 모두 하한에 못 미치는 보라색 프리셋에는 검정·흰색 가운데 대비가 큰 쪽을 쓴다', () => {
-    expect(contrast('#8b5cf6', CANDIDATE_HEX[DARK])).toBeLessThan(4.5);
-    expect(contrast('#8b5cf6', CANDIDATE_HEX[LIGHT])).toBeLessThan(4.5);
+    expect(contrast('#8b5cf6', CANDIDATE_HEX[DARK]!)).toBeLessThan(4.5);
+    expect(contrast('#8b5cf6', CANDIDATE_HEX[LIGHT]!)).toBeLessThan(4.5);
     expect(foregroundFor('#8b5cf6')).toBe(BLACK);
   });
 
   it.each(PRESET_COLORS)('프리셋 %s 의 단추 글자는 일반 텍스트 하한(4.5:1)을 넘는다', (hex) => {
     const chosen = foregroundFor(hex);
-    expect(contrast(hex, CANDIDATE_HEX[chosen])).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(hex, CANDIDATE_HEX[chosen]!)).toBeGreaterThanOrEqual(4.5);
     expect(buildTokenVars({ ...DEFAULT_THEME_CONFIG, primaryColor: hex })['--color-primary-foreground']).toBe(`hsl(${chosen})`);
   });
 
@@ -61,8 +61,8 @@ describe('layout-theme 전경색 선택', () => {
   it('임의로 고른 색(216색)에서도 단추 글자가 4.5:1 을 넘고, 토큰으로 되면 토큰을 쓴다', () => {
     for (const hex of SWEEP) {
       const chosen = foregroundFor(hex);
-      expect(contrast(hex, CANDIDATE_HEX[chosen]), hex).toBeGreaterThanOrEqual(4.48);
-      const bestToken = Math.max(contrast(hex, CANDIDATE_HEX[DARK]), contrast(hex, CANDIDATE_HEX[LIGHT]));
+      expect(contrast(hex, CANDIDATE_HEX[chosen]!), hex).toBeGreaterThanOrEqual(4.48);
+      const bestToken = Math.max(contrast(hex, CANDIDATE_HEX[DARK]!), contrast(hex, CANDIDATE_HEX[LIGHT]!));
       if (bestToken >= 4.52) expect([DARK, LIGHT], hex).toContain(chosen);
       if (bestToken <= 4.48) expect([BLACK, WHITE], hex).toContain(chosen);
     }

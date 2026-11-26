@@ -219,7 +219,7 @@ describe('ordinary generated boundary wave5', () => {
     await expect(fileService.getFileList(11)).resolves.toStrictEqual(files);
     await expect(fileService.fetchBlob(11, 2)).resolves.toBe(blob);
 
-    const multipartCall = client.requestRaw.mock.calls[0][0] as {
+    const multipartCall = client.requestRaw.mock.calls[0]![0] as {
       url: string;
       method: string;
       data: FormData;

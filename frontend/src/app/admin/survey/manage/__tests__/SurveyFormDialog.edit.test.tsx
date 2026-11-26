@@ -101,7 +101,7 @@ describe('설문 수정 모달 — 전체 치환 왕복', () => {
     fireEvent.click(screen.getByTestId('poll-submit-button'));
 
     await waitFor(() => expect(mocks.updatePoll).toHaveBeenCalledTimes(1));
-    const payload = mocks.updatePoll.mock.calls[0][0];
+    const payload = mocks.updatePoll.mock.calls[0]![0];
     expect(payload.pollNm).toBe('사내 식당 만족도(2차)');
     // 이 한 줄이 이 파일의 존재 이유다.
     expect(payload.pollDsuseYn).toBe('Y');
@@ -113,7 +113,7 @@ describe('설문 수정 모달 — 전체 치환 왕복', () => {
     fireEvent.click(screen.getByTestId('poll-submit-button'));
 
     await waitFor(() => expect(mocks.updatePoll).toHaveBeenCalledTimes(1));
-    const payload = mocks.updatePoll.mock.calls[0][0];
+    const payload = mocks.updatePoll.mock.calls[0]![0];
     expect(payload).toMatchObject({
       pollSn: 7,
       pollNm: '사내 식당 만족도',
@@ -133,7 +133,7 @@ describe('설문 수정 모달 — 전체 치환 왕복', () => {
     fireEvent.click(screen.getByTestId('poll-submit-button'));
 
     await waitFor(() => expect(mocks.updatePoll).toHaveBeenCalledTimes(1));
-    expect(mocks.updatePoll.mock.calls[0][0].pollKndCd).toBe('002');
+    expect(mocks.updatePoll.mock.calls[0]![0].pollKndCd).toBe('002');
   });
 
   it('등록 모드에는 진행 상태를 묻지 않는다 — 새 설문을 폐기로 만드는 것은 의미가 없다', () => {

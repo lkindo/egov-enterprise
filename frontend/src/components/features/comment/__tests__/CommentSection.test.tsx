@@ -444,7 +444,7 @@ describe('CommentSection Component', () => {
 
   it('남의 댓글에는 수정·삭제 버튼을 노출하지 않는다', () => {
     // 종전에는 판정 자체가 없어 버튼이 떴고, 사용자는 확인창을 통과한 뒤에야 서버 403 을 만났다.
-    const othersComment: CommentVO = { ...mockComments[0], editable: false, deletable: false };
+    const othersComment: CommentVO = { ...mockComments[0]!, editable: false, deletable: false };
 
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[othersComment]} />);
 
@@ -458,7 +458,7 @@ describe('CommentSection Component', () => {
     const previous = authMock.user;
     authMock.user = { id: 'admin01', name: '관리자', role: 'ROLE_ADMIN', permissions: ['COMMENT_UPDATE', 'COMMENT_DELETE', 'COMMENT_UPDATE_ALL', 'COMMENT_DELETE_ALL'], authorizationVersion: 'v1' };
     try {
-      const othersComment: CommentVO = { ...mockComments[0], editable: true, deletable: true };
+      const othersComment: CommentVO = { ...mockComments[0]!, editable: true, deletable: true };
 
       render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[othersComment]} />);
 

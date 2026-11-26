@@ -134,7 +134,7 @@ function setCookie(response: Response, name: string): ParsedCookie | null {
     if (eq < 0) attrs.set(trimmed.toLowerCase(), '');
     else attrs.set(trimmed.slice(0, eq).toLowerCase(), trimmed.slice(eq + 1));
   }
-  return { value: pair.slice(name.length + 1), attrs };
+  return { value: pair!.slice(name.length + 1), attrs };
 }
 
 function postRequest(
@@ -186,7 +186,7 @@ describe.each([
     mockedPost.mockRejectedValueOnce(Object.assign(new Error(privateDetail), { code: 'ECONNABORTED' }));
     const request = postRequest(path, body);
     const response = await handler(request);
-    expect(mockedPost.mock.calls[0][2]).toEqual(expect.objectContaining({
+    expect(mockedPost.mock.calls[0]![2]).toEqual(expect.objectContaining({
       timeout: 15_000, signal: expect.any(AbortSignal),
     }));
     expect(response.status).toBe(status);
@@ -210,9 +210,9 @@ describe.each([
     const responsePromise = handler(request);
     try {
       await vi.waitFor(() => expect(mockedPost).toHaveBeenCalled());
-      expect(mockedPost.mock.calls[0][2]?.signal?.aborted).toBe(false);
+      expect(mockedPost.mock.calls[0]![2]?.signal?.aborted).toBe(false);
       controller.abort();
-      expect(mockedPost.mock.calls[0][2]?.signal?.aborted).toBe(handler !== logout);
+      expect(mockedPost.mock.calls[0]![2]?.signal?.aborted).toBe(handler !== logout);
       if (handler === logout) rejectPending(new Error('synthetic-abort-detail'));
       const response = await responsePromise;
       expect(response.status).toBe(status);
@@ -565,9 +565,9 @@ describe('POST /api/auth/reissue', () => {
 
     await reissue(postRequest('/api/auth/reissue', undefined, { cookie: 'refreshToken=rt-abc' }));
 
-    const [, , config] = mockedPost.mock.calls[0];
+    const [, , config] = mockedPost.mock.calls[0]!;
     expect((config as { headers: Record<string, string> }).headers.Cookie).toContain('refreshToken=rt-abc');
-    expect(mockedPost.mock.calls[0][1]).toBeUndefined();
+    expect(mockedPost.mock.calls[0]![1]).toBeUndefined();
   });
 
   it('쿠키 자격과 함께 브라우저의 이중 제출 CSRF 헤더를 백엔드로 넘기고, 없으면 지어내지 않는다', async () => {
@@ -577,7 +577,7 @@ describe('POST /api/auth/reissue', () => {
       { cookie: 'refreshToken=rt-abc; XSRF-TOKEN=csrf-1', 'x-xsrf-token': 'csrf-1' }));
     await reissue(postRequest('/api/auth/reissue', undefined, { cookie: 'refreshToken=rt-abc' }));
 
-    const headersOf = (call: number) => (mockedPost.mock.calls[call][2] as { headers: Record<string, string> }).headers;
+    const headersOf = (call: number) => (mockedPost.mock.calls[call]![2] as { headers: Record<string, string> }).headers;
     expect(headersOf(0)['X-XSRF-TOKEN']).toBe('csrf-1');
     expect(headersOf(0).Cookie).toContain('XSRF-TOKEN=csrf-1');
     expect(headersOf(1)).not.toHaveProperty('X-XSRF-TOKEN');
@@ -685,7 +685,7 @@ describe('POST /api/auth/logout', () => {
 
     await logout(postRequest('/api/auth/logout', undefined, { cookie: 'accessToken=tok-123' }));
 
-    const [, , config] = mockedPost.mock.calls[0];
+    const [, , config] = mockedPost.mock.calls[0]!;
     expect((config as { headers: Record<string, string> }).headers.Authorization).toBe('Bearer tok-123');
   });
 
@@ -695,7 +695,7 @@ describe('POST /api/auth/logout', () => {
     await logout(postRequest('/api/auth/logout', undefined,
       { cookie: 'refreshToken=rt; XSRF-TOKEN=csrf-2', 'x-xsrf-token': 'csrf-2' }));
 
-    const [, , config] = mockedPost.mock.calls[0];
+    const [, , config] = mockedPost.mock.calls[0]!;
     expect((config as { headers: Record<string, string> }).headers['X-XSRF-TOKEN']).toBe('csrf-2');
   });
 
@@ -754,14 +754,14 @@ describe.each([
     vi.stubEnv('TRUSTED_EDGE_PROXY', 'true');
     await call();
 
-    const [, , config] = mockedPost.mock.calls[0];
+    const [, , config] = mockedPost.mock.calls[0]!;
     expect((config as { headers: Record<string, string> }).headers['X-Forwarded-For']).toBe('203.0.113.9');
   });
 
   it('신뢰 앞단 프록시가 없으면 넘기지 않는다 — 직접 공개된 Next 에서는 위조 값일 수 있다', async () => {
     await call();
 
-    const [, , config] = mockedPost.mock.calls[0];
+    const [, , config] = mockedPost.mock.calls[0]!;
     expect((config as { headers: Record<string, string> }).headers['X-Forwarded-For']).toBeUndefined();
   });
 });

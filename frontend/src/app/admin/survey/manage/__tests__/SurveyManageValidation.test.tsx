@@ -127,8 +127,8 @@ describe('survey manage validation', () => {
     renderWithQueryClient(<SurveyManageCreateClient />);
     fireEvent.change(screen.getByLabelText('설문명 (필수)'), { target: { value: '신규 설문' } });
     const dates = screen.getAllByRole('button', { name: '2026년 8월 26일 선택' });
-    fireEvent.click(dates[0]);
-    fireEvent.click(dates[1]);
+    fireEvent.click(dates[0]!);
+    fireEvent.click(dates[1]!);
     const submit = screen.getByRole('button', { name: /설문 등록/ });
 
     act(() => {
@@ -166,8 +166,8 @@ describe('survey manage validation', () => {
     const title = screen.getByLabelText('설문명 (필수)');
     fireEvent.change(title, { target: { value: '입력한 신규 설문' } });
     const dates = screen.getAllByRole('button', { name: '2026년 8월 26일 선택' });
-    fireEvent.click(dates[0]);
-    fireEvent.click(dates[1]);
+    fireEvent.click(dates[0]!);
+    fireEvent.click(dates[1]!);
 
     fireEvent.click(screen.getByRole('button', { name: /설문 등록/ }));
 

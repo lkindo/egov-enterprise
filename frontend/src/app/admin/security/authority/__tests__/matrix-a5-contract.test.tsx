@@ -132,7 +132,7 @@ describe('기능별 권한 표 — A5 계약', () => {
     expect(box.className.split(/\s+/)).toEqual(expect.arrayContaining([...BOX_CLASSES, 'scroll-pt-10', 'scroll-pl-[11rem]']));
     expect(box.className).not.toContain('max-h-96');
     // 고정 첫 열의 폭이 스크롤 여백과 같다 — 다르면 칸이 첫 열 밑에 가린 채 멈춘다.
-    expect(within(table).getAllByRole('columnheader')[0].className).toContain('w-[11rem]');
+    expect(within(table).getAllByRole('columnheader')[0]!.className).toContain('w-[11rem]');
 
     for (const header of within(table).getAllByRole('columnheader')) {
       expect(header.className).toMatch(/\bsticky\b/);
@@ -380,7 +380,7 @@ describe('화면별 권한 표 — A5 계약', () => {
     const box = table().parentElement!;
     expect(box.className.split(/\s+/)).toEqual(expect.arrayContaining([...BOX_CLASSES, 'scroll-pt-8', 'scroll-pl-[15rem]']));
     expect(box.className).not.toContain('max-h-96');
-    expect(within(table()).getAllByRole('columnheader')[0].className).toContain('w-[15rem]');
+    expect(within(table()).getAllByRole('columnheader')[0]!.className).toContain('w-[15rem]');
     for (const header of within(table()).getAllByRole('columnheader')) {
       expect(header.className).toMatch(/\bsticky\b/);
       expect(header.className).toMatch(/\btop-0\b/);

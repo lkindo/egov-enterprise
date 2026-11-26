@@ -115,7 +115,7 @@ describe('WorkReport attachments', () => {
     fireEvent.click(screen.getByRole('button', { name: '보고 등록' }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
-    expect(onSubmit.mock.calls[0][0]).toMatchObject({ rptTtl: '주간 업무 보고', atchFileSn: 64 });
+    expect(onSubmit.mock.calls[0]![0]).toMatchObject({ rptTtl: '주간 업무 보고', atchFileSn: 64 });
   });
 
   it('수정 모드에서 기존 첨부 제거를 선택하면 atchFileSn 없이 저장한다', async () => {
@@ -140,7 +140,7 @@ describe('WorkReport attachments', () => {
     fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
-    expect(onSubmit.mock.calls[0][0].atchFileSn).toBeUndefined();
+    expect(onSubmit.mock.calls[0]![0].atchFileSn).toBeUndefined();
   });
 
   it('업무 보고 행을 클릭하면 상세 모달에서 첨부파일 목록과 내려받기를 제공한다', async () => {

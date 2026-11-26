@@ -330,7 +330,7 @@ describe('통계 허브 공통 탭', () => {
       fireEvent.click(screen.getByRole('button', { name: '최근 1주' }));
 
       await waitFor(() => expect(requestedUrls()).toEqual([URL.user]));
-      const { fromDate, toDate } = statsCalls()[0][1]?.params as { fromDate: string; toDate: string };
+      const { fromDate, toDate } = statsCalls()[0]![1]?.params as { fromDate: string; toDate: string };
       expect(fromDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(toDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(screen.getByTestId('report-basis')).toHaveTextContent(`집계 구간: ${fromDate} ~ ${toDate}`);

@@ -93,7 +93,7 @@ describe('previewMenuVisibility — 숨는 이유', () => {
     expect(preview.byMenu.get('2')?.reason).toBe('no-entry-permission');
     // 보이지만 자기 경로는 열 수 없다 — 사이드바는 경로 없는 분류로 그린다.
     expect(preview.byMenu.get('3')).toMatchObject({ visible: true, reason: null, route: '/admin/user/manage', canEnter: false });
-    expect(preview.tree[0].route).toBeNull();
+    expect(preview.tree[0]!.route).toBeNull();
   });
 
   // 지금 사이드바의 사실이다 — 서버 calculateUrl 이 라우트 없는 메뉴에 chkURL '#' 를 싣고, openableMenus 의 '빈 분류' 규칙은
@@ -149,7 +149,7 @@ describe('previewMenuVisibility — 입력 모양', () => {
     });
 
     expect(names(preview.tree)).toEqual([['새 섹션', ['새 화면']]]);
-    expect(preview.tree[0].children[0].menuNo).toBe('new-2');
+    expect(preview.tree[0]!.children[0]!.menuNo).toBe('new-2');
     expect(preview.byMenu.get('5')?.reason).toBe('no-navigation');
   });
 
@@ -270,7 +270,7 @@ describe('previewMenuVisibility — 사이드바 규칙 대조', () => {
     nodes.flatMap((node) => [`${depth}:${node.menuNo}:${node.menuNm}:${resolveMenuInternalRoute(node) ?? '-'}`, ...flatten(node.children ?? [], depth + 1)]);
   const flattenPreview = (nodes: readonly MenuPreviewNode[], depth = 0): string[] =>
     nodes.flatMap((node) => [`${depth}:${node.menuNo}:${node.menuNm}:${node.route ?? '-'}`, ...flattenPreview(node.children, depth + 1)]);
-  const keysOf = (nodes: readonly MenuInfo[]): Set<string> => new Set(flatten(nodes).map((line) => line.split(':')[1]));
+  const keysOf = (nodes: readonly MenuInfo[]): Set<string> => new Set(flatten(nodes).map((line) => line.split(':')[1]!));
 
   it('무작위 메뉴 숲 400개에서 사이드바(참조 서버 트리 → openableMenus)와 보이는 트리·숨는 단계가 같다', () => {
     const next = random(20261002);
@@ -279,10 +279,10 @@ describe('previewMenuVisibility — 사이드바 규칙 대조', () => {
       const numbers = Array.from({ length: count }, (_, index) => index + 1).sort(() => next() - 0.5);
       const menus: MenuPreviewMenu[] = numbers.map((menuNo) => {
         const roll = next();
-        const upMenuSn = roll < 0.4 ? null : roll < 0.95 ? numbers[Math.floor(next() * count)] : 999;
+        const upMenuSn = roll < 0.4 ? null : roll < 0.95 ? numbers[Math.floor(next() * count)]! : 999;
         return {
           menuNo, menuNm: `메뉴${menuNo}`, upMenuSn, menuOrdr: 1 + Math.floor(next() * 5),
-          modernRoute: ROUTES[Math.floor(next() * ROUTES.length)], useYn: next() < 0.85 ? 'Y' : 'N',
+          modernRoute: ROUTES[Math.floor(next() * ROUTES.length)]!, useYn: next() < 0.85 ? 'Y' : 'N',
         };
       });
       const navigation = new Set(numbers.filter(() => next() < 0.75).map(String));

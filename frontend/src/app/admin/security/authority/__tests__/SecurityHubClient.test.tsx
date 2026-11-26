@@ -42,7 +42,7 @@ const catalog = {
   ],
   navigation: [{ code: 'MENU_1', name: '게시판', parentCode: null, route: null, useYn: 'Y' }], catalogVersion: 'catalog-v1',
 };
-const snapshot: Snapshot = { ...groups[0], complete: true, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }, { type: 'NAVIGATION', code: 'MENU_1' }] };
+const snapshot: Snapshot = { ...groups[0]!, complete: true, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }, { type: 'NAVIGATION', code: 'MENU_1' }] };
 const treeCatalog = { ...catalog, navigation: [
   { code: 'ROOT', name: '업무 메뉴', parentCode: null, route: null, useYn: 'Y' },
   { code: 'BRANCH', name: '게시판 관리', parentCode: 'ROOT', route: null, useYn: 'Y' },
@@ -123,7 +123,7 @@ async function untilEditable(name: RegExp) {
 function resetMocks() {
   vi.clearAllMocks();
   window.sessionStorage.clear();
-  server = new Map([['CONTENT', snapshot], ['SURVEY', { ...groups[1], complete: true, grants: [] }]]);
+  server = new Map([['CONTENT', snapshot], ['SURVEY', { ...groups[1]!, complete: true, grants: [] }]]);
   revision = 0;
   mocks.version = 'auth-v1';
   mocks.permissions = ['AUTHRT_READ', 'AUTHRT_CREATE', 'AUTHRT_UPDATE', 'AUTHRT_DELETE', 'AUTHRT_GRANT', 'AUTHRT_ASSIGN', 'AUTHRT_AUDIT'];
@@ -397,7 +397,7 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
   });
 
   it('공개 메뉴 그룹은 기능권한을 더할 수 없고 일괄 선택도 해제만 하며, 복제·구성원 추가를 두지 않는다', async () => {
-    mocks.getGroups.mockResolvedValue([{ ...groups[0], code: 'ROLE_ANONYMOUS' }]);
+    mocks.getGroups.mockResolvedValue([{ ...groups[0]!, code: 'ROLE_ANONYMOUS' }]);
     putGroup({ ...snapshot, code: 'ROLE_ANONYMOUS' });
     setup();
     await userEvent.click(await screen.findByRole('button', { name: /콘텐츠 담당.*ROLE_ANONYMOUS/ }));
@@ -605,7 +605,7 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
   });
 
   it('예약 그룹의 삭제 버튼은 제공하지 않는다', async () => {
-    mocks.getGroups.mockResolvedValue([{ ...groups[0], code: 'ROLE_ADMIN' }]);
+    mocks.getGroups.mockResolvedValue([{ ...groups[0]!, code: 'ROLE_ADMIN' }]);
     putGroup({ ...snapshot, code: 'ROLE_ADMIN' });
     setup();
     await userEvent.click(await screen.findByRole('button', { name: /콘텐츠 담당.*ROLE_ADMIN/ }));
@@ -952,7 +952,7 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     await userEvent.keyboard('[Space]');
     // [2026-10-05] 영역·섹션 줄의 메뉴 표시 칸은 아래 메뉴의 집계다 — 형제(통계 메뉴)가 꺼져 있어 업무 메뉴는 일부 선택이다.
     expect(screen.getByRole('checkbox', { name: menuCell('업무 메뉴', 'ROOT') })).toBePartiallyChecked();
-    for (const [name, code] of [['게시판 관리', 'BRANCH'], ['게시글 목록', 'LEAF']]) expect(screen.getByRole('checkbox', { name: menuCell(name, code) })).toBeChecked();
+    for (const [name, code] of [['게시판 관리', 'BRANCH'], ['게시글 목록', 'LEAF']]) expect(screen.getByRole('checkbox', { name: menuCell(name!, code!) })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: menuCell('통계 메뉴', 'SIBLING') })).not.toBeChecked();
     await userEvent.click(screen.getByRole('button', { name: '권한 변경 저장' }));
     expect(saveGroupGrants).toHaveBeenCalledWith('CONTENT', { grants: [{ type: 'OPERATION', code: 'BOARD_READ' }, ...['ROOT', 'BRANCH', 'LEAF'].map((code) => ({ type: 'NAVIGATION', code }))], version: 'v1', complete: true });
@@ -983,7 +983,7 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     await untilEditable(menuCell('업무 메뉴', 'ROOT'));
     await userEvent.click(screen.getByRole('checkbox', { name: menuCell('업무 메뉴', 'ROOT') }));
     for (const [name, code] of [['업무 메뉴', 'ROOT'], ['게시판 관리', 'BRANCH'], ['게시글 목록', 'LEAF'], ['통계 메뉴', 'SIBLING']]) {
-      expect(screen.getByRole('checkbox', { name: menuCell(name, code) })).not.toBeChecked();
+      expect(screen.getByRole('checkbox', { name: menuCell(name!, code!) })).not.toBeChecked();
     }
   });
 
@@ -1307,7 +1307,7 @@ describe('SecurityHub: 그룹 복제·변경 이력·메뉴 미리보기', () =>
   it('사용자 메뉴 미리보기는 고른 그룹의 권한을 합치고, 고치기는 그 그룹의 화면별 권한 줄로 간다', async () => {
     mocks.getCatalog.mockResolvedValue(previewCatalog);
     putGroup({ ...snapshot, grants: [{ type: 'NAVIGATION', code: 'AREA' }, { type: 'NAVIGATION', code: 'MENUS' }] });
-    putGroup({ ...groups[1], complete: true, grants: [{ type: 'NAVIGATION', code: 'AREA' }, { type: 'NAVIGATION', code: 'NOTES' }] });
+    putGroup({ ...groups[1]!, complete: true, grants: [{ type: 'NAVIGATION', code: 'AREA' }, { type: 'NAVIGATION', code: 'NOTES' }] });
     mocks.getMemberships.mockResolvedValue({ ...membership, groups: ['CONTENT', 'SURVEY'] });
     await openMembership();
     await userEvent.click(screen.getByRole('button', { name: '메뉴 미리보기' }));

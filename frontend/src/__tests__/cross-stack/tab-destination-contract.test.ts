@@ -55,10 +55,10 @@ const TAB_VALUE = String.raw`[A-Za-z0-9_-]+`;
 
 /** `/경로?…tab=값…` 을 목적지로. 탭이 없으면 null. 경로·값의 모양이 틀리면 판정할 수 없어 실패한다. */
 export function tabDestination(source: string, url: string): TabDestination | null {
-  if (!/[?&]tab=/.test(url.split('#', 1)[0])) return null;
+  if (!/[?&]tab=/.test(url.split('#', 1)[0]!)) return null;
   const match = new RegExp(String.raw`^(\/${ROUTE_CHARS}*)\?(?:[^#]*&)?tab=(${TAB_VALUE})(?:[&#]|$)`).exec(url);
   if (!match) throw new Error(`${source}: ${url} — 탭 목적지를 판정할 수 없다(경로·탭 값의 모양을 확인한다)`);
-  return { source, route: match[1].replace(/\/$/, '') || '/', tab: match[2] };
+  return { source, route: match[1]!.replace(/\/$/, '') || '/', tab: match[2]! };
 }
 
 const lineOf = (source: string, index: number) => source.slice(0, index).split('\n').length;
@@ -73,7 +73,7 @@ export function frontendDestinations(source: string, file: string): TabDestinati
   const code = codeWithoutComments(source, file);
   const pattern = new RegExp(String.raw`(['"\x60])(\/${ROUTE_CHARS}*\?[^'"\x60$]*?tab=${TAB_VALUE})(?=[&#'"\x60])`, 'g');
   return [...code.matchAll(pattern)]
-    .map((match) => tabDestination(`${file}:${lineOf(code, match.index ?? 0)}`, match[2]))
+    .map((match) => tabDestination(`${file}:${lineOf(code, match.index ?? 0)}`, match[2]!))
     .filter((destination): destination is TabDestination => destination !== null);
 }
 
@@ -83,7 +83,7 @@ export function javaDestinations(source: string, file: string): TabDestination[]
   const constants = new Map([...code.matchAll(/\b([A-Z][A-Z0-9_]*)\s*=\s*"(\/[^"]*)"\s*;/g)].map((match) => [match[1], match[2]]));
   const at = (index: number) => `${file}:${lineOf(code, index)}`;
   const literal = [...code.matchAll(new RegExp(String.raw`"(\/${ROUTE_CHARS}*\?[^"]*?tab=[^"]*)"`, 'g'))]
-    .map((match) => tabDestination(at(match.index ?? 0), match[1]));
+    .map((match) => tabDestination(at(match.index ?? 0), match[1]!));
   const joined = [...code.matchAll(/\b([A-Z][A-Z0-9_]*)\s*\+\s*"(\?[^"]*?tab=[^"]*)"/g)].map((match) => {
     const base = constants.get(match[1]);
     if (!base) throw new Error(`${at(match.index ?? 0)}: ${match[1]} 의 값을 같은 파일에서 찾지 못해 탭 목적지를 판정할 수 없다`);

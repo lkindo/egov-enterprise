@@ -23,7 +23,7 @@ describe('requested browser page observations', () => {
     expect(guards.install).toHaveBeenCalledTimes(2);
     expect(guards.verify).toHaveBeenCalledTimes(2);
     expect(write).toHaveBeenCalledTimes(2);
-    expect(write.mock.calls[0][0]).not.toBe(write.mock.calls[1][0]);
+    expect(write.mock.calls[0]![0]).not.toBe(write.mock.calls[1]![0]);
   });
 
   it('an unexpected browser error is red and coverage is still persisted', async () => {
@@ -147,7 +147,7 @@ describe('enterprise task observations retain metric meaning', () => {
     const observation = new EnterpriseObservation(measuredPage, 'cold', 1);
     try {
       await observation.prepare();
-      expect(events[0].documentKind).toBe('survey-detail');
+      expect(events[0]!.documentKind).toBe('survey-detail');
       (host as unknown as { __enterpriseTaskLabStep: (step: string) => void }).__enterpriseTaskLabStep('open-modal');
       clock.mockReturnValue(70);
       (host as unknown as { __enterpriseTaskLabStep: (step: string) => void }).__enterpriseTaskLabStep('confirm-open');
@@ -173,7 +173,7 @@ describe('enterprise task observations retain metric meaning', () => {
       ]);
       expect(JSON.stringify(events)).not.toMatch(/private|https?:\/\/|textContent|cookies/);
       events.length = 0; host.location.pathname = '/private-workflow-name/12345'; reinstall();
-      expect(events[0].documentKind).toBe('other');
+      expect(events[0]!.documentKind).toBe('other');
       expect(JSON.stringify(events)).not.toMatch(/private|12345|pathname/);
       await observation.reapplyCacheMode();
       expect(session.send).toHaveBeenLastCalledWith('Network.setCacheDisabled', { cacheDisabled: true });

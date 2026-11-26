@@ -16,7 +16,7 @@ describe('navigation permission hierarchy', () => {
     expect(tree.error).toBeNull();
     expect(tree.roots.map((node) => node.code)).toEqual(['other', 'root']);
     expect(tree.nodes.get('root')?.children.map((node) => node.code)).toEqual(['child-b', 'child-a']);
-    expect(tree.nodes.get('child-a')?.children[0].code).toBe('leaf');
+    expect(tree.nodes.get('child-a')?.children[0]!.code).toBe('leaf');
   });
 
   it('selects all ancestors while preserving operations and unrelated menus, without selecting siblings', () => {

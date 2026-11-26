@@ -117,7 +117,7 @@ describe('LoginPolicyAdminClient validation behavior', () => {
     fireEvent.click(screen.getByRole('button', { name: '정책 동기화 적용' }));
 
     await waitFor(() => expect(mocks.create).toHaveBeenCalledTimes(1));
-    expect(mocks.create.mock.calls[0][0]).toBe('newbie');
+    expect(mocks.create.mock.calls[0]![0]).toBe('newbie');
     expect(mocks.save).not.toHaveBeenCalled();
   });
 
@@ -150,7 +150,7 @@ describe('LoginPolicyAdminClient validation behavior', () => {
     fireEvent.click(await screen.findByRole('button', { name: '테스트 사용자 로그인 정책 해제' }));
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
     // 무엇이 사라지는지 확인 본문이 밝힌다.
-    expect(mocks.confirm.mock.calls[0][0].message).toContain('2단계 인증');
+    expect(mocks.confirm.mock.calls[0]![0].message).toContain('2단계 인증');
 
     await waitFor(() => expect(mocks.remove).toHaveBeenCalledWith('tester'));
     const pending = screen.getByRole('button', { name: '테스트 사용자 로그인 정책 해제' });
@@ -202,7 +202,7 @@ describe('LoginPolicyAdminClient validation behavior', () => {
     fireEvent.click(screen.getByRole('button', { name: '정책 동기화 적용' }));
 
     await waitFor(() => expect(mocks.save).toHaveBeenCalledTimes(1));
-    expect(mocks.save.mock.calls[0][1]).toMatchObject({ otpUseYn: 'N' });
+    expect(mocks.save.mock.calls[0]![1]).toMatchObject({ otpUseYn: 'N' });
   });
 
   it('invalid 값을 write하지 않고 summary와 첫 오류 필드로 연결한다', async () => {

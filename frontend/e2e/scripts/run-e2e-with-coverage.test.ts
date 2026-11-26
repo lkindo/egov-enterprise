@@ -44,7 +44,7 @@ describe('isolated E2E coverage workflow', () => {
     expect(dependencies.execute).toHaveBeenCalledWith(process.execPath,
       [expect.stringMatching(/nyc[\\/]bin[\\/]nyc\.js$/), 'report', '--reporter=html', '--reporter=text'],
       expect.objectContaining({ env: { PATH: 'test-path' }, stdio: 'inherit' }));
-    expect(dependencies.execute.mock.calls[0][2]).not.toHaveProperty('shell');
+    expect(dependencies.execute.mock.calls[0]![2]).not.toHaveProperty('shell');
   });
 
   it('명시적인 Playwright 인자는 shell 문자열 없이 그대로 전달한다', async () => {
@@ -192,9 +192,9 @@ describe('SWC-compatible coverage post-loader', () => {
     runInNewContext(result.code, context, { contextCodeGeneration: { strings: false, wasm: false } });
     expect(context.answer).toBe('positive');
     const entry = Object.values(context.__coverage__ || {})[0];
-    expect(Object.values(entry.s).some(count => count > 0)).toBe(true);
-    expect(Object.values(entry.f)).toContain(1);
-    expect(Object.values(entry.b).flat()).toContain(0);
+    expect(Object.values(entry!.s).some(count => count > 0)).toBe(true);
+    expect(Object.values(entry!.f)).toContain(1);
+    expect(Object.values(entry!.b).flat()).toContain(0);
     expect(result.map).toBeTruthy();
   });
 

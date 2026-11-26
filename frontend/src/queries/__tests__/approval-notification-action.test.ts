@@ -163,7 +163,7 @@ describe('approval notification action', () => {
       bindings.filter((row) => row.method === 'PUT' && row.handler.endsWith('.ApprovalApiController#confirm')),
     ];
     expect(called.map((rows) => rows.length)).toEqual([1, 1]);
-    const permissions = called.map((rows) => rows[0].permission);
+    const permissions = called.map((rows) => rows[0]!.permission);
     expect(permissions).toEqual(['APPROVAL_READ', 'APPROVAL_APPROVE']);
     expect(notificationActions.map((entry) => entry.visibleWhen)).toEqual([{ permissions }]);
     expect(notificationActions.map((entry) => entry.submit)).toEqual([approveFromNotification]);

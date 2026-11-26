@@ -19,7 +19,7 @@ describe('department treeUtils', () => {
     const tree = listToDeptTree(flat);
 
     expect(tree.map((node) => node.ognzId)).toEqual(['ROOT', 'ORPHAN']);
-    expect(tree[0].children.map((node) => node.ognzId)).toEqual(['CHILD']);
+    expect(tree[0]!.children.map((node) => node.ognzId)).toEqual(['CHILD']);
     expect(flat.every((node) => !('children' in node))).toBe(true);
   });
 
@@ -41,11 +41,11 @@ describe('department treeUtils', () => {
     );
 
     // 상위를 모르는 부서만 표시가 붙는다.
-    expect(byId.ORPHAN.unloadedParentId).toBe('MISSING');
+    expect(byId.ORPHAN!.unloadedParentId).toBe('MISSING');
     // 진짜 최상위는 상위가 없는 것이지 모르는 것이 아니다 — 표시가 붙으면 저장이 막혀 버린다.
-    expect(byId.ROOT.unloadedParentId).toBeNull();
+    expect(byId.ROOT!.unloadedParentId).toBeNull();
     // 상위가 목록에 있는 부서도 표시가 없어야 정상 저장된다.
-    expect(byId.CHILD.unloadedParentId).toBeNull();
+    expect(byId.CHILD!.unloadedParentId).toBeNull();
   });
 
   it('평탄화가 그 표시를 편집 목록까지 옮긴다', () => {

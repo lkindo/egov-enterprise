@@ -59,10 +59,10 @@ describe('컴포넌트 axe 와 E2E axe 의 판 일치', () => {
   });
 
   it.each([
-    ['직접 의존을 범위로 적음', (pkg: string, lock: string) => [pkg.replace(/"axe-core": "([\d.]+)"/, '"axe-core": "^$1"'), lock]],
-    ['@axe-core/playwright 만 다른 axe-core 로 해석', (pkg: string, lock: string) =>
+    ['직접 의존을 범위로 적음', (pkg: string, lock: string): [string, string] => [pkg.replace(/"axe-core": "([\d.]+)"/, '"axe-core": "^$1"'), lock]],
+    ['@axe-core/playwright 만 다른 axe-core 로 해석', (pkg: string, lock: string): [string, string] =>
       [pkg, lock.replace(/(\n {2}'@axe-core\/playwright@[^\n]+\n {4}dependencies:\n {6}axe-core: )[\d.]+/, '$1999.0.0')]],
-    ['직접 의존이 lockfile 에 없음', (pkg: string, lock: string) => [pkg, lock.replace(/\n {6}axe-core:\n {8}specifier: [^\n]+\n {8}version: [^\n]+/, '')]],
+    ['직접 의존이 lockfile 에 없음', (pkg: string, lock: string): [string, string] => [pkg, lock.replace(/\n {6}axe-core:\n {8}specifier: [^\n]+\n {8}version: [^\n]+/, '')]],
   ])('%s 이면 붉어진다', (_name, mutate) => {
     const [pkg, lock] = mutate(packageJson, lockfile.replace(/\r\n/g, '\n'));
     expect(pkg + lock).not.toBe(packageJson + lockfile.replace(/\r\n/g, '\n'));

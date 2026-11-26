@@ -44,7 +44,7 @@ describe('API Client Configuration', () => {
 
  it('should have interceptors defined on the instance', async () => {
  await import('../client');
- const instance = vi.mocked(axios.create).mock.results[0].value;
+ const instance = vi.mocked(axios.create).mock.results[0]!.value;
  expect(instance.interceptors.request.use).toHaveBeenCalled();
  expect(instance.interceptors.response.use).toHaveBeenCalled();
  });

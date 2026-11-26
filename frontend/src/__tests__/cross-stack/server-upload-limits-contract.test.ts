@@ -26,7 +26,7 @@ describe('server upload limits contract', () => {
   it('확장자 목록이 FileService.ALLOWED_EXTENSIONS 와 같다', () => {
     const block = source.match(/ALLOWED_EXTENSIONS\s*=\s*Arrays\.asList\(([\s\S]*?)\);/);
     expect(block, 'FileService.ALLOWED_EXTENSIONS 를 찾지 못했다').not.toBeNull();
-    const withoutComments = block![1].replace(/\/\/[^\n]*/g, '');
+    const withoutComments = block![1]!.replace(/\/\/[^\n]*/g, '');
     const serverExtensions = [...withoutComments.matchAll(/"([^"]+)"/g)].map((match) => match[1]);
     expect(serverExtensions.length).toBeGreaterThan(0);
     expect([...SERVER_UPLOAD_EXTENSIONS].sort()).toEqual([...serverExtensions].sort());
@@ -45,7 +45,7 @@ describe('server upload limits contract', () => {
     const mediaSource = readFileSync(BOARD_MEDIA_SIGNATURE, 'utf8');
     const block = mediaSource.match(/EXTENSIONS\s*=\s*Set\.of\(([\s\S]*?)\);/);
     expect(block, 'BoardMediaSignature.EXTENSIONS를 찾지 못했다').not.toBeNull();
-    const serverMediaExtensions = [...block![1].matchAll(/"([^"]+)"/g)].map((match) => match[1]);
+    const serverMediaExtensions = [...block![1]!.matchAll(/"([^"]+)"/g)].map((match) => match[1]);
     expect(serverMediaExtensions).toHaveLength(2);
     expect([...BOARD_UPLOAD_EXTENSIONS].sort())
       .toEqual([...SERVER_UPLOAD_EXTENSIONS, ...serverMediaExtensions].sort());

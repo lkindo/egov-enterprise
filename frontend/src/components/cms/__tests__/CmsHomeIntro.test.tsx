@@ -81,7 +81,7 @@ describe('CmsHomeIntro — 업무 홈 맨 위 소개(ADR-0042)', () => {
   });
 
   it('접힌 채 키보드로 잘린 부분의 링크에 닿으면 펼친다 — 초점이 흐림 아래에 가려지지 않는다', async () => {
-    const linked: CmsDocument = { ...document, sections: [{ ...document.sections[0], cells: [{
+    const linked: CmsDocument = { ...document, sections: [{ ...document.sections[0]!, cells: [{
       kind: 'rich',
       doc: { type: 'doc', content: [{ type: 'paragraph', content: [
         { type: 'text', text: '아래쪽 링크', marks: [{ type: 'link', attrs: { href: '/pages/next' } }] },

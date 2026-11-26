@@ -13,6 +13,10 @@
     //   켜기 전 서버 액션 7개가 **호출될 수 없는 채로** 살아 있었고(별도 게이트로 차단),
     //   그 외에도 미사용 import 160·타입 30·지역선언 29 가 남아 있었다.
     "noUnusedLocals": true,
+    // [2026-11-27 품질 평가 PR-3b] 색인 접근(arr[i]·record[key]·정규식 그룹)이 undefined 일 수 있음을 타입에 드러낸다. 제품 소스(1단계,
+    //   tsconfig.index-access.json)에 이어 시험·E2E 의 색인 접근을 고친 뒤 이 설정으로 옮기고 단계 설정을 걷었다 — tsconfig.e2e.json 도
+    //   이어받는다. 시험의 고침은 실행 동작이 같은 타입 단언(!)이다.
+    "noUncheckedIndexedAccess": true,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",

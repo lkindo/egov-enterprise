@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({ createDraft: vi.fn(), resubmit: vi.fn(), getDe
 const auth = vi.hoisted(() => ({ user: { esntlId: 'DRAFTER', authorizationVersion: 'test-v1', permissions: ['APPROVAL_CREATE'] as string[] } }));
 // 피커가 찾는 사람들. 홍기안은 기안자 본인이다.
 const PEOPLE = [['BOSS', '김결재'], ['PEER', '이합의'], ['FINAL', '박최종'], ['DRAFTER', '홍기안']].map(([esntlId, userNm]) => ({ esntlId, userNm, deptNm: '기획팀', absent: false }));
-const searchPeople = async (keyword: string) => PEOPLE.filter(person => person.userNm.includes(keyword));
+const searchPeople = async (keyword: string) => PEOPLE.filter(person => person.userNm!.includes(keyword));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: auth.user }) }));
@@ -128,7 +128,7 @@ describe('ApprovalDraftDialog', () => {
   it('순차 단계 안의 여러 명과 합의 전원 동의를 미리보기와 요청에 보존한다', async () => {
     renderDialog(); await fillContent(); await pick(1, '김결재'); await pick(1, '이합의', true);
     fireEvent.click(screen.getByRole('button', { name: '다음 단계 추가' })); await pick(2, '박최종');
-    const kinds = screen.getAllByLabelText('단계 유형'); fireEvent.change(kinds[1], { target: { value: 'AGREEMENT' } });
+    const kinds = screen.getAllByLabelText('단계 유형'); fireEvent.change(kinds[1]!, { target: { value: 'AGREEMENT' } });
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
     const preview = screen.getByLabelText('상신 결재선 미리보기');
     expect(preview).toHaveTextContent('1단계 · 결재 · 전원 승인 (2명)');
@@ -185,7 +185,7 @@ describe('ApprovalDraftDialog', () => {
   it('키보드로 단계 순서를 바꾸고 이동한 카드에 초점을 유지한다', async () => {
     const user = userEvent.setup(); renderDialog(); await fillContent(); await pick(1, '김결재');
     fireEvent.click(screen.getByRole('button', { name: '다음 단계 추가' })); await pick(2, '이합의');
-    fireEvent.change(screen.getAllByLabelText('단계 유형')[1], { target: { value: 'AGREEMENT' } });
+    fireEvent.change(screen.getAllByLabelText('단계 유형')[1]!, { target: { value: 'AGREEMENT' } });
     screen.getByRole('button', { name: '2단계 위로 이동' }).focus(); await user.keyboard('{Enter}');
     await waitFor(() => expect(screen.getByRole('heading', { name: '1단계 · 합의' })).toHaveFocus());
     expect(screen.getByRole('status')).toHaveTextContent('2단계를 1단계로 이동했습니다.');
@@ -773,7 +773,7 @@ describe('ApprovalDraftDialog 참조자 (D4)', () => {
     mocks.confirm.mockResolvedValue(false);
     mocks.getTaskTypes.mockResolvedValue([{ dtlCd: '01', dtlCdNm: '일반', useYn: 'Y' }]);
     mocks.createDraft.mockResolvedValue(88); mocks.resubmit.mockResolvedValue(88);
-    mocks.searchAssignableUsers.mockImplementation(async (keyword: string) => REFEREE_PEOPLE.filter(person => person.userNm.includes(keyword)));
+    mocks.searchAssignableUsers.mockImplementation(async (keyword: string) => REFEREE_PEOPLE.filter(person => person.userNm!.includes(keyword)));
     mocks.getLineSuggestions.mockResolvedValue({ lines: [], otherLines: [], recentApprovers: [] });
     mocks.checkApprovers.mockImplementation(async (ids: string[]) => ids.map(profile));
     mocks.createTemporaryDraft.mockResolvedValue({ temporaryDraftSn: 7, version: 0, mdfcnDt: '2026-10-04T10:00:00' });

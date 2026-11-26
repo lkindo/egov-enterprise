@@ -129,7 +129,7 @@ function fillRequiredFields() {
 
 function submittedFormData(): FormData {
   expect(mocks.saveBoardArticle).toHaveBeenCalledTimes(1);
-  const formData = mocks.saveBoardArticle.mock.calls[0][1];
+  const formData = mocks.saveBoardArticle.mock.calls[0]![1];
   expect(formData).toBeInstanceOf(FormData);
   return formData as FormData;
 }

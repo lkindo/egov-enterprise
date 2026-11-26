@@ -335,8 +335,8 @@ describe('SatisfactionSection', () => {
     fireEvent.click(await screen.findByRole('button', { name: /비공개 평가자의 만족도 삭제/ }));
 
     await waitFor(() => expect(testState.confirm).toHaveBeenCalledTimes(1));
-    expect(testState.confirm.mock.calls[0][0].message).toContain('비공개 평가자');
-    expect(testState.confirm.mock.calls[0][0].message).not.toContain('김철수');
+    expect(testState.confirm.mock.calls[0]![0].message).toContain('비공개 평가자');
+    expect(testState.confirm.mock.calls[0]![0].message).not.toContain('김철수');
     await waitFor(() => expect(mocked.moderate).toHaveBeenCalledWith('BBS_01', 1, 7));
     expect(mocked.remove).not.toHaveBeenCalled();
   });

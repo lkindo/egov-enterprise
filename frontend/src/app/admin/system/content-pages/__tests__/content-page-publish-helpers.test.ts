@@ -62,8 +62,8 @@ describe('publishBlockers — 게시를 막는 문제', () => {
       section('b', '사진', [{ kind: 'image', atchFileSn: 0, alt: '', decorative: false, caption: '' }, { kind: 'links', items: [{ title: '', url: '' }] }], 'two'),
     ));
     expect(issues.map(({ section: s, cell }) => [s, cell])).toEqual([[0, 0], [1, 0], [1, 1]]);
-    expect(issueText(issues[1].message)).toBe('이미지를 선택해 주세요');
-    expect(issueText(issues[2].message)).toBe('바로가기 1 이름: 값을 입력해 주세요');
+    expect(issueText(issues[1]!.message)).toBe('이미지를 선택해 주세요');
+    expect(issueText(issues[2]!.message)).toBe('바로가기 1 이름: 값을 입력해 주세요');
   });
 
   it('초안 판정부터 통과하지 못하면 그 문제 하나만 준다', () => {

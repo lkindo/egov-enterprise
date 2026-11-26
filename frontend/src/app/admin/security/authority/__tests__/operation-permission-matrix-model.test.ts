@@ -16,7 +16,7 @@ import {
 
 const op = (code: string, name = code) => {
   const [domain, ...rest] = code.split(':');
-  return { code: `${domain}_${rest.join('_')}`, domain, action: rest.join('_'), name };
+  return { code: `${domain}_${rest.join('_')}`, domain: domain!, action: rest.join('_'), name };
 };
 const key = (code: string) => `OPERATION:${code}`;
 
@@ -38,17 +38,17 @@ describe('기능별 권한 표 모델', () => {
     const [category] = buildOperationMatrix([
       op('BOARD:READ'), op('BOARD:LIKE'), op('BOARD:DELETE_ALL'), { code: 'BOARD_READ_DUP', domain: 'BOARD', action: 'READ', name: '중복' },
     ]);
-    const [row] = category.rows;
-    expect(row.columns.map((cell) => cell?.code ?? null)).toEqual(['BOARD_READ', null, null, null, null, null, 'BOARD_DELETE_ALL']);
-    expect(row.others.map((cell) => cell.code)).toEqual(['BOARD_LIKE', 'BOARD_READ_DUP']);
-    expect(row.operations).toHaveLength(4);
+    const [row] = category!.rows;
+    expect(row!.columns.map((cell) => cell?.code ?? null)).toEqual(['BOARD_READ', null, null, null, null, null, 'BOARD_DELETE_ALL']);
+    expect(row!.others.map((cell) => cell.code)).toEqual(['BOARD_LIKE', 'BOARD_READ_DUP']);
+    expect(row!.operations).toHaveLength(4);
   });
 
   it('기능 검색은 영역 라벨·영역 코드·권한 코드·권한 이름으로 행을 거른다', () => {
     const [category] = buildOperationMatrix([op('BOARD:READ', '게시글 조회'), op('BOARD:LIKE', '게시글 추천')]);
-    const [row] = category.rows;
-    for (const query of ['게시글', 'board', 'BOARD_LIKE', '추천', '  ']) expect(matrixRowMatches(row, query)).toBe(true);
-    expect(matrixRowMatches(row, '메뉴')).toBe(false);
+    const [row] = category!.rows;
+    for (const query of ['게시글', 'board', 'BOARD_LIKE', '추천', '  ']) expect(matrixRowMatches(row!, query)).toBe(true);
+    expect(matrixRowMatches(row!, '메뉴')).toBe(false);
   });
 
   it('일괄 선택은 비보호 칸만 다루고, 모두 켜져 있으면 해제한다', () => {
@@ -148,7 +148,7 @@ describe('진입 권한 고치기 계획', () => {
     expect(isOthersDataPermission('FILE_READ_ALL')).toBe(true);
     expect(isOthersDataPermission('DEPT_JOB_UPDATE_ALL')).toBe(true);
     expect(isOthersDataPermission('FILE_READ')).toBe(false);
-    const protectedCode = PROTECTED_PERMISSIONS[0];
+    const protectedCode = PROTECTED_PERMISSIONS[0]!;
     const fixes = planEntryFixes([
       menu({ code: 'a', required: ['MENU_READ'] }),
       menu({ code: 'b', required: ['FILE_READ', 'FILE_READ_ALL'], mode: 'ALL' }),

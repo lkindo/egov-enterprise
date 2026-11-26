@@ -36,8 +36,8 @@ describe('StandardDataTable 접근성', () => {
   it('본문 행·셀은 좁은 화면(display:block)에서도 표 의미를 잃지 않게 역할을 명시한다', () => {
     render(<StandardDataTable columns={columns} data={rows} keyField="id" />);
     const body = screen.getAllByRole('rowgroup')[1];
-    expect(within(body).getAllByRole('row')).toHaveLength(2);
-    expect(within(body).getAllByRole('cell').length).toBeGreaterThanOrEqual(4);
+    expect(within(body!).getAllByRole('row')).toHaveLength(2);
+    expect(within(body!).getAllByRole('cell').length).toBeGreaterThanOrEqual(4);
   });
 
   it('좁은 화면용 전체 선택·정렬 기준을 표 위에 한 번 둔다(넓은 화면에서는 CSS 로 숨김)', async () => {
@@ -46,7 +46,7 @@ describe('StandardDataTable 접근성', () => {
     expect(sortBy.closest('div')).toHaveClass('standard-data-table-narrow-controls');
     await userEvent.selectOptions(sortBy, within(sortBy).getByRole('option', { name: '이름 내림차순' }));
     const body = screen.getAllByRole('rowgroup')[1];
-    expect(within(body).getAllByRole('row')[0]).toHaveTextContent('재무팀');
+    expect(within(body!).getAllByRole('row')[0]).toHaveTextContent('재무팀');
     expect(screen.getByRole('checkbox', { name: '전체 선택' }).closest('div')).toHaveClass('standard-data-table-narrow-controls');
   });
 
@@ -82,6 +82,6 @@ describe('StandardDataTable 접근성', () => {
 
     rerender(<StandardDataTable columns={columns} data={[]} keyField="id" loading />);
     const body = screen.getAllByRole('rowgroup')[1];
-    expect(within(body).queryAllByRole('row')).toHaveLength(0);
+    expect(within(body!).queryAllByRole('row')).toHaveLength(0);
   });
 });

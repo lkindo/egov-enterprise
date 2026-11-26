@@ -26,9 +26,9 @@ describe('buildMenuTree', () => {
     ]);
 
     expect(tree).toHaveLength(1);
-    expect(tree[0].menuNm).toBe('관리 센터');
-    expect(tree[0].children?.[0].menuNm).toBe('권한 보안');
-    expect(tree[0].children?.[0].children?.[0].menuNm).toBe('그룹별 메뉴 현황');
+    expect(tree[0]!.menuNm).toBe('관리 센터');
+    expect(tree[0]!.children?.[0]!.menuNm).toBe('권한 보안');
+    expect(tree[0]!.children?.[0]!.children?.[0]!.menuNm).toBe('그룹별 메뉴 현황');
   });
 
   it('상위 메뉴가 0 이거나 값이 없는 레거시 형태도 루트로 잡는다', () => {
@@ -42,7 +42,7 @@ describe('buildMenuTree', () => {
     const tree = buildMenuTree([menu(9010220, '그룹별 메뉴 현황', 9010000)]);
 
     expect(tree).toHaveLength(1);
-    expect(tree[0].menuNm).toBe('그룹별 메뉴 현황');
+    expect(tree[0]!.menuNm).toBe('그룹별 메뉴 현황');
   });
 
   it('배정이 없으면 빈 계층이다', () => {

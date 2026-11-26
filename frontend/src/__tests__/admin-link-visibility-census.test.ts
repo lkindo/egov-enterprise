@@ -61,7 +61,7 @@ interface LinkFinding {
 
 /** 쿼리·해시를 떼고 동적 세그먼트(`${...}`·`[id]`)를 같은 모양으로 만든다. */
 function normalizeTarget(raw: string): string {
-  return raw.split(/[?#]/, 1)[0].replace(/\$\{[^}]*\}/g, '[x]').replace(/\[[^\]/]+\]/g, '[x]').replace(/\/$/, '');
+  return raw.split(/[?#]/, 1)[0]!.replace(/\$\{[^}]*\}/g, '[x]').replace(/\[[^\]/]+\]/g, '[x]').replace(/\/$/, '');
 }
 
 type PermissionLookup = (path: string) => readonly string[] | null;
@@ -146,12 +146,12 @@ function findUngatedAdminLinks(files: LinkSourceFile[], lookup: PermissionLookup
       findings.push(...contributionFindings(file, lookup));
       continue;
     }
-    const gated = new Set([...file.source.matchAll(GATE_LITERAL)].map((match) => normalizeTarget(match[2])));
+    const gated = new Set([...file.source.matchAll(GATE_LITERAL)].map((match) => normalizeTarget(match[2]!)));
     const filtersByHref = GATE_BY_HREF_FIELD.test(file.source);
     const sourceRequired = file.route ? lookup(file.route) : null;
     for (const match of file.source.matchAll(LINK_PATTERN)) {
       const raw = match[2] ?? match[4];
-      const target = normalizeTarget(raw);
+      const target = normalizeTarget(raw!);
       const line = file.source.slice(0, match.index).split('\n').length;
       const required = lookup(target);
       if (!required) {
@@ -367,7 +367,7 @@ function literalScreenTargets(source: string, fileName = 'screen.tsx'): ScreenTa
       : ts.isTemplateExpression(node) ? node.getText(file).slice(1, -1) : undefined;
     if (text === undefined || !text.startsWith('/') || text.startsWith('//')) return;
     const path = text.split(/[?#]/, 1)[0];
-    if (!NOT_SCREEN.test(path)) targets.push({ offset: node.getStart(file), target: path });
+    if (!NOT_SCREEN.test(path!)) targets.push({ offset: node.getStart(file), target: path! });
   };
   const keyOf = (name: ts.PropertyName | ts.JsxAttributeName | ts.BindingName) =>
     (ts.isIdentifier(name) || ts.isStringLiteral(name) ? name.text : undefined);
@@ -404,7 +404,7 @@ function screenRouteMatcher(routes: readonly (readonly string[])[]) {
         if (/^\[\.\.\./.test(segment)) return index < parts.length;
         if (index >= parts.length) return false;
         const part = parts[index];
-        if (!/^\[.*\]$/.test(segment) && !/\$\{/.test(part) && segment !== part) return false;
+        if (!/^\[.*\]$/.test(segment) && !/\$\{/.test(part!) && segment !== part) return false;
         index += 1;
       }
       return index === parts.length;

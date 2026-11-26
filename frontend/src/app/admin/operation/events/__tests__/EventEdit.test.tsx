@@ -108,7 +108,7 @@ describe('행사 수정', () => {
     fireEvent.click(screen.getByRole('button', { name: /변경 사항 저장/ }));
 
     await waitFor(() => expect(mocks.updateEvent).toHaveBeenCalledTimes(1));
-    const [evntSn, payload] = mocks.updateEvent.mock.calls[0];
+    const [evntSn, payload] = mocks.updateEvent.mock.calls[0]!;
     expect(evntSn).toBe(12);
     expect(payload).toMatchObject({
       evntNm: '가을 워크숍(수정)',
@@ -128,7 +128,7 @@ describe('행사 수정', () => {
     await screen.findByDisplayValue('가을 워크숍');
 
     // 툴바의 '행사 등록' 버튼(모달 제출 버튼과 이름이 같으므로 첫 번째를 집는다)
-    fireEvent.click(screen.getAllByRole('button', { name: /행사 등록$/ })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /행사 등록$/ })[0]!);
 
     expect(screen.queryByDisplayValue('가을 워크숍')).not.toBeInTheDocument();
     // 편집 모드가 풀리면 제목이 '신규 행사 등록' 으로 돌아온다.
@@ -181,7 +181,7 @@ describe('행사 — 담당자·준비사항', () => {
     fireEvent.click(screen.getByRole('button', { name: /변경 사항 저장/ }));
 
     await waitFor(() => expect(mocks.updateEvent).toHaveBeenCalledTimes(1));
-    expect(mocks.updateEvent.mock.calls[0][1]).toMatchObject({
+    expect(mocks.updateEvent.mock.calls[0]![1]).toMatchObject({
       picNm: '박담당',
       prepMttr: '버스 3대 예약',
     });

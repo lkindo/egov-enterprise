@@ -51,15 +51,15 @@ function densityBlockBody(css: string): string {
 /** `--key: value;` 선언을 key → value 맵으로 뽑는다. */
 function declarations(cssBlock: string): Map<string, string> {
   const entries = [...stripComments(cssBlock).matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/gi)];
-  return new Map(entries.map(([, key, value]) => [key, value.trim()]));
+  return new Map(entries.map(([, key, value]) => [key!, value!.trim()]));
 }
 
 /** 카탈로그 §4 의 `<!-- density-contract:start -->` ~ `end` 구간 표를 맵으로 뽑는다. */
 function catalogDensityTable(markdown: string): Map<string, string> {
   const section = /<!-- density-contract:start -->([\s\S]*?)<!-- density-contract:end -->/.exec(markdown);
   if (!section) return new Map();
-  const rows = [...section[1].matchAll(/^\|\s*`(--[a-z0-9-]+)`\s*\|\s*`([^`]+)`\s*\|/gm)];
-  return new Map(rows.map(([, token, value]) => [token, value.trim()]));
+  const rows = [...section[1]!.matchAll(/^\|\s*`(--[a-z0-9-]+)`\s*\|\s*`([^`]+)`\s*\|/gm)];
+  return new Map(rows.map(([, token, value]) => [token!, value!.trim()]));
 }
 
 describe('Work screen grammar catalog ↔ density token contract', () => {

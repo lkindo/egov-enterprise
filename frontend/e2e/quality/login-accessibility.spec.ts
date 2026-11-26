@@ -86,7 +86,7 @@ test.describe('공통 셸과 인증', () => {
             };
             const firstGlyph = (name: string) => {
                 const range = manifest.slices.find((slice) => slice.name === name)!.glyphRange;
-                return String.fromCodePoint(parseInt(/U\+([0-9A-F]+)/.exec(range)![1], 16));
+                return String.fromCodePoint(parseInt(/U\+([0-9A-F]+)/.exec(range)![1]!, 16));
             };
             const sample = `L${firstGlyph('ko-1')}${firstGlyph('ko-2')}`;
             const loaded = await page.evaluate(async (text) => {

@@ -238,10 +238,10 @@ describe('HelpUserService QNA generated contract', () => {
 
     const result = await helpUserService.getQnas({ page: 1, size: 10 });
 
-    expect(result.list[0].wrterNm).toBe('이름 없음');
-    expect(result.list[0].wrterNm).not.toContain('writer-1');
+    expect(result.list[0]!.wrterNm).toBe('이름 없음');
+    expect(result.list[0]!.wrterNm).not.toContain('writer-1');
     expect(result.list[0]).not.toHaveProperty('authorId');
-    expect(result.list[0].writngDe).toBe('');
+    expect(result.list[0]!.writngDe).toBe('');
     expect(result.list[0]).not.toHaveProperty('qnaSttsCd');
     expect(result.list[0]).not.toHaveProperty('scrtYn');
   });

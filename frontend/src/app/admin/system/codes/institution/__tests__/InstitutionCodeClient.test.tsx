@@ -129,7 +129,7 @@ describe('기관코드 수신 처리 — 없는 원장 반영을 약속하지 �
     fireEvent.click(screen.getByRole('button', { name: '서울특별시 수신 건 처리 완료로 표시' }));
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    const message = String(mocks.confirm.mock.calls[0][0].message);
+    const message = String(mocks.confirm.mock.calls[0]![0].message);
     expect(message).toContain('서울특별시');
     expect(message).toContain('기관코드 원장은 이 동작으로 바뀌지 않으며');
     // 서버가 하지 않는 일을 약속하지 않는다.

@@ -76,8 +76,8 @@ const DYNAMIC_SEGMENT = /^\[[^.[\]]+\]$/;
 /** 생성물의 findScreen 과 같은 규칙(세그먼트 수가 같은 화면·별칭 중 리터럴이 가장 많이 맞는 것, 별칭이면 null)을 고정 목록에 적용한다. */
 export function fixtureFindScreen(route: string): ScreenRegistryEntry | null {
   const pathOnly = route.split(/[?#]/)[0];
-  if (pathOnly.trim() === '') return null;
-  const segments = (pathOnly.replace(/\/+$/, '') || '/').split('/');
+  if (pathOnly!.trim() === '') return null;
+  const segments = (pathOnly!.replace(/\/+$/, '') || '/').split('/');
   let best: { literals: number; screen: ScreenRegistryEntry | null } | null = null;
   const candidates = [
     ...FIXTURE_SCREENS.map((screen) => ({ route: screen.route, screen })),
@@ -88,7 +88,7 @@ export function fixtureFindScreen(route: string): ScreenRegistryEntry | null {
     if (parts.length !== segments.length) continue;
     let literals = 0;
     const matches = parts.every((part, index) => {
-      if (DYNAMIC_SEGMENT.test(part)) return segments[index].length > 0;
+      if (DYNAMIC_SEGMENT.test(part)) return segments[index]!.length > 0;
       literals += 1;
       return part === segments[index];
     });

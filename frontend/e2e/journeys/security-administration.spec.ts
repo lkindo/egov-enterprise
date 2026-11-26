@@ -329,7 +329,7 @@ test.describe('권한 변경과 충돌 제어', () => {
                         data: { userId, userNm, pswd: `Dept1!${randomBytes(16).toString('hex')}`, role: 'USER', ognzId: departmentId },
                     });
                     if (created.ok())
-                        createdUsers.push(userId);
+                        createdUsers.push(userId!);
                     expect(created.status(), '전용 부서 사용자 생성').toBe(201);
                 }
                 const before = await departmentSnapshot(request, auth, departmentId);
@@ -480,7 +480,7 @@ test.describe('권한 변경과 충돌 제어', () => {
                         headers: administrator, data: { code, name, description: '이 테스트에서만 사용하는 권한 그룹' },
                     });
                     if (response.ok())
-                        createdGroups.push(code);
+                        createdGroups.push(code!);
                     expect(response.status(), '전용 그룹 생성').toBe(201);
                 }
                 const created = await request.post(USERS, {
@@ -609,7 +609,7 @@ test.describe('권한 변경과 충돌 제어', () => {
                     if (!visibleRoot)
                         throw new Error('A visible parent and child are required for the hierarchy fixture.');
                     const visibleChild = visibleRoot.children[0];
-                    const leaf = visibleChild.children[0] ?? visibleChild;
+                    const leaf = visibleChild!.children[0] ?? visibleChild;
                     const rootMenu = catalog.navigation.find(entry => entry.code === String(visibleRoot.id));
                     if (!rootMenu)
                         throw new Error('Visible root is missing from the complete navigation catalog.');
@@ -627,10 +627,10 @@ test.describe('권한 변경과 충돌 제어', () => {
                     // filter({ has }) 의 내부 locator 는 그 줄 안에서 상대로 찾는다 — 편집기·표부터 시작하는 locator 를 넣으면 어떤 줄도 맞지 않는다.
                     const rowOf = (id: number) => table.getByRole('row').filter({ has: page.getByRole('checkbox', { name: menuCellName(id) }) });
                     const rootCheckbox = menuCell(visibleRoot.id);
-                    const leafCheckbox = menuCell(leaf.id);
+                    const leafCheckbox = menuCell(leaf!.id);
                     // 처음에는 영역만 펼친다 — 3단계 화면은 그 섹션을 펼쳐야 보인다(진입 권한 문제가 있는 섹션은 펼친 채 시작한다).
                     if (leaf !== visibleChild) {
-                        const sectionToggle = rowOf(visibleChild.id).getByRole('button', { name: /하위 메뉴 (펼치기|접기)$/ });
+                        const sectionToggle = rowOf(visibleChild!.id).getByRole('button', { name: /하위 메뉴 (펼치기|접기)$/ });
                         if (await sectionToggle.getAttribute('aria-expanded') === 'false')
                             await sectionToggle.click();
                     }
@@ -639,7 +639,7 @@ test.describe('권한 변경과 충돌 제어', () => {
                     await expect(rootCheckbox).toHaveAttribute('aria-checked', 'false');
                     await leafCheckbox.check();
                     await expect(rootCheckbox, '하위 선택은 필요한 모든 상위 선택을 함께 추가한다').not.toHaveAttribute('aria-checked', 'false');
-                    await expect(menuCell(visibleChild.id)).not.toHaveAttribute('aria-checked', 'false');
+                    await expect(menuCell(visibleChild!.id)).not.toHaveAttribute('aria-checked', 'false');
                     const rootRow = rowOf(visibleRoot.id);
                     await rootRow.getByRole('button', { name: `${rootMenu.name} 하위 메뉴 접기`, exact: true }).click();
                     await expect(rootRow.getByRole('button', { name: `${rootMenu.name} 하위 메뉴 펼치기`, exact: true })).toHaveAttribute('aria-expanded', 'false');
@@ -658,7 +658,7 @@ test.describe('권한 변경과 충돌 제어', () => {
                     await editor.getByRole('button', { name: '권한 변경 저장', exact: true }).click();
                     expect((await saveSelected).status()).toBe(200);
                     const withNavigation = (await group(request, administrator, groupA)).grants.filter(grant => grant.type === 'NAVIGATION').map(grant => grant.code);
-                    expect(withNavigation, '하위만 켜도 모든 상위가 명시적으로 저장된다').toEqual(expect.arrayContaining([String(visibleRoot.id), String(visibleChild.id), String(leaf.id)]));
+                    expect(withNavigation, '하위만 켜도 모든 상위가 명시적으로 저장된다').toEqual(expect.arrayContaining([String(visibleRoot.id), String(visibleChild!.id), String(leaf!.id)]));
                     // [A2] 저장 뒤에도 잠기지 않는다 — 응답 스냅샷이 새 기준선이라 '최신 정보 적용' 없이 이어서 편집한다.
                     await expect(screensTab).toHaveAttribute('aria-selected', 'true');
                     await expect(rootCheckbox).not.toHaveAttribute('aria-checked', 'false');
@@ -682,7 +682,7 @@ test.describe('권한 변경과 충돌 제어', () => {
                     const directPage = await request.get('/admin/system/menus', { headers: { Cookie: `accessToken=${token}` }, maxRedirects: 0 });
                     expect(directPage.status(), '기능권한 보유자는 메뉴를 숨겨도 등록 화면 URL에 접근할 수 있다').toBe(200);
                     const orphan = await request.put(`${AUTHORIZATION}/groups/${groupA}/grants`, {
-                        headers: administrator, data: { grants: [...withoutNavigation.grants, { type: 'NAVIGATION', code: String(leaf.id) }], version: withoutNavigation.version, complete: true },
+                        headers: administrator, data: { grants: [...withoutNavigation.grants, { type: 'NAVIGATION', code: String(leaf!.id) }], version: withoutNavigation.version, complete: true },
                     });
                     expect(orphan.status(), '상위 없이 하위만 부여하는 직접 API 요청은 거절한다').toBe(400);
                     expect(await group(request, administrator, groupA)).toEqual(withoutNavigation);
@@ -698,7 +698,7 @@ test.describe('권한 변경과 충돌 제어', () => {
                         for (const route of routes) {
                             const denied = await request.get(route, { headers: { Cookie: `accessToken=${token}` }, maxRedirects: 0 });
                             expect(denied.status(), `${permissions.join('+')}만으로 관리 화면 진입 불가`).toBe(307);
-                            expect(new URL(denied.headers().location, baseURL).searchParams.get('auth_error')).toBe('unauthorized');
+                            expect(new URL(denied.headers().location!, baseURL).searchParams.get('auth_error')).toBe('unauthorized');
                         }
                         const directWrite = await request.post('/api/v1/polls', {
                             headers: user,
@@ -713,7 +713,7 @@ test.describe('권한 변경과 충돌 제어', () => {
                     const actor = await actorPage({ storageState: { cookies: [], origins: [] } });
                     try {
                         await actor.context.addCookies([{ name: 'accessToken', value: token, url: baseURL, httpOnly: true, sameSite: 'Strict' }]);
-                        await actor.page.goto(routes[0]);
+                        await actor.page.goto(routes[0]!);
                         await expect(actor.page.getByRole('heading', { name: '온라인 투표 관리', exact: true })).toBeVisible();
                         await expect(actor.page.getByRole('button', { name: '알림', exact: true })).toHaveCount(0);
                         await expect(actor.page.getByRole('button', { name: '신규 설문 등록', exact: true })).toHaveCount(0);
@@ -748,7 +748,7 @@ test.describe('권한 변경과 충돌 제어', () => {
                 expect((await request.get(MENUS, { headers: user })).status(), 'A 회수 뒤 새 세션에도 A 의 권한은 없다').toBe(403);
                 const revokedPage = await request.get('/admin/system/menus', { headers: { Cookie: `accessToken=${token}` }, maxRedirects: 0 });
                 expect(revokedPage.status(), '기능권한 회수 후 새 토큰으로 직접 URL 진입도 거절한다').toBe(307);
-                expect(new URL(revokedPage.headers().location, baseURL).searchParams.get('auth_error')).toBe('unauthorized');
+                expect(new URL(revokedPage.headers().location!, baseURL).searchParams.get('auth_error')).toBe('unauthorized');
                 expect((await request.get(ADMCODES, { headers: user })).status(), '다른 그룹 B의 권한 보존').toBe(200);
                 const staleMembership = await request.put(`${AUTHORIZATION}/users/${esntlId}/groups`, {
                     headers: administrator, data: { groups: [], version: combined.version, complete: true },

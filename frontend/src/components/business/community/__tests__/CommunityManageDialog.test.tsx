@@ -205,7 +205,7 @@ describe('CommunityManageDialog', () => {
     expect(screen.getByRole('form', { name: '커뮤니티 수정' })).toBeInTheDocument();
     const selects = screen.getAllByTestId('mock-select');
     // 첫 select 는 템플릿, 둘째는 사용 여부(수정 모드에서만 나타난다)
-    await user.selectOptions(selects[1], 'Y');
+    await user.selectOptions(selects[1]!, 'Y');
     await user.click(screen.getByRole('button', { name: '수정 저장' }));
 
     await waitFor(() => expect(mocks.updateCommunity).toHaveBeenCalledTimes(1));

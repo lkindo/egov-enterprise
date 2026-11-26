@@ -86,11 +86,11 @@ describe('메뉴 연결', () => {
 
   it('관리자 그룹에만 보이면 관리자 그룹만, 사용자 정의 그룹에 보이면 일반 그룹, 상위가 숨으면 일반 그룹이 아니다', () => {
     const adminOnly = findBoardMenuLinks(WIKI, ready(), groups(ADMIN, group('ROLE_USER', '사용자', [])));
-    expect(adminOnly.status === 'ready' && adminOnly.links[0].exposure).toEqual({ kind: 'admin-only', groups: ['관리자'] });
+    expect(adminOnly.status === 'ready' && adminOnly.links[0]!.exposure).toEqual({ kind: 'admin-only', groups: ['관리자'] });
     const custom = findBoardMenuLinks(WIKI, ready(), groups(ADMIN, group('OPS_TEAM', '운영팀', nav(2000000, 2040000))));
-    expect(custom.status === 'ready' && custom.links[0].exposure).toEqual({ kind: 'general', groups: ['관리자', '운영팀'] });
+    expect(custom.status === 'ready' && custom.links[0]!.exposure).toEqual({ kind: 'general', groups: ['관리자', '운영팀'] });
     const parentHidden = findBoardMenuLinks(WIKI, ready(), groups(group('OPS_TEAM', '운영팀', nav(2040000))));
-    expect(parentHidden.status === 'ready' && parentHidden.links[0].exposure).toEqual({ kind: 'hidden' });
+    expect(parentHidden.status === 'ready' && parentHidden.links[0]!.exposure).toEqual({ kind: 'hidden' });
   });
 
   it('메뉴 원장을 읽을 권한이 없거나 실패하면 연결 없음으로 추정하지 않는다', () => {
@@ -100,9 +100,9 @@ describe('메뉴 연결', () => {
 
   it('그룹을 읽을 권한이 없으면 노출은 확인 권한 없음, 실패면 확인 불가다', () => {
     const noPermission = findBoardMenuLinks(WIKI, ready(), { status: 'no-permission' });
-    expect(noPermission.status === 'ready' && noPermission.links[0].exposure).toEqual({ kind: 'no-permission' });
+    expect(noPermission.status === 'ready' && noPermission.links[0]!.exposure).toEqual({ kind: 'no-permission' });
     const failed = findBoardMenuLinks(WIKI, ready(), { status: 'failed' });
-    expect(failed.status === 'ready' && failed.links[0].exposure).toEqual({ kind: 'unknown' });
+    expect(failed.status === 'ready' && failed.links[0]!.exposure).toEqual({ kind: 'unknown' });
   });
 });
 

@@ -49,11 +49,11 @@ describe('openableMenus', () => {
     const tree = [menu('사용자 관리', '/admin/user/manage', [menu('쪽지', '/note', [])])];
     const [kept] = openableMenus(tree, reader());
 
-    expect(kept.menuNm).toBe('사용자 관리');
-    expect(kept.modernRoute).toBeUndefined();
-    expect(names(kept.children ?? [])).toEqual(['쪽지']);
+    expect(kept!.menuNm).toBe('사용자 관리');
+    expect(kept!.modernRoute).toBeUndefined();
+    expect(names(kept!.children ?? [])).toEqual(['쪽지']);
     // 원본 트리는 바꾸지 않는다 — react-query 캐시의 데이터다.
-    expect(tree[0].modernRoute).toBe('/admin/user/manage');
+    expect(tree[0]!.modernRoute).toBe('/admin/user/manage');
   });
 
   it('등록되지 않은 관리 경로는 누구에게도 열리지 않으므로 보이지 않는다', () => {

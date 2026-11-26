@@ -184,7 +184,7 @@ describe('RewardManageClient useAppForm 소비', () => {
     fireEvent.click(screen.getByRole('button', { name: /최종 등록/ }));
 
     await waitFor(() => expect(mocks.createReward).toHaveBeenCalledTimes(1));
-    const body = mocks.createReward.mock.calls[0][0];
+    const body = mocks.createReward.mock.calls[0]![0];
     expect(body).toMatchObject({ rwardwnrId: 'USR_000000000007' });
     expect(body).not.toHaveProperty('rwardwnrNm');
     expect(body).not.toHaveProperty('rwardwnrDeptNm');
@@ -241,7 +241,7 @@ describe('RewardManageClient useAppForm 소비', () => {
     fireEvent.click(screen.getByRole('button', { name: /최종 등록/ }));
 
     await waitFor(() => expect(mocks.createReward).toHaveBeenCalledTimes(1));
-    const body = mocks.createReward.mock.calls[0][0];
+    const body = mocks.createReward.mock.calls[0]![0];
     expect(body).toMatchObject({ rwardNm: '모범 사원상' });
     for (const serverOwned of ['confmAt', 'sanctnerId', 'sanctnDt', 'returnResn', 'ifmlAtrzSn']) {
       expect(body).not.toHaveProperty(serverOwned);

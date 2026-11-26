@@ -8,7 +8,7 @@ import { codeWithoutComments, productionSourceFiles } from '../../../scripts/cod
 const SRC = join(process.cwd(), 'src');
 const readSource = (...parts: string[]) => readFileSync(join(SRC, ...parts), 'utf8');
 /** 주석을 뺀 코드 — 공용 판정(scripts/code-without-comments.mjs)이 문자열은 두고 주석만 지운다. */
-const readCode = (...parts: string[]) => codeWithoutComments(readSource(...parts), parts[parts.length - 1]);
+const readCode = (...parts: string[]) => codeWithoutComments(readSource(...parts), parts[parts.length - 1]!);
 
 /** hydration 전용 mount gate 의 이름 — 첫 DOM 을 버리고 마운트 뒤에 다시 그리는 상태다. */
 const MOUNT_GATE = /\b(?:isMounted|mounted|setIsMounted|setMounted)\b/;

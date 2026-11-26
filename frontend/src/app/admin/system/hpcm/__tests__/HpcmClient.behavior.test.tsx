@@ -201,8 +201,8 @@ describe('도움말 콘텐츠 — 수정과 삭제', () => {
     fireEvent.click(screen.getByRole('button', { name: /수정 저장/ }));
 
     await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
-    expect(mocks.update.mock.calls[0][0]).toBe(7);
-    expect(mocks.update.mock.calls[0][1]).toMatchObject({ hlpSn: 7, hlpDfn: '고친 명칭', version: 0 });
+    expect(mocks.update.mock.calls[0]![0]).toBe(7);
+    expect(mocks.update.mock.calls[0]![1]).toMatchObject({ hlpSn: 7, hlpDfn: '고친 명칭', version: 0 });
     expect(mocks.create).not.toHaveBeenCalled();
   });
 
@@ -212,7 +212,7 @@ describe('도움말 콘텐츠 — 수정과 삭제', () => {
     fireEvent.click(await screen.findByRole('button', { name: '게시판 삭제 가이드 삭제' }));
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    const message = String(mocks.confirm.mock.calls[0][0].message);
+    const message = String(mocks.confirm.mock.calls[0]![0].message);
     expect(message).toContain('게시판 삭제 가이드');
     expect(message).toContain('되돌릴 수 없습니다');
   });
@@ -301,7 +301,7 @@ describe('도움말 콘텐츠 — 목록 조회', () => {
     fireEvent.click(screen.getByRole('button', { name: '다음 페이지' }));
 
     await waitFor(() => expect(mocks.list).toHaveBeenCalled());
-    const last = mocks.list.mock.calls[mocks.list.mock.calls.length - 1][0];
+    const last = mocks.list.mock.calls[mocks.list.mock.calls.length - 1]![0];
     expect(last).toMatchObject({ page: 2, size: 10 });
   });
 
@@ -311,7 +311,7 @@ describe('도움말 콘텐츠 — 목록 조회', () => {
     fireEvent.click(await screen.findByRole('button', { name: '다음 페이지' }));
 
     await waitFor(() => expect(mocks.list).toHaveBeenCalled());
-    const last = mocks.list.mock.calls[mocks.list.mock.calls.length - 1][0];
+    const last = mocks.list.mock.calls[mocks.list.mock.calls.length - 1]![0];
     expect(last.sort).toBe('hlpSn,DESC');
   });
 
@@ -322,7 +322,7 @@ describe('도움말 콘텐츠 — 목록 조회', () => {
     fireEvent.click(screen.getByRole('button', { name: '조회' }));
 
     await waitFor(() => {
-      const last = mocks.list.mock.calls[mocks.list.mock.calls.length - 1][0];
+      const last = mocks.list.mock.calls[mocks.list.mock.calls.length - 1]![0];
       expect(last).toMatchObject({ keyword: '게시판', page: 1 });
     });
   });

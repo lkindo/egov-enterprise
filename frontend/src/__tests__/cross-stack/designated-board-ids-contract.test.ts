@@ -22,7 +22,7 @@ describe('지정 게시판 화면 상수 ↔ 서버 설정', () => {
     const yml = readFileSync(join(REPO_DIR, 'api-server/src/main/resources/application.yml'), 'utf8');
     const block = yml.match(/^ {2}boards:\r?\n((?: {4}[a-z-]+: *\S+\r?\n?)+)/m);
     expect(block, 'application.yml 에서 nuri.boards 블록을 찾지 못했다').not.toBeNull();
-    const ymlIds = Object.fromEntries([...block![1].matchAll(/^ {4}([a-z-]+): *(\S+)/gm)].map((m) => [m[1], m[2]]));
+    const ymlIds = Object.fromEntries([...block![1]!.matchAll(/^ {4}([a-z-]+): *(\S+)/gm)].map((m) => [m[1], m[2]]));
 
     const properties = readFileSync(join(REPO_DIR, 'business-core/src/main/java/nuri/business/core/config/BoardIdProperties.java'), 'utf8');
     const javaDefault = (field: string) => properties.match(new RegExp(`private String ${field} = "([^"]+)";`))?.[1];

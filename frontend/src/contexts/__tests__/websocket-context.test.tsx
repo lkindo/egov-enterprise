@@ -95,16 +95,16 @@ describe('WebSocketProvider', () => {
       const view = render(<WebSocketProvider><Probe onValue={(next) => { value = next; }} /></WebSocketProvider>);
       await settle();
       const first = created[0];
-      act(() => { first.onConnect?.(); });
+      act(() => { first!.onConnect?.(); });
       expect(value?.client).toBe(first);
       authUser = { id: 'U1', authorizationVersion: 'v2' };
       view.rerender(<WebSocketProvider><Probe onValue={(next) => { value = next; }} /></WebSocketProvider>);
       await settle();
-      expect(first.deactivate).toHaveBeenCalledTimes(1);
+      expect(first!.deactivate).toHaveBeenCalledTimes(1);
       expect(value?.client).toBeNull();
-      act(() => { first.onConnect?.(); });
+      act(() => { first!.onConnect?.(); });
       expect(value?.client).toBeNull();
-      act(() => { created[1].onConnect?.(); });
+      act(() => { created[1]!.onConnect?.(); });
       expect(value?.client).toBe(created[1]);
     });
 
@@ -118,16 +118,16 @@ describe('WebSocketProvider', () => {
 
     it('허용한 동일 출처 transport만 사용하며 토큰을 연결 헤더나 URL에 넣지 않는다', async () => {
       await renderProvider();
-      (created[0].config.webSocketFactory as () => unknown)();
+      (created[0]!.config.webSocketFactory as () => unknown)();
       expect(SockJS).toHaveBeenCalledWith('/ws', undefined, { transports: ['websocket', 'xhr-streaming', 'xhr-polling'] });
-      expect(created[0].config.connectHeaders).toBeUndefined();
+      expect(created[0]!.config.connectHeaders).toBeUndefined();
     });
 
     it('로그인 사용자가 있으면 연결을 시작한다', async () => {
       await renderProvider();
 
       expect(created).toHaveLength(1);
-      expect(created[0].activate).toHaveBeenCalledTimes(1);
+      expect(created[0]!.activate).toHaveBeenCalledTimes(1);
     });
 
     it('로그인 사용자가 없으면 연결하지 않는다', async () => {
@@ -153,7 +153,7 @@ describe('WebSocketProvider', () => {
       });
 
       // 끊지 않으면 화면은 로그아웃됐는데 브라우저는 아직 그 사람의 알림을 받는다.
-      expect(first.deactivate).toHaveBeenCalled();
+      expect(first!.deactivate).toHaveBeenCalled();
     });
 
     it('리렌더가 반복돼도 소켓을 하나만 만든다', async () => {
@@ -210,7 +210,7 @@ describe('WebSocketProvider', () => {
 
         expect(loadTransport).toHaveBeenCalledTimes(2);
         expect(created).toHaveLength(1);
-        expect(created[0].activate).toHaveBeenCalledTimes(1);
+        expect(created[0]!.activate).toHaveBeenCalledTimes(1);
       } finally {
         vi.useRealTimers();
       }
@@ -239,11 +239,11 @@ describe('WebSocketProvider', () => {
     it('언마운트하면 연결을 정리한다', async () => {
       const { unmount } = await renderProvider();
       const client = created[0];
-      client.active = true;
+      client!.active = true;
 
       unmount();
 
-      expect(client.deactivate).toHaveBeenCalled();
+      expect(client!.deactivate).toHaveBeenCalled();
     });
   });
 
@@ -252,10 +252,10 @@ describe('WebSocketProvider', () => {
       const view = await renderProvider();
       expect(view.value.isConnected).toBe(false);
 
-      act(() => { created[0].onConnect?.(); });
+      act(() => { created[0]!.onConnect?.(); });
 
       // 실제 알림 구독은 useNotifications가 소유한다. Provider까지 구독하면 같은 알림 토스트가 중복된다.
-      expect(created[0].subscribe).not.toHaveBeenCalled();
+      expect(created[0]!.subscribe).not.toHaveBeenCalled();
       expect(view.value.isConnected).toBe(true);
       expect(view.value.client).toBe(created[0]);
     });
@@ -268,17 +268,17 @@ describe('WebSocketProvider', () => {
       render(<WebSocketProvider><ContextProbe /></WebSocketProvider>);
       await settle();
 
-      act(() => { created[0].onConnect?.(); });
+      act(() => { created[0]!.onConnect?.(); });
 
       expect(seen.size, '연결이 공급자 값을 바꿨다').toBe(1);
     });
 
     it('STOMP 오류가 나면 연결 해제 상태로 되돌린다', async () => {
       const view = await renderProvider();
-      act(() => { created[0].onConnect?.(); });
+      act(() => { created[0]!.onConnect?.(); });
       expect(view.value.isConnected).toBe(true);
 
-      act(() => { created[0].onStompError?.({ headers: {} }); });
+      act(() => { created[0]!.onStompError?.({ headers: {} }); });
 
       // 연결됨으로 남아 있으면 알림 훅이 폴백 폴링으로 넘어가지 않아 알림이 끊긴다.
       expect(view.value.isConnected).toBe(false);
@@ -287,9 +287,9 @@ describe('WebSocketProvider', () => {
 
     it('끊기면 연결 해제 상태로 되돌린다', async () => {
       const view = await renderProvider();
-      act(() => { created[0].onConnect?.(); });
+      act(() => { created[0]!.onConnect?.(); });
 
-      act(() => { created[0].onDisconnect?.(); });
+      act(() => { created[0]!.onDisconnect?.(); });
 
       expect(view.value.isConnected).toBe(false);
       expect(view.value.client).toBeNull();
@@ -299,15 +299,15 @@ describe('WebSocketProvider', () => {
     // 소비자의 subscribe 가 'There is no underlying STOMP connection' 으로 던진다(2026-11-07 CUBRID 대표 E2E).
     it('서버가 소켓을 닫으면 연결 해제 상태로 되돌리고, 다시 연결되면 소비자에게 새로 알린다', async () => {
       const view = await renderProvider();
-      act(() => { created[0].onConnect?.(); });
+      act(() => { created[0]!.onConnect?.(); });
       expect(view.value.isConnected).toBe(true);
 
-      act(() => { created[0].onWebSocketClose?.(); });
+      act(() => { created[0]!.onWebSocketClose?.(); });
       expect(view.value.isConnected).toBe(false);
       expect(view.value.client).toBeNull();
 
       // stompjs 의 자동 재연결은 같은 클라이언트로 onConnect 를 다시 부른다. 소비자는 연결 상태가 바뀐 것을 보고 다시 구독한다.
-      act(() => { created[0].onConnect?.(); });
+      act(() => { created[0]!.onConnect?.(); });
       expect(view.value.isConnected).toBe(true);
       expect(view.value.client).toBe(created[0]);
     });
@@ -316,9 +316,9 @@ describe('WebSocketProvider', () => {
       await renderProvider();
 
       // 재연결이 없으면 일시적 단절 후 알림이 영구히 멈춘다.
-      expect(created[0].config.reconnectDelay).toBe(5000);
-      expect(created[0].config.heartbeatIncoming).toBe(4000);
-      expect(created[0].config.heartbeatOutgoing).toBe(4000);
+      expect(created[0]!.config.reconnectDelay).toBe(5000);
+      expect(created[0]!.config.heartbeatIncoming).toBe(4000);
+      expect(created[0]!.config.heartbeatOutgoing).toBe(4000);
     });
   });
 

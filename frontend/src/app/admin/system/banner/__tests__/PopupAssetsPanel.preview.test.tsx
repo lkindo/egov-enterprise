@@ -208,7 +208,7 @@ describe('팝업 편집 미리보기', () => {
     fireEvent.change(height, { target: { value: '4000' } });
     fireEvent.click(within(modal).getByRole('button', { name: '자산 수정' }));
     await waitFor(() => expect(mocks.requestRaw).toHaveBeenCalledTimes(1));
-    const submitted = mocks.savePopup.mock.calls[0][1].data;
+    const submitted = mocks.savePopup.mock.calls[0]![1].data;
     expect(PopupSaveRequestRequestSchema.strict().safeParse(submitted).success).toBe(true);
     expect(submitted).toMatchObject({
       popupTtlNm: '제목만 수정', popupWdthSz: '100', popupVrtcSz: '4000',
@@ -228,7 +228,7 @@ describe('팝업 편집 미리보기', () => {
     expect(within(modal).getByRole('textbox', { name: /세로 높이/ })).toHaveValue('300');
     fireEvent.click(within(modal).getByRole('button', { name: '자산 수정' }));
     await waitFor(() => expect(mocks.requestRaw).toHaveBeenCalledTimes(1));
-    expect(PopupSaveRequestRequestSchema.strict().safeParse(mocks.savePopup.mock.calls[0][1].data).success).toBe(true);
+    expect(PopupSaveRequestRequestSchema.strict().safeParse(mocks.savePopup.mock.calls[0]![1].data).success).toBe(true);
     expect(mocks.requestRaw).toHaveBeenCalledWith(expect.objectContaining({
       method: 'put', data: expect.objectContaining({ popupWdthSz: '400', popupVrtcSz: '300', fileUrl: '/api/v1/files/77', version: 1 }),
     }));
@@ -243,7 +243,7 @@ describe('팝업 편집 미리보기', () => {
     fireEvent.change(modal.querySelector('input[name="ntceEndde"]')!, { target: { value: '2026-10-31' } });
     fireEvent.click(within(modal).getByRole('button', { name: /운영 배포/ }));
     await waitFor(() => expect(mocks.requestRaw).toHaveBeenCalledTimes(1));
-    const submitted = mocks.savePopup.mock.calls[0][1].data;
+    const submitted = mocks.savePopup.mock.calls[0]![1].data;
     expect(PopupSaveRequestRequestSchema.strict().safeParse(submitted).success).toBe(true);
     expect(submitted).not.toHaveProperty('popupSn');
     expect(submitted).not.toHaveProperty('version');
@@ -271,12 +271,12 @@ describe('팝업 편집 미리보기', () => {
     fireEvent.change(within(modal).getByRole('textbox', { name: /세로 높이/ }), { target: { value: '4000' } });
     fireEvent.click(within(modal).getByRole('button', { name: '자산 수정' }));
     await waitFor(() => expect(mocks.requestRaw).toHaveBeenCalledTimes(1));
-    const submitted = mocks.savePopup.mock.calls[0][1].data;
+    const submitted = mocks.savePopup.mock.calls[0]![1].data;
     expect(PopupSaveRequestRequestSchema.strict().safeParse(submitted).success).toBe(true);
     expect(submitted.fileUrl).toBeUndefined();
     expect(mocks.requestRaw).toHaveBeenCalledWith(expect.objectContaining({
       method: 'put', data: expect.objectContaining({ popupWdthSz: '100', popupVrtcSz: '4000', ntceYn: 'N', version: 1 }),
     }));
-    expect(mocks.requestRaw.mock.calls[0][0].data.fileUrl).toBeUndefined();
+    expect(mocks.requestRaw.mock.calls[0]![0].data.fileUrl).toBeUndefined();
   });
 });

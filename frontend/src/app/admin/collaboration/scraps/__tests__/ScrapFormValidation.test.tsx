@@ -241,7 +241,7 @@ describe('scrap form validation contract', () => {
       queryClient: new QueryClient(),
     });
     expect(mocks.post).toHaveBeenCalledTimes(1);
-    const created = mocks.post.mock.calls[0][1] as ScrapFormValues;
+    const created = mocks.post.mock.calls[0]![1] as ScrapFormValues;
     expect(created.scrapUrl).toBe(canonicalPath);
     renderDetail(created);
     const user = userEvent.setup();

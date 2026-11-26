@@ -58,7 +58,7 @@ describe('summarizeError — 요청 파라미터를 담지 않는다', () => {
     logErrorSafely('실패', axiosLike);
 
     expect(spy).toHaveBeenCalledTimes(1);
-    const [, payload] = spy.mock.calls[0];
+    const [, payload] = spy.mock.calls[0]!;
     expect(JSON.stringify(payload)).not.toContain('홍길동');
     expect(payload).not.toBe(axiosLike);
     spy.mockRestore();

@@ -20,7 +20,7 @@ export async function warmBodyFontCache(page: Page): Promise<void> {
     const sample = manifest.slices.map(({ glyphRange }) => {
         const first = glyphRange.split(',')
             .map((part) => /U\+([0-9A-F]+)(?:-([0-9A-F]+))?/.exec(part)!)
-            .map((match) => [parseInt(match[1], 16), parseInt(match[2] ?? match[1], 16)] as const)
+            .map((match) => [parseInt(match[1]!, 16), parseInt((match[2] ?? match[1])!, 16)] as const)
             .map(([lo, hi]) => (lo > 0x20 ? lo : hi > 0x20 ? 0x21 : -1))
             .find((cp) => cp > 0x20);
         return String.fromCodePoint(first!);

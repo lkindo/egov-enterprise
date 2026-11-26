@@ -23,7 +23,7 @@ describe('menu treeUtils', () => {
     const tree = listToTree(flat);
 
     expect(tree.map((node) => node.menuNo)).toEqual([4, 1]);
-    expect(tree[1].children?.map((node) => node.menuNo)).toEqual([3, 2]);
+    expect(tree[1]!.children?.map((node) => node.menuNo)).toEqual([3, 2]);
     expect(flat.every((node) => node.children === undefined)).toBe(true);
   });
 

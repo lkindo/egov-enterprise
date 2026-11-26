@@ -134,7 +134,7 @@ describe('콘텐츠 페이지 관리(ADR-0039)', () => {
     fireEvent.click(save);
 
     await waitFor(() => expect(mocks.saveDraft).toHaveBeenCalledTimes(1));
-    const [contsSn, body] = mocks.saveDraft.mock.calls[0];
+    const [contsSn, body] = mocks.saveDraft.mock.calls[0]!;
     expect(contsSn).toBe(7);
     expect(body).toMatchObject({ contsPathNm: 'service-guide', contsTtl: '바뀐 안내', version: 3 });
     expect(body.document.schemaVersion).toBe(1);
@@ -269,7 +269,7 @@ describe('콘텐츠 페이지 관리(ADR-0039)', () => {
 
     await waitFor(() => expect(mocks.createPage).toHaveBeenCalledTimes(1));
     expect(mocks.getPage).toHaveBeenCalledWith(7);
-    const body = mocks.createPage.mock.calls[0][0];
+    const body = mocks.createPage.mock.calls[0]![0];
     expect(body).toMatchObject({ contsTtl: '복사한 안내', contsPathNm: 'copied-guide' });
     expect(body.document.sections[0].cells).toEqual([
       { kind: 'image', atchFileSn: 0, alt: '안내도', decorative: false, caption: '' },

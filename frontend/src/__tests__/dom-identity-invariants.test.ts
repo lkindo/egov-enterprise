@@ -33,7 +33,7 @@ const SRC_DIR = join(FRONTEND_DIR, 'src');
  * 주석 제거는 공용 판정(scripts/code-without-comments.mjs)이 한다. 종전 정규식은 지우는 순서를 바꿔도(2026-08-29) 문자열 속
  * 주석 기호에서 블록 주석을 열어 그 뒤 실행 코드를 지웠다(FE-CONTRACT-01).
  */
-const codeOf = (...parts: string[]) => codeWithoutComments(readFileSync(join(SRC_DIR, ...parts), 'utf8'), parts[parts.length - 1]);
+const codeOf = (...parts: string[]) => codeWithoutComments(readFileSync(join(SRC_DIR, ...parts), 'utf8'), parts[parts.length - 1]!);
 
 describe('DOM 정체성 불변식', () => {
   it('PageTransition 은 AnimatePresence·exit 로 라우트 subtree 를 이중 마운트하지 않는다', () => {
@@ -122,7 +122,7 @@ describe('DOM 정체성 불변식', () => {
         const source = readFileSync(full, 'utf8');
         const counts = new Map<string, number>();
         for (const match of source.matchAll(/data-testid=["']([^"']+)["']/g)) {
-          counts.set(match[1], (counts.get(match[1]) ?? 0) + 1);
+          counts.set(match[1]!, (counts.get(match[1]!) ?? 0) + 1);
         }
         for (const [id, count] of counts) {
           if (count > 1) offenders.push(`${relative(FRONTEND_DIR, full).replace(/\\/g, '/')} → "${id}" ×${count}`);

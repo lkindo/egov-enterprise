@@ -325,7 +325,7 @@ describe('SecurityGroupClient', () => {
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
     // 사용자 그룹 지정 해제를 확인 본문이 미리 말한다.
-    expect(mocks.confirm.mock.calls[0][0].message).toContain('그룹 지정이 해제');
+    expect(mocks.confirm.mock.calls[0]![0].message).toContain('그룹 지정이 해제');
     await waitFor(() => expect(mocks.removeMany).toHaveBeenCalledWith(['GROUP_ADMIN', 'GROUP_EMPTY']));
     expect(mocks.remove).not.toHaveBeenCalled();
   });
