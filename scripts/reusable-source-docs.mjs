@@ -21,7 +21,6 @@ import {
 import { readRemovalLedger } from './reusable-asset-removal.mjs';
 import { artifactAliases } from './reusable-artifact-entrypoints-contract.mjs';
 import { MEMORY_PATHS } from './reusable-governance-integrity.mjs';
-import { UPSTREAM_ATLAS } from './reusable-harness-census.mjs';
 import { ALWAYS_REMOVED_ASSET_RULES, isUpstreamRuntimeAlias } from './reusable-product-assets.mjs';
 import { readVendorAssetLedger } from './reusable-vendor-assets.mjs';
 
@@ -181,30 +180,29 @@ export function nonInlineLinks(source) {
 /*
  * 생성 프로젝트의 루트 README 투영.
  *
- * 루트 README 는 원본을 그대로 실어, 생성 프로젝트에 없는 도구(생성기·오프라인 이관 도구·요구사항 도구·Atlas)와 그 명령을 안내했다.
+ * 루트 README 는 원본을 그대로 실어, 생성 프로젝트에 없는 도구(생성기·오프라인 이관 도구·요구사항 도구)와 그 명령을 안내했다.
  * 원본 README 는 그런 내용을 원본 전용 구간 표지로 감싸고, 생성기는 구간째 걷은 뒤 이 프로젝트의 구성을 머리에 적는다.
  * 표지 밖에 남은 문장이 걷은 별칭·자산을 말하면 생성이 멈춘다. README 만 고친 변경에는 재사용 생성 잡이 돌지 않으므로,
  * 원본 문서 계약(reusable-source-docs.test.mjs)이 같은 판정을 원본 README 에 미리 돌린다.
  *
- * 검사가 보는 것은 루트 package.json 의 `npm run` 대상, 걷은 별칭, 상시 제거 원장(과 Atlas·벤더 원장)의 자산·시험 경로,
+ * 검사가 보는 것은 루트 package.json 의 `npm run` 대상, 걷은 별칭, 상시 제거 원장(과 벤더 원장)의 자산·시험 경로,
  * 단일모듈 배치의 Gradle 프로젝트 경로다. 구성에 따라 빠지는 소스·화면·스킬·비활성 워크플로의 경로와 `pnpm`·`make` 대상은 보지 않는다.
  */
 export const UPSTREAM_ONLY_START = '<!-- upstream-only:start -->';
 export const UPSTREAM_ONLY_END = '<!-- upstream-only:end -->';
 
 /**
- * README 가 말하면 안 되는 별칭·자산을 모은다: 상시 제거 원장 셋과 Atlas 의 자산·시험·별칭, 원장 없이 규칙으로 걷는 별칭.
+ * README 가 말하면 안 되는 별칭·자산을 모은다: 상시 제거 원장 셋과 원장 없이 규칙으로 걷는 별칭.
  * 벤더 프로젝트는 PostgreSQL 전용 자산의 원장을 더한다.
  */
 export function upstreamOnlySubjects(root, upstreamScripts = {}, { vendor = false } = {}) {
   const ledgers = [...ALWAYS_REMOVED_ASSET_RULES.map(({ ledgerPath }) => readRemovalLedger(root, ledgerPath)),
     ...(vendor ? [readVendorAssetLedger(root)] : [])];
-  const aliases = [...ledgers.flatMap(ledger => ledger.aliases), ...UPSTREAM_ATLAS.aliases,
+  const aliases = [...ledgers.flatMap(ledger => ledger.aliases),
     ...Object.keys(upstreamScripts).filter(isUpstreamRuntimeAlias)].filter(alias => !alias.startsWith('//'));
   return {
     aliases: [...new Set(aliases)].sort(),
-    assets: [...new Set([...ledgers.flatMap(ledger => [...ledger.assets, ...ledger.gates.map(gate => gate.file)]),
-      ...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates])].sort(),
+    assets: [...new Set(ledgers.flatMap(ledger => [...ledger.assets, ...ledger.gates.map(gate => gate.file)]))].sort(),
   };
 }
 

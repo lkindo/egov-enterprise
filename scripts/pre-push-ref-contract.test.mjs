@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
@@ -10,7 +10,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { createRequire } from 'node:module';
-import { tmpdir } from 'node:os';
+import { availableParallelism, cpus, tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -66,7 +66,19 @@ function pushLine(localRef, localOid, remoteRef, remoteOid) {
   return `${localRef} ${localOid} ${remoteRef} ${remoteOid}`;
 }
 
-const SCOPE_FIELDS_LIST = ['docsOnly', 'backend', 'migration', 'frontend', 'atlas'];
+const SCOPE_FIELDS_LIST = ['docsOnly', 'backend', 'migration', 'frontend'];
+const MAX_HOOK_CONCURRENCY = Math.min(8, Math.max(4, typeof availableParallelism === 'function' ? availableParallelism() : cpus().length));
+let activeHooks = 0;
+const hookWaiters = [];
+async function withHookSlot(task) {
+  if (activeHooks >= MAX_HOOK_CONCURRENCY) await new Promise((resolve) => hookWaiters.push(resolve));
+  activeHooks++;
+  try { return await task(); } finally {
+    activeHooks--;
+    const next = hookWaiters.shift();
+    if (next) next();
+  }
+}
 const scopeOutputCache = new Map();
 function scopeOutputFor(files) {
   const key = [...new Set(files)].sort().join('\n');
@@ -163,7 +175,7 @@ node() {
         command node "$@"
         return $?
       fi
-      if [ "$*" = "scripts/ci-change-scope.mjs --stdin --fields docsOnly,backend,migration,frontend,atlas" ]; then
+      if [ "$*" = "scripts/ci-change-scope.mjs --stdin --fields docsOnly,backend,migration,frontend" ]; then
         STDIN_DATA=""
         while IFS= read -r _line || [ -n "$_line" ]; do
           if [ -n "$_line" ]; then
@@ -196,7 +208,7 @@ node() {
   return source.replaceAll('./gradlew ', 'test_gradle ').replace('#!/bin/sh', `#!/bin/sh${stubs}`);
 }
 
-function runHook(input, source = hookSource, { files = ['docs/README.md'], failCommand = '',
+async function runHook(input, source = hookSource, { files = ['docs/README.md'], failCommand = '',
   failDiffRange = '', failedDiffOutput = [], emptyDiffRange = '',
   scopeOutput = undefined, scopeStatus = 0, realScopeCli = false, realQueueCli = false } = {}) {
   const id = ++callCounter;
@@ -217,43 +229,55 @@ function runHook(input, source = hookSource, { files = ['docs/README.md'], failC
   const filesScope = scopeOutputFor(files);
   const partialScope = failedDiffOutput.length > 0 ? scopeOutputFor(failedDiffOutput) : { key: '', output: '' };
   const bothScope = failedDiffOutput.length > 0 ? scopeOutputFor([...files, ...failedDiffOutput]) : { key: '', output: '' };
+  const env = {
+    ...process.env,
+    HOOK_GIT_LOG: shellPath(gitLog),
+    HOOK_NPM_LOG: shellPath(npmLog),
+    HOOK_COMMAND_LOG: shellPath(commandLog),
+    HOOK_CHANGED_FILES: files.join('\n'),
+    HOOK_FAIL_COMMAND: failCommand,
+    HOOK_FAIL_DIFF_RANGE: failDiffRange,
+    HOOK_EMPTY_DIFF_RANGE: emptyDiffRange,
+    HOOK_FAILED_DIFF_OUTPUT: failedDiffOutput.join('\n'),
+    SKIP_HOOKS: '',
+    SKIP_HARNESS: '',
+    HOOK_SOURCE_CONTRACTS: SOURCE_CONTRACT_FILES.join('\n'),
+    HOOK_SCOPE_OUTPUT_SET: String(scopeOutput !== undefined),
+    HOOK_SCOPE_OUTPUT: scopeOutput ?? '',
+    HOOK_SCOPE_STATUS: String(scopeStatus),
+    HOOK_SCOPE_EMPTY: EMPTY_SCOPE_OUTPUT,
+    HOOK_SCOPE_FILES_KEY: filesScope.key,
+    HOOK_SCOPE_FILES: filesScope.output,
+    HOOK_SCOPE_PARTIAL_KEY: partialScope.key,
+    HOOK_SCOPE_PARTIAL: partialScope.output,
+    HOOK_SCOPE_BOTH_KEY: bothScope.key,
+    HOOK_SCOPE_BOTH: bothScope.output,
+    HOOK_REAL_SCOPE_CLI: String(realScopeCli),
+    HOOK_REAL_QUEUE_CLI: String(realQueueCli),
+  };
 
-  const result = spawnSync(shell, [shellPath(fixtureHook)], {
-    cwd: repoRoot,
-    input,
-    encoding: 'utf8',
-    env: {
-      ...process.env,
-      HOOK_GIT_LOG: shellPath(gitLog),
-      HOOK_NPM_LOG: shellPath(npmLog),
-      HOOK_COMMAND_LOG: shellPath(commandLog),
-      HOOK_CHANGED_FILES: files.join('\n'),
-      HOOK_FAIL_COMMAND: failCommand,
-      HOOK_FAIL_DIFF_RANGE: failDiffRange,
-      HOOK_EMPTY_DIFF_RANGE: emptyDiffRange,
-      HOOK_FAILED_DIFF_OUTPUT: failedDiffOutput.join('\n'),
-      SKIP_HOOKS: '',
-      SKIP_HARNESS: '',
-      HOOK_SOURCE_CONTRACTS: SOURCE_CONTRACT_FILES.join('\n'),
-      HOOK_SCOPE_OUTPUT_SET: String(scopeOutput !== undefined),
-      HOOK_SCOPE_OUTPUT: scopeOutput ?? '',
-      HOOK_SCOPE_STATUS: String(scopeStatus),
-      HOOK_SCOPE_EMPTY: EMPTY_SCOPE_OUTPUT,
-      HOOK_SCOPE_FILES_KEY: filesScope.key,
-      HOOK_SCOPE_FILES: filesScope.output,
-      HOOK_SCOPE_PARTIAL_KEY: partialScope.key,
-      HOOK_SCOPE_PARTIAL: partialScope.output,
-      HOOK_SCOPE_BOTH_KEY: bothScope.key,
-      HOOK_SCOPE_BOTH: bothScope.output,
-      HOOK_REAL_SCOPE_CLI: String(realScopeCli),
-      HOOK_REAL_QUEUE_CLI: String(realQueueCli),
-    },
-  });
+  const status = await withHookSlot(() => new Promise((resolve, reject) => {
+    const child = spawn(shell, [shellPath(fixtureHook)], {
+      cwd: repoRoot,
+      env,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => { stdout += chunk; });
+    child.stderr.setEncoding('utf8');
+    child.stderr.on('data', (chunk) => { stderr += chunk; });
+    child.stdin.on('error', () => {});
+    child.stdin.end(input);
+    child.on('error', reject);
+    child.on('close', (code) => resolve({ status: code, stdout, stderr }));
+  }));
 
   return {
-    status: result.status,
-    stdout: result.stdout,
-    stderr: result.stderr,
+    status: status.status,
+    stdout: status.stdout,
+    stderr: status.stderr,
     gitCalls: existsSync(gitLog) ? readFileSync(gitLog, 'utf8').trim().split(/\r?\n/u) : [],
     npmCalls: existsSync(npmLog) ? readFileSync(npmLog, 'utf8').trim().split(/\r?\n/u) : [],
     commands: existsSync(commandLog) ? readFileSync(commandLog, 'utf8').trim().split(/\r?\n/u) : [],
@@ -264,7 +288,7 @@ function assertSuccessful(result) {
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
 }
 
-test('branch and tag deletion-only pushes skip every local verification command', () => {
+test('branch and tag deletion-only pushes skip every local verification command', { concurrency: true }, async () => {
   const fixtures = [
     `${pushLine('(delete)', ZERO_OID, 'refs/heads/old-branch', REMOTE_OID)}\n`,
     `${pushLine('(delete)', ZERO_OID, 'refs/tags/old-tag', REMOTE_OID)}\n`,
@@ -274,43 +298,46 @@ test('branch and tag deletion-only pushes skip every local verification command'
     ].join('\n') + '\n',
   ];
 
-  for (const input of fixtures) {
-    const result = runHook(input);
+  await Promise.all(fixtures.map(async (input) => {
+    const result = await runHook(input);
     assertSuccessful(result);
     assert.match(result.stdout, /branch\/tag 삭제만 감지됨/u);
     assert.deepEqual(result.gitCalls, []);
     assert.deepEqual(result.npmCalls, []);
-  }
+  }));
 });
 
-// [2026-11-07] 훅은 다섯 범위 필드를 분류기 한 번 호출로 읽는다. 값을 하나라도 true|false 로 읽지 못하거나 분류기가 실패하면
+// [2026-11-07] 훅은 네 범위 필드를 분류기 한 번 호출로 읽는다. 값을 하나라도 true|false 로 읽지 못하거나 분류기가 실패하면
 //   어떤 검사도 돌리기 전에 멈춘다 — 빈 값은 backend·frontend 검사를 건너뛰는 쪽으로 읽혀 안전측이 아니다.
-test('pre-push stops before any check when the one classifier call yields an unreadable scope value', () => {
+test('pre-push stops before any check when the one classifier call yields an unreadable scope value', { concurrency: true }, async () => {
   const input = `${pushLine('refs/heads/feature', LOCAL_OID, 'refs/heads/feature', REMOTE_OID)}\n`;
   const files = ['api-server/src/main/java/nuri/api/Example.java', 'frontend/src/example.ts'];
-  const complete = 'docsOnly=false\nbackend=true\nmigration=false\nfrontend=true\natlas=false\n';
-  const proceeds = runHook(input, hookSource, { files, scopeOutput: complete });
-  assertSuccessful(proceeds);
-  assert.ok(proceeds.commands.length > 0, 'a readable classification must run the selected checks');
+  const complete = 'docsOnly=false\nbackend=true\nmigration=false\nfrontend=true\n';
   const broken = [
-    ...['docsOnly', 'backend', 'migration', 'frontend', 'atlas'].map(field =>
+    ...['docsOnly', 'backend', 'migration', 'frontend'].map(field =>
       [`${field} empty`, complete.replace(new RegExp(`^${field}=.*$`, 'm'), `${field}=`)]),
     ['backend missing', complete.replace(/^backend=.*\n/m, '')],
     ['frontend invalid', complete.replace(/^frontend=.*$/m, 'frontend=yes')],
   ];
-  for (const [label, output] of broken) {
-    const result = runHook(input, hookSource, { files, scopeOutput: output });
+  const [proceeds, failed, ...brokenResults] = await Promise.all([
+    runHook(input, hookSource, { files, scopeOutput: complete }),
+    runHook(input, hookSource, { files, scopeOutput: '', scopeStatus: 1 }),
+    ...broken.map(([, output]) => runHook(input, hookSource, { files, scopeOutput: output })),
+  ]);
+  assertSuccessful(proceeds);
+  assert.ok(proceeds.commands.length > 0, 'a readable classification must run the selected checks');
+  broken.forEach(([label], index) => {
+    const result = brokenResults[index];
     assert.notEqual(result.status, 0, `${label} must stop the push`);
     assert.match(result.stderr, /변경 범위 분류 결과를 읽지 못했습니다/u, label);
     assert.deepEqual(result.commands, [], `${label} must not run any check`);
-  }
-  const failed = runHook(input, hookSource, { files, scopeOutput: '', scopeStatus: 1 });
+  });
   assert.notEqual(failed.status, 0, 'a failing classifier must stop the push');
   assert.deepEqual(failed.commands, [], 'a failing classifier must not run any check');
 });
 
-test('mixed deletion and update verifies only the object-bearing update range', () => {
-  const result = runHook([
+test('mixed deletion and update verifies only the object-bearing update range', { concurrency: true }, async () => {
+  const result = await runHook([
     pushLine('(delete)', ZERO_OID, 'refs/heads/old-branch', REMOTE_OID),
     pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID),
   ].join('\n') + '\n');
@@ -323,24 +350,24 @@ test('mixed deletion and update verifies only the object-bearing update range', 
   assert.doesNotMatch(diffCalls[0], new RegExp(ZERO_OID, 'u'));
 });
 
-test('empty stdin and a new ref retain their fail-closed verification paths', () => {
-  const emptyInput = runHook('');
+test('empty stdin and a new ref retain their fail-closed verification paths', { concurrency: true }, async () => {
+  // 새 작업 브랜치의 첫 push 는 origin/main 과의 전체 차이를 본다. 운영 계약은 작업 브랜치 push 라 Required CI(secret-scan)로
+  //   일원화하고 로컬 훅에서는 생략한다(DEC-OPS-434).
+  const [emptyInput, newRef] = await Promise.all([
+    runHook(''),
+    runHook(`${pushLine('refs/heads/new-branch', LOCAL_OID, 'refs/heads/new-branch', ZERO_OID)}\n`),
+  ]);
   assertSuccessful(emptyInput);
   assert.deepEqual(emptyInput.npmCalls, ['run regen -- --check', 'run test:operational-contracts']);
   assert.ok(emptyInput.gitCalls.some((call) => call.includes('origin/main..HEAD')));
 
-  // 새 작업 브랜치의 첫 push 는 origin/main 과의 전체 차이를 본다. 운영 계약은 작업 브랜치 push 라 Required CI(secret-scan)로
-  //   일원화하고 로컬 훅에서는 생략한다(DEC-OPS-434).
-  const newRef = runHook(
-    `${pushLine('refs/heads/new-branch', LOCAL_OID, 'refs/heads/new-branch', ZERO_OID)}\n`,
-  );
   assertSuccessful(newRef);
   assert.deepEqual(newRef.npmCalls, ['run regen -- --check']);
   assert.match(newRef.stdout, /PR Required CI\(secret-scan[^)]*\)에서 검증한다/);
   assert.ok(newRef.gitCalls.some((call) => call.includes(`origin/main..${LOCAL_OID}`)));
 });
 
-test('the contract exposes deletion-condition regressions as reproducible red outcomes', () => {
+test('the contract exposes deletion-condition regressions as reproducible red outcomes', { concurrency: true }, async () => {
   const deletion = `${pushLine('(delete)', ZERO_OID, 'refs/heads/old-branch', REMOTE_OID)}\n`;
   const mixed = [
     pushLine('(delete)', ZERO_OID, 'refs/heads/old-branch', REMOTE_OID),
@@ -352,18 +379,20 @@ test('the contract exposes deletion-condition regressions as reproducible red ou
     'if [ "$remote_sha" = "$ZERO_OID" ]; then',
   );
   assert.notEqual(remoteOidMutant, hookSource);
-  assert.notDeepEqual(runHook(deletion, remoteOidMutant).npmCalls, []);
 
   const anyDeletionMutant = hookSource.replace(
     'if [ "$DELETION_REFS" -gt 0 ] && [ "$OBJECT_REFS" -eq 0 ]; then',
     'if [ "$DELETION_REFS" -gt 0 ]; then',
   );
   assert.notEqual(anyDeletionMutant, hookSource);
-  assert.deepEqual(runHook(mixed, anyDeletionMutant).npmCalls, []);
+  const [remoteRes, anyDelRes] = await Promise.all([
+    runHook(deletion, remoteOidMutant),
+    runHook(mixed, anyDeletionMutant),
+  ]);
+  assert.notDeepEqual(remoteRes.npmCalls, []);
+  assert.deepEqual(anyDelRes.npmCalls, []);
 });
 
-/** Governance Atlas 렌더·상호작용 계약 — 수동 실행이다(DEC-OPS-420). 훅·verify 어디에서도 돌지 않아야 한다. */
-const atlasManual = /governance-atlas-contract|test:atlas|atlas:contract/;
 const crossStackCommand = 'pnpm -C frontend exec vitest run src/__tests__/cross-stack';
 
 // process.exit 는 실제처럼 실행을 멈춘다 — 기록만 하고 계속 돌면 분기 앞 조기 종료 뒤에도 명령 목록이 그대로라 놓친다.
@@ -602,7 +631,7 @@ test('verify stops on a CodeQL approximation finding first and on a Flyway confl
 });
 
 // [2026-10-24] 운영 계약(로컬 약 11분)을 부르는 범위는 생성물 신선도(약 20초)를 그보다 먼저 정확히 한 번 본다.
-//   verify:docs 가 11분 뒤에야 Atlas 신선도 실패를 알린 일이 있었다. 계약 codegen 은 그 안의 sync-contract 가 맡는다.
+//   계약 codegen 은 그 안의 sync-contract 가 맡는다.
 function freshnessViolation(scope, source) {
   const { commands } = observeVerification(scope, { source });
   const position = commands.indexOf(REGEN_CHECK);
@@ -657,9 +686,9 @@ test('integration propagates failures without skipping earlier stages', () => {
   }
 });
 
-test('pre-push runs real heavy-run-queue and ci-change-scope CLIs cleanly (end-to-end CLI smoke)', () => {
+test('pre-push runs real heavy-run-queue and ci-change-scope CLIs cleanly (end-to-end CLI smoke)', { concurrency: true }, async () => {
   const docsInput = `${pushLine('refs/heads/feature', LOCAL_OID, 'refs/heads/feature', ZERO_OID)}\n`;
-  const docsResult = runHook(docsInput, hookSource, {
+  const docsResult = await runHook(docsInput, hookSource, {
     files: ['docs/README.md'],
     realScopeCli: true,
     realQueueCli: true,
@@ -699,21 +728,21 @@ function contractsBeforeShortStages(source) {
     .replace(INVARIANTS_START, () => `\nrun_operational_contracts\n${INVARIANTS_START}`);
 }
 
-test('pre-push does not display an empty file when a successful ref has no changes', () => {
+test('pre-push does not display an empty file when a successful ref has no changes', { concurrency: true }, async () => {
   const secondLocal = '3'.repeat(40);
   const secondRemote = '4'.repeat(40);
   const input = [
     pushLine('refs/heads/docs', LOCAL_OID, 'refs/heads/docs', REMOTE_OID),
     pushLine('refs/heads/empty', secondLocal, 'refs/heads/empty', secondRemote),
   ].join('\n') + '\n';
-  const result = runHook(input, hookSource, { emptyDiffRange: `${secondRemote}..${secondLocal}` });
+  const result = await runHook(input, hookSource, { emptyDiffRange: `${secondRemote}..${secondLocal}` });
   assertSuccessful(result);
   assert.match(result.stdout, /Fast-pass/);
   assert.match(result.stdout, /- docs\/README\.md/);
   assert.doesNotMatch(result.stdout, /^\s+-\s*$/m);
 });
 
-test('pre-push discards every partial diff result and runs the full gates when any ref diff fails', () => {
+test('pre-push discards every partial diff result and runs the full gates when any ref diff fails', { concurrency: true }, async () => {
   const secondLocal = '3'.repeat(40);
   const secondRemote = '4'.repeat(40);
   const input = [
@@ -736,31 +765,32 @@ test('pre-push discards every partial diff result and runs the full gates when a
   );
   assert.notEqual(swallowed, hookSource, 'the mutant must restore the original diff pipeline');
 
-  for (const failDiffRange of ranges) {
-    for (const failedDiffOutput of [[], ['docs/partial.md']]) {
-      const result = runHook(input, hookSource, { failDiffRange, failedDiffOutput });
-      assertFullFallback(result);
-      assert.match(result.stderr, /부분 목록을 버리고 전체 게이트를 실행/);
-      const partial = runHook(input, swallowed, { failDiffRange, failedDiffOutput });
-      assertSuccessful(partial);
-      // 첫 ref가 출력 없이 실패하면 dash는 errexit로 루프를 멈추지만 Bash는 다음 ref를 읽는다.
-      // 나머지 세 조합은 두 셸 모두 부분 목록이 남으므로 반드시 같은 단언에서 red여야 한다.
-      const stoppedBeforeNextRef = failDiffRange === ranges[0] && failedDiffOutput.length === 0
-        && !partial.stdout.includes('docsOnly=true');
-      if (stoppedBeforeNextRef) {
-        assertFullFallback(partial);
-      } else {
-        assert.match(partial.stdout, /docsOnly=true/);
-        assert.throws(() => assertFullFallback(partial), assert.AssertionError);
-      }
+  const pairs = ranges.flatMap(failDiffRange => [[], ['docs/partial.md']].map(failedDiffOutput => ({ failDiffRange, failedDiffOutput })));
+  await Promise.all(pairs.map(async ({ failDiffRange, failedDiffOutput }) => {
+    const [result, partial] = await Promise.all([
+      runHook(input, hookSource, { failDiffRange, failedDiffOutput }),
+      runHook(input, swallowed, { failDiffRange, failedDiffOutput }),
+    ]);
+    assertFullFallback(result);
+    assert.match(result.stderr, /부분 목록을 버리고 전체 게이트를 실행/);
+    assertSuccessful(partial);
+    // 첫 ref가 출력 없이 실패하면 dash는 errexit로 루프를 멈추지만 Bash는 다음 ref를 읽는다.
+    // 나머지 세 조합은 두 셸 모두 부분 목록이 남으므로 반드시 같은 단언에서 red여야 한다.
+    const stoppedBeforeNextRef = failDiffRange === ranges[0] && failedDiffOutput.length === 0
+      && !partial.stdout.includes('docsOnly=true');
+    if (stoppedBeforeNextRef) {
+      assertFullFallback(partial);
+    } else {
+      assert.match(partial.stdout, /docsOnly=true/);
+      assert.throws(() => assertFullFallback(partial), assert.AssertionError);
     }
-  }
+  }));
 });
 
 // 계약 드리프트(api-docs.json ↔ 생성 타입·zod·operations)는 맨 앞의 regen --check 가 본다. 그 생성 계약 검사는 프런트
 // codegen:verify·codegen:verify:zod 와 같은 스크립트·인자라, 프런트 단계에서 다시 돌리면 한 push 안에서 같은 명령·입력이 두 번 돈다.
 // 그 전제(같은 검증기)와 훅이 계약 드리프트를 한 번만 보는지를 함께 고정한다. 검사기가 갈라지면 이 시험이 붉어 중복 제거를 다시 판단한다.
-test('pre-push checks contract drift once, through the regen check that runs the frontend codegen verifier', () => {
+test('pre-push checks contract drift once, through the regen check that runs the frontend codegen verifier', { concurrency: true }, async () => {
   const sync = GENERATORS.find(generator => generator.id === 'sync-contract');
   assert.deepEqual(sync.check, [['node', ['scripts/verify-generated-contracts.mjs', 'api']], ['node', ['scripts/verify-generated-contracts.mjs', 'zod']]],
     'the regen check must run the contract verifier for both api and zod');
@@ -768,51 +798,62 @@ test('pre-push checks contract drift once, through the regen check that runs the
   assert.equal(scripts['codegen:verify'], 'node ../scripts/verify-generated-contracts.mjs api');
   assert.equal(scripts['codegen:verify:zod'], 'node ../scripts/verify-generated-contracts.mjs zod');
   const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
-  const drift = command => runHook(input, hookSource, { files: ['frontend/src/example.ts'], failCommand: command });
-  const commands = runHook(input, hookSource, { files: ['frontend/src/example.ts'] }).commands;
-  assert.deepEqual(commands.filter(command => command === REGEN_CHECK || /codegen:verify/.test(command)), [REGEN_CHECK]);
-  // 낡은 생성 계약은 regen --check 에서 멈춘다(그 뒤 아무것도 돌지 않는다).
-  assert.deepEqual(drift(REGEN_CHECK).commands, [REGEN_CHECK]);
-  assert.notEqual(drift(REGEN_CHECK).status, 0);
   // 프런트 단계에 다시 넣으면 같은 검사가 두 번 돈다 — 위 단언과 PRE_PUSH_SOURCE_ORDER 가 그것을 잡는다(red 재현).
   const doubled = hookSource.replace(/(\r?\n)( {2}# ESLint error는)/u, '$1  ( cd frontend && pnpm run codegen:verify && pnpm run codegen:verify:zod ) || exit 1$1$2');
   assert.notEqual(doubled, hookSource);
-  assert.ok(runHook(input, doubled, { files: ['frontend/src/example.ts'] }).commands.includes('pnpm run codegen:verify'));
+  const [normal, drifted, doubledRes] = await Promise.all([
+    runHook(input, hookSource, { files: ['frontend/src/example.ts'] }),
+    runHook(input, hookSource, { files: ['frontend/src/example.ts'], failCommand: REGEN_CHECK }),
+    runHook(input, doubled, { files: ['frontend/src/example.ts'] }),
+  ]);
+  assert.deepEqual(normal.commands.filter(command => command === REGEN_CHECK || /codegen:verify/.test(command)), [REGEN_CHECK]);
+  // 낡은 생성 계약은 regen --check 에서 멈춘다(그 뒤 아무것도 돌지 않는다).
+  assert.deepEqual(drifted.commands, [REGEN_CHECK]);
+  assert.notEqual(drifted.status, 0);
+  assert.ok(doubledRes.commands.includes('pnpm run codegen:verify'));
 });
 
-test('pre-push runs static checks, invariant and source-contract Vitest, cross-stack and harness before the operational contracts', () => {
+test('pre-push runs static checks, invariant and source-contract Vitest, cross-stack and harness before the operational contracts', { concurrency: true }, async () => {
   const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
   const files = ['api-server/src/main/java/nuri/api/Example.java', 'frontend/src/example.ts'];
-  const both = runHook(input, hookSource, { files });
-  assertSuccessful(both);
-  assert.deepEqual(both.commands, PRE_PUSH_SOURCE_ORDER);
-  const backendOnly = runHook(input, hookSource, { files: [files[0]] });
-  assertSuccessful(backendOnly);
-  assert.deepEqual(backendOnly.commands,
-    [REGEN_CHECK, SAST_APPROXIMATION_HOOK, 'gradlew compileJava compileTestJava -q', CROSS_STACK_RUN, 'gradlew :api-server:harnessTest -q', CONTRACTS]);
-  // 짧고 실패가 잦은 단계의 실패는 운영 계약(로컬 약 8~14분)을 기다리지 않고 그 자리에서 막는다.
   const shortStages = [
     ...[SAST_APPROXIMATION_HOOK, 'gradlew compileJava compileTestJava -q', 'pnpm run type-check', INVARIANTS_RUN, SOURCE_CONTRACTS_RUN,
       'gradlew :api-server:harnessTest -q'].map(failCommand => ({ files, failCommand })),
     { files: [files[0]], failCommand: CROSS_STACK_RUN },
   ];
-  const waitsForContracts = source => shortStages.filter(({ files: pushed, failCommand }) => {
-    const failed = runHook(input, source, { files: pushed, failCommand });
-    assert.notEqual(failed.status, 0, failCommand);
-    assert.equal(failed.commands.at(-1), failCommand);
-    return failed.commands.includes(CONTRACTS);
-  }).map(({ failCommand }) => failCommand);
-  assert.deepEqual(waitsForContracts(hookSource), [], 'a short-stage failure must not wait for the operational contracts');
-  // 계약 호출을 정적 검사 앞으로 옮긴 훅은 타입 오류에서도 계약을 먼저 부른다 — 위 단언이 그것을 잡는다(red 재현).
+  const waitsForContracts = async (source) => {
+    const results = await Promise.all(shortStages.map(({ files: pushed, failCommand }) =>
+      runHook(input, source, { files: pushed, failCommand })));
+    return shortStages.filter(({ failCommand }, index) => {
+      const failed = results[index];
+      assert.notEqual(failed.status, 0, failCommand);
+      assert.equal(failed.commands.at(-1), failCommand);
+      return failed.commands.includes(CONTRACTS);
+    }).map(({ failCommand }) => failCommand);
+  };
   const contractsFirst = hookSource.replace(/\r\n/g, '\n')
     .replace('echo "[pre-push] AGENTS.md change-scoped source verification"', 'run_operational_contracts\necho "[pre-push] AGENTS.md change-scoped source verification"')
     .replace(SOURCE_PATH_CONTRACTS_TAIL, '\n');
   assert.notEqual(contractsFirst, hookSource.replace(/\r\n/g, '\n'));
-  assert.ok(runHook(input, contractsFirst, { files, failCommand: 'pnpm run type-check' }).commands.includes(CONTRACTS));
-  // 종전 순서(계약이 불변식·원문 계약·cross-stack·하네스 앞)로 되돌리면 명령 순서와 실패 대기가 모두 붉다(red 재현).
   const formerOrder = contractsBeforeShortStages(hookSource);
-  assert.notDeepEqual(runHook(input, formerOrder, { files }).commands, PRE_PUSH_SOURCE_ORDER);
-  assert.deepEqual(waitsForContracts(formerOrder), shortStages.slice(3).map(({ failCommand }) => failCommand));
+
+  const [both, backendOnly, currentWaits, contractsFirstRes, formerCommandsRes, formerWaits] = await Promise.all([
+    runHook(input, hookSource, { files }),
+    runHook(input, hookSource, { files: [files[0]] }),
+    waitsForContracts(hookSource),
+    runHook(input, contractsFirst, { files, failCommand: 'pnpm run type-check' }),
+    runHook(input, formerOrder, { files }),
+    waitsForContracts(formerOrder),
+  ]);
+  assertSuccessful(both);
+  assert.deepEqual(both.commands, PRE_PUSH_SOURCE_ORDER);
+  assertSuccessful(backendOnly);
+  assert.deepEqual(backendOnly.commands,
+    [REGEN_CHECK, SAST_APPROXIMATION_HOOK, 'gradlew compileJava compileTestJava -q', CROSS_STACK_RUN, 'gradlew :api-server:harnessTest -q', CONTRACTS]);
+  assert.deepEqual(currentWaits, [], 'a short-stage failure must not wait for the operational contracts');
+  assert.ok(contractsFirstRes.commands.includes(CONTRACTS));
+  assert.notDeepEqual(formerCommandsRes.commands, PRE_PUSH_SOURCE_ORDER);
+  assert.deepEqual(formerWaits, shortStages.slice(3).map(({ failCommand }) => failCommand));
 });
 
 // [2026-10-29] 프런트 타입 게이트(pre-push·verify 의 type-check)는 next build 의 타입 검사와 같은 전제로 돈다 — next typegen 으로
@@ -870,30 +911,32 @@ test('the frontend type gate regenerates route types and keeps the next dev copy
     feCommands.join(','));
 });
 
-test('pre-push blocks a CodeQL approximation finding before compilation, only on the source path', () => {
+test('pre-push blocks a CodeQL approximation finding before compilation, only on the source path', { concurrency: true }, async () => {
   const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
   const files = ['scripts/example.mjs'];
-  const blocked = runHook(input, hookSource, { files, failCommand: SAST_APPROXIMATION_HOOK });
-  assert.notEqual(blocked.status, 0);
-  assert.deepEqual(blocked.commands, [REGEN_CHECK, SAST_APPROXIMATION_HOOK], '근사 위반은 컴파일·운영 계약을 기다리지 않고 막는다');
-  assert.ok(!runHook(input, hookSource, { files: ['docs/README.md'] }).commands.includes(SAST_APPROXIMATION_HOOK), '문서 전용 push 에는 JS·TS 가 없다');
   // 근사는 push 가 바꾼 파일을 표준 입력으로 받는다 — 범위 밖 파일까지 보거나 아무것도 보지 않게 바뀌면 이 줄이 사라진다.
   assert.match(hookSource, /^printf '%s\\n' "\$CHANGED_FILES" \| npm run sast:approx -- --stdin \\\r?$/mu);
   // 실패 처리에서 exit 1 을 걷으면 근사 위반으로도 push 가 지나간다 — 위 단언이 그것을 잡는다(red 재현).
   const swallowed = hookSource.replace('(근사를 이유로 CodeQL 예외 원장을 늘리지 않습니다)"; exit 1; }', '(근사를 이유로 CodeQL 예외 원장을 늘리지 않습니다)"; }');
   assert.notEqual(swallowed, hookSource);
-  assert.equal(runHook(input, swallowed, { files, failCommand: SAST_APPROXIMATION_HOOK }).status, 0);
+  const [blocked, docsRes, swallowedRes] = await Promise.all([
+    runHook(input, hookSource, { files, failCommand: SAST_APPROXIMATION_HOOK }),
+    runHook(input, hookSource, { files: ['docs/README.md'] }),
+    runHook(input, swallowed, { files, failCommand: SAST_APPROXIMATION_HOOK }),
+  ]);
+  assert.notEqual(blocked.status, 0);
+  assert.deepEqual(blocked.commands, [REGEN_CHECK, SAST_APPROXIMATION_HOOK], '근사 위반은 컴파일·운영 계약을 기다리지 않고 막는다');
+  assert.ok(!docsRes.commands.includes(SAST_APPROXIMATION_HOOK), '문서 전용 push 에는 JS·TS 가 없다');
+  assert.equal(swallowedRes.status, 0);
 });
 
-test('pre-push checks generated freshness first and stops before compilation and the operational contracts', () => {
+test('pre-push checks generated freshness first and stops before compilation and the operational contracts', { concurrency: true }, async () => {
   const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
   const paths = [['docs/README.md'], ['api-server/src/main/java/nuri/api/Example.java', 'frontend/src/example.ts']];
-  const stops = source => paths.map(files => {
-    const failed = runHook(input, source, { files, failCommand: REGEN_CHECK });
+  const stops = (source) => Promise.all(paths.map(async (files) => {
+    const failed = await runHook(input, source, { files, failCommand: REGEN_CHECK });
     return { status: failed.status === 0 ? 0 : 'blocked', commands: failed.commands };
-  });
-  assert.deepEqual(stops(hookSource), paths.map(() => ({ status: 'blocked', commands: [REGEN_CHECK] })),
-    '낡은 생성물은 컴파일·운영 계약을 기다리지 않고 바로 막는다');
+  }));
   // 실패 처리에서 exit 1 을 걷으면 낡은 생성물로도 다음 단계로 넘어가고, 검사를 정적 검사 뒤로 옮기면 컴파일을 먼저 기다린다 — 위 단언이 둘 다 잡는다(red 재현).
   const swallowed = hookSource.replace("함께 커밋하세요(SAST 예외는 위 안내대로 재검토 뒤 결속)\"; exit 1; }", "함께 커밋하세요(SAST 예외는 위 안내대로 재검토 뒤 결속)\"; }");
   const regenBlock = /# 생성물·해시 결속이 낡았는지 맨 앞에서 본다[\s\S]*?exit 1; \}\n\n/u;
@@ -901,38 +944,45 @@ test('pre-push checks generated freshness first and stops before compilation and
   assert.ok(block, 'pre-push 의 생성물 신선도 블록을 찾지 못했다');
   const moved = hookSource.replace(/\r\n/g, '\n').replace(block, '')
     .replace(INVARIANTS_START, () => `\n${block}${INVARIANTS_START.slice(1)}`);
-  for (const mutant of [swallowed, moved]) {
-    assert.notEqual(mutant, hookSource);
-    assert.notDeepEqual(stops(mutant), paths.map(() => ({ status: 'blocked', commands: [REGEN_CHECK] })));
-  }
+  assert.notEqual(swallowed, hookSource);
+  assert.notEqual(moved, hookSource);
+  const [normalStops, swallowedStops, movedStops] = await Promise.all([
+    stops(hookSource),
+    stops(swallowed),
+    stops(moved),
+  ]);
+  assert.deepEqual(normalStops, paths.map(() => ({ status: 'blocked', commands: [REGEN_CHECK] })),
+    '낡은 생성물은 컴파일·운영 계약을 기다리지 않고 바로 막는다');
+  assert.notDeepEqual(swallowedStops, paths.map(() => ({ status: 'blocked', commands: [REGEN_CHECK] })));
+  assert.notDeepEqual(movedStops, paths.map(() => ({ status: 'blocked', commands: [REGEN_CHECK] })));
 });
 
-test('pre-push blocks the push when the operational contracts fail on the documentation and source paths', () => {
+test('pre-push blocks the push when the operational contracts fail on the documentation and source paths', { concurrency: true }, async () => {
   const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
   const sourceFiles = ['api-server/src/main/java/nuri/api/Example.java', 'frontend/src/example.ts'];
   const cases = [
     { files: ['docs/README.md'], commands: [REGEN_CHECK, CONTRACTS] },
-    { files: ['docs/03-guides/governance-atlas-guide.md'], commands: [REGEN_CHECK, CONTRACTS] },
     { files: sourceFiles, commands: PRE_PUSH_SOURCE_ORDER.slice(0, PRE_PUSH_SOURCE_ORDER.indexOf(CONTRACTS) + 1) },
   ];
-  const blocks = (source) => cases.map(({ files }) => {
-    const failed = runHook(input, source, { files, failCommand: CONTRACTS });
+  const blocks = (source) => Promise.all(cases.map(async ({ files }) => {
+    const failed = await runHook(input, source, { files, failCommand: CONTRACTS });
     return { status: failed.status === 0 ? 0 : 'blocked', commands: failed.commands };
-  });
-  assert.deepEqual(blocks(hookSource), cases.map(({ commands }) => ({ status: 'blocked', commands })));
+  }));
   // 실패 처리에서 exit 1 을 걷으면 문서 경로는 fast-pass 로, 소스 경로는 다음 단계로 넘어간다 — 위 단언이 그것을 잡는다(red 재현).
   const swallowed = hookSource.replace('실행 경로가 불일치합니다"; exit 1; }', '실행 경로가 불일치합니다"; }');
   assert.notEqual(swallowed, hookSource);
-  assert.ok(blocks(swallowed).every(({ status }) => status === 0));
+  const [normalBlocks, swallowedBlocks] = await Promise.all([blocks(hookSource), blocks(swallowed)]);
+  assert.deepEqual(normalBlocks, cases.map(({ commands }) => ({ status: 'blocked', commands })));
+  assert.ok(swallowedBlocks.every(({ status }) => status === 0));
 });
 
 /*
   [2026-11-25 DEC-OPS-434] 작업 브랜치만 push 하면 운영 계약은 PR Required CI(secret-scan)에서 검증하므로 로컬 pre-push 에서는 생략한다.
   CI 가 미리 막지 않는 ref(main·master·태그·refs/heads 밖)나 ref 를 모르는 push 가 하나라도 있으면 지금처럼 여기서 돈다.
 */
-test('a branch-only push skips operational contracts for Required CI; main, master, tags, other refs and unknown pushes run them', () => {
+test('a branch-only push skips operational contracts for Required CI; main, master, tags, other refs and unknown pushes run them', { concurrency: true }, async () => {
   const line = (ref) => pushLine(ref, LOCAL_OID, ref, REMOTE_OID);
-  const runs = (input, source = hookSource) => runHook(input, source, { files: ['docs/README.md'] }).npmCalls.includes('run test:operational-contracts');
+  const runs = async (input, source = hookSource) => (await runHook(input, source, { files: ['docs/README.md'] })).npmCalls.includes('run test:operational-contracts');
   const deferredInputs = [
     `${line('refs/heads/feature')}\n`,
     `${line('refs/heads/fix/a')}\n${line('refs/heads/chore/b')}\n`,
@@ -948,71 +998,67 @@ test('a branch-only push skips operational contracts for Required CI; main, mast
     `${line('refs/heads/feature')}\n${line('refs/tags/v1.0.0')}\n`,
     '',
   ];
-  for (const input of deferredInputs) assert.equal(runs(input), false, `skipped: ${JSON.stringify(input)}`);
-  for (const input of runningInputs) assert.equal(runs(input), true, `runs: ${JSON.stringify(input)}`);
-
-  // 소스 경로도 같다 — 생략해도 그 밖의 단계는 모두 돈다.
-  const files = ['api-server/src/main/java/nuri/api/Example.java', 'frontend/src/example.ts'];
-  const source = runHook(`${line('refs/heads/feature')}\n`, hookSource, { files });
-  assertSuccessful(source);
-  assert.deepEqual(source.commands, PRE_PUSH_SOURCE_ORDER.filter(command => command !== CONTRACTS));
-  assert.match(source.stdout, /PR Required CI\(secret-scan[^)]*\)에서 검증한다/);
-
   // red 재현: 늘 미루는 훅은 main push 에서, main·master 판정을 걷은 훅은 main 에서, ref 를 모르는 push 를 미루는 훅은 빈 입력에서 붉다.
   const lf = hookSource.replace(/\r\n/g, '\n');
   const alwaysDefer = lf.replace('  if [ "$CONTRACTS_DEFERRABLE" = "1" ]; then', '  if true; then');
   const ignoresMain = lf.replace('    refs/heads/main|refs/heads/master) CONTRACTS_DEFERRABLE=0 ;;\n', '');
   const defersUnknown = lf.replace('[ "$OBJECT_REFS" -gt 0 ] || CONTRACTS_DEFERRABLE=0\n', '');
   for (const mutant of [alwaysDefer, ignoresMain, defersUnknown]) assert.notEqual(mutant, lf);
-  assert.equal(runs(`${line('refs/heads/main')}\n`, alwaysDefer), false);
-  assert.equal(runs(`${line('refs/heads/main')}\n`, ignoresMain), false);
-  assert.equal(runs('', defersUnknown), false);
+  const files = ['api-server/src/main/java/nuri/api/Example.java', 'frontend/src/example.ts'];
+
+  const [deferredRes, runningRes, source, mutant1, mutant2, mutant3] = await Promise.all([
+    Promise.all(deferredInputs.map(input => runs(input))),
+    Promise.all(runningInputs.map(input => runs(input))),
+    runHook(`${line('refs/heads/feature')}\n`, hookSource, { files }),
+    runs(`${line('refs/heads/main')}\n`, alwaysDefer),
+    runs(`${line('refs/heads/main')}\n`, ignoresMain),
+    runs('', defersUnknown),
+  ]);
+  deferredInputs.forEach((input, index) => assert.equal(deferredRes[index], false, `skipped: ${JSON.stringify(input)}`));
+  runningInputs.forEach((input, index) => assert.equal(runningRes[index], true, `runs: ${JSON.stringify(input)}`));
+  assertSuccessful(source);
+  assert.deepEqual(source.commands, PRE_PUSH_SOURCE_ORDER.filter(command => command !== CONTRACTS));
+  assert.match(source.stdout, /PR Required CI\(secret-scan[^)]*\)에서 검증한다/);
+  assert.equal(mutant1, false);
+  assert.equal(mutant2, false);
+  assert.equal(mutant3, false);
 });
 
 // [2026-10-24] src/__tests__ 밖에서 저장소 파일을 직접 읽는 시험(원문 계약)은 CI 전체 vitest 에서만 돌아, 그 원문을 바꾸면 CI 에서야
 //   붉었다(PR #626·2026-09-16 layout.tsx·PR #969). 프런트 축 push 는 탐지기가 계산한 목록을 불변식 다음에 돌고, 실패·탐지 실패는 막는다.
-test('pre-push runs the file-reading contracts outside src/__tests__ on frontend pushes and blocks on their failure', () => {
+test('pre-push runs the file-reading contracts outside src/__tests__ on frontend pushes and blocks on their failure', { concurrency: true }, async () => {
   const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
   const frontend = ['frontend/src/app/page.tsx'];
-  const ran = runHook(input, hookSource, { files: frontend });
+  // 실패 처리에서 exit 1 을 걷거나 목록을 고정 사본으로 바꾸면 위 단언이 붉다(red 재현).
+  const swallowed = hookSource.replace('(CI frontend-coverage-scope 가 같은 시험을 돕니다)"; exit 1; }', '(CI frontend-coverage-scope 가 같은 시험을 돕니다)"; }');
+  assert.notEqual(swallowed, hookSource);
+  const pinned = hookSource.replace('FRONTEND_SOURCE_CONTRACTS=$(node scripts/frontend-source-contracts.mjs)', 'FRONTEND_SOURCE_CONTRACTS="src/app/login/__tests__/page.test.tsx"');
+  assert.notEqual(pinned, hookSource);
+
+  const nonFrontend = [['docs/README.md'], ['api-server/src/main/java/nuri/api/Example.java']];
+  const [ran, docsCmds, backendCmds, failed, undetected, swallowedRes, pinnedRes] = await Promise.all([
+    runHook(input, hookSource, { files: frontend }),
+    ...nonFrontend.map(files => runHook(input, hookSource, { files })),
+    runHook(input, hookSource, { files: frontend, failCommand: SOURCE_CONTRACTS_RUN }),
+    runHook(input, hookSource, { files: frontend, failCommand: SOURCE_CONTRACTS_DETECT }),
+    runHook(input, swallowed, { files: frontend, failCommand: SOURCE_CONTRACTS_RUN }),
+    runHook(input, pinned, { files: frontend }),
+  ]);
   assertSuccessful(ran);
   const after = ran.commands.slice(ran.commands.indexOf(INVARIANTS_RUN));
   assert.deepEqual(after.slice(0, 3), [INVARIANTS_RUN, SOURCE_CONTRACTS_DETECT, SOURCE_CONTRACTS_RUN]);
   for (const file of ['src/app/components/layout/__tests__/shell-accessibility-contract.test.ts', 'src/app/__tests__/dashboard-auth-error.test.tsx']) {
     assert.ok(SOURCE_CONTRACT_FILES.includes(file), file);
   }
-  for (const files of [['docs/README.md'], ['api-server/src/main/java/nuri/api/Example.java']]) {
-    const commands = runHook(input, hookSource, { files }).commands;
-    assert.ok(!commands.includes(SOURCE_CONTRACTS_DETECT) && !commands.includes(SOURCE_CONTRACTS_RUN), files.join(', '));
-  }
-  const failed = runHook(input, hookSource, { files: frontend, failCommand: SOURCE_CONTRACTS_RUN });
+  [docsCmds, backendCmds].forEach((res, idx) => {
+    assert.ok(!res.commands.includes(SOURCE_CONTRACTS_DETECT) && !res.commands.includes(SOURCE_CONTRACTS_RUN), nonFrontend[idx].join(', '));
+  });
   assert.notEqual(failed.status, 0);
   assert.equal(failed.commands.at(-1), SOURCE_CONTRACTS_RUN);
   assert.match(failed.stdout, /원문 계약 실패/u);
-  const undetected = runHook(input, hookSource, { files: frontend, failCommand: SOURCE_CONTRACTS_DETECT });
   assert.notEqual(undetected.status, 0);
   assert.ok(!undetected.commands.includes(SOURCE_CONTRACTS_RUN), '탐지 실패는 빈 목록으로 넘어가지 않고 막는다');
   assert.match(undetected.stdout, /원문 계약 목록을 계산하지 못했습니다/u);
-  // 실패 처리에서 exit 1 을 걷거나 목록을 고정 사본으로 바꾸면 위 단언이 붉다(red 재현).
-  const swallowed = hookSource.replace('(CI frontend-coverage-scope 가 같은 시험을 돕니다)"; exit 1; }', '(CI frontend-coverage-scope 가 같은 시험을 돕니다)"; }');
-  assert.notEqual(swallowed, hookSource);
-  assert.equal(runHook(input, swallowed, { files: frontend, failCommand: SOURCE_CONTRACTS_RUN }).status, 0);
-  const pinned = hookSource.replace('FRONTEND_SOURCE_CONTRACTS=$(node scripts/frontend-source-contracts.mjs)', 'FRONTEND_SOURCE_CONTRACTS="src/app/login/__tests__/page.test.tsx"');
-  assert.notEqual(pinned, hookSource);
-  assert.ok(!runHook(input, pinned, { files: frontend }).commands.includes(SOURCE_CONTRACTS_RUN));
-});
-
-test('pre-push and verify never run the manual Atlas render contract (DEC-OPS-420)', () => {
-  const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
-  const atlas = 'docs/03-guides/governance-atlas-guide.md';
-  for (const files of [[atlas], ['frontend/atlas/atlas-runtime.js'], ['scripts/build-atlas.mjs'],
-    [atlas, 'api-server/src/test/java/ExampleTest.java'], [atlas, 'frontend/src/example.ts'], [atlas, 'migration-tool/src/main/java/X.java']]) {
-    const result = runHook(input, hookSource, { files });
-    assertSuccessful(result);
-    assert.deepEqual(result.commands.filter(value => atlasManual.test(value)), [], files.join(', '));
-    assert.equal(result.commands.filter(value => value === 'npm run test:operational-contracts').length, 1, files.join(', '));
-  }
-  for (const scope of ['docs', 'fast', 'push', 'be', 'fe', 'full']) {
-    assert.deepEqual(observeVerification(scope).commands.filter(value => atlasManual.test(value)), [], scope);
-  }
+  assert.equal(swallowedRes.status, 0);
+  assert.ok(!pinnedRes.commands.includes(SOURCE_CONTRACTS_RUN));
 });

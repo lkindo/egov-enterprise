@@ -18,7 +18,6 @@ import { JAVA_GATE_SCAN_ROOTS, loadGovernanceRegistry } from './governance-gates
 import { GATE_REGISTRY, LEDGER_PRECHECKS, formatPrecheck, ledgerPrecheck, main } from './ledger-precheck.mjs';
 import { LEDGER_CHECKS, checkGenerated, checkTasks, main as regenerateMain } from './regenerate.mjs';
 import { GENERATORS } from './merge-main-regenerate.mjs';
-import { UPSTREAM_ATLAS } from './reusable-harness-census.mjs';
 import { isPathCoveredBy } from './reusable-asset-removal.mjs';
 import { readMigrationAssetLedger, readProducerAssetLedger, readRequirementsAssetLedger } from './reusable-product-assets.mjs';
 import { VENDOR_LEDGER_PATH } from './project-composer-vendors.mjs';
@@ -198,13 +197,13 @@ test('생성 프로젝트에서 Phase 3·4 제거 원장을 적용한 뒤 regen 
   const producer = readProducerAssetLedger(ROOT);
   const req = readRequirementsAssetLedger(ROOT);
   const migration = readMigrationAssetLedger(ROOT);
-  const removed = [...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates, ...producer.assets, ...producer.gates.map(r => r.file),
+  const removed = [...producer.assets, ...producer.gates.map(r => r.file),
     ...req.assets, ...req.gates.map(r => r.file), ...migration.assets, ...migration.gates.map(r => r.file)];
   const isRemoved = target => removed.some(asset => isPathCoveredBy(target, asset));
   assert.deepEqual(
     [...GENERATORS, ...LEDGER_CHECKS].filter(step => step.requires && isRemoved(step.requires)).map(step => step.id),
-    ['atlas', 'ia-disposition-binding'],
-    '생성 프로젝트에서 regen 단계 중 atlas 와 ia-disposition-binding 만 건너뛰고 계약 생성·census·hand-bound 점검은 유지된다',
+    ['ia-disposition-binding'],
+    '생성 프로젝트에서 regen 단계 중 ia-disposition-binding 만 건너뛰고 계약 생성·census·hand-bound 점검은 유지된다',
   );
   assert.deepEqual(
     LEDGER_PRECHECKS.filter(check => isRemoved(check.requires)).map(check => check.code),

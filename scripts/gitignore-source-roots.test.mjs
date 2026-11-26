@@ -85,7 +85,7 @@ const allowlisted = [...TOOL_OUTPUT_NAMES, ...FILE_NAME_RULES].flatMap(({ names 
 
 // 루트 아래가 모두 소스인 고정 루트. 모듈 소스 집합(src/<set>/<kind>)과 tools/* 는 추적 파일에서 도출한다.
 const FIXED_SOURCE_ROOTS = Object.freeze([
-  'frontend/src', 'frontend/e2e', 'frontend/scripts', 'frontend/atlas', 'frontend/public',
+  'frontend/src', 'frontend/e2e', 'frontend/scripts', 'frontend/public',
   'scripts', 'config', 'docs', 'test', '.agent/scripts',
 ]);
 

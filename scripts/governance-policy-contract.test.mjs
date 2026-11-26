@@ -3,7 +3,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { renderAtlas } from './build-atlas.mjs';
 import { OPERATIONAL_CONTRACTS_RUNNER } from './operational-contracts-runner.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -88,29 +87,6 @@ function activeMarkdown(source) {
     .join('\n');
 }
 
-function activeHtml(source) {
-  return source
-    .replace(/<!--[\s\S]*?-->/gu, ' ')
-    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/giu, ' ');
-}
-
-function htmlText(source) {
-  return source
-    .replace(/<[^>]+>/gu, ' ')
-    .replace(/&amp;/gu, '&')
-    .replace(/\s+/gu, ' ')
-    .trim();
-}
-
-function atlasGradeRow(source, grade) {
-  const active = activeHtml(source);
-  const rows = [...active.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/giu)]
-    .map((match) => match[1])
-    .filter((row) => new RegExp(`\\b${grade} \\(`, 'u').test(row));
-  if (rows.length !== 1 || /<(?:script|style)\b|\bhidden\b|display\s*:\s*none/iu.test(rows[0])) return '';
-  return htmlText(rows[0]);
-}
-
 function section(source, start, end) {
   const startAt = source.indexOf(start);
   if (startAt < 0) return '';
@@ -136,9 +112,9 @@ function numberedItem(article, number) {
 
 /**
  * SOP 3대 핵심 경계(① 포괄 승인 vs 개별 명시 승인 경계, ② 위임 산출물 메인 직접 재검증, ③ 3회 실패 중단 원칙)와
- * AGENTS.md · Atlas 서술의 정합성을 검증한다.
+ * AGENTS.md 서술의 정합성을 검증한다.
  */
-function protocolTruthErrors({ agents, protocol, atlas, reviewSkill, subagentSkill, parallelSkill }) {
+function protocolTruthErrors({ agents, protocol, reviewSkill, subagentSkill, parallelSkill }) {
   const errors = [];
   const activeAgents = activeMarkdown(agents);
   const activeProtocol = activeMarkdown(protocol);
@@ -230,17 +206,6 @@ function protocolTruthErrors({ agents, protocol, atlas, reviewSkill, subagentSki
   const assignedPaths = assignedTrees.map((match) => match[2].replaceAll('\\', '/').replace(/\/+$/u, '').toLowerCase());
   if (assignedTrees.length !== 3 || new Set(assignedTrees.map((m) => m[1])).size !== 3 || new Set(assignedPaths).size !== 3) {
     errors.push('SOP §6.6 must assign each operator a distinct persistent worktree');
-  }
-
-  // Atlas 서술 정합
-  const atlasL0 = atlasGradeRow(atlas, 'L0');
-  const atlasL2 = atlasGradeRow(atlas, 'L2');
-  if (!atlasL0.includes('AGENTS 안전 경계에는 Fast-Track 금지')
-    || !atlasL2.includes('정확한 대상·영향을 현재 요청에서 명시 승인해야 실행')) {
-    errors.push('Atlas must preserve L0/L2 safety-boundary approval distinctions');
-  }
-  if (!htmlText(activeHtml(atlas)).includes('같은 원인으로 세 번 실패하면 증거와 선택지를 보고')) {
-    errors.push('Atlas must show the three-failure boundary');
   }
 
   return errors;
@@ -400,7 +365,6 @@ const current = {
   reviewSkill: read(files.reviewSkill),
   subagentSkill: read(files.subagentSkill),
   parallelSkill: read(files.parallelSkill),
-  atlas: renderAtlas(repoRoot),
   constitution: read(files.constitution),
   constitutionMetadata: JSON.parse(read(files.constitutionMetadata)),
   lombokLinter: read(files.lombokLinter),
@@ -410,7 +374,7 @@ const current = {
   registry: JSON.parse(read(files.registry)),
 };
 
-test('orchestration core boundaries match AGENTS.md and Atlas', () => {
+test('orchestration core boundaries match AGENTS.md and SOP', () => {
   assert.deepEqual(protocolTruthErrors(current), []);
 });
 
@@ -430,7 +394,6 @@ test('SOP 3 core boundary regressions become red without mutating repository fil
     { ...current, parallelSkill: current.parallelSkill.replace('H1(물리 스키마·식별자 축)·H2(게이트/신호·동결 기준선·거버넌스 경계)·H3(인증·인가·개인정보)', 'trivial CSS changes') },
     { ...current, protocol: current.protocol.replace('총 3회 실패하면 직접 재시도를 즉시 중단하고', '총 5회 실패하면 중단하고') },
     { ...current, protocol: current.protocol.replace('green이든 red든 증거로 쓰지 않고 단독 재실행', 'red일 때만 단독으로 다시 확인') },
-    { ...current, atlas: current.atlas.replace('AGENTS 안전 경계에는 Fast-Track 금지', '안전 경계도 Fast-Track 실행') },
   ];
   for (const mutant of mutants) {
     assert.notDeepEqual(protocolTruthErrors(mutant), []);

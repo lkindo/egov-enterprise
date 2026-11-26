@@ -76,7 +76,7 @@ Gemini·Claude Code·Codex 등은 같은 워킹트리를 공유하며, 도구별
 - 연속 배치는 PR 수를 줄인다. 응집된 배치 하나를 PR 하나로 묶거나, 한 브랜치에 쌓아 required CI 한 번으로 병합한다.
 - 같은 커밋에 같은 검증 묶음을 되풀이하지 않는다. 넓은 로컬 검증은 푸시 직전에 한 번, 훅이 보지 않는 검사만 고르며, 병합 판정은 required CI가 한다.
 - 무거운 검증([§6.3](docs/03-guides/orchestration-protocol.md#63-무거운-검증은-하나씩)의 목록)은 한 기계에서 하나씩 실행한다. 겹쳐 실행한 결과는 red든 green이든 증거로 쓰지 않는다.
-- main 최신화 뒤 생성물(생성 계약, census, 승인 해시, Atlas)은 손으로 병합하지 않고 생성기로 다시 만든다. 공용 메모리 표는 양쪽 행을 살려 합치고 수치는 원장에서 다시 센다.
+- main 최신화 뒤 생성물(생성 계약, census, 승인 해시)은 손으로 병합하지 않고 생성기로 다시 만든다. 공용 메모리 표는 양쪽 행을 살려 합치고 수치는 원장에서 다시 센다.
 - 인증 벤더의 증거 입력([판정](scripts/vendor-evidence-inputs.mjs))을 바꾸는 작업은 바로 하지 않는다 — 입력 하나만 바뀌어도 인증 벤더 전부의 증거를 다시 기록해야 한다. 바꾸기 전에 입력인지 보고, 바꾼 뒤 `node scripts/regenerate.mjs --check` 가 `VENDOR_EVIDENCE_STALE` 을 내면 되돌린 뒤 [재기록 묶음 대기 목록](docs/04-operations/vendor-rerecord-batch.md)에 더해 묶음 때 한 번에 처리한다. 입력 밖에서 같은 목적을 이룰 수 있으면 그쪽으로 하고, 사용자가 지금 하라고 명시하면 비용을 알린 뒤 따른다(DEC-OPS-421). PostgreSQL 외 인증을 멈춘 동안(2026-11-21~, DEC-OPS-422)에는 인증 벤더가 없어 이 보류가 걸리지 않는다.
 
 ## 공유 워킹트리와 Git
@@ -107,4 +107,4 @@ Gemini·Claude Code·Codex 등은 같은 워킹트리를 공유하며, 도구별
 | 그 밖의 도구 | `AGENTS.md`를 명시 로드 | `.agent/skills/` 를 직접 읽는다 | 없음 — git 훅·required CI 가 받친다 | 별도 정책 복제 없이 동일 계약 적용 |
 
 - 스킬 정본은 `.agent/skills/` 하나다. 도구별 안내 파일은 [생성기](scripts/agent-skill-adapters.mjs)가 `npm run regen` 으로 만들므로 직접 고치지 않는다.
-- 실행 전 가드의 규칙·근거·대신 쓸 방법은 [agent-guard](scripts/agent-guard.mjs)의 규칙 표가 정본이고, 세 어댑터는 그것을 부르기만 한다. 반복된 실수는 기억·문서보다 먼저 가드·lint·계약으로 막고, 새 규칙은 실제 사례가 붉어지는 시험과 함께 둔다. 가드는 앞단의 보조이며 병합 권위는 required CI 다. 가드는 판정하지 못하면 조용히 통과하므로, 세션을 시작하거나 어댑터를 바꾼 뒤 `echo AGENT_GUARD_CANARY` 를 한 번 실행해 막히는지 본다 — 막히지 않으면 그 도구의 어댑터가 끊긴 것이다.
+- 실행 전 가드의 규칙·근거·대신 쓸 방법은 [agent-guard](scripts/agent-guard.mjs)의 규칙 표가 정본이고, 세 어댑터는 그것을 부르기만 한다. 실행 전 가드(`scripts/agent-guard.mjs`)는 신규 규칙 추가와 셸 우회 엣지케이스 패치를 동결하며, 치명적 보안·데이터 사고 방지 목적이 아닌 한 확장하지 않는다(`DEC-OPS-436`·`DEC-OPS-437`). 반복된 실수는 가능하면 타입·lint·계약으로 막고, 예외적으로 가드 규칙을 추가할 때만 실제 사례가 붉어지는 시험과 함께 둔다. 가드는 앞단의 보조이며 병합 권위는 required CI 다. 가드는 판정하지 못하면 조용히 통과하므로, 세션을 시작하거나 어댑터를 바꾼 뒤 `echo AGENT_GUARD_CANARY` 를 한 번 실행해 막히는지 본다 — 막히지 않으면 그 도구의 어댑터가 끊긴 것이다.

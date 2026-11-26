@@ -143,15 +143,6 @@ export const GENERATORS = [
     command: ['node', ['scripts/agent-skill-adapters.mjs', '--write']],
     check: [['node', ['scripts/agent-skill-adapters.mjs', '--check']]],
   },
-  {
-    id: 'atlas',
-    // 재사용 생성물은 원본 Atlas 와 그 생성기를 걷는다. 생성기가 없는 저장소에서는 이 단계를 건너뛴다.
-    requires: 'scripts/build-atlas.mjs',
-    inputs: anyPath,
-    outputs: [],
-    command: ['node', ['scripts/build-atlas.mjs', '--check']],
-    check: [['node', ['scripts/build-atlas.mjs', '--check']]],
-  },
 ];
 
 // ---------------------------------------------------------------- 공용 메모리 표

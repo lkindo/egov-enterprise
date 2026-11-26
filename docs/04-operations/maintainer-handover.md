@@ -43,10 +43,9 @@
 ## 4. 처음 맡았을 때 확인 순서
 
 1. [AGENTS.md](../../AGENTS.md)와 공용 메모리 셋([project-context](../../.agent/memory/project-context.md)·[decisions](../../.agent/memory/decisions.md)·[known-gaps](../../.agent/memory/known-gaps.md))을 읽는다 — 무엇이 규칙이고 무엇이 파생 인덱스인지 구분된다.
-2. 거버넌스 지도를 만든다: `npm run atlas:build` 뒤 `build/atlas/governance_harness_atlas.html` 을 연다([Atlas 가이드](../03-guides/governance-atlas-guide.md)).
-3. 로컬 검증을 한 번 돈다: `npm run verify:fast`, 이어서 격리 E2E `npm run test:e2e:isolated`([E2E 가이드](../03-guides/e2e-test-guide.md)). 무거운 검증은 한 기계에서 하나씩 돈다([SOP §6.3](../03-guides/orchestration-protocol.md#63-무거운-검증은-하나씩)).
-4. 최근 main CI·야간 검증 기록을 보고 붉은 것이 없는지, 열린 PR(특히 Dependabot)이 무엇을 기다리는지 본다.
-5. [pending-decisions.md](pending-decisions.md)와 known-gaps 의 결정권자 열에서 내가 맡아야 할 판단을 고른다.
+2. 로컬 검증을 한 번 돈다: `npm run verify:fast`, 이어서 격리 E2E `npm run test:e2e:isolated`([E2E 가이드](../03-guides/e2e-test-guide.md)). 무거운 검증은 한 기계에서 하나씩 돈다([SOP §6.3](../03-guides/orchestration-protocol.md#63-무거운-검증은-하나씩)).
+3. 최근 main CI·야간 검증 기록을 보고 붉은 것이 없는지, 열린 PR(특히 Dependabot)이 무엇을 기다리는지 본다.
+4. [pending-decisions.md](pending-decisions.md)와 known-gaps 의 결정권자 열에서 내가 맡아야 할 판단을 고른다.
 
 ## 5. 한 사람 운영에서 오는 위험
 

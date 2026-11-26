@@ -45,7 +45,7 @@ export const KINDS = Object.freeze({ HUMAN: '사람 판정', GENERATED: '생성�
 
 /** 생성기가 다시 만드는 지점 — 판정하지 않고 명령만 안내한다. */
 export const GENERATED_POINTS = Object.freeze([
-  { id: 'regen', path: 'npm run regen', detail: '권한 생성물·화면 목록·URL census·슬롯·경계 census·생성 계약·Atlas 를 다시 만든다(검사만: npm run regen -- --check).' },
+  { id: 'regen', path: 'npm run regen', detail: '권한 생성물·화면 목록·URL census·슬롯·경계 census·생성 계약을 다시 만든다(검사만: npm run regen -- --check).' },
   { id: 'api-docs', path: 'api-docs.json', detail: '컨트롤러·DTO 를 바꿨으면 OpenApiDocumentationTest 정적 추출로 다시 만든다(무거운 실행, SOP §6.4).' },
   { id: 'operation-count', path: 'config/governance/operation-consumer-census.json', detail: 'node scripts/operation-consumer-census.mjs --json 의 operationCount 로 expected.operationCount 를 맞춘다.' },
 ]);
@@ -267,7 +267,7 @@ export function evaluateRegistration(inputs) {
     ruleIds.add(id);
     const moduleEntry = ownedGates.has(path) ? '' : ` 이 기능(${featureId})의 시험이면 ${featurePath} 의 owns.gates 에 ${JSON.stringify({ file: path, alsoRequires: [] })} 를 둔다(다른 기능의 시험이면 그 기능 파일에).`;
     points.push(point(KINDS.HUMAN, `schema-gate:${className}`, 'config/governance/gates.json', 'missing',
-      `@Tag("schema-validation") 시험이 게이트 원장에 없다 — ${SCHEMA_VALIDATION_GATESET} 의 rules 에 ${JSON.stringify({ id, source: path })} 를 둔다(id 는 제안이다).${moduleEntry} 그다음 npm run regen 으로 하네스 기준선·Atlas 를 다시 만든다.`));
+      `@Tag("schema-validation") 시험이 게이트 원장에 없다 — ${SCHEMA_VALIDATION_GATESET} 의 rules 에 ${JSON.stringify({ id, source: path })} 를 둔다(id 는 제안이다).${moduleEntry} 그다음 npm run regen 으로 생성물·해시 결속을 다시 만든다.`));
   }
 
   const censusText = JSON.stringify(inputs.inputContractCensus);

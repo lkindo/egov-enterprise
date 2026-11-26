@@ -3,7 +3,7 @@
  * 생성물 재생성 한 명령(오케스트레이션 프로토콜 §6.4). 손으로 돌리던 순서를 코드로 둔다.
  *
  * 사용법:
- *   npm run regen                   # 다시 쓴다 — 생성기 사슬 → SAST 예외 해시 확인 → (생성물만) 하네스 기준선 → Atlas 정합성 확인, 끝에 바뀐 파일을 보인다
+ *   npm run regen                   # 다시 쓴다 — 생성기 사슬 → SAST 예외 해시 확인 → (생성물만) 하네스 기준선, 끝에 바뀐 파일을 보인다
  *   npm run regen -- --check        # 쓰지 않는다 — 낡은 생성물·해시 결속이 있으면 종료 코드 1(pre-push 맨 앞에서 돈다)
  *   npm run regen -- --rebind-sast SAST-FP-001,SAST-FP-002 --note "Re-reviewed 2026-10-19: <무엇이 바뀌었고 어느 방어가 그대로인지>"
  *                                   # 방어 경계를 재검토한 SAST 예외 항목만 소스 해시를 다시 결속하고 사유 끝에 재검토 문장을 붙인다
@@ -16,7 +16,6 @@
  *      재검토하고 --rebind-sast 로 그 항목만 결속한 뒤 이 명령을 다시 돌린다(몇 번 돌려도 결과가 같다).
  *   3. 하네스 기준선(baseline-manifest.properties)은 손 결속 원장(gates.json·SAST 예외)과 훅·게이트 소스의 해시라 그 뒤에 쓴다. 재사용
  *      생성물(생성 잠금이 있는 트리)에만 있다 — 원본 저장소는 매니페스트를 두지 않는다(DEC-OPS-420).
- *   4. Atlas 는 문서·게이트 원장·훅의 인메모리 렌더 정합성과 레거시 커밋 파일 부재를 확인하는 마지막 단계다(DEC-OPS-398).
  *
  * 하지 않는 것: api-docs.json 추출(Gradle)과 메뉴 snapshot(일회용 PostgreSQL)은 §6.3 의 무거운 실행이라 따로 돌린다(--check 는 메뉴
  * snapshot 이 낡았는지만 본다). 새 시험의 게이트 등록(gates.json)과 고정 수 시험의 값은 사람이 정한다 — 이 명령은 그 결과를 해시하고,
@@ -41,8 +40,6 @@ import { sourceHash } from './sast-exceptions.mjs';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 export const SAST_LEDGER = 'config/security/false-positive-review.json';
-/** 마지막 생성기. 하네스 기준선을 이 앞에 끼운다. */
-export const ATLAS_STEP = 'atlas';
 
 /** 하네스 기준선 도구 — 재사용 생성물에서만 regen 단계다(DEC-OPS-420). */
 const HARNESS_MANIFEST_TOOL = 'scripts/harness-baseline-manifest.mjs';
@@ -130,22 +127,18 @@ function generatorStep(generator) {
 }
 
 /**
- * 재생성 단계 — GENERATORS 를 그 순서로 두고, Atlas 앞에 SAST 예외 해시 확인과 (생성물이면) 하네스 기준선을 끼운다(머리 주석의 순서 근거).
- * Atlas 가 없는 저장소(재사용 생성물)에서는 기준선이 마지막이다. 원본 저장소에는 기준선 단계가 없다(DEC-OPS-420).
+ * 재생성 단계 — GENERATORS 를 그 순서로 두고, 그 뒤에 SAST 예외 해시 확인과 (생성물이면) 하네스 기준선을 둔다(머리 주석의 순서 근거).
+ * 원본 저장소에는 기준선 단계가 없다(DEC-OPS-420).
  */
 export function regenerationSteps(generators = GENERATORS, { harnessBaseline = fs.existsSync(path.join(repoRoot, REUSABLE_LOCK_PATH)) } = {}) {
-  const atlasAt = generators.findIndex(generator => generator.id === ATLAS_STEP);
-  const head = atlasAt < 0 ? generators : generators.slice(0, atlasAt);
-  const tail = atlasAt < 0 ? [] : generators.slice(atlasAt);
   return [
-    ...head.map(generatorStep),
+    ...generators.map(generatorStep),
     { id: 'sast-exceptions', kind: 'sast', requires: SAST_LEDGER, files: () => [] },
     ...(harnessBaseline ? [{
       id: 'harness-baseline', kind: 'generator', requires: HARNESS_MANIFEST_TOOL,
       command: ['node', [HARNESS_MANIFEST_TOOL, '--write']], check: [['node', [HARNESS_MANIFEST_TOOL, '--check']]],
       files: () => [HARNESS_MANIFEST],
     }] : []),
-    ...tail.map(generatorStep),
   ];
 }
 
