@@ -15,7 +15,6 @@ import {
   resolveMemoryTableConflicts,
   MEMORY_TABLES,
 } from './merge-main-regenerate.mjs';
-import { DECISION_AREA_INDEXES, GAP_DETAIL, GAP_INDEX } from './decision-indexes.mjs';
 import { SCREEN_REGISTRY_INPUTS, SCREEN_REGISTRY_OUTPUT } from './generate-screen-registry.mjs';
 import { slotRegistryOutputs } from './slot-registry.mjs';
 
@@ -215,20 +214,18 @@ test('a real merge resolves memory rows and generated conflicts, regenerates, st
   assert.equal(r.git('rev-list', '--count', 'HEAD').trim(), '2');
 });
 
-// 영역 결정 색인도 공용 결정 인덱스와 같은 ID 순서 병합을 받는다(DEC-OPS-381) — 빠지면 사람이 손으로 푸는 충돌이 된다.
-test('area decision index rows merge in ID order like the auto-loaded index', () => {
-  for (const file of DECISION_AREA_INDEXES.map(({ path: areaPath }) => areaPath)) {
-    assert.deepEqual(MEMORY_TABLES.get(file), { order: 'id' }, file);
-  }
-  // gap 인덱스와 영역 상세(DEC-OPS-389)도 행 단위로 합친다 — 상세가 빠지면 옮긴 gap 행의 충돌이 손으로 푸는 충돌이 된다.
-  for (const file of [GAP_INDEX, GAP_DETAIL]) assert.deepEqual(MEMORY_TABLES.get(file), { order: 'keep' }, file);
-  const file = DECISION_AREA_INDEXES.at(-1).path;
-  const r = divergedRepo({ decisionsOurs: row('DEC-OPS-3'), decisionsTheirs: row('DEC-OPS-2'), file });
+// 공용 결정 인덱스(decisions.md)와 활성 gap 인덱스(known-gaps.md)만 행 단위 병합 테이블에 둔다(DEC-OPS-435).
+test('memory tables merge decisions in ID order and known-gaps in append order', () => {
+  assert.deepEqual(MEMORY_TABLES.get('.agent/memory/decisions.md'), { order: 'id' });
+  assert.deepEqual(MEMORY_TABLES.get('.agent/memory/known-gaps.md'), { order: 'keep' });
+  assert.equal(MEMORY_TABLES.size, 2);
+  const file = '.agent/memory/known-gaps.md';
+  const r = divergedRepo({ decisionsOurs: row('GAP-Z-002'), decisionsTheirs: row('GAP-A-002'), file });
   const messages = [];
   const result = mergeMainAndRegenerate({ cwd: r.dir, base: 'main', fetch: false, generators: [fakeGenerator], log: m => messages.push(m) });
   assert.equal(result.status, 'ready', messages.join('\n'));
   assert.ok(result.resolved.includes(file), result.resolved.join(', '));
-  assert.equal(r.read(file), `| ID | 결정 |\n|---|---|\n${row('DEC-OPS-1')}\n${row('DEC-OPS-2')}\n${row('DEC-OPS-3')}\n`);
+  assert.equal(r.read(file), `| ID | 결정 |\n|---|---|\n${row('DEC-OPS-1')}\n${row('GAP-Z-002')}\n${row('GAP-A-002')}\n`);
 });
 
 test('a generator whose tool is absent from the repository is skipped with a message, not run', () => {

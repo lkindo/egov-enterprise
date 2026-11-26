@@ -79,7 +79,7 @@
    - **Strict-Transport-Security**: `max-age=63072000; includeSubDomains; preload`.
    - **X-Frame-Options**: `DENY` · **X-Content-Type-Options**: `nosniff` · **Referrer-Policy**: `strict-origin-when-cross-origin` · **X-XSS-Protection**: `0`(deprecated·XS-Leaks 벡터라 비활성 — 방어는 CSP로 대체).
    - **Cross-Origin-Resource-Policy**: `same-origin` · **Cross-Origin-Embedder-Policy**: `credentialless` · **Permissions-Policy**: 쓰지 않는 강력 기능 `()` 차단 · **Reporting-Endpoints**: CSP `report-to` 그룹 정의. CSP와 같은 경로 상수로 `src/proxy.ts`가 문서 응답에만 단다(단일 소스, `next.config.ts` 재유입은 `csp-policy` 계약이 차단).
-   - **Cross-Origin-Opener-Policy**: `same-origin`(`proxy.ts`가 문서 응답에 부여, [DEC-OPS-113](../../../../docs/04-operations/operational-decisions-index-ci-governance.md)).
+   - **Cross-Origin-Opener-Policy**: `same-origin`(`proxy.ts`가 문서 응답에 부여, [DEC-OPS-113](../../../../docs/archived/operational-decisions-history.md#dec-ops-113)).
 3. **[nonce CSP의 전제와 한계의 정직한 기록]** `script-src`의 `'unsafe-inline'`은 요청별 nonce로 제거됐다(PPR 포기 제품 결정). 이 승격은 두 가지 실측 제약 위에 서 있으며, 본 조는 이를 은폐하지 않고 기록·추적할 것을 의무화한다.
    - **전 페이지 동적 렌더가 전제다**: 정적 프리렌더 HTML의 inline script에는 요청 nonce가 없어 통째로 차단된다. `cacheComponents`(PPR) 비활성과 루트 layout의 `force-dynamic`을 `csp-policy` 계약이 고정하며, 되돌리려면 nonce CSP 철회가 선행돼야 한다.
    - **`'strict-dynamic'`은 채택하지 않는다**: Next.js가 스트리밍 중 삽입하는 lazy chunk `<script src>`에 nonce가 없어 host 허용(`'self'`)이 꺼지면 앱이 전면 파손된다. 방어는 `'self'`+nonce 조합으로 달성한다.

@@ -8,7 +8,7 @@
  *
  * 하는 일:
  *   1. 작업 트리가 깨끗한지 확인하고 `--no-ff --no-commit` 으로 base 를 합친다(diff3 충돌 표기).
- *   2. 공용 메모리 표(결정 색인 — decisions.md·영역 색인·역사 색인 — 과 known-gaps.md·gap 영역 상세)의 충돌은 행 단위로 합친다. 같은 ID 를 양쪽이 다르게
+ *   2. 공용 메모리 표(.agent/memory/decisions.md·known-gaps.md)의 충돌은 행 단위로 합친다. 같은 ID 를 양쪽이 다르게
  *      고쳤거나 같은 새 ID 를 썼으면 합치지 않고 멈춘다(프로토콜 §6.4 — 사람이 한 행으로 합치거나 번호를 바꾼다).
  *   3. 다시 만들 생성물의 충돌은 한쪽을 고르지 않고 재생성 결과로 덮는다. URL 승인 파일은 사람이 고르는 기록 ID 원장이라 손으로 푼다.
  *      원본 저장소는 하네스 manifest 를 두지 않으므로(DEC-OPS-420) 그 파일의 충돌은 지워서 푼다. 그 밖의 충돌(api-docs.json·
@@ -29,7 +29,6 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 // 매니페스트는 경로·줄 형식 모듈만 읽는다(node 내장만 쓴다). 계산 도구는 재사용 투영 그래프를 끌어와, 병합 중 그 안에 충돌 표기가
 // 남으면 이 도구가 시작도 못 한다 — 계산값은 다른 충돌이 다 풀렸을 때 하위 프로세스로만 얻는다.
 import { adapterOutputs } from './agent-skill-adapters.mjs';
-import { ALL_DECISION_INDEXES, GAP_DETAIL, GAP_INDEX } from './decision-indexes.mjs';
 import { MANIFEST_PATH } from './harness-baseline-manifest-format.mjs';
 import { slotRegistryOutputs } from './slot-registry.mjs';
 // 승인 결속 범위는 생성기·승인 계약과 같은 함수 하나가 정한다(node 내장만 쓴다).
@@ -51,12 +50,10 @@ export function syncContractOutputs(root) {
   return [...CONTRACT_ENTRIES, ...CONTRACT_MODULE_DIRECTORIES, ...modules];
 }
 
-// 결정 색인(공용·영역·역사, DEC-OPS-381)은 ID 순서로 합친다. 한 결정은 색인 하나에만 있어야 한다(Atlas 생성기가 검사).
-// gap 인덱스와 영역 상세(DEC-OPS-389)는 기존 순서를 지키고 새 행을 표 끝에 둔다.
+// 공용 결정 인덱스(decisions.md)는 ID 순서로 합치고, 활성 gap 인덱스(known-gaps.md)는 기존 순서를 지키며 새 행을 표 끝에 둔다.
 export const MEMORY_TABLES = new Map([
-  ...ALL_DECISION_INDEXES.map((file) => [file, { order: 'id' }]),
-  [GAP_INDEX, { order: 'keep' }],
-  [GAP_DETAIL, { order: 'keep' }],
+  ['.agent/memory/decisions.md', { order: 'id' }],
+  ['.agent/memory/known-gaps.md', { order: 'keep' }],
 ]);
 
 export const URL_CENSUS = 'config/ui-url-state-census.json';

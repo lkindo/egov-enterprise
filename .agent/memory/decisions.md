@@ -5,18 +5,13 @@ status: active
 authority: adr-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-11-23
-verified_against: 44ed238d30e1c5b71225cd02d44d19a0c504deba
+verified_at: 2026-11-26
+verified_against: b4a98d72d6723bbf66a063c86ebb77d20238f025
 canonical_sources:
-  - ../../scripts/decision-indexes.mjs
-  - ../../docs/02-architecture/decisions/ADR-0001-core-app-product-boundary.md
-  - ../../docs/archived/operational-decisions-history.md
-  - ../../docs/04-operations/operational-decisions-index-ci-governance.md
-  - ../../docs/04-operations/operational-decisions-index-composer.md
-  - ../../docs/04-operations/operational-decisions-index-migration.md
-  - ../../docs/04-operations/operational-decisions-index-product.md
   - ../../AGENTS.md
   - ../../docs/02-architecture/decisions/README.md
+  - ../../docs/02-architecture/decisions/ADR-0001-core-app-product-boundary.md
+  - ../../docs/archived/operational-decisions-history.md
   - ../../.github/required-checks.json
   - ../../config/governance/gates.json
 refresh_triggers:
@@ -27,80 +22,69 @@ refresh_triggers:
 
 # 공용 결정 인덱스
 
-`verified_at`·`verified_against`는 인덱스 구조·참조를 점검한 날짜와 작업 시작 커밋이다. 2026-10-17 정리는 과거 승인·DB·CI·운영 실측을 재실행한 것이 아니며, 각 행의 시행일·검증일과 증거 경계는 그대로다.
+`verified_at`·`verified_against`는 인덱스 구조·참조를 점검한 날짜와 기준 커밋이다. 아키텍처·제품 경계 정본은 [ADR 정본 목록](../../docs/02-architecture/decisions/README.md)에, 운영 결정 전문·이유·근거·역사 결정은 [운영 결정 보관 원문](../../docs/archived/operational-decisions-history.md)에 둔다. 이 파일은 매 세션 자동 로드되는 `Do-Not-Break` 체크리스트와 저장소 공통 활성 운영 결정만 싣는다. 원시 세션 로그를 이관하지 않으며 실시간 claim/lock 조정 버스로 쓰지 않는다.
 
-## 범위와 승격 규칙
+## Do-Not-Break 체크리스트 (자동 게이트 미커버 확정 규칙)
 
-제품·아키텍처 결정의 정본은 [ADR 디렉터리](../../docs/02-architecture/decisions/README.md)다. 이 파일은 세션마다 자동으로 읽히는 짧은 결정 인덱스로, 어느 경로를 고치든 걸리는 Accepted ADR 과 운영 결정, 나머지 Accepted ADR 의 ID·제목 목록만 둔다. 나머지 Accepted ADR 의 행과 특정 경로에만 걸리는 운영 결정은 아래 「영역 결정 색인」 표의 색인에, 지금의 작업을 제약하지 않는 결정은 [역사 색인](../../docs/archived/operational-decisions-index-historical.md)에 있다. ADR 내용을 복제하거나 바꾸지 않는다. 제안·보류 항목은 결정으로 기록하지 않고 [known-gaps.md](known-gaps.md)에 둔다.
+린터·단위 테스트가 단독으로 강제하지 못하는 확정 동작·데이터 금지·운영 경계다. 해당 영역을 고치기 전에 반드시 확인한다.
 
-- 허용 상태: `accepted`, `superseded`, `rejected`.
-- 기존 결정의 전문은 소급 편집하지 않는다. 운영 결정의 변경은 후속 DEC가 `supersedes`로 연결하고, Accepted ADR의 규범 변경은 후속 ADR로 대체한 뒤 인덱스에 연결한다. 이 규칙(2026-10-17) 전에 운영 결정이 ADR 일부를 대체한 경우는 해당 ADR 머리의 "후속 결정" 줄과 ADR 색인 상태 열로 표시한다.
-- 행의 시행일·당시 수치는 결정 배경이며 현재 구현 수치가 아니다. 현행 상태는 [project-context.md](project-context.md)·[known-gaps.md](known-gaps.md)와 링크된 코드에서 확인한다. 재검증일은 인덱스·참조 점검일이며 과거 승인이나 외부 운영 증거를 새로 부여하지 않는다.
-- 헌법과 `AGENTS.md`의 실질 정책 변경은 사용자 명시 요청이 먼저다.
-- 이 파일은 에이전트 진입점이 매 세션 읽는다. 행 길이와 파일 전체 크기의 상한은 [공용 메모리 계약](../../scripts/shared-memory-contract.test.mjs)이 검사한다.
+### A. 데이터·DB·스키마·인코딩 금지 (8건)
 
-## Accepted ADR index
+1. `GAP-DATA-002`: 공유 OCI 온라인 설문 3행의 잘린 시작·종료일은 업무 소유자가 원래 날짜를 확인하기 전까지 추정 보정하지 않는다.
+2. `DEC-OPS-358` / `AGENTS.md`: 로그인 ID로 소유를 판정하는 기록 테이블의 잔존 ID는 새 계정에 재부여하지 않으며, 임의 이관 이력/시드/운영 데이터를 복구·수정하지 않는다(운영/코어 데이터 DML 명시 승인 필수).
+3. `DEC-OPS-375` / OCI 적용 경계: 부서 미배정 '부서 공유' 일정(기본조직 묶기)과 일반 관리자의 보호 관리자 기본정보 수정 권한 의미는 유지하며, 공유 OCI DB 마이그레이션은 반드시 백업 후 명시 승인을 받아 적용하고 [적용 로그](../../docs/04-operations/shared-oci-migration-apply-log.md)에 기록한다(DEC 아님).
+4. `DEC-OPS-379`: 이미 적용된 Flyway 마이그레이션/체크섬 사후 변조 및 예약 집행 전 진단에서 나온 미래 시작일·형식 오류 행 임의 보정 금지; 스키마 변경은 Expand–Sync–Redirect–Contract를 따른다.
+5. `GAP-STD-001`: 기승인 `version` 기술 명칭 예외(`DEC-OPS-378`)와 1차 C 유지 승인 항목은 미등록 정정 후보에서 제외하며, 등록 단어 조합만으로 DB 표준 적합 판정을 내리지 않는다.
+6. `GAP-ZDM-001`: Contract waiver의 `expandRelease` 대조는 기록 검증이지 실제 배포·관측 증명이 아니며, 도입 기관은 `V2_127` 한 건 예외(`DEC-OPS-233`)를 승계하지 않는다.
+7. `DEC-OPS-396`: 모든 날짜·시각은 KST(`Asia/Seoul`), 시간대 없는 컬럼은 한국 벽시계 `LocalDateTime`, 프런트 '오늘'은 브라우저가 아닌 KST다(날짜 경계 변경 시 `TZ=UTC` 교차 확인).
+8. `DEC-OPS-134 ④` / `DEC-OPS-417`: CSV 반출은 수식 시작 글자(`= + - @` 탭·CR) 앞에 `'`를 붙이고 한국 날짜를 쓴다; 화면 문구는 서술 `~니다`·요청 `~해 주세요`/`~하세요`를 쓰고 `~하십시오`를 금지하며(화면 용어 원장 소유자는 저장소 소유자, 승인 표지 임의 변경 금지).
 
-ADR ID 가 ADR 색인의 키다: 각 ADR 의 링크·이유·전문은 [ADR 색인](../../docs/02-architecture/decisions/README.md)의 같은 ID 행에서 연다. 이 표는 결정 요지·시행일·대체 범위만 둔다. 어느 경로를 고치든 걸리는 ADR 만 이 표에 두고, 나머지 Accepted ADR 은 아래 「영역 결정 색인」 표가 가리키는 영역 색인의 표 맨 위(운영 결정 행 앞)에 둔다(DEC-OPS-385). 한 ADR 의 행은 색인 하나에만 있고, 공용·영역 색인을 합친 집합이 ADR 색인의 Accepted 집합과 같으며, 아래 목록의 영역 줄은 그 영역 색인의 ADR 행과 같아야 한다([공용 메모리 계약](../../scripts/shared-memory-contract.test.mjs)).
+### B. 제품 동작·인가·UI·비즈니스 경계 (12건)
 
-| ID | 상태 | 결정 | 시행일 | supersedes |
-|---|---|---|---|---|
-| ADR-0001 | accepted | core/app 제품 경계와 main·release-tag 배포 기준을 분리한다. | 2026-08-15 | - |
+9. `GAP-DEPT-001`: 부서·조직도 편집은 행 잠금/순서·미로드 상위 노드(`unloadedParentId`) 보존과 하위 참조 정합성을 유지하며, 기존 `up_ognz_id IS NULL`을 추정 일괄 보정·삭제하지 않는다.
+10. `GAP-FILE-001`: 첨부 실물 삭제는 업무 트랜잭션 커밋 뒤 영속 작업(`tb_sys_job`)으로 수행하며, `FileAccessPolicy`·`AttachmentReferenceResolver` 인가 경계를 우회하거나 고아 파일을 추정 삭제하지 않는다.
+11. `GAP-LOGIN-001`: 로그인·세션·쿠키 `Secure` 예외는 명시적 평문 loopback(격리 E2E)에 한정(`ADR-0010`)하고 단일 세션을 유지(`dpcn_prm_yn` 미개방)하며, 운영 edge·백엔드 로그인 rate limit(`ADR-0059`)을 유지한다.
+12. `GAP-LOGIN-002`: 보호계정·마지막 관리자 잠금/비활성화/권한 박탈 차단 가드 우회 금지; `MFA_REQUIRE_PROTECTED`는 앱 기본 `false`·운영 오버레이 기본 `true`(`ADR-0054`)이며, 로그인 잠금이 기존 세션을 끊지 않는 정책을 유지한다.
+13. `GAP-CODE-001`: 기관코드 원장·수신 로그에는 앱 쓰기 경로를 열지 않고 수신 확인은 `procSe`만 변경하며, 공통코드·행정코드 마스터는 참조 무결성 및 낙관적 잠금 버전을 유지한다.
+14. `GAP-WIRING-001`: [배선 원장](../../config/governance/operation-consumer-census.json)의 unwired·화면 고아·ungated write 상한 악화 금지; 목록과 같은 값을 주는 단건 조회는 래칫을 내리기 위해 억지로 배선하지 않으며 발신 메일 이력 등 개인정보 경계를 보존한다(`DEC-OPS-062`).
+15. `GAP-UI-001`: 반응형 표는 단일 SSR DOM 위 CSS 전환 유지(`ADR-0006`); 서버 정렬은 `ServerSortWhitelist`와 인덱스 기반 `@SortableBy` 허용 목록만 연다(`DEC-OPS-433`).
+16. `GAP-COPY-001`: [화면 용어 원장](../../config/frontend-visible-terms.json)의 규범·결함 기준을 유지하며 일괄 치환 및 과장 표현(`100%`, `수기 0%`, `현행화 0시간`)을 금지한다.
+17. `GAP-UIQ-001`: UI 품질 기준선·폼 검증 경계([전용 폼 census](../../config/governance/a3-1-form-container-census.json))의 `measured` 허위 선언·hash 소급 대입·수동 접근성 자동 충족 및 부채 래칫 악화를 금지한다.
+18. `GAP-UIF-001` / `DEC-OPS-403`: URL 상태 승인 파일(`config/ui-url-state-approval.json`)은 사람이 고르는 기록 ID 원장이므로 생성기로 덮어쓰지 않고, 폰트·CI 크로미움 렌더링 결과를 다른 OS·브라우저 증거로 승격하지 않는다.
+19. `DEC-OPS-431` / `ADR-0043` / `DEC-OPS-430 ③` / `DEC-OPS-416` / `GAP-PACK-001`: 게시판 답글 등록 퇴역 유지(`ans_psblty_yn` DB 값 보존·지정 게시판 영구 삭제 거부·유형/템플릿 불일치 시드 데이터 임의 수정 금지), 리다이렉트 페이지 제거 시 동거 테스트 연쇄 금지(목적지 소실 은폐 방지), 정책 upsert(`DEC-OPS-430 ③`)·설문/투표 마스터 버전(`DEC-OPS-416`)·기능 소유(`config/modules`, pack 축 없음) 경계를 보존한다.
+20. `DEC-OPS-382 ②` / `DEC-OPS-397` / `DEC-OPS-415 ④` / `ADR-0018`: 산출물 내보내기(`export-deliverables`)는 `.agent/memory/`·`docs/archived/`·ADR 색인·`.env`·`upstream-review/` 입력을 거부하며, `--compare` 기준 해시 분리·검수 CSV 14열 `uatBaseDecisionHash`·덮어쓰기 차단(`--allow-decision-overwrite` 명시 시만 허용)을 보존하고, 미확정/시안 산출물을 기관 승인으로 승격하지 않는다.
 
-나머지 Accepted ADR 의 행은 아래 영역 색인에 있다. 대부분은 결정을 집행하는 계약·시험·생성기가 다른 영역 경로에도 있어 여러 영역에 걸친다 — 대상 경로가 그 영역에 걸리지 않아도 제목이 작업과 닿으면 그 행을 읽는다([AGENTS.md 작업 시작 시 필수 읽기](../../AGENTS.md#작업-시작-시-필수-읽기)). 괄호는 다른 영역 경로에 있는 대표 집행 조항이다. 영역별 ID·제목:
+### C. 인프라·운영·CI·이관·에이전트 경계 (5건)
 
-- [CI·검증·거버넌스](../../docs/04-operations/operational-decisions-index-ci-governance.md): ADR-0005 UI 품질 증거 보존(ui-quality 원장·스키마) · ADR-0015 시큐어코딩 정적 분석(High/Critical 차단) · ADR-0018 기술 계약·정기 검토·기관 승인 분리(reviewBy 경과는 비차단) · ADR-0021 격리·책임별 테스트(compose 계획 검사) · ADR-0022 CI 모듈 영향 분류·캐시(ID 형식 복제 계약) · ADR-0023 E2E 영향 선별·캐시 저장 · ADR-0024 Spring Boot 4.1·Jackson 3·JSpecify 규칙 · ADR-0026 CI 임계 경로·재사용 선별(시험 시간 profile) · ADR-0027 재사용 검증 입장·PR 레이아웃(presets 의 ci 선언) · ADR-0030 재사용 CI 의 PR 제외(ci.pr 이 null 이면 main 두 레이아웃) · ADR-0032 이관 PIT 슬롯 · ADR-0037 제품 PIT 슬롯 · ADR-0044 CI 튜닝값 정본·PIT 범위별 하한(슬롯·순서는 ci.yml·실측 profile, 계약은 양수·profile 순서) · ADR-0050 요구사항 로컬 UI·기준선·개발 준비·인수 근거 · ADR-0051 산출물 기반 AI 요구사항·개발 계획 · ADR-0052 AI 원본 판독·통합 계획·최종 확인 · ADR-0053 비공개 분석 민감정보 안내 · ADR-0055 요구사항 항목 저장소·점진 분석(요청 크기 상한) · ADR-0056 요구사항 표기 차이는 참고·판정된 충돌만 쟁점(참고는 확정을 막지 않는다) · ADR-0058 요구사항 같은 질문은 묶어 한 번 답함(묶여도 확정을 막는다) · ADR-0061 미지 경로는 PIT 가 읽을 때만 PIT·제품 PIT 시험 대상 축소(PIT 입력 census)
-- [프로젝트 생성기·재사용 투영](../../docs/04-operations/operational-decisions-index-composer.md): ADR-0020 멀티·단일모듈 출력(원본 모듈·빌드 관례 유지) · ADR-0028 시작 구성은 기능 목록(스크립트는 이름을 열거하지 않는다) · ADR-0047 다중 DB 선택과 벤더 SQL 경계(앱 SQL 포트·벤더 SQL 린터) · ADR-0057 도입자 Java·미배정 권한 추가 등록(원본 인증 분리) · ADR-0062 생성 프로젝트에서 오프라인 이관 도구 제외(원본 독립 migration:export 유지)
-- [레거시 이관 도구](../../docs/04-operations/operational-decisions-index-migration.md): ADR-0008 승인형 오프라인 이관(실행 봉투·온라인 모듈 미의존) · ADR-0029 표준화 이관과 용어 원장(온라인 암호 구현과 대조) · ADR-0031 원장 확정·chunk 실패 처리(제어 스키마 승인 플래그) · ADR-0041 로컬 이관 작업공간·AI 진행
-- [제품 동작·화면·도메인](../../docs/04-operations/operational-decisions-index-product.md): ADR-0002 한국어 우선 UI·ko/en 메시지 번들 · ADR-0003 과업 중심 UX·WCAG 2.2·KRDS 표현·민감 상태 위치 · ADR-0004 하이브리드 IA 잠정 채택(메뉴 DB·생성기 미적용) · ADR-0006 단일 SSR DOM 반응형 · ADR-0007 참조-기본 IA 승인(처분 승인 전 메뉴·생성기 미적용) · ADR-0009 검색어의 URL 사용(허용 목록, 생성물은 좁히기만) · ADR-0010 세션 쿠키 Secure(loopback 예외는 격리 E2E 한정) · ADR-0011 익명 만족도 퇴역·자격증명 이름의 path/query 차단 · ADR-0012 블로그 도메인 제거 · ADR-0013 표준 길이 정합(ZDM waiver 결속) · ADR-0014 보류 컬럼 표준 정합(주민번호 암호문 보존) · ADR-0016 복수 그룹·명시 권한 인가(권한 생성물·명시 bootstrap) · ADR-0017 과업 중심 메뉴(V2_99→Contract 초기화 순서) · ADR-0019 클라이언트 IP 신뢰 경계(edge·TRUSTED_EDGE_PROXY) · ADR-0025 권한·업무 계약·내구 작업·MFA(미배정 권한·AND 진입) · ADR-0033 메일 수신주소 암호화 보관 · ADR-0034 구 인가 API 퇴역(ISM 별칭은 결재로) · ADR-0035 로그인 요청 제한 기본값(E2E 는 종전 값) · ADR-0036 1 기반 page·size·POST 201 · ADR-0038 이중 제출 CSRF(E2E 헬퍼가 헤더를 싣는다) · ADR-0039 콘텐츠 페이지 1차 범위(cms 기능 선언) · ADR-0040 게시판 운영·예약·고정(BOARD_PIN 미배정) · ADR-0042 콘텐츠 페이지 운영 보완(CMS_PURGE 미배정) · ADR-0043 게시판 공개 동선(지정 게시판 삭제 거부) · ADR-0045 즐겨찾기 정리·엄격 입력·읽은 메모 기준 지시 · ADR-0046 빈 표 숫자 전환·로그 밀리초 표준 · ADR-0048 업로더 근거와 개인 첨부 개별 삭제(쪽지·메모 첨부) · ADR-0049 워크플로우 목업 화면 퇴역(WORKFLOW_READ 배정 호환) · ADR-0054 운영 오버레이 보호계정 MFA 기본 강제·키 선검증 · ADR-0059 edge 로그인 요청 제한(백엔드와 같은 한도 변수) · ADR-0060 비대칭 JWT 서명(Next 는 공개키만, 두 번 배포) · ADR-0063 한국어·영어 UI 와 화면 단위 완결성(번역 원장 밖 화면은 lang=ko 영역)
+21. `DEC-OPS-422` / `DEC-OPS-432` / `DEC-OPS-009` / `ADR-0060`: 운영 API 8080 루프백 바인딩·ES256 비대칭 JWT(Next는 공개키만, `JWT_SECRET` 없음)·운영 주민번호 키링 필수; PostgreSQL 외 5개 DB 벤더는 인증 중단(`preview`) 유지; 단독 운영 리뷰 정책(`DEC-OPS-009`·`DEC-OPS-432 ⑥`) 유지.
+22. `GAP-COMPOSE-001·002` / `ADR-0018` / `ADR-0057` / `ADR-0062`: 기능 저하 생성물은 채널/포틀릿 저하를 숨기지 않고, 생성 프로젝트는 원본 인증/승인 기록을 승계하지 않은 새 `pending`으로 시작하며(`ADR-0018`·`0057`), 오프라인 `migration-tool`을 생성 앱에서 제외한다(`ADR-0062`).
+23. `GAP-MIG-001·002`: 원천 DB 7종 이관은 모두 `UNVERIFIED·MANUAL_ONLY`이며 기관 실측 없이 COMMIT/cutover 승인 불가; 암호화 보호 컬럼은 평문 체크포인트 키로 사용 금지; 전체 롤백은 온라인 저장소 백업 복원 런북 기준.
+24. `GAP-SEC-004` / `GAP-FE-001` / `ADR-0019` / `ADR-0038` / `AGENTS.md`: SAST/비밀 스캔·CSRF 이중 제출·CSP(`script-src` nonce, `style-src` 수용 위험 외 약화 금지)·COOP·프록시 IP 신뢰 경계(`TRUSTED_EDGE_PROXY` `/32`, 부가 컨테이너 `egov-net`/Next 직접 도달 차단) 유지; 공개 저장소 안전성(비밀·토큰·개인정보·내부 절대경로·원시 세션 로그 금지).
+25. `GAP-AGENT-001` / `GAP-WIN-001`: 무거운 검증은 `heavy-run-queue` 단일 실행(겹친 결과 증거 사용 금지, 에이전트 임의 `confirm-idle` 금지); `DEC-OPS-434`로 작업 브랜치 `pre-push`에서 운영 계약을 생략하므로 `heavy-run-queue`·`agent-guard`·`pre-push`·`project-composer`·`reusable-*` 등 Windows 분기 변경 시 Windows에서 대상/전체 운영 계약을 수동 실행.
 
-## 운영 결정 index
+## 저장소 공통 활성 운영 결정
 
-아래 DEC 행은 당시 결정의 짧은 검색 인덱스이며 상태·시행일·대체 범위는 당시 기록 그대로다.
-
-ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [보관 기록](../../docs/archived/operational-decisions-history.md)의 `#<ID 소문자>` 절(예: `#dec-ops-001`)에 있다.
-
-이 표는 어느 경로를 고치든 걸리는 결정만 둔다(기준은 [AGENTS.md 기록 기준](../../AGENTS.md#documentation-and-memory)). 특정 경로에만 걸리는 결정은 아래 「영역 결정 색인」 표의 색인에, 퇴역·전부 대체·일회성 실행·구현 기록으로 분류한 결정은 [역사 색인](../../docs/archived/operational-decisions-index-historical.md)에 있고 전문은 같은 보관 원문 앵커다. 행이 퇴역·전부 대체·일회성 실행이 되면 역사 색인으로, 걸리는 범위가 넓어지거나 좁아지면 공용·영역 색인 사이로 옮긴다(지우지 않는다).
+아래는 저장소 전역 작업에 적용되는 핵심 활성 운영 결정(DEC) 요약이다. 전체 결정 원문·이유·영역별 결정·과거 결정은 [운영 결정 보관 원문](../../docs/archived/operational-decisions-history.md)의 `#<id 소문자>` 절을, 아키텍처·제품 결정은 [ADR 정본 목록](../../docs/02-architecture/decisions/README.md)을 직접 조회한다.
 
 | ID | 상태 | 결정 | 시행일 | supersedes |
 |---|---|---|---|---|
 | DEC-OPS-001 | accepted | 프로젝트 공통 규칙은 `AGENTS.md` 한 곳에 두고 저장소 `GEMINI.md`·`CLAUDE.md`는 자동 탐색용 얇은 어댑터로 유지한다. | 2026-08-18 | - |
 | DEC-OPS-002 | accepted | 공용 메모리 3종은 규범이 아닌, 근거 링크와 검증일을 가진 파생 인덱스로 운영한다. | 2026-08-18 | - |
 | DEC-OPS-004 | accepted | 로컬 훅은 범위별 빠른 피드백, required CI는 병합 권위로 구분한다. | 2026-08-18 | - |
-| DEC-OPS-013 | accepted | 단독 운영 기간 IA 프로그램의 세 owner 역할(Product·IA·Security/Privacy)을 저장소 소유자 lkindo 로 지명하고 승인 채널을 저장소 PR 리뷰로 기록한다. | 2026-08-23 | - |
 | DEC-OPS-062 | accepted | 축 2(화면 도달성) 래칫의 운영 방침을 확정한다 — 0 을 목표로 하지 않는다. | 2026-09-08 | DEC-OPS-051 의 래칫 목적을 재확인하고 잔여 소진 목표를 명시적으로 배제 |
-| DEC-OPS-097 | accepted | 거버넌스 총량 관리 규칙을 AGENTS.md 에 둔다. | 2026-09-14 | - |
 | DEC-OPS-177 | accepted | 연속 배치 작업의 반복 비용을 규칙으로 줄인다. | 2026-09-27 | - |
-| DEC-OPS-340 | accepted | 공용 메모리 행은 원장이 세는 수를 다시 적지 않고 원장에 링크한다(GAP-WIRING-001·GAP-ARCH-001). | 2026-10-17 | DEC-OPS-090 ⑥ 의 공용 메모리 결합 수 대조, GAP-WIRING-001 수치 결속(2026-09-15 커밋 2c55b9924, DEC 없음) |
 | DEC-OPS-358 | accepted | 기록이 로그인 ID 로 소유를 판정하는 표에 남은 ID 는 새 계정에 다시 주지 않는다. | 2026-10-19 | - |
-| DEC-OPS-371 | accepted | 규칙·기록·계약의 중복과 반복 재생성을 걷는다 — 결정 인덱스 반복 열·역사 행 분리, DEC 기록 기준, 공유 OCI 적용 로그, 고정값의 원장 계산, npm run regen, Atlas·URL 승인·IA 처분 결속 축소, 헌법 정정, 범용 스킬 정리, 하네스 기준선 단일 구현(2026-10-19 사용자 승인). | 2026-10-19 | DEC-OPS-335 의 Atlas 소스 다이제스트 결속, 구현 기록·공유 OCI 적용을 DEC 로 쓰던 관행, 백엔드 헌법 §10.3 의 외부 발송 runAfterCommit 표준, 하네스 기준선의 Java·node 이중 구현과 거울 대조 |
 | DEC-OPS-374 | accepted | 직접 맡은 작업 브랜치는 추가 승인 없이 PR·required CI·main 병합·원격/로컬 브랜치 삭제까지 마무리한다. 현재 사용자의 범위 제한과 다른 작업 보호를 우선한다. | 2026-10-20 | - |
 | DEC-OPS-375 | accepted | 부서 미배정 사용자의 '부서 공유' 일정을 기본조직으로 묶어 미배정자끼리 공유하는 현재 동작과, 일반 사용자 관리자(USER_UPDATE·USER_DEPT)가 보호 관리자 계정의 이름·연락처·부서를 바꿀 수 있는 현재 권한 의미를 유지한다(2026-10-21 사용자 결정). | 2026-10-21 | - |
 | DEC-OPS-379 | accepted | ADR-0040 의 스키마 변경을 저장소 Flyway 로 일괄 승인하고, 공유 OCI 적용은 PR 병합마다 하며, 예약 집행 전 진단에서 나온 미래 시작일·형식 오류 행은 보정하지 않는다(2026-10-23 사용자 결정). | 2026-10-23 | - |
-| DEC-OPS-381 | accepted | 자동 로드되는 공용 결정 인덱스에는 Accepted ADR(5열)과 어느 경로를 고치든 걸리는 운영 결정만 두고, 특정 경로에만 걸리는 운영 결정은 자동 로드하지 않는 영역 결정 색인 넷에 둔다. 변경 작업은 대상 경로가 걸리는 영역 색인을 읽고, 새 결정은 기본으로 영역 색인에 쓰며, 자동 로드되는 공용 메모리 파일마다 전체 크기 상한을 둔다(2026-10-24 사용자 결정). | 2026-10-24 | DEC-OPS-371 ① 의 'Atlas 가 두 색인이 보관 원문의 DEC 를 정확히 한 번씩 나눠 갖는지 검사한다' 가운데 두 색인(현재·역사 → 공용·영역·역사 색인), Accepted ADR index 의 이유·정본 열(기록 템플릿, DEC 없음) |
-| DEC-OPS-382 | accepted | 방법론 보완 배치를 한 결정으로 묶는다(2026-10-24 사용자 승인). ① 설계 검토 예산·결정 카드·결정 유형 분리를 SOP §7 에 두고, 시안 확인을 스키마·데이터·인가·IA 처분·운영 적용 승인과 분리한다. ② 산출물 내보내기는 비규범 파생물이다 — 커밋하지 않는 build/deliverables 에만 쓰고 수동·dispatch·릴리스 태그에서만 만들며, frontend/public·regen·required CI 에 넣지 않고 .agent/memory·docs/archived·ADR 색인·공유 OCI·생성물 메뉴 스냅숏을 읽지 않는다(기관 RTM CSV 는 실행 인자 예외). ③ 스캐폴더는 최소 정합화와 등록 점검기로 두고 실사용 전에는 Node 로 옮기지 않는다. ④ 시연 라우트를 메뉴 연결 선택지·화면 목록·권한 묶음 화면에서 뺀다. ⑤ 공개 저장소 CI 는 시험 결과 XML·SARIF 만 올리고 산출물 패키지는 다이제스트만 남긴다. ⑥ 출력은 Markdown·CSV 다. ⑦ OpenAPI 의 PUBLIC 연산은 security: [] 로 전역 bearer 를 지운다. | 2026-10-24 | - |
-| DEC-OPS-385 | accepted | 방법론 후속 보완 배치(2026-10-26 사용자 승인). `verify:docs` 는 문서 전용 변경의 넓은 경로이지 작업 중 최소 검사가 아니고, 병렬 에이전트·워크플로가 도는 동안 메인도 무거운 검증을 시작하지 않으며, H1·H3·식별자·동시성·게이트 의미를 보는 검토 관점은 채택률로 줄이지 않는다. 실행 스킬은 AGENTS·SOP 를 상위 권위로 가리킨다. 의미를 바꾸는 변경(H3·H1·식별자·게이트)은 병합 전 독립 검토를 한 번 두고 검토자는 사용자 원문과 diff 로 반례를 먼저 적는다(SOP §2.3). 실행 기록은 겹친 무거운 실행과 실행 중 입력 변경을 경고만 한다. 자동 로드 인덱스에는 어느 경로를 고치든 걸리는 Accepted ADR 의 행과 나머지 Accepted ADR 의 영역별 ID·제목 목록만 둔다. 동시에 작업하면 별도 작업 트리를 쓰고, 커밋할 경로에 다른 작업의 변경이 섞이면 멈추고 보고한다. | 2026-10-26 | DEC-OPS-381 의 '공용 결정 인덱스에는 Accepted ADR(5열)' 가운데 Accepted ADR 전부를 자동 로드하는 부분 |
-| DEC-OPS-386 | accepted | 세 에이전트(Claude Code·Codex·Antigravity) 하네스 공용화 배치(2026-10-27 사용자 승인). 스킬 정본은 `.agent/skills` 하나이고 안내 파일은 `npm run regen` 이 만든다 — 안내 경로에 스킬을 직접 쓰지 않는다. 셸 명령의 실행 전 가드는 `scripts/agent-guard.mjs` 규칙 표가 정본이고, 판정할 수 없으면 막지 않으며 막지 않은 명령에 승인을 대신 내리지 않는다. 반복된 실수는 기억·문서보다 먼저 가드·lint·계약으로 막는다(AGENTS 도구별 진입점). `npm run dev` 는 원격 DB 에서 Flyway 자동 적용을 끈다(옵트인해도 seed-dev 제외). `.agents/`·`.claude/`·`.codex/` 는 안내 파일·훅만 추적한다. 의미를 바꾸는 변경의 독립 검토는 가능하면 다른 회사 모델에 맡긴다. | 2026-10-27 | - |
-| DEC-OPS-387 | accepted | 하네스·방법론 정합화 배치(2026-10-27 사용자 승인). 다른 회사 모델 독립 검토로 diff·사용자 원문을 보내는 것은 매번 묻지 않되 비밀·토큰·쿠키·개인정보·운영 데이터·`.env` 내용은 보내지 않는다(AGENTS 안전 경계의 예외). 포괄 승인("진행해")은 Workflow 도구 동의가 아니고 작업 브랜치 완료의 상시 승인과 별개다. 훅 우회는 사용자가 명시 지시한 경우뿐이며 실행 전 가드가 환경 변수·`core.hooksPath` 우회도 묻는다. 병합한 브랜치의 로컬 강제 삭제는 끝 커밋이 원격 추적 ref 에 있으면 묻지 않고, 작업 트리 디렉터리 제거는 묻는다. | 2026-10-27 | SOP §2.1 이 포괄 승인을 Workflow 도구 동의로 보던 문구(DEC 없음), 실행 전 가드가 작업 트리 이름 `setup` 을 막던 부분(DEC-OPS-386 ② 구현) |
-| DEC-OPS-389 | accepted | 방법론 감사 결정 카드 후속(2026-10-29 사용자 위임). 경로 → 영역 결정 색인 판정의 정본은 `scripts/decision-indexes.mjs` 이고 어느 원장에도 걸리지 않는 경로는 넷 모두를 읽는다(AGENTS 필수 읽기 3). known-gaps 는 모든 작업에 걸리거나 글로만 지켜지는 큰 피해 금지가 있는 행만 전문으로 두고 특정 경로 행은 레지스트리 한 줄과 영역 상세로 나눈다(크기 상한은 공용 메모리 계약, 산출물 입력 금지). 규칙 계층 5 에 승인된 운영 결정을 둔다. L2 는 §2.3 의미 변경 범주를 포함하고 L2 Audit 리포트는 PR 설명의 고정 절이다. CI 튜닝값은 ADR-0044 를 따르고, 변이 800개 이상 PIT 범위의 하한은 실측−5(최저 75)로 범위마다 두며 낮추지 않는다(gates.json `scopeFloors`). | 2026-10-29 | DEC-OPS-381 ② 의 판정 정본(손으로 쓴 경로 표 → 경로 원장)과 ⑤ 의 known-gaps 상한 값(34000 → 19000), DEC-OPS-366 의 '범위마다 75%' 가운데 변이 800개 이상 범위 |
-| DEC-OPS-395 | accepted | 변경 작업은 도구별 고정 작업 트리와 작업별 브랜치를 사용한다(2026-10-31 사용자 승인). 배정·유휴 확인·병렬 세션 분리·대기 복귀는 SOP §6.6 이 정본이며, 병합 뒤 자기 브랜치만 정리하고 고정 디렉터리·의존성·캐시는 유지한다. 기존 WIP·프로세스 소유권·검증·삭제 승인 경계는 유지한다. | 2026-10-31 | DEC-OPS-385 ⑥ 의 동시 작업 시 매번 새 작업 트리를 만들던 운영을 고정 트리 우선 재사용으로 구체화 |
-| DEC-OPS-413 | accepted | 무거운 검증 대기열을 둔다(DEC-OPS-412 ② 의 구현, 남은 실행 판정 범위는 2026-11-10 사용자 결정). Windows 에서 대기열에 연결된 단독 실행 진입점과 pre-push 는 같은 저장소의 잠금으로 한 번에 하나씩 돌고(격리 E2E·DB 번들 생성 진입점은 아직 스스로 줄을 서지 않는다 — 벤더 재기록 묶음에서 연결하며 그때까지 직접 부르면 가드가 대기열로 보낸다), 살아 있는 보유자의 잠금은 회수하지 않는다. 관측할 수 있는 남은 실행은 기다리고, 앞 실행이 끝났는지 알 수 없으면 사람이 `confirm-idle` 로 확인할 때까지 시작하지 않으며, 관측 밖의 남은 실행은 수용한 위험이다(GAP-AGENT-001). 에이전트의 직접 전체 실행은 실행 전 가드가 대기열로 보내고 증거 판정은 바꾸지 않는다 — 절차는 SOP §6.3. | 2026-11-10 | DEC-OPS-385 ⑥ 의 '잠금은 두지 않는다' 가운데 무거운 검증의 실행 잠금 부분, DEC-OPS-412 ② 의 '남은 자식·컨테이너는 살아 있음'(관측할 수 있는 것으로 좁힘) |
-| DEC-OPS-414 | accepted | 임시 작업 트리를 예외로 좁히고 수명을 닫는다(2026-11-11 사용자 요청). 도구마다 고정 트리 하나가 기본이고, 임시 트리는 사용자 승인을 받아 만든다 — 실행 전 가드가 모든 `git worktree add` 를 묻고(고정 트리 첫 생성 포함), Codex 는 확실히 풀어 보는 명령에만 `.codex/rules/agent-guard.rules` 의 승인 창이 묻고 그 밖의 꼴은 가드가 막는다. 임시 트리는 병합으로 끝나지 않으며, 그 트리를 쓰는 것이 없을 때 완료 보고에서 삭제를 묻는다. 만들 조건·같은 세션의 새 작업·삭제 전 링크 확인은 SOP §6.6 이 정본이고, Codex 승인 창의 남은 두 틈은 사용자가 수용한 위험이다(GAP-AGENT-001). | 2026-11-11 | DEC-OPS-395 ② 가운데 임시 트리를 묻지 않고 만들던 운영 |
-| DEC-OPS-434 | accepted | 운영 계약 2분할(`core` vs `composer`) 및 로컬 `verify:post-push` 의무 폐기(2026-11-25 사용자 승인·검토 확정). 일반 PR 은 CI(`secret-scan`)에서 `:core` 만, 생성기·`frontend/src`·`business-app/src`·스킬·`docs/README.md`·정책·미지·`main`·수동은 전체를 단계 `if:`·범위 가드(fail-closed)로 돈다. 작업 브랜치 push 운영 계약은 Required CI 일원화(Windows 분기는 GAP-WIN-001, SOP §6.2). | 2026-11-25 | DEC-OPS-410 의 작업 브랜치 push 뒤 로컬 `verify:post-push` 의무와 `pr-checks-wait` 의 로컬 Windows 기록(종료 코드 5) 요구, DEC-OPS-364 의 모든 PR 운영 계약 전수 실행 |
-
-## 영역 결정 색인
-
-이 표의 색인과 [gap 영역 상세](../../docs/04-operations/known-gaps-detail.md)의 같은 영역 절은 자동으로 읽히지 않는다. 읽는 의무는 [AGENTS.md 작업 시작 시 필수 읽기](../../AGENTS.md#작업-시작-시-필수-읽기)가 정하고, 이 표는 경로를 색인에 잇는다. 판정의 정본은 [경로 원장](../../scripts/decision-indexes.mjs)이고 이 표는 그 경로 패턴을 그대로 보인다(공용 메모리 계약이 대조한다). 문서(`docs/`)의 영역 배정은 원장에만 둔다 — `node scripts/decision-indexes.mjs --for <경로…>`(또는 `--diff <base>`)가 읽을 색인과 gap 상세 절을 출력한다. `**` 는 하위 경로 전부, `*` 는 한 단계 안의 임의 문자열이다. 경로가 여러 행에 걸리면 걸린 색인을 모두 읽고, 어느 행에도 걸리지 않으면 넷을 모두 읽는다.
-
-| 영역 색인 | 이 경로를 고치면 읽는다 |
-|---|---|
-| [CI·검증·거버넌스](../../docs/04-operations/operational-decisions-index-ci-governance.md) | `.github/**`, `.githooks/**`, `.zap/**`, `.agent/scripts/**`, `.agent/skills/**`, `.agent/knowledge/**`, `.agents/hooks.json`, `.claude/settings.json`, `.codex/hooks.json`, `.codex/rules/agent-guard.rules`, `.gemini/settings.json`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `LICENSE`, `Makefile`, `start-dev.ps1`, `.editorconfig`, `.gitattributes`, `.gitignore`, `.gitleaks.toml`, `.nvmrc`, `lombok.config`, `config/governance/**`, `config/security/**`, `config/dependency-check/**`, `config/migration-test-duration-profile.json`, `config/pit-duration-profile.json`, `scripts/**`(아래 두 행의 도구는 그 행도 읽는다), `tools/agent-evaluation/**`, `tools/requirements-workspace/**`, `api-server/src/test/**`, `api-server/src/main/resources/db/migration/**`(무중단 waiver), `frontend/e2e/**`, `frontend/scripts/**`, `frontend/atlas/**`, `frontend/*.config.*`, `frontend/tsconfig*.json`, `frontend/vitest.setup.ts`, `frontend/lighthouserc.json`, `frontend/.gitignore`, `frontend/.nvmrc`, `test/load-tests/**`, `package.json`, `package-lock.json`, `frontend/package.json`, `frontend/pnpm-lock.yaml`, `frontend/patches/**`, `gradle/**`, `**/*.gradle`, `gradle.properties`, `gradlew`, `gradlew.bat` |
-| [프로젝트 생성기·재사용 투영](../../docs/04-operations/operational-decisions-index-composer.md) | `config/modules/**`, `config/project-composer-menus.json`, `config/db-vendors.json`, `tools/project-composer/**`, `frontend/src/extensions/**`, `scripts/project-composer*`, `scripts/composer-*`, `scripts/reusable-*`, `scripts/generate-reusable-base-*`, `scripts/verify-reusable-*`, `scripts/slot-registry*`, `scripts/domain-deletion-*`, `scripts/frontend-reachability-census*`, `scripts/*migration-product*`, `config/governance/*-removed-assets.json` — 경로가 아닌 조건: 기능 마커(`config/modules/*.json` 의 `markerBlocks`)가 가리키는 화면, 한 기능이 다른 기능의 코드를 새로 import 하는 변경 |
-| [레거시 이관 도구](../../docs/04-operations/operational-decisions-index-migration.md) | `migration-tool/**`, `tools/migration-workspace/**`, `scripts/*migration*`, `config/migration-test-duration-profile.json` |
-| [제품 동작·화면·도메인](../../docs/04-operations/operational-decisions-index-product.md) | `foundation/**`, `business-core/**`, `business-app/**`, `api-server/src/main/**`(Flyway 새 표·컬럼 포함), `api-server/src/test/**`, `api-server/Dockerfile`, `frontend/src/**`, `frontend/public/**`, `frontend/patches/**`, `frontend/next.config.*`, `frontend/components.json`, `frontend/Dockerfile`, `frontend/.dockerignore`, `frontend/.env.example`, `frontend/README.md`, `frontend/AGENTS.md`, `frontend/CLAUDE.md`, `.agent/knowledge/**`, `lombok.config`, `db_columns.json`, `config/governance/permission-catalog.json`, `config/governance/authorization-policies.json`, `config/governance/permission-bundles.json`, `config/governance/privacy-access-census.json`, `config/frontend-visible-terms.json`, `config/ui-*.json`, `config/ui-quality-baseline/**`, `config/krds-profile-mapping.json`, `config/db/**`, `config/edge/**`, `config/observability/**`, `docker-compose*.yml`, `.dockerignore`, `.env.example`, `README.md`, `migration-tool/src/main/java/nuri/migration/validate/TargetStandardValidator.java` |
-| 추가 색인 없음 | `.agent/memory/**`, `docs/04-operations/known-gaps-detail.md`, `docs/04-operations/operational-decisions-index-*.md`, `docs/archived/operational-decisions-*.md`, `docs/02-architecture/decisions/README.md`, `docs/README.md`, `.agents/skills/**`, `.claude/skills/**`, `api-docs.json`, `frontend/src/types/generated-**`, `frontend/src/extensions/generated-*`, `config/governance/generated-*`, `config/ui-url-state-census.json`, `business-core/src/main/java/nuri/business/security/authorization/PermissionCodes.java`, `business-core/src/main/resources/authorization/*.json` — 생성물·공용 메모리·결정 색인은 그 변경을 부른 입력 경로로 판정한다. ADR 문서는 그 ADR 행이 있는 색인을 읽는다(공용 인덱스의 ADR 은 추가 색인이 없다) |
-| 넷 모두 | 위 어느 행에도, 경로 원장의 문서 배정에도 걸리지 않는 경로, 또는 걸리는지 판단이 서지 않을 때 |
-
-## 기록 템플릿
-
-DEC를 쓰는 기준과 쓸 색인은 [AGENTS.md](../../AGENTS.md#documentation-and-memory)를 따른다. 새 운영 결정은 기본으로 그 결정이 걸리는 경로의 영역 색인(위 「영역 결정 색인」 표)에 `ID | 상태 | 결정 | 시행일 | supersedes` 행을 두고, 어느 경로를 고치든 걸리는 결정일 때만 이 파일의 운영 결정 표에 둔다. [보관 기록](../../docs/archived/operational-decisions-history.md)에는 같은 ID의 `## DEC-OPS-NNN` 절과 `ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes` 전문 행을 둔다. 색인 행과 보관 원문의 상태·시행일·supersedes는 같아야 한다. 아키텍처·제품 경계를 바꾸면 먼저 ADR을 만들어 [ADR 색인](../../docs/02-architecture/decisions/README.md)에 링크하고, 같은 5열로 한 줄만 추가한다 — 어느 경로를 고치든 걸리면 이 파일의 ADR 표에, 아니면 그 ADR 이 주로 걸리는 경로의 영역 색인 표 맨 위(운영 결정 행 앞)에 두고 이 파일의 ADR 목록 그 영역 줄에 ID·제목을 더한다.
+| DEC-OPS-382 | accepted | 방법론 보완 배치를 한 결정으로 묶는다(설계 검토 예산 §7, 시안≠승인 분리, 산출물 `build/deliverables` 비규범 파생물 및 금지 입력, 스캐폴더 최소 정합화, OpenAPI PUBLIC `security: []`). | 2026-10-24 | - |
+| DEC-OPS-385 | accepted | 병렬 에이전트·워크플로 중 무거운 검증 금지, 의미 변경 L2 병합 전 독립 적대 검토(사용자 원문+diff, §2.3), 동시 작업 별도 작업 트리, 섞인 경로 커밋 중단. | 2026-10-26 | DEC-OPS-381 의 '공용 결정 인덱스에는 Accepted ADR(5열)' 가운데 Accepted ADR 전부를 자동 로드하는 부분 |
+| DEC-OPS-386 | accepted | 세 에이전트 하네스 공용화(스킬 정본 `.agent/skills` + `npm run regen`, `scripts/agent-guard.mjs` 규칙 표 정본, `npm run dev` 원격 DB Flyway 차단, 다른 회사 모델 독립 검토). | 2026-10-27 | - |
+| DEC-OPS-387 | accepted | 다른 회사 모델 독립 검토로 diff·사용자 원문 전송 예외(비밀·개인정보·`.env` 제외), 포괄 승인≠Workflow 동의, 훅 우회 명시 지시 한정, 병합 브랜치 삭제와 작업 트리 삭제 분리. | 2026-10-27 | SOP §2.1 이 포괄 승인을 Workflow 도구 동의로 보던 문구(DEC 없음), 실행 전 가드가 작업 트리 이름 `setup` 을 막던 부분(DEC-OPS-386 ② 구현) |
+| DEC-OPS-395 | accepted | 변경 작업은 도구별 고정 작업 트리와 작업별 브랜치를 사용한다(SOP §6.6 정본, 완료 시 자기 브랜치만 정리하고 고정 디렉터리·의존성·캐시 유지). | 2026-10-31 | DEC-OPS-385 ⑥ 의 동시 작업 시 매번 새 작업 트리를 만들던 운영을 고정 트리 우선 재사용으로 구체화 |
+| DEC-OPS-413 | accepted | Windows 무거운 검증 대기열(`scripts/heavy-run-queue.mjs`, SOP §6.3)을 둔다 — 관측 가능한 남은 실행 대기, 미확인 시 `confirm-idle` 대기, 대기열은 증거를 만들거나 면제하지 않는다. | 2026-11-10 | DEC-OPS-385 ⑥ 의 '잠금은 두지 않는다' 가운데 무거운 검증의 실행 잠금 부분, DEC-OPS-412 ② 의 '남은 자식·컨테이너는 살아 있음'(관측할 수 있는 것으로 좁힘) |
+| DEC-OPS-414 | accepted | 임시 작업 트리를 예외로 좁히고 수명을 닫는다(`git worktree add` 전 실행 전 가드 승인, 병합 후 사용 여부 확인 뒤 완료 보고에서 삭제 질의, SOP §6.6). | 2026-11-11 | DEC-OPS-395 ② 가운데 임시 트리를 묻지 않고 만들던 운영 |
+| DEC-OPS-432 | accepted | 품질 평가 개선 과제 일괄 진행 확정(운영 API 8080 루프백, ES256 비대칭 JWT 전환 완료 및 HMAC/`JWT_SECRET` 제거, 주민번호 키링 필수, 사용자 버전·검색 trigram Flyway, 단독 운영 리뷰 유지). | 2026-11-25 | docker-compose.yml egov-net 주석의 2026-08-04 사용자 답변 ②(백엔드 8080 을 브라우저가 직접 도달) 가운데 공개 바인딩, ADR-0060 결정 5 의 1차 배포 전환 상태(2차 반영으로 끝남) |
+| DEC-OPS-433 | accepted | 목록 API 의 클라이언트 정렬은 허용 목록(`@SortableBy` + 인덱스)으로만 받는다(`SortParameterGuard` 기본 거부 및 `OpenApiConfig` 제외). | 2026-11-26 | - |
+| DEC-OPS-434 | accepted | 운영 계약 2분할(`core` vs `composer`) 및 작업 브랜치 `pre-push` 로컬 운영 계약/`verify:post-push` 폐기(PR Required CI `secret-scan` 일원화, Windows 분기 `GAP-WIN-001`). | 2026-11-25 | DEC-OPS-410 의 작업 브랜치 push 뒤 로컬 `verify:post-push` 의무와 `pr-checks-wait` 의 로컬 Windows 기록(종료 코드 5) 요구, DEC-OPS-364 의 모든 PR 운영 계약 전수 실행 |
+| DEC-OPS-435 | accepted | 거버넌스 다이어트 Phase 2 확정(`Do-Not-Break` 25항목 승격, 4개 영역 결정 색인·`known-gaps-detail.md`·`decision-indexes.mjs`·`ledger-count-restatement.mjs` 폐기, 단일 보관 원문·ADR 색인·활성 gap 표, SOP·메타 계약 축소 및 3대 유용 검사 보존). | 2026-11-26 | DEC-OPS-340 의 원장 수치 재진술·개별 상한 검사, DEC-OPS-381 의 영역 결정 색인 4분할·6분할 매핑, DEC-OPS-389 의 `decision-indexes.mjs`·`known-gaps-detail.md` 분할 및 바이트 상한 |

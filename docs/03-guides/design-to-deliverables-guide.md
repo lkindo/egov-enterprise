@@ -68,7 +68,7 @@ README 가 제출용이 아니라고 적는다. 기관 백로그가 없는 기�
 | 단계 기준선 비교 | `--compare` 로 받은 이전 기준선 `manifest.json` | `--compare` 를 줄 때만 생긴다(DEC-OPS-397). 자기 자신(`baseline-comparison.*`)과 `contentDigest` 는 비교·집계에서 제외해 단계 다이제스트 불변성을 유지한다 |
 | 테이블·컬럼 정의서, 외래 키 목록, 기능별 물리 ERD, 표준 용어·단어·도메인 사전 | 참조 스키마(`--db`) | 표지(설명 없음·용어 없음·폐기 용어·타입 대조·외래 키 없음)는 이름 대응 표시이지 표준 판정이 아니다. ERD 는 키 컬럼과 물리 외래 키만 그린다 |
 
-**읽지 않는 입력과 투영 원장 모드(`projected-ledger`).** 금지 입력은 공용 메모리(`.agent/memory`, 거기서 옮긴 [gap 영역 상세](../04-operations/known-gaps-detail.md) 포함), 보관 기록(`docs/archived`), ADR 색인, 공유 OCI(`.env`·DB 접속), 생성물의 검토 전
+**읽지 않는 입력과 투영 원장 모드(`projected-ledger`).** 금지 입력은 공용 메모리(`.agent/memory`), 보관 기록(`docs/archived`), ADR 색인, 공유 OCI(`.env`·DB 접속), 생성물의 검토 전
 원장·메뉴 스냅숏(`config/governance/upstream-review`)이다. 원장·생산 Java·E2E·시험 소스와 `--rtm`·`--backlog` 은 한 판정 함수를 지나며 거기서
 거부한다(구분자·대소문자를 가리지 않는다). 생성기 카탈로그·기능 선언은 그 모듈의 읽기를 쓰며 `config/modules` 와 생산 소스만 읽는다.
 생성물(재사용 투영본)에서는 `config/governance/reusable-governance-projection.json` 과 `reusable-base-lock.json` 이 모두 갖춰진 완전한 투영 원장(`projected-ledger`)일 때만 실행되며(불완전한 생성물은 거부), 메뉴 목록은 선택된 라우트(`retainedRoutes`)와 상위 메뉴 폴더로만 필터링한다.

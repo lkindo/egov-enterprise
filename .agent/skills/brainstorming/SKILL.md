@@ -14,7 +14,7 @@ license: MIT — Complete terms in LICENSE.txt
 ## 언제 묻고 언제 진행하나
 
 - 답에 따라 결과가 달라지는 질문만 한다. 요청이 분명하거나 현재 요청·상시 승인이 그 작업을 덮으면 가정을 밝히고 진행한다.
-- 묻기 전에 현재 구현을 읽는다 — 대상 파일, 관련 헌법, 걸리는 영역 결정 색인(`node scripts/decision-indexes.mjs --for <경로…>`). 이미 결정된 것을 다시 묻지 않는다.
+- 묻기 전에 현재 구현을 읽는다 — 대상 파일, 관련 헌법, 자동 로드된 [decisions.md](../../memory/decisions.md)(`Do-Not-Break` 체크리스트 포함)·[known-gaps.md](../../memory/known-gaps.md) 및 관련 [ADR 목록](../../../docs/02-architecture/decisions/README.md). 이미 결정된 것을 다시 묻지 않는다.
 - 선택지를 낼 때는 권고안을 먼저 두고, 각 선택지가 무엇을 바꾸는지 한 줄로 적는다.
 
 ## 설계를 남길 곳
