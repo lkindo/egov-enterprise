@@ -15,6 +15,7 @@ import { useTranslations } from 'use-intl';
 import { LocaleSwitcher } from '@/app/components/layout/LocaleSwitcher';
 import { restorableQuery } from '@/lib/auth/login-return-path';
 import { SITE_IDENTITY } from '@/config/site-identity';
+import { contentLang } from '@/i18n/content-lang';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { MfaChallengePanel } from '@/components/account/MfaChallengePanel';
@@ -266,7 +267,7 @@ function LoginContent() {
                             <Zap className="text-primary w-6 h-6 fill-primary" />
                         </motion.div>
                         {/* 사이트 이름은 배포 설정 값이다(번역하지 않는다) — 한국어 이름이면 그 부분의 언어를 밝힌다(WCAG 3.1.2). */}
-                        <h1 id="login-title" lang={/[가-힣]/.test(SITE_IDENTITY.siteShortName) ? 'ko' : undefined} className="text-2xl font-bold tracking-tight text-foreground">
+                        <h1 id="login-title" lang={contentLang(SITE_IDENTITY.siteShortName)} className="text-2xl font-bold tracking-tight text-foreground">
                             {SITE_IDENTITY.siteShortName}
                         </h1>
                         {/* [2026-09-15 DEC-OPS-099] 제목 아래 설명 문구를 두지 않는다. 종전 문구는 검증되지 않은 제품
@@ -314,7 +315,7 @@ function LoginContent() {
                                     data-testid="login-sign-out-notices"
                                     className="text-sm text-secondary-foreground bg-muted/40 p-3 rounded-[var(--radius-hub-item)] border border-border space-y-1"
                                 >
-                                    {signOutNotices.map((notice) => <p key={notice.key}>{tRoot(notice.key, notice.values)}</p>)}
+                                    {signOutNotices.filter((notice) => tRoot.has(notice.key)).map((notice) => <p key={notice.key}>{tRoot(notice.key, notice.values)}</p>)}
                                 </div>
                             )}
 

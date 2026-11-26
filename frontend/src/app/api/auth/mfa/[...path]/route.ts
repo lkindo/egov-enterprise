@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
-import { authUpstreamRequestConfig } from '@/lib/auth/auth-request-policy';
+import { authUpstreamRequestConfig, forwardedLanguageHeaders } from '@/lib/auth/auth-request-policy';
 import { z } from 'zod';
 import { parseGeneratedOperationRequest, parseGeneratedOperationResponse } from '@/lib/api/generated-operation';
 import { forwardedClientIpHeaders } from '@/lib/api/forwarded-client-ip';
@@ -33,7 +33,7 @@ function failure(status: number) {
 
 function headers(request: NextRequest, authenticated = true) {
   const accessToken = request.cookies.get('accessToken')?.value;
-  return { 'Content-Type': 'application/json', ...forwardedClientIpHeaders(request.headers),
+  return { 'Content-Type': 'application/json', ...forwardedClientIpHeaders(request.headers), ...forwardedLanguageHeaders(request.headers),
     ...(authenticated && accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
   };
 }

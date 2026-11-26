@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { LoginRequestSchema } from '@/types/generated-zod';
-import { catalogKey } from '@/i18n/messages';
+import { catalogKey } from '@/i18n/catalog';
 
 /** 로그인 요청 DTO의 필수값과 사용자 아이디 20자·비밀번호 128자 경계를 그대로 사용한다. 안내 문구는 카탈로그 키다(ADR-0063). */
 export const loginFormSchema = LoginRequestSchema.extend({

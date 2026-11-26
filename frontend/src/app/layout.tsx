@@ -25,9 +25,11 @@ import { getServerUser } from '@/lib/auth/server-user';
 import { SITE_IDENTITY } from '@/config/site-identity';
 import { POPSTATE_GATE_SCRIPT } from '@/lib/navigation/popstate-gate';
 import { SIDEBAR_COLLAPSE_SCRIPT } from '@/lib/layout/sidebar-collapse-script';
-import { I18nProvider } from '@/i18n/I18nProvider';
+import { LocaleBoundary } from '@/i18n/LocaleBoundary';
+import { contentLang } from '@/i18n/content-lang';
 import { messagesFor } from '@/i18n/messages';
-import { requestLocale, serverTranslator } from '@/i18n/server-locale';
+import { requestEffectiveLocale, requestLocale, serverTranslator } from '@/i18n/server-locale';
+import { CommonText } from './components/layout/ShellText';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -61,7 +63,6 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   //   그 사이 바뀐 주소(빠른 이동)로 하이드레이션해 서버 HTML 과 어긋났다(React #418). 메뉴 조회는 같은 백엔드라 첫 화면을
   //   크게 늦추지 않고, 실패하면 빈 메뉴다. 자리표시가 없으니 자리표시가 사이드바로 바뀌며 포커스가 떨어지는 일도 없다(2.4.3).
   const initialMenus = await getInitialMenus(accessToken);
-  const t = await serverTranslator('common');
 
   return (
     <ApplicationFrame
@@ -70,7 +71,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
       footer={<Footer />}
     >
       <PageTransition>
-        <Suspense fallback={<div className="flex min-h-64 items-center justify-center text-muted-foreground"><h1 className="sr-only">{t('loadingPageTitle')}</h1><p role="status">{t('loadingPageStatus')}</p></div>}>
+        <Suspense fallback={<div className="flex min-h-64 items-center justify-center text-muted-foreground"><h1 className="sr-only"><CommonText k="loadingPageTitle" /></h1><p role="status"><CommonText k="loadingPageStatus" /></p></div>}>
           {children}
         </Suspense>
       </PageTransition>
@@ -82,7 +83,6 @@ async function ProvidersWithAuth({ children }: { children: React.ReactNode }) {
   // 인증 정보를 서버 사이드에서 미리 조회 (성능 최적화 및 플리커 방지). 요청 하나에서 한 번만 읽는다 — 업무 홈 서버 자식도 같은
   // 함수로 읽어 '/' 요청의 /auth/me 가 두 번 나가지 않는다(lib/auth/server-user.ts).
   const initialUser = await getServerUser();
-  const t = await serverTranslator('common');
 
   return (
     <Providers initialUser={initialUser}>
@@ -92,8 +92,8 @@ async function ProvidersWithAuth({ children }: { children: React.ReactNode }) {
       <Suspense fallback={
         <main className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">
           <div>
-            <h1 className="sr-only">{SITE_IDENTITY.siteAccessibleName}</h1>
-            <p role="status" aria-live="polite">{t('preparingApp')}</p>
+            <h1 className="sr-only" lang={contentLang(SITE_IDENTITY.siteAccessibleName)}>{SITE_IDENTITY.siteAccessibleName}</h1>
+            <p role="status" aria-live="polite"><CommonText k="preparingApp" /></p>
           </div>
         </main>
       }>
@@ -123,14 +123,17 @@ export default async function RootLayout({
   // allowlist 검증 뒤 <html> 한 곳에만 배선한다(미설정 시 comfortable = 렌더링 무변경).
   const density = resolveDensity(process.env.UI_DENSITY);
   // [2026-11-26 ADR-0063] 화면 로케일은 쿠키로 고르고 <html lang> 과 카탈로그가 같은 값을 쓴다. 미번역 화면 영역은 ApplicationFrame 이 ko 로 다시 감싼다.
+  // [2026-11-26 ADR-0063] 고른 로케일(쿠키)과 이 화면에서 실제로 그리는 로케일 — 번역을 마치지 않은 화면은 한국어다. 문서 언어는
+  //   실제 로케일이고, 화면을 옮기면 로케일 경계가 맞춘다.
   const locale = await requestLocale();
-  const t = await serverTranslator('common');
+  const effective = await requestEffectiveLocale();
+  const t = await serverTranslator('common', effective);
   // [2026-09-16 GAP-UIF-001] next/font 변수는 <html>(:root)에 둔다. globals.css 의 @theme 는
   // --font-sans 를 :root 에서 계산하는데, 변수를 body 에만 두면 그 시점에 값이 없어 별칭 전체가
   // 무효가 되고 브라우저는 시스템 대체 글꼴로 떨어졌다 — 번들한 본문 글꼴이 쓰이지 않았다.
   return (
     <html
-      lang={locale}
+      lang={effective}
       className={`${inter.variable} ${outfit.variable} scroll-pt-16`}
       data-brand-theme={brandTheme}
       data-density={density}
@@ -158,16 +161,16 @@ export default async function RootLayout({
           <Suspense fallback={
             <main className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">
               <div>
-                <h1 className="sr-only">{SITE_IDENTITY.siteAccessibleName}</h1>
+                <h1 className="sr-only" lang={contentLang(SITE_IDENTITY.siteAccessibleName)}>{SITE_IDENTITY.siteAccessibleName}</h1>
                 <p role="status" aria-live="polite">{t('checkingSession')}</p>
               </div>
             </main>
           }>
-            <I18nProvider locale={locale} messages={messagesFor(locale)}>
+            <LocaleBoundary preferred={locale} messages={messagesFor(locale)} koreanMessages={locale === 'ko' ? undefined : messagesFor('ko')}>
               <ProvidersWithAuth>
                 {children}
               </ProvidersWithAuth>
-            </I18nProvider>
+            </LocaleBoundary>
           </Suspense>
         </ThemeProvider>
       </body>

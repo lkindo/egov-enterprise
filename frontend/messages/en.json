@@ -4,13 +4,17 @@
     "checkingSession": "Checking your secure session...",
     "preparingApp": "Preparing the application...",
     "loadingPageTitle": "Loading page content",
-    "loadingPageStatus": "Loading page content..."
+    "loadingPageStatus": "Loading page content...",
+    "globalLoadingTitle": "Enterprise work portal",
+    "globalLoadingAnnouncement": "Loading the page.",
+    "globalLoadingStatus": "Loading"
   },
   "locale": {
     "label": "Language",
     "ko": "한국어",
     "en": "English",
-    "koreanOnlyNotice": "This page is available in Korean only."
+    "koreanOnlyNotice": "This page is available in Korean only.",
+    "noticeLabel": "Language notice"
   },
   "validation": {
     "tooLong": "{label}: enter up to {maximum} characters.",
@@ -46,7 +50,8 @@
     "passwordRequired": "Enter your password.",
     "errorFailure": "Sign-in failed. Check your user ID and password.",
     "errorUnavailable": "The sign-in service is temporarily unavailable. Please try again later.",
-    "errorRateLimited": "There are too many sign-in requests. Please try again later."
+    "errorRateLimited": "There are too many sign-in requests. Please try again later.",
+    "pageTitle": "Sign in"
   },
   "mfa": {
     "recoveryRegion": "Store your recovery codes",
@@ -75,5 +80,10 @@
   "signOut": {
     "unsentApprovals": "{count, plural, one {# approval was} other {# approvals were}} not sent because your session ended. Process {count, plural, one {it} other {them}} again in the approval inbox.",
     "unconfirmedApprovals": "The result of {count, plural, one {# approval} other {# approvals}} could not be confirmed. Check the result in the approval inbox."
+  },
+  "transport": {
+    "timeout": "The server took too long to respond. Try again in a moment.",
+    "offline": "Could not connect to the server. Check your network connection and try again.",
+    "generic": "The request could not be completed. Try again in a moment."
   }
 }

@@ -2,17 +2,19 @@
 
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLocale, useTranslations } from 'use-intl';
+import { useTranslations } from 'use-intl';
 import { cn } from '@/lib/utils';
-import { LOCALES, resolveLocale, writeBrowserLocale, type AppLocale } from '@/i18n/locales';
+import { LOCALES, writeBrowserLocale, type AppLocale } from '@/i18n/locales';
+import { usePreferredLocale } from '@/i18n/LocaleBoundary';
 
 /**
  * 보이는 로케일 선택기(ADR-0063 결정 3). 언어 이름은 그 언어로 적고(endonym) `lang` 을 단다 — 어느 로케일에서도 고를 언어를 알아본다.
- * 바꾸면 쿠키를 쓰고 서버 렌더를 다시 받는다(루트 레이아웃이 `html[lang]` 과 카탈로그를 바꾼다).
+ * 바꾸면 쿠키를 쓰고 서버 렌더를 다시 받는다(루트 레이아웃이 `html[lang]` 과 카탈로그를 바꾼다). 눌린 단추는 사용자가 고른 로케일이다 —
+ * 번역을 마치지 않은 화면(한국어로 그린다)에서도 영어가 눌려 있고, 한국어를 누르면 한국어로 돌아간다.
  */
 export function LocaleSwitcher({ className }: { className?: string }) {
   const t = useTranslations('locale');
-  const current = resolveLocale(useLocale());
+  const current = usePreferredLocale();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 

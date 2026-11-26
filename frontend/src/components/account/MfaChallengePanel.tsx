@@ -11,7 +11,7 @@ import { z } from 'zod';
 import { mfaService } from '@/services/foundation/auth/mfaService';
 import { type AuthLoginData } from '@/lib/auth/auth-bff-contract';
 import { MFA_CODE_PATTERN, MFA_RECOVERY_CODE_PATTERN, type MfaEnrollment } from '@/lib/auth/mfa-bff-contract';
-import { catalogKey } from '@/i18n/messages';
+import { catalogKey } from '@/i18n/catalog';
 
 /*
  * [2026-11-26 ADR-0063] 추가 인증은 로그인 화면의 일부라 번역을 마친 화면이다 — 고정 문구는 카탈로그(mfa)에서 그린다. 코드 형식은
@@ -63,7 +63,7 @@ export function MfaChallengePanel({ stage: initialStage, enrollment: initialEnro
     if (submittingRef.current) return;
     submittingRef.current = true; setPending(true); validation.setFormErrors({});
     try { await operation(); }
-    catch { validation.setFormErrors({ root: t('failure') }); }
+    catch { validation.setFormErrors({ root: catalogKey('mfa.failure') }); }
     finally { submittingRef.current = false; setPending(false); }
   };
   if (codes) return <RecoveryCodes codes={codes} onContinue={() => { setCodes(null); onComplete(); }} />;

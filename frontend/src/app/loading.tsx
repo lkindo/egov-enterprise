@@ -1,4 +1,5 @@
 import { SITE_IDENTITY } from '@/config/site-identity';
+import { CommonText } from './components/layout/ShellText';
 
 export default function GlobalLoading() {
   return (
@@ -23,15 +24,16 @@ export default function GlobalLoading() {
 
       {/* Loading Text */}
       <div className="mt-8 flex flex-col items-center gap-2">
-        <h1 className="text-xl font-bold tracking-tighter text-primary">전사 업무 포털</h1>
-        <span className="sr-only">{SITE_IDENTITY.siteAccessibleName} 화면을 불러오는 중입니다.</span>
+        {/* [2026-11-26 ADR-0063] 글자는 카탈로그(common)에서 지금 화면의 로케일로 그린다. */}
+        <h1 className="text-xl font-bold tracking-tighter text-primary"><CommonText k="globalLoadingTitle" /></h1>
+        <span className="sr-only"><CommonText k="globalLoadingAnnouncement" values={{ site: SITE_IDENTITY.siteAccessibleName }} /></span>
         <div className="flex items-center gap-1.5" aria-hidden="true">
           <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[bounce_1s_infinite_0ms]" />
           <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[bounce_1s_infinite_200ms]" />
           <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[bounce_1s_infinite_400ms]" />
         </div>
         <p className="text-xs font-bold text-muted-foreground tracking-[0.2em] mt-2 opacity-70">
-          화면을 불러오는 중입니다
+          <CommonText k="globalLoadingStatus" />
         </p>
       </div>
 

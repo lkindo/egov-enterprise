@@ -430,10 +430,19 @@ test.describe('인증 경계', () => {
             const signIn = page.getByRole('button', { name: 'Sign in', exact: true });
             await expect(signIn).toBeVisible();
             await expect(page.getByRole('textbox', { name: 'User ID', exact: true })).toBeVisible();
-            // 번역을 마친 화면은 검증 안내까지 영어다 — 한 화면 안에서 언어가 섞이지 않는다.
+            // 번역을 마친 화면은 검증 안내까지 영어다 — 한 화면 안에서 언어가 섞이지 않는다(lang 표지 없는 한글이 없다).
             await signIn.click();
             await expect(page.getByText('Enter your user ID.').first()).toBeVisible();
             await expect(page.getByTestId('korean-only-notice')).toHaveCount(0);
+            expect(await unmarkedHangul(page), '영어 로그인 화면에 lang 표지 없는 한글이 남았다').toEqual([]);
+            // 이미 보이는 오류도 언어를 바꾸면 새 언어로 다시 그린다 — 화면을 다시 그려도 입력·오류 상태는 남는다.
+            await page.getByLabel('Password', { exact: true }).fill('draft-secret');
+            await page.getByRole('group', { name: 'Language' }).getByRole('button', { name: '한국어' }).click();
+            await expect(page.locator('html')).toHaveAttribute('lang', 'ko');
+            await expect(page.getByText('아이디를 입력해 주세요.').first()).toBeVisible();
+            await expect(page.getByLabel('비밀번호', { exact: true })).toHaveValue('draft-secret');
+            await page.getByRole('group', { name: '언어' }).getByRole('button', { name: 'English' }).click();
+            await expect(page.getByText('Enter your user ID.').first()).toBeVisible();
             await page.reload();
             await expect(page.locator('html')).toHaveAttribute('lang', 'en');
             await page.getByRole('group', { name: 'Language' }).getByRole('button', { name: '한국어' }).click();
@@ -444,11 +453,23 @@ test.describe('인증 경계', () => {
 
     test.describe('Locale on untranslated screens (ADR-0063)', () => {
         test.use({ storageState: 'playwright/.auth/admin.json' });
-        test('영어 로케일에서 아직 번역하지 않은 화면은 한국어 영역(lang=ko)으로 그리고 그 사실을 영어로 알린다', async ({ page, context, baseURL }) => {
+        test('영어 로케일에서 아직 번역하지 않은 화면은 한국어로 그리고(html lang=ko) 그 사실을 영어로 알리며, 입력을 지킨 채 한국어로 돌아간다', async ({ page, context, baseURL }) => {
             await context.addCookies([{ name: 'NEXT_LOCALE', value: 'en', url: baseURL ?? 'http://localhost:3001' }]);
-            await page.goto('/');
-            await expect(page.getByTestId('korean-only-notice')).toHaveText('This page is available in Korean only.');
-            await expect(page.locator('[lang="ko"] main#main-content')).toHaveCount(1);
+            await page.goto('/search');
+            const notice = page.getByTestId('korean-only-notice');
+            await expect(notice).toHaveText('This page is available in Korean only.');
+            await expect(notice).toHaveAttribute('lang', 'en');
+            // 문서 언어가 한국어라 본문 밖에 그려지는 대화상자·토스트도 한국어로 읽힌다.
+            await expect(page.locator('html')).toHaveAttribute('lang', 'ko');
+            const query = page.getByRole('textbox', { name: '통합검색어', exact: true });
+            await query.fill('작성 중인 검색어');
+            // 선택기는 한국어 화면 안에 있어 묶음 이름은 한국어이고, 고른 언어(영어)가 눌려 있다.
+            const switcher = page.getByRole('group', { name: '언어' });
+            await expect(switcher.getByRole('button', { name: 'English' })).toHaveAttribute('aria-pressed', 'true');
+            await switcher.getByRole('button', { name: '한국어' }).click();
+            await expect(notice).toHaveCount(0);
+            await expect(switcher.getByRole('button', { name: '한국어' })).toHaveAttribute('aria-pressed', 'true');
+            await expect(query).toHaveValue('작성 중인 검색어');
         });
     });
 
@@ -513,6 +534,29 @@ test.describe('인증 경계', () => {
     });
 });
 
+
+/** 문서 본문에서 `lang="ko"` 표지 없이 남은 한글(글자와 보조기술이 읽는 속성) — 화면 단위 완결성의 렌더 증거(ADR-0063). */
+async function unmarkedHangul(page: Page): Promise<string[]> {
+    return page.evaluate(() => {
+        const hangul = /[가-힣]/;
+        const language = (element: Element | null) => element?.closest('[lang]')?.getAttribute('lang') ?? '';
+        const skipped = (element: Element | null) => !!element?.closest('script,style,noscript,template');
+        const found: string[] = [];
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+            const text = node.textContent ?? '';
+            if (hangul.test(text) && !skipped(node.parentElement) && language(node.parentElement) !== 'ko') found.push(text.trim().slice(0, 40));
+        }
+        for (const element of document.body.querySelectorAll('*')) {
+            if (skipped(element)) continue;
+            for (const attribute of ['aria-label', 'placeholder', 'title', 'alt']) {
+                const value = element.getAttribute(attribute);
+                if (value && hangul.test(value) && language(element) !== 'ko') found.push(`${attribute}: ${value.slice(0, 40)}`);
+            }
+        }
+        return found;
+    });
+}
 
 const AUTHORIZATION = '/api/v1/admin/authorization';
 type NavigationEntry = { code: string; parentCode: string | null; route?: string | null; useYn?: string | null };

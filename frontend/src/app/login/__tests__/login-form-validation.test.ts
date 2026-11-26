@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { loginFormSchema } from '../login-form-validation';
-import { catalogKey } from '@/i18n/messages';
+import { catalogKey } from '@/i18n/catalog';
 import ko from '../../../../messages/ko.json';
 
 describe('login form validation', () => {

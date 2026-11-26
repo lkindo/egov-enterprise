@@ -14,11 +14,20 @@ export function resolveLocale(value: string | null | undefined): AppLocale {
   return value === 'en' ? 'en' : DEFAULT_LOCALE;
 }
 
-/** 브라우저 쿠키에서 로케일을 읽는다(서버에서는 기본값). */
+/** 쿠키 값의 퍼센트 인코딩을 푼다. 깨진 인코딩(다른 앱이 쓴 같은 이름 쿠키 등)은 모르는 값으로 본다 — 화면을 깨뜨리지 않는다. */
+function decodeCookieValue(raw: string): string | undefined {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return undefined;
+  }
+}
+
+/** 브라우저 쿠키에서 사용자가 고른 로케일을 읽는다(서버에서는 기본값). */
 export function readBrowserLocale(): AppLocale {
   if (typeof document === 'undefined') return DEFAULT_LOCALE;
   const entry = document.cookie.split(';').map((part) => part.trim()).find((part) => part.startsWith(`${LOCALE_COOKIE}=`));
-  return resolveLocale(entry ? decodeURIComponent(entry.slice(LOCALE_COOKIE.length + 1)) : undefined);
+  return resolveLocale(entry ? decodeCookieValue(entry.slice(LOCALE_COOKIE.length + 1)) : undefined);
 }
 
 /** 브라우저 쿠키에 로케일을 쓴다(1년, 사이트 전체, 같은 사이트 요청만). */

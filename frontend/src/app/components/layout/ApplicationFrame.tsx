@@ -2,43 +2,19 @@
 
 import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
-import { useLocale, useTranslations } from 'use-intl';
-import { I18nProvider } from '@/i18n/I18nProvider';
-import { resolveLocale } from '@/i18n/locales';
-import { messagesFor } from '@/i18n/messages';
-import { isTranslatedRoute } from '@/i18n/surfaces';
+import { useTranslations } from 'use-intl';
 
 type FrameSlots = { children: ReactNode; header: ReactNode; sidebar: ReactNode; footer: ReactNode };
 
 /**
  * Public authentication pages do not mount the authenticated navigation.
  *
- * <p>[2026-11-26 ADR-0063] 영어 로케일에서 아직 번역하지 않은 화면은 틀 전체(머리글·사이드바·본문·바닥글)를 `lang="ko"` 영역과 한국어
- * 카탈로그로 다시 감싼다 — 그 안의 공용 부품(오류 요약 등)도 한국어로 그려 한 화면 안에서 언어가 섞이지 않고, 보조기술이 한국어를
- * 한국어로 읽는다. 그 사실은 영역 밖의 한 줄 안내가 영어로 말한다.
+ * <p>[2026-11-26 ADR-0063] 화면 로케일(번역을 마치지 않은 화면은 한국어)은 루트의 로케일 경계가 정한다 — 이 틀은 그 공급자의 문구로
+ * 그리기만 한다. 로케일을 바꿔도 틀의 모양이 같아 작성 중인 입력이 남는다.
  */
 export function ApplicationFrame(slots: FrameSlots) {
   const pathname = usePathname();
-  const locale = resolveLocale(useLocale());
-  const koreanOnly = locale !== 'ko' && !isTranslatedRoute(pathname);
-  if (!koreanOnly) return <FrameBody {...slots} pathname={pathname} />;
-  return <KoreanOnlyFrame {...slots} pathname={pathname} />;
-}
-
-function KoreanOnlyFrame(props: FrameSlots & { pathname: string }) {
-  const t = useTranslations('locale');
-  return (
-    <>
-      <p role="note" data-testid="korean-only-notice" className="bg-muted px-4 py-1.5 text-center text-xs text-muted-foreground">
-        {t('koreanOnlyNotice')}
-      </p>
-      <div lang="ko" className="contents">
-        <I18nProvider locale="ko" messages={messagesFor('ko')}>
-          <FrameBody {...props} />
-        </I18nProvider>
-      </div>
-    </>
-  );
+  return <FrameBody {...slots} pathname={pathname} />;
 }
 
 function FrameBody({ children, header, sidebar, footer, pathname }: FrameSlots & { pathname: string }) {

@@ -1,3 +1,4 @@
+import { effectiveBrowserLocale } from '@/i18n/surfaces';
 import axios from 'axios';
 import { AUTH_BROWSER_REQUEST_TIMEOUT_MS } from '@/lib/auth/auth-request-policy';
 import { reissueSession } from '@/lib/api/client';
@@ -94,7 +95,8 @@ export const authService = {
    // 동일 도메인 Next.js API Route Handler로 라우팅
    let response;
    try {
-     response = await axios.post<unknown>('/api/auth/login', loginData, ROUTE_HANDLER);
+     // 백엔드 문구의 언어는 지금 화면(로그인)의 로케일이다(ADR-0063). BFF 가 ko·en 만 넘긴다.
+     response = await axios.post<unknown>('/api/auth/login', loginData, { ...ROUTE_HANDLER, headers: { 'Accept-Language': effectiveBrowserLocale() } });
    } catch (error: unknown) {
      const responseData = axiosErrorResponseData(error);
      const failure = authLoginResponseSchema.safeParse(responseData);
