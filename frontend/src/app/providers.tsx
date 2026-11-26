@@ -51,6 +51,7 @@ z.setErrorMap((issue) => {
 
 import { UserInfo } from '@/services/foundation/auth/authService';
 import { createAppQueryClient } from '@/lib/query/list-query-defaults';
+import { browserQueryClient, rememberBrowserQueryClient } from '@/lib/query/browser-query-client';
 import { RouteHistoryRecorder } from '@/app/components/navigation/RouteHistoryRecorder';
 
 export default function Providers({
@@ -62,6 +63,12 @@ export default function Providers({
 }) {
   // 기본 설정(조회 중 이전 페이지 유지 — C1, 오류 승격 규칙 — C2)은 lib/query/list-query-defaults 가 소유한다.
   const [queryClient] = useState(createAppQueryClient);
+  // 브라우저에서는 공급자 밖 공용 부품(브레드크럼)이 같은 캐시를 쓰도록 기억해 둔다(서버에서는 기억하지 않는다). 초기화 함수가 아니라
+  //   효과에서 기억한다 — Strict Mode 는 초기화 함수를 두 번 불러 React 가 채택하지 않은 클라이언트를 기억하게 된다(Codex 검토).
+  useEffect(() => {
+    rememberBrowserQueryClient(queryClient);
+    return () => { if (browserQueryClient() === queryClient) rememberBrowserQueryClient(undefined); };
+  }, [queryClient]);
 
   // Page Visibility API 연동: 탭이 보이지 않을 때 불필요한 백그라운드 폴링 중단
   useEffect(() => {

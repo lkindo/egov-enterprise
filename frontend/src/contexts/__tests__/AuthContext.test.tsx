@@ -12,6 +12,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AUTHORIZATION_CHANGED_EVENT, isSignedOut, markSignedIn } from '@/lib/auth/authorization-state';
+import { registerBeforeSignOut, registerOnSessionLost } from '@/lib/auth/before-sign-out';
 
 const sessionBroadcast = vi.hoisted(() => ({
   handler: null as null | ((message: { type: 'signed-out' } | { type: 'signed-in' }) => void),
@@ -157,6 +158,54 @@ describe('AuthContext', () => {
     expect(result.current.user?.id ?? null).toBe(latest === 'login' ? 'current' : null);
   });
 
+  it('[2026-11-25] 로그아웃은 등록된 정리(대기 중 승인 전송)를 요청 차단 표지보다 먼저 끝낸다', async () => {
+    (authService.logout as any).mockResolvedValue({});
+    const signedOutWhileRunning: boolean[] = [];
+    const release = registerBeforeSignOut('auth-context-test', async () => {
+      await Promise.resolve();
+      signedOutWhileRunning.push(isSignedOut());
+    });
+    try {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await act(async () => { await result.current.logout(); });
+
+      expect(signedOutWhileRunning).toEqual([false]);
+      expect(isSignedOut()).toBe(true);
+    } finally {
+      release();
+      markSignedIn();
+    }
+  });
+
+  it('[Codex 검토] 겹친 로그아웃은 같은 정리를 기다린다 — 둘째가 첫째의 정리를 추월해 세션을 먼저 닫지 않는다', async () => {
+    (authService.logout as any).mockResolvedValue({});
+    // 두 호출이 같은 관문을 기다린다 — 중복 방지가 빠지면 관문을 풀기 전에 정리 호출이 둘이 된다(시험이 멈추지 않고 바로 붉다).
+    let finish: () => void = () => {};
+    const gate = new Promise<void>((resolve) => { finish = resolve; });
+    const task = vi.fn(() => gate);
+    const release = registerBeforeSignOut('auth-context-concurrent', task);
+    try {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      let first!: Promise<void>;
+      let second!: Promise<void>;
+      await act(async () => {
+        first = result.current.logout();
+        second = result.current.logout();
+        await Promise.resolve();
+      });
+      expect(isSignedOut()).toBe(false);
+      expect(task).toHaveBeenCalledTimes(1);
+      await act(async () => { finish(); await Promise.all([first, second]); });
+
+      expect(task).toHaveBeenCalledTimes(1);
+      expect(authService.logout).toHaveBeenCalledTimes(1);
+      expect(isSignedOut()).toBe(true);
+    } finally {
+      release();
+      markSignedIn();
+    }
+  });
+
   it('로그아웃 시 사용자 세션 정보가 비워져야 함', async () => {
     (authService.logout as any).mockResolvedValue({});
     localStorage.setItem('egov-board-draft:v2:user-1:BBS-1:create:new', 'draft');
@@ -231,6 +280,53 @@ describe('AuthContext', () => {
     expect(result.current.user).toBeNull();
     expect(isSignedOut()).toBe(true);
     expect(replace).toHaveBeenCalledWith('/login');
+  });
+
+  it('[Codex 2차 검토] 로그아웃 대기 중 다른 탭의 로그인으로 사용자가 바뀌면 새 사용자의 로그아웃은 따로 한다', async () => {
+    (authService.logout as any).mockResolvedValue({});
+    vi.mocked(authService.getCurrentUser).mockResolvedValue({ id: 'user-a', name: 'A', groups: [], permissions: [], authorizationVersion: 'v1' });
+    let finish: () => void = () => {};
+    const gate = new Promise<void>((resolve) => { finish = resolve; });
+    const task = vi.fn(() => gate);
+    const release = registerBeforeSignOut('auth-context-switch', task);
+    try {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await waitFor(() => expect(result.current.user?.id).toBe('user-a'));
+      let first!: Promise<void>;
+      act(() => { first = result.current.logout(); });
+
+      vi.mocked(authService.getCurrentUser).mockResolvedValue({ id: 'user-b', name: 'B', groups: [], permissions: [], authorizationVersion: 'v1' });
+      act(() => sessionBroadcast.handler?.({ type: 'signed-in' }));
+      await waitFor(() => expect(result.current.user?.id).toBe('user-b'));
+      let second!: Promise<void>;
+      act(() => { second = result.current.logout(); });
+      await act(async () => { await Promise.resolve(); });
+
+      expect(task).toHaveBeenCalledTimes(2);
+      await act(async () => { finish(); await Promise.all([first, second]); });
+    } finally {
+      release();
+      markSignedIn();
+    }
+  });
+
+  it('[Codex 2차 검토] 사용자 재확인이 먼저 비웠어도 다른 탭의 로그아웃이면 세션 상실 정리를 한다 — 익명 화면의 요청은 막지 않는다', async () => {
+    vi.mocked(authService.getCurrentUser).mockResolvedValue(null as never);
+    const lost = vi.fn();
+    const release = registerOnSessionLost('auth-context-lost', lost);
+    try {
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.user).toBeNull();
+      markSignedIn(); // 앞 시험이 남긴 전역 표지와 무관하게 기준선을 세운다.
+
+      act(() => sessionBroadcast.handler?.({ type: 'signed-out' }));
+
+      expect(lost).toHaveBeenCalledTimes(1);
+      expect(isSignedOut()).toBe(false);
+    } finally {
+      release();
+    }
   });
 
   it('초기화 시 사용자 정보를 조회하여 세션 유지를 확인해야 함', async () => {

@@ -10,9 +10,9 @@ export class BoardMasterPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.wizardButton = page.locator('button').filter({
-      hasText: /게시판 만들기|NEW BOARD WIZARD|마법사|Wizard|Maker|Create/i
-    }).or(page.locator('button:has(svg.lucide-rocket), button:has(.lucide-rocket)')).first();
+    // [2026-11-25 품질 평가] 목록 머리의 생성 단추 하나만 이름으로 고른다 — 종전의 넓은 정규식·아이콘 대체 선택자는 다른 단추를
+    //   누르고도 통과할 수 있었다(거짓 통과).
+    this.wizardButton = page.getByRole('button', { name: '게시판 만들기', exact: true });
 
     this.bbsNmInput = page.locator('#bbsTtl').first();
     this.bbsIntrcnInput = page.locator('#bbsExpln').first();
@@ -31,18 +31,9 @@ export class BoardMasterPage {
 
   async startWizard() {
     console.log('>>> Attempting to start wizard...');
-    await this.page.waitForLoadState('networkidle').catch(() => {});
-
-    try {
-      await expect(this.wizardButton).toBeVisible({ timeout: 15000 });
-      await this.wizardButton.scrollIntoViewIfNeeded();
-      await this.wizardButton.click();
-    } catch {
-      console.log('>>> Standard wizard button not found, searching for any button with "마법사" or "Rocket"');
-      const fallback = this.page.locator('button').filter({ hasText: /마법사/i }).first();
-      await expect(fallback).toBeVisible({ timeout: 10000 });
-      await fallback.click();
-    }
+    // networkidle 대기를 삼키고 대체 선택자로 넘어가던 것을 걷었다 — 단추가 보이지 않으면 그대로 실패한다.
+    await expect(this.wizardButton).toBeVisible({ timeout: 15000 });
+    await this.wizardButton.click();
 
     console.log('>>> Wizard click sent');
     await expect(this.page).toHaveURL(/.*maker/, { timeout: 15000 });
