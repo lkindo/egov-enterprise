@@ -33,7 +33,7 @@ function invalidateBookmarks(client: QueryClient) {
 export function useMenuBookmarks() {
   const authorization = useMenuAuthorizationScope();
   const query = useQuery({
-    queryKey: [...MENU_BOOKMARKS_KEY, ...authorization.scope],
+    queryKey: menuKeys.bookmarks(authorization.scope),
     queryFn: ({ signal }) => menuService.getMyBookmarkStatus({ signal }),
     enabled: authorization.authenticated,
     staleTime: 5 * 60 * 1000,
@@ -78,7 +78,7 @@ export function useMenuBookmarkCleanup(ready: boolean) {
     const confirmedScope = scopeKey;
     const sameScope = () => lifecycleActiveRef.current && currentScope.current === confirmedScope;
     const headKey = menuKeys.head(authorization.scope);
-    const statusKey = [...MENU_BOOKMARKS_KEY, ...authorization.scope] as const;
+    const statusKey = menuKeys.bookmarks(authorization.scope);
     try {
       const [menus, status] = await Promise.all([
         client.fetchQuery({ queryKey: headKey, queryFn: ({ signal }) => menuService.getHeadMenus({ signal }), staleTime: 0, retry: false }),

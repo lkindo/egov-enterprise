@@ -6,7 +6,9 @@ import {
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import type { BoardPostingStatus } from '@/types/business/board';
 import { boardPostKeys } from './board-post-keys';
+/* reusable-base:community:start */
 import { communityKeys } from './community-keys';
+/* reusable-base:community:end */
 
 /**
  * 운영 화면 게시물 탭의 조회 조건(ADR-0040 §5.4). URL 밖 상태이고 `조회`·Enter 로 적용한 값만 담는다. 쪽은 1 기반이다(ADR-0036).
@@ -34,7 +36,9 @@ export function invalidateBoardCaches(queryClient: QueryClient, options: { remov
   if (options.removedBbsId) queryClient.removeQueries({ queryKey: boardMasterKeys.detail(options.removedBbsId) });
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: boardMasterKeys.all }),
+    /* reusable-base:community:start */
     queryClient.invalidateQueries({ queryKey: communityKeys.boardsRoot }),
+    /* reusable-base:community:end */
   ]);
 }
 

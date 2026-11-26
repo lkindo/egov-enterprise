@@ -19,6 +19,7 @@ export const menuKeys = {
   head: (scope: MenuScope) => [...menuKeys.headAll(), ...scope] as const,
   left: (activeMenuNo: number | null, scope: MenuScope) => [...menuKeys.all, 'left', activeMenuNo, ...scope] as const,
   bookmarksAll: () => [...menuKeys.all, 'bookmarks'] as const,
+  bookmarks: (scope: MenuScope) => [...menuKeys.bookmarksAll(), ...scope] as const,
   commandCenter: () => [...menuKeys.all, 'command-center'] as const,
   commandCenterHead: (scope: CommandCenterScope) => [...menuKeys.commandCenter(), 'head', ...scope] as const,
   commandCenterBookmarksAll: () => [...menuKeys.commandCenter(), 'bookmarks'] as const,
