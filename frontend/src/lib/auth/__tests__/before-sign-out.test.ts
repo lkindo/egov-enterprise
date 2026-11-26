@@ -67,14 +67,51 @@ describe('before-sign-out', () => {
     unregister.push(registerOnSessionLost('broken', () => { throw new Error('broken'); }));
     unregister.push(registerOnSessionLost('later', () => {
       later();
-      rememberSignOutNotice('보내지 못한 일이 있습니다.');
-      rememberSignOutNotice('보내지 못한 일이 있습니다.');
+      rememberSignOutNotice('signOut.unsentApprovals', { count: 1 });
+      rememberSignOutNotice('signOut.unsentApprovals', { count: 2 });
     }));
 
     runOnSessionLost();
 
     expect(later).toHaveBeenCalledTimes(1);
-    expect(takeSignOutNotices()).toEqual(['보내지 못한 일이 있습니다.']);
+    expect(takeSignOutNotices()).toEqual([{ key: 'signOut.unsentApprovals', values: { count: 2 } }]);
     expect(takeSignOutNotices()).toEqual([]);
+  });
+
+  it('종전 형식(v1)이 남긴 한국어 안내는 건수와 함께 키로 옮겨 꺼내고, 같은 키는 새 형식의 것이 남는다', () => {
+    window.sessionStorage.setItem('egov.sign-out-notices.v1', JSON.stringify([
+      '세션이 끝나 보내지 못한 승인이 3건 있습니다. 결재함에서 다시 처리해 주세요.',
+      '결과를 확인하지 못한 승인이 1건 있습니다. 결재함에서 처리 결과를 확인해 주세요.',
+      '이 형식이 남긴 적 없는 문장',
+    ]));
+    rememberSignOutNotice('signOut.unconfirmedApprovals', { count: 4 });
+
+    expect(takeSignOutNotices()).toEqual([
+      { key: 'signOut.unsentApprovals', values: { count: 3 } },
+      { key: 'signOut.unconfirmedApprovals', values: { count: 4 } },
+    ]);
+    expect(window.sessionStorage.getItem('egov.sign-out-notices.v1')).toBeNull();
+    expect(takeSignOutNotices()).toEqual([]);
+  });
+
+  it('종전 형식에 같은 종류가 건수만 달리 여럿 쌓였으면 나중 것 하나만 옮긴다', () => {
+    window.sessionStorage.setItem('egov.sign-out-notices.v1', JSON.stringify([
+      '세션이 끝나 보내지 못한 승인이 1건 있습니다. 결재함에서 다시 처리해 주세요.',
+      '세션이 끝나 보내지 못한 승인이 2건 있습니다. 결재함에서 다시 처리해 주세요.',
+    ]));
+    expect(takeSignOutNotices()).toEqual([{ key: 'signOut.unsentApprovals', values: { count: 2 } }]);
+  });
+
+  it('저장소에 남은 모르는 키는 안내로 꺼내지 않는다(다른 기능·조작된 값)', () => {
+    window.sessionStorage.setItem('egov.sign-out-notices.v2', JSON.stringify([
+      { key: 'login.submit', values: { count: 1 } },
+      // 건수가 없거나 숫자가 아닌 값은 로그인 화면의 번역에서 깨지므로 버린다.
+      { key: 'signOut.unconfirmedApprovals' },
+      { key: 'signOut.unconfirmedApprovals', values: { count: 'two' } },
+      { key: 'signOut.unconfirmedApprovals', values: { count: -1 } },
+      { key: 'signOut.unconfirmedApprovals', values: { count: 1.5 } },
+      { key: 'signOut.unsentApprovals', values: { count: 1 } },
+    ]));
+    expect(takeSignOutNotices()).toEqual([{ key: 'signOut.unsentApprovals', values: { count: 1 } }]);
   });
 });

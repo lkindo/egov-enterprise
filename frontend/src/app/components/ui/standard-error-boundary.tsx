@@ -25,8 +25,9 @@ export class StandardErrorBoundary extends Component<Props, State> {
 
   public render() {
     if (this.state.hasError) {
+      // [2026-11-26 ADR-0063] 오류 화면은 아직 한국어로만 제공한다 — 영어 문서 안에서도 한국어로 읽히게 내용 언어를 단다.
       return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] p-6 text-center border-2 border-dashed rounded-lg bg-destructive/5 border-destructive/20">
+        <div lang="ko" className="flex flex-col items-center justify-center min-h-[400px] p-6 text-center border-2 border-dashed rounded-lg bg-destructive/5 border-destructive/20">
           <div className="p-4 bg-destructive/10 text-destructive-emphasis rounded-lg mb-4">
             <AlertTriangle size={48} />
           </div>

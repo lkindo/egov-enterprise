@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 import { flattenFormErrors } from "@/lib/validation/form-errors"
+import { useTranslations } from "use-intl"
 
 const Form = FormProvider
 
@@ -110,6 +111,7 @@ function FormLabel({
   ...props
 }: React.ComponentProps<typeof LabelPrimitive.Root>) {
   const { error, formItemId, required } = useFormField()
+  const t = useTranslations("form")
 
   return (
     <Label
@@ -123,7 +125,7 @@ function FormLabel({
       {required ? (
         <>
           <span aria-hidden="true" className="ml-1 text-destructive-emphasis">*</span>
-          <span className="sr-only">(필수)</span>
+          <span className="sr-only">{t("required")}</span>
         </>
       ) : null}
     </Label>
@@ -198,10 +200,11 @@ function FormErrorSummaryView({
   errors,
   labels = {},
   onNavigate,
-  title = "입력 내용을 확인해 주세요.",
+  title,
   className,
   ...props
 }: FormErrorSummaryProps & { errors: ErrorSummaryErrors }) {
+  const t = useTranslations("form")
   const titleId = React.useId()
   const entries = flattenFormErrors(errors)
   if (entries.length === 0) return null
@@ -222,12 +225,12 @@ function FormErrorSummaryView({
       )}
     >
       <p id={titleId} className="font-bold">
-        입력 오류 {entries.length}개 — {title}
+        {t("summaryCount", { count: entries.length, title: title ?? t("summaryTitle") })}
       </p>
       <ul className="mt-2 list-disc space-y-1 pl-5">
         {entries.map((entry) => {
           const label = labels[entry.name] ?? entry.name
-          const message = entry.message ?? "입력값을 확인해 주세요."
+          const message = entry.message ?? t("fieldFallback")
           const isRootError = entry.name === "root" || entry.name.startsWith("root.")
           return (
             <li key={entry.name}>

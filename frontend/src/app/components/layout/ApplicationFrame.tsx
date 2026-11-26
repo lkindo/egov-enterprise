@@ -2,16 +2,27 @@
 
 import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'use-intl';
 
-/** Public authentication pages do not mount the authenticated navigation. */
-export function ApplicationFrame({ children, header, sidebar, footer }: {
-  children: ReactNode; header: ReactNode; sidebar: ReactNode; footer: ReactNode;
-}) {
+type FrameSlots = { children: ReactNode; header: ReactNode; sidebar: ReactNode; footer: ReactNode };
+
+/**
+ * Public authentication pages do not mount the authenticated navigation.
+ *
+ * <p>[2026-11-26 ADR-0063] 화면 로케일(번역을 마치지 않은 화면은 한국어)은 루트의 로케일 경계가 정한다 — 이 틀은 그 공급자의 문구로
+ * 그리기만 한다. 로케일을 바꿔도 틀의 모양이 같아 작성 중인 입력이 남는다.
+ */
+export function ApplicationFrame(slots: FrameSlots) {
   const pathname = usePathname();
+  return <FrameBody {...slots} pathname={pathname} />;
+}
+
+function FrameBody({ children, header, sidebar, footer, pathname }: FrameSlots & { pathname: string }) {
+  const t = useTranslations('common');
   const publicPage = pathname === '/login' || pathname.startsWith('/login/');
   return (
     <div className="relative flex min-h-dvh flex-col bg-background selection:bg-primary/20 selection:text-primary">
-      <a href="#main-content" data-sidebar-modal-background="skip-link" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:rounded-md focus:bg-card focus:px-5 focus:py-3 focus:text-foreground focus:ring-2 focus:ring-primary">본문 바로가기</a>
+      <a href="#main-content" data-sidebar-modal-background="skip-link" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:rounded-md focus:bg-card focus:px-5 focus:py-3 focus:text-foreground focus:ring-2 focus:ring-primary">{t('skipToContent')}</a>
       {!publicPage && header}
       <div className="flex flex-1">
         {!publicPage && sidebar}

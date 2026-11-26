@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
-import { authUpstreamRequestConfig } from '@/lib/auth/auth-request-policy';
+import { authUpstreamRequestConfig, forwardedLanguageHeaders } from '@/lib/auth/auth-request-policy';
 import { authenticationResponse } from '@/lib/auth/auth-session-response';
 import { safeLoginFailure } from '@/lib/auth/login-error';
 import { authLoginResponseSchema } from '@/lib/auth/auth-bff-contract';
@@ -45,6 +45,8 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
         // 로그인 IP 제한 정책·로그인 IP 기록의 입력이다(ADR-0019). 신뢰 앞단 프록시가 없으면 넘기지 않는다.
         ...forwardedClientIpHeaders(request.headers),
+        // 백엔드 문구의 언어는 부른 화면의 로케일이다(ADR-0063).
+        ...forwardedLanguageHeaders(request.headers),
       },
     });
 

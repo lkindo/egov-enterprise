@@ -147,10 +147,10 @@ export function abandonApprovalCommitsOnSessionLost(): void {
   pending.clear();
   notify();
   if (unsent > 0) {
-    rememberSignOutNotice(`세션이 끝나 보내지 못한 승인이 ${unsent}건 있습니다. 결재함에서 다시 처리해 주세요.`);
+    rememberSignOutNotice('signOut.unsentApprovals', { count: unsent });
   }
   if (unconfirmed > 0) {
-    rememberSignOutNotice(`결과를 확인하지 못한 승인이 ${unconfirmed}건 있습니다. 결재함에서 처리 결과를 확인해 주세요.`);
+    rememberSignOutNotice('signOut.unconfirmedApprovals', { count: unconfirmed });
   }
 }
 

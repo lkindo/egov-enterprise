@@ -22,7 +22,8 @@ const toast = vi.hoisted(() => vi.fn());
 vi.mock('@/services/business/user/MenuService', () => ({ menuService: menu }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => auth }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast }) }));
-vi.mock('next/navigation', () => ({ usePathname: () => '/', useSearchParams: () => new URLSearchParams() }));
+// [2026-11-26 ADR-0063] 좁은 화면 서랍의 언어 선택기가 서버 렌더를 다시 받으려고 라우터를 쓴다.
+vi.mock('next/navigation', () => ({ usePathname: () => '/', useSearchParams: () => new URLSearchParams(), useRouter: () => ({ push: () => {}, replace: () => {}, prefetch: () => {}, back: () => {}, forward: () => {}, refresh: () => {} }) }));
 
 import { Sidebar } from '../sidebar';
 import { LayoutProvider, useLayout } from '@/contexts/LayoutContext';
