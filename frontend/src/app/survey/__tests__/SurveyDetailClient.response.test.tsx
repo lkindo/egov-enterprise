@@ -234,8 +234,8 @@ describe('설문 응답 제출', () => {
         qstnSn: 2,
         qstnCn: '다시 이용하시겠습니까?',
         items: [
-          { ...QUESTIONS[0].items[0], srvyArtclSn: 201, srvyQstnSn: 12, artclCn: '예' },
-          { ...QUESTIONS[0].items[0], srvyArtclSn: 202, srvyQstnSn: 12, artclSn: 2, artclCn: '아니오' },
+          { ...QUESTIONS[0]!.items[0], srvyArtclSn: 201, srvyQstnSn: 12, artclCn: '예' },
+          { ...QUESTIONS[0]!.items[0], srvyArtclSn: 202, srvyQstnSn: 12, artclSn: 2, artclCn: '아니오' },
         ],
       },
     ]);
@@ -256,8 +256,8 @@ describe('설문 응답 제출', () => {
     fireEvent.click(screen.getByRole('button', { name: '응답 제출' }));
 
     await waitFor(() => expect(mocks.submitAnswers).toHaveBeenCalledTimes(1));
-    expect(mocks.submitAnswers.mock.calls[0][0]).toBe(1);
-    expect(mocks.submitAnswers.mock.calls[0][1]).toEqual({
+    expect(mocks.submitAnswers.mock.calls[0]![0]).toBe(1);
+    expect(mocks.submitAnswers.mock.calls[0]![1]).toEqual({
       answers: [{ srvyQstnSn: 11, srvyArtclSn: 101 }],
     });
   });
@@ -271,7 +271,7 @@ describe('설문 응답 제출', () => {
         qstnSn: 2,
         qstnTypeCd: '2',
         qstnCn: '개선할 점을 적어 주세요',
-        items: [{ ...QUESTIONS[0].items[0], srvyArtclSn: 301, srvyQstnSn: 13, artclCn: '자유 응답' }],
+        items: [{ ...QUESTIONS[0]!.items[0], srvyArtclSn: 301, srvyQstnSn: 13, artclCn: '자유 응답' }],
       },
     ]);
     renderClient();
@@ -288,7 +288,7 @@ describe('설문 응답 제출', () => {
     fireEvent.click(screen.getByRole('button', { name: '응답 제출' }));
 
     await waitFor(() => expect(mocks.submitAnswers).toHaveBeenCalledTimes(1));
-    expect(mocks.submitAnswers.mock.calls[0][1].answers).toEqual([
+    expect(mocks.submitAnswers.mock.calls[0]![1].answers).toEqual([
       { srvyQstnSn: 13, srvyArtclSn: 301, rspdntAnsCn: '회의를 줄였으면 합니다' },
       { srvyQstnSn: 11, srvyArtclSn: 101 },
     ]);
@@ -314,7 +314,7 @@ describe('설문 응답 제출', () => {
     fireEvent.click(screen.getByRole('button', { name: '응답 제출' }));
 
     await waitFor(() => expect(mocks.submitAnswers).toHaveBeenCalledTimes(1));
-    expect(mocks.submitAnswers.mock.calls[0][1].answers[0]).toMatchObject({
+    expect(mocks.submitAnswers.mock.calls[0]![1].answers[0]).toMatchObject({
       srvyArtclSn: 102,
       etcAnsCn: '보통입니다',
     });

@@ -73,7 +73,7 @@ describe('ApprovalReferencePanel (D4)', () => {
     auth.user.permissions = ['APPROVAL_APPROVE', 'APPROVAL_CREATE'];
     mocks.confirm.mockResolvedValue(true);
     mocks.addReferences.mockResolvedValue(1);
-    mocks.searchAssignableUsers.mockImplementation(async (keyword: string) => PEOPLE.filter(person => person.userNm.includes(keyword)));
+    mocks.searchAssignableUsers.mockImplementation(async (keyword: string) => PEOPLE.filter(person => person.userNm!.includes(keyword)));
     mocks.checkApprovers.mockImplementation(async (ids: string[]) => ids.map(profile));
   });
 
@@ -175,7 +175,7 @@ describe('ApprovalReferencePanel (D4)', () => {
     await choose('최참조');
     fireEvent.click(screen.getByRole('button', { name: '참조자 지정 (1명)' }));
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    const request = mocks.confirm.mock.calls[0][0];
+    const request = mocks.confirm.mock.calls[0]![0];
     expect(request.message).toContain('‘출장비 정산’ 문서에 1명을 참조자로 지정합니다: 최참조.');
     expect(request.message).toContain('지정은 되돌릴 수 없습니다.');
     expect(request.confirmText).toBe('참조자 지정');
@@ -230,7 +230,7 @@ describe('ApprovalReferencePanel — 알림 기능 유무', () => {
     auth.user.permissions = ['APPROVAL_APPROVE', 'APPROVAL_CREATE'];
     mocks.confirm.mockResolvedValue(true);
     mocks.addReferences.mockResolvedValue(1);
-    mocks.searchAssignableUsers.mockImplementation(async (keyword: string) => PEOPLE.filter(person => person.userNm.includes(keyword)));
+    mocks.searchAssignableUsers.mockImplementation(async (keyword: string) => PEOPLE.filter(person => person.userNm!.includes(keyword)));
     mocks.checkApprovers.mockImplementation(async (ids: string[]) => ids.map(profile));
   });
 
@@ -247,7 +247,7 @@ describe('ApprovalReferencePanel — 알림 기능 유무', () => {
     await choose('최참조');
     fireEvent.click(screen.getByRole('button', { name: '참조자 지정 (1명)' }));
     await waitFor(() => expect(mocks.addReferences).toHaveBeenCalledWith(31, ['READER'], 4));
-    expect(mocks.confirm.mock.calls[0][0].message).toBe(message);
+    expect(mocks.confirm.mock.calls[0]![0].message).toBe(message);
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(done, 'success'));
   });
 });

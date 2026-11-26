@@ -245,7 +245,7 @@ describe('boardActions', () => {
         data: expect.any(FormData),
         headers: { 'Content-Type': undefined },
       });
-      const request = vi.mocked(client.requestRaw).mock.calls[0][0] as { data: FormData; headers?: object };
+      const request = vi.mocked(client.requestRaw).mock.calls[0]![0] as { data: FormData; headers?: object };
       expect(request.data.get('board')).toBeInstanceOf(Blob);
       expect(request.data.getAll('file')).toHaveLength(1);
       expect(request.headers).toEqual({ 'Content-Type': undefined });
@@ -263,7 +263,7 @@ describe('boardActions', () => {
 
       await saveBoardArticle({}, formData);
 
-      const request = vi.mocked(client.requestRaw).mock.calls[0][0] as { data: Record<string, unknown> };
+      const request = vi.mocked(client.requestRaw).mock.calls[0]![0] as { data: Record<string, unknown> };
       expect(request.data.atchFileSn).toBe(77);
     });
 
@@ -277,7 +277,7 @@ describe('boardActions', () => {
 
       await saveBoardArticle({}, formData);
 
-      const request = vi.mocked(client.requestRaw).mock.calls[0][0] as { data: Record<string, unknown> };
+      const request = vi.mocked(client.requestRaw).mock.calls[0]![0] as { data: Record<string, unknown> };
       expect(request.data.qnaSttsCd).toBeUndefined();
       expect(request.data.qnaCatCd).toBeUndefined();
     });
@@ -292,7 +292,7 @@ describe('boardActions', () => {
 
       await saveBoardArticle({}, formData);
 
-      const request = vi.mocked(client.requestRaw).mock.calls[0][0] as { data: Record<string, unknown> };
+      const request = vi.mocked(client.requestRaw).mock.calls[0]![0] as { data: Record<string, unknown> };
       expect(request.data.qnaSttsCd).toBeUndefined();
       expect(request.data.qnaCatCd).toBe('CAT01');
     });
@@ -313,7 +313,7 @@ describe('boardActions', () => {
         data: expect.any(FormData),
         headers: { 'Content-Type': undefined },
       });
-      const request = vi.mocked(client.requestRaw).mock.calls[0][0] as { data: FormData; headers?: object };
+      const request = vi.mocked(client.requestRaw).mock.calls[0]![0] as { data: FormData; headers?: object };
       expect(request.data.get('board')).toBeInstanceOf(Blob);
       expect(request.data.getAll('file')).toHaveLength(1);
       expect(request.headers).toEqual({ 'Content-Type': undefined });

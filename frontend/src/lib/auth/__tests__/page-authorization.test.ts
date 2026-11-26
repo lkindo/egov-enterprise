@@ -28,9 +28,9 @@ describe('page permission mapping', () => {
 
   it('requires an explicitly registered permission for a protected page', () => {
     const required = PAGE_PERMISSIONS['/admin/system/menus'];
-    expect(required.length).toBeGreaterThan(0);
+    expect(required!.length).toBeGreaterThan(0);
     expect(canEnterRegisteredPage('/admin/system/menus', current)).toBe(false);
-    expect(canEnterRegisteredPage('/admin/system/menus', { ...current, permissions: [...required] })).toBe(true);
+    expect(canEnterRegisteredPage('/admin/system/menus', { ...current, permissions: [...required!] })).toBe(true);
   });
 
   it.each(pageRows([

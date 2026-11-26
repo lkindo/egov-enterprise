@@ -123,7 +123,7 @@ describe('BoardSettingsTab', () => {
     fireEvent.click(within(review).getByRole('button', { name: '설정 저장' }));
 
     await waitFor(() => expect(mocks.updateBoardMaster).toHaveBeenCalledOnce());
-    const [bbsId, request] = mocks.updateBoardMaster.mock.calls[0];
+    const [bbsId, request] = mocks.updateBoardMaster.mock.calls[0]!;
     expect(bbsId).toBe(BBS_ID);
     expect(request).toMatchObject({ bbsTtl: '전사 공지사항', ansYn: 'N', stsfdgYn: 'Y', useYn: 'Y', version: 4, atchPsbltyFileSz: 5_242_880 });
     // 바꾸지 않은 비밀글 정책·추천 받기도 지금 값 그대로 함께 보낸다(화면은 늘 전체를 보낸다).
@@ -244,7 +244,7 @@ describe('BoardSettingsTab', () => {
     expect(within(review).getByRole('note')).toHaveTextContent('전환 진단 대상');
     fireEvent.click(within(review).getByRole('button', { name: '설정 저장' }));
     await waitFor(() => expect(mocks.updateBoardMaster).toHaveBeenCalledOnce());
-    expect(mocks.updateBoardMaster.mock.calls[0][1]).toMatchObject({ rsvtPstgPsbltyYn: 'Y', version: 4 });
+    expect(mocks.updateBoardMaster.mock.calls[0]![1]).toMatchObject({ rsvtPstgPsbltyYn: 'Y', version: 4 });
   });
 
   it('예약 게시를 끄는 것은 새 미래 시작일만 막는다고 말한다', async () => {
@@ -289,7 +289,7 @@ describe('BoardSettingsTab', () => {
     expect(mocks.useQuery).not.toHaveBeenCalledWith(expect.objectContaining({ enabled: true }));
     fireEvent.click(within(review).getByRole('button', { name: '설정 저장' }));
     await waitFor(() => expect(mocks.updateBoardMaster).toHaveBeenCalledOnce());
-    expect(mocks.updateBoardMaster.mock.calls[0][1]).toMatchObject({
+    expect(mocks.updateBoardMaster.mock.calls[0]![1]).toMatchObject({
       upendFixPsbltyYn: 'Y', upendFixUplmtNocs: 3, upendFixBscDayCnt: 14, rsvtPstgPsbltyYn: 'N', version: 4,
     });
   });
@@ -377,7 +377,7 @@ describe('BoardSettingsTab', () => {
       .toHaveTextContent('새 고정만 막습니다. 고정 중인 글은 고정 종료일까지 위에 남고 해제할 수 있습니다.');
     fireEvent.click(within(review).getByRole('button', { name: '설정 저장' }));
     await waitFor(() => expect(mocks.updateBoardMaster).toHaveBeenCalledOnce());
-    expect(mocks.updateBoardMaster.mock.calls[0][1]).toMatchObject({ upendFixPsbltyYn: 'N', upendFixUplmtNocs: 7, upendFixBscDayCnt: 10 });
+    expect(mocks.updateBoardMaster.mock.calls[0]![1]).toMatchObject({ upendFixPsbltyYn: 'N', upendFixUplmtNocs: 7, upendFixBscDayCnt: 10 });
   });
 
   // [2026-10-23 ADR-0040 결정 7] 비밀글 정책은 앞으로 저장하는 글에만 적용된다 — 필수는 고친 글도 비밀글로 만든다고 말한다.
@@ -397,7 +397,7 @@ describe('BoardSettingsTab', () => {
     expect(within(review).queryByRole('note')).toBeNull();
     fireEvent.click(within(review).getByRole('button', { name: '설정 저장' }));
     await waitFor(() => expect(mocks.updateBoardMaster).toHaveBeenCalledOnce());
-    expect(mocks.updateBoardMaster.mock.calls[0][1]).toMatchObject({ prvtPstPlcyCd: 'REQUIRED', rcmdtnUseYn: 'Y', version: 4 });
+    expect(mocks.updateBoardMaster.mock.calls[0]![1]).toMatchObject({ prvtPstPlcyCd: 'REQUIRED', rcmdtnUseYn: 'Y', version: 4 });
   });
 
   // [2026-10-23 ADR-0040 결정 6] 추천 받기를 꺼도 쌓인 수는 그대로이고 자기 추천은 거둘 수 있다.
@@ -414,7 +414,7 @@ describe('BoardSettingsTab', () => {
     ]);
     fireEvent.click(within(review).getByRole('button', { name: '설정 저장' }));
     await waitFor(() => expect(mocks.updateBoardMaster).toHaveBeenCalledOnce());
-    expect(mocks.updateBoardMaster.mock.calls[0][1]).toMatchObject({ rcmdtnUseYn: 'N', prvtPstPlcyCd: 'NONE' });
+    expect(mocks.updateBoardMaster.mock.calls[0]![1]).toMatchObject({ rcmdtnUseYn: 'N', prvtPstPlcyCd: 'NONE' });
   });
 
   /*
@@ -608,7 +608,7 @@ describe('BoardSettingsTab', () => {
       renderTab({ useYn: 'N' });
       fireEvent.click(screen.getByRole('button', { name: '게시판 영구 삭제' }));
       await waitFor(() => expect(mocks.confirm).toHaveBeenCalledOnce());
-      expect(mocks.confirm.mock.calls[0][0].message).toContain('글이 한 번이라도 있었던 게시판이라 영구 삭제할 수 없습니다');
+      expect(mocks.confirm.mock.calls[0]![0].message).toContain('글이 한 번이라도 있었던 게시판이라 영구 삭제할 수 없습니다');
       expect(screen.queryByRole('dialog', { name: '게시판 영구 삭제' })).toBeNull();
       expect(mocks.deleteBoardMasterPhysically).not.toHaveBeenCalled();
     });
@@ -628,7 +628,7 @@ describe('BoardSettingsTab', () => {
       expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['board-masters'] });
       // 지운 게시판의 상세는 무효화 전에 캐시에서 뺀다 — 열린 운영 화면이 다시 읽어 404 를 띄우지 않는다.
       expect(mocks.removeQueries).toHaveBeenCalledWith({ queryKey: ['board-masters', 'detail', BBS_ID] });
-      expect(mocks.removeQueries.mock.invocationCallOrder[0]).toBeLessThan(mocks.invalidateQueries.mock.invocationCallOrder[0]);
+      expect(mocks.removeQueries.mock.invocationCallOrder[0]).toBeLessThan(mocks.invalidateQueries.mock.invocationCallOrder[0]!);
     });
 
     it('확인에서 메뉴 관리에서 열기를 고르면 지우지 않고 그 메뉴와 돌아올 곳을 넘긴다', async () => {

@@ -266,7 +266,7 @@ describe('UX-09 게시판 이름·공개 범위·날짜 칸', () => {
     });
     fireEvent.submit(screen.getByRole('button', { name: '게시글 수정' }).closest('form')!);
     await waitFor(() => expect(mocks.saveBoardArticle).toHaveBeenCalledTimes(1));
-    expect((mocks.saveBoardArticle.mock.calls[0][1] as FormData).get('evntDt')).toBe('2026-11-03');
+    expect((mocks.saveBoardArticle.mock.calls[0]![1] as FormData).get('evntDt')).toBe('2026-11-03');
   });
 
   it('게시 기간은 새 글에서 접혀 있고, 접힌 머리가 지금 값을 요약한다', () => {

@@ -106,12 +106,12 @@ describe('Schedule attachments', () => {
     fireEvent.click(screen.getByRole('button', { name: '일정 등록' }));
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     expect(mocks.uploadFiles).toHaveBeenCalledTimes(1);
-    expect(onSubmit.mock.calls[0][0]).toMatchObject({ schdlNm: '주간 회의', atchFileSn: 91 });
+    expect(onSubmit.mock.calls[0]![0]).toMatchObject({ schdlNm: '주간 회의', atchFileSn: 91 });
 
     fireEvent.click(screen.getByRole('button', { name: '일정 등록' }));
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(2));
     expect(mocks.uploadFiles).toHaveBeenCalledTimes(1);
-    expect(onSubmit.mock.calls[1][0]).toMatchObject({ atchFileSn: 91 });
+    expect(onSubmit.mock.calls[1]![0]).toMatchObject({ atchFileSn: 91 });
   });
 
   it('수정 모드에서 기존 첨부 제거를 선택하면 atchFileSn 없이 저장한다', async () => {
@@ -137,7 +137,7 @@ describe('Schedule attachments', () => {
     fireEvent.click(screen.getByRole('button', { name: '일정 수정' }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
-    expect(onSubmit.mock.calls[0][0].atchFileSn).toBeUndefined();
+    expect(onSubmit.mock.calls[0]![0].atchFileSn).toBeUndefined();
   });
 
   it('일정 행을 클릭하면 상세 모달에서 첨부파일 목록과 내려받기를 제공한다', async () => {

@@ -107,7 +107,7 @@ describe('홍보 배너 캐러셀 접근성', () => {
     expect(dots[0]).toHaveAttribute('aria-current', 'true');
     expect(dots[1]).not.toHaveAttribute('aria-current');
 
-    fireEvent.click(dots[2]);
+    fireEvent.click(dots[2]!);
     expect(heading('배너 3')).not.toBeNull();
     expect(dots[2]).toHaveAttribute('aria-current', 'true');
   });

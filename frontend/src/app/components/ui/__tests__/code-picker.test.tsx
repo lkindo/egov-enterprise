@@ -185,8 +185,8 @@ describe('CodePicker', () => {
     renderPicker();
     await searchGroups('사용자');
     await searchGroups('게시');
-    await act(async () => latest.resolve({ list: [groupRows[1]], total: 1 }));
-    await act(async () => previous.resolve({ list: [groupRows[0]], total: 1 }));
+    await act(async () => latest.resolve({ list: [groupRows[1]!], total: 1 }));
+    await act(async () => previous.resolve({ list: [groupRows[0]!], total: 1 }));
     expect(screen.getByRole('button', { name: '그룹 선택: 게시 상태' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '그룹 선택: 사용자 상태' })).not.toBeInTheDocument();
   });
@@ -199,12 +199,12 @@ describe('CodePicker', () => {
     await searchGroups('사용자');
     await searchGroups('게시');
     await act(async () => {
-      if (outcome === 'success') previous.resolve({ list: [groupRows[0]], total: 1 });
+      if (outcome === 'success') previous.resolve({ list: [groupRows[0]!], total: 1 });
       else previous.reject(new Error('stale group failure'));
     });
     expect(screen.getByText('검색 중…')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    await act(async () => latest.resolve({ list: [groupRows[1]], total: 1 }));
+    await act(async () => latest.resolve({ list: [groupRows[1]!], total: 1 }));
     expect(screen.getByRole('button', { name: '그룹 선택: 게시 상태' })).toBeInTheDocument();
   });
 
@@ -229,9 +229,9 @@ describe('CodePicker', () => {
     fireEvent.click(await screen.findByRole('button', { name: '그룹 선택: 사용자 상태' }));
     fireEvent.click(screen.getByRole('button', { name: '그룹 목록으로 돌아가기' }));
     fireEvent.click(screen.getByRole('button', { name: '그룹 선택: 게시 상태' }));
-    const latestCode = { ...detailRows[0], cdId: 'GRP2', dtlCdNm: '게시 활성' };
+    const latestCode = { ...detailRows[0]!, cdId: 'GRP2', dtlCdNm: '게시 활성' };
     await act(async () => latest.resolve({ list: [latestCode], total: 1 }));
-    await act(async () => previous.resolve({ list: [detailRows[0]], total: 1 }));
+    await act(async () => previous.resolve({ list: [detailRows[0]!], total: 1 }));
     expect(screen.queryByRole('button', { name: '코드 선택: 활성' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '코드 선택: 게시 활성' }));
     expect(mocks.onSelect).toHaveBeenCalledWith({ group: groupRows[1], code: latestCode });
@@ -247,7 +247,7 @@ describe('CodePicker', () => {
     fireEvent.click(screen.getByRole('button', { name: '그룹 목록으로 돌아가기' }));
     fireEvent.click(screen.getByRole('button', { name: '그룹 선택: 게시 상태' }));
     await act(async () => {
-      if (outcome === 'success') previous.resolve({ list: [detailRows[0]], total: 1 });
+      if (outcome === 'success') previous.resolve({ list: [detailRows[0]!], total: 1 });
       else previous.reject(new Error('stale detail failure'));
     });
     expect(screen.getByText('불러오는 중…')).toBeInTheDocument();
@@ -268,12 +268,12 @@ describe('CodePicker', () => {
     expect(screen.getByRole('textbox', { name: '코드 그룹 검색어 입력' })).toHaveValue('사용자');
     await searchGroups('게시');
     await act(async () => {
-      if (outcome === 'success') previous.resolve({ list: [groupRows[0]], total: 1 });
+      if (outcome === 'success') previous.resolve({ list: [groupRows[0]!], total: 1 });
       else previous.reject(new Error('closed group failure'));
     });
     expect(screen.getByText('검색 중…')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    await act(async () => latest.resolve({ list: [groupRows[1]], total: 1 }));
+    await act(async () => latest.resolve({ list: [groupRows[1]!], total: 1 }));
     expect(screen.getByRole('button', { name: '그룹 선택: 게시 상태' })).toBeInTheDocument();
   });
 
@@ -287,7 +287,7 @@ describe('CodePicker', () => {
     expect(mocks.onClose).toHaveBeenCalledOnce();
     view.rerender(<CodePicker isOpen={false} onClose={mocks.onClose} onSelect={mocks.onSelect} />);
     view.rerender(<CodePicker isOpen onClose={mocks.onClose} onSelect={mocks.onSelect} />);
-    await act(async () => pending.resolve({ list: [detailRows[0]], total: 1 }));
+    await act(async () => pending.resolve({ list: [detailRows[0]!], total: 1 }));
     expect(screen.getByRole('textbox', { name: '코드 그룹 검색어 입력' })).toHaveValue('상태');
     expect(screen.getByRole('button', { name: '그룹 선택: 사용자 상태' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '코드 선택: 활성' })).not.toBeInTheDocument();
@@ -323,7 +323,7 @@ describe('CodePicker', () => {
       expect(screen.getByText('검색 중…')).toBeInTheDocument();
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
       view.rerender(<CodePicker isOpen={false} onClose={mocks.onClose} onSelect={mocks.onSelect} />);
-      await act(async () => retry.resolve({ list: [groupRows[1]], total: 1 }));
+      await act(async () => retry.resolve({ list: [groupRows[1]!], total: 1 }));
       view.rerender(<CodePicker isOpen onClose={mocks.onClose} onSelect={mocks.onSelect} />);
 
       expect(screen.getByRole('alert')).toHaveTextContent('그룹 검색에 실패했습니다.');
@@ -349,7 +349,7 @@ describe('CodePicker', () => {
     await searchGroups('게시');
     view.rerender(<CodePicker isOpen={false} onClose={mocks.onClose} onSelect={mocks.onSelect} />);
     await act(async () => {
-      if (outcome === 'success') pending.resolve({ list: [groupRows[1]], total: 1 });
+      if (outcome === 'success') pending.resolve({ list: [groupRows[1]!], total: 1 });
       else pending.reject(new Error('response while closed'));
     });
     view.rerender(<CodePicker isOpen onClose={mocks.onClose} onSelect={mocks.onSelect} />);
@@ -368,7 +368,7 @@ describe('CodePicker', () => {
     fireEvent.click(await screen.findByRole('button', { name: '그룹 선택: 사용자 상태' }));
     view.rerender(<CodePicker isOpen={false} onClose={mocks.onClose} onSelect={mocks.onSelect} />);
     await act(async () => {
-      if (outcome === 'success') pending.resolve({ list: [detailRows[0]], total: 1 });
+      if (outcome === 'success') pending.resolve({ list: [detailRows[0]!], total: 1 });
       else pending.reject(new Error('detail response while closed'));
     });
     view.rerender(<CodePicker isOpen onClose={mocks.onClose} onSelect={mocks.onSelect} />);

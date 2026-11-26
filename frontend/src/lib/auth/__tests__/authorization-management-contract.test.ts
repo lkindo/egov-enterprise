@@ -150,8 +150,8 @@ describe('authorization management — 2단계 계약', () => {
   it('권한 목록은 순서와 무관하게 같은 집합인지 비교한다(기준선 이어받기)', () => {
     const a: AuthorizationGrant[] = [{ type: 'OPERATION', code: 'BOARD_READ' }, { type: 'NAVIGATION', code: '1' }];
     expect(sameGrantSet(a, [...a].reverse())).toBe(true);
-    expect(sameGrantSet(a, [a[0]])).toBe(false);
-    expect(sameGrantSet(a, [a[0], { type: 'OPERATION', code: '1' }])).toBe(false);
+    expect(sameGrantSet(a, [a[0]!])).toBe(false);
+    expect(sameGrantSet(a, [a[0]!, { type: 'OPERATION', code: '1' }])).toBe(false);
     expect(sameGrantSet([], [])).toBe(true);
   });
 });

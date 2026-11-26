@@ -119,7 +119,7 @@ describe.each(ROUTES)('$route 동등성', (route) => {
     fireEvent.click(screen.getByRole('tab', { name: '업무 관리' }));
     expect(mocks.push).toHaveBeenLastCalledWith('/smart-toolkit/dept-job', { scroll: false });
     for (const [name, href] of [['업무 보고', WORK_REPORT], ['일정', SCHEDULE]]) {
-      if (!pageInProjection(href)) continue;
+      if (!pageInProjection(href!)) continue;
       fireEvent.click(screen.getByRole('tab', { name }));
       expect(mocks.push).toHaveBeenLastCalledWith(href, { scroll: false });
     }

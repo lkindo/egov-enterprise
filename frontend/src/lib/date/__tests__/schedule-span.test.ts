@@ -42,7 +42,7 @@ describe('scheduleSpanDates 표시 범위 교집합', () => {
     });
     expect(MAX_SCHEDULE_SPAN_DAYS).toBe(366);
     expect(dates).toHaveLength(MAX_SCHEDULE_SPAN_DAYS);
-    expect(ymd(dates[0])).toBe('20270201');
+    expect(ymd(dates[0]!)).toBe('20270201');
     expect(ymd(dates.at(-1)!)).toBe('20280201');
   });
 

@@ -51,7 +51,7 @@ describe('StandardDataTable', () => {
 
     const table = screen.getByRole('table');
     const firstBodyRow = within(table).getAllByRole('row')[1];
-    const labels = within(firstBodyRow)
+    const labels = within(firstBodyRow!)
       .getAllByRole('cell')
       .map((cell) => cell.getAttribute('data-label'));
 
@@ -145,7 +145,7 @@ describe('StandardDataTable', () => {
       rerender(
         <StandardDataTable
           columns={columns}
-          data={[{ ...rows[0], name: '동적으로 길어진 셀 내용' }, rows[1]]}
+          data={[{ ...rows[0]!, name: '동적으로 길어진 셀 내용' }, rows[1]!]}
           keyField="id"
           accessibleLabel="동적 사용자 목록"
         />,
@@ -203,13 +203,13 @@ describe('StandardDataTable', () => {
 
     expect(document.querySelector('button button')).toBeNull();
     const firstRowAction = screen.getAllByRole('button', { name: '행 메뉴' })[0];
-    await user.click(firstRowAction);
+    await user.click(firstRowAction!);
     expect(onRowClick).not.toHaveBeenCalled();
 
     const rowActions = screen.getAllByRole('button', { name: '홍길동 계정 선택' });
     expect(rowActions).toHaveLength(1);
     expect(rowActions[0]).toHaveTextContent('홍길동 계정 선택');
-    rowActions[0].focus();
+    rowActions[0]!.focus();
     await user.keyboard('{Enter}');
     expect(onRowClick).toHaveBeenCalledOnce();
     expect(onRowClick).toHaveBeenCalledWith(rows[0]);
@@ -244,7 +244,7 @@ describe('StandardDataTable', () => {
 
     const table = screen.getByRole('table');
     const checkboxes = within(table).getAllByRole('checkbox');
-    await user.click(checkboxes[1]);
+    await user.click(checkboxes[1]!);
     expect(onRowClick).not.toHaveBeenCalled();
     expect(screen.getByText('1')).toBeInTheDocument();
 
@@ -254,7 +254,7 @@ describe('StandardDataTable', () => {
     await user.click(screen.getByRole('button', { name: '선택한 1개 항목 전체 해제' }));
     expect(screen.queryByRole('button', { name: '상태 변경' })).not.toBeInTheDocument();
 
-    await user.click(checkboxes[0]);
+    await user.click(checkboxes[0]!);
     await user.click(screen.getByRole('button', { name: '상태 변경' }));
     expect(onBulkAction).toHaveBeenLastCalledWith(rows);
   });
@@ -273,7 +273,7 @@ describe('StandardDataTable', () => {
       }],
     });
 
-    await user.click(within(screen.getByRole('table')).getAllByRole('checkbox')[1]);
+    await user.click(within(screen.getByRole('table')).getAllByRole('checkbox')[1]!);
 
     const action = screen.getByRole('button', { name: '삭제 처리 중…' });
     expect(action).toBeDisabled();
@@ -350,7 +350,7 @@ describe('StandardDataTable', () => {
     });
 
     const firstRowCheckbox = within(screen.getByRole('table')).getAllByRole('checkbox')[1];
-    await user.click(firstRowCheckbox);
+    await user.click(firstRowCheckbox!);
     expect(screen.getByRole('button', { name: '삭제' })).toBeInTheDocument();
 
     rerender(
@@ -378,7 +378,7 @@ describe('StandardDataTable', () => {
     );
     const { rerender } = render(table('조건-1'));
     expect(onCount).toHaveBeenLastCalledWith(0);
-    await user.click(within(screen.getByRole('table')).getAllByRole('checkbox')[0]);
+    await user.click(within(screen.getByRole('table')).getAllByRole('checkbox')[0]!);
     expect(screen.getByRole('button', { name: '선택한 2개 항목 전체 해제' })).toBeInTheDocument();
     await waitFor(() => expect(onCount).toHaveBeenLastCalledWith(2));
 
@@ -399,7 +399,7 @@ describe('StandardDataTable', () => {
       <StandardDataTable columns={columns} data={rows} keyField="id" enableSelection bulkActions={[{ label: '삭제', onClick: vi.fn() }]} />
     );
     const { rerender } = render(table());
-    await user.click(within(screen.getByRole('table')).getAllByRole('checkbox')[1]);
+    await user.click(within(screen.getByRole('table')).getAllByRole('checkbox')[1]!);
     rerender(table());
     expect(screen.getByRole('button', { name: '삭제' })).toBeInTheDocument();
     expect(within(screen.getByRole('table')).getAllByRole('checkbox')[1]).toBeChecked();
@@ -413,7 +413,7 @@ describe('StandardDataTable', () => {
       <StandardDataTable columns={columns} data={data} keyField="id" enableSelection bulkActions={[{ label: '삭제', onClick: onDelete }]} />
     );
     const { rerender } = render(table(rows));
-    await user.click(within(screen.getByRole('table')).getAllByRole('checkbox')[0]);
+    await user.click(within(screen.getByRole('table')).getAllByRole('checkbox')[0]!);
     expect(screen.getByRole('button', { name: '선택한 2개 항목 전체 해제' })).toBeInTheDocument();
 
     const replacement: TestRow[] = [{ id: 12, name: '김영희', state: '대기' }, { id: 13, name: '이순신', state: '활성' }];
@@ -437,7 +437,7 @@ describe('StandardDataTable', () => {
       <StandardDataTable columns={columns} data={data} keyField="id" enableSelection bulkActions={[{ label: '삭제', onClick: vi.fn() }]} />
     );
     const { rerender } = render(table(rows));
-    await user.click(within(screen.getByRole('table')).getAllByRole('checkbox')[1]);
+    await user.click(within(screen.getByRole('table')).getAllByRole('checkbox')[1]!);
     expect(within(screen.getByRole('table')).getAllByRole('checkbox')[0]).toHaveAttribute('aria-checked', 'mixed');
 
     // 선택된 1건이 사라지고 다른 1건만 남으면 선택 수(과거 1)와 행 수(1)가 같아도 헤더는 켜지지 않는다.
@@ -455,7 +455,7 @@ describe('StandardDataTable', () => {
 
     expect(screen.getAllByRole('alert')).toHaveLength(1);
     expect(screen.getAllByText('network down')).toHaveLength(1);
-    await user.click(screen.getAllByRole('button', { name: '데이터 다시 불러오기' })[0]);
+    await user.click(screen.getAllByRole('button', { name: '데이터 다시 불러오기' })[0]!);
     expect(onRetry).toHaveBeenCalledOnce();
 
     rerender(

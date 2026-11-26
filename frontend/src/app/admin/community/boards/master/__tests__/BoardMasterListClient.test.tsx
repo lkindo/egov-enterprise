@@ -118,7 +118,7 @@ describe('BoardMasterListClient', () => {
     const checkboxes = within(table()).getAllByRole('checkbox');
     expect(checkboxes).toHaveLength(3);
 
-    await user.click(checkboxes[2]);
+    await user.click(checkboxes[2]!);
     await user.click(screen.getByRole('button', { name: /사용으로 바꾸기$/ }));
 
     await waitFor(() => expect(mocks.batchUpdateBoardMasterStatus).toHaveBeenCalledOnce());
@@ -135,7 +135,7 @@ describe('BoardMasterListClient', () => {
     mocks.confirm.mockResolvedValue(false);
     const user = userEvent.setup();
     render(<BoardMasterListClient />);
-    await user.click(within(table()).getAllByRole('checkbox')[1]);
+    await user.click(within(table()).getAllByRole('checkbox')[1]!);
     await user.click(screen.getByRole('button', { name: /사용 안 함으로 바꾸기$/ }));
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalled());
     expect(mocks.batchUpdateBoardMasterStatus).not.toHaveBeenCalled();
@@ -144,11 +144,11 @@ describe('BoardMasterListClient', () => {
   it('사용 안 함으로 바꾸는 대상에 앱이 직접 쓰는 게시판이 있으면 사용처를 나열한다', async () => {
     const user = userEvent.setup();
     render(<BoardMasterListClient />);
-    await user.click(within(table()).getAllByRole('checkbox')[0]);
+    await user.click(within(table()).getAllByRole('checkbox')[0]!);
     await user.click(screen.getByRole('button', { name: /사용 안 함으로 바꾸기$/ }));
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalled());
 
-    const options = mocks.confirm.mock.calls[0][0];
+    const options = mocks.confirm.mock.calls[0]![0];
     expect(options).toMatchObject({ title: '게시판 사용 안 함으로 바꾸기', variant: 'destructive' });
     render(<>{options.details}</>);
     expect(screen.getByText(/\[공지사항\] 공지 지정 게시판입니다/)).toBeInTheDocument();
@@ -169,7 +169,7 @@ describe('BoardMasterListClient', () => {
     await user.click(screen.getByRole('button', { name: /사용 안 함으로 바꾸기$/ }));
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalled());
 
-    render(<>{mocks.confirm.mock.calls[0][0].details}</>);
+    render(<>{mocks.confirm.mock.calls[0]![0].details}</>);
     expect(screen.getByText('메뉴 연결이나 그 메뉴가 보이는 그룹을 확인할 수 없는 게시판이 있습니다. 메뉴 관리에서 확인하세요.')).toBeInTheDocument();
     expect(screen.queryByText(/일반 그룹에 보이는 메뉴가 남습니다/)).toBeNull();
   });
@@ -179,7 +179,7 @@ describe('BoardMasterListClient', () => {
     mocks.batchUpdateBoardMasterStatus.mockReturnValueOnce(new Promise((_, reject) => { rejectWrite = reject; }));
     render(<BoardMasterListClient />);
     const firstRow = within(table()).getAllByRole('checkbox')[1];
-    fireEvent.click(firstRow);
+    fireEvent.click(firstRow!);
     const action = screen.getByRole('button', { name: /사용으로 바꾸기$/ });
 
     act(() => {
@@ -231,7 +231,7 @@ describe('BoardMasterListClient', () => {
   });
 
   it('내장 레이아웃이 아닌 템플릿은 기본 목록형(레이아웃 미지정)으로 보인다 — 코드를 보이지 않는다', () => {
-    mocks.boards = [{ ...mocks.boards[0], bbsTypeCd: 'BBST01', tmpltId: 'TMPLAT_BOARD_DEFAULT' }, mocks.boards[1]];
+    mocks.boards = [{ ...mocks.boards[0], bbsTypeCd: 'BBST01', tmpltId: 'TMPLAT_BOARD_DEFAULT' }, mocks.boards[1]!];
     render(<BoardMasterListClient />);
     const notice = rowOf('공지사항');
     expect(within(notice).getByText('기본 목록형(레이아웃 미지정)')).toBeInTheDocument();
@@ -299,7 +299,7 @@ describe('BoardMasterListClient', () => {
 
   it('이용 범위는 귀속이 없으면 전체, 귀속이면 커뮤니티 회원이고 사용 중지·확인 불가를 알린다', () => {
     mocks.boards = [
-      mocks.boards[0],
+      mocks.boards[0]!,
       { ...mocks.boards[1], community: { cmntySn: 7, cmntyNm: '개발 모임', inUse: false } },
       { ...mocks.boards[1], bbsId: 'BBSMSTR_0123456789AB', bbsTtl: '모르는 귀속', community: { cmntySn: 8, cmntyNm: null, inUse: null } },
     ];

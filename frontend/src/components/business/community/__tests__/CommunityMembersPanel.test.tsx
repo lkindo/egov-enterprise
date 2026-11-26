@@ -141,8 +141,8 @@ describe('CommunityMembersPanel', () => {
     fireEvent.click(rejectButton);
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    expect(mocks.confirm.mock.calls[0][0]).toMatchObject({ variant: 'destructive', confirmText: '반려' });
-    expect(String(mocks.confirm.mock.calls[0][0].message)).toMatch(/다시 신청할 수 있습니다/);
+    expect(mocks.confirm.mock.calls[0]![0]).toMatchObject({ variant: 'destructive', confirmText: '반려' });
+    expect(String(mocks.confirm.mock.calls[0]![0].message)).toMatch(/다시 신청할 수 있습니다/);
     await waitFor(() => expect(mocks.rejectMember).toHaveBeenCalledTimes(1));
     expect(mocks.rejectMember).toHaveBeenCalledWith(11, 'esntl-1');
     expect(rejectButton).toBeDisabled();
@@ -195,8 +195,8 @@ describe('CommunityMembersPanel', () => {
     fireEvent.click(withdrawButton);
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    expect(mocks.confirm.mock.calls[0][0]).toMatchObject({ variant: 'destructive', confirmText: '탈퇴 처리' });
-    expect(String(mocks.confirm.mock.calls[0][0].message)).toMatch(/회원 전용 게시판을 더 이상 볼 수 없/);
+    expect(mocks.confirm.mock.calls[0]![0]).toMatchObject({ variant: 'destructive', confirmText: '탈퇴 처리' });
+    expect(String(mocks.confirm.mock.calls[0]![0].message)).toMatch(/회원 전용 게시판을 더 이상 볼 수 없/);
     await waitFor(() => expect(mocks.withdrawMember).toHaveBeenCalledTimes(1));
     expect(mocks.withdrawMember).toHaveBeenCalledWith(11, 'esntl-2');
     expect(withdrawButton).toBeDisabled();

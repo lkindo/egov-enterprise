@@ -31,7 +31,7 @@ async function valueCell(item: string | RegExp) {
   const table = await screen.findByRole('table', { name: '공지사항 변경 이력' });
   const row = within(table).getAllByRole('row').find((candidate) => {
     const cells = candidate.querySelectorAll('td');
-    return cells.length > 3 && (typeof item === 'string' ? cells[3].textContent === item : item.test(cells[3].textContent ?? ''));
+    return cells.length > 3 && (typeof item === 'string' ? cells[3]!.textContent === item : item.test(cells[3]!.textContent ?? ''));
   });
   if (!row) throw new Error(`이력 행을 찾지 못했습니다: ${item}`);
   return row.querySelectorAll('td')[4];

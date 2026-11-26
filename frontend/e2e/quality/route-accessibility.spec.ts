@@ -95,10 +95,10 @@ test.describe('Quality & Resilience', () => {
             ]) {
                 test(`${route} 에 axe 위반이 없다`, async ({ page, adminRequest }) => {
                     if (route !== FAQ_HUB_ROUTE) {
-                        await auditRoute(page, route, purpose);
+                        await auditRoute(page, route!, purpose!);
                         return;
                     }
-                    await withOwnedFaq(adminRequest, page, (faq) => auditRoute(page, route, purpose, () => expectFaqHubRows(page, faq)));
+                    await withOwnedFaq(adminRequest, page, (faq) => auditRoute(page, route, purpose!, () => expectFaqHubRows(page, faq)));
                 });
             }
             /*
@@ -193,7 +193,7 @@ test.describe('Quality & Resilience', () => {
                 ['/pages', '안내 페이지'],
             ]) {
                 test(`${route} 에 axe 위반이 없다`, async ({ page }) => {
-                    await auditRoute(page, route, purpose);
+                    await auditRoute(page, route!, purpose!);
                 });
             }
             test('/help 에 axe 위반이 없다', async ({ page, adminRequest }) => {

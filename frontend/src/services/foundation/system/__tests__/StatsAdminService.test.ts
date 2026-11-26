@@ -155,7 +155,7 @@ describe('StatsAdminService — 통계 관리자 API 계약', () => {
       // 기간 미지정은 의도된 호출이다: 백엔드가 "오늘까지 최근 1개월"을 적용한다.
       await statsAdminService.getDataUsageStats();
 
-      const [url, sentConfig] = client.get.mock.calls[0];
+      const [url, sentConfig] = client.get.mock.calls[0]!;
 
       expect(url).toBe(`${BASE}/data-usage`);
       expect(sentConfig).toBeDefined();

@@ -165,7 +165,7 @@ describe('app shell accessibility source contract', () => {
     expect(sidebar.match(/<SidebarEdgeToggle\b/g)).toHaveLength(1);
     expect(aside.indexOf('<SidebarEdgeToggle />')).toBeGreaterThan(-1);
     expect(aside.indexOf('<SidebarEdgeToggle />')).toBeLessThan(aside.indexOf('data-app-sidebar-content'));
-    const asideClasses = aside.match(/className=\{cn\(\s*'([^']+)'/)?.[1].split(/\s+/) ?? [];
+    const asideClasses = aside.match(/className=\{cn\(\s*'([^']+)'/)?.[1]!.split(/\s+/) ?? [];
     expect(asideClasses).toContain('fixed');
     expect(asideClasses.filter((name) => /overflow/.test(name))).toEqual([]);
 
@@ -203,7 +203,7 @@ describe('app shell accessibility source contract', () => {
     expect(at, '머리글이 셸 링크 슬롯을 그리지 않습니다').toBeGreaterThan(-1);
     const [rendered] = linkTags(header.slice(at));
     expect(rendered?.tag).toMatch(/\bhref=\{href\}/);
-    const tokens = [...rendered!.tag.matchAll(/["'`]([^"'`]*)["'`]/g)].flatMap((match) => match[1].split(/\s+/));
+    const tokens = [...rendered!.tag.matchAll(/["'`]([^"'`]*)["'`]/g)].flatMap((match) => match[1]!.split(/\s+/));
     expect(tokens.filter((token) => /^(?:sm|md|lg|xl|2xl):hidden$/.test(token)), '머리글의 셸 링크가 넓은 화면에서 숨습니다').toEqual([]);
     if (tokens.includes('hidden')) {
       expect(tokens.some((token) => /^(?:sm|md|lg):(?:flex|inline-flex|block|inline-block|inline|grid)$/.test(token)),
@@ -512,7 +512,7 @@ describe('app shell accessibility source contract', () => {
       ['manage', '사용자 관리를 불러오는 중'],
     ];
     for (const [route, title] of userOrgFallbackTitles) {
-      const page = readAppSource('admin', 'user', route, 'page.tsx');
+      const page = readAppSource('admin', 'user', route!, 'page.tsx');
       expect(page, `admin/user/${route}/page.tsx`).toContain("import UserOrgHubPage from '../UserOrgHubPage'");
       expect(page, `admin/user/${route}/page.tsx`).toMatch(
         new RegExp(`<UserOrgHubPage\\b[^>]*loadingTitle="${title}"`),

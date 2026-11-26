@@ -136,7 +136,7 @@ function paginationBlocks(code: string): string[] {
  */
 function siblingImports(path: string, source: string): string[] {
   return [...codeWithoutComments(source, path).matchAll(/from\s+['"]\.\/([^'"/]+)['"]/g)]
-    .map(([, name]) => join(dirname(path), /\.tsx?$/.test(name) ? name : `${name}.tsx`));
+    .map(([, name]) => join(dirname(path), (/\.tsx?$/.test(name!) ? name : `${name}.tsx`)!));
 }
 
 function census() {

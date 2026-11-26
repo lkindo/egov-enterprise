@@ -126,8 +126,8 @@ test.describe('조직 ↔ 일정 통합 사슬', () => {
                 const items = (await list.json()).data as FileItem[];
                 expect(items).toHaveLength(1);
                 expect(items[0]).toMatchObject({ atchFileSn, orignlFileNm: name, fileMg: bytes.length });
-                expect(Number.isSafeInteger(items[0].fileSn)).toBe(true);
-                return { atchFileSn, fileSn: items[0].fileSn, name, bytes };
+                expect(Number.isSafeInteger(items[0]!.fileSn)).toBe(true);
+                return { atchFileSn, fileSn: items[0]!.fileSn, name, bytes };
             };
             const create = async (sharing: string, atchFileSn: number) => {
                 const response = await actors.post(SCHEDULE_API, { headers: owner,

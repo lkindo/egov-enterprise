@@ -269,7 +269,7 @@ describe('satisfactionService 요청 본문과 응답 전달', () => {
     await satisfactionService.create(BBS_ID, PST_SN, body);
 
     // 참조 동일성 — 얕은 복사나 필드 주입이 끼어들지 않음을 고정한다.
-    expect(client.post.mock.calls[0][1]).toEqual(body);
+    expect(client.post.mock.calls[0]![1]).toEqual(body);
     expect(body).toEqual(snapshot);
   });
 

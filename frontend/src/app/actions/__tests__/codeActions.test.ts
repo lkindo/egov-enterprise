@@ -72,7 +72,7 @@ describe('codeActions', () => {
 
       expect(codeAdminService.createDetailCode).not.toHaveBeenCalled();
       expect(codeAdminService.updateDetailCode).toHaveBeenCalledTimes(1);
-      const [cdId, dtlCd] = vi.mocked(codeAdminService.updateDetailCode).mock.calls[0];
+      const [cdId, dtlCd] = vi.mocked(codeAdminService.updateDetailCode).mock.calls[0]!;
       expect(cdId).toBe('G1');
       expect(dtlCd).toBe('D1');
     });
@@ -80,7 +80,7 @@ describe('codeActions', () => {
     it('isNew 플래그는 백엔드로 전송되지 않는다', async () => {
       await saveCodeDetail(null, { cdId: 'G1', dtlCd: 'D1', dtlCdNm: '이름', isNew: true });
 
-      const [payload] = vi.mocked(codeAdminService.createDetailCode).mock.calls[0];
+      const [payload] = vi.mocked(codeAdminService.createDetailCode).mock.calls[0]!;
       // 화면 전용 플래그가 DTO 에 섞여 나가면 백엔드가 모르는 필드를 받는다.
       expect(payload).not.toHaveProperty('isNew');
       expect(payload).toMatchObject({ cdId: 'G1', dtlCd: 'D1', dtlCdNm: '이름' });
@@ -89,7 +89,7 @@ describe('codeActions', () => {
     it('accessToken 을 Authorization 헤더로 전달한다', async () => {
       await saveCodeDetail(null, { cdId: 'G1', dtlCd: 'D1' });
 
-      const config = vi.mocked(codeAdminService.createDetailCode).mock.calls[0][1];
+      const config = vi.mocked(codeAdminService.createDetailCode).mock.calls[0]![1];
       // 헤더가 빠지면 백엔드가 401 을 내는데, 화면에는 "저장 실패" 로만 보인다.
       expect(config).toEqual({ headers: { Authorization: 'Bearer TOKEN-123' } });
     });
@@ -99,7 +99,7 @@ describe('codeActions', () => {
 
       await saveCodeDetail(null, { cdId: 'G1', dtlCd: 'D1' });
 
-      const config = vi.mocked(codeAdminService.createDetailCode).mock.calls[0][1];
+      const config = vi.mocked(codeAdminService.createDetailCode).mock.calls[0]![1];
       expect(config).toEqual({});
     });
 
@@ -184,7 +184,7 @@ describe('codeActions', () => {
         { id: 'G2', parentId: 'CLS2', type: 'group' },
       ] as never);
 
-      const [payload] = vi.mocked(codeAdminService.updateCmmnCodeHierarchy).mock.calls[0];
+      const [payload] = vi.mocked(codeAdminService.updateCmmnCodeHierarchy).mock.calls[0]!;
       // 필터가 뒤집히면 분류가 그룹으로 이동 요청돼 계층이 깨진다.
       expect(payload).toEqual([
         { cdId: 'G1', clsfCd: 'CLS1' },
@@ -199,7 +199,7 @@ describe('codeActions', () => {
         { id: 'G3', parentId: '', type: 'group' },
       ] as never);
 
-      const [payload] = vi.mocked(codeAdminService.updateCmmnCodeHierarchy).mock.calls[0];
+      const [payload] = vi.mocked(codeAdminService.updateCmmnCodeHierarchy).mock.calls[0]!;
       expect(payload).toEqual([{ cdId: 'G1', clsfCd: 'CLS1' }]);
     });
 

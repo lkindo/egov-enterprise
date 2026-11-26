@@ -177,9 +177,9 @@ describe('BoardMakerWizard validation', () => {
 
     await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
     // [2026-10-23 ADR-0040 §5.3] 파일당 크기는 비워 두면 0(전역 상한)이다.
-    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ ansYn: 'Y', stsfdgYn: 'N', fileAtchPsbltyYn: 'N', atchPsbltyFileSz: 0 });
+    expect(createBoardMaster.mock.calls[0]![0]).toMatchObject({ ansYn: 'Y', stsfdgYn: 'N', fileAtchPsbltyYn: 'N', atchPsbltyFileSz: 0 });
     // 실패는 화면이 사유와 함께 보인다 — 같은 실패를 전역 토스트로 한 번 더 띄우지 않는다(DEC-OPS-184).
-    expect(createBoardMaster.mock.calls[0][1]).toEqual({ suppressErrorToast: true });
+    expect(createBoardMaster.mock.calls[0]![1]).toEqual({ suppressErrorToast: true });
   });
 
   // [2026-10-26 ADR-0043 WIZ 6] 최종 확인은 만들 설정을 빠짐없이 보이고, 만든 직후 상태와 메뉴를 만들지 않는다는 사실을 말한다.
@@ -210,7 +210,7 @@ describe('BoardMakerWizard validation', () => {
   it('게시판을 사용 안 함으로 만들고 결과 화면에 이름·ID·상태와 남은 일 순서를 보인다', async () => {
     createBoardMaster.mockResolvedValue(BOARD_ID);
     await createBoard();
-    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ useYn: 'N' });
+    expect(createBoardMaster.mock.calls[0]![0]).toMatchObject({ useYn: 'N' });
     expect(summaryValue('게시판 이름')).toBe('사내 소식');
     expect(summaryValue('게시판 ID')).toBe(BOARD_ID);
     expect(summaryValue('상태')).toBe('사용 안 함 — 이용자에게 닫혀 있습니다');
@@ -240,7 +240,7 @@ describe('BoardMakerWizard validation', () => {
       fireEvent.click(screen.getByRole('button', { name: '지금 사용으로 바꾸기' }));
       await waitFor(() => expect(batchUpdateBoardMasterStatus).toHaveBeenCalledWith([BOARD_ID], 'Y'));
       expect(confirmMock).toHaveBeenCalledTimes(1);
-      const options = confirmMock.mock.calls[0][0];
+      const options = confirmMock.mock.calls[0]![0];
       expect(options).toMatchObject({ title: '게시판 사용으로 바꾸기', confirmText: '사용으로 바꾸기' });
       // 영향: 게시글 권한자 누구나 주소·통합 검색·선택지로 열고 쓴다. 메뉴는 따로다.
       expect(options.message).toContain('게시글 권한이 있는 로그인 사용자는 누구나 주소·통합 검색·게시판 선택지로');
@@ -453,7 +453,7 @@ describe('BoardMakerWizard validation', () => {
     fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
 
     await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
-    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({
+    expect(createBoardMaster.mock.calls[0]![0]).toMatchObject({
       tmpltId: 'TMPLT_LIST', bbsTypeCd: 'BBST02', ansYn: 'Y', stsfdgYn: 'N', fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 10,
     });
   });
@@ -483,7 +483,7 @@ describe('BoardMakerWizard validation', () => {
     expect(summaryValue('예약 게시')).toBe('받음');
     fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
     await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
-    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ rsvtPstgPsbltyYn: 'Y', useYn: 'N' });
+    expect(createBoardMaster.mock.calls[0]![0]).toMatchObject({ rsvtPstgPsbltyYn: 'Y', useYn: 'N' });
   });
 
   it('예약 게시를 직접 끈 뒤 공지형을 골라도 끈 값이 남는다', async () => {
@@ -502,7 +502,7 @@ describe('BoardMakerWizard validation', () => {
     await goToStep('최종 확인');
     fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
     await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
-    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ rsvtPstgPsbltyYn: 'N' });
+    expect(createBoardMaster.mock.calls[0]![0]).toMatchObject({ rsvtPstgPsbltyYn: 'N' });
   });
 
   // [2026-10-23 ADR-0040 결정 5·6, §5.3] 상단 고정은 기본 허용 안 함(상한 5·기본 30일)이고 공지형 용도만 켠다.
@@ -520,7 +520,7 @@ describe('BoardMakerWizard validation', () => {
     expect(summaryValue('상단 고정')).toBe('허용(상한 5건 · 기본 30일)');
     fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
     await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
-    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({
+    expect(createBoardMaster.mock.calls[0]![0]).toMatchObject({
       upendFixPsbltyYn: 'Y', upendFixUplmtNocs: 5, upendFixBscDayCnt: 30, rsvtPstgPsbltyYn: 'Y', useYn: 'N',
     });
   });
@@ -536,7 +536,7 @@ describe('BoardMakerWizard validation', () => {
     expect(summaryValue('상단 고정')).toBe('허용 안 함');
     fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
     await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
-    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ upendFixPsbltyYn: 'N', upendFixUplmtNocs: 5, upendFixBscDayCnt: 30 });
+    expect(createBoardMaster.mock.calls[0]![0]).toMatchObject({ upendFixPsbltyYn: 'N', upendFixUplmtNocs: 5, upendFixBscDayCnt: 30 });
   });
 
   it('상단 고정을 직접 바꾼 값은 용도가 덮지 않고, 생성 스키마 범위를 넘는 상한은 다음 단계로 가지 않는다', async () => {
@@ -559,7 +559,7 @@ describe('BoardMakerWizard validation', () => {
     fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
     await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
     // 직접 끈 고정 허용과 직접 바꾼 상한은 공지형 용도가 덮지 않는다.
-    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ upendFixPsbltyYn: 'N', upendFixUplmtNocs: 3, upendFixBscDayCnt: 30 });
+    expect(createBoardMaster.mock.calls[0]![0]).toMatchObject({ upendFixPsbltyYn: 'N', upendFixUplmtNocs: 3, upendFixBscDayCnt: 30 });
   });
 
   // [2026-10-23 ADR-0040 결정 6·7, §5.3] 비밀글 정책은 기본 없음·추천은 기본 받음이고, 질의응답형은 선택, 공지형은 추천을 받지 않는다.
@@ -574,7 +574,7 @@ describe('BoardMakerWizard validation', () => {
     expect([summaryValue('비밀글 정책'), summaryValue('추천')]).toEqual(['없음', '받음']);
     fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
     await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
-    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ prvtPstPlcyCd: 'NONE', rcmdtnUseYn: 'Y', useYn: 'N' });
+    expect(createBoardMaster.mock.calls[0]![0]).toMatchObject({ prvtPstPlcyCd: 'NONE', rcmdtnUseYn: 'Y', useYn: 'N' });
   });
 
   it.each([
@@ -592,7 +592,7 @@ describe('BoardMakerWizard validation', () => {
     expect([summaryValue('비밀글 정책'), summaryValue('추천')]).toEqual(shown);
     fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
     await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
-    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ ...expected, useYn: 'N' });
+    expect(createBoardMaster.mock.calls[0]![0]).toMatchObject({ ...expected, useYn: 'N' });
   });
 
   it('비밀글 정책·추천 받기를 직접 바꾼 값은 용도가 덮지 않는다', async () => {
@@ -608,7 +608,7 @@ describe('BoardMakerWizard validation', () => {
     await goToStep('최종 확인');
     fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
     await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
-    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ prvtPstPlcyCd: 'REQUIRED', rcmdtnUseYn: 'N', tmpltId: 'TMPLT_QNA' });
+    expect(createBoardMaster.mock.calls[0]![0]).toMatchObject({ prvtPstPlcyCd: 'REQUIRED', rcmdtnUseYn: 'N', tmpltId: 'TMPLT_QNA' });
   });
 
   it('질의응답형은 Q&A 화면 유형을 고른다 — 화면 유형을 직접 고른 뒤에는 바꾸지 않는다', async () => {
@@ -619,7 +619,7 @@ describe('BoardMakerWizard validation', () => {
     await goToStep('최종 확인');
     fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
     await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
-    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ tmpltId: 'TMPLT_QNA' });
+    expect(createBoardMaster.mock.calls[0]![0]).toMatchObject({ tmpltId: 'TMPLT_QNA' });
   });
 
   /*
@@ -741,7 +741,7 @@ describe('BoardMakerWizard validation', () => {
 
       await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
       // undefined 로 보내는 것과 다르다 — 서버는 값이 있으면 존재를 검증하고 없으면 귀속 없음이다.
-      expect(createBoardMaster.mock.calls[0][0]).not.toHaveProperty('cmntySn');
+      expect(createBoardMaster.mock.calls[0]![0]).not.toHaveProperty('cmntySn');
     });
 
     it('커뮤니티를 고르면 숫자로 실어 보낸다 — 그 게시판은 회원 전용이 된다', async () => {
@@ -754,7 +754,7 @@ describe('BoardMakerWizard validation', () => {
       fireEvent.submit(screen.getByRole('button', { name: '게시판 만들기' }).closest('form')!);
 
       await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
-      expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ cmntySn: 7 });
+      expect(createBoardMaster.mock.calls[0]![0]).toMatchObject({ cmntySn: 7 });
     });
 
     // [2026-10-26 ADR-0043 결정 1] 귀속 게시판의 입구는 커뮤니티 화면이다 — 메뉴 안내를 건너뛰고, 사용 전환 안내도 회원 범위로 말한다.
@@ -770,7 +770,7 @@ describe('BoardMakerWizard validation', () => {
       expect(screen.queryByRole('button', { name: '메뉴에 붙이기' })).toBeNull();
       fireEvent.click(screen.getByRole('button', { name: '지금 사용으로 바꾸기' }));
       await waitFor(() => expect(batchUpdateBoardMasterStatus).toHaveBeenCalledWith([BOARD_ID], 'Y'));
-      expect(confirmMock.mock.calls[0][0].message).toContain('귀속 커뮤니티의 승인 회원과 관리자가');
+      expect(confirmMock.mock.calls[0]![0].message).toContain('귀속 커뮤니티의 승인 회원과 관리자가');
       await waitFor(() => expect(summaryValue('상태')).toBe('사용 중 — 귀속 커뮤니티의 승인 회원에게 열려 있습니다'));
     });
   });

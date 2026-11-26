@@ -138,7 +138,7 @@ describe('ApiService', () => {
    timeout: 5000,
    headers: { 'Content-Type': undefined },
   }));
-  const request = vi.mocked(client.requestRaw).mock.calls[0][0] as { data: FormData };
+  const request = vi.mocked(client.requestRaw).mock.calls[0]![0] as { data: FormData };
   expect(request.data.getAll('files')).toStrictEqual([file]);
 
   await expect(service.testGeneratedMultipart([file], {

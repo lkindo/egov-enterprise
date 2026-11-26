@@ -350,8 +350,8 @@ describe('커뮤니티 탈퇴와 재가입', () => {
 
     await waitFor(() => expect(mocks.leaveCommunity).toHaveBeenCalledTimes(1));
     expect(mocks.confirm).toHaveBeenCalledTimes(1);
-    expect(mocks.confirm.mock.calls[0][0]).toMatchObject({ variant: 'destructive', confirmText: '탈퇴' });
-    expect(String(mocks.confirm.mock.calls[0][0].message)).toMatch(/회원 전용 게시판을 더 이상 볼 수 없/);
+    expect(mocks.confirm.mock.calls[0]![0]).toMatchObject({ variant: 'destructive', confirmText: '탈퇴' });
+    expect(String(mocks.confirm.mock.calls[0]![0].message)).toMatch(/회원 전용 게시판을 더 이상 볼 수 없/);
     expect(mocks.leaveCommunity).toHaveBeenCalledWith(9);
     expect(leave).toBeDisabled();
     expect(leave).toHaveAttribute('aria-busy', 'true');

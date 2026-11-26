@@ -58,7 +58,7 @@ function assertBoardContract(controller: string, rows: Binding[]): void {
 function methodBody(source: string, method: string): string {
   const start = source.search(new RegExp(`(?:public|protected|private)\\s+[\\w<>.]+\\s+${method}\\s*\\(`));
   expect(start, `${method} method is missing`).toBeGreaterThanOrEqual(0);
-  return source.slice(start).split(/\n\s*(?:public|protected|private)\s/)[0];
+  return source.slice(start).split(/\n\s*(?:public|protected|private)\s/)[0]!;
 }
 
 /**
@@ -77,9 +77,9 @@ export function findUnenforcedDenial(source: string, fileName: string): string[]
   const hits: string[] = [];
   for (const match of stripped.matchAll(/\{([^{}]*?)\?([\s\S]{0,1600}?)\}/g)) {
     const [, condition, branch] = match;
-    if (!ROLE_NEGATION.test(condition)) continue;
-    const word = DENIAL_VOCABULARY.find((token) => branch.includes(token));
-    if (word) hits.push(`${condition.trim().slice(0, 60)} → "${word}"`);
+    if (!ROLE_NEGATION.test(condition!)) continue;
+    const word = DENIAL_VOCABULARY.find((token) => branch!.includes(token));
+    if (word) hits.push(`${condition!.trim().slice(0, 60)} → "${word}"`);
   }
 
   // 술어가 변수로 한 번 우회하는 흔한 형태도 잡는다: const x = !isAdmin && ...; {x ? (...)}

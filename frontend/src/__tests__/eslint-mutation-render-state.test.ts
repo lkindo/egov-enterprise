@@ -14,7 +14,7 @@ const RULE = 'local-query/no-render-state-in-mutation-fn';
 async function flagged(source: string): Promise<string[]> {
   const eslint = new ESLint({ cwd: FRONTEND_DIR });
   const [result] = await eslint.lintText(source, { filePath: join(FRONTEND_DIR, 'src/app/__rule_probe__/Probe.tsx') });
-  return result.messages.filter((m) => m.ruleId === RULE).map((m) => /'([^']+)'/.exec(m.message)?.[1] ?? m.message);
+  return result!.messages.filter((m) => m.ruleId === RULE).map((m) => /'([^']+)'/.exec(m.message)?.[1] ?? m.message);
 }
 
 const header = `import { useReducer, useState } from 'react';

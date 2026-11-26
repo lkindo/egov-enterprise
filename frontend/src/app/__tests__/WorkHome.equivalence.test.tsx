@@ -296,7 +296,7 @@ if (boardInProjection) describe('업무 홈 동등성 그물 (Phase 2 H0)', () =
       order.push(banner);
     }
     for (const [index, node] of order.slice(1).entries()) {
-      expect(order[index].compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(order[index]!.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     }
     if (present.popup) expect(await screen.findByText('점검 안내')).toBeInTheDocument();
   });

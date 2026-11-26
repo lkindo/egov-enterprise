@@ -26,7 +26,7 @@ const GLOBALS = join(FRONTEND_DIR, 'src', 'app', 'globals.css');
 /** `--key: value;` 선언에서 키만 뽑는다. 주석 안의 것은 제외한다. */
 function declaredKeys(css: string): Set<string> {
   const withoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '');
-  return new Set([...withoutComments.matchAll(/(--[a-z0-9-]+)\s*:/gi)].map((m) => m[1]));
+  return new Set([...withoutComments.matchAll(/(--[a-z0-9-]+)\s*:/gi)].map((m) => m[1]!));
 }
 
 /** 여는 셀렉터 줄부터 대응하는 닫는 중괄호까지의 블록 본문을 돌려준다. */
@@ -88,15 +88,15 @@ describe('브랜드 프로필 토큰 계약', () => {
 
     expect(perProfile.length).toBeGreaterThan(0);
     const [reference, ...rest] = perProfile;
-    expect(reference.light.size, `${reference.file} 라이트 블록에서 토큰을 추출하지 못했습니다`)
+    expect(reference!.light.size, `${reference!.file} 라이트 블록에서 토큰을 추출하지 못했습니다`)
       .toBeGreaterThan(30);
 
     for (const profile of rest) {
-      const missing = [...reference.light].filter((key) => !profile.light.has(key));
-      const extra = [...profile.light].filter((key) => !reference.light.has(key));
+      const missing = [...reference!.light].filter((key) => !profile.light.has(key));
+      const extra = [...profile.light].filter((key) => !reference!.light.has(key));
       expect(
         { missing, extra },
-        `${profile.file} 의 시맨틱 키 집합이 ${reference.file} 과 다릅니다. ` +
+        `${profile.file} 의 시맨틱 키 집합이 ${reference!.file} 과 다릅니다. ` +
           '프로필 전환 시 미정의 변수가 생기면 이전 프로필 값이 남거나 빈 값이 됩니다.',
       ).toEqual({ missing: [], extra: [] });
     }

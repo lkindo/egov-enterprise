@@ -111,8 +111,8 @@ async function downloadedXlsxRows(download: Download, page: Page, sheetName: str
         };
         const workbook = xml('xl/workbook.xml');
         const sheets = Array.from(workbook.getElementsByTagName('sheet'));
-        if (sheets.length !== 1 || sheets[0].getAttribute('name') !== sheetName) throw new Error('Unexpected XLSX worksheet');
-        const relationshipId = sheets[0].getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+        if (sheets.length !== 1 || sheets[0]!.getAttribute('name') !== sheetName) throw new Error('Unexpected XLSX worksheet');
+        const relationshipId = sheets[0]!.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
         const relationship = Array.from(xml('xl/_rels/workbook.xml.rels').getElementsByTagName('Relationship'))
             .find(entry => entry.getAttribute('Id') === relationshipId);
         const target = relationship?.getAttribute('Target');
@@ -322,7 +322,7 @@ test.describe('관측 여정 — 행동이 남긴 기록을 찾는다', () => {
             expect(records.every(row => row[2] === 'UserApiController#getUser' && row[5] === auditor.userId)).toBe(true);
             const prepared = records.filter(row => row[4] === 'PREPARED' && row[6] === subject.esntlId);
             expect(prepared).toHaveLength(1);
-            expect(prepared[0][3]).toContain('사용자 상세');
+            expect(prepared[0]![3]).toContain('사용자 상세');
         });
 
         await test.step('내보내기 자체가 사유와 함께 원장에 남는다', async () => {

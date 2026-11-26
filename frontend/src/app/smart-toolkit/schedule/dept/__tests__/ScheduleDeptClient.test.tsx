@@ -487,7 +487,7 @@ describe('ScheduleDeptClient 수정 본문 계약', () => {
     // 픽스처가 금지 키를 실제로 품고 있어야 "안 실렸다"가 증거가 된다.
     // 생성 계약에 금지 키가 추가되면 여기가 먼저 red 가 되어 픽스처 갱신을 강제한다.
     for (const key of FORBIDDEN_REQUEST_KEYS) {
-      expect(Object.hasOwn(SERVER_SHAPED_ROW, key)).toBe(true);
+      expect(Object.hasOwn(SERVER_SHAPED_ROW, key!)).toBe(true);
     }
 
     expect(Object.keys(body).filter((key) => FORBIDDEN_REQUEST_KEYS.includes(key))).toEqual([]);

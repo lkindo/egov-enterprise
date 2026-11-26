@@ -243,7 +243,7 @@ describe('address-book form validation contract', () => {
       })],
     }));
     // [DIP B5 F8] 작성자 ID 를 구성원에 넣지 않는다 — 서버가 그 값으로 구성원을 대조해 서로를 덮었다.
-    expect(mocks.createAddressBook.mock.calls[0][0].adbkMan[0]).not.toHaveProperty('userId');
+    expect(mocks.createAddressBook.mock.calls[0]![0].adbkMan[0]).not.toHaveProperty('userId');
     expect(email).toHaveAttribute('aria-invalid', 'true');
     await waitFor(() => expect(email).toHaveFocus());
   });
@@ -412,7 +412,7 @@ describe('주소록 구성원 추가·수정·삭제 (DIP B5 F8)', () => {
     await user.click(within(dialog).getByRole('button', { name: '구성원 추가' }));
 
     await waitFor(() => expect(mocks.updateAddressBook).toHaveBeenCalledTimes(1));
-    const [adbkSn, body] = mocks.updateAddressBook.mock.calls[0];
+    const [adbkSn, body] = mocks.updateAddressBook.mock.calls[0]!;
     expect(adbkSn).toBe(7);
     expect(body.adbkNm).toBe('팀 주소록');
     expect(body.rlsScopeCd).toBe('G');
@@ -440,7 +440,7 @@ describe('주소록 구성원 추가·수정·삭제 (DIP B5 F8)', () => {
     await user.click(within(dialog).getByRole('button', { name: '구성원 저장' }));
 
     await waitFor(() => expect(mocks.updateAddressBook).toHaveBeenCalledTimes(1));
-    const body = mocks.updateAddressBook.mock.calls[0][1];
+    const body = mocks.updateAddressBook.mock.calls[0]![1];
     expect(body.adbkMan[0]).toMatchObject({ adbkMbrSn: 31, nm: '갑돌', homeTelno: '0212345678' });
     expect(body.adbkMan[1]).toMatchObject({ adbkMbrSn: 32, nm: '을', faxNo: '0299998888' });
   });
@@ -481,7 +481,7 @@ describe('주소록 구성원 추가·수정·삭제 (DIP B5 F8)', () => {
 
     await waitFor(() => expect(mocks.updateAddressBook).toHaveBeenCalledTimes(1));
     expect(mocks.confirm).toHaveBeenCalledTimes(1);
-    expect(mocks.updateAddressBook.mock.calls[0][1].adbkMan).toEqual([
+    expect(mocks.updateAddressBook.mock.calls[0]![1].adbkMan).toEqual([
       expect.objectContaining({ adbkMbrSn: 31, nm: '갑' }),
     ]);
     const pending = screen.getByRole('button', { name: '을 삭제 중' });
@@ -712,7 +712,7 @@ describe('주소록 충돌 복구', () => {
     expect(screen.getByRole('textbox', { name: '이메일' })).toHaveValue('new@example.com');
     await user.click(screen.getByRole('button', { name: '구성원 저장' }));
     await waitFor(() => expect(mocks.updateAddressBook).toHaveBeenCalledTimes(2));
-    const body = mocks.updateAddressBook.mock.calls[1][1];
+    const body = mocks.updateAddressBook.mock.calls[1]![1];
     expect(body).toMatchObject({ adbkNm: latest.adbkNm, editToken: LATEST_EDIT_TOKEN });
     expect(body.adbkMan).toEqual([
       expect.objectContaining({ adbkMbrSn: 31, nm: '내가 고친 성명', emlAddr: 'new@example.com', homeTelno: '0298765432' }),
@@ -733,7 +733,7 @@ describe('주소록 충돌 복구', () => {
     expect(name).toHaveValue('내 새 구성원');
     await user.click(screen.getByRole('button', { name: '구성원 추가' }));
     await waitFor(() => expect(mocks.updateAddressBook).toHaveBeenCalledTimes(2));
-    expect(mocks.updateAddressBook.mock.calls[1][1]).toMatchObject({
+    expect(mocks.updateAddressBook.mock.calls[1]![1]).toMatchObject({
       editToken: LATEST_EDIT_TOKEN,
       adbkMan: [expect.objectContaining({ adbkMbrSn: 31 }), expect.objectContaining({ adbkMbrSn: 32 }), expect.objectContaining({ nm: '내 새 구성원' })],
     });
@@ -760,14 +760,14 @@ describe('주소록 충돌 복구', () => {
     await screen.findByText('갑');
     await user.click(screen.getByRole('button', { name: '갑 삭제' }));
     const conflict = await screen.findByRole('alert', { name: '다른 변경과 충돌했습니다' });
-    expect(mocks.updateAddressBook.mock.calls[0][1].editToken).toBe(EDIT_TOKEN);
+    expect(mocks.updateAddressBook.mock.calls[0]![1].editToken).toBe(EDIT_TOKEN);
     mocks.getAddressBook.mockResolvedValueOnce(latest);
     await user.click(within(conflict).getByRole('button', { name: '최신 내용 확인' }));
     expect(await within(conflict).findByText(/서버 구성원: 갑 \/ new@example.com/)).toBeVisible();
     expect(mocks.updateAddressBook).toHaveBeenCalledTimes(1);
     await user.click(within(conflict).getByRole('button', { name: '최신 내용에 내 변경 반영' }));
     await waitFor(() => expect(mocks.updateAddressBook).toHaveBeenCalledTimes(2));
-    expect(mocks.updateAddressBook.mock.calls[1][1]).toMatchObject({
+    expect(mocks.updateAddressBook.mock.calls[1]![1]).toMatchObject({
       adbkNm: latest.adbkNm, editToken: LATEST_EDIT_TOKEN,
       adbkMan: [expect.objectContaining({ adbkMbrSn: 32, nm: '새 구성원', faxNo: '0211112222' })],
     });

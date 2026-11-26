@@ -95,9 +95,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   window.sessionStorage.clear();
   server = new Map<string, Snapshot>([
-    ['CONTENT', { ...groups[0], complete: true, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }, { type: 'OPERATION', code: 'MENU_READ' }, { type: 'NAVIGATION', code: 'AREA' }] }],
-    ['SURVEY', { ...groups[1], complete: true, grants: [{ type: 'OPERATION', code: 'MENU_READ' }, { type: 'OPERATION', code: 'MENU_UPDATE' }] }],
-    ['ROLE_ANONYMOUS', { ...groups[2], complete: true, grants: [{ type: 'NAVIGATION', code: 'AREA' }] }],
+    ['CONTENT', { ...groups[0]!, complete: true, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }, { type: 'OPERATION', code: 'MENU_READ' }, { type: 'NAVIGATION', code: 'AREA' }] }],
+    ['SURVEY', { ...groups[1]!, complete: true, grants: [{ type: 'OPERATION', code: 'MENU_READ' }, { type: 'OPERATION', code: 'MENU_UPDATE' }] }],
+    ['ROLE_ANONYMOUS', { ...groups[2]!, complete: true, grants: [{ type: 'NAVIGATION', code: 'AREA' }] }],
   ]);
   mocks.permissions = ['AUTHRT_READ', 'AUTHRT_GRANT', 'AUTHRT_ASSIGN', 'AUTHRT_UPDATE'];
   mocks.getCatalog.mockResolvedValue(catalog);
@@ -292,7 +292,7 @@ describe('그룹 비교(G3)', () => {
     const entry = within(authority).getAllByRole('cell')[1];
     expect(entry).toHaveTextContent('A 있음 1/2');
     expect(entry).toHaveTextContent('B 있음 1/2');
-    expect(within(entry).getByText('다름')).not.toHaveClass('sr-only');
+    expect(within(entry!).getByText('다름')).not.toHaveClass('sr-only');
     expect(entry).toHaveTextContent('A에만: 권한 조회');
     expect(entry).toHaveTextContent('B에만: 권한 감사');
   });

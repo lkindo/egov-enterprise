@@ -214,7 +214,7 @@ describe('ExternalHrClient useAppForm 소비', () => {
     fireEvent.click(screen.getByRole('button', { name: /최종 등록/ }));
 
     await waitFor(() => expect(mocks.createExternalHr).toHaveBeenCalledTimes(1));
-    const payload = mocks.createExternalHr.mock.calls[0][0] as Record<string, unknown>;
+    const payload = mocks.createExternalHr.mock.calls[0]![0] as Record<string, unknown>;
 
     expect(payload).not.toHaveProperty('gndrCd');
     expect(payload).not.toHaveProperty('crTypeCd');

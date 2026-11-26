@@ -161,7 +161,7 @@ describe('ContentPageEditor — 초안 저장(ADR-0039·ADR-0042)', () => {
     await waitFor(() => expect(saveButton).toBeDisabled());
     expect(saveButton).toHaveAttribute('aria-busy', 'true');
     expect(mocks.saveDraft).toHaveBeenCalledTimes(1);
-    expect(mocks.saveDraft.mock.calls[0][1]).toMatchObject({ contsTtl: '바뀐 안내', contsPathNm: 'service-guide', version: 3 });
+    expect(mocks.saveDraft.mock.calls[0]![1]).toMatchObject({ contsTtl: '바뀐 안내', contsPathNm: 'service-guide', version: 3 });
 
     pendingSave.reject({ isAxiosError: true, response: { status: 500 } });
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('초안을 저장하지 못했습니다. 입력한 내용은 그대로 있습니다.', 'error'));
@@ -250,7 +250,7 @@ describe('ContentPageEditor — 초안 저장(ADR-0039·ADR-0042)', () => {
     mocks.saveDraft.mockResolvedValueOnce(detail({ contsTtl: '제목 B', version: 5 }));
     fireEvent.click(screen.getByRole('button', { name: '초안 저장' }));
     await waitFor(() => expect(mocks.saveDraft).toHaveBeenCalledTimes(2));
-    expect(mocks.saveDraft.mock.calls[1][1]).toMatchObject({ contsTtl: '제목 B', version: 4 });
+    expect(mocks.saveDraft.mock.calls[1]![1]).toMatchObject({ contsTtl: '제목 B', version: 4 });
   });
 });
 
@@ -298,7 +298,7 @@ describe('ContentPageEditor — 동시 수정 배너(409 C013)', () => {
     fireEvent.click(screen.getByRole('button', { name: '내 변경으로 덮어쓰기(다른 사람의 저장 내용을 버림)' }));
     await waitFor(() => expect(mocks.saveDraft).toHaveBeenCalledTimes(2));
     expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ title: '내 변경으로 덮어쓰기', variant: 'destructive' }));
-    expect(mocks.saveDraft.mock.calls[1][1]).toMatchObject({ contsTtl: '내 제목', version: 8 });
+    expect(mocks.saveDraft.mock.calls[1]![1]).toMatchObject({ contsTtl: '내 제목', version: 8 });
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(expect.stringContaining('내 변경으로 덮어써 초안을 저장했습니다'), 'success'));
     expect(title).toHaveValue('내 제목');
     expect(screen.queryByText(/다른 사람이 먼저 이 페이지를 바꿨습니다/)).toBeNull();
@@ -361,11 +361,11 @@ describe('ContentPageEditor — 영역 편집', () => {
     mocks.saveDraft.mockResolvedValue(detail());
     fireEvent.click(screen.getByRole('button', { name: '초안 저장' }));
     await waitFor(() => expect(mocks.saveDraft).toHaveBeenCalledTimes(1));
-    const sent = mocks.saveDraft.mock.calls[0][1].document as CmsDocument;
+    const sent = mocks.saveDraft.mock.calls[0]![1].document as CmsDocument;
     expect(sent.sections).toHaveLength(2);
-    expect(sent.sections[0].cells[0]).toMatchObject({ kind: 'image', atchFileSn: 5 });
-    expect(sent.sections[1].cells[0]).toMatchObject({ kind: 'image', atchFileSn: 0, alt: '청사 전경' });
-    expect(sent.sections[1].id).not.toBe(sent.sections[0].id);
+    expect(sent.sections[0]!.cells[0]).toMatchObject({ kind: 'image', atchFileSn: 5 });
+    expect(sent.sections[1]!.cells[0]).toMatchObject({ kind: 'image', atchFileSn: 0, alt: '청사 전경' });
+    expect(sent.sections[1]!.id).not.toBe(sent.sections[0]!.id);
   });
 });
 
@@ -402,7 +402,7 @@ describe('ContentPageEditor — 업무 홈 지정', () => {
     fireEvent.click(homeButton);
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    const { message } = mocks.confirm.mock.calls[0][0] as { message: string };
+    const { message } = mocks.confirm.mock.calls[0]![0] as { message: string };
     expect(message).toContain('지금 보이는 ‘기관 소개’은(는) 내려갑니다');
     expect(message).toContain('업무 홈의 카드가 아래로 밀릴 수 있습니다');
     expect(mocks.updateHome).not.toHaveBeenCalled();
@@ -425,7 +425,7 @@ describe('ContentPageEditor — 게시 중지·보관의 메뉴 안내', () => {
     fireEvent.click(await screen.findByRole('button', { name: '게시 중지' }));
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    expect(mocks.confirm.mock.calls[0][0]).toMatchObject({
+    expect(mocks.confirm.mock.calls[0]![0]).toMatchObject({
       title: '게시 중지',
       variant: 'destructive',
       message: expect.stringContaining('이 페이지를 가리키는 메뉴 1개(관리 센터 › 이용 안내)는 그대로 남습니다 — 메뉴 관리에서 정리하세요.'),
@@ -442,7 +442,7 @@ describe('ContentPageEditor — 게시 중지·보관의 메뉴 안내', () => {
     fireEvent.click(await screen.findByRole('button', { name: '보관' }));
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    expect(mocks.confirm.mock.calls[0][0].message).toContain('이 페이지로 가는 메뉴는 그대로 남으니 메뉴 관리에서 정리해 주세요.');
+    expect(mocks.confirm.mock.calls[0]![0].message).toContain('이 페이지로 가는 메뉴는 그대로 남으니 메뉴 관리에서 정리해 주세요.');
   });
 
   it('게시 중지는 저장하지 않은 변경을 덮지 않는다', async () => {

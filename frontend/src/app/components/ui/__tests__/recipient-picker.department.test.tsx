@@ -98,7 +98,7 @@ describe('RecipientPicker — 부서 탭', () => {
     expect(screen.getByText('2명 선택')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '선택 추가 (2)' }));
 
-    expect(mocks.onConfirm.mock.calls[0][0]).toEqual([
+    expect(mocks.onConfirm.mock.calls[0]![0]).toEqual([
       { kind: 'user', esntlId: 'USR_A', name: '김갑', deptNm: '기획팀' },
       { kind: 'user', esntlId: 'USR_B', name: '이을', deptNm: '기획팀' },
     ]);

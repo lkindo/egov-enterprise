@@ -265,7 +265,7 @@ describe('SurveyTemplatesPanel validation contract', () => {
     await user.click(screen.getByRole('button', { name: '템플릿 수정 저장' }));
 
     await waitFor(() => expect(mocked.updateTemplate).toHaveBeenCalledTimes(1));
-    const [srvyTmpltSn, body] = mocked.updateTemplate.mock.calls[0];
+    const [srvyTmpltSn, body] = mocked.updateTemplate.mock.calls[0]!;
     expect(srvyTmpltSn).toBe(11);
     expect(Object.values(body)).not.toContain(null);
     expect(body).toMatchObject({ srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '수정 설명', version: 0 });
@@ -286,7 +286,7 @@ describe('SurveyTemplatesPanel validation contract', () => {
     await user.click(screen.getByRole('button', { name: '템플릿 수정 저장' }));
 
     await waitFor(() => expect(mocked.updateTemplate).toHaveBeenCalledTimes(1));
-    const [, body] = mocked.updateTemplate.mock.calls[0];
+    const [, body] = mocked.updateTemplate.mock.calls[0]!;
     expect(body).toEqual({ srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '수정 설명', srvyTmpltPathNm: '/templates/preserved', version: 0 });
     expect(() => parseGeneratedOperationRequest(updateTemplateOperation, body)).not.toThrow();
   });

@@ -127,7 +127,7 @@ describe('업무 홈 셸', () => {
     expect(screen.queryByText('hidden')).toBeNull();
     const order = ['popup', '업무 홈', 'intro', 'pending', 'lists', 'realtime', 'banner'].map(text => screen.getByText(text));
     for (const [index, node] of order.slice(1).entries()) {
-      expect(order[index].compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(order[index]!.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     }
     expect(document.body.textContent).not.toMatch(/최근 활동/);
   });

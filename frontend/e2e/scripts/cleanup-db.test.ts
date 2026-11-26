@@ -189,9 +189,9 @@ describe('cleanup-db exit contract', () => {
 
     expect(logSpy).toHaveBeenCalled();
     expect(postSpy).toHaveBeenCalledTimes(1);
-    expect(getSpy.mock.invocationCallOrder[0]).toBeGreaterThan(postSpy.mock.invocationCallOrder[0]);
-    expect(getSpy.mock.invocationCallOrder[1]).toBeGreaterThan(getSpy.mock.invocationCallOrder[0]);
-    expect(getSpy.mock.invocationCallOrder[2]).toBeGreaterThan(getSpy.mock.invocationCallOrder[1]);
+    expect(getSpy.mock.invocationCallOrder[0]).toBeGreaterThan(postSpy.mock.invocationCallOrder[0]!);
+    expect(getSpy.mock.invocationCallOrder[1]).toBeGreaterThan(getSpy.mock.invocationCallOrder[0]!);
+    expect(getSpy.mock.invocationCallOrder[2]).toBeGreaterThan(getSpy.mock.invocationCallOrder[1]!);
     expect(deleteSpy).not.toHaveBeenCalled();
   });
 });

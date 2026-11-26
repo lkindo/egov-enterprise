@@ -132,7 +132,7 @@ function submit() {
 }
 
 function submittedData(index = 0): FormData {
-  const data = mocks.saveBoardArticle.mock.calls[index][1];
+  const data = mocks.saveBoardArticle.mock.calls[index]![1];
   expect(data).toBeInstanceOf(FormData);
   return data;
 }
@@ -203,8 +203,8 @@ describe('BoardRegistClient 본문 미디어 저장', () => {
     expect(references.map(reference => reference.name)).toContain(existingMedia.name);
     const files = data.getAll('files') as File[];
     expect(files).toHaveLength(1);
-    expect(files[0].name).toBe(references[1].name);
-    expect(files[0].name).not.toBe(existingMedia.name);
+    expect(files[0]!.name).toBe(references[1]!.name);
+    expect(files[0]!.name).not.toBe(existingMedia.name);
 
     const fresh = { ...initialData, pstTtl: '미디어 게시글', pstCn: content };
     await act(async () => { finishRefresh(fresh); });
@@ -341,7 +341,7 @@ describe('BoardRegistClient 본문 미디어 저장', () => {
     const file = picture();
     addMedia([file]);
     const [reference] = getBoardMediaReferences(editor().value);
-    const imageOnly = serializeMedia([{ ...reference, label: '' }]);
+    const imageOnly = serializeMedia([{ ...reference!, label: '' }]);
     expect(htmlToSemanticPlainText(imageOnly)).toBe('');
     fireEvent.change(editor(), { target: { value: imageOnly } });
 
@@ -352,10 +352,10 @@ describe('BoardRegistClient 본문 미디어 저장', () => {
     const files = data.getAll('files') as File[];
     expect(files).toHaveLength(1);
     expect(files[0]).toBeInstanceOf(File);
-    expect(files[0].name).toBe(reference.name);
-    expect(files[0].name).not.toBe(file.name);
-    expect(files[0].size).toBe(file.size);
-    expect(files[0].type).toBe('image/png');
+    expect(files[0]!.name).toBe(reference!.name);
+    expect(files[0]!.name).not.toBe(file.name);
+    expect(files[0]!.size).toBe(file.size);
+    expect(files[0]!.type).toBe('image/png');
     expect(data.get('pstCn')).toBe(imageOnly);
     expect(data.get('pstCn')).not.toMatch(/blob:|data:|\bsrc=/);
   });
@@ -391,7 +391,7 @@ describe('BoardRegistClient 본문 미디어 저장', () => {
 
     await waitFor(() => expect(mocks.saveBoardArticle).toHaveBeenCalledTimes(1));
     const files = submittedData().getAll('files') as File[];
-    expect(files.map(file => file.name)).toEqual([attachment.name, getBoardMediaReferences(content)[0].name]);
+    expect(files.map(file => file.name)).toEqual([attachment.name, getBoardMediaReferences(content)[0]!.name]);
   });
 
   it('일반 첨부가 50MiB이면 미디어 추가를 거부하고 기존 본문을 유지한다', () => {

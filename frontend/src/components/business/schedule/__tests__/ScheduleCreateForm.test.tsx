@@ -65,7 +65,7 @@ describe('ScheduleCreateForm validation', () => {
     expect(screen.getByText('전사 일정으로 공유 중입니다')).toBeInTheDocument();
     fireEvent.submit(fields.form);
     await waitFor(() => expect(mocks.submit).toHaveBeenCalledTimes(1));
-    expect(mocks.submit.mock.calls[0][0]).toMatchObject({ schdlSeCd: '3' });
+    expect(mocks.submit.mock.calls[0]![0]).toMatchObject({ schdlSeCd: '3' });
   });
 
   it('공백만 있는 일정명을 write sink로 보내지 않고 일정명으로 이동한다', async () => {
@@ -289,7 +289,7 @@ describe('ScheduleCreateForm 수정 모드 전체 치환 왕복', () => {
     fireEvent.submit(fields.form);
 
     await waitFor(() => expect(mocks.submit).toHaveBeenCalledTimes(1));
-    const payload = mocks.submit.mock.calls[0][0] as ScheduleFormValues;
+    const payload = mocks.submit.mock.calls[0]![0] as ScheduleFormValues;
 
     // 사용자가 고친 필드는 새 값으로 간다.
     expect(payload.schdlNm).toBe('이름만 고친 회의');
@@ -313,7 +313,7 @@ describe('ScheduleCreateForm 수정 모드 전체 치환 왕복', () => {
     fireEvent.submit(fields.form);
 
     await waitFor(() => expect(mocks.submit).toHaveBeenCalledTimes(1));
-    const payload = mocks.submit.mock.calls[0][0] as ScheduleFormValues;
+    const payload = mocks.submit.mock.calls[0]![0] as ScheduleFormValues;
 
     // initialData 를 통째로 펼치는 '오답 수정' 이 들어오면 여기서 red 가 된다.
     // 이 값들이 실리면 assertForbiddenPathsAbsent 가 HTTP 전에 throw 해 수정이 통째로 죽는다.

@@ -42,7 +42,7 @@ describe('Standardized Validation Schemas', () => {
       if (!result.success) {
         const issues = result.error.issues;
         expect(issues.length).toBeGreaterThan(0);
-        expect(issues[0].code).toBe('too_big');
+        expect(issues[0]!.code).toBe('too_big');
       }
     });
   });

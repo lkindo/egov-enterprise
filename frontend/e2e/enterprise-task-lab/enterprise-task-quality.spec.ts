@@ -141,31 +141,31 @@ async function departmentWorkflow(context: Context): Promise<Workflow> {
   for (const name of [`${prefix} A`, `${prefix} B`]) ids.push(await created<string>(api, DEPARTMENTS, { ognzNm: name }));
   const rows = (await read<{ list: { ognzId: string; ognzNm: string }[] }>(api, `${DEPARTMENTS}?keyword=${prefix}&page=1&size=10`)).list;
   expect(rows).toHaveLength(2); const child = rows[0]; const parent = rows[1]; let childExists = true;
-  defer(async () => { if (childExists) await safeDelete(api, `${DEPARTMENTS}/${child.ognzId}`); await safeDelete(api, `${DEPARTMENTS}/${parent.ognzId}`); });
+  defer(async () => { if (childExists) await safeDelete(api, `${DEPARTMENTS}/${child!.ognzId}`); await safeDelete(api, `${DEPARTMENTS}/${parent!.ognzId}`); });
   return { route: '/admin/user/departments', ready: () => expect(page.getByRole('heading', { name: '부서 및 조직 관리', exact: true })).toBeVisible(),
     execute: async () => {
       const search = page.getByRole('textbox', { name: '부서 검색', exact: true });
       await observation.fill(search, prefix); await observation.enter(search);
-      await observation.enter(page.locator('[data-a2-master-item]', { hasText: child.ognzNm }));
+      await observation.enter(page.locator('[data-a2-master-item]', { hasText: child!.ognzNm }));
       const editTrigger = page.getByRole('button', { name: '정보 수정', exact: true });
-      const dialog = await openModal(context, editTrigger, '부서 정보 수정'); const name = `${child.ognzNm} Edited`;
+      const dialog = await openModal(context, editTrigger, '부서 정보 수정'); const name = `${child!.ognzNm} Edited`;
       await dirtyEscape(context, editTrigger, dialog, dialog.locator('input[name="ognzNm"]'), name);
       await observation.tabTo(dialog.locator('form button[type="submit"]'));
       await observation.action('update', () => observation.enter(dialog.locator('form button[type="submit"]')),
-        () => poll(async () => (await read<{ ognzNm: string }>(api, `${DEPARTMENTS}/${child.ognzId}`)).ognzNm === name));
+        () => poll(async () => (await read<{ ognzNm: string }>(api, `${DEPARTMENTS}/${child!.ognzId}`)).ognzNm === name));
       await expect(dialog).toBeHidden();
       await observation.enter(page.locator('[data-a2-master-item]', { hasText: name }));
       const placement = page.getByRole('region', { name: '부서 자리 바꾸기' });
-      await observation.select(placement.getByRole('combobox', { name: '상위 부서', exact: true }), parent.ognzId);
+      await observation.select(placement.getByRole('combobox', { name: '상위 부서', exact: true }), parent!.ognzId);
       await observation.enter(placement.getByRole('button', { name: '상위 부서로 옮기기', exact: true }));
       const save = page.getByRole('button', { name: '조직 계층 저장', exact: true }); await expect(save).toBeEnabled();
       await observation.tabTo(save);
       await observation.action('reparent', () => observation.enter(save),
-        () => poll(async () => (await read<{ upOgnzId: string }>(api, `${DEPARTMENTS}/${child.ognzId}`)).upOgnzId === parent.ognzId));
+        () => poll(async () => (await read<{ upOgnzId: string }>(api, `${DEPARTMENTS}/${child!.ognzId}`)).upOgnzId === parent!.ognzId));
       await observation.enter(page.locator('[data-a2-master-item]', { hasText: name }));
       const confirm = await confirmDelete(context, page.getByRole('button', { name: '부서 삭제', exact: true }));
       await observation.tabTo(confirm);
-      await observation.action('delete', () => observation.enter(confirm), () => poll(async () => (await api.get(`${DEPARTMENTS}/${child.ognzId}`)).status() === 404));
+      await observation.action('delete', () => observation.enter(confirm), () => poll(async () => (await api.get(`${DEPARTMENTS}/${child!.ognzId}`)).status() === 404));
       childExists = false;
     } };
 }
@@ -177,7 +177,7 @@ async function boardWorkflow(context: Context): Promise<Workflow> {
   defer(async () => { if (post !== null) await safeDelete(api, `/api/v1/boards/${board}/posts/${post}`); });
   const locate = async (name: string) => {
     const rows = (await read<{ list: { pstSn: number; pstTtl: string }[] }>(api, `/api/v1/boards/${board}?searchCnd=0&searchWrd=${encodeURIComponent(name)}&page=1&size=20`)).list;
-    const found = rows.filter(row => row.pstTtl === name); if (found.length === 1) post = found[0].pstSn; return found.length === 1;
+    const found = rows.filter(row => row.pstTtl === name); if (found.length === 1) post = found[0]!.pstSn; return found.length === 1;
   };
   const openSavedArticle = async (name: string, toast: string) => {
     await expect(page.locator('[data-sonner-toast]', { hasText: toast })).toBeVisible();
@@ -244,7 +244,7 @@ async function approvalWorkflow(context: Context): Promise<Workflow> {
       let approval = 0;
       await observation.action('submit', () => observation.enter(submit), () => poll(async () => {
         const rows = await read<{ list: { ifmlAtrzSn: number; docTtl: string }[] }>(api, `/api/v1/approvals/my?keyword=${encodeURIComponent(title)}&page=1&size=100`);
-        const owned = rows.list.filter(row => row.docTtl === title); if (owned.length === 1) approval = owned[0].ifmlAtrzSn;
+        const owned = rows.list.filter(row => row.docTtl === title); if (owned.length === 1) approval = owned[0]!.ifmlAtrzSn;
         return approval > 0;
       }));
       await expect(dialog).toBeHidden();
@@ -317,7 +317,7 @@ async function reportWorkflow(context: Context): Promise<Workflow> {
       const submit = dialog.getByRole('button', { name: '보고 등록', exact: true }); await observation.tabTo(submit);
       await observation.action('create', () => observation.enter(submit), () => poll(async () => {
         const rows = (await read<{ list: { rptpSn: number; rptTtl: string }[] }>(api, `/api/v1/work-reports?searchKeyword=${encodeURIComponent(title)}&page=1&size=10`)).list;
-        const owned = rows.filter(row => row.rptTtl === title); if (owned.length === 1) id = owned[0].rptpSn; return id !== null;
+        const owned = rows.filter(row => row.rptTtl === title); if (owned.length === 1) id = owned[0]!.rptpSn; return id !== null;
       }));
       await expect(dialog).toBeHidden(); await observation.fill(model.searchInput, title); await observation.enter(model.searchInput);
       await observation.enter(model.rowEditButton(title)); const edit = page.getByRole('dialog', { name: '업무 보고 수정', exact: true });
@@ -365,7 +365,7 @@ async function scheduleWorkflow(context: Context): Promise<Workflow> {
       const submit = dialog.locator('form button[type="submit"]'); await observation.tabTo(submit);
       await observation.action('create', () => observation.enter(submit), () => poll(async () => {
         const rows = await read<{ schdlSn: number; schdlNm: string }[]>(api, `/api/v1/schedules/monthly?yearMonth=${yearMonth}`);
-        const owned = rows.filter(row => row.schdlNm === title); if (owned.length === 1) id = owned[0].schdlSn; return id !== null;
+        const owned = rows.filter(row => row.schdlNm === title); if (owned.length === 1) id = owned[0]!.schdlSn; return id !== null;
       }));
       await expect(dialog).toBeHidden();
       await observation.enter(page.locator('tr', { hasText: title }).getByTestId('schedule-edit'));
@@ -429,15 +429,18 @@ async function surveyWorkflow(context: Context): Promise<Workflow> {
       await observation.enter(page.getByRole('button', { name: `${title} 설문 응답 열기`, exact: true }));
       for (const choice of choices) { await observation.tabTo(page.getByRole('radio', { name: choice.label, exact: true })); await page.keyboard.press('Space'); }
       const submit = page.getByRole('button', { name: '응답 제출', exact: true }); await observation.tabTo(submit);
+      // 제출을 확인한 그 조회 결과의 행을 쓴다 — 다시 조회하면 다른 응답을 받을 수 있다.
+      let responded: Awaited<ReturnType<typeof ownedResponses>> = [];
       await observation.action('respond', () => observation.enter(submit), () => poll(async () => {
-        const rows = await ownedResponses(); return rows.length === 2 && choices.every(choice => rows.some(row => row.srvyQstnSn === choice.question && row.srvyArtclSn === choice.item && row.rspdntAnsCn === choice.label));
+        const rows = await ownedResponses(); responded = rows; return rows.length === 2 && choices.every(choice => rows.some(row => row.srvyQstnSn === choice.question && row.srvyArtclSn === choice.item && row.rspdntAnsCn === choice.label));
       })); await expect(page.getByRole('button', { name: '제출 완료', exact: true })).toBeDisabled();
-      const rows = await ownedResponses(); const { page: adminPage, guard: adminGuard } = await actorPage({ storageState: 'playwright/.auth/admin.json', ...LAB_CONTEXT });
+      const [response] = responded; expect(response, '제출을 확인한 응답 행').toBeDefined();
+      const { page: adminPage, guard: adminGuard } = await actorPage({ storageState: 'playwright/.auth/admin.json', ...LAB_CONTEXT });
       context.guards.push(adminGuard);
       const adminObservation = new EnterpriseObservation(adminPage, observation.measurement.cache, observation.measurement.iteration);
       observation.includeActor(adminObservation); await adminObservation.prepare();
       await adminObservation.navigate('/survey/response', () => expect(adminPage.getByRole('heading', { name: '설문조사 응답 관리', exact: true })).toBeVisible());
-      const row = adminPage.getByRole('row').filter({ has: adminPage.locator(`a[href="/survey/response/${rows[0].srvyRspnsSn}"]`) });
+      const row = adminPage.getByRole('row').filter({ has: adminPage.locator(`a[href="/survey/response/${response!.srvyRspnsSn}"]`) });
       const adminContext = { ...context, page: adminPage, observation: adminObservation };
       const confirm = await confirmDelete(adminContext, row.getByRole('button', { name: /전체 제출 취소$/ }), '전체 제출 취소'); await adminObservation.tabTo(confirm);
       await observation.action('cancel', () => adminObservation.enter(confirm, 'cancel'), () => poll(async () => (await ownedResponses()).length === 0));

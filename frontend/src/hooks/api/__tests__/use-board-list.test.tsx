@@ -39,7 +39,7 @@ describe('useBoardList Hook', () => {
 
     expect(result.current.data?.total).toBe(1);
     expect(result.current.data?.list).toHaveLength(1);
-    expect(result.current.data?.list[0].bbsId).toBe('BBSMSTR_000000000001');
+    expect(result.current.data?.list[0]!.bbsId).toBe('BBSMSTR_000000000001');
   });
 
   it('should use initialData if provided', () => {
@@ -64,6 +64,6 @@ describe('useBoardList Hook', () => {
       wrapper: createWrapper(),
     });
 
-    expect(result.current.data?.list[0].pstTtl).toBe('임시 공지');
+    expect(result.current.data?.list[0]!.pstTtl).toBe('임시 공지');
   });
 });

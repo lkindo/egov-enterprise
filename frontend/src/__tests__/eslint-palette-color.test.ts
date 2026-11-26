@@ -18,7 +18,7 @@ const RULE = 'local-theme/enforce-design-tokens';
 async function lint(source: string, filePath = 'src/app/__rule_probe__/Probe.tsx') {
   const eslint = new ESLint({ cwd: FRONTEND_DIR });
   const [result] = await eslint.lintText(source, { filePath: join(FRONTEND_DIR, filePath) });
-  return result.messages.filter((message) => message.ruleId === RULE).map((message) => message.message);
+  return result!.messages.filter((message) => message.ruleId === RULE).map((message) => message.message);
 }
 
 const palette = async (source: string, filePath?: string) =>

@@ -163,7 +163,7 @@ describe('BoardAccessTab', () => {
     renderTab({ designations: ['NOTICE'], cmntySn: 7 });
     const table = screen.getByRole('table', { name: '게시글 권한' });
     const conditionOf = (action: string) => within(table).getByRole('row', { name: new RegExp(`^${action.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) })
-      .querySelectorAll('td')[2].textContent ?? '';
+      .querySelectorAll('td')[2]!.textContent ?? '';
 
     for (const action of ['글 쓰기', '내 글 고치기·해결 표시', '내 글 지우기', '남의 글 고치기', '남의 글 지우기', '게시 기간 바꾸기(운영 화면)',
       '상단 고정·해제(운영 화면)']) {

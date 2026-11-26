@@ -165,7 +165,7 @@ describe('여론조사 상세 — 폐기와 삭제', () => {
     fireEvent.click(await screen.findByRole('button', { name: '설문 삭제' }));
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    const message = String(mocks.confirm.mock.calls[0][0].message);
+    const message = String(mocks.confirm.mock.calls[0]![0].message);
     expect(message).toContain('사내 식당 만족도');
     expect(message).toContain('투표 결과도 함께 삭제');
     expect(message).toContain('폐기');

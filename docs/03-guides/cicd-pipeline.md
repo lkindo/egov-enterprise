@@ -305,7 +305,6 @@ pnpm run lint                  # ESLint error 규칙 0건 게이트
 node ../scripts/frontend-audit-policy.mjs # pnpm audit 전체·--prod JSON 조회·정책 판정
 pnpm run build
 pnpm run bundle:check
-npx tsc -p tsconfig.index-access.json --noEmit # 색인 접근(noUncheckedIndexedAccess) 단계 도입 — 제품 소스만, 빌드가 만든 라우트 타입을 쓴다
 pnpm run test:coverage
 ```
 

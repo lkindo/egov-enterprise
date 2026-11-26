@@ -46,7 +46,7 @@ function productionSources(directory: string): string[] {
  */
 function pageUnitLiteralViolations(source: string, path: string): string[] {
   return [...codeWithoutComments(source, path).matchAll(/\b(?:size|pageUnit)\s*:\s*(\d[\d_]*)\b/g)]
-    .filter((match) => Number(match[1].replaceAll('_', '')) > MAX_PAGE_UNIT)
+    .filter((match) => Number(match[1]!.replaceAll('_', '')) > MAX_PAGE_UNIT)
     .map((match) => `${path}:${match[1]}`);
 }
 

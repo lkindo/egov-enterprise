@@ -56,8 +56,8 @@ test.describe('공통 셸과 인증', () => {
                     const results = await Promise.all(responses);
                     for (const [index, { label, suffix }] of cards.entries()) {
                         const response = results[index];
-                        expect(response.status()).toBe(200);
-                        const { data } = await response.json();
+                        expect(response!.status()).toBe(200);
+                        const { data } = await response!.json();
                         expect(Number.isSafeInteger(data.total)).toBe(true);
                         const shown = data.total.toLocaleString('ko-KR') + suffix;
                         if (label === '권한 그룹') expect(shown).not.toBe(previousTotal);

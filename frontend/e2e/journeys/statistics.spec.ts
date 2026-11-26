@@ -61,7 +61,7 @@ test.describe('운영 관측', () => {
             await expect(page.getByRole('heading', { level: 1, name: '시스템 활성 지표', exact: true })).toBeVisible({ timeout: 15000 });
 
             // 1) 실행 전의 사흘 — 기록이 없는 날도 행이 있고 값은 0 이다.
-            await applyPeriod(page, quiet[0], quiet[2]);
+            await applyPeriod(page, quiet[0]!, quiet[2]!);
             await expectRows(page, quiet.map((date) => [date, '0']));
             await expect(summaryValue(page, '기간 합계')).toHaveText('0');
             await expect(summaryValue(page, '가장 많은 날')).toHaveText('없음');
@@ -82,7 +82,7 @@ test.describe('운영 관측', () => {
             // 3) 사용자 활동 — 요청 구분을 고르면 표가 그 계열이다. 실행 전의 날은 어느 계열이든 0 이다.
             await page.getByRole('navigation', { name: '통계 분석 뷰' }).getByRole('button', { name: /사용자 통계$/ }).click();
             await expect(page.getByRole('heading', { level: 1, name: '사용자 통계 분석', exact: true })).toBeVisible({ timeout: 15000 });
-            await applyPeriod(page, quiet[0], quiet[2]);
+            await applyPeriod(page, quiet[0]!, quiet[2]!);
             const picker = page.getByRole('group', { name: '요청 구분' });
             await picker.getByRole('button', { name: '수정 요청', exact: true }).click();
             await expect(picker.getByRole('button', { name: '수정 요청', exact: true })).toHaveAttribute('aria-pressed', 'true');
@@ -126,7 +126,7 @@ test.describe('운영 관측', () => {
                 // 2) 내보내기 — 지금 표의 행(서버가 준 오늘 값)을 그대로 파일로 낸다.
                 await expectExport(page, 'stats_content_stats', '등록(작성일 기준)', [[today, String(value)]]);
                 // 3) 차트 — 사흘을 고르면 표는 세 행이고 가로축은 서버가 채운 그 사흘이다.
-                await applyPeriod(page, quiet[0], quiet[2]);
+                await applyPeriod(page, quiet[0]!, quiet[2]!);
                 await expect(sourceRows(page)).toHaveCount(quiet.length);
                 await expectChartDays(page, quiet);
                 // 4) 쪽 — 12일은 두 쪽이고 둘째 쪽은 마지막 이틀이다(날짜만 본다).
@@ -222,11 +222,11 @@ async function expectMatchesApi(
         expect(response.status()).toBe(200);
         const points = series((await response.json()).data) as { date: string; value: number }[];
         expect(points).toEqual([{ date: today, value: expect.any(Number) }]);
-        const value = points[0].value.toLocaleString('en-US');
+        const value = points[0]!.value.toLocaleString('en-US');
         await expect(sourceRows(page)).toHaveCount(1, { timeout: 3000 });
         await expect(sourceRows(page).first().getByRole('cell')).toHaveText([today, value], { timeout: 3000 });
         await expect(summaryValue(page, '기간 합계')).toHaveText(value, { timeout: 3000 });
-        matched = points[0].value;
+        matched = points[0]!.value;
     }).toPass({ timeout: 45_000 });
     return matched;
 }

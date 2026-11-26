@@ -196,7 +196,7 @@ describe('MonitoringHubClient', () => {
     renderHub('tab=login');
 
     await screen.findByText('성공 계정');
-    for (const [id, result] of [['성공 계정', '성공'], ['실패 입력', '실패'], ['미상 기록', '결과 미상']]) {
+    for (const [id, result] of [['성공 계정', '성공'], ['실패 입력', '실패'], ['미상 기록', '결과 미상']] as const) {
       expect(within(screen.getByText(id).closest('tr')!).getByText(result)).toBeInTheDocument();
     }
     expect(screen.getByRole('tab', { name: '로그인 시도 이력' })).toHaveAttribute('aria-selected', 'true');
@@ -418,7 +418,7 @@ describe('MonitoringHubClient', () => {
 
   it('실제 로그 기록의 상세에는 샘플 데이터 고지를 붙이지 않는다', async () => {
     renderHub('tab=system');
-    fireEvent.click((await screen.findAllByRole('button', { name: /상세 열기/ }))[0]);
+    fireEvent.click((await screen.findAllByRole('button', { name: /상세 열기/ }))[0]!);
 
     const detail = await screen.findByRole('region', { name: '선택 항목 상세' });
     expect(within(detail).queryByText('샘플 데이터')).toBeNull();

@@ -60,7 +60,7 @@ describe('콘텐츠 페이지 메뉴 연결', () => {
       menuNo: 4010, menuNm: '이용 안내', path: ['안내', '이용 안내'], route: '/pages/guide',
       basis: { kind: 'page-address' }, exposure: { kind: 'general', groups: ['사용자'] },
     });
-    expect(links.status === 'ready' && links.links[1].exposure).toEqual({ kind: 'hidden' });
+    expect(links.status === 'ready' && links.links[1]!.exposure).toEqual({ kind: 'hidden' });
   });
 
   it('주소가 비어 있으면 사용자용 목록(/pages) 메뉴도 연결이 아니다', () => {

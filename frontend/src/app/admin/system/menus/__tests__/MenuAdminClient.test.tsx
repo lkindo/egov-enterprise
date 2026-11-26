@@ -866,7 +866,7 @@ describe('저장 — 한 번에, 버전 확인, 중복 실행 차단', () => {
   });
 
   it('저장에 성공하면 응답 구조를 새 기준선으로 삼고, 그룹 권한을 다시 읽고, 화면을 새로 고친다', async () => {
-    const saved = structure([MENUS[0], MENUS[1], MENUS[3], { ...MENUS[2], menuOrdr: 2 }, ...MENUS.slice(4)].map((item) => (
+    const saved = structure([MENUS[0]!, MENUS[1]!, MENUS[3]!, { ...MENUS[2]!, menuOrdr: 2 }, ...MENUS.slice(4)].map((item) => (
       item.menuNo === 4 ? { ...item, menuOrdr: 1 } : item)), 'v2');
     mocks.save.mockResolvedValueOnce(saved);
     await renderClient();
@@ -897,7 +897,7 @@ describe('저장 — 한 번에, 버전 확인, 중복 실행 차단', () => {
     fireEvent.click(saveButton());
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
 
-    const options = mocks.confirm.mock.calls[0][0] as { detailsLabel?: string; details?: React.ReactNode };
+    const options = mocks.confirm.mock.calls[0]![0] as { detailsLabel?: string; details?: React.ReactNode };
     expect(options.detailsLabel).toBe('저장할 변경 목록');
     const details = render(<>{options.details}</>);
     const items = within(details.container).getAllByRole('listitem').map((item) => item.textContent);

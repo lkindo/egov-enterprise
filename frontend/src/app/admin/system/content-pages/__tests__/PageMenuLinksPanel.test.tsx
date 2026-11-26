@@ -85,7 +85,7 @@ describe('PageMenuLinksPanel — 콘텐츠 페이지의 메뉴 연결(ADR-0042)'
     expect(rows[1]).toHaveTextContent('관리 센터 › 옛 안내');
     expect(rows[1]).toHaveTextContent('비활성');
 
-    fireEvent.click(within(rows[0]).getByRole('button', { name: '이용 안내 메뉴 관리에서 열기' }));
+    fireEvent.click(within(rows[0]!).getByRole('button', { name: '이용 안내 메뉴 관리에서 열기' }));
     expect(mocks.handOffMenuFocus).toHaveBeenCalledWith({ menuSn: 2 });
     expect(mocks.push).toHaveBeenCalledWith('/admin/system/menus');
   });

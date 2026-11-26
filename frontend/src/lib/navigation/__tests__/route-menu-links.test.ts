@@ -75,7 +75,7 @@ describe('노출 분류', () => {
   const exposureFor = (groupSource: GroupSource) => {
     const links = findRouteMenuLinks(ready(), groupSource, matchGuide);
     if (links.status !== 'ready') throw new Error('메뉴 원장이 준비되지 않았습니다.');
-    return links.links[0].exposure;
+    return links.links[0]!.exposure;
   };
 
   it('관리자 그룹(ROLE_ADMIN·ROLE_SYSTEM)에만 보이면 관리자 그룹만이다', () => {
@@ -98,7 +98,7 @@ describe('노출 분류', () => {
     expect(exposureFor({ status: 'no-permission' })).toEqual({ kind: 'no-permission' });
     expect(exposureFor({ status: 'failed' })).toEqual({ kind: 'unknown' });
     const inactive = findRouteMenuLinks(ready(), { status: 'failed' }, matchGuide);
-    expect(inactive.status === 'ready' && inactive.links[1].exposure).toEqual({ kind: 'inactive' });
+    expect(inactive.status === 'ready' && inactive.links[1]!.exposure).toEqual({ kind: 'inactive' });
   });
 });
 

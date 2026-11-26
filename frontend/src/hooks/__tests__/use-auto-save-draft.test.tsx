@@ -183,7 +183,7 @@ describe('useAutoSaveDraft', () => {
       expect(same.result.current.restoreDraft()).toMatchObject(LONG);
       expect(same.onRestore).toHaveBeenCalledWith(LONG);
       expect(restoreFiles).toHaveBeenCalledTimes(1);
-      expect(restoreFiles.mock.calls[0][0][0]).toBe(file);
+      expect(restoreFiles.mock.calls[0]![0][0]).toBe(file);
       expect(persist).not.toHaveBeenCalled();
     });
 
@@ -284,7 +284,7 @@ describe('useAutoSaveDraft', () => {
       expect(result.current.restoreDraft()).toMatchObject({ title: '이전 제목', content: '이전 본문' });
 
       expect(onRestoreFiles).toHaveBeenCalledTimes(1);
-      expect(onRestoreFiles.mock.calls[0][0][0]).toBe(file);
+      expect(onRestoreFiles.mock.calls[0]![0][0]).toBe(file);
     });
   });
 
@@ -326,7 +326,7 @@ describe('useAutoSaveDraft', () => {
 
       expect(oldHook.result.current.restoreDraft()).toBeNull();
       expect(current.result.current.restoreDraft()).toMatchObject(newData);
-      expect(onRestoreFiles.mock.calls[0][0][0]).toBe(newFile);
+      expect(onRestoreFiles.mock.calls[0]![0][0]).toBe(newFile);
       expect(boardDraftMemoryStorage.getFiles(FULL_KEY)).toEqual([newFile]);
     });
 
@@ -350,7 +350,7 @@ describe('useAutoSaveDraft', () => {
       expect(boardDraftMemoryStorage.getFiles(FULL_KEY)[0]).toBe(file);
       expect(current.result.current.hasDraft).toBe(true);
       expect(current.result.current.restoreDraft()).toMatchObject(data);
-      expect(onRestoreFiles.mock.calls[0][0][0]).toBe(file);
+      expect(onRestoreFiles.mock.calls[0]![0][0]).toBe(file);
     });
 
     it('정상 제출 뒤 같은 입력을 자동 저장하거나 이탈 경고하지 않는다', () => {
@@ -414,7 +414,7 @@ describe('useAutoSaveDraft', () => {
       expect(boardDraftMemoryStorage.getFiles(FULL_KEY)[0]).toBe(file);
       act(() => { result.current.restoreDraft(); });
       expect(onRestore).toHaveBeenCalledWith({ title: draft.title, content: draft.content });
-      expect(onRestoreFiles.mock.calls[0][0][0]).toBe(file);
+      expect(onRestoreFiles.mock.calls[0]![0][0]).toBe(file);
 
       rerender({ enabled: true });
       act(() => vi.advanceTimersByTime(3000));

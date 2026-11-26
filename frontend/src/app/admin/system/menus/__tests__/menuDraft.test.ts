@@ -367,7 +367,7 @@ describe('그룹 메뉴 표시', () => {
   it('공개 메뉴용 그룹에는 기능 권한을 더하지 않는다', () => {
     expect(addOperations(startDraft(tree()), group('ROLE_ANONYMOUS', []), ['MENU_READ']).ok).toBe(false);
     const added = ok(addOperations(startDraft(tree()), group('ROLE_USER', []), ['MENU_READ']));
-    expect(summarizeDraft(tree(), added, [group('ROLE_USER', [])]).groups[0].operationAdd).toEqual(['MENU_READ']);
+    expect(summarizeDraft(tree(), added, [group('ROLE_USER', [])]).groups[0]!.operationAdd).toEqual(['MENU_READ']);
   });
 });
 

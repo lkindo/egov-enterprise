@@ -63,7 +63,7 @@ describe('DeptPlacementControls', () => {
     const onMoveToParent = vi.fn(() => true);
     const onShift = vi.fn(() => false);
     const items = tree();
-    render(<DeptPlacementControls dept={items[1]} depts={items} onMoveToParent={onMoveToParent} onShift={onShift} />);
+    render(<DeptPlacementControls dept={items[1]!} depts={items} onMoveToParent={onMoveToParent} onShift={onShift} />);
 
     const select = screen.getByRole('combobox', { name: '상위 부서' });
     const options = Array.from((select as HTMLSelectElement).options).map((o) => o.value);

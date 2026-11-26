@@ -74,8 +74,8 @@ export function resolveRoute(targetPath: string): Pattern | null {
     for (let i = 0; i < segs.length; i += 1) {
       const actual = segs[i];
       const expected = p.segs[i];
-      if (isDynamic(expected)) continue;
-      if (isComputed(actual)) { ok = false; break; }
+      if (isDynamic(expected!)) continue;
+      if (isComputed(actual!)) { ok = false; break; }
       if (actual !== expected) { ok = false; break; }
       score += 1;
     }
@@ -108,8 +108,8 @@ export function sourceViolations(relFromSrc: string, rel: string, rawSource: str
   const source = codeWithoutComments(rawSource, relFromSrc);
   for (const match of source.matchAll(NAV)) {
     const raw = match[1];
-    if (!raw.startsWith('/')) continue;
-    const targetPath = raw.split('?')[0].split('#')[0].replace(/\/$/, '');
+    if (!raw!.startsWith('/')) continue;
+    const targetPath = raw!.split('?')[0]!.split('#')[0]!.replace(/\/$/, '');
     if (!targetPath) continue;
     const hit = resolveRoute(targetPath);
     if (!hit || hit.kind !== 'page-redirect') continue;
@@ -183,7 +183,7 @@ describe('page-redirect 라우트로의 역참조 차단', () => {
       접두 매칭으로 되돌리면 아래 정적 형제들이 전부 위반으로 뒤집힌다(실측 오탐 21건).
     */
     const flagged = (target: string) => {
-      const hit = resolveRoute(target.split('?')[0].replace(/\/$/, ''));
+      const hit = resolveRoute(target.split('?')[0]!.replace(/\/$/, ''));
       return hit?.kind === 'page-redirect' ? hit.route : null;
     };
     // 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).

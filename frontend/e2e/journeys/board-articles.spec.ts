@@ -430,7 +430,7 @@ test.describe('게시판과 커뮤니티', () => {
                         pixels.data[offset + 3] = 255;
                     }
                     imageContext.putImageData(pixels, 0, 0);
-                    const png = image.toDataURL('image/png').split(',')[1];
+                    const png = image.toDataURL('image/png').split(',')[1]!;
 
                     const movie = document.createElement('canvas');
                     movie.width = 128;
@@ -463,7 +463,7 @@ test.describe('게시판과 커뮤니티', () => {
                                 window.clearInterval(timer);
                                 const reader = new FileReader();
                                 reader.onerror = () => reject(new Error('WebM fixture encoding failed'));
-                                reader.onload = () => resolve(String(reader.result).split(',')[1]);
+                                reader.onload = () => resolve(String(reader.result).split(',')[1]!);
                                 reader.readAsDataURL(new Blob(chunks, { type: 'video/webm' }));
                             };
                             recorder.start();
@@ -526,9 +526,9 @@ test.describe('게시판과 커뮤니티', () => {
                 for (const [extension, bytes] of [['png', imageBytes], ['webm', videoBytes]] as const) {
                     const matches = files.filter((file) => file.fileExtsn.toLowerCase() === extension);
                     expect(matches).toHaveLength(1);
-                    expect(matches[0].atchFileSn).toBe(stored.atchFileSn);
-                    expect(matches[0].fileMg).toBe(bytes.length);
-                    const downloaded = await adminRequest.get(`/api/v1/files/${stored.atchFileSn}/${matches[0].fileSn}`);
+                    expect(matches[0]!.atchFileSn).toBe(stored.atchFileSn);
+                    expect(matches[0]!.fileMg).toBe(bytes.length);
+                    const downloaded = await adminRequest.get(`/api/v1/files/${stored.atchFileSn}/${matches[0]!.fileSn}`);
                     expect(downloaded.status()).toBe(200);
                     expect((await downloaded.body()).equals(bytes)).toBe(true);
                 }
@@ -590,10 +590,10 @@ test.describe('게시판과 커뮤니티', () => {
                     .toEqual(updatedReferences.map((reference) => reference.name).sort());
                 const addedFiles = updatedFiles.filter((file) => !files.some((original) => original.fileSn === file.fileSn));
                 expect(addedFiles).toHaveLength(1);
-                expect(addedFiles[0].atchFileSn).toBe(stored.atchFileSn);
-                expect(addedFiles[0].fileExtsn.toLowerCase()).toBe('png');
-                expect(addedFiles[0].fileMg).toBe(imageBytes.length);
-                const addedDownload = await adminRequest.get(`/api/v1/files/${updated.atchFileSn}/${addedFiles[0].fileSn}`);
+                expect(addedFiles[0]!.atchFileSn).toBe(stored.atchFileSn);
+                expect(addedFiles[0]!.fileExtsn.toLowerCase()).toBe('png');
+                expect(addedFiles[0]!.fileMg).toBe(imageBytes.length);
+                const addedDownload = await adminRequest.get(`/api/v1/files/${updated.atchFileSn}/${addedFiles[0]!.fileSn}`);
                 expect(addedDownload.status()).toBe(200);
                 expect((await addedDownload.body()).equals(imageBytes)).toBe(true);
                 await expect(page.getByRole('heading', { name: updatedTitle, exact: true, level: 1 })).toBeVisible();

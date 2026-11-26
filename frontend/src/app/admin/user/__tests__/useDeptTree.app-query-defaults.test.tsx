@@ -84,7 +84,7 @@ describe('useDeptTree — 앱 QueryClient 목록 규칙', () => {
     expect(result.current.isDeptsPlaceholder).toBe(true);
     expect(result.current.deptTotal).toBeUndefined();
 
-    await act(async () => { resolveNext([TREE[1]]); });
+    await act(async () => { resolveNext([TREE[1]!]); });
 
     await waitFor(() => expect(result.current.isDeptsPlaceholder).toBe(false));
     expect(result.current.deptTotal).toBe(1);

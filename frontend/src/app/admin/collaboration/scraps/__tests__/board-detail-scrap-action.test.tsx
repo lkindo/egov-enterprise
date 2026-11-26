@@ -126,8 +126,8 @@ describe('게시글 상세의 스크랩 버튼(스크랩 기여 조립)', () => 
     // 기여의 쓰기(submitPostScrap)가 부르는 연산(ScrapService.createScrap → POST /api/v1/scraps).
     const called = bindings.filter((row) => row.method === 'POST' && row.handler.endsWith('.ScrapApiController#createScrap'));
     expect(called).toHaveLength(1);
-    expect(called[0].permission).toBe('SCRAP_CREATE');
-    expect(scrapPostActions.map((entry) => entry.visibleWhen)).toEqual([{ permissions: [called[0].permission] }]);
+    expect(called[0]!.permission).toBe('SCRAP_CREATE');
+    expect(scrapPostActions.map((entry) => entry.visibleWhen)).toEqual([{ permissions: [called[0]!.permission] }]);
     // 기본 그룹은 모두 이 권한을 가져 화면이 바뀌지 않는다. 기본 그룹에서 빠지면 이 노출 결정을 다시 본다.
     const catalog = readConfig('config/governance/permission-catalog.json') as { permissions: Array<{ code: string; defaultGroups: string[] }> };
     expect(catalog.permissions.find((row) => row.code === 'SCRAP_CREATE')?.defaultGroups).toEqual(['ROLE_ADMIN', 'ROLE_SYSTEM', 'ROLE_USER']);
@@ -181,7 +181,7 @@ describe('게시글 상세의 스크랩 버튼(스크랩 기여 조립)', () => 
     await renderDetail();
     fireEvent.click(await screen.findByRole('button', { name: '게시글 스크랩' }));
     await waitFor(() => expect(mocks.createScrap).toHaveBeenCalledTimes(1));
-    const created = mocks.createScrap.mock.calls[0][0];
+    const created = mocks.createScrap.mock.calls[0]![0];
     const edited = { ...created, scrapNm: '다시 볼 게시글', scrapExpln: '나중에 참고할 설명' };
 
     expect(created.scrapUrl).toBe('/admin/community/boards/detail?bbsId=BBS-1&pstSn=31');

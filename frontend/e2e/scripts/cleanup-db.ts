@@ -187,10 +187,10 @@ export async function cleanup() {
     const cookieList = [];
 
     for (const cookie of rawCookies) {
-      const parts = cookie.split(';')[0];
+      const parts = cookie.split(';')[0]!;
       cookieList.push(parts);
       if (parts.startsWith('XSRF-TOKEN=')) {
-        xsrfToken = parts.split('=')[1];
+        xsrfToken = parts.split('=')[1]!;
       }
     }
 

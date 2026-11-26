@@ -23,8 +23,8 @@ describe('menuUndo', () => {
     let history = EMPTY_MENU_UNDO;
     for (let index = 1; index <= MENU_UNDO_LIMIT + 5; index += 1) history = recordMenuUndo(history, draftNo(index), `단계 ${index}`);
     expect(history.steps).toHaveLength(MENU_UNDO_LIMIT);
-    expect(history.steps[0].label).toBe('단계 6');
-    expect(history.steps[history.steps.length - 1].label).toBe(`단계 ${MENU_UNDO_LIMIT + 5}`);
+    expect(history.steps[0]!.label).toBe('단계 6');
+    expect(history.steps[history.steps.length - 1]!.label).toBe(`단계 ${MENU_UNDO_LIMIT + 5}`);
   });
 
   it('같은 키로 이어서 기록하면 처음 것 하나만 남고, 다른 기록이나 꺼내기가 끼면 묶음이 끝난다', () => {

@@ -144,7 +144,7 @@ describe('ApprovalCollaborationPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: '본부장 결재자 바꾸기' }));
     fireEvent.click(screen.getByRole('button', { name: '새결재자 고르기' }));
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    const waitingMessage = mocks.confirm.mock.calls[0][0].message as string;
+    const waitingMessage = mocks.confirm.mock.calls[0]![0].message as string;
     expect(waitingMessage).not.toContain('두 사람 모두에게');
     expect(waitingMessage).toContain('새결재자에게는 그 단계 차례가 되면 알립니다');
     await waitFor(() => expect(mocks.replaceApprover).toHaveBeenCalledWith(7, 'chief', 'NEW', 3));
@@ -152,7 +152,7 @@ describe('ApprovalCollaborationPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: '부장 결재자 바꾸기' }));
     fireEvent.click(screen.getByRole('button', { name: '새결재자 고르기' }));
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(2));
-    expect(mocks.confirm.mock.calls[1][0].message).toContain('새결재자에게는 지금 차례라고 알립니다');
+    expect(mocks.confirm.mock.calls[1]![0].message).toContain('새결재자에게는 지금 차례라고 알립니다');
   });
 
   it('본문도 고치기를 체크했지만 본문을 고치지 않았으면 본문을 보냈다고 말하지 않는다 (F23)', async () => {
@@ -275,7 +275,7 @@ describe('ApprovalCollaborationPanel — 알림 기능 유무', () => {
     fireEvent.click(screen.getByRole('button', { name: `${userId === 'boss' ? '부장' : '본부장'} 결재자 바꾸기` }));
     fireEvent.click(screen.getByRole('button', { name: '새결재자 고르기' }));
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    expect(mocks.confirm.mock.calls[0][0].message).toBe(message);
+    expect(mocks.confirm.mock.calls[0]![0].message).toBe(message);
     await waitFor(() => expect(mocks.replaceApprover).toHaveBeenCalledWith(7, userId, 'NEW', 3));
   });
 });

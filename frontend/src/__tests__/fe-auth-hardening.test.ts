@@ -43,9 +43,9 @@ const SESSION_WRITERS = [
 function extractCookieOptions(source: string, cookieName: SessionCookieName): string | null {
   const marker = new RegExp(`cookies\\.set\\(\\s*['"]${cookieName}['"]`, 'g');
   const calls = [...source.matchAll(marker)];
-  if (calls.length !== 1 || calls[0].index === undefined) return null;
+  if (calls.length !== 1 || calls[0]!.index === undefined) return null;
 
-  const optionsStart = source.indexOf('{', calls[0].index + calls[0][0].length);
+  const optionsStart = source.indexOf('{', calls[0]!.index + calls[0]![0].length);
   if (optionsStart < 0) return null;
 
   let depth = 0;

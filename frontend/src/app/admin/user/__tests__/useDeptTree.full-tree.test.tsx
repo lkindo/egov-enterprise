@@ -53,7 +53,7 @@ describe('useDeptTree — 전량 조회와 검색', () => {
   });
 
   it('검색에서는 전체 seed를 재사용하지 않고 조회 결과의 미로드 상위를 보존한다', async () => {
-    vi.mocked(deptAdminService.getDeptTree).mockResolvedValue([FULL_TREE[0]]);
+    vi.mocked(deptAdminService.getDeptTree).mockResolvedValue([FULL_TREE[0]!]);
     const { result, rerender } = renderTree(FULL_TREE);
 
     rerender({ keyword: '팀 0' });

@@ -46,13 +46,13 @@ function parseRanges(text: string): Array<[number, number]> {
   return text.split(',').map((part) => {
     const match = /^U\+([0-9A-F]+)(?:-([0-9A-F]+))?$/i.exec(part.trim());
     if (!match) throw new Error(`unicode-range 형식이 아니다: ${part}`);
-    const lo = parseInt(match[1], 16);
+    const lo = parseInt(match[1]!, 16);
     return [lo, match[2] ? parseInt(match[2], 16) : lo];
   });
 }
 
 const faces: Face[] = [...fontCss.matchAll(/@font-face\s*\{([^}]*)\}/g)].map(([, body]) => {
-  const prop = (name: string) => new RegExp(`${name}:\\s*([^;]+);`).exec(body)?.[1].trim() ?? '';
+  const prop = (name: string) => new RegExp(`${name}:\\s*([^;]+);`).exec(body!)?.[1]!.trim() ?? '';
   const file = /url\('\.\/nuri-sans\/([^']+)'\)/.exec(prop('src'))?.[1] ?? '';
   return {
     family: prop('font-family').replace(/['"]/g, ''),
@@ -124,7 +124,7 @@ describe('Nuri Sans 조각(생성물)', () => {
     const all = faces.flatMap((face) => face.ranges.map(([lo, hi]) => ({ lo, hi, file: face.file })))
       .sort((a, b) => a.lo - b.lo);
     for (let i = 1; i < all.length; i += 1) {
-      expect(all[i].lo, `${all[i - 1].file} 와 ${all[i].file} 가 겹친다`).toBeGreaterThan(all[i - 1].hi);
+      expect(all[i]!.lo, `${all[i - 1]!.file} 와 ${all[i]!.file} 가 겹친다`).toBeGreaterThan(all[i - 1]!.hi);
     }
   });
 

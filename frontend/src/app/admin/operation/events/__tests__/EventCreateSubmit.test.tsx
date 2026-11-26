@@ -97,7 +97,7 @@ describe('행사 등록 제출 — e2e 가 채우는 입력만으로 저장된�
     fireEvent.click(dialog.getByRole('button', { name: '행사 등록' }));
 
     await waitFor(() => expect(mocks.createEvent).toHaveBeenCalledTimes(1));
-    expect(mocks.createEvent.mock.calls[0][0]).toMatchObject({
+    expect(mocks.createEvent.mock.calls[0]![0]).toMatchObject({
       evntNm: 'E2E 워크숍',
       evntCn: 'E2E 상세 내용',
       evntUseCnt: 30,
@@ -115,7 +115,7 @@ describe('행사 등록 제출 — e2e 가 채우는 입력만으로 저장된�
     fireEvent.change(dialog.getByLabelText('신청 정원 (명)'), { target: { value: '40' } });
     fireEvent.click(dialog.getByRole('button', { name: '행사 등록' }));
     await waitFor(() => expect(mocks.createEvent).toHaveBeenCalledTimes(1));
-    expect(mocks.createEvent.mock.calls[0][0]).toMatchObject({ pscpNope: 40, aplyDdlnYmd: '20260930' });
+    expect(mocks.createEvent.mock.calls[0]![0]).toMatchObject({ pscpNope: 40, aplyDdlnYmd: '20260930' });
   });
 
   it('담당자·준비사항을 채우면 그대로 실려 나간다', async () => {
@@ -126,7 +126,7 @@ describe('행사 등록 제출 — e2e 가 채우는 입력만으로 저장된�
     fireEvent.click(dialog.getByRole('button', { name: '행사 등록' }));
 
     await waitFor(() => expect(mocks.createEvent).toHaveBeenCalledTimes(1));
-    expect(mocks.createEvent.mock.calls[0][0]).toMatchObject({
+    expect(mocks.createEvent.mock.calls[0]![0]).toMatchObject({
       picNm: '김담당',
       prepMttr: '버스 2대',
     });

@@ -73,14 +73,14 @@ describe('AttachmentImage 화면 캐시', () => {
     const client = newClient();
     const first = render(<AttachmentImage atchFileSn={101} alt="배너" />, { wrapper: wrapper(client) });
     await waitFor(() => expect(images(first.container)).toHaveLength(1));
-    const firstUrl = images(first.container)[0].getAttribute('src');
+    const firstUrl = images(first.container)[0]!.getAttribute('src');
 
     first.unmount();
     expect(revokeUrl).toHaveBeenCalledWith(firstUrl);
 
     const second = render(<AttachmentImage atchFileSn={101} alt="배너" />, { wrapper: wrapper(client) });
     expect(images(second.container)).toHaveLength(1);
-    expect(images(second.container)[0].getAttribute('src')).not.toBe(firstUrl);
+    expect(images(second.container)[0]!.getAttribute('src')).not.toBe(firstUrl);
     expect(files.getFileList).toHaveBeenCalledTimes(1);
     expect(files.fetchBlob).toHaveBeenCalledTimes(1);
   });
@@ -88,7 +88,7 @@ describe('AttachmentImage 화면 캐시', () => {
   it('다른 첨부로 바뀌면 이전 주소를 회수하고, 앞서 받은 첨부로 돌아오면 다시 받지 않는다', async () => {
     const view = render(<AttachmentImage atchFileSn={101} alt="배너" />, { wrapper: wrapper(newClient()) });
     await waitFor(() => expect(images(view.container)).toHaveLength(1));
-    const firstUrl = images(view.container)[0].getAttribute('src');
+    const firstUrl = images(view.container)[0]!.getAttribute('src');
 
     view.rerender(<AttachmentImage atchFileSn={202} alt="배너" />);
     await waitFor(() => expect(files.fetchBlob).toHaveBeenCalledWith(202, 1, { suppressErrorToast: true }));

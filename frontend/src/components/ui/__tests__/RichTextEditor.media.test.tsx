@@ -121,7 +121,7 @@ describe('RichTextEditor 실제 미디어 입력', () => {
     const references = getBoardMediaReferences(html);
     expect(references).toHaveLength(1);
     expect(references[0]).toMatchObject({ label: file.name, kind: 'image' });
-    expect(references[0].name).toMatch(/^media-[0-9a-f-]{36}-회의_사진\.png$/);
+    expect(references[0]!.name).toMatch(/^media-[0-9a-f-]{36}-회의_사진\.png$/);
     expect(html).not.toMatch(/blob:|data:|<img|<video|\bsrc=/);
     expect(network.getFileList).not.toHaveBeenCalled();
     expect(network.fetchBlob).not.toHaveBeenCalled();
@@ -148,7 +148,7 @@ describe('RichTextEditor 실제 미디어 입력', () => {
 
     const restoredChange = vi.fn();
     render(<RichTextEditor value={html} onChange={restoredChange} aria-label="게시글 본문"
-      media={{ attachments: [], pendingFiles: [new File([file], reference.name)], onAddFiles: vi.fn() }} />);
+      media={{ attachments: [], pendingFiles: [new File([file], reference!.name)], onAddFiles: vi.fn() }} />);
     const restored = await getEditor();
     expect(getBoardMediaReferences(restored.getHTML())).toEqual([reference]);
     expect(screen.getByLabelText('영상 설명')).toHaveValue(file.name);

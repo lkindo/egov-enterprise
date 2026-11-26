@@ -78,7 +78,7 @@ describe('CodeAdminService — 조회 조건이 서버에 실제로 닿는다', 
       });
 
       expect(client.get).toHaveBeenCalledTimes(1);
-      const [url, config] = client.get.mock.calls[0];
+      const [url, config] = client.get.mock.calls[0]!;
       expect(url).toBe(`${BASE}/administ`);
       expect((config as { params: Record<string, unknown> }).params).toMatchObject({
         searchKeyword: '종로',
@@ -94,7 +94,7 @@ describe('CodeAdminService — 조회 조건이 서버에 실제로 닿는다', 
         size: 10,
       });
 
-      const params = paramsOf(client.get.mock.calls[0]);
+      const params = paramsOf(client.get.mock.calls[0]!);
       for (const key of UNBOUND_KEYS) {
         expect(params).not.toHaveProperty(key);
       }
@@ -120,7 +120,7 @@ describe('CodeAdminService — 조회 조건이 서버에 실제로 닿는다', 
         size: 20,
       });
 
-      const [url, config] = client.get.mock.calls[0];
+      const [url, config] = client.get.mock.calls[0]!;
       expect(url).toBe(`${BASE}/institution`);
       expect((config as { params: Record<string, unknown> }).params).toMatchObject({
         searchKeyword: '교육청',
@@ -138,7 +138,7 @@ describe('CodeAdminService — 조회 조건이 서버에 실제로 닿는다', 
         size: 10,
       });
 
-      const [url, config] = client.get.mock.calls[0];
+      const [url, config] = client.get.mock.calls[0]!;
       expect(url).toBe(`${BASE}/institution/receptions`);
       expect((config as { params: Record<string, unknown> }).params).toMatchObject({
         searchKeyword: '교육청',
@@ -157,7 +157,7 @@ describe('CodeAdminService — 조회 조건이 서버에 실제로 닿는다', 
       });
 
       expect(client.post).toHaveBeenCalledTimes(1);
-      const [url, body, config] = client.post.mock.calls[0];
+      const [url, body, config] = client.post.mock.calls[0]!;
       expect(url).toBe(`${BASE}/institution/receptions/process`);
       expect(body).toEqual({ ocrnYmd: '20260828', instCd: 'INST01', jobSn: 7 });
       // 본문 대신 쿼리로 실어 보내던 형태로 되돌아가면 red 다.
@@ -171,7 +171,7 @@ describe('CodeAdminService — 조회 조건이 서버에 실제로 닿는다', 
         jobSn: 7,
       });
 
-      const [, body] = client.post.mock.calls[0];
+      const [, body] = client.post.mock.calls[0]!;
       expect(body).not.toHaveProperty('procSe');
     });
   });

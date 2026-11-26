@@ -86,7 +86,7 @@ describe('previewBundle', () => {
     expect(preview.blockedMenus.map((menu) => menu.code)).not.toContain('OLD_MENUS');
     // 묶음 화면이 아닌 메뉴는 대상이 아니다.
     expect(preview.navigationToAdd).not.toContain('USERS');
-    expect(preview.screens[0].menus).toEqual([{ code: 'MENUS', name: '메뉴 관리' }]);
+    expect(preview.screens[0]!.menus).toEqual([{ code: 'MENUS', name: '메뉴 관리' }]);
   });
 
   it('이미 초안에 있는 메뉴 표시는 세지 않는다 — 비어 있던 상위만 더한다', () => {

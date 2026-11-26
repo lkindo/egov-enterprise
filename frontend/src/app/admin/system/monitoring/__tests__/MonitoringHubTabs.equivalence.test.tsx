@@ -97,7 +97,7 @@ describe('감시 허브 탭과 기존 주소', () => {
 
   it('실제 로그 상세에는 샘플 고지가 없다', async () => {
     renderHub('tab=system');
-    fireEvent.click((await screen.findAllByRole('button', { name: /상세 열기/ }))[0]);
+    fireEvent.click((await screen.findAllByRole('button', { name: /상세 열기/ }))[0]!);
     const detail = await screen.findByRole('region', { name: '선택 항목 상세' });
     expect(within(detail).queryByText(/샘플 데이터/)).toBeNull();
   });

@@ -130,7 +130,7 @@ describe('업무 홈 게시판 조회', () => {
     }));
 
     const result = (await loadBoardHome())!;
-    expect(result.initialNotiList[0].date).toBe('2026-09-25');
+    expect(result.initialNotiList[0]!.date).toBe('2026-09-25');
     expect(result.taskListTotal).toBeNull();
     expect(result.notiListTotal).toBe(12);
     // 조회 실패는 운영하지 않는 게시판이 아니다 — 두 상태를 합치지 않는다(SET-07).

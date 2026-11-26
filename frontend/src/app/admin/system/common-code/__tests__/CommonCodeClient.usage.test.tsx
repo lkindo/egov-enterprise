@@ -169,7 +169,7 @@ describe('공통코드 — 사용처 표시와 영향 확인', () => {
 
     fireEvent.click(within(screen.getByRole('region', { name: '코드 그룹 수정' })).getByRole('button', { name: '저장' }));
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    const options = mocks.confirm.mock.calls[0][0];
+    const options = mocks.confirm.mock.calls[0]![0];
     expect(options.message).toContain('이 제품이 읽는 그룹');
     expect(options.message).toContain('상세 코드 목록에 그 상세 코드가 보이지 않습니다');
     // 그룹을 끄면 소비 경로도 그 코드를 주지 않는다(CommonCodeService#getCodesByGroup) — 결과를 그대로 말한다.
@@ -200,7 +200,7 @@ describe('공통코드 — 사용처 표시와 영향 확인', () => {
     fireEvent.click(await screen.findByRole('button', { name: '검토 코드 삭제' }));
 
     await waitFor(() => expect(mocks.deleteDetail).toHaveBeenCalledWith(null, { cdId: 'COM075', dtlCd: 'WF' }));
-    const options = mocks.confirm.mock.calls[0][0];
+    const options = mocks.confirm.mock.calls[0]![0];
     expect(options.message).toContain('사용 안 함으로 바뀌며');
     expect(options.message).toContain('사용처에 영향');
     expect(options.message).not.toContain('영구히');
@@ -215,7 +215,7 @@ describe('공통코드 — 사용처 표시와 영향 확인', () => {
 
     await waitFor(() => expect(mocks.saveDetail).toHaveBeenCalledTimes(1));
     expect(mocks.confirm).toHaveBeenCalledTimes(1);
-    expect(mocks.confirm.mock.calls[0][0].message).toContain('이름을 바꾸면 아래 사용처에 바로 반영됩니다');
+    expect(mocks.confirm.mock.calls[0]![0].message).toContain('이름을 바꾸면 아래 사용처에 바로 반영됩니다');
 
     fireEvent.click(screen.getByRole('button', { name: '신규 상세 코드 등록' }));
     mocks.formValues = { ...mocks.formValues, dtlCd: 'NEW', dtlCdNm: '신규' };
@@ -232,7 +232,7 @@ describe('공통코드 — 사용처 표시와 영향 확인', () => {
 
     fireEvent.click(within(screen.getByRole('region', { name: '코드 분류 수정' })).getByRole('button', { name: '저장' }));
     await waitFor(() => expect(mocks.saveClCode).toHaveBeenCalledTimes(1));
-    const options = mocks.confirm.mock.calls[0][0];
+    const options = mocks.confirm.mock.calls[0]![0];
     expect(options.message).toContain('1개는 이 제품이 읽는 그룹');
     const { container } = render(<>{options.details}</>);
     expect(within(container).getByText('‘결재 업무 구분’(COM075)')).toBeInTheDocument();

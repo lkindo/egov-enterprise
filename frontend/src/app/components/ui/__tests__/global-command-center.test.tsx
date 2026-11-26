@@ -269,12 +269,12 @@ describe('GlobalCommandCenter accessibility contract', () => {
     expect(options).toHaveLength(2);
 
     expect(input).toHaveAttribute('aria-controls', 'command-center-results');
-    expect(input).toHaveAttribute('aria-activedescendant', options[0].id);
+    expect(input).toHaveAttribute('aria-activedescendant', options[0]!.id);
     expect(options[0]).toHaveAttribute('aria-selected', 'true');
 
     await user.keyboard('{ArrowDown}');
 
-    expect(input).toHaveAttribute('aria-activedescendant', options[1].id);
+    expect(input).toHaveAttribute('aria-activedescendant', options[1]!.id);
     expect(options[1]).toHaveAttribute('aria-selected', 'true');
     expect(options[0]).toHaveAttribute('aria-selected', 'false');
   });
@@ -300,7 +300,7 @@ describe('GlobalCommandCenter accessibility contract', () => {
       await user.keyboard('{ArrowDown}');
     }
     // 마지막에서 한 번 더 내리면 처음으로 돈다.
-    expect(input).toHaveAttribute('aria-activedescendant', options[0].id);
+    expect(input).toHaveAttribute('aria-activedescendant', options[0]!.id);
 
     // 보이는 순서로 메뉴 항목까지 내려가 Enter 를 누르면 그 메뉴를 연다 — 로그아웃하지 않는다.
     while (input.getAttribute('aria-activedescendant') !== screen.getByRole('option', { name: '통합 검색 바로가기' }).id) {

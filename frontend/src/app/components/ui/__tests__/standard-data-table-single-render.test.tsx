@@ -96,13 +96,13 @@ describe('StandardDataTable 단일 렌더 계약', () => {
 
     const table = tables[0];
     // 머리글 행 1 + 데이터 행 n
-    expect(within(table).getAllByRole('row')).toHaveLength(rows.length + 1);
-    expect(within(table).getAllByRole('columnheader')).toHaveLength(columns.length);
+    expect(within(table!).getAllByRole('row')).toHaveLength(rows.length + 1);
+    expect(within(table!).getAllByRole('columnheader')).toHaveLength(columns.length);
     // thead·tbody 두 rowgroup 이 모두 존재한다(구조 확인).
     // ⚠ 이 단언은 **명시 role 속성을 보호하지 못한다** — jsdom 은 CSS 를 적용하지 않아
     //   role 속성을 지워도 <tbody> 의 암시 role 로 통과한다(2026-08-22 red 증명에서 실측).
     //   md 미만 display:block 전환 시 시맨틱을 지키는 명시 role 은
     //   src/__tests__/dom-identity-invariants.test.ts 의 소스 계약이 담당한다.
-    expect(within(table).getAllByRole('rowgroup')).toHaveLength(2);
+    expect(within(table!).getAllByRole('rowgroup')).toHaveLength(2);
   });
 });

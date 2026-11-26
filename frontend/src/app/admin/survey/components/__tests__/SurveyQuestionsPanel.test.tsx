@@ -142,7 +142,7 @@ describe('SurveyQuestionsPanel', () => {
 
     await waitFor(() => expect(mocked.updateSurvey).toHaveBeenCalledTimes(1));
     expect(confirmMock).toHaveBeenCalledWith(expect.objectContaining({ title: '설문지 공개' }));
-    const body = mocked.updateSurvey.mock.calls[0][1];
+    const body = mocked.updateSurvey.mock.calls[0]![1];
     expect(body).toEqual({
       srvyTtl: '만족도 조사', srvyTmpltSn: 11, srvyPrps: '서비스 개선', srvyWrtGdCn: '솔직하게 답해 주세요',
       srvyBgngYmd: '20260901', srvyEndYmd: '20260930', srvyTrgt: '전 직원', rlsYn: 'Y',
@@ -353,7 +353,7 @@ describe('SurveyQuestionsPanel', () => {
     await user.click(screen.getByRole('button', { name: /문항 추가/ }));
 
     await waitFor(() => expect(mocked.createQuestion).toHaveBeenCalledTimes(1));
-    const [, payload] = mocked.createQuestion.mock.calls[0];
+    const [, payload] = mocked.createQuestion.mock.calls[0]!;
     expect(payload).toEqual(expect.objectContaining({ qstnCn: '관심 분야를 모두 고르세요', maxChcCnt: 3 }));
     expect(payload.qstnSn).toBe(4);
   });
@@ -368,7 +368,7 @@ describe('SurveyQuestionsPanel', () => {
     await user.click(screen.getByRole('button', { name: /문항 추가/ }));
 
     await waitFor(() => expect(mocked.createQuestion).toHaveBeenCalledTimes(1));
-    expect(mocked.createQuestion.mock.calls[0][1]).toEqual(expect.objectContaining({ maxChcCnt: 1 }));
+    expect(mocked.createQuestion.mock.calls[0]![1]).toEqual(expect.objectContaining({ maxChcCnt: 1 }));
   });
 
   it('🚨 글로 답하기를 고르면 주관식 유형으로 만든다 — 종전에는 화면이 늘 객관식만 만들었다 (2026-10-27)', async () => {
@@ -382,7 +382,7 @@ describe('SurveyQuestionsPanel', () => {
     await user.click(screen.getByRole('button', { name: /문항 추가/ }));
 
     await waitFor(() => expect(mocked.createQuestion).toHaveBeenCalledTimes(1));
-    expect(mocked.createQuestion.mock.calls[0][1]).toEqual(expect.objectContaining({ qstnTypeCd: '2', maxChcCnt: 1 }));
+    expect(mocked.createQuestion.mock.calls[0]![1]).toEqual(expect.objectContaining({ qstnTypeCd: '2', maxChcCnt: 1 }));
   });
 
   it('🚨 주관식 문항은 글로 답한다고 보이고 항목 추가를 내놓지 않는다 — 칸 없는 기존 문항은 답변 칸을 만들 수 있다', async () => {
@@ -621,7 +621,7 @@ describe('SurveyQuestionsPanel 설문지 등록·삭제', () => {
     fireEvent.click(screen.getByRole('button', { name: '설문지 등록' }));
 
     await waitFor(() => expect(mocked.createSurvey).toHaveBeenCalledTimes(1));
-    expect(mocked.createSurvey.mock.calls[0][0]).toEqual({ srvyTtl: '2026 만족도', srvyTmpltSn: 11 });
+    expect(mocked.createSurvey.mock.calls[0]![0]).toEqual({ srvyTtl: '2026 만족도', srvyTmpltSn: 11 });
   });
 
   it.each([
@@ -640,7 +640,7 @@ describe('SurveyQuestionsPanel 설문지 등록·삭제', () => {
     fireEvent.click(screen.getByRole('button', { name: '설문지 등록' }));
 
     await waitFor(() => expect(mocked.createSurvey).toHaveBeenCalledTimes(1));
-    const payload = mocked.createSurvey.mock.calls[0][0];
+    const payload = mocked.createSurvey.mock.calls[0]![0];
     expect(payload.srvyBgngYmd).toBe(storedBegin);
     expect(payload.srvyEndYmd).toBe(storedEnd);
     expect(screen.getByLabelText('설문 시작일')).toHaveValue('');
@@ -722,7 +722,7 @@ describe('SurveyQuestionsPanel 설문지 등록·삭제', () => {
     fireEvent.click(screen.getByRole('button', { name: '설문지 삭제' }));
 
     await waitFor(() => expect(confirmMock).toHaveBeenCalledTimes(1));
-    const message = String(confirmMock.mock.calls[0][0].message);
+    const message = String(confirmMock.mock.calls[0]![0].message);
     expect(message).toContain('만족도 조사');
     expect(message).toContain('응답이 함께 사라지며');
   });
@@ -800,9 +800,9 @@ describe('SurveyQuestionsPanel 수정 배선', () => {
     await user.click(screen.getByRole('button', { name: /저장/ }));
 
     await waitFor(() => expect(mocked.updateSurvey).toHaveBeenCalledTimes(1));
-    const [, payload] = mocked.updateSurvey.mock.calls[0];
+    const [, payload] = mocked.updateSurvey.mock.calls[0]!;
     expect(payload).toEqual({
-      srvyTtl: SURVEYS.list[0].srvyTtl,
+      srvyTtl: SURVEYS.list[0]!.srvyTtl,
       srvyTmpltSn: 11,
       srvyPrps: '서비스 개선',
       srvyWrtGdCn: '솔직하게 답해 주세요',
@@ -822,7 +822,7 @@ describe('SurveyQuestionsPanel 수정 배선', () => {
     fireEvent.change(screen.getByLabelText('설문 종료일 수정'), { target: { value: '' } });
     await user.click(screen.getByRole('button', { name: /저장/ }));
     await waitFor(() => expect(mocked.updateSurvey).toHaveBeenCalledTimes(1));
-    expect(mocked.updateSurvey.mock.calls[0][1]).toMatchObject({ srvyBgngYmd: '', srvyEndYmd: '' });
+    expect(mocked.updateSurvey.mock.calls[0]![1]).toMatchObject({ srvyBgngYmd: '', srvyEndYmd: '' });
   });
 
   it('설문 기간: 수정 순서 오류와 서버 실패에서도 입력을 보존한다', async () => {
@@ -878,7 +878,7 @@ describe('SurveyQuestionsPanel 수정 배선', () => {
     await user.click(screen.getByRole('button', { name: /저장/ }));
 
     await waitFor(() => expect(mocked.updateQuestion).toHaveBeenCalledTimes(1));
-    const [srvySn, srvyQstnSn, body] = mocked.updateQuestion.mock.calls[0];
+    const [srvySn, srvyQstnSn, body] = mocked.updateQuestion.mock.calls[0]!;
     expect(srvySn).toBe(201);
     expect(srvyQstnSn).toBe(QUESTION_WITH_ITEM.srvyQstnSn);
     expect(body).toMatchObject({
@@ -919,7 +919,7 @@ describe('SurveyQuestionsPanel 수정 배선', () => {
     const user = userEvent.setup();
     renderPanel();
     await selectSurvey(user);
-    await user.click((await screen.findAllByRole('button', { name: /항목 추가/ }))[0]);
+    await user.click((await screen.findAllByRole('button', { name: /항목 추가/ }))[0]!);
     fireEvent.change(screen.getByLabelText('새 항목 내용'), { target: { value: '보존할 항목' } });
     confirmMock.mockResolvedValueOnce(false);
     await user.click(screen.getByRole('button', { name: /항목 추가/ }));
@@ -1015,7 +1015,7 @@ describe('SurveyQuestionsPanel 전체 치환 왕복의 null 안전', () => {
 
   it('설문지 제목 수정은 기존 null 을 요청에 싣지 않는다 — 등록으로 만든 설문지도 고칠 수 있다', async () => {
     // 픽스처가 실제로 null 을 품고 있어야 "안 실렸다"가 증거가 된다.
-    const source = NULL_SURVEYS.list[0];
+    const source = NULL_SURVEYS.list[0]!;
     expect(Object.entries(source).filter(([, v]) => v === null).map(([k]) => k))
       .toEqual(['srvyPrps', 'srvyWrtGdCn', 'srvyBgngYmd', 'srvyEndYmd', 'srvyTrgt']);
 
@@ -1030,7 +1030,7 @@ describe('SurveyQuestionsPanel 전체 치환 왕복의 null 안전', () => {
     await user.click(screen.getByRole('button', { name: /저장/ }));
 
     await waitFor(() => expect(mocked.updateSurvey).toHaveBeenCalledTimes(1));
-    const [srvySn, body] = mocked.updateSurvey.mock.calls[0];
+    const [srvySn, body] = mocked.updateSurvey.mock.calls[0]!;
     expect(srvySn).toBe(201);
     expect(Object.values(body)).not.toContain(null);
     // 편집한 값과, 비대칭이 아니라 그대로 실리는 srvyTmpltSn 은 살아 있어야 한다.
@@ -1052,7 +1052,7 @@ describe('SurveyQuestionsPanel 전체 치환 왕복의 null 안전', () => {
     await user.click(screen.getByRole('button', { name: /저장/ }));
 
     await waitFor(() => expect(mocked.updateSurvey).toHaveBeenCalledTimes(1));
-    const [, body] = mocked.updateSurvey.mock.calls[0];
+    const [, body] = mocked.updateSurvey.mock.calls[0]!;
     expect(body).toEqual({
       srvyTtl: '만족도 조사 2026',
       srvyPrps: '서비스 개선',
@@ -1079,7 +1079,7 @@ describe('SurveyQuestionsPanel 전체 치환 왕복의 null 안전', () => {
     await user.click(screen.getByRole('button', { name: /저장/ }));
 
     await waitFor(() => expect(mocked.updateQuestion).toHaveBeenCalledTimes(1));
-    const [, srvyQstnSn, body] = mocked.updateQuestion.mock.calls[0];
+    const [, srvyQstnSn, body] = mocked.updateQuestion.mock.calls[0]!;
     expect(srvyQstnSn).toBe(301);
     expect(Object.values(body)).not.toContain(null);
     expect(body).not.toHaveProperty('maxChcCnt');
@@ -1089,7 +1089,7 @@ describe('SurveyQuestionsPanel 전체 치환 왕복의 null 안전', () => {
 
   it('선택 항목 수정은 등록이 남긴 null 순번·기타답변여부를 싣지 않는다', async () => {
     const created = NULL_QUESTION.items[0];
-    expect([created.artclSn, created.etcAnsYn]).toEqual([null, null]);
+    expect([created!.artclSn, created!.etcAnsYn]).toEqual([null, null]);
 
     const user = userEvent.setup();
     renderPanel();
@@ -1102,7 +1102,7 @@ describe('SurveyQuestionsPanel 전체 치환 왕복의 null 안전', () => {
     await user.click(screen.getByRole('button', { name: /저장/ }));
 
     await waitFor(() => expect(mocked.updateItem).toHaveBeenCalledTimes(1));
-    const [srvyArtclSn, body] = mocked.updateItem.mock.calls[0];
+    const [srvyArtclSn, body] = mocked.updateItem.mock.calls[0]!;
     expect(srvyArtclSn).toBe(401);
     expect(Object.values(body)).not.toContain(null);
     expect(body).toEqual({ artclCn: '수정된 항목' });
@@ -1121,7 +1121,7 @@ describe('SurveyQuestionsPanel 전체 치환 왕복의 null 안전', () => {
     await user.click(screen.getByRole('button', { name: /저장/ }));
 
     await waitFor(() => expect(mocked.updateItem).toHaveBeenCalledTimes(1));
-    const [srvyArtclSn, body] = mocked.updateItem.mock.calls[0];
+    const [srvyArtclSn, body] = mocked.updateItem.mock.calls[0]!;
     expect(srvyArtclSn).toBe(402);
     expect(body).toEqual({ artclCn: '수정된 항목', artclSn: 2, etcAnsYn: 'N' });
     expect(() => parseGeneratedOperationRequest(updateItemOperation, body)).not.toThrow();

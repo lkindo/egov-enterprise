@@ -134,7 +134,7 @@ describe('BoardRegistClient draft restore (DIP B5 F9)', () => {
     renderSubject({ pstSn: 7, initialData: saved });
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    expect(mocks.confirm.mock.calls[0][0]).toMatchObject({ title: '수정하던 초안 복구', confirmText: '초안으로 바꾸기' });
+    expect(mocks.confirm.mock.calls[0]![0]).toMatchObject({ title: '수정하던 초안 복구', confirmText: '초안으로 바꾸기' });
     await waitFor(() => expect(mocks.restoreDraft).toHaveBeenCalledTimes(1));
   });
 
@@ -161,6 +161,6 @@ describe('BoardRegistClient draft restore (DIP B5 F9)', () => {
     renderSubject();
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    expect(mocks.confirm.mock.calls[0][0]).toMatchObject({ title: '임시저장 데이터 복구' });
+    expect(mocks.confirm.mock.calls[0]![0]).toMatchObject({ title: '임시저장 데이터 복구' });
   });
 });

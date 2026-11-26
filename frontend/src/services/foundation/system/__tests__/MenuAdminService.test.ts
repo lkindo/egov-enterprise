@@ -78,7 +78,7 @@ describe('MenuAdminService — 메뉴 구조', () => {
 
   it.each([
     [{ ...save, version: '' }, '메뉴 구조를 다시 불러온 뒤 저장해 주세요.'],
-    [{ ...save, grants: [{ ...save.grants[0], groupVersion: '' }] }, '그룹 권한을 다시 불러온 뒤 저장해 주세요.'],
+    [{ ...save, grants: [{ ...save.grants[0]!, groupVersion: '' }] }, '그룹 권한을 다시 불러온 뒤 저장해 주세요.'],
     [{ version: 's1', creations: [], placements: [], properties: [], deletions: [], grants: [] }, '바뀐 내용이 없습니다.'],
   ])('저장할 수 없는 초안은 전송 전에 막는다 %#', (body, message) => {
     expect(() => menuAdminService.saveMenuStructure(body)).toThrow(message);

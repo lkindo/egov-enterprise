@@ -29,7 +29,7 @@ describe('common-code treeUtils', () => {
 
     expect(flattened).toEqual([
       { id: 'A', parentId: null, name: '분류 A', type: 'cluster', data: source[0], depth: 0 },
-      { id: 'A1', parentId: 'A', name: '그룹 A1', type: 'group', data: source[0].groups[0], depth: 1 },
+      { id: 'A1', parentId: 'A', name: '그룹 A1', type: 'group', data: source[0]!.groups[0], depth: 1 },
     ]);
   });
 

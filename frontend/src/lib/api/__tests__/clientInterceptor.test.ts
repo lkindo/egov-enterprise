@@ -236,7 +236,7 @@ describe('API 클라이언트 인터셉터', () => {
       await captured.responseErr!({ response: { status: 401 }, config: { url: '/x' } });
 
       expect(instance.post).toHaveBeenCalledTimes(1);
-      const [url, body, config] = instance.post.mock.calls[0];
+      const [url, body, config] = instance.post.mock.calls[0]!;
       expect(url).toBe('/api/auth/reissue');
       expect(body).toEqual({});
       // baseURL 을 비우지 않으면 '/api/v1' 이 전치돼 '/api/v1/api/auth/reissue' 로 나간다
@@ -386,7 +386,7 @@ describe('API 클라이언트 인터셉터', () => {
       ).rejects.toBeDefined();
 
       expect(dispatchEvent).toHaveBeenCalledTimes(1);
-      const event = dispatchEvent.mock.calls[0][0] as CustomEvent;
+      const event = dispatchEvent.mock.calls[0]![0] as CustomEvent;
       expect(event.type).toBe('api-error');
       expect(event.detail).toEqual({ message: '서버 오류', status: 500 });
     });

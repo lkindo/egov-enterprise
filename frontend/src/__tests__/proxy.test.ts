@@ -324,7 +324,7 @@ describe('proxy 인증 게이트', () => {
       '/admin/community/boards/master/BBSMSTR_AAAAAAAAAAAA'));
     expect(denied.headers.get('x-mw-auth')).toContain('deny=permission');
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ success: true, code: 'S000', message: '성공', data: {
-      id: 'webmaster', esntlId: SUBJECT, groups: ['BOARD_OPERATOR'], permissions: [...PAGE_PERMISSIONS['/admin/community/boards/master/[id]']],
+      id: 'webmaster', esntlId: SUBJECT, groups: ['BOARD_OPERATOR'], permissions: [...PAGE_PERMISSIONS['/admin/community/boards/master/[id]']!],
       authorizationVersion: 'v2',
     } })));
     const allowed = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() }),
@@ -347,7 +347,7 @@ describe('proxy 인증 게이트', () => {
 
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ success: true, code: 'S000', message: '성공', data: {
       id: 'webmaster', esntlId: SUBJECT, groups: ['SMS_OPERATOR'],
-      permissions: [...(PAGE_PERMISSIONS as Record<string, readonly string[]>)[SMS_LEGACY]], authorizationVersion: 'v2',
+      permissions: [...(PAGE_PERMISSIONS as Record<string, readonly string[]>)[SMS_LEGACY]!], authorizationVersion: 'v2',
     } })));
     const allowed = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() }), SMS_LEGACY));
     expect(allowed.status).toBe(200);
@@ -364,7 +364,7 @@ describe('proxy 인증 게이트', () => {
 
   it('a current functional grant opens its page without an administrator role claim', async () => {
     const permissions = PAGE_PERMISSIONS['/admin/system/menus'];
-    expect(permissions.length).toBeGreaterThan(0);
+    expect(permissions!.length).toBeGreaterThan(0);
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ success: true, code: 'S000', message: '성공', data: {
       id: 'webmaster', esntlId: SUBJECT, groups: ['MENU_EDITOR'], permissions, authorizationVersion: 'v2',
     } })));
@@ -377,7 +377,7 @@ describe('proxy 인증 게이트', () => {
 
   it('rejects a different essential ID even when the login ID equals the JWT subject', async () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ success: true, code: 'S000', message: '성공', data: {
-      id: SUBJECT, esntlId: 'USRCNFRM_other_002', groups: ['MENU_EDITOR'], permissions: [...PAGE_PERMISSIONS['/admin/system/menus']], authorizationVersion: 'v2',
+      id: SUBJECT, esntlId: 'USRCNFRM_other_002', groups: ['MENU_EDITOR'], permissions: [...PAGE_PERMISSIONS['/admin/system/menus']!], authorizationVersion: 'v2',
     } })));
     const response = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() }), '/admin/system/menus'));
     expect(response.headers.get('x-mw-auth')).toContain('deny=permission');

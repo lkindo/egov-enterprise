@@ -71,7 +71,7 @@ describe('MFA account management', () => {
     fireEvent.click(screen.getByRole('button', { name: '복구 코드 재발급' }));
     expect(await screen.findByRole('list', { name: '일회용 복구 코드' })).toHaveTextContent('r'.repeat(22));
     expect(mfaService.reauthenticate).toHaveBeenCalledWith('test-password', '012345');
-    expect(vi.mocked(mfaService.reauthenticate).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(mfaService.regenerate).mock.invocationCallOrder[0]);
+    expect(vi.mocked(mfaService.reauthenticate).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(mfaService.regenerate).mock.invocationCallOrder[0]!);
     await waitFor(() => expect(locked).toHaveBeenLastCalledWith(true));
   });
 

@@ -209,7 +209,7 @@ describe('menu metadata navigation boundary', () => {
     const view = render(<HeaderSearchParamSync menus={menus} activeMenuNo={1} setActiveMenuNo={setActiveMenuNo} />);
     view.rerender(<HeaderSearchParamSync menus={menus} activeMenuNo={2} setActiveMenuNo={setActiveMenuNo} />);
     expect(setActiveMenuNo).not.toHaveBeenCalled();
-    view.rerender(<HeaderSearchParamSync menus={[menus[0]]} activeMenuNo={2} setActiveMenuNo={setActiveMenuNo} />);
+    view.rerender(<HeaderSearchParamSync menus={[menus[0]!]} activeMenuNo={2} setActiveMenuNo={setActiveMenuNo} />);
     expect(setActiveMenuNo).toHaveBeenCalledWith(1);
   });
 

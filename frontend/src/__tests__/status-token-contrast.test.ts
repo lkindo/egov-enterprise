@@ -71,11 +71,11 @@ function readTokens(file: string): { light: Map<string, string>; dark: Map<strin
   expect(blocks.length, `${file} 에서 선언 블록을 찾지 못했습니다 — 계약이 vacuous 합니다`).toBeGreaterThanOrEqual(2);
 
   const toMap = (body: string) =>
-    new Map([...body.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/gi)].map((m) => [m[1], m[2].trim()]));
+    new Map([...body.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/gi)].map((m) => [m[1]!, m[2]!.trim()]));
 
-  const light = toMap(blocks[0]);
+  const light = toMap(blocks[0]!);
   const dark = new Map(light);
-  for (const [k, v] of toMap(blocks[1])) dark.set(k, v);
+  for (const [k, v] of toMap(blocks[1]!)) dark.set(k, v);
   return { light, dark };
 }
 

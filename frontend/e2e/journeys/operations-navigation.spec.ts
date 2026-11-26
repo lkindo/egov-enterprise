@@ -148,7 +148,7 @@ test.describe('메모 보고의 읽은 내용과 지시 저장', () => {
                 expect(fileList.status()).toBe(200);
                 const files = (await fileList.json()).data as Array<{ fileSn: number; orignlFileNm: string }>;
                 expect(files).toHaveLength(1);
-                expect(files[0].orignlFileNm).toBe(fileName);
+                expect(files[0]!.orignlFileNm).toBe(fileName);
                 const payload = { rptTtl: title, rptCn: originalBody, rptrId: recipient, memoRptYmd: screenYmd(), atchFileSn: fileGroup };
                 const created = await adminRequest.post(memos, { data: payload });
                 expect(created.status()).toBe(201);
