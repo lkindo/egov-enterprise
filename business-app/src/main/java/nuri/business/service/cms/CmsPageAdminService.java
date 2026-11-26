@@ -188,11 +188,10 @@ public class CmsPageAdminService {
         content.unpublish();
         boolean homeReleased = releaseHome(home, contsSn);
         contentRepository.flush();
-        sensitiveAudit.recordMutation("CMS_PAGE_UNPUBLISH", contsSn.toString());
-        if (homeReleased) {
-            // 홈 지정이 함께 풀렸다 — 지정 화면에서 바꾼 것과 같은 감사 사실을 남긴다(ADR-0042).
-            sensitiveAudit.recordMutation("CMS_HOME_UPDATE", "NONE");
-        }
+        // 감사 원장은 요청마다 COMMITTED 행을 하나만 받는다(uk_tb_sys_adt_log_request_stage).
+        // 홈 지정이 함께 풀리면 단일 커밋 기록의 대상 좌표에 홈 해제 사실을 함께 남긴다.
+        sensitiveAudit.recordMutation("CMS_PAGE_UNPUBLISH",
+                homeReleased ? contsSn + ":home-released" : contsSn.toString());
         return detail(content);
     }
 
@@ -270,11 +269,9 @@ public class CmsPageAdminService {
         contentFileService.releaseAll(contsSn);
         contentRepository.deleteById(contsSn);
         contentRepository.flush();
-        if (homeReleased) {
-            sensitiveAudit.recordMutation("CMS_HOME_UPDATE", "NONE");
-        }
-        sensitiveAudit.recordReferencedMutation("CMS_PAGE_PURGE", auditTarget(contsSn, content.getContsPathNm()),
-                request.getCaseReference());
+        String target = auditTarget(contsSn, content.getContsPathNm())
+                + (homeReleased ? ":home-released" : "");
+        sensitiveAudit.recordReferencedMutation("CMS_PAGE_PURGE", target, request.getCaseReference());
     }
 
     /**

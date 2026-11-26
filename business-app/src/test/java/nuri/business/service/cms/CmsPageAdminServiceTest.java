@@ -51,6 +51,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /** 콘텐츠 페이지의 게시 상태 전이(ADR-0039 결정 7)와 초안 판정·삭제·파기(ADR-0042). */
@@ -246,7 +247,8 @@ class CmsPageAdminServiceTest {
 
         assertThat(published.isPublished()).isFalse();
         assertThat(home.getContsSn()).isNull();
-        verify(sensitiveAudit).recordMutation("CMS_PAGE_UNPUBLISH", "1");
+        verify(sensitiveAudit).recordMutation("CMS_PAGE_UNPUBLISH", "1:home-released");
+        verifyNoMoreInteractions(sensitiveAudit);
     }
 
     @Test
@@ -261,6 +263,8 @@ class CmsPageAdminServiceTest {
         service.unpublish(1L, CmsPageStateRequest.builder().version(3).build());
 
         assertThat(home.getContsSn()).isEqualTo(2L);
+        verify(sensitiveAudit).recordMutation("CMS_PAGE_UNPUBLISH", "1");
+        verifyNoMoreInteractions(sensitiveAudit);
     }
 
     @Test
@@ -304,7 +308,7 @@ class CmsPageAdminServiceTest {
     }
 
     @Test
-    void unpublishRecordsTheHomeReleaseAsAHomeChange() {
+    void unpublishRecordsTheHomeReleaseInSingleCommittedAudit() {
         CmsSiteSetting home = CmsSiteSetting.create(CmsSiteSetting.HOME_INTRO);
         home.point(1L);
         when(homeService.lockHome()).thenReturn(home);
@@ -314,7 +318,8 @@ class CmsPageAdminServiceTest {
 
         service.unpublish(1L, CmsPageStateRequest.builder().version(3).build());
 
-        verify(sensitiveAudit).recordMutation("CMS_HOME_UPDATE", "NONE");
+        verify(sensitiveAudit).recordMutation("CMS_PAGE_UNPUBLISH", "1:home-released");
+        verifyNoMoreInteractions(sensitiveAudit);
     }
 
     @Test
@@ -504,9 +509,8 @@ class CmsPageAdminServiceTest {
         service.purgePage(1L, purge("guide"));
 
         assertThat(home.getContsSn()).isNull();
-        InOrder auditOrder = inOrder(sensitiveAudit);
-        auditOrder.verify(sensitiveAudit).recordMutation("CMS_HOME_UPDATE", "NONE");
-        auditOrder.verify(sensitiveAudit).recordReferencedMutation("CMS_PAGE_PURGE", "1:guide", "INC-2026-7");
+        verify(sensitiveAudit).recordReferencedMutation("CMS_PAGE_PURGE", "1:guide:home-released", "INC-2026-7");
+        verifyNoMoreInteractions(sensitiveAudit);
     }
 
     @Test
