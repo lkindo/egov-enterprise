@@ -98,23 +98,21 @@ test('the URL approval is never rewritten by regeneration: no generator writes o
 test('only generators whose inputs or outputs changed on both sides run, downstream steps follow', () => {
   const ids = files => planRegeneration(files).map(generator => generator.id);
   assert.deepEqual(ids({ ours: ['frontend/src/a.tsx'], theirs: ['frontend/src/b.tsx'] }),
-    ['boundary-census', 'screen-registry', 'url-state-census', 'atlas']);
+    ['boundary-census', 'screen-registry', 'url-state-census']);
   assert.deepEqual(ids({ ours: ['api-docs.json'], theirs: ['api-docs.json'] }),
-    ['sync-contract', 'boundary-census', 'screen-registry', 'url-state-census', 'atlas'], 'regenerated contracts feed the censuses');
+    ['sync-contract', 'boundary-census', 'screen-registry', 'url-state-census'], 'regenerated contracts feed the censuses');
   assert.deepEqual(ids({ ours: ['config/governance/permission-catalog.json'], theirs: ['config/governance/authorization-policies.json'] }),
-    ['permissions', 'boundary-census', 'screen-registry', 'url-state-census', 'atlas'], 'the generated permission module is a frontend source');
+    ['permissions', 'boundary-census', 'screen-registry', 'url-state-census'], 'the generated permission module is a frontend source');
   assert.deepEqual(ids({ ours: ['config/ui-route-capabilities.json'], theirs: ['config/project-composer-menus.json'] }),
-    ['screen-registry', 'url-state-census', 'atlas'], 'the screen registry is a frontend source the URL census scans');
+    ['screen-registry', 'url-state-census'], 'the screen registry is a frontend source the URL census scans');
   assert.deepEqual(ids({ ours: ['frontend/src/types/generated-screen-registry.ts'], theirs: ['frontend/src/types/generated-screen-registry.ts'] }),
-    ['boundary-census', 'screen-registry', 'url-state-census', 'atlas'], 'a conflicted registry is regenerated, not picked');
-  assert.deepEqual(ids({ ours: ['api-docs.json'], theirs: ['docs/a.md'] }), ['atlas'],
+    ['boundary-census', 'screen-registry', 'url-state-census'], 'a conflicted registry is regenerated, not picked');
+  assert.deepEqual(ids({ ours: ['api-docs.json'], theirs: ['docs/a.md'] }), [],
     'a contract changed on one side only is already consistent');
-  assert.deepEqual(ids({ ours: ['frontend/atlas/atlas.css'], theirs: ['frontend/atlas/atlas.css'] }),
-    ['atlas']);
   assert.deepEqual(ids({ ours: ['config/governance/permission-bundles.json'], theirs: ['config/ui-route-capabilities.json'] }),
-    ['screen-registry', 'url-state-census', 'atlas'], 'the permission bundle ledger feeds the screen registry');
+    ['screen-registry', 'url-state-census'], 'the permission bundle ledger feeds the screen registry');
   assert.deepEqual(ids({ ours: ['config/frontend-visible-terms.json'], theirs: ['config/governance/permission-bundles.json'] }),
-    ['screen-registry', 'url-state-census', 'atlas'], 'the visible terms ledger checks the bundle copy the registry writes');
+    ['screen-registry', 'url-state-census'], 'the visible terms ledger checks the bundle copy the registry writes');
 });
 
 test('slot contributions changed on both sides regenerate the slot registries before the censuses that scan them', () => {
@@ -122,7 +120,7 @@ test('slot contributions changed on both sides regenerate the slot registries be
   const ids = files => planRegeneration(files).map(generator => generator.id);
   assert.deepEqual(ids({ ours: ['frontend/src/extensions/addressbook/recipient-picker-sources.ts'],
     theirs: ['frontend/src/extensions/note/recipient-picker-sources.ts'] }),
-  ['slot-registries', 'boundary-census', 'screen-registry', 'url-state-census', 'atlas']);
+  ['slot-registries', 'boundary-census', 'screen-registry', 'url-state-census']);
   const step = GENERATORS.find(generator => generator.id === 'slot-registries');
   // 출력은 손으로 적지 않는다 — 디스크의 기여·레지스트리에서 읽는다(지금은 슬롯 세 개).
   assert.deepEqual(step.outputs, slotRegistryOutputs(path.resolve(import.meta.dirname, '..')));
@@ -134,7 +132,7 @@ test('slot contributions changed on both sides regenerate the slot registries be
 test('config/modules is the source after the v2 transition — no generator rewrites a feature file', () => {
   // 11단계 C7 전환 뒤 기능 파일은 손으로 쓰는 원천이다. 양쪽이 같은 기능 파일을 고친 충돌은 다시 만들지 않고 사람이 합친다.
   const ids = files => planRegeneration(files).map(generator => generator.id);
-  assert.deepEqual(ids({ ours: ['config/modules/board.json'], theirs: ['config/modules/board.json'] }), ['atlas'],
+  assert.deepEqual(ids({ ours: ['config/modules/board.json'], theirs: ['config/modules/board.json'] }), [],
     'a conflicted feature file is resolved by hand, not regenerated');
   assert.ok(GENERATORS.every(generator => generator.outputs.every(output => !output.startsWith('config/modules/'))),
     'no generator writes the feature files');
@@ -240,9 +238,6 @@ test('a generator whose tool is absent from the repository is skipped with a mes
   assert.equal(result.status, 'ready', messages.join('\n'));
   assert.deepEqual(result.plan, ['fake-census', 'present-tool'], 'only the generator whose tool is missing is skipped');
   assert.ok(messages.some(m => m.includes('건너뜀: absent-tool')), messages.join('\n'));
-  // 원본 저장소는 Atlas 생성기를 갖고 있어 Atlas 재생성을 건너뛰지 않는다.
-  const atlas = GENERATORS.find(generator => generator.id === 'atlas');
-  assert.ok(fs.existsSync(new URL(`../${atlas.requires}`, import.meta.url)), atlas.requires);
 });
 
 test('a conflict the tool must not decide stops before regeneration and resumes with --continue', () => {

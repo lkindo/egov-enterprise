@@ -134,11 +134,11 @@ flowchart TD
 
 CI에서 기본 `comfortable` 밀도의 공통코드 320px 화면에 가로 넘침이 발견되어 분류 등록·그룹 등록·코드 검색 버튼 줄을 줄바꿈하도록 수정했다. 실제 컴포넌트의 합성 Chromium 검증에서도 기본 밀도의 기존 배치를 복원하면 334px로 넘치고 수정 배치는 320px에 들어오는 것을 확인했다. `compact` 밀도도 320px에서 확인했으며, CI의 기존 가로 넘침 허용치와 시각 비교 기준은 유지한다. 화면 제목과 탭 이름을 바꾼 E2E는 현재 과업명과 정확한 heading/tab 역할로 검증한다.
 
-타입·lint·프로덕션 build, 프론트 테스트/커버리지, 폼/URL/API 소비 경계 census와 문서/Atlas 계약을 함께 확인한다. 폼 census에서 제거한 항목은 `/survey/stats`의 번호 입력 검색 폼 하나다. 검색 선택 UI로 바뀌어 네이티브 form이 실제로 사라졌으며 mutation 검증을 제외한 것이 아니다. API 경계의 위치 정보와 URL census는 현재 소스에서 재생성한다.
+타입·lint·프로덕션 build, 프론트 테스트/커버리지, 폼/URL/API 소비 경계 census와 문서 계약을 함께 확인한다. 폼 census에서 제거한 항목은 `/survey/stats`의 번호 입력 검색 폼 하나다. 검색 선택 UI로 바뀌어 네이티브 form이 실제로 사라졌으며 mutation 검증을 제외한 것이 아니다. API 경계의 위치 정보와 URL census는 현재 소스에서 재생성한다.
 
 URL census 비교에서는 기존 검색 승인 대상의 내용 변경 없이 탐색 링크·셸 이동 어댑터가 추가되었다. 오버레이의 부류·승인자·검색 허용 5개 record/3개 key는 유지하고 현재 census 해시에 다시 결속했다. 어댑터의 동적 목적지는 계속 opaque 검토 대상이며 새 검색어 URL 허용으로 확대하지 않았다. lint 경고는 144→138, 상태 색상 하드코딩은 494→487로 감소해 각 상한도 낮췄다. `baseline-manifest.properties`의 레지스트리 해시 1개도 lint 상한 감소에 맞춰 갱신했다. 예외 목록은 늘리지 않았다. 색상 게이트는 임시 위반 1건을 넣었을 때 실패하는 것도 확인했다. (census 해시 결속은 2026-11-18 DEC-OPS-420으로 걷었다 — 승인은 기록 ID 고정이다.)
 
-관련 안내: [업무 화면 문법](../02-architecture/work-screen-grammar-catalog.md) · [정보 구조](../01-product/information-architecture.md) · [Atlas 가이드](governance-atlas-guide.md).
+관련 안내: [업무 화면 문법](../02-architecture/work-screen-grammar-catalog.md) · [정보 구조](../01-product/information-architecture.md).
 
 ## 8. 구현 감사 요약
 

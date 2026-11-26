@@ -14,7 +14,7 @@ import { planFrontendRemoval, pruneFrontend } from './reusable-source-frontend.m
 import { copySourceTree, normalize, walk } from './reusable-source-tree.mjs';
 import { readPermissionSources } from './reusable-permission-projection.mjs';
 import { readSourceApiContract } from './reusable-contract-projection.mjs';
-import { root, catalog, modules, ownership, files, compose, atlasPaths, codes, quietly, memoizedRepositoryReader, readRepositorySource } from './project-composer-deep.test-helpers.mjs';
+import { root, catalog, modules, ownership, files, compose, codes, quietly, memoizedRepositoryReader, readRepositorySource } from './project-composer-deep.test-helpers.mjs';
 
 // 이 점검은 기억하는 읽기를 넘기지 않는다 — 정밀 점검의 기본 읽기(디스크) 경로도 계속 돈다.
 test('a full product composition removes nothing and still reports a summary', () => {
@@ -135,10 +135,9 @@ test('a surviving file that uses a contract name the composition removes blocks 
  */
 test('every acknowledgement blocker of the deep plan is a failure of the generator acknowledgement check', () => {
   const javaGates = files => ({ removedGates: files.map(file => ({ file, reason: '시험용' })) });
-  const rules = { 'historical-migration-tests': ['api-server/src/test/java/nuri/api/schema/OldMigrationIntegrationTest.java'],
-    'upstream-atlas': ['scripts/atlas-catalog.test.mjs'] };
+  const rules = { 'historical-migration-tests': ['api-server/src/test/java/nuri/api/schema/OldMigrationIntegrationTest.java'] };
   const accepted = { acknowledgedRemovedGates: [{ file: 'a/Gate.java', reason: 'r' }],
-    acknowledgedGateRemovalRules: [{ rule: 'historical-migration-tests', reason: 'r' }, { rule: 'upstream-atlas', reason: 'r' }] };
+    acknowledgedGateRemovalRules: [{ rule: 'historical-migration-tests', reason: 'r' }] };
   const cases = [
     ['passes', accepted, ['a/Gate.java'], rules, [], null],
     ['invalid entry', { ...accepted, acknowledgedRemovedGates: [{ file: 'a/Gate.java' }] }, ['a/Gate.java'], rules, ['invalidEntries', 'unacknowledged'], /acknowledgedRemovedGates 항목은 \{ file, reason \}/],
@@ -165,7 +164,7 @@ test('every acknowledgement blocker of the deep plan is a failure of the generat
   try {
     assert.throws(() => assertRemovedGatesAcknowledged('p', { ...accepted, acknowledgedRemovedGates: 'x' }, javaGates(['a/Gate.java']), { removedGates: [] }, rules), /: "x"/);
   } finally { console.log = log; }
-  assert.equal(lines[0], '[base-source] 투영에서 제거된 거버넌스 게이트: 3건');
+  assert.equal(lines[0], '[base-source] 투영에서 제거된 거버넌스 게이트: 2건');
 });
 
 /*
@@ -179,7 +178,6 @@ test('the deep plan sees exactly the files the generator copies and projects eve
   // 합성 저장소의 기능 소유(메일 하나)와 시작 구성 기대치. 시작 구성은 연쇄로 지우는 Java 를 승인해야 생성된다(설계서 C4) —
   // 아래 과거 마이그레이션 검증이 그 연쇄다.
   const expected = { description: '시험용', gates: [], gateRemovalRules: [
-    { rule: 'upstream-atlas', reason: '시험용' },
     { rule: 'upstream-producer-tools', reason: '시험용' },
     { rule: 'requirements-studio', reason: '시험용' },
     { rule: 'offline-migration-tool', reason: '시험용' },
@@ -188,18 +186,15 @@ test('the deep plan sees exactly the files the generator copies and projects eve
     extras: { presetExpectations: { core: expected }, gateOwners: {}, rbac: { file: 'none', domains: [], surfaces: {} } } };
   // 시작 구성 core: 메일을 고르지 않고 demo 화면을 지운다(해석기가 기능 규칙에서 계산하는 제외 경로를 직접 준다).
   const coreOf = removePaths => ({ profile: 'core', packs: ['core'], resolvedDomains: [], frontend: { includedPaths: [], removePaths } });
-  // 원본 Atlas 및 항상 제외하는 생산자·요구사항·이관 규칙이 성공하도록 자산과 별칭을 둔다.
+  // 항상 제외하는 생산자·요구사항·이관 규칙이 성공하도록 자산과 별칭을 둔다.
   write('config/governance/producer-removed-assets.json', JSON.stringify({ assets: ['tools/dummy-producer.mjs'], aliases: ['dummy:producer'], gates: [{ file: 'scripts/dummy-producer.test.mjs' }] }));
   write('config/governance/requirements-removed-assets.json', JSON.stringify({ assets: ['tools/dummy-req.mjs'], aliases: ['dummy:req'], gates: [{ file: 'scripts/dummy-req.test.mjs' }] }));
   write('config/governance/migration-removed-assets.json', JSON.stringify({ assets: ['tools/dummy-mig.mjs'], aliases: ['dummy:mig'], gates: [{ file: 'scripts/dummy-mig.test.mjs' }] }));
   const ruleFixtures = ['tools/dummy-producer.mjs', 'scripts/dummy-producer.test.mjs', 'tools/dummy-req.mjs', 'scripts/dummy-req.test.mjs', 'tools/dummy-mig.mjs', 'scripts/dummy-mig.test.mjs'];
   for (const file of ruleFixtures) write(file, '// rule fixture\n');
-  const atlas = ['frontend/atlas/catalog.json', ...atlasPaths.filter(path => /\.(?:mjs|ts|md)$/.test(path)), 'package.json'];
-  for (const file of atlas) write(file, file === 'package.json'
-    ? '{"scripts":{"atlas:build":"x","atlas:check":"x","atlas:contract":"x","dummy:producer":"x","dummy:req":"x","dummy:mig":"x"}}'
-    : '// atlas\n');
+  write('package.json', '{"scripts":{"dummy:producer":"x","dummy:req":"x","dummy:mig":"x"}}');
   const listed = ['business-app/src/main/java/nuri/business/service/mail/MailService.java', 'frontend/src/app/layout.tsx',
-    'frontend/src/app/page.tsx', 'frontend/src/app/login/page.tsx', 'frontend/src/app/demo/page.tsx', ...atlas, ...ruleFixtures,
+    'frontend/src/app/page.tsx', 'frontend/src/app/login/page.tsx', 'frontend/src/app/demo/page.tsx', 'package.json', ...ruleFixtures,
     'config/governance/producer-removed-assets.json', 'config/governance/requirements-removed-assets.json', 'config/governance/migration-removed-assets.json'];
   write(listed[0], 'package nuri.business.service.mail;\npublic class MailService {}\n');
   for (const file of listed.slice(1, 5)) write(file, 'export default function Page() { return null; }\n');

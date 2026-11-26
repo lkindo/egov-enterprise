@@ -10,7 +10,6 @@ import {
   ARTIFACT_COMMAND, CURRENT_ARTIFACT_COMMAND, PRODUCT_CI_ACTIONS, VERIFICATION_HISTORY,
   parseWorkflowJobs, reusableArtifactEntrypoints, upstreamActionPins, validateReusableArtifactEntrypoints,
 } from './reusable-artifact-entrypoints-contract.mjs';
-import { UPSTREAM_ATLAS } from './reusable-harness-census.mjs';
 import { EXCLUDED_ARTIFACT_SKILLS, MIGRATION_ASSET_LEDGER, pruneMigrationTools, pruneProducerTools, pruneRequirementsStudio,
   readMigrationAssetLedger, readProducerAssetLedger, readRequirementsAssetLedger,
   stripMigrationBaselineArchivePath, stripMigrationBaselineCoreRequired, stripMigrationBuildReferences,
@@ -21,7 +20,6 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const isArtifact = existsSync(join(ROOT, 'reusable-base-lock.json'));
 const producer = isArtifact ? null : {
   installReusableVerification: (await import('./generate-reusable-base-source.mjs')).installReusableVerification,
-  pruneUpstreamAtlas: (await import('./reusable-source-gates.mjs')).pruneUpstreamAtlas,
   reviewedActionPin: (await import('./required-checks-contract.mjs')).reviewedActionPin,
 };
 const read = (root, path) => readFileSync(join(root, path), 'utf8').replace(/\r\n/g, '\n');
@@ -284,42 +282,13 @@ test('missing upstream inputs fail before the product is represented as a valid 
   assert.equal(read(root, `${VERIFICATION_HISTORY}/index.json`), original);
 });
 
-test('the upstream Atlas, its generator, contracts and aliases are absent from generated products', t => {
-  const removed = [...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates];
-  if (isArtifact) {
-    // 생성물 안에서는 이 계약이 T1 으로 돈다. 원본 운영 사실을 담은 Atlas 가 되살아나면 여기서 붉다.
-    for (const path of removed) assert.equal(existsSync(join(ROOT, path)), false, path);
-    for (const alias of UPSTREAM_ATLAS.aliases) assert.equal(Object.hasOwn(json(ROOT, 'package.json').scripts, alias), false, alias);
-    return;
-  }
-  // 원본에서는 규칙이 지목하는 대상이 모두 실재해야 한다. 하나라도 개명되면 규칙을 다시 검토한다.
-  for (const path of removed) assert.ok(existsSync(join(ROOT, path)), path);
-  for (const alias of UPSTREAM_ATLAS.aliases) assert.ok(Object.hasOwn(json(ROOT, 'package.json').scripts, alias), alias);
-
-  const base = resolve(tmpdir());
-  const root = mkdtempSync(join(base, 'egov-atlas-prune-'));
-  t.after(() => rmSync(root, { recursive: true, force: true }));
-  for (const path of removed) write(root, path === 'frontend/atlas' ? `${path}/atlas.css` : path, 'x\n');
-  write(root, 'frontend/public/other.svg', '<svg/>\n');
-  write(root, 'package.json', JSON.stringify({ scripts: { 'atlas:build': 'a', 'atlas:check': 'b', 'atlas:contract': 'd', verify: 'c' } }));
-  assert.deepEqual(producer.pruneUpstreamAtlas(root).files, [...UPSTREAM_ATLAS.gates].sort((a, b) => a.localeCompare(b)));
-  for (const path of removed) assert.equal(existsSync(join(root, path)), false, path);
-  assert.ok(existsSync(join(root, 'frontend/public/other.svg')), 'only the Atlas assets are removed');
-  assert.deepEqual(json(root, 'package.json').scripts, { verify: 'c' });
-
-  // 대상이 하나라도 없으면 조용히 넘어가지 않는다 — 규칙이 낡은 채 "0건 제거" 로 통과하지 않게 한다.
-  write(root, 'package.json', JSON.stringify({ scripts: { 'atlas:build': 'a', 'atlas:check': 'b', 'atlas:contract': 'd' } }));
-  for (const path of removed.slice(1)) write(root, path === 'frontend/atlas' ? `${path}/atlas.css` : path, 'x\n');
-  assert.throws(() => producer.pruneUpstreamAtlas(root), /Upstream Atlas asset is missing.*frontend\/atlas/);
-});
-
 test('producer tools, requirements studio, offline migration tool, their contracts, aliases and repository-only skills are absent from generated products', t => {
   if (isArtifact) {
     // T1: 생성 프로젝트에는 생산자 도구·요구사항 스튜디오·오프라인 이관 도구·저장소 전용 스킬·원본 시험과 별칭이 남지 않는다.
     assert.deepEqual(validateAlwaysRemovedAssetsAbsent(ROOT), []);
     const archivedPkg = json(ROOT, `${VERIFICATION_HISTORY}/package.json`);
     const activePkg = json(ROOT, 'package.json');
-    for (const alias of ['test:operational-contracts:core', 'test:governance-gates', 'project:ui', 'requirements:ui', 'atlas:build', 'migration:export', 'verify:migration', 'migration:ui']) {
+    for (const alias of ['test:operational-contracts:core', 'test:governance-gates', 'project:ui', 'requirements:ui', 'migration:export', 'verify:migration', 'migration:ui']) {
       assert.ok(Object.hasOwn(archivedPkg.scripts ?? {}, alias), `upstream verification history must keep ${alias}`);
       assert.equal(Object.hasOwn(activePkg.scripts ?? {}, alias), false, `active package.json must omit ${alias}`);
     }
@@ -400,7 +369,7 @@ test('producer tools, requirements studio, offline migration tool, their contrac
   }
   const upstreamPackageJson = readFileSync(join(historyRoot, 'package.json'), 'utf8');
   const prunedPkg = json(historyRoot, 'package.json');
-  const preservedAliases = ['test:operational-contracts:core', 'test:governance-gates', 'project:ui', 'requirements:ui', 'atlas:build', 'migration:export', 'verify:migration', 'migration:ui'];
+  const preservedAliases = ['test:operational-contracts:core', 'test:governance-gates', 'project:ui', 'requirements:ui', 'migration:export', 'verify:migration', 'migration:ui'];
   for (const alias of preservedAliases) delete prunedPkg.scripts[alias];
   write(historyRoot, 'package.json', `${JSON.stringify(prunedPkg, null, 2)}\n`);
   write(historyRoot, 'reusable-base-lock.json', JSON.stringify({ profile: 'core', layout: 'multi-module', migrationTool: false, sourceCommit: '1'.repeat(40) }));

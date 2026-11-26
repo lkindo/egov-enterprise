@@ -27,7 +27,6 @@ import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, parseVendorAssetLedger, pruneVe
 import { KEPT_ARTIFACT_SCRIPT_TESTS, MIGRATION_ASSET_LEDGER, readMigrationAssetLedger, readProducerAssetLedger, readRequirementsAssetLedger } from './reusable-product-assets.mjs';
 import { findLedgerOverlapErrors, parseRemovalLedger, readRemovalLedger, staleRemovalLedgerEntries } from './reusable-asset-removal.mjs';
 import { extractLocalScriptReferences, findRemovalLeakErrors } from './reusable-asset-removal-leak-check.mjs';
-import { UPSTREAM_ATLAS } from './reusable-harness-census.mjs';
 import { ARTIFACT_COMMAND, artifactAliases, reusableArtifactEntrypoints } from './reusable-artifact-entrypoints-contract.mjs';
 import { HARNESS_SCAN_ROOTS, computeHarnessBaselineEntries } from './harness-baseline-manifest.mjs';
 import { assertBuildTarget, assertIsolatedRunnerSupportsProject, assertNoDotEnv, awaitChildExit, closedEnvironment, createIsolatedMfaEnvironment, launchIsolatedVendorDatabase, onTermination, parseRepresentativeArguments, provisionRepresentativeAccounts, readRepresentativeBundle, removeVendorDatabase, representativeSelection, resolveVendorEngine, runCleanupSteps, validateLocalRun, vendorDatabaseEnvironment } from './run-isolated-e2e.mjs';
@@ -1891,14 +1890,8 @@ test('the removal ledger names real files and leaves nothing behind that depends
   const producerLedger = readProducerAssetLedger(ROOT);
   const requirementsLedger = readRequirementsAssetLedger(ROOT);
   const migrationLedger = readMigrationAssetLedger(ROOT);
-  const atlasLedger = {
-    assets: UPSTREAM_ATLAS.assets,
-    gates: UPSTREAM_ATLAS.gates.map(file => ({ file })),
-    aliases: UPSTREAM_ATLAS.aliases,
-  };
   assert.deepEqual(findLedgerOverlapErrors([
     { name: 'vendor', ledger: vendorLedger },
-    { name: 'upstream-atlas', ledger: atlasLedger },
     { name: 'producer', ledger: producerLedger },
     { name: 'requirements', ledger: requirementsLedger },
     { name: 'migration', ledger: migrationLedger },
@@ -1914,12 +1907,11 @@ test('the removal ledger names real files and leaves nothing behind that depends
   // H2/H5 완전성 가드: 모든 scripts/*.test.* 와 제거 디렉터리 하위 시험은 정확히 하나의 처분 집합에만 속한다.
   const trackedScriptTests = readdirSync(join(ROOT, 'scripts')).filter(name => /\.test\.(?:mjs|js)$/u.test(name)).map(name => `scripts/${name}`).sort();
   const keptSet = new Set(KEPT_ARTIFACT_SCRIPT_TESTS);
-  const atlasTestSet = new Set(atlasLedger.gates.map(r => r.file));
   const vendorScriptTests = new Set(vendorLedger.gates.map(r => r.file).filter(f => f.startsWith('scripts/')));
   const producerScriptTests = new Set(producerLedger.gates.map(r => r.file).filter(f => f.startsWith('scripts/')));
   const migrationScriptTests = new Set(migrationLedger.gates.map(r => r.file).filter(f => f.startsWith('scripts/')));
   for (const file of trackedScriptTests) {
-    const owners = [keptSet.has(file), atlasTestSet.has(file), vendorScriptTests.has(file), producerScriptTests.has(file), migrationScriptTests.has(file)].filter(Boolean).length;
+    const owners = [keptSet.has(file), vendorScriptTests.has(file), producerScriptTests.has(file), migrationScriptTests.has(file)].filter(Boolean).length;
     assert.equal(owners, 1, `${file} 의 생성물 시험 분류가 유일해야 한다(현재 ${owners}곳)`);
   }
   const collectDirTests = (relDir) => {
@@ -1958,7 +1950,7 @@ test('the removal ledger names real files and leaves nothing behind that depends
   }
 
   // PostgreSQL 생성물: vendor-removed-assets.json 을 적용하지 않으므로 그 원장의 scripts/*.test.* 도 남고, migrationLedger 는 제외된다.
-  const pgLedgers = [atlasLedger, producerLedger, requirementsLedger, migrationLedger];
+  const pgLedgers = [producerLedger, requirementsLedger, migrationLedger];
   const pgTests = [...KEPT_ARTIFACT_SCRIPT_TESTS, ...vendorScriptTests];
   const pgLeaks = findRemovalLeakErrors({
     root: ROOT,
@@ -1977,7 +1969,7 @@ test('the removal ledger names real files and leaves nothing behind that depends
   };
   const pgRedLeaks = findRemovalLeakErrors({
     root: ROOT,
-    ledgers: [atlasLedger, withPgBrokenModules, requirementsLedger, migrationLedger],
+    ledgers: [withPgBrokenModules, requirementsLedger, migrationLedger],
     allowedAliases: Object.keys(artifactAliases),
     allowedDynamicImports: [],
     artifactTestFiles: pgTests,
@@ -1992,7 +1984,7 @@ test('the removal ledger names real files and leaves nothing behind that depends
   };
   const pgAliasRedLeaks = findRemovalLeakErrors({
     root: ROOT,
-    ledgers: [atlasLedger, producerLedger, requirementsLedger, withoutMigrationExportAlias],
+    ledgers: [producerLedger, requirementsLedger, withoutMigrationExportAlias],
     allowedAliases: Object.keys(artifactAliases),
     allowedDynamicImports: [],
     artifactTestFiles: pgTests,
@@ -2002,8 +1994,8 @@ test('the removal ledger names real files and leaves nothing behind that depends
     `PG 이관 별칭 누락 시 leakedAliases 에 잡혀야 한다: ${pgAliasRedLeaks.leakedAliases.join(', ')}`,
   );
 
-  // 비-PostgreSQL 벤더 생성물: 5개 원장 전부 적용
-  const allLedgers = [vendorLedger, atlasLedger, producerLedger, requirementsLedger, migrationLedger];
+  // 비-PostgreSQL 벤더 생성물: 4개 원장 전부 적용
+  const allLedgers = [vendorLedger, producerLedger, requirementsLedger, migrationLedger];
   const { brokenImports, leakedAliases } = findRemovalLeakErrors({
     root: ROOT,
     ledgers: allLedgers,
@@ -2034,7 +2026,7 @@ test('the removal ledger names real files and leaves nothing behind that depends
   };
   const partialLeaks = findRemovalLeakErrors({
     root: ROOT,
-    ledgers: [partialVendor, atlasLedger, producerLedger, requirementsLedger, migrationLedger],
+    ledgers: [partialVendor, producerLedger, requirementsLedger, migrationLedger],
     allowedAliases: Object.keys(artifactAliases),
     allowedDynamicImports: [{ edge: 'scripts/run-isolated-e2e.mjs -> scripts/run-isolated-release-smoke.mjs', guard: 'enterpriseTaskLab' }],
     artifactTestFiles: KEPT_ARTIFACT_SCRIPT_TESTS,
@@ -2051,7 +2043,7 @@ test('the removal ledger names real files and leaves nothing behind that depends
   };
   const serverLeaks = findRemovalLeakErrors({
     root: ROOT,
-    ledgers: [vendorLedger, atlasLedger, withoutServer, requirementsLedger, migrationLedger],
+    ledgers: [vendorLedger, withoutServer, requirementsLedger, migrationLedger],
     allowedAliases: Object.keys(artifactAliases),
     allowedDynamicImports: [{ edge: 'scripts/run-isolated-e2e.mjs -> scripts/run-isolated-release-smoke.mjs', guard: 'enterpriseTaskLab' }],
     artifactTestFiles: KEPT_ARTIFACT_SCRIPT_TESTS,
@@ -2068,7 +2060,7 @@ test('the removal ledger names real files and leaves nothing behind that depends
   };
   const reqAliasLeaks = findRemovalLeakErrors({
     root: ROOT,
-    ledgers: [vendorLedger, atlasLedger, producerLedger, withoutReqAlias, migrationLedger],
+    ledgers: [vendorLedger, producerLedger, withoutReqAlias, migrationLedger],
     allowedAliases: Object.keys(artifactAliases),
     allowedDynamicImports: [{ edge: 'scripts/run-isolated-e2e.mjs -> scripts/run-isolated-release-smoke.mjs', guard: 'enterpriseTaskLab' }],
     artifactTestFiles: KEPT_ARTIFACT_SCRIPT_TESTS,

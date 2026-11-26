@@ -23,7 +23,7 @@
 | 권한 카탈로그·인가 원장·라우트 원장·보안약점 원장 | 정본(사람이 검토한 원장) | `config/governance/`, `config/ui-route-capabilities.json`, `config/security/` | 사람이 PR 로 고친다 |
 | 화면 목록·권한 생성물 | 커밋하는 파생 생성물 | `frontend/src/types/` | 원장을 고친 뒤 `npm run regen` |
 | 앞단 요구사항·백로그 작업공간(`backlog.json`·`rtm.csv`·`WORKSPACE-REPORT.md`) | 기관·프로젝트 외부 작업공간(저장소 비커밋) | checkout 밖 `--workspace <경로>` | `node scripts/export-deliverables-workspace.mjs init\|verify\|export-context --workspace <checkout 밖 경로>` 로 관리하고 `--rtm <workspace/rtm.csv>` 로 산출물 초안에 넘긴다 |
-| 산출물 초안·Atlas HTML | 비규범·비커밋 파생물 | `build/deliverables/<커밋>/`, `build/atlas/` | 필요할 때 다시 실행한다(`export-deliverables.mjs`, `npm run atlas:build`). 손으로 고친 사본은 초안이 아니라 기관 문서다 |
+| 산출물 초안 | 비규범·비커밋 파생물 | `build/deliverables/<커밋>/` | 필요할 때 다시 실행한다(`export-deliverables.mjs`). 손으로 고친 사본은 초안이 아니라 기관 문서다 |
 | 시안(갤러리·토큰 키트·저장소 밖 아티팩트) | 비규범 | `/admin/patterns`, `build/prototype-kit/` | 확인은 승인이 아니다([SOP §7.2](orchestration-protocol.md#72-결정-유형별-확정-수단)) |
 
 ## 3. 산출물 초안 내보내기

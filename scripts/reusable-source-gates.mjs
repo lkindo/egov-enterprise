@@ -1,13 +1,13 @@
 /**
- * 소스 투영의 게이트 단계 — 제거된 거버넌스 게이트의 승인 대조, 투영본에 맞춘 하네스·ZDM 원장·원본 Atlas 조정.
+ * 소스 투영의 게이트 단계 — 제거된 거버넌스 게이트의 승인 대조, 투영본에 맞춘 하네스·ZDM 원장 조정.
  */
 import { closeSync, existsSync, ftruncateSync, openSync, readFileSync, rmSync, writeFileSync, writeSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
 import { stripJavaComments } from './harness-baseline-manifest.mjs';
-import { HISTORICAL_SCHEMA_TEST_DIR, UPSTREAM_ATLAS } from './reusable-harness-census.mjs';
+import { HISTORICAL_SCHEMA_TEST_DIR } from './reusable-harness-census.mjs';
 import { fail, normalize, readTextIfPresent, walk } from './reusable-source-tree.mjs';
 
-export { HISTORICAL_SCHEMA_TEST_DIR, UPSTREAM_ATLAS };
+export { HISTORICAL_SCHEMA_TEST_DIR };
 
 /**
  * 제거된 거버넌스 게이트를 **말하고**, manifest 의 명시적 승인과 exact 대조한다.
@@ -30,8 +30,6 @@ export { HISTORICAL_SCHEMA_TEST_DIR, UPSTREAM_ATLAS };
 const GATE_REMOVAL_RULES = {
   'historical-migration-tests':
     '투영 DB 번들이 원본 V2 체인을 V1 baseline 으로 대체해 역사적 migration 검증이 검사 대상을 잃는다',
-  'upstream-atlas':
-    '원본 Atlas 는 원본 저장소의 운영 사실을 담은 채 로그인 전에 응답되고, 투영본만으로는 다시 만들 수 없어 생성물에서 걷는다',
   'upstream-producer-tools':
     '프로젝트 생성기와 생산자 전용 CI·검증·평가 도구는 생성 프로젝트에 포함하지 않는다. 목록과 사유는 config/governance/producer-removed-assets.json 에 있다',
   'requirements-studio':
@@ -270,39 +268,6 @@ export function pruneHistoricalMigrationTests(output) {
     count: tests.length,
     files: tests.map((path) => normalize(relative(output, path))).sort((a, b) => a.localeCompare(b)),
   };
-}
-
-/*
- * 원본 Governance & Harness Atlas 와 그 생성·검증 도구. Atlas HTML 은 원본의 결정·gap·운영 사실을
- * 담고 프록시가 인증 전에 응답하는 정적 파일이다. 생성기는 원본 공용 메모리와 문서를 읽으므로
- * 생성물 안에서 다시 만들어도 원본 사실이 되살아난다. 그래서 고치지 않고 통째로 걷는다.
- * (상수 UPSTREAM_ATLAS 는 reusable-harness-census.mjs 에서 re-export 한다.)
- */
-
-/**
- * 원본 Atlas 를 걷기 전에 빠진 자산·검사와 package.json 별칭을 찾아 생성기 실패 문장으로 돌려준다(지우지 않는다).
- * `has(path)` 는 그 파일·폴더가 투영본에 있는지 답한다. 생성기와 정밀 점검(plan/deep)이 같이 쓴다.
- */
-export function missingUpstreamAtlasAssets(has) {
-  return [...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates].filter(file => !has(file))
-    .map(file => `Upstream Atlas asset is missing; review the Atlas removal rule: ${file}`);
-}
-export function missingUpstreamAtlasAliases(scripts) {
-  return UPSTREAM_ATLAS.aliases.filter(alias => !Object.hasOwn(scripts ?? {}, alias))
-    .map(alias => `Upstream Atlas alias is missing; review the Atlas removal rule: ${alias}`);
-}
-
-export function pruneUpstreamAtlas(output) {
-  const missingAssets = missingUpstreamAtlasAssets(file => existsSync(join(output, file)));
-  if (missingAssets.length) fail(missingAssets[0]);
-  for (const file of [...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates]) rmSync(join(output, file), { recursive: true });
-  const path = join(output, 'package.json');
-  const pkg = JSON.parse(readFileSync(path, 'utf8'));
-  const missingAliases = missingUpstreamAtlasAliases(pkg.scripts);
-  if (missingAliases.length) fail(missingAliases[0]);
-  for (const alias of UPSTREAM_ATLAS.aliases) delete pkg.scripts[alias];
-  writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`);
-  return { files: [...UPSTREAM_ATLAS.gates].sort((a, b) => a.localeCompare(b)) };
 }
 
 function adaptOwnershipGuardBaseline(output) {

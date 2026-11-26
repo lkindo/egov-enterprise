@@ -11,7 +11,6 @@ import {
   applyPushBaseCheck, baseSourceReader, classifyChangedFiles, githubOutputs, MAIN_REUSABLE_LAYOUTS, PR_REUSABLE_LAYOUT, PROTECTED_COLUMN_CONTENT, pushBaseWasVerified,
   reusableMatrix,
 } from './ci-change-scope.mjs';
-import { buildAtlasCatalog } from './atlas-catalog.mjs';
 import { presetIds } from './composition-profiles.mjs';
 import { vendorCiPlan, vendorEvidenceInputs } from './vendor-evidence-inputs.mjs';
 import { asPreviewVendors } from './project-composer-vendor-evidence.test-helpers.mjs';
@@ -20,15 +19,13 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 // 모든 시작 구성(presets.json 의 선언 순서). '모든 시작 구성' 기대는 이름을 열거하지 않고 이것을 쓴다(11단계 C8).
 const PRESET_IDS = presetIds();
 
-test('documentation and Atlas-only changes run governance without heavy leaves', () => {
+test('documentation-only changes run governance without heavy leaves', () => {
   const result = classifyChangedFiles([
     'docs/03-guides/testing-guide.md',
     '.agent/memory/known-gaps.md',
-    'docs/03-guides/governance-atlas-guide.md',
   ]);
 
   assert.equal(result.docsOnly, true);
-  assert.equal(result.atlas, true);
   assert.equal(result.governance, true);
   assert.equal(result.secretScan, true);
 
@@ -69,8 +66,8 @@ test('agent harness guard, skill adapter generator and hook adapters select only
   assert.equal(hooks.frontend, false);
   assert.equal(hooks.e2e, false);
   assert.equal(hooks.secretScan, true);
-  // 프로세스 분류 보조 모듈은 heavy-run-queue.mjs 가 import 하는 실행 경로라 표에 없다 — 미분류 전수로 남는다.
-  assert.deepEqual(classifyChangedFiles(['scripts/verification-record.mjs']).unknownFiles, ['scripts/verification-record.mjs']);
+  // 파이프·프로세스 분류 보조 모듈은 heavy-run-queue.mjs 가 import 하는 실행 경로라 표에 없다 — 미분류 전수로 남는다.
+  assert.deepEqual(classifyChangedFiles(['scripts/heavy-run-pipes.mjs']).unknownFiles, ['scripts/heavy-run-pipes.mjs']);
 });
 
 test('backend production changes select backend, e2e, and mutation', () => {
@@ -84,54 +81,6 @@ test('backend production changes select backend, e2e, and mutation', () => {
   assert.equal(result.frontend, false);
   assert.equal(result.e2e, true);
   assert.equal(result.mutation, true);
-});
-
-test('Atlas source and generator inputs select Atlas contracts without weakening source scopes', () => {
-  const source = classifyChangedFiles(['frontend/atlas/render.mjs']);
-  assert.equal(source.atlas, true);
-  assert.equal(source.docsOnly, false);
-  assert.equal(source.frontend, true);
-  assert.equal(source.e2e, true);
-  assert.equal(source.sast, true);
-  for (const file of ['scripts/build-atlas.mjs', 'scripts/atlas-catalog.mjs', 'scripts/atlas-generation.test.mjs']) {
-    const result = classifyChangedFiles([file]);
-    assert.equal(result.atlas, true, file);
-    assert.deepEqual(result.unknownFiles, []);
-    assert.equal(result.docsOnly, false, file);
-    assert.equal(result.backend, true, `${file}: source-scanning harnesses must still execute`);
-    assert.equal(result.sast, true, file);
-    assert.equal(result.migration, false, file);
-    assert.equal(result.mutation, false, file);
-    assert.equal(result.mutationMigrationTool, false, file);
-  }
-  assert.equal(classifyChangedFiles(['.githooks/README.md']).atlas, false);
-  for (const { path: catalogSource } of buildAtlasCatalog(repoRoot).sources) {
-    const scoped = classifyChangedFiles([catalogSource]);
-    assert.equal(
-      scoped.atlas || scoped.backend || scoped.frontend,
-      true,
-      `${catalogSource} is read by buildAtlasCatalog and must select atlas, backend, or frontend`,
-    );
-  }
-  for (const catalogInput of [
-    'docs/03-guides/governance-atlas-guide.md',
-    'docs/03-guides/testing-guide.md',
-    'docs/03-guides/__synthetic_new_guide__.md',
-    '.agent/memory/project-context.md',
-    '.agent/memory/decisions.md',
-    '.agent/memory/known-gaps.md',
-    'docs/archived/operational-decisions-history.md',
-    'docs/02-architecture/decisions/ADR-0001-core-app-product-boundary.md',
-    '.agent/knowledge/backend-api-constitution/artifacts/constitution.md',
-    '.github/workflows/ci.yml',
-    'config/governance/gates.json',
-    'migration-tool/src/test/java/com/example/SyntheticMigrationTest.java',
-  ]) {
-    assert.equal(classifyChangedFiles([catalogInput]).atlas, true, `${catalogInput} must select the atlas axis`);
-  }
-  const hook = fs.readFileSync(path.join(repoRoot, '.githooks/pre-push'), 'utf8');
-  assert.ok(hook.includes('--stdin --fields docsOnly,backend,migration,frontend,atlas'), 'pre-push must ask the classifier for the atlas axis');
-  assert.ok(hook.includes('SCOPE_ATLAS=$(scope_field atlas)'), 'SCOPE_ATLAS must come from the one classifier call');
 });
 
 test('backend tests rerun mutation evidence but do not spend browser E2E time', () => {
@@ -902,7 +851,6 @@ test('GitHub outputs are explicit strings for job conditions', () => {
   const outputs = githubOutputs(classifyChangedFiles(['README.md']));
   assert.deepEqual(outputs, {
     docs_only: 'true',
-    atlas: 'false',
     governance: 'true',
     secret_scan: 'true',
     sast: 'false',
@@ -1335,16 +1283,16 @@ test('stdin boolean field mode is safe for local hook scope selection', () => {
 test('pre-push consumes the shared fail-closed classifier before its documentation fast path', () => {
   const hook = fs.readFileSync(path.join(repoRoot, '.githooks', 'pre-push'), 'utf8');
   assert.match(hook, /--no-renames --name-only --diff-filter=ACMRD/);
-  // [2026-11-07] 다섯 필드를 한 번에 묻고, 하나라도 true|false 가 아니면 멈춘다(빈 값은 검사를 건너뛰는 쪽으로 읽힌다).
-  assert.ok(hook.includes('--stdin --fields docsOnly,backend,migration,frontend,atlas'), 'pre-push must classify all scope fields in one call');
+  // 네 필드를 한 번에 묻고, 하나라도 true|false 가 아니면 멈춘다(빈 값은 검사를 건너뛰는 쪽으로 읽힌다).
+  assert.ok(hook.includes('--stdin --fields docsOnly,backend,migration,frontend'), 'pre-push must classify all scope fields in one call');
   for (const [variable, field] of [['SCOPE_DOCS_ONLY', 'docsOnly'], ['SCOPE_BACKEND', 'backend'], ['SCOPE_MIGRATION', 'migration'],
-    ['SCOPE_FRONTEND', 'frontend'], ['SCOPE_ATLAS', 'atlas']]) {
+    ['SCOPE_FRONTEND', 'frontend']]) {
     assert.ok(hook.includes(`${variable}=$(scope_field ${field})`), `${variable} must come from the one classifier call`);
   }
   assert.ok(hook.includes('    true|false) ;;'), 'scope values must be checked');
   assert.ok(hook.includes('*) echo "❌ 변경 범위 분류 결과를 읽지 못했습니다'), 'an unreadable scope value must stop the push');
   assert.ok(
-    hook.indexOf('--stdin --fields docsOnly,backend,migration,frontend,atlas') < hook.indexOf('if [ "$SCOPE_DOCS_ONLY" = "true" ]'),
+    hook.indexOf('--stdin --fields docsOnly,backend,migration,frontend') < hook.indexOf('if [ "$SCOPE_DOCS_ONLY" = "true" ]'),
     'docsOnly must be classified before the fast-pass exit',
   );
   assert.doesNotMatch(hook, /CODE_CHANGES=/);

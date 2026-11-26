@@ -79,12 +79,11 @@ function runOperationalContracts() {
 
 // 생성물·해시 결속의 낡음을 운영 계약(로컬 약 19분, 2026-11-07 실측) 전에 본다 — pre-push 맨 앞과 같은 검사(npm run regen -- --check, 약 20초)이며
 // 새 판정이 아니다(regenerate.mjs). 그 안의 생성 계약 검사(sync-contract)가 프런트 codegen:verify·:zod 와 같은 검증기라
-// runFrontendStatic 은 그것을 다시 돌리지 않는다. 2026-10-23 verify:docs 가 11분 뒤에야 Atlas 신선도 실패를 알렸다.
+// runFrontendStatic 은 그것을 다시 돌리지 않는다.
 function runGeneratedFreshness() {
   run('npm run regen -- --check');
 }
 
-// Governance Atlas 의 렌더·상호작용 계약은 수동 실행이다(npm run atlas:contract, DEC-OPS-420) — 문서 경로가 돌리지 않는다.
 function runDocumentationContracts() {
   runGeneratedFreshness();
   runOperationalContracts();

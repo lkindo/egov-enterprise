@@ -12,13 +12,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     include: ['**/*.test.{ts,tsx}'],
-    // [2026-11-18 DEC-OPS-420] Governance Atlas 의 jsdom 렌더·상호작용 계약은 수동 실행이다(`npm run atlas:contract`). Atlas 는 비규범
-    //   온디맨드 지도이고, 그 카탈로그·결정 색인 분할·렌더 안전성은 늘 도는 운영 계약(scripts/atlas-*.test.mjs)이, 문서 링크는
-    //   docs-link-integrity 가 본다. 이 계약은 게이트 구조가 바뀔 때마다 개수 가정이 깨지는 비용이 신호보다 컸다.
-    exclude: [
-      ...configDefaults.exclude,
-      ...(process.env.ATLAS_CONTRACT === '1' ? [] : ['src/__tests__/cross-stack/governance-atlas-contract.test.ts']),
-    ],
+    exclude: [...configDefaults.exclude],
     testTimeout: 15000,
     // [2026-10-24 DEC-OPS-382 ⑤] CI 에서만 시험 결과 XML 을 남긴다(ci.yml 이 보관한다). reporters 를 적으면 Vitest 가 GitHub Actions 에서
     //   스스로 붙이던 github-actions(실패 주석) 보고가 빠지므로 함께 적는다. CI 밖에서는 적지 않아 Vitest 의 기본 선택을 그대로 둔다.

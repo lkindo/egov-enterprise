@@ -357,10 +357,6 @@ function matchesPrefix(pathname: string, prefix: string): boolean {
 //     csp-policy 계약이 그때 red 로 알린다.
 //   - dev 는 'unsafe-eval' 추가(HMR)·connect-src ws: 만 다르고 nonce 구조는 동일하다 —
 //     dev/prod 정책 구조가 갈라지면 위반을 dev 에서 못 보고 CI 에서 처음 만나게 된다.
-//
-//  ⚠ public/governance_harness_atlas.html 은 예외다. 정적 파일이라 Next 가 nonce 를 심어 줄
-//  수 없고, 자체 inline <script> 블록으로 동작한다. 그 문서에만 Phase 2 정책(elem inline 허용 +
-//  attr 차단)을 유지한다. 예외의 재확산은 csp-policy 계약이 차단한다(정확히 이 한 경로만 허용).
 // ────────────────────────────────────────────────────────────────────────────
 
 /** Edge 런타임 Web Crypto 로 요청당 128bit nonce 를 만든다. */
@@ -433,20 +429,13 @@ function buildAppCsp(nonce: string): string {
   );
 }
 
-/** Atlas 전용 — Phase 2 정책(inline <script> 요소 허용 + inline 핸들러 차단). */
-const ATLAS_CSP =
-  `default-src 'self'; script-src 'self' 'unsafe-inline'; script-src-attr 'none'; ` +
-  `style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; ` +
-  `connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; ` +
-  `frame-ancestors 'none'; report-uri /api/security/csp; report-to csp-endpoint;`;
-
 /**
  * CSP 위반 리포트 수집 지점과 Reporting API 그룹 정의.
  *
- * ⚠ 경로는 위 두 CSP 의 report-uri 와 같아야 한다 — 다르면 브라우저가 서로 다른 두 곳으로
- *   리포트를 보낸다. csp-policy 계약이 세 자리의 일치를 검사한다.
+ * ⚠ 경로는 위 CSP 의 report-uri 와 같아야 한다 — 다르면 브라우저가 다른 경로로
+ *   리포트를 보낸다. csp-policy 계약이 두 자리의 일치를 검사한다.
  *
- * [2026-09-23 ZAP 주간 스캔 분류] 두 CSP 가 선언하는 report-to 그룹 csp-endpoint 의 정의를 여기
+ * [2026-09-23 ZAP 주간 스캔 분류] CSP 가 선언하는 report-to 그룹 csp-endpoint 의 정의를 여기
  *   상수로 두고 문서 응답에 단다. 수집기 route.ts 는 reports+json 형식을 파싱한다.
  * [2026-10-17] next.config.ts 도 같은 값을 리터럴로 모든 경로에 달고 있었다(상수에 묶이지 않아
  *   수집 경로가 바뀌면 그쪽만 낡는다). CSP 가 있는 응답은 모두 이 파일을 지나므로 그 선언을 걷고
@@ -570,15 +559,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
-  // 2-a. Atlas 정적 문서 — nonce 를 심을 수 없는 자체 inline <script> 문서라 Phase 2 정책을 유지한다.
-  if (pathname === '/governance_harness_atlas.html') {
-    const atlasResponse = NextResponse.next();
-    atlasResponse.headers.set('Content-Security-Policy', ATLAS_CSP);
-    applyDocumentSecurityHeaders(atlasResponse);
-    return atlasResponse;
-  }
-
-  // 2-b. Next.js 자체 API Route(/api/auth/* 등)·정적 리소스 — 문서가 아니므로 CSP 불요.
+  // 2. Next.js 자체 API Route(/api/auth/* 등)·정적 리소스 — 문서가 아니므로 CSP 불요.
   if (pathname.startsWith('/api') || pathname.startsWith('/images') || pathname.startsWith('/_next') || pathname === '/favicon.ico') {
     return NextResponse.next();
   }

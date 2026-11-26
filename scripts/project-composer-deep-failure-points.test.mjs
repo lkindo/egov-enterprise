@@ -73,7 +73,7 @@ test('every generator failure point becomes a labelled blocker before Docker sta
   const rules = withExpectations('core', expected => { expected.gateRemovalRules = []; });
   deep = checkApprovals(rules);
   assert.deepEqual(codes(deep), ['RULE_UNACKNOWLEDGED']);
-  assert.deepEqual(deep.blockers[0].files, ['historical-migration-tests', 'upstream-atlas', 'upstream-producer-tools', 'requirements-studio', 'offline-migration-tool']);
+  assert.deepEqual(deep.blockers[0].files, ['historical-migration-tests', 'upstream-producer-tools', 'requirements-studio', 'offline-migration-tool']);
   const historical = deep.ruleRemovals['historical-migration-tests'];
   assert.ok(historical.length > 0, 'the rule selects historical tests');
   const withoutHistorical = files.filter(file => !historical.includes(normalize(file)));
@@ -81,10 +81,7 @@ test('every generator failure point becomes a labelled blocker before Docker sta
   assert.deepEqual(codes(deep), ['RULE_STALE']);
   assert.deepEqual(deep.blockers[0].files, ['historical-migration-tests']);
 
-  // 원본 Atlas·생산자·요구사항 자산이 생성물에 없으면 생성기는 규칙 제거에서 실패한다.
-  deep = compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition: core, files: files.filter(file => normalize(file) !== 'scripts/build-atlas.mjs') });
-  assert.deepEqual(codes(deep), ['RULE_REMOVAL']);
-  assert.match(deep.blockers[0].message, /Upstream Atlas asset is missing; review the Atlas removal rule: scripts\/build-atlas\.mjs/);
+  // 생산자·요구사항 자산이 생성물에 없으면 생성기는 규칙 제거에서 실패한다.
   deep = compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition: core, files: files.filter(file => normalize(file) !== 'scripts/project-composer-server.mjs') });
   assert.deepEqual(codes(deep), ['RULE_REMOVAL']);
   assert.match(deep.blockers[0].message, /생산자 제거 원장.*scripts\/project-composer-server\.mjs/);

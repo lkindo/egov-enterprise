@@ -8,8 +8,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ENV_LOCK, ENV_SWITCH, ENV_TEST_ACTIVE, OWNER_LABELS, busyDaemons, cmdLine, dockerOutcome, entryRoute, exitCodeFor, liveRestoreState,
   orderedWaiters, parseLockEnv, runTreeAlive, shouldAttempt, startDecision } from './heavy-run-queue.mjs';
-import { lockPipeName, parseWaiterPipe, repositoryHash, waiterPipeName, waitingSupervisorPids } from './heavy-run-pipes.mjs';
-import { heavyProcessKinds, waitingExclusions } from './verification-record.mjs';
+import {
+  heavyProcessKinds, listProcesses, lockPipeName, parseWaiterPipe, repositoryHash, waiterPipeName, waitingExclusions,
+  waitingSupervisorPids,
+} from './heavy-run-pipes.mjs';
+import * as heavyRunPipes from './heavy-run-pipes.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -596,7 +599,7 @@ test('Windows: the pre-push header re-runs the hook under a supervisor with the 
     assert.ok(start > 0 && end > start, 'the queue header is in the hook');
     const header = hook.slice(start, end);
     fs.mkdirSync(path.join(fx.dir, 'scripts'));
-    for (const file of ['heavy-run-queue.mjs', 'heavy-run-pipes.mjs', 'verification-record.mjs']) fs.copyFileSync(path.join(HERE, file), path.join(fx.dir, 'scripts', file));
+    for (const file of ['heavy-run-queue.mjs', 'heavy-run-pipes.mjs']) fs.copyFileSync(path.join(HERE, file), path.join(fx.dir, 'scripts', file));
     fs.mkdirSync(path.join(fx.dir, '.githooks'));
     const out = path.join(fx.dir, 'hook.out');
     // 본문은 셸 내장 명령만 쓴다 — PowerShell 에서 띄운 시험(post-push)의 PATH 에는 Git 의 usr/bin(cat 등)이 없다. 실제 훅은 git 이 PATH 를 맞춘다.
@@ -619,4 +622,87 @@ test('Windows: the pre-push header re-runs the hook under a supervisor with the 
     assert.equal(forged.status, 1);
     assert.equal(fs.existsSync(out), false);
   } finally { fx.cleanup(); }
+});
+
+test('the heavy-run scan skips the caller ancestry, survives pid cycles and keeps only kind names', () => {
+  const processes = [
+    { pid: 1, ppid: 0, name: 'init', command: 'init' },
+    { pid: 10, ppid: 1, name: 'node.exe', command: '"C:\\nodejs\\node.exe" scripts/verify.mjs --scope fast' },
+    { pid: 11, ppid: 10, name: 'node.exe', command: 'node scripts/heavy-run-queue.mjs run --kind verify -- node scripts/verify.mjs --scope fast' },
+    { pid: 20, ppid: 1, name: 'node.exe', command: 'node private-root/node_modules/vitest/vitest.mjs run' },
+    { pid: 21, ppid: 1, name: 'java.exe', command: "java -cp private.jar worker.org.gradle.process.internal.worker.GradleWorkerMain 'Gradle Test Executor 3'" },
+    { pid: 22, ppid: 1, name: 'node', command: 'node --test scripts/private.test.mjs' },
+    { pid: 23, ppid: 1, name: 'node.exe', command: 'node scripts/regenerate.mjs --check' },
+    { pid: 24, ppid: 1, name: 'node.exe', command: null },
+  ];
+  assert.deepEqual(heavyProcessKinds(processes, 11), ['gradle-test-worker', 'node-test', 'vitest']);
+  const foreign = [
+    { pid: 30, ppid: 1, name: 'node.exe', command: 'node D:\\wt-other\\scripts\\verify.mjs --scope full' },
+    { pid: 31, ppid: 1, name: 'sh.exe', command: 'sh .githooks/pre-push origin private-remote' },
+    { pid: 32, ppid: 1, name: 'node.exe', command: '"C:\\nodejs\\node.exe" "D:\\wt-x\\node_modules\\@playwright\\test\\cli.js" test --project=full-suite' },
+    { pid: 33, ppid: 1, name: 'node', command: 'node scripts/verify-reusable-base.mjs --profile core' },
+  ];
+  assert.deepEqual(heavyProcessKinds([...processes, ...foreign], 11),
+    ['gradle-test-worker', 'node-test', 'playwright', 'pre-push', 'reusable-base', 'verify', 'vitest']);
+  const lookalikes = [
+    { pid: 11, ppid: 1, name: 'node.exe', command: 'node scripts/verify.mjs --scope fast' },
+    { pid: 50, ppid: 1, name: 'powershell.exe', command: "powershell -Command while (Get-CimInstance Win32_Process | ? { $_.CommandLine -match 'node --test .scripts|vitest|GradleWorkerMain|playwright test ' }) { sleep 5 }" },
+    { pid: 51, ppid: 1, name: 'rg.exe', command: 'rg -n vitest frontend/src' },
+    { pid: 52, ppid: 1, name: 'node.exe', command: 'node D:\\x\\node_modules\\@playwright\\test\\cli.js show-report' },
+    { pid: 53, ppid: 1, name: 'node.exe', command: 'node D:\\x\\node_modules\\@playwright\\test\\cli.js install chromium' },
+    { pid: 54, ppid: 1, name: 'java.exe', command: "java worker.org.gradle.process.internal.worker.GradleWorkerMain 'Gradle Worker Daemon 2'" },
+    { pid: 55, ppid: 1, name: 'bash.exe', command: 'bash -c "until ! pgrep -f .githooks/pre-push; do sleep 5; done"' },
+    { pid: 56, ppid: 1, name: 'node.exe', command: 'node scripts/x.mjs --test-reporter=tap' },
+    { pid: 57, ppid: 1, command: 'node --test scripts/unnamed.test.mjs' },
+  ];
+  assert.deepEqual(heavyProcessKinds(lookalikes, 11), []);
+  assert.equal(heavyProcessKinds(lookalikes.slice(1), 11), null, 'the caller must find its own entry');
+  assert.equal(heavyProcessKinds([{ ...lookalikes[0], command: null }, ...lookalikes.slice(1)], 11), null);
+  const elevated = { pid: 60, ppid: 1, name: 'java.exe', command: null };
+  assert.equal(heavyProcessKinds([...lookalikes, elevated], 11), null);
+  assert.deepEqual(heavyProcessKinds([...processes, elevated], 11), ['gradle-test-worker', 'node-test', 'vitest']);
+  assert.deepEqual(heavyProcessKinds([...lookalikes, { pid: 61, ppid: 1, name: 'svchost.exe', command: null }], 11), []);
+  const cycle = [{ pid: 40, ppid: 41, name: 'node', command: 'node verify-helper' },
+    { pid: 41, ppid: 40, name: 'node', command: 'node node_modules/vitest/vitest.mjs run' }];
+  assert.deepEqual(heavyProcessKinds(cycle, 40), []);
+});
+
+test('the real process listing shows this process with its executable and command line', () => {
+  const self = listProcesses({ timeout: 120_000 }).find(entry => entry.pid === process.pid);
+  assert.ok(self, 'the listing must contain the caller');
+  assert.match(String(self.name), /^node(?:\.exe)?$/i);
+  assert.equal(typeof self.command, 'string');
+  assert.ok(Number.isInteger(self.ppid));
+});
+
+function pollingRetirementViolations({ hookSource, verifySource, pipesSource, verificationRecordExists }) {
+  const violations = [];
+  if (verificationRecordExists) violations.push('scripts/verification-record.mjs must remain removed');
+  if (/verification-record\.mjs|build\/verification-runs/u.test(hookSource)) {
+    violations.push('pre-push must not call verification-record.mjs or reference build/verification-runs');
+  }
+  if (/verification-record\.mjs|EGOV_VERIFICATION_RUN_ID|build\/verification-runs/u.test(verifySource)) {
+    violations.push('verify.mjs must not import verification-record.mjs or emit EGOV_VERIFICATION_RUN_ID');
+  }
+  if (/createRun|noteTimeoutRerun|summarizeRuns|verification-runs|\.jsonl/u.test(pipesSource)) {
+    violations.push('heavy-run-pipes.mjs must not retain JSONL recording functions or paths');
+  }
+  return violations;
+}
+
+test('DEC-OPS-436/437 retires verification-record.mjs and JSONL/CIM polling while preserving queue helpers (including H5 red proofs)', () => {
+  for (const name of ['heavyProcessKinds', 'listProcesses', 'listProcessesAsync', 'waitingExclusions', 'waitingQueuePids']) {
+    assert.equal(typeof heavyRunPipes[name], 'function', `${name} must remain exported in heavy-run-pipes`);
+  }
+  const current = {
+    hookSource: fs.readFileSync(path.join(ROOT, '.githooks', 'pre-push'), 'utf8'),
+    verifySource: fs.readFileSync(path.join(ROOT, 'scripts', 'verify.mjs'), 'utf8'),
+    pipesSource: fs.readFileSync(path.join(HERE, 'heavy-run-pipes.mjs'), 'utf8'),
+    verificationRecordExists: fs.existsSync(path.join(HERE, 'verification-record.mjs')),
+  };
+  assert.deepEqual(pollingRetirementViolations(current), []);
+  assert.equal(pollingRetirementViolations({ ...current, verificationRecordExists: true }).length, 1);
+  assert.equal(pollingRetirementViolations({ ...current, hookSource: `${current.hookSource}\nnode scripts/verification-record.mjs begin\n` }).length, 1);
+  assert.equal(pollingRetirementViolations({ ...current, verifySource: `${current.verifySource}\nimport { createRun } from './verification-record.mjs';\n` }).length, 1);
+  assert.equal(pollingRetirementViolations({ ...current, pipesSource: `${current.pipesSource}\nbuild/verification-runs\n` }).length, 1);
 });

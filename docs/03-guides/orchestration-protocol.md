@@ -92,7 +92,7 @@
 ### 6.2 검증은 한 커밋에 한 번
 - 작업 중에는 영향 테스트(`node scripts/impact-tests.mjs --diff origin/main`)와 바꾼 계약만 돌리고, `pre-push`가 곧 실행할 묶음 전체를 같은 커밋에서 중복 실행하지 않는다. `verify:docs`는 문서 변경의 넓은 경로이지 작업 중 최소 검사가 아니다.
 - 단, 위임 산출물 재검증(§2.3)·게이트 red 증명(H5)·신규/수정 계약 단독 확인과 `pre-push`가 안 보는 검사(컨트롤러 변경 시 `api-docs.json`, DDL 변경 시 `schemaValidationTest`, RSC 변경 시 `pnpm -C frontend build`, 날짜 경계 시 `TZ=UTC`)는 생략하지 않는다.
-- `[DEC-OPS-434]` 작업 브랜치(`refs/heads/*`, `main`/`master` 제외) push 시 `pre-push`는 로컬 운영 계약을 생략하고 PR Required CI(`secret-scan` — 일반 PR `:core`, 생성기/`frontend/src`/`business-app/src`/스킬/`docs/README.md`/`atlas-*`/정책/미지/`main` 전체)로 일원화한다(`GAP-WIN-001` Windows 분기 스크립트/훅 변경 시 수동 검증).
+- `[DEC-OPS-434]` 작업 브랜치(`refs/heads/*`, `main`/`master` 제외) push 시 `pre-push`는 로컬 운영 계약을 생략하고 PR Required CI(`secret-scan` — 일반 PR `:core`, 생성기/`frontend/src`/`business-app/src`/스킬/`docs/README.md`/정책/미지/`main` 전체)로 일원화한다(`GAP-WIN-001` Windows 분기 스크립트/훅 변경 시 수동 검증).
 - **훅 비우회**: `--no-verify`·`SKIP_HARNESS=1` 등 훅 우회는 사용자가 명시적으로 지시한 경우 외에는 금지한다. CI red 시 실패 잡 로그로 원인을 판정한다(인프라 장애만 재실행, 예약 워크플로 2회 연속 실패 시 `known-gaps.md` 추적).
 
 ### 6.3 무거운 검증은 하나씩

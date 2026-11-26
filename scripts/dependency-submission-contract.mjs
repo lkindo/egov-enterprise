@@ -56,7 +56,7 @@ function integerScalar(raw) {
 
 function validateSnapshotWait(errors, readinessStep, readinessContent) {
   // [FE-CONTRACT-06] 상한은 검증기 기본값과 결속한다. 여기에 리터럴 "600" 을 따로 적으면 기본값을 바꿀 때
-  // 두 곳을 함께 고쳐야 하고, 둘이 어긋나도 이 계약은 통과한다. 기본값은 Atlas 수치의 원천이기도 하다.
+  // 두 곳을 함께 고쳐야 하고, 둘이 어긋나도 이 계약은 통과한다.
   const defaults = [...readinessContent.matchAll(/env\.SNAPSHOT_WAIT_SECONDS\s*\?\?\s*['"](\d+)['"]/g)];
   if (defaults.length !== 1) {
     errors.push('snapshot readiness verifier must declare exactly one SNAPSHOT_WAIT_SECONDS default');

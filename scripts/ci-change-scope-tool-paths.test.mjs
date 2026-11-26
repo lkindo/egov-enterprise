@@ -22,7 +22,7 @@ import { partitionOperationalContracts } from './run-operational-contracts.mjs';
  *  - Java 시험(test·testFixtures): 업무 모듈은 backend·mutation(PIT 가 nuri.business.*·nuri.foundation.* 시험을 돈다),
  *    api-server 는 backend, schema-validation 태그는 schema, migration-tool 은 migration·mutationMigrationTool.
  *  - Java 제품 소스: 그 파일이 바뀌면 분류기가 고르는 축(제품 코드가 생성기 파일을 읽으면 그 축이 그 코드를 돌린다).
- *  - 프런트 vitest(*.test.ts·tsx): cross-stack 은 atlas(secret-scan 이 atlas·backend 일 때 돈다), 그 밖은 frontend.
+ *  - 프런트 vitest(*.test.ts·tsx): cross-stack 은 backend(secret-scan 이 backend 일 때 돈다), 그 밖은 frontend.
  *    프런트 제품 소스는 frontend·e2e, frontend/e2e 의 Playwright 소스는 e2e.
  *  - 조건부 CI 잡·단계가 node 로 실행하는 저장소 파일(npm·pnpm run 은 package.json 의 명령을 한 단계 펼친다): 그 조건의 축.
  *    늘 도는 잡의 무조건 단계(운영 계약 등)는 축이 필요 없다.
@@ -40,12 +40,12 @@ import { partitionOperationalContracts } from './run-operational-contracts.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VENDOR_AXIS = 'reusableVendor';
-const AXES = ['atlas', 'backend', 'e2e', 'frontend', 'migration', 'mutation', 'mutationMigrationTool', VENDOR_AXIS, 'schema'];
+const AXES = ['backend', 'e2e', 'frontend', 'migration', 'mutation', 'mutationMigrationTool', VENDOR_AXIS, 'schema'];
 const PIT_AXES = ['mutation', 'mutationMigrationTool'];
 /** 표가 항목마다 선언하는 축. 벤더 축은 파일 단위 입력 목록이 고르므로 아래 벤더 계약이 따로 본다. */
 const TABLE_AXES = AXES.filter(axis => axis !== VENDOR_AXIS);
 const OUTPUT_AXIS = {
-  atlas: 'atlas', backend: 'backend', e2e: 'e2e', frontend: 'frontend', migration: 'migration', mutation: 'mutation',
+  backend: 'backend', e2e: 'e2e', frontend: 'frontend', migration: 'migration', mutation: 'mutation',
   'mutation-migration-tool': 'mutationMigrationTool', 'reusable-vendor': VENDOR_AXIS, schema: 'schema',
 };
 const JS_SOURCE = /\.(?:mjs|cjs|js|ts|tsx|mts|cts)$/;
@@ -221,7 +221,7 @@ function toolPathEvidence({ files, read, table = GENERATOR_TOOL_PATHS }) {
       addReader(file, read(file).includes('@Tag("schema-validation")') ? ['schema'] : ['backend']);
     } else if (/^migration-tool\/src\/(?:test|testFixtures)\/.*\.java$/.test(file)) addReader(file, ['migration', 'mutationMigrationTool']);
     else if (/^(?:foundation|business-core|business-app|api-server|migration-tool)\/src\/main\/.*\.java$/.test(file)) addReader(file, axesOfChange(file));
-    else if (/^frontend\/.*\.test\.tsx?$/.test(file)) addReader(file, file.startsWith('frontend/src/__tests__/cross-stack/') ? ['atlas'] : ['frontend']);
+    else if (/^frontend\/.*\.test\.tsx?$/.test(file)) addReader(file, file.startsWith('frontend/src/__tests__/cross-stack/') ? ['backend'] : ['frontend']);
     else if (/^frontend\/src\/.*\.(?:ts|tsx|mts|mjs|js)$/.test(file)) addReader(file, ['frontend', 'e2e']);
     else if (/^frontend\/e2e\/.*\.(?:ts|tsx|mts|mjs|js)$/.test(file)) addReader(file, ['e2e']);
   }
@@ -471,7 +471,7 @@ const PR_VERIFIED_PRESETS = PRESET_IDS.filter(id => PR_REUSABLE_LAYOUT[id] !== n
 test('a synthetic PR touching only generator-tool paths skips backend, migration and PIT where no test reads them', () => {
   const result = classifyChangedFiles(['tools/project-composer/public/app.js', 'tools/project-composer/ui.test.mjs'], { event: 'pull_request' });
   assert.deepEqual(result.unknownFiles, []);
-  for (const field of ['backend', 'schema', ...HEAVY_UNRELATED, 'docsOnly', 'atlas']) assert.equal(result[field], false, field);
+  for (const field of ['backend', 'schema', ...HEAVY_UNRELATED, 'docsOnly']) assert.equal(result[field], false, field);
   for (const field of ['e2e', 'reusable', 'reusableCustom', 'sast', 'governance', 'secretScan']) assert.equal(result[field], true, field);
   assert.deepEqual(result.reusableProfiles, PRESET_IDS);
   assert.deepEqual(result.reusableMatrix.include.map(entry => entry.profile), PR_VERIFIED_PRESETS,
@@ -484,7 +484,7 @@ test('workspace UI and server changes keep contracts, SAST and reuse checks with
     ['tools/migration-workspace/ai.mjs']]) {
     const result = classifyChangedFiles(files, { event: 'pull_request' });
     assert.deepEqual(result.unknownFiles, [], files.join(','));
-    for (const field of ['backend', 'schema', 'e2e', ...HEAVY_UNRELATED, 'docsOnly', 'atlas']) assert.equal(result[field], false, `${files}: ${field}`);
+    for (const field of ['backend', 'schema', 'e2e', ...HEAVY_UNRELATED, 'docsOnly']) assert.equal(result[field], false, `${files}: ${field}`);
     for (const field of ['reusable', 'sast', 'secretScan']) assert.equal(result[field], true, `${files}: ${field}`);
     assert.deepEqual(result.reusableProfiles, PRESET_IDS);
   }
@@ -504,7 +504,7 @@ test('requirements workspace selects its Node contracts and SAST without unrelat
     const result = classifyChangedFiles([file], { event: 'pull_request' });
     assert.deepEqual(result.unknownFiles, [], file);
     assert.deepEqual(generatorToolEntry(file), { path: 'tools/requirements-workspace/', axes: [] });
-    for (const axis of ['backend', 'schema', 'e2e', ...HEAVY_UNRELATED, 'docsOnly', 'atlas']) assert.equal(result[axis], false, `${file}: ${axis}`);
+    for (const axis of ['backend', 'schema', 'e2e', ...HEAVY_UNRELATED, 'docsOnly']) assert.equal(result[axis], false, `${file}: ${axis}`);
     for (const axis of ['governance', 'secretScan', 'sast', 'reusable', 'reusableCustom']) assert.equal(result[axis], true, `${file}: ${axis}`);
   }
   // A prefix lookalike remains unknown and therefore cannot use this narrow selection.
@@ -584,9 +584,8 @@ test('generator-tool paths do not open a fast path around unknown, policy or cla
   }
 });
 
-test('Atlas and operation-census tooling retains its audited consumers without unrelated product lanes', () => {
-  for (const file of ['scripts/atlas-catalog.mjs', 'scripts/atlas-catalog.test.mjs',
-    'scripts/build-atlas.mjs', 'config/governance/operation-consumer-census.json']) {
+test('operation-census tooling retains its audited consumers without unrelated product lanes', () => {
+  for (const file of ['config/governance/operation-consumer-census.json']) {
     const result = classifyChangedFiles([file]);
     const entry = generatorToolEntry(file);
     assert.ok(entry, file);
@@ -595,12 +594,11 @@ test('Atlas and operation-census tooling retains its audited consumers without u
     for (const axis of ['backend', 'schema', 'e2e', ...HEAVY_UNRELATED]) {
       assert.equal(result[axis], entry.axes.includes(axis), `${file}: ${axis}`);
     }
-    assert.equal(result.atlas, true, file);
     assert.equal(result.governance, true, file);
     assert.equal(result.sast, true, file);
     assert.equal(result.reusableCustom, true, file);
     const unknown = classifyChangedFiles([file, 'scripts/new-unmapped-tool.mjs'], { vendorPlan: VENDOR_PLAN });
-    for (const axis of AXES.filter(axis => !['atlas', ...PIT_AXES].includes(axis))) assert.equal(unknown[axis], true, `${file}: unknown input restores ${axis}`);
+    for (const axis of AXES.filter(axis => !PIT_AXES.includes(axis))) assert.equal(unknown[axis], true, `${file}: unknown input restores ${axis}`);
     // [ADR-0061 결정 1] PIT 는 PIT 가 읽는 미지 경로만 고른다 — 아래 PIT 입력 census 가 그 경계를 지킨다.
     assert.deepEqual(PIT_AXES.map(axis => unknown[axis]), [false, false], `${file}: an unknown script PIT does not read`);
   }
@@ -906,8 +904,6 @@ test('every composer-group operational contract and its transitive local imports
   assert.deepEqual(composerTriggerMisses([...visited].sort()), []);
 
   const composerToolFiles = repositoryFiles.filter((file) => [
-    'scripts/atlas-',
-    'scripts/build-atlas.mjs',
     'config/modules/',
     'config/project-composer-menus.json',
     'scripts/composer-modules',
@@ -927,8 +923,8 @@ test('every composer-group operational contract and its transitive local imports
   );
   // 또한 기존 composer test 가 읽는 파일에서 트리거를 뺀 가상 분류기도 즉시 붉다.
   const narrowed = composerTriggerMisses(
-    ['scripts/build-atlas.mjs', 'frontend/scripts/ui-quality-baseline-core.mjs'],
+    ['scripts/reusable-source-gates.mjs', 'frontend/scripts/ui-quality-baseline-core.mjs'],
     () => ({ composerContracts: false }),
   );
-  assert.deepEqual(narrowed, ['scripts/build-atlas.mjs', 'frontend/scripts/ui-quality-baseline-core.mjs']);
+  assert.deepEqual(narrowed, ['scripts/reusable-source-gates.mjs', 'frontend/scripts/ui-quality-baseline-core.mjs']);
 });

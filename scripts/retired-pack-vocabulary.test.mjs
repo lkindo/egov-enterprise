@@ -67,7 +67,7 @@ export const RETIRED_PACK_VOCABULARY = Object.freeze([
     paths: [
       'scripts/ui-route-capabilities-contract.mjs', 'scripts/frontend-reachability-census.mjs', 'scripts/reusable-review-scopes.mjs',
       'scripts/reusable-governance-projection.mjs', 'scripts/generate-permissions.mjs', 'scripts/pack-tagged-registry.mjs',
-      'scripts/reusable-source-harness.mjs', 'scripts/ci-change-scope.mjs', 'scripts/adoption-review.mjs', 'scripts/atlas-catalog.mjs',
+      'scripts/reusable-source-harness.mjs', 'scripts/ci-change-scope.mjs', 'scripts/adoption-review.mjs',
       'scripts/domain-deletion-plan.mjs', 'scripts/reusable-source-frontend.mjs', 'scripts/project-composer-recipe.mjs',
       'scripts/reusable-source-tree.mjs', 'scripts/reusable-db-postgres.mjs', 'scripts/generate-reusable-base-source.mjs',
       'scripts/reusable-governance-integrity.mjs', 'scripts/reusable-base-census.mjs', 'scripts/project-composer-catalog.mjs',

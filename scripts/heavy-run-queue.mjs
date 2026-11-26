@@ -5,7 +5,7 @@
  * - 잠금은 Windows 명명된 파이프 `\\.\pipe\egov-heavy-run-<h>` 이고, 그것을 listen 한 감독(이 스크립트의 `run`)이 보유자다.
  *   보유자가 살아 있는 동안(멈춰 있어도) 아무도 얻지 못하고, 죽으면 운영체제가 이름을 푼다 — 시간·PID 로 회수하지 않는다.
  * - 기다리는 감독은 대기 파이프를 연다. 순서는 이름(시작 시각·PID)으로 정하는 공정성 힌트이고 배타성은 잠금 파이프가 맡는다.
- * - 잠금을 얻으면 자식을 띄우기 전에 무거운 프로세스(실행 기록과 같은 분류)·소유 라벨이 붙은 실행 중 컨테이너·앞 실행의 표식을
+ * - 잠금을 얻으면 자식을 띄우기 전에 무거운 프로세스·소유 라벨이 붙은 실행 중 컨테이너·앞 실행의 표식을
  *   본다. 보이면 기다리고, 알 수 없으면(조회 실패·감독이 강제 종료됐거나 호출자가 사라진 앞 실행·손상된 표식) 자동으로 시작하지
  *   않는다 — 사람이 `confirm-idle --run <runId>` 로 확인한다. 강제 종료된 실행이 만들던 컨테이너도 그 표식이 덮는다.
  * - 안쪽 실행은 EGOV_HEAVY_RUN_LOCK 의 토큰을 보유자에게 확인한 뒤에만 같은 실행으로 친다. 같은 저장소 토큰의 확인이 실패하면
@@ -23,8 +23,10 @@ import { randomBytes } from 'node:crypto';
 import { execFile, execFileSync, spawn, spawnSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 import { fileURLToPath } from 'node:url';
-import { listQueuePipeNamesSync, lockPipeName, parseWaiterPipe, PIPE_PREFIX, PIPE_ROOT, pipePath, repositoryHash, waiterPipeName } from './heavy-run-pipes.mjs';
-import { heavyProcessKinds, listProcessesAsync, waitingQueuePids } from './verification-record.mjs';
+import {
+  heavyProcessKinds, listProcessesAsync, listQueuePipeNamesSync, lockPipeName, parseWaiterPipe, PIPE_PREFIX, PIPE_ROOT, pipePath,
+  repositoryHash, waiterPipeName, waitingQueuePids,
+} from './heavy-run-pipes.mjs';
 
 export const QUEUE_SCRIPT = fileURLToPath(import.meta.url);
 export const ENV_LOCK = 'EGOV_HEAVY_RUN_LOCK';
@@ -313,7 +315,7 @@ export async function classify({ env = process.env, platform = process.platform,
   const hash = commonDir ? repositoryHash(commonDir) : null;
   const decision = early.route === 'direct' ? early : entryRoute({ platform, env, hash });
   if (decision.route === 'direct') {
-    if (decision.reason === 'off') say(`${ENV_SWITCH}=off — 대기열 없이 실행한다(실행 기록의 겹침 판정은 그대로다).`);
+    if (decision.reason === 'off') say(`${ENV_SWITCH}=off — 대기열 없이 실행한다(외부 무거운 실행 감지는 그대로다).`);
     return { state: 'direct', reason: decision.reason, hash, commonDir };
   }
   if (decision.route === 'queue') return { state: 'queue', reason: decision.reason, hash, commonDir };
@@ -762,7 +764,7 @@ function spawnChild(command, args, env, onSpawn = () => {}) {
 export function ensureQueued(kind, { script = process.argv[1], args = process.argv.slice(2), env = process.env } = {}) {
   const route = entryRoute({ platform: process.platform, env, hash: 'pending' });
   if (route.route === 'direct') {
-    if (route.reason === 'off') say(`${ENV_SWITCH}=off — 대기열 없이 실행한다(실행 기록의 겹침 판정은 그대로다).`);
+    if (route.reason === 'off') say(`${ENV_SWITCH}=off — 대기열 없이 실행한다(외부 무거운 실행 감지는 그대로다).`);
     return 'direct';
   }
   const classified = spawnSync(process.execPath, [QUEUE_SCRIPT, 'classify'], { encoding: 'utf8', windowsHide: true, env, stdio: ['ignore', 'pipe', 'inherit'] });

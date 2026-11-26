@@ -7,7 +7,6 @@ import { fileURLToPath } from 'node:url';
 import { documentationLinks, maskExamples, ownedMarkdown, validateDocumentationLinks } from './docs-link-integrity.mjs';
 import { VENDOR_SCHEMA_ALIAS, vendorReadme } from './project-composer-vendor-project.mjs';
 import { VENDOR_ADAPTERS, loadVendorLedger } from './project-composer-vendors.mjs';
-import { UPSTREAM_ATLAS } from './reusable-harness-census.mjs';
 import {
   UPSTREAM_ONLY_END, UPSTREAM_ONLY_START, dropDanglingIndexRows, dropUpstreamOnlyBlocks, expectedGeneratedAliases, generatedReadmeIntro,
   insertGeneratedReadmeIntro, nonInlineLinks, ownedDocFiles, projectGeneratedDocs, projectReadmeLayout, readmeMentionErrors, rewriteDanglingLinks,
@@ -249,13 +248,6 @@ test('origin documents use inline links only, so every broken link in a generate
   ]);
 });
 
-test('the upstream Atlas guide leaves with the Atlas tools, and the README mentions them only inside an upstream-only block', () => {
-  assert.ok(UPSTREAM_ATLAS.assets.includes('docs/03-guides/governance-atlas-guide.md'));
-  const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
-  assert.ok(readme.includes('npm run atlas:build'));
-  assert.ok(!dropUpstreamOnlyBlocks(readme).text.includes('atlas:'));
-});
-
 test('upstream-only blocks leave the README whole, and a malformed marker stops the projection', () => {
   const source = ['# 제목', '', '남는 문단', '', UPSTREAM_ONLY_START, '원본 전용 문단', '', '```bash', 'npm run base:verify', '```',
     UPSTREAM_ONLY_END, '', '다음 문단', ''].join('\r\n');
@@ -353,11 +345,11 @@ test('the origin README, projected as a generated project sees it, advertises no
   const scripts = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).scripts;
   const subjects = upstreamOnlySubjects(ROOT, scripts);
   const vendorSubjects = upstreamOnlySubjects(ROOT, scripts, { vendor: true });
-  // 모집단: 상시 제거 원장 셋의 별칭·자산·시험, Atlas, 원장 없이 규칙으로 걷는 별칭(verify:e2e 는 규칙에만 있다). 벤더는 원장 하나가 더 있다.
+  // 모집단: 상시 제거 원장 셋의 별칭·자산·시험, 원장 없이 규칙으로 걷는 별칭(verify:e2e 는 규칙에만 있다). 벤더는 원장 하나가 더 있다.
   for (const alias of ['base:verify', 'project:ui', 'migration:export', 'verify:migration', 'verify:e2e', 'verify:ops', 'review:migration',
-    'requirements:ui', 'atlas:build']) assert.ok(subjects.aliases.includes(alias), alias);
+    'requirements:ui']) assert.ok(subjects.aliases.includes(alias), alias);
   assert.ok(subjects.aliases.every(alias => !alias.startsWith('//')));
-  for (const asset of ['migration-tool', 'tools/requirements-workspace', 'frontend/atlas', 'scripts/atlas-catalog.test.mjs',
+  for (const asset of ['migration-tool', 'tools/requirements-workspace',
     'docs/02-architecture/legacy-migration-tool-design.md']) assert.ok(subjects.assets.includes(asset), asset);
   for (const alias of ['ui-quality:baseline:build', ...subjects.aliases]) assert.ok(vendorSubjects.aliases.includes(alias), alias);
   assert.ok(vendorSubjects.assets.includes('scripts/restore-drill.mjs') && !subjects.assets.includes('scripts/restore-drill.mjs'));
@@ -389,7 +381,7 @@ test('the origin README, projected as a generated project sees it, advertises no
   // 실행 안내는 남고, 원본 저장소만의 절·버전 체인 설명과 걷힌 문서를 소개하는 표의 행은 빠진다.
   for (const kept of ['make bootstrap', 'npm run dev', './gradlew :api-server:bootRun', '## 📚 문서 (Documentation)', '## 📄 라이선스 (License)',
     'R__seed_framework', 'dev / e2e 프로필']) assert.ok(projected.includes(kept), kept);
-  for (const gone of ['Atlas', '검증 진입점', '기여 가이드', '레거시 이관 도구 설계', '재사용 Base 생성 가이드', 'V2_0', 'V2_2']) {
+  for (const gone of ['검증 진입점', '기여 가이드', '레거시 이관 도구 설계', '재사용 Base 생성 가이드', 'V2_0', 'V2_2']) {
     assert.ok(readme.includes(gone) && !projected.includes(gone), gone);
   }
   // 단일모듈에는 Gradle 하위 프로젝트가 없다: 복사해 쓰는 실행 명령이 그 배치의 것이어야 한다.

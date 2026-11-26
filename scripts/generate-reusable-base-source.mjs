@@ -25,7 +25,7 @@ import { assertCompositionDatabaseLock, composerProfile, assertComposerSourceSur
 import { pageSurvivalExpectation } from './reusable-page-survival.mjs';
 import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
 import { applyFrontendProjection, createFrontendProjector, pruneFrontend } from './reusable-source-frontend.mjs';
-import { adaptGeneratedHarness, assertJavaCascadeAcknowledged, assertRemovedGatesAcknowledged, pruneHistoricalMigrationTests, pruneUpstreamAtlas,
+import { adaptGeneratedHarness, assertJavaCascadeAcknowledged, assertRemovedGatesAcknowledged, pruneHistoricalMigrationTests,
   pruneZeroDowntimeWaivers } from './reusable-source-gates.mjs';
 import { writeHarnessBaseline } from './reusable-source-harness.mjs';
 import { VENDOR_ASSET_RULE, pruneVendorPostgresAssets } from './reusable-vendor-assets.mjs';
@@ -265,7 +265,6 @@ async function main() {
   // ⚠ 규칙 기반 제거는 **승인 검사보다 먼저** 해야 한다 — 뒤에 두면 census 가 "0건" 이라고 말한 뒤
   //   게이트 42개가 사라진다(2026-09-12 실측으로 드러난 이 census 자신의 구멍).
   const removedHistoricalMigrationTests = pruneHistoricalMigrationTests(output);
-  const removedUpstreamAtlas = pruneUpstreamAtlas(output);
   const removedProducerTools = pruneProducerTools(output);
   const removedRequirementsStudio = pruneRequirementsStudio(output);
   const removedMigrationTools = pruneMigrationTools(output);
@@ -273,7 +272,6 @@ async function main() {
   const removedVendorAssets = vendorInput ? pruneVendorPostgresAssets(output) : null;
   const removedGates = assertRemovedGatesAcknowledged(args.profile, profile, java, frontend, {
     'historical-migration-tests': removedHistoricalMigrationTests.files,
-    'upstream-atlas': removedUpstreamAtlas.files,
     [PRODUCER_ASSET_RULE]: removedProducerTools.files,
     [REQUIREMENTS_ASSET_RULE]: removedRequirementsStudio.files,
     [MIGRATION_ASSET_RULE]: removedMigrationTools.files,

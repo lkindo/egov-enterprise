@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { projectionRemovedFiles } from '@/test-utils/projection';
 
 const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -13,9 +12,9 @@ const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
  * headers() 로는 만들 수 없고, 거기에 CSP 가 되살아나면 미들웨어 정책과 이중 소스가 되어
  * 어느 쪽이 이기는지가 배포 형상에 좌우된다. 이 계약은 다섯 방향을 고정한다:
  *   ① 앱 정책이 'self'+nonce 를 유지하고 script-src 에 'unsafe-inline'·'strict-dynamic' 이 없다
- *   ② Phase 2(script-src-attr 'none')가 앱·Atlas 양쪽 정책에서 유지된다
+ *   ② Phase 2(script-src-attr 'none')가 유지되고 퇴역한 Atlas 예외 정책이 재유입되지 않는다
  *   ③ next.config.ts 에 CSP 가 재유입되지 않는다 (이중 소스 차단)
- *   ④ public/ 정적 HTML 에 inline 핸들러가 재유입되지 않는다
+ *   ④ public/ 정적 HTML 에 inline 핸들러·정적 HTML 파일이 재유입되지 않는다
  *   ⑤ 정적 프리렌더가 되살아나지 않는다 (cacheComponents off + 루트 force-dynamic)
  *   ⑥ Next 밖 inline script(next-themes)로의 nonce 전파 배선이 유지된다 (x-nonce → prop)
  */
@@ -35,14 +34,17 @@ describe('CSP nonce 계약', () => {
    * `:` 가 아닐 때만 주석으로 본다 — 그래서 주석에 URL 을 쓰면 본문에 남으니, 주석에는
    * 호스트를 스킴 없이 적는다.
    */
+  function stripComments(source: string): string {
+    return source
+      .replace(/(^|[^:])\/\/[^\n]*/gm, '$1')
+      .replace(/\/\*[\s\S]*?\*\//g, '');
+  }
+
   function extractFunctionBody(name: string): string {
     const start = proxySource.indexOf(`function ${name}(`);
     expect(start, `proxy.ts 에서 ${name} 을 찾지 못했습니다 — 추출이 깨지면 이 계약은 vacuous 합니다`).toBeGreaterThan(-1);
     const end = proxySource.indexOf('\n}', start);
-    return proxySource
-      .slice(start, end)
-      .replace(/(^|[^:])\/\/[^\n]*/gm, '$1')
-      .replace(/\/\*[\s\S]*?\*\//g, '');
+    return stripComments(proxySource.slice(start, end));
   }
 
   it("앱 정책은 'self'+nonce 이고 script-src 에 'unsafe-inline'·'strict-dynamic' 이 없다", () => {
@@ -137,15 +139,25 @@ describe('CSP nonce 계약', () => {
     expect(directives[0][1].trim().split(/\s+/)).toEqual(["'self'", 'blob:']);
   });
 
-  it("Atlas 예외 정책은 elem inline 을 허용하되 attr 'none' 을 유지하며, 예외 경로는 정확히 하나다", () => {
-    const atlasPolicy = proxySource.match(/const ATLAS_CSP =\s*((?:`[^`]*`|'[^']*'|"[^"]*"|[\s+])+);/)?.[1] ?? '';
-    expect(atlasPolicy, 'proxy.ts 에서 ATLAS_CSP 리터럴을 찾지 못했습니다').toBeTruthy();
-    expect(atlasPolicy).toContain("script-src 'self' 'unsafe-inline'");
-    expect(atlasPolicy).toContain("script-src-attr 'none'");
+  it('퇴역한 Atlas unsafe-inline CSP 예외가 proxy.ts 에 재유입되지 않는다', () => {
+    expect(proxySource, '퇴역한 ATLAS_CSP 상수가 proxy.ts 에 남아 있습니다').not.toMatch(/\bATLAS_CSP\b/);
+    expect(proxySource, '퇴역한 governance_harness_atlas.html 예외 분기가 남아 있습니다').not.toContain('governance_harness_atlas.html');
 
-    // 예외가 늘어나는 것 자체가 회귀다 — ATLAS_CSP 를 참조하는 분기는 정확히 1개여야 한다.
-    const usages = proxySource.match(/ATLAS_CSP/g) ?? [];
-    expect(usages.length, 'ATLAS_CSP 선언 1 + 사용 1 = 2 를 넘으면 예외 경로가 확산된 것입니다').toBe(2);
+    const proxyCode = stripComments(proxySource);
+    const scriptUnsafeInlinePattern = /script-src\s+[^;]*'unsafe-inline'/;
+    // H5 부정 검증: 상수·경로 이름을 바꿔도 script-src 의 unsafe-inline 우회를 탐지한다.
+    expect(scriptUnsafeInlinePattern.test("const RENAMED_CSP = \"default-src 'self'; script-src 'self' 'unsafe-inline';\";")).toBe(true);
+    expect(
+      proxyCode,
+      "proxy.ts 코드 어디에도 script-src 에 'unsafe-inline' 을 허용하는 별도 CSP 가 없어야 합니다.",
+    ).not.toMatch(scriptUnsafeInlinePattern);
+
+    const cspAssignments = [...proxyCode.matchAll(/\.set\(\s*['"]content-security-policy['"]\s*,\s*([^)]+)\)/gi)].map((m) => m[1].trim());
+    expect(cspAssignments.length).toBeGreaterThanOrEqual(2);
+    expect(
+      cspAssignments.every((expr) => expr === 'csp'),
+      `Content-Security-Policy 헤더는 단일 buildAppCsp(nonce) 결과(csp)만 설정해야 합니다: ${cspAssignments.join(', ')}`,
+    ).toBe(true);
   });
 
   it('next.config.ts 에 Content-Security-Policy 가 재유입되지 않는다', () => {
@@ -205,7 +217,7 @@ describe('CSP nonce 계약', () => {
     ).toMatch(/nonce=\{nonce\}/);
   });
 
-  it('public/ 에 정적 HTML 을 커밋하지 않으며 Atlas 템플릿 HTML 에 inline 이벤트 핸들러가 없다', () => {
+  it('public/ 에 정적 HTML 을 커밋하지 않는다', () => {
     const isHtmlName = (name: string) => /\.html?$/i.test(name);
     const collectHtmlFiles = (dir: string, prefix = ''): string[] =>
       readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -234,35 +246,18 @@ describe('CSP nonce 계약', () => {
       htmlFiles,
       'frontend/public/ 아래(하위 폴더·대소문자 확장자 포함)에 정적 HTML 을 커밋하지 않습니다(DEC-OPS-398). 정적 HTML 은 nonce 를 받을 수 없어 별도 CSP 예외가 필요합니다.',
     ).toEqual([]);
-
-    const templatePath = join(FRONTEND_DIR, 'atlas', 'atlas.template.html');
-    // 재사용 생성물에서는 원본 Atlas 템플릿이 투영으로 빠질 수 있다 — 원장이 확인한 부재는 비어 있는 이유가 된다.
-    const removedTemplate = [...projectionRemovedFiles()].filter((file) => file === 'frontend/atlas/atlas.template.html');
-    const templateExists = existsSync(templatePath);
-    expect((templateExists ? 1 : 0) + removedTemplate.length, 'Atlas 템플릿 HTML 스캔이 비면 이 계약은 vacuous 하다').toBeGreaterThan(0);
-
-    const sourcesToScan = templateExists ? [{ label: 'atlas/atlas.template.html', source: readFileSync(templatePath, 'utf8') }] : [];
-    const offenders = scanInlineHandlers(sourcesToScan);
-
-    expect(
-      offenders,
-      [
-        "script-src-attr 'none' 아래에서 inline 핸들러는 조용히 죽습니다. addEventListener 로 배선하십시오:",
-        ...offenders.map(({ file, line }) => `  ${file}:${line}`),
-      ].join('\n'),
-    ).toEqual([]);
   });
 
   /*
-   * [2026-09-23 ZAP 주간 스캔 분류] 두 CSP 가 report-to 그룹을 선언하는데 그 그룹을 정의하는
+   * [2026-09-23 ZAP 주간 스캔 분류] CSP 가 report-to 그룹을 선언하는데 그 그룹을 정의하는
    * Reporting-Endpoints 헤더가 없어 최신 리포팅 경로가 선언만 있고 동작하지 않았다.
-   * 아래 세 단언이 "선언 · 그룹 정의 · 수집기" 가 같은 한 경로를 가리키는지 묶는다 —
+   * 아래 단언이 "선언 · 그룹 정의 · 수집기" 가 같은 한 경로를 가리키는지 묶는다 —
    * 하나라도 어긋나면 리포트가 사라지는데 브라우저는 아무 오류도 내지 않는다.
    */
   it('CSP 의 report-uri·Reporting-Endpoints·수집기 라우트가 같은 경로를 가리킨다', () => {
     const declared = [...proxySource.matchAll(/report-uri\s+(\S+?);/g)].map((m) => m[1]);
     expect(declared.length, 'report-uri 선언을 찾지 못했습니다 — 추출이 깨지면 이 계약은 vacuous 합니다')
-      .toBeGreaterThanOrEqual(2);
+      .toBeGreaterThanOrEqual(1);
     expect(new Set(declared).size, `report-uri 가 서로 다른 경로를 가리킵니다: ${[...new Set(declared)].join(', ')}`)
       .toBe(1);
     const reportPath = declared[0];
@@ -293,7 +288,7 @@ describe('CSP nonce 계약', () => {
       'Cross-Origin-Opener-Policy 가 사라지면 새 창 링크가 noopener 를 빠뜨렸을 때 opener 가 다시 열립니다',
     ).toContain("response.headers.set('Cross-Origin-Opener-Policy', 'same-origin')");
     const applied = [...proxySource.matchAll(/applyDocumentSecurityHeaders\(/g)].length;
-    expect(applied, 'Atlas·앱 문서 두 경로와 정의 자신까지 3곳에서 쓰여야 합니다').toBeGreaterThanOrEqual(3);
+    expect(applied, '앱 문서 경로와 정의 자신까지 2곳 이상에서 쓰여야 합니다').toBeGreaterThanOrEqual(2);
   });
 
 });
