@@ -25,6 +25,7 @@ import { messagesFor } from '../messages';
 import { catalogKey } from '../catalog';
 import type { AppLocale } from '../locales';
 import { effectiveBrowserLocale } from '../surfaces';
+import { contentLang } from '../content-lang';
 import { ApplicationFrame } from '@/app/components/layout/ApplicationFrame';
 import { LocaleSwitcher } from '@/app/components/layout/LocaleSwitcher';
 import { FormErrorSummary } from '@/components/ui/form';
@@ -199,6 +200,27 @@ describe('i18n 렌더링', () => {
       window.history.replaceState({}, '', '/');
       document.cookie = 'NEXT_LOCALE=; path=/; max-age=0';
     }
+  });
+
+  it('주소가 화면보다 먼저 바뀐 순간(뒤로 가기)에도 요청 언어는 지금 보이는 화면의 언어다', () => {
+    nav.pathname = '/login';
+    window.history.replaceState({}, '', '/login');
+    try {
+      document.cookie = 'NEXT_LOCALE=en; path=/';
+      render(<Boundary preferred="en"><p>x</p></Boundary>);
+      window.history.replaceState({}, '', '/search');
+      expect(effectiveBrowserLocale()).toBe('en');
+    } finally {
+      window.history.replaceState({}, '', '/');
+      document.cookie = 'NEXT_LOCALE=; path=/; max-age=0';
+    }
+  });
+
+  it('고유 이름의 한글 판정은 완성형 음절과 자모(초성 로고 등)를 모두 본다', () => {
+    expect(contentLang('누리')).toBe('ko');
+    expect(contentLang('ㄴㄹ')).toBe('ko');
+    expect(contentLang('누리')).toBe('ko');
+    expect(contentLang('EG')).toBeUndefined();
   });
 
   it('개발·시험 공급자는 빠진 ICU 인자도 숨기지 않고 실패한다(시험 대역과 같은 기준)', () => {

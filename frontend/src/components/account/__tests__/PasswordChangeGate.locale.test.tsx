@@ -52,4 +52,30 @@ describe('PasswordChangeGate 화면 로케일 (ADR-0063)', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(/입력 오류 3개/);
     expect(document.body.textContent).not.toMatch(/enter at least|input errors|\(required\)/);
   });
+
+  it('관문이 떠 있는 동안 탭 제목은 관문의 것이고, 관문이 사라지면 제목·문서 언어·요청 언어가 로그인 화면(영어)으로 돌아간다', async () => {
+    document.cookie = 'NEXT_LOCALE=en; path=/';
+    window.history.replaceState({}, '', '/login');
+    document.title = 'Sign in | test';
+    const view = render(
+      <LocaleBoundary preferred="en" messages={messagesFor('en')} koreanMessages={messagesFor('ko')}>
+        <PasswordChangeGate><p>Sign in</p></PasswordChangeGate>
+      </LocaleBoundary>,
+    );
+    await waitFor(() => expect(document.documentElement.lang).toBe('ko'));
+    expect(document.title).toMatch(/^비밀번호 변경 \| /);
+
+    mocks.user = { ...mocks.user, passwordChangeRequired: undefined as never };
+    view.rerender(
+      <LocaleBoundary preferred="en" messages={messagesFor('en')} koreanMessages={messagesFor('ko')}>
+        <PasswordChangeGate><p>Sign in</p></PasswordChangeGate>
+      </LocaleBoundary>,
+    );
+
+    await waitFor(() => expect(document.documentElement.lang).toBe('en'));
+    expect(document.title).toBe('Sign in | test');
+    expect(screen.queryByTestId('korean-only-notice')).toBeNull();
+    expect(effectiveBrowserLocale()).toBe('en');
+    mocks.user = { id: 'user1', name: '사용자', passwordChangeRequired: true };
+  });
 });

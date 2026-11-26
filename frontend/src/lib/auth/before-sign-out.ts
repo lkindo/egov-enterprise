@@ -75,27 +75,33 @@ const NOTICE_KEY = 'egov.sign-out-notices.v2';
  */
 export type SignOutNoticeKey = `signOut.${keyof AppMessages['signOut'] & string}`;
 
+/** 지금 안내는 모두 건수(`{count}`)를 받는다 — 인자를 빠뜨린 안내가 저장돼 로그인 화면에서 번역 오류로 깨지지 않게 타입이 요구한다. */
+export type SignOutNoticeValues = {
+  count: number;
+};
+
 export interface SignOutNotice {
   key: SignOutNoticeKey;
-  values?: Record<string, number>;
+  values?: SignOutNoticeValues;
 }
 
 function isNotice(value: unknown): value is SignOutNotice {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as { key?: unknown; values?: unknown };
   if (typeof candidate.key !== 'string' || !candidate.key.startsWith('signOut.')) return false;
-  if (candidate.values === undefined) return true;
-  return typeof candidate.values === 'object' && candidate.values !== null
-    && Object.values(candidate.values as Record<string, unknown>).every((item) => typeof item === 'number');
+  // 안내 문구는 건수를 받는다 — 건수가 없거나 숫자가 아닌 저장 값은 로그인 화면을 번역 오류로 깨뜨리지 않게 버린다.
+  if (!candidate.values || typeof candidate.values !== 'object') return false;
+  const count = (candidate.values as { count?: unknown }).count;
+  return typeof count === 'number' && Number.isFinite(count);
 }
 
 /** 다시 로그인할 때 보일 안내를 남긴다(이 탭의 세션 저장소). 같은 키는 새 값으로 바꾼다. */
-export function rememberSignOutNotice(key: SignOutNoticeKey, values?: Record<string, number>): void {
+export function rememberSignOutNotice(key: SignOutNoticeKey, values: SignOutNoticeValues): void {
   forgetShownSignOutNotices();
   try {
     const current = JSON.parse(window.sessionStorage.getItem(NOTICE_KEY) ?? '[]') as unknown;
     const list = (Array.isArray(current) ? current.filter(isNotice) : []).filter((notice) => notice.key !== key);
-    list.push(values ? { key, values } : { key });
+    list.push({ key, values });
     window.sessionStorage.setItem(NOTICE_KEY, JSON.stringify(list.slice(-5)));
   } catch {
     // 저장소를 쓸 수 없으면 안내만 잃는다.

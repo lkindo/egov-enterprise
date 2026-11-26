@@ -4,5 +4,6 @@
  * 언어와 같아 덧붙는 의미가 없다.
  */
 export function contentLang(text: string): 'ko' | undefined {
-  return /[가-힣]/.test(text) ? 'ko' : undefined;
+  // 완성형 음절뿐 아니라 자모(초성 로고 등)도 한글이다.
+  return /\p{Script=Hangul}/u.test(text) ? 'ko' : undefined;
 }

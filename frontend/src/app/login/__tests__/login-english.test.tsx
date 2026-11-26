@@ -41,12 +41,12 @@ function unmarkedHangul(root: HTMLElement): string[] {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     const text = node.textContent ?? '';
-    if (/[가-힣]/.test(text) && language(node.parentElement) !== 'ko') found.push(`text: ${text.trim().slice(0, 40)}`);
+    if (/\p{Script=Hangul}/u.test(text) && language(node.parentElement) !== 'ko') found.push(`text: ${text.trim().slice(0, 40)}`);
   }
   for (const element of root.querySelectorAll('*')) {
     for (const attribute of ['aria-label', 'placeholder', 'title', 'alt']) {
       const value = element.getAttribute(attribute);
-      if (value && /[가-힣]/.test(value) && language(element) !== 'ko') found.push(`${attribute}: ${value.slice(0, 40)}`);
+      if (value && /\p{Script=Hangul}/u.test(value) && language(element) !== 'ko') found.push(`${attribute}: ${value.slice(0, 40)}`);
     }
   }
   return found;

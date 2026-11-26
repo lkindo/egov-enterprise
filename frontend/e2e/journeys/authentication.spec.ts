@@ -540,7 +540,7 @@ test.describe('인증 경계', () => {
 /** 문서 본문에서 `lang="ko"` 표지 없이 남은 한글(글자와 보조기술이 읽는 속성) — 화면 단위 완결성의 렌더 증거(ADR-0063). */
 async function unmarkedHangul(page: Page): Promise<string[]> {
     return page.evaluate(() => {
-        const hangul = /[가-힣]/;
+        const hangul = /\p{Script=Hangul}/u;
         const language = (element: Element | null) => element?.closest('[lang]')?.getAttribute('lang') ?? '';
         const skipped = (element: Element | null) => !!element?.closest('script,style,noscript,template');
         const found: string[] = [];

@@ -369,7 +369,7 @@ describe('세션 만료 안내', () => {
 
   it('[ADR-0063] 카탈로그에 없는 안내 키만 남았으면 빈 상태 영역도 그리지 않는다', async () => {
     forgetShownSignOutNotices();
-    window.sessionStorage.setItem('egov.sign-out-notices.v2', JSON.stringify([{ key: 'signOut.future' }]));
+    window.sessionStorage.setItem('egov.sign-out-notices.v2', JSON.stringify([{ key: 'signOut.future', values: { count: 1 } }]));
     try {
       await act(async () => { render(<LoginPage />); });
 

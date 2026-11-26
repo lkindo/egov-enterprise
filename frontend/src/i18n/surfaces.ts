@@ -58,12 +58,14 @@ export function effectiveLocale(preferred: AppLocale, pathname: string | null | 
 }
 
 /**
- * 이 탭이 지금 그린 로케일 — 로케일 경계가 알린다. 쿠키는 탭끼리 함께 쓰므로 다른 탭이 바꿀 수 있고, 선택기는 쿠키를 먼저 쓰고 다시
- * 그리기를 기다린다. 요청 언어는 쿠키가 아니라 이 값을 본다(경계가 아직 그리지 않았으면 쿠키다).
+ * 이 탭이 지금 그린 로케일 — 로케일 경계가 그릴 때마다 알린다. 쿠키는 탭끼리 함께 쓰므로 다른 탭이 바꿀 수 있고, 선택기는 쿠키를 먼저
+ * 쓰고 다시 그리기를 기다린다. 주소도 화면보다 먼저 바뀔 수 있다(뒤로 가기). 요청 언어는 쿠키·주소가 아니라 이 값을 본다(경계가 아직
+ * 그리지 않았으면 쿠키와 주소로 정한다).
  */
-let renderedLocale: { preferred: AppLocale; koreanOnly: boolean } | undefined;
+let renderedLocale: { readonly effective: AppLocale } | undefined;
 
-export function rememberRenderedLocale(rendered: { preferred: AppLocale; koreanOnly: boolean }): () => void {
+export function rememberRenderedLocale(effective: AppLocale): () => void {
+  const rendered = { effective };
   renderedLocale = rendered;
   return () => {
     if (renderedLocale === rendered) renderedLocale = undefined;
@@ -73,6 +75,5 @@ export function rememberRenderedLocale(rendered: { preferred: AppLocale; koreanO
 /** 브라우저에서 지금 화면의 로케일(서버에서는 기본값) — API 요청의 Accept-Language 다. */
 export function effectiveBrowserLocale(): AppLocale {
   if (typeof window === 'undefined') return DEFAULT_LOCALE;
-  if (renderedLocale?.koreanOnly) return DEFAULT_LOCALE;
-  return effectiveLocale(renderedLocale?.preferred ?? readBrowserLocale(), window.location.pathname);
+  return renderedLocale?.effective ?? effectiveLocale(readBrowserLocale(), window.location.pathname);
 }

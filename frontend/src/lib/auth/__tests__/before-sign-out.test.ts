@@ -103,7 +103,13 @@ describe('before-sign-out', () => {
   });
 
   it('저장소에 남은 모르는 키는 안내로 꺼내지 않는다(다른 기능·조작된 값)', () => {
-    window.sessionStorage.setItem('egov.sign-out-notices.v2', JSON.stringify([{ key: 'login.submit' }, { key: 'signOut.unsentApprovals', values: { count: 1 } }]));
+    window.sessionStorage.setItem('egov.sign-out-notices.v2', JSON.stringify([
+      { key: 'login.submit', values: { count: 1 } },
+      // 건수가 없거나 숫자가 아닌 값은 로그인 화면의 번역에서 깨지므로 버린다.
+      { key: 'signOut.unconfirmedApprovals' },
+      { key: 'signOut.unconfirmedApprovals', values: { count: 'two' } },
+      { key: 'signOut.unsentApprovals', values: { count: 1 } },
+    ]));
     expect(takeSignOutNotices()).toEqual([{ key: 'signOut.unsentApprovals', values: { count: 1 } }]);
   });
 });

@@ -25,6 +25,12 @@ const LANGUAGE_NEUTRAL_IMPORTS: Record<string, Record<string, string>> = {
   'src/lib/auth/login-error.ts': {
     loginErrorKind: 'BFF 응답 본문 문구를 보이지 않고 실패 종류만 돌려준다 — 화면은 카탈로그로 그린다',
   },
+  'src/extensions/generated-shell-links.ts': {
+    shellLinks: '한국어로만 제공하는 화면(/help·/pages)으로 가는 링크 이름 — 번역하지 않고 바닥글이 contentLang 으로 lang="ko" 를 단다(결정 6)',
+  },
+  'src/services/foundation/auth/mfaService.ts': {
+    mfaService: '추가 인증 BFF 호출 — 응답을 계약으로 검증해 값만 돌려주고 문구를 돌려주지 않는다(실패는 화면이 카탈로그 키로 그린다)',
+  },
   'src/types/generated-zod.ts': {
     LoginRequestSchema: '문구를 적지 않은 생성 계약 스키마(한글은 같은 모듈의 다른 스키마) — 검증 문구는 전역 오류 맵에서 오고 수동 폼 검증이 로케일별로 바꾼다',
   },
@@ -43,8 +49,12 @@ function flatten(value: unknown, prefix = ''): Record<string, string> {
 
 function parse(file: string): ts.SourceFile {
   const text = fs.readFileSync(path.join(FRONTEND, file), 'utf8');
-  return ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const kind = /\.tsx$/.test(file) ? ts.ScriptKind.TSX : /\.ts$/.test(file) ? ts.ScriptKind.TS : /\.jsx$/.test(file) ? ts.ScriptKind.JSX : ts.ScriptKind.JS;
+  return ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, kind);
 }
+
+/** 한글(완성형 음절과 자모). */
+const HANGUL = /\p{Script=Hangul}/u;
 
 /** 파일의 주석·정규식 밖 문자열·템플릿 조각·JSX 글자 가운데 한글이 든 것. */
 function hangulLiterals(file: string): string[] {
@@ -53,7 +63,7 @@ function hangulLiterals(file: string): string[] {
   const visit = (node: ts.Node) => {
     const literal = ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateHead(node)
       || ts.isTemplateMiddle(node) || ts.isTemplateTail(node) || ts.isJsxText(node);
-    if (literal && /[가-힣]/.test(node.text)) {
+    if (literal && HANGUL.test(node.text)) {
       found.push(`${file}:${source.getLineAndCharacterOfPosition(node.getStart()).line + 1} ${node.text.trim().slice(0, 40)}`);
     }
     ts.forEachChild(node, visit);
@@ -67,17 +77,31 @@ function resolveLocalImport(from: string, specifier: string): string | undefined
   if (specifier.startsWith('@/')) base = path.join(FRONTEND, 'src', specifier.slice(2));
   else if (specifier.startsWith('.')) base = path.resolve(path.dirname(path.join(FRONTEND, from)), specifier);
   else return undefined;
-  for (const candidate of [base, `${base}.ts`, `${base}.tsx`, path.join(base, 'index.ts'), path.join(base, 'index.tsx')]) {
+  const extensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'];
+  for (const candidate of [base, ...extensions.map((extension) => `${base}${extension}`), ...extensions.map((extension) => path.join(base, `index${extension}`))]) {
     if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return path.relative(FRONTEND, candidate).split(path.sep).join('/');
   }
   throw new Error(`${from}: 가져온 모듈을 찾지 못했다 — ${specifier}`);
 }
 
-const isSourceModule = (file: string | undefined): file is string => !!file && /\.(ts|tsx)$/.test(file);
+/** 스크립트 모듈(TS·JS — 프로젝트는 allowJs 다). JSON·CSS·그림은 문구 모듈이 아니다. */
+const isSourceModule = (file: string | undefined): file is string => !!file && /\.(ts|tsx|js|jsx|mjs|cjs)$/.test(file);
+
+/** 식 안에서 쓰인 식별자(속성 이름 제외). */
+function identifiersIn(node: ts.Node): string[] {
+  const found: string[] = [];
+  const visit = (child: ts.Node) => {
+    if (ts.isIdentifier(child) && !(ts.isPropertyAccessExpression(child.parent) && child.parent.name === child)) found.push(child.text);
+    ts.forEachChild(child, visit);
+  };
+  visit(node);
+  return found;
+}
 
 /**
- * 모듈이 다른 지역 모듈의 값을 그대로 내보내는 곳 — `export … from`, 가져온 이름의 `export { 이름 }`·`export default 이름`·
- * `export const X = 이름`. 한글 문구를 가진 모듈을 한 번 거쳐 내보내면 거친 모듈에는 한글 글자가 없다(Codex 2차 검토 반례).
+ * 모듈이 다른 지역 모듈의 값을 그대로 내보내는 곳 — `export … from`, 가져온 이름의 `export { 이름 }`·`export default 식`·
+ * `export const X = 식`(식이 가져온 이름·네임스페이스 멤버를 쓰면). 한글 문구를 가진 모듈을 한 번 거쳐 내보내면 거친 모듈에는 한글
+ * 글자가 없다(Codex 2·3차 검토 반례). 타입만 다시 내보내는 항목은 화면에 닿지 않아 따라가지 않는다.
  */
 function reexportSources(file: string): string[] {
   const source = parse(file);
@@ -90,30 +114,34 @@ function reexportSources(file: string): string[] {
     if (clause?.name) imported.set(clause.name.text, target);
     const bindings = clause?.namedBindings;
     if (bindings && ts.isNamespaceImport(bindings)) imported.set(bindings.name.text, target);
-    if (bindings && ts.isNamedImports(bindings)) for (const element of bindings.elements) imported.set(element.name.text, target);
+    if (bindings && ts.isNamedImports(bindings)) {
+      for (const element of bindings.elements) if (!element.isTypeOnly) imported.set(element.name.text, target);
+    }
   }
   const sources = new Set<string>();
+  const follow = (expression: ts.Node) => {
+    for (const name of identifiersIn(expression)) {
+      const origin = imported.get(name);
+      if (origin) sources.add(origin);
+    }
+  };
   for (const statement of source.statements) {
     if (ts.isExportDeclaration(statement) && !statement.isTypeOnly) {
+      const clause = statement.exportClause;
+      const valueElements = clause && ts.isNamedExports(clause) ? clause.elements.filter((element) => !element.isTypeOnly) : undefined;
       if (statement.moduleSpecifier && ts.isStringLiteral(statement.moduleSpecifier)) {
         const target = resolveLocalImport(file, statement.moduleSpecifier.text);
-        if (isSourceModule(target)) sources.add(target);
-      } else if (statement.exportClause && ts.isNamedExports(statement.exportClause)) {
-        for (const element of statement.exportClause.elements) {
+        if (isSourceModule(target) && (valueElements === undefined || valueElements.length > 0)) sources.add(target);
+      } else if (valueElements) {
+        for (const element of valueElements) {
           const origin = imported.get((element.propertyName ?? element.name).text);
           if (origin) sources.add(origin);
         }
       }
     }
-    if (ts.isExportAssignment(statement) && ts.isIdentifier(statement.expression)) {
-      const origin = imported.get(statement.expression.text);
-      if (origin) sources.add(origin);
-    }
+    if (ts.isExportAssignment(statement)) follow(statement.expression);
     if (ts.isVariableStatement(statement) && statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword)) {
-      for (const declaration of statement.declarationList.declarations) {
-        const origin = declaration.initializer && ts.isIdentifier(declaration.initializer) ? imported.get(declaration.initializer.text) : undefined;
-        if (origin) sources.add(origin);
-      }
+      for (const declaration of statement.declarationList.declarations) if (declaration.initializer) follow(declaration.initializer);
     }
   }
   return [...sources];
@@ -179,7 +207,7 @@ describe('i18n 카탈로그 완결성 (ADR-0063)', () => {
 
   it('영어 카탈로그에 한글 문장이 남지 않는다 — 언어 이름(endonym)만 예외다', () => {
     const endonyms = new Set(['locale.ko']);
-    expect(Object.entries(enKeys).filter(([key, value]) => !endonyms.has(key) && /[가-힣]/.test(value)).map(([key]) => key)).toEqual([]);
+    expect(Object.entries(enKeys).filter(([key, value]) => !endonyms.has(key) && HANGUL.test(value)).map(([key]) => key)).toEqual([]);
   });
 
   it('번역 원장의 화면은 실제 경로이고 정확히 그 경로만이며, 그 파일은 고정 문구를 모두 카탈로그에서 그린다', () => {

@@ -198,8 +198,8 @@ export function Sidebar({
               <X size={20} className="text-muted-foreground" />
             </Button>
           </div>
-          {/* [2026-11-26 ADR-0063] 좁은 화면(머리글에 언어 선택기를 둘 자리가 없는 폭)은 서랍 맨 위에서 언어를 고른다. */}
-          <LocaleSwitcher className="mb-6 self-start sm:hidden" />
+          {/* [2026-11-26 ADR-0063] 서랍으로 쓰는 폭(lg 미만, 머리글에 언어 선택기를 둘 자리가 없는 폭)은 서랍 맨 위에서 언어를 고른다. */}
+          <LocaleSwitcher className="mb-6 self-start lg:hidden" />
 
           <nav className="flex-1 space-y-1" aria-label="주 메뉴 탐색">
             <div
