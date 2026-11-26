@@ -34,26 +34,38 @@ const PALETTE_GUIDE = "프론트엔드 UX 헌법 제15조 2항(시맨틱 컬러 
 //   썼다(경고 글자가 본문색으로 보였다). 허용 목록은 @theme 에서 읽으므로 토큰을 정의하면 그대로 풀린다.
 //   유틸리티를 만드는 것은 @theme 블록의 선언뿐이다 — 주석 안(퇴역시킨 토큰)이나 :root 의 --color-* 는 정의가 아니다. 방향 테두리
 //   (border-t-…·논리 방향 border-bs-…)와 숫자 단계(bg-warning-500)도 같은 함정이고, 화면 클래스를 담는 .ts 색상표도 본다.
-/** CSS 에서 `@theme …{ … }` 블록 본문들(중첩 중괄호까지)만 이어 붙인다. */
-const themeBlocks = (css) => {
-  const bodies = [];
+/**
+ * CSS 의 `@theme …{ … }` 블록에서 **맨 위 단계** 선언만 순서대로 이어 붙인다. 블록 안의 `@keyframes { to { --color-x: … } }` 같은
+ * 중첩 본문은 지역 선언이라 유틸리티를 만들지 않는다.
+ */
+const themeTopLevel = (css) => {
+  const parts = [];
   for (const match of css.matchAll(/@theme\b[^{]*\{/g)) {
     let depth = 1;
-    let index = match.index + match[0].length;
-    const start = index;
-    for (; index < css.length && depth > 0; index += 1) {
-      if (css[index] === "{") depth += 1;
-      else if (css[index] === "}") depth -= 1;
+    for (let index = match.index + match[0].length; index < css.length && depth > 0; index += 1) {
+      const char = css[index];
+      if (char === "{") depth += 1;
+      else if (char === "}") depth -= 1;
+      else if (depth === 1) parts.push(char);
     }
-    bodies.push(css.slice(start, index - 1));
+    parts.push("\n");
   }
-  return bodies.join("\n");
+  return parts.join("");
 };
-const THEME_COLOR_NAMES = new Set(
-  [
-    ...themeBlocks(readFileSync(new URL("./src/app/globals.css", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, ""))
-      .matchAll(/--color-([a-z0-9-]+)\s*:/g),
-  ].map((m) => m[1]),
+/** 선언 순서대로 적용한다 — 뒤의 `--color-*: initial` 은 앞의 색을 모두, `--color-x: initial` 은 그 색을 지운다. */
+const themeColorNames = (css) => {
+  const names = new Set();
+  for (const [, name, value] of themeTopLevel(css).matchAll(/--color-([a-z0-9-]+|\*)\s*:\s*([^;]*);/g)) {
+    const reset = value.trim() === "initial";
+    if (name === "*") {
+      if (reset) names.clear();
+    } else if (reset) names.delete(name);
+    else names.add(name);
+  }
+  return names;
+};
+const THEME_COLOR_NAMES = themeColorNames(
+  readFileSync(new URL("./src/app/globals.css", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, ""),
 );
 const SEMANTIC_STATUS_REGEX = new RegExp(
   `(?<![\\w-])(?:${PALETTE_UTILITIES}|border-(?:[xytrblse]|bs|be))-((?:success|warning|info|destructive|primary)(?:-[a-z0-9]+)*)(?:\\/[0-9]{1,3})?(?![\\w-])`,

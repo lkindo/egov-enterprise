@@ -155,13 +155,16 @@ describe('r6 accessibility regressions', () => {
     // [2026-11-26] 이 부품들은 초점을 고리(box-shadow)로 보이는데, Windows 고대비 같은 강제 색상 모드에서는 box-shadow 가 사라진다.
     //   outline-none 은 그때도 윤곽선을 지워 초점이 보이지 않고(WCAG 2.4.7), 접두 없는 outline-hidden 은 초점이 없는 칸에도 같은
     //   윤곽선을 그려 현재 위치를 가리지 못한다(Codex 검토 2회차). focus-visible:outline-hidden 이 초점일 때만 시스템 색으로 남긴다.
-    for (const name of ['input', 'textarea', 'select', 'native-select', 'checkbox']) {
+    // 파일마다 초점을 받는 부품 수만큼 있어야 한다 — select.tsx 는 트리거와 항목 둘이라, 한쪽이 빠져도 다른 쪽이 가리지 않게 센다.
+    const expected: Record<string, number> = { input: 1, textarea: 1, select: 2, 'native-select': 1, checkbox: 1 };
+    for (const [name, count] of Object.entries(expected)) {
       // 주석은 뺀다 — native-select.tsx 의 설명 주석이 이 낱말들을 말한다.
       const code = source(`components/ui/${name}.tsx`).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-      const tokens = code.split(/[\s"'`]+/);
+      // 중요 표기(!)는 떼고 본다 — focus-visible:outline-none! 도 같은 outline-none 이다.
+      const tokens = code.split(/[\s"'`]+/).map((token) => token.replace(/^!|!$/g, ''));
       expect(tokens.filter((token) => token.split(':').pop() === 'outline-none'), `${name}: 초점을 지우는 outline-none`).toEqual([]);
       expect(tokens, `${name}: 초점이 없어도 윤곽선을 그리는 접두 없는 outline-hidden`).not.toContain('outline-hidden');
-      expect(tokens, `${name}: focus-visible:outline-hidden 이 없다`).toContain('focus-visible:outline-hidden');
+      expect(tokens.filter((token) => token === 'focus-visible:outline-hidden'), `${name}: focus-visible:outline-hidden 수`).toHaveLength(count);
     }
   });
 
@@ -181,5 +184,7 @@ describe('r6 accessibility regressions', () => {
 
     expect(forcedColors).toContain('[aria-current="true"]');
     expect(forcedColors).toMatch(/\[aria-current="true"\][\s\S]*outline:\s*2px solid Highlight/);
+    // 포인터로 가리킨 목록 항목(data-highlighted)도 강제 색상에서 표시가 남는다(Codex 검토 3회차).
+    expect(forcedColors).toMatch(/\[role="option"\]\[data-highlighted\]\s*\{[^}]*outline:\s*2px dashed Highlight/);
   });
 });

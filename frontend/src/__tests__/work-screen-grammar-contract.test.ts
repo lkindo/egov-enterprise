@@ -230,13 +230,20 @@ describe('Control height ↔ density token contract', () => {
       'SelectTrigger 기본 높이가 다시 고정됐다 — compact 밀도가 선택 컨트롤에 닿지 않는다',
     ).not.toMatch(/data-\[size=(?:default|sm)\]:h-(?:\d|\[\d)/);
     // 래퍼는 아래 고정 높이 동결에서 빠지므로(CONTROL_DEFINITIONS) 여기서 본다 — 기본 클래스 끝에 h-9 를 더하면 병합 결과가 h-9 가 된다.
-    // 주석은 뺀다 — 설명 주석의 낱말(예: 'h-9 를 토큰으로 바꿨다')을 고정 높이로 세지 않는다.
-    const nativeSelect = readFileSync(join(UI_DIR, 'native-select.tsx'), 'utf8')
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      .replace(/^\s*\/\/.*$/gm, '');
-    expect(nativeSelect).toContain('h-[var(--control-h)]');
+    // 구문 트리의 문자열만 본다 — 줄 끝 주석을 포함한 설명 주석의 낱말(예: '이전 높이는 h-9 였다')을 고정 높이로 세지 않는다.
+    const nativeSelect = ts.createSourceFile(
+      'native-select.tsx', readFileSync(join(UI_DIR, 'native-select.tsx'), 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX,
+    );
+    const literals: string[] = [];
+    const collect = (node: ts.Node): void => {
+      if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) literals.push(node.text);
+      ts.forEachChild(node, collect);
+    };
+    collect(nativeSelect);
+    const nativeTokens = literals.join(' ').split(/\s+/);
+    expect(nativeTokens).toContain('h-[var(--control-h)]');
     expect(
-      nativeSelect.split(/[\s"'`,()]+/).filter((token) => FIXED_HEIGHT.test((token.split(':').pop() ?? '').replace(/^!|!$/g, ''))),
+      nativeTokens.filter((token) => FIXED_HEIGHT.test((token.split(':').pop() ?? '').replace(/^!|!$/g, ''))),
       'NativeSelect 기본 높이가 고정됐다 — compact 밀도가 선택 목록에 닿지 않는다',
     ).toEqual([]);
   });

@@ -441,5 +441,12 @@
       outline: 2px solid Highlight;
       outline-offset: 1px;
     }
+
+    /* [2026-11-26] 목록 항목의 강조(Radix Select·Command 의 data-highlighted)는 배경색으로만 말해 포인터로 가리킨 항목이 평평해진다
+       — 방향키는 :focus-visible 윤곽선이 남지만 포인터 초점은 :focus-visible 이 아니다. 선택 표시와 겹치지 않게 점선으로 둔다. */
+    [role="option"][data-highlighted] {
+      outline: 2px dashed Highlight;
+      outline-offset: -2px;
+    }
   }
 }
