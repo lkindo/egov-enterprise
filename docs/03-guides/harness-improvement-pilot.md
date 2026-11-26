@@ -18,30 +18,17 @@
 - 동일 코드·입력·도구 조건과 cold/warm 상태. 다른 코드·기계의 시간을 하나의 잡음 표본으로 합치지 않는다.
 - 중복 실행 비용과 통합 단계에서 먼저 발견한 결함의 비용 절감. 검사 개수 감소만으로 성공을 판정하지 않는다.
 
-`verify:integrate`의 `api-tests-and-harness`는 한 Gradle 명령의 합계다. 이를 하네스 단독 시간으로 분해하거나 pre-push의 `harness`와 직접 같은 모집단으로 비교하지 않는다. 기존 JUnit·Playwright 보고서는 세부 시험의 정본이며 suite 시간의 합은 벽시계 시간과 다르다.
+`verify:integrate`의 `:api-server:test :api-server:harnessTest`는 한 Gradle 명령의 합계다. 이를 하네스 단독 시간으로 분해하거나 pre-push의 `harnessTest`와 직접 같은 모집단으로 비교하지 않는다. 기존 JUnit·Playwright 보고서는 세부 시험의 정본이며 suite 시간의 합은 벽시계 시간과 다르다.
 
 ## 관측용 실행 기록
 
-`scripts/verify.mjs`와 `.githooks/pre-push`는 각 실행을 `build/verification-runs/<UUID>.jsonl`에 기록한다. `build/`는 Git에서 제외되므로 원시 실행 기록을 커밋하지 않는다. 다른 워크트리는 별도 기록을 만든다.
+`DEC-OPS-436` 으로 `scripts/verify.mjs`·`.githooks/pre-push`·`scripts/vitest-timeout-rerun.mjs` 의 `build/verification-runs/<UUID>.jsonl` 기록 쓰기와 단계별 PowerShell CIM 프로세스 폴링(`createRun`·`noteTimeoutRerun`·`summarizeRuns`)을 폐지했다.
 
-| 이벤트 | 의미 |
-|---|---|
-| `run-start` | 실행 ID·부모 ID·진입점·범위·시작 시각·Git 상태·입력 다이제스트·그 시점에 보인 시험·검증 실행의 종류·Node/OS/시간대 |
-| `step-start` / `step-end` | 고정 단계 ID, 시작/종료 시각, 소요 시간, 종료 코드와 포착한 signal. `step-start` 는 그 시점에 보인 실행의 종류도 남긴다 |
-| `inputs-rebased` | 추적 파일을 일부러 다시 쓰는 단계(`verify:integrate` 의 `npm run regen`) 뒤의 새 입력 다이제스트 — 이후 작업 트리 변경은 이 값과 비교한다. HEAD·index 는 옮기지 않고 `run-start` 의 `anchorDigest` 와 따로 비교한다(그 사이 다른 사람의 commit·stage 를 흡수하지 않는다) |
-| `step-skipped` | 실행기가 명시적으로 알린 생략과 고정 사유. 통과가 아니다. |
-| `step-note` | pre-push Vitest 단계에서 실패가 모두 Vitest 시간 초과라 단독으로 한 번 다시 돈 파일(`src/` 아래 상대 경로)과 그 결과(`timeout-rerun`, DEC-OPS-390). 단계·실행 결과는 바꾸지 않는다 |
-| `run-end` | 실행 결과·전체 시간·종료 시 Git 상태·기록 완결 여부·실행 중 입력 변경(`inputChanged`)·겹친 실행 의심(`concurrentSuspected`, `concurrentKinds`) |
+`scripts/verification-record.mjs` 는 [무거운 검증 대기열](../../scripts/heavy-run-queue.mjs)이 쓰는 프로세스 종류 판별·목록 보조 함수(`heavyProcessKinds`·`waitingExclusions`·`listProcesses`·`listProcessesAsync`·`waitingQueuePids`)만 유지하며, 명령 원문·환경·비밀값은 저장하지 않는다.
 
-명령 원문·인자·환경 전체·출력·파일명 목록·비밀값은 저장하지 않는다. Git 정보는 HEAD, 추적 파일 변경 여부, 미추적 파일 수만 관측한다. 입력 다이제스트는 HEAD·index(staged 변경)·추적 파일 diff·미추적 파일의 이름·크기·수정 시각을 한 SHA-256 으로 접은 값만 남긴다. 겹친 실행은 자기 조상 프로세스를 뺀 프로세스 목록에서 실행 파일(node·java·sh)과 명령줄 모양으로 Vitest·`node --test`·Gradle 테스트 executor·Playwright 테스트·격리 E2E·`verify.mjs`·재사용 base 생성·검증과 메뉴 스냅숏 갱신·pre-push 훅을 가려 종류 이름만 남기고 명령줄은 남기지 않는다. 같은 낱말을 담은 대기 루프·검색이나 시험을 돌리지 않는 상주 프로세스(Playwright 보고서 서버, Gradle worker daemon)는 세지 않는다. 시작·단계 시작·종료의 표본 가운데 하나라도 보이면 `concurrentSuspected: true` 다. 단계 시작에서 처음 본 종류는 그 자리에서 경고하고, 끝에서 모든 종류를 다시 알린다. 목록이 자기 프로세스의 명령줄을 보여 주지 못했거나, 감시하는 실행 파일(node·java·sh)의 명령줄을 읽지 못했는데 아무것도 보지 못한 표본은 관측하지 못한 것이다. 어느 표본이든 관측하지 못했고 아무것도 보지 못했으면 `null` 이며, `false` 는 모든 표본이 아무것도 보지 못했다는 뜻일 뿐 표본 사이의 겹침이 없었다는 증거가 아니다. 두 진단 모두 경고만 내며 검사 결과는 바꾸지 않는다(SOP §6.3). `node --test` 안이거나 `VERIFICATION_RECORD_PROCESS_SCAN=off` 면 프로세스를 보지 않는다(`null`). Windows 에서 표본 한 번은 PowerShell CIM 조회라 약 1.4초다 — 단계가 많은 pre-push 면 단계 수만큼 더해진다(단계 11개면 약 18초). `node scripts/verification-record.mjs --root . summary` 는 이 워크트리의 기록 가운데 `run-end` 가 없는 실행(6시간 안이면 실행 중일 수 있다)·`inconsistent`·`incomplete`·입력 변경·겹친 실행·시간 초과 단독 재실행(`timeout-rerun:<단계>(<파일 수>)`)과 비었거나 잘린 기록(`empty-record`·`malformed-record`)을 짧은 ID 와 시각으로 최신순 출력한다. ignored 입력·DB·서비스 상태·모든 도구 버전을 포함하지 않으므로 이 정보는 캐시 키나 성공 재사용 증거가 아니다.
+원래 검사 명령·인자·범위·실패 전파는 `pre-push-ref-contract.test.mjs` 에서, 대기열 프로세스 판별과 폴링 퇴역 경계는 `verification-record.test.mjs` 및 `heavy-run-queue.test.mjs` 에서 확인한다.
 
-기록 쓰기 실패는 고정 경고를 남기고 원래 검증을 계속한다. 명령 실패는 기존대로 실패한다. `run-end`가 없는 기록은 중단/미완결이며 성공으로 집계하지 않는다. signal이 실제 포착된 경우에만 `interrupted`로 분류한다. SIGKILL·전원 차단의 원인은 추정하지 않는다. 기록이 없는 후속 단계는 미실행인지 범위 밖인지 알 수 없으며, 어느 쪽도 통과로 세지 않는다.
-
-`EGOV_VERIFICATION_RUN_ID`는 중첩된 공식 실행기가 기록을 연결할 때만 사용하는 UUID다. 별도 실행 잠금이나 검사 생략 토큰이 아니다. 기록의 단계 수는 시험 수가 아니며, `integration-selected`는 선별 검증 묶음의 외부 시간이다. 상세 대상·결과는 기존 실행 로그와 JUnit/Playwright 보고서를 함께 확인한다.
-
-삭제만 하는 push와 기존 훅 우회 경로는 기록 전에 종료한다. 따라서 기록이 없다는 사실로 실행 성공 또는 실패를 판단할 수 없다. 이 배치는 원래 검사 명령·인자·범위·실패 전파를 기존 `pre-push-ref-contract.test.mjs`에서 계속 대조하고, 새 기록기의 상태·부분 기록·비밀 배제는 `verification-record.test.mjs`에서 확인한다.
-
-독립 이관 생성물에는 `verify.mjs`가 사용하는 기록기와 계약 시험의 보조 모듈을 함께 복사한다. 생성물 검증은 부모의 `NODE_TEST_CONTEXT`를 제거한 실제 자식 시험에서 비어 있지 않은 모집단을 확인한다. 독립 이관의 승인·파일 경계 시험과 원본 전용 온라인·재사용 구성 시험은 파일로 분리하며, 원본 운영 계약은 두 파일을 모두 실행한다. 제품의 구성 카탈로그 부재를 가짜 선언이나 시험 skip으로 덮지 않는다.
+독립 이관 생성물에는 `verify.mjs`가 사용하는 대기열 및 프로세스 판별 보조 모듈을 함께 복사한다. 생성물 검증은 부모의 `NODE_TEST_CONTEXT`를 제거한 실제 자식 시험에서 비어 있지 않은 모집단을 확인한다. 독립 이관의 승인·파일 경계 시험과 원본 전용 온라인·재사용 구성 시험은 파일로 분리하며, 원본 운영 계약은 두 파일을 모두 실행한다. 제품의 구성 카탈로그 부재를 가짜 선언이나 시험 skip으로 덮지 않는다.
 
 ## 행동 평가: 시각 회귀 사례 한 건
 

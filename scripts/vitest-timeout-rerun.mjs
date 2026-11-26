@@ -12,7 +12,6 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { noteTimeoutRerun } from './verification-record.mjs';
 
 const SCRIPT = fileURLToPath(import.meta.url);
 const REPO_ROOT = path.resolve(path.dirname(SCRIPT), '..');
@@ -80,13 +79,8 @@ function defaultRunVitest(args) {
   }
 }
 
-function defaultNote(note) {
-  const runId = process.env.EGOV_VERIFICATION_RUN_ID;
-  if (runId) noteTimeoutRerun(REPO_ROOT, runId, note);
-}
-
 export function main(args, { runVitest = defaultRunVitest, ci = Boolean(process.env.CI), log = message => console.error(message),
-  note = defaultNote } = {}) {
+  note = () => {} } = {}) {
   // 경로 필터만 받는다 — 옵션은 값이 따로 오는지(`--testTimeout 20000`) 알 수 없어 재실행 인자로 옮길 수 없다. 받으면 돌리지 않고 막는다.
   if (args.length === 0 || args.some(arg => typeof arg !== 'string' || arg === '' || arg.startsWith('-'))) {
     log(`${PREFIX} 사용법: node scripts/vitest-timeout-rerun.mjs <vitest 경로 필터…> — 옵션은 받지 않는다(재실행에 그대로 옮길 수 없다).`);

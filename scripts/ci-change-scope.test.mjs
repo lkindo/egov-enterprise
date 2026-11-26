@@ -69,7 +69,7 @@ test('agent harness guard, skill adapter generator and hook adapters select only
   assert.equal(hooks.frontend, false);
   assert.equal(hooks.e2e, false);
   assert.equal(hooks.secretScan, true);
-  // 실행 기록은 verify.mjs·pre-push 가 import 하는 실행 경로라 표에 없다 — 미분류 전수로 남는다.
+  // 프로세스 분류 보조 모듈은 heavy-run-queue.mjs 가 import 하는 실행 경로라 표에 없다 — 미분류 전수로 남는다.
   assert.deepEqual(classifyChangedFiles(['scripts/verification-record.mjs']).unknownFiles, ['scripts/verification-record.mjs']);
 });
 

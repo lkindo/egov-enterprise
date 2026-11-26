@@ -26,7 +26,6 @@ import { execSync } from 'node:child_process';
 import { generateKeyPairSync } from 'node:crypto';
 import { platform } from 'node:os';
 import { ensureQueued } from './heavy-run-queue.mjs';
-import { createRun } from './verification-record.mjs';
 
 const isWin = platform() === 'win32';
 const gradlew = isWin ? '.\\gradlew.bat' : './gradlew';
@@ -39,33 +38,9 @@ if (!allowedScopes.has(scope)) {
   process.exit(2);
 }
 
-// [DEC-OPS-413] 단독 실행 대상(SOP §6.3)은 실행 기록을 열기 전에 대기열에서 차례를 기다린다(비Windows·Git 밖·시험 안은 그대로 돈다).
+// [DEC-OPS-413] 단독 실행 대상(SOP §6.3)은 대기열에서 차례를 기다린다(비Windows·Git 밖·시험 안은 그대로 돈다).
 // ops 는 원격 정책 조회 하나라 무거운 검증이 아니다.
 if (scope !== 'ops') ensureQueued('verify');
-
-const record = createRun({ root: process.cwd(), entrypoint: 'verify', scope,
-  parentRunId: process.env.EGOV_VERIFICATION_RUN_ID || undefined, timezone: process.env.TZ || 'Asia/Seoul' });
-
-// 고정된 분류명만 관측한다. 명령·인자·환경·stdout은 실행 기록에 저장하지 않는다.
-// 묶인 Gradle 명령의 시간은 묶음 전체이며 하네스 단독 시간으로 해석하지 않는다.
-function stageId(command) {
-  const labels = [
-    ['--run-selected', 'integration-selected'], ['integration-precheck', 'integration-precheck'],
-    ['test:form-validation', 'form-validation'], [':api-server:test :api-server:harnessTest', 'api-tests-and-harness'],
-    ['jacocoRootCoverageVerification', 'backend-suite'], ['harnessTest', 'harness'],
-    ['compileJava compileTestJava', 'backend-compile'], ['test:operational-contracts', 'operational-contracts'],
-    ['governance-atlas-contract', 'atlas'], ['cross-stack', 'cross-stack'], ['src/__tests__', 'frontend-invariants'],
-    ['vitest run', 'frontend-tests'],
-    // 'run type-check' 는 'run type-check:e2e' 에도 들어 있다 — e2e 항목이 먼저 맞아야 한다(find 는 앞에서부터 고른다).
-    ['type-check:e2e', 'e2e-types'], ['run type-check', 'frontend-types'], ['run lint', 'frontend-lint'],
-    ['sast:approx', 'sast'], ['bundle:check', 'frontend-bundle'], ['test:coverage', 'frontend-coverage'],
-    ['frontend build', 'frontend-build'], ['run-isolated-e2e', 'isolated-e2e'],
-    ['verify-branch-protection', 'repository-policy'], ['regen -- --check', 'generated-freshness'], ['npm run regen', 'regenerate'],
-    ['migration-verification-contract', 'migration-contract'], ['migration-test-shard', 'migration-artifacts'],
-    [':migration-tool:', 'migration-build'],
-  ];
-  return labels.find(([fragment]) => command.includes(fragment))?.[1] ?? 'other';
-}
 
 // 프런트 명령에 넘기지 않는 서명 비밀. 정본은 scripts/dev.mjs 의 FRONTEND_WITHHELD_SIGNING_ENV 이고 이 목록은 그 사본이다 —
 // 독립 이관 제품이 이 파일만 복사하므로 dev.mjs 를 import 하지 않는다. 두 목록이 같은지는 dev-remote-db-guard 시험이 본다.
@@ -79,29 +54,20 @@ function stripPrivateJwtSigningForFrontend(command, env) {
 }
 
 function run(command, extraEnv = {}) {
-  const id = stageId(command);
-  record.stepStart(id);
   console.log(`\n▶ ${command}`);
-  try {
-    const childEnv = stripPrivateJwtSigningForFrontend(command, {
-      ...process.env,
-      TZ: process.env.TZ || 'Asia/Seoul',
-      ...extraEnv,
-      EGOV_VERIFICATION_RUN_ID: record.runId || '',
-    });
-    execSync(command, {
-      stdio: 'inherit',
-      // 로컬 기본 시간대는 KST 다(개발 기계와 같은 조건). CI 러너는 UTC 로 돈다 — 명시한 TZ 가 이기므로
-      // `npx cross-env TZ=UTC npm run verify:<범위>`(셸 중립, 세션에 TZ 를 남기지 않음)로 CI 조건을 그대로 재현한다
-      // (백엔드 시험·변이 시험 JVM 은 build.gradle 이 따로 한국 표준시로 고정한다). 생성물 검증(verify-reusable-artifact)·T2(reusable-nightly)는
-      // CI 에서도 실행기가 자식 환경을 만들어 KST 로 고정하므로 이 손잡이를 두지 않는다.
-      env: childEnv,
-    });
-    record.stepEnd(id, { exitCode: 0 });
-  } catch (error) {
-    record.stepEnd(id, { exitCode: Number.isInteger(error.status) ? error.status : null, signal: error.signal });
-    throw error;
-  }
+  const childEnv = stripPrivateJwtSigningForFrontend(command, {
+    ...process.env,
+    TZ: process.env.TZ || 'Asia/Seoul',
+    ...extraEnv,
+  });
+  execSync(command, {
+    stdio: 'inherit',
+    // 로컬 기본 시간대는 KST 다(개발 기계와 같은 조건). CI 러너는 UTC 로 돈다 — 명시한 TZ 가 이기므로
+    // `npx cross-env TZ=UTC npm run verify:<범위>`(셸 중립, 세션에 TZ 를 남기지 않음)로 CI 조건을 그대로 재현한다
+    // (백엔드 시험·변이 시험 JVM 은 build.gradle 이 따로 한국 표준시로 고정한다). 생성물 검증(verify-reusable-artifact)·T2(reusable-nightly)는
+    // CI 에서도 실행기가 자식 환경을 만들어 KST 로 고정하므로 이 손잡이를 두지 않는다.
+    env: childEnv,
+  });
 }
 
 // 운영 계약은 그것을 부르는 범위(docs·fast·push·be·fe·full·e2e)에서 정확히 한 번 돌고, ops·migration 은 부르지 않는다.
@@ -222,8 +188,6 @@ try {
     // ③ 폼 census와 전체 시험·하네스 → ④ 닿는 schema-validation·생성기 화면·바뀐 E2E를 순차 실행한다.
     run('node scripts/integration-precheck.mjs');
     run('npm run regen');
-    // regen 은 추적 생성물을 의도적으로 다시 쓴다 — 뒤 시험은 그 트리를 검증하므로 입력 비교 기준을 여기로 옮긴다(DEC-OPS-385).
-    record.rebaseInputs();
     run('pnpm -C frontend run test:form-validation');
     run('pnpm -C frontend exec vitest run');
     run(`${gradlew} :api-server:test :api-server:harnessTest --console=plain -Dfile.encoding=UTF-8`);
@@ -247,9 +211,7 @@ try {
   }
 
   console.log(`\n✅ [verify:${scope}] 요청 범위 검증 통과`);
-  record.finish({ exitCode: 0 });
 } catch (error) {
-  record.finish({ exitCode: 1, signal: error?.signal });
   const message = error instanceof Error ? error.message : String(error);
   console.error(`\n❌ [verify:${scope}] 검증 실패 — ${message}`);
   process.exit(1);
