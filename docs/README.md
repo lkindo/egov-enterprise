@@ -86,7 +86,6 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [getting-started.md](03-guides/getting-started.md) | **온보딩 런북** — 새 프로젝트 시작 |
 | [orchestration-protocol.md](03-guides/orchestration-protocol.md) | **SOP** — 작업 등급·위임·감사·증거 기반 검증 |
 | [harness-improvement-pilot.md](03-guides/harness-improvement-pilot.md) | 스킬 정합·통합 하네스 중복 판단·관측용 실행 기록과 시각 회귀 행동 평가 1건의 범위, 첫 평가와 판정 시험의 결과(2026-11-22)와 한계 |
-| [governance-atlas-guide.md](03-guides/governance-atlas-guide.md) | Atlas 읽기·소스 생성·현행화·검증 및 증거 경계 |
 | [design-to-deliverables-guide.md](03-guides/design-to-deliverables-guide.md) | 설계 검토 예산·패턴 갤러리·토큰 키트·등록 점검기·감리·검수 입력 자료 초안 내보내기의 쓰임과 증거 경계, 공공 SW 규범 대응, 앞단 요구사항 작업공간(`P0~P5`)·에이전트 지시 플레이북 |
 | [requirements-workspace-guide.md](03-guides/requirements-workspace-guide.md) | 요구사항 스튜디오(문서 → 요구사항 → 산출물 → 스토리)와 이전 화면의 AI 판독·검수·복구 경계(ADR-0050~0053·0055·0056·0058) |
 | [governance-review-lifecycle.md](03-guides/governance-review-lifecycle.md) | 실제 시계 검토 보고, 기관 도입 preflight, 프로필 원장·메모리 투영과 무결성, 독립 이관 검증 |
@@ -185,6 +184,5 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | 공용 프로젝트 컨텍스트 | [.agent/memory/project-context.md](../.agent/memory/project-context.md) |
 | 공용 결정 인덱스 | [.agent/memory/decisions.md](../.agent/memory/decisions.md) |
 | 공용 활성 gap 인덱스 | [.agent/memory/known-gaps.md](../.agent/memory/known-gaps.md) |
-| 거버넌스·하네스 설명 지도 | [Governance & Harness Atlas 가이드](03-guides/governance-atlas-guide.md) — 온디맨드 설명용 파생 문서(`npm run atlas:build`) |
 | 게이트 계층·훅 규약 | [.githooks/README.md](../.githooks/README.md) |
 | 3대 헌법 | [.agent/knowledge/](../.agent/knowledge/) |

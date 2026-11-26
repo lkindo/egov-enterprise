@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
-import { renderAtlas } from './build-atlas.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -420,27 +419,6 @@ test('current E2E documentation matches the authoritative shard matrix and worke
   const buildGradle = fs.readFileSync('build.gradle', 'utf8');
   assert.ok(buildGradle.includes('e2e-tests 전체 shard가 통째로 skip 됩니다.'));
   assert.doesNotMatch(buildGradle, /e2e-tests \d+샤드/);
-
-  const atlas = renderAtlas();
-  assertAtlasShardClaims(atlas, shardCount);
-});
-
-function assertAtlasShardClaims(html, expected) {
-  const embedded = html.match(/<script\b[^>]*id="atlas-catalog-data"[^>]*>([\s\S]*?)<\/script>/);
-  assert.ok(embedded, 'Atlas source catalog must be embedded');
-  assert.equal(JSON.parse(embedded[1]).facts.e2eShardCount, expected);
-  const claims = [...html.matchAll(/<span\b[^>]*data-fact="e2eShardCount"[^>]*>([^<]*)<\/span>/g)];
-  assert.ok(claims.length > 0, 'Atlas must display its shard count');
-  for (const [, count] of claims) assert.equal(Number(count), expected, 'Every visible shard claim must match the manifest');
-}
-
-test('Atlas shard binding rejects one stale duplicate even when another is correct', () => {
-  const header = '<script id="atlas-catalog-data" type="application/json">{"facts":{"e2eShardCount":2}}</script>';
-  const correct = '<span data-fact="e2eShardCount">2</span>';
-  assertAtlasShardClaims(header + correct + correct, 2);
-  assert.throws(() => assertAtlasShardClaims(header + correct + '<span data-fact="e2eShardCount">3</span>', 2));
-  assert.throws(() => assertAtlasShardClaims(header + correct, 3));
-  assert.throws(() => assertAtlasShardClaims(header, 2));
 });
 
 test('worker topology contract rejects synthetic Playwright config drift', () => {

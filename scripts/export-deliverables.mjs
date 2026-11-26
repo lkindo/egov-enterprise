@@ -16,8 +16,7 @@
  *
  * 형식: 표마다 Markdown 과 CSV(UTF-8 BOM·CRLF, 수식 주입 방지). manifest.json 은 입력 sha256·lockfile·도구 버전과
  * 커밋·시각을 넣지 않은 내용 다이제스트(표 파일만)를 싣는다 — 원장 값이 같으면 커밋이 달라도 다이제스트가 같다.
- * Atlas(atlas-catalog.mjs)는 OpenAPI 만으로 연산을 그리고 인가 원장과 잇지 않는다 — 여기서 하는 조인은 Atlas 에 없으므로
- * 계산부를 나누지 않고 api-docs.json 을 직접 읽는다.
+ * OpenAPI(`api-docs.json`)와 인가 원장 조인을 위해 `api-docs.json` 을 직접 읽는다.
  *
  * 추적 표(하류 추적 보기·입력 항목 후보·시험 목록·인수 시험 시나리오 후보·요구사항 추적 조인)는 export-deliverables-trace.mjs,
  * 예외·도입 승인 현황과 단계 기준선 비교는 이 파일, DB 표는 export-deliverables-db.mjs 가 계산한다.

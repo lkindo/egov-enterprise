@@ -5,7 +5,7 @@ import { javaCascadeRemovals, planJavaRemoval } from './reusable-source-java.mjs
 import { FRONTEND_LAYOUT, createFrontendProjector, isFrontendModuleFile, planFrontendRemoval } from './reusable-source-frontend.mjs';
 import { convergeRedirectPages, describeRoutes, pageSurvivalExpectation, pageSurvivalViolations } from './reusable-page-survival.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
-import { HISTORICAL_SCHEMA_TEST_DIR, UPSTREAM_ATLAS, javaCascadeAcknowledgement, missingUpstreamAtlasAliases, missingUpstreamAtlasAssets,
+import { HISTORICAL_SCHEMA_TEST_DIR, javaCascadeAcknowledgement,
   removedGateAcknowledgement, selectHistoricalMigrationTests } from './reusable-source-gates.mjs';
 import { isCopyableSourceFile, normalize } from './reusable-source-tree.mjs';
 import { assertComposerSourceSurvives, composerProfile } from './project-composer-source.mjs';
@@ -25,7 +25,7 @@ import { describeContractReferences, isContractScopeFile, predictFromProjection,
  * 화면 생존 대조(pageSurvivalViolations)·assertComposerSourceSurvives·규칙 제거 선택·removedGateAcknowledgement·
  * api-docs 투영(projectSourceApiDocs)·사라진 계약 이름 참조(vanishedContractReferences)·권한 투영(planPermissionProjection)).
  * 그래서 여기서 찾은 차단 사유는 생성하면 같은 자리에서 실패할 사유다. 투영 뒤의 DB 번들·ZDM 원장·하네스 단계는 보지 않는다.
- * 규칙으로 걷는 게이트(과거 마이그레이션 검증·원본 Atlas)는 승인만 대조하고 제거 수에는 세지 않는다.
+ * 규칙으로 걷는 게이트(과거 마이그레이션 검증 등)는 승인만 대조하고 제거 수에는 세지 않는다.
  */
 const FRONTEND_GATE_DIR = 'frontend/src/__tests__/';
 // 라우트가 아닌 진입점만 따로 본다. 홈·로그인 같은 화면은 아래 화면 생존 대조(core 기대 화면)가 본다.
@@ -230,10 +230,9 @@ export function compositionDeepPlan({ root, composition, files, outputParent, ca
     ...(frontend ? [...frontend.removed].map(rel).filter(file => file.startsWith(FRONTEND_GATE_DIR)) : []),
   ].sort((left, right) => left.localeCompare(right));
 
-  // 생성기는 투영 뒤 규칙 제거(과거 마이그레이션 검증·원본 Atlas)를 하고 승인을 대조한다. 같은 판정을 남은 파일에 건다.
-  // 원본 Atlas 규칙은 늘 같은 게이트를 걷는다(자산이 빠지면 생성기는 걷기 전에 실패한다). 과거 마이그레이션 검증 선택이
-  // 실패하면 그 규칙이 적용되는지 알 수 없으므로, 승인 대조에서 그 규칙을 '적용되지 않는 규칙'으로 몰지 않는다.
-  // 규칙 순서는 생성기와 같다(과거 마이그레이션 검증, 원본 Atlas). 승인되지 않은 규칙을 말하는 순서가 된다.
+  // 생성기는 투영 뒤 규칙 제거(과거 마이그레이션 검증 등)를 하고 승인을 대조한다. 같은 판정을 남은 파일에 건다.
+  // 과거 마이그레이션 검증 선택이 실패하면 그 규칙이 적용되는지 알 수 없으므로, 승인 대조에서 그 규칙을
+  // '적용되지 않는 규칙'으로 몰지 않는다. 승인하지 않은 규칙을 말하는 순서가 된다.
   const ruleRemovals = {};
   const undeterminedRules = new Set();
   let vendorRemoval;
@@ -245,7 +244,6 @@ export function compositionDeepPlan({ root, composition, files, outputParent, ca
     undeterminedRules.add('historical-migration-tests');
     block('RULE_REMOVAL', { message: message(error) });
   }
-  ruleRemovals['upstream-atlas'] = [...UPSTREAM_ATLAS.gates].sort((left, right) => left.localeCompare(right));
   const isPresent = path => kept(path) || relativeFiles.some(file => file.startsWith(`${path}/`) && kept(file));
   let pkgScripts = {};
   if (present.has(pathKey('package.json'))) {
@@ -283,13 +281,6 @@ export function compositionDeepPlan({ root, composition, files, outputParent, ca
       block('RULE_REMOVAL', { message: message(error) });
     }
   }
-  try {
-    const missing = [
-      ...missingUpstreamAtlasAssets(isPresent),
-      ...(pkgScripts === null ? [] : missingUpstreamAtlasAliases(pkgScripts)),
-    ];
-    if (missing.length) block('RULE_REMOVAL', { message: missing.join(' · ') });
-  } catch (error) { block('RULE_REMOVAL', { message: message(error) }); }
 
   // 승인 대조는 두 투영이 성공해 제거 집합을 모두 알 때만 한다. 직접 선택에는 연쇄 승인 목록이 없다.
   if (java && frontend) {

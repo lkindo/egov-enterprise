@@ -278,7 +278,7 @@ main `6ac17d46f`의 UI·시각 기준선을 통합한 변경의 PR은 [#699](htt
 | 실제 Windows E2E | main 통합 전 새 일회용 DB에서 **136 passed(본 테스트 134 + setup 2), 플랫폼 skip 1, unexpected/flaky/global error 0**. 목록·결과 완전성 및 cleanup 통과. Playwright 구간 540.8초 | 로컬 worker 1과 정적 검사 병행 결과로, Linux CI 성능과 직접 비교하지 않음 |
 | 실제 Linux E2E·VRT | run `35579358480`, SHA `56aa75d7`, workers=2. **50개 파일·135개 본 테스트(API 36 + browser 99)**가 두 샤드에 정확히 한 번씩 실행됨. setup은 각 2개·총 4회. skip/retry/flaky/unexpected/global error 모두 0 | Linux VRT 4장 포함. inventory·결과·ID·project 대조 후 현재 프로파일 갱신. 전체 required CI 성공은 별개 |
 | 실제 계측 E2E | main 통합 전 별도의 새 일회용 DB와 계측 production build에서 **136 passed, 플랫폼 skip 1, unexpected/flaky/global error 0**. Playwright 구간 595.0초. 수집 JSON 104개의 형식 검증과 HTML 보고서 생성 성공 | 일반 실행과 분리된 선택적 계측 결과다. 두 실행 모두 소유한 프로세스·DB를 회수했으며 공유 DB를 사용하지 않음 |
-| 변경 계약·산출물 | 격리·선별 후보·결과 완전성·required CI 계약, 인증·정리·오류 관찰·coverage·VRT 하네스 검사와 부정 사례 통과. Java 하네스 결속, 문서 링크·공용 메모리·Atlas 정합 검사 통과 | 의도적 위반의 red를 확인. 새 원격 CI, PIT 전체 및 CodeQL 실행 성공을 뜻하지 않음 |
+| 변경 계약·산출물 | 격리·선별 후보·결과 완전성·required CI 계약, 인증·정리·오류 관찰·coverage·VRT 하네스 검사와 부정 사례 통과. Java 하네스 결속, 문서 링크·공용 메모리 정합 검사 통과 | 의도적 위반의 red를 확인. 새 원격 CI, PIT 전체 및 CodeQL 실행 성공을 뜻하지 않음 |
 
 이행용 `build/` JSON은 리뷰용 산출물이며 영구적인 두 번째 테스트 원장이 아니다. 지속되는 결론은 이 문서와 실제 spec·[Playwright 설정](../../frontend/playwright.config.ts)·[하네스](../../frontend/src/__tests__/e2e-harness-hygiene.test.ts)가 설명한다. 실행 결과 원본이나 민감 값을 문서에 복제하지 않는다.
 

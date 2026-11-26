@@ -64,10 +64,6 @@ const nextConfig: NextConfig = {
     //  - style-src/font-src: Google Fonts 도메인 2개 제거(2026-07-29).
     //    앱 본체는 layout.tsx 가 next/font/google 을 쓰므로 Next 가 빌드타임에 폰트를 받아
     //    /_next/static 으로 셀프호스팅한다 — 런타임에 fonts.googleapis/gstatic 으로 나가는 요청이 없다.
-    //    ⚠ 단, 앱 소스(src/) 밖에 예외가 하나 있었다: public/governance_harness_atlas.html 이
-    //    두 도메인을 실제로 참조하고 있었다(게다가 Pretendard 를 받는 cdn.jsdelivr 은 CSP 에 등재된
-    //    적이 없어 이미 차단 중이었다 — 그 문서는 CSP 와 어긋난 상태였다). 그 파일의 외부 폰트 의존을
-    //    함께 끊어 시스템 폰트로 전환했기에 여기서 두 출처를 지울 수 있다.
     //    → public/ 에 정적 HTML 을 추가할 때 이 CSP 가 그대로 적용된다는 점에 주의할 것.
     //    폰트 세분화(style-src-elem/attr)는 sonner·framer-motion 런타임 <style> 주입 검증이
     //    선행돼야 하므로 Phase 3 잔여로 둔다.

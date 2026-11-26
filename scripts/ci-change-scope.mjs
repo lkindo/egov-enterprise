@@ -385,7 +385,7 @@ const COMPOSER_CONTRACTS_RELEVANT = [
   /^\.(?:agent|agents|claude)\/skills\//,
   /^\.agent\/skillsets\//,
   /^docs\/README\.md$/,
-  /^scripts\/(?:atlas-|build-atlas\.mjs$|project-composer|reusable-|composer-|generate-reusable-base-|verify-reusable-|verify-project-composer|slot-registry|domain-deletion-|domain-scaffold-|frontend-reachability-census|frontend-module-graph|composition-profiles|pack-tagged-registry|retired-pack-vocabulary|run-operational-contracts|operational-contracts-runner)/,
+  /^scripts\/(?:project-composer|reusable-|composer-|generate-reusable-base-|verify-reusable-|verify-project-composer|slot-registry|domain-deletion-|domain-scaffold-|frontend-reachability-census|frontend-module-graph|composition-profiles|pack-tagged-registry|retired-pack-vocabulary|run-operational-contracts|operational-contracts-runner)/,
 ];
 
 /**
@@ -400,16 +400,14 @@ const COMPOSER_CONTRACTS_RELEVANT = [
  * composition-profiles.mjs 는 넣지 않는다(분류기가 자기 입력의 변경을 좁게 분류하지 않게 한다).
  */
 export const GENERATOR_TOOL_PATHS = Object.freeze([
-  // Atlas와 소비 원장도 실행 가능한 도구 입력이다. 문서 fast-pass 대신 소비자 축을
+  // 소비 원장도 실행 가능한 도구 입력이다. 문서 fast-pass 대신 소비자 축을
   // 동일한 source-reader 계약으로 확인하고, 관계없는 migration/PIT만 선택하지 않는다.
-  { path: 'scripts/atlas-', axes: ['atlas', 'backend', 'e2e', 'schema'] },
-  { path: 'scripts/build-atlas.mjs', axes: ['atlas', 'backend', 'e2e', 'schema'] },
-  { path: 'config/governance/operation-consumer-census.json', axes: ['atlas', 'backend'] },
+  { path: 'config/governance/operation-consumer-census.json', axes: ['backend'] },
   // 기능 선언(매니페스트 v2). 하네스가 생성물 표지(presets.json)와 디렉터리를, 기본 관리자 시드 스키마 검증이 기능 파일을
   // 읽고, 생성기 화면 시험이 카탈로그를 실행한다.
-  { path: 'config/modules/', axes: ['atlas', 'backend', 'e2e', 'schema'] },
+  { path: 'config/modules/', axes: ['backend', 'e2e', 'schema'] },
   // 생성기 메뉴 스냅숏. 탭 목적지 cross-stack 계약도 읽는다.
-  { path: 'config/project-composer-menus.json', axes: ['atlas', 'backend', 'e2e', 'schema'] },
+  { path: 'config/project-composer-menus.json', axes: ['backend', 'e2e', 'schema'] },
   // scripts/ 는 하네스 두 개(FlywaySchemaOwnershipLinterTest·SecretLiteralLinterTest)가 디렉터리째 읽어 backend 를 끄지 못한다.
   { path: 'scripts/composer-modules', axes: ['backend', 'e2e', 'schema'] },
   { path: 'scripts/domain-deletion-plan', axes: ['backend', 'e2e', 'schema'] },
@@ -419,7 +417,7 @@ export const GENERATOR_TOOL_PATHS = Object.freeze([
   { path: 'scripts/generate-domain', axes: ['backend', 'e2e', 'schema'] },
   { path: 'scripts/generate-reusable-base-', axes: ['backend', 'e2e', 'schema'] },
   { path: 'scripts/project-composer', axes: ['backend', 'e2e', 'schema'] },
-  { path: 'scripts/reusable-', axes: ['atlas', 'backend', 'e2e', 'schema'] },
+  { path: 'scripts/reusable-', axes: ['backend', 'e2e', 'schema'] },
   { path: 'scripts/verify-project-composer', axes: ['backend', 'e2e', 'schema'] },
   { path: 'scripts/verify-reusable-', axes: ['backend', 'e2e', 'schema'] },
   // 생성기 화면. 화면 시험(ui.test.mjs)은 e2e 0번 샤드에서만 돈다.
@@ -436,8 +434,8 @@ export const GENERATOR_TOOL_PATHS = Object.freeze([
   { path: 'tools/requirements-workspace/', axes: [] },
   // [2026-10-27 DEC-OPS-387] 에이전트 하네스(DEC-OPS-386) — 실행 전 가드·스킬 안내 생성기와 세 도구의 훅 어댑터. 시험은 늘 도는 운영
   // 계약(agent-guard·agent-skill-adapters·project-composer-source)이고, 생성물에 복사되므로 재사용 검증은 남는다. 축은 운영 계약이
-  // 그 경로를 읽는 시험에서 계산한 값이다(훅 어댑터를 읽는 시험은 운영 계약뿐이다). 이관·PIT 는 켜지 않는다. 프로세스 분류 보조
-  // (verification-record.mjs)은 heavy-run-queue.mjs 가 import 하는 실행 경로라 넣지 않는다.
+  // 그 경로를 읽는 시험에서 계산한 값이다(훅 어댑터를 읽는 시험은 운영 계약뿐이다). 이관·PIT 는 켜지 않는다. 명명된 파이프·프로세스 분류 보조
+  // (heavy-run-pipes.mjs)은 heavy-run-queue.mjs 가 import 하는 실행 경로라 넣지 않는다.
   { path: 'scripts/agent-guard', axes: ['backend', 'e2e', 'schema'] },
   { path: 'scripts/agent-skill-adapters', axes: ['backend', 'e2e', 'schema'] },
   { path: '.claude/settings.json', axes: [] },
@@ -608,15 +606,6 @@ export function classifyChangedFiles(changedFiles,
   // 생성기·도구 전용 경로는 표의 축만 켠다(GENERATOR_TOOL_PATHS). 재사용 검증은 아래 selectedReusableProfiles 가 고른다 —
   // 이 경로는 기능 소유가 없어 모든 시작 구성이다.
   const tool = axis => files.some(file => selectsToolAxis(file, axis));
-  const atlas = tool('atlas') || files.some(file => /^docs\/.+\.(?:md|html)$/i.test(file)
-    || /^\.agent\/memory\/(?:project-context|decisions|known-gaps)\.md$/.test(file)
-    || /^\.agent\/knowledge\/[^/]+\/artifacts\/constitution\.md$/.test(file)
-    || /^\.github\/workflows\/[^/]+\.ya?ml$/.test(file)
-    || file.startsWith('config/governance/')
-    || /^migration-tool\/(?:build\.gradle|src\/test\/java\/.+\.java)$/.test(file)
-    || file.startsWith('frontend/atlas/')
-    || file === 'scripts/build-atlas.mjs'
-    || /^scripts\/atlas-[^/]+\.mjs$/.test(file));
   const backend = full || files.some(isBackend) || tool('backend');
   const migration = full || files.some(isMigration) || tool('migration')
     || files.some(file => declaresProtectedColumn(file, readSource));
@@ -639,7 +628,6 @@ export function classifyChangedFiles(changedFiles,
     files,
     unknownFiles,
     docsOnly,
-    atlas,
     governance: true,
     secretScan: true,
     sast: !docsOnly,
@@ -689,7 +677,6 @@ function bool(value) {
 export function githubOutputs(result) {
   return {
     docs_only: bool(result.docsOnly),
-    atlas: bool(result.atlas),
     governance: bool(result.governance),
     secret_scan: bool(result.secretScan),
     sast: bool(result.sast),

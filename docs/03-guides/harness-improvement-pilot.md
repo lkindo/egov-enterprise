@@ -22,11 +22,11 @@
 
 ## 관측용 실행 기록
 
-`DEC-OPS-436` 으로 `scripts/verify.mjs`·`.githooks/pre-push`·`scripts/vitest-timeout-rerun.mjs` 의 `build/verification-runs/<UUID>.jsonl` 기록 쓰기와 단계별 PowerShell CIM 프로세스 폴링(`createRun`·`noteTimeoutRerun`·`summarizeRuns`)을 폐지했다.
+`DEC-OPS-436` 으로 JSONL 기록 쓰기와 단계별 PowerShell CIM 프로세스 폴링(`createRun`·`noteTimeoutRerun`·`summarizeRuns`)을 폐지했고, 후속 정리(`DEC-OPS-437`)로 `verification-record.mjs`·`verification-record.test.mjs` 를 완전히 퇴역시켰다.
 
-`scripts/verification-record.mjs` 는 [무거운 검증 대기열](../../scripts/heavy-run-queue.mjs)이 쓰는 프로세스 종류 판별·목록 보조 함수(`heavyProcessKinds`·`waitingExclusions`·`listProcesses`·`listProcessesAsync`·`waitingQueuePids`)만 유지하며, 명령 원문·환경·비밀값은 저장하지 않는다.
+[무거운 검증 대기열](../../scripts/heavy-run-queue.mjs)이 쓰는 프로세스 종류 판별·목록 보조 함수(`heavyProcessKinds`·`waitingExclusions`·`listProcesses`·`listProcessesAsync`·`waitingQueuePids`)는 [대기열 파이프·프로세스 보조 모듈](../../scripts/heavy-run-pipes.mjs)로 통합했으며, 명령 원문·환경·비밀값은 저장하지 않는다.
 
-원래 검사 명령·인자·범위·실패 전파는 `pre-push-ref-contract.test.mjs` 에서, 대기열 프로세스 판별과 폴링 퇴역 경계는 `verification-record.test.mjs` 및 `heavy-run-queue.test.mjs` 에서 확인한다.
+원래 검사 명령·인자·범위·실패 전파는 `pre-push-ref-contract.test.mjs` 에서, 대기열 프로세스 판별과 폴링·JSONL 퇴역 경계는 `heavy-run-queue.test.mjs` 에서 확인한다.
 
 독립 이관 생성물에는 `verify.mjs`가 사용하는 대기열 및 프로세스 판별 보조 모듈을 함께 복사한다. 생성물 검증은 부모의 `NODE_TEST_CONTEXT`를 제거한 실제 자식 시험에서 비어 있지 않은 모집단을 확인한다. 독립 이관의 승인·파일 경계 시험과 원본 전용 온라인·재사용 구성 시험은 파일로 분리하며, 원본 운영 계약은 두 파일을 모두 실행한다. 제품의 구성 카탈로그 부재를 가짜 선언이나 시험 skip으로 덮지 않는다.
 

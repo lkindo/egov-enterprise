@@ -5,21 +5,6 @@ import { stripJavaComments } from './harness-baseline-manifest.mjs';
 import { fail, walk } from './reusable-source-tree.mjs';
 
 export const HISTORICAL_SCHEMA_TEST_DIR = 'api-server/src/test/java/nuri/api/schema';
-export const UPSTREAM_ATLAS = Object.freeze({
-  assets: Object.freeze([
-    'frontend/atlas',
-    'scripts/build-atlas.mjs',
-    'scripts/atlas-catalog.mjs',
-    // Atlas 만 다루는 안내 문서. 생성 프로젝트에는 Atlas 도구와 atlas:* 명령이 없다(DEC-OPS-427).
-    'docs/03-guides/governance-atlas-guide.md',
-  ]),
-  gates: Object.freeze([
-    'frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts',
-    'scripts/atlas-catalog.test.mjs',
-    'scripts/atlas-generation.test.mjs',
-  ]),
-  aliases: Object.freeze(['atlas:build', 'atlas:check', 'atlas:contract']),
-});
 
 export function projectedWriteHandlerCounts(source) {
   const code = stripJavaComments(source);

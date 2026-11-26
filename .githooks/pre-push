@@ -110,9 +110,9 @@ unset GIT_LOCAL_ENV_VARS GIT_LOCAL_ENV_VAR
 # CI와 동일한 fail-closed 분류기를 fast-pass 판정에도 사용한다. 확장자만
 # 보는 별도 allowlist를 두면 헌법 Markdown, 실행 가능한 docs 파일, rename의
 # 이전 경로가 CI와 로컬에서 서로 다르게 분류될 수 있다.
-# 다섯 필드를 한 번에 묻는다(2026-11-07) — 분류기 기동이 Windows 에서 약 1.6초라 필드마다 부르면 push 마다 약 8초다. 값을 하나라도
+# 네 필드를 한 번에 묻는다(2026-11-07) — 분류기 기동이 Windows 에서 약 1.6초라 필드마다 부르면 push 마다 약 6초다. 값을 하나라도
 # 읽지 못하면 멈춘다: 빈 값은 backend·frontend 검사를 건너뛰는 쪽으로 읽히므로 안전측이 아니다.
-SCOPE_FIELDS=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --fields docsOnly,backend,migration,frontend,atlas)
+SCOPE_FIELDS=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --fields docsOnly,backend,migration,frontend)
 scope_field() {
   printf '%s\n' "$SCOPE_FIELDS" | sed -n "s/^$1=//p"
 }
@@ -120,8 +120,7 @@ SCOPE_DOCS_ONLY=$(scope_field docsOnly)
 SCOPE_BACKEND=$(scope_field backend)
 SCOPE_MIGRATION=$(scope_field migration)
 SCOPE_FRONTEND=$(scope_field frontend)
-SCOPE_ATLAS=$(scope_field atlas)
-for SCOPE_VALUE in "$SCOPE_DOCS_ONLY" "$SCOPE_BACKEND" "$SCOPE_MIGRATION" "$SCOPE_FRONTEND" "$SCOPE_ATLAS"; do
+for SCOPE_VALUE in "$SCOPE_DOCS_ONLY" "$SCOPE_BACKEND" "$SCOPE_MIGRATION" "$SCOPE_FRONTEND"; do
   case "$SCOPE_VALUE" in
     true|false) ;;
     *) echo "❌ 변경 범위 분류 결과를 읽지 못했습니다 — 어떤 검사도 안전하게 생략할 수 없어 멈춥니다" >&2; exit 1 ;;
@@ -146,14 +145,11 @@ run_operational_contracts() {
     || { echo "❌ 운영 계약 실패 — 하네스 registry, CI scope, 문서·메모리 또는 실행 경로가 불일치합니다"; exit 1; }
 }
 
-# [2026-11-18 DEC-OPS-420] Governance Atlas 의 렌더·상호작용 계약은 수동 실행이다(npm run atlas:contract) — 이 훅은 돌리지 않는다.
-# Atlas 카탈로그·결정 색인 분할·렌더 안전성은 운영 계약(scripts/atlas-*.test.mjs)이, 문서 링크는 docs-link-integrity 가 본다.
-
 # 생성물·해시 결속이 낡았는지 맨 앞에서 본다(npm run regen -- --check — 쓰지 않는다, 로컬 약 20초). 생성 계약·권한·슬롯·경계
-# census·화면 목록·URL census·SAST 예외 해시·Atlas 의 각 검사 모드와, regen 이 고치지 않는 손 결속 원장
+# census·화면 목록·URL census·SAST 예외 해시의 각 검사 모드와, regen 이 고치지 않는 손 결속 원장
 # 확인(operation census 의 수·래칫, IA 처분 제안의 라우트 원장 결속 해시, scripts/ledger-precheck.mjs 의 태그 시험 gates.json 등록·
 # 메뉴 snapshot 해시·기본 그룹 없는 권한의 기능 파일 안내·certified 벤더의 인증 입력 해시)이다. 모두 운영 계약·CI codegen 게이트가 같은 판정으로 다시 보는 것이라
-# 새 검사가 아니다 — 11분짜리 운영 계약 뒤가 아니라 처음에 알린다. 문서·원장만 바꿔도 Atlas 카탈로그·해시 결속을 확인하므로 두 경로 모두 돈다.
+# 새 검사가 아니다 — 11분짜리 운영 계약 뒤가 아니라 처음에 알린다. 문서·원장만 바꿔도 해시 결속을 확인하므로 두 경로 모두 돈다.
 # [계약 드리프트 게이트] 생성 계약 검사(sync-contract)는 프런트 codegen:verify·codegen:verify:zod 와 같은 스크립트·인자다
 # (scripts/verify-generated-contracts.mjs api·zod — 경로는 스크립트 위치 기준 절대 경로라 cwd 와 무관하다). index 의 api-docs.json 으로
 # 임시 재생성해 index 생성물과 비교하고, 작업 트리가 다르면 작업 트리 쌍도 비교하며, 스펙·생성물이 추적되지 않으면 실패한다.

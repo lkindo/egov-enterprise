@@ -55,7 +55,7 @@ test('배선을 끊거나 값을 줄이면 red 다', () => {
   for (const [name, mutate] of [
     ['close 헤더 제거', s => ({ ...s, proxy: s.proxy.replace("if (!isUpgradeRequest(requestHeaders)) requestHeaders.set('Connection', 'close');", '') })],
     ['업그레이드 예외 제거', s => ({ ...s, proxy: s.proxy.replace("if (!isUpgradeRequest(requestHeaders)) requestHeaders.set", "requestHeaders.set") })],
-    ['덮어쓰기 전달 제거', s => ({ ...s, proxy: s.proxy.replace("return NextResponse.next({ request: { headers: requestHeaders } });\n  }\n\n  // 2-a.", "return NextResponse.next();\n  }\n\n  // 2-a.") })],
+    ['덮어쓰기 전달 제거', s => ({ ...s, proxy: s.proxy.replace("if (!isUpgradeRequest(requestHeaders)) requestHeaders.set('Connection', 'close');\n    return NextResponse.next({ request: { headers: requestHeaders } });", "if (!isUpgradeRequest(requestHeaders)) requestHeaders.set('Connection', 'close');\n    return NextResponse.next();") })],
     ['러너 인자 배선 제거', s => ({ ...s, runner: s.runner.replace('process.execPath, frontendStartArguments(next, webPort), frontend', "process.execPath, [next, 'start', '--hostname', '127.0.0.1', '--port', String(webPort)], frontend") })],
     ['e2e 잡 한도가 서버 유휴 수명을 넘김', s => ({ ...s, ci: s.ci.replace(new RegExp(`(  e2e-tests:\\n[\\s\\S]*?    timeout-minutes: )${ciMinutes}\\n`, 'u'), '$1600\n') })],
   ]) {
