@@ -6,7 +6,6 @@ import { useToast } from '@/app/components/ui/toast';
 import { userService } from '@/services/business/user/userService';
 import { ChangePasswordForm } from './ChangePasswordForm';
 import { KoreanOnlyScreen } from '@/i18n/LocaleBoundary';
-import { SITE_IDENTITY } from '@/config/site-identity';
 
 /**
  * 관리자가 초기화한 임시 비밀번호로 로그인한 사용자에게 앱 대신 비밀번호 변경 화면만 보인다(2026-10-01 결정 18).
@@ -31,7 +30,7 @@ export function PasswordChangeGate({ children }: { children: ReactNode }) {
   // [2026-11-26 ADR-0063] 이 관문은 아직 한국어로만 제공한다. 번역을 마친 경로(/login)에서 열려도 경로가 아니라 이 화면으로 판정해
   //   문서 언어·폼 문구·API 언어·안내를 한국어 화면으로 맞춘다. lang 은 문서 언어가 맞춰지기 전의 첫 화면(서버 렌더)을 위한 것이다.
   return (
-    <KoreanOnlyScreen documentTitle={`비밀번호 변경 | ${SITE_IDENTITY.frameworkName}`}>
+    <KoreanOnlyScreen>
     <main lang="ko" className="flex min-h-dvh items-center justify-center bg-background p-4">
       <section aria-labelledby={titleId} className="w-full max-w-md space-y-4 rounded-lg border bg-card p-6 shadow-sm">
         <h1 id={titleId} className="text-xl font-bold">비밀번호를 바꿔 주세요</h1>

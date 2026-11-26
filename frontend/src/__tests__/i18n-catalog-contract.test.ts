@@ -28,6 +28,9 @@ const LANGUAGE_NEUTRAL_IMPORTS: Record<string, Record<string, string>> = {
   'src/extensions/generated-shell-links.ts': {
     shellLinks: '한국어로만 제공하는 화면(/help·/pages)으로 가는 링크 이름 — 번역하지 않고 바닥글이 contentLang 으로 lang="ko" 를 단다(결정 6)',
   },
+  'src/lib/auth/server-user.ts': {
+    getServerUser: '서버 컴포넌트의 현재 사용자 조회 — 사용자 정보만 돌려주고 문구를 돌려주지 않는다(로그인 문서 제목의 관문 판정)',
+  },
   'src/services/foundation/auth/mfaService.ts': {
     mfaService: '추가 인증 BFF 호출 — 응답을 계약으로 검증해 값만 돌려주고 문구를 돌려주지 않는다(실패는 화면이 카탈로그 키로 그린다)',
   },
@@ -118,12 +121,26 @@ function reexportSources(file: string): string[] {
       for (const element of bindings.elements) if (!element.isTypeOnly) imported.set(element.name.text, target);
     }
   }
-  const sources = new Set<string>();
-  const follow = (expression: ts.Node) => {
+  // 최상위 지역 상수가 가져온 이름을 쓰면 그 출처를 기억한다 — `const label = ns.label; export { label }` 처럼 나눠 내보내도 따라간다.
+  const localOrigins = new Map<string, Set<string>>();
+  const originsOf = (expression: ts.Node): Set<string> => {
+    const origins = new Set<string>();
     for (const name of identifiersIn(expression)) {
       const origin = imported.get(name);
-      if (origin) sources.add(origin);
+      if (origin) origins.add(origin);
+      for (const local of localOrigins.get(name) ?? []) origins.add(local);
     }
+    return origins;
+  };
+  for (const statement of source.statements) {
+    if (!ts.isVariableStatement(statement)) continue;
+    for (const declaration of statement.declarationList.declarations) {
+      if (ts.isIdentifier(declaration.name) && declaration.initializer) localOrigins.set(declaration.name.text, originsOf(declaration.initializer));
+    }
+  }
+  const sources = new Set<string>();
+  const follow = (expression: ts.Node) => {
+    for (const origin of originsOf(expression)) sources.add(origin);
   };
   for (const statement of source.statements) {
     if (ts.isExportDeclaration(statement) && !statement.isTypeOnly) {
@@ -133,10 +150,7 @@ function reexportSources(file: string): string[] {
         const target = resolveLocalImport(file, statement.moduleSpecifier.text);
         if (isSourceModule(target) && (valueElements === undefined || valueElements.length > 0)) sources.add(target);
       } else if (valueElements) {
-        for (const element of valueElements) {
-          const origin = imported.get((element.propertyName ?? element.name).text);
-          if (origin) sources.add(origin);
-        }
+        for (const element of valueElements) follow(element.propertyName ?? element.name);
       }
     }
     if (ts.isExportAssignment(statement)) follow(statement.expression);
@@ -233,16 +247,15 @@ describe('i18n 카탈로그 완결성 (ADR-0063)', () => {
     const used = new Map<string, Set<string>>();
     for (const file of surfaceFiles) {
       for (const { module, names } of valueImports(file)) {
+        for (const name of names) used.set(module, (used.get(module) ?? new Set()).add(name));
         if (surfaceFiles.has(module) || !isSourceModule(module) || !koreanBearing(module)) continue;
         const allowed = LANGUAGE_NEUTRAL_IMPORTS[module] ?? {};
-        for (const name of names) {
-          if (name in allowed) used.set(module, (used.get(module) ?? new Set()).add(name));
-          else violations.push(`${file} → ${module}#${name}`);
-        }
+        for (const name of names) if (!(name in allowed)) violations.push(`${file} → ${module}#${name}`);
       }
     }
     expect(violations, '한글 문구를 가진 모듈에서 허용 목록 밖의 이름을 가져왔다 — 그 문구를 카탈로그로 옮기거나 화면에 닿지 않음을 확인해 적는다').toEqual([]);
-    // 허용 목록이 낡지 않게 — 아무도 가져오지 않는 항목은 걷는다.
+    // 허용 목록이 낡지 않게 — 번역 화면 파일이 더는 가져오지 않는 항목은 걷는다. 가져오기만 본다: 기능을 뺀 생성물에서는 같은
+    //   모듈에 한글이 없어질 수 있다(빈 바닥글 링크 목록) — 그때도 항목은 낡지 않았다(Codex 4차 검토, 생성물 투영에서 붉었다).
     const stale = Object.entries(LANGUAGE_NEUTRAL_IMPORTS).flatMap(([module, names]) =>
       Object.keys(names).filter((name) => !used.get(module)?.has(name)).map((name) => `${module}#${name}`));
     expect(stale).toEqual([]);

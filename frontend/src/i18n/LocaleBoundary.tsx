@@ -88,19 +88,13 @@ export function LocaleBoundary({ preferred, messages, koreanMessages, children }
  * 경로와 무관하게 이 화면을 한국어 전용으로 그린다 — 번역 원장의 경로(예: `/login`) 위에 아직 번역하지 않은 화면이 통째로 대신 그려질 때
  * (임시 비밀번호 변경 관문) 쓴다. 안의 공용 부품은 처음부터 한국어 카탈로그로 그리고(서버 렌더 포함), 화면이 떠 있는 동안 경계가 문서
  * 언어·API 언어·안내를 한국어 화면으로 맞춘다. 그리는 쪽은 자기 최상위 요소에 `lang="ko"` 를 단다(문서 언어가 맞춰지기 전의 첫 화면).
- * 서버도 같은 판정을 한다 — 임시 비밀번호 사용자의 요청은 첫 문서부터 한국어다(server-locale).
+ * 탭 제목은 경로의 메타데이터가 정한다(클라이언트가 덮어쓰면 Next 의 제목 갱신과 겨룬다) — 관문이 남는 /login 은 그 메타데이터가 관문
+ * 제목을 낸다.
  */
-export function KoreanOnlyScreen({ documentTitle, children }: { documentTitle?: string; children: ReactNode }) {
+export function KoreanOnlyScreen({ children }: { children: ReactNode }) {
   const boundary = useContext(BoundaryContext);
   const claim = boundary?.claimKoreanOnly;
   useLayoutEffect(() => claim?.(), [claim]);
-  // 탭 제목은 그 경로의 문서 제목(예: 영어 로그인의 Sign in)이 남는다 — 이 화면이 떠 있는 동안 이 화면의 제목으로 바꾸고 떠나면 돌린다.
-  useLayoutEffect(() => {
-    if (!documentTitle) return undefined;
-    const previous = document.title;
-    document.title = documentTitle;
-    return () => { document.title = previous; };
-  }, [documentTitle]);
   if (!boundary) return <>{children}</>;
   return <I18nProvider locale="ko" messages={boundary.koreanMessages}>{children}</I18nProvider>;
 }

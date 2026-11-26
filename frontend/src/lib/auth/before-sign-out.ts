@@ -89,10 +89,10 @@ function isNotice(value: unknown): value is SignOutNotice {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as { key?: unknown; values?: unknown };
   if (typeof candidate.key !== 'string' || !candidate.key.startsWith('signOut.')) return false;
-  // 안내 문구는 건수를 받는다 — 건수가 없거나 숫자가 아닌 저장 값은 로그인 화면을 번역 오류로 깨뜨리지 않게 버린다.
+  // 안내 문구는 건수를 받는다 — 건수가 없거나 0 이상의 정수가 아닌 저장 값은 로그인 화면을 번역 오류로 깨뜨리지 않게 버린다.
   if (!candidate.values || typeof candidate.values !== 'object') return false;
   const count = (candidate.values as { count?: unknown }).count;
-  return typeof count === 'number' && Number.isFinite(count);
+  return typeof count === 'number' && Number.isInteger(count) && count >= 0;
 }
 
 /** 다시 로그인할 때 보일 안내를 남긴다(이 탭의 세션 저장소). 같은 키는 새 값으로 바꾼다. */

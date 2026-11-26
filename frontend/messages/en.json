@@ -51,7 +51,8 @@
     "errorFailure": "Sign-in failed. Check your user ID and password.",
     "errorUnavailable": "The sign-in service is temporarily unavailable. Please try again later.",
     "errorRateLimited": "There are too many sign-in requests. Please try again later.",
-    "pageTitle": "Sign in"
+    "pageTitle": "Sign in",
+    "passwordChangeTitle": "Change password"
   },
   "mfa": {
     "recoveryRegion": "Store your recovery codes",

@@ -16,37 +16,45 @@ vi.mock('@/lib/auth/server-user', () => ({
 }));
 
 import { requestEffectiveLocale } from '../server-locale';
+import { generateMetadata } from '@/app/login/page';
 
-/** 서버가 첫 문서를 그릴 로케일(ADR-0063) — 경로와 임시 비밀번호 관문을 함께 본다. */
+beforeEach(() => {
+  request.locale = 'en';
+  request.pathname = '/login';
+  request.user = null;
+  request.userReads = 0;
+});
+
+/**
+ * 서버가 첫 문서를 그릴 로케일(ADR-0063) — 경로만 본다. 루트 레이아웃이 문서를 내보내기 전에 인증 조회를 기다리지 않는다(Codex 4차 검토:
+ * 영어 로그인 첫 문서가 인증 백엔드 응답을 기다렸다).
+ */
 describe('requestEffectiveLocale', () => {
-  beforeEach(() => {
-    request.locale = 'en';
-    request.pathname = '/login';
-    request.user = null;
-    request.userReads = 0;
-  });
-
-  it('영어를 고른 번역 화면은 영어다', async () => {
+  it('영어를 고른 번역 화면은 영어, 번역을 마치지 않은 경로·경로를 모를 때는 한국어다', async () => {
     expect(await requestEffectiveLocale()).toBe('en');
-  });
-
-  it('번역을 마치지 않은 경로·경로를 모를 때는 한국어이고 현재 사용자를 읽지 않는다', async () => {
     request.pathname = '/search';
     expect(await requestEffectiveLocale()).toBe('ko');
     request.pathname = null;
     expect(await requestEffectiveLocale()).toBe('ko');
+  });
+
+  it('현재 사용자를 읽지 않는다 — 임시 비밀번호 사용자여도 문서를 내보내기 전에 인증을 기다리지 않는다', async () => {
+    request.user = { passwordChangeRequired: true };
+    expect(await requestEffectiveLocale()).toBe('en');
     expect(request.userReads).toBe(0);
   });
+});
 
-  it('번역 화면이라도 임시 비밀번호 사용자에게는 관문이 대신 그려지므로 한국어다', async () => {
-    request.user = { passwordChangeRequired: true };
-    expect(await requestEffectiveLocale()).toBe('ko');
-  });
-
-  it('한국어를 고르면 현재 사용자를 읽지 않는다', async () => {
+/** 로그인 문서 제목 — 화면 로케일을 따르고, 이 경로에 한국어 전용 관문이 대신 그려지는 사용자에게는 관문의 한국어 제목이다. */
+describe('로그인 generateMetadata', () => {
+  it('영어·한국어 로케일의 로그인 제목', async () => {
+    expect((await generateMetadata()).title).toMatch(/^Sign in \| /);
     request.locale = 'ko';
+    expect((await generateMetadata()).title).toMatch(/^로그인 \| /);
+  });
+
+  it('임시 비밀번호 사용자에게는 고른 로케일과 무관하게 관문의 한국어 제목이다', async () => {
     request.user = { passwordChangeRequired: true };
-    expect(await requestEffectiveLocale()).toBe('ko');
-    expect(request.userReads).toBe(0);
+    expect((await generateMetadata()).title).toMatch(/^비밀번호 변경 \| /);
   });
 });

@@ -51,7 +51,8 @@
     "errorFailure": "로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요.",
     "errorUnavailable": "로그인 서비스에 일시적으로 연결할 수 없습니다. 잠시 후 다시 시도해주세요.",
     "errorRateLimited": "로그인 요청이 많습니다. 잠시 후 다시 시도해주세요.",
-    "pageTitle": "로그인"
+    "pageTitle": "로그인",
+    "passwordChangeTitle": "비밀번호 변경"
   },
   "mfa": {
     "recoveryRegion": "복구 코드 보관",

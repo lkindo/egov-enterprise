@@ -108,6 +108,8 @@ describe('before-sign-out', () => {
       // 건수가 없거나 숫자가 아닌 값은 로그인 화면의 번역에서 깨지므로 버린다.
       { key: 'signOut.unconfirmedApprovals' },
       { key: 'signOut.unconfirmedApprovals', values: { count: 'two' } },
+      { key: 'signOut.unconfirmedApprovals', values: { count: -1 } },
+      { key: 'signOut.unconfirmedApprovals', values: { count: 1.5 } },
       { key: 'signOut.unsentApprovals', values: { count: 1 } },
     ]));
     expect(takeSignOutNotices()).toEqual([{ key: 'signOut.unsentApprovals', values: { count: 1 } }]);
