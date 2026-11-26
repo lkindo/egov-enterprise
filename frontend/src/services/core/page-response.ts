@@ -70,9 +70,9 @@ export function requirePageItems<T, U extends T>(
   guard: (item: T) => item is U,
   label: string,
 ): PageResponse<U> {
-  if (!page.list.every(guard)) {
+  const everyItem = (candidate: PageResponse<T>): candidate is PageResponse<U> => candidate.list.every(guard);
+  if (!everyItem(page)) {
     throw new Error(`${label} 페이지 응답이 필수 계약과 일치하지 않습니다.`);
   }
-  // 바로 위에서 모든 항목이 U 임을 확인했다 — 목록 말고는 바뀌는 필드가 없어 페이지째 좁힌다.
-  return page as PageResponse<U>;
+  return page;
 }

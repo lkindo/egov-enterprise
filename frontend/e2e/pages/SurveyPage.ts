@@ -201,12 +201,9 @@ export class SurveyPage {
         
         for (let i = 0; i < 3; i++) {
             await this.searchInput.fill(keyword);
-            const searchBtn = this.page.getByRole('button', { name: /SEARCH/i }).first();
-            if (await searchBtn.isVisible()) {
-                await searchBtn.click();
-            } else {
-                await this.searchInput.press('Enter');
-            }
+            // [2026-11-26 PR-3b] 검색어 칸이 든 검색 폼의 '조회' 단추 하나만 누른다 — 종전에는 이름이 맞지 않는 /SEARCH/ 를 찾다가 Enter 로
+            //   넘어가, 단추가 사라지거나 이름이 바뀌어도 시험이 조용히 지나갔다(대체 선택자). 단추가 없으면 여기서 실패한다.
+            await this.page.getByRole('search').filter({ has: this.searchInput }).getByRole('button', { name: '조회', exact: true }).click();
             
             if (expectedText) {
                 const expectedLoc = this.page.getByText(expectedText).first();

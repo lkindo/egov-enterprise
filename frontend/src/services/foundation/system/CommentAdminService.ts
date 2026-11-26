@@ -5,11 +5,14 @@ import { AxiosRequestConfig } from 'axios';
 import { deleteComment_1Operation, getComments_1Operation } from '@/types/generated-operations';
 import type { components } from '@/types/generated-api';
 
-/** 관리자 댓글 행. 식별자(댓글·글 번호, 게시판 ID)는 삭제·이동에 쓰여 필수이고, 표시 값은 서버 계약대로 비어 올 수 있다(탈퇴 작성자 등). */
+/**
+ * 관리자 댓글 행. 댓글 번호는 삭제에 쓰여 필수다. 글 번호·게시판 ID 는 이관된 옛 댓글에서 비어 올 수 있고(글 연결 없음 — 화면은 글
+ * 링크 대신 '—' 를 그린다), 표시 값도 서버 계약대로 비어 올 수 있다(탈퇴 작성자 등).
+ */
 export interface CommentDetail {
   ansSn: number;
-  pstSn: number;
-  bbsId: string;
+  pstSn?: number;
+  bbsId?: string;
   editable?: boolean;
   deletable?: boolean;
   wrterNm?: string | null;
@@ -17,9 +20,12 @@ export interface CommentDetail {
   crtDt?: string | null;
 }
 
-/** 화면이 기대는 식별자(댓글·글 번호, 게시판 ID)가 실제로 있는 댓글인가. */
+/**
+ * 삭제에 쓰는 댓글 번호가 실제로 있는 댓글인가. 글 연결(글 번호·게시판 ID)이 없는 옛 댓글 한 행 때문에 정상 행까지 조회하지 못하게
+ * 하지 않는다(Codex 검토) — 그 행은 글 링크 없이 그린다.
+ */
 function isCommentDetail(dto: components['schemas']['CommentDto']): dto is CommentDetail {
-  return typeof dto.ansSn === 'number' && typeof dto.pstSn === 'number' && typeof dto.bbsId === 'string';
+  return typeof dto.ansSn === 'number';
 }
 
 function withoutConfigParams(config?: AxiosRequestConfig): AxiosRequestConfig | undefined {

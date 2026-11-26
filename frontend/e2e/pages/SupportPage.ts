@@ -69,7 +69,9 @@ export class SupportPage {
         await expect(titleInput).toHaveValue(title);
         await titleInput.press('Tab'); // Trigger blur and react-hook-form change validation
 
-        const editor = this.page.locator('.tiptap[contenteditable="true"], .ProseMirror, [contenteditable="true"], textarea').last();
+        // [2026-11-26 PR-3b] 본문은 게시글 편집기 컨테이너 안의 편집 칸 하나다 — 종전에는 편집기·모든 textarea 를 합쳐 마지막 것을
+        //   골라, 뒤에 보조 입력칸이 생기면 그 칸에 본문을 적었다(대체 선택자).
+        const editor = this.page.getByTestId('rich-text-editor').getByRole('textbox');
         await editor.waitFor({ state: 'visible' });
         await editor.click();
         await this.page.keyboard.type(content);

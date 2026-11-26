@@ -4,7 +4,7 @@ export interface CommunityVO {
   cmntySn?: number;
   cmntyNm: string;
   /** 소개 — 서버에서 선택이다(없으면 화면이 안내 문구를 그린다). */
-  cmntyIntroCn?: string;
+  cmntyIntroCn?: string | null;
   useYn: string;
   regSeCd?: string;
   regSeCdNm?: string;

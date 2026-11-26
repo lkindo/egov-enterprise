@@ -104,7 +104,23 @@ describe('CommentAdminService generated contract', () => {
     await expect(commentAdminService.getComments({ page: 1, size: 50 })).resolves.toBe(page);
   });
 
-  it('[PR-3b] 삭제·이동에 쓰는 식별자가 없는 댓글 행은 계약 위반으로 거부한다 — 이중 단언으로 흘려보내지 않는다', async () => {
+  it('[PR-3b] 글 연결(글 번호·게시판 ID)이 없는 옛 댓글이 섞여도 정상 행까지 막지 않고 같은 페이지를 돌려준다', async () => {
+    const page = {
+      list: [
+        { ansSn: 1, pstSn: 7, bbsId: 'BBSMSTR_000000000001', ansCn: '정상', wrterNm: '홍길동', crtDt: '2026-08-14T10:00:00' },
+        { ansSn: 2, ansCn: '이관된 옛 댓글', wrterNm: null, crtDt: null },
+      ],
+      total: 2,
+      page: 1,
+      size: 50,
+      totalPage: 1,
+    };
+    client.getRaw.mockResolvedValueOnce(success(page));
+
+    await expect(commentAdminService.getComments({ page: 1, size: 50 })).resolves.toBe(page);
+  });
+
+  it('[PR-3b] 삭제에 쓰는 댓글 번호가 없는 행은 계약 위반으로 거부한다 — 이중 단언으로 흘려보내지 않는다', async () => {
     client.getRaw.mockResolvedValueOnce(success({
       list: [{ pstSn: 1, bbsId: 'BBSMSTR_000000000001', ansCn: '식별자 없음' }],
       total: 1,

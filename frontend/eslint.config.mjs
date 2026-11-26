@@ -297,8 +297,8 @@ const eslintConfig = [
           "selector": "JSXAttribute[name.name='role'] Literal[value=/^tab(list|panel)?$/]",
           "message": "손으로 쓴 탭 역할 금지 — @/app/components/ui/standard-tabs 의 TabList·Tab·TabPanel 을 쓰세요(방향키·roving tabindex·aria-controls 를 갖춘 탭 원천)."
         },
-        // [2026-11-26 품질 평가 PR-3b] 이중 단언(`x as unknown as T`)은 두 타입의 차이(선택·필수, 없는 필드)를 통째로 숨긴다 — 14건을 실제
-        //   값 확인·변환 함수·타입 정렬로 걷었다. 표현할 수 없는 라이브러리 경계만 그 줄에 사유를 단 예외 주석을 둔다.
+        // [2026-11-26 품질 평가 PR-3b] 이중 단언(`x as unknown as T`)은 두 타입의 차이(선택·필수, 없는 필드)를 통째로 숨긴다 — 제품 코드의 13건 중
+        //   12건을 실제 값 확인·변환 함수·타입 정렬로 걷었다. 표현할 수 없는 라이브러리 경계(폼 resolver 1건)만 그 줄에 사유를 단 예외 주석을 둔다.
         {
           "selector": "TSAsExpression[expression.type='TSAsExpression'][expression.typeAnnotation.type='TSUnknownKeyword']",
           "message": "이중 단언(as unknown as) 금지 — 타입 가드로 실제 값을 확인하거나, 변환 함수로 바꾸거나, 두 타입을 맞추세요. 표현할 수 없는 라이브러리 경계만 사유를 단 eslint-disable-next-line 으로 둡니다."

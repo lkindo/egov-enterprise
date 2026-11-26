@@ -28,8 +28,8 @@ test.describe('공개 포털', () => {
             await test.step('User: Verify FAQ Visibility', async () => {
                 console.log(`>>> Verifying FAQ visibility for: ${faqQuestion}`);
                 await userPage.goto('/help');
-                // Select FAQ tab (it should be default, but let's be sure)
-                const faqTab = userPage.getByRole('button', { name: /고객지원|FAQ/ }).first();
+                // [2026-11-26 PR-3b] FAQ 탭을 정확한 이름으로 고른다 — 종전 /고객지원|FAQ/ 의 첫 단추는 탭이 아닌 다른 단추일 수 있었다.
+                const faqTab = userPage.getByRole('tab', { name: 'FAQ 자주 묻는 질문', exact: true });
                 await expect(faqTab).toBeVisible({ timeout: 15000 });
                 await faqTab.click();
                 console.log(`>>> [FAQ] Checking visibility for: ${faqQuestion}`);
@@ -43,14 +43,11 @@ test.describe('공개 포털', () => {
                     if (faqVisible)
                         break;
                     console.log(`>>> [FAQ] Not found (attempt ${i + 1}), searching/reloading...`);
-                    const searchInput = userPage.getByPlaceholder(/검색|Search|키워드/i);
-                    if (await searchInput.isVisible()) {
-                        await searchInput.fill(faqQuestion);
-                        await searchInput.press('Enter');
-                    }
-                    else {
-                        await userPage.reload();
-                    }
+                    // [2026-11-26 PR-3b] 도움말 검색 칸은 이 화면에 늘 있다 — 없으면(이름이 바뀌면) 새로고침으로 넘어가지 않고 실패한다.
+                    const searchInput = userPage.getByRole('textbox', { name: '도움말 키워드 검색', exact: true });
+                    await expect(searchInput).toBeVisible();
+                    await searchInput.fill(faqQuestion);
+                    await searchInput.press('Enter');
                 }
                 await expect(faqItem).toBeVisible({ timeout: 10000 });
                 console.log('>>> [FAQ] Found created FAQ in Portal list');
