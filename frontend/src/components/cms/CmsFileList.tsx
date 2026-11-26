@@ -6,6 +6,7 @@ import { Download, FileText, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/app/components/ui/toast';
 import { fileService } from '@/services/foundation/file/FileService';
+import { cmsKeys } from '@/queries/cms-query-options';
 import type { CmsFileItem } from '@/lib/cms/document';
 
 /**
@@ -19,7 +20,7 @@ import type { CmsFileItem } from '@/lib/cms/document';
 /** 같은 화면에서 다시 그려도 다시 읽지 않는다. 파일이 바뀌면 첨부 번호가 바뀌므로 오래 둬도 낡지 않는다. */
 const FILE_INFO_STALE_MS = 10 * 60 * 1000;
 
-const cmsFileInfoQueryKey = (atchFileSn: number) => ['cms', 'file-info', atchFileSn] as const;
+const cmsFileInfoQueryKey = (atchFileSn: number) => [...cmsKeys.all, 'file-info', atchFileSn] as const;
 
 /** 바이트 크기를 읽기 쉬운 단위로 쓴다. 모르면 빈 문자열(형식만 보인다). */
 function formatFileSize(bytes: number | undefined): string {

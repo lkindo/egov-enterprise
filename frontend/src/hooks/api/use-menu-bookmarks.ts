@@ -21,12 +21,12 @@ import { useMenuAuthorizationScope } from './use-menu-authorization-scope';
  * 목록은 서버가 지금 볼 수 있는 메뉴만 돌려준다 — 배정이 회수된 메뉴는 여기서 사라진다. 권한 범위(scope)를 키에
  * 넣어 계정·권한이 바뀌면 다른 목록으로 읽는다.
  */
-export const MENU_BOOKMARKS_KEY = menuKeys.bookmarks();
+export const MENU_BOOKMARKS_KEY = menuKeys.bookmarksAll();
 
 function invalidateBookmarks(client: QueryClient) {
   return Promise.all([
     client.invalidateQueries({ queryKey: MENU_BOOKMARKS_KEY }),
-    client.invalidateQueries({ queryKey: menuKeys.commandCenterBookmarks() }),
+    client.invalidateQueries({ queryKey: menuKeys.commandCenterBookmarksAll() }),
   ]);
 }
 
@@ -129,7 +129,7 @@ export function useMenuBookmarkCleanup(ready: boolean) {
         await checkAuth({ afterAuthorizationChange: true });
         await Promise.all([
           invalidateBookmarks(client),
-          client.invalidateQueries({ queryKey: menuKeys.head() }),
+          client.invalidateQueries({ queryKey: menuKeys.headAll() }),
         ]);
         toast('즐겨찾기 상태가 변경되었습니다. 다시 확인한 뒤 정리해 주세요.', 'info');
       } else {

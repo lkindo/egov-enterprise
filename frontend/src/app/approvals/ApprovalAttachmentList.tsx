@@ -6,6 +6,7 @@ import { Download, FileText, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/app/components/ui/toast';
 import { fileService } from '@/services/foundation/file/FileService';
+import { approvalKeys } from '@/queries/approval-query-options';
 
 /**
  * 결재 문서·차수의 첨부 목록(V2_151). 내려받기는 일반 첨부 경로(fileService)라 열람 권한은 서버가 본문 상세와 같은 조건으로 판정한다 —
@@ -15,7 +16,7 @@ import { fileService } from '@/services/foundation/file/FileService';
  * <p>목록 조회 실패는 이 칸이 스스로 알린다(전역 알림을 띄우지 않는다). 권한 없음·없음·연결 실패를 구분해 보이지 않는다 — 구분하면
  * 첨부의 존재가 드러난다(CmsFileList 와 같은 원칙).
  */
-export const approvalAttachmentQueryKey = (atchFileSn: number) => ['approvals', 'attachments', atchFileSn] as const;
+export const approvalAttachmentQueryKey = (atchFileSn: number) => [...approvalKeys.all, 'attachments', atchFileSn] as const;
 
 /** 같은 묶음은 바뀌지 않는다(재상신은 새 묶음 번호다) — 다시 그려도 다시 읽지 않는다. */
 const ATTACHMENT_STALE_MS = 10 * 60 * 1000;

@@ -65,7 +65,7 @@ export function DynamicBreadcrumb({ customItems = [], currentLabel }: { customIt
       setExactMatch(lastPath === currentPath);
     };
     const loadMenus = () => {
-      const shared = queryClient?.getQueryCache().findAll({ queryKey: menuKeys.head(), type: 'active' })
+      const shared = queryClient?.getQueryCache().findAll({ queryKey: menuKeys.headAll(), type: 'active' })
         .sort((left, right) => right.state.dataUpdatedAt - left.state.dataUpdatedAt)[0];
       return queryClient && shared
         ? queryClient.fetchQuery({
@@ -90,7 +90,7 @@ export function DynamicBreadcrumb({ customItems = [], currentLabel }: { customIt
     //   이전 메뉴 이름·링크가 남았다). 진행 중인 직접 조회는 이 계산보다 오래됐으므로 버린다.
     const unsubscribe = queryClient?.getQueryCache().subscribe((event) => {
       const key = event.query.queryKey;
-      if (key[0] !== menuKeys.all[0] || key[1] !== menuKeys.head()[1]) return;
+      if (key[0] !== menuKeys.all[0] || key[1] !== menuKeys.headAll()[1]) return;
       if (event.type === 'updated' && event.action.type === 'success' && event.query.isActive()) {
         latest += 1;
         if (!cancelled) applyMenus(event.query.state.data);
