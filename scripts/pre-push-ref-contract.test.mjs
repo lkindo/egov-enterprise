@@ -15,6 +15,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { runInNewContext } from 'node:vm';
+import { classifyChangedFiles, formatScopeFields } from './ci-change-scope.mjs';
 import { frontendSourceContracts } from './frontend-source-contracts.mjs';
 import { GENERATORS } from './merge-main-regenerate.mjs';
 
@@ -65,6 +66,27 @@ function pushLine(localRef, localOid, remoteRef, remoteOid) {
   return `${localRef} ${localOid} ${remoteRef} ${remoteOid}`;
 }
 
+const SCOPE_FIELDS_LIST = ['docsOnly', 'backend', 'migration', 'frontend', 'atlas'];
+const scopeOutputCache = new Map();
+function scopeOutputFor(files) {
+  const key = [...new Set(files)].sort().join('\n');
+  if (!scopeOutputCache.has(key)) {
+    const sortedFiles = key ? key.split('\n') : [];
+    scopeOutputCache.set(key, {
+      key,
+      output: formatScopeFields(classifyChangedFiles(sortedFiles), SCOPE_FIELDS_LIST),
+    });
+  }
+  return scopeOutputCache.get(key);
+}
+const EMPTY_SCOPE_OUTPUT = scopeOutputFor([]).output;
+
+const sharedFixtureRoot = mkdtempSync(path.join(tmpdir(), 'pre-push-ref-contract-shared-'));
+const cachedDefaultHookPath = path.join(sharedFixtureRoot, 'pre-push-default');
+let cachedHookInitialized = false;
+let callCounter = 0;
+test.after(() => rmSync(sharedFixtureRoot, { recursive: true, force: true }));
+
 function instrumentHook(source) {
   const stubs = `
 git() {
@@ -93,6 +115,27 @@ record_command() {
 }
 pnpm() { record_command "pnpm $*"; }
 npx() { record_command "npx $*"; }
+sed() {
+  if [ "$HOOK_REAL_SCOPE_CLI" != "true" ] && [ "$1" = "-n" ] && [ $# -eq 2 ]; then
+    case "$2" in
+      s/^*=//p)
+        prefix=\${2#s/^}
+        prefix=\${prefix%//p}
+        case "$prefix" in
+          [A-Za-z]*=)
+            while IFS= read -r _line; do
+              case "$_line" in
+                "$prefix"*) printf '%s\\n' "\${_line#"$prefix"}" ;;
+              esac
+            done
+            return 0
+            ;;
+        esac
+        ;;
+    esac
+  fi
+  command sed "$@"
+}
 test_gradle() { record_command "gradlew $*"; }
 node() {
   case "$1" in
@@ -102,20 +145,47 @@ node() {
     ../scripts/vitest-timeout-rerun.mjs)
       record_command "node $*"
       ;;
-    */scripts/verification-record.mjs)
-      if [ "$HOOK_RECORD_FAIL" = "true" ]; then return 1; fi
-      if [ "$HOOK_REAL_RECORDS" = "true" ]; then
-        module=$1
-        shift 3
-        command node "$module" --root "$HOOK_RECORD_ROOT" "$@"
-      elif [ "$4" = "begin" ]; then
-        printf '%s\\n' '11111111-1111-4111-8111-111111111111'
+    scripts/heavy-run-queue.mjs)
+      if [ "$HOOK_REAL_QUEUE_CLI" = "true" ]; then
+        command node "$@"
+      elif [ "$2" = "classify" ]; then
+        printf '%s\\n' 'direct'
+      else
+        command node "$@"
       fi
       ;;
     scripts/ci-change-scope.mjs)
       if [ "$HOOK_SCOPE_OUTPUT_SET" = "true" ]; then
         printf '%s' "$HOOK_SCOPE_OUTPUT"
         return "$HOOK_SCOPE_STATUS"
+      fi
+      if [ "$HOOK_REAL_SCOPE_CLI" = "true" ]; then
+        command node "$@"
+        return $?
+      fi
+      if [ "$*" = "scripts/ci-change-scope.mjs --stdin --fields docsOnly,backend,migration,frontend,atlas" ]; then
+        STDIN_DATA=""
+        while IFS= read -r _line || [ -n "$_line" ]; do
+          if [ -n "$_line" ]; then
+            STDIN_DATA="\${STDIN_DATA:+$STDIN_DATA
+}$_line"
+          fi
+        done
+        if [ -z "$STDIN_DATA" ]; then
+          printf '%s' "$HOOK_SCOPE_EMPTY"
+          return 0
+        elif [ "$STDIN_DATA" = "$HOOK_SCOPE_FILES_KEY" ]; then
+          printf '%s' "$HOOK_SCOPE_FILES"
+          return 0
+        elif [ -n "$HOOK_SCOPE_PARTIAL_KEY" ] && [ "$STDIN_DATA" = "$HOOK_SCOPE_PARTIAL_KEY" ]; then
+          printf '%s' "$HOOK_SCOPE_PARTIAL"
+          return 0
+        elif [ -n "$HOOK_SCOPE_BOTH_KEY" ] && [ "$STDIN_DATA" = "$HOOK_SCOPE_BOTH_KEY" ]; then
+          printf '%s' "$HOOK_SCOPE_BOTH"
+          return 0
+        fi
+        printf '%s\n' "$STDIN_DATA" | command node "$@"
+        return $?
       fi
       command node "$@"
       ;;
@@ -127,14 +197,26 @@ node() {
 }
 
 function runHook(input, source = hookSource, { files = ['docs/README.md'], failCommand = '',
-  realRecords = false, recordFailure = false, failDiffRange = '', failedDiffOutput = [], emptyDiffRange = '',
-  scopeOutput = undefined, scopeStatus = 0 } = {}) {
-  const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'pre-push-ref-contract-'));
-  const gitLog = path.join(fixtureRoot, 'git.log');
-  const npmLog = path.join(fixtureRoot, 'npm.log');
-  const commandLog = path.join(fixtureRoot, 'commands.log');
-  const fixtureHook = path.join(fixtureRoot, 'pre-push');
-  writeFileSync(fixtureHook, instrumentHook(source), 'utf8');
+  failDiffRange = '', failedDiffOutput = [], emptyDiffRange = '',
+  scopeOutput = undefined, scopeStatus = 0, realScopeCli = false, realQueueCli = false } = {}) {
+  const id = ++callCounter;
+  const gitLog = path.join(sharedFixtureRoot, `git-${id}.log`);
+  const npmLog = path.join(sharedFixtureRoot, `npm-${id}.log`);
+  const commandLog = path.join(sharedFixtureRoot, `commands-${id}.log`);
+  let fixtureHook = cachedDefaultHookPath;
+  if (source === hookSource) {
+    if (!cachedHookInitialized) {
+      writeFileSync(cachedDefaultHookPath, instrumentHook(hookSource), 'utf8');
+      cachedHookInitialized = true;
+    }
+  } else {
+    fixtureHook = path.join(sharedFixtureRoot, `pre-push-${id}`);
+    writeFileSync(fixtureHook, instrumentHook(source), 'utf8');
+  }
+
+  const filesScope = scopeOutputFor(files);
+  const partialScope = failedDiffOutput.length > 0 ? scopeOutputFor(failedDiffOutput) : { key: '', output: '' };
+  const bothScope = failedDiffOutput.length > 0 ? scopeOutputFor([...files, ...failedDiffOutput]) : { key: '', output: '' };
 
   const result = spawnSync(shell, [shellPath(fixtureHook)], {
     cwd: repoRoot,
@@ -152,32 +234,30 @@ function runHook(input, source = hookSource, { files = ['docs/README.md'], failC
       HOOK_FAILED_DIFF_OUTPUT: failedDiffOutput.join('\n'),
       SKIP_HOOKS: '',
       SKIP_HARNESS: '',
-      HOOK_REAL_RECORDS: String(realRecords),
-      HOOK_RECORD_FAIL: String(recordFailure),
-      HOOK_RECORD_ROOT: shellPath(fixtureRoot),
       HOOK_SOURCE_CONTRACTS: SOURCE_CONTRACT_FILES.join('\n'),
       HOOK_SCOPE_OUTPUT_SET: String(scopeOutput !== undefined),
       HOOK_SCOPE_OUTPUT: scopeOutput ?? '',
       HOOK_SCOPE_STATUS: String(scopeStatus),
+      HOOK_SCOPE_EMPTY: EMPTY_SCOPE_OUTPUT,
+      HOOK_SCOPE_FILES_KEY: filesScope.key,
+      HOOK_SCOPE_FILES: filesScope.output,
+      HOOK_SCOPE_PARTIAL_KEY: partialScope.key,
+      HOOK_SCOPE_PARTIAL: partialScope.output,
+      HOOK_SCOPE_BOTH_KEY: bothScope.key,
+      HOOK_SCOPE_BOTH: bothScope.output,
+      HOOK_REAL_SCOPE_CLI: String(realScopeCli),
+      HOOK_REAL_QUEUE_CLI: String(realQueueCli),
     },
   });
 
-  const output = {
+  return {
     status: result.status,
     stdout: result.stdout,
     stderr: result.stderr,
     gitCalls: existsSync(gitLog) ? readFileSync(gitLog, 'utf8').trim().split(/\r?\n/u) : [],
     npmCalls: existsSync(npmLog) ? readFileSync(npmLog, 'utf8').trim().split(/\r?\n/u) : [],
     commands: existsSync(commandLog) ? readFileSync(commandLog, 'utf8').trim().split(/\r?\n/u) : [],
-    records: [],
   };
-  const recordsRoot = path.join(fixtureRoot, 'build/verification-runs');
-  if (existsSync(recordsRoot)) {
-    output.records = readdirSync(recordsRoot).filter(name => name.endsWith('.jsonl'))
-      .flatMap(name => readFileSync(path.join(recordsRoot, name), 'utf8').trim().split('\n').map(line => JSON.parse(line)));
-  }
-  rmSync(fixtureRoot, { recursive: true, force: true });
-  return output;
 }
 
 function assertSuccessful(result) {
@@ -295,9 +375,10 @@ function observeVerification(scope, { source, failCommand, env = {}, recordEvent
   const zones = [];
   const runner = source ?? readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8');
   try {
-    runInNewContext(runner.replace(/^import [^\r\n]+ from '(?:node:[^']+|\.\/verification-record\.mjs|\.\/heavy-run-queue\.mjs)';\r?$/gm, ''), {
+    runInNewContext(runner.replace(/^import [^\r\n]+ from '(?:node:[^']+|\.\/heavy-run-queue\.mjs)';\r?$/gm, ''), {
       execSync: (command, options) => {
         commands.push(command);
+        recordEvents.push({ event: 'exec', command });
         zones.push(options?.env?.TZ);
         if (command === failCommand) throw new Error('deliberate verification failure');
         // 원문 계약 탐지기는 목록을 돌려준다(시험이 한 번 계산한 목록).
@@ -307,16 +388,6 @@ function observeVerification(scope, { source, failCommand, env = {}, recordEvent
       randomBytes: () => ({ toString: () => 'fixture-only' }),
       generateKeyPairSync: () => ({ publicKey: { export: () => ({ toString: () => 'fixture-spki' }) } }),
       ensureQueued: (kind) => { recordEvents.push({ event: 'queue', kind }); return 'direct'; },
-      createRun: (options) => {
-        recordEvents.push({ event: 'begin', ...options });
-        return {
-          runId: '11111111-1111-4111-8111-111111111111',
-          stepStart: (id) => recordEvents.push({ event: 'step-start', id }),
-          stepEnd: (id, result) => recordEvents.push({ event: 'step-end', id, ...result }),
-          rebaseInputs: () => recordEvents.push({ event: 'inputs-rebased' }),
-          finish: (result) => recordEvents.push({ event: 'finish', ...result }),
-        };
-      },
       process: {
         argv: ['node', 'scripts/verify.mjs', scope],
         env,
@@ -334,27 +405,27 @@ function observeVerification(scope, { source, failCommand, env = {}, recordEvent
   return { commands, exits, zones };
 }
 
-// [DEC-OPS-413] 단독 실행 대상은 실행 기록을 열기 전에 대기열에서 차례를 기다린다 — 대기 시간이 기록에 들어가지 않고, 기록이 연
-// 뒤에 줄을 서면 그 기록이 다른 실행과의 겹침을 담는다. ops 는 원격 정책 조회 하나라 줄을 서지 않는다.
-test('verify queues before it opens its run record, in every scope but ops', () => {
+// [DEC-OPS-413] 단독 실행 대상은 검증 명령을 실행하기 전에 대기열에서 차례를 기다린다(ops 는 원격 정책 조회 하나라 줄을 서지 않는다).
+test('verify queues before running any command, in every scope but ops', () => {
   for (const scope of ['docs', 'fast', 'push', 'full', 'be', 'fe', 'e2e', 'migration', 'integrate']) {
     const events = [];
     observeVerification(scope, { recordEvents: events });
-    assert.deepEqual(events.slice(0, 2).map(({ event, kind }) => kind ?? event), ['verify', 'begin'], scope);
+    assert.deepEqual([events[0]?.event, events[0]?.kind, events[1]?.event], ['queue', 'verify', 'exec'], scope);
   }
   const ops = [];
   observeVerification('ops', { recordEvents: ops });
   assert.equal(ops.some(({ event }) => event === 'queue'), false);
-  assert.equal(ops[0]?.event, 'begin');
-  // 대기열 진입을 기록 뒤로 옮긴 실행기는 위 단언에 걸린다(red 재현): 기록을 먼저 연다.
+  assert.equal(ops[0]?.event, 'exec');
+  // 대기열 진입을 첫 명령 뒤로 옮긴 실행기는 위 단언에 걸린다(red 재현): 검증 명령을 먼저 실행한다.
   const runner = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8').replace(/\r\n/g, '\n');
   const queueLine = "if (scope !== 'ops') ensureQueued('verify');\n";
   assert.ok(runner.includes(queueLine));
-  const moved = runner.replace(queueLine, '').replace(/(\n\/\/ 고정된 분류명만 관측한다)/, `\n${queueLine}$1`);
+  const moved = runner.replace(queueLine, '').replace('  } else if (scope === \'push\') {\n    runFastChecks();\n',
+    `  } else if (scope === 'push') {\n    runFastChecks();\n    ${queueLine}`);
   assert.notEqual(moved, runner);
   const events = [];
   observeVerification('push', { source: moved, recordEvents: events });
-  assert.deepEqual(events.slice(0, 2).map(({ event, kind }) => kind ?? event), ['begin', 'verify'], 'the moved runner opens its record first');
+  assert.equal(events[0]?.event, 'exec', 'the moved runner executes commands before queueing');
 });
 
 // 로컬 기본은 KST(개발 기계와 같은 조건)이고, 명시한 TZ 가 이겨 CI 러너(UTC) 조건을 그대로 재현할 수 있다.
@@ -551,9 +622,7 @@ test('verify checks generated freshness before the operational contracts in ever
     assert.ok(!failed.commands.includes(CONTRACTS), `${scope}: a stale artifact must not wait for the operational contracts`);
   }
   for (const scope of ['integrate', 'ops', 'migration']) assert.ok(!observeVerification(scope).commands.includes(REGEN_CHECK), scope);
-  const events = [];
-  observeVerification('docs', { recordEvents: events });
-  assert.deepEqual(events.filter(event => event.event === 'step-start').map(event => event.id), ['generated-freshness', 'operational-contracts']);
+  assert.deepEqual(observeVerification('docs').commands, [REGEN_CHECK, CONTRACTS]);
   // 호출을 걷거나, 계약 뒤로 옮기거나, 프런트 codegen 중복을 되살리면 위 판정이 붉다(red 재현).
   const runner = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8').replace(/\r\n/g, '\n');
   for (const [scope, from, to, message] of [
@@ -568,7 +637,7 @@ test('verify checks generated freshness before the operational contracts in ever
   }
 });
 
-test('integration runs the form census and full harness before selected E2E, and propagates their failures', () => {
+test('integration propagates failures without skipping earlier stages', () => {
   for (const command of [INTEGRATION_FORMS, INTEGRATION_BACKEND, 'node scripts/integration-precheck.mjs --run-selected']) {
     const failed = observeVerification('integrate', { failCommand: command });
     assert.deepEqual(failed.exits, [1], command);
@@ -588,77 +657,15 @@ test('integration runs the form census and full harness before selected E2E, and
   }
 });
 
-test('verify records integration stages without replacing their execution or treating failure as success', () => {
-  const events = [];
-  assert.deepEqual(observeVerification('integrate', { recordEvents: events }).commands, VERIFY_INTEGRATE);
-  assert.deepEqual(events.filter(event => event.event === 'step-start').map(event => event.id),
-    ['integration-precheck', 'regenerate', 'form-validation', 'frontend-tests', 'api-tests-and-harness', 'integration-selected']);
-  assert.equal(events.filter(event => event.event === 'step-end' && event.exitCode === 0).length, VERIFY_INTEGRATE.length);
-  assert.deepEqual(events.at(-1), { event: 'finish', exitCode: 0 });
-  // regen 이 추적 생성물을 다시 쓴 뒤에 입력 비교 기준을 옮긴다 — 뒤 시험이 읽는 트리가 새 기준이다(DEC-OPS-385).
-  const baselineOrder = (list) => list.filter(event => event.event === 'step-start' || event.event === 'inputs-rebased')
-    .map(event => event.id ?? event.event);
-  assert.deepEqual(baselineOrder(events).slice(1, 4), ['regenerate', 'inputs-rebased', 'form-validation']);
-  const source = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8');
-  const unrebased = [];
-  const withoutRebase = source.replace('record.rebaseInputs();', '');
-  assert.notEqual(withoutRebase, source);
-  observeVerification('integrate', { source: withoutRebase, recordEvents: unrebased });
-  assert.throws(() => assert.deepEqual(baselineOrder(unrebased).slice(1, 4), ['regenerate', 'inputs-rebased', 'form-validation']),
-    'dropping the rebase after regen is red');
-  const failed = [];
-  assert.deepEqual(observeVerification('integrate', { recordEvents: failed, failCommand: INTEGRATION_FORMS }).exits, [1]);
-  assert.deepEqual(failed.filter(event => event.event === 'step-start').map(event => event.id),
-    ['integration-precheck', 'regenerate', 'form-validation']);
-  assert.equal(failed.at(-2).exitCode, null, 'a command launch error without a code is unknown, never successful');
-  assert.equal(failed.at(-1).exitCode, 1);
-  const missing = source.replace('record.stepStart(id);', '');
-  assert.notEqual(missing, source);
-  const mutant = [];
-  observeVerification('integrate', { source: missing, recordEvents: mutant });
-  assert.throws(() => assert.deepEqual(mutant.filter(event => event.event === 'step-start').map(event => event.id),
-    events.filter(event => event.event === 'step-start').map(event => event.id)), 'removing the recording connection is red');
-});
-
-test('pre-push recording failure does not skip commands or swallow their failure', () => {
-  const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
-  const success = runHook(input, hookSource, { recordFailure: true });
-  assertSuccessful(success);
-  assert.deepEqual(success.commands, ['npm run regen -- --check', CONTRACTS]);
-  const failed = runHook(input, hookSource, { recordFailure: true, failCommand: CONTRACTS });
-  assert.equal(failed.status, 1);
-  assert.deepEqual(failed.commands, ['npm run regen -- --check', CONTRACTS]);
-  assert.match(failed.stderr, /기록을 시작하지 못했습니다/u);
-});
-
-test('pre-push emits real stage and run outcomes, including failures before later stages', () => {
-  const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
-  const passed = runHook(input, hookSource, { realRecords: true });
-  assertSuccessful(passed);
-  assert.deepEqual(passed.records.filter(event => event.event === 'step-start').map(event => event.stageId),
-    ['generated-freshness', 'operational-contracts']);
-  assert.deepEqual(passed.records.filter(event => event.event === 'step-end').map(event => [event.stageId, event.exitCode]),
-    [['generated-freshness', 0], ['operational-contracts', 0]]);
-  assert.equal(passed.records.at(-1).event, 'run-end');
-  assert.equal(passed.records.at(-1).result, 'passed');
-  assert.equal(passed.records.at(-1).recordComplete, true);
-  assert.doesNotMatch(JSON.stringify(passed.records), /HOOK_|npm run|refs\/heads|docs\/README/u);
-
-  const failed = runHook(input, hookSource, { realRecords: true, failCommand: 'npm run regen -- --check' });
-  assert.equal(failed.status, 1);
-  assert.deepEqual(failed.records.filter(event => event.event === 'step-end').map(event => [event.stageId, event.result, event.exitCode]),
-    [['generated-freshness', 'failed', 1]]);
-  assert.equal(failed.records.at(-1).result, 'failed');
-  assert.equal(failed.records.at(-1).exitCode, 1);
-  assert.equal(failed.records.some(event => event.stageId === 'operational-contracts'), false,
-    'a stage never reached must not be recorded as passed');
-
-  const mutant = hookSource.replace('record_start generated-freshness', ':');
-  assert.notEqual(mutant, hookSource);
-  const missing = runHook(input, mutant, { realRecords: true });
-  assertSuccessful(missing);
-  assert.throws(() => assert.deepEqual(missing.records.filter(event => event.event === 'step-start').map(event => event.stageId),
-    ['generated-freshness', 'operational-contracts']), 'disconnecting the recorder is red without changing the original command result');
+test('pre-push runs real heavy-run-queue and ci-change-scope CLIs cleanly (end-to-end CLI smoke)', () => {
+  const docsInput = `${pushLine('refs/heads/feature', LOCAL_OID, 'refs/heads/feature', ZERO_OID)}\n`;
+  const docsResult = runHook(docsInput, hookSource, {
+    files: ['docs/README.md'],
+    realScopeCli: true,
+    realQueueCli: true,
+  });
+  assertSuccessful(docsResult);
+  assert.match(docsResult.stdout, /Fast-pass/);
 });
 
 // [2026-10-20] 소스 경로는 생성물 신선도 다음에 CodeQL 근사를 push 가 바꾼 파일에만 돈다(문서 전용 경로에는 JS·TS 가 없다).
@@ -858,11 +865,9 @@ test('the frontend type gate regenerates route types and keeps the next dev copy
     rmSync(fixture, { recursive: true, force: true });
   }
 
-  // verify 의 실행 기록 단계 이름은 'type-check:e2e' 와 겹치지 않게 갈린다.
-  const events = [];
-  observeVerification('fe', { recordEvents: events });
-  const started = events.filter(event => event.event === 'step-start').map(event => event.id);
-  assert.ok(started.includes('frontend-types') && started.includes('e2e-types'), started.join(','));
+  const feCommands = observeVerification('fe').commands;
+  assert.ok(feCommands.includes('pnpm -C frontend run type-check') && feCommands.includes('pnpm -C frontend run type-check:e2e'),
+    feCommands.join(','));
 });
 
 test('pre-push blocks a CodeQL approximation finding before compilation, only on the source path', () => {
@@ -891,7 +896,7 @@ test('pre-push checks generated freshness first and stops before compilation and
     '낡은 생성물은 컴파일·운영 계약을 기다리지 않고 바로 막는다');
   // 실패 처리에서 exit 1 을 걷으면 낡은 생성물로도 다음 단계로 넘어가고, 검사를 정적 검사 뒤로 옮기면 컴파일을 먼저 기다린다 — 위 단언이 둘 다 잡는다(red 재현).
   const swallowed = hookSource.replace("함께 커밋하세요(SAST 예외는 위 안내대로 재검토 뒤 결속)\"; exit 1; }", "함께 커밋하세요(SAST 예외는 위 안내대로 재검토 뒤 결속)\"; }");
-  const regenBlock = /# 생성물·해시 결속이 낡았는지 맨 앞에서 본다[\s\S]*?exit 1; \}\nrecord_end 0\n\n/u;
+  const regenBlock = /# 생성물·해시 결속이 낡았는지 맨 앞에서 본다[\s\S]*?exit 1; \}\n\n/u;
   const block = hookSource.replace(/\r\n/g, '\n').match(regenBlock)?.[0];
   assert.ok(block, 'pre-push 의 생성물 신선도 블록을 찾지 못했다');
   const moved = hookSource.replace(/\r\n/g, '\n').replace(block, '')
@@ -923,8 +928,7 @@ test('pre-push blocks the push when the operational contracts fail on the docume
 
 /*
   [2026-11-25 DEC-OPS-434] 작업 브랜치만 push 하면 운영 계약은 PR Required CI(secret-scan)에서 검증하므로 로컬 pre-push 에서는 생략한다.
-  CI 가 미리 막지 않는 ref(main·master·태그·refs/heads 밖)나 ref 를 모르는 push 가 하나라도 있으면 지금처럼 여기서 돈다. 생략 사실은
-  실행 기록에 skip(ci-authoritative) 으로 남긴다.
+  CI 가 미리 막지 않는 ref(main·master·태그·refs/heads 밖)나 ref 를 모르는 push 가 하나라도 있으면 지금처럼 여기서 돈다.
 */
 test('a branch-only push skips operational contracts for Required CI; main, master, tags, other refs and unknown pushes run them', () => {
   const line = (ref) => pushLine(ref, LOCAL_OID, ref, REMOTE_OID);
@@ -953,16 +957,6 @@ test('a branch-only push skips operational contracts for Required CI; main, mast
   assertSuccessful(source);
   assert.deepEqual(source.commands, PRE_PUSH_SOURCE_ORDER.filter(command => command !== CONTRACTS));
   assert.match(source.stdout, /PR Required CI\(secret-scan[^)]*\)에서 검증한다/);
-
-  // 생략 사실은 실행 기록에 남는다(실제 기록기). main push 는 계약 단계를 그대로 기록한다.
-  const recorded = runHook(`${line('refs/heads/feature')}\n`, hookSource, { realRecords: true });
-  assertSuccessful(recorded);
-  assert.deepEqual(recorded.records.filter(event => event.event === 'step-skipped').map(event => [event.stageId, event.reasonCode]),
-    [['operational-contracts', 'ci-authoritative']]);
-  assert.equal(recorded.records.at(-1).result, 'passed');
-  const onMain = runHook(`${line('refs/heads/main')}\n`, hookSource, { realRecords: true });
-  assert.ok(onMain.records.some(event => event.event === 'step-end' && event.stageId === 'operational-contracts'));
-  assert.equal(onMain.records.some(event => event.event === 'step-skipped'), false);
 
   // red 재현: 늘 미루는 훅은 main push 에서, main·master 판정을 걷은 훅은 main 에서, ref 를 모르는 push 를 미루는 훅은 빈 입력에서 붉다.
   const lf = hookSource.replace(/\r\n/g, '\n');
