@@ -16,7 +16,7 @@ Dispatch code-reviewer subagent to catch issues before they cascade.
 ## When to Request Review
 
 **Required:**
-- Before merge to main when the change alters authorization or privacy (H3), physical schema (H1), identifier axes or gate meaning — one adversarial review whose reviewer gets the user's original request and the diff before your restatement (SOP §2.3)
+- Before merge to main only for **H1 · H2 · H3** changes — physical schema / identifier axes (H1), gate/signal or baseline boundaries (H2), or auth / authorization / privacy (H3) (`DEC-OPS-436`). One adversarial review whose reviewer gets the user's original request and the diff before your restatement (SOP §2.3). Other L2 changes are optional by risk.
 
 **By risk (subagent-driven development decides per task):**
 - After a task with a concrete unresolved risk

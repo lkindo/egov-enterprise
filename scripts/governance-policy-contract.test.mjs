@@ -10,6 +10,9 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const files = {
   agents: 'AGENTS.md',
   protocol: 'docs/03-guides/orchestration-protocol.md',
+  reviewSkill: '.agent/skills/requesting-code-review/SKILL.md',
+  subagentSkill: '.agent/skills/subagent-driven-development/SKILL.md',
+  parallelSkill: '.agent/skills/dispatching-parallel-agents/SKILL.md',
   constitution: '.agent/knowledge/backend-api-constitution/artifacts/constitution.md',
   constitutionMetadata: '.agent/knowledge/backend-api-constitution/metadata.json',
   lombokLinter: 'api-server/src/test/java/nuri/api/harness/EntityLombokSourceLinterTest.java',
@@ -135,7 +138,7 @@ function numberedItem(article, number) {
  * SOP 3대 핵심 경계(① 포괄 승인 vs 개별 명시 승인 경계, ② 위임 산출물 메인 직접 재검증, ③ 3회 실패 중단 원칙)와
  * AGENTS.md · Atlas 서술의 정합성을 검증한다.
  */
-function protocolTruthErrors({ agents, protocol, atlas }) {
+function protocolTruthErrors({ agents, protocol, atlas, reviewSkill, subagentSkill, parallelSkill }) {
   const errors = [];
   const activeAgents = activeMarkdown(agents);
   const activeProtocol = activeMarkdown(protocol);
@@ -180,13 +183,31 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
   if (!designBudget.includes('**시안 확인은 스키마·코어 데이터·인가 의미·IA 처분·메뉴 노출·운영 적용의 승인이 아니다.**')) {
     errors.push('SOP §7 must keep prototype confirmation separate from schema, data, authorization, and rollout approval');
   }
+  if (!designBudget.includes('인가·스키마·데이터·게이트 L2') || !designBudget.includes('H1·H2·H3·동시성 관점은 채택률로 줄이지 않는다')) {
+    errors.push('SOP §7 must retain data/concurrency review scope alongside H1·H2·H3');
+  }
 
-  // SOP 경계 ②: 위임 산출물 메인 직접 재검증 + L2 독립 적대 검토 + Audit 리포트
+  // SOP 경계 ②: 위임 산출물 메인 직접 재검증 + H1·H2·H3 L2 필수 독립 적대 검토 + Audit 리포트
   if (!audit.includes('완료 증거로 신뢰하지 않고') || !audit.includes('직접 검토하고 게이트(§4.1)를 직접 재실행')) {
     errors.push('SOP §2.3 must require direct main-agent re-verification of delegated outputs');
   }
-  if (!audit.includes('독립 적대 검토') || !audit.includes('사용자 원문 요청과 diff')) {
-    errors.push('SOP §2.3 must preserve pre-merge independent adversarial review');
+  if (!audit.includes('H1·H2·H3 변경의 필수 독립 검토')
+    || !audit.includes('H1(물리 스키마·식별자 축)·H2(게이트/신호·동결 기준선·거버넌스 경계)·H3(인증·인가·개인정보)에 해당하는 변경은 병합 전 1회 독립 적대 검토를 둔다')
+    || !audit.includes('그 외 L2 변경의 타사 독립 검토는 위험에 따라 선택 적용한다')
+    || !audit.includes('사용자 원문 요청과 diff')) {
+    errors.push('SOP §2.3 must preserve H1·H2·H3 mandatory independent adversarial review');
+  }
+  if (agentPrinciples && !agentPrinciples.includes('H1(물리 스키마·식별자 축)·H2(게이트/신호·동결 기준선·거버넌스 경계)·H3(인증·인가·개인정보) 필수 검토')) {
+    errors.push('AGENTS safety-boundary exception must reflect H1·H2·H3 independent review scope');
+  }
+  if (reviewSkill !== undefined && (!/Required:[\s\S]*H1\s*·\s*H2\s*·\s*H3/u.test(reviewSkill) || !reviewSkill.includes('DEC-OPS-436'))) {
+    errors.push('requesting-code-review skill must limit mandatory independent review to H1·H2·H3');
+  }
+  if (subagentSkill !== undefined && (!subagentSkill.includes('H1(물리 스키마·식별자 축)·H2(게이트/신호·동결 기준선·거버넌스 경계)·H3(인증·인가·개인정보)') || !subagentSkill.includes('H1·H2·H3') || !subagentSkill.includes('DEC-OPS-436'))) {
+    errors.push('subagent-driven-development skill must align mandatory independent review scope to H1·H2·H3');
+  }
+  if (parallelSkill !== undefined && !parallelSkill.includes('H1(물리 스키마·식별자 축)·H2(게이트/신호·동결 기준선·거버넌스 경계)·H3(인증·인가·개인정보)')) {
+    errors.push('dispatching-parallel-agents skill must align mandatory H1·H2·H3 criteria');
   }
   if (!stage3.includes('## Audit 리포트(L2)')) {
     errors.push('SOP Stage 3 must preserve the PR ## Audit 리포트(L2) section requirement');
@@ -376,6 +397,9 @@ function backendEnforcementErrors({
 const current = {
   agents: read(files.agents),
   protocol: read(files.protocol),
+  reviewSkill: read(files.reviewSkill),
+  subagentSkill: read(files.subagentSkill),
+  parallelSkill: read(files.parallelSkill),
   atlas: renderAtlas(repoRoot),
   constitution: read(files.constitution),
   constitutionMetadata: JSON.parse(read(files.constitutionMetadata)),
@@ -396,6 +420,14 @@ test('SOP 3 core boundary regressions become red without mutating repository fil
     { ...current, protocol: current.protocol.replace('Fast-Track·포괄 승인으로 우회할 수 없으며', 'L0 Fast-Track으로 우회할 수 있으며') },
     { ...current, protocol: current.protocol.replace('**시안 확인은 스키마·코어 데이터·인가 의미·IA 처분·메뉴 노출·운영 적용의 승인이 아니다.**', '**시안 확인은 스키마 승인을 겸한다.**') },
     { ...current, protocol: current.protocol.replace('직접 검토하고 게이트(§4.1)를 직접 재실행', '위임 보고만 신뢰하고 완료') },
+    { ...current, protocol: current.protocol.replace('병합 전 1회 독립 적대 검토를 둔다', '병합 전 1회 독립 적대 검토를 둘 수 있다') },
+    { ...current, protocol: current.protocol.replace('H1·H2·H3 변경의 필수 독립 검토', 'H1·H2·H3 변경의 선택 독립 검토') },
+    { ...current, protocol: current.protocol.replace('인가·스키마·데이터·게이트 L2', '인가·스키마·게이트 L2') },
+    { ...current, protocol: current.protocol.replace('H1·H2·H3·동시성 관점은', 'H1·H2·H3 관점은') },
+    { ...current, agents: current.agents.replace('H1(물리 스키마·식별자 축)·H2(게이트/신호·동결 기준선·거버넌스 경계)·H3(인증·인가·개인정보) 필수 검토', 'L2 전체 필수 검토') },
+    { ...current, reviewSkill: current.reviewSkill.replace('H1 · H2 · H3', 'trivial CSS changes') },
+    { ...current, subagentSkill: current.subagentSkill.replace('H1(물리 스키마·식별자 축)·H2(게이트/신호·동결 기준선·거버넌스 경계)·H3(인증·인가·개인정보)', 'trivial CSS changes') },
+    { ...current, parallelSkill: current.parallelSkill.replace('H1(물리 스키마·식별자 축)·H2(게이트/신호·동결 기준선·거버넌스 경계)·H3(인증·인가·개인정보)', 'trivial CSS changes') },
     { ...current, protocol: current.protocol.replace('총 3회 실패하면 직접 재시도를 즉시 중단하고', '총 5회 실패하면 중단하고') },
     { ...current, protocol: current.protocol.replace('green이든 red든 증거로 쓰지 않고 단독 재실행', 'red일 때만 단독으로 다시 확인') },
     { ...current, atlas: current.atlas.replace('AGENTS 안전 경계에는 Fast-Track 금지', '안전 경계도 Fast-Track 실행') },

@@ -193,7 +193,7 @@ function validateDrillBuild(source) {
 function observeMigrationCommands(source, os, failCommand, extraEnv = {}) {
   const commands = [];
   const exits = [];
-  const executable = source.replace(/^import [^\r\n]+ from '(?:node:[^']+|\.\/verification-record\.mjs|\.\/heavy-run-queue\.mjs)';\r?$/gm, '');
+  const executable = source.replace(/^import [^\r\n]+ from '(?:node:[^']+|\.\/heavy-run-queue\.mjs)';\r?$/gm, '');
   runInNewContext(executable, {
     execSync: (command) => {
       commands.push(command);
@@ -201,7 +201,6 @@ function observeMigrationCommands(source, os, failCommand, extraEnv = {}) {
     },
     platform: () => os,
     randomBytes: () => { throw new Error('frontend build environment must not run'); },
-    createRun: () => ({ runId: 'migration-contract', stepStart() {}, stepEnd() {}, finish() {} }),
     // [DEC-OPS-413] 대기열 진입은 pre-push 계약이 순서를 본다 — 여기서는 명령 목록만 본다.
     ensureQueued: () => 'direct',
     process: {
