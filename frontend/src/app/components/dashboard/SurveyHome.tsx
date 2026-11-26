@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { homeKeys } from '@/queries/home-keys';
 import { useAuth } from '@/contexts/AuthContext';
 import { todayStorageYmd } from '@/lib/format-date';
 import { getSurveyStatus } from '@/lib/survey-status';
@@ -22,7 +23,7 @@ const MAX_ITEMS = 2;
 export function SurveyToAnswerCard() {
   const { user } = useAuth();
   const surveys = useQuery({
-    queryKey: ['home', 'surveys-to-answer', user?.id],
+    queryKey: [...homeKeys.all, 'surveys-to-answer', user?.id] as const,
     queryFn: () => surveyParticipationService.getSurveys({ page: 1, size: PAGE_LIMIT }),
     retry: false,
   });

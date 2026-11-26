@@ -6,13 +6,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { grantKey, hasCompleteCatalog, type AuthorizationMembership } from '@/lib/auth/authorization-management-contract';
 import { authorizationAdminService } from '@/services/foundation/system/AuthorizationAdminService';
+import { authorizationKeys } from '@/queries/authorization-keys';
 import { Button } from '@/components/ui/button';
 
 export function AuthorizationEffectivePermissions({ snapshot, current }: { snapshot: AuthorizationMembership; current: boolean }) {
   const { user } = useAuth();
   const [expanded, setExpanded] = useState(false);
   const query = useQuery({
-    queryKey: ['authorization', user?.id, user?.authorizationVersion, 'effective-groups', snapshot.userId, snapshot.version],
+    queryKey: authorizationKeys.effectiveGroups(user?.id, user?.authorizationVersion, snapshot.userId, snapshot.version),
     enabled: expanded && current && snapshot.complete && canPermission(user, 'AUTHRT_READ'), retry: false,
     queryFn: async () => {
       const [catalog, before] = await Promise.all([authorizationAdminService.getCatalog(), authorizationAdminService.getMemberships(snapshot.userId)]);

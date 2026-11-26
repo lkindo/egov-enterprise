@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { surveyKeys } from '@/queries/survey-keys';
 import { downloadSurveyStatsXlsx, getSurveyStats } from '@/lib/api/survey';
 import { FREE_TEXT_QUESTION_TYPE, type SurveyResultStats } from '@/types/business/survey';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,7 +50,7 @@ function groupSurveyStats(stats: SurveyResultStats[]): QuestionStatsGroup[] {
 export function SurveyStatsPanel({ srvySn }: { srvySn: number | null }) {
   const hasValidSurvey = srvySn !== null && Number.isSafeInteger(srvySn) && srvySn > 0;
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['survey-stats', srvySn],
+    queryKey: surveyKeys.stats(srvySn),
     queryFn: () => getSurveyStats({ srvySn: srvySn! }),
     enabled: hasValidSurvey,
     retry: false,

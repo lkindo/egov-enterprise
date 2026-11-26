@@ -10,6 +10,7 @@ import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { Button } from '@/components/ui/button';
 import { MenuPreviewDialog } from './MenuPreviewDialog';
+import { authorizationKeys } from '@/queries/authorization-keys';
 
 /**
  * 사용자 배정의 '메뉴 미리보기' — 그 사용자에게 고른 그룹 전부의 권한을 합쳐 사이드바를 본다(2026-10-02, 관리 콘솔 UX 2단계 A7).
@@ -25,7 +26,7 @@ export function UserMenuPreviewDialog({ userName, groupCodes, groups, onClose, o
   onFixMenu?: (groupCode: string, menuCode: string) => void;
 }) {
   const { user } = useAuth();
-  const scope = ['authorization', user?.id, user?.authorizationVersion];
+  const scope = authorizationKeys.scope(user?.id, user?.authorizationVersion);
   const canRead = canPermission(user, 'AUTHRT_READ');
   const canGrant = canPermission(user, 'AUTHRT_GRANT');
   const catalog = useQuery({ queryKey: [...scope, 'catalog'], queryFn: () => authorizationAdminService.getCatalog(), enabled: canRead, retry: false });

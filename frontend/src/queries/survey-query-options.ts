@@ -1,5 +1,7 @@
 import { queryOptions, type QueryClient } from '@tanstack/react-query';
 import { surveyParticipationService } from '@/services/foundation/survey/SurveyParticipationService';
+import { homeKeys } from '@/queries/home-keys';
+import { surveyKeys } from '@/queries/survey-keys';
 
 export function surveyListOptions(page: number, size: number) {
   return queryOptions({
@@ -15,7 +17,13 @@ export function surveyListOptions(page: number, size: number) {
  * 내 응답 목록이다. 종전에는 통계·상세만 무효화해 목록과 홈 카드가 최대 60초 동안 제출 전 상태를 보였다.
  */
 export function surveyResponseStaleKeys(srvySn: number) {
-  return [['survey-stats', srvySn], ['survey', srvySn], ['surveys'], ['home', 'surveys-to-answer'], ['survey-responses']] as const;
+  return [
+    surveyKeys.stats(srvySn),
+    surveyKeys.detail(srvySn),
+    ['surveys'],
+    [...homeKeys.all, 'surveys-to-answer'],
+    surveyKeys.myResponsesRoot,
+  ] as const;
 }
 
 export function invalidateAfterSurveyResponse(queryClient: QueryClient, srvySn: number) {

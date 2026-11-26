@@ -27,6 +27,7 @@ import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { PagePagination } from '@/components/common/PagePagination';
 import { communityAdminService, type Community } from '@/services/foundation/system/CommunityAdminService';
 import { CommunityMembersPanel } from './CommunityMembersPanel';
+import { communityKeys } from '@/queries/community-keys';
 import { CommunityDtoSchema } from '@/types/generated-zod';
 
 const StandardModal = dynamic(
@@ -95,7 +96,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
   const form = useAppForm(communitySchema, { defaultValues: EMPTY_FORM });
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['admin-communities', 'manage', page],
+    queryKey: communityKeys.adminList(page),
     queryFn: () => communityAdminService.getCommunityList({ page, size: PAGE_SIZE }),
     enabled: isOpen,
   });
@@ -130,9 +131,9 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
     && !activeTemplates.some(template => template.tmpltId === existingTemplateId);
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ['admin-communities'] });
+    queryClient.invalidateQueries({ queryKey: communityKeys.adminRoot });
     // 사용자 커뮤니티 목록·포틀릿도 같은 데이터를 읽는다.
-    queryClient.invalidateQueries({ queryKey: ['communities'] });
+    queryClient.invalidateQueries({ queryKey: communityKeys.listRoot });
   };
 
   const startCreate = () => {

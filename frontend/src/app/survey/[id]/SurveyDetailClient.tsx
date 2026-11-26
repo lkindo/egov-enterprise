@@ -20,6 +20,7 @@ import {
   getSurveyStatus,
 } from '@/lib/survey-status';
 import { SurveyStatsPanel } from '../components/SurveyStatsPanel';
+import { surveyKeys } from '@/queries/survey-keys';
 
 /**
  * 설문 응답 화면.
@@ -91,7 +92,7 @@ export default function SurveyDetailClient({
     isLoading: isSurveyLoading,
     isError: isSurveyError,
   } = useQuery<Survey>({
-    queryKey: ['survey', srvySn],
+    queryKey: surveyKeys.detail(srvySn),
     queryFn: () => surveyParticipationService.getSurvey(srvySn),
     initialData: initialSurvey,
   });

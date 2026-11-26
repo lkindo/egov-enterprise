@@ -26,6 +26,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { failureMessage } from '@/lib/safe-error-log';
 import { CommunityOperatorPanel } from '@/components/business/community/CommunityOperatorPanel';
+import { communityKeys } from '@/queries/community-keys';
 
 export default function CommunityDetailHubClient({ 
   cmntySn,
@@ -45,7 +46,7 @@ export default function CommunityDetailHubClient({
   const [isLeaving, setLeaving] = React.useState(false);
 
   const { data: community } = useQuery({
-    queryKey: ['community', cmntySn],
+    queryKey: communityKeys.detail(cmntySn),
     queryFn: () => communityUserService.getCommunity(cmntySn),
     initialData: initialData
   });
@@ -58,7 +59,7 @@ export default function CommunityDetailHubClient({
    * 조회 실패 하나로 가입 경로를 닫지 않기 위해서다.
    */
   const { data: membership } = useQuery({
-    queryKey: ['community-membership', cmntySn],
+    queryKey: communityKeys.membership(cmntySn),
     queryFn: () => communityUserService.getMyMembership(cmntySn),
   });
   const membershipStatus = membership?.status;
@@ -72,7 +73,7 @@ export default function CommunityDetailHubClient({
   //   열자마자 가입하면 가입 전에 나간 조회의 NONE 이 최종 결과가 되어 '승인 대기' 대신 신청 버튼이 다시 보였다(PR #973 run
   //   40071454996 trace). 진행 중인 조회를 먼저 취소해 가입·탈퇴 뒤의 조회가 반드시 새로 나가게 한다.
   const refreshMembership = async () => {
-    const queryKey = ['community-membership', cmntySn];
+    const queryKey = communityKeys.membership(cmntySn);
     await queryClient.cancelQueries({ queryKey });
     await queryClient.invalidateQueries({ queryKey });
   };
@@ -94,7 +95,7 @@ export default function CommunityDetailHubClient({
     isLoading: isBoardsLoading,
     error: boardsError,
   } = useQuery({
-    queryKey: ['community-boards', cmntySn],
+    queryKey: communityKeys.boards(cmntySn),
     queryFn: () => communityUserService.getCommunityBoards(cmntySn),
     enabled: canSeeBoards,
   });

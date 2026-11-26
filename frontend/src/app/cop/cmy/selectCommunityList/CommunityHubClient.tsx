@@ -15,6 +15,7 @@ import { CommunityVO } from '@/types/business/community';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { PageResponse } from '@/types/foundation/system';
+import { communityKeys } from '@/queries/community-keys';
 
 export default function CommunityHubClient({ 
   initialData 
@@ -36,7 +37,7 @@ export default function CommunityHubClient({
   const [initialAuthorizationScope] = useState(authorizationScope);
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['communities', authorizationScope, searchKeyword, page, pageSize, joinedOnly],
+    queryKey: [...communityKeys.listRoot, authorizationScope, searchKeyword, page, pageSize, joinedOnly] as const,
     /*
      * [2026-08-25 실측 수정] 종전에는 `pageIndex`·`searchKeyword` 를 보냈는데
      * CommunityApiController 는 **page(1부터, ADR-0036) / size** 와
@@ -128,7 +129,7 @@ export default function CommunityHubClient({
           variant="outline"
           size="sm"
           aria-label="커뮤니티 목록 새로고침"
-          onClick={() => queryClient.invalidateQueries({ queryKey: ['communities'] })}
+          onClick={() => queryClient.invalidateQueries({ queryKey: communityKeys.listRoot })}
           className="gap-2"
         >
           <RefreshCcw size={16} className={cn(isLoading && "animate-spin")} aria-hidden="true" />

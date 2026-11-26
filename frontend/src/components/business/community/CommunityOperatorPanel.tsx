@@ -20,6 +20,7 @@ import {
   type OperatorMember,
   type OperatorMemberStatusCode,
 } from '@/services/business/community/communityOperatorService';
+import { communityKeys } from '@/queries/community-keys';
 
 const PAGE_SIZE = 20;
 
@@ -95,7 +96,7 @@ export function CommunityOperatorPanel({ cmntySn, community }: CommunityOperator
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: membersKey });
     // 내가 운영자를 해제하면 상세 화면의 '내 멤버십'(운영자 표시)도 바뀐다.
-    void queryClient.invalidateQueries({ queryKey: ['community-membership', cmntySn] });
+    void queryClient.invalidateQueries({ queryKey: communityKeys.membership(cmntySn) });
   };
 
   const changeFilter = (next: Filter) => {
@@ -147,13 +148,13 @@ export function CommunityOperatorPanel({ cmntySn, community }: CommunityOperator
         version: community.version,
       });
       toast('커뮤니티 소개를 저장했습니다.', 'success');
-      await queryClient.invalidateQueries({ queryKey: ['community', cmntySn] });
+      await queryClient.invalidateQueries({ queryKey: communityKeys.detail(cmntySn) });
     } catch (error) {
       // 입력은 그대로 둔다 — 필드 오류는 그 칸에, 그 밖의 거부(다른 사람이 먼저 고침 409 등)는 서버 문구로 알린다.
       const fieldErrors = extractFieldErrors(error);
       if (fieldErrors) validation.setFormErrors(fieldErrors);
       else toast(extractErrorMessage(error, '커뮤니티 소개를 저장하지 못했습니다.'), 'error');
-      await queryClient.invalidateQueries({ queryKey: ['community', cmntySn] });
+      await queryClient.invalidateQueries({ queryKey: communityKeys.detail(cmntySn) });
     } finally {
       savingProfileRef.current = false;
       setSavingProfile(false);

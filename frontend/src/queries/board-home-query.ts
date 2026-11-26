@@ -3,6 +3,7 @@ import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
 import type { DashboardTask } from '@/types/foundation/dashboard';
 import type { components } from '@/types/generated-api';
 import { getDashboardDataOperation } from '@/types/generated-operations';
+import { homeKeys } from '@/queries/home-keys';
 
 /**
  * 업무 홈의 게시판 조회(Phase 2 9단계 — 종전 app/dashboard-data.ts 의 응답 처리를 그대로 옮겼다). 게시판 기능 소유다.
@@ -80,6 +81,6 @@ export async function loadBoardHome(): Promise<BoardHomeData | null> {
 }
 
 export const boardHomeQuery = queryOptions({
-  queryKey: ['home', 'board'] as const,
+  queryKey: [...homeKeys.all, 'board'] as const,
   queryFn: loadBoardHome,
 });

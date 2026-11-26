@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { BackToListButton } from '@/app/components/navigation/BackToListButton';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { surveyKeys } from '@/queries/survey-keys';
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { parseStorageYmd, toDisplayYmd } from "@/lib/format-date";
@@ -99,7 +100,7 @@ export default function SurveyManageDetailClient() {
         try {
             await pollUserService.deletePoll(pollSn);
             success('설문을 삭제했습니다.');
-            await queryClient.invalidateQueries({ queryKey: ['admin-polls'] });
+            await queryClient.invalidateQueries({ queryKey: surveyKeys.adminPollsRoot });
             router.push('/admin/survey/manage');
         } catch (e) {
             const message = failureMessage(e, '설문 삭제에 실패했습니다.');
@@ -119,7 +120,7 @@ export default function SurveyManageDetailClient() {
     const handleSaved = async () => {
         setIsEditing(false);
         await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ['admin-polls'] }),
+            queryClient.invalidateQueries({ queryKey: surveyKeys.adminPollsRoot }),
             queryClient.invalidateQueries({ queryKey: ['poll-detail', pollSn] }),
         ]);
     };

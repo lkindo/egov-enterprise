@@ -14,6 +14,7 @@ import {
 } from '@dnd-kit/core';
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { deptAdminService, Department } from '@/services/foundation/system/DeptAdminService';
+import { userOrgKeys } from '@/queries/user-org-keys';
 import { flattenDeptTree, listToDeptTree, getDeptProjection, reparentFlattened, shiftFlattened, FlattenedDept } from './departments/treeUtils';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { INDENTATION_WIDTH } from './UserOrgHubParts';
@@ -40,7 +41,7 @@ export function useDeptTree({
     data: deptsData, isLoading: isDeptsLoading, isError: isDeptsError, error: deptsError, refetch: refetchDepts,
     isPlaceholderData: isDeptsPlaceholder,
   } = useQuery({
-    queryKey: ['admin-depts', 'tree', deptKeyword],
+    queryKey: userOrgKeys.depts.tree(deptKeyword),
     // 트리와 부서 선택은 전량 API를 공유한다. 검색 결과에서 빠진 부모의 보호 의미는 아래에서 유지한다.
     queryFn: () => deptAdminService.getDeptTree(deptKeyword),
     // 부서 탭뿐 아니라 '부서 이동' 모달·사용자 등록/수정 폼(소속 부서 선택)에서도 목록이 필요하다.

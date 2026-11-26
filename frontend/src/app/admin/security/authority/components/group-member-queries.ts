@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
+import { authorizationKeys } from '@/queries/authorization-keys';
 
 /**
  * 구성원을 바꾼 뒤 다시 읽을 조회(2026-10-02, 관리 콘솔 UX 2단계 D6) — 그룹 구성원 목록, 사용자별 배정, 부서 명부, 유효권한
@@ -9,6 +10,6 @@ const MEMBERSHIP_QUERY_KINDS = new Set(['group-members', 'membership', 'departme
 
 export function invalidateMembershipQueries(queryClient: QueryClient): Promise<void> {
   return queryClient.invalidateQueries({
-    predicate: (query) => query.queryKey[0] === 'authorization' && MEMBERSHIP_QUERY_KINDS.has(String(query.queryKey[3])),
+    predicate: (query) => query.queryKey[0] === authorizationKeys.all[0] && MEMBERSHIP_QUERY_KINDS.has(String(query.queryKey[3])),
   });
 }

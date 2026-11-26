@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { menuService } from '@/services/business/user/MenuService';
 import { useLayout } from '@/contexts/LayoutContext';
 import { useMenuAuthorizationScope } from '@/hooks/api/use-menu-authorization-scope';
+import { menuKeys } from '@/queries/menu-keys';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { MenuInfo } from '@/types/foundation/menu';
@@ -73,7 +74,7 @@ export function Sidebar({
 
   // initialData가 실제로 있을 때만 주입한다. 빈 배열을 데이터로 확정하면 복구 query가 실행되지 않는다.
   const { data: assignedTopMenus = NO_MENUS, isError: topMenusFailed, isSuccess: topMenusLoaded, isFetching: topMenusFetching, refetch: refetchTopMenus } = useQuery({
-    queryKey: ['menus', 'head', ...menuAuthorization.scope],
+    queryKey: menuKeys.head(menuAuthorization.scope),
     queryFn: () => menuService.getHeadMenus(),
     initialData: menuAuthorization.acceptsInitialMenus && resolvedMenus.length > 0 ? resolvedMenus : undefined,
     enabled: menuAuthorization.authenticated,
@@ -118,7 +119,7 @@ export function Sidebar({
   // 여기서 첫 영역을 저장하면 같은 commit의 정확한 URL 선택을 덮어쓸 수 있다.
 
   const { data: assignedMenus = prefetchedLeftMenus, isLoading: loading, isError: leftMenusFailed, refetch: refetchLeftMenus } = useQuery({
-    queryKey: ['menus', 'left', effectiveActiveMenuNo, ...menuAuthorization.scope],
+    queryKey: menuKeys.left(effectiveActiveMenuNo, menuAuthorization.scope),
     queryFn: async () => {
       if (!effectiveActiveMenuNo) return [];
       if (prefetchedLeftMenus.length > 0) return prefetchedLeftMenus;

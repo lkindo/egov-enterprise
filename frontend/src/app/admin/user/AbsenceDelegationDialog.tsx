@@ -14,6 +14,7 @@ import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUti
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { getTodayYmd } from '@/lib/date/today-ymd';
 import { userAbsenceAdminService } from '@/services/foundation/system/UserAbsenceAdminService';
+import { userOrgKeys } from '@/queries/user-org-keys';
 import type { UserSearchResult } from '@/services/business/user/UserSearchService';
 import type { UserManage } from '@/types/foundation/user';
 import { UserAbsenceDtoRequestSchema } from '@/types/generated-zod';
@@ -66,7 +67,7 @@ export function AbsenceDelegationDialog({ target, delegateName, onClose }: {
       await userAbsenceAdminService.updateDelegation(input.userId, {
         sbtAprvrId: input.sbtAprvrId, absnBgngYmd: input.absnBgngYmd, absnEndYmd: input.absnEndYmd,
       });
-      await queryClient.invalidateQueries({ queryKey: ['admin-user-absences'] });
+      await queryClient.invalidateQueries({ queryKey: userOrgKeys.absences.all });
     },
   });
 

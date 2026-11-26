@@ -12,6 +12,7 @@ import { getHttpStatus } from '@/lib/query/list-query-defaults';
 import { openableMenus } from '@/lib/navigation/openable-menus';
 import { walkMenuTree } from '@/lib/navigation/active-menu';
 import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
+import { menuKeys } from '@/queries/menu-keys';
 import { useMenuAuthorizationScope } from './use-menu-authorization-scope';
 
 /**
@@ -20,12 +21,12 @@ import { useMenuAuthorizationScope } from './use-menu-authorization-scope';
  * 목록은 서버가 지금 볼 수 있는 메뉴만 돌려준다 — 배정이 회수된 메뉴는 여기서 사라진다. 권한 범위(scope)를 키에
  * 넣어 계정·권한이 바뀌면 다른 목록으로 읽는다.
  */
-export const MENU_BOOKMARKS_KEY = ['menus', 'bookmarks'] as const;
+export const MENU_BOOKMARKS_KEY = menuKeys.bookmarks();
 
 function invalidateBookmarks(client: QueryClient) {
   return Promise.all([
     client.invalidateQueries({ queryKey: MENU_BOOKMARKS_KEY }),
-    client.invalidateQueries({ queryKey: ['menus', 'command-center', 'bookmarks'] }),
+    client.invalidateQueries({ queryKey: menuKeys.commandCenterBookmarks() }),
   ]);
 }
 
@@ -76,7 +77,7 @@ export function useMenuBookmarkCleanup(ready: boolean) {
     setPending(true);
     const confirmedScope = scopeKey;
     const sameScope = () => lifecycleActiveRef.current && currentScope.current === confirmedScope;
-    const headKey = ['menus', 'head', ...authorization.scope] as const;
+    const headKey = menuKeys.head(authorization.scope);
     const statusKey = [...MENU_BOOKMARKS_KEY, ...authorization.scope] as const;
     try {
       const [menus, status] = await Promise.all([
@@ -128,7 +129,7 @@ export function useMenuBookmarkCleanup(ready: boolean) {
         await checkAuth({ afterAuthorizationChange: true });
         await Promise.all([
           invalidateBookmarks(client),
-          client.invalidateQueries({ queryKey: ['menus', 'head'] }),
+          client.invalidateQueries({ queryKey: menuKeys.head() }),
         ]);
         toast('즐겨찾기 상태가 변경되었습니다. 다시 확인한 뒤 정리해 주세요.', 'info');
       } else {

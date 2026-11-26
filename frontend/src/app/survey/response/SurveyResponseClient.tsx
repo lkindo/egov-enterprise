@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { surveyKeys } from '@/queries/survey-keys';
 import { getQustnrRespondInfoList, cancelSurveySubmission } from '@/lib/api/survey';
 import { useRef, useState } from 'react';
 import Link from 'next/link';
@@ -54,7 +55,7 @@ export default function SurveyResponseClient() {
   //   ② 응답 항목 필드도 실재하지 않는 이름(`respondNm`·`respondAnswerCn`·`qestnrQesitmId`)을
   //      읽고 있었는데 tsc 가 아무것도 잡지 못했다.
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: ['survey-responses', pageNo, searchKeyword],
+    queryKey: [...surveyKeys.myResponsesRoot, pageNo, searchKeyword],
     // [ADR-0036] 서버 page 가 화면과 같은 1부터다 — 화면 번호를 그대로 보낸다.
     //   [2026-08-29] 서버가 0부터 세던 때 이 화면만 1-base 번호를 그대로 실어 **첫 화면이 곧 2페이지 요청**이었다
     //   (표는 비고 머리말만 '총 N건' 이라 말했다). 그때는 `- 1` 로 맞췄고, 이제는 변환할 것이 없다.
@@ -69,9 +70,9 @@ export default function SurveyResponseClient() {
   const deleteMutation = useMutation({
     mutationFn: (srvyRspnsSn: number) => cancelSurveySubmission(srvyRspnsSn),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['survey-responses'] });
-      queryClient.invalidateQueries({ queryKey: ['survey-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['survey-response-detail'] });
+      queryClient.invalidateQueries({ queryKey: surveyKeys.myResponsesRoot });
+      queryClient.invalidateQueries({ queryKey: surveyKeys.statsRoot });
+      queryClient.invalidateQueries({ queryKey: surveyKeys.responseDetailRoot });
       setPageNo(1);
       toast.success('전체 제출을 취소했습니다.');
     },

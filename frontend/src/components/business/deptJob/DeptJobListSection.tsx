@@ -11,6 +11,7 @@ import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { deptJobKeys } from '@/queries/dept-job-keys';
 import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { DeptJobForm, PRIORITY_LABEL, type DeptJobFormValues } from '@/components/business/deptJob/DeptJobForm';
@@ -133,7 +134,7 @@ export function DeptJobListSection({
   } = useQuery({
     // jobScope 를 queryKey 에 포함해야 토글 시 재조회된다. 빠뜨리면 캐시된 이전 스코프 결과가
     // 그대로 남아 "토글이 먹지 않는" 것처럼 보인다.
-    queryKey: ['work-jobs', searchKeyword, jobPage, jobScope, pageUnit],
+    queryKey: deptJobKeys.jobs(searchKeyword, jobPage, jobScope, pageUnit),
     // [2026-08-29] searchCondition 을 함께 보낸다. 서버(DeptJobService)는 조건이
     //   '0'(부서업무명)·'1'(내용)·'2'(담당자ID) 일 때만 술어를 붙이고, 그 밖에는 **아무것도
     //   거르지 않는다**. 종전에는 조건 없이 키워드만 보내 무엇을 입력해도 전체 목록이 그대로
@@ -159,7 +160,7 @@ export function DeptJobListSection({
       toast('업무가 등록되었습니다.', 'success');
       // 저장에 성공했으므로 가드를 거치지 않고 곧장 닫는다.
       closeJobModal();
-      await queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
+      await queryClient.invalidateQueries({ queryKey: deptJobKeys.jobsRoot });
       /*
         [조회범위 안내] 서버의 'mine' 술어는 `picId = 나 OR (담당자 없음 AND 내가 등록)` 이다
         (DeptJobService#searchDeptJobs). 담당자를 **타인으로 지정**하면 방금 만든 업무가
@@ -206,7 +207,7 @@ export function DeptJobListSection({
       if (!ok) return;
       await deptJobUserService.deleteDeptJob(item.deptTaskSn);
       toast('업무가 삭제되었습니다.', 'success');
-      await queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
+      await queryClient.invalidateQueries({ queryKey: deptJobKeys.jobsRoot });
     } catch {
       toast('삭제에 실패했습니다. 권한이 없거나 이미 삭제된 업무일 수 있습니다.', 'error');
     } finally {

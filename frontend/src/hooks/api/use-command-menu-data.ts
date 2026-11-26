@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { openableMenus } from '@/lib/navigation/openable-menus';
 import { menuService } from '@/services/business/user/MenuService';
+import { menuKeys } from '@/queries/menu-keys';
 import type { UserInfo } from '@/services/foundation/auth/authService';
 import type { MenuInfo } from '@/types/foundation/menu';
 
@@ -13,7 +14,7 @@ export function useCommandMenuData(isOpen: boolean, user: UserInfo | null) {
   const scope = [user?.id ?? null, user?.esntlId ?? null, user?.authorizationVersion ?? ''] as const;
   const enabled = isOpen && !!user;
   const menus = useQuery({
-    queryKey: ['menus', 'command-center', 'head', ...scope],
+    queryKey: menuKeys.commandCenterHead(scope),
     queryFn: ({ signal }) => menuService.getHeadMenus({ signal }),
     enabled,
     staleTime: 0,
@@ -21,7 +22,7 @@ export function useCommandMenuData(isOpen: boolean, user: UserInfo | null) {
     placeholderData: undefined,
   });
   const bookmarks = useQuery({
-    queryKey: ['menus', 'command-center', 'bookmarks', ...scope],
+    queryKey: menuKeys.commandCenterBookmarks(scope),
     queryFn: ({ signal }) => menuService.getMyBookmarks({ signal }),
     enabled,
     staleTime: 0,

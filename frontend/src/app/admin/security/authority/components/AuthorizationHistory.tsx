@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { PagePagination } from '@/components/common/PagePagination';
 import { cn } from '@/lib/utils';
 import { PermissionScrollRegion } from './PermissionScrollRegion';
+import { authorizationKeys } from '@/queries/authorization-keys';
 
 const PAGE_SIZE = 20;
 /**
@@ -72,7 +73,7 @@ export function AuthorizationHistory({ initialUserId = '', fill = false }: { ini
   const { user } = useAuth();
   const headingId = useId();
   const canAudit = canPermission(user, 'AUTHRT_AUDIT');
-  const scope = ['authorization', user?.id, user?.authorizationVersion];
+  const scope = authorizationKeys.scope(user?.id, user?.authorizationVersion);
   const [historyPage, setHistoryPage] = useState(1);
   // 사용자 상세에서 넘어오면 그 사람의 로그인 ID 로 조건을 채워 연다(대상 인계, 2026-10-01).
   const [historyInput, setHistoryInput] = useState({ groupCode: '', userId: initialUserId, actorId: '', fromDate: '', toDate: '' });

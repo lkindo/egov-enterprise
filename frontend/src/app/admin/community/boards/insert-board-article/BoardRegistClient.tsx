@@ -38,6 +38,7 @@ import { canPermission } from '@/lib/auth/permissions';
 import { canEditConfiguredBoard } from '@/lib/auth/board-edit-permissions';
 import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
 import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
+import { boardPostKeys } from '@/queries/board-post-keys';
 import { boardUploadLimits, formatMegabytes, BOARD_UPLOAD_ACCEPT, BOARD_UPLOAD_EXTENSIONS } from '@/lib/attachments/server-upload-limits';
 import { fileService } from '@/services/foundation/file/FileService';
 import { knowledgeService } from '@/services/business/knowledge/knowledgeService';
@@ -268,7 +269,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
     isError: isAttachmentError,
     refetch: refetchAttachments,
   } = useQuery({
-    queryKey: ['article-files', existingAtchFileSn],
+    queryKey: boardPostKeys.files(existingAtchFileSn),
     queryFn: () => fileService.getFileList(existingAtchFileSn!),
     enabled: !!existingAtchFileSn,
   });
@@ -324,7 +325,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
 
       await fileService.deleteFile(file.atchFileSn, file.fileSn);
       toast('첨부파일을 삭제했습니다.', 'success');
-      await queryClient.invalidateQueries({ queryKey: ['article-files', file.atchFileSn] });
+      await queryClient.invalidateQueries({ queryKey: boardPostKeys.files(file.atchFileSn) });
     } catch (error) {
       toast(extractErrorMessage(error, '첨부파일을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.'), 'error');
     } finally {
@@ -513,12 +514,12 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
       // Debug log removed for Zero-Tolerance clean console requirement
       
       if (result.success) {
-        queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
+        queryClient.invalidateQueries({ queryKey: boardPostKeys.lists(bbsId) });
         const refreshes: Promise<unknown>[] = [];
         if (activePstSn) {
           // An inactive query seeded only with SSR initialData is not refetched by
           // invalidateQueries. Fetch explicitly before navigating to avoid stale media.
-          const detailKey = ['article-detail', bbsId, activePstSn];
+          const detailKey = boardPostKeys.detail(bbsId, activePstSn);
           if (queryClient.getQueryState(detailKey)) {
             refreshes.push(queryClient.fetchQuery({
               queryKey: detailKey,
@@ -529,10 +530,10 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
               queryClient.removeQueries({ queryKey: detailKey, exact: true });
             }));
           }
-          refreshes.push(queryClient.invalidateQueries({ queryKey: ['boardArticle', bbsId, activePstSn], refetchType: 'all' }));
+          refreshes.push(queryClient.invalidateQueries({ queryKey: boardPostKeys.article(bbsId, activePstSn), refetchType: 'all' }));
         }
         if (existingAtchFileSn) {
-          refreshes.push(queryClient.invalidateQueries({ queryKey: ['article-files', existingAtchFileSn], refetchType: 'all' }));
+          refreshes.push(queryClient.invalidateQueries({ queryKey: boardPostKeys.files(existingAtchFileSn), refetchType: 'all' }));
         }
         await Promise.all(refreshes);
         clearDraft();
