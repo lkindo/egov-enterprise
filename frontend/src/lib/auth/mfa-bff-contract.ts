@@ -10,8 +10,11 @@ export const mfaEnrollmentSchema = z.strictObject({
 });
 export const mfaReauthenticationSchema = z.strictObject({ expiresAt: z.iso.datetime({ offset: true }) });
 export const mfaCompleteSchema = z.strictObject({ completed: z.literal(true) });
-export const mfaCodeSchema = z.string().regex(/^\d{6}$/, '인증앱의 6자리 숫자를 입력해 주세요.');
-export const mfaRecoveryCodeSchema = z.string().trim().regex(/^[A-Za-z0-9_-]{22}$/, '발급받은 22자리 복구 코드를 입력해 주세요.');
+/** 인증앱 코드·복구 코드의 형식 — BFF 요청 계약과 추가 인증 화면(카탈로그 문구, ADR-0063)이 같은 패턴을 쓴다. */
+export const MFA_CODE_PATTERN = /^\d{6}$/;
+export const MFA_RECOVERY_CODE_PATTERN = /^[A-Za-z0-9_-]{22}$/;
+export const mfaCodeSchema = z.string().regex(MFA_CODE_PATTERN, '인증앱의 6자리 숫자를 입력해 주세요.');
+export const mfaRecoveryCodeSchema = z.string().trim().regex(MFA_RECOVERY_CODE_PATTERN, '발급받은 22자리 복구 코드를 입력해 주세요.');
 export const mfaVerifyRequestSchema = z.union([
   z.strictObject({ code: mfaCodeSchema }),
   z.strictObject({ recoveryCode: mfaRecoveryCodeSchema }),

@@ -359,6 +359,8 @@ test('global metadata and loading copy do not claim unapproved KRDS or intellige
     // 바닥글의 링크 문구는 도움말 기능의 셸 링크 기여에 있다(슬롯 단계 PR-6). 범위를 그대로 두려고 함께 읽는다.
     'frontend/src/extensions/help/shell-links.ts',
     'frontend/src/app/components/ui/smart-onboarding-hub.tsx',
+    // [2026-11-26 ADR-0063] 셸 공통 문구(불러오는 중 화면의 포털 이름 등)는 화면 카탈로그에 있다. 한국어 정본을 함께 읽는다.
+    'frontend/messages/ko.json',
   ].map((source) => fs.readFileSync(path.join(ROOT, source), 'utf8')).join('\n');
 
   assert.doesNotMatch(

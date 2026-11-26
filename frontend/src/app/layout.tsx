@@ -25,6 +25,11 @@ import { getServerUser } from '@/lib/auth/server-user';
 import { SITE_IDENTITY } from '@/config/site-identity';
 import { POPSTATE_GATE_SCRIPT } from '@/lib/navigation/popstate-gate';
 import { SIDEBAR_COLLAPSE_SCRIPT } from '@/lib/layout/sidebar-collapse-script';
+import { LocaleBoundary } from '@/i18n/LocaleBoundary';
+import { contentLang } from '@/i18n/content-lang';
+import { messagesFor } from '@/i18n/messages';
+import { requestEffectiveLocale, requestLocale, serverTranslator } from '@/i18n/server-locale';
+import { CommonText } from './components/layout/ShellText';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -66,7 +71,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
       footer={<Footer />}
     >
       <PageTransition>
-        <Suspense fallback={<div className="flex min-h-64 items-center justify-center text-muted-foreground"><h1 className="sr-only">페이지 콘텐츠를 불러오는 중</h1><p role="status">페이지 콘텐츠를 불러오는 중...</p></div>}>
+        <Suspense fallback={<div className="flex min-h-64 items-center justify-center text-muted-foreground"><h1 className="sr-only"><CommonText k="loadingPageTitle" /></h1><p role="status"><CommonText k="loadingPageStatus" /></p></div>}>
           {children}
         </Suspense>
       </PageTransition>
@@ -87,8 +92,8 @@ async function ProvidersWithAuth({ children }: { children: React.ReactNode }) {
       <Suspense fallback={
         <main className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">
           <div>
-            <h1 className="sr-only">{SITE_IDENTITY.siteAccessibleName}</h1>
-            <p role="status" aria-live="polite">애플리케이션을 준비하는 중...</p>
+            <h1 className="sr-only" lang={contentLang(SITE_IDENTITY.siteAccessibleName)}>{SITE_IDENTITY.siteAccessibleName}</h1>
+            <p role="status" aria-live="polite"><CommonText k="preparingApp" /></p>
           </div>
         </main>
       }>
@@ -117,12 +122,18 @@ export default async function RootLayout({
   // 밀도 축은 브랜드와 직교하는 배포 단위 서버 설정이다(D1, DEC-OPS-015) — 같은 규칙으로
   // allowlist 검증 뒤 <html> 한 곳에만 배선한다(미설정 시 comfortable = 렌더링 무변경).
   const density = resolveDensity(process.env.UI_DENSITY);
+  // [2026-11-26 ADR-0063] 화면 로케일은 쿠키로 고르고 <html lang> 과 카탈로그가 같은 값을 쓴다. 미번역 화면 영역은 ApplicationFrame 이 ko 로 다시 감싼다.
+  // [2026-11-26 ADR-0063] 고른 로케일(쿠키)과 이 화면에서 실제로 그리는 로케일 — 번역을 마치지 않은 화면은 한국어다. 문서 언어는
+  //   실제 로케일이고, 화면을 옮기면 로케일 경계가 맞춘다.
+  const locale = await requestLocale();
+  const effective = await requestEffectiveLocale();
+  const t = await serverTranslator('common', effective);
   // [2026-09-16 GAP-UIF-001] next/font 변수는 <html>(:root)에 둔다. globals.css 의 @theme 는
   // --font-sans 를 :root 에서 계산하는데, 변수를 body 에만 두면 그 시점에 값이 없어 별칭 전체가
   // 무효가 되고 브라우저는 시스템 대체 글꼴로 떨어졌다 — 번들한 본문 글꼴이 쓰이지 않았다.
   return (
     <html
-      lang="ko"
+      lang={effective}
       className={`${inter.variable} ${outfit.variable} scroll-pt-16`}
       data-brand-theme={brandTheme}
       data-density={density}
@@ -150,14 +161,16 @@ export default async function RootLayout({
           <Suspense fallback={
             <main className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">
               <div>
-                <h1 className="sr-only">{SITE_IDENTITY.siteAccessibleName}</h1>
-                <p role="status" aria-live="polite">보안 세션을 확인하는 중...</p>
+                <h1 className="sr-only" lang={contentLang(SITE_IDENTITY.siteAccessibleName)}>{SITE_IDENTITY.siteAccessibleName}</h1>
+                <p role="status" aria-live="polite">{t('checkingSession')}</p>
               </div>
             </main>
           }>
-            <ProvidersWithAuth>
-              {children}
-            </ProvidersWithAuth>
+            <LocaleBoundary preferred={locale} messages={messagesFor(locale)} koreanMessages={locale === 'ko' ? undefined : messagesFor('ko')}>
+              <ProvidersWithAuth>
+                {children}
+              </ProvidersWithAuth>
+            </LocaleBoundary>
           </Suspense>
         </ThemeProvider>
       </body>

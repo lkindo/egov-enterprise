@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo, useRef } from 'react';
+import { useTranslations } from 'use-intl';
 import { toast as sonnerToast } from 'sonner';
 import { userFacingErrorMessage } from '@/lib/safe-error-log';
 
@@ -110,16 +111,25 @@ export const useToast = () => {
   return useMemo(() => ({ toast, success, error, removeToast: noop }), [toast, success, error]);
 };
 
+type TransportFailure = 'timeout' | 'offline' | 'generic';
+const TRANSPORT_FAILURES: ReadonlySet<unknown> = new Set<TransportFailure>(['timeout', 'offline', 'generic']);
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
+  // [2026-11-26 ADR-0063] 서버 문구가 없는 전송 실패는 지금 화면의 로케일 문구로 알린다(공급자는 로케일 경계 안이다). 듣는 함수를 다시
+  //   달지 않도록 번역 함수는 참조로 읽는다.
+  const tTransport = useTranslations('transport');
+  const transportRef = useRef(tTransport);
+  useEffect(() => { transportRef.current = tTransport; }, [tTransport]);
+
   // API 오류 이벤트 리스너 등록
   useEffect(() => {
     const handleApiError = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (!detail) return;
-      const { message, status } = detail;
+      const { message, status, transport } = detail;
       // 401(인증) 오류는 로그인 처리 영역에서 핸들링하므로 호출하지 않음
       if (status !== 401) {
-        announceUnclaimedFailure(message);
+        announceUnclaimedFailure(TRANSPORT_FAILURES.has(transport) ? transportRef.current(transport as TransportFailure) : message);
       }
     };
 

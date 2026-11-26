@@ -358,13 +358,26 @@ describe('세션 만료 안내', () => {
   });
 
   it('[2026-11-25] 세션이 끝나며 보내지 못한 일의 안내를 한 번 보이고 지운다', async () => {
-    rememberSignOutNotice('세션이 끝나 보내지 못한 승인이 1건 있습니다. 결재함에서 다시 처리해 주세요.');
+    rememberSignOutNotice('signOut.unsentApprovals', { count: 1 });
 
     await act(async () => { render(<LoginPage />); });
 
     expect(screen.getByTestId('login-sign-out-notices')).toHaveTextContent('보내지 못한 승인이 1건');
     expect(takeSignOutNotices()).toEqual([]);
     forgetShownSignOutNotices();
+  });
+
+  it('[ADR-0063] 카탈로그에 없는 안내 키만 남았으면 빈 상태 영역도 그리지 않는다', async () => {
+    forgetShownSignOutNotices();
+    window.sessionStorage.setItem('egov.sign-out-notices.v2', JSON.stringify([{ key: 'signOut.future', values: { count: 1 } }]));
+    try {
+      await act(async () => { render(<LoginPage />); });
+
+      expect(screen.queryByTestId('login-sign-out-notices')).toBeNull();
+    } finally {
+      // 꺼내 고정한 안내가 다음 시험의 로그인 화면으로 넘어가지 않게 한다.
+      forgetShownSignOutNotices();
+    }
   });
 
   it('만료 파라미터가 없으면 안내하지 않는다 — 평상시 로그인은 사고가 아니다', async () => {

@@ -21,6 +21,16 @@ export function loginErrorMessage(error: unknown): string {
   return LOGIN_FAILURE_MESSAGE;
 }
 
+/** 로그인 화면이 카탈로그에서 고를 실패 종류(ADR-0063) — {@link loginErrorMessage} 와 같은 판정이다. */
+export type LoginErrorKind = 'failure' | 'unavailable' | 'rateLimited';
+
+export function loginErrorKind(error: unknown): LoginErrorKind {
+  const message = loginErrorMessage(error);
+  if (message === LOGIN_RATE_LIMITED_MESSAGE) return 'rateLimited';
+  if (message === LOGIN_UNAVAILABLE_MESSAGE) return 'unavailable';
+  return 'failure';
+}
+
 /** 응답 자체를 받지 못한 axios 실패(연결 거부·시간 초과). */
 function isNetworkFailure(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;

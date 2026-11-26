@@ -5,6 +5,7 @@ import { VERIFIED_USER_HEADER, consumeVerifiedPageUser, signVerifiedUserHeader }
 import { loginReturnPath } from '@/lib/auth/login-return-path';
 import { shouldUseSecureSessionCookie } from '@/lib/auth/session-cookie-policy';
 import { isTrustedEdgeProxyEnabled } from '@/lib/api/forwarded-client-ip';
+import { REQUEST_PATHNAME_HEADER } from '@/i18n/surfaces';
 
 // ────────────────────────────────────────────────────────────────────────────
 // [보안] JWT 서명 검증 (Edge/Web Crypto 네이티브, 외부 의존 없음 — ADR-0060)
@@ -586,6 +587,9 @@ export async function proxy(request: NextRequest) {
     // <script> 0건" 전수 grep 은 라이브러리가 렌더하는 것을 보지 못했다).
     // ⚠ set() 은 외부에서 실어 보낸 x-nonce 를 덮어쓴다 — 외부 주입값이 문서에 닿을 일은 없다.
     requestHeaders.set('x-nonce', nonce);
+    // [2026-11-26 ADR-0063] 레이아웃은 경로를 받지 못한다 — 문서 언어(html[lang])를 그 화면의 로케일로 그리도록 요청 경로를 싣는다.
+    //   외부가 실어 보낸 같은 이름의 값은 덮어쓴다(언어 선택에만 쓰고 인가·보안 판정에는 쓰지 않는다).
+    requestHeaders.set(REQUEST_PATHNAME_HEADER, pathname);
     return withNonce(NextResponse.next({ request: { headers: requestHeaders } }));
   };
 

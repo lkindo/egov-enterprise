@@ -118,6 +118,22 @@ describe('API 클라이언트 인터셉터', () => {
       await expect(captured.requestOk!({ url: '/admin/system/users', headers: {} })).resolves.toMatchObject({ url: '/admin/system/users' });
     });
 
+    it('[ADR-0063] Accept-Language 는 지금 화면의 로케일이고, 호출부가 대소문자와 무관하게 이미 실었으면 덮지 않는다', async () => {
+      const { captured } = await loadClient();
+      document.cookie = 'NEXT_LOCALE=en; path=/';
+      try {
+        Object.defineProperty(globalThis, 'window', { value: { location: { pathname: '/login', href: '' } }, configurable: true, writable: true });
+        expect(await captured.requestOk!({ url: '/auth/me', headers: {} })).toMatchObject({ headers: { 'Accept-Language': 'en' } });
+        // 번역을 마치지 않은 화면은 영어를 골랐어도 한국어로 그린다 — 서버 문구도 한국어다.
+        Object.defineProperty(globalThis, 'window', { value: { location: { pathname: '/admin', href: '' } }, configurable: true, writable: true });
+        expect(await captured.requestOk!({ url: '/admin/system/users', headers: {} })).toMatchObject({ headers: { 'Accept-Language': 'ko' } });
+        const lower = await captured.requestOk!({ url: '/admin/system/users', headers: { 'accept-language': 'en' } }) as { headers: Record<string, string> };
+        expect(lower.headers).toEqual({ 'accept-language': 'en' });
+      } finally {
+        document.cookie = 'NEXT_LOCALE=; path=/; max-age=0';
+      }
+    });
+
     it('generated 경계용 raw 요청은 envelope를 벗기지 않는다', async () => {
       const { client, instance } = await loadClient();
       const envelope = { success: true, code: 'S001', message: 'ok', data: { id: 7 } };
@@ -386,13 +402,13 @@ describe('API 클라이언트 인터셉터', () => {
       const { captured } = await loadClient();
       const cases = [
         { error: Object.assign(new Error('Network Error'), { code: 'ERR_NETWORK' }),
-          expected: '서버에 연결하지 못했습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요.' },
+          expected: '서버에 연결하지 못했습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요.', transport: 'offline' },
         { error: Object.assign(new Error('timeout of 15000ms exceeded'), { code: 'ECONNABORTED' }),
-          expected: '서버 응답이 늦어 요청을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.' },
+          expected: '서버 응답이 늦어 요청을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.', transport: 'timeout' },
         { error: Object.assign(new Error('Request failed with status code 500'), { response: { status: 500, data: {} } }),
-          expected: '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.' },
+          expected: '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.', transport: 'generic' },
       ];
-      for (const { error, expected } of cases) {
+      for (const { error, expected, transport } of cases) {
         dispatchEvent.mockClear();
         const raw = error.message;
         await expect(captured.responseErr!(error)).rejects.toThrow(raw);
@@ -400,6 +416,8 @@ describe('API 클라이언트 인터셉터', () => {
           .find((candidate) => candidate.type === 'api-error');
         expect(event?.detail.message).toBe(expected);
         expect(event?.detail.message).not.toMatch(/Network Error|timeout of|status code/);
+        // [2026-11-26 ADR-0063] 전역 알림이 지금 화면의 로케일로 다시 쓰도록 실패 종류를 함께 싣는다.
+        expect(event?.detail.transport).toBe(transport);
       }
     });
 

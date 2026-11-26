@@ -8,7 +8,7 @@
 | ADR | 결정 | 상태 |
 |---|---|---|
 | [ADR-0001](ADR-0001-core-app-product-boundary.md) | 코어/앱 제품 경계와 배포 기준 | Accepted — 일부 ADR-0028로 대체 |
-| [ADR-0002](ADR-0002-korean-first-frontend.md) | 한국어 우선 프런트엔드와 API 메시지 범위 | Accepted |
+| [ADR-0002](ADR-0002-korean-first-frontend.md) | 한국어 우선 프런트엔드와 API 메시지 범위 | Accepted — 일부 ADR-0063으로 대체 |
 | [ADR-0003](ADR-0003-frontend-ux-modernization-principles.md) | 사용자 과업 중심 UX·브랜드 프로필·접근성·데이터 소유권 원칙 | Accepted — 일부 ADR-0009로 대체 |
 | [ADR-0004](ADR-0004-provisional-hybrid-information-architecture.md) | 하이브리드 정보구조를 검증용 잠정 방향으로 채택 | Accepted — 일부 ADR-0007로 대체 |
 | [ADR-0005](ADR-0005-ui-quality-durable-evidence.md) | UI 품질 증거를 버전형 compact summary와 tracked index로 보존 | Accepted |
@@ -69,3 +69,4 @@
 | [ADR-0060](ADR-0060-asymmetric-jwt-signing.md) | 접근·재발급 토큰을 ES256 키링으로 서명하고 Next 에는 공개키만 둔다 — 두 번 배포로 전환, 구현은 재기록 묶음 | Accepted |
 | [ADR-0061](ADR-0061-pit-selection-and-test-targets.md) | 미지 경로는 PIT 가 읽을 때만 PIT 를 고르고(PIT 입력 census), 제품 PIT 시험 대상은 대상 패키지와 실제 탐지 시험으로 좁힌다 | Accepted |
 | [ADR-0062](ADR-0062-exclude-migration-tool-from-generated-projects.md) | 모든 생성 애플리케이션 프로젝트에서 오프라인 이관 도구를 제외하고 원본 독립 `migration:export` 로 분리한다 | Accepted |
+| [ADR-0063](ADR-0063-korean-english-ui-with-screen-completeness.md) | 프런트 UI 를 한국어·영어로 제공하되 번역을 마친 화면만 영어로 그리고(화면 단위 완결성) 나머지는 한국어 영역으로 단계 도입 | Accepted |

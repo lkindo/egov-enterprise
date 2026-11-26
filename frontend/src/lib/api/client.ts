@@ -3,6 +3,7 @@ import { AUTH_BROWSER_REQUEST_TIMEOUT_MS } from '@/lib/auth/auth-request-policy'
 import type { AxiosRequestConfig } from 'axios';
 import { cache } from 'react';
 import { runOnSessionLost } from '@/lib/auth/before-sign-out';
+import { effectiveBrowserLocale } from '@/i18n/surfaces';
 
 import { authReissueResponseSchema } from '@/lib/auth/auth-reissue-contract';
 import { forwardedClientIpHeaders } from '@/lib/api/forwarded-client-ip';
@@ -93,6 +94,12 @@ axiosInstance.interceptors.request.use(
     if (token && !config.headers['Authorization']) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
+    // [2026-11-26 ADR-0063] 백엔드 오류 문구도 지금 화면의 로케일을 따른다(ko/en MessageSource, ADR-0002 가 유지한 계약) — 번역을 마치지
+    //   않은 화면은 영어를 골랐어도 한국어로 그리므로 한국어를 싣는다. 브라우저 요청만 싣는다(서버 렌더의 요청은 기본 한국어다). 헤더 이름은
+    //   대소문자를 가리지 않는다 — 호출부가 소문자로 이미 실었으면 덮지 않는다.
+    if (typeof window !== 'undefined' && !hasHeader(config.headers, 'Accept-Language')) {
+      config.headers['Accept-Language'] = effectiveBrowserLocale();
+    }
 
     return config;
   },
@@ -166,20 +173,38 @@ export function isLoginScreen(pathname: string): boolean {
   return pathname === '/login' || pathname.startsWith('/login/');
 }
 
+/** 요청 헤더에 이 이름이 있는가(대소문자 무관). axios 는 보통 AxiosHeaders 를 주지만 호출부가 평범한 객체를 넘길 수도 있다. */
+function hasHeader(headers: unknown, name: string): boolean {
+  if (!headers || typeof headers !== 'object') return false;
+  const candidate = headers as { has?: (header: string) => boolean };
+  if (typeof candidate.has === 'function') return candidate.has(name);
+  const lower = name.toLowerCase();
+  return Object.entries(headers as Record<string, unknown>).some(([key, value]) => key.toLowerCase() === lower && value !== undefined && value !== null && value !== '');
+}
+
 // Response interceptor: 401 시 token refresh
 /**
  * 서버 문구가 없는 요청 실패를 사용자에게 보여 줄 한국어 안내로 바꾼다.
  * axios 원문(`Network Error`·`timeout of 15000ms exceeded`·`Request failed with status code 500`)은
  * 무엇을 해야 하는지 말하지 않는다. 원문은 호출부가 받는 오류 객체에 그대로 남는다.
  */
+export type RequestFailureKind = 'timeout' | 'offline' | 'generic';
+
+/** 서버 문구가 없는 요청 실패의 종류 — 전역 알림은 이 종류를 지금 화면의 로케일 문구(카탈로그 transport)로 그린다(ADR-0063). */
+function requestFailureKind(error: { code?: string; response?: unknown }): RequestFailureKind {
+  if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') return 'timeout';
+  if (!error.response) return 'offline';
+  return 'generic';
+}
+
+const REQUEST_FAILURE_TEXT: Record<RequestFailureKind, string> = {
+  timeout: '서버 응답이 늦어 요청을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+  offline: '서버에 연결하지 못했습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요.',
+  generic: '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+};
+
 function describeRequestFailure(error: { code?: string; response?: unknown }): string {
-  if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
-    return '서버 응답이 늦어 요청을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.';
-  }
-  if (!error.response) {
-    return '서버에 연결하지 못했습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요.';
-  }
-  return '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+  return REQUEST_FAILURE_TEXT[requestFailureKind(error)];
 }
 
 axiosInstance.interceptors.response.use(
@@ -298,7 +323,9 @@ axiosInstance.interceptors.response.use(
 
     if (typeof window !== 'undefined' && !suppressToast && !cancelled) {
       window.dispatchEvent(new CustomEvent('api-error', {
-        detail: { message, status: error.response?.status }
+        // transport: 서버 문구가 없을 때의 실패 종류 — 전역 알림이 지금 화면의 로케일로 다시 쓴다. message 는 종전 그대로(한국어 안내 또는
+        //   서버 문구)라 이 이벤트를 듣는 다른 곳의 의미가 바뀌지 않는다.
+        detail: { message, status: error.response?.status, transport: backendMessage ? undefined : requestFailureKind(error) }
       }));
     }
 

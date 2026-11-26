@@ -37,9 +37,11 @@ beforeEach(() => {
 });
 
 // Mock next/navigation
+// [2026-11-26 ADR-0063] 좁은 화면 서랍의 언어 선택기가 서버 렌더를 다시 받으려고 라우터를 쓴다.
 vi.mock('next/navigation', () => ({
  usePathname: () => navigation.pathname,
  useSearchParams: () => navigation.searchParams,
+ useRouter: () => ({ push: () => {}, replace: () => {}, prefetch: () => {}, back: () => {}, forward: () => {}, refresh: () => {} }),
 }));
 
 const sidebarMenus = [

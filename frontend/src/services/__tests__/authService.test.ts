@@ -50,10 +50,12 @@ describe('authService', () => {
     const result = await authService.login(loginData);
 
     // baseURL:'' 오버라이드로 Route Handler 직결(이중 프리픽스 회귀 방어)
+    //   [2026-11-26 ADR-0063] 백엔드 문구의 언어는 지금 화면의 로케일이다 — 고른 로케일이 없으면 한국어다.
     expect(mockedPost).toHaveBeenCalledWith('/api/auth/login', loginData, {
       baseURL: '',
       withCredentials: true,
       timeout: 20_000,
+      headers: { 'Accept-Language': 'ko' },
     });
     expect(result).toEqual(mockResponse);
   });
@@ -131,7 +133,7 @@ describe('authService', () => {
     mockedPost.mockRejectedValueOnce(new Error('timeout'));
     await expect(mfaService.status()).rejects.toThrow('timeout');
     await expect(mfaService.verify({ code: '012345' })).rejects.toThrow('timeout');
-    const transport = { baseURL: '', withCredentials: true, timeout: 20_000 };
+    const transport = { baseURL: '', withCredentials: true, timeout: 20_000, headers: { 'Accept-Language': 'ko' } };
     expect(axios.get).toHaveBeenCalledWith('/api/auth/mfa/status', transport);
     expect(mockedPost).toHaveBeenCalledWith('/api/auth/mfa/verify', { code: '012345' }, transport);
   });

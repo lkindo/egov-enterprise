@@ -24,8 +24,9 @@ export default function Error({
     // 오류 경계는 인증 공급자에 기대지 않는다(주체 null). 오류 화면 항목은 /admin 밖 목적지만 둔다(경계 계약).
     const errorShellLinks = visibleEntries(null, shellLinks, isErrorShellLink);
 
+    // [2026-11-26 ADR-0063] 오류 화면은 아직 한국어로만 제공한다 — 영어 문서 안에서도 한국어로 읽히게 내용 언어를 단다.
     return (
-        <div className="min-h-[80vh] flex items-center justify-center p-6 relative overflow-hidden">
+        <div lang="ko" className="min-h-[80vh] flex items-center justify-center p-6 relative overflow-hidden">
             {/* Background Decor */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-destructive/5 rounded-lg blur-[120px] -z-10" />
 

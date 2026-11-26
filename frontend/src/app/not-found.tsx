@@ -12,8 +12,9 @@ export default function NotFound() {
     // [2026-10-01] 돌아갈 기록이 없으면(새 탭·주소 직접 입력) '이전으로' 를 두지 않는다 — 눌러도 아무 일이 없었다.
     //   서버 렌더에서는 알 수 없으므로 두지 않고, 브라우저에서 기록이 있을 때만 보인다.
     const canGoBack = useSyncExternalStore(noSubscribe, () => window.history.length > 1, () => false);
+    // [2026-11-26 ADR-0063] 찾을 수 없음 화면은 아직 한국어로만 제공한다 — 영어 문서 안에서도 한국어로 읽히게 내용 언어를 단다.
     return (
-        <div className="min-h-[80vh] flex items-center justify-center p-6 relative overflow-hidden">
+        <div lang="ko" className="min-h-[80vh] flex items-center justify-center p-6 relative overflow-hidden">
             {/* Background Orbs */}
             <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-lg blur-[100px] -z-10" />
             <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-hub-blue/10 rounded-lg blur-[120px] -z-10" />

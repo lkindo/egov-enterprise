@@ -408,6 +408,73 @@ test.describe('인증 경계', () => {
     // ───────────── E1: 위조 토큰 거부 — 미들웨어 JWT 서명 검증(Web Crypto HMAC) ─────────────
     // Phase 1 하드닝: 미들웨어가 accessToken 의 서명·만료를 실제 검증한다. base64 페이로드만 디코드하던
     // 과거엔 서명 없는 위조 토큰(role=ADMIN·미래 exp)으로 관리자 UI 셸을 열람할 수 있었다 — 이를 차단한다.
+    // ───────── 화면 로케일(ADR-0063) — 보이는 선택기·html[lang]·화면 단위 완결성·새로고침 유지 ─────────
+    test.describe('Locale (ADR-0063)', () => {
+        test('로그인 화면은 영어로 바꿀 수 있고 html lang·문구·검증 안내·새로고침이 함께 따른다', async ({ page, consoleGuard }) => {
+            consoleGuard.expectErrors([{
+                id: 'E2E-AUTH-LOCALE-PAGE-ME-401',
+                specScope: 'authentication.spec.ts :: 로그인 화면은 영어로 바꿀 수 있고 html lang·문구·검증 안내·새로고침이 함께 따른다',
+                channel: 'response',
+                urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
+                messagePattern: null,
+                method: 'GET',
+                status: 401,
+                maxOccurrences: 3,
+                reason: '비로그인 상태의 로그인 화면이 세션 유무를 확인하는 초기 요청이다(첫 진입·새로고침).',
+                expiresAt: '2026-12-31',
+            }]);
+            await page.goto('/login');
+            await expect(page.locator('html')).toHaveAttribute('lang', 'ko');
+            await page.getByRole('group', { name: '언어' }).getByRole('button', { name: 'English' }).click();
+            await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+            // 문서 제목도 화면 로케일을 따른다(사이트 이름 접미사는 번역하지 않는 고유 이름이다).
+            await expect(page).toHaveTitle(/^Sign in \| /);
+            const signIn = page.getByRole('button', { name: 'Sign in', exact: true });
+            await expect(signIn).toBeVisible();
+            await expect(page.getByRole('textbox', { name: 'User ID', exact: true })).toBeVisible();
+            // 번역을 마친 화면은 검증 안내까지 영어다 — 한 화면 안에서 언어가 섞이지 않는다(lang 표지 없는 한글이 없다).
+            await signIn.click();
+            await expect(page.getByText('Enter your user ID.').first()).toBeVisible();
+            await expect(page.getByTestId('korean-only-notice')).toHaveCount(0);
+            expect(await unmarkedHangul(page), '영어 로그인 화면에 lang 표지 없는 한글이 남았다').toEqual([]);
+            // 이미 보이는 오류도 언어를 바꾸면 새 언어로 다시 그린다 — 화면을 다시 그려도 입력·오류 상태는 남는다.
+            await page.getByLabel('Password', { exact: true }).fill('draft-secret');
+            await page.getByRole('group', { name: 'Language' }).getByRole('button', { name: '한국어' }).click();
+            await expect(page.locator('html')).toHaveAttribute('lang', 'ko');
+            await expect(page.getByText('아이디를 입력해 주세요.').first()).toBeVisible();
+            await expect(page.getByLabel('비밀번호', { exact: true })).toHaveValue('draft-secret');
+            await page.getByRole('group', { name: '언어' }).getByRole('button', { name: 'English' }).click();
+            await expect(page.getByText('Enter your user ID.').first()).toBeVisible();
+            await page.reload();
+            await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+            await page.getByRole('group', { name: 'Language' }).getByRole('button', { name: '한국어' }).click();
+            await expect(page.locator('html')).toHaveAttribute('lang', 'ko');
+            await expect(page.getByRole('button', { name: '로그인', exact: true })).toBeVisible();
+        });
+    });
+
+    test.describe('Locale on untranslated screens (ADR-0063)', () => {
+        test.use({ storageState: 'playwright/.auth/admin.json' });
+        test('영어 로케일에서 아직 번역하지 않은 화면은 한국어로 그리고(html lang=ko) 그 사실을 영어로 알리며, 입력을 지킨 채 한국어로 돌아간다', async ({ page, context, baseURL }) => {
+            await context.addCookies([{ name: 'NEXT_LOCALE', value: 'en', url: baseURL ?? 'http://localhost:3001' }]);
+            await page.goto('/search');
+            const notice = page.getByTestId('korean-only-notice');
+            await expect(notice).toHaveText('This page is available in Korean only.');
+            await expect(notice).toHaveAttribute('lang', 'en');
+            // 문서 언어가 한국어라 본문 밖에 그려지는 대화상자·토스트도 한국어로 읽힌다.
+            await expect(page.locator('html')).toHaveAttribute('lang', 'ko');
+            const query = page.getByRole('textbox', { name: '통합검색어', exact: true });
+            await query.fill('작성 중인 검색어');
+            // 선택기는 한국어 화면 안에 있어 묶음 이름은 한국어이고, 고른 언어(영어)가 눌려 있다.
+            const switcher = page.getByRole('group', { name: '언어' });
+            await expect(switcher.getByRole('button', { name: 'English' })).toHaveAttribute('aria-pressed', 'true');
+            await switcher.getByRole('button', { name: '한국어' }).click();
+            await expect(notice).toHaveCount(0);
+            await expect(switcher.getByRole('button', { name: '한국어' })).toHaveAttribute('aria-pressed', 'true');
+            await expect(query).toHaveValue('작성 중인 검색어');
+        });
+    });
+
     test.describe('Forged-token rejection (middleware signature verification)', () => {
         test.use({ storageState: 'playwright/.auth/admin.json' });
         // header=HS512, payload={role:ROLE_ADMIN, exp:먼 미래}, 서명='invalidsig'(위조). 과거 미들웨어는 통과시켰다.
@@ -469,6 +536,29 @@ test.describe('인증 경계', () => {
     });
 });
 
+
+/** 문서 본문에서 `lang="ko"` 표지 없이 남은 한글(글자와 보조기술이 읽는 속성) — 화면 단위 완결성의 렌더 증거(ADR-0063). */
+async function unmarkedHangul(page: Page): Promise<string[]> {
+    return page.evaluate(() => {
+        const hangul = /\p{Script=Hangul}/u;
+        const language = (element: Element | null) => element?.closest('[lang]')?.getAttribute('lang') ?? '';
+        const skipped = (element: Element | null) => !!element?.closest('script,style,noscript,template');
+        const found: string[] = [];
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+            const text = node.textContent ?? '';
+            if (hangul.test(text) && !skipped(node.parentElement) && language(node.parentElement) !== 'ko') found.push(text.trim().slice(0, 40));
+        }
+        for (const element of document.body.querySelectorAll('*')) {
+            if (skipped(element)) continue;
+            for (const attribute of ['aria-label', 'placeholder', 'title', 'alt']) {
+                const value = element.getAttribute(attribute);
+                if (value && hangul.test(value) && language(element) !== 'ko') found.push(`${attribute}: ${value.slice(0, 40)}`);
+            }
+        }
+        return found;
+    });
+}
 
 const AUTHORIZATION = '/api/v1/admin/authorization';
 type NavigationEntry = { code: string; parentCode: string | null; route?: string | null; useYn?: string | null };

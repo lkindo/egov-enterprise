@@ -13,7 +13,7 @@
 
 ## 1. 규칙의 우선순위와 범위
 
-1. [한국어 우선 ADR](../02-architecture/decisions/ADR-0002-korean-first-frontend.md)은 프런트엔드의 지원 언어를 한국어 하나로 정한다.
+1. 프런트엔드 UI 는 한국어(기본·정본)와 영어를 화면 단위로 제공한다 — [ADR-0063](../02-architecture/decisions/ADR-0063-korean-english-ui-with-screen-completeness.md)이 [한국어 우선 ADR](../02-architecture/decisions/ADR-0002-korean-first-frontend.md)의 한국어 단일 언어 부분을 대체했다. 이 문서의 규칙은 한국어 문구(정본 카탈로그 `frontend/messages/ko.json` 과 아직 번역하지 않은 화면의 문구)에 적용하고, 영어 문구는 같은 의미를 옮긴 번역이다.
 2. [프런트엔드 헌법](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)은 내부 구현 용어, 출처 없는 수치, 비동작 action을 실제 기능처럼 노출하지 못하게 한다. 개인정보성 업무 검색어의 URL 경계는 [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md)를 따른다.
 3. [route capability manifest](../../config/ui-route-capabilities.json)는 route·role·기능 상태의 증거 경계다. 콘텐츠는 `demo`, `partial`, `unavailable`을 `live`처럼 바꿔 말할 수 없다.
 4. 이 문서는 사용자 언어와 표현 구조를 소유하고, 도메인 정책·인가·데이터 보존·법률 판단을 대신하지 않는다.

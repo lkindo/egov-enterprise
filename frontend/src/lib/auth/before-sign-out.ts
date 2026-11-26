@@ -1,3 +1,5 @@
+import type { AppMessages } from '@/i18n/catalog';
+
 /**
  * 로그아웃 직전·세션을 잃었을 때 끝내야 하는 일(2026-11-25 품질 평가).
  *
@@ -65,15 +67,41 @@ export function runOnSessionLost(): void {
   }
 }
 
-const NOTICE_KEY = 'egov.sign-out-notices.v1';
+const NOTICE_KEY = 'egov.sign-out-notices.v2';
 
-/** 다시 로그인할 때 보일 안내를 남긴다(이 탭의 세션 저장소, 문장만 — 식별자·내용은 싣지 않는다). */
-export function rememberSignOutNotice(message: string): void {
+/**
+ * 다시 로그인할 때 보일 안내 — 문장이 아니라 카탈로그 키와 값이다(ADR-0063: 로그인 화면이 현재 로케일로 그린다). 건수 같은 값만 싣고
+ * 사용자·문서 식별자나 제목은 싣지 않는다.
+ */
+export type SignOutNoticeKey = `signOut.${keyof AppMessages['signOut'] & string}`;
+
+/** 지금 안내는 모두 건수(`{count}`)를 받는다 — 인자를 빠뜨린 안내가 저장돼 로그인 화면에서 번역 오류로 깨지지 않게 타입이 요구한다. */
+export type SignOutNoticeValues = {
+  count: number;
+};
+
+export interface SignOutNotice {
+  key: SignOutNoticeKey;
+  values?: SignOutNoticeValues;
+}
+
+function isNotice(value: unknown): value is SignOutNotice {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as { key?: unknown; values?: unknown };
+  if (typeof candidate.key !== 'string' || !candidate.key.startsWith('signOut.')) return false;
+  // 안내 문구는 건수를 받는다 — 건수가 없거나 0 이상의 정수가 아닌 저장 값은 로그인 화면을 번역 오류로 깨뜨리지 않게 버린다.
+  if (!candidate.values || typeof candidate.values !== 'object') return false;
+  const count = (candidate.values as { count?: unknown }).count;
+  return typeof count === 'number' && Number.isInteger(count) && count >= 0;
+}
+
+/** 다시 로그인할 때 보일 안내를 남긴다(이 탭의 세션 저장소). 같은 키는 새 값으로 바꾼다. */
+export function rememberSignOutNotice(key: SignOutNoticeKey, values: SignOutNoticeValues): void {
   forgetShownSignOutNotices();
   try {
     const current = JSON.parse(window.sessionStorage.getItem(NOTICE_KEY) ?? '[]') as unknown;
-    const list = Array.isArray(current) ? current.filter((item): item is string => typeof item === 'string') : [];
-    if (!list.includes(message)) list.push(message);
+    const list = (Array.isArray(current) ? current.filter(isNotice) : []).filter((notice) => notice.key !== key);
+    list.push({ key, values });
     window.sessionStorage.setItem(NOTICE_KEY, JSON.stringify(list.slice(-5)));
   } catch {
     // 저장소를 쓸 수 없으면 안내만 잃는다.
@@ -84,10 +112,10 @@ export function rememberSignOutNotice(message: string): void {
  * 로그인 화면이 보일 안내의 스냅숏(useSyncExternalStore) — 처음 읽을 때 남긴 안내를 꺼내 고정한다. 같은 화면의 다시 그리기와 Strict Mode 의
  * 이중 렌더가 같은 목록을 보고, 로그아웃이 시작되거나 새 안내가 남으면 비운다(다음 로그인 화면이 새로 꺼낸다). 서버 렌더는 빈 목록이다.
  */
-const NO_NOTICES: readonly string[] = Object.freeze([]);
-let shownNotices: readonly string[] | null = null;
+const NO_NOTICES: readonly SignOutNotice[] = Object.freeze([]);
+let shownNotices: readonly SignOutNotice[] | null = null;
 
-export function signOutNoticesSnapshot(): readonly string[] {
+export function signOutNoticesSnapshot(): readonly SignOutNotice[] {
   if (shownNotices === null) {
     const taken = takeSignOutNotices();
     shownNotices = taken.length === 0 ? NO_NOTICES : Object.freeze(taken);
@@ -95,7 +123,7 @@ export function signOutNoticesSnapshot(): readonly string[] {
   return shownNotices;
 }
 
-export function serverSignOutNoticesSnapshot(): readonly string[] {
+export function serverSignOutNoticesSnapshot(): readonly SignOutNotice[] {
   return NO_NOTICES;
 }
 
@@ -109,14 +137,50 @@ export function forgetShownSignOutNotices(): void {
   shownNotices = null;
 }
 
-/** 남긴 안내를 읽고 지운다. */
-export function takeSignOutNotices(): string[] {
+/**
+ * 종전 형식(v1, 2026-11-26 이전 배포)은 한국어 문장을 그대로 남겼다. 배포를 사이에 두고 같은 탭에 남은 안내를 잃지 않도록, 그 형식이
+ * 남기던 두 문장만 건수와 함께 키로 옮기고 지운다. 다른 문장은 이 형식이 남긴 적이 없으므로 버린다.
+ */
+const LEGACY_NOTICE_KEY = 'egov.sign-out-notices.v1';
+const LEGACY_NOTICE_PATTERNS: readonly [RegExp, SignOutNoticeKey][] = [
+  [/^세션이 끝나 보내지 못한 승인이 (\d+)건 있습니다\./, 'signOut.unsentApprovals'],
+  [/^결과를 확인하지 못한 승인이 (\d+)건 있습니다\./, 'signOut.unconfirmedApprovals'],
+];
+
+function legacyNotices(raw: string | null): SignOutNotice[] {
+  const parsed = JSON.parse(raw ?? '[]') as unknown;
+  if (!Array.isArray(parsed)) return [];
+  // 종전 형식은 같은 종류의 문장이 건수만 달리 여럿 쌓일 수 있었다 — 새 형식처럼 같은 키는 나중 것(최신)만 남긴다.
+  const byKey = new Map<SignOutNoticeKey, SignOutNotice>();
+  for (const item of parsed) {
+    if (typeof item !== 'string') continue;
+    for (const [pattern, key] of LEGACY_NOTICE_PATTERNS) {
+      const count = pattern.exec(item)?.[1];
+      if (count === undefined) continue;
+      byKey.delete(key);
+      byKey.set(key, { key, values: { count: Number(count) } });
+    }
+  }
+  return [...byKey.values()];
+}
+
+/** 남긴 안내를 읽고 지운다(종전 형식이 남긴 안내도 옮겨 함께 꺼낸다). 같은 키는 새 형식의 것이 남는다. */
+export function takeSignOutNotices(): SignOutNotice[] {
+  let legacy: SignOutNotice[] = [];
+  try {
+    const raw = window.sessionStorage.getItem(LEGACY_NOTICE_KEY);
+    window.sessionStorage.removeItem(LEGACY_NOTICE_KEY);
+    legacy = legacyNotices(raw);
+  } catch {
+    // 종전 형식을 읽지 못하면 그 안내만 잃는다.
+  }
   try {
     const raw = window.sessionStorage.getItem(NOTICE_KEY);
     window.sessionStorage.removeItem(NOTICE_KEY);
     const parsed = JSON.parse(raw ?? '[]') as unknown;
-    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
+    const current = Array.isArray(parsed) ? parsed.filter(isNotice) : [];
+    return [...legacy.filter((notice) => !current.some((item) => item.key === notice.key)), ...current];
   } catch {
-    return [];
+    return legacy;
   }
 }

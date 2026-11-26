@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 import { SITE_IDENTITY } from "@/config/site-identity";
+import { contentLang } from "@/i18n/content-lang";
 import { visibleEntries, type ShellLink } from "@/extensions/slots";
 import { shellLinks } from "@/extensions/generated-shell-links";
 
@@ -22,7 +23,8 @@ export function Footer({ className }: FooterProps) {
         "flex flex-col items-center justify-between gap-2 md:flex-row max-w-7xl mx-auto",
       )}>
         <div className="flex flex-col gap-1 text-center md:text-left">
-          <p className="text-balance text-xs font-bold leading-relaxed text-muted-foreground tracking-tight">
+          {/* [2026-11-26 ADR-0063] 사이트 정체와 한국어로만 제공하는 화면으로 가는 링크 이름은 번역하지 않고 내용 언어를 단다(결정 6). */}
+          <p lang={contentLang(SITE_IDENTITY.copyright)} className="text-balance text-xs font-bold leading-relaxed text-muted-foreground tracking-tight">
             {SITE_IDENTITY.copyright}
           </p>
 
@@ -40,7 +42,7 @@ export function Footer({ className }: FooterProps) {
         {footerShellLinks.length > 0 && (
           <div className="flex items-center gap-8 text-xs font-bold text-muted-foreground tracking-tight">
             {footerShellLinks.map(({ id, href, label }) => (
-              <Link key={id} href={href} className="hover:text-primary hover:opacity-100 transition-all font-bold">{label}</Link>
+              <Link key={id} href={href} lang={contentLang(label)} className="hover:text-primary hover:opacity-100 transition-all font-bold">{label}</Link>
             ))}
           </div>
         )}
