@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { z } from 'zod';
+import { useTranslations } from 'use-intl';
+import { catalogKeyOf } from '@/i18n/messages';
 
 export type ManualFormErrors = Record<string, string>;
 
@@ -14,17 +16,25 @@ type ManualFormValidationOptions = {
   form?: () => HTMLFormElement | null;
 };
 
-function issueMessage(issue: z.core.$ZodIssue, label: string) {
+type Translate = ReturnType<typeof useTranslations>;
+
+/**
+ * 검증 문구. [2026-11-26 ADR-0063] 스키마가 카탈로그 키(`$t:네임스페이스.키`)를 적었으면 현재 로케일로 바꾸고, 한국어 문장을 적었으면
+ * (아직 번역하지 않은 화면) 그대로 쓴다. 그 밖(zod 기본 영문)은 항목 이름과 함께 현재 로케일의 일반 안내로 바꾼다.
+ */
+function issueMessage(issue: z.core.$ZodIssue, label: string, t: Translate, tRoot: Translate) {
+  const key = catalogKeyOf(issue.message);
+  if (key) return tRoot(key);
   if (/[가-힣]/.test(issue.message)) return issue.message;
   if (issue.code === 'too_big' && issue.origin === 'string') {
-    return `${label}: 최대 ${String(issue.maximum)}자까지 입력할 수 있습니다.`;
+    return t('tooLong', { label, maximum: String(issue.maximum) });
   }
   if (issue.code === 'too_small' && issue.origin === 'string') {
-    return `${label}: 최소 ${String(issue.minimum)}자 이상 입력해 주세요.`;
+    return t('tooShort', { label, minimum: String(issue.minimum) });
   }
-  if (issue.code === 'invalid_format') return `${label} 형식을 확인해 주세요.`;
-  if (issue.code === 'invalid_type') return `${label} 입력값의 종류를 확인해 주세요.`;
-  return `${label} 입력값을 확인해 주세요.`;
+  if (issue.code === 'invalid_format') return t('invalidFormat', { label });
+  if (issue.code === 'invalid_type') return t('invalidType', { label });
+  return t('invalid', { label });
 }
 
 function errorId(namespace: string, name: string) {
@@ -96,6 +106,8 @@ export function useManualFormValidation<TSchema extends z.ZodType>(
   options: ManualFormValidationOptions = {},
 ) {
   const [errors, setErrors] = useState<ManualFormErrors>({});
+  const t = useTranslations('validation');
+  const tRoot = useTranslations();
   const generatedNamespace = `manual-${useId().replace(/[^A-Za-z0-9_-]/g, '')}`;
   // 기존 Standard FormField는 <name>-error ID를 소유한다. 명시적 form scope를
   // 쓰는 다중 폼만 인스턴스 namespace를 적용해 기존 소비자 연결을 보존한다.
@@ -178,16 +190,16 @@ export function useManualFormValidation<TSchema extends z.ZodType>(
     for (const issue of result.error.issues) {
       const name = issue.path.map(String).join('.');
       if (name && nextErrors[name] === undefined) {
-        nextErrors[name] = issueMessage(issue, labelsRef.current?.[name] ?? name);
+        nextErrors[name] = issueMessage(issue, labelsRef.current?.[name] ?? name, t, tRoot);
       }
     }
     if (Object.keys(nextErrors).length === 0) {
-      nextErrors.root = '입력 내용을 확인해 주세요.';
+      nextErrors.root = t('formRoot');
     }
     setErrors(nextErrors);
     focusFirst(nextErrors);
     return null;
-  }, [focusFirst, schema]);
+  }, [focusFirst, schema, t, tRoot]);
 
   const clearError = useCallback((name: string) => {
     setErrors((current) => {

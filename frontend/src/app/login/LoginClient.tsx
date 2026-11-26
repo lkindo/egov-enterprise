@@ -10,7 +10,9 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { User, Lock, Eye, EyeOff, LogIn, Loader2, ShieldCheck, Zap } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
-import { loginErrorMessage } from '@/lib/auth/login-error';
+import { loginErrorKind, type LoginErrorKind } from '@/lib/auth/login-error';
+import { useTranslations } from 'use-intl';
+import { LocaleSwitcher } from '@/app/components/layout/LocaleSwitcher';
 import { restorableQuery } from '@/lib/auth/login-return-path';
 import { SITE_IDENTITY } from '@/config/site-identity';
 import { FormErrorSummary } from '@/components/ui/form';
@@ -24,10 +26,6 @@ import {
     subscribeSignOutNotices,
 } from '@/lib/auth/before-sign-out';
 
-const LOGIN_FORM_LABELS = {
-    userId: '아이디',
-    password: '비밀번호',
-};
 /**
  * 로그인 후 기본 착지 — 요청된 redirect 가 없거나 안전하지 않을 때의 안전한 목적지다.
  *
@@ -82,7 +80,11 @@ function LoginContent() {
     const [id, setId] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [error, setError] = useState('');
+    // [2026-11-26 ADR-0063] 로그인 화면은 번역을 마친 화면이다 — 고정 문구는 모두 카탈로그(login)에서 그린다.
+    const t = useTranslations('login');
+    const tRoot = useTranslations();
+    const loginFormLabels = React.useMemo(() => ({ userId: t('userIdLabel'), password: t('passwordLabel') }), [t]);
+    const [error, setError] = useState<LoginErrorKind | ''>('');
     const [mfaStage, setMfaStage] = useState<'MFA_REQUIRED' | 'ENROLLMENT_REQUIRED' | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [authStep, setAuthStep] = useState(0); // 0: Idle, 1: Connecting, 2: Finalizing
@@ -119,7 +121,7 @@ function LoginContent() {
     const idInputRef = React.useRef<HTMLInputElement>(null);
     const restoreIdFocusAfterFailureRef = React.useRef(false);
     const validation = useManualFormValidation(loginFormSchema, {
-        labels: LOGIN_FORM_LABELS,
+        labels: loginFormLabels,
         focusTargets: { userId: () => idInputRef.current },
     });
 
@@ -185,7 +187,7 @@ function LoginContent() {
             submittingRef.current = false;
             justLoggedIn.current = false;
             restoreIdFocusAfterFailureRef.current = true;
-            setError(loginErrorMessage(loginError));
+            setError(loginErrorKind(loginError));
             setIsSubmitting(false);
             setAuthStep(0);
             // 포커스는 위 effect에서 form의 inert 제거가 DOM에 커밋된 뒤 복원한다.
@@ -245,24 +247,26 @@ function LoginContent() {
 
                                 <div className="space-y-2">
                                     <p className="text-xl font-bold text-surface-inverse-foreground">
-                                        {authStep === 1 ? "로그인 인증 중" : "인증 완료"}
+                                        {authStep === 1 ? t('authenticating') : t('authenticated')}
                                     </p>
                                     <p className="text-surface-inverse-muted text-sm">
-                                        {authStep === 1 ? "로그인 정보를 확인하는 중..." : "업무 화면으로 이동하는 중..."}
+                                        {authStep === 1 ? t('verifying') : t('redirecting')}
                                     </p>
                                 </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
 
-                    <CardHeader className="space-y-2 text-center pt-10">
+                    <CardHeader className="relative space-y-2 text-center pt-10">
+                        <LocaleSwitcher className="absolute right-4 top-4" />
                         <motion.div
                             initial={false}
                             className="w-12 h-12 bg-primary/10 rounded-[var(--radius-hub-item)] mx-auto flex items-center justify-center mb-2"
                         >
                             <Zap className="text-primary w-6 h-6 fill-primary" />
                         </motion.div>
-                        <h1 id="login-title" className="text-2xl font-bold tracking-tight text-foreground">
+                        {/* 사이트 이름은 배포 설정 값이다(번역하지 않는다) — 한국어 이름이면 그 부분의 언어를 밝힌다(WCAG 3.1.2). */}
+                        <h1 id="login-title" lang={/[가-힣]/.test(SITE_IDENTITY.siteShortName) ? 'ko' : undefined} className="text-2xl font-bold tracking-tight text-foreground">
                             {SITE_IDENTITY.siteShortName}
                         </h1>
                         {/* [2026-09-15 DEC-OPS-099] 제목 아래 설명 문구를 두지 않는다. 종전 문구는 검증되지 않은 제품
@@ -300,7 +304,7 @@ function LoginContent() {
                                     data-testid="login-session-expired"
                                     className="text-sm text-center text-secondary-foreground bg-muted/40 p-3 rounded-[var(--radius-hub-item)] border border-border"
                                 >
-                                    다른 곳에서 로그인했거나 세션이 만료되었습니다. 다시 로그인해 주세요.
+                                    {t('sessionExpired')}
                                 </div>
                             )}
 
@@ -310,14 +314,14 @@ function LoginContent() {
                                     data-testid="login-sign-out-notices"
                                     className="text-sm text-secondary-foreground bg-muted/40 p-3 rounded-[var(--radius-hub-item)] border border-border space-y-1"
                                 >
-                                    {signOutNotices.map((notice) => <p key={notice}>{notice}</p>)}
+                                    {signOutNotices.map((notice) => <p key={notice.key}>{tRoot(notice.key, notice.values)}</p>)}
                                 </div>
                             )}
 
                             <FormErrorSummary
                                 data-testid="login-validation-summary"
                                 errors={validation.errors}
-                                labels={LOGIN_FORM_LABELS}
+                                labels={loginFormLabels}
                                 onNavigate={validation.focusError}
                             />
                             <motion.div
@@ -325,7 +329,7 @@ function LoginContent() {
                                 className="space-y-2"
                             >
                                 <Label htmlFor="id" className="text-xs font-bold text-muted-foreground tracking-tight ml-1">
-                                    아이디
+                                    {t('userIdLabel')}
                                 </Label>
                                 <div className="relative group">
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -335,7 +339,7 @@ function LoginContent() {
                                         aria-required="true"
                                         {...validation.fieldProps('userId')}
                                         ref={idInputRef}
-                                        placeholder="아이디를 입력하세요..."
+                                        placeholder={t('userIdPlaceholder')}
                                         value={id}
                                         onChange={(e) => {
                                             setId(e.target.value);
@@ -356,7 +360,7 @@ function LoginContent() {
                                 className="space-y-2"
                             >
                                 <Label htmlFor="password" className="text-xs font-bold text-muted-foreground tracking-tight ml-1">
-                                    비밀번호
+                                    {t('passwordLabel')}
                                 </Label>
                                 <div className="relative group">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -365,7 +369,7 @@ function LoginContent() {
                                         aria-required="true"
                                         {...validation.fieldProps('password')}
                                         type={showPassword ? 'text' : 'password'}
-                                        placeholder="비밀번호를 입력하세요"
+                                        placeholder={t('passwordPlaceholder')}
                                         value={password}
                                         onChange={(e) => {
                                             setPassword(e.target.value);
@@ -379,7 +383,7 @@ function LoginContent() {
                                         type="button"
                                         variant="ghost"
                                         size="icon-sm"
-                                        aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 표시'}
+                                        aria-label={showPassword ? t('hidePassword') : t('showPassword')}
                                         onClick={() => setShowPassword(!showPassword)}
                                         className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground rounded-lg"
                                     >
@@ -412,7 +416,7 @@ function LoginContent() {
                                     data-testid="login-error"
                                     className="text-xs font-bold text-destructive-emphasis text-center bg-destructive/5 p-4 rounded-[var(--radius-hub-item)] border border-destructive/20 animate-shake uppercase font-mono"
                                 >
-                                    오류: {error}
+                                    {t('errorPrefix')} {t(error === 'rateLimited' ? 'errorRateLimited' : error === 'unavailable' ? 'errorUnavailable' : 'errorFailure')}
                                 </motion.div>
                             )}
                         </CardContent>
@@ -428,7 +432,7 @@ function LoginContent() {
                                     disabled={isSubmitting}
                                 >
                                     <LogIn className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                                    로그인
+                                    {t('submit')}
                                 </Button>
                             </motion.div>
                         </CardFooter>
@@ -441,11 +445,12 @@ function LoginContent() {
 }
 
 export default function LoginClient() {
+    const t = useTranslations('login');
     return (
         <Suspense fallback={
             <div className="flex min-h-64 items-center justify-center">
-                <h1 className="sr-only">로그인 화면을 불러오는 중</h1>
-                <p role="status">불러오는 중…</p>
+                <h1 className="sr-only">{t('loadingTitle')}</h1>
+                <p role="status">{t('loadingStatus')}</p>
             </div>
         }>
             <LoginContent />

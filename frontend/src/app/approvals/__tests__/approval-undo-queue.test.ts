@@ -94,7 +94,7 @@ describe('approval-undo-queue', () => {
     expect(pendingApprovalCommits()).toEqual([]);
     await vi.advanceTimersByTimeAsync(APPROVAL_UNDO_MS);
     expect(run).not.toHaveBeenCalled();
-    expect(takeSignOutNotices()).toEqual(['세션이 끝나 보내지 못한 승인이 2건 있습니다. 결재함에서 다시 처리해 주세요.']);
+    expect(takeSignOutNotices()).toEqual([{ key: 'signOut.unsentApprovals', values: { count: 2 } }]);
   });
 
   it('같은 문서를 다시 잡지 않는다 — 연타가 두 번 보내지 않는다', async () => {

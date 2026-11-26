@@ -3,6 +3,7 @@ import { AUTH_BROWSER_REQUEST_TIMEOUT_MS } from '@/lib/auth/auth-request-policy'
 import type { AxiosRequestConfig } from 'axios';
 import { cache } from 'react';
 import { runOnSessionLost } from '@/lib/auth/before-sign-out';
+import { readBrowserLocale } from '@/i18n/locales';
 
 import { authReissueResponseSchema } from '@/lib/auth/auth-reissue-contract';
 import { forwardedClientIpHeaders } from '@/lib/api/forwarded-client-ip';
@@ -92,6 +93,11 @@ axiosInstance.interceptors.request.use(
 
     if (token && !config.headers['Authorization']) {
       config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    // [2026-11-26 ADR-0063] 백엔드 오류 문구도 화면 로케일을 따른다(ko/en MessageSource, ADR-0002 가 유지한 계약). 브라우저 요청만 싣는다 —
+    //   서버 렌더의 요청은 기본(한국어)이다.
+    if (typeof window !== 'undefined' && !config.headers['Accept-Language']) {
+      config.headers['Accept-Language'] = readBrowserLocale();
     }
 
     return config;

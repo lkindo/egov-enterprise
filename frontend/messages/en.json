@@ -1,0 +1,79 @@
+{
+  "common": {
+    "skipToContent": "Skip to main content",
+    "checkingSession": "Checking your secure session...",
+    "preparingApp": "Preparing the application...",
+    "loadingPageTitle": "Loading page content",
+    "loadingPageStatus": "Loading page content..."
+  },
+  "locale": {
+    "label": "Language",
+    "ko": "한국어",
+    "en": "English",
+    "koreanOnlyNotice": "This page is available in Korean only."
+  },
+  "validation": {
+    "tooLong": "{label}: enter up to {maximum} characters.",
+    "tooShort": "{label}: enter at least {minimum} characters.",
+    "invalidFormat": "Check the format of {label}.",
+    "invalidType": "Check the kind of value entered for {label}.",
+    "invalid": "Check the value entered for {label}.",
+    "formRoot": "Check what you entered."
+  },
+  "form": {
+    "required": "(required)",
+    "summaryTitle": "Check what you entered.",
+    "summaryCount": "{count, plural, one {# input error} other {# input errors}} — {title}",
+    "fieldFallback": "Check this value."
+  },
+  "login": {
+    "userIdLabel": "User ID",
+    "passwordLabel": "Password",
+    "authenticating": "Signing in",
+    "authenticated": "Signed in",
+    "verifying": "Checking your sign-in details...",
+    "redirecting": "Opening your workspace...",
+    "sessionExpired": "You signed in somewhere else or your session expired. Please sign in again.",
+    "userIdPlaceholder": "Enter your user ID...",
+    "passwordPlaceholder": "Enter your password",
+    "hidePassword": "Hide password",
+    "showPassword": "Show password",
+    "errorPrefix": "Error:",
+    "submit": "Sign in",
+    "loadingTitle": "Loading the sign-in page",
+    "loadingStatus": "Loading…",
+    "userIdRequired": "Enter your user ID.",
+    "passwordRequired": "Enter your password.",
+    "errorFailure": "Sign-in failed. Check your user ID and password.",
+    "errorUnavailable": "The sign-in service is temporarily unavailable. Please try again later.",
+    "errorRateLimited": "There are too many sign-in requests. Please try again later."
+  },
+  "mfa": {
+    "recoveryRegion": "Store your recovery codes",
+    "recoveryTitle": "Keep your recovery codes in a safe place",
+    "recoveryHelp": "These codes are shown only this once. Each code can be used once, and after using one you must register your authenticator app again.",
+    "recoveryList": "One-time recovery codes",
+    "recoveryDone": "I have stored my recovery codes",
+    "recoveryCodeLabel": "Recovery code",
+    "appCodeLabel": "Authenticator code",
+    "failure": "Additional verification could not be completed. Check the code and its time limit and try again. If it keeps failing, start again from sign-in.",
+    "region": "Additional verification",
+    "cancelWarning": "If you cancel setup or refresh the page, you may need to sign in again.",
+    "enrollTitle": "Register an authenticator app",
+    "enrollIntro": "Register an authenticator app to finish signing in. If you are recovering a lost device, your previous app and recovery codes can no longer be used.",
+    "enrollPrepare": "Prepare registration",
+    "enrollHelp": "Add a time-based account in your authenticator app and enter the setup key below. Do not share the setup key with anyone.",
+    "enrollKey": "Authenticator setup key",
+    "checking": "Checking…",
+    "verify": "Verify",
+    "useApp": "Use the authenticator app",
+    "useRecovery": "Use a recovery code instead",
+    "cancel": "Cancel and sign in again",
+    "appCodeInvalid": "Enter the 6-digit code from your authenticator app.",
+    "recoveryCodeInvalid": "Enter the 22-character recovery code you were issued."
+  },
+  "signOut": {
+    "unsentApprovals": "{count, plural, one {# approval was} other {# approvals were}} not sent because your session ended. Process {count, plural, one {it} other {them}} again in the approval inbox.",
+    "unconfirmedApprovals": "The result of {count, plural, one {# approval} other {# approvals}} could not be confirmed. Check the result in the approval inbox."
+  }
+}

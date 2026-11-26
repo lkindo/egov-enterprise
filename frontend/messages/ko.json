@@ -1,0 +1,79 @@
+{
+  "common": {
+    "skipToContent": "본문 바로가기",
+    "checkingSession": "보안 세션을 확인하는 중...",
+    "preparingApp": "애플리케이션을 준비하는 중...",
+    "loadingPageTitle": "페이지 콘텐츠를 불러오는 중",
+    "loadingPageStatus": "페이지 콘텐츠를 불러오는 중..."
+  },
+  "locale": {
+    "label": "언어",
+    "ko": "한국어",
+    "en": "English",
+    "koreanOnlyNotice": "이 화면은 한국어로만 제공됩니다."
+  },
+  "validation": {
+    "tooLong": "{label}: 최대 {maximum}자까지 입력할 수 있습니다.",
+    "tooShort": "{label}: 최소 {minimum}자 이상 입력해 주세요.",
+    "invalidFormat": "{label} 형식을 확인해 주세요.",
+    "invalidType": "{label} 입력값의 종류를 확인해 주세요.",
+    "invalid": "{label} 입력값을 확인해 주세요.",
+    "formRoot": "입력 내용을 확인해 주세요."
+  },
+  "form": {
+    "required": "(필수)",
+    "summaryTitle": "입력 내용을 확인해 주세요.",
+    "summaryCount": "입력 오류 {count}개 — {title}",
+    "fieldFallback": "입력값을 확인해 주세요."
+  },
+  "login": {
+    "userIdLabel": "아이디",
+    "passwordLabel": "비밀번호",
+    "authenticating": "로그인 인증 중",
+    "authenticated": "인증 완료",
+    "verifying": "로그인 정보를 확인하는 중...",
+    "redirecting": "업무 화면으로 이동하는 중...",
+    "sessionExpired": "다른 곳에서 로그인했거나 세션이 만료되었습니다. 다시 로그인해 주세요.",
+    "userIdPlaceholder": "아이디를 입력하세요...",
+    "passwordPlaceholder": "비밀번호를 입력하세요",
+    "hidePassword": "비밀번호 숨기기",
+    "showPassword": "비밀번호 표시",
+    "errorPrefix": "오류:",
+    "submit": "로그인",
+    "loadingTitle": "로그인 화면을 불러오는 중",
+    "loadingStatus": "불러오는 중…",
+    "userIdRequired": "아이디를 입력해 주세요.",
+    "passwordRequired": "비밀번호를 입력해 주세요.",
+    "errorFailure": "로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요.",
+    "errorUnavailable": "로그인 서비스에 일시적으로 연결할 수 없습니다. 잠시 후 다시 시도해주세요.",
+    "errorRateLimited": "로그인 요청이 많습니다. 잠시 후 다시 시도해주세요."
+  },
+  "mfa": {
+    "recoveryRegion": "복구 코드 보관",
+    "recoveryTitle": "복구 코드를 안전한 곳에 보관해 주세요",
+    "recoveryHelp": "이 코드는 이번에만 표시됩니다. 각 코드는 한 번만 사용할 수 있으며, 사용 후 인증앱을 다시 등록해야 합니다.",
+    "recoveryList": "일회용 복구 코드",
+    "recoveryDone": "복구 코드를 보관했습니다",
+    "recoveryCodeLabel": "복구 코드",
+    "appCodeLabel": "인증앱 코드",
+    "failure": "추가 인증을 완료하지 못했습니다. 코드와 유효 시간을 확인하고 다시 시도해 주세요. 계속 실패하면 로그인부터 다시 진행해 주세요.",
+    "region": "추가 인증",
+    "cancelWarning": "설정을 취소하거나 화면을 새로고침하면 다시 로그인해야 할 수 있습니다.",
+    "enrollTitle": "인증앱 등록",
+    "enrollIntro": "인증앱을 등록해야 로그인이 완료됩니다. 분실 복구 중이면 기존 인증앱과 복구 코드는 사용할 수 없습니다.",
+    "enrollPrepare": "인증앱 등록 준비",
+    "enrollHelp": "인증앱에서 시간 기반 계정을 추가하고 아래 등록 키를 입력하세요. 등록 키는 다른 사람에게 공유하지 마세요.",
+    "enrollKey": "인증앱 등록 키",
+    "checking": "확인 중…",
+    "verify": "인증 확인",
+    "useApp": "인증앱으로 인증",
+    "useRecovery": "분실 시 복구 코드 사용",
+    "cancel": "취소하고 다시 로그인",
+    "appCodeInvalid": "인증앱의 6자리 숫자를 입력해 주세요.",
+    "recoveryCodeInvalid": "발급받은 22자리 복구 코드를 입력해 주세요."
+  },
+  "signOut": {
+    "unsentApprovals": "세션이 끝나 보내지 못한 승인이 {count}건 있습니다. 결재함에서 다시 처리해 주세요.",
+    "unconfirmedApprovals": "결과를 확인하지 못한 승인이 {count}건 있습니다. 결재함에서 처리 결과를 확인해 주세요."
+  }
+}

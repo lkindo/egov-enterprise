@@ -51,6 +51,7 @@ import { ChangePasswordForm } from '@/components/account/ChangePasswordForm';
 import { ProfileEditForm } from '@/components/account/ProfileEditForm';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import type { UserDto } from '@/types/foundation/user';
+import { LocaleSwitcher } from './LocaleSwitcher';
 
 const MfaSettings = dynamic(() => import('@/components/account/MfaSettings').then(mod => mod.MfaSettings), { ssr: false });
 
@@ -295,6 +296,9 @@ export function Header({
           </Button>
 
           {visibleHeaderWidgets.map(({ id, Component }) => <Component key={id} />)}
+
+          {/* [2026-11-26 ADR-0063] 보이는 로케일 선택기 — 언어 이름은 그 언어로 적는다. */}
+          <LocaleSwitcher className="hidden sm:inline-flex" />
 
           <div className="flex items-center gap-2 pl-2 md:pl-3 border-l ml-1 md:ml-2">
             {user ? (

@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { keepInProjection, readInProjection } from '@/test-utils/projection';
+import ko from '../../../../../messages/ko.json';
 
 const SRC_DIR = join(process.cwd(), 'src');
 const APP_DIR = join(SRC_DIR, 'app');
@@ -72,7 +73,9 @@ describe('app shell accessibility source contract', () => {
     // [2026-09-16 GAP-UIF-001] next/font 변수가 <html> 로 올라가며 className 이 식이 됐다.
     //   이 계약이 고정하려는 사실은 문자열 형태가 아니라 "html 이 lang 과 scroll-pt-16 을 갖는다" 이다.
     const htmlTag = layout.slice(layout.indexOf('<html'), layout.indexOf('<body'));
-    expect(htmlTag).toContain('lang="ko"');
+    // [2026-11-26 ADR-0063] lang 은 요청 로케일이다(기본 ko) — 값이 고정 글자가 아니라 로케일 식이어도 html 이 lang 을 갖는다는 사실은 같다.
+    expect(htmlTag).toContain('lang={locale}');
+    expect(layout).toContain('const locale = await requestLocale();');
     expect(htmlTag).toContain('scroll-pt-16');
     expect(frame).toContain('scroll-mt-[var(--app-header-height)]');
     expect(frame).toContain('id="main-content"');
@@ -382,8 +385,11 @@ describe('app shell accessibility source contract', () => {
     const statsFallback = readAppSource('admin', 'stats', 'StatsHubFallback.tsx');
     const surveyHub = readAppSourceInProjection('admin', 'survey', 'hub', 'SurveyHubClient.tsx');
 
-    expect(layout).toContain('보안 세션을 확인하는 중');
-    expect(layout).toContain('애플리케이션을 준비하는 중');
+    // [2026-11-26 ADR-0063] 진행 문구는 카탈로그(common)에서 온다 — 한국어 문장은 카탈로그가 그대로 갖는다.
+    expect(layout).toContain("t('checkingSession')");
+    expect(layout).toContain("t('preparingApp')");
+    expect(ko.common.checkingSession).toBe('보안 세션을 확인하는 중...');
+    expect(ko.common.preparingApp).toBe('애플리케이션을 준비하는 중...');
     expect(layout.match(/<h1\b/g)?.length ?? 0).toBeGreaterThanOrEqual(3);
     if (boardDetailPage !== undefined) expect(boardDetailPage).toMatch(/BoardDetailSkeleton[\s\S]*?<h1\b/);
     if (boardListPage !== undefined) {

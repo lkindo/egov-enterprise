@@ -358,7 +358,7 @@ describe('세션 만료 안내', () => {
   });
 
   it('[2026-11-25] 세션이 끝나며 보내지 못한 일의 안내를 한 번 보이고 지운다', async () => {
-    rememberSignOutNotice('세션이 끝나 보내지 못한 승인이 1건 있습니다. 결재함에서 다시 처리해 주세요.');
+    rememberSignOutNotice('signOut.unsentApprovals', { count: 1 });
 
     await act(async () => { render(<LoginPage />); });
 

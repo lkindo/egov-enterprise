@@ -65,15 +65,33 @@ export function runOnSessionLost(): void {
   }
 }
 
-const NOTICE_KEY = 'egov.sign-out-notices.v1';
+const NOTICE_KEY = 'egov.sign-out-notices.v2';
 
-/** 다시 로그인할 때 보일 안내를 남긴다(이 탭의 세션 저장소, 문장만 — 식별자·내용은 싣지 않는다). */
-export function rememberSignOutNotice(message: string): void {
+/**
+ * 다시 로그인할 때 보일 안내 — 문장이 아니라 카탈로그 키와 값이다(ADR-0063: 로그인 화면이 현재 로케일로 그린다). 건수 같은 값만 싣고
+ * 사용자·문서 식별자나 제목은 싣지 않는다.
+ */
+export interface SignOutNotice {
+  key: string;
+  values?: Record<string, number>;
+}
+
+function isNotice(value: unknown): value is SignOutNotice {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as { key?: unknown; values?: unknown };
+  if (typeof candidate.key !== 'string' || candidate.key.length === 0) return false;
+  if (candidate.values === undefined) return true;
+  return typeof candidate.values === 'object' && candidate.values !== null
+    && Object.values(candidate.values as Record<string, unknown>).every((item) => typeof item === 'number');
+}
+
+/** 다시 로그인할 때 보일 안내를 남긴다(이 탭의 세션 저장소). 같은 키는 새 값으로 바꾼다. */
+export function rememberSignOutNotice(key: string, values?: Record<string, number>): void {
   forgetShownSignOutNotices();
   try {
     const current = JSON.parse(window.sessionStorage.getItem(NOTICE_KEY) ?? '[]') as unknown;
-    const list = Array.isArray(current) ? current.filter((item): item is string => typeof item === 'string') : [];
-    if (!list.includes(message)) list.push(message);
+    const list = (Array.isArray(current) ? current.filter(isNotice) : []).filter((notice) => notice.key !== key);
+    list.push(values ? { key, values } : { key });
     window.sessionStorage.setItem(NOTICE_KEY, JSON.stringify(list.slice(-5)));
   } catch {
     // 저장소를 쓸 수 없으면 안내만 잃는다.
@@ -84,10 +102,10 @@ export function rememberSignOutNotice(message: string): void {
  * 로그인 화면이 보일 안내의 스냅숏(useSyncExternalStore) — 처음 읽을 때 남긴 안내를 꺼내 고정한다. 같은 화면의 다시 그리기와 Strict Mode 의
  * 이중 렌더가 같은 목록을 보고, 로그아웃이 시작되거나 새 안내가 남으면 비운다(다음 로그인 화면이 새로 꺼낸다). 서버 렌더는 빈 목록이다.
  */
-const NO_NOTICES: readonly string[] = Object.freeze([]);
-let shownNotices: readonly string[] | null = null;
+const NO_NOTICES: readonly SignOutNotice[] = Object.freeze([]);
+let shownNotices: readonly SignOutNotice[] | null = null;
 
-export function signOutNoticesSnapshot(): readonly string[] {
+export function signOutNoticesSnapshot(): readonly SignOutNotice[] {
   if (shownNotices === null) {
     const taken = takeSignOutNotices();
     shownNotices = taken.length === 0 ? NO_NOTICES : Object.freeze(taken);
@@ -95,7 +113,7 @@ export function signOutNoticesSnapshot(): readonly string[] {
   return shownNotices;
 }
 
-export function serverSignOutNoticesSnapshot(): readonly string[] {
+export function serverSignOutNoticesSnapshot(): readonly SignOutNotice[] {
   return NO_NOTICES;
 }
 
@@ -110,12 +128,12 @@ export function forgetShownSignOutNotices(): void {
 }
 
 /** 남긴 안내를 읽고 지운다. */
-export function takeSignOutNotices(): string[] {
+export function takeSignOutNotices(): SignOutNotice[] {
   try {
     const raw = window.sessionStorage.getItem(NOTICE_KEY);
     window.sessionStorage.removeItem(NOTICE_KEY);
     const parsed = JSON.parse(raw ?? '[]') as unknown;
-    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
+    return Array.isArray(parsed) ? parsed.filter(isNotice) : [];
   } catch {
     return [];
   }

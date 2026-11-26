@@ -67,14 +67,14 @@ describe('before-sign-out', () => {
     unregister.push(registerOnSessionLost('broken', () => { throw new Error('broken'); }));
     unregister.push(registerOnSessionLost('later', () => {
       later();
-      rememberSignOutNotice('보내지 못한 일이 있습니다.');
-      rememberSignOutNotice('보내지 못한 일이 있습니다.');
+      rememberSignOutNotice('signOut.unsentApprovals', { count: 1 });
+      rememberSignOutNotice('signOut.unsentApprovals', { count: 2 });
     }));
 
     runOnSessionLost();
 
     expect(later).toHaveBeenCalledTimes(1);
-    expect(takeSignOutNotices()).toEqual(['보내지 못한 일이 있습니다.']);
+    expect(takeSignOutNotices()).toEqual([{ key: 'signOut.unsentApprovals', values: { count: 2 } }]);
     expect(takeSignOutNotices()).toEqual([]);
   });
 });

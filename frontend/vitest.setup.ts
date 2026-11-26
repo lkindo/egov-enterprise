@@ -35,6 +35,24 @@ Object.assign(process.env, {
 });
 
 // Mock Next.js Navigation
+// [2026-11-26 ADR-0063] 화면 시험은 카탈로그 공급자 없이 그리는 경우가 많다 — 번역 함수는 기본으로 한국어 카탈로그를 쓴다(화면의 현재 문구와
+//   같다). 영어를 확인하는 시험은 파일 머리에서 vi.unmock('use-intl') 한 뒤 I18nProvider 로 감싼다.
+vi.mock('use-intl', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('use-intl')>();
+  const ko = (await import('./messages/ko.json')).default;
+  // 실제 훅처럼 같은 네임스페이스에는 같은 함수를 준다 — 번역 함수를 의존성으로 둔 콜백·효과가 렌더마다 다시 돌지 않게.
+  const translators = new Map<string, ReturnType<typeof actual.createTranslator>>();
+  return {
+    ...actual,
+    useTranslations: (namespace?: string) => {
+      const key = namespace ?? '';
+      if (!translators.has(key)) translators.set(key, actual.createTranslator({ locale: 'ko', messages: ko, namespace: namespace as never }));
+      return translators.get(key);
+    },
+    useLocale: () => 'ko',
+  };
+});
+
 vi.mock('next/navigation', () => {
   // 실제 Next 의 useSearchParams 는 렌더 사이에 같은 객체다. 렌더마다 새 객체를 주면 searchParams 를 의존성으로 둔 effect 가
   //   끝없이 다시 돌아, 공용 브레드크럼의 메뉴 조회처럼 시험 하나가 수백 건을 요청했다(2026-10-26 실측 약 1,500건).
