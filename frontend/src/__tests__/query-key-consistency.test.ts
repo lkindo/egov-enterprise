@@ -15,8 +15,11 @@ import { describe, expect, it } from 'vitest';
  *    상수·인자)끼리는 모든 자리가 같아야 하고, 한쪽이 동적 값인 자리는 맞을 수 있다고 본다. 첫 원소는 리터럴끼리 같아야 한다.
  *    setQueryData·getQueryData·getQueryState·QueryCache.find·`exact: true` 는 길이까지 같아야 한다(길이를 모르는 끝 스프레드는 비어
  *    있을 수 있다).
+ *    setQueryData 로 저장한 항목은 그 항목을 정확히 읽는 조작이 있으면 조회가 없어도 쓰인 것이다(접두 무효화는 짝이 아니다).
  * ② 같은 이름공간(키 맨 앞 문자열)을 실제로 적은 파일은 하나뿐이다. 여러 파일이 각자 적으면 `src/queries/<도메인>-keys.ts` 의 계층형
  *    팩토리로 옮기고 펼쳐 쓴다.
+ * ③ 정적 판정이 따라가지 못하는 조작(조작 전의 조기 반환 등)만 바로 위·같은 줄의 `query-key-unchecked: <사유>` 표지로 뺀다. 사유 없는
+ *    표지와 맞는 조작이 사라진 낡은 표지는 붉다.
  *
  * 판정은 실제 node_modules 타입을 읽는 TypeScript 프로그램의 심볼 해석이다.
  * - 조회 후보: 조작 필터가 아닌 모든 `queryKey` 속성(슬롯 기여·커스텀 훅에 넘기는 옵션처럼 정적으로 소비를 따라가지 못하는 것도 후보다).
@@ -68,7 +71,14 @@ interface KeyUse {
   selfOnly: boolean;
   /** 조작이 풀면서 거친 옵션 객체의 `queryKey` 속성. */
   through: ReadonlySet<ts.Node>;
+  /** 바로 위 줄의 `query-key-unchecked: <사유>` 표지로 판정에서 뺀 조작. */
+  exempt: boolean;
+  /** setQueryData — 그 항목을 정확히 읽는 다른 조작(getQueryData 등)이 있으면 조회가 없어도 쓰인 것이다. */
+  writes: boolean;
 }
+/** 정적 판정이 따라가지 못하는 조작 하나를 빼는 표지. */
+interface UncheckedMarker { file: string; line: number; reason: string }
+export interface KeyCensus { uses: KeyUse[]; markers: UncheckedMarker[] }
 interface SourceFileEntry { path: string; text: string }
 
 function productionFiles(directory: string): string[] {
@@ -142,7 +152,12 @@ function createKeyProgram(files: readonly SourceFileEntry[]): ts.Program {
  * 매개변수 → 호출 자리의 인자(와 그 인자를 풀 환경). known 은 호출 자리를 아는지다 — 알면 넘기지 않은 매개변수는 기본값이고,
  * 모르면(함수 본문만 보는 중이면) 기본값으로 확정하지 않고 동적 값으로 본다.
  */
-interface Environment { known: boolean; params: ReadonlyMap<ts.ParameterDeclaration, { argument: ts.Expression; environment: Environment }> }
+interface Environment {
+  known: boolean;
+  /** 호출 자리를 대입한 함수 — 넘기지 않은 매개변수의 기본값은 이 함수의 것만 확정한다(바깥 함수 매개변수는 동적이다). */
+  fn?: ts.Node;
+  params: ReadonlyMap<ts.ParameterDeclaration, { argument: ts.Expression; environment: Environment }>;
+}
 const EMPTY: Environment = { known: false, params: new Map() };
 type FunctionNode = ts.ArrowFunction | ts.FunctionExpression | ts.FunctionDeclaration | ts.MethodDeclaration;
 /** 옵션 객체 안에서 실제로 쓰일 수 있는 queryKey — 뒤의 속성·스프레드가 앞의 것을 덮는다. */
@@ -242,7 +257,9 @@ class KeyResolver {
     if (ts.isParameter(declaration)) {
       const bound = environment.params.get(declaration);
       if (bound) return { node: bound.argument, environment: bound.environment };
-      if (environment.known && declaration.initializer) return { node: declaration.initializer, environment };
+      if (environment.known && environment.fn === declaration.parent && declaration.initializer) {
+        return { node: declaration.initializer, environment };
+      }
       this.unbound.add(declaration);
       return undefined;
     }
@@ -273,7 +290,7 @@ class KeyResolver {
       const argument = call.arguments[index];
       if (argument && !parameter.dotDotDotToken) params.set(parameter, { argument, environment: callerEnvironment });
     });
-    return { known: true, params };
+    return { known: true, fn, params };
   }
 
   /** 함수가 돌려주는 식(첫 return)과, 인자를 매개변수에 대입한 환경. */
@@ -363,6 +380,44 @@ class KeyResolver {
     return undefined;
   }
 
+  /** `useMemo(() => 값, deps)` 의 값 식. */
+  private memoized(call: ts.CallExpression): ts.Expression[] {
+    if (this.callName(call) !== 'useMemo' || !call.arguments[0]) return [];
+    const callback = unwrap(call.arguments[0]);
+    return ts.isArrowFunction(callback) || ts.isFunctionExpression(callback) ? returnedExpressions(callback) : [];
+  }
+
+  /** 키 식의 가능한 값들 — 조건식의 두 갈래, 여러 return 의 팩토리, useMemo 로 메모한 키. 풀 수 없으면 빈 배열. */
+  expandAll(node: ts.Expression, environment: Environment = EMPTY, depth = 0): Element[][] {
+    if (depth > MAX_DEPTH) return [];
+    const target = unwrap(node);
+    if (ts.isConditionalExpression(target)) {
+      return [...this.expandAll(target.whenTrue, environment, depth + 1), ...this.expandAll(target.whenFalse, environment, depth + 1)];
+    }
+    if (ts.isCallExpression(target)) {
+      const memo = this.memoized(target);
+      if (memo.length > 0) return memo.flatMap((value) => this.expandAll(value, environment, depth + 1));
+      const found = this.functionOf(target.expression, environment);
+      if (found) {
+        const returns = returnedExpressions(found.fn);
+        if (returns.length > 1) {
+          const bound = this.bind(found.fn, target, environment, found.environment);
+          return returns.flatMap((value) => this.expandAll(value, bound, depth + 1));
+        }
+      }
+    }
+    if ((ts.isIdentifier(target) || ts.isPropertyAccessExpression(target))
+      && !(ts.isPropertyAccessExpression(target) && target.name.text === 'queryKey')) {
+      const value = this.valueOf(target, environment);
+      const inner = value && unwrap(value.node);
+      if (value && inner && (ts.isConditionalExpression(inner) || ts.isCallExpression(inner))) {
+        return this.expandAll(value.node, value.environment, depth + 1);
+      }
+    }
+    const single = this.expand(node, environment, depth);
+    return single ? [single] : [];
+  }
+
   /** 키 식을 원소로 푼다. 풀 수 없으면 null. */
   expand(node: ts.Expression, environment: Environment = EMPTY, depth = 0): Element[] | null {
     if (depth > MAX_DEPTH) return null;
@@ -371,6 +426,8 @@ class KeyResolver {
       return target.elements.flatMap((element) => this.element(element, environment, depth + 1));
     }
     if (ts.isCallExpression(target)) {
+      const [memo] = this.memoized(target);
+      if (memo) return this.expand(memo, environment, depth + 1);
       const result = this.returned(target, environment);
       return result ? this.expand(result.node, result.environment, depth + 1) : null;
     }
@@ -446,9 +503,14 @@ class KeyResolver {
 interface QueryInstance { property: ts.Node; key: ts.Expression; environment: Environment }
 interface Sink {
   instances: QueryInstance[];
-  /** 덮인 옵션(스프레드 뒤 queryKey 가 덮었다)의 queryKey 속성 — 후보가 아니다. */
+  /** 덮인 옵션(스프레드 뒤 queryKey 가 덮었다)의 queryKey 속성 — 다른 곳에서 쓰이지 않으면 후보가 아니다. */
   overridden: Set<ts.Node>;
+  /** 덮은 객체 안의 앞쪽 스프레드 식(덮인 옵션을 펼친 자리). */
+  overriddenSources: Set<ts.Node>;
+  /** 옵션을 매개변수로 받아 조회 훅에 넘기는 함수 → 그 매개변수 자리. */
   wrappers: Map<FunctionNode, Set<number>>;
+  /** queryKey 를 매개변수로 받아 조회 훅에 넘기는 함수 → 자리 → 그 queryKey 속성(`useReport(queryKey)`). */
+  keyWrappers: Map<FunctionNode, Map<number, ts.Node>>;
 }
 
 /** 덮인 옵션 원천의 queryKey 속성들을 overridden 에 넣는다. */
@@ -473,8 +535,20 @@ function consume(resolver: KeyResolver, node: ts.Expression, environment: Enviro
   const target = unwrap(node);
   if (ts.isObjectLiteralExpression(target)) {
     const found = resolver.keySites(target, environment);
-    for (const site of found.sites) sink.instances.push({ property: site.property, key: site.key, environment: site.environment });
-    for (const overridden of found.overridden) markOverridden(resolver, overridden.node, overridden.environment, sink);
+    for (const site of found.sites) {
+      sink.instances.push({ property: site.property, key: site.key, environment: site.environment });
+      // queryKey 자체가 호출 자리를 모르는 매개변수이면 그 함수의 호출 자리 인자가 키다.
+      const keyDeclaration = resolver.declarationOf(site.key);
+      if (keyDeclaration && ts.isParameter(keyDeclaration) && !site.environment.params.has(keyDeclaration) && isFunctionNode(keyDeclaration.parent)) {
+        const fn = keyDeclaration.parent;
+        if (!sink.keyWrappers.has(fn)) sink.keyWrappers.set(fn, new Map());
+        sink.keyWrappers.get(fn)?.set(fn.parameters.indexOf(keyDeclaration), site.property);
+      }
+    }
+    for (const overridden of found.overridden) {
+      sink.overriddenSources.add(overridden.node);
+      markOverridden(resolver, overridden.node, overridden.environment, sink);
+    }
     for (const property of target.properties) {
       if (ts.isSpreadAssignment(property)) registerWrapper(resolver, property.expression, environment, sink);
       const queries = propertyValue(property, 'queries');
@@ -568,7 +642,7 @@ function spreadList(list: ts.ArrayLiteralExpression, resolver: KeyResolver, dept
   });
 }
 
-export function collectKeyUses(files: readonly SourceFileEntry[]): KeyUse[] {
+export function collectKeyUses(files: readonly SourceFileEntry[]): KeyCensus {
   const program = createKeyProgram(files);
   const resolver = new KeyResolver(program);
   const sources = program.getSourceFiles().filter((source) => source.fileName.startsWith(SRC_ROOT));
@@ -598,64 +672,81 @@ export function collectKeyUses(files: readonly SourceFileEntry[]): KeyUse[] {
     return (identifiers.get(name.text) ?? []).filter((identifier) => identifier !== name && !ts.isImportSpecifier(identifier.parent)
       && !ts.isExportSpecifier(identifier.parent) && resolver.symbolOf(identifier) === symbol);
   };
-  /** 노드가 어떤 호출의 인자 안에 있는가(그 호출의 이름 조건). */
-  const insideArgumentOf = (node: ts.Node, names: ReadonlySet<string>): boolean => {
-    for (let current: ts.Node = node; current.parent; current = current.parent) {
-      const parent = current.parent;
-      if (ts.isCallExpression(parent) && parent.arguments.some((argument) => argument === current) && names.has(resolver.callName(parent))) {
-        return true;
-      }
-    }
-    return false;
-  };
 
-  // 1) 조회 — 조회 훅·prefetch 호출에서 출발해 커스텀 훅 래퍼를 고정점까지 따라간다.
-  const sink: Sink = { instances: [], overridden: new Set(), wrappers: new Map() };
+  // 1) 조회 — 조회 훅·prefetch 호출에서 출발해 커스텀 훅 래퍼(옵션·키를 받는 함수)를 고정점까지 따라간다.
+  const sink: Sink = { instances: [], overridden: new Set(), overriddenSources: new Set(), wrappers: new Map(), keyWrappers: new Map() };
   for (const call of calls) {
     if (call.arguments[0] && QUERY_PRODUCERS.has(resolver.callName(call))) consume(resolver, call.arguments[0], EMPTY, sink);
   }
-  const done = new Map<FunctionNode, Set<number>>();
+  const done = new Set<string>();
+  const ids = new Map<FunctionNode, number>();
+  const idOf = (fn: FunctionNode): number => {
+    if (!ids.has(fn)) ids.set(fn, ids.size);
+    return ids.get(fn) ?? -1;
+  };
   for (let round = 0; round < 10; round += 1) {
-    const pending = [...sink.wrappers].flatMap(([fn, indexes]) => [...indexes].filter((index) => !done.get(fn)?.has(index))
-      .map((index) => ({ fn, index })));
-    if (pending.length === 0) break;
-    for (const { fn, index } of pending) {
-      if (!done.has(fn)) done.set(fn, new Set());
-      done.get(fn)?.add(index);
+    const pending: { fn: FunctionNode; index: number; property?: ts.Node }[] = [];
+    for (const [fn, indexes] of sink.wrappers) {
+      for (const index of indexes) if (!done.has(`o:${idOf(fn)}:${index}`)) pending.push({ fn, index });
     }
+    for (const [fn, indexes] of sink.keyWrappers) {
+      for (const [index, property] of indexes) if (!done.has(`k:${idOf(fn)}:${index}`)) pending.push({ fn, index, property });
+    }
+    if (pending.length === 0) break;
+    for (const item of pending) done.add(`${item.property ? 'k' : 'o'}:${idOf(item.fn)}:${item.index}`);
     for (const call of calls) {
       const target = callTarget(call);
-      for (const { fn, index } of pending) {
-        const argument = call.arguments[index];
-        if (target === fn && argument) consume(resolver, argument, EMPTY, sink);
+      if (!target) continue;
+      for (const item of pending) {
+        const argument = call.arguments[item.index];
+        if (target !== item.fn || !argument) continue;
+        if (item.property) sink.instances.push({ property: item.property, key: argument, environment: EMPTY });
+        else consume(resolver, argument, EMPTY, sink);
       }
     }
   }
 
+  // 표지 — 조작 줄 바로 위(또는 같은 줄)의 `query-key-unchecked: <사유>` 는 정적 판정이 따라가지 못하는 그 조작 하나를 뺀다.
+  const markers: UncheckedMarker[] = [];
+  for (const source of sources) {
+    source.text.split('\n').forEach((text, index) => {
+      const match = /(?:\/\/|\/\*)\s*query-key-unchecked:(.*)$/.exec(text);
+      if (match) markers.push({ file: fileOf(source), line: index + 1, reason: (match[1] ?? '').replace(/\*\/\s*\}?\s*$/, '').trim() });
+    });
+  }
+  const exemptAt = (file: string, line: number): boolean => markers
+    .some((marker) => marker.file === file && marker.reason !== '' && (marker.line === line - 1 || marker.line === line));
+
   const uses: KeyUse[] = [];
   const push = (anchor: ts.Node, role: KeyUse['role'], exact: boolean, key: ts.Expression, environment: Environment,
-    property: ts.Node | null, through: ReadonlySet<ts.Node> = new Set(), selfOnly = false): KeyUse => {
+    property: ts.Node | null, through: ReadonlySet<ts.Node> = new Set(), selfOnly = false, openEnded = false, writes = false): KeyUse[] => {
     resolver.trace = new Set(through);
     resolver.unbound = new Set();
-    const expanded = resolver.expand(key, environment);
+    const alternatives = resolver.expandAll(key, environment);
     const source = anchor.getSourceFile();
-    const use: KeyUse = {
-      file: fileOf(source),
-      line: source.getLineAndCharacterOfPosition(anchor.getStart(source)).line + 1,
+    const file = fileOf(source);
+    const line = source.getLineAndCharacterOfPosition(anchor.getStart(source)).line + 1;
+    const created = (alternatives.length > 0 ? alternatives : [null]).map((expanded): KeyUse => ({
+      file,
+      line,
       role,
       exact,
-      expanded,
+      expanded: expanded && openEnded ? [...expanded, { spread: '(화면이 덧붙임)' }] : expanded,
       property,
       selfOnly,
+      exempt: role === 'op' && exemptAt(file, line),
+      writes,
       through: resolver.trace,
-    };
-    uses.push(use);
-    return use;
+    }));
+    uses.push(...created);
+    return created;
   };
   const instanceProperties = new Set(sink.instances.map((instance) => instance.property));
   for (const instance of sink.instances) push(instance.property, 'query', false, instance.key, instance.environment, instance.property);
 
-  // 2) 후보 — 조작 필터가 아닌 그 밖의 queryKey 속성(소비를 따라가지 못한 옵션). 덮인 옵션은 빼고, 조작에만 쓰이는 const 옵션은 selfOnly.
+  // 2) 후보 — 조작 필터가 아닌 그 밖의 queryKey 속성(소비를 따라가지 못한 옵션). queryFn 이 없는 객체(슬롯 기여처럼 화면이 키를
+  //    덧붙여 조회하는 것)는 뒤에 원소가 더 붙을 수 있는 접두다. 덮인 옵션은 다른 곳에서 쓰이지 않으면 빼고, 조작에만 쓰이는 const
+  //    옵션은 selfOnly.
   const isOperationArgument = (node: ts.Node): boolean => {
     const outer = outermost(node);
     const parent = outer.parent;
@@ -672,38 +763,47 @@ export function collectKeyUses(files: readonly SourceFileEntry[]): KeyUse[] {
     return !!container && (ts.isPropertyAssignment(container) || ts.isSpreadAssignment(container))
       && ts.isObjectLiteralExpression(container.parent) && isOperationArgument(container.parent);
   };
-  /** const 로 든 옵션이 조작에만 쓰이는가. */
-  const usedOnlyByOperations = (holder: ts.Node): boolean => {
+  const holderName = (holder: ts.Node): ts.Identifier | undefined => {
     const declaration = outermost(holder).parent;
-    if (!declaration || !ts.isVariableDeclaration(declaration) || !ts.isIdentifier(declaration.name)) return false;
-    return references(declaration.name).every(isOperationReference);
+    return declaration && ts.isVariableDeclaration(declaration) && ts.isIdentifier(declaration.name) ? declaration.name : undefined;
   };
   for (const property of keyProperties) {
-    if (instanceProperties.has(property) || sink.overridden.has(property)) continue;
+    if (instanceProperties.has(property)) continue;
     const object = property.parent;
     if (!ts.isObjectLiteralExpression(object) || isOperationArgument(object)) continue;
-    const key = ts.isPropertyAssignment(property) ? property.initializer : property.name;
     const wrapper = outermost(object).parent;
     const holder = wrapper && ts.isCallExpression(wrapper) && OPTION_WRAPPERS.has(resolver.callName(wrapper)) ? wrapper : object;
-    push(property, 'candidate', false, key, EMPTY, property, new Set(), usedOnlyByOperations(holder));
+    const name = holderName(holder);
+    const others = name ? references(name) : [];
+    // 덮인 옵션은 덮은 스프레드·조작 밖에서도 쓰여야(다른 조회에 넘김 등) 후보로 남는다.
+    if (sink.overridden.has(property)
+      && !others.some((reference) => !isOperationReference(reference) && !sink.overriddenSources.has(outermost(reference)))) continue;
+    const key = ts.isPropertyAssignment(property) ? property.initializer : property.name;
+    const openEnded = !object.properties.some((candidate) => propertyValue(candidate, 'queryFn') !== undefined
+      || (ts.isMethodDeclaration(candidate) && candidate.name.getText() === 'queryFn'));
+    const selfOnly = !!name && others.every(isOperationReference);
+    push(property, 'candidate', false, key, EMPTY, property, new Set(), selfOnly, openEnded);
   }
 
   // 3) 조작 — 조작 호출마다(같은 필터를 여러 호출에 넘겨도 각각). 키가 감싼 함수의 매개변수에 기대면 그 함수의 호출 자리마다 본다.
   const pushOperation = (anchor: ts.Node, measure: (environment: Environment) => { key: ts.Expression; environment: Environment;
-    exact: boolean; through: ReadonlySet<ts.Node> } | undefined): void => {
+    exact: boolean; through: ReadonlySet<ts.Node> } | undefined, writes = false): void => {
     const generic = measure(EMPTY);
     if (!generic) return;
-    const use = push(anchor, 'op', generic.exact, generic.key, generic.environment, null, generic.through);
+    const created = push(anchor, 'op', generic.exact, generic.key, generic.environment, null, generic.through, false, false, writes);
     const unbound = [...resolver.unbound];
     const owner = unbound[0]?.parent;
     if (!owner || !isFunctionNode(owner) || unbound.some((parameter) => parameter.parent !== owner)) return;
+    let enclosed = false;
+    for (let current: ts.Node | undefined = anchor.parent; current && !enclosed; current = current.parent) enclosed = current === owner;
+    if (!enclosed) return;
     const sites = calls.filter((call) => callTarget(call) === owner);
     if (sites.length === 0) return;
-    uses.splice(uses.indexOf(use), 1);
+    for (const use of created) uses.splice(uses.indexOf(use), 1);
     for (const site of sites) {
       const bound = resolver.bind(owner, site, EMPTY);
       const measured = measure(bound);
-      if (measured) push(site, 'op', measured.exact, measured.key, measured.environment, null, measured.through);
+      if (measured) push(site, 'op', measured.exact, measured.key, measured.environment, null, measured.through, false, false, writes);
     }
   };
   for (const call of calls) {
@@ -717,30 +817,34 @@ export function collectKeyUses(files: readonly SourceFileEntry[]): KeyUse[] {
         if (!site) return undefined;
         const exactValue = resolver.optionValue(first, 'exact', environment);
         const literal = exactValue ? resolver.literal(exactValue.node, exactValue.environment) : null;
-        const exact = literal?.literal === 'k:true' ? true : literal?.literal === 'k:false' ? false : defaultExact;
+        // 풀 수 없는 exact 값은 정확 일치로 확정하지 않는다(매개변수 기본값 false 를 넘기는 도우미).
+        const exact = exactValue ? literal?.literal === 'k:true' : defaultExact;
         return { key: site.key, environment: site.environment, exact, through: new Set([site.property]) };
       });
     }
     if (KEY_ARGUMENT_OPS.has(name) && !ts.isObjectLiteralExpression(unwrap(first))) {
-      pushOperation(call, (environment) => ({ key: first, environment, exact: true, through: new Set() }));
+      const writes = name === 'setQueryData';
+      pushOperation(call, (environment) => ({ key: first, environment, exact: true, through: writes ? new Set([call]) : new Set() }), writes);
+      // setQueryData 로 만든 항목은 다른 읽기·조작의 후보다(자기 자신과는 맞추지 않는다).
+      if (writes) push(call, 'candidate', false, first, EMPTY, call, new Set(), true);
     }
   }
 
-  // 4) 키 목록 — 원소마다 무효화 키다(조회 훅에 넘기는 목록이면 조회로 본다). QueryKey[] 변수에 push 한 원소도.
-  const listed = new Set<ts.Node>();
+  // 4) 키 목록 — 참조가 조작으로 흘러가는 목록(for…of·forEach·map 안에서 invalidateQueries 등)의 원소는 조작이고, 그 밖(조회 훅에
+  //    넘기는 목록 등)의 원소는 후보다. QueryKey[] 변수에 push 한 원소도 그 목록의 원소다.
+  interface KeyList { name?: ts.Identifier; elements: ts.Expression[] }
+  const lists: KeyList[] = [];
+  const listOfDeclaration = new Map<ts.Node, KeyList>();
   for (const source of sources) {
     const visit = (node: ts.Node): void => {
       const elements = keyListElements(node, source, resolver);
-      if (elements.length > 0) {
-        const name = ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) ? node.name
-          : ts.isFunctionDeclaration(node) ? node.name : undefined;
-        const forQueries = !!name && references(name).some((reference) => insideArgumentOf(reference, QUERY_PRODUCERS));
-        for (const element of elements) {
-          if (listed.has(element)) continue;
-          listed.add(element);
-          if (forQueries) push(element, 'query', false, element, EMPTY, null);
-          else pushOperation(element, (environment) => ({ key: element, environment, exact: false, through: new Set() }));
-        }
+      const isListVariable = ts.isVariableDeclaration(node) && isKeyListVariable(node, source);
+      if (elements.length > 0 || isListVariable) {
+        const name = (ts.isVariableDeclaration(node) || ts.isFunctionDeclaration(node)) && node.name && ts.isIdentifier(node.name)
+          ? node.name : undefined;
+        const list: KeyList = { name, elements: [...elements] };
+        lists.push(list);
+        listOfDeclaration.set(node, list);
       }
       ts.forEachChild(node, visit);
     };
@@ -750,17 +854,52 @@ export function collectKeyUses(files: readonly SourceFileEntry[]): KeyUse[] {
     const callee = call.expression;
     if (!ts.isPropertyAccessExpression(callee) || callee.name.text !== 'push') continue;
     const declaration = resolver.declarationOf(callee.expression);
-    const source = call.getSourceFile();
-    const isList = declaration !== undefined && ts.isVariableDeclaration(declaration) && declaration.initializer !== undefined
-      && (KEY_LIST_TYPE.test(declaration.type?.getText(source) ?? '')
-        || (ts.isSatisfiesExpression(declaration.initializer) && KEY_LIST_TYPE.test(declaration.initializer.type.getText(source))));
-    if (isList) {
-      for (const argument of call.arguments) {
-        pushOperation(argument, (environment) => ({ key: argument, environment, exact: false, through: new Set() }));
-      }
+    const list = declaration ? listOfDeclaration.get(declaration) : undefined;
+    if (list) list.elements.push(...call.arguments);
+  }
+  /** 참조를 품은 문장(블록의 직접 자식). */
+  const statementOf = (node: ts.Node): ts.Node => {
+    let current = node;
+    while (current.parent && !ts.isBlock(current.parent) && !ts.isSourceFile(current.parent) && !ts.isModuleBlock(current.parent)
+      && !ts.isCaseClause(current.parent) && !ts.isDefaultClause(current.parent)) current = current.parent;
+    return current;
+  };
+  const containsOperation = (node: ts.Node): boolean => {
+    let found = false;
+    const visit = (child: ts.Node): void => {
+      if (found) return;
+      if (ts.isCallExpression(child) && (CACHE_OPS.has(resolver.callName(child)) || KEY_ARGUMENT_OPS.has(resolver.callName(child)))) found = true;
+      else ts.forEachChild(child, visit);
+    };
+    visit(node);
+    return found;
+  };
+  const operationElements = new Set<ts.Expression>();
+  for (const list of lists) {
+    if (list.name && references(list.name).some((reference) => containsOperation(statementOf(reference)))) {
+      for (const element of list.elements) operationElements.add(element);
     }
   }
-  return uses;
+  for (const element of operationElements) {
+    pushOperation(element, (environment) => ({ key: element, environment, exact: false, through: new Set() }));
+  }
+  const listedCandidates = new Set<ts.Node>();
+  for (const list of lists) {
+    for (const element of list.elements) {
+      if (operationElements.has(element) || listedCandidates.has(element)) continue;
+      listedCandidates.add(element);
+      push(element, 'candidate', false, element, EMPTY, null);
+    }
+  }
+  return { uses, markers };
+}
+
+/** 목록 변수인가 — QueryKey[] 로 타입을 달았거나 satisfies QueryKey[] 인 const. */
+function isKeyListVariable(declaration: ts.VariableDeclaration, source: ts.SourceFile): boolean {
+  const initializer = declaration.initializer;
+  if (!initializer) return false;
+  return KEY_LIST_TYPE.test(declaration.type?.getText(source) ?? '')
+    || (ts.isSatisfiesExpression(initializer) && KEY_LIST_TYPE.test(initializer.type.getText(source)));
 }
 
 const headOf = (elements: readonly Element[] | null): { literal: string; origin: string } | null => {
@@ -775,6 +914,8 @@ const headOf = (elements: readonly Element[] | null): { literal: string; origin:
  */
 export function keyMatches(op: readonly Element[], query: readonly Element[], exact: boolean): boolean {
   for (const [index, element] of op.entries()) {
+    // 조작 쪽의 길이 모르는 스프레드는 비어 있을 수도 있다(`scopedKey()` 가 루트만 돌려준다).
+    if (index > 0 && 'spread' in element) return true;
     const other = query[index];
     if (other === undefined) return false;
     const literal = 'literal' in element ? element.literal : null;
@@ -793,13 +934,26 @@ export function checkedOperations(uses: readonly KeyUse[]): KeyUse[] {
   return uses.filter((use) => use.role === 'op' && headOf(use.expanded) !== null);
 }
 
-/** ① 맞는 조회 키가 없는 조작. 첫 원소가 리터럴로 풀린 조작만 본다. */
+/** ① 맞는 조회 키가 없는 조작. 첫 원소가 리터럴로 풀린 조작만 보고, 표지로 뺀 조작은 보지 않는다. */
 export function orphanOperations(uses: readonly KeyUse[]): KeyUse[] {
   const candidates = uses.filter((use) => (use.role === 'query' || use.role === 'candidate') && use.expanded !== null);
-  return checkedOperations(uses).filter((op) => !candidates.some((candidate) => {
+  // 저장 항목의 짝은 그 항목을 정확히 읽는 조작뿐이다 — 이름공간 접두 무효화는 오타 난 저장도 덮으므로 짝으로 치지 않는다.
+  const readers = uses.filter((use) => use.role === 'op' && !use.writes && use.exact && use.expanded !== null);
+  return checkedOperations(uses).filter((op) => !op.exempt && !candidates.some((candidate) => {
     if (candidate.selfOnly && candidate.property !== null && op.through.has(candidate.property)) return false;
     return op.expanded !== null && candidate.expanded !== null && keyMatches(op.expanded, candidate.expanded, op.exact);
-  }));
+  }) && !(op.writes && readers.some((reader) => op.expanded !== null && reader.expanded !== null
+    && keyMatches(reader.expanded, op.expanded, true))));
+}
+
+/** ③ 표지 문제 — 사유가 없거나, 바로 아래(또는 같은) 줄에 표지가 없으면 고아였을 조작이 없다(낡은 표지). */
+export function markerProblems(census: KeyCensus): string[] {
+  const unexempted = orphanOperations(census.uses.map((use) => ({ ...use, exempt: false })));
+  return census.markers.flatMap((marker) => {
+    if (marker.reason === '') return [`${marker.file}:${marker.line} 사유가 없다`];
+    const covers = unexempted.some((op) => op.file === marker.file && (op.line === marker.line + 1 || op.line === marker.line));
+    return covers ? [] : [`${marker.file}:${marker.line} 아래 줄에 맞는 조회가 없는 조작이 없다(낡은 표지)`];
+  });
 }
 
 /** ② 문자열 이름공간 → 그 첫 리터럴을 실제로 적은 파일들(둘 이상만). */
@@ -815,7 +969,7 @@ export function sharedLiteralNamespaces(uses: readonly KeyUse[]): Map<string, st
   return new Map([...files].filter(([, set]) => set.size > 1).map(([head, set]) => [head, [...set].sort()]));
 }
 
-const production = (): KeyUse[] => collectKeyUses(productionFiles(SRC).map((path) => ({
+const production = (): KeyCensus => collectKeyUses(productionFiles(SRC).map((path) => ({
   path: relative(SRC, path).split(sep).join('/'),
   text: readFileSync(path, 'utf8'),
 })));
@@ -827,24 +981,32 @@ const display = (element: Element): string => {
   return element.literal.slice(2);
 };
 const describeKey = (use: KeyUse): string => JSON.stringify((use.expanded ?? []).map(display));
+const orphansOf = (census: KeyCensus, file: string): string[] => orphanOperations(census.uses).filter((use) => use.file === file)
+  .map((use) => `${use.line}:${describeKey(use)}`)
+  .sort((left, right) => Number.parseInt(left, 10) - Number.parseInt(right, 10) || left.localeCompare(right));
 
 describe('쿼리 키 일관성', () => {
-  let cached: KeyUse[] | undefined;
-  const uses = (): KeyUse[] => (cached ??= production());
+  let cached: KeyCensus | undefined;
+  const census = (): KeyCensus => (cached ??= production());
 
   it('생산 소스에서 실제로 비교한다 — 첫 원소가 풀린 조회·조작이 있어야 한다(없으면 아래 계약은 공허하다)', () => {
-    expect(uses().filter((use) => use.role === 'query' && headOf(use.expanded) !== null).length).toBeGreaterThan(0);
-    expect(checkedOperations(uses()).length).toBeGreaterThan(0);
+    expect(census().uses.filter((use) => use.role === 'query' && headOf(use.expanded) !== null).length).toBeGreaterThan(0);
+    expect(checkedOperations(census().uses).length).toBeGreaterThan(0);
   }, 180_000);
 
   it('① 캐시 조작의 키는 어떤 조회 키와 자리마다 맞는다', () => {
-    const orphans = orphanOperations(uses()).map((use) => `${use.file}:${use.line}${use.exact ? ' (정확)' : ''} ${describeKey(use)}`);
-    expect(orphans, `맞는 조회 키가 없는 무효화·캐시 조작(조용히 아무것도 갱신하지 않는다) — 조회와 같은 팩토리를 쓴다:\n${orphans.join('\n')}`).toEqual([]);
+    const orphans = orphanOperations(census().uses).map((use) => `${use.file}:${use.line}${use.exact ? ' (정확)' : ''} ${describeKey(use)}`);
+    expect(orphans, '맞는 조회 키가 없는 무효화·캐시 조작(조용히 아무것도 갱신하지 않는다) — 조회와 같은 팩토리를 쓴다. 키를 런타임에 '
+      + `조립해 정적 판정이 따라가지 못하면 그 조작 바로 위에 'query-key-unchecked: <사유>' 를 둔다:\n${orphans.join('\n')}`).toEqual([]);
   }, 180_000);
 
   it('② 같은 쿼리 키 이름공간을 실제로 적은 파일은 하나뿐이다(여러 파일이면 src/queries/<도메인>-keys.ts 팩토리)', () => {
-    const shared = [...sharedLiteralNamespaces(uses())].map(([head, files]) => `'${head}': ${files.join(', ')}`);
+    const shared = [...sharedLiteralNamespaces(census().uses)].map(([head, files]) => `'${head}': ${files.join(', ')}`);
     expect(shared, `여러 파일이 각자 적은 쿼리 키 이름공간:\n${shared.join('\n')}`).toEqual([]);
+  }, 180_000);
+
+  it('③ query-key-unchecked 표지는 사유가 있고, 바로 아래 줄의 조작이 실제로 판정에 걸릴 때만 둔다', () => {
+    expect(markerProblems(census())).toEqual([]);
   }, 180_000);
 
   it('판정 자체 ① — 자리·정확 조작·튜플 길이·옵션 변수·스코프·import 경로·인자 대입·숫자·find·queryOptions 를 가른다', () => {
@@ -877,7 +1039,8 @@ describe('쿼리 키 일관성', () => {
           + "useQuery({ queryKey: ['jobs', 'detail', id], queryFn });\n"
           + 'qc.invalidateQueries({ queryKey: keys.all });\n' // 24: import 한 one.ts 의 'alpha' — 조회가 없다
           + "const single: QueryKey = ['search', ['active', 'pending']];\nuseQuery({ queryKey: single, queryFn });\n" // 키 하나는 목록이 아니다
-          + "const extra: QueryKey[] = [['jbos3']];\nconst stale = [...extra, ['jbos2']] satisfies QueryKey[];\n" // 27·28: 목록 원소
+          + "const extra: QueryKey[] = [['jbos3']];\n"
+          + "const stale = [...extra, ['jbos2']] satisfies QueryKey[]; for (const k of stale) qc.invalidateQueries({ queryKey: k });\n" // 27·28: 무효화 목록
           + "function keep(keys2: string[]) { return useQuery({ queryKey: [...keys2, 'x'], queryFn }); }\n" // 머리 미해석 조회는 덮지 않는다
           + 'const memoOptions = (n: number) => queryOptions({ queryKey: memoKeys.detail(n), queryFn });\n' // 쓰이지 않는 선언 = 약한 후보
           + 'qc.invalidateQueries({ queryKey: memoKeys.detail(3) });\n' // 31: 같은 팩토리의 다른 조작 — 맞음
@@ -910,10 +1073,9 @@ describe('쿼리 키 일관성', () => {
           + "function Comp() { const scope = useMemo(() => ['u', 'v'] as const, []); useRQ({ queryKey: ['memo2', ...scope], queryFn }); return null; }\n"
           + "qc.getQueryState(['memo2', 'u']);\n" // 28: 외부 타입 튜플 길이 — 정확 조작 길이 2 ≠ 3
           + "const keys9 = { old: ['jobz2'] as const };\nuseRQ({ queryKey: ['jobs2'], queryFn });\n"
-          + 'function staleKeys(): QueryKey[] { return [keys9.old]; }\n' // 31: 팩토리 참조만인 목록
+          + 'function staleKeys(): QueryKey[] { return [keys9.old]; } for (const k of staleKeys()) void qc.invalidateQueries({ queryKey: k });\n' // 31
           + "const exact = true as const;\nuseRQ({ queryKey: ['ex', 1], queryFn });\nqc.invalidateQueries({ queryKey: ['ex'], exact });\n" // 34
           + "useRQ({ queryKey: ['hash', 1], queryFn });\nqc.getQueryData(['hash', '#1']);\n" // 36: 문자열 '#1' 은 숫자 1 이 아니다
-          // 37~: 4회차 — 정상이어야 할 것(오탐 금지)과 잡아야 할 것.
           + "const panel = { id: 'x', queryKey: ['slot-stats'] as const };\ndeclare const panels: { queryKey: readonly unknown[] }[];\n"
           + 'useQueries({ queries: panels.map((p) => ({ queryKey: [...p.queryKey, 1], queryFn })) });\n'
           + "qc.invalidateQueries({ queryKey: ['slot-stats'] });\n" // 40: 슬롯 기여의 키(약한 후보) — 맞음
@@ -940,10 +1102,45 @@ describe('쿼리 키 일관성', () => {
           + "useRQ({ queryKey: ['tickets', 'open'], queryFn });\nfunction evict(kind: string) { return qc.invalidateQueries({ queryKey: ['tickets', kind] }); }\n"
           + "evict('opne');\n", // 79: 조작 도우미의 호출 자리
       },
+      {
+        // 5회차 — 정상이어야 할 것(오탐 금지)과 분기별 오타·표지.
+        path: 'qk-self/d.tsx',
+        text: "import { useMemo } from 'react';\n"
+          + "import { useQuery, useQueries, type QueryKey, type QueryClient, type QueryCache } from '@tanstack/react-query';\n"
+          + 'declare const qc: QueryClient; declare const cache: QueryCache; declare const queryFn: () => Promise<number>; declare const range: string; declare const editing: boolean; declare const id: number;\n'
+          + "const STATS_KEY = ['stats-bbs'] as const;\nexport const contribution = { id: 'bbs', queryKey: STATS_KEY, load: queryFn };\n"
+          + 'qc.getQueryData([...STATS_KEY, range]);\n' // 6: 슬롯 기여(queryFn 없음)의 키는 접두 — 맞음
+          + "const keyList: QueryKey[] = [['tab-a']];\nkeyList.push(['tab-b']);\nconst queries = keyList.map((queryKey) => ({ queryKey, queryFn }));\n"
+          + 'useQueries({ queries });\n' // 조회용 목록 — 조작 아님
+          + "const detailKey = (n: number) => ['page', 'detail', n] as const; const listKey = ['page', 'list'] as const;\n"
+          + 'useQuery({ queryKey: editing ? detailKey(id) : listKey, queryFn });\nqc.getQueryData(detailKey(id));\n' // 13: 키의 분기 — 맞음
+          + "function pageKey(n?: number) { if (n !== undefined) return ['pk', 'detail', n] as const; return ['pk', 'list'] as const; }\n"
+          + "useQuery({ queryKey: pageKey(42), queryFn }); qc.getQueryData(['pk', 'detail', 42]);\n" // 15: 여러 return — 맞음
+          + "function Memo() { const key = useMemo(() => ['memo-key', id] as const, []); useQuery({ queryKey: key, queryFn }); return null; }\n"
+          + "qc.getQueryData(['memo-key', 7]);\n" // 17: useMemo 키 — 맞음
+          + 'function useReport(queryKey: QueryKey) { return useQuery({ queryKey, queryFn }); }\n'
+          + "useReport(['report', 1]); qc.invalidateQueries({ queryKey: ['report'] });\n" // 19: 키를 받는 커스텀 훅 — 맞음
+          + "const base = { queryKey: ['base2'] as const, queryFn };\nuseQuery({ ...base, queryKey: ['other2'] }); declare const showBase: boolean;\n"
+          + 'useQueries({ queries: [base].filter(() => showBase) }); qc.getQueryData(base.queryKey);\n' // 22: 덮였어도 다른 곳에서 쓰인다 — 맞음
+          + "const ROOT2 = ['scoped'] as const; const scopedKey = (...path: string[]) => [...ROOT2, ...path] as const;\n"
+          + 'useQuery({ queryKey: ROOT2, queryFn }); qc.getQueryData(scopedKey());\n' // 24: 조작 끝의 빈 스프레드 — 맞음
+          + "function findInCache(exact = false) { return cache.find({ queryKey: ['fic'], exact }); }\n"
+          + "useQuery({ queryKey: ['fic', 'list'], queryFn }); findInCache();\n" // 26: exact 기본값 false — 맞음
+          + "qc.setQueryData(['stored', 1], 123); qc.getQueryData(['stored', 1]);\n" // 27: setQueryData 로 만든 항목 — 맞음
+          + "function useFiles(view = 'list') { const options = () => ({ queryKey: ['files', view], queryFn }); return useQuery(options()); }\n"
+          + "useFiles('detail'); qc.getQueryData(['files', 'detail']);\n" // 29: 바깥 함수 기본값을 확정하지 않는다 — 맞음
+          + "function refresh(tab: string) { if (tab === 'help') return; return qc.invalidateQueries({ queryKey: ['queue', tab] }); }\n"
+          + "useQuery({ queryKey: ['queue', 'active'], queryFn });\nrefresh('active');\n"
+          + "// query-key-unchecked: 'help' 는 조작 전에 돌아간다 — 정적 판정이 조기 반환을 보지 못한다\nrefresh('help');\n" // 34: 표지로 뺀다
+          + "declare const flag2: boolean; useQuery({ queryKey: ['cases', 'open'], queryFn });\n"
+          + "qc.invalidateQueries({ queryKey: flag2 ? ['cases', 'open'] : ['cases', 'opne'] });\n" // 36: 분기별 오타
+          + "// query-key-unchecked:\nqc.invalidateQueries({ queryKey: ['no-reason'] });\n" // 37: 사유 없는 표지(뺄 수 없다) → 38 고아
+          + "// query-key-unchecked: 고아가 아닌데 둔 표지\nqc.invalidateQueries({ queryKey: ['queue'] });\n" // 39: 낡은 표지
+          + "useQuery({ queryKey: ['wr', 'list'], queryFn }); qc.invalidateQueries({ queryKey: ['wr'] });\n"
+          + "qc.setQueryData(['wr', 'lsit'], 1);\n", // 42: 접두 무효화는 저장 항목을 읽지 않는다 — 오타 난 저장은 고아
+      },
     ]);
-    const orphansOf = (file: string): string[] => orphanOperations(result).filter((use) => use.file === file)
-      .map((use) => `${use.line}:${describeKey(use)}`).sort((left, right) => Number.parseInt(left, 10) - Number.parseInt(right, 10));
-    expect(orphansOf('qk-self/a.tsx'), orphansOf('qk-self/a.tsx').join(' | ')).toEqual([
+    expect(orphansOf(result, 'qk-self/a.tsx'), orphansOf(result, 'qk-self/a.tsx').join(' | ')).toEqual([
       '6:["auth","{id}","gruop","{code}"]',
       '9:["users","#2"]',
       '11:["menus","head"]',
@@ -957,7 +1154,7 @@ describe('쿼리 키 일관성', () => {
       '28:["jbos2"]',
       '33:["lonely","detial"]',
     ]);
-    expect(orphansOf('qk-self/b.tsx'), orphansOf('qk-self/b.tsx').join(' | ')).toEqual([
+    expect(orphansOf(result, 'qk-self/b.tsx'), orphansOf(result, 'qk-self/b.tsx').join(' | ')).toEqual([
       '18:["kinded","opne"]',
       '19:["jobz-shared"]',
       '23:["multi"]',
@@ -970,6 +1167,15 @@ describe('쿼리 키 일관성', () => {
       '73:["permission","u"]',
       '76:["jobs3","opne"]',
       '79:["tickets","opne"]',
+    ]);
+    expect(orphansOf(result, 'qk-self/d.tsx'), orphansOf(result, 'qk-self/d.tsx').join(' | ')).toEqual([
+      '36:["cases","opne"]',
+      '38:["no-reason"]',
+      '42:["wr","lsit"]',
+    ]);
+    expect(markerProblems(result)).toEqual([
+      'qk-self/d.tsx:37 사유가 없다',
+      'qk-self/d.tsx:39 아래 줄에 맞는 조회가 없는 조작이 없다(낡은 표지)',
     ]);
   }, 180_000);
 
@@ -991,7 +1197,7 @@ describe('쿼리 키 일관성', () => {
         text: "import { boxKeys } from './v';\nuseQuery({ queryKey: [...boxKeys.all, 1], queryFn });\nqc.invalidateQueries({ queryKey: boxKeys.all });\n",
       },
     ]);
-    expect([...sharedLiteralNamespaces(result)]).toEqual([
+    expect([...sharedLiteralNamespaces(result.uses)]).toEqual([
       ['auth', ['qk-self/p.tsx', 'qk-self/q.tsx']],
       ['jobs', ['qk-self/r.tsx', 'qk-self/s.tsx']],
       ['notes', ['qk-self/t.tsx', 'qk-self/u.tsx']],
