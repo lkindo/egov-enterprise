@@ -214,7 +214,8 @@ function PostScreenFeatures({ features }: { features: BoardPreviewFeatures }) {
   );
 }
 
-function HubLayout({ posts, features }: { posts: readonly PreviewPost[]; features: BoardPreviewFeatures }) {
+// 대표 게시글이 첫 항목이라 빈 목록을 받지 않는다 — 호출부가 넘기는 MOCK_POSTS(고정 튜플)의 비어 있지 않음을 타입으로 둔다.
+function HubLayout({ posts, features }: { posts: readonly [PreviewPost, ...PreviewPost[]]; features: BoardPreviewFeatures }) {
   const [lead, ...rest] = posts;
   return (
     <div className="space-y-3">

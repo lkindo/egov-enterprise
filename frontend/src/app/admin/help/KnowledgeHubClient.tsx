@@ -54,7 +54,8 @@ const HUB_PARAM_KEYS = ['tab'] as const;
  * 셸이 그 게시판(bbsId)의 글 목록을 그리고, 탭이 열렸을 때 기여의 머리 동작(Actions)을 더한다.
  */
 type KnowledgeTab = { readonly id: string; readonly label: string } & HubTabViews['knowledge'];
-const SHELL_TABS: readonly KnowledgeTab[] = [
+// 첫 탭(위키)은 열 탭을 찾지 못했을 때의 기본 탭이라, 비지 않은 튜플로 적어 SHELL_TABS[0] 이 늘 있음을 타입에 드러낸다.
+const SHELL_TABS: readonly [KnowledgeTab, ...KnowledgeTab[]] = [
   // 탭 → 게시판 대응은 게시판 운영 화면의 메뉴 연결 판정과 공유한다(knowledge-tab-boards.ts, ADR-0040 결정 8).
   { id: 'WIKI', label: '위키', description: '기술 사양', icon: Library, bbsId: KNOWLEDGE_SHELL_TAB_BOARDS.WIKI },
   { id: 'FAQ', label: '자주 묻는 질문', description: '빠른 답변', icon: BookOpen, bbsId: KNOWLEDGE_SHELL_TAB_BOARDS.FAQ },
@@ -231,11 +232,12 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
       searchCnd: undefined,
       searchWrd: undefined,
     }),
-    select: (res) => (res.list ?? []).map((item) => ({
-      ...toKnowledgeActivities([item])[0],
+    // 변환은 항목 하나에 활동 하나를 내므로, 그 결과를 펼쳐 고정 표지를 붙인다(종전 `[0]` 과 같은 결과).
+    select: (res) => (res.list ?? []).flatMap((item) => toKnowledgeActivities([item]).map((activity) => ({
+      ...activity,
       pinned: item.pinned === true,
       pinnedEndYmd: item.upendFixEndYmd ?? null,
-    })),
+    }))),
   });
 
   const displayItems: KnowledgeRow[] = articlesData?.list || [];

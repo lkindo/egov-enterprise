@@ -550,7 +550,8 @@ export function validatePageAuthorizationBinding(proxySource, helperSource) {
       + 'returnObject.entries(PAGE_PERMISSIONS).some(([route,required])=>{if(required.length===0)returnfalse;'
       + `constrouteSegments=route.replace(/\\/$/,${literalToken('')}).toLowerCase().split(${literalToken('/')});`
       + 'returnrouteSegments.length===segments.length&&routeSegments.every((segment,index)=>'
-      + '/^\\[[^.[\\]]+\\]$/.test(segment)?segments[index].length>0:segment===segments[index],);});}')) {
+      // [2026-11-26 PR-3b] 색인 접근 검사 뒤로 동적 마디는 `(segments[index] ?? '')` 로 읽는다 — 마디 수가 같음을 먼저 보므로 같은 판정이다.
+      + `/^\\[[^.[\\]]+\\]$/.test(segment)?(segments[index]??${literalToken('')}).length>0:segment===segments[index],);});}`)) {
     errors.push('page helper must gate every page with registered permissions, case-insensitively and never pages that only require sign-in');
   }
   return errors;

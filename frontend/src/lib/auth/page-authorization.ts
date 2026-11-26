@@ -23,8 +23,9 @@ export function registeredPageEntry(pathname: string): readonly [string, readonl
   // An authenticated detail route must never shadow a protected management page.
   const entry = exact ? [normalizedPath, exact] as const : Object.entries(PAGE_PERMISSIONS).find(([route]) => {
     const routeSegments = route.replace(/\/$/, '').split('/');
+    // 두 마디 수가 같음을 먼저 보므로 segments[index] 는 늘 있다 — `?? ''` 는 타입만 좁힌다.
     return routeSegments.length === segments.length && routeSegments.every((segment, index) =>
-      /^\[[^.[\]]+\]$/.test(segment) ? segments[index].length > 0 : segment === segments[index],
+      /^\[[^.[\]]+\]$/.test(segment) ? (segments[index] ?? '').length > 0 : segment === segments[index],
     );
   });
   return entry ?? null;
@@ -48,8 +49,9 @@ export function requiresRegisteredPermission(pathname: string): boolean {
   return Object.entries(PAGE_PERMISSIONS).some(([route, required]) => {
     if (required.length === 0) return false;
     const routeSegments = route.replace(/\/$/, '').toLowerCase().split('/');
+    // 두 마디 수가 같음을 먼저 보므로 segments[index] 는 늘 있다 — `?? ''` 는 타입만 좁힌다.
     return routeSegments.length === segments.length && routeSegments.every((segment, index) =>
-      /^\[[^.[\]]+\]$/.test(segment) ? segments[index].length > 0 : segment === segments[index],
+      /^\[[^.[\]]+\]$/.test(segment) ? (segments[index] ?? '').length > 0 : segment === segments[index],
     );
   });
 }

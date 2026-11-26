@@ -77,6 +77,11 @@ const withRecoverableDocument = <T extends { document?: unknown }>(dto: T):
   return { ...dto, document: createRecoveryDocument(), documentError: result.error };
 };
 
+/** 문서는 생성 계약에서 자유 형식 JSON 객체다 — 인터페이스 값을 같은 필드의 일반 객체로 펼쳐 넘긴다(이중 단언 없이). */
+function jsonDocument(document: CmsPageInput['document']): Record<string, unknown> {
+  return { ...document };
+}
+
 class CmsService extends ApiService {
   async getPages(params: { keyword?: string; status?: string; page?: number; size?: number },
     config?: AxiosRequestConfig): Promise<PageList> {
@@ -97,14 +102,14 @@ class CmsService extends ApiService {
 
   async createPage(input: CmsPageInput): Promise<number> {
     return this.executeGenerated(createPageOperation, {
-      body: { ...input, document: input.document as unknown as Record<string, unknown> },
+      body: { ...input, document: jsonDocument(input.document) },
     });
   }
 
   async saveDraft(contsSn: number, input: CmsPageInput & { version: number }): Promise<CmsPageDetail> {
     return withRecoverableDocument(await this.executeGenerated(saveDraftOperation, {
       path: { contsSn },
-      body: { ...input, document: input.document as unknown as Record<string, unknown> },
+      body: { ...input, document: jsonDocument(input.document) },
     }));
   }
 

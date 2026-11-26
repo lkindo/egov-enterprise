@@ -128,7 +128,8 @@ export default function SecurityHubClient() {
    */
   if (!autoSelected && groups.data) {
     setAutoSelected(true);
-    if (!selectedGroup && !creating && groups.data.length > 0) setSelectedGroup(groups.data[0].code);
+    const firstGroup = groups.data[0];
+    if (!selectedGroup && !creating && firstGroup) setSelectedGroup(firstGroup.code);
   }
 
   const refresh = async () => { await queryClient.invalidateQueries({ queryKey: ['authorization'] }); };

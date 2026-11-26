@@ -173,7 +173,7 @@ export function SmartOnboardingHub() {
             <div className="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity" style={{ backgroundImage: 'radial-gradient(circle, hsl(var(--primary)) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
             <div className="flex flex-col items-center gap-6 animate-in slide-in-from-bottom-4 duration-1000">
               <div className="p-6 bg-surface-inverse-foreground/5 rounded-lg border border-surface-inverse-border shadow-inner">
-                {steps[currentStep].icon}
+                {steps[currentStep]?.icon}
               </div>
             </div>
           </div>
@@ -201,10 +201,10 @@ export function SmartOnboardingHub() {
                 <span className="text-xs font-bold text-surface-inverse-muted tracking-[0.3em]">사용 안내</span>
               </div>
               <DialogTitle id="smart-onboarding-title" className="text-3xl font-bold tracking-tighter text-surface-inverse-foreground leading-[1.1]">
-                {steps[currentStep].title}
+                {steps[currentStep]?.title}
               </DialogTitle>
               <DialogDescription id="smart-onboarding-description" className="text-base text-surface-inverse-muted font-medium leading-relaxed">
-                {steps[currentStep].description}
+                {steps[currentStep]?.description}
               </DialogDescription>
             </div>
 

@@ -125,7 +125,8 @@ const UNMEASURED_SUMMARY = { total: '미수집', average: '미수집', peak: '�
 /** 시작·종료일을 포함한 일수. 형식이 틀리면 NaN 이다. */
 function periodDays(period: PeriodValue): number {
   const toUtc = (value: string) => {
-    const [year, month, day] = value.split('-').map(Number);
+    // 없는 조각은 NaN 으로 둔다 — 형식이 틀리면 NaN 이라는 위 약속(예전 undefined 산술과 같은 결과)을 지킨다.
+    const [year = NaN, month = NaN, day = NaN] = value.split('-').map(Number);
     return Date.UTC(year, month - 1, day);
   };
   return (toUtc(period.to) - toUtc(period.from)) / 86_400_000 + 1;

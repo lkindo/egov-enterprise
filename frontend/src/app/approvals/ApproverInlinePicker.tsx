@@ -11,9 +11,12 @@ import { approvalUserService, type ApproverProfile } from '@/services/business/u
 import { cn } from '@/lib/utils';
 import { logErrorSafely } from '@/lib/safe-error-log';
 
+/** 본인을 고를 때의 사유. 고르기 칸이 바로 쓰고, 아래 사유 표의 SELF 도 같은 값이다. */
+const SELF_REASON = '본인';
+
 /** 결재자가 될 수 없는 사유. 상신 때 서버 검사와 같은 판정이다(ApprovalLineAssistService). */
 export const INELIGIBLE_REASONS: Record<string, string> = {
-  SELF: '본인',
+  SELF: SELF_REASON,
   INACTIVE: '사용 중이 아닌 계정',
   NO_PERMISSION: '결재 권한 없음',
   NOT_FOUND: '찾을 수 없는 사용자',
@@ -125,7 +128,7 @@ export function ApproverInlinePicker({
     const id = person.esntlId;
     if (!id) return '식별자를 확인할 수 없습니다';
     if (selected) return null;
-    if (id === selfId) return INELIGIBLE_REASONS.SELF;
+    if (id === selfId) return SELF_REASON;
     const blocked = blockedReasons?.get(id);
     if (blocked) return blocked;
     if (otherStageIds.includes(id)) return '이미 다른 단계에 있습니다';

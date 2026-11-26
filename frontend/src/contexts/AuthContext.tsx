@@ -15,11 +15,17 @@ import {
   purgePersistedBoardDraftStorage,
 } from '@/lib/drafts/board-draft-storage';
 
+/** 로그인 화면이 넘기는 자격 증명. 아이디·비밀번호 둘 다 있어야 한다(호출부는 모두 이 모양으로 넘긴다). */
+interface LoginCredentials {
+  id: string;
+  password: string;
+}
+
 interface AuthContextType {
   user: UserInfo | null;
   loading: boolean;
   mfaPending: boolean;
-  login: (credentials: Record<string, string>) => Promise<AuthLoginData>;
+  login: (credentials: LoginCredentials) => Promise<AuthLoginData>;
   logout: () => Promise<void>;
   /** {@code afterAuthorizationChange} 는 서버가 권한 변경(버전 충돌 등)을 알린 뒤의 확인이다 — 답을 받지 못하면 이전 권한을 남기지 않는다. */
   checkAuth: (options?: AuthCheckOptions) => Promise<void>;
@@ -178,7 +184,7 @@ export function AuthProvider({
     setLoading(false);
   }, [commitUser, invalidateAuthCheck]);
 
-  const login = useCallback(async (credentials: Record<string, string>) => {
+  const login = useCallback(async (credentials: LoginCredentials) => {
     mfaPending.current = false;
     setMfaPending(false);
     advanceAuthorizationRequestEpoch();

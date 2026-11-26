@@ -22,7 +22,7 @@ export function publishBlockers(document: CmsDocument): CmsDocumentIssue[] {
   const normalized = normalizeCmsDocument(document, 'draft');
   if (!normalized.ok) return [{ ...normalized.location, message: normalized.error }];
   // 문서 순서(영역·칸)로 늘어놓는다 — 목록을 위에서부터 고쳐 내려가게. 위치가 없는 문서 전체의 문제는 맨 뒤다.
-  const order = (issue: CmsDocumentIssue) => [issue.section ?? Number.MAX_SAFE_INTEGER, issue.cell ?? -1];
+  const order = (issue: CmsDocumentIssue): [section: number, cell: number] => [issue.section ?? Number.MAX_SAFE_INTEGER, issue.cell ?? -1];
   return [...cmsPublishIssues(normalized.document), ...templateInstructionIssues(normalized.document)]
     .map((issue, position) => ({ issue, position }))
     .sort((left, right) => {

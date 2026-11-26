@@ -78,7 +78,8 @@ export const toQueryDate = (date: Date) => {
  */
 export const fromQueryDate = (raw: string | null | undefined): Date | undefined => {
   if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return undefined;
-  const [year, month, day] = raw.split('-').map(Number);
+  // 위 정규식으로 세 조각이 늘 있다. 없는 조각은 NaN 으로 두어 아래 유효성 검사가 거른다(예전 undefined 산술과 같은 결과).
+  const [year = NaN, month = NaN, day = NaN] = raw.split('-').map(Number);
   // 로컬 자정으로 만든다 — toQueryDate 가 로컬 연·월·일을 쓰므로 대칭을 맞춘다.
   const parsed = new Date(year, month - 1, day);
   return Number.isFinite(parsed.getTime()) && toQueryDate(parsed) === raw ? parsed : undefined;

@@ -45,7 +45,8 @@ export interface MenuScreenResolution {
 
 /** 쿼리·해시와 끝 슬래시를 뗀 경로부. 경로부가 비면 null(라우트 없는 메뉴는 '' 로 저장된다). */
 function routePathOf(route: string): string | null {
-  const pathOnly = route.split(/[?#]/, 1)[0];
+  // split 은 늘 한 조각 이상을 준다. 없으면 빈 경로부로 보아 아래에서 null 이 된다.
+  const [pathOnly = ''] = route.split(/[?#]/, 1);
   if (pathOnly.trim() === '') return null;
   return pathOnly.replace(/\/+$/, '') || '/';
 }

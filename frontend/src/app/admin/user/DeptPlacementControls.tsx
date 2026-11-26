@@ -36,8 +36,9 @@ export function DeptPlacementControls({
   const blocked = new Set<string>();
   if (start >= 0) {
     blocked.add(ognzId);
-    for (let i = start + 1; i < depts.length && depts[i].depth > dept.depth; i += 1) {
-      if (depts[i].ognzId) blocked.add(depts[i].ognzId as string);
+    for (const below of depts.slice(start + 1)) {
+      if (below.depth <= dept.depth) break;
+      if (below.ognzId) blocked.add(below.ognzId);
     }
   }
   const nameOf = (id: string | null) => (id ? depts.find((d) => d.ognzId === id)?.ognzNm || id : '최상위');

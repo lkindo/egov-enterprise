@@ -297,6 +297,12 @@ const eslintConfig = [
           "selector": "JSXAttribute[name.name='role'] Literal[value=/^tab(list|panel)?$/]",
           "message": "손으로 쓴 탭 역할 금지 — @/app/components/ui/standard-tabs 의 TabList·Tab·TabPanel 을 쓰세요(방향키·roving tabindex·aria-controls 를 갖춘 탭 원천)."
         },
+        // [2026-11-26 품질 평가 PR-3b] 이중 단언(`x as unknown as T`)은 두 타입의 차이(선택·필수, 없는 필드)를 통째로 숨긴다 — 제품 코드의 13건 중
+        //   12건을 실제 값 확인·변환 함수·타입 정렬로 걷었다. 표현할 수 없는 라이브러리 경계(폼 resolver 1건)만 그 줄에 사유를 단 예외 주석을 둔다.
+        {
+          "selector": "TSAsExpression[expression.type='TSAsExpression'][expression.typeAnnotation.type='TSUnknownKeyword']",
+          "message": "이중 단언(as unknown as) 금지 — 타입 가드로 실제 값을 확인하거나, 변환 함수로 바꾸거나, 두 타입을 맞추세요. 표현할 수 없는 라이브러리 경계만 사유를 단 eslint-disable-next-line 으로 둡니다."
+        },
         // [2026-11-15] 화면 대기 문구. 기다리는 동안은 '불러오는 중…' 이고, 저장·처리 중은 무엇을 하는지(대상) 붙인다
         //   — '부서 등록 중…', '추천 처리 중…'. '로딩 중'·대상 없는 '처리 중…' 은 화면 용어 검토(GAP-COPY-001)에서 남은 편차였고
         //   5곳을 옮긴 뒤 0건에서 동결한다. 주석·시험·e2e 는 이 블록 밖이다.

@@ -33,6 +33,8 @@ export const listToTree = (flatMenus: MenuInfo[]): MenuInfo[] => {
   flatMenus.forEach((m) => {
     if (!m || !m.menuNo) return;
     const item = map[m.menuNo];
+    // 위 반복이 같은 조건으로 넣었으므로 늘 있다 — 검사는 타입만 좁힌다.
+    if (!item) return;
     const parentId = m.upMenuSn ?? m.upperMenuId ?? 0;
 
     if (parentId === 0 || !map[parentId]) {

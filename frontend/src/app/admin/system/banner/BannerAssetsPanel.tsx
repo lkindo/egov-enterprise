@@ -218,7 +218,7 @@ export function useBannerAssetsPanel({
         //   같은 이유로 `if (uploadedFileSn)` 가드도 걷었다 — atchFileSn 은 IDENTITY BIGINT PK 이고
         //   서비스가 non-null 을 단언하므로(FileService#uploadFiles) falsy 값이 만들어질 경로가 없다.
         data.atchFileSn = await fileAdminService.uploadFiles(formFiles);
-        data.bnrImgNm = formFiles[0].name;
+        data.bnrImgNm = formFiles[0]?.name;
       } else if (editingItem) {
         data.atchFileSn = editingItem.atchFileSn;
         data.bnrImgNm = editingItem.bnrImgNm;

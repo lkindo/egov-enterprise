@@ -156,7 +156,8 @@ export function ApprovalQueueList({
                     </span>
                   </span>
                   {item.stages?.length ? (() => {
-                    const current = item.stages.find(stage => stage.status === 'ACTIVE' || stage.status === 'REJECTED') ?? item.stages[item.stages.length - 1];
+                    const current = item.stages.find(stage => stage.status === 'ACTIVE' || stage.status === 'REJECTED') ?? item.stages.at(-1);
+                    if (!current) return null;
                     const completed = current.approvers?.filter(person => person.status === 'APPROVED').length ?? 0;
                     return <span className="mt-1 block text-xs text-muted-foreground">{current.order}/{item.stages.length}단계 · 전원 {current.kind === 'AGREEMENT' ? '동의' : '승인'} {completed}/{current.approvers?.length ?? 0}</span>;
                   })() : null}

@@ -123,7 +123,8 @@ export function BoardPostBatchDialog({ bbsId, mode, posts, defaultDays, onClose,
       }
       const fieldErrors = extractFieldErrors(error);
       const message = extractErrorMessage(error, copy.failed);
-      if (fieldErrors?.[copy.field]) validation.setFormErrors({ [copy.field]: fieldErrors[copy.field] });
+      const fieldError = fieldErrors?.[copy.field];
+      if (fieldError) validation.setFormErrors({ [copy.field]: fieldError });
       // 오늘보다 이른 고정 종료일은 필드 없이 사유만 온다 — 그 칸에 붙인다. 상한·답글 같은 전체 거부는 알림으로 보인다.
       else if (mode === 'PIN' && message.includes('고정 종료일')) validation.setFormErrors({ upendFixEndYmd: message });
       else setServerError(message);

@@ -122,7 +122,7 @@ test('프런트 dev·build·start 는 어느 경로로 띄워도 래퍼를 지�
   assert.equal(frontendPkg.scripts.build, 'node scripts/next-cli.mjs build');
   assert.equal(frontendPkg.scripts.start, 'node scripts/next-cli.mjs start');
   assert.equal(frontendPkg.scripts['start:3001'], 'node scripts/next-cli.mjs start -p 3001');
-  assert.equal(frontendPkg.scripts['type-check'], 'node scripts/next-cli.mjs typegen && tsc --noEmit');
+  assert.equal(frontendPkg.scripts['type-check'], 'node scripts/next-cli.mjs typegen && tsc --noEmit && tsc --noEmit -p tsconfig.index-access.json');
   assert.ok(!Object.values(frontendPkg.scripts).some((command) => /(?:^|[\s&|;])next\s+[a-z]/u.test(command)),
     'package.json 스크립트가 next CLI 를 래퍼 없이 부르지 않는다.');
   const rootPkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));

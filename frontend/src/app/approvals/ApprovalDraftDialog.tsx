@@ -221,7 +221,7 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
   const contentValidation = useManualFormValidation(contentSchema, { form: () => formRef.current, labels: LABELS });
   const draftValidation = useManualFormValidation(draftSchema, {
     form: () => formRef.current, labels: { ...LABELS, ...stageLabels },
-    focusTargets: { ...stageFocus, stages: () => pickerButtons.current.get(stages[0]?.key) ?? null, references: () => refereePickerButton.current },
+    focusTargets: { ...stageFocus, stages: () => { const first = stages[0]; return first ? pickerButtons.current.get(first.key) ?? null : null; }, references: () => refereePickerButton.current },
   });
   const validation = step === 0 ? contentValidation : draftValidation;
   const close = useDirtyCloseGuard(edited, onClose);
@@ -256,12 +256,18 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
   };
   const moveStage = (index: number, direction: -1 | 1) => {
     const destination = index + direction;
-    if (destination < 0 || destination >= stages.length || submitting) return;
-    const key = stages[index].key;
+    const moving = stages[index];
+    if (destination < 0 || destination >= stages.length || !moving || submitting) return;
+    const key = moving.key;
     touch(); draftValidation.setFormErrors({}, false);
     setStages(current => {
       const next = [...current];
-      [next[index], next[destination]] = [next[destination], next[index]];
+      const from = next[index];
+      const to = next[destination];
+      // 두 자리 중 하나라도 비면 바꾸지 않는다 — 빈 자리를 결재선에 넣지 않는다.
+      if (!from || !to) return current;
+      next[index] = to;
+      next[destination] = from;
       return next;
     });
     setNotice(`${index + 1}단계를 ${destination + 1}단계로 이동했습니다.`);
@@ -269,9 +275,12 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
   };
   const removeStage = (index: number) => {
     if (stages.length <= 1 || submitting) return;
-    const nextFocusKey = stages[index === stages.length - 1 ? index - 1 : index + 1].key;
+    const removed = stages[index];
+    const nextFocus = stages[index === stages.length - 1 ? index - 1 : index + 1];
+    if (!removed || !nextFocus) return;
+    const nextFocusKey = nextFocus.key;
     touch(); draftValidation.setFormErrors({}, false);
-    setStages(current => current.filter(stage => stage.key !== stages[index].key));
+    setStages(current => current.filter(stage => stage.key !== removed.key));
     setNotice(`${index + 1}단계를 삭제했습니다. 남은 결재 순서를 확인해 주세요.`);
     focusAfterRender(() => stageHeadings.current.get(nextFocusKey));
   };

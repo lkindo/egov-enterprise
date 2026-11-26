@@ -56,11 +56,13 @@ export function handleTabListKeyDown(
   if (tabs.length === 0) return false;
 
   const index = tabs.indexOf(current);
-  let target: HTMLElement;
+  let target: HTMLElement | undefined;
   if (event.key === 'Home') target = tabs[0];
   else if (event.key === 'End') target = tabs[tabs.length - 1];
   else if (index < 0) target = event.key === nextKey ? tabs[0] : tabs[tabs.length - 1];
   else target = tabs[(index + (event.key === nextKey ? 1 : -1) + tabs.length) % tabs.length];
+  // 위에서 탭이 하나 이상임을 확인해 모든 색인이 범위 안이다 — 그래도 없으면 처리하지 않은 키로 돌려준다.
+  if (!target) return false;
 
   event.preventDefault();
   target.focus();

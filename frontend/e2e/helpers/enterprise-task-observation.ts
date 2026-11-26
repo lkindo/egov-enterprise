@@ -36,7 +36,10 @@ export function summarizeKeyboardCpuProfile(profile: { nodes: { id: number; call
     return { key, frame: retained.get(key)! };
   };
   for (let index = 0; index < profile.samples.length; index++) {
-    const elapsed = profile.timeDeltas[index] / 1000; const id = profile.samples[index];
+    const delta = profile.timeDeltas[index]; const id = profile.samples[index];
+    // 두 배열 길이는 위에서 같다고 확인했다 — undefined 는 예전처럼(NaN·없는 노드) 같은 오류로 막는다.
+    if (delta === undefined || id === undefined) throw new Error('Invalid diagnostic CPU samples.');
+    const elapsed = delta / 1000;
     if (!Number.isFinite(elapsed) || elapsed < 0 || !frames.has(id)) throw new Error('Invalid diagnostic CPU samples.');
     sampledTimeMs += elapsed; retainedFrame(id).frame.selfMs += elapsed;
     const visited = new Set<number>(); const countedLocations = new Set<string>(); let ancestor: number | undefined = id;
@@ -75,7 +78,9 @@ export function updateClsSession(state: ClsSession | null, shift: { time: number
 
 export function summarizeNumbers(samples: (number | null)[]) {
   const values = samples.filter((value): value is number => value !== null && Number.isFinite(value)).sort((a, b) => a - b);
-  const median = (rows: number[]) => rows.length % 2 ? rows[Math.floor(rows.length / 2)] : (rows[rows.length / 2 - 1] + rows[rows.length / 2]) / 2;
+  // 빈 배열로는 부르지 않는다. 없는 칸은 예전 산술 결과(undefined 연산 → NaN)와 같게 NaN 으로 둔다.
+  const median = (rows: number[]) => rows.length % 2 ? rows[Math.floor(rows.length / 2)] ?? NaN
+    : ((rows[rows.length / 2 - 1] ?? NaN) + (rows[rows.length / 2] ?? NaN)) / 2;
   if (!values.length) return { sampleCount: samples.length, observedCount: 0, median: null, min: null, max: null, mad: null };
   const center = median(values);
   return { sampleCount: samples.length, observedCount: values.length, median: center, min: values[0], max: values.at(-1)!,

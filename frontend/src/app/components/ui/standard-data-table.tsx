@@ -503,6 +503,9 @@ export function StandardDataTable<T extends object>({
     for (let i = start; i <= end; i += 1) pages.push(i);
     return pages;
   }, [currentPage, totalPages]);
+  // 번호 창의 처음·끝. 창이 비면(현재 쪽 없음) 1·totalPages 로 보아 앞뒤 생략부호를 그리지 않는다 — 종전의 undefined 비교도 false 였다.
+  const firstWindowPage = pageNumbers[0] ?? 1;
+  const lastWindowPage = pageNumbers.at(-1) ?? totalPages;
 
   // 현재 페이지가 보여주는 레코드 구간 (totalCount + pageSize 를 모두 준 경우에만)
   const totalCount = pagination?.totalCount;
@@ -755,7 +758,7 @@ export function StandardDataTable<T extends object>({
                   const canSort = serverKey !== undefined || (tanColumn?.getCanSort() ?? false);
                   const sortDirection = serverKey !== undefined
                     ? (serverSort?.sortBy === serverKey ? (serverSort.sortDir ?? 'asc') : false)
-                    : canSort ? tanColumn.getIsSorted() : false;
+                    : canSort && tanColumn ? tanColumn.getIsSorted() : false;
                   return (
                     <th
                       key={`header-${idx}`}
@@ -782,7 +785,7 @@ export function StandardDataTable<T extends object>({
                             : (event: React.MouseEvent<HTMLButtonElement>) => {
                                 // 현재 페이지 정렬로 바꾸면 서버 정렬을 푼다 — 두 정렬 표시가 함께 남지 않게(좁은 화면 선택기와 같다).
                                 if (serverSort?.sortBy) serverSort.onSortChange({});
-                                tanColumn.getToggleSortingHandler()?.(event);
+                                tanColumn?.getToggleSortingHandler()?.(event);
                               }}
                           // 서버 페이지네이션은 그대로다 — 정렬 범위를 정직하게 문서화한다(쪽이 하나면 말하지 않는다).
                           // 서버 정렬 열은 목록 전체를 정렬하므로 현재 페이지 고지를 하지 않는다.
@@ -959,7 +962,7 @@ export function StandardDataTable<T extends object>({
                   </Button>
                 </li>
 
-                {pageNumbers[0] > 1 && (
+                {firstWindowPage > 1 && (
                   <>
                     <li>
                       <Button
@@ -972,7 +975,7 @@ export function StandardDataTable<T extends object>({
                         1
                       </Button>
                     </li>
-                    {pageNumbers[0] > 2 && (
+                    {firstWindowPage > 2 && (
                       <li className="px-1 text-muted-foreground" aria-hidden="true">…</li>
                     )}
                   </>
@@ -996,9 +999,9 @@ export function StandardDataTable<T extends object>({
                   </li>
                 ))}
 
-                {pageNumbers[pageNumbers.length - 1] < totalPages && (
+                {lastWindowPage < totalPages && (
                   <>
-                    {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && (
+                    {lastWindowPage < totalPages - 1 && (
                       <li className="px-1 text-muted-foreground" aria-hidden="true">…</li>
                     )}
                     <li>

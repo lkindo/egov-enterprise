@@ -453,6 +453,9 @@ function handleToolbarNavigation(event: React.KeyboardEvent<HTMLDivElement>) {
     case 'End': next = buttons.length - 1; break;
     default: return;
   }
+  // 현재 단추가 목록에 있으므로 목록은 비지 않았고 next 는 [0, 길이 - 1] 안이다 — 검사는 타입만 좁힌다.
+  const nextButton = buttons[next];
+  if (!nextButton) return;
   event.preventDefault();
-  buttons[next].focus();
+  nextButton.focus();
 }

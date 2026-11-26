@@ -20,7 +20,8 @@ import { failureMessage } from '@/lib/safe-error-log';
 import { z } from 'zod';
 import { operationsRecordAdminService, type AuditJournalEntry } from '@/services/foundation/system/OperationsRecordAdminService';
 
-const PAGE_SIZE_OPTIONS = [20, 50, 100];
+// 첫 선택지가 기본 쪽 크기다 — 비어 있지 않은 목록임을 타입으로 둔다.
+const PAGE_SIZE_OPTIONS: [number, ...number[]] = [20, 50, 100];
 
 /** 내보내기 사유 길이 — 서버 감사 경계(SensitiveAuditInterceptor)와 같다. 서버가 최종 판정자다. */
 export const EXPORT_REASON_MIN = 2;

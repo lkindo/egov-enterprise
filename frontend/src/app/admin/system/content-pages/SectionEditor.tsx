@@ -556,7 +556,12 @@ function FilesCellEditor({ cell, label, idPrefix, readOnly, canUpload, issueId, 
   const setItems = (items: CmsFileItem[]) => onChange({ kind: 'files', items });
   const move = (index: number, direction: -1 | 1) => {
     const items = [...cell.items];
-    [items[index], items[index + direction]] = [items[index + direction], items[index]];
+    const current = items[index];
+    const neighbor = items[index + direction];
+    // 목록 끝에서 바깥으로는 옮기지 않는다(양끝 단추는 이미 막혀 있다) — 종전에는 빈 항목이 끼어들었다.
+    if (!current || !neighbor) return;
+    items[index] = neighbor;
+    items[index + direction] = current;
     setItems(items);
   };
   const fail = (message: string) => {

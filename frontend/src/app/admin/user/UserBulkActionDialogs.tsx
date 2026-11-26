@@ -52,7 +52,7 @@ export function BulkUserStatusDialog({
                 )}
               >
                 <span className={cn('size-2 shrink-0 rounded-full', dot)} aria-hidden="true" />
-                <span className="text-[length:var(--font-size-body)] font-medium text-foreground">{USER_STATUS_LABELS[code].label}</span>
+                <span className="text-[length:var(--font-size-body)] font-medium text-foreground">{USER_STATUS_LABELS[code]?.label ?? '-'}</span>
               </button>
             ))}
           </div>

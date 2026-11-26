@@ -1,18 +1,31 @@
 import { ApiService } from '@/services/core/ApiService';
-import { requirePageResponse } from '@/services/core/page-response';
+import { requirePageItems, requirePageResponse } from '@/services/core/page-response';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 import { deleteComment_1Operation, getComments_1Operation } from '@/types/generated-operations';
+import type { components } from '@/types/generated-api';
 
+/**
+ * 관리자 댓글 행. 댓글 번호는 삭제에 쓰여 필수다. 글 번호·게시판 ID 는 이관된 옛 댓글에서 비어 올 수 있고(글 연결 없음 — 화면은 글
+ * 링크 대신 '—' 를 그린다), 표시 값도 서버 계약대로 비어 올 수 있다(탈퇴 작성자 등).
+ */
 export interface CommentDetail {
   ansSn: number;
-  pstSn: number;
-  bbsId: string;
+  pstSn?: number;
+  bbsId?: string;
   editable?: boolean;
   deletable?: boolean;
-  wrterNm: string;
-  ansCn: string;
-  crtDt: string;
+  wrterNm?: string | null;
+  ansCn?: string;
+  crtDt?: string | null;
+}
+
+/**
+ * 삭제에 쓰는 댓글 번호가 실제로 있는 댓글인가. 글 연결(글 번호·게시판 ID)이 없는 옛 댓글 한 행 때문에 정상 행까지 조회하지 못하게
+ * 하지 않는다(Codex 검토) — 그 행은 글 링크 없이 그린다.
+ */
+function isCommentDetail(dto: components['schemas']['CommentDto']): dto is CommentDetail {
+  return typeof dto.ansSn === 'number';
 }
 
 function withoutConfigParams(config?: AxiosRequestConfig): AxiosRequestConfig | undefined {
@@ -45,7 +58,8 @@ class CommentAdminService extends ApiService {
       },
       config: withoutConfigParams(config),
     });
-    return requirePageResponse(response as unknown as PageResponse<CommentDetail>, '댓글');
+    // 검증한 같은 페이지를 돌려준다(재포장하지 않는다) — 식별자가 없는 행이 있으면 계약 위반으로 던진다.
+    return requirePageItems(requirePageResponse<components['schemas']['CommentDto']>(response, '댓글'), isCommentDetail, '댓글');
   }
 
   /** 댓글 삭제 */

@@ -363,7 +363,10 @@ export function AuthorizationGroupEditor({ snapshot, catalog, refreshing, onRefr
             : navigationGaps.length > 0 ? '상위 메뉴가 빠진 메뉴가 있어 저장할 수 없습니다.'
               : null;
   const changeLabel = (key: string) => {
-    const { type, code } = grantsOfKeys([key])[0];
+    const [grant] = grantsOfKeys([key]);
+    // 키 하나를 넣었으니 늘 하나가 나온다 — 없으면 키를 그대로 보인다(이름을 모를 때 코드를 보이는 아래 대체와 같은 뜻).
+    if (!grant) return key;
+    const { type, code } = grant;
     return type === 'NAVIGATION' ? `메뉴 표시 · ${menuNames.get(code) ?? code}` : `${operationNames.get(code) ?? code} (${code})`;
   };
   const description = (snapshot.description ?? '').trim();

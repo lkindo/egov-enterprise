@@ -11,8 +11,27 @@ import {
   removeBookmarkOperation,
 } from '@/types/generated-operations';
 import type { GeneratedOperationRequest } from '@/types/generated-operations';
+import type { components } from '@/types/generated-api';
 
 export type MenuBookmarkCleanupRequest = GeneratedOperationRequest<'cleanupUnavailableBookmarks'>;
+
+type MenuDto = components['schemas']['MenuDto'];
+
+/**
+ * 생성 메뉴 응답이 화면 메뉴 계약을 지키는가(하위까지). 메뉴 번호는 메뉴 행의 기본키라 늘 오고 화면이 열쇠로 쓴다 — 없으면 계약
+ * 위반이다. 사용 여부는 Y·N 이다. 상위 번호는 최상위 메뉴에서 비어 오며 화면 타입도 선택이다.
+ */
+function isMenuNode(node: MenuDto): node is MenuInfo {
+  return typeof node.menuNo === 'number'
+    && (node.useYn === undefined || node.useYn === 'Y' || node.useYn === 'N')
+    && (node.children ?? []).every(isMenuNode);
+}
+
+/** 같은 목록을 화면 메뉴 타입으로 좁힌다(목록 어댑터 — 재포장하지 않는다). 이중 단언 대신 실제 값을 확인한다. */
+function requireMenuTree(list: MenuDto[]): MenuInfo[] {
+  if (!list.every(isMenuNode)) throw new Error('메뉴 응답이 화면 메뉴 계약과 일치하지 않습니다.');
+  return list;
+}
 
 class MenuService extends ApiService {
   /**
@@ -20,7 +39,7 @@ class MenuService extends ApiService {
    */
   async getHeadMenus(config?: AxiosRequestConfig): Promise<MenuInfo[]> {
     const response = await this.executeGenerated(getHeadMenuOperation, { config });
-    return response.list as unknown as MenuInfo[];
+    return requireMenuTree(response.list);
   }
 
   /**
@@ -31,7 +50,7 @@ class MenuService extends ApiService {
       query: { menuNo },
       config,
     });
-    return response.list as unknown as MenuInfo[];
+    return requireMenuTree(response.list);
   }
 
   /**

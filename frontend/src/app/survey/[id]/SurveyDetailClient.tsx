@@ -154,11 +154,16 @@ export default function SurveyDetailClient({
     try {
       const payload: SurveyResponseSubmit = {
         answers: [
-          ...answerableQuestions.filter(isFreeText).map((question) => ({
-            srvyQstnSn: question.srvyQstnSn,
-            srvyArtclSn: (question.items ?? [])[0].srvyArtclSn,
-            rspdntAnsCn: (writtenAnswer[question.srvyQstnSn] ?? '').trim(),
-          })),
+          ...answerableQuestions.filter(isFreeText).flatMap((question) => {
+            // answerableQuestions 는 항목이 하나 이상인 문항만 남기므로 첫 항목은 늘 있다 — 없으면 보낼 항목 번호가 없어 뺀다.
+            const [firstItem] = question.items ?? [];
+            if (!firstItem) return [];
+            return [{
+              srvyQstnSn: question.srvyQstnSn,
+              srvyArtclSn: firstItem.srvyArtclSn,
+              rspdntAnsCn: (writtenAnswer[question.srvyQstnSn] ?? '').trim(),
+            }];
+          }),
           ...Object.entries(selected).flatMap(([questionSn, articleSns]) => {
             const srvyQstnSn = Number(questionSn);
             const question = questionList.find((q) => q.srvyQstnSn === srvyQstnSn);

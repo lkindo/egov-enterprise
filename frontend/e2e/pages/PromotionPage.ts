@@ -43,14 +43,14 @@ export class PromotionPage {
         //     5분 타임아웃으로 죽었다(실측 call log).
         // 현재 값이 이미 게시면 건드리지 않고, 다를 때만 키보드로 선택한다(오버레이 히트테스트 회피).
         const noticeStatusTrigger = this.page.locator('label').filter({ hasText: /게시 설정/ }).locator('..').locator('button[role="combobox"]');
-        if (await noticeStatusTrigger.isVisible()) {
-            const current = (await noticeStatusTrigger.textContent()) ?? '';
-            if (!/게시/.test(current)) {
-                await noticeStatusTrigger.click();
-                await this.page.getByRole('option', { name: '게시', exact: true }).press('Enter');
-            } else {
-                console.log('>>> [Promotion] 게시 설정이 이미 게시 — 콤보박스를 열지 않는다.');
-            }
+        // [2026-11-26 PR-3b] 게시 설정은 이 폼의 필수 칸이다 — 없으면(이름·구조가 바뀌면) 조용히 지나가지 않고 여기서 실패한다.
+        await expect(noticeStatusTrigger).toBeVisible();
+        const current = (await noticeStatusTrigger.textContent()) ?? '';
+        if (!/게시/.test(current)) {
+            await noticeStatusTrigger.click();
+            await this.page.getByRole('option', { name: '게시', exact: true }).press('Enter');
+        } else {
+            console.log('>>> [Promotion] 게시 설정이 이미 게시 — 콤보박스를 열지 않는다.');
         }
 
         // Mandatory Coordinates and Size

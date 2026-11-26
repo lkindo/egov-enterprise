@@ -76,7 +76,7 @@ export interface ScreenPermissionTableProps {
 }
 
 const COLUMN_INDEX: Readonly<Record<ScreenColumnKey, number>> = { navigation: 0, entry: 1, create: 2, update: 3, delete: 4, other: 5 };
-const columnLabel = (column: ScreenColumnKey) => SCREEN_PERMISSION_COLUMNS[COLUMN_INDEX[column]].label;
+const columnLabel = (column: ScreenColumnKey) => SCREEN_PERMISSION_COLUMNS[COLUMN_INDEX[column]]?.label ?? '';
 /*
  * [2026-10-05 한 화면 압축] 칸 패딩은 업무 표 행 토큰(--work-cell-px/py, 카탈로그 §4 '업무 표 행 토큰')이다. 종전 표 셀 밀도 토큰
  * (--cell-px/py)은 기본 comfortable 에서 24·20px 라 한 줄이 약 77px 였다. 업무 표 토큰은 배포 전역 data-density 를 따라가는
@@ -103,7 +103,8 @@ function entrySentence(entry: ScreenEntry, label: (code: string) => string): str
   if (entry.state === 'unregistered') return '화면 진입: 등록되지 않은 화면';
   if (entry.state === 'unlisted') return '화면 진입: 화면 목록에 없는 경로';
   if (entry.state === 'unknown') return '화면 진입: 기능 목록에 없는 권한';
-  if (entry.codes.length === 1) return `화면 진입: ${label(entry.codes[0])}`;
+  const [onlyCode] = entry.codes;
+  if (entry.codes.length === 1 && onlyCode !== undefined) return `화면 진입: ${label(onlyCode)}`;
   return entry.mode === 'ALL'
     ? `화면 진입(모두 필요): ${entry.codes.map(label).join(' + ')}`
     : `화면 진입(하나만 있으면 됨): ${entry.codes.map(label).join(' 또는 ')}`;
@@ -367,13 +368,15 @@ export function ScreenPermissionTable({
       if (entry.state === 'unregistered') return <span className="whitespace-nowrap text-xs text-muted-foreground">등록되지 않은 화면</span>;
       if (entry.state === 'unlisted') return <span className="whitespace-nowrap text-xs text-muted-foreground">화면 목록에 없는 경로</span>;
       if (entry.state === 'unknown') return <span className="whitespace-nowrap text-xs text-muted-foreground">기능 목록에 없는 권한</span>;
-      if (entry.codes.length === 1) return singleCode(row, 'entry', entry.codes[0]);
+      const [onlyEntryCode] = entry.codes;
+      if (entry.codes.length === 1 && onlyEntryCode !== undefined) return singleCode(row, 'entry', onlyEntryCode);
       if (entry.mode === 'ALL') return allEntry(row, entry.codes);
       return multipleCodes(row, 'entry', entry.codes, '하나라도 있으면 이 화면에 들어갈 수 있습니다.');
     }
     const codes = cellCodes(row, column);
     if (codes.length === 0) return null;
-    if (codes.length === 1) return singleCode(row, column, codes[0]);
+    const [onlyCode] = codes;
+    if (codes.length === 1 && onlyCode !== undefined) return singleCode(row, column, onlyCode);
     return multipleCodes(row, column, codes, '권한마다 따로 켜고 끕니다. 같은 권한은 다른 화면에서도 켜진 상태로 보입니다.');
   };
 

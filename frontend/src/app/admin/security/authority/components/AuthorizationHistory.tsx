@@ -92,7 +92,7 @@ export function AuthorizationHistory({ initialUserId = '', fill = false }: { ini
         event.preventDefault();
         if (historyInput.fromDate && historyInput.toDate && historyInput.fromDate > historyInput.toDate) { setHistoryFilterError('시작일은 종료일보다 늦을 수 없습니다.'); return; }
         setHistoryFilterError(''); setHistoryPage(1);
-        setHistoryFilters(Object.fromEntries(Object.entries(historyInput).map(([key, value]) => [key, value.trim()]).filter(([, value]) => value.length > 0)));
+        setHistoryFilters(Object.fromEntries(Object.entries(historyInput).map(([key, value]): [string, string] => [key, value.trim()]).filter(([, value]) => value.length > 0)));
       }}>
         <label className="space-y-1 text-sm">그룹 코드<Input maxLength={20} value={historyInput.groupCode} onChange={(event) => setHistoryInput((current) => ({ ...current, groupCode: event.target.value }))} /></label>
         <label className="space-y-1 text-sm">대상 사용자 로그인 ID<Input maxLength={20} value={historyInput.userId} onChange={(event) => setHistoryInput((current) => ({ ...current, userId: event.target.value }))} /></label>

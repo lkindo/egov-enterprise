@@ -441,6 +441,8 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
     const moveSection = (index: number, direction: -1 | 1) => {
       const next = [...sections];
       const [moved] = next.splice(index, 1);
+      // 없는 위치면 아무것도 바꾸지 않는다 — 빈 칸을 문서에 끼워 넣지 않는다.
+      if (moved === undefined) return;
       next.splice(index + direction, 0, moved);
       setDocument({ ...draft.document, sections: next });
       const position = index + direction;
@@ -449,6 +451,7 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
     };
     const removeSection = async (index: number) => {
       const target = sections[index];
+      if (target === undefined) return;
       const ok = await confirm({
         title: '영역 삭제',
         message: `${target.label || `${index + 1}번 영역`}과(와) 그 안의 내용 ${target.cells.length}칸을 초안에서 지웁니다. 저장하기 전에는 되돌릴 수 있습니다(변경 버리기).`,
@@ -488,6 +491,7 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
     // 복제는 첨부를 뗀다 — 한 첨부는 한 곳에만 쓴다(같은 파일을 두 칸에 두면 저장이 거부된다). 새 식별자로 만들어 원본과 섞이지 않게 한다.
     const duplicateSection = (index: number) => {
       const source = sections[index];
+      if (source === undefined) return;
       const [stripped] = withoutAttachments({ schemaVersion: 1, sections: [source] }).sections;
       const copy: CmsSection = {
         ...(JSON.parse(JSON.stringify(stripped)) as CmsSection),

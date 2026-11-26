@@ -59,3 +59,20 @@ export function copyPageResponse<T, R>(
     totalPage: page.totalPage,
   };
 }
+
+/**
+ * 검증한 페이지의 항목을 화면 타입으로 좁힌다 — 항목마다 가드(식별자 등 화면이 기대는 값의 실제 확인)를 지나야 하고, 하나라도
+ * 어기면 `<label> 페이지 응답이 필수 계약과 일치하지 않습니다.` 를 던진다. **같은 객체**를 돌려준다(재포장하지 않는다) — 이중 단언
+ * 대신 실제 값을 확인한 뒤 좁히는 자리다(2026-11-26 품질 평가 PR-3b).
+ */
+export function requirePageItems<T, U extends T>(
+  page: PageResponse<T>,
+  guard: (item: T) => item is U,
+  label: string,
+): PageResponse<U> {
+  const everyItem = (candidate: PageResponse<T>): candidate is PageResponse<U> => candidate.list.every(guard);
+  if (!everyItem(page)) {
+    throw new Error(`${label} 페이지 응답이 필수 계약과 일치하지 않습니다.`);
+  }
+  return page;
+}

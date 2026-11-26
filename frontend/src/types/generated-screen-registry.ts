@@ -2046,7 +2046,7 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
 
 const isProjected = (route: string): boolean => Object.hasOwn(PAGE_PERMISSIONS, route);
 /** 경로부 — 쿼리·해시와 끝 슬래시를 뗀다. */
-const pathOf = (route: string): string => route.split(/[?#]/)[0].replace(/\/+$/, '') || '/';
+const pathOf = (route: string): string => (route.split(/[?#]/)[0] ?? '').replace(/\/+$/, '') || '/';
 /**
  * 별칭의 투영 판정. 화면 파일이 넘기는 별칭은 그 파일이 투영본에 있을 때 남는다. 앱 설정(next.config)이 넘기는 별칭은
  * 투영본에서도 앱 설정이 그대로 넘기므로, 화면 파일이 없거나 빠졌어도 목적지 화면이 투영본에 있으면 남는다.
@@ -2074,7 +2074,7 @@ const DYNAMIC_SEGMENT = /^\[[^.[\]]+\]$/;
  * 이긴다). 고른 경로가 별칭이면 화면이 아니다.
  */
 export function findScreen(route: string): ScreenRegistryEntry | null {
-  const pathOnly = route.split(/[?#]/)[0];
+  const pathOnly = route.split(/[?#]/)[0] ?? '';
   // 라우트 없는 메뉴는 '' 로 저장된다 — 빈 경로를 업무 홈('/')으로 풀지 않는다.
   if (pathOnly.trim() === '') return null;
   const normalized = pathOnly.replace(/\/+$/, '') || '/';
@@ -2089,7 +2089,8 @@ export function findScreen(route: string): ScreenRegistryEntry | null {
     if (parts.length !== segments.length) continue;
     let literals = 0;
     const matches = parts.every((part, index) => {
-      if (DYNAMIC_SEGMENT.test(part)) return segments[index].length > 0;
+      // 세그먼트 수가 같음을 위에서 확인했다 — 대체 빈 값은 쓰이지 않는다.
+      if (DYNAMIC_SEGMENT.test(part)) return (segments[index] ?? '').length > 0;
       literals += 1;
       return part === segments[index];
     });

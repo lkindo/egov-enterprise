@@ -60,7 +60,8 @@ const filterLabel = (status: StatusFilter) => STATUS_FILTERS.find((filter) => fi
 /** 전송 날짜·시각('2026-10-25T09:30:00')의 날짜 부분(yyyy-MM-dd). 값이 없거나 형식이 다르면 null 이다. */
 function dateOf(value: string | null | undefined): string | null {
   const match = /^(\d{4}-\d{2}-\d{2})/.exec(value ?? '');
-  return match ? match[1] : null;
+  // 1번 그룹은 필수라 일치하면 늘 있다.
+  return match?.[1] ?? null;
 }
 
 /** 고른 페이지와 그 마지막 제목. 목록 쪽을 옮기거나 조건을 바꿔 그 행이 목록에서 빠져도 편집 머리의 제목은 그대로다. */

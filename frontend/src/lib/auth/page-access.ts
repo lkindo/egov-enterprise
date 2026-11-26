@@ -27,7 +27,8 @@ export function registeredPagePermissions(pathname: string): readonly string[] |
 
 /** 라우트 게이트가 보는 부분만 남긴다 — 쿼리·해시는 판정에 쓰지 않는다. */
 function pathOf(href: string): string {
-  return href.split(/[?#]/, 1)[0];
+  // split 은 빈 문자열에도 마디 하나를 돌려주므로 늘 있다 — `?? ''` 는 타입만 좁힌다.
+  return href.split(/[?#]/, 1)[0] ?? '';
 }
 
 /**

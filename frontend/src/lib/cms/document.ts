@@ -607,6 +607,8 @@ export function createSection(existing: readonly CmsSection[], layout: CmsLayout
 export function changeSectionLayout(sections: readonly CmsSection[], index: number, layout: CmsLayout)
   : { sections: CmsSection[]; moved: number } {
   const target = sections[index];
+  // 없는 위치면 아무것도 바꾸지 않는다(종전에는 예외로 멈췄다).
+  if (!target) return { sections: [...sections], moved: 0 };
   const size = CMS_LAYOUT_CELLS[layout];
   const kept = target.cells.slice(0, size);
   while (kept.length < size) kept.push(emptyRichCell());

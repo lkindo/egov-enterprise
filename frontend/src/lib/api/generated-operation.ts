@@ -147,8 +147,9 @@ export function validateGeneratedOperationConfig(value: unknown): GeneratedOpera
 }
 
 function containsForbiddenPath(value: unknown, path: readonly string[], offset = 0): boolean {
-  if (offset >= path.length) return true;
   const segment = path[offset];
+  // 남은 마디가 없으면(경로 끝을 지났으면) 금지 경로 전체가 있다 — 종전 `offset >= path.length` 검사와 같다.
+  if (segment === undefined) return true;
   if (segment === '*') {
     return Array.isArray(value)
       && value.some((item) => containsForbiddenPath(item, path, offset + 1));

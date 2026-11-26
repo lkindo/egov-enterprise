@@ -55,7 +55,7 @@ const UNKNOWN_USER = '알 수 없는 사용자';
 /** 보낸 쪽지의 수신자 요약 — 첫 사람 이름과 나머지 인원수. */
 function recipientSummary(recipients: Note['recipients']): string {
   if (!recipients?.length) return '-';
-  const first = recipients[0].rcverNm || UNKNOWN_USER;
+  const first = recipients[0]?.rcverNm || UNKNOWN_USER;
   return recipients.length === 1 ? first : `${first} 외 ${recipients.length - 1}명`;
 }
 

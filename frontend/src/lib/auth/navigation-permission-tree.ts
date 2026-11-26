@@ -117,7 +117,7 @@ export function menusMissingEntryPermission(
     if (!selection.has(`NAVIGATION:${menu.code}`)) continue;
     const route = normalizeInternalRoute(menu.route);
     if (route === null || canOpenPage(subject, route)) continue;
-    const path = route.split(/[?#]/, 1)[0];
+    const [path = ''] = route.split(/[?#]/, 1);
     const entry = registeredPageEntry(path);
     const required = entry ? [...entry[1]] : [];
     missing.push({

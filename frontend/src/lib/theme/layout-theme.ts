@@ -35,6 +35,8 @@ function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
   if (!matched) return null;
 
   let raw = matched[1];
+  // 1번 그룹은 필수라 일치하면 늘 있다 — 없을 수 없는 경우도 실패(null)로 둔다.
+  if (raw === undefined) return null;
   if (raw.length === 3) raw = raw.split('').map((c) => c + c).join('');
 
   const r = parseInt(raw.slice(0, 2), 16) / 255;
@@ -142,7 +144,7 @@ function expandHex(hex: string): string {
  * 따라서 하위 스코프(미리보기 컨테이너)에서 `--primary` 만 바꾸면 `bg-primary` 계열 유틸리티는 따라오지 않으므로
  * 완성색 토큰(`--color-*`)도 함께 덮어써야 스코프 미리보기가 성립한다.
  */
-export function buildTokenVars(config: ThemeConfig): Record<string, string> {
+export function buildTokenVars(config: ThemeConfig): Record<`--${string}`, string> {
   const base = parseBaseRadius(config.borderRadius);
   const hsl = hexToHsl(config.primaryColor) ?? FALLBACK_HSL;
   const channel = toHslChannel(hsl);

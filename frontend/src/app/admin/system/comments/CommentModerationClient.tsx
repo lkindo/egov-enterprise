@@ -170,7 +170,7 @@ export default function CommentModerationClient() {
    * 댓글 삭제는 반드시 확인 모달을 거친다. 확인 전에 동기로 선점해 두 번 눌러도 한 번만 묻는다.
    * 과거에는 서비스 경로 오조립(404)으로 삭제가 "잠복"해 있었을 뿐, 무확인 1클릭 삭제 구조였다.
    */
-  const handleDeleteComment = async (comment: { ansSn?: number | null; ansCn?: string; wrterNm?: string }) => {
+  const handleDeleteComment = async (comment: { ansSn?: number | null; ansCn?: string; wrterNm?: string | null }) => {
     if (comment?.ansSn === undefined || comment?.ansSn === null || deleteCommentPendingRef.current) return;
     const ansSn = comment.ansSn;
     deleteCommentPendingRef.current = true;
@@ -255,7 +255,7 @@ export default function CommentModerationClient() {
       actions={
         <DataExportExcel
           scope="page"
-          data={comments as unknown as Record<string, unknown>[]}
+          data={comments}
           headers={COMMENT_EXPORT_HEADERS}
           filename="댓글목록"
         />

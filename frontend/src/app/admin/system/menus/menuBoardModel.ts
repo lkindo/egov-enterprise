@@ -92,8 +92,9 @@ export function dropPosition(
 
 /** 끌기 대상(menu:)과 놓을 곳(row:·card:·section-end:·area-tab:·area-head:·area-end:) 식별자를 읽는다. */
 export function parseBoardId(id: UniqueIdentifier): { kind: string; menuNo: number } | null {
-  const match = /^(menu|row|card|section-end|area-tab|area-head|area-end):(-?\d+)$/.exec(String(id));
-  return match ? { kind: match[1], menuNo: Number(match[2]) } : null;
+  const [, kind, digits] = /^(menu|row|card|section-end|area-tab|area-head|area-end):(-?\d+)$/.exec(String(id)) ?? [];
+  // 두 무리 모두 필수라 일치하면 늘 있다 — 없으면 일치하지 않은 것과 같다.
+  return kind !== undefined && digits !== undefined ? { kind, menuNo: Number(digits) } : null;
 }
 
 /** 놓을 곳 식별자와 위치 → 놓을 곳. */
@@ -234,5 +235,5 @@ export function menuSearchMatches(items: readonly FlattenedItem[], keyword: stri
 export function nextSearchMatch(matches: readonly number[], selected: number | null): number | null {
   if (matches.length === 0) return null;
   const at = selected === null ? -1 : matches.indexOf(selected);
-  return matches[(at + 1) % matches.length];
+  return matches[(at + 1) % matches.length] ?? null;
 }

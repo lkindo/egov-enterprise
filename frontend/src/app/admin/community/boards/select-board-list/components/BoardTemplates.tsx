@@ -195,8 +195,9 @@ function LikeButton({
 }
 
 export const HubTemplate = ({ list, bbsId, querySearchWrd, page = 1 }: TemplateProps) => {
-  if (list.length === 0) return null;
   const [lead, ...rest] = list;
+  // 빈 목록이면 그리지 않는다(첫 항목이 대표 글이다) — 예전 `list.length === 0` 검사와 같다.
+  if (lead === undefined) return null;
   const cards = page === 1 ? rest : list;
 
   return (

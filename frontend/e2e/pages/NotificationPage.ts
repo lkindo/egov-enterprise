@@ -45,14 +45,17 @@ export class NotificationPage {
     }
 
     async getUnreadCount(): Promise<number> {
-        // More robust badge check: any dot or number inside the bell button container
-        const badge = this.page.locator('#e2e-bell-button').locator('.notification-badge, [data-slot="badge"], .bg-red-500, .bg-rose-500, .bg-destructive').first();
-        if (await badge.isVisible()) {
-            const text = await badge.innerText();
-            if (!text || text.trim() === '') return 1; // It's a dot
-            return parseInt(text.replace('+', '')) || 0;
-        }
-        return 0;
+        // [2026-11-26 PR-3b] 알림 단추의 접근 이름('알림, 읽지 않음 N건' / '알림')에서 읽는다 — 종전에는 배지 후보 클래스 다섯 가지를
+        //   묶어 첫 것을 읽어(대체 선택자) 다른 배지를 셀 수 있었고, 9+ 로 줄인 숫자를 9 로 읽었다.
+        const bell = this.page.locator('#e2e-bell-button');
+        await expect(bell).toBeVisible();
+        // 접근 이름은 단추 안의 sr-only 글자다(header-notifications.tsx) — 화면에 보이는 9+ 배지가 아니라 정확한 건수를 싣는다.
+        const name = await bell.locator('.sr-only').first().textContent() ?? '';
+        const unread = /읽지 않음\s*(\d+)건/.exec(name);
+        const count = unread ? Number(unread[1]) : 0;
+        // 건수가 있으면 화면에 보이는 숫자 배지도 있어야 한다 — 접근 이름만 보면 배지가 사라져도 통과한다(Codex 검토).
+        if (count > 0) await expect(bell.locator('[data-slot="badge"]')).toBeVisible();
+        return count;
     }
 
     async verifyNotificationExists(title: string) {

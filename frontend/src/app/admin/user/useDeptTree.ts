@@ -181,14 +181,18 @@ export function useDeptTree({
           const newIndex = items.findIndex(n => n.ognzId === over.id);
           const newItems = oldIndex === newIndex ? items.slice() : arrayMove(items, oldIndex, newIndex);
           const idx = newItems.findIndex(n => n.ognzId === active.id);
+          const dragged = newItems[idx];
           // 끌었다는 것은 이 부서의 자리를 사용자가 직접 정했다는 뜻이다 — 상위를 모른다는 표시를
           // 해제해야 저장이 새 자리를 반영한다(해제하지 않으면 드래그가 조용히 무시된다).
-          newItems[idx] = {
-            ...newItems[idx],
-            parentId: deptProjected.parentId,
-            depth: deptProjected.depth,
-            unloadedParentId: null,
-          };
+          // 끈 부서를 목록에서 못 찾으면(idx -1) 고칠 행이 없다 — 예전에도 배열 밖 '-1' 속성에만 썼다.
+          if (dragged) {
+            newItems[idx] = {
+              ...dragged,
+              parentId: deptProjected.parentId,
+              depth: deptProjected.depth,
+              unloadedParentId: null,
+            };
+          }
           return newItems;
         });
         if (changed) setHasDeptChanges(true);

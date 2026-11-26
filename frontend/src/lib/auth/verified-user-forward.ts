@@ -95,8 +95,8 @@ function resolveForwardSecret(): ForwardSecretMaterial | null {
 
 function bytesToBase64Url(bytes: Uint8Array): string {
   let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
   }
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
@@ -204,7 +204,8 @@ export async function verifyVerifiedUserHeader(
   if (parts.length !== 2) {
     return null;
   }
-  const [encodedPayload, encodedSig] = parts;
+  // 빈 조각은 base64UrlToBytes 가 null 로 돌려 아래에서 fail-closed 된다(길이 2 를 위에서 확인해 실제로는 늘 있다).
+  const [encodedPayload = '', encodedSig = ''] = parts;
   const payloadBytes = base64UrlToBytes(encodedPayload);
   const sigBytes = base64UrlToBytes(encodedSig);
   if (!payloadBytes || !sigBytes) {

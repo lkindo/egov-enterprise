@@ -108,7 +108,7 @@ function ownerFormFromEvent(event?: BaseSyntheticEvent): HTMLFormElement | null 
 function scopedErrorSummary(scope?: HTMLFormElement | null): HTMLElement | null {
   if (scope) return scope.querySelector<HTMLElement>('[data-form-error-summary="true"]');
   const summaries = document.querySelectorAll<HTMLElement>('[data-form-error-summary="true"]');
-  return summaries.length === 1 ? summaries[0] : null;
+  return summaries.length === 1 ? summaries[0] ?? null : null;
 }
 
 function waitForNextPaint(): Promise<void> {
@@ -169,6 +169,7 @@ export function useAppForm<
     // 소비 폼의 TFieldValues 로 한 번만 좁히고, 이후 register/submit 표면은 강타입으로 유지한다.
     // @hookform/resolvers 7.0.7 부터 리졸버가 스키마의 입력·출력 타입을 따로 들고 와 TFieldValues 와 직접 겹치지 않으므로
     // unknown 을 거친다(런타임 값은 그대로다 — 좁히는 대상과 이유는 위와 같다).
+    // eslint-disable-next-line no-restricted-syntax -- 리졸버의 입력·출력 제네릭과 이 훅의 TFieldValues 는 겹치지 않는다(위 설명). 없애려면 훅의 공개 제네릭을 다시 설계해야 한다.
     resolver: zodResolver(schema) as unknown as Resolver<TFieldValues, unknown>,
   });
 

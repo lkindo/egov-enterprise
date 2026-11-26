@@ -56,6 +56,15 @@ describe('ordinary generated boundary wave5', () => {
     await expect(menuService.getHeadMenus()).rejects.toBeDefined();
   });
 
+  it('[PR-3b] 메뉴 번호가 없는 노드(하위 포함)는 화면 메뉴 계약 위반으로 거부한다 — 이중 단언으로 흘려보내지 않는다', async () => {
+    client.getRaw
+      .mockResolvedValueOnce(success({ list: [{ menuNm: '번호 없음', menuOrdr: 1 }] }))
+      .mockResolvedValueOnce(success({ list: [{ menuNo: 1, menuNm: '업무', menuOrdr: 1, children: [{ menuNm: '하위', menuOrdr: 1 }] }] }));
+
+    await expect(menuService.getHeadMenus()).rejects.toThrow('메뉴 응답이 화면 메뉴 계약과 일치하지 않습니다.');
+    await expect(menuService.getLeftMenus(1)).rejects.toThrow('메뉴 응답이 화면 메뉴 계약과 일치하지 않습니다.');
+  });
+
   it('popup, banner, and assignable-user reads use their exact operations', async () => {
     const popups = [{ popupSn: 3, popupTtlNm: '안내' }];
     const banners = [{ bnrSn: 4, bnrNm: '메인' }];

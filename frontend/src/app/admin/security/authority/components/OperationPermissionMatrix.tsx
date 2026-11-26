@@ -100,8 +100,11 @@ export function OperationPermissionMatrix({
   const rowIndex = new Map<string, number>(visibleRows.map((row, index) => [row.domain, index]));
   const cellsOf = (row: MatrixRow): CellDescriptor[] => {
     const position = rowIndex.get(row.domain) ?? -1;
-    const fixed = row.columns.flatMap((operation, col) => operation
-      ? [{ operation, actionLabel: PERMISSION_MATRIX_COLUMNS[col].label, position: { row: position, col } }] : []);
+    // 고정 열을 기준으로 돈다 — row.columns 는 PERMISSION_MATRIX_COLUMNS 와 같은 길이로 만들어진다(buildOperationMatrix).
+    const fixed = PERMISSION_MATRIX_COLUMNS.flatMap((column, col) => {
+      const operation = row.columns[col];
+      return operation ? [{ operation, actionLabel: column.label, position: { row: position, col } }] : [];
+    });
     const others = row.others.map((operation, index) => ({
       operation, actionLabel: permissionActionLabel(operation.action), position: { row: position, col: PERMISSION_MATRIX_COLUMNS.length + index },
     }));
@@ -238,11 +241,13 @@ export function OperationPermissionMatrix({
                         </span>
                       </th>
                       <td className={`border-b border-border ${CELL_PAD} text-center`}>{bulk(row.operations, row.label)}</td>
-                      {row.columns.map((operation, col) => {
+                      {/* 고정 열을 기준으로 칸을 그린다 — row.columns 는 같은 길이로 만들어진다(buildOperationMatrix). */}
+                      {PERMISSION_MATRIX_COLUMNS.map((column, col) => {
+                        const operation = row.columns[col];
                         const cell = operation && cells.find((entry) => entry.operation === operation);
                         const changed = !!operation && selection.has(operationKey(operation.code)) !== baseline.has(operationKey(operation.code));
                         return (
-                          <td key={PERMISSION_MATRIX_COLUMNS[col].action} className={cn(`border-b border-border ${CELL_PAD} text-center`, changed && 'bg-primary/10')}>
+                          <td key={column.action} className={cn(`border-b border-border ${CELL_PAD} text-center`, changed && 'bg-primary/10')}>
                             {cell ? renderCell(cell, row, false) : null}
                           </td>
                         );
