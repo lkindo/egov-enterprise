@@ -2,14 +2,20 @@ package nuri.api.controller.business.file;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import nuri.business.service.file.AttachmentIntegrityService;
 import nuri.business.service.file.dto.AttachmentIntegrityReport;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.response.ApiResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.Duration;
+import java.util.Objects;
 
 /**
  * 첨부 정합성 진단 (Admin).
@@ -29,13 +35,39 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "AttachmentIntegrity", description = "첨부 정합성 진단 API (Admin)")
 @RestController
 @RequestMapping("/api/v1/admin/files/integrity")
-@RequiredArgsConstructor
 public class AttachmentIntegrityApiController {
 
+    static final int DEFAULT_MAX_ITEMS = 50_000;
+    static final int DEFAULT_TIMEOUT_SECONDS = 60;
+    private static final int MAX_ITEMS_LIMIT = 1_000_000;
+    private static final int MAX_TIMEOUT_SECONDS_LIMIT = 600;
+
     private final AttachmentIntegrityService attachmentIntegrityService;
+    private final int maxItems;
+    private final int timeoutSeconds;
+
+    @Autowired
+    public AttachmentIntegrityApiController(
+            AttachmentIntegrityService attachmentIntegrityService,
+            @Value("${nuri.attachment.integrity.max-items:" + DEFAULT_MAX_ITEMS + "}") int maxItems,
+            @Value("${nuri.attachment.integrity.timeout-seconds:" + DEFAULT_TIMEOUT_SECONDS + "}") int timeoutSeconds) {
+        if (maxItems < 1 || maxItems > MAX_ITEMS_LIMIT) {
+            throw new IllegalArgumentException("Invalid attachment scan max-items: " + maxItems);
+        }
+        if (timeoutSeconds < 1 || timeoutSeconds > MAX_TIMEOUT_SECONDS_LIMIT) {
+            throw new IllegalArgumentException("Invalid attachment scan timeout-seconds: " + timeoutSeconds);
+        }
+        this.attachmentIntegrityService = Objects.requireNonNull(attachmentIntegrityService);
+        this.maxItems = maxItems;
+        this.timeoutSeconds = timeoutSeconds;
+    }
+
+    public AttachmentIntegrityApiController(AttachmentIntegrityService attachmentIntegrityService) {
+        this(attachmentIntegrityService, DEFAULT_MAX_ITEMS, DEFAULT_TIMEOUT_SECONDS);
+    }
 
     /**
-     * 전체 첨부 레코드와 저장소 실물을 대조한다.
+     * 허용 건수·시간 상한 안에서 첨부 레코드와 저장소 실물을 양방향 대조한다.
      *
      * <p>[인가 — H3] 저장 경로가 응답에 포함되므로 첨부 무결성 점검 권한 {@code FILE_AUDIT}
      * (기본 그룹 ROLE_ADMIN·ROLE_SYSTEM)으로 제한한다. HTTP·메서드 계층이 같은 operation binding 을
@@ -47,6 +79,13 @@ public class AttachmentIntegrityApiController {
     @GetMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.file.AttachmentIntegrityApiController#scan')")
     public ResponseEntity<ApiResponse<AttachmentIntegrityReport>> scan() {
-        return ResponseEntity.ok(ApiResponse.success(attachmentIntegrityService.scan()));
+        try {
+            return ResponseEntity.ok(ApiResponse.success(
+                    attachmentIntegrityService.scanBounded(maxItems, Duration.ofSeconds(timeoutSeconds))));
+        } catch (AttachmentIntegrityService.ScanLimitExceededException limitExceeded) {
+            throw new BusinessException(CommonErrorCode.SERVER_OVERLOAD,
+                    "첨부 정합성 점검이 허용 범위(" + maxItems + "건 / " + timeoutSeconds
+                            + "초)를 초과했습니다. 스케줄 점검 결과를 확인해 주세요.");
+        }
     }
 }

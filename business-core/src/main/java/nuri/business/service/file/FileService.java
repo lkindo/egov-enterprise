@@ -287,36 +287,78 @@ public class FileService extends BaseAbstractService {
     /**
      * 파일 수정 (추가 업로드)
      */
-    @Transactional
+    @Transactional(propagation = Propagation.SUPPORTS)
     public void updateFiles(Long atchFileSn, List<MultipartFile> files) throws IOException {
         appendToFileGroup(atchFileSn, files, UploadProfile.GENERAL);
     }
 
     /** 게시판의 기존 묶음에 추가한다. 원 업로더 판정·상한·롤백 보상은 공용 경로와 같다. */
-    @Transactional
+    @Transactional(propagation = Propagation.SUPPORTS)
     public void updateBoardFiles(Long atchFileSn, List<MultipartFile> files) throws IOException {
         appendToFileGroup(atchFileSn, files, UploadProfile.BOARD);
     }
 
     private void appendToFileGroup(Long atchFileSn, List<MultipartFile> files, UploadProfile profile) throws IOException {
-        // 상세가 아직 없는 묶음도 같은 부모 행을 잠가 max+1 계산의 경쟁을 막는다.
+        if (transactionManager != null && !TransactionSynchronizationManager.isActualTransactionActive()) {
+            appendToFileGroupOutsideTransaction(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"), files, profile);
+            return;
+        }
+        // 외부 트랜잭션이 이미 열린 호출(예: 게시글 수정)은 상세가 없는 묶음도 같은 부모 행을 잠가 max+1 경쟁을 막는다.
         FileMaster master = fileMasterRepository.findByIdForUpdate(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
-        // 기존 업무 참조를 읽을 수 있다는 사실만으로 파일 그룹 자체를 변경할 수는 없다.
-        // 원 업로더 확인과 업로드 batch 검증을 상세 조회·물리 저장보다 먼저 수행해 거부/오류 요청의 부작용을 막는다.
-        // 결재에 묶인 묶음은 원 업로더라도 이 경로로 바꾸지 못한다(재상신이 새 묶음으로 바꾼다).
         accessPolicy.assertAppendable(master);
-
-        // 수정은 빈 목록을 no-op으로 허용하되, 파일이 있으면 업로드와 같은 방어를 적용한다.
         validateUploadBatch(files, false, profile);
 
         Integer maxSn = fileDetailRepository.findByFileMaster(required(master, "master 는 null 일 수 없습니다")).stream()
-                .mapToInt(detail -> detail.getAtchFileSeq())
+                .mapToInt(FileDetail::getAtchFileSeq)
                 .max()
                 .orElse(0);
 
         storeFileDetails(master, atchFileSn, files, maxSn + 1, "general/" + atchFileSn);
+    }
+
+    private void appendToFileGroupOutsideTransaction(
+            Long masterId,
+            List<MultipartFile> files,
+            UploadProfile profile) throws IOException {
+        // Phase 1: 스토리지 쓰기 전에 짧은 읽기 트랜잭션으로 존재·추가 권한을 먼저 판정한다.
+        executeReadOnly(() -> {
+            FileMaster master = fileMasterRepository.findById(masterId)
+                    .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+            accessPolicy.assertAppendable(master);
+            return null;
+        });
+
+        validateUploadBatch(files, false, profile);
+        if (!hasNonEmptyFile(files)) {
+            return;
+        }
+
+        // Phase 2~3: 스토리지 저장은 FOR UPDATE 잠금·DB 연결 밖에서 수행하고, 짧은 쓰기 트랜잭션에서
+        // 부모 잠금 + 인가 재검증(TOCTOU 방어) + max+1 계산·저장을 원자적으로 확정한다.
+        String targetPath = "general/" + masterId;
+        uploadAndPersistOutsideTransaction(masterId, files, targetPath, false, (managedMaster, uploaded, storedInThisCall) -> {
+            accessPolicy.assertAppendable(managedMaster);
+            int nextSequence = maxFileSequence(managedMaster) + 1;
+            persistUploadedEntries(managedMaster, targetPath, uploaded, nextSequence);
+        });
+    }
+
+    private int maxFileSequence(FileMaster master) {
+        return fileDetailRepository.findByFileMaster(required(master, "master 는 null 일 수 없습니다")).stream()
+                .mapToInt(FileDetail::getAtchFileSeq)
+                .max()
+                .orElse(0);
+    }
+
+    private static boolean hasNonEmptyFile(List<MultipartFile> files) {
+        for (MultipartFile file : files) {
+            if (!file.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -398,9 +440,23 @@ public class FileService extends BaseAbstractService {
             List<MultipartFile> files,
             int firstSequence,
             String targetPath) {
+        uploadAndPersistOutsideTransaction(masterId, files, targetPath, true, (managedMaster, uploaded, storedInThisCall) ->
+                persistUploadedEntries(managedMaster, targetPath, uploaded, firstSequence));
+    }
+
+    @FunctionalInterface
+    private interface ShortTxPersister {
+        void persist(FileMaster managedMaster, List<UploadedEntry> uploaded, List<String> storedInThisCall);
+    }
+
+    private void uploadAndPersistOutsideTransaction(
+            Long masterId,
+            List<MultipartFile> files,
+            String targetPath,
+            boolean deleteEmptyMasterOnFailure,
+            ShortTxPersister persister) {
         List<String> storedFilenames = new ArrayList<>();
         List<UploadedEntry> uploaded = new ArrayList<>();
-        int fileSequence = firstSequence;
 
         // Phase 2: 물리 파일 저장은 DB 연결/트랜잭션 밖에서 실행한다.
         try {
@@ -414,17 +470,18 @@ public class FileService extends BaseAbstractService {
                         savedFilename,
                         file.getOriginalFilename(),
                         StringUtils.getFilenameExtension(file.getOriginalFilename()),
-                        file.getSize(),
-                        fileSequence++));
+                        file.getSize()));
             }
         } catch (RuntimeException failure) {
             compensateStoredFiles(targetPath, storedFilenames, failure);
-            deleteMasterIfEmptyBestEffort(masterId, failure);
+            if (deleteEmptyMasterOnFailure) {
+                deleteMasterIfEmptyBestEffort(masterId, failure);
+            }
             throw failure;
         }
 
         // Phase 3: 메타데이터 INSERT 만 짧은 쓰기 TX 로 커밋한다.
-        //   Phase 1(FileMaster 생성)과 Phase 3 사이의 비정상 프로세스 종료로 남는 미참조 빈 FileMaster 는
+        //   신규 업로드 시 Phase 1(FileMaster 생성)과 Phase 3 사이의 비정상 프로세스 종료로 남는 미참조 빈 FileMaster 는
         //   별도 수거기 없이 잔존할 수 있으며(GAP-FILE-001), 커밋 결과 불명확(STATUS_UNKNOWN) 시에는
         //   이미 커밋된 상세 행이 가리키는 실물을 잃지 않도록 보상 삭제를 생략한다.
         boolean[] txCallbackStarted = new boolean[1];
@@ -440,27 +497,38 @@ public class FileService extends BaseAbstractService {
                 });
                 FileMaster managedMaster = fileMasterRepository.findByIdForUpdate(masterId)
                         .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-                for (UploadedEntry entry : uploaded) {
-                    FileDetail detail = FileDetail.builder()
-                            .fileMaster(managedMaster)
-                            .atchFileSeq(entry.sequence())
-                            .fileStrgPath(targetPath)
-                            .strgFileNm(entry.savedFilename())
-                            .orgnlFileNm(entry.originalFilename())
-                            .fileEstn(entry.extension())
-                            .fileSz(entry.size())
-                            .build();
-                    fileDetailRepository.save(detail);
-                }
+                persister.persist(managedMaster, uploaded, storedInThisCall);
             });
         } catch (RuntimeException failure) {
             if (!txCallbackStarted[0]) {
                 compensateStoredFiles(targetPath, storedFilenames, failure);
-                deleteMasterIfEmptyBestEffort(masterId, failure);
-            } else if (confirmedRollback[0]) {
+                if (deleteEmptyMasterOnFailure) {
+                    deleteMasterIfEmptyBestEffort(masterId, failure);
+                }
+            } else if (confirmedRollback[0] && deleteEmptyMasterOnFailure) {
                 deleteMasterIfEmptyBestEffort(masterId, failure);
             }
             throw failure;
+        }
+    }
+
+    private void persistUploadedEntries(
+            FileMaster managedMaster,
+            String targetPath,
+            List<UploadedEntry> uploaded,
+            int firstSequence) {
+        int sequence = firstSequence;
+        for (UploadedEntry entry : uploaded) {
+            FileDetail detail = FileDetail.builder()
+                    .fileMaster(managedMaster)
+                    .atchFileSeq(sequence++)
+                    .fileStrgPath(targetPath)
+                    .strgFileNm(entry.savedFilename())
+                    .orgnlFileNm(entry.originalFilename())
+                    .fileEstn(entry.extension())
+                    .fileSz(entry.size())
+                    .build();
+            fileDetailRepository.save(detail);
         }
     }
 
@@ -522,8 +590,7 @@ public class FileService extends BaseAbstractService {
             String savedFilename,
             String originalFilename,
             String extension,
-            long size,
-            int sequence) {}
+            long size) {}
 
     private record StoredResourceRef(String storedFilename, String storagePath, String originalFilename) {}
 

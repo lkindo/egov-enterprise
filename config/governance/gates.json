@@ -287,7 +287,8 @@
         "src/constants/**",
         "src/config/**",
         "src/queries/**",
-        "src/extensions/**"
+        "src/extensions/**",
+        "src/proxy.ts"
       ],
       "exclude": [
         "**/*.test.{ts,tsx}",
@@ -307,7 +308,8 @@
         "src/constants/**",
         "src/config/**",
         "src/queries/**",
-        "src/extensions/**"
+        "src/extensions/**",
+        "src/proxy.ts"
       ],
       "baselineExclude": [
         "**/*.test.{ts,tsx}",

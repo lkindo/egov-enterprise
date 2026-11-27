@@ -44,7 +44,8 @@ class AttachmentIntegrityApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")
     @DisplayName("점검 결과를 양방향(실물 부재·고아 후보) 모두 실어 돌려준다")
     void scan_returnsBothDirections() throws Exception {
-        given(attachmentIntegrityService.scan()).willReturn(report(3L, 5L));
+        given(attachmentIntegrityService.scanBounded(50_000, java.time.Duration.ofSeconds(60)))
+                .willReturn(report(3L, 5L));
 
         mockMvc.perform(get("/api/v1/admin/files/integrity").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -55,6 +56,19 @@ class AttachmentIntegrityApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data.orphanCandidates").value(5))
                 .andExpect(jsonPath("$.data.undecidable").value(2))
                 .andExpect(jsonPath("$.data.storageRoot").value("/app/storage/uploads"));
+    }
+
+    @Test
+    @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")
+    @DisplayName("스캔 건수·시간 상한을 넘기면 무제한 조회를 끊고 503(S002)으로 응답한다")
+    void scan_returns503WhenBudgetExceeded() throws Exception {
+        given(attachmentIntegrityService.scanBounded(50_000, java.time.Duration.ofSeconds(60)))
+                .willThrow(new AttachmentIntegrityService.ScanLimitExceededException());
+
+        mockMvc.perform(get("/api/v1/admin/files/integrity").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("S002"));
     }
 
     /**
