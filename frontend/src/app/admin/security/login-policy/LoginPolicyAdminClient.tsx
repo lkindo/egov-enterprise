@@ -58,10 +58,10 @@ export function toClockInput(value?: string | null): string {
 }
 
 export const loginPolicySchema = LoginPolicyDtoSchema.extend({
-  ipAddr: LoginPolicyDtoSchema.shape.ipAddr
-    .unwrap()
+  ipAddr: z
+    .string()
     .trim()
-    .max(30, '접속 제한 IP는 최대 30자까지 입력할 수 있습니다.'),
+    .max(45, '접속 제한 IP는 최대 45자까지 입력할 수 있습니다.'),
   lmtYn: z.enum(['Y', 'N']),
   bgngTm: optionalStartTimeSchema,
   endTm: optionalEndTimeSchema,
@@ -376,7 +376,7 @@ export default function LoginPolicyAdminClient() {
   return (
     <WorkListPage
       title="로그인 보안 정책 관리"
-      description="사용자별 접속 IP·허용 시간대·접속 제한을 설정합니다. 2단계 인증(OTP)은 아직 제공하지 않습니다. 목록은 전체 사용자이며 정책이 설정된 계정만 해제할 수 있습니다."
+      description="사용자별 접속 IP·허용 시간대·접속 제한을 설정합니다. 2단계 인증(OTP)은 로그인 정책이 아니라 각 계정의 보안 설정(인증앱 등록·확인)에서 관리합니다. 목록은 전체 사용자이며 정책이 설정된 계정만 해제할 수 있습니다."
       breadcrumbItems={[{ label: '권한 보안' }, { label: '로그인 정책 관리' }]}
       totalCount={countsKnown ? total : undefined}
       filter={(
@@ -477,7 +477,7 @@ export default function LoginPolicyAdminClient() {
                       <div className="relative group">
                         <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
                         <FormControl>
-                          <Input {...field} maxLength={30} placeholder="예: 192.168.0.1 (미입력 시 제한 없음)" className="pl-12 rounded-lg border-2 bg-muted/50 font-bold" />
+                          <Input {...field} maxLength={45} placeholder="예: 192.168.0.1 또는 2001:db8::1 (미입력 시 제한 없음)" className="pl-12 rounded-lg border-2 bg-muted/50 font-bold" />
                         </FormControl>
                       </div>
                       <FormDescription className="text-xs font-medium opacity-60">특정 IP에서만 접근을 허용하려면 입력해 주세요.</FormDescription>
@@ -550,11 +550,11 @@ export default function LoginPolicyAdminClient() {
                   <div className="space-y-1" data-testid="login-policy-otp-notice">
                     <p className="text-sm font-bold tracking-tight">2단계 인증(OTP)</p>
                     <p className="text-xs text-muted-foreground">
-                      2단계 인증은 아직 제공하지 않습니다. 비밀키 발급과 번호 입력 경로가 없어 켜면 이 사용자는 로그인할 수 없습니다.
+                      2단계 인증(OTP)은 로그인 정책에서 켜거나 끄지 않고, 각 계정의 보안 설정(인증앱 등록·확인)에서 관리합니다.
                     </p>
                     {selectedPolicy?.otpUseYn === 'Y' ? (
                       <p className="text-xs font-bold text-destructive-emphasis">
-                        이 계정은 2단계 인증이 켜져 있어 지금 로그인할 수 없습니다. 저장하면 2단계 인증이 꺼집니다.
+                        과거 로그인 정책의 2단계 인증 플래그가 켜져 있습니다. 저장하면 이 플래그는 해제되며, 계정에 등록된 인증앱(MFA) 자격에는 영향을 주지 않습니다.
                       </p>
                     ) : null}
                   </div>

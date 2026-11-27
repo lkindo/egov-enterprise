@@ -39,6 +39,14 @@ public class MailService {
     /** 현재 배포의 발송 구현. 발송 가능 상태를 알리는 데만 쓴다 — 발송은 {@link MailAsyncProcessor} 가 한다. */
     private final EmailSender emailSender;
     private final nuri.foundation.core.persistence.VendorSqlDialect vendorSql;
+    /** 사용자별 메일 발송 한도 제한기(GAP-MAIL-001 ②). Spring 컨텍스트에서는 설정 빈이 주입된다. */
+    private MailUserRateLimiter mailUserRateLimiter =
+            new MailUserRateLimiter(MailUserRateLimiter.DEFAULT_DISPATCHES_PER_HOUR);
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setMailUserRateLimiter(MailUserRateLimiter mailUserRateLimiter) {
+        this.mailUserRateLimiter = Objects.requireNonNull(mailUserRateLimiter);
+    }
 
     /**
      * 대기('P')에 이 시간보다 오래 멈춘 메일은 재발송할 수 있다(2026-09-26 DIP B5 F7). 비동기 발송은 재시도를 포함해도
@@ -168,6 +176,17 @@ public class MailService {
         String loginId = assertSender(sentMail);
         String address = resolveResendAddress(sentMail);
         java.time.LocalDateTime now = acceptanceTime();
+        if (!isResendState(sentMail, now)) {
+            if ("S".equals(sentMail.getDsptchRsltCd())) {
+                throw new BusinessException(CommonErrorCode.INVALID_STATE, "이미 발송된 메일입니다.");
+            }
+            throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
+                    "발송을 처리하고 있습니다. 잠시 뒤 결과를 확인한 다음 다시 시도해 주세요.");
+        }
+        String rateLimitActor = resolveRateLimitActor(sentMail.getFrstRgtrId());
+        if (mailUserRateLimiter != null && rateLimitActor != null) {
+            mailUserRateLimiter.assertWithinLimit(rateLimitActor, 1);
+        }
         int claimed = sentMailRepository.claimForResend(emlDsptchSn, loginId, now, now.minus(RESEND_STUCK_AFTER));
         if (claimed == 0) {
             if ("S".equals(sentMail.getDsptchRsltCd())) {
@@ -176,8 +195,14 @@ public class MailService {
             throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
                     "발송을 처리하고 있습니다. 잠시 뒤 결과를 확인한 다음 다시 시도해 주세요.");
         }
-        String senderEsntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
-        durableWork.enqueue(MailDeliveryWorkHandler.work(emlDsptchSn, now, address, systemSenderAddress, senderEsntlId));
+        MailUserRateLimiter.Reservation reservation = reserveRateLimit(rateLimitActor, 1);
+        try {
+            String senderEsntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
+            durableWork.enqueue(MailDeliveryWorkHandler.work(emlDsptchSn, now, address, systemSenderAddress, senderEsntlId));
+        } catch (RuntimeException | Error ex) {
+            reservation.release();
+            throw ex;
+        }
     }
 
     /**
@@ -247,7 +272,40 @@ public class MailService {
         log.info("Mail dispatch requested");
         assertRequiredContent(dto);
         assertNoAttachment(dto);
-        return dispatchAll(userId, dto, resolveRecipients(dto));
+        List<ResolvedRecipient> recipients = resolveRecipients(dto);
+        MailUserRateLimiter.Reservation reservation = reserveRateLimit(resolveRateLimitActor(userId), recipients.size());
+        try {
+            return dispatchAll(userId, dto, recipients);
+        } catch (RuntimeException | Error ex) {
+            reservation.release();
+            throw ex;
+        }
+    }
+
+    private MailUserRateLimiter.Reservation reserveRateLimit(String actor, int dispatchCount) {
+        if (mailUserRateLimiter == null || actor == null) {
+            return MailUserRateLimiter.Reservation.NOOP;
+        }
+        MailUserRateLimiter.Reservation reservation = mailUserRateLimiter.reserveOrThrow(actor, dispatchCount);
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                    new org.springframework.transaction.support.TransactionSynchronization() {
+                        @Override
+                        public void afterCompletion(int status) {
+                            if (status != STATUS_COMMITTED) {
+                                reservation.release();
+                            }
+                        }
+                    });
+        }
+        return reservation;
+    }
+
+    private static String resolveRateLimitActor(String fallbackUserId) {
+        return nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
+                .or(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                .filter(MailService::hasText)
+                .orElseGet(() -> hasText(fallbackUserId) ? fallbackUserId.trim() : null);
     }
 
     /**

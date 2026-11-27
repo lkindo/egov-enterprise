@@ -167,6 +167,9 @@ nuri:
   # 운영에서는 SPF/DMARC 를 통과하는 발신 도메인의 시스템 메일함 주소로 반드시 재정의한다.
   mail:
     from: ${MAIL_FROM:${spring.mail.username:no-reply@egov.local}}
+    # [2026-11-27 GAP-MAIL-001 ②] 사용자당 시간당 발송 한도(수신자 건수 기준, 기본 30건).
+    rate-limit:
+      dispatches-per-hour: ${MAIL_RATE_LIMIT_DISPATCHES_PER_HOUR:30}
 
   # 결재 상태 변경 같은 시스템 발신 문자의 발신 번호. 종전에는 코드에 '02-1234-5678' 이 박혀 있어
   # 실 게이트웨이에서 거부·오귀속될 값이었다. 비어 있으면 문자 채널을 건너뛰고(앱 내 알림·메일은

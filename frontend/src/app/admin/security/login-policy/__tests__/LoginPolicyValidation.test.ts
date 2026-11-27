@@ -13,7 +13,8 @@ const validPolicy = {
 describe('login policy validation', () => {
   it('generated IP length boundary is preserved', () => {
     expect(loginPolicySchema.safeParse(validPolicy).success).toBe(true);
-    expect(loginPolicySchema.safeParse({ ...validPolicy, ipAddr: '1'.repeat(31) }).success).toBe(false);
+    expect(loginPolicySchema.safeParse({ ...validPolicy, ipAddr: '1'.repeat(45) }).success).toBe(true);
+    expect(loginPolicySchema.safeParse({ ...validPolicy, ipAddr: '1'.repeat(46) }).success).toBe(false);
   });
 
   it.each(['24:00', '12:60', '9:00', '0900'])(

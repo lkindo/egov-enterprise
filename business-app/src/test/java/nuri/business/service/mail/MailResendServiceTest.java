@@ -240,6 +240,65 @@ class MailResendServiceTest {
     void loggingSenderIsNotConfigured() {
         assertThat(new LoggingEmailSender().isDeliveryConfigured()).isFalse();
     }
+
+    @Test
+    @DisplayName("[GAP-MAIL-001 ②] 재발송도 사용자별 시간당 발송 한도를 공유하며 초과 시 차지·작업 등록 없이 429(C015)로 차단한다")
+    void resendMailEnforcesHourlyUserLimit() {
+        mailService.setMailUserRateLimiter(new MailUserRateLimiter(1));
+        given(sentMailRepository.findById(20L)).willReturn(Optional.of(
+                mail(20L, "owner", "F", LocalDateTime.now(), "direct@example.com", null)));
+        given(sentMailRepository.findById(21L)).willReturn(Optional.of(
+                mail(21L, "owner", "F", LocalDateTime.now(), "direct2@example.com", null)));
+        given(sentMailRepository.claimForResend(eq(20L), eq("owner"), any(), any())).willReturn(1);
+
+        mailService.resendMail(20L);
+
+        assertThatThrownBy(() -> mailService.resendMail(21L))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(CommonErrorCode.TOO_MANY_REQUESTS);
+        verify(sentMailRepository, never()).claimForResend(eq(21L), anyString(), any(), any());
+        verify(durableWork).enqueue(any());
+    }
+
+    @Test
+    @DisplayName("[GAP-MAIL-001 ②] 재발송 차지 실패(409)와 작업 등록 실패·트랜잭션 롤백은 사용자 한도를 소모하지 않는다")
+    void failedClaimAndRollbackDoNotConsumeRateLimit() {
+        mailService.setMailUserRateLimiter(new MailUserRateLimiter(1));
+        given(sentMailRepository.findById(30L)).willReturn(Optional.of(
+                mail(30L, "owner", "F", LocalDateTime.now(), "direct@example.com", null)));
+        given(sentMailRepository.findById(31L)).willReturn(Optional.of(
+                mail(31L, "owner", "F", LocalDateTime.now(), "direct2@example.com", null)));
+
+        // 1) 동시 재발송 차지 패배(409)는 한도를 소비하지 않아 다음 재발송이 성공해야 한다.
+        given(sentMailRepository.claimForResend(eq(30L), eq("owner"), any(), any())).willReturn(0);
+        assertThatThrownBy(() -> mailService.resendMail(30L))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(CommonErrorCode.CONCURRENT_MODIFICATION);
+
+        // 2) durableWork.enqueue 예외 시 예약 한도가 반환된다.
+        given(sentMailRepository.claimForResend(eq(31L), eq("owner"), any(), any())).willReturn(1);
+        org.mockito.Mockito.doThrow(new IllegalStateException("queue unavailable"))
+                .when(durableWork).enqueue(any());
+        assertThatThrownBy(() -> mailService.resendMail(31L))
+                .isInstanceOf(IllegalStateException.class);
+        org.mockito.Mockito.reset(durableWork);
+
+        // 3) 트랜잭션 롤백 동기화 시 예약 한도가 반환되어 이후 재발송이 최종 성공한다.
+        org.springframework.transaction.support.TransactionSynchronizationManager.initSynchronization();
+        try {
+            mailService.resendMail(31L);
+            org.springframework.transaction.support.TransactionSynchronizationManager.getSynchronizations()
+                    .forEach(sync -> sync.afterCompletion(
+                            org.springframework.transaction.support.TransactionSynchronization.STATUS_ROLLED_BACK));
+        } finally {
+            org.springframework.transaction.support.TransactionSynchronizationManager.clearSynchronization();
+        }
+
+        org.mockito.Mockito.clearInvocations(durableWork);
+        crypto.clearInvocations();
+        mailService.resendMail(31L);
+        assertEnqueued(31L, "direct2@example.com");
+    }
     private static String encrypted(String address) {
         return java.util.Base64.getEncoder().encodeToString(address.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }

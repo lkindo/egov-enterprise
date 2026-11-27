@@ -7,6 +7,7 @@ import { ChevronRight, File, Folder, Loader2, Network, RefreshCcw, ShieldAlert, 
 import { ErrorStateDisplay } from '@/app/components/ui/status-displays';
 import { authorAdminService, AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
 import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
+import { fetchAllPages } from '@/lib/api/fetch-all-pages';
 import { MenuByAuthority } from '@/types/foundation/security';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { cn } from '@/lib/utils';
@@ -84,10 +85,9 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
     refetch: refetchAuthorities,
   } = useQuery({
     queryKey: ['admin-authorities-all'],
-    queryFn: async () => {
-      const res = await authorAdminService.getAuthorList({ page: 1, searchCondition: '1', searchKeyword: '' });
-      return res?.list ?? [];
-    },
+    queryFn: () => fetchAllPages(
+      (page, size) => authorAdminService.getAuthorList({ page, size, searchCondition: '1', searchKeyword: '' }),
+    ),
     initialData: initialAuthors.data,
     // 서버 조회가 실패했다면 캐시를 즉시 stale 로 두어 클라이언트 재조회가 가능하게 한다.
     staleTime: initialAuthors.error ? 0 : 5 * 60 * 1000,
@@ -126,6 +126,11 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
    */
   const {
     data: allMenus = [],
+    isLoading: isAllMenusLoading,
+    isFetching: isAllMenusFetching,
+    isError: isAllMenusError,
+    error: allMenusError,
+    refetch: refetchAllMenus,
   } = useQuery({
     queryKey: ['admin-menus-all'],
     queryFn: () => menuAdminService.getAllMenus(),
@@ -166,13 +171,14 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
     return menuTree.length > 0 ? walk(menuTree, 1) : 0;
   }, [menuTree]);
 
-  const isRefreshing = isAuthorFetching || isMenuFetching;
+  const isRefreshing = isAuthorFetching || isMenuFetching || isAllMenusFetching;
 
-  // 새로고침은 이 화면이 소비하는 두 질의(권한 목록 · 선택 권한의 메뉴 트리)를 모두 무효화한다.
+  // 새로고침은 이 화면이 소비하는 세 질의(권한 목록 · 선택 권한의 메뉴 할당 · 전체 메뉴 계층)를 모두 무효화한다.
   // 메뉴 트리는 selectedAuthority 를 키에 포함하므로 접두 키로 일괄 무효화한다.
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['admin-authorities-all'] });
     queryClient.invalidateQueries({ queryKey: ['admin-menu-tree'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-menus-all'] });
   };
 
   const toggleExpand = (menuNo: number) => {
@@ -315,20 +321,26 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
           <h2 id="menu-hierarchy-title" className="truncate text-[length:var(--font-size-body)] font-semibold text-foreground">
             {currentAuth ? `[${currentAuth.authrtNm}] 메뉴 계층` : '메뉴 계층'}
           </h2>
-          {isMenuLoading && <Loader2 size={14} aria-hidden="true" className="ml-auto shrink-0 animate-spin text-muted-foreground" />}
+          {(isMenuLoading || isAllMenusLoading) && <Loader2 size={14} aria-hidden="true" className="ml-auto shrink-0 animate-spin text-muted-foreground" />}
         </header>
         <div className="p-[var(--filter-pad)]">
           {!selectedAuthority ? (
             <p role="status" className="py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">
               메뉴를 확인할 권한 그룹을 먼저 선택하세요.
             </p>
-          ) : isMenuLoading ? (
+          ) : isMenuLoading || isAllMenusLoading ? (
             <p role="status" className="py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">
               선택한 권한 그룹의 메뉴를 불러오는 중입니다.
             </p>
-          ) : isMenuError ? (
-            // 조회 실패를 할당된 메뉴 없음으로 위장하지 않는다.
-            <ErrorStateDisplay error={menuError} onRetry={() => refetchMenus()} />
+          ) : isMenuError || isAllMenusError ? (
+            // 할당 조회뿐 아니라 전체 메뉴(/menus/all, MENU_READ) 실패도 "할당된 메뉴 없음"으로 위장하지 않는다.
+            <ErrorStateDisplay
+              error={isMenuError ? menuError : allMenusError}
+              onRetry={() => {
+                if (isMenuError) void refetchMenus();
+                if (isAllMenusError) void refetchAllMenus();
+              }}
+            />
           ) : menuTree.length === 0 ? (
             <p role="status" className="py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">
               할당된 메뉴 없음
