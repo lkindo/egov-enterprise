@@ -140,7 +140,7 @@ function CommunityBoardContent() {
           </KeywordFilter>
           {/* [2026-10-23 ADR-0040 결정 11] 선택지가 비었거나 실패하면 폴백으로 덮지 않고 사실대로 알린다. */}
           {!boardOptionsLoading && boardOptionsError ? (
-            <p role="status" className="mt-4 flex items-center gap-2 text-sm font-medium text-destructive">
+            <p role="status" className="mt-4 flex items-center gap-2 text-sm font-medium text-destructive-emphasis">
               게시판 목록을 불러오지 못했습니다.
               <Button type="button" variant="link" className="h-auto p-0" onClick={() => void refetchBoardOptions()}>
                 다시 불러오기

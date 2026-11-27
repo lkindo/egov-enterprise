@@ -225,6 +225,7 @@ public class ApprovalApiController {
                     + "결정합니다(onBehalfOf 로 원결재자를 고릅니다). 대신 결정한 줄에는 원결재자와 결정한 사람이 따로 남고, 민감 작업 감사 "
                     + "원장에 기록되며 원결재자에게 알림이 갑니다. 기안자이거나 같은 차수 결재선에 있는 사람은 대신 결정할 수 없고, 기간이 "
                     + "끝났거나 맡기지 않은 사람은 403 입니다.")
+    @nuri.foundation.core.annotation.SensitiveOperation("결재 처리(승인·반려)")
     @PutMapping("/{id}/confirm")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#confirm')")
     public ResponseEntity<ApiResponse<Void>> confirm(

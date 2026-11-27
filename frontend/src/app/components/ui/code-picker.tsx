@@ -259,7 +259,7 @@ export function CodePicker({
                   검색 중…
                 </div>
               ) : groupsError ? (
-                <div role="alert" className="flex-1 flex flex-col items-center justify-center text-destructive p-8 text-center space-y-2">
+                <div role="alert" className="flex-1 flex flex-col items-center justify-center text-destructive-emphasis p-8 text-center space-y-2">
                   <p className="text-sm font-bold">그룹 검색에 실패했습니다.</p>
                   <button
                     type="button"
@@ -328,7 +328,7 @@ export function CodePicker({
                   불러오는 중…
                 </div>
               ) : codesError ? (
-                <div role="alert" className="flex-1 flex flex-col items-center justify-center text-destructive p-8 text-center space-y-2">
+                <div role="alert" className="flex-1 flex flex-col items-center justify-center text-destructive-emphasis p-8 text-center space-y-2">
                   <p className="text-sm font-bold">상세코드 조회에 실패했습니다.</p>
                   <button
                     type="button"

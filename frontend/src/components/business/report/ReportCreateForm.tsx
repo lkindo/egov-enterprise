@@ -203,7 +203,7 @@ export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onS
                                     placeholder="주요 업무 내용과 진행 상황"
                                 />
                             </FormControl>
-                            <FormMessage className="text-xs font-bold text-destructive mt-1 ml-1" />
+                            <FormMessage className="text-xs font-bold text-destructive-emphasis mt-1 ml-1" />
                         </FormItem>
                     )}
                 />

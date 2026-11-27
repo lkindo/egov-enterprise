@@ -132,7 +132,7 @@ describe('r6 accessibility regressions', () => {
   it('초점을 지웠던 단추들이 focus-visible 윤곽선을 보인다', () => {
     // [파일, 그 단추 class 만 갖는 토큰들] — 토큰이 모두 든 class 문자열은 파일마다 정확히 하나다.
     const buttons: Array<[file: string, marker: string[]]> = [
-      ['app/note/NoteHubClient.tsx', ['ml-1', 'hover:text-destructive']],
+      ['app/note/NoteHubClient.tsx', ['ml-1', 'hover:text-destructive-emphasis']],
       ['components/admin/user/UserManageForm.tsx', ['flex-1', 'hover:bg-surface-inverse', 'cursor-pointer']],
       ['components/admin/user/DepartmentForm.tsx', ['flex-1', 'hover:bg-surface-inverse', 'cursor-pointer']],
       ['app/admin/security/group/SecurityGroupClient.tsx', ['flex-1', 'hover:bg-surface-inverse', 'cursor-pointer']],

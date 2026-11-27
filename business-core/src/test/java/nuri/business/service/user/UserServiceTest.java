@@ -163,7 +163,7 @@ class UserServiceTest {
         assertSame(revoked, actual);
         verify(authorizationAdministration).lockAndAuthorize("USER_CREATE");
         verifyNoMoreInteractions(authorizationAdministration);
-        verifyNoInteractions(userRepository, passwordEncoder, eventPublisher, sensitiveAudit);
+        verifyNoInteractions(userRepository, eventPublisher, sensitiveAudit);
     }
 
     /**

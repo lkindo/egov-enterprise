@@ -57,11 +57,13 @@ public class SystemLogApiController {
             description = "xlsx 바이너리 스트림",
             content = @Content(mediaType = XlsxExport.XLSX_MEDIA_TYPE,
                     schema = @Schema(type = "string", format = "binary")))
-    @nuri.foundation.core.annotation.PrivacyAccess("운영 로그 내보내기(사용자 식별자·접속 정보)")
+    @nuri.foundation.core.annotation.PrivacyAccess(value = "운영 로그 내보내기(사용자 식별자·접속 정보)", reasonParameter = "reason")
     @GetMapping(value = "/export.xlsx", produces = XlsxExport.XLSX_MEDIA_TYPE)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.SystemLogApiController#exportSystemLogs')")
     public ResponseEntity<StreamingResponseBody> exportSystemLogs(
-            @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
+            @Valid @ModelAttribute BaseSearchDto searchDto,
+            @io.swagger.v3.oas.annotations.Parameter(description = "내보내기 사유(2~200자). 감사 원장의 내보내기 기록에 함께 남는다.")
+            @RequestParam String reason) throws Exception {
 
         int totalCount = logManageService.selectSysLogListTotCnt(searchDto);
         XlsxExport.assertWithinCap(totalCount);

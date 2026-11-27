@@ -33,6 +33,8 @@ type LogExportQuery = GeneratedOperationQuery<LogExportOperationId>;
 export interface FullExportRequest {
   /** OpenAPI/codegen 정본에 결속된 `/export.xlsx` binary GET operation. */
   operation: LogExportOperation;
+  /** 감사 원장 및 @PrivacyAccess 사유 감사 경계에 전달할 필수 내보내기 사유. */
+  reason: string;
   /** 서버가 내려준 총 건수. 모르면 상한 검사를 건너뛴다(서버가 판정한다). */
   totalCount?: number;
   /** 목록 조회에 쓰는 것과 **같은** 검색어. 다르면 파일과 화면이 어긋난다. */
@@ -43,6 +45,11 @@ export interface FullExportRequest {
   onTooMany: (message: string) => void;
 }
 
+/** 총 건수가 서버 export 행 상한을 넘는지 판정한다. */
+export function isOverExportCap(totalCount?: number): boolean {
+  return typeof totalCount === 'number' && totalCount > MAX_EXPORT_ROWS;
+}
+
 /**
  * 상한을 확인하고 전체 결과 파일을 요청한다.
  *
@@ -50,14 +57,15 @@ export interface FullExportRequest {
  */
 export function requestFullExport({
   operation,
+  reason,
   totalCount,
   searchKeyword,
   period,
   onTooMany,
 }: FullExportRequest): boolean {
-  if (typeof totalCount === 'number' && totalCount > MAX_EXPORT_ROWS) {
+  if (isOverExportCap(totalCount)) {
     onTooMany(
-      `전체 결과가 ${totalCount.toLocaleString('ko-KR')}건으로 export 상한(`
+      `전체 결과가 ${totalCount!.toLocaleString('ko-KR')}건으로 export 상한(`
       + `${MAX_EXPORT_ROWS.toLocaleString('ko-KR')}건)을 초과합니다. 검색 조건이나 기간을 좁혀 다시 시도해 주세요.`,
     );
     return false;
@@ -75,12 +83,12 @@ export function requestFullExport({
       대용량 스트리밍의 메모리 이점을 잃으며, binary GET 계약(DEC-OPS-016) 영향 확인이 선행이다.
       소비 화면 5개 중 하나가 개인정보 접근 로그라는 사실도 결정 시점에 알려진 채 승인됐다.
   */
-  const query: LogExportQuery = {};
+  const query: LogExportQuery = { reason };
   if (searchKeyword) query.searchKeyword = searchKeyword;
   const periodParams = period ? periodToParams(period) : {};
   if (periodParams.searchKeywordFrom) query.searchKeywordFrom = periodParams.searchKeywordFrom;
   if (periodParams.searchKeywordTo) query.searchKeywordTo = periodParams.searchKeywordTo;
 
-  navigateToDownload(operation, Object.keys(query).length > 0 ? query : undefined);
+  navigateToDownload(operation, query);
   return true;
 }

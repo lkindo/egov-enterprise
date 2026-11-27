@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "eabf4a186af3d39fc8654d51f236508e180a819138593215e40a5b02f5c2de5f",
+  "inventoryHash": "a73158de0415419cf2316718224a7b0f9304d304157736eec81afd74e24420b0",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -147,9 +147,9 @@
     },
     {
       "file": "frontend/src/app/admin/system/logs/LogDashboardClient.tsx",
-      "owner": "handleFullExport",
+      "owner": "confirmFullExport",
       "ordinal": 1,
-      "enclosingMethod": "handleFullExport",
+      "enclosingMethod": "confirmFullExport",
       "classification": "special",
       "transport": "browser-navigation",
       "callee": "requestFullExport",
@@ -159,13 +159,13 @@
       "descriptorName": "exportLoginLogsOperation",
       "mappingStatus": "explicit-special-case",
       "specialCase": "binary",
-      "id": "6253a6e3b26995d31f1d"
+      "id": "fe8a36de261033d939b7"
     },
     {
       "file": "frontend/src/app/admin/system/logs/LogDashboardClient.tsx",
-      "owner": "handleFullExport",
+      "owner": "confirmFullExport",
       "ordinal": 2,
-      "enclosingMethod": "handleFullExport",
+      "enclosingMethod": "confirmFullExport",
       "classification": "special",
       "transport": "browser-navigation",
       "callee": "requestFullExport",
@@ -175,13 +175,13 @@
       "descriptorName": "exportUserLogsOperation",
       "mappingStatus": "explicit-special-case",
       "specialCase": "binary",
-      "id": "c4ffb318c3f3a78427c0"
+      "id": "22b38ec042f1003d35d2"
     },
     {
       "file": "frontend/src/app/admin/system/logs/LogDashboardClient.tsx",
-      "owner": "handleFullExport",
+      "owner": "confirmFullExport",
       "ordinal": 3,
-      "enclosingMethod": "handleFullExport",
+      "enclosingMethod": "confirmFullExport",
       "classification": "special",
       "transport": "browser-navigation",
       "callee": "requestFullExport",
@@ -191,13 +191,13 @@
       "descriptorName": "exportWebLogsOperation",
       "mappingStatus": "explicit-special-case",
       "specialCase": "binary",
-      "id": "d304b7f746b36da62297"
+      "id": "75abbbfdc433f3d0d0e1"
     },
     {
       "file": "frontend/src/app/admin/system/logs/LogDashboardClient.tsx",
-      "owner": "handleFullExport",
+      "owner": "confirmFullExport",
       "ordinal": 4,
-      "enclosingMethod": "handleFullExport",
+      "enclosingMethod": "confirmFullExport",
       "classification": "special",
       "transport": "browser-navigation",
       "callee": "requestFullExport",
@@ -207,13 +207,13 @@
       "descriptorName": "exportSystemLogsOperation",
       "mappingStatus": "explicit-special-case",
       "specialCase": "binary",
-      "id": "20d6290ae8e185c26c7e"
+      "id": "6b62cc2e7e65aea08269"
     },
     {
       "file": "frontend/src/app/admin/system/logs/login/SystemLogsLoginClient.tsx",
-      "owner": "handleFullExport",
+      "owner": "confirmFullExport",
       "ordinal": 1,
-      "enclosingMethod": "handleFullExport",
+      "enclosingMethod": "confirmFullExport",
       "classification": "special",
       "transport": "browser-navigation",
       "callee": "requestFullExport",
@@ -223,13 +223,13 @@
       "descriptorName": "exportLoginLogsOperation",
       "mappingStatus": "explicit-special-case",
       "specialCase": "binary",
-      "id": "3b9aea0722abded6149f"
+      "id": "42dd9773241ddce4cccb"
     },
     {
       "file": "frontend/src/app/admin/system/logs/privacy/SystemLogsPrivacyClient.tsx",
-      "owner": "handleFullExport",
+      "owner": "confirmFullExport",
       "ordinal": 1,
-      "enclosingMethod": "handleFullExport",
+      "enclosingMethod": "confirmFullExport",
       "classification": "special",
       "transport": "browser-navigation",
       "callee": "requestFullExport",
@@ -239,13 +239,13 @@
       "descriptorName": "exportPrivacyLogsOperation",
       "mappingStatus": "explicit-special-case",
       "specialCase": "binary",
-      "id": "2297aa9e411236f1110b"
+      "id": "e7cb980d806491b97fdc"
     },
     {
       "file": "frontend/src/app/admin/system/logs/system/SystemLogsSystemClient.tsx",
-      "owner": "handleFullExport",
+      "owner": "confirmFullExport",
       "ordinal": 1,
-      "enclosingMethod": "handleFullExport",
+      "enclosingMethod": "confirmFullExport",
       "classification": "special",
       "transport": "browser-navigation",
       "callee": "requestFullExport",
@@ -255,13 +255,13 @@
       "descriptorName": "exportSystemLogsOperation",
       "mappingStatus": "explicit-special-case",
       "specialCase": "binary",
-      "id": "0674a13b90d5f7ae4a59"
+      "id": "c1b01713814905570b20"
     },
     {
       "file": "frontend/src/app/admin/system/logs/user/SystemLogsUserClient.tsx",
-      "owner": "handleFullExport",
+      "owner": "confirmFullExport",
       "ordinal": 1,
-      "enclosingMethod": "handleFullExport",
+      "enclosingMethod": "confirmFullExport",
       "classification": "special",
       "transport": "browser-navigation",
       "callee": "requestFullExport",
@@ -271,13 +271,13 @@
       "descriptorName": "exportUserLogsOperation",
       "mappingStatus": "explicit-special-case",
       "specialCase": "binary",
-      "id": "8030bea4457c74f549ba"
+      "id": "9e0709a6f21f4b743084"
     },
     {
       "file": "frontend/src/app/admin/system/logs/web/SystemLogsWebClient.tsx",
-      "owner": "handleFullExport",
+      "owner": "confirmFullExport",
       "ordinal": 1,
-      "enclosingMethod": "handleFullExport",
+      "enclosingMethod": "confirmFullExport",
       "classification": "special",
       "transport": "browser-navigation",
       "callee": "requestFullExport",
@@ -287,7 +287,7 @@
       "descriptorName": "exportWebLogsOperation",
       "mappingStatus": "explicit-special-case",
       "specialCase": "binary",
-      "id": "094b33c95913a95d6646"
+      "id": "8dc792aa9409c80a2ced"
     },
     {
       "file": "frontend/src/app/api/auth/login/route.ts",

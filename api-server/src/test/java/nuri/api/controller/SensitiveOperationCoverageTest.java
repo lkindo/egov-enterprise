@@ -30,6 +30,7 @@ class SensitiveOperationCoverageTest {
             "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController|updateLoginPolicy|로그인 정책 변경",
             "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController|deleteLoginPolicy|로그인 정책 삭제",
             "nuri.api.controller.foundation.controller.system.user.UserAbsenceApiController|updateAbsence|부재·대리결재 지정",
+            "nuri.api.controller.business.approval.ApprovalApiController|confirm|결재 처리(승인·반려)",
     })
     void accountAccessWritesAreRecordedInTheSensitiveAuditLedger(String controller, String handlerName, String description)
             throws ClassNotFoundException {

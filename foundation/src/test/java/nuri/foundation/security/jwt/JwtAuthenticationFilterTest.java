@@ -46,8 +46,7 @@ class JwtAuthenticationFilterTest {
         String token = "validToken123";
         Authentication mockAuth = mock(Authentication.class);
         when(tokenProvider.resolveToken(request)).thenReturn(token);
-        when(tokenProvider.validateToken(token)).thenReturn(true);
-        when(tokenProvider.getAuthentication(token)).thenReturn(mockAuth);
+        when(tokenProvider.authenticateAccessToken(token)).thenReturn(mockAuth);
 
         request.addHeader("Authorization", "Bearer " + token);
 
@@ -74,7 +73,7 @@ class JwtAuthenticationFilterTest {
         // Given
         String token = "invalidToken";
         when(tokenProvider.resolveToken(request)).thenReturn(token);
-        when(tokenProvider.validateToken(token)).thenReturn(false);
+        when(tokenProvider.authenticateAccessToken(token)).thenReturn(null);
         request.addHeader("Authorization", "Bearer " + token);
 
         // When
@@ -88,8 +87,7 @@ class JwtAuthenticationFilterTest {
     void currentAccountRevocationClearsAnyPreviousSecurityContext() throws Exception {
         SecurityContextHolder.getContext().setAuthentication(mock(Authentication.class));
         when(tokenProvider.resolveToken(request)).thenReturn("existing-token");
-        when(tokenProvider.validateToken("existing-token")).thenReturn(true);
-        when(tokenProvider.getAuthentication("existing-token"))
+        when(tokenProvider.authenticateAccessToken("existing-token"))
                 .thenThrow(new org.springframework.security.authentication.DisabledException("inactive"));
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
@@ -98,9 +96,8 @@ class JwtAuthenticationFilterTest {
     @Test
     void unavailableIdentityStoreReturns503WithoutDiscardingTheClientTokenAndCanRecover() throws Exception {
         when(tokenProvider.resolveToken(request)).thenReturn("same-token");
-        when(tokenProvider.validateToken("same-token")).thenReturn(true);
         Authentication auth = mock(Authentication.class);
-        when(tokenProvider.getAuthentication("same-token"))
+        when(tokenProvider.authenticateAccessToken("same-token"))
                 .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("private-db-detail"))
                 .thenReturn(auth);
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -121,8 +118,7 @@ class JwtAuthenticationFilterTest {
     @Test
     void transactionStartFailureReturns503AndClearsAnExistingContext() throws Exception {
         when(tokenProvider.resolveToken(request)).thenReturn("token");
-        when(tokenProvider.validateToken("token")).thenReturn(true);
-        when(tokenProvider.getAuthentication("token")).thenThrow(new org.springframework.transaction.CannotCreateTransactionException("unavailable"));
+        when(tokenProvider.authenticateAccessToken("token")).thenThrow(new org.springframework.transaction.CannotCreateTransactionException("unavailable"));
         SecurityContextHolder.getContext().setAuthentication(mock(Authentication.class));
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
         assertThat(response.getStatus()).isEqualTo(503);

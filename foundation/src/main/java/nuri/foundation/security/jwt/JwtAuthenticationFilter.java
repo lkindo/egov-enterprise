@@ -37,8 +37,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (token != null) {
                 log.debug(">>> [JwtFilter] Found token in header for path: {}", path);
-                if (jwtTokenProvider.validateToken(token)) {
-                    Authentication auth = jwtTokenProvider.getAuthentication(token);
+                Authentication auth = jwtTokenProvider.authenticateAccessToken(token);
+                if (auth != null) {
                     SecurityContextHolder.getContext().setAuthentication(auth);
                     log.debug(">>> [JwtFilter] Successfully authenticated request: {} {}", method, path);
                 } else {

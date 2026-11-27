@@ -273,7 +273,7 @@ export default function SmsHubClient({
                                     />
                                 </div>
                                 {validation.errors.sndngTelno && (
-                                  <p {...validation.messageProps('sndngTelno')} className="text-xs font-bold text-destructive" />
+                                  <p {...validation.messageProps('sndngTelno')} className="text-xs font-bold text-destructive-emphasis" />
                                 )}
                             </div>
                             <div className="space-y-3">
@@ -296,7 +296,7 @@ export default function SmsHubClient({
                                     />
                                 </div>
                                 {validation.errors.rcptnTelno && (
-                                  <p {...validation.messageProps('rcptnTelno')} className="text-xs font-bold text-destructive" />
+                                  <p {...validation.messageProps('rcptnTelno')} className="text-xs font-bold text-destructive-emphasis" />
                                 )}
                             </div>
                             <div className="space-y-3">
@@ -320,7 +320,7 @@ export default function SmsHubClient({
                                     </div>
                                 </div>
                                 {validation.errors.sndngCn && (
-                                  <p {...validation.messageProps('sndngCn')} className="text-xs font-bold text-destructive" />
+                                  <p {...validation.messageProps('sndngCn')} className="text-xs font-bold text-destructive-emphasis" />
                                 )}
                             </div>
                         </div>

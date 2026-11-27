@@ -8,6 +8,7 @@ on:
 jobs:
   zap_scan:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     env:
       COMPOSE_FILE: docker-compose.yml:docker-compose.authz-e2e.yml
       # [2026-09-24] 2026-09-24 첫 API 스캔에서 응답 535건이 429 였다 — 그만큼의 공격이 핸들러에 닿지 못했고,

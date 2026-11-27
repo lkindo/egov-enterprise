@@ -71,11 +71,9 @@ class LegacySecurityFilterChainProdTest extends ControllerTestSupport {
             String auth = req.getHeader("Authorization");
             return auth != null && auth.startsWith("Bearer ") ? auth.substring(7) : null;
         });
-        given(jwtTokenProvider.validateToken("user-token")).willReturn(true);
-        given(jwtTokenProvider.getAuthentication("user-token")).willReturn(
+        given(jwtTokenProvider.authenticateAccessToken("user-token")).willReturn(
                 new UsernamePasswordAuthenticationToken("user1", "", List.of(new SimpleGrantedAuthority("ROLE_USER"))));
-        given(jwtTokenProvider.validateToken("ops-token")).willReturn(true);
-        given(jwtTokenProvider.getAuthentication("ops-token")).willReturn(
+        given(jwtTokenProvider.authenticateAccessToken("ops-token")).willReturn(
                 new UsernamePasswordAuthenticationToken("ops1", "", List.of(new SimpleGrantedAuthority("OPS_READ"))));
 
         mockMvc.perform(get("/v3/api-docs").header("Authorization", "Bearer user-token"))

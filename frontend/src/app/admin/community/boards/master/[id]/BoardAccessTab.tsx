@@ -338,7 +338,7 @@ export function BoardAccessTab({ detail }: { detail: BoardMasterDetail }) {
           <p className="text-[length:var(--font-size-body)] text-muted-foreground">메뉴 원장을 볼 권한(MENU_READ)이 없어 메뉴 연결을 확인할 수 없습니다(확인 권한 없음).</p>
         )}
         {links?.status === 'unknown' && (
-          <p role="alert" className="text-[length:var(--font-size-body)] text-destructive">메뉴 원장을 불러오지 못해 메뉴 연결을 확인할 수 없습니다(확인 불가).</p>
+          <p role="alert" className="text-[length:var(--font-size-body)] text-destructive-emphasis">메뉴 원장을 불러오지 못해 메뉴 연결을 확인할 수 없습니다(확인 불가).</p>
         )}
         {links?.status === 'ready' && links.links.length > 0 && (
           <div className="relative overflow-auto rounded-lg border border-border">

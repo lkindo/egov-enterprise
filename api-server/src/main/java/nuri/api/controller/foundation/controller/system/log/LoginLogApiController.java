@@ -1,30 +1,23 @@
 package nuri.api.controller.foundation.controller.system.log;
 
 import jakarta.validation.Valid;
-import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.api.support.XlsxExport;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.log.LoginLogManageService;
 import nuri.business.service.log.dto.LoginLogDto;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.List;
 
 /**
@@ -38,23 +31,10 @@ import java.util.List;
 public class LoginLogApiController {
 
     /** export 미디어 타입 — OOXML 스프레드시트(.xlsx). */
-    static final String XLSX_MEDIA_TYPE =
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    static final String XLSX_MEDIA_TYPE = XlsxExport.XLSX_MEDIA_TYPE;
 
-    /**
-     * 서버측 전체 결과 export 의 행 상한.
-     *
-     * <p>[왜 상한인가 — 무제한 스트리밍 금지] 이 엔드포인트는 페이지 무관 <b>전체</b> 결과를 내보낸다.
-     * 상한이 없으면 검색 조건이 느슨할 때 단일 HTTP 요청 하나가 수백만 행을 조회·직렬화하며
-     * DB 커넥션과 서블릿 스레드를 무기한 점유한다(헌법 제9조 2항 — 커넥션 점유 시간 최소화,
-     * 제14조 — OOM 방어). SXSSF 가 워크북 메모리는 창(window) 크기로 억제하지만
-     * <b>조회 결과 List 자체는 힙에 실린다</b>. 그래서 행 수를 먼저 세고, 상한 초과면
-     * 400 으로 즉시 실패시켜 기간 필터 등으로 조건을 좁히도록 강제한다.
-     */
-    static final int MAX_EXPORT_ROWS = 100_000;
-
-    /** SXSSF 메모리 창 — 이 행 수를 넘는 행은 임시 파일로 flush 되어 힙에 남지 않는다. */
-    private static final int SXSSF_ROW_WINDOW = 200;
+    /** 서버측 전체 결과 export 의 행 상한. */
+    static final int MAX_EXPORT_ROWS = XlsxExport.MAX_EXPORT_ROWS;
 
     private final LoginLogManageService loginLogManageService;
 
@@ -104,18 +84,16 @@ public class LoginLogApiController {
             description = "xlsx 바이너리 스트림",
             content = @Content(mediaType = XLSX_MEDIA_TYPE,
                     schema = @Schema(type = "string", format = "binary")))
-    @nuri.foundation.core.annotation.PrivacyAccess("운영 로그 내보내기(사용자 식별자·접속 정보)")
+    @nuri.foundation.core.annotation.PrivacyAccess(value = "운영 로그 내보내기(사용자 식별자·접속 정보)", reasonParameter = "reason")
     @GetMapping(value = "/export.xlsx", produces = XLSX_MEDIA_TYPE)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.LoginLogApiController#exportLoginLogs')")
     public ResponseEntity<StreamingResponseBody> exportLoginLogs(
-            @Valid @ModelAttribute BaseSearchDto searchDto) {
+            @Valid @ModelAttribute BaseSearchDto searchDto,
+            @Parameter(description = "내보내기 사유(2~200자). 감사 원장의 내보내기 기록에 함께 남는다.")
+            @RequestParam String reason) {
 
         int totalCount = loginLogManageService.selectLoginLogListTotCnt(searchDto);
-        if (totalCount > MAX_EXPORT_ROWS) {
-            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                    "export 대상이 " + totalCount + "행으로 상한(" + MAX_EXPORT_ROWS
-                            + "행)을 초과합니다. 검색 기간이나 조건을 좁혀 다시 시도하십시오.");
-        }
+        XlsxExport.assertWithinCap(totalCount);
 
         // 페이지 파라미터를 전체 결과로 덮어쓴다 — 화면 페이징 값이 무엇이든 export 는 전량이다.
         // (0건이어도 effectivePageUnit 이 기본값으로 대체하므로 안전하다.)
@@ -123,13 +101,18 @@ public class LoginLogApiController {
         searchDto.setPageUnit(Math.max(totalCount, 1));
         List<LoginLogDto> rows = loginLogManageService.selectLoginLogList(searchDto);
 
-        // 조회는 요청 스레드(트랜잭션·보안 컨텍스트 유효 구간)에서 끝내고,
-        // 스트리밍 램다는 이미 확보한 rows 의 직렬화만 담당한다.
-        StreamingResponseBody body = out -> writeXlsx(out, rows);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"login-logs.xlsx\"")
-                .contentType(MediaType.parseMediaType(XLSX_MEDIA_TYPE))
-                .body(body);
+        return XlsxExport.attachment("login-logs.xlsx", "login-logs",
+                new String[]{"로그인 일련번호", "접속 ID", "접속 IP", "접속방식", "오류발생여부", "오류코드", "생성일시"},
+                rows,
+                (row, dto) -> {
+                    row.createCell(0).setCellValue(XlsxExport.nullSafe(dto.getLgnSn()));
+                    row.createCell(1).setCellValue(XlsxExport.nullSafe(dto.getLoginId()));
+                    row.createCell(2).setCellValue(XlsxExport.nullSafe(dto.getLoginIp()));
+                    row.createCell(3).setCellValue(XlsxExport.nullSafe(dto.getLoginMthd()));
+                    row.createCell(4).setCellValue(XlsxExport.nullSafe(dto.getErrOccrrAt()));
+                    row.createCell(5).setCellValue(XlsxExport.nullSafe(dto.getErrorCode()));
+                    row.createCell(6).setCellValue(XlsxExport.nullSafe(dto.getCreatDt()));
+                });
     }
 
     @Operation(summary = "로그인 로그 상세 조회")
@@ -139,33 +122,5 @@ public class LoginLogApiController {
             @PathVariable("lgnSn") Long lgnSn) throws Exception {
         LoginLogDto result = loginLogManageService.selectLoginLogDetail(lgnSn);
         return ResponseEntity.ok(ApiResponse.success(result));
-    }
-
-    /** 확보된 행을 SXSSF(스트리밍 워크북)로 직렬화한다. try-with-resources 가 임시 파일까지 정리한다. */
-    private static void writeXlsx(OutputStream out, List<LoginLogDto> rows) throws IOException {
-        try (SXSSFWorkbook workbook = new SXSSFWorkbook(SXSSF_ROW_WINDOW)) {
-            Sheet sheet = workbook.createSheet("login-logs");
-            String[] headers = {"로그인 일련번호", "접속 ID", "접속 IP", "접속방식", "오류발생여부", "오류코드", "생성일시"};
-            Row headerRow = sheet.createRow(0);
-            for (int i = 0; i < headers.length; i++) {
-                headerRow.createCell(i).setCellValue(headers[i]);
-            }
-            int rowIndex = 1;
-            for (LoginLogDto dto : rows) {
-                Row row = sheet.createRow(rowIndex++);
-                row.createCell(0).setCellValue(dto.getLgnSn() != null ? String.valueOf(dto.getLgnSn()) : "");
-                row.createCell(1).setCellValue(nullSafe(dto.getLoginId()));
-                row.createCell(2).setCellValue(nullSafe(dto.getLoginIp()));
-                row.createCell(3).setCellValue(nullSafe(dto.getLoginMthd()));
-                row.createCell(4).setCellValue(nullSafe(dto.getErrOccrrAt()));
-                row.createCell(5).setCellValue(nullSafe(dto.getErrorCode()));
-                row.createCell(6).setCellValue(nullSafe(dto.getCreatDt()));
-            }
-            workbook.write(out);
-        }
-    }
-
-    private static String nullSafe(String value) {
-        return value != null ? value : "";
     }
 }

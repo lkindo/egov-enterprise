@@ -494,6 +494,28 @@ class RewardManageServiceTest {
     }
 
     @Test
+    @DisplayName("포상 수정 — clearAttachment=true 면 기존 첨부를 해제해 null 로 비우고 미참조 첨부를 정리한다")
+    void updateReward_clearsAttachmentWhenRequested() {
+        authorize("REWARD_UPDATE");
+        RewardManage entity = RewardManage.builder().rwrdSn(7L).rwrdUserId("U1").rwrdCd("R01").rwrdNm("Old")
+                .atchFileSn(100L).build();
+        ReflectionTestUtils.setField(entity, "version", 0);
+        given(rewardManageRepository.findById(7L)).willReturn(Optional.of(entity));
+
+        assertThatThrownBy(() -> rewardManageService.updateReward(7L, RewardManageDto.builder()
+                .rwardwnrId("U1").rwardCode("R01").rwardNm("Conflict").atchFileSn(101L).clearAttachment(true).version(0).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThat(entity.getAtchFileSn()).isEqualTo(100L);
+
+        RewardManageDto updated = rewardManageService.updateReward(7L, RewardManageDto.builder()
+                .rwardwnrId("U1").rwardCode("R01").rwardNm("Cleared").clearAttachment(true).version(0).build());
+        assertThat(entity.getAtchFileSn()).isNull();
+        assertThat(updated.getAtchFileSn()).isNull();
+        verify(attachmentAssignmentPolicy).releaseIfUnreferenced(100L);
+    }
+
+    @Test
     @DisplayName("[2026-10-18] 포상 수정 — 읽은 버전이 다르면 409, 버전이 없으면 400 이고 기록을 바꾸지 않는다")
     void updateReward_rejectsStaleOrMissingVersion() {
         authorize("REWARD_UPDATE");

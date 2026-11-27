@@ -71,6 +71,8 @@ const SEMANTIC_STATUS_REGEX = new RegExp(
   `(?<![\\w-])(?:${PALETTE_UTILITIES}|border-(?:[xytrblse]|bs|be))-((?:success|warning|info|destructive|primary)(?:-[a-z0-9]+)*)(?:\\/[0-9]{1,3})?(?![\\w-])`,
   "g",
 );
+/** 고대비 미달 전경색(`text-destructive`) 금지 — text-destructive-emphasis·text-destructive-foreground 만 허용한다. */
+const BARE_TEXT_DESTRUCTIVE_REGEX = /(?:^|[\s"'`:!])text-destructive(?![A-Za-z0-9_-])/g;
 /** 미정의 시맨틱 색 판정 범위 — 시험을 뺀 생산 소스 전부(.ts 색상표 포함). */
 const isProductionSource = (filename) => {
   const path = filename.replaceAll("\\", "/");
@@ -105,7 +107,10 @@ const enforceDesignTokensRule = {
     const semanticScope = isProductionSource(context.filename);
     const collectPalette = (node, text) => {
       if (typeof text !== "string") return;
-      if (semanticScope) reportUndefinedSemantic(node, text);
+      if (semanticScope) {
+        reportUndefinedSemantic(node, text);
+        reportBareTextDestructive(node, text);
+      }
       if (!paletteScope) return;
       const matches = text.match(PALETTE_REGEX);
       if (!matches) return;
@@ -113,6 +118,17 @@ const enforceDesignTokensRule = {
       if (!paletteByLine.has(line)) paletteByLine.set(line, []);
       paletteByLine.get(line).push({ node, matches });
     };
+
+    function reportBareTextDestructive(node, text) {
+      if (BARE_TEXT_DESTRUCTIVE_REGEX.test(text)) {
+        BARE_TEXT_DESTRUCTIVE_REGEX.lastIndex = 0;
+        context.report({
+          node,
+          message: "대비 미달 전경색 'text-destructive' 사용이 감지되었습니다. 전경 글자색은 'text-destructive-emphasis' 를 사용하고(배경·테두리만 bg-destructive/border-destructive 허용), 버튼/오류 문구 대비 기준을 유지하십시오.",
+        });
+      }
+      BARE_TEXT_DESTRUCTIVE_REGEX.lastIndex = 0;
+    }
 
     function reportUndefinedSemantic(node, text) {
       const undefinedNames = [...text.matchAll(SEMANTIC_STATUS_REGEX)]

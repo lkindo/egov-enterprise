@@ -72,7 +72,7 @@ function CaseReferenceField({ id, value, onChange, validation, autoFocus }: {
         aria-describedby={[field['aria-describedby'], hintId].filter(Boolean).join(' ')}
         onChange={(event) => { validation.clearError('caseReference'); onChange(event.target.value); }} />
       <span id={hintId}>{CASE_REFERENCE_HINT}</span>
-      {validation.errors.caseReference ? <p {...validation.messageProps('caseReference')} className="text-sm text-destructive" /> : null}
+      {validation.errors.caseReference ? <p {...validation.messageProps('caseReference')} className="text-sm text-destructive-emphasis" /> : null}
     </label>
   );
 }
@@ -149,10 +149,10 @@ export function PurgePageDialog({
             <Input {...pathField} value={path} maxLength={100} required autoComplete="off" spellCheck={false}
               onChange={(event) => { validation.clearError('contsPathNm'); setPath(event.target.value); }} />
           </div>
-          {validation.errors.contsPathNm ? <p {...validation.messageProps('contsPathNm')} className="text-sm text-destructive" /> : null}
+          {validation.errors.contsPathNm ? <p {...validation.messageProps('contsPathNm')} className="text-sm text-destructive-emphasis" /> : null}
         </label>
         <CaseReferenceField id="cms-purge-page-case" value={caseReference} onChange={setCaseReference} validation={validation} />
-        {serverError && <p role="alert" className="text-sm text-destructive">{serverError}</p>}
+        {serverError && <p role="alert" className="text-sm text-destructive-emphasis">{serverError}</p>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>취소</Button>
           <Button type="submit" variant="destructive" disabled={isSubmitting} aria-busy={isSubmitting}>
@@ -222,7 +222,7 @@ export function PurgeRevisionForm({
       </ul>
       <FormErrorSummary errors={validation.errors} labels={purgeLabels} onNavigate={validation.focusError} />
       <CaseReferenceField id={`${headingId}-case`} value={caseReference} onChange={setCaseReference} validation={validation} autoFocus />
-      {serverError && <p role="alert" className="text-sm text-destructive">{serverError}</p>}
+      {serverError && <p role="alert" className="text-sm text-destructive-emphasis">{serverError}</p>}
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>취소</Button>
         <Button type="submit" variant="destructive" disabled={isSubmitting} aria-busy={isSubmitting}>

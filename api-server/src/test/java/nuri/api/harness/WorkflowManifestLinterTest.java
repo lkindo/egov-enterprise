@@ -635,6 +635,65 @@ class WorkflowManifestLinterTest {
         return index;
     }
 
+    @Test
+    @DisplayName("🔒 E2E 백엔드 기동 확인에서 /actuator/prometheus 미인증 200 은 경고가 아니라 실패(exit 1)다")
+    void ciPrometheusProtectionCheckFailsClosedOnUnauthenticated200() throws IOException {
+        Path ciPath = resolveRepoRoot().resolve(WORKFLOW_DIR).resolve("ci.yml");
+        String source = HarnessSourceIndex.read(ciPath);
+        Map<?, ?> root = asMap(new Yaml().load(source));
+        Map<?, ?> jobs = asMap(root.get("jobs"));
+        List<?> e2eSteps = asList(asMap(jobs.get("e2e-tests")).get("steps"));
+        Map<?, ?> waitStep = findStep(e2eSteps, "Wait for API and Prometheus Metrics");
+        String run = Objects.toString(waitStep.get("run"), "");
+
+        assertThat(prometheusMetricsProtectionViolations(run)).isEmpty();
+        assertThat(prometheusMetricsProtectionViolations(
+                run.replace("200) echo \"::error", "200) echo \"::warning")))
+                .anyMatch(v -> v.contains("::warning") || v.contains("::error"));
+        assertThat(prometheusMetricsProtectionViolations(
+                run.replace("; exit 1 ;;", " ;;")))
+                .anyMatch(v -> v.contains("exit 1"));
+        assertThat(prometheusMetricsProtectionViolations(
+                run.replace("\"; exit 1 ;;", " exit 1\" ;;")))
+                .anyMatch(v -> v.contains("exit 1"));
+    }
+
+    private static List<String> prometheusMetricsProtectionViolations(String stepRun) {
+        List<String> violations = new ArrayList<>();
+        if (!stepRun.contains("/actuator/prometheus")) {
+            violations.add("Wait for API and Prometheus Metrics 단계에 /actuator/prometheus 검사가 없습니다.");
+            return violations;
+        }
+        String twoHundredLine = stepRun.lines()
+                .map(String::strip)
+                .filter(line -> line.startsWith("200)"))
+                .findFirst()
+                .orElse("");
+        if (twoHundredLine.isEmpty()) {
+            violations.add("/actuator/prometheus 응답 코드 분기에 200) 실패 분기가 없습니다.");
+        } else {
+            if (twoHundredLine.contains("::warning")) {
+                violations.add("/actuator/prometheus 미인증 200 분기가 경고(::warning)로 남아 있습니다.");
+            }
+            if (!twoHundredLine.contains("::error")) {
+                violations.add("/actuator/prometheus 미인증 200 분기에 ::error 로그가 없습니다: " + twoHundredLine);
+            }
+            String commands = twoHundredLine
+                    .replaceFirst("^200\\)\\s*", "")
+                    .replaceFirst("\\s*;;\\s*$", "")
+                    // 따옴표 안의 리터럴은 실행되는 셸 명령으로 보지 않는다.
+                    .replaceAll("\"([^\"]|\\\\.)*\"", "\"\"")
+                    .replaceAll("'[^']*'", "''");
+            boolean executesFailExit = java.util.Arrays.stream(commands.split("(?:;|&&)"))
+                    .map(String::strip)
+                    .anyMatch(stmt -> stmt.matches("exit\\s+[1-9]\\d*"));
+            if (!executesFailExit) {
+                violations.add("/actuator/prometheus 미인증 200 분기가 실제 exit 1 명령으로 실패하지 않습니다: " + twoHundredLine);
+            }
+        }
+        return violations;
+    }
+
     private List<String> releasePublicationViolations(Map<?, ?> root) {
         List<String> violations = new ArrayList<>();
         String publishCondition = "github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')";
@@ -643,6 +702,11 @@ class WorkflowManifestLinterTest {
         Map<?, ?> build = asMap(jobs.get("build-and-push"));
         List<?> steps = asList(build.get("steps"));
         if (!"verify".equals(build.get("needs"))) violations.add("build-and-push.needs=verify 누락");
+        Object rawTimeout = build.get("timeout-minutes");
+        int timeoutMinutes = rawTimeout instanceof Number number ? number.intValue() : -1;
+        if (timeoutMinutes <= 0 || timeoutMinutes > 60) {
+            violations.add("build-and-push.timeout-minutes 누락 또는 상한(60분) 초과: " + rawTimeout);
+        }
         Map<?, ?> permissions = asMap(build.get("permissions"));
         if (!"write".equals(permissions.get("packages")) || !"write".equals(permissions.get("contents"))) {
             violations.add("발행 잡의 packages/contents write 권한 누락");
@@ -749,6 +813,12 @@ class WorkflowManifestLinterTest {
         String source = HarnessSourceIndex.read(resolveRepoRoot().resolve(WORKFLOW_DIR).resolve("release.yml"));
         assertThat(releasePublicationViolations(asMap(new Yaml().load(source)))).isEmpty();
         List<String> fixtures = List.of(
+                source.replaceFirst(
+                        "(?m)(  build-and-push:[^\\r\\n]*\\R\\s+needs: verify\\R\\s+runs-on: ubuntu-latest\\R)\\s+timeout-minutes: 45",
+                        "$1"),
+                source.replaceFirst(
+                        "(?m)(  build-and-push:[^\\r\\n]*\\R\\s+needs: verify\\R\\s+runs-on: ubuntu-latest\\R\\s+timeout-minutes: )45",
+                        "$190"),
                 source.replace("push: false", "push: true"),
                 source.replace("load: true", "load: false"),
                 source.replace("DOCKER_BUILD_RECORD_UPLOAD: 'false'", "DOCKER_BUILD_RECORD_UPLOAD: 'true'"),
@@ -837,6 +907,7 @@ class WorkflowManifestLinterTest {
         String compliant = """
                 jobs:
                   zap_scan:
+                    timeout-minutes: 90
                     env:
                       RATE_LIMIT_REQUESTS_PER_MINUTE: '1000000'
                       LOGIN_MAX_FAILURES: '0'
@@ -865,6 +936,8 @@ class WorkflowManifestLinterTest {
         String prepareStep = compliant.substring(compliant.indexOf("      - name: Prepare API definition"),
                 compliant.indexOf("      - name: ZAP API Scan"));
         Map<String, String[]> mutations = new java.util.LinkedHashMap<>();
+        mutations.put("잡 timeout-minutes 누락", new String[]{compliant.replace("    timeout-minutes: 90\n", ""), "timeout-minutes"});
+        mutations.put("잡 timeout-minutes 상한 초과", new String[]{compliant.replace("timeout-minutes: 90", "timeout-minutes: 180"), "timeout-minutes"});
         mutations.put("문서 URL 크롤링으로 되돌림", new String[]{compliant.replace("zaproxy/action-api-scan@", "zaproxy/action-full-scan@"), "full-scan"});
         mutations.put("OpenAPI 형식 누락", new String[]{compliant.replace("format: openapi", "format: soap"), "OpenAPI 형식"});
         mutations.put("로그인 단계 제거", new String[]{compliant.replace("ZAP_AUTH_HEADER_VALUE", "NOT_AUTH"), "스캐너 로그인"});
@@ -938,8 +1011,13 @@ class WorkflowManifestLinterTest {
     private List<String> zapScanViolations(String source) {
         Object parsed = new Yaml().load(source);
         Map<?, ?> job = asMap(asMap(asMap(parsed).get("jobs")).get("zap_scan"));
+        Object rawTimeout = job.get("timeout-minutes");
+        int timeoutMinutes = rawTimeout instanceof Number number ? number.intValue() : -1;
         List<?> steps = asList(job.get("steps"));
         List<String> violations = new ArrayList<>();
+        if (timeoutMinutes <= 0 || timeoutMinutes > 120) {
+            violations.add("zap_scan.timeout-minutes 누락 또는 상한(120분) 초과: " + rawTimeout);
+        }
         Map<?, ?> env = asMap(job.get("env"));
         String limit = Objects.toString(env.get("RATE_LIMIT_REQUESTS_PER_MINUTE"), "");
         if (!limit.matches("\\d+") || Long.parseLong(limit) < 100_000) {

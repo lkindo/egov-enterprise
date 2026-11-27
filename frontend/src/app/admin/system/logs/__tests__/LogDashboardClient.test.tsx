@@ -41,6 +41,8 @@ const dashboardHarness = vi.hoisted(() => ({
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: dashboardHarness.user }) }));
 
 vi.mock('@/app/components/patterns/full-result-export', () => ({
+  MAX_EXPORT_ROWS: 100_000,
+  isOverExportCap: (totalCount?: number) => typeof totalCount === 'number' && totalCount > 100_000,
   requestFullExport: dashboardHarness.requestFullExport,
 }));
 
@@ -90,9 +92,17 @@ vi.mock('@/components/ui/hub/HubSectionCard', () => ({
 }));
 
 vi.mock('@/app/components/ui/standard-modal', () => ({
-  StandardModal: ({ isOpen, title, children }: { isOpen: boolean; title: string; children: ReactNode }) => (
-    isOpen ? <section role="dialog" aria-label={title}>{children}</section> : null
-  ),
+  StandardModal: ({
+    isOpen,
+    title,
+    children,
+    footer,
+  }: {
+    isOpen: boolean;
+    title: string;
+    children: ReactNode;
+    footer?: ReactNode;
+  }) => (isOpen ? <section role="dialog" aria-label={title}>{children}{footer}</section> : null),
 }));
 
 vi.mock('@/components/ui/button', () => ({
@@ -287,9 +297,12 @@ describe('integrated log dashboard contracts', () => {
     fireEvent.change(screen.getByLabelText('조회 기간(발생일자) 시작일'), { target: { value: '2026-09-01' } });
     fireEvent.change(screen.getByLabelText('조회 기간(발생일자) 종료일'), { target: { value: '2026-09-10' } });
     fireEvent.click(screen.getByRole('button', { name: /전체 결과 엑셀 다운로드/ }));
+    fireEvent.change(screen.getByLabelText('내보내기 사유'), { target: { value: '월간 점검' } });
+    fireEvent.click(screen.getByRole('button', { name: '내보내기' }));
 
     expect(dashboardHarness.requestFullExport).toHaveBeenCalledWith(expect.objectContaining({
       operation,
+      reason: '월간 점검',
       totalCount: 37,
       searchKeyword: '',
       period: { from: '2026-09-01', to: '2026-09-10' },

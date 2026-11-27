@@ -38,6 +38,10 @@ public class ProdRequiredPropertiesGuard implements InitializingBean {
             "nuri.crypto.rrno.keys-json"
     );
 
+    private static final String KEY_MFA_REQUIRE_PROTECTED = "nuri.security.mfa.require-protected";
+    private static final String KEY_MFA_ACTIVE_KEY_ID = "nuri.security.mfa.active-key-id";
+    private static final String KEY_MFA_KEYS_JSON = "nuri.security.mfa.keys-json";
+
     private static final Pattern UNRESOLVED_PLACEHOLDER_PATTERN = Pattern.compile("\\$\\{[^}]+}");
 
     private final ConfigurableEnvironment environment;
@@ -59,6 +63,8 @@ public class ProdRequiredPropertiesGuard implements InitializingBean {
                 missingOrUnresolved.add(key);
             }
         }
+
+        validateMfaProperties(missingOrUnresolved);
 
         for (PropertySource<?> propertySource : flattenPropertySources()) {
             if (!(propertySource instanceof EnumerablePropertySource<?> enumerableSource)) {
@@ -83,6 +89,35 @@ public class ProdRequiredPropertiesGuard implements InitializingBean {
                     "Missing or unresolved required prod configuration properties: "
                             + String.join(", ", missingOrUnresolved)
             );
+        }
+    }
+
+    private void validateMfaProperties(Set<String> missingOrUnresolved) {
+        String requireProtected;
+        try {
+            requireProtected = environment.getProperty(KEY_MFA_REQUIRE_PROTECTED);
+        } catch (IllegalArgumentException ex) {
+            missingOrUnresolved.add(KEY_MFA_REQUIRE_PROTECTED);
+            return;
+        }
+        if (requireProtected == null
+                || requireProtected.isBlank()
+                || UNRESOLVED_PLACEHOLDER_PATTERN.matcher(requireProtected).find()) {
+            missingOrUnresolved.add(KEY_MFA_REQUIRE_PROTECTED);
+            return;
+        }
+        String normalized = requireProtected.trim().toLowerCase(Locale.ROOT);
+        if (!"true".equals(normalized) && !"false".equals(normalized)) {
+            missingOrUnresolved.add(KEY_MFA_REQUIRE_PROTECTED);
+            return;
+        }
+        if ("true".equals(normalized)) {
+            if (isMissingOrUnresolved(KEY_MFA_ACTIVE_KEY_ID, true)) {
+                missingOrUnresolved.add(KEY_MFA_ACTIVE_KEY_ID);
+            }
+            if (isMissingOrUnresolved(KEY_MFA_KEYS_JSON, true)) {
+                missingOrUnresolved.add(KEY_MFA_KEYS_JSON);
+            }
         }
     }
 

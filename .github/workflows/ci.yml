@@ -1415,7 +1415,7 @@ jobs:
           CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/prometheus || echo 000)
           case "$CODE" in
             401|403) echo "metrics 엔드포인트가 보호되어 있음($CODE) — 정상" ;;
-            200) echo "::warning title=metrics 미보호::/actuator/prometheus 가 미인증 200 을 반환했습니다. ROLE_ADMIN 보호가 풀렸는지 확인하십시오." ;;
+            200) echo "::error title=metrics 미보호::/actuator/prometheus 가 미인증 200 을 반환했습니다. ROLE_ADMIN 보호가 풀렸는지 확인하십시오."; exit 1 ;;
             *) echo "::error title=metrics 엔드포인트 비정상::응답 코드 $CODE (엔드포인트 부재 또는 앱 비정상)"; exit 1 ;;
           esac
           echo "Backend is ready!"

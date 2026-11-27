@@ -494,7 +494,7 @@ const FAQItem = ({ item, bbsId, querySearchWrd }: { item: BoardPost; bbsId: stri
                 <p className="text-[length:var(--font-size-body)] text-muted-foreground" role="status">답변을 불러오는 중입니다.</p>
               ) : answer.isError ? (
                 <div className="flex flex-wrap items-center gap-2" role="alert">
-                  <p className="text-[length:var(--font-size-body)] text-destructive">답변을 불러오지 못했습니다.</p>
+                  <p className="text-[length:var(--font-size-body)] text-destructive-emphasis">답변을 불러오지 못했습니다.</p>
                   <Button type="button" variant="outline" size="sm" onClick={() => void answer.refetch()}>다시 시도</Button>
                 </div>
               ) : answerHtml ? (

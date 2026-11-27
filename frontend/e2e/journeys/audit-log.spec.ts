@@ -243,13 +243,16 @@ test.describe('관측 여정 — 행동이 남긴 기록을 찾는다', () => {
         await expect(row).toContainText('403');
 
         await test.step('서버에서 직접 내려받은 XLSX 끝까지 읽고 같은 실패 요청을 찾는다', async () => {
+            await page.getByRole('button', { name: '전체 결과 엑셀 다운로드', exact: true }).click();
+            await page.getByLabel('내보내기 사유').fill('시스템 로그 E2E 점검');
             const [download] = await Promise.all([
                 page.waitForEvent('download'),
-                page.getByRole('button', { name: '전체 결과 엑셀 다운로드', exact: true }).click(),
+                page.getByRole('button', { name: '내보내기', exact: true }).click(),
             ]);
             const downloadUrl = new URL(download.url());
             expect(downloadUrl.pathname).toBe('/api/v1/admin/system/logs/system/export.xlsx');
             expect(downloadUrl.searchParams.get('searchKeyword')).toBe(marker);
+            expect(downloadUrl.searchParams.get('reason')).toBe('시스템 로그 E2E 점검');
             expect(download.suggestedFilename()).toBe('system-logs.xlsx');
             // 이 화면은 서버 URL 로 직접 이동한다. download 이벤트 뒤 전송 완료·ZIP 끝·실제 행까지 확인한다.
             const rows = await downloadedXlsxRows(download, page, 'system-logs');

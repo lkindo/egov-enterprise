@@ -34,7 +34,7 @@ export function PreviewDialog({ draft, onClose }: { draft: PreviewDraft; onClose
   const title = draft.contsTtl.trim() || '제목 없음';
   const body = normalized.ok
     ? <CmsDocumentView document={normalized.document} showPlaceholders />
-    : <p role="alert" className="text-destructive">미리 볼 수 없는 내용이 있습니다: {normalized.error}</p>;
+    : <p role="alert" className="text-destructive-emphasis">미리 볼 수 없는 내용이 있습니다: {normalized.error}</p>;
 
   return (
     <StandardModal isOpen onClose={onClose} title="미리보기 — 저장하지 않은 변경 포함" maxWidth="5xl">

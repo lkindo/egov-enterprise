@@ -793,6 +793,11 @@ class SurveyServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_IN_USE);
         assertThat(item.getArtclCn()).isEqualTo("예");
+
+        assertThatThrownBy(() -> surveyService.updateItem(SurveyArticleDto.builder()
+                .srvyArtclSn(401L).artclSn(1L).artclCn("예").etcAnsYn("Y").build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_IN_USE);
     }
 
     @Test

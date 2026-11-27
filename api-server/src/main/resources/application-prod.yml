@@ -120,6 +120,10 @@ springdoc:
 
 # Read-only, bounded daily storage/reference audit; snapshots contain aggregate counts only.
 nuri:
+  # 운영은 기본적으로 보호 계정(ADMIN) MFA 를 강제한다(ADR-0054). 전환 유예만 MFA_REQUIRE_PROTECTED=false 로 연다.
+  security:
+    mfa:
+      require-protected: ${MFA_REQUIRE_PROTECTED:true}
   # [2026-11-25] 운영은 주민등록번호를 키링(AES-256-GCM v2)으로만 새로 쓴다 — 무기본값으로 재선언해 미설정 시 기동 실패(fail-fast).
   #   비우면 종전 ARIA(IV·MAC 없는 결정적 암호)로 저장되던 경로다. ProdRequiredPropertiesGuard 가 두 키를 함께 요구한다.
   crypto:

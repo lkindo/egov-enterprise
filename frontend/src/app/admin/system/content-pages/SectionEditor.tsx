@@ -441,7 +441,7 @@ function ImageCellEditor({ cell, label, idPrefix, readOnly, canUpload, issueId, 
             onClick={() => input.current?.click()}>
             <ImagePlus size={16} aria-hidden="true" /> {uploading ? '올리는 중…' : cell.atchFileSn > 0 ? '이미지 바꾸기' : '이미지 올리기'}
           </Button>
-          {uploadError && <p id={errorId} role="alert" className="text-sm text-destructive">{uploadError}</p>}
+          {uploadError && <p id={errorId} role="alert" className="text-sm text-destructive-emphasis">{uploadError}</p>}
           <p className="text-sm text-muted-foreground">
             {CMS_IMAGE_EXTENSIONS.join('·')} 이미지를 한 장씩 올립니다(파일 하나에 {SERVER_MAX_FILE_SIZE_MB}MB 까지). 다른 페이지에 쓴 이미지는 다시 올려 주세요.
           </p>
@@ -521,7 +521,7 @@ function LinksCellEditor({ cell, idPrefix, readOnly, issueId, onChange }: CellCo
                 <X size={16} aria-hidden="true" />
               </Button>
               {invalidUrl && (
-                <p id={errorId} className="basis-full text-sm text-destructive">
+                <p id={errorId} className="basis-full text-sm text-destructive-emphasis">
                   https 주소, /로 시작하는 사이트 내부 경로, mailto·tel 만 쓸 수 있습니다.
                 </p>
               )}
@@ -642,7 +642,7 @@ function FilesCellEditor({ cell, label, idPrefix, readOnly, canUpload, issueId, 
             onClick={() => input.current?.click()}>
             <FilePlus size={16} aria-hidden="true" /> {uploading ? '올리는 중…' : '파일 올리기'}
           </Button>
-          {uploadError && <p id={errorId} role="alert" className="text-sm text-destructive">{uploadError}</p>}
+          {uploadError && <p id={errorId} role="alert" className="text-sm text-destructive-emphasis">{uploadError}</p>}
           <p className="text-sm text-muted-foreground">
             {CMS_FILE_EXTENSIONS.join('·')} 파일을 하나씩 올립니다(파일 하나에 {SERVER_MAX_FILE_SIZE_MB}MB 까지, 한 칸에 {MAX_FILES}개까지).
             {full ? ` ${MAX_FILES}개를 모두 채웠습니다. 더 올리려면 하나를 지우세요.` : ''} 다른 페이지에 쓴 파일은 다시 올려 주세요.

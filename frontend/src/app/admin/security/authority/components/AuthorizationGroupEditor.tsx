@@ -404,11 +404,11 @@ export function AuthorizationGroupEditor({ snapshot, catalog, refreshing, onRefr
       {bundleEditable && anonymous && <p id={bundleReasonId} className="text-xs text-muted-foreground">비로그인 사용자 그룹에는 묶음을 적용할 수 없습니다.</p>}
       {!currentBaseline && <div className="flex flex-wrap items-center gap-2"><p role="status" className="text-sm text-muted-foreground">그룹 정보가 다른 곳에서 변경되어 화면별 권한·기능별 권한을 저장할 수 없습니다. 최신 정보를 적용한 뒤 다시 편집하세요.</p>{reloadButton}</div>}
       {currentBaseline && !metadataCurrent && <div className="flex flex-wrap items-center gap-2"><p role="status" className="text-sm text-muted-foreground">그룹명·설명이 다른 곳에서 변경되었습니다. 최신 정보를 적용한 뒤 기본 정보를 편집하세요.</p>{reloadButton}</div>}
-      {!complete && <p role="alert" className="text-sm text-destructive">전체 권한 또는 현재 기능 목록과의 일치를 확인하지 못해 저장할 수 없습니다. 다시 조회해 주세요.</p>}
-      {navigationOnly && !anonymous && <p role="alert" className="text-sm text-destructive">메뉴만 선택되어 있고 기능권한이 없습니다. 필요한 업무 영역의 조회 기능을 확인하세요. 권한은 자동으로 추가되지 않습니다.</p>}
+      {!complete && <p role="alert" className="text-sm text-destructive-emphasis">전체 권한 또는 현재 기능 목록과의 일치를 확인하지 못해 저장할 수 없습니다. 다시 조회해 주세요.</p>}
+      {navigationOnly && !anonymous && <p role="alert" className="text-sm text-destructive-emphasis">메뉴만 선택되어 있고 기능권한이 없습니다. 필요한 업무 영역의 조회 기능을 확인하세요. 권한은 자동으로 추가되지 않습니다.</p>}
       {/* 메뉴 계층 손상과 상위 누락은 어느 탭에 있든 저장(또는 편집 전체)을 막으므로 탭 밖에 둔다 — 이유 없이 죽은 버튼을 남기지 않는다(G10). */}
-      {navigationTree.error && <p role="alert" className="text-sm text-destructive">{navigationTree.error} 저장할 수 없습니다. 메뉴 설정을 확인한 뒤 다시 조회해 주세요.</p>}
-      {navigationGaps.length > 0 && <p role="alert" className="text-sm text-destructive">상위 메뉴가 선택되지 않은 메뉴가 있습니다: {navigationGaps.join(', ')}. &apos;화면별 권한&apos; 탭의 &apos;메뉴 표시&apos; 칸에서 상위 메뉴를 선택하거나 해당 하위 메뉴를 해제한 뒤 저장하세요.</p>}
+      {navigationTree.error && <p role="alert" className="text-sm text-destructive-emphasis">{navigationTree.error} 저장할 수 없습니다. 메뉴 설정을 확인한 뒤 다시 조회해 주세요.</p>}
+      {navigationGaps.length > 0 && <p role="alert" className="text-sm text-destructive-emphasis">상위 메뉴가 선택되지 않은 메뉴가 있습니다: {navigationGaps.join(', ')}. &apos;화면별 권한&apos; 탭의 &apos;메뉴 표시&apos; 칸에서 상위 메뉴를 선택하거나 해당 하위 메뉴를 해제한 뒤 저장하세요.</p>}
       {/* 탭 묶음은 바닥값(5rem — 탭 이름 줄과 탭 내용 한 줄)을 지킨다. min-h-0 이면 편집기가 아주 낮을 때 탭 이름 줄까지 저장 막대 위로 넘친다.
           바닥값을 더 크게 두면 흔한 노트북 창(1366×657)에서 편집기가 작업 영역보다 길어져 저장 막대가 작업 영역 아래로 밀린다(구조 측정). */}
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as EditorTab)} className="gap-2 work-fill:min-h-[5rem] work-fill:flex-1">

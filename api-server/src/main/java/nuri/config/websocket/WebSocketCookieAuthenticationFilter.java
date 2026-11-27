@@ -127,7 +127,7 @@ public final class WebSocketCookieAuthenticationFilter extends AuthenticationFil
 
         private Authentication verify(String token) {
             try {
-                Authentication verified = tokens.validateToken(token) ? tokens.getAuthentication(token) : null;
+                Authentication verified = tokens.authenticateAccessToken(token);
                 if (verified == null || !verified.isAuthenticated()) {
                     throw new BadCredentialsException("Invalid transport token");
                 }

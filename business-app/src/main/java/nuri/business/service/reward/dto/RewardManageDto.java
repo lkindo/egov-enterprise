@@ -48,6 +48,9 @@ public class RewardManageDto {
     // [2026-10-19] 승인 필드(승인자·승인 여부·승인 일시·반려 사유·연결 결재)를 걷었다 — 승인 절차가 제품에 없어 늘
     //   대기·빈값이었다. 물리 컬럼은 남지만 앱은 쓰지도 내보내지도 않는다. 감사 필드는 응답 전용이다 — 서버가 소유한다.
     private Long atchFileSn;
+    @Schema(description = "기존 첨부파일을 해제할 때 true. atchFileSn 과 함께 보내면 400 이다.")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private Boolean clearAttachment;
     @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String frstRgtrId;

@@ -198,7 +198,7 @@ export default function CommunityDetailHubClient({
                     disabled={isLeaving}
                     aria-busy={isLeaving || undefined}
                     aria-label={isLeaving ? '커뮤니티 탈퇴 중' : '커뮤니티 탈퇴'}
-                    className="text-destructive hover:text-destructive"
+                    className="text-destructive-emphasis hover:text-destructive-emphasis"
                   >
                     <UserMinus size={16} aria-hidden="true" />
                     {isLeaving ? '탈퇴 중…' : '탈퇴'}

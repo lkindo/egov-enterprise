@@ -34015,6 +34015,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "description": "내보내기 사유(2~200자). 감사 원장의 내보내기 기록에 함께 남는다.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -34279,6 +34288,15 @@
             "name": "searchKeywordTo",
             "in": "query",
             "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "description": "내보내기 사유(2~200자). 감사 원장의 내보내기 기록에 함께 남는다.",
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -34630,6 +34648,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "description": "내보내기 사유(2~200자). 감사 원장의 내보내기 기록에 함께 남는다.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -34894,6 +34921,15 @@
             "name": "searchKeywordTo",
             "in": "query",
             "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "description": "내보내기 사유(2~200자). 감사 원장의 내보내기 기록에 함께 남는다.",
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -35259,6 +35295,15 @@
             "name": "searchKeywordTo",
             "in": "query",
             "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "description": "내보내기 사유(2~200자). 감사 원장의 내보내기 기록에 함께 남는다.",
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -42916,6 +42961,11 @@
           "atchFileSn": {
             "type": "integer",
             "format": "int64"
+          },
+          "clearAttachment": {
+            "type": "boolean",
+            "description": "기존 첨부파일을 해제할 때 true. atchFileSn 과 함께 보내면 400 이다.",
+            "writeOnly": true
           },
           "frstRgtrId": {
             "type": "string",

@@ -296,7 +296,7 @@ export default function CommentModerationClient() {
               </NativeSelect>
             </div>
           </KeywordFilter>
-          {postNumberError && <p role="alert" className="text-[length:var(--font-size-body)] text-destructive">{postNumberError}</p>}
+          {postNumberError && <p role="alert" className="text-[length:var(--font-size-body)] text-destructive-emphasis">{postNumberError}</p>}
         </div>
       }
       toolbarActions={

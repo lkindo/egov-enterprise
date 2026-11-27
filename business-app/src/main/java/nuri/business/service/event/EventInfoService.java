@@ -53,18 +53,23 @@ public class EventInfoService {
         SecurityUtil.assertPermission("EVENT_CREATE");
         log.info("Creating new event");
  
+        String bgngYmd = normalizeYmd(dto.getEvntBgngYmd());
+        String endYmd = normalizeYmd(dto.getEvntEndYmd());
+        assertOrderedDates(bgngYmd, endYmd);
+        String deadlineYmd = applicationDeadline(dto.getAplyDdlnYmd(), endYmd);
+
         EventInfo eventInfo = EventInfo.builder()
                 .bizYr(dto.getBizYr())
                 .evntNm(dto.getEvntNm())
                 .evntCn(dto.getEvntCn())
-                .evntBgngYmd(normalizeYmd(dto.getEvntBgngYmd()))
-                .evntEndYmd(normalizeYmd(dto.getEvntEndYmd()))
+                .evntBgngYmd(bgngYmd)
+                .evntEndYmd(endYmd)
                 .evntUseCnt(dto.getEvntUseCnt())
                 .picNm(dto.getPicNm())
                 .prepMttr(dto.getPrepMttr())
                 .evntTypeCd(dto.getEvntTypeCd())
                 .pscpNope(dto.getPscpNope())
-                .aplyDdlnYmd(applicationDeadline(dto))
+                .aplyDdlnYmd(deadlineYmd)
                 .build();
 
         EventInfo saved = eventInfoRepository.save(Objects.requireNonNull(eventInfo));
@@ -90,36 +95,48 @@ public class EventInfoService {
             }
         }
 
+        String bgngYmd = normalizeYmd(dto.getEvntBgngYmd());
+        String endYmd = normalizeYmd(dto.getEvntEndYmd());
+        assertOrderedDates(bgngYmd, endYmd);
+        String deadlineYmd = applicationDeadline(dto.getAplyDdlnYmd(), endYmd);
+
         eventInfo.update(
                 dto.getBizYr(),
                 dto.getEvntNm(),
                 dto.getEvntCn(),
-                normalizeYmd(dto.getEvntBgngYmd()),
-                normalizeYmd(dto.getEvntEndYmd()),
+                bgngYmd,
+                endYmd,
                 dto.getEvntUseCnt(),
                 dto.getPicNm(),
                 dto.getPrepMttr(),
                 dto.getEvntTypeCd(),
                 dto.getPscpNope(),
-                applicationDeadline(dto));
+                deadlineYmd);
         log.info("Event updated successfully: {}", evntSn);
     }
- 
+
     /**
-     * 행사 일자(YYYY-MM-DD 또는 YYYYMMDD)를 물리 컬럼 표준(YYYYMMDD, varchar(8))으로 정규화한다.
-     * V2_18 스키마 동기화 — 하이픈 데이터 유입 경로 봉쇄.
+     * 행사 일자(YYYY-MM-DD 또는 YYYYMMDD)를 검증한 뒤 물리 컬럼 표준(YYYYMMDD, varchar(8))으로 정규화한다.
      */
     private static String normalizeYmd(String ymd) {
-        return ymd == null ? null : ymd.replace("-", "");
+        return nuri.foundation.core.validation.Ymd.compact(ymd);
+    }
+
+    /** 행사 시작일은 종료일보다 늦을 수 없다(400). */
+    private static void assertOrderedDates(String bgngYmd, String endYmd) {
+        if (bgngYmd != null && !bgngYmd.isBlank()
+                && endYmd != null && !endYmd.isBlank()
+                && bgngYmd.compareTo(endYmd) > 0) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "행사 시작일은 종료일보다 늦을 수 없습니다.");
+        }
     }
 
     /** 신청 마감일(V2_152)을 정해야 신청을 받는다(비우면 받지 않는다). 행사 종료일보다 늦은 마감일은 받지 않는다(400). */
-    private static String applicationDeadline(EventInfoDto dto) {
-        String deadline = normalizeYmd(dto.getAplyDdlnYmd());
+    private static String applicationDeadline(String rawDeadline, String end) {
+        String deadline = normalizeYmd(rawDeadline);
         if (deadline == null || deadline.isBlank()) {
             return null;
         }
-        String end = normalizeYmd(dto.getEvntEndYmd());
         if (end != null && !end.isBlank() && deadline.compareTo(end) > 0) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "신청 마감일은 행사 종료일보다 늦을 수 없습니다.");
         }

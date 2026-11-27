@@ -165,7 +165,31 @@ class EventInfoServiceTest {
         BusinessException late = assertThrows(BusinessException.class, () -> eventInfoService.createEvent("writer",
                 EventInfoDto.builder().evntNm("늦은 마감").evntEndYmd("20261202").aplyDdlnYmd("20261203").build()));
         assertThat(late.getErrorCode()).isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+
+        BusinessException invalidCalendar = assertThrows(BusinessException.class, () -> eventInfoService.createEvent("writer",
+                EventInfoDto.builder().evntNm("없는 날짜").evntBgngYmd("20260230").evntEndYmd("20260301").build()));
+        assertThat(invalidCalendar.getErrorCode()).isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+
+        BusinessException reversed = assertThrows(BusinessException.class, () -> eventInfoService.createEvent("writer",
+                EventInfoDto.builder().evntNm("역전 기간").evntBgngYmd("2026-12-05").evntEndYmd("20261202").build()));
+        assertThat(reversed.getErrorCode()).isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
         verify(eventInfoRepository, times(1)).save(any(EventInfo.class));
+    }
+
+    @Test
+    @DisplayName("행사 수정 시 유효하지 않은 달력 날짜와 시작일>종료일 역전 기간을 거부한다")
+    void updateEventRejectsInvalidCalendarAndReversedRange() {
+        authenticate(List.of("EVENT_UPDATE"), List.of());
+        EventInfo existing = EventInfo.builder().evntSn(1L).evntNm("워크숍").evntBgngYmd("20261201").evntEndYmd("20261202").build();
+        existing.setFrstRgtrId("operator");
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
+        given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existing));
+
+        assertThrows(BusinessException.class, () -> eventInfoService.updateEvent(1L, "writer",
+                EventInfoDto.builder().evntNm("워크숍").evntBgngYmd("2026-02-30").evntEndYmd("2026-03-01").version(0).build()));
+        assertThrows(BusinessException.class, () -> eventInfoService.updateEvent(1L, "writer",
+                EventInfoDto.builder().evntNm("워크숍").evntBgngYmd("20261205").evntEndYmd("20261202").version(0).build()));
+        assertThat(existing.getEvntBgngYmd()).isEqualTo("20261201");
     }
 
     @Test

@@ -67,13 +67,12 @@ class AuthenticationBypassTest extends BaseSecurityTest {
             return null;
         });
         // 유효/무효를 실제로 가른다. 이 두 줄이 없으면 모든 토큰이 동일하게 거부되어 정보량이 0이 된다.
-        when(jwtTokenProvider.validateToken(anyString())).thenReturn(false);
-        when(jwtTokenProvider.validateToken(eq(VALID_TOKEN))).thenReturn(true);
+        when(jwtTokenProvider.authenticateAccessToken(anyString())).thenReturn(null);
         // principal 은 CustomUserDetails 여야 한다 — @LoginUser 아규먼트 리졸버가 그 타입을 주입하므로,
         // String principal 을 넣으면 핸들러가 null 을 받아 대조군이 엉뚱한 이유로 깨진다.
         nuri.foundation.security.service.CustomUserDetails principal =
                 nuri.business.support.AuthorizationTestPrincipal.principal("testuser01", "USR0000001", "USER");
-        when(jwtTokenProvider.getAuthentication(eq(VALID_TOKEN))).thenReturn(
+        when(jwtTokenProvider.authenticateAccessToken(eq(VALID_TOKEN))).thenReturn(
                 new UsernamePasswordAuthenticationToken(
                         principal, null, principal.getAuthorities()));
     }

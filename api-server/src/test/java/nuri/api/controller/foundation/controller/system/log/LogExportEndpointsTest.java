@@ -111,7 +111,8 @@ class LogExportEndpointsTest {
                         .param("size", "2")
                         .param("searchKeyword", "조회어")
                         .param("searchKeywordFrom", "20260801")
-                        .param("searchKeywordTo", "20260831"))
+                        .param("searchKeywordTo", "20260831")
+                        .param("reason", "월간 점검"))
                 .andExpect(request().asyncStarted())
                 .andReturn();
 
@@ -200,7 +201,8 @@ class LogExportEndpointsTest {
                 .thenReturn(XlsxExport.MAX_EXPORT_ROWS + 1);
 
         mvc(systemLogApiController)
-                .perform(get("/api/v1/admin/system/logs/system/export.xlsx"))
+                .perform(get("/api/v1/admin/system/logs/system/export.xlsx")
+                        .param("reason", "월간 점검"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -211,10 +213,47 @@ class LogExportEndpointsTest {
                 .thenReturn(XlsxExport.MAX_EXPORT_ROWS + 1);
 
         mvc(systemLogApiController)
-                .perform(get("/api/v1/admin/system/logs/system/export.xlsx"))
+                .perform(get("/api/v1/admin/system/logs/system/export.xlsx")
+                        .param("reason", "월간 점검"))
                 .andExpect(status().isBadRequest());
 
         org.mockito.Mockito.verify(logManageService, org.mockito.Mockito.never())
                 .selectSysLogList(any());
+    }
+
+    @Test
+    @DisplayName("다섯 로그 export 모두 사유 감사 파라미터와 수식 인젝션 중화를 적용한다")
+    void enforcesReasonParameterAndFormulaNeutralization() throws Exception {
+        for (Class<?> controller : List.of(
+                LoginLogApiController.class,
+                PrivacyLogApiController.class,
+                SystemLogApiController.class,
+                WebLogApiController.class,
+                UserLogApiController.class)) {
+            var method = java.util.Arrays.stream(controller.getDeclaredMethods())
+                    .filter(m -> m.getName().startsWith("export"))
+                    .findFirst()
+                    .orElseThrow();
+            var annotation = method.getAnnotation(nuri.foundation.core.annotation.PrivacyAccess.class);
+            assertThat(annotation).isNotNull();
+            assertThat(annotation.reasonParameter()).isEqualTo("reason");
+        }
+
+        WebLogDto injected = new WebLogDto(5L, "=CMD|'/C calc'!A0", "  +admin", "@malicious", "20260826", 12L);
+        when(webLogManageService.selectWebLogList(any())).thenReturn(pageOf(List.of(injected), 1));
+        byte[] body = download(mvc(webLogApiController),
+                "/api/v1/admin/system/logs/web/export.xlsx", "web-logs.xlsx");
+
+        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(body))) {
+            var dataRow = workbook.getSheetAt(0).getRow(1);
+            assertThat(dataRow.getCell(1).getStringCellValue()).isEqualTo("=CMD|'/C calc'!A0");
+            assertThat(dataRow.getCell(2).getStringCellValue()).isEqualTo("  +admin");
+            assertThat(dataRow.getCell(3).getStringCellValue()).isEqualTo("@malicious");
+            assertThat(dataRow.getCell(1).getCellStyle().getQuotePrefixed()).isTrue();
+            assertThat(dataRow.getCell(2).getCellStyle().getQuotePrefixed()).isTrue();
+            assertThat(dataRow.getCell(3).getCellStyle().getQuotePrefixed()).isTrue();
+            assertThat(dataRow.getCell(0).getCellStyle().getQuotePrefixed()).isFalse();
+            assertThat(dataRow.getCell(4).getCellStyle().getQuotePrefixed()).isFalse();
+        }
     }
 }

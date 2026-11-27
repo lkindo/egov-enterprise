@@ -55,7 +55,7 @@ export function RevisionsDialog({
 
   return (
     <StandardModal isOpen onClose={onClose} title="게시 이력" maxWidth="4xl">
-      {revisions.isError && <p role="alert" className="text-destructive">게시 이력을 불러오지 못했습니다.</p>}
+      {revisions.isError && <p role="alert" className="text-destructive-emphasis">게시 이력을 불러오지 못했습니다.</p>}
       <ul className="divide-y divide-border">
         {items.map((item) => (
           <li key={item.contsRvsnSn} className="flex flex-wrap items-center gap-3 py-2">
@@ -101,7 +101,7 @@ export function RevisionsDialog({
       {viewing !== null && (
         <div className="mt-4 space-y-3 rounded-md border border-border p-4">
           {revision.isLoading && <p className="text-muted-foreground">불러오는 중…</p>}
-          {revision.isError && <p role="alert" className="text-destructive">게시본을 불러오지 못했습니다.</p>}
+          {revision.isError && <p role="alert" className="text-destructive-emphasis">게시본을 불러오지 못했습니다.</p>}
           {revision.data && (
             <>
               <div className="flex flex-wrap items-center justify-between gap-2">

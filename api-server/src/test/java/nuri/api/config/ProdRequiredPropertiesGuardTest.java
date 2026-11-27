@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +17,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.PropertySource;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.mock.env.MockEnvironment;
 
 class ProdRequiredPropertiesGuardTest {
@@ -167,10 +169,54 @@ class ProdRequiredPropertiesGuardTest {
     }
 
     private void loadYamlSources(ConfigurableEnvironment environment, String name, String location) throws IOException {
-        List<PropertySource<?>> loaded = yamlLoader.load(name, new ClassPathResource(location));
+        Path direct = Path.of("src/main/resources", location);
+        Path fromRoot = Path.of("api-server/src/main/resources", location);
+        Path resolved = Files.isRegularFile(direct) ? direct : fromRoot;
+        List<PropertySource<?>> loaded = yamlLoader.load(name, new FileSystemResource(resolved));
         for (PropertySource<?> source : loaded) {
             environment.getPropertySources().addLast(source);
         }
+    }
+
+    /** 운영은 보호계정 MFA 가 기본 강제되므로 전환 유예를 명시(false)하지 않으면 MFA 키링 두 키가 모두 필요하다(ADR-0054). */
+    @Test
+    void missingMfaKeyringWhenRequireProtectedDefaultTrueFailsWithoutSecretLeak() throws IOException {
+        Map<String, Object> envVars = completeProdEnvVars();
+        envVars.remove("MFA_ACTIVE_KEY_ID");
+        envVars.put("MFA_KEYS_JSON", " ");
+
+        MockEnvironment environment = buildProdEnvironment(envVars, Map.of());
+        ProdRequiredPropertiesGuard guard = new ProdRequiredPropertiesGuard(environment);
+
+        assertThatThrownBy(guard::validate)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("nuri.security.mfa.active-key-id")
+                .hasMessageContaining("nuri.security.mfa.keys-json")
+                .hasMessageNotContaining("super-secret");
+    }
+
+    @Test
+    void mfaRequireProtectedFalseAllowsOmittedMfaKeyringForGracePeriod() throws IOException {
+        Map<String, Object> envVars = completeProdEnvVars();
+        envVars.put("MFA_REQUIRE_PROTECTED", "false");
+        envVars.remove("MFA_ACTIVE_KEY_ID");
+        envVars.remove("MFA_KEYS_JSON");
+
+        MockEnvironment environment = buildProdEnvironment(envVars, Map.of());
+        assertThatCode(new ProdRequiredPropertiesGuard(environment)::validate).doesNotThrowAnyException();
+    }
+
+    @Test
+    void invalidMfaRequireProtectedValueFailsStartup() throws IOException {
+        Map<String, Object> envVars = completeProdEnvVars();
+        envVars.put("MFA_REQUIRE_PROTECTED", "flase");
+
+        MockEnvironment environment = buildProdEnvironment(envVars, Map.of());
+        ProdRequiredPropertiesGuard guard = new ProdRequiredPropertiesGuard(environment);
+
+        assertThatThrownBy(guard::validate)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("nuri.security.mfa.require-protected");
     }
 
     private static Map<String, Object> completeProdEnvVars() {
@@ -184,6 +230,8 @@ class ProdRequiredPropertiesGuardTest {
         vars.put("JWT_SIGNING_KEYS_JSON", "[{\"kid\":\"prod-kid-1\",\"secret\":\"super-secret-jwt-value\"}]");
         vars.put("RRNO_ACTIVE_KEY_ID", "rrno-1");
         vars.put("RRNO_KEYS_JSON", "{\"rrno-1\":\"super-secret-rrno-key\"}");
+        vars.put("MFA_ACTIVE_KEY_ID", "mfa-1");
+        vars.put("MFA_KEYS_JSON", "{\"mfa-1\":\"super-secret-mfa-key\"}");
         return vars;
     }
 }

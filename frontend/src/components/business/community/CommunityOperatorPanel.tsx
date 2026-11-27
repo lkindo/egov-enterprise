@@ -222,7 +222,7 @@ export function CommunityOperatorPanel({ cmntySn, community }: CommunityOperator
                         <span className="sr-only">{name}</span>{' '}가입 승인
                       </Button>
                       <Button type="button" size="sm" variant="outline" disabled={pendingAction !== null} aria-busy={busy(member, 'reject') || undefined}
-                        className="text-destructive hover:text-destructive"
+                        className="text-destructive-emphasis hover:text-destructive-emphasis"
                         onClick={() => { void runAction(member, 'reject', () => communityOperatorService.reject(cmntySn, member.userId),
                           `${name} 님의 가입 신청을 반려했습니다.`, '가입 신청을 반려하지 못했습니다.',
                           { title: '가입 신청 반려', message: `${name} 님의 가입 신청을 반려합니다. 신청 기록은 지워지며 다시 신청할 수 있습니다.`, confirmText: '반려' }); }}>
@@ -240,7 +240,7 @@ export function CommunityOperatorPanel({ cmntySn, community }: CommunityOperator
                         <span className="sr-only">{name}</span>{' '}운영자 지정
                       </Button>
                       <Button type="button" size="sm" variant="outline" disabled={pendingAction !== null} aria-busy={busy(member, 'withdraw') || undefined}
-                        className="text-destructive hover:text-destructive"
+                        className="text-destructive-emphasis hover:text-destructive-emphasis"
                         onClick={() => { void runAction(member, 'withdraw', () => communityOperatorService.withdraw(cmntySn, member.userId),
                           `${name} 님을 탈퇴 처리했습니다.`, '탈퇴 처리하지 못했습니다.',
                           { title: '회원 탈퇴 처리', message: `${name} 님을 탈퇴 처리합니다. 회원 전용 게시판을 더 이상 볼 수 없고, 다시 이용하려면 새로 가입을 신청해야 합니다.`, confirmText: '탈퇴 처리' }); }}>

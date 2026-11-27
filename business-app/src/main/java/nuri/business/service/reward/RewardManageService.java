@@ -135,11 +135,17 @@ public class RewardManageService {
         String rewardDate = normalizeAndValidateDate(dto.getRwardDe());
         Long previousAtchFileSn = reward.getAtchFileSn();
         Long atchFileSn = dto.getAtchFileSn();
+        boolean clearAttachment = Boolean.TRUE.equals(dto.getClearAttachment());
+        if (clearAttachment && atchFileSn != null) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "첨부파일 교체와 해제를 동시에 요청할 수 없습니다.");
+        }
         if (atchFileSn != null && !Objects.equals(previousAtchFileSn, atchFileSn)) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
         }
+        Long nextAtchFileSn = clearAttachment ? null : (atchFileSn != null ? atchFileSn : previousAtchFileSn);
         reward.update(dto.getRwardwnrId(), dto.getRwardCode(), rewardDate, rewardName, dto.getPblenCn(),
-                atchFileSn != null ? atchFileSn : previousAtchFileSn);
+                nextAtchFileSn);
         // 올라간 버전을 응답에 싣는다 — @Version 은 flush 때 오르므로 먼저 내보낸다(결재 임시저장 선례).
         rewardManageRepository.flush();
         if (previousAtchFileSn != null && !Objects.equals(previousAtchFileSn, reward.getAtchFileSn())) {
