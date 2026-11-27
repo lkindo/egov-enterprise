@@ -342,6 +342,29 @@ describe('API 클라이언트 인터셉터', () => {
       expect(win.location.href).toContain('/login?expired=true');
     });
 
+    it('만료 화면으로 이동하는 동안 늦은 401 은 재발급을 다시 시작하지 않는다', async () => {
+      const win = { location: { pathname: '/admin', href: '' }, dispatchEvent: vi.fn() };
+      Object.defineProperty(globalThis, 'window', { value: win, configurable: true, writable: true });
+      const { instance, captured } = await loadClient();
+      const initial = await captured.requestOk!({ url: '/notifications', headers: {} });
+      const inFlight = await captured.requestOk!({ url: '/auth/me', headers: {} });
+      const denied = Object.assign(new Error('refresh rejected'), { response: { status: 401 } });
+      instance.post.mockRejectedValue(denied);
+
+      await expect(captured.responseErr!({ config: initial, response: { status: 401 } })).rejects.toBe(denied);
+      expect(win.location.href).toContain('/login?expired=true');
+      // 이전 문서에서 뒤늦게 처리한 401 과 이동 중 새로 허용된 인증 조회의 401 을 모두 재현한다.
+      expect(win.location.pathname).toBe('/admin');
+      const lateResult = await captured.responseErr!({ config: inFlight, response: { status: 401 } }).catch((error: unknown) => error);
+      const authCheck = await captured.requestOk!({ url: '/auth/me', headers: {} });
+      const authCheckError = { config: authCheck, response: { status: 401 } };
+      const authCheckResult = await captured.responseErr!(authCheckError).catch((error: unknown) => error);
+
+      expect(instance.post).toHaveBeenCalledTimes(1);
+      expect(lateResult).toMatchObject({ name: 'CanceledError' });
+      expect(authCheckResult).toBe(authCheckError);
+    });
+
     it('재발급 자체가 실패해도 로그인으로 보낸다', async () => {
       const win = { location: { pathname: '/admin', href: '' }, dispatchEvent: vi.fn() };
       Object.defineProperty(globalThis, 'window', { value: win, configurable: true, writable: true });
