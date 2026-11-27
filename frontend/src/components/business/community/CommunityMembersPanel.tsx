@@ -249,7 +249,7 @@ export function CommunityMembersPanel({ community, onBack }: CommunityMembersPan
                       aria-busy={isPending && pendingAction?.kind === 'reject'}
                       disabled={pendingAction !== null}
                       onClick={() => { void handleReject(member); }}
-                      className="text-destructive hover:text-destructive"
+                      className="text-destructive-emphasis hover:text-destructive-emphasis"
                     >
                       {isPending && pendingAction?.kind === 'reject'
                         ? <Loader2 size={14} className="animate-spin" aria-hidden="true" />
@@ -267,7 +267,7 @@ export function CommunityMembersPanel({ community, onBack }: CommunityMembersPan
                     aria-busy={isPending && pendingAction?.kind === 'withdraw'}
                     disabled={pendingAction !== null}
                     onClick={() => { void handleWithdraw(member); }}
-                    className="text-destructive hover:text-destructive"
+                    className="text-destructive-emphasis hover:text-destructive-emphasis"
                   >
                     {isPending && pendingAction?.kind === 'withdraw'
                       ? <Loader2 size={14} className="animate-spin" aria-hidden="true" />

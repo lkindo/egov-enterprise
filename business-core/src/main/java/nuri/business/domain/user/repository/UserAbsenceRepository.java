@@ -27,4 +27,13 @@ public interface UserAbsenceRepository extends JpaRepository<UserAbsence, String
             + " and a.userId <> :excludedUserId and a.absnBgngYmd <= :toYmd and a.absnEndYmd >= :fromYmd")
     List<UserAbsence> findOverlappingDelegationsTo(@Param("delegate") String delegate,
             @Param("excludedUserId") String excludedUserId, @Param("fromYmd") String fromYmd, @Param("toYmd") String toYmd);
+
+    /**
+     * 차례인 결재자 목록 중 오늘(yyyyMMdd) 부재 중이며 대리결재자를 지정한 행의 대리결재자 ID 목록을 조회한다.
+     */
+    @Query("select a.sbtAprvrId from UserAbsence a where a.userAbsnYn = 'Y' and a.userId in :userIds"
+            + " and a.absnBgngYmd <= :ymd and a.absnEndYmd >= :ymd"
+            + " and a.sbtAprvrId is not null and trim(a.sbtAprvrId) <> ''")
+    List<String> findActiveDelegatesFor(@Param("userIds") java.util.Collection<String> userIds,
+            @Param("ymd") String ymd);
 }

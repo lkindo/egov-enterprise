@@ -639,7 +639,7 @@ export default function NoteHubClient() {
                       <button
                         type="button"
                         onClick={() => removeRecipient(rec.esntlId)}
-                        className="ml-1 rounded-sm text-muted-foreground hover:text-destructive focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+                        className="ml-1 rounded-sm text-muted-foreground hover:text-destructive-emphasis focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
                         aria-label={`${rec.name} 수신자 제거`}
                       >
                         <X size={12} />

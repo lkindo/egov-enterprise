@@ -397,6 +397,48 @@ class ApprovalSubstitutionServiceTest {
         }
     }
 
+    @Test
+    @DisplayName("결재 재알림은 차례인 결재자뿐 아니라 부재 기간에 지정된 적격 대리결재자에게도 알림을 보낸다")
+    void remindApproversAlsoNotifiesEligibleActiveDelegates() {
+        actor("drafter");
+        InformalSanction document = document("A");
+        InformalSanctionDetail activeFirst = line(1, "first", true);
+        InformalSanctionDetail nextSecond = line(2, "second", false);
+        writable(document, List.of(activeFirst, nextSecond));
+
+        given(userAbsenceRepository.findActiveDelegatesFor(eq(List.of("first")), anyString()))
+                .willReturn(List.of("sub"));
+
+        int count = service.remindApprovers(7L);
+
+        assertThat(count).isEqualTo(2);
+        ArgumentCaptor<NotificationRequestedEvent> captor = ArgumentCaptor.forClass(NotificationRequestedEvent.class);
+        verify(eventPublisher, org.mockito.Mockito.times(2)).publishEvent(captor.capture());
+        assertThat(captor.getAllValues()).extracting(NotificationRequestedEvent::receiverEsntlId)
+                .containsExactlyInAnyOrder("first", "sub");
+    }
+
+    @Test
+    @DisplayName("결재 재알림은 기안자나 같은 차수 결재선 인원인 대리결재자를 제외하고 원결재자 탈퇴 시에도 적격 대리자에게는 보낸다")
+    void remindApproversExcludesIneligibleDelegatesAndDeliversToSurvivingDelegate() {
+        actor("drafter");
+        InformalSanction document = document("A");
+        InformalSanctionDetail activeFirst = line(1, "first", true);
+        InformalSanctionDetail secondLine = line(2, "second", false);
+        writable(document, List.of(activeFirst, secondLine));
+
+        given(userAbsenceRepository.findActiveDelegatesFor(eq(List.of("first")), anyString()))
+                .willReturn(List.of("drafter", "second", "sub"));
+        org.mockito.Mockito.doReturn(List.of("sub")).when(approvalRecipients).existing(any());
+
+        int count = service.remindApprovers(7L);
+
+        assertThat(count).isEqualTo(1);
+        ArgumentCaptor<NotificationRequestedEvent> captor = ArgumentCaptor.forClass(NotificationRequestedEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        assertThat(captor.getValue().receiverEsntlId()).isEqualTo("sub");
+    }
+
     /** 권한 보유자 조회 스텁 — 실제 저장소처럼 넘긴 후보 가운데 보유자만 돌려준다(후보 인자를 잘못 넘기면 시험이 붉어지게, 2026-11-25 Codex 검토). */
     private static org.mockito.stubbing.Answer<java.util.List<String>> holdersAmong(java.util.Collection<String> holders) {
         return invocation -> {

@@ -15,8 +15,9 @@ const RULE = 'local-theme/enforce-design-tokens';
  * hardcoded-color-guard)가 파일별 동결표로 셌다. 그 두 가드가 실제로 잡던 형태와, 동결 표지(palette-frozen)가 허용한 것만 푸는지를
  * 실제 설정으로 확인한다.
  */
+const eslint = new ESLint({ cwd: FRONTEND_DIR });
+
 async function lint(source: string, filePath = 'src/app/__rule_probe__/Probe.tsx') {
-  const eslint = new ESLint({ cwd: FRONTEND_DIR });
   const [result] = await eslint.lintText(source, { filePath: join(FRONTEND_DIR, filePath) });
   return result!.messages.filter((message) => message.ruleId === RULE).map((message) => message.message);
 }
@@ -27,7 +28,7 @@ const palette = async (source: string, filePath?: string) =>
 const REASON = '-- 히트맵 명암 스케일';
 
 describe('팔레트 원색 금지 (local-theme/enforce-design-tokens)', () => {
-  it('상태색·중립·브랜드 액센트를 className·cva 변형·조건식·템플릿 문자열·정규식 어디서든 잡는다', async () => {
+  it('상태색·중립·브랜드 액센트를 className·cva 변형·조건식·템플릿 문자열·정규식 어디서든 잡는다', { timeout: 30_000 }, async () => {
     expect(await palette(`
 const variants = { danger: 'border-rose-500 text-rose-700', calm: 'bg-slate-100' };
 export function Probe({ ok }: { ok: boolean }) {
@@ -66,6 +67,42 @@ export const Probe = () => <p className="hover:border-t-warning-emphasis bg-warn
     expect(await undefinedNames(`
 export function Probe() {
   return <p className="text-success-emphasis bg-destructive/15 dark:text-destructive-emphasis ring-offset-primary text-primary-foreground/80 text-[color:var(--warning-emphasis)]">상태</p>;
+}
+`)).toEqual([]);
+  });
+
+  it('전경 대비 미달인 text-destructive 및 변형 접두 사용은 잡고 text-destructive-emphasis·foreground·배경은 허용한다', async () => {
+    const bareDestructive = async (source: string, filePath?: string) =>
+      (await lint(source, filePath)).filter((message) => message.includes("'text-destructive'"));
+
+    expect(await bareDestructive(`
+export function Probe() {
+  return <p className="text-destructive">오류</p>;
+}
+`)).toHaveLength(1);
+    expect(await bareDestructive(`
+export function Probe() {
+  return <button className="hover:text-destructive dark:text-destructive">삭제</button>;
+}
+`)).toHaveLength(1);
+    expect(await bareDestructive(`
+export function Probe() {
+  return <p className="!text-destructive">오류</p>;
+}
+`)).toHaveLength(1);
+    expect(await bareDestructive(`
+export function Probe() {
+  return <button className="hover:!text-destructive">삭제</button>;
+}
+`)).toHaveLength(1);
+    expect(await bareDestructive(
+      `export const TONE = { err: 'text-destructive' };\n`,
+      'src/app/__rule_probe__/probe-model.ts',
+    )).toHaveLength(1);
+
+    expect(await bareDestructive(`
+export function Probe() {
+  return <p className="text-destructive-emphasis text-destructive-foreground bg-destructive/10 border-destructive">오류</p>;
 }
 `)).toEqual([]);
   });

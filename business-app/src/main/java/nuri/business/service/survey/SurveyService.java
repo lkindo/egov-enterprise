@@ -454,8 +454,9 @@ public class SurveyService {
     public void updateItem(SurveyArticleDto dto) {
         nuri.business.security.util.SecurityUtil.assertPermission("SURVEY_UPDATE_ALL");
         SurveyArticle entity = itemAfterSurveyLock(dto.getSrvyArtclSn());
-        // [2026-09-26 DIP B4 P6] 응답이 모인 문항의 선택지 문구를 바꾸면 이미 고른 사람의 답이 다른 뜻이 된다.
-        if (!Objects.equals(entity.getArtclCn(), dto.getArtclCn())) {
+        // 응답이 모인 문항의 선택지 문구나 기타 자유응답 허용 여부를 바꾸면 이미 모인 답의 뜻이 달라진다.
+        if (!Objects.equals(entity.getArtclCn(), dto.getArtclCn())
+                || (dto.getEtcAnsYn() != null && !Objects.equals(entity.getEtcAnsYn(), dto.getEtcAnsYn()))) {
             assertNotAnswered(rsltRepository.countBySrvyQstnSn(entity.getSrvyQstnSn()), "문항");
         }
         // [2026-11-19] 비어 온 순번·기타 여부는 지우지 않는다 — 화면은 null 을 떨어뜨려 보내므로(omit-nulls) 빠진 값은 '그대로' 다.

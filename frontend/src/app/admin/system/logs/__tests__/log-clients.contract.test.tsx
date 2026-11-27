@@ -478,8 +478,10 @@ describe('logs cluster modernization (m-1): LGN full-result xlsx export wiring',
       render(<Component />);
 
       fireEvent.click(screen.getByRole('button', { name: '전체 결과 엑셀 다운로드' }));
+      fireEvent.change(screen.getByLabelText('내보내기 사유'), { target: { value: '월간 점검' } });
+      fireEvent.click(screen.getByRole('button', { name: '내보내기' }));
 
-      expect(downloadHarness.navigateToDownload).toHaveBeenCalledWith(operation, undefined);
+      expect(downloadHarness.navigateToDownload).toHaveBeenCalledWith(operation, { reason: '월간 점검' });
     },
   );
 
@@ -494,10 +496,12 @@ describe('logs cluster modernization (m-1): LGN full-result xlsx export wiring',
     });
     fireEvent.click(screen.getByRole('button', { name: '조회' }));
     fireEvent.click(screen.getByRole('button', { name: '전체 결과 엑셀 다운로드' }));
+    fireEvent.change(screen.getByLabelText('내보내기 사유'), { target: { value: '접속 이상 조사' } });
+    fireEvent.click(screen.getByRole('button', { name: '내보내기' }));
 
     expect(downloadHarness.navigateToDownload).toHaveBeenCalledWith(
       exportLoginLogsOperation,
-      { searchKeyword: 'alice' },
+      { reason: '접속 이상 조사', searchKeyword: 'alice' },
     );
   });
 

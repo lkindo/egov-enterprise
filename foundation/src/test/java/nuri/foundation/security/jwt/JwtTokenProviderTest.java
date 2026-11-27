@@ -994,6 +994,39 @@ class JwtTokenProviderTest {
                     () -> providerWith("missing", "{\"other\":\"" + ecB64 + "\"}", ""));
             assertThrows(IllegalStateException.class,
                     () -> providerWith("badb64", "{\"badb64\":\"not-valid-base64!!!\"}", ""));
+
+            JwtTokenProvider envProdNoEc = new JwtTokenProvider();
+            var mockEnv = new org.springframework.mock.env.MockEnvironment();
+            mockEnv.setActiveProfiles("prod");
+            ReflectionTestUtils.setField(envProdNoEc, "environment", mockEnv);
+            assertThrows(IllegalStateException.class, () -> ReflectionTestUtils.invokeMethod(envProdNoEc, "init"));
+        }
+
+        @Test
+        @DisplayName("authenticateAccessToken 은 단일 파싱으로 검증·인증하고 리프레시·불량 토큰에는 사용자 조회 없이 null 을 반환한다")
+        void authenticateAccessTokenSingleParseAndCachingContract() {
+            var userDetails = org.springframework.security.core.userdetails.User.withUsername("alice")
+                    .password("x")
+                    .authorities("ROLE_USER")
+                    .build();
+            when(userDetailsService.loadUserByUsername("alice")).thenReturn(userDetails);
+
+            String accessToken = jwtTokenProvider.createAccessToken("alice", "ROLE_USER");
+            Authentication auth = jwtTokenProvider.authenticateAccessToken(accessToken);
+            assertThat(auth).isNotNull();
+            assertThat(auth.getName()).isEqualTo("alice");
+            org.mockito.Mockito.verify(userDetailsService, org.mockito.Mockito.times(1)).loadUserByUsername("alice");
+
+            String refreshToken = jwtTokenProvider.createRefreshToken("alice");
+            assertThat(jwtTokenProvider.authenticateAccessToken(refreshToken)).isNull();
+            assertThat(jwtTokenProvider.authenticateAccessToken("not-a-jwt")).isNull();
+            assertThat(jwtTokenProvider.authenticateAccessToken(null)).isNull();
+            assertThat(jwtTokenProvider.authenticateAccessToken("   ")).isNull();
+            org.mockito.Mockito.verifyNoMoreInteractions(userDetailsService);
+
+            Object parser1 = ReflectionTestUtils.invokeMethod(jwtTokenProvider, "jwtParser");
+            Object parser2 = ReflectionTestUtils.invokeMethod(jwtTokenProvider, "jwtParser");
+            assertThat(parser1).isNotNull().isSameAs(parser2);
         }
     }
 }

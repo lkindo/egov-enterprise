@@ -101,7 +101,7 @@ export function AuthorizationHistory({ initialUserId = '', fill = false }: { ini
         <label className="space-y-1 text-sm">시작일<Input type="date" value={historyInput.fromDate} onChange={(event) => setHistoryInput((current) => ({ ...current, fromDate: event.target.value }))} /></label>
         <label className="space-y-1 text-sm">종료일<Input type="date" value={historyInput.toDate} onChange={(event) => setHistoryInput((current) => ({ ...current, toDate: event.target.value }))} /></label>
         <Button type="submit">이력 조회</Button>
-        {historyFilterError && <p role="alert" className="text-sm text-destructive sm:col-span-full">{historyFilterError}</p>}
+        {historyFilterError && <p role="alert" className="text-sm text-destructive-emphasis sm:col-span-full">{historyFilterError}</p>}
       </form>
       {history.isPending && <p role="status">변경 이력을 불러오는 중입니다…</p>}
       {rows.length > 0 && (

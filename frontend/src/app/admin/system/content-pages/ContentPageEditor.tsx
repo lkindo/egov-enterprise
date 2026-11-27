@@ -294,7 +294,7 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
     React.useImperativeHandle(ref, () => ({ save: saveDraft }));
 
     if (detail.isError && !deleted) {
-      return <p role="alert" className="text-[length:var(--font-size-body)] text-destructive">페이지를 불러오지 못했습니다.</p>;
+      return <p role="alert" className="text-[length:var(--font-size-body)] text-destructive-emphasis">페이지를 불러오지 못했습니다.</p>;
     }
     if (deleted) {
       return <p role="status" className="text-[length:var(--font-size-body)] text-muted-foreground">이 페이지는 없어졌습니다. 목록에서 다른 페이지를 고르세요.</p>;
@@ -749,7 +749,7 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
               페이지 제목 <span className="sr-only">(필수)</span>
               <Input {...validation.fieldProps('contsTtl')} value={draft.contsTtl} maxLength={256} required
                 onChange={(event) => { validation.clearError('contsTtl'); setDraft({ ...draft, contsTtl: event.target.value }); }} />
-              {validation.errors.contsTtl ? <p {...validation.messageProps('contsTtl')} className="text-sm text-destructive" /> : null}
+              {validation.errors.contsTtl ? <p {...validation.messageProps('contsTtl')} className="text-sm text-destructive-emphasis" /> : null}
             </label>
             <label className="flex flex-col gap-1 text-sm text-muted-foreground">
               주소
@@ -763,13 +763,13 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
               <span id="cms-path-help" className="text-sm text-muted-foreground">
                 {baseline.pathLocked ? '게시한 적이 있어 주소를 바꿀 수 없습니다(메뉴와 공유한 링크를 지킵니다).' : '영문 소문자·숫자·하이픈. 처음 게시하면 고정됩니다.'}
               </span>
-              {validation.errors.contsPathNm ? <p {...validation.messageProps('contsPathNm')} className="text-sm text-destructive" /> : null}
+              {validation.errors.contsPathNm ? <p {...validation.messageProps('contsPathNm')} className="text-sm text-destructive-emphasis" /> : null}
             </label>
             <label className="flex flex-col gap-1 text-sm text-muted-foreground">
               요약(제목 아래에 보임, 선택)
               <Textarea {...validation.fieldProps('contsExpln')} value={draft.contsExpln} maxLength={4000} rows={2}
                 onChange={(event) => { validation.clearError('contsExpln'); setDraft({ ...draft, contsExpln: event.target.value }); }} />
-              {validation.errors.contsExpln ? <p {...validation.messageProps('contsExpln')} className="text-sm text-destructive" /> : null}
+              {validation.errors.contsExpln ? <p {...validation.messageProps('contsExpln')} className="text-sm text-destructive-emphasis" /> : null}
             </label>
           </fieldset>
         </form>

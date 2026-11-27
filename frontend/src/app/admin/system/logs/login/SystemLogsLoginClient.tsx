@@ -13,7 +13,8 @@ import { clearTargetHandoff, useTargetHandoff } from '@/lib/navigation/target-ha
 import { StandardDataTable, Column, type ServerSortState } from '@/app/components/ui/standard-data-table';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { useToast } from '@/app/components/ui/toast';
-import { requestFullExport } from '@/app/components/patterns/full-result-export';
+import { isOverExportCap, MAX_EXPORT_ROWS, requestFullExport } from '@/app/components/patterns/full-result-export';
+import { LogExportReasonDialog } from '@/app/components/patterns/log-export-reason-dialog';
 import { exportLoginLogsOperation } from '@/types/generated-operations';
 import { FileDown } from 'lucide-react';
 import { usePageParam } from '../use-log-url-state';
@@ -71,6 +72,7 @@ const SystemLogsLoginClient = () => {
     const searchKeyword = chosenKeyword ?? handedUser?.loginId ?? '';
     const setSearchKeyword = (next: string) => { clearTargetHandoff('login-log-user'); setChosenKeyword(next); };
     const { error: toastError } = useToast();
+    const [exportOpen, setExportOpen] = useState(false);
     // [Wave 4 GAP-UI-001] 발생시점 열은 서버가 접속일시로 목록 전체를 정렬한다(인덱스가 받치는 열). 비우면 최신순이다.
     const [sort, setSort] = useState<ServerSortState>({});
 
@@ -90,18 +92,25 @@ const SystemLogsLoginClient = () => {
     const totalCount = Number(data?.total || 0);
 
     /**
-     * 전체 결과 xlsx 다운로드 — 현재 검색 조건을 그대로 실어 보낸다.
+     * 전체 결과 xlsx 다운로드 — 사유를 입력받은 뒤 현재 검색 조건을 그대로 실어 보낸다.
      * 서버는 페이지 파라미터를 무시하고 조건 일치 전량을 스트리밍하므로
      * page/size 는 부치지 않는다(검색어만 서버 계약 키 searchKeyword 로 전달).
      */
-    /*
-     * [2026-08-26] 종전에는 이 화면만 export URL 을 손으로 조립했고 **기간을 빼먹고 있었다** —
-     * 조회 기간을 배선한 뒤에는 화면에서 좁힌 조건과 파일 내용이 어긋난다는 뜻이다.
-     * 다섯 로그가 같은 계약을 쓰므로 공용 조립기로 수렴시킨다.
-     */
     const handleFullExport = () => {
+        if (isOverExportCap(totalCount)) {
+            toastError(
+                `전체 결과가 ${totalCount.toLocaleString('ko-KR')}건으로 export 상한(`
+                + `${MAX_EXPORT_ROWS.toLocaleString('ko-KR')}건)을 초과합니다. 검색 조건이나 기간을 좁혀 다시 시도해 주세요.`,
+            );
+            return;
+        }
+        setExportOpen(true);
+    };
+
+    const confirmFullExport = (reason: string) => {
         requestFullExport({
             operation: exportLoginLogsOperation,
+            reason,
             totalCount,
             searchKeyword,
             period,
@@ -251,6 +260,14 @@ const SystemLogsLoginClient = () => {
                     onPageSizeChange: (size: number) => { setPageSize(size); setPage(1); },
                     pageSizeOptions: PAGE_SIZE_OPTIONS,
                 }}
+            />
+
+            <LogExportReasonDialog
+                isOpen={exportOpen}
+                onClose={() => setExportOpen(false)}
+                title="로그인 로그 내보내기"
+                totalCount={totalCount}
+                onConfirm={confirmFullExport}
             />
         </WorkListPage>
     );

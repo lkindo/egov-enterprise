@@ -435,11 +435,14 @@ public class InformalSanctionService {
             throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE,
                     "오늘은 이미 재알림을 보냈습니다. 내일 다시 보낼 수 있습니다.");
         }
-        List<String> active = detailRepository.findRevision(id, sanction.getAtrzCycl()).stream()
+        List<InformalSanctionDetail> lines = detailRepository.findRevision(id, sanction.getAtrzCycl());
+        List<String> active = lines.stream()
                 .filter(d -> d.status() == ApprovalStatus.ACTIVE).map(d -> d.getId().getUserId()).toList();
         if (active.isEmpty()) throw new BusinessException(CommonErrorCode.INVALID_STATE, "재알림을 받을 결재자가 없습니다.");
-        // 차례인 결재자의 계정이 모두 지워졌으면 보낼 곳이 없다 — 재알림 기록을 남기지 않고 결재자 변경·회수를 안내한다.
-        List<String> receivers = existingUsers(active);
+        // 차례인 결재자와 그 부재 기간에 적격 대리결재자로 지정된 활성 사용자까지 함께 알린다.
+        List<String> candidates = new ArrayList<>(active);
+        candidates.addAll(activeDelegatesFor(sanction, lines, active));
+        List<String> receivers = existingUsers(candidates);
         if (receivers.isEmpty()) {
             throw new BusinessException(CommonErrorCode.INVALID_STATE,
                     "차례인 결재자의 계정이 없어 재알림을 보낼 수 없습니다. 결재자를 바꾸거나 회수해 주세요.");
@@ -449,6 +452,16 @@ public class InformalSanctionService {
         receivers.forEach(receiver -> eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, receiver,
                 "결재 재알림", documentLabel(sanction) + "를 기다리고 있습니다. 확인해 주세요.", pendingLink(id))));
         return receivers.size();
+    }
+
+    private List<String> activeDelegatesFor(InformalSanction sanction, List<InformalSanctionDetail> currentLines,
+                                            List<String> active) {
+        return userAbsenceRepository.findActiveDelegatesFor(active, serviceToday()).stream()
+                .filter(delegate -> delegate != null && !delegate.isBlank())
+                .filter(delegate -> !delegate.equals(sanction.getAplcntId()))
+                .filter(delegate -> currentLines.stream()
+                        .noneMatch(d -> delegate.equals(d.getId().getUserId()) || delegate.equals(d.getSbtAprvrId())))
+                .toList();
     }
 
     /**

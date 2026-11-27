@@ -40,8 +40,8 @@ export function GroupCopyDialog({ source, onClose, onCopied }: {
         <p className="text-sm">원본: <strong>{source.name}</strong> <span className="text-muted-foreground">({source.code})</span> · 기능권한 {operationCount}개 · 메뉴 표시 {navigationCount}개</p>
         <p className="text-sm text-muted-foreground">원본의 저장된 기능권한과 메뉴 표시를 새 그룹에 그대로 복사합니다. 원본에서 저장하지 않은 변경과 구성원은 복사하지 않습니다.</p>
         {protectedCodes.length > 0 && <p role="status" className="text-sm text-muted-foreground">원본에 보호 권한({protectedCodes.join(', ')})이 있어, 복제하려면 권한 설정과 권한 배정 권한이 모두 필요합니다.</p>}
-        {blockedByProtection && <p role="alert" className="text-sm text-destructive">지금 계정에는 권한 배정 권한이 없어 이 그룹을 복제할 수 없습니다.</p>}
-        {!canCopy && <p role="alert" className="text-sm text-destructive">그룹을 만들려면 그룹 등록과 권한 설정 권한이 모두 필요합니다.</p>}
+        {blockedByProtection && <p role="alert" className="text-sm text-destructive-emphasis">지금 계정에는 권한 배정 권한이 없어 이 그룹을 복제할 수 없습니다.</p>}
+        {!canCopy && <p role="alert" className="text-sm text-destructive-emphasis">그룹을 만들려면 그룹 등록과 권한 설정 권한이 모두 필요합니다.</p>}
         <AuthorizationGroupForm creating labels={{ form: '권한 그룹 복제', submit: '새 그룹 만들기' }}
           initial={{ code: '', name: `${source.name} 사본`.slice(0, 100), description: source.description ?? '' }}
           externalBusy={copyPending || !canCopy || blockedByProtection}

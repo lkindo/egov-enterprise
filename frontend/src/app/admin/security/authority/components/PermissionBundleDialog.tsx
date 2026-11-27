@@ -145,7 +145,7 @@ export function PermissionBundleDialog({ groupName, bundles, selection, saved, n
           </div>
           {preview && <>
             {preview.operationsUnknown.length > 0 && <p className="text-muted-foreground">현재 기능 목록에 없는 권한 {preview.operationsUnknown.length}개({preview.operationsUnknown.join(', ')})는 더하지 않습니다. 다시 조회해 주세요.</p>}
-            {preview.navigationError && <p role="alert" className="text-destructive">{preview.navigationError} 메뉴 표시는 더하지 않습니다.</p>}
+            {preview.navigationError && <p role="alert" className="text-destructive-emphasis">{preview.navigationError} 메뉴 표시는 더하지 않습니다.</p>}
             <BundleScreenList title={`권한으로 열리는 화면 ${preview.screens.length}개`} screens={preview.screens} />
             {preview.relatedScreens.length > 0 && <BundleScreenList title={`누구나 들어가는 관련 화면 ${preview.relatedScreens.length}개`} screens={preview.relatedScreens} />}
             {preview.blockedMenus.length > 0 && <div>
@@ -156,7 +156,7 @@ export function PermissionBundleDialog({ groupName, bundles, selection, saved, n
             </div>}
             <p className="text-muted-foreground">{OPEN_SCREEN_NOTICE}</p>
             {chosen?.protected && <p>{PROTECTED_BUNDLE_NOTICE}</p>}
-            {preview.protectedToAdd.length > 0 && !canAssign && <p role="alert" className="text-destructive">지금 계정에는 권한 배정 권한이 없어, 보호 권한({preview.protectedToAdd.join(', ')})을 더한 변경은 저장할 수 없습니다.</p>}
+            {preview.protectedToAdd.length > 0 && !canAssign && <p role="alert" className="text-destructive-emphasis">지금 계정에는 권한 배정 권한이 없어, 보호 권한({preview.protectedToAdd.join(', ')})을 더한 변경은 저장할 수 없습니다.</p>}
           </>}
         </section>
       </div>

@@ -67,7 +67,7 @@ export function CommonCodeChangeHistoryDialog({
         </p>
         {history.isPending && <p role="status">변경 이력을 불러오는 중입니다…</p>}
         {history.isError && (
-          <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-destructive">
+          <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-destructive-emphasis">
             변경 이력을 불러오지 못했습니다.
             <Button type="button" variant="outline" size="sm" onClick={() => history.refetch()}>다시 시도</Button>
           </div>

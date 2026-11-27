@@ -78,7 +78,7 @@ export function PageMenuLinksPanel({ contsPathNm, title, links, menuSource, grou
         </p>
       )}
       {links?.status === 'unknown' && (
-        <p role="alert" className="text-[length:var(--font-size-body)] text-destructive">
+        <p role="alert" className="text-[length:var(--font-size-body)] text-destructive-emphasis">
           메뉴 원장을 불러오지 못해 메뉴 연결을 확인할 수 없습니다(확인 불가). ‘다시 불러오기’를 눌러 주세요.
         </p>
       )}

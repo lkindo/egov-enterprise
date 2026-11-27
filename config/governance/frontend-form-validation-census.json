@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 78,
-    "nativeFormFiles": 67,
+    "nativeFormOccurrences": 79,
+    "nativeFormFiles": 68,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 27,
     "secondaryActionBoundaries": 92,
-    "candidateCount": 198
+    "candidateCount": 199
   },
   "entries": [
     {
@@ -1593,6 +1593,23 @@
       "serverErrors": "not-applicable",
       "pendingGuard": "not-applicable",
       "testEvidence": []
+    },
+    {
+      "key": "native-form:frontend/src/app/components/patterns/log-export-reason-dialog.tsx#LogExportReasonDialog[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/components/patterns/log-export-reason-dialog.tsx",
+      "owner": "LogExportReasonDialog",
+      "classification": "primitive",
+      "status": "compliant",
+      "validationMode": "not-applicable",
+      "schemaSource": "not-applicable",
+      "errorNavigation": "not-applicable",
+      "serverErrors": "not-applicable",
+      "pendingGuard": "not-applicable",
+      "testEvidence": [
+        "frontend/src/app/components/patterns/__tests__/LogExportReasonDialog.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
     },
     {
       "key": "native-form:frontend/src/app/components/ui/code-picker.tsx#CodePicker[1]",

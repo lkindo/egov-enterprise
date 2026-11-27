@@ -263,7 +263,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
                       aria-busy={isDeleting}
                       disabled={deleteFlight.pendingKey !== null || saving}
                       onClick={() => handleDelete(box)}
-                      className="text-destructive hover:text-destructive"
+                      className="text-destructive-emphasis hover:text-destructive-emphasis"
                     >
                       {isDeleting ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Trash2 size={16} aria-hidden="true" />}
                     </Button>}

@@ -7693,6 +7693,8 @@ export interface components {
             pblenCn?: string;
             /** Format: int64 */
             atchFileSn?: number;
+            /** @description 기존 첨부파일을 해제할 때 true. atchFileSn 과 함께 보내면 400 이다. */
+            clearAttachment?: boolean;
             readonly frstRgtrId?: string;
             /** Format: date-time */
             readonly crtDt?: string;
@@ -39826,7 +39828,7 @@ export interface operations {
     };
     exportWebLogs: {
         parameters: {
-            query?: {
+            query: {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
@@ -39836,6 +39838,8 @@ export interface operations {
                 size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
+                /** @description 내보내기 사유(2~200자). 감사 원장의 내보내기 기록에 함께 남는다. */
+                reason: string;
             };
             header?: never;
             path?: never;
@@ -39958,7 +39962,7 @@ export interface operations {
     };
     exportUserLogs: {
         parameters: {
-            query?: {
+            query: {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
@@ -39968,6 +39972,8 @@ export interface operations {
                 size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
+                /** @description 내보내기 사유(2~200자). 감사 원장의 내보내기 기록에 함께 남는다. */
+                reason: string;
             };
             header?: never;
             path?: never;
@@ -40157,7 +40163,7 @@ export interface operations {
     };
     exportSystemLogs: {
         parameters: {
-            query?: {
+            query: {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
@@ -40167,6 +40173,8 @@ export interface operations {
                 size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
+                /** @description 내보내기 사유(2~200자). 감사 원장의 내보내기 기록에 함께 남는다. */
+                reason: string;
             };
             header?: never;
             path?: never;
@@ -40289,7 +40297,7 @@ export interface operations {
     };
     exportPrivacyLogs: {
         parameters: {
-            query?: {
+            query: {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
@@ -40299,6 +40307,8 @@ export interface operations {
                 size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
+                /** @description 내보내기 사유(2~200자). 감사 원장의 내보내기 기록에 함께 남는다. */
+                reason: string;
             };
             header?: never;
             path?: never;
@@ -40490,7 +40500,7 @@ export interface operations {
     };
     exportLoginLogs: {
         parameters: {
-            query?: {
+            query: {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
@@ -40500,6 +40510,8 @@ export interface operations {
                 size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
+                /** @description 내보내기 사유(2~200자). 감사 원장의 내보내기 기록에 함께 남는다. */
+                reason: string;
             };
             header?: never;
             path?: never;

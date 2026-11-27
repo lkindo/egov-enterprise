@@ -155,7 +155,7 @@ export function GroupComparison({ selection, onSelectionChange, onEdit }: {
                 <TabsTrigger value="operations" className="flex-none px-3">기능별</TabsTrigger>
               </TabsList>
               <TabsContent value="screens" className="space-y-2">
-                {comparison.navigationError ? <p role="alert" className="text-sm text-destructive">{comparison.navigationError} 화면별 비교를 보일 수 없습니다.</p> : (() => {
+                {comparison.navigationError ? <p role="alert" className="text-sm text-destructive-emphasis">{comparison.navigationError} 화면별 비교를 보일 수 없습니다.</p> : (() => {
                   const rows = shownScreenRows(comparison, onlyDifferences);
                   if (rows.length === 0) return <p role="status" className="text-sm">{onlyDifferences ? '화면별 권한에 차이가 없습니다.' : '표시할 메뉴와 화면이 없습니다.'}</p>;
                   return (

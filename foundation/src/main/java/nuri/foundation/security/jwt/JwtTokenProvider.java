@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Header;
 import io.jsonwebtoken.JwsHeader;
 import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.InvalidKeyException;
@@ -13,7 +14,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import nuri.foundation.security.constants.SecurityConstants;
 import nuri.foundation.security.util.SafeLog;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -107,12 +111,16 @@ public class JwtTokenProvider {
     private ECPrivateKey activeSigningKey;
     private Map<String, ECPublicKey> ecVerifyKeys = Map.of();
     private Map<String, String> ecPublicKeyFingerprints = Map.of();
+    private volatile JwtParser jwtParser;
     /** 저장소에 커밋된 개발용 키쌍으로 서명하는가(키링을 주지 않은 비운영 기동). */
     private boolean usingCommittedDevKey;
 
-    /** 활성 프로파일. 운영에서 저장소에 커밋된 개발용 서명키를 거부하기 위해서만 쓴다. */
+    /** 활성 프로파일. 단위 테스트처럼 Environment 빈이 없을 때도 prod 프로파일을 판정한다. */
     @Value("${spring.profiles.active:}")
     private String activeProfiles;
+
+    @Autowired(required = false)
+    private Environment environment;
 
     private static final String DEV_ES256_KID = "dev-es256-1";
     /** ADR-0060: 로컬/개발 전용 ES256(P-256) 키쌍. prod 프로파일에서는 기동을 차단한다. */
@@ -224,6 +232,9 @@ public class JwtTokenProvider {
     }
 
     private boolean isProdProfile() {
+        if (environment != null && environment.acceptsProfiles(Profiles.of("prod"))) {
+            return true;
+        }
         return activeProfiles != null
                 && Arrays.stream(activeProfiles.split(","))
                         .map(String::trim)
@@ -285,6 +296,7 @@ public class JwtTokenProvider {
         this.activeSigningKey = Objects.requireNonNull(privMap.get(resolvedKid));
         this.ecVerifyKeys = Map.copyOf(pubMap);
         this.ecPublicKeyFingerprints = Map.copyOf(fpMap);
+        this.jwtParser = Jwts.parser().keyLocator(this::locateVerificationKey).build();
     }
 
     private static Map<String, String> parseSigningKeysJson(String rawJson) {
@@ -496,10 +508,18 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    private JwtParser jwtParser() {
+        JwtParser cached = this.jwtParser;
+        if (cached != null) {
+            return cached;
+        }
+        JwtParser built = Jwts.parser().keyLocator(this::locateVerificationKey).build();
+        this.jwtParser = built;
+        return built;
+    }
+
     private Claims parseClaims(String token) {
-        return Jwts.parser()
-                .keyLocator(this::locateVerificationKey)
-                .build()
+        return jwtParser()
                 .parseSignedClaims(token)
                 .getPayload();
     }
@@ -525,7 +545,22 @@ public class JwtTokenProvider {
     }
 
     public Authentication getAuthentication(String token) {
-        var claims = parseClaims(token);
+        return buildAuthentication(parseClaims(token));
+    }
+
+    /**
+     * 액세스 토큰을 한 번만 파싱·서명 검증한 뒤 유효한 액세스 토큰이면 인증 객체를 만든다.
+     *
+     * <p>요청·WebSocket 필터가 {@link #validateToken(String)} 와 {@link #getAuthentication(String)} 을
+     * 연달아 불러 ES256 검증을 두 번 수행하지 않도록 단일 경로를 제공한다. 리프레시 토큰·만료·변조·형식 오류는
+     * {@code null} 을 반환하고, 저장소 일시 장애({@code DataAccessException} 등)는 호출자에게 전파해 503 으로 응답한다.
+     */
+    public Authentication authenticateAccessToken(String token) {
+        Claims claims = parseAccessClaims(token);
+        return claims == null ? null : buildAuthentication(claims);
+    }
+
+    private Authentication buildAuthentication(Claims claims) {
         UserDetails userDetails = userDetailsService.loadUserByUsername(
                 Objects.requireNonNull(claims.getSubject(), "Subject in JWT token cannot be null"));
         new org.springframework.security.authentication.AccountStatusUserDetailsChecker().check(userDetails);
@@ -658,16 +693,23 @@ public class JwtTokenProvider {
      * 이 한계를 '해결됨' 으로 보고하지 말 것.
      */
     public boolean validateToken(String token) {
+        return parseAccessClaims(token) != null;
+    }
+
+    private Claims parseAccessClaims(String token) {
+        if (token == null || token.isBlank()) {
+            return null;
+        }
         try {
             var claims = parseClaims(token);
             if (TYPE_REFRESH.equals(claims.get(CLAIM_TOKEN_TYPE, String.class))) {
                 log.warn(">>> [JWT] 리프레시 토큰이 액세스 토큰 자리에 제시되었습니다 — 거부합니다.");
-                return false;
+                return null;
             }
-            return true;
+            return claims;
         // [W1-13] 로그 레벨 규율.
-        //   [2026-11-21] 예외 메시지는 SafeLog 로 한 줄·유한 길이로 줄인다 — 헤더의 kid·alg 가 메시지에 그대로 실려
-        //   미인증 요청이 개행으로 가짜 로그 줄을 만들 수 있었다(운영 기본 텍스트 로그).
+        //   예외 메시지는 SafeLog 로 한 줄·유한 길이로 줄인다 — 헤더의 kid·alg 가 메시지에 그대로 실려
+        //   미인증 요청이 개행으로 가짜 로그 줄을 만들 수 없었다(운영 기본 텍스트 로그).
         //   이 세 예외는 전부 **공격자가 제어할 수 있는 입력**으로 발생시킬 수 있다. ERROR 로 두면
         //   ① 정상 동작이 오류로 계상돼 알람이 무뎌지고 ② 임의 요청으로 ERROR 로그를 무한 생성하는
         //   로그 볼륨 공격면이 된다. 등급을 사실에 맞춘다.
@@ -685,7 +727,7 @@ public class JwtTokenProvider {
             // 분류되지 않은 실패만 ERROR 로 남긴다 — 여기 쌓이면 실제로 확인할 가치가 있다.
             log.error(">>> [JWT] Validation failed: {} - {}", e.getClass().getSimpleName(), SafeLog.text(e.getMessage()));
         }
-        return false;
+        return null;
     }
 
     /**

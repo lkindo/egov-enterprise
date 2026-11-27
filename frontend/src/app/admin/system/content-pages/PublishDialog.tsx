@@ -210,7 +210,7 @@ export function PublishDialog({
             placeholder="예: 문의처를 바꿈"
             onChange={(event) => { validation.clearError('rvsnRsn'); setNote(event.target.value); }}
           />
-          {validation.errors.rvsnRsn ? <p {...validation.messageProps('rvsnRsn')} className="text-sm text-destructive" /> : null}
+          {validation.errors.rvsnRsn ? <p {...validation.messageProps('rvsnRsn')} className="text-sm text-destructive-emphasis" /> : null}
         </label>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onClose} disabled={busy}>취소</Button>

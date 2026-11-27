@@ -57,7 +57,8 @@ class PrivacyLogApiControllerTest {
         nuri.security.support.MethodPermissionContract.assertOperation(PrivacyLogApiController.class
                 .getDeclaredMethod("getPrivacyLogList", nuri.business.domain.common.BaseSearchDto.class), "PRIVACY_READ", true);
         nuri.security.support.MethodPermissionContract.assertOperation(PrivacyLogApiController.class
-                .getDeclaredMethod("exportPrivacyLogs", nuri.business.domain.common.BaseSearchDto.class), "PRIVACY_EXPORT", true);
+                .getDeclaredMethod("exportPrivacyLogs", nuri.business.domain.common.BaseSearchDto.class, String.class),
+                "PRIVACY_EXPORT", true);
     }
 
     /** 검색어가 서비스까지 도달하는지 — 목이 응답을 주므로 이 단언이 없으면 검색창이 죽어도 초록이다. */
@@ -97,7 +98,8 @@ class PrivacyLogApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.list[0].trprId").value("USR_SUBJECT_11"));
 
-        MvcResult started = mockMvc.perform(get("/api/v1/admin/system/logs/privacy/export.xlsx"))
+        MvcResult started = mockMvc.perform(get("/api/v1/admin/system/logs/privacy/export.xlsx")
+                        .param("reason", "월간 점검"))
                 .andExpect(request().asyncStarted())
                 .andReturn();
         MvcResult exportResult = mockMvc.perform(asyncDispatch(started))

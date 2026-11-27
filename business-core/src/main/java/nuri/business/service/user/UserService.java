@@ -268,9 +268,8 @@ public class UserService extends BaseAbstractService {
         /**
          * 사용자 등록 (비밀번호 암호화 적용)
          */
-        @Transactional
+        @Transactional(propagation = Propagation.SUPPORTS)
         public String registerUser(@NonNull UserDto dto) {
-                authorizationAdministration.lockAndAuthorize("USER_CREATE");
                 required(dto, "등록 요청은 null 일 수 없습니다");
                 String userId = required(dto.userId(), "사용자 ID 는 null 일 수 없습니다");
                 String pswd = required(dto.pswd(), "비밀번호 는 null 일 수 없습니다");
@@ -279,66 +278,59 @@ public class UserService extends BaseAbstractService {
                 String pswdCrans = dto.pswdCrans();
                 String roleName = dto.role();
 
-                // [보안] 관리자 권한 확인
+                // [보안] 관리자 권한 확인 및 트랜잭션 밖에서 비밀번호 해시 계산(DB 커넥션·전역 잠금 점유 최소화)
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_CREATE");
-
-                assertLoginIdAvailable(userId);
-
-                String esntlId = nuri.foundation.core.util.IdGenerationUtil.generateUserId();
                 String encodedPassword = passwordEncoder.encode(pswd);
 
-                Role role = Role.USER;
-                if (org.springframework.util.StringUtils.hasText(roleName)
-                        && !"USER".equals(roleName) && !"ROLE_USER".equals(roleName)) {
-                    throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                            "신규 사용자 그룹은 USER입니다. 추가 그룹은 권한 관리에서 배정해 주세요.");
-                }
+                return executeWrite(() -> {
+                        authorizationAdministration.lockAndAuthorize("USER_CREATE");
 
-                // [2026-08-11 결함 수정] 종전에는 아래 builder 에 **7개 필드만** 넣었다
-                //   (userId·pswd·userNm·esntlId·pswdHint·pswdCrans·role). 그래서 등록 폼이 채워 보낸
-                //   **이메일·연락처·소속 부서가 오류 없이 사라졌다** — 성공 토스트까지 뜬 채로.
-                //   그 결과 갓 만든 사용자는 항상 이메일이 없었고, 그것이
-                //   `UserDto.emlAddr` 의 @Pattern 이 빈 문자열을 거부하던 문제(2026-08-11 수정)와 겹쳐
-                //   "등록은 되는데 수정은 영원히 400" 이라는 증상을 만들었다.
-                //
-                //   저장 필드 집합은 **updateUser 와 동일하게** 맞춘다. 등록과 수정이 서로 다른 필드를
-                //   쓰면 "등록으로는 넣을 수 없고 수정으로만 넣을 수 있는 값"이 생겨 비대칭이 남는다.
-                //   원칙은 하나다 — **클라이언트가 보낸 것을 저장한다.**
-                //   (등록 폼이 실제로 보내는 것은 emlAddr·mblTelno·ognzId 이고, 나머지는 API 직접
-                //    호출 시에만 채워진다. 보내지 않으면 종전과 같이 null 이라 회귀가 없다.)
-                assertDepartmentExists(dto.ognzId());
+                        assertLoginIdAvailable(userId);
 
-                User user = User.builder()
-                                .userId(userId)
-                                .pswd(encodedPassword)
-                                .userNm(userNm)
-                                .esntlId(esntlId)
-                                .sbscrbYmd(todaySignupYmd())
-                                .pswdHint(pswdHint)
-                                .pswdCrans(pswdCrans)
-                                .role(role)
-                                .emlAddr(dto.emlAddr())
-                                .mblTelno(dto.mblTelno())
-                                .ognzId(blankToNull(dto.ognzId()))
-                                .emplNo(dto.emplNo())
-                                .ofcpsNm(dto.ofcpsNm())
-                                .groupId(dto.groupId())
-                                .pstinstCd(dto.pstinstCd())
-                                .officeTelno(dto.officeTelno())
-                                .areaNo(dto.areaNo())
-                                .middleTelno(dto.middleTelno())
-                                .endTelno(dto.endTelno())
-                                .faxNo(dto.faxNo())
-                                .homeAddr(dto.homeAddr())
-                                .daddr(dto.daddr())
-                                .zip(dto.zip())
-                                .build();
+                        String esntlId = nuri.foundation.core.util.IdGenerationUtil.generateUserId();
+
+                        Role role = Role.USER;
+                        if (org.springframework.util.StringUtils.hasText(roleName)
+                                && !"USER".equals(roleName) && !"ROLE_USER".equals(roleName)) {
+                            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                                    "신규 사용자 그룹은 USER입니다. 추가 그룹은 권한 관리에서 배정해 주세요.");
+                        }
+
+                        // 등록과 수정이 저장하는 사용자 속성 집합을 일치시켜 전달된 부서·이메일·연락처가 누락되지 않게 한다.
+                        assertDepartmentExists(dto.ognzId());
+
+                        User user = User.builder()
+                                        .userId(userId)
+                                        .pswd(encodedPassword)
+                                        .userNm(userNm)
+                                        .esntlId(esntlId)
+                                        .sbscrbYmd(todaySignupYmd())
+                                        .pswdHint(pswdHint)
+                                        .pswdCrans(pswdCrans)
+                                        .role(role)
+                                        .emlAddr(dto.emlAddr())
+                                        .mblTelno(dto.mblTelno())
+                                        .ognzId(blankToNull(dto.ognzId()))
+                                        .emplNo(dto.emplNo())
+                                        .ofcpsNm(dto.ofcpsNm())
+                                        .groupId(dto.groupId())
+                                        .pstinstCd(dto.pstinstCd())
+                                        .officeTelno(dto.officeTelno())
+                                        .areaNo(dto.areaNo())
+                                        .middleTelno(dto.middleTelno())
+                                        .endTelno(dto.endTelno())
+                                        .faxNo(dto.faxNo())
+                                        .homeAddr(dto.homeAddr())
+                                        .daddr(dto.daddr())
+                                        .zip(dto.zip())
+                                        .build();
 
 
-                userRepository.saveAndFlush(required(user));
-                authorizationAdministration.assignNewUser(user.getEsntlId());
+                        userRepository.saveAndFlush(required(user));
+                        authorizationAdministration.assignNewUser(user.getEsntlId());
 
-                return userId;
+                        return userId;
+                });
         }
 
         /**
@@ -694,40 +686,44 @@ public class UserService extends BaseAbstractService {
         /**
          * 사용자 회원가입 (기존 API 호환 및 비밀번호 암호화 적용)
          */
-        @Transactional
+        @Transactional(propagation = Propagation.SUPPORTS)
         public UserResponse signup(UserSignupRequest request) {
-                // 잠금을 기다리는 사이 회수된 권한으로 계정을 만들지 않게 잠금 뒤 현재 상태로 다시 판정한다(registerUser 와 같다).
-                authorizationAdministration.lockAndAuthorize("USER_CREATE");
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_CREATE");
                 required(request, "회원가입 요청 정보는 null 일 수 없습니다");
                 required(request.getUserId(), "사용자 ID 는 null 일 수 없습니다");
-                required(request.getPswd(), "비밀번호 는 null 일 수 없습니다");
+                String pswd = required(request.getPswd(), "비밀번호 는 null 일 수 없습니다");
                 required(request.getUserNm(), "사용자 이름 은 null 일 수 없습니다");
 
-                // [버그수정] User @Id 는 esntlId 이므로 existsById(loginId)만으로는 로그인 ID 중복을 못 본다.
-                // 로그인 ID 중복은 unique 컬럼 user_id 로 확인해야 한다. 미수정 시 중복 loginId 가 통과→INSERT 시 500.
-                assertLoginIdAvailable(request.getUserId());
+                String encodedPassword = passwordEncoder.encode(pswd);
 
-                String esntlId = nuri.foundation.core.util.IdGenerationUtil.generateUserId();
-                String encodedPassword = passwordEncoder.encode(request.getPswd());
+                return executeWrite(() -> {
+                        // 잠금을 기다리는 사이 회수된 권한으로 계정을 만들지 않게 잠금 뒤 현재 상태로 다시 판정한다(registerUser 와 같다).
+                        authorizationAdministration.lockAndAuthorize("USER_CREATE");
 
-                User user = User.builder()
-                                .userId(request.getUserId())
-                                .pswd(encodedPassword)
-                                .userNm(request.getUserNm())
-                                .esntlId(esntlId)
-                                .sbscrbYmd(todaySignupYmd())
-                                .pswdHint(request.getPswdHint())
-                                .pswdCrans(request.getPswdCrans())
-                                // [보안] 권한을 요청에서 받지 않고 USER 로 고정한다(호출자는 USER_CREATE 권한자다 — DEC-OPS-135).
-                                //   관리자 등록도 USER 그룹으로 생성하며 추가 그룹은 버전 검증된 배정 API로 부여한다.
-                                .role(Role.USER)
-                                .build();
+                        // [버그수정] User @Id 는 esntlId 이므로 existsById(loginId)만으로는 로그인 ID 중복을 못 본다.
+                        // 로그인 ID 중복은 unique 컬럼 user_id 로 확인해야 한다. 미수정 시 중복 loginId 가 통과→INSERT 시 500.
+                        assertLoginIdAvailable(request.getUserId());
 
-                userRepository.saveAndFlush(required(user));
-                authorizationAdministration.assignNewUser(user.getEsntlId());
+                        String esntlId = nuri.foundation.core.util.IdGenerationUtil.generateUserId();
 
-                return UserResponse.from(user);
+                        User user = User.builder()
+                                        .userId(request.getUserId())
+                                        .pswd(encodedPassword)
+                                        .userNm(request.getUserNm())
+                                        .esntlId(esntlId)
+                                        .sbscrbYmd(todaySignupYmd())
+                                        .pswdHint(request.getPswdHint())
+                                        .pswdCrans(request.getPswdCrans())
+                                        // [보안] 권한을 요청에서 받지 않고 USER 로 고정한다(호출자는 USER_CREATE 권한자다 — DEC-OPS-135).
+                                        //   관리자 등록도 USER 그룹으로 생성하며 추가 그룹은 버전 검증된 배정 API로 부여한다.
+                                        .role(Role.USER)
+                                        .build();
+
+                        userRepository.saveAndFlush(required(user));
+                        authorizationAdministration.assignNewUser(user.getEsntlId());
+
+                        return UserResponse.from(user);
+                });
         }
 
         /**
@@ -774,23 +770,25 @@ public class UserService extends BaseAbstractService {
         /**
          * 관리자 권한으로 비밀번호를 변경합니다. (기존 비밀번호 확인 없음)
          */
-        @Transactional
+        @Transactional(propagation = Propagation.SUPPORTS)
         public void updatePasswordByAdmin(@NonNull String userId, @NonNull String newPassword) {
-                // [보안] 관리자 권한 확인
+                // [보안] 관리자 권한 확인 및 트랜잭션 밖에서 비밀번호 해시 계산(DB 커넥션·전역 잠금 점유 최소화)
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_PASSWORD");
-                authorizationAdministration.lockAndAuthorize("USER_PASSWORD");
-
-                User user = findByLoginIdOrEsntlIdOrThrow(userId);
-                authorizationAdministration.authorizeProtectedAccountChange(user.getEsntlId());
                 String encodedPassword = passwordEncoder.encode(newPassword);
-                refreshForUpdateOrThrow(user);
-                // [2026-10-01 결정 18] 관리자가 정해 알려 준 비밀번호는 임시다 — 본인이 바꾸기 전까지 다른 기능을 막는다.
-                user.issueTemporaryPassword(encodedPassword);
-                // [2026-09-26 DIP B4 P7, D5] 초기화는 계정 잠금도 푼다 — 잠긴 채로 새 비밀번호를 알려 주면 잠금 시간이
-                //   지날 때까지 그 비밀번호로도 들어올 수 없다.
-                user.unlockAccount();
-                revokeRefreshTokens(user);
-                sensitiveAudit.recordMutation("ADMIN_PASSWORD_RESET", user.getEsntlId());
+
+                executeWrite(() -> {
+                        authorizationAdministration.lockAndAuthorize("USER_PASSWORD");
+
+                        User user = findByLoginIdOrEsntlIdOrThrow(userId);
+                        authorizationAdministration.authorizeProtectedAccountChange(user.getEsntlId());
+                        refreshForUpdateOrThrow(user);
+                        // 관리자 초기화 비밀번호는 임시 비밀번호로 발급하며, 본인이 새 비밀번호로 로그인·변경할 수 있게 잠금도 함께 푼다.
+                        user.issueTemporaryPassword(encodedPassword);
+                        user.unlockAccount();
+                        revokeRefreshTokens(user);
+                        sensitiveAudit.recordMutation("ADMIN_PASSWORD_RESET", user.getEsntlId());
+                        return null;
+                });
         }
 
         /**

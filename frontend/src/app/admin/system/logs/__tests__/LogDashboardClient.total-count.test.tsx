@@ -29,7 +29,11 @@ vi.mock('@/app/admin/system/logs/use-log-url-state', () => ({
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: { permissions: [], authorizationVersion: 'v1' } }),
 }));
-vi.mock('@/app/components/patterns/full-result-export', () => ({ requestFullExport: vi.fn() }));
+vi.mock('@/app/components/patterns/full-result-export', () => ({
+  MAX_EXPORT_ROWS: 100_000,
+  isOverExportCap: (totalCount?: number) => typeof totalCount === 'number' && totalCount > 100_000,
+  requestFullExport: vi.fn(),
+}));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 vi.mock('@/app/components/ui/standard-modal', () => ({ StandardModal: () => null }));
 // 셸과 표의 계약은 각자의 시험이 본다. 여기서는 이 화면이 셸에 넘기는 총 건수만 본다.

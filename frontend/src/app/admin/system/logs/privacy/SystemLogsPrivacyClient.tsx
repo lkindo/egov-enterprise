@@ -9,7 +9,8 @@ import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { PeriodFilter, EMPTY_PERIOD, periodToParams, hasAppliedPeriod } from '@/app/components/patterns/period-filter';
 import { useRememberedListConditions } from '@/lib/hooks/use-remembered-list-conditions';
-import { requestFullExport } from '@/app/components/patterns/full-result-export';
+import { isOverExportCap, MAX_EXPORT_ROWS, requestFullExport } from '@/app/components/patterns/full-result-export';
+import { LogExportReasonDialog } from '@/app/components/patterns/log-export-reason-dialog';
 import { exportPrivacyLogsOperation } from '@/types/generated-operations';
 import { FileDown } from 'lucide-react';
 import { useToast } from '@/app/components/ui/toast';
@@ -28,6 +29,7 @@ const SystemLogsPrivacyClient = () => {
       pageSizeOptions: PAGE_SIZE_OPTIONS,
     });
     const [searchKeyword, setSearchKeyword] = useState('');
+    const [exportOpen, setExportOpen] = useState(false);
     const { toast } = useToast();
 
     const { data, isLoading, error, refetch } = useQuery<PageResponse<PrivacyLog>>({
@@ -54,8 +56,21 @@ const SystemLogsPrivacyClient = () => {
 
     /** 전체 결과 xlsx 요청. 상한 초과는 다운로드를 시작하지 않고 즉시 알린다(서버도 같은 상한으로 400). */
     const handleFullExport = () => {
+        if (isOverExportCap(totalCount)) {
+            toast(
+                `전체 결과가 ${totalCount.toLocaleString('ko-KR')}건으로 export 상한(`
+                + `${MAX_EXPORT_ROWS.toLocaleString('ko-KR')}건)을 초과합니다. 검색 조건이나 기간을 좁혀 다시 시도해 주세요.`,
+                'error',
+            );
+            return;
+        }
+        setExportOpen(true);
+    };
+
+    const confirmFullExport = (reason: string) => {
         requestFullExport({
             operation: exportPrivacyLogsOperation,
+            reason,
             totalCount,
             searchKeyword,
             period,
@@ -182,6 +197,14 @@ const SystemLogsPrivacyClient = () => {
                     onPageSizeChange: (size: number) => { setPageSize(size); setPage(1); },
                     pageSizeOptions: PAGE_SIZE_OPTIONS,
                 }}
+            />
+
+            <LogExportReasonDialog
+                isOpen={exportOpen}
+                onClose={() => setExportOpen(false)}
+                title="개인정보 접근 로그 내보내기"
+                totalCount={totalCount}
+                onConfirm={confirmFullExport}
             />
         </WorkListPage>
     );

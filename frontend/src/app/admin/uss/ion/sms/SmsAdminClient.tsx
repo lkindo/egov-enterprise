@@ -92,7 +92,7 @@ function SmsByteCounter({ text }: { text: string }) {
   const bytes = smsByteLength(text);
   const over = bytes > SMS_SHORT_BYTE_LIMIT;
   return (
-    <p aria-live="polite" className={over ? 'text-xs text-destructive ml-2' : 'text-xs text-muted-foreground ml-2'}>
+    <p aria-live="polite" className={over ? 'text-xs text-destructive-emphasis ml-2' : 'text-xs text-muted-foreground ml-2'}>
       {bytes} / {SMS_SHORT_BYTE_LIMIT}바이트
       {over && ' · 단문 한도를 넘었습니다. 게이트웨이에 따라 장문으로 보내거나 잘릴 수 있습니다.'}
     </p>

@@ -202,6 +202,42 @@ class UserServiceTransactionBoundaryTest {
         assertThat(user).hasFieldOrPropertyWithValue("pswdFailNmtm", java.math.BigInteger.ONE);
     }
 
+    @Test
+    void standaloneRegisterSignupAndAdminResetRunBcryptOutsideWriteTransactions() {
+        List<Boolean> encodeTxStates = new ArrayList<>();
+        given(passwordEncoder.encode("secret-1")).willAnswer(inv -> {
+            encodeTxStates.add(TransactionSynchronizationManager.isActualTransactionActive());
+            return "hash-1";
+        });
+        given(passwordEncoder.encode("secret-2")).willAnswer(inv -> {
+            encodeTxStates.add(TransactionSynchronizationManager.isActualTransactionActive());
+            return "hash-2";
+        });
+        given(passwordEncoder.encode("secret-3")).willAnswer(inv -> {
+            encodeTxStates.add(TransactionSynchronizationManager.isActualTransactionActive());
+            return "hash-3";
+        });
+        given(userRepository.findByUserId("new1")).willReturn(Optional.empty());
+        given(userRepository.findByUserId("new2")).willReturn(Optional.empty());
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("admin", "USR_ADMIN", "ROLE_ADMIN"));
+        try {
+            userService.registerUser(nuri.business.service.user.dto.UserDto.builder()
+                    .userId("new1").pswd("secret-1").userNm("User One").role("USER").build());
+            userService.signup(nuri.business.service.user.dto.UserSignupRequest.builder()
+                    .userId("new2").pswd("secret-2").userNm("User Two").build());
+            userService.updatePasswordByAdmin("user1", "secret-3");
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+
+        assertThat(encodeTxStates).containsExactly(false, false, false);
+        assertThat(txManager.readOnlyFlags).containsExactly(false, false, false);
+        assertThat(txManager.commits).isEqualTo(3);
+        assertThat(txManager.rollbacks).isZero();
+        assertThat(user.getPswd()).isEqualTo("hash-3");
+    }
+
     private static final class RecordingTransactionManager extends AbstractPlatformTransactionManager {
         private final List<Boolean> readOnlyFlags = new ArrayList<>();
         private int commits;

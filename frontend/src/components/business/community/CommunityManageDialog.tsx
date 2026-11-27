@@ -320,7 +320,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                       aria-busy={isClosePending}
                       disabled={closeFlight.pendingKey !== null || saving || !isOpenState}
                       onClick={() => handleClose(community)}
-                      className="text-destructive hover:text-destructive"
+                      className="text-destructive-emphasis hover:text-destructive-emphasis"
                     >
                       {isClosePending ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <XCircle size={16} aria-hidden="true" />}
                     </Button>}

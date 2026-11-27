@@ -189,7 +189,7 @@ export default function CommunityDetailHubClient({
                     disabled={leaveFlight.pending}
                     aria-busy={leaveFlight.pending || undefined}
                     aria-label={leaveFlight.pending ? '커뮤니티 탈퇴 중' : '커뮤니티 탈퇴'}
-                    className="text-destructive hover:text-destructive"
+                    className="text-destructive-emphasis hover:text-destructive-emphasis"
                   >
                     <UserMinus size={16} aria-hidden="true" />
                     {leaveFlight.pending ? '탈퇴 중…' : '탈퇴'}

@@ -29,8 +29,7 @@ class WebSocketCookieAuthenticationFilterTest {
     @Test
     void httpOnlyCookieAuthenticatesEachSupportedSockJsTransport() throws Exception {
         var principal = current(true);
-        when(tokens.validateToken("cookie-token")).thenReturn(true);
-        when(tokens.getAuthentication("cookie-token")).thenReturn(principal);
+        when(tokens.authenticateAccessToken("cookie-token")).thenReturn(principal);
         for (String route : List.of("GET /ws", "GET /ws/info", "GET /ws/websocket",
                 "GET /ws/123/session/websocket", "POST /ws/123/session/xhr",
                 "POST /ws/123/session/xhr_streaming", "POST /ws/123/session/xhr_send", "HEAD /ws/info")) {
@@ -81,8 +80,7 @@ class WebSocketCookieAuthenticationFilterTest {
         var request = request("GET", "/ws/info");
         request.removeHeader("Origin");
         request.addHeader("Sec-Fetch-Site", "same-origin");
-        when(tokens.validateToken("cookie-token")).thenReturn(true);
-        when(tokens.getAuthentication("cookie-token")).thenReturn(current(true));
+        when(tokens.authenticateAccessToken("cookie-token")).thenReturn(current(true));
         var chain = new MockFilterChain();
         filter.doFilter(request, new MockHttpServletResponse(), chain);
         assertThat(chain.getRequest()).isSameAs(request);
@@ -94,8 +92,7 @@ class WebSocketCookieAuthenticationFilterTest {
         var invalid = new MockHttpServletResponse();
         filter.doFilter(request, invalid, new MockFilterChain());
         assertThat(invalid.getStatus()).isEqualTo(401);
-        when(tokens.validateToken("cookie-token")).thenReturn(true);
-        when(tokens.getAuthentication("cookie-token")).thenReturn(current(false));
+        when(tokens.authenticateAccessToken("cookie-token")).thenReturn(current(false));
         var disabled = new MockHttpServletResponse();
         filter.doFilter(request, disabled, new MockFilterChain());
         assertThat(disabled.getStatus()).isEqualTo(401);
@@ -104,8 +101,7 @@ class WebSocketCookieAuthenticationFilterTest {
 
     @Test
     void backendFailureReturns503WithoutClearingCookieOrLeakingDetails() throws Exception {
-        when(tokens.validateToken("cookie-token")).thenReturn(true);
-        when(tokens.getAuthentication("cookie-token"))
+        when(tokens.authenticateAccessToken("cookie-token"))
                 .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("private-db-detail"));
         var response = new MockHttpServletResponse();
         var chain = new MockFilterChain();
@@ -135,8 +131,7 @@ class WebSocketCookieAuthenticationFilterTest {
         request.setCookies();
         request.addHeader("Authorization", "Bearer header-token");
         when(tokens.resolveToken(request)).thenReturn("header-token");
-        when(tokens.validateToken("header-token")).thenReturn(true);
-        when(tokens.getAuthentication("header-token")).thenReturn(current(true));
+        when(tokens.authenticateAccessToken("header-token")).thenReturn(current(true));
         var chain = new MockFilterChain();
         filter.doFilter(request, new MockHttpServletResponse(), chain);
         assertThat(chain.getRequest()).isSameAs(request);
@@ -147,7 +142,7 @@ class WebSocketCookieAuthenticationFilterTest {
         filter.doFilter(malformed, rejected, rejectedChain);
         assertThat(rejected.getStatus()).isEqualTo(401);
         assertThat(rejectedChain.getRequest()).isNull();
-        org.mockito.Mockito.verify(tokens, org.mockito.Mockito.never()).validateToken("cookie-token");
+        org.mockito.Mockito.verify(tokens, org.mockito.Mockito.never()).authenticateAccessToken("cookie-token");
     }
 
     @Test
@@ -183,13 +178,12 @@ class WebSocketCookieAuthenticationFilterTest {
 
     @Test
     void invalidAuthenticationObjectsAndMissingSnapshotVersionsNeverEnterTheTransport() throws Exception {
-        when(tokens.validateToken("cookie-token")).thenReturn(true);
         var unauthenticated = new UsernamePasswordAuthenticationToken(current(true).getPrincipal(), null);
         var wrongPrincipal = new UsernamePasswordAuthenticationToken("untrusted-principal", null, List.of());
         var invalid = java.util.Arrays.asList(null, unauthenticated, wrongPrincipal,
                 current(true, null), current(true, ""), current(true, "   "));
         for (var authentication : invalid) {
-            when(tokens.getAuthentication("cookie-token")).thenReturn(authentication);
+            when(tokens.authenticateAccessToken("cookie-token")).thenReturn(authentication);
             SecurityContextHolder.getContext().setAuthentication(current(true));
             var response = new MockHttpServletResponse();
             var chain = new MockFilterChain();

@@ -81,7 +81,7 @@ class LoginLogExportSecurityIntegrationTest {
     void export_shouldBeForbidden_forNormalUser() throws Exception {
         CustomUserDetails normalUser = nuri.business.support.AuthorizationTestPrincipal.principal("normal_user", "USR_001", "USER");
 
-        mockMvc.perform(get(EXPORT_URL).with(user(normalUser)))
+        mockMvc.perform(get(EXPORT_URL).with(user(normalUser)).param("reason", "월간 점검"))
                 .andExpect(status().isForbidden());
     }
 
@@ -93,6 +93,17 @@ class LoginLogExportSecurityIntegrationTest {
     }
 
     @Test
+    @DisplayName("사유 검증 — ADMIN 이라도 reason 없이 또는 공백 reason 으로 export 하면 400 이다")
+    void export_requiresReason_forAdmin() throws Exception {
+        CustomUserDetails admin = nuri.business.support.AuthorizationTestPrincipal.principal("admin_user", "USR_999", "ADMIN");
+
+        mockMvc.perform(get(EXPORT_URL).with(user(admin)))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get(EXPORT_URL).with(user(admin)).param("reason", "   "))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("전량 export — ADMIN 은 페이지 파라미터와 무관하게 조건 일치 전체 행을 xlsx 로 받는다")
     void export_shouldStreamAllRows_ignoringPaging_forAdmin() throws Exception {
         CustomUserDetails admin = nuri.business.support.AuthorizationTestPrincipal.principal("admin_user", "USR_999", "ADMIN");
@@ -101,7 +112,8 @@ class LoginLogExportSecurityIntegrationTest {
         MvcResult asyncStarted = mockMvc.perform(get(EXPORT_URL)
                         .with(user(admin))
                         .param("page", "3")
-                        .param("size", "1"))
+                        .param("size", "1")
+                        .param("reason", "월간 점검"))
                 .andExpect(request().asyncStarted())
                 .andReturn();
 

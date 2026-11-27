@@ -23,7 +23,7 @@ export const updateRewardOperation = /*#__PURE__*/ (() => {
   responseSchema: z.lazy(() => RewardManageDtoResponseSchema),
   envelopeSchema: ApiResponseRewardManageDtoResponseSchema,
   requestForbiddenPaths: [["rwardwnrNm"],["rwardwnrDeptNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
-  responseForbiddenPaths: [],
+  responseForbiddenPaths: [["clearAttachment"]],
   });
 })();
 
@@ -61,7 +61,7 @@ export const getAllRewardsOperation = /*#__PURE__*/ (() => {
   responseSchema: z.lazy(() => PageResponseRewardManageDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseRewardManageDtoResponseSchema,
   requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
+  responseForbiddenPaths: [["list","*","clearAttachment"]],
   });
 })();
 
@@ -80,6 +80,6 @@ export const createRewardOperation = /*#__PURE__*/ (() => {
   responseSchema: z.lazy(() => RewardManageDtoResponseSchema),
   envelopeSchema: ApiResponseRewardManageDtoResponseSchema,
   requestForbiddenPaths: [["rwardwnrNm"],["rwardwnrDeptNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
-  responseForbiddenPaths: [],
+  responseForbiddenPaths: [["clearAttachment"]],
   });
 })();

@@ -323,7 +323,7 @@ export default function HpcmClient({
             aria-busy={deletingSn === item.hlpSn || undefined}
             disabled={isWritePending}
             onClick={() => { void handleDelete(item); }}
-            className="rounded-lg text-destructive hover:bg-destructive/10 transition-all"
+            className="rounded-lg text-destructive-emphasis hover:bg-destructive/10 transition-all"
           >
             {deletingSn === item.hlpSn
               ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
@@ -427,7 +427,7 @@ export default function HpcmClient({
                   <FormControl>
                     <Input {...field} maxLength={3} placeholder="예: BBS" />
                   </FormControl>
-                  <FormMessage className="text-xs font-bold text-destructive" />
+                  <FormMessage className="text-xs font-bold text-destructive-emphasis" />
                 </FormItem>
               )}
             />
@@ -441,7 +441,7 @@ export default function HpcmClient({
                   <FormControl>
                     <Input {...field} maxLength={1000} placeholder="도움말 명칭" />
                   </FormControl>
-                  <FormMessage className="text-xs font-bold text-destructive" />
+                  <FormMessage className="text-xs font-bold text-destructive-emphasis" />
                 </FormItem>
               )}
             />
@@ -460,7 +460,7 @@ export default function HpcmClient({
                       className="w-full min-h-[160px] rounded-lg border border-input bg-muted/40 p-4 outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
                     />
                   </FormControl>
-                  <FormMessage className="text-xs font-bold text-destructive" />
+                  <FormMessage className="text-xs font-bold text-destructive-emphasis" />
                 </FormItem>
               )}
             />

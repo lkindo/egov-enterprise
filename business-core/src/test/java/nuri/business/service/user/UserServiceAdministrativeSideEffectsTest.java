@@ -105,7 +105,8 @@ class UserServiceAdministrativeSideEffectsTest {
                 .isInstanceOf(BusinessException.class);
 
         assertThat(target.getPswd()).isEqualTo("old-hash");
-        verifyNoInteractions(refreshTokenRepository, sensitiveAudit, passwordEncoder);
+        verify(userRepository, org.mockito.Mockito.never()).flush();
+        verifyNoInteractions(refreshTokenRepository, sensitiveAudit);
     }
 
     @Test

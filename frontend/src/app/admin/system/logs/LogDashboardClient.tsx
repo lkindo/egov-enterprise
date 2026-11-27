@@ -7,7 +7,8 @@ import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { PeriodFilter, EMPTY_PERIOD, periodToParams, hasAppliedPeriod } from '@/app/components/patterns/period-filter';
 import { useRememberedListConditions } from '@/lib/hooks/use-remembered-list-conditions';
-import { requestFullExport } from '@/app/components/patterns/full-result-export';
+import { isOverExportCap, MAX_EXPORT_ROWS, requestFullExport } from '@/app/components/patterns/full-result-export';
+import { LogExportReasonDialog } from '@/app/components/patterns/log-export-reason-dialog';
 import { useToast } from '@/app/components/ui/toast';
 import {
   exportLoginLogsOperation,
@@ -109,6 +110,7 @@ export default function LogDashboardClient({
   const [searchKeyword, setSearchKeyword] = useState('');
   // [2026-09-26 DIP C6] 통합 조회에도 개별 로그 화면과 같은 기간 조건을 둔다 — 네 분류 모두 서버가 기간을 받는다.
   const { toast } = useToast();
+  const [exportOpen, setExportOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<{
     category: LogCategoryId;
     row: IntegratedLogRow;
@@ -138,9 +140,22 @@ export default function LogDashboardClient({
         : undefined,
   });
 
-  // 분류마다 생성 descriptor 를 직접 넘긴다 — 생성 경계 census 가 호출마다 어떤 operation 인지 정적으로 확인한다.
   const handleFullExport = () => {
+    if (isOverExportCap(data?.total)) {
+      toast(
+        `전체 결과가 ${data!.total.toLocaleString('ko-KR')}건으로 export 상한(`
+        + `${MAX_EXPORT_ROWS.toLocaleString('ko-KR')}건)을 초과합니다. 검색 조건이나 기간을 좁혀 다시 시도해 주세요.`,
+        'error',
+      );
+      return;
+    }
+    setExportOpen(true);
+  };
+
+  // 분류마다 생성 descriptor 를 직접 넘긴다 — 생성 경계 census 가 호출마다 어떤 operation 인지 정적으로 확인한다.
+  const confirmFullExport = (reason: string) => {
     const request = {
+      reason,
       totalCount: data?.total,
       searchKeyword,
       period,
@@ -393,6 +408,14 @@ export default function LogDashboardClient({
           </div>
         </div>
       </StandardModal>
+
+      <LogExportReasonDialog
+        isOpen={exportOpen}
+        onClose={() => setExportOpen(false)}
+        title={`${activeLabel} 내보내기`}
+        totalCount={data?.total}
+        onConfirm={confirmFullExport}
+      />
     </WorkListPage>
   );
 }

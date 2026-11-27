@@ -492,7 +492,7 @@ export default function HelpClient() {
                           <FormControl>
                             <Input {...field} maxLength={TITLE_MAX} placeholder="무엇을 도와드릴까요?" />
                           </FormControl>
-                          <FormMessage className="text-xs font-bold text-destructive" />
+                          <FormMessage className="text-xs font-bold text-destructive-emphasis" />
                         </FormItem>
                       )}
                     />
@@ -515,7 +515,7 @@ export default function HelpClient() {
                           <p className="text-xs text-muted-foreground">
                             등록한 문의는 작성자와 관리자만 볼 수 있습니다.
                           </p>
-                          <FormMessage className="text-xs font-bold text-destructive" />
+                          <FormMessage className="text-xs font-bold text-destructive-emphasis" />
                         </FormItem>
                       )}
                     />

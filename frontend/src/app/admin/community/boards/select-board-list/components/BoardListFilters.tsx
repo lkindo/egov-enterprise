@@ -126,7 +126,7 @@ export const BoardListFilters = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => { setStartDate(undefined); setEndDate(undefined); }}
-                      className="!h-[var(--control-h-sm)] px-2 text-xs font-bold text-muted-foreground hover:text-destructive"
+                      className="!h-[var(--control-h-sm)] px-2 text-xs font-bold text-muted-foreground hover:text-destructive-emphasis"
                       aria-label="기간 초기화"
                     >
                       <X size={12} className="mr-1" /> 초기화

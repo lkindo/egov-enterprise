@@ -125,8 +125,7 @@ class RequestMatcherBoundaryTest {
     @DisplayName("🧭 인증된 사용자의 SockJS 핸드셰이크만 WebSocket 핸들러에 도달한다")
     void websocketHandshake_acceptsAuthenticatedUser() throws Exception {
         var principal = normalUser();
-        org.mockito.Mockito.when(jwtTokenProvider.validateToken("ws-fixture")).thenReturn(true);
-        org.mockito.Mockito.when(jwtTokenProvider.getAuthentication("ws-fixture")).thenReturn(
+        org.mockito.Mockito.when(jwtTokenProvider.authenticateAccessToken("ws-fixture")).thenReturn(
                 new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
         mockMvc.perform(get("/ws/info").cookie(new jakarta.servlet.http.Cookie("accessToken", "ws-fixture")))
                 .andExpect(status().isOk());

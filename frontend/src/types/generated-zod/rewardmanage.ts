@@ -16,6 +16,7 @@ export const RewardManageDtoSchema = /*#__PURE__*/ (() => z.object({
   rwardNm: z.string().min(0).max(300).optional(),
   pblenCn: z.string().min(0).max(4000).optional(),
   atchFileSn: z.number().int().optional(),
+  clearAttachment: z.boolean().optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   lastMdfrId: z.string().optional(),
@@ -63,6 +64,7 @@ export const RewardManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   rwardNm: z.string().min(0).max(300).optional(),
   pblenCn: z.string().min(0).max(4000).optional(),
   atchFileSn: z.number().int().optional(),
+  clearAttachment: z.boolean().optional(),
   version: z.number().int().min(0).optional(),
 }))();
 

@@ -27,13 +27,13 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "44beced2f22d4917bef77846358f04b320010e105181ebac19e2d3bec847b063"
+    "inventoryHash": "3911732883d6e77c77b0f5190a16938d1e84ea6dafc5820d7e63301cc465e664"
   },
   "summary": {
-    "records": 477,
-    "syntaxOccurrences": 580,
-    "ambiguousRecords": 428,
-    "unverifiedRecords": 477,
+    "records": 478,
+    "syntaxOccurrences": 581,
+    "ambiguousRecords": 429,
+    "unverifiedRecords": 478,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 13,
@@ -43,7 +43,7 @@
     "byKind": {
       "config-redirect": 12,
       "dynamic-segment": 13,
-      "form-producer": 64,
+      "form-producer": 65,
       "navigation-producer": 232,
       "page-redirect": 18,
       "query-builder": 25,
@@ -53,7 +53,7 @@
       "url-observer": 3
     },
     "bySurface": {
-      "navigation": 471,
+      "navigation": 472,
       "request-telemetry": 6
     }
   },
@@ -15322,6 +15322,45 @@
       },
       "evidence": {
         "source": "frontend/src/app/components/patterns/keyword-filter.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-2E4156FF011F91",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/components/patterns/log-export-reason-dialog.tsx",
+      "producerFile": "frontend/src/app/components/patterns/log-export-reason-dialog.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/components/patterns/log-export-reason-dialog.tsx",
         "detector": "jsx-form",
         "occurrenceCount": 1
       }

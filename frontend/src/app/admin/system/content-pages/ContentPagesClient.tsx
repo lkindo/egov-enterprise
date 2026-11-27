@@ -274,7 +274,7 @@ export default function ContentPagesClient() {
         <div className="space-y-2">
           {list.isError && (
             <div role="alert" className="space-y-2 rounded-md border border-destructive/40 px-3 py-3 text-sm">
-              <p className="text-destructive">페이지 목록을 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.</p>
+              <p className="text-destructive-emphasis">페이지 목록을 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.</p>
               <Button type="button" size="sm" variant="outline" onClick={() => void list.refetch()}>다시 시도</Button>
             </div>
           )}
@@ -458,7 +458,7 @@ function CreatePageDialog({ onClose, onCreated }: { onClose: () => void; onCreat
           페이지 제목 <span className="sr-only">(필수)</span>
           <Input {...validation.fieldProps('contsTtl')} value={title} maxLength={256} required autoFocus
             onChange={(event) => { validation.clearError('contsTtl'); setTitle(event.target.value); }} />
-          {validation.errors.contsTtl ? <p {...validation.messageProps('contsTtl')} className="text-sm text-destructive" /> : null}
+          {validation.errors.contsTtl ? <p {...validation.messageProps('contsTtl')} className="text-sm text-destructive-emphasis" /> : null}
         </label>
         <label className="flex flex-col gap-1 text-sm text-muted-foreground">
           주소
@@ -469,7 +469,7 @@ function CreatePageDialog({ onClose, onCreated }: { onClose: () => void; onCreat
               onChange={(event) => { validation.clearError('contsPathNm'); setPath(event.target.value.toLowerCase()); }} />
           </div>
           <span id="cms-new-path-help">영문 소문자·숫자·하이픈. 처음 게시하면 바꿀 수 없습니다.</span>
-          {validation.errors.contsPathNm ? <p {...validation.messageProps('contsPathNm')} className="text-sm text-destructive" /> : null}
+          {validation.errors.contsPathNm ? <p {...validation.messageProps('contsPathNm')} className="text-sm text-destructive-emphasis" /> : null}
         </label>
         <fieldset className="space-y-1">
           <legend className="text-sm text-muted-foreground">시작 양식</legend>
@@ -491,7 +491,7 @@ function CreatePageDialog({ onClose, onCreated }: { onClose: () => void; onCreat
             onChange={(source) => { validation.clearError('copySource'); setCopySource(source); }}
             searchFieldProps={validation.fieldProps('copySource')}
             error={validation.errors.copySource
-              ? <p {...validation.messageProps('copySource')} className="text-sm text-destructive" />
+              ? <p {...validation.messageProps('copySource')} className="text-sm text-destructive-emphasis" />
               : null}
           />
         )}
@@ -543,7 +543,7 @@ function CopySourcePicker({ value, onChange, searchFieldProps, error }: CopySour
         <p className="text-sm text-muted-foreground">고른 페이지: <span className="font-medium text-foreground">{value.title}</span></p>
       )}
       {result.isError ? (
-        <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-destructive">
+        <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-destructive-emphasis">
           페이지 목록을 불러오지 못했습니다.
           <Button type="button" size="sm" variant="outline" onClick={() => void result.refetch()}>다시 시도</Button>
         </div>

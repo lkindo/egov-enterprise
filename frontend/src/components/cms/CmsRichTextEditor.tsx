@@ -327,7 +327,7 @@ export function CmsRichTextEditor({
           onChange={(event) => { setLinkValue(event.target.value); setLinkError(null); }}
           onKeyDown={applyOnEnter}
         />
-        {linkError && <p id={`${linkId}-error`} className="text-sm text-destructive">{linkError}</p>}
+        {linkError && <p id={`${linkId}-error`} className="text-sm text-destructive-emphasis">{linkError}</p>}
         <Button type="button" variant="outline" size="sm" onClick={() => { setLinkOpen(false); setPickerOpen(true); }}>
           사이트 안에서 고르기
         </Button>

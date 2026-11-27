@@ -327,7 +327,7 @@ class ConfigSafetyLinterTest {
         Path deployScriptPath = root.resolve(DEPLOY_SCRIPT);
         if (Files.isRegularFile(deployScriptPath)) {
             String deployStripped = stripComments(HarnessSourceIndex.read(deployScriptPath));
-            violations.addAll(prodMfaProtectionViolations(composeProdSrc, deployStripped));
+            violations.addAll(prodMfaProtectionViolations(composeProdSrc, deployStripped, prod));
             violations.addAll(rrnoKeyringDeployPreflightViolations(deployStripped));
             violations.addAll(prodJwtAsymmetricBoundaryViolations(composeProdSrc, deployStripped));
         }
@@ -650,7 +650,10 @@ class ConfigSafetyLinterTest {
                 repeatedRead.toString());
     }
 
-    static List<String> prodMfaProtectionViolations(String composeProdSrc, String deployScriptSrc) {
+    private static final String KEY_PROD_MFA_REQUIRE_PROTECTED = "nuri.security.mfa.require-protected";
+
+    static List<String> prodMfaProtectionViolations(
+            String composeProdSrc, String deployScriptSrc, Map<String, String> prodYaml) {
         List<String> violations = new ArrayList<>();
         Matcher apiBlock = COMPOSE_API_BLOCK.matcher(composeProdSrc);
         if (!apiBlock.find()) {
@@ -659,6 +662,13 @@ class ConfigSafetyLinterTest {
             violations.add(COMPOSE_PROD + ": api.environment 의 MFA_REQUIRE_PROTECTED 가"
                     + " '${MFA_REQUIRE_PROTECTED:-true}' 가 아닙니다 — 운영 배포에서 보호계정 MFA 가"
                     + " 조용히 꺼진 채 기동하지 않도록 기본값을 true 로 두고 전환 유예만 명시적으로 false 를 주십시오.");
+        }
+
+        String prodMfaDefault = prodYaml.get(KEY_PROD_MFA_REQUIRE_PROTECTED);
+        if (!"${MFA_REQUIRE_PROTECTED:true}".equals(prodMfaDefault)) {
+            violations.add(APP_PROD_YML + ": " + KEY_PROD_MFA_REQUIRE_PROTECTED + " 가"
+                    + " '${MFA_REQUIRE_PROTECTED:true}' 가 아닙니다(현재: " + prodMfaDefault
+                    + ") — JAR/WAR 직접 실행에서도 운영 보호계정 MFA 기본 강제가 유지돼야 합니다(ADR-0054).");
         }
 
         List<String> requiredSignals = List.of(
@@ -682,35 +692,50 @@ class ConfigSafetyLinterTest {
         Path root = resolveRepoRoot();
         String prodSrc = stripComments(HarnessSourceIndex.read(root.resolve(COMPOSE_PROD)));
         String deploySrc = stripComments(HarnessSourceIndex.read(root.resolve(DEPLOY_SCRIPT)));
-        assertTrue(prodMfaProtectionViolations(prodSrc, deploySrc).isEmpty(),
-                () -> prodMfaProtectionViolations(prodSrc, deploySrc).toString());
+        Map<String, String> appProdYaml = flattenYaml(root.resolve(APP_PROD_YML));
+        assertTrue(prodMfaProtectionViolations(prodSrc, deploySrc, appProdYaml).isEmpty(),
+                () -> prodMfaProtectionViolations(prodSrc, deploySrc, appProdYaml).toString());
+
+        Map<String, String> missingAppProdMfa = new LinkedHashMap<>(appProdYaml);
+        missingAppProdMfa.remove(KEY_PROD_MFA_REQUIRE_PROTECTED);
+        Map<String, String> falseAppProdMfa = new LinkedHashMap<>(appProdYaml);
+        falseAppProdMfa.put(KEY_PROD_MFA_REQUIRE_PROTECTED, "${MFA_REQUIRE_PROTECTED:false}");
+        Map<String, String> fixedTrueAppProdMfa = new LinkedHashMap<>(appProdYaml);
+        fixedTrueAppProdMfa.put(KEY_PROD_MFA_REQUIRE_PROTECTED, "true");
 
         Map<String, List<String>> broken = new LinkedHashMap<>();
+        broken.put("application-prod.yml MFA 기본 강제 누락", prodMfaProtectionViolations(prodSrc, deploySrc, missingAppProdMfa));
+        broken.put("application-prod.yml MFA 기본 false 로 약화", prodMfaProtectionViolations(prodSrc, deploySrc, falseAppProdMfa));
+        broken.put("application-prod.yml MFA 고정 true 로 전환 유예 차단", prodMfaProtectionViolations(prodSrc, deploySrc, fixedTrueAppProdMfa));
         broken.put("무기본값 전달 원복", prodMfaProtectionViolations(
                 prodSrc.replace("MFA_REQUIRE_PROTECTED: ${MFA_REQUIRE_PROTECTED:-true}", "MFA_REQUIRE_PROTECTED:"),
-                deploySrc));
+                deploySrc, appProdYaml));
         broken.put("기본 false 로 약화", prodMfaProtectionViolations(
                 prodSrc.replace("MFA_REQUIRE_PROTECTED: ${MFA_REQUIRE_PROTECTED:-true}",
                         "MFA_REQUIRE_PROTECTED: ${MFA_REQUIRE_PROTECTED:-false}"),
-                deploySrc));
+                deploySrc, appProdYaml));
         broken.put("고정 true 로 전환 유예 차단", prodMfaProtectionViolations(
                 prodSrc.replace("MFA_REQUIRE_PROTECTED: ${MFA_REQUIRE_PROTECTED:-true}", "MFA_REQUIRE_PROTECTED: true"),
-                deploySrc));
+                deploySrc, appProdYaml));
         broken.put("deploy 키링 검증 누락", prodMfaProtectionViolations(
                 prodSrc,
-                deploySrc.replace("for v in MFA_ACTIVE_KEY_ID MFA_KEYS_JSON; do", "for v in MFA_ACTIVE_KEY_ID; do")));
+                deploySrc.replace("for v in MFA_ACTIVE_KEY_ID MFA_KEYS_JSON; do", "for v in MFA_ACTIVE_KEY_ID; do"),
+                appProdYaml));
         broken.put("deploy 오타 값 차단 누락", prodMfaProtectionViolations(
                 prodSrc,
-                deploySrc.replace("MFA_REQUIRE_PROTECTED 는 true 또는 false 여야 합니다", "removed")));
+                deploySrc.replace("MFA_REQUIRE_PROTECTED 는 true 또는 false 여야 합니다", "removed"),
+                appProdYaml));
         broken.put("deploy false 분기 누락", prodMfaProtectionViolations(
                 prodSrc,
-                deploySrc.replace("false) ;;", "disabled) ;;")));
+                deploySrc.replace("false) ;;", "disabled) ;;"),
+                appProdYaml));
         broken.put("deploy MFA 검증이 docker pull 뒤로 이동", prodMfaProtectionViolations(
                 prodSrc,
                 deploySrc.replace("MFA_REQUIRE_PROTECTED_EFFECTIVE=", "MOVED_MFA_GUARD=")
                         .replace("docker pull \"$ref\"",
                                 "docker pull \"$ref\"\nMFA_REQUIRE_PROTECTED_EFFECTIVE=$(printf '%s'"
-                                        + " \"${MFA_REQUIRE_PROTECTED:-true}\" | tr '[:upper:]' '[:lower:]')")));
+                                        + " \"${MFA_REQUIRE_PROTECTED:-true}\" | tr '[:upper:]' '[:lower:]')"),
+                appProdYaml));
         broken.forEach((name, violations) -> assertFalse(violations.isEmpty(), name));
     }
 

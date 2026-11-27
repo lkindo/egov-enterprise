@@ -2,6 +2,9 @@ package nuri.api.support;
 
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
@@ -12,7 +15,9 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 전체 결과 xlsx export 의 공통 규칙.
@@ -89,20 +94,71 @@ public final class XlsxExport {
             throws IOException {
 
         try (SXSSFWorkbook workbook = new SXSSFWorkbook(SXSSF_ROW_WINDOW)) {
+            Map<Short, CellStyle> quotePrefixedStyles = new HashMap<>();
             Sheet sheet = workbook.createSheet(sheetName);
             Row headerRow = sheet.createRow(0);
             for (int i = 0; i < headers.length; i++) {
                 headerRow.createCell(i).setCellValue(headers[i]);
             }
+            protectFormulaCells(workbook, headerRow, quotePrefixedStyles);
             int rowIndex = 1;
             for (T item : rows) {
-                writer.write(sheet.createRow(rowIndex++), item);
+                Row row = sheet.createRow(rowIndex++);
+                writer.write(row, item);
+                protectFormulaCells(workbook, row, quotePrefixedStyles);
             }
             workbook.write(out);
         }
     }
 
-    /** 빈 셀과 {@code "null"} 문자열을 구분한다 — 후자는 데이터로 오인된다. */
+    /**
+     * 수식 트리거 문자({@code = + - @ \t \r} 및 선행 공백 뒤 {@code = + - @})로 시작하는
+     * 문자열 셀에 OOXML {@code quotePrefixed} 스타일을 부여한다.
+     *
+     * <p>문자열 앞에 따옴표를 직접 붙이지 않고 셀 스타일 메타데이터만 설정해
+     * 감사 원장 등 원본 문자열 값을 변조하지 않으면서 스프레드시트 수식 해석을 차단한다.
+     */
+    private static void protectFormulaCells(
+            SXSSFWorkbook workbook, Row row, Map<Short, CellStyle> quotePrefixedStyles) {
+
+        for (Cell cell : row) {
+            if (cell.getCellType() == CellType.STRING && isFormulaTrigger(cell.getStringCellValue())) {
+                CellStyle baseStyle = cell.getCellStyle();
+                short key = baseStyle != null ? baseStyle.getIndex() : 0;
+                CellStyle protectedStyle = quotePrefixedStyles.computeIfAbsent(key, ignored -> {
+                    CellStyle next = workbook.createCellStyle();
+                    if (baseStyle != null && key != 0) {
+                        next.cloneStyleFrom(baseStyle);
+                    }
+                    next.setQuotePrefixed(true);
+                    return next;
+                });
+                cell.setCellStyle(protectedStyle);
+            }
+        }
+    }
+
+    /** 수식 인젝션 트리거 접두사 여부를 판별한다. */
+    public static boolean isFormulaTrigger(String value) {
+        if (value == null || value.isEmpty()) {
+            return false;
+        }
+        char first = value.charAt(0);
+        if (first == '=' || first == '+' || first == '-' || first == '@' || first == '\t' || first == '\r') {
+            return true;
+        }
+        int index = 0;
+        while (index < value.length() && Character.isWhitespace(value.charAt(index))) {
+            index++;
+        }
+        if (index < value.length()) {
+            char leading = value.charAt(index);
+            return leading == '=' || leading == '+' || leading == '-' || leading == '@';
+        }
+        return false;
+    }
+
+    /** 빈 셀과 {@code "null"} 문자열을 구분하며 원본 문자열을 그대로 유지한다. */
     public static String nullSafe(String value) {
         return value != null ? value : "";
     }
