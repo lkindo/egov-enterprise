@@ -148,40 +148,222 @@ function resolvedHandlerContract(formNode, ownerNode) {
   const identifiers = uniqueSorted(initializerText.match(/[A-Za-z_$][\w$]*/g) ?? []);
   const definitions = [];
   const sourceFile = ownerNode.getSourceFile();
+  const initializers = attributes.map((attribute) => attribute.getInitializer()).filter(Boolean);
+  // 처리기 이름은 그 속성 초기값 안의 식별자로 푼다. 범위는 종전과 같이 파일 최상위 선언이다.
+  const isTopLevel = (declaration) => (Node.isFunctionDeclaration(declaration)
+    ? Node.isSourceFile(declaration.getParent())
+    : Node.isSourceFile(declaration.getVariableStatement?.()?.getParent()));
   for (const name of identifiers) {
-    const fn = sourceFile.getFunctions().find((declaration) => declaration.getName() === name);
-    if (fn) definitions.push(fn.getText());
-    const variable = sourceFile.getVariableDeclarations().find((declaration) => declaration.getName() === name);
-    if (variable) definitions.push(variable.getText());
+    const declaration = initializers.map((initializer) => localDeclaration(sourceFile, name, initializer)).find(Boolean);
+    if (declaration && isTopLevel(declaration)) definitions.push(declaration.getText());
   }
   return { explicit: true, text: `${initializerText} ${definitions.join(' ')}` };
 }
 
-function localDeclaration(sourceFile, name) {
-  return sourceFile.getDescendantsOfKind(SyntaxKind.FunctionDeclaration)
-    .find((declaration) => declaration.getName() === name)
-    ?? sourceFile.getDescendantsOfKind(SyntaxKind.VariableDeclaration)
-      .find((declaration) => declaration.getName() === name)
-    ?? null;
-}
-
-function stateSetterName(sourceFile, stateName) {
-  for (const declaration of sourceFile.getDescendantsOfKind(SyntaxKind.VariableDeclaration)) {
-    const nameNode = declaration.getNameNode();
-    if (!Node.isArrayBindingPattern(nameNode)) continue;
-    const [state, setter] = nameNode.getElements();
-    if (!Node.isBindingElement(state) || !Node.isBindingElement(setter)) continue;
-    if (state.getNameNode().getText() === stateName) return setter.getNameNode().getText();
+/**
+ * 식별자가 가리키는 함수·변수 선언 — 이름이 아니라 TypeScript 심볼로 찾는다. 종전 이름 검색(파일 안 첫 같은 이름 선언)은 다른
+ * 컴포넌트·범위의 같은 이름 선언을 빌렸다. 같은 파일의 선언만 돌려준다(가져온 이름·매개변수·구조 분해는 null — 종전과 같은 범위).
+ */
+function declarationOfIdentifier(identifier, seen = new Set()) {
+  if (!identifier || !Node.isIdentifier(identifier)) return null;
+  const parent = identifier.getParent();
+  const symbol = parent && Node.isShorthandPropertyAssignment(parent) && parent.getNameNode() === identifier
+    ? identifier.getProject().getTypeChecker().getShorthandAssignmentValueSymbol(parent)
+    : identifier.getSymbol();
+  if (!symbol) return null;
+  const sourceFile = identifier.getSourceFile();
+  for (const declaration of symbol.getDeclarations()) {
+    if (declaration.getSourceFile() !== sourceFile) continue;
+    if (Node.isFunctionDeclaration(declaration)) return declaration;
+    if (Node.isVariableDeclaration(declaration) && Node.isIdentifier(declaration.getNameNode())) return declaration;
+    // 구조 분해한 이름은 그 값의 출처를 따라간다 — 훅이 돌려준 객체의 속성, 자식에 넘긴 props·인자.
+    if (Node.isBindingElement(declaration)) {
+      const value = bindingValueDeclaration(declaration, seen);
+      if (value) return value;
+    }
   }
   return null;
 }
 
-function rootIdentifier(expression) {
+/** 괄호·as·satisfies·! 를 벗긴 식. */
+function unwrapExpression(expression) {
+  let current = expression;
+  while (current && (Node.isParenthesizedExpression(current) || Node.isAsExpression(current)
+    || Node.isSatisfiesExpression(current) || Node.isNonNullExpression(current))) current = current.getExpression();
+  return current;
+}
+
+/** 식별자가 부르는 같은 파일의 함수(함수 선언, 또는 화살표·함수 식을 든 변수). */
+function calledFunction(identifier) {
+  const symbol = identifier?.getSymbol();
+  for (const declaration of symbol?.getDeclarations() ?? []) {
+    if (declaration.getSourceFile() !== identifier.getSourceFile()) continue;
+    if (Node.isFunctionDeclaration(declaration)) return declaration;
+    if (Node.isVariableDeclaration(declaration)) {
+      const initializer = unwrapExpression(declaration.getInitializer());
+      if (initializer && (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer))) return initializer;
+    }
+  }
+  return null;
+}
+
+/** 함수가 돌려주는 식들(안쪽 함수의 return 은 빼고, 한 줄 화살표는 그 몸체). */
+function returnedExpressionsOf(fn) {
+  const body = fn.getBody?.();
+  if (!body) return [];
+  if (!Node.isBlock(body)) return [body];
+  return body.getDescendantsOfKind(SyntaxKind.ReturnStatement)
+    .filter((statement) => statement.getFirstAncestor((ancestor) => Node.isArrowFunction(ancestor)
+      || Node.isFunctionExpression(ancestor) || Node.isFunctionDeclaration(ancestor) || Node.isMethodDeclaration(ancestor)) === fn)
+    .map((statement) => statement.getExpression())
+    .filter(Boolean);
+}
+
+/** 식이 내는 객체의 그 속성 값이 가리키는 선언 — 객체 리터럴·그것을 든 변수·그것을 돌려주는 함수 호출·조건식을 따라간다. */
+function propertyValueDeclaration(expression, property, seen, depth = 0) {
+  const target = unwrapExpression(expression);
+  if (!target || depth > 8) return null;
+  if (Node.isObjectLiteralExpression(target)) {
+    const member = target.getProperty(property);
+    if (member && Node.isShorthandPropertyAssignment(member)) return declarationOfIdentifier(member.getNameNode(), seen);
+    if (member && Node.isPropertyAssignment(member)) {
+      const value = unwrapExpression(member.getInitializer());
+      return value && Node.isIdentifier(value) ? declarationOfIdentifier(value, seen) : null;
+    }
+    for (const spread of target.getProperties().filter((candidate) => Node.isSpreadAssignment(candidate))) {
+      const found = propertyValueDeclaration(spread.getExpression(), property, seen, depth + 1);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (Node.isConditionalExpression(target)) {
+    return propertyValueDeclaration(target.getWhenTrue(), property, seen, depth + 1)
+      ?? propertyValueDeclaration(target.getWhenFalse(), property, seen, depth + 1);
+  }
+  if (Node.isCallExpression(target)) {
+    const callee = unwrapExpression(target.getExpression());
+    const fn = callee && Node.isIdentifier(callee) ? calledFunction(callee) : null;
+    for (const returned of fn ? returnedExpressionsOf(fn) : []) {
+      const found = propertyValueDeclaration(returned, property, seen, depth + 1);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (Node.isIdentifier(target)) {
+    const declaration = declarationOfIdentifier(target, seen);
+    return declaration && Node.isVariableDeclaration(declaration)
+      ? propertyValueDeclaration(declaration.getInitializer(), property, seen, depth + 1)
+      : null;
+  }
+  return null;
+}
+
+/** 같은 파일에서 그 함수를 부르는 호출과 JSX 요소(컴포넌트) — 함수 노드마다 한 번 모은다. */
+const CALLERS_CACHE = new WeakMap();
+function callersOf(fn) {
+  if (CALLERS_CACHE.has(fn)) return CALLERS_CACHE.get(fn);
+  const calls = [];
+  const elements = [];
+  const sourceFile = fn.getSourceFile();
+  for (const call of sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+    const callee = unwrapExpression(call.getExpression());
+    if (callee && Node.isIdentifier(callee) && calledFunction(callee) === fn) calls.push(call);
+  }
+  for (const element of [...sourceFile.getDescendantsOfKind(SyntaxKind.JsxOpeningElement),
+    ...sourceFile.getDescendantsOfKind(SyntaxKind.JsxSelfClosingElement)]) {
+    const tag = element.getTagNameNode();
+    if (Node.isIdentifier(tag) && calledFunction(tag) === fn) elements.push(element);
+  }
+  const callers = { calls, elements };
+  CALLERS_CACHE.set(fn, callers);
+  return callers;
+}
+
+/**
+ * 구조 분해한 이름의 값이 가리키는 선언. `const { save } = useActions()` 는 그 함수가 돌려준 객체의 속성을,
+ * `function Child({ save })` 는 같은 파일의 호출 인자·JSX 속성 값을 따라간다(이름이 아니라 심볼·구문으로).
+ */
+function bindingValueDeclaration(binding, seen) {
+  if (seen.has(binding) || seen.size > 40) return null;
+  seen.add(binding);
+  const pattern = binding.getParent();
+  if (!Node.isObjectBindingPattern(pattern) || binding.getDotDotDotToken()) return null;
+  const property = binding.getPropertyNameNode()?.getText() ?? binding.getName();
+  const holder = pattern.getParent();
+  if (Node.isVariableDeclaration(holder)) return propertyValueDeclaration(holder.getInitializer(), property, seen);
+  if (!Node.isParameterDeclaration(holder)) return null;
+  const fn = holder.getParent();
+  const index = fn.getParameters?.().indexOf(holder) ?? -1;
+  if (index < 0) return null;
+  const { calls, elements } = callersOf(fn);
+  for (const call of calls) {
+    const found = propertyValueDeclaration(call.getArguments()[index], property, seen);
+    if (found) return found;
+  }
+  if (index !== 0) return null;
+  for (const element of elements) {
+    const attribute = element.getAttribute(property);
+    const initializer = attribute && Node.isJsxAttribute(attribute) ? attribute.getInitializer() : null;
+    const value = initializer && Node.isJsxExpression(initializer) ? unwrapExpression(initializer.getExpression()) : null;
+    const found = value && Node.isIdentifier(value) ? declarationOfIdentifier(value, seen) : null;
+    if (found) return found;
+  }
+  return null;
+}
+
+/**
+ * 이름이 context 안에서 가리키는 선언 — context(그 이름을 읽어 낸 노드) 안의 같은 이름 식별자를 심볼로 푼다. 규칙은 이름 목록으로
+ * 판정하고, 이름 → 선언 해석만 이 함수가 맡는다.
+ */
+function localDeclaration(sourceFile, name, context) {
+  if (!context) throw new Error(`localDeclaration(${name}) needs the node the name was read from`);
+  const occurrences = [...(Node.isIdentifier(context) ? [context] : []), ...context.getDescendantsOfKind(SyntaxKind.Identifier)]
+    .filter((identifier) => identifier.getText() === name);
+  for (const occurrence of occurrences) {
+    const declaration = declarationOfIdentifier(occurrence);
+    if (declaration) return declaration;
+  }
+  return null;
+}
+
+/**
+ * 상태 이름의 setter — `[saving, setSaving] = useState()` 에서 그 상태 이름을 읽어 낸 노드(origin) 안의 식별자를 심볼로 풀어
+ * 그 구조 분해의 둘째 원소를 돌려준다. 종전 이름 검색은 다른 컴포넌트의 같은 이름 상태를 빌렸다.
+ */
+function stateSetterName(sourceFile, stateName, origin) {
+  if (!origin) return null;
+  const occurrences = [...(Node.isIdentifier(origin) ? [origin] : []), ...origin.getDescendantsOfKind(SyntaxKind.Identifier)]
+    .filter((identifier) => identifier.getText() === stateName);
+  for (const occurrence of occurrences) {
+    for (const declaration of occurrence.getSymbol()?.getDeclarations() ?? []) {
+      if (!Node.isBindingElement(declaration) || declaration.getSourceFile() !== sourceFile) continue;
+      const pattern = declaration.getParent();
+      if (!Node.isArrayBindingPattern(pattern)) continue;
+      const [state, setter] = pattern.getElements();
+      if (state === declaration && Node.isBindingElement(setter)) return setter.getNameNode().getText();
+    }
+  }
+  return null;
+}
+
+/** 호출이 그 선언(함수·변수 선언, 매개변수)을 부르는가 — 이름이 아니라 심볼로 맞춘다. */
+function callsDeclaration(call, declaration) {
+  const callee = call.getExpression();
+  if (!Node.isIdentifier(callee) || !declaration) return false;
+  if (Node.isParameterDeclaration(declaration)) return (callee.getSymbol()?.getDeclarations() ?? []).includes(declaration);
+  return declarationOfIdentifier(callee) === declaration;
+}
+
+function rootIdentifierNode(expression) {
   let current = expression;
   while (Node.isPropertyAccessExpression(current) || Node.isElementAccessExpression(current)) {
     current = current.getExpression();
   }
-  return Node.isIdentifier(current) ? current.getText() : null;
+  return Node.isIdentifier(current) ? current : null;
+}
+
+function rootIdentifier(expression) {
+  return rootIdentifierNode(expression)?.getText() ?? null;
 }
 
 function referencedLocalNames(node) {
@@ -195,7 +377,7 @@ function referencedLocalNames(node) {
     }
     for (const argument of call.getArguments()) {
       if (!Node.isIdentifier(argument)) continue;
-      const declaration = localDeclaration(node.getSourceFile(), argument.getText());
+      const declaration = localDeclaration(node.getSourceFile(), argument.getText(), argument);
       const initializer = Node.isVariableDeclaration(declaration) ? declaration.getInitializer() : null;
       if (Node.isFunctionDeclaration(declaration)
         || Node.isArrowFunction(initializer)
@@ -224,31 +406,32 @@ function resolvedControlContract(controlNode) {
   const seenDeclarations = new Set();
   const queuedNames = [];
   const expression = Node.isJsxExpression(initializer) ? initializer.getExpression() : null;
-  if (expression && Node.isIdentifier(expression)) queuedNames.push(expression.getText());
-  queuedNames.push(...referencedLocalNames(initializer));
+  // 큐는 [이름, 그 이름을 읽어 낸 노드] — 이름 → 선언은 그 노드 안의 식별자로 푼다.
+  if (expression && Node.isIdentifier(expression)) queuedNames.push([expression.getText(), initializer]);
+  queuedNames.push(...referencedLocalNames(initializer).map((name) => [name, initializer]));
 
   for (let index = 0; index < queuedNames.length; index += 1) {
-    const name = queuedNames[index];
-    const declaration = localDeclaration(sourceFile, name);
+    const [name, context] = queuedNames[index];
+    const declaration = localDeclaration(sourceFile, name, context);
     if (!declaration || seenDeclarations.has(declaration)) continue;
     seenDeclarations.add(declaration);
     nodes.push(declaration);
-    queuedNames.push(...referencedLocalNames(declaration));
+    queuedNames.push(...referencedLocalNames(declaration).map((referenced) => [referenced, declaration]));
   }
 
   const directNames = [];
   if (expression && Node.isIdentifier(expression)) directNames.push(expression.getText());
   for (const call of initializer.getDescendantsOfKind(SyntaxKind.CallExpression)) {
     const callExpression = call.getExpression();
-    if (Node.isIdentifier(callExpression) && localDeclaration(sourceFile, callExpression.getText())) {
+    if (Node.isIdentifier(callExpression) && localDeclaration(sourceFile, callExpression.getText(), callExpression)) {
       directNames.push(callExpression.getText());
     } else {
       const receiver = rootIdentifier(callExpression);
-      if (receiver && localDeclaration(sourceFile, receiver)) directNames.push(receiver);
+      if (receiver && localDeclaration(sourceFile, receiver, callExpression)) directNames.push(receiver);
     }
   }
   const delegatedWriteHandler = directNames.find((name) => {
-    const declaration = localDeclaration(sourceFile, name);
+    const declaration = localDeclaration(sourceFile, name, initializer);
     return declaration && actionWriteCalls({ nodes: [declaration] }, sourceFile).length > 0;
   });
   const handler = directNames.find((name) => /^(?:begin|handle|on|delete|remove|save|submit|send|create|update)/i.test(name))
@@ -269,29 +452,29 @@ function resolvedInitializerContract(initializer, sourceFile, handlerOverride = 
   const seenDeclarations = new Set();
   const queuedNames = [];
   const expression = Node.isJsxExpression(initializer) ? initializer.getExpression() : initializer;
-  if (expression && Node.isIdentifier(expression)) queuedNames.push(expression.getText());
-  queuedNames.push(...referencedLocalNames(initializer));
+  if (expression && Node.isIdentifier(expression)) queuedNames.push([expression.getText(), initializer]);
+  queuedNames.push(...referencedLocalNames(initializer).map((name) => [name, initializer]));
   for (let index = 0; index < queuedNames.length; index += 1) {
-    const name = queuedNames[index];
-    const declaration = localDeclaration(sourceFile, name);
+    const [name, context] = queuedNames[index];
+    const declaration = localDeclaration(sourceFile, name, context);
     if (!declaration || seenDeclarations.has(declaration)) continue;
     seenDeclarations.add(declaration);
     nodes.push(declaration);
-    queuedNames.push(...referencedLocalNames(declaration));
+    queuedNames.push(...referencedLocalNames(declaration).map((referenced) => [referenced, declaration]));
   }
   const directNames = [];
   if (expression && Node.isIdentifier(expression)) directNames.push(expression.getText());
   for (const call of initializer.getDescendantsOfKind(SyntaxKind.CallExpression)) {
     const callExpression = call.getExpression();
-    if (Node.isIdentifier(callExpression) && localDeclaration(sourceFile, callExpression.getText())) {
+    if (Node.isIdentifier(callExpression) && localDeclaration(sourceFile, callExpression.getText(), callExpression)) {
       directNames.push(callExpression.getText());
     } else {
       const receiver = rootIdentifier(callExpression);
-      if (receiver && localDeclaration(sourceFile, receiver)) directNames.push(receiver);
+      if (receiver && localDeclaration(sourceFile, receiver, callExpression)) directNames.push(receiver);
     }
   }
   const delegatedWriteHandler = directNames.find((name) => {
-    const declaration = localDeclaration(sourceFile, name);
+    const declaration = localDeclaration(sourceFile, name, initializer);
     return declaration && actionWriteCalls({ nodes: [declaration] }, sourceFile).length > 0;
   });
   const handler = handlerOverride
@@ -315,7 +498,7 @@ function bulkActionContracts(controlNode) {
   const expression = initializer && Node.isJsxExpression(initializer) ? initializer.getExpression() : null;
   let array = expression;
   if (array && Node.isIdentifier(array)) {
-    const declaration = localDeclaration(controlNode.getSourceFile(), array.getText());
+    const declaration = localDeclaration(controlNode.getSourceFile(), array.getText(), array);
     array = declaration && Node.isVariableDeclaration(declaration) ? declaration.getInitializer() : null;
   }
   const collectObjects = (node, seen = new Set()) => {
@@ -325,7 +508,7 @@ function bulkActionContracts(controlNode) {
     if (Node.isArrayLiteralExpression(node)) return node.getElements().flatMap((item) => collectObjects(item, nextSeen));
     if (Node.isConditionalExpression(node)) return [...collectObjects(node.getWhenTrue(), nextSeen), ...collectObjects(node.getWhenFalse(), nextSeen)];
     if (Node.isIdentifier(node)) {
-      const declaration = localDeclaration(controlNode.getSourceFile(), node.getText());
+      const declaration = localDeclaration(controlNode.getSourceFile(), node.getText(), node);
       return declaration && Node.isVariableDeclaration(declaration) ? collectObjects(declaration.getInitializer(), nextSeen) : [];
     }
     return Node.isObjectLiteralExpression(node) ? [node] : [];
@@ -388,7 +571,7 @@ function blockingRefNames(contract) {
         const helperName = callName(call);
         const escaped = helperName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         if (new RegExp('!\\s*' + escaped + '\\s*\\(').test(condition.getText())) continue;
-        const declaration = localDeclaration(sourceFile, helperName);
+        const declaration = localDeclaration(sourceFile, helperName, call.getExpression());
         if (declaration) addPositiveRefs(declaration.getText());
       }
     }
@@ -515,12 +698,14 @@ function directTriggerControls(node, triggerAttribute) {
 function localComponentDefinition(element, sourceFile) {
   const component = jsxTag(element);
   if (!/^[A-Z][A-Za-z0-9_$]*$/.test(component)) return null;
-  const fn = sourceFile.getFunctions().find((candidate) => candidate.getName() === component);
-  if (fn) return fn;
-  const variable = sourceFile.getVariableDeclarations().find((candidate) => candidate.getName() === component);
-  const initializer = variable?.getInitializer();
-  if (initializer && (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer))) return initializer;
-  return null;
+  // 태그 식별자를 심볼로 푼다. 범위는 종전과 같이 그 파일 최상위 컴포넌트다.
+  const fn = element.getSourceFile() === sourceFile ? calledFunction(element.getTagNameNode()) : null;
+  if (!fn) return null;
+  const holder = Node.isFunctionDeclaration(fn) ? fn : fn.getParent();
+  const topLevel = Node.isFunctionDeclaration(holder)
+    ? Node.isSourceFile(holder.getParent())
+    : Node.isVariableDeclaration(holder) && Node.isSourceFile(holder.getVariableStatement()?.getParent());
+  return topLevel ? fn : null;
 }
 
 function forwardedChildControlContract(element, contract, repoRoot, project) {
@@ -686,7 +871,7 @@ function synchronousRefLockNames(contract) {
       .filter((call) => Node.isIdentifier(call.getExpression()))
       .map((call) => callName(call));
     const positiveHelper = helperCallNames.some((name) => {
-      const declaration = localDeclaration(sourceFile, name);
+      const declaration = localDeclaration(sourceFile, name, conditionNode);
       if (!declaration || !new RegExp(`\\b${escaped}\\.current\\b`).test(declaration.getText())) return false;
       const helperEscaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       if (new RegExp(`!\\s*${helperEscaped}\\s*\\(`).test(condition)) return false;
@@ -723,8 +908,8 @@ function synchronousRefLockNames(contract) {
     const mutationDeclarationFor = (call) => {
       const expression = call.getExpression();
       if (!Node.isPropertyAccessExpression(expression) || !/^(?:mutate|mutateAsync)$/.test(callName(call))) return null;
-      const receiver = rootIdentifier(expression.getExpression());
-      return contract.nodes.find((node) => Node.isVariableDeclaration(node) && node.getName() === receiver) ?? null;
+      const declaration = declarationOfIdentifier(rootIdentifierNode(expression.getExpression()));
+      return declaration && Node.isVariableDeclaration(declaration) && contract.nodes.includes(declaration) ? declaration : null;
     };
     const hasMatchingOnSettled = (call) => {
       const declaration = mutationDeclarationFor(call);
@@ -805,12 +990,12 @@ function synchronousRefLockNames(contract) {
       if (!wrapperName || !callable) continue;
       for (const parameterCall of node.getDescendantsOfKind(SyntaxKind.CallExpression)) {
         if (!Node.isIdentifier(parameterCall.getExpression())) continue;
-        const parameterIndex = callbackParameters.findIndex((parameter) => parameter.getName() === callName(parameterCall));
+        const parameterIndex = callbackParameters.findIndex((parameter) => callsDeclaration(parameterCall, parameter));
         if (parameterIndex < 0 || parameterCall.getStart() - node.getStart() <= claimIndex) continue;
         const locallyReleased = releases.some((release) => isFinallyReleaseAfter(release, parameterCall));
         for (const invocationNode of contract.nodes) {
           for (const invocation of invocationNode.getDescendantsOfKind(SyntaxKind.CallExpression)) {
-            if (!Node.isIdentifier(invocation.getExpression()) || callName(invocation) !== wrapperName) continue;
+            if (!callsDeclaration(invocation, node)) continue;
             const argument = invocation.getArguments()[parameterIndex];
             if (!argument) continue;
             const callbackWrites = writes.filter((write) => isWithin(write, argument));
@@ -823,29 +1008,31 @@ function synchronousRefLockNames(contract) {
       }
     }
 
+    // 획득·해제 도우미는 선언 노드로 모으고, 호출은 심볼로 그 선언에 맞춘다.
     const claimHelpers = new Set(contract.nodes.flatMap((node) => {
       const name = declarationName(node);
       if (!name) return [];
       const guard = positiveGuards(node, refName)[0];
       const claim = node.getDescendantsOfKind(SyntaxKind.BinaryExpression)
         .find((expression) => isRefAssignment(expression) && !isReleaseAssignment(expression));
-      return guard && claim && guard.getStart() < claim.getStart() ? [name] : [];
+      return guard && claim && guard.getStart() < claim.getStart() ? [node] : [];
     }));
     const releaseHelpers = new Set(contract.nodes.flatMap((node) => {
       const name = declarationName(node);
       if (!name || !new RegExp(`\\b${escaped}\\.current\\s*=\\s*(?:false|null)\\b`).test(node.getText())) return [];
-      return [name];
+      return [node];
     }));
+    const helperOf = (call) => (Node.isIdentifier(call.getExpression()) ? declarationOfIdentifier(call.getExpression()) : null);
     if (claimHelpers.size > 0 && releaseHelpers.size > 0) {
       for (const node of contract.nodes) {
         const text = node.getText();
         const calls = node.getDescendantsOfKind(SyntaxKind.CallExpression);
         const claimCalls = calls.filter((call) => Node.isIdentifier(call.getExpression())
-          && claimHelpers.has(callName(call))
+          && claimHelpers.has(helperOf(call))
           && new RegExp(`if\\s*\\([^)]*\\b${callName(call)}\\s*\\([^)]*\\)[^)]*\\)\\s*(?:return\\b|\\{[^}]*\\breturn\\b)`, 's')
             .test(text));
         const releaseCalls = calls.filter((call) => Node.isIdentifier(call.getExpression())
-          && releaseHelpers.has(callName(call))
+          && releaseHelpers.has(helperOf(call))
           && call.getAncestors().some((ancestor) => {
             if (!Node.isBlock(ancestor)) return false;
             const parent = ancestor.getParent();
@@ -883,6 +1070,8 @@ function pendingStateIdentifiers(initializerOrAttribute) {
   if (!hasDynamicPendingInitializer(initializer)) return new Set();
   const expression = Node.isJsxExpression(initializer) ? initializer.getExpression() : initializer;
   const queued = expression?.getText().match(/[A-Za-z_$][\w$]*/g) ?? [];
+  // 이름마다 그 이름을 읽어 낸 노드 — 이름 → 선언은 그 노드 안에서 푼다.
+  const contexts = queued.map(() => expression);
   const expressionTexts = [expression?.getText() ?? ''];
   const qualified = new Set();
   const collectQualified = (candidate) => {
@@ -897,24 +1086,31 @@ function pendingStateIdentifiers(initializerOrAttribute) {
   };
   collectQualified(expression);
   const seen = new Set();
+  const origins = new Map();
   for (let index = 0; index < queued.length && index < 40; index += 1) {
     const name = queued[index];
     if (seen.has(name)) continue;
     seen.add(name);
-    const declaration = localDeclaration(expression.getSourceFile(), name);
+    origins.set(name, contexts[index]);
+    const declaration = localDeclaration(expression.getSourceFile(), name, contexts[index]);
     if (!declaration || !Node.isVariableDeclaration(declaration)) continue;
     const declarationInitializer = declaration.getInitializer();
     if (!declarationInitializer) continue;
     expressionTexts.push(declarationInitializer.getText());
     collectQualified(declarationInitializer);
-    queued.push(...(declarationInitializer.getText().match(/[A-Za-z_$][\w$]*/g) ?? []));
+    const more = declarationInitializer.getText().match(/[A-Za-z_$][\w$]*/g) ?? [];
+    queued.push(...more);
+    contexts.push(...more.map(() => declarationInitializer));
   }
   const names = [...seen].filter((name) => {
     if (!PENDING_STATE_NAME.test(name)) return false;
     if (!/^(?:isPending|isLoading)$/.test(name)) return true;
     return expressionTexts.some((text) => new RegExp(`(?:^|[^.\\w$])${name}\\b`).test(text));
   });
-  return new Set([...names, ...qualified]);
+  const result = new Set([...names, ...qualified]);
+  // 이름마다 그 이름을 읽어 낸 노드 — 상태 setter 를 그 자리의 심볼로 찾는 데 쓴다.
+  result.origins = origins;
+  return result;
 }
 
 function pendingStateIdentityTokens(initializerOrAttribute) {
@@ -936,7 +1132,7 @@ function pendingStateIdentityTokens(initializerOrAttribute) {
   return tokens;
 }
 
-function pendingStateSpansWrite(contract, identifier) {
+function pendingStateSpansWrite(contract, identifier, origin = null) {
   const root = identifier.split('.')[0];
   if (identifier.includes('.')) {
     const escapedRoot = root.replace(/[.*+?^$(){}|[\]\\]/g, '\\$&');
@@ -944,7 +1140,7 @@ function pendingStateSpansWrite(contract, identifier) {
   }
   const sourceFile = contract.nodes[0]?.getSourceFile();
   if (!sourceFile) return false;
-  const setter = stateSetterName(sourceFile, identifier)
+  const setter = stateSetterName(sourceFile, identifier, origin)
     ?? 'set' + (identifier[0]?.toUpperCase() ?? '') + identifier.slice(1);
   const writes = actionWriteCalls(contract, sourceFile);
   if (writes.length === 0) return false;
@@ -972,9 +1168,9 @@ function pendingStateSpansWrite(contract, identifier) {
   const mutationDeclarationFor = (call) => {
     const expression = call.getExpression();
     if (!Node.isPropertyAccessExpression(expression) || !/^(?:mutate|mutateAsync)$/.test(callName(call))) return null;
-    const receiver = rootIdentifier(expression.getExpression());
-    return sourceFile.getDescendantsOfKind(SyntaxKind.VariableDeclaration)
-      .find((node) => node.getName() === receiver) ?? null;
+    // 뮤테이션 변수는 그 호출 자리의 수신자를 심볼로 푼다(종전 파일 전체 이름 검색은 다른 컴포넌트의 같은 이름 변수를 빌렸다).
+    const declaration = declarationOfIdentifier(rootIdentifierNode(expression.getExpression()));
+    return declaration && Node.isVariableDeclaration(declaration) ? declaration : null;
   };
   const hasMatchingOnSettledRelease = (write) => {
     const declaration = mutationDeclarationFor(write);
@@ -1008,12 +1204,12 @@ function pendingStateSpansWrite(contract, identifier) {
     const releases = setterCalls(node).filter(isRelease);
     for (const parameterCall of node.getDescendantsOfKind(SyntaxKind.CallExpression)) {
       if (!Node.isIdentifier(parameterCall.getExpression())) continue;
-      const parameterIndex = parameters.findIndex((parameter) => parameter.getName() === callName(parameterCall));
+      const parameterIndex = parameters.findIndex((parameter) => callsDeclaration(parameterCall, parameter));
       if (parameterIndex < 0
         || !starts.some((call) => call.getStart() < parameterCall.getStart())) continue;
       for (const invocationNode of contract.nodes) {
         for (const invocation of invocationNode.getDescendantsOfKind(SyntaxKind.CallExpression)) {
-          if (!Node.isIdentifier(invocation.getExpression()) || callName(invocation) !== wrapperName) continue;
+          if (!callsDeclaration(invocation, node)) continue;
           const callback = invocation.getArguments()[parameterIndex];
           if (!callback) continue;
           const callbackWrites = writes.filter((write) => isWithin(write, callback));
@@ -1025,20 +1221,20 @@ function pendingStateSpansWrite(contract, identifier) {
     }
   }
 
+  // 시작·해제 도우미는 선언 노드로 모으고, 호출은 심볼로 그 선언에 맞춘다.
   const startHelpers = new Set(contract.nodes.flatMap((node) => {
     const name = declarationName(node);
-    return name && setterCalls(node).some((call) => !isRelease(call)) ? [name] : [];
+    return name && setterCalls(node).some((call) => !isRelease(call)) ? [node] : [];
   }));
   const releaseHelpers = new Set(contract.nodes.flatMap((node) => {
     const name = declarationName(node);
-    return name && setterCalls(node).some(isRelease) ? [name] : [];
+    return name && setterCalls(node).some(isRelease) ? [node] : [];
   }));
+  const helperOf = (call) => (Node.isIdentifier(call.getExpression()) ? declarationOfIdentifier(call.getExpression()) : null);
   for (const node of contract.nodes) {
     const calls = node.getDescendantsOfKind(SyntaxKind.CallExpression);
-    const starts = calls.filter((call) => Node.isIdentifier(call.getExpression())
-      && startHelpers.has(callName(call)));
-    const releases = calls.filter((call) => Node.isIdentifier(call.getExpression())
-      && releaseHelpers.has(callName(call)));
+    const starts = calls.filter((call) => startHelpers.has(helperOf(call)));
+    const releases = calls.filter((call) => releaseHelpers.has(helperOf(call)));
     for (const write of writes.filter((call) => isWithin(call, node))) {
       if (starts.some((call) => call.getStart() < write.getStart())
         && releases.some((call) => safelyReleasesAfter(call, write))) return true;
@@ -1051,6 +1247,7 @@ function linkedPendingControl(disabled, ariaBusy, contract = null) {
   const disabledIdentifiers = pendingStateIdentifiers(disabled);
   const busyIdentifiers = pendingStateIdentifiers(ariaBusy);
   const sharedIdentifiers = [...disabledIdentifiers].filter((identifier) => busyIdentifiers.has(identifier));
+  const originOf = (identifier) => disabledIdentifiers.origins?.get(identifier) ?? busyIdentifiers.origins?.get(identifier) ?? null;
   const linkedToHandler = contract && sharedIdentifiers.some((identifier) => {
     const root = identifier.split('.')[0];
     if (identifier.includes('.')) {
@@ -1058,12 +1255,12 @@ function linkedPendingControl(disabled, ariaBusy, contract = null) {
       return new RegExp(`\\b${escapedRoot}\\.(?:mutate|mutateAsync)\\s*\\(`).test(contract.text);
     }
     const sourceFile = contract.nodes[0]?.getSourceFile();
-    const setter = (sourceFile ? stateSetterName(sourceFile, identifier) : null)
+    const setter = (sourceFile ? stateSetterName(sourceFile, identifier, originOf(identifier)) : null)
       ?? `set${identifier[0]?.toUpperCase() ?? ''}${identifier.slice(1)}`;
     return new RegExp(`\\b${setter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\(`).test(contract.text);
   });
   const pendingSpansWrite = contract && sharedIdentifiers.some((identifier) => (
-    pendingStateSpansWrite(contract, identifier)
+    pendingStateSpansWrite(contract, identifier, originOf(identifier))
   ));
   const linked = sharedIdentifiers.length > 0 && linkedToHandler && pendingSpansWrite;
   return {
@@ -1182,7 +1379,7 @@ function actionValidationMetadata(contract) {
       const adapter = rootIdentifier(expression.getExpression());
       if (!adapter) continue;
       adapters.push(adapter);
-      const declaration = localDeclaration(node.getSourceFile(), adapter);
+      const declaration = localDeclaration(node.getSourceFile(), adapter, expression);
       const initializer = declaration && Node.isVariableDeclaration(declaration) ? declaration.getInitializer() : null;
       if (initializer && Node.isCallExpression(initializer) && callName(initializer) === 'useManualFormValidation') {
         const schema = initializer.getArguments()[0];

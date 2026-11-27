@@ -1305,6 +1305,77 @@ test('secondary action lock can release through its matching mutation onSettled 
   }
 });
 
+test('a same-name handler of another component in the file does not lend its lock (symbol resolution)', () => {
+  // 종전 이름 검색은 파일 안 첫 `handleDelete`(잠근 컴포넌트의 것)를 빌려, 잠그지 않은 컴포넌트까지 잠금이 있다고 판정했다.
+  const subject = fixture({
+    'frontend/src/TwoOwners.tsx': `
+      import { deleteService } from '@/services/deleteService';
+      export function Locked(){
+        const deletePendingRef = useRef(false);
+        const handleDelete = async () => {
+          if (deletePendingRef.current) return;
+          deletePendingRef.current = true;
+          try { await deleteService.deleteItem(1); }
+          catch { setError('delete failed'); }
+          finally { deletePendingRef.current = false; }
+        };
+        return <><form role="search"><input /></form><button disabled={isDeleting} aria-busy={isDeleting} onClick={handleDelete}>delete</button></>;
+      }
+      export function Unlocked(){
+        const deletePendingRef = useRef(false);
+        const handleDelete = async () => {
+          try { await deleteService.deleteItem(2); }
+          catch { setError('delete failed'); }
+        };
+        return <><form role="search"><input /></form><button disabled={isDeleting} aria-busy={isDeleting} onClick={handleDelete}>delete</button></>;
+      }
+    `,
+  });
+  try {
+    const actions = subject.discovery.candidates.filter(({ kind }) => kind === 'secondary-action');
+    const lockOf = (owner) => actions.find((action) => action.owner === owner)?.signals.implementation.actionHandlerHasSynchronousRef;
+    assert.equal(lockOf('Locked'), true);
+    assert.equal(lockOf('Unlocked'), false);
+  } finally {
+    subject.cleanup();
+  }
+});
+
+test('a handler destructured from a same-file hook resolves to the returned declaration, not a same-name decoy', () => {
+  // 구조 분해한 처리기는 그 훅이 돌려준 객체의 속성을 따라간다 — 같은 이름의 다른 지역 함수를 빌리지 않는다.
+  const subject = fixture({
+    'frontend/src/HookOwner.tsx': `
+      import { deleteService } from '@/services/deleteService';
+      function Decoy(){
+        const deletePendingRef = useRef(false);
+        const handleDelete = async () => {
+          if (deletePendingRef.current) return;
+          deletePendingRef.current = true;
+          try { await deleteService.deleteItem(0); } catch { setError('x'); } finally { deletePendingRef.current = false; }
+        };
+        return null;
+      }
+      function useDeleteActions(){
+        const remove = async () => {
+          try { await deleteService.deleteItem(3); } catch { setError('delete failed'); }
+        };
+        return { handleDelete: remove };
+      }
+      export function HookOwner(){
+        const { handleDelete } = useDeleteActions();
+        return <><form role="search"><input /></form><button disabled={isDeleting} aria-busy={isDeleting} onClick={handleDelete}>delete</button></>;
+      }
+    `,
+  });
+  try {
+    const action = subject.discovery.candidates.find(({ kind, owner }) => kind === 'secondary-action' && owner === 'HookOwner');
+    assert.ok(action, 'the destructured write handler is a discovered boundary');
+    assert.equal(action.signals.implementation.actionHandlerHasSynchronousRef, false);
+  } finally {
+    subject.cleanup();
+  }
+});
+
 test('secondary action lock can claim and release the same key in a Set ref', () => {
   const subject = fixture({
     'frontend/src/PerItemLockOwner.tsx': `
