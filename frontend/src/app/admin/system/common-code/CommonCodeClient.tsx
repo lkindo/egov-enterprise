@@ -1,10 +1,7 @@
 import { fetchAllPages } from '@/lib/api/fetch-all-pages';
-import {
-  findGroupInClusters,
-  flattenCodeTree,
-  FlattenedCodeNode,
-} from './treeUtils';
-import { CodeHierarchyTree, useCodeHierarchyExplorer } from './CodeHierarchyExplorer';
+import type { FlattenedCodeNode } from './treeUtils';
+import { CodeHierarchyTree } from './CodeHierarchyExplorer';
+import { useCommonCodeNavigation } from './use-common-code-navigation';
 import {
   Search,
   SearchSlash,
@@ -19,13 +16,13 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useRouter } from 'next/navigation';
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAppForm } from '@/hooks/useAppForm';
 import { Form, FormErrorSummary } from '@/components/ui/form';
 import { Column } from '@/app/components/ui/standard-data-table';
 import { StandardModal } from '@/app/components/ui/standard-modal';
-import { CodePicker, CodePickerSelection } from '@/app/components/ui/code-picker';
+import { CodePicker } from '@/app/components/ui/code-picker';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 import { z } from 'zod';
 import {
@@ -57,7 +54,6 @@ import {
   COMMON_DETAIL_COLUMNS,
   CommonCodeDetailActions,
   CommonCodeDetailPanel,
-  filterCodeNodes,
 } from './CodeTreeNode';
 import { CodeClusterFields, CodeDetailFields, CodeGroupFields } from './CodeFormFields';
 import { CommonCodeChangeHistoryDialog, type CodeChangeHistoryTarget } from './CommonCodeChangeHistoryDialog';
@@ -103,7 +99,6 @@ export default function CommonCodeClient({
   const canDeleteCode = canPermission(user, 'CODE_DELETE');
 
   // --- State ---
-  const [searchQuery, setSearchQuery] = useState('');
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isModalOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -176,52 +171,22 @@ export default function CommonCodeClient({
     }
   }, [editingDetail, isModalOpen, resetForm]);
 
-  const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
-  const [selectedGroup, setSelectedGroup] = useState<GroupCode | null>(null);
   // [2026-09-27 DIP B5 F11] 변경 이력 대화상자 — 열릴 때만 마운트한다.
   const [historyTarget, setHistoryTarget] = useState<CodeChangeHistoryTarget | null>(null);
-  const [seedSync, setSeedSync] = useState<{
-    selectedGroupId: string | null | undefined;
-    hierarchySignature: string | undefined;
-    resolved: boolean;
-  }>({
-    selectedGroupId: undefined,
-    hierarchySignature: undefined,
-    resolved: false,
-  });
 
-  const selectNode = (node: FlattenedCodeNode) => {
-    if (node.type === 'cluster') {
-      setSelectedClusterId(node.id);
-      setSelectedGroup(null);
-      return;
-    }
-    setSelectedClusterId(node.parentId);
-    setSelectedGroup(node.data);
-  };
-
-  // 분류·그룹 탐색기(끌어다 소속 옮기기) — 상태와 트리는 CodeHierarchyExplorer, 저장은 아래 handleSaveExplorerChanges.
-  const explorer = useCodeHierarchyExplorer({
-    clCodes,
-    groups,
-    toast,
-    moveBlocked: Boolean(searchQuery) || isSaving,
-    onSelectNode: selectNode,
-    onMovedToCluster: setSelectedClusterId,
-  });
+  // 분류·그룹 선택·검색·탐색기 — 쓰기가 없는 선택 상태는 use-common-code-navigation 이 맡는다(2026-11-27 분해).
   const {
-    initialClusters,
-    hierarchySignature,
-    flattenedNodes,
-    hasExplorerChanges,
-    setHasExplorerChanges,
-    hierarchyRevisionRef,
-  } = explorer;
-
-  const selectedNodeId = selectedGroup?.cdId ?? selectedClusterId;
-  const selectedNode = selectedNodeId
-    ? flattenedNodes.find((node) => node.id === selectedNodeId) ?? null
-    : null;
+    explorer,
+    searchQuery,
+    selectedGroup,
+    selectedNode,
+    visibleNodes,
+    selectNode,
+    groupCountOf,
+    handlePickCode,
+    handleSearchChange,
+  } = useCommonCodeNavigation({ clCodes, groups, selectedGroupId, toast, isSavingHierarchy: isSaving });
+  const { flattenedNodes, hasExplorerChanges, setHasExplorerChanges, hierarchyRevisionRef } = explorer;
 
   /*
    * [P1-1] 상세코드 조회를 useQuery 로 옮긴다.
@@ -258,10 +223,6 @@ export default function CommonCodeClient({
   });
 
   const detailList: CmmnDetailCode[] = detailRows ?? [];
-
-  /** 선택된 분류에 속한 코드 그룹 수. 미사용 전환 고지와 분류 상세의 '포함 그룹' 수에 쓴다. */
-  const groupCountOf = (clsfCd: string) =>
-    flattenedNodes.filter((node) => node.type === 'group' && node.parentId === clsfCd).length;
 
   const openCreateCluster = () => {
     clusterForm.reset(CLUSTER_FORM_DEFAULTS);
@@ -458,113 +419,6 @@ export default function CommonCodeClient({
       hierarchySavePendingRef.current = false;
       setIsSaving(false);
     }
-  };
-
-  /**
-   * CodePicker 1호 소비처 — 팝업에서 고른 코드의 그룹을 탐색기에서 그대로 선택한다.
-   * (상세 목록은 기존 useQuery 경로가 이어받는다. 신규 조회 경로를 만들지 않는다.)
-   */
-  const handlePickCode = ({ group, code }: CodePickerSelection) => {
-    const found = findGroupInClusters(initialClusters, group.cdId);
-    if (!found) {
-      toast('선택한 코드 그룹을 현재 탐색기에서 찾을 수 없습니다. 데이터를 새로고침한 뒤 다시 시도해 주세요.', 'error');
-      return;
-    }
-    setSearchQuery('');
-    setSelectedClusterId(found.cluster.id);
-    setSelectedGroup(found.group);
-    toast(`‘${code.dtlCdNm}’(${code.dtlCd}) — ${group.cdIdNm} 그룹이 선택되었습니다.`, 'success');
-  };
-
-  // Synchronize initial state from props during render
-  const nextSelectedGroupId = selectedGroupId ?? null;
-  const previousSelectedGroupId = seedSync.selectedGroupId;
-  const seedChanged = previousSelectedGroupId !== nextSelectedGroupId;
-  const hierarchyChanged = seedSync.hierarchySignature !== hierarchySignature;
-  if (seedChanged || hierarchyChanged) {
-    const findGroup = (groupId: string) => findGroupInClusters(initialClusters, groupId);
-    const revealSelectionIfHidden = (nodeId: string) => {
-      if (!searchQuery) return;
-      const nextVisibleNodes = filterCodeNodes(flattenCodeTree(initialClusters), searchQuery);
-      if (!nextVisibleNodes.some((node) => node.id === nodeId)) setSearchQuery('');
-    };
-
-    if (!seedChanged) {
-      let nextResolved = seedSync.resolved;
-      if (selectedGroup) {
-        const currentSelection = findGroup(selectedGroup.cdId);
-        if (currentSelection) {
-          revealSelectionIfHidden(currentSelection.group.cdId);
-          setSelectedClusterId(currentSelection.cluster.id);
-          setSelectedGroup(currentSelection.group);
-        } else {
-          if (selectedGroup.cdId === nextSelectedGroupId) nextResolved = false;
-          setSelectedClusterId(null);
-          setSelectedGroup(null);
-        }
-      } else if (selectedClusterId) {
-        const clusterStillExists = initialClusters.some((cluster) => cluster.id === selectedClusterId);
-        if (clusterStillExists) revealSelectionIfHidden(selectedClusterId);
-        else setSelectedClusterId(null);
-      } else if (!nextResolved && nextSelectedGroupId) {
-        const lateSelection = findGroup(nextSelectedGroupId);
-        if (lateSelection) {
-          nextResolved = true;
-          setSearchQuery('');
-          setSelectedClusterId(lateSelection.cluster.id);
-          setSelectedGroup(lateSelection.group);
-        }
-      }
-      setSeedSync({
-        selectedGroupId: nextSelectedGroupId,
-        hierarchySignature,
-        resolved: nextResolved,
-      });
-    } else if (!nextSelectedGroupId) {
-      setSeedSync({
-        selectedGroupId: nextSelectedGroupId,
-        hierarchySignature,
-        resolved: true,
-      });
-      if (previousSelectedGroupId !== undefined) {
-        setSelectedClusterId(null);
-        setSelectedGroup(null);
-      }
-    } else {
-      const seededSelection = findGroup(nextSelectedGroupId);
-      if (seededSelection) {
-        setSeedSync({
-          selectedGroupId: nextSelectedGroupId,
-          hierarchySignature,
-          resolved: true,
-        });
-        setSearchQuery('');
-        setSelectedClusterId(seededSelection.cluster.id);
-        setSelectedGroup(seededSelection.group);
-      } else {
-        setSeedSync({
-          selectedGroupId: nextSelectedGroupId,
-          hierarchySignature,
-          resolved: false,
-        });
-        setSelectedClusterId(null);
-        setSelectedGroup(null);
-      }
-    }
-  }
-
-  // Filtered Nodes
-  const visibleNodes = useMemo(
-    () => filterCodeNodes(flattenedNodes, searchQuery),
-    [flattenedNodes, searchQuery],
-  );
-
-  const handleSearchChange = (nextQuery: string) => {
-    setSearchQuery(nextQuery);
-    if (!selectedNodeId) return;
-    if (filterCodeNodes(flattenedNodes, nextQuery).some((node) => node.id === selectedNodeId)) return;
-    setSelectedClusterId(null);
-    setSelectedGroup(null);
   };
 
   const handleEditDetail = (detail: CmmnDetailCode) => {
