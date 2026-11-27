@@ -72,7 +72,7 @@ const SEMANTIC_STATUS_REGEX = new RegExp(
   "g",
 );
 /** 고대비 미달 전경색(`text-destructive`) 금지 — text-destructive-emphasis·text-destructive-foreground 만 허용한다. */
-const BARE_TEXT_DESTRUCTIVE_REGEX = /(?:^|[\s"'`:!])text-destructive(?![A-Za-z0-9_-])/g;
+const BARE_TEXT_DESTRUCTIVE_REGEX = /(?:^|[\s\x22\x27`:!])text-destructive(?![A-Za-z0-9_-])/g;
 /** 미정의 시맨틱 색 판정 범위 — 시험을 뺀 생산 소스 전부(.ts 색상표 포함). */
 const isProductionSource = (filename) => {
   const path = filename.replaceAll("\\", "/");

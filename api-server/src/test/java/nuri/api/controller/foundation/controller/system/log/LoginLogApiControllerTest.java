@@ -104,7 +104,8 @@ class LoginLogApiControllerTest {
                         .param("size", "2")
                         .param("searchKeyword", "PWD")
                         .param("searchKeywordFrom", "2026-08-01")
-                        .param("searchKeywordTo", "2026-08-31"))
+                        .param("searchKeywordTo", "2026-08-31")
+                        .param("reason", "감사 점검"))
                 .andExpect(request().asyncStarted())
                 .andReturn();
 
@@ -141,7 +142,8 @@ class LoginLogApiControllerTest {
         when(loginLogManageService.selectLoginLogListTotCnt(any())).thenReturn(0);
         when(loginLogManageService.selectLoginLogList(any())).thenReturn(Collections.emptyList());
 
-        MvcResult asyncStarted = mockMvc.perform(get(EXPORT_URL))
+        MvcResult asyncStarted = mockMvc.perform(get(EXPORT_URL)
+                        .param("reason", "감사 점검"))
                 .andExpect(request().asyncStarted())
                 .andReturn();
 
@@ -161,7 +163,8 @@ class LoginLogApiControllerTest {
         when(loginLogManageService.selectLoginLogListTotCnt(any()))
                 .thenReturn(LoginLogApiController.MAX_EXPORT_ROWS + 1);
 
-        mockMvc.perform(get(EXPORT_URL))
+        mockMvc.perform(get(EXPORT_URL)
+                        .param("reason", "감사 점검"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false));
 

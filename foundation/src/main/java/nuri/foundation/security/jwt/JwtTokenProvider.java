@@ -697,6 +697,9 @@ public class JwtTokenProvider {
     }
 
     private Claims parseAccessClaims(String token) {
+        if (token == null || token.isBlank()) {
+            return null;
+        }
         try {
             var claims = parseClaims(token);
             if (TYPE_REFRESH.equals(claims.get(CLAIM_TOKEN_TYPE, String.class))) {

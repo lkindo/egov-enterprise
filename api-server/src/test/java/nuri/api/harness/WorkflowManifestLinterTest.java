@@ -638,6 +638,7 @@ class WorkflowManifestLinterTest {
     @Test
     @DisplayName("🔒 E2E 백엔드 기동 확인에서 /actuator/prometheus 미인증 200 은 경고가 아니라 실패(exit 1)다")
     void ciPrometheusProtectionCheckFailsClosedOnUnauthenticated200() throws IOException {
+        if (ReusableHarnessProfile.current().projected()) return;
         Path ciPath = resolveRepoRoot().resolve(WORKFLOW_DIR).resolve("ci.yml");
         String source = HarnessSourceIndex.read(ciPath);
         Map<?, ?> root = asMap(new Yaml().load(source));

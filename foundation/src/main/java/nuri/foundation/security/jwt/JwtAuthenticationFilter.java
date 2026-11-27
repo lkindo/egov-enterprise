@@ -34,16 +34,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             String token = jwtTokenProvider.resolveToken(request);
-
-            if (token != null) {
-                log.debug(">>> [JwtFilter] Found token in header for path: {}", path);
-                Authentication auth = jwtTokenProvider.authenticateAccessToken(token);
-                if (auth != null) {
-                    SecurityContextHolder.getContext().setAuthentication(auth);
-                    log.debug(">>> [JwtFilter] Successfully authenticated request: {} {}", method, path);
-                } else {
-                    log.warn(">>> [JwtFilter] Token validation failed for path: {}", path);
-                }
+            Authentication auth = jwtTokenProvider.authenticateAccessToken(token);
+            if (auth != null) {
+                SecurityContextHolder.getContext().setAuthentication(auth);
+                log.debug(">>> [JwtFilter] Successfully authenticated request: {} {}", method, path);
+            } else if (token != null) {
+                log.warn(">>> [JwtFilter] Token validation failed for path: {}", path);
             } else {
                 // 토큰이 없는 경우 (로그인 등 허용된 경로는 정상, 그 외엔 나중에 401 발생)
                 log.debug(">>> [JwtFilter] No token found in request header for path: {}", path);

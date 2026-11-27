@@ -64,7 +64,7 @@ class PrivacyLogSystemRoleExclusionTest {
         assertThat(mixed.getAuthorities()).extracting(org.springframework.security.core.GrantedAuthority::getAuthority)
                 .contains("PRIVACY_READ", "PRIVACY_EXPORT");
         mockMvc.perform(get(LIST_URL).with(user(mixed))).andExpect(status().isForbidden());
-        mockMvc.perform(get(EXPORT_URL).with(user(mixed))).andExpect(status().isForbidden());
+        mockMvc.perform(get(EXPORT_URL).with(user(mixed)).param("reason", "감사 점검")).andExpect(status().isForbidden());
     }
     @Test
     @DisplayName("배제 — SYSTEM 롤은 개인정보 로그 목록을 볼 수 없다")
@@ -76,7 +76,8 @@ class PrivacyLogSystemRoleExclusionTest {
     @Test
     @DisplayName("배제 — SYSTEM 롤은 개인정보 로그 전량 반출을 할 수 없다")
     void export_shouldBeForbidden_forSystemRole() throws Exception {
-        mockMvc.perform(get(EXPORT_URL).with(user(principal("system_user", "SYSTEM"))))
+        mockMvc.perform(get(EXPORT_URL).with(user(principal("system_user", "SYSTEM")))
+                        .param("reason", "감사 점검"))
                 .andExpect(status().isForbidden());
     }
 
@@ -87,7 +88,8 @@ class PrivacyLogSystemRoleExclusionTest {
 
         mockMvc.perform(get(LIST_URL).with(user(admin)))
                 .andExpect(status().isOk());
-        mockMvc.perform(get(EXPORT_URL).with(user(admin)))
+        mockMvc.perform(get(EXPORT_URL).with(user(admin))
+                        .param("reason", "감사 점검"))
                 .andExpect(status().isOk());
     }
 

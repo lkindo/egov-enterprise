@@ -1020,6 +1020,8 @@ class JwtTokenProviderTest {
             String refreshToken = jwtTokenProvider.createRefreshToken("alice");
             assertThat(jwtTokenProvider.authenticateAccessToken(refreshToken)).isNull();
             assertThat(jwtTokenProvider.authenticateAccessToken("not-a-jwt")).isNull();
+            assertThat(jwtTokenProvider.authenticateAccessToken(null)).isNull();
+            assertThat(jwtTokenProvider.authenticateAccessToken("   ")).isNull();
             org.mockito.Mockito.verifyNoMoreInteractions(userDetailsService);
 
             Object parser1 = ReflectionTestUtils.invokeMethod(jwtTokenProvider, "jwtParser");
