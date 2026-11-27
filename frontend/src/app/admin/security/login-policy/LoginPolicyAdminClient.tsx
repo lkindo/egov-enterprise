@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
@@ -213,32 +214,28 @@ export default function LoginPolicyAdminClient() {
     정책이 없는 사용자(regYn='N')에게는 이 액션을 노출하지 않는다. 서버가 404 를 낼 뿐이고,
     사용자에게는 "지울 것이 없는데 삭제 버튼이 있는" 상태가 된다.
   */
-  const releasePendingRef = useRef(false);
-  const [releasePendingUserId, setReleasePendingUserId] = useState<string | null>(null);
+  const releaseFlight = useSingleFlight<string>();
 
   const handleRelease = async (policy: LoginPolicy) => {
-    if (releasePendingRef.current || form.formState.isSubmitting) return;
-    releasePendingRef.current = true;
-    setReleasePendingUserId(policy.userId);
-    try {
-      const ok = await confirm({
-        title: '로그인 정책 해제',
-        message: `'${policy.userNm || policy.userId}'(${policy.userId})의 로그인 정책을 해제합니다. `
-          + 'IP 제한·허용 시간대·2단계 인증 설정이 모두 사라지고 이 계정에는 로그인 제한이 적용되지 않습니다.',
-        confirmText: '해제',
-        variant: 'destructive',
-      });
-      if (!ok) return;
+    if (form.formState.isSubmitting) return;
+    await releaseFlight.runFor(policy.userId, async () => {
+      try {
+        const ok = await confirm({
+          title: '로그인 정책 해제',
+          message: `'${policy.userNm || policy.userId}'(${policy.userId})의 로그인 정책을 해제합니다. `
+            + 'IP 제한·허용 시간대·2단계 인증 설정이 모두 사라지고 이 계정에는 로그인 제한이 적용되지 않습니다.',
+          confirmText: '해제',
+          variant: 'destructive',
+        });
+        if (!ok) return;
 
-      await loginPolicyAdminService.deleteLoginPolicy(policy.userId);
-      toast('로그인 정책을 해제했습니다.', 'success');
-      queryClient.invalidateQueries({ queryKey: LOGIN_POLICIES_QUERY_KEY });
-    } catch (releaseError: unknown) {
-      toast(extractErrorMessage(releaseError, '정책 해제 중 오류가 발생했습니다.'), 'error');
-    } finally {
-      releasePendingRef.current = false;
-      setReleasePendingUserId(null);
-    }
+        await loginPolicyAdminService.deleteLoginPolicy(policy.userId);
+        toast('로그인 정책을 해제했습니다.', 'success');
+        queryClient.invalidateQueries({ queryKey: LOGIN_POLICIES_QUERY_KEY });
+      } catch (releaseError: unknown) {
+        toast(extractErrorMessage(releaseError, '정책 해제 중 오류가 발생했습니다.'), 'error');
+      }
+    });
   };
 
   const onFormSubmit = async (values: LoginPolicyFormValues) => {
@@ -357,8 +354,8 @@ export default function LoginPolicyAdminClient() {
               variant="ghost"
               size="icon-sm"
               onClick={() => { void handleRelease(item); }}
-              disabled={releasePendingUserId !== null}
-              aria-busy={releasePendingUserId === item.userId || undefined}
+              disabled={releaseFlight.pendingKey !== null}
+              aria-busy={releaseFlight.pendingKey === item.userId || undefined}
               aria-label={`${item.userNm || item.userId} 로그인 정책 해제`}
               className="text-destructive-emphasis hover:bg-destructive/10"
             >
