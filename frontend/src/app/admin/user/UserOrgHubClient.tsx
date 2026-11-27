@@ -79,8 +79,9 @@ import { UserOrgBulkMoveDialog, UserOrgBulkStatusDialog } from './UserOrgBulkDia
  * 고른 항목(useUserOrgSelection)·부재 조회(useUserOrgAbsences)·대화상자 상태(useUserOrgDialogs)·
  * 상세 동작 단추(UserOrgDetailActions)·부서 마스터(UserOrgDeptMaster)·일괄 대화상자(UserOrgBulkDialogs)·툴바 보조 동작
  * (UserOrgToolbarActions). 이 파일 안에서는 표시 판정(useUserOrgPermissions)·사용자 목록(useUserOrgUsers)·쓰기 잠금(useUserOrgWriteLock)·상세·일괄 쓰기 동작(useUserOrgWriteActions)·부재 탭의
- * 열(absenceColumns)을 뗐다. 쓰기 처리기는 이 파일에 둔다 —
- * 폼 검증 census 가 단추의 처리기를 이 파일의 선언 이름으로 따라가 쓰기·동기 잠금·처리 중 표시를 함께 본다. 폼 제출 처리기
+ * 열(absenceColumns)을 뗐다. 폼 검증 census 는 단추의 처리기를 심볼로 따라가 쓰기·동기 잠금·처리 중 표시를 함께 본다 —
+ * 같은 파일과 다른 파일의 훅이 돌려준 처리기까지 보고, 다른 파일 컴포넌트에 넘기는 처리기는 handle… 속성 이름으로만 따라간다
+ * (docs/03-guides/frontend-form-validation-loop.md 「처리기 해석 범위」). 폼 제출 처리기
  * (onUserSubmit·onDeptSubmit·onPasswordResetSubmit)와 그 폼, URL 을 바꾸는 코드(탭 이동·페이지)는 허브 함수에 그대로 있다.
  */
 

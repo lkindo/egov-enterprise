@@ -239,6 +239,36 @@ describe('사이드바 메뉴 조회 상태', () => {
     }
   });
 
+  it('정리 중인 단추는 대기·사용 불가로 표시되고 다시 눌러도 요청은 하나이며, 실패하면 알리고 대기를 푼다', async () => {
+    // 폼 검증 census 의 쓰기 지점(정리 훅의 mutation.mutateAsync)이 부르는 서비스다 — 이 이름으로 그 경계와 잇는다.
+    const mutation = menu.cleanupUnavailableBookmarks;
+    let finishHead: (value: []) => void = () => undefined;
+    let rejectCleanup: (reason: unknown) => void = () => undefined;
+    menu.getHeadMenus.mockImplementationOnce(() => new Promise(resolve => { finishHead = resolve; }));
+    menu.getMyBookmarkStatus.mockResolvedValue({ bookmarks: [], unavailableCount: 1 });
+    mutation.mockImplementationOnce(() => new Promise((_, reject) => { rejectCleanup = reject; }));
+    renderSidebar();
+    const cleanup = await screen.findByRole('button', { name: '사용할 수 없는 즐겨찾기 정리' });
+    // 상태를 확정하기 전에는 정리할 수 없다.
+    expect(cleanup).toBeDisabled();
+    await act(async () => { finishHead([]); });
+    await screen.findByText('사용할 수 없는 즐겨찾기 1개가 보관되어 있습니다.');
+    await waitFor(() => expect(cleanup).not.toBeDisabled());
+    await userEvent.click(cleanup);
+    const submit = within(await confirmDialog()).getByRole('button', { name: '정리하기' });
+    act(() => { submit.click(); submit.click(); });
+    // 대기 중에는 초점을 지키려고 disabled 대신 aria-disabled 로 막는다 — 다시 눌러도 확인창·요청이 새로 생기지 않는다.
+    await waitFor(() => expect(cleanup).toHaveAttribute('aria-busy', 'true'));
+    expect(cleanup).toHaveAttribute('aria-disabled', 'true');
+    await userEvent.click(cleanup);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(mutation).toHaveBeenCalledTimes(1);
+    await act(async () => { rejectCleanup({ response: { status: 500 } }); });
+    await waitFor(() => expect(toast).toHaveBeenCalledWith('즐겨찾기 상태를 확인하거나 정리하지 못했습니다. 다시 시도해 주세요.', 'error'));
+    expect(cleanup).not.toHaveAttribute('aria-busy', 'true');
+    expect(mutation).toHaveBeenCalledTimes(1);
+  });
+
   it('열린 서랍 위 확인창의 Escape는 정리만 취소하고 서랍·초점을 보존한다', async () => {
     menu.getMyBookmarkStatus.mockResolvedValue({ bookmarks: [], unavailableCount: 1 });
     renderSidebar();
