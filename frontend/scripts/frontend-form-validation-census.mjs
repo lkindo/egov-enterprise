@@ -497,6 +497,19 @@ function callsDeclaration(call, declaration) {
   if (Node.isParameterDeclaration(declaration)) return (callee.getSymbol()?.getDeclarations() ?? []).includes(declaration);
   return declarationsOfIdentifier(callee).includes(declaration);
 }
+/** 호출이 await 로 기다려지는가(괄호는 벗긴다) — 감싸기 함수의 finally 해제가 콜백의 끝 뒤에 오는지 본다. */
+function isAwaitedCall(call) {
+  let parent = call.getParent();
+  while (parent && Node.isParenthesizedExpression(parent)) parent = parent.getParent();
+  return Boolean(parent && Node.isAwaitExpression(parent));
+}
+
+/** 감싸기 함수에 넘긴 콜백의 본문 — 인라인 함수는 그 자신, 이름으로 넘긴 함수(`runFor(id, performDelete)`)는 그 선언이다. */
+function callbackTargets(argument) {
+  const value = unwrapExpression(argument);
+  return value && Node.isIdentifier(value) ? [argument, ...declarationsOfIdentifier(value)] : [argument];
+}
+
 const REACT_PRIMITIVE_HOOK = /^use(?:State|Ref|Memo|Callback|Reducer|Context|Transition|Id|Effect|LayoutEffect)$/;
 
 /**
@@ -819,7 +832,57 @@ function blockingRefNames(contract) {
       }
     }
   }
-  return uniqueSorted([...result]);
+  return qualifiedRefNames(contract, uniqueSorted([...result]));
+}
+
+/**
+ * 훅 안에서 선언한 ref(공용 단일 실행 훅의 `inFlightRef` 등)는 훅을 부를 때마다 다른 ref 다. 이름만으로 맞추면 서로 다른 인스턴스가
+ * 상호 잠금으로 보인다. 그런 ref 이름에는 처리기가 그 훅을 부른 인스턴스(호출 위치)를 붙인다 — 같은 인스턴스를 함께 쓰는 동작끼리만
+ * 이름이 같다. 컴포넌트 자신이 선언한 ref 는 종전대로 이름 그대로다.
+ */
+function qualifiedRefNames(contract, names) {
+  if (names.length === 0) return names;
+  const controlFile = contract.nodes[0]?.getSourceFile();
+  const enclosingFunction = (node) => {
+    const owner = node.getFirstAncestor((ancestor) => Node.isFunctionDeclaration(ancestor)
+      || Node.isArrowFunction(ancestor) || Node.isFunctionExpression(ancestor) || Node.isMethodDeclaration(ancestor));
+    return owner && Node.isFunctionDeclaration(owner) ? implementationOf(owner) : owner;
+  };
+  return uniqueSorted(names.map((refName) => {
+    // 그 ref 를 선언한 함수(훅). 컴포넌트가 직접 선언했으면 한정하지 않는다.
+    const hooks = new Set();
+    for (const node of contract.nodes) {
+      for (const identifier of [...(Node.isIdentifier(node) ? [node] : []), ...node.getDescendantsOfKind(SyntaxKind.Identifier)]) {
+        if (identifier.getText() !== refName) continue;
+        for (const declaration of identifier.getSymbol()?.getDeclarations() ?? []) {
+          const hook = enclosingFunction(declaration);
+          if (hook && /^use[A-Z0-9]/.test(hook.getName?.() ?? hook.getFirstAncestorByKind?.(SyntaxKind.VariableDeclaration)?.getName() ?? '')) hooks.add(hook);
+        }
+      }
+    }
+    if (hooks.size === 0) return refName;
+    // 그 훅 안에서 이 ref 를 획득하는 함수(`ref.current = true`·`ref.current.add(…)`)를 처리기가 부른 인스턴스만 붙인다 —
+    // 다른 인스턴스를 읽기만 하는 것(`otherFlight.isRunning()`·`otherFlight.pending`)은 그 인스턴스의 잠금을 잡지 않는다.
+    const claimPattern = new RegExp(`\\b${refName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.current(?:\\s*=\\s*(?!=)(?!\\s*(?:false|null)\\b)|\\.add\\s*\\()`);
+    const claims = (declaration) => hooks.has(enclosingFunction(declaration)) && claimPattern.test(declaration.getText());
+    const keys = new Set();
+    for (const node of contract.nodes) {
+      if (node.getSourceFile() !== controlFile) continue;
+      for (const call of node.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+        const callee = unwrapExpression(call.getExpression());
+        const nameNode = callee && Node.isPropertyAccessExpression(callee) ? callee.getNameNode() : callee;
+        if (!nameNode || !Node.isIdentifier(nameNode)) continue;
+        const targets = Node.isPropertyAccessExpression(callee)
+          ? propertyValueNodes(callee.getExpression(), callee.getName(), new Set()).flatMap((value) => declarationsOfValueNode(value, new Set()))
+          : declarationsOfIdentifier(nameNode);
+        if (!targets.some(claims)) continue;
+        for (const instance of hookInstancesOf(nameNode)) {
+          keys.add(`${instance.getSourceFile().getBaseName()}:${instance.getStartLineNumber()}:${instance.getStart()}`);
+        }
+      }
+    }
+    return keys.size === 0 ? refName : `${refName}@${uniqueSorted([...keys]).join('+')}`;
+  }));
 }
 
 function importedChildFormImplementation(element, repoRoot, project) {
@@ -1142,7 +1205,7 @@ function synchronousRefLockNames(contract) {
     return Node.isReturnStatement(thenStatement)
       || thenStatement.getDescendantsOfKind(SyntaxKind.ReturnStatement).length > 0;
   });
-  return refNames.filter((refName) => {
+  return qualifiedRefNames(contract, refNames.filter((refName) => {
     const escaped = refName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const isRefAssignment = (expression) => expression.getOperatorToken().getText() === '='
       && expression.getLeft().getText() === `${refName}.current`;
@@ -1245,13 +1308,15 @@ function synchronousRefLockNames(contract) {
         if (!Node.isIdentifier(parameterCall.getExpression())) continue;
         const parameterIndex = callbackParameters.findIndex((parameter) => callsDeclaration(parameterCall, parameter));
         if (parameterIndex < 0 || parameterCall.getStart() - node.getStart() <= claimIndex) continue;
-        const locallyReleased = releases.some((release) => isFinallyReleaseAfter(release, parameterCall));
+        // finally 해제가 콜백의 끝을 기다려야 잠금이다 — `return task()` 는 Promise 를 돌려주자마자 finally 가 푼다.
+        const locallyReleased = isAwaitedCall(parameterCall)
+          && releases.some((release) => isFinallyReleaseAfter(release, parameterCall));
         for (const invocationNode of contract.nodes) {
           for (const invocation of invocationNode.getDescendantsOfKind(SyntaxKind.CallExpression)) {
             if (!callsDeclaration(invocation, node)) continue;
             const argument = invocation.getArguments()[parameterIndex];
             if (!argument) continue;
-            const callbackWrites = writes.filter((write) => isWithin(write, argument));
+            const callbackWrites = writes.filter((write) => callbackTargets(argument).some((target) => isWithin(write, target)));
             const mutationSettled = callbackWrites.length > 0 && callbackWrites.every((write) => hasMatchingOnSettled(write));
             if (callbackWrites.length === 0 || (!locallyReleased && !mutationSettled)) continue;
             foundLockPath = true;
@@ -1304,7 +1369,7 @@ function synchronousRefLockNames(contract) {
       }
     }
     return foundLockPath && writes.every((write) => coveredWrites.has(write));
-  });
+  }));
 }
 
 function hasSynchronousRefLock(contract) {
@@ -1394,6 +1459,17 @@ function pendingStateSpansWrite(contract, identifier, origin = null) {
   }
   const sourceFile = contract.nodes[0]?.getSourceFile();
   if (!sourceFile) return false;
+  const pendingInstances = origin
+    ? [...(Node.isIdentifier(origin) ? [origin] : []), ...origin.getDescendantsOfKind(SyntaxKind.Identifier)]
+      .filter((occurrence) => occurrence.getText() === identifier)
+      .flatMap((occurrence) => hookInstancesOf(occurrence))
+    : [];
+  /** 감싸기 호출이 나온 훅 인스턴스 — `flight.run(…)` 은 flight 의, 구조 분해한 `run(…)` 은 그 출처의 인스턴스다. */
+  const invocationInstances = (invocation) => {
+    const callee = unwrapExpression(invocation.getExpression());
+    if (callee && Node.isPropertyAccessExpression(callee)) return hookInstancesOf(callee.getNameNode());
+    return callee && Node.isIdentifier(callee) ? hookInstancesOf(callee) : [];
+  };
   const setter = stateSetterName(sourceFile, identifier, origin)
     ?? 'set' + (identifier[0]?.toUpperCase() ?? '') + identifier.slice(1);
   const writes = actionWriteCalls(contract, sourceFile);
@@ -1464,11 +1540,16 @@ function pendingStateSpansWrite(contract, identifier, origin = null) {
       for (const invocationNode of contract.nodes) {
         for (const invocation of invocationNode.getDescendantsOfKind(SyntaxKind.CallExpression)) {
           if (!callsDeclaration(invocation, node)) continue;
+          // 감싸기 함수가 훅 인스턴스의 것이면(`deleteFlight.runFor(…)`) 대기 상태도 그 인스턴스의 것이어야 한다 — 같은 훅 선언을
+          // 공유하는 다른 인스턴스(`refreshFlight.pendingKey`)의 대기는 이 쓰기를 말하지 않는다.
+          // 지역 감싸기 함수(인스턴스 없음)는 종전대로 setter 이름으로만 맺는다.
+          const wrapperInstances = pendingInstances.length > 0 ? invocationInstances(invocation) : [];
+          if (wrapperInstances.length > 0 && !wrapperInstances.some((instance) => pendingInstances.includes(instance))) continue;
           const callback = invocation.getArguments()[parameterIndex];
           if (!callback) continue;
-          const callbackWrites = writes.filter((write) => isWithin(write, callback));
+          const callbackWrites = writes.filter((write) => callbackTargets(callback).some((target) => isWithin(write, target)));
           if (callbackWrites.length > 0
-            && (releases.some((call) => safelyReleasesAfter(call, parameterCall))
+            && ((isAwaitedCall(parameterCall) && releases.some((call) => safelyReleasesAfter(call, parameterCall)))
               || callbackWrites.some(hasMatchingOnSettledRelease))) return true;
         }
       }
@@ -1758,8 +1839,7 @@ function collectSignals(ownerNode, formNode, sourceText, file, kind) {
   const appFormMatch = ownerText.match(/\buseManualFormValidation\s*\(\s*([A-Za-z_$][\w$]*)/);
   const usesReactHookForm = /\buseForm\s*(?:<[^>]+>)?\s*\(/.test(ownerText) || /\.handleSubmit\s*\(/.test(submitText);
   const applyServerErrors = /(?:\.applyServerErrors|extractFieldErrors)\s*\(/.test(ownerText);
-  // 공용 단일 실행 훅(useSingleFlight)은 동기 ref 잠금을 품고 있다 — 손으로 짠 …PendingRef 와 같은 파일 단위 표지로 본다.
-  const pendingGuard = /(?:isSubmitting|isPending|\.isPending|pending\s*=|(?:pending|submitting|saving|sending|registering|deleting)\w*Ref|\buseSingleFlight\s*(?:<[^>]*>)?\s*\()/i.test(ownerText)
+  const pendingGuard = /(?:isSubmitting|isPending|\.isPending|pending\s*=|(?:pending|submitting|saving|sending|registering|deleting)\w*Ref)/i.test(ownerText)
     && /\bdisabled\s*=/.test(ownerText);
   const explicitWrite = /\.mutate(?:Async)?\s*\(|\.handleSubmit\s*\(|\b(?:onFormSubmit|onSubmit|handleSubmit|handleSend|handleSave|handleCreate|handleRegister|handleUpdate)\b/.test(handler.text);
   const strongWrite = formNode
@@ -1790,7 +1870,7 @@ function collectSignals(ownerNode, formNode, sourceText, file, kind) {
         : appFormMatch?.[1] ?? null,
       sourceAppliesServerErrors: /(?:\.applyServerErrors|extractFieldErrors|\.setFormErrors)\s*\(/.test(sourceText),
       sourceHasDisabledControl: /\bdisabled\s*=/.test(sourceText),
-      sourceHasSynchronousRef: /(?:pending|submitting|saving|sending|registering|deleting|request)\w*Ref|\buseSingleFlight\s*(?:<[^>]*>)?\s*\(/i.test(sourceText),
+      sourceHasSynchronousRef: /(?:pending|submitting|saving|sending|registering|deleting|request)\w*Ref/i.test(sourceText),
       sourceUsesAppForm: ownerNode.getSourceFile().getDescendantsOfKind(SyntaxKind.CallExpression)
         .some((call) => callName(call) === 'useAppForm'),
       sourceUsesManualFormValidation: /\buseManualFormValidation\s*\(/.test(sourceText),
