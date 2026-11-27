@@ -10,7 +10,6 @@ import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.code.CommonCodeService;
 import nuri.business.service.code.dto.CommonCodeDto;
 import nuri.business.service.informalsanction.dto.*;
-import nuri.business.service.informalsanction.event.SanctionStatusChangedEvent;
 import nuri.foundation.core.event.NotificationRequestedEvent;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
@@ -700,64 +699,27 @@ public class InformalSanctionService {
         publishStageAvailable(sanction, lines);
     }
 
-    private void publishStageAvailable(InformalSanction sanction, List<InformalSanctionDetail> lines) {
-        notifyExisting(UUID.randomUUID(), lines.stream().filter(d -> d.status() == ApprovalStatus.ACTIVE)
-                        .map(d -> d.getId().getUserId()).toList(),
-                "결재 순서 도래", documentLabel(sanction) + "를 확인해 주세요.", pendingLink(sanction.getIfmlAtrzSn()));
+    // --- 결재 알림 발행 — 본문은 InformalSanctionNotifier(2026-11-27 분해, 권한 검사 없음) ---
+
+    private InformalSanctionNotifier notifier() {
+        return new InformalSanctionNotifier(eventPublisher, approvalRecipients, referenceRepository, userRepository);
     }
 
-    /**
-     * [2026-11-19] 결재 알림은 실제로 계정이 있는 사람에게만 보낸다 — 이유와 범위는 {@link ApprovalRecipients}(참조자 결과 알림은
-     * {@link #publishReferenceResult} 가 먼저 걸렀다). 받는 사람은 정렬해 순서를 고정한다.
-     */
+    private void publishStageAvailable(InformalSanction sanction, List<InformalSanctionDetail> lines) {
+        notifier().publishStageAvailable(sanction, lines);
+    }
+
     private List<String> existingUsers(Collection<String> candidates) {
-        return approvalRecipients.existing(candidates);
+        return notifier().existingUsers(candidates);
     }
 
     private void notifyExisting(UUID eventId, Collection<String> receivers, String title, String content, String link) {
-        existingUsers(receivers).forEach(receiver -> eventPublisher.publishEvent(
-                new NotificationRequestedEvent(eventId, receiver, title, content, link)));
+        notifier().notifyExisting(eventId, receivers, title, content, link);
     }
 
     private void publishFinalStatus(InformalSanction sanction, String actor, String opinion,
                                     List<InformalSanctionDetail> lines) {
-        SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(sanction.getIfmlAtrzSn(),
-                sanction.getAplcntId(), actor, SanctionStatus.fromCode(sanction.getAprvYn()), opinion, sanction.getDocTtl(),
-                sanction.getAtrzCycl());
-        eventPublisher.publishEvent(event);
-        publishReferenceResult(sanction, lines);
-    }
-
-    /**
-     * [2026-10-04 D4] 최종 결과(승인 C·반려 R)를 지금 차수의 참조자에게 알린다 — 이 차수의 행이 있는 사람만이다(재상신 때 다시
-     * 지정한 이전 차수 참조자도 이 차수의 행이 있으므로 받는다). 이 차수에 지정되지 않은 이전 차수 참조자는 계속 읽지만 이 알림은
-     * 받지 않는다. 회수(W)는 이 경로를 타지 않는다. 기안자와 이 차수의 결재선 사람은 각자의 알림을 받으므로 뺀다. 결과
-     * 알림(신청자)과 같은 eventId 를 쓰지 않는다 — 멱등 키가 (eventId, 받는 사람)이라 내용이 다른 같은 키는 업무 트랜잭션을
-     * 되돌린다. 반려 사유는 싣지 않는다(본문 상한).
-     *
-     * <p>[개정 1] 실제로 있는 사용자에게만 보낸다. 참조 행은 사용자 삭제 뒤에도 남지만(사용자 FK 없음, V2_123) 알림 행
-     * (tb_user_noti)은 사용자 FK 가 있고 이 업무 트랜잭션 안에서 저장된다 — 지워진 참조자에게 보내면 FK 위반으로 승인·반려
-     * 전체가 되돌아가고, 참조는 지울 수 없어 회수 말고는 빠져나갈 길이 없다.
-     */
-    private void publishReferenceResult(InformalSanction sanction, List<InformalSanctionDetail> lines) {
-        Set<String> excluded = lines.stream().map(d -> d.getId().getUserId()).collect(Collectors.toCollection(HashSet::new));
-        excluded.add(sanction.getAplcntId());
-        List<String> candidates = referenceRepository.findForDocuments(List.of(sanction.getIfmlAtrzSn())).stream()
-                .filter(r -> r.designatedIn(sanction.getAtrzCycl()))
-                .map(r -> r.getId().getUserId()).filter(userId -> !excluded.contains(userId))
-                .distinct().sorted().toList();
-        if (candidates.isEmpty()) return;
-        Set<String> existing = userRepository.findAllById(candidates).stream().map(User::getEsntlId)
-                .collect(Collectors.toSet());
-        List<String> receivers = candidates.stream().filter(existing::contains).toList();
-        if (receivers.isEmpty()) return;
-        boolean approved = "C".equals(sanction.getAprvYn());
-        String title = approved ? "결재가 완료되었습니다" : "결재가 반려되었습니다";
-        String content = documentLabel(sanction) + (approved ? "가 최종 승인되었습니다." : "가 반려되었습니다.")
-                + " 참조로 받은 문서입니다.";
-        UUID eventId = UUID.randomUUID();
-        receivers.forEach(receiver -> eventPublisher.publishEvent(new NotificationRequestedEvent(eventId, receiver,
-                title, content, referencedLink(sanction.getIfmlAtrzSn()))));
+        notifier().publishFinalStatus(sanction, actor, opinion, lines);
     }
 
     /**
@@ -890,94 +852,33 @@ public class InformalSanctionService {
         return toDtoPage(page, actor, Set.of());
     }
 
-    /**
-     * [V2_151] 보이는 결재선 질의는 신청자·참조자에게 지금 차수를, 결재자에게 자기가 든 마지막 차수를 돌려준다. 대리결재자로 보는
-     * 문서(대신 결정했거나 지금 대신 결정할 차례다)는 그 질의가 지금 차수를 돌려주지 않으므로, 지금 차수가 보이지 않는 문서는 모든
-     * 줄·차수를 읽어 조립한다 — 볼 차수는 조립이 같은 규칙(내가 든 차수·대신 결정한 차수·지금 대신 결정할 차수)으로 고른다.
-     */
-    private Page<InformalSanctionDto> toDtoPage(Page<InformalSanction> page, String actor, Set<String> delegators) {
-        if (page.isEmpty()) return page.map(informalSanctionMapper::toDto);
-        List<Long> ids = page.stream().map(InformalSanction::getIfmlAtrzSn).toList();
-        Map<Long, BigDecimal> currentCycles = new java.util.HashMap<>();
-        page.forEach(sanction -> currentCycles.put(sanction.getIfmlAtrzSn(), sanction.getAtrzCycl()));
-        List<InformalSanctionDetail> visibleLines = detailRepository.findVisibleForDocuments(ids, actor);
-        Set<Long> seesAny = visibleLines.stream().map(d -> d.getId().getIfmlAtrzSn()).collect(Collectors.toSet());
-        Set<Long> seesCurrent = delegators.isEmpty() ? Set.of() : visibleLines.stream()
-                .filter(d -> {
-                    BigDecimal current = currentCycles.get(d.getId().getIfmlAtrzSn());
-                    return current != null && d.getId().getAtrzCycl() != null && d.getId().getAtrzCycl().compareTo(current) == 0;
-                })
-                .map(d -> d.getId().getIfmlAtrzSn()).collect(Collectors.toSet());
-        // 보이는 줄이 없으면(대신 결정만 한 문서) 넓히고, 오늘 맡긴 사람이 있으면 지금 차수가 보이지 않는 문서도 넓힌다.
-        Set<Long> widenedIds = ids.stream().filter(id -> !seesAny.contains(id)
-                || (!delegators.isEmpty() && !seesCurrent.contains(id))).collect(Collectors.toSet());
-        List<Long> widened = ids.stream().filter(widenedIds::contains).toList();
-        List<InformalSanctionDetail> lines = new ArrayList<>(visibleLines.stream()
-                .filter(d -> !widenedIds.contains(d.getId().getIfmlAtrzSn())).toList());
-        List<InformalSanctionHistory> history = new ArrayList<>(historyRepository.findVisibleForDocuments(ids, actor)
-                .stream().filter(h -> !widenedIds.contains(h.getId().getIfmlAtrzSn())).toList());
-        if (!widened.isEmpty()) {
-            lines.addAll(detailRepository.findForDocuments(widened));
-            history.addAll(historyRepository.findForDocuments(widened));
-        }
-        List<InformalSanctionProcess> processes = processRepository.findForCurrentCycles(ids);
-        // [D4] 참조자 여부·결재자 추가 힌트에 쓴다. 참조자 목록(이름)은 상세에만 싣는다.
-        List<InformalSanctionReference> references = referenceRepository.findForDocuments(ids);
-        Map<String, String> users = userNames(page.getContent(), lines, processes);
-        Set<String> absent = absentUsers(lines);
-        Map<String, String> tasks = taskTypeNames();
-        Map<Long, List<InformalSanctionDetail>> byDocument = lines.stream().collect(Collectors.groupingBy(d -> d.getId().getIfmlAtrzSn()));
-        Map<Long, List<InformalSanctionHistory>> revisions = history.stream().collect(Collectors.groupingBy(h -> h.getId().getIfmlAtrzSn()));
-        Map<Long, List<InformalSanctionProcess>> processByDocument = processes.stream().collect(Collectors.groupingBy(InformalSanctionProcess::getIfmlAtrzSn));
-        Map<Long, List<InformalSanctionReference>> referencesByDocument = references.stream()
-                .collect(Collectors.groupingBy(r -> r.getId().getIfmlAtrzSn()));
-        return page.map(s -> toParticipantDto(informalSanctionMapper, s, actor,
-                byDocument.getOrDefault(s.getIfmlAtrzSn(), List.of()),
-                revisions.getOrDefault(s.getIfmlAtrzSn(), List.of()), processByDocument.getOrDefault(s.getIfmlAtrzSn(), List.of()),
-                referencesByDocument.getOrDefault(s.getIfmlAtrzSn(), List.of()), users, absent, tasks, Map.of(), false,
-                delegators));
+    // --- 목록 조립·화면 이름 조회 — 본문은 InformalSanctionPageAssembler(2026-11-27 분해, 권한 검사 없음) ---
+
+    private InformalSanctionPageAssembler pages() {
+        return new InformalSanctionPageAssembler(informalSanctionMapper, detailRepository, historyRepository, processRepository,
+                referenceRepository, userRepository, commonCodeService);
     }
 
-    /** 상세의 참조자 이름·부서(사용자 검색과 같은 최소 필드). 참조자가 없으면 조회하지 않는다. */
+    private Page<InformalSanctionDto> toDtoPage(Page<InformalSanction> page, String actor, Set<String> delegators) {
+        return pages().toDtoPage(page, actor, delegators);
+    }
+
     private Map<String, nuri.business.service.user.dto.UserSearchDto> referenceProfiles(
             List<InformalSanctionReference> references) {
-        if (references.isEmpty()) return Map.of();
-        return userRepository.findProfilesByEsntlIds(references.stream().map(r -> r.getId().getUserId()).distinct().toList())
-                .stream().collect(Collectors.toMap(nuri.business.service.user.dto.UserSearchDto::esntlId,
-                        java.util.function.Function.identity(), (first, second) -> first));
+        return pages().referenceProfiles(references);
     }
 
     private Map<String, String> userNames(List<InformalSanction> sanctions, List<InformalSanctionDetail> lines,
                                           List<InformalSanctionProcess> processes) {
-        Set<String> ids = new HashSet<>();
-        sanctions.forEach(s -> { if (s.getAplcntId() != null) ids.add(s.getAplcntId()); });
-        lines.forEach(d -> {
-            ids.add(d.getId().getUserId());
-            // [V2_151] 대신 결정한 대리결재자도 결재선에 이름으로 남는다.
-            if (d.getSbtAprvrId() != null) ids.add(d.getSbtAprvrId());
-        });
-        // 결재선에서 빠진 사람도 처리 이력에는 이름으로 남아야 한다.
-        processes.forEach(p -> {
-            ids.add(p.getChgUserIdntfr());
-            if (p.getTrgtUserId() != null) ids.add(p.getTrgtUserId());
-            if (p.getBfrUserId() != null) ids.add(p.getBfrUserId());
-        });
-        return userRepository.findAllById(ids).stream().collect(Collectors.toMap(User::getEsntlId,
-                u -> u.getUserNm() == null ? "" : u.getUserNm(), (first, second) -> first));
+        return pages().userNames(sanctions, lines, processes);
     }
 
-    /** [2026-10-03] 결재선에 있는 사람 중 부재 중인 사람. 결재선을 보는 사람이 늦어질 차례를 미리 안다. */
     private Set<String> absentUsers(List<InformalSanctionDetail> lines) {
-        Set<String> ids = lines.stream().map(d -> d.getId().getUserId()).collect(Collectors.toSet());
-        if (ids.isEmpty()) return Set.of();
-        return userRepository.findProfilesByEsntlIds(ids).stream()
-                .filter(profile -> Boolean.TRUE.equals(profile.absent()))
-                .map(nuri.business.service.user.dto.UserSearchDto::esntlId).collect(Collectors.toSet());
+        return pages().absentUsers(lines);
     }
 
     private Map<String, String> taskTypeNames() {
-        return getTaskTypes().stream().filter(c -> c.dtlCd() != null)
-                .collect(Collectors.toMap(CommonCodeDto::dtlCd, c -> c.dtlCdNm() == null ? "" : c.dtlCdNm(),
-                        (first, second) -> first));
+        return pages().taskTypeNames();
     }
+
 }
