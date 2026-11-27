@@ -739,6 +739,63 @@ class MailServiceTest {
         assertThatThrownBy(() -> mailService.deleteMail(999L))
                 .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
     }
+
+    @Test
+    @DisplayName("[GAP-MAIL-001 ②] 사용자별 시간당 메일 발송 한도를 초과하면 저장·발송 없이 429(C015)로 거부하고 시스템 알림 발송은 영향을 받지 않는다")
+    void sendMail_enforcesHourlyUserLimitWithoutBlockingSystemNotifications() {
+        asUser("sender-limit");
+        securityUtil.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("ESNTL_LIMIT_1"));
+        mailService.setMailUserRateLimiter(new MailUserRateLimiter(2));
+        given(sentMailRepository.save(any(SentMail.class)))
+                .willReturn(SentMail.builder().emlDsptchSn(21L).build());
+
+        // 잘못된 입력(본문 누락)은 한도를 소모하지 않는다.
+        assertThatThrownBy(() -> mailService.sendMail("sender-limit",
+                SentMailDto.builder().sj("제목").emailCn("").recptnPerson("a@example.com").build()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+
+        List<MailRecipientDto> twoRecipients = List.of(
+                MailRecipientDto.builder().emlAddr("a@example.com").build(),
+                MailRecipientDto.builder().emlAddr("b@example.com").build());
+        mailService.sendMail("sender-limit",
+                SentMailDto.builder().sj("제목").emailCn("본문").recipients(twoRecipients).build());
+        verify(sentMailRepository, times(2)).save(any(SentMail.class));
+
+        // 3번째 발송(한도 2 초과)은 DB 저장·작업 등록 없이 429 거부된다.
+        assertThatThrownBy(() -> mailService.sendMail("sender-limit",
+                SentMailDto.builder().sj("제목").emailCn("본문").recptnPerson("c@example.com").build()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(CommonErrorCode.TOO_MANY_REQUESTS);
+        verify(sentMailRepository, times(2)).save(any(SentMail.class));
+        verify(durableWork, times(2)).enqueue(any());
+
+        // 시스템 업무 알림 경로(sendToResolvedAddress)는 사용자 발송 한도에 막히지 않는다.
+        mailService.sendToResolvedAddress("ESNTL_LIMIT_1",
+                SentMailDto.builder().sj("시스템 알림").emailCn("본문").build(), "notify@example.com", "수신자");
+        verify(sentMailRepository, times(3)).save(any(SentMail.class));
+    }
+
+    @Test
+    @DisplayName("[GAP-MAIL-001 ②] sendMail 중 저장·작업 등록이 실패하면 예약했던 발송 한도를 반환한다")
+    void sendMail_releasesReservationWhenEnqueueFails() {
+        asUser("sender-rollback");
+        securityUtil.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("ESNTL_ROLLBACK_1"));
+        mailService.setMailUserRateLimiter(new MailUserRateLimiter(1));
+        given(sentMailRepository.save(any(SentMail.class)))
+                .willReturn(SentMail.builder().emlDsptchSn(31L).build());
+        org.mockito.Mockito.doThrow(new IllegalStateException("enqueue error"))
+                .when(durableWork).enqueue(any());
+
+        assertThatThrownBy(() -> mailService.sendMail("sender-rollback",
+                SentMailDto.builder().sj("제목").emailCn("본문").recptnPerson("a@example.com").build()))
+                .isInstanceOf(IllegalStateException.class);
+
+        org.mockito.Mockito.reset(durableWork);
+        mailService.sendMail("sender-rollback",
+                SentMailDto.builder().sj("제목").emailCn("본문").recptnPerson("b@example.com").build());
+        verify(durableWork).enqueue(any());
+    }
     private static String encrypted(String address) {
         return java.util.Base64.getEncoder().encodeToString(address.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }

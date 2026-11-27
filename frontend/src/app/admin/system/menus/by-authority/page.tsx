@@ -3,6 +3,7 @@ import { SITE_IDENTITY } from '@/config/site-identity';
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { authorAdminService, AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
+import { fetchAllPages } from '@/lib/api/fetch-all-pages';
 import MenuByAuthorityClient, { type FetchResult } from './MenuByAuthorityClient';
 
 export const metadata: Metadata = {
@@ -16,9 +17,11 @@ export default async function MenuByAuthorityPage() {
 
   // [P1: Waterfall Elimination] Initiate authors promise on server
   // 실패를 빈 목록으로 삼키면 "등록된 역할이 없음"으로 위장되므로 사유를 봉투에 담아 전달한다.
-  const authorsPromise: Promise<FetchResult<AuthorInfo[]>> = authorAdminService
-    .getAuthorList({ page: 1, searchCondition: '1', searchKeyword: '' }, axiosConfig)
-    .then((res) => ({ data: res?.list ?? [], error: null }))
+  // 서버 페이지 상한(MAX_PAGE_UNIT=100) 안에서 전 페이지를 따라가 11번째 이후 권한 그룹이 잘리지 않게 한다.
+  const authorsPromise: Promise<FetchResult<AuthorInfo[]>> = fetchAllPages(
+    (page, size) => authorAdminService.getAuthorList({ page, size, searchCondition: '1', searchKeyword: '' }, axiosConfig),
+  )
+    .then((data) => ({ data, error: null }))
     .catch((error: unknown) => {
       return {
         data: [] as AuthorInfo[],
