@@ -1,7 +1,6 @@
 'use client';
 
 import { QueryClientProvider, focusManager } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -21,6 +20,10 @@ import { MotionConfig } from 'framer-motion';
 const GlobalCommandCenter = dynamic(() => import('./components/ui/global-command-center').then(mod => mod.GlobalCommandCenter), { ssr: false });
 const SmartOnboardingHub = dynamic(() => import('./components/ui/smart-onboarding-hub').then(mod => mod.SmartOnboardingHub), { ssr: false });
 const SessionExpiryWarning = dynamic(() => import('./components/ui/session-expiry-warning').then(mod => mod.SessionExpiryWarning), { ssr: false });
+const ReactQueryDevtools =
+  process.env.NODE_ENV === 'development'
+    ? dynamic(() => import('@tanstack/react-query-devtools').then(mod => mod.ReactQueryDevtools), { ssr: false })
+    : null;
 
 export function RouteScopedGlobalOverlays({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -116,7 +119,7 @@ export default function Providers({
           </ConfirmProvider>
         </ToastProvider>
       </MotionConfig>
-      <ReactQueryDevtools initialIsOpen={false} />
+      {ReactQueryDevtools ? <ReactQueryDevtools initialIsOpen={false} /> : null}
     </QueryClientProvider>
   );
 }

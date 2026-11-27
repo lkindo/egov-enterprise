@@ -98,8 +98,8 @@ LIMIT 20;
 -- 인덱스 크기 순위
 SELECT 
     schemaname,
-    tablename,
-    indexname,
+    relname AS table_name,
+    indexrelname AS index_name,
     pg_size_pretty(pg_relation_size(indexrelid)) AS index_size
 FROM pg_stat_user_indexes
 ORDER BY pg_relation_size(indexrelid) DESC
@@ -144,7 +144,7 @@ SELECT
     l.mode,
     l.granted,
     a.query,
-    a.age(clock_timestamp(), a.xact_start) AS query_age
+    age(clock_timestamp(), a.xact_start) AS query_age
 FROM pg_locks l
 JOIN pg_stat_activity a ON l.pid = a.pid
 WHERE l.granted = true
@@ -158,7 +158,7 @@ SELECT
     l.mode,
     l.granted,
     a.query,
-    a.age(clock_timestamp(), a.xact_start) AS query_age
+    age(clock_timestamp(), a.xact_start) AS query_age
 FROM pg_locks l
 JOIN pg_stat_activity a ON l.pid = a.pid
 WHERE l.granted = false
@@ -224,14 +224,14 @@ GROUP BY state;
 -- 자주 조회되는 컬럼에 인덱스 생성 예시
 -- 실제 환경에 맞게 수정하여 사용하세요.
 
--- 예: 사용자 ID 로 자주 조회하는 경우
--- CREATE INDEX CONCURRENTLY idx_users_username ON users(username);
+-- 예: 사용자 로그인 ID 로 자주 조회하는 경우
+-- CREATE INDEX CONCURRENTLY idx_user_info_user_id ON tb_user_info(user_id);
 
 -- 예: 생성일자로 정렬/필터링하는 경우
--- CREATE INDEX CONCURRENTLY idx_posts_created_at ON posts(created_at DESC);
+-- CREATE INDEX CONCURRENTLY idx_bbs_item_crt_dt ON tb_bbs_item(crt_dt DESC);
 
 -- 예: 복합 인덱스 (여러 컬럼으로 필터링)
--- CREATE INDEX CONCURRENTLY idx_common_codes_group ON common_codes(group_id, use_at);
+-- CREATE INDEX CONCURRENTLY idx_cmmn_cd_group ON tb_cmmn_cd(cd_id, use_yn);
 
 
 -- 9. VACUUM 및 ANALYZE 실행
@@ -241,8 +241,8 @@ GROUP BY state;
 -- VACUUM ANALYZE;
 
 -- 특정 테이블만 VACUUM ANALYZE
--- VACUUM ANALYZE common_code;
--- VACUUM ANALYZE users;
+-- VACUUM ANALYZE tb_cmmn_cd;
+-- VACUUM ANALYZE tb_user_info;
 
 
 -- 10. 설정 값 확인
