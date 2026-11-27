@@ -318,10 +318,11 @@ describe('API 클라이언트 인터셉터', () => {
         if (transition === 'signed-out') state.markSignedOut();
         else if (transition === 'epoch') state.advanceAuthorizationRequestEpoch();
         else endTransition = state.beginSessionTransition();
-        rejectReissue(new Error('reissue 401'));
+        rejectReissue(Object.assign(new Error('reissue 401'), { response: { status: 401 } }));
         try {
           await expect(pending).rejects.toMatchObject({ name: 'CanceledError' });
           expect(win.location.href, transition).toBe('');
+          expect(state.isSignedOut(), transition).toBe(transition === 'signed-out');
         } finally {
           state.markSignedIn();
           endTransition();
@@ -342,13 +343,13 @@ describe('API 클라이언트 인터셉터', () => {
       expect(win.location.href).toContain('/login?expired=true');
     });
 
-    it('만료 화면으로 이동하는 동안 늦은 401 은 재발급을 다시 시작하지 않는다', async () => {
+    it.each([401, 403])('재발급이 %i로 거절되면 이동 중 늦은 401 이 재발급을 다시 시작하지 않는다', async (status) => {
       const win = { location: { pathname: '/admin', href: '' }, dispatchEvent: vi.fn() };
       Object.defineProperty(globalThis, 'window', { value: win, configurable: true, writable: true });
       const { instance, captured } = await loadClient();
       const initial = await captured.requestOk!({ url: '/notifications', headers: {} });
       const inFlight = await captured.requestOk!({ url: '/auth/me', headers: {} });
-      const denied = Object.assign(new Error('refresh rejected'), { response: { status: 401 } });
+      const denied = Object.assign(new Error('refresh rejected'), { response: { status } });
       instance.post.mockRejectedValue(denied);
 
       await expect(captured.responseErr!({ config: initial, response: { status: 401 } })).rejects.toBe(denied);
@@ -365,17 +366,25 @@ describe('API 클라이언트 인터셉터', () => {
       expect(authCheckResult).toBe(authCheckError);
     });
 
-    it('재발급 자체가 실패해도 로그인으로 보낸다', async () => {
+    it('일시적 재발급 실패로 로그인 이동을 시도해도 이전 화면에 남으면 다시 재발급할 수 있다', async () => {
       const win = { location: { pathname: '/admin', href: '' }, dispatchEvent: vi.fn() };
       Object.defineProperty(globalThis, 'window', { value: win, configurable: true, writable: true });
       const { instance, captured } = await loadClient();
-      instance.post.mockRejectedValueOnce(new Error('network down'));
+      const initial = await captured.requestOk!({ url: '/x', headers: {} });
+      const networkError = new Error('network down');
+      instance.post.mockRejectedValueOnce(networkError);
 
       await expect(
-        captured.responseErr!({ response: { status: 401 }, config: { url: '/x' } })
-      ).rejects.toBeInstanceOf(Error);
+        captured.responseErr!({ response: { status: 401 }, config: initial })
+      ).rejects.toBe(networkError);
 
       expect(win.location.href).toContain('/login?expired=true');
+      expect(win.location.pathname).toBe('/admin');
+      const next = await captured.requestOk!({ url: '/y', headers: {} });
+      instance.post.mockResolvedValueOnce({ data: { success: true, data: authorization } });
+
+      await expect(captured.responseErr!({ response: { status: 401 }, config: next })).resolves.toEqual({ __retriedWith: next });
+      expect(instance.post).toHaveBeenCalledTimes(2);
     });
   });
 
