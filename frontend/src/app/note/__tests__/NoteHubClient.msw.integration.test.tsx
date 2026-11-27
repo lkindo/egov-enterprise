@@ -1,9 +1,17 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
+import { http } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 import { server } from '@/mocks/server';
+import { contractJson } from '@/test-utils/contract-response';
+import {
+  deleteNoteOperation,
+  getNoteOperation,
+  getReceivedNotesOperation,
+  getSentNotesOperation,
+  getUnreadReceivedCountOperation,
+} from '@/types/generated-operations';
 
 vi.mock('next/dynamic', () => ({
   default: () => function MockModal({ isOpen, title, footer, children }: React.PropsWithChildren<{ isOpen?: boolean; title?: string; footer?: React.ReactNode }>) {
@@ -44,73 +52,54 @@ describe('NoteHubClient MSW integration (real NoteService HTTP path)', () => {
     let deletedRelationSn: string | null = null;
 
     server.use(
-      http.get('*/api/v1/notes/received', () => HttpResponse.json({
-        success: true,
-        code: 'S000',
-        message: '성공',
-        data: {
-          list: deletedRelationSn === '201'
-            ? []
-            : [{ ...received[0], openYn: opened ? 'Y' : 'N' }],
-          total: deletedRelationSn === '201' ? 0 : 1,
-          page: 1,
-          size: 20,
-          totalPage: deletedRelationSn === '201' ? 0 : 1,
-        },
+      http.get('*/api/v1/notes/received', () => contractJson(getReceivedNotesOperation, {
+        list: deletedRelationSn === '201'
+          ? []
+          : [{ ...received[0], openYn: opened ? 'Y' : 'N' }],
+        total: deletedRelationSn === '201' ? 0 : 1,
+        page: 1,
+        size: 20,
+        totalPage: deletedRelationSn === '201' ? 0 : 1,
       })),
-      http.get('*/api/v1/notes/received/unread-count', () => HttpResponse.json({
-        success: true,
-        code: 'S000',
-        message: '성공',
-        data: deletedRelationSn === '201' || opened ? 0 : 1,
-      })),
-      http.get('*/api/v1/notes/sent', () => HttpResponse.json({
-        success: true,
-        code: 'S000',
-        message: '성공',
-        data: {
-          list: [
-            {
-              noteSn: 22,
-              noteSndngSn: 302,
-              noteSj: '보낸 안내',
-              noteCn: '공지 확인 부탁드립니다.',
-              crtDt: '2026-11-21T10:00:00',
-              recipients: [{ noteRcptnSn: 401, rcverId: 'USER_LEE', rcverNm: '이담당', recptnSe: 'RECEIPT01', openYn: 'Y' }],
-            },
-          ],
-          total: 1,
-          page: 1,
-          size: 20,
-          totalPage: 1,
-        },
+      http.get('*/api/v1/notes/received/unread-count', () => contractJson(getUnreadReceivedCountOperation,
+        deletedRelationSn === '201' || opened ? 0 : 1)),
+      http.get('*/api/v1/notes/sent', () => contractJson(getSentNotesOperation, {
+        list: [
+          {
+            noteSn: 22,
+            noteSndngSn: 302,
+            noteSj: '보낸 안내',
+            noteCn: '공지 확인 부탁드립니다.',
+            crtDt: '2026-11-21T10:00:00',
+            recipients: [{ noteRcptnSn: 401, rcverId: 'USER_LEE', rcverNm: '이담당', recptnSe: 'RECEIPT01', openYn: 'Y' }],
+          },
+        ],
+        total: 1,
+        page: 1,
+        size: 20,
+        totalPage: 1,
       })),
       http.get('*/api/v1/notes/11', ({ request }) => {
         const url = new URL(request.url);
         expect(url.searchParams.get('type')).toBe('received');
         expect(url.searchParams.get('relationSn')).toBe('201');
         opened = true;
-        return HttpResponse.json({
-          success: true,
-          code: 'S000',
-          message: '성공',
-          data: {
-            noteSn: 11,
-            noteRcptnSn: 201,
-            noteSj: '월간 점검 요청',
-            noteCn: '서버 로그 점검 바랍니다.',
-            dsptchUserId: 'USR_ADMIN',
-            trnsmiterNm: '김관리',
-            crtDt: '2026-11-20T09:00:00',
-            openYn: 'Y',
-          },
+        return contractJson(getNoteOperation, {
+          noteSn: 11,
+          noteRcptnSn: 201,
+          noteSj: '월간 점검 요청',
+          noteCn: '서버 로그 점검 바랍니다.',
+          dsptchUserId: 'USR_ADMIN',
+          trnsmiterNm: '김관리',
+          crtDt: '2026-11-20T09:00:00',
+          openYn: 'Y',
         });
       }),
       http.delete('*/api/v1/notes/:relationSn', ({ params, request }) => {
         const url = new URL(request.url);
         expect(url.searchParams.get('type')).toBe('received');
         deletedRelationSn = String(params.relationSn);
-        return HttpResponse.json({ success: true, code: 'S000', message: '성공' });
+        return contractJson(deleteNoteOperation);
       }),
     );
 
