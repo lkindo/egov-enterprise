@@ -17,6 +17,7 @@ import type { PageResponse } from '@/types/foundation/system';
 import { useToast } from '@/app/components/ui/toast';
 import { Loader2, Pencil, Plus, RefreshCcw, ShieldCheck, Trash2 } from 'lucide-react';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -195,8 +196,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
    * 식별자(소속 행사·외부인사 ID)는 복합키라 수정 모드에서 잠근다.
    */
   const [editing, setEditing] = useState<ExternalHr | null>(null);
-  const [deletingKey, setDeletingKey] = useState<string | null>(null);
-  const deletePendingRef = useRef(false);
+  const deleteFlight = useSingleFlight<string>();
 
   // 등록·수정이 요구하는 것이 다르므로 모드에 맞는 스키마를 준다(DEC-OPS-045).
   const form = useAppForm(editing ? externalHrEditSchema : externalHrSchema, {
@@ -261,26 +261,22 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
   };
 
   const handleDelete = async (item: ExternalHrListItem) => {
-    if (deletePendingRef.current) return;
-    deletePendingRef.current = true;
-    setDeletingKey(rowKey(item));
-    try {
-      const ok = await confirm({
-        title: '외부인사 삭제',
-        message: `'${item.otsdHrNm || item.otsdHrId}' 정보를 삭제합니다. 삭제한 정보는 복구할 수 없습니다.`,
-        confirmText: '삭제',
-        variant: 'destructive',
-      });
-      if (!ok) return;
-      await externalHrAdminService.deleteExternalHr(item.evntSn, item.otsdHrId);
-      toast('외부인사 정보를 삭제했습니다.', 'success');
-      queryClient.invalidateQueries({ queryKey: ['admin-external-hr'] });
-    } catch (error) {
-      toast(extractErrorMessage(error, '외부인사 삭제에 실패했습니다.'), 'error');
-    } finally {
-      deletePendingRef.current = false;
-      setDeletingKey(null);
-    }
+    await deleteFlight.runFor(rowKey(item), async () => {
+      try {
+        const ok = await confirm({
+          title: '외부인사 삭제',
+          message: `'${item.otsdHrNm || item.otsdHrId}' 정보를 삭제합니다. 삭제한 정보는 복구할 수 없습니다.`,
+          confirmText: '삭제',
+          variant: 'destructive',
+        });
+        if (!ok) return;
+        await externalHrAdminService.deleteExternalHr(item.evntSn, item.otsdHrId);
+        toast('외부인사 정보를 삭제했습니다.', 'success');
+        queryClient.invalidateQueries({ queryKey: ['admin-external-hr'] });
+      } catch (error) {
+        toast(extractErrorMessage(error, '외부인사 삭제에 실패했습니다.'), 'error');
+      }
+    });
   };
 
   /**
@@ -429,7 +425,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
       className: 'text-right w-28',
       accessor: (item: ExternalHrListItem) => {
         const key = rowKey(item);
-        const isDeleting = deletingKey === key;
+        const isDeleting = deleteFlight.pendingKey === key;
         const isFetchingDetail = loadingEditKey === key;
         const label = item.otsdHrNm || item.otsdHrId;
         return (
@@ -438,7 +434,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
             <Button
               variant="ghost"
               size="icon"
-              disabled={loadingEditKey !== null || deletingKey !== null || registerLoading}
+              disabled={loadingEditKey !== null || deleteFlight.pendingKey !== null || registerLoading}
               aria-busy={isFetchingDetail}
               aria-label={isFetchingDetail ? `${label} 상세 불러오는 중` : `${label} 수정`}
               onClick={() => { void openEdit(item); }}
@@ -453,7 +449,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
             <Button
               variant="ghost"
               size="icon"
-              disabled={deletingKey !== null}
+              disabled={deleteFlight.pendingKey !== null}
               aria-busy={isDeleting}
               aria-label={isDeleting ? `${label} 삭제 중` : `${label} 삭제`}
               onClick={() => { void handleDelete(item); }}

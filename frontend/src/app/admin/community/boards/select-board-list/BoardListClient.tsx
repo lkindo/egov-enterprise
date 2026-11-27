@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
@@ -118,8 +119,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
 
  const LIST_PARAM_KEYS = ['bbsId', 'searchWrd', 'searchCnd', 'orderBy', 'startDate', 'endDate', 'page'] as const;
  const { toast } = useToast();
- const likePendingRef = React.useRef(false);
- const [pendingLikePstSn, setPendingLikePstSn] = useState<number | null>(null);
+ const likeFlight = useSingleFlight<number>();
 
  // 필터 로컬 상태 관리 (사용자 입력용)
  const [searchWrd, setSearchWrd] = useState(searchParams.get('searchWrd') || "");
@@ -329,17 +329,14 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
   e.preventDefault();
   e.stopPropagation();
   // 추천이 닫혀 있으면 단추가 없다 — 남은 경로로 요청을 보내지 않는다(서버도 거부한다).
-  if (!likesOpen || likePendingRef.current) return;
-  likePendingRef.current = true;
-  setPendingLikePstSn(pstSn);
-  try {
-   await likeMutation.mutateAsync(pstSn);
-  } catch {
-   // mutation onError가 롤백과 사용자 안내를 소유한다.
-  } finally {
-   likePendingRef.current = false;
-   setPendingLikePstSn(null);
-  }
+  if (!likesOpen) return;
+  await likeFlight.runFor(pstSn, async () => {
+    try {
+     await likeMutation.mutateAsync(pstSn);
+    } catch {
+     // mutation onError가 롤백과 사용자 안내를 소유한다.
+    }
+  });
  };
 
  const list: BoardPost[] = data?.list || [];
@@ -439,11 +436,11 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
    return (
      <div>
        {tmpltId === 'TMPLT_HUB' ? (
-         <HubTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen} page={queryPage} totalCount={totalCount} />
+         <HubTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={likeFlight.pendingKey} likesOpen={likesOpen} page={queryPage} totalCount={totalCount} />
        ) : tmpltId === 'TMPLT_GALLERY' ? (
-         <GalleryTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen} />
+         <GalleryTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={likeFlight.pendingKey} likesOpen={likesOpen} />
        ) : tmpltId === 'TMPLT_QNA' ? (
-         <QnaTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen} />
+         <QnaTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={likeFlight.pendingKey} likesOpen={likesOpen} />
        ) : tmpltId === 'TMPLT_CALENDAR' ? (
          <>
            {list.length === 0 && (
@@ -454,17 +451,17 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
              </p>
            )}
            <CalendarTemplate
-             list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen}
+             list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={likeFlight.pendingKey} likesOpen={likesOpen}
              currentViewDate={currentViewDate} onPrevMonth={handlePrevMonth} onNextMonth={handleNextMonth}
              totalCount={totalCount}
            />
          </>
        ) : tmpltId === 'TMPLT_FAQ' ? (
-         <FaqTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen} />
+         <FaqTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={likeFlight.pendingKey} likesOpen={likesOpen} />
        ) : tmpltId === 'TMPLT_WIKI' ? (
-         <WikiTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen} />
+         <WikiTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={likeFlight.pendingKey} likesOpen={likesOpen} />
        ) : (
-         <DefaultTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen} page={queryPage} totalCount={totalCount} />
+         <DefaultTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={likeFlight.pendingKey} likesOpen={likesOpen} page={queryPage} totalCount={totalCount} />
        )}
      </div>
    );

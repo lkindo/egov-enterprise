@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import { useRouter } from 'next/navigation';
 /* reusable-base:help:start */
 import Link from 'next/link';
@@ -257,9 +258,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
   const mediaScope = `${user?.esntlId ?? user?.id ?? ''}:${bbsId}:${activeRecordId ?? 'new'}:${getBoardDraftEpoch()}`;
   const [mediaCache, setMediaCache] = useState<{ scope: string; files: File[] }>({ scope: mediaScope, files: [] });
   const pendingMediaFiles = mediaCache.scope === mediaScope ? mediaCache.files : [];
-  const [deletingFileKey, setDeletingFileKey] = useState<string | null>(null);
-  // 같은 tick 의 연속 클릭은 state 갱신보다 먼저 들어오므로 동기 ref 로 잠근다(폼 검증 census 의 destructive action 계약).
-  const deletingRef = useRef(false);
+  const deleteFileFlight = useSingleFlight<string>();
   // 사용자 범위가 준비되면 기존 초안을 한 번만 확인한다. 이후 자기 자동저장분은 다시 묻지 않는다.
   const draftPromptedRef = useRef(false);
   const [draftRestorePending, setDraftRestorePending] = useState(true);
@@ -305,33 +304,31 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
   const editingPublicPost = Boolean(activeRecordId) && initialData?.scrtYn !== 'Y';
 
   const handleDeleteAttachment = async (file: AttachmentItem) => {
-    if (!canWrite || deletingRef.current) return;
+    // 진행 중이면 본문 참조 안내보다 먼저 조용히 멈춘다.
+    if (!canWrite || deleteFileFlight.isRunning()) return;
     if ([...getBoardMediaReferences(form.getValues('pstCn')), ...getBoardMediaReferences(initialData?.pstCn ?? '')]
       .some((reference) => reference.name === file.orignlFileNm)) {
       toast('본문에서 사용하는 파일입니다. 본문에서 먼저 제거하고 게시글을 저장한 뒤 첨부파일을 삭제해 주세요.', 'error');
       return;
     }
-    deletingRef.current = true;
     const key = attachmentKey(file);
-    setDeletingFileKey(key);
-    try {
-      const confirmed = await confirm({
-        title: '첨부파일 삭제',
-        message: `'${file.orignlFileNm}' 파일을 삭제합니다. 삭제한 파일은 복구할 수 없습니다.`,
-        confirmText: '삭제',
-        variant: 'destructive',
-      });
-      if (!confirmed) return;
+    await deleteFileFlight.runFor(key, async () => {
+      try {
+        const confirmed = await confirm({
+          title: '첨부파일 삭제',
+          message: `'${file.orignlFileNm}' 파일을 삭제합니다. 삭제한 파일은 복구할 수 없습니다.`,
+          confirmText: '삭제',
+          variant: 'destructive',
+        });
+        if (!confirmed) return;
 
-      await fileService.deleteFile(file.atchFileSn, file.fileSn);
-      toast('첨부파일을 삭제했습니다.', 'success');
-      await queryClient.invalidateQueries({ queryKey: boardPostKeys.files(file.atchFileSn) });
-    } catch (error) {
-      toast(extractErrorMessage(error, '첨부파일을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.'), 'error');
-    } finally {
-      deletingRef.current = false;
-      setDeletingFileKey(null);
-    }
+        await fileService.deleteFile(file.atchFileSn, file.fileSn);
+        toast('첨부파일을 삭제했습니다.', 'success');
+        await queryClient.invalidateQueries({ queryKey: boardPostKeys.files(file.atchFileSn) });
+      } catch (error) {
+        toast(extractErrorMessage(error, '첨부파일을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.'), 'error');
+      }
+    });
   };
   const draftScope = useMemo(() => user ? {
     ownerId: user.esntlId ?? user.id,
@@ -753,14 +750,14 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
                           type="button"
                           variant="outline"
                           size="sm"
-                          disabled={deletingFileKey !== null}
-                          aria-busy={deletingFileKey === key}
+                          disabled={deleteFileFlight.pendingKey !== null}
+                          aria-busy={deleteFileFlight.pendingKey === key}
                           onClick={() => void handleDeleteAttachment(file)}
                           aria-label={`${file.orignlFileNm} 삭제`}
                           className="gap-2 shrink-0"
                         >
                           <Trash2 size={14} aria-hidden="true" />
-                          {deletingFileKey === key ? '삭제 중…' : '삭제'}
+                          {deleteFileFlight.pendingKey === key ? '삭제 중…' : '삭제'}
                         </Button>
                       </li>
                     );

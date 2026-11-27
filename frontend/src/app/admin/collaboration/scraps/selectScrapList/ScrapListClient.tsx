@@ -13,6 +13,7 @@ import { Plus, Pencil, Trash2, ExternalLink, RefreshCcw } from "lucide-react";
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { parseScrapUrl } from '../scrap-url';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 
 export { parseScrapUrl } from '../scrap-url';
 
@@ -31,14 +32,13 @@ const ScrapListClient = () => {
     const queryClient = useQueryClient();
     const [pageNo, setPageNo] = React.useState(1);
     const [pageUnit, setPageUnit] = React.useState(DEFAULT_PAGE_UNIT);
-    const deletePendingRef = React.useRef(false);
+    const deleteFlight = useSingleFlight<number>();
     /*
       [2026-09-12 §A3-1] 등록·수정을 전용 페이지에서 목록 위 모달로 옮겼다. 목록의 page·pageSize 는
       useState 이고 URL 에 실리지 않아, 라우트를 떠나면 조회 맥락이 전손됐다.
     */
     const [formMode, setFormMode] = React.useState<'create' | 'edit' | null>(null);
     const [editTarget, setEditTarget] = React.useState<{ scrapSn: number; values: ScrapFormValues } | null>(null);
-    const [deletingScrapSn, setDeletingScrapSn] = React.useState<number | null>(null);
 
     // 백엔드(ScrapApiController)는 page(1부터)·size 를 읽는다(ADR-0036).
     const { data, isLoading, isError, error, refetch } = useQuery(
@@ -61,10 +61,9 @@ const ScrapListClient = () => {
 
     /** [P1-9] native confirm → useConfirm. 본문에 대상 스크랩명을 노출한다. */
     const handleDelete = async (item: Scrap) => {
-        if (!item.scrapSn || deletePendingRef.current) return;
-        deletePendingRef.current = true;
-        setDeletingScrapSn(item.scrapSn);
-        try {
+        const { scrapSn } = item;
+        if (!scrapSn) return;
+        await deleteFlight.runFor(scrapSn, async () => {
             const ok = await confirm({
                 title: '스크랩 삭제',
                 message: `'${item.scrapNm ?? '제목 없음'}' 스크랩을 삭제합니다. 삭제한 항목은 복구할 수 없습니다.`,
@@ -73,14 +72,11 @@ const ScrapListClient = () => {
             });
             if (!ok) return;
             try {
-                await deleteMutation.mutateAsync(item.scrapSn);
+                await deleteMutation.mutateAsync(scrapSn);
             } catch {
                 // mutation onError가 사용자 안내를 소유한다. 목록과 선택 상태는 그대로 둔다.
             }
-        } finally {
-            deletePendingRef.current = false;
-            setDeletingScrapSn(null);
-        }
+        });
     };
 
     const columns: Column<Scrap>[] = [
@@ -185,7 +181,7 @@ const ScrapListClient = () => {
                         variant="ghost"
                         size="icon-sm"
                         aria-label={`${item.scrapNm ?? '스크랩'} 수정`}
-                        disabled={deletingScrapSn !== null}
+                        disabled={deleteFlight.pendingKey !== null}
                         onClick={() => {
                             setEditTarget({
                                 scrapSn: item.scrapSn as number,
@@ -204,9 +200,9 @@ const ScrapListClient = () => {
                     <Button
                         variant="ghost"
                         size="icon-sm"
-                        aria-label={`${item.scrapNm ?? '스크랩'} ${deletingScrapSn === item.scrapSn ? '삭제 중' : '삭제'}`}
-                        aria-busy={deletingScrapSn === item.scrapSn || undefined}
-                        disabled={deletingScrapSn !== null}
+                        aria-label={`${item.scrapNm ?? '스크랩'} ${deleteFlight.pendingKey === item.scrapSn ? '삭제 중' : '삭제'}`}
+                        aria-busy={deleteFlight.pendingKey === item.scrapSn || undefined}
+                        disabled={deleteFlight.pendingKey !== null}
                         onClick={() => { void handleDelete(item); }}
                         className="text-muted-foreground hover:text-destructive-emphasis hover:bg-destructive/10 transition-all"
                     >

@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useMemo, useRef, useState } from 'react';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import dynamic from 'next/dynamic';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -85,9 +86,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
   const [editing, setEditing] = useState<Community | null>(null);
   const [saving, setSaving] = useState(false);
   const submitLock = useRef(false);
-  // 이름의 'pending' 은 폼 검증 census 의 pending 상태 어휘(PENDING_STATE_NAME)에 맞춘 것이다 — 폐쇄 진행 중인 행.
-  const [pendingCloseSn, setPendingCloseSn] = useState<number | null>(null);
-  const closePendingRef = useRef(false);
+  const closeFlight = useSingleFlight<number>();
   const [membersOf, setMembersOf] = useState<Community | null>(null);
   const [templateSearch, setTemplateSearch] = useState('');
   const [templatePage, setTemplatePage] = useState(1);
@@ -191,27 +190,23 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
 
   const handleClose = async (community: Community) => {
     if (!canDelete || community.deletable !== true) return;
-    if (closePendingRef.current) return;
-    closePendingRef.current = true;
-    setPendingCloseSn(community.cmntySn);
-    try {
-      const ok = await confirm({
-        title: '커뮤니티 폐쇄',
-        message: `'${community.cmntyNm}' 커뮤니티를 폐쇄합니다. 게시글과 회원 정보는 남고 사용자 목록에서만 숨겨집니다. 수정에서 사용 여부를 '사용' 으로 바꾸면 다시 열립니다.`,
-        confirmText: '폐쇄',
-        variant: 'destructive',
-      });
-      if (!ok) return;
-      await communityAdminService.deleteCommunity(community.cmntySn);
-      toast('커뮤니티를 폐쇄했습니다.', 'success');
-      if (editing?.cmntySn === community.cmntySn) startCreate();
-      invalidate();
-    } catch (error) {
-      toast(extractErrorMessage(error, '커뮤니티 폐쇄에 실패했습니다.'), 'error');
-    } finally {
-      closePendingRef.current = false;
-      setPendingCloseSn(null);
-    }
+    await closeFlight.runFor(community.cmntySn, async () => {
+      try {
+        const ok = await confirm({
+          title: '커뮤니티 폐쇄',
+          message: `'${community.cmntyNm}' 커뮤니티를 폐쇄합니다. 게시글과 회원 정보는 남고 사용자 목록에서만 숨겨집니다. 수정에서 사용 여부를 '사용' 으로 바꾸면 다시 열립니다.`,
+          confirmText: '폐쇄',
+          variant: 'destructive',
+        });
+        if (!ok) return;
+        await communityAdminService.deleteCommunity(community.cmntySn);
+        toast('커뮤니티를 폐쇄했습니다.', 'success');
+        if (editing?.cmntySn === community.cmntySn) startCreate();
+        invalidate();
+      } catch (error) {
+        toast(extractErrorMessage(error, '커뮤니티 폐쇄에 실패했습니다.'), 'error');
+      }
+    });
   };
 
   const handleDialogClose = () => {
@@ -282,7 +277,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
           ) : (
             <ul className="divide-y divide-border rounded-lg border border-border" aria-label="커뮤니티 목록">
               {communities.map((community) => {
-                const isClosePending = pendingCloseSn === community.cmntySn;
+                const isClosePending = closeFlight.pendingKey === community.cmntySn;
                 const isCurrent = editing?.cmntySn === community.cmntySn;
                 const isOpenState = community.useYn !== 'N';
                 // [2026-10-01 결정 20] 승인을 기다리는 가입 신청 수. 종전에는 회원 관리를 하나씩 열어 봐야 알았다.
@@ -323,7 +318,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                       size="icon"
                       aria-label={`${community.cmntyNm} 폐쇄`}
                       aria-busy={isClosePending}
-                      disabled={pendingCloseSn !== null || saving || !isOpenState}
+                      disabled={closeFlight.pendingKey !== null || saving || !isOpenState}
                       onClick={() => handleClose(community)}
                       className="text-destructive hover:text-destructive"
                     >
