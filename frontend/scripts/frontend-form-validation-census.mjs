@@ -446,8 +446,21 @@ function holdsWrite(declaration) {
   return result;
 }
 
-/** 값이 다른 파일에 있으면 쓰기를 가진 처리기일 때만 남긴다(위 holdsWrite). */
-const sameFileOrWriting = (sourceFile) => (declaration) => declaration.getSourceFile() === sourceFile || holdsWrite(declaration);
+/**
+ * 선언이 자기 매개변수(콜백)를 부르는 감싸기 함수인가 — 공용 단일 실행 훅의 `run(task)` 처럼 쓰기는 부르는 쪽이 콜백으로 넘기고,
+ * 감싸기 함수는 동기 잠금·처리 중 상태·finally 해제를 맡는다. 잠금·대기 판정은 종전 같은 파일 감싸기 함수의 규칙 그대로다.
+ */
+function invokesOwnParameter(declaration) {
+  const callable = Node.isVariableDeclaration(declaration) ? unwrapExpression(declaration.getInitializer()) : declaration;
+  if (!callable || !(Node.isFunctionDeclaration(callable) || isInlineFunction(callable))) return false;
+  const parameters = callable.getParameters();
+  return parameters.length > 0 && callable.getDescendantsOfKind(SyntaxKind.CallExpression)
+    .some((call) => parameters.some((parameter) => callsDeclaration(call, parameter)));
+}
+
+/** 값이 다른 파일에 있으면 쓰기를 가진 처리기(위 holdsWrite)나 콜백을 감싸는 함수(invokesOwnParameter)일 때만 남긴다. */
+const sameFileOrWriting = (sourceFile) => (declaration) => declaration.getSourceFile() === sourceFile
+  || holdsWrite(declaration) || invokesOwnParameter(declaration);
 
 function localDeclaration(sourceFile, name, context) {
   return localDeclarations(sourceFile, name, context)[0] ?? null;
@@ -474,10 +487,42 @@ function stateSetterName(sourceFile, stateName, origin) {
 /** 호출이 그 선언(함수·변수 선언, 매개변수)을 부르는가 — 이름이 아니라 심볼로 맞춘다. */
 function callsDeclaration(call, declaration) {
   const callee = call.getExpression();
-  if (!Node.isIdentifier(callee) || !declaration) return false;
+  if (!declaration) return false;
+  // 훅 객체의 멤버로 부르는 감싸기 함수(`deleteFlight.runFor(id, task)`)는 그 멤버 값으로 맞춘다.
+  if (Node.isPropertyAccessExpression(callee) && !Node.isParameterDeclaration(declaration)) {
+    return propertyValueNodes(callee.getExpression(), callee.getName(), new Set())
+      .some((value) => declarationsOfValueNode(value, new Set()).includes(declaration));
+  }
+  if (!Node.isIdentifier(callee)) return false;
   if (Node.isParameterDeclaration(declaration)) return (callee.getSymbol()?.getDeclarations() ?? []).includes(declaration);
   return declarationsOfIdentifier(callee).includes(declaration);
 }
+/**
+ * 호출이 바로 await 로 기다려지는가(괄호만 벗긴다) — 감싸기 함수의 finally 해제가 콜백의 끝 뒤에 오는지 본다. Promise 사슬
+ * (`await task().finally(…)`)까지 인정하던 판은 `?.finally` 처럼 기다리지 않는 사슬을 기다림으로 봐 되돌렸다(보수적 미탐 —
+ * 공인 감싸기 함수는 `await task()` 를 쓰는 공용 단일 실행 훅이다).
+ */
+function isAwaitedCall(call) {
+  let parent = call.getParent();
+  while (parent && Node.isParenthesizedExpression(parent)) parent = parent.getParent();
+  return Boolean(parent && Node.isAwaitExpression(parent));
+}
+
+/**
+ * 감싸기 함수에 넘긴 콜백의 본문 — 인라인 함수는 그 자신, 이름으로 넘긴 함수(`runFor(id, performDelete)`)는 그 선언이다. 다만 그
+ * 함수를 처리기 안에서 감싸기 밖에서도 직접 부르면 그 경로는 잠기지 않으므로 선언을 넣지 않는다.
+ */
+function callbackTargets(argument, contract) {
+  const value = unwrapExpression(argument);
+  if (!value || !Node.isIdentifier(value)) return [argument];
+  const declarations = declarationsOfIdentifier(value);
+  const calledDirectly = contract.nodes.some((node) => node.getDescendantsOfKind(SyntaxKind.CallExpression).some((call) => {
+    const callee = unwrapExpression(call.getExpression());
+    return callee && Node.isIdentifier(callee) && declarationsOfIdentifier(callee).some((declaration) => declarations.includes(declaration));
+  }));
+  return calledDirectly ? [argument] : [argument, ...declarations];
+}
+
 const REACT_PRIMITIVE_HOOK = /^use(?:State|Ref|Memo|Callback|Reducer|Context|Transition|Id|Effect|LayoutEffect)$/;
 
 /**
@@ -800,7 +845,57 @@ function blockingRefNames(contract) {
       }
     }
   }
-  return uniqueSorted([...result]);
+  return qualifiedRefNames(contract, uniqueSorted([...result]));
+}
+
+/**
+ * 훅 안에서 선언한 ref(공용 단일 실행 훅의 `inFlightRef` 등)는 훅을 부를 때마다 다른 ref 다. 이름만으로 맞추면 서로 다른 인스턴스가
+ * 상호 잠금으로 보인다. 그런 ref 이름에는 처리기가 그 훅을 부른 인스턴스(호출 위치)를 붙인다 — 같은 인스턴스를 함께 쓰는 동작끼리만
+ * 이름이 같다. 컴포넌트 자신이 선언한 ref 는 종전대로 이름 그대로다.
+ */
+function qualifiedRefNames(contract, names) {
+  if (names.length === 0) return names;
+  const controlFile = contract.nodes[0]?.getSourceFile();
+  const enclosingFunction = (node) => {
+    const owner = node.getFirstAncestor((ancestor) => Node.isFunctionDeclaration(ancestor)
+      || Node.isArrowFunction(ancestor) || Node.isFunctionExpression(ancestor) || Node.isMethodDeclaration(ancestor));
+    return owner && Node.isFunctionDeclaration(owner) ? implementationOf(owner) : owner;
+  };
+  return uniqueSorted(names.map((refName) => {
+    // 그 ref 를 선언한 함수(훅). 컴포넌트가 직접 선언했으면 한정하지 않는다.
+    const hooks = new Set();
+    for (const node of contract.nodes) {
+      for (const identifier of [...(Node.isIdentifier(node) ? [node] : []), ...node.getDescendantsOfKind(SyntaxKind.Identifier)]) {
+        if (identifier.getText() !== refName) continue;
+        for (const declaration of identifier.getSymbol()?.getDeclarations() ?? []) {
+          const hook = enclosingFunction(declaration);
+          if (hook && /^use[A-Z0-9]/.test(hook.getName?.() ?? hook.getFirstAncestorByKind?.(SyntaxKind.VariableDeclaration)?.getName() ?? '')) hooks.add(hook);
+        }
+      }
+    }
+    if (hooks.size === 0) return refName;
+    // 그 훅 안에서 이 ref 를 획득하는 함수(`ref.current = true`·`ref.current.add(…)`)를 처리기가 부른 인스턴스만 붙인다 —
+    // 다른 인스턴스를 읽기만 하는 것(`otherFlight.isRunning()`·`otherFlight.pending`)은 그 인스턴스의 잠금을 잡지 않는다.
+    const claimPattern = new RegExp(`\\b${refName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.current(?:\\s*=\\s*(?!=)(?!\\s*(?:false|null)\\b)|\\.add\\s*\\()`);
+    const claims = (declaration) => hooks.has(enclosingFunction(declaration)) && claimPattern.test(declaration.getText());
+    const keys = new Set();
+    for (const node of contract.nodes) {
+      if (node.getSourceFile() !== controlFile) continue;
+      for (const call of node.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+        const callee = unwrapExpression(call.getExpression());
+        const nameNode = callee && Node.isPropertyAccessExpression(callee) ? callee.getNameNode() : callee;
+        if (!nameNode || !Node.isIdentifier(nameNode)) continue;
+        const targets = Node.isPropertyAccessExpression(callee)
+          ? propertyValueNodes(callee.getExpression(), callee.getName(), new Set()).flatMap((value) => declarationsOfValueNode(value, new Set()))
+          : declarationsOfIdentifier(nameNode);
+        if (!targets.some(claims)) continue;
+        for (const instance of hookInstancesOf(nameNode)) {
+          keys.add(`${instance.getSourceFile().getBaseName()}:${instance.getStartLineNumber()}:${instance.getStart()}`);
+        }
+      }
+    }
+    return keys.size === 0 ? refName : `${refName}@${uniqueSorted([...keys]).join('+')}`;
+  }));
 }
 
 function importedChildFormImplementation(element, repoRoot, project) {
@@ -1123,7 +1218,7 @@ function synchronousRefLockNames(contract) {
     return Node.isReturnStatement(thenStatement)
       || thenStatement.getDescendantsOfKind(SyntaxKind.ReturnStatement).length > 0;
   });
-  return refNames.filter((refName) => {
+  return qualifiedRefNames(contract, refNames.filter((refName) => {
     const escaped = refName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const isRefAssignment = (expression) => expression.getOperatorToken().getText() === '='
       && expression.getLeft().getText() === `${refName}.current`;
@@ -1226,13 +1321,15 @@ function synchronousRefLockNames(contract) {
         if (!Node.isIdentifier(parameterCall.getExpression())) continue;
         const parameterIndex = callbackParameters.findIndex((parameter) => callsDeclaration(parameterCall, parameter));
         if (parameterIndex < 0 || parameterCall.getStart() - node.getStart() <= claimIndex) continue;
-        const locallyReleased = releases.some((release) => isFinallyReleaseAfter(release, parameterCall));
+        // finally 해제가 콜백의 끝을 기다려야 잠금이다 — `return task()` 는 Promise 를 돌려주자마자 finally 가 푼다.
+        const locallyReleased = isAwaitedCall(parameterCall)
+          && releases.some((release) => isFinallyReleaseAfter(release, parameterCall));
         for (const invocationNode of contract.nodes) {
           for (const invocation of invocationNode.getDescendantsOfKind(SyntaxKind.CallExpression)) {
             if (!callsDeclaration(invocation, node)) continue;
             const argument = invocation.getArguments()[parameterIndex];
             if (!argument) continue;
-            const callbackWrites = writes.filter((write) => isWithin(write, argument));
+            const callbackWrites = writes.filter((write) => callbackTargets(argument, contract).some((target) => isWithin(write, target)));
             const mutationSettled = callbackWrites.length > 0 && callbackWrites.every((write) => hasMatchingOnSettled(write));
             if (callbackWrites.length === 0 || (!locallyReleased && !mutationSettled)) continue;
             foundLockPath = true;
@@ -1285,7 +1382,7 @@ function synchronousRefLockNames(contract) {
       }
     }
     return foundLockPath && writes.every((write) => coveredWrites.has(write));
-  });
+  }));
 }
 
 function hasSynchronousRefLock(contract) {
@@ -1375,6 +1472,17 @@ function pendingStateSpansWrite(contract, identifier, origin = null) {
   }
   const sourceFile = contract.nodes[0]?.getSourceFile();
   if (!sourceFile) return false;
+  const pendingInstances = origin
+    ? [...(Node.isIdentifier(origin) ? [origin] : []), ...origin.getDescendantsOfKind(SyntaxKind.Identifier)]
+      .filter((occurrence) => occurrence.getText() === identifier)
+      .flatMap((occurrence) => hookInstancesOf(occurrence))
+    : [];
+  /** 감싸기 호출이 나온 훅 인스턴스 — `flight.run(…)` 은 flight 의, 구조 분해한 `run(…)` 은 그 출처의 인스턴스다. */
+  const invocationInstances = (invocation) => {
+    const callee = unwrapExpression(invocation.getExpression());
+    if (callee && Node.isPropertyAccessExpression(callee)) return hookInstancesOf(callee.getNameNode());
+    return callee && Node.isIdentifier(callee) ? hookInstancesOf(callee) : [];
+  };
   const setter = stateSetterName(sourceFile, identifier, origin)
     ?? 'set' + (identifier[0]?.toUpperCase() ?? '') + identifier.slice(1);
   const writes = actionWriteCalls(contract, sourceFile);
@@ -1445,11 +1553,16 @@ function pendingStateSpansWrite(contract, identifier, origin = null) {
       for (const invocationNode of contract.nodes) {
         for (const invocation of invocationNode.getDescendantsOfKind(SyntaxKind.CallExpression)) {
           if (!callsDeclaration(invocation, node)) continue;
+          // 감싸기 함수가 훅 인스턴스의 것이면(`deleteFlight.runFor(…)`) 대기 상태도 그 인스턴스의 것이어야 한다 — 같은 훅 선언을
+          // 공유하는 다른 인스턴스(`refreshFlight.pendingKey`)의 대기는 이 쓰기를 말하지 않는다.
+          // 지역 감싸기 함수(인스턴스 없음)는 종전대로 setter 이름으로만 맺는다.
+          const wrapperInstances = pendingInstances.length > 0 ? invocationInstances(invocation) : [];
+          if (wrapperInstances.length > 0 && !wrapperInstances.some((instance) => pendingInstances.includes(instance))) continue;
           const callback = invocation.getArguments()[parameterIndex];
           if (!callback) continue;
-          const callbackWrites = writes.filter((write) => isWithin(write, callback));
+          const callbackWrites = writes.filter((write) => callbackTargets(callback, contract).some((target) => isWithin(write, target)));
           if (callbackWrites.length > 0
-            && (releases.some((call) => safelyReleasesAfter(call, parameterCall))
+            && ((isAwaitedCall(parameterCall) && releases.some((call) => safelyReleasesAfter(call, parameterCall)))
               || callbackWrites.some(hasMatchingOnSettledRelease))) return true;
         }
       }
