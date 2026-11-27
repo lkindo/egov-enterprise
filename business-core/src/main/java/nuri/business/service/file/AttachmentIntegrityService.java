@@ -312,7 +312,7 @@ public class AttachmentIntegrityService {
                 + "/" + detail.getStrgFileNm();
     }
     public static final class ScanLimitExceededException extends RuntimeException {
-        private ScanLimitExceededException() { super("Attachment scan budget exceeded"); }
+        public ScanLimitExceededException() { super("Attachment scan budget exceeded"); }
     }
 
     private static final class ScanBudget {

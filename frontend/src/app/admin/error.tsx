@@ -1,7 +1,6 @@
 'use client';
 
 import { AlertTriangle, RefreshCcw, Home, ArrowLeft, Bug, Shield } from 'lucide-react';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ErrorReference } from '@/app/components/ui/error-reference';
 import { loginReturnPath } from '@/lib/auth/login-return-path';
@@ -172,18 +171,13 @@ function ErrorLayout({
 }) {
   return (
     <div className="flex items-center justify-center min-h-[60vh] p-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: 'easeOut' }}
-        className="flex flex-col items-center text-center max-w-lg"
-      >
+      <div className="flex flex-col items-center text-center max-w-lg">
         <div className={`p-6 rounded-lg ${iconBg} ${iconColor} mb-6`}>{icon}</div>
         <h1 className="text-2xl font-bold text-foreground tracking-tight mb-3">{title}</h1>
         <p className="text-muted-foreground font-medium leading-relaxed mb-8">{description}</p>
         <div className="flex items-center gap-3">{actions}</div>
         <ErrorReference digest={digest} className="mt-6 text-xs text-muted-foreground" />
-      </motion.div>
+      </div>
     </div>
   );
 }

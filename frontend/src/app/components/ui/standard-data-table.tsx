@@ -23,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { motion, AnimatePresence } from "framer-motion";
 import { ErrorStateDisplay, EmptyStateDisplay } from './status-displays';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { useOverflowRegion } from '@/components/ui/table';
@@ -601,58 +600,52 @@ export function StandardDataTable<T extends object>({
       )}
 
       {/* Inline Bulk Action Bar — WorkListPage §A1 업무 화면 밀도 규범에 맞춘 인라인 일괄 작업 툴바 */}
-      <AnimatePresence>
-        {enableSelection && selectedIds.size > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.15 }}
-            className="flex flex-col sm:flex-row items-center justify-between gap-3 p-2.5 sm:px-4 sm:py-2 rounded-lg border border-primary/20 bg-primary/5 text-card-foreground"
-            role="toolbar"
-            aria-label="선택 항목 일괄 작업"
-          >
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4 w-full sm:w-auto">
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
-                <span>선택 항목</span>
-                <span className="text-sm font-bold text-primary">{selectedIds.size}</span>
-                <span>개</span>
-              </div>
-
-              <div className="hidden sm:block h-4 w-px bg-border" aria-hidden="true" />
-
-              <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
-                {bulkActions.map((action, idx) => (
-                  <Button
-                    key={`bulk-action-${idx}`}
-                    variant={action.variant ?? 'default'}
-                    size="sm"
-                    className="px-3 rounded-md text-xs font-medium gap-1.5 whitespace-nowrap"
-                    onClick={() => action.onClick(selectedItems)}
-                    disabled={action.disabled}
-                    aria-busy={action.ariaBusy || undefined}
-                  >
-                    {action.icon && <span className="shrink-0">{action.icon}</span>}
-                    {action.ariaBusy && action.pendingLabel ? action.pendingLabel : action.label}
-                  </Button>
-                ))}
-              </div>
+      {enableSelection && selectedIds.size > 0 && (
+        <div
+          className="flex flex-col sm:flex-row items-center justify-between gap-3 p-2.5 sm:px-4 sm:py-2 rounded-lg border border-primary/20 bg-primary/5 text-card-foreground"
+          role="toolbar"
+          aria-label="선택 항목 일괄 작업"
+        >
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 w-full sm:w-auto">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
+              <span>선택 항목</span>
+              <span className="text-sm font-bold text-primary">{selectedIds.size}</span>
+              <span>개</span>
             </div>
 
-            <div className="shrink-0 w-full sm:w-auto text-right">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedIds(new Set())}
-                aria-label={`선택한 ${selectedIds.size}개 항목 전체 해제`}
-                className="px-2.5 text-xs text-muted-foreground hover:text-foreground"
-              >
-                전체 해제
-              </Button>
+            <div className="hidden sm:block h-4 w-px bg-border" aria-hidden="true" />
+
+            <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+              {bulkActions.map((action, idx) => (
+                <Button
+                  key={`bulk-action-${idx}`}
+                  variant={action.variant ?? 'default'}
+                  size="sm"
+                  className="px-3 rounded-md text-xs font-medium gap-1.5 whitespace-nowrap"
+                  onClick={() => action.onClick(selectedItems)}
+                  disabled={action.disabled}
+                  aria-busy={action.ariaBusy || undefined}
+                >
+                  {action.icon && <span className="shrink-0">{action.icon}</span>}
+                  {action.ariaBusy && action.pendingLabel ? action.pendingLabel : action.label}
+                </Button>
+              ))}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+
+          <div className="shrink-0 w-full sm:w-auto text-right">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedIds(new Set())}
+              aria-label={`선택한 ${selectedIds.size}개 항목 전체 해제`}
+              className="px-2.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              전체 해제
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* 단일 표 트리 — 뷰포트 전환은 CSS 만 담당한다(ADR-0006).
           종전에는 이 블록(hidden md:block)과 모바일 카드 블록(md:hidden)이 **형제로 항상 함께 렌더**돼

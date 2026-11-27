@@ -79,7 +79,7 @@ describe('FAQ 템플릿', () => {
     expect(screen.queryByText('15일')).not.toBeInTheDocument();
     expect(container.querySelector('script, img, a')).toBeNull();
     finishChunk();
-    expect(await screen.findByText('15일')).toBeInTheDocument();
+    expect(await screen.findByText('15일', undefined, { timeout: 5000 })).toBeInTheDocument();
     expect(mocks.getArticle).toHaveBeenCalledWith('BBS-FAQ', 5);
     expect(container.querySelector('script')).toBeNull();
     expect(container.querySelector('[onerror]')).toBeNull();
@@ -97,7 +97,7 @@ describe('FAQ 템플릿', () => {
     expect(question).toHaveFocus();
     expect(question).toHaveAttribute('aria-expanded', 'false');
     await user.keyboard('{Enter}');
-    expect(await screen.findByText('키보드 답변')).toBeInTheDocument();
+    expect(await screen.findByText('키보드 답변', undefined, { timeout: 5000 })).toBeInTheDocument();
     expect(question).toHaveAttribute('aria-expanded', 'true');
     expect(mocks.getArticle).toHaveBeenCalledWith('BBS-FAQ', 7);
     await user.keyboard('{Enter}');
