@@ -5,7 +5,7 @@
  * contractJson 은 운영 코드와 같은 판정(parseGeneratedOperationResponse)으로 고정물을 먼저 읽어 보고, 래칫은 MSW 의 손으로 쓴 JSON
  * 응답이 늘지 않게 한다.
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -168,10 +168,11 @@ function rawJsonResponses(source: string): RawJsonResponse[] {
 }
 
 function mswSources(directory: string): string[] {
-  return readdirSync(directory).flatMap((name) => {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const { name } = entry;
     const path = join(directory, name);
-    if (statSync(path).isDirectory()) return SKIPPED_DIRECTORIES.has(name) ? [] : mswSources(path);
-    if (!/\.(?:ts|tsx|mts|js|jsx)$/.test(name)) return [];
+    if (entry.isDirectory()) return SKIPPED_DIRECTORIES.has(name) ? [] : mswSources(path);
+    if (!entry.isFile() || !/\.(?:ts|tsx|mts|js|jsx)$/.test(name)) return [];
     const text = readFileSync(path, 'utf8');
     return /from\s+['"]msw(?:\/[\w-]+)?['"]|\bHttpResponse\b/.test(text) ? [path] : [];
   });
