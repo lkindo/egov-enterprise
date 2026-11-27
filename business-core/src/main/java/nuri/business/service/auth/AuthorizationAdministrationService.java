@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import nuri.business.security.authorization.PermissionCodes;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.auth.dto.AuthorizationDto.*;
@@ -19,7 +18,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
@@ -27,11 +25,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Audited authorization mutations. The reserved ADMIN row serializes last-manager checks across nodes. */
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AuthorizationAdministrationService implements ProtectedAccountChangeGuard {
+    /** 인가 판정 SQL(직렬화 잠금·권한 재확인·활성 권한관리자 수)만 직접 쓴다 — 나머지 자료 접근은 {@link #dao}. */
     private final JdbcTemplate jdbc;
     private final VendorSqlDialect vendorSql;
+    /** [2026-11-27] 그룹·권한·배정·이력 표의 조회와 쓰기 SQL(품질 평가 A안 7번에서 옮김, 문장은 그대로). */
+    private final AuthorizationAdministrationDao dao;
     private static final Set<String> RESERVED = Set.of("ROLE_ADMIN", "ROLE_SYSTEM", "ROLE_USER", "ROLE_ANONYMOUS");
     private static final Set<String> PROTECTED_PERMISSIONS = Set.of("AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD");
     // Recovery authority needs the same trusted administration boundary without changing D02 account classification.
@@ -39,14 +39,13 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
     //   기록을 보는 것을 막는다(원장을 보는 사람과 기록되는 작업을 하는 사람을 나눈다, SensitiveAuditQueryService).
     private static final Set<String> SENSITIVE_ADMINISTRATION_PERMISSIONS =
             Set.of("AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD", "MFA_RECOVER", "ADT_LOG_READ");
-    /**
-     * [2026-10-02] 그룹 버전은 그룹 자신의 이력(GROUP·GROUP_GRANT)만 본다. 종전에는 그룹과 사용자를 같은 조건
-     * ({@code authrt_cd=? OR scrty_dcsn_trgt_id=?})으로 셌는데, 구성원 추가·회수(USER_GROUP 행)도 {@code authrt_cd} 에
-     * 그 그룹을 싣기 때문에 구성원 탭에서 저장하면 같은 그룹의 기능권한 초안이 409 가 됐다. 그룹 스냅샷은 구성원을 담지 않고
-     * 그룹 삭제는 잠금 아래에서 구성원 수를 다시 세므로 이 분리로 막던 것은 없다. 각 축 안의 ABA 방지(마지막 이력 번호)는 유지된다.
-     * 단건({@link #groupLastChange})과 일괄({@link #readGroups}) 조회가 이 조건 하나를 함께 쓴다.
-     */
-    private static final String GROUP_HISTORY = "chg_trgt_type_cd<>'USER_GROUP'";
+    // 그룹 버전의 이력 조건(GROUP_HISTORY)은 그 SQL 과 함께 AuthorizationAdministrationDao 로 옮겼다.
+
+    public AuthorizationAdministrationService(JdbcTemplate jdbc, VendorSqlDialect vendorSql) {
+        this.jdbc = jdbc;
+        this.vendorSql = vendorSql;
+        this.dao = new AuthorizationAdministrationDao(jdbc, vendorSql);
+    }
 
     public List<GroupSummary> groups() {
         SecurityUtil.assertPermission("AUTHRT_READ");
@@ -60,8 +59,7 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
     }
 
     private GroupSnapshot readGroup(String code) {
-        var rows = jdbc.query("SELECT authrt_cd,authrt_nm,authrt_expln FROM tb_authrt_info WHERE authrt_cd=?",
-                (rs, n) -> new GroupSummary(rs.getString(1),rs.getString(2),rs.getString(3),null), code);
+        var rows = dao.findGroup(code);
         if (rows.isEmpty()) throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         var g = rows.getFirst();
         var grants = readGrants(code);
@@ -70,29 +68,25 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
 
     /** 버전이 필요 없는 경로의 그룹 존재 확인. 없으면 {@link #readGroup} 과 같은 404 다. */
     private void requireGroup(String code) {
-        if (jdbc.queryForObject("SELECT count(*) FROM tb_authrt_info WHERE authrt_cd=?",Long.class,code) == 0) {
+        if (dao.countGroup(code) == 0) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         }
     }
 
     private List<Grant> readGrants(String code) {
-        return jdbc.query("SELECT authrt_type_cd,authrt_grnt_cd FROM tb_authrt_grnt_map WHERE authrt_cd=? ORDER BY authrt_type_cd,authrt_grnt_cd",
-                (rs,n) -> new Grant(rs.getString(1),rs.getString(2)),code);
+        return dao.findGrants(code);
     }
 
     /** Read the same ordered grants and audit version as readGroup without one query set per group. */
     private List<GroupSnapshot> readGroups() {
-        var groups = jdbc.query("SELECT authrt_cd,authrt_nm,authrt_expln FROM tb_authrt_info ORDER BY authrt_cd",
-                (rs,n) -> new GroupSummary(rs.getString(1),rs.getString(2),rs.getString(3),null));
+        var groups = dao.findAllGroups();
         if (groups.isEmpty()) return List.of();
 
         Map<String,List<Grant>> grantsByGroup = new HashMap<>();
-        jdbc.query("SELECT authrt_cd,authrt_type_cd,authrt_grnt_cd FROM tb_authrt_grnt_map ORDER BY authrt_cd,authrt_type_cd,authrt_grnt_cd",
-                (rs,n) -> Map.entry(rs.getString(1),new Grant(rs.getString(2),rs.getString(3))))
+        dao.findAllGrants()
                 .forEach(row -> grantsByGroup.computeIfAbsent(row.getKey(), ignored -> new ArrayList<>()).add(row.getValue()));
         Map<String,Long> lastByGroup = new HashMap<>();
-        jdbc.query("SELECT authrt_cd,max(authrt_chg_hstry_sn) FROM tb_authrt_chg_hstry WHERE " + GROUP_HISTORY + " GROUP BY authrt_cd",
-                (rs,n) -> Map.entry(rs.getString(1),rs.getLong(2)))
+        dao.findGroupLastChanges()
                 .forEach(row -> lastByGroup.put(row.getKey(),row.getValue()));
 
         return groups.stream().map(group -> groupSnapshot(group.code(),group.name(),group.description(),
@@ -111,10 +105,10 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
 
     /** 사용자의 배정 그룹(코드 순). 버전이 필요 없는 경로는 이력을 읽지 않는다. 없는 사용자는 404 다. */
     private List<String> memberGroups(String userId) {
-        if (jdbc.queryForObject("SELECT count(*) FROM tb_user_info WHERE esntl_id=?",Long.class,userId) == 0) {
+        if (dao.countUser(userId) == 0) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         }
-        return jdbc.queryForList("SELECT authrt_cd FROM tb_authrt_user_map WHERE scrty_dcsn_trgt_id=? ORDER BY authrt_cd",String.class,userId);
+        return dao.findUserGroups(userId);
     }
 
     /**
@@ -126,20 +120,14 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
         SecurityUtil.assertPermission("AUTHRT_READ");
         requireGroup(code);
         var pageable = pagination(page,size);
-        var rows = jdbc.query(vendorSql.paginate("SELECT u.esntl_id,u.user_id,u.user_nm,u.ognz_id FROM tb_authrt_user_map m"
-                + " JOIN tb_user_info u ON u.esntl_id=m.scrty_dcsn_trgt_id WHERE m.authrt_cd=?"
-                + " ORDER BY u.user_nm,u.user_id",pageable.getPageSize(),pageable.getOffset()),
-                (rs,n) -> new UserChoice(rs.getString(1),rs.getString(2),rs.getString(3),rs.getString(4)),
-                code);
-        Long total = jdbc.queryForObject("SELECT count(*) FROM tb_authrt_user_map m JOIN tb_user_info u"
-                + " ON u.esntl_id=m.scrty_dcsn_trgt_id WHERE m.authrt_cd=?",Long.class,code);
+        var rows = dao.findGroupMembers(code,pageable);
+        Long total = dao.countGroupMembersWithUser(code);
         return new PageImpl<>(rows,pageable,Objects.requireNonNull(total));
     }
 
     public List<DepartmentChoice> departments() {
         SecurityUtil.assertPermission("AUTHRT_READ");
-        return jdbc.query("SELECT ognz_id,ognz_nm FROM tb_ognz_info ORDER BY ognz_nm,ognz_id",
-                (rs,n) -> new DepartmentChoice(rs.getString(1),rs.getString(2)));
+        return dao.findDepartments();
     }
 
     @Transactional(isolation=Isolation.REPEATABLE_READ, readOnly=true)
@@ -149,22 +137,16 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
     }
 
     private DepartmentSnapshot readDepartment(String departmentId) {
-        if (jdbc.queryForObject("SELECT count(*) FROM tb_ognz_info WHERE ognz_id=?", Long.class, departmentId)==0) {
+        if (dao.countDepartment(departmentId)==0) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         }
-        var users=jdbc.query("SELECT esntl_id,user_id,user_nm FROM tb_user_info WHERE ognz_id=? ORDER BY esntl_id",
-                (rs,n) -> new UserChoice(rs.getString(1),rs.getString(2),rs.getString(3),departmentId),departmentId);
+        var users=dao.findDepartmentUsers(departmentId);
         Map<String,List<String>> groupsByUser = new HashMap<>();
         Map<String,Long> lastByUser = new HashMap<>();
         if (!users.isEmpty()) {
-            jdbc.query("SELECT m.scrty_dcsn_trgt_id,m.authrt_cd FROM tb_authrt_user_map m"
-                    + " JOIN tb_user_info u ON u.esntl_id=m.scrty_dcsn_trgt_id WHERE u.ognz_id=?"
-                    + " ORDER BY m.scrty_dcsn_trgt_id,m.authrt_cd",
-                    (rs,n) -> Map.entry(rs.getString(1),rs.getString(2)),departmentId)
+            dao.findDepartmentMemberships(departmentId)
                     .forEach(row -> groupsByUser.computeIfAbsent(row.getKey(), ignored -> new ArrayList<>()).add(row.getValue()));
-            jdbc.query("SELECT h.scrty_dcsn_trgt_id,max(h.authrt_chg_hstry_sn) FROM tb_authrt_chg_hstry h"
-                    + " JOIN tb_user_info u ON u.esntl_id=h.scrty_dcsn_trgt_id WHERE u.ognz_id=? GROUP BY h.scrty_dcsn_trgt_id",
-                    (rs,n) -> Map.entry(rs.getString(1),rs.getLong(2)),departmentId)
+            dao.findDepartmentLastChanges(departmentId)
                     .forEach(row -> lastByUser.put(row.getKey(),row.getValue()));
         }
         return buildDepartmentSnapshot(departmentId,users,groupsByUser,lastByUser);
@@ -194,21 +176,20 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
         return readDepartment(departmentId);
     }
 
-    /** 그룹 자신의 마지막 이력 번호 — 조건은 {@link #GROUP_HISTORY} 다. */
+    /** 그룹 자신의 마지막 이력 번호 — 조건은 {@link AuthorizationAdministrationDao#GROUP_HISTORY} 다. */
     private Long groupLastChange(String code) {
-        return jdbc.queryForObject("SELECT coalesce(max(authrt_chg_hstry_sn),0) FROM tb_authrt_chg_hstry WHERE authrt_cd=? AND " + GROUP_HISTORY,Long.class,code);
+        return dao.groupLastChange(code);
     }
 
     /** 사용자를 대상으로 한 마지막 이력 번호(USER_GROUP 행)만 본다. */
     private Long membershipLastChange(String userId) {
-        return jdbc.queryForObject("SELECT coalesce(max(authrt_chg_hstry_sn),0) FROM tb_authrt_chg_hstry WHERE scrty_dcsn_trgt_id=?",Long.class,userId);
+        return dao.membershipLastChange(userId);
     }
 
     public Catalog catalog() {
         SecurityUtil.assertPermission("AUTHRT_READ");
-        // 사용 여부는 사이드바와 같은 판정(값이 'Y' 일 때만 사용)으로 정규화한다 — NULL 을 사용 중으로 보이지 않게 한다.
-        var navigation = jdbc.query("SELECT menu_sn,menu_nm,NULLIF(up_menu_sn,0),modern_route,use_yn FROM tb_menu_info ORDER BY menu_ordr,menu_sn",
-                (rs,n) -> new Navigation(rs.getString(1),rs.getString(2),rs.getString(3),routeOf(rs.getString(4)),"Y".equals(rs.getString(5))?"Y":"N"));
+        // 사용 여부는 사이드바와 같은 판정(값이 'Y' 일 때만 사용)으로 정규화한다(DAO) — NULL 을 사용 중으로 보이지 않게 한다.
+        var navigation = dao.findNavigation();
         return new Catalog(loadCatalogOperations(),navigation,PermissionCodes.CATALOG_VERSION);
     }
 
@@ -216,9 +197,8 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
         SecurityUtil.assertPermission("AUTHRT_READ");
         var pageable = pagination(page,size);
         String term = "%" + Objects.toString(keyword, "").replace("!","!!").replace("%","!%").replace("_","!_") + "%";
-        var rows = jdbc.query(vendorSql.paginate("SELECT esntl_id,user_id,user_nm,ognz_id FROM tb_user_info WHERE user_id LIKE ? ESCAPE '!' OR user_nm LIKE ? ESCAPE '!' ORDER BY user_id",pageable.getPageSize(),pageable.getOffset()),
-                (rs,n) -> new UserChoice(rs.getString(1),rs.getString(2),rs.getString(3),rs.getString(4)),term,term);
-        Long total = jdbc.queryForObject("SELECT count(*) FROM tb_user_info WHERE user_id LIKE ? ESCAPE '!' OR user_nm LIKE ? ESCAPE '!'",Long.class,term,term);
+        var rows = dao.searchUsers(term,pageable);
+        Long total = dao.countUsers(term);
         return new PageImpl<>(rows,pageable,Objects.requireNonNull(total));
     }
 
@@ -228,15 +208,14 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
         SecurityUtil.assertPermission("AUTHRT_CREATE");
         lockAndAuthorize("AUTHRT_CREATE");
         if (RESERVED.contains(request.code())) invalid("예약된 그룹 코드는 생성할 수 없습니다.");
-        if (jdbc.queryForObject("SELECT count(*) FROM tb_authrt_info WHERE authrt_cd=?",Long.class,request.code()) != 0) invalid("이미 존재하는 그룹입니다.");
+        if (dao.countGroup(request.code()) != 0) invalid("이미 존재하는 그룹입니다.");
         insertGroup(UUID.randomUUID().toString(),request.code(),request.name(),request.description(),null);
         return readGroup(request.code());
     }
 
     private void insertGroup(String id, String code, String name, String description, String reason) {
         String actor = auditLogin();
-        jdbc.update("INSERT INTO tb_authrt_info(authrt_cd,authrt_nm,authrt_expln,authrt_crt_ymd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) VALUES(?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,?,?)",
-                code,name,description,LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE),actor,actor);
+        dao.insertGroup(code,name,description,LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE),actor);
         audit(id,"GROUP","ADD",code,null,null,"authrt_nm",null,name,reason);
         if (description!=null) audit(id,"GROUP","ADD",code,null,null,"authrt_expln",null,description,reason);
     }
@@ -247,7 +226,7 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
         lockAndAuthorize("AUTHRT_UPDATE");
         var before = readGroup(code); requireVersion(before.version(),request.version());
         String id = UUID.randomUUID().toString();
-        jdbc.update("UPDATE tb_authrt_info SET authrt_nm=?,authrt_expln=?,mdfcn_dt=CURRENT_TIMESTAMP,last_mdfr_id=? WHERE authrt_cd=?",request.name(),request.description(),auditLogin(),code);
+        dao.updateGroup(code,request.name(),request.description(),auditLogin());
         audit(id,"GROUP","UPDATE",code,null,null,"authrt_nm",before.name(),request.name());
         audit(id,"GROUP","UPDATE",code,null,null,"authrt_expln",before.description(),request.description());
         return readGroup(code);
@@ -268,7 +247,7 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
         lockAndAuthorize("AUTHRT_GRANT");
         var original = readGroup(source); requireVersion(original.version(),request.sourceVersion());
         if (RESERVED.contains(request.code())) invalid("예약된 그룹 코드는 생성할 수 없습니다.");
-        if (jdbc.queryForObject("SELECT count(*) FROM tb_authrt_info WHERE authrt_cd=?",Long.class,request.code()) != 0) invalid("이미 존재하는 그룹입니다.");
+        if (dao.countGroup(request.code()) != 0) invalid("이미 존재하는 그룹입니다.");
         if ("ROLE_ANONYMOUS".equals(source)) invalid("공개 메뉴용 그룹은 복제할 수 없습니다.");
         var desired = new TreeSet<>(original.grants());
         var orphans = navigationWithoutSelectedAncestor(desired,parents);
@@ -291,9 +270,7 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
 
     /** 메시지용 메뉴 이름. 지워진 메뉴는 번호로 남는다. */
     private String menuNames(List<String> codes) {
-        var names = new HashMap<String,String>();
-        jdbc.query("SELECT menu_sn,menu_nm FROM tb_menu_info ORDER BY menu_sn",
-                (rs,n) -> names.put(rs.getString(1),rs.getString(2)));
+        var names = dao.findMenuNames();
         return codes.stream().limit(5).map(code -> "'" + names.getOrDefault(code,code) + "'")
                 .collect(Collectors.joining(", ")) + (codes.size() > 5 ? " 외 " + (codes.size()-5) + "개" : "");
     }
@@ -312,13 +289,13 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
         if (RESERVED.contains(code)) invalid("예약된 그룹은 삭제할 수 없습니다.");
         var before = readGroup(code); requireVersion(before.version(),expectedVersion);
         // [2026-10-01] 거부 사유에 배정 인원을 싣는다 — 종전 409 는 기본 문구뿐이라 몇 명을 해제해야 하는지 알 수 없었다.
-        long assigned = Objects.requireNonNull(jdbc.queryForObject("SELECT count(*) FROM tb_authrt_user_map WHERE authrt_cd=?",Long.class,code));
+        long assigned = Objects.requireNonNull(dao.countGroupAssignments(code));
         if (assigned != 0) throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
                 "이 그룹에 배정된 사용자 " + assigned + "명이 있어 삭제할 수 없습니다. 구성원 목록에서 배정을 먼저 해제하세요.");
         if (before.grants().stream().anyMatch(AuthorizationAdministrationService::isSensitiveAdministrationGrant)) authorizeProtectedAdministration();
         String id = UUID.randomUUID().toString();
         for (var grant: before.grants()) removeGrant(id,code,grant);
-        jdbc.update("DELETE FROM tb_authrt_info WHERE authrt_cd=?",code);
+        dao.deleteGroup(code);
         audit(id,"GROUP","REMOVE",code,null,null,"authrt_nm",before.name(),null);
         if (before.description()!=null) audit(id,"GROUP","REMOVE",code,null,null,"authrt_expln",before.description(),null);
     }
@@ -340,20 +317,14 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
 
     private void lockMenus(List<Long> ids) {
         ids.stream().distinct().sorted().forEach(id -> {
-            var found = jdbc.queryForList(vendorSql.selectForLock("menu_sn","tb_menu_info","WHERE menu_sn=?",RowLock.FOR_UPDATE),Long.class,id);
+            var found = dao.lockMenu(id);
             if (found.isEmpty()) invalid("존재하지 않는 메뉴입니다.");
         });
     }
 
-    private record MenuParent(String code, String parentCode) {}
-
     /** Stabilize parent links before ADMIN; allow the deferred self-FK's KEY SHARE during a move. */
     private Map<String,String> lockMenuParents() {
-        var rows = jdbc.query(vendorSql.selectForLock("menu_sn,up_menu_sn","tb_menu_info","ORDER BY menu_sn",RowLock.FOR_NO_KEY_UPDATE),
-                (rs,n) -> new MenuParent(rs.getString(1),rs.getString(2)));
-        var parents = new HashMap<String,String>();
-        rows.forEach(row -> parents.put(row.code(),row.parentCode()));
-        return parents;
+        return dao.lockMenuParents();
     }
 
     private void applyGrants(String request, String group, List<Grant> before, Set<Grant> desired) {
@@ -373,18 +344,17 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
     }
 
     private void addGrant(String request, String group, Grant grant, String reason) {
-        jdbc.update("INSERT INTO tb_authrt_grnt_map(authrt_cd,authrt_type_cd,authrt_grnt_cd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) VALUES(?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,?,?)",group,grant.type(),grant.code(),auditLogin(),auditLogin());
+        dao.insertGrant(group,grant,auditLogin(),auditLogin());
         audit(request,"GROUP_GRANT","ADD",group,null,grant,"grant",null,grant.code(),reason);
     }
 
     private void removeGrant(String request, String group, Grant grant) {
-        jdbc.update("DELETE FROM tb_authrt_grnt_map WHERE authrt_cd=? AND authrt_type_cd=? AND authrt_grnt_cd=?",group,grant.type(),grant.code());
+        dao.deleteGrant(group,grant);
         // [V2_153] 그룹에서 권한을 회수하면 그 그룹 구성원의 세션을 끊는다(세션차수 증가 → 옛 토큰 401). 권한은 요청마다 다시 읽지만,
         //   회수 전에 받아 둔 세션·연결이 회수된 권한으로 일하던 화면을 이어 가지 않게 다시 로그인하게 한다.
         //   메뉴 표시(NAVIGATION)는 권한이 아니라 끊지 않는다 — 메뉴를 지울 때마다 그룹 전원이 로그아웃되지 않게.
         if (!"NAVIGATION".equals(grant.type())) {
-            jdbc.update("UPDATE tb_user_info SET ssn_cycl = ssn_cycl + 1 WHERE esntl_id IN "
-                    + "(SELECT m.scrty_dcsn_trgt_id FROM tb_authrt_user_map m WHERE m.authrt_cd=?)",group);
+            dao.bumpGroupMemberSessions(group);
         }
         audit(request,"GROUP_GRANT","REMOVE",group,null,grant,"grant",grant.code(),null);
     }
@@ -417,15 +387,15 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
     }
 
     private void removeMembership(String request, String userId, String group) {
-        jdbc.update("DELETE FROM tb_authrt_user_map WHERE scrty_dcsn_trgt_id=? AND authrt_cd=?",userId,group);
+        dao.deleteMembership(userId,group);
         // [V2_153] 그룹 회수는 그 전에 발급된 세션을 끊는다(세션차수 증가 → 옛 토큰 401). 권한은 요청마다 다시 읽지만, 회수 전에
         //   받아 둔 화면·연결이 회수된 권한으로 계속 일하지 않게 다시 로그인하게 한다.
-        jdbc.update("UPDATE tb_user_info SET ssn_cycl = ssn_cycl + 1 WHERE esntl_id=?",userId);
+        dao.bumpUserSession(userId);
         audit(request,"USER_GROUP","REMOVE",group,userId,null,"membership",group,null);
     }
 
     private void addMembership(String request, String userId, String group) {
-        jdbc.update("INSERT INTO tb_authrt_user_map(scrty_dcsn_trgt_id,authrt_cd,mbr_type_cd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) VALUES(?,?,'USR03',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,?,?)",userId,group,auditLogin(),auditLogin());
+        dao.insertMembership(userId,group,auditLogin(),auditLogin());
         audit(request,"USER_GROUP","ADD",group,userId,null,"membership",null,group);
     }
 
@@ -457,9 +427,7 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
         var users = usersById(targets);
         var missing = targets.stream().filter(id -> !users.containsKey(id)).limit(5).toList();
         if (!missing.isEmpty()) invalid("존재하지 않는 사용자가 있습니다: " + String.join(", ", missing));
-        List<Object> memberArgs = new ArrayList<>(); memberArgs.add(code); memberArgs.addAll(targets);
-        var members = new HashSet<>(jdbc.queryForList("SELECT scrty_dcsn_trgt_id FROM tb_authrt_user_map WHERE authrt_cd=? AND scrty_dcsn_trgt_id IN ("
-                + placeholders(targets.size()) + ")",String.class,memberArgs.toArray()));
+        var members = new HashSet<>(dao.findMembersAmong(code,targets));
         var alreadyMembers = add.stream().filter(members::contains).map(users::get).toList();
         var notMembers = remove.stream().filter(id -> !members.contains(id)).map(users::get).toList();
         if (!alreadyMembers.isEmpty() || !notMembers.isEmpty()) {
@@ -479,15 +447,14 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
             else { removeMembership(requestId,userId,code); removed.add(users.get(userId)); }
         }
         protectLastManager(managers);
-        long memberCount = Objects.requireNonNull(jdbc.queryForObject("SELECT count(*) FROM tb_authrt_user_map WHERE authrt_cd=?",Long.class,code));
+        long memberCount = Objects.requireNonNull(dao.countGroupAssignments(code));
         return new GroupMembersChange(code,List.copyOf(added),List.copyOf(removed),memberCount);
     }
 
     /** 대상 사용자를 한 번에 읽는다. 상태와 무관하게 존재만 본다 — 비활성 계정의 배정 회수도 막지 않는다. */
     private Map<String,UserChoice> usersById(Set<String> ids) {
         var users = new HashMap<String,UserChoice>();
-        jdbc.query("SELECT esntl_id,user_id,user_nm,ognz_id FROM tb_user_info WHERE esntl_id IN (" + placeholders(ids.size()) + ")",
-                (rs,n) -> new UserChoice(rs.getString(1),rs.getString(2),rs.getString(3),rs.getString(4)),ids.toArray())
+        dao.findUsersByIds(ids)
                 .forEach(user -> users.put(user.id(),user));
         return users;
     }
@@ -536,7 +503,7 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
         SecurityUtil.assertPermission("MENU_DELETE");
         lockMenus(ids); lockAndAuthorize("MENU_DELETE"); String request=UUID.randomUUID().toString();
         for (Long id: ids) {
-            var groups=jdbc.queryForList("SELECT authrt_cd FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' AND authrt_grnt_cd=? ORDER BY authrt_cd",String.class,id.toString());
+            var groups=dao.findNavigationGroups(id);
             for (String group: groups) removeGrant(request,group,new Grant("NAVIGATION",id.toString()));
         }
     }
@@ -552,7 +519,7 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
         lockAndAuthorize("AUTHRT_GRANT");
         for (var expected: groups.stream().sorted(Comparator.comparing(GroupVersion::code)).toList()) {
             // 그룹 권한 행을 읽은 뒤 그 그룹이 지워졌으면 초안이 낡은 것이다 — 404 가 아니라 다시 불러오라는 409 다.
-            if (jdbc.queryForObject("SELECT count(*) FROM tb_authrt_info WHERE authrt_cd=?",Long.class,expected.code()) == 0) {
+            if (dao.countGroup(expected.code()) == 0) {
                 throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,"'" + expected.code()
                         + "' 그룹이 다른 곳에서 삭제되었습니다. 다시 불러온 뒤 저장해 주세요.");
             }
@@ -579,11 +546,9 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
         SecurityUtil.assertPermission("MENU_UPDATE");
         if (movedParents.isEmpty()) return List.of();
         var navigation = new TreeMap<String,Set<Long>>();
-        jdbc.query("SELECT authrt_cd,authrt_grnt_cd FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' ORDER BY authrt_cd,authrt_grnt_cd",
-                (rs,n) -> navigation.computeIfAbsent(rs.getString(1),ignored -> new HashSet<>()).add(Long.valueOf(rs.getString(2))));
-        var names = new HashMap<String,String>();
-        jdbc.query("SELECT authrt_cd,authrt_nm FROM tb_authrt_info ORDER BY authrt_cd",
-                (rs,n) -> names.put(rs.getString(1),rs.getString(2)));
+        dao.findAllNavigationGrants()
+                .forEach(row -> navigation.computeIfAbsent(row.getKey(),ignored -> new HashSet<>()).add(Long.valueOf(row.getValue())));
+        var names = dao.findGroupNames();
         return findNavigationConflicts(navigation,movedParents,added,removed,compatibilityCandidates,names);
     }
 
@@ -631,15 +596,7 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
         SecurityUtil.assertPermission("AUTHRT_AUDIT"); var pageable=pagination(page,size);
         var parameters=new MapSqlParameterSource();
         String where=buildHistoryWhereClause(groupCode,userId,actorId,fromDate,toDate,parameters);
-        var query=new NamedParameterJdbcTemplate(jdbc);
-        // 처리자·대상 사용자 이름을 함께 싣는다 — 종전 화면은 내부 식별자(esntlId)만 보여 누가 바꿨는지 읽을 수 없었다.
-        //   탈퇴 등으로 사용자가 없으면 이름은 null 이고 식별자가 남는다.
-        var rows=query.query(vendorSql.paginate("SELECT h.*, actor.user_nm AS actor_nm, target.user_nm AS target_user_nm"
-                + " FROM tb_authrt_chg_hstry h"
-                + " LEFT JOIN tb_user_info actor ON actor.esntl_id=h.chg_user_idntfr"
-                + " LEFT JOIN tb_user_info target ON target.esntl_id=h.scrty_dcsn_trgt_id"
-                + where+" ORDER BY h.authrt_chg_hstry_sn DESC",pageable.getPageSize(),pageable.getOffset()),parameters,AuthorizationAdministrationSupport::mapHistoryChange);
-        return new PageImpl<>(rows,pageable,Objects.requireNonNull(query.queryForObject("SELECT count(*) FROM tb_authrt_chg_hstry h"+where,parameters,Long.class)));
+        return dao.history(where,parameters,pageable);
     }
 
     private void audit(String request, String target, String change, String group, String userId, Grant grant, String field, String before, String after) {
@@ -649,11 +606,7 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
     /** {@code reason} 은 이력의 사유 칸(chg_rsn)이다. 복제는 원본 그룹을 남긴다 — 변경 유형 CHECK 를 넓히지 않는다. */
     private void audit(String request, String target, String change, String group, String userId, Grant grant, String field, String before, String after, String reason) {
         if (Objects.equals(before,after)) return;
-        jdbc.update("""
-                INSERT INTO tb_authrt_chg_hstry(dmnd_idntfr,plcy_ver_no,chg_trgt_type_cd,chg_type_cd,authrt_cd,scrty_dcsn_trgt_id,
-                  authrt_type_cd,authrt_grnt_cd,chg_artcl_nm,chg_bfr_cn,chg_aftr_cn,chg_user_idntfr,frst_rgtr_id,chg_rsn,crt_dt)
-                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
-                """,request,PermissionCodes.CATALOG_VERSION,target,change,group,userId,grant==null?null:grant.type(),grant==null?null:grant.code(),field,before,after,
+        dao.insertHistory(request,PermissionCodes.CATALOG_VERSION,target,change,group,userId,grant==null?null:grant.type(),grant==null?null:grant.code(),field,before,after,
                 SecurityUtil.getCurrentLoginId().isPresent()?SecurityUtil.getCurrentEsntlId().orElse(null):null,auditLogin(),reason);
     }
 
