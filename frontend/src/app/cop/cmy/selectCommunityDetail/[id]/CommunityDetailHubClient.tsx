@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
@@ -39,11 +40,9 @@ export default function CommunityDetailHubClient({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const confirm = useConfirm();
-  const joinPendingRef = React.useRef(false);
   const { user } = useAuth();
-  const [isJoining, setJoining] = React.useState(false);
-  const leavePendingRef = React.useRef(false);
-  const [isLeaving, setLeaving] = React.useState(false);
+  const joinFlight = useSingleFlight();
+  const leaveFlight = useSingleFlight();
 
   const { data: community } = useQuery({
     queryKey: communityKeys.detail(cmntySn),
@@ -125,17 +124,13 @@ export default function CommunityDetailHubClient({
   });
 
   const handleJoin = async () => {
-    if (joinPendingRef.current) return;
-    joinPendingRef.current = true;
-    setJoining(true);
-    try {
-      await joinMutation.mutateAsync();
-    } catch {
-      // mutation onError가 실패 안내를 소유하며 상세 화면은 그대로 유지한다.
-    } finally {
-      joinPendingRef.current = false;
-      setJoining(false);
-    }
+    await joinFlight.run(async () => {
+      try {
+        await joinMutation.mutateAsync();
+      } catch {
+        // mutation onError가 실패 안내를 소유하며 상세 화면은 그대로 유지한다.
+      }
+    });
   };
 
   /**
@@ -143,26 +138,22 @@ export default function CommunityDetailHubClient({
    * 회원 전용 게시판 접근이 끊기므로 destructive 확인을 거친다. 실패는 서버 메시지를 그대로 보여 준다.
    */
   const handleLeave = async () => {
-    if (leavePendingRef.current) return;
-    leavePendingRef.current = true;
-    setLeaving(true);
-    try {
-      const ok = await confirm({
-        title: '커뮤니티 탈퇴',
-        message: '이 커뮤니티에서 탈퇴합니다. 회원 전용 게시판을 더 이상 볼 수 없고, 다시 이용하려면 새로 가입을 신청해 승인을 받아야 합니다.',
-        confirmText: '탈퇴',
-        variant: 'destructive',
-      });
-      if (!ok) return;
-      await communityUserService.leaveCommunity(cmntySn);
-      toast('커뮤니티에서 탈퇴했습니다.', 'success');
-      void refreshMembership();
-    } catch (error) {
-      toast(failureMessage(error, '커뮤니티 탈퇴 중 오류가 발생했습니다.'), 'error');
-    } finally {
-      leavePendingRef.current = false;
-      setLeaving(false);
-    }
+    await leaveFlight.run(async () => {
+      try {
+        const ok = await confirm({
+          title: '커뮤니티 탈퇴',
+          message: '이 커뮤니티에서 탈퇴합니다. 회원 전용 게시판을 더 이상 볼 수 없고, 다시 이용하려면 새로 가입을 신청해 승인을 받아야 합니다.',
+          confirmText: '탈퇴',
+          variant: 'destructive',
+        });
+        if (!ok) return;
+        await communityUserService.leaveCommunity(cmntySn);
+        toast('커뮤니티에서 탈퇴했습니다.', 'success');
+        void refreshMembership();
+      } catch (error) {
+        toast(failureMessage(error, '커뮤니티 탈퇴 중 오류가 발생했습니다.'), 'error');
+      }
+    });
   };
 
   const joinLabel = membershipStatus === 'WITHDRAWN' ? '다시 가입 신청' : '커뮤니티 가입 신청';
@@ -195,13 +186,13 @@ export default function CommunityDetailHubClient({
                     size="sm"
                     variant="outline"
                     onClick={() => { void handleLeave(); }}
-                    disabled={isLeaving}
-                    aria-busy={isLeaving || undefined}
-                    aria-label={isLeaving ? '커뮤니티 탈퇴 중' : '커뮤니티 탈퇴'}
+                    disabled={leaveFlight.pending}
+                    aria-busy={leaveFlight.pending || undefined}
+                    aria-label={leaveFlight.pending ? '커뮤니티 탈퇴 중' : '커뮤니티 탈퇴'}
                     className="text-destructive-emphasis hover:text-destructive-emphasis"
                   >
                     <UserMinus size={16} aria-hidden="true" />
-                    {isLeaving ? '탈퇴 중…' : '탈퇴'}
+                    {leaveFlight.pending ? '탈퇴 중…' : '탈퇴'}
                   </Button>
                 </>
               ) : membershipStatus === 'UNKNOWN' ? (
@@ -212,12 +203,12 @@ export default function CommunityDetailHubClient({
                 <Button
                   size="sm"
                   onClick={() => { void handleJoin(); }}
-                  disabled={isJoining}
-                  aria-busy={isJoining || undefined}
-                  aria-label={isJoining ? `${joinLabel} 중` : joinLabel}
+                  disabled={joinFlight.pending}
+                  aria-busy={joinFlight.pending || undefined}
+                  aria-label={joinFlight.pending ? `${joinLabel} 중` : joinLabel}
                 >
                   <UserPlus size={16} aria-hidden="true" />
-                  {isJoining ? '신청 중…' : joinLabel}
+                  {joinFlight.pending ? '신청 중…' : joinLabel}
                 </Button>
               )}
             </div>

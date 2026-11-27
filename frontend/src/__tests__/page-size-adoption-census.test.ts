@@ -64,7 +64,7 @@ const CLIENT_SLICE: Readonly<Record<string, string>> = {
 
 /** (e) 표 컴포넌트 자신 — onPageSizeChange 를 받아 부르는 쪽이다. */
 const COMPONENTS: Readonly<Record<string, string>> = {
-  'src/app/components/ui/standard-data-table.tsx': '표 컴포넌트 — pagination.onPageSizeChange 를 받아 부른다',
+  'src/app/components/ui/standard-data-table-pagination.tsx': '표 페이저 — StandardDataTable 이 넘긴 pagination.onPageSizeChange 를 받아 부른다',
 };
 
 const LISTED: ReadonlyArray<readonly [Exclude<PageSizeKind, 'literal-queryKey' | 'factory'>, Readonly<Record<string, string>>]> = [

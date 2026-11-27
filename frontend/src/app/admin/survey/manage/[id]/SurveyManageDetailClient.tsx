@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import { useParams, useRouter } from 'next/navigation';
 import { BackToListButton } from '@/app/components/navigation/BackToListButton';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -68,8 +69,7 @@ export default function SurveyManageDetailClient() {
     });
 
     const [isEditing, setIsEditing] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
-    const deletingRef = useRef(false);
+    const deleteFlight = useSingleFlight();
     /*
      * 삭제 실패 사유를 화면에도 남긴다. 토스트는 사라지므로 "왜 안 지워졌는지"를 사용자가
      * 놓치기 쉽고, 파괴적 액션일수록 그 사유가 화면에 머물러야 한다.
@@ -84,7 +84,7 @@ export default function SurveyManageDetailClient() {
      *   진행을 멈추기만 하려면 수정 모달의 '폐기' 로 충분하고 그쪽은 되돌릴 수 있다.
      */
     const handleDelete = async () => {
-        if (deletingRef.current || isEditing) return;
+        if (deleteFlight.isRunning() || isEditing) return;
 
         const ok = await confirm({
             title: '설문 삭제',
@@ -94,22 +94,19 @@ export default function SurveyManageDetailClient() {
         });
         if (!ok) return;
 
-        deletingRef.current = true;
-        setIsDeleting(true);
-        setDeleteError(null);
-        try {
-            await pollUserService.deletePoll(pollSn);
-            success('설문을 삭제했습니다.');
-            await queryClient.invalidateQueries({ queryKey: surveyKeys.adminPollsRoot });
-            router.push('/admin/survey/manage');
-        } catch (e) {
-            const message = failureMessage(e, '설문 삭제에 실패했습니다.');
-            setDeleteError(message);
-            toastError(message);
-        } finally {
-            deletingRef.current = false;
-            setIsDeleting(false);
-        }
+        await deleteFlight.run(async () => {
+            setDeleteError(null);
+            try {
+                await pollUserService.deletePoll(pollSn);
+                success('설문을 삭제했습니다.');
+                await queryClient.invalidateQueries({ queryKey: surveyKeys.adminPollsRoot });
+                router.push('/admin/survey/manage');
+            } catch (e) {
+                const message = failureMessage(e, '설문 삭제에 실패했습니다.');
+                setDeleteError(message);
+                toastError(message);
+            }
+        });
     };
 
     /*
@@ -247,7 +244,7 @@ export default function SurveyManageDetailClient() {
                                 <Button
                                     type="button"
                                     onClick={() => setIsEditing(true)}
-                                    disabled={isDeleting}
+                                    disabled={deleteFlight.pending}
                                     data-testid="poll-edit-button"
                                     className="flex-1 rounded-lg font-bold gap-3"
                                 >
@@ -259,11 +256,11 @@ export default function SurveyManageDetailClient() {
                                     type="button"
                                     variant="outline"
                                     onClick={() => { void handleDelete(); }}
-                                    disabled={isDeleting || isEditing}
-                                    aria-busy={isDeleting || undefined}
+                                    disabled={deleteFlight.pending || isEditing}
+                                    aria-busy={deleteFlight.pending || undefined}
                                     className="rounded-lg border-2 border-destructive/30 font-bold text-destructive-emphasis hover:bg-destructive hover:text-destructive-foreground sm:w-48"
                                 >
-                                    <Trash2 className="w-5 h-5" aria-hidden="true" /> {isDeleting ? '삭제 중…' : '설문 삭제'}
+                                    <Trash2 className="w-5 h-5" aria-hidden="true" /> {deleteFlight.pending ? '삭제 중…' : '설문 삭제'}
                                 </Button>
                                 )}
                             </div>

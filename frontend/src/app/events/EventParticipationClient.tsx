@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, RefreshCcw, Users } from 'lucide-react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -29,9 +30,8 @@ export default function EventParticipationClient() {
   const { toast } = useToast();
   const askConfirm = useConfirm();
   const queryClient = useQueryClient();
-  const [pendingSn, setPendingSn] = useState<number | null>(null);
+  const requestFlight = useSingleFlight<number>();
   // 같은 프레임의 두 번 누름도 한 번만 보낸다 — 상태 갱신은 다음 렌더에야 보이므로 ref 로 먼저 잠근다.
-  const requestPendingRef = useRef(false);
   const [page, setPage] = useState(1);
   const events = useQuery({
     queryKey: [...openEventsKey, page],
@@ -42,25 +42,22 @@ export default function EventParticipationClient() {
   const cancel = useMutation({ mutationFn: (evntSn: number) => eventParticipationService.cancel(evntSn), onSettled: refresh });
 
   const run = async (event: OpenEvent, action: 'apply' | 'cancel') => {
-    if (requestPendingRef.current || typeof event.evntSn !== 'number') return;
+    const { evntSn } = event;
+    if (requestFlight.isRunning() || typeof evntSn !== 'number') return;
     const name = event.evntNm || '행사';
     if (action === 'cancel' && !(await askConfirm({
       title: '신청 취소', message: `‘${name}’ 참가 신청을 취소합니다. 마감 전이면 다시 신청할 수 있습니다.`,
       confirmText: '신청 취소', cancelText: '그대로 두기', variant: 'destructive',
     }))) return;
-    if (requestPendingRef.current) return;
-    requestPendingRef.current = true;
-    setPendingSn(event.evntSn);
-    try {
-      if (action === 'apply') await apply.mutateAsync(event.evntSn);
-      else await cancel.mutateAsync(event.evntSn);
-      toast(action === 'apply' ? `‘${name}’ 참가를 신청했습니다.` : `‘${name}’ 참가 신청을 취소했습니다.`, 'success');
-    } catch (error) {
-      toast(extractErrorMessage(error, action === 'apply' ? '신청하지 못했습니다. 다시 시도해 주세요.' : '취소하지 못했습니다. 다시 시도해 주세요.'), 'error');
-    } finally {
-      requestPendingRef.current = false;
-      setPendingSn(null);
-    }
+    await requestFlight.runFor(evntSn, async () => {
+      try {
+        if (action === 'apply') await apply.mutateAsync(evntSn);
+        else await cancel.mutateAsync(evntSn);
+        toast(action === 'apply' ? `‘${name}’ 참가를 신청했습니다.` : `‘${name}’ 참가 신청을 취소했습니다.`, 'success');
+      } catch (error) {
+        toast(extractErrorMessage(error, action === 'apply' ? '신청하지 못했습니다. 다시 시도해 주세요.' : '취소하지 못했습니다. 다시 시도해 주세요.'), 'error');
+      }
+    });
   };
 
   const list = events.data?.list ?? [];
@@ -97,14 +94,14 @@ export default function EventParticipationClient() {
                 </dl>
                 <div className="flex justify-end gap-2">
                   {holdsSeat ? (
-                    <Button type="button" variant="outline" disabled={pendingSn !== null} aria-busy={pendingSn === event.evntSn || undefined}
+                    <Button type="button" variant="outline" disabled={requestFlight.pendingKey !== null} aria-busy={requestFlight.pendingKey === event.evntSn || undefined}
                       onClick={() => void run(event, 'cancel')}>
                       <span className="sr-only">{name}</span>{' '}신청 취소
                     </Button>
                   ) : status === 'REJECTED' ? (
                     <p className="text-sm text-muted-foreground">반려된 신청입니다. 행사 담당자에게 문의해 주세요.</p>
                   ) : (
-                    <Button type="button" disabled={pendingSn !== null || !event.acceptingApplications} aria-busy={pendingSn === event.evntSn || undefined}
+                    <Button type="button" disabled={requestFlight.pendingKey !== null || !event.acceptingApplications} aria-busy={requestFlight.pendingKey === event.evntSn || undefined}
                       onClick={() => void run(event, 'apply')}>
                       <span className="sr-only">{name}</span>{' '}{event.acceptingApplications ? '참가 신청' : '신청 마감'}
                     </Button>

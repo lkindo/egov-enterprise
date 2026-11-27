@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 
 /**
- * 한 번에 하나만 도는 쓰기 동작(2026-11-27, 품질 평가 A안 2번).
+ * 한 번에 하나만 도는 쓰기 동작.
  *
  * 화면마다 손으로 짜던 `if (pendingRef.current) return; pendingRef.current = true; setPending(true); try { … } finally { … }` 를
  * 한 곳에 둔다. 동기 잠금(ref)은 같은 틱의 연타를 막고, 처리 중 상태(`pending`·`pendingKey`)는 단추의 `disabled`·`aria-busy` 에
@@ -16,7 +16,9 @@ import { useRef, useState } from 'react';
  * - 다른 동작과 서로 막아야 하면 시작 전에 `otherFlight.isRunning()` 을 본다.
  * - 진행 중이면 task 를 부르지 않고 `undefined` 를 돌려준다. task 의 실패는 그대로 던진다 — 실패 알림은 task 안의 catch 가 맡는다.
  * - 보조 동작(삭제·재전송 단추 등)에 쓴다. 폼 제출은 아직 손으로 짠 잠금을 둔다 — 폼 검증 census 가 폼의 동기 잠금을 파일
- *   단위 원문 표지로만 보기 때문이다(docs/03-guides/frontend-form-validation-loop.md 「처리기 해석 범위」).
+ *   단위 원문 표지로만 보기 때문이다(docs/03-guides/frontend-form-validation-loop.md 「처리기 해석 범위」). 폼 없는 쓰기 경계가
+ *   있는 파일의 유일한 동기 ref, 쓰기를 콜백으로 받는 범용 실행 함수, 훅 반환 객체의 속성으로 넘긴 대기 상태도 census 가 따라가지
+ *   못한다(같은 절).
  *
  * 돌려주는 함수는 렌더마다 새로 만든다. 폼 검증 census 가 다른 파일의 감싸기 함수를 그 선언으로 따라가기 때문이다.
  * 의존성 배열에 넣어야 하면 인스턴스(`flight`)가 아니라 필요한 값만 넣는다.

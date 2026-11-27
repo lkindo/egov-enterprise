@@ -322,7 +322,7 @@
       "disposition": "adapted",
       "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
       "upstream": "https://www.krds.go.kr/html/site/component/component_04_01.html",
-      "localEvidence": ["frontend/src/app/components/ui/standard-data-table.tsx"],
+      "localEvidence": ["frontend/src/app/components/ui/standard-data-table.tsx", "frontend/src/app/components/ui/standard-data-table-pagination.tsx"],
       "deviation": "StandardDataTable is a local composite with desktop table, mobile cards, state and pagination contracts.",
       "notes": "Dense-list pilot and responsive semantics must be verified before scope approval."
     },

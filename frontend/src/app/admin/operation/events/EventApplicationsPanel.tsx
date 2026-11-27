@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,9 +34,8 @@ export function EventApplicationsPanel({ evntSn, eventName }: { evntSn: number; 
   const queryClient = useQueryClient();
   const key = ['admin', 'events', evntSn, 'applications'] as const;
   const [page, setPage] = useState(1);
-  const [pending, setPending] = useState<{ sn: number; approved: boolean } | null>(null);
+  const decisionFlight = useSingleFlight<{ sn: number; approved: boolean }>();
   // 같은 프레임의 두 번 누름도 한 번만 보낸다 — 상태 갱신은 다음 렌더에야 보이므로 ref 로 먼저 잠근다.
-  const decisionPendingRef = useRef(false);
   const applications = useQuery({
     queryKey: [...key, page],
     queryFn: () => eventParticipationService.getApplications(evntSn, { page, size: APPLICATIONS_PAGE_SIZE }),
@@ -49,24 +49,20 @@ export function EventApplicationsPanel({ evntSn, eventName }: { evntSn: number; 
   });
 
   const run = async (application: EventApplication, approved: boolean) => {
-    if (decisionPendingRef.current || typeof application.evntAplySn !== 'number' || typeof application.version !== 'number') return;
+    if (decisionFlight.isRunning() || typeof application.evntAplySn !== 'number' || typeof application.version !== 'number') return;
     const who = application.aplcntNm || application.aplcntId || '신청자';
     if (!approved && !(await askConfirm({
       title: '신청 반려', message: `${who}님의 ‘${eventName}’ 참가 신청을 반려합니다. 반려된 신청은 다시 신청할 수 없습니다.`,
       confirmText: '반려', variant: 'destructive',
     }))) return;
-    if (decisionPendingRef.current) return;
-    decisionPendingRef.current = true;
-    setPending({ sn: application.evntAplySn, approved });
-    try {
-      await decide.mutateAsync({ application, approved });
-      toast(`${who}님의 신청을 ${approved ? '승인' : '반려'}했습니다.`, 'success');
-    } catch (error) {
-      toast(extractErrorMessage(error, '처리하지 못했습니다. 목록을 다시 확인해 주세요.'), 'error');
-    } finally {
-      decisionPendingRef.current = false;
-      setPending(null);
-    }
+    await decisionFlight.runFor({ sn: application.evntAplySn, approved }, async () => {
+      try {
+        await decide.mutateAsync({ application, approved });
+        toast(`${who}님의 신청을 ${approved ? '승인' : '반려'}했습니다.`, 'success');
+      } catch (error) {
+        toast(extractErrorMessage(error, '처리하지 못했습니다. 목록을 다시 확인해 주세요.'), 'error');
+      }
+    });
   };
 
   const list = applications.data?.list ?? [];
@@ -96,13 +92,13 @@ export function EventApplicationsPanel({ evntSn, eventName }: { evntSn: number; 
                 {canDecide && (status === 'APPLIED' || status === 'APPROVED') && (
                   <span className="flex gap-1">
                     {status === 'APPLIED' && (
-                      <Button type="button" size="sm" variant="outline" disabled={pending !== null}
-                        aria-busy={(pending !== null && pending.sn === application.evntAplySn && pending.approved) || undefined} onClick={() => void run(application, true)}>
+                      <Button type="button" size="sm" variant="outline" disabled={decisionFlight.pendingKey !== null}
+                        aria-busy={(decisionFlight.pendingKey !== null && decisionFlight.pendingKey.sn === application.evntAplySn && decisionFlight.pendingKey.approved) || undefined} onClick={() => void run(application, true)}>
                         <span className="sr-only">{who}</span>{' '}승인
                       </Button>
                     )}
-                    <Button type="button" size="sm" variant="ghost" disabled={pending !== null}
-                      aria-busy={(pending !== null && pending.sn === application.evntAplySn && !pending.approved) || undefined} onClick={() => void run(application, false)}>
+                    <Button type="button" size="sm" variant="ghost" disabled={decisionFlight.pendingKey !== null}
+                      aria-busy={(decisionFlight.pendingKey !== null && decisionFlight.pendingKey.sn === application.evntAplySn && !decisionFlight.pendingKey.approved) || undefined} onClick={() => void run(application, false)}>
                       <span className="sr-only">{who}</span>{' '}반려
                     </Button>
                   </span>

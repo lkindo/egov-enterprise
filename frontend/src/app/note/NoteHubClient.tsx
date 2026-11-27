@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
@@ -134,8 +135,7 @@ export default function NoteHubClient() {
   }, []);
   const [isSending, setIsSending] = useState(false);
   const sendingRef = useRef(false);
-  const [deletingRelationSn, setDeletingRelationSn] = useState<number | null>(null);
-  const deletePendingRef = useRef(false);
+  const deleteFlight = useSingleFlight<number>();
   const validation = useManualFormValidation(noteComposeSchema, {
     labels: NOTE_FORM_LABELS,
     focusTargets: {
@@ -398,30 +398,26 @@ export default function NoteHubClient() {
       toast('삭제 대상 식별자를 찾을 수 없습니다.', 'error');
       return;
     }
-    if (deletePendingRef.current) return;
-    deletePendingRef.current = true;
-    setDeletingRelationSn(relationSn);
-    try {
-      const ok = await confirm({
-        title: '쪽지 삭제',
-        message: deleteTab === 'received'
-          ? '이 쪽지를 받은 편지함에서 삭제하시겠습니까? (보낸 사람의 사본은 유지됩니다)'
-          : '이 쪽지를 보낸 편지함에서 삭제하시겠습니까? (받은 사람의 사본은 유지됩니다)',
-        confirmText: '삭제',
-        variant: 'destructive',
-      });
-      if (!ok) return;
-      await noteService.deleteNote(relationSn, { type: deleteTab });
-      // 안 읽은 받은 쪽지를 지우면 홈 카드의 수가 줄어든다 — 탭을 바꿔 아래 목록 재조회를 건너뛰어도 무효화한다.
-      if (deleteTab === 'received') void invalidateNoteUnreadCount(queryClient);
-      toast('삭제되었습니다.', 'success');
-      await queryClient.invalidateQueries({ queryKey: noteListTabKey(deleteTab) });
-    } catch {
-      toast('삭제 중 오류가 발생했습니다.', 'error');
-    } finally {
-      deletePendingRef.current = false;
-      setDeletingRelationSn(null);
-    }
+    await deleteFlight.runFor(relationSn, async () => {
+      try {
+        const ok = await confirm({
+          title: '쪽지 삭제',
+          message: deleteTab === 'received'
+            ? '이 쪽지를 받은 편지함에서 삭제하시겠습니까? (보낸 사람의 사본은 유지됩니다)'
+            : '이 쪽지를 보낸 편지함에서 삭제하시겠습니까? (받은 사람의 사본은 유지됩니다)',
+          confirmText: '삭제',
+          variant: 'destructive',
+        });
+        if (!ok) return;
+        await noteService.deleteNote(relationSn, { type: deleteTab });
+        // 안 읽은 받은 쪽지를 지우면 홈 카드의 수가 줄어든다 — 탭을 바꿔 아래 목록 재조회를 건너뛰어도 무효화한다.
+        if (deleteTab === 'received') void invalidateNoteUnreadCount(queryClient);
+        toast('삭제되었습니다.', 'success');
+        await queryClient.invalidateQueries({ queryKey: noteListTabKey(deleteTab) });
+      } catch {
+        toast('삭제 중 오류가 발생했습니다.', 'error');
+      }
+    });
   };
 
   // 이 보기의 목록 응답을 받기 전(불러오는 중)이나 실패했으면 총 건수를 0 으로 말하지 않는다 — 표도 그동안 비운다.
@@ -484,12 +480,12 @@ export default function NoteHubClient() {
       header: '관리',
       accessor: (item: Note) => {
         const relationSn = tab === 'received' ? item.noteRcptnSn : item.noteSndngSn;
-        const isDeleting = deletingRelationSn === relationSn;
+        const isDeleting = deleteFlight.pendingKey === relationSn;
         return (
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); void handleDelete(item); }}
-          disabled={deletingRelationSn !== null}
+          disabled={deleteFlight.pendingKey !== null}
           aria-busy={isDeleting}
           aria-label={isDeleting ? `${item.noteSj || '쪽지'} 삭제 중` : `${item.noteSj || '쪽지'} 삭제`}
           className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive-emphasis disabled:opacity-50"

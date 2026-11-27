@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Eye, Loader2, Pencil, Plus, RefreshCcw, Trash2 } from 'lucide-react';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
@@ -103,8 +104,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
   const [editing, setEditing] = useState<Reward | null>(null);
   // 수정 권한 없이 연 행은 조회 전용이다 — 같은 창으로 공적 내용을 읽기만 한다.
   const isViewOnly = editing !== null && !canUpdateReward;
-  const [deletingSn, setDeletingSn] = useState<number | null>(null);
-  const deletePendingRef = useRef(false);
+  const deleteFlight = useSingleFlight<number>();
   /*
     [2026-10-20] 수상자는 사용자 검색으로 고른다. 종전에는 내부 식별자(USR_…)를 자유 입력으로 받아, 없는 사람에게도 포상이
     기록됐다(서버도 존재를 보지 않았다). 식별자는 사람이 타이핑할 값이 아니다 — 결재·메모 보고와 같은 공용 피커를 쓴다.
@@ -144,26 +144,24 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
   };
 
   const handleDelete = async (item: Reward) => {
-    if (deletePendingRef.current || item.rwrdSn === undefined) return;
-    deletePendingRef.current = true;
-    setDeletingSn(item.rwrdSn);
-    try {
-      const ok = await confirm({
-        title: '포상 기록 삭제',
-        message: `'${item.rwardNm}' 포상 기록을 삭제합니다. 삭제한 기록은 복구할 수 없습니다.`,
-        confirmText: '삭제',
-        variant: 'destructive',
-      });
-      if (!ok) return;
-      await rewardAdminService.deleteReward(item.rwrdSn);
-      toast('포상 기록을 삭제했습니다.', 'success');
-      queryClient.invalidateQueries({ queryKey: ['admin-rewards'] });
-    } catch (error) {
-      toast(extractErrorMessage(error, '포상 기록 삭제에 실패했습니다.'), 'error');
-    } finally {
-      deletePendingRef.current = false;
-      setDeletingSn(null);
-    }
+    const { rwrdSn } = item;
+    if (rwrdSn === undefined) return;
+    await deleteFlight.runFor(rwrdSn, async () => {
+      try {
+        const ok = await confirm({
+          title: '포상 기록 삭제',
+          message: `'${item.rwardNm}' 포상 기록을 삭제합니다. 삭제한 기록은 복구할 수 없습니다.`,
+          confirmText: '삭제',
+          variant: 'destructive',
+        });
+        if (!ok) return;
+        await rewardAdminService.deleteReward(rwrdSn);
+        toast('포상 기록을 삭제했습니다.', 'success');
+        queryClient.invalidateQueries({ queryKey: ['admin-rewards'] });
+      } catch (error) {
+        toast(extractErrorMessage(error, '포상 기록 삭제에 실패했습니다.'), 'error');
+      }
+    });
   };
 
   /*
@@ -281,13 +279,13 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
       header: '관리',
       className: 'text-right w-28',
       accessor: (item: Reward) => {
-        const isDeleting = deletingSn !== null && deletingSn === item.rwrdSn;
+        const isDeleting = deleteFlight.pendingKey !== null && deleteFlight.pendingKey === item.rwrdSn;
         return (
           <div className="flex items-center justify-end gap-1 pr-2">
             <Button
               variant="ghost"
               size="icon"
-              disabled={deletingSn !== null || registerLoading}
+              disabled={deleteFlight.pendingKey !== null || registerLoading}
               aria-label={canUpdateReward ? `${item.rwardNm} 수정` : `${item.rwardNm} 상세 보기`}
               onClick={() => openEdit(item)}
               className="rounded-md text-muted-foreground"
@@ -298,7 +296,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
             <Button
               variant="ghost"
               size="icon"
-              disabled={deletingSn !== null}
+              disabled={deleteFlight.pendingKey !== null}
               aria-busy={isDeleting}
               aria-label={isDeleting ? `${item.rwardNm} 삭제 중` : `${item.rwardNm} 삭제`}
               onClick={() => { void handleDelete(item); }}
