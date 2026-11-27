@@ -1,12 +1,10 @@
 import { http, HttpResponse } from 'msw';
 import { contractJson } from '@/test-utils/contract-response';
-import {
-  getHeadMenuOperation,
-  getMeOperation,
-  getMyBookmarkStatusOperation,
-  getMyBookmarksOperation,
-  loginOperation,
-} from '@/types/generated-operations';
+// 색인(@/types/generated-operations)이 아니라 묶음 모듈에서 직접 가져온다 — 이 파일은 모든 시험의 공용 설정이 적재하므로, 색인을 쓰면
+//   MSW 를 쓰지 않는 시험까지 생성 계약 전체(모듈 130여 개)를 읽는다.
+import { loginOperation } from '@/types/generated-operations/auth-api-controller';
+import { getHeadMenuOperation, getMyBookmarkStatusOperation, getMyBookmarksOperation } from '@/types/generated-operations/menu';
+import { getMeOperation } from '@/types/generated-operations/user';
 
 // [2026-11-27] core 성공 응답은 contractJson 으로 생성 응답 계약을 먼저 통과해야 한다(src/test-utils/contract-response.ts). 게시판
 //   고정물은 게시판을 뺀 생성물에 operation 이 없어 여기서 import 하지 않는다 — 게시판 소유 시험(src/lib/board/__tests__/

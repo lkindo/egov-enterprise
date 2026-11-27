@@ -2,14 +2,27 @@
  * MSW 응답 고정물 계약 도우미와 그 래칫(2026-11-27, 품질 평가 A안 4번).
  *
  * 손으로 쓴 성공 JSON 고정물은 서버 계약이 바뀌어도 조용히 남아 화면 시험을 존재하지 않는 응답 모양으로 초록이 되게 한다.
- * contractJson 은 운영 코드와 같은 판정(parseGeneratedOperationResponse)으로 고정물을 먼저 읽어 보고, 래칫은 MSW 의 손으로 쓴 성공
- * JSON 이 늘지 않게 한다.
+ * contractJson 은 운영 코드와 같은 판정(parseGeneratedOperationResponse)으로 고정물을 먼저 읽어 보고, 래칫은 MSW 의 손으로 쓴 JSON
+ * 응답이 늘지 않게 한다.
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { assertContractFixture, contractJson } from './contract-response';
-import { getHeadMenuOperation, getMyBookmarkStatusOperation, removeBookmarkOperation } from '@/types/generated-operations';
+import {
+  assertContractFixture,
+  assertNoContractViolations,
+  contractJson,
+  takeContractViolations,
+} from './contract-response';
+import { getHeadMenuOperation, getMyBookmarkStatusOperation, removeBookmarkOperation } from '@/types/generated-operations/menu';
+
+/** 일부러 위반을 일으킨 뒤 기록을 비운다(비우지 않으면 시험 끝 검사가 그 위반으로 이 시험을 붉힌다). */
+function expectViolation(run: () => unknown, pattern: RegExp) {
+  expect(run).toThrow(pattern);
+  const recorded = takeContractViolations();
+  expect(recorded).toHaveLength(1);
+  expect(recorded[0]).toMatch(pattern);
+}
 
 describe('contractJson', () => {
   it('생성 응답 계약을 지키는 고정물은 성공 envelope 로 돌려준다', async () => {
@@ -17,85 +30,160 @@ describe('contractJson', () => {
     expect(await response.json()).toEqual({
       success: true, code: 'S000', message: '성공', data: { bookmarks: [], unavailableCount: 0 },
     });
+    expect(takeContractViolations()).toEqual([]);
   });
 
-  it('계약과 어긋난 고정물은 operation 과 어긋난 필드 경로를 밝혀 던진다', () => {
-    expect(() => contractJson(getMyBookmarkStatusOperation, { bookmarks: [], unavailableCount: '0' }))
-      .toThrow(/getMyBookmarkStatus.*unavailableCount/);
-    expect(() => contractJson(getHeadMenuOperation, { list: 'not-a-list' })).toThrow(/getHeadMenu.*list/);
+  it('계약과 어긋난 고정물은 operation 과 어긋난 필드 경로를 밝혀 던지고 기록한다', () => {
+    expectViolation(() => contractJson(getMyBookmarkStatusOperation, { bookmarks: [], unavailableCount: '0' }),
+      /getMyBookmarkStatus.*unavailableCount/);
+    expectViolation(() => contractJson(getHeadMenuOperation, { list: 'not-a-list' }), /getHeadMenu.*list/);
+  });
+
+  it('계약에 없는 키(선택 필드의 오타·옛 키)도 어긋남이다 — 운영 zod 는 그런 키를 조용히 버린다', () => {
+    expectViolation(() => contractJson(getMyBookmarkStatusOperation, { bookmarks: [], unavailableCount: 0, legacyCount: 1 }),
+      /getMyBookmarkStatus.*계약에 없는 키: legacyCount/);
   });
 
   it('void 응답은 data 없이 돌려주고, data 를 실으면 계약 위반이다', async () => {
     expect(await contractJson(removeBookmarkOperation).json()).toEqual({ success: true, code: 'S000', message: '성공' });
-    expect(() => contractJson(removeBookmarkOperation, { removed: true })).toThrow(/removeBookmark/);
+    expectViolation(() => contractJson(removeBookmarkOperation, { removed: true }), /removeBookmark/);
   });
 
-  it('실패 envelope 는 성공 계약이 아니다 — 실패 응답은 이 도우미 밖에서 만든다', () => {
-    expect(() => assertContractFixture(getMyBookmarkStatusOperation, { success: false, code: 'E400', message: '실패' }))
-      .toThrow(/getMyBookmarkStatus/);
+  it('실패 envelope 는 성공 계약이 아니다 — 원인을 envelope 로 밝힌다', () => {
+    expectViolation(() => assertContractFixture(getMyBookmarkStatusOperation, { success: false, code: 'E400', message: '실패' }),
+      /getMyBookmarkStatus.*envelope/);
+  });
+
+  it('기록된 위반은 시험 끝 검사가 실패로 올린다 — 처리기가 던진 오류를 MSW 가 500 으로 바꿔 삼켜도 붉어진다', () => {
+    expect(() => contractJson(getHeadMenuOperation, { list: 'x' })).toThrow();
+    expect(() => assertNoContractViolations()).toThrow(/MSW 고정물 계약 위반: .*getHeadMenu/);
+    expect(() => assertNoContractViolations()).not.toThrow();
   });
 });
 
-const SOURCE_ROOT = join(__dirname, '..');
-const HELPER_FILES = new Set(['test-utils/contract-response.ts', 'test-utils/contract-response.test.ts']);
+describe('공용 처리기(src/mocks/handlers.ts)의 core 고정물', () => {
+  // 화면 시험이 그 경로를 부를 때만 검사되면, 아무도 부르지 않는 고정물은 계약과 어긋난 채 남는다 — 여기서 직접 부른다.
+  it.each([
+    ['GET', '/api/v1/menus/head'],
+    ['GET', '/api/v1/menus/bookmarks'],
+    ['GET', '/api/v1/menus/bookmarks/status'],
+    ['GET', '/api/v1/users/me'],
+    ['POST', '/api/v1/auth/login'],
+  ])('%s %s 는 생성 응답 계약을 통과한다', async (method, path) => {
+    const response = await fetch(`http://localhost:8080${path}`, { method });
+    expect(response.status).toBe(200);
+    expect(takeContractViolations()).toEqual([]);
+  });
+});
+
+const FRONTEND_ROOT = join(__dirname, '..', '..');
+const SKIPPED_DIRECTORIES = new Set(['node_modules', '.next', 'coverage', 'dist', 'playwright-report', 'test-results']);
+const HELPER_FILES = new Set(['src/test-utils/contract-response.ts', 'src/test-utils/contract-response.test.ts']);
+
+/** 주석을 공백으로, 문자열·템플릿의 내용을 공백으로 바꾼다(따옴표와 위치는 그대로) — 주석·문자열 속 글자를 코드로 세지 않는다. */
+function blankCommentsAndStrings(source: string): string {
+  const out = source.split('');
+  let index = 0;
+  while (index < source.length) {
+    const char = source[index];
+    const next = source[index + 1];
+    if (char === '/' && next === '/') {
+      while (index < source.length && source[index] !== '\n') out[index++] = ' ';
+    } else if (char === '/' && next === '*') {
+      const end = source.indexOf('*/', index + 2);
+      const stop = end < 0 ? source.length : end + 2;
+      for (; index < stop; index += 1) if (source[index] !== '\n') out[index] = ' ';
+    } else if (char === '\'' || char === '"' || char === '`') {
+      index += 1;
+      while (index < source.length && source[index] !== char) {
+        if (source[index] === '\\') out[index++] = ' ';
+        if (source[index] !== '\n') out[index] = ' ';
+        index += 1;
+      }
+      index += 1;
+    } else {
+      index += 1;
+    }
+  }
+  return out.join('');
+}
+
+interface RawJsonResponse { route: string }
 
 /**
- * MSW 를 쓰는 파일에서 손으로 쓴 성공 JSON 응답(`HttpResponse.json(` 의 인자에 `success: true` 가 있는 것)의 수. 실패 응답
- * (`success: false`·오류 상태)과 `passthrough()` 는 세지 않는다.
+ * MSW 쪽 파일에서 손으로 만든 JSON 응답 — `HttpResponse.json(`·그 별칭·기본 `Response.json(` 호출이다. 인자가 리터럴로 `success: false`
+ * 인 실패 응답만 뺀다(변수로 넘긴 본문은 모양을 모르므로 센다). 각 응답은 앞의 가장 가까운 `http.<메서드>('<경로>'` 에 묶는다.
  */
-function countRawSuccessJson(source: string): number {
-  let count = 0;
-  const marker = 'HttpResponse.json(';
-  for (let index = source.indexOf(marker); index >= 0; index = source.indexOf(marker, index + marker.length)) {
+function rawJsonResponses(source: string): RawJsonResponse[] {
+  const code = blankCommentsAndStrings(source);
+  const aliases = [...source.matchAll(/\bHttpResponse\s+as\s+([A-Za-z_$][\w$]*)/g)].map((match) => match[1]);
+  const callee = new RegExp(`\\b(?:HttpResponse|Response${aliases.map((alias) => `|${alias}`).join('')})\\s*\\.\\s*json\\s*\\(`, 'g');
+  const routes = [...code.matchAll(/\bhttp\s*\.\s*(get|post|put|patch|delete|all|head|options)\s*\(\s*(['"`])/g)]
+    .map((match) => {
+      const [whole, method = '', quote = '\''] = match;
+      const quoteAt = (match.index ?? 0) + whole.length - 1;
+      const close = source.indexOf(quote, quoteAt + 1);
+      return { at: match.index ?? 0, route: `${method.toUpperCase()} ${source.slice(quoteAt + 1, close)}` };
+    });
+  const responses: RawJsonResponse[] = [];
+  for (const match of code.matchAll(callee)) {
+    const start = (match.index ?? 0) + match[0].length - 1;
     let depth = 0;
-    let end = index + marker.length - 1;
-    for (; end < source.length; end += 1) {
-      const char = source[end];
-      if (char === '(') depth += 1;
-      else if (char === ')') {
-        depth -= 1;
-        if (depth === 0) break;
-      }
+    let end = start;
+    for (; end < code.length; end += 1) {
+      if (code[end] === '(') depth += 1;
+      else if (code[end] === ')' && --depth === 0) break;
     }
-    if (/\bsuccess\s*:\s*true\b/.test(source.slice(index, end))) count += 1;
+    if (/\bsuccess\s*:\s*false\b/.test(code.slice(start, end))) continue;
+    const owner = routes.filter((route) => route.at < (match.index ?? 0)).at(-1);
+    responses.push({ route: owner?.route ?? '(경로 없음)' });
   }
-  return count;
+  return responses;
 }
 
 function mswSources(directory: string): string[] {
   return readdirSync(directory).flatMap((name) => {
     const path = join(directory, name);
-    if (statSync(path).isDirectory()) return name === 'node_modules' ? [] : mswSources(path);
-    return /\.(?:ts|tsx)$/.test(name) && /from ['"]msw['"]/.test(readFileSync(path, 'utf8')) ? [path] : [];
+    if (statSync(path).isDirectory()) return SKIPPED_DIRECTORIES.has(name) ? [] : mswSources(path);
+    if (!/\.(?:ts|tsx|mts|js|jsx)$/.test(name)) return [];
+    const text = readFileSync(path, 'utf8');
+    return /from\s+['"]msw(?:\/[\w-]+)?['"]|\bHttpResponse\b/.test(text) ? [path] : [];
   });
 }
 
-describe('MSW 성공 응답 래칫', () => {
-  it('손으로 쓴 성공 JSON 세기는 성공 응답만 센다', () => {
-    expect(countRawSuccessJson("HttpResponse.json({ success: true, code: 'S000', message: '성공', data: { list: [] } })")).toBe(1);
-    expect(countRawSuccessJson("HttpResponse.json({ success: false, code: 'E400' }, { status: 400 })")).toBe(0);
-    expect(countRawSuccessJson("contractJson(getHeadMenuOperation, { list: [] })")).toBe(0);
-    expect(countRawSuccessJson("HttpResponse.json({\n  success: true,\n  data: { nested: (1) },\n})")).toBe(1);
+describe('MSW 손으로 쓴 JSON 응답 래칫', () => {
+  it('성공·변수 본문·별칭·기본 Response 는 세고, 리터럴 실패 응답과 주석·문자열은 세지 않는다', () => {
+    const routesOf = (source: string) => rawJsonResponses(source).map(({ route }) => route);
+    expect(routesOf("http.get('*/a', () => HttpResponse.json({ success: true, data: { list: [] } }))")).toEqual(['GET */a']);
+    expect(routesOf("http.get('*/a', () => HttpResponse.json(body))")).toEqual(['GET */a']);
+    expect(routesOf("import { HttpResponse as Mock } from 'msw';\nhttp.post('*/b', () => Mock.json({ success: true }))")).toEqual(['POST */b']);
+    expect(routesOf("http.get('*/c', () => Response.json({ success: true }))")).toEqual(['GET */c']);
+    expect(routesOf("http.get('*/d', () => HttpResponse.json({ success: false, code: 'E400' }, { status: 400 }))")).toEqual([]);
+    expect(routesOf("// HttpResponse.json({ success: true })\nconst note = 'HttpResponse.json({ success: true })';")).toEqual([]);
+    expect(routesOf("http.get('*/e', () => contractJson(op, { list: [] }))")).toEqual([]);
+    expect(routesOf("http.get('*/f', () => HttpResponse.json({\n  success: true,\n  data: { nested: (1) },\n}))")).toEqual(['GET */f']);
   });
 
   /**
    * 허용 목록 — 게시판 고정물 2개는 게시판을 뺀 생성물에 operation 이 없어 공용 처리기가 contractJson 으로 import 할 수 없다. 대신
-   * 게시판 소유 시험(src/lib/board/__tests__/msw-board-list-fixture.test.ts)이 생성 응답 계약으로 대조한다. 이 목록을 줄였으면 함께
-   * 고친다(늘리지 않는다 — 새 성공 고정물은 contractJson 으로 쓴다).
+   * 게시판 소유 시험(src/lib/board/__tests__/msw-board-list-fixture.test.ts)이 이 두 경로를 생성 응답 계약으로 대조한다. 경로 단위로
+   * 묶어 다른 응답이 이 자리를 차지하지 못하게 한다. 목록은 줄이기만 한다(새 성공 고정물은 contractJson 으로 쓴다).
    */
-  const ALLOWED_RAW_SUCCESS_JSON: Record<string, number> = {
-    'mocks/handlers.ts': 2,
+  const ALLOWED_RAW_JSON: Record<string, number> = {
+    'src/mocks/handlers.ts#GET */api/v1/boards/options': 1,
+    'src/mocks/handlers.ts#GET */api/v1/boards/*': 1,
   };
 
-  it('MSW 의 성공 응답은 contractJson 을 거친다 — 손으로 쓴 성공 JSON 은 허용 목록보다 늘지 않는다', () => {
+  it('MSW 의 JSON 응답은 contractJson 을 거친다 — 손으로 쓴 응답은 허용 목록(파일·경로)을 넘지 않는다', () => {
     const actual: Record<string, number> = {};
-    for (const file of mswSources(SOURCE_ROOT)) {
-      const key = relative(SOURCE_ROOT, file).replaceAll('\\', '/');
+    for (const file of mswSources(FRONTEND_ROOT)) {
+      const key = relative(FRONTEND_ROOT, file).replaceAll('\\', '/');
       if (HELPER_FILES.has(key)) continue;
-      const count = countRawSuccessJson(readFileSync(file, 'utf8'));
-      if (count > 0) actual[key] = count;
+      for (const { route } of rawJsonResponses(readFileSync(file, 'utf8'))) {
+        actual[`${key}#${route}`] = (actual[`${key}#${route}`] ?? 0) + 1;
+      }
     }
     expect(actual, '새 MSW 성공 고정물은 contractJson(operation, data) 로 쓴다(src/test-utils/contract-response.ts)')
-      .toEqual(ALLOWED_RAW_SUCCESS_JSON);
+      .toEqual(ALLOWED_RAW_JSON);
   });
 });

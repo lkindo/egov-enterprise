@@ -3,6 +3,7 @@ import { vi, beforeAll, afterAll, afterEach } from 'vitest';
 import React from 'react';
 import { server } from './src/mocks/server';
 import { assertNoUnhandledRequests, watchUnhandledRequests } from './src/mocks/unhandled-requests';
+import { assertNoContractViolations } from './src/test-utils/contract-response';
 
 /*
  * [2026-10-26] 핸들러 없는 요청은 시험 실패다. 종전 'warn' 은 그 요청을 실제 네트워크(jsdom 기준 http://localhost:3000)로
@@ -15,14 +16,18 @@ beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 // 미처리 기록은 요청 뒤 핸들러 탐색을 마친 다음(마이크로태스크 여러 틱 뒤)에 생긴다. 한 번 양보한 뒤 검사해 그 시험의 요청을 그 시험에
 //   귀속시키고, 마지막 시험의 요청도 서버를 닫기 전에 본다(닫은 뒤에는 이벤트가 오지 않는다).
 const settle = () => new Promise<void>((resolve) => { setTimeout(resolve, 0); });
+// [2026-11-27] contractJson 이 거부한 고정물은 처리기 안에서 던져 MSW 가 HTTP 500 으로 바꾼다 — 앱 코드가 그 실패를 빈 목록처럼 삼켜도
+//   시험이 붉어지도록, 기록된 계약 위반을 미처리 요청과 같은 자리에서 실패로 올린다(src/test-utils/contract-response.ts).
 afterEach(async () => {
   server.resetHandlers();
   await settle();
   assertNoUnhandledRequests();
+  assertNoContractViolations();
 });
 afterAll(async () => {
   await settle();
   assertNoUnhandledRequests();
+  assertNoContractViolations();
   server.close();
 });
 
