@@ -1440,6 +1440,257 @@ test('an imported non-hook write function is still a sink, not a body the census
   }
 });
 
+test('every alternative handler is checked, not only the first (one component used with two handlers)', () => {
+  // 같은 파일 컴포넌트를 두 곳에서 다른 처리기로 쓰면 둘 다 그 버튼의 처리기다 — 처음 것(잠근 처리기)만 보면 잠그지 않은 쪽을 놓친다.
+  const subject = fixture({
+    'frontend/src/TwoRows.tsx': `
+      import { deleteService } from '@/services/deleteService';
+      function Row({ onDelete }){
+        return <><form role="search"><input /></form><button disabled={busy} aria-busy={busy} onClick={onDelete}>delete</button></>;
+      }
+      export function TwoRows(){
+        const lockedRef = useRef(false);
+        const lockedDelete = async () => {
+          if (lockedRef.current) return;
+          lockedRef.current = true;
+          try { await deleteService.deleteItem(1); } catch { setError('x'); } finally { lockedRef.current = false; }
+        };
+        const unlockedDelete = async () => {
+          try { await deleteService.deleteItem(2); } catch { setError('x'); }
+        };
+        return <><Row onDelete={lockedDelete} /><Row onDelete={unlockedDelete} /></>;
+      }
+    `,
+  });
+  try {
+    const action = subject.discovery.candidates.find(({ kind, owner }) => kind === 'secondary-action' && owner === 'Row');
+    assert.ok(action, 'the row button is a boundary');
+    assert.equal(action.signals.writeEvidence.length, 2, 'both handlers write');
+    assert.equal(action.signals.implementation.actionHandlerHasSynchronousRef, false);
+  } finally {
+    subject.cleanup();
+  }
+});
+
+test('a handler returned through useMemo or an inline arrow property still resolves', () => {
+  // 훅이 반환 객체를 useMemo 로 감싸거나 `{ archive: (id) => remove(id) }` 처럼 인라인 함수로 돌려줘도 그 처리기를 따라간다.
+  const subject = fixture({
+    'frontend/src/MemoOwner.tsx': `
+      import { useMemo, useRef } from 'react';
+      import { deleteService } from '@/services/deleteService';
+      function useRowActions(){
+        const pendingRef = useRef(false);
+        const remove = async (id) => {
+          if (pendingRef.current) return;
+          pendingRef.current = true;
+          try { await deleteService.deleteItem(id); } catch { setError('x'); } finally { pendingRef.current = false; }
+        };
+        return useMemo(() => ({ remove, archive: (id) => remove(id) }), [remove]);
+      }
+      export function MemoOwner(){
+        const { remove, archive } = useRowActions();
+        return <><form role="search"><input /></form>
+          <button disabled={busy} aria-busy={busy} onClick={remove}>delete</button>
+          <button disabled={busy} aria-busy={busy} onClick={archive}>archive</button></>;
+      }
+    `,
+  });
+  try {
+    const actions = subject.discovery.candidates.filter(({ kind, owner }) => kind === 'secondary-action' && owner === 'MemoOwner');
+    assert.equal(actions.length, 2, 'both buttons are boundaries');
+    for (const action of actions) assert.equal(action.signals.implementation.actionHandlerHasSynchronousRef, true);
+  } finally {
+    subject.cleanup();
+  }
+});
+
+test('props passed by a JSX spread or an inline arrow attribute resolve to the parent handler', () => {
+  const subject = fixture({
+    'frontend/src/SpreadOwner.tsx': `
+      import { deleteService } from '@/services/deleteService';
+      function SpreadRow({ onDelete }){
+        return <><form role="search"><input /></form><button disabled={busy} aria-busy={busy} onClick={onDelete}>delete</button></>;
+      }
+      function ArrowRow({ onArchive }){
+        return <><form role="search"><input /></form><button disabled={busy} aria-busy={busy} onClick={onArchive}>archive</button></>;
+      }
+      export function SpreadOwner({ id }){
+        const removeItem = async () => { try { await deleteService.deleteItem(id); } catch { setError('x'); } };
+        const rowProps = { onDelete: removeItem };
+        return <><SpreadRow {...rowProps} /><ArrowRow onArchive={() => removeItem()} /></>;
+      }
+    `,
+  });
+  try {
+    const sinksOf = (owner) => subject.discovery.candidates
+      .find((candidate) => candidate.kind === 'secondary-action' && candidate.owner === owner)?.writeSinks;
+    assert.deepEqual(sinksOf('SpreadRow'), ['deleteService.deleteItem']);
+    assert.deepEqual(sinksOf('ArrowRow'), ['deleteService.deleteItem']);
+  } finally {
+    subject.cleanup();
+  }
+});
+
+test('a member of a hook object from another file reaches its write handler and its pending state', () => {
+  // `actions.cleanup()`·`onClick={actions.cleanup}`·`actions.pending` — 훅 객체를 구조 분해하지 않고 멤버로 써도 처리기·대기 상태를
+  // 따라간다. setter 이름이 관례(setPending)와 달라도 그 상태의 setter 를 찾는다.
+  const subject = fixture({
+    'frontend/src/hooks/use-cleanup.ts': `
+      import { useRef, useState } from 'react';
+      import { cleanupService } from '@/services/cleanupService';
+      export function useCleanup(){
+        const pendingRef = useRef(false);
+        const [pending, markPending] = useState(false);
+        const cleanup = async () => {
+          if (pendingRef.current) return;
+          pendingRef.current = true;
+          markPending(true);
+          try { await cleanupService.deleteAll(); } catch { setError('cleanup failed'); }
+          finally { pendingRef.current = false; markPending(false); }
+        };
+        return { cleanup, pending };
+      }
+    `,
+    'frontend/src/Panel.tsx': `
+      import { useCleanup } from '@/hooks/use-cleanup';
+      export function Panel(){
+        const actions = useCleanup();
+        return <><form role="search"><input /></form>
+          <button disabled={actions.pending} aria-busy={actions.pending} onClick={() => { void actions.cleanup(); }}>cleanup</button>
+          <button disabled={actions.pending} aria-busy={actions.pending} onClick={actions.cleanup}>cleanup again</button></>;
+      }
+    `,
+  });
+  try {
+    const actions = subject.discovery.candidates.filter(({ kind, owner }) => kind === 'secondary-action' && owner === 'Panel');
+    assert.equal(actions.length, 2, 'both member forms are boundaries');
+    for (const action of actions) {
+      assert.deepEqual(action.signals.writeEvidence, ['frontend/src/hooks/use-cleanup.ts:11:cleanupService.deleteAll']);
+      assert.equal(action.signals.implementation.actionHandlerHasSynchronousRef, true);
+      assert.equal(action.signals.implementation.actionControlHasDisabled, true);
+      assert.equal(action.signals.implementation.actionControlHasAriaBusy, true);
+    }
+  } finally {
+    subject.cleanup();
+  }
+});
+
+test('a tool hook body (toast) followed from another file lends no pending identity', () => {
+  // 다른 파일 훅이 돌려준 값은 쓰기를 가진 처리기일 때만 따라간다 — 토스트 훅 본문의 `sonnerToast.loading` 을 이 버튼의 대기
+  // 상태로 적지 않는다.
+  const subject = fixture({
+    'frontend/src/components/ui/toast.tsx': `
+      import { useCallback, useMemo } from 'react';
+      import { toast as sonnerToast } from 'sonner';
+      export const useToast = () => {
+        const toast = useCallback((message, type) => { if (type === 'loading') sonnerToast.loading(message); else sonnerToast(message); }, []);
+        return useMemo(() => ({ toast }), [toast]);
+      };
+    `,
+    'frontend/src/MailPanel.tsx': `
+      import { useMutation } from '@tanstack/react-query';
+      import { useToast } from '@/components/ui/toast';
+      import { mailService } from '@/services/mailService';
+      export function MailPanel(){
+        const { toast } = useToast();
+        const removeMutation = useMutation({ mutationFn: (id) => mailService.deleteMail(id), onError: () => toast('failed', 'error') });
+        return <><form role="search"><input /></form>
+          <button disabled={removeMutation.isPending} aria-busy={removeMutation.isPending} onClick={() => removeMutation.mutate(1)}>delete</button></>;
+      }
+    `,
+  });
+  try {
+    const action = subject.discovery.candidates.find(({ kind, owner }) => kind === 'secondary-action' && owner === 'MailPanel');
+    assert.ok(action);
+    assert.deepEqual(action.signals.implementation.actionControlPendingIdentities, ['removeMutation.isPending']);
+  } finally {
+    subject.cleanup();
+  }
+});
+
+test('a pending state from another instance of the same hook does not link to the handler', () => {
+  // 같은 훅을 두 번 부르면 인스턴스가 둘이다 — 다른 인스턴스의 대기 상태는 이 처리기가 진행 중인지 말해 주지 않는다.
+  const subject = fixture({
+    'frontend/src/TwoInstances.tsx': `
+      import { useState } from 'react';
+      import { deleteService } from '@/services/deleteService';
+      function useDeleteActions(){
+        const [deleting, setDeleting] = useState(false);
+        const handleDelete = async () => {
+          setDeleting(true);
+          try { await deleteService.deleteItem(1); } catch { setError('x'); } finally { setDeleting(false); }
+        };
+        return { deleting, handleDelete };
+      }
+      export function TwoInstances(){
+        const { handleDelete } = useDeleteActions();
+        const { deleting } = useDeleteActions();
+        return <><form role="search"><input /></form><button disabled={deleting} aria-busy={deleting} onClick={handleDelete}>delete</button></>;
+      }
+      export function OneInstance(){
+        const { deleting, handleDelete } = useDeleteActions();
+        return <><form role="search"><input /></form><button disabled={deleting} aria-busy={deleting} onClick={handleDelete}>delete</button></>;
+      }
+    `,
+  });
+  try {
+    const implementationOf = (owner) => subject.discovery.candidates
+      .find((candidate) => candidate.kind === 'secondary-action' && candidate.owner === owner)?.signals.implementation;
+    assert.equal(implementationOf('TwoInstances')?.actionControlHasAriaBusy, false);
+    assert.equal(implementationOf('TwoInstances')?.actionControlHasDisabled, false);
+    assert.equal(implementationOf('OneInstance')?.actionControlHasAriaBusy, true);
+    assert.equal(implementationOf('OneInstance')?.actionControlHasDisabled, true);
+  } finally {
+    subject.cleanup();
+  }
+});
+
+test('claim and release helpers from different instances of a lock hook do not form a lock', () => {
+  // 한 인스턴스의 해제는 다른 인스턴스의 획득을 풀지 않는다 — 두 번째 누름이 첫 획득에 막혀 영영 풀리지 않거나, 반대로 막지 못한다.
+  const subject = fixture({
+    'frontend/src/LockInstances.tsx': `
+      import { useRef } from 'react';
+      import { deleteService } from '@/services/deleteService';
+      function useActionLock(){
+        const actionRequestRef = useRef(false);
+        const beginAction = () => {
+          if (actionRequestRef.current) return false;
+          actionRequestRef.current = true;
+          return true;
+        };
+        const finishAction = () => { actionRequestRef.current = false; };
+        return { beginAction, finishAction };
+      }
+      export function SplitLock(){
+        const { beginAction } = useActionLock();
+        const { finishAction } = useActionLock();
+        const handleDelete = async () => {
+          if (!beginAction()) return;
+          try { await deleteService.deleteItem(); } catch { setError('delete failed'); } finally { finishAction(); }
+        };
+        return <><form role="search"><input /></form><button disabled={busy} aria-busy={busy} onClick={handleDelete}>delete</button></>;
+      }
+      export function SharedLock(){
+        const lock = useActionLock();
+        const { beginAction, finishAction } = lock;
+        const handleDelete = async () => {
+          if (!beginAction()) return;
+          try { await deleteService.deleteItem(); } catch { setError('delete failed'); } finally { finishAction(); }
+        };
+        return <><form role="search"><input /></form><button disabled={busy} aria-busy={busy} onClick={handleDelete}>delete</button></>;
+      }
+    `,
+  });
+  try {
+    const lockOf = (owner) => subject.discovery.candidates
+      .find((candidate) => candidate.kind === 'secondary-action' && candidate.owner === owner)?.signals.implementation.actionHandlerHasSynchronousRef;
+    assert.equal(lockOf('SplitLock'), false);
+    assert.equal(lockOf('SharedLock'), true);
+  } finally {
+    subject.cleanup();
+  }
+});
+
 test('secondary action lock can claim and release the same key in a Set ref', () => {
   const subject = fixture({
     'frontend/src/PerItemLockOwner.tsx': `

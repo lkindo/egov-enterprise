@@ -42,10 +42,13 @@ pnpm -C frontend run lint
 
 census 는 단추·폼의 처리기 이름을 그 이름이 쓰인 자리의 TypeScript 심볼로 따라가 쓰기·동기 잠금·처리 중 표시를 본다(2026-11-27, 파일 안 첫 같은 이름 선언을 빌리던 이름 검색을 바꿨다). 판정 규칙은 그대로다.
 
-- 같은 파일 안: 지역 선언, 같은 파일 훅이 돌려준 객체에서 구조 분해한 처리기, 같은 파일 컴포넌트·함수에 props·인자로 넘긴 처리기를 따라간다.
-- 다른 파일의 훅(`use…`): 그 훅이 돌려준 처리기와 상태(`[state, setState] = useState()` 의 setter 포함)를 따라간다. 쓰기 증거는 훅 파일의 줄로 적고, 쓰기 호출은 그 호출이 있는 파일의 import 로 판정한다. 처리기를 훅 파일로 옮겨도 경계가 남는다.
+- 같은 파일 안: 지역 선언, 같은 파일 훅이 돌려준 객체에서 구조 분해한 처리기, 같은 파일 컴포넌트·함수에 props·인자로 넘긴 처리기를 따라간다. 반환 객체를 `useMemo` 로 감싸거나 인라인 함수(`{ archive: (id) => remove(id) }`)로 돌려줘도, props 를 JSX 스프레드(`{...rowProps}`)나 인라인 화살표 속성(`onArchive={() => remove(id)}`)으로 넘겨도 같다. 값이 여럿이면(조건식, 같은 컴포넌트를 다른 처리기로 두 번 씀) 모두 본다.
+- 훅 객체의 멤버(`actions.cleanup()`·`onClick={actions.cleanup}`·`disabled={actions.pending}`)도 구조 분해와 같이 따라간다.
+- 다른 파일의 훅(`use…`): 그 훅이 돌려준 처리기와 상태(`[state, setState] = useState()` 의 setter 포함)를 따라간다. 쓰기 증거는 훅 파일의 줄로 적고, 쓰기 호출은 그 호출이 있는 파일의 import 로 판정한다. 처리기를 훅 파일로 옮겨도 경계가 남는다. 다만 다른 파일 값은 쓰기를 가진 처리기일 때만 따라간다 — 토스트·확인 대화 같은 도구 훅의 본문은 처리기 계약에 넣지 않는다.
+- 같은 훅을 두 번 부르면 인스턴스가 둘이다. 대기 상태는 처리기가 쓰는 인스턴스의 것이어야 처리 중 표시로 보고, 잠금 획득·해제 도우미도 같은 인스턴스여야 잠금으로 본다. 인스턴스는 `useWriteActions({ lock })` 처럼 인자·props 로 넘겨도 따라간다.
 - 다른 파일에서 가져온 서비스·액션 함수는 쓰기 지점이다. census 는 그 함수 본문에 들어가지 않는다.
 - 다른 파일 컴포넌트에 넘기는 쓰기 처리기는 부모 쪽 속성 이름으로만 따라간다(`handle…`·`onClick`·`onSave` → 자식 정의의 같은 이름 컨트롤). 화면을 다른 파일의 하위 컴포넌트로 나눌 때는 이 이름 관례를 지킨다.
+- 남은 경계: 폼 없는 편집 화면(formless-write) 경계는 그 컴포넌트 본문에 쓰기 호출이 있어야 잡힌다 — 쓰기를 다른 파일 훅으로 옮기면 그 경계는 빠지고, 단추(onClick·onSave·handle…)로 부르는 쓰기만 보조 동작 경계로 남는다. 그런 분해는 옮기기 전후 `--print-draft` 결과를 비교하고, 빠지면 처리기를 컨트롤 파일에 두거나 보조 동작 컨트롤로 잇는다. `disabled` 식의 대기 상태 극성(`!pending`)은 보지 않는다.
 
 ## RED 증명
 
@@ -65,6 +68,8 @@ census 는 단추·폼의 처리기 이름을 그 이름이 쓰인 자리의 Typ
 - 성공 toast와 빈 `catch`를 실패 feedback으로 위장하거나, 같은 source의 다른 handler/control에만 있는 ref·feedback으로 compliance를 주장
 - 같은 파일의 다른 컴포넌트에 있는 같은 이름 처리기의 잠금을 빌리거나, 같은 파일 훅에서 구조 분해한 처리기를 같은 이름의 다른 지역 함수로 판정
 - 쓰기 처리기를 다른 파일의 훅으로 옮겨 경계·잠금·처리 중 표시를 잃음
+- 여러 대안 처리기 중 처음 것만 보거나, `useMemo` 반환·JSX 스프레드·인라인 화살표 속성·훅 객체 멤버로 넘긴 처리기를 놓침
+- 같은 훅의 다른 인스턴스에서 대기 상태나 잠금 해제를 빌리거나, 도구 훅(토스트) 본문의 이름을 대기 상태로 적음
 - `StandardDataTable bulkActions={localVariable}` callback이나 `axios.delete` sink를 ledger에서 누락
 - custom child Form parent aggregate, child로 전달되는 `handle*` write callback, 가입·추천 action을 ledger에서 누락
 - action 행동 assertion을 여러 test block에 분산하거나, 같은 block 안에서 다른 sink·control의 assertion을 차용

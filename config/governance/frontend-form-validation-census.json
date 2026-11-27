@@ -8,8 +8,8 @@
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 27,
-    "secondaryActionBoundaries": 91,
-    "candidateCount": 197
+    "secondaryActionBoundaries": 92,
+    "candidateCount": 198
   },
   "entries": [
     {
@@ -3086,6 +3086,26 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/components/layout/__tests__/NavBookmarkToggle.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/components/layout/sidebar.tsx#Sidebar.inline-action[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/components/layout/sidebar.tsx",
+      "owner": "Sidebar",
+      "handler": "inline-action",
+      "writeSinks": [
+        "mutation.mutateAsync"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/components/layout/__tests__/sidebar-load-state.test.tsx"
       ]
     },
     {
