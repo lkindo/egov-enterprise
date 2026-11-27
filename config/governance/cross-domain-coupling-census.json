@@ -199,6 +199,37 @@
       ]
     },
     {
+      "file": "informalsanction/InformalSanctionNotifier.java",
+      "owner": "informalsanction",
+      "target": "user",
+      "module": "business-core",
+      "types": [
+        "nuri.business.domain.user.entity.User",
+        "nuri.business.domain.user.repository.UserRepository"
+      ]
+    },
+    {
+      "file": "informalsanction/InformalSanctionPageAssembler.java",
+      "owner": "informalsanction",
+      "target": "code",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.code.CommonCodeService",
+        "nuri.business.service.code.dto.CommonCodeDto"
+      ]
+    },
+    {
+      "file": "informalsanction/InformalSanctionPageAssembler.java",
+      "owner": "informalsanction",
+      "target": "user",
+      "module": "business-core",
+      "types": [
+        "nuri.business.domain.user.entity.User",
+        "nuri.business.domain.user.repository.UserRepository",
+        "nuri.business.service.user.dto.UserSearchDto"
+      ]
+    },
+    {
       "file": "informalsanction/InformalSanctionService.java",
       "owner": "informalsanction",
       "target": "user",
