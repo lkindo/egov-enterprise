@@ -292,8 +292,10 @@ axiosInstance.interceptors.response.use(
         isRetrying = false;
 
         if (typeof window !== 'undefined' && !superseded) {
-          const reissueStatus = (reissueError as AxiosError | undefined)?.response?.status;
-          if (reissueStatus === 401 || reissueStatus === 403) {
+          const response = (reissueError as AxiosError<unknown> | undefined)?.response;
+          const failure = authReissueResponseSchema.safeParse(response?.data);
+          if ((response?.status === 401 || response?.status === 403)
+            && failure.success && !failure.data.success && failure.data.code === 'SESSION_EXPIRED') {
             // 재발급 거절이 확정되면 로그인 화면이 열리기 전에 이전 화면의 응답과 새 재발급을 막는다.
             markSignedOut();
             advanceAuthorizationRequestEpoch();

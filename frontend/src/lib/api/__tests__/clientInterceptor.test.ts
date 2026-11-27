@@ -31,6 +31,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
 
 const authorization = { groups: ['USER'], permissions: [], authorizationVersion: 'v1' };
+const expiredReissue = { success: false, code: 'SESSION_EXPIRED', message: 'refresh rejected' };
 
 type Handler = (arg: unknown) => Promise<unknown>;
 
@@ -318,7 +319,7 @@ describe('API 클라이언트 인터셉터', () => {
         if (transition === 'signed-out') state.markSignedOut();
         else if (transition === 'epoch') state.advanceAuthorizationRequestEpoch();
         else endTransition = state.beginSessionTransition();
-        rejectReissue(Object.assign(new Error('reissue 401'), { response: { status: 401 } }));
+        rejectReissue(Object.assign(new Error('reissue 401'), { response: { status: 401, data: expiredReissue } }));
         try {
           await expect(pending).rejects.toMatchObject({ name: 'CanceledError' });
           expect(win.location.href, transition).toBe('');
@@ -349,7 +350,7 @@ describe('API 클라이언트 인터셉터', () => {
       const { instance, captured } = await loadClient();
       const initial = await captured.requestOk!({ url: '/notifications', headers: {} });
       const inFlight = await captured.requestOk!({ url: '/auth/me', headers: {} });
-      const denied = Object.assign(new Error('refresh rejected'), { response: { status } });
+      const denied = Object.assign(new Error('refresh rejected'), { response: { status, data: expiredReissue } });
       instance.post.mockRejectedValue(denied);
 
       await expect(captured.responseErr!({ config: initial, response: { status: 401 } })).rejects.toBe(denied);
@@ -366,17 +367,21 @@ describe('API 클라이언트 인터셉터', () => {
       expect(authCheckResult).toBe(authCheckError);
     });
 
-    it('일시적 재발급 실패로 로그인 이동을 시도해도 이전 화면에 남으면 다시 재발급할 수 있다', async () => {
+    it.each([
+      { name: '네트워크 단절', response: undefined },
+      { name: '일시적 서비스 장애', response: { status: 502, data: { success: false, code: 'REISSUE_PROXY_ERROR', message: 'proxy down' } } },
+      { name: 'Origin 검사 거절', response: { status: 403, data: { success: false, code: 'INVALID_ORIGIN', message: 'untrusted origin' } } },
+    ])('$name 뒤 로그인 이동을 시도해도 이전 화면에 남으면 다시 재발급할 수 있다', async ({ response }) => {
       const win = { location: { pathname: '/admin', href: '' }, dispatchEvent: vi.fn() };
       Object.defineProperty(globalThis, 'window', { value: win, configurable: true, writable: true });
       const { instance, captured } = await loadClient();
       const initial = await captured.requestOk!({ url: '/x', headers: {} });
-      const networkError = new Error('network down');
-      instance.post.mockRejectedValueOnce(networkError);
+      const reissueError = Object.assign(new Error('reissue failed'), { response });
+      instance.post.mockRejectedValueOnce(reissueError);
 
       await expect(
         captured.responseErr!({ response: { status: 401 }, config: initial })
-      ).rejects.toBe(networkError);
+      ).rejects.toBe(reissueError);
 
       expect(win.location.href).toContain('/login?expired=true');
       expect(win.location.pathname).toBe('/admin');
