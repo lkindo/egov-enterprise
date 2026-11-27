@@ -906,9 +906,24 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     const body = service.slice(start, end);
     expect(body).toContain('requireVersion(before.version(),expectedVersion)');
     expect(body).toContain('RESERVED.contains(code)');
-    expect(body).toMatch(/SELECT count\(\*\) FROM tb_authrt_user_map[\s\S]*RESOURCE_IN_USE/);
-    expect(body.indexOf('RESOURCE_IN_USE')).toBeLessThan(body.indexOf('DELETE FROM tb_authrt_info'));
+    // [2026-11-27] 자료 접근 SQL 은 AuthorizationAdministrationDao 로 옮겼다(문장 그대로). 배정 수 확인(거부) → 그룹 삭제 순서는
+    //   서비스 본문에서, 각 SQL 은 DAO 의 그 메서드에서 본다 — 종전 계약과 같은 것을 같은 강도로 지킨다.
+    expect(body).toMatch(/dao\.countGroupAssignments\(code\)[\s\S]*RESOURCE_IN_USE/);
+    expect(body.indexOf('RESOURCE_IN_USE')).toBeLessThan(body.indexOf('dao.deleteGroup(code)'));
+    expect(body).not.toContain('deleteMembership(');
     expect(body).not.toContain('DELETE FROM tb_authrt_user_map');
+
+    const dao = codeOfRepo(
+      'business-core/src/main/java/nuri/business/service/auth/AuthorizationAdministrationDao.java',
+    );
+    const daoMethod = (signature: string) => {
+      const methodStart = dao.indexOf(signature);
+      expect(methodStart, `DAO 의 ${signature} 를 찾지 못했다 — 계약이 vacuous 하다`).toBeGreaterThan(-1);
+      return dao.slice(methodStart, dao.indexOf('\n    }', methodStart));
+    };
+    expect(daoMethod('Long countGroupAssignments(String code)')).toContain('SELECT count(*) FROM tb_authrt_user_map WHERE authrt_cd=?');
+    expect(daoMethod('void deleteGroup(String code)')).toContain('DELETE FROM tb_authrt_info WHERE authrt_cd=?');
+    expect(daoMethod('void deleteGroup(String code)')).not.toContain('tb_authrt_user_map');
   });
 
   it('권한별 메뉴 화면이 계층을 실제로 가진 API 에서 가져온다', () => {
