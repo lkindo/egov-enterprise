@@ -110,9 +110,40 @@ function blankCommentsAndStrings(source: string): string {
 
 interface RawJsonResponse { route: string }
 
+const SUCCESS_KEYS = ['success', '"success"', '\'success\''];
+
 /**
- * MSW 쪽 파일에서 손으로 만든 JSON 응답 — `HttpResponse.json(`·그 별칭·기본 `Response.json(` 호출이다. 인자가 리터럴로 `success: false`
- * 인 실패 응답만 뺀다(변수로 넘긴 본문은 모양을 모르므로 센다). 각 응답은 앞의 가장 가까운 `http.<메서드>('<경로>'` 에 묶는다.
+ * 첫 인자가 최상위 키 `success: false`(따옴표 키 포함)를 가진 객체 리터럴인가 — 중첩 객체 속 `success: false`(예: `data.success`)나
+ * 삼항식 `cond ? success : false` 는 실패 응답 표지가 아니다. 깊이는 문자열을 비운 code 로 세고, 키 글자는 원문에서 읽는다.
+ */
+function literalFailureBody(source: string, code: string, open: number): boolean {
+  let index = open + 1;
+  while (/\s/.test(code[index] ?? '')) index += 1;
+  if (code[index] !== '{') return false;
+  let depth = 0;
+  for (; index < code.length; index += 1) {
+    const char = code[index];
+    if (char === '{' || char === '[' || char === '(') {
+      depth += 1;
+    } else if (char === '}' || char === ']' || char === ')') {
+      depth -= 1;
+      if (depth === 0) return false;
+    } else if (depth === 1) {
+      const key = SUCCESS_KEYS.find((candidate) => source.startsWith(candidate, index));
+      if (key === undefined) continue;
+      let before = index - 1;
+      while (before > 0 && /\s/.test(code[before] ?? '')) before -= 1;
+      if ((code[before] === '{' || code[before] === ',') && /^\s*:\s*false\b/.test(source.slice(index + key.length, index + key.length + 20))) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * MSW 쪽 파일에서 손으로 만든 JSON 응답 — `HttpResponse.json(`·그 별칭·기본 `Response.json(` 호출이다. 첫 인자가 최상위 `success: false`
+ * 객체 리터럴인 실패 응답만 뺀다(변수로 넘긴 본문은 모양을 모르므로 센다). 각 응답은 앞의 가장 가까운 `http.<메서드>('<경로>'` 에 묶는다.
  */
 function rawJsonResponses(source: string): RawJsonResponse[] {
   const code = blankCommentsAndStrings(source);
@@ -127,14 +158,8 @@ function rawJsonResponses(source: string): RawJsonResponse[] {
     });
   const responses: RawJsonResponse[] = [];
   for (const match of code.matchAll(callee)) {
-    const start = (match.index ?? 0) + match[0].length - 1;
-    let depth = 0;
-    let end = start;
-    for (; end < code.length; end += 1) {
-      if (code[end] === '(') depth += 1;
-      else if (code[end] === ')' && --depth === 0) break;
-    }
-    if (/\bsuccess\s*:\s*false\b/.test(code.slice(start, end))) continue;
+    const open = (match.index ?? 0) + match[0].length - 1;
+    if (literalFailureBody(source, code, open)) continue;
     const owner = routes.filter((route) => route.at < (match.index ?? 0)).at(-1);
     responses.push({ route: owner?.route ?? '(경로 없음)' });
   }
@@ -162,6 +187,17 @@ describe('MSW 손으로 쓴 JSON 응답 래칫', () => {
     expect(routesOf("// HttpResponse.json({ success: true })\nconst note = 'HttpResponse.json({ success: true })';")).toEqual([]);
     expect(routesOf("http.get('*/e', () => contractJson(op, { list: [] }))")).toEqual([]);
     expect(routesOf("http.get('*/f', () => HttpResponse.json({\n  success: true,\n  data: { nested: (1) },\n}))")).toEqual(['GET */f']);
+  });
+
+  it('실패 표지는 첫 인자의 최상위 키만 본다 — 따옴표 키는 실패, 중첩 data.success·삼항식은 성공 응답으로 센다', () => {
+    const routesOf = (source: string) => rawJsonResponses(source).map(({ route }) => route);
+    expect(routesOf("http.get('*/g', () => HttpResponse.json({ \"success\": false, \"code\": 'E400' }, { status: 400 }))")).toEqual([]);
+    expect(routesOf("http.get('*/g', () => HttpResponse.json({ 'success': false }, { status: 400 }))")).toEqual([]);
+    expect(routesOf("http.get('*/g', () => HttpResponse.json({ ...base, success: false }))")).toEqual([]);
+    expect(routesOf("http.get('*/h', () => HttpResponse.json({ success: true, data: { success: false } }))")).toEqual(['GET */h']);
+    expect(routesOf("http.get('*/h', () => HttpResponse.json({ success: true, data: [{ success: false }] }))")).toEqual(['GET */h']);
+    expect(routesOf("http.get('*/h', () => HttpResponse.json({ success: ok ? success : false }))")).toEqual(['GET */h']);
+    expect(routesOf("http.get('*/h', () => HttpResponse.json(body, { success: false }))")).toEqual(['GET */h']);
   });
 
   /**
