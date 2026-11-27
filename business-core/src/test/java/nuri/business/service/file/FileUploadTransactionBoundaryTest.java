@@ -307,6 +307,64 @@ class FileUploadTransactionBoundaryTest {
         assertThat(directory.resolve("general/123").resolve(storedName.get())).doesNotExist();
     }
 
+    @Test
+    void standaloneAppendRunsStorageIoOutsideTransactionsAndReverifiesAuthorizationUnderLock() throws Exception {
+        given(masters.findById(123L)).willReturn(Optional.of(master));
+        FileDetail existing = FileDetail.builder().fileMaster(master).atchFileSeq(4).build();
+        given(details.findByFileMaster(master)).willReturn(List.of(existing));
+        List<Boolean> txStatesDuringStore = new ArrayList<>();
+        List<String> storedNames = new ArrayList<>();
+        doAnswer(inv -> {
+            txStatesDuringStore.add(TransactionSynchronizationManager.isActualTransactionActive());
+            String name = (String) inv.callRealMethod();
+            storedNames.add(name);
+            return name;
+        }).when(storage).store(any(), anyString());
+
+        fileService.updateFiles(123L, List.of(validJpeg("append.jpg")));
+
+        assertThat(txStatesDuringStore).containsExactly(false);
+        assertThat(txManager.readOnlyFlags).containsExactly(true, false);
+        assertThat(txManager.commits).isEqualTo(2);
+        assertThat(txManager.rollbacks).isZero();
+        var order = inOrder(masters, policy, storage, details);
+        order.verify(masters).findById(123L);
+        order.verify(policy).assertAppendable(master);
+        order.verify(storage).store(any(), org.mockito.ArgumentMatchers.eq("general/123"));
+        order.verify(masters).findByIdForUpdate(123L);
+        order.verify(policy).assertAppendable(master);
+        var captor = org.mockito.ArgumentCaptor.forClass(FileDetail.class);
+        order.verify(details).save(captor.capture());
+        assertThat(captor.getValue().getAtchFileSeq()).isEqualTo(5);
+        assertThat(directory.resolve("general/123").resolve(storedNames.getFirst())).exists();
+    }
+
+    @Test
+    void standaloneAppendCompensatesStoredFileWithoutDeletingExistingMasterWhenPhase3AuthFails() {
+        given(masters.findById(123L)).willReturn(Optional.of(master));
+        AtomicReference<String> storedName = new AtomicReference<>();
+        doAnswer(inv -> {
+            String name = (String) inv.callRealMethod();
+            storedName.set(name);
+            return name;
+        }).when(storage).store(any(), anyString());
+        org.mockito.Mockito.doNothing()
+                .doThrow(new nuri.foundation.core.exception.BusinessException(
+                        nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED))
+                .when(policy).assertAppendable(master);
+
+        assertThatThrownBy(() -> fileService.updateBoardFiles(123L, List.of(validJpeg("toctou.jpg"))))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED);
+
+        assertThat(directory.resolve("general/123").resolve(storedName.get())).doesNotExist();
+        verify(masters, never()).delete(any());
+        verify(details, never()).save(any());
+        assertThat(txManager.commits).isEqualTo(1);
+        assertThat(txManager.rollbacks).isEqualTo(1);
+    }
+
     private static MockMultipartFile validJpeg(String name) {
         return new MockMultipartFile(
                 "files",

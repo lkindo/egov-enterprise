@@ -51,6 +51,8 @@ export default defineConfig({
         //   676개 파일·lines 87.80 / branches 79.74 / statements 85.54 / functions 82.58 이고 하한은 그대로다.
         'src/queries/**',
         'src/extensions/**',
+        // [2026-11-27] 보안·JWT·CSP·BFF 인가 경계를 담당하는 루트 프록시도 커버리지 분모에 편입한다.
+        'src/proxy.ts',
       ],
       exclude: [
         '**/*.test.{ts,tsx}',
