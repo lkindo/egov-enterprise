@@ -497,17 +497,43 @@ function callsDeclaration(call, declaration) {
   if (Node.isParameterDeclaration(declaration)) return (callee.getSymbol()?.getDeclarations() ?? []).includes(declaration);
   return declarationsOfIdentifier(callee).includes(declaration);
 }
-/** 호출이 await 로 기다려지는가(괄호는 벗긴다) — 감싸기 함수의 finally 해제가 콜백의 끝 뒤에 오는지 본다. */
+/**
+ * 호출이 await 로 기다려지는가 — 감싸기 함수의 finally 해제가 콜백의 끝 뒤에 오는지 본다. 괄호와 Promise 사슬
+ * (`await task().finally(cleanup)`)을 거쳐 올라간다.
+ */
 function isAwaitedCall(call) {
-  let parent = call.getParent();
-  while (parent && Node.isParenthesizedExpression(parent)) parent = parent.getParent();
-  return Boolean(parent && Node.isAwaitExpression(parent));
+  let node = call;
+  for (;;) {
+    let parent = node.getParent();
+    while (parent && Node.isParenthesizedExpression(parent)) {
+      node = parent;
+      parent = parent.getParent();
+    }
+    if (parent && Node.isPropertyAccessExpression(parent) && parent.getExpression() === node
+      && /^(?:then|catch|finally)$/.test(parent.getName())) {
+      const chained = parent.getParent();
+      if (chained && Node.isCallExpression(chained) && chained.getExpression() === parent) {
+        node = chained;
+        continue;
+      }
+    }
+    return Boolean(parent && Node.isAwaitExpression(parent));
+  }
 }
 
-/** 감싸기 함수에 넘긴 콜백의 본문 — 인라인 함수는 그 자신, 이름으로 넘긴 함수(`runFor(id, performDelete)`)는 그 선언이다. */
-function callbackTargets(argument) {
+/**
+ * 감싸기 함수에 넘긴 콜백의 본문 — 인라인 함수는 그 자신, 이름으로 넘긴 함수(`runFor(id, performDelete)`)는 그 선언이다. 다만 그
+ * 함수를 처리기 안에서 감싸기 밖에서도 직접 부르면 그 경로는 잠기지 않으므로 선언을 넣지 않는다.
+ */
+function callbackTargets(argument, contract) {
   const value = unwrapExpression(argument);
-  return value && Node.isIdentifier(value) ? [argument, ...declarationsOfIdentifier(value)] : [argument];
+  if (!value || !Node.isIdentifier(value)) return [argument];
+  const declarations = declarationsOfIdentifier(value);
+  const calledDirectly = contract.nodes.some((node) => node.getDescendantsOfKind(SyntaxKind.CallExpression).some((call) => {
+    const callee = unwrapExpression(call.getExpression());
+    return callee && Node.isIdentifier(callee) && declarationsOfIdentifier(callee).some((declaration) => declarations.includes(declaration));
+  }));
+  return calledDirectly ? [argument] : [argument, ...declarations];
 }
 
 const REACT_PRIMITIVE_HOOK = /^use(?:State|Ref|Memo|Callback|Reducer|Context|Transition|Id|Effect|LayoutEffect)$/;
@@ -1316,7 +1342,7 @@ function synchronousRefLockNames(contract) {
             if (!callsDeclaration(invocation, node)) continue;
             const argument = invocation.getArguments()[parameterIndex];
             if (!argument) continue;
-            const callbackWrites = writes.filter((write) => callbackTargets(argument).some((target) => isWithin(write, target)));
+            const callbackWrites = writes.filter((write) => callbackTargets(argument, contract).some((target) => isWithin(write, target)));
             const mutationSettled = callbackWrites.length > 0 && callbackWrites.every((write) => hasMatchingOnSettled(write));
             if (callbackWrites.length === 0 || (!locallyReleased && !mutationSettled)) continue;
             foundLockPath = true;
@@ -1547,7 +1573,7 @@ function pendingStateSpansWrite(contract, identifier, origin = null) {
           if (wrapperInstances.length > 0 && !wrapperInstances.some((instance) => pendingInstances.includes(instance))) continue;
           const callback = invocation.getArguments()[parameterIndex];
           if (!callback) continue;
-          const callbackWrites = writes.filter((write) => callbackTargets(callback).some((target) => isWithin(write, target)));
+          const callbackWrites = writes.filter((write) => callbackTargets(callback, contract).some((target) => isWithin(write, target)));
           if (callbackWrites.length > 0
             && ((isAwaitedCall(parameterCall) && releases.some((call) => safelyReleasesAfter(call, parameterCall)))
               || callbackWrites.some(hasMatchingOnSettledRelease))) return true;
