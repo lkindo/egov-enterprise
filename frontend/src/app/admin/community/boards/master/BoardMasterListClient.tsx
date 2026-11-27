@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -109,8 +110,7 @@ export function BoardMasterListClient() {
   // [2026-10-23 ADR-0040 A0] 서버는 1 기반 page·size 로 나눠 준다(ADR-0036).
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
-  const [bulkPendingAction, setBulkPendingAction] = useState<BulkPendingAction | null>(null);
-  const bulkPendingRef = useRef(false);
+  const bulkFlight = useSingleFlight<BulkPendingAction>();
 
   const queryClient = useQueryClient();
   const canReadAllPosts = canPermission(user, 'BOARD_READ_ALL');
@@ -145,73 +145,70 @@ export function BoardMasterListClient() {
     : boardList;
 
   const handleBulkStatusChange = async (items: BoardMasterSummary[], status: 'Y' | 'N', action: BulkPendingAction) => {
-    if (!canUpdate || bulkPendingRef.current) return;
+    if (!canUpdate) return;
     const targets = items.filter((item) => item.bbsId);
     if (targets.length === 0) return;
-    bulkPendingRef.current = true;
-    setBulkPendingAction(action);
-    try {
-      const usage = status === 'N'
-        ? targets.map((item) => ({ item, notes: boardUsageNotes(item.bbsId, item.designations) })).filter(({ notes }) => notes.length > 0)
-        : [];
-      // [2026-10-26 ADR-0043 1차 SET-03] 닫는 게시판을 가리키며 일반 그룹에 보이는 메뉴 — 게시판을 닫아도 메뉴는 남으므로 함께 알린다.
-      //   메뉴 원천을 판정할 수 없는 게시판과, 연결은 찾았지만 보이는 그룹을 판정하지 못한 메뉴(그룹 확인 권한 없음·조회 실패)는
-      //   '없음'으로 추정하지 않고 확인하라고 말한다 — 설정 탭 검토(activeLinkedMenus)와 같은 판정이다.
-      const exposedMenus = status === 'N'
-        ? targets.flatMap((item) => {
+    await bulkFlight.runFor(action, async () => {
+      try {
+        const usage = status === 'N'
+          ? targets.map((item) => ({ item, notes: boardUsageNotes(item.bbsId, item.designations) })).filter(({ notes }) => notes.length > 0)
+          : [];
+        // [2026-10-26 ADR-0043 1차 SET-03] 닫는 게시판을 가리키며 일반 그룹에 보이는 메뉴 — 게시판을 닫아도 메뉴는 남으므로 함께 알린다.
+        //   메뉴 원천을 판정할 수 없는 게시판과, 연결은 찾았지만 보이는 그룹을 판정하지 못한 메뉴(그룹 확인 권한 없음·조회 실패)는
+        //   '없음'으로 추정하지 않고 확인하라고 말한다 — 설정 탭 검토(activeLinkedMenus)와 같은 판정이다.
+        const exposedMenus = status === 'N'
+          ? targets.flatMap((item) => {
+            const links = menuLinksByBoard.get(item.bbsId)?.links;
+            if (!links || links.status !== 'ready') return [];
+            return links.links.filter((link) => link.exposure.kind === 'general')
+              .map((link) => ({ key: `${item.bbsId}:${link.menuNo}`, text: `[${item.bbsTtl}] ${link.path.join(' › ')}` }));
+          })
+          : [];
+        const menuUnknown = status === 'N' && targets.some((item) => {
           const links = menuLinksByBoard.get(item.bbsId)?.links;
-          if (!links || links.status !== 'ready') return [];
-          return links.links.filter((link) => link.exposure.kind === 'general')
-            .map((link) => ({ key: `${item.bbsId}:${link.menuNo}`, text: `[${item.bbsTtl}] ${link.path.join(' › ')}` }));
-        })
-        : [];
-      const menuUnknown = status === 'N' && targets.some((item) => {
-        const links = menuLinksByBoard.get(item.bbsId)?.links;
-        if (!links || links.status !== 'ready') return true;
-        return links.links.some((link) => link.exposure.kind === 'no-permission' || link.exposure.kind === 'unknown');
-      });
-      const confirmed = await confirm({
-        title: status === 'Y' ? '게시판 사용으로 바꾸기' : '게시판 사용 안 함으로 바꾸기',
-        message: status === 'Y'
-          ? `${targets.length.toLocaleString()}개 게시판을 사용으로 바꿉니다. 메뉴가 비활성이거나 관리자 그룹에만 보여도 게시글 권한이 있는 로그인 사용자는 주소·통합 검색·게시판 선택지로 엽니다(커뮤니티 귀속 게시판은 그 회원과 관리자만).`
-          : `${targets.length.toLocaleString()}개 게시판을 사용 안 함으로 바꿉니다. 이용자에게 읽기·쓰기 모두 닫힙니다. 연결된 메뉴는 남으므로 메뉴 관리에서 따로 정리합니다.`,
-        confirmText: status === 'Y' ? '사용으로 바꾸기' : '사용 안 함으로 바꾸기',
-        variant: status === 'Y' ? 'default' : 'destructive',
-        details: (
-          <div className="space-y-2 text-[length:var(--font-size-body)]">
-            <p className="font-medium">대상: {targets.map((item) => item.bbsTtl).join(', ')}</p>
-            {usage.length > 0 && (
-              <div>
-                <p className="font-medium">앱이 직접 쓰는 게시판이 있습니다. 사용 안 함이면 아래에서 보이지 않습니다.</p>
-                <ul className="list-disc pl-5">
-                  {usage.flatMap(({ item, notes }) => notes.map((note) => <li key={`${item.bbsId}:${note}`}>[{item.bbsTtl}] {note}</li>))}
-                </ul>
-              </div>
-            )}
-            {exposedMenus.length > 0 && (
-              <div>
-                <p className="font-medium">{"일반 그룹에 보이는 메뉴가 남습니다. 누르면 '게시판 없음'이 됩니다."}</p>
-                <ul className="list-disc pl-5">
-                  {exposedMenus.map((menu) => <li key={menu.key}>{menu.text}</li>)}
-                </ul>
-              </div>
-            )}
-            {menuUnknown && <p>메뉴 연결이나 그 메뉴가 보이는 그룹을 확인할 수 없는 게시판이 있습니다. 메뉴 관리에서 확인하세요.</p>}
-          </div>
-        ),
-        detailsLabel: '대상과 사용처',
-      });
-      if (!confirmed) return;
-      await boardAdminService.batchUpdateBoardMasterStatus(targets.map((item) => item.bbsId), status);
-      toast(`${targets.length.toLocaleString()}개 게시판을 ${status === 'Y' ? '사용으로' : '사용 안 함으로'} 바꿨습니다.`, status === 'Y' ? 'success' : 'info');
-      // 사용 여부는 목록만의 값이 아니다 — 운영 화면 상세(버전)·이용 화면 메타·선택지·변경 이력·커뮤니티 게시판 목록도 다시 읽는다.
-      void invalidateBoardCaches(queryClient);
-    } catch (err) {
-      toast(extractErrorMessage(err, '게시판 사용 상태를 바꾸지 못했습니다.'), 'error');
-    } finally {
-      bulkPendingRef.current = false;
-      setBulkPendingAction(null);
-    }
+          if (!links || links.status !== 'ready') return true;
+          return links.links.some((link) => link.exposure.kind === 'no-permission' || link.exposure.kind === 'unknown');
+        });
+        const confirmed = await confirm({
+          title: status === 'Y' ? '게시판 사용으로 바꾸기' : '게시판 사용 안 함으로 바꾸기',
+          message: status === 'Y'
+            ? `${targets.length.toLocaleString()}개 게시판을 사용으로 바꿉니다. 메뉴가 비활성이거나 관리자 그룹에만 보여도 게시글 권한이 있는 로그인 사용자는 주소·통합 검색·게시판 선택지로 엽니다(커뮤니티 귀속 게시판은 그 회원과 관리자만).`
+            : `${targets.length.toLocaleString()}개 게시판을 사용 안 함으로 바꿉니다. 이용자에게 읽기·쓰기 모두 닫힙니다. 연결된 메뉴는 남으므로 메뉴 관리에서 따로 정리합니다.`,
+          confirmText: status === 'Y' ? '사용으로 바꾸기' : '사용 안 함으로 바꾸기',
+          variant: status === 'Y' ? 'default' : 'destructive',
+          details: (
+            <div className="space-y-2 text-[length:var(--font-size-body)]">
+              <p className="font-medium">대상: {targets.map((item) => item.bbsTtl).join(', ')}</p>
+              {usage.length > 0 && (
+                <div>
+                  <p className="font-medium">앱이 직접 쓰는 게시판이 있습니다. 사용 안 함이면 아래에서 보이지 않습니다.</p>
+                  <ul className="list-disc pl-5">
+                    {usage.flatMap(({ item, notes }) => notes.map((note) => <li key={`${item.bbsId}:${note}`}>[{item.bbsTtl}] {note}</li>))}
+                  </ul>
+                </div>
+              )}
+              {exposedMenus.length > 0 && (
+                <div>
+                  <p className="font-medium">{"일반 그룹에 보이는 메뉴가 남습니다. 누르면 '게시판 없음'이 됩니다."}</p>
+                  <ul className="list-disc pl-5">
+                    {exposedMenus.map((menu) => <li key={menu.key}>{menu.text}</li>)}
+                  </ul>
+                </div>
+              )}
+              {menuUnknown && <p>메뉴 연결이나 그 메뉴가 보이는 그룹을 확인할 수 없는 게시판이 있습니다. 메뉴 관리에서 확인하세요.</p>}
+            </div>
+          ),
+          detailsLabel: '대상과 사용처',
+        });
+        if (!confirmed) return;
+        await boardAdminService.batchUpdateBoardMasterStatus(targets.map((item) => item.bbsId), status);
+        toast(`${targets.length.toLocaleString()}개 게시판을 ${status === 'Y' ? '사용으로' : '사용 안 함으로'} 바꿨습니다.`, status === 'Y' ? 'success' : 'info');
+        // 사용 여부는 목록만의 값이 아니다 — 운영 화면 상세(버전)·이용 화면 메타·선택지·변경 이력·커뮤니티 게시판 목록도 다시 읽는다.
+        void invalidateBoardCaches(queryClient);
+      } catch (err) {
+        toast(extractErrorMessage(err, '게시판 사용 상태를 바꾸지 못했습니다.'), 'error');
+      }
+    });
   };
 
   const menuLinkCell = (board: BoardMasterSummary) => {
@@ -468,21 +465,21 @@ export function BoardMasterListClient() {
           bulkActions={canUpdate ? [
             {
               label: '사용으로 바꾸기',
-              icon: bulkPendingAction === 'activate'
+              icon: bulkFlight.pendingKey === 'activate'
                 ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                 : <Zap size={16} aria-hidden="true" />,
-              disabled: bulkPendingAction !== null,
-              ariaBusy: bulkPendingAction === 'activate',
+              disabled: bulkFlight.pendingKey !== null,
+              ariaBusy: bulkFlight.pendingKey === 'activate',
               pendingLabel: '사용으로 바꾸는 중...',
               onClick: (items: BoardMasterSummary[]) => { void handleBulkStatusChange(items, 'Y', 'activate'); }
             },
             {
               label: '사용 안 함으로 바꾸기',
-              icon: bulkPendingAction === 'deactivate'
+              icon: bulkFlight.pendingKey === 'deactivate'
                 ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                 : <Lock size={16} aria-hidden="true" />,
-              disabled: bulkPendingAction !== null,
-              ariaBusy: bulkPendingAction === 'deactivate',
+              disabled: bulkFlight.pendingKey !== null,
+              ariaBusy: bulkFlight.pendingKey === 'deactivate',
               pendingLabel: '사용 안 함으로 바꾸는 중...',
               onClick: (items: BoardMasterSummary[]) => { void handleBulkStatusChange(items, 'N', 'deactivate'); }
             }] : []}

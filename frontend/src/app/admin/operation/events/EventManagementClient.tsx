@@ -151,6 +151,7 @@ import { omitNulls } from '@/lib/api/omit-nulls';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnsavedCloseGuard } from '@/hooks/useDirtyCloseGuard';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import { canPermission } from '@/lib/auth/permissions';
 
 /**
@@ -224,10 +225,9 @@ export default function EventManagementClient() {
   const isViewOnly = editingViewOnly && (editingEvent !== null || isLoadingEvent);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitPendingRef = useRef(false);
-  const [deletingEventSn, setDeletingEventSn] = useState<number | null>(null);
+  const deleteFlight = useSingleFlight<number>();
   // [V2_152] 신청자 창 — 고른 행사의 참가 신청을 보고 승인·반려한다.
   const [applicantsEvent, setApplicantsEvent] = useState<EventInfo | null>(null);
-  const deletePendingRef = useRef(false);
   const validation = useManualFormValidation(eventCreateSchema, { labels: eventValidationLabels });
 
   // --- Data Fetching ---
@@ -375,25 +375,21 @@ export default function EventManagementClient() {
   };
 
   const handleDelete = async (event: EventInfo) => {
-    if (deletePendingRef.current) return;
-    deletePendingRef.current = true;
-    setDeletingEventSn(event.evntSn);
-    try {
-      const ok = await confirm({
-        title: '행사 삭제',
-        message: `'${event.evntNm}' 행사를 삭제합니다. 삭제된 행사는 복구할 수 없습니다. 외부인사가 등록된 행사는 외부인사를 먼저 삭제해야 합니다.`,
-        confirmText: '삭제',
-        variant: 'destructive',
-      });
-      if (!ok) return;
-      await deleteMutation.mutateAsync(event.evntSn);
-    } catch (deleteError) {
-      // [2026-09-26 DIP V9] 서버는 외부인사가 남은 행사를 409 와 건수로 거부한다. 그 사유를 버리지 않는다.
-      toast(extractErrorMessage(deleteError, '행사 삭제에 실패했습니다.'), 'error');
-    } finally {
-      deletePendingRef.current = false;
-      setDeletingEventSn(null);
-    }
+    await deleteFlight.runFor(event.evntSn, async () => {
+      try {
+        const ok = await confirm({
+          title: '행사 삭제',
+          message: `'${event.evntNm}' 행사를 삭제합니다. 삭제된 행사는 복구할 수 없습니다. 외부인사가 등록된 행사는 외부인사를 먼저 삭제해야 합니다.`,
+          confirmText: '삭제',
+          variant: 'destructive',
+        });
+        if (!ok) return;
+        await deleteMutation.mutateAsync(event.evntSn);
+      } catch (deleteError) {
+        // 서버는 외부인사가 남은 행사를 409 와 건수로 거부한다. 그 사유를 버리지 않는다.
+        toast(extractErrorMessage(deleteError, '행사 삭제에 실패했습니다.'), 'error');
+      }
+    });
   };
 
   // --- DataTable Configuration ---
@@ -435,7 +431,7 @@ export default function EventManagementClient() {
       header: '관리',
       className: 'text-right w-40',
       accessor: (event: EventInfo) => {
-        const isDeleting = deletingEventSn === event.evntSn;
+        const isDeleting = deleteFlight.pendingKey === event.evntSn;
         const canEditRow = canEditEventRow(event);
         const canManageApplicants = canManageApplicantsRow(event);
         const canDeleteRow = canDeleteEventRow(event);
@@ -445,7 +441,7 @@ export default function EventManagementClient() {
           <Button
             variant="ghost"
             size="icon"
-            disabled={deletingEventSn !== null || submitPendingRef.current}
+            disabled={deleteFlight.pendingKey !== null || submitPendingRef.current}
             aria-label={canEditRow ? `${event.evntNm} 수정` : `${event.evntNm} 상세 보기`}
             onClick={() => { void handleOpenEdit(event); }}
             className="rounded-md text-muted-foreground"
@@ -456,7 +452,7 @@ export default function EventManagementClient() {
           <Button
             variant="ghost"
             size="icon"
-            disabled={deletingEventSn !== null}
+            disabled={deleteFlight.pendingKey !== null}
             aria-label={`${event.evntNm} 신청자`}
             onClick={() => setApplicantsEvent(event)}
             className="rounded-md text-muted-foreground"
@@ -469,7 +465,7 @@ export default function EventManagementClient() {
             variant="ghost"
             size="icon"
             data-testid="delete-event-btn"
-            disabled={deletingEventSn !== null}
+            disabled={deleteFlight.pendingKey !== null}
             aria-busy={isDeleting}
             aria-label={isDeleting ? `${event.evntNm} 삭제 중` : `${event.evntNm} 삭제`}
             onClick={() => { void handleDelete(event); }}

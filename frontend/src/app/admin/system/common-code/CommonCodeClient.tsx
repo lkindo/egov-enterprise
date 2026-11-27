@@ -17,6 +17,7 @@ import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useRouter } from 'next/navigation';
 import React, { useState, useEffect, useRef } from 'react';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAppForm } from '@/hooks/useAppForm';
 import { Form, FormErrorSummary } from '@/components/ui/form';
@@ -101,8 +102,7 @@ export default function CommonCodeClient({
   // --- State ---
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isModalOpen, setIsOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const hierarchySavePendingRef = useRef(false);
+  const hierarchySaveFlight = useSingleFlight();
   const detailSubmitAttemptRef = useRef(false);
   const detailSavePendingRef = useRef(false);
   const detailDeletePendingRef = useRef(false);
@@ -185,7 +185,7 @@ export default function CommonCodeClient({
     groupCountOf,
     handlePickCode,
     handleSearchChange,
-  } = useCommonCodeNavigation({ clCodes, groups, selectedGroupId, toast, isSavingHierarchy: isSaving });
+  } = useCommonCodeNavigation({ clCodes, groups, selectedGroupId, toast, isSavingHierarchy: hierarchySaveFlight.pending });
   const { flattenedNodes, hasExplorerChanges, setHasExplorerChanges, hierarchyRevisionRef } = explorer;
 
   /*
@@ -396,29 +396,26 @@ export default function CommonCodeClient({
   };
 
   const handleSaveExplorerChanges = async () => {
-    if (hierarchySavePendingRef.current || !hasExplorerChanges || !selectedNode || isSaving || isModalOpen || isPickerOpen) return;
-    hierarchySavePendingRef.current = true;
+    if (!hasExplorerChanges || !selectedNode || hierarchySaveFlight.pending || isModalOpen || isPickerOpen) return;
     const savingRevision = hierarchyRevisionRef.current;
-    setIsSaving(true);
-    try {
-      const res = await saveCmmnCodeHierarchyAction(flattenedNodes);
-      if (res.success) {
-        toast(res.message, 'success');
-        if (hierarchyRevisionRef.current === savingRevision) {
-          setHasExplorerChanges(false);
-          router.refresh();
+    await hierarchySaveFlight.run(async () => {
+      try {
+        const res = await saveCmmnCodeHierarchyAction(flattenedNodes);
+        if (res.success) {
+          toast(res.message, 'success');
+          if (hierarchyRevisionRef.current === savingRevision) {
+            setHasExplorerChanges(false);
+            router.refresh();
+          } else {
+            toast('저장 중 추가된 소속 분류 변경이 남아 있습니다. 다시 저장해 주세요.', 'info');
+          }
         } else {
-          toast('저장 중 추가된 소속 분류 변경이 남아 있습니다. 다시 저장해 주세요.', 'info');
+          toast(res.message, 'error');
         }
-      } else {
-        toast(res.message, 'error');
+      } catch {
+        toast('그룹 소속 저장 중 오류 발생', 'error');
       }
-    } catch {
-      toast('그룹 소속 저장 중 오류 발생', 'error');
-    } finally {
-      hierarchySavePendingRef.current = false;
-      setIsSaving(false);
-    }
+    });
   };
 
   const handleEditDetail = (detail: CmmnDetailCode) => {
@@ -620,7 +617,7 @@ export default function CommonCodeClient({
     }] : []),
   ];
 
-  const saveDisabled = !hasExplorerChanges || !selectedNode || isSaving || isModalOpen || isPickerOpen;
+  const saveDisabled = !hasExplorerChanges || !selectedNode || hierarchySaveFlight.pending || isModalOpen || isPickerOpen;
 
   return (
     <div>
@@ -636,11 +633,11 @@ export default function CommonCodeClient({
             type="button"
             onClick={handleSaveExplorerChanges}
             disabled={saveDisabled}
-            aria-busy={isSaving || undefined}
+            aria-busy={hierarchySaveFlight.pending || undefined}
             className="gap-2"
           >
             <Save size={16} aria-hidden="true" />
-            {isSaving ? '그룹 소속 저장 중…' : '그룹 소속 저장'}
+            {hierarchySaveFlight.pending ? '그룹 소속 저장 중…' : '그룹 소속 저장'}
           </Button>
         ) : undefined}
         masterTitle="코드 분류 및 그룹"
@@ -703,7 +700,7 @@ export default function CommonCodeClient({
                 explorer={explorer}
                 visibleNodes={visibleNodes}
                 selectedNode={selectedNode}
-                dragDisabled={Boolean(searchQuery) || isSaving}
+                dragDisabled={Boolean(searchQuery) || hierarchySaveFlight.pending}
                 reorderable={canUpdateCode}
                 onSelectNode={selectNode}
               />

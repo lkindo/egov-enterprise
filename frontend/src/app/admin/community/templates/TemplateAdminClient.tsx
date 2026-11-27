@@ -17,6 +17,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -120,8 +121,7 @@ export default function TemplateAdminClient({
    * [2026-09-05 DEC-OPS-036] 종전에는 등록·조회만 가능했다(감사 D11-02). 템플릿 ID 는 PK 라 수정 모드에서 잠근다.
    */
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const deletePendingRef = useRef(false);
+  const deleteFlight = useSingleFlight<string>();
   const confirm = useConfirm();
   const validation = useManualFormValidation(templateFormSchema, { labels: templateValidationLabels });
 
@@ -192,26 +192,22 @@ export default function TemplateAdminClient({
   };
 
   const handleDelete = async (item: TmplatInfo) => {
-    if (deletePendingRef.current) return;
-    deletePendingRef.current = true;
-    setDeletingId(item.tmpltId);
-    try {
-      const ok = await confirm({
-        title: '템플릿 삭제',
-        message: `'${item.tmpltNm}' 템플릿을 삭제합니다. 커뮤니티 또는 이전 게시판이 원장을 참조 중이면 삭제할 수 없습니다. 구현된 기본 게시판 레이아웃은 원장과 별개입니다. 삭제한 템플릿은 복구할 수 없습니다.`,
-        confirmText: '삭제',
-        variant: 'destructive',
-      });
-      if (!ok) return;
-      await templateAdminService.deleteTemplate(item.tmpltId);
-      toast('템플릿을 삭제했습니다.', 'success');
-      await handleRefresh();
-    } catch (err: unknown) {
-      toast(extractErrorMessage(err, '템플릿 삭제에 실패했습니다.'), 'error');
-    } finally {
-      deletePendingRef.current = false;
-      setDeletingId(null);
-    }
+    await deleteFlight.runFor(item.tmpltId, async () => {
+      try {
+        const ok = await confirm({
+          title: '템플릿 삭제',
+          message: `'${item.tmpltNm}' 템플릿을 삭제합니다. 커뮤니티 또는 이전 게시판이 원장을 참조 중이면 삭제할 수 없습니다. 구현된 기본 게시판 레이아웃은 원장과 별개입니다. 삭제한 템플릿은 복구할 수 없습니다.`,
+          confirmText: '삭제',
+          variant: 'destructive',
+        });
+        if (!ok) return;
+        await templateAdminService.deleteTemplate(item.tmpltId);
+        toast('템플릿을 삭제했습니다.', 'success');
+        await handleRefresh();
+      } catch (err: unknown) {
+        toast(extractErrorMessage(err, '템플릿 삭제에 실패했습니다.'), 'error');
+      }
+    });
   };
 
   const handleAddOpenChange = (open: boolean) => {
@@ -274,14 +270,14 @@ export default function TemplateAdminClient({
       header: '관리',
       className: 'text-right w-28',
       accessor: (item: TmplatInfo) => {
-        const isDeleting = deletingId === item.tmpltId;
+        const isDeleting = deleteFlight.pendingKey === item.tmpltId;
         return (
           <div className="flex items-center justify-end gap-1 pr-2">
             {canUpdateTemplate && (
               <Button
                 variant="ghost"
                 size="icon"
-                disabled={deletingId !== null || isAdding}
+                disabled={deleteFlight.pendingKey !== null || isAdding}
                 aria-label={`${item.tmpltNm} 수정`}
                 onClick={() => handleOpenEdit(item)}
                 className="rounded-lg hover:bg-muted transition-colors"
@@ -293,7 +289,7 @@ export default function TemplateAdminClient({
               <Button
                 variant="ghost"
                 size="icon"
-                disabled={deletingId !== null}
+                disabled={deleteFlight.pendingKey !== null}
                 aria-busy={isDeleting}
                 aria-label={isDeleting ? `${item.tmpltNm} 삭제 중` : `${item.tmpltNm} 삭제`}
                 onClick={() => { void handleDelete(item); }}

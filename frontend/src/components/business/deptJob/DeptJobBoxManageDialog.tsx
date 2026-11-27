@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import dynamic from 'next/dynamic';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { deptJobKeys } from '@/queries/dept-job-keys';
@@ -83,8 +84,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
   const [editing, setEditing] = useState<DeptJobBxVO | null>(null);
   const [saving, setSaving] = useState(false);
   const submitLock = useRef(false);
-  const [deletingSn, setDeletingSn] = useState<number | null>(null);
-  const deletePendingRef = useRef(false);
+  const deleteFlight = useSingleFlight<number>();
 
   const form = useAppForm(deptJobBoxSchema, { defaultValues: EMPTY_FORM });
 
@@ -170,27 +170,23 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
 
   const handleDelete = async (box: DeptJobBxVO) => {
     if (!canDelete) return;
-    if (deletePendingRef.current) return;
-    deletePendingRef.current = true;
-    setDeletingSn(box.deptTaskBoxSn);
-    try {
-      const ok = await confirm({
-        title: '업무함 삭제',
-        message: `'${box.deptTaskBoxNm}' 업무함을 삭제합니다. 산하 업무가 남아 있으면 삭제되지 않습니다 — 먼저 업무를 다른 함으로 옮기거나 지워 주세요.`,
-        confirmText: '삭제',
-        variant: 'destructive',
-      });
-      if (!ok) return;
-      await deptJobUserService.deleteDeptJobBox(box.deptTaskBoxSn);
-      toast('업무함을 삭제했습니다.', 'success');
-      if (editing?.deptTaskBoxSn === box.deptTaskBoxSn) startCreate();
-      invalidate();
-    } catch (error) {
-      toast(extractErrorMessage(error, '업무함 삭제에 실패했습니다.'), 'error');
-    } finally {
-      deletePendingRef.current = false;
-      setDeletingSn(null);
-    }
+    await deleteFlight.runFor(box.deptTaskBoxSn, async () => {
+      try {
+        const ok = await confirm({
+          title: '업무함 삭제',
+          message: `'${box.deptTaskBoxNm}' 업무함을 삭제합니다. 산하 업무가 남아 있으면 삭제되지 않습니다 — 먼저 업무를 다른 함으로 옮기거나 지워 주세요.`,
+          confirmText: '삭제',
+          variant: 'destructive',
+        });
+        if (!ok) return;
+        await deptJobUserService.deleteDeptJobBox(box.deptTaskBoxSn);
+        toast('업무함을 삭제했습니다.', 'success');
+        if (editing?.deptTaskBoxSn === box.deptTaskBoxSn) startCreate();
+        invalidate();
+      } catch (error) {
+        toast(extractErrorMessage(error, '업무함 삭제에 실패했습니다.'), 'error');
+      }
+    });
   };
 
   const handleClose = () => {
@@ -241,7 +237,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
           ) : (
             <ul className="divide-y divide-border rounded-lg border border-border" aria-label="업무함 목록">
               {boxes.map((box) => {
-                const isDeleting = deletingSn === box.deptTaskBoxSn;
+                const isDeleting = deleteFlight.pendingKey === box.deptTaskBoxSn;
                 const isCurrent = editing?.deptTaskBoxSn === box.deptTaskBoxSn;
                 return (
                   <li
@@ -265,7 +261,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
                       size="icon"
                       aria-label={`${box.deptTaskBoxNm} 삭제`}
                       aria-busy={isDeleting}
-                      disabled={deletingSn !== null || saving}
+                      disabled={deleteFlight.pendingKey !== null || saving}
                       onClick={() => handleDelete(box)}
                       className="text-destructive hover:text-destructive"
                     >
