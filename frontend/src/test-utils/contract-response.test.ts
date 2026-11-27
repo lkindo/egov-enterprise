@@ -114,7 +114,8 @@ const SUCCESS_KEYS = ['success', '"success"', '\'success\''];
 
 /**
  * 첫 인자가 최상위 키 `success: false`(따옴표 키 포함)를 가진 객체 리터럴인가 — 중첩 객체 속 `success: false`(예: `data.success`)나
- * 삼항식 `cond ? success : false` 는 실패 응답 표지가 아니다. 깊이는 문자열을 비운 code 로 세고, 키 글자는 원문에서 읽는다.
+ * 삼항식 `cond ? success : false` 는 실패 응답 표지가 아니다. 깊이·키 자리·값은 주석과 문자열을 비운 code 로 보고(주석 속 글자는 키가
+ * 아니고, 키와 값 사이 주석은 공백이다), 비워진 따옴표 키의 글자만 원문에서 읽는다.
  */
 function literalFailureBody(source: string, code: string, open: number): boolean {
   let index = open + 1;
@@ -129,11 +130,11 @@ function literalFailureBody(source: string, code: string, open: number): boolean
       depth -= 1;
       if (depth === 0) return false;
     } else if (depth === 1) {
-      const key = SUCCESS_KEYS.find((candidate) => source.startsWith(candidate, index));
+      const key = SUCCESS_KEYS.find((candidate) => code[index] === candidate[0] && source.startsWith(candidate, index));
       if (key === undefined) continue;
       let before = index - 1;
       while (before > 0 && /\s/.test(code[before] ?? '')) before -= 1;
-      if ((code[before] === '{' || code[before] === ',') && /^\s*:\s*false\b/.test(source.slice(index + key.length, index + key.length + 20))) {
+      if ((code[before] === '{' || code[before] === ',') && /^\s*:\s*false\b/.test(code.slice(index + key.length))) {
         return true;
       }
     }
@@ -198,6 +199,8 @@ describe('MSW 손으로 쓴 JSON 응답 래칫', () => {
     expect(routesOf("http.get('*/h', () => HttpResponse.json({ success: true, data: [{ success: false }] }))")).toEqual(['GET */h']);
     expect(routesOf("http.get('*/h', () => HttpResponse.json({ success: ok ? success : false }))")).toEqual(['GET */h']);
     expect(routesOf("http.get('*/h', () => HttpResponse.json(body, { success: false }))")).toEqual(['GET */h']);
+    expect(routesOf("http.get('*/h', () => HttpResponse.json({ /* success: false */ success: true }))")).toEqual(['GET */h']);
+    expect(routesOf("http.get('*/g', () => HttpResponse.json({ success: /* 설명 */ false }))")).toEqual([]);
   });
 
   /**
