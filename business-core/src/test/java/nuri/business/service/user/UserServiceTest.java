@@ -841,10 +841,24 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("ID 중복 체크")
+    @DisplayName("ID 중복 체크는 활성 loginId·esntlId 충돌·재사용 금지 이력을 모두 차단한다")
     void checkIdDplctTest() {
         given(userRepository.findByUserId("user1")).willReturn(Optional.of(mock(User.class)));
         assertTrue(userService.checkIdDplct("user1"));
+
+        given(userRepository.findByUserId("USRCNFRM_00000000001")).willReturn(Optional.empty());
+        given(userRepository.existsById("USRCNFRM_00000000001")).willReturn(true);
+        assertTrue(userService.checkIdDplct("USRCNFRM_00000000001"));
+
+        given(userRepository.findByUserId("retired1")).willReturn(Optional.empty());
+        given(userRepository.existsById("retired1")).willReturn(false);
+        given(loginIdReuseGuard.isStillReferenced("retired1")).willReturn(true);
+        assertTrue(userService.checkIdDplct("retired1"));
+
+        given(userRepository.findByUserId("fresh1")).willReturn(Optional.empty());
+        given(userRepository.existsById("fresh1")).willReturn(false);
+        given(loginIdReuseGuard.isStillReferenced("fresh1")).willReturn(false);
+        assertFalse(userService.checkIdDplct("fresh1"));
     }
 
     @Test

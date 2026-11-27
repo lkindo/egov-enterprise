@@ -196,13 +196,32 @@ describe('LoginPolicyAdminClient validation behavior', () => {
     fireEvent.click(await screen.findByRole('button', { name: '테스트 사용자 로그인 정책 수정' }));
     // 스위치가 사라졌다 — 켜는 순간 로그인할 수 없게 되는 설정을 화면이 제공하지 않는다.
     expect(screen.queryByText(/2단계 인증 \(OTP\) 필수 적용/)).toBeNull();
-    expect(screen.getByTestId('login-policy-otp-notice')).toHaveTextContent('아직 제공하지 않습니다');
-    expect(screen.getByText(/저장하면 2단계 인증이 꺼집니다/)).toBeInTheDocument();
+    expect(screen.getByTestId('login-policy-otp-notice')).toHaveTextContent('각 계정의 보안 설정(인증앱 등록·확인)에서 관리합니다.');
+    expect(screen.getByText(/계정에 등록된 인증앱\(MFA\) 자격에는 영향을 주지 않습니다/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '정책 동기화 적용' }));
 
     await waitFor(() => expect(mocks.save).toHaveBeenCalledTimes(1));
     expect(mocks.save.mock.calls[0]![1]).toMatchObject({ otpUseYn: 'N' });
+  });
+
+  it('IPv6 전체 주소(39자)는 저장을 허용하고 45자를 넘기면 검증 오류로 막는다', async () => {
+    const ipv6 = '2001:0db8:85a3:0000:0000:8a2e:0370:7334';
+    expect(ipv6).toHaveLength(39);
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '테스트 사용자 로그인 정책 수정' }));
+    const ip = screen.getByRole('textbox', { name: '접속 제한 IP' });
+    expect(ip).toHaveAttribute('maxLength', '45');
+
+    fireEvent.change(ip, { target: { value: 'a'.repeat(46) } });
+    fireEvent.click(screen.getByRole('button', { name: '정책 동기화 적용' }));
+    expect(await screen.findByText('접속 제한 IP는 최대 45자까지 입력할 수 있습니다.')).toBeVisible();
+    expect(mocks.save).not.toHaveBeenCalled();
+
+    fireEvent.change(ip, { target: { value: ipv6 } });
+    fireEvent.click(screen.getByRole('button', { name: '정책 동기화 적용' }));
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledWith('tester', expect.objectContaining({ ipAddr: ipv6 })));
   });
 
   it('invalid 값을 write하지 않고 summary와 첫 오류 필드로 연결한다', async () => {

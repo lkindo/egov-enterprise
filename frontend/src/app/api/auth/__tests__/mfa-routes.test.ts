@@ -8,11 +8,20 @@ import { authenticationResponse } from '@/lib/auth/auth-session-response';
 vi.mock('axios', () => ({ default: { post: vi.fn(), get: vi.fn(), isAxiosError: (value: unknown) => !!value && typeof value === 'object' && 'response' in value } }));
 const challenge = 'c'.repeat(43);
 const replacement = 'r'.repeat(43);
+const csrfToken = 'csrf-fixture-token';
+const csrfCookie = `XSRF-TOKEN=${csrfToken}`;
 const expiry = () => new Date(Date.now() + 240_000).toISOString();
 const envelope = (data: unknown) => ({ success: true, status: 200, code: 'SUCCESS', message: 'ok', data, timestamp: '2026-09-28T00:00:00' });
 const ctx = (path: string) => ({ params: Promise.resolve({ path: path.split('/') }) });
 const request = (path: string, body: unknown, cookie = `mfa_challenge=${challenge}; accessToken=stale-access`) => new NextRequest(`https://example.test/api/auth/mfa/${path}`, {
-  method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://example.test', cookie }, body: JSON.stringify(body),
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Origin: 'https://example.test',
+    'X-XSRF-TOKEN': csrfToken,
+    cookie: cookie ? `${cookie}; ${csrfCookie}` : csrfCookie,
+  },
+  body: JSON.stringify(body),
 });
 
 describe('MFA BFF restricted session boundary', () => {
@@ -74,16 +83,44 @@ describe('MFA BFF restricted session boundary', () => {
     expect(axios.post).not.toHaveBeenCalled();
   });
 
-  it('rejects cross-origin requests and unauthenticated status requests', async () => {
-    const cross = new NextRequest('https://example.test/api/auth/mfa/verify', { method: 'POST', headers: { Origin: 'https://elsewhere.test' }, body: '{}' });
+  it('rejects cross-origin, missing Origin, and missing/mismatched CSRF requests and unauthenticated status requests', async () => {
+    const cross = new NextRequest('https://example.test/api/auth/mfa/verify', {
+      method: 'POST',
+      headers: { Origin: 'https://elsewhere.test', 'X-XSRF-TOKEN': csrfToken, cookie: csrfCookie },
+      body: '{}',
+    });
+    const noOrigin = new NextRequest('https://example.test/api/auth/mfa/verify', {
+      method: 'POST',
+      headers: { 'X-XSRF-TOKEN': csrfToken, cookie: csrfCookie },
+      body: '{}',
+    });
+    const noHeader = new NextRequest('https://example.test/api/auth/mfa/verify', {
+      method: 'POST',
+      headers: { Origin: 'https://example.test', cookie: csrfCookie },
+      body: '{}',
+    });
+    const noCookie = new NextRequest('https://example.test/api/auth/mfa/verify', {
+      method: 'POST',
+      headers: { Origin: 'https://example.test', 'X-XSRF-TOKEN': csrfToken },
+      body: '{}',
+    });
+    const mismatched = new NextRequest('https://example.test/api/auth/mfa/verify', {
+      method: 'POST',
+      headers: { Origin: 'https://example.test', 'X-XSRF-TOKEN': 'other-token', cookie: csrfCookie },
+      body: '{}',
+    });
     expect((await POST(cross, ctx('verify'))).status).toBe(403);
+    expect((await POST(noOrigin, ctx('verify'))).status).toBe(403);
+    expect((await POST(noHeader, ctx('verify'))).status).toBe(403);
+    expect((await POST(noCookie, ctx('verify'))).status).toBe(403);
+    expect((await POST(mismatched, ctx('verify'))).status).toBe(403);
     expect((await GET(new NextRequest('https://example.test/api/auth/mfa/status'), ctx('status'))).status).toBe(401);
     expect(axios.post).not.toHaveBeenCalled(); expect(axios.get).not.toHaveBeenCalled();
   });
 
   it.each(['http://127.0.0.1:3001', 'http://[::1]:3001'])('accepts the actual same origin when Next normalizes %s', async origin => {
     const local = new NextRequest(`${origin}/api/auth/mfa/enrollment/start`, {
-      method: 'POST', headers: { Origin: origin, Host: new URL(origin).host, cookie: 'accessToken=fixture-session' },
+      method: 'POST', headers: { Origin: origin, Host: new URL(origin).host, 'X-XSRF-TOKEN': csrfToken, cookie: `accessToken=fixture-session; ${csrfCookie}` },
       body: JSON.stringify({ password: 'synthetic-password-fixture' }),
     });
     expect(local.nextUrl.hostname).toBe('localhost');
@@ -109,7 +146,7 @@ describe('MFA BFF restricted session boundary', () => {
     ['http://example.test', 'example.test', 'https://example.test', { 'x-forwarded-proto': 'https' }],
   ] as const)('rejects inconsistent request origin/host/port and untrusted forwarded overrides (%s, %s, %s)', async (url, host, origin, forwarded) => {
     const denied = new NextRequest(`${url}/api/auth/mfa/enrollment/start`, {
-      method: 'POST', headers: { Host: host, Origin: origin, cookie: 'accessToken=fixture-session', ...forwarded },
+      method: 'POST', headers: { Host: host, Origin: origin, 'X-XSRF-TOKEN': csrfToken, cookie: `accessToken=fixture-session; ${csrfCookie}`, ...forwarded },
       body: JSON.stringify({ password: 'synthetic-password-fixture' }),
     });
     expect((await POST(denied, ctx('enrollment/start'))).status).toBe(403);
@@ -118,8 +155,8 @@ describe('MFA BFF restricted session boundary', () => {
 
   it('uses the established HTTPS request scheme for a TLS-terminated request and keeps cookies Secure', async () => {
     const secured = new NextRequest('https://example.test/api/auth/mfa/enrollment/start', {
-      method: 'POST', headers: { Origin: 'https://example.test', Host: 'example.test',
-        'x-forwarded-host': 'example.test', 'x-forwarded-proto': 'https', cookie: 'accessToken=fixture-session' },
+      method: 'POST', headers: { Origin: 'https://example.test', Host: 'example.test', 'X-XSRF-TOKEN': csrfToken,
+        'x-forwarded-host': 'example.test', 'x-forwarded-proto': 'https', cookie: `accessToken=fixture-session; ${csrfCookie}` },
       body: JSON.stringify({ password: 'synthetic-password-fixture' }),
     });
     vi.mocked(axios.post).mockResolvedValue({ data: envelope({

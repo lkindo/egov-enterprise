@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { authUpstreamRequestConfig, forwardedLanguageHeaders } from '@/lib/auth/auth-request-policy';
@@ -40,7 +41,7 @@ function headers(request: NextRequest, authenticated = true) {
 
 function sameOrigin(request: NextRequest) {
   const origin = request.headers.get('origin');
-  if (!origin) return true;
+  if (!origin) return false;
   const host = request.headers.get('host');
   if (!host) return origin === request.nextUrl.origin;
   // Next normalizes loopback URL hosts to localhost. Compare the browser's actual
@@ -72,8 +73,17 @@ export async function GET(request: NextRequest, context: RouteContext) {
   } catch (error) { return failure(statusOf(error)); }
 }
 
+function hasValidCsrf(request: NextRequest) {
+  const cookieToken = request.cookies.get('XSRF-TOKEN')?.value;
+  const headerToken = request.headers.get('x-xsrf-token');
+  if (!cookieToken || !headerToken) return false;
+  const cookieBytes = Buffer.from(cookieToken, 'utf8');
+  const headerBytes = Buffer.from(headerToken, 'utf8');
+  return cookieBytes.length === headerBytes.length && timingSafeEqual(cookieBytes, headerBytes);
+}
+
 export async function POST(request: NextRequest, context: RouteContext) {
-  if (!sameOrigin(request)) return failure(403);
+  if (!sameOrigin(request) || !hasValidCsrf(request)) return failure(403);
   const path = (await context.params).path.join('/');
   if (!Object.hasOwn(operations, path)) return failure(404);
   const action = path as keyof typeof operations;

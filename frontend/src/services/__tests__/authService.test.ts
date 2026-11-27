@@ -133,7 +133,14 @@ describe('authService', () => {
     mockedPost.mockRejectedValueOnce(new Error('timeout'));
     await expect(mfaService.status()).rejects.toThrow('timeout');
     await expect(mfaService.verify({ code: '012345' })).rejects.toThrow('timeout');
-    const transport = { baseURL: '', withCredentials: true, timeout: 20_000, headers: { 'Accept-Language': 'ko' } };
+    const transport = {
+      baseURL: '',
+      withCredentials: true,
+      xsrfCookieName: 'XSRF-TOKEN',
+      xsrfHeaderName: 'X-XSRF-TOKEN',
+      timeout: 20_000,
+      headers: { 'Accept-Language': 'ko' },
+    };
     expect(axios.get).toHaveBeenCalledWith('/api/auth/mfa/status', transport);
     expect(mockedPost).toHaveBeenCalledWith('/api/auth/mfa/verify', { code: '012345' }, transport);
   });

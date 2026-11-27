@@ -566,10 +566,15 @@ public class UserService extends BaseAbstractService {
          * 기록을 제 것으로 물려받았다({@link LoginIdReuseGuard}). 어느 기록이 남았는지는 응답으로 드러내지 않는다.
          */
         private void assertLoginIdAvailable(String userId) {
-                if (userRepository.findByUserId(userId).isPresent() || userRepository.existsById(userId)
-                                || loginIdReuseGuard.isStillReferenced(userId)) {
+                if (isLoginIdUnavailable(userId)) {
                         throw new BusinessException(UserErrorCode.DUPLICATE_USER_ID);
                 }
+        }
+
+        private boolean isLoginIdUnavailable(String userId) {
+                return userRepository.findByUserId(userId).isPresent()
+                                || userRepository.existsById(userId)
+                                || loginIdReuseGuard.isStillReferenced(userId);
         }
 
         /**
@@ -763,7 +768,7 @@ public class UserService extends BaseAbstractService {
          * 아이디 중복 여부를 확인합니다.
          */
         public boolean checkIdDplct(@NonNull String userId) {
-                return userRepository.findByUserId(required(userId, "사용자 ID 는 null 일 수 없습니다")).isPresent();
+                return isLoginIdUnavailable(required(userId, "사용자 ID 는 null 일 수 없습니다"));
         }
 
         /**
