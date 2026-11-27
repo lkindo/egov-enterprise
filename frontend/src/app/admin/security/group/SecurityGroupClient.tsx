@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Trash2,
@@ -131,32 +132,28 @@ export default function SecurityGroupClient() {
     트랜잭션에서 지운다 — 단수 삭제 N번 반복과 다르다(중간 실패 시 일부 사용자만 그룹이
     풀린 채 남지 않는다). API 는 있었는데 화면에 다중 선택이 없어 소비자가 0 이었다.
   */
-  const bulkDeletePendingRef = useRef(false);
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const bulkDeleteFlight = useSingleFlight();
 
   const handleBulkDelete = async (targets: GroupManage[]) => {
-    if (bulkDeletePendingRef.current || deletePendingRef.current || submitPendingRef.current) return;
+    if (deletePendingRef.current || submitPendingRef.current) return;
     if (targets.length === 0) return;
-    bulkDeletePendingRef.current = true;
-    setIsBulkDeleting(true);
-    try {
-      const ok = await confirm({
-        title: '보안 그룹 일괄 삭제',
-        message: `선택한 ${targets.length}개 그룹을 삭제합니다. 이 그룹들에 배정된 사용자의 그룹 지정이 해제되며 되돌릴 수 없습니다.`,
-        confirmText: '삭제',
-        variant: 'destructive',
-      });
-      if (!ok) return;
+    await bulkDeleteFlight.run(async () => {
+      try {
+        const ok = await confirm({
+          title: '보안 그룹 일괄 삭제',
+          message: `선택한 ${targets.length}개 그룹을 삭제합니다. 이 그룹들에 배정된 사용자의 그룹 지정이 해제되며 되돌릴 수 없습니다.`,
+          confirmText: '삭제',
+          variant: 'destructive',
+        });
+        if (!ok) return;
 
-      await groupAdminService.deleteGroups(targets.map((group) => group.groupId));
-      queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
-      toast(`${targets.length}개 그룹을 삭제했습니다.`, 'success');
-    } catch (bulkError: unknown) {
-      toast(extractErrorMessage(bulkError, '일괄 삭제 중 시스템 예외가 발생했습니다.'), 'error');
-    } finally {
-      bulkDeletePendingRef.current = false;
-      setIsBulkDeleting(false);
-    }
+        await groupAdminService.deleteGroups(targets.map((group) => group.groupId));
+        queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
+        toast(`${targets.length}개 그룹을 삭제했습니다.`, 'success');
+      } catch (bulkError: unknown) {
+        toast(extractErrorMessage(bulkError, '일괄 삭제 중 시스템 예외가 발생했습니다.'), 'error');
+      }
+    });
   };
 
   const deleteMutation = useMutation({
@@ -346,8 +343,8 @@ export default function SecurityGroupClient() {
         bulkActions={canDeleteGroup ? [{
           label: '선택 그룹 삭제',
           variant: 'destructive',
-          disabled: isBulkDeleting || isDeletePending || isSubmitPending,
-          ariaBusy: isBulkDeleting,
+          disabled: bulkDeleteFlight.pending || isDeletePending || isSubmitPending,
+          ariaBusy: bulkDeleteFlight.pending,
           pendingLabel: '삭제 처리 중…',
           onClick: (items) => { void handleBulkDelete(items); },
         }] : []}
