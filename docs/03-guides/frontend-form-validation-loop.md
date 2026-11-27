@@ -38,6 +38,15 @@ pnpm -C frontend run lint
 
 행동 증거는 한 action-specific test block 안에서 같은 sink의 호출 1회와 실패 주입, 같은 trigger control의 중복 실행·disabled·`aria-busy`, visible feedback을 함께 증명해야 한다. 테스트 제목에 action token만 넣고 다른 save/delete control의 assertion을 차용할 수 없다. composed child form은 manifest의 exact `composedChildContracts`(component, child handler/write sinks, 충돌하는 parent action handlers)를 기준으로 child→parent와 parent→child 양방향 잠금, child 자체 pending control, 외부 busy 전달을 별도 증거로 확인한다. 같은 파일의 관련 없는 ref·control·오류 UI나 일반 문자열은 다른 action의 증거가 될 수 없다. 신규·삭제·재분류·만료 예외·FormLabel 문맥 위반·중복 inline alert·모호한 compliance metadata·관련 없는 test evidence가 있으면 실패한다. 같은 gate는 pre-push, `scripts/verify.mjs`, required frontend CI에 연결되어 있다.
 
+## 처리기 해석 범위
+
+census 는 단추·폼의 처리기 이름을 그 이름이 쓰인 자리의 TypeScript 심볼로 따라가 쓰기·동기 잠금·처리 중 표시를 본다(2026-11-27, 파일 안 첫 같은 이름 선언을 빌리던 이름 검색을 바꿨다). 판정 규칙은 그대로다.
+
+- 같은 파일 안: 지역 선언, 같은 파일 훅이 돌려준 객체에서 구조 분해한 처리기, 같은 파일 컴포넌트·함수에 props·인자로 넘긴 처리기를 따라간다.
+- 다른 파일의 훅(`use…`): 그 훅이 돌려준 처리기와 상태(`[state, setState] = useState()` 의 setter 포함)를 따라간다. 쓰기 증거는 훅 파일의 줄로 적고, 쓰기 호출은 그 호출이 있는 파일의 import 로 판정한다. 처리기를 훅 파일로 옮겨도 경계가 남는다.
+- 다른 파일에서 가져온 서비스·액션 함수는 쓰기 지점이다. census 는 그 함수 본문에 들어가지 않는다.
+- 다른 파일 컴포넌트에 넘기는 쓰기 처리기는 부모 쪽 속성 이름으로만 따라간다(`handle…`·`onClick`·`onSave` → 자식 정의의 같은 이름 컨트롤). 화면을 다른 파일의 하위 컴포넌트로 나눌 때는 이 이름 관례를 지킨다.
+
 ## RED 증명
 
 게이트를 수정할 때는 최소한 다음 위반이 red인지 함께 확인한다.
@@ -54,6 +63,8 @@ pnpm -C frontend run lint
 - 여러 secondary action이 action identity 없이 하나의 generic busy state를 공유
 - write 전에 lock을 잡지 않거나, write 전에 해제하거나, reject 시 건너뛰는 plain post-`await` 해제를 사용
 - 성공 toast와 빈 `catch`를 실패 feedback으로 위장하거나, 같은 source의 다른 handler/control에만 있는 ref·feedback으로 compliance를 주장
+- 같은 파일의 다른 컴포넌트에 있는 같은 이름 처리기의 잠금을 빌리거나, 같은 파일 훅에서 구조 분해한 처리기를 같은 이름의 다른 지역 함수로 판정
+- 쓰기 처리기를 다른 파일의 훅으로 옮겨 경계·잠금·처리 중 표시를 잃음
 - `StandardDataTable bulkActions={localVariable}` callback이나 `axios.delete` sink를 ledger에서 누락
 - custom child Form parent aggregate, child로 전달되는 `handle*` write callback, 가입·추천 action을 ledger에서 누락
 - action 행동 assertion을 여러 test block에 분산하거나, 같은 block 안에서 다른 sink·control의 assertion을 차용

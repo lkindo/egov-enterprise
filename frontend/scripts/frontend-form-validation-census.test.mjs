@@ -1376,6 +1376,70 @@ test('a handler destructured from a same-file hook resolves to the returned decl
   }
 });
 
+test('a write handler moved into a hook in another file keeps its boundary, lock and pending link', () => {
+  // 처리기·대기 상태를 다른 파일의 훅으로 옮긴 분해 — 종전 이름 검색은 그 파일을 보지 못해 경계 자체를 잃었다.
+  const subject = fixture({
+    'frontend/src/hooks/use-delete-actions.ts': `
+      import { useRef, useState } from 'react';
+      import { deleteService } from '@/services/deleteService';
+      export function useDeleteActions(){
+        const deletePendingRef = useRef(false);
+        const [deleting, setDeleting] = useState(false);
+        const handleDelete = async () => {
+          if (deletePendingRef.current) return;
+          deletePendingRef.current = true;
+          setDeleting(true);
+          try { await deleteService.deleteItem(1); }
+          catch { setError('delete failed'); }
+          finally { deletePendingRef.current = false; setDeleting(false); }
+        };
+        return { deleting, handleDelete };
+      }
+    `,
+    'frontend/src/Screen.tsx': `
+      import { useDeleteActions } from '@/hooks/use-delete-actions';
+      export function Screen(){
+        const { deleting, handleDelete } = useDeleteActions();
+        return <><form role="search"><input /></form><button disabled={deleting} aria-busy={deleting} onClick={handleDelete}>delete</button></>;
+      }
+    `,
+  });
+  try {
+    const action = subject.discovery.candidates.find(({ kind, owner }) => kind === 'secondary-action' && owner === 'Screen');
+    assert.ok(action, 'the boundary survives moving the handler into another file');
+    assert.deepEqual(action.signals.writeEvidence, ['frontend/src/hooks/use-delete-actions.ts:11:deleteService.deleteItem']);
+    assert.equal(action.signals.implementation.actionHandlerHasSynchronousRef, true);
+    assert.equal(action.signals.implementation.actionControlHasDisabled, true);
+    assert.equal(action.signals.implementation.actionControlHasAriaBusy, true);
+  } finally {
+    subject.cleanup();
+  }
+});
+
+test('an imported non-hook write function is still a sink, not a body the census walks into', () => {
+  // 다른 파일로는 훅(use…)이 돌려준 처리기만 따라간다 — 서비스·액션 함수 본문까지 들어가면 쓰기 지점의 의미가 바뀐다.
+  const subject = fixture({
+    'frontend/src/app/actions/itemActions.ts': `
+      'use server';
+      import { apiClient } from '@/lib/api-client';
+      export async function deleteItemAction(id){ return apiClient.delete('/items/' + id); }
+    `,
+    'frontend/src/Owner.tsx': `
+      import { deleteItemAction } from '@/app/actions/itemActions';
+      export function Owner(){
+        return <><form role="search"><input /></form><button disabled={busy} aria-busy={busy} onClick={() => deleteItemAction(1)}>delete</button></>;
+      }
+    `,
+  });
+  try {
+    const action = subject.discovery.candidates.find(({ kind, owner }) => kind === 'secondary-action' && owner === 'Owner');
+    assert.ok(action);
+    assert.deepEqual(action.signals.writeEvidence, ['frontend/src/Owner.tsx:4:deleteItemAction']);
+  } finally {
+    subject.cleanup();
+  }
+});
+
 test('secondary action lock can claim and release the same key in a Set ref', () => {
   const subject = fixture({
     'frontend/src/PerItemLockOwner.tsx': `

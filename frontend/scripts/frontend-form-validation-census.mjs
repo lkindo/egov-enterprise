@@ -162,14 +162,12 @@ function resolvedHandlerContract(formNode, ownerNode) {
 
 /**
  * 식별자가 가리키는 함수·변수 선언 — 이름이 아니라 TypeScript 심볼로 찾는다. 종전 이름 검색(파일 안 첫 같은 이름 선언)은 다른
- * 컴포넌트·범위의 같은 이름 선언을 빌렸다. 같은 파일의 선언만 돌려준다(가져온 이름·매개변수·구조 분해는 null — 종전과 같은 범위).
+ * 컴포넌트·범위의 같은 이름 선언을 빌렸다. 직접 참조는 같은 파일의 선언만 돌려준다(가져온 서비스·액션 함수는 쓰기 지점이라 들어가지
+ * 않는다). 구조 분해한 이름은 값의 출처를 따라간다 — 같은 파일 훅의 반환·props·인자, 다른 파일 훅(use…)의 반환.
  */
 function declarationOfIdentifier(identifier, seen = new Set()) {
   if (!identifier || !Node.isIdentifier(identifier)) return null;
-  const parent = identifier.getParent();
-  const symbol = parent && Node.isShorthandPropertyAssignment(parent) && parent.getNameNode() === identifier
-    ? identifier.getProject().getTypeChecker().getShorthandAssignmentValueSymbol(parent)
-    : identifier.getSymbol();
+  const symbol = valueSymbolOf(identifier);
   if (!symbol) return null;
   const sourceFile = identifier.getSourceFile();
   for (const declaration of symbol.getDeclarations()) {
@@ -193,11 +191,21 @@ function unwrapExpression(expression) {
   return current;
 }
 
-/** 식별자가 부르는 같은 파일의 함수(함수 선언, 또는 화살표·함수 식을 든 변수). */
-function calledFunction(identifier) {
-  const symbol = identifier?.getSymbol();
+/** 따라갈 수 있는 다른 파일 — 생산 소스(선언 파일·node_modules 밖). */
+function followableFile(sourceFile) {
+  return !sourceFile.isDeclarationFile() && !sourceFile.isInNodeModules();
+}
+
+/**
+ * 식별자가 부르는 함수(함수 선언, 또는 화살표·함수 식을 든 변수). 기본은 같은 파일이다. foreign 이면 import 별칭을 따라 다른
+ * 생산 소스 파일의 선언까지 간다 — 훅(`use…`)과 컴포넌트만 그렇게 부른다(서비스·액션 함수는 종전처럼 쓰기 지점이라 들어가지 않는다).
+ */
+function calledFunction(identifier, { foreign = false } = {}) {
+  let symbol = identifier?.getSymbol();
+  if (foreign && symbol?.isAlias()) symbol = symbol.getAliasedSymbol() ?? symbol;
   for (const declaration of symbol?.getDeclarations() ?? []) {
-    if (declaration.getSourceFile() !== identifier.getSourceFile()) continue;
+    const sameFile = declaration.getSourceFile() === identifier.getSourceFile();
+    if (!sameFile && !(foreign && followableFile(declaration.getSourceFile()))) continue;
     if (Node.isFunctionDeclaration(declaration)) return declaration;
     if (Node.isVariableDeclaration(declaration)) {
       const initializer = unwrapExpression(declaration.getInitializer());
@@ -219,43 +227,52 @@ function returnedExpressionsOf(fn) {
     .filter(Boolean);
 }
 
-/** 식이 내는 객체의 그 속성 값이 가리키는 선언 — 객체 리터럴·그것을 든 변수·그것을 돌려주는 함수 호출·조건식을 따라간다. */
-function propertyValueDeclaration(expression, property, seen, depth = 0) {
+/** 식별자의 값 심볼 — 단축 속성(`{ save }`)은 속성이 아니라 그 값의 심볼이다. */
+function valueSymbolOf(identifier) {
+  const parent = identifier.getParent();
+  return parent && Node.isShorthandPropertyAssignment(parent) && parent.getNameNode() === identifier
+    ? identifier.getProject().getTypeChecker().getShorthandAssignmentValueSymbol(parent)
+    : identifier.getSymbol();
+}
+
+/**
+ * 식이 내는 객체의 그 속성 값을 든 식별자들(앞의 것부터) — 객체 리터럴·그것을 든 변수·그것을 돌려주는 함수 호출·조건식을 따라간다.
+ */
+function propertyValueIdentifiers(expression, property, seen, depth = 0) {
   const target = unwrapExpression(expression);
-  if (!target || depth > 8) return null;
+  if (!target || depth > 8) return [];
   if (Node.isObjectLiteralExpression(target)) {
     const member = target.getProperty(property);
-    if (member && Node.isShorthandPropertyAssignment(member)) return declarationOfIdentifier(member.getNameNode(), seen);
+    if (member && Node.isShorthandPropertyAssignment(member)) return [member.getNameNode()];
     if (member && Node.isPropertyAssignment(member)) {
       const value = unwrapExpression(member.getInitializer());
-      return value && Node.isIdentifier(value) ? declarationOfIdentifier(value, seen) : null;
+      return value && Node.isIdentifier(value) ? [value] : [];
     }
-    for (const spread of target.getProperties().filter((candidate) => Node.isSpreadAssignment(candidate))) {
-      const found = propertyValueDeclaration(spread.getExpression(), property, seen, depth + 1);
-      if (found) return found;
-    }
-    return null;
+    return target.getProperties().filter((candidate) => Node.isSpreadAssignment(candidate))
+      .flatMap((spread) => propertyValueIdentifiers(spread.getExpression(), property, seen, depth + 1));
   }
   if (Node.isConditionalExpression(target)) {
-    return propertyValueDeclaration(target.getWhenTrue(), property, seen, depth + 1)
-      ?? propertyValueDeclaration(target.getWhenFalse(), property, seen, depth + 1);
+    return [
+      ...propertyValueIdentifiers(target.getWhenTrue(), property, seen, depth + 1),
+      ...propertyValueIdentifiers(target.getWhenFalse(), property, seen, depth + 1),
+    ];
   }
   if (Node.isCallExpression(target)) {
     const callee = unwrapExpression(target.getExpression());
-    const fn = callee && Node.isIdentifier(callee) ? calledFunction(callee) : null;
-    for (const returned of fn ? returnedExpressionsOf(fn) : []) {
-      const found = propertyValueDeclaration(returned, property, seen, depth + 1);
-      if (found) return found;
-    }
-    return null;
+    // 훅이 돌려준 처리기는 그 훅이 다른 파일에 있어도 따라간다(처리기를 훅 파일로 옮긴 분해).
+    const fn = callee && Node.isIdentifier(callee)
+      ? calledFunction(callee, { foreign: /^use[A-Z0-9]/.test(callee.getText()) })
+      : null;
+    return (fn ? returnedExpressionsOf(fn) : [])
+      .flatMap((returned) => propertyValueIdentifiers(returned, property, seen, depth + 1));
   }
   if (Node.isIdentifier(target)) {
     const declaration = declarationOfIdentifier(target, seen);
     return declaration && Node.isVariableDeclaration(declaration)
-      ? propertyValueDeclaration(declaration.getInitializer(), property, seen, depth + 1)
-      : null;
+      ? propertyValueIdentifiers(declaration.getInitializer(), property, seen, depth + 1)
+      : [];
   }
-  return null;
+  return [];
 }
 
 /** 같은 파일에서 그 함수를 부르는 호출과 JSX 요소(컴포넌트) — 함수 노드마다 한 번 모은다. */
@@ -280,37 +297,57 @@ function callersOf(fn) {
 }
 
 /**
- * 구조 분해한 이름의 값이 가리키는 선언. `const { save } = useActions()` 는 그 함수가 돌려준 객체의 속성을,
- * `function Child({ save })` 는 같은 파일의 호출 인자·JSX 속성 값을 따라간다(이름이 아니라 심볼·구문으로).
+ * 구조 분해한 이름의 값을 든 식별자들. `const { save } = useActions()` 는 그 함수가 돌려준 객체의 속성을, `function Child({ save })`
+ * 는 같은 파일의 호출 인자·JSX 속성 값을 따라간다(이름이 아니라 심볼·구문으로). 다른 파일 컴포넌트의 props 는 따라가지 않는다 —
+ * 부모 쪽 전달(`handle…`·onClick·onSave 속성 → 자식 정의)이 그 경계를 본다.
  */
-function bindingValueDeclaration(binding, seen) {
-  if (seen.has(binding) || seen.size > 40) return null;
+function bindingValueIdentifiers(binding, seen) {
+  if (seen.has(binding) || seen.size > 40) return [];
   seen.add(binding);
   const pattern = binding.getParent();
-  if (!Node.isObjectBindingPattern(pattern) || binding.getDotDotDotToken()) return null;
+  if (!Node.isObjectBindingPattern(pattern) || binding.getDotDotDotToken()) return [];
   const property = binding.getPropertyNameNode()?.getText() ?? binding.getName();
   const holder = pattern.getParent();
-  if (Node.isVariableDeclaration(holder)) return propertyValueDeclaration(holder.getInitializer(), property, seen);
-  if (!Node.isParameterDeclaration(holder)) return null;
+  if (Node.isVariableDeclaration(holder)) return propertyValueIdentifiers(holder.getInitializer(), property, seen);
+  if (!Node.isParameterDeclaration(holder)) return [];
   const fn = holder.getParent();
   const index = fn.getParameters?.().indexOf(holder) ?? -1;
-  if (index < 0) return null;
+  if (index < 0) return [];
   const { calls, elements } = callersOf(fn);
-  for (const call of calls) {
-    const found = propertyValueDeclaration(call.getArguments()[index], property, seen);
-    if (found) return found;
-  }
-  if (index !== 0) return null;
+  const values = calls.flatMap((call) => propertyValueIdentifiers(call.getArguments()[index], property, seen));
+  if (index !== 0) return values;
   for (const element of elements) {
     const attribute = element.getAttribute(property);
     const initializer = attribute && Node.isJsxAttribute(attribute) ? attribute.getInitializer() : null;
     const value = initializer && Node.isJsxExpression(initializer) ? unwrapExpression(initializer.getExpression()) : null;
-    const found = value && Node.isIdentifier(value) ? declarationOfIdentifier(value, seen) : null;
+    if (value && Node.isIdentifier(value)) values.push(value);
+  }
+  return values;
+}
+
+/** 구조 분해한 이름의 값이 가리키는 선언(값 식별자들 가운데 앞에서 풀리는 것). */
+function bindingValueDeclaration(binding, seen) {
+  for (const value of bindingValueIdentifiers(binding, seen)) {
+    const found = declarationOfIdentifier(value, seen);
     if (found) return found;
   }
   return null;
 }
 
+/** 이름이 결국 묶인 `[state, setState] = …` 의 그 원소 — 훅 반환·props 를 거쳐 원래의 배열 구조 분해까지 따라간다. */
+function stateBindingOf(identifier, seen = new Set()) {
+  for (const declaration of valueSymbolOf(identifier)?.getDeclarations() ?? []) {
+    if (!Node.isBindingElement(declaration)) continue;
+    const pattern = declaration.getParent();
+    if (Node.isArrayBindingPattern(pattern)) return declaration;
+    if (!Node.isObjectBindingPattern(pattern)) continue;
+    for (const value of bindingValueIdentifiers(declaration, seen)) {
+      const found = stateBindingOf(value, seen);
+      if (found) return found;
+    }
+  }
+  return null;
+}
 /**
  * 이름이 context 안에서 가리키는 선언 — context(그 이름을 읽어 낸 노드) 안의 같은 이름 식별자를 심볼로 푼다. 규칙은 이름 목록으로
  * 판정하고, 이름 → 선언 해석만 이 함수가 맡는다.
@@ -335,13 +372,11 @@ function stateSetterName(sourceFile, stateName, origin) {
   const occurrences = [...(Node.isIdentifier(origin) ? [origin] : []), ...origin.getDescendantsOfKind(SyntaxKind.Identifier)]
     .filter((identifier) => identifier.getText() === stateName);
   for (const occurrence of occurrences) {
-    for (const declaration of occurrence.getSymbol()?.getDeclarations() ?? []) {
-      if (!Node.isBindingElement(declaration) || declaration.getSourceFile() !== sourceFile) continue;
-      const pattern = declaration.getParent();
-      if (!Node.isArrayBindingPattern(pattern)) continue;
-      const [state, setter] = pattern.getElements();
-      if (state === declaration && Node.isBindingElement(setter)) return setter.getNameNode().getText();
-    }
+    // 훅이 돌려준 상태(`const { saving } = useActions()`)는 그 훅 안의 `[saving, setSaving] = useState()` 까지 따라간다.
+    const binding = stateBindingOf(occurrence);
+    if (!binding) continue;
+    const [state, setter] = binding.getParent().getElements();
+    if (state === binding && Node.isBindingElement(setter)) return setter.getNameNode().getText();
   }
   return null;
 }
@@ -815,16 +850,26 @@ function discoverComposedChildContracts(ownerNode, jsxElements, repoRoot, projec
   });
 }
 
-function actionWriteCalls(contract, sourceFile) {
-  const importedWriteNames = new Set();
+/** 그 파일이 서비스·액션·API 모듈에서 가져온 이름(쓰기 지점 후보). */
+const IMPORTED_WRITE_NAMES_CACHE = new WeakMap();
+function importedWriteNamesOf(sourceFile) {
+  if (IMPORTED_WRITE_NAMES_CACHE.has(sourceFile)) return IMPORTED_WRITE_NAMES_CACHE.get(sourceFile);
+  const names = new Set();
   for (const declaration of sourceFile.getImportDeclarations()) {
     if (!/(?:service|actions?|api)/i.test(declaration.getModuleSpecifierValue())) continue;
     const defaultImport = declaration.getDefaultImport()?.getText();
-    if (defaultImport) importedWriteNames.add(defaultImport);
+    if (defaultImport) names.add(defaultImport);
     for (const namedImport of declaration.getNamedImports()) {
-      importedWriteNames.add(namedImport.getAliasNode()?.getText() ?? namedImport.getName());
+      names.add(namedImport.getAliasNode()?.getText() ?? namedImport.getName());
     }
   }
+  IMPORTED_WRITE_NAMES_CACHE.set(sourceFile, names);
+  return names;
+}
+
+// 쓰기 호출의 가져온 이름은 그 호출이 있는 파일의 import 로 본다 — 처리기가 다른 파일의 훅에 있어도 그 파일의 서비스 호출을 잡는다.
+function actionWriteCalls(contract, sourceFile) {
+  const importedWriteNames = { has: (name, call) => importedWriteNamesOf(call?.getSourceFile() ?? sourceFile).has(name) };
   const callsByPosition = new Map();
   for (const node of contract.nodes) {
     for (const call of node.getDescendantsOfKind(SyntaxKind.CallExpression)) {
@@ -837,7 +882,7 @@ function actionWriteCalls(contract, sourceFile) {
     if (/^(?:mutate|mutateAsync)$/.test(name)) return true;
     if (isWriteName(name) && !/^submitHandler$/i.test(name)) {
       const expression = call.getExpression();
-      if (Node.isIdentifier(expression) && importedWriteNames.has(expression.getText())) return true;
+      if (Node.isIdentifier(expression) && importedWriteNames.has(expression.getText(), call)) return true;
       if (Node.isPropertyAccessExpression(expression)) {
         if (/(?:service|api|actions?|client)/i.test(expression.getExpression().getText())) return true;
       }
@@ -1561,9 +1606,10 @@ function candidateKey(kind, file, owner, ordinal, handler = null) {
   return `${kind}:${file}#${suffix}`;
 }
 
-function loadProject(files) {
+function loadProject(files, repoRoot = DEFAULT_REPO_ROOT) {
+  // `@/` 경로를 풀어 다른 파일의 처리기·훅까지 심볼로 따라간다(처리기를 훅 파일로 옮겨도 경계가 남게).
   const project = new Project({
-    compilerOptions: { allowJs: true, jsx: 4 },
+    compilerOptions: { allowJs: true, jsx: 4, baseUrl: resolve(repoRoot, 'frontend'), paths: { '@/*': ['src/*'] } },
     skipAddingFilesFromTsConfig: true,
   });
   for (const file of files) project.addSourceFileAtPath(file);
@@ -1579,7 +1625,9 @@ export function discoverFormValidationBoundaries({
   const absoluteSourceRoot = resolve(sourceRoot);
   if (!isInside(absoluteRepoRoot, absoluteSourceRoot)) throw new Error('sourceRoot must be inside repoRoot');
   const files = walkProductionSources(absoluteSourceRoot);
-  const ast = project ?? loadProject(files);
+  const ast = project ?? loadProject(files, absoluteRepoRoot);
+  // 쓰기 증거는 그 호출이 있는 파일로 적는다 — 처리기가 다른 파일의 훅에 있으면 그 파일·줄이다.
+  const writeEvidenceOf = (call) => `${posix(relative(absoluteRepoRoot, resolve(call.getSourceFile().getFilePath())))}:${call.getStartLineNumber()}:${call.getExpression().getText()}`;
   const candidates = [];
   const formContextViolations = [];
   const inlineAlertViolations = [];
@@ -1725,7 +1773,7 @@ export function discoverFormValidationBoundaries({
             primitiveSignal: false,
             searchSignal: false,
             strongWrite: true,
-            writeEvidence: uniqueSorted(writes.map((call) => `${file}:${call.getStartLineNumber()}:${call.getExpression().getText()}`)),
+            writeEvidence: uniqueSorted(writes.map((call) => writeEvidenceOf(call))),
             evidenceTokens: uniqueSorted([...actionEvidenceTokens(writes, bulkAction.contract.handler), bulkAction.triggerLabel]),
             controlEvidenceTokens: [bulkAction.triggerLabel],
             implementation: {
@@ -1797,7 +1845,7 @@ export function discoverFormValidationBoundaries({
           primitiveSignal: false,
           searchSignal: false,
           strongWrite: true,
-          writeEvidence: uniqueSorted(writes.map((call) => `${file}:${call.getStartLineNumber()}:${call.getExpression().getText()}`)),
+          writeEvidence: uniqueSorted(writes.map((call) => writeEvidenceOf(call))),
           evidenceTokens: uniqueSorted([
             ...actionEvidenceTokens(writes, contract.handler),
             ...actionControlTokens,
