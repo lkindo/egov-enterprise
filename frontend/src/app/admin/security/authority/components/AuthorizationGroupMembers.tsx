@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 import { X } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,9 +53,8 @@ export function AuthorizationGroupMembers({ code, name, anonymous, protectedGran
   const scope = authorizationKeys.scope(user?.id, user?.authorizationVersion);
   const [page, setPage] = useState(1);
   const [chosen, setChosen] = useState<ReadonlyMap<string, AuthorizationUserChoice>>(() => new Map());
-  const [revokePending, setRevokePending] = useState(false);
+  const revokeFlight = useSingleFlight();
   const [addOpen, setAddOpen] = useState(false);
-  const revokeRequestRef = useRef(false);
   const members = useQuery({
     queryKey: [...scope, 'group-members', code, page],
     queryFn: () => authorizationAdminService.getGroupMembers(code, page, PAGE_SIZE),
@@ -76,31 +76,28 @@ export function AuthorizationGroupMembers({ code, name, anonymous, protectedGran
     return next;
   });
   const revokeSelected = async () => {
-    if (!editable || chosen.size === 0 || revokeRequestRef.current) return;
-    revokeRequestRef.current = true;
-    setRevokePending(true);
-    try {
-      const targets = [...chosen.values()];
-      const approved = await confirm({
-        title: '구성원 회수',
-        message: `선택한 ${targets.length}명(${targets.slice(0, 5).map((member) => member.userNm).join(', ')}${targets.length > 5 ? ' 외' : ''})을 '${name}' 그룹에서 회수합니다. 이 사용자들의 다른 그룹 배정은 그대로 유지됩니다.`,
-        confirmText: `${targets.length}명 회수`, variant: 'destructive',
-      });
-      if (!approved) return;
-      const result = await authorizationAdminService.updateGroupMembers(code, { add: [], remove: targets.map((member) => member.id), complete: true });
-      setChosen(new Map());
-      toast(`구성원 ${result.removed.length}명을 회수했습니다. 남은 구성원은 ${result.memberCount}명입니다.`, 'success');
-      notifyAuthorizationChanged();
-      await invalidateMembershipQueries(queryClient);
-    } catch (error) {
-      toast(failureMessage(error, '구성원을 회수하지 못했습니다. 구성원 목록을 다시 확인해 주세요.'), 'error');
-      // 다른 곳에서 구성원이 바뀌었으면 목록을 다시 읽는다. 선택은 남긴다 — 무엇을 하려 했는지 보이고, 이미 빠진 사람은
-      // 서버 문구가 밝히므로 '회수할 사람' 목록에서 풀고 다시 보낸다.
-      if (isConflictError(error)) await invalidateMembershipQueries(queryClient);
-    } finally {
-      revokeRequestRef.current = false;
-      setRevokePending(false);
-    }
+    if (!editable || chosen.size === 0) return;
+    await revokeFlight.run(async () => {
+      try {
+        const targets = [...chosen.values()];
+        const approved = await confirm({
+          title: '구성원 회수',
+          message: `선택한 ${targets.length}명(${targets.slice(0, 5).map((member) => member.userNm).join(', ')}${targets.length > 5 ? ' 외' : ''})을 '${name}' 그룹에서 회수합니다. 이 사용자들의 다른 그룹 배정은 그대로 유지됩니다.`,
+          confirmText: `${targets.length}명 회수`, variant: 'destructive',
+        });
+        if (!approved) return;
+        const result = await authorizationAdminService.updateGroupMembers(code, { add: [], remove: targets.map((member) => member.id), complete: true });
+        setChosen(new Map());
+        toast(`구성원 ${result.removed.length}명을 회수했습니다. 남은 구성원은 ${result.memberCount}명입니다.`, 'success');
+        notifyAuthorizationChanged();
+        await invalidateMembershipQueries(queryClient);
+      } catch (error) {
+        toast(failureMessage(error, '구성원을 회수하지 못했습니다. 구성원 목록을 다시 확인해 주세요.'), 'error');
+        // 다른 곳에서 구성원이 바뀌었으면 목록을 다시 읽는다. 선택은 남긴다 — 무엇을 하려 했는지 보이고, 이미 빠진 사람은
+        // 서버 문구가 밝히므로 '회수할 사람' 목록에서 풀고 다시 보낸다.
+        if (isConflictError(error)) await invalidateMembershipQueries(queryClient);
+      }
+    });
   };
 
   return (
@@ -110,8 +107,8 @@ export function AuthorizationGroupMembers({ code, name, anonymous, protectedGran
           배정된 사용자{typeof total === 'number' ? ` (${total}명)` : ''}
         </h3>
         {editable && <div className="flex flex-wrap gap-2">
-          {!anonymous && <Button type="button" variant="outline" size="sm" disabled={revokePending} onClick={() => setAddOpen(true)}>구성원 추가</Button>}
-          <Button type="button" variant="destructive" size="sm" disabled={chosen.size === 0 || revokePending} aria-busy={revokePending} onClick={() => void revokeSelected()}>
+          {!anonymous && <Button type="button" variant="outline" size="sm" disabled={revokeFlight.pending} onClick={() => setAddOpen(true)}>구성원 추가</Button>}
+          <Button type="button" variant="destructive" size="sm" disabled={chosen.size === 0 || revokeFlight.pending} aria-busy={revokeFlight.pending} onClick={() => void revokeSelected()}>
             선택한 {chosen.size}명 회수
           </Button>
         </div>}
@@ -133,7 +130,7 @@ export function AuthorizationGroupMembers({ code, name, anonymous, protectedGran
           {members.data.list.map((member) => (
             <li key={member.id} className="flex items-center justify-between gap-3 px-3 py-1">
               <span className="flex min-w-0 items-center gap-2">
-                {editable && <Checkbox aria-label={`${member.userNm} (${member.userId}) 선택`} checked={chosen.has(member.id)} disabled={revokePending}
+                {editable && <Checkbox aria-label={`${member.userNm} (${member.userId}) 선택`} checked={chosen.has(member.id)} disabled={revokeFlight.pending}
                   onCheckedChange={(checked) => toggle(member, checked === true)} />}
                 <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-sm">
                   <span className="font-medium">{member.userNm}</span>
@@ -156,7 +153,7 @@ export function AuthorizationGroupMembers({ code, name, anonymous, protectedGran
           <p className="text-sm text-muted-foreground">회수할 사람 {chosen.size}명 — 다른 페이지로 넘어가도 선택은 남습니다. 목록에 없는 사람도 여기서 풀 수 있습니다.</p>
           <ul className="flex flex-wrap gap-2">
             {[...chosen.values()].map((member) => <li key={member.id}>
-              <Button type="button" variant="outline" size="sm" disabled={revokePending} aria-label={`${member.userNm} · ${member.userId} 선택 해제`}
+              <Button type="button" variant="outline" size="sm" disabled={revokeFlight.pending} aria-label={`${member.userNm} · ${member.userId} 선택 해제`}
                 onClick={() => toggle(member, false)}>
                 {member.userNm} · {member.userId}<X aria-hidden="true" />
               </Button>
