@@ -498,27 +498,14 @@ function callsDeclaration(call, declaration) {
   return declarationsOfIdentifier(callee).includes(declaration);
 }
 /**
- * 호출이 await 로 기다려지는가 — 감싸기 함수의 finally 해제가 콜백의 끝 뒤에 오는지 본다. 괄호와 Promise 사슬
- * (`await task().finally(cleanup)`)을 거쳐 올라간다.
+ * 호출이 바로 await 로 기다려지는가(괄호만 벗긴다) — 감싸기 함수의 finally 해제가 콜백의 끝 뒤에 오는지 본다. Promise 사슬
+ * (`await task().finally(…)`)까지 인정하던 판은 `?.finally` 처럼 기다리지 않는 사슬을 기다림으로 봐 되돌렸다(보수적 미탐 —
+ * 공인 감싸기 함수는 `await task()` 를 쓰는 공용 단일 실행 훅이다).
  */
 function isAwaitedCall(call) {
-  let node = call;
-  for (;;) {
-    let parent = node.getParent();
-    while (parent && Node.isParenthesizedExpression(parent)) {
-      node = parent;
-      parent = parent.getParent();
-    }
-    if (parent && Node.isPropertyAccessExpression(parent) && parent.getExpression() === node
-      && /^(?:then|catch|finally)$/.test(parent.getName())) {
-      const chained = parent.getParent();
-      if (chained && Node.isCallExpression(chained) && chained.getExpression() === parent) {
-        node = chained;
-        continue;
-      }
-    }
-    return Boolean(parent && Node.isAwaitExpression(parent));
-  }
+  let parent = call.getParent();
+  while (parent && Node.isParenthesizedExpression(parent)) parent = parent.getParent();
+  return Boolean(parent && Node.isAwaitExpression(parent));
 }
 
 /**

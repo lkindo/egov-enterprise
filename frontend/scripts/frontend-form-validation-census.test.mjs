@@ -2980,8 +2980,10 @@ test('a named callback that is also called directly outside the single-flight ho
   }
 });
 
-test('a wrapper that awaits a promise chain on the callback still releases after it', () => {
-  // `await task().finally(cleanup)` 도 콜백이 끝난 뒤 finally 로 간다 — await 를 Promise 사슬 너머로 본다.
+test('a wrapper whose callback wait goes through a promise chain is not credited (conservative)', () => {
+  // 남은 한계: `await task().finally(…)` 도 실제로는 기다리지만 census 는 `await task()` 형태만 기다림으로 본다. 사슬까지 넓힌 판은
+  // `await task().finally?.(…)` 처럼 기다리지 않는 사슬도 기다림으로 봐 거짓 통과를 만들었다(Codex 3회차) — 되돌리고 보수적
+  // 미탐으로 남긴다. 공인 감싸기 함수(공용 단일 실행 훅)는 `await task()` 를 쓴다.
   const chained = SINGLE_FLIGHT_SOURCE.replace(/return await task\(\);/g, 'return await task().finally(() => undefined);');
   assert.notEqual(chained, SINGLE_FLIGHT_SOURCE, 'the hook source must await its task');
   const subject = fixture({
@@ -3001,8 +3003,8 @@ test('a wrapper that awaits a promise chain on the callback still releases after
   try {
     const action = subject.discovery.candidates.find(({ kind, owner }) => kind === 'secondary-action' && owner === 'ChainedOwner');
     assert.ok(action);
-    assert.equal(action.signals.implementation.actionHandlerHasSynchronousRef, true);
-    assert.equal(action.signals.implementation.actionControlHasAriaBusy, true);
+    assert.equal(action.signals.implementation.actionHandlerHasSynchronousRef, false);
+    assert.equal(action.signals.implementation.actionControlHasAriaBusy, false);
   } finally {
     subject.cleanup();
   }
