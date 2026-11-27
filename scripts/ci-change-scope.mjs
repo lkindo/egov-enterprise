@@ -370,6 +370,10 @@ const CROSS_STACK_CONTRACT = [
 ];
 
 const COMPOSER_CONTRACTS_RELEVANT = [
+  // 생성기 계약이 직접 읽는 앱 설정과 API 투영 입력이다.
+  /^api-server\/src\/main\/resources\/application\.yml$/,
+  /^api-docs\.json$/,
+  /^config\/governance\/operation-consumer-census\.json$/,
   /^config\/modules\//,
   /^config\/project-composer-menus\.json$/,
   /^config\/db-vendors\.json$/,

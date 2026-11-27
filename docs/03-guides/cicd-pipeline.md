@@ -57,6 +57,8 @@ Gradle PR 의존성 그래프는 write token으로 PR 코드를 실행하지 않
 
 운영 계약 실행(`npm run test:operational-contracts`, 일반 PR 은 핵심 `:core` 분할 실행, 생성기·`frontend/src`·`business-app/src`·스킬·`docs/README.md` 는 `:composer`, 요구분석 작업공간·산출물 내보내기·토큰 키트·스냅숏 입력은 `:requirements` 추가 실행, 둘 다 해당·정책·`main` 은 전체 실행)은 콘솔에 spec 출력을 내면서 파일별 JUnit 보고서 `build/operational-contracts/junit.xml`(`:composer`는 `junit-composer.xml`, `:requirements`는 `junit-requirements.xml`)을 남긴다([보고자](../../scripts/node-test-junit-reporter.mjs) — Node 22 의 내장 junit 보고자는 시험의 파일을 적지 않아 따로 둔다). CI 는 `Summarize operational contract durations` 단계가 파일별 시간 합과 가장 느린 시험을 step summary 에 싣는다. 로컬에서는 `node scripts/ci-junit-duration-summary.mjs --node-junit build/operational-contracts/junit.xml` 로 같은 표를 본다. 보고서와 요약에는 파일 경로·시험 이름·시간·상태만 있고 명령·출력·오류 원문은 없다.
 
+`api-server/src/main/resources/application.yml`, `api-docs.json`, `config/governance/operation-consumer-census.json`을 각각 단독으로 변경해도 `:composer` 계약이 실행된다. `api-docs.json`은 요구분석 입력이기도 해서 전체 운영 계약이 실행된다.
+
 ```
 dependency-submission.yml (pull_request, contents:read)
     └─ Gradle graph 생성·artifact upload

@@ -1,13 +1,22 @@
 import axios from 'axios';
 import { AUTH_BROWSER_REQUEST_TIMEOUT_MS } from '@/lib/auth/auth-request-policy';
-import type { AxiosRequestConfig } from 'axios';
+import type { AxiosError, AxiosRequestConfig } from 'axios';
 import { cache } from 'react';
 import { runOnSessionLost } from '@/lib/auth/before-sign-out';
 import { effectiveBrowserLocale } from '@/i18n/surfaces';
 
 import { authReissueResponseSchema } from '@/lib/auth/auth-reissue-contract';
 import { forwardedClientIpHeaders } from '@/lib/api/forwarded-client-ip';
-import { assertCurrentAuthorizationRequest, assertRequestAllowedWhileSignedOut, getAuthorizationRequestEpoch, isSessionTransitionPending, isSignedOut, notifyAuthorizationChanged } from '@/lib/auth/authorization-state';
+import {
+  advanceAuthorizationRequestEpoch,
+  assertCurrentAuthorizationRequest,
+  assertRequestAllowedWhileSignedOut,
+  getAuthorizationRequestEpoch,
+  isSessionTransitionPending,
+  isSignedOut,
+  markSignedOut,
+  notifyAuthorizationChanged,
+} from '@/lib/auth/authorization-state';
 import { isCanceledRequest } from '@/lib/safe-error-log';
 import { loginReturnPath } from '@/lib/auth/login-return-path';
 import { hardNavigateToInternalRoute } from '@/lib/navigation/internal-route';
@@ -224,10 +233,9 @@ axiosInstance.interceptors.response.use(
     }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // [2026-11-21] 로그인 화면 자신만 뺀다 — 종전 부분 문자열 판정은 `/admin/security/login-policy`·`/admin/system/logs/login`
-      //   같은 관리 화면도 로그인 화면으로 보아, 그 화면들에서는 세션이 만료돼도 재발급·로그인 이동 없이 요청이 조용히 실패했다.
+      // 로그인 화면 경로는 정확히 판정한다. `/admin/security/login-policy` 같은 관리 화면에서도 재발급이 필요하다.
       if (typeof window !== 'undefined' &&
-        (isLoginScreen(window.location.pathname) ||
+        (isSignedOut() || isLoginScreen(window.location.pathname) ||
         originalRequest.url?.includes('/api/auth/login') ||
         originalRequest.url?.includes('/api/auth/reissue'))) {
         return Promise.reject(error);
@@ -284,6 +292,14 @@ axiosInstance.interceptors.response.use(
         isRetrying = false;
 
         if (typeof window !== 'undefined' && !superseded) {
+          const response = (reissueError as AxiosError<unknown> | undefined)?.response;
+          const failure = authReissueResponseSchema.safeParse(response?.data);
+          if ((response?.status === 401 || response?.status === 403)
+            && failure.success && !failure.data.success && failure.data.code === 'SESSION_EXPIRED') {
+            // 재발급 거절이 확정되면 로그인 화면이 열리기 전에 이전 화면의 응답과 새 재발급을 막는다.
+            markSignedOut();
+            advanceAuthorizationRequestEpoch();
+          }
           // 세션은 이미 끝났다 — 보낼 수 없는 대기 일(결재 대기 승인)을 거두고 다시 로그인할 때 볼 안내를 남긴다(2026-11-25).
           runOnSessionLost();
           // 세션 만료 시 로그인 화면으로 포워딩

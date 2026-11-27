@@ -1390,6 +1390,22 @@ test('pull_request narrows operational contracts to core unless composer/fronten
   assert.equal(classifyChangedFiles(['docs/03-guides/e2e-test-guide.md'], { event: 'workflow_dispatch' }).composerContracts, true);
 });
 
+test('individual repository inputs select the composer contracts that read them', async (t) => {
+  for (const [file, requirementsContracts] of [
+    ['api-server/src/main/resources/application.yml', 'false'],
+    ['api-docs.json', 'true'],
+    ['config/governance/operation-consumer-census.json', 'false'],
+  ]) {
+    await t.test(file, () => {
+      const scope = classifyChangedFiles([file], { event: 'pull_request' });
+      assert.deepEqual(scope.unknownFiles, []);
+      const outputs = githubOutputs(scope);
+      assert.equal(outputs.composer_contracts, 'true');
+      assert.equal(outputs.requirements_contracts, requirementsContracts);
+    });
+  }
+});
+
 test('pull_request skips requirements contracts unless requirements workspace, deliverables/token inputs, policy, unknown paths, or non-PR events apply', () => {
   for (const files of [
     ['docs/03-guides/e2e-test-guide.md'],

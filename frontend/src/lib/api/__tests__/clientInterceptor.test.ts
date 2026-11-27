@@ -31,6 +31,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
 
 const authorization = { groups: ['USER'], permissions: [], authorizationVersion: 'v1' };
+const expiredReissue = { success: false, code: 'SESSION_EXPIRED', message: 'refresh rejected' };
 
 type Handler = (arg: unknown) => Promise<unknown>;
 
@@ -318,10 +319,11 @@ describe('API 클라이언트 인터셉터', () => {
         if (transition === 'signed-out') state.markSignedOut();
         else if (transition === 'epoch') state.advanceAuthorizationRequestEpoch();
         else endTransition = state.beginSessionTransition();
-        rejectReissue(new Error('reissue 401'));
+        rejectReissue(Object.assign(new Error('reissue 401'), { response: { status: 401, data: expiredReissue } }));
         try {
           await expect(pending).rejects.toMatchObject({ name: 'CanceledError' });
           expect(win.location.href, transition).toBe('');
+          expect(state.isSignedOut(), transition).toBe(transition === 'signed-out');
         } finally {
           state.markSignedIn();
           endTransition();
@@ -342,17 +344,52 @@ describe('API 클라이언트 인터셉터', () => {
       expect(win.location.href).toContain('/login?expired=true');
     });
 
-    it('재발급 자체가 실패해도 로그인으로 보낸다', async () => {
+    it.each([401, 403])('재발급이 %i로 거절되면 이동 중 늦은 401 이 재발급을 다시 시작하지 않는다', async (status) => {
       const win = { location: { pathname: '/admin', href: '' }, dispatchEvent: vi.fn() };
       Object.defineProperty(globalThis, 'window', { value: win, configurable: true, writable: true });
       const { instance, captured } = await loadClient();
-      instance.post.mockRejectedValueOnce(new Error('network down'));
+      const initial = await captured.requestOk!({ url: '/notifications', headers: {} });
+      const inFlight = await captured.requestOk!({ url: '/auth/me', headers: {} });
+      const denied = Object.assign(new Error('refresh rejected'), { response: { status, data: expiredReissue } });
+      instance.post.mockRejectedValue(denied);
+
+      await expect(captured.responseErr!({ config: initial, response: { status: 401 } })).rejects.toBe(denied);
+      expect(win.location.href).toContain('/login?expired=true');
+      // 이전 문서에서 뒤늦게 처리한 401 과 이동 중 새로 허용된 인증 조회의 401 을 모두 재현한다.
+      expect(win.location.pathname).toBe('/admin');
+      const lateResult = await captured.responseErr!({ config: inFlight, response: { status: 401 } }).catch((error: unknown) => error);
+      const authCheck = await captured.requestOk!({ url: '/auth/me', headers: {} });
+      const authCheckError = { config: authCheck, response: { status: 401 } };
+      const authCheckResult = await captured.responseErr!(authCheckError).catch((error: unknown) => error);
+
+      expect(instance.post).toHaveBeenCalledTimes(1);
+      expect(lateResult).toMatchObject({ name: 'CanceledError' });
+      expect(authCheckResult).toBe(authCheckError);
+    });
+
+    it.each([
+      { name: '네트워크 단절', response: undefined },
+      { name: '일시적 서비스 장애', response: { status: 502, data: { success: false, code: 'REISSUE_PROXY_ERROR', message: 'proxy down' } } },
+      { name: 'Origin 검사 거절', response: { status: 403, data: { success: false, code: 'INVALID_ORIGIN', message: 'untrusted origin' } } },
+    ])('$name 뒤 로그인 이동을 시도해도 이전 화면에 남으면 다시 재발급할 수 있다', async ({ response }) => {
+      const win = { location: { pathname: '/admin', href: '' }, dispatchEvent: vi.fn() };
+      Object.defineProperty(globalThis, 'window', { value: win, configurable: true, writable: true });
+      const { instance, captured } = await loadClient();
+      const initial = await captured.requestOk!({ url: '/x', headers: {} });
+      const reissueError = Object.assign(new Error('reissue failed'), { response });
+      instance.post.mockRejectedValueOnce(reissueError);
 
       await expect(
-        captured.responseErr!({ response: { status: 401 }, config: { url: '/x' } })
-      ).rejects.toBeInstanceOf(Error);
+        captured.responseErr!({ response: { status: 401 }, config: initial })
+      ).rejects.toBe(reissueError);
 
       expect(win.location.href).toContain('/login?expired=true');
+      expect(win.location.pathname).toBe('/admin');
+      const next = await captured.requestOk!({ url: '/y', headers: {} });
+      instance.post.mockResolvedValueOnce({ data: { success: true, data: authorization } });
+
+      await expect(captured.responseErr!({ response: { status: 401 }, config: next })).resolves.toEqual({ __retriedWith: next });
+      expect(instance.post).toHaveBeenCalledTimes(2);
     });
   });
 
