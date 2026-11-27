@@ -1,34 +1,33 @@
 import { http, HttpResponse } from 'msw';
+import { contractJson } from '@/test-utils/contract-response';
+import {
+  getHeadMenuOperation,
+  getMeOperation,
+  getMyBookmarkStatusOperation,
+  getMyBookmarksOperation,
+  loginOperation,
+} from '@/types/generated-operations';
+
+// [2026-11-27] core 성공 응답은 contractJson 으로 생성 응답 계약을 먼저 통과해야 한다(src/test-utils/contract-response.ts). 게시판
+//   고정물은 게시판을 뺀 생성물에 operation 이 없어 여기서 import 하지 않는다 — 게시판 소유 시험(src/lib/board/__tests__/
+//   msw-board-list-fixture.test.ts)이 생성 계약으로 대조한다.
 
 export const handlers = [
   // [2026-10-26] 공용 레이아웃(브레드크럼·사이드바)이 배경으로 부르는 메뉴 조회. 시험의 검증 대상이 아니므로 빈 목록이다 — 종전에는
   //   핸들러가 없어 실제 네트워크로 나갔고, CI 에서는 실패해 빈 목록과 같은 표시가 됐다. 응답 모양은 생성 계약이 대조한다.
-  http.get('*/api/v1/menus/head', () => {
-    return HttpResponse.json({ success: true, code: 'S000', message: '성공', data: { list: [] } });
-  }),
-  http.get('*/api/v1/menus/bookmarks', () => {
-    return HttpResponse.json({ success: true, code: 'S000', message: '성공', data: [] });
-  }),
-  http.get('*/api/v1/menus/bookmarks/status', () => {
-    return HttpResponse.json({ success: true, code: 'S000', message: '성공', data: { bookmarks: [], unavailableCount: 0 } });
-  }),
+  http.get('*/api/v1/menus/head', () => contractJson(getHeadMenuOperation, { list: [] })),
+  http.get('*/api/v1/menus/bookmarks', () => contractJson(getMyBookmarksOperation, [])),
+  http.get('*/api/v1/menus/bookmarks/status', () => contractJson(getMyBookmarkStatusOperation, { bookmarks: [], unavailableCount: 0 })),
 
   // 사용자 정보 조회 Mock API (실제 서비스는 users/me 호출)
-  http.get('*/api/v1/users/me', () => {
-    return HttpResponse.json({
-      success: true,
-      code: 'S000',
-      message: '성공',
-      data: {
-        userId: 'admin',
-        userNm: '관리자',
-        esntlId: 'USRCNFRM_00000000001',
-        role: 'ROLE_ADMIN',
-        groups: ['ROLE_ADMIN'], permissions: [], authorizationVersion: 'fixture-authorization-v1',
-        emlAddr: 'admin@egov.go.kr'
-      }
-    });
-  }),
+  http.get('*/api/v1/users/me', () => contractJson(getMeOperation, {
+    userId: 'admin',
+    userNm: '관리자',
+    esntlId: 'USRCNFRM_00000000001',
+    role: 'ROLE_ADMIN',
+    groups: ['ROLE_ADMIN'], permissions: [], authorizationVersion: 'fixture-authorization-v1',
+    emlAddr: 'admin@egov.go.kr'
+  })),
 
   // 게시판 선택지(ADR-0040 결정 11) — 아래 와일드카드보다 먼저 둔다. bare 배열이고 PageResponse 가 아니다.
   http.get('*/api/v1/boards/options', () => {
@@ -74,16 +73,9 @@ export const handlers = [
   }),
 
   // 로그인 Mock API
-  http.post('*/api/v1/auth/login', () => {
-    return HttpResponse.json({
-      success: true,
-      code: 'S000',
-      message: '성공',
-      data: {
-        accessToken: 'fixture-access-token',
-        role: 'ROLE_ADMIN',
-        groups: ['ROLE_ADMIN'], permissions: [], authorizationVersion: 'fixture-authorization-v1',
-      },
-    });
-  })
+  http.post('*/api/v1/auth/login', () => contractJson(loginOperation, {
+    accessToken: 'fixture-access-token',
+    role: 'ROLE_ADMIN',
+    groups: ['ROLE_ADMIN'], permissions: [], authorizationVersion: 'fixture-authorization-v1',
+  }))
 ];

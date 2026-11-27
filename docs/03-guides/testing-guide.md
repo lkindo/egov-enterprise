@@ -98,6 +98,13 @@ test('renders button with text', () => {
 
 API service 테스트는 [api-client-test-double.ts](../../frontend/src/test-utils/api-client-test-double.ts)의 5-method client 형태와 reset 계약을 재사용한다. 각 테스트 파일의 `vi.mock` 격리는 유지하고, 호출 이력뿐 아니라 일회성 resolve/reject 구현까지 `resetApiClientTestDouble`로 초기화해 이전 테스트의 실패 설정이 다음 테스트에 새지 않게 한다. helper는 Axios envelope가 아니라 공통 client가 이미 unwrap한 `ApiResponse.data` 값을 반환한다는 경계를 따른다. 특수 interceptor나 config 동작을 검사하는 파일은 억지로 공통화하지 않는다.
 
+MSW 성공 응답 고정물은 [contract-response.ts](../../frontend/src/test-utils/contract-response.ts)의 `contractJson(operation, data)`로 만든다.
+
+- 판정 방식: 운영 코드가 응답을 읽는 판정(`parseGeneratedOperationResponse`)으로 고정물을 먼저 읽어 본다. 생성 응답 계약과 어긋나면 처리기가 불릴 때 operation 과 어긋난 필드 경로를 밝혀 던지므로, 서버 계약이 바뀐 뒤에도 고정물이 조용히 남지 않는다.
+- 도우미를 쓰지 않는 경우: 실패 응답(`success: false`·오류 상태)은 도우미 밖에서 만든다.
+- 공용 처리기([handlers.ts](../../frontend/src/mocks/handlers.ts)): core operation 만 import 한다. 생성 프로젝트에서 빠질 수 있는 기능의 operation 을 공용 처리기가 import 하면, 그 기능을 뺀 생성물의 타입 검사가 깨진다. 그런 기능의 고정물은 그 기능 소유 시험이 계약으로 대조한다(예: 게시판).
+- 래칫: [contract-response.test.ts](../../frontend/src/test-utils/contract-response.test.ts)가 MSW 의 손으로 쓴 성공 JSON 을 파일별 허용 목록으로 고정한다. 새 성공 고정물은 도우미로 쓰고, 목록은 줄이기만 한다.
+
 ---
 
 ## 통합 테스트
