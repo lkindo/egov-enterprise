@@ -74,7 +74,7 @@ public class AttachmentIntegrityApiController {
      * 이중 집행한다.
      */
     @Operation(summary = "첨부 정합성 점검",
-            description = "DB 첨부 레코드와 저장소 실물을 상한 범위 내에서 대조해 어긋난 건수와 조치 대상 예시를 반환한다. "
+            description = "DB 첨부 레코드와 저장소 실물을 대조해 어긋난 건수와 조치 대상 예시를 반환한다. "
                     + "읽기 전용이며 어떤 레코드도 변경하지 않는다.")
     @GetMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.file.AttachmentIntegrityApiController#scan')")
