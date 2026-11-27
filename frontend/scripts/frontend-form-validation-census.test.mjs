@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
@@ -2667,6 +2667,142 @@ test('generic useAppForm calls are detected as concrete adapter consumers', () =
     assert.equal(candidate.signals.implementation.sourceUsesAppForm, true);
     assert.equal(candidate.signals.implementation.usesAppForm, true);
     assert.equal(candidate.signals.implementation.schemaIdentifier, 'profileSchema');
+  } finally {
+    subject.cleanup();
+  }
+});
+
+// 공용 단일 실행 훅(frontend/src/hooks/use-single-flight.ts)의 실제 원문 — 훅을 바꾸면(예: useCallback 으로 감싸 census 가
+// 감싸기 함수를 못 보게 되면) 아래 시험이 붉어진다.
+const SINGLE_FLIGHT_SOURCE = readFileSync(new URL('../src/hooks/use-single-flight.ts', import.meta.url), 'utf8');
+
+test('the shared single-flight hook from another file locks each write and links its own pending state', () => {
+  // 쓰기는 부르는 쪽이 콜백으로 넘기고 잠금·처리 중 상태·finally 해제는 다른 파일의 훅이 맡는다 — 감싸기 함수를 따라가 같은
+  // 파일 감싸기 함수와 같은 규칙으로 판정한다. 행별 대기(runFor·pendingKey)와 단일 대기(run·pending)를 함께 본다.
+  const subject = fixture({
+    'frontend/src/hooks/use-single-flight.ts': SINGLE_FLIGHT_SOURCE,
+    'frontend/src/Rows.tsx': `
+      import { useSingleFlight } from '@/hooks/use-single-flight';
+      import { itemService } from '@/services/itemService';
+      export function Rows({ rows }){
+        const deleteFlight = useSingleFlight();
+        const saveFlight = useSingleFlight();
+        const handleDelete = (row) => deleteFlight.runFor(row.id, async () => {
+          try { await itemService.deleteItem(row.id); } catch { setError('delete failed'); }
+        });
+        const handleSave = () => saveFlight.run(async () => {
+          try { await itemService.saveItem(1); } catch { setError('save failed'); }
+        });
+        return <><form role="search"><input /></form>
+          {rows.map((row) => <button key={row.id} disabled={deleteFlight.pendingKey !== null} aria-busy={deleteFlight.pendingKey === row.id} onClick={() => handleDelete(row)}>delete</button>)}
+          <button disabled={saveFlight.pending} aria-busy={saveFlight.pending} onClick={handleSave}>save</button></>;
+      }
+    `,
+  });
+  try {
+    const actions = subject.discovery.candidates.filter(({ kind, owner }) => kind === 'secondary-action' && owner === 'Rows');
+    assert.deepEqual(actions.map(({ handler }) => handler).sort(), ['handleDelete', 'handleSave']);
+    for (const action of actions) {
+      assert.equal(action.signals.implementation.actionHandlerHasSynchronousRef, true, `${action.handler} lock`);
+      assert.equal(action.signals.implementation.actionControlHasDisabled, true, `${action.handler} disabled`);
+      assert.equal(action.signals.implementation.actionControlHasAriaBusy, true, `${action.handler} aria-busy`);
+    }
+  } finally {
+    subject.cleanup();
+  }
+});
+
+test('a cross-file wrapper that releases after await instead of finally is not a lock', () => {
+  // 다른 파일 감싸기 함수도 같은 파일과 같은 규칙이다 — 콜백이 던지면 풀리지 않는 해제는 잠금·처리 중 표시로 보지 않는다.
+  const subject = fixture({
+    'frontend/src/hooks/use-loose-flight.ts': `
+      import { useRef, useState } from 'react';
+      export function useLooseFlight(){
+        const inFlightRef = useRef(false);
+        const [pending, setPending] = useState(false);
+        async function run(task){
+          if (inFlightRef.current) return undefined;
+          inFlightRef.current = true;
+          setPending(true);
+          const result = await task();
+          inFlightRef.current = false;
+          setPending(false);
+          return result;
+        }
+        return { run, pending };
+      }
+    `,
+    'frontend/src/LooseOwner.tsx': `
+      import { useLooseFlight } from '@/hooks/use-loose-flight';
+      import { itemService } from '@/services/itemService';
+      export function LooseOwner(){
+        const saveFlight = useLooseFlight();
+        const handleSave = () => saveFlight.run(async () => {
+          try { await itemService.saveItem(1); } catch { setError('save failed'); }
+        });
+        return <><form role="search"><input /></form><button disabled={saveFlight.pending} aria-busy={saveFlight.pending} onClick={handleSave}>save</button></>;
+      }
+    `,
+  });
+  try {
+    const action = subject.discovery.candidates.find(({ kind, owner }) => kind === 'secondary-action' && owner === 'LooseOwner');
+    assert.ok(action);
+    assert.equal(action.signals.implementation.actionHandlerHasSynchronousRef, false);
+    assert.equal(action.signals.implementation.actionControlHasAriaBusy, false);
+  } finally {
+    subject.cleanup();
+  }
+});
+
+test('one single-flight instance shared by two actions is neither action\'s pending state', () => {
+  // 인스턴스 하나를 두 동작이 쓰면 단추가 어느 동작이 진행 중인지 말하지 못한다 — 종전 '공용 busy 상태' 규칙이 그대로 걸린다.
+  const subject = fixture({
+    'frontend/src/hooks/use-single-flight.ts': SINGLE_FLIGHT_SOURCE,
+    'frontend/src/SharedFlight.tsx': `
+      import { useSingleFlight } from '@/hooks/use-single-flight';
+      import { itemService } from '@/services/itemService';
+      export function SharedFlight(){
+        const flight = useSingleFlight();
+        const handleSave = () => flight.run(async () => { try { await itemService.saveItem(1); } catch { setError('save failed'); } });
+        const handleDelete = () => flight.run(async () => { try { await itemService.deleteItem(1); } catch { setError('delete failed'); } });
+        return <><form role="search"><input /></form>
+          <button disabled={flight.pending} aria-busy={flight.pending} onClick={handleSave}>save</button>
+          <button disabled={flight.pending} aria-busy={flight.pending} onClick={handleDelete}>delete</button></>;
+      }
+    `,
+  });
+  try {
+    const actions = subject.discovery.candidates.filter(({ kind, owner }) => kind === 'secondary-action' && owner === 'SharedFlight');
+    assert.equal(actions.length, 2);
+    for (const action of actions) assert.equal(action.signals.implementation.actionControlHasAriaBusy, false, action.handler);
+  } finally {
+    subject.cleanup();
+  }
+});
+
+test('a validated form locked with the shared single-flight hook keeps its source-level lock signal', () => {
+  // 폼 제출을 손으로 짠 sendingRef 대신 공용 훅으로 잠가도 파일 단위 잠금 표지(pendingGuard·sourceHasSynchronousRef)가 남는다 —
+  // 없으면 검증 폼 준수 판정이 'source-level ref lock' 부재로 붉어져 훅으로 옮길 수 없다.
+  const subject = fixture({
+    'frontend/src/hooks/use-single-flight.ts': SINGLE_FLIGHT_SOURCE,
+    'frontend/src/FlightForm.tsx': `
+      import { useSingleFlight } from '@/hooks/use-single-flight';
+      export function FlightForm(){
+        const validation = useManualFormValidation(manualSchema);
+        const submitFlight = useSingleFlight<string>();
+        const errors = extractFieldErrors(new Error());
+        return <form onSubmit={() => submitFlight.run(() => saveService.create())}>
+          <input />
+          <button disabled={submitFlight.pending}>save</button>
+        </form>;
+      }
+    `,
+  });
+  try {
+    const form = subject.discovery.candidates.find(({ kind, owner }) => kind === 'native-form' && owner === 'FlightForm');
+    assert.equal(form?.signals.implementation.sourceHasSynchronousRef, true);
+    const entry = createDraftManifest(subject.discovery).entries.find(({ owner }) => owner === 'FlightForm');
+    assert.equal(entry?.pendingGuard, 'synchronous-submit-lock-and-disabled');
   } finally {
     subject.cleanup();
   }

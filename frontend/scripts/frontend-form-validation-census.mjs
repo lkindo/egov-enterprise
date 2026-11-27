@@ -446,8 +446,21 @@ function holdsWrite(declaration) {
   return result;
 }
 
-/** 값이 다른 파일에 있으면 쓰기를 가진 처리기일 때만 남긴다(위 holdsWrite). */
-const sameFileOrWriting = (sourceFile) => (declaration) => declaration.getSourceFile() === sourceFile || holdsWrite(declaration);
+/**
+ * 선언이 자기 매개변수(콜백)를 부르는 감싸기 함수인가 — 공용 단일 실행 훅의 `run(task)` 처럼 쓰기는 부르는 쪽이 콜백으로 넘기고,
+ * 감싸기 함수는 동기 잠금·처리 중 상태·finally 해제를 맡는다. 잠금·대기 판정은 종전 같은 파일 감싸기 함수의 규칙 그대로다.
+ */
+function invokesOwnParameter(declaration) {
+  const callable = Node.isVariableDeclaration(declaration) ? unwrapExpression(declaration.getInitializer()) : declaration;
+  if (!callable || !(Node.isFunctionDeclaration(callable) || isInlineFunction(callable))) return false;
+  const parameters = callable.getParameters();
+  return parameters.length > 0 && callable.getDescendantsOfKind(SyntaxKind.CallExpression)
+    .some((call) => parameters.some((parameter) => callsDeclaration(call, parameter)));
+}
+
+/** 값이 다른 파일에 있으면 쓰기를 가진 처리기(위 holdsWrite)나 콜백을 감싸는 함수(invokesOwnParameter)일 때만 남긴다. */
+const sameFileOrWriting = (sourceFile) => (declaration) => declaration.getSourceFile() === sourceFile
+  || holdsWrite(declaration) || invokesOwnParameter(declaration);
 
 function localDeclaration(sourceFile, name, context) {
   return localDeclarations(sourceFile, name, context)[0] ?? null;
@@ -474,7 +487,13 @@ function stateSetterName(sourceFile, stateName, origin) {
 /** 호출이 그 선언(함수·변수 선언, 매개변수)을 부르는가 — 이름이 아니라 심볼로 맞춘다. */
 function callsDeclaration(call, declaration) {
   const callee = call.getExpression();
-  if (!Node.isIdentifier(callee) || !declaration) return false;
+  if (!declaration) return false;
+  // 훅 객체의 멤버로 부르는 감싸기 함수(`deleteFlight.runFor(id, task)`)는 그 멤버 값으로 맞춘다.
+  if (Node.isPropertyAccessExpression(callee) && !Node.isParameterDeclaration(declaration)) {
+    return propertyValueNodes(callee.getExpression(), callee.getName(), new Set())
+      .some((value) => declarationsOfValueNode(value, new Set()).includes(declaration));
+  }
+  if (!Node.isIdentifier(callee)) return false;
   if (Node.isParameterDeclaration(declaration)) return (callee.getSymbol()?.getDeclarations() ?? []).includes(declaration);
   return declarationsOfIdentifier(callee).includes(declaration);
 }
@@ -1739,7 +1758,8 @@ function collectSignals(ownerNode, formNode, sourceText, file, kind) {
   const appFormMatch = ownerText.match(/\buseManualFormValidation\s*\(\s*([A-Za-z_$][\w$]*)/);
   const usesReactHookForm = /\buseForm\s*(?:<[^>]+>)?\s*\(/.test(ownerText) || /\.handleSubmit\s*\(/.test(submitText);
   const applyServerErrors = /(?:\.applyServerErrors|extractFieldErrors)\s*\(/.test(ownerText);
-  const pendingGuard = /(?:isSubmitting|isPending|\.isPending|pending\s*=|(?:pending|submitting|saving|sending|registering|deleting)\w*Ref)/i.test(ownerText)
+  // 공용 단일 실행 훅(useSingleFlight)은 동기 ref 잠금을 품고 있다 — 손으로 짠 …PendingRef 와 같은 파일 단위 표지로 본다.
+  const pendingGuard = /(?:isSubmitting|isPending|\.isPending|pending\s*=|(?:pending|submitting|saving|sending|registering|deleting)\w*Ref|\buseSingleFlight\s*(?:<[^>]*>)?\s*\()/i.test(ownerText)
     && /\bdisabled\s*=/.test(ownerText);
   const explicitWrite = /\.mutate(?:Async)?\s*\(|\.handleSubmit\s*\(|\b(?:onFormSubmit|onSubmit|handleSubmit|handleSend|handleSave|handleCreate|handleRegister|handleUpdate)\b/.test(handler.text);
   const strongWrite = formNode
@@ -1770,7 +1790,7 @@ function collectSignals(ownerNode, formNode, sourceText, file, kind) {
         : appFormMatch?.[1] ?? null,
       sourceAppliesServerErrors: /(?:\.applyServerErrors|extractFieldErrors|\.setFormErrors)\s*\(/.test(sourceText),
       sourceHasDisabledControl: /\bdisabled\s*=/.test(sourceText),
-      sourceHasSynchronousRef: /(?:pending|submitting|saving|sending|registering|deleting|request)\w*Ref/i.test(sourceText),
+      sourceHasSynchronousRef: /(?:pending|submitting|saving|sending|registering|deleting|request)\w*Ref|\buseSingleFlight\s*(?:<[^>]*>)?\s*\(/i.test(sourceText),
       sourceUsesAppForm: ownerNode.getSourceFile().getDescendantsOfKind(SyntaxKind.CallExpression)
         .some((call) => callName(call) === 'useAppForm'),
       sourceUsesManualFormValidation: /\buseManualFormValidation\s*\(/.test(sourceText),
