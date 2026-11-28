@@ -16,8 +16,7 @@ test.describe('Ops Governance', () => {
             await opsPage.verifyPolicyTab();
         });
     });
-    test('새 정책을 화면에서 등록하고 다시 열어 업무 키와 내용을 확인한다', async ({ adminPage, adminRequest }) => {
-        // 정책 삭제 API는 없다. 자동 isolatedTarget fixture가 검증한 폐기용 DB에만 새 합성 행을 남긴다.
+    test('새 정책을 화면에서 등록하고 다시 열어 업무 키와 내용을 확인한다', async ({ adminPage, adminRequest, userRequest }) => {
         const code = `E2E${randomUUID().replaceAll('-', '').slice(0, 9).toUpperCase()}`;
         const title = `E2E policy ${code}`;
         const content = `Policy created through the browser ${code}`;
@@ -82,5 +81,12 @@ test.describe('Ops Governance', () => {
         await expect(adminPage.getByRole('button', { name: `${updatedTitle} 정책 수정`, exact: true })).toHaveCount(0);
         await adminPage.reload();
         await expect(adminPage.getByRole('button', { name: `${refreshedTitle} 정책 수정`, exact: true })).toBeVisible();
+        const userReadable = await userRequest.get(`/api/v1/policies/${code.toLowerCase()}`);
+        expect(userReadable.status()).toBe(200);
+        const publicData = (await userReadable.json()).data;
+        expect(publicData).toMatchObject({ plcyTypeCd: code, plcyTtl: refreshedTitle });
+        expect(publicData).not.toHaveProperty('version');
+        expect(publicData).not.toHaveProperty('lastMdfrId');
+        expect((await userRequest.get(`/api/v1/policies/NOSUCH_${code.slice(0, 5)}`)).status()).toBe(404);
     });
 });

@@ -2869,6 +2869,13 @@
     "permission": "POLICY_UPDATE"
   },
   {
+    "method": "GET",
+    "path": "/api/v1/policies/{type}",
+    "handler": "nuri.api.controller.foundation.controller.system.policy.PublicPolicyApiController#getPublicPolicy",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
     "method": "DELETE",
     "path": "/api/v1/admin/system/survey-responses/{srvyRspnsSn}/submission",
     "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyResponseAdminApiController#cancelSubmission",

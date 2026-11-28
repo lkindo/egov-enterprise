@@ -279,6 +279,10 @@
       "description": "후속 작업 전달 상태와 명시적 재처리"
     },
     {
+      "name": "Policy Public",
+      "description": "로그인 사용자용 시스템 정책/약관 열람 API"
+    },
+    {
       "name": "Admin - Comment",
       "description": "관리자용 댓글 관리 API"
     },
@@ -27436,6 +27440,88 @@
         }
       }
     },
+    "/api/v1/policies/{type}": {
+      "get": {
+        "tags": [
+          "Policy Public"
+        ],
+        "summary": "시스템 정책 일반 열람",
+        "description": "로그인한 사용자가 등록된 시스템 정책을 조회합니다. 미등록 정책은 404입니다.",
+        "operationId": "getPublicPolicy",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePublicPolicy"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/notifications/{notiSn}": {
       "get": {
         "tags": [
@@ -47561,6 +47647,55 @@
           }
         }
       },
+      "ApiResponsePublicPolicy": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PublicPolicy"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "PublicPolicy": {
+        "type": "object",
+        "properties": {
+          "plcyTypeCd": {
+            "type": "string"
+          },
+          "plcyTtl": {
+            "type": "string"
+          },
+          "plcyCn": {
+            "type": "string"
+          },
+          "mdfcnDt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "ApiResponsePageResponseNotificationDto": {
         "type": "object",
         "properties": {
@@ -53050,6 +53185,17 @@
           "version": {
             "type": "integer",
             "format": "int32"
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "mdfcnDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastMdfrId": {
+            "type": "string"
           }
         }
       },

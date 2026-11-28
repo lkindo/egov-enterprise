@@ -11,8 +11,8 @@
     ],
     "testAndDeclarationFilesExcluded": true,
     "openApiSource": "api-docs.json",
-    "openApiOperationCount": 451,
-    "generatedDescriptorCount": 451
+    "openApiOperationCount": 452,
+    "generatedDescriptorCount": 452
   },
   "target": {
     "generatedPercent": 100,
@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 415,
-    "eligible": 393,
+    "total": 416,
+    "eligible": 394,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 393,
+      "generated": 394,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "a73158de0415419cf2316718224a7b0f9304d304157736eec81afd74e24420b0",
+  "inventoryHash": "9600e71db4f64e6a85833d8671ae49b53dcd7363fc48fd1f49114e83aea6433f",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -2640,6 +2640,22 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "5ec326df432c27c8c0aa"
+    },
+    {
+      "file": "frontend/src/services/business/user/help/HelpUserService.ts",
+      "owner": "HelpUserService.getPublicPolicy",
+      "ordinal": 1,
+      "enclosingMethod": "getPublicPolicy",
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "this.executeGenerated",
+      "method": "get",
+      "target": "/api/v1/policies/{type}",
+      "operationId": "getPublicPolicy",
+      "descriptorName": "getPublicPolicyOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "962d7f12803fd21f64cc"
     },
     {
       "file": "frontend/src/services/business/user/MenuService.ts",

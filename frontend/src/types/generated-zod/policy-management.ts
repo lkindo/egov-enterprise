@@ -29,6 +29,9 @@ export const PolicySchema = /*#__PURE__*/ (() => z.object({
   plcyTtl: z.string().optional(),
   plcyCn: z.string().optional(),
   version: z.number().int().optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  lastMdfrId: z.string().optional(),
 }))();
 export type Policy = z.infer<typeof PolicySchema>;
 
@@ -80,6 +83,9 @@ export const PolicyRequestSchema = /*#__PURE__*/ (() => z.object({
   plcyTtl: z.string().optional(),
   plcyCn: z.string().optional(),
   version: z.number().int().optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  lastMdfrId: z.string().optional(),
 }))();
 
 export const PolicyResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -87,6 +93,9 @@ export const PolicyResponseSchema = /*#__PURE__*/ (() => z.object({
   plcyTtl: z.string().optional().nullable(),
   plcyCn: z.string().optional().nullable(),
   version: z.number().int().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
 }))();
 
 export const ApiResponsePolicyRequestSchema = /*#__PURE__*/ (() => z.object({

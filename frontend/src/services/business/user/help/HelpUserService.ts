@@ -9,6 +9,7 @@ import {
   getPublicFaqsOperation,
   getPublicHpcmListOperation,
   getPublicManualsOperation,
+  getPublicPolicyOperation,
 } from '@/types/generated-operations';
 import { AxiosRequestConfig } from 'axios';
 import { HELP_FAQ_BOARD_ID, QNA_BOARD_ID } from '@/config/board-ids';
@@ -18,6 +19,7 @@ const FAQ_BOARD_ID = HELP_FAQ_BOARD_ID;
 
 type BoardFaqListItem = components['schemas']['PublicFaqListItemResponse'];
 type BoardFaqDetail = components['schemas']['PublicFaqDetailResponse'];
+export type PublicSystemPolicy = components['schemas']['PublicPolicy'];
 
 export interface FAQ {
   faqId: string;
@@ -233,6 +235,11 @@ class HelpUserService extends ApiService {
       scrtYn: 'Y',
     };
     await this.executeGenerated(createPostOperation, { body: boardData, config });
+  }
+
+  /** 로그인한 일반 사용자가 등록된 시스템 정책을 열람한다. */
+  async getPublicPolicy(type: string, config?: AxiosRequestConfig): Promise<PublicSystemPolicy> {
+    return this.executeGenerated(getPublicPolicyOperation, { path: { type }, config });
   }
 }
 

@@ -419,6 +419,7 @@ export { triggerErrorOperation } from './generated-operations/debug';
 export { getPopup_1Operation } from './generated-operations/popup-user';
 export { getActivePopupsOperation } from './generated-operations/popup-user';
 export { getPollItemsOperation } from './generated-operations/poll';
+export { getPublicPolicyOperation } from './generated-operations/policy-public';
 export { getNotificationOperation } from './generated-operations/notification';
 export { deleteNotificationOperation } from './generated-operations/notification';
 export { getUnreadCountOperation } from './generated-operations/notification';

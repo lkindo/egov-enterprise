@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { SITE_IDENTITY } from '@/config/site-identity';
 import DOMPurify from 'isomorphic-dompurify';
-import { policyAdminService, SystemPolicy } from '@/services/foundation/system/PolicyAdminService';
+import { helpUserService, type PublicSystemPolicy } from '@/services/business/user/help/HelpUserService';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Scale } from 'lucide-react';
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 /** 화면이 스스로 만들어 낸 본문과 서버가 준 본문을 섞지 않기 위한 표현. */
 type PolicyView =
-  | { kind: 'loaded'; policy: SystemPolicy }
+  | { kind: 'loaded'; policy: PublicSystemPolicy }
   | { kind: 'not-registered'; type: string }
   | { kind: 'permission-wall'; type: string }
   | { kind: 'error'; type: string };
@@ -44,21 +44,13 @@ export default async function PolicyViewPage({
 
   let view: PolicyView;
   try {
-    view = { kind: 'loaded', policy: await policyAdminService.getPolicy(type) };
+    view = { kind: 'loaded', policy: await helpUserService.getPublicPolicy(type) };
   } catch (error) {
     /*
-     * [2026-08-28] 실패 사유를 세 갈래로 구분한다.
+     * 실패 사유를 세 갈래로 구분한다.
      *
-     * 이 화면은 /api/v1/admin/system/policies/{type}에서 읽으며 현재 POLICY_READ가 필요하다.
-     * 이 기능권한이 없으면 403이다. 종전 폴백은 '잠시 후 다시 시도해 주세요' 라고 안내해 일시적 장애처럼 보이게
-     * 했고, 사용자는 새로고침을 반복하게 된다 — 권한 문제는 기다려도 해소되지 않는다.
-     *
-     * 404(미등록)는 이번에 새로 구분한다. 종전에는 서버가 본문을 **지어내서** 200 으로
-     * 돌려줬기 때문에 이 갈래가 존재할 수 없었다 — 신규 설치의 기본 상태가 "가짜 개인정보
-     * 처리방침을 진짜처럼 게시" 였다. 없는 것은 없다고 말한다.
-     *
-     * 인증·기능권한 없이 읽는 공개 조회 경로를 여는 것은 신규 API 표면이자 라우트 인가
-     * 완화라 별도 결정이다.
+     * 이 화면은 로그인 사용자 열람 경로(/api/v1/policies/{type})에서 읽으며 미인증 401/403은 권한 안내로,
+     * 미등록 404는 미등록 안내로 구분해 가짜 정책 본문을 만들어 내지 않는다.
      */
     const status = (error as { response?: { status?: number } })?.response?.status;
     if (status === 404) view = { kind: 'not-registered', type };

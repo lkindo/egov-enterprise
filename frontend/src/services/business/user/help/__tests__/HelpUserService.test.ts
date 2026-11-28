@@ -330,4 +330,23 @@ describe('HelpUserService 도움말·온라인 매뉴얼 열람', () => {
 
     await expect(helpUserService.getHelpGuides({ page: 1, size: 10 })).rejects.toThrow();
   });
+
+  it('시스템 정책 일반 열람은 policies/{type} 경로에서 공개 필드만 반환한다', async () => {
+    vi.mocked(client.getRaw).mockResolvedValueOnce(successEnvelope({
+      plcyTypeCd: 'PRIVACY',
+      plcyTtl: '개인정보 처리방침',
+      plcyCn: '<p>정책 본문</p>',
+      mdfcnDt: '2026-11-28T09:00:00',
+    }));
+
+    const result = await helpUserService.getPublicPolicy('privacy');
+
+    expect(client.getRaw).toHaveBeenCalledWith('policies/privacy', undefined);
+    expect(result).toEqual({
+      plcyTypeCd: 'PRIVACY',
+      plcyTtl: '개인정보 처리방침',
+      plcyCn: '<p>정책 본문</p>',
+      mdfcnDt: '2026-11-28T09:00:00',
+    });
+  });
 });

@@ -39,6 +39,9 @@ class PolicyServiceTest {
     @Mock
     private SystemPolicyRepository systemPolicyRepository;
 
+    @Mock
+    private nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
+
     @Test
     void createInsertsNewPolicyAndRejectsExistingCodeWithoutMerge() {
         try (var security = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
@@ -47,12 +50,14 @@ class PolicyServiceTest {
             verify(systemPolicyRepository).insert(inserted.capture());
             assertThat(inserted.getValue().getPlcyTypeCd()).isEqualTo("NEW_POLICY");
             assertThat(inserted.getValue().getPlcyCn()).isEqualTo("본문");
+            verify(sensitiveAudit).recordMutation("POLICY_CREATE", "NEW_POLICY");
             given(systemPolicyRepository.existsById("NEW_POLICY")).willReturn(true);
             org.assertj.core.api.Assertions.assertThatThrownBy(() -> policyService.createPolicy("NEW_POLICY", "다른 제목", "다른 본문"))
                     .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.DUPLICATE_RESOURCE);
             verify(systemPolicyRepository, org.mockito.Mockito.never()).save(any());
             verify(systemPolicyRepository, org.mockito.Mockito.times(1)).insert(any());
+            org.mockito.Mockito.verifyNoMoreInteractions(sensitiveAudit);
         }
     }
 
@@ -110,7 +115,8 @@ class PolicyServiceTest {
 
         // then
         assertThat(policy.getPlcyTtl()).isEqualTo("New Title");
-        verify(systemPolicyRepository).save(policy);
+        verify(systemPolicyRepository).saveAndFlush(policy);
+        verify(sensitiveAudit).recordMutation("POLICY_UPDATE", "COPYRIGHT");
     }
 
     @Test
@@ -127,7 +133,8 @@ class PolicyServiceTest {
                 .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
                 .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION);
         assertThat(policy.getPlcyTtl()).isEqualTo("원래 제목");
-        verify(systemPolicyRepository, org.mockito.Mockito.never()).save(any());
+        verify(systemPolicyRepository, org.mockito.Mockito.never()).saveAndFlush(any());
+        org.mockito.Mockito.verifyNoInteractions(sensitiveAudit);
     }
 
     @Test
@@ -140,7 +147,7 @@ class PolicyServiceTest {
         policyService.updatePolicy("COPYRIGHT", "New Title", "New Content", null);
 
         // then
-        verify(systemPolicyRepository).save(any());
+        verify(systemPolicyRepository).saveAndFlush(any());
     }
 
     /*
@@ -167,7 +174,7 @@ class PolicyServiceTest {
                 .extracting("errorCode")
                 .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
         verify(systemPolicyRepository, org.mockito.Mockito.never()).findById(any());
-        verify(systemPolicyRepository, org.mockito.Mockito.never()).save(any());
+        verify(systemPolicyRepository, org.mockito.Mockito.never()).saveAndFlush(any());
     }
 
     @Test
@@ -179,6 +186,67 @@ class PolicyServiceTest {
 
         policyService.updatePolicy(twelve, "T", "C", null);
 
-        verify(systemPolicyRepository).save(any());
+        verify(systemPolicyRepository).saveAndFlush(any());
+        verify(sensitiveAudit).recordMutation("POLICY_UPDATE", twelve);
+    }
+
+    @Test
+    @DisplayName("버전을 실어 보낸 수정은 대상 정책이 사라졌을 때 새 행으로 되살리지 않고 409 로 거부한다")
+    void updatePolicy_RejectsMissingPolicyWhenVersionProvided() {
+        given(systemPolicyRepository.findById("COPYRIGHT")).willReturn(Optional.empty());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> policyService.updatePolicy("COPYRIGHT", "T", "C", 0))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION);
+
+        verify(systemPolicyRepository, org.mockito.Mockito.never()).saveAndFlush(any());
+        org.mockito.Mockito.verifyNoInteractions(sensitiveAudit);
+    }
+
+    @Test
+    @DisplayName("정책 수정은 감사 기록 전에 flush 해 낙관적 잠금 예외를 503 대신 409 경로로 보존한다")
+    void updatePolicy_FlushesBeforeAuditAndPropagatesOptimisticLockFailure() {
+        SystemPolicy policy = SystemPolicy.builder().plcyTypeCd("COPYRIGHT").plcyTtl("원래 제목").plcyCn("원래 본문").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(policy, "version", 1);
+        given(systemPolicyRepository.findById("COPYRIGHT")).willReturn(Optional.of(policy));
+
+        policyService.updatePolicy("COPYRIGHT", "수정 제목", "수정 본문", 1);
+        var order = org.mockito.Mockito.inOrder(systemPolicyRepository, sensitiveAudit);
+        order.verify(systemPolicyRepository).saveAndFlush(policy);
+        order.verify(sensitiveAudit).recordMutation("POLICY_UPDATE", "COPYRIGHT");
+
+        org.mockito.Mockito.reset(sensitiveAudit);
+        given(systemPolicyRepository.saveAndFlush(policy))
+                .willThrow(new org.springframework.orm.ObjectOptimisticLockingFailureException(SystemPolicy.class, "COPYRIGHT"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> policyService.updatePolicy("COPYRIGHT", "경합 제목", "경합 본문", 1))
+                .isInstanceOf(org.springframework.dao.OptimisticLockingFailureException.class);
+        org.mockito.Mockito.verifyNoInteractions(sensitiveAudit);
+    }
+
+    @Test
+    @DisplayName("일반 열람 조회는 유형 코드를 대문자 정규화해 공개 필드만 돌려주고 비정규 입력은 저장소 조회 없이 거부한다")
+    void getPublicPolicy_NormalizesAndRejectsMalformedCodes() {
+        java.time.LocalDateTime modifiedAt = java.time.LocalDateTime.of(2026, 11, 28, 9, 0);
+        SystemPolicy entity = SystemPolicy.builder().plcyTypeCd("PRIVACY").plcyTtl("개인정보 처리방침").plcyCn("<p>본문</p>").build();
+        entity.setMdfcnDt(modifiedAt);
+        entity.setLastMdfrId("admin01");
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 7);
+        given(systemPolicyRepository.findById("PRIVACY")).willReturn(Optional.of(entity));
+
+        Optional<PolicyService.PublicPolicy> found = policyService.getPublicPolicy(" privacy ");
+        assertThat(found).isPresent();
+        assertThat(found.get().getPlcyTypeCd()).isEqualTo("PRIVACY");
+        assertThat(found.get().getPlcyTtl()).isEqualTo("개인정보 처리방침");
+        assertThat(found.get().getMdfcnDt()).isEqualTo(modifiedAt);
+
+        assertThat(policyService.getPublicPolicy("../ETC")).isEmpty();
+        assertThat(policyService.getPublicPolicy("TOO_LONG_TYPE_13")).isEmpty();
+        assertThat(policyService.getPublicPolicy("  ")).isEmpty();
+        verify(systemPolicyRepository, org.mockito.Mockito.times(1)).findById("PRIVACY");
+        org.mockito.Mockito.verifyNoMoreInteractions(systemPolicyRepository);
     }
 }
