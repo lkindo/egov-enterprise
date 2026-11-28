@@ -3,12 +3,18 @@ package nuri.api.controller.business.approval;
 import nuri.business.security.annotation.WithMockCustomUser;
 import nuri.business.service.informalsanction.InformalSanctionService;
 import nuri.business.support.ControllerTestSupport;
+import nuri.foundation.core.annotation.SensitiveOperation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -61,6 +67,21 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
         }
 
         verifyNoInteractions(approvalService);
+    }
+
+    @Test
+    @DisplayName("결재 처리(승인·반려)는 민감 작업 감사 원장에 남는다")
+    void confirmIsRecordedInTheSensitiveAuditLedger() {
+        // 결재 처리가 민감 작업 감사 원장(SensitiveAuditInterceptor)에 남도록 confirm 의 표지와 문구를 고정한다.
+        // core 표지를 보는 SensitiveOperationCoverageTest 는 결재가 빠진 구성에도 남으므로, 결재 컨트롤러는 결재가 소유한 이 시험이 본다.
+        List<Method> handlers = Arrays.stream(ApprovalApiController.class.getDeclaredMethods())
+                .filter(method -> method.getName().equals("confirm"))
+                .toList();
+
+        assertThat(handlers).as("ApprovalApiController#confirm").hasSize(1);
+        SensitiveOperation marker = handlers.getFirst().getAnnotation(SensitiveOperation.class);
+        assertThat(marker).as("ApprovalApiController#confirm 의 민감 작업 표지").isNotNull();
+        assertThat(marker.value()).isEqualTo("결재 처리(승인·반려)");
     }
 
     @Test

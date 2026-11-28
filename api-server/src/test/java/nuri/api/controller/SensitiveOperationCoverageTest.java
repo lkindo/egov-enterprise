@@ -11,11 +11,12 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * [2026-11-24] 계정의 접속을 바꾸는 쓰기는 민감 작업 감사 원장에 남는다(품질 평가 2순위).
+ * 계정의 접속을 바꾸는 쓰기는 민감 작업 감사 원장에 남는다. 원장 기록은 {@code @SensitiveOperation}·{@code @PrivacyAccess}
+ * 표지가 있는 핸들러만 대상이다(SensitiveAuditInterceptor). 표지를 빼면 이 시험이 붉다.
  *
- * <p>원장 기록은 {@code @SensitiveOperation}·{@code @PrivacyAccess} 표지가 있는 핸들러만 대상이다(SensitiveAuditInterceptor).
- * 종전에는 비밀번호 초기화·강제 로그아웃·권한 그룹 변경만 남고, 같은 효과의 계정 삭제·잠금 해제·상태 변경·로그인 정책·부재 대리결재
- * 지정은 웹 로그(URL·행위자)에만 남았다. 표지를 빼면 이 시험이 붉다.
+ * <p>이 시험은 모든 생성물에 남으므로 core 컨트롤러만 적는다. 문자열 클래스 이름은 생성기의 import 연쇄 제거에 걸리지 않아,
+ * 기능이 소유한 컨트롤러를 적으면 그 기능이 빠진 구성에서 실행 중에 실패한다. 기능 컨트롤러는 그 기능의 시험이 본다
+ * (결재: ApprovalApiControllerTest).
  */
 class SensitiveOperationCoverageTest {
 
@@ -30,7 +31,6 @@ class SensitiveOperationCoverageTest {
             "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController|updateLoginPolicy|로그인 정책 변경",
             "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController|deleteLoginPolicy|로그인 정책 삭제",
             "nuri.api.controller.foundation.controller.system.user.UserAbsenceApiController|updateAbsence|부재·대리결재 지정",
-            "nuri.api.controller.business.approval.ApprovalApiController|confirm|결재 처리(승인·반려)",
             "nuri.api.controller.foundation.controller.system.policy.PolicyApiController|createPolicy|시스템 정책 등록",
             "nuri.api.controller.foundation.controller.system.policy.PolicyApiController|updatePolicy|시스템 정책 수정",
     })
