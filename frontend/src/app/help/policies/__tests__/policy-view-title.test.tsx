@@ -9,10 +9,10 @@ import type { ReactElement } from 'react';
  * (권한 벽·미등록·오류) 늘 일반 제목 '약관 및 정책' 이 나왔다. 지금은 이 화면으로 가는 링크가 없다(바닥글 링크는 걷었다).
  * 대소문자를 가리지 않고 찾는다. 받은 정책 제목이 있으면 그것이 먼저다.
  */
-const mocks = vi.hoisted(() => ({ getPolicy: vi.fn() }));
+const mocks = vi.hoisted(() => ({ getPublicPolicy: vi.fn() }));
 
-vi.mock('@/services/foundation/system/PolicyAdminService', () => ({
-  policyAdminService: { getPolicy: mocks.getPolicy },
+vi.mock('@/services/business/user/help/HelpUserService', () => ({
+  helpUserService: { getPublicPolicy: mocks.getPublicPolicy },
 }));
 
 const { default: PolicyViewPage } = await import('../[type]/page');
@@ -30,19 +30,19 @@ describe('정책 열람 — 제목', () => {
     ['COPYRIGHT', '저작권 정책'],
     ['privacy', '개인정보 처리 방침'],
   ])('정책 PK(%s)로 열면 권한 벽에서도 그 정책 이름을 제목으로 보인다', async (type, title) => {
-    mocks.getPolicy.mockRejectedValueOnce(forbidden());
+    mocks.getPublicPolicy.mockRejectedValueOnce(forbidden());
     await renderPolicy(type);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(title);
   });
 
   it('모르는 정책 유형은 일반 제목을 보인다', async () => {
-    mocks.getPolicy.mockRejectedValueOnce(forbidden());
+    mocks.getPublicPolicy.mockRejectedValueOnce(forbidden());
     await renderPolicy('UNKNOWN');
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('약관 및 정책');
   });
 
   it('받은 정책 제목이 있으면 그것을 보인다', async () => {
-    mocks.getPolicy.mockResolvedValueOnce({ plcyId: 'PRIVACY', plcyTtl: '개인정보 처리방침(2026 개정)', plcyCn: '<p>본문</p>' });
+    mocks.getPublicPolicy.mockResolvedValueOnce({ plcyTypeCd: 'PRIVACY', plcyTtl: '개인정보 처리방침(2026 개정)', plcyCn: '<p>본문</p>' });
     await renderPolicy('PRIVACY');
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('개인정보 처리방침(2026 개정)');
   });
