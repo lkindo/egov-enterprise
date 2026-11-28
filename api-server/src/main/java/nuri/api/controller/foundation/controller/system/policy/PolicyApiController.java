@@ -61,6 +61,7 @@ public class PolicyApiController {
     }
 
     @Operation(summary = "정책 내용 수정")
+    @nuri.foundation.core.annotation.SensitiveOperation("시스템 정책 수정")
     @PutMapping("/{type}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.policy.PolicyApiController#updatePolicy')")
     public ResponseEntity<ApiResponse<Void>> updatePolicy(
@@ -76,6 +77,7 @@ public class PolicyApiController {
     }
 
     @Operation(summary = "시스템 정책 신규 등록", description = "기존 정책 쓰기 권한으로 새 유형을 등록한다. 기존 유형은 덮어쓰지 않으며 공개 범위는 변경하지 않는다.")
+    @nuri.foundation.core.annotation.SensitiveOperation("시스템 정책 등록")
     @PostMapping("/{type}")
     @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.policy.PolicyApiController#createPolicy')")

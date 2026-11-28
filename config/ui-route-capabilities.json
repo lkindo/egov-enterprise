@@ -9472,7 +9472,7 @@
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E4",
-          "lastVerifiedAt": "2026-11-10",
+          "lastVerifiedAt": "2026-11-28",
           "owner": "product/UX + domain owner",
           "roundtrips": [
             {
@@ -11334,7 +11334,7 @@
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
-      "dataSource": "admin-system-policies-api",
+      "dataSource": "public-policies-api",
       "supportedActions": [
         "view-detail"
       ],
@@ -11358,25 +11358,25 @@
           "id": "policy.document-read",
           "status": "partial",
           "candidateStatus": "live",
-          "dataSource": "admin-system-policies-api",
+          "dataSource": "public-policies-api",
           "actions": [
             "view-detail"
           ],
           "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN|SYSTEM",
+          "actorScope": "AUTHENTICATED",
           "visibleLabel": "약관 및 정책",
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-11-28",
           "owner": "product/UX + domain owner",
           "evidence": [
-            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/policy/PolicyApiController.java",
-            "api-server/src/test/java/nuri/api/controller/foundation/controller/system/policy/PolicyApiControllerTest.java",
+            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/policy/PublicPolicyApiController.java",
+            "api-server/src/test/java/nuri/api/controller/foundation/controller/system/policy/PublicPolicyApiControllerTest.java",
             "frontend/src/app/help/policies/[type]/page.tsx",
             "frontend/src/app/help/policies/__tests__/policy-view-honesty.test.ts",
-            "frontend/src/services/foundation/system/PolicyAdminService.ts",
-            "frontend/src/services/foundation/system/__tests__/PolicyAdminService.test.ts"
+            "frontend/src/services/business/user/help/HelpUserService.ts",
+            "frontend/src/services/business/user/help/__tests__/HelpUserService.test.ts"
           ]
         }
       ],

@@ -3,7 +3,14 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PolicyAdminClient from '../PolicyAdminClient';
 
-const mocks = vi.hoisted(() => ({ getPolicies: vi.fn(), create: vi.fn(), update: vi.fn(), toast: vi.fn(), permissions: ['POLICY_READ', 'POLICY_UPDATE'] }));
+const mocks = vi.hoisted(() => ({
+  getPolicies: vi.fn(),
+  getPolicy: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  toast: vi.fn(),
+  permissions: ['POLICY_READ', 'POLICY_UPDATE'],
+}));
 
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { authorizationVersion: 'test-v1', permissions: mocks.permissions } }) }));
 
@@ -23,6 +30,7 @@ vi.mock('next/dynamic', () => ({
 vi.mock('@/services/foundation/system/PolicyAdminService', () => ({
   policyAdminService: {
     getPolicies: (...args: unknown[]) => mocks.getPolicies(...args),
+    getPolicy: (...args: unknown[]) => mocks.getPolicy(...args),
     updatePolicy: (...args: unknown[]) => mocks.update(...args),
     createPolicy: (...args: unknown[]) => mocks.create(...args),
   },
@@ -53,6 +61,7 @@ const policy = {
   plcyTypeCd: 'PRIVACY',
   plcyTtl: '개인정보 처리방침',
   plcyCn: '<p>기존 정책 내용</p>',
+  version: 0,
 };
 
 function deferred<T>() {
@@ -66,6 +75,7 @@ describe('PolicyAdminClient validation behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getPolicies.mockResolvedValue([policy]);
+    mocks.getPolicy.mockResolvedValue({ ...policy, mdfcnDt: '2026-11-28T09:00:00', lastMdfrId: 'admin01' });
     mocks.permissions = ['POLICY_READ', 'POLICY_UPDATE'];
     mocks.create.mockResolvedValue(undefined);
     mocks.update.mockResolvedValue(undefined);
@@ -141,12 +151,34 @@ describe('PolicyAdminClient validation behavior', () => {
     expect(screen.getByRole('button', { name: '정책 등록하기' })).toBeEnabled();
   });
 
-  it('정책 읽기 권한만 있으면 생성·수정 동작을 표시하지 않는다', async () => {
+  it('정책 읽기 권한만 있으면 상세 조회만 보이고 생성·수정 동작을 표시하지 않는다', async () => {
     mocks.permissions = ['POLICY_READ'];
     render(<PolicyAdminClient />);
     expect(await screen.findByText('PRIVACY')).toBeVisible();
+    expect(screen.getByRole('button', { name: '개인정보 처리방침 정책 상세' })).toBeVisible();
     expect(screen.queryByRole('button', { name: '새 정책 등록' })).toBeNull();
     expect(screen.queryByRole('button', { name: '개인정보 처리방침 정책 수정' })).toBeNull();
+  });
+
+  it('상세 버튼은 관리자 단건 API 를 조회해 버전·수정 메타·정제된 본문을 보여주고 닫을 수 있다', async () => {
+    mocks.getPolicy.mockResolvedValueOnce({
+      ...policy,
+      plcyCn: '<p>상세 미리보기 본문</p><script>alert(1)</script>',
+      mdfcnDt: '2026-11-28T09:00:00',
+      lastMdfrId: 'admin01',
+    });
+    render(<PolicyAdminClient />);
+    fireEvent.click(await screen.findByRole('button', { name: '개인정보 처리방침 정책 상세' }));
+
+    await waitFor(() => expect(mocks.getPolicy).toHaveBeenCalledWith('PRIVACY'));
+    expect(await screen.findByText('버전: 0')).toBeVisible();
+    expect(screen.getByText('최종 변경: 2026-11-28 09:00')).toBeVisible();
+    expect(screen.getByText('수정자: admin01')).toBeVisible();
+    expect(screen.getByText('상세 미리보기 본문')).toBeVisible();
+    expect(document.querySelector('script')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: '닫기' }));
+    await waitFor(() => expect(screen.queryByText('수정자: admin01')).toBeNull());
   });
 
   it('invalid 수정 요청을 write하지 않고 summary와 첫 필드로 연결한다', async () => {

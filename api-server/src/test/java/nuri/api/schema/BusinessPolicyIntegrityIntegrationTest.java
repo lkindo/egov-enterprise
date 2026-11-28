@@ -81,6 +81,9 @@ class BusinessPolicyIntegrityIntegrationTest {
     @AfterEach
     void removeOnlyOwnFixtures() {
         SecurityContextHolder.clearContext();
+        AuditLedgerFixtures.delete(jdbc,
+                "DELETE FROM tb_sys_adt_log WHERE job_nm IN ('POLICY_CREATE', 'POLICY_UPDATE') AND adt_cn LIKE ?",
+                "%\"" + key + "\"%");
         jdbc.update("DELETE FROM tb_plcy_manage WHERE plcy_type_cd=?", key);
         var detailCache = cacheManager.getCache(DETAIL_CACHE);
         if (detailCache != null) detailCache.evict(key);
@@ -128,6 +131,51 @@ class BusinessPolicyIntegrityIntegrationTest {
             assertThat(pending.get(20, TimeUnit.SECONDS)).isInstanceOf(DataIntegrityViolationException.class);
         }
         assertThat(jdbc.queryForObject("SELECT plcy_cn FROM tb_plcy_manage WHERE plcy_type_cd=?", String.class, key)).isEqualTo("원래 본문");
+    }
+
+    @Test
+    void concurrentPolicyUpdateThrowsOptimisticLockFailureNotAuditOverload() throws Exception {
+        policies.createPolicy(key, "초기 제목", "초기 본문");
+        String application = "policy-update-" + key;
+        try (var executor = Executors.newSingleThreadExecutor(); var blocker = dataSource.getConnection()) {
+            blocker.setAutoCommit(false);
+            try (var update = blocker.prepareStatement(
+                    "UPDATE tb_plcy_manage SET plcy_ttl='먼저 커밋', version=1 WHERE plcy_type_cd=? AND version=0")) {
+                update.setString(1, key);
+                assertThat(update.executeUpdate()).isEqualTo(1);
+            }
+            var pending = executor.submit(() -> {
+                authenticate();
+                try {
+                    new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+                        VendorTestSql.nameSession(jdbc, application);
+                        policies.updatePolicy(key, "동시 수정", "동시 본문", 0);
+                    });
+                    return null;
+                } catch (RuntimeException failure) {
+                    return failure;
+                } finally {
+                    SecurityContextHolder.clearContext();
+                }
+            });
+            try {
+                assertWaitingOnDatabaseLock(application);
+            } finally {
+                blocker.commit();
+            }
+            RuntimeException thrown = pending.get(20, TimeUnit.SECONDS);
+            assertThat(thrown)
+                    .isInstanceOf(org.springframework.dao.OptimisticLockingFailureException.class)
+                    .isNotInstanceOf(BusinessException.class);
+        }
+        assertThat(jdbc.queryForObject("SELECT plcy_ttl FROM tb_plcy_manage WHERE plcy_type_cd=?", String.class, key))
+                .isEqualTo("먼저 커밋");
+        assertThat(jdbc.queryForObject("SELECT version FROM tb_plcy_manage WHERE plcy_type_cd=?", Integer.class, key))
+                .isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT count(*) FROM tb_sys_adt_log WHERE job_nm = 'POLICY_UPDATE' AND adt_cn LIKE ?",
+                Long.class, "%\"" + key + "\"%"))
+                .isZero();
     }
 
     @ParameterizedTest
@@ -226,7 +274,8 @@ class BusinessPolicyIntegrityIntegrationTest {
         var transactions = new TransactionInterceptor();
         transactions.setTransactionManager(transactionManager);
         transactions.setTransactionAttributeSource(new AnnotationTransactionAttributeSource());
-        var proxy = new ProxyFactory(new PolicyService(observed));
+        var proxy = new ProxyFactory(new PolicyService(observed,
+                org.mockito.Mockito.mock(nuri.foundation.core.audit.SensitiveAuditPort.class)));
         proxy.setProxyTargetClass(true);
         if (order == AdviceOrder.CACHE_OUTER) {
             proxy.addAdvice(caching);

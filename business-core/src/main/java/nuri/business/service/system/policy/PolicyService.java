@@ -10,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -23,7 +25,8 @@ import java.util.stream.Collectors;
 public class PolicyService {
 
     private final SystemPolicyRepository systemPolicyRepository;
-    
+    private final nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
+
     @Data
     @Builder
     @NoArgsConstructor
@@ -32,8 +35,23 @@ public class PolicyService {
         private String plcyTypeCd;
         private String plcyTtl;
         private String plcyCn;
-        /** 낙관적 잠금 버전(V2_155). 수정 요청에 그대로 돌려보낸다 — 다르면 409. */
+        /** 낙관적 잠금 버전. 수정 요청에 그대로 돌려보내며 불일치 시 409로 거부한다. */
         private Integer version;
+        private LocalDateTime crtDt;
+        private LocalDateTime mdfcnDt;
+        private String lastMdfrId;
+    }
+
+    /** 일반 사용자 열람용 정책 DTO. 관리용 버전·수정자 식별자는 노출하지 않는다. */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PublicPolicy {
+        private String plcyTypeCd;
+        private String plcyTtl;
+        private String plcyCn;
+        private LocalDateTime mdfcnDt;
     }
 
     /**
@@ -53,33 +71,62 @@ public class PolicyService {
         return systemPolicyRepository.findById(type).map(PolicyService::toPolicy);
     }
 
+    /**
+     * 일반 사용자용 정책 조회. PK가 대문자 규약이므로 대소문자를 정규화해 조회하며,
+     * 미등록 또는 비정규 유형은 기본 본문을 만들지 않고 빈 값을 반환한다.
+     */
+    public Optional<PublicPolicy> getPublicPolicy(String type) {
+        String normalized = type == null ? "" : type.trim().toUpperCase(Locale.ROOT);
+        if (!isValidPolicyType(normalized)) {
+            return Optional.empty();
+        }
+        return systemPolicyRepository.findById(normalized).map(PolicyService::toPublicPolicy);
+    }
+
     private static Policy toPolicy(SystemPolicy entity) {
         return Policy.builder()
                 .plcyTypeCd(entity.getPlcyTypeCd())
                 .plcyTtl(entity.getPlcyTtl())
                 .plcyCn(entity.getPlcyCn())
                 .version(entity.getVersion())
+                .crtDt(entity.getCrtDt())
+                .mdfcnDt(entity.getMdfcnDt())
+                .lastMdfrId(entity.getLastMdfrId())
+                .build();
+    }
+
+    private static PublicPolicy toPublicPolicy(SystemPolicy entity) {
+        return PublicPolicy.builder()
+                .plcyTypeCd(entity.getPlcyTypeCd())
+                .plcyTtl(entity.getPlcyTtl())
+                .plcyCn(entity.getPlcyCn())
+                .mdfcnDt(entity.getMdfcnDt())
                 .build();
     }
 
     /**
-     * 정책 수정 구현부.
-     *
-     * <p>[2026-11-25 V2_155] 이미 있는 정책은 화면이 읽은 버전과 대조한다 — 두 관리자가 같은 정책을 열고 차례로 저장하면 늦은
-     * 저장이 앞 저장을 알림 없이 덮었다(법적 고지 본문이라 영향이 컸다). 없는 유형은 종전처럼 새로 만들며 버전을 보지 않는다.
+     * 이미 있는 정책은 화면이 읽은 버전과 대조해 동시 덮어쓰기를 409로 거부하며,
+     * 없는 유형의 첫 저장은 버전을 보지 않는다. 커밋 시 민감 작업 감사 원장에 기록한다.
      */
     @Transactional
     public void updatePolicy(String type, String title, String content, Integer version) {
         nuri.business.security.util.SecurityUtil.assertPermission("POLICY_UPDATE");
         validatePolicyType(type);
         Optional<SystemPolicy> existing = systemPolicyRepository.findById(type);
+        if (existing.isEmpty() && version != null) {
+            throw new nuri.foundation.core.exception.BusinessException(
+                    nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION,
+                    nuri.foundation.core.util.EntityVersions.STALE_VERSION_MESSAGE);
+        }
         existing.ifPresent(current -> nuri.foundation.core.util.EntityVersions.assertCurrent(version, current.getVersion()));
         SystemPolicy policy = existing.orElseGet(() -> SystemPolicy.builder()
                 .plcyTypeCd(type)
                 .build());
 
         policy.update(title, content);
-        systemPolicyRepository.save(policy);
+        // 정책 변경을 감사 호출 전에 flush해 실제 낙관적 잠금 실패(409)가 감사 catch-block 에서 503으로 변환되지 않게 한다.
+        systemPolicyRepository.saveAndFlush(policy);
+        sensitiveAudit.recordMutation("POLICY_UPDATE", type);
     }
 
     /** 첫 등록은 기존 PUT upsert와 구분하고 DB PK로 동시 중복 생성도 거부한다. */
@@ -94,10 +141,18 @@ public class PolicyService {
         }
         systemPolicyRepository.insert(SystemPolicy.builder()
                 .plcyTypeCd(type).plcyTtl(title).plcyCn(content).build());
+        sensitiveAudit.recordMutation("POLICY_CREATE", type);
     }
 
     /** {@code tb_plcy_manage.plcy_type_cd} 의 물리 폭. PK 라 넘치면 INSERT 가 통째로 실패한다. */
     static final int POLICY_TYPE_MAX_LENGTH = 12;
+
+    private static boolean isValidPolicyType(String type) {
+        return type != null
+                && !type.isBlank()
+                && type.length() <= POLICY_TYPE_MAX_LENGTH
+                && type.matches("[A-Z0-9_]+");
+    }
 
     /**
      * 정책 유형 키를 물리 계약에 맞춰 검증한다.

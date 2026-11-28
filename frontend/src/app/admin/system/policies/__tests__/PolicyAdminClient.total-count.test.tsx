@@ -20,6 +20,7 @@ vi.mock('next/dynamic', () => ({ default: () => function TestEditor() { return n
 vi.mock('@/services/foundation/system/PolicyAdminService', () => ({
   policyAdminService: {
     getPolicies: (...args: unknown[]) => mocks.getPolicies(...args),
+    getPolicy: vi.fn(),
     updatePolicy: vi.fn(),
     createPolicy: vi.fn(),
   },

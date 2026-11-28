@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import DOMPurify from 'isomorphic-dompurify';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { policyAdminService, SystemPolicy } from '@/services/foundation/system/PolicyAdminService';
@@ -8,8 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import dynamic from 'next/dynamic';
-import { Settings, Edit2, CheckCircle2 } from 'lucide-react';
+import { Settings, Edit2, Eye, CheckCircle2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+import { RICH_TEXT_CONTENT_CLASSES } from '@/lib/rich-text-styles';
+import { useSingleFlight } from '@/hooks/use-single-flight';
 
 const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
   ssr: false,
@@ -70,6 +74,16 @@ function toError(value: unknown): Error {
   return new Error('정책 목록을 불러오지 못했습니다.');
 }
 
+function formatServerDateTime(value?: string | null): string | null {
+  if (typeof value !== 'string' || value.trim().length < 10) return null;
+  const trimmed = value.trim();
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(trimmed)
+    ? `${trimmed.slice(0, 10)} ${trimmed.slice(11, 16)}`
+    : /^\d{4}-\d{2}-\d{2}/.test(trimmed)
+      ? trimmed.slice(0, 10)
+      : null;
+}
+
 export default function PolicyAdminClient() {
   const { user } = useAuth();
   const canWrite = canPermission(user, 'POLICY_UPDATE');
@@ -79,10 +93,12 @@ export default function PolicyAdminClient() {
   const policyRequestRef = useRef(0);
   // 조회 실패를 "등록된 정책 없음"으로 위장하지 않기 위해 실패 사유를 목록 영역에 그대로 노출한다.
   const [error, setError] = useState<Error | null>(null);
-  // [2026-11-08 화면 용어 원장 후속] 목록 응답을 받았는가. 받기 전·실패 뒤에는 총 건수를 0 으로 말하지 않고, 다시 조회하는 동안에는 마지막으로 받은 수를 둔다.
+  // 목록 응답 수신 전·실패 뒤에는 총 건수를 0으로 표시하지 않고, 새로고침 중에는 마지막으로 받은 건수를 유지한다.
   const [policiesReceived, setPoliciesReceived] = useState(false);
   const [selectedPolicy, setSelectedPolicy] = useState<SystemPolicy | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [detailPolicy, setDetailPolicy] = useState<SystemPolicy | null>(null);
+  const detailFlight = useSingleFlight<string>();
 
   const form = useAppForm<typeof policySchema, PolicyFormValues>(policySchema, {
     defaultValues: {
@@ -178,6 +194,19 @@ export default function PolicyAdminClient() {
     }
   };
 
+  const handleViewDetail = async (item: SystemPolicy) => {
+    const type = item.plcyTypeCd;
+    if (!type) return;
+    await detailFlight.runFor(type, async () => {
+      try {
+        const fetched = await policyAdminService.getPolicy(type);
+        setDetailPolicy(fetched);
+      } catch (err: unknown) {
+        toast(extractErrorMessage(err, '정책 상세 내용을 불러오지 못했습니다.'), 'error');
+      }
+    });
+  };
+
   const columns: Column<SystemPolicy>[] = [
     {
       header: '정책 유형(ID)',
@@ -205,27 +234,55 @@ export default function PolicyAdminClient() {
       )
     },
     {
+      header: '최근 수정',
+      accessor: (item) => {
+        const modified = formatServerDateTime(item.mdfcnDt);
+        const actor = item.lastMdfrId?.trim();
+        if (!modified && !actor) {
+          return <span className="text-xs text-muted-foreground">기록 없음</span>;
+        }
+        return (
+          <div className="flex flex-col text-xs text-muted-foreground">
+            {modified && <span>{modified}</span>}
+            {actor && <span>{actor}</span>}
+          </div>
+        );
+      }
+    },
+    {
       header: '관리',
       className: 'text-right',
-      accessor: (item) => canWrite ? (
-        <div className="flex justify-end">
+      accessor: (item) => (
+        <div className="flex justify-end gap-1">
           <Button
             variant="ghost"
             size="sm"
-            aria-label={`${item.plcyTtl || item.plcyTypeCd} 정책 수정`}
-            onClick={() => handleEdit(item)}
+            aria-label={`${item.plcyTtl || item.plcyTypeCd} 정책 상세`}
+            disabled={detailFlight.pending}
+            aria-busy={detailFlight.pendingKey === item.plcyTypeCd || undefined}
+            onClick={() => { void handleViewDetail(item); }}
           >
-            <Edit2 size={14} aria-hidden="true" /> 수정
+            <Eye size={14} aria-hidden="true" /> 상세
           </Button>
+          {canWrite && (
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label={`${item.plcyTtl || item.plcyTypeCd} 정책 수정`}
+              onClick={() => handleEdit(item)}
+            >
+              <Edit2 size={14} aria-hidden="true" /> 수정
+            </Button>
+          )}
         </div>
-      ) : null
+      )
     }
   ];
 
   return (
     <WorkListPage
       title="시스템 정책 관리"
-      description="정책을 등록·수정합니다. 열람에는 기존 정책 조회 권한이 필요합니다."
+      description="정책을 등록·수정합니다. 등록된 정책은 로그인한 사용자가 일반 열람 경로에서 볼 수 있습니다."
       breadcrumbItems={[{ label: '시스템관리' }, { label: '정책 관리' }]}
       totalCount={error || !policiesReceived ? undefined : policies.length}
       actions={
@@ -325,7 +382,7 @@ export default function PolicyAdminClient() {
 
               <DialogFooter className="flex items-center border-t border-border bg-muted px-5 py-3">
                 <div className="text-left text-xs text-muted-foreground">
-                  저장한 정책은 기존 정책 조회 권한 안에서 열람합니다. 로그인 전 공개로 전환되지 않습니다.
+                  저장한 정책은 로그인한 사용자가 일반 열람 경로에서 볼 수 있습니다. 로그인 전 공개로 전환되지 않습니다.
                 </div>
                 <div className="flex shrink-0 gap-2">
                   <Button variant="ghost" type="button" disabled={form.formState.isSubmitting} onClick={() => setIsEditModalOpen(false)}>취소</Button>
@@ -340,6 +397,37 @@ export default function PolicyAdminClient() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={detailPolicy !== null} onOpenChange={(open) => { if (!open) setDetailPolicy(null); }}>
+        <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {detailPolicy?.plcyTtl || detailPolicy?.plcyTypeCd}
+              {detailPolicy?.plcyTypeCd && (
+                <span className="ml-2 font-mono text-xs text-muted-foreground">{detailPolicy.plcyTypeCd}</span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          {detailPolicy && (
+            <div className="space-y-4 text-left">
+              <div className="flex flex-wrap gap-4 text-xs text-muted-foreground border-b border-border pb-2">
+                <span>버전: {detailPolicy.version ?? 0}</span>
+                {formatServerDateTime(detailPolicy.mdfcnDt) && (
+                  <span>최종 변경: {formatServerDateTime(detailPolicy.mdfcnDt)}</span>
+                )}
+                {detailPolicy.lastMdfrId && <span>수정자: {detailPolicy.lastMdfrId}</span>}
+              </div>
+              <div
+                className={cn(RICH_TEXT_CONTENT_CLASSES, 'text-sm leading-relaxed')}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(detailPolicy.plcyCn || '') }}
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDetailPolicy(null)}>닫기</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </WorkListPage>
