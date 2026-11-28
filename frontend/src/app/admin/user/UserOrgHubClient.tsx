@@ -75,30 +75,19 @@ import { UserOrgDeptMaster } from './UserOrgDeptMaster';
 import { UserOrgBulkMoveDialog, UserOrgBulkStatusDialog } from './UserOrgBulkDialogs';
 
 /*
- * [2026-10-18 허브 분해] 한 함수(약 1,240줄)를 동작 변경 없이 나눴다 — 값(user-org-hub-model)·
- * 고른 항목(useUserOrgSelection)·부재 조회(useUserOrgAbsences)·대화상자 상태(useUserOrgDialogs)·
- * 상세 동작 단추(UserOrgDetailActions)·부서 마스터(UserOrgDeptMaster)·일괄 대화상자(UserOrgBulkDialogs)·툴바 보조 동작
- * (UserOrgToolbarActions). 이 파일 안에서는 표시 판정(useUserOrgPermissions)·사용자 목록(useUserOrgUsers)·쓰기 잠금(useUserOrgWriteLock)·상세·일괄 쓰기 동작(useUserOrgWriteActions)·부재 탭의
- * 열(absenceColumns)을 뗐다. 폼 검증 census 는 단추의 처리기를 심볼로 따라가 쓰기·동기 잠금·처리 중 표시를 함께 본다 —
- * 같은 파일과 다른 파일의 훅이 돌려준 처리기까지 보고, 다른 파일 컴포넌트에 넘기는 처리기는 handle… 속성 이름으로만 따라간다
- * (docs/03-guides/frontend-form-validation-loop.md 「처리기 해석 범위」). 폼 제출 처리기
- * (onUserSubmit·onDeptSubmit·onPasswordResetSubmit)와 그 폼, URL 을 바꾸는 코드(탭 이동·페이지)는 허브 함수에 그대로 있다.
+ * 폼 검증 census 는 단추의 처리기를 심볼로 따라가 쓰기·동기 잠금·처리 중 표시를 함께 본다. 다른 파일 컴포넌트에 넘기는 처리기는
+ * handle… 속성 이름으로만 따라간다(docs/03-guides/frontend-form-validation-loop.md 「처리기 해석 범위」). 폼 제출 처리기
+ * (onUserSubmit·onDeptSubmit·onPasswordResetSubmit)와 그 폼, URL 을 바꾸는 코드(탭 이동·페이지)는 이 파일에 둔다 — census 가
+ * 파일 단위로 본다.
  */
 
 /**
- * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
- *
- * 종전에는 들어온 쿼리를 통째로 복사해 재발행했다 — 모르는 이름이 한 번 들어오면 이동마다
- * 다시 붙는 캐리어였다(DEC-OPS-029 Q2). 새 파라미터를 도입하면 이 목록에 함께 넣어야 하고,
- * 빠뜨리면 이동 시 조용히 사라진다.
+ * 이 라우트가 URL 에 싣는 쿼리 키 전수 — 모르는 이름이 이동마다 다시 붙지 않게 허용 키만 남긴다(DEC-OPS-029 Q2).
+ * 새 파라미터를 도입하면 이 목록에 함께 넣는다. 빠뜨리면 이동 시 조용히 사라진다.
  */
 const LIST_PARAM_KEYS = ['page'] as const;
 
-/**
- * 이 허브의 탭은 곧 라우트다(감사 P1-7). 탭 전환을 로컬 state 로만 처리하면
- * 주소가 그대로라 공유·새로고침·뒤로가기가 복원되지 않고 사이드바 활성 표시도 어긋난다.
- * 따라서 탭 클릭은 해당 라우트로 이동시킨다.
- */
+/** 탭은 곧 라우트다 — 로컬 state 로만 바꾸면 공유·새로고침·뒤로가기가 복원되지 않고 사이드바 활성 표시도 어긋난다. */
 const TAB_ROUTE_MAP: Record<UserOrgTab, string> = {
   USERS: '/admin/user/manage',
   DEPTS: '/admin/user/departments',
@@ -107,10 +96,9 @@ const TAB_ROUTE_MAP: Record<UserOrgTab, string> = {
 };
 
 /**
- * 탭별 화면 제목·설명.
- *
- * ⚠ 제목 문자열은 e2e 가 셀렉터로 쓴다 — 19-hierarchy 는 `부서 및 조직 관리` 를 **exact** 로,
- *   02-admin-system 은 `사용자 관리` 를 **부분일치**로 찾는다. 바꾸려면 두 스펙을 함께 고친다.
+ * ⚠ 제목 문자열은 e2e 가 셀렉터로 쓴다 — `부서 및 조직 관리` 는 **exact** 로, `계정 및 사용자 관리` 는 **exact** 와
+ *   `사용자 관리` **부분일치** 양쪽으로 찾는다.
+ *   바꾸려면 그 스펙도 함께 고친다.
  */
 const TAB_META: Record<UserOrgTab, { title: string; description: string }> = {
   USERS: {
@@ -132,25 +120,21 @@ const TAB_META: Record<UserOrgTab, { title: string; description: string }> = {
 };
 
 /**
- * 사용자·조직 허브의 표시 판정(2026-10-18 허브 분해 때 허브 함수에서 뗐다 — 동작 변경 없음).
+ * 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 이 화면은 조회 권한(USER_READ)만으로 들어올 수 있다. 표시 판정일 뿐이며 서버 인가는
+ * 그대로 집행된다(H3).
  *
- * <p>[2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다. 이 화면은 조회 권한(USER_READ)만으로 들어올 수 있어,
- * 종전에는 헬프데스크 담당자에게도 등록·수정·초기화·삭제·일괄 작업이 모두 보였고 폼을 다 채운 뒤에야 403 을 만났다.
- * 표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
- *
- * <p>이 파일에 둔다 — operation 소비 census 의 쓰기 권한 표시 축(축 3)은 쓰기를 부르는 화면 파일이 그 권한 코드를
- * 직접 언급하는지 본다. 다른 모듈로 옮기면 판정은 그대로여도 이 허브의 쓰기 10건이 표시 판정 없음으로 세인다.
+ * <p>이 파일에 둔다 — operation 소비 census 의 쓰기 권한 표시 축(축 3)은 쓰기를 부르는 화면 파일이 그 권한 코드를 직접 언급하는지
+ * 본다. 다른 모듈로 옮기면 판정은 그대로여도 이 허브의 쓰기 10건이 표시 판정 없음으로 세인다.
  */
 function useUserOrgPermissions() {
-  // 권한 그룹 화면은 이 허브와 권한이 다르다 — 라우트 게이트와 같은 판정으로만 길을 보인다(DIP B4 P1).
+  // 권한 그룹 화면은 이 허브와 권한이 다르다 — 라우트 게이트와 같은 판정으로만 길을 보인다.
   const { user: currentUser } = useAuth();
   const canOpenAuthority = canOpenPage(currentUser, '/admin/security/authority');
   return {
-    // [2026-10-01] 사용자 상세에서 이 사람을 대상으로 권한 배정·권한 변경 이력·로그인 이력을 연다(탭 세션 인계).
     canOpenLoginLog: canOpenPage(currentUser, '/admin/system/logs/login'),
     canAssignAuthority: canOpenAuthority && canPermission(currentUser, 'AUTHRT_READ'),
     canAuditAuthority: canOpenAuthority && canPermission(currentUser, 'AUTHRT_AUDIT'),
-    // [결정 18] 인증앱을 잃은 사용자의 복구 승인. 승인 자체는 계정 메뉴의 추가 인증 관리가 재인증과 함께 집행한다.
+    // 인증앱을 잃은 사용자의 복구 승인. 승인 자체는 계정 메뉴의 추가 인증 관리가 재인증과 함께 집행한다.
     canRecoverMfa: canPermission(currentUser, 'MFA_RECOVER'),
     canCreateUser: canPermission(currentUser, 'USER_CREATE'),
     canUpdateUser: canPermission(currentUser, 'USER_UPDATE'),
@@ -166,11 +150,8 @@ function useUserOrgPermissions() {
 }
 
 /**
- * 사용자·조직 허브의 사용자 목록 조회(2026-10-18 허브 분해 때 허브 함수에서 뗐다 — 동작 변경 없음). 사용자·부재 탭이
- * 같은 목록을 본다. 페이지·검색어는 허브가 소유한다(페이지는 URL 에 싣는다).
- *
- * <p>이 파일에 둔다 — 페이지당 건수 census 는 표에 onPageSizeChange 를 넘기는 파일이 그 크기를 조회 키(queryKey)에 넣는지
- * 같은 파일에서 본다.
+ * 사용자·부재 탭이 같은 목록을 본다. 페이지·검색어는 허브가 소유한다(페이지는 URL 에 싣는다). 이 파일에 둔다 — 페이지당 건수
+ * census 는 표에 onPageSizeChange 를 넘기는 파일이 그 크기를 조회 키(queryKey)에 넣는지 같은 파일에서 본다.
  */
 function useUserOrgUsers({ activeTab, searchKeyword, userPage, userPageSize, initialUsers }: {
   activeTab: UserOrgTab;
@@ -179,9 +160,9 @@ function useUserOrgUsers({ activeTab, searchKeyword, userPage, userPageSize, ini
   userPageSize: number;
   initialUsers: Awaited<UserOrgPrefetch['usersPromise']>;
 }) {
-  // [2026-09-26 DIP B5 F4] 사용자 탭의 계정 상태·소속 부서·로그인 잠금 조건. 부재 탭은 전체 사용자를 그대로 본다.
+  // 사용자 탭의 계정 상태·소속 부서·로그인 잠금 조건. 부재 탭은 전체 사용자를 그대로 본다.
   const [userFilters, setUserFilters] = useState<UserListFilters>(EMPTY_USER_FILTERS);
-  // [Wave 4 GAP-UI-001] 사용자 탭의 서버 정렬 — 로그인 ID·이름·등록일시(인덱스가 받치는 열)로 목록 전체를 정렬한다.
+  // 사용자 탭의 서버 정렬 — 로그인 ID·이름·등록일시(인덱스가 받치는 열)로 목록 전체를 정렬한다(GAP-UI-001).
   const [userSort, setUserSort] = useState<ServerSortState>({});
   const appliedUserFilters = activeTab === 'USERS' ? userFilters : EMPTY_USER_FILTERS;
   const appliedUserSort = activeTab === 'USERS' ? userSort : {};
@@ -189,8 +170,6 @@ function useUserOrgUsers({ activeTab, searchKeyword, userPage, userPageSize, ini
   const { data: usersData, isLoading: isUsersLoading, isError: isUsersError, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: [...userOrgKeys.users.all, searchKeyword, userPage, userPageSize, appliedUserFilters, appliedUserSort] as const,
     // 서버(GET /admin/system/users)는 searchKeyword + page(1부터)·size 를 읽는다(ADR-0036).
-    // 종전의 옛 페이지 이름은 서버가 읽지 않아 그대로 무시됐고,
-    // 몇 페이지를 눌러도 항상 첫 페이지가 왔다(死 페이저 — 감사 m-2).
     queryFn: () => userAdminService.getUserList({
       page: userPage, size: userPageSize, searchKeyword: searchKeyword,
       ...(appliedUserFilters.userSttsCd ? { userSttsCd: appliedUserFilters.userSttsCd } : {}),
@@ -200,7 +179,7 @@ function useUserOrgUsers({ activeTab, searchKeyword, userPage, userPageSize, ini
     }),
     enabled: activeTab === 'USERS' || activeTab === 'ABSENCES',
     // 서버 프리페치가 실패했다면(null) 시드를 쓰지 않는다 — 빈 목록을 시드로 넣으면
-    // staleTime 동안 재조회가 막혀 조회 실패가 '0건'으로 위장된다(감사 P1-1).
+    // staleTime 동안 재조회가 막혀 조회 실패가 '0건'으로 위장된다.
     initialData: (userPage === 1 && userPageSize === 10 && !searchKeyword && !hasUserFilter && !appliedUserSort.sortBy)
       ? (initialUsers ?? undefined) : undefined
   });
@@ -237,10 +216,7 @@ function useUserOrgWriteLock() {
   return { activeWriteOperation, actionRequestRef, isSaving, beginNonFormAction, finishNonFormAction };
 }
 
-/**
- * 상세·일괄 쓰기 동작 — 부재·복귀, 계정 잠금 해제, 사용자·부서 삭제, 일괄 삭제·상태 변경·부서 이동, 조직 계층 저장. 모두 위의
- * 쓰기 잠금을 지난다. 실패는 서버 문구로 알리고 화면 상태를 지운다(토스트 하나).
- */
+/** 상세·일괄 쓰기 동작. 실패는 서버 문구로 알리고 화면 상태를 지운다(토스트 하나). */
 function useUserOrgWriteActions({
   lock,
   selectedItemId,
@@ -305,8 +281,8 @@ function useUserOrgWriteActions({
   };
 
   /**
-   * [2026-09-26 DIP B4 P7, D5] 계정 잠금 해제. 연속 실패로 잠긴 계정은 잠금 시간이 지나면 스스로 풀리지만, 그 전에 풀어야 할 때
-   * 관리자가 쓴다. 비밀번호 초기화도 잠금을 함께 푼다(서버).
+   * 연속 실패로 잠긴 계정은 잠금 시간이 지나면 스스로 풀리지만, 그 전에 풀어야 할 때 관리자가 쓴다. 비밀번호 초기화도 잠금을
+   * 함께 푼다(서버).
    */
   const handleUnlockUser = async () => {
     const operation = 'unlock-user' as const;
@@ -323,8 +299,8 @@ function useUserOrgWriteActions({
   };
 
   /**
-   * [V2_153] 강제 로그아웃. 대상의 모든 로그인 세션을 지금 끊는다 — 계정 상태·비밀번호는 그대로라 다시 로그인하면 들어온다. 확인 본문에
-   * 대상과 결과를 밝힌다(누구의 무엇을 끊는지 모른 채 누르지 않게).
+   * [V2_153] 대상의 모든 로그인 세션을 지금 끊는다 — 계정 상태·비밀번호는 그대로라 다시 로그인하면 들어온다. 확인 본문에 대상과
+   * 결과를 밝힌다(누구의 무엇을 끊는지 모른 채 누르지 않게).
    */
   const handleForceLogout = async () => {
     const operation = 'force-logout' as const;
@@ -353,11 +329,11 @@ function useUserOrgWriteActions({
     if (!selectedItemId || !beginNonFormAction(operation)) return;
 
     try {
-      // 확인 본문에 대상 식별자(이름·아이디)를 노출한다 — 무엇을 지우는지 모른 채 누르는 오삭제 방지(감사 P1-9).
+      // 확인 본문에 대상 식별자(이름·아이디)를 노출한다 — 무엇을 지우는지 모른 채 누르는 오삭제 방지.
       const targetName = (selectedItem as UserManage)?.userNm ?? String(selectedItemId);
       const ok = await confirm({
         title: '사용자 삭제',
-        // [2026-10-01] 삭제가 실제로 하는 일을 말한다 — 서버는 콘텐츠를 시스템 관리자로 재귀속하고 알림·멤버십·정책을 지운다.
+        // 삭제가 실제로 하는 일을 말한다 — 서버는 콘텐츠를 시스템 관리자로 재귀속하고 알림·멤버십·정책을 지운다.
         message: `'${targetName}(${selectedItemId})' 사용자의 계정과 접근 권한을 영구히 삭제합니다. ${USER_DELETE_CONSEQUENCE}`,
         variant: 'destructive',
         confirmText: '삭제'
@@ -377,11 +353,7 @@ function useUserOrgWriteActions({
     }
   };
 
-  /**
-   * 부서 삭제. 종전에는 상세 패널의 삭제 버튼이 탭 분기 없이 handleDeleteUser 를 호출해,
-   * DEPTS 탭에서는 부서 ID(ognzId)로 사용자 삭제 API 를 때리고 있었다.
-   * 서버는 소속 사용자·하위 부서가 남아 있으면 409(RESOURCE_IN_USE)로 막으므로 그 메시지를 그대로 보여준다.
-   */
+  /** 서버는 소속 사용자·하위 부서가 남아 있으면 409(RESOURCE_IN_USE)로 막으므로 그 메시지를 그대로 보여준다. */
   const handleDeleteDept = async () => {
     const operation = 'delete-dept' as const;
     if (!selectedItemId || !beginNonFormAction(operation)) return;
@@ -447,7 +419,6 @@ function useUserOrgWriteActions({
         toast(res.message, 'error');
       }
     } catch (error) {
-      // 같은 화면의 다른 처리기처럼 원인 문구를 살린다(2026-11-25 품질 평가 — 종전에는 오류 객체를 버렸다).
       toast(failureMessage(error, '상태 변경 중 오류가 발생했습니다.'), 'error');
     } finally {
       finishNonFormAction(operation);
@@ -485,12 +456,12 @@ function useUserOrgWriteActions({
     if (!selectedDept || !hasDeptChanges || isDeptModalOpen || !beginNonFormAction(operation)) return;
 
     try {
-      // [DIP C5] 서버에서 읽은 기준선과 달라진 부서만, 형제 안 상대 순서로 보낸다.
+      // 서버에서 읽은 기준선과 달라진 부서만, 형제 안 상대 순서로 보낸다.
       const res = await saveDeptHierarchyAction(flattenedDepts, baselineDepts);
       if (res.success) {
         toast(res.message, 'success');
         markDeptChangesSaved();
-        // [2026-11-25 V2_155] 계층 저장은 옮긴 부서의 버전을 올린다 — 조직도 조회를 다시 받아야 이어서 연 편집 창이 새 버전을 보낸다
+        // [V2_155] 계층 저장은 옮긴 부서의 버전을 올린다 — 조직도 조회를 다시 받아야 이어서 연 편집 창이 새 버전을 보낸다
         //   (router.refresh 는 서버 초기 자료만 바꾸고 이미 받은 조회 캐시는 그대로 둔다).
         void queryClient.invalidateQueries({ queryKey: userOrgKeys.depts.all });
         router.refresh();
@@ -545,8 +516,8 @@ function useUserOrgWriteActions({
 }
 
 /**
- * 탭(=라우트)과 사용자 목록 페이지. 페이지는 URL 에 싣고(허용 키만 남긴다), 탭은 그 라우트로 이동한다. URL 을 바꾸는 코드는 이
- * 파일에 둔다(URL 상태 census 가 파일 단위로 센다).
+ * 페이지는 URL 에 싣고(허용 키만 남긴다), 탭은 그 라우트로 이동한다. URL 을 바꾸는 코드는 이 파일에 둔다(URL 상태 census 가 파일
+ * 단위로 센다).
  */
 function useUserOrgNavigation({ defaultTab, setSelectedItemId }: {
   defaultTab: UserOrgTab;
@@ -557,15 +528,12 @@ function useUserOrgNavigation({ defaultTab, setSelectedItemId }: {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  /** 페이지 번호는 URL 에 반영한다 — 새로고침·공유·뒤로가기가 복원된다(감사 P1-7). */
+  /** 페이지 번호는 URL 에 반영한다 — 새로고침·공유·뒤로가기가 복원된다. */
   const [userPage, setUserPage] = useState(() => {
     const raw = Number(searchParams.get('page'));
     return Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
   });
-  /**
-   * 페이지당 건수(A1 필수). URL 에는 싣지 않는다 — PD-UX-002 의 census 승인 경계 밖에서
-   * 새 URL producer 를 만들지 않는다는 기존 결정(DEC-OPS-033)을 그대로 따른다.
-   */
+  /** 페이지당 건수(A1 필수)는 URL 에 싣지 않는다 — PD-UX-002 의 census 승인 경계 밖에서 새 URL producer 를 만들지 않는다(DEC-OPS-033). */
   const [userPageSize, setUserPageSize] = useState(10);
 
   /** 라우트(=탭) 이동 시 서버가 내려준 defaultTab 으로 동기화한다. */
@@ -584,7 +552,7 @@ function useUserOrgNavigation({ defaultTab, setSelectedItemId }: {
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }, [pathname, router, searchParams]);
 
-  /** 탭 = 라우트. 현재 라우트가 가리키는 탭이면 이동하지 않는다(로그인정책/개인정보정책 공용 탭). */
+  /** 현재 라우트가 가리키는 탭이면 이동하지 않는다(로그인정책/개인정보정책 공용 탭). */
   const handleTabChange = useCallback((tab: UserOrgTab) => {
     startTransition(() => {
       setActiveTab(tab);
@@ -604,10 +572,7 @@ function useUserOrgNavigation({ defaultTab, setSelectedItemId }: {
   return { isPending, activeTab, router, userPage, userPageSize, goToPage, handleTabChange, handlePageSizeChange };
 }
 
-/**
- * 부재 탭의 열 — 직함·부재 여부와, 부재를 바꿀 권한(ABSENCE_UPDATE)이 있으면 조치(부재·복귀 처리·대리결재 지정).
- * [V2_151] 부재 중인 사람의 대리결재자와 기간을 부재 여부 아래에 보인다.
- */
+/** 부재 탭의 열. [V2_151] 부재 중인 사람의 대리결재자와 기간을 부재 여부 아래에 보인다. */
 function absenceColumns({ absenceOf, delegationOf, nameOf, canUpdateAbsence, absencePendingId, handleToggleAbsence, onEditDelegation }: {
   absenceOf: (user: UserManage) => string | null;
   delegationOf: (user: UserManage) => { sbtAprvrId: string; absnBgngYmd: string | null; absnEndYmd: string | null } | null;
@@ -713,7 +678,6 @@ function userAccessControlLinks({ displayedUser, router, canAssignAuthority, can
   canOpenLoginLog: boolean;
   canRecoverMfa: boolean;
 }) {
-  /** 사용자 상세가 권한 배정·권한 변경 이력·로그인 이력·인증앱 복구 화면으로 넘기는 대상(탭 세션 인계). */
   const handOffUser = displayedUser?.esntlId
     ? { id: displayedUser.esntlId, loginId: displayedUser.userId ?? '', name: displayedUser.userNm ?? displayedUser.userId ?? '' }
     : null;
@@ -727,7 +691,6 @@ function userAccessControlLinks({ displayedUser, router, canAssignAuthority, can
     : null;
 }
 
-/** 탭(=라우트) 전환 줄. 탭을 누르면 그 라우트로 간다(handleTabChange). */
 export default function UserOrgHubClient({
   defaultTab = 'USERS',
   usersPromise,
@@ -747,9 +710,8 @@ export default function UserOrgHubClient({
   const lock = useUserOrgWriteLock();
   const { activeWriteOperation, actionRequestRef, isSaving, beginNonFormAction, finishNonFormAction } = lock;
   /**
-   * [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 300ms 디바운스해 조회했고,
-   * 그래서 `조회` 버튼이 죽은 컨트롤이 될까 봐 두지 않았다(G10). 이제 조회 버튼이 조건을 적용하는 유일한 경로다.
-   * 부서 탭에서는 입력 중 재조회가 사라져, 저장하지 않은 드래그 중에 트리가 바뀌는 경로도 줄어든다.
+   * 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2) — 조회 버튼이 조건을 적용하는 유일한 경로다. 부서 탭에서는 입력 중
+   * 재조회가 없어, 저장하지 않은 드래그 중에 트리가 바뀌는 경로도 줄어든다.
    */
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
@@ -778,14 +740,13 @@ export default function UserOrgHubClient({
     activeTab, searchKeyword, userPage, userPageSize, initialUsers,
   });
   const userFilterId = useId();
-  // 조건이 바뀌면 1페이지로 돌아간다 — 검색어와 같은 규칙(감사 P1-8).
+  // 조건이 바뀌면 1페이지로 돌아간다 — 검색어와 같은 규칙.
   const applyUserFilter = (patch: Partial<UserListFilters>) => {
     setUserFilters((prev) => ({ ...prev, ...patch }));
     if (userPage !== 1) goToPage(1);
   };
 
   const { isAbsencesLoading, isAbsencesError, absencesError, refetchAbsences, absenceOf, delegationOf } = useUserOrgAbsences(activeTab === 'ABSENCES');
-  // [V2_151] 대리결재 지정 대화상자의 대상.
   const [delegationTarget, setDelegationTarget] = useState<UserManage | null>(null);
 
   /**
@@ -796,8 +757,7 @@ export default function UserOrgHubClient({
   const deptTree = useDeptTree({
     deptKeyword,
     initialDepts,
-    // [2026-09-26 DIP V9] 사용자를 고르면 상세의 소속을 이름으로 보이도록 부서 목록도 읽는다(캐시 공유).
-    // [2026-09-26 DIP B5 F4] 사용자 탭은 목록의 부서 열과 '소속 부서' 조건도 이름으로 보이므로 늘 읽는다.
+    // 사용자 탭은 상세의 소속·목록의 부서 열·'소속 부서' 조건을 이름으로 보이므로 부서 목록도 늘 읽는다(캐시 공유).
     //   서버 프리페치(전량)가 있으면 그것이 initialData 라 추가 요청이 없다.
     enabled: activeTab === 'DEPTS' || activeTab === 'USERS' || dialogs.isBulkMoveModalOpen || isUserModalOpen,
     onDragSelect: setSelectedItemId,
@@ -805,7 +765,7 @@ export default function UserOrgHubClient({
   const { isDeptsLoading, isDeptsError, refetchDepts, departments, deptTotal, flattenedDepts, hasDeptChanges } = deptTree;
 
   /**
-   * [2026-11-25 V2_156] 사용자 수정 창을 연 순간의 프로필 편집 버전(상세 응답). 창이 열린 동안 상세가 다시 조회돼도 폼은 연 때의 내용을
+   * [V2_156] 사용자 수정 창을 연 순간의 프로필 편집 버전(상세 응답). 창이 열린 동안 상세가 다시 조회돼도 폼은 연 때의 내용을
    * 들고 있으므로, 새 버전을 보내면 그 사이 다른 사람의 저장을 덮는다 — 부서 편집(openedDeptVersionRef)과 같은 이유다.
    */
   const openedUserVersionRef = useRef<number | undefined>(undefined);
@@ -818,7 +778,7 @@ export default function UserOrgHubClient({
         await userAdminService.createUser(values as UserManage);
         toast('사용자가 성공적으로 등록되었습니다.', 'success');
       } else {
-        // [2026-11-25 V2_156] 연 사용자의 편집 버전을 함께 보낸다 — 그 사이 다른 관리자(또는 본인)가 고쳤으면 서버가 409 로 거부한다.
+        // [V2_156] 연 사용자의 편집 버전을 함께 보낸다 — 그 사이 다른 관리자(또는 본인)가 고쳤으면 서버가 409 로 거부한다.
         const openedVersion = openedUserVersionRef.current;
         if (openedVersion === undefined) {
           toast('사용자 정보를 다시 불러온 뒤 수정해 주세요.', 'error');
@@ -835,7 +795,7 @@ export default function UserOrgHubClient({
       // [V2_156] 동시 수정(409)이면 상세(와 편집 버전)를 다시 읽는다 — 창을 다시 열 때 캐시의 옛 버전을 또 보내지 않게 한다.
       if (isConflictError(error)) void queryClient.invalidateQueries({ queryKey: userOrgKeys.userDetail.all });
       // 인가 실패(403 등)를 포함한 서버 메시지를 그대로 보여준다 — 일반 문구로 뭉개면
-      // 사용자는 권한 문제인지 입력 문제인지 알 수 없다(H3 의미 보존, 감사 m-2).
+      // 사용자는 권한 문제인지 입력 문제인지 알 수 없다(H3 의미 보존).
       const message = failureMessage(error, '사용자 저장 중 오류가 발생했습니다.');
       toast(message, 'error');
     } finally {
@@ -844,7 +804,7 @@ export default function UserOrgHubClient({
   };
 
   /**
-   * [2026-11-25 V2_155] 편집 창을 연 순간의 부서 버전. 창이 열린 동안 조직도가 다시 조회되면 선택 항목은 새 버전으로 바뀌지만
+   * [V2_155] 편집 창을 연 순간의 부서 버전. 창이 열린 동안 조직도가 다시 조회되면 선택 항목은 새 버전으로 바뀌지만
    * 폼은 연 때의 내용을 그대로 들고 있다 — 저장할 때 새 버전을 보내면 그 사이 다른 관리자가 고친 내용을 덮는다.
    */
   const openedDeptVersionRef = useRef<number | undefined>(undefined);
@@ -857,7 +817,7 @@ export default function UserOrgHubClient({
         await deptAdminService.createDept(values as Department);
         toast('부서가 성공적으로 등록되었습니다.', 'success');
       } else {
-        // [2026-11-25 V2_155] 연 부서의 버전을 함께 보낸다 — 그 사이 다른 관리자가 고치거나 옮겼으면 서버가 409 로 거부한다.
+        // [V2_155] 연 부서의 버전을 함께 보낸다 — 그 사이 다른 관리자가 고치거나 옮겼으면 서버가 409 로 거부한다.
         const openedVersion = openedDeptVersionRef.current;
         await deptAdminService.updateDept(selectedItemId as string, {
           ...(values as Department),
@@ -875,9 +835,6 @@ export default function UserOrgHubClient({
       finishNonFormAction(operation);
     }
   };
-
-  // 조회 실패는 목록 영역에 ErrorStateDisplay(다시 시도 버튼 포함)로 상주 노출한다.
-  // 사라지는 토스트만으로는 "데이터 없음"과 구분되지 않는다(감사 P1-1).
 
   const {
     deptMembersLabel, selectedDept, selectedFlatDept, selectedDeptParentId, selectedItem, selectedUserDetail, displayedUser,
@@ -970,7 +927,7 @@ export default function UserOrgHubClient({
         <UserOrgFilterBar isDeptTab={isDeptTab}>
           {/* 보이는 라벨과 접근 이름을 같게 둔다(WCAG 2.5.3). e2e(department-hierarchy·security-administration)는
               이 접근 이름('부서 검색')으로, user-administration 은 placeholder('검색어를 입력하세요...')로 입력을 찾는다 —
-              문구를 바꾸면 그 스펙도 함께 고친다. 검색어가 바뀌면 페이지를 1로 되돌린다(감사 P1-8). */}
+              문구를 바꾸면 그 스펙도 함께 고친다. */}
           <KeywordFilter
             label={isDeptTab ? '부서 검색' : '사용자 검색'}
             placeholder="검색어를 입력하세요..."
@@ -987,8 +944,7 @@ export default function UserOrgHubClient({
               if (userPage !== 1) goToPage(1);
             }}
           >
-            {/* [2026-09-26 DIP B5 F4] 사용자 탭만 계정 상태·소속 부서·로그인 잠금으로 좁힌다.
-                부재 탭은 부재를 판정하려고 전체 사용자를 보므로 조건을 두지 않는다. 부서는 직속 소속만 본다. */}
+            {/* 부재 탭은 부재를 판정하려고 전체 사용자를 보므로 조건을 두지 않는다. 부서는 직속 소속만 본다. */}
             {activeTab === 'USERS' && (
               <UserListFilterFields
                 userFilterId={userFilterId}
@@ -1013,14 +969,10 @@ export default function UserOrgHubClient({
           saveShortcutDisabled={!hasDeptChanges || isSaving || isDeptModalOpen}
           className={cn(
             !isDeptTab && 'grid min-w-0 gap-4',
-            // 상세 패널은 선택했을 때만 자리를 차지한다 — 미선택 상태에서 화면의 3분의 1을
-            // 빈 안내 상자에 내주면 목록 열이 그만큼 좁아진다(선택 상태는 뷰포트가 아니라
-            // 앱 상태이므로 ADR-0006 의 뷰포트 분기 금지와 무관하다).
-            //
-            // ⚠ 분할 시작점은 `lg`(1024)여야 한다. 종전 레이아웃이 `lg:col-span-7`/`lg:col-span-5`
-            //   였는데 `xl`(1280)로 올리면 1024~1279 구간에서 행을 클릭했을 때 상세가 표 **아래**
-            //   수백 px 뒤에 렌더된다 — 스크롤도 포커스 이동도 없어 "눌렀는데 아무 일도 없는" 화면이
-            //   된다. 1024×768 은 e2e 가 상시 돌리는 해상도다.
+            // 상세 패널은 선택했을 때만 자리를 차지한다 — 미선택에 자리를 내주면 목록 열이 그만큼 좁아진다(선택 상태는
+            // 뷰포트가 아니라 앱 상태라 ADR-0006 의 뷰포트 분기 금지와 무관하다).
+            // ⚠ 분할 시작점은 `lg`(1024)여야 한다 — `xl`(1280)로 올리면 1024~1279 에서 행을 눌렀을 때 상세가 표 **아래**
+            //   수백 px 뒤에 렌더돼 "눌렀는데 아무 일도 없는" 화면이 된다. 1024×768 은 e2e 가 상시 돌리는 해상도다.
             !isDeptTab && selectedItem && 'lg:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)]',
             isPending && 'opacity-60 pointer-events-none',
           )}
@@ -1066,6 +1018,8 @@ export default function UserOrgHubClient({
                   columns={userColumns as Column<UserManage>[]}
                   data={users}
                   loading={isUsersLoading}
+                  // 조회 실패는 목록 영역에 ErrorStateDisplay(다시 시도 버튼 포함)로 상주 노출한다.
+                  // 사라지는 토스트만으로는 "데이터 없음"과 구분되지 않는다.
                   error={isUsersError ? (usersError as Error) : null}
                   onRetry={() => refetchUsers()}
                   onRowClick={(item) => {
@@ -1073,15 +1027,13 @@ export default function UserOrgHubClient({
                   }}
                   rowActionLabel={(item) => `${item.userNm || item.userId || '사용자'} 상세 열기`}
                   keyField="userId"
-                  // ⚠ e2e(23-security-auth-supplement E12)가 /검색 결과가 없습니다|데이터가 존재하지 않습니다/ 로 단언한다.
+                  // ⚠ e2e 가 /검색 결과가 없습니다|데이터가 존재하지 않습니다/ 로 단언한다.
                   emptyMessage={hasUserFilter && !searchKeyword.trim() ? '조건에 맞는 사용자가 없습니다.' : emptyResultMessage(searchKeyword, '데이터가 존재하지 않습니다.')}
-                  // 업무형 화면은 진입 애니메이션을 두지 않는다(카탈로그 §3 금지 목록).
                   enableSelection={canChangeUserStatus || canMoveUserDept || canDeleteUser}
                   bulkActions={userBulkActions}
                   className="border-none shadow-none bg-transparent"
                   // ⚠ 총 건수는 셸의 결과 툴바가 단독으로 소유한다 — 여기에 totalCount 를 다시 넘기면
                   //   같은 수치가 표 위아래로 두 번 나온다(work-list-adoption-census 가 red 로 막는다).
-                  // [Wave 4] 사용자 탭은 이름·사용자 ID·등록일 열을 서버가 목록 전체로 정렬한다. 정렬이 바뀌면 1페이지로 돌아간다.
                   serverSort={activeTab === 'USERS' ? {
                       ...userSort,
                       onSortChange: (next) => {
@@ -1137,7 +1089,7 @@ export default function UserOrgHubClient({
       >
         <UserManageForm
           // 수정 시드는 반드시 상세 레코드여야 한다. 목록 행에는 ognzId 가 없어 '' 로 왕복되고,
-          // 부분수정 계약("" = 지움)이 실제 소속 부서를 지운다. [2026-10-18] 목록 행의 휴대전화·이메일은 가린 값이라
+          // 부분수정 계약("" = 지움)이 실제 소속 부서를 지운다. 목록 행의 휴대전화·이메일은 가린 값이라
           // 목록 행으로는 시드하지 않는다 — 수정 버튼도 상세가 온 뒤에만 열린다.
           key={formMode === 'edit' ? `edit-${selectedUserDetail?.userId ?? ''}-detail` : 'create'}
           mode={formMode}
