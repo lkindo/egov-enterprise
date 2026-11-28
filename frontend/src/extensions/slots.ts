@@ -1,9 +1,7 @@
 /**
- * 확장 슬롯 — 기능이 core 셸에 값을 기여하는 자리(슬롯 단계 PR-4·PR-6, 스크랩 슬롯).
- *
- * pack 마커 블록은 셸 파일 안에 선택 기능의 코드를 품어, 기능이 빠지면 투영이 그 줄을 걷어 냈다. 슬롯은 반대로 기능이 자기
- * 디렉터리(src/extensions/<기능 id>/<슬롯>.ts)에 항목을 적고, 셸은 생성 레지스트리(src/extensions/generated-<슬롯>.ts)만 읽는다.
- * 기능이 빠지면 기여 파일이 기능과 함께 직접 지워지고 레지스트리가 남은 기여로 다시 만들어진다 — 셸은 바뀌지 않는다.
+ * 확장 슬롯 — 기능이 core 셸에 값을 기여하는 자리. 기능은 자기 디렉터리(src/extensions/<기능 id>/<슬롯>.ts)에 항목을 적고, 셸은
+ * 생성 레지스트리(src/extensions/generated-<슬롯>.ts)만 읽는다. 기능이 빠지면 기여 파일이 기능과 함께 직접 지워지고 레지스트리가
+ * 남은 기여로 다시 만들어진다 — 셸은 바뀌지 않는다.
  *
  * 이 파일은 core 소유다. 기능 디렉터리를 import 하지 않는다. 슬롯 이름 하나를 모든 곳에 같은 철자로 쓴다:
  * SlotMap 키 = 기여 파일 이름 = 레지스트리 파일 이름(generated-<이름>.ts). 키를 더할 때는 그 슬롯을 읽는 셸(소비자)을 같은 변경에 둔다.
@@ -44,15 +42,13 @@ export interface RecipientPickerSource extends SlotEntry {
 }
 
 /**
- * shell-links — 앱 셸의 링크. 배치는 소비 셸이 있는 것만 닫힌 목록으로 둔다(머리글·바닥글·오류 화면·명령 센터·협업 허브 머리·
- * 나의 업무 탭 줄·업무 보고 머리).
- * 셸이 모양을 정하고 항목은 목적지·이름·아이콘만 준다. visibleWhen 은 { page: 자기 href } 여야 한다. 주체 없이 거르는 바닥글·오류 화면
- * 배치는 /admin 밖 목적지만 둔다. 머리글·명령 센터·업무 보고 머리 배치는 아이콘이 있는 목록이라 icon 이 필요하다. 바닥글 항목은 같은
- * 기여 안에 같은 목적지의 머리글 짝을 둔다(경계 계약).
- * - work-hub(업무 허브 분해 W1): 나의 업무 탭 줄의 탭 하나. 탭은 글자뿐이라 icon 을 두지 않는다. id 가 탭 DOM id(work-hub-tab-<id>)
- *   가 되므로 core 탭(업무 관리, id job·목적지 /smart-toolkit/dept-job)과 겹치지 않는다. 탭은 그 화면 경로로 가는 경로 탭이다.
- * - work-report(업무 허브 분해 W1): 업무 보고 화면 머리의 링크. description 은 업무 보고 화면 설명에 덧붙는 한 문장이고 링크와 함께
- *   보이고 숨는다(갈 수 없는 화면을 안내하지 않는다).
+ * shell-links — 앱 셸의 링크. 배치는 소비 셸이 있는 것만 닫힌 목록으로 둔다. 셸이 모양을 정하고 항목은 목적지·이름·아이콘만 준다.
+ * visibleWhen 은 { page: 자기 href } 여야 한다. 주체 없이 거르는 바닥글·오류 화면 배치는 /admin 밖 목적지만 둔다. 머리글·명령 센터·
+ * 업무 보고 머리 배치는 아이콘이 있는 목록이라 icon 이 필요하다. 바닥글 항목은 같은 기여 안에 같은 목적지의 머리글 짝을 둔다(경계 계약).
+ * - work-hub: 나의 업무 탭 줄의 경로 탭 하나(글자뿐이라 icon 없음). id 가 탭 DOM id(work-hub-tab-<id>)가 되므로 core 탭(id job)과
+ *   겹치지 않는다.
+ * - work-report: 업무 보고 화면 머리의 링크. description 은 화면 설명에 덧붙는 한 문장이고 링크와 함께 보이고 숨는다(갈 수 없는
+ *   화면을 안내하지 않는다).
  */
 export interface ShellLink extends SlotEntry {
   readonly placement: 'header' | 'footer' | 'error' | 'command-center' | 'collaboration-hub' | 'work-hub' | 'work-report';
@@ -118,7 +114,7 @@ export interface HubTabViews {
   /** 협업 허브(core 셸). 탭 뷰가 자기 목록 조회·표·대화상자를 소유하고 core 틀(collaboration-hub-frame)에 조각을 넘긴다. */
   readonly collaboration: { readonly Component: ComponentType };
   /**
-   * 지식 허브(게시판 셸, 허브 분해 H2). 셸이 그 게시판(bbsId)의 글 목록·인기·최근 활동을 그리고, 탭이 열렸을 때 기여의 머리 동작(Actions)을
+   * 지식 허브(게시판 셸). 셸이 그 게시판(bbsId)의 글 목록·인기·최근 활동을 그리고, 탭이 열렸을 때 기여의 머리 동작(Actions)을
    * 더한다. 설명은 탭 버튼 아래 짧은 문구다.
    */
   readonly knowledge: {
@@ -170,7 +166,7 @@ export interface StatsPanelQuery {
 
 interface StatsHubTabBase extends SlotEntry {
   readonly placement: 'hub-tab';
-  /** 통계 내비게이션의 자리(작은 값 먼저). 셸 탭: 통계 개요 10 · 사용자 통계 20 · 시스템 활성 40 (운영 보고서 70 은 2026-10-19 걷었다). */
+  /** 통계 내비게이션의 자리(작은 값 먼저). 셸 탭: 통계 개요 10 · 사용자 통계 20 · 시스템 활성 40. */
   readonly order: number;
   /** 내비게이션 단추 글자. */
   readonly label: string;
@@ -178,7 +174,7 @@ interface StatsHubTabBase extends SlotEntry {
   readonly title: string;
   /**
    * 집계 기준과 데이터 출처 한 줄 — A7 셸(ReportPage)의 basis 다. 무엇을 어디서 센 값인지 기능만 안다. 셸이 그 뒤에 적용 중인 기간을
-   * 덧붙인다(series). [2026-10-20] 하위 화면을 A7 셸로 옮기며 둔다.
+   * 덧붙인다(series).
    */
   readonly basis: string;
   readonly icon: LucideIcon;
@@ -190,8 +186,6 @@ interface StatsHubTabBase extends SlotEntry {
  * series — 일자별 집계를 셸의 A7 화면(요약·차트·원본 표·내보내기)으로 그린다. 탭이 곧 라우트라 href 를 가진다(링크 슬롯: visibleWhen
  * 은 { page: href }). 미수집 축(쓰는 쪽이 없는 집계)은 uninstrumented 이고, 빈 결과는 기간이 아니라 미수집을 말하며 요약 값은 '미수집'
  * 이다(측정되지 않는 값을 0 으로 보이지 않는다).
- *
- * [2026-10-20] 미수집 축이 모든 탭에 내던 요약 칸(summary)을 걷었다 — 요약은 이제 탭마다 그 탭이 그리는 계열의 것이다(A7).
  */
 export type StatsSeriesTab = StatsHubTabBase & {
   readonly kind: 'series';
@@ -199,8 +193,8 @@ export type StatsSeriesTab = StatsHubTabBase & {
   readonly load: (range?: StatsDateRange) => Promise<readonly StatsSeriesPoint[]>;
   readonly uninstrumented: boolean;
   /**
-   * 차트·원본 표의 계열 이름(선택). 주지 않으면 탭 이름(label)이다. [2026-10-23 ADR-0040 결정 3] 탭 이름이 메뉴·라우트 원장과 묶여
-   * 바꿀 수 없을 때 계열이 무엇을 센 값인지(예: 작성일 기준 등록 건수) 따로 말한다.
+   * 차트·원본 표의 계열 이름(선택). 주지 않으면 탭 이름(label)이다. 탭 이름이 메뉴·라우트 원장과 묶여 바꿀 수 없을 때 계열이
+   * 무엇을 센 값인지(예: 작성일 기준 등록 건수) 따로 말한다(ADR-0040 결정 3).
    */
   readonly seriesName?: string;
 };
@@ -223,7 +217,7 @@ export interface StatsOverviewCard extends SlotEntry {
 }
 
 /**
- * stats-panels — 통계 셸의 기능 탭과 요약 칸(허브 분해 H4). 셸이 패널 조회를 한 번(useQueries)에 소유하고, 기여는 조회 키·로더·본문
+ * stats-panels — 통계 셸의 기능 탭과 요약 칸. 셸이 패널 조회를 한 번(useQueries)에 소유하고, 기여는 조회 키·로더·본문
  * 컴포넌트·내보내기 함수를 이름으로만 가리킨다. 기능이 빠진 구성에서는 기여 파일이 함께 지워져 그 탭·칸만 사라진다.
  */
 export type StatsPanel = StatsSeriesTab | StatsBodyTab | StatsOverviewCard;
@@ -232,7 +226,7 @@ export const isStatsHubTab = (entry: StatsPanel): entry is StatsHubTab => entry.
 export const isStatsOverviewCard = (entry: StatsPanel): entry is StatsOverviewCard => entry.placement === 'overview-card';
 
 /**
- * 업무 홈 미리 채우기 하나(Phase 2 9단계). query 는 기능 소유의 queryOptions 값이고 'use client' 가 없는 모듈에서 가져온다 —
+ * 업무 홈 미리 채우기 하나. query 는 기능 소유의 queryOptions 값이고 'use client' 가 없는 모듈에서 가져온다 —
  * 서버 자식이 실제 객체를 받아야 한다('use client' 모듈의 값은 서버에서 클라이언트 참조가 된다, 경계 계약). failure 는 서버에서 실패했을
  * 때의 뜻이다.
  * - boundary: 다시 던져 서버에서 라우트 오류 경계로 보낸다(실패를 빈 화면이나 0건으로 위장하지 않는다).
@@ -248,10 +242,9 @@ export interface HomePrefetch {
 }
 
 /**
- * home-sections — 업무 홈('/')의 자리(Phase 2 9단계). 셸이 배치마다 순서대로 그린다: overlay(구역 밖에 뜨는 것) → 머리의 actions
+ * home-sections — 업무 홈('/')의 자리. 셸이 배치마다 순서대로 그린다: overlay(구역 밖에 뜨는 것) → 머리의 actions
  * (단추) → hero(머리 바로 아래 소개 — 업무 홈 제목 h1 뒤라 소개의 h2 가 제목 순서를 깨지 않는다, ADR-0039) → cards(요약 카드 줄,
  * Component 는 <li> 하나를 그린다 — core 셸의 카드와 같은 order 축) → main(본문 목록) → status(상태 구역) → bottom(홍보).
- * 2026-10-20 늘 비어 있던 활동 구역과 그 구역에 덧붙이던 activityNote 를 걷었다.
  * Component 는 기능의 'use client' 모듈에서 가져오고 기여는 그 이름만 가리킨다 — 서버 자식도 레지스트리를 읽으므로 서버에서 그릴 수 없는
  * 컴포넌트(ssr:false 래퍼)가 서버 그래프에 들어오지 않게 한다(경계 계약). 링크는 컴포넌트가 그린다(기여는 링크 키를 갖지 않는다).
  * 셸은 등록된 항목이 하나라도 있으면 DASHBOARD_READ 로 홈 진입을 판정한다(app/home-access.ts).

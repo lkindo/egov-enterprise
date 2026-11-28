@@ -1,0 +1,5 @@
+# git blame 이 건너뛸 커밋 — 코드 토큰을 바꾸지 않은 주석 정리 묶음(DEC-OPS-441).
+# GitHub 는 이 파일을 자동으로 읽는다. 로컬은 한 번: git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# 1단계 시범: 운영 파일 9개
+73f8f3142b332f7ca189693860d4ca5e3df92c24

@@ -46,7 +46,7 @@ public class InformalSanctionService {
     private final nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository;
     /** [V2_151] 대리결재는 응답 전에 민감 작업 감사 원장에 남긴다(같은 트랜잭션). */
     private final nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
-    /** [2026-11-19] 결재 알림을 받을 수 있는 사람(계정이 있는 사람)만 고른다. */
+    /** 결재 알림을 받을 수 있는 사람(계정이 있는 사람)만 고른다. */
     private final ApprovalRecipients approvalRecipients;
 
     /** 대리결재의 민감 작업 감사 이름 — 대상은 {@code 문서번호/차수/원결재자}. */
@@ -56,7 +56,7 @@ public class InformalSanctionService {
     static final String APPROVE_PERMISSION = "APPROVAL_APPROVE";
     static final String WITHDRAW_PERMISSION = "APPROVAL_CANCEL";
     static final String DRAFT_PERMISSION = "APPROVAL_CREATE";
-    /** 참조자가 문서를 읽는 권한(2026-10-04 D4) — 지정할 때 이 권한이 없으면 지정해도 읽을 수 없으므로 거부한다. */
+    /** 참조자가 문서를 읽는 권한 — 이 권한이 없으면 지정해도 읽을 수 없으므로 지정을 거부한다. */
     private static final String READ_PERMISSION = "APPROVAL_READ";
     /**
      * 한 문서의 참조자 상한 — 문서에 누적된 서로 다른 사람 수다(참조는 추가만 하므로 빠진 사람도 자리를 차지한다). 지정은 차수
@@ -69,7 +69,7 @@ public class InformalSanctionService {
         return getInformalSanctionList(aplcntId, ApprovalListFilter.NONE, pageable);
     }
 
-    /** 내가 올린 결재. 조건은 제목·요청일 기간·문서 상태(2026-09-26 DIP B5 F4). */
+    /** 내가 올린 결재. 조건은 제목·요청일 기간·문서 상태다. */
     public Page<InformalSanctionDto> getInformalSanctionList(String aplcntId, ApprovalListFilter filter, Pageable pageable) {
         assertCurrentParticipant(aplcntId);
         ApprovalListFilter f = Objects.requireNonNull(filter);
@@ -83,9 +83,8 @@ public class InformalSanctionService {
     }
 
     /**
-     * 대기함은 늘 대기 문서라 상태 조건은 쓰지 않는다. [V2_151] 오늘 부재 기간에 나에게 결재를 맡긴 사람의 차례인 문서도 함께
-     * 싣는다 — 내가 기안했거나 그 차수 결재선에 내가 있는 문서는 빼고(대리결재로 같은 문서를 두 번 결정하지 않는다) 상세·결정과
-     * 같은 판정이다. 맡긴 사람이 없으면 종전 질의 그대로다.
+     * 대기함은 늘 대기 문서라 상태 조건은 쓰지 않는다. 오늘 부재 기간에 나에게 결재를 맡긴 사람의 차례인 문서도 싣되(V2_151),
+     * 내가 기안했거나 그 차수 결재선에 내가 있는 문서는 뺀다(같은 문서를 두 번 결정하지 않는다). 상세·결정과 같은 판정이다.
      */
     public Page<InformalSanctionDto> getPendingApprovalList(String aprvrId, ApprovalListFilter filter, Pageable pageable) {
         assertCurrentParticipant(aprvrId);
@@ -120,7 +119,7 @@ public class InformalSanctionService {
     }
 
     /**
-     * '참조된 결재'(2026-10-04 D4) — 내가 참조자로 지정된 문서. 조건은 다른 탭과 같고 상태 조건은 문서의 지금 상태다.
+     * '참조된 결재' — 내가 참조자로 지정된 문서. 조건은 다른 탭과 같고 상태 조건은 문서의 지금 상태다.
      * 참조자는 결재선에 들지 않으므로 대기 건수·처리함에 섞이지 않는다(그 질의는 결재선 표만 읽는다).
      */
     public Page<InformalSanctionDto> getReferencedApprovalList(String userId, ApprovalListFilter filter, Pageable pageable) {
@@ -201,7 +200,7 @@ public class InformalSanctionService {
         return registerInformalSanction(dto, requests, null);
     }
 
-    /** [2026-10-04 D4] 참조자를 함께 지정해 상신한다. 참조자는 차수 1 에 지정한 것으로 남고 지정 알림을 받는다. */
+    /** 참조자를 함께 지정해 상신한다. 참조자는 차수 1 에 지정한 것으로 남고 지정 알림을 받는다. */
     @Transactional
     public Long registerInformalSanction(InformalSanctionDto dto, List<ApprovalStageRequest> requests,
                                          List<String> references) {
@@ -218,8 +217,8 @@ public class InformalSanctionService {
     }
 
     /**
-     * 새 문서를 저장한다. [V2_151] 첨부 묶음은 원 업로더만 붙인다 — 저장보다 먼저 확인한다(첨부 할당 writer 계약). 첫 차수 이력은
-     * 이 묶음을 그대로 옮겨 남긴다.
+     * 첨부 묶음은 원 업로더만 붙이므로 저장보다 먼저 확인한다(V2_151, 첨부 할당 writer 계약). 첫 차수 이력은 이 묶음을 그대로
+     * 옮겨 남긴다.
      */
     private InformalSanction saveNewDocument(InformalSanctionDto dto, String firstApprover) {
         Long atchFileSn = dto.getAtchFileSn();
@@ -234,7 +233,7 @@ public class InformalSanctionService {
     }
 
     /**
-     * 재상신할 차수의 첨부 묶음을 정한다. [V2_151] 지금 묶음을 그대로 두거나({@code null} 이면 첨부 없음) 새로 올린 묶음으로 바꾼다 —
+     * 재상신할 차수의 첨부 묶음을 정한다(V2_151). 지금 묶음을 그대로 두거나({@code null} 이면 첨부 없음) 새로 올린 묶음으로 바꾼다 —
      * 새 묶음은 원 업로더만 붙인다. 앞 차수의 묶음은 그 차수 이력에 남아 앞 차수 결재자가 계속 연다(지우지 않는다).
      */
     private void replaceAttachmentForResubmission(InformalSanction sanction, InformalSanctionDto dto) {
@@ -259,7 +258,7 @@ public class InformalSanctionService {
         assertVersion(sanction, expectedVersion);
         InformalSanctionHistory history = currentHistory(sanction);
         List<InformalSanctionDetail> lines = detailRepository.findRevision(id, sanction.getAtrzCycl());
-        // [2026-09-26 DIP B5 F1] 차례가 와 있던 결재자에게 회수를 알린다 — 대기함에서 사라진 이유를 모르게 두지 않는다.
+        // 차례가 와 있던 결재자에게 회수를 알린다 — 대기함에서 사라진 이유를 모르게 두지 않는다.
         List<String> activeApprovers = lines.stream().filter(d -> d.status() == ApprovalStatus.ACTIVE)
                 .map(d -> d.getId().getUserId()).toList();
         sanction.withdraw();
@@ -281,9 +280,9 @@ public class InformalSanctionService {
     }
 
     /**
-     * [2026-10-04 D4 개정 1] 재상신에서도 참조자를 지정한다. 보낸 사람은 모두 새 차수에 지정한 것으로 남는다 — 이전 차수의
-     * 참조자를 다시 보내면 새 차수의 행이 생겨 그 차수의 참조자가 된다(최종 결과 알림을 받고, 이 차수 결재선에 둘 수 없다).
-     * 지정 알림은 이 문서에 처음 참조되는 사람에게만 간다. 참조는 추가만 하므로 빼도 그 사람은 이전 차수의 행으로 계속 읽는다.
+     * 재상신에서도 참조자를 지정한다. 보낸 사람은 모두 새 차수에 지정한 것으로 남는다 — 이전 차수 참조자를 다시 보내면 새 차수의
+     * 참조자가 된다(최종 결과 알림을 받고, 이 차수 결재선에 둘 수 없다). 지정 알림은 이 문서에 처음 참조되는 사람에게만 간다.
+     * 참조는 추가만 하므로 빼도 그 사람은 이전 차수의 행으로 계속 읽는다.
      */
     @Transactional
     public void resubmitInformalSanction(Long id, InformalSanctionDto dto, Integer expectedVersion,
@@ -315,10 +314,9 @@ public class InformalSanctionService {
     }
 
     /**
-     * 승인·반려. [V2_151] 결재선에 내 줄이 없으면 대리결재를 본다 — 지금 차례인 줄의 원결재자가 오늘 부재 기간에 나에게 결재를
-     * 맡겼으면 그 줄을 대신 결정한다({@code onBehalfOf} 로 원결재자를 고르며, 맡긴 줄이 하나면 비워도 된다). 대신 결정한 줄에는
-     * 원결재자와 따로 결정한 사람을 남기고, 응답 전에 민감 작업 감사 원장에 기록하며 원결재자에게 알린다. 기간이 끝났거나 맡기지
-     * 않은 사람은 결재선 밖 사람과 같이 403 이다.
+     * 승인·반려. 결재선에 내 줄이 없으면 대리결재(V2_151)로, 지금 차례인 줄의 원결재자가 오늘 부재 기간에 나에게 맡긴 줄을 대신
+     * 결정한다({@code onBehalfOf} 로 원결재자를 고르며 맡긴 줄이 하나면 비워도 된다). 대신 결정한 줄은 결정자를 따로 남기고, 응답
+     * 전에 민감 작업 감사 원장에 기록하며 원결재자에게 알린다. 기간이 끝났거나 맡기지 않은 사람은 결재선 밖 사람과 같이 403 이다.
      */
     @Transactional
     public void confirmInformalSanction(Long id, String aprvYn, String opinion, Integer expectedVersion,
@@ -346,9 +344,7 @@ public class InformalSanctionService {
         InformalSanctionDetail ownLine = found.orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
         if (!substitute) SecurityUtil.assertOwnerByEsntlId(ownLine.getId().getUserId());
         /*
-         * [2026-10-01] 이미 끝난 문서·이미 처리한 라인은 입력 오류가 아니라 **먼저 일어난 다른 처리와의 충돌**이다.
-         * 종전에는 사유 없는 400(잘못된 상태 전이)이라, 병렬 결재에서 다른 사람이 먼저 반려했거나 신청자가 회수한 문서를
-         * 누른 사람이 무슨 일이 있었는지 알 수 없었고 화면도 '최신 문서 확인' 흐름으로 가지 못했다(화면은 409 만 충돌로 본다).
+         * 이미 끝난 문서·이미 처리한 라인은 입력 오류가 아니라 먼저 일어난 다른 처리와의 충돌이다(화면은 409 만 충돌로 본다).
          * 결재선에 있는 사람에게만 도달하는 분기라(위에서 비참여자는 403) 문서 상태를 새로 노출하지 않는다.
          */
         assertInProgress(sanction, "처리");
@@ -423,7 +419,7 @@ public class InformalSanctionService {
     }
 
     /**
-     * [2026-10-03 결재 동선 개선] 기안자가 지금 차례인 결재자에게 재알림을 보낸다. 같은 차수에서 하루 한 번이다 —
+     * 기안자가 지금 차례인 결재자에게 재알림을 보낸다. 같은 차수에서 하루 한 번이다 —
      * 기록이 처리 이력에 남아 다음 날까지 다시 보내지 않는다. 문서 상태와 버전은 바꾸지 않는다.
      */
     @Transactional
@@ -465,7 +461,7 @@ public class InformalSanctionService {
     }
 
     /**
-     * [2026-10-03 D6] 기안자가 아직 처리하지 않은 결재자를 다른 사람으로 바꾼다. 앞 단계 승인과 같은 단계 다른 사람의
+     * 기안자가 아직 처리하지 않은 결재자를 다른 사람으로 바꾼다. 앞 단계 승인과 같은 단계 다른 사람의
      * 결정은 그대로다. 대결·위임이 아니다 — 새 결재자가 자기 이름으로 결재하며, 바꾼 기록은 처리 이력에 남는다.
      * 새 결재자는 상신 때와 같은 검사(본인·사용 중·결재 권한·중복)를 지나야 한다.
      */
@@ -486,7 +482,7 @@ public class InformalSanctionService {
         if (lines.stream().anyMatch(d -> d.getId().getUserId().equals(toUserId))) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "이미 결재선에 있는 사람입니다.");
         }
-        // [2026-10-04 D4] 이 차수의 참조자는 결재선에 넣지 않는다 — 참조는 지울 수 없어, 넣으면 같은 차수에 참조자와 결재자를
+        // 이 차수의 참조자는 결재선에 넣지 않는다 — 참조는 지울 수 없어, 넣으면 같은 차수에 참조자와 결재자를
         //   겸한다('그 차수 결재선에 있는 사람은 참조자가 아니다' 가 깨진다). 결재선을 바꾸려면 회수 후 재상신한다.
         if (referenceRepository.findForDocuments(List.of(id)).stream().anyMatch(r ->
                 r.designatedIn(sanction.getAtrzCycl()) && r.getId().getUserId().equals(toUserId))) {
@@ -520,7 +516,7 @@ public class InformalSanctionService {
     }
 
     /**
-     * [2026-10-03 D7] 결재자가 반려하지 않고 기안자에게 보완을 요청한다. 문서는 진행 중으로 남고 요청한 결재자의
+     * 결재자가 반려하지 않고 기안자에게 보완을 요청한다. 문서는 진행 중으로 남고 요청한 결재자의
      * 차례도 그대로다. 기안자가 답하면 같은 결재자 차례로 돌아오며 앞 단계 승인은 유지된다. 한 번에 하나만 열린다.
      */
     @Transactional
@@ -555,12 +551,9 @@ public class InformalSanctionService {
     }
 
     /**
-     * [2026-10-03 D7] 기안자가 열린 보완 요청에 답한다. 본문을 함께 고칠 수 있으며, 고치면 고치기 전 본문을 처리
-     * 이력(REVISE)에 남기고 앞서 승인한 사람에게 알린다 — 승인은 그대로 유지된다(D7 규칙).
-     *
-     * <p>제목은 고치지 않는다. 앞서 승인한 사람이 본 제목을 남길 자리가 처리 이력에 없어, 제목을 바꾸면 승인한 내용의
-     * 증거가 사라진다. 저장된 제목은 검사하지도 않는다 — 제목 없이 올라온 문서(V2_101 이전 문서·제목을 비운 기안)도
-     * 보완 답변을 할 수 있어야 한다. 제목을 바꾸려면 회수 후 재상신한다.
+     * 기안자가 열린 보완 요청에 답한다. 본문을 고치면 고치기 전 본문을 처리 이력(REVISE)에 남기고 앞서 승인한 사람에게 알리며,
+     * 승인은 유지된다. 제목은 고치지 않는다 — 앞선 승인자가 본 제목을 남길 자리가 처리 이력에 없다. 저장된 제목도 검사하지 않아
+     * 제목 없이 올라온 문서(V2_101 이전·제목을 비운 기안)도 답할 수 있다. 제목을 바꾸려면 회수 후 재상신한다.
      */
     @Transactional
     public void answerSupplement(Long id, String answer, String docCn, Integer expectedVersion) {
@@ -602,13 +595,9 @@ public class InformalSanctionService {
     }
 
     /**
-     * [2026-10-04 D4] 지금 차례인 결재자가 참조자를 더한다 — 기안자가 이 차수에 참조자를 한 명도 지정하지 않았을 때만이다.
-     * 차례 판정은 승인·보완 요청과 같다: 아직 차례가 아니면(WAITING) 권한 거부 403, 이미 처리했으면 결재 처리와 같은 충돌
-     * 409 다(DEC-OPS-187 — 다른 탭에서 승인한 뒤 누른 사람이 권한 오류가 아니라 '최신 상태 확인' 으로 간다). 나머지 검사(기안자·
-     * 결재선·사용 중·결재 조회 권한·문서 누적 20명)는 기안자 지정과 같다. 더한 사람은 지금 차수에 지정한 것으로 남는다(개정 1) —
-     * 지금 차수에 이미 있는 사람은 무시하고, 이전 차수에만 있던 사람은 지금 차수의 행이 새로 생긴다(이 문서에 처음 참조되는
-     * 사람에게만 지정 알림이 간다). 처리 이력에 남기지 않는다 — 참조 행이 지정한 사람을 기록한다. 되돌릴 수 없으므로 읽은 버전이
-     * 필수다.
+     * 지금 차례인 결재자가 참조자를 더한다 — 기안자가 이 차수에 참조자를 한 명도 지정하지 않았을 때만이다. 아직 차례가 아니면
+     * 403, 이미 처리했으면 409 다(DEC-OPS-187 — 다른 탭에서 승인한 뒤 누른 사람이 '최신 상태 확인' 으로 간다). 나머지 검사와 차수
+     * 단위 지정은 기안자 지정과 같다. 처리 이력 대신 참조 행이 지정한 사람을 기록하며, 되돌릴 수 없으므로 읽은 버전이 필수다.
      *
      * @return 지금 차수에 새로 지정한 사람 수(모두 이 차수에 이미 있었으면 0 이며 문서는 바뀌지 않는다)
      */
@@ -672,10 +661,9 @@ public class InformalSanctionService {
     }
 
     /**
-     * [2026-10-03 D6] 기안자가 결재자를 바꾸면 빠진 사람의 라인은 지워진다. 그 사람이 열어 둔 화면이나 되돌리기 대기열에서
-     * 처리하면 자기 라인이 없어 403 이 되는데, 화면은 409 만 충돌로 보고 목록을 다시 읽는다 — 권한 오류로 보이고 문서가
-     * 대기함에 남는다. 이 차수에서 그 사람을 바꾼 기록(REPLACE 의 변경 전 사람)이 있을 때만 409 로 사유를 말한다.
-     * 결재선에 있던 적이 없는 사람은 호출한 쪽이 그대로 403 으로 거부한다(문서 상태를 알리지 않는다, H3).
+     * 결재자 변경으로 빠진 사람이 열어 둔 화면에서 처리하면 자기 라인이 없어 403 인데, 화면은 409 만 충돌로 보고 다시 읽는다.
+     * 그래서 이 차수에 그 사람을 바꾼 기록(REPLACE 의 변경 전 사람)이 있을 때만 409 로 사유를 말한다. 결재선에 있던 적이 없는
+     * 사람은 호출한 쪽이 그대로 403 으로 거부한다(문서 상태를 알리지 않는다, H3).
      */
     private void assertNotReplacedOut(InformalSanction sanction, String actor) {
         boolean replacedOut = cycleProcesses(sanction).stream().anyMatch(p ->
@@ -712,7 +700,7 @@ public class InformalSanctionService {
         publishStageAvailable(sanction, lines);
     }
 
-    // --- 결재 알림 발행 — 본문은 InformalSanctionNotifier(2026-11-27 분해, 권한 검사 없음) ---
+    // --- 결재 알림 발행 — 본문은 InformalSanctionNotifier(권한 검사 없음) ---
 
     private InformalSanctionNotifier notifier() {
         return new InformalSanctionNotifier(eventPublisher, approvalRecipients, referenceRepository, userRepository);
@@ -736,14 +724,11 @@ public class InformalSanctionService {
     }
 
     /**
-     * [2026-10-04 D4 개정 1] 참조자 검사. 지정은 차수 단위다 — 돌려주는 것은 {@code cycle} 차수에 <b>새로</b> 지정할 사람이며,
-     * 그 차수에 이미 있는 사람은 무시한다(참조는 추가만 한다). 이전 차수에만 있던 사람은 이 차수의 지정이 된다. 기안자 지정과
-     * 결재자 추가가 같은 검사를 쓴다: 형식·중복, 기안자 본인 금지, 이 차수 결재선과 겹침 금지(겸직 금지는 이 차수 기준이다 —
-     * 이전 차수 참조자는 다음 차수 결재자가 될 수 있다), 문서 누적 서로 다른 20명, 사용 중(P)인 계정, 결재 조회 권한
-     * (APPROVAL_READ — 없으면 지정해도 읽을 수 없다). 사용·권한 검사는 이 차수에 새로 지정할 사람 모두가 받는다 — 이전 차수
-     * 참조자라도 다시 지정하면 지금 자격을 본다. 사용 중이 아니거나 권한이 없는 사람은 이름을 밝히고, 없는 식별자는 식별자를
-     * 되돌려 주지 않는 일반 문구로 거부한다(결재자 검사와 같은 공개 수준). 오류는 모두 입력 오류(400)다 — 거부 사유가
-     * 권한(403)이 아니라 고른 사람이다.
+     * 참조자 검사. 지정은 차수 단위라 {@code cycle} 차수에 <b>새로</b> 지정할 사람만 돌려준다(그 차수에 이미 있으면 무시, 이전
+     * 차수에만 있던 사람은 이 차수의 지정). 기안자 지정과 결재자 추가가 같은 검사를 쓴다: 형식·중복, 기안자 본인 금지, 이 차수
+     * 결재선과 겹침 금지(이전 차수 참조자는 다음 차수 결재자가 될 수 있다), 문서 누적 서로 다른 20명, 사용 중(P), APPROVAL_READ.
+     * 사용·권한은 새로 지정할 사람 모두가 지금 자격으로 받는다. 사용 중이 아니거나 권한이 없으면 이름을 밝히고, 없는 식별자는
+     * 식별자를 되돌려 주지 않는 일반 문구로 거부한다(결재자 검사와 같은 공개 수준). 거부 사유가 고른 사람이라 모두 400 이다.
      *
      * @param cycle     지정할 차수(상신은 1, 재상신은 새 차수, 결재자 추가는 지금 차수)
      * @param lineUsers 같은 차수의 결재선 사람(상신·재상신은 요청의 결재선, 결재자 추가는 지금 차수의 결재선)
@@ -770,7 +755,7 @@ public class InformalSanctionService {
         if (!active.containsAll(fresh)) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "참조자로 지정할 수 없는 사용자입니다.");
         }
-        // 지정한 사람 가운데 보유자만 읽는다(2026-11-25 품질 평가 — 보유자 전체를 읽지 않는다). fresh 는 위에서 비어 있지 않다.
+        // 보유자 전체가 아니라 지정한 사람 가운데 보유자만 읽는다. fresh 는 위에서 비어 있지 않다.
         Set<String> readers = new HashSet<>(userRepository.findActiveEsntlIdsHoldingPermissionAmong(READ_PERMISSION, fresh));
         List<String> unreadableNames = found.stream()
                 .filter(u -> !readers.contains(u.getEsntlId()))
@@ -785,11 +770,9 @@ public class InformalSanctionService {
     }
 
     /**
-     * 참조 행을 지금 차수로 넣고, 이 문서에 처음 참조되는 사람에게만 알린다(이전 차수 참조자를 다시 지정하면 행만 생긴다).
-     * 행은 결재 차수 이력 뒤에 넣는다(지정 차수가 그 이력에 FK 로 묶인다). 지정 알림의 받는 사람은 {@link #validateReferences}
-     * 가 같은 트랜잭션에서 실제로 있고 사용 중인 계정임을 확인한 사람뿐이다 — 없는 사용자에게 보내 알림 FK 로 업무가 되돌아가는
-     * 경로가 없다. 지정 알림은 결재 순서 알림과 다른 eventId 를 쓴다 — 이전 차수의 참조자가 새 결재선에 들 수 있어 같은 사람이
-     * 두 알림을 받을 수 있고, 멱등 키가 (eventId, 받는 사람)이라 같은 eventId 면 업무 트랜잭션이 되돌아간다.
+     * 참조 행을 지금 차수로 넣고 이 문서에 처음 참조되는 사람에게만 알린다. 행은 지정 차수가 FK 로 묶인 결재 차수 이력 뒤에 넣는다.
+     * 받는 사람은 {@link #validateReferences} 가 같은 트랜잭션에서 사용 중임을 확인한 계정뿐이라 알림 FK 로 업무가 되돌아가지 않는다.
+     * 결재 순서 알림과 다른 eventId 를 쓴다 — 같은 사람이 두 알림을 받을 수 있고, 멱등 키 (eventId, 받는 사람)가 겹치면 업무가 되돌아간다.
      */
     private void designateReferences(InformalSanction sanction, ReferencePlan plan, String designatorId) {
         if (plan.users().isEmpty()) return;
@@ -809,8 +792,8 @@ public class InformalSanctionService {
         Set<String> participants = new LinkedHashSet<>();
         List<ApprovalStageRequest> stages = parseStageStructure(applicant, requests, participants);
         List<User> found = userRepository.findAllById(participants);
-        // [2026-09-26 DIP B4 P4] 거부 사유에 대상자 이름을 싣는다 — 여러 결재자 중 누가 문제인지 화면이 말할 수 있어야 한다.
-        //   존재하지 않는 식별자는 이름이 없으므로 종전 문구를 쓴다(식별자를 되돌려 주지 않는다).
+        // 거부 사유에 대상자 이름을 싣는다 — 여러 결재자 중 누가 문제인지 화면이 말할 수 있어야 한다.
+        //   존재하지 않는 식별자는 이름이 없어 일반 문구로 거부한다(식별자를 되돌려 주지 않는다).
         List<String> inactiveNames = found.stream()
                 .filter(u -> !"P".equals(u.getUserSttsCd()))
                 .map(User::getUserNm)
@@ -826,9 +809,8 @@ public class InformalSanctionService {
         if (!active.containsAll(participants)) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "결재자로 지정할 수 없는 사용자입니다.");
         }
-        // [2026-10-01] 결재 권한(APPROVAL_APPROVE)이 없는 사람에게 올리면 그 단계에서 문서가 멈춘다 — 서버가 그 사람의
-        //   승인을 403 으로 거부하고, 대신 처리할 경로도 없다. 상신 시점에 이름을 밝혀 거부한다(사용 중지 계정과 같은 형태).
-        //   보유자 전체가 아니라 지정한 결재자 가운데 보유자만 읽는다(2026-11-25 품질 평가).
+        // 결재 권한(APPROVAL_APPROVE)이 없는 사람에게 올리면 그 단계의 승인이 403 이라 결재자 교체·대리결재 전까지 문서가
+        //   멈춘다. 상신 시점에 이름을 밝혀 거부한다. 보유자 전체가 아니라 지정한 결재자 가운데 보유자만 읽는다.
         Set<String> approvers = participants.isEmpty() ? Set.of()
                 : new HashSet<>(userRepository.findActiveEsntlIdsHoldingPermissionAmong(APPROVE_PERMISSION, participants));
         List<String> unauthorizedNames = found.stream()
@@ -865,7 +847,7 @@ public class InformalSanctionService {
         return toDtoPage(page, actor, Set.of());
     }
 
-    // --- 목록 조립·화면 이름 조회 — 본문은 InformalSanctionPageAssembler(2026-11-27 분해, 권한 검사 없음) ---
+    // --- 목록 조립·화면 이름 조회 — 본문은 InformalSanctionPageAssembler(권한 검사 없음) ---
 
     private InformalSanctionPageAssembler pages() {
         return new InformalSanctionPageAssembler(informalSanctionMapper, detailRepository, historyRepository, processRepository,

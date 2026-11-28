@@ -40,11 +40,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-/**
- * JPA 기반 사용자 관리 서비스 구현체
- * - 전자정부 표준프레임워크 5.0 호환성 인증 요건 충족
- * - BaseAbstractService 상속으로 중복 코드 제거
- */
+/** 사용자 계정 관리 — 조회·등록·수정·비밀번호·관리 조치(잠금 해제·상태·부서 이동·삭제). */
 @Slf4j
 @Service
 @Transactional(readOnly = true)
@@ -54,13 +50,7 @@ public class UserService extends BaseAbstractService {
         public static final int MAX_BULK_DELETE_USERS = 100;
         public static final int MAX_BULK_USERS = MAX_BULK_DELETE_USERS;
 
-        /**
-         * 가입일자(yyyyMMdd) 판정의 기준 시계. 운영에서는 항상 Asia/Seoul 시스템 시계다.
-         *
-         * <p>[2026-09-23] 종전에는 등록·가입이 가입일자를 채우지 않아 NULL 로만 저장됐고, 컬럼의 DB 기본값은
-         * varchar(8) 에 담기지 않는 CURRENT_TIMESTAMP 라 생략 INSERT 가 죽었다(V2_103 이 기본값을 고쳤다).
-         * 앱 경로는 기본값에 기대지 않고 여기서 명시적으로 채운다. 시계 교체 지점은 LoginPolicyManageService 와 같은 형태다.
-         */
+        /** 가입일자(yyyyMMdd) 판정 시계(운영은 Asia/Seoul). 앱이 가입일자를 직접 채우고 DB 기본값(V2_103)에 기대지 않는다. */
         private Clock signupClock = Clock.system(ZoneId.of("Asia/Seoul"));
 
         /** 테스트 전용 — 가입일자 판정의 기준 시각을 고정한다. */
@@ -73,9 +63,8 @@ public class UserService extends BaseAbstractService {
         }
 
         /**
-         * 비밀번호 변경의 현재 비밀번호 불일치도 로그인 실패와 같은 횟수에 더하고 같은 한도에서 잠근다(2026-11-16). 설정 키는 로그인
-         * 인증({@code EgovAuthenticationProvider})과 같다 — 한도를 따로 두면 로그인을 막아 둔 대입이 이 경로로 옮겨 온다.
-         * 0 이하이면 잠그지 않는다(로그인과 같은 규칙).
+         * 현재 비밀번호 불일치는 전용 횟수로 세되 로그인 인증({@code EgovAuthenticationProvider})과 같은 설정 키·한도로 잠근다 —
+         * 한도를 따로 두면 로그인에서 막힌 대입이 이 경로로 옮겨 온다. 0 이하이면 잠그지 않는다.
          */
         @org.springframework.beans.factory.annotation.Value("${nuri.security.login.max-failures:5}")
         private int maxLoginFailures = 5;
@@ -161,9 +150,6 @@ public class UserService extends BaseAbstractService {
                 this.transactionManager = transactionManager;
         }
 
-        /**
-         * 사용자 목록 페이지 조회 구현
-         */
         public Page<UserDto> getPagedUserList(String searchKeyword, UserListFilter filter, @NonNull Pageable pageable) {
                 var page=userRepository.getPagedUserList(searchKeyword, filter == null ? UserListFilter.NONE : filter,
                         required(pageable, "Pageable 은 null 일 수 없습니다"));
@@ -179,24 +165,14 @@ public class UserService extends BaseAbstractService {
         public static final int PIC_SEARCH_MAX_RESULTS = 20;
 
         /**
-         * 담당자 지정용 사용자 검색.
-         *
-         * <p><b>이 메서드는 전 직원 인명부를 일반 사용자에게 여는 유일한 창구다.</b>
-         * 관리자 전용인 {@link #getPagedUserList} 와 달리 로그인만 하면 누구나 호출할 수 있으므로,
-         * 다음 세 가지를 구조적으로 강제한다.</p>
+         * 담당자 지정용 사용자 검색 — 로그인한 누구나 부르는, 전 직원 인명부의 유일한 일반 사용자 창구다. 그래서 구조로 막는다.
          * <ol>
-         *   <li><b>최소 검색어 길이</b>({@value #PIC_SEARCH_MIN_KEYWORD_LENGTH}자) — 빈 검색어나 1자로
-         *       전체를 덤프하지 못하게 한다. 미달 시 예외가 아니라 <b>빈 목록</b>을 돌려준다.
-         *       타이핑 중(1자 입력 상태)에 폼이 붉게 물드는 건 오류가 아니라 정상 흐름이기 때문이다.</li>
-         *   <li><b>건수 상한</b>({@value #PIC_SEARCH_MAX_RESULTS}건) + <b>offset 부재</b> — 페이지를
-         *       넘겨가며 전량 수집하는 경로 자체를 만들지 않는다. 총 건수도 반환하지 않는다.</li>
-         *   <li><b>최소 필드</b> — {@link UserSearchDto} 3필드(esntlId·성명·부서명)뿐이다.
-         *       연락처·이메일·주소·생년월일은 담기지 않는다.</li>
+         *   <li>검색어가 {@value #PIC_SEARCH_MIN_KEYWORD_LENGTH}자 미만이면 예외 없이 빈 목록이다(입력 중 상태라 오류가 아니다).</li>
+         *   <li>최대 {@value #PIC_SEARCH_MAX_RESULTS}건이고 offset·총 건수가 없다 — 넘겨 가며 전량을 모을 수 없다.</li>
+         *   <li>{@link UserSearchDto} 의 esntlId·성명·부서명·부재 여부만 싣는다. 연락처·이메일·주소·생년월일은 없다.</li>
          * </ol>
-         *
-         * <p>서비스 레이어 인가 재검증(백엔드 헌법 제8조): 컨트롤러 operation binding({@code AUTHENTICATED})과 짝을 이뤄
-         * 인증 주체 존재를 여기서 다시 확인한다. 컨트롤러를 우회해 이 서비스를 호출하는 경로
-         * (배치·내부 호출 등)가 생기더라도 익명 컨텍스트에서는 인명부가 나가지 않도록 하는 이중 방어다.</p>
+         * 컨트롤러의 {@code AUTHENTICATED} 바인딩과 따로 인증 주체를 다시 확인해, 내부 호출 경로에서도 익명에게 나가지 않는다
+         * (백엔드 헌법 제8조).
          *
          * @param keyword 성명 일부
          * @return 최대 {@value #PIC_SEARCH_MAX_RESULTS}건. 검색어가 짧으면 빈 목록.
@@ -218,10 +194,8 @@ public class UserService extends BaseAbstractService {
         public static final int DEPARTMENT_RECIPIENT_MAX = 200;
 
         /**
-         * 부서 단위 수신자 선택(2026-09-27 DIP B5 F5) — 한 부서의 사용 중 계정인 직속 소속 인원.
-         *
-         * <p>관리자 사용자 목록과 같은 권한(USER_READ)으로 열린다. 그 목록은 같은 사람을 연락처까지 실어 보여 주므로 이 창구가
-         * 권한을 넓히지 않는다(H3). 응답은 {@link UserSearchDto} 최소 필드뿐이다.</p>
+         * 부서 단위 수신자 선택 — 한 부서의 사용 중 계정인 직속 소속 인원. 사용자 목록과 같은 USER_READ 로 열려 권한을 넓히지 않고(H3),
+         * 응답은 {@link UserSearchDto} 최소 필드뿐이다.
          *
          * @throws BusinessException 부서가 없으면 404
          */
@@ -235,13 +209,10 @@ public class UserService extends BaseAbstractService {
                 return new DepartmentRecipientsDto(truncated ? List.copyOf(rows.subList(0, DEPARTMENT_RECIPIENT_MAX)) : rows, truncated);
         }
 
-        /**
-         * 사용자 상세 조회
-         */
         public UserDto getUserById(@NonNull String id) {
                 User user = findByLoginIdOrEsntlIdOrThrow(id);
-                // [2026-10-01 결정 18] 상세에 비밀번호 변경 필요와 추가 인증 사용 여부를 싣는다 — 관리자가 초기화 뒤의
-                //   상태와 복구 승인 대상인지를 사용자 상세에서 본다. 인증앱 비밀값·복구 코드는 싣지 않는다.
+                // 관리자가 초기화 뒤 상태와 복구 승인 대상인지 볼 수 있게 비밀번호 변경 필요·추가 인증 사용 여부를 싣는다.
+                //   인증앱 비밀값·복구 코드는 싣지 않는다.
                 boolean mfaActive = mfaCredentials.findBySubject(user.getEsntlId())
                         .map(nuri.business.domain.auth.mfa.MfaCredential::isActive).orElse(false);
                 return UserDto.from(user).withAuthorization(authorizationSnapshots.load(user.getEsntlId())).toBuilder()
@@ -249,25 +220,18 @@ public class UserService extends BaseAbstractService {
     }
 
         /**
-         * 관리 경로의 사용자 식별자 해석 — 로그인 ID 로 먼저 찾고, 없으면 내부 식별자(esntlId)로 찾는다.
-         *
-         * <p>조회만 한다. 인가 판정은 각 호출 메서드가 자기 순서대로 이 조회의 앞이나 뒤에서 한다(H3).
-         * 인증 제공자의 로그인 ID 전용 해석(DEC-OPS-179)과는 다른 경로이고, 새 로그인 ID 의 esntlId 충돌을
-         * 거부하는 {@link #assertLoginIdAvailable} 와도 의미가 다르다.
+         * 관리 경로의 사용자 식별자 해석 — 로그인 ID 로 먼저, 없으면 esntlId 로 찾는다. 조회만 하며 인가는 호출 메서드가 자기 순서로 한다(H3).
+         * 인증 제공자의 로그인 ID 전용 해석(DEC-OPS-179)·{@link #assertLoginIdAvailable} 와는 의미가 다르다.
          */
         private Optional<User> findByLoginIdOrEsntlId(String id) {
                 return userRepository.findByUserId(id).or(() -> userRepository.findById(id));
         }
 
-        /** {@link #findByLoginIdOrEsntlId} 로 찾지 못하면 {@code USER_NOT_FOUND} 다. */
         private User findByLoginIdOrEsntlIdOrThrow(String id) {
                 return findByLoginIdOrEsntlId(id)
                                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
         }
 
-        /**
-         * 사용자 등록 (비밀번호 암호화 적용)
-         */
         @Transactional(propagation = Propagation.SUPPORTS)
         public String registerUser(@NonNull UserDto dto) {
                 required(dto, "등록 요청은 null 일 수 없습니다");
@@ -278,7 +242,7 @@ public class UserService extends BaseAbstractService {
                 String pswdCrans = dto.pswdCrans();
                 String roleName = dto.role();
 
-                // [보안] 관리자 권한 확인 및 트랜잭션 밖에서 비밀번호 해시 계산(DB 커넥션·전역 잠금 점유 최소화)
+                // 단독 호출이면 비밀번호 해시를 트랜잭션 밖에서 계산한다(DB 연결·전역 잠금 점유 최소화).
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_CREATE");
                 String encodedPassword = passwordEncoder.encode(pswd);
 
@@ -333,16 +297,12 @@ public class UserService extends BaseAbstractService {
                 });
         }
 
-        /**
-         * 사용자 정보 수정
-         */
         @Transactional
         public void updateUser(@NonNull String userId, @NonNull UserDto userDto) {
                 User user = findByLoginIdOrEsntlIdOrThrow(userId);
 
-                // [보안] 본인 또는 관리자만 수정 가능 (인가 판정을 전역 잠금보다 먼저 수행)
-                // 보호계정 가드(authorizeProtectedAccountChange)는 걸지 않는다 — 이 경로는 비밀번호 힌트·정답·역할을 바꾸지 못하고,
-                //   일반 사용자 관리자가 보호 관리자의 이름·연락처·부서를 고치는 것은 허용하기로 정했다(DEC-OPS-375).
+                // 본인 또는 USER_UPDATE 만 수정한다(인가를 전역 잠금보다 먼저 판정). 보호계정 가드는 걸지 않는다 — 이 경로는
+                //   비밀번호 힌트·정답·역할을 못 바꾸고, 보호 관리자의 이름·연락처·부서 수정은 허용한다(DEC-OPS-375).
                 nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId(user.getEsntlId(), "USER_UPDATE");
 
                 boolean isSelf = Optional.ofNullable(user.getEsntlId())
@@ -352,33 +312,15 @@ public class UserService extends BaseAbstractService {
                         authorizationAdministration.lockAdministration();
                 }
                 refreshForUpdateOrThrow(user);
-                // [2026-11-25 V2_156] 행 잠금 뒤 읽은 편집 버전과 대조한다 — 두 관리자(또는 관리자와 본인)가 같은 사용자를 열고 차례로
-                //   저장하면 늦은 저장이 앞 저장을 알림 없이 덮었다. 없으면 400, 다르면 409. 로그인 실패 횟수 같은 보안 상태 쓰기는
-                //   이 버전을 올리지 않는다(User.editVersion 주석).
+                // 행 잠금 뒤 읽은 편집 버전과 대조해 늦은 저장이 앞 저장을 덮지 않게 한다(V2_156). 없으면 400, 다르면 409.
+                //   로그인 실패 횟수 같은 보안 상태 쓰기는 이 버전을 올리지 않는다(User.editVersion).
                 nuri.foundation.core.util.EntityVersions.assertCurrent(userDto.version(), user.getEditVersion());
 
-                // [2026-08-12 결함 수정] **보내지 않은 필드가 지워지던 것**을 막는다.
-                //
-                //   User.update() 는 인자를 무조건 대입한다(this.emplNo = emplNo). 그런데 관리자
-                //   수정 폼(UserManageForm)이 전송하는 것은 userId·userNm·emlAddr·mblTelno·ognzId·pswd
-                //   뿐이고, 나머지 **12개(사번·직함·주소·우편번호·사무실/지역/중간/끝 전화·팩스·
-                //   상세주소·그룹·기관코드)는 null 로 와서 그대로 덮어써졌다.**
-                //   즉 이름 한 글자만 고쳐도 그 사용자의 주소·연락처·사번이 통째로 날아갔다.
-                //
-                //   폼이 값을 왕복시켜 방어하는 방법(부서 업무에서 쓰는 방식)은 여기서는 성립하지 않는다 —
-                //   목록 API 의 projection 이 10개 필드만 돌려주어(UserRepositoryImpl) 화면이
-                //   areaNo·homeAddr·zip·ognzId 등을 **애초에 받지 못한다**. 왕복시킬 값이 없다.
-                //
-                //   그래서 서버에서 막는다: **null 은 '보내지 않음' 으로 보고 기존 값을 유지**한다.
-                //   빈 문자열("")은 '지움' 이므로 그대로 반영된다 — 폼은 비운 칸을 "" 로 보내므로
-                //   사용자가 실제로 지우려는 의도는 여전히 통한다.
-                //
-                //   ⚠ 이 규칙은 **부분 수정(partial update)** 계약이다. 필드를 null 로 만들고 싶다면
-                //     "" 를 보내야 한다. 전체 치환(PUT 의 엄격한 의미)을 원하는 클라이언트가 생기면
-                //     그때는 별도 엔드포인트로 분리할 것 — 조용한 데이터 유실보다 명시적 계약이 낫다.
-                // 소속 부서는 **요청이 실제로 보낸 값**만, 그것도 **기존과 다를 때만** 검사한다.
-                //   해석된 결과값을 검사하면 이미 고아 소속을 가진 사용자가 이름·연락처조차 고치지 못한다 —
-                //   /users/me 경계는 소속을 역직렬화하지 않아 본인은 그 값을 바꿀 수단이 아예 없다.
+                // 부분 수정 계약 — null 은 '보내지 않음'이라 기존 값을 두고 "" 는 '지움'이다(keepIfAbsent). User.update() 는
+                //   모든 인자를 대입하는데 화면은 일부 필드만 보내고 나머지를 받지도 못하므로, 이 규칙이 없으면 보내지 않은 칸이
+                //   지워진다. 전체 치환이 필요하면 별도 엔드포인트로 나눈다.
+                // 소속은 요청이 실제로 보냈고 기존과 다를 때만 검사한다 — 결과값을 검사하면 이미 고아 소속인 사용자가 이름조차
+                //   못 고친다(/users/me 는 소속을 받지 않는다).
                 assertDepartmentChange(userDto.ognzId(), user.getOgnzId());
 
                 user.update(
@@ -408,27 +350,15 @@ public class UserService extends BaseAbstractService {
                 user.markProfileEdited();
         }
 
-        /**
-         * 부분 수정 규칙 — {@code null} 이면 기존 값을 유지하고, 그 외(빈 문자열 포함)는 요청 값을 쓴다.
-         *
-         * <p>null 과 "" 를 구분하는 것이 핵심이다:
-         * <ul>
-         *   <li>{@code null} = 클라이언트가 <b>보내지 않은</b> 필드 → 건드리지 않는다.</li>
-         *   <li>{@code ""}   = 클라이언트가 <b>비운</b> 필드 → 지우려는 의도이므로 반영한다.</li>
-         * </ul>
-         * 폼은 렌더하는 칸을 비우면 "" 로 보내므로 이 구분이 사용자 의도와 그대로 맞는다.
-         */
+        /** 부분 수정 규칙 — {@code null}(보내지 않음)이면 기존 값, 빈 문자열(비움)을 포함한 그 밖의 값은 요청 값을 쓴다. */
         private static String keepIfAbsent(String requested, String existing) {
                 return requested != null ? requested : existing;
         }
 
         /**
-         * 비밀번호 변경
-         *
-         * <p>단독 호출에서는 사용자 조회(읽기 TX), 비밀번호 해시 대조/생성(트랜잭션 밖), 행 잠금 후 갱신/실패 기록
-         * (짧은 쓰기 TX)을 한 흐름 안에서 분리해 bcrypt 비용 12 동안 DB 풀 연결을 쥐지 않는다. 외부 트랜잭션이 이미
-         * 열려 있으면 기존처럼 참여하며, 현재 비밀번호 불일치 시 {@link CurrentPasswordMismatchException} ({@code noRollbackFor}) 으로
-         * 실패 카운터·잠금을 커밋한다.
+         * 비밀번호 변경. 단독 호출이면 조회(읽기 TX) → 해시 대조·생성(트랜잭션 밖) → 행 잠금 뒤 갱신·실패 기록(짧은 쓰기 TX)으로
+         * 나눠 bcrypt 동안 DB 연결을 쥐지 않는다. 외부 트랜잭션이 있으면 참여한다. 불일치는
+         * {@link nuri.business.domain.user.exception.CurrentPasswordMismatchException}({@code noRollbackFor})으로 실패 횟수·잠금을 커밋한다.
          */
         @Transactional(propagation = Propagation.SUPPORTS,
                         noRollbackFor = nuri.business.domain.user.exception.CurrentPasswordMismatchException.class)
@@ -502,13 +432,10 @@ public class UserService extends BaseAbstractService {
         }
 
         /**
-         * 현재 비밀번호 불일치를 전용 횟수에 더하고, 한도에 닿으면 잠근 뒤 호출자가 {@link CurrentPasswordMismatchException} 을 던지게 한다.
-         *
-         * <p>로그인 인증과 같은 규칙이다(DEC-OPS-354). 횟수는 행 잠금 아래의 현재 값으로 올린다 — 잠금 없이 읽은 값을 올려 저장하면
-         * 동시 요청의 증가가 서로를 덮는다. 이미 잠겨 있으면 횟수를 더 올리지 않는다(고정창). 잠글 때 세션 차수를 올려 그 전에 발급된
-         * 세션을 끊는다(V2_153) — 한 번 틀린 것만으로는 끊지 않는다. 이 점은 로그인과 다르다(DEC-OPS-419): 로그인 실패는 누구나 낼 수
-         * 있어 세션을 끊지 않지만, 여기서 대입한 쪽은 이미 세션을 가졌으므로 그 세션(빼앗긴 토큰일 수 있다)을 끊는다. 기다리는 사이
-         * 비밀번호가 바뀌었으면 옛 해시와 대조한 실패이므로 세지 않는다.
+         * 현재 비밀번호 불일치를 전용 횟수에 더하고 한도에 닿으면 잠근다(로그인과 같은 규칙, DEC-OPS-354).
+         * 횟수는 행 잠금 아래 현재 값으로 올려 동시 요청이 서로를 덮지 않게 하고, 이미 잠겼으면 더 올리지 않는다(고정창).
+         * 잠글 때만 세션 차수를 올려 기존 세션을 끊는다(V2_153) — 로그인과 달리 대입한 쪽이 이미 세션을 가졌기 때문이다(DEC-OPS-419).
+         * 기다리는 사이 비밀번호가 바뀌었으면 옛 해시와 대조한 실패라 세지 않는다.
          */
         private void applyCurrentPasswordFailure(User user, String observedPassword) {
                 refreshForUpdateOrThrow(user);
@@ -545,17 +472,11 @@ public class UserService extends BaseAbstractService {
         }
 
         /**
-         * 새 로그인 ID 가 기존 로그인 ID 는 물론 **기존 사용자의 내부 식별자(esntlId)와도** 겹치지 않게 한다.
-         *
-         * <p>access token 의 subject 는 esntlId 인데, 인증 어댑터는 그 값을 로그인 ID 로 먼저 찾고
-         * 없을 때 esntlId 로 찾는다. 그래서 누군가의 esntlId 와 같은 로그인 ID 가 생기면 원래 사용자의
-         * 토큰이 새 계정으로 해석된다 — 권한·감사 귀속이 다른 사람으로 바뀐다. 관리자 등록 규칙
-         * (영문·숫자·밑줄 4~20자)은 초기 관리자 식별자 {@code USRCNFRM_00000000001} 같은 값을 통과시킨다.
-         * 사용자에게는 일반 중복과 같은 오류로 답해 내부 식별자의 존재를 드러내지 않는다.
-         *
-         * <p>[2026-10-18] <b>지워진 계정의 기록이 아직 그 로그인 ID 를 들고 있으면</b> 같은 오류로 거부한다. 사용자는 물리
-         * 삭제되지만 업무 보고·일정·메모 보고·부서 업무·첨부 등은 주인을 로그인 ID 로 판정하므로, 다시 만든 계정이 옛
-         * 기록을 제 것으로 물려받았다({@link LoginIdReuseGuard}). 어느 기록이 남았는지는 응답으로 드러내지 않는다.
+         * 새 로그인 ID 가 기존 로그인 ID·기존 사용자의 esntlId·지워진 계정의 남은 기록과 겹치면 일반 중복과 같은 오류로 거부한다
+         * (어느 쪽인지 드러내지 않는다). 관리 경로는 식별자를 로그인 ID 로 먼저 해석하므로({@link #findByLoginIdOrEsntlId}), 남의
+         * esntlId 와 같은 로그인 ID 가 생기면 그 사용자를 겨눈 관리 조치가 새 계정으로 간다 — 등록 규칙(영문·숫자·밑줄 4~20자)은
+         * {@code USRCNFRM_00000000001} 같은 값을 통과시킨다. 업무 기록은 주인을 로그인 ID 로 판정하므로 같은 ID 로 다시 만든 계정은
+         * 옛 기록을 물려받는다({@link LoginIdReuseGuard}).
          */
         private void assertLoginIdAvailable(String userId) {
                 if (isLoginIdUnavailable(userId)) {
@@ -570,14 +491,8 @@ public class UserService extends BaseAbstractService {
         }
 
         /**
-         * 비밀번호가 바뀌면 그 전에 발급된 refresh token 을 폐기한다.
-         *
-         * <p>종전에는 비밀번호만 바꾸고 토큰을 남겨, 탈취된 refresh token 이 새 비밀번호와 무관하게
-         * 만료(최대 7일)까지 access token 을 재발급받을 수 있었다. 본인 변경과 관리자 초기화는 모두
-         * "지금까지의 자격을 끊는다" 는 의미이므로 두 경로에서 같은 폐기를 수행한다.
-         *
-         * <p>토큰 테이블은 esntlId 단일 키이며 사용자 삭제와 같은 bulk 계약을 쓴다. [V2_153] 이미 발급된 access token 도
-         * 세션차수를 올려 즉시 끊는다 — 발급 때의 차수가 현재 차수와 다르면 인증 필터가 거부한다(401).
+         * 비밀번호가 바뀌면 지금까지의 자격을 끊는다 — 본인 변경·관리자 초기화 모두 세션 차수를 올려 이전 차수의 access·refresh
+         * token 을 무효화하고(V2_153), 저장된 refresh token 행도 지운다.
          */
         private void revokeRefreshTokens(User user) {
                 // 사용자→MFA 자격→refresh 순서로 잠근다. 비밀번호 이전의 도전은 더 이상 증명이 아니다.
@@ -586,16 +501,15 @@ public class UserService extends BaseAbstractService {
                 revokeSessions(List.of(user.getEsntlId()));
         }
 
-        /** [V2_153] 세션차수를 올리고 refresh token 을 지운다 — 그 전에 발급된 access·refresh token 이 모두 거부된다. */
+        /** 세션 차수를 올리고 refresh token 을 지운다 — 그 전에 발급된 access·refresh token 이 모두 거부된다(V2_153). */
         private void revokeSessions(List<String> esntlIds) {
                 userRepository.advanceSessionCycle(esntlIds);
                 refreshTokenRepository.deleteAllByEsntlIdIn(esntlIds);
         }
 
         /**
-         * 관리자 강제 로그아웃(V2_153). 대상의 모든 세션을 지금 끊는다 — 발급된 access token 은 다음 요청에서 401 이고, refresh token
-         * 은 지워져 재발급되지 않는다. 계정 상태·비밀번호는 바꾸지 않는다(다시 로그인하면 들어온다). 계정 상태 관리 권한
-         * ({@code USER_STATUS})으로 하며 보호 계정은 상태 변경과 같은 보호 판정을 받는다. 응답 전에 민감 감사에 남긴다.
+         * 관리자 강제 로그아웃 — 대상의 모든 세션을 끊되(V2_153) 계정 상태·비밀번호는 그대로라 다시 로그인할 수 있다.
+         * {@code USER_STATUS} 로 하며 보호 계정은 상태 변경과 같은 보호 판정을 받고, 응답 전에 민감 감사에 남긴다.
          */
         @Transactional
         public void forceLogout(@NonNull String userId) {
@@ -608,12 +522,8 @@ public class UserService extends BaseAbstractService {
                 sensitiveAudit.recordMutation("ADMIN_FORCE_LOGOUT", user.getEsntlId());
         }
 
-        /**
-         * 사용자 삭제
-         */
         @Transactional
         public void deleteUser(@NonNull String userId) {
-                // [보안] 관리자 권한 확인
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_DELETE");
 
                 User user = findByLoginIdOrEsntlIdOrThrow(userId);
@@ -622,18 +532,10 @@ public class UserService extends BaseAbstractService {
         }
 
         /**
-         * [무결성/V2_12 결속] 사용자 삭제 전 종속 데이터 정리 후 일괄 삭제.
-         *
-         * <p>V2_12 가 tb_user_authrt_map·tb_bbs_item·tb_bbs_comment·tb_adbk_manage·tb_user_noti 에
-         * tb_user_info(esntl_id) FK(NO ACTION)를 부여했으므로, 사용자 행 삭제 전에 같은 트랜잭션에서
-         * 종속 행을 반드시 정리해야 한다. 정리하지 않으면 커밋 시 FK 위반으로 삭제가 실패한다.
-         * <ul>
-         *   <li>보안 인가 매핑(tb_user_authrt_map)·리프레시 토큰: 여기서 직접 삭제</li>
-         *   <li>콘텐츠(게시글/댓글/주소록)·알림·커뮤니티 멤버십: {@link UserDeletionEvent} 동기 발행 →
-         *       business-app 의 기능별 UserDeletionEvent 리스너가 동일 트랜잭션에서
-         *       콘텐츠는 webmaster 재귀속, 알림/커뮤니티 멤버십은 삭제 처리(§2.B: 필수 코어→샘플 직접 결합 제거)</li>
-         *   <li>시스템 관리자 계정(webmaster)은 재귀속 종착지이므로 삭제 금지</li>
-         * </ul>
+         * 종속 데이터를 같은 트랜잭션에서 정리한 뒤 사용자를 일괄 삭제한다 — 사용자 행을 가리키는 FK 가 지연되지 않는 NO ACTION 이라
+         * (V2_12) 사용자 DELETE 문보다 먼저 정리하지 않으면 그 삭제문이 실패한다. 인가 매핑·토큰·로그인 정책·부재·사용 로그·부서 업무 담당자는 여기서,
+         * 콘텐츠·알림·커뮤니티 멤버십은 {@link UserDeletionEvent} 리스너(business-app)가 같은 트랜잭션에서 처리한다
+         * (콘텐츠는 webmaster 로 재귀속). 재귀속 종착지인 시스템 관리자 계정은 지우지 않는다.
          */
         private void cleanupDependentsAndDelete(List<User> users) {
                 if (users.isEmpty()) {
@@ -641,9 +543,7 @@ public class UserService extends BaseAbstractService {
                 }
                 List<String> esntlIds = users.stream().map(u -> u.getEsntlId()).collect(Collectors.toList());
                 if (esntlIds.contains(Constants.User.SYSTEM_ADMIN_ESNTL_ID)) {
-                        // 재귀속 종착 계정이 사라지면 콘텐츠 보존 정책 자체가 붕괴한다.
-                        // [2026-10-01] 사유를 말한다 — 종전에는 '접근 권한이 없습니다' 로만 보여, 삭제 권한이 있는 관리자가
-                        //   일괄 선택에 이 계정이 섞인 것을 알 수 없었다(전체가 거부된다).
+                        // 재귀속 종착 계정이라 지우면 콘텐츠 보존이 무너진다. 일괄 선택에 섞였음을 알도록 사유를 말한다(전체가 거부된다).
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED,
                                         "시스템 관리자 계정은 삭제할 수 없습니다. 선택에서 빼고 다시 시도해 주세요.");
                 }
@@ -652,26 +552,20 @@ public class UserService extends BaseAbstractService {
                 // refresh를 먼저 지우면 사용자 행을 보유한 MFA 요청과 서로 기다릴 수 있다.
                 esntlIds.stream().distinct().sorted().forEach(userRepository::lockForDeletion);
                 authorizationAdministration.removeDeletedUsers(esntlIds);
-                // [P2 키 규약] tb_auth_rfsh_tk 는 esntlId 단일 키잉 — 발급/로그아웃/재발급 전 경로가
-                // esntlId 기준임을 실측 확인했고, 레거시 loginId 키 행은 V2_18 이 정리한다(생성 경로 없음).
-                // 사용자별 파생 delete N회를 같은 PK 축의 명시적 IN bulk delete 한 번으로 수렴한다.
+                // refresh token 표는 esntlId 단일 키다(레거시 loginId 키 행은 V2_18 이 정리했다). IN 삭제 한 번으로 지운다.
                 refreshTokenRepository.deleteAllByEsntlIdIn(esntlIds);
-                // [V2_13 결속] 로그인 정책(키=loginId)·부재 플래그(키=esntlId) 정리 (커뮤니티 멤버십은 이벤트 리스너로 이관)
+                // 로그인 정책은 loginId, 부재 표지는 esntlId 가 키다(V2_13).
                 loginPolicyRepository.deleteAllByIdInBatch(
                                 users.stream().map(u -> u.getUserId()).collect(Collectors.toList()));
                 userAbsenceRepository.deleteAllByIdInBatch(esntlIds);
-                // [§2.B] 커뮤니티 멤버십(샘플 도메인) 정리는 UserDeletionEvent 리스너(business-app
-                //  기능별 정리 리스너)로 역전 — 콘텐츠/알림 정리와 동일 경로. 필수 코어→샘플 직접 결합 제거.
-                // [log-privacy] 사용통계 로그 정리 — fk_tb_user_log_tb_user_info(dmnd_user_id→esntl_id) 잠복 결함 해소.
-                // 개인 단위 통계이므로 파기 대상(보존기간 정책은 접속기록 web/sys/login 에만 적용). 사용자 삭제 前 선행.
+                // 사용 통계 로그는 개인 단위라 파기한다(보존기간 정책은 접속기록에만 적용된다). FK 때문에 사용자보다 먼저 지운다.
                 userLogRepository.deleteByDmndUserIdIn(esntlIds);
-                // [V2_32 결속] 부서업무 담당자 참조 해제 — fk_tb_dept_task_info_tb_user_info(pic_id→esntl_id, NO ACTION).
-                // 업무는 삭제하지 않는다. 부서 자산이므로 담당자만 공석(NULL)으로 되돌리며, 공석 업무의 인가는
-                // 등록자(frstRgtrId) 기준으로 판정된다(DeptJobService.assertPicOrAdmin — 이미 정상 상태로 설계됨).
+                // 부서 업무는 부서 자산이라 지우지 않고 담당자만 공석으로 돌린다(V2_32 FK). 공석 업무의 인가는 등록자 기준이다
+                //   (DeptJobService.assertPicOrAdmin).
                 deptJobRepository.releasePicByPicIdIn(esntlIds);
                 eventPublisher.publishEvent(new UserDeletionEvent(esntlIds));
                 userRepository.deleteAllInBatch(users);
-                // [2026-11-25] 삭제한 계정을 같은 트랜잭션에 커밋 사실로 남긴다(ADR-0025 D13) — 엔드포인트 표지는 시도·결과만 남긴다.
+                // 삭제한 계정을 같은 트랜잭션에 커밋 사실로 남긴다(ADR-0025 D13) — 엔드포인트 표지는 시도·결과만 남긴다.
                 sensitiveAudit.recordMutation("ADMIN_USER_DELETE", auditTargets(esntlIds));
         }
 
@@ -683,9 +577,6 @@ public class UserService extends BaseAbstractService {
                 return esntlIds.stream().distinct().sorted().collect(Collectors.joining(","));
         }
 
-        /**
-         * 사용자 회원가입 (기존 API 호환 및 비밀번호 암호화 적용)
-         */
         @Transactional(propagation = Propagation.SUPPORTS)
         public UserResponse signup(UserSignupRequest request) {
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_CREATE");
@@ -700,8 +591,6 @@ public class UserService extends BaseAbstractService {
                         // 잠금을 기다리는 사이 회수된 권한으로 계정을 만들지 않게 잠금 뒤 현재 상태로 다시 판정한다(registerUser 와 같다).
                         authorizationAdministration.lockAndAuthorize("USER_CREATE");
 
-                        // [버그수정] User @Id 는 esntlId 이므로 existsById(loginId)만으로는 로그인 ID 중복을 못 본다.
-                        // 로그인 ID 중복은 unique 컬럼 user_id 로 확인해야 한다. 미수정 시 중복 loginId 가 통과→INSERT 시 500.
                         assertLoginIdAvailable(request.getUserId());
 
                         String esntlId = nuri.foundation.core.util.IdGenerationUtil.generateUserId();
@@ -714,8 +603,7 @@ public class UserService extends BaseAbstractService {
                                         .sbscrbYmd(todaySignupYmd())
                                         .pswdHint(request.getPswdHint())
                                         .pswdCrans(request.getPswdCrans())
-                                        // [보안] 권한을 요청에서 받지 않고 USER 로 고정한다(호출자는 USER_CREATE 권한자다 — DEC-OPS-135).
-                                        //   관리자 등록도 USER 그룹으로 생성하며 추가 그룹은 버전 검증된 배정 API로 부여한다.
+                                        // 권한은 요청에서 받지 않고 USER 로 고정한다. 추가 그룹은 버전 검증된 배정 API 로 준다(DEC-OPS-135).
                                         .role(Role.USER)
                                         .build();
 
@@ -726,19 +614,12 @@ public class UserService extends BaseAbstractService {
                 });
         }
 
-        /**
-         * 비밀번호 검증
-         */
         public boolean verifyPassword(@NonNull String rawPassword, @NonNull String encodedPassword) {
                 return passwordEncoder.matches(rawPassword, encodedPassword);
         }
 
-        /**
-         * 여러 사용자를 한꺼번에 삭제합니다.
-         */
         @Transactional
         public void deleteUserList(@NonNull List<String> userIds) {
-                // [보안] 관리자 권한 확인
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_DELETE");
                 required(userIds, "사용자 ID 목록은 null 일 수 없습니다");
                 if (userIds.size() > MAX_BULK_DELETE_USERS) {
@@ -746,10 +627,7 @@ public class UserService extends BaseAbstractService {
                                         "한 번에 삭제할 사용자 ID는 " + MAX_BULK_DELETE_USERS + "개 이하여야 합니다.");
                 }
 
-                // [버그수정] 기존 deleteAllByIdInBatch(userIds)는 PK(esntlId) 기준이라, FE(UserOrgHubClient)가
-                // 보내는 loginId 목록에서는 아무 행도 지우지 못하는 침묵 no-op 이었다. deleteUser 와 동일하게
-                // loginId → esntlId 순으로 해석해 실제 사용자를 확정한 뒤, 종속 정리를 거쳐 삭제한다.
-                // (존재하지 않는 ID 는 멱등 삭제 의미론으로 건너뛰고 경고만 남긴다)
+                // 화면은 loginId 를 보내므로 deleteUser 처럼 loginId → esntlId 로 해석한다. 없는 ID 는 멱등 삭제로 건너뛰고 경고만 남긴다.
                 List<User> users = userIds.stream()
                                 .map(this::findByLoginIdOrEsntlId)
                                 .flatMap(opt -> opt.stream())
@@ -760,19 +638,14 @@ public class UserService extends BaseAbstractService {
                 cleanupDependentsAndDelete(users);
         }
 
-        /**
-         * 아이디 중복 여부를 확인합니다.
-         */
         public boolean checkIdDplct(@NonNull String userId) {
                 return isLoginIdUnavailable(required(userId, "사용자 ID 는 null 일 수 없습니다"));
         }
 
-        /**
-         * 관리자 권한으로 비밀번호를 변경합니다. (기존 비밀번호 확인 없음)
-         */
+        /** 관리자 비밀번호 초기화 — 현재 비밀번호를 묻지 않고 임시 비밀번호로 발급한다. */
         @Transactional(propagation = Propagation.SUPPORTS)
         public void updatePasswordByAdmin(@NonNull String userId, @NonNull String newPassword) {
-                // [보안] 관리자 권한 확인 및 트랜잭션 밖에서 비밀번호 해시 계산(DB 커넥션·전역 잠금 점유 최소화)
+                // 단독 호출이면 비밀번호 해시를 트랜잭션 밖에서 계산한다(DB 연결·전역 잠금 점유 최소화).
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_PASSWORD");
                 String encodedPassword = passwordEncoder.encode(newPassword);
 
@@ -791,10 +664,7 @@ public class UserService extends BaseAbstractService {
                 });
         }
 
-        /**
-         * 계정 잠금을 푼다(2026-09-26 DIP B4 P7, D5). 연속 실패로 잠긴 계정은 잠금 시간이 지나면 스스로 풀리지만,
-         * 그 전에 풀어야 할 때 관리자가 쓴다. 비밀번호와 세션은 건드리지 않는다.
-         */
+        /** 잠금 시간이 지나기 전에 관리자가 계정 잠금을 푼다. 비밀번호와 세션은 건드리지 않는다. */
         @Transactional
         public void unlockUser(@NonNull String userId) {
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_STATUS");
@@ -807,12 +677,8 @@ public class UserService extends BaseAbstractService {
                 sensitiveAudit.recordMutation("ADMIN_UNLOCK", user.getEsntlId());
         }
 
-        /**
-         * 여러 사용자의 상태를 한꺼번에 변경합니다.
-         */
         @Transactional
         public void updateUsersStatus(@NonNull List<String> userIds, @NonNull String status) {
-                // [보안] 관리자 권한 확인
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_STATUS");
                 authorizationAdministration.lockAndAuthorize("USER_STATUS");
                 long managerCount = authorizationAdministration.managerCount();
@@ -821,19 +687,15 @@ public class UserService extends BaseAbstractService {
                 refreshAllForUpdate(users);
                 users.forEach(user -> user.updateStatus(status));
                 userRepository.saveAllAndFlush(users);
-                // [V2_153] 상태가 바뀌면(정지·탈퇴·승인 등) 그 전에 발급된 세션을 끊는다 — 다시 활성으로 돌려도 옛 토큰은 되살아나지 않는다.
+                // 상태가 바뀌면(정지·탈퇴·승인 등) 그 전에 발급된 세션을 끊는다(V2_153) — 다시 활성으로 돌려도 옛 토큰은 되살아나지 않는다.
                 revokeSessions(users.stream().map(User::getEsntlId).toList());
                 authorizationAdministration.protectLastManager(managerCount);
                 sensitiveAudit.recordMutation("ADMIN_STATUS_CHANGE", auditTargets(users.stream().map(User::getEsntlId).toList()));
         }
 
-        /**
-         * 여러 사용자의 소속 부서를 한꺼번에 변경합니다.
-         */
         @Transactional
         public void moveUsersToDept(@NonNull List<String> userIds, @NonNull String ognzId) {
                 authorizationAdministration.lockAndAuthorize("USER_DEPT");
-                // [보안] 관리자 권한 확인
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_DEPT");
                 assertDepartmentExists(ognzId);
                 List<User> users = findAllByLoginIdOrThrow(userIds);
@@ -857,9 +719,7 @@ public class UserService extends BaseAbstractService {
                 }
         }
 
-        /**
-         * 여러 사용자의 권한을 한꺼번에 변경합니다.
-         */
+        /** 단일 role 일괄 변경은 받지 않는다 — 사용자별 전체 그룹과 버전으로 배정하는 API 를 쓴다. */
         @Transactional
         public void updateUsersRole(@NonNull List<String> userIds, @NonNull Role role) {
                 nuri.business.security.util.SecurityUtil.assertPermission("AUTHRT_ASSIGN");
@@ -868,12 +728,8 @@ public class UserService extends BaseAbstractService {
     }
 
         /**
-         * 화면의 벌크 선택 키인 loginId({@code user_id})로 사용자를 전부 확정한다.
-         *
-         * <p>{@link User}의 JPA PK는 esntlId이므로 {@code findAllById(userIds)}를 사용하면 정상적인
-         * loginId 요청도 0건으로 조회되어 200 응답 뒤 아무 변경도 일어나지 않는다. 또한 일부 ID만
-         * 존재할 때 부분 성공을 허용하면 관리자가 요청 결과를 신뢰할 수 없으므로 전체 일치가 아니면
-         * 트랜잭션을 실패시킨다.</p>
+         * 화면의 일괄 선택 키인 loginId({@code user_id})로 사용자를 전부 확정한다(PK 는 esntlId 라 findAllById 로는 0건이다).
+         * 하나라도 없으면 부분 성공 없이 실패시켜, 관리자가 결과를 믿을 수 있게 한다.
          */
         private List<User> findAllByLoginIdOrThrow(List<String> userIds) {
                 List<String> nonNullIds = required(userIds, "사용자 ID 목록은 null 일 수 없습니다");
@@ -898,31 +754,14 @@ public class UserService extends BaseAbstractService {
                 return users;
         }
         /**
-         * 소속 부서가 실재하는지 확인한다. [2026-09-17]
-         *
-         * <p>{@code tb_user_info.ognz_id} 에는 물리 FK 가 없어 존재하지 않는 부서를 그대로 저장할 수
-         * 있었다. 삭제 방향은 부서 삭제 가드가 닫고 있지만 쓰기 방향은 열려 있었고, 실측에서 값이
-         * 0 이었던 것은 가드 때문이 아니라 <b>아직 아무도 소속을 지정하지 않았기 때문</b>이다 —
-         * 시드가 이 컬럼을 채우지 않는다.
-         *
-         * <p>빈 값은 소속 해제라 그대로 통과시킨다.
-         */
-        /**
-         * "소속 없음" 의 저장 표현을 NULL 하나로 모은다. [2026-09-17]
-         *
-         * <p>화면은 소속 없음을 <b>빈 문자열</b>로 보낸다 — 등록·수정 폼의
-         * {@code <option value="">소속 없음 / GLOBAL</option>} 이 그렇고, E2E 가 캡처한 실제 요청
-         * 본문도 {@code "ognzId":""} 다. 빈 문자열은 NULL 이 아니므로 V2_102 가 추가한
-         * {@code fk_tb_user_info_tb_ognz_info} 가 그것을 <b>거부한다</b> — 정규화하지 않으면
-         * 소속 없는 사용자를 등록할 수 없게 된다.
-         *
-         * <p>⚠ 부분 수정 계약({@link #keepIfAbsent})은 건드리지 않는다. 빈 문자열은 여전히
-         * "비우려는 의도" 로 해석되며, 이 변환은 그 의도가 확정된 <b>뒤</b> 저장 표현만 바꾼다.
+         * "소속 없음"의 저장 표현을 NULL 하나로 모은다 — 화면은 소속 없음을 빈 문자열로 보내는데 V2_102 의 부서 FK 가 빈 문자열을
+         * 거부한다. 부분 수정 계약({@link #keepIfAbsent})에서 '비움'이 확정된 뒤 저장 표현만 바꾼다.
          */
         private static String blankToNull(String value) {
                 return (value == null || value.isBlank()) ? null : value;
         }
 
+        /** 소속 부서가 실재하는지 먼저 확인해 FK 위반 대신 부서 없음으로 답한다. 빈 값은 소속 해제라 통과시킨다. */
         private void assertDepartmentExists(String ognzId) {
                 if (ognzId == null || ognzId.isBlank()) {
                         return; // 소속 없음
@@ -940,9 +779,8 @@ public class UserService extends BaseAbstractService {
                 if (requested == null || java.util.Objects.equals(blankToNull(requested), blankToNull(current))) {
                         return;
                 }
-                // [H3] 소속 변경은 '사용자 · 부서 변경'(USER_DEPT) 권한의 의미다 — 정보 수정(USER_UPDATE)만으로 우회하지 못한다.
-                //   소속을 그대로 왕복시키는 수정은 묻지 않는다. 판정 강도는 이 메서드의 USER_UPDATE 판정과 같은 요청 시점 권한이다
-                //   (전역 관리 잠금은 소속 입력이 있으면 위에서 이미 잡았다). 일괄 이동(moveUsersToDept)은 잠금 뒤 DB 재확인까지 한다.
+                // 소속 변경은 USER_DEPT 의 의미라 USER_UPDATE 만으로 우회하지 못한다(H3). 판정은 요청 시점 권한이다(전역 잠금은
+                //   소속 입력이 있으면 updateUser 가 이미 잡았다). 일괄 이동은 잠금 뒤 DB 재확인까지 한다.
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_DEPT");
                 assertDepartmentExists(requested);
         }
